@@ -1,15 +1,14 @@
 // =====================================================================
 // state.js -- Praxis state + storage primitives
 //
-// Owns: SCHEMA_VERSION, ls() / sv() localStorage wrappers, and (in
-// later sub-stages) the Praxis state object. SCHEMA_VERSION is a
-// string semver here; HQ uses an integer inside HQ_CONFIG -- this
-// divergence is intentional and locked.
+// Owns: ls() / sv() localStorage wrappers, the Praxis 'state' object
+// (v1 schema: users, books, userBooks, notebooks), and the
+// loadState / saveState / migrate trio. SCHEMA_VERSION lives on the
+// state object as a string semver; HQ uses an integer inside
+// HQ_CONFIG -- divergence is intentional and locked.
 // =====================================================================
 
 'use strict';
-
-var SCHEMA_VERSION = '1.0.0';
 
 function ls(k, d) {
   try {
@@ -28,6 +27,38 @@ function sv(k, v) {
   } catch (e) {
     return false;
   }
+}
+
+var state = {
+  SCHEMA_VERSION: '1.0.0',
+  users:     {},
+  books:     {},
+  userBooks: {},
+  notebooks: {}
+};
+window.state = state;
+
+function loadState() {
+  var stored = ls('praxis_state', null);
+  if (stored === null) return state;
+  var migrated = migrate(stored);
+  for (var k in migrated) {
+    if (Object.prototype.hasOwnProperty.call(migrated, k)) {
+      state[k] = migrated[k];
+    }
+  }
+  return state;
+}
+
+function saveState() {
+  return sv('praxis_state', state);
+}
+
+// Migration hook. No-op at SCHEMA_VERSION 1.0.0. When the schema
+// bumps, read stored.SCHEMA_VERSION and apply transforms here before
+// loadState merges into the live state object.
+function migrate(stored) {
+  return stored;
 }
 
 console.log('state.js loaded');
