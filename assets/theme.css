@@ -1,0 +1,35 @@
+/* =====================================================================
+   theme.css -- Praxis design tokens
+   STAGE 1.1: CSS variable definitions only. No component styles, no
+   layout rules. Component styles arrive with their respective views.
+   ===================================================================== */
+
+:root {
+  /* Fonts */
+  --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:  'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Core colors */
+  --ink:     #1a1814;
+  --ink-2:   #4a443c;
+  --ink-3:   #7a7368;
+  --gold:    #b8860b;
+  --bg:      #faf6ec;
+  --surface: #ffffff;
+  --border:  #e5dfd2;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
