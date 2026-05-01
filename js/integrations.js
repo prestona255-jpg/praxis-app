@@ -56,4 +56,170 @@ function getCurrentUser() {
   return ls('praxis_user', null);
 }
 
+// ISBN lookup: Open Library is primary, Google Books is fallback.
+// Public API is callback-only; internal Promise chains stay inside.
+// Normalized shape: { isbn, title, author, coverUrl, publishYear,
+// openLibraryWorkId }. Google Books fallback yields openLibraryWorkId
+// = null, which is acceptable.
+function fetchBookByIsbn(isbn, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  function isComplete(b) {
+    if (!b) return false;
+    if (!b.isbn) return false;
+    if (!b.title) return false;
+    if (!b.author) return false;
+    if (!b.coverUrl) return false;
+    if (!b.publishYear) return false;
+    if (!b.openLibraryWorkId) return false;
+    return true;
+  }
+  try {
+    fetchOpenLibrary(isbn, function (book) {
+      if (isComplete(book)) {
+        finish(book);
+        return;
+      }
+      try {
+        fetchGoogleBooks(isbn, function (book2) {
+          if (book2) {
+            finish(book2);
+          } else {
+            finish(null);
+          }
+        });
+      } catch (e2) {
+        finish(null);
+      }
+    });
+  } catch (e) {
+    finish(null);
+  }
+}
+
+function fetchOpenLibrary(isbn, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  function extractYear(s) {
+    if (!s) return null;
+    var m = s.match(/(\d{4})/);
+    if (m) return m[1];
+    return null;
+  }
+  try {
+    var url1 = 'https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data';
+    fetch(url1).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      var key = 'ISBN:' + isbn;
+      var entry = data[key];
+      if (!entry) {
+        finish(null);
+        return;
+      }
+      var title = entry.title || null;
+      var author = null;
+      if (entry.authors && entry.authors.length > 0) {
+        author = entry.authors[0].name || null;
+      }
+      var coverUrl = null;
+      if (entry.cover && entry.cover.large) {
+        coverUrl = entry.cover.large;
+      }
+      var publishYear = extractYear(entry.publish_date);
+      var url2 = 'https://openlibrary.org/isbn/' + isbn + '.json';
+      fetch(url2).then(function (res2) {
+        return res2.json();
+      }).then(function (data2) {
+        var workId = null;
+        if (data2.works && data2.works.length > 0 && data2.works[0].key) {
+          workId = data2.works[0].key.replace('/works/', '');
+        }
+        finish({
+          isbn:              isbn,
+          title:             title,
+          author:            author,
+          coverUrl:          coverUrl,
+          publishYear:       publishYear,
+          openLibraryWorkId: workId
+        });
+      }).catch(function () {
+        finish({
+          isbn:              isbn,
+          title:             title,
+          author:            author,
+          coverUrl:          coverUrl,
+          publishYear:       publishYear,
+          openLibraryWorkId: null
+        });
+      });
+    }).catch(function () {
+      finish(null);
+    });
+  } catch (e) {
+    finish(null);
+  }
+}
+
+function fetchGoogleBooks(isbn, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  function extractYear(s) {
+    if (!s) return null;
+    var m = s.match(/(\d{4})/);
+    if (m) return m[1];
+    return null;
+  }
+  try {
+    var url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn;
+    fetch(url).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      if (!data.totalItems || data.totalItems === 0) {
+        finish(null);
+        return;
+      }
+      if (!data.items || data.items.length === 0) {
+        finish(null);
+        return;
+      }
+      var v = data.items[0].volumeInfo || {};
+      var title = v.title || null;
+      var author = null;
+      if (v.authors && v.authors.length > 0) {
+        author = v.authors[0] || null;
+      }
+      var coverUrl = null;
+      if (v.imageLinks && v.imageLinks.thumbnail) {
+        coverUrl = v.imageLinks.thumbnail;
+      }
+      var publishYear = extractYear(v.publishedDate);
+      finish({
+        isbn:              isbn,
+        title:             title,
+        author:            author,
+        coverUrl:          coverUrl,
+        publishYear:       publishYear,
+        openLibraryWorkId: null
+      });
+    }).catch(function () {
+      finish(null);
+    });
+  } catch (e) {
+    finish(null);
+  }
+}
+
 console.log('integrations.js loaded');
