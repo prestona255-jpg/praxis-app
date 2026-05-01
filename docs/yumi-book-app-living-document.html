@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi Book App — Living Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-2: #3a3a3a;
+  --ink-3: #6a6a6a;
+  --ink-4: #9a9a9a;
+  --gold: #b08d3a;
+  --gold-soft: #d4b878;
+  --br-deep: #2c2418;
+  --border: rgba(0,0,0,0.12);
+  --border-strong: rgba(0,0,0,0.24);
+  --surface: #fafaf7;
+  --surface-2: #f0eee6;
+  --surface-3: #e6e3d6;
+  --serif: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --sans: "DM Sans", -apple-system, system-ui, "Segoe UI", sans-serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --c-blue: #185FA5;
+  --c-blue-bg: #E6F1FB;
+  --c-purple: #534AB7;
+  --c-purple-bg: #EEEDFE;
+  --c-teal: #0F6E56;
+  --c-teal-bg: #E1F5EE;
+  --c-coral: #993C1D;
+  --c-coral-bg: #FAECE7;
+  --c-amber: #854F0B;
+  --c-amber-bg: #FAEEDA;
+  --c-green: #3B6D11;
+  --c-green-bg: #EAF3DE;
+  --c-gray: #5F5E5A;
+  --c-gray-bg: #F1EFE8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ece9df;
+    --ink-2: #c8c5ba;
+    --ink-3: #98948a;
+    --ink-4: #6a665e;
+    --gold: #d4a850;
+    --gold-soft: #b08d3a;
+    --br-deep: #f0e8d0;
+    --border: rgba(255,255,255,0.12);
+    --border-strong: rgba(255,255,255,0.24);
+    --surface: #16161a;
+    --surface-2: #1f1f24;
+    --surface-3: #2a2a30;
+    --c-blue: #85B7EB;
+    --c-blue-bg: #0C447C;
+    --c-purple: #AFA9EC;
+    --c-purple-bg: #3C3489;
+    --c-teal: #5DCAA5;
+    --c-teal-bg: #085041;
+    --c-coral: #F0997B;
+    --c-coral-bg: #712B13;
+    --c-amber: #EF9F27;
+    --c-amber-bg: #633806;
+    --c-green: #97C459;
+    --c-green-bg: #27500A;
+    --c-gray: #B4B2A9;
+    --c-gray-bg: #444441;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  padding: 56px 24px 96px;
+}
+.wrap { max-width: 920px; margin: 0 auto; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+h1 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 56px;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px;
+}
+.tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--ink-3);
+  margin: 0 0 48px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 36px;
+  margin: 80px 0 8px;
+  letter-spacing: -0.005em;
+  line-height: 1.15;
+}
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 22px;
+  margin: 32px 0 8px;
+}
+h2 + .section-note,
+h3 + .section-note {
+  color: var(--ink-3);
+  font-size: 15px;
+  margin: 0 0 24px;
+  font-style: italic;
+}
+p { margin: 0 0 16px; color: var(--ink-2); }
+a { color: var(--gold); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+.status-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin: 0 0 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+}
+.status-field { }
+.status-field .label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin: 0 0 6px;
+}
+.status-field .value {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.2;
+}
+.viz {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  overflow-x: auto;
+  margin: 24px 0;
+}
+.viz svg { display: block; max-width: 100%; height: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 32px;
+  font-size: 14px;
+}
+th, td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-strong);
+}
+td { color: var(--ink-2); }
+td.stage-name { color: var(--ink); font-weight: 500; }
+td.checkbox-col { font-family: var(--mono); color: var(--ink-3); width: 32px; }
+.toc {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 0 0 64px;
+}
+.toc-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin: 0 0 12px;
+}
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px 24px;
+}
+.toc-list li { padding: 4px 0; }
+.toc-list a { color: var(--ink); text-decoration: none; }
+.toc-list a:hover { color: var(--gold); }
+.toc-list .num {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-4);
+  margin-right: 8px;
+}
+.callout {
+  border-left: 3px solid var(--gold);
+  padding: 8px 0 8px 24px;
+  margin: 32px 0;
+}
+.callout p { margin: 0 0 8px; color: var(--ink); }
+.callout p:last-child { margin: 0; }
+.brand-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 16px 0 32px;
+}
+.brand-grid .col {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.brand-grid .col h4 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+.brand-grid .is h4 { color: var(--c-teal); }
+.brand-grid .isnt h4 { color: var(--c-coral); }
+.brand-grid ul { margin: 0; padding-left: 20px; color: var(--ink-2); }
+.brand-grid li { margin: 6px 0; }
+.update-log {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin: 24px 0 0;
+}
+.update-entry {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.update-entry:last-child { border-bottom: none; padding-bottom: 0; }
+.update-entry:first-child { padding-top: 0; }
+.update-date {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin: 0 0 6px;
+}
+.update-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+.update-body { color: var(--ink-2); font-size: 15px; }
+.update-body p { margin: 0 0 8px; }
+.update-body p:last-child { margin: 0; }
+.howto {
+  background: var(--surface-3);
+  border-left: 3px solid var(--gold);
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+}
+.howto strong { color: var(--ink); }
+.howto code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--gold);
+}
+footer {
+  margin-top: 96px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+.svg-host text { font-family: var(--sans); fill: var(--ink); font-size: 14px; }
+.svg-host .t { font-size: 14px; font-weight: 400; }
+.svg-host .ts { font-size: 12px; font-weight: 400; fill: var(--ink-3); }
+.svg-host .th { font-size: 14px; font-weight: 500; }
+.svg-host .arr { stroke: var(--ink-2); stroke-width: 1; fill: none; }
+.svg-host .leader { stroke: var(--ink-3); stroke-width: 0.5; stroke-dasharray: 3 3; fill: none; }
+.svg-host .c-gray rect { fill: var(--c-gray-bg); stroke: var(--c-gray); stroke-width: 0.5; }
+.svg-host .c-blue rect { fill: var(--c-blue-bg); stroke: var(--c-blue); stroke-width: 0.5; }
+.svg-host .c-purple rect { fill: var(--c-purple-bg); stroke: var(--c-purple); stroke-width: 0.5; }
+.svg-host .c-teal rect { fill: var(--c-teal-bg); stroke: var(--c-teal); stroke-width: 0.5; }
+.svg-host .c-coral rect { fill: var(--c-coral-bg); stroke: var(--c-coral); stroke-width: 0.5; }
+.svg-host .c-amber rect { fill: var(--c-amber-bg); stroke: var(--c-amber); stroke-width: 0.5; }
+.svg-host .c-green rect { fill: var(--c-green-bg); stroke: var(--c-green); stroke-width: 0.5; }
+@media (prefers-color-scheme: dark) {
+  .svg-host .c-gray text, .svg-host .c-gray .th { fill: #F1EFE8; }
+  .svg-host .c-gray .ts { fill: #D3D1C7; }
+  .svg-host .c-blue text, .svg-host .c-blue .th { fill: #E6F1FB; }
+  .svg-host .c-blue .ts { fill: #B5D4F4; }
+  .svg-host .c-purple text, .svg-host .c-purple .th { fill: #EEEDFE; }
+  .svg-host .c-purple .ts { fill: #CECBF6; }
+  .svg-host .c-teal text, .svg-host .c-teal .th { fill: #E1F5EE; }
+  .svg-host .c-teal .ts { fill: #9FE1CB; }
+  .svg-host .c-coral text, .svg-host .c-coral .th { fill: #FAECE7; }
+  .svg-host .c-coral .ts { fill: #F5C4B3; }
+  .svg-host .c-amber text, .svg-host .c-amber .th { fill: #FAEEDA; }
+  .svg-host .c-amber .ts { fill: #FAC775; }
+  .svg-host .c-green text, .svg-host .c-green .th { fill: #EAF3DE; }
+  .svg-host .c-green .ts { fill: #C0DD97; }
+}
+@media (prefers-color-scheme: light) {
+  .svg-host .c-gray text, .svg-host .c-gray .th { fill: #2C2C2A; }
+  .svg-host .c-gray .ts { fill: #5F5E5A; }
+  .svg-host .c-blue text, .svg-host .c-blue .th { fill: #042C53; }
+  .svg-host .c-blue .ts { fill: #185FA5; }
+  .svg-host .c-purple text, .svg-host .c-purple .th { fill: #26215C; }
+  .svg-host .c-purple .ts { fill: #534AB7; }
+  .svg-host .c-teal text, .svg-host .c-teal .th { fill: #04342C; }
+  .svg-host .c-teal .ts { fill: #0F6E56; }
+  .svg-host .c-coral text, .svg-host .c-coral .th { fill: #4A1B0C; }
+  .svg-host .c-coral .ts { fill: #993C1D; }
+  .svg-host .c-amber text, .svg-host .c-amber .th { fill: #412402; }
+  .svg-host .c-amber .ts { fill: #854F0B; }
+  .svg-host .c-green text, .svg-host .c-green .th { fill: #173404; }
+  .svg-host .c-green .ts { fill: #3B6D11; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">Living document — re-uploadable, append-only updates</p>
+<h1>Yumi Book App</h1>
+<p class="tagline">A reading community organized by depth of engagement, not metrics of attention.</p>
+
+<div class="status-card">
+  <div class="status-field">
+    <p class="label">Last updated</p>
+    <p class="value" id="last-updated">2026-04-29</p>
+  </div>
+  <div class="status-field">
+    <p class="label">Current phase</p>
+    <p class="value" id="current-phase">Pre-build</p>
+  </div>
+  <div class="status-field">
+    <p class="label">Current stage</p>
+    <p class="value" id="current-stage">Stage 0 — voice doc</p>
+  </div>
+  <div class="status-field">
+    <p class="label">Hours/week</p>
+    <p class="value">20</p>
+  </div>
+</div>
+
+<div class="howto">
+<p><strong>How to update this file.</strong> When you re-upload this HTML in a future Claude chat, tell the chat what changed — for example, <code>"Stage 1 is now in progress, here's what we built last week."</code> The chat will read this file, update the Status card at the top, the Stage status table, and append a new entry to the Update Log. Save the new version. Repeat.</p>
+<p>The file is fully self-contained: no external files needed, just upload this one document. The fonts load from Google Fonts when you have internet; the file still works offline with system fallbacks.</p>
+</div>
+
+<div class="toc">
+<p class="toc-title">Contents</p>
+<ul class="toc-list">
+  <li><span class="num">01</span><a href="#thesis">Thesis &amp; brand position</a></li>
+  <li><span class="num">02</span><a href="#architecture">Architecture map</a></li>
+  <li><span class="num">03</span><a href="#timeline">Build timeline &amp; goals</a></li>
+  <li><span class="num">04</span><a href="#weekly">Week-by-week breakdown</a></li>
+  <li><span class="num">05</span><a href="#journey">User journey</a></li>
+  <li><span class="num">06</span><a href="#brand">Brand position map</a></li>
+  <li><span class="num">07</span><a href="#voice">Yumi voice reference</a></li>
+  <li><span class="num">08</span><a href="#status">Stage status</a></li>
+  <li><span class="num">09</span><a href="#log">Update log</a></li>
+</ul>
+</div>
+
+<h2 id="thesis">01 — Thesis &amp; brand position</h2>
+<p class="section-note">The non-negotiables.</p>
+
+<p>Goodreads-class in scope and polish — millions of books, real discovery, full feature breadth — built on a different foundation: critical pedagogy, scaffolded reflection, and Yumi as the structuring intelligence. Goodreads gamifies quantity of consumption. This app cultivates depth of becoming.</p>
+
+<div class="callout">
+<p><strong>Hard constraints.</strong> Yumi does not summarize books. Star ratings exist but are de-emphasized. No follower counts, like counts, or reshare counts as primary UI. Reviews are pedagogically scaffolded, not free-form. Recommendations driven by engagement depth and concept overlap, not collaborative filtering on ratings. One Book Artifact per user per book — strict structural rule. The Notebook is fully private, always.</p>
+</div>
+
+<h2 id="architecture">02 — Architecture map</h2>
+<p class="section-note">How the app is put together.</p>
+
+<div class="viz svg-host">
+<svg width="100%" viewBox="0 0 680 920" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Architecture map</title>
+<desc>Modular file structure, data model, and user flow with the privacy line.</desc>
+<defs>
+<marker id="arrow1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<text class="th" x="340" y="32" text-anchor="middle">Files load top to bottom — never reorder</text>
+<g class="c-gray"><rect x="40" y="60" width="600" height="36" rx="6"/><text class="th" x="60" y="78" dominant-baseline="central">state.js</text><text class="ts" x="620" y="78" text-anchor="end" dominant-baseline="central">schema, ls/sv wrappers, Firebase sync</text></g>
+<g class="c-gray"><rect x="40" y="104" width="600" height="36" rx="6"/><text class="th" x="60" y="122" dominant-baseline="central">integrations.js</text><text class="ts" x="620" y="122" text-anchor="end" dominant-baseline="central">Firebase, Open Library, Bookshop, Stripe</text></g>
+<g class="c-purple"><rect x="40" y="148" width="600" height="36" rx="6"/><text class="th" x="60" y="166" dominant-baseline="central">yumi-brain.js</text><text class="ts" x="620" y="166" text-anchor="end" dominant-baseline="central">personality, voice doc, prompts</text></g>
+<g class="c-purple"><rect x="40" y="192" width="600" height="36" rx="6"/><text class="th" x="60" y="210" dominant-baseline="central">arcs.js</text><text class="ts" x="620" y="210" text-anchor="end" dominant-baseline="central">arc creation, reflection, completion</text></g>
+<g class="c-purple"><rect x="40" y="236" width="600" height="36" rx="6"/><text class="th" x="60" y="254" dominant-baseline="central">yumi-ui.js</text><text class="ts" x="620" y="254" text-anchor="end" dominant-baseline="central">chat UI, voice input prominent</text></g>
+<g class="c-gray"><rect x="40" y="280" width="600" height="36" rx="6"/><text class="th" x="60" y="298" dominant-baseline="central">views.js</text><text class="ts" x="620" y="298" text-anchor="end" dominant-baseline="central">section renderers, one per view</text></g>
+<g class="c-gray"><rect x="40" y="324" width="600" height="36" rx="6"/><text class="th" x="60" y="342" dominant-baseline="central">app.js</text><text class="ts" x="620" y="342" text-anchor="end" dominant-baseline="central">router, lifecycle, feature flags</text></g>
+<text class="ts" x="40" y="388">Utilities — sw.js, manifest.json, theme.css, verify-engine.js, voice-input.js, claude-proxy.js</text>
+<line x1="40" y1="410" x2="640" y2="410" stroke="#9a9a9a" stroke-width="0.5" opacity="0.4"/>
+<text class="th" x="340" y="440" text-anchor="middle">The privacy line</text>
+<text class="ts" x="340" y="458" text-anchor="middle">Public reads above. Private reads below. Enforced in state.js.</text>
+<g class="c-teal"><rect x="40" y="480" width="290" height="200" rx="12"/><text class="th" x="60" y="504" dominant-baseline="central">Public</text><text class="ts" x="60" y="528" dominant-baseline="central">books</text><text class="ts" x="60" y="548" dominant-baseline="central">authors</text><text class="ts" x="60" y="568" dominant-baseline="central">bookArtifacts (one per user per book)</text><text class="ts" x="60" y="588" dominant-baseline="central">arcs, arcCompletions</text><text class="ts" x="60" y="608" dominant-baseline="central">shelves (when published)</text><text class="ts" x="60" y="628" dominant-baseline="central">comments, follows, saves</text><text class="ts" x="60" y="656" dominant-baseline="central">— readable by signed-in users</text></g>
+<g class="c-coral"><rect x="350" y="480" width="290" height="200" rx="12"/><text class="th" x="370" y="504" dominant-baseline="central">Private</text><text class="ts" x="370" y="528" dominant-baseline="central">users (profile, settings)</text><text class="ts" x="370" y="548" dominant-baseline="central">userBooks (status, captures)</text><text class="ts" x="370" y="568" dominant-baseline="central">notebooks (quotes, concepts, learned)</text><text class="ts" x="370" y="588" dominant-baseline="central">conversations (Yumi dialogues)</text><text class="ts" x="370" y="608" dominant-baseline="central">arcReflections</text><text class="ts" x="370" y="628" dominant-baseline="central">messages (user to user)</text><text class="ts" x="370" y="656" dominant-baseline="central">— owner only, ever</text></g>
+<line x1="40" y1="704" x2="640" y2="704" stroke="#9a9a9a" stroke-width="0.5" opacity="0.4"/>
+<text class="th" x="340" y="734" text-anchor="middle">How a book becomes a public artifact</text>
+<g class="c-gray"><rect x="40" y="760" width="120" height="56" rx="8"/><text class="th" x="100" y="782" text-anchor="middle" dominant-baseline="central">User</text><text class="ts" x="100" y="800" text-anchor="middle" dominant-baseline="central">reads, captures</text></g>
+<line x1="160" y1="788" x2="186" y2="788" class="arr" marker-end="url(#arrow1)"/>
+<g class="c-coral"><rect x="186" y="760" width="120" height="56" rx="8"/><text class="th" x="246" y="782" text-anchor="middle" dominant-baseline="central">Notebook</text><text class="ts" x="246" y="800" text-anchor="middle" dominant-baseline="central">private always</text></g>
+<line x1="306" y1="788" x2="332" y2="788" class="arr" marker-end="url(#arrow1)"/>
+<g class="c-purple"><rect x="332" y="760" width="120" height="56" rx="8"/><text class="th" x="392" y="782" text-anchor="middle" dominant-baseline="central">Yumi</text><text class="ts" x="392" y="800" text-anchor="middle" dominant-baseline="central">helps shape</text></g>
+<line x1="452" y1="788" x2="478" y2="788" class="arr" marker-end="url(#arrow1)"/>
+<g class="c-teal"><rect x="478" y="760" width="160" height="56" rx="8"/><text class="th" x="558" y="782" text-anchor="middle" dominant-baseline="central">Book Artifact</text><text class="ts" x="558" y="800" text-anchor="middle" dominant-baseline="central">one per book, public</text></g>
+<text class="ts" x="340" y="856" text-anchor="middle">User picks a form: reading note, review, or essay. Revisable.</text>
+<text class="ts" x="340" y="876" text-anchor="middle">No raw notebook entries publish. Yumi distills the artifact.</text>
+</svg>
+
+</div>
+
+<h2 id="timeline">03 — Build timeline &amp; goals</h2>
+<p class="section-note">Nine stages, then four phases of opening access.</p>
+
+<div class="viz svg-host">
+<svg width="100%" viewBox="0 0 680 1100" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Build timeline and goals</title>
+<desc>Nine build stages followed by four cohort phases with monetization activation points.</desc>
+<text class="th" x="340" y="32" text-anchor="middle">Nine stages, then four phases of opening access</text>
+<text class="th" x="40" y="68">Stages — what gets built, in order</text>
+<g class="c-gray"><rect x="40" y="84" width="600" height="48" rx="8"/><text class="th" x="60" y="106" dominant-baseline="central">Stage 0 — Yumi voice document</text><text class="ts" x="60" y="124" dominant-baseline="central">Goal: a doc that defines who Yumi is and how she talks. Everything downstream depends on this.</text></g>
+<g class="c-blue"><rect x="40" y="140" width="600" height="48" rx="8"/><text class="th" x="60" y="162" dominant-baseline="central">Stage 1 — Foundation</text><text class="ts" x="60" y="180" dominant-baseline="central">Goal: user signs in with Google, app fetches a book by ISBN, state syncs to Firebase.</text></g>
+<g class="c-purple"><rect x="40" y="196" width="600" height="48" rx="8"/><text class="th" x="60" y="218" dominant-baseline="central">Stage 2 — Yumi brain online</text><text class="ts" x="60" y="236" dominant-baseline="central">Goal: real conversation with Yumi via proxy. Voice and text both work. Tone matches voice doc.</text></g>
+<g class="c-teal"><rect x="40" y="252" width="600" height="48" rx="8"/><text class="th" x="60" y="274" dominant-baseline="central">Stage 3 — Reading practice (private)</text><text class="ts" x="60" y="292" dominant-baseline="central">Goal: solo user can read a book end-to-end. Capture, shelve, take notes, talk to Yumi.</text></g>
+<g class="c-teal"><rect x="40" y="308" width="600" height="48" rx="8"/><text class="th" x="60" y="330" dominant-baseline="central">Stage 4 — Pedagogy layer</text><text class="ts" x="60" y="348" dominant-baseline="central">Goal: user finishes a book, produces one Book Artifact that feels real, not formulaic.</text></g>
+<g class="c-purple"><rect x="40" y="364" width="600" height="48" rx="8"/><text class="th" x="60" y="386" dominant-baseline="central">Stage 5 — Learning Arcs</text><text class="ts" x="60" y="404" dominant-baseline="central">Goal: Preston creates an arc, works through it, produces a completion he'd publish.</text></g>
+<g class="c-coral"><rect x="40" y="420" width="600" height="48" rx="8"/><text class="th" x="60" y="442" dominant-baseline="central">Stage 6 — Social layer</text><text class="ts" x="60" y="460" dominant-baseline="central">Goal: two users find each other's work and connect through it. Privacy controls visible per-item.</text></g>
+<g class="c-coral"><rect x="40" y="476" width="600" height="48" rx="8"/><text class="th" x="60" y="498" dominant-baseline="central">Stage 7 — Discovery</text><text class="ts" x="60" y="516" dominant-baseline="central">Goal: book pages, author pages, Yumi-curated feed, search across everything.</text></g>
+<g class="c-amber"><rect x="40" y="532" width="600" height="48" rx="8"/><text class="th" x="60" y="554" dominant-baseline="central">Stage 8 — Bookselling, recaps, polish</text><text class="ts" x="60" y="572" dominant-baseline="central">Goal: app feels finished. Bookshop affiliate live. App could be shared without apology.</text></g>
+<g class="c-green"><rect x="40" y="588" width="600" height="48" rx="8"/><text class="th" x="60" y="610" dominant-baseline="central">Stage 9 — Phase 1 launch</text><text class="ts" x="60" y="628" dominant-baseline="central">Goal: each tester completes a book and publishes one artifact. Voice quality holds.</text></g>
+<line x1="40" y1="664" x2="640" y2="664" stroke="#9a9a9a" stroke-width="0.5" opacity="0.4"/>
+<text class="th" x="40" y="694">Phases — when access opens</text>
+<g class="c-green"><rect x="40" y="708" width="145" height="80" rx="8"/><text class="th" x="112" y="732" text-anchor="middle" dominant-baseline="central">Phase 1</text><text class="ts" x="112" y="752" text-anchor="middle" dominant-baseline="central">1 to 3 testers</text><text class="ts" x="112" y="770" text-anchor="middle" dominant-baseline="central">manual onboarding</text></g>
+<g class="c-blue"><rect x="195" y="708" width="145" height="80" rx="8"/><text class="th" x="267" y="732" text-anchor="middle" dominant-baseline="central">Phase 2</text><text class="ts" x="267" y="752" text-anchor="middle" dominant-baseline="central">10 to 25 testers</text><text class="ts" x="267" y="770" text-anchor="middle" dominant-baseline="central">first paid cohort</text></g>
+<g class="c-purple"><rect x="350" y="708" width="145" height="80" rx="8"/><text class="th" x="422" y="732" text-anchor="middle" dominant-baseline="central">Phase 3</text><text class="ts" x="422" y="752" text-anchor="middle" dominant-baseline="central">broader invite</text><text class="ts" x="422" y="770" text-anchor="middle" dominant-baseline="central">classroom mode</text></g>
+<g class="c-coral"><rect x="505" y="708" width="135" height="80" rx="8"/><text class="th" x="572" y="732" text-anchor="middle" dominant-baseline="central">Phase 4</text><text class="ts" x="572" y="752" text-anchor="middle" dominant-baseline="central">public</text><text class="ts" x="572" y="770" text-anchor="middle" dominant-baseline="central">scale concerns</text></g>
+<line x1="40" y1="820" x2="640" y2="820" stroke="#9a9a9a" stroke-width="0.5" opacity="0.4"/>
+<text class="th" x="40" y="850">Monetization activation points</text>
+<g class="c-amber"><rect x="40" y="864" width="600" height="40" rx="8"/><text class="th" x="60" y="884" dominant-baseline="central">Stage 8 — Bookshop affiliate live</text><text class="ts" x="620" y="884" text-anchor="end" dominant-baseline="central">primary channel, Amazon as fallback</text></g>
+<g class="c-amber"><rect x="40" y="912" width="600" height="40" rx="8"/><text class="th" x="60" y="932" dominant-baseline="central">Phase 2 — first paid cohort</text><text class="ts" x="620" y="932" text-anchor="end" dominant-baseline="central">8-week, capped 30, $200 to $400 per seat</text></g>
+<g class="c-amber"><rect x="40" y="960" width="600" height="40" rx="8"/><text class="th" x="60" y="980" dominant-baseline="central">Phase 3 — classroom licenses</text><text class="ts" x="620" y="980" text-anchor="end" dominant-baseline="central">institutional adoption begins</text></g>
+<text class="ts" x="40" y="1024">App stays free. Money flows through cohorts (primary), affiliate (secondary, compounds across surfaces),</text>
+<text class="ts" x="40" y="1042">and eventually classroom licenses. No ads, no premium tiers, no engagement-maximizing dark patterns.</text>
+<text class="ts" x="40" y="1060">App is the credibility surface. The compounding logic is what makes it profitable.</text>
+</svg>
+
+</div>
+
+<h2 id="weekly">04 — Week-by-week breakdown</h2>
+<p class="section-note">At 20 hrs/wk. Ranges, not dates.</p>
+
+<div class="viz svg-host">
+<svg width="100%" viewBox="0 0 680 760" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Week by week breakdown at 20 hours per week</title>
+<desc>Stage durations laid out as week ranges across roughly 5 to 6 months of build time.</desc>
+<text class="th" x="340" y="32" text-anchor="middle">At 20 hrs/wk — total build runs ~19 to 28 weeks</text>
+<text class="ts" x="340" y="50" text-anchor="middle">Ranges, not dates. Slip a stage, the rest shifts. Adjust as you go.</text>
+<line x1="180" y1="80" x2="640" y2="80" stroke="#9a9a9a" stroke-width="0.5" opacity="0.5"/>
+<text class="ts" x="180" y="74" text-anchor="middle">w1</text>
+<text class="ts" x="295" y="74" text-anchor="middle">w7</text>
+<text class="ts" x="410" y="74" text-anchor="middle">w14</text>
+<text class="ts" x="525" y="74" text-anchor="middle">w21</text>
+<text class="ts" x="640" y="74" text-anchor="middle">w28</text>
+<text class="th" x="40" y="118" dominant-baseline="central">Stage 0</text>
+<text class="ts" x="40" y="136" dominant-baseline="central">voice doc</text>
+<g class="c-gray"><rect x="180" y="104" width="16" height="32" rx="4"/></g>
+<text class="ts" x="640" y="124" text-anchor="end" dominant-baseline="central">~1 wk</text>
+<text class="th" x="40" y="170" dominant-baseline="central">Stage 1</text>
+<text class="ts" x="40" y="188" dominant-baseline="central">foundation</text>
+<g class="c-blue"><rect x="196" y="156" width="49" height="32" rx="4"/></g>
+<text class="ts" x="640" y="176" text-anchor="end" dominant-baseline="central">2 to 3 wks</text>
+<text class="th" x="40" y="222" dominant-baseline="central">Stage 2</text>
+<text class="ts" x="40" y="240" dominant-baseline="central">Yumi brain</text>
+<g class="c-purple"><rect x="245" y="208" width="33" height="32" rx="4"/></g>
+<text class="ts" x="640" y="228" text-anchor="end" dominant-baseline="central">1 to 2 wks</text>
+<text class="th" x="40" y="274" dominant-baseline="central">Stage 3</text>
+<text class="ts" x="40" y="292" dominant-baseline="central">reading practice</text>
+<g class="c-teal"><rect x="278" y="260" width="65" height="32" rx="4"/></g>
+<text class="ts" x="640" y="280" text-anchor="end" dominant-baseline="central">3 to 4 wks</text>
+<text class="th" x="40" y="326" dominant-baseline="central">Stage 4</text>
+<text class="ts" x="40" y="344" dominant-baseline="central">pedagogy layer</text>
+<g class="c-teal"><rect x="343" y="312" width="49" height="32" rx="4"/></g>
+<text class="ts" x="640" y="332" text-anchor="end" dominant-baseline="central">2 to 3 wks</text>
+<text class="th" x="40" y="378" dominant-baseline="central">Stage 5</text>
+<text class="ts" x="40" y="396" dominant-baseline="central">learning arcs</text>
+<g class="c-purple"><rect x="392" y="364" width="65" height="32" rx="4"/></g>
+<text class="ts" x="640" y="384" text-anchor="end" dominant-baseline="central">3 to 4 wks</text>
+<text class="th" x="40" y="430" dominant-baseline="central">Stage 6</text>
+<text class="ts" x="40" y="448" dominant-baseline="central">social layer</text>
+<g class="c-coral"><rect x="457" y="416" width="49" height="32" rx="4"/></g>
+<text class="ts" x="640" y="436" text-anchor="end" dominant-baseline="central">2 to 3 wks</text>
+<text class="th" x="40" y="482" dominant-baseline="central">Stage 7</text>
+<text class="ts" x="40" y="500" dominant-baseline="central">discovery</text>
+<g class="c-coral"><rect x="506" y="468" width="49" height="32" rx="4"/></g>
+<text class="ts" x="640" y="488" text-anchor="end" dominant-baseline="central">2 to 3 wks</text>
+<text class="th" x="40" y="534" dominant-baseline="central">Stage 8</text>
+<text class="ts" x="40" y="552" dominant-baseline="central">polish, bookselling</text>
+<g class="c-amber"><rect x="555" y="520" width="49" height="32" rx="4"/></g>
+<text class="ts" x="640" y="540" text-anchor="end" dominant-baseline="central">2 to 3 wks</text>
+<text class="th" x="40" y="586" dominant-baseline="central">Stage 9</text>
+<text class="ts" x="40" y="604" dominant-baseline="central">Phase 1 launch</text>
+<g class="c-green"><rect x="604" y="572" width="16" height="32" rx="4"/></g>
+<text class="ts" x="640" y="592" text-anchor="end" dominant-baseline="central">~1 wk</text>
+<line x1="40" y1="640" x2="640" y2="640" stroke="#9a9a9a" stroke-width="0.5" opacity="0.4"/>
+<text class="th" x="40" y="666">If life pulls you off the build</text>
+<text class="ts" x="40" y="690">10 hrs/wk → roughly double the timeline (~38 to 56 weeks).</text>
+<text class="ts" x="40" y="710">5 hrs/wk → roughly quadruple. At that pace, cut scope: defer arcs to v2.</text>
+<text class="ts" x="40" y="730">Don't promise yourself dates. Track stages completed, not weeks elapsed.</text>
+</svg>
+
+</div>
+
+<h3>The honest math</h3>
+<table>
+  <thead>
+    <tr><th>Stage</th><th>Estimate at 20 hrs/wk</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">Stage 0 — Voice doc</td><td>~1 week</td><td>Writing task, not build task. Quality over length.</td></tr>
+    <tr><td class="stage-name">Stage 1 — Foundation</td><td>2 to 3 weeks</td><td>Firebase + auth + API integrations. First-time friction.</td></tr>
+    <tr><td class="stage-name">Stage 2 — Yumi brain</td><td>1 to 2 weeks</td><td>Mostly adapting working code from HQ.</td></tr>
+    <tr><td class="stage-name">Stage 3 — Reading practice</td><td>3 to 4 weeks</td><td>Big stage. Capture, shelves, Notebook all need to feel right.</td></tr>
+    <tr><td class="stage-name">Stage 4 — Pedagogy layer</td><td>2 to 3 weeks</td><td>The Book Artifact composer is where the brand lives.</td></tr>
+    <tr><td class="stage-name">Stage 5 — Learning Arcs</td><td>3 to 4 weeks</td><td>New territory. Curation + reflection + completion.</td></tr>
+    <tr><td class="stage-name">Stage 6 — Social layer</td><td>2 to 3 weeks</td><td>Multi-user data model + privacy enforcement.</td></tr>
+    <tr><td class="stage-name">Stage 7 — Discovery</td><td>2 to 3 weeks</td><td>Search + book pages + Yumi-curated feed.</td></tr>
+    <tr><td class="stage-name">Stage 8 — Polish</td><td>2 to 3 weeks</td><td>Bookselling + recaps + design polish + empty states.</td></tr>
+    <tr><td class="stage-name">Stage 9 — Phase 1 launch</td><td>~1 week</td><td>Onboarding setup + first three testers.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Total: 19 to 28 weeks, or roughly 4.5 to 6.5 months at 20 hrs/wk.</strong> Slip on one stage and the rest shifts. Don't promise yourself dates. Track stages completed, not weeks elapsed.</p>
+
+<h2 id="journey">05 — User journey</h2>
+<p class="section-note">A real user, from signup to first published artifact.</p>
+
+<div class="viz svg-host">
+<svg width="100%" viewBox="0 0 680 880" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>User journey — what a real new user experiences</title>
+<desc>The first hour, first week, first book, and first month of using the app.</desc>
+<text class="th" x="340" y="32" text-anchor="middle">What a new user experiences</text>
+<text class="ts" x="340" y="50" text-anchor="middle">From signup to first published Book Artifact</text>
+<text class="th" x="40" y="92">First hour</text>
+<g class="c-blue"><rect x="40" y="104" width="600" height="120" rx="10"/><text class="th" x="60" y="128" dominant-baseline="central">Signs in with Google</text><text class="ts" x="60" y="148" dominant-baseline="central">Yumi greets them in chat. No empty home screen.</text><text class="ts" x="60" y="170" dominant-baseline="central">Reading-stance onboarding: three questions about how they read.</text><text class="ts" x="60" y="190" dominant-baseline="central">Yumi adds one book to the "Reading" shelf with their input.</text><text class="ts" x="60" y="210" dominant-baseline="central">Closes with: "What do you want to read first?"</text></g>
+<text class="th" x="40" y="262">First week</text>
+<g class="c-purple"><rect x="40" y="274" width="600" height="140" rx="10"/><text class="th" x="60" y="298" dominant-baseline="central">Captures their first quotes</text><text class="ts" x="60" y="318" dominant-baseline="central">Reads. Notebook accumulates quotes, concepts, things-learned.</text><text class="ts" x="60" y="338" dominant-baseline="central">Talks to Yumi about what they're reading. Voice or text.</text><text class="ts" x="60" y="358" dominant-baseline="central">Sees Yumi's probing questions, not summaries.</text><text class="ts" x="60" y="378" dominant-baseline="central">Receives the first weekly reflective prompt.</text><text class="ts" x="60" y="400" dominant-baseline="central">Privacy line is felt: notebook is theirs, conversations are theirs.</text></g>
+<text class="th" x="40" y="452">First book finished</text>
+<g class="c-teal"><rect x="40" y="464" width="600" height="160" rx="10"/><text class="th" x="60" y="488" dominant-baseline="central">Book moves to "Read"</text><text class="ts" x="60" y="508" dominant-baseline="central">Yumi offers the optional "sit with it" pause.</text><text class="ts" x="60" y="528" dominant-baseline="central">User chooses a form: reading note, review, or essay.</text><text class="ts" x="60" y="548" dominant-baseline="central">Yumi scaffolds the artifact through dialogue, drawing on the user's notebook</text><text class="ts" x="60" y="568" dominant-baseline="central">captures and conversations. User edits, approves.</text><text class="ts" x="60" y="588" dominant-baseline="central">Publishes: their one Book Artifact for that book is now public.</text><text class="ts" x="60" y="610" dominant-baseline="central">Notebook stays private. Quotes never surface to other users.</text></g>
+<text class="th" x="40" y="662">First month</text>
+<g class="c-coral"><rect x="40" y="674" width="600" height="180" rx="10"/><text class="th" x="60" y="698" dominant-baseline="central">Discovery starts</text><text class="ts" x="60" y="718" dominant-baseline="central">User opens a book and sees other readers' Book Artifacts.</text><text class="ts" x="60" y="738" dominant-baseline="central">Saves an artifact whose author thinks differently from them.</text><text class="ts" x="60" y="758" dominant-baseline="central">Considers a Learning Arc — picks a subject they want to grow into.</text><text class="ts" x="60" y="778" dominant-baseline="central">Yumi proposes books across angles. User curates.</text><text class="ts" x="60" y="798" dominant-baseline="central">Monthly recap surfaces: themes emerging, concept web growing.</text><text class="ts" x="60" y="820" dominant-baseline="central">Book purchase happens through Bookshop affiliate. Preston earns.</text><text class="ts" x="60" y="842" dominant-baseline="central">User feels: this is a practice, not a feed.</text></g>
+</svg>
+
+</div>
+
+<h2 id="brand">06 — Brand position map</h2>
+<p class="section-note">What the app is. What it isn't. What other reading tools are.</p>
+
+<div class="brand-grid">
+  <div class="col is">
+    <h4>What this app is</h4>
+    <ul>
+      <li>A reading community organized by depth of engagement</li>
+      <li>A practice tool: notebook, conversations, scaffolded reflection</li>
+      <li>A publishing surface for one coherent Book Artifact per book</li>
+      <li>A subject-based learning instrument: Learning Arcs across angles</li>
+      <li>A bookselling channel for readers who want curated paths</li>
+      <li>Pedagogically grounded — Freire, hooks, Giroux, De Lissovoy</li>
+      <li>Yumi is the structuring intelligence, not a chatbot bolted on</li>
+    </ul>
+  </div>
+  <div class="col isnt">
+    <h4>What this app is not</h4>
+    <ul>
+      <li>Not Goodreads — not a database of star ratings or short opinions</li>
+      <li>Not BookTok — not engagement-maximizing, not algorithmic feeds</li>
+      <li>Not a journal app — output is shaped, not raw</li>
+      <li>Not a review aggregator — no scores, no rankings, no "top picks"</li>
+      <li>Not a summary generator — Yumi never summarizes</li>
+      <li>Not a follower platform — no follower counts as primary UI</li>
+      <li>Not a quantity tracker — no "30 books in 2026" challenges</li>
+    </ul>
+  </div>
+</div>
+
+<h3>How it sits next to other reading tools</h3>
+<table>
+  <thead>
+    <tr><th>Tool</th><th>What it does</th><th>How this app differs</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">Goodreads</td><td>Catalog + ratings + lists + light social</td><td>This app removes ratings as primary signal, replaces with engagement depth.</td></tr>
+    <tr><td class="stage-name">Substack</td><td>Long-form publishing for writers with audiences</td><td>This app is for readers, not writers. Output emerges from reading, not writing for an audience.</td></tr>
+    <tr><td class="stage-name">Reading journals</td><td>Private notebooks, no community</td><td>This app keeps the private notebook but adds a public artifact per book, shaped by Yumi.</td></tr>
+    <tr><td class="stage-name">StoryGraph</td><td>Better catalog, mood-based recommendations</td><td>This app builds recommendations from concept overlap, not mood matching.</td></tr>
+    <tr><td class="stage-name">BookTok / Bookstagram</td><td>Visual culture around books, peer recommendation</td><td>This app structurally rejects the engagement-metric mechanics those platforms run on.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="voice">07 — Yumi voice reference</h2>
+<p class="section-note">A starting frame for Stage 0.</p>
+
+<div class="viz svg-host">
+<svg width="100%" viewBox="0 0 680 760" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Yumi voice reference</title>
+<desc>Who Yumi is, what she does and does not do, and how she sounds.</desc>
+<text class="th" x="340" y="32" text-anchor="middle">Yumi voice reference</text>
+<text class="ts" x="340" y="50" text-anchor="middle">A starting frame for Stage 0. Refine when writing the canonical voice document.</text>
+<text class="th" x="40" y="92">Who she is</text>
+<g class="c-purple"><rect x="40" y="104" width="600" height="100" rx="10"/><text class="th" x="60" y="128" dominant-baseline="central">A reading companion shaped by critical pedagogy</text><text class="ts" x="60" y="148" dominant-baseline="central">Trained on Freire, hooks, Giroux, De Lissovoy and the larger tradition.</text><text class="ts" x="60" y="170" dominant-baseline="central">Curious, warm, intellectually serious. Asks better questions than she answers.</text><text class="ts" x="60" y="190" dominant-baseline="central">Treats reading as a practice of becoming, not a hobby of consuming.</text></g>
+<text class="th" x="40" y="242">What she does</text>
+<g class="c-teal"><rect x="40" y="254" width="600" height="160" rx="10"/><text class="ts" x="60" y="278" dominant-baseline="central">Asks probing questions while you read.</text><text class="ts" x="60" y="298" dominant-baseline="central">Connects books across your shelf through concept overlap.</text><text class="ts" x="60" y="318" dominant-baseline="central">Curates Learning Arcs across angles — cultural, scientific, historical, narrative.</text><text class="ts" x="60" y="338" dominant-baseline="central">Helps you concentrate captures, conversations, and time into one Book Artifact.</text><text class="ts" x="60" y="358" dominant-baseline="central">Calibrates her voice to your reading-stance answers.</text><text class="ts" x="60" y="378" dominant-baseline="central">Surfaces what other readers have made of a book — never her own summary.</text><text class="ts" x="60" y="400" dominant-baseline="central">Lets you silence her when you don't want her there.</text></g>
+<text class="th" x="40" y="452">What she does not do</text>
+<g class="c-coral"><rect x="40" y="464" width="600" height="160" rx="10"/><text class="ts" x="60" y="488" dominant-baseline="central">Summarize a book. Ever. Even when asked.</text><text class="ts" x="60" y="508" dominant-baseline="central">Surface the user's private notebook to anyone but them.</text><text class="ts" x="60" y="528" dominant-baseline="central">Use engagement-bait language (hot takes, must-reads, top picks).</text><text class="ts" x="60" y="548" dominant-baseline="central">Praise the user reflexively or perform enthusiasm she doesn't feel.</text><text class="ts" x="60" y="568" dominant-baseline="central">Pretend to know more than she does. She names her uncertainty.</text><text class="ts" x="60" y="588" dominant-baseline="central">Push the user to publish, or to read more, or to engage more.</text><text class="ts" x="60" y="610" dominant-baseline="central">Drift in tone over a long conversation.</text></g>
+<text class="th" x="40" y="662">How she sounds — the redirect</text>
+<g class="c-amber"><rect x="40" y="674" width="600" height="80" rx="10"/><text class="th" x="340" y="700" text-anchor="middle" dominant-baseline="central">"I'd rather read it with you. Where are you in it?"</text><text class="ts" x="340" y="724" text-anchor="middle" dominant-baseline="central">When asked for a summary. When asked to do the user's thinking for them.</text><text class="ts" x="340" y="742" text-anchor="middle" dominant-baseline="central">When asked to flatten a book into a takeaway.</text></g>
+</svg>
+
+</div>
+
+<h2 id="status">08 — Stage status</h2>
+<p class="section-note">Update this table as work progresses. Re-upload this file in a future chat to have it updated.</p>
+
+<table>
+  <thead>
+    <tr><th class="checkbox-col"></th><th>Stage</th><th>Status</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 0 — Voice doc</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 1 — Foundation</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2 — Yumi brain</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 3 — Reading practice</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 4 — Pedagogy layer</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 5 — Learning Arcs</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 6 — Social layer</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 7 — Discovery</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 8 — Polish</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 9 — Phase 1 launch</td><td>Not started</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h2 id="log">09 — Update log</h2>
+<p class="section-note">Append-only. Newest at the top.</p>
+
+<div class="update-log">
+  <div class="update-entry">
+    <p class="update-date">2026-04-29</p>
+    <p class="update-title">Living document created</p>
+    <div class="update-body">
+      <p>Spec locked across multiple sessions. Architecture map, timeline, week-by-week, user journey, brand position map, and Yumi voice reference all included.</p>
+      <p>Hours-per-week assumption set to 20. Build estimate runs 19 to 28 weeks at that pace.</p>
+      <p>Next action: Stage 0 — write the canonical Yumi voice document. Open a new Claude chat, paste the spec, ask for help drafting it.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+<p>Yumi Book App — Living Document. Self-contained. Re-uploadable.<br>
+Companion to <code>book-app-spec.md</code>, <code>book-app-buildlog.md</code>, <code>book-app-timeline.md</code>.</p>
+</footer>
+
+</div>
+</body>
+</html>
