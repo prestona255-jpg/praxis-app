@@ -22,9 +22,27 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // Auth state is persisted to localStorage via sv()/ls() so
-// getCurrentUser() works synchronously across reloads. Firebase's own
-// auth observer is not wired in 1.3 -- added in a later sub-stage
-// when the app needs reactive auth state.
+// getCurrentUser() works synchronously across reloads. The Firebase
+// auth observer below keeps the cache in sync with the source of
+// truth: any sign-in (popup, redirect, restored session, multi-tab)
+// or sign-out is reflected into 'praxis_user' without the explicit
+// signInWithGoogle / signOut helpers having to do it themselves.
+firebase.auth().onAuthStateChanged(function (u) {
+  if (u) {
+    var userObj = {
+      uid:         u.uid,
+      displayName: u.displayName,
+      email:       u.email,
+      photoURL:    u.photoURL
+    };
+    sv('praxis_user', userObj);
+    console.log('onAuthStateChanged: signed in', userObj);
+  } else {
+    sv('praxis_user', null);
+    console.log('onAuthStateChanged: signed out');
+  }
+});
+
 function signInWithGoogle() {
   var provider = new firebase.auth.GoogleAuthProvider();
   firebase.auth().signInWithPopup(provider).then(function (result) {

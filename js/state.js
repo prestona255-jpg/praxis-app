@@ -1,11 +1,50 @@
 // =====================================================================
 // state.js -- Praxis state + storage primitives
 //
-// Owns: ls() / sv() localStorage wrappers, the Praxis 'state' object
-// (v1 schema: users, books, userBooks, notebooks), and the
-// loadState / saveState / migrate trio. SCHEMA_VERSION lives on the
-// state object as a string semver; HQ uses an integer inside
+// Owns: ls() / sv() localStorage wrappers, the Praxis 'state' object,
+// and the loadState / saveState / migrate trio. SCHEMA_VERSION lives
+// on the state object as a string semver; HQ uses an integer inside
 // HQ_CONFIG -- divergence is intentional and locked.
+//
+// Schema 1.1.0 adds three maps for stage 2:
+//
+//   notebookEntries: keyed by entryId. Each entry is the atomic unit
+//     of writing -- a single timestamped piece of prose attached to a
+//     notebook. Shape (skeleton):
+//       {
+//         id:         string,
+//         userId:     string,
+//         notebookId: string,   // foreign key into state.notebooks
+//         createdAt:  number,   // ms epoch
+//         updatedAt:  number,
+//         body:       string    // raw text / markdown
+//       }
+//
+//   bookArtifacts: keyed by artifactKey(userId, bookId). At most one
+//     artifact per user+book pair -- this is the user's evolving
+//     summary / synthesis of a book. Shape (skeleton):
+//       {
+//         userId:    string,
+//         bookId:    string,
+//         createdAt: number,
+//         updatedAt: number,
+//         body:      string
+//       }
+//
+//   arcs: keyed by arcId. An arc groups books and notebook entries
+//     into a directed reading thread. Shape (skeleton):
+//       {
+//         id:        string,
+//         userId:    string,
+//         title:     string,
+//         bookIds:   array of string,
+//         entryIds:  array of string,
+//         createdAt: number,
+//         updatedAt: number
+//       }
+//
+// var/function only -- no const, let, arrow, class, or template
+// literals anywhere.
 // =====================================================================
 
 'use strict';
@@ -30,13 +69,35 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION: '1.0.0',
-  users:     {},
-  books:     {},
-  userBooks: {},
-  notebooks: {}
+  SCHEMA_VERSION:  '1.1.0',
+  users:           {},
+  books:           {},
+  userBooks:       {},
+  notebooks:       {},
+  notebookEntries: {},
+  bookArtifacts:   {},
+  arcs:            {}
 };
 window.state = state;
+
+// Composite key for the bookArtifacts map. Kept as a function so the
+// format is changed in one place if it ever needs to change. The ':'
+// separator is safe because neither id is allowed to contain one.
+function artifactKey(userId, bookId) {
+  return userId + ':' + bookId;
+}
+
+// Enforce the at-most-one-artifact-per-user-per-book invariant. If an
+// artifact already exists for the pair, return it untouched. Otherwise
+// store the supplied artifact and return it. Callers that want to
+// overwrite should write to state.bookArtifacts directly.
+function ensureOneArtifact(userId, bookId, artifact) {
+  var key = artifactKey(userId, bookId);
+  var existing = state.bookArtifacts[key];
+  if (existing) return existing;
+  state.bookArtifacts[key] = artifact;
+  return artifact;
+}
 
 function loadState() {
   var stored = ls('praxis_state', null);
@@ -54,10 +115,21 @@ function saveState() {
   return sv('praxis_state', state);
 }
 
-// Migration hook. No-op at SCHEMA_VERSION 1.0.0. When the schema
-// bumps, read stored.SCHEMA_VERSION and apply transforms here before
-// loadState merges into the live state object.
+// Migration hook. Reads stored.SCHEMA_VERSION and applies forward
+// transforms in order before loadState merges into the live state
+// object. Each step mutates 'stored' in place and bumps its version
+// stamp. Unknown / future versions are passed through untouched so a
+// newer client's data does not get clobbered by an older client.
 function migrate(stored) {
+  if (!stored.SCHEMA_VERSION) {
+    stored.SCHEMA_VERSION = '1.0.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.0.0') {
+    if (!stored.notebookEntries) stored.notebookEntries = {};
+    if (!stored.bookArtifacts)   stored.bookArtifacts   = {};
+    if (!stored.arcs)            stored.arcs            = {};
+    stored.SCHEMA_VERSION = '1.1.0';
+  }
   return stored;
 }
 

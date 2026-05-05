@@ -3,12 +3,11 @@
 //
 // 1.5 ships the real shell: cache-first for the app shell, network-only
 // for API + third-party CDNs. CACHE_VERSION is bumped on each shipping
-// stage to invalidate stale caches; staying at 'praxis-v1' for 1.5
-// because this is the first real cache. var/function only -- no const,
+// stage to invalidate stale caches. var/function only -- no const,
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v1';
+var CACHE_VERSION = 'praxis-v2';
 
 var APP_SHELL = [
   '/',
@@ -21,7 +20,6 @@ var APP_SHELL = [
   '/js/yumi-brain.js',
   '/js/arcs.js',
   '/js/voice-input.js',
-  '/js/verify-engine.js',
   '/js/yumi-ui.js',
   '/js/views.js',
   '/js/app.js'
