@@ -361,19 +361,23 @@ footer {
 <div class="status-card">
   <div class="status-field">
     <p class="label">Last updated</p>
-    <p class="value" id="last-updated">2026-04-29</p>
+    <p class="value" id="last-updated">2026-05-05</p>
   </div>
   <div class="status-field">
     <p class="label">Current phase</p>
-    <p class="value" id="current-phase">Pre-build</p>
+    <p class="value" id="current-phase">Between Stage 1.5 cleanup and Stage 2</p>
   </div>
   <div class="status-field">
     <p class="label">Current stage</p>
-    <p class="value" id="current-stage">Stage 0 — voice doc</p>
+    <p class="value" id="current-stage">Between Stage 1.5 cleanup and Stage 2</p>
   </div>
   <div class="status-field">
     <p class="label">Hours/week</p>
     <p class="value">20</p>
+  </div>
+  <div class="status-field">
+    <p class="label">Beta target</p>
+    <p class="value">Mid-October 2026</p>
   </div>
 </div>
 
@@ -394,6 +398,10 @@ footer {
   <li><span class="num">07</span><a href="#voice">Yumi voice reference</a></li>
   <li><span class="num">08</span><a href="#status">Stage status</a></li>
   <li><span class="num">09</span><a href="#log">Update log</a></li>
+  <li><span class="num">10</span><a href="#arcs">Knowledge Arcs</a></li>
+  <li><span class="num">11</span><a href="#notebook">Notebook architecture</a></li>
+  <li><span class="num">15</span><a href="#deferred">Deferred decisions</a></li>
+  <li><span class="num">16</span><a href="#not-yet">Not building yet (pre-beta)</a></li>
 </ul>
 </div>
 
@@ -401,6 +409,8 @@ footer {
 <p class="section-note">The non-negotiables.</p>
 
 <p>Goodreads-class in scope and polish — millions of books, real discovery, full feature breadth — built on a different foundation: critical pedagogy, scaffolded reflection, and Yumi as the structuring intelligence. Goodreads gamifies quantity of consumption. This app cultivates depth of becoming.</p>
+
+<p><em>Caveat on scope.</em> "Goodreads-class" names the long-term horizon — Phase 3 and Phase 4 work, after the product has earned the right to that footprint. It is not the beta target. The mid-October 2026 beta is deliberately small: a personal reading practice with Yumi, private Knowledge Arcs, and one Book Artifact per book. The social, discovery, and publishing surfaces that the Goodreads framing implies are post-beta. See <a href="#not-yet">§16 — Not building yet (pre-beta)</a> for the explicit refusal list that holds through Stage 2 to Stage 6.</p>
 
 <div class="callout">
 <p><strong>Hard constraints.</strong> Yumi does not summarize books. Star ratings exist but are de-emphasized. No follower counts, like counts, or reshare counts as primary UI. Reviews are pedagogically scaffolded, not free-form. Recommendations driven by engagement depth and concept overlap, not collaborative filtering on ratings. One Book Artifact per user per book — strict structural rule. The Notebook is fully private, always.</p>
@@ -417,7 +427,7 @@ footer {
 <marker id="arrow1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
 </defs>
 <text class="th" x="340" y="32" text-anchor="middle">Files load top to bottom — never reorder</text>
-<g class="c-gray"><rect x="40" y="60" width="600" height="36" rx="6"/><text class="th" x="60" y="78" dominant-baseline="central">state.js</text><text class="ts" x="620" y="78" text-anchor="end" dominant-baseline="central">schema, ls/sv wrappers, Firebase sync</text></g>
+<g class="c-gray"><rect x="40" y="60" width="600" height="36" rx="6"/><text class="th" x="60" y="78" dominant-baseline="central">state.js</text><text class="ts" x="620" y="78" text-anchor="end" dominant-baseline="central">schema, ls/sv wrappers, migrate hook</text></g>
 <g class="c-gray"><rect x="40" y="104" width="600" height="36" rx="6"/><text class="th" x="60" y="122" dominant-baseline="central">integrations.js</text><text class="ts" x="620" y="122" text-anchor="end" dominant-baseline="central">Firebase, Open Library, Bookshop, Stripe</text></g>
 <g class="c-purple"><rect x="40" y="148" width="600" height="36" rx="6"/><text class="th" x="60" y="166" dominant-baseline="central">yumi-brain.js</text><text class="ts" x="620" y="166" text-anchor="end" dominant-baseline="central">personality, voice doc, prompts</text></g>
 <g class="c-purple"><rect x="40" y="192" width="600" height="36" rx="6"/><text class="th" x="60" y="210" dominant-baseline="central">arcs.js</text><text class="ts" x="620" y="210" text-anchor="end" dominant-baseline="central">arc creation, reflection, completion</text></g>
@@ -443,6 +453,10 @@ footer {
 <text class="ts" x="340" y="876" text-anchor="middle">No raw notebook entries publish. Yumi distills the artifact.</text>
 </svg>
 
+</div>
+
+<div class="callout">
+<p><strong>Deferred decision: localStorage to Firestore migration.</strong> For Phase 1 the source of truth is localStorage. Firestore stays initialized for auth and is reserved for sync, but data writes do not go to it yet. The migration path — when to flip writes to Firestore, how to reconcile a tester's existing localStorage state with their Firestore record on first sync, and what conflict resolution looks like across devices — is a named open question, tracked in <a href="#deferred">§15</a>. Until that decision is made, the architecture above describes the eventual shape; the running app uses only the localStorage half.</p>
 </div>
 
 <h2 id="timeline">03 — Build timeline &amp; goals</h2>
@@ -661,16 +675,14 @@ footer {
     <tr><th class="checkbox-col"></th><th>Stage</th><th>Status</th><th>Notes</th></tr>
   </thead>
   <tbody>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 0 — Voice doc</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 1 — Foundation</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2 — Yumi brain</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 3 — Reading practice</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 4 — Pedagogy layer</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 5 — Learning Arcs</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 6 — Social layer</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 7 — Discovery</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 8 — Polish</td><td>Not started</td><td>—</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 9 — Phase 1 launch</td><td>Not started</td><td>—</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2 — Yumi comes alive</td><td>Up next</td><td>yumi-brain.js + yumi-ui.js wired through the Netlify Claude proxy. Voice document loaded into the system prompt. Note: <code>verify-engine.js</code> was removed from the load order and the app shell during 1.5 cleanup; verification logic, if it returns, lives elsewhere.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2.5 — TTS</td><td>Not started</td><td>Yumi speaks back. Web Speech API for Phase 1 (free, available offline, good enough). ElevenLabs / OpenAI TTS evaluated before Phase 2.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 3 — Reading practice (private)</td><td>Not started</td><td>Solo reading loop: capture, shelve, take notes, talk to Yumi. Notebook entries land here. No sharing surface.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 4 — Book Artifact</td><td>Not started</td><td>One Book Artifact per user per book. Reading note, review, or essay. The (userId, bookId) keying is the structural enforcement.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 5 — Knowledge Arcs</td><td>Not started</td><td>Personal arc workspace only — no publishing in beta. List-style UI is fine. Visual design of the arc workspace is deferred to post-beta.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 6 — Beta-ready polish</td><td>Not started</td><td>Empty states, error states, onboarding, install path, voice tone QA. The bar: app could be handed to a Phase 1 tester without apology.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Phase 1 launch</td><td>Not started</td><td>3 to 8 testers, manual onboarding, mid-October 2026.</td></tr>
+    <tr style="opacity:0.55"><td class="checkbox-col">—</td><td class="stage-name">Original Stages 6, 7, 8 (Social, Discovery, Bookselling/recaps)</td><td>Post-beta</td><td>Deferred to Phase 2. Social layer, discovery feeds, author pages, Bookshop affiliate, monthly recaps. Not in the mid-October beta. See <a href="#not-yet">§16</a>.</td></tr>
   </tbody>
 </table>
 
@@ -678,6 +690,17 @@ footer {
 <p class="section-note">Append-only. Newest at the top.</p>
 
 <div class="update-log">
+  <div class="update-entry">
+    <p class="update-date">2026-05-04</p>
+    <p class="update-title">Beta reframe and Stage 2 groundwork</p>
+    <div class="update-body">
+      <p><strong>Beta reframe.</strong> Beta target set to mid-October 2026, 3 to 8 testers. The "Goodreads-class in scope" framing is reclassified as a Phase 3–4 horizon, not a beta target. New §16 captures the explicit refusal list — what is <em>not</em> being built before beta — so future Stage 2 to Stage 6 conversations can refer back to it instead of relitigating scope.</p>
+      <p><strong>1.5 cleanup landed in code.</strong> <code>verify-engine.js</code> removed from the <code>index.html</code> load order and from <code>APP_SHELL</code> in <code>sw.js</code>; <code>CACHE_VERSION</code> bumped from <code>praxis-v1</code> to <code>praxis-v2</code>; the file itself is retained as a comment-only tombstone for cache rollover. <code>onAuthStateChanged</code> wired in <code>integrations.js</code> so the localStorage user cache stays in sync with Firebase auth (restored sessions, multi-tab sign-out, expired tokens). Optional shared-secret gate added to <code>netlify/functions/claude-proxy.js</code> via <code>PRAXIS_CLIENT_KEY</code> env var and <code>x-praxis-key</code> header — unset means open, set means required.</p>
+      <p><strong>Schema 1.1.0.</strong> <code>state.js</code> bumped from <code>1.0.0</code> to <code>1.1.0</code>. New maps on <code>state</code>: <code>notebookEntries</code>, <code>bookArtifacts</code>, <code>arcs</code> — each with a skeleton schema shape in comments. Added <code>artifactKey(userId, bookId)</code> and <code>ensureOneArtifact(userId, bookId, artifact)</code>; the latter enforces the at-most-one-artifact-per-user-per-book invariant in code, not just policy. <code>migrate()</code> now handles 1.0.0 → 1.1.0 forward (backfills the three new maps) and passes unknown future versions through untouched.</p>
+      <p><strong>Decisions resolved.</strong> TTS for Phase 1 = Web Speech API (free, offline-capable, good enough); ElevenLabs vs OpenAI TTS evaluated before Phase 2. Source of truth for Phase 1 = localStorage only; Firestore migration deferred. Both moved out of §15 deferred decisions where appropriate.</p>
+      <p><strong>Drift caught.</strong> Three pieces of drift between framing and reality were named so they don't recur: (1) "Goodreads-class" was scope romanticism — beta is much smaller, and the doc now says so explicitly; (2) the brand principles were stated as structural but the schema implemented none of them — the 1.1.0 expansion (artifactKey + ensureOneArtifact, the absent <code>visibleToOtherUsers</code> field on notebook entries) is the first place the structure actually matches the principles; (3) Knowledge Arcs were called the central organizing idea but were on track to be built last — Stage 5 brings them forward to a personal workspace before any social layer.</p>
+    </div>
+  </div>
   <div class="update-entry">
     <p class="update-date">2026-04-29</p>
     <p class="update-title">Living document created</p>
@@ -688,6 +711,175 @@ footer {
     </div>
   </div>
 </div>
+
+<h2 id="arcs">10 — Knowledge Arcs</h2>
+<p class="section-note">The central organizing idea, brought forward.</p>
+
+<p>Knowledge Arcs are how a reader pulls a thread through more than one book. An arc is a question the reader is following — not a syllabus, not a reading list, not a challenge. Arcs were originally slated for late in the build; they have been moved up because the rest of the practice doesn't cohere without them. Arcs are personal-only in beta; publishing arcs is post-beta.</p>
+
+<h3>Data model</h3>
+<p>Skeleton shapes — comments live in <code>state.js</code>; this is the canonical reference for the document.</p>
+
+<table>
+  <thead>
+    <tr><th>arc</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">id</td><td>string</td><td>Stable identifier.</td></tr>
+    <tr><td class="stage-name">userId</td><td>string</td><td>Owner. Arcs are single-author in beta.</td></tr>
+    <tr><td class="stage-name">title</td><td>string</td><td>Reader-named. The question, in their words.</td></tr>
+    <tr><td class="stage-name">bookIds</td><td>array of string</td><td>Books linked to the arc, in reader-defined order.</td></tr>
+    <tr><td class="stage-name">entryIds</td><td>array of string</td><td>Notebook entries the reader has tagged into the arc.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+    <tr><td class="stage-name">updatedAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr><th>theme</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">id</td><td>string</td><td>Stable identifier.</td></tr>
+    <tr><td class="stage-name">arcId</td><td>string</td><td>Foreign key into arc.</td></tr>
+    <tr><td class="stage-name">label</td><td>string</td><td>Reader-named or Yumi-proposed; reader can rename.</td></tr>
+    <tr><td class="stage-name">source</td><td>"reader" | "yumi"</td><td>Provenance, kept so we can study which themes Yumi proposed and which the reader added.</td></tr>
+    <tr><td class="stage-name">entryIds</td><td>array of string</td><td>Notebook entries the reader has placed under this theme.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr><th>connection</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">id</td><td>string</td><td>Stable identifier.</td></tr>
+    <tr><td class="stage-name">arcId</td><td>string</td><td>Foreign key into arc.</td></tr>
+    <tr><td class="stage-name">fromEntryId</td><td>string</td><td>Anchoring notebook entry.</td></tr>
+    <tr><td class="stage-name">toEntryId</td><td>string</td><td>Connected notebook entry — typically a different book.</td></tr>
+    <tr><td class="stage-name">note</td><td>string</td><td>Why these speak to each other, in the reader's words.</td></tr>
+    <tr><td class="stage-name">source</td><td>"reader" | "yumi"</td><td>Connections Yumi proposes are saved only when the reader accepts them.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr><th>contribution</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">id</td><td>string</td><td>Stable identifier.</td></tr>
+    <tr><td class="stage-name">arcId</td><td>string</td><td>Foreign key into arc.</td></tr>
+    <tr><td class="stage-name">userId</td><td>string</td><td>In beta, always the arc owner. Field exists so multi-author arcs are not a schema migration later.</td></tr>
+    <tr><td class="stage-name">body</td><td>string</td><td>The reader's own writing into the arc — synthesis, partial answer, fragment.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+    <tr><td class="stage-name">updatedAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<h3>Minimum viable arc workflow for beta</h3>
+<ol>
+  <li>Create an arc with a question. The arc's title <em>is</em> the question, in the reader's words. No template, no required structure.</li>
+  <li>Link books to the arc. Books come from the reader's existing shelves; an arc is a re-view of books already in the practice, not a new acquisition flow.</li>
+  <li>Capture notebook entries to the arc. Existing notebook entries (marginalia, journal) get tagged into the arc; new entries can be created arc-first.</li>
+  <li>Yumi participates at the arc level. She can speak about the arc as a whole — patterns across books, the question the arc is asking — not just per-book chat. One observation, one offering, the way the voice document describes.</li>
+  <li>Themes are reader-named or Yumi-proposed. Yumi may suggest a theme; the reader accepts, renames, or ignores it. The schema records provenance so we can study what Yumi got right and what readers preferred to name themselves.</li>
+  <li>No publishing in beta. Arcs are private. There is no "publish arc" button, no shared arc surface, no co-authoring. The personal workspace must hold its own weight before any sharing layer earns the right to exist.</li>
+</ol>
+
+<h3>How much of arcs must be in beta</h3>
+<p>The judgment call: arcs are the central organizing idea, but beta only needs the personal workspace. That means the data model above and a list-style UI are sufficient. A polished arc workspace — visual layout, drag-to-connect, theme spatialization — is deferred. The point of including arcs in beta is so the testers' first month with the app is shaped by the practice arcs were designed for, not so they encounter the eventual interface. List UI plus Yumi participation is the minimum that earns the word "arc."</p>
+
+<h2 id="notebook">11 — Notebook architecture</h2>
+<p class="section-note">Where the privacy line is structural, not editorial.</p>
+
+<p>The Notebook is two things in one place: marginalia attached to a passage in a book, and journal entries that aren't anchored to a single passage. Both are private. Both can be tagged into arcs. Neither ever surfaces to other readers.</p>
+
+<h3>Data model — notebookEntry</h3>
+<table>
+  <thead>
+    <tr><th>field</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">id</td><td>string</td><td>Stable identifier.</td></tr>
+    <tr><td class="stage-name">userId</td><td>string</td><td>Owner.</td></tr>
+    <tr><td class="stage-name">notebookId</td><td>string</td><td>Foreign key into <code>notebooks</code>.</td></tr>
+    <tr><td class="stage-name">type</td><td>"marginalia" | "journal"</td><td>Marginalia is anchored to a book passage; journal stands alone.</td></tr>
+    <tr><td class="stage-name">bookId</td><td>string | null</td><td>Required for marginalia, null for free-standing journal entries.</td></tr>
+    <tr><td class="stage-name">passage</td><td>string | null</td><td>Quoted text or page reference for marginalia; null for journal.</td></tr>
+    <tr><td class="stage-name">body</td><td>string</td><td>The reader's writing.</td></tr>
+    <tr><td class="stage-name">arcLinks</td><td>array of string</td><td>Arc ids this entry has been tagged into.</td></tr>
+    <tr><td class="stage-name">visibleToYumi</td><td>boolean</td><td>Per-entry switch. Default true; reader can hide an entry from Yumi without deleting it.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+    <tr><td class="stage-name">updatedAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>What is absent matters.</strong> There is no <code>visibleToOtherUsers</code> field on the notebookEntry. There is no <code>sharedWith</code> array. There is no privacy-level enum. The absence is the point: the schema has no shape that could express "share this notebook entry with another user," which is the structural encoding of Principle 2 (the Notebook is fully private, always). A future contributor who wanted to add notebook sharing could not do it as a feature flag — they would have to alter the schema, the privacy line in the architecture, and the brand position. Making the wrong move expensive is the design.</p>
+
+<h3>Book Artifact data model</h3>
+<table>
+  <thead>
+    <tr><th>field</th><th>Type</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">userId</td><td>string</td><td>Author. Half of the composite key.</td></tr>
+    <tr><td class="stage-name">bookId</td><td>string</td><td>Book the artifact is about. Other half of the composite key.</td></tr>
+    <tr><td class="stage-name">form</td><td>"reading note" | "review" | "essay"</td><td>Reader picks one form per artifact. Form can change over revisions.</td></tr>
+    <tr><td class="stage-name">body</td><td>string</td><td>The shaped output — not raw notebook excerpts.</td></tr>
+    <tr><td class="stage-name">status</td><td>"draft" | "published"</td><td>Draft until reader chooses to publish. Publishing is post-beta but the field exists so the data is forward-compatible.</td></tr>
+    <tr><td class="stage-name">createdAt</td><td>number</td><td>ms epoch.</td></tr>
+    <tr><td class="stage-name">updatedAt</td><td>number</td><td>ms epoch.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>The keying convention enforces Principle 3.</strong> Book Artifacts are keyed by <code>artifactKey(userId, bookId)</code> in <code>state.bookArtifacts</code>, and <code>ensureOneArtifact()</code> refuses to overwrite an existing entry for the same (userId, bookId) pair. There is no list of artifacts under a user-and-book key; there is one slot. A user can revise their artifact, change its form, or delete it and start over — but they cannot accumulate parallel artifacts for the same book. The "one Book Artifact per user per book" rule is structural, not a UI affordance.</p>
+
+<h2 id="deferred">15 — Deferred decisions</h2>
+<p class="section-note">Open questions parked, not lost. Resolved decisions move out of this list.</p>
+
+<h3>Resolved</h3>
+<ul>
+  <li><strong>TTS service for Phase 1</strong> — resolved to Web Speech API. Free, available offline, quality is good enough for a small tester cohort. ElevenLabs vs OpenAI TTS will be re-evaluated before Phase 2 when voice quality matters more and the tester count justifies the spend.</li>
+</ul>
+
+<h3>Still deferred</h3>
+<ul>
+  <li><strong>localStorage vs Firestore as source of truth for Phase 1</strong> — current recommendation: localStorage-only for the beta. Firestore stays initialized for auth and future sync, but data writes go to localStorage. Reasoning: Phase 1 is 3–8 testers, no multi-device need, and localStorage-only removes a class of sync bugs from the beta surface. Firestore migration is its own deferred decision (see §02).</li>
+  <li><strong>Voice agent capability (screen commands)</strong> — Stage 2.5 vs deferred to Phase 3. Preliminary lean is Stage 2.5 (Option B in the Stage 2 design note), so the companion register grounds before the agent register layers on. Final call at Stage 2 pre-flight.</li>
+  <li><strong>Yumi's specific voice profile for TTS</strong> — picked during Stage 2.5 by ear, against sample Yumi responses.</li>
+  <li><strong>Voice document v1.1 review pass when TTS lands</strong> — read the document by listening, not by reading. Some lines that work in text may need pacing or pause changes when spoken. Tracked in <code>yumi-voice-changelog.md</code>.</li>
+</ul>
+
+<h2 id="not-yet">16 — Not building yet (pre-beta)</h2>
+<p class="section-note">The refusal list. Holds through Stage 2 to Stage 6 conversations.</p>
+
+<table>
+  <thead>
+    <tr><th>Item</th><th>Why not in beta</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage-name">Published arcs</td><td>Personal arc workspace must hold its own weight before any sharing surface earns the right to exist.</td></tr>
+    <tr><td class="stage-name">Co-authored arcs</td><td>Multi-author behavior is a separate design problem; the schema reserves the field but the workflow is post-beta.</td></tr>
+    <tr><td class="stage-name">Social layer (follows, profiles, messages)</td><td>The whole point of the beta is to test the personal practice; layering social mechanics on top before the practice is real would replicate the platforms this app is rejecting.</td></tr>
+    <tr><td class="stage-name">Discovery feeds</td><td>Algorithmic feeds are exactly the engagement-maximizing surface this app structurally refuses; anything called "discovery" needs to be designed from the brand position, not borrowed.</td></tr>
+    <tr><td class="stage-name">Author pages</td><td>Author pages are a discovery primitive; deferred with the rest of discovery.</td></tr>
+    <tr><td class="stage-name">Content warnings</td><td>Real moderation needs a real social surface; without one, content warnings are theater.</td></tr>
+    <tr><td class="stage-name">Voice agent (screen commands)</td><td>Stage 2.5 candidate, not Stage 2; the companion register must ground before agent capability layers on.</td></tr>
+    <tr><td class="stage-name">Yumi eval framework</td><td>Tone evaluation is best done against a real tester cohort, not synthetic prompts; build after Phase 1 produces real conversation logs.</td></tr>
+    <tr><td class="stage-name">Full transparency surface (model, prompt, memory inspection)</td><td>Worth building, but only once Yumi's behavior is stable enough that transparency is documenting reality, not aspiration.</td></tr>
+    <tr><td class="stage-name">Data export</td><td>Important for the brand position long-term; not critical for 3–8 testers who can be exported manually if needed.</td></tr>
+    <tr><td class="stage-name">Comment threading</td><td>Comments require a public surface; deferred with the social layer.</td></tr>
+    <tr><td class="stage-name">Follower counts</td><td>Structurally rejected anyway — the brand position forbids them as primary UI; no need to build the data model in beta.</td></tr>
+    <tr><td class="stage-name">Spaced resurfacing of past entries</td><td>Worth building, but needs a body of past entries to resurface; meaningful only after Phase 1 has produced months of data.</td></tr>
+    <tr><td class="stage-name">Barcode scanning</td><td>Quality-of-life addition for adding books; ISBN typing is acceptable for 3–8 testers, and camera permissions are friction we don't need yet.</td></tr>
+    <tr><td class="stage-name">OCR Marginalia capture</td><td>Photographing a page and extracting handwritten notes is an entire research problem; well after Phase 1.</td></tr>
+    <tr><td class="stage-name">Multi-user arc workspace</td><td>Co-presence in an arc is its own UX problem; defer until single-user arcs are good.</td></tr>
+  </tbody>
+</table>
+
+<p>This is the refusal list. It holds through every Stage 2, Stage 2.5, Stage 3, Stage 4, Stage 5, and Stage 6 conversation between now and mid-October 2026. When a conversation produces an idea that lives on this list, the answer is "post-beta." The refusal list is not a backlog of regret; it is the shape of what the beta is by virtue of what it is not.</p>
 
 <footer>
 <p>Yumi Book App — Living Document. Self-contained. Re-uploadable.<br>
