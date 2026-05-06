@@ -27,6 +27,7 @@ var yumiToggleEl   = null;
 var yumiInputEl    = null;
 var yumiBodyEl     = null;
 var yumiSendBtnEl  = null;
+var yumiMicBtnEl   = null;
 var yumi_request_in_flight = false;
 
 function isYumiPanelOpen() {
@@ -95,13 +96,43 @@ function removeTypingIndicator() {
   }
 }
 
-function renderError() {
+function renderError(customText) {
   if (!yumiBodyEl) { return; }
+  var text;
+  if (typeof customText === 'string' && customText.length > 0) {
+    text = customText;
+  } else {
+    text = 'Something went wrong reaching Yumi. Try again.';
+  }
   var msg = document.createElement('div');
   msg.className = 'yumi-msg yumi-msg-error';
-  msg.textContent = 'Something went wrong reaching Yumi. Try again.';
+  msg.textContent = text;
   yumiBodyEl.appendChild(msg);
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+function handleVoiceTranscript(text) {
+  if (!yumiInputEl || typeof text !== 'string') { return; }
+  var current = yumiInputEl.value || '';
+  var trimmed = current.replace(/\s+$/, '');
+  var next;
+  if (trimmed === '') {
+    next = text;
+  } else {
+    next = trimmed + ' ' + text;
+  }
+  yumiInputEl.value = next;
+  yumiInputEl.focus();
+}
+
+function handleVoiceError(reason) {
+  if (reason === 'unsupported') {
+    renderError('Voice input is not available in this browser. Try Chrome or Safari.');
+  } else if (reason === 'denied') {
+    renderError('Microphone access blocked. Enable it in your browser settings to use voice input.');
+  } else {
+    renderError('Could not catch that. Try again.');
+  }
 }
 
 function buildYumiToggle() {
@@ -167,15 +198,19 @@ function buildYumiPanel() {
   var micBtn = document.createElement('button');
   micBtn.className = 'yumi-mic-btn';
   micBtn.setAttribute('type', 'button');
-  micBtn.setAttribute('aria-label', 'Voice input (not yet wired)');
+  micBtn.setAttribute('aria-label', 'Voice input');
   micBtn.innerHTML =
     '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
     '<path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/>' +
     '</svg>';
-  micBtn.addEventListener('click', function() {
-    /* inert -- voice wiring lands in a later stage */
-  });
+  yumiMicBtnEl = micBtn;
   row.appendChild(micBtn);
+  if (window.VoiceInput) {
+    window.VoiceInput.attachMicButton(micBtn, {
+      onTranscript: handleVoiceTranscript,
+      onError:      handleVoiceError
+    });
+  }
 
   var sendBtn = document.createElement('button');
   sendBtn.className = 'yumi-send-btn';

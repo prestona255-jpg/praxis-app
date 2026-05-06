@@ -230,4 +230,19 @@
   cursor: not-allowed;
 }
 
+.yumi-mic-btn.yumi-mic-recording {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.yumi-mic-btn.yumi-mic-processing {
+  color: var(--ink-3);
+  opacity: 0.7;
+}
+
+.yumi-mic-btn.yumi-mic-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ===== END YUMI PANEL ===== */
