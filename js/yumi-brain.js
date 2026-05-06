@@ -62,10 +62,53 @@ function buildYumiSystem() {
   return prompt;
 }
 
+function sendMessage(userText) {
+  var payload = {
+    model:      'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    system:     buildYumiSystem(),
+    messages: [
+      { role: 'user', content: userText }
+    ]
+    // stream parameter intentionally omitted — non-streaming for 2.4
+  };
+
+  return fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (body) {
+        throw new Error('proxy ' + res.status + ': ' + body);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    var blocks = data && data.content;
+    if (!blocks || !blocks.length) {
+      throw new Error('no text content in response');
+    }
+    var text = '';
+    var i;
+    for (i = 0; i < blocks.length; i++) {
+      var block = blocks[i];
+      if (block && block.type === 'text' && typeof block.text === 'string') {
+        text = text + block.text;
+      }
+    }
+    if (text === '') {
+      throw new Error('no text content in response');
+    }
+    return { ok: true, text: text };
+  });
+}
+
 window.YumiBrain = {
   loadVoice:   loadYumiVoice,
   buildSystem: buildYumiSystem,
-  getContext:  getYumiContext
+  getContext:  getYumiContext,
+  sendMessage: sendMessage
 };
 
 // Kick off preload at script-load time so buildYumiSystem can return

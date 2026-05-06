@@ -240,38 +240,4 @@ function fetchGoogleBooks(isbn, callback) {
   }
 }
 
-// STAGE-2.2-TEMP-START — remove in Stage 2.4 when real wiring lands
-// GATE: OFF for Phase 1 — see deferred items log entry 2026-05-05
-function testProxy(message) {
-  var payload = {
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 64,
-    messages: [
-      { role: 'user', content: message || 'Reply with the single word: working' }
-    ]
-    // stream parameter intentionally omitted — non-streaming for 2.2 test
-  };
-
-  var headers = { 'Content-Type': 'application/json' };
-
-  var t0 = performance.now();
-  return fetch('/.netlify/functions/claude-proxy', {
-    method: 'POST',
-    headers: headers,
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    var elapsed = performance.now() - t0;
-    console.log('testProxy: HTTP ' + res.status + ' in ' +
-      Math.round(elapsed) + 'ms');
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  });
-}
-window.testProxy = testProxy;
-// STAGE-2.2-TEMP-END
-
 console.log('integrations.js loaded');

@@ -175,4 +175,59 @@
   border: 0;
 }
 
+.yumi-msg {
+  width: fit-content;
+  max-width: 85%;
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  line-height: 1.5;
+}
+
+.yumi-msg-user {
+  margin-left: auto;
+  margin-right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.yumi-msg-yumi {
+  margin-left: 0;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.yumi-msg-typing {
+  margin-left: 0;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+.yumi-msg-error {
+  margin-left: 0;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.yumi-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ===== END YUMI PANEL ===== */

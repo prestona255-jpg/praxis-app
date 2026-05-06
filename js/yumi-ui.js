@@ -22,10 +22,12 @@ var YUMI_TOGGLE_ID = 'yumi-toggle';
 var YUMI_INPUT_ID  = 'yumi-input';
 var YUMI_BODY_ID   = 'yumi-panel-body';
 
-var yumiPanelEl  = null;
-var yumiToggleEl = null;
-var yumiInputEl  = null;
-var yumiBodyEl   = null;
+var yumiPanelEl    = null;
+var yumiToggleEl   = null;
+var yumiInputEl    = null;
+var yumiBodyEl     = null;
+var yumiSendBtnEl  = null;
+var yumi_request_in_flight = false;
 
 function isYumiPanelOpen() {
   return ls('praxis_yumi_open', false) === true;
@@ -55,6 +57,51 @@ function renderYumiEmptyState() {
   line.textContent = greeting;
   wrap.appendChild(line);
   yumiBodyEl.appendChild(wrap);
+}
+
+function renderUserMessage(text) {
+  if (!yumiBodyEl) { return; }
+  var msg = document.createElement('div');
+  msg.className = 'yumi-msg yumi-msg-user';
+  msg.textContent = text;
+  yumiBodyEl.appendChild(msg);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+function renderYumiMessage(text) {
+  if (!yumiBodyEl) { return; }
+  var msg = document.createElement('div');
+  msg.className = 'yumi-msg yumi-msg-yumi';
+  msg.textContent = text;
+  yumiBodyEl.appendChild(msg);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+function renderTypingIndicator() {
+  if (!yumiBodyEl) { return; }
+  removeTypingIndicator();
+  var msg = document.createElement('div');
+  msg.className = 'yumi-msg yumi-msg-typing';
+  msg.textContent = '...';
+  yumiBodyEl.appendChild(msg);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  if (!yumiBodyEl) { return; }
+  var el = yumiBodyEl.querySelector('.yumi-msg-typing');
+  if (el && el.parentNode) {
+    el.parentNode.removeChild(el);
+  }
+}
+
+function renderError() {
+  if (!yumiBodyEl) { return; }
+  var msg = document.createElement('div');
+  msg.className = 'yumi-msg yumi-msg-error';
+  msg.textContent = 'Something went wrong reaching Yumi. Try again.';
+  yumiBodyEl.appendChild(msg);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
 function buildYumiToggle() {
@@ -135,10 +182,38 @@ function buildYumiPanel() {
   sendBtn.setAttribute('type', 'button');
   sendBtn.setAttribute('aria-label', 'Send message');
   sendBtn.textContent = 'Send';
-  sendBtn.addEventListener('click', function() {
-    var v = yumiInputEl ? yumiInputEl.value : '';
-    v = v.replace(/\s+$/, '');
-    console.log('[yumi] send clicked: ' + v);
+  yumiSendBtnEl = sendBtn;
+  sendBtn.addEventListener('click', function () {
+    if (yumi_request_in_flight) { return; }
+    var raw = yumiInputEl ? yumiInputEl.value : '';
+    var trimmed = raw.replace(/^\s+|\s+$/g, '');
+    if (trimmed === '') { return; }
+
+    if (yumiBodyEl) {
+      var emptyEl = yumiBodyEl.querySelector('.yumi-empty');
+      if (emptyEl && emptyEl.parentNode) {
+        emptyEl.parentNode.removeChild(emptyEl);
+      }
+    }
+
+    renderUserMessage(trimmed);
+    if (yumiInputEl) { yumiInputEl.value = ''; }
+
+    yumi_request_in_flight = true;
+    if (yumiSendBtnEl) { yumiSendBtnEl.disabled = true; }
+    renderTypingIndicator();
+
+    window.YumiBrain.sendMessage(trimmed).then(function (result) {
+      removeTypingIndicator();
+      renderYumiMessage(result.text);
+    }).catch(function (err) {
+      console.error('[yumi] sendMessage failed', err);
+      removeTypingIndicator();
+      renderError();
+    }).finally(function () {
+      yumi_request_in_flight = false;
+      if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+    });
   });
   row.appendChild(sendBtn);
 
