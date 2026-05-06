@@ -1,0 +1,178 @@
+/* =====================================================================
+   components.css -- Praxis component-level styles
+   Sister to theme.css. theme.css owns design tokens; this file owns
+   the rules that consume them. Component blocks are delimited with
+   start/end sentinels so they can be moved or audited without
+   ambiguity.
+   ===================================================================== */
+
+/* ===== YUMI PANEL — Stage 2.3 ===== */
+
+.yumi-toggle {
+  position: fixed;
+  bottom: var(--sp-5);
+  right: var(--sp-5);
+  z-index: 9999;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
+}
+
+.yumi-toggle:hover {
+  color: var(--gold);
+}
+
+.yumi-toggle:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.yumi-panel {
+  position: fixed;
+  bottom: calc(var(--sp-5) + 56px);
+  right: var(--sp-5);
+  width: 380px;
+  max-width: calc(100vw - var(--sp-5) - var(--sp-5));
+  height: 540px;
+  max-height: calc(100vh - var(--sp-6) - var(--sp-6));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9998;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.yumi-panel.yumi-panel-open {
+  display: flex;
+}
+
+.yumi-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.yumi-panel-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  color: var(--ink);
+}
+
+.yumi-panel-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: var(--fs-display);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+}
+
+.yumi-panel-close:hover {
+  color: var(--ink);
+}
+
+.yumi-panel-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.yumi-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.yumi-greeting {
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.yumi-panel-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.yumi-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.yumi-input:focus {
+  border-color: var(--gold);
+}
+
+.yumi-send-btn,
+.yumi-mic-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.yumi-send-btn:hover,
+.yumi-mic-btn:hover {
+  color: var(--gold);
+}
+
+.yumi-mic-btn {
+  color: var(--ink-3);
+}
+
+.yumi-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== END YUMI PANEL ===== */

@@ -26,6 +26,13 @@
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
+
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --fs-sm: 0.8125rem;
+  --fs-body: 0.9375rem;
+  --fs-display: 1.5rem;
 }
 
 body {
