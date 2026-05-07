@@ -8,4 +8,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App init');
+  loadState();
+  saveState();
 });
