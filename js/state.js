@@ -86,6 +86,13 @@
 // 2.7a only seeds the field via migration -- the actual summarization
 // pass that writes into it lands in 2.7b.
 //
+// Schema 1.4.0 extends yumiMemory with recentTurns -- the last few raw
+// conversation exchanges, kept alongside the rolling summary so Yumi
+// can recall verbatim phrasing. Shape addition:
+//
+//   recentTurns: array of { role: 'user'|'assistant', content: string }
+//                // capped at 10 entries by 2.7b-ii write logic
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -112,7 +119,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.3.0',
+  SCHEMA_VERSION:  '1.4.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -190,6 +197,21 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.3.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.3.0') {
+    if (stored.users) {
+      var uid;
+      for (uid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, uid)) {
+          if (stored.users[uid].yumiMemory) {
+            if (!stored.users[uid].yumiMemory.recentTurns) {
+              stored.users[uid].yumiMemory.recentTurns = [];
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.4.0';
   }
   return stored;
 }
