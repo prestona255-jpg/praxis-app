@@ -79,15 +79,15 @@ function summarizeAndRoll(uid, droppedTurn) {
   var priorSummary = state.users[uid].yumiMemory.summary;
 
   var promptBody =
-    'A turn from earlier in this conversation is about to slip past. '
-    + 'Gather it into your memory of this reader before it goes.\n\n'
-    + 'What you remember of the conversation so far:\n'
-    + (priorSummary || '(nothing yet -- this is the first turn slipping past)') + '\n\n'
+    'A turn from earlier is about to slip past. Gather it into '
+    + 'your memory of this reader before it goes.\n\n'
+    + 'What you remember so far:\n'
+    + (priorSummary || '(this is the first turn -- there is no prior memory yet)') + '\n\n'
     + 'The turn slipping past:\n'
     + droppedTurn.role + ': ' + droppedTurn.content + '\n\n'
-    + 'Gather it in. One paragraph, in your voice, 1-3 sentences, '
-    + 'holding the thread of what they have been working through. '
-    + 'Keep it brief. Keep it warm.';
+    + 'Write what you remember now. Output only the memory itself -- '
+    + 'no labels, no headers, no preamble, no quotation marks. '
+    + '1 to 3 sentences. Keep it brief. Keep it warm.';
 
   var payload = {
     model:      'claude-sonnet-4-20250514',
