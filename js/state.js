@@ -72,6 +72,20 @@
 //   currentArcId:  string | null   // foreign key into state.arcs,
 //                                  // or null if no arc is active
 //
+// Schema 1.3.0 adds a per-user yumiMemory field carrying a rolling
+// conversation summary that survives across sessions. Lives on each
+// user record under state.users[uid]. Shape:
+//
+//   yumiMemory: {
+//     summary:   string,    // rolling natural-language summary,
+//                           // empty string until first write
+//     updatedAt: number     // ms epoch of last summary update,
+//                           // 0 until first write
+//   }
+//
+// 2.7a only seeds the field via migration -- the actual summarization
+// pass that writes into it lands in 2.7b.
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -98,7 +112,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.2.0',
+  SCHEMA_VERSION:  '1.3.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -163,6 +177,19 @@ function migrate(stored) {
   }
   if (stored.SCHEMA_VERSION === '1.1.0') {
     stored.SCHEMA_VERSION = '1.2.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.2.0') {
+    if (stored.users) {
+      var uid;
+      for (uid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, uid)) {
+          if (!stored.users[uid].yumiMemory) {
+            stored.users[uid].yumiMemory = { summary: '', updatedAt: 0 };
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.3.0';
   }
   return stored;
 }
