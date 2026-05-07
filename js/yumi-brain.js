@@ -38,6 +38,71 @@ function getYumiContext() {
   };
 }
 
+function buildContext() {
+  var bookLine;
+  if (state.currentBookId === null) {
+    bookLine = 'none yet';
+  } else {
+    var book = state.books[state.currentBookId];
+    if (!book) {
+      console.warn('yumi-brain: dangling currentBookId ' + state.currentBookId);
+      bookLine = 'none yet';
+    } else {
+      var hasAuthor = (typeof book.author === 'string') && book.author.length > 0;
+      if (hasAuthor) {
+        bookLine = book.title + ' by ' + book.author;
+      } else {
+        bookLine = book.title;
+      }
+    }
+  }
+
+  var arcLine;
+  if (state.currentArcId === null) {
+    arcLine = 'none';
+  } else {
+    var arc = state.arcs[state.currentArcId];
+    if (!arc) {
+      console.warn('yumi-brain: dangling currentArcId ' + state.currentArcId);
+      arcLine = 'none';
+    } else {
+      arcLine = arc.title;
+    }
+  }
+
+  var entries = [];
+  var key;
+  for (key in state.notebookEntries) {
+    if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
+      entries.push(state.notebookEntries[key]);
+    }
+  }
+  entries.sort(function (a, b) {
+    return b.createdAt - a.createdAt;
+  });
+  var top = entries.slice(0, 3);
+
+  var entriesLine;
+  if (top.length === 0) {
+    entriesLine = 'none yet';
+  } else {
+    var parts = [];
+    var i;
+    for (i = 0; i < top.length; i++) {
+      var body = top[i].body;
+      if (body.length > 200) {
+        body = body.substring(0, 197) + '...';
+      }
+      parts.push(body);
+    }
+    entriesLine = parts.join('; ');
+  }
+
+  return 'currentBook: ' + bookLine + '\n' +
+         'recentEntries: ' + entriesLine + '\n' +
+         'currentArc: ' + arcLine;
+}
+
 function buildYumiSystem() {
   var voiceSection;
   if (!YUMI_VOICE_LOADED) {
@@ -47,11 +112,7 @@ function buildYumiSystem() {
     voiceSection = YUMI_VOICE_TEXT;
   }
 
-  var ctx = getYumiContext();
-  var contextSection =
-    'currentBook: ' + JSON.stringify(ctx.currentBook) + '\n' +
-    'recentEntries: ' + JSON.stringify(ctx.recentEntries) + '\n' +
-    'currentArc: ' + JSON.stringify(ctx.currentArc);
+  var contextSection = buildContext();
 
   var prompt =
     '===== YUMI VOICE =====\n\n' +
@@ -105,10 +166,11 @@ function sendMessage(userText) {
 }
 
 window.YumiBrain = {
-  loadVoice:   loadYumiVoice,
-  buildSystem: buildYumiSystem,
-  getContext:  getYumiContext,
-  sendMessage: sendMessage
+  loadVoice:    loadYumiVoice,
+  buildSystem:  buildYumiSystem,
+  buildContext: buildContext,
+  getContext:   getYumiContext,
+  sendMessage:  sendMessage
 };
 
 // Kick off preload at script-load time so buildYumiSystem can return
