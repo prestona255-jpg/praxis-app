@@ -151,6 +151,23 @@ function ensureOneArtifact(userId, bookId, artifact) {
   return artifact;
 }
 
+// Lazy initializer for per-user records. The schema-versioned shape of
+// a user record is owned here so that future writers (notebook entries,
+// artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
+// the default shape. Called by the first writer to state.users[uid].
+function ensureUser(uid) {
+  if (!state.users[uid]) {
+    state.users[uid] = {
+      yumiMemory: { summary: '', recentTurns: [], updatedAt: 0 }
+    };
+  }
+  if (!state.users[uid].yumiMemory) {
+    state.users[uid].yumiMemory = {
+      summary: '', recentTurns: [], updatedAt: 0
+    };
+  }
+}
+
 function loadState() {
   var stored = ls('praxis_state', null);
   if (stored === null) return state;

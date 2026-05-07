@@ -38,6 +38,79 @@ function getYumiContext() {
   };
 }
 
+// Resolve the uid of the user this conversation belongs to. Firebase
+// auth (via integrations.js getCurrentUser) is the primary source. If
+// no signed-in user, fall back to state.users contents: 0 keys -> null,
+// 1 key -> that key, 2+ keys -> first alphabetically with a deferred-#6
+// warning (multi-user is not yet supported).
+function resolveActiveUid() {
+  var current = getCurrentUser();
+  if (current && current.uid) {
+    return current.uid;
+  }
+  var keys = [];
+  var k;
+  for (k in state.users) {
+    if (Object.prototype.hasOwnProperty.call(state.users, k)) {
+      keys.push(k);
+    }
+  }
+  if (keys.length === 0) return null;
+  if (keys.length === 1) return keys[0];
+  keys.sort();
+  console.warn('yumi-brain: multiple users in state.users (deferred #6); using first alphabetically: ' + keys[0]);
+  return keys[0];
+}
+
+// Append a single conversation turn to the active user's recentTurns
+// log, cap at 10 (drop oldest), and persist. Called by sendMessage
+// pre-fetch (user) and post-response (assistant).
+function appendTurn(role, content) {
+  var uid = resolveActiveUid();
+  if (!uid) {
+    console.warn('yumi-brain: appendTurn called with no active uid; skipping');
+    return;
+  }
+  ensureUser(uid);
+  state.users[uid].yumiMemory.recentTurns.push({ role: role, content: content });
+  while (state.users[uid].yumiMemory.recentTurns.length > 10) {
+    state.users[uid].yumiMemory.recentTurns.shift();
+  }
+  saveState();
+}
+
+// Render the recentTurns labeled-prose block for buildContext. The
+// current user turn (which messages[] carries directly) is excluded --
+// recentTurns is appended pre-fetch and its last entry IS the live
+// message, so we slice it off here to avoid double-counting it in the
+// system prompt. Empty cases (no active uid, no user record, no
+// yumiMemory, no recentTurns, or only the live entry) all collapse to
+// "recentTurns: none yet".
+function renderRecentTurns(activeUid) {
+  if (!activeUid || !state.users[activeUid] ||
+      !state.users[activeUid].yumiMemory ||
+      !state.users[activeUid].yumiMemory.recentTurns) {
+    return 'recentTurns: none yet';
+  }
+  var allTurns = state.users[activeUid].yumiMemory.recentTurns;
+  var priorTurns = allTurns.slice(0, allTurns.length - 1);
+  if (priorTurns.length === 0) {
+    return 'recentTurns: none yet';
+  }
+  var turnLines = ['recentTurns:'];
+  var t;
+  for (t = 0; t < priorTurns.length; t++) {
+    var label;
+    if (priorTurns[t].role === 'assistant') {
+      label = 'Yumi: ';
+    } else {
+      label = 'User: ';
+    }
+    turnLines.push(label + priorTurns[t].content);
+  }
+  return turnLines.join('\n');
+}
+
 function buildContext() {
   var bookLine;
   if (state.currentBookId === null) {
@@ -98,9 +171,12 @@ function buildContext() {
     entriesLine = parts.join('; ');
   }
 
+  var turnsLine = renderRecentTurns(resolveActiveUid());
+
   return 'currentBook: ' + bookLine + '\n' +
          'recentEntries: ' + entriesLine + '\n' +
-         'currentArc: ' + arcLine;
+         'currentArc: ' + arcLine + '\n' +
+         turnsLine;
 }
 
 function buildYumiSystem() {
@@ -124,6 +200,11 @@ function buildYumiSystem() {
 }
 
 function sendMessage(userText) {
+  // Known limitation (2.7b-ii-a): if the proxy call below fails between
+  // these two appendTurn calls, the user turn persists without a matching
+  // assistant turn -- left as-is, addressed in a follow-up sub-stage.
+  appendTurn('user', userText);
+
   var payload = {
     model:      'claude-sonnet-4-20250514',
     max_tokens: 1024,
@@ -161,6 +242,7 @@ function sendMessage(userText) {
     if (text === '') {
       throw new Error('no text content in response');
     }
+    appendTurn('assistant', text);
     return { ok: true, text: text };
   });
 }
