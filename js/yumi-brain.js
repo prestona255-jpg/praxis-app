@@ -62,9 +62,84 @@ function resolveActiveUid() {
   return keys[0];
 }
 
+// Summarize a single dropped turn into yumiMemory.summary via a
+// rewrite-to-unify proxy call. Reuses YUMI_VOICE_TEXT as system so
+// the summary lands in Yumi's voice. Returns Promise<string|null>:
+// string is the new summary; null means summarizer unavailable or
+// failed (caller drops oldest unsummarized, leaves summary intact).
+// Never throws into the caller -- voice-doc-unavailable and any
+// proxy/parse error degrade to null with a console.warn.
+function summarizeAndRoll(uid, droppedTurn) {
+  if (!YUMI_VOICE_LOADED ||
+      YUMI_VOICE_TEXT === 'YUMI VOICE DOCUMENT FAILED TO LOAD') {
+    console.warn('summarizeAndRoll: voice doc unavailable; dropping oldest turn unsummarized');
+    return Promise.resolve(null);
+  }
+
+  var priorSummary = state.users[uid].yumiMemory.summary;
+
+  var promptBody =
+    'A turn from earlier in this conversation is about to slip past. '
+    + 'Gather it into your memory of this reader before it goes.\n\n'
+    + 'What you remember of the conversation so far:\n'
+    + (priorSummary || '(nothing yet -- this is the first turn slipping past)') + '\n\n'
+    + 'The turn slipping past:\n'
+    + droppedTurn.role + ': ' + droppedTurn.content + '\n\n'
+    + 'Gather it in. One paragraph, in your voice, 1-3 sentences, '
+    + 'holding the thread of what they have been working through. '
+    + 'Keep it brief. Keep it warm.';
+
+  var payload = {
+    model:      'claude-sonnet-4-20250514',
+    max_tokens: 512,
+    system:     YUMI_VOICE_TEXT,
+    messages: [
+      { role: 'user', content: promptBody }
+    ]
+  };
+
+  return fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (body) {
+        throw new Error('proxy ' + res.status + ': ' + body);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    var blocks = data && data.content;
+    if (!blocks || !blocks.length) {
+      throw new Error('summarizeAndRoll: no text content in response');
+    }
+    var text = '';
+    var i;
+    for (i = 0; i < blocks.length; i++) {
+      var block = blocks[i];
+      if (block && block.type === 'text' && typeof block.text === 'string') {
+        text = text + block.text;
+      }
+    }
+    if (text === '') {
+      throw new Error('summarizeAndRoll: empty text in response');
+    }
+    if (text.length > 2000) {
+      text = text.substring(0, 1997) + '...';
+    }
+    return text;
+  }).catch(function (err) {
+    console.warn('summarizeAndRoll: failed; dropping oldest turn unsummarized', err);
+    return null;
+  });
+}
+
 // Append a single conversation turn to the active user's recentTurns
-// log, cap at 10 (drop oldest), and persist. Called by sendMessage
-// pre-fetch (user) and post-response (assistant).
+// log, persist, and (if push pushed us over cap=10) trigger
+// summarization rollover via summarizeAndRoll on each dropped turn.
+// Synchronous outer for the push+save, async tail for the rollover.
+// Called by sendMessage pre-fetch (user) and post-response (assistant).
 function appendTurn(role, content) {
   var uid = resolveActiveUid();
   if (!uid) {
@@ -72,11 +147,48 @@ function appendTurn(role, content) {
     return;
   }
   ensureUser(uid);
-  state.users[uid].yumiMemory.recentTurns.push({ role: role, content: content });
-  while (state.users[uid].yumiMemory.recentTurns.length > 10) {
-    state.users[uid].yumiMemory.recentTurns.shift();
-  }
+  var mem = state.users[uid].yumiMemory;
+  mem.recentTurns.push({ role: role, content: content });
   saveState();
+
+  if (mem.recentTurns.length <= 10) {
+    return;
+  }
+
+  // Rollover: async tail. Each pass summarizes oldest into mem.summary
+  // (or drops unsummarized on degradation), shifts, then recurses.
+  // While-loop semantics preserved against future imports starting
+  // above cap.
+  function shiftLoop() {
+    if (mem.recentTurns.length <= 10) {
+      saveState();
+      return;
+    }
+    var dropped = mem.recentTurns[0];
+    summarizeAndRoll(uid, dropped).then(function (newSummary) {
+      if (newSummary) {
+        mem.summary = newSummary;
+        mem.updatedAt = Date.now();
+      }
+      mem.recentTurns.shift();
+      shiftLoop();
+    });
+  }
+  shiftLoop();
+}
+
+// Render the conversation summary line for buildContext. Empty when
+// there is no active uid, no user record, no yumiMemory, or summary
+// is the empty string. When present, prefixed to make explicit to
+// Claude that this is OLDER memory than recentTurns.
+function renderConversationSummary(activeUid) {
+  if (!activeUid || !state.users[activeUid] ||
+      !state.users[activeUid].yumiMemory) {
+    return '';
+  }
+  var summary = state.users[activeUid].yumiMemory.summary;
+  if (!summary) return '';
+  return 'EARLIER IN OUR CONVERSATION (summary): ' + summary + '\n';
 }
 
 // Render the recentTurns labeled-prose block for buildContext. The
@@ -171,11 +283,14 @@ function buildContext() {
     entriesLine = parts.join('; ');
   }
 
-  var turnsLine = renderRecentTurns(resolveActiveUid());
+  var activeUid = resolveActiveUid();
+  var summaryLine = renderConversationSummary(activeUid);
+  var turnsLine = renderRecentTurns(activeUid);
 
   return 'currentBook: ' + bookLine + '\n' +
          'recentEntries: ' + entriesLine + '\n' +
          'currentArc: ' + arcLine + '\n' +
+         summaryLine +
          turnsLine;
 }
 

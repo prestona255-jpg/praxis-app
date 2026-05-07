@@ -83,8 +83,9 @@
 //                           // 0 until first write
 //   }
 //
-// 2.7a only seeds the field via migration -- the actual summarization
-// pass that writes into it lands in 2.7b.
+// 2.7a seeds the field via migration; 2.7b-ii-b writes summaries
+// into it on each rollover via the summarizeAndRoll path in
+// yumi-brain.js.
 //
 // Schema 1.4.0 extends yumiMemory with recentTurns -- the last few raw
 // conversation exchanges, kept alongside the rolling summary so Yumi
@@ -92,6 +93,15 @@
 //
 //   recentTurns: array of { role: 'user'|'assistant', content: string }
 //                // capped at 10 entries by 2.7b-ii write logic
+//
+// Schema 1.5.0 marks the point where summarization rollover
+// operationalizes (see 2.7b-ii-b). The yumiMemory shape is unchanged
+// from 1.4.0 -- summary already existed from 1.3.0 and recentTurns
+// from 1.4.0. The 1.4.0 -> 1.5.0 migration is a pure version stamp,
+// preserving any existing summary content verbatim. yumi-brain.js
+// now writes into yumiMemory.summary on each rollover via
+// summarizeAndRoll, replacing the prior summary with a rewrite-to-
+// unify pass through Claude in Yumi's voice.
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
@@ -119,7 +129,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.4.0',
+  SCHEMA_VERSION:  '1.5.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -229,6 +239,13 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.4.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.4.0') {
+    // No-op on shape: yumiMemory.summary already exists from 1.3.0;
+    // 1.5.0 marks the point where summarization rollover
+    // operationalizes in yumi-brain.js (2.7b-ii-b). Existing summary
+    // content preserved verbatim; only the version marker changes.
+    stored.SCHEMA_VERSION = '1.5.0';
   }
   return stored;
 }
