@@ -85,9 +85,9 @@ function summarizeAndRoll(uid, droppedTurn) {
     + (priorSummary || '(this is the first turn -- there is no prior memory yet)') + '\n\n'
     + 'The turn slipping past:\n'
     + droppedTurn.role + ': ' + droppedTurn.content + '\n\n'
-    + 'Write what you remember now. Output only the memory itself -- '
-    + 'no labels, no headers, no preamble, no quotation marks. '
-    + '1 to 3 sentences. Keep it brief. Keep it warm.';
+    + 'Write what you remember now. Maximum 60 words. Two '
+    + 'sentences. Output only the memory itself -- no labels, '
+    + 'no headers, no preamble, no quotation marks. Keep it warm.';
 
   var payload = {
     model:      'claude-sonnet-4-20250514',
