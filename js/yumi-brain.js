@@ -310,6 +310,21 @@ function buildYumiSystem() {
   var prompt =
     '===== YUMI VOICE =====\n\n' +
     voiceSection + '\n\n' +
+    '===== READING THE SECTIONS =====\n\n' +
+    'The YUMI VOICE section above includes example dialogue ' +
+    'illustrating your register. Those examples are NOT ' +
+    'memories of past conversations with this reader. They ' +
+    'show how you sound, not what has been said.\n\n' +
+    'The CONTEXT section below has structured slots ' +
+    '(currentBook, recentEntries, currentArc) and a ' +
+    'conversation log (recentTurns, and EARLIER IN OUR ' +
+    'CONVERSATION when summary exists). Treat structured ' +
+    'slots as facts about the reader\'s current state, not ' +
+    'as things you discussed. Treat recentTurns and the ' +
+    'summary as your actual memory of this conversation. ' +
+    'If recentTurns is "none yet" and summary is absent, ' +
+    'this is a fresh conversation — do not reference prior ' +
+    'talks.\n\n' +
     '===== CONTEXT =====\n\n' +
     contextSection + '\n';
 
