@@ -1,0 +1,3763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Literary palette — header, stage cards, body text */
+  --ink:            #1f1a14;
+  --ink-2:          #3a3026;
+  --ink-3:          #6a5e51;
+  --ink-4:          #8a7f72;
+  --gold:           #b88a3a;
+  --gold-soft:      #d4b876;
+  --gold-deep:      #8b6a26;
+  --br-deep:        #5a3f24;
+  --br-mid:         #8a6d4a;
+  --parchment:      #f5ede0;
+  --parchment-2:    #ede3d2;
+  --parchment-3:    #e3d6bf;
+  --border:         #c8b89a;
+  --border-soft:    #d8cab0;
+
+  /* Tool palette — dashboard, timeline, matrix */
+  --tool-bg:        #1c1812;
+  --tool-bg-2:      #25201a;
+  --tool-bg-3:      #2f2a22;
+  --tool-line:      #3d3528;
+  --tool-line-2:    #4a4135;
+  --tool-fg:        #e8dfc9;
+  --tool-fg-2:      #b9ad94;
+  --tool-fg-3:      #847a66;
+  --tool-accent:    #d4a04a;
+  --tool-accent-2:  #f0c878;
+
+  /* Status — high saturation gap so done vs not-done reads instantly */
+  --status-not-started: #8a7f72;
+  --status-in-progress: #e09a30;
+  --status-shipped:     #5a8c4a;
+  --status-proven:      #2d6b32;
+  --status-deferred:    #6a5e51;
+
+  /* Status (bright variants for dark surfaces) */
+  --status-not-started-b: #a89684;
+  --status-in-progress-b: #f0b450;
+  --status-shipped-b:     #7aaf68;
+  --status-proven-b:      #5fa05a;
+  --status-deferred-b:    #8a7f72;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(30,20,10,0.04), 0 2px 6px rgba(30,20,10,0.04);
+  --shadow-2: 0 2px 4px rgba(30,20,10,0.06), 0 8px 20px rgba(30,20,10,0.08);
+  --shadow-3: 0 4px 8px rgba(30,20,10,0.08), 0 16px 40px rgba(30,20,10,0.10);
+  --shadow-tool: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-tool-lift: 0 1px 0 rgba(255,255,255,0.05) inset, 0 4px 16px rgba(0,0,0,0.4);
+
+  --display: 'Cormorant Garamond', Georgia, serif;
+  --body: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(184,138,58,0.05), transparent 55%),
+    radial-gradient(circle at 85% 80%, rgba(90,63,36,0.04), transparent 55%);
+}
+
+#app { position: relative; z-index: 1; }
+
+a { color: var(--br-deep); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--gold); }
+
+button {
+  font-family: var(--body);
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+button:hover { border-color: var(--gold); background: var(--parchment-2); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ====================  HEADER (literary)  ==================== */
+
+.header {
+  padding: 56px 48px 36px;
+  border-bottom: 1px solid var(--border);
+  background: var(--parchment);
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+  opacity: 0.35;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.title-block { flex: 1; min-width: 280px; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--gold);
+}
+.title {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 0.95;
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+.subtitle {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink-3);
+  margin: 14px 0 0;
+  max-width: 640px;
+  line-height: 1.4;
+}
+.meta-row {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-top: 20px;
+}
+.meta-row span { display: inline-flex; align-items: baseline; gap: 6px; }
+.meta-row span strong { color: var(--ink); font-weight: 500; }
+.meta-row span::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 4px;
+  display: inline-block;
+  align-self: center;
+}
+
+/* ====================  TOOLBAR  ==================== */
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 48px;
+  background: rgba(245,237,224,0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.toolbar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.view-switcher {
+  display: inline-flex;
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow-1);
+}
+.view-switcher button {
+  border: none;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: transparent;
+}
+.view-switcher button.active {
+  background: var(--ink);
+  color: var(--parchment);
+  box-shadow: var(--shadow-1);
+}
+.view-switcher button:hover:not(.active) {
+  color: var(--ink);
+  background: rgba(184,138,58,0.10);
+}
+
+.filter-select, .search-input {
+  font-family: var(--body);
+  font-size: 13px;
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--ink);
+}
+.search-input { min-width: 220px; flex: 1; max-width: 360px; }
+.search-input::placeholder { color: var(--ink-4); font-style: italic; }
+.filter-select:focus, .search-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 48px 80px;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ====================  DASHBOARD (dense tool)  ==================== */
+
+.dash-hero {
+  background:
+    linear-gradient(135deg, var(--tool-bg-2), var(--tool-bg)),
+    radial-gradient(circle at 80% 20%, rgba(212,160,74,0.08), transparent 50%);
+  border: 1px solid var(--tool-line);
+  border-radius: 8px;
+  padding: 48px 56px;
+  margin-bottom: 36px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  box-shadow: var(--shadow-3);
+  position: relative;
+  overflow: hidden;
+}
+.dash-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,200,120,0.4), transparent);
+}
+.dash-hero::after {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(212,160,74,0.15), transparent 70%);
+  pointer-events: none;
+}
+.dash-hero > div { position: relative; z-index: 1; }
+
+.dash-bignum {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 96px;
+  line-height: 0.9;
+  color: var(--tool-accent-2);
+  letter-spacing: -0.025em;
+}
+.dash-bignum .of {
+  font-size: 28px;
+  color: var(--tool-fg-2);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.dash-hero-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tool-fg-3);
+  margin-top: 12px;
+}
+.dash-hero-label::before {
+  content: '— ';
+  color: var(--tool-accent);
+}
+
+.dash-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+.dash-cta button {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 19px;
+  padding: 16px 32px;
+  background: var(--tool-accent);
+  color: var(--ink);
+  border: 1px solid var(--tool-accent-2);
+  letter-spacing: -0.005em;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 4px 12px rgba(212,160,74,0.25);
+  transition: all 0.18s ease;
+}
+.dash-cta button:hover {
+  background: var(--tool-accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 6px 16px rgba(212,160,74,0.35);
+}
+
+.dash-section-title {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 32px;
+  margin: 40px 0 18px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.dash-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+  position: relative;
+  top: -8px;
+}
+
+.dash-bars {
+  background: var(--tool-bg);
+  border: 1px solid var(--tool-line);
+  border-radius: 8px;
+  padding: 8px 28px;
+  box-shadow: var(--shadow-2);
+}
+
+.stage-bar-row {
+  display: grid;
+  grid-template-columns: 240px 1fr 110px;
+  gap: 24px;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--tool-line);
+}
+.stage-bar-row:last-child { border-bottom: none; }
+.stage-bar-name {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--tool-fg);
+  letter-spacing: -0.005em;
+}
+.stage-bar-name .num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--tool-fg-3);
+  letter-spacing: 0.16em;
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.stage-bar-track {
+  height: 10px;
+  background: var(--tool-bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--tool-line);
+  position: relative;
+}
+.stage-bar-segment { height: 100%; transition: width 0.3s ease; }
+.stage-bar-count {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--tool-fg-2);
+  text-align: right;
+  letter-spacing: 0.04em;
+}
+.stage-bar-count strong {
+  color: var(--tool-accent-2);
+  font-weight: 500;
+}
+
+.dash-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 32px;
+}
+.dash-card {
+  background: var(--tool-bg-2);
+  border: 1px solid var(--tool-line);
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: var(--shadow-2);
+  position: relative;
+  overflow: hidden;
+}
+.dash-card.active {
+  border-left: 3px solid var(--tool-accent);
+  background:
+    linear-gradient(90deg, rgba(212,160,74,0.06), transparent 30%),
+    var(--tool-bg-2);
+}
+.dash-card.dim { opacity: 0.65; }
+.dash-card-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tool-fg-3);
+  margin: 0 0 12px;
+}
+.dash-card.active .dash-card-label { color: var(--tool-accent); }
+.dash-card-title {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 24px;
+  margin: 0 0 10px;
+  color: var(--tool-fg);
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+.dash-card-meta {
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--tool-fg-2);
+  line-height: 1.5;
+}
+.dash-card-bignum {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 56px;
+  color: var(--tool-accent-2);
+  line-height: 1;
+  margin-top: 8px;
+  letter-spacing: -0.02em;
+}
+
+/* ====================  STAGES (literary)  ==================== */
+
+.stage-card {
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition: all 0.2s;
+  position: relative;
+}
+.stage-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.stage-card.active {
+  box-shadow: var(--shadow-2);
+}
+.stage-card.active::before { background: var(--gold); }
+.stage-card.shipped::before { background: var(--status-shipped); opacity: 0.6; }
+.stage-card.proven::before { background: var(--status-proven); opacity: 0.6; }
+.stage-card.shipped, .stage-card.proven { opacity: 0.94; }
+
+.stage-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 24px;
+  align-items: center;
+  padding: 26px 36px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.stage-head:hover { background: rgba(184,138,58,0.04); }
+.stage-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.stage-name {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 34px;
+  color: var(--ink);
+  letter-spacing: -0.012em;
+  line-height: 1.05;
+}
+.stage-purpose {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-3);
+  margin-top: 6px;
+  line-height: 1.45;
+  max-width: 720px;
+}
+.stage-progress-mini {
+  width: 110px;
+  height: 6px;
+  background: var(--parchment-3);
+  border-radius: 999px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+.stage-progress-mini > div { height: 100%; }
+.chevron {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-3);
+  transition: transform 0.2s;
+  display: inline-block;
+  width: 14px;
+}
+.stage-card.expanded .chevron, .substage.expanded .chevron, .prompt-block.expanded .chevron {
+  transform: rotate(90deg);
+}
+
+.stage-body {
+  display: none;
+  padding: 0 36px 36px;
+  border-top: 1px solid var(--border-soft);
+}
+.stage-card.expanded .stage-body { display: block; }
+
+.stage-summary {
+  font-family: var(--display);
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 28px 0 24px;
+  font-style: italic;
+  max-width: 780px;
+}
+.stage-meta-block {
+  background: var(--parchment);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.stage-meta-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.stage-meta-block ul, .stage-meta-block p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.stage-meta-block ul { padding-left: 20px; }
+.stage-meta-block li { margin-bottom: 5px; }
+
+.substage-list { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--parchment-3);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+.status-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-not-started);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.4) inset;
+}
+.status-badge.status-not-started::before { background: var(--status-not-started); }
+.status-badge.status-in-progress::before { background: var(--status-in-progress); box-shadow: 0 0 8px rgba(224,154,48,0.5), 0 0 0 2px rgba(255,255,255,0.4) inset; }
+.status-badge.status-shipped::before { background: var(--status-shipped); }
+.status-badge.status-proven::before { background: var(--status-proven); box-shadow: 0 0 0 2px rgba(255,255,255,0.4) inset; }
+.status-badge.status-deferred::before { background: var(--status-deferred); }
+.status-badge.status-deferred { font-style: italic; color: var(--status-deferred); }
+.status-badge.status-proven { background: rgba(45,107,50,0.10); border-color: rgba(45,107,50,0.3); color: var(--status-proven); }
+.status-badge.status-shipped { background: rgba(90,140,74,0.10); border-color: rgba(90,140,74,0.3); color: var(--status-shipped); }
+.status-badge.status-in-progress { background: rgba(224,154,48,0.12); border-color: rgba(224,154,48,0.35); color: #8a5a14; }
+
+/* Substage card */
+.substage {
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.substage:hover { box-shadow: var(--shadow-1); }
+.substage.deferred { font-style: italic; color: var(--status-deferred); }
+.substage.expanded { box-shadow: var(--shadow-2); }
+
+.substage-head {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 24px;
+  cursor: pointer;
+  user-select: none;
+}
+.substage-head:hover { background: var(--parchment-2); }
+.substage-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gold-deep);
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+.substage-name {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 24px;
+  color: var(--ink);
+  margin-top: 3px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+.substage-checks {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.check-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-weight: 500;
+}
+.check-pill input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.substage-body {
+  display: none;
+  padding: 4px 24px 26px;
+  border-top: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, var(--parchment-2) 0%, var(--parchment) 60px);
+}
+.substage.expanded .substage-body { display: block; }
+
+.field-block { margin-top: 20px; }
+.field-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+.field-value { font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+.field-value p { margin: 0 0 6px; }
+.field-value ul { margin: 0; padding-left: 22px; }
+.field-value li { margin-bottom: 5px; }
+
+.field-files {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--parchment-3);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 14px 16px;
+  line-height: 1.7;
+}
+.field-files ul { list-style: none; padding: 0; margin: 0; }
+.field-files li { padding: 2px 0; color: var(--ink); }
+.field-files li::before { content: '› '; color: var(--gold); font-weight: 700; }
+
+.field-evidence {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  background: var(--ink);
+  color: var(--parchment-2);
+  border-radius: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--ink);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+.field-evidence ul { list-style: none; padding: 0; margin: 0; }
+.field-evidence li { padding: 4px 0; padding-left: 20px; position: relative; }
+.field-evidence li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--gold-soft);
+  font-weight: 700;
+}
+
+.subsystem-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.subsystem-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  padding: 4px 11px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.subsystem-chip:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+  background: rgba(184,138,58,0.08);
+}
+
+.notes-textarea {
+  width: 100%;
+  min-height: 76px;
+  font-family: var(--body);
+  font-size: 13px;
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 11px 14px;
+  color: var(--ink);
+  resize: vertical;
+  line-height: 1.5;
+}
+.notes-textarea:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--gold);
+}
+
+.check-status-line {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+.prompt-block {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 5px;
+  margin-top: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+.prompt-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--tool-line);
+  cursor: pointer;
+  user-select: none;
+  color: var(--parchment-2);
+}
+.prompt-block-head:hover { background: var(--tool-bg-2); }
+.prompt-block-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tool-accent);
+  font-weight: 500;
+}
+.prompt-block-actions { display: flex; gap: 10px; align-items: center; }
+.prompt-block-actions .chevron { color: var(--tool-fg-2); }
+.copy-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  background: var(--tool-bg-3);
+  border: 1px solid var(--tool-line-2);
+  border-radius: 3px;
+  color: var(--tool-fg);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.copy-btn:hover {
+  background: var(--tool-accent);
+  color: var(--ink);
+  border-color: var(--tool-accent);
+}
+.copy-btn.copied {
+  background: var(--status-shipped);
+  color: #fff;
+  border-color: var(--status-shipped);
+}
+.prompt-block-body {
+  display: none;
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--parchment-2);
+  white-space: pre-wrap;
+  max-height: 520px;
+  overflow-y: auto;
+}
+.prompt-block.expanded .prompt-block-body { display: block; }
+.prompt-block-body::-webkit-scrollbar-track { background: var(--ink-2); }
+.prompt-block-body::-webkit-scrollbar-thumb { background: var(--tool-line-2); }
+
+/* ====================  TIMELINE (dense tool)  ==================== */
+
+.timeline-wrap {
+  background:
+    linear-gradient(180deg, var(--tool-bg-2), var(--tool-bg)),
+    radial-gradient(circle at 70% 30%, rgba(212,160,74,0.05), transparent 60%);
+  border: 1px solid var(--tool-line);
+  border-radius: 8px;
+  padding: 36px 36px 24px;
+  box-shadow: var(--shadow-3);
+  overflow-x: auto;
+  position: relative;
+}
+.timeline-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,200,120,0.3), transparent);
+}
+.timeline {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto repeat(5, 60px);
+  min-width: 760px;
+}
+.timeline-months {
+  display: grid;
+  grid-template-columns: 240px repeat(7, 1fr);
+  border-bottom: 1px solid var(--tool-line);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+.timeline-month {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tool-fg-3);
+  text-align: center;
+  padding: 0 4px;
+  font-weight: 500;
+}
+.timeline-month.current {
+  color: var(--tool-accent-2);
+  font-weight: 700;
+}
+.timeline-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  align-items: center;
+  border-bottom: 1px dashed var(--tool-line);
+}
+.timeline-row:last-child { border-bottom: none; }
+.timeline-label {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 18px;
+  padding: 10px 14px 10px 0;
+  color: var(--tool-fg);
+  letter-spacing: -0.005em;
+}
+.timeline-label .num {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--tool-fg-3);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+.timeline-track {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.timeline-track-cell { border-right: 1px dashed var(--tool-line); }
+.timeline-track-cell:last-child { border-right: none; }
+.timeline-band {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-tool-lift);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.15s;
+}
+.timeline-band:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 6px 20px rgba(0,0,0,0.5);
+}
+.timeline-note {
+  margin-top: 24px;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--tool-fg-3);
+  text-align: center;
+}
+
+/* ====================  SUBSYSTEMS / MATRIX (dense tool)  ==================== */
+
+.matrix-wrap {
+  background: var(--tool-bg);
+  border: 1px solid var(--tool-line);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: var(--shadow-3);
+  overflow-x: auto;
+}
+.matrix {
+  display: grid;
+  gap: 0;
+  min-width: 720px;
+}
+.matrix-corner {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--tool-fg-3);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--tool-line);
+  border-right: 1px solid var(--tool-line);
+  background: var(--tool-bg-2);
+  font-weight: 500;
+}
+.matrix-col-head {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--tool-fg-2);
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--tool-line);
+  text-align: center;
+  letter-spacing: 0.06em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  min-height: 90px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--tool-bg-2);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.matrix-col-head:hover {
+  color: var(--tool-accent-2);
+  background: var(--tool-bg-3);
+}
+.matrix-stage-group {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--tool-accent);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--tool-line);
+  text-align: center;
+  background: rgba(212,160,74,0.08);
+  font-weight: 500;
+}
+.matrix-row-head {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--tool-line);
+  border-right: 1px solid var(--tool-line);
+  color: var(--tool-fg);
+  background: var(--tool-bg-2);
+  letter-spacing: -0.005em;
+}
+.matrix-cell {
+  border-bottom: 1px solid var(--tool-line);
+  border-right: 1px dashed var(--tool-line);
+  cursor: default;
+  position: relative;
+  transition: opacity 0.15s, transform 0.15s;
+  min-height: 36px;
+  background: var(--tool-bg);
+}
+.matrix-cell.active { cursor: pointer; }
+.matrix-cell.active:hover {
+  opacity: 0.8;
+  transform: scale(0.92);
+}
+.matrix-cell .tip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  background: var(--ink);
+  color: var(--parchment);
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  border: 1px solid var(--tool-line-2);
+  box-shadow: var(--shadow-2);
+  letter-spacing: 0.04em;
+}
+.matrix-cell.active:hover .tip { display: block; }
+
+.subsystem-list-section {
+  margin-top: 48px;
+}
+.subsystem-list-section h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 32px;
+  margin: 0 0 18px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.subsystem-list-section h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+  position: relative;
+  top: -8px;
+}
+.subsystem-card {
+  background: var(--parchment-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--br-mid);
+  border-radius: 4px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-1);
+  transition: all 0.15s;
+}
+.subsystem-card:hover {
+  box-shadow: var(--shadow-2);
+  border-left-color: var(--gold);
+}
+.subsystem-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.subsystem-card-name {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 24px;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.subsystem-card-touched {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gold-deep);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+.subsystem-card-def {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 8px 0 10px;
+  line-height: 1.6;
+}
+.subsystem-card-meta {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+.subsystem-card-meta strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ====================  DEFERRED LOG  ==================== */
+
+.deferred-section { margin-top: 48px; }
+.deferred-section h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 32px;
+  margin: 0 0 8px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.deferred-section h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+  position: relative;
+  top: -8px;
+}
+.deferred-section .lead {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink-3);
+  margin-bottom: 24px;
+  max-width: 720px;
+  line-height: 1.5;
+}
+.deferred-item {
+  background: var(--parchment-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 16px 22px;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+  transition: all 0.15s;
+}
+.deferred-item:hover {
+  background: var(--parchment-3);
+  border-color: var(--border);
+}
+.deferred-name {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--status-deferred);
+  margin: 0 0 4px;
+  letter-spacing: -0.005em;
+}
+.deferred-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-4);
+  letter-spacing: 0.04em;
+}
+.deferred-reason {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  margin: 6px 0 0;
+  font-style: italic;
+  line-height: 1.55;
+}
+.deferred-when {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  white-space: nowrap;
+  align-self: start;
+  background: rgba(184,138,58,0.10);
+  padding: 5px 12px;
+  border-radius: 3px;
+  font-weight: 500;
+  border: 1px solid rgba(184,138,58,0.25);
+}
+
+/* ====================  STATUS LEGEND  ==================== */
+
+.legend {
+  margin-top: 40px;
+  padding: 22px 28px;
+  background: var(--tool-bg-2);
+  border: 1px solid var(--tool-line);
+  border-radius: 6px;
+  box-shadow: var(--shadow-1);
+}
+.legend h3 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tool-accent);
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--tool-fg);
+  font-family: var(--body);
+}
+.legend-item em {
+  color: var(--tool-fg-2);
+  font-style: italic;
+}
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.06) inset;
+}
+
+/* ====================  EMPTY STATE  ==================== */
+
+.empty-state {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--ink-3);
+  padding: 48px;
+  text-align: center;
+  background: var(--parchment-2);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  font-size: 17px;
+}
+
+/* ====================  SCROLLBAR  ==================== */
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--parchment-2); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--br-mid); }
+
+/* ====================  RESPONSIVE  ==================== */
+
+@media (max-width: 900px) {
+  .header, .toolbar, .main { padding-left: 24px; padding-right: 24px; }
+  .header { padding-top: 36px; padding-bottom: 28px; }
+  .title { font-size: 44px; }
+  .dash-hero { padding: 28px; grid-template-columns: 1fr; }
+  .dash-bignum { font-size: 68px; }
+  .dash-cards { grid-template-columns: 1fr; }
+  .stage-bar-row { grid-template-columns: 1fr; gap: 8px; }
+  .stage-bar-count { text-align: left; }
+  .stage-head { grid-template-columns: 1fr auto; padding: 20px 22px; gap: 14px; }
+  .stage-progress-mini { display: none; }
+  .stage-body { padding: 0 22px 26px; }
+  .substage-head { grid-template-columns: 1fr auto; padding: 16px 18px; }
+  .substage-checks { grid-column: 1 / -1; flex-wrap: wrap; }
+  .substage-body { padding: 4px 18px 22px; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="app">
+
+<header class="header">
+  <div class="header-inner">
+    <div class="title-block">
+      <p class="eyebrow">Master Planning Document</p>
+      <h1 class="title">Praxis Roadmap</h1>
+      <p class="subtitle">A reading community organized by depth of engagement, not metrics of attention.</p>
+      <div class="meta-row">
+        <span><strong>Active stage</strong> · Stage 2 — Text-only conversational Yumi</span>
+        <span><strong>Version</strong> · v1.0</span>
+        <span><strong>Last updated</strong> · May 5, 2026</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="toolbar">
+  <div class="toolbar-inner">
+    <div class="view-switcher" id="viewSwitcher">
+      <button data-view="dashboard">Dashboard</button>
+      <button data-view="stages">Stages</button>
+      <button data-view="timeline">Timeline</button>
+      <button data-view="subsystems">Subsystems</button>
+    </div>
+    <select class="filter-select" id="filterSelect">
+      <option value="all">All sub-stages</option>
+      <option value="active">Active stage only</option>
+      <option value="deferred">Deferred only</option>
+    </select>
+    <input type="search" class="search-input" id="searchInput" placeholder="Search sub-stages…">
+  </div>
+</nav>
+
+<main class="main">
+  <section class="view" id="view-dashboard"></section>
+  <section class="view" id="view-stages"></section>
+  <section class="view" id="view-timeline"></section>
+  <section class="view" id="view-subsystems"></section>
+</main>
+
+</div>
+
+<script>
+'use strict';
+
+// =====================================================================
+// ls / sv localStorage wrappers
+// =====================================================================
+
+function ls(k, d) {
+  try {
+    var raw = localStorage.getItem(k);
+    if (raw === null) return d;
+    return JSON.parse(raw);
+  } catch (e) {
+    return d;
+  }
+}
+
+function sv(k, v) {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// =====================================================================
+// DATA — STAGES
+// =====================================================================
+
+var STAGES = [
+
+  // ----- STAGE 1 (compressed retro) -----
+  {
+    id: 's1',
+    num: 'Stage 1',
+    name: 'Foundation',
+    purpose: 'Ship the plumbing — auth, state schema, ISBN lookup, PWA shell, Claude proxy stub.',
+    stageStatus: 'shipped',
+    summary: 'Stage 1 is mostly shipped and partially proven. Detailed retro sub-stage entries deferred until Stage 2 begins. Current state: state.js at 1.1.0 with notebookEntries, bookArtifacts, arcs maps; integrations.js with Firebase auth and ISBN fallback; sw.js as real service worker (praxis-v2); claude-proxy.js deployed but untested in production.',
+    nonGoals: ['Detailed retro sub-stage breakdown — deferred to the deferred items log.'],
+    dependencies: 'None — Stage 1 is the foundation.',
+    active: false,
+    substages: []
+  },
+
+  // ----- STAGE 2 -----
+  {
+    id: 's2',
+    num: 'Stage 2',
+    name: 'Text-only conversational Yumi',
+    purpose: 'Yumi comes online for the first time. After Stage 2 ships, a user can sign in, open the app, type a message to Yumi, and have a real conversation that matches the voice document. Voice input works. TTS does not. Voice agent does not.',
+    stageStatus: 'in-progress',
+    active: true,
+    summary: 'This is where Yumi behaves for the first time. Eight sub-stages move from brain skeleton through proxy verification, UI scaffold, full text wiring, voice input, context injection, conversation memory, and a final voice-document compliance audit. Stage 2 ships only when the audit passes.',
+    nonGoals: [
+      'TTS / spoken Yumi (deferred to 2.5)',
+      'Voice agent / screen commands (deferred to 2.5 or Phase 3)',
+      'Notebook UI (Stage 3)',
+      'Arc navigation UI (Stage 3)',
+      'Book Artifact creation flow (Stage 3)'
+    ],
+    dependencies: 'Stage 1 plumbing must be Shipped and Proven, especially the proxy round-trip.',
+
+    substages: [
+
+      {
+        id: 's2-1',
+        num: '2.1',
+        name: 'Yumi brain skeleton',
+        depConfirm: 'Stage 1 must be Shipped. yumi-brain.js currently a stub.',
+        purpose: 'Stand up yumi-brain.js with the system prompt assembly function and voice document loading. No UI wiring yet. Prove that buildYumiSystem() returns a complete system prompt string that includes the voice document.',
+        scope: [
+          'Implement buildYumiSystem() following HQ pattern',
+          'Load /docs/yumi-voice.md at runtime (fetch + cache in module scope)',
+          'Include voice document in system prompt',
+          'Include placeholder context block (current book = null, recent entries = empty, current arc = null) — full context wiring lands in 2.6',
+          'Expose window.YumiBrain.buildSystem() for console testing'
+        ],
+        nonGoals: [
+          'No API call to Anthropic yet',
+          'No UI',
+          'No conversation memory',
+          'No context data injection beyond placeholders'
+        ],
+        subsystems: ['yumi-brain'],
+        files: [
+          'js/yumi-brain.js (replace stub)',
+          'index.html (no changes expected — script tag already present)'
+        ],
+        acceptance: [
+          'js/yumi-brain.js is no longer a stub',
+          'Calling window.YumiBrain.buildSystem() from console returns a non-empty string containing the full text of yumi-voice.md',
+          'File parses cleanly (node --check)',
+          'No const, let, arrow functions, classes, or template literals introduced'
+        ],
+        evidence: [
+          "Static: grep -c 'function buildYumiSystem' js/yumi-brain.js returns >=1",
+          "Static: grep -c 'yumi-voice.md' js/yumi-brain.js returns >=1",
+          'Static: node --check js/yumi-brain.js exits 0',
+          "Static: grep -E '(const |let |=>|class | backtick)' js/yumi-brain.js returns 0 matches",
+          'Console (live URL): window.YumiBrain.buildSystem().then(function(s){ console.log(s.length); }) logs >=1000'
+        ],
+        rollback: 'None. New code introduced; no temporary scaffolding.',
+        risks: [
+          'Voice document fetch fails on first load (no cache). Handle with retry or fail-loud console error.',
+          'File path drift: if yumi-voice.md is renamed or relocated, fetch silently 404s',
+          "Module scope leak: if buildYumiSystem isn't attached to window.YumiBrain correctly, console testing impossible"
+        ],
+        promptSkeleton:
+'Non-goals: no UI, no Anthropic call, no memory, no context wiring beyond placeholders.\n\n' +
+'Stage 0 read-only: view js/yumi-brain.js, index.html, docs/yumi-voice.md. Confirm anchors. Report current byte sizes.\n' +
+'[FILL AT SESSION TIME: report stub byte size, confirm yumi-voice.md path, confirm script tag present]\n\n' +
+'Stage 1 atomic patch: replace stub with full implementation.\n\n' +
+'Verification gates per Evidence block.\n\n' +
+'Revert on FAIL unless drift is pre-existing and unrelated.'
+      },
+
+      {
+        id: 's2-2',
+        num: '2.2',
+        name: 'Claude proxy live test',
+        depConfirm: 'Stage 1 proxy must be deployed. 2.1 should be Shipped (provides realistic call path).',
+        purpose: 'Prove the deployed Netlify function actually round-trips a request to Anthropic and returns a valid response. The proxy was shipped in Stage 1 but has never been called from production code.',
+        scope: [
+          'Add a temporary window.testProxy() function (or one-off console snippet) that POSTs a minimal messages payload through the proxy',
+          "Confirm response shape matches Anthropic's /v1/messages contract",
+          'Confirm CORS headers allow browser calls from the live URL',
+          'Decide on shared-secret gate: enabled or disabled for Phase 1 testing. Document the choice.'
+        ],
+        nonGoals: [
+          'No yumi-brain.js wiring yet',
+          'No UI',
+          'No streaming (initial test is non-streaming)'
+        ],
+        subsystems: ['claude-proxy', 'yumi-brain'],
+        files: [
+          'js/integrations.js (add temporary testProxy function — to be removed in 2.4)',
+          'netlify/functions/claude-proxy.js (no changes expected; proxy is shipped)',
+          'Netlify environment variables: confirm ANTHROPIC_API_KEY set; decide on PRAXIS_CLIENT_KEY'
+        ],
+        acceptance: [
+          'Calling window.testProxy() from live URL console returns a parsed Anthropic response object with content array',
+          'No CORS errors',
+          'Response time under 10 seconds for a trivial prompt'
+        ],
+        evidence: [
+          'Live URL console: window.testProxy("hello").then(function(r){ console.log(r.content[0].text); }) logs a non-empty string within 10s',
+          'Network tab: POST to /.netlify/functions/claude-proxy returns 200',
+          'Network tab: response body contains content array',
+          'If PRAXIS_CLIENT_KEY enabled: omitting x-praxis-key header returns 401'
+        ],
+        rollback: 'testProxy function in integrations.js must be removed in sub-stage 2.4 when real wiring lands. Document this commitment in code comment when adding.',
+        risks: [
+          'Anthropic API key not set in Netlify env → 500 error',
+          'CORS misconfiguration → preflight fails',
+          'Rate limit on free tier → 429 mid-test',
+          'Shared-secret decision drift: enabled in env but not in client → 401 on every call'
+        ],
+        promptSkeleton:
+'Stage 0: view netlify/functions/claude-proxy.js, js/integrations.js. Confirm proxy path, env var names.\n' +
+'[FILL AT SESSION TIME: confirm Netlify env vars, decide shared-secret state]\n\n' +
+'Stage 1: add testProxy function in integrations.js as a clearly-marked temporary helper.\n\n' +
+'Verification per Evidence block.\n\n' +
+'Cleanup commitment: testProxy removed in 2.4 when real wiring lands.'
+      },
+
+      {
+        id: 's2-3',
+        num: '2.3',
+        name: 'Yumi UI scaffold',
+        depConfirm: '2.1 must be Shipped (brain function exists, even if not yet wired). 2.2 should be Proven (proxy works) so UI can call it next stage.',
+        purpose: 'Render the chat panel UI with no brain wiring. Empty state, message list, input field, send button, voice input button. Visual proof that Yumi has a place to live.',
+        scope: [
+          'Implement js/yumi-ui.js with renderYumiPanel(), message list rendering, input field, send button, voice input button (visual only — no wiring to voice-input.js yet)',
+          'Use Cormorant Garamond display, DM Sans body, DM Mono code/meta',
+          'Use CSS variables only',
+          'Persistent toggle button or keyboard shortcut to open/close panel',
+          'Empty state copy that matches voice document register',
+          'Loading state, error state stubbed visually'
+        ],
+        nonGoals: [
+          'No actual messages sent',
+          'No brain wiring',
+          'No voice input wiring',
+          'No conversation memory'
+        ],
+        subsystems: ['yumi-ui'],
+        files: [
+          'js/yumi-ui.js (replace stub)',
+          'assets/theme.css (add Yumi panel styles using existing variables)',
+          'index.html (no changes expected)'
+        ],
+        acceptance: [
+          'Yumi panel opens via toggle/shortcut on live URL',
+          'Empty state renders with voice-document-aligned copy',
+          'Typing in input field works; send button visible but inert (or logs to console)',
+          'Voice input button visible but inert',
+          'All styling via CSS variables — zero hardcoded hex values in yumi-ui.js or new CSS rules',
+          'File parses cleanly'
+        ],
+        evidence: [
+          "Static: grep -c 'function renderYumiPanel' js/yumi-ui.js returns >=1",
+          "Static: grep -E '#[0-9a-fA-F]{3,6}' js/yumi-ui.js returns 0 matches",
+          'Static: node --check js/yumi-ui.js exits 0',
+          "Static: grep -E '(const |let |=>|class | backtick)' js/yumi-ui.js returns 0 matches",
+          'Live URL behavioral: panel opens, empty state renders, fonts match (Cormorant Garamond on display elements, DM Sans on body)'
+        ],
+        rollback: 'None. New code introduced; no temporary scaffolding.',
+        risks: [
+          "CSS variable drift: introducing --yumi-* variables that don't exist elsewhere",
+          'Font loading failure: panel renders but in fallback fonts',
+          'Z-index conflicts with future modals',
+          'Accessibility: voice input button needs accessible label even when inert'
+        ],
+        promptSkeleton:
+'Stage 0: view js/yumi-ui.js, assets/theme.css, index.html. Confirm CSS variables in use.\n' +
+'[FILL AT SESSION TIME: list current --ink, --gold, etc. variables; decide whether new vars needed]\n\n' +
+'Stage 1: replace stub.\n\n' +
+'Verification per Evidence block.\n\n' +
+'Visual verification: screenshot or live URL behavioral check before declaring shipped.'
+      },
+
+      {
+        id: 's2-4',
+        num: '2.4',
+        name: 'Brain + UI wired',
+        depConfirm: '2.1, 2.2, and 2.3 must all be Shipped and Proven. testProxy from 2.2 still present; gets removed in this sub-stage.',
+        purpose: "First real conversation. User types a message, presses send, Yumi's brain assembles system prompt, calls proxy, response renders in panel. Text-only end-to-end.",
+        scope: [
+          'Wire yumi-ui.js send button to yumi-brain.js',
+          'Implement sendMessage(text) in yumi-brain that calls proxy, parses response, returns text',
+          'Render Yumi response in message list with correct typography',
+          'Loading state visible during request',
+          'Error state visible on failure',
+          'Remove the temporary testProxy from 2.2'
+        ],
+        nonGoals: [
+          'No streaming responses (single-shot for now)',
+          'No conversation memory across turns yet (each message is fresh)',
+          'No context injection beyond placeholders',
+          'No voice input wiring'
+        ],
+        subsystems: ['yumi-brain', 'yumi-ui', 'claude-proxy'],
+        files: [
+          'js/yumi-brain.js (add sendMessage)',
+          'js/yumi-ui.js (wire send button, render responses)',
+          'js/integrations.js (remove testProxy)'
+        ],
+        acceptance: [
+          'Live URL: type "hi" in panel, press send, receive Yumi response within 10s',
+          'Yumi response matches voice document register (warm, no "Great question!", no exclamation points unless warranted)',
+          'Loading state appears during request',
+          'Error state appears if proxy fails',
+          'testProxy removed from integrations.js'
+        ],
+        evidence: [
+          "Static: grep -c 'function sendMessage' js/yumi-brain.js returns >=1",
+          "Static: grep -c 'testProxy' js/integrations.js returns 0 (cleaned up)",
+          'Static: node --check on all three modified files exits 0',
+          'Live URL behavioral: send exact prompt "hi" → receive non-empty response → response does not contain substring "Great question" or "Absolutely" (case-insensitive)',
+          'Live URL behavioral (voice document compliance): send exact prompt "summarize Beloved by Toni Morrison" → response contains a redirect substring matching one of: "rather read it with you", "where are you in it", "I don\'t summarize"'
+        ],
+        rollback: 'testProxy from 2.2 removed in this sub-stage. Confirm grep returns 0.',
+        risks: [
+          'Voice document drift: Yumi summarizes when asked, violating principle #1',
+          'Network errors not surfaced to user',
+          'Race conditions if user sends second message before first returns',
+          'Response parsing breaks on tool_use or unexpected content blocks'
+        ],
+        promptSkeleton:
+'Stage 0: view all three files. Confirm 2.1, 2.2, 2.3 are Shipped and Proven before starting.\n\n' +
+'Stage 1: atomic patch wiring brain to UI to proxy.\n\n' +
+'Stage 2: behavioral test against voice document — send the redirect-trigger prompts ("summarize", "rate this book", "what did other people think") and verify Yumi redirects per voice document.\n\n' +
+'Verification per Evidence block.\n\n' +
+'This is the first sub-stage where voice document compliance becomes testable. Failures here are voice document failures, not just code failures.'
+      },
+
+      {
+        id: 's2-5',
+        num: '2.5',
+        name: 'Voice input wired',
+        depConfirm: '2.4 must be Shipped and Proven (text conversation works end-to-end). voice-input.js currently a stub.',
+        purpose: 'Mic button in the chat panel actually captures speech, transcribes via Web Speech API, and feeds transcript into the input field.',
+        scope: [
+          'Wire voice-input.js to the mic button in yumi-ui.js',
+          'Hold-to-speak or tap-to-toggle (decide during pre-flight)',
+          "Transcript appears in input field as it's captured",
+          'User can edit before sending',
+          'Visual feedback during recording (button state change)',
+          'Permission handling: first-time mic prompt, denial state'
+        ],
+        nonGoals: [
+          'No TTS (Stage 2.5)',
+          'No always-listening / wake-word (out of scope entirely for now)',
+          'No transcription accuracy improvements beyond Web Speech API defaults'
+        ],
+        subsystems: ['voice-input', 'yumi-ui'],
+        files: [
+          'js/voice-input.js (replace stub, lift from HQ pattern)',
+          'js/yumi-ui.js (wire mic button to voice-input)'
+        ],
+        acceptance: [
+          'Live URL: tap mic, speak "hello Yumi", transcript appears in input field',
+          'Mic permission denial shows clear error state',
+          'Voice input works on Chrome desktop and mobile Safari (the two Phase 1 targets)'
+        ],
+        evidence: [
+          "Static: grep -c 'SpeechRecognition' js/voice-input.js returns >=1",
+          "Static: grep -c 'function attachMicButton' js/voice-input.js returns >=1",
+          'Static: node --check js/voice-input.js exits 0',
+          'Live URL behavioral (Chrome): mic button → speak exact phrase "test one two three" → input field contains substring matching "test" (transcription accuracy varies; partial match acceptable)',
+          'Live URL behavioral (mobile Safari): same test',
+          'Permission denial path: revoke mic perms in browser settings → mic button click shows error state (specific error string TBD at session time, must be visible to user)'
+        ],
+        rollback: 'None. New code introduced; no temporary scaffolding.',
+        risks: [
+          'Web Speech API browser support gaps (Safari historically flaky)',
+          "HTTPS requirement: mic doesn't work on file:// or http:// — Netlify URL is fine but worth noting",
+          'Permission state not detected correctly on first denial',
+          'Transcript appended vs replaced confusion'
+        ],
+        promptSkeleton:
+'Stage 0: view js/voice-input.js, js/yumi-ui.js. Reference HQ voice-input.js as known-working pattern.\n' +
+"[FILL AT SESSION TIME: confirm HQ voice-input current line count, identify any HQ-specific dependencies that don't apply to Praxis]\n\n" +
+'Stage 1: lift from HQ with Praxis-specific adjustments.\n\n' +
+'Behavioral verification on both target browsers required before Shipped.'
+      },
+
+      {
+        id: 's2-6',
+        num: '2.6',
+        name: 'Context injection',
+        depConfirm: '2.4 must be Shipped and Proven (real conversation works). 2.5 may or may not be done — context injection is independent of voice input.',
+        purpose: "Yumi knows what you're reading. The system prompt now includes current book, recent notebook entries, and current arc (if any), pulled from state at message time.",
+        scope: [
+          'Implement buildContext() in yumi-brain.js that reads state.userBooks, state.notebookEntries, state.arcs for the current user',
+          'Inject context into system prompt assembly',
+          'Decide depth: most recent N entries, last book opened, currently active arc (default 3 most recent unless evidence suggests otherwise)',
+          'Handle empty state gracefully (new user, no books, no entries)'
+        ],
+        nonGoals: [
+          'No conversation memory across sessions yet (2.7)',
+          "No arc navigation UI (Stage 3) — Yumi reads arc state but the user can't browse arcs visually yet",
+          'No notebook UI (Stage 3) — Yumi reads entry state but the user writes them through some other path TBD'
+        ],
+        subsystems: ['yumi-brain', 'state-schema', 'notebook', 'arcs', 'book-artifact'],
+        files: ['js/yumi-brain.js (add buildContext)'],
+        acceptance: [
+          'System prompt assembled by buildYumiSystem() includes a context block when state has data',
+          'Context block format is stable and parseable (Yumi can refer to "the book you opened last" coherently)',
+          'Empty state: new user gets a context block that says "no books yet" or equivalent — not an empty section that confuses the model'
+        ],
+        evidence: [
+          "Static: grep -c 'function buildContext' js/yumi-brain.js returns >=1",
+          'Console: seed state.userBooks with one book → call buildYumiSystem() → output contains book title',
+          'Console: empty state → call buildYumiSystem() → output contains substring "no books" or equivalent sentinel',
+          'Live URL behavioral: with seeded book in state, send exact prompt "What am I reading right now?" → response contains substring matching seeded book title (case-insensitive)',
+          'Live URL behavioral (voice document compliance): with seeded book, send exact prompt "summarize this book" → response still refuses summary per redirect rules'
+        ],
+        rollback: 'This is the second sub-stage to bump system prompt size. Token usage should be monitored. If tokens balloon past sensible budget, revert depth setting (e.g., from 5 entries to 3 to 1) before considering full revert.',
+        risks: [
+          'Context bloat: too many entries inflates system prompt and burns tokens',
+          'Stale context: state mutates between buildContext call and actual API call',
+          "Privacy leak: notebook entries marked private (when that toggle exists) shouldn't reach Yumi without user awareness — but the constitution says default-visible to Yumi, so this is a Stage 3 concern, not 2.6",
+          'Empty state edge case: new user with zero data confuses the model into hallucinating books'
+        ],
+        promptSkeleton:
+'Stage 0: view js/yumi-brain.js, js/state.js. Confirm state shape.\n' +
+'[FILL AT SESSION TIME: confirm exact field names — userBooks vs books, notebookEntries shape]\n\n' +
+'Stage 1: add buildContext, integrate into buildYumiSystem.\n\n' +
+'Stage 2: behavioral test with seeded state.\n\n' +
+'Open question for the session: how many recent entries to include? Default to 3 most recent unless evidence suggests otherwise.'
+      },
+
+      {
+        id: 's2-7',
+        num: '2.7',
+        name: 'Conversation memory',
+        depConfirm: '2.6 must be Shipped and Proven (context injection works). This sub-stage adds memory on top.',
+        purpose: 'Yumi remembers within a session and across sessions. Per-session: full conversation history sent with each turn. Per-user: short summary of past conversations persisted to state and loaded on signin.',
+        scope: [
+          'Per-session: maintain messages array in yumi-brain.js, append user/assistant turns, send full array to proxy on each call',
+          'Per-user persistence: after every N turns or session end, generate short summary, persist to state.users[uid].yumiMemory',
+          'Load yumiMemory at session start, inject into system prompt',
+          'Cap session history at reasonable length (e.g. 20 turns) — older turns roll into memory'
+        ],
+        nonGoals: [
+          'No vector store / embeddings',
+          'No retrieval-augmented memory',
+          'No cross-user memory',
+          'No editing of memory by user (transparency view comes later)'
+        ],
+        subsystems: ['yumi-brain', 'state-schema'],
+        files: [
+          'js/yumi-brain.js (sessionMessages array, summarization call, memory load)',
+          'js/state.js (add users[uid].yumiMemory field, schema bump to 1.2.0, migration step)'
+        ],
+        acceptance: [
+          'Within a session: Yumi correctly references something said three turns ago',
+          'Across sessions: sign out, sign in, ask about something from previous session — Yumi has a coherent (if compressed) memory of it',
+          'Schema migration: existing users (1.1.0) load cleanly with empty yumiMemory after migration'
+        ],
+        evidence: [
+          "Static: grep -c 'yumiMemory' js/state.js returns >=1",
+          "Static: grep -c 'SCHEMA_VERSION' js/state.js shows 1.2.0",
+          "Static: grep -c 'function migrate' js/state.js returns >=1 with 1.1.0 to 1.2.0 step",
+          'Console: load 1.1.0 stored state → migrate → schema version becomes 1.2.0, yumiMemory field exists on users',
+          'Live URL behavioral (in-session memory): turn 1 send exact prompt "my favorite color is sage", turn 4 send exact prompt "what did I say my favorite color was" → response contains substring "sage"',
+          'Live URL behavioral (cross-session memory): turn 1 send exact prompt "I\'m reading Sula", sign out, sign in, send "what am I reading" → response contains substring "Sula"'
+        ],
+        rollback: 'Schema migration introduces durable change to user data. Migration must be additive only (add field, do not remove or rename). Do not deploy this sub-stage until migration is tested against a 1.1.0 fixture in console.',
+        risks: [
+          'Token bloat: 20-turn history plus voice document plus context blows past sensible system prompt size',
+          'Summary quality: cheap summarization loses the things that mattered',
+          'Migration bug: 1.1.0 to 1.2.0 fails silently, users lose state',
+          'Privacy: yumiMemory contains things from notebook entries that might later be marked private'
+        ],
+        promptSkeleton:
+'Stage 0: view js/yumi-brain.js, js/state.js. Confirm 1.1.0 is current schema. Read existing migrate() to mirror its pattern.\n\n' +
+'Stage 1: schema bump and migration first, in its own atomic patch. Verify migration on staged 1.1.0 fixture before adding memory logic.\n\n' +
+'Stage 2: memory logic in yumi-brain.js.\n\n' +
+'Verification per Evidence block.\n\n' +
+'This is the first sub-stage that bumps schema since Stage 1; treat migration as load-bearing.'
+      },
+
+      {
+        id: 's2-8',
+        num: '2.8',
+        name: 'Voice document compliance audit',
+        depConfirm: 'All of 2.1 through 2.7 must be Shipped. 2.4, 2.6, 2.7 should be Proven (these are the sub-stages where voice document behavior is testable).',
+        purpose: 'Stage 2 ships only when Yumi behaves like the voice document. This sub-stage is the dedicated compliance check.',
+        scope: [
+          'Run a fixed test battery against live Yumi covering every redirect and every "she does not" rule from the voice document',
+          'For each test: input prompt, expected behavior, observed behavior, pass/fail',
+          'File the results in /docs/yumi-compliance-2.8.md',
+          'Any failures: open as separate sub-stage tasks (likely yumi-brain.js prompt tweaks)'
+        ],
+        nonGoals: [
+          'This is not eval infrastructure (Stage 2 design note specifies eval is its own deliverable later or Stage 3 work)',
+          'This is a one-time gate, not a recurring CI check',
+          'No code changes in this sub-stage unless a failure forces a follow-up patch'
+        ],
+        subsystems: ['yumi-brain'],
+        files: [
+          '/docs/yumi-compliance-2.8.md (new)',
+          'Potentially js/yumi-brain.js if a failure forces a prompt revision (but that gets its own sub-stage entry as 2.8.1)'
+        ],
+        acceptance: [
+          'Compliance document exists with all test cases run',
+          'All redirect tests pass',
+          'All "she does not" tests pass',
+          'Any disposition flags (PASS-but-revision-needed) recorded with explicit follow-up sub-stage',
+          'Any FAILs have linked follow-up sub-stages'
+        ],
+        evidence: [
+          '/docs/yumi-compliance-2.8.md exists',
+          'Document contains test cases for each redirect from voice document (summarize, rate, what others thought, predict liking, write artifact for me) — each with exact prompt and expected redirect substring',
+          'Document contains test cases for each "she does not" rule (no "Great question", no exclamation points unless warranted, no emoji, no "absolutely") — each with exact prompt and expected absence',
+          'All listed cases marked PASS or FAIL',
+          'Disposition flags noted where a PASS reveals a separate tension requiring voice document revision (resolved in 2.9)',
+          'Actual outcome: 16/16 tests PASS against shipped voice doc; three disposition flags surfaced (Tests #13, #14, #15 + length register drift across Category 2 responses), opened as Stage 2.9'
+        ],
+        rollback: 'None. Audit is documentation, not code.',
+        risks: [
+          "Voice document drift: Yumi has subtly slid into generic-assistant register and the audit catches it. Good — that's what the audit exists for.",
+          'Single-pass audit gives false confidence: test prompts may not surface drift that emerges in longer conversations. Note this limitation in the compliance doc.'
+        ],
+        promptSkeleton:
+'This sub-stage is run by Preston in conversation with Claude chat, not Claude Code.\n\n' +
+'No agent prompt needed; the work is a structured manual test pass against live Yumi with Claude chat helping interpret edge cases.'
+      },
+
+      {
+        id: 's2-9',
+        num: '2.9',
+        name: 'Voice document v1.1.0 revision + re-audit',
+        depConfirm: '2.8 must be Shipped, with the compliance document filed and disposition flags identified. The flags from 2.8 (Tests #13, #14, #15 + length register drift) are the inputs to this sub-stage.',
+        purpose: 'Resolve the three disposition flags surfaced by 2.8 through a surgical revision of yumi-voice.md, then re-audit the affected tests. Stage 2 closes only when the re-audit returns required PASS.',
+        scope: [
+          'Draft voice document v1.1.0 integrating three revisions: (A) critical-pedagogy framework engagement carve-out, (B) brevity as character (under 60w typical), (C) no meta-narrating the reader',
+          'Add a Memory Posture connector sentence linking Memory Posture to Revision C',
+          'Preserve all brand-position constraints verbatim: no book summary, no rating, no Notebook sharing, canonical redirect, Memory Posture distinction',
+          'Update /docs/yumi-voice-changelog.md with v1.1.0 entry following the existing format',
+          'Bump CACHE_VERSION in sw.js to praxis-v2.9-a so the new voice doc rolls over live',
+          'Re-run audit tests #13, #14, #15 (required) and a new test #17 (length discipline under elaboration pressure) — optional spot-checks: #1, #16',
+          'localStorage.clear() between every test to avoid recentTurns pattern-recognition contamination (lesson from 2.8)',
+          'File results in /docs/yumi-compliance-2.9.md mirroring the 2.8 structure'
+        ],
+        nonGoals: [
+          'No new tests beyond the required re-runs and #17 (the audit framework itself is not changing)',
+          'No yumi-brain.js logic changes (voice doc revision is the only behavioral lever)',
+          'No new constraints beyond the three locked revisions (scope is bounded by the 2.8 disposition flags)',
+          'Not a full re-audit of all 16 tests (only the affected ones plus #17 plus optional spot-checks)'
+        ],
+        subsystems: ['yumi-voice', 'sw'],
+        files: [
+          '/docs/yumi-voice.md (v1.0.1 → v1.1.0, four additions)',
+          '/docs/yumi-voice-changelog.md (prepend v1.1.0 entry)',
+          'sw.js (CACHE_VERSION praxis-v2.7b-ii-f → praxis-v2.9-a)',
+          '/docs/yumi-compliance-2.9.md (new, after re-audit)'
+        ],
+        acceptance: [
+          'Voice document v1.1.0 shipped, all four locked revisions present',
+          'Brand-position constraints verified preserved verbatim (no summary, no rating, structural Notebook privacy, canonical redirect, Memory Posture distinction)',
+          'Changelog v1.1.0 entry surfaced for review per the explicit rule in /docs/yumi-voice-changelog.md',
+          'Cache version bumped; live caches.keys() returns the new value after rollover',
+          'Re-audit tests #13, #14, #15, #17 return PASS',
+          'Compliance document /docs/yumi-compliance-2.9.md exists with re-audit results'
+        ],
+        evidence: [
+          'Static: grep -c "v1.1.0" docs/yumi-voice.md returns 1 (version stamp)',
+          'Static: grep -c "She does not narrate the reader to themselves" docs/yumi-voice.md returns 1 (Revision C)',
+          'Static: grep -c "She is brief. Most of what she says is under sixty words" docs/yumi-voice.md returns 1 (Revision B)',
+          'Static: grep -c "what critical pedagogy is" docs/yumi-voice.md returns 1 (Revision A carve-out language)',
+          'Static: grep -c "remembers the conversation in order to be present" docs/yumi-voice.md returns 1 (Memory Posture connector)',
+          'Static: wc -c docs/yumi-voice.md returns 10978 (byte-parity gate)',
+          'Static: grep -c "praxis-v2.9-a" sw.js returns 1; grep -c "praxis-v2.7b-ii-f" sw.js returns 0',
+          'Live URL: caches.keys() returns array containing "praxis-v2.9-a" after hard-refresh',
+          'Live URL console: "yumi-brain: voice doc loaded (10916 chars)" appears on first conversation (10916 chars = 10978 bytes with UTF-8 multi-byte characters accounted for)',
+          'Re-audit document exists and records tests #13, #14, #15, #17 as PASS'
+        ],
+        rollback: 'If re-audit fails on any required test: revert to voice doc v1.0.1 (git checkout the prior version) and re-bump cache version to a new sentinel (praxis-v2.9-b) to force rollover. Diagnose failure, draft v1.1.1, re-ship.',
+        risks: [
+          'Voice doc edits introduce new drift not caught in audit — the carve-out for critical pedagogy could read as license to lecture, defeating its own constraint. Mitigation: framing the carve-out as conversational engagement rather than expert exposition.',
+          'Cache rollover fails on some clients — service worker stickiness can leave users on old voice doc. Mitigation: explicit hard-refresh instruction, byte-count gate in the audit.',
+          'recentTurns contamination repeats — if localStorage.clear() between tests is skipped, audit results are unreliable. Mitigation: explicit protocol in the audit document.',
+          'Test #17 (length discipline) defines its threshold weakly — under 60 words is a soft cap that an audit can debate. Mitigation: state the threshold and the warranted-exception conditions in the audit document itself.'
+        ],
+        promptSkeleton:
+'This sub-stage is hybrid: drafting in Claude chat, shipping via Claude Code, re-audit in Claude chat.\n\n' +
+'Drafting phase (Claude chat): work through the three revisions in order. Revision A first (critical pedagogy carve-out, most theoretically loaded), then Revision B (length), then Revision C (no meta-narrating). For each, draft surgical addition to existing voice doc paragraphs rather than new sections. Add Memory Posture connector last.\n\n' +
+'Shipping phase (Claude Code): four-stage prompt — Stage 0 pre-flight, Stage 1 replace docs/yumi-voice.md, Stage 2 prepend changelog entry, Stage 3 bump sw.js CACHE_VERSION, Stage 4 commit and push. Each stage has hard-numeric verification (byte count, awk-canonical word count, grep counts on load-bearing phrases). Pre-computed expected values throughout for independent verification.\n\n' +
+'Re-audit phase (Claude chat or separate chat): localStorage.clear() between every test. Required: tests #13, #14, #15, #17. Optional: spot-checks #1, #16. File results in /docs/yumi-compliance-2.9.md mirroring 2.8 structure.\n\n' +
+'Drift check on Claude before drafting each revision: not weakening any of the four absolute refusals, not weakening the canonical redirect, not weakening Memory Posture distinction.'
+      }
+    ]
+  },
+
+  // ----- STAGE 2.5 (skeleton) -----
+  {
+    id: 's25',
+    num: 'Stage 2.5',
+    name: 'TTS — Yumi speaks back',
+    purpose: 'Yumi speaks back. Conversational text from Stage 2 stays; spoken audio rendering is added on top.',
+    stageStatus: 'not-started',
+    skeleton: true,
+    skeletonReason: 'Detailed sub-stages depend on which TTS service we pick (ElevenLabs, OpenAI, Web Speech API), which depends on Phase 1 budget realities not yet known.',
+    summary: 'Skeleton stage. Adds literal voice to Yumi after Stage 2 ships. Sub-stage detail intentionally deferred until prior stages surface what TTS actually needs to hold.',
+    nonGoals: [],
+    dependencies: 'Stage 2 must be Shipped and Proven, including 2.8 voice document compliance audit.',
+    tentativeSubstages: [
+      { num: '2.5.1', name: 'TTS service selection and integration (API key, basic call, return audio blob)' },
+      { num: '2.5.2', name: 'Audio playback queue (play, interrupt on new user input, mute toggle)' },
+      { num: '2.5.3', name: 'Voice character selection (test against sample Yumi responses, pick by ear)' },
+      { num: '2.5.4', name: 'Voice document review pass (listen to yumi-voice.md spoken; revise text where pacing breaks)' }
+    ],
+    openQuestions: [
+      'Which TTS service?',
+      'Is voice always-on by default or opt-in?',
+      "Does Yumi's voice ever change across registers (book / arc / weekly prompt)?"
+    ],
+    substages: []
+  },
+
+  // ----- STAGE 3 -----
+  {
+    id: 's3',
+    num: 'Stage 3',
+    name: 'Notebook + Arcs UI',
+    purpose: "Make the structurally-private writing space and the intersectional reading-thread structure visible and usable. This is where Praxis's constitutional principles become user-facing instead of schema-only. After Stage 3 ships, a user can open the Notebook as a top-level surface, see all entries as one graph, write Marginalia inside book detail view, write Journal from the Notebook, toggle Journal entries to private, see what Yumi can currently see, mark a book finished and create its Book Artifact, create Knowledge Arcs explicitly, and view arcs chronologically.",
+    stageStatus: 'not-started',
+    summary: 'Notebook and Knowledge Arcs become first-class user surfaces. Constitutional principles #2 (Notebook structurally private), #3 (one Book Artifact per user per book), #5 (no asymmetric knowledge), and #6 (Knowledge Arcs intersectional by design) land in user-facing form here. Scope locked through nine cluster decisions documented in /docs/praxis-3-scope.md, May 12 2026.',
+    nonGoals: [
+      'No Yumi-suggested arc creation (deferred to Stage 4+)',
+      'No arc-register Yumi conversation behavior (deferred to Stage 4 or 3.10)',
+      'No passage-level highlight UI in Marginalia (Stage 3 ships notes-only; highlights require a reading surface that does not yet exist)',
+      'No Notebook sharing surface, partial-export, or social layer (Notebook is structurally private)',
+      'No auto-generated book summaries, arc summaries, or Artifact templates (Yumi does not summarize books)',
+      'No reorderable arc curation (chronological-by-add-date only; curated narrative views deferred)',
+      'No graph editing affordances beyond entry creation (no drag-rewire of edges)'
+    ],
+    dependencies: 'Stage 2 must be Shipped and Proven, including the 2.8 audit and the 2.9 re-audit. Voice document v1.1.0 must be live before any Stage 3 substage that touches Yumi behavior (specifically 3.4 privacy filter).',
+    substages: [
+
+      {
+        id: 's3-1',
+        num: '3.1',
+        name: 'Notebook surface scaffold + entry schema cleanup',
+        depConfirm: 'Stage 2 fully Shipped and Proven (including 2.9 re-audit). views.js currently a stub. state.js at SCHEMA_VERSION 1.5.0.',
+        purpose: 'Stand up the top-level Notebook route as an empty surface. Clean up the entry schema so notebookEntries supports zero-or-more bookIds and zero-or-more arcIds per entry, matching the Cluster 1 decision (Notebook is one top-level graph; book and arc views are filtered slices).',
+        scope: [
+          'Replace views.js stub with a real renderer that includes a notebook route',
+          'Notebook route renders an empty state with instructional copy in the app literary register (per Cluster 8 decision — not Yumi-voiced)',
+          'Confirm notebookEntries shape supports bookIds (array) and arcIds (array) per entry; add if missing',
+          'Drop the notebookId field from notebookEntries (one Notebook per user under Cluster 1; the field is no longer meaningful)',
+          'Schema bump 1.5.0 → 1.6.0 with a migration that removes notebookId from any existing entries (likely zero, given no entries have been created yet)',
+          'Add navigation affordance from app shell to /notebook route'
+        ],
+        nonGoals: [
+          'No entry creation UI yet (3.2 for Journal, 3.3 for Marginalia)',
+          'No graph rendering (3.5)',
+          'No privacy toggle UI (3.4)',
+          'No transparency view (3.6)'
+        ],
+        subsystems: ['views', 'state', 'app'],
+        files: [
+          'js/views.js (replace stub with notebook route renderer)',
+          'js/state.js (drop notebookId from entry shape, bump SCHEMA_VERSION to 1.6.0, add migration)',
+          'js/app.js (wire navigation to notebook route)'
+        ],
+        acceptance: [
+          'Live URL: navigate to /notebook → empty state visible with instructional copy',
+          'Empty state copy is in the app literary register, not Yumi voice (no "I" pronouns, no Yumi-style sentences)',
+          'state.SCHEMA_VERSION === "1.6.0" after load',
+          'Migration runs cleanly on a fixture state at 1.5.0 (no notebookId references remain)',
+          'No const/let/arrow/class/backtick introduced'
+        ],
+        evidence: [
+          'Static: grep -c "SCHEMA_VERSION" js/state.js returns >=1 with value "1.6.0"',
+          'Static: grep -c "notebookId" js/state.js returns 0 (field removed)',
+          'Static: grep -c "function render" js/views.js returns >=1',
+          'Static: grep -E "(const |let |=>|class )" js/views.js js/state.js js/app.js returns 0 matches',
+          'Live URL: load app, navigate to /notebook, confirm empty state renders',
+          'Console: ls("praxis_state").SCHEMA_VERSION returns "1.6.0"'
+        ],
+        rollback: 'Schema bump is forward-only; rollback requires manual state surgery. Verify migration on a fixture state at 1.5.0 before applying to live.',
+        risks: [
+          'Migration drops notebookId from entries that do not exist (vacuous case) — but if any test entries do exist on Preston development data, they get the field stripped. Acceptable since the field is no longer meaningful.',
+          'views.js is currently a stub; replacing it could cascade into other places that import from it. Pre-flight grep for "views" usage required.',
+          'Navigation routing pattern not yet established in Praxis (state.currentBookId / currentArcId are scalar pointers, not route segments). Decide whether to use hash routing or History API at session time.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js, js/app.js. Confirm views.js is still a stub. Confirm state.SCHEMA_VERSION is 1.5.0. Pre-flight grep for any current references to notebookId across all js files (likely zero).\n\n' +
+'Stage 1: schema bump and migration in state.js as its own atomic patch. Verify migration on a fixture state at 1.5.0 before adding renderer logic.\n\n' +
+'Stage 2: replace views.js stub with notebook route renderer. Empty state copy is instructional and in app literary register, not Yumi voice.\n\n' +
+'Stage 3: wire navigation in app.js.\n\n' +
+'Verification per Evidence block.\n\n' +
+'This is the first sub-stage that introduces a real user-facing surface in Praxis. Empty state copy matters; do not draft it lazily.'
+      },
+
+      {
+        id: 's3-2',
+        num: '3.2',
+        name: 'Journal entry creation',
+        depConfirm: '3.1 must be Shipped (Notebook surface exists). state.SCHEMA_VERSION is 1.6.0.',
+        purpose: 'From the Notebook surface, the user can create a Journal entry. Journal is the free-form reflective register; entries are created from the Notebook itself (not from a book context). Per Cluster 2, this is the Notebook-originated half of the split creation path.',
+        scope: [
+          '"+ New entry" affordance in the Notebook header',
+          'Inline expansion editor (not modal, not full-screen route) — per scope doc lean',
+          'Markdown editor for entry body (no rich text in Stage 3)',
+          'Save persists entry to state.notebookEntries with: id, userId, register: "journal", body, createdAt, updatedAt, isPrivate (defaulting to register default per Cluster 3), bookIds: [], arcIds: []',
+          'Entry appears in Notebook view immediately after save',
+          'Cancel discards the draft'
+        ],
+        nonGoals: [
+          'No Marginalia creation here (3.3)',
+          'No graph view (3.5)',
+          'No privacy toggle UI yet (3.4) — the field exists and gets the register default; visible UI lands in 3.4',
+          'No cross-entry linking (3.5)',
+          'No rich-text editor (markdown only)'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'js/views.js (add Journal creation affordance and editor)',
+          'js/state.js (add the register and isPrivate fields to entry shape if not already present)'
+        ],
+        acceptance: [
+          'Live URL: from /notebook, click "+ New entry" → editor appears inline',
+          'Type body, click save → entry persists; reload page; entry is still there',
+          'Entry shows up in Notebook view with register marker indicating "journal"',
+          'Cancel discards the draft and removes the editor',
+          'Entry default for isPrivate matches register-level default (set to whatever default Journal register holds — initial value: false, since Journal is "default-visible-but-expected-to-be-toggled-often")'
+        ],
+        evidence: [
+          'Static: grep -c "register.*journal" js/views.js returns >=1',
+          'Static: grep -c "notebookEntries\\[" js/views.js returns >=1 (writes to the map)',
+          'Static: node --check on modified files exits 0',
+          'Live URL behavioral: create entry → entry persists across reload → state.notebookEntries[<id>] has register === "journal" and isPrivate matches register default',
+          'Live URL behavioral: cancel discards (no entry persisted to state.notebookEntries)'
+        ],
+        rollback: 'None. New code; no temporary scaffolding.',
+        risks: [
+          'Markdown editor library choice could become a rabbit hole. Default: minimal textarea with monospace font; do not pull in a full markdown editor library for Stage 3.',
+          'Save-on-blur vs save-on-button — pick save-on-button to make the creation moment intentional.',
+          'Empty entries (no body) should probably not save; add a guard.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js. Confirm 3.1 is Shipped and Proven (Notebook surface renders). Confirm state.notebookEntries shape supports register and isPrivate fields, or note they need to be added.\n\n' +
+'Stage 1: extend entry shape in state.js if needed (register and isPrivate fields).\n\n' +
+'Stage 2: add Journal creation affordance + inline editor in views.js.\n\n' +
+'Verification per Evidence block. Behavioral test: create, reload, confirm persistence.'
+      },
+
+      {
+        id: 's3-3',
+        num: '3.3',
+        name: 'Marginalia entry creation from book detail view',
+        depConfirm: '3.1 must be Shipped. 3.2 should be Shipped (entry creation pattern established). Book detail view does not yet exist as a meaningful surface — minimal version lands here.',
+        purpose: 'From inside a book detail view, the user can create a Marginalia entry attached to that book. Marginalia is the contextual-to-the-book register. Per Cluster 2, this is the book-originated half of the split creation path.',
+        scope: [
+          'Minimal book detail route in views.js for /book/<bookId>',
+          'Renders book metadata (title, author, cover) and an "Add Marginalia" affordance',
+          'Marginalia creation flow: inline expansion editor; entry shape mirrors Journal but with register: "marginalia" and bookIds: [<currentBookId>] pre-populated',
+          'Entry appears in both the book detail view and the unified Notebook view',
+          'Entry default for isPrivate matches Marginalia register default (initial value: false, since Marginalia is "default-visible-to-Yumi")'
+        ],
+        nonGoals: [
+          'No passage-level highlight UI ("notes only" in Stage 3 per scope doc)',
+          'No book detail view polish — this is a minimal surface; Stage 4 hardens it',
+          'No book-Marginalia editing in this substage (create only; edit is a Stage 4 polish target)'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'js/views.js (add book detail route, Marginalia creation affordance)',
+          'js/app.js (route /book/<bookId> if not already wired)'
+        ],
+        acceptance: [
+          'Live URL: navigate to /book/<bookId> → book metadata renders',
+          '"Add Marginalia" affordance opens inline editor',
+          'Save persists entry with register === "marginalia" and bookIds === [<bookId>]',
+          'Entry appears in book detail view',
+          'Entry also appears in unified /notebook view'
+        ],
+        evidence: [
+          'Static: grep -c "register.*marginalia" js/views.js returns >=1',
+          'Static: grep -c "bookIds" js/views.js returns >=1 (writes the field)',
+          'Live URL behavioral: create Marginalia from /book/X → entry appears at /notebook and at /book/X',
+          'Live URL behavioral: state.notebookEntries[<id>] has register === "marginalia" and bookIds.includes(<bookId>)'
+        ],
+        rollback: 'None.',
+        risks: [
+          'Scope creep: the temptation to build a polished book detail view here is strong. Hold to minimal. Book detail view hardening is a Stage 4 target.',
+          'Marginalia and Journal share most of the creation code; resist the temptation to extract a shared abstraction prematurely (Builder-Intellectual). Inline duplication is fine for Stage 3; refactor in Stage 4 if the duplication actually hurts.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/app.js. Confirm 3.2 is Shipped (Journal creation pattern in place). Note: book detail view does not yet exist as a real surface; minimal version is in scope here.\n\n' +
+'Stage 1: add book detail route and Marginalia creation flow to views.js, mirroring 3.2 Journal pattern but with marginalia register and pre-populated bookIds.\n\n' +
+'Non-goal anchor: book detail view stays minimal. No polish. Stage 4 hardens it.\n\n' +
+'Verification per Evidence block.'
+      },
+
+      {
+        id: 's3-4',
+        num: '3.4',
+        name: 'Privacy toggle UI + Yumi context filter',
+        depConfirm: '3.2 must be Shipped (Journal entries exist to be toggled). 3.3 should be Shipped (Marginalia entries also benefit from the toggle).',
+        purpose: 'Each entry has a per-entry privacy toggle with a register-level default (Cluster 3). The privacy state is enforced at the Yumi-context layer: private entries are excluded from buildContext output. This is the substage where principle #5 (no asymmetric knowledge) starts being enforced in code rather than schema.',
+        scope: [
+          'Each entry in the Notebook view shows a privacy indicator (icon + visible/private label)',
+          'Click toggles per-entry visibility',
+          'Settings affordance in Notebook header: register-level default toggle for Marginalia and for Journal independently',
+          'New entries inherit the register-level default at creation time',
+          'yumi-brain.js buildContext is updated to filter out entries where isPrivate === true (both from recentEntries and from any future summary)',
+          'Verification step: create a private entry → send Yumi a message → open the transparency view (assumes 3.6 is also implemented, OR add a temporary console.log of buildContext output for this substage) → confirm the private entry is absent'
+        ],
+        nonGoals: [
+          'No granular sharing-with-X-but-not-Y (Notebook is structurally private; there is no sharing layer)',
+          'No history of when a toggle was flipped',
+          'No undo on a privacy flip (you toggle back if you want it the other way)'
+        ],
+        subsystems: ['views', 'state', 'yumi-brain'],
+        files: [
+          'js/views.js (toggle UI + register-default settings affordance)',
+          'js/state.js (register-default fields per user, if not already present; defaults persisted to state.users[uid])',
+          'js/yumi-brain.js (filter recentEntries by isPrivate in buildContext)'
+        ],
+        acceptance: [
+          'Per-entry toggle works in the Notebook view',
+          'Register-default toggle persists per user',
+          'A new entry inherits the register default for its register',
+          'A private entry does not appear in buildContext output (verified via console log or transparency view)',
+          'No regression in 2.6 context injection — public entries still appear correctly'
+        ],
+        evidence: [
+          'Static: grep -c "isPrivate" js/yumi-brain.js returns >=1 (filter logic)',
+          'Static: grep -c "isPrivate" js/views.js returns >=1 (toggle UI)',
+          'Static: grep -c "registerDefaults" js/state.js returns >=1 (per-user defaults stored)',
+          'Live URL behavioral: create a Journal entry → toggle it to private → console.log(buildContext()) shows the private entry is absent from recentEntries',
+          'Live URL behavioral: register-default for Journal flipped to private → new Journal entry created → entry has isPrivate === true by default'
+        ],
+        rollback: 'If the filter is buggy: revert yumi-brain.js to pre-3.4 version. The filter is the load-bearing change; the UI can ship without behavioral impact, but the filter is what makes the principle real.',
+        risks: [
+          'CONSTITUTIONAL: a bug in the filter means private entries reach Yumi. Principle #5 violated. This substage requires a verification step that explicitly tests the filter.',
+          'Race condition: entry created with default → toggled private → buildContext runs in the millisecond between save and toggle. Mitigation: filter reads state.notebookEntries directly each call, not a cached copy.',
+          'Migration of existing entries: any entries created before 3.4 do not have isPrivate set. Backfill on schema migration (default: register-level default at backfill time).'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js, js/yumi-brain.js. Confirm 3.2 and 3.3 Shipped. Confirm buildContext currently emits all entries unfiltered.\n\n' +
+'Stage 1: schema additions in state.js (registerDefaults per user, backfill migration for existing entries without isPrivate).\n\n' +
+'Stage 2: filter logic in yumi-brain.js (the constitutional change).\n\n' +
+'Stage 3: toggle UI and register-default settings in views.js.\n\n' +
+'Behavioral verification REQUIRED before Shipped: create private entry, confirm absent from buildContext output. This is principle #5 enforcement; do not ship without verification.\n\n' +
+'Mark as Proven only after a manual test confirms a private entry does not reach Yumi context.'
+      },
+
+      {
+        id: 's3-5',
+        num: '3.5',
+        name: 'Notebook graph view',
+        depConfirm: '3.2 and 3.3 must be Shipped (entries exist to graph). 3.4 should be Shipped (privacy filter applied to which entries appear in the graph for any future Yumi-side use).',
+        purpose: 'The Notebook surface renders entries as a graph: nodes are entries, edges are inferred from shared bookIds, shared arcIds, and explicit cross-entry links. Per Cluster 1, this is the visible-graph affordance the unified Notebook view promises.',
+        scope: [
+          'Replace the Notebook view list with a graph layout',
+          'Nodes: entries (visual register markers distinguish Marginalia from Journal)',
+          'Edges: inferred from shared bookIds, shared arcIds, and explicit cross-entry links',
+          'Explicit cross-entry link syntax: markdown convention [[entryId]] inside entry body, renderer detects and converts to edge (per scope doc lean)',
+          'Layout: clustered-by-tag (group entries that share book or arc tags); not force-directed for Stage 3',
+          'Pan/zoom basic interactions',
+          'Click a node to open the entry (inline expansion or modal — decide at session time)'
+        ],
+        nonGoals: [
+          'No drag-rewire of edges',
+          'No graph editing affordances',
+          'No Yumi annotations on the graph',
+          'No time-axis (that is arc view)',
+          'No force-directed physics simulation',
+          'BUILDER-INTELLECTUAL FENCE: this substage stops at legible and navigable. Beautiful is a Stage 4 polish target.'
+        ],
+        subsystems: ['views'],
+        files: [
+          'js/views.js (graph view replaces Notebook list view)'
+        ],
+        acceptance: [
+          'Live URL: /notebook shows entries as nodes in a clustered layout',
+          'Entries sharing a book or arc tag are visually grouped',
+          'Clicking a node opens the entry',
+          'Markdown [[entryId]] references inside an entry body render as edges to that entry',
+          'Performance: with 50 entries, graph renders without visible jank'
+        ],
+        evidence: [
+          'Static: grep -c "\\[\\[" js/views.js returns >=1 (link syntax detection)',
+          'Static: node --check exits 0',
+          'Live URL behavioral: seed 5 entries, two sharing a book — they cluster visually',
+          'Live URL behavioral: write [[<id>]] in entry body, save, reload, graph shows an edge from the entry to <id>'
+        ],
+        rollback: 'Keep the pre-3.5 list view code present (commented or behind a flag) for at least one substage in case the graph view regresses badly.',
+        risks: [
+          'BUILDER-INTELLECTUAL SPRAWL: graph rendering is a rabbit hole. Hard fence: clustered-by-tag, no physics, no beauty pass. If session starts trending toward "let me evaluate three graph libraries," stop and revert to the simpler layout.',
+          'Performance with many entries unknown. Cap rendering at 100 entries for Stage 3 and show a "showing 100 of N" indicator; full handling deferred.',
+          'Mobile interaction model not designed (pan/zoom on touch is harder than mouse). Document explicitly: Stage 3 mobile graph view is acceptable-but-not-polished; Stage 4 hardens it.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js. Note the Builder-Intellectual fence in the non-goals — this substage stops at legible and navigable, not beautiful.\n\n' +
+'Stage 1: clustered-by-tag layout. No physics. No library evaluation. Use a simple grouping algorithm: entries with same first bookId go in the same cluster, ties broken by first arcId, ties broken by createdAt.\n\n' +
+'Stage 2: [[entryId]] link detection and edge rendering.\n\n' +
+'Stage 3: click-to-open interaction.\n\n' +
+'BUILDER-INTELLECTUAL DRIFT CHECK BEFORE ANY COMMIT: am I building beauty or legibility? If beauty, stop and revert.\n\n' +
+'Verification per Evidence block.'
+      },
+
+      {
+        id: 's3-6',
+        num: '3.6',
+        name: 'Transparency view',
+        depConfirm: '3.4 must be Shipped (privacy filter applied — the transparency view should show post-filter state, not raw state).',
+        purpose: 'The user can see what Yumi currently sees. Per Cluster 6, this is on-demand: a button in the Notebook header opens a snapshot panel. Diagnostic surface, not primary surface.',
+        scope: [
+          '"What does Yumi see?" affordance in the Notebook header',
+          'Click opens a panel (modal or sidebar) showing the current buildContext output',
+          'Display: currentBook, currentArc, recentEntries (post-privacy-filter), conversation summary (if any), recentTurns',
+          'Distinct styling from the rest of the app (this is a diagnostic surface — looks different to signal that)',
+          'Read-only; no editing affordances in this view',
+          'Closing returns to the Notebook surface'
+        ],
+        nonGoals: [
+          'No edit-what-Yumi-sees flow (visibility is controlled through 3.4)',
+          'No historical transparency (showing what Yumi saw an hour ago)',
+          'No Yumi-side metadata (token counts, model used)',
+          'No diff view (showing what changed since last open)'
+        ],
+        subsystems: ['views', 'yumi-brain'],
+        files: [
+          'js/views.js (transparency panel UI)',
+          'js/yumi-brain.js (expose buildContext output via window.YumiBrain.getCurrentContext or similar — most likely already exposed)'
+        ],
+        acceptance: [
+          'Live URL: from /notebook, click "What does Yumi see?" → panel opens with current context snapshot',
+          'Panel displays currentBook, currentArc, recentEntries, summary, recentTurns',
+          'Private entries do not appear in the panel (filter from 3.4 is applied)',
+          'Panel closes on dismiss',
+          'Diagnostic-surface styling distinguishes it from primary surfaces'
+        ],
+        evidence: [
+          'Static: grep -c "buildContext\\(\\)" js/views.js returns >=1',
+          'Live URL behavioral: open transparency view → contents match buildContext output verbatim',
+          'Live URL behavioral: toggle an entry to private → re-open transparency view → entry is absent',
+          'Visual: panel styling visibly differs from Notebook surface'
+        ],
+        rollback: 'None.',
+        risks: [
+          'User confusion: panel could be read as "Yumi reading my mind" rather than "Yumi receiving filtered context." Mitigation: explanatory copy at the top of the panel framing what is shown.',
+          'Privacy bug regression: if 3.4 has a subtle filter bug, 3.6 makes it visible (which is good — that is the point of the transparency view).',
+          'Mobile layout: full-screen panel on small viewports; sidebar on large.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/yumi-brain.js. Confirm 3.4 is Shipped and Proven (private entries verified absent from buildContext).\n\n' +
+'Stage 1: panel UI in views.js calling buildContext and rendering each section with explanatory copy.\n\n' +
+'Verification per Evidence block. Specifically: regression-test 3.4 by toggling an entry private and confirming absence from this panel.'
+      },
+
+      {
+        id: 's3-7',
+        num: '3.7',
+        name: 'Mark book finished + Book Artifact creation flow',
+        depConfirm: '3.3 must be Shipped (book detail view exists). 3.1 must be Shipped (Notebook surface exists for the Artifact to appear in).',
+        purpose: 'The user can mark a book finished, which triggers the option to create the Book Artifact. Per Cluster 5, the Artifact is post-completion only; no in-progress drafting. Constitutional principle #3: one Book Artifact per user per book, enforced via ensureOneArtifact.',
+        scope: [
+          '"Mark finished" affordance in book detail view',
+          'Marking finished records a finishedAt timestamp on userBooks entry for the book',
+          'On finish, offer to create the Artifact (single CTA, not auto-created)',
+          'Artifact creation flow: title pre-filled with book title, body editable (markdown), save calls ensureOneArtifact',
+          'Once Artifact exists for a book, book detail view shows "Open Artifact" in place of "Mark finished → create Artifact"',
+          'Artifact appears in the unified /notebook view as a distinct entry type (special card style)',
+          'Schema decision: Artifact lives in state.bookArtifacts (existing map), separate from notebookEntries; the Notebook view pulls from both maps and unifies in display'
+        ],
+        nonGoals: [
+          'No Yumi-suggested finishing (Cluster 4 spirit: no Yumi-initiated state transitions)',
+          'No Artifact templates',
+          'No Yumi-assisted Artifact drafting',
+          'No multiple Artifacts per book (constitutional principle #3)',
+          'No "un-finish" affordance in Stage 3 (Stage 4 polish if needed)'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'js/views.js (mark-finished affordance, Artifact creation flow, Artifact display in Notebook view)',
+          'js/state.js (finishedAt field on userBooks entries if not present; backfill if needed)'
+        ],
+        acceptance: [
+          'Live URL: in book detail view, "Mark finished" button is visible if no Artifact exists for that book',
+          'Click mark-finished → finishedAt timestamp recorded → CTA to create Artifact appears',
+          'Create Artifact → editor opens with title pre-filled → save calls ensureOneArtifact',
+          'After Artifact creation, book detail view shows "Open Artifact" instead of mark-finished CTA',
+          'Artifact appears in /notebook as a distinct entry type',
+          'Attempting to create a second Artifact for the same book is prevented by ensureOneArtifact (no UI path triggers it; ensureOneArtifact is the schema-level guard)'
+        ],
+        evidence: [
+          'Static: grep -c "ensureOneArtifact" js/views.js returns >=1',
+          'Static: grep -c "finishedAt" js/views.js returns >=1',
+          'Static: grep -c "bookArtifacts\\[" js/views.js returns >=1 (read path for Notebook view)',
+          'Live URL behavioral: mark book finished → create Artifact → reload → Artifact persists and book detail view shows "Open Artifact"',
+          'Live URL behavioral: ensureOneArtifact called twice for same (uid, bookId) returns the same Artifact both times'
+        ],
+        rollback: 'None.',
+        risks: [
+          'Schema separation between bookArtifacts and notebookEntries means the Notebook view does two reads to assemble its full content. Performance non-issue at Stage 3 scale; flag for Stage 4 if entry count grows.',
+          'Mark-finished UX: should it require confirmation? Default: yes, lightweight ("Mark this book finished?"). Prevents accidental finishes.',
+          'Artifact body editor reuses Journal editor pattern from 3.2 — verify the pattern generalizes; if not, extract a shared editor here (acceptable refactor at this point in Stage 3).'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js. Confirm 3.3 Shipped (book detail view exists). Confirm ensureOneArtifact in state.js is unchanged from current shape.\n\n' +
+'Stage 1: state.js extensions if needed (finishedAt field on userBooks).\n\n' +
+'Stage 2: mark-finished UI in book detail view.\n\n' +
+'Stage 3: Artifact creation flow (reuse Journal editor pattern from 3.2; extract shared editor only if pattern generalizes cleanly).\n\n' +
+'Stage 4: Artifact display in Notebook view (read from bookArtifacts map; render as distinct card style).\n\n' +
+'Verification per Evidence block. Specifically: confirm ensureOneArtifact returns the same object on second call.'
+      },
+
+      {
+        id: 's3-8',
+        num: '3.8',
+        name: 'Knowledge Arc creation',
+        depConfirm: '3.1 must be Shipped (Notebook surface). 3.2 and 3.3 must be Shipped (entries exist to attach to arcs). 3.7 should be Shipped (books are likely arc members too; book detail view stable).',
+        purpose: 'The user can create a Knowledge Arc explicitly and attach books and entries to it. Per Cluster 4, user-initiated only — no Yumi-suggested arc creation. Constitutional principle #6: arcs are intersectional by design (the creation flow does not categorize or taxonomize what an arc can hold).',
+        scope: [
+          '"New Arc" affordance on the Notebook surface (header or sidebar)',
+          'Arc creation flow as a modal (per scope doc lean): title (required), description (optional)',
+          'After creation, the arc has its own entry-point UI: a list of arcs in a sidebar or section of the Notebook surface',
+          'Add books and entries to the arc: button or drag-to-arc affordance (button preferred for Stage 3 simplicity)',
+          'A book or entry can belong to multiple arcs',
+          'Edit arc title, description, members after creation',
+          'Delete arc (with confirmation)'
+        ],
+        nonGoals: [
+          'No Yumi-suggested arc creation (Cluster 4)',
+          'No arc-register Yumi conversation (Cluster 9, deferred)',
+          'No arc sharing surface (Notebook is structurally private)',
+          'No arc visibility toggle (arcs are part of the Notebook; their visibility is the Notebook visibility)',
+          'No nested arcs (arcs do not contain other arcs in Stage 3)'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'js/views.js (arc creation flow, arc list UI, add-to-arc affordances)',
+          'js/state.js (no schema changes expected — state.arcs already exists with the right shape)'
+        ],
+        acceptance: [
+          'Live URL: from /notebook, click "New Arc" → modal opens → enter title → arc created and persisted',
+          'Arc appears in arcs section of Notebook surface',
+          'From a book or entry, add to arc → entry shows up in arc members',
+          'Edit arc title, description, members → changes persist',
+          'Delete arc → confirmation → arc removed; member books/entries unaffected',
+          'A book can be in two arcs simultaneously without error'
+        ],
+        evidence: [
+          'Static: grep -c "state.arcs\\[" js/views.js returns >=1 (writes to map)',
+          'Static: grep -c "bookIds.push\\|entryIds.push" js/views.js returns >=1 (attach logic)',
+          'Live URL behavioral: create arc, attach two books and three entries, reload, all members persist',
+          'Live URL behavioral: same book attached to two different arcs simultaneously without state corruption'
+        ],
+        rollback: 'None.',
+        risks: [
+          'Drag-to-arc UX deferred in favor of button — confirm at session time the button affordance is clear enough; revisit only if testing reveals friction.',
+          'Modal creation flow vs inline expansion: modal chosen for Stage 3 because arc creation is a distinct intentional act; revisit if it feels heavy.',
+          'Delete-confirmation copy needs care — Knowledge Arc deletion does not delete member books or entries, but users might assume it does. Copy explicitly states what is and is not deleted.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js. Confirm state.arcs schema unchanged. Confirm 3.1, 3.2, 3.3, 3.7 Shipped.\n\n' +
+'Stage 1: arc creation modal + persistence in views.js.\n\n' +
+'Stage 2: arc list UI on /notebook surface.\n\n' +
+'Stage 3: add-to-arc affordances on books and entries.\n\n' +
+'Stage 4: edit + delete flows.\n\n' +
+'Verification per Evidence block. Specifically: confirm multi-arc membership for a single book persists correctly.'
+      },
+
+      {
+        id: 's3-9',
+        num: '3.9',
+        name: 'Arc view UI (chronological)',
+        depConfirm: '3.8 must be Shipped (arcs exist to view).',
+        purpose: 'Opening an arc shows its books and entries in chronological order by entry-added-to-arc date (Cluster 7). Time order is the floor; curated narrative views deferred to Stage 4+.',
+        scope: [
+          'Arc view route: /arc/<arcId>',
+          'Renders arc title, description, and members in time order (oldest at top, newest at bottom — or vice versa; decide at session time)',
+          'Each member is a card: book card shows cover + title + author; entry card shows register marker + body preview',
+          'Vertical scroll with implicit time axis',
+          'Click a card to open the book or entry',
+          'Reorder is by edit-arc flow only (which lets the user remove and re-add to change time order); no drag-to-reorder in the time axis'
+        ],
+        nonGoals: [
+          'No Yumi arc-register conversation (Cluster 9 defers)',
+          'No network-graph rendering of the arc',
+          'No auto-generated arc summary at the top',
+          'No curated-narrative reordering (deferred)',
+          'No timeline visualization beyond vertical scroll order'
+        ],
+        subsystems: ['views'],
+        files: [
+          'js/views.js (arc view route, member rendering, navigation back to /notebook)'
+        ],
+        acceptance: [
+          'Live URL: from arc list in /notebook, click an arc → /arc/<arcId> renders',
+          'Members appear in time order by entry-added-to-arc date',
+          'Click a book card → navigate to /book/<bookId>',
+          'Click an entry card → entry expands or opens',
+          'Back button returns to /notebook'
+        ],
+        evidence: [
+          'Static: grep -c "/arc/" js/views.js returns >=1 (route)',
+          'Static: grep -c "addedAt\\|attachedAt" js/views.js returns >=1 (time ordering)',
+          'Live URL behavioral: create arc with two books added in known order → /arc/<id> shows them in that order',
+          'Live URL behavioral: click a member → correct navigation'
+        ],
+        rollback: 'None.',
+        risks: [
+          'Sort order direction (newest-first vs oldest-first) — decide once and document. Default lean: oldest-first because the voice doc arc example is told in chronological progression (first → then → now).',
+          'addedAt vs attachedAt field name — pick one and use consistently. Lean: addedAt (matches arcs.bookIds and arcs.entryIds being arrays without timestamps currently; adding timestamp requires either a shape change to arcs or a separate state.arcMemberships map).',
+          'If timestamps are not stored on arc membership, time order is inferable from createdAt on the entry or addedAt on the userBook entry — neither is the "added to this arc" time. Schema decision needed at session time.'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js, js/state.js. Confirm 3.8 Shipped. Make schema decision: where does "added to arc at" time live? Three options: (a) arc.bookIds and arc.entryIds become arrays of {id, addedAt}; (b) add a state.arcMemberships map keyed by arcId+memberId; (c) approximate using entry.createdAt and userBook.addedAt. Recommend (a) for the simplest fix.\n\n' +
+'Stage 1: schema change (if option a or b chosen) — atomic patch with migration.\n\n' +
+'Stage 2: arc view route in views.js.\n\n' +
+'Stage 3: member rendering in time order.\n\n' +
+'Verification per Evidence block.\n\n' +
+'Stage 3 closes here. Confirm end-to-end flow: add book → create Marginalia → create Journal → toggle one private → check transparency view → mark book finished → create Artifact → create arc → attach members → view arc chronologically.'
+      }
+    ]
+  },
+
+  // ----- STAGE 4 (skeleton) -----
+  {
+    id: 's4',
+    num: 'Stage 4',
+    name: 'Phase 1 testing readiness',
+    purpose: "The app is ready to put in front of 1-3 testers including Preston's father. Hardening, edge cases, onboarding, feedback loop.",
+    stageStatus: 'not-started',
+    skeleton: true,
+    skeletonReason: 'Stage 4 contents depend entirely on what Stage 2 and Stage 3 surface. Writing this in detail now is fiction.',
+    summary: 'Skeleton stage. Hardening and onboarding before putting Praxis in front of real testers.',
+    nonGoals: [],
+    dependencies: 'Stage 3 must be Shipped and Proven.',
+    tentativeSubstages: [
+      { num: '4.1', name: 'Onboarding flow (first-time signin → first book added → first Yumi conversation)' },
+      { num: '4.2', name: "Empty state pass across all surfaces (new user shouldn't ever see a confusing blank screen)" },
+      { num: '4.3', name: 'Error state pass (network failures, proxy failures, voice input failures)' },
+      { num: '4.4', name: 'Mobile pass (iOS Safari is a Phase 1 target)' },
+      { num: '4.5', name: 'Feedback capture mechanism (in-app or external — decide at Stage 4 design time)' },
+      { num: '4.6', name: 'Tester-specific patches (per-tester adjustments after early feedback)' }
+    ],
+    openQuestions: [
+      "Who specifically are the testers beyond Preston's father?",
+      "What's the feedback loop — weekly call, in-app form, email?",
+      'Does Phase 1 have a fixed end date, or does it run until N learnings accumulate?'
+    ],
+    substages: []
+  }
+];
+
+// =====================================================================
+// DATA — SUBSYSTEMS
+// =====================================================================
+
+var SUBSYSTEMS = [
+  {
+    id: 'state-schema',
+    name: 'State and schema',
+    definition: 'state.js, migrations, ensureOneArtifact, schema versioning.',
+    principlesServed: 'Foundation for #3 (one Book Artifact per user per book), #5 (no asymmetric knowledge).',
+    currentState: '1.1.0 with notebookEntries, bookArtifacts, arcs maps.',
+    touchedBy: ['s2-6', 's2-7']
+  },
+  {
+    id: 'auth-identity',
+    name: 'Auth and identity',
+    definition: 'Firebase auth, getCurrentUser cached via localStorage, sign-in/out helpers.',
+    principlesServed: 'Foundation for user-scoped privacy (#2, #5).',
+    currentState: 'Shipped, onAuthStateChanged wired.',
+    touchedBy: []
+  },
+  {
+    id: 'isbn-lookup',
+    name: 'ISBN and book lookup',
+    definition: 'Open Library primary, Google Books fallback, normalized shape.',
+    principlesServed: 'Enables canonical book identity needed for #3 and #6.',
+    currentState: 'Shipped, callback API.',
+    touchedBy: []
+  },
+  {
+    id: 'yumi-brain',
+    name: 'Yumi brain',
+    definition: 'System prompt assembly, voice document loading, context injection, Anthropic API via proxy.',
+    principlesServed: '#1 (Yumi never summarizes books) lives here.',
+    currentState: 'Stub.',
+    touchedBy: ['s2-1', 's2-4', 's2-6', 's2-7', 's2-8']
+  },
+  {
+    id: 'yumi-ui',
+    name: 'Yumi UI',
+    definition: 'Chat panel, message rendering, voice input wiring, voice/text toggle.',
+    principlesServed: 'Surfaces voice-document register to user.',
+    currentState: 'Stub.',
+    touchedBy: ['s2-3', 's2-4', 's2-5']
+  },
+  {
+    id: 'notebook',
+    name: 'Notebook',
+    definition: 'Entries (Marginalia and Journal registers), structural privacy, transparency view, graph linking.',
+    principlesServed: '#2 (structurally private), #5 (no asymmetric knowledge).',
+    currentState: 'Schema only.',
+    touchedBy: ['s2-6']
+  },
+  {
+    id: 'book-artifact',
+    name: 'Book Artifact',
+    definition: 'One-per-user-per-book, creation, editing, ensureOneArtifact enforcement.',
+    principlesServed: '#3 (one per user per book).',
+    currentState: 'Schema only, helper exists.',
+    touchedBy: ['s2-6']
+  },
+  {
+    id: 'arcs',
+    name: 'Knowledge Arcs',
+    definition: 'Arc objects, book and entry linking, intersectional structure, arc-conversation register.',
+    principlesServed: '#6 (intersectional by design).',
+    currentState: 'Schema only, arcs.js stub.',
+    touchedBy: ['s2-6']
+  },
+  {
+    id: 'voice-input',
+    name: 'Voice input',
+    definition: 'Speech-to-text wrapper, mic button, transcript handling.',
+    principlesServed: 'Companion register requires natural input modes.',
+    currentState: 'Stub (lifted from HQ but not wired).',
+    touchedBy: ['s2-5']
+  },
+  {
+    id: 'sw-pwa',
+    name: 'Service worker and PWA',
+    definition: 'Cache versioning, app shell precache, network-only for APIs.',
+    principlesServed: 'Local-first, offline-tolerant; supports #5.',
+    currentState: 'Shipped (praxis-v2).',
+    touchedBy: []
+  },
+  {
+    id: 'claude-proxy',
+    name: 'Claude proxy',
+    definition: 'Netlify function, optional shared-secret gate, forwards to Anthropic /v1/messages.',
+    principlesServed: 'Keeps API key server-side; preserves user-owned data path.',
+    currentState: 'Shipped, untested in production.',
+    touchedBy: ['s2-2', 's2-4']
+  },
+  {
+    id: 'deploy',
+    name: 'Deploy pipeline',
+    definition: 'Netlify Drop, cache version bumps, hard-refresh discipline.',
+    principlesServed: 'Operational discipline that protects all other principles.',
+    currentState: 'Shipped.',
+    touchedBy: []
+  }
+];
+
+// =====================================================================
+// DATA — DEFERRED ITEMS
+// =====================================================================
+
+var DEFERRED = [
+  {
+    name: 'TTS / spoken Yumi',
+    dateDeferred: '2026-05-05',
+    reason: 'Stage 2 already large; voice document tuned for screen reading.',
+    comesBackWhen: 'Stage 2.5'
+  },
+  {
+    name: 'Voice agent / screen commands',
+    dateDeferred: '2026-05-02',
+    reason: 'Risk that agent register dominates companion register.',
+    comesBackWhen: 'Stage 2.5 or Phase 3, decided at Stage 2.5 design'
+  },
+  {
+    name: 'Roadmap HTML upgrade beyond markdown',
+    dateDeferred: '2026-05-05',
+    reason: 'Markdown was original choice; HTML chosen for v1 of this document.',
+    comesBackWhen: 'Already addressed (this is the HTML version)'
+  },
+  {
+    name: 'Arc navigation UI',
+    dateDeferred: '2026-05-05',
+    reason: 'Stage 2 reads arc state; navigation UI is Stage 3.',
+    comesBackWhen: 'Stage 3.7+'
+  },
+  {
+    name: 'Yumi structured eval (3-layer)',
+    dateDeferred: '2026-05-02',
+    reason: 'Eval is Stage 2 deliverable per design note, but external/late.',
+    comesBackWhen: 'After Stage 2 ships, before Phase 1'
+  },
+  {
+    name: 'Vector / embeddings memory',
+    dateDeferred: '2026-05-05',
+    reason: 'Stage 2.7 uses summary-based memory; embeddings are post-Phase-1.',
+    comesBackWhen: 'If summary-based memory proves insufficient'
+  },
+  {
+    name: 'Bookshop affiliate code wiring',
+    dateDeferred: '2026-05-05',
+    reason: 'External dependency; affiliate application slow.',
+    comesBackWhen: 'Once Bookshop application returns approved'
+  },
+  {
+    name: 'Stage 2 evaluation harness / test prompts',
+    dateDeferred: '2026-05-05',
+    reason: '2.8 compliance audit is one-time; ongoing harness is its own deliverable.',
+    comesBackWhen: 'After Stage 2 ships, before Phase 1'
+  },
+  {
+    name: 'Stage 1 retro sub-stage detail',
+    dateDeferred: '2026-05-05',
+    reason: 'Backfill not blocking; not critical to forward progress.',
+    comesBackWhen: 'When Stage 2 ships and a retro session has time'
+  }
+];
+
+// =====================================================================
+// TIMELINE — month columns and stage spans
+// Anchored to current month: May 2026 = "now"
+// =====================================================================
+
+var TIMELINE_MONTHS = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+var TIMELINE_NOW_INDEX = 0; // May 2026
+
+// Stage spans: startMonthIndex, endMonthIndex (inclusive of fractional bands)
+// Stage 1 ends at "now". Stage 2 starts at "now". Estimates per spec:
+// Stage 2: 4-6 weeks. Stage 2.5: 2-3 weeks. Stage 3: 6-8 weeks. Stage 4: 3-4 weeks.
+var TIMELINE_BANDS = [
+  { stageId: 's1',  label: 'Stage 1 — Foundation',     start: -1.0, end: 0.0,  status: 'shipped' },
+  { stageId: 's2',  label: 'Stage 2 — Conversational Yumi', start: 0.0, end: 1.5,  status: 'in-progress' },
+  { stageId: 's25', label: 'Stage 2.5 — TTS',          start: 1.5,  end: 2.25, status: 'not-started' },
+  { stageId: 's3',  label: 'Stage 3 — Notebook + Arcs', start: 2.25, end: 4.25, status: 'not-started' },
+  { stageId: 's4',  label: 'Stage 4 — Phase 1 ready',  start: 4.25, end: 5.25, status: 'not-started' }
+];
+
+// =====================================================================
+// ENGINE — status computation, persistence
+// =====================================================================
+
+function getManual(subId) {
+  return ls('praxis_roadmap_manual_' + subId, false);
+}
+function setManual(subId, v) {
+  sv('praxis_roadmap_manual_' + subId, !!v);
+  if (v) {
+    sv('praxis_roadmap_manual_ts_' + subId, new Date().toISOString());
+  }
+}
+function getAudit(subId) {
+  return ls('praxis_roadmap_audit_' + subId, false);
+}
+function setAudit(subId, v) {
+  sv('praxis_roadmap_audit_' + subId, !!v);
+  if (v) {
+    sv('praxis_roadmap_audit_ts_' + subId, new Date().toISOString());
+  }
+}
+function getNotes(subId) {
+  return ls('praxis_roadmap_notes_' + subId, '');
+}
+function setNotes(subId, v) {
+  sv('praxis_roadmap_notes_' + subId, v || '');
+}
+function getView() {
+  return ls('praxis_roadmap_view', 'dashboard');
+}
+function setView(v) {
+  sv('praxis_roadmap_view', v);
+}
+function getExpandedStages() {
+  return ls('praxis_roadmap_expanded_stages', null);
+}
+function setExpandedStages(arr) {
+  sv('praxis_roadmap_expanded_stages', arr);
+}
+
+function computeSubstageStatus(sub) {
+  if (sub.deferred) return 'deferred';
+  var manual = getManual(sub.id);
+  var audit = getAudit(sub.id);
+  if (manual && audit) return 'proven';
+  if (manual) return 'shipped';
+  if (sub.inProgress) return 'in-progress';
+  return 'not-started';
+}
+
+function computeStageProgress(stage) {
+  if (!stage.substages || stage.substages.length === 0) {
+    return { proven: 0, shipped: 0, inProgress: 0, notStarted: 0, deferred: 0, total: 0 };
+  }
+  var p = 0, s = 0, ip = 0, ns = 0, d = 0;
+  var i;
+  for (i = 0; i < stage.substages.length; i++) {
+    var st = computeSubstageStatus(stage.substages[i]);
+    if (st === 'proven') p++;
+    else if (st === 'shipped') s++;
+    else if (st === 'in-progress') ip++;
+    else if (st === 'deferred') d++;
+    else ns++;
+  }
+  return {
+    proven: p,
+    shipped: s,
+    inProgress: ip,
+    notStarted: ns,
+    deferred: d,
+    total: stage.substages.length
+  };
+}
+
+function totalProgress() {
+  var totalSub = 0;
+  var provenSub = 0;
+  var i;
+  for (i = 0; i < STAGES.length; i++) {
+    var prog = computeStageProgress(STAGES[i]);
+    totalSub += prog.total;
+    provenSub += prog.proven;
+  }
+  return { proven: provenSub, total: totalSub };
+}
+
+function statusColorVar(status) {
+  if (status === 'proven') return 'var(--status-proven)';
+  if (status === 'shipped') return 'var(--status-shipped)';
+  if (status === 'in-progress') return 'var(--status-in-progress)';
+  if (status === 'deferred') return 'var(--status-deferred)';
+  return 'var(--status-not-started)';
+}
+
+function statusLabel(status) {
+  if (status === 'proven') return 'Proven';
+  if (status === 'shipped') return 'Shipped';
+  if (status === 'in-progress') return 'In progress';
+  if (status === 'deferred') return 'Deferred';
+  return 'Not started';
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(s) { return escapeHtml(s); }
+
+function findStageById(id) {
+  var i;
+  for (i = 0; i < STAGES.length; i++) {
+    if (STAGES[i].id === id) return STAGES[i];
+  }
+  return null;
+}
+
+function findSubstageById(id) {
+  var i, j;
+  for (i = 0; i < STAGES.length; i++) {
+    var subs = STAGES[i].substages || [];
+    for (j = 0; j < subs.length; j++) {
+      if (subs[j].id === id) return { stage: STAGES[i], sub: subs[j] };
+    }
+  }
+  return null;
+}
+
+function findSubsystemById(id) {
+  var i;
+  for (i = 0; i < SUBSYSTEMS.length; i++) {
+    if (SUBSYSTEMS[i].id === id) return SUBSYSTEMS[i];
+  }
+  return null;
+}
+
+// Decide whether a sub-stage has enough operational detail to merit a
+// fully-assembled prompt. Eight Stage 2 sub-stages currently qualify;
+// skeleton tentative sub-stages (Stage 2.5, 3, 4) do not. The signal is
+// the presence of acceptance criteria and evidence — both load-bearing
+// for a runnable prompt.
+function isSubFullyDeveloped(sub) {
+  if (!sub) return false;
+  if (!sub.acceptance || sub.acceptance.length === 0) return false;
+  if (!sub.evidence || sub.evidence.length === 0) return false;
+  return true;
+}
+
+// Assemble the full operational prompt from a sub-stage's card data.
+// Sections appear in the order an agent needs them: identity →
+// dependencies → purpose → non-goals → files → acceptance → evidence
+// → rollback → risks → staging instructions. The promptSkeleton field
+// supplies the staging tail; everything else is sourced from the card,
+// so editing the card edits the prompt with no drift.
+function buildFullPrompt(sub, stage) {
+  if (!isSubFullyDeveloped(sub)) {
+    // Skeleton fallback: just the raw skeleton text, since that's all there is.
+    return sub.promptSkeleton || '';
+  }
+  var lines = [];
+  var i;
+  var subsysNames = [];
+  if (sub.subsystems && sub.subsystems.length) {
+    for (i = 0; i < sub.subsystems.length; i++) {
+      var sys = findSubsystemById(sub.subsystems[i]);
+      subsysNames.push(sys ? sys.name : sub.subsystems[i]);
+    }
+  }
+
+  lines.push('=== ' + (stage ? stage.num : '') + ' · ' + (sub.num || sub.id) + ' — ' + sub.name + ' ===');
+  lines.push('');
+  lines.push('DEPENDENCIES (must be satisfied before starting):');
+  lines.push('  ' + (sub.depConfirm || '—'));
+  lines.push('');
+  lines.push('PURPOSE:');
+  lines.push('  ' + sub.purpose);
+  lines.push('');
+  if (sub.scope && sub.scope.length) {
+    lines.push('SCOPE:');
+    for (i = 0; i < sub.scope.length; i++) {
+      lines.push('  - ' + sub.scope[i]);
+    }
+    lines.push('');
+  }
+  if (sub.nonGoals && sub.nonGoals.length) {
+    lines.push('NON-GOALS (do not touch):');
+    for (i = 0; i < sub.nonGoals.length; i++) {
+      lines.push('  - ' + sub.nonGoals[i]);
+    }
+    lines.push('');
+  }
+  if (subsysNames.length) {
+    lines.push('SUBSYSTEMS INVOLVED:');
+    lines.push('  ' + subsysNames.join(', '));
+    lines.push('');
+  }
+  if (sub.files && sub.files.length) {
+    lines.push('FILES LIKELY TO CHANGE:');
+    for (i = 0; i < sub.files.length; i++) {
+      lines.push('  - ' + sub.files[i]);
+    }
+    lines.push('');
+  }
+  if (sub.acceptance && sub.acceptance.length) {
+    lines.push('ACCEPTANCE CRITERIA:');
+    for (i = 0; i < sub.acceptance.length; i++) {
+      lines.push('  - ' + sub.acceptance[i]);
+    }
+    lines.push('');
+  }
+  if (sub.evidence && sub.evidence.length) {
+    lines.push('EVIDENCE (every check must pass — do not accept self-reports):');
+    for (i = 0; i < sub.evidence.length; i++) {
+      lines.push('  - ' + sub.evidence[i]);
+    }
+    lines.push('');
+  }
+  if (sub.rollback) {
+    lines.push('ROLLBACK / CLEANUP:');
+    lines.push('  ' + sub.rollback);
+    lines.push('');
+  }
+  if (sub.risks && sub.risks.length) {
+    lines.push('RISKS AND FAILURE MODES:');
+    for (i = 0; i < sub.risks.length; i++) {
+      lines.push('  - ' + sub.risks[i]);
+    }
+    lines.push('');
+  }
+  lines.push('CONVENTIONS (Praxis vanilla-JS, non-negotiable):');
+  lines.push('  - var and function only. No const, let, arrow functions, classes, or template literals.');
+  lines.push('  - String concatenation only.');
+  lines.push('  - CSS variables only — no hardcoded hex.');
+  lines.push('  - localStorage via ls(k, d) / sv(k, v) wrappers.');
+  lines.push('  - File load order: state → integrations → yumi-brain → arcs → voice-input → yumi-ui → views → app.');
+  lines.push('');
+  if (sub.promptSkeleton) {
+    lines.push('STAGING INSTRUCTIONS:');
+    var skLines = sub.promptSkeleton.split('\n');
+    for (i = 0; i < skLines.length; i++) {
+      lines.push(skLines[i]);
+    }
+    lines.push('');
+  }
+  lines.push('VERIFICATION DISCIPLINE:');
+  lines.push('  Do not declare PASS without independent evidence. Run every check in the EVIDENCE block.');
+  lines.push('  If any check fails: revert the patch unless the failure is pre-existing drift unrelated to this work.');
+  lines.push('  Report each check with its actual output, not a self-narrated summary.');
+  return lines.join('\n');
+}
+
+function tsString(iso) {
+  if (!iso) return '';
+  try {
+    var d = new Date(iso);
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var hh = d.getHours();
+    var mm = d.getMinutes();
+    var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' · ' + pad2(hh) + ':' + pad2(mm);
+  } catch (e) { return ''; }
+}
+
+// =====================================================================
+// RENDER — DASHBOARD
+// =====================================================================
+
+function renderDashboard() {
+  var tp = totalProgress();
+  var html = '';
+
+  html += '<section class="dash-hero">';
+  html += '  <div>';
+  html += '    <div class="dash-bignum">' + tp.proven + ' <span class="of">of ' + tp.total + ' Proven</span></div>';
+  html += '    <div class="dash-hero-label">Sub-stages across all stages</div>';
+  html += '  </div>';
+  html += '  <div class="dash-cta">';
+  // Find active stage
+  var activeStage = null;
+  var i;
+  for (i = 0; i < STAGES.length; i++) { if (STAGES[i].active) { activeStage = STAGES[i]; break; } }
+  if (activeStage) {
+    html += '    <button data-jump-stage="' + escapeAttr(activeStage.id) + '">Continue to ' + escapeHtml(activeStage.num) + '</button>';
+  }
+  html += '  </div>';
+  html += '</section>';
+
+  // Stage progress bars
+  html += '<h2 class="dash-section-title">Stages at a glance</h2>';
+  html += '<div>';
+  for (i = 0; i < STAGES.length; i++) {
+    var stage = STAGES[i];
+    var prog = computeStageProgress(stage);
+    var totalForBar = prog.total > 0 ? prog.total : 1;
+    var pctProven = (prog.proven / totalForBar) * 100;
+    var pctShipped = (prog.shipped / totalForBar) * 100;
+    var pctInProg = (prog.inProgress / totalForBar) * 100;
+    var pctDeferred = (prog.deferred / totalForBar) * 100;
+
+    html += '<div class="stage-bar-row">';
+    html += '  <div class="stage-bar-name">';
+    html += '    <span class="num">' + escapeHtml(stage.num) + '</span>';
+    html += escapeHtml(stage.name);
+    html += '  </div>';
+    html += '  <div class="stage-bar-track">';
+    if (prog.total === 0) {
+      // skeleton stages: show single muted segment
+      html += '<div class="stage-bar-segment" style="width:100%;background:var(--status-not-started);opacity:0.4"></div>';
+    } else {
+      html += '<div class="stage-bar-segment" style="width:' + pctProven + '%;background:var(--status-proven)"></div>';
+      html += '<div class="stage-bar-segment" style="width:' + pctShipped + '%;background:var(--status-shipped)"></div>';
+      html += '<div class="stage-bar-segment" style="width:' + pctInProg + '%;background:var(--status-in-progress)"></div>';
+      html += '<div class="stage-bar-segment" style="width:' + pctDeferred + '%;background:var(--status-deferred)"></div>';
+    }
+    html += '  </div>';
+    html += '  <div class="stage-bar-count">' + (prog.total === 0 ? '—' : (prog.proven + '/' + prog.total)) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Cards row
+  var nextStage = null;
+  if (activeStage) {
+    var foundActive = false;
+    for (i = 0; i < STAGES.length; i++) {
+      if (foundActive) { nextStage = STAGES[i]; break; }
+      if (STAGES[i].id === activeStage.id) foundActive = true;
+    }
+  }
+
+  html += '<div class="dash-cards">';
+  if (activeStage) {
+    var ap = computeStageProgress(activeStage);
+    html += '<div class="dash-card active">';
+    html += '  <div class="dash-card-label">Active stage</div>';
+    html += '  <div class="dash-card-title">' + escapeHtml(activeStage.num) + ' — ' + escapeHtml(activeStage.name) + '</div>';
+    html += '  <div class="dash-card-meta">' + ap.proven + ' Proven · ' + ap.shipped + ' Shipped · ' + ap.notStarted + ' Not started · ' + (ap.total) + ' total</div>';
+    html += '</div>';
+  }
+  if (nextStage) {
+    html += '<div class="dash-card dim">';
+    html += '  <div class="dash-card-label">Next stage</div>';
+    html += '  <div class="dash-card-title">' + escapeHtml(nextStage.num) + ' — ' + escapeHtml(nextStage.name) + '</div>';
+    html += '  <div class="dash-card-meta">' + escapeHtml(nextStage.purpose.substring(0, 110)) + (nextStage.purpose.length > 110 ? '…' : '') + '</div>';
+    html += '</div>';
+  }
+  html += '<div class="dash-card">';
+  html += '  <div class="dash-card-label">Deferred items</div>';
+  html += '  <div class="dash-card-bignum">' + DEFERRED.length + '</div>';
+  html += '  <div class="dash-card-meta">Logged with reason and comes-back-when</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Status legend
+  html += '<div class="legend">';
+  html += '  <h3>Status Legend</h3>';
+  html += '  <div class="legend-items">';
+  html += '    <span class="legend-item"><span class="legend-dot" style="background:var(--status-not-started)"></span>Not started</span>';
+  html += '    <span class="legend-item"><span class="legend-dot" style="background:var(--status-in-progress)"></span>In progress</span>';
+  html += '    <span class="legend-item"><span class="legend-dot" style="background:var(--status-shipped)"></span>Shipped (Manual ✓)</span>';
+  html += '    <span class="legend-item"><span class="legend-dot" style="background:var(--status-proven)"></span>Proven (Manual ✓ + Audit ✓)</span>';
+  html += '    <span class="legend-item"><span class="legend-dot" style="background:var(--status-deferred)"></span><em>Deferred</em></span>';
+  html += '  </div>';
+  html += '</div>';
+
+  return html;
+}
+
+// =====================================================================
+// RENDER — STAGES
+// =====================================================================
+
+function renderStages(filter, search) {
+  var html = '';
+  var i, j;
+  var expanded = getExpandedStages();
+  if (expanded === null) {
+    // first load: expand active stage only
+    expanded = [];
+    for (i = 0; i < STAGES.length; i++) {
+      if (STAGES[i].active) expanded.push(STAGES[i].id);
+    }
+    setExpandedStages(expanded);
+  }
+
+  for (i = 0; i < STAGES.length; i++) {
+    var stage = STAGES[i];
+    if (filter === 'active' && !stage.active) continue;
+    if (filter === 'deferred') {
+      // only render this stage if any of its substages is deferred
+      var hasDeferred = false;
+      for (j = 0; j < (stage.substages || []).length; j++) {
+        if (stage.substages[j].deferred) { hasDeferred = true; break; }
+      }
+      if (!hasDeferred) continue;
+    }
+    var prog = computeStageProgress(stage);
+    var isExpanded = expanded.indexOf(stage.id) !== -1;
+    var classes = ['stage-card'];
+    if (stage.active) classes.push('active');
+    if (stage.stageStatus) classes.push(stage.stageStatus);
+    if (isExpanded) classes.push('expanded');
+
+    html += '<article class="' + classes.join(' ') + '" data-stage-id="' + escapeAttr(stage.id) + '">';
+    html += '  <div class="stage-head" data-toggle-stage="' + escapeAttr(stage.id) + '">';
+    html += '    <div class="stage-num">' + escapeHtml(stage.num) + '</div>';
+    html += '    <div>';
+    html += '      <div class="stage-name">' + escapeHtml(stage.name) + '</div>';
+    html += '      <div class="stage-purpose">' + escapeHtml(stage.purpose) + '</div>';
+    html += '    </div>';
+    html += '    <div class="stage-progress-mini">';
+    if (prog.total === 0) {
+      html += '<div style="width:100%;background:var(--status-not-started);opacity:0.4"></div>';
+    } else {
+      var t = prog.total;
+      html += '<div style="width:' + (prog.proven / t * 100) + '%;background:var(--status-proven)"></div>';
+      html += '<div style="width:' + (prog.shipped / t * 100) + '%;background:var(--status-shipped)"></div>';
+      html += '<div style="width:' + (prog.inProgress / t * 100) + '%;background:var(--status-in-progress)"></div>';
+      html += '<div style="width:' + (prog.deferred / t * 100) + '%;background:var(--status-deferred)"></div>';
+    }
+    html += '    </div>';
+    html += '    <div class="chevron">▸</div>';
+    html += '  </div>';
+
+    html += '  <div class="stage-body">';
+    html += '    <div class="stage-summary">' + escapeHtml(stage.summary) + '</div>';
+
+    if (stage.nonGoals && stage.nonGoals.length) {
+      html += '    <div class="stage-meta-block">';
+      html += '      <div class="stage-meta-label">Stage-level non-goals</div>';
+      html += '      <ul>';
+      for (j = 0; j < stage.nonGoals.length; j++) {
+        html += '<li>' + escapeHtml(stage.nonGoals[j]) + '</li>';
+      }
+      html += '      </ul>';
+      html += '    </div>';
+    }
+    if (stage.dependencies) {
+      html += '    <div class="stage-meta-block">';
+      html += '      <div class="stage-meta-label">Dependencies on prior stages</div>';
+      html += '      <p>' + escapeHtml(stage.dependencies) + '</p>';
+      html += '    </div>';
+    }
+
+    // Skeleton stage: render skeleton view
+    if (stage.skeleton) {
+      html += '    <div class="stage-meta-block">';
+      html += '      <div class="stage-meta-label">Why skeleton only</div>';
+      html += '      <p>' + escapeHtml(stage.skeletonReason) + '</p>';
+      html += '    </div>';
+      if (stage.tentativeSubstages && stage.tentativeSubstages.length) {
+        html += '    <div class="stage-meta-block">';
+        html += '      <div class="stage-meta-label">Tentative sub-stages</div>';
+        html += '      <ul>';
+        for (j = 0; j < stage.tentativeSubstages.length; j++) {
+          var ts = stage.tentativeSubstages[j];
+          html += '<li><strong style="font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--ink-3);margin-right:8px">' + escapeHtml(ts.num) + '</strong> ' + escapeHtml(ts.name) + '</li>';
+        }
+        html += '      </ul>';
+        html += '    </div>';
+      }
+      if (stage.openQuestions && stage.openQuestions.length) {
+        html += '    <div class="stage-meta-block">';
+        html += '      <div class="stage-meta-label">Open questions</div>';
+        html += '      <ul>';
+        for (j = 0; j < stage.openQuestions.length; j++) {
+          html += '<li>' + escapeHtml(stage.openQuestions[j]) + '</li>';
+        }
+        html += '      </ul>';
+        html += '    </div>';
+      }
+    } else if (stage.substages && stage.substages.length > 0) {
+      // Real sub-stage list
+      html += '    <div class="substage-list">';
+      for (j = 0; j < stage.substages.length; j++) {
+        var sub = stage.substages[j];
+        if (search && !subMatchesSearch(sub, search)) continue;
+        if (filter === 'deferred' && !sub.deferred) continue;
+        html += renderSubstage(sub, stage);
+      }
+      html += '    </div>';
+    }
+
+    html += '  </div>';
+    html += '</article>';
+  }
+  return html;
+}
+
+function subMatchesSearch(sub, q) {
+  if (!q) return true;
+  q = q.toLowerCase();
+  if (sub.name.toLowerCase().indexOf(q) !== -1) return true;
+  if (sub.id.toLowerCase().indexOf(q) !== -1) return true;
+  if (sub.num && sub.num.toLowerCase().indexOf(q) !== -1) return true;
+  if (sub.purpose && sub.purpose.toLowerCase().indexOf(q) !== -1) return true;
+  return false;
+}
+
+function renderSubstage(sub, stage) {
+  var html = '';
+  var status = computeSubstageStatus(sub);
+  var manual = getManual(sub.id);
+  var audit = getAudit(sub.id);
+  var notes = getNotes(sub.id);
+  var manualTs = ls('praxis_roadmap_manual_ts_' + sub.id, '');
+  var auditTs = ls('praxis_roadmap_audit_ts_' + sub.id, '');
+
+  var classes = ['substage'];
+  if (sub.deferred) classes.push('deferred');
+  // expanded: track per substage in localStorage too? Keep simple: collapse by default
+  var subExpanded = ls('praxis_roadmap_sub_exp_' + sub.id, false);
+  if (subExpanded) classes.push('expanded');
+
+  html += '<div class="' + classes.join(' ') + '" data-sub-id="' + escapeAttr(sub.id) + '">';
+  html += '  <div class="substage-head" data-toggle-sub="' + escapeAttr(sub.id) + '">';
+  html += '    <div>';
+  html += '      <div class="substage-id">' + escapeHtml(sub.num || sub.id) + '</div>';
+  html += '      <div class="substage-name">' + escapeHtml(sub.name) + '</div>';
+  html += '    </div>';
+  html += '    <div class="substage-checks" data-stop-toggle>';
+  html += '      <span class="status-badge status-' + status + '">' + escapeHtml(statusLabel(status)) + '</span>';
+  html += '      <label class="check-pill"><input type="checkbox" data-check="manual" data-sub="' + escapeAttr(sub.id) + '"' + (manual ? ' checked' : '') + '> Manual</label>';
+  html += '      <label class="check-pill"><input type="checkbox" data-check="audit" data-sub="' + escapeAttr(sub.id) + '"' + (audit ? ' checked' : '') + '> Audit</label>';
+  html += '    </div>';
+  html += '    <div class="chevron">▸</div>';
+  html += '  </div>';
+
+  html += '  <div class="substage-body">';
+
+  // 3 — dependencies confirmation
+  html += renderField('Dependencies', escapeHtml(sub.depConfirm || '—'));
+  // 4 — purpose
+  html += renderField('Purpose', escapeHtml(sub.purpose));
+  // 5 — scope
+  html += renderFieldList('Scope', sub.scope);
+  // 6 — non-goals
+  html += renderFieldList('Non-goals', sub.nonGoals);
+  // 7 — subsystems involved
+  html += renderSubsystemChips('Subsystems involved', sub.subsystems);
+  // 8 — files (prominent)
+  html += '<div class="field-block">';
+  html += '  <div class="field-label">Files likely to change</div>';
+  html += '  <div class="field-files"><ul>';
+  if (sub.files && sub.files.length) {
+    var fi;
+    for (fi = 0; fi < sub.files.length; fi++) {
+      html += '<li>' + escapeHtml(sub.files[fi]) + '</li>';
+    }
+  } else {
+    html += '<li><em>—</em></li>';
+  }
+  html += '  </ul></div>';
+  html += '</div>';
+  // 9 — acceptance
+  html += renderFieldList('Acceptance criteria', sub.acceptance);
+  // 10 — evidence
+  html += '<div class="field-block">';
+  html += '  <div class="field-label">Evidence</div>';
+  html += '  <div class="field-evidence"><ul>';
+  if (sub.evidence && sub.evidence.length) {
+    var ei;
+    for (ei = 0; ei < sub.evidence.length; ei++) {
+      html += '<li>' + escapeHtml(sub.evidence[ei]) + '</li>';
+    }
+  }
+  html += '  </ul></div>';
+  html += '</div>';
+  // 11 — rollback
+  html += renderField('Rollback / cleanup', escapeHtml(sub.rollback || '—'));
+  // 12 — risks
+  html += renderFieldList('Risks and failure modes', sub.risks);
+  // 13 — manual check status
+  html += '<div class="field-block">';
+  html += '  <div class="field-label">Manual check</div>';
+  html += '  <div class="field-value">' + (manual ? 'Ticked' : 'Not yet ticked') + '</div>';
+  if (manual && manualTs) {
+    html += '  <div class="check-status-line">Last set: ' + escapeHtml(tsString(manualTs)) + '</div>';
+  }
+  html += '</div>';
+  // 14 — audit check status
+  html += '<div class="field-block">';
+  html += '  <div class="field-label">Audit check</div>';
+  html += '  <div class="field-value">' + (audit ? 'Ticked' : 'Not yet ticked') + '</div>';
+  if (audit && auditTs) {
+    html += '  <div class="check-status-line">Last set: ' + escapeHtml(tsString(auditTs)) + '</div>';
+  }
+  html += '</div>';
+  // 15 — audit notes
+  html += '<div class="field-block">';
+  html += '  <div class="field-label">Audit notes</div>';
+  html += '  <textarea class="notes-textarea" data-notes="' + escapeAttr(sub.id) + '" placeholder="Audit notes — what passed, what surprised you, what to flag for the next reviewer.">' + escapeHtml(notes) + '</textarea>';
+  html += '</div>';
+  // 16 — prompt (full operational prompt for developed sub-stages,
+  //        skeleton-only fallback for tentative/skeleton entries)
+  var assembledPrompt = buildFullPrompt(sub, stage);
+  if (assembledPrompt) {
+    var fullyDeveloped = isSubFullyDeveloped(sub);
+    var promptLabel = fullyDeveloped ? 'Operational prompt' : 'Prompt skeleton';
+    var promptId = 'prompt-' + sub.id;
+    var promptExpanded = ls('praxis_roadmap_prompt_exp_' + sub.id, false);
+    html += '<div class="field-block">';
+    html += '  <div class="prompt-block' + (promptExpanded ? ' expanded' : '') + '" data-prompt-id="' + escapeAttr(sub.id) + '">';
+    html += '    <div class="prompt-block-head" data-toggle-prompt="' + escapeAttr(sub.id) + '">';
+    html += '      <span class="prompt-block-label">' + escapeHtml(promptLabel) + '</span>';
+    html += '      <span class="prompt-block-actions">';
+    html += '        <button class="copy-btn" data-copy-prompt="' + escapeAttr(sub.id) + '">Copy</button>';
+    html += '        <span class="chevron">▸</span>';
+    html += '      </span>';
+    html += '    </div>';
+    html += '    <div class="prompt-block-body" id="' + promptId + '">' + escapeHtml(assembledPrompt) + '</div>';
+    html += '  </div>';
+    html += '</div>';
+  }
+
+  html += '  </div>'; // .substage-body
+  html += '</div>'; // .substage
+  return html;
+}
+
+function renderField(label, valueHtml) {
+  return '<div class="field-block"><div class="field-label">' + escapeHtml(label) + '</div><div class="field-value"><p>' + valueHtml + '</p></div></div>';
+}
+
+function renderFieldList(label, list) {
+  if (!list || !list.length) {
+    return '<div class="field-block"><div class="field-label">' + escapeHtml(label) + '</div><div class="field-value"><p><em>—</em></p></div></div>';
+  }
+  var html = '<div class="field-block"><div class="field-label">' + escapeHtml(label) + '</div><div class="field-value"><ul>';
+  var i;
+  for (i = 0; i < list.length; i++) {
+    html += '<li>' + escapeHtml(list[i]) + '</li>';
+  }
+  html += '</ul></div></div>';
+  return html;
+}
+
+function renderSubsystemChips(label, ids) {
+  if (!ids || !ids.length) {
+    return '<div class="field-block"><div class="field-label">' + escapeHtml(label) + '</div><div class="field-value"><p><em>—</em></p></div></div>';
+  }
+  var html = '<div class="field-block"><div class="field-label">' + escapeHtml(label) + '</div><div class="subsystem-chips">';
+  var i;
+  for (i = 0; i < ids.length; i++) {
+    var sys = findSubsystemById(ids[i]);
+    var name = sys ? sys.name : ids[i];
+    html += '<span class="subsystem-chip" data-jump-subsystem="' + escapeAttr(ids[i]) + '">' + escapeHtml(name) + '</span>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// =====================================================================
+// RENDER — TIMELINE
+// =====================================================================
+
+function renderTimeline() {
+  var html = '';
+  var i;
+  var months = TIMELINE_MONTHS;
+  html += '<div class="timeline-wrap">';
+  html += '<div class="timeline">';
+
+  // months row
+  html += '<div class="timeline-months">';
+  html += '<div></div>';
+  for (i = 0; i < months.length; i++) {
+    var cls = 'timeline-month';
+    if (i === TIMELINE_NOW_INDEX) cls += ' current';
+    html += '<div class="' + cls + '">' + months[i] + ' 2026</div>';
+  }
+  html += '</div>';
+
+  // Each band
+  for (i = 0; i < TIMELINE_BANDS.length; i++) {
+    var band = TIMELINE_BANDS[i];
+    var stage = findStageById(band.stageId);
+    var name = stage ? stage.num + ' — ' + stage.name : band.label;
+    var totalMonths = months.length - 1; // 6 columns of width
+    // band.start can be negative (Stage 1 before "now"); clip to 0..totalMonths
+    var clipStart = band.start < 0 ? 0 : band.start;
+    var clipEnd = band.end > totalMonths ? totalMonths : band.end;
+    var leftPct = (clipStart / totalMonths) * 100;
+    var widthPct = ((clipEnd - clipStart) / totalMonths) * 100;
+    var statusColor;
+    var status = computeStageProgress(stage || {});
+    var stageStatus = stage && stage.stageStatus ? stage.stageStatus : band.status;
+    if (stage && stage.id === 's2') stageStatus = 'in-progress';
+    statusColor = statusColorVar(stageStatus);
+
+    html += '<div class="timeline-row">';
+    html += '  <div class="timeline-label">';
+    html += '    <span class="num">' + escapeHtml(stage ? stage.num : '') + '</span>';
+    html += escapeHtml(stage ? stage.name : band.label);
+    html += '  </div>';
+    html += '  <div class="timeline-track">';
+    var cellIdx;
+    for (cellIdx = 0; cellIdx < months.length - 1; cellIdx++) {
+      html += '<div class="timeline-track-cell"></div>';
+    }
+    html += '    <div class="timeline-band" style="left:' + leftPct + '%;width:' + widthPct + '%;background:' + statusColor + '" title="' + escapeAttr(name + ' · ' + statusLabel(stageStatus)) + '">';
+    html += escapeHtml(statusLabel(stageStatus));
+    html += '    </div>';
+    if (i === 0) {
+      // place "now" line on the first row, but actually it should span all rows; render once at bottom
+    }
+    html += '  </div>';
+    html += '</div>';
+  }
+
+  // The "now" marker — overlaid via absolute on the wrap
+  html += '</div>';
+
+  // Now marker (separate so it can overlay)
+  var nowOffsetPct = (TIMELINE_NOW_INDEX / (months.length - 1)) * 100;
+  // The track region starts after the 220px label column. We place the line by re-rendering
+  // an absolutely-positioned overlay div whose left is computed from the track.
+  html += '<div style="position:relative;height:0;margin-top:-' + (TIMELINE_BANDS.length * 56 + 4) + 'px;pointer-events:none">';
+  html += '  <div style="position:absolute;left:220px;right:0;top:24px;bottom:0;height:' + (TIMELINE_BANDS.length * 56) + 'px">';
+  html += '    <div style="position:absolute;top:0;bottom:0;left:' + nowOffsetPct + '%;width:2px;background:var(--gold);z-index:5">';
+  html += '      <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);background:var(--parchment-2);padding:0 6px;white-space:nowrap">Now</div>';
+  html += '    </div>';
+  html += '  </div>';
+  html += '</div>';
+
+  html += '<div class="timeline-note">Illustrative arc, not a forecast. Duration estimates: Stage 2 is 4–6 weeks; Stage 2.5 is 2–3 weeks; Stage 3 is 6–8 weeks; Stage 4 is 3–4 weeks.</div>';
+  html += '</div>';
+  return html;
+}
+
+// =====================================================================
+// RENDER — SUBSYSTEMS
+// =====================================================================
+
+function renderSubsystems() {
+  var html = '';
+  var i, j, k;
+
+  // Build the matrix: rows = subsystems, cols = sub-stages grouped by stage
+  // Only sub-stages from non-skeleton stages with substages
+  var allSubs = [];
+  for (i = 0; i < STAGES.length; i++) {
+    if (STAGES[i].substages && STAGES[i].substages.length) {
+      for (j = 0; j < STAGES[i].substages.length; j++) {
+        allSubs.push({ stage: STAGES[i], sub: STAGES[i].substages[j] });
+      }
+    }
+  }
+
+  // Matrix header
+  html += '<h2 class="dash-section-title" style="margin-top:0">Subsystem matrix</h2>';
+  html += '<p style="font-family:var(--display);font-style:italic;color:var(--ink-3);margin:0 0 20px;font-size:16px">Rows are subsystems. Columns are sub-stages with detail. Filled cells show which subsystem each sub-stage touches; cell color reflects sub-stage status. Skeleton stages are surfaced in the list below the matrix.</p>';
+
+  html += '<div class="matrix-wrap">';
+  // Compute grid: 1 row-head col + N substage cols
+  var cols = allSubs.length;
+  var gridTpl = 'minmax(180px, 220px) repeat(' + cols + ', minmax(38px, 1fr))';
+  html += '<div class="matrix" style="grid-template-columns:' + gridTpl + '">';
+
+  // Row 0: corner + stage group headers (spanning their substages)
+  html += '<div class="matrix-corner">Subsystem</div>';
+  // Stage group headers — render each substage's stage-group cell, but visually we
+  // draw a band only on the first substage of each stage. To keep grid simple,
+  // we render one cell per substage with the stage label, which hands off
+  // visual grouping via the gold underline on the column header below.
+  for (k = 0; k < allSubs.length; k++) {
+    html += '<div class="matrix-stage-group">' + escapeHtml(allSubs[k].stage.num.replace('Stage ', '')) + '</div>';
+  }
+
+  // Row 1: column headers (sub-stage names)
+  html += '<div class="matrix-corner" style="border-top:none">&nbsp;</div>';
+  for (k = 0; k < allSubs.length; k++) {
+    html += '<div class="matrix-col-head" data-jump-sub="' + escapeAttr(allSubs[k].sub.id) + '" title="' + escapeAttr(allSubs[k].sub.num + ' ' + allSubs[k].sub.name) + '">' + escapeHtml(allSubs[k].sub.num) + ' ' + escapeHtml(allSubs[k].sub.name) + '</div>';
+  }
+
+  // Subsystem rows
+  for (i = 0; i < SUBSYSTEMS.length; i++) {
+    var sys = SUBSYSTEMS[i];
+    html += '<div class="matrix-row-head">' + escapeHtml(sys.name) + '</div>';
+    for (k = 0; k < allSubs.length; k++) {
+      var pair = allSubs[k];
+      var touched = sys.touchedBy.indexOf(pair.sub.id) !== -1;
+      if (touched) {
+        var status = computeSubstageStatus(pair.sub);
+        var color = statusColorVar(status);
+        html += '<div class="matrix-cell active" data-jump-sub="' + escapeAttr(pair.sub.id) + '" style="background:' + color + ';opacity:0.85"><span class="tip">' + escapeHtml(pair.sub.num + ' · ' + pair.sub.name + ' · ' + statusLabel(status)) + '</span></div>';
+      } else {
+        html += '<div class="matrix-cell"></div>';
+      }
+    }
+  }
+
+  html += '</div>'; // .matrix
+  html += '</div>'; // .matrix-wrap
+
+  // Subsystem detail list
+  html += '<div class="subsystem-list-section">';
+  html += '<h2>All subsystems</h2>';
+  for (i = 0; i < SUBSYSTEMS.length; i++) {
+    var s = SUBSYSTEMS[i];
+    var touchedLabel = s.touchedBy.length === 0 ? 'Not touched in current scope' : 'Touched by: ' + s.touchedBy.join(', ');
+    html += '<div class="subsystem-card">';
+    html += '  <div class="subsystem-card-head">';
+    html += '    <h3 class="subsystem-card-name">' + escapeHtml(s.name) + '</h3>';
+    html += '    <span class="subsystem-card-touched">' + escapeHtml(touchedLabel) + '</span>';
+    html += '  </div>';
+    html += '  <p class="subsystem-card-def">' + escapeHtml(s.definition) + '</p>';
+    html += '  <div class="subsystem-card-meta"><strong>Current state:</strong> ' + escapeHtml(s.currentState) + '</div>';
+    html += '  <div class="subsystem-card-meta"><strong>Principles served:</strong> ' + escapeHtml(s.principlesServed) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Deferred items log
+  html += '<div class="deferred-section">';
+  html += '<h2>Deferred items</h2>';
+  html += '<p class="lead">Things explicitly punted, with the reason and the condition under which they come back.</p>';
+  for (i = 0; i < DEFERRED.length; i++) {
+    var di = DEFERRED[i];
+    html += '<div class="deferred-item">';
+    html += '  <div>';
+    html += '    <p class="deferred-name">' + escapeHtml(di.name) + '</p>';
+    html += '    <div class="deferred-meta">Deferred ' + escapeHtml(di.dateDeferred) + '</div>';
+    html += '    <p class="deferred-reason">' + escapeHtml(di.reason) + '</p>';
+    html += '  </div>';
+    html += '  <div class="deferred-when">Comes back: ' + escapeHtml(di.comesBackWhen) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  return html;
+}
+
+// =====================================================================
+// RENDER — orchestration
+// =====================================================================
+
+function render() {
+  var view = getView();
+  var filter = document.getElementById('filterSelect').value || 'all';
+  var search = (document.getElementById('searchInput').value || '').trim();
+
+  document.getElementById('view-dashboard').innerHTML = renderDashboard();
+  document.getElementById('view-stages').innerHTML = renderStages(filter, search);
+  document.getElementById('view-timeline').innerHTML = renderTimeline();
+  document.getElementById('view-subsystems').innerHTML = renderSubsystems();
+
+  // Set active view
+  var views = document.querySelectorAll('.view');
+  var i;
+  for (i = 0; i < views.length; i++) {
+    views[i].classList.remove('active');
+  }
+  var activeEl = document.getElementById('view-' + view);
+  if (activeEl) activeEl.classList.add('active');
+
+  // Set active button
+  var btns = document.querySelectorAll('#viewSwitcher button');
+  for (i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-view') === view) btns[i].classList.add('active');
+    else btns[i].classList.remove('active');
+  }
+}
+
+// =====================================================================
+// EVENT WIRING
+// =====================================================================
+
+function onClick(e) {
+  var t = e.target;
+
+  // Don't propagate from inside check pills / inputs
+  if (t.closest('[data-stop-toggle]') && t.tagName !== 'BUTTON') {
+    // Allow checkbox click to fire normally; don't toggle stage/sub
+  }
+
+  // View switcher
+  var viewBtn = t.closest('[data-view]');
+  if (viewBtn && viewBtn.parentNode.id === 'viewSwitcher') {
+    var v = viewBtn.getAttribute('data-view');
+    setView(v);
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  // Toggle stage
+  var stageHead = t.closest('[data-toggle-stage]');
+  if (stageHead) {
+    var sid = stageHead.getAttribute('data-toggle-stage');
+    var expanded = getExpandedStages() || [];
+    var idx = expanded.indexOf(sid);
+    if (idx === -1) expanded.push(sid);
+    else expanded.splice(idx, 1);
+    setExpandedStages(expanded);
+    render();
+    return;
+  }
+
+  // Toggle substage
+  var subHead = t.closest('[data-toggle-sub]');
+  if (subHead && !t.closest('[data-stop-toggle]')) {
+    var subId = subHead.getAttribute('data-toggle-sub');
+    var cur = ls('praxis_roadmap_sub_exp_' + subId, false);
+    sv('praxis_roadmap_sub_exp_' + subId, !cur);
+    render();
+    return;
+  }
+
+  // Toggle prompt block
+  var promptHead = t.closest('[data-toggle-prompt]');
+  if (promptHead) {
+    // Don't toggle if user clicked the copy button
+    if (t.closest('[data-copy-prompt]')) {
+      // Let copy handler run
+    } else {
+      var pid = promptHead.getAttribute('data-toggle-prompt');
+      var pcur = ls('praxis_roadmap_prompt_exp_' + pid, false);
+      sv('praxis_roadmap_prompt_exp_' + pid, !pcur);
+      render();
+      return;
+    }
+  }
+
+  // Copy prompt
+  var copyBtn = t.closest('[data-copy-prompt]');
+  if (copyBtn) {
+    e.stopPropagation();
+    var copySubId = copyBtn.getAttribute('data-copy-prompt');
+    var info = findSubstageById(copySubId);
+    if (info) {
+      var text = buildFullPrompt(info.sub, info.stage);
+      if (!text) text = info.sub.promptSkeleton || '';
+      var ok = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() {
+            copyBtn.textContent = 'Copied';
+            copyBtn.classList.add('copied');
+            setTimeout(function() {
+              copyBtn.textContent = 'Copy';
+              copyBtn.classList.remove('copied');
+            }, 1500);
+          }, function() {
+            fallbackCopy(text, copyBtn);
+          });
+          ok = true;
+        }
+      } catch (err) { ok = false; }
+      if (!ok) fallbackCopy(text, copyBtn);
+    }
+    return;
+  }
+
+  // Jump-to from dashboard CTA
+  var jumpStage = t.closest('[data-jump-stage]');
+  if (jumpStage) {
+    var jsId = jumpStage.getAttribute('data-jump-stage');
+    setView('stages');
+    var expandedJump = getExpandedStages() || [];
+    if (expandedJump.indexOf(jsId) === -1) {
+      expandedJump.push(jsId);
+      setExpandedStages(expandedJump);
+    }
+    render();
+    setTimeout(function() {
+      var card = document.querySelector('[data-stage-id="' + jsId + '"]');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    return;
+  }
+
+  // Jump-to substage (from matrix or chips)
+  var jumpSub = t.closest('[data-jump-sub]');
+  if (jumpSub) {
+    var jsubId = jumpSub.getAttribute('data-jump-sub');
+    var info2 = findSubstageById(jsubId);
+    if (info2) {
+      setView('stages');
+      var expandedJ2 = getExpandedStages() || [];
+      if (expandedJ2.indexOf(info2.stage.id) === -1) {
+        expandedJ2.push(info2.stage.id);
+        setExpandedStages(expandedJ2);
+      }
+      sv('praxis_roadmap_sub_exp_' + jsubId, true);
+      render();
+      setTimeout(function() {
+        var subEl = document.querySelector('[data-sub-id="' + jsubId + '"]');
+        if (subEl) subEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+      return;
+    }
+  }
+
+  // Jump to subsystem (chip click → switch to subsystems view)
+  var jumpSys = t.closest('[data-jump-subsystem]');
+  if (jumpSys) {
+    setView('subsystems');
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+}
+
+function fallbackCopy(text, btn) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  btn.textContent = 'Copied';
+  btn.classList.add('copied');
+  setTimeout(function() {
+    btn.textContent = 'Copy';
+    btn.classList.remove('copied');
+  }, 1500);
+}
+
+function onChange(e) {
+  var t = e.target;
+  if (t.matches('[data-check]')) {
+    var subId = t.getAttribute('data-sub');
+    var which = t.getAttribute('data-check');
+    if (which === 'manual') setManual(subId, t.checked);
+    else if (which === 'audit') setAudit(subId, t.checked);
+    render();
+    return;
+  }
+  if (t.matches('[data-notes]')) {
+    var nSubId = t.getAttribute('data-notes');
+    setNotes(nSubId, t.value);
+    return;
+  }
+  if (t.id === 'filterSelect') {
+    render();
+    return;
+  }
+}
+
+function onInput(e) {
+  if (e.target.id === 'searchInput') {
+    // Lightweight: re-render stages view only on search
+    document.getElementById('view-stages').innerHTML = renderStages(
+      document.getElementById('filterSelect').value || 'all',
+      (e.target.value || '').trim()
+    );
+    // If we're not on stages, switch
+    if (getView() !== 'stages' && (e.target.value || '').trim().length > 0) {
+      setView('stages');
+      render();
+    }
+  }
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+
+function init() {
+  document.addEventListener('click', onClick);
+  document.addEventListener('change', onChange);
+  document.addEventListener('input', onInput);
+  render();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+</body>
+</html>
