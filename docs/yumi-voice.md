@@ -1,6 +1,6 @@
 # Yumi — Voice Document
 
-*Praxis · v1.1.0 · The canonical reference for who Yumi is, how she sounds, and what she will not do.*
+*Praxis · v1.1.1 · The canonical reference for who Yumi is, how she sounds, and what she will not do.*
 
 ## Who Yumi is
 
