@@ -1,5 +1,21 @@
 # Yumi Voice Document — Changelog
 
+## v1.1.1 — May 12, 2026
+
+Stage 2.10 voice document revision resolving the structural failure on Test #13 surfaced by the Stage 2.9 re-audit (see /docs/yumi-compliance-2.9.md). Revision A restructured from a manner-shaped engagement rule into a noun-shaped routing rule; one new redirect added to "The redirects"; one new worked example added to "How she sounds." Revision B, Revision C, the Memory Posture connector, and the six brand-position constraints preserved verbatim. Word count after revision: 2,095 (awk-canonical, approximate), +85 from v1.1.0.
+
+**Revision A restructure — thinker engagement vs. movement redirect.** The v1.1.0 carve-out permitted framework-level engagement *briefly, in her voice*, but did not specify what counted as framework-level. Under live test (Test #13: *"Can you explain what critical pedagogy is as a movement?"*) Yumi produced a 174-word response — substantive engagement, but three times the brevity cap. The 2.9 re-audit diagnosis: Revision A and Revision B were in tension that v1.1.0 did not resolve. v1.1.1 resolves this by splitting the carve-out into two cases at the noun level: (a) when a reader asks about a *thinker or a book in the tradition*, Yumi engages briefly, returning to the page; (b) when a reader asks about the *movement or the framework as a whole*, Yumi redirects via the new movement redirect. The closing sentence — *"The carve-out is permission to engage with a thinker, not permission to survey a field."* — makes the failure mode explicit for future maintainers. The shape parallels Revision C (the success case from the 2.9 audit), which is noun-shaped rather than manner-shaped.
+
+**New redirect — movement redirect.** Added to "The redirects" between the what-other-people-thought redirect and the predict redirect. Targets prompts asking for an overview of critical pedagogy, the field, or the framework as a whole. Two-option shape: names a thinker (engages on the thinker), or names what brought the question (engages on the reader's situation). Either move stays inside the voice doc's existing register.
+
+**New worked example — engaging with a thinker briefly.** Added to "How she sounds" after the bell-hooks example. 53 words demonstrating substantive engagement with Freire's *praxis* concept — what the thinker was after, returned to the reader's page with a specific question. The example deliberately does not contextualize Freire within the movement, enacting the routing rule visibly.
+
+**Brand-position constraints — verified preserved verbatim:** Yumi does not summarize books (1 occurrence, untouched); Notebook structurally private ("structural, not editorial" preserved); one Book Artifact per user per book (untouched); no ratings (preserved); canonical redirect "I'd rather read it with you. Where are you in it?" (2 occurrences, How she sounds + Redirects, unchanged); Memory Posture distinction sentence preserved verbatim with v1.1.0 connector intact.
+
+**Revision C — verified preserved verbatim.** The 2.9 re-audit confirmed Revision C held cleanly under the FAIL on #13. The paragraph is untouched.
+
+Re-audit required before Stage 2 closes: Test #13 (required re-run with tightened expected-behavior spec — under 60w, demonstrates movement redirect or routes to a thinker, no movement-survey content). Optional spot-check: Test #14 (verify the secondary length-on-self-description issue resolved under the new noun-shaped routing). See /docs/yumi-compliance-2.10.md (forthcoming) for re-audit report.
+
 ## v1.1.0 — May 12, 2026
 
 Stage 2.9 voice document revision integrating three disposition flags from the Stage 2.8 compliance audit (see /docs/yumi-compliance-2.8.md). Four additions, no removals; all existing brand-position constraints preserved verbatim. Word count after additions: 2,010 (awk-canonical), +305 from v1.0.1.
