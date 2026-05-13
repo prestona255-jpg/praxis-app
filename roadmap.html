@@ -1363,9 +1363,9 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       <h1 class="title">Praxis Roadmap</h1>
       <p class="subtitle">A reading community organized by depth of engagement, not metrics of attention.</p>
       <div class="meta-row">
-        <span><strong>Active stage</strong> · Stage 2 — Text-only conversational Yumi</span>
+        <span><strong>Active stage</strong> · Stage 3 — Notebook + Arcs UI</span>
         <span><strong>Version</strong> · v1.0</span>
-        <span><strong>Last updated</strong> · May 5, 2026</span>
+        <span><strong>Last updated</strong> · May 13, 2026</span>
       </div>
     </div>
   </div>
@@ -1449,8 +1449,8 @@ var STAGES = [
     num: 'Stage 2',
     name: 'Text-only conversational Yumi',
     purpose: 'Yumi comes online for the first time. After Stage 2 ships, a user can sign in, open the app, type a message to Yumi, and have a real conversation that matches the voice document. Voice input works. TTS does not. Voice agent does not.',
-    stageStatus: 'in-progress',
-    active: true,
+    stageStatus: 'shipped',
+    active: false,
     summary: 'This is where Yumi behaves for the first time. Eight sub-stages move from brain skeleton through proxy verification, UI scaffold, full text wiring, voice input, context injection, conversation memory, and a final voice-document compliance audit. Stage 2 ships only when the audit passes.',
     nonGoals: [
       'TTS / spoken Yumi (deferred to 2.5)',
@@ -1932,6 +1932,72 @@ var STAGES = [
 'Shipping phase (Claude Code): four-stage prompt — Stage 0 pre-flight, Stage 1 replace docs/yumi-voice.md, Stage 2 prepend changelog entry, Stage 3 bump sw.js CACHE_VERSION, Stage 4 commit and push. Each stage has hard-numeric verification (byte count, awk-canonical word count, grep counts on load-bearing phrases). Pre-computed expected values throughout for independent verification.\n\n' +
 'Re-audit phase (Claude chat or separate chat): localStorage.clear() between every test. Required: tests #13, #14, #15, #17. Optional: spot-checks #1, #16. File results in /docs/yumi-compliance-2.9.md mirroring 2.8 structure.\n\n' +
 'Drift check on Claude before drafting each revision: not weakening any of the four absolute refusals, not weakening the canonical redirect, not weakening Memory Posture distinction.'
+      },
+
+      {
+        id: 's2-10',
+        num: '2.10',
+        name: 'Voice document v1.1.1 revision + 2.10 re-audit',
+        depConfirm: '2.9 must be Shipped. The 2.9 re-audit must have surfaced a structural FAIL on at least one required test. The 2.10 substage exists only because the 2.9 re-audit identified a remaining structural issue that v1.1.0 did not resolve.',
+        purpose: 'Resolve the structural FAIL on Test #13 (critical pedagogy framework engagement) surfaced by the 2.9 re-audit. v1.1.0 Revision A was manner-shaped (engage briefly, in her voice); under live test it produced a 174-word response — 3x the brevity cap. Restructure Revision A into a noun-shaped routing rule, add a movement redirect, and re-audit the affected test plus one spot-check.',
+        scope: [
+          'Restructure voice document Revision A from manner-shaped engagement rule into noun-shaped routing rule: (a) thinker-level questions get engaged briefly, in her voice; (b) movement-level questions get redirected',
+          'Add a sixth redirect to "The redirects" section — the movement redirect — between the what-other-people-thought redirect and the predict redirect',
+          'Add a worked example to "How she sounds" demonstrating brief engagement with Freire\'s praxis (the thinker case)',
+          'Closing sentence on Revision A makes the failure mode explicit: "The carve-out is permission to engage with a thinker, not permission to survey a field."',
+          'Preserve verbatim: Revision B (length register), Revision C (no meta-narrating), Memory Posture connector, all six brand-position constraints, all existing redirects, all existing worked examples',
+          'Update /docs/yumi-voice-changelog.md with v1.1.1 entry following the existing format',
+          'Bump CACHE_VERSION in sw.js to force voice doc rollover live',
+          'Re-audit Test #13 (required, gating) and spot-check Test #14 (optional, non-gating) against live deploy',
+          'localStorage.clear() between every test (continued discipline from 2.9 audit protocol)',
+          'File results in /docs/yumi-compliance-2.10.md following 2.9 structure'
+        ],
+        nonGoals: [
+          'No new tests beyond #13 (required re-run) and #14 (optional spot-check). The other 2.9 tests passed; re-running adds noise',
+          'No yumi-brain.js logic changes — voice doc revision is the only behavioral lever',
+          'No revision of Revision B, Revision C, Memory Posture, or any brand-position constraint',
+          'No drafting of v1.1.2 fixes during the audit — if #13 fails again, report the failure mode and open a separate substage',
+          'Not a full re-audit of all 16 tests'
+        ],
+        subsystems: ['yumi-voice', 'sw'],
+        files: [
+          '/docs/yumi-voice.md (v1.1.0 -> v1.1.1, Revision A restructure + new redirect + new worked example)',
+          '/docs/yumi-voice-changelog.md (prepend v1.1.1 entry)',
+          'sw.js (CACHE_VERSION bump for rollover)',
+          '/docs/yumi-compliance-2.10.md (new, after re-audit)'
+        ],
+        acceptance: [
+          'Voice document v1.1.1 shipped with Revision A restructured as noun-shaped routing rule',
+          'New movement redirect present in "The redirects" section',
+          'New Freire worked example present in "How she sounds"',
+          'Brand-position constraints and Revisions B, C, Memory Posture connector verified preserved verbatim',
+          'CACHE_VERSION bumped and rolled over live',
+          'Test #13 re-audit returns PASS (under 60w AND routing fired AND no movement-survey content)',
+          'Test #14 spot-check noted with PASS-or-FAIL outcome (does not gate Stage 2 closure)',
+          'Compliance document /docs/yumi-compliance-2.10.md exists with re-audit results'
+        ],
+        evidence: [
+          'Static: grep -c "v1.1.1" docs/yumi-voice.md returns 1',
+          'Static: grep -c "permission to engage with a thinker, not permission to survey a field" docs/yumi-voice.md returns 1',
+          'Static: grep -c "rather come at through a thinker than as a survey" docs/yumi-voice.md returns 1',
+          'Static: grep -c "literacy circles" docs/yumi-voice.md returns 1',
+          'Static: grep -c "She does not narrate the reader to themselves" docs/yumi-voice.md returns 1',
+          'Static: grep -c "She is brief. Most of what she says is under sixty words" docs/yumi-voice.md returns 1',
+          'Live URL DevTools: fetch loaded voice doc returns version string v1.1.1',
+          'Audit outcome: Test #13 PASS (35w, movement redirect fired verbatim, no survey content). Test #14 PASS-with-flag (134w against 60w cap; routing shape correct; length axis flagged as v1.2.0 candidate, non-gating)'
+        ],
+        rollback: 'If Test #13 fails again under v1.1.1: revert to v1.1.0 (git checkout the prior version) and re-bump cache. Two diagnostic modes identified for v1.1.2: (1) routing rule shaped right but model not binding (fix: numerical binding inside Revision A); (2) routing rule shaped wrong (fix: deeper rework of the carve-out). Diagnosis happens in a separate chat.',
+        risks: [
+          'Routing rule depends on the model parsing thinker vs. movement/framework as the load-bearing distinction. Under engagement pressure the model may treat critical pedagogy as thinker-adjacent and engage with the field anyway. Mitigation: the explicit closing sentence on Revision A makes the failure mode visible to future maintainers.',
+          'Length cap may not bind even when routing is correct. Test #14 confirmed this risk under live test (134w response, structurally correct shape). v1.2.0 candidate fix: numerical anchor inside Revision A. Not addressed in this substage.',
+          'Cache rollover stickiness — same risk as 2.9. Mitigated by explicit DevTools verification of the loaded version string before running audit tests.'
+        ],
+        promptSkeleton:
+'This sub-stage is hybrid: voice doc revision in Claude chat, shipping via Claude Code, re-audit in Claude chat against live deploy.\n\n' +
+'Drafting phase (Claude chat): work the restructure of Revision A first. Identify the manner-shaped failure mode in v1.1.0. Restructure into noun-shaped (a) thinker case, (b) movement case. Draft the new redirect and the new worked example with explicit word count discipline.\n\n' +
+'Shipping phase (Claude Code): four-stage prompt mirroring 2.9. Stage 0 pre-flight grep gates, Stage 1 replace docs/yumi-voice.md, Stage 2 prepend changelog entry, Stage 3 bump sw.js CACHE_VERSION, Stage 4 commit and push.\n\n' +
+'Re-audit phase (Claude chat): localStorage.clear() before every test. Required: Test #13. Optional spot-check: Test #14. DevTools confirm v1.1.1 loaded before running tests. File results in /docs/yumi-compliance-2.10.md.\n\n' +
+'Audit outcome (Stage 2.10 re-audit, May 12-13, 2026): Test #13 PASS (35w response, movement redirect fired verbatim, structural fix held). Test #14 PASS-with-flag (134w against 60w cap; routing shape correct but length axis strained — flagged as v1.2.0 candidate, non-gating). Stage 2 closed.'
       }
     ]
   },
@@ -1968,7 +2034,8 @@ var STAGES = [
     num: 'Stage 3',
     name: 'Notebook + Arcs UI',
     purpose: "Make the structurally-private writing space and the intersectional reading-thread structure visible and usable. This is where Praxis's constitutional principles become user-facing instead of schema-only. After Stage 3 ships, a user can open the Notebook as a top-level surface, see all entries as one graph, write Marginalia inside book detail view, write Journal from the Notebook, toggle Journal entries to private, see what Yumi can currently see, mark a book finished and create its Book Artifact, create Knowledge Arcs explicitly, and view arcs chronologically.",
-    stageStatus: 'not-started',
+    stageStatus: 'in-progress',
+    active: true,
     summary: 'Notebook and Knowledge Arcs become first-class user surfaces. Constitutional principles #2 (Notebook structurally private), #3 (one Book Artifact per user per book), #5 (no asymmetric knowledge), and #6 (Knowledge Arcs intersectional by design) land in user-facing form here. Scope locked through nine cluster decisions documented in /docs/praxis-3-scope.md, May 12 2026.',
     nonGoals: [
       'No Yumi-suggested arc creation (deferred to Stage 4+)',
@@ -1979,7 +2046,7 @@ var STAGES = [
       'No reorderable arc curation (chronological-by-add-date only; curated narrative views deferred)',
       'No graph editing affordances beyond entry creation (no drag-rewire of edges)'
     ],
-    dependencies: 'Stage 2 must be Shipped and Proven, including the 2.8 audit and the 2.9 re-audit. Voice document v1.1.0 must be live before any Stage 3 substage that touches Yumi behavior (specifically 3.4 privacy filter).',
+    dependencies: 'Stage 2 must be Shipped and Proven, including the 2.8 audit and the 2.9 re-audit. Voice document v1.1.1 must be live before any Stage 3 substage that touches Yumi behavior (specifically 3.4 privacy filter).',
     substages: [
 
       {
@@ -2672,10 +2739,10 @@ var TIMELINE_NOW_INDEX = 0; // May 2026
 // Stage 2: 4-6 weeks. Stage 2.5: 2-3 weeks. Stage 3: 6-8 weeks. Stage 4: 3-4 weeks.
 var TIMELINE_BANDS = [
   { stageId: 's1',  label: 'Stage 1 — Foundation',     start: -1.0, end: 0.0,  status: 'shipped' },
-  { stageId: 's2',  label: 'Stage 2 — Conversational Yumi', start: 0.0, end: 1.5,  status: 'in-progress' },
-  { stageId: 's25', label: 'Stage 2.5 — TTS',          start: 1.5,  end: 2.25, status: 'not-started' },
-  { stageId: 's3',  label: 'Stage 3 — Notebook + Arcs', start: 2.25, end: 4.25, status: 'not-started' },
-  { stageId: 's4',  label: 'Stage 4 — Phase 1 ready',  start: 4.25, end: 5.25, status: 'not-started' }
+  { stageId: 's2',  label: 'Stage 2 — Conversational Yumi', start: 0.0, end: 0.5,  status: 'shipped' },
+  { stageId: 's3',  label: 'Stage 3 — Notebook + Arcs', start: 0.5, end: 2.0, status: 'in-progress' },
+  { stageId: 's25', label: 'Stage 2.5 — TTS',          start: 2.0,  end: 2.75, status: 'not-started' },
+  { stageId: 's4',  label: 'Stage 4 — Phase 1 ready',  start: 2.75, end: 3.75, status: 'not-started' }
 ];
 
 // =====================================================================
