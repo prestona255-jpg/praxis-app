@@ -140,6 +140,31 @@
 // (no asymmetric knowledge -- anything captured is visible and
 // correctable to the user).
 //
+// Schema 1.9.0 adds two user-facing fields to state.books records:
+//
+//   status: string   // 'want' | 'reading' | 'finished'
+//   genre:  string   // free-form singular tag, empty string allowed
+//
+// status is not just metadata -- it is the state-machine field
+// 3.7 reads as a gate for Artifact creation (Mark Finished ->
+// Artifact). genre is a single free-form string; multi-genre is
+// out of scope for 3.5a. The 1.8.0 -> 1.9.0 migration backfills
+// every existing books record with status: 'reading' and
+// genre: '' (empty string) -- safe defaults that align with the
+// add-book radio default in the shelf surface (3.5a).
+//
+// 1.9.0 also lazily seeds per-user shelves in state.userBooks.
+// The userBooks map has existed as a top-level field since
+// schema 1.1.0, but no code path initialized per-user records.
+// ensureUser(uid) now writes state.userBooks[uid] = { bookIds: [] }
+// when missing, so the add-book flow can append to a guaranteed
+// array. The 3.5a shelf reads from state.books (not userBooks)
+// to preserve book_test_1 visibility despite its pre-existing
+// drift (seeded into state.books in 3.3 console testing but
+// never into userBooks). userBooks is half-wired in 3.5a: writes
+// happen on new-book creation, reads do not filter the shelf.
+// User-scoping the shelf is a future seam.
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -166,7 +191,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.8.0',
+  SCHEMA_VERSION:  '1.9.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -206,6 +231,14 @@ function genEntryId() {
   return 'entry_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
+// Canonical book id generator. Shaped identically to genEntryId so
+// id collisions across the two maps are impossible (different prefix)
+// and the timestamp-ordered suffix preserves insertion order for
+// shelf rendering when sort keys are missing.
+function genBookId() {
+  return 'book_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
 // Lazy initializer for per-user records. The schema-versioned shape of
 // a user record is owned here so that future writers (notebook entries,
 // artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
@@ -226,6 +259,9 @@ function ensureUser(uid) {
     state.users[uid].registerDefaults = {
       journal: false, marginalia: false
     };
+  }
+  if (!state.userBooks[uid]) {
+    state.userBooks[uid] = { bookIds: [] };
   }
 }
 
@@ -367,6 +403,30 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.8.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.8.0') {
+    // 3.5a: state.books gains status + genre. Backfill every existing
+    // record with safe defaults aligned to the add-book radio default
+    // ('reading') and an empty genre string. Books created post-1.9.0
+    // carry these fields from creation; the loop is a no-op on them
+    // because both fields will already be the correct type.
+    if (stored.books) {
+      var bid;
+      for (bid in stored.books) {
+        if (Object.prototype.hasOwnProperty.call(stored.books, bid)) {
+          var book = stored.books[bid];
+          if (book) {
+            if (typeof book.status !== 'string') {
+              book.status = 'reading';
+            }
+            if (typeof book.genre !== 'string') {
+              book.genre = '';
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.9.0';
   }
   return stored;
 }
