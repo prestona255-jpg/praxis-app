@@ -52,6 +52,16 @@
 // instead of hardcoding false. Existing entries are never
 // retroactively flipped when a register default changes.
 //
+// Stage 3.6: principle #5's third leg -- the transparency view.
+// "What does Yumi see?" affordance in the Notebook header opens an
+// inline panel at #notebook-transparency-host (between settings
+// host and editor host). The panel reads
+// window.YumiBrain.getContextSnapshot() at mount time -- fresh on
+// every open, no live updates, close clears. Five sections:
+// Current book, Current arc, Recent notebook entries, conversation
+// summary, recent turns. Diagnostic surface, not primary surface;
+// styling differentiation deferred to the styling pass.
+//
 // CSS classes (all unstyled; styling pass to follow):
 //   3.1: notebook-empty, notebook-empty-title, notebook-empty-body
 //   3.2: notebook, notebook-title, notebook-header,
@@ -69,9 +79,17 @@
 //         notebook-settings-section, notebook-settings-label,
 //         notebook-settings-current, notebook-settings-toggle-link,
 //         notebook-settings-explanation, notebook-settings-done
+//   3.6:  notebook-transparency-toggle, transparency-panel,
+//         transparency-header, transparency-title, transparency-close,
+//         transparency-framing, transparency-section,
+//         transparency-section-label, transparency-section-body,
+//         transparency-entry, transparency-entry-body,
+//         transparency-entry-meta, transparency-turn,
+//         transparency-turn-role, transparency-turn-body
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3)
-//   Settings host id: #notebook-settings-host (3.4b)
+//   Settings host id:     #notebook-settings-host (3.4b)
+//   Transparency host id: #notebook-transparency-host (3.6)
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -135,6 +153,15 @@ function renderNotebook() {
       openNotebookSettings();
     });
     header.appendChild(settingsBtn);
+
+    var transparencyBtn = document.createElement('button');
+    transparencyBtn.type = 'button';
+    transparencyBtn.className = 'notebook-transparency-toggle';
+    transparencyBtn.textContent = 'What does Yumi see?';
+    transparencyBtn.addEventListener('click', function() {
+      openTransparencyView();
+    });
+    header.appendChild(transparencyBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -153,6 +180,13 @@ function renderNotebook() {
   var settingsHost = document.createElement('div');
   settingsHost.id = 'notebook-settings-host';
   wrap.appendChild(settingsHost);
+
+  // Transparency host -- empty on every render; openTransparencyView
+  // mounts the "What Yumi sees" panel here on demand. Created
+  // unconditionally; gating happens at the header button level.
+  var transparencyHost = document.createElement('div');
+  transparencyHost.id = 'notebook-transparency-host';
+  wrap.appendChild(transparencyHost);
 
   // Editor host -- empty on every render; openJournalEditor mounts
   // its block here on demand.
@@ -676,15 +710,228 @@ function setRegisterDefault(register, isPrivate) {
   openNotebookSettings();
 }
 
+// Mount the "What Yumi sees" panel into #notebook-transparency-host.
+// Fresh snapshot from window.YumiBrain.getContextSnapshot() on every
+// open -- no live updates while open. Each section renders its
+// empty-state copy when its source data is absent. All dynamic text
+// goes in via textContent; innerHTML only clears the host.
+function openTransparencyView() {
+  var host = document.getElementById('notebook-transparency-host');
+  if (!host) return;
+
+  var snap = window.YumiBrain.getContextSnapshot();
+
+  host.innerHTML = '';
+
+  var panel = document.createElement('section');
+  panel.className = 'transparency-panel';
+
+  // Header: title + close button.
+  var header = document.createElement('header');
+  header.className = 'transparency-header';
+
+  var title = document.createElement('h2');
+  title.className = 'transparency-title';
+  title.textContent = 'What Yumi sees';
+  header.appendChild(title);
+
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'transparency-close';
+  closeBtn.textContent = 'Close';
+  closeBtn.addEventListener('click', function() {
+    closeTransparencyView();
+  });
+  header.appendChild(closeBtn);
+
+  panel.appendChild(header);
+
+  // Framing copy: two paragraphs, verbatim from the Stage 3.6 brief.
+  var framing = document.createElement('div');
+  framing.className = 'transparency-framing';
+
+  var p1 = document.createElement('p');
+  p1.textContent =
+    'This is everything Yumi sees right now: the book you are ' +
+    'reading, the arc you are following, recent notebook entries ' +
+    'that are marked visible, and the conversation you and Yumi ' +
+    'have been having. Yumi does not see anything else.';
+  framing.appendChild(p1);
+
+  var p2 = document.createElement('p');
+  p2.textContent =
+    'Entries marked private do not appear here. They stay in the ' +
+    'Notebook for the reader and are excluded from what Yumi ' +
+    'receives. Yumi sees the three most recent visible entries, ' +
+    'trimmed; older or longer writing lives in the Notebook but ' +
+    'not in this view. Closing this panel returns to the Notebook.';
+  framing.appendChild(p2);
+
+  panel.appendChild(framing);
+
+  // Section: Current book.
+  var bookSec = renderTransparencySection('Current book');
+  var bookBody = bookSec.querySelector('.transparency-section-body');
+  if (snap.currentBook === null) {
+    bookBody.textContent = 'No book is open right now.';
+  } else {
+    var bookText = snap.currentBook.title;
+    if (snap.currentBook.author && snap.currentBook.author.length > 0) {
+      bookText = bookText + ' by ' + snap.currentBook.author;
+    }
+    bookBody.textContent = bookText;
+  }
+  panel.appendChild(bookSec);
+
+  // Section: Current arc.
+  var arcSec = renderTransparencySection('Current arc');
+  var arcBody = arcSec.querySelector('.transparency-section-body');
+  if (snap.currentArc === null) {
+    arcBody.textContent = 'No arc is active right now.';
+  } else {
+    arcBody.textContent = snap.currentArc.title;
+  }
+  panel.appendChild(arcSec);
+
+  // Section: Recent notebook entries. Bodies are already truncated
+  // to 200 chars by assembleContextData -- this is exactly the form
+  // Yumi receives.
+  var entriesSec = renderTransparencySection('Recent notebook entries');
+  var entriesBody = entriesSec.querySelector('.transparency-section-body');
+  if (snap.recentEntries.length === 0) {
+    entriesBody.textContent =
+      'No notebook entries are visible to Yumi right now. New ' +
+      'entries or entries marked visible will appear here.';
+  } else {
+    var i;
+    for (i = 0; i < snap.recentEntries.length; i++) {
+      entriesBody.appendChild(renderTransparencyEntry(snap.recentEntries[i]));
+    }
+  }
+  panel.appendChild(entriesSec);
+
+  // Section: Conversation summary.
+  var summarySec = renderTransparencySection(
+    'What Yumi remembers from this conversation'
+  );
+  var summaryBody = summarySec.querySelector('.transparency-section-body');
+  if (!snap.summary) {
+    summaryBody.textContent =
+      'Nothing has been summarized yet — this happens after a ' +
+      'conversation grows past its short-term memory.';
+  } else {
+    summaryBody.textContent = snap.summary;
+  }
+  panel.appendChild(summarySec);
+
+  // Section: Recent turns in this conversation.
+  var turnsSec = renderTransparencySection(
+    'Recent turns in this conversation'
+  );
+  var turnsBody = turnsSec.querySelector('.transparency-section-body');
+  if (snap.recentTurns.length === 0) {
+    turnsBody.textContent =
+      'No conversation has happened yet in this session.';
+  } else {
+    var t;
+    for (t = 0; t < snap.recentTurns.length; t++) {
+      turnsBody.appendChild(renderTransparencyTurn(snap.recentTurns[t]));
+    }
+  }
+  panel.appendChild(turnsSec);
+
+  host.appendChild(panel);
+}
+
+// Build the shell of a transparency-section (label + empty body
+// div). Callers fill the body. Saves repetition across the five
+// sections in openTransparencyView.
+function renderTransparencySection(labelText) {
+  var sec = document.createElement('section');
+  sec.className = 'transparency-section';
+
+  var label = document.createElement('h3');
+  label.className = 'transparency-section-label';
+  label.textContent = labelText;
+  sec.appendChild(label);
+
+  var body = document.createElement('div');
+  body.className = 'transparency-section-body';
+  sec.appendChild(body);
+
+  return sec;
+}
+
+// Render one recentEntries snapshot item as a card: body line plus
+// a meta line (register, optional book attribution for marginalia,
+// timestamp).
+function renderTransparencyEntry(item) {
+  var card = document.createElement('article');
+  card.className = 'transparency-entry';
+
+  var bodyEl = document.createElement('div');
+  bodyEl.className = 'transparency-entry-body';
+  bodyEl.textContent = item.body || '';
+  card.appendChild(bodyEl);
+
+  var meta = document.createElement('div');
+  meta.className = 'transparency-entry-meta';
+  var metaText = item.register || 'journal';
+  if (item.register === 'marginalia') {
+    var bookLabel = item.bookTitle || '(unknown book)';
+    metaText = metaText + ' from ' + bookLabel;
+  }
+  if (item.createdAt) {
+    metaText = metaText + ' · ' + new Date(item.createdAt).toLocaleString();
+  }
+  meta.textContent = metaText;
+  card.appendChild(meta);
+
+  return card;
+}
+
+// Render one recentTurns snapshot item as role + content.
+function renderTransparencyTurn(turn) {
+  var line = document.createElement('div');
+  line.className = 'transparency-turn';
+
+  var role = document.createElement('span');
+  role.className = 'transparency-turn-role';
+  if (turn.role === 'assistant') {
+    role.textContent = 'Yumi: ';
+  } else {
+    role.textContent = 'User: ';
+  }
+  line.appendChild(role);
+
+  var body = document.createElement('span');
+  body.className = 'transparency-turn-body';
+  body.textContent = turn.content || '';
+  line.appendChild(body);
+
+  return line;
+}
+
+// Clear the transparency host. Does not re-render the Notebook --
+// the host stays mounted, only its contents are emptied. Mirrors
+// the Settings panel's "Done" semantics.
+function closeTransparencyView() {
+  var host = document.getElementById('notebook-transparency-host');
+  if (!host) return;
+  host.innerHTML = '';
+}
+
 window.views = {
-  renderRoute:          renderRoute,
-  renderNotebook:       renderNotebook,
-  renderBookDetail:     renderBookDetail,
-  openJournalEditor:    openJournalEditor,
-  openMarginaliaEditor: openMarginaliaEditor,
-  openNotebookSettings: openNotebookSettings,
-  togglePrivacy:        togglePrivacy,
-  setRegisterDefault:   setRegisterDefault
+  renderRoute:           renderRoute,
+  renderNotebook:        renderNotebook,
+  renderBookDetail:      renderBookDetail,
+  openJournalEditor:     openJournalEditor,
+  openMarginaliaEditor:  openMarginaliaEditor,
+  openNotebookSettings:  openNotebookSettings,
+  togglePrivacy:         togglePrivacy,
+  setRegisterDefault:    setRegisterDefault,
+  openTransparencyView:  openTransparencyView,
+  closeTransparencyView: closeTransparencyView
 };
 
 console.log('views.js loaded');
