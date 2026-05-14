@@ -179,88 +179,39 @@ function appendTurn(role, content) {
   shiftLoop();
 }
 
-// Render the conversation summary line for buildContext. Empty when
-// there is no active uid, no user record, no yumiMemory, or summary
-// is the empty string. When present, prefixed to make explicit to
-// Claude that this is OLDER memory than recentTurns.
-function renderConversationSummary(activeUid) {
-  if (!activeUid || !state.users[activeUid] ||
-      !state.users[activeUid].yumiMemory) {
-    return '';
-  }
-  var summary = state.users[activeUid].yumiMemory.summary;
-  if (!summary) return '';
-  return 'EARLIER IN OUR CONVERSATION (summary): ' + summary + '\n';
-}
-
-// Render the recentTurns labeled-prose block for buildContext. The
-// current user turn (which messages[] carries directly) is excluded --
-// recentTurns is appended pre-fetch and its last entry IS the live
-// message, so we slice it off here to avoid double-counting it in the
-// system prompt. Empty cases (no active uid, no user record, no
-// yumiMemory, no recentTurns, or only the live entry) all collapse to
-// "recentTurns: none yet".
-function renderRecentTurns(activeUid) {
-  if (!activeUid || !state.users[activeUid] ||
-      !state.users[activeUid].yumiMemory ||
-      !state.users[activeUid].yumiMemory.recentTurns) {
-    return 'recentTurns: none yet';
-  }
-  var allTurns = state.users[activeUid].yumiMemory.recentTurns;
-  var priorTurns = allTurns.slice(0, allTurns.length - 1);
-  if (priorTurns.length === 0) {
-    return 'recentTurns: none yet';
-  }
-  var turnLines = ['recentTurns:'];
-  var t;
-  for (t = 0; t < priorTurns.length; t++) {
-    var label;
-    if (priorTurns[t].role === 'assistant') {
-      label = 'Yumi: ';
-    } else {
-      label = 'User: ';
-    }
-    turnLines.push(label + priorTurns[t].content);
-  }
-  return turnLines.join('\n');
-}
-
-// Enforces principle #5 in code: the notebookEntries loop below skips
-// any entry the user has flagged private so private writing never
-// enters Yumi's context. Toggle UI lands in 3.4b.
-function buildContext() {
-  var bookLine;
-  if (state.currentBookId === null) {
-    bookLine = 'none yet';
-  } else {
+// Assemble the structured context Yumi sees. Single source of truth
+// for both buildContext (prose blob for the model call) and
+// getContextSnapshot (structured object for the transparency view).
+// Enforces principle #5: the notebookEntries loop skips any entry
+// the user has flagged private so private writing never enters
+// Yumi's context. Top 3 newest visible entries, each body truncated
+// to 200 chars -- both consumers see the same set, byte for byte.
+function assembleContextData() {
+  var currentBook = null;
+  if (state.currentBookId !== null) {
     var book = state.books[state.currentBookId];
     if (!book) {
       console.warn('yumi-brain: dangling currentBookId ' + state.currentBookId);
-      bookLine = 'none yet';
     } else {
-      var hasAuthor = (typeof book.author === 'string') && book.author.length > 0;
-      if (hasAuthor) {
-        bookLine = book.title + ' by ' + book.author;
-      } else {
-        bookLine = book.title;
+      var author = '';
+      if (typeof book.author === 'string') {
+        author = book.author;
       }
+      currentBook = { title: book.title, author: author };
     }
   }
 
-  var arcLine;
-  if (state.currentArcId === null) {
-    arcLine = 'none';
-  } else {
+  var currentArc = null;
+  if (state.currentArcId !== null) {
     var arc = state.arcs[state.currentArcId];
     if (!arc) {
       console.warn('yumi-brain: dangling currentArcId ' + state.currentArcId);
-      arcLine = 'none';
     } else {
-      arcLine = arc.title;
+      currentArc = { title: arc.title };
     }
   }
 
-  var entries = [];
+  var collected = [];
   var key;
   for (key in state.notebookEntries) {
     if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
@@ -268,33 +219,127 @@ function buildContext() {
           state.notebookEntries[key].isPrivate === true) {
         continue;
       }
-      entries.push(state.notebookEntries[key]);
+      collected.push(state.notebookEntries[key]);
     }
   }
-  entries.sort(function (a, b) {
+  collected.sort(function (a, b) {
     return b.createdAt - a.createdAt;
   });
-  var top = entries.slice(0, 3);
+  var top = collected.slice(0, 3);
+
+  var recentEntries = [];
+  var i;
+  for (i = 0; i < top.length; i++) {
+    var src = top[i];
+    var body = src.body;
+    if (body.length > 200) {
+      body = body.substring(0, 197) + '...';
+    }
+    var bookTitle = null;
+    if (src.bookIds && src.bookIds.length > 0) {
+      var bId = src.bookIds[0];
+      if (state.books && state.books[bId]) {
+        bookTitle = state.books[bId].title;
+      }
+    }
+    recentEntries.push({
+      body:      body,
+      register:  src.register || 'journal',
+      bookTitle: bookTitle,
+      createdAt: src.createdAt
+    });
+  }
+
+  var activeUid = resolveActiveUid();
+
+  var summary = '';
+  if (activeUid && state.users[activeUid] &&
+      state.users[activeUid].yumiMemory &&
+      state.users[activeUid].yumiMemory.summary) {
+    summary = state.users[activeUid].yumiMemory.summary;
+  }
+
+  var recentTurns = [];
+  if (activeUid && state.users[activeUid] &&
+      state.users[activeUid].yumiMemory &&
+      state.users[activeUid].yumiMemory.recentTurns) {
+    var allTurns = state.users[activeUid].yumiMemory.recentTurns;
+    var priorTurns = allTurns.slice(0, allTurns.length - 1);
+    var t;
+    for (t = 0; t < priorTurns.length; t++) {
+      recentTurns.push({
+        role:    priorTurns[t].role,
+        content: priorTurns[t].content
+      });
+    }
+  }
+
+  return {
+    currentBook:   currentBook,
+    currentArc:    currentArc,
+    recentEntries: recentEntries,
+    summary:       summary,
+    recentTurns:   recentTurns
+  };
+}
+
+// Format the structured snapshot into the labeled-prose blob Yumi's
+// model call expects. Output must remain byte-identical to the pre-
+// 3.6 version -- buildYumiSystem composes this into the system
+// prompt and any drift changes what Yumi sees.
+function buildContext() {
+  var data = assembleContextData();
+
+  var bookLine;
+  if (data.currentBook === null) {
+    bookLine = 'none yet';
+  } else if (data.currentBook.author && data.currentBook.author.length > 0) {
+    bookLine = data.currentBook.title + ' by ' + data.currentBook.author;
+  } else {
+    bookLine = data.currentBook.title;
+  }
+
+  var arcLine;
+  if (data.currentArc === null) {
+    arcLine = 'none';
+  } else {
+    arcLine = data.currentArc.title;
+  }
 
   var entriesLine;
-  if (top.length === 0) {
+  if (data.recentEntries.length === 0) {
     entriesLine = 'none yet';
   } else {
     var parts = [];
     var i;
-    for (i = 0; i < top.length; i++) {
-      var body = top[i].body;
-      if (body.length > 200) {
-        body = body.substring(0, 197) + '...';
-      }
-      parts.push(body);
+    for (i = 0; i < data.recentEntries.length; i++) {
+      parts.push(data.recentEntries[i].body);
     }
     entriesLine = parts.join('; ');
   }
 
-  var activeUid = resolveActiveUid();
-  var summaryLine = renderConversationSummary(activeUid);
-  var turnsLine = renderRecentTurns(activeUid);
+  var summaryLine = '';
+  if (data.summary) {
+    summaryLine = 'EARLIER IN OUR CONVERSATION (summary): ' + data.summary + '\n';
+  }
+
+  var turnsLine;
+  if (data.recentTurns.length === 0) {
+    turnsLine = 'recentTurns: none yet';
+  } else {
+    var turnLines = ['recentTurns:'];
+    var t;
+    for (t = 0; t < data.recentTurns.length; t++) {
+      var label;
+      if (data.recentTurns[t].role === 'assistant') {
+        label = 'Yumi: ';
+      } else {
+        label = 'User: ';
+      }
+      turnLines.push(label + data.recentTurns[t].content);
+    }
+    turnsLine = turnLines.join('\n');
+  }
 
   return 'currentBook: ' + bookLine + '\n' +
          'recentEntries: ' + entriesLine + '\n' +
@@ -387,11 +432,12 @@ function sendMessage(userText) {
 }
 
 window.YumiBrain = {
-  loadVoice:    loadYumiVoice,
-  buildSystem:  buildYumiSystem,
-  buildContext: buildContext,
-  getContext:   getYumiContext,
-  sendMessage:  sendMessage
+  loadVoice:          loadYumiVoice,
+  buildSystem:        buildYumiSystem,
+  buildContext:       buildContext,
+  getContext:         getYumiContext,
+  getContextSnapshot: assembleContextData,
+  sendMessage:        sendMessage
 };
 
 // Kick off preload at script-load time so buildYumiSystem can return
