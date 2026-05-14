@@ -92,22 +92,41 @@
 //         transparency-turn-role, transparency-turn-body
 //   3.5a: shelf, shelf-header, shelf-title, shelf-empty-body,
 //         shelf-list, shelf-book, shelf-book-title, shelf-book-author,
-//         shelf-book-meta, shelf-book-status, shelf-book-genre
+//         shelf-book-meta, shelf-book-status, shelf-book-genre,
+//         shelf-new-book, shelf-signin-prompt, shelf-editor,
+//         shelf-editor-title-input, shelf-editor-author-input,
+//         shelf-editor-status, shelf-editor-status-option,
+//         shelf-editor-genre-input, shelf-editor-actions,
+//         shelf-editor-save, shelf-editor-cancel
 //   Editor host ids: #notebook-editor-host (3.2),
-//                    #book-detail-editor-host (3.3)
+//                    #book-detail-editor-host (3.3),
+//                    #shelf-editor-host (3.5a)
 //   Settings host id:     #notebook-settings-host (3.4b)
 //   Transparency host id: #notebook-transparency-host (3.6)
 //
 // Stage 3.5a: renderShelf paints the Books surface -- header (title
-// only in this sub-stage; auth-aware add affordance lands with the
-// add-book editor) + book list (or empty-state paragraph). The list
-// reads from state.books (not state.userBooks) so book_test_1 from
-// 3.3 console seeding stays visible despite never being written to
-// userBooks -- the pre-existing drift documented in the 3.5a brief.
-// Filter pills are deferred; this sub-stage renders every record in
-// state.books, newest first by addedAt. Each row is an anchor to
-// #book/<id> so click-through hits the existing book-detail surface.
+// + auth-aware add affordance: "+ Add book" if signed in,
+// "Sign in to add books" otherwise) + editor host (#shelf-editor-host)
+// + book list (or empty-state paragraph). The list reads from
+// state.books (not state.userBooks) so book_test_1 from 3.3 console
+// seeding stays visible despite never being written to userBooks --
+// the pre-existing drift documented in the 3.5a brief. Filter pills
+// are deferred; this sub-stage renders every record in state.books,
+// newest first by addedAt. Each row is an anchor to #book/<id> so
+// click-through hits the existing book-detail surface.
 // renderShelfBook is the single row renderer.
+//
+// openShelfEditor mounts an inline title/author/status/genre form
+// into #shelf-editor-host. Save (disabled until trimmed title is
+// non-empty) calls genBookId, writes a complete books record with
+// the four schema-1.9.0 fields (id, title, author, isbn:'', addedAt,
+// status, genre), then ensureUser(uid) + push to
+// state.userBooks[uid].bookIds, persists via saveState, re-renders
+// via renderShelf. Cancel re-renders the shelf without writing --
+// state.books and state.userBooks are untouched. Auth gate mirrors
+// renderBookDetail header: when getCurrentUser() is null, the
+// affordance becomes "Sign in to add books" and click routes to
+// signInWithGoogle(), not openShelfEditor.
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -354,7 +373,40 @@ function renderShelf() {
   title.textContent = 'Books';
   header.appendChild(title);
 
+  // Auth-aware add affordance. Mirrors renderBookDetail at
+  // views.js:358-377: signed-in user gets a button that opens the
+  // inline editor; signed-out user gets a sign-in prompt routed
+  // through signInWithGoogle (the same path used by the Notebook
+  // and book-detail surfaces).
+  var user = getCurrentUser();
+  if (user) {
+    var newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.className = 'shelf-new-book';
+    newBtn.textContent = '+ Add book';
+    newBtn.addEventListener('click', function() {
+      openShelfEditor();
+    });
+    header.appendChild(newBtn);
+  } else {
+    var signinBtn = document.createElement('button');
+    signinBtn.type = 'button';
+    signinBtn.className = 'shelf-signin-prompt';
+    signinBtn.textContent = 'Sign in to add books';
+    signinBtn.addEventListener('click', function() {
+      signInWithGoogle();
+    });
+    header.appendChild(signinBtn);
+  }
+
   wrap.appendChild(header);
+
+  // Editor host -- empty on every render; openShelfEditor mounts
+  // its block here on demand. Lives between the header and the
+  // book list so the editor sits visually above existing rows.
+  var editorHost = document.createElement('div');
+  editorHost.id = 'shelf-editor-host';
+  wrap.appendChild(editorHost);
 
   // Collect books. Read site is state.books, not state.userBooks --
   // see brief: userBooks is write-but-not-read in 3.5a so book_test_1
@@ -429,6 +481,137 @@ function renderShelfBook(book) {
 
   card.appendChild(meta);
   return card;
+}
+
+// Inline add-book editor mounted into #shelf-editor-host. Structurally
+// mirrors openMarginaliaEditor: title input (required) + author input
+// (optional) + status radio (default 'reading') + genre input
+// (optional) + Save/Cancel. Save is disabled until the trimmed title
+// is non-empty. On Save: genBookId, write a complete books record
+// (all 1.9.0 fields), ensureUser(uid) + push to userBooks[uid].bookIds,
+// saveState, renderShelf. Cancel re-renders the shelf with no writes.
+function openShelfEditor() {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) return;
+
+  hostEl.innerHTML = '';
+
+  var editor = document.createElement('div');
+  editor.className = 'shelf-editor';
+
+  var titleInput = document.createElement('input');
+  titleInput.type = 'text';
+  titleInput.className = 'shelf-editor-title-input';
+  titleInput.placeholder = 'Title';
+
+  var authorInput = document.createElement('input');
+  authorInput.type = 'text';
+  authorInput.className = 'shelf-editor-author-input';
+  authorInput.placeholder = 'Author (optional)';
+
+  // Status radios: want | reading | finished. Default 'reading' --
+  // same default the migration backfills onto pre-existing records
+  // and the same default 3.7 will treat as the pre-Artifact state.
+  var statusWrap = document.createElement('div');
+  statusWrap.className = 'shelf-editor-status';
+  var statuses = ['want', 'reading', 'finished'];
+  var statusRadios = [];
+  var s;
+  for (s = 0; s < statuses.length; s++) {
+    var label = document.createElement('label');
+    label.className = 'shelf-editor-status-option';
+    var radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'shelf-editor-status';
+    radio.value = statuses[s];
+    if (statuses[s] === 'reading') radio.checked = true;
+    statusRadios.push(radio);
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(' ' + statuses[s]));
+    statusWrap.appendChild(label);
+  }
+
+  var genreInput = document.createElement('input');
+  genreInput.type = 'text';
+  genreInput.className = 'shelf-editor-genre-input';
+  genreInput.placeholder = 'Genre (optional)';
+
+  var actions = document.createElement('div');
+  actions.className = 'shelf-editor-actions';
+
+  var saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'shelf-editor-save';
+  saveBtn.textContent = 'Save';
+  saveBtn.disabled = true;
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'shelf-editor-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  titleInput.addEventListener('input', function() {
+    var trimmed = titleInput.value.replace(/^\s+|\s+$/g, '');
+    saveBtn.disabled = (trimmed.length === 0);
+  });
+
+  saveBtn.addEventListener('click', function() {
+    var titleTrimmed  = titleInput.value.replace(/^\s+|\s+$/g, '');
+    if (titleTrimmed.length === 0) return;
+    var user = getCurrentUser();
+    if (!user) return;
+
+    var authorTrimmed = authorInput.value.replace(/^\s+|\s+$/g, '');
+    var genreTrimmed  = genreInput.value.replace(/^\s+|\s+$/g, '');
+
+    var statusValue = 'reading';
+    var i;
+    for (i = 0; i < statusRadios.length; i++) {
+      if (statusRadios[i].checked) {
+        statusValue = statusRadios[i].value;
+        break;
+      }
+    }
+
+    var now = Date.now();
+    var id  = genBookId();
+
+    state.books[id] = {
+      id:      id,
+      title:   titleTrimmed,
+      author:  authorTrimmed,
+      isbn:    '',
+      addedAt: now,
+      status:  statusValue,
+      genre:   genreTrimmed
+    };
+
+    // ensureUser is defensive against fresh accounts whose state.users
+    // and state.userBooks records have not been seeded yet. After this
+    // call, state.userBooks[uid].bookIds is guaranteed to be an array.
+    if (typeof ensureUser === 'function') {
+      ensureUser(user.uid);
+    }
+    state.userBooks[user.uid].bookIds.push(id);
+
+    saveState();
+    renderShelf();
+  });
+
+  cancelBtn.addEventListener('click', function() {
+    renderShelf();
+  });
+
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+  editor.appendChild(titleInput);
+  editor.appendChild(authorInput);
+  editor.appendChild(statusWrap);
+  editor.appendChild(genreInput);
+  editor.appendChild(actions);
+  hostEl.appendChild(editor);
+
+  titleInput.focus();
 }
 
 function renderBookDetail(bookId) {
@@ -1053,6 +1236,7 @@ window.views = {
   renderBookDetail:      renderBookDetail,
   openJournalEditor:     openJournalEditor,
   openMarginaliaEditor:  openMarginaliaEditor,
+  openShelfEditor:       openShelfEditor,
   openNotebookSettings:  openNotebookSettings,
   togglePrivacy:         togglePrivacy,
   setRegisterDefault:    setRegisterDefault,
