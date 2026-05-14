@@ -32,7 +32,8 @@
 //       {
 //         id:         string,
 //         userId:     string,
-//         notebookId: string,   // foreign key into state.notebooks
+//         bookIds:    array of string,   // foreign keys into state.books
+//         arcIds:     array of string,   // foreign keys into state.arcs
 //         createdAt:  number,   // ms epoch
 //         updatedAt:  number,
 //         body:       string    // raw text / markdown
@@ -103,6 +104,14 @@
 // summarizeAndRoll, replacing the prior summary with a rewrite-to-
 // unify pass through Claude in Yumi's voice.
 //
+// Schema 1.6.0 reshapes notebookEntries for Stage 3.1: the
+// notebookId field is dropped (one Notebook per user under Cluster
+// 1 means there is nothing to foreign-key into), replaced by two
+// array fields -- bookIds and arcIds, zero or more foreign keys
+// each. The 1.5.0 -> 1.6.0 migration deletes any stray notebookId
+// on existing entries; new array fields are populated lazily by
+// Stage 3.2 (Journal) and 3.3 (Marginalia) writers.
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -129,7 +138,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.5.0',
+  SCHEMA_VERSION:  '1.6.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -246,6 +255,20 @@ function migrate(stored) {
     // operationalizes in yumi-brain.js (2.7b-ii-b). Existing summary
     // content preserved verbatim; only the version marker changes.
     stored.SCHEMA_VERSION = '1.5.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.5.0') {
+    var eid;
+    if (stored.notebookEntries) {
+      for (eid in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, eid)) {
+          if (stored.notebookEntries[eid] &&
+              Object.prototype.hasOwnProperty.call(stored.notebookEntries[eid], 'notebookId')) {
+            delete stored.notebookEntries[eid].notebookId;
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.6.0';
   }
   return stored;
 }
