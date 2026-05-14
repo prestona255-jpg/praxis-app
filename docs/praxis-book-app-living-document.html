@@ -361,15 +361,15 @@ footer {
 <div class="status-card">
   <div class="status-field">
     <p class="label">Last updated</p>
-    <p class="value" id="last-updated">2026-05-05</p>
+    <p class="value" id="last-updated">2026-05-14</p>
   </div>
   <div class="status-field">
     <p class="label">Current phase</p>
-    <p class="value" id="current-phase">Between Stage 1.5 cleanup and Stage 2</p>
+    <p class="value" id="current-phase">Pre-beta build</p>
   </div>
   <div class="status-field">
     <p class="label">Current stage</p>
-    <p class="value" id="current-stage">Between Stage 1.5 cleanup and Stage 2</p>
+    <p class="value" id="current-stage">Stage 3 — Notebook + Arcs UI (in progress)</p>
   </div>
   <div class="status-field">
     <p class="label">Hours/week</p>
@@ -675,12 +675,11 @@ footer {
     <tr><th class="checkbox-col"></th><th>Stage</th><th>Status</th><th>Notes</th></tr>
   </thead>
   <tbody>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2 — Yumi comes alive</td><td>Up next</td><td>yumi-brain.js + yumi-ui.js wired through the Netlify Claude proxy. Voice document loaded into the system prompt. Note: <code>verify-engine.js</code> was removed from the load order and the app shell during 1.5 cleanup; verification logic, if it returns, lives elsewhere.</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2.5 — TTS</td><td>Not started</td><td>Yumi speaks back. Web Speech API for Phase 1 (free, available offline, good enough). ElevenLabs / OpenAI TTS evaluated before Phase 2.</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 3 — Reading practice (private)</td><td>Not started</td><td>Solo reading loop: capture, shelve, take notes, talk to Yumi. Notebook entries land here. No sharing surface.</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 4 — Book Artifact</td><td>Not started</td><td>One Book Artifact per user per book. Reading note, review, or essay. The (userId, bookId) keying is the structural enforcement.</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 5 — Knowledge Arcs</td><td>Not started</td><td>Personal arc workspace only — no publishing in beta. List-style UI is fine. Visual design of the arc workspace is deferred to post-beta.</td></tr>
-    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 6 — Beta-ready polish</td><td>Not started</td><td>Empty states, error states, onboarding, install path, voice tone QA. The bar: app could be handed to a Phase 1 tester without apology.</td></tr>
+    <tr><td class="checkbox-col">[x]</td><td class="stage-name">Stage 1 — Foundation</td><td>Shipped (partially Proven)</td><td>state.js at 1.1.0 with notebookEntries, bookArtifacts, arcs maps; integrations.js with Firebase auth and ISBN fallback; sw.js as real service worker (praxis-v2); claude-proxy.js deployed. Detailed retro sub-stage entries deferred until later. <code>verify-engine.js</code> removed from load order and APP_SHELL during 1.5 cleanup.</td></tr>
+    <tr><td class="checkbox-col">[x]</td><td class="stage-name">Stage 2 — Text-only conversational Yumi</td><td>Shipped (Proven through 2.10 re-audit)</td><td>Eight sub-stages from brain skeleton through proxy verification, UI scaffold, full text wiring, voice input, context injection, conversation memory, and voice-document compliance audit. Voice document v1.1.1 live. Stage 2 closed when the 2.10 re-audit returned PASS on Test #13 (35w, movement redirect fired verbatim) and PASS-with-flag on Test #14 (134w against 60w cap, routing shape correct; length axis flagged as v1.2.0 candidate, non-gating).</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 2.5 — TTS</td><td>Not started (skeleton only)</td><td>Yumi speaks back. Web Speech API for Phase 1 (free, available offline, good enough). ElevenLabs / OpenAI TTS evaluated before Phase 2. Detailed sub-stages deferred until prior stages surface what TTS actually needs to hold.</td></tr>
+    <tr><td class="checkbox-col">[~]</td><td class="stage-name">Stage 3 — Notebook + Arcs UI</td><td>In progress (active)</td><td>Notebook and Knowledge Arcs become first-class user surfaces. Constitutional principles #2, #3, #5, #6 land in user-facing form. Scope locked May 12, 2026 via nine cluster decisions documented in <code>/docs/praxis-3-scope.md</code>. Nine substages: 3.1 Notebook scaffold + entry schema cleanup → 3.2 Journal creation → 3.3 Marginalia creation (first minimal book detail view) → 3.4 Privacy toggle + Yumi context filter → 3.5 Notebook graph view → 3.6 Transparency view → 3.7 Mark finished + Book Artifact creation → 3.8 Knowledge Arc creation → 3.9 Arc view chronological. No substage shipped yet at the time of this update.</td></tr>
+    <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Stage 4 — Phase 1 testing readiness</td><td>Not started</td><td>Onboarding, empty states, error states, mobile pass (iOS Safari), feedback capture, tester-specific patches. <strong>Book detail view "hardens" here</strong> — Stage 3.3 ships the surface minimal, Stage 4 makes it feel finished. The bar: app could be handed to a Phase 1 tester without apology.</td></tr>
     <tr><td class="checkbox-col">[ ]</td><td class="stage-name">Phase 1 launch</td><td>Not started</td><td>3 to 8 testers, manual onboarding, mid-October 2026.</td></tr>
     <tr style="opacity:0.55"><td class="checkbox-col">—</td><td class="stage-name">Original Stages 6, 7, 8 (Social, Discovery, Bookselling/recaps)</td><td>Post-beta</td><td>Deferred to Phase 2. Social layer, discovery feeds, author pages, Bookshop affiliate, monthly recaps. Not in the mid-October beta. See <a href="#not-yet">§16</a>.</td></tr>
   </tbody>
@@ -690,6 +689,42 @@ footer {
 <p class="section-note">Append-only. Newest at the top.</p>
 
 <div class="update-log">
+  <div class="update-entry">
+    <p class="update-date">2026-05-14</p>
+    <p class="update-title">Reading surface question — when do book "shells" appear</p>
+    <div class="update-body">
+      <p><strong>Question logged.</strong> When does the aesthetic, interface, and actual visual book shell pop up for users to interact with? The roadmap answers this in three steps, with one gap worth flagging:</p>
+      <p><strong>Stage 3.3 — first appearance, minimal.</strong> The book detail route <code>/book/&lt;bookId&gt;</code> does not exist as a meaningful surface until Stage 3.3 (Marginalia entry creation from book detail view). When it ships, it renders book metadata — title, author, cover — plus an "Add Marginalia" affordance. That is the entire book detail view at this point. The substage non-goals explicitly say: <em>"No book detail view polish — this is a minimal surface; Stage 4 hardens it."</em> The risk note repeats it: <em>"the temptation to build a polished book detail view here is strong. Hold to minimal."</em></p>
+      <p><strong>Stage 3.7 — same surface, more verbs.</strong> The book detail view gains a "Mark finished" CTA and the Book Artifact creation flow. No visual polish added; just the verbs that make the surface load-bearing for the practice.</p>
+      <p><strong>Stage 4 — the aesthetic shell lands.</strong> Stage 4.2 (empty state pass) and Stage 4.4 (mobile pass for iOS Safari) are where the book detail view "hardens" — where the surface stops being a wire-frame and starts being a thing a tester sees without apology. This is the stage that earns the word "aesthetic."</p>
+      <p><strong>What's <em>not</em> in the roadmap that's worth naming.</strong> There is no "shelf of book covers" or library-grid surface before Phase 1. Books appear in two places: (a) inside the unified Notebook graph view in 3.5 (as clusters of entries grouped by bookId, not as cover thumbnails), and (b) inside the book detail view in 3.3 (one book at a time). The roadmap does not currently have a substage for "all my books, shown as covers, browsable." That may be a deliberate scope refusal — Goodreads has shelves; Praxis is rejecting the catalog frame in favor of the Notebook frame — or it may be a gap worth flagging at Stage 3 retrospective. Logging it here so the question doesn't get lost.</p>
+      <p><strong>Seam.</strong> The decision to make the Notebook the primary surface and the book detail view a minimal slice is a constitutional choice, not a UX shortcut. Books-as-clusters-in-a-graph (3.5) is what makes the Notebook intersectional by design; books-as-covers-in-a-grid would re-import the Goodreads frame Preston is trying to refuse. The minimal book detail view in 3.3/3.7 is what the practice needs; the polished book detail view in Stage 4 is what the testers need. The catalog grid is what Goodreads needs.</p>
+    </div>
+  </div>
+  <div class="update-entry">
+    <p class="update-date">2026-05-13</p>
+    <p class="update-title">Stage 3 scope locked and roadmap consolidated</p>
+    <div class="update-body">
+      <p><strong>Stage 3 renamed and rescoped.</strong> Stage 3 is now "Notebook + Arcs UI," not "Reading practice (private)." The renaming reflects what Stage 3 actually does: make the structurally-private writing space and the intersectional reading-thread structure visible and usable. This is where constitutional principles #2 (Notebook structurally private), #3 (one Book Artifact per user per book), #5 (no asymmetric knowledge), and #6 (Knowledge Arcs intersectional by design) move from schema-only to user-facing.</p>
+      <p><strong>Nine substages locked.</strong> 3.1 Notebook surface scaffold + entry schema cleanup (schema bump 1.5.0 → 1.6.0, drop <code>notebookId</code> field — one Notebook per user). 3.2 Journal entry creation. 3.3 Marginalia entry creation from book detail view (first appearance of <code>/book/&lt;bookId&gt;</code> route). 3.4 Privacy toggle UI + Yumi context filter (the constitutional substage — principle #5 enforced in <code>buildContext</code>). 3.5 Notebook graph view (clustered-by-tag, not force-directed). 3.6 Transparency view (what Yumi can currently see). 3.7 Mark book finished + Book Artifact creation. 3.8 Knowledge Arc creation. 3.9 Arc view chronological. Scope locked through nine cluster decisions in <code>/docs/praxis-3-scope.md</code>, May 12 2026.</p>
+      <p><strong>Stage numbering reconciled with roadmap.</strong> The old living-doc timeline used Stage 3 = Reading practice, Stage 4 = Book Artifact, Stage 5 = Knowledge Arcs, Stage 6 = Beta-ready polish. The roadmap consolidates those into Stage 3 (Notebook + Arcs UI, which includes Book Artifact creation in 3.7 and Knowledge Arc creation in 3.8) and Stage 4 (Phase 1 testing readiness). The §08 Stage status table has been updated to match the roadmap; §03 timeline SVG still reflects the old numbering and should be refactored in a future pass.</p>
+      <p><strong>Stage 4 is now Phase 1 testing readiness.</strong> Onboarding, empty state pass, error state pass, mobile pass (iOS Safari is a Phase 1 target), feedback capture, tester-specific patches. The book detail view "hardens" here — the minimal version that ships in 3.3 becomes the version a tester can see without apology.</p>
+      <p><strong>Drift caught.</strong> Three pieces of drift between the old living-doc timeline and the roadmap were named: (1) the old timeline gave Knowledge Arcs their own stage; the roadmap folds them into Stage 3 because they don't make sense without the Notebook they reference; (2) the old timeline treated Book Artifact as a separate stage; the roadmap puts it at 3.7 because the Artifact is structurally tied to the book detail view; (3) the old timeline's Stage 6 "Beta-ready polish" is now Stage 4 "Phase 1 testing readiness" — same idea, narrower naming.</p>
+    </div>
+  </div>
+  <div class="update-entry">
+    <p class="update-date">2026-05-12</p>
+    <p class="update-title">Stage 2 closed — voice document v1.1.1 live, audit passed</p>
+    <div class="update-body">
+      <p><strong>Stage 2 shipped and proven.</strong> Eight sub-stages moved Yumi from brain skeleton through proxy verification, UI scaffold, full text wiring, voice input, context injection, conversation memory, and a final voice-document compliance audit. Stage 2 closed when the 2.10 re-audit returned the required passes.</p>
+      <p><strong>2.8 compliance audit (May 8–10).</strong> 16/16 tests PASS against the shipped voice doc. Three disposition flags surfaced — Tests #13, #14, #15, plus length-register drift across Category 2 responses — and were opened as Stage 2.9.</p>
+      <p><strong>2.9 v1.1.0 revision (May 10–11).</strong> Three revisions integrated into <code>docs/yumi-voice.md</code>: (A) critical-pedagogy framework engagement carve-out, (B) brevity as character — under 60w typical, (C) no meta-narrating the reader. Cache rolled to <code>praxis-v2.9-a</code>. Re-audit found Revision A had been written manner-shaped rather than noun-shaped; under live test Test #13 produced a 174-word response, 3× the brevity cap. Structural FAIL recorded; 2.10 opened to resolve it.</p>
+      <p><strong>2.10 v1.1.1 revision (May 12–13).</strong> Revision A restructured from manner-shaped to noun-shaped routing rule with explicit thinker case / movement case branches. New movement redirect added. New worked example with word-count discipline. Re-audit outcome: Test #13 PASS (35w response, movement redirect fired verbatim, structural fix held); Test #14 PASS-with-flag (134w against 60w cap; routing shape correct but length axis strained — flagged as v1.2.0 candidate, non-gating). Stage 2 closed.</p>
+      <p><strong>Voice document v1.1.1 is now the canonical Yumi voice.</strong> Any Stage 3 substage that touches Yumi behavior (specifically 3.4 privacy filter) builds on top of v1.1.1. The changelog at <code>docs/yumi-voice-changelog.md</code> documents v1.0.1 → v1.1.0 → v1.1.1.</p>
+      <p><strong>Lineage.</strong> The audit-then-revise-then-re-audit pattern (Bambrick's See It / Name It / Do It, applied to a voice document instead of a teacher) is the first place the critical-pedagogy lineage shows up in the build process itself, not just in what's being built. Worth holding onto as a pattern for Stage 3's harder constitutional substage (3.4 privacy filter).</p>
+      <p><strong>Drift caught.</strong> The 2.9 → 2.10 sequence is the first time the build has used a re-audit to catch a manner-vs-noun shape error in writing intended to constrain a model. The lesson — routing rules need to be shaped as nouns the model can bind to, not manners the model can interpret — is load-bearing for any future voice-document revision and for prompt engineering in general. Logged in the voice changelog so it doesn't have to be re-learned.</p>
+    </div>
+  </div>
   <div class="update-entry">
     <p class="update-date">2026-05-04</p>
     <p class="update-title">Beta reframe and Stage 2 groundwork</p>
@@ -842,14 +877,18 @@ footer {
 <h3>Resolved</h3>
 <ul>
   <li><strong>TTS service for Phase 1</strong> — resolved to Web Speech API. Free, available offline, quality is good enough for a small tester cohort. ElevenLabs vs OpenAI TTS will be re-evaluated before Phase 2 when voice quality matters more and the tester count justifies the spend.</li>
+  <li><strong>Stage 3 scope</strong> — resolved May 12, 2026 via nine cluster decisions in <code>/docs/praxis-3-scope.md</code>. Stage 3 = Notebook + Arcs UI, nine substages from 3.1 (Notebook scaffold) through 3.9 (Arc view chronological). Includes Book Artifact creation at 3.7 and Knowledge Arc creation at 3.8, folding what the old timeline split across Stages 3, 4, and 5.</li>
+  <li><strong>Yumi voice document v1.1.1</strong> — resolved May 13, 2026 after the 2.10 re-audit. Test #13 PASS (35w, movement redirect fired verbatim, structural fix held); Test #14 PASS-with-flag (134w against 60w cap; routing shape correct; length axis flagged as v1.2.0 candidate, non-gating). Voice doc v1.1.1 is canonical until v1.2.0 work is opened.</li>
 </ul>
 
 <h3>Still deferred</h3>
 <ul>
   <li><strong>localStorage vs Firestore as source of truth for Phase 1</strong> — current recommendation: localStorage-only for the beta. Firestore stays initialized for auth and future sync, but data writes go to localStorage. Reasoning: Phase 1 is 3–8 testers, no multi-device need, and localStorage-only removes a class of sync bugs from the beta surface. Firestore migration is its own deferred decision (see §02).</li>
-  <li><strong>Voice agent capability (screen commands)</strong> — Stage 2.5 vs deferred to Phase 3. Preliminary lean is Stage 2.5 (Option B in the Stage 2 design note), so the companion register grounds before the agent register layers on. Final call at Stage 2 pre-flight.</li>
+  <li><strong>Voice agent capability (screen commands)</strong> — deferred to Stage 2.5 or Phase 3. Roadmap currently lists this as a Stage 2.5 candidate with Phase 3 as the fallback. Final call at Stage 2.5 pre-flight; the companion register (TTS-only Yumi who speaks back) should ground before the agent register (Yumi who can act on the screen) layers on.</li>
   <li><strong>Yumi's specific voice profile for TTS</strong> — picked during Stage 2.5 by ear, against sample Yumi responses.</li>
   <li><strong>Voice document v1.1 review pass when TTS lands</strong> — read the document by listening, not by reading. Some lines that work in text may need pacing or pause changes when spoken. Tracked in <code>yumi-voice-changelog.md</code>.</li>
+  <li><strong>Voice document v1.2.0 — length-cap binding</strong> — flagged at 2.10 re-audit, non-gating. Test #14 produced a 134w response against a 60w cap with the routing shape correct. The length-axis fix is a future revision; candidate approach is a numerical anchor inside Revision A. Opened in a future chat, not in current Stage 3 work.</li>
+  <li><strong>Book catalog / shelf surface</strong> — flagged May 14, 2026. The current roadmap has no substage for "all my books, shown as covers, browsable." Books appear inside the Notebook graph view (3.5, as clusters of entries) and inside the book detail view (3.3, one book at a time). Whether this absence is a deliberate refusal — Praxis rejects the Goodreads catalog frame in favor of the Notebook frame — or a gap that should be filled before Phase 1 is an open question. Resolution target: Stage 3 retrospective, before Stage 4 begins.</li>
 </ul>
 
 <h2 id="not-yet">16 — Not building yet (pre-beta)</h2>
