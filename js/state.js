@@ -27,16 +27,22 @@
 //       }
 //
 //   notebookEntries: keyed by entryId. Each entry is the atomic unit
-//     of writing -- a single timestamped piece of prose attached to a
-//     notebook. Shape (skeleton):
+//     of writing -- a single timestamped piece of prose. From 1.7.0
+//     each entry carries a register tag ('journal' for free-form
+//     reflective entries from the Notebook surface; 'marginalia' for
+//     entries bound to a specific book context) and an isPrivate
+//     flag whose default tracks the register (toggle UI in 3.4).
+//     Shape (skeleton):
 //       {
 //         id:         string,
 //         userId:     string,
+//         register:   string,    // 'journal' | 'marginalia'
+//         isPrivate:  boolean,   // register default; toggle UI in 3.4
+//         body:       string,    // raw text / markdown
 //         bookIds:    array of string,   // foreign keys into state.books
 //         arcIds:     array of string,   // foreign keys into state.arcs
-//         createdAt:  number,   // ms epoch
-//         updatedAt:  number,
-//         body:       string    // raw text / markdown
+//         createdAt:  number,    // ms epoch
+//         updatedAt:  number
 //       }
 //
 //   bookArtifacts: keyed by artifactKey(userId, bookId). At most one
@@ -112,6 +118,11 @@
 // on existing entries; new array fields are populated lazily by
 // Stage 3.2 (Journal) and 3.3 (Marginalia) writers.
 //
+// Schema 1.7.0 adds register ('journal' | 'marginalia') and
+// isPrivate (boolean, register-default) to notebookEntries. The
+// 1.6.0 -> 1.7.0 migration backfills both on any pre-existing
+// entries -- journal/false as the safe default. Toggle UI in 3.4.
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -138,7 +149,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.6.0',
+  SCHEMA_VERSION:  '1.7.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -168,6 +179,14 @@ function ensureOneArtifact(userId, bookId, artifact) {
   if (existing) return existing;
   state.bookArtifacts[key] = artifact;
   return artifact;
+}
+
+// Canonical entry id generator. Shared by 3.2 (Journal writes) and
+// 3.3 (Marginalia writes) so both registers produce ids with the
+// same prefix and timestamp ordering. Format is opaque to callers;
+// only the entryId map key contract matters.
+function genEntryId() {
+  return 'entry_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
 // Lazy initializer for per-user records. The schema-versioned shape of
@@ -269,6 +288,25 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.6.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.6.0') {
+    var eid;
+    if (stored.notebookEntries) {
+      for (eid in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, eid)) {
+          var entry = stored.notebookEntries[eid];
+          if (entry) {
+            if (typeof entry.register !== 'string') {
+              entry.register = 'journal';
+            }
+            if (typeof entry.isPrivate !== 'boolean') {
+              entry.isPrivate = false;
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.7.0';
   }
   return stored;
 }
