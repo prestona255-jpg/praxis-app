@@ -22,9 +22,9 @@
 //
 // Stage 3.2: openJournalEditor mounts an inline textarea + Save /
 // Cancel block into #notebook-editor-host. Save creates a
-// notebookEntry with register 'journal', isPrivate false (the
-// register default; toggle UI lands in 3.4), persists via saveState,
-// and re-renders via renderNotebook.
+// notebookEntry with register 'journal', isPrivate sourced from
+// the per-user Journal register default (3.4b), persists via
+// saveState, and re-renders via renderNotebook.
 //
 // Stage 3.3: renderBookDetail paints the per-book surface -- header
 // (cover if present, title, author byline if present, auth-aware
@@ -41,6 +41,17 @@
 // All user-derived text goes in via textContent. innerHTML = '' is
 // acceptable for clearing. No markdown rendering in 3.3.
 //
+// Stage 3.4b: per-entry visibility toggle on every rendered entry
+// (notebook-entry-privacy + notebook-entry-privacy-toggle) plus a
+// register-default settings affordance in the Notebook header
+// (notebook-settings-toggle opens an inline panel at
+// #notebook-settings-host). Per-entry flip is the primary
+// correctable surface for principle #5; the filter that consumes
+// isPrivate lives in yumi-brain.js buildContext (3.4a). New entry
+// creation reads state.users[uid].registerDefaults[register]
+// instead of hardcoding false. Existing entries are never
+// retroactively flipped when a register default changes.
+//
 // CSS classes (all unstyled; styling pass to follow):
 //   3.1: notebook-empty, notebook-empty-title, notebook-empty-body
 //   3.2: notebook, notebook-title, notebook-header,
@@ -53,8 +64,14 @@
 //        book-detail-author, book-detail-cover, book-detail-new-entry,
 //        book-detail-signin-prompt, book-detail-empty-body,
 //        book-detail-not-found, notebook-entry-book-meta
+//   3.4b: notebook-entry-privacy, notebook-entry-privacy-toggle,
+//         notebook-settings-toggle, notebook-settings-panel,
+//         notebook-settings-section, notebook-settings-label,
+//         notebook-settings-current, notebook-settings-toggle-link,
+//         notebook-settings-explanation, notebook-settings-done
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3)
+//   Settings host id: #notebook-settings-host (3.4b)
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -109,6 +126,15 @@ function renderNotebook() {
       openJournalEditor();
     });
     header.appendChild(newBtn);
+
+    var settingsBtn = document.createElement('button');
+    settingsBtn.type = 'button';
+    settingsBtn.className = 'notebook-settings-toggle';
+    settingsBtn.textContent = 'Settings';
+    settingsBtn.addEventListener('click', function() {
+      openNotebookSettings();
+    });
+    header.appendChild(settingsBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -121,6 +147,12 @@ function renderNotebook() {
   }
 
   wrap.appendChild(header);
+
+  // Settings host -- empty on every render; openNotebookSettings
+  // mounts the register-default panel here on demand.
+  var settingsHost = document.createElement('div');
+  settingsHost.id = 'notebook-settings-host';
+  wrap.appendChild(settingsHost);
 
   // Editor host -- empty on every render; openJournalEditor mounts
   // its block here on demand.
@@ -215,7 +247,7 @@ function openJournalEditor() {
       id:         id,
       userId:     user.uid,
       register:   'journal',
-      isPrivate:  false,
+      isPrivate:  getRegisterDefault('journal'),
       body:       trimmed,
       bookIds:    [],
       arcIds:     [],
@@ -406,7 +438,7 @@ function openMarginaliaEditor(bookId) {
       id:         id,
       userId:     user.uid,
       register:   'marginalia',
-      isPrivate:  false,
+      isPrivate:  getRegisterDefault('marginalia'),
       body:       trimmed,
       bookIds:    [bookId],
       arcIds:     [],
@@ -464,6 +496,27 @@ function renderNotebookEntry(entry) {
     meta.appendChild(bookMeta);
   }
 
+  // Privacy indicator + flip affordance. The text reflects the
+  // current value; the link inverts it. Principle #5: anything
+  // captured is visible and correctable to the user.
+  var privacyEl = document.createElement('span');
+  privacyEl.className = 'notebook-entry-privacy';
+  privacyEl.appendChild(document.createTextNode(
+    entry.isPrivate === true ? 'private ' : 'visible to Yumi '
+  ));
+  var privacyToggle = document.createElement('a');
+  privacyToggle.href = '#';
+  privacyToggle.className = 'notebook-entry-privacy-toggle';
+  privacyToggle.textContent =
+    entry.isPrivate === true ? 'make visible' : 'make private';
+  var capturedId = entry.id;
+  privacyToggle.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    togglePrivacy(capturedId);
+  });
+  privacyEl.appendChild(privacyToggle);
+  meta.appendChild(privacyEl);
+
   var bodyEl = document.createElement('div');
   bodyEl.className = 'notebook-entry-body';
   bodyEl.textContent = entry.body || '';
@@ -473,12 +526,165 @@ function renderNotebookEntry(entry) {
   return card;
 }
 
+// Per-register default lookup. Fail-safe to false (visible) on any
+// missing chain link, mirroring the filter's fail-open posture in
+// yumi-brain.js. Editor save handlers call this when stamping
+// isPrivate on a new entry.
+function getRegisterDefault(register) {
+  var user = getCurrentUser();
+  if (!user) return false;
+  var rec = state.users && state.users[user.uid];
+  if (!rec) return false;
+  var defaults = rec.registerDefaults;
+  if (!defaults) return false;
+  if (typeof defaults[register] !== 'boolean') return false;
+  return defaults[register];
+}
+
+// Flip an entry's isPrivate flag in place, persist, and re-render
+// the surface the user is currently looking at. Reads location.hash
+// at call time so per-entry toggles fired from #book/... stay on
+// the book-detail page instead of bouncing to the Notebook.
+function togglePrivacy(entryId) {
+  var entry = state.notebookEntries && state.notebookEntries[entryId];
+  if (!entry) return;
+  entry.isPrivate = !(entry.isPrivate === true);
+  saveState();
+  if (location.hash.indexOf('#book/') === 0) {
+    renderBookDetail(state.currentBookId);
+  } else {
+    renderNotebook();
+  }
+}
+
+// Mount the register-default settings panel into
+// #notebook-settings-host. Called from the header Settings button
+// to open the panel, and from setRegisterDefault to re-paint after
+// a flip (so the current/toggle labels stay in sync). Plain prose
+// in the app literary register -- no Yumi voice.
+function openNotebookSettings() {
+  var host = document.getElementById('notebook-settings-host');
+  if (!host) return;
+  var user = getCurrentUser();
+  if (!user) return;
+  if (typeof ensureUser === 'function') {
+    ensureUser(user.uid);
+  }
+
+  host.innerHTML = '';
+
+  var panel = document.createElement('div');
+  panel.className = 'notebook-settings-panel';
+
+  // Journal section.
+  var jSec = document.createElement('div');
+  jSec.className = 'notebook-settings-section';
+
+  var jLabel = document.createElement('div');
+  jLabel.className = 'notebook-settings-label';
+  jLabel.textContent = 'Journal default';
+  jSec.appendChild(jLabel);
+
+  var jCurrent = document.createElement('span');
+  jCurrent.className = 'notebook-settings-current';
+  var jPrivate = getRegisterDefault('journal');
+  jCurrent.textContent = jPrivate ? 'private' : 'visible';
+  jSec.appendChild(jCurrent);
+
+  var jToggle = document.createElement('a');
+  jToggle.href = '#';
+  jToggle.className = 'notebook-settings-toggle-link';
+  jToggle.textContent = jPrivate ? 'Set to visible' : 'Set to private';
+  jToggle.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    setRegisterDefault('journal', !getRegisterDefault('journal'));
+  });
+  jSec.appendChild(jToggle);
+
+  var jExp = document.createElement('p');
+  jExp.className = 'notebook-settings-explanation';
+  jExp.textContent =
+    'New Journal entries inherit this visibility on creation. ' +
+    'Existing entries keep whatever they were last set to.';
+  jSec.appendChild(jExp);
+
+  panel.appendChild(jSec);
+
+  // Marginalia section.
+  var mSec = document.createElement('div');
+  mSec.className = 'notebook-settings-section';
+
+  var mLabel = document.createElement('div');
+  mLabel.className = 'notebook-settings-label';
+  mLabel.textContent = 'Marginalia default';
+  mSec.appendChild(mLabel);
+
+  var mCurrent = document.createElement('span');
+  mCurrent.className = 'notebook-settings-current';
+  var mPrivate = getRegisterDefault('marginalia');
+  mCurrent.textContent = mPrivate ? 'private' : 'visible';
+  mSec.appendChild(mCurrent);
+
+  var mToggle = document.createElement('a');
+  mToggle.href = '#';
+  mToggle.className = 'notebook-settings-toggle-link';
+  mToggle.textContent = mPrivate ? 'Set to visible' : 'Set to private';
+  mToggle.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    setRegisterDefault('marginalia', !getRegisterDefault('marginalia'));
+  });
+  mSec.appendChild(mToggle);
+
+  var mExp = document.createElement('p');
+  mExp.className = 'notebook-settings-explanation';
+  mExp.textContent =
+    'New Marginalia inherit this visibility on creation. ' +
+    'Existing entries keep whatever they were last set to.';
+  mSec.appendChild(mExp);
+
+  panel.appendChild(mSec);
+
+  // Done link clears the panel without re-rendering the whole
+  // Notebook. The settings host stays mounted; only its contents
+  // are emptied.
+  var done = document.createElement('a');
+  done.href = '#';
+  done.className = 'notebook-settings-done';
+  done.textContent = 'Done';
+  done.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var h = document.getElementById('notebook-settings-host');
+    if (h) h.innerHTML = '';
+  });
+  panel.appendChild(done);
+
+  host.appendChild(panel);
+}
+
+// Write a register's default isPrivate value on the current user
+// record, persist, and re-paint the settings panel in place. Does
+// NOT touch existing entries -- per-entry isPrivate is independent
+// of the register default after creation.
+function setRegisterDefault(register, isPrivate) {
+  var user = getCurrentUser();
+  if (!user) return;
+  if (typeof ensureUser === 'function') {
+    ensureUser(user.uid);
+  }
+  state.users[user.uid].registerDefaults[register] = (isPrivate === true);
+  saveState();
+  openNotebookSettings();
+}
+
 window.views = {
   renderRoute:          renderRoute,
   renderNotebook:       renderNotebook,
   renderBookDetail:     renderBookDetail,
   openJournalEditor:    openJournalEditor,
-  openMarginaliaEditor: openMarginaliaEditor
+  openMarginaliaEditor: openMarginaliaEditor,
+  openNotebookSettings: openNotebookSettings,
+  togglePrivacy:        togglePrivacy,
+  setRegisterDefault:   setRegisterDefault
 };
 
 console.log('views.js loaded');
