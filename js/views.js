@@ -96,8 +96,8 @@
 //         shelf-new-book, shelf-signin-prompt, shelf-editor,
 //         shelf-editor-title-input, shelf-editor-author-input,
 //         shelf-editor-status, shelf-editor-status-option,
-//         shelf-editor-genre-input, shelf-editor-actions,
-//         shelf-editor-save, shelf-editor-cancel
+//         shelf-editor-genre-input, shelf-editor-isbn-input,
+//         shelf-editor-actions, shelf-editor-save, shelf-editor-cancel
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3),
 //                    #shelf-editor-host (3.5a)
@@ -116,17 +116,31 @@
 // click-through hits the existing book-detail surface.
 // renderShelfBook is the single row renderer.
 //
-// openShelfEditor mounts an inline title/author/status/genre form
-// into #shelf-editor-host. Save (disabled until trimmed title is
-// non-empty) calls genBookId, writes a complete books record with
-// the four schema-1.9.0 fields (id, title, author, isbn:'', addedAt,
-// status, genre), then ensureUser(uid) + push to
-// state.userBooks[uid].bookIds, persists via saveState, re-renders
-// via renderShelf. Cancel re-renders the shelf without writing --
-// state.books and state.userBooks are untouched. Auth gate mirrors
-// renderBookDetail header: when getCurrentUser() is null, the
-// affordance becomes "Sign in to add books" and click routes to
-// signInWithGoogle(), not openShelfEditor.
+// openShelfEditor mounts an inline title/author/status/genre/isbn
+// form into #shelf-editor-host. Save (disabled until trimmed title
+// is non-empty) calls genBookId, writes a complete books record
+// with id, title, author, isbn (trimmed; may be ''), addedAt,
+// status, genre, coverUrl (null at write time), then ensureUser
+// + push to state.userBooks[uid].bookIds, persists via saveState,
+// re-renders via renderShelf. Cancel re-renders the shelf without
+// writing -- state.books and state.userBooks are untouched. Auth
+// gate mirrors renderBookDetail header: when getCurrentUser() is
+// null, the affordance becomes "Sign in to add books" and click
+// routes to signInWithGoogle(), not openShelfEditor.
+//
+// Stage 3.5b: when isbn is non-empty after trim, the save handler
+// fires fetchAndApplyCover(id, isbn, onComplete) in the background
+// AFTER the synchronous write+saveState+renderShelf path completes.
+// The cover arrives asynchronously and patches state.books[id]
+// .coverUrl when the integrations callback fires; renderShelf is
+// re-called only if the user is still on #books at that moment
+// (route check, not currentBookId check -- both #books and
+// #notebook clear currentBookId, so route inspection is the
+// faithful signal). The fail-soft contract is enforced in
+// fetchAndApplyCover: null returns, throws, empty/null coverUrl
+// fields, and OL "id=0" / "/id/0-" placeholder URLs all resolve
+// to state.books[id].coverUrl === null. The book record itself
+// is written regardless of fetch outcome.
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -483,13 +497,56 @@ function renderShelfBook(book) {
   return card;
 }
 
+// Stage 3.5b fail-soft cover fetch wrapper. Used by both the add-book
+// save path (background fetch after sync save completes) and the
+// book detail page ISBN re-fetch path (3.5b Stage 2). Contract:
+//   - bookId   : the books map key whose coverUrl we patch
+//   - isbn     : trimmed, non-empty (caller responsibility)
+//   - onComplete(url): fires after the patch is durable. url is the
+//     final coverUrl value (string or null). Caller decides whether
+//     to re-render based on the current route -- the helper does NOT
+//     touch the DOM.
+// Returns coverUrl === null on any of: fetchBookByIsbn returns null,
+// throws (defensive -- integrations.js cannot throw to caller today
+// but the guard is forward-safe), returns an object whose coverUrl
+// is null or empty string, or returns an Open Library "no cover"
+// placeholder URL (matched by 'id=0' or '/id/0-' substring).
+// Otherwise patches state.books[bookId].coverUrl to the returned URL.
+// In all cases calls saveState() before firing onComplete.
+function fetchAndApplyCover(bookId, isbn, onComplete) {
+  function settle(url) {
+    if (state.books[bookId]) {
+      state.books[bookId].coverUrl = url;
+      saveState();
+    }
+    if (typeof onComplete === 'function') onComplete(url);
+  }
+  try {
+    fetchBookByIsbn(isbn, function(result) {
+      var url = null;
+      if (result &&
+          typeof result.coverUrl === 'string' &&
+          result.coverUrl.length > 0 &&
+          result.coverUrl.indexOf('id=0') === -1 &&
+          result.coverUrl.indexOf('/id/0-') === -1) {
+        url = result.coverUrl;
+      }
+      settle(url);
+    });
+  } catch (e) {
+    settle(null);
+  }
+}
+
 // Inline add-book editor mounted into #shelf-editor-host. Structurally
 // mirrors openMarginaliaEditor: title input (required) + author input
 // (optional) + status radio (default 'reading') + genre input
-// (optional) + Save/Cancel. Save is disabled until the trimmed title
-// is non-empty. On Save: genBookId, write a complete books record
-// (all 1.9.0 fields), ensureUser(uid) + push to userBooks[uid].bookIds,
-// saveState, renderShelf. Cancel re-renders the shelf with no writes.
+// (optional) + ISBN input (optional, 3.5b) + Save/Cancel. Save is
+// disabled until the trimmed title is non-empty. On Save: genBookId,
+// write a complete books record (all 1.9.0 fields plus coverUrl:null),
+// ensureUser(uid) + push to userBooks[uid].bookIds, saveState,
+// renderShelf. If ISBN non-empty, fire background fetchAndApplyCover
+// after the sync render. Cancel re-renders the shelf with no writes.
 function openShelfEditor() {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) return;
@@ -536,6 +593,11 @@ function openShelfEditor() {
   genreInput.className = 'shelf-editor-genre-input';
   genreInput.placeholder = 'Genre (optional)';
 
+  var isbnInput = document.createElement('input');
+  isbnInput.type = 'text';
+  isbnInput.className = 'shelf-editor-isbn-input';
+  isbnInput.placeholder = 'ISBN (optional)';
+
   var actions = document.createElement('div');
   actions.className = 'shelf-editor-actions';
 
@@ -563,6 +625,7 @@ function openShelfEditor() {
 
     var authorTrimmed = authorInput.value.replace(/^\s+|\s+$/g, '');
     var genreTrimmed  = genreInput.value.replace(/^\s+|\s+$/g, '');
+    var isbnTrimmed   = isbnInput.value.replace(/^\s+|\s+$/g, '');
 
     var statusValue = 'reading';
     var i;
@@ -577,13 +640,14 @@ function openShelfEditor() {
     var id  = genBookId();
 
     state.books[id] = {
-      id:      id,
-      title:   titleTrimmed,
-      author:  authorTrimmed,
-      isbn:    '',
-      addedAt: now,
-      status:  statusValue,
-      genre:   genreTrimmed
+      id:       id,
+      title:    titleTrimmed,
+      author:   authorTrimmed,
+      isbn:     isbnTrimmed,
+      addedAt:  now,
+      status:   statusValue,
+      genre:    genreTrimmed,
+      coverUrl: null
     };
 
     // ensureUser is defensive against fresh accounts whose state.users
@@ -596,6 +660,23 @@ function openShelfEditor() {
 
     saveState();
     renderShelf();
+
+    // 3.5b: background cover fetch. The user-visible save path is
+    // already complete -- editor closed, row painted, state durable.
+    // When the callback eventually fires (or fails soft), we patch
+    // state.books[id].coverUrl and re-render only if the user is
+    // still looking at the shelf. Route inspection rather than
+    // state.currentBookId === null because #notebook also clears
+    // currentBookId, and re-rendering the shelf from a notebook
+    // route would clobber the Notebook surface.
+    if (isbnTrimmed.length > 0) {
+      fetchAndApplyCover(id, isbnTrimmed, function() {
+        var parts = location.hash.replace(/^#/, '').split('/');
+        if (parts[0] === 'books') {
+          renderShelf();
+        }
+      });
+    }
   });
 
   cancelBtn.addEventListener('click', function() {
@@ -608,6 +689,7 @@ function openShelfEditor() {
   editor.appendChild(authorInput);
   editor.appendChild(statusWrap);
   editor.appendChild(genreInput);
+  editor.appendChild(isbnInput);
   editor.appendChild(actions);
   hostEl.appendChild(editor);
 
