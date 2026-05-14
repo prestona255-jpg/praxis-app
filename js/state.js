@@ -123,6 +123,23 @@
 // 1.6.0 -> 1.7.0 migration backfills both on any pre-existing
 // entries -- journal/false as the safe default. Toggle UI in 3.4.
 //
+// Schema 1.8.0 adds a per-user registerDefaults map carrying the
+// default isPrivate value for each register a user writes in.
+// Lives on each user record under state.users[uid]. Shape:
+//
+//   registerDefaults: { journal: boolean, marginalia: boolean }
+//
+// Initial values are { journal: false, marginalia: false } -- the
+// same fail-open default Stage 3.2/3.3 writers stamp on each new
+// entry. The 1.7.0 -> 1.8.0 migration seeds the field on every
+// user record and backfills entry.isPrivate (per-register) for
+// any entry where the field is not a boolean. The toggle UI and
+// the register-default settings affordance ship in 3.4b; the
+// filter that consumes isPrivate ships in 3.4a inside
+// yumi-brain.js buildContext(), enforcing principle #5
+// (no asymmetric knowledge -- anything captured is visible and
+// correctable to the user).
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -149,7 +166,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.7.0',
+  SCHEMA_VERSION:  '1.8.0',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -196,12 +213,18 @@ function genEntryId() {
 function ensureUser(uid) {
   if (!state.users[uid]) {
     state.users[uid] = {
-      yumiMemory: { summary: '', recentTurns: [], updatedAt: 0 }
+      yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
+      registerDefaults: { journal: false, marginalia: false }
     };
   }
   if (!state.users[uid].yumiMemory) {
     state.users[uid].yumiMemory = {
       summary: '', recentTurns: [], updatedAt: 0
+    };
+  }
+  if (!state.users[uid].registerDefaults) {
+    state.users[uid].registerDefaults = {
+      journal: false, marginalia: false
     };
   }
 }
@@ -307,6 +330,43 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.7.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.7.0') {
+    if (stored.users) {
+      var uid;
+      for (uid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, uid)) {
+          if (!stored.users[uid].registerDefaults) {
+            stored.users[uid].registerDefaults = {
+              journal:    false,
+              marginalia: false
+            };
+          }
+        }
+      }
+    }
+    if (stored.notebookEntries) {
+      var eid2;
+      for (eid2 in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, eid2)) {
+          var entry2 = stored.notebookEntries[eid2];
+          if (entry2 && typeof entry2.isPrivate !== 'boolean') {
+            var ownerUid = entry2.userId;
+            var reg = entry2.register;
+            var def = false;
+            if (ownerUid &&
+                stored.users &&
+                stored.users[ownerUid] &&
+                stored.users[ownerUid].registerDefaults &&
+                typeof stored.users[ownerUid].registerDefaults[reg] === 'boolean') {
+              def = stored.users[ownerUid].registerDefaults[reg];
+            }
+            entry2.isPrivate = def;
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.8.0';
   }
   return stored;
 }

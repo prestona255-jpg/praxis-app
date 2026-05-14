@@ -225,6 +225,9 @@ function renderRecentTurns(activeUid) {
   return turnLines.join('\n');
 }
 
+// Enforces principle #5 in code: the notebookEntries loop below skips
+// any entry the user has flagged private so private writing never
+// enters Yumi's context. Toggle UI lands in 3.4b.
 function buildContext() {
   var bookLine;
   if (state.currentBookId === null) {
@@ -261,6 +264,10 @@ function buildContext() {
   var key;
   for (key in state.notebookEntries) {
     if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
+      if (state.notebookEntries[key] &&
+          state.notebookEntries[key].isPrivate === true) {
+        continue;
+      }
       entries.push(state.notebookEntries[key]);
     }
   }
