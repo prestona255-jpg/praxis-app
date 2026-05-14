@@ -7,12 +7,16 @@
 // on parts[0]:
 //   ''            -> renderNotebook()
 //   'notebook'    -> renderNotebook()
-//   'book' + id   -> renderBookDetail(id)   (id from parts[1])
-//   otherwise     -> renderNotebook()       (default fallback)
-// Each notebook-bound dispatch clears state.currentBookId to null;
-// the book-detail dispatch sets it to the route id. Both paths call
-// saveState() after the mutation so yumi-brain (which reads
-// currentBookId) sees a consistent live state.
+//   'books'       -> renderShelf()         (3.5a)
+//   'book' + id   -> renderBookDetail(id)  (id from parts[1])
+//   otherwise     -> renderNotebook()      (default fallback)
+// The notebook-bound dispatch and the shelf-bound dispatch both
+// clear state.currentBookId to null; the book-detail dispatch sets
+// it to the route id. All paths call saveState() after the mutation
+// so yumi-brain (which reads currentBookId) sees a consistent live
+// state. The 'books' branch is distinct from the 'book' + id branch
+// by parts[0] alone -- no collision with a hypothetical bookId of
+// 'all' or similar reserved value.
 //
 // Stage 3.1: renderNotebook paints the unified Notebook surface --
 // header (title + auth-aware affordance) + editor host + entry list
@@ -86,10 +90,24 @@
 //         transparency-entry, transparency-entry-body,
 //         transparency-entry-meta, transparency-turn,
 //         transparency-turn-role, transparency-turn-body
+//   3.5a: shelf, shelf-header, shelf-title, shelf-empty-body,
+//         shelf-list, shelf-book, shelf-book-title, shelf-book-author,
+//         shelf-book-meta, shelf-book-status, shelf-book-genre
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3)
 //   Settings host id:     #notebook-settings-host (3.4b)
 //   Transparency host id: #notebook-transparency-host (3.6)
+//
+// Stage 3.5a: renderShelf paints the Books surface -- header (title
+// only in this sub-stage; auth-aware add affordance lands with the
+// add-book editor) + book list (or empty-state paragraph). The list
+// reads from state.books (not state.userBooks) so book_test_1 from
+// 3.3 console seeding stays visible despite never being written to
+// userBooks -- the pre-existing drift documented in the 3.5a brief.
+// Filter pills are deferred; this sub-stage renders every record in
+// state.books, newest first by addedAt. Each row is an anchor to
+// #book/<id> so click-through hits the existing book-detail surface.
+// renderShelfBook is the single row renderer.
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -106,6 +124,15 @@ function renderRoute() {
     state.currentBookId = parts[1];
     saveState();
     renderBookDetail(parts[1]);
+    return;
+  }
+  if (parts[0] === 'books') {
+    // Shelf surface (3.5a). currentBookId clears symmetrically with
+    // the notebook path so yumi-brain does not carry a stale book
+    // reference into a shelf-scoped session.
+    state.currentBookId = null;
+    saveState();
+    renderShelf();
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -304,6 +331,104 @@ function openJournalEditor() {
   hostEl.appendChild(editor);
 
   bodyInput.focus();
+}
+
+// Stage 3.5a: the Books shelf surface. Reads from state.books and
+// renders one row per record, newest first by addedAt. No filtering,
+// no add-book affordance, no editor in this sub-stage -- those land
+// in later 3.5a sub-stages. Each row links to #book/<id> via an
+// anchor so click-through hits renderBookDetail through the router.
+function renderShelf() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'shelf';
+
+  var header = document.createElement('header');
+  header.className = 'shelf-header';
+
+  var title = document.createElement('h1');
+  title.className = 'shelf-title';
+  title.textContent = 'Books';
+  header.appendChild(title);
+
+  wrap.appendChild(header);
+
+  // Collect books. Read site is state.books, not state.userBooks --
+  // see brief: userBooks is write-but-not-read in 3.5a so book_test_1
+  // (seeded into state.books in 3.3 console testing but never into
+  // userBooks) stays visible. User-scoping the shelf is a future
+  // seam.
+  var books = [];
+  var booksMap = state.books || {};
+  var bid;
+  for (bid in booksMap) {
+    if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
+      if (booksMap[bid]) books.push(booksMap[bid]);
+    }
+  }
+  books.sort(function(a, b) {
+    return (b.addedAt || 0) - (a.addedAt || 0);
+  });
+
+  if (books.length === 0) {
+    var empty = document.createElement('p');
+    empty.className = 'shelf-empty-body';
+    empty.textContent =
+      'Books you add will appear here. ' +
+      'Nothing has been added yet.';
+    wrap.appendChild(empty);
+  } else {
+    var list = document.createElement('div');
+    list.className = 'shelf-list';
+    var i;
+    for (i = 0; i < books.length; i++) {
+      list.appendChild(renderShelfBook(books[i]));
+    }
+    wrap.appendChild(list);
+  }
+
+  host.appendChild(wrap);
+}
+
+// Single shelf row. Anchor element so the browser's hashchange path
+// handles navigation -- no addEventListener needed.
+function renderShelfBook(book) {
+  var card = document.createElement('a');
+  card.className = 'shelf-book';
+  card.href = '#book/' + book.id;
+
+  var titleEl = document.createElement('h2');
+  titleEl.className = 'shelf-book-title';
+  titleEl.textContent = book.title || '';
+  card.appendChild(titleEl);
+
+  if (book.author) {
+    var authorEl = document.createElement('p');
+    authorEl.className = 'shelf-book-author';
+    authorEl.textContent = book.author;
+    card.appendChild(authorEl);
+  }
+
+  var meta = document.createElement('div');
+  meta.className = 'shelf-book-meta';
+
+  var statusEl = document.createElement('span');
+  statusEl.className = 'shelf-book-status';
+  statusEl.textContent = book.status || 'reading';
+  meta.appendChild(statusEl);
+
+  if (book.genre) {
+    var genreEl = document.createElement('span');
+    genreEl.className = 'shelf-book-genre';
+    genreEl.textContent = book.genre;
+    meta.appendChild(genreEl);
+  }
+
+  card.appendChild(meta);
+  return card;
 }
 
 function renderBookDetail(bookId) {
@@ -924,6 +1049,7 @@ function closeTransparencyView() {
 window.views = {
   renderRoute:           renderRoute,
   renderNotebook:        renderNotebook,
+  renderShelf:           renderShelf,
   renderBookDetail:      renderBookDetail,
   openJournalEditor:     openJournalEditor,
   openMarginaliaEditor:  openMarginaliaEditor,
