@@ -536,6 +536,15 @@ function renderShelf() {
       openShelfEditor();
     });
     header.appendChild(newBtn);
+
+    var bulkBtn = document.createElement('button');
+    bulkBtn.type = 'button';
+    bulkBtn.className = 'shelf-new-book-bulk';
+    bulkBtn.textContent = '+ Bulk add';
+    bulkBtn.addEventListener('click', function() {
+      openBulkAddEditor();
+    });
+    header.appendChild(bulkBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -885,6 +894,185 @@ function openShelfEditor() {
   hostEl.appendChild(editor);
 
   titleInput.focus();
+}
+
+// Stage 3.5c bulk add: multi-line text editor mounted into the same
+// #shelf-editor-host openShelfEditor uses. On Submit, processBulkLines
+// parses + dedupes + writes per-entry, then drains a sequential ISBN
+// fetch queue (sequential callback chain, per Praxis conventions).
+// The save-path mirror is intentionally inlined rather than factored
+// into a shared writer: at one-and-a-maybe callers (3.5d/3.5e may or
+// may not want the same writer), the abstraction does not yet earn
+// its keep. Extract when a second real caller arrives.
+function openBulkAddEditor() {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) return;
+
+  hostEl.innerHTML = '';
+
+  var editor = document.createElement('div');
+  editor.className = 'shelf-bulk-editor';
+
+  var textarea = document.createElement('textarea');
+  textarea.className = 'shelf-bulk-editor-textarea';
+  textarea.placeholder = 'One ISBN or title per line';
+  textarea.rows = 8;
+
+  var actions = document.createElement('div');
+  actions.className = 'shelf-bulk-editor-actions';
+
+  var submitBtn = document.createElement('button');
+  submitBtn.type = 'button';
+  submitBtn.className = 'shelf-bulk-editor-submit';
+  submitBtn.textContent = 'Submit';
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'shelf-bulk-editor-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  submitBtn.addEventListener('click', function() {
+    processBulkLines(textarea.value);
+  });
+
+  cancelBtn.addEventListener('click', function() {
+    renderShelf();
+  });
+
+  actions.appendChild(submitBtn);
+  actions.appendChild(cancelBtn);
+  editor.appendChild(textarea);
+  editor.appendChild(actions);
+  hostEl.appendChild(editor);
+
+  textarea.focus();
+}
+
+// Parse a pasted blob into entries, write each entry to state, then
+// drain a sequential ISBN fetch queue. Per-entry write mirrors the
+// openShelfEditor save path (state.books record + userBooks push +
+// saveState + renderShelf). ISBN detection: strip hyphens/spaces,
+// uppercase, then match either 13 digits or 9-digits-plus-(digit|X)
+// for ISBN-10. Within-list dedupe on normalized ISBN only -- titles
+// can legitimately repeat across editions and the user can sort
+// that out. Title lines write a title-only record with isbn:''; the
+// 3.5b save path already accepts title-OR-ISBN, so no schema work.
+function processBulkLines(raw) {
+  var user = getCurrentUser();
+  if (!user) return;
+
+  var lines = raw.split('\n');
+  var entries = [];
+  var seenIsbns = {};
+  var i;
+  for (i = 0; i < lines.length; i++) {
+    var line = lines[i].replace(/^\s+|\s+$/g, '');
+    if (line.length === 0) continue;
+
+    var normalized = line.replace(/[\s-]/g, '').toUpperCase();
+    var isIsbn = false;
+    if (/^[0-9]{13}$/.test(normalized)) isIsbn = true;
+    else if (/^[0-9]{9}[0-9X]$/.test(normalized)) isIsbn = true;
+
+    if (isIsbn) {
+      if (seenIsbns[normalized]) continue;
+      seenIsbns[normalized] = true;
+      entries.push({ kind: 'isbn', value: normalized });
+    } else {
+      entries.push({ kind: 'title', value: line });
+    }
+  }
+
+  if (entries.length === 0) {
+    renderShelf();
+    return;
+  }
+
+  if (typeof ensureUser === 'function') {
+    ensureUser(user.uid);
+  }
+
+  // Per-entry write loop. Single saveState per entry (not batched at
+  // end) so a mid-import tab close leaves localStorage consistent.
+  // renderShelf is called per entry as the spec prescribes; at
+  // synchronous loop pace only the final render paints, which is
+  // fine -- all rows appear in one tick. Subsequent renderShelf
+  // calls happen from the fetch queue as covers resolve.
+  var isbnQueue = [];
+  var j;
+  for (j = 0; j < entries.length; j++) {
+    var entry = entries[j];
+    var now = Date.now();
+    var id = genBookId();
+    if (entry.kind === 'isbn') {
+      state.books[id] = {
+        id:       id,
+        title:    '',
+        author:   '',
+        isbn:     entry.value,
+        addedAt:  now,
+        status:   'reading',
+        genre:    '',
+        coverUrl: null
+      };
+      isbnQueue.push({ bookId: id, isbn: entry.value });
+    } else {
+      state.books[id] = {
+        id:       id,
+        title:    entry.value,
+        author:   '',
+        isbn:     '',
+        addedAt:  now,
+        status:   'reading',
+        genre:    '',
+        coverUrl: null
+      };
+    }
+    state.userBooks[user.uid].bookIds.push(id);
+    saveState();
+    renderShelf();
+  }
+
+  // Sequential fetch queue. Callback chain via fetchAndApplyCover's
+  // onComplete -- one ISBN in flight at a time, advance on settle
+  // (success or fail). Per-resolve title/author backfill mirrors the
+  // openShelfEditor 3.5b path: only patch when the current record
+  // value is still blank (the user could in theory have edited the
+  // row between submit and resolve; the freshness check protects
+  // that). Re-render only when the user is still on #books so we
+  // don't clobber other surfaces.
+  var qi = 0;
+  function processNext() {
+    if (qi >= isbnQueue.length) return;
+    var item = isbnQueue[qi];
+    qi++;
+    fetchAndApplyCover(item.bookId, item.isbn, function(url, result) {
+      if (state.books[item.bookId]) {
+        var metaChanged = false;
+        if (state.books[item.bookId].title === '' &&
+            result &&
+            typeof result.title === 'string' &&
+            result.title.length > 0) {
+          state.books[item.bookId].title = result.title;
+          metaChanged = true;
+        }
+        if (state.books[item.bookId].author === '' &&
+            result &&
+            typeof result.author === 'string' &&
+            result.author.length > 0) {
+          state.books[item.bookId].author = result.author;
+          metaChanged = true;
+        }
+        if (metaChanged) saveState();
+      }
+      var parts = location.hash.replace(/^#/, '').split('/');
+      if (parts[0] === 'books') {
+        renderShelf();
+      }
+      processNext();
+    });
+  }
+  processNext();
 }
 
 function renderBookDetail(bookId) {
