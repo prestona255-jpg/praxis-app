@@ -250,6 +250,51 @@ function assembleContextData() {
     });
   }
 
+  // Stage 3.7: bookArtifacts join Yumi's substrate subject to the
+  // same isPrivate filter pattern applied to notebookEntries above.
+  // Artifacts do not carry an isPrivate field today (no UI toggle
+  // yet); the filter is the contract -- principle #5, anything
+  // captured is visible and correctable to the user. When artifacts
+  // gain isPrivate, this loop already enforces it. Same shape as
+  // recentEntries (top 3 newest, body truncated to 200 chars) so
+  // both consumers -- buildContext (prose for the model) and the
+  // transparency view (UI for the user) -- see identical substrate.
+  var collectedArtifacts = [];
+  var aKey;
+  for (aKey in state.bookArtifacts) {
+    if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, aKey)) {
+      var artRec = state.bookArtifacts[aKey];
+      if (artRec && artRec.isPrivate === true) {
+        continue;
+      }
+      if (artRec) collectedArtifacts.push(artRec);
+    }
+  }
+  collectedArtifacts.sort(function (a, b) {
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+  var topArtifacts = collectedArtifacts.slice(0, 3);
+
+  var recentArtifacts = [];
+  var ai;
+  for (ai = 0; ai < topArtifacts.length; ai++) {
+    var artSrc = topArtifacts[ai];
+    var artBody = artSrc.body || '';
+    if (artBody.length > 200) {
+      artBody = artBody.substring(0, 197) + '...';
+    }
+    var artBookTitle = null;
+    if (artSrc.bookId && state.books && state.books[artSrc.bookId]) {
+      artBookTitle = state.books[artSrc.bookId].title;
+    }
+    recentArtifacts.push({
+      title:     artSrc.title || '',
+      body:      artBody,
+      bookTitle: artBookTitle,
+      createdAt: artSrc.createdAt
+    });
+  }
+
   var activeUid = resolveActiveUid();
 
   var summary = '';
@@ -275,18 +320,22 @@ function assembleContextData() {
   }
 
   return {
-    currentBook:   currentBook,
-    currentArc:    currentArc,
-    recentEntries: recentEntries,
-    summary:       summary,
-    recentTurns:   recentTurns
+    currentBook:     currentBook,
+    currentArc:      currentArc,
+    recentEntries:   recentEntries,
+    recentArtifacts: recentArtifacts,
+    summary:         summary,
+    recentTurns:     recentTurns
   };
 }
 
 // Format the structured snapshot into the labeled-prose blob Yumi's
-// model call expects. Output must remain byte-identical to the pre-
-// 3.6 version -- buildYumiSystem composes this into the system
-// prompt and any drift changes what Yumi sees.
+// model call expects. Pre-3.6 prose was load-bearing: any drift in
+// the existing slots changes what Yumi sees. Stage 3.7 adds one new
+// slot (recentArtifacts) carrying the user's finished-room writing
+// -- principle #5 (no asymmetric knowledge) requires Yumi see
+// Artifacts subject to the same isPrivate filter as notebookEntries.
+// Existing slot ordering and formatting are preserved verbatim.
 function buildContext() {
   var data = assembleContextData();
 
@@ -318,6 +367,23 @@ function buildContext() {
     entriesLine = parts.join('; ');
   }
 
+  var artifactsLine;
+  if (data.recentArtifacts.length === 0) {
+    artifactsLine = 'none yet';
+  } else {
+    var artParts = [];
+    var ap;
+    for (ap = 0; ap < data.recentArtifacts.length; ap++) {
+      var art = data.recentArtifacts[ap];
+      if (art.body && art.body.length > 0) {
+        artParts.push(art.title + ': ' + art.body);
+      } else {
+        artParts.push(art.title);
+      }
+    }
+    artifactsLine = artParts.join('; ');
+  }
+
   var summaryLine = '';
   if (data.summary) {
     summaryLine = 'EARLIER IN OUR CONVERSATION (summary): ' + data.summary + '\n';
@@ -343,6 +409,7 @@ function buildContext() {
 
   return 'currentBook: ' + bookLine + '\n' +
          'recentEntries: ' + entriesLine + '\n' +
+         'recentArtifacts: ' + artifactsLine + '\n' +
          'currentArc: ' + arcLine + '\n' +
          summaryLine +
          turnsLine;
@@ -368,12 +435,15 @@ function buildYumiSystem() {
     'memories of past conversations with this reader. They ' +
     'show how you sound, not what has been said.\n\n' +
     'The CONTEXT section below has structured slots ' +
-    '(currentBook, recentEntries, currentArc) and a ' +
-    'conversation log (recentTurns, and EARLIER IN OUR ' +
+    '(currentBook, recentEntries, recentArtifacts, currentArc) ' +
+    'and a conversation log (recentTurns, and EARLIER IN OUR ' +
     'CONVERSATION when summary exists). Treat structured ' +
     'slots as facts about the reader\'s current state, not ' +
-    'as things you discussed. Treat recentTurns and the ' +
-    'summary as your actual memory of this conversation. ' +
+    'as things you discussed. recentArtifacts are retrospective ' +
+    'syntheses the reader has written about books they marked ' +
+    'finished -- treat them as the reader\'s own framings, not ' +
+    'as conversations you had with them. Treat recentTurns and ' +
+    'the summary as your actual memory of this conversation. ' +
     'If recentTurns is "none yet" and summary is absent, ' +
     'this is a fresh conversation — do not reference prior ' +
     'talks.\n\n' +

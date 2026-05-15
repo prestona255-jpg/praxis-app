@@ -298,23 +298,39 @@ function renderNotebook() {
   editorHost.id = 'notebook-editor-host';
   wrap.appendChild(editorHost);
 
-  // Collect entries owned by the current user; newest first.
-  var entries = [];
+  // Stage 3.7: /notebook unifies notebookEntries + bookArtifacts as
+  // distinct card kinds in one chronological stream owned by the
+  // current user. Interleaved by createdAt, newest first. Each item
+  // is tagged with its kind so the render loop can dispatch to the
+  // right card renderer -- entry cards keep their existing affordances
+  // (privacy toggle, register marker, book attribution); Artifact
+  // cards are click-through navigation to #artifact/<bookId>.
+  var items = [];
   var entryMap = state.notebookEntries || {};
   var key;
   for (key in entryMap) {
     if (Object.prototype.hasOwnProperty.call(entryMap, key)) {
       var e = entryMap[key];
       if (e && user && e.userId === user.uid) {
-        entries.push(e);
+        items.push({ kind: 'entry', createdAt: e.createdAt || 0, data: e });
       }
     }
   }
-  entries.sort(function(a, b) {
-    return (b.createdAt || 0) - (a.createdAt || 0);
+  var artifactMap = state.bookArtifacts || {};
+  var aKey;
+  for (aKey in artifactMap) {
+    if (Object.prototype.hasOwnProperty.call(artifactMap, aKey)) {
+      var a = artifactMap[aKey];
+      if (a && user && a.userId === user.uid) {
+        items.push({ kind: 'artifact', createdAt: a.createdAt || 0, data: a });
+      }
+    }
+  }
+  items.sort(function(x, y) {
+    return y.createdAt - x.createdAt;
   });
 
-  if (entries.length === 0) {
+  if (items.length === 0) {
     var empty = document.createElement('p');
     empty.className = 'notebook-empty-body';
     empty.textContent =
@@ -326,8 +342,12 @@ function renderNotebook() {
     var list = document.createElement('div');
     list.className = 'notebook-entry-list';
     var i;
-    for (i = 0; i < entries.length; i++) {
-      list.appendChild(renderNotebookEntry(entries[i]));
+    for (i = 0; i < items.length; i++) {
+      if (items[i].kind === 'artifact') {
+        list.appendChild(renderArtifactCard(items[i].data));
+      } else {
+        list.appendChild(renderNotebookEntry(items[i].data));
+      }
     }
     wrap.appendChild(list);
   }
@@ -1305,6 +1325,68 @@ function renderNotebookEntry(entry) {
   return card;
 }
 
+// Stage 3.7: render a bookArtifact as a card in the /notebook stream.
+// Distinct className (notebook-artifact-card vs notebook-entry) so
+// styling can diverge in 3.10 -- minimum-distinguishable for 3.7.
+// "Artifact" marker replaces the entry register marker. No inline
+// privacy toggle (artifacts do not carry isPrivate today; if/when
+// they do, this card will mirror the entry card's affordance).
+// Click anywhere on the card navigates to the Artifact view.
+function renderArtifactCard(artifact) {
+  var card = document.createElement('article');
+  card.className = 'notebook-artifact-card';
+  card.addEventListener('click', function() {
+    if (artifact.bookId) {
+      location.hash = '#artifact/' + artifact.bookId;
+    }
+  });
+
+  var meta = document.createElement('div');
+  meta.className = 'notebook-artifact-meta';
+
+  var markerEl = document.createElement('span');
+  markerEl.className = 'notebook-artifact-marker';
+  markerEl.textContent = 'Artifact';
+  meta.appendChild(markerEl);
+
+  var timeEl = document.createElement('time');
+  var ts = new Date(artifact.createdAt || 0);
+  timeEl.textContent = ts.toLocaleString();
+  if (artifact.createdAt) {
+    timeEl.setAttribute('datetime', ts.toISOString());
+  }
+  meta.appendChild(timeEl);
+
+  var bookMeta = document.createElement('div');
+  bookMeta.className = 'notebook-artifact-book-meta';
+  var book = (artifact.bookId && state.books && state.books[artifact.bookId])
+    || null;
+  var bookTitleText = (book && book.title) || '(unknown book)';
+  bookMeta.textContent = 'from ' + bookTitleText;
+  meta.appendChild(bookMeta);
+
+  card.appendChild(meta);
+
+  var titleEl = document.createElement('div');
+  titleEl.className = 'notebook-artifact-title';
+  titleEl.textContent = artifact.title || '';
+  card.appendChild(titleEl);
+
+  var bodyText = artifact.body || '';
+  if (bodyText.length > 0) {
+    var bodyEl = document.createElement('div');
+    bodyEl.className = 'notebook-artifact-body';
+    if (bodyText.length > 200) {
+      bodyEl.textContent = bodyText.substring(0, 197) + '...';
+    } else {
+      bodyEl.textContent = bodyText;
+    }
+    card.appendChild(bodyEl);
+  }
+
+  return card;
+}
+
 // Per-register default lookup. Fail-safe to false (visible) on any
 // missing chain link, mirroring the filter's fail-open posture in
 // yumi-brain.js. Editor save handlers call this when stamping
@@ -1555,6 +1637,28 @@ function openTransparencyView() {
   }
   panel.appendChild(entriesSec);
 
+  // Stage 3.7: Recent book Artifacts. Same provenance and truncation
+  // rules as recentEntries -- this is what Yumi sees of the user's
+  // finished-room writing, subject to the same privacy filter the
+  // entries loop uses (artifacts do not carry isPrivate today; the
+  // filter is the contract). Principle #5 -- anything captured is
+  // visible and correctable to the user, including via this surface.
+  var artifactsSec = renderTransparencySection('Recent book Artifacts');
+  var artifactsBody = artifactsSec.querySelector('.transparency-section-body');
+  if (snap.recentArtifacts.length === 0) {
+    artifactsBody.textContent =
+      'No Artifacts are visible to Yumi right now. Marking a book ' +
+      'finished and writing its Artifact will surface it here.';
+  } else {
+    var ai;
+    for (ai = 0; ai < snap.recentArtifacts.length; ai++) {
+      artifactsBody.appendChild(
+        renderTransparencyArtifact(snap.recentArtifacts[ai])
+      );
+    }
+  }
+  panel.appendChild(artifactsSec);
+
   // Section: Conversation summary.
   var summarySec = renderTransparencySection(
     'What Yumi remembers from this conversation'
@@ -1625,6 +1729,41 @@ function renderTransparencyEntry(item) {
   if (item.register === 'marginalia') {
     var bookLabel = item.bookTitle || '(unknown book)';
     metaText = metaText + ' from ' + bookLabel;
+  }
+  if (item.createdAt) {
+    metaText = metaText + ' · ' + new Date(item.createdAt).toLocaleString();
+  }
+  meta.textContent = metaText;
+  card.appendChild(meta);
+
+  return card;
+}
+
+// Stage 3.7: render one recentArtifacts snapshot item as a card.
+// Mirrors renderTransparencyEntry structurally; title and book
+// attribution replace the register marker since artifacts do not
+// carry the journal/marginalia register distinction.
+function renderTransparencyArtifact(item) {
+  var card = document.createElement('article');
+  card.className = 'transparency-artifact';
+
+  var titleEl = document.createElement('div');
+  titleEl.className = 'transparency-artifact-title';
+  titleEl.textContent = item.title || '';
+  card.appendChild(titleEl);
+
+  if (item.body && item.body.length > 0) {
+    var bodyEl = document.createElement('div');
+    bodyEl.className = 'transparency-artifact-body';
+    bodyEl.textContent = item.body;
+    card.appendChild(bodyEl);
+  }
+
+  var meta = document.createElement('div');
+  meta.className = 'transparency-artifact-meta';
+  var metaText = 'Artifact';
+  if (item.bookTitle) {
+    metaText = metaText + ' from ' + item.bookTitle;
   }
   if (item.createdAt) {
     metaText = metaText + ' · ' + new Date(item.createdAt).toLocaleString();
