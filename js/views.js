@@ -1206,6 +1206,46 @@ function renderBookDetail(bookId) {
 
   wrap.appendChild(header);
 
+  // Stage 3.7c: status selector. Editable on book detail; sibling to
+  // ISBN editing below. DOM shape mirrors the shelf-editor 3.5a radio
+  // pattern at views.js:727-744 (div wrapper > one label per status,
+  // each label > radio + space + text node). Class names differ from
+  // 3.5a so 3.10 can style book-detail and shelf-editor independently.
+  // Auth-gated: editing user-owned state requires sign-in. onChange
+  // mirrors the finish-flip handler at views.js (status write,
+  // saveState, re-render); deliberately does NOT touch the finish
+  // timestamp -- the Artifact reflects the moment of finishing and
+  // un-flipping does not erase that. The (status, hasArtifact) matrix in
+  // the header above is unchanged in Stage 1; Stage 2 ships the
+  // (reading, hasArtifact) un-finish branch, and between the two
+  // commits that state will render incoherently. Expected.
+  if (user) {
+    var currentStatus = book.status || 'reading';
+    var statusWrap = document.createElement('div');
+    statusWrap.className = 'book-detail-status';
+    var statuses = ['want', 'reading', 'finished'];
+    var s;
+    for (s = 0; s < statuses.length; s++) {
+      var statusLabel = document.createElement('label');
+      statusLabel.className = 'book-detail-status-option';
+      var statusRadio = document.createElement('input');
+      statusRadio.type = 'radio';
+      statusRadio.name = 'book-detail-status';
+      statusRadio.value = statuses[s];
+      if (statuses[s] === currentStatus) statusRadio.checked = true;
+      statusRadio.addEventListener('change', function(ev) {
+        if (!state.books[bookId]) return;
+        state.books[bookId].status = ev.target.value;
+        saveState();
+        renderBookDetail(bookId);
+      });
+      statusLabel.appendChild(statusRadio);
+      statusLabel.appendChild(document.createTextNode(' ' + statuses[s]));
+      statusWrap.appendChild(statusLabel);
+    }
+    wrap.appendChild(statusWrap);
+  }
+
   // 3.5b: editable ISBN row with onblur re-fetch. priorIsbn is the
   // closure-cached value the handler compares against on each blur
   // so we never re-fetch when the user blurs without changing the
