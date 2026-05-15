@@ -2745,16 +2745,17 @@ var STAGES = [
         ],
         rollback: 'None.',
         risks: [
-          'Status selector UX: radio vs dropdown — decided session-time. Radio matches shelf-editor 3.5a; dropdown saves vertical space',
-          'Visual coherence of the un-finish state ("Open Artifact" + marginalia + journal affordances all stacked) may feel cluttered; 3.10 reconciles styling',
-          'Edge state (want, hasArtifact) exists only via flip from finished → want; user expectation here is undefined. Default lean: render same as (finished, hasArtifact) — Open Artifact link visible — since the Artifact still represents real reading work',
-          'Builder-Intellectual risk: status-editing seems small but cuts against the ritual frame of finishing. Mitigated by 3.7 keeping "I\'ve finished this" as the ceremonial path; status selector is the escape hatch, not the primary affordance'
+          'Radio vs dropdown: resolved — radio chosen, matching shelf-editor 3.5a pattern',
+          'Visual coherence of the un-finish state ("Open Artifact" link + marginalia + journal affordances stacked): still pending; 3.10 reconciles styling',
+          'Edge state (want, hasArtifact): resolved — renders "Open Artifact" link defensively per six-branch matrix; only reachable via finished → want flip',
+          'Builder-Intellectual risk: held — ceremonial "I\'ve finished this" path preserved on shelf editor first-finish; selector is the escape hatch on book detail, not the primary affordance'
         ],
         promptSkeleton:
-'Stage 0: view js/views.js. Confirm 3.7 Shipped (renderArtifact, ensureOneArtifact, "Open Artifact" link all operational). Locate the existing (status, hasArtifact) branch render logic added in Stage 4 of 3.7; report current handling of each of the four branches.\n\n' +
-'Stage 1: js/views.js — status selector on book detail wired to state.books[bookId].status + saveState() + re-render. Match shelf-editor 3.5a pattern.\n\n' +
-'Stage 2: js/views.js — extend (status, hasArtifact) render to handle all four branches; specifically the (reading, hasArtifact) un-finish case rendering both Open Artifact link and working-shelf affordances.\n\n' +
-'Verification per Evidence block. Specifically: cycle status reading → finished (auto-opens editor, save Artifact) → reading (both affordances) → finished (Open Artifact only) and confirm each state renders correctly.'
+'(Shipped 3.7c — this skeleton documents the executed sequence)\n\n' +
+'Stage 0: pre-flight on js/views.js confirmed 3.7 Shipped (renderArtifact at 1316, ensureOneArtifact operational, "Open Artifact" link rendering). Located the existing (status, hasArtifact) header conditional at js/views.js:1157–1195; verified three of six branches handled (reading/no-artifact → "I\'ve finished this"; finished/no-artifact → "Create Artifact"; finished/has-artifact → "Open Artifact" link). Confirmed the (reading, hasArtifact) gap was the un-finish branch deferred from 3.7, not pre-existing drift.\n\n' +
+'Stage 1: js/views.js — radio selector (want / reading / finished) matching shelf-editor 3.5a DOM pattern, mounted after wrap.appendChild(header) at line 1207 and before the ISBN row, inside the if (user) auth gate. Class names diverged (book-detail-status, book-detail-status-option) so 3.10 can style book-detail and shelf-editor independently. Defensive fallback book.status || \'reading\' for legacy records. onChange writes state.books[bookId].status, saveState(), renderBookDetail(bookId); deliberately does NOT write or clear finishedAt — the Artifact reflects the moment of finishing and un-flipping does not erase that. [Commit fe4f698.]\n\n' +
+'Stage 2: js/views.js — extended the (status, hasArtifact) header conditional to six explicit branches, no shared tails and no collapsed conditionals. Three branches render the identical "Open Artifact" link; duplicated at three call sites by design (the spec matrix is the audit surface; 3.10 may diverge visual treatment per branch). The new (reading, hasArtifact) un-finish branch renders the "Open Artifact" link in the header; working-shelf affordances (Add Marginalia button, ISBN row, marginalia list) already render unconditionally for signed-in users so are not gated. The (want, hasArtifact) defensive branch renders the same link — the Artifact represents real reading work regardless of intent to re-shelf as want. The (want, no-artifact) branch is explicit and empty by design. [Commit 9a9320f.]\n\n' +
+'Constitutional verification: principle — correctability over friction. Un-finish operational without console intervention; finishedAt persists across the un-finish cycle (verified on live URL via JSON.stringify(state.books[bookId]) after status flipped back to reading). Ceremonial "I\'ve finished this" path preserved on shelf editor first-finish; radio selector is the escape hatch on book detail, not the primary affordance.'
       },
 
       {
