@@ -16,8 +16,23 @@
   --ink-3:   #7a7368;
   --gold:    #b8860b;
   --bg:      #faf6ec;
-  --surface: #ffffff;
+  --surface: #ebe0c4;
   --border:  #e5dfd2;
+
+  /* Stage 3.10a additions (Oshun / wheat field / cherry oak).
+     Existing --ink / --ink-2 / --ink-3 / --gold left untouched per
+     Stage A pre-flight: their current values were judged usable
+     warm-darks rather than wildly off, so the palette shift in
+     3.10a lands surface-first; deeper ink-tone retune is deferred.
+     --surface was pure white pre-3.10a -- wildly off the locked
+     wheat target -- so it is the one existing token updated here. */
+  --ink-4:        #b8997a;
+  --br-deep:      #4a2810;
+  --surface-2:    #f6ecd2;
+  --gold-light:   #f0c46a;
+  --gold-text:    #6b4516;
+  --river:        #2a4a5c;
+  --color-surface: var(--surface);
 
   /* Spacing scale */
   --sp-1: 4px;

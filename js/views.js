@@ -187,6 +187,29 @@ var APP_EL_ID = 'app';
 function renderRoute() {
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
+
+  // Stage 3.10a Stage A: toggle .app-nav-link-active on the top-nav
+  // link that matches the current route. Book detail and Artifact
+  // are sub-surfaces of the shelf so they keep Books highlighted.
+  // Empty / unknown hashes converge on Notebook downstream, so the
+  // active-link signal matches that convergence here.
+  var activeRoute;
+  if (parts[0] === 'book' || parts[0] === 'artifact' ||
+      parts[0] === 'books') {
+    activeRoute = 'books';
+  } else {
+    activeRoute = 'notebook';
+  }
+  var links = document.querySelectorAll('.app-nav-link');
+  var i;
+  for (i = 0; i < links.length; i++) {
+    if (links[i].getAttribute('data-route') === activeRoute) {
+      links[i].classList.add('app-nav-link-active');
+    } else {
+      links[i].classList.remove('app-nav-link-active');
+    }
+  }
+
   if (parts[0] === 'book' && parts[1]) {
     state.currentBookId = parts[1];
     saveState();
