@@ -193,6 +193,16 @@ function renderRoute() {
     renderBookDetail(parts[1]);
     return;
   }
+  if (parts[0] === 'artifact' && parts[1]) {
+    // Artifact view sets currentBookId so yumi-brain's current-book
+    // lens stays coherent across the workshop / finished-room boundary
+    // -- the user is still engaged with this book, just on its
+    // retrospective surface rather than the in-progress one.
+    state.currentBookId = parts[1];
+    saveState();
+    renderArtifact(parts[1]);
+    return;
+  }
   if (parts[0] === 'books') {
     // Shelf surface (3.5a). currentBookId clears symmetrically with
     // the notebook path so yumi-brain does not carry a stale book
@@ -964,6 +974,16 @@ function renderBookDetail(bookId) {
         openArtifactEditor(bookId);
       });
       header.appendChild(createBtn);
+    } else if (book.status === 'finished' && hasArtifact) {
+      // (finished, has-artifact): post-Artifact state. Both creation
+      // CTAs are gone; an "Open Artifact" link is the only book-detail
+      // surface that references the Artifact. The (reading, has-artifact)
+      // un-finish branch is intentionally out of scope -- 3.7c.
+      var openArtLink = document.createElement('a');
+      openArtLink.className = 'book-detail-open-artifact';
+      openArtLink.href = '#artifact/' + bookId;
+      openArtLink.textContent = 'Open Artifact';
+      header.appendChild(openArtLink);
     }
   } else {
     var signinBtn = document.createElement('button');
@@ -1071,6 +1091,81 @@ function renderBookDetail(bookId) {
     }
     wrap.appendChild(list);
   }
+
+  host.appendChild(wrap);
+}
+
+// Stage 3.7: Artifact view at #artifact/<bookId>. Paints the
+// Artifact's title, body, and a substrate link back to book detail
+// ("Marginalia and journal for this book ->"). The retrospective
+// surface lives separately from book detail by design -- workshop
+// floor vs finished room. Defensive empty states cover hand-typed
+// hashes: the only in-app entry point is the "Open Artifact" link
+// gated on hasArtifact, so (no book) and (book exists, no artifact)
+// are reachable only via direct URL entry. textContent (not
+// innerHTML) for body keeps writing un-rendered as plain text;
+// markdown rendering and visual treatment are 3.10 territory.
+function renderArtifact(bookId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'artifact-view';
+
+  var book = state.books[bookId];
+  if (!book) {
+    var notFoundMsg = document.createElement('p');
+    notFoundMsg.className = 'artifact-not-found';
+    notFoundMsg.textContent = 'Book not found.';
+    wrap.appendChild(notFoundMsg);
+    var notFoundLink = document.createElement('a');
+    notFoundLink.className = 'artifact-back-link';
+    notFoundLink.href = '#books';
+    notFoundLink.textContent = 'Back to shelf →';
+    wrap.appendChild(notFoundLink);
+    host.appendChild(wrap);
+    return;
+  }
+
+  var user = getCurrentUser();
+  var artifact = null;
+  if (user && state.bookArtifacts) {
+    var key = artifactKey(user.uid, bookId);
+    if (state.bookArtifacts[key]) {
+      artifact = state.bookArtifacts[key];
+    }
+  }
+
+  if (!artifact) {
+    var emptyMsg = document.createElement('p');
+    emptyMsg.className = 'artifact-empty';
+    emptyMsg.textContent = 'No Artifact yet for this book.';
+    wrap.appendChild(emptyMsg);
+    var emptyLink = document.createElement('a');
+    emptyLink.className = 'artifact-back-link';
+    emptyLink.href = '#book/' + bookId;
+    emptyLink.textContent = 'Back to book →';
+    wrap.appendChild(emptyLink);
+    host.appendChild(wrap);
+    return;
+  }
+
+  var titleEl = document.createElement('h1');
+  titleEl.className = 'artifact-title';
+  titleEl.textContent = artifact.title || '';
+  wrap.appendChild(titleEl);
+
+  var bodyEl = document.createElement('div');
+  bodyEl.className = 'artifact-body';
+  bodyEl.textContent = artifact.body || '';
+  wrap.appendChild(bodyEl);
+
+  var substrateLink = document.createElement('a');
+  substrateLink.className = 'artifact-substrate-link';
+  substrateLink.href = '#book/' + bookId;
+  substrateLink.textContent = 'Marginalia and journal for this book →';
+  wrap.appendChild(substrateLink);
 
   host.appendChild(wrap);
 }
@@ -1576,6 +1671,7 @@ window.views = {
   renderNotebook:        renderNotebook,
   renderShelf:           renderShelf,
   renderBookDetail:      renderBookDetail,
+  renderArtifact:        renderArtifact,
   openJournalEditor:     openJournalEditor,
   openMarginaliaEditor:  openMarginaliaEditor,
   openShelfEditor:       openShelfEditor,
