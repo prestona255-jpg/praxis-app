@@ -1142,19 +1142,27 @@ function renderBookDetail(bookId) {
     });
     header.appendChild(newBtn);
 
-    // Stage 3.7: "I've finished this" button. Renders only when the
-    // (status, hasArtifact) tuple is ('reading', no-artifact). The only
-    // path 3.7 owns to status === 'finished'. Status-editing (un-finish,
-    // selector flip) lands in 3.7c; "Open Artifact" link replaces this
-    // button after Artifact creation in Stage 4. The click stamps state
-    // (status + finishedAt) and re-renders; Stage 3 will chain the
-    // Artifact editor open off the same handler.
+    // Stage 3.7c stage 2: explicit six-branch (status, hasArtifact)
+    // render matrix. Each branch handled standalone -- no shared tails
+    // and no collapsed conditionals like (status === 'finished' ||
+    // status === 'want'). Branches that render identical markup
+    // duplicate the call site by design: the spec matrix is the audit
+    // surface, and 3.10 may diverge visual treatment per branch.
+    // "I've finished this" stays first-finish-only (the ceremonial
+    // path that creates an Artifact); the status selector above is
+    // the path for subsequent flips, including un-finish.
     var hasArtifact = false;
     if (state.bookArtifacts) {
       var artKey = artifactKey(user.uid, bookId);
       if (state.bookArtifacts[artKey]) hasArtifact = true;
     }
-    if (book.status === 'reading' && !hasArtifact) {
+    if (book.status === 'want' && !hasArtifact) {
+      // Branch 1 -- (want, no-artifact): no header Artifact-affordance.
+      // User has not begun reading; no finish or Artifact paths apply.
+    } else if (book.status === 'reading' && !hasArtifact) {
+      // Branch 2 -- (reading, no-artifact): first-finish ceremonial
+      // path. Click stamps status + finishedAt and chains the Artifact
+      // editor open. Mirrors 3.7 stage 1+2 behavior; unchanged in 3.7c.
       var finishedBtn = document.createElement('button');
       finishedBtn.type = 'button';
       finishedBtn.className = 'book-detail-mark-finished';
@@ -1169,11 +1177,12 @@ function renderBookDetail(bookId) {
       });
       header.appendChild(finishedBtn);
     } else if (book.status === 'finished' && !hasArtifact) {
-      // (finished, no-artifact): reachable in 3.7 when the user
+      // Branch 3 -- (finished, no-artifact): reachable when the user
       // cancelled the auto-opened Artifact editor after marking
-      // finished. Persistent CTA gets them back into the editor
-      // without re-flipping status. The same !hasArtifact gate
-      // prevents a second creation path -- principle #3.
+      // finished, OR via 3.7c selector flip 'reading'/'want' ->
+      // 'finished' on a book that never had an Artifact. Persistent
+      // CTA gets the user back into the editor without re-flipping
+      // status. The !hasArtifact gate prevents a second creation path.
       var createBtn = document.createElement('button');
       createBtn.type = 'button';
       createBtn.className = 'book-detail-create-artifact';
@@ -1182,11 +1191,36 @@ function renderBookDetail(bookId) {
         openArtifactEditor(bookId);
       });
       header.appendChild(createBtn);
+    } else if (book.status === 'reading' && hasArtifact) {
+      // Branch 4 -- (reading, has-artifact): un-finish state, reached
+      // via 3.7c selector flip 'finished' -> 'reading' on a book whose
+      // Artifact already exists. "I've finished this" does NOT render
+      // here -- first-finish stays ceremonial; the selector handles
+      // subsequent flips. "Open Artifact" link remains because the
+      // Artifact still represents the user's prior closure (the
+      // selector handler in 3.7c stage 1 deliberately retains the
+      // finish timestamp across un-flip for the same reason).
+      var openArtLink = document.createElement('a');
+      openArtLink.className = 'book-detail-open-artifact';
+      openArtLink.href = '#artifact/' + bookId;
+      openArtLink.textContent = 'Open Artifact';
+      header.appendChild(openArtLink);
     } else if (book.status === 'finished' && hasArtifact) {
-      // (finished, has-artifact): post-Artifact state. Both creation
-      // CTAs are gone; an "Open Artifact" link is the only book-detail
-      // surface that references the Artifact. The (reading, has-artifact)
-      // un-finish branch is intentionally out of scope -- 3.7c.
+      // Branch 5 -- (finished, has-artifact): canonical post-Artifact
+      // state. Both creation CTAs are gone; the link is the only
+      // book-detail surface that references the Artifact.
+      var openArtLink = document.createElement('a');
+      openArtLink.className = 'book-detail-open-artifact';
+      openArtLink.href = '#artifact/' + bookId;
+      openArtLink.textContent = 'Open Artifact';
+      header.appendChild(openArtLink);
+    } else if (book.status === 'want' && hasArtifact) {
+      // Branch 6 -- (want, has-artifact): defensive, only reachable
+      // via 3.7c selector flip 'finished' -> 'want' on a book whose
+      // Artifact already exists. User expectation is undefined for
+      // this combination; the Artifact represents real reading work
+      // regardless of the user's intent to re-shelf as 'want', so
+      // the link stays visible.
       var openArtLink = document.createElement('a');
       openArtLink.className = 'book-detail-open-artifact';
       openArtLink.href = '#artifact/' + bookId;
