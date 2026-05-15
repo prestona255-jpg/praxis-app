@@ -2628,18 +2628,18 @@ var STAGES = [
         id: 's3-7',
         num: '3.7',
         name: 'Mark finished + Book Artifact (creation + view + Notebook integration)',
-        depConfirm: '3.3 must be Shipped (book detail view at #book/<id>). 3.1 must be Shipped (Notebook surface at /notebook). 3.5a must be Shipped (status field on userBooks). state.bookArtifacts map and ensureOneArtifact(uid, bookId) must exist in js/state.js.',
-        purpose: 'Ship constitutional principle #3 ("one Book Artifact per book per user") in code. The user marks a book finished as a first-person ritual act, optionally writes the Artifact (post-completion residue), and the Artifact becomes reachable from book detail and /notebook. ensureOneArtifact is the schema-level idempotency guard; UI never offers a second-creation path. Design frame: workshop (book detail) vs finished room (Artifact) — separate surfaces, linked.',
+        depConfirm: '3.3 must be Shipped (book detail view at #book/<id>). 3.1 must be Shipped (Notebook surface at /notebook). 3.5a must be Shipped (status field on state.books). state.bookArtifacts map and ensureOneArtifact(uid, bookId, artifact) must exist in js/state.js.',
+        purpose: 'Ship constitutional principle #3 ("one Book Artifact per book per user") in code. The user marks a book finished as a first-person ritual act ("I\'ve finished this" button), writes the Artifact (post-completion residue), and the Artifact becomes reachable from book detail and /notebook. ensureOneArtifact is the schema-level idempotency guard; UI never offers a second-creation path. Design frame: workshop (book detail) vs finished room (Artifact) — separate surfaces, linked.',
         scope: [
-          '"I\'ve finished this" button on book detail when status === "reading" and no Artifact exists; click sets status to "finished", records finishedAt, opens Artifact draft editor',
-          'Status-selector flip to "finished" records finishedAt and shows persistent "Create Artifact" CTA, but does NOT auto-open editor (quieter path)',
-          'Artifact creation flow: editor with editable title (pre-filled with book title) plus markdown body; save calls ensureOneArtifact and persists to state.bookArtifacts',
-          'Artifact view at #artifact/<bookId>: title, body, substrate link section at bottom ("Marginalia and journal for this book →" linking to #book/<bookId>)',
-          'Book detail post-Artifact: replaces mark-finished CTAs with "Open Artifact" link',
-          'Un-finish render: status can flip "finished" → "reading"; when status === "reading" AND Artifact exists, book detail shows both "Open Artifact" link AND working-shelf affordances; Artifact persists (no deletion)',
-          'Idempotency: re-finishing a book that already has an Artifact does not create a second one; UI gates creation entry points by !hasArtifact',
-          'Notebook view at /notebook unifies notebookEntries and bookArtifacts as distinct visual card types (minimum distinction; full styling deferred to 3.10)',
-          'Yumi context (assembleContextData in yumi-brain.js) reads bookArtifacts subject to existing isPrivate privacy filter — extend only if not already reading them (constitutional principle #5)'
+          '"I\'ve finished this" button on book detail when state.books[bookId].status === "reading" and no Artifact exists; click sets status to "finished", records finishedAt timestamp, opens Artifact draft editor',
+          'Artifact creation flow: shared editor extracted (openEditor) and reused by journal, marginalia, Artifact editors; Artifact editor opens with editable title (pre-filled with book title) plus body field; save calls ensureOneArtifact(uid, bookId, artifact) and persists to state.bookArtifacts',
+          '"Create Artifact" CTA on book detail when status === "finished" && !hasArtifact (second creation entry point if user cancels the auto-opened editor; identically gated on !hasArtifact)',
+          'Artifact view at #artifact/<bookId>: title, body, substrate link section at bottom ("Marginalia and journal for this book →" linking to #book/<bookId>); defensive branches for book-not-found and book-without-Artifact',
+          'Book detail post-Artifact: replaces creation CTAs with "Open Artifact" link to #artifact/<bookId>',
+          'Idempotency: re-finishing a book that already has an Artifact does not create a second one; UI gates both creation entry points by !hasArtifact; ensureOneArtifact is the schema-level guard',
+          'Notebook view at /notebook unifies notebookEntries and bookArtifacts in a single newest-first stream as distinct visual card types (renderNotebookEntry vs renderArtifactCard with "Artifact" marker); Artifact cards click-through to #artifact/<bookId>',
+          'Yumi context (assembleContextData in yumi-brain.js) reads bookArtifacts subject to identical isPrivate filter pattern applied to notebookEntries; sorted newest-first, top 3, body truncated to 200 chars; new recentArtifacts slot composed into buildContext prose; buildYumiSystem updated to name recentArtifacts and instruct Yumi to treat Artifacts as the reader\'s own framings, not prior conversations',
+          'Transparency view extended: new "Recent book Artifacts" section consumes snap.recentArtifacts via renderTransparencyArtifact (constitutional principle #5: user sees what Yumi sees)'
         ],
         nonGoals: [
           'No Yumi-suggested finishing or Yumi-initiated state transitions',
@@ -2647,25 +2647,29 @@ var STAGES = [
           'No Yumi-assisted Artifact drafting',
           'No multiple Artifacts per book (constitutional principle #3)',
           'No new top-level surface (/library, /finished, /artifacts) — deferred to 3.7b',
-          'No deletion of Artifact on un-finish (option chosen: persist; reflects prior state honestly)',
-          'No styling pass beyond minimum-to-distinguish on Artifact view and Artifact cards in /notebook (full styling deferred to 3.10)'
+          'No status-flip affordance on book detail (status is set-once-at-creation in current code) — un-finish path and quieter status-flip path both moved to 3.7c during execution Stage 0',
+          'No deletion of Artifact on un-finish (un-finish is 3.7c territory; option chosen in design: persist Artifact)',
+          'No markdown rendering on Artifact body — textContent only; markdown deferred to 3.10',
+          'No styling pass beyond minimum-to-distinguish — full styling deferred to 3.10 (the "Open Artifact" link is an <a> for navigation semantics while the creation CTAs are <button> for state-transition semantics; visual reconciliation lives in 3.10)'
         ],
-        subsystems: ['views', 'state'],
+        subsystems: ['views', 'state', 'yumi-brain'],
         files: [
-          'js/views.js (mark-finished UI, status-flip CTA, Artifact creation flow, Artifact view, Notebook unification, conditional book-detail render)',
-          'js/state.js (finishedAt field on userBooks entries if not already present; SCHEMA_VERSION bump if added)',
-          'js/yumi-brain.js (only if assembleContextData does not already read bookArtifacts)'
+          'js/state.js (SCHEMA_VERSION 1.9.0 → 1.9.1; finishedAt on state.books with migration; title documented on bookArtifacts schema)',
+          'js/views.js (mark-finished button, Artifact creation flow via shared openEditor, Artifact view route + renderArtifact, "Open Artifact" link, Notebook unification + renderArtifactCard, transparency view extension)',
+          'js/yumi-brain.js (assembleContextData reads bookArtifacts; buildContext composes recentArtifacts slot; buildYumiSystem updated)'
         ],
         acceptance: [
           'Book detail for a "reading" book with no Artifact shows "I\'ve finished this" button',
-          'Click → status becomes "finished" → finishedAt recorded → Artifact draft editor opens with title pre-filled',
-          'Save Artifact → ensureOneArtifact called → reload → Artifact persists',
-          'After Artifact creation, book detail shows "Open Artifact" link instead of mark-finished CTA',
-          'Status-flip to "finished" via status selector records finishedAt, shows "Create Artifact" CTA, does NOT auto-open editor',
-          'Un-finish: flip "finished" → "reading" on book with Artifact → book detail shows both Artifact link and working-shelf affordances',
-          '#artifact/<bookId> renders Artifact view with title, body, substrate link to book detail',
-          '/notebook shows journal entries and Artifacts as visually distinct cards',
-          'ensureOneArtifact called twice for same (uid, bookId) returns the same Artifact object both times'
+          'Click → status becomes "finished" → finishedAt recorded → Artifact draft editor auto-opens with title pre-filled',
+          'Save Artifact → ensureOneArtifact called → reload → Artifact persists in state.bookArtifacts',
+          'Cancel auto-opened editor → state is (finished, no Artifact) → "Create Artifact" CTA appears as second entry point',
+          'After Artifact creation, book detail shows "Open Artifact" link instead of any creation CTA',
+          '#artifact/<bookId> renders Artifact view with title, body, substrate link back to book detail',
+          'Substrate link round-trip: Artifact view → book detail → Open Artifact → Artifact view works without state loss',
+          '/notebook shows journal entries and Artifacts in unified newest-first stream as visually distinct cards; Artifact cards click-through to #artifact/<bookId>',
+          'Transparency view shows new "Recent book Artifacts" section listing the user\'s Artifacts',
+          'ensureOneArtifact(uid, bookId, artifactA) followed by ensureOneArtifact(uid, bookId, artifactB) returns artifactA both times (idempotent)',
+          'Regression: journal and marginalia editors still work identically after shared-editor extraction'
         ],
         evidence: [
           'Static: grep -c "ensureOneArtifact" js/views.js returns >=2',
@@ -2673,26 +2677,84 @@ var STAGES = [
           'Static: grep -c "finishedAt" js/state.js returns >=1',
           'Static: grep -c "bookArtifacts\\[" js/views.js returns >=2',
           'Static: grep -c "#artifact/" js/views.js returns >=1',
-          'Static: grep -nE "(const |let |=>|\\bclass\\b|\\`)" js/views.js js/state.js returns 0 matches',
-          'Live URL behavioral: mark finished → create Artifact → reload → persists; book detail shows "Open Artifact"',
-          'Live URL behavioral: un-finish (finished → reading with Artifact) shows both Artifact link and working-shelf affordances',
-          'Console: ensureOneArtifact called twice for same pair returns objects with identical ids'
+          'Static: grep -c "bookArtifacts" js/yumi-brain.js returns >=1',
+          'Static: grep -c "recentArtifacts" js/yumi-brain.js returns >=1',
+          'Static: grep -nE "(const |let |=>|\\bclass\\b|\\`)" js/views.js js/state.js js/yumi-brain.js returns 0 actual JS-syntax matches (doc-comment self-references not counted)',
+          'Live URL behavioral: mark finished → editor auto-opens → save → reload → Artifact persists; book detail shows "Open Artifact"',
+          'Live URL behavioral: cancel auto-opened editor → "Create Artifact" CTA appears as second entry point',
+          'Live URL behavioral: /notebook stream interleaves journal entries and Artifact cards; transparency view shows recentArtifacts',
+          'Console: ensureOneArtifact called twice with different artifacts for same (uid, bookId) returns the first one both times'
+        ],
+        rollback: 'Not applicable — shipped across four atomic commits (13f6f10, 74d4011, a55ab4f, b07e307); each stage independently verified before next.',
+        risks: [
+          'Builder-Intellectual risk on the design call (option 1: Artifact as its own surface) — verified earned by the temporal frame distinction (workshop vs finished room); option 2 collapsed the frame, option 3 over-architected for current scale',
+          'Editor extraction was a known fork (3.2 journal editor did not generalize); now resolved — journal, marginalia, Artifact editors all use shared openEditor function',
+          'Status-flip path was scoped originally but dropped Stage 0 when status was found set-once-at-creation; un-finish forgiveness UX deferred to 3.7c, not lost',
+          'Artifact body has no markdown rendering yet (textContent only); 3.10 territory',
+          'Link/button visual inconsistency in book detail header ("Open Artifact" as <a>, creation CTAs as <button>) intentional for semantics; visual reconciliation in 3.10',
+          'Artifacts have no isPrivate field yet — assembleContextData filter is structurally present but fail-open for artifacts; gated principle #5 will tighten when isPrivate ships on artifacts'
+        ],
+        promptSkeleton:
+'(Shipped 3.7 — this skeleton documents the executed sequence)\n\n' +
+'Stage 0: pre-flight scan of js/views.js, js/state.js, js/yumi-brain.js. Surfaced: status set-once-at-creation (no flip affordance) → drop status-flip and un-finish from 3.7, carve into 3.7c. Journal editor (openJournalEditor) does NOT generalize cleanly → known fork in Stage 3. ensureOneArtifact is 3-arg (uid, bookId, artifact). finishedAt belongs on state.books not state.userBooks. bookArtifacts schema needs title field added in Stage 1.\n\n' +
+'Stage 1: js/state.js — SCHEMA_VERSION 1.9.0 → 1.9.1; finishedAt: null on state.books with idempotent migration; title documented on bookArtifacts schema. [Commit 13f6f10 covers Stages 1+2.]\n\n' +
+'Stage 2: js/views.js — "I\'ve finished this" button gated by status === "reading" && !hasArtifact; click writes status and finishedAt, re-renders.\n\n' +
+'Stage 3: js/views.js — shared openEditor extracted; openJournalEditor and openMarginaliaEditor migrated to thin wrappers; new openArtifactEditor with showTitleField; mark-finished click chains editor open; "Create Artifact" CTA for (finished, !hasArtifact). [Commit 74d4011.]\n\n' +
+'Stage 4: js/views.js — #artifact/<bookId> route + renderArtifact (title, body, substrate link, defensive branches for missing book/Artifact); "Open Artifact" link replaces creation CTAs for (finished, hasArtifact). [Commit a55ab4f.]\n\n' +
+'Stage 5: js/views.js + js/yumi-brain.js — Notebook unification (renderArtifactCard, unified newest-first stream); assembleContextData reads bookArtifacts through identical isPrivate filter, returns recentArtifacts slot; buildContext composes it; buildYumiSystem updated; transparency view extended. [Commit b07e307.]\n\n' +
+'Constitutional verification at end of Stage 5: principle #3 (no UI path creates second Artifact for existing pair — both creation entry points gated by !hasArtifact; ensureOneArtifact is schema-level guard) and principle #5 (assembleContextData is single filter site; identical isPrivate pattern applied to notebookEntries and bookArtifacts; transparency view consumes from same source).'
+      },
+
+      {
+        id: 's3-7c',
+        num: '3.7c',
+        name: 'Status editing on book detail + un-finish render',
+        depConfirm: '3.7 must be Shipped (Artifacts exist, ensureOneArtifact operational, bookArtifacts populated). 3.5a Shipped (status field on state.books).',
+        purpose: 'Add status editing to book detail (today status is set-once-at-creation in shelf editor and read-only thereafter). Specifically: allow status to flip between want, reading, and finished from book detail. Land the un-finish render branch deferred from 3.7: when status === "reading" AND Artifact exists, book detail shows both "Open Artifact" link and working-shelf affordances. Honors the broader Praxis correctability spirit — a user who marks a book finished by accident or in a moment of false closure should be able to back out without console intervention.',
+        scope: [
+          'Status selector on book detail (radio buttons or dropdown — decided at session time; match shelf-editor pattern from 3.5a if possible)',
+          'Status change writes state.books[bookId].status, saveState(), re-render',
+          'When status flips from "finished" to anything else: finishedAt is retained, not cleared (Artifact reflects the moment-of-finishing; un-flip does not erase that)',
+          'When status flips from any state to "finished": if no Artifact, "Create Artifact" CTA renders; if Artifact already exists, "Open Artifact" link renders (existing 3.7 behavior preserved)',
+          'Un-finish render branch: (status === "reading" && hasArtifact) renders BOTH "Open Artifact" link AND working-shelf affordances (marginalia, journal editor host) — book is back in workshop mode but the finished-room artifact persists',
+          'Edge case: (want, hasArtifact) state — possible only via status-flip from finished → want — also renders Open Artifact link defensively'
+        ],
+        nonGoals: [
+          'No deletion of Artifact on un-finish (option chosen in 3.7 design: persist Artifact)',
+          'No "confirm before un-finishing" modal (correctability over friction)',
+          'No automatic clearing of finishedAt on status flip away from "finished"',
+          'No styling pass on the new status selector (matches existing shelf-editor pattern; 3.10 reconciles)'
+        ],
+        subsystems: ['views'],
+        files: [
+          'js/views.js (status selector on book detail, (status, hasArtifact) tuple conditional render extended to four branches, un-finish render with both affordances)'
+        ],
+        acceptance: [
+          'Book detail shows status selector for any book',
+          'Flip status reading → finished without Artifact: "Create Artifact" CTA renders',
+          'Flip status finished → reading on a book with Artifact: "Open Artifact" link AND marginalia/journal affordances both visible',
+          'Flip status finished → want on a book with Artifact: "Open Artifact" link still visible (defensive)',
+          'finishedAt persists across un-finish (state.books[bookId].finishedAt is not cleared)',
+          'Regression: shelf editor status-set-at-creation still works (3.5a path unchanged)'
+        ],
+        evidence: [
+          'Static: grep -c "renderBookDetail" js/views.js to confirm no new entry point introduced (status selector wires into existing render)',
+          'Static: confirm all four (status, hasArtifact) branches are handled in book detail render code',
+          'Live URL: flip status reading → finished → reading on a book with Artifact; both affordances visible at the end',
+          'Live URL: finishedAt persists across the un-finish cycle (console check)'
         ],
         rollback: 'None.',
         risks: [
-          '3.2 Journal editor may not generalize cleanly to Artifact body (longer-form prose, editable title). Stage 0 of execution verifies this; if not, shared editor extracted as a known fork.',
-          'Book detail render becomes a (status, hasArtifact) tuple branch instead of a status switch. Verify all four states render without crash: (reading, no Artifact), (reading, has Artifact), (finished, no Artifact), (finished, has Artifact).',
-          'Notebook reads two maps now. Performance non-issue at Stage 3 scale; flag for Stage 4 if entry count grows.',
-          'finishedAt backfill for existing "finished" books may need a backfill-on-read strategy. Decided in execution Stage 1.'
+          'Status selector UX: radio vs dropdown — decided session-time. Radio matches shelf-editor 3.5a; dropdown saves vertical space',
+          'Visual coherence of the un-finish state ("Open Artifact" + marginalia + journal affordances all stacked) may feel cluttered; 3.10 reconciles styling',
+          'Edge state (want, hasArtifact) exists only via flip from finished → want; user expectation here is undefined. Default lean: render same as (finished, hasArtifact) — Open Artifact link visible — since the Artifact still represents real reading work',
+          'Builder-Intellectual risk: status-editing seems small but cuts against the ritual frame of finishing. Mitigated by 3.7 keeping "I\'ve finished this" as the ceremonial path; status selector is the escape hatch, not the primary affordance'
         ],
         promptSkeleton:
-'Stage 0: view js/views.js, js/state.js, js/yumi-brain.js (assembleContextData section). Confirm state.bookArtifacts shape, ensureOneArtifact signature, finishedAt on userBooks (yes/no), 3.2 Journal editor pattern (editable title? longer-form body? reusable function?), and whether assembleContextData reads bookArtifacts.\n\n' +
-'Stage 1: js/state.js — finishedAt on userBooks if missing; backfill strategy.\n\n' +
-'Stage 2: js/views.js — mark-finished button, status-flip CTA, (status, hasArtifact) conditional render on book detail.\n\n' +
-'Stage 3: js/views.js — Artifact creation flow; reuse 3.2 editor pattern or extract shared editor.\n\n' +
-'Stage 4: js/views.js — Artifact view at #artifact/<bookId> with substrate link; un-finish render logic on book detail.\n\n' +
-'Stage 5: js/views.js + possibly js/yumi-brain.js — Notebook unification (notebookEntries + bookArtifacts as distinct cards); extend assembleContextData to read bookArtifacts if Stage 0 found it does not.\n\n' +
-'Verification per Evidence block. Constitutional verification at end of Stage 5: principle #3 (no UI path creates a second Artifact for existing pair) and principle #5 (assembleContextData reads bookArtifacts subject to isPrivate filter).'
+'Stage 0: view js/views.js. Confirm 3.7 Shipped (renderArtifact, ensureOneArtifact, "Open Artifact" link all operational). Locate the existing (status, hasArtifact) branch render logic added in Stage 4 of 3.7; report current handling of each of the four branches.\n\n' +
+'Stage 1: js/views.js — status selector on book detail wired to state.books[bookId].status + saveState() + re-render. Match shelf-editor 3.5a pattern.\n\n' +
+'Stage 2: js/views.js — extend (status, hasArtifact) render to handle all four branches; specifically the (reading, hasArtifact) un-finish case rendering both Open Artifact link and working-shelf affordances.\n\n' +
+'Verification per Evidence block. Specifically: cycle status reading → finished (auto-opens editor, save Artifact) → reading (both affordances) → finished (Open Artifact only) and confirm each state renders correctly.'
       },
 
       {
