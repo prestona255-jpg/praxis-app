@@ -2922,13 +2922,16 @@ var STAGES = [
         num: '3.10',
         name: 'Styling pass — Stage 3 closer',
         depConfirm: '3.1 through 3.9 must be Shipped (all Stage 3 surfaces in place; 53+ unstyled classes and 4 ids exist across six surfaces). The styling-pass ticket has been accumulating throughout Stage 3 as each substage shipped its classes unstyled.',
-        purpose: 'Apply visual design to every Stage 3 surface in a single coordinated pass. Stage 3 surfaces have shipped unstyled by design — class names are documented in the in-file headers and in the project styling-pass ticket. This stage closes Stage 3 by making Praxis look like Praxis. Likely splits into 3.10a (typography + layout) and 3.10b (interactive states) at session time.',
+        purpose: 'Apply visual design to every Stage 3 surface in a single coordinated pass. Stage 3 surfaces have shipped unstyled by design — class names are documented in the in-file headers and in the project styling-pass ticket. This stage closes Stage 3 by making Praxis look like Praxis. Likely splits into 3.10a (typography + layout) and 3.10b (interactive states) at session time. The 3.7c verification surfaced that the visual debt extends beyond the Stage 3 substages — shelf and top nav (which predate Stage 3) are also unstyled DOM. 3.10\'s scope is therefore the full Praxis visual pass, not only Stage 3 closer styling.',
         scope: [
           'Typography pass: Cormorant Garamond for display surfaces, DM Sans for body, DM Mono for code/meta',
           'Layout pass: spacing, alignment, breathing room across all six surfaces',
           'Interactive states: hover, focus, active, disabled for every clickable element',
           'Visual differentiation for the transparency view (diagnostic-distinct styling — deferred from 3.6)',
           'Mobile layout review: full-screen on small viewports where appropriate',
+          'Shelf surface visual pass: book card framing, cover/title/author hierarchy, status pill styling, breathing room between rows (currently unstyled DOM — flagged during 3.7c verification)',
+          'Top nav visual pass: Notebook/Books links currently render as a bulleted list; needs nav-bar treatment matching HQ-level polish (flagged during 3.7c verification)',
+          'Book detail visual pass: header hierarchy, ISBN row styling, selector + Add Marginalia + Open Artifact affordance cluster reconciliation (the 3.7 link-vs-button intentional split — Open Artifact as <a>, creation CTAs as <button>)',
           'CSS variables only; no hardcoded hex',
           'Consolidate component classes where the styling pass reveals true duplication (the 3.4b register-default settings panel and the 3.6 transparency panel share structural seams that may be worth a shared class set)'
         ],
