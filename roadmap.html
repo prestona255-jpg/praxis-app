@@ -1365,7 +1365,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       <div class="meta-row">
         <span><strong>Active stage</strong> · Stage 3 — Notebook + Arcs UI</span>
         <span><strong>Version</strong> · v1.0</span>
-        <span><strong>Last updated</strong> · May 13, 2026</span>
+        <span><strong>Last updated</strong> · May 16, 2026</span>
       </div>
     </div>
   </div>
@@ -2627,58 +2627,122 @@ var STAGES = [
       {
         id: 's3-7',
         num: '3.7',
-        name: 'Mark book finished + Book Artifact creation flow',
-        depConfirm: '3.3 must be Shipped (book detail view exists). 3.1 must be Shipped (Notebook surface exists for the Artifact to appear in).',
-        purpose: 'The user can mark a book finished, which triggers the option to create the Book Artifact. Per Cluster 5, the Artifact is post-completion only; no in-progress drafting. Constitutional principle #3: one Book Artifact per user per book, enforced via ensureOneArtifact.',
+        name: 'Mark finished + Book Artifact (creation + view + Notebook integration)',
+        depConfirm: '3.3 must be Shipped (book detail view at #book/<id>). 3.1 must be Shipped (Notebook surface at /notebook). 3.5a must be Shipped (status field on userBooks). state.bookArtifacts map and ensureOneArtifact(uid, bookId) must exist in js/state.js.',
+        purpose: 'Ship constitutional principle #3 ("one Book Artifact per book per user") in code. The user marks a book finished as a first-person ritual act, optionally writes the Artifact (post-completion residue), and the Artifact becomes reachable from book detail and /notebook. ensureOneArtifact is the schema-level idempotency guard; UI never offers a second-creation path. Design frame: workshop (book detail) vs finished room (Artifact) — separate surfaces, linked.',
         scope: [
-          '"Mark finished" affordance in book detail view',
-          'Marking finished records a finishedAt timestamp on userBooks entry for the book',
-          'On finish, offer to create the Artifact (single CTA, not auto-created)',
-          'Artifact creation flow: title pre-filled with book title, body editable (markdown), save calls ensureOneArtifact',
-          'Once Artifact exists for a book, book detail view shows "Open Artifact" in place of "Mark finished → create Artifact"',
-          'Artifact appears in the unified /notebook view as a distinct entry type (special card style)',
-          'Schema decision: Artifact lives in state.bookArtifacts (existing map), separate from notebookEntries; the Notebook view pulls from both maps and unifies in display'
+          '"I\'ve finished this" button on book detail when status === "reading" and no Artifact exists; click sets status to "finished", records finishedAt, opens Artifact draft editor',
+          'Status-selector flip to "finished" records finishedAt and shows persistent "Create Artifact" CTA, but does NOT auto-open editor (quieter path)',
+          'Artifact creation flow: editor with editable title (pre-filled with book title) plus markdown body; save calls ensureOneArtifact and persists to state.bookArtifacts',
+          'Artifact view at #artifact/<bookId>: title, body, substrate link section at bottom ("Marginalia and journal for this book →" linking to #book/<bookId>)',
+          'Book detail post-Artifact: replaces mark-finished CTAs with "Open Artifact" link',
+          'Un-finish render: status can flip "finished" → "reading"; when status === "reading" AND Artifact exists, book detail shows both "Open Artifact" link AND working-shelf affordances; Artifact persists (no deletion)',
+          'Idempotency: re-finishing a book that already has an Artifact does not create a second one; UI gates creation entry points by !hasArtifact',
+          'Notebook view at /notebook unifies notebookEntries and bookArtifacts as distinct visual card types (minimum distinction; full styling deferred to 3.10)',
+          'Yumi context (assembleContextData in yumi-brain.js) reads bookArtifacts subject to existing isPrivate privacy filter — extend only if not already reading them (constitutional principle #5)'
         ],
         nonGoals: [
-          'No Yumi-suggested finishing (Cluster 4 spirit: no Yumi-initiated state transitions)',
+          'No Yumi-suggested finishing or Yumi-initiated state transitions',
           'No Artifact templates',
           'No Yumi-assisted Artifact drafting',
           'No multiple Artifacts per book (constitutional principle #3)',
-          'No "un-finish" affordance in Stage 3 (Stage 4 polish if needed)'
+          'No new top-level surface (/library, /finished, /artifacts) — deferred to 3.7b',
+          'No deletion of Artifact on un-finish (option chosen: persist; reflects prior state honestly)',
+          'No styling pass beyond minimum-to-distinguish on Artifact view and Artifact cards in /notebook (full styling deferred to 3.10)'
         ],
         subsystems: ['views', 'state'],
         files: [
-          'js/views.js (mark-finished affordance, Artifact creation flow, Artifact display in Notebook view)',
-          'js/state.js (finishedAt field on userBooks entries if not present; backfill if needed)'
+          'js/views.js (mark-finished UI, status-flip CTA, Artifact creation flow, Artifact view, Notebook unification, conditional book-detail render)',
+          'js/state.js (finishedAt field on userBooks entries if not already present; SCHEMA_VERSION bump if added)',
+          'js/yumi-brain.js (only if assembleContextData does not already read bookArtifacts)'
         ],
         acceptance: [
-          'Live URL: in book detail view, "Mark finished" button is visible if no Artifact exists for that book',
-          'Click mark-finished → finishedAt timestamp recorded → CTA to create Artifact appears',
-          'Create Artifact → editor opens with title pre-filled → save calls ensureOneArtifact',
-          'After Artifact creation, book detail view shows "Open Artifact" instead of mark-finished CTA',
-          'Artifact appears in /notebook as a distinct entry type',
-          'Attempting to create a second Artifact for the same book is prevented by ensureOneArtifact (no UI path triggers it; ensureOneArtifact is the schema-level guard)'
+          'Book detail for a "reading" book with no Artifact shows "I\'ve finished this" button',
+          'Click → status becomes "finished" → finishedAt recorded → Artifact draft editor opens with title pre-filled',
+          'Save Artifact → ensureOneArtifact called → reload → Artifact persists',
+          'After Artifact creation, book detail shows "Open Artifact" link instead of mark-finished CTA',
+          'Status-flip to "finished" via status selector records finishedAt, shows "Create Artifact" CTA, does NOT auto-open editor',
+          'Un-finish: flip "finished" → "reading" on book with Artifact → book detail shows both Artifact link and working-shelf affordances',
+          '#artifact/<bookId> renders Artifact view with title, body, substrate link to book detail',
+          '/notebook shows journal entries and Artifacts as visually distinct cards',
+          'ensureOneArtifact called twice for same (uid, bookId) returns the same Artifact object both times'
         ],
         evidence: [
-          'Static: grep -c "ensureOneArtifact" js/views.js returns >=1',
+          'Static: grep -c "ensureOneArtifact" js/views.js returns >=2',
           'Static: grep -c "finishedAt" js/views.js returns >=1',
-          'Static: grep -c "bookArtifacts\\[" js/views.js returns >=1 (read path for Notebook view)',
-          'Live URL behavioral: mark book finished → create Artifact → reload → Artifact persists and book detail view shows "Open Artifact"',
-          'Live URL behavioral: ensureOneArtifact called twice for same (uid, bookId) returns the same Artifact both times'
+          'Static: grep -c "finishedAt" js/state.js returns >=1',
+          'Static: grep -c "bookArtifacts\\[" js/views.js returns >=2',
+          'Static: grep -c "#artifact/" js/views.js returns >=1',
+          'Static: grep -nE "(const |let |=>|\\bclass\\b|\\`)" js/views.js js/state.js returns 0 matches',
+          'Live URL behavioral: mark finished → create Artifact → reload → persists; book detail shows "Open Artifact"',
+          'Live URL behavioral: un-finish (finished → reading with Artifact) shows both Artifact link and working-shelf affordances',
+          'Console: ensureOneArtifact called twice for same pair returns objects with identical ids'
         ],
         rollback: 'None.',
         risks: [
-          'Schema separation between bookArtifacts and notebookEntries means the Notebook view does two reads to assemble its full content. Performance non-issue at Stage 3 scale; flag for Stage 4 if entry count grows.',
-          'Mark-finished UX: should it require confirmation? Default: yes, lightweight ("Mark this book finished?"). Prevents accidental finishes.',
-          'Artifact body editor reuses Journal editor pattern from 3.2 — verify the pattern generalizes; if not, extract a shared editor here (acceptable refactor at this point in Stage 3).'
+          '3.2 Journal editor may not generalize cleanly to Artifact body (longer-form prose, editable title). Stage 0 of execution verifies this; if not, shared editor extracted as a known fork.',
+          'Book detail render becomes a (status, hasArtifact) tuple branch instead of a status switch. Verify all four states render without crash: (reading, no Artifact), (reading, has Artifact), (finished, no Artifact), (finished, has Artifact).',
+          'Notebook reads two maps now. Performance non-issue at Stage 3 scale; flag for Stage 4 if entry count grows.',
+          'finishedAt backfill for existing "finished" books may need a backfill-on-read strategy. Decided in execution Stage 1.'
         ],
         promptSkeleton:
-'Stage 0: view js/views.js, js/state.js. Confirm 3.3 Shipped (book detail view exists). Confirm ensureOneArtifact in state.js is unchanged from current shape.\n\n' +
-'Stage 1: state.js extensions if needed (finishedAt field on userBooks).\n\n' +
-'Stage 2: mark-finished UI in book detail view.\n\n' +
-'Stage 3: Artifact creation flow (reuse Journal editor pattern from 3.2; extract shared editor only if pattern generalizes cleanly).\n\n' +
-'Stage 4: Artifact display in Notebook view (read from bookArtifacts map; render as distinct card style).\n\n' +
-'Verification per Evidence block. Specifically: confirm ensureOneArtifact returns the same object on second call.'
+'Stage 0: view js/views.js, js/state.js, js/yumi-brain.js (assembleContextData section). Confirm state.bookArtifacts shape, ensureOneArtifact signature, finishedAt on userBooks (yes/no), 3.2 Journal editor pattern (editable title? longer-form body? reusable function?), and whether assembleContextData reads bookArtifacts.\n\n' +
+'Stage 1: js/state.js — finishedAt on userBooks if missing; backfill strategy.\n\n' +
+'Stage 2: js/views.js — mark-finished button, status-flip CTA, (status, hasArtifact) conditional render on book detail.\n\n' +
+'Stage 3: js/views.js — Artifact creation flow; reuse 3.2 editor pattern or extract shared editor.\n\n' +
+'Stage 4: js/views.js — Artifact view at #artifact/<bookId> with substrate link; un-finish render logic on book detail.\n\n' +
+'Stage 5: js/views.js + possibly js/yumi-brain.js — Notebook unification (notebookEntries + bookArtifacts as distinct cards); extend assembleContextData to read bookArtifacts if Stage 0 found it does not.\n\n' +
+'Verification per Evidence block. Constitutional verification at end of Stage 5: principle #3 (no UI path creates a second Artifact for existing pair) and principle #5 (assembleContextData reads bookArtifacts subject to isPrivate filter).'
+      },
+
+      {
+        id: 's3-7b',
+        num: '3.7b',
+        name: 'Library surface — top-level view of finished Artifacts',
+        depConfirm: '3.7 must be Shipped (Artifacts exist and are reachable from book detail and /notebook). At least 2-3 Artifacts in real use before starting.',
+        purpose: 'Give the collection of Artifacts a home of its own — a top-level surface that lists every finished book\'s Artifact. The Artifact view itself already exists from 3.7; this stage adds the index/list surface that points to them collectively. Honors the temporal frame established in 3.7 (workshop vs finished room) at the navigation layer.',
+        scope: [
+          'New top-level route (naming TBD at session time: /library, /finished, or /artifacts — lean /finished for low-jargon clarity)',
+          'Top-nav entry alongside existing /books and /notebook',
+          'List view: each Artifact rendered as a card with book title, Artifact title (if different), book cover thumbnail, finishedAt date, and short body preview',
+          'Click card → opens Artifact view at #artifact/<bookId> (route already exists from 3.7)',
+          'Empty state when no Artifacts exist: explanatory copy pointing to /books'
+        ],
+        nonGoals: [
+          'No sorting/filtering controls in this stage (default reverse-chronological by finishedAt)',
+          'No search within Artifacts (deferred)',
+          'No Artifact grouping by Arc or theme (Arcs are 3.8+; this is flat)',
+          'No editing Artifacts from the list view (open Artifact view to edit)',
+          'No bulk operations'
+        ],
+        subsystems: ['views'],
+        files: [
+          'js/views.js (new route, new view function, top-nav entry)'
+        ],
+        acceptance: [
+          'Top-nav shows entry for the new surface',
+          'Click → list of all Artifacts renders in reverse-chronological order by finishedAt',
+          'Click Artifact card → navigates to #artifact/<bookId>',
+          'Empty state renders when no Artifacts exist'
+        ],
+        evidence: [
+          'Static: grep -c "#library\\|#finished\\|#artifacts" js/views.js returns >=1 (route, name decided at session)',
+          'Static: grep -c "bookArtifacts" js/views.js increases by >=1 from 3.7 baseline (list read path)',
+          'Live URL behavioral: create 2-3 Artifacts, open new surface, all appear in order',
+          'Live URL behavioral: click each → navigates to correct Artifact view'
+        ],
+        rollback: 'None.',
+        risks: [
+          'Naming: /library collides conceptually with /books. /finished is descriptive but low-style. /artifacts reads like jargon. Decide at session start; document choice in stage report.',
+          'Empty-state copy needs care — should not shame an empty library. Default lean: "No finished books yet. Books you mark finished will appear here."'
+        ],
+        promptSkeleton:
+'Stage 0: view js/views.js. Confirm 3.7 Shipped (Artifact view, ensureOneArtifact, bookArtifacts populated in real use). Count current Artifacts in state.bookArtifacts; if fewer than 2, flag and ask whether to proceed.\n\n' +
+'Stage 1: pick route name (/library | /finished | /artifacts).\n\n' +
+'Stage 2: new view function rendering Artifact list (reverse-chronological by finishedAt).\n\n' +
+'Stage 3: top-nav entry.\n\n' +
+'Stage 4: empty state.\n\n' +
+'Verification per Evidence block.'
       },
 
       {
