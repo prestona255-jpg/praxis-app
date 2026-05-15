@@ -98,6 +98,9 @@
 //         shelf-editor-status, shelf-editor-status-option,
 //         shelf-editor-genre-input, shelf-editor-isbn-input,
 //         shelf-editor-actions, shelf-editor-save, shelf-editor-cancel
+//   3.5b: shelf-book-cover, shelf-book-cover-placeholder,
+//         book-detail-cover-placeholder, book-detail-isbn-row,
+//         book-detail-isbn-label, book-detail-isbn-input
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3),
 //                    #shelf-editor-host (3.5a)
@@ -141,6 +144,23 @@
 // fields, and OL "id=0" / "/id/0-" placeholder URLs all resolve
 // to state.books[id].coverUrl === null. The book record itself
 // is written regardless of fetch outcome.
+//
+// Stage 3.5b Stage 2: renderShelfBook prepends a cover thumbnail
+// (img.shelf-book-cover) when book.coverUrl is a non-empty string,
+// otherwise a placeholder div (shelf-book-cover-placeholder) so
+// the row layout stays stable. renderBookDetail mirrors this on
+// the full-cover element. A new ISBN row mounts between the
+// book-detail header and the editor host with an addEventListener
+// 'blur' handler implementing the re-fetch contract:
+//   - trimmed === priorIsbn (closure-cached at render time): no-op
+//   - trimmed === '': clear state.books[bookId].isbn and coverUrl,
+//                     saveState, renderBookDetail. No fetch.
+//   - trimmed non-empty and changed: persist new isbn, saveState,
+//                     fetchAndApplyCover(bookId, trimmed, cb). cb
+//                     re-renders only if the user is still on
+//                     #book/<bookId> when the fetch completes.
+// First onblur-driven handler in the codebase; no prior pattern
+// to mirror.
 //
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere. String concatenation only.
@@ -466,6 +486,20 @@ function renderShelfBook(book) {
   card.className = 'shelf-book';
   card.href = '#book/' + book.id;
 
+  // 3.5b: cover thumbnail or placeholder block. The truthy check
+  // correctly treats null, undefined, and '' as missing-cover.
+  if (book.coverUrl) {
+    var cover = document.createElement('img');
+    cover.className = 'shelf-book-cover';
+    cover.src = book.coverUrl;
+    cover.alt = '';
+    card.appendChild(cover);
+  } else {
+    var coverPlaceholder = document.createElement('div');
+    coverPlaceholder.className = 'shelf-book-cover-placeholder';
+    card.appendChild(coverPlaceholder);
+  }
+
   var titleEl = document.createElement('h2');
   titleEl.className = 'shelf-book-title';
   titleEl.textContent = book.title || '';
@@ -725,12 +759,19 @@ function renderBookDetail(bookId) {
   var header = document.createElement('header');
   header.className = 'book-detail-header';
 
+  // 3.5b: cover image or placeholder block. Truthy guard treats
+  // null, undefined, and '' as missing -- same shape as the shelf
+  // row. CSS constrains max-width on both elements (styling pass).
   if (book.coverUrl) {
     var cover = document.createElement('img');
     cover.className = 'book-detail-cover';
     cover.src = book.coverUrl;
     cover.alt = '';
     header.appendChild(cover);
+  } else {
+    var coverPlaceholder = document.createElement('div');
+    coverPlaceholder.className = 'book-detail-cover-placeholder';
+    header.appendChild(coverPlaceholder);
   }
 
   var title = document.createElement('h1');
@@ -767,6 +808,59 @@ function renderBookDetail(bookId) {
   }
 
   wrap.appendChild(header);
+
+  // 3.5b: editable ISBN row with onblur re-fetch. priorIsbn is the
+  // closure-cached value the handler compares against on each blur
+  // so we never re-fetch when the user blurs without changing the
+  // field. The cache is local to this renderBookDetail invocation;
+  // a re-render rebuilds the closure with the new persisted value.
+  var priorIsbn = (typeof book.isbn === 'string' ? book.isbn : '')
+                    .replace(/^\s+|\s+$/g, '');
+  var isbnRow = document.createElement('div');
+  isbnRow.className = 'book-detail-isbn-row';
+  var isbnLabel = document.createElement('label');
+  isbnLabel.className = 'book-detail-isbn-label';
+  isbnLabel.textContent = 'ISBN';
+  var isbnField = document.createElement('input');
+  isbnField.type = 'text';
+  isbnField.className = 'book-detail-isbn-input';
+  isbnField.value = priorIsbn;
+  isbnField.placeholder = 'ISBN (optional)';
+
+  isbnField.addEventListener('blur', function() {
+    var trimmed = isbnField.value.replace(/^\s+|\s+$/g, '');
+    if (trimmed.length === 0) {
+      // Empty: clear isbn + coverUrl, persist, re-render. No fetch.
+      if (state.books[bookId]) {
+        state.books[bookId].isbn     = '';
+        state.books[bookId].coverUrl = null;
+        saveState();
+      }
+      priorIsbn = '';
+      renderBookDetail(bookId);
+      return;
+    }
+    if (trimmed === priorIsbn) {
+      return;  // No-op.
+    }
+    // Changed, non-empty: persist new isbn, fire background fetch,
+    // re-render only after fetch settles if user is still here.
+    if (state.books[bookId]) {
+      state.books[bookId].isbn = trimmed;
+      saveState();
+    }
+    priorIsbn = trimmed;
+    fetchAndApplyCover(bookId, trimmed, function() {
+      var parts = location.hash.replace(/^#/, '').split('/');
+      if (parts[0] === 'book' && parts[1] === bookId) {
+        renderBookDetail(bookId);
+      }
+    });
+  });
+
+  isbnRow.appendChild(isbnLabel);
+  isbnRow.appendChild(isbnField);
+  wrap.appendChild(isbnRow);
 
   // Editor host -- empty on every render; openMarginaliaEditor
   // mounts its block here on demand.
