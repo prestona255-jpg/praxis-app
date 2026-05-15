@@ -591,14 +591,17 @@ function fetchAndApplyCover(bookId, isbn, onComplete) {
 }
 
 // Inline add-book editor mounted into #shelf-editor-host. Structurally
-// mirrors openMarginaliaEditor: title input (required) + author input
-// (optional) + status radio (default 'reading') + genre input
-// (optional) + ISBN input (optional, 3.5b) + Save/Cancel. Save is
-// disabled until the trimmed title is non-empty. On Save: genBookId,
-// write a complete books record (all 1.9.0 fields plus coverUrl:null),
-// ensureUser(uid) + push to userBooks[uid].bookIds, saveState,
-// renderShelf. If ISBN non-empty, fire background fetchAndApplyCover
-// after the sync render. Cancel re-renders the shelf with no writes.
+// mirrors openMarginaliaEditor: title input + author input (optional)
+// + status radio (default 'reading') + genre input (optional) + ISBN
+// input + Save/Cancel. Save is disabled when BOTH title AND ISBN are
+// empty after trim -- either one alone enables Save. The ISBN-only
+// path is the gate that makes the 3.5b Stage 3 metadata backfill
+// reachable (and the same gate 3.5c bulk import will use). On Save:
+// genBookId, write a complete books record (all 1.9.0 fields plus
+// coverUrl:null), ensureUser(uid) + push to userBooks[uid].bookIds,
+// saveState, renderShelf. If ISBN non-empty, fire background
+// fetchAndApplyCover after the sync render. Cancel re-renders the
+// shelf with no writes.
 function openShelfEditor() {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) return;
@@ -664,20 +667,30 @@ function openShelfEditor() {
   cancelBtn.className = 'shelf-editor-cancel';
   cancelBtn.textContent = 'Cancel';
 
-  titleInput.addEventListener('input', function() {
-    var trimmed = titleInput.value.replace(/^\s+|\s+$/g, '');
-    saveBtn.disabled = (trimmed.length === 0);
-  });
+  // Shared toggle: Save enabled when at least one of title or ISBN
+  // is non-empty after trim. Attached to both inputs so either
+  // field driving non-empty enables the button. Author and genre
+  // play no validation role; status always has a default selection.
+  function updateSaveDisabledState() {
+    var titleHas = titleInput.value.replace(/^\s+|\s+$/g, '').length > 0;
+    var isbnHas  = isbnInput.value.replace(/^\s+|\s+$/g, '').length > 0;
+    saveBtn.disabled = !(titleHas || isbnHas);
+  }
+  titleInput.addEventListener('input', updateSaveDisabledState);
+  isbnInput.addEventListener('input', updateSaveDisabledState);
 
   saveBtn.addEventListener('click', function() {
-    var titleTrimmed  = titleInput.value.replace(/^\s+|\s+$/g, '');
-    if (titleTrimmed.length === 0) return;
+    var titleTrimmed = titleInput.value.replace(/^\s+|\s+$/g, '');
+    var isbnTrimmed  = isbnInput.value.replace(/^\s+|\s+$/g, '');
+    // Defensive gate mirrors the Save-disabled toggle: bail if BOTH
+    // are empty. The toggle keeps the button disabled in that state,
+    // so this is belt-and-suspenders against future drift.
+    if (titleTrimmed.length === 0 && isbnTrimmed.length === 0) return;
     var user = getCurrentUser();
     if (!user) return;
 
     var authorTrimmed = authorInput.value.replace(/^\s+|\s+$/g, '');
     var genreTrimmed  = genreInput.value.replace(/^\s+|\s+$/g, '');
-    var isbnTrimmed   = isbnInput.value.replace(/^\s+|\s+$/g, '');
 
     var statusValue = 'reading';
     var i;
