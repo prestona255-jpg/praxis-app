@@ -2330,6 +2330,16 @@ var STAGES = [
         id: 's3-5b',
         num: '3.5b',
         name: 'Cover images + ISBN',
+        shipped: {
+          date: '2026-05-15',
+          commits: [
+            { hash: '26ff4da', summary: 'Stage 1 — ISBN field in add-book editor + async fail-soft cover fetch (fetchAndApplyCover helper)' },
+            { hash: '7f92ef0', summary: 'Stage 2 — cover rendering on shelf and book detail + first onblur in codebase for ISBN re-fetch' },
+            { hash: '793dc3d', summary: 'Stage 3 — metadata backfill closes original brief scope (title/author populated from API when typed inputs were blank; typed values always authoritative)' },
+            { hash: '46f8dca', summary: 'Stage 4 — Save validation relaxed to title-OR-ISBN; makes Stage 3 metadata backfill reachable' }
+          ],
+          notes: 'Constitutional principle #5 verified intact: Yumi does not consume coverUrl, no asymmetric knowledge added. Open design decision logged to memory for 3.5c: loading-state-per-row vs queue-until-resolved (see project_35c_bulk_import_blank_title.md).'
+        },
         depConfirm: '3.5a must be Shipped (books exist with title, author, status, genre). The integrations.js fetchBookByIsbn chain (Open Library primary, Google Books fallback) is already implemented but unused.',
         purpose: 'Books on the shelf and on the book detail page render with cover images when available. ISBN field is added to the add-book editor and the book detail page so cover fetching has its trigger. Visual upgrade to the shelf surface; no change to what the app does.',
         scope: [
@@ -2376,6 +2386,136 @@ var STAGES = [
 'Stage 2: views.js patch — cover thumbnail rendering in renderShelfBook (left of title), full cover in renderBookDetail.\n\n' +
 'Stage 3: live verification — add book with known ISBN, confirm cover appears; add book without ISBN, confirm placeholder; bad ISBN, confirm fail-soft.\n\n' +
 'No schema bump. Optional coverUrl field is the only data shape change.'
+      },
+
+      {
+        id: 's3-5c',
+        num: '3.5c',
+        name: 'Bulk add by text list',
+        depConfirm: '3.5b must be Shipped (fetchAndApplyCover helper, async fail-soft contract, ISBN-only save path). state.SCHEMA_VERSION 1.9.0. The Save validation in openShelfEditor accepts title-OR-ISBN; bulk import exercises the ISBN-only path heavily.',
+        purpose: 'Praxis users today add books one at a time. This stage lets a user paste or type a list of ISBNs (one per line) or a list of titles (one per line) and have the shelf populate in one action. Reuses the fetchAndApplyCover plumbing established in 3.5b.',
+        scope: [
+          'Bulk-add affordance on the shelf surface (sibling to the single-add "+ Add book" button)',
+          'Inline editor accepts a multi-line text input where each non-empty line is one entry',
+          'Per-line parsing: detect ISBN (digits-only, 10 or 13 chars) vs title (anything else); route accordingly',
+          'ISBN path: fetchBookByIsbn → fetchAndApplyCover for each detected ISBN',
+          'Title path: requires the 3.5e title-search API (may merge into this stage)',
+          'Batched write to state.books and state.userBooks[uid].bookIds (single saveState at the end, or per-batch save — decide at session time)',
+          'Incremental shelf rendering as fetches resolve (or queue-until-resolved — decide per the 3.5b Stage 0 blank-title flash flag logged at memory/project_35c_bulk_import_blank_title.md)',
+          'Fail-soft per entry: a single bad ISBN does not block the rest of the list'
+        ],
+        nonGoals: [
+          'No photo / OCR input (3.5d)',
+          'No file upload / CSV / JSON import format (text paste only)',
+          'No duplicate detection (if user pastes the same ISBN twice, two records are created; user can delete one)',
+          'No reorderable per-line preview (parse and submit; no in-flight edit UI)'
+        ],
+        subsystems: ['views', 'integrations'],
+        files: [
+          'js/views.js (bulk-add affordance, openBulkAddEditor, per-line dispatch)',
+          'js/integrations.js (likely no changes; reuses fetchBookByIsbn; if title-search lives here, +1 function fetchBookByTitle)'
+        ],
+        acceptance: [
+          'Live URL: paste 5 ISBNs → 5 shelf rows appear, covers populate as fetches resolve',
+          'Live URL: paste 5 titles → 5 shelf rows appear with API-resolved titles + authors + covers (assumes 3.5e logic ships in this stage)',
+          'Live URL: paste mixed list (ISBNs + titles + blank lines + duplicates) → only valid entries written; blanks and duplicates do not crash',
+          'Live URL: bad ISBN in the middle of a valid list → that row gets the placeholder cover; other rows unaffected'
+        ],
+        evidence: [
+          'Static: grep -c "function openBulkAddEditor" js/views.js → 1',
+          'Behavioral harness: per-line dispatch correctly routes ISBN vs title for a synthetic input list',
+          'Behavioral harness: batch write produces N rows in state.books and N pushes to userBooks[uid].bookIds',
+          'Live URL: paste known-good ISBN list, verify covers populate over the next few seconds'
+        ],
+        rollback: 'No schema bump. Hard-revert is safe. Books created during 3.5c remain in state.books.',
+        risks: [
+          'Blank-title flash at scale: rows render with empty titles before fetches resolve. Loading-state-per-row vs queue-until-resolved decision (logged from 3.5b Stage 0). Decide before patching.',
+          'API rate limits: 50+ rapid fetches to OL or Google Books may hit a rate limit. Defensive throttling or sequential rather than parallel may be needed.',
+          'Title-search disambiguation: multiple candidates may return for ambiguous titles. UX for picking the right one is a sub-decision (or defer to 3.5e).'
+        ],
+        promptSkeleton:
+'Stage 0: read js/views.js (3.5b add-book editor and fetchAndApplyCover) and js/integrations.js (fetchBookByIsbn). Decide per-row loading vs queue-until-resolved.\n\n' +
+'Stage 1: openBulkAddEditor, per-line dispatch (ISBN vs title), batched write to state.books / userBooks, incremental render.\n\n' +
+'Stage 2: (if title-search merged in from 3.5e) fetchBookByTitle in integrations.js + disambiguation UX.\n\n' +
+'Stage 3: live verification — paste mixed list, observe incremental fill, confirm fail-soft per row.'
+      },
+
+      {
+        id: 's3-5d',
+        num: '3.5d',
+        name: 'Photo-to-text-list (OCR shelf photo)',
+        deferred: true,
+        depConfirm: '3.5c must be Shipped (bulk text-list import path established). 3.5e must be Shipped or merged into 3.5c (title-only resolution required for OCR output).',
+        purpose: 'User uploads a photo of a bookshelf. System OCRs the spines and presents an editable list of detected titles. List then hands off to 3.5c\'s resolution path. Substantially more complex than 3.5c and depends on 3.5c shipping first.',
+        scope: [
+          'Photo upload affordance on the shelf surface',
+          'OCR pipeline: client-side (Tesseract.js) or server-side (Google Vision / AWS Textract) — decide at session time',
+          'Spine-text detection: vertical text, varied fonts, partial occlusion all expected',
+          'Editable list of detected titles before resolution (user can fix OCR errors)',
+          'Hand-off to 3.5c bulk-add flow with the corrected title list'
+        ],
+        nonGoals: [
+          'No real-time camera capture; static photo upload only',
+          'No multi-photo batch in v1',
+          'No barcode scanning (separate path; ISBNs from barcode would route through 3.5c\'s ISBN dispatch)'
+        ],
+        subsystems: ['views', 'integrations'],
+        files: [
+          'js/views.js (photo upload affordance, OCR result review UI)',
+          'js/integrations.js (OCR API wrapper; vendor TBD)'
+        ],
+        acceptance: ['Deferred — full acceptance criteria defined when 3.5d is scoped.'],
+        evidence: ['Deferred.'],
+        rollback: 'Deferred.',
+        risks: [
+          'OCR quality on book spines is hard. Vertical text + varied fonts + partial occlusion makes this much harder than flat-page OCR. Plan for high error rates and good correction UX.',
+          'OCR API choice: vendor selection (Tesseract.js client-side vs Google Vision / AWS Textract server-side) is a real decision with cost and quality tradeoffs.',
+          'Privacy: photos are sensitive (the bookshelf is a personal artifact). If OCR is server-side, photos transit a third party. Consider client-side OCR even at quality cost.'
+        ],
+        promptSkeleton: 'Deferred. Will be drafted when 3.5c is Shipped and the resolution path is concrete.'
+      },
+
+      {
+        id: 's3-5e',
+        num: '3.5e',
+        name: 'Title-only resolution (may merge into 3.5c)',
+        depConfirm: '3.5b must be Shipped (fetchAndApplyCover plumbing exists). 3.5c is the primary consumer; this stage may be implemented inline within 3.5c rather than as a separate stage.',
+        purpose: 'When a user provides a title without an ISBN (in single-add or bulk-add), search OL / Google Books by title (and optionally author) and resolve to a book record. Multiple candidates may return; disambiguation UX is part of the scope.',
+        scope: [
+          'New integrations.js function fetchBookByTitle(title, callback) — symmetric to fetchBookByIsbn',
+          'OL primary: https://openlibrary.org/search.json?title=...; Google Books fallback if OL returns no hits',
+          'Return shape symmetric to fetchBookByIsbn: { isbn, title, author, coverUrl, publishYear, openLibraryWorkId }',
+          'Disambiguation UX when multiple candidates: present top N options with covers + authors + publish years; user picks',
+          'Auto-resolve when only one strong candidate (decide threshold at session time)',
+          'Single-add and bulk-add both route through this function for title-only entries'
+        ],
+        nonGoals: [
+          'No fuzzy matching beyond what the API natively supports',
+          'No learning from user disambiguation choices (no preference model)',
+          'No combined title+ISBN query path; title and ISBN remain separate dispatch lanes'
+        ],
+        subsystems: ['integrations', 'views'],
+        files: [
+          'js/integrations.js (+ fetchBookByTitle)',
+          'js/views.js (disambiguation UI when called from single-add or bulk-add)'
+        ],
+        acceptance: [
+          'Live URL: single-add with title "Pedagogy of the Oppressed" + no ISBN → cover, full title, author resolve via API',
+          'Live URL: ambiguous title (e.g. "The Republic") → disambiguation UI presents candidates → user picks → book record reflects the pick'
+        ],
+        evidence: [
+          'Static: grep -c "function fetchBookByTitle" js/integrations.js → 1',
+          'Behavioral: harness stubs API responses with 0, 1, N candidates and verifies dispatch'
+        ],
+        rollback: 'No schema bump. Hard-revert is safe.',
+        risks: [
+          'Disambiguation UX is the design risk. A bad UI here makes title-only entry worse than typing the ISBN manually.',
+          'Merge-into-3.5c decision: this stage may not stand alone. If 3.5c implements all of it inline, this entry becomes a section heading in 3.5c rather than its own stage.'
+        ],
+        promptSkeleton:
+'Stage 0: confirm whether this stays standalone or merges into 3.5c. Read integrations.js, confirm fetchBookByIsbn shape to mirror.\n\n' +
+'Stage 1: fetchBookByTitle implementation + harness.\n\n' +
+'Stage 2: disambiguation UI in views (single-add + bulk-add both consume).'
       },
 
       {
