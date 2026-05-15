@@ -853,6 +853,33 @@ function renderBookDetail(bookId) {
       openMarginaliaEditor(bookId);
     });
     header.appendChild(newBtn);
+
+    // Stage 3.7: "I've finished this" button. Renders only when the
+    // (status, hasArtifact) tuple is ('reading', no-artifact). The only
+    // path 3.7 owns to status === 'finished'. Status-editing (un-finish,
+    // selector flip) lands in 3.7c; "Open Artifact" link replaces this
+    // button after Artifact creation in Stage 4. The click stamps state
+    // (status + finishedAt) and re-renders; Stage 3 will chain the
+    // Artifact editor open off the same handler.
+    var hasArtifact = false;
+    if (state.bookArtifacts) {
+      var artKey = artifactKey(user.uid, bookId);
+      if (state.bookArtifacts[artKey]) hasArtifact = true;
+    }
+    if (book.status === 'reading' && !hasArtifact) {
+      var finishedBtn = document.createElement('button');
+      finishedBtn.type = 'button';
+      finishedBtn.className = 'book-detail-mark-finished';
+      finishedBtn.textContent = 'I\'ve finished this';
+      finishedBtn.addEventListener('click', function() {
+        if (!state.books[bookId]) return;
+        state.books[bookId].status     = 'finished';
+        state.books[bookId].finishedAt = Date.now();
+        saveState();
+        renderBookDetail(bookId);
+      });
+      header.appendChild(finishedBtn);
+    }
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';

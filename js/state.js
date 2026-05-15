@@ -51,6 +51,11 @@
 //       {
 //         userId:    string,
 //         bookId:    string,
+//         title:     string,    // editable; pre-filled with book title
+//                               // at creation (3.7). Distinct from
+//                               // state.books[bookId].title so the
+//                               // Artifact's name can drift from the
+//                               // catalog title (retrospective framing).
 //         createdAt: number,
 //         updatedAt: number,
 //         body:      string
@@ -165,6 +170,32 @@
 // happen on new-book creation, reads do not filter the shelf.
 // User-scoping the shelf is a future seam.
 //
+// Schema 1.9.1 adds two fields tied to Stage 3.7 (Mark Finished +
+// Book Artifact creation):
+//
+//   state.books[bookId].finishedAt: number | null
+//                              // ms epoch at which the user marked
+//                              // the book finished. null until the
+//                              // mark-finished path stamps it.
+//
+//   state.bookArtifacts[key].title: string
+//                              // Artifact display title. Pre-filled
+//                              // with the book title at creation, but
+//                              // editable thereafter so the Artifact
+//                              // can drift from the catalog name.
+//
+// The 1.9.0 -> 1.9.1 migration stamps finishedAt: null on every
+// existing state.books record so downstream readers can rely on
+// the field being present (null) rather than undefined. No backfill
+// for bookArtifacts.title: no real Artifacts existed before 3.7,
+// so any pre-existing entries are test fixtures only and tolerate
+// a missing title.
+//
+// Status-editing on book detail (status-selector flip, un-finish
+// render) is NOT in 3.7; it ships in 3.7c. Stage 3.7's only path
+// to status === 'finished' is the "I've finished this" button in
+// book detail.
+//
 // var/function only -- no const, let, arrow, class, or template
 // literals anywhere.
 // =====================================================================
@@ -191,7 +222,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.9.0',
+  SCHEMA_VERSION:  '1.9.1',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -427,6 +458,25 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.9.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.9.0') {
+    // 3.7: state.books gains finishedAt. Stamp null on every existing
+    // record so downstream readers see a present-but-null field rather
+    // than undefined. The mark-finished button writes Date.now() on
+    // click; everything else leaves it as null. No backfill for
+    // bookArtifacts.title -- pre-3.7 there were no real Artifacts.
+    if (stored.books) {
+      var bid2;
+      for (bid2 in stored.books) {
+        if (Object.prototype.hasOwnProperty.call(stored.books, bid2)) {
+          var book2 = stored.books[bid2];
+          if (book2 && typeof book2.finishedAt === 'undefined') {
+            book2.finishedAt = null;
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.9.1';
   }
   return stored;
 }
