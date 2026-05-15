@@ -325,21 +325,52 @@ function renderNotebook() {
   host.appendChild(wrap);
 }
 
-function openJournalEditor() {
-  var hostEl = document.getElementById('notebook-editor-host');
+// Stage 3.7: shared editor shell. Mounts a title (optional) + body
+// textarea + Save/Cancel block into the host element identified by
+// opts.hostId. Three callers as of 3.7: openJournalEditor and
+// openMarginaliaEditor (body-only entries into state.notebookEntries)
+// and openArtifactEditor (title + body, write into state.bookArtifacts
+// via ensureOneArtifact).
+//
+// opts shape:
+//   hostId:         string         // DOM id of the mount point.
+//   emptySelector:  string | null  // CSS selector for an empty-state
+//                                  // element to hide on mount. null
+//                                  // if none.
+//   showTitleField: boolean        // render a title input above body.
+//   titlePrefill:   string         // initial value when showTitleField
+//                                  // is true; ignored otherwise.
+//   onSave(title, body):           // both trimmed strings; only the
+//                                  // gated field is guaranteed non-empty.
+//   onCancel():
+//
+// Save-enabled gate is field-driven, not caller-driven: title-bearing
+// editors enable Save when the title trims non-empty (body optional --
+// the Artifact's body is genuinely optional per 3.7 brief), body-only
+// editors enable Save when the body trims non-empty (existing journal /
+// marginalia behavior, unchanged).
+function openEditor(opts) {
+  var hostEl = document.getElementById(opts.hostId);
   if (!hostEl) return;
 
-  // Hide the empty-state paragraph if present so the editor sits
-  // alone below the header.
-  var emptyEl = document.querySelector('.notebook-empty-body');
-  if (emptyEl) {
-    emptyEl.style.display = 'none';
+  if (opts.emptySelector) {
+    var emptyEl = document.querySelector(opts.emptySelector);
+    if (emptyEl) emptyEl.style.display = 'none';
   }
 
   hostEl.innerHTML = '';
 
   var editor = document.createElement('div');
   editor.className = 'notebook-editor';
+
+  var titleInput = null;
+  if (opts.showTitleField) {
+    titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.className = 'notebook-editor-title-input';
+    titleInput.value = (typeof opts.titlePrefill === 'string')
+      ? opts.titlePrefill : '';
+  }
 
   var bodyInput = document.createElement('textarea');
   bodyInput.className = 'notebook-editor-body';
@@ -352,52 +383,91 @@ function openJournalEditor() {
   saveBtn.type = 'button';
   saveBtn.className = 'notebook-editor-save';
   saveBtn.textContent = 'Save';
-  saveBtn.disabled = true;
 
   var cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'notebook-editor-cancel';
   cancelBtn.textContent = 'Cancel';
 
-  bodyInput.addEventListener('input', function() {
-    var trimmed = bodyInput.value.replace(/^\s+|\s+$/g, '');
-    saveBtn.disabled = (trimmed.length === 0);
-  });
+  function trimVal(el) {
+    return el.value.replace(/^\s+|\s+$/g, '');
+  }
+
+  function refreshSaveEnabled() {
+    var ok;
+    if (opts.showTitleField) {
+      ok = trimVal(titleInput).length > 0;
+    } else {
+      ok = trimVal(bodyInput).length > 0;
+    }
+    saveBtn.disabled = !ok;
+  }
+  refreshSaveEnabled();
+
+  bodyInput.addEventListener('input', refreshSaveEnabled);
+  if (titleInput) {
+    titleInput.addEventListener('input', refreshSaveEnabled);
+  }
 
   saveBtn.addEventListener('click', function() {
-    var trimmed = bodyInput.value.replace(/^\s+|\s+$/g, '');
-    if (trimmed.length === 0) return;
-    var user = getCurrentUser();
-    if (!user) return;
-    var now = Date.now();
-    var id = genEntryId();
-    var entry = {
-      id:         id,
-      userId:     user.uid,
-      register:   'journal',
-      isPrivate:  getRegisterDefault('journal'),
-      body:       trimmed,
-      bookIds:    [],
-      arcIds:     [],
-      createdAt:  now,
-      updatedAt:  now
-    };
-    state.notebookEntries[id] = entry;
-    saveState();
-    renderNotebook();
+    var titleVal = titleInput ? trimVal(titleInput) : '';
+    var bodyVal  = trimVal(bodyInput);
+    if (opts.showTitleField) {
+      if (titleVal.length === 0) return;
+    } else {
+      if (bodyVal.length === 0) return;
+    }
+    opts.onSave(titleVal, bodyVal);
   });
 
   cancelBtn.addEventListener('click', function() {
-    renderNotebook();
+    opts.onCancel();
   });
 
   actions.appendChild(saveBtn);
   actions.appendChild(cancelBtn);
+  if (titleInput) editor.appendChild(titleInput);
   editor.appendChild(bodyInput);
   editor.appendChild(actions);
   hostEl.appendChild(editor);
 
-  bodyInput.focus();
+  if (titleInput) {
+    titleInput.focus();
+    titleInput.select();
+  } else {
+    bodyInput.focus();
+  }
+}
+
+function openJournalEditor() {
+  openEditor({
+    hostId:         'notebook-editor-host',
+    emptySelector:  '.notebook-empty-body',
+    showTitleField: false,
+    onSave: function(_titleVal, bodyVal) {
+      var user = getCurrentUser();
+      if (!user) return;
+      var now = Date.now();
+      var id  = genEntryId();
+      var entry = {
+        id:         id,
+        userId:     user.uid,
+        register:   'journal',
+        isPrivate:  getRegisterDefault('journal'),
+        body:       bodyVal,
+        bookIds:    [],
+        arcIds:     [],
+        createdAt:  now,
+        updatedAt:  now
+      };
+      state.notebookEntries[id] = entry;
+      saveState();
+      renderNotebook();
+    },
+    onCancel: function() {
+      renderNotebook();
+    }
+  });
 }
 
 // Stage 3.5a: the Books shelf surface. Reads from state.books and
@@ -877,8 +947,23 @@ function renderBookDetail(bookId) {
         state.books[bookId].finishedAt = Date.now();
         saveState();
         renderBookDetail(bookId);
+        openArtifactEditor(bookId);
       });
       header.appendChild(finishedBtn);
+    } else if (book.status === 'finished' && !hasArtifact) {
+      // (finished, no-artifact): reachable in 3.7 when the user
+      // cancelled the auto-opened Artifact editor after marking
+      // finished. Persistent CTA gets them back into the editor
+      // without re-flipping status. The same !hasArtifact gate
+      // prevents a second creation path -- principle #3.
+      var createBtn = document.createElement('button');
+      createBtn.type = 'button';
+      createBtn.className = 'book-detail-create-artifact';
+      createBtn.textContent = 'Create Artifact';
+      createBtn.addEventListener('click', function() {
+        openArtifactEditor(bookId);
+      });
+      header.appendChild(createBtn);
     }
   } else {
     var signinBtn = document.createElement('button');
@@ -991,78 +1076,75 @@ function renderBookDetail(bookId) {
 }
 
 function openMarginaliaEditor(bookId) {
-  var hostEl = document.getElementById('book-detail-editor-host');
-  if (!hostEl) return;
-
-  // Hide the empty-state paragraph if present so the editor sits
-  // alone below the header.
-  var emptyEl = document.querySelector('.book-detail-empty-body');
-  if (emptyEl) {
-    emptyEl.style.display = 'none';
-  }
-
-  hostEl.innerHTML = '';
-
-  var editor = document.createElement('div');
-  editor.className = 'notebook-editor';
-
-  var bodyInput = document.createElement('textarea');
-  bodyInput.className = 'notebook-editor-body';
-  bodyInput.rows = 8;
-
-  var actions = document.createElement('div');
-  actions.className = 'notebook-editor-actions';
-
-  var saveBtn = document.createElement('button');
-  saveBtn.type = 'button';
-  saveBtn.className = 'notebook-editor-save';
-  saveBtn.textContent = 'Save';
-  saveBtn.disabled = true;
-
-  var cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.className = 'notebook-editor-cancel';
-  cancelBtn.textContent = 'Cancel';
-
-  bodyInput.addEventListener('input', function() {
-    var trimmed = bodyInput.value.replace(/^\s+|\s+$/g, '');
-    saveBtn.disabled = (trimmed.length === 0);
+  openEditor({
+    hostId:         'book-detail-editor-host',
+    emptySelector:  '.book-detail-empty-body',
+    showTitleField: false,
+    onSave: function(_titleVal, bodyVal) {
+      var user = getCurrentUser();
+      if (!user) return;
+      var now = Date.now();
+      var id  = genEntryId();
+      var entry = {
+        id:         id,
+        userId:     user.uid,
+        register:   'marginalia',
+        isPrivate:  getRegisterDefault('marginalia'),
+        body:       bodyVal,
+        bookIds:    [bookId],
+        arcIds:     [],
+        createdAt:  now,
+        updatedAt:  now
+      };
+      state.notebookEntries[id] = entry;
+      saveState();
+      renderBookDetail(bookId);
+    },
+    onCancel: function() {
+      renderBookDetail(bookId);
+    }
   });
+}
 
-  saveBtn.addEventListener('click', function() {
-    var trimmed = bodyInput.value.replace(/^\s+|\s+$/g, '');
-    if (trimmed.length === 0) return;
-    var user = getCurrentUser();
-    if (!user) return;
-    var now = Date.now();
-    var id = genEntryId();
-    var entry = {
-      id:         id,
-      userId:     user.uid,
-      register:   'marginalia',
-      isPrivate:  getRegisterDefault('marginalia'),
-      body:       trimmed,
-      bookIds:    [bookId],
-      arcIds:     [],
-      createdAt:  now,
-      updatedAt:  now
-    };
-    state.notebookEntries[id] = entry;
-    saveState();
-    renderBookDetail(bookId);
+// Stage 3.7: Artifact draft editor. Mounted into the book-detail
+// editor host (shared with marginalia -- only one editor lives there
+// at a time). Title pre-fills from book.title; user may edit before
+// save. Save is gated on title-non-empty; body is optional. Write
+// goes through ensureOneArtifact so a second invocation for the same
+// (uid, bookId) is a no-op (constitutional principle #3). Reached
+// from two entry points, both gated on !hasArtifact: the "I've
+// finished this" button (auto-opens after status flip) and the
+// "Create Artifact" CTA on book detail (when status === 'finished'
+// && !hasArtifact, e.g. after the user cancelled the auto-opened
+// editor).
+function openArtifactEditor(bookId) {
+  var book = state.books[bookId];
+  if (!book) return;
+  openEditor({
+    hostId:         'book-detail-editor-host',
+    emptySelector:  '.book-detail-empty-body',
+    showTitleField: true,
+    titlePrefill:   book.title || '',
+    onSave: function(titleVal, bodyVal) {
+      var user = getCurrentUser();
+      if (!user) return;
+      var now = Date.now();
+      var artifact = {
+        userId:    user.uid,
+        bookId:    bookId,
+        title:     titleVal,
+        body:      bodyVal,
+        createdAt: now,
+        updatedAt: now
+      };
+      ensureOneArtifact(user.uid, bookId, artifact);
+      saveState();
+      renderBookDetail(bookId);
+    },
+    onCancel: function() {
+      renderBookDetail(bookId);
+    }
   });
-
-  cancelBtn.addEventListener('click', function() {
-    renderBookDetail(bookId);
-  });
-
-  actions.appendChild(saveBtn);
-  actions.appendChild(cancelBtn);
-  editor.appendChild(bodyInput);
-  editor.appendChild(actions);
-  hostEl.appendChild(editor);
-
-  bodyInput.focus();
 }
 
 function renderNotebookEntry(entry) {
