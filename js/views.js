@@ -145,6 +145,20 @@
 // to state.books[id].coverUrl === null. The book record itself
 // is written regardless of fetch outcome.
 //
+// Stage 3.5b Stage 3: fetchAndApplyCover's onComplete signature
+// extends to (url, result). The save handler's callback uses
+// result.title and result.author to backfill state.books[id]
+// .title and .author -- but only when the user's typed form
+// fields (titleTrimmed / authorTrimmed, closure-captured at save
+// time) were blank. The user's typed values are authoritative;
+// we only fill the gaps. Same typeof-string + length>0 guard as
+// coverUrl: any missing/null/empty API value leaves the record
+// field as-is. The blur handler on book detail also receives the
+// (url, result) signature but ignores result -- per 3.5b Stage 3
+// brief Non-Goal: ISBN edits on book detail do not backfill
+// metadata, since the user's existing title and author there
+// are authoritative.
+//
 // Stage 3.5b Stage 2: renderShelfBook prepends a cover thumbnail
 // (img.shelf-book-cover) when book.coverUrl is a non-empty string,
 // otherwise a placeholder div (shelf-book-cover-placeholder) so
@@ -536,10 +550,14 @@ function renderShelfBook(book) {
 // book detail page ISBN re-fetch path (3.5b Stage 2). Contract:
 //   - bookId   : the books map key whose coverUrl we patch
 //   - isbn     : trimmed, non-empty (caller responsibility)
-//   - onComplete(url): fires after the patch is durable. url is the
-//     final coverUrl value (string or null). Caller decides whether
-//     to re-render based on the current route -- the helper does NOT
-//     touch the DOM.
+//   - onComplete(url, result): fires after the patch is durable.
+//     url is the final coverUrl value (string or null) after the
+//     placeholder filter. result is the raw fetchBookByIsbn return
+//     object (or null on null-return / throw). Callers that want
+//     to consume metadata fields (title, author, etc.) read them
+//     off result; the helper itself only writes coverUrl. Caller
+//     decides whether to re-render based on the current route --
+//     the helper does NOT touch the DOM.
 // Returns coverUrl === null on any of: fetchBookByIsbn returns null,
 // throws (defensive -- integrations.js cannot throw to caller today
 // but the guard is forward-safe), returns an object whose coverUrl
@@ -548,12 +566,12 @@ function renderShelfBook(book) {
 // Otherwise patches state.books[bookId].coverUrl to the returned URL.
 // In all cases calls saveState() before firing onComplete.
 function fetchAndApplyCover(bookId, isbn, onComplete) {
-  function settle(url) {
+  function settle(url, result) {
     if (state.books[bookId]) {
       state.books[bookId].coverUrl = url;
       saveState();
     }
-    if (typeof onComplete === 'function') onComplete(url);
+    if (typeof onComplete === 'function') onComplete(url, result);
   }
   try {
     fetchBookByIsbn(isbn, function(result) {
@@ -565,10 +583,10 @@ function fetchAndApplyCover(bookId, isbn, onComplete) {
           result.coverUrl.indexOf('/id/0-') === -1) {
         url = result.coverUrl;
       }
-      settle(url);
+      settle(url, result);
     });
   } catch (e) {
-    settle(null);
+    settle(null, null);
   }
 }
 
@@ -704,7 +722,33 @@ function openShelfEditor() {
     // currentBookId, and re-rendering the shelf from a notebook
     // route would clobber the Notebook surface.
     if (isbnTrimmed.length > 0) {
-      fetchAndApplyCover(id, isbnTrimmed, function() {
+      fetchAndApplyCover(id, isbnTrimmed, function(url, result) {
+        // 3.5b Stage 3: conditionally backfill title and author
+        // from the fetch result -- only when the user's form fields
+        // were blank at save time (titleTrimmed/authorTrimmed
+        // closure-captured from the save handler scope). The user's
+        // typed values are authoritative; we only fill the gaps.
+        // Same fail-soft contract as coverUrl: typeof-string +
+        // length>0 guard treats null/empty/undefined as missing
+        // metadata and leaves the existing record value alone.
+        if (state.books[id]) {
+          var metaChanged = false;
+          if (titleTrimmed === '' &&
+              result &&
+              typeof result.title === 'string' &&
+              result.title.length > 0) {
+            state.books[id].title = result.title;
+            metaChanged = true;
+          }
+          if (authorTrimmed === '' &&
+              result &&
+              typeof result.author === 'string' &&
+              result.author.length > 0) {
+            state.books[id].author = result.author;
+            metaChanged = true;
+          }
+          if (metaChanged) saveState();
+        }
         var parts = location.hash.replace(/^#/, '').split('/');
         if (parts[0] === 'books') {
           renderShelf();
