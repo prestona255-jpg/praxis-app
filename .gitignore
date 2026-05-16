@@ -31,3 +31,7 @@ build/
 # Firebase
 firebase-debug.log
 .firebase/
+
+# Claude Code session scratch (parse-check harnesses, isolated
+# worktrees, per-project settings). Never belongs on origin.
+.claude/
