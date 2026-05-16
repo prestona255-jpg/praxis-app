@@ -37,6 +37,68 @@ firebase.auth().onAuthStateChanged(function (u) {
     };
     sv('praxis_user', userObj);
     console.log('onAuthStateChanged: signed in', userObj);
+
+    // Firestore Stage 1: fetch this user's book-doc from
+    // /userBooks/{uid}. Optimistic-UI contract -- the first render
+    // already painted from the localStorage cache by the time this
+    // listener fires; this fetch either confirms the cache (no-op)
+    // or replaces it (re-render). Stage 1 has no WRITE path yet,
+    // so every user's doc is absent today; the absent branch is
+    // the expected hit. The found branch must still be correct now
+    // because Stage 2 will start writing the doc and Stage 3 will
+    // migrate existing localStorage shelves into it.
+    loadBooksFromFirestore(u.uid, function (result) {
+      if (result.status === 'found') {
+        // REPLACE merge -- Firestore is the source of truth. Clear
+        // this uid's previously-known bookIds from state.books
+        // BEFORE writing the remote set so deleted-on-the-server
+        // entries don't resurrect from the cache. ensureUser keeps
+        // state.users[uid] and state.userBooks[uid] coherent in
+        // case this device has never seen this uid before.
+        ensureUser(u.uid);
+        var prevIds = state.userBooks[u.uid].bookIds.slice();
+        var p;
+        for (p = 0; p < prevIds.length; p++) {
+          if (state.books[prevIds[p]]) {
+            delete state.books[prevIds[p]];
+          }
+        }
+        var remoteIds = (result.data && result.data.bookIds)
+          ? result.data.bookIds
+          : [];
+        var remoteBooks = (result.data && result.data.books)
+          ? result.data.books
+          : {};
+        state.userBooks[u.uid].bookIds = remoteIds.slice();
+        var r;
+        for (r = 0; r < remoteIds.length; r++) {
+          var rbid = remoteIds[r];
+          if (remoteBooks[rbid]) {
+            state.books[rbid] = remoteBooks[rbid];
+          }
+        }
+        saveState();
+        // Re-render the current route. Defensive guard for the
+        // edge case where Firebase persistence resolves auth
+        // synchronously before views.js sets window.views; in
+        // normal cold-load timing window.views is set well before
+        // this listener fires.
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadBooksFromFirestore: merged remote doc, '
+          + remoteIds.length + ' books');
+      } else if (result.status === 'absent') {
+        // Stage 1 expected path. No remote doc exists for this
+        // user yet; keep the localStorage cache intact, no
+        // re-render needed (nothing changed).
+        console.log('loadBooksFromFirestore: no remote doc for uid, keeping cache');
+      } else {
+        // Network / permission / other failure. Keep cache, log
+        // and continue; the cached shelf stays visible.
+        console.warn('loadBooksFromFirestore: fetch failed, keeping cache', result.error);
+      }
+    });
   } else {
     sv('praxis_user', null);
     console.log('onAuthStateChanged: signed out');
@@ -72,6 +134,48 @@ function signOut() {
 
 function getCurrentUser() {
   return ls('praxis_user', null);
+}
+
+// Firestore Stage 1: per-user book-doc read from /userBooks/{uid}.
+// Single-arg callback in the fetchBookByIsbn house style; the
+// result is a typed object distinguishing three outcomes:
+//   { status: 'found',  data: <doc data> }   doc exists
+//   { status: 'absent' }                     doc does not exist
+//   { status: 'error',  error: <err> }       fetch failed
+// The caller branches on result.status. Idempotent fire-once is
+// guarded by a local 'done' flag, mirroring fetchBookByIsbn.
+// firebase.firestore() is called per-use, matching the per-call
+// firebase.auth() pattern elsewhere in this file; the compat SDK
+// memoizes the handle internally so per-call has no perf cost.
+function loadBooksFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadBooksFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userBooks')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
 }
 
 // ISBN lookup: Open Library is primary, Google Books is fallback.
