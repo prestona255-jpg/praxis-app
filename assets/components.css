@@ -357,6 +357,7 @@
 
 .shelf-new-book,
 .shelf-new-book-bulk,
+.shelf-resolve-covers-btn,
 .shelf-signin-prompt {
   grid-row: 1;
   align-self: start;
@@ -392,6 +393,26 @@
 .shelf-new-book-bulk:hover {
   border-color: var(--ink-3);
   color: var(--ink);
+}
+
+/* 3.10d: secondary button shape, mirrors .shelf-new-book-bulk.
+   Implicit grid column 4 -- .shelf-header's explicit template is
+   1fr auto auto; grid-auto-columns: auto creates column 4 on demand. */
+.shelf-resolve-covers-btn {
+  grid-column: 4;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+
+.shelf-resolve-covers-btn:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.shelf-resolve-covers-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .shelf-signin-prompt {
@@ -843,6 +864,11 @@
   .shelf-new-book-bulk {
     grid-column: 1;
     grid-row: 4;
+  }
+
+  .shelf-resolve-covers-btn {
+    grid-column: 1;
+    grid-row: 5;
   }
 
   .shelf-signin-prompt {

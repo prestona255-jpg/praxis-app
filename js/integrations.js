@@ -418,4 +418,94 @@ function fetchGoogleBooks(isbn, callback) {
   }
 }
 
+// Title lookup: Google Books only. Open Library has no equivalent
+// title-search endpoint with matching fidelity, so there is no
+// primary/fallback pair -- Google Books is the single source. Takes
+// the first result; no ranking. Normalized shape matches
+// fetchBookByIsbn:
+//   { isbn, title, author, coverUrl, publishYear, openLibraryWorkId }
+// openLibraryWorkId is always null. isbn is picked from
+// industryIdentifiers (ISBN_13 preferred, ISBN_10 fallback) and may
+// be null when Google returns no identifiers. Fail-soft: any error,
+// missing totalItems, empty items, or missing volumeInfo yields
+// callback(null), matching the fetchGoogleBooks contract.
+function fetchBookByTitle(title, author, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  function extractYear(s) {
+    if (!s) return null;
+    var m = s.match(/(\d{4})/);
+    if (m) return m[1];
+    return null;
+  }
+  try {
+    var q = 'intitle:' + encodeURIComponent(title);
+    if (typeof author === 'string' && author.length > 0) {
+      q = q + '+inauthor:' + encodeURIComponent(author);
+    }
+    var url = 'https://www.googleapis.com/books/v1/volumes?q=' + q;
+    fetch(url).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      if (!data.totalItems || data.totalItems === 0) {
+        finish(null);
+        return;
+      }
+      if (!data.items || data.items.length === 0) {
+        finish(null);
+        return;
+      }
+      var v = data.items[0].volumeInfo;
+      if (!v) {
+        finish(null);
+        return;
+      }
+      var rTitle = v.title || null;
+      var rAuthor = null;
+      if (v.authors && v.authors.length > 0) {
+        rAuthor = v.authors[0] || null;
+      }
+      var rIsbn = null;
+      if (v.industryIdentifiers && v.industryIdentifiers.length > 0) {
+        var ii;
+        for (ii = 0; ii < v.industryIdentifiers.length; ii++) {
+          if (v.industryIdentifiers[ii].type === 'ISBN_13') {
+            rIsbn = v.industryIdentifiers[ii].identifier;
+            break;
+          }
+        }
+        if (!rIsbn) {
+          for (ii = 0; ii < v.industryIdentifiers.length; ii++) {
+            if (v.industryIdentifiers[ii].type === 'ISBN_10') {
+              rIsbn = v.industryIdentifiers[ii].identifier;
+              break;
+            }
+          }
+        }
+      }
+      var rCoverUrl = null;
+      if (v.imageLinks && v.imageLinks.thumbnail) {
+        rCoverUrl = v.imageLinks.thumbnail;
+      }
+      var rPublishYear = extractYear(v.publishedDate);
+      finish({
+        isbn:              rIsbn,
+        title:             rTitle,
+        author:            rAuthor,
+        coverUrl:          rCoverUrl,
+        publishYear:       rPublishYear,
+        openLibraryWorkId: null
+      });
+    }).catch(function () {
+      finish(null);
+    });
+  } catch (e) {
+    finish(null);
+  }
+}
+
 console.log('integrations.js loaded');

@@ -654,6 +654,26 @@ function renderShelf() {
       openBulkAddEditor();
     });
     header.appendChild(bulkBtn);
+
+    // 3.10d: resolve missing covers (title-imported books). The 109-
+    // book bulk-import wrote coverUrl: null for every title-form line
+    // and never fired a cover fetch (fetchAndApplyCover is ISBN-only).
+    // Label + disabled state read from coverResolveState, which lives
+    // outside the DOM so progress survives the per-settle renderShelf.
+    var resolveBtn = document.createElement('button');
+    resolveBtn.type = 'button';
+    resolveBtn.className = 'shelf-resolve-covers-btn';
+    if (coverResolveState.running) {
+      resolveBtn.textContent = 'Resolving ' +
+        coverResolveState.completed + ' of ' + coverResolveState.total;
+      resolveBtn.disabled = true;
+    } else {
+      resolveBtn.textContent = 'Resolve missing covers';
+    }
+    resolveBtn.addEventListener('click', function() {
+      startCoverBackfill();
+    });
+    header.appendChild(resolveBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -969,6 +989,100 @@ function fetchAndApplyCover(bookId, isbn, onComplete) {
   } catch (e) {
     settle(null, null);
   }
+}
+
+// 3.10d: sibling of fetchAndApplyCover for title-imported books.
+// Same settle() shape, same placeholder-URL filter (the id=0 / /id/0-
+// patterns are OpenLibrary-shaped and won't appear on Google Books
+// URLs, but we mirror exactly so future routing changes stay safe).
+// markBooksDirty() + saveState() at settle() is the Firestore
+// chokepoint; no separate persistence code is added here.
+function fetchAndApplyCoverByTitle(bookId, title, author, onComplete) {
+  function settle(url, result) {
+    if (state.books[bookId]) {
+      state.books[bookId].coverUrl = url;
+      markBooksDirty();
+      saveState();
+    }
+    if (typeof onComplete === 'function') onComplete(url, result);
+  }
+  try {
+    fetchBookByTitle(title, author, function(result) {
+      var url = null;
+      if (result &&
+          typeof result.coverUrl === 'string' &&
+          result.coverUrl.length > 0 &&
+          result.coverUrl.indexOf('id=0') === -1 &&
+          result.coverUrl.indexOf('/id/0-') === -1) {
+        url = result.coverUrl;
+      }
+      settle(url, result);
+    });
+  } catch (e) {
+    settle(null, null);
+  }
+}
+
+// 3.10d: progressive missing-cover backfill state. Lives outside
+// the DOM because renderShelf() rebuilds the button on every settle
+// to populate covers progressively -- state in the DOM would reset
+// each tick. renderShelf reads this to decide idle vs running label.
+// running === true is the concurrency gate: a second click while a
+// backfill is in flight is an immediate no-op (the disabled attr is
+// belt-and-suspenders).
+var coverResolveState = { running: false, completed: 0, total: 0 };
+
+function startCoverBackfill() {
+  if (coverResolveState.running) return;
+  var user = getCurrentUser();
+  if (!user) return;
+  var userBookIds = (state.userBooks &&
+                     state.userBooks[user.uid] &&
+                     state.userBooks[user.uid].bookIds)
+    ? state.userBooks[user.uid].bookIds
+    : [];
+  var queue = [];
+  var i;
+  for (i = 0; i < userBookIds.length; i++) {
+    var bid = userBookIds[i];
+    var b = state.books[bid];
+    if (b && b.coverUrl === null) {
+      queue.push(bid);
+    }
+  }
+  if (queue.length === 0) return;
+  coverResolveState.running = true;
+  coverResolveState.completed = 0;
+  coverResolveState.total = queue.length;
+  // Initial render so the button shows "Resolving 0 of N" disabled
+  // before the first fetch resolves.
+  var partsStart = location.hash.replace(/^#/, '').split('/');
+  if (partsStart[0] === 'books') renderShelf();
+  var qi = 0;
+  function processNextCover() {
+    if (qi >= queue.length) {
+      // Full reset BEFORE the terminal render so the button renders
+      // clean-idle and a second backfill starts from zero.
+      coverResolveState.running = false;
+      coverResolveState.completed = 0;
+      coverResolveState.total = 0;
+      var partsDone = location.hash.replace(/^#/, '').split('/');
+      if (partsDone[0] === 'books') renderShelf();
+      return;
+    }
+    var nextId = queue[qi];
+    qi++;
+    var book = state.books[nextId];
+    var t = (book && typeof book.title === 'string') ? book.title : '';
+    var a = (book && typeof book.author === 'string') ? book.author : '';
+    fetchAndApplyCoverByTitle(nextId, t, a, function() {
+      coverResolveState.completed = qi;
+      var parts = location.hash.replace(/^#/, '').split('/');
+      if (parts[0] === 'books') renderShelf();
+      processNextCover();
+    });
+  }
+  processNextCover();
 }
 
 // Inline add-book editor mounted into #shelf-editor-host. Structurally
