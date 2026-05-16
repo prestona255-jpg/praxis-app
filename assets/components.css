@@ -685,3 +685,214 @@
 }
 
 /* ===== END BOOK CARD ===== */
+
+
+/* ===== EMPTY STATE -- Stage 3.10a Stage 4 =====
+   Rendered in renderShelf's books.length === 0 branch. Replaces
+   the prior single <p class="shelf-empty-body"> (which had no CSS
+   rule to consume it). Structure supports both copy variants
+   (zero-books and zero-filter-results) so 3.10b can switch on
+   filter state without restructuring. 3.10a wires zero-books only.
+   Action button is auth-conditional and reuses the existing
+   page-header button classes -- no new button styling. */
+
+.shelf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 240px;
+}
+
+.shelf-empty-headline {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.shelf-empty-subtitle {
+  margin: 16px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-3);
+}
+
+/* The auth-conditional button inherits its visual treatment from
+   .shelf-new-book (signed-in) or .shelf-signin-prompt (signed-out)
+   defined in the Stage 1 SHELF PAGE HEADER block. Empty state
+   only adds the spacing above it. */
+.shelf-empty .shelf-new-book,
+.shelf-empty .shelf-signin-prompt {
+  margin-top: 24px;
+}
+
+/* ===== END EMPTY STATE ===== */
+
+
+/* ===== MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) -- Stage 3.10a Stage 4 =====
+   Both elements live in the DOM at all viewport widths but are
+   hidden on desktop via display: none here; the mobile media
+   query block below reveals them. Keeping them DOM-present means
+   the toggle bindings (in views.js initNavMobileToggle and
+   renderShelf) stay valid; CSS controls visibility. */
+
+.app-nav-hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.shelf-filter-button {
+  /* Override the Stage 1 .shelf-new-book-bulk grid placement on
+     desktop -- the filter button is hidden on desktop entirely. */
+  display: none;
+}
+
+/* ===== END MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) ===== */
+
+
+/* ===== MOBILE BREAKPOINT (< 760px) -- Stage 3.10a Stage 4 =====
+   All Stage 4 visual changes that affect the desktop surfaces live
+   inside this media query so Stages 1-3 desktop rendering is
+   byte-for-byte unchanged outside it. Two existing media queries
+   (Stage 2 grid column-count at 759px and 499px) sit alongside;
+   they target only .shelf-list and do not collide.
+
+   z-index: the slide-down nav panel and the slide-down filter
+   panel sit at z-index 100 -- above page content, well below the
+   Yumi panel (9998) and toggle (9999) per the existing yumi-panel
+   block at the top of this file. */
+
+@media (max-width: 759px) {
+  /* Nav: 56px height, 16px padding, hamburger visible, link list
+     collapsed to a slide-down panel anchored below the nav. */
+  .app-nav {
+    height: 56px;
+    padding: 0 16px;
+    position: relative;
+  }
+
+  .app-nav-hamburger {
+    display: block;
+  }
+
+  .app-nav-list {
+    display: none;
+  }
+
+  .app-nav.app-nav-mobile-open .app-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 16px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+
+  .app-nav.app-nav-mobile-open .app-nav-list li {
+    padding: 12px 0;
+  }
+
+  /* Shelf container: 16px horizontal padding (was 32px on desktop). */
+  .shelf {
+    padding: 0 16px;
+  }
+
+  /* Page header: top padding 32px, title 32px, layout stacks --
+     title row 1, subtitle row 2, buttons rows 3+ on a single
+     column. The Stage 1 desktop grid (1fr auto auto) is replaced
+     by a single 1fr column on mobile; explicit grid-column / row
+     assignments override the Stage 1 placements that send buttons
+     to columns 2 and 3. */
+  .shelf-header {
+    grid-template-columns: 1fr;
+    padding-top: 32px;
+  }
+
+  .shelf-title {
+    font-size: 32px;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .shelf-subtitle {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .shelf-new-book {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .shelf-new-book-bulk {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .shelf-signin-prompt {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  /* Layout: collapse to single column; sidebar hidden by default,
+     revealed as a fixed overlay panel when .shelf-sidebar-mobile-
+     open is toggled by the Filter button. */
+  .shelf-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .shelf-sidebar {
+    display: none;
+  }
+
+  .shelf-sidebar.shelf-sidebar-mobile-open {
+    display: block;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 24px 16px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+
+  /* Filter button: visible on mobile, sits at the top of the main
+     column above the editor host and grid. inline-block + auto
+     margins keep it left-aligned with the grid below. The Stage 1
+     grid-column / grid-row rules on .shelf-new-book-bulk do not
+     apply here because .shelf-filter-button lives inside .shelf-
+     main, not .shelf-header. */
+  .shelf-filter-button {
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  /* Cards: cover area drops to 160px on mobile per Stage 3 brief
+     deferral. */
+  .shelf-book-cover-area {
+    height: 160px;
+  }
+}
+
+/* ===== END MOBILE BREAKPOINT ===== */

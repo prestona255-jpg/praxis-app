@@ -184,7 +184,50 @@
 
 var APP_EL_ID = 'app';
 
+// 3.10a Stage 4: guards initNavMobileToggle so the hamburger
+// listener binds exactly once across the session. Module-level so
+// the flag persists across renderRoute calls.
+var navMobileToggleInitialized = false;
+
+// 3.10a Stage 4: bind the mobile hamburger toggle. Called by
+// renderRoute on first invocation only (guarded by
+// navMobileToggleInitialized). The hamburger click toggles
+// .app-nav-mobile-open on the nav; one addEventListener, no per-
+// link close handlers (the panel closes when a link is tapped via
+// renderRoute, which runs on every hashchange and removes the open
+// class -- see the renderRoute body). The nav lives in static
+// index.html so this can run any time after DOMContentLoaded;
+// renderRoute is dispatched by app.js immediately after, so first-
+// call binding is safe.
+function initNavMobileToggle() {
+  var navEl = document.querySelector('.app-nav');
+  var ham = document.querySelector('.app-nav-hamburger');
+  if (!navEl || !ham) return;
+  ham.addEventListener('click', function() {
+    if (navEl.classList.contains('app-nav-mobile-open')) {
+      navEl.classList.remove('app-nav-mobile-open');
+    } else {
+      navEl.classList.add('app-nav-mobile-open');
+    }
+  });
+}
+
 function renderRoute() {
+  // 3.10a Stage 4: bind the hamburger toggle once on first call,
+  // then close any open mobile nav panel on every route change.
+  // app.js's existing hashchange listener calls renderRoute on
+  // every URL change, so tapping a nav link inside the open panel
+  // -> URL changes -> renderRoute fires -> classList.remove
+  // closes the panel. No per-link addEventListener required.
+  if (!navMobileToggleInitialized) {
+    initNavMobileToggle();
+    navMobileToggleInitialized = true;
+  }
+  var navOpen = document.querySelector('.app-nav');
+  if (navOpen) {
+    navOpen.classList.remove('app-nav-mobile-open');
+  }
+
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
 
@@ -711,6 +754,28 @@ function renderShelf() {
   var main = document.createElement('div');
   main.className = 'shelf-main';
 
+  // 3.10a Stage 4: mobile filter-panel toggle. Button is hidden on
+  // desktop (CSS display:none default; mobile media query reveals
+  // it). On mobile it sits at the top of the main column and
+  // toggles .shelf-sidebar-mobile-open on the sidebar element above.
+  // One addEventListener; open/close only. The sidebar's theme +
+  // author rows remain inert -- 3.10b owns filter behavior. The
+  // panel OPENS and CLOSES; its contents do not act.
+  // Reuses .shelf-new-book-bulk visual treatment per Stage 0
+  // decision (no new button class authored).
+  var filterBtn = document.createElement('button');
+  filterBtn.type = 'button';
+  filterBtn.className = 'shelf-filter-button shelf-new-book-bulk';
+  filterBtn.textContent = 'Filter';
+  filterBtn.addEventListener('click', function() {
+    if (sidebar.classList.contains('shelf-sidebar-mobile-open')) {
+      sidebar.classList.remove('shelf-sidebar-mobile-open');
+    } else {
+      sidebar.classList.add('shelf-sidebar-mobile-open');
+    }
+  });
+  main.appendChild(filterBtn);
+
   // Editor host -- empty on every render; openShelfEditor mounts
   // its block here on demand. Lives above the book list so the
   // editor sits visually above existing rows.
@@ -735,11 +800,48 @@ function renderShelf() {
   });
 
   if (books.length === 0) {
-    var empty = document.createElement('p');
-    empty.className = 'shelf-empty-body';
-    empty.textContent =
-      'Books you add will appear here. ' +
-      'Nothing has been added yet.';
+    // 3.10a Stage 4: empty state. Structure supports both copy
+    // variants (zero-books and zero-filter-results); 3.10a wires
+    // only zero-books because filter behavior -- the only path to
+    // zero-filter-results -- is 3.10b. The button is auth-
+    // conditional per Q1 resolution (2026-05-16): signed-in shows
+    // Add book primary, signed-out shows the sign-in prompt. Both
+    // reuse existing button classes (.shelf-new-book /
+    // .shelf-signin-prompt) and existing handlers (openShelfEditor
+    // / signInWithGoogle) -- zero new behavior, just reuse-wiring
+    // a second button instance to a pre-existing handler.
+    // The unused .shelf-empty-body class from earlier stages is
+    // discarded; no rule consumed it.
+    var empty = document.createElement('div');
+    empty.className = 'shelf-empty';
+    var emptyHeadline = document.createElement('h2');
+    emptyHeadline.className = 'shelf-empty-headline';
+    emptyHeadline.textContent = 'Your shelf is empty.';
+    empty.appendChild(emptyHeadline);
+    var emptySubtitle = document.createElement('p');
+    emptySubtitle.className = 'shelf-empty-subtitle';
+    emptySubtitle.textContent = 'Add a book to begin.';
+    empty.appendChild(emptySubtitle);
+    var emptyUser = getCurrentUser();
+    if (emptyUser) {
+      var emptyAddBtn = document.createElement('button');
+      emptyAddBtn.type = 'button';
+      emptyAddBtn.className = 'shelf-new-book';
+      emptyAddBtn.textContent = '+ Add book';
+      emptyAddBtn.addEventListener('click', function() {
+        openShelfEditor();
+      });
+      empty.appendChild(emptyAddBtn);
+    } else {
+      var emptySigninBtn = document.createElement('button');
+      emptySigninBtn.type = 'button';
+      emptySigninBtn.className = 'shelf-signin-prompt';
+      emptySigninBtn.textContent = 'Sign in to add books';
+      emptySigninBtn.addEventListener('click', function() {
+        signInWithGoogle();
+      });
+      empty.appendChild(emptySigninBtn);
+    }
     main.appendChild(empty);
   } else {
     var list = document.createElement('div');
