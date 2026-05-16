@@ -2972,6 +2972,234 @@ var STAGES = [
 'Stage 2 (3.10b): interactive states — hover, focus, active, disabled — for every clickable element. Transparency view visual differentiation.\n\n' +
 'Stage 3: live verification — visual inspection across surfaces, mobile layout check at 375px, full functional regression sweep.\n\n' +
 'Stage 3 closes here. Praxis is ready for Stage 4 hardening and the Phase 1 testing readiness work.'
+      },
+
+      {
+        id: 's3-10a',
+        num: '3.10a',
+        name: 'Typography + layout pass (shelf + top nav + cards + mobile)',
+        depConfirm: 'Stage 3 surfaces 3.7c and earlier Shipped. assets/theme.css present with the original palette tokens (pre-Oshun). assets/components.css contained only the Yumi panel block. Cormorant Garamond / DM Sans / DM Mono fonts NOT yet loaded by index.html (Stage A foundation pass added them).',
+        purpose: 'First of four substages under the 3.10 visual pass. Apply locked typography + layout + default-hover-state pass to the shelf surface, top nav, book cards, empty state, and mobile chrome. Interactive states beyond hover (focus/active/disabled) are 3.10b. Non-shelf surfaces (Notebook, book detail, settings, transparency, arc view) are 3.10c. A title-only cover-fetch adapter is 3.10d.',
+        scope: [
+          'Locked Oshun palette (wheat field / cherry oak): --surface, --surface-2, --ink ramp (4 steps), --gold + --gold-light + --gold-text, --br-deep, --river, --color-surface alias',
+          'Three Google Fonts loaded in index.html: Cormorant Garamond (display), DM Sans (body), DM Mono (meta)',
+          'Top nav: wordmark left, two nav items right (Books, Notebook), --gold underline on active route, --ink-3 underline on hover, 64px desktop / 56px mobile',
+          '/books page header: Cormorant "Your shelf" title, DM Mono book-count subtitle (singular/plural), Add book primary + Bulk add secondary buttons top-right',
+          'Two-column shelf layout: 220px filter sidebar (transparent, sticky on desktop) + responsive grid',
+          'Filter sidebar markup: 15 themes from docs/themes.md in file order + deduplicated alphabetical author list from state.books. INERT in 3.10a — clicking does nothing; behavior is 3.10b',
+          'Shelf grid: 4 columns desktop, responsive 4 -> 3 -> 2 -> 1 at 1099/759/499px breakpoints; minmax(0,1fr) tracks to prevent horizontal overflow',
+          'Book card: --surface-2 background, 1px --border, 2px radius, hover lifts -2px with shadow; fixed cover-area (200px desktop, 160px mobile) with object-fit contain; Cormorant title + DM Sans author + DM Mono status pill',
+          'Status pill three variants via color-mix on --gold and --ink-4 at 15% alpha; --gold-text for reading text; transparent + --ink-4 border for want',
+          'Empty state: centered headline + subtitle + auth-conditional button (Add book primary for signed-in, sign-in prompt for signed-out)',
+          'Mobile (< 760px): hamburger nav with slide-down panel, header stacks below title, sidebar collapses to slide-down filter panel toggled by a Filter button, 16px container padding, 160px covers',
+          'docs/praxis-design-system.md locked palette, typography, and shelf spec for durability outside chat transcripts'
+        ],
+        nonGoals: [
+          'No filter behavior — sidebar lists render but do not filter the grid (3.10b)',
+          'No focus rings, active-press, or disabled states beyond default + hover (3.10b)',
+          'No styling on Notebook, book detail, editor modals, Artifact view, settings, transparency, arc view (3.10c)',
+          'No title-only cover fetch — bulk-imported title-only entries land with coverUrl: null (3.10d)',
+          'No icon system; single hamburger glyph is &#x2261; (U+2261 IDENTICAL TO)',
+          'No animation beyond a 180ms card-hover transform + 120ms color/border transitions',
+          'No dark mode (parallel palette deferred)'
+        ],
+        subsystems: ['styling', 'views'],
+        files: [
+          'assets/theme.css (palette tokens locked to the Oshun scheme; new --text-on-dark warm off-white for primary-button text on --ink fills)',
+          'assets/components.css (Yumi panel block kept; ~900 lines added across the executed stages — nav, header, buttons, sidebar, grid, cards, empty state, mobile media block)',
+          'js/views.js (additive markup hooks: subtitle, sidebar markup, cover-area wrapper, status-modifier class, mobile filter button, hamburger toggle; renderRoute toggles active-nav-link class)',
+          'index.html (Google Fonts <link>; nav restructure with wordmark + data-route attributes; hamburger button)',
+          'sw.js (two cache-version bumps mid- and post-execution to flush stale browser caches)',
+          'docs/praxis-design-system.md (locked palette, typography, and shelf spec)'
+        ],
+        acceptance: [
+          'Shelf renders in the locked Oshun palette with Cormorant titles, DM Sans body, DM Mono meta',
+          'Top nav shows active-route underline in --gold; hover underline in --ink-3; layout shift impossible across active toggle (2px reserved)',
+          'Page header renders "Your shelf" + book-count subtitle + Add book / Bulk add buttons',
+          'Filter sidebar renders 15 themes (file order from docs/themes.md) and dedup\'d alphabetical author list; clicking does nothing (inert, 3.10b owns behavior)',
+          'Grid 4/3/2/1 columns responsive; no horizontal overflow at any width',
+          'Book cards render uniform-height with cover, title (2-line clamp), author (1-line clamp), status pill (3 variants)',
+          'Empty state renders centered with auth-conditional button',
+          'Mobile < 760px: hamburger nav, header stacks, sidebar collapses to slide-down filter panel, 160px covers; no horizontal scroll'
+        ],
+        evidence: [
+          'Five-stage commit history in origin/main: Stage A foundation, Stage 1 nav+header, Stage 2 sidebar+grid (plus two overflow fixes), Stage 3 cards, Stage 4 empty+mobile, plus a design-system doc commit and two SW cache-version bumps',
+          'grep -nE "#[0-9a-fA-F]{3,6}" assets/components.css returns 0 (all colors via CSS variables; rgba(0,0,0,alpha) shadow exempt)',
+          'grep -nE "(\\bconst\\b|\\blet\\b|=>|\\bclass\\b|`)" js/views.js returns 0 actual JS-syntax matches (comment self-references exempt)',
+          'Live URL behavioral: every acceptance item verified at desktop and at 375px mobile emulation'
+        ],
+        rollback: 'Shipped across multiple commits each independently verified; surgical revert of any single stage commit is safe. Two SW cache-version bumps (v2.10-a -> v3.10-a, v3.10-a -> v3.10-b) were the operational discipline; if a future bump is forgotten, the SW serves stale shell assets.',
+        risks: [
+          'Builder-Intellectual rabbit hole: held — shipped exactly what was specced; no animation system, no icon library, no extra polish',
+          'Service-worker cache staleness bit the project twice during execution (stale components.css after Stage 4 deploy; stale views.js after Firestore stages); both resolved with cache-version bumps. Mechanism logged to DEFERRED (stale-while-revalidate SW rework) so the pattern is addressed structurally, not by repeated manual bumps',
+          'Mobile filter-sidebar investigation midway through 3.10a observed shelf-sidebar-mobile-open on the sidebar element and was suspected as a source bug; runtime createElement trace confirmed renderShelf produces a clean sidebar with className "shelf-sidebar" only — no source path adds the mobile-open class on render. The observation was post-tap test state, not an initial-render fault. Recorded so the investigation is not repeated',
+          'Palette spec naming inconsistency: locked spec referred to --color-surface-2 which does not exist; resolved by using --surface-2 (the canonical "Card surface" token per docs/praxis-design-system.md). No new variable added',
+          'Pill alpha approach: color-mix(in srgb, var(--token) 15%, transparent) used per Option A (modern CSS, supported by all evergreen browsers); avoided channel-triplet refactor of palette tokens'
+        ],
+        promptSkeleton:
+'(Shipped 3.10a — this skeleton documents the executed sequence)\n\n' +
+'Design-system pass: locked the Oshun palette (wheat field / cherry oak), the typography hierarchy (Cormorant Garamond / DM Sans / DM Mono), and the shelf spec into docs/praxis-design-system.md. The doc is the source of intent; theme.css holds the actual values. [Commit 880dd8c.]\n\n' +
+'Stage A foundation: index.html began loading Cormorant Garamond / DM Sans / DM Mono via Google Fonts; nav restructured with a left Praxis wordmark and data-route attributes; theme.css gained the Oshun palette tokens (--surface to wheat, four-step --ink cherry-oak ramp, --gold + --gold-light + --gold-text, --br-deep, --river, --color-surface alias); renderRoute toggles .app-nav-link-active on the matching nav link. [Commits c7efffc, add7ef3, 8428657, 9e12fa7 — Stage A landed across four corrections as palette-ramp values were refined.]\n\n' +
+'Stage 1 top nav + page header + buttons — added --text-on-dark warm off-white token to fill the palette gap surfaced mid-patch for primary-button text on --ink fills. Body background moved off pale cream to wheat. [Commit 611c115.]\n\n' +
+'Stage 2 sidebar + grid scaffolding; filter sidebar emits 15 themes in docs/themes.md order plus dedup\'d alphabetical author list (inert). Two follow-up fixes: minmax(0,1fr) on .shelf-list grid tracks to prevent horizontal overflow, and a cover-image max-width constraint to stop the unconstrained <img> from blowing out the layout between Stage 2 and Stage 3. [Commits bc1e912, 277e013, 985c6f8.]\n\n' +
+'Stage 3 book card styling — wrapped the cover in a fixed-height .shelf-book-cover-area for uniform card heights; status-pill variants via color-mix on --gold and --ink-4 at 15% alpha; typography pass on title (Cormorant 2-line clamp), author (DM Sans 1-line clamp), status pill (DM Mono uppercase). Stage 2 fix-2 .shelf-book-cover rule cleanly superseded by the Stage 3 object-fit rule (single coherent rule, not stacked). [Commit 7139efc.]\n\n' +
+'Stage 4 empty state + mobile — hamburger nav with slide-down panel anchored below the 56px nav; mobile filter button at the top of the main column toggles a slide-down sidebar panel; header stacks below title at < 760px; cover-area drops to 160px mobile; container padding 16px mobile. Empty state rebuilt as headline + subtitle + auth-conditional button (Add book / sign-in prompt). Two open/close panel listeners + two empty-state reuse-wiring listeners; nav-panel close on link tap handled via the existing renderRoute hashchange dispatch rather than per-link listeners. [Commit 22e9d1e.]\n\n' +
+'SW cache-version bump supporting Stage 4 deploy (v2.10-a -> v3.10-a) — the prior cache held a pre-3.10a components.css and the @media (max-width: 759px) block could not reach the browser without the bump. Activate handler deletes old cache fully. [Commit 48557b4.]\n\n' +
+'Follow-up SW cache-version bump (v3.10-a -> v3.10-b) clearing stale views.js after the Firestore stages modified it. Same shape as the prior bump; same root cause (APP_SHELL pre-cache + cache-first). DEFERRED entry filed for the structural rework. [Commit 5d6bfe2.]\n\n' +
+'Resolution note (recorded so the investigation is not repeated): a mobile filter-sidebar bug was suspected when the sidebar element was observed carrying shelf-sidebar-mobile-open on initial load. Full source trace and a runtime createElement instrumentation (patching document.createElement to log every aside\'s className mutations) showed renderShelf produces a sidebar with className "shelf-sidebar" only and no source path adds the mobile-open class on render. The earlier observation was post-tap test state, not an initial-render fault.'
+      },
+
+      {
+        id: 's3-10b',
+        num: '3.10b',
+        name: 'Interactive states + filter behavior',
+        depConfirm: '3.10a Shipped (typography + layout in place; filter sidebar renders the inert theme/author lists).',
+        purpose: 'Second substage under the 3.10 visual pass. Add the full interactive-state ladder (focus, active, disabled) on every clickable element. Wire the (currently inert) theme + author filter sidebar so clicking a theme or author actually filters the shelf grid. The 3.10a sidebar is markup-only; this stage makes it behavior. Includes the filter-empty empty state (the "Nothing on the shelf matches" copy already scaffolded into the 3.10a empty-state structure).',
+        scope: [
+          'Focus rings on every interactive element (keyboard accessibility); --river for the ring color where it differentiates from --gold',
+          'Active-press states on buttons (depressed-look on mousedown)',
+          'Disabled states (reduced contrast, no-pointer cursor)',
+          'Filter sidebar wired: clicking a theme or author row filters the shelf grid to matching books; selected-filter visual state (filled, checked, or highlighted row)',
+          'Multi-select model decision at session time: single-select OR multi-select per section; the choice determines whether selected filters are an array per section or a single string',
+          'Filter-empty empty state: when filters select zero books, render the headline "Nothing on the shelf matches." + subtitle "Clear your filters or add a new book." (the 3.10a empty-state markup already supports both copy variants; this stage wires the switch)',
+          'Mobile parity: the existing mobile Filter panel toggles open/close in 3.10a; this stage makes its filter rows behave identically to desktop',
+          'Selected-filter state lives in memory only — closing the tab clears selection (no URL routing, no localStorage persistence)'
+        ],
+        nonGoals: [
+          'No URL-routing of filter state (deferred to a future stage; would need /books?theme=... handling)',
+          'No persistence of selected filters across reloads',
+          'No filter combinators beyond theme + author (status filter, year filter, etc., out of scope)',
+          'No saved-filter-presets',
+          'No additional surfaces (3.10c)'
+        ],
+        subsystems: ['styling', 'views'],
+        files: [
+          'assets/components.css (focus / active / disabled rules; selected-filter row styling)',
+          'js/views.js (filter state field; click handlers on .shelf-filter-row that update the field and re-render the grid; filter-empty branch in renderShelf)'
+        ],
+        acceptance: [
+          'Every clickable element has visible focus, active-press, and disabled states where applicable',
+          'Clicking a theme or author row filters the grid to matching books in real time',
+          'Selecting a filter then clicking it again clears it (or the multi-select equivalent — decided at session time)',
+          'When filters select zero books, the filter-empty copy renders ("Nothing on the shelf matches." / "Clear your filters or add a new book.")',
+          'Mobile filter panel filters behave identically to desktop',
+          'Regression: 3.10a visual treatment unchanged'
+        ],
+        evidence: [
+          'Keyboard tab through the shelf surface and confirm focus rings visible on every interactive element',
+          'Live URL: click a theme row -> grid filters to matching books; click the row again -> filter clears',
+          'Live URL: filter to a no-match selection -> filter-empty empty state renders'
+        ],
+        rollback: 'Filter behavior is additive over 3.10a markup; revert the click handlers and the filter state field to restore inert behavior.',
+        risks: [
+          'Builder-Intellectual fence: this stage stops at theme + author filtering. Status, year, rating, and other axes are out of scope',
+          'Multi-select vs single-select is a real design call at session time; do not pick silently',
+          'Filter-state-in-memory means refreshes lose selection. Acceptable for 3.10b; URL-routing is a known future improvement'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.10a Shipped, sidebar markup intact, .shelf-filter-row click target exists on every theme + author row.\n\n' +
+'Stage 1: focus / active / disabled visual states across all interactive elements in components.css. --river for focus rings.\n\n' +
+'Stage 2: filter state field decision (single-select vs multi-select per section) + selected-filter row styling.\n\n' +
+'Stage 3: wire .shelf-filter-row click handlers to mutate the filter state and trigger renderShelf; renderShelf reads the filter state and emits only matching books; filter-empty branch flips the empty-state copy.\n\n' +
+'Stage 4: verify mobile parity (filter panel rows behave identically); regression sweep on 3.10a surfaces.'
+      },
+
+      {
+        id: 's3-10c',
+        num: '3.10c',
+        name: 'Remaining surfaces — book detail, settings, transparency, arc view, editor modals',
+        depConfirm: '3.10a Shipped (shelf + nav + cards styled). 3.10b Shipped (interactive states established as a pattern).',
+        purpose: 'Third substage under the 3.10 visual pass. Apply the locked design system to every Stage 3 surface that 3.10a left unstyled. Book detail, settings panel (3.4b register-default toggles), transparency view (the "what does Yumi see" diagnostic), arc view (3.8/3.9), and the editor modals (journal, marginalia, artifact, shelf-add, bulk-add) — all consistent with the Oshun palette and the typography hierarchy.',
+        scope: [
+          'Book detail: header hierarchy, ISBN row styling, six-branch (status, hasArtifact) affordance cluster reconciliation (the 3.7 link-vs-button intentional split — Open Artifact as <a>, creation CTAs as <button>)',
+          'Settings panel (3.4b): register-default toggle treatment',
+          'Transparency view: diagnostic-distinct visual treatment so the user reads it as a monitored / observed surface, not the primary writing surface. Deferred from 3.6',
+          'Arc view (3.8 + 3.9): card / list treatment consistent with shelf cards',
+          'Editor modals: shelf-add, bulk-add, journal editor, marginalia editor, artifact editor — consistent typography, button hierarchy, modal chrome',
+          'Cross-surface seams: any structural duplication revealed by the styling pass consolidated into shared component classes where appropriate'
+        ],
+        nonGoals: [
+          'No reflow of any 3.10a or 3.10b surface',
+          'No new functional behavior',
+          'No animation system (Stage 4 polish)',
+          'No icon system'
+        ],
+        subsystems: ['styling'],
+        files: [
+          'assets/components.css (additive — each surface gets its own block)',
+          'Possible: js/views.js for additive class-hook attributes if any surface lacks the hooks the spec needs (no behavioral changes)'
+        ],
+        acceptance: [
+          'Every Stage 3 surface visually consistent with the Oshun palette and the typography hierarchy',
+          'Book detail header reconciled (Open Artifact link visually coherent with the creation CTAs despite the intentional <a>/<button> semantic split)',
+          'Transparency view reads as diagnostic / monitored (distinct from primary writing surfaces)',
+          'Mobile parity across all surfaces'
+        ],
+        evidence: [
+          'Live URL visual inspection across all named surfaces, desktop and mobile',
+          'grep -nE "#[0-9a-fA-F]{3,6}" assets/components.css remains 0',
+          'Regression sweep: every interactive flow (mark finished, save artifact, add marginalia, sign in, settings toggle) functional'
+        ],
+        rollback: 'Styling-only changes per surface; revert per-surface CSS block if a layout breaks.',
+        risks: [
+          'Builder-Intellectual fence: ship the listed surfaces; consolidate duplication ONLY where 3.10c\'s pass reveals real overlap',
+          'Editor modals share structural seams with the shelf editor; the consolidation question lands here'
+        ],
+        promptSkeleton:
+'Stage 0: inventory unstyled classes across the listed surfaces (book detail, settings, transparency, arc view, editor modals). Confirm 3.10b Shipped.\n\n' +
+'Stage 1: book detail visual pass — header, ISBN row, six-branch affordance cluster reconciliation.\n\n' +
+'Stage 2: settings panel + transparency view (diagnostic-distinct treatment).\n\n' +
+'Stage 3: arc view + editor modals; cross-surface consolidation where revealed.\n\n' +
+'Stage 4: live verification + mobile parity + regression sweep.'
+      },
+
+      {
+        id: 's3-10d',
+        num: '3.10d',
+        name: 'Cover-fetch adapter — title-only imports',
+        depConfirm: 'Firestore 2 Shipped (cover-fetch save path calls markBooksDirty before saveState at js/views.js:952, so fetched covers persist to Firestore). 3.5c bulk add Shipped (the importer that introduces title-only entries).',
+        purpose: 'Fourth substage under 3.10. The bulk importer accepts BOTH ISBN-form lines (matching strict regex) AND title-form lines (everything else); fetchAndApplyCover and fetchBookByIsbn are ISBN-only. Title-imported books therefore never receive an automatic cover fetch — a real-world consequence: Preston\'s 109-book library imported in May 2026 with coverUrl: null on every record because the input was titles, not ISBNs. 3.10d adds a fetchBookByTitle adapter (Google Books q=intitle:<title>+inauthor:<author>) plus a backfill pass over books where coverUrl === null. Persistence to Firestore is already correct via the existing markBooksDirty + saveState chokepoint; this stage only adds the adapter and the backfill loop.',
+        scope: [
+          'fetchBookByTitle(title, author, callback) in integrations.js — Google Books q=intitle:<title>+inauthor:<author> returning a normalized result matching fetchBookByIsbn\'s shape ({ isbn, title, author, coverUrl, publishYear, openLibraryWorkId } — workId likely null)',
+          'Backfill UI: a "Resolve missing covers" affordance (shelf header or settings) that iterates books with coverUrl === null',
+          'Per-book resolution: prefer book.isbn if non-empty (existing fetchAndApplyCover path is free); otherwise call fetchBookByTitle with book.title (and book.author when present)',
+          'On success: patch state.books[bookId].isbn (if API returned one) and state.books[bookId].coverUrl; markBooksDirty(); saveState() — Firestore write fires per Firestore 2',
+          'Sequential queue, rate-limit-friendly: one fetch in flight at a time (same pattern as the existing bulk-add isbnQueue.processNext)',
+          'Fail-soft: a book without a findable cover remains at coverUrl: null; backfill skips and continues'
+        ],
+        nonGoals: [
+          'No author-only search (must have title)',
+          'No fuzzy-matching beyond Google Books\' built-in',
+          'No manual cover-URL override UI (book detail\'s ISBN field already re-fetches via fetchAndApplyCover; that path is unchanged)',
+          'No persistence-layer work — Firestore 2 already handles cover writes correctly'
+        ],
+        subsystems: ['integrations', 'views'],
+        files: [
+          'js/integrations.js (new fetchBookByTitle adapter)',
+          'js/views.js (backfill button + sequential queue + per-book resolution)'
+        ],
+        acceptance: [
+          'A book with title + author but no ISBN and no coverUrl resolves a cover via fetchBookByTitle and renders it on the shelf',
+          'The 109-book title-imported library (Preston\'s personal case) backfills covers for the majority of books that have findable Google Books matches',
+          'Books without findable matches stay at coverUrl: null; backfill skips without throwing',
+          'Resolved covers persist to Firestore via the existing markBooksDirty + saveState path (verifiable via the Firestore Console doc)'
+        ],
+        evidence: [
+          'Live URL: trigger backfill; watch Network for Google Books requests; covers populate progressively on the shelf',
+          'Firebase Console: /userBooks/{uid} doc shows updated coverUrl values on books that resolved',
+          'Books that did not resolve remain at coverUrl: null; the placeholder block renders cleanly'
+        ],
+        rollback: 'Adapter + backfill are additive; revert the commit to restore null-cover-on-title-import behavior.',
+        risks: [
+          'Google Books rate limiting on 109 sequential calls — sequential queue with throttling mitigates; verify under real load',
+          'Google Books returning the wrong book for ambiguous titles — title-only matching is inherently fuzzy; flag for manual override via book detail ISBN field if a mis-match ships',
+          'Builder-Intellectual fence: ship the adapter + the backfill; do not extend to author-only search or fuzzy-match logic'
+        ],
+        promptSkeleton:
+'Stage 0: confirm Firestore 2 Shipped (markBooksDirty at fetchAndApplyCover save site js/views.js:952). Confirm fetchBookByIsbn shape so the new adapter matches.\n\n' +
+'Stage 1: integrations.js — fetchBookByTitle(title, author, callback) calling Google Books q=intitle+inauthor. Normalized return shape. Same callback contract as fetchBookByIsbn.\n\n' +
+'Stage 2: views.js — backfill UI (button on shelf or settings); sequential queue iterating books with coverUrl === null; per-book ISBN-then-title resolution; markBooksDirty + saveState on each success.\n\n' +
+'Stage 3: live verification on the 109-book library; rate-limit check; failed-match handling.'
       }
     ]
   },
@@ -3002,6 +3230,168 @@ var STAGES = [
       'Does Phase 1 have a fixed end date, or does it run until N learnings accumulate?'
     ],
     substages: []
+  },
+
+  // ----- FIRESTORE PERSISTENCE (off the numbered phase track) -----
+  {
+    id: 's-firestore',
+    num: 'Firestore',
+    name: 'Firestore persistence',
+    stageStatus: 'shipped',
+    active: false,
+    summary: 'Praxis stored a user\'s books in localStorage only until 2026-05-17 — a DevTools "Clear site data" destroyed Preston\'s 25-book shelf with no recovery (second such loss across Preston\'s apps after a similar incident in an earlier project). The fix: Firestore as source of truth, localStorage demoted to an offline read cache. One doc per user at /userBooks/{uid}, denormalized as { schemaVersion, bookIds: [...], books: { bookId: {...} }, updatedAt: serverTimestamp }. Optimistic-UI read on auth-resolve; fire-and-forget write per book mutation. Off the numbered phase track because it is cross-cutting infrastructure that shipped during Stage 3 work — kept here so it has a real home in the roadmap.',
+    nonGoals: [
+      'No offline-write queue (Stage 2 fires fire-and-forget; offline writes are lost — acceptable per the optimistic-UI contract: localStorage holds the data, the next online save reconciles)',
+      'No conflict resolution beyond last-write-wins via serverTimestamp',
+      'No sharing / multi-user-per-book / shared shelves (out of scope for personal Praxis)',
+      'No subcollections — single doc per user, denormalized (1MB doc limit accommodates ~2000 books, well above any personal-shelf use case)',
+      'No Firebase CLI workflow — rules are pasted into the Firebase Console manually (Node blocked on the work machine)'
+    ],
+    dependencies: 'Firebase Auth (already shipped in Stage 1). Firestore SDK loaded by index.html since Stage 1 but dormant until this stack.',
+    substages: [
+
+      {
+        id: 's-fire-1',
+        num: 'Firestore 1',
+        name: 'Security rules + read path',
+        depConfirm: 'firebase.auth() already wired in integrations.js. Firestore SDK loaded by index.html. No Firestore code in the app yet.',
+        purpose: 'Land the security rules in the repo (deployable by paste into Firebase Console — no CLI) and the READ path that fetches a signed-in user\'s book doc on auth-resolve and REPLACE-merges it into in-memory state, with a re-render after a successful merge.',
+        scope: [
+          'firestore.rules in the repo: per-user rule on /userBooks/{uid} (allow read, write if request.auth.uid == uid). Deployed by pasting into Firebase Console',
+          'firebase.json in the repo: firestore.rules pointer (future-proof for CLI use even though CLI is not used today)',
+          'loadBooksFromFirestore(uid, callback) in integrations.js: single-arg typed callback with three outcomes — { status: "found", data }, { status: "absent" }, { status: "error", error }',
+          'onAuthStateChanged signed-in branch extended: after the existing sv("praxis_user") cache write, fire loadBooksFromFirestore; on "found" REPLACE-merge (clear this uid\'s previously-known bookIds from state.books, then write the remote set), saveState, window.views.renderRoute() to repaint the current route',
+          'Defensive guards: typeof window.views check before renderRoute; ensureUser(uid) before touching state.userBooks[uid]'
+        ],
+        nonGoals: [
+          'No Firestore WRITES (Firestore 2)',
+          'No migration of pre-existing localStorage shelves (Firestore 3)',
+          'No Firebase CLI workflow'
+        ],
+        subsystems: ['integrations', 'state', 'views'],
+        files: [
+          'firestore.rules (new — per-user rule)',
+          'firebase.json (new — rules pointer)',
+          'js/integrations.js (loadBooksFromFirestore + onAuthStateChanged extension)',
+          '.gitignore (separate housekeeping commit — .claude/ session scratch ignored after the SW-bump-style hygiene check)'
+        ],
+        acceptance: [
+          'Signed-in cold load fires a Firestore read to /userBooks/{uid}',
+          'Absent-doc branch handled cleanly (Stage 1 expected path for every user pre-Firestore-2)',
+          'Found-doc branch REPLACE-merges the doc into state.books and state.userBooks[uid], saveState, renderRoute',
+          'No uncaught Promise rejection; the cached localStorage shelf renders normally on a failed fetch'
+        ],
+        evidence: [
+          'Network tab shows a Firestore .get to /userBooks/{uid} on sign-in',
+          'Console shows the loadBooksFromFirestore typed-result log ("merged remote doc, N books" / "no remote doc for uid, keeping cache" / "fetch failed, keeping cache")',
+          'Regression: shelf, sign-in/out, routing all intact'
+        ],
+        rollback: 'Stage 1 added a read + two inert repo files. Revert restores localStorage-only behavior; the published Firestore rule stays in place harmlessly.',
+        risks: [
+          'Rule deploy is the security gate — Preston pastes into Firebase Console; until published, the DB is either locked or wide-open',
+          'REPLACE merge semantics must be correct even though Stage 1 always hits the absent branch (Stage 2/3 exercise the merge); union/append would resurrect deleted entries',
+          'Cold-load timing: renderShelf paints from localStorage BEFORE auth resolves; the auth listener\'s renderRoute call is what repaints with Firestore data when it arrives'
+        ],
+        promptSkeleton:
+'(Shipped Firestore 1 — this skeleton documents the executed sequence)\n\n' +
+'Stage 0: pre-flight on integrations.js, state.js, views.js confirmed Firestore SDK loaded but unused; auth flow via onAuthStateChanged; getCurrentUser reads praxis_user localStorage cache synchronously; renderShelf reads state.* synchronously and assumes populated. fetchBookByIsbn confirmed as the house-style single-arg callback adapter. Stage 1 read must wire from onAuthStateChanged signed-in branch and call window.views.renderRoute on found-doc merge.\n\n' +
+'Stage 1: created firestore.rules (per-user rule, version 2 syntax) + firebase.json (CLI pointer) in the repo. loadBooksFromFirestore(uid, callback) in integrations.js, typed-result callback distinguishing found / absent / error. onAuthStateChanged signed-in branch fires loadBooksFromFirestore after the existing praxis_user cache write; on "found" REPLACE-merge (clear this uid\'s prior bookIds from state.books, then write remote bookIds + books map), saveState, window.views.renderRoute (with defensive typeof guard). [Commits dc90943, a1dbc45 — a1dbc45 also gitignored .claude/ session scratch.]\n\n' +
+'Constitutional verification: principle — durability over device. A signed-in user\'s books are no longer hostage to a single browser\'s localStorage. The absent-doc path until Firestore 2/3 land is the expected hit for every user; the cached shelf stays intact on a failed fetch (optimistic-UI contract).'
+      },
+
+      {
+        id: 's-fire-2',
+        num: 'Firestore 2',
+        name: 'Write path (saveState chokepoint + dirty flag)',
+        depConfirm: 'Firestore 1 Shipped (read path operational, security rules deployed via Firebase Console).',
+        purpose: 'Mirror every book mutation to /userBooks/{uid} so adds and edits are durable across cache clears, browser switches, and devices. Choice locked at Stage 0: Option A+ (saveState chokepoint + dirty flag). 9 book-mutation callsites (10 logical sites; sites 4 and 5 share the bulk-add loop saveState fence) each call markBooksDirty() after mutating; saveState consumes the flag and fires a fire-and-forget Firestore write. localStorage write stays synchronous; Firestore write is best-effort eventually-consistent on top.',
+        scope: [
+          'var booksDirty = false; + function markBooksDirty() in state.js, next to the state object initializer',
+          'saveState() extended: synchronous sv() always; then if booksDirty, clear flag, resolve user via getCurrentUser(), build payload via buildUserBookDoc, fire saveBooksToFirestore fire-and-forget. Defensive typeof guards on getCurrentUser / saveBooksToFirestore / buildUserBookDoc mirror the existing typeof-ensureUser idiom in views.js — if integrations.js failed to load, saveState still does its localStorage write and does not throw',
+          'buildUserBookDoc(uid) in integrations.js: { schemaVersion, bookIds, books (filtered to this uid\'s bookIds), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }',
+          'saveBooksToFirestore(uid, payload, callback) in integrations.js: .set() full-doc overwrite matching the REPLACE read semantics; single-arg typed callback { status: "ok" } / { status: "error", error }; idempotent fire-once',
+          'markBooksDirty() inserted at the 9 book-mutation saveState fences in views.js (single add, single-add metadata backfill, cover-fetch save, bulk-add per-entry loop body, bulk metadata backfill, Mark Finished, status flip, ISBN clear, ISBN update)'
+        ],
+        nonGoals: [
+          'No migration of pre-existing localStorage shelves (Firestore 3)',
+          'No flush-on-unload / beforeunload handler',
+          'No blocking on the Firestore write — fire-and-forget only',
+          'No .update / .delete / writeBatch / runTransaction; .set() full-doc overwrite is the only write call site'
+        ],
+        subsystems: ['state', 'integrations', 'views'],
+        files: [
+          'js/state.js (booksDirty flag, markBooksDirty, saveState extension)',
+          'js/integrations.js (buildUserBookDoc + saveBooksToFirestore)',
+          'js/views.js (markBooksDirty() inserted at 9 book-mutation callsites)'
+        ],
+        acceptance: [
+          'Add a book via the UI -> a Firestore .set fires to /userBooks/{uid}; the doc appears in the Firebase Console with bookIds, books, updatedAt',
+          'Edit a book (status flip, ISBN update, etc.) -> .set fires; updatedAt advances',
+          'Non-book saveState callers (Notebook entry save, Artifact saves, arcs saves, Yumi memory writes — 9 total across views.js and yumi-brain.js) leave the flag unset and do NOT trigger a Firestore book-doc write',
+          'Round-trip durability: add book -> Clear site data -> sign in -> book returns from Firestore via Firestore 1 read path. THIS is the proof Firestore 2 works'
+        ],
+        evidence: [
+          'Round-trip durability test passed live',
+          '109-book bulk re-import via Preston\'s personal library confirmed via console log "loadBooksFromFirestore: merged remote doc, 109 books" on subsequent cold load',
+          'Per-iteration firing in the bulk-add loop verified — each book triggers its own Firestore write (Network tab shows N .set calls for an N-book import)',
+          'Firebase Console: /userBooks/{your-uid} doc holds the full bookIds + books map after Stage 2 deploys'
+        ],
+        rollback: 'Stage 2 added a write helper + 9 instrumentation calls. Revert restores synchronous-localStorage-only behavior; read path (Firestore 1) independent and stays intact.',
+        risks: [
+          'Wiring reachability: saveState in state.js calls saveBooksToFirestore in integrations.js — forward reference across script load order. Resolved cleanly: saveState only runs post-DOMContentLoaded, by which time integrations.js has evaluated; vanilla JS name resolution is at call time, not definition time. Defensive typeof guards add belt-and-braces',
+          'serverTimestamp() composability with .set() in the compat SDK — confirmed clean; produces a server-stamped updatedAt',
+          'Bulk-add per-iteration saveState contract preserved: each iteration marks dirty + saves; per-entry crash-consistency (mid-import tab close leaves localStorage consistent) holds',
+          'Future drift: a future book mutation that calls saveState without markBooksDirty silently misses Firestore. Same risk under Option B; mitigated by the chokepoint being one grep away'
+        ],
+        promptSkeleton:
+'(Shipped Firestore 2 — this skeleton documents the executed sequence)\n\n' +
+'Stage 0: pre-flight identified 9 distinct saveState callsites covering 10 logical book-mutation sites in views.js. Confirmed saveState wiring reachability — state.js -> integrations.js forward reference resolves at call time. serverTimestamp() composes cleanly with compat SDK .set(). 9 non-book saveState callers (Notebook, Artifact, arcs, Yumi memory) confirmed as separate paths that must stay unaffected.\n\n' +
+'Stage 1: state.js — var booksDirty + function markBooksDirty; saveState extended with synchronous sv() first (durability guarantee preserved), then if booksDirty: clear flag, resolve user, build payload via buildUserBookDoc, fire saveBooksToFirestore. Defensive typeof guards on every cross-file reference. Callback only logs (ok) / warns (failure); no state mutation, no re-render.\n\n' +
+'Stage 2: integrations.js — buildUserBookDoc(uid) emits the denormalized per-user doc payload with books filtered to this uid\'s bookIds and updatedAt = serverTimestamp. saveBooksToFirestore(uid, payload, callback) does .set() full-doc overwrite, typed callback, idempotent fire-once. .set() is the only write call site (verified by grep on the diff: 0 .update / .delete / writeBatch / runTransaction).\n\n' +
+'Stage 3: views.js — markBooksDirty() inserted at 9 book-mutation saveState fences. Each insertion is one line; total +9 lines plus 3 braces-expansions for conditional metaChanged saveStates. Bulk-add per-iteration firing verified by inspection (each iteration\'s saveState sees the flag set by that iteration\'s markBooksDirty). [Commit 4d167e9.]\n\n' +
+'Constitutional verification: principle — durability over device. Round-trip durability proven (add -> clear -> sign in -> book returns). localStorage write stays synchronous (bulk-add crash-consistency contract preserved). Fire-and-forget Firestore write does not block, does not re-render, does not mutate state.'
+      },
+
+      {
+        id: 's-fire-3',
+        num: 'Firestore 3',
+        name: 'Migration of pre-existing localStorage-only shelves',
+        deferred: true,
+        depConfirm: 'Firestore 2 Shipped (write path operational).',
+        purpose: 'One-time per-user-per-device migration: on first signed-in load after Firestore 2, if state.userBooks[uid].bookIds.length > 0 but the Firestore doc is absent, build the doc from current state and write it. So pre-Firestore localStorage shelves migrate to Firestore without the user having to re-touch every book to fire a save. Deferred because Preston\'s personal case was covered by the bulk re-import — the 109-book library was re-added via bulk-add post-Firestore-2, and each bulk-add entry fires a Firestore write per book; the import WAS the migration. Stage 3 is now only relevant for OTHER users on OTHER devices with pre-existing localStorage shelves that have not been re-touched. Comes back if/when another Praxis user with an existing localStorage shelf signs in.',
+        scope: [
+          'In integrations.js loadBooksFromFirestore "absent" branch: detect the migrate-up case — state.userBooks[uid].bookIds.length > 0 (localStorage has books) AND result.status === "absent" (no remote doc)',
+          'Build the doc via buildUserBookDoc(uid) from Firestore 2',
+          'Fire saveBooksToFirestore fire-and-forget (same contract as Firestore 2 writes)',
+          'No re-render needed (state already reflects the localStorage data)',
+          'Idempotency: skip if subsequent loads find the doc (status: "found"); the REPLACE-merge handles that'
+        ],
+        nonGoals: [
+          'No conflict resolution — the doc is absent, nothing to conflict with',
+          'No backup of localStorage data before migration (it stays in localStorage as the cache; nothing to back up)',
+          'No retry queue if the migration write fails (next saveState reconciles)'
+        ],
+        subsystems: ['integrations'],
+        files: ['js/integrations.js (extend the loadBooksFromFirestore absent-branch handler to fire a migrate-up write)'],
+        acceptance: [
+          'A user with a pre-Firestore-2 localStorage shelf signs in on a Firestore-2+ build -> the absent-doc branch fires the migrate-up write -> Firestore Console shows the populated doc -> next sign-in pulls the doc back (read path)'
+        ],
+        evidence: [
+          'Test: clear Firestore doc for a test uid (or use a fresh uid), pre-seed localStorage with state.userBooks/state.books, sign in -> Firebase Console shows the doc populated',
+          'Idempotency check: second sign-in on the same device hits the "found" branch (the REPLACE-merge), not the absent-migrate branch'
+        ],
+        rollback: 'Migration is one-shot per uid per device; nothing to roll back beyond reverting the absent-branch extension.',
+        risks: [
+          'Builder-Intellectual fence: migration is a single condition + a single write; do not over-architect with retry queues, conflict detection, or partial-doc merging',
+          'Race condition: if a user is signed in on two devices at once and BOTH have absent docs, both trigger migrate-up writes; last-write-wins via serverTimestamp. Acceptable for Stage 3'
+        ],
+        promptSkeleton:
+'Stage 0: confirm Firestore 2 Shipped. Locate the loadBooksFromFirestore absent-branch handler in integrations.js. Confirm buildUserBookDoc + saveBooksToFirestore reachable.\n\n' +
+'Stage 1: extend the absent-branch handler — if state.userBooks[uid] && state.userBooks[uid].bookIds.length > 0, build payload via buildUserBookDoc(uid), fire saveBooksToFirestore (fire-and-forget). Log the migrate-up event for verification.\n\n' +
+'Stage 2: verification — fresh uid with pre-seeded localStorage signs in; Firestore Console shows the doc populated; second sign-in hits the found branch, not migrate-up.'
+      }
+
+    ]
   }
 ];
 
@@ -3113,6 +3503,12 @@ var SUBSYSTEMS = [
 // =====================================================================
 
 var DEFERRED = [
+  {
+    name: 'Stale-while-revalidate SW rework',
+    dateDeferred: '2026-05-17',
+    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has bitten the project three times — stale components.css mid-3.10a, stale views.js post-Firestore Stages 1-2, and a second stale views.js observation that turned out to be the same root cause. Each fix was a one-line cache-version bump; the underlying mechanism makes recurrence near-certain.',
+    comesBackWhen: 'Before Phase 1 testing, or sooner if the next SW staleness blocks a deploy. Rework options: stale-while-revalidate (return cached, fetch fresh in background, update cache for next load) or network-first for app JS/CSS (HTML + manifest stay pre-cached, everything else fetched live).'
+  },
   {
     name: 'TTS / spoken Yumi',
     dateDeferred: '2026-05-05',
