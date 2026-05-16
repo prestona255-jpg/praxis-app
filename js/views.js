@@ -523,6 +523,33 @@ function openJournalEditor() {
   });
 }
 
+// Theme taxonomy mirror of docs/themes.md (locked 2026-05-15).
+// COUNT = 15. File order is authoritative -- DO NOT alphabetize or
+// reorder. If docs/themes.md ever changes, this array changes with
+// it (same number of entries, same labels, same order). The sidebar
+// filter list in renderShelf reads exclusively from this array;
+// docs/themes.md cannot be loaded at runtime in the browser, so this
+// is the in-code mirror of that authoritative source. Stage 3.10a
+// Stage 2 surfaces these as inert text rows; filter behavior is
+// 3.10b.
+var SHELF_THEMES = [
+  'Philosophy & wisdom',
+  'Critical theory & pedagogy',
+  'Power & systems',
+  'Political economy & society',
+  'Mind & behavior',
+  'History & memory',
+  'Liberation',
+  'Love & connection',
+  'Grief & witness',
+  'Joy & wonder',
+  'Faith & meaning',
+  'Place & belonging',
+  'Nature & ecology',
+  'Story & imagination',
+  'Craft & practice'
+];
+
 // Stage 3.5a: the Books shelf surface. Reads from state.books and
 // renders one row per record, newest first by addedAt. No filtering,
 // no add-book affordance, no editor in this sub-stage -- those land
@@ -597,20 +624,106 @@ function renderShelf() {
 
   wrap.appendChild(header);
 
+  // 3.10a Stage 2: two-column layout below the full-width header.
+  // .shelf-layout holds .shelf-sidebar (left, 220px, transparent --
+  // dissolves into the page, not a card) and .shelf-main (right,
+  // flex-fills). The editor host moves inside .shelf-main so it sits
+  // above the grid in the right column; getElementById lookups in
+  // openShelfEditor / processBulkLines are position-independent
+  // (Q1 grep 2026-05-16 confirmed zero dependencies on the previous
+  // direct-child-of-.shelf position).
+  //
+  // SIDEBAR IS INERT IN STAGE 2. The theme + author rows render but
+  // do nothing on click; filter behavior is 3.10b. No event listeners
+  // are attached anywhere in this block, no checkboxes wired to
+  // anything, no selected-state field on state.*.
+
+  var booksMap = state.books || {};
+
+  // Author dedupe + alphabetic sort for the sidebar's "Filter by
+  // author" section. Object-as-set for dedupe; default lexicographic
+  // sort (no comparator means no arrow callback). Vanilla.
+  var authorSeen = {};
+  var authors = [];
+  var abid;
+  var abk;
+  for (abid in booksMap) {
+    if (Object.prototype.hasOwnProperty.call(booksMap, abid)) {
+      abk = booksMap[abid];
+      if (abk && abk.author &&
+          !Object.prototype.hasOwnProperty.call(authorSeen, abk.author)) {
+        authorSeen[abk.author] = true;
+        authors.push(abk.author);
+      }
+    }
+  }
+  authors.sort();
+
+  var layout = document.createElement('div');
+  layout.className = 'shelf-layout';
+
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'shelf-sidebar';
+
+  // Theme section -- 15 rows, file order from docs/themes.md mirror.
+  var themeSection = document.createElement('div');
+  themeSection.className = 'shelf-filter-section';
+  var themeLabel = document.createElement('h3');
+  themeLabel.className = 'shelf-filter-label';
+  themeLabel.textContent = 'Filter by theme';
+  themeSection.appendChild(themeLabel);
+  var themeList = document.createElement('ul');
+  themeList.className = 'shelf-filter-list';
+  var ti;
+  var themeRow;
+  for (ti = 0; ti < SHELF_THEMES.length; ti++) {
+    themeRow = document.createElement('li');
+    themeRow.className = 'shelf-filter-row';
+    themeRow.textContent = SHELF_THEMES[ti];
+    themeList.appendChild(themeRow);
+  }
+  themeSection.appendChild(themeList);
+  sidebar.appendChild(themeSection);
+
+  // Author section -- dedup'd alphabetical list from state.books.
+  var authorSection = document.createElement('div');
+  authorSection.className = 'shelf-filter-section';
+  var authorLabel = document.createElement('h3');
+  authorLabel.className = 'shelf-filter-label';
+  authorLabel.textContent = 'Filter by author';
+  authorSection.appendChild(authorLabel);
+  var authorListEl = document.createElement('ul');
+  authorListEl.className = 'shelf-filter-list shelf-filter-list-author';
+  var ai;
+  var authorRow;
+  for (ai = 0; ai < authors.length; ai++) {
+    authorRow = document.createElement('li');
+    authorRow.className = 'shelf-filter-row';
+    authorRow.textContent = authors[ai];
+    authorListEl.appendChild(authorRow);
+  }
+  authorSection.appendChild(authorListEl);
+  sidebar.appendChild(authorSection);
+
+  layout.appendChild(sidebar);
+
+  // Right column: editor host above the grid/empty.
+  var main = document.createElement('div');
+  main.className = 'shelf-main';
+
   // Editor host -- empty on every render; openShelfEditor mounts
-  // its block here on demand. Lives between the header and the
-  // book list so the editor sits visually above existing rows.
+  // its block here on demand. Lives above the book list so the
+  // editor sits visually above existing rows.
   var editorHost = document.createElement('div');
   editorHost.id = 'shelf-editor-host';
-  wrap.appendChild(editorHost);
+  main.appendChild(editorHost);
 
-  // Collect books. Read site is state.books, not state.userBooks --
-  // see brief: userBooks is write-but-not-read in 3.5a so book_test_1
-  // (seeded into state.books in 3.3 console testing but never into
-  // userBooks) stays visible. User-scoping the shelf is a future
-  // seam.
+  // Collect books for the grid. Read site is state.books, not
+  // state.userBooks -- see 3.5a brief: userBooks is write-but-not-
+  // read in 3.5a so book_test_1 (seeded into state.books in 3.3
+  // console testing but never into userBooks) stays visible.
+  // User-scoping the shelf is a future seam.
   var books = [];
-  var booksMap = state.books || {};
   var bid;
   for (bid in booksMap) {
     if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
@@ -627,7 +740,7 @@ function renderShelf() {
     empty.textContent =
       'Books you add will appear here. ' +
       'Nothing has been added yet.';
-    wrap.appendChild(empty);
+    main.appendChild(empty);
   } else {
     var list = document.createElement('div');
     list.className = 'shelf-list';
@@ -635,8 +748,11 @@ function renderShelf() {
     for (i = 0; i < books.length; i++) {
       list.appendChild(renderShelfBook(books[i]));
     }
-    wrap.appendChild(list);
+    main.appendChild(list);
   }
+
+  layout.appendChild(main);
+  wrap.appendChild(layout);
 
   host.appendChild(wrap);
 }

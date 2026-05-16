@@ -406,3 +406,119 @@
 }
 
 /* ===== END SHELF PAGE HEADER + ACTION BUTTONS ===== */
+
+
+/* ===== SHELF LAYOUT + FILTER SIDEBAR + GRID -- Stage 3.10a Stage 2 =====
+   Two-column container below the page header. Sidebar 220px on the
+   left, grid flex-fills the right. The sidebar is transparent --
+   dissolves into the page background, not a card; no fill, no border,
+   no radius. Sticky on desktop so the filter list stays visible
+   while the grid scrolls. The sidebar's theme + author rows are
+   INERT in Stage 2 -- they render but do not filter anything;
+   click handlers and selected-state styling are 3.10b.
+
+   The .shelf container gets the max-width + horizontal padding
+   here; it had no rule before Stage 2. The Stage 1 header lives
+   inside .shelf so it inherits the container width -- this is
+   intentional, matches the locked spec (page header sits over the
+   same 1280px container as the two-column layout below).
+
+   Card interiors are NOT styled here (Stage 3). Mobile chrome
+   (hamburger, stacked header, sidebar -> Filter panel collapse) is
+   Stage 4; only the grid's column-count breakpoints land here. */
+
+.shelf {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.shelf-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.shelf-sidebar {
+  background: transparent;
+  border: none;
+  position: sticky;
+  top: 88px;
+  align-self: start;
+}
+
+.shelf-filter-section + .shelf-filter-section {
+  margin-top: 48px;
+}
+
+.shelf-filter-label {
+  margin: 0 0 16px 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.shelf-filter-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shelf-filter-list-author {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.shelf-filter-row {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: default;
+  transition: color 120ms ease;
+}
+
+.shelf-filter-row:hover {
+  color: var(--ink);
+}
+
+.shelf-main {
+  /* min-width: 0 lets the grid track shrink below its intrinsic
+     content size on narrow viewports -- without it, long card titles
+     can push the main column wider than its 1fr allotment and
+     squeeze the sidebar. */
+  min-width: 0;
+}
+
+.shelf-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 32px;
+  row-gap: 48px;
+}
+
+@media (max-width: 1099px) {
+  .shelf-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 759px) {
+  .shelf-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 499px) {
+  .shelf-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== END SHELF LAYOUT + FILTER SIDEBAR + GRID ===== */
