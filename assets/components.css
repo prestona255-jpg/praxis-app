@@ -246,3 +246,163 @@
 }
 
 /* ===== END YUMI PANEL ===== */
+
+
+/* ===== TOP NAV -- Stage 3.10a Stage 1 =====
+   Persistent bar at the top of every route. Two items (Books,
+   Notebook) plus a left-aligned Praxis wordmark. Active route is
+   marked by a 2px gold underline toggled in renderRoute() (Stage
+   A). The 2px line's space is reserved on every link via a
+   transparent border-bottom so toggling the active class does not
+   shift layout. Mobile (56px height, hamburger panel) is Stage 4
+   -- this block is desktop-only. */
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav-wordmark {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.app-nav-list {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-nav-link {
+  /* Reserve the active-underline's 2px so toggling the active class
+     does not push the link text up or down. Hover and active swap
+     in the border-bottom color; spec wants hover thinner than active
+     but the visual distinction is carried by color contrast (gold
+     vs ink-3) rather than literal 1px-vs-2px geometry. */
+  display: inline-block;
+  padding-bottom: 8px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.app-nav-link:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink-3);
+}
+
+.app-nav-link.app-nav-link-active,
+.app-nav-link.app-nav-link-active:hover {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+
+/* ===== END TOP NAV ===== */
+
+
+/* ===== SHELF PAGE HEADER + ACTION BUTTONS -- Stage 3.10a Stage 1 =====
+   /books header. Title-block left, action buttons top-right. CSS
+   grid carries the layout so no wrapper divs were added to
+   renderShelf() -- the four direct children (.shelf-title,
+   .shelf-subtitle, .shelf-new-book, .shelf-new-book-bulk OR
+   .shelf-signin-prompt) place themselves via explicit grid-column
+   / grid-row. Signed-out branch has only the sign-in prompt; it
+   spans the action columns so it sits where the buttons would. */
+
+.shelf-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: start;
+  padding: 48px 0 32px 0;
+}
+
+.shelf-title {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.shelf-subtitle {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.shelf-new-book,
+.shelf-new-book-bulk,
+.shelf-signin-prompt {
+  grid-row: 1;
+  align-self: start;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 120ms ease,
+              border-color 120ms ease,
+              color 120ms ease;
+}
+
+.shelf-new-book {
+  grid-column: 2;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+}
+
+.shelf-new-book:hover {
+  background: var(--br-deep);
+}
+
+.shelf-new-book-bulk {
+  grid-column: 3;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+
+.shelf-new-book-bulk:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.shelf-signin-prompt {
+  grid-column: 2 / span 2;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+}
+
+.shelf-signin-prompt:hover {
+  background: var(--br-deep);
+}
+
+/* ===== END SHELF PAGE HEADER + ACTION BUTTONS ===== */

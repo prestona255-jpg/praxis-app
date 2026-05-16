@@ -541,7 +541,7 @@ function renderShelf() {
 
   var title = document.createElement('h1');
   title.className = 'shelf-title';
-  title.textContent = 'Books';
+  title.textContent = 'Your shelf';
   header.appendChild(title);
 
   // Auth-aware add affordance. Mirrors renderBookDetail at
@@ -551,6 +551,22 @@ function renderShelf() {
   // and book-detail surfaces).
   var user = getCurrentUser();
   if (user) {
+    // Stage 3.10a Stage 1: book-count subtitle. Signed-in branch
+    // only -- signed-out users have no uid and therefore no
+    // userBooks bucket to count against (Q1 resolution 2026-05-15).
+    // Singular case is "1 BOOK", plural "N BOOKS"; both uppercase
+    // because the .shelf-subtitle rule applies text-transform but
+    // we keep the source string uppercase too so the DOM matches
+    // what the user sees and assistive tech reads.
+    var subtitle = document.createElement('p');
+    subtitle.className = 'shelf-subtitle';
+    var bookCount = (state.userBooks && state.userBooks[user.uid] &&
+                     state.userBooks[user.uid].bookIds &&
+                     state.userBooks[user.uid].bookIds.length) || 0;
+    var bookNoun = bookCount === 1 ? 'BOOK' : 'BOOKS';
+    subtitle.textContent = bookCount + ' ' + bookNoun;
+    header.appendChild(subtitle);
+
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
     newBtn.className = 'shelf-new-book';
