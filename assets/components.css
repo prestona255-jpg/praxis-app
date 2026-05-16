@@ -528,4 +528,19 @@
   }
 }
 
+/* Stage 2 fix 2: cap cover-image width inside the card box. The
+   minmax(0,1fr) tracks let columns shrink, but an unconstrained
+   <img> still renders at its natural pixel width and overflows
+   visually outside the column even when the grid track stays
+   correct. Constraining the image to 100% of its container width
+   (with height: auto preserving aspect ratio) is the minimum
+   needed to stop page-level horizontal overflow. Full card chrome
+   -- fixed cover-area height, object-fit, padding, border, title /
+   author / pill styling -- lands in Stage 3. */
+.shelf-book-cover {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* ===== END SHELF LAYOUT + FILTER SIDEBAR + GRID ===== */
