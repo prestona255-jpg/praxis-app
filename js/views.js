@@ -766,17 +766,26 @@ function renderShelfBook(book) {
 
   // 3.5b: cover thumbnail or placeholder block. The truthy check
   // correctly treats null, undefined, and '' as missing-cover.
+  // 3.10a Stage 3: both branches now mount inside a shared
+  // .shelf-book-cover-area wrapper so the fixed 200px cover-area
+  // height applies uniformly whether the card has an image or a
+  // placeholder. Wrapper is purely structural -- no behavior, no
+  // event listeners. Future surfaces (Stage 4 mobile 160px, overlay
+  // affordances) hang off this container.
+  var coverArea = document.createElement('div');
+  coverArea.className = 'shelf-book-cover-area';
   if (book.coverUrl) {
     var cover = document.createElement('img');
     cover.className = 'shelf-book-cover';
     cover.src = book.coverUrl;
     cover.alt = '';
-    card.appendChild(cover);
+    coverArea.appendChild(cover);
   } else {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'shelf-book-cover-placeholder';
-    card.appendChild(coverPlaceholder);
+    coverArea.appendChild(coverPlaceholder);
   }
+  card.appendChild(coverArea);
 
   var titleEl = document.createElement('h2');
   titleEl.className = 'shelf-book-title';
@@ -793,9 +802,14 @@ function renderShelfBook(book) {
   var meta = document.createElement('div');
   meta.className = 'shelf-book-meta';
 
+  // 3.10a Stage 3: status-modifier class hook for the three pill
+  // variants (reading / finished / want). statusValue is reused for
+  // class and textContent so the fallback 'reading' applies to both
+  // without recomputing book.status || 'reading' twice.
   var statusEl = document.createElement('span');
-  statusEl.className = 'shelf-book-status';
-  statusEl.textContent = book.status || 'reading';
+  var statusValue = book.status || 'reading';
+  statusEl.className = 'shelf-book-status shelf-book-status-' + statusValue;
+  statusEl.textContent = statusValue;
   meta.appendChild(statusEl);
 
   if (book.genre) {

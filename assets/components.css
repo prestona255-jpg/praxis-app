@@ -528,19 +528,160 @@
   }
 }
 
-/* Stage 2 fix 2: cap cover-image width inside the card box. The
-   minmax(0,1fr) tracks let columns shrink, but an unconstrained
-   <img> still renders at its natural pixel width and overflows
-   visually outside the column even when the grid track stays
-   correct. Constraining the image to 100% of its container width
-   (with height: auto preserving aspect ratio) is the minimum
-   needed to stop page-level horizontal overflow. Full card chrome
-   -- fixed cover-area height, object-fit, padding, border, title /
-   author / pill styling -- lands in Stage 3. */
-.shelf-book-cover {
-  max-width: 100%;
-  height: auto;
-  display: block;
+/* ===== END SHELF LAYOUT + FILTER SIDEBAR + GRID ===== */
+
+
+/* ===== BOOK CARD -- Stage 3.10a Stage 3 =====
+   The .shelf-book card is an <a> anchor (whole-card link to
+   #book/<id>). text-decoration: none on the card plus explicit
+   color rules on every text descendant kill the default
+   blue/purple link styling that bled through Stages 1 and 2. The
+   card body is a vertical flex column so the cover area, title,
+   author, and meta stack with their own margins.
+
+   Card surface is --surface-2 (the lighter wheat); the page below
+   sits on --color-surface (the darker wheat) so cards visually
+   lift off the page. The cover-area uses --color-surface so a
+   contained image that does not fill its 200px box visually sits
+   over the page color, with the card itself framing it in the
+   lighter wheat.
+
+   Note on spec naming: the Stage 3 brief referred to
+   var(--color-surface-2) for the card. The palette defines
+   --surface-2 directly (no -color- prefix alias exists for it) and
+   --color-surface as an alias of --surface. This block uses
+   --surface-2 for the card and --color-surface for the cover area,
+   which matches the design-intent unambiguously per
+   docs/praxis-design-system.md (where --surface-2 is named "Card
+   surface" and --color-surface is documented as the spec-naming
+   alias of --surface). No new variable added.
+
+   Reconciliation: this block fully supersedes the Stage 2 fix 2
+   interim .shelf-book-cover rule (max-width 100% / height auto /
+   display block). The image now lives inside a fixed-height cover
+   area and uses object-fit; the interim rule is deleted, not
+   stacked under.
+
+   Pill alpha: approach (A) -- color-mix(in srgb, var(--token) 15%,
+   transparent) for the reading and finished backgrounds. No new
+   theme.css variables; derivation lives at the consumer per
+   2026-05-16 decision D1. */
+
+.shelf-book {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-/* ===== END SHELF LAYOUT + FILTER SIDEBAR + GRID ===== */
+.shelf-book:hover {
+  transform: translateY(-2px);
+  /* rgba black at low alpha is a shadow color, not a palette color
+     -- the hex grep targets #-prefixed hex and will not trip on
+     rgba(0,0,0,...). Convention permits this for shadows. */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.shelf-book-cover-area {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 16px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.shelf-book-cover,
+.shelf-book-cover-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.shelf-book-cover {
+  /* object-fit + object-position center bottom: preserve aspect
+     ratio, never crop, anchor the image to the bottom edge of the
+     cover area per spec ("justify-center, align-flex-end"). */
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.shelf-book-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+  /* 2-line clamp via the standard -webkit-box idiom. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.shelf-book-author {
+  margin: 6px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+  /* 1-line clamp. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.shelf-book-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.shelf-book-status {
+  display: inline-block;
+  /* Reserve 1px border on the base so all three variants are the
+     same total height; only .shelf-book-status-want fills the
+     border color, but every pill carries the same box dimensions
+     so a row of mixed-status pills sits on the same baseline. */
+  border: 1px solid transparent;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shelf-book-status-reading {
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  color: var(--gold);
+}
+
+.shelf-book-status-finished {
+  background: color-mix(in srgb, var(--ink-4) 15%, transparent);
+  color: var(--ink-3);
+}
+
+.shelf-book-status-want {
+  background: transparent;
+  border-color: var(--ink-4);
+  color: var(--ink-3);
+}
+
+.shelf-book-genre {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* ===== END BOOK CARD ===== */
