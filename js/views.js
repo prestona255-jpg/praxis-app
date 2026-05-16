@@ -949,6 +949,7 @@ function fetchAndApplyCover(bookId, isbn, onComplete) {
   function settle(url, result) {
     if (state.books[bookId]) {
       state.books[bookId].coverUrl = url;
+      markBooksDirty();
       saveState();
     }
     if (typeof onComplete === 'function') onComplete(url, result);
@@ -1103,6 +1104,7 @@ function openShelfEditor() {
     }
     state.userBooks[user.uid].bookIds.push(id);
 
+    markBooksDirty();
     saveState();
     renderShelf();
 
@@ -1140,7 +1142,10 @@ function openShelfEditor() {
             state.books[id].author = result.author;
             metaChanged = true;
           }
-          if (metaChanged) saveState();
+          if (metaChanged) {
+            markBooksDirty();
+            saveState();
+          }
         }
         var parts = location.hash.replace(/^#/, '').split('/');
         if (parts[0] === 'books') {
@@ -1300,6 +1305,7 @@ function processBulkLines(raw) {
       };
     }
     state.userBooks[user.uid].bookIds.push(id);
+    markBooksDirty();
     saveState();
     renderShelf();
   }
@@ -1334,7 +1340,10 @@ function processBulkLines(raw) {
           state.books[item.bookId].author = result.author;
           metaChanged = true;
         }
-        if (metaChanged) saveState();
+        if (metaChanged) {
+          markBooksDirty();
+          saveState();
+        }
       }
       var parts = location.hash.replace(/^#/, '').split('/');
       if (parts[0] === 'books') {
@@ -1442,6 +1451,7 @@ function renderBookDetail(bookId) {
         if (!state.books[bookId]) return;
         state.books[bookId].status     = 'finished';
         state.books[bookId].finishedAt = Date.now();
+        markBooksDirty();
         saveState();
         renderBookDetail(bookId);
         openArtifactEditor(bookId);
@@ -1541,6 +1551,7 @@ function renderBookDetail(bookId) {
       statusRadio.addEventListener('change', function(ev) {
         if (!state.books[bookId]) return;
         state.books[bookId].status = ev.target.value;
+        markBooksDirty();
         saveState();
         renderBookDetail(bookId);
       });
@@ -1576,6 +1587,7 @@ function renderBookDetail(bookId) {
       if (state.books[bookId]) {
         state.books[bookId].isbn     = '';
         state.books[bookId].coverUrl = null;
+        markBooksDirty();
         saveState();
       }
       priorIsbn = '';
@@ -1589,6 +1601,7 @@ function renderBookDetail(bookId) {
     // re-render only after fetch settles if user is still here.
     if (state.books[bookId]) {
       state.books[bookId].isbn = trimmed;
+      markBooksDirty();
       saveState();
     }
     priorIsbn = trimmed;

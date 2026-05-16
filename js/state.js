@@ -235,6 +235,20 @@ var state = {
 };
 window.state = state;
 
+// Firestore Stage 2: dirty flag for the per-user book doc. The 10
+// book-mutation sites in views.js call markBooksDirty() after
+// mutating state.books / state.userBooks; saveState() consumes the
+// flag below and fires a fire-and-forget Firestore write for THIS
+// user's denormalized doc. Non-book saveState callers (Notebook,
+// Artifacts, arcs, Yumi memory) leave the flag unset and do NOT
+// trigger a Firestore write -- so unrelated saves don't waste
+// round-trips on the book doc.
+var booksDirty = false;
+
+function markBooksDirty() {
+  booksDirty = true;
+}
+
 // Composite key for the bookArtifacts map. Kept as a function so the
 // format is changed in one place if it ever needs to change. The ':'
 // separator is safe because neither id is allowed to contain one.
@@ -309,7 +323,44 @@ function loadState() {
 }
 
 function saveState() {
-  return sv('praxis_state', state);
+  // Synchronous localStorage write -- the durability guarantee.
+  // Unchanged from the pre-Firestore behavior; bulk-add's per-entry
+  // saveState crash-consistency contract is preserved (a mid-import
+  // tab close leaves localStorage consistent).
+  var ok = sv('praxis_state', state);
+  // Firestore Stage 2: if a book mutation marked the flag, fire a
+  // fire-and-forget per-user-doc write. localStorage is already
+  // durable; the Firestore write is a best-effort remote mirror.
+  // The forward references (getCurrentUser / buildUserBookDoc /
+  // saveBooksToFirestore live in integrations.js, loaded after
+  // state.js) resolve at call time -- saveState only runs post-
+  // DOMContentLoaded, by which time integrations.js has evaluated.
+  // The typeof guards mirror the existing `typeof ensureUser`
+  // idiom in views.js: if integrations.js failed to load for any
+  // reason, saveState still does its localStorage write and does
+  // not throw.
+  if (booksDirty) {
+    booksDirty = false;
+    var user = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (user && user.uid &&
+        typeof saveBooksToFirestore === 'function' &&
+        typeof buildUserBookDoc === 'function') {
+      var payload = buildUserBookDoc(user.uid);
+      saveBooksToFirestore(user.uid, payload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveBooksToFirestore: ok');
+        } else {
+          console.warn(
+            'saveBooksToFirestore: failed',
+            result ? result.error : null
+          );
+        }
+      });
+    }
+  }
+  return ok;
 }
 
 // Migration hook. Reads stored.SCHEMA_VERSION and applies forward

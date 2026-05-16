@@ -178,6 +178,80 @@ function loadBooksFromFirestore(uid, callback) {
   }
 }
 
+// Firestore Stage 2: build the per-user book-doc payload from
+// current state. Mirrors the denormalized single-doc model the
+// Stage 1 read already consumes:
+//   { schemaVersion, bookIds: [...], books: { bookId: {...} },
+//     updatedAt: <serverTimestamp> }
+// The books map is FILTERED to only this uid's bookIds, NOT the
+// whole global state.books -- the doc is per-user. ensureUser is
+// not called here because the caller (saveState) only fires when
+// a book mutation has occurred, which itself ran through code
+// that already seeded state.userBooks[uid] via ensureUser.
+// updatedAt uses firebase.firestore.FieldValue.serverTimestamp()
+// so the server stamps the write time -- robust against client
+// clock skew.
+function buildUserBookDoc(uid) {
+  var bookIds = (state.userBooks &&
+                 state.userBooks[uid] &&
+                 state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds.slice()
+    : [];
+  var books = {};
+  var i;
+  for (i = 0; i < bookIds.length; i++) {
+    var bid = bookIds[i];
+    if (state.books && state.books[bid]) {
+      books[bid] = state.books[bid];
+    }
+  }
+  return {
+    schemaVersion: state.SCHEMA_VERSION,
+    bookIds:       bookIds,
+    books:         books,
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// Firestore Stage 2: per-user book-doc write to /userBooks/{uid}.
+// .set() is a full-doc overwrite -- matches the denormalized
+// single-doc model and the REPLACE read semantics from Stage 1.
+// Fire-and-forget by contract: the caller (saveState) does NOT
+// block on this, does NOT mutate state in the callback, does NOT
+// trigger a re-render. localStorage is the synchronous durability
+// guarantee; this is a best-effort remote mirror.
+// Single-arg typed callback in the house style:
+//   { status: 'ok' }                         success
+//   { status: 'error', error: <err> }        failure
+// Idempotent fire-once via a local done flag, same as
+// loadBooksFromFirestore and fetchBookByIsbn.
+function saveBooksToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveBooksToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userBooks')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
 // ISBN lookup: Open Library is primary, Google Books is fallback.
 // Public API is callback-only; internal Promise chains stay inside.
 // Normalized shape: { isbn, title, author, coverUrl, publishYear,
