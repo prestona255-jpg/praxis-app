@@ -723,6 +723,17 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 }
 .substage.expanded .substage-body { display: block; }
 
+.substage-superseded-note {
+  margin: 16px 0 4px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--br-deep);
+  background: color-mix(in srgb, var(--br-deep) 7%, transparent);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+  font-style: normal;
+}
+
 .field-block { margin-top: 20px; }
 .field-label {
   font-family: var(--mono);
@@ -2399,13 +2410,13 @@ var STAGES = [
           'Inline editor accepts a multi-line text input where each non-empty line is one entry',
           'Per-line parsing: detect ISBN (digits-only, 10 or 13 chars) vs title (anything else); route accordingly',
           'ISBN path: fetchBookByIsbn → fetchAndApplyCover for each detected ISBN',
-          'Title path: requires the 3.5e title-search API (may merge into this stage)',
+          'Title path: title-only resolution shipped separately via fetchBookByTitle (3.10d) and auto-resolves on upload (3.10e)',
           'Batched write to state.books and state.userBooks[uid].bookIds (single saveState at the end, or per-batch save — decide at session time)',
           'Incremental shelf rendering as fetches resolve (or queue-until-resolved — decide per the 3.5b Stage 0 blank-title flash flag logged at memory/project_35c_bulk_import_blank_title.md)',
           'Fail-soft per entry: a single bad ISBN does not block the rest of the list'
         ],
         nonGoals: [
-          'No photo / OCR input (3.5d)',
+          'No photo input (shelf-photo capture is 3.10f)',
           'No file upload / CSV / JSON import format (text paste only)',
           'No duplicate detection (if user pastes the same ISBN twice, two records are created; user can delete one)',
           'No reorderable per-line preview (parse and submit; no in-flight edit UI)'
@@ -2417,7 +2428,7 @@ var STAGES = [
         ],
         acceptance: [
           'Live URL: paste 5 ISBNs → 5 shelf rows appear, covers populate as fetches resolve',
-          'Live URL: paste 5 titles → 5 shelf rows appear with API-resolved titles + authors + covers (assumes 3.5e logic ships in this stage)',
+          'Live URL: paste 5 titles → 5 shelf rows appear with API-resolved titles + authors + covers (resolution via 3.10d/3.10e)',
           'Live URL: paste mixed list (ISBNs + titles + blank lines + duplicates) → only valid entries written; blanks and duplicates do not crash',
           'Live URL: bad ISBN in the middle of a valid list → that row gets the placeholder cover; other rows unaffected'
         ],
@@ -2431,12 +2442,12 @@ var STAGES = [
         risks: [
           'Blank-title flash at scale: rows render with empty titles before fetches resolve. Loading-state-per-row vs queue-until-resolved decision (logged from 3.5b Stage 0). Decide before patching.',
           'API rate limits: 50+ rapid fetches to OL or Google Books may hit a rate limit. Defensive throttling or sequential rather than parallel may be needed.',
-          'Title-search disambiguation: multiple candidates may return for ambiguous titles. UX for picking the right one is a sub-decision (or defer to 3.5e).'
+          'Title-search disambiguation: multiple candidates may return for ambiguous titles. UX for picking the right one is a sub-decision handled by the 3.10d/3.10e resolution path.'
         ],
         promptSkeleton:
 'Stage 0: read js/views.js (3.5b add-book editor and fetchAndApplyCover) and js/integrations.js (fetchBookByIsbn). Decide per-row loading vs queue-until-resolved.\n\n' +
 'Stage 1: openBulkAddEditor, per-line dispatch (ISBN vs title), batched write to state.books / userBooks, incremental render.\n\n' +
-'Stage 2: (if title-search merged in from 3.5e) fetchBookByTitle in integrations.js + disambiguation UX.\n\n' +
+'Stage 2: title resolution is delivered separately by 3.10d/3.10e — no title-search work in this stage.\n\n' +
 'Stage 3: live verification — paste mixed list, observe incremental fill, confirm fail-soft per row.'
       },
 
@@ -2445,7 +2456,8 @@ var STAGES = [
         num: '3.5d',
         name: 'Photo-to-text-list (OCR shelf photo)',
         deferred: true,
-        depConfirm: '3.5c must be Shipped (bulk text-list import path established). 3.5e must be Shipped or merged into 3.5c (title-only resolution required for OCR output).',
+        supersededReason: 'Superseded by 3.10f + 3.10g. Shelf-photo import was rebuilt on Anthropic vision extraction (3.10f) rather than OCR (Tesseract / Google Vision / Textract); the editable review list is 3.10g. The OCR approach described below was not adopted. Retained for numbering continuity; do not implement this entry.',
+        depConfirm: '3.5c must be Shipped (bulk text-list import path established).',
         purpose: 'User uploads a photo of a bookshelf. System OCRs the spines and presents an editable list of detected titles. List then hands off to 3.5c\'s resolution path. Substantially more complex than 3.5c and depends on 3.5c shipping first.',
         scope: [
           'Photo upload affordance on the shelf surface',
@@ -2479,6 +2491,8 @@ var STAGES = [
         id: 's3-5e',
         num: '3.5e',
         name: 'Title-only resolution (may merge into 3.5c)',
+        deferred: true,
+        supersededReason: 'Superseded by 3.10d. Title-only resolution shipped as fetchBookByTitle in 3.10d (Google Books only — the OL-primary design described below was not adopted; Open Library has no title-search endpoint of matching fidelity). Retained for numbering continuity; do not implement this entry.',
         depConfirm: '3.5b must be Shipped (fetchAndApplyCover plumbing exists). 3.5c is the primary consumer; this stage may be implemented inline within 3.5c rather than as a separate stage.',
         purpose: 'When a user provides a title without an ISBN (in single-add or bulk-add), search OL / Google Books by title (and optionally author) and resolve to a book record. Multiple candidates may return; disambiguation UX is part of the scope.',
         scope: [
@@ -4341,6 +4355,11 @@ function renderSubstage(sub, stage) {
   html += '  </div>';
 
   html += '  <div class="substage-body">';
+
+  // Superseded banner — emitted only when sub.supersededReason is a non-empty string.
+  if (sub.supersededReason && typeof sub.supersededReason === 'string' && sub.supersededReason.length > 0) {
+    html += '<div class="substage-superseded-note">' + escapeHtml(sub.supersededReason) + '</div>';
+  }
 
   // 3 — dependencies confirmation
   html += renderField('Dependencies', escapeHtml(sub.depConfirm || '—'));
