@@ -3371,8 +3371,9 @@ var STAGES = [
           'The key is not committed to the repo in plaintext (env var or Cloud Console-restricted client key per the chosen approach)'
         ],
         evidence: [
-          'Live URL: a title-only add fires a Google Books request that returns 200, not 429; the cover populates',
-          'A full backfill pass over the 116-book library resolves without hitting the rate limit'
+          'Live URL: Google Books routed through Netlify Function proxy with server-side API key (option (b) chosen). A 323-request full-library backfill completed with zero 429s — DevTools status-code:429 filter returned 0/323. The 3.10e quota ceiling is resolved.',
+          'Commits 6fa5137 (proxy + client rewire) and 8771f5c (SW cache bump praxis-v3.10-d)',
+          'Note: live verification surfaced a separate http:// cover URL / Mixed Content finding (Google Books returns imageLinks.thumbnail with an http:// scheme; the HTTPS app trips ~6,000 Mixed Content warnings across the 116-book backfill; browser auto-upgrades so covers still render). Logged as 3.10i.'
         ],
         rollback: 'Additive — revert the commit to return to the unauthenticated endpoint and the low anonymous quota.',
         risks: [
@@ -3383,6 +3384,44 @@ var STAGES = [
 'Stage 0: confirm the Google Books request site in integrations.js and the claude-proxy.js pattern. Decide client-key vs proxy.\n\n' +
 'Stage 1: obtain the key; wire it into the Google Books request per the chosen approach; keep the key out of the repo.\n\n' +
 'Stage 2: live verification — title-only add returns 200; full-library backfill completes without 429.'
+      },
+
+      {
+        id: 's3-10i',
+        num: '3.10i',
+        name: 'Normalize Google Books cover URLs to https',
+        depConfirm: '3.10h Shipped (Google Books traffic routes through google-books-proxy.js with a server-side API key; the 323-request backfill verification surfaced this finding).',
+        purpose: 'Google Books volumes returns imageLinks.thumbnail (and related image links) with an http:// scheme. Praxis runs on HTTPS, so every http:// cover image triggers a browser Mixed Content warning — ~6,000 warnings observed across the 3.10h 116-book backfill verification. The browser auto-upgrades the request to https:// so covers still render and nothing breaks for the user, but the stored coverUrl value is http://, and the console is flooded, which buries real diagnostics. Surfaced during 3.10h verification.',
+        scope: [
+          'In integrations.js, normalize the coverUrl scheme at the point it is read from the Google Books response — rewrite a leading "http://" to "https://" before the value is stored',
+          'Applies to both fetchBookByTitle and fetchGoogleBooks (the ISBN-fallback path), since both read v.imageLinks.thumbnail. A one-line scheme rewrite per site'
+        ],
+        nonGoals: [
+          'No change to the proxy (google-books-proxy.js stays frozen)',
+          'No change to resolution logic, the cover-fetch queue, or fail-soft behavior',
+          'No re-fetch or migration of already-stored http:// coverUrls in existing records — decide separately whether a backfill rewrite of stored values is wanted; this substage only fixes newly-resolved covers'
+        ],
+        subsystems: ['integrations'],
+        files: [
+          'js/integrations.js (scheme-rewrite at the two v.imageLinks.thumbnail read sites)'
+        ],
+        acceptance: [
+          'Newly resolved covers store an https:// coverUrl',
+          'A cover-fetch pass produces no Mixed Content warnings for newly resolved books'
+        ],
+        evidence: [
+          'Live URL: a title-only add or ISBN add resolves a cover whose stored coverUrl begins with https://',
+          'Live URL: a cover-resolution pass over newly-added books produces zero Mixed Content warnings in DevTools Console'
+        ],
+        rollback: 'Additive — revert the commit to return to verbatim http:// thumbnails (browser auto-upgrade still renders covers; only the console flood returns).',
+        risks: [
+          'OPEN DECISION: the existing 116-book library already has http:// coverUrls stored from the 3.10h backfill. A one-time rewrite pass over stored values may be wanted to silence Mixed Content warnings on the already-populated shelf; flag is open. Options — (a) ship 3.10i covering only newly-resolved covers and accept that existing records stay http:// until they are next re-resolved; (b) add a one-shot migration that walks state.books and rewrites every coverUrl beginning with http:// to https://, with markBooksDirty + saveState. Decide before Stage 1.',
+          'A naive replace could mis-handle a URL that contains "http://" later in the string (e.g. as a query param). Mitigation: anchor the rewrite to a leading "http://" only — string.indexOf or startsWith check'
+        ],
+        promptSkeleton:
+'Stage 0: confirm the two v.imageLinks.thumbnail read sites in integrations.js (fetchBookByTitle and fetchGoogleBooks). Resolve the open-decision on backfill of stored values.\n\n' +
+'Stage 1: integrations.js — anchored leading-"http://" → "https://" rewrite at both read sites; coverUrl stored https:// only.\n\n' +
+'Stage 2: live verification — newly-added book stores https:// coverUrl; Console clean of Mixed Content warnings for newly resolved covers.'
       }
     ]
   },
