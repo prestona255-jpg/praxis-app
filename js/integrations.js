@@ -9,7 +9,8 @@
 
 'use strict';
 
-var CLAUDE_PROXY_URL = '/.netlify/functions/claude-proxy';
+var CLAUDE_PROXY_URL       = '/.netlify/functions/claude-proxy';
+var GOOGLE_BOOKS_PROXY_URL = '/.netlify/functions/google-books-proxy';
 
 var firebaseConfig = {
   apiKey:            "AIzaSyDegS-mT0hrBVuptm-I-ByrogeLmJis6rE",
@@ -379,8 +380,11 @@ function fetchGoogleBooks(isbn, callback) {
     return null;
   }
   try {
-    var url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn;
-    fetch(url).then(function (res) {
+    fetch(GOOGLE_BOOKS_PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ q: 'isbn:' + isbn })
+    }).then(function (res) {
       return res.json();
     }).then(function (data) {
       if (!data.totalItems || data.totalItems === 0) {
@@ -443,12 +447,15 @@ function fetchBookByTitle(title, author, callback) {
     return null;
   }
   try {
-    var q = 'intitle:' + encodeURIComponent(title);
+    var q = 'intitle:' + title;
     if (typeof author === 'string' && author.length > 0) {
-      q = q + '+inauthor:' + encodeURIComponent(author);
+      q = q + '+inauthor:' + author;
     }
-    var url = 'https://www.googleapis.com/books/v1/volumes?q=' + q;
-    fetch(url).then(function (res) {
+    fetch(GOOGLE_BOOKS_PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ q: q })
+    }).then(function (res) {
       return res.json();
     }).then(function (data) {
       if (!data.totalItems || data.totalItems === 0) {
