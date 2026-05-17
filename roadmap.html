@@ -3342,6 +3342,47 @@ var STAGES = [
 'Stage 1: views.js — review screen between extraction and shelf write; remove-row + confirm; surviving rows to the add path.\n\n' +
 'Stage 2: yumi-ui.js + state.js — empty-shelf detection, first-run greeting copy + trigger, onboarding-seen flag.\n\n' +
 'Stage 3: live verification — review removal, greeting gating, flag persistence.'
+      },
+
+      {
+        id: 's3-10h',
+        num: '3.10h',
+        name: 'Google Books API key — raise the cover-fetch quota',
+        depConfirm: '3.10e Shipped (title-based cover/metadata resolution runs on the upload path via fetchBookByTitle / fetchBookByIsbn against the Google Books API).',
+        purpose: '3.10e cover resolution calls the Google Books volumes endpoint unauthenticated. The anonymous per-IP quota is low; live verification of 3.10e hit HTTP 429 (Too Many Requests) repeatedly across a single session with hours between attempts — a 116-book library plus repeated test adds and the manual backfill button exhaust the free quota. The adapter\'s fail-soft handles a 429 correctly (cover stays null, no crash), but the practical effect is that covers silently fail to resolve. This substage adds a Google Books API key to raise the quota so resolution actually completes. It is a prerequisite for 3.10f at scale — a photograph-import of a large shelf would hammer the quota far harder than manual adds.',
+        scope: [
+          'Obtain a Google Books API key (Google Cloud Console, free, no billing required at this volume)',
+          'Append the key to the Google Books request URL in the cover-fetch path (integrations.js) as a key parameter',
+          'Decide and document the key-exposure approach: a key in client-side JS is visible via view-source. Two options — (a) accept it as a client-side key for a personal-scale app, restricting the key by referrer/API in the Cloud Console; (b) route the Google Books call through a Netlify Function proxy (same pattern as claude-proxy.js and the planned vision-proxy.js) so the key stays server-side. The substage must pick one explicitly, not leave it open'
+        ],
+        nonGoals: [
+          'No change to the resolution logic, the queue, or the fail-soft behavior — only the request gains an authenticated key',
+          'No paid tier, no billing setup',
+          'No retry/backoff layer — a higher quota is the fix, not client cleverness'
+        ],
+        subsystems: ['integrations'],
+        files: [
+          'js/integrations.js (key appended to the Google Books request)',
+          'netlify/functions/ (only if option (b), the proxy route, is chosen)'
+        ],
+        acceptance: [
+          'Title-only and ISBN cover-fetch requests carry the API key',
+          'A cover-resolution pass over the existing library completes without 429s',
+          'The key is not committed to the repo in plaintext (env var or Cloud Console-restricted client key per the chosen approach)'
+        ],
+        evidence: [
+          'Live URL: a title-only add fires a Google Books request that returns 200, not 429; the cover populates',
+          'A full backfill pass over the 116-book library resolves without hitting the rate limit'
+        ],
+        rollback: 'Additive — revert the commit to return to the unauthenticated endpoint and the low anonymous quota.',
+        risks: [
+          'Client-side key exposure if option (a) is chosen — mitigated by Cloud Console referrer/API restrictions; option (b) avoids it entirely at the cost of a proxy function',
+          'Quota is raised, not infinite — a very large future import could still approach limits; revisit only if it actually recurs'
+        ],
+        promptSkeleton:
+'Stage 0: confirm the Google Books request site in integrations.js and the claude-proxy.js pattern. Decide client-key vs proxy.\n\n' +
+'Stage 1: obtain the key; wire it into the Google Books request per the chosen approach; keep the key out of the repo.\n\n' +
+'Stage 2: live verification — title-only add returns 200; full-library backfill completes without 429.'
       }
     ]
   },
