@@ -3200,6 +3200,148 @@ var STAGES = [
 'Stage 1: integrations.js — fetchBookByTitle(title, author, callback) calling Google Books q=intitle+inauthor. Normalized return shape. Same callback contract as fetchBookByIsbn.\n\n' +
 'Stage 2: views.js — backfill UI (button on shelf or settings); sequential queue iterating books with coverUrl === null; per-book ISBN-then-title resolution; markBooksDirty + saveState on each success.\n\n' +
 'Stage 3: live verification on the 109-book library; rate-limit check; failed-match handling.'
+      },
+
+      {
+        id: 's3-10e',
+        num: '3.10e',
+        name: 'Auto-resolve covers and metadata on title upload',
+        depConfirm: '3.10d Shipped (fetchBookByTitle adapter and fetchAndApplyCoverByTitle apply-helper exist in integrations.js and views.js). 3.5c bulk add Shipped.',
+        purpose: '3.10d shipped fetchBookByTitle and a manual "Resolve missing covers" button. 3.10e promotes title-based resolution from button-triggered to UPLOAD-triggered: when a book is added by title — single add via openShelfEditor OR bulk import — covers and metadata resolve automatically in the background, the same way ISBN-form input already auto-resolves. The manual button stays untouched as a fallback. Backfills only blank fields (coverUrl, author, isbn); never overwrites user-typed values. publishYear was deliberately excluded to avoid a sparse schema — recorded as a future stage if wanted.',
+        scope: [
+          'openShelfEditor: an else-if (titleTrimmed.length > 0) branch mirroring the existing ISBN background-fetch block, firing fetchAndApplyCoverByTitle and backfilling blank isbn and author',
+          'Bulk import: title-form lines now pushed into the same sequential fetch queue as ISBN lines, discriminated by a kind field on the queue item; title items resolve via fetchAndApplyCoverByTitle',
+          'Backfill only fills fields blank at save time; title never backfilled (it is the query input)',
+          'The "Resolve missing covers" button, startCoverBackfill, and coverResolveState are untouched'
+        ],
+        nonGoals: [
+          'No publishYear backfill (would create a sparse schema; deferred)',
+          'No genre/theme auto-fill (editorial taxonomy, not Google-derived)',
+          'No change to save-button gating',
+          'No "Title by Author" bulk-line parsing',
+          'No confirmation modal — resolution is silent + background'
+        ],
+        subsystems: ['views', 'integrations'],
+        files: [
+          'js/views.js (openShelfEditor else-if branch; bulk-import queue extended to title-form lines)'
+        ],
+        acceptance: [
+          'A title-only single add auto-resolves cover and author with no button press',
+          'Title-form bulk lines resolve covers sequentially, one fetch in flight at a time',
+          'The 3 original ISBN fetchAndApplyCover call sites are unchanged',
+          'Fail-soft: a title with no match stays coverUrl: null; queue continues'
+        ],
+        evidence: [
+          'Live URL: title-only add fires a Google Books q=intitle: request on save (confirmed live; initiator integrations.js)',
+          'Commits ab2adcb (feature) and 8d464df (SW cache bump to v3.10-c)',
+          'Note: live verification surfaced a Google Books 429 rate-limit under heavy session use — quota ceiling, not a code fault; future API-key stage tracked separately'
+        ],
+        rollback: 'Additive — revert ab2adcb to restore button-only resolution.',
+        risks: [
+          'Title-only matching has an inherent error floor; Google\'s first result can attach a wrong author. Mitigation is correctability, not accuracy chasing',
+          'Google Books unkeyed-endpoint rate limits — surfaced live as a 429. A free API key is the real fix, tracked as a future stage'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.10d adapter + apply-helper shape; locate the openShelfEditor ISBN block and the bulk-import queue.\n\n' +
+'Stage 1: views.js — openShelfEditor else-if title branch, isbn+author backfill only.\n\n' +
+'Stage 2: views.js — bulk-import queue extended to title-form lines via a kind discriminator.\n\n' +
+'Stage 3: live verification — intitle: request fires on title-only add.'
+      },
+
+      {
+        id: 's3-10f',
+        num: '3.10f',
+        name: 'Shelf capture — camera and vision extraction',
+        depConfirm: '3.10e Shipped (openBulkAddEditor auto-resolves covers and metadata on title-form upload — this substage feeds that path). The Netlify Function proxy pattern exists and is deployed (claude-proxy.js) — the vision proxy mirrors it.',
+        purpose: 'The first half of the photograph-your-shelf onboarding flow. A browser camera/file input captures a photo of the user\'s bookshelf. The image is sent to a new Netlify Function (vision-proxy.js, mirroring claude-proxy.js) which calls the Anthropic Messages API with an image block and a prompt demanding JSON-only output: an array of {title, author} objects, one per detected spine. That title list is handed into the existing openBulkAddEditor path, which already chains into 3.10e auto-resolve for covers and metadata. This substage ends at the hand-off — the review screen that sits between extraction and save is 3.10g.',
+        scope: [
+          'Camera/file capture UI: a "Photograph your shelf" affordance on the shelf header (permanent, beside Add book and Bulk add), using a standard file input with capture attribute so mobile opens the camera',
+          'New Netlify Function vision-proxy.js, structurally mirroring claude-proxy.js: receives a base64 image, calls the Anthropic Messages API with an image content block plus a JSON-only extraction prompt, returns the parsed title list',
+          'Extraction prompt: instruct the model to return ONLY a JSON array of {title, author} objects, no prose, no markdown fences; author may be empty string when the spine does not show one',
+          'Client-side: capture image, base64-encode, POST to vision-proxy, receive the title list, hand it to openBulkAddEditor (or its underlying list-ingest path)',
+          'Fail-soft: a failed vision call surfaces a plain error and leaves the shelf untouched; no partial writes'
+        ],
+        nonGoals: [
+          'No barcode scanning (Phase 2 fast-follow)',
+          'No on-device OCR',
+          'No guided audio/visual Yumi walkthrough (3.10g handles the first-run greeting; the full walkthrough is Phase 2, gated on voice work)',
+          'No review/confirm screen (that is 3.10g)',
+          'No shelf-wide per-book delete (separate stage)',
+          'No retry logic, confidence scoring, or fuzzy-match layer — extraction imperfection is handled by the 3.10g review step, not by client cleverness'
+        ],
+        subsystems: ['integrations', 'views'],
+        files: [
+          'netlify/functions/vision-proxy.js (new)',
+          'js/integrations.js (client-side vision call + title-list hand-off)',
+          'js/views.js (capture affordance on shelf header)'
+        ],
+        acceptance: [
+          'A photo of a real bookshelf, captured via the shelf affordance, produces a list of detected {title, author} pairs',
+          'The detected list reaches openBulkAddEditor and the existing 3.10e auto-resolve fires on the resulting title-form entries',
+          'A failed or empty vision response surfaces a clean error and writes nothing to the shelf',
+          'vision-proxy.js never returns the raw API key to the client'
+        ],
+        evidence: [
+          'Live URL: capture a shelf photo; Network shows the POST to vision-proxy; the response is a JSON title array',
+          'Live URL: detected titles appear in the bulk-add path and resolve covers via 3.10e',
+          'A deliberately bad photo (blur/glare) returns either a short list or a clean error — never a crash'
+        ],
+        rollback: 'Capture affordance and vision-proxy are additive. Revert the commit to remove the affordance; the Netlify Function can be left deployed dormant or deleted separately.',
+        risks: [
+          'Vision extraction accuracy on real shelf photos is the load-bearing risk of this whole feature — glare, rotated spines, thin books, occlusion. This substage should be preceded by a throwaway spike (one photo, one call) to confirm viability before full build',
+          'Mitigation for residual error is the 3.10g review step, NOT chasing extraction perfection. Builder-Intellectual fence: ship capture + proxy + extraction + hand-off; do not build retry, confidence scoring, or fuzzy-match systems',
+          'Image payload size: a full-shelf photo is a large vision call. Rare event, acceptable cost — but flag if a user photographs in a loop'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.10e Shipped and openBulkAddEditor list-ingest path. Confirm claude-proxy.js shape so vision-proxy.js mirrors it.\n\n' +
+'Stage 1: netlify/functions/vision-proxy.js — Anthropic Messages API, image block + JSON-only extraction prompt, returns {title,author} array.\n\n' +
+'Stage 2: client-side capture in views.js + integrations.js — file input with capture attr, base64 encode, POST to vision-proxy, hand list to openBulkAddEditor.\n\n' +
+'Stage 3: live verification on a real shelf photo; bad-photo fail-soft.'
+      },
+
+      {
+        id: 's3-10g',
+        num: '3.10g',
+        name: 'Review screen and first-run Yumi greeting',
+        depConfirm: '3.10f Shipped (vision extraction produces a {title,author} list — this substage inserts the review step between that list and the shelf write).',
+        purpose: 'The second half of the photograph-your-shelf flow, plus the onboarding entry point. After 3.10f extracts a title list, a mandatory review screen lists every detected book; the user removes wrong rows before confirming. Removal needs no delete logic — unconfirmed rows are simply never added. Separately, a first-run greeting fires only on an empty shelf, where Yumi prompts the user to upload their shelf as their first action. The review screen is what makes silent vision extraction honest: nothing enters the shelf the user did not see and approve.',
+        scope: [
+          'Review screen: between 3.10f extraction and the shelf write, render the detected {title,author} list, each row with a remove affordance and an editable author/title; one "Add these N books" confirm',
+          'Confirm hands the surviving rows to the existing add path; removed rows are dropped, not deleted (no delete logic touched)',
+          'Empty-shelf detection: a check for zero books on the current user',
+          'First-run Yumi greeting: when the shelf is empty and the onboarding flag is unset, Yumi greets the user and directs them to the "Photograph your shelf" affordance',
+          'Onboarding-seen flag in state, set once the user completes or dismisses the greeting, so returning users are not nagged'
+        ],
+        nonGoals: [
+          'No full guided audio + visual Yumi walkthrough — that is Phase 2 and depends on voice work not yet built. 3.10g is a greeting, not a walkthrough',
+          'No permanent shelf-wide per-book delete — review-step removal is NOT a delete feature and must not be built as one; shelf-wide delete is its own later stage that must handle Firestore propagation',
+          'No barcode path'
+        ],
+        subsystems: ['views', 'yumi-ui', 'state'],
+        files: [
+          'js/views.js (review screen)',
+          'js/yumi-ui.js (first-run greeting)',
+          'js/state.js (onboarding-seen flag)'
+        ],
+        acceptance: [
+          'After a 3.10f extraction, the review screen lists every detected book; removing a row and confirming adds only the surviving rows',
+          'The first-run greeting fires on an empty shelf and does NOT fire for a user who already has books or has seen onboarding',
+          'The onboarding-seen flag persists across reloads'
+        ],
+        evidence: [
+          'Live URL: extract a shelf, remove a row, confirm — only kept rows land on the shelf',
+          'Live URL: empty shelf shows the Yumi greeting; a populated shelf does not; reload preserves the seen flag'
+        ],
+        rollback: 'Review screen and greeting are additive. Revert the commit; 3.10f extraction would then hand directly to the bulk-add path with no review step.',
+        risks: [
+          'First-run greeting must not nag returning users — gate strictly on empty-shelf AND unset onboarding flag',
+          'Scope creep toward a full walkthrough: hard fence — 3.10g ships a greeting and a review screen, nothing more'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.10f Shipped and its title-list hand-off point. Confirm state shape for an onboarding flag.\n\n' +
+'Stage 1: views.js — review screen between extraction and shelf write; remove-row + confirm; surviving rows to the add path.\n\n' +
+'Stage 2: yumi-ui.js + state.js — empty-shelf detection, first-run greeting copy + trigger, onboarding-seen flag.\n\n' +
+'Stage 3: live verification — review removal, greeting gating, flag persistence.'
       }
     ]
   },
@@ -3506,8 +3648,8 @@ var DEFERRED = [
   {
     name: 'Stale-while-revalidate SW rework',
     dateDeferred: '2026-05-17',
-    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has bitten the project three times — stale components.css mid-3.10a, stale views.js post-Firestore Stages 1-2, and a second stale views.js observation that turned out to be the same root cause. Each fix was a one-line cache-version bump; the underlying mechanism makes recurrence near-certain.',
-    comesBackWhen: 'Before Phase 1 testing, or sooner if the next SW staleness blocks a deploy. Rework options: stale-while-revalidate (return cached, fetch fresh in background, update cache for next load) or network-first for app JS/CSS (HTML + manifest stay pre-cached, everything else fetched live).'
+    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has now bitten the project FOUR times — stale components.css mid-3.10a, stale views.js post-Firestore stages, a repeat stale views.js observation, and most recently a stale views.js after the 3.10e deploy that cost an extended live-debugging session because the sw.js cache-version bump was edited locally but never committed. Each fix has been a one-line bump; the mechanism makes recurrence near-certain.',
+    comesBackWhen: 'Promoted from deferred — this should be taken as its own stage soon, ideally bundled with the next infrastructure touch (the vision-proxy work in 3.10f is a natural pairing). "Not blocking" is no longer accurate after a fourth bite. Rework options unchanged: stale-while-revalidate, or network-first for app JS/CSS with HTML and manifest staying pre-cached.'
   },
   {
     name: 'TTS / spoken Yumi',
