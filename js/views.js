@@ -1266,6 +1266,44 @@ function openShelfEditor() {
           renderShelf();
         }
       });
+    } else if (titleTrimmed.length > 0) {
+      // 3.10e: mirror of the ISBN background-fetch above, but on the
+      // title path. Fires fetchAndApplyCoverByTitle on save; on
+      // settle, conditionally backfills isbn + author when those
+      // user-form fields were blank at save time. Title is never
+      // backfilled -- it is the query input, and writing Google's
+      // normalized echo over the user's typed title would be a
+      // silent mutation. publishYear is intentionally NOT written:
+      // no existing book record carries it, opportunistic property-
+      // writes would produce a sparse schema, and proper adoption
+      // is its own future stage.
+      fetchAndApplyCoverByTitle(id, titleTrimmed, authorTrimmed, function(url, result) {
+        if (state.books[id]) {
+          var metaChanged = false;
+          if (isbnTrimmed === '' &&
+              result &&
+              typeof result.isbn === 'string' &&
+              result.isbn.length > 0) {
+            state.books[id].isbn = result.isbn;
+            metaChanged = true;
+          }
+          if (authorTrimmed === '' &&
+              result &&
+              typeof result.author === 'string' &&
+              result.author.length > 0) {
+            state.books[id].author = result.author;
+            metaChanged = true;
+          }
+          if (metaChanged) {
+            markBooksDirty();
+            saveState();
+          }
+        }
+        var parts = location.hash.replace(/^#/, '').split('/');
+        if (parts[0] === 'books') {
+          renderShelf();
+        }
+      });
     }
   });
 
@@ -1405,7 +1443,7 @@ function processBulkLines(raw) {
         genre:    '',
         coverUrl: null
       };
-      isbnQueue.push({ bookId: id, isbn: entry.value });
+      isbnQueue.push({ kind: 'isbn', bookId: id, isbn: entry.value });
     } else {
       state.books[id] = {
         id:       id,
@@ -1417,6 +1455,10 @@ function processBulkLines(raw) {
         genre:    '',
         coverUrl: null
       };
+      // 3.10e: title-form bulk lines now queue for background
+      // resolution alongside ISBN-form lines. Same sequential queue,
+      // discriminated by the kind field.
+      isbnQueue.push({ kind: 'title', bookId: id, title: entry.value });
     }
     state.userBooks[user.uid].bookIds.push(id);
     markBooksDirty();
@@ -1424,19 +1466,58 @@ function processBulkLines(raw) {
     renderShelf();
   }
 
-  // Sequential fetch queue. Callback chain via fetchAndApplyCover's
-  // onComplete -- one ISBN in flight at a time, advance on settle
-  // (success or fail). Per-resolve title/author backfill mirrors the
-  // openShelfEditor 3.5b path: only patch when the current record
-  // value is still blank (the user could in theory have edited the
-  // row between submit and resolve; the freshness check protects
-  // that). Re-render only when the user is still on #books so we
-  // don't clobber other surfaces.
+  // Sequential fetch queue. Callback chain -- one fetch in flight at
+  // a time, advance on settle (success or fail). 3.10e: queue now
+  // carries both ISBN-form items (kind: 'isbn', resolved via
+  // fetchAndApplyCover) and title-form items (kind: 'title', resolved
+  // via fetchAndApplyCoverByTitle). Per-resolve metadata backfill
+  // mirrors the openShelfEditor 3.5b / 3.10e paths: only patch when
+  // the current record value is still blank (the user could in theory
+  // have edited the row between submit and resolve; the freshness
+  // check protects that). Re-render only when the user is still on
+  // #books so we don't clobber other surfaces.
   var qi = 0;
   function processNext() {
     if (qi >= isbnQueue.length) return;
     var item = isbnQueue[qi];
     qi++;
+    if (item.kind === 'title') {
+      // 3.10e: title-form path. Author is sent as '' because bulk-
+      // import title-form lines carry no author -- fetchBookByTitle
+      // skips the +inauthor: qualifier when author is empty. Backfill
+      // patches isbn + author when blank; title is the query input
+      // and never backfilled. publishYear intentionally not written
+      // (see Stage 1 single-add comment for rationale).
+      fetchAndApplyCoverByTitle(item.bookId, item.title, '', function(url, result) {
+        if (state.books[item.bookId]) {
+          var metaChanged = false;
+          if (state.books[item.bookId].isbn === '' &&
+              result &&
+              typeof result.isbn === 'string' &&
+              result.isbn.length > 0) {
+            state.books[item.bookId].isbn = result.isbn;
+            metaChanged = true;
+          }
+          if (state.books[item.bookId].author === '' &&
+              result &&
+              typeof result.author === 'string' &&
+              result.author.length > 0) {
+            state.books[item.bookId].author = result.author;
+            metaChanged = true;
+          }
+          if (metaChanged) {
+            markBooksDirty();
+            saveState();
+          }
+        }
+        var parts = location.hash.replace(/^#/, '').split('/');
+        if (parts[0] === 'books') {
+          renderShelf();
+        }
+        processNext();
+      });
+      return;
+    }
     fetchAndApplyCover(item.bookId, item.isbn, function(url, result) {
       if (state.books[item.bookId]) {
         var metaChanged = false;
