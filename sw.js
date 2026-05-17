@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.10-c';
+var CACHE_VERSION = 'praxis-v3.10-d';
 
 var APP_SHELL = [
   '/',
