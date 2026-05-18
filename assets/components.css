@@ -777,6 +777,859 @@
 /* ===== END EMPTY STATE ===== */
 
 
+/* ===== BOOK DETAIL + ARTIFACT VIEW -- Stage 3.10c =====
+   Two adjacent routes, styled together. Book detail = the working
+   surface for a book; artifact view = the finished room (per 3.7's
+   workshop-floor vs finished-room framing). The (status, hasArtifact)
+   six-branch affordance cluster respects the 3.7 intentional <a> /
+   <button> split: book-detail-open-artifact (the <a>) and the
+   creation CTAs (mark-finished, create-artifact, signin-prompt)
+   share the dark-fill primary affordance treatment from
+   .shelf-new-book -- the user reads them as the same primary
+   weight regardless of semantic. .book-detail-new-entry (Add
+   Marginalia) is workshop-floor secondary, lighter weight.
+   Status radios are styled here AND grouped in Stage 3 with
+   .shelf-editor-status (they render the same data shape). */
+
+.book-detail {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 32px;
+  font-family: var(--font-body);
+}
+
+.book-detail-not-found {
+  padding: 96px 32px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+.book-detail-not-found a {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.book-detail-not-found a:hover {
+  color: var(--ink);
+}
+
+.book-detail-header {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  column-gap: 32px;
+  row-gap: 8px;
+  align-items: start;
+  margin-bottom: 32px;
+}
+
+.book-detail-cover,
+.book-detail-cover-placeholder {
+  grid-column: 1;
+  grid-row: 1 / span 6;
+  width: 240px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+}
+
+.book-detail-cover {
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--color-surface);
+}
+
+.book-detail-cover-placeholder {
+  height: 360px;
+  background: color-mix(in srgb, var(--ink-3) 8%, transparent);
+}
+
+.book-detail-title {
+  grid-column: 2;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.book-detail-author {
+  grid-column: 2;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+/* Primary affordance — the creation CTAs (buttons) and the Open
+   Artifact link (the intentional <a>) share the dark-fill treatment
+   so the semantic split does not become a visual split. */
+.book-detail-mark-finished,
+.book-detail-create-artifact,
+.book-detail-signin-prompt,
+.book-detail-open-artifact {
+  grid-column: 2;
+  display: inline-block;
+  justify-self: start;
+  margin-top: 16px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.book-detail-mark-finished:hover,
+.book-detail-create-artifact:hover,
+.book-detail-signin-prompt:hover,
+.book-detail-open-artifact:hover {
+  background: var(--br-deep);
+}
+
+/* Secondary affordance — Add Marginalia is the workshop-floor
+   entry point, lighter weight than the closure CTAs. Mirrors
+   .shelf-new-book-bulk transparent + border treatment. */
+.book-detail-new-entry {
+  grid-column: 2;
+  display: inline-block;
+  justify-self: start;
+  margin-top: 16px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.book-detail-new-entry:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* Status selector — rules grouped in Stage 3 with
+   .shelf-editor-status / .shelf-editor-status-option (same data
+   shape). See the EDITOR MODALS block below for the active rule. */
+
+/* ISBN edit row */
+.book-detail-isbn-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 32px 0;
+}
+
+.book-detail-isbn-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.book-detail-isbn-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 6px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.book-detail-isbn-input:hover {
+  border-color: var(--ink-3);
+}
+
+/* :focus (not :focus-visible) on inputs because typing focus IS
+   keyboard focus -- the ring should appear whether the user clicked
+   or tabbed in. Matches the --river idiom from 3.10b. */
+.book-detail-isbn-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+/* Marginalia-for-this-book empty state */
+.book-detail-empty-body {
+  margin: 48px 0;
+  padding: 32px 16px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ===== END BOOK DETAIL ===== */
+
+
+/* ===== ARTIFACT VIEW -- Stage 3.10c =====
+   The 3.7 finished-room surface. Restful long-form serif body,
+   generous line-height, reader-mode page width. Lives at
+   #artifact/<bookId>. */
+
+.artifact-view {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 96px 32px;
+  font-family: var(--font-serif);
+}
+
+.artifact-title {
+  margin: 0 0 32px 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.artifact-body {
+  margin: 0 0 64px 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.artifact-substrate-link,
+.artifact-back-link {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.artifact-substrate-link:hover,
+.artifact-back-link:hover {
+  color: var(--ink);
+}
+
+.artifact-not-found,
+.artifact-empty {
+  margin: 96px 0 24px 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ===== END ARTIFACT VIEW ===== */
+
+
+/* ===== NOTEBOOK SETTINGS + TRANSPARENCY -- Stage 3.10c =====
+   Two surfaces that mount inside the Notebook flow and read as
+   secondary to the writing itself.
+
+   SETTINGS: a quiet preference UI. The toggle is intentionally an
+   <a href="#"> (not a checkbox / switch / button), so its visual
+   treatment is link-shaped: slate text, --river focus ring, no
+   button chrome.
+
+   TRANSPARENCY: a diagnostic / monitored surface. Visually
+   distinguished from primary writing by a thin --ink-3 border
+   around .transparency-panel (option (a) per Stage 0 — chosen
+   over a tint or a label-marker because it is structurally
+   honest: this panel is a discrete read-only surface, and the
+   border says so). One declaration; no background change; the
+   panel still sits on the wheat field. transparency-section-label
+   uses the mono-uppercase letter-spacing idiom from
+   .shelf-filter-label / .shelf-subtitle so the data areas read as
+   instrumented telemetry, not body prose.
+
+   The two Notebook header buttons (.notebook-settings-toggle and
+   .notebook-transparency-toggle) share the .shelf-new-book-bulk
+   secondary-button treatment so they sit consistently in the
+   header without competing with primary CTAs. */
+
+.notebook-settings-toggle,
+.notebook-transparency-toggle {
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.notebook-settings-toggle:hover,
+.notebook-transparency-toggle:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* Settings panel */
+.notebook-settings-panel {
+  margin: 24px 0;
+  padding: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: var(--font-body);
+}
+
+.notebook-settings-section {
+  padding: 12px 0;
+}
+
+.notebook-settings-section + .notebook-settings-section {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+.notebook-settings-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+
+.notebook-settings-current {
+  display: inline-block;
+  margin-right: 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* The toggle link is intentionally an <a>, not a button. Style it
+   as a clear actionable link — slate text, no underline by default,
+   --ink on hover, --river focus ring (from the existing
+   :focus-visible group below). Distinct from primary CTAs. */
+.notebook-settings-toggle-link,
+.notebook-settings-done {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-4);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.notebook-settings-toggle-link:hover,
+.notebook-settings-done:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink-2);
+}
+
+.notebook-settings-done {
+  margin-top: 16px;
+}
+
+.notebook-settings-explanation {
+  margin: 8px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* ===== END NOTEBOOK SETTINGS ===== */
+
+
+/* ===== TRANSPARENCY VIEW -- Stage 3.10c =====
+   Diagnostic / monitored surface treatment per option (a): a thin
+   --ink-3 border around .transparency-panel marks it as a discrete
+   read-only surface, structurally distinct from the writing flow. */
+
+.transparency-panel {
+  margin: 24px 0;
+  padding: 24px 24px 32px 24px;
+  border: 1px solid var(--ink-3);
+  border-radius: 2px;
+  background: var(--color-surface);
+  font-family: var(--font-body);
+}
+
+.transparency-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.transparency-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.transparency-close {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.transparency-close:hover {
+  color: var(--ink);
+}
+
+.transparency-framing {
+  margin: 0 0 24px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.transparency-section {
+  margin-bottom: 24px;
+}
+
+.transparency-section:last-child {
+  margin-bottom: 0;
+}
+
+.transparency-section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+
+.transparency-section-body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* Individual entry / artifact / turn cards inside a section body.
+   Quiet boxed treatment — wheat-tone surface-2 fill so each card
+   reads as a discrete item without competing with the panel's
+   own border. */
+.transparency-entry,
+.transparency-artifact {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: var(--surface-2);
+  border-radius: 2px;
+}
+
+.transparency-entry:last-child,
+.transparency-artifact:last-child {
+  margin-bottom: 0;
+}
+
+.transparency-entry-body,
+.transparency-artifact-body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.transparency-entry-meta,
+.transparency-artifact-meta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.transparency-artifact-title {
+  margin: 0 0 6px 0;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Conversation-turn lines stack tightly; the role glyph sits next
+   to the body on a single line for compact telemetry rendering. */
+.transparency-turn {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.transparency-turn + .transparency-turn {
+  border-top: 1px dotted var(--border);
+}
+
+.transparency-turn-role {
+  flex-shrink: 0;
+  width: 56px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.transparency-turn-body {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+/* ===== END TRANSPARENCY VIEW ===== */
+
+
+/* ===== EDITOR MODALS -- Stage 3.10c =====
+   Three editor families styled together with the A6 consolidations
+   approved in Stage 0:
+   - A6.1 grouped: actions-row + Save/Submit + Cancel across all
+     three families (3 grouped rules);
+   - A6.3 grouped: large-body textareas, one grouped rule across
+     .shelf-bulk-editor-textarea and .notebook-editor-body;
+   - Status radios grouped across .shelf-editor-status and
+     .book-detail-status (Stage 1 reserved this; Stage 3 implements);
+   - A6.2 single-line inputs: PER-CLASS rules, not grouped. Each
+     input class has its own rule body even where declarations match
+     today — a future divergence (e.g. ISBN field) is a local edit,
+     not a rule split. Decision rationale per Stage 0; the per-class
+     path also keeps the "no restructure of openEditor /
+     openShelfEditor / openBulkAddEditor" non-goal intact (no JS
+     touch for a className base prefix).
+
+   Container chrome (.shelf-editor / .shelf-bulk-editor /
+   .notebook-editor) uses the same --surface-2 fill + --border
+   outline as the Stage 2 notebook-settings-panel so editors sit
+   consistently across both Notebook and shelf surfaces. */
+
+/* Container chrome — shared across all three editor families. */
+.shelf-editor,
+.shelf-bulk-editor,
+.notebook-editor {
+  margin: 24px 0;
+  padding: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: var(--font-body);
+}
+
+/* A6.2 single-line inputs — per-class rules. Identical declarations
+   today; deliberate non-grouping so divergence (likely on ISBN) is
+   a local edit. */
+
+.shelf-editor-title-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.shelf-editor-title-input:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-title-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-author-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.shelf-editor-author-input:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-author-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+/* Genre input. Stage 4 swaps this element from <input> to <select>;
+   the declarations here are element-agnostic (no input/select
+   element-selector prefix) and work for both. */
+.shelf-editor-genre-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.shelf-editor-genre-input:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-genre-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-isbn-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.shelf-editor-isbn-input:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-editor-isbn-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+.notebook-editor-title-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 120ms ease;
+}
+
+.notebook-editor-title-input:hover {
+  border-color: var(--ink-3);
+}
+
+.notebook-editor-title-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+/* Status selector — grouped across shelf-editor + book-detail.
+   Same data shape; Stage 1 deferred this group to Stage 3. The
+   rule body matches what Stage 1's standalone book-detail-status
+   rule already used; the grouped rule REPLACES that standalone
+   rule (the standalone one is removed below to avoid duplicate
+   declarations). */
+.shelf-editor-status,
+.book-detail-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 12px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.shelf-editor-status-option,
+.book-detail-status-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* A6.3 grouped — large-body textareas across bulk-add and the
+   shared notebook-editor (journal / marginalia / artifact). */
+.shelf-bulk-editor-textarea,
+.notebook-editor-body {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  padding: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  resize: vertical;
+  transition: border-color 120ms ease;
+}
+
+.shelf-bulk-editor-textarea:hover,
+.notebook-editor-body:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-bulk-editor-textarea:focus,
+.notebook-editor-body:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+/* A6.1 grouped — actions row (the wrapper) across all three
+   editor families. */
+.shelf-editor-actions,
+.shelf-bulk-editor-actions,
+.notebook-editor-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* A6.1 grouped — primary CTA (Save / Submit / Save). Dark-fill
+   treatment matching .shelf-new-book and the Stage 1 book-detail
+   primary affordances. */
+.shelf-editor-save,
+.shelf-bulk-editor-submit,
+.notebook-editor-save {
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.shelf-editor-save:hover,
+.shelf-bulk-editor-submit:hover,
+.notebook-editor-save:hover {
+  background: var(--br-deep);
+}
+
+.shelf-editor-save:disabled,
+.notebook-editor-save:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* A6.1 grouped — Cancel across all three editor families.
+   Secondary treatment matching .shelf-new-book-bulk. */
+.shelf-editor-cancel,
+.shelf-bulk-editor-cancel,
+.notebook-editor-cancel {
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.shelf-editor-cancel:hover,
+.shelf-bulk-editor-cancel:hover,
+.notebook-editor-cancel:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* ===== END EDITOR MODALS ===== */
+
+
+/* ===== NOTEBOOK SIGN-IN PROMPT -- Stage 3.10c =====
+   Stage 0 inventory gap. The signed-out Notebook header carries a
+   .notebook-signin-prompt button; without a rule it would ship bare
+   alongside the now-styled .notebook-settings-toggle /
+   .notebook-transparency-toggle siblings. Mirrors the existing
+   signin-prompt precedent (.shelf-signin-prompt /
+   .book-detail-signin-prompt) — dark-fill primary affordance. */
+
+.notebook-signin-prompt {
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.notebook-signin-prompt:hover {
+  background: var(--br-deep);
+}
+
+/* ===== END NOTEBOOK SIGN-IN PROMPT ===== */
+
+
 /* ===== MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) -- Stage 3.10a Stage 4 =====
    Both elements live in the DOM at all viewport widths but are
    hidden on desktop via display: none here; the mobile media
@@ -858,7 +1711,26 @@
 .shelf-resolve-covers-btn:focus-visible,
 .shelf-signin-prompt:focus-visible,
 .shelf-filter-button:focus-visible,
-.shelf-filter-row:focus-visible {
+.shelf-filter-row:focus-visible,
+.book-detail-mark-finished:focus-visible,
+.book-detail-create-artifact:focus-visible,
+.book-detail-open-artifact:focus-visible,
+.book-detail-signin-prompt:focus-visible,
+.book-detail-new-entry:focus-visible,
+.artifact-back-link:focus-visible,
+.artifact-substrate-link:focus-visible,
+.notebook-settings-toggle:focus-visible,
+.notebook-transparency-toggle:focus-visible,
+.notebook-settings-toggle-link:focus-visible,
+.notebook-settings-done:focus-visible,
+.transparency-close:focus-visible,
+.shelf-editor-save:focus-visible,
+.shelf-editor-cancel:focus-visible,
+.shelf-bulk-editor-submit:focus-visible,
+.shelf-bulk-editor-cancel:focus-visible,
+.notebook-editor-save:focus-visible,
+.notebook-editor-cancel:focus-visible,
+.notebook-signin-prompt:focus-visible {
   outline: 2px solid var(--river);
   outline-offset: 2px;
 }
@@ -869,7 +1741,22 @@
 .shelf-resolve-covers-btn:active,
 .shelf-signin-prompt:active,
 .shelf-filter-button:active,
-.shelf-filter-row:active {
+.shelf-filter-row:active,
+.book-detail-mark-finished:active,
+.book-detail-create-artifact:active,
+.book-detail-open-artifact:active,
+.book-detail-signin-prompt:active,
+.book-detail-new-entry:active,
+.notebook-settings-toggle:active,
+.notebook-transparency-toggle:active,
+.transparency-close:active,
+.shelf-editor-save:active,
+.shelf-editor-cancel:active,
+.shelf-bulk-editor-submit:active,
+.shelf-bulk-editor-cancel:active,
+.notebook-editor-save:active,
+.notebook-editor-cancel:active,
+.notebook-signin-prompt:active {
   transform: translateY(1px);
 }
 
