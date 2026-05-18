@@ -101,9 +101,14 @@
 //   3.5b: shelf-book-cover, shelf-book-cover-placeholder,
 //         book-detail-cover-placeholder, book-detail-isbn-row,
 //         book-detail-isbn-label, book-detail-isbn-input
+//   3.8:  notebook-new-arc, notebook-arc-list-block,
+//         notebook-arc-list-title, notebook-arc-empty-body,
+//         notebook-arc-list, notebook-arc-row, notebook-arc-title,
+//         notebook-arc-description
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3),
-//                    #shelf-editor-host (3.5a)
+//                    #shelf-editor-host (3.5a),
+//                    #notebook-arc-editor-host (3.8)
 //   Settings host id:     #notebook-settings-host (3.4b)
 //   Transparency host id: #notebook-transparency-host (3.6)
 //
@@ -315,6 +320,15 @@ function renderNotebook() {
     });
     header.appendChild(newBtn);
 
+    var newArcBtn = document.createElement('button');
+    newArcBtn.type = 'button';
+    newArcBtn.className = 'notebook-new-arc';
+    newArcBtn.textContent = '+ New arc';
+    newArcBtn.addEventListener('click', function() {
+      openArcEditor();
+    });
+    header.appendChild(newArcBtn);
+
     var settingsBtn = document.createElement('button');
     settingsBtn.type = 'button';
     settingsBtn.className = 'notebook-settings-toggle';
@@ -363,6 +377,62 @@ function renderNotebook() {
   var editorHost = document.createElement('div');
   editorHost.id = 'notebook-editor-host';
   wrap.appendChild(editorHost);
+
+  // Stage 3.8: arc editor host -- empty on every render; openArcEditor
+  // mounts the title + description form here on demand. Placed
+  // adjacent to the entry editor host so the arc affordance and the
+  // entry affordance share the same mount-region of the surface.
+  var arcEditorHost = document.createElement('div');
+  arcEditorHost.id = 'notebook-arc-editor-host';
+  wrap.appendChild(arcEditorHost);
+
+  // Stage 3.8: arc-list block. Always renders (the heading is the
+  // durable cue that arcs exist, surviving past first-create when the
+  // empty-state line goes away). Filter by current user, newest-first
+  // by createdAt -- mirrors the chronological stream's ordering
+  // convention. Rows are inert this stage; arc detail navigation is
+  // 3.9. Block lives ABOVE the chronological item stream and BELOW
+  // the header / editor hosts.
+  var arcBlock = document.createElement('section');
+  arcBlock.className = 'notebook-arc-list-block';
+
+  var arcHeading = document.createElement('h2');
+  arcHeading.className = 'notebook-arc-list-title';
+  arcHeading.textContent = 'Arcs';
+  arcBlock.appendChild(arcHeading);
+
+  var arcItems = [];
+  var arcMap = state.arcs || {};
+  var arcKey;
+  for (arcKey in arcMap) {
+    if (Object.prototype.hasOwnProperty.call(arcMap, arcKey)) {
+      var arc = arcMap[arcKey];
+      if (arc && user && arc.userId === user.uid) {
+        arcItems.push(arc);
+      }
+    }
+  }
+  arcItems.sort(function(x, y) {
+    return (y.createdAt || 0) - (x.createdAt || 0);
+  });
+
+  if (arcItems.length === 0) {
+    var arcEmpty = document.createElement('p');
+    arcEmpty.className = 'notebook-arc-empty-body';
+    arcEmpty.textContent =
+      'No arcs yet. Use + New arc to start one.';
+    arcBlock.appendChild(arcEmpty);
+  } else {
+    var arcList = document.createElement('div');
+    arcList.className = 'notebook-arc-list';
+    var ai;
+    for (ai = 0; ai < arcItems.length; ai++) {
+      arcList.appendChild(renderArcRow(arcItems[ai]));
+    }
+    arcBlock.appendChild(arcList);
+  }
+
+  wrap.appendChild(arcBlock);
 
   // Stage 3.7: /notebook unifies notebookEntries + bookArtifacts as
   // distinct card kinds in one chronological stream owned by the
@@ -557,6 +627,35 @@ function openJournalEditor() {
         updatedAt:  now
       };
       state.notebookEntries[id] = entry;
+      saveState();
+      renderNotebook();
+    },
+    onCancel: function() {
+      renderNotebook();
+    }
+  });
+}
+
+// Stage 3.8: arc creation editor. Thin wrapper around openEditor --
+// title field is required (Save auto-disabled while empty; onSave does
+// not fire on empty input), body field carries the optional
+// description. onSave resolves the user via getCurrentUser, no-ops if
+// absent (mirrors openJournalEditor), then calls createArc with
+// (title, description, user.uid). createArc returns null only on
+// empty-title (already gated by the openEditor disabled-Save
+// validation, so this is belt-and-suspenders); on success the
+// saveState + renderNotebook sequence matches the entry-creation path
+// exactly. Cancel just re-renders, which clears the editor host as
+// part of the full tree rebuild.
+function openArcEditor() {
+  openEditor({
+    hostId:         'notebook-arc-editor-host',
+    showTitleField: true,
+    onSave: function(titleVal, bodyVal) {
+      var user = getCurrentUser();
+      if (!user) return;
+      var arc = createArc(titleVal, bodyVal, user.uid);
+      if (!arc) return;
       saveState();
       renderNotebook();
     },
@@ -2350,6 +2449,32 @@ function renderArtifactCard(artifact) {
   }
 
   return card;
+}
+
+// Stage 3.8: render a single arc as an inert row in the arc-list
+// block. Title is always present (createArc rejects empty titles after
+// trim); description renders only when non-empty so an arc without a
+// description does not leave an empty subordinate line. Rows are inert
+// this stage -- arc detail navigation is 3.9. Mirrors the entry card's
+// <article>-based structure for visual consistency with the post-3.8
+// styling pass; no event handlers wired.
+function renderArcRow(arc) {
+  var row = document.createElement('article');
+  row.className = 'notebook-arc-row';
+
+  var titleEl = document.createElement('div');
+  titleEl.className = 'notebook-arc-title';
+  titleEl.textContent = arc.title || '';
+  row.appendChild(titleEl);
+
+  if (arc.description) {
+    var descEl = document.createElement('div');
+    descEl.className = 'notebook-arc-description';
+    descEl.textContent = arc.description;
+    row.appendChild(descEl);
+  }
+
+  return row;
 }
 
 // Per-register default lookup. Fail-safe to false (visible) on any
