@@ -3437,6 +3437,56 @@ var STAGES = [
 'Stage 0: confirm the two v.imageLinks.thumbnail read sites in integrations.js (fetchBookByTitle and fetchGoogleBooks). Resolve the open-decision on backfill of stored values.\n\n' +
 'Stage 1: integrations.js — anchored leading-"http://" → "https://" rewrite at both read sites; coverUrl stored https:// only.\n\n' +
 'Stage 2: live verification — newly-added book stores https:// coverUrl; Console clean of Mixed Content warnings for newly resolved covers.'
+      },
+
+      {
+        id: 's3-10b-i',
+        num: '3.10b-i',
+        name: 'Mobile filter panel completion + SW install-interception fix',
+        depConfirm: '3.10b Shipped (filter logic + interactive states live). The mobile filter panel toggles open/close in 3.10a markup but lacks backdrop, close button, tap-outside dismiss, and Escape handler — surfaced during 3.10b 375px verification. SW install-interception staleness pattern documented in DEFERRED entry with six observed bites; the most recent (3.10i deploy) was the worst.',
+        purpose: 'Two independent changes bundled by efficiency, not by coupling: (Part A) finish the mobile filter panel chrome — backdrop, close button, tap-outside dismiss, Escape keydown — all routed through one open/dismiss pair so panel + backdrop always move together; (Part B) fix the service-worker install-time interception that caused six staleness bites by cache-busting the new SW\'s precache fetches so the old SW\'s cache-first interception cannot poison the new cache key. Separate commits so a failure in one is independently revertible.',
+        scope: [
+          'Part A — backdrop element as sibling of .shelf-sidebar inside .shelf-layout, created fresh every render; class .shelf-sidebar-backdrop, toggled .shelf-sidebar-backdrop-open in lockstep with .shelf-sidebar-mobile-open',
+          'Part A — close × button as first child of sidebar (aria-label "Close filters"), mobile-only via CSS display gate, --ink-3 quiet treatment, :focus-visible --river ring consistent with 3.10b Stage 1',
+          'Part A — single openShelfFilterPanel / dismissShelfFilterPanel pair in renderShelf closure wired to four dismiss triggers: close button, backdrop click, Escape keydown (document scope), filter-button click when already open',
+          'Part A — module-scope shelfSidebarEscapeHandler slot so renderShelf can purge a stale handler on rebuild (filter-click auto-close path); top-of-renderShelf cleanup + open() rotates the slot',
+          'Part A — CSS: backdrop hidden by default, full-viewport color-mix(in srgb, var(--ink) 40%, transparent) fill at z-index 99 (panel stays at 100, well below Yumi 9998/9999) inside @media (max-width: 759px); close button positioned absolute top-right of the fixed sidebar',
+          'Part B — sw.js install handler: replace cache.addAll(APP_SHELL) with a Promise.all loop calling a precacheFresh(cache, url) helper that fetches each url with ?sw_v=<CACHE_VERSION> query string and {cache:"reload"}, then cache.put under the canonical URL — old SW\'s caches.match misses the busted URL, falls through to network, returns fresh bytes',
+          'Part B — activate and fetch handlers byte-identical to pre-edit; runtime/offline behavior unchanged',
+          'Cache bump praxis-v3.10-f -> praxis-v3.10-g lands in the Part B commit'
+        ],
+        nonGoals: [
+          'Part A — no change to filter LOGIC (3.10b shipped it); no desktop sidebar change',
+          'Part B — install handler only; no stale-while-revalidate rework, no network-first strategy, no fetch-handler change',
+          'No non-shelf surfaces, no genre-dropdown retrofit (both 3.10c)'
+        ],
+        subsystems: ['views', 'styling', 'service-worker'],
+        files: [
+          'js/views.js (Part A — backdrop, close, dismiss pair, Escape slot)',
+          'assets/components.css (Part A — mobile chrome rules)',
+          'sw.js (Part B — install-handler precacheFresh + cache bump)'
+        ],
+        acceptance: [
+          'Part A — opening the mobile filter panel shows backdrop AND sidebar; any of the four dismiss triggers removes both; auto-close on filter-click re-render leaves no lingering backdrop',
+          'Part A — Escape handler is purged on every dismiss AND at the top of every renderShelf (no leak across renders)',
+          'Part A — desktop width: no backdrop visible, no close button visible, 3.10b desktop treatment unchanged',
+          'Part B — the next deploy after praxis-v3.10-g lands cleanly without requiring a manual unregister+reload (this is the install-interception fix\'s real proof, not provable on the v3.10-g deploy itself)'
+        ],
+        evidence: [
+          'Part A — mobile filter panel completed: backdrop, close button, tap-outside and Escape dismiss, all routed through one open/dismiss pair; auto-close on filter-click re-render leaves no lingering backdrop; Escape handler purged per-render (no leak). Part B — SW install-interception fix: install handler precaches via cache-busted {cache:"reload"} fetches so a stale active SW cannot poison the new cache. Commits e8e7dad (Part A), d516bab (Part B, cache praxis-v3.10-g). Part A verified in-harness; real-device 375px and Part B\'s install-interception effectiveness both pending next-deploy confirmation.',
+          'Note: the v3.10-g deploy itself was still subject to the old v3.10-f SW intercepting its precache (expected — v3.10-f does not contain the fix). Future deploys after v3.10-g are what the fix protects.'
+        ],
+        rollback: 'Two independent commits — Part A revertible without touching Part B, and vice versa. Part A revert restores the 3.10a-era toggle (open/close via filter button, no chrome). Part B revert restores cache.addAll precache (returns to the install-interception staleness pattern).',
+        risks: [
+          'Part B effectiveness only proven on the deploy AFTER praxis-v3.10-g; the v3.10-g deploy itself needed the one final manual unregister+reload as expected',
+          'Part A real-device 375px visual check is outside the in-harness verification (MCP browser refuses to shrink content below 1280px); responsibility falls to manual DevTools device-mode verification'
+        ],
+        promptSkeleton:
+'Stage 0: confirm Part A render path (sidebar, filter button, toggle), mobile CSS rules, no existing backdrop/close affordance. Diagnose Part B root cause (install-time interception by old SW). Confirm minimal fix is bounded, not full stale-while-revalidate rework.\n\n' +
+'Stage 1 — Part A: backdrop element + close button + single open/dismiss pair wired to 4 triggers; Escape handler at module scope, purged at renderShelf top and on dismiss; CSS at backdrop z-index 99 (below panel 100, far below Yumi).\n\n' +
+'Stage 2 — Part B: sw.js install-handler precacheFresh with ?sw_v= cache-bust + {cache:"reload"}, cache.put under canonical URL; activate/fetch handlers byte-identical; cache bump v3.10-f -> v3.10-g.\n\n' +
+'Stage 3: two separate commits (Part A, Part B) so revert can target one; push.\n\n' +
+'Stage 4: live verification at praxis-reading.netlify.app; Part A via in-harness JS-driven dismiss-path checks + injected CSS lift; Part B verified deployed-but-not-yet-provable (real proof is the next deploy).'
       }
     ]
   },
@@ -3741,10 +3791,10 @@ var SUBSYSTEMS = [
 
 var DEFERRED = [
   {
-    name: 'Stale-while-revalidate SW rework',
+    name: 'SW freshness without reload (narrowed from "Stale-while-revalidate SW rework")',
     dateDeferred: '2026-05-17',
-    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has now bitten the project SIX times — stale components.css mid-3.10a, stale views.js post-Firestore stages, a repeat stale views.js observation, a stale views.js after the 3.10e deploy that cost an extended live-debugging session because the sw.js cache-version bump was edited locally but never committed, the 3.10b deploy (2026-05-18) where the v3.10-d -> v3.10-e bump WAS committed and pushed but the old SW intercepted the new SW\'s cache.addAll so the new praxis-v3.10-e cache held stale views.js until a manual unregister+reload, and most recently the 3.10i deploy (2026-05-18) where the v3.10-e -> v3.10-f bump was committed and pushed but the old SW held control through TWO full reload cycles (browser HTTP cache poisoning compounded on top of the SW interception) — required unregister + clear-all-caches + cache:"reload" of every APP_SHELL file + a true location.reload before the new code executed; the worst occurrence so far. Each fix has been a one-line bump or manual purge; the mechanism makes recurrence near-certain.',
-    comesBackWhen: 'Promoted from deferred — this should be taken as its own stage soon, ideally bundled with the next infrastructure touch (the vision-proxy work in 3.10f is a natural pairing). "Not blocking" is no longer accurate after a fourth bite. Rework options unchanged: stale-while-revalidate, or network-first for app JS/CSS with HTML and manifest staying pre-cached.'
+    reason: 'NARROWED 2026-05-18 in 3.10b-i. The install-interception facet — the six documented bites where the active old SW intercepted the new SW\'s cache.addAll and poisoned the new cache with stale bytes — has been RESOLVED in d516bab / praxis-v3.10-g: the install handler now cache-busts each APP_SHELL precache fetch with a ?sw_v=<CACHE_VERSION> query string and {cache:"reload"} option, then cache.puts under the canonical URL. The old SW\'s caches.match misses the busted URL, falls through to network, returns fresh bytes; the new cache populates cleanly without requiring a manual unregister+reload. EFFECTIVENESS PENDING confirmation on the next deploy: if the v3.10-g -> v3.10-h transition lands without a manual unregister+reload, the fix is proven. The v3.10-g deploy itself still needed the manual workaround one last time (the v3.10-f SW intercepted it the old way, as expected — v3.10-f did not contain the fix). The remaining concern this entry now scopes is freshness without reload: a user who keeps the app open across a deploy gets the new SW asynchronously but their current tab continues running old code until they reload. The install-interception bites were the per-deploy blocker; this remaining concern is not. REDUCED PRIORITY accordingly. The six-bite history is preserved in commit log and prior versions of this entry for context.',
+    comesBackWhen: 'No longer urgent — install-interception was the blocker, and that is fixed pending next-deploy confirmation. Revisit if a distinct user-facing freshness need surfaces (e.g. long-session users on important fixes who would not reload naturally). Rework options unchanged: stale-while-revalidate, or network-first for app JS/CSS with HTML and manifest staying pre-cached.'
   },
   {
     name: 'TTS / spoken Yumi',
