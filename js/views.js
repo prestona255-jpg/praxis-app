@@ -603,6 +603,17 @@ function renderShelf() {
   if (!host) return;
   host.innerHTML = '';
 
+  // 3.10b-i: purge any stale Escape handler from a previous render.
+  // The fresh render replaces the sidebar; the old handler closed
+  // over the now-detached old sidebar/backdrop pair. Without this,
+  // an Escape press between an auto-close (filter-click re-render)
+  // and the next open would no-op on the detached old sidebar and
+  // leak a listener. The open/dismiss path below rebinds cleanly.
+  if (shelfSidebarEscapeHandler) {
+    document.removeEventListener('keydown', shelfSidebarEscapeHandler);
+    shelfSidebarEscapeHandler = null;
+  }
+
   var wrap = document.createElement('section');
   wrap.className = 'shelf';
 
@@ -728,6 +739,26 @@ function renderShelf() {
   var sidebar = document.createElement('aside');
   sidebar.className = 'shelf-sidebar';
 
+  // 3.10b-i: backdrop — sibling of sidebar inside .shelf-layout
+  // (appended below after both are populated). Class .shelf-sidebar-
+  // backdrop; default-hidden by CSS, revealed by toggling .shelf-
+  // sidebar-backdrop-open in lockstep with .shelf-sidebar-mobile-open.
+  var backdrop = document.createElement('div');
+  backdrop.className = 'shelf-sidebar-backdrop';
+
+  // 3.10b-i: close affordance. First child of the sidebar so source-
+  // order tab focus lands on it when the panel opens — gives keyboard
+  // users an immediate dismiss path. Mobile-only via CSS display
+  // gate (the desktop sidebar has no panel chrome). The aria-label
+  // carries semantics for screen readers; the visible glyph is ×
+  // (U+00D7 multiplication sign).
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'shelf-sidebar-close';
+  closeBtn.setAttribute('aria-label', 'Close filters');
+  closeBtn.textContent = '×';
+  sidebar.appendChild(closeBtn);
+
   // Theme section -- 15 rows, file order from docs/themes.md mirror.
   var themeSection = document.createElement('div');
   themeSection.className = 'shelf-filter-section';
@@ -796,6 +827,45 @@ function renderShelf() {
   sidebar.appendChild(authorSection);
 
   layout.appendChild(sidebar);
+  // 3.10b-i: backdrop appended as a sibling of the sidebar inside
+  // .shelf-layout. Order after the sidebar so the close-button focus
+  // ring (Stage 1 :focus-visible) renders cleanly above the backdrop
+  // dim. CSS z-index keeps the sidebar (100) above the backdrop (99).
+  layout.appendChild(backdrop);
+
+  // 3.10b-i: mobile filter panel open/close. Backdrop and sidebar
+  // always toggle together via add/remove of paired classes. dismiss
+  // is the single source of truth — wired to four triggers below:
+  // the close × button, a click on the backdrop, an Escape keydown
+  // at document scope, and the .shelf-filter-button when the panel
+  // is already open. The Escape handler is parked at module scope
+  // (shelfSidebarEscapeHandler) so a re-render can purge a stale
+  // one; see the cleanup at the top of renderShelf.
+  function openShelfFilterPanel() {
+    sidebar.classList.add('shelf-sidebar-mobile-open');
+    backdrop.classList.add('shelf-sidebar-backdrop-open');
+    if (shelfSidebarEscapeHandler) {
+      document.removeEventListener('keydown', shelfSidebarEscapeHandler);
+    }
+    shelfSidebarEscapeHandler = function(ev) {
+      if (ev.key === 'Escape' || ev.key === 'Esc') {
+        dismissShelfFilterPanel();
+      }
+    };
+    document.addEventListener('keydown', shelfSidebarEscapeHandler);
+  }
+
+  function dismissShelfFilterPanel() {
+    sidebar.classList.remove('shelf-sidebar-mobile-open');
+    backdrop.classList.remove('shelf-sidebar-backdrop-open');
+    if (shelfSidebarEscapeHandler) {
+      document.removeEventListener('keydown', shelfSidebarEscapeHandler);
+      shelfSidebarEscapeHandler = null;
+    }
+  }
+
+  closeBtn.addEventListener('click', dismissShelfFilterPanel);
+  backdrop.addEventListener('click', dismissShelfFilterPanel);
 
   // Right column: editor host above the grid/empty.
   var main = document.createElement('div');
@@ -814,11 +884,15 @@ function renderShelf() {
   filterBtn.type = 'button';
   filterBtn.className = 'shelf-filter-button shelf-new-book-bulk';
   filterBtn.textContent = 'Filter';
+  // 3.10b-i: routes through openShelfFilterPanel / dismissShelfFilter-
+  // Panel so the backdrop and Escape handler move in lockstep with
+  // .shelf-sidebar-mobile-open. The 3.10a-era class-flip-only handler
+  // would leave the backdrop in whatever state was last seen.
   filterBtn.addEventListener('click', function() {
     if (sidebar.classList.contains('shelf-sidebar-mobile-open')) {
-      sidebar.classList.remove('shelf-sidebar-mobile-open');
+      dismissShelfFilterPanel();
     } else {
-      sidebar.classList.add('shelf-sidebar-mobile-open');
+      openShelfFilterPanel();
     }
   });
   main.appendChild(filterBtn);
@@ -1111,6 +1185,15 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // correct, the genre-dropdown retrofit is 3.10c. Author values come
 // from state.books so they match by construction.
 var shelfFilter = { theme: null, author: null };
+
+// 3.10b-i: module-scope reference to the document-level Escape
+// listener bound when the mobile filter panel is open. Tracked here
+// (not inside renderShelf's closure) so a re-render can purge a
+// stale handler that closed over the previous render's detached
+// sidebar. Null when no handler is bound. The open/close path in
+// renderShelf rotates this slot: open() removes any prior + adds a
+// fresh one, dismiss() removes and clears it.
+var shelfSidebarEscapeHandler = null;
 
 // 3.10b Stage 3: single-select toggle. Called by both the click and
 // keydown handlers on every .shelf-filter-row. If the section's

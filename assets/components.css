@@ -806,6 +806,25 @@
 /* ===== END MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) ===== */
 
 
+/* ===== MOBILE FILTER PANEL CHROME (DEFAULTS) -- Stage 3.10b-i =====
+   The backdrop and the close-× button are mobile-only panel chrome:
+   they exist in the DOM at every viewport width (renderShelf creates
+   them unconditionally) but display: none here on desktop. The
+   mobile media query block at the bottom of this file reveals them
+   and supplies the active-state styling. Pattern mirrors the
+   MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) block above. */
+
+.shelf-sidebar-backdrop {
+  display: none;
+}
+
+.shelf-sidebar-close {
+  display: none;
+}
+
+/* ===== END MOBILE FILTER PANEL CHROME (DEFAULTS) ===== */
+
+
 /* ===== INTERACTIVE STATES -- Stage 3.10b Stage 1 =====
    Focus / active / disabled states for every clickable element on
    the shelf surface and top nav. Additive over 3.10a's default +
@@ -997,6 +1016,58 @@
   .shelf-filter-button {
     display: inline-block;
     margin-bottom: 24px;
+  }
+
+  /* 3.10b-i: mobile filter panel chrome.
+     - Backdrop: full-viewport semi-transparent fill, sits at z-index
+       99 — just below the panel (100), well below Yumi (9998/9999).
+       The dim is a color-mix on --ink (the cherry-oak ramp) at 40%
+       opacity, mirroring the gold-family color-mix idiom already
+       used by the reading-status pill (.shelf-book-status-reading).
+     - Close button: quiet × in --ink-3, positioned absolute to the
+       top-right of the panel (the panel is position: fixed at this
+       breakpoint, so absolute resolves against it). :hover lifts to
+       --ink; :focus-visible reuses --river (consistent with Stage
+       3.10b Stage 1 focus rings); :active uses the translateY(1px)
+       press idiom. No new tokens; no hardcoded hex. */
+  .shelf-sidebar-backdrop.shelf-sidebar-backdrop-open {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: color-mix(in srgb, var(--ink) 40%, transparent);
+    z-index: 99;
+  }
+
+  .shelf-sidebar-close {
+    display: block;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-family: var(--font-body);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: color 120ms ease;
+  }
+
+  .shelf-sidebar-close:hover {
+    color: var(--ink);
+  }
+
+  .shelf-sidebar-close:focus-visible {
+    outline: 2px solid var(--river);
+    outline-offset: 2px;
+  }
+
+  .shelf-sidebar-close:active {
+    transform: translateY(1px);
   }
 
   /* Cards: cover area drops to 160px on mobile per Stage 3 brief
