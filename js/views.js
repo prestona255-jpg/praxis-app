@@ -1343,10 +1343,29 @@ function openShelfEditor() {
     statusWrap.appendChild(label);
   }
 
-  var genreInput = document.createElement('input');
-  genreInput.type = 'text';
+  // 3.10c Stage 4: free-text <input> swapped for a <select> populated
+  // from SHELF_THEMES. First option carries value '' for "no theme
+  // selected" — books with empty or legacy non-SHELF_THEMES genre
+  // values land on this option without rewriting their stored
+  // string. The variable name 'genreInput' is preserved so the
+  // save-handler read at genreInput.value below is byte-unchanged
+  // (.value contract is identical across <input> and <select>).
+  // .placeholder is dropped — <select> does not honor placeholder;
+  // the 'No theme' option replaces its semantics.
+  var genreInput = document.createElement('select');
   genreInput.className = 'shelf-editor-genre-input';
-  genreInput.placeholder = 'Genre (optional)';
+  var emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = 'No theme';
+  genreInput.appendChild(emptyOpt);
+  var gi;
+  var opt;
+  for (gi = 0; gi < SHELF_THEMES.length; gi++) {
+    opt = document.createElement('option');
+    opt.value = SHELF_THEMES[gi];
+    opt.textContent = SHELF_THEMES[gi];
+    genreInput.appendChild(opt);
+  }
 
   var isbnInput = document.createElement('input');
   isbnInput.type = 'text';
