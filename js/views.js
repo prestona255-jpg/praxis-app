@@ -741,8 +741,22 @@ function renderShelf() {
   var themeRow;
   for (ti = 0; ti < SHELF_THEMES.length; ti++) {
     themeRow = document.createElement('li');
-    themeRow.className = 'shelf-filter-row';
+    // 3.10b Stage 3: bare <li> -> real interactive control. role +
+    // tabindex make the row focusable and screen-reader-announced as
+    // a button; data-* carries the filter section + value so the
+    // handlers can read directly from the element (avoids the
+    // var-loop closure trap). Selected class is applied on render
+    // by re-reading shelfFilter -- the single source of truth.
+    themeRow.className = shelfFilter.theme === SHELF_THEMES[ti]
+      ? 'shelf-filter-row shelf-filter-row-selected'
+      : 'shelf-filter-row';
+    themeRow.setAttribute('role', 'button');
+    themeRow.setAttribute('tabindex', '0');
+    themeRow.setAttribute('data-filter-section', 'theme');
+    themeRow.setAttribute('data-filter-value', SHELF_THEMES[ti]);
     themeRow.textContent = SHELF_THEMES[ti];
+    themeRow.addEventListener('click', onShelfFilterRowClick);
+    themeRow.addEventListener('keydown', onShelfFilterRowKeydown);
     themeList.appendChild(themeRow);
   }
   themeSection.appendChild(themeList);
@@ -761,8 +775,21 @@ function renderShelf() {
   var authorRow;
   for (ai = 0; ai < authors.length; ai++) {
     authorRow = document.createElement('li');
-    authorRow.className = 'shelf-filter-row';
+    // 3.10b Stage 3: same treatment as theme rows -- role, tabindex,
+    // data-* for section + value, selected class on render, click +
+    // keydown handlers. Both row types share the handler pair via
+    // the data-filter-section attribute, so the handler reads
+    // 'theme' or 'author' directly off the activated element.
+    authorRow.className = shelfFilter.author === authors[ai]
+      ? 'shelf-filter-row shelf-filter-row-selected'
+      : 'shelf-filter-row';
+    authorRow.setAttribute('role', 'button');
+    authorRow.setAttribute('tabindex', '0');
+    authorRow.setAttribute('data-filter-section', 'author');
+    authorRow.setAttribute('data-filter-value', authors[ai]);
     authorRow.textContent = authors[ai];
+    authorRow.addEventListener('click', onShelfFilterRowClick);
+    authorRow.addEventListener('keydown', onShelfFilterRowKeydown);
     authorListEl.appendChild(authorRow);
   }
   authorSection.appendChild(authorListEl);
@@ -819,28 +846,68 @@ function renderShelf() {
     return (b.addedAt || 0) - (a.addedAt || 0);
   });
 
+  // 3.10b Stage 3: filter pass. Sits AFTER the addedAt sort and
+  // BEFORE the empty-state branch -- the empty-state branch consumes
+  // the post-filter length, which is what drives the filter-empty
+  // copy switch below. STRICT === only: no toLowerCase, no indexOf,
+  // no normalization. An active filter excludes any book whose
+  // corresponding field is empty/missing or whose value is not ===
+  // the selection. A null filter for a section is a no-op for that
+  // section. AND across sections: a book passes only if both
+  // predicates pass.
+  var filtered = [];
+  var fi;
+  var fb;
+  var themeOk;
+  var authorOk;
+  for (fi = 0; fi < books.length; fi++) {
+    fb = books[fi];
+    themeOk = shelfFilter.theme === null ||
+      (typeof fb.genre === 'string' && fb.genre.length > 0 &&
+       fb.genre === shelfFilter.theme);
+    authorOk = shelfFilter.author === null ||
+      (typeof fb.author === 'string' && fb.author.length > 0 &&
+       fb.author === shelfFilter.author);
+    if (themeOk && authorOk) {
+      filtered.push(fb);
+    }
+  }
+  books = filtered;
+
   if (books.length === 0) {
     // 3.10a Stage 4: empty state. Structure supports both copy
-    // variants (zero-books and zero-filter-results); 3.10a wires
-    // only zero-books because filter behavior -- the only path to
-    // zero-filter-results -- is 3.10b. The button is auth-
-    // conditional per Q1 resolution (2026-05-16): signed-in shows
-    // Add book primary, signed-out shows the sign-in prompt. Both
-    // reuse existing button classes (.shelf-new-book /
+    // variants (zero-books and zero-filter-results); 3.10a wired
+    // only zero-books, 3.10b adds the filter-empty switch below.
+    // The button is auth-conditional per Q1 resolution (2026-05-16):
+    // signed-in shows Add book primary, signed-out shows the sign-in
+    // prompt. Both reuse existing button classes (.shelf-new-book /
     // .shelf-signin-prompt) and existing handlers (openShelfEditor
-    // / signInWithGoogle) -- zero new behavior, just reuse-wiring
-    // a second button instance to a pre-existing handler.
-    // The unused .shelf-empty-body class from earlier stages is
-    // discarded; no rule consumed it.
+    // / signInWithGoogle) -- zero new behavior, just reuse-wiring a
+    // second button instance to a pre-existing handler. The unused
+    // .shelf-empty-body class from earlier stages is discarded; no
+    // rule consumed it.
+    //
+    // 3.10b Stage 3: copy switch. If any filter is active, the
+    // empty list is the result of filtering rather than an unstocked
+    // shelf; the headline + subtitle change accordingly. The auth-
+    // conditional action button stays identical in BOTH branches per
+    // the brief -- signed-out users still get the sign-in prompt
+    // even when their filter yields zero.
+    var filterActive = shelfFilter.theme !== null ||
+                       shelfFilter.author !== null;
     var empty = document.createElement('div');
     empty.className = 'shelf-empty';
     var emptyHeadline = document.createElement('h2');
     emptyHeadline.className = 'shelf-empty-headline';
-    emptyHeadline.textContent = 'Your shelf is empty.';
+    emptyHeadline.textContent = filterActive
+      ? 'Nothing on the shelf matches.'
+      : 'Your shelf is empty.';
     empty.appendChild(emptyHeadline);
     var emptySubtitle = document.createElement('p');
     emptySubtitle.className = 'shelf-empty-subtitle';
-    emptySubtitle.textContent = 'Add a book to begin.';
+    emptySubtitle.textContent = filterActive
+      ? 'Clear your filters or add a new book.'
+      : 'Add a book to begin.';
     empty.appendChild(emptySubtitle);
     var emptyUser = getCurrentUser();
     if (emptyUser) {
@@ -1031,6 +1098,61 @@ function fetchAndApplyCoverByTitle(bookId, title, author, onComplete) {
 // backfill is in flight is an immediate no-op (the disabled attr is
 // belt-and-suspenders).
 var coverResolveState = { running: false, completed: 0, total: 0 };
+
+// 3.10b: shelf filter state. Two nullable strings -- one theme, one
+// author -- enforcing single-select per section and AND across
+// sections. Memory-only; no localStorage, no URL routing; closing the
+// tab clears it. Same shape precedent as coverResolveState above: a
+// single object var at file scope, named fields, direct read/write
+// from renderShelf and the row click handlers (3.10b Stage 3).
+// Theme match is STRICT EQUALITY against the locked 15-theme
+// taxonomy (SHELF_THEMES); book.genre is free-text today, so the
+// theme filter matches ~zero books on current data -- expected and
+// correct, the genre-dropdown retrofit is 3.10c. Author values come
+// from state.books so they match by construction.
+var shelfFilter = { theme: null, author: null };
+
+// 3.10b Stage 3: single-select toggle. Called by both the click and
+// keydown handlers on every .shelf-filter-row. If the section's
+// current value === the clicked row's value, clear it (toggle off);
+// else replace it (single-select replacement of any prior choice in
+// that section). renderShelf is the one re-render entry point -- it
+// re-reads shelfFilter to apply the selected class and the match
+// predicate in a single pass.
+function toggleShelfFilter(section, value) {
+  if (shelfFilter[section] === value) {
+    shelfFilter[section] = null;
+  } else {
+    shelfFilter[section] = value;
+  }
+  renderShelf();
+}
+
+// 3.10b Stage 3: shared click handler for every .shelf-filter-row
+// (theme + author). Reads section + value from the activated
+// element's data-* attributes -- single source of truth, immune to
+// the var-loop closure trap.
+function onShelfFilterRowClick() {
+  toggleShelfFilter(
+    this.getAttribute('data-filter-section'),
+    this.getAttribute('data-filter-value')
+  );
+}
+
+// 3.10b Stage 3: keyboard activation for the same rows. Enter and
+// Space both fire toggle, matching native <button> behavior so
+// role="button" is honest. preventDefault on Space stops page
+// scroll when the focused row is an <li>. Spacebar value is the
+// legacy IE key name -- defensive, harmless on modern browsers.
+function onShelfFilterRowKeydown(ev) {
+  if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+    ev.preventDefault();
+    toggleShelfFilter(
+      this.getAttribute('data-filter-section'),
+      this.getAttribute('data-filter-value')
+    );
+  }
+}
 
 function startCoverBackfill() {
   if (coverResolveState.running) return;

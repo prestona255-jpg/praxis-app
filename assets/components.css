@@ -501,12 +501,37 @@
   font-family: var(--font-body);
   font-size: 14px;
   color: var(--ink-2);
-  cursor: default;
+  /* 3.10b Stage 3: cursor flipped from default to pointer because the
+     row is now a real interactive control (role="button" + tabindex
+     wired in renderShelf). Only permitted edit to a 3.10a rule in
+     this stage; cursor honesty, not a restyle. */
+  cursor: pointer;
   transition: color 120ms ease;
 }
 
 .shelf-filter-row:hover {
   color: var(--ink);
+}
+
+/* 3.10b Stage 2: selected-row state. JS toggles
+   .shelf-filter-row-selected on exactly one row per section when its
+   value matches the active shelfFilter for that section; cleared
+   when shelfFilter is null. --gold-light fill is the locked palette
+   choice for "selected" (one drop of warmth, mirrors the gold-family
+   idiom of the reading-status pill at .shelf-book-status-reading
+   above); --gold-text is the token paired with gold-family fills for
+   text contrast. The :hover override is needed because the existing
+   .shelf-filter-row:hover rule above shifts color to --ink -- when a
+   row is selected, hover should not steal the selected text color.
+   No padding/border-radius added: the full-row bar is intentional
+   and consistent with the sidebar's borderless, listy treatment. */
+.shelf-filter-row-selected {
+  background: var(--gold-light);
+  color: var(--gold-text);
+}
+
+.shelf-filter-row-selected:hover {
+  color: var(--gold-text);
 }
 
 .shelf-main {
@@ -779,6 +804,66 @@
 }
 
 /* ===== END MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) ===== */
+
+
+/* ===== INTERACTIVE STATES -- Stage 3.10b Stage 1 =====
+   Focus / active / disabled states for every clickable element on
+   the shelf surface and top nav. Additive over 3.10a's default +
+   hover treatment -- no 3.10a hover rule is modified.
+
+   Focus rings use --river, the single cool accent reserved for
+   "where it does work." :focus-visible (not :focus) so mouse-click
+   does not leave a stuck ring; keyboard-tab does. outline (not
+   box-shadow) so the ring does not interact with element fills or
+   borders. outline-offset: 2px keeps the ring clear of the
+   element's own border on the bordered buttons.
+
+   Active-press is a subtle translateY(1px) -- depressed motion,
+   no color change. Transitions are NOT extended to include
+   transform: :active should snap and release, not animate. That
+   preserves 3.10a's 120ms color/border transition declarations
+   unmodified.
+
+   Disabled adds cursor: not-allowed. .shelf-resolve-covers-btn
+   :disabled already exists in the Stage 1 SHELF PAGE HEADER block
+   with opacity 0.6 + cursor: default; the matching selector below
+   overrides the cursor only via cascade order, leaving the 3.10a
+   opacity untouched. .shelf-new-book has no 3.10a disabled rule;
+   this block establishes the visual treatment for the field's
+   future disabled use. */
+
+.app-nav-link:focus-visible,
+.app-nav-hamburger:focus-visible,
+.shelf-new-book:focus-visible,
+.shelf-new-book-bulk:focus-visible,
+.shelf-resolve-covers-btn:focus-visible,
+.shelf-signin-prompt:focus-visible,
+.shelf-filter-button:focus-visible,
+.shelf-filter-row:focus-visible {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+}
+
+.app-nav-hamburger:active,
+.shelf-new-book:active,
+.shelf-new-book-bulk:active,
+.shelf-resolve-covers-btn:active,
+.shelf-signin-prompt:active,
+.shelf-filter-button:active,
+.shelf-filter-row:active {
+  transform: translateY(1px);
+}
+
+.shelf-new-book:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.shelf-resolve-covers-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* ===== END INTERACTIVE STATES ===== */
 
 
 /* ===== MOBILE BREAKPOINT (< 760px) -- Stage 3.10a Stage 4 =====
