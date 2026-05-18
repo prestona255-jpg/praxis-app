@@ -64,14 +64,23 @@
 //   arcs: keyed by arcId. An arc groups books and notebook entries
 //     into a directed reading thread. Shape (skeleton):
 //       {
-//         id:        string,
-//         userId:    string,
-//         title:     string,
-//         bookIds:   array of string,
-//         entryIds:  array of string,
-//         createdAt: number,
-//         updatedAt: number
+//         id:          string,
+//         userId:      string,
+//         title:       string,
+//         description: string,    // optional, '' allowed
+//         bookIds:     array of { id: string, addedAt: number },
+//         entryIds:    array of { id: string, addedAt: number },
+//         createdAt:   number,
+//         updatedAt:   number
 //       }
+//
+//     bookIds / entryIds carry an addedAt timestamp PER MEMBERSHIP --
+//     when that book or entry was attached to THIS arc, not the
+//     member's own creation time. 3.9 renders an arc as a
+//     chronological path through the Notebook keyed on these
+//     timestamps. entry.arcIds (the entry-side back-reference) stays
+//     `array of plain string` -- the arc side is authoritative for
+//     chronology; the entry side is a denormalized lookup index.
 //
 // Schema 1.2.0 adds two top-level pointer fields tracking which book
 // and which arc the user currently has open. Both are scalar id refs
@@ -222,7 +231,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.9.2',
+  SCHEMA_VERSION:  '1.9.3',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -284,6 +293,13 @@ function genBookId() {
   return 'book_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
+// Canonical arc id generator (3.8). Shaped identically to genEntryId
+// and genBookId; the 'arc_' prefix differentiates the maps so a single
+// id cannot collide across notebookEntries, books, and arcs.
+function genArcId() {
+  return 'arc_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
 // Lazy initializer for per-user records. The schema-versioned shape of
 // a user record is owned here so that future writers (notebook entries,
 // artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
@@ -308,6 +324,102 @@ function ensureUser(uid) {
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
   }
+}
+
+// 3.8 arc data layer. createArc / addBookToArc / addEntryToArc are
+// pure in-memory mutators: they write into state.arcs (and, for
+// addEntryToArc, into the entry-side back-reference state.notebook-
+// Entries[eid].arcIds). They do NOT call saveState() -- callers
+// (Stage 2 views.js) own persistence and re-render, matching the
+// established state.js pattern (ensureUser / ensureOneArtifact / the
+// migrate steps are all caller-persisted). The userId arg matches the
+// in-file mutator precedent (ensureUser/ensureOneArtifact take uid);
+// state.js stays a pure data layer and does not reach into
+// integrations.js for getCurrentUser().
+//
+// Membership shape from 3.8 onward: arc.bookIds and arc.entryIds are
+// arrays of { id: string, addedAt: number }. addedAt is when the
+// member was attached to THIS arc, not the member's own creation
+// time. Idempotency is gated on a linear .id scan -- arc memberships
+// are short by design, so an O(n) duplicate check is the right cost
+// for the simplest code. entry.arcIds (entry-side back-reference)
+// stays `array of plain string`.
+
+function createArc(title, description, userId) {
+  var trimmedTitle = (typeof title === 'string') ? title.trim() : '';
+  if (trimmedTitle === '') return null;
+  var trimmedDesc = (typeof description === 'string') ? description.trim() : '';
+  var now = Date.now();
+  var id = genArcId();
+  var arc = {
+    id:          id,
+    userId:      userId,
+    title:       trimmedTitle,
+    description: trimmedDesc,
+    bookIds:     [],
+    entryIds:    [],
+    createdAt:   now,
+    updatedAt:   now
+  };
+  state.arcs[id] = arc;
+  return arc;
+}
+
+function addBookToArc(arcId, bookId) {
+  var arc = state.arcs[arcId];
+  if (!arc) return false;
+  var i;
+  for (i = 0; i < arc.bookIds.length; i++) {
+    if (arc.bookIds[i] && arc.bookIds[i].id === bookId) {
+      return false;
+    }
+  }
+  var now = Date.now();
+  arc.bookIds.push({ id: bookId, addedAt: now });
+  arc.updatedAt = now;
+  return true;
+}
+
+// Maintains the membership on the arc side (arc.entryIds carries
+// {id, addedAt}) AND the back-reference on the entry side
+// (entry.arcIds carries plain arcId strings). Idempotent on both
+// sides: a duplicate arc-side membership returns false without
+// touching the entry; an entry that already names the arcId in its
+// arcIds is not pushed again. If the entry is missing from
+// state.notebookEntries the arc side is still updated and the miss
+// is logged -- the arc remains internally consistent even if the
+// entry was deleted out from under the caller.
+function addEntryToArc(arcId, entryId) {
+  var arc = state.arcs[arcId];
+  if (!arc) return false;
+  var i;
+  for (i = 0; i < arc.entryIds.length; i++) {
+    if (arc.entryIds[i] && arc.entryIds[i].id === entryId) {
+      return false;
+    }
+  }
+  var now = Date.now();
+  arc.entryIds.push({ id: entryId, addedAt: now });
+  arc.updatedAt = now;
+  var entry = state.notebookEntries[entryId];
+  if (!entry) {
+    console.warn('addEntryToArc: entry not found ' + entryId
+      + ' (arc side updated, entry back-ref skipped)');
+    return true;
+  }
+  if (!entry.arcIds) entry.arcIds = [];
+  var j;
+  var present = false;
+  for (j = 0; j < entry.arcIds.length; j++) {
+    if (entry.arcIds[j] === arcId) {
+      present = true;
+      break;
+    }
+  }
+  if (!present) {
+    entry.arcIds.push(arcId);
+  }
+  return true;
 }
 
 function loadState() {
@@ -575,6 +687,13 @@ function migrate(stored) {
     // back when the helper returns true.
     normalizeCoverUrlsToHttps(stored.books);
     stored.SCHEMA_VERSION = '1.9.2';
+  }
+  if (stored.SCHEMA_VERSION === '1.9.2') {
+    // 3.8: arc.bookIds / arc.entryIds move from id-string arrays to
+    // {id, addedAt} object arrays. No arcs exist in any code-created
+    // state (Stage 0 verified zero write sites), so this is a
+    // version-bump no-op. New shape applies to writes from 3.8 forward.
+    stored.SCHEMA_VERSION = '1.9.3';
   }
   return stored;
 }
