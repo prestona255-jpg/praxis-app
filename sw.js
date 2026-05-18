@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.10-f';
+var CACHE_VERSION = 'praxis-v3.10-g';
 
 var APP_SHELL = [
   '/',
@@ -35,10 +35,40 @@ function isApiRequest(url) {
   return false;
 }
 
+// 3.10b-i SW-FIX: install-time precache that defeats the active-SW
+// interception pattern. cache.addAll() routes its internal fetches
+// through the still-active OLD SW's fetch handler -- which is cache-
+// first, so the new cache gets poisoned with stale bytes from the
+// old cache. Fix: fetch each APP_SHELL url with a cache-busted query
+// string (?sw_v=<CACHE_VERSION>), {cache: 'reload'} to bypass the
+// browser HTTP cache too. The old SW's caches.match() misses on the
+// busted URL (its cache only holds canonical URLs), falls through to
+// network, returns fresh bytes. We then cache.put() under the
+// CANONICAL url so page-level fetches hit the precache normally.
+// Builds the busted URL with a ?-vs-& check so a future APP_SHELL
+// entry carrying a query string still works.
+function precacheFresh(cache, url) {
+  var bustedUrl = url +
+    (url.indexOf('?') === -1 ? '?' : '&') +
+    'sw_v=' + encodeURIComponent(CACHE_VERSION);
+  var req = new Request(bustedUrl, { cache: 'reload' });
+  return fetch(req).then(function (response) {
+    if (response && response.ok) {
+      return cache.put(url, response);
+    }
+    return null;
+  });
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(function (cache) {
-      return cache.addAll(APP_SHELL);
+      var puts = [];
+      var i;
+      for (i = 0; i < APP_SHELL.length; i++) {
+        puts.push(precacheFresh(cache, APP_SHELL[i]));
+      }
+      return Promise.all(puts);
     })
   );
   self.skipWaiting();
