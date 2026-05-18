@@ -3425,8 +3425,8 @@ var STAGES = [
           'A cover-fetch pass produces no Mixed Content warnings for newly resolved books'
         ],
         evidence: [
-          'Live URL: a title-only add or ISBN add resolves a cover whose stored coverUrl begins with https://',
-          'Live URL: a cover-resolution pass over newly-added books produces zero Mixed Content warnings in DevTools Console'
+          'Read-path normalization at both Google Books sites + one-shot migrate() step (1.9.1->1.9.2) + guarded loadBooksFromFirestore flush-back. Live verification: Firestore doc healed in one round-trip (0 http://, 105 https://, schemaVersion 1.9.2), Mixed Content warnings 0 from ~6,000, self-terminating confirmed (second load fired no write). Commit 605da3c.',
+          'Note: live verification reproduced the SW-staleness pattern a sixth time (old SW held control through two reload cycles; required unregister + clear-all-caches + cache:"reload" of every app-shell file + a true location.reload before the new code executed). Logged in the DEFERRED stale-while-revalidate SW rework entry.'
         ],
         rollback: 'Additive — revert the commit to return to verbatim http:// thumbnails (browser auto-upgrade still renders covers; only the console flood returns).',
         risks: [
@@ -3743,7 +3743,7 @@ var DEFERRED = [
   {
     name: 'Stale-while-revalidate SW rework',
     dateDeferred: '2026-05-17',
-    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has now bitten the project FIVE times — stale components.css mid-3.10a, stale views.js post-Firestore stages, a repeat stale views.js observation, a stale views.js after the 3.10e deploy that cost an extended live-debugging session because the sw.js cache-version bump was edited locally but never committed, and most recently the 3.10b deploy (2026-05-18) where the v3.10-d -> v3.10-e bump WAS committed and pushed but the old SW intercepted the new SW\'s cache.addAll, so the new praxis-v3.10-e cache held stale views.js until a manual unregister+reload — a new flavor of the same mechanism that every existing user updating from v3.10-d would have hit. Each fix has been a one-line bump or manual purge; the mechanism makes recurrence near-certain.',
+    reason: 'APP_SHELL pre-caches app JS/CSS cache-first; every code change needs a manual sw.js cache-version bump or stale assets serve. Has now bitten the project SIX times — stale components.css mid-3.10a, stale views.js post-Firestore stages, a repeat stale views.js observation, a stale views.js after the 3.10e deploy that cost an extended live-debugging session because the sw.js cache-version bump was edited locally but never committed, the 3.10b deploy (2026-05-18) where the v3.10-d -> v3.10-e bump WAS committed and pushed but the old SW intercepted the new SW\'s cache.addAll so the new praxis-v3.10-e cache held stale views.js until a manual unregister+reload, and most recently the 3.10i deploy (2026-05-18) where the v3.10-e -> v3.10-f bump was committed and pushed but the old SW held control through TWO full reload cycles (browser HTTP cache poisoning compounded on top of the SW interception) — required unregister + clear-all-caches + cache:"reload" of every APP_SHELL file + a true location.reload before the new code executed; the worst occurrence so far. Each fix has been a one-line bump or manual purge; the mechanism makes recurrence near-certain.',
     comesBackWhen: 'Promoted from deferred — this should be taken as its own stage soon, ideally bundled with the next infrastructure touch (the vision-proxy work in 3.10f is a natural pairing). "Not blocking" is no longer accurate after a fourth bite. Rework options unchanged: stale-while-revalidate, or network-first for app JS/CSS with HTML and manifest staying pre-cached.'
   },
   {
