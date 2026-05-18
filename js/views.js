@@ -434,6 +434,11 @@ function renderNotebook() {
 
   wrap.appendChild(arcBlock);
 
+  var entryHeading = document.createElement('h2');
+  entryHeading.className = 'notebook-entry-list-title';
+  entryHeading.textContent = 'Entries';
+  wrap.appendChild(entryHeading);
+
   // Stage 3.7: /notebook unifies notebookEntries + bookArtifacts as
   // distinct card kinds in one chronological stream owned by the
   // current user. Interleaved by createdAt, newest first. Each item
