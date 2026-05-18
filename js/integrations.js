@@ -70,6 +70,18 @@ firebase.auth().onAuthStateChanged(function (u) {
         var remoteBooks = (result.data && result.data.books)
           ? result.data.books
           : {};
+        // 3.10i: rewrite leading-http:// coverUrls on the remote
+        // payload BEFORE the replace-merge below. The Firestore doc
+        // may still hold pre-3.10i http:// URLs from past Google
+        // Books fetches; without this, the replace-merge would undo
+        // the local migrate() step within seconds of every signed-in
+        // boot. Capture the boolean to drive a one-shot conditional
+        // flush-back AFTER the existing saveState() below: the helper
+        // returns true exactly once (the first post-deploy boot,
+        // while Firestore still holds http:// data); every later boot
+        // it returns false and no extra Firestore write fires. Self-
+        // terminating, not a write-every-boot.
+        var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
         state.userBooks[u.uid].bookIds = remoteIds.slice();
         var r;
         for (r = 0; r < remoteIds.length; r++) {
@@ -79,6 +91,16 @@ firebase.auth().onAuthStateChanged(function (u) {
           }
         }
         saveState();
+        // 3.10i: conditional flush-back. ONLY when the helper above
+        // rewrote at least one coverUrl: mark dirty + saveState so the
+        // corrected payload flushes to Firestore via the existing
+        // saveBooksToFirestore chokepoint in state.js's saveState. If
+        // coversNormalized is false, the existing saveState() above
+        // stands and no second write fires.
+        if (coversNormalized) {
+          markBooksDirty();
+          saveState();
+        }
         // Re-render the current route. Defensive guard for the
         // edge case where Firebase persistence resolves auth
         // synchronously before views.js sets window.views; in
@@ -404,6 +426,14 @@ function fetchGoogleBooks(isbn, callback) {
       var coverUrl = null;
       if (v.imageLinks && v.imageLinks.thumbnail) {
         coverUrl = v.imageLinks.thumbnail;
+        // 3.10i: normalize http:// -> https:// at the read site so
+        // newly-stored covers never trip Mixed Content on the HTTPS
+        // app. Same anchored leading-position guard as
+        // normalizeCoverUrlsToHttps in state.js -- a URL containing
+        // 'http://' deeper in the string is untouched.
+        if (coverUrl.indexOf('http://') === 0) {
+          coverUrl = 'https://' + coverUrl.slice(7);
+        }
       }
       var publishYear = extractYear(v.publishedDate);
       finish({
@@ -497,6 +527,13 @@ function fetchBookByTitle(title, author, callback) {
       var rCoverUrl = null;
       if (v.imageLinks && v.imageLinks.thumbnail) {
         rCoverUrl = v.imageLinks.thumbnail;
+        // 3.10i: mirror of the read-site normalization in
+        // fetchGoogleBooks above. Same anchored guard, same
+        // transform, no shared helper -- the two-line transform is
+        // local to each Google Books read site for readability.
+        if (rCoverUrl.indexOf('http://') === 0) {
+          rCoverUrl = 'https://' + rCoverUrl.slice(7);
+        }
       }
       var rPublishYear = extractYear(v.publishedDate);
       finish({

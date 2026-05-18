@@ -222,7 +222,7 @@ function sv(k, v) {
 }
 
 var state = {
-  SCHEMA_VERSION:  '1.9.1',
+  SCHEMA_VERSION:  '1.9.2',
   currentBookId:   null,
   currentArcId:    null,
   users:           {},
@@ -361,6 +361,39 @@ function saveState() {
     }
   }
   return ok;
+}
+
+// 3.10i: rewrite leading-http:// coverUrls in a books map to https://.
+// Shared by migrate()'s 1.9.1 -> 1.9.2 step (over stored.books) and
+// by loadBooksFromFirestore's 'found' branch (over the remote payload
+// before replace-merge into state.books). Anchored leading-position
+// test via the codebase's .indexOf(prefix) === 0 idiom -- a URL that
+// merely contains 'http://' deeper in the string (e.g. inside a query
+// param) is left untouched. Returns true ONLY when at least one
+// record was rewritten; false when the map is empty/missing, when
+// every coverUrl is already https://, when coverUrl is null/empty/not
+// a string, or when http:// appears at non-zero position. The boolean
+// is set inside the rewrite branch -- callers use it to decide
+// whether to trigger a Firestore write-back, so it must reflect
+// actual changes, not loop execution. Plain function declaration (no
+// strict mode in this file) makes it globally accessible to
+// integrations.js, matching the markBooksDirty / ensureUser / etc.
+// cross-file exposure pattern.
+function normalizeCoverUrlsToHttps(booksMap) {
+  var changed = false;
+  if (!booksMap) return changed;
+  var bid;
+  for (bid in booksMap) {
+    if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
+      var book = booksMap[bid];
+      if (book && typeof book.coverUrl === 'string' &&
+          book.coverUrl.indexOf('http://') === 0) {
+        book.coverUrl = 'https://' + book.coverUrl.slice(7);
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 // Migration hook. Reads stored.SCHEMA_VERSION and applies forward
@@ -528,6 +561,20 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.9.1';
+  }
+  if (stored.SCHEMA_VERSION === '1.9.1') {
+    // 3.10i: rewrite any leading-http:// coverUrl in stored.books to
+    // https://. Mirrors the read-path fix at both Google Books read
+    // sites in integrations.js. The helper's return value is ignored
+    // here -- migrate() must not touch booksDirty (consistent with
+    // every other migrate step); persistence to localStorage happens
+    // via the boot loadState -> saveState pair in app.js. The
+    // Firestore replace-merge replay-undo is handled separately in
+    // loadBooksFromFirestore's 'found' branch (Stage 2B), which calls
+    // the same helper on the remote payload and conditionally flushes
+    // back when the helper returns true.
+    normalizeCoverUrlsToHttps(stored.books);
+    stored.SCHEMA_VERSION = '1.9.2';
   }
   return stored;
 }
