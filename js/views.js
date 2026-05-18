@@ -105,10 +105,18 @@
 //         notebook-arc-list-title, notebook-arc-empty-body,
 //         notebook-arc-list, notebook-arc-row, notebook-arc-title,
 //         notebook-arc-description
+//   3.8 2b-i: book-detail-add-to-arc, arc-picker-panel,
+//         arc-picker-label, arc-picker-status, arc-picker-empty,
+//         arc-picker-row, arc-picker-done
+//   3.8 2b-ii: notebook-entry-add-to-arc,
+//         notebook-entry-arc-picker-host
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3),
 //                    #shelf-editor-host (3.5a),
 //                    #notebook-arc-editor-host (3.8)
+//   Picker host ids: #book-detail-arc-picker-host (3.8 2b-i),
+//                    .notebook-entry-arc-picker-host (3.8 2b-ii,
+//                    per-card inline mount, not an id)
 //   Settings host id:     #notebook-settings-host (3.4b)
 //   Transparency host id: #notebook-transparency-host (3.6)
 //
@@ -1945,6 +1953,15 @@ function renderBookDetail(bookId) {
     });
     header.appendChild(newBtn);
 
+    var addToArcBtn = document.createElement('button');
+    addToArcBtn.type = 'button';
+    addToArcBtn.className = 'book-detail-add-to-arc';
+    addToArcBtn.textContent = 'Add to arc…';
+    addToArcBtn.addEventListener('click', function() {
+      openBookArcPicker(bookId);
+    });
+    header.appendChild(addToArcBtn);
+
     // Stage 3.7c stage 2: explicit six-branch (status, hasArtifact)
     // render matrix. Each branch handled standalone -- no shared tails
     // and no collapsed conditionals like (status === 'finished' ||
@@ -2146,6 +2163,15 @@ function renderBookDetail(bookId) {
   editorHost.id = 'book-detail-editor-host';
   wrap.appendChild(editorHost);
 
+  // Stage 3.8 sub-stage 2b-i: arc picker host -- empty on every render;
+  // openBookArcPicker mounts the arc list here when the user clicks
+  // "Add to arc…". One host per concern (mirrors the 2a precedent of
+  // #notebook-arc-editor-host parallel to #notebook-editor-host) so the
+  // picker never collides with the marginalia / artifact editors.
+  var arcPickerHost = document.createElement('div');
+  arcPickerHost.id = 'book-detail-arc-picker-host';
+  wrap.appendChild(arcPickerHost);
+
   // Filtered entry list: this user's entries that name this book in
   // bookIds, newest first.
   var entries = [];
@@ -2331,6 +2357,161 @@ function openArtifactEditor(bookId) {
   });
 }
 
+// Stage 3.8 sub-stage 2b: arc picker, shared shape. Two callers --
+// openBookArcPicker (2b-i) attaches the current book; openEntryArcPicker
+// (2b-ii) attaches the current entry. The panel-building, arc-filtering,
+// row-binding, status-note, and Done-link logic are all identical
+// between them; only the click-side mutator (addBookToArc vs
+// addEntryToArc), the re-render target, and the close-shape (host
+// innerHTML clear vs inline mount removal) differ. buildArcPickerPanel
+// expresses the shared shape; the two openX wrappers carry the
+// caller-specific bits via onPick / onDone callbacks.
+//
+// Per-row click handlers use appendArcPickerRow so each arc.id is
+// captured in its own closure scope -- var-in-for-loop would share the
+// loop variable, binding every row to the last arc.
+function buildArcPickerPanel(opts) {
+  // opts: { user, label, statusMsg, onPick(arcId), onDone() }
+  var panel = document.createElement('div');
+  panel.className = 'arc-picker-panel';
+
+  var labelEl = document.createElement('div');
+  labelEl.className = 'arc-picker-label';
+  labelEl.textContent = opts.label;
+  panel.appendChild(labelEl);
+
+  if (typeof opts.statusMsg === 'string' && opts.statusMsg.length > 0) {
+    var status = document.createElement('p');
+    status.className = 'arc-picker-status';
+    status.textContent = opts.statusMsg;
+    panel.appendChild(status);
+  }
+
+  var arcItems = [];
+  var arcMap = state.arcs || {};
+  var arcKey;
+  for (arcKey in arcMap) {
+    if (Object.prototype.hasOwnProperty.call(arcMap, arcKey)) {
+      var arc = arcMap[arcKey];
+      if (arc && arc.userId === opts.user.uid) {
+        arcItems.push(arc);
+      }
+    }
+  }
+  arcItems.sort(function(x, y) {
+    return (y.createdAt || 0) - (x.createdAt || 0);
+  });
+
+  if (arcItems.length === 0) {
+    var empty = document.createElement('p');
+    empty.className = 'arc-picker-empty';
+    empty.textContent =
+      'No arcs yet — create one from the Notebook.';
+    panel.appendChild(empty);
+  } else {
+    var i;
+    for (i = 0; i < arcItems.length; i++) {
+      appendArcPickerRow(panel, arcItems[i], opts.onPick);
+    }
+  }
+
+  var done = document.createElement('a');
+  done.href = '#';
+  done.className = 'arc-picker-done';
+  done.textContent = 'Done';
+  done.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    opts.onDone();
+  });
+  panel.appendChild(done);
+
+  return panel;
+}
+
+function appendArcPickerRow(panel, arc, onPick) {
+  var row = document.createElement('a');
+  row.href = '#';
+  row.className = 'arc-picker-row';
+  row.textContent = arc.title || '';
+  row.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    onPick(arc.id);
+  });
+  panel.appendChild(row);
+}
+
+// Book arc picker (2b-i). Mounts the shared panel into
+// #book-detail-arc-picker-host. On a true return from addBookToArc,
+// saveState + renderBookDetail -- the re-render rebuilds the wrap and
+// the picker host gets re-created empty as a side effect. On false
+// (already attached), re-open the picker in place with a quiet inline
+// status note. Done clears host.innerHTML.
+function openBookArcPicker(bookId, statusMsg) {
+  var host = document.getElementById('book-detail-arc-picker-host');
+  if (!host) return;
+  var user = getCurrentUser();
+  if (!user) return;
+
+  host.innerHTML = '';
+  host.appendChild(buildArcPickerPanel({
+    user:      user,
+    label:     'Add this book to an arc',
+    statusMsg: statusMsg,
+    onPick: function(arcId) {
+      var ok = addBookToArc(arcId, bookId);
+      if (ok) {
+        saveState();
+        renderBookDetail(bookId);
+      } else {
+        openBookArcPicker(bookId, 'Already in that arc.');
+      }
+    },
+    onDone: function() {
+      var h = document.getElementById('book-detail-arc-picker-host');
+      if (h) h.innerHTML = '';
+    }
+  }));
+}
+
+// Entry arc picker (2b-ii). Mounts the shared panel into a per-card
+// inline element (no global host -- per-card scope can't live on a
+// shared host). On a true return from addEntryToArc, saveState then a
+// route-aware re-render: #book/<id> stays on book detail (entries
+// render in the marginalia list there too), anything else returns to
+// the Notebook. Same route-check shape as togglePrivacy. On false
+// (already attached), re-open the picker in place with a quiet inline
+// status note. Done clears mountEl.innerHTML; the inline mount element
+// itself is left in the DOM, but its empty state is visually inert
+// (the styling pass will hide empty picker mounts).
+function openEntryArcPicker(entryId, mountEl, statusMsg) {
+  if (!mountEl) return;
+  var user = getCurrentUser();
+  if (!user) return;
+
+  mountEl.innerHTML = '';
+  mountEl.appendChild(buildArcPickerPanel({
+    user:      user,
+    label:     'Add this entry to an arc',
+    statusMsg: statusMsg,
+    onPick: function(arcId) {
+      var ok = addEntryToArc(arcId, entryId);
+      if (ok) {
+        saveState();
+        if (location.hash.indexOf('#book/') === 0) {
+          renderBookDetail(state.currentBookId);
+        } else {
+          renderNotebook();
+        }
+      } else {
+        openEntryArcPicker(entryId, mountEl, 'Already in that arc.');
+      }
+    },
+    onDone: function() {
+      mountEl.innerHTML = '';
+    }
+  }));
+}
+
 function renderNotebookEntry(entry) {
   var card = document.createElement('article');
   card.className = 'notebook-entry';
@@ -2384,6 +2565,30 @@ function renderNotebookEntry(entry) {
   });
   privacyEl.appendChild(privacyToggle);
   meta.appendChild(privacyEl);
+
+  // Stage 3.8 sub-stage 2b-ii: per-card "add to arc" link. Mirrors the
+  // privacy-toggle link shape inside the meta row -- <a href="#"> with
+  // capturedId in closure. The picker mounts inline inside this card,
+  // not in a global host: per-card scope can't live on a shared host
+  // because the click attribution would be ambiguous. The inline mount
+  // element is created lazily on first click and reused on subsequent
+  // clicks (the picker's mountEl.innerHTML = '' resets the contents
+  // each time it opens).
+  var addToArcLink = document.createElement('a');
+  addToArcLink.href = '#';
+  addToArcLink.className = 'notebook-entry-add-to-arc';
+  addToArcLink.textContent = 'add to arc';
+  addToArcLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var mount = card.querySelector('.notebook-entry-arc-picker-host');
+    if (!mount) {
+      mount = document.createElement('div');
+      mount.className = 'notebook-entry-arc-picker-host';
+      card.appendChild(mount);
+    }
+    openEntryArcPicker(capturedId, mount);
+  });
+  meta.appendChild(addToArcLink);
 
   var bodyEl = document.createElement('div');
   bodyEl.className = 'notebook-entry-body';
