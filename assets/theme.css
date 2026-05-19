@@ -156,26 +156,34 @@ body::before {
   pointer-events: none;
   z-index: -1;
   background:
+    /* Stage 5.1 grain (softened post-ship): three layers at distinct
+       non-harmonic angles (37 / 67 / 109) so they CROSS rather than
+       reinforce -- 45deg-on-all-three reads as fabric; crossed at
+       irregular angles, they interfere into faint texture. Opacities
+       ~halved (3->1.5, 2->1, 2->1) and periods shifted off the
+       previous clean 3x progression (3/9/27 -> 4/13/31) so the three
+       frequencies are not multiples of each other. Bands stay thin
+       (1-2px). Goal: warmth, never pattern. */
     repeating-linear-gradient(
-      45deg,
+      37deg,
       transparent 0,
-      transparent 2px,
-      color-mix(in srgb, var(--ink-3) 3%, transparent) 2px,
-      color-mix(in srgb, var(--ink-3) 3%, transparent) 3px
+      transparent 3px,
+      color-mix(in srgb, var(--ink-3) 1.5%, transparent) 3px,
+      color-mix(in srgb, var(--ink-3) 1.5%, transparent) 4px
     ),
     repeating-linear-gradient(
-      45deg,
+      67deg,
       transparent 0,
-      transparent 7px,
-      color-mix(in srgb, var(--br-deep) 2%, transparent) 7px,
-      color-mix(in srgb, var(--br-deep) 2%, transparent) 9px
+      transparent 11px,
+      color-mix(in srgb, var(--br-deep) 1%, transparent) 11px,
+      color-mix(in srgb, var(--br-deep) 1%, transparent) 13px
     ),
     repeating-linear-gradient(
-      45deg,
+      109deg,
       transparent 0,
-      transparent 23px,
-      color-mix(in srgb, var(--ink-2) 2%, transparent) 23px,
-      color-mix(in srgb, var(--ink-2) 2%, transparent) 27px
+      transparent 29px,
+      color-mix(in srgb, var(--ink-2) 1%, transparent) 29px,
+      color-mix(in srgb, var(--ink-2) 1%, transparent) 31px
     ),
     radial-gradient(
       ellipse 70% 60% at 12% 8%,
