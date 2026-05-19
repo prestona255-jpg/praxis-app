@@ -100,8 +100,13 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-base: 350ms;
 
-  /* Stage 5.2 presence dial -- 0-10 intent scale lives at ~0.08; ceiling ~0.12. */
-  --field-presence: 0.08;
+  /* Stage 5.2 presence dial. Calibrated floor: ~0.18 reads as faint-
+     but-perceptible warmth; ceiling ~0.32 before the field stops
+     feeling atmospheric. Values below ~0.12 are effectively invisible
+     on the wheat-cream + 5.1-grain background (a 1-5% per-channel
+     shift the eye loses under the existing grain noise). Tune from
+     this floor; 0.18 is the visible baseline, not a final value. */
+  --field-presence: 0.18;
 }
 
 body {
