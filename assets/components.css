@@ -15,15 +15,20 @@
   z-index: 9999;
   width: 48px;
   height: 48px;
+  /* Pill stays pill-shaped per 5.1 -- 999px not migrated to --radius-md. */
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--ink-4);
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: var(--fs-display);
   line-height: 1;
   cursor: pointer;
-  box-shadow: var(--shadow-1);
+  /* Stage 5.1 surface-set: --ink-4 hairline (above) + lit-edge
+     highlight (inset top-left, A1.3) + Yumi-tier shadow per A3.3. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-yumi);
 }
 
 .yumi-toggle:hover {
@@ -44,9 +49,16 @@
   height: 540px;
   max-height: calc(100vh - var(--sp-6) - var(--sp-6));
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Yumi-tier
+     shadow per A3.3 (gentle end of Tier 2). Background stays
+     --surface for now -- the Yumi panel's internal --bg / --surface
+     mix (input row, message bubbles) predates 5.1; not touched here
+     since the brief is a material pass, not a Yumi internal restyle. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-yumi);
   display: none;
   flex-direction: column;
   overflow: hidden;
@@ -299,7 +311,13 @@
   color: var(--ink-2);
   text-decoration: none;
   border-bottom: 2px solid transparent;
-  transition: color 120ms ease, border-color 120ms ease;
+  /* Stage 5.1 motion: nav-underline slide (A4.3 permitted motion).
+     Color + border-color cross-fade between active and inactive items.
+     A literal slide between tabs would require a single absolute
+     underline element + JS positioning; not in 5.1 scope. Re-timed
+     from 120ms to --motion-base / --ease so the swap feels gentle. */
+  transition: color var(--motion-base) var(--ease),
+              border-color var(--motion-base) var(--ease);
 }
 
 .app-nav-link:hover {
@@ -367,9 +385,6 @@
   padding: 10px 20px;
   border-radius: 2px;
   cursor: pointer;
-  transition: background-color 120ms ease,
-              border-color 120ms ease,
-              color 120ms ease;
 }
 
 .shelf-new-book {
@@ -506,7 +521,6 @@
      wired in renderShelf). Only permitted edit to a 3.10a rule in
      this stage; cursor honesty, not a restyle. */
   cursor: pointer;
-  transition: color 120ms ease;
 }
 
 .shelf-filter-row:hover {
@@ -618,20 +632,30 @@
   flex-direction: column;
   padding: 16px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: --ink-4 hairline + lit-edge highlight
+     (inset top-left, A1.3) + Tier 1 card shadow (A3.2). */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  /* Stage 5.1 A4.3 card hover: 3px lift, shadow deepens one tier,
+     350ms slow ease-out. Replaces the Stage 3.10a 180ms hover
+     (transform + hardcoded rgba(0,0,0) shadow) wholesale -- the
+     prior shadow was the only A3.1 black-rgba violation in this
+     file outside the redefined --shadow-1 token. */
+  transition: transform var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease);
 }
 
 .shelf-book:hover {
-  transform: translateY(-2px);
-  /* rgba black at low alpha is a shadow color, not a palette color
-     -- the hex grep targets #-prefixed hex and will not trip on
-     rgba(0,0,0,...). Convention permits this for shadows. */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
 }
 
 .shelf-book-cover-area {
@@ -811,7 +835,6 @@
   margin-top: 16px;
   color: var(--ink-2);
   text-decoration: none;
-  transition: color 120ms ease;
 }
 
 .book-detail-not-found a:hover {
@@ -833,7 +856,13 @@
   grid-row: 1 / span 6;
   width: 240px;
   max-width: 100%;
-  border: 1px solid var(--border);
+  /* Stage 5.1: hairline + radius retune to align with the v2 surface
+     family. The full surface-set (highlight + shadow) does NOT apply
+     here -- this is a media frame, not a card/panel. The frame
+     borrows the chrome edge so it sits in the same material world
+     as nearby surfaces; the image content owns the interior. */
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
 }
 
 .book-detail-cover {
@@ -887,7 +916,6 @@
   border-radius: 2px;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 120ms ease;
 }
 
 .book-detail-mark-finished:hover,
@@ -914,7 +942,6 @@
   border: 1px solid var(--border);
   border-radius: 2px;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
 }
 
 .book-detail-new-entry:hover {
@@ -953,7 +980,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .book-detail-isbn-input:hover {
@@ -1019,7 +1045,6 @@
   font-size: 14px;
   color: var(--ink-3);
   text-decoration: none;
-  transition: color 120ms ease;
 }
 
 .artifact-substrate-link:hover,
@@ -1075,7 +1100,6 @@
   border: 1px solid var(--border);
   border-radius: 2px;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
 }
 
 .notebook-settings-toggle:hover,
@@ -1089,8 +1113,13 @@
   margin: 24px 0;
   padding: 24px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Tier 2
+     panel shadow. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
   font-family: var(--font-body);
 }
 
@@ -1135,7 +1164,6 @@
   text-decoration-color: var(--ink-4);
   text-underline-offset: 3px;
   cursor: pointer;
-  transition: color 120ms ease, text-decoration-color 120ms ease;
 }
 
 .notebook-settings-toggle-link:hover,
@@ -1167,9 +1195,19 @@
 .transparency-panel {
   margin: 24px 0;
   padding: 24px 24px 32px 24px;
-  border: 1px solid var(--ink-3);
-  border-radius: 2px;
-  background: var(--color-surface);
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Tier 2
+     panel shadow. The Stage 3.10c "discrete diagnostic surface"
+     treatment (--ink-3 border + --color-surface fill) is superseded
+     here so the panel sits in the v2 panel material set; its
+     diagnostic character is now carried by the mono-uppercase
+     typography in transparency-section-label / -title, not by
+     chrome. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
   font-family: var(--font-body);
 }
 
@@ -1201,7 +1239,6 @@
   line-height: 1;
   color: var(--ink-3);
   cursor: pointer;
-  transition: color 120ms ease;
 }
 
 .transparency-close:hover {
@@ -1251,7 +1288,16 @@
   padding: 12px 16px;
   margin-bottom: 8px;
   background: var(--surface-2);
-  border-radius: 2px;
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Tier 1
+     card shadow. These are diagnostic sub-cards inside the Tier 2
+     transparency-panel; same --surface-2 fill as parent is OK
+     because the hairline + highlight + Tier 1 cast distinguish
+     them visually from the panel ground. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
 }
 
 .transparency-entry:last-child,
@@ -1340,15 +1386,22 @@
    outline as the Stage 2 notebook-settings-panel so editors sit
    consistently across both Notebook and shelf surfaces. */
 
-/* Container chrome — shared across all three editor families. */
+/* Container chrome — shared across all three editor families.
+   Stage 5.1: floating Tier 2 panel material set (editors are
+   inline-mounted floating panels that appear in flow on demand). */
 .shelf-editor,
 .shelf-bulk-editor,
 .notebook-editor {
   margin: 24px 0;
   padding: 24px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Tier 2
+     panel shadow. */
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
   font-family: var(--font-body);
 }
 
@@ -1367,7 +1420,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .shelf-editor-title-input:hover {
@@ -1391,7 +1443,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .shelf-editor-author-input:hover {
@@ -1418,7 +1469,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .shelf-editor-genre-input:hover {
@@ -1442,7 +1492,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .shelf-editor-isbn-input:hover {
@@ -1466,7 +1515,6 @@
   background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: border-color 120ms ease;
 }
 
 .notebook-editor-title-input:hover {
@@ -1520,7 +1568,6 @@
   border: 1px solid var(--border);
   border-radius: 2px;
   resize: vertical;
-  transition: border-color 120ms ease;
 }
 
 .shelf-bulk-editor-textarea:hover,
@@ -1560,7 +1607,6 @@
   border: none;
   border-radius: 2px;
   cursor: pointer;
-  transition: background-color 120ms ease;
 }
 
 .shelf-editor-save:hover,
@@ -1589,7 +1635,6 @@
   border: 1px solid var(--border);
   border-radius: 2px;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
 }
 
 .shelf-editor-cancel:hover,
@@ -1620,7 +1665,6 @@
   border: none;
   border-radius: 2px;
   cursor: pointer;
-  transition: background-color 120ms ease;
 }
 
 .notebook-signin-prompt:hover {
@@ -1770,6 +1814,541 @@
 }
 
 /* ===== END INTERACTIVE STATES ===== */
+
+
+/* ===== NOTEBOOK + ARC TRACK SURFACES -- Stage 5.1 =====
+   Base chrome AND the v2 material set for surfaces that rendered
+   bare prior to 5.1 (zero rules in components.css). Mirrors the
+   Checkpoint 2 styled set exactly so the app reads as one material
+   world; no new visual language.
+
+   Tier split (confirmed at C2 go-ahead):
+   - Tier 1 CARDS (--surface-2 ground + --ink-4 hairline + inset
+     --highlight-edge + --shadow-1 + --radius-md + 3px hover lift):
+     .notebook-entry, .notebook-artifact-card, .notebook-arc-row.
+     Identical to .shelf-book. Hover lift is applied even when the
+     card itself is not a click target (.notebook-entry has inline
+     action links rather than a card-level click handler); the lift
+     reads as "this is one tactile surface," matching the v2
+     direction-consistency rule, not as "click me."
+   - Tier 2 PANELS (--surface-2 ground + --ink-4 hairline + inset
+     --highlight-edge + --shadow-2 + --radius-md): .arc-detail,
+     .arc-picker-panel, .arc-confirm-panel. Mirrors the editor
+     panel set from C2.
+
+   No className additions required in views.js -- every surface in
+   this block already emits its own targetable className via the
+   render functions verified at Stage 0. */
+
+/* ----- Notebook entry card (Tier 1) ----- */
+
+.notebook-entry {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
+  font-family: var(--font-body);
+  color: var(--ink);
+  transition: transform var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease);
+}
+
+.notebook-entry:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+}
+
+.notebook-entry-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.notebook-entry-register {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.notebook-entry-meta time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.notebook-entry-book-meta {
+  flex-basis: 100%;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.notebook-entry-privacy {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.notebook-entry-privacy-toggle,
+.notebook-entry-add-to-arc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-4);
+  text-underline-offset: 3px;
+}
+
+.notebook-entry-privacy-toggle:hover,
+.notebook-entry-add-to-arc:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink-2);
+}
+
+.notebook-entry-body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.notebook-entry-arc-picker-host {
+  margin-top: 12px;
+}
+
+/* ----- Notebook artifact card (Tier 1) -----
+   The artifact card is click-the-card-anywhere (handler in views.js
+   navigates to #artifact/<bookId>); cursor + hover lift here mirror
+   the .shelf-book affordance contract. */
+
+.notebook-artifact-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
+  font-family: var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease);
+}
+
+.notebook-artifact-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+}
+
+.notebook-artifact-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.notebook-artifact-marker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.notebook-artifact-meta time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.notebook-artifact-book-meta {
+  flex-basis: 100%;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.notebook-artifact-title {
+  margin: 0 0 6px 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.notebook-artifact-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* ----- Arc row (Tier 1, clickable <a>) ----- */
+
+.notebook-arc-row {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
+  font-family: var(--font-body);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease);
+}
+
+.notebook-arc-row:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+}
+
+.notebook-arc-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.notebook-arc-description {
+  margin: 6px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* ----- Arc detail (Tier 2 panel) -----
+   Per C2-confirmed tier split, .arc-detail is the Tier 2 panel.
+   Spacing mirrors .book-detail (max-width 1280, padding 32-ish,
+   centered) but the surface-set chrome differs by design: arc
+   detail is a contained panel; book detail is a transparent route
+   wrapper. The user accepted this divergence at C2 go-ahead. */
+
+.arc-detail {
+  max-width: 1280px;
+  margin: 32px auto;
+  padding: 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+  font-family: var(--font-body);
+}
+
+.arc-detail-not-found {
+  padding: 96px 32px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+.arc-detail-not-found a {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.arc-detail-not-found a:hover {
+  color: var(--ink);
+}
+
+.arc-detail-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+.arc-detail-title {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.arc-detail-description {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 6px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+/* Destructive secondary button -- transparent + --ink-4 border,
+   --br-deep on hover. Quieter than the dark-fill primary affordances;
+   destructive actions get less weight, not more. */
+.arc-detail-delete {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.arc-detail-delete:hover {
+  border-color: var(--br-deep);
+  color: var(--br-deep);
+}
+
+.arc-detail-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arc-detail-empty-body {
+  margin: 48px 0;
+  padding: 32px 16px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* Quiet, dashed placeholder -- this is information about a missing
+   member, not an action surface. Dashed --ink-4 (vs solid on real
+   surfaces) signals "absence" without ringing alarms. */
+.arc-detail-missing-member {
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+  border: 1px dashed var(--ink-4);
+  border-radius: var(--radius-md);
+}
+
+/* ----- Arc picker panel (Tier 2) ----- */
+
+.arc-picker-panel {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+  font-family: var(--font-body);
+}
+
+.arc-picker-label {
+  margin: 0 0 12px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.arc-picker-status {
+  margin: 0 0 12px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.arc-picker-empty {
+  margin: 0 0 12px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* Row hover reuses the --gold-light / --gold-text "selected" idiom
+   from the shelf filter rows. Picker rows are pickable items, not
+   navigation; the hover treatment communicates "this is the one if
+   you click now," matching the filter-row selected pattern. */
+.arc-picker-row {
+  display: block;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.arc-picker-row:hover {
+  background: var(--gold-light);
+  color: var(--gold-text);
+}
+
+.arc-picker-done {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-4);
+  text-underline-offset: 3px;
+}
+
+.arc-picker-done:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink-2);
+}
+
+/* ----- Arc delete-confirm panel (Tier 2) ----- */
+
+.arc-confirm-panel {
+  margin: 16px 0;
+  padding: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-2);
+  font-family: var(--font-body);
+}
+
+.arc-confirm-copy {
+  margin: 0 0 16px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.arc-confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Destructive primary -- --br-deep fill (the deepest warm-dark)
+   rather than --ink, so "delete arc" reads as the most committed
+   action available without a separate red palette. */
+.arc-confirm-confirm {
+  display: inline-block;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--br-deep);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.arc-confirm-confirm:hover {
+  background: var(--ink);
+}
+
+.arc-confirm-cancel,
+.arc-confirm-stale-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-4);
+  text-underline-offset: 3px;
+}
+
+.arc-confirm-cancel:hover,
+.arc-confirm-stale-back:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink-2);
+}
+
+.arc-confirm-stale-note {
+  margin: 0 0 12px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* ----- Focus + active states for the new clickables -----
+   Self-contained mini-block so the centralized INTERACTIVE STATES
+   block above stays unmodified. Same outline / translateY idioms
+   as the rest of the file -- --river ring on focus-visible, 1px
+   press on :active for buttons only (links don't get the press). */
+
+.notebook-entry-privacy-toggle:focus-visible,
+.notebook-entry-add-to-arc:focus-visible,
+.notebook-artifact-card:focus-visible,
+.notebook-arc-row:focus-visible,
+.arc-detail-not-found a:focus-visible,
+.arc-detail-delete:focus-visible,
+.arc-picker-row:focus-visible,
+.arc-picker-done:focus-visible,
+.arc-confirm-confirm:focus-visible,
+.arc-confirm-cancel:focus-visible,
+.arc-confirm-stale-back:focus-visible {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+}
+
+.arc-detail-delete:active,
+.arc-confirm-confirm:active {
+  transform: translateY(1px);
+}
+
+/* ===== END NOTEBOOK + ARC TRACK SURFACES ===== */
 
 
 /* ===== MOBILE BREAKPOINT (< 760px) -- Stage 3.10a Stage 4 =====
@@ -1941,8 +2520,7 @@
     line-height: 1;
     color: var(--ink-3);
     cursor: pointer;
-    transition: color 120ms ease;
-  }
+    }
 
   .shelf-sidebar-close:hover {
     color: var(--ink);
@@ -1965,3 +2543,61 @@
 }
 
 /* ===== END MOBILE BREAKPOINT ===== */
+
+
+/* ===== MOTION -- Stage 5.1 (A4.3) =====
+   The ONLY four motions permitted by A4.3:
+
+   1. Route cross-fade -- #app > * fades in on every render. The OLD
+      route is destroyed via host.innerHTML = '' before the NEW route
+      mounts, so true cross-fade overlap is not achievable in CSS
+      alone; the fade-in is the pragmatic minimum-viable interpretation.
+   2. Card hover lift -- per-card transition rules on .shelf-book,
+      .notebook-entry, .notebook-artifact-card, .notebook-arc-row
+      (defined inline at each card rule above, on transform +
+      box-shadow at --motion-base / --ease).
+   3. Nav underline slide -- re-timed transition on .app-nav-link's
+      color + border-color (above). A literal sliding element between
+      tabs is out of 5.1 scope.
+   4. Picker/panel fade-and-rise -- every floating panel runs the
+      fade-and-rise animation on mount via the selector group below.
+      The Yumi panel runs on .yumi-panel-open class addition.
+
+   Every other transition (button hover, link hover, input border on
+   focus, etc.) was removed at Stage 5.1. Those interactions snap
+   rather than animate, per the A4.3 strict "only these four motions"
+   rule. Focus rings + :active translateY are instant by design (no
+   transition declared) and remain so. */
+
+@keyframes route-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-and-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#app > * {
+  animation: route-fade-in var(--motion-base) var(--ease) both;
+}
+
+.shelf-editor,
+.shelf-bulk-editor,
+.notebook-editor,
+.notebook-settings-panel,
+.transparency-panel,
+.arc-picker-panel,
+.arc-confirm-panel,
+.yumi-panel.yumi-panel-open {
+  animation: fade-and-rise var(--motion-base) var(--ease) both;
+}
+
+/* ===== END MOTION ===== */

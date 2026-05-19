@@ -46,16 +46,142 @@
   --sp-5: 24px;
   --sp-6: 32px;
 
-  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06);
   --radius-sm: 6px;
   --radius-lg: 14px;
   --fs-sm: 0.8125rem;
   --fs-body: 0.9375rem;
   --fs-display: 1.5rem;
+
+  /* =====================================================================
+     Stage 5.1 -- Material system tokens (A1-A4).
+
+     LIGHT DIRECTION (load-bearing): light rakes from the upper-left of
+     the page at a low warm angle. Every shadow in this stylesheet
+     falls DOWN-AND-RIGHT (positive X offset, positive Y offset). Every
+     lit-edge highlight sits at the TOP + LEFT of a surface. Future
+     rules MUST follow this direction -- mixing directions reads as
+     broken material per the v2 direction-consistency rule.
+
+     The previous --shadow-1 was two-layer black rgba (A3.1 violation).
+     It is redefined here in the warm --br-deep family; its callers
+     (.yumi-toggle, .yumi-panel) are in 5.1 scope and re-tuned at
+     Checkpoint 2 anyway -- the Yumi panel migrates to --shadow-yumi
+     and the toggle picks up the warm Tier 1 directly.
+     ===================================================================== */
+
+  /* Shadow set -- warm-brown, expressed from --br-deep so the token is
+     the single source of truth. NEVER rgba(0,0,0,...) per A3.1. Each
+     tier is two-layer (tight ambient + softer wider cast). Offsets
+     encode the upper-left light direction. */
+  --shadow-1:
+    2px 3px 6px color-mix(in srgb, var(--br-deep) 8%, transparent),
+    4px 8px 18px color-mix(in srgb, var(--br-deep) 6%, transparent);
+  --shadow-2:
+    3px 5px 12px color-mix(in srgb, var(--br-deep) 10%, transparent),
+    8px 16px 32px color-mix(in srgb, var(--br-deep) 8%, transparent);
+  --shadow-yumi:
+    3px 4px 10px color-mix(in srgb, var(--br-deep) 9%, transparent),
+    6px 12px 24px color-mix(in srgb, var(--br-deep) 7%, transparent);
+
+  /* Lit-edge highlight (A1.3) -- a warm near-white at low opacity for
+     the top + left of every surface. Derived from --text-on-dark so it
+     sits in the yellow-warm hue family, not pure white. */
+  --highlight-edge: color-mix(in srgb, var(--text-on-dark) 55%, transparent);
+
+  /* Radius (A2.3) -- 10px is the consistent card/panel radius.
+     --radius-sm and --radius-lg are retained for pills and Yumi
+     legacy uses; --radius-md is the v2 default for new chrome. */
+  --radius-md: 10px;
+
+  /* Motion (A4.2) -- slow ease-out, no overshoot. 350ms is the
+     baseline duration; applied ONLY to the four permitted motions
+     in A4.3 (route cross-fade, card hover lift, nav underline slide,
+     picker/panel fade-and-rise). */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-base: 350ms;
 }
 
 body {
-  background: var(--color-surface);
+  /* Stage 5.1: body bg is transparent so the page-light/grain pseudo
+     (rendered at z-index: -1 in the root stacking context) shows
+     through. The --color-surface fill moves into body::before's
+     stacked background as the bottom-most layer; the page still
+     reads as opaque wheat. No isolation: isolate, no position
+     declaration -- the global stacking model is byte-for-byte
+     unchanged from pre-5.1. */
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-body);
+}
+
+/* =====================================================================
+   Stage 5.1 -- Page light + grain pseudo-element (A1.2, A2.1).
+
+   ONE pseudo-element, not two. The pseudo carries the full page
+   ground: three grain layers on top, the radial glow beneath them,
+   and --color-surface as the bottom solid fill. This makes the
+   pseudo fully opaque, so body's transparent background reveals
+   it without needing a body-level stacking context.
+
+   Stack order in the CSS background list paints FIRST-LISTED ON
+   TOP, so the layers below are written from-viewer-out:
+   1. Grain layer A (tight, --ink-3 3%)
+   2. Grain layer B (medium, --br-deep 2%)
+   3. Grain layer C (wide, --ink-2 2%)
+   4. Radial glow (warm peak at 12% 8%, A1.2)
+   5. --color-surface fill (the page wheat ground)
+
+   Grain bands run at 45deg = UPPER-LEFT to LOWER-RIGHT (parallel to
+   the light rake set in the C1 light-direction comment). Strength
+   ~2/10 -- felt, not seen.
+
+   The pseudo:
+   - position: fixed (does not scroll-detach)
+   - inset: 0 (covers the full viewport)
+   - pointer-events: none (never intercepts clicks)
+   - z-index: -1 (resolves in the root html stacking context, at
+     step 2, BELOW body's transparent box in step 3 -- so it shows
+     through. Yumi panel/toggle at z=9998/9999 and mobile overlays
+     at z=99/100 all paint at root steps 6-7 above the pseudo, same
+     as pre-5.1).
+
+   Pure CSS, no raster asset, no new file in assets/, index.html
+   not modified.
+   ===================================================================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 2px,
+      color-mix(in srgb, var(--ink-3) 3%, transparent) 2px,
+      color-mix(in srgb, var(--ink-3) 3%, transparent) 3px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 7px,
+      color-mix(in srgb, var(--br-deep) 2%, transparent) 7px,
+      color-mix(in srgb, var(--br-deep) 2%, transparent) 9px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 23px,
+      color-mix(in srgb, var(--ink-2) 2%, transparent) 23px,
+      color-mix(in srgb, var(--ink-2) 2%, transparent) 27px
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 12% 8%,
+      color-mix(in srgb, var(--text-on-dark) 28%, transparent) 0%,
+      color-mix(in srgb, var(--text-on-dark) 10%, transparent) 35%,
+      transparent 70%
+    ),
+    var(--color-surface);
 }
