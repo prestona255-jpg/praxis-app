@@ -99,6 +99,9 @@
      picker/panel fade-and-rise). */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-base: 350ms;
+
+  /* Stage 5.2 presence dial -- 0-10 intent scale lives at ~0.08; ceiling ~0.12. */
+  --field-presence: 0.08;
 }
 
 body {
