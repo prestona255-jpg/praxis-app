@@ -1,144 +1,601 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMin slice">
   <!--
-    Praxis Stage 5.2 - wheat-field.svg (1a-redraw)
+    Praxis Stage 5.2 - wheat-field.svg (1h: inline-drawn, no symbol/use)
     Drawn at FULL STRENGTH. CSS opacity (var(--field-presence)) dims the
     field at mount; this asset never carries opacity, fill-opacity, rgba,
-    or alpha gradient stops. 28 wheat stalks across FIVE distinct forms
-    (wA tall-full / wB medium / wC short-compact / wD sparse-young /
-    wE nearly-bare-grass) so the field is irregular rather than a stamped
-    motif. Stalks vary in length (18-40), dark-seed count (3-11), head
-    density, and stroke width (1.4-1.7) -- not one shape scaled.
-    Density biased toward the upper-left, peaking near the A1.1 light
-    anchor at (192, 72). Single warm-gold family (stalk #a87a2e,
-    seed #d4972a, highlight #f0c46a). viewBox 1600 x 900;
-    preserveAspectRatio xMinYMin slice anchors the upper-left and slices
-    on overflow.
+    or alpha gradient stops. 30 wheat stalks across five distinct forms
+    (tall-full / medium / short-compact / sparse-young / nearly-bare),
+    drawn INLINE per-stalk as <g transform="translate(x y) rotate(d)">
+    wrapping the primitives in local coordinates. The 1g-confirmed root
+    cause of invisibility was <symbol>+<use> collapsing to a zero-size
+    viewport when the SVG is consumed as a CSS background-image; <g>
+    does NOT create a viewport and renders identically inline or via
+    background-image.
+
+    Distribution: roughly even across all four 800x450 quadrants
+    (Q1 9 / Q2 8 / Q3 7 / Q4 6) with a gentle upper-left lean -- the
+    taller forms (A, B) are biased upper-left, thinning to short and
+    nearly-bare forms toward lower-right. Wheat reads in every region;
+    no quadrant pooled, no quadrant bare. Single warm-gold family
+    (stalk #a87a2e, seed #d4972a, highlight #f0c46a). viewBox 1600x900
+    with matching width/height; preserveAspectRatio xMinYMin slice.
   -->
-  <defs>
-    <!-- Form A: tall mature wheat, full ear (11 dark + 3 light seeds). -->
-    <symbol id="wA" overflow="visible">
-      <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
-      <g fill="#d4972a">
-        <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
-        <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
-        <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
-        <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
-        <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
-        <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
-        <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
-        <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
-        <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
-        <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
-        <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
-      </g>
-      <g fill="#f0c46a">
-        <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
-        <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
-        <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
-      </g>
-    </symbol>
 
-    <!-- Form B: medium standard wheat, 7 dark + 2 light seeds. -->
-    <symbol id="wB" overflow="visible">
-      <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
-      <g fill="#d4972a">
-        <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
-        <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
-        <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
-        <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
-        <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
-        <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
-        <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
-      </g>
-      <g fill="#f0c46a">
-        <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
-        <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
-      </g>
-    </symbol>
+  <!-- ===== Q1 upper-left (9 stalks; lean to taller A / B forms) ===== -->
 
-    <!-- Form C: short stalk, compact dense head (8 dark + 2 light seeds). -->
-    <symbol id="wC" overflow="visible">
-      <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
-      <g fill="#d4972a">
-        <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
-        <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
-        <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
-        <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
-        <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
-        <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
-        <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
-        <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
-        <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
-      </g>
-      <g fill="#f0c46a">
-        <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
-        <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
-      </g>
-    </symbol>
+  <!-- 1: Form A at (90, 130) -->
+  <g transform="translate(90 130) rotate(-8)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
 
-    <!-- Form D: medium stalk, sparse young head (4 dark + 1 light seed). -->
-    <symbol id="wD" overflow="visible">
-      <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
-      <g fill="#d4972a">
-        <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
-        <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
-        <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
-        <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
-        <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
-      </g>
-      <g fill="#f0c46a">
-        <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
-      </g>
-    </symbol>
+  <!-- 2: Form A at (220, 170) -->
+  <g transform="translate(220 170) rotate(5)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
 
-    <!-- Form E: nearly bare grass-like, tall thin stalk + tiny tip. -->
-    <symbol id="wE" overflow="visible">
-      <line x1="0" y1="0" x2="0" y2="-38" stroke="#a87a2e" stroke-width="1.4" stroke-linecap="round"/>
-      <g fill="#d4972a">
-        <ellipse cx="-1.8" cy="-40" rx="1.3" ry="3" transform="rotate(-25 -1.8 -40)"/>
-        <ellipse cx="1.8" cy="-40" rx="1.3" ry="3" transform="rotate(25 1.8 -40)"/>
-        <ellipse cx="0" cy="-44" rx="1.2" ry="2.6"/>
-      </g>
-      <g fill="#f0c46a">
-        <ellipse cx="0" cy="-42" rx="1" ry="2.2"/>
-      </g>
-    </symbol>
-  </defs>
+  <!-- 3: Form B at (320, 150) -->
+  <g transform="translate(320 150) rotate(-3)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
 
-  <!-- Upper-left dense (12 stalks); peak density near the (192, 72) anchor. -->
-  <use href="#wA" transform="translate(95 145) rotate(-8)"/>
-  <use href="#wB" transform="translate(165 165) rotate(4)"/>
-  <use href="#wC" transform="translate(245 130) rotate(-5)"/>
-  <use href="#wD" transform="translate(135 240) rotate(6)"/>
-  <use href="#wB" transform="translate(215 285) rotate(-10)"/>
-  <use href="#wA" transform="translate(310 220) rotate(3)"/>
-  <use href="#wC" transform="translate(375 175) rotate(-7)"/>
-  <use href="#wE" transform="translate(445 310) rotate(8)"/>
-  <use href="#wE" transform="translate(305 380) rotate(-4)"/>
-  <use href="#wD" transform="translate(505 240) rotate(5)"/>
-  <use href="#wB" transform="translate(95 365) rotate(-9)"/>
-  <use href="#wA" transform="translate(570 200) rotate(4)"/>
+  <!-- 4: Form A at (450, 200) -->
+  <g transform="translate(450 200) rotate(7)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
 
-  <!-- Upper-right medium (7 stalks). -->
-  <use href="#wC" transform="translate(830 195) rotate(-6)"/>
-  <use href="#wB" transform="translate(905 285) rotate(7)"/>
-  <use href="#wA" transform="translate(990 215) rotate(-9)"/>
-  <use href="#wD" transform="translate(1080 350) rotate(5)"/>
-  <use href="#wE" transform="translate(1210 240) rotate(-7)"/>
-  <use href="#wC" transform="translate(1350 195) rotate(6)"/>
-  <use href="#wB" transform="translate(1490 305) rotate(-4)"/>
+  <!-- 5: Form B at (550, 250) -->
+  <g transform="translate(550 250) rotate(-10)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
 
-  <!-- Lower-left (5 stalks). -->
-  <use href="#wD" transform="translate(115 525) rotate(-6)"/>
-  <use href="#wC" transform="translate(245 605) rotate(5)"/>
-  <use href="#wA" transform="translate(385 555) rotate(-8)"/>
-  <use href="#wB" transform="translate(510 685) rotate(7)"/>
-  <use href="#wD" transform="translate(665 605) rotate(-4)"/>
+  <!-- 6: Form C at (140, 230) -->
+  <g transform="translate(140 230) rotate(4)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
 
-  <!-- Lower-right sparse (4 stalks). -->
-  <use href="#wE" transform="translate(890 575) rotate(-5)"/>
-  <use href="#wC" transform="translate(1075 660) rotate(6)"/>
-  <use href="#wA" transform="translate(1295 595) rotate(-7)"/>
-  <use href="#wD" transform="translate(1480 695) rotate(4)"/>
+  <!-- 7: Form B at (380, 300) -->
+  <g transform="translate(380 300) rotate(-7)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 8: Form D at (660, 180) -->
+  <g transform="translate(660 180) rotate(6)">
+    <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
+      <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
+      <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
+      <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
+      <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 9: Form A at (700, 360) -->
+  <g transform="translate(700 360) rotate(-5)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
+
+  <!-- ===== Q2 upper-right (8 stalks; mixed forms) ===== -->
+
+  <!-- 10: Form C at (850, 130) -->
+  <g transform="translate(850 130) rotate(-6)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 11: Form B at (940, 200) -->
+  <g transform="translate(940 200) rotate(8)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 12: Form A at (1050, 170) -->
+  <g transform="translate(1050 170) rotate(-9)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
+
+  <!-- 13: Form D at (1150, 280) -->
+  <g transform="translate(1150 280) rotate(4)">
+    <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
+      <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
+      <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
+      <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
+      <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 14: Form C at (1240, 150) -->
+  <g transform="translate(1240 150) rotate(7)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 15: Form E at (1330, 220) -->
+  <g transform="translate(1330 220) rotate(-7)">
+    <line x1="0" y1="0" x2="0" y2="-38" stroke="#a87a2e" stroke-width="1.4" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-1.8" cy="-40" rx="1.3" ry="3" transform="rotate(-25 -1.8 -40)"/>
+      <ellipse cx="1.8" cy="-40" rx="1.3" ry="3" transform="rotate(25 1.8 -40)"/>
+      <ellipse cx="0" cy="-44" rx="1.2" ry="2.6"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-42" rx="1" ry="2.2"/>
+    </g>
+  </g>
+
+  <!-- 16: Form B at (1430, 350) -->
+  <g transform="translate(1430 350) rotate(5)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 17: Form A at (1530, 280) -->
+  <g transform="translate(1530 280) rotate(-4)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
+
+  <!-- ===== Q3 lower-left (7 stalks) ===== -->
+
+  <!-- 18: Form B at (110, 540) -->
+  <g transform="translate(110 540) rotate(-7)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 19: Form C at (250, 620) -->
+  <g transform="translate(250 620) rotate(5)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 20: Form A at (380, 580) -->
+  <g transform="translate(380 580) rotate(-10)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
+
+  <!-- 21: Form D at (510, 700) -->
+  <g transform="translate(510 700) rotate(6)">
+    <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
+      <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
+      <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
+      <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
+      <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 22: Form B at (640, 540) -->
+  <g transform="translate(640 540) rotate(-4)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 23: Form C at (730, 760) -->
+  <g transform="translate(730 760) rotate(8)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 24: Form E at (180, 820) -->
+  <g transform="translate(180 820) rotate(-5)">
+    <line x1="0" y1="0" x2="0" y2="-38" stroke="#a87a2e" stroke-width="1.4" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-1.8" cy="-40" rx="1.3" ry="3" transform="rotate(-25 -1.8 -40)"/>
+      <ellipse cx="1.8" cy="-40" rx="1.3" ry="3" transform="rotate(25 1.8 -40)"/>
+      <ellipse cx="0" cy="-44" rx="1.2" ry="2.6"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-42" rx="1" ry="2.2"/>
+    </g>
+  </g>
+
+  <!-- ===== Q4 lower-right (6 stalks; sparser forms) ===== -->
+
+  <!-- 25: Form C at (900, 580) -->
+  <g transform="translate(900 580) rotate(-6)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 26: Form D at (1050, 660) -->
+  <g transform="translate(1050 660) rotate(7)">
+    <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
+      <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
+      <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
+      <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
+      <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 27: Form B at (1180, 600) -->
+  <g transform="translate(1180 600) rotate(-8)">
+    <line x1="0" y1="0" x2="0" y2="-28" stroke="#a87a2e" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-30" rx="1.8" ry="4" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.8" ry="4" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-2.7" cy="-37" rx="1.8" ry="4" transform="rotate(-22 -2.7 -37)"/>
+      <ellipse cx="2.7" cy="-37" rx="1.8" ry="4" transform="rotate(22 2.7 -37)"/>
+      <ellipse cx="-2" cy="-44" rx="1.5" ry="3.4" transform="rotate(-18 -2 -44)"/>
+      <ellipse cx="2" cy="-44" rx="1.5" ry="3.4" transform="rotate(18 2 -44)"/>
+      <ellipse cx="0" cy="-49" rx="1.3" ry="2.7"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-34" rx="1.2" ry="2.6"/>
+      <ellipse cx="0" cy="-41" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
+
+  <!-- 28: Form A at (1310, 700) -->
+  <g transform="translate(1310 700) rotate(5)">
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#a87a2e" stroke-width="1.7" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.8" cy="-26" rx="2" ry="4.2" transform="rotate(-22 -2.8 -26)"/>
+      <ellipse cx="2.8" cy="-26" rx="2" ry="4.2" transform="rotate(22 2.8 -26)"/>
+      <ellipse cx="-3" cy="-33" rx="2" ry="4.2" transform="rotate(-22 -3 -33)"/>
+      <ellipse cx="3" cy="-33" rx="2" ry="4.2" transform="rotate(22 3 -33)"/>
+      <ellipse cx="-2.8" cy="-40" rx="1.9" ry="4" transform="rotate(-20 -2.8 -40)"/>
+      <ellipse cx="2.8" cy="-40" rx="1.9" ry="4" transform="rotate(20 2.8 -40)"/>
+      <ellipse cx="-2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(-18 -2.5 -47)"/>
+      <ellipse cx="2.5" cy="-47" rx="1.7" ry="3.7" transform="rotate(18 2.5 -47)"/>
+      <ellipse cx="-1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(-14 -1.8 -53)"/>
+      <ellipse cx="1.8" cy="-53" rx="1.5" ry="3.2" transform="rotate(14 1.8 -53)"/>
+      <ellipse cx="0" cy="-58" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-30" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-37" rx="1.3" ry="2.8"/>
+      <ellipse cx="0" cy="-45" rx="1.2" ry="2.5"/>
+    </g>
+  </g>
+
+  <!-- 29: Form C at (1450, 620) -->
+  <g transform="translate(1450 620) rotate(-5)">
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(-25 -2.5 -20)"/>
+      <ellipse cx="2.5" cy="-20" rx="1.7" ry="3.5" transform="rotate(25 2.5 -20)"/>
+      <ellipse cx="-2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(-25 -2.7 -25)"/>
+      <ellipse cx="2.7" cy="-25" rx="1.7" ry="3.5" transform="rotate(25 2.7 -25)"/>
+      <ellipse cx="-2.5" cy="-30" rx="1.5" ry="3" transform="rotate(-22 -2.5 -30)"/>
+      <ellipse cx="2.5" cy="-30" rx="1.5" ry="3" transform="rotate(22 2.5 -30)"/>
+      <ellipse cx="-1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(-15 -1.5 -34)"/>
+      <ellipse cx="1.5" cy="-34" rx="1.3" ry="2.7" transform="rotate(15 1.5 -34)"/>
+      <ellipse cx="0" cy="-37" rx="1.2" ry="2.5"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-23" rx="1.2" ry="2.5"/>
+      <ellipse cx="0" cy="-29" rx="1.1" ry="2.3"/>
+    </g>
+  </g>
+
+  <!-- 30: Form D at (1560, 780) -->
+  <g transform="translate(1560 780) rotate(9)">
+    <line x1="0" y1="0" x2="0" y2="-32" stroke="#a87a2e" stroke-width="1.5" stroke-linecap="round"/>
+    <g fill="#d4972a">
+      <ellipse cx="-2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(-22 -2.3 -34)"/>
+      <ellipse cx="2.3" cy="-34" rx="1.6" ry="3.6" transform="rotate(22 2.3 -34)"/>
+      <ellipse cx="-2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(-20 -2.3 -40)"/>
+      <ellipse cx="2.3" cy="-40" rx="1.5" ry="3.4" transform="rotate(20 2.3 -40)"/>
+      <ellipse cx="0" cy="-45" rx="1.3" ry="2.8"/>
+    </g>
+    <g fill="#f0c46a">
+      <ellipse cx="0" cy="-37" rx="1.1" ry="2.4"/>
+    </g>
+  </g>
 </svg>
