@@ -350,16 +350,6 @@
   row-gap: 8px;
   align-items: start;
   padding: 48px 0 32px 0;
-  /* Stage 5.2 1c: matched lift to .shelf-layout below. .shelf-header
-     and .shelf-layout are BOTH direct children of .shelf (sibling
-     wrappers, not nested); without this z:1, the header would paint
-     at .shelf's step 3 (in-flow non-positioned) and the field at
-     z:0 step 6 would cover the title + Add-book button. Brief
-     specified only .shelf-layout; flagging this extra rule because
-     it's required for the brief's stated intent ("ALL shelf content
-     above the field"). */
-  position: relative;
-  z-index: 1;
 }
 
 .shelf-title {
@@ -477,60 +467,65 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 32px;
-  /* Stage 5.2 1c: .shelf is now a REAL stacking context (isolation
-     isolate). The field mounts inside this context at z:0 (above
-     .shelf's own bg paint in step 1) and .shelf's direct children
-     are lifted to z:1 so they paint above the field. This removes
-     the 1b dependency on .shelf being background-transparent --
-     the field now works even if a future stage adds a .shelf bg.
+  /* Stage 5.2 1f-A: .shelf is a stacking context (isolation:isolate);
+     the field pseudo mounts inside it at z:-1, paints at step 2,
+     and .shelf's in-flow children (.shelf-header, .shelf-layout)
+     paint at step 3 over the field WITHOUT needing a z-index lift.
+     Cards mask the field where they sit; wheat shows through the
+     gutters. The 1c content-lift on .shelf-header / .shelf-layout
+     has been removed -- the "visible ground" model makes the lift
+     unnecessary and incorrect (cards-on-soil, not cards-floating-
+     above-field).
 
      The Yumi panel/toggle (z=9998/9999) are direct children of body,
      NOT descendants of .shelf, so they continue to resolve in the
      ROOT stacking context and paint above .shelf as a whole.
      Mobile sidebar/backdrop (z=100/99) ARE descendants of .shelf
-     via .shelf-layout, so their z-index now resolves inside this
-     context -- but .shelf-layout's own z:1 + their fixed positioning
-     still places them above shelf content and below Yumi. See the
-     regression-check report in the 1c checkpoint for the full walk. */
+     via .shelf-layout, so their z-index resolves inside this
+     context -- the stacking context still encapsulates them, just
+     as in 1c. */
   position: relative;
   isolation: isolate;
 }
 
-/* ===== WHEAT FIELD -- Stage 5.2 (1c-hardened) =====
+/* ===== WHEAT FIELD -- Stage 5.2 (1f-A "visible ground") =====
    Shelf-only background layer. The .shelf selector is exclusive to
    the #books route (every other route renders a different root
    class verified at Stage 0), so this pseudo NEVER appears on
    Notebook, book-detail, artifact, or arc surfaces.
 
-   Stacking (1c): with .shelf as a real stacking context
-   (isolation:isolate above), the pseudo at z:0 paints INSIDE
-   .shelf's context above .shelf's own bg layer; .shelf's direct
-   children (.shelf-header, .shelf-layout) are lifted to z:1 so
-   they paint above the field. This design no longer depends on
-   .shelf being background-transparent and is robust against any
-   future stage that adds a fill to .shelf.
+   Visible-ground model (1f-A): the field is the ground the shelf
+   rests on, NOT a backdrop hidden behind content. With .shelf as a
+   stacking context (isolation:isolate above), the pseudo at z:-1
+   paints at step 2 of .shelf's context, below the in-flow children
+   in step 3. Cards have an opaque --surface-2 background and
+   naturally mask the field where they sit; wheat shows through the
+   margins and the gutters around cards. The 1c content-lift was
+   removed -- cards-on-soil is the design, not cards-floating-above.
 
    Sizing: background-size:cover scales the SVG to fill .shelf's
    bounding box, aspect-preserved; background-position:top left
-   keeps the SVG's upper-left dense cluster anchored where the
-   A1.1 light peak is felt. The SVG's own xMinYMin slice
-   preserveAspectRatio is a defensive duplicate -- the CSS cover
-   handles aspect when the shelf is taller or shorter than 16:9.
+   anchors the SVG's upper-left dense cluster to .shelf's lit corner.
+   The SVG's own xMinYMin slice preserveAspectRatio is a defensive
+   duplicate -- the CSS cover handles aspect when the shelf is
+   taller or shorter than 16:9.
 
    Opacity is wired to --field-presence (theme.css) for one-value
-   tuning. Default 0.08 (~presence 2 of 10); ceiling ~0.12. */
+   tuning. Default 0.18 (visible baseline); ceiling ~0.32. */
 
 .shelf::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* Stage 5.2 1c: field mounts INSIDE .shelf's own stacking context
-     (isolation:isolate above), at z:0 -- above .shelf's bg paint
-     (step 1 of its own context) and below .shelf's direct children
-     which are lifted to z:1. No longer depends on .shelf being
-     background-transparent. */
-  z-index: 0;
+  /* Stage 5.2 1f-A: field is the GROUND the shelf rests on. Inside
+     .shelf's stacking context (isolation:isolate above), the pseudo
+     at z:-1 paints at step 2, BELOW .shelf's in-flow content (step 3)
+     so the title, buttons, sidebar, and book cards all paint OVER
+     the field. Cards have an opaque --surface-2 background and
+     naturally mask the field where they sit; wheat shows in margins
+     and in the gutters between/around cards. */
+  z-index: -1;
   background-image: url('/assets/wheat-field.svg');
   background-repeat: no-repeat;
   background-position: top left;
@@ -545,13 +540,6 @@
   grid-template-columns: 220px 1fr;
   gap: 48px;
   align-items: start;
-  /* Stage 5.2 1c: lift shelf body above the wheat-field pseudo.
-     position:relative is needed so z-index applies; z:1 sits above
-     .shelf::before at z:0 inside .shelf's stacking context. All
-     descendants (sidebar, main, cards, list) ride along -- no
-     per-card touch. */
-  position: relative;
-  z-index: 1;
 }
 
 .shelf-sidebar {
