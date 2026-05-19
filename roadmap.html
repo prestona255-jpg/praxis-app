@@ -1374,9 +1374,9 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       <h1 class="title">Praxis Roadmap</h1>
       <p class="subtitle">A reading community organized by depth of engagement, not metrics of attention.</p>
       <div class="meta-row">
-        <span><strong>Active stage</strong> · Stage 3 — Notebook + Arcs UI</span>
+        <span><strong>Active stage</strong> · Stage 5 — The Material Build-Out</span>
         <span><strong>Version</strong> · v1.0</span>
-        <span><strong>Last updated</strong> · May 16, 2026</span>
+        <span><strong>Last updated</strong> · May 19, 2026</span>
       </div>
     </div>
   </div>
@@ -2013,32 +2013,6 @@ var STAGES = [
     ]
   },
 
-  // ----- STAGE 2.5 (skeleton) -----
-  {
-    id: 's25',
-    num: 'Stage 2.5',
-    name: 'TTS — Yumi speaks back',
-    purpose: 'Yumi speaks back. Conversational text from Stage 2 stays; spoken audio rendering is added on top.',
-    stageStatus: 'not-started',
-    skeleton: true,
-    skeletonReason: 'Detailed sub-stages depend on which TTS service we pick (ElevenLabs, OpenAI, Web Speech API), which depends on Phase 1 budget realities not yet known.',
-    summary: 'Skeleton stage. Adds literal voice to Yumi after Stage 2 ships. Sub-stage detail intentionally deferred until prior stages surface what TTS actually needs to hold.',
-    nonGoals: [],
-    dependencies: 'Stage 2 must be Shipped and Proven, including 2.8 voice document compliance audit.',
-    tentativeSubstages: [
-      { num: '2.5.1', name: 'TTS service selection and integration (API key, basic call, return audio blob)' },
-      { num: '2.5.2', name: 'Audio playback queue (play, interrupt on new user input, mute toggle)' },
-      { num: '2.5.3', name: 'Voice character selection (test against sample Yumi responses, pick by ear)' },
-      { num: '2.5.4', name: 'Voice document review pass (listen to yumi-voice.md spoken; revise text where pacing breaks)' }
-    ],
-    openQuestions: [
-      'Which TTS service?',
-      'Is voice always-on by default or opt-in?',
-      "Does Yumi's voice ever change across registers (book / arc / weekly prompt)?"
-    ],
-    substages: []
-  },
-
   // ----- STAGE 3 -----
   {
     id: 's3',
@@ -2046,7 +2020,7 @@ var STAGES = [
     name: 'Notebook + Arcs UI',
     purpose: "Make the structurally-private writing space and the intersectional reading-thread structure visible and usable. This is where Praxis's constitutional principles become user-facing instead of schema-only. After Stage 3 ships, a user can open the Notebook as a top-level surface, see all entries as one graph, write Marginalia inside book detail view, write Journal from the Notebook, toggle Journal entries to private, see what Yumi can currently see, mark a book finished and create its Book Artifact, create Knowledge Arcs explicitly, and view arcs chronologically.",
     stageStatus: 'in-progress',
-    active: true,
+    active: false,
     summary: 'Notebook and Knowledge Arcs become first-class user surfaces. Constitutional principles #2 (Notebook structurally private), #3 (one Book Artifact per user per book), #5 (no asymmetric knowledge), and #6 (Knowledge Arcs intersectional by design) land in user-facing form here. Scope locked through nine cluster decisions documented in /docs/praxis-3-scope.md, May 12 2026.',
     nonGoals: [
       'No Yumi-suggested arc creation (deferred to Stage 4+)',
@@ -3266,6 +3240,8 @@ var STAGES = [
         id: 's3-10f',
         num: '3.10f',
         name: 'Shelf capture — camera and vision extraction',
+        deferred: true,
+        supersededReason: 'Superseded — rebuilt as Stage 6.1 (shelf photo capture + vision extraction).',
         depConfirm: '3.10e Shipped (openBulkAddEditor auto-resolves covers and metadata on title-form upload — this substage feeds that path). The Netlify Function proxy pattern exists and is deployed (claude-proxy.js) — the vision proxy mirrors it.',
         purpose: 'The first half of the photograph-your-shelf onboarding flow. A browser camera/file input captures a photo of the user\'s bookshelf. The image is sent to a new Netlify Function (vision-proxy.js, mirroring claude-proxy.js) which calls the Anthropic Messages API with an image block and a prompt demanding JSON-only output: an array of {title, author} objects, one per detected spine. That title list is handed into the existing openBulkAddEditor path, which already chains into 3.10e auto-resolve for covers and metadata. This substage ends at the hand-off — the review screen that sits between extraction and save is 3.10g.',
         scope: [
@@ -3317,6 +3293,8 @@ var STAGES = [
         id: 's3-10g',
         num: '3.10g',
         name: 'Review screen and first-run Yumi greeting',
+        deferred: true,
+        supersededReason: 'Superseded — rebuilt as Stage 6.2 (review screen + first-run experience).',
         depConfirm: '3.10f Shipped (vision extraction produces a {title,author} list — this substage inserts the review step between that list and the shelf write).',
         purpose: 'The second half of the photograph-your-shelf flow, plus the onboarding entry point. After 3.10f extracts a title list, a mandatory review screen lists every detected book; the user removes wrong rows before confirming. Removal needs no delete logic — unconfirmed rows are simply never added. Separately, a first-run greeting fires only on an empty shelf, where Yumi prompts the user to upload their shelf as their first action. The review screen is what makes silent vision extraction honest: nothing enters the shelf the user did not see and approve.',
         scope: [
@@ -3679,6 +3657,549 @@ var STAGES = [
       }
 
     ]
+  },
+
+  // ----- STAGE 5 -----
+  {
+    id: 's5',
+    num: 'Stage 5',
+    name: 'The Material Build-Out',
+    purpose: 'The beautiful-surfaces layer — material, light, depth, motion, the wheat field, the Arcs page, and the arc web. Built against the locked praxis-design-system.md v2. Stage 5 is where Praxis stops looking like a wireframe and starts looking like the room.',
+    stageStatus: 'not-started',
+    active: true,
+    summary: 'Five sub-stages, sequenced per the v2 design system Build sequencing section. 5.1 lands the material pass (light, grain, depth, motion) across existing surfaces. 5.2 paints the still SVG wheat field behind the shelf. 5.3 builds the Arcs page (top-nav item, teaching panel, worked examples, how-to, the Find-this-book affiliate surface). 5.4 renders the arc web (chronological-spine visualization as a toggle on arc detail). 5.5 adds opt-in ambient sound + the synced field motion. Each sub-stage is checked against the governing rule: Praxis is the room, the books are why you came.',
+    nonGoals: [
+      'No concept-node system (deferred — a new data model, Phase-scale)',
+      'No user-drawn arc-web edges (deferred with the concept-node phase)',
+      'No interactive arc-as-workspace (the web is the arc seen, not edited — D4)',
+      'No sound on by default (A5.3 — opt-in only, always-visible mute)',
+      'No new commerce surfaces beyond the single Find-this-book line (C5)',
+      'No interaction sounds, no idle animation, no decorative motion (A4.3, A5.2)'
+    ],
+    dependencies: 'Stage 3 must be Shipped and Proven (Notebook + Arcs UI exists as the surface set the material pass applies to). docs/praxis-design-system.md must be at v2 (locked 2026-05-19). Stage 4 (Phase 1 testing readiness) does not block Stage 5 — these run in parallel.',
+    substages: [
+
+      {
+        id: 's5-1',
+        num: '5.1',
+        name: 'Material pass — A1-A4 applied to existing surfaces',
+        depConfirm: 'Stage 3 Shipped (shelf, notebook, book detail, pickers all exist). praxis-design-system.md v2 locked — Parts A1-A4 are the spec.',
+        purpose: 'Apply the v2 material layer (A1 light, A2 material & grain, A3 depth & elevation, A4 motion) to every existing Praxis surface. No new features; this is the pass that makes the existing app feel materially real — golden-hour light direction, cherry-oak grain, the hairline-highlight-shadow set, the slow ease-out motion.',
+        scope: [
+          'A1 light direction: low-angle warm light raking from one upper corner; --surface gains the faint radial page glow (A1.2); cards catch a highlight on the lit edge and cast a shadow on the opposite side (A1.3)',
+          'A2 material & grain: faint wood-grain texture on the page (strength 2/10, running WITH the light direction); 1px --ink-4 hairline on every card edge (A2.2); 10px corner radius applied consistently across cards, pills, pickers, panels, the Yumi panel (A2.3)',
+          'A3 depth: warm-brown shadows in the --br-deep family at ~10% opacity (NEVER grey-black); three elevation tiers — Tier 0 page, Tier 1 cards + filter sidebar, Tier 2 floating (Yumi panel, modals, pickers, confirm panels); Yumi panel at the gentle end of Tier 2 (A3.3)',
+          'A4 motion: slow ease-out (no spring, no bounce, no overshoot, never linear); 350ms base; only the four permitted motions — route cross-fade, card hover lift (~3px with shadow deepening), nav gold underline slide, picker/panel fade-and-rise',
+          'Direction-consistency check across all surfaces — highlight edge, shadow side, page glow peak, and grain direction must all agree on one light direction (A1.4 load-bearing rule)',
+          'Surface-set check on every elevated thing — hairline + highlight + shadow as a set, never half-applied (A2.4 load-bearing rule)'
+        ],
+        nonGoals: [
+          'No wheat field yet (5.2)',
+          'No Arcs page (5.3)',
+          'No arc-web visualization (5.4)',
+          'No sound or motion-with-sound (5.5)',
+          'No new features — this is a pure visual-material pass on existing surfaces',
+          'No grey-black shadows anywhere (A3.1 correctness rule)',
+          'No idle animation, no decorative motion (A4.3)'
+        ],
+        subsystems: ['views'],
+        files: [
+          'assets/theme.css (palette tokens may need additions for --br-deep family, --ink-4 if not present)',
+          'js/views.js (card render paths, panel render paths, hover handlers)',
+          'index.html (page-glow background layer if implemented at body level)'
+        ],
+        acceptance: [
+          'Live URL: every card on every surface shows the hairline + highlight + shadow set; no card has the depth half-applied',
+          'Live URL: card hover produces a slow ~3px lift with the shadow deepening; duration ~350ms; no spring, no overshoot',
+          'Live URL: route changes cross-fade rather than cut; pickers and panels fade-and-rise',
+          'Visual: the page reads as warm-lit from one consistent direction; no grey shadows anywhere',
+          'Visual: the page glow is felt but not noticed (A1.2 — barely-perceptible brighter zone)'
+        ],
+        evidence: [
+          "Static: grep -c 'transition' assets/theme.css returns matches showing the new 350ms base",
+          "Static: grep -E 'box-shadow.*0,0,0|box-shadow.*grey|box-shadow.*#000' assets/theme.css returns 0 (no grey-black shadows)",
+          'Live URL: visual check on shelf, notebook, book detail, arc detail, picker modal — direction-consistency rule holds across all',
+          'Live URL: hover a card on each surface; confirm the lift + shadow-deepen pattern is identical'
+        ],
+        rollback: 'Material pass is additive — revert the commit to restore the v1 flat treatment. No data migration involved.',
+        risks: [
+          'Direction-consistency rule is the most likely thing to drift across surfaces — a card on the Notebook lit from a different angle than a card on the shelf would silently break the room feel. Visual audit across surfaces in one sitting is the verification, not per-surface QA',
+          'Shadow color is a correctness rule, not preference — grey-black shadows on a warm palette is the fastest way the app looks cheap (A3.1). Watch any third-party component that defaults to rgba(0,0,0,...)',
+          'The faint page glow (A1.2) is felt-not-noticed — if a tester remarks on it, it is too strong'
+        ],
+        promptSkeleton:
+'Stage 0: confirm Stage 3 Shipped and praxis-design-system.md at v2. Inventory every surface that has cards / panels / pickers — shelf, notebook, book detail, arc detail, transparency view, all modals, Yumi panel.\n\n' +
+'Stage 1: theme.css — add any missing tokens (--br-deep family, --ink-4 if absent). Define the shadow-set as CSS custom properties so every surface reaches for the same values.\n\n' +
+'Stage 2: views.js — apply hairline + highlight + shadow to every card render path. Apply 10px radius consistently. Wire the hover lift.\n\n' +
+'Stage 3: page-level light direction — radial page glow on --surface; grain texture running with the light.\n\n' +
+'Stage 4: motion pass — 350ms slow ease-out on all four permitted motions; nothing else animates.\n\n' +
+'Verification gates per Evidence block. Visual audit across all surfaces in one sitting.'
+      },
+
+      {
+        id: 's5-2',
+        num: '5.2',
+        name: 'The wheat field — still SVG behind the shelf',
+        depConfirm: '5.1 Shipped (the material layer is in place; the field sits ON the lit room, not on a wireframe). praxis-design-system.md v2 Part B is the spec.',
+        purpose: 'Paint the atmospheric backdrop. A still SVG wheat field — stylized, hand-controlled, faded — sits behind the shelf surface only. Felt, not noticed. This is the most-wanted v2 element and the most dangerous to the books, which is why every B-decision is tuned to keep the field a whisper.',
+        scope: [
+          'SVG illustration of a wheat field — stylized, drawn, faded; not a CSS gradient, not a photo (B1)',
+          'Placement: behind the shelf surface only — the wheat is the library ground (B2). Notebook stays clean; book detail stays clean; arc surfaces stay clean',
+          'Presence level: 2, possibly 3, on a 0-10 scale (B3). Start low; tunable live on the deploy',
+          'Light direction: brighter toward the A1.1 light corner, fading as it crosses (B5) — the field and the page read as one lit space',
+          'Field is STILL by default (B4) — no motion in 5.2; motion belongs to 5.5 with sound'
+        ],
+        nonGoals: [
+          'No motion — the field does not move in 5.2 (B4: visible motion behind the books pulls the eye off them; motion ships in 5.5 with sound)',
+          'No field on Notebook, book detail, or arc surfaces (B2 — shelf only)',
+          'No CSS gradient or photo fallback (B1 — drawn SVG only)',
+          'No interactive control beyond the eventual sound toggle in 5.5'
+        ],
+        subsystems: ['views'],
+        files: [
+          'assets/wheat-field.svg (new — stylized field illustration)',
+          'assets/theme.css (field-presence CSS variable for live tuning)',
+          'js/views.js (shelf render — mount field as a background layer behind the shelf surface)'
+        ],
+        acceptance: [
+          'Live URL: shelf page shows the field behind the books at presence ~2-3; books are not visually fought',
+          'Live URL: Notebook, book detail, and arc surfaces show NO field',
+          'Visual: field lit consistent with the A1.1 light direction — brighter toward the lit corner',
+          'Visual: the field is still — no animation, no motion'
+        ],
+        evidence: [
+          'Static: assets/wheat-field.svg exists and is an SVG (not raster)',
+          'Static: views.js shelf render references the field; notebook / book / arc renders do not',
+          'Live URL: visual check on shelf vs notebook — field present on shelf, absent on notebook',
+          'Live URL: open the page for >30s; the field does not animate'
+        ],
+        rollback: 'Field is a background layer; revert the commit to remove it. SVG asset can stay in repo or be deleted separately.',
+        risks: [
+          'Presence dial is the load-bearing tuning — too strong and the field fights the books; too faint and it is invisible. Start at 2, nudge up. Never start at 5+',
+          'Drawing style consistency — the field must read as part of the same drawn world as the rest of the app, not like a stock illustration',
+          'The shelf-only fence is constitutional — putting the field on Notebook would betray the room/books rule (B2)'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 5.1 Shipped. Inventory shelf vs non-shelf surfaces.\n\n' +
+'Stage 1: draw the SVG field — stylized, hand-controlled, lit toward the A1.1 corner. Save to assets/wheat-field.svg.\n\n' +
+'Stage 2: mount the field as a background layer on the shelf surface only.\n\n' +
+'Stage 3: expose a CSS variable for presence level; default to ~2-3.\n\n' +
+'Verification per Evidence block. Visual audit confirms shelf-only placement and stillness.'
+      },
+
+      {
+        id: 's5-3',
+        num: '5.3',
+        name: 'The Arcs page — top-nav surface',
+        depConfirm: '5.1 Shipped (material layer the page sits in). Stage 3.8 and 3.9 Shipped (arc creation + chronological arc view exist as the substrate). praxis-design-system.md v2 Part C is the spec. Living-document Sections 7 and 10 provide the source content (do not re-invent).',
+        purpose: 'Build a dedicated, navigable surface for Knowledge Arcs. Today arcs live inside the Notebook (arc-list block + arc detail). The Arcs page is the teaching surface — the place a new user learns what an arc IS by seeing two worked examples. Most of the content already exists in the living document; this stage is presentation, not new writing.',
+        scope: [
+          'C1 — Arcs becomes the third top-nav item (Books, Notebook, Arcs). Replaces the prior "no nav item that goes nowhere" rule by earning the slot',
+          'C2 — Teaching panel at top: one paragraph in Yumi voice — "An arc is a path you build through your reading — books from any tradition, set side by side, so they speak to each other."',
+          'C3 — Worked examples, split treatment: *A Pedagogy of Desire* (Giroux Zombie Politics, hooks Yearning, Grant Hidden Potential, Epstein Range, Hurston Their Eyes Were Watching God) seeded as a fully live, openable arc with real member books and arc web; *A Pedagogy of Flow* (sound studies, relationships, psychoanalysis, systems, environment) as an illustrated card. One live, one illustrated.',
+          'C4 — A single guided "Create an arc" call-to-action that opens the arc editor, with three short steps shown beside it (drawn from living-document Section 7.2)',
+          'C5 — Find-this-book affiliate surface: Bookshop affiliate links on member books inside an arc, framed "Find this book". One restrained line. Also placed on book detail page. No store styling.'
+        ],
+        nonGoals: [
+          'No new arc data model — this surface presents what 3.8/3.9 already built',
+          'No "Buy now" framing, no store styling — Find this book is the only acceptable framing (C5)',
+          'No new commerce relationships beyond Bookshop affiliate (already decided)',
+          'No discovery feed or browse-arcs-by-other-readers surface (Phase 2)',
+          'No live-seed of *A Pedagogy of Flow* — that one is illustrated only (C3)'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'js/views.js (Arcs route, top-nav addition, teaching panel render, worked-examples render, Find-this-book line)',
+          'js/state.js (seed the Pedagogy of Desire arc + its five member books if not already present in fixtures)',
+          'index.html (top-nav markup if not data-driven)'
+        ],
+        acceptance: [
+          'Live URL: top-nav shows Books / Notebook / Arcs; clicking Arcs lands on the new page',
+          'Live URL: teaching panel paragraph reads in Yumi voice; one paragraph, not multiple',
+          'Live URL: Pedagogy of Desire is openable as a real arc with the five member books and a populated arc detail view',
+          'Live URL: Pedagogy of Flow appears as an illustrated card; clicking does NOT open a live arc',
+          'Live URL: Create-an-arc CTA opens the existing arc editor (no new editor)',
+          'Live URL: Find-this-book line appears on member books inside an arc and on book detail; one line, no store styling'
+        ],
+        evidence: [
+          "Static: grep -c '/arcs' js/views.js returns matches for the new route",
+          "Static: grep -c 'Find this book' js/views.js returns matches; grep -c 'Buy now' returns 0",
+          'Live URL: full click-through — top-nav Arcs, open Pedagogy of Desire, see real members, return to Arcs page, click Pedagogy of Flow illustrated card (no live open), click Create an arc CTA, editor opens',
+          'Live URL: book detail page also shows the Find-this-book line'
+        ],
+        rollback: 'Arcs page is additive; revert the commit to remove the top-nav item and the route. The seeded Pedagogy of Desire arc can stay or be removed separately.',
+        risks: [
+          'Pedagogy of Desire seed must be real data, not lorem-ipsum — the page teaches by showing a live arc',
+          'Find-this-book line drift — if any future surface adds it with "Buy" or store framing, the constitutional one-restrained-line rule is broken',
+          'Teaching panel paragraph drift — it must stay one paragraph in Yumi voice; multi-paragraph teaching belongs in living-document Section 7, not on the page'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 5.1 Shipped and arc data model from 3.8/3.9 stable. Review living-document Sections 7 and 10 for source content — do not re-write.\n\n' +
+'Stage 1: top-nav addition (Books / Notebook / Arcs) + /arcs route in views.js.\n\n' +
+'Stage 2: teaching panel + Create-an-arc CTA + three steps (Section 7.2 source).\n\n' +
+'Stage 3: seed Pedagogy of Desire arc (five member books) as live; render Pedagogy of Flow as an illustrated card.\n\n' +
+'Stage 4: Find-this-book line on member books and book detail. Bookshop affiliate. One restrained line.\n\n' +
+'Verification per Evidence block. Full click-through audit.'
+      },
+
+      {
+        id: 's5-4',
+        num: '5.4',
+        name: 'The arc web — chronological-spine visualization',
+        depConfirm: '3.9 Shipped (chronological arc list view is the substrate the toggle sits beside). 5.3 Shipped (Arcs page exists; arc detail is a known surface). praxis-design-system.md v2 Part D is the spec.',
+        purpose: 'The one genuinely new design in v2. Arc detail today shows a flat chronological stream. The web is the richer lens — nodes are member books and entries laid out along a chronological spine, edges implicit by chronology and shared books. A rendered artifact, beautiful, fixed — you look at it. List view stays as a toggle alongside.',
+        scope: [
+          'D1 — Nodes are existing arc objects only (member books, member entries). No new "concept" node type',
+          'D2 — Edges are implicit, laid out automatically by chronology and shared books. No user-drawn edges',
+          'D3 — Layout: chronological spine — first → then → now reads along the spine; entries branch off it; oldest-first honors the 3.9 ordering',
+          'D4 — Static / rendered artifact. No drag-nodes, no draw-edges, no editing in the web',
+          'D5 — Toggle between "list" (3.9) and "web" on the same arc; both views read the same data',
+          'D6 — Aesthetic: nodes are small book covers and cherry-ink entry cards along the spine; edges are thin --ink-4 hairlines; --river drop marks the focused node; web sits on the wheat field (5.2); reads as drawn-and-crafted, not generic mind-map'
+        ],
+        nonGoals: [
+          'No concept-node system (D1 — explicitly deferred as a Phase-scale build)',
+          'No user-drawn edges (D2 — paired with concept-nodes, deferred together)',
+          'No drag, no draw, no edit in the web (D4)',
+          'No alternative layouts beyond chronological spine in 5.4 (D3 — the legible default; richer layouts later if first users want them)',
+          'No generic mind-map / force-directed graph aesthetic (D6)'
+        ],
+        subsystems: ['views', 'arcs'],
+        files: [
+          'js/views.js (arc detail — list/web toggle; web render path)',
+          'assets/theme.css (web-specific tokens if needed: spine width, node sizes)'
+        ],
+        acceptance: [
+          'Live URL: arc detail page shows a list/web toggle; default is list (3.9 baseline) until the user switches',
+          'Live URL: web view renders the chronological spine with member books as small-cover nodes and entries as cherry-ink cards branching off the spine',
+          'Live URL: --river drop appears on whichever node is currently focused',
+          'Live URL: web sits on top of the wheat field (5.2) for arcs viewed from a shelf-adjacent path, or on the plain page where appropriate — direction-consistency holds',
+          'Visual: no concept-nodes, no user-drawn edges, no drag affordances'
+        ],
+        evidence: [
+          "Static: grep -c 'concept' js/views.js returns 0 (no concept-node code)",
+          "Static: grep -c 'drag' js/views.js returns 0 in the arc-web render path",
+          'Live URL: open Pedagogy of Desire (seeded in 5.3), toggle to web, see five member-book nodes laid out along the spine; entries branch off',
+          'Live URL: toggle back to list — exact same data, just the 3.9 rendering'
+        ],
+        rollback: 'Web view is additive on top of 3.9 list; revert the commit and the toggle disappears, list view becomes the default again.',
+        risks: [
+          'Aesthetic drift toward generic mind-map (D6 governing rule) — the web must look drawn, part of the Praxis world, not like a force-directed graph library',
+          'Concept-node scope creep — D1 is explicit: nodes are existing arc objects ONLY. Any "let me add a concept here" affordance is the deferred phase leaking',
+          'Edge legibility — implicit chronological edges may read as too sparse on small arcs (2-3 members) or too crowded on large arcs (10+). Test on Pedagogy of Desire (5 members) and confirm legibility'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.9 list view stable and 5.3 Arcs page Shipped. Confirm Pedagogy of Desire arc exists with five live member books.\n\n' +
+'Stage 1: arc detail — add list/web toggle. Default list.\n\n' +
+'Stage 2: web render — chronological spine, small-cover book nodes, cherry-ink entry cards branching off, --ink-4 hairline edges.\n\n' +
+'Stage 3: --river focused-node marker; sit web on wheat field where appropriate.\n\n' +
+'Verification per Evidence block. Visual audit confirms drawn-not-mind-map aesthetic.'
+      },
+
+      {
+        id: 's5-5',
+        num: '5.5',
+        name: 'Ambient sound + immersive mode',
+        depConfirm: '5.1-5.4 Shipped (material layer, wheat field, Arcs page, and arc web all in place). praxis-design-system.md v2 A5 and B4 are the spec.',
+        purpose: 'The last sub-stage in Stage 5 — opt-in ambient sound, plus the synced wheat-field motion that comes with it. Sound off: a quiet lit room. Sound on: the room with the window open. The field gains motion only because sound is on; motion is a property of the sound, not of the app.',
+        scope: [
+          'A5.1 — Sound exists as an opt-in immersive mode',
+          'A5.2 — Two layers, both very low: wheat rustle (wind through the field) and water (Oshun river). No interaction sounds — no page-turn, no clicks',
+          'A5.3 — OFF by default. Turned on only by explicit user choice. Always-visible mute whenever sound is on',
+          'B4 — When sound is ON, the wheat field gains gentle motion synced to the rustle. Sound OFF: field is still (the 5.2 default)',
+          'Mute affordance is always visible while sound is on — non-negotiable per the no-manipulation principle'
+        ],
+        nonGoals: [
+          'No sound on by default (A5.3 — opt-in is constitutional, not a preference)',
+          'No interaction sounds — no click sound, no page-turn sound, no notification chime (A5.2)',
+          'No motion when sound is off — field-still is the default for everyone who has not opted in (B4)',
+          'No more than the two layers (rustle + water) — additive sound design is the trap',
+          'No persistent autoplay across sessions without a fresh opt-in toggle visible'
+        ],
+        subsystems: ['views', 'state'],
+        files: [
+          'assets/sound/wheat-rustle.mp3 (or .ogg) (new — low rustle layer)',
+          'assets/sound/oshun-water.mp3 (or .ogg) (new — low water layer)',
+          'js/views.js (sound toggle affordance, mute, field-motion wiring)',
+          'js/state.js (sound-preference flag, persisted)'
+        ],
+        acceptance: [
+          'Live URL: sound is OFF by default on a fresh session and after every reload — no autoplay',
+          'Live URL: an opt-in toggle is reachable from a known surface (settings or a discreet header control); turning it on starts the two layers low',
+          'Live URL: with sound on, an always-visible mute affordance is present',
+          'Live URL: with sound on, the wheat field gains gentle motion synced to the rustle; with sound off, the field is still',
+          'Live URL: no interaction sound on any click, hover, or page-turn'
+        ],
+        evidence: [
+          "Static: grep -E 'autoplay|loop=\"true\"' js/views.js returns 0 (or only on the explicit user-triggered sound layer)",
+          "Static: grep -c 'click.*play\\|hover.*play' js/views.js returns 0 (no interaction sounds)",
+          'Live URL: fresh session — no sound, field still; toggle on — sound starts, mute visible, field moves; toggle off — sound stops, field stills',
+          'Live URL: reload after toggle on — still defaults to off (or restores per the explicit preference, but never autoplays from cold)'
+        ],
+        rollback: 'Sound + motion are additive; revert the commit to remove the toggle, the audio assets can stay in repo or be deleted separately. Field returns to the still-only 5.2 default.',
+        risks: [
+          'Default-on is the constitutional failure mode (A5.3) — any change that ships sound autoplaying breaks the no-manipulation principle. Test cold-start every time',
+          'Sync between rustle and field motion is the load-bearing UX detail — desynced motion reads as broken rather than ambient',
+          'Sound layering scope creep — A5.2 caps the design at two layers. Adding a third (birdsong, distant voices) is the trap'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 5.1-5.4 Shipped. Locate the field-motion mount point from 5.2.\n\n' +
+'Stage 1: source the two audio layers (rustle + water) — very low, loopable.\n\n' +
+'Stage 2: views.js — opt-in toggle, always-visible mute when on, no autoplay.\n\n' +
+'Stage 3: wire field motion to sound-on state; field-still when sound-off.\n\n' +
+'Stage 4: state.js — sound-preference flag, never autoplay from cold start.\n\n' +
+'Verification per Evidence block. Cold-start test confirms default-off is constitutional, not just behavioral.'
+      }
+
+    ]
+  },
+
+  // ----- STAGE 6 -----
+  {
+    id: 's6',
+    num: 'Stage 6',
+    name: 'Onboarding & Utility',
+    purpose: 'The easy-for-users layer — getting books in, finding them, the first-run experience, and Yumi aloud. Stage 6 absorbs the work that was originally scattered across old 3.10f/g (shelf photo capture) and old Stage 2.5 (TTS), and adds the search surface plus the first-run experience that 3.10 deferred.',
+    stageStatus: 'not-started',
+    active: false,
+    summary: 'Four sub-stages, each one a user-facing utility. 6.1 ships the shelf-photo capture + vision-extraction pipeline (rebuilds old 3.10f). 6.2 adds the review screen + first-run empty-shelf greeting (rebuilds old 3.10g). 6.3 builds shelf search. 6.4 turns on Yumi speaking aloud (TTS — absorbs old Stage 2.5). Dark mode also slots into the Stage 6 era — it is a Stage-6-shaped piece of work (utility, accessibility, easy-for-users) even if it is not numbered as its own sub-stage yet.',
+    nonGoals: [
+      'No barcode scanning (Phase 2 fast-follow)',
+      'No on-device OCR (vision model handles the spine read)',
+      'No retry / confidence-score / fuzzy-match layer on vision (6.2 review step is the human-in-the-loop)',
+      'No full guided audio + visual Yumi walkthrough (6.2 is a greeting; walkthrough is Phase 2)',
+      'No discovery feed, no browse-others-shelves surface (Phase 2)',
+      'No interaction sounds via TTS — Yumi voice is the only spoken layer (matches A5.2 from Stage 5)'
+    ],
+    dependencies: 'Stage 3 Shipped (notebook + arcs + book detail exist as the surfaces utilities sit on). Stage 4 (Phase 1 testing readiness) should be Shipped before 6.2 — the first-run greeting is the testers\' first impression and benefits from the tester-feedback loop being in place. 5.x can run in parallel; Stage 6 does not depend on Stage 5.',
+    substages: [
+
+      {
+        id: 's6-1',
+        num: '6.1',
+        name: 'Shelf photo capture + vision extraction',
+        depConfirm: '3.10e Shipped (openBulkAddEditor auto-resolves covers and metadata on title-form upload — the destination this substage feeds). Old 3.10f superseded by this sub-stage.',
+        purpose: 'The first half of the photograph-your-shelf flow. A browser camera/file input captures a photo of the user\'s bookshelf. The image is sent to a Netlify Function (vision-proxy.js, structurally mirroring claude-proxy.js) which calls the Anthropic Messages API with an image block and a JSON-only extraction prompt — returns an array of {title, author} objects. That list is handed into openBulkAddEditor, which auto-resolves covers and metadata via the 3.10e path. This stage ends at the hand-off — the review screen is 6.2.',
+        scope: [
+          'Camera/file capture UI: a "Photograph your shelf" affordance on the shelf header (permanent, beside Add book and Bulk add), using a standard file input with capture attribute so mobile opens the camera',
+          'New Netlify Function vision-proxy.js, structurally mirroring claude-proxy.js: receives a base64 image, calls Anthropic Messages API with image content block + JSON-only extraction prompt, returns the parsed title list',
+          'Extraction prompt: instruct the model to return ONLY a JSON array of {title, author} objects, no prose, no markdown fences; author may be empty string when the spine does not show one',
+          'Client-side: capture image, base64-encode, POST to vision-proxy, receive title list, hand to openBulkAddEditor (or its underlying list-ingest path)',
+          'Fail-soft: failed vision call surfaces a plain error, leaves the shelf untouched; no partial writes'
+        ],
+        nonGoals: [
+          'No barcode scanning (Phase 2 fast-follow)',
+          'No on-device OCR',
+          'No guided audio/visual Yumi walkthrough (6.2 handles the first-run greeting; full walkthrough is Phase 2)',
+          'No review/confirm screen (that is 6.2)',
+          'No retry logic, no confidence scoring, no fuzzy-match — extraction imperfection is handled by the 6.2 review step'
+        ],
+        subsystems: ['integrations', 'views'],
+        files: [
+          'netlify/functions/vision-proxy.js (new)',
+          'js/integrations.js (client-side vision call + title-list hand-off)',
+          'js/views.js (capture affordance on shelf header)'
+        ],
+        acceptance: [
+          'A photo of a real shelf, captured via the shelf affordance, produces a list of detected {title, author} pairs',
+          'The detected list reaches openBulkAddEditor and 3.10e auto-resolve fires on the resulting entries',
+          'A failed or empty vision response surfaces a clean error and writes nothing',
+          'vision-proxy.js never returns the raw API key to the client'
+        ],
+        evidence: [
+          'Live URL: capture a shelf photo; Network shows POST to vision-proxy; response is a JSON title array',
+          'Live URL: detected titles appear in the bulk-add path and resolve covers via 3.10e',
+          'A deliberately bad photo (blur/glare) returns either a short list or a clean error — never a crash'
+        ],
+        rollback: 'Capture affordance and vision-proxy are additive. Revert the commit to remove the affordance; the Netlify Function can be left deployed dormant or deleted separately.',
+        risks: [
+          'Vision extraction accuracy on real shelf photos is the load-bearing risk — glare, rotated spines, thin books, occlusion. Precede with a throwaway spike (one photo, one call) before full build',
+          'Mitigation for residual error is the 6.2 review step, NOT chasing extraction perfection. Builder-Intellectual fence: ship capture + proxy + extraction + hand-off; do not build retry, confidence scoring, or fuzzy-match',
+          'Image payload size: a full-shelf photo is a large vision call. Rare event, acceptable cost — flag if a user photographs in a loop'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 3.10e Shipped and openBulkAddEditor list-ingest path. Confirm claude-proxy.js shape so vision-proxy.js mirrors it.\n\n' +
+'Stage 1: netlify/functions/vision-proxy.js — Anthropic Messages API, image block + JSON-only extraction prompt, returns {title,author} array.\n\n' +
+'Stage 2: client-side capture in views.js + integrations.js — file input with capture attr, base64 encode, POST to vision-proxy, hand list to openBulkAddEditor.\n\n' +
+'Stage 3: live verification on a real shelf photo; bad-photo fail-soft.'
+      },
+
+      {
+        id: 's6-2',
+        num: '6.2',
+        name: 'Review screen + first-run experience',
+        depConfirm: '6.1 Shipped (vision extraction produces a {title,author} list — this sub-stage inserts the review step between that list and the shelf write, and adds the empty-shelf greeting).',
+        purpose: 'The second half of the shelf-photo flow plus the onboarding entry point. After 6.1 extracts a title list, a mandatory review screen lists every detected book; the user removes wrong rows before confirming. Removal needs no delete logic — unconfirmed rows are simply never added. Separately, a first-run greeting fires only on an empty shelf, directing the user to the photograph-your-shelf affordance. The review screen is what makes silent vision extraction honest: nothing enters the shelf the user did not see and approve.',
+        scope: [
+          'Review screen: between 6.1 extraction and the shelf write, render the detected {title,author} list, each row with a remove affordance and editable author/title; one "Add these N books" confirm',
+          'Confirm hands surviving rows to the existing add path; removed rows are dropped, not deleted (no delete logic touched)',
+          'Empty-shelf detection: a check for zero books on the current user',
+          'First-run Yumi greeting: when the shelf is empty and the onboarding flag is unset, Yumi greets the user and points to the "Photograph your shelf" affordance',
+          'Onboarding-seen flag in state, set once the user completes or dismisses the greeting, so returning users are not nagged'
+        ],
+        nonGoals: [
+          'No full guided audio + visual Yumi walkthrough — Phase 2',
+          'No permanent shelf-wide per-book delete — review-step removal is NOT a delete feature and must not be built as one; shelf-wide delete is its own later stage (Stage 4.7 in the existing s4 skeleton or its own ticket)',
+          'No barcode path'
+        ],
+        subsystems: ['views', 'yumi-ui', 'state'],
+        files: [
+          'js/views.js (review screen)',
+          'js/yumi-ui.js (first-run greeting)',
+          'js/state.js (onboarding-seen flag)'
+        ],
+        acceptance: [
+          'After a 6.1 extraction, the review screen lists every detected book; removing a row and confirming adds only the surviving rows',
+          'The first-run greeting fires on an empty shelf and does NOT fire for a user who has books or has seen onboarding',
+          'The onboarding-seen flag persists across reloads'
+        ],
+        evidence: [
+          'Live URL: extract a shelf, remove a row, confirm — only kept rows land on the shelf',
+          'Live URL: empty shelf shows the Yumi greeting; populated shelf does not; reload preserves the seen flag'
+        ],
+        rollback: 'Review screen and greeting are additive. Revert the commit; 6.1 extraction would then hand directly to the bulk-add path with no review step.',
+        risks: [
+          'First-run greeting must not nag returning users — gate strictly on empty-shelf AND unset onboarding flag',
+          'Scope creep toward a full walkthrough: hard fence — 6.2 ships a greeting and a review screen, nothing more'
+        ],
+        promptSkeleton:
+'Stage 0: confirm 6.1 Shipped and its title-list hand-off point. Confirm state shape for an onboarding flag.\n\n' +
+'Stage 1: views.js — review screen between extraction and shelf write; remove-row + confirm; surviving rows to the add path.\n\n' +
+'Stage 2: yumi-ui.js + state.js — empty-shelf detection, first-run greeting copy + trigger, onboarding-seen flag.\n\n' +
+'Stage 3: live verification — review removal, greeting gating, flag persistence.'
+      },
+
+      {
+        id: 's6-3',
+        num: '6.3',
+        name: 'Shelf search',
+        depConfirm: 'Stage 3 Shipped (shelf surface exists and stable). 6.1 and 6.2 should be Shipped because they raise the floor of how many books a typical user has — search matters more once shelves are full from a photo import.',
+        purpose: 'Search across the shelf. A user with 50+ books needs to find one quickly. Title and author are the search fields; result is the existing shelf-card UI, filtered.',
+        scope: [
+          'Search input on the shelf header (or as a discreet keyboard-shortcut overlay — decide at session time)',
+          'Live filtering as the user types — match against title and author, case-insensitive, substring',
+          'Empty-state copy when the search returns zero matches: "Nothing on your shelf matches" (consistent with the 3.10b filter-empty state)',
+          'Clear-search affordance returns the full shelf'
+        ],
+        nonGoals: [
+          'No full-text search of notebook entries or artifacts (separate surface; if wanted, Phase 2)',
+          'No fuzzy matching, no synonyms — substring case-insensitive match only',
+          'No search history, no recent-searches list',
+          'No search across other users\' shelves (Phase 2)'
+        ],
+        subsystems: ['views'],
+        files: [
+          'js/views.js (shelf header search input, filter logic, empty-state copy)'
+        ],
+        acceptance: [
+          'Live URL: search input appears on the shelf header; typing filters the visible books live',
+          'Live URL: empty-state copy fires on zero matches',
+          'Live URL: clear-search restores the full shelf without reload'
+        ],
+        evidence: [
+          "Static: grep -c 'toLowerCase\\|toUpperCase' js/views.js shows the case-insensitive match in place",
+          'Live URL: type a query → only matching books visible; clear → full shelf back'
+        ],
+        rollback: 'Search is additive. Revert the commit; the shelf returns to the unfiltered grid.',
+        risks: [
+          'Filter performance on large shelves — for 1000+ books, naive substring filter on every keystroke may stutter. Acceptable for Stage 6; revisit if it becomes painful',
+          'Search-input placement drift — keyboard-shortcut overlay vs always-visible input is a real UX choice; decide at session time and document'
+        ],
+        promptSkeleton:
+'Stage 0: confirm shelf render path in views.js. Inventory current header affordances.\n\n' +
+'Stage 1: search input + live filter on the shelf grid.\n\n' +
+'Stage 2: empty-state copy + clear affordance.\n\n' +
+'Verification per Evidence block.'
+      },
+
+      {
+        id: 's6-4',
+        num: '6.4',
+        name: 'Yumi speaks aloud (TTS)',
+        depConfirm: 'Stage 2 fully Shipped and Proven (voice document v1.1.1 is canonical). Old Stage 2.5 superseded by this sub-stage and relocated into the DEFERRED log.',
+        purpose: 'Yumi speaks back. Conversational text from Stage 2 stays; spoken audio rendering is added on top. The voice document was tuned for screen reading; this sub-stage is also the place we listen to yumi-voice.md spoken aloud and revise text where pacing breaks.',
+        scope: [
+          'TTS service selection and integration — API key, basic call, return audio blob. Candidates: Web Speech API (free, browser-native, lower quality), ElevenLabs (paid, high quality), OpenAI TTS (paid, good quality). Decide at session time based on Phase 1 budget',
+          'Audio playback queue: play, interrupt on new user input, mute toggle (always-visible when speaking, matching the A5.3 mute principle)',
+          'Voice character selection: test against sample Yumi responses; pick by ear',
+          'Voice-document review pass: listen to yumi-voice.md spoken; revise text where pacing breaks',
+          'TTS off by default; opt-in toggle per the same constitutional default-off rule as Stage 5.5 ambient sound'
+        ],
+        nonGoals: [
+          'No interaction sounds (clicks, page-turns) — only Yumi voice speaks',
+          'No autoplay across sessions without explicit opt-in (default-off is constitutional)',
+          'No voice agent / screen commands (Phase 3+)',
+          'No wake-word / always-listening (out of scope)',
+          'No multi-voice — Yumi has one voice; register changes are textual, not sonic'
+        ],
+        subsystems: ['yumi-ui', 'voice-input', 'state'],
+        files: [
+          'js/yumi-ui.js (TTS playback wiring, mute toggle, queue)',
+          'js/integrations.js (TTS service call)',
+          'js/state.js (TTS-preference flag)',
+          'netlify/functions/tts-proxy.js (new, if a paid TTS service is chosen to keep the API key server-side; not needed for Web Speech API)',
+          'docs/yumi-voice.md (revision pass for spoken pacing)'
+        ],
+        acceptance: [
+          'Live URL: with TTS toggled on, a Yumi response is spoken aloud after it renders',
+          'Live URL: a new user message interrupts ongoing playback',
+          'Live URL: mute toggle is visible whenever playback is active',
+          'Live URL: TTS is OFF on a fresh session; turning it on persists per the explicit preference, but never autoplays cold',
+          'Voice document audit: listen to a sample yumi-voice.md passage spoken; any pacing-break revisions are committed'
+        ],
+        evidence: [
+          "Static: grep -c 'SpeechSynthesis\\|fetch.*tts' js/integrations.js returns matches for the chosen TTS path",
+          'Live URL: cold-start has no TTS; toggle on → response speaks; new user input interrupts; mute is visible',
+          'docs/yumi-voice.md commit history shows the spoken-pacing revision pass'
+        ],
+        rollback: 'TTS is additive. Revert the commit to remove the toggle; written Yumi responses continue to work. Audio assets / proxy can stay or be deleted separately.',
+        risks: [
+          'Default-on is the constitutional failure (matches Stage 5.5 sound rule) — TTS autoplaying on a cold session breaks the no-manipulation principle',
+          'Voice character drift — if Yumi sounds "off" (over-cheerful, over-warm, over-flat), it betrays the voice document. Voice character selection is by ear, not by spec sheet',
+          'Service-cost surprise on paid TTS — a chatty user with TTS on can generate real API costs. If a paid service is chosen, document expected per-message cost'
+        ],
+        promptSkeleton:
+'Stage 0: confirm Stage 2 voice document v1.1.1 canonical. Confirm yumi-ui.js render path. Decide TTS service (Web Speech / ElevenLabs / OpenAI).\n\n' +
+'Stage 1: TTS service call — Web Speech inline, or netlify function for paid service to keep keys server-side.\n\n' +
+'Stage 2: playback queue + interrupt-on-input + always-visible mute.\n\n' +
+'Stage 3: default-off toggle + state persistence (never autoplay cold).\n\n' +
+'Stage 4: voice-document spoken-pacing review pass; commit any revisions to docs/yumi-voice.md.\n\n' +
+'Verification per Evidence block. Cold-start test confirms default-off.'
+      }
+
+    ]
+  },
+
+  // ----- PHASE 2 -----
+  {
+    id: 's7',
+    num: 'Phase 2',
+    name: 'The Social Layer',
+    purpose: 'Profiles, published arcs, book pages, arc completion, author pages, and connection mechanics. Already specced in living-document Sections 7-9. Phase 2 is when Praxis grows from a personal practice into a multi-user fabric — but the personal workspace must hold its own weight first.',
+    stageStatus: 'not-started',
+    active: false,
+    skeleton: true,
+    skeletonReason: 'Phase 2 needs a multi-user backend; it gets its own infrastructure pre-flight before any sub-stage. Detailed sub-stages depend on backend choices (Firestore extension vs. dedicated backend), commercial model decisions, and the post-beta learning from Phase 1 testers.',
+    summary: 'Skeleton phase. The social layer is fully specced in living-document Sections 7-9 — profiles, published arcs, book pages, arc completion, connection mechanics, author pages. Detail intentionally deferred until Phase 1 testers surface what the personal practice actually needs the social layer to hold.',
+    nonGoals: [
+      'No sub-stage detail until the backend foundation pre-flight is run',
+      'No commitment to a specific backend (Firestore-extended vs. dedicated server) until the local-first-to-multi-user transition is designed',
+      'No commerce surfaces beyond the v1 Bookshop affiliate (C5 from design system v2) until the commercial model center-of-gravity is decided'
+    ],
+    dependencies: 'Stage 4 (Phase 1 testing readiness), Stage 5 (Material Build-Out), and Stage 6 (Onboarding & Utility) all Shipped. Phase 1 testers\' feedback synthesized into a Phase 2 brief before any sub-stage opens.',
+    tentativeSubstages: [
+      { num: '7.1', name: 'Backend foundation — multi-user data model, auth scopes, the local-first-to-multi-user transition' },
+      { num: '7.2', name: 'Profiles + viewing another reader\'s library / arcs (read-only first)' },
+      { num: '7.3', name: 'Published arcs — publish, browse, fork mechanics' },
+      { num: '7.4', name: 'Book pages — the book as a surface other readers can land on' },
+      { num: '7.5', name: 'Arc completion — Yumi-scaffolded summative review' },
+      { num: '7.6', name: 'Connection — comment / follow / save, consent-based throughout' },
+      { num: '7.7', name: 'Author pages + discovery' }
+    ],
+    openQuestions: [
+      'The local-first to multi-user transition: how does today\'s Firestore-per-user doc model extend to a read-other-users shape without breaking the privacy guarantees that #2 and #5 enforce today?',
+      'The commercial model center-of-gravity: Bookshop affiliate stays as the floor, but does Phase 2 add subscription, author tipping, paid arcs — or does the practice stay free with affiliate as the only commerce surface?'
+    ],
+    substages: []
   }
 ];
 
@@ -3849,6 +4370,12 @@ var DEFERRED = [
     dateDeferred: '2026-05-05',
     reason: 'Backfill not blocking; not critical to forward progress.',
     comesBackWhen: 'When Stage 2 ships and a retro session has time'
+  },
+  {
+    name: 'Yumi speaks aloud (TTS)',
+    dateDeferred: '2026-05-19',
+    reason: 'Originally a standalone stage. Relocated into the Stage 6 onboarding-and-utility cluster as Stage 6.4.',
+    comesBackWhen: 'Stage 6.4'
   }
 ];
 
@@ -3857,18 +4384,22 @@ var DEFERRED = [
 // Anchored to current month: May 2026 = "now"
 // =====================================================================
 
-var TIMELINE_MONTHS = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+var TIMELINE_MONTHS = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 var TIMELINE_NOW_INDEX = 0; // May 2026
 
 // Stage spans: startMonthIndex, endMonthIndex (inclusive of fractional bands)
 // Stage 1 ends at "now". Stage 2 starts at "now". Estimates per spec:
 // Stage 2: 4-6 weeks. Stage 2.5: 2-3 weeks. Stage 3: 6-8 weeks. Stage 4: 3-4 weeks.
+// Stage 5 (Material): 4-6 weeks. Stage 6 (Onboarding): 3-4 weeks. Phase 2 (Social): multi-month.
 var TIMELINE_BANDS = [
   { stageId: 's1',  label: 'Stage 1 — Foundation',     start: -1.0, end: 0.0,  status: 'shipped' },
   { stageId: 's2',  label: 'Stage 2 — Conversational Yumi', start: 0.0, end: 0.5,  status: 'shipped' },
   { stageId: 's3',  label: 'Stage 3 — Notebook + Arcs', start: 0.5, end: 2.0, status: 'in-progress' },
   { stageId: 's25', label: 'Stage 2.5 — TTS',          start: 2.0,  end: 2.75, status: 'not-started' },
-  { stageId: 's4',  label: 'Stage 4 — Phase 1 ready',  start: 2.75, end: 3.75, status: 'not-started' }
+  { stageId: 's4',  label: 'Stage 4 — Phase 1 ready',  start: 2.75, end: 3.75, status: 'not-started' },
+  { stageId: 's5',  label: 'Stage 5 — Material Build-Out', start: 3.75, end: 5.25, status: 'not-started' },
+  { stageId: 's6',  label: 'Stage 6 — Onboarding & Utility', start: 5.25, end: 6.5, status: 'not-started' },
+  { stageId: 's7',  label: 'Phase 2 — Social Layer',   start: 6.5,  end: 10.5, status: 'not-started' }
 ];
 
 // =====================================================================
