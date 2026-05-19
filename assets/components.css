@@ -467,7 +467,51 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 32px;
+  /* Stage 5.2: containing block for the wheat-field pseudo below.
+     position:relative ONLY -- no z-index, no isolation. .shelf is
+     NOT a stacking context (intentional): the pseudo at z:-1
+     resolves in the ROOT stacking context, same pattern as 5.1's
+     body::before, so the global z-index model is unchanged --
+     Yumi (9998/9999), mobile sidebar (100), backdrop (99) all
+     resolve in root context just as they did pre-5.2. */
+  position: relative;
 }
+
+/* ===== WHEAT FIELD -- Stage 5.2 =====
+   Shelf-only background layer. The .shelf selector is exclusive to
+   the #books route (every other route renders a different root
+   class verified at Stage 0), so this pseudo NEVER appears on
+   Notebook, book-detail, artifact, or arc surfaces.
+
+   Stacking: position:absolute (containing block = .shelf via
+   position:relative above) places the pseudo geometrically inside
+   .shelf. z-index:-1 sinks the painting to the root negative-z
+   layer, below .shelf's transparent box (root step 3) and above
+   body::before's page glow/grain (also z:-1, but earlier in DOM
+   order, so .shelf::before paints OVER it).
+
+   Sizing: background-size:cover scales the SVG to fill .shelf's
+   bounding box, aspect-preserved; background-position:top left
+   keeps the SVG's upper-left dense cluster anchored where the
+   A1.1 light peak is felt. The SVG's own xMinYMin slice
+   preserveAspectRatio is a defensive duplicate -- the CSS cover
+   handles aspect when the shelf is taller or shorter than 16:9. */
+
+.shelf::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: url('/assets/wheat-field.svg');
+  background-repeat: no-repeat;
+  background-position: top left;
+  background-size: cover;
+  /* placeholder -- 1c wires token */
+  opacity: 0.08;
+}
+
+/* ===== END WHEAT FIELD ===== */
 
 .shelf-layout {
   display: grid;
