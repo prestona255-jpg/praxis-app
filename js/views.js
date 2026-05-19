@@ -110,6 +110,13 @@
 //         arc-picker-row, arc-picker-done
 //   3.8 2b-ii: notebook-entry-add-to-arc,
 //         notebook-entry-arc-picker-host
+//   3.9-a: arc-detail, arc-detail-header, arc-detail-title,
+//         arc-detail-description, arc-detail-delete,
+//         arc-detail-empty-body, arc-detail-member-list,
+//         arc-detail-missing-member, arc-detail-not-found
+//   3.9-b: arc-confirm-panel, arc-confirm-copy, arc-confirm-actions,
+//         arc-confirm-confirm, arc-confirm-cancel,
+//         arc-confirm-stale-note, arc-confirm-stale-back
 //   Editor host ids: #notebook-editor-host (3.2),
 //                    #book-detail-editor-host (3.3),
 //                    #shelf-editor-host (3.5a),
@@ -117,6 +124,7 @@
 //   Picker host ids: #book-detail-arc-picker-host (3.8 2b-i),
 //                    .notebook-entry-arc-picker-host (3.8 2b-ii,
 //                    per-card inline mount, not an id)
+//   Confirm host id: #arc-detail-confirm-host (3.9-a, 3.9-b wires)
 //   Settings host id:     #notebook-settings-host (3.4b)
 //   Transparency host id: #notebook-transparency-host (3.6)
 //
@@ -266,8 +274,15 @@ function renderRoute() {
     }
   }
 
+  // 3.9: every route block leaves exactly one of {currentBookId,
+  // currentArcId} set (or both null), never a stale pairing. Entering a
+  // book leaves any arc; entering an arc leaves any book; the shelf and
+  // notebook clear both. yumi-brain reads both slots ([yumi-brain.js
+  // currentArc lens]) so a stale value in either is a stale-context
+  // bug. The symmetric-clear pattern below is the prevention.
   if (parts[0] === 'book' && parts[1]) {
     state.currentBookId = parts[1];
+    state.currentArcId  = null;
     saveState();
     renderBookDetail(parts[1]);
     return;
@@ -278,8 +293,19 @@ function renderRoute() {
     // -- the user is still engaged with this book, just on its
     // retrospective surface rather than the in-progress one.
     state.currentBookId = parts[1];
+    state.currentArcId  = null;
     saveState();
     renderArtifact(parts[1]);
+    return;
+  }
+  if (parts[0] === 'arc' && parts[1]) {
+    // 3.9: arc detail. Setting currentArcId keeps yumi-brain's
+    // currentArc context lens accurate; clearing currentBookId is the
+    // symmetric half (entering an arc is leaving any book).
+    state.currentArcId  = parts[1];
+    state.currentBookId = null;
+    saveState();
+    renderArcDetail(parts[1]);
     return;
   }
   if (parts[0] === 'books') {
@@ -287,6 +313,7 @@ function renderRoute() {
     // the notebook path so yumi-brain does not carry a stale book
     // reference into a shelf-scoped session.
     state.currentBookId = null;
+    state.currentArcId  = null;
     saveState();
     renderShelf();
     return;
@@ -296,6 +323,7 @@ function renderRoute() {
   // symmetrically on the way in so yumi-brain's retrieval path
   // does not carry a stale book reference.
   state.currentBookId = null;
+  state.currentArcId  = null;
   saveState();
   renderNotebook();
 }
@@ -2285,6 +2313,241 @@ function renderArtifact(bookId) {
   host.appendChild(wrap);
 }
 
+// Stage 3.9-a: arc detail view at #arc/<arcId>. Renders the arc's
+// members as ONE chronological stream merged from bookIds + entryIds,
+// sorted ASCENDING by addedAt (oldest-first: first -> then -> now;
+// Cluster 6 -- arcs are intersectional, no sectioning by member type).
+// Members are looked up defensively: a missing book or entry renders
+// a placeholder rather than crashing, because Firestore replace-merge
+// on sign-in can drop a local book that a local-only arc still names
+// (Stage 0 finding). Reuses renderShelfBook / renderNotebookEntry
+// as-is for member rendering -- no parallel renderers (styling-pass
+// scope). Not-found-or-not-yours collapses to a quiet placeholder
+// view; user filter mirrors the 2a arc-list filter exactly.
+//
+// Header carries a 'Delete arc' button. In 3.9-a the button is wired
+// to NO handler -- 3.9-b adds the confirm-panel handler. The
+// arc-detail-confirm-host div is mounted now so 3.9-b's panel has a
+// stable mount point without re-rendering the header.
+function renderArcDetail(arcId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var arc = state.arcs && state.arcs[arcId];
+  var user = getCurrentUser();
+
+  if (!arc || !user || arc.userId !== user.uid) {
+    var nf = document.createElement('section');
+    nf.className = 'arc-detail-not-found';
+    var nfMsg = document.createElement('p');
+    nfMsg.textContent = 'That arc could not be found.';
+    var nfLink = document.createElement('a');
+    nfLink.href = '#notebook';
+    nfLink.textContent = 'Back to Notebook';
+    nf.appendChild(nfMsg);
+    nf.appendChild(nfLink);
+    host.appendChild(nf);
+    return;
+  }
+
+  var wrap = document.createElement('section');
+  wrap.className = 'arc-detail';
+
+  var header = document.createElement('header');
+  header.className = 'arc-detail-header';
+
+  var title = document.createElement('h1');
+  title.className = 'arc-detail-title';
+  title.textContent = arc.title || '';
+  header.appendChild(title);
+
+  if (arc.description) {
+    var desc = document.createElement('p');
+    desc.className = 'arc-detail-description';
+    desc.textContent = arc.description;
+    header.appendChild(desc);
+  }
+
+  // 3.9-b: delete button opens the in-DOM confirm panel mounted in
+  // #arc-detail-confirm-host. arcId captured in the click closure.
+  var deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'arc-detail-delete';
+  deleteBtn.textContent = 'Delete arc';
+  deleteBtn.addEventListener('click', function() {
+    openArcDeleteConfirm(arcId);
+  });
+  header.appendChild(deleteBtn);
+
+  wrap.appendChild(header);
+
+  // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
+  var confirmHost = document.createElement('div');
+  confirmHost.id = 'arc-detail-confirm-host';
+  wrap.appendChild(confirmHost);
+
+  // Merge books + entries into one stream, oldest-first by addedAt.
+  // The 3.8 attach mutators guarantee every push is well-formed
+  // {id, addedAt} (Stage 0 verified by code reading), so no shape
+  // check is needed. Defensive id checks protect against console-
+  // injected legacy data only.
+  var members = [];
+  var i;
+  for (i = 0; i < arc.bookIds.length; i++) {
+    var bm = arc.bookIds[i];
+    if (bm && bm.id) {
+      members.push({
+        kind:    'book',
+        id:      bm.id,
+        addedAt: bm.addedAt || 0
+      });
+    }
+  }
+  for (i = 0; i < arc.entryIds.length; i++) {
+    var em = arc.entryIds[i];
+    if (em && em.id) {
+      members.push({
+        kind:    'entry',
+        id:      em.id,
+        addedAt: em.addedAt || 0
+      });
+    }
+  }
+  members.sort(function(x, y) {
+    return (x.addedAt || 0) - (y.addedAt || 0);
+  });
+
+  if (members.length === 0) {
+    var empty = document.createElement('p');
+    empty.className = 'arc-detail-empty-body';
+    empty.textContent =
+      'No books or entries in this arc yet. Open a book or an ' +
+      'entry and use "Add to arc…" to attach it here.';
+    wrap.appendChild(empty);
+  } else {
+    var list = document.createElement('div');
+    list.className = 'arc-detail-member-list';
+    var m;
+    for (m = 0; m < members.length; m++) {
+      var member = members[m];
+      if (member.kind === 'book') {
+        var book = state.books && state.books[member.id];
+        if (!book) {
+          list.appendChild(renderArcMissingMember('book'));
+        } else {
+          list.appendChild(renderShelfBook(book));
+        }
+      } else {
+        var entry = state.notebookEntries
+          && state.notebookEntries[member.id];
+        if (!entry) {
+          list.appendChild(renderArcMissingMember('entry'));
+        } else {
+          list.appendChild(renderNotebookEntry(entry));
+        }
+      }
+    }
+    wrap.appendChild(list);
+  }
+
+  host.appendChild(wrap);
+}
+
+// Placeholder row for an arc member whose underlying book or entry
+// can no longer be resolved. Two reachable causes (Stage 0): Firestore
+// REPLACE-merge on sign-in dropping a local book (book case), or
+// console-side state manipulation (either case). Quiet copy, no
+// affordances -- this is information, not an action surface. A future
+// stage may add a "remove from arc" repair affordance; out of 3.9 scope.
+function renderArcMissingMember(kind) {
+  var node = document.createElement('div');
+  node.className = 'arc-detail-missing-member';
+  node.textContent = (kind === 'book')
+    ? 'A book that was in this arc is no longer in your library.'
+    : 'An entry that was in this arc is no longer in your notebook.';
+  return node;
+}
+
+// Stage 3.9-b: in-DOM delete-arc confirmation. Mounts into
+// #arc-detail-confirm-host. Native confirm() is avoided -- the
+// codebase's prior precedent (openNotebookSettings + the arc pickers)
+// is in-DOM panels built from createElement primitives, and this is
+// the first destructive-action confirmation in the file. The copy
+// MUST explicitly state member books and entries are NOT deleted,
+// only the arc -- removing a path through the graph, not its waypoints.
+//
+// Cancel clears the host innerHTML; the arc detail view underneath is
+// untouched. Confirm calls deleteArc(arcId); on TRUE saveState then
+// navigate to #notebook via location.hash assignment (the hashchange
+// path fires renderRoute -> renderNotebook, and the deleted arc is
+// gone from the arc-list). On FALSE the arc was already gone (race
+// across tabs, or console-side delete) -- replace the panel contents
+// with a quiet stale-note and a back-to-Notebook link rather than
+// crashing or re-opening the same confirm panel.
+function openArcDeleteConfirm(arcId) {
+  var host = document.getElementById('arc-detail-confirm-host');
+  if (!host) return;
+  host.innerHTML = '';
+
+  var panel = document.createElement('div');
+  panel.className = 'arc-confirm-panel';
+
+  var copy = document.createElement('p');
+  copy.className = 'arc-confirm-copy';
+  copy.textContent =
+    'Delete this arc? The books and entries in it stay in your ' +
+    'library and notebook — only the arc is removed.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'arc-confirm-actions';
+
+  var confirmLink = document.createElement('a');
+  confirmLink.href = '#';
+  confirmLink.className = 'arc-confirm-confirm';
+  confirmLink.textContent = 'Delete arc';
+  confirmLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var ok = deleteArc(arcId);
+    if (ok) {
+      saveState();
+      location.hash = '#notebook';
+    } else {
+      // Arc already gone (race / console-side delete). Quiet stale-
+      // note in place of the panel; user can step back to the
+      // Notebook from here without a crash or a redundant re-confirm.
+      var h = document.getElementById('arc-detail-confirm-host');
+      if (!h) return;
+      h.innerHTML = '';
+      var staleNote = document.createElement('p');
+      staleNote.className = 'arc-confirm-stale-note';
+      staleNote.textContent = 'That arc has already been removed.';
+      var backLink = document.createElement('a');
+      backLink.href = '#notebook';
+      backLink.className = 'arc-confirm-stale-back';
+      backLink.textContent = 'Back to Notebook';
+      h.appendChild(staleNote);
+      h.appendChild(backLink);
+    }
+  });
+  actions.appendChild(confirmLink);
+
+  var cancelLink = document.createElement('a');
+  cancelLink.href = '#';
+  cancelLink.className = 'arc-confirm-cancel';
+  cancelLink.textContent = 'Cancel';
+  cancelLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var h = document.getElementById('arc-detail-confirm-host');
+    if (h) h.innerHTML = '';
+  });
+  actions.appendChild(cancelLink);
+
+  panel.appendChild(actions);
+  host.appendChild(panel);
+}
+
 function openMarginaliaEditor(bookId) {
   openEditor({
     hostId:         'book-detail-editor-host',
@@ -2669,8 +2932,14 @@ function renderArtifactCard(artifact) {
 // <article>-based structure for visual consistency with the post-3.8
 // styling pass; no event handlers wired.
 function renderArcRow(arc) {
-  var row = document.createElement('article');
+  // 3.9: row navigates to #arc/<id>. Anchor-element pattern mirrors
+  // renderShelfBook -- the browser's hashchange path fires renderRoute,
+  // which dispatches to renderArcDetail. className is preserved from
+  // 2a so styling-pass selectors do not break; only the tag changes
+  // (inert <article> -> clickable <a>).
+  var row = document.createElement('a');
   row.className = 'notebook-arc-row';
+  row.href = '#arc/' + arc.id;
 
   var titleEl = document.createElement('div');
   titleEl.className = 'notebook-arc-title';

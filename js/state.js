@@ -344,6 +344,14 @@ function ensureUser(uid) {
 // are short by design, so an O(n) duplicate check is the right cost
 // for the simplest code. entry.arcIds (entry-side back-reference)
 // stays `array of plain string`.
+//
+// 3.9 adds deleteArc(arcId): removes the arc AND cleans the entry-
+// side back-references (every member entry's arcIds array gets the
+// arcId spliced out). Books carry no back-reference (no book.arcIds
+// exists by design), so the book side needs no cleanup. Tolerates a
+// missing entry mid-iteration -- the arc deletion is still authoritative
+// even when the back-reference cleanup is partial. No saveState() --
+// caller owns persistence, matching the rest of this data layer.
 
 function createArc(title, description, userId) {
   var trimmedTitle = (typeof title === 'string') ? title.trim() : '';
@@ -419,6 +427,33 @@ function addEntryToArc(arcId, entryId) {
   if (!present) {
     entry.arcIds.push(arcId);
   }
+  return true;
+}
+
+function deleteArc(arcId) {
+  var arc = state.arcs[arcId];
+  if (!arc) return false;
+  // Back-reference cleanup: for every entry member, splice this arcId
+  // out of the entry's arcIds back-reference array. Tolerate a missing
+  // entry, a missing/empty arcIds field, and duplicate arcId strings
+  // (defensive -- addEntryToArc dedupes on write, but state can be
+  // console-edited). Reverse iteration so splicing does not skip
+  // indices. Books carry no back-reference; no book-side cleanup.
+  var i;
+  for (i = 0; i < arc.entryIds.length; i++) {
+    var m = arc.entryIds[i];
+    if (!m || !m.id) continue;
+    var entry = state.notebookEntries[m.id];
+    if (!entry) continue;
+    if (!entry.arcIds || entry.arcIds.length === 0) continue;
+    var j;
+    for (j = entry.arcIds.length - 1; j >= 0; j--) {
+      if (entry.arcIds[j] === arcId) {
+        entry.arcIds.splice(j, 1);
+      }
+    }
+  }
+  delete state.arcs[arcId];
   return true;
 }
 
