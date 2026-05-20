@@ -2796,6 +2796,18 @@ function renderArcDetail(arcId) {
 
   wrap.appendChild(toolbar);
 
+  // Stage 5.4 Stage 1d: branch on viewMode. Web mounts an empty
+  // container (1f fills it, Stage 2 draws the spine). List wraps the
+  // Stage 5.3 baseline render below in else; the brace moves, the
+  // iteration logic is byte-for-byte unchanged (kept at its existing
+  // indent on purpose -- minimum-scope diff).
+  if (viewMode === 'web') {
+    var webContainer = document.createElement('div');
+    webContainer.className = 'arc-detail-web-view';
+    // Stage 1f placeholder content goes here.
+    wrap.appendChild(webContainer);
+  } else {
+
   // Merge books + entries into one stream, oldest-first by addedAt.
   // The 3.8 attach mutators guarantee every push is well-formed
   // {id, addedAt} (Stage 0 verified by code reading), so no shape
@@ -2882,6 +2894,8 @@ function renderArcDetail(arcId) {
     }
     wrap.appendChild(list);
   }
+
+  } // <-- Stage 5.4 Stage 1d: close the viewMode === 'web' else branch.
 
   host.appendChild(wrap);
 }
