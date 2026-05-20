@@ -252,6 +252,28 @@ function buildBookshopUrl(isbn) {
          encodeURIComponent(normalized);
 }
 
+// Stage 5.4 Stage 1b: arc-detail view-mode persistence. localStorage,
+// global key (one preference across all arcs), default 'list'. The
+// unknown-value branch in getArcViewMode coerces any corrupt /
+// hand-edited ls value back to the safe default rather than letting
+// it propagate into the renderArcDetail branch. setArcViewMode
+// mirrors the same allow-list so a bad call site (future caller
+// passing a typo) cannot poison the stored value.
+function getArcViewMode() {
+  var mode = ls('praxis_arc_view_mode', 'list');
+  if (mode !== 'list' && mode !== 'web') {
+    return 'list';
+  }
+  return mode;
+}
+
+function setArcViewMode(mode) {
+  if (mode !== 'list' && mode !== 'web') {
+    return;
+  }
+  sv('praxis_arc_view_mode', mode);
+}
+
 // 3.10a Stage 4: guards initNavMobileToggle so the hamburger
 // listener binds exactly once across the session. Module-level so
 // the flag persists across renderRoute calls.
