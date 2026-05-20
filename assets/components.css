@@ -738,6 +738,74 @@
 /* ===== END ARCS PAGE ===== */
 
 
+/* ===== FIND-THIS-BOOK -- Stage 5.3 Stage 4 =====
+   The C5 commercial line: one restrained Bookshop affiliate link per
+   member book inside an arc, plus the same line on the book-detail
+   header. The hardest constraint here is what's NOT in this block --
+   no shopping-cart icon, no price, no badge, no Bookshop branding, no
+   "BUY NOW" register. The line is a typographic statement of honest
+   availability that happens to be clickable, sized and weighted to
+   match the surrounding metadata rather than to compete with the
+   page's primary affordances. Mono font choice mirrors .shelf-subtitle
+   (the metadata strap pattern) -- this is information, not action. */
+
+.find-this-book {
+  display: inline-block;
+  margin: 8px 0 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--motion-base) var(--ease);
+}
+
+/* On-hover underline + slight color shift. The default state has NO
+   underline -- a persistent underline reads as "click me, this is the
+   destination"; an on-hover underline reads as "this is here if you
+   want it." Color goes to --ink-2 (one step warmer than --ink-3), not
+   --gold -- gold is reserved for the active nav state, which is a
+   different register. */
+.find-this-book:hover {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Arc-detail container per member book. Wraps the shelf-book card
+   (which renderShelfBook emits as an <a>) plus the Find-this-book
+   link so they read as one unit. The wrap itself is structural only
+   -- it gets the bottom margin that previously lived on the bare
+   shelf-book card's slot in .arc-detail-member-list. The find link
+   inside attaches to the card above via its own 8px top margin (set
+   in .find-this-book above); no negative-margin tricks. */
+.arc-detail-book-member {
+  display: flex;
+  flex-direction: column;
+}
+
+.arc-detail-book-member .find-this-book {
+  /* Inset the link slightly from the card's left edge so it doesn't
+     read as part of the card's content padding. The shelf-book card
+     has its own internal padding; the find link lives just outside
+     that padding, aligned to the card's left edge plus a small
+     indent for visual separation. */
+  padding-left: 4px;
+}
+
+/* Book-detail header: the find link sits at the end of the header
+   block, separated from the CTA cluster by a small top margin.
+   Mirrors the arc-detail-member treatment so the line reads the same
+   way on both surfaces -- honest availability, not a destination. */
+.book-detail-header .find-this-book {
+  margin-top: 16px;
+}
+
+/* ===== END FIND-THIS-BOOK ===== */
+
+
 /* ===== SHELF LAYOUT + FILTER SIDEBAR + GRID -- Stage 3.10a Stage 2 =====
    Two-column container below the page header. Sidebar 220px on the
    left, grid flex-fills the right. The sidebar is transparent --

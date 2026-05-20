@@ -205,6 +205,53 @@
 
 var APP_EL_ID = 'app';
 
+// Stage 5.3 Stage 4: Bookshop.org affiliate configuration for the
+// "Find this book" line that renders on arc-detail member books and
+// the book-detail header. C5 spec: honest availability framing, never
+// "BUY NOW", one restrained line, no store styling. The affiliate ID
+// is a hardcoded constant rather than a config file because it's a
+// single value with one consumer; future affiliate config (Amazon
+// fallback, etc.) can earn its own file when a second value lands.
+//
+// When BOOKSHOP_AFFILIATE_ID is the empty string (today's value --
+// Preston has not yet completed the Bookshop affiliate application,
+// per README.md:26), buildBookshopUrl returns the keyword-search URL
+// so the link still works and points at Bookshop, just without
+// affiliate revenue. Preston edits the one constant below + bumps
+// CACHE_VERSION when his ID arrives; no other code changes needed.
+var BOOKSHOP_AFFILIATE_ID = '';
+
+// Returns the Bookshop.org URL for a given ISBN, or null if the ISBN
+// is missing / empty. Strips dashes and whitespace before insertion
+// so a user-entered "978-0061-120060" formats correctly. Callers MUST
+// check for null and skip rendering the link in that case -- a book
+// with no ISBN gets no "Find this book" line (the line is honest
+// availability, not a fallback search).
+//
+// Affiliate path:  https://bookshop.org/a/<id>/<isbn>
+// Fallback path:   https://bookshop.org/search?keywords=<isbn>
+//                  (live-probed at Stage 4 commit time: this URL
+//                  302-redirects to Bookshop's /beta-search results
+//                  page with the ISBN preserved. The plausible-looking
+//                  /books?keywords=<isbn> form was probed too but
+//                  302-redirects to the homepage with a dangling
+//                  query, not a real search result. The /search form
+//                  is the working endpoint.)
+// Both surfaces are real Bookshop URLs; the fallback just lacks the
+// affiliate kickback attribution.
+function buildBookshopUrl(isbn) {
+  if (typeof isbn !== 'string') return null;
+  var normalized = isbn.replace(/[-\s]/g, '');
+  if (normalized.length === 0) return null;
+  if (BOOKSHOP_AFFILIATE_ID && BOOKSHOP_AFFILIATE_ID.length > 0) {
+    return 'https://bookshop.org/a/' +
+           encodeURIComponent(BOOKSHOP_AFFILIATE_ID) +
+           '/' + encodeURIComponent(normalized);
+  }
+  return 'https://bookshop.org/search?keywords=' +
+         encodeURIComponent(normalized);
+}
+
 // 3.10a Stage 4: guards initNavMobileToggle so the hamburger
 // listener binds exactly once across the session. Module-level so
 // the flag persists across renderRoute calls.
@@ -2327,6 +2374,27 @@ function renderBookDetail(bookId) {
     header.appendChild(signinBtn);
   }
 
+  // Stage 5.3 Stage 4: "Find this book" line in the header region.
+  // Appended after all status-aware affordances and CTAs (Add
+  // Marginalia / Add to arc / status-branch buttons / Sign in to
+  // write) so it lives as the final header element -- typographic,
+  // not button-cluster. Same skip-if-no-ISBN rule as the arc-detail
+  // member rendering; books without an ISBN get no line. Renders for
+  // every viewer (signed-in or not) since availability is the same
+  // regardless of auth. target="_blank" so the user keeps their
+  // current Praxis context; rel="noopener noreferrer" is the
+  // standard cross-origin security pair.
+  var bdFindUrl = buildBookshopUrl(book.isbn);
+  if (bdFindUrl) {
+    var bdFindLink = document.createElement('a');
+    bdFindLink.className = 'find-this-book';
+    bdFindLink.href = bdFindUrl;
+    bdFindLink.target = '_blank';
+    bdFindLink.rel = 'noopener noreferrer';
+    bdFindLink.textContent = 'Find this book';
+    header.appendChild(bdFindLink);
+  }
+
   wrap.appendChild(header);
 
   // Stage 3.7c: status selector. Editable on book detail; sibling to
@@ -2708,7 +2776,30 @@ function renderArcDetail(arcId) {
         if (!book) {
           list.appendChild(renderArcMissingMember('book'));
         } else {
-          list.appendChild(renderShelfBook(book));
+          // Stage 5.3 Stage 4: each arc-member book gets a "Find this
+          // book" line beneath the shelf-book card. The shelf-book card
+          // itself is an <a> (whole-card link to #book/<id>), so the
+          // Bookshop link CANNOT nest inside it -- nested anchors are
+          // invalid HTML. Wrap the card + the find link in a
+          // .arc-detail-book-member container so the pair reads as one
+          // unit; the find link's CSS attaches it visually to the card
+          // above. buildBookshopUrl returns null for books without an
+          // ISBN -- in that case we skip the link entirely (no
+          // title-search fallback per the locked spec).
+          var memberWrap = document.createElement('div');
+          memberWrap.className = 'arc-detail-book-member';
+          memberWrap.appendChild(renderShelfBook(book));
+          var arcFindUrl = buildBookshopUrl(book.isbn);
+          if (arcFindUrl) {
+            var arcFindLink = document.createElement('a');
+            arcFindLink.className = 'find-this-book';
+            arcFindLink.href = arcFindUrl;
+            arcFindLink.target = '_blank';
+            arcFindLink.rel = 'noopener noreferrer';
+            arcFindLink.textContent = 'Find this book';
+            memberWrap.appendChild(arcFindLink);
+          }
+          list.appendChild(memberWrap);
         }
       } else {
         var entry = state.notebookEntries
