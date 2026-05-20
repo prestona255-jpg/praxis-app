@@ -2804,7 +2804,11 @@ function renderArcDetail(arcId) {
   if (viewMode === 'web') {
     var webContainer = document.createElement('div');
     webContainer.className = 'arc-detail-web-view';
-    // Stage 1f placeholder content goes here.
+    var placeholder = document.createElement('p');
+    placeholder.className = 'arc-detail-web-placeholder';
+    placeholder.textContent =
+      'The web view is coming. For now, switch back to list.';
+    webContainer.appendChild(placeholder);
     wrap.appendChild(webContainer);
   } else {
 

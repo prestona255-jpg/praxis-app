@@ -3115,3 +3115,16 @@
   background-size: cover;
   opacity: var(--field-presence, 1);
 }
+
+/* Stage 5.4 Stage 1f: transitional placeholder line shown inside the
+   empty web container until Stage 2 draws the spine. Mirrors the
+   .arc-detail-empty-body precedent (components.css:2580-2588): same
+   margin / padding / italic / --ink-3 / centered text. font-family +
+   font-size from the precedent are inheritable defaults and dropped. */
+.arc-detail-web-placeholder {
+  margin: 48px 0;
+  padding: var(--sp-6) var(--sp-4);
+  color: var(--ink-3);
+  font-style: italic;
+  text-align: center;
+}
