@@ -2703,6 +2703,14 @@ function renderArcDetail(arcId) {
     return;
   }
 
+  // Stage 5.4 Stage 1c: read the persisted view mode once at the top
+  // of the render. Both the toolbar (active-button highlight) and --
+  // from Stage 1d onward -- the member-rendering branch consume this
+  // value, so a single read up here is the single source of truth
+  // for this render pass. Re-renders triggered by the toggle click
+  // handler re-enter renderArcDetail and re-read fresh.
+  var viewMode = getArcViewMode();
+
   var wrap = document.createElement('section');
   wrap.className = 'arc-detail';
 
@@ -2748,6 +2756,45 @@ function renderArcDetail(arcId) {
   var confirmHost = document.createElement('div');
   confirmHost.id = 'arc-detail-confirm-host';
   wrap.appendChild(confirmHost);
+
+  // Stage 5.4 Stage 1c: list/web view toggle row. Sits between the
+  // header (identity + destructive) and the member content so it
+  // reads as a view-control, not a destructive sibling. Active button
+  // gets .is-active; click writes the new mode through
+  // setArcViewMode() and re-enters renderArcDetail in place (the
+  // function clears host.innerHTML at its top, so the rebuild is
+  // idempotent). Stage 1c is scaffolding only -- viewMode is read
+  // and the toggle UI is live, but BOTH branches still render the
+  // existing list view. The web-vs-list rendering split lands in
+  // Stage 1d.
+  var toolbar = document.createElement('div');
+  toolbar.className = 'arc-detail-toolbar';
+
+  var listBtn = document.createElement('button');
+  listBtn.type = 'button';
+  listBtn.className = 'arc-detail-toggle-btn'
+    + (viewMode === 'list' ? ' is-active' : '');
+  listBtn.setAttribute('data-mode', 'list');
+  listBtn.textContent = 'List';
+  listBtn.addEventListener('click', function() {
+    setArcViewMode('list');
+    renderArcDetail(arcId);
+  });
+  toolbar.appendChild(listBtn);
+
+  var webBtn = document.createElement('button');
+  webBtn.type = 'button';
+  webBtn.className = 'arc-detail-toggle-btn'
+    + (viewMode === 'web' ? ' is-active' : '');
+  webBtn.setAttribute('data-mode', 'web');
+  webBtn.textContent = 'Web';
+  webBtn.addEventListener('click', function() {
+    setArcViewMode('web');
+    renderArcDetail(arcId);
+  });
+  toolbar.appendChild(webBtn);
+
+  wrap.appendChild(toolbar);
 
   // Merge books + entries into one stream, oldest-first by addedAt.
   // The 3.8 attach mutators guarantee every push is well-formed

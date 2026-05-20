@@ -3029,3 +3029,58 @@
 }
 
 /* ===== END MOTION ===== */
+
+
+/* ===== STAGE 5.4 STAGE 1c -- ARC-DETAIL TOOLBAR (LIST/WEB TOGGLE) =====
+   View-control row mounted below .arc-detail-header. Two pill buttons
+   (List + Web) switch the arc-detail render between the chronological
+   list (Stage 5.3 baseline) and the chronological web (Stage 5.4
+   spine). Stage 1c ships the toolbar shape + active state only; the
+   list/web rendering split lands in Stage 1d.
+
+   Inactive button shape mirrors .shelf-new-book-bulk -- the codebase's
+   canonical secondary-button form: transparent fill, --ink-2 text,
+   --border 1px frame, 10px 20px padding, 2px radius. Hover follows
+   the same precedent (border-color --ink-3, color --ink).
+
+   Active state is a STRICT mirror of .shelf-filter-row-selected: the
+   locked "selected" gold-family idiom (--gold-light fill, --gold-text
+   color), with the matching :hover override so the selected color is
+   preserved on cursor hover. The inactive border is intentionally NOT
+   overridden when active -- the precedent does not include that
+   property and Stage 1c holds strict. If the rendered result reads as
+   broken (gold fill ringed by stale gray border), revisit at Stage 1c
+   live-URL verification rather than diverging from the precedent here.
+   ===================================================================== */
+
+.arc-detail-toolbar {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.arc-detail-toggle-btn {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.arc-detail-toggle-btn:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.arc-detail-toggle-btn.is-active {
+  background: var(--gold-light);
+  color: var(--gold-text);
+}
+
+.arc-detail-toggle-btn.is-active:hover {
+  color: var(--gold-text);
+}
