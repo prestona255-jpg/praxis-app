@@ -459,7 +459,23 @@ function deleteArc(arcId) {
 
 function loadState() {
   var stored = ls('praxis_state', null);
-  if (stored === null) return state;
+  if (stored === null) {
+    // Stage 5.3 Stage 3a: cold-open path now runs migrate(state) too,
+    // so the Pedagogy of Desire seed migration step (1.9.3 -> 1.10.0)
+    // fires on first load for new users. The pre-3a behavior returned
+    // the default state untouched, which would leave a brand-new user
+    // without the worked example until a saveState + reload cycle
+    // promoted the default state into localStorage and a second
+    // loadState ran migrate. Calling migrate on the default `state`
+    // object is safe: it walks the same version chain a stored state
+    // does (1.9.3 is the default), and migrate steps that are
+    // version-stamp no-ops (e.g. 1.4.0 -> 1.5.0) are skipped because
+    // the default SCHEMA_VERSION starts at 1.9.3. Default literal
+    // SCHEMA_VERSION is intentionally NOT bumped to 1.10.0 -- a fresh
+    // default needs to walk THROUGH the seed step, not past it.
+    state = migrate(state);
+    return state;
+  }
   var migrated = migrate(stored);
   for (var k in migrated) {
     if (Object.prototype.hasOwnProperty.call(migrated, k)) {
@@ -729,6 +745,113 @@ function migrate(stored) {
     // state (Stage 0 verified zero write sites), so this is a
     // version-bump no-op. New shape applies to writes from 3.8 forward.
     stored.SCHEMA_VERSION = '1.9.3';
+  }
+  if (stored.SCHEMA_VERSION === '1.9.3') {
+    // Stage 5.3 Stage 3a: seed the "A Pedagogy of Desire" worked-
+    // example arc + five book records. Idempotent on two layers:
+    // (1) this migration step only fires when stored is exactly at
+    // 1.9.3, after which the version stamp bumps to 1.10.0 and the
+    // step is skipped on every subsequent load; and (2) the
+    // belt-and-braces early-return checks stored.seeds.pedagogyOfDesire
+    // .attempted -- protects against accidental version regression
+    // (e.g. a future migration that re-writes 1.10.0 -> 1.9.3 for
+    // some reason). The 'attempted' marker survives a user deleting
+    // the seeded arc, so deleteArc on the seed is permanent --
+    // re-seeding requires clearing localStorage entirely.
+    //
+    // Books go into stored.books only (NOT stored.userBooks) -- the
+    // example must not pollute any user's shelf. coverUrl: null on
+    // every seeded book; app.js fires fetchAndApplyCover asynchronously
+    // after loadState. Null-as-retry: any future load whose seed-book
+    // coverUrl is still null re-attempts the OL fetch automatically.
+    //
+    // The arc is owned by the sentinel userId '__praxis_seed__' so
+    // it is global, not per-user. Stage 3b patches renderArcDetail's
+    // user-filter check to allow seed-owned arcs through; until that
+    // patch ships, the seeded arc is reachable in state but not
+    // rendered by #arc/<id>. The arc's id is non-deterministic
+    // (genArcId uses Date.now + random) so Stage 3b reads it from
+    // stored.seeds.pedagogyOfDesire.arcId rather than hardcoding.
+    //
+    // Inline writes against stored.books / stored.arcs because
+    // createArc / addBookToArc operate on the live `state` object,
+    // not the migration-local `stored` arg. The arc shape mirrors
+    // createArc's output (state.js:362-371) byte-for-byte.
+    if (!stored.seeds) stored.seeds = {};
+    if (!stored.seeds.pedagogyOfDesire ||
+        !stored.seeds.pedagogyOfDesire.attempted) {
+      if (!stored.books) stored.books = {};
+      if (!stored.arcs)  stored.arcs  = {};
+
+      var seedNow = Date.now();
+      var seedBooks = [
+        { title:  'Zombie Politics and Culture in the Age of Casino ' +
+                  'Capitalism',
+          author: 'Henry Giroux',
+          isbn:   '9781433127199' },
+        { title:  'Yearning: Race, Gender, and Cultural Politics',
+          author: 'bell hooks',
+          isbn:   '9781138821750' },
+        { title:  'Hidden Potential',
+          author: 'Adam Grant',
+          isbn:   '9780593653142' },
+        { title:  'Range: Why Generalists Triumph in a Specialized World',
+          author: 'David Epstein',
+          isbn:   '9780735214507' },
+        { title:  'Their Eyes Were Watching God',
+          author: 'Zora Neale Hurston',
+          isbn:   '9780061120060' }
+      ];
+
+      var seedBookIds = [];
+      var si;
+      for (si = 0; si < seedBooks.length; si++) {
+        var sb = seedBooks[si];
+        var sbid = genBookId();
+        stored.books[sbid] = {
+          id:         sbid,
+          title:      sb.title,
+          author:     sb.author,
+          isbn:       sb.isbn,
+          addedAt:    seedNow,
+          status:     'reading',
+          genre:      '',
+          finishedAt: null,
+          coverUrl:   null
+        };
+        seedBookIds.push(sbid);
+      }
+
+      var seedArcId = genArcId();
+      var seedArc = {
+        id:          seedArcId,
+        userId:      '__praxis_seed__',
+        title:       'A Pedagogy of Desire',
+        description: 'Five books on desire as a pedagogical force — ' +
+                     'what it shapes us toward when we follow it, ' +
+                     'and who we become when we don\'t.',
+        bookIds:     [],
+        entryIds:    [],
+        createdAt:   seedNow,
+        updatedAt:   seedNow
+      };
+      var sj;
+      for (sj = 0; sj < seedBookIds.length; sj++) {
+        seedArc.bookIds.push({
+          id:      seedBookIds[sj],
+          addedAt: seedNow
+        });
+      }
+      stored.arcs[seedArcId] = seedArc;
+
+      stored.seeds.pedagogyOfDesire = {
+        attempted: true,
+        arcId:     seedArcId,
+        bookIds:   seedBookIds,
+        seededAt:  seedNow
+      };
+    }
+    stored.SCHEMA_VERSION = '1.10.0';
   }
   return stored;
 }
