@@ -1,25 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMin slice">
   <!--
-    Praxis Stage 5.2 - wheat-field.svg (1h: inline-drawn, no symbol/use)
-    Drawn at FULL STRENGTH. CSS opacity (var(--field-presence)) dims the
-    field at mount; this asset never carries opacity, fill-opacity, rgba,
-    or alpha gradient stops. 30 wheat stalks across five distinct forms
-    (tall-full / medium / short-compact / sparse-young / nearly-bare),
-    drawn INLINE per-stalk as <g transform="translate(x y) rotate(d)">
-    wrapping the primitives in local coordinates. The 1g-confirmed root
-    cause of invisibility was <symbol>+<use> collapsing to a zero-size
-    viewport when the SVG is consumed as a CSS background-image; <g>
-    does NOT create a viewport and renders identically inline or via
-    background-image.
+    Praxis Stage 5.2 - wheat-field.svg (1h inline-drawn, no symbol/use)
+    Drawn at FULL STRENGTH. CSS opacity (the field-presence variable in
+    theme.css) dims the field at mount; this asset never carries
+    opacity, fill-opacity, rgba, or alpha gradient stops. 30 wheat
+    stalks across five distinct forms (tall-full / medium /
+    short-compact / sparse-young / nearly-bare), drawn INLINE per-stalk
+    as a <g transform="translate(x y) rotate(d)"> wrapper around the
+    primitives in local coordinates. The 1g-confirmed root cause of
+    invisibility was symbol+use collapsing to a zero-size viewport when
+    the SVG is consumed as a CSS background-image; <g> does NOT create
+    a viewport and renders identically inline or via background-image.
 
     Distribution: roughly even across all four 800x450 quadrants
-    (Q1 9 / Q2 8 / Q3 7 / Q4 6) with a gentle upper-left lean -- the
-    taller forms (A, B) are biased upper-left, thinning to short and
-    nearly-bare forms toward lower-right. Wheat reads in every region;
-    no quadrant pooled, no quadrant bare. Single warm-gold family
-    (stalk #a87a2e, seed #d4972a, highlight #f0c46a). viewBox 1600x900
-    with matching width/height; preserveAspectRatio xMinYMin slice.
+    (Q1 9 / Q2 8 / Q3 7 / Q4 6) with a gentle upper-left lean. Taller
+    forms (A, B) are biased upper-left, thinning to short and nearly
+    bare forms toward lower-right. Wheat reads in every region; no
+    quadrant pooled, no quadrant bare. Single warm-gold family (stalk
+    #a87a2e, seed #d4972a, highlight #f0c46a). viewBox 1600x900 with
+    matching width/height; preserveAspectRatio xMinYMin slice.
+
+    1i note: this header comment was rewritten to remove every "double
+    hyphen" sequence from the body. XML forbids two adjacent hyphens
+    inside a comment; lenient parsers (preview tools, some XML viewers)
+    rendered the file regardless, but Chrome strictly rejected it and
+    the SVG drew nothing on every browser since 1a. CSS variable names
+    that begin with two hyphens are now referred to by bare name in
+    prose (e.g. "the field-presence variable" rather than var with
+    double-hyphen).
   -->
 
   <!-- ===== Q1 upper-left (9 stalks; lean to taller A / B forms) ===== -->
