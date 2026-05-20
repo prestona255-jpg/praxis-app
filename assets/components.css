@@ -587,6 +587,154 @@
   }
 }
 
+/* Stage 5.3 Stage 3b: worked-example cards (Pedagogy of Desire live,
+   Pedagogy of Flow illustrated). Both cards share the base register
+   so they read as siblings; the live/illustrated split is carried by
+   opacity + cursor + hover behavior, not by structural redesign. */
+
+.arcs-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0 0 64px 0;
+}
+
+/* Base card register. --surface-2 fill + --ink-4 hairline matches the
+   tier-1 card pattern named in components.css line 2038 (the shelf
+   book cards, the notebook entry cards, the artifact cards) -- the
+   wheat field sits below, so cards must be opaque, not translucent.
+   No new tokens introduced. Anchor reset (color, text-decoration)
+   applies only to the live card (which IS an <a>); the illustrated
+   card is a <div> and inherits body color naturally. */
+.arc-card {
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: 4px;
+  padding: 28px 32px;
+  color: inherit;
+  text-decoration: none;
+  /* Stage 5.1 motion: card-lift on hover is a permitted micro-motion
+     (A4.3). Re-timed transition matching the shelf-book card's hover
+     behavior. */
+  transition: transform var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease),
+              opacity var(--motion-base) var(--ease);
+}
+
+.arc-card-text {
+  /* Group the title + description so the cover row sits visibly below
+     the prose, not interleaved with it. */
+}
+
+.arc-card-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.arc-card-description {
+  margin: 8px 0 0 0;
+  max-width: 60ch;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Live card: full visual weight, anchor cursor, subtle lift on hover.
+   The Pedagogy of Desire card is the only one a user can click into;
+   hover affords that. */
+.arc-card-live {
+  cursor: pointer;
+}
+
+.arc-card-live:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Illustrated card design call (treatment): lower opacity (0.78) +
+   default cursor + no hover lift + a small mono-caps label above the
+   title. The label is the explicit cue ("Illustrated example" tells
+   the user what this card IS); the opacity is the implicit cue (it
+   recedes slightly from the live card). Both cues together prevent
+   the card from reading as a broken/missing/coming-soon variant of
+   the live card. No greyscale, no dashed border, no "ghost" styling
+   -- those treatments overshoot and make the card look broken. */
+.arc-card-illustrated {
+  opacity: 0.78;
+  cursor: default;
+}
+
+.arc-card-label {
+  display: inline-block;
+  margin: 0 0 12px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Cover thumbnails row (live card only). Five small covers in a
+   horizontal flex row. Heights are fixed; widths vary by each book's
+   aspect ratio. Null-coverUrl placeholder block matches the shelf's
+   .shelf-book-cover-placeholder pattern (--color-surface fill, no
+   icon, no copy) -- placeholders read as "cover loading" rather than
+   "no cover ever", which is honest because the async fetch may still
+   resolve them. */
+.arc-card-covers {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.arc-card-cover,
+.arc-card-cover-placeholder {
+  display: block;
+  height: 72px;
+  width: auto;
+  border-radius: 2px;
+}
+
+.arc-card-cover {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.arc-card-cover-placeholder {
+  /* Reserve a placeholder width so the row's layout doesn't collapse
+     before covers resolve. 48px sits within the typical book-cover
+     aspect-ratio range (paperback ~0.66) for a 72px-tall thumb. */
+  width: 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--ink-4);
+}
+
+/* Mobile: cards already stack via the flex-column on .arcs-examples.
+   Tighten the card's inner padding and shrink the cover thumbnails
+   so the live card's five-cover row doesn't wrap awkwardly on narrow
+   screens. 720px matches the breakpoint used by .arcs-create above. */
+@media (max-width: 720px) {
+  .arc-card {
+    padding: 24px;
+  }
+  .arc-card-cover,
+  .arc-card-cover-placeholder {
+    height: 56px;
+  }
+  .arc-card-cover-placeholder {
+    width: 40px;
+  }
+}
+
 /* ===== END ARCS PAGE ===== */
 
 

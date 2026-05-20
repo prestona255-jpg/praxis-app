@@ -833,6 +833,116 @@ function renderArcsPage() {
   createSec.appendChild(steps);
   wrap.appendChild(createSec);
 
+  // Stage 5.3 Stage 3b: worked-example cards. Two cards in one section,
+  // no parent heading -- the visual contrast (live opaque card with
+  // five book covers vs. illustrated muted card with an "Illustrated
+  // example" label) does the orienting work that an h2 would. Adding
+  // a heading here would compete with the page <h1>Arcs</h1> for
+  // attention and break the read-flow: teaching paragraph -> CTA ->
+  // examples should feel like one cascading lesson, not three
+  // separately-titled sections.
+  //
+  // The Pedagogy of Desire card reads from state.seeds.pedagogyOfDesire
+  // at render time -- never hardcoded ids. Triple guard: missing seeds
+  // map, missing pedagogyOfDesire entry, OR missing arc record all
+  // skip the card cleanly rather than render a broken element. The
+  // arc record can be legitimately absent if a signed-in user deletes
+  // the seed via the arc-detail Delete button (Stage 0 design: stays
+  // deleted; the page is intentionally degraded after delete).
+  //
+  // The Pedagogy of Flow card has NO seeded data -- it's an illustrated
+  // example, deliberately not a real arc (design-system v2 Part C3:
+  // "One live, one illustrated: shows the range of what an arc can
+  // be without seeding two."). Rendered as <div>, not <a>, so it
+  // carries no click target. The "Illustrated example" label and
+  // the lighter CSS treatment carry the meaning.
+  var examplesSec = document.createElement('section');
+  examplesSec.className = 'arcs-examples';
+
+  var seedInfo = state.seeds && state.seeds.pedagogyOfDesire;
+  var seedArc = seedInfo &&
+                seedInfo.arcId &&
+                state.arcs &&
+                state.arcs[seedInfo.arcId];
+  if (seedArc) {
+    var desireCard = document.createElement('a');
+    desireCard.className = 'arc-card arc-card-live';
+    desireCard.href = '#arc/' + seedInfo.arcId;
+
+    var desireText = document.createElement('div');
+    desireText.className = 'arc-card-text';
+
+    var desireTitle = document.createElement('h3');
+    desireTitle.className = 'arc-card-title';
+    desireTitle.textContent = seedArc.title || 'A Pedagogy of Desire';
+    desireText.appendChild(desireTitle);
+
+    var desireDesc = document.createElement('p');
+    desireDesc.className = 'arc-card-description';
+    desireDesc.textContent = seedArc.description || '';
+    desireText.appendChild(desireDesc);
+
+    desireCard.appendChild(desireText);
+
+    // Five cover thumbnails read from state.books at render time. Null
+    // coverUrl falls back to a placeholder block matching the shelf
+    // pattern -- covers may still be backfilling on first load (the
+    // app.js async fetchAndApplyCover loop hasn't settled yet) and
+    // again on later loads if Open Library / Google Books couldn't
+    // resolve a particular ISBN. The card stays well-formed either way.
+    var covers = document.createElement('div');
+    covers.className = 'arc-card-covers';
+    var bookIds = (seedInfo.bookIds && seedInfo.bookIds.length)
+      ? seedInfo.bookIds : [];
+    var ci;
+    for (ci = 0; ci < bookIds.length; ci++) {
+      var coverBook = state.books && state.books[bookIds[ci]];
+      if (coverBook && coverBook.coverUrl) {
+        var coverImg = document.createElement('img');
+        coverImg.className = 'arc-card-cover';
+        coverImg.src = coverBook.coverUrl;
+        coverImg.alt = '';
+        covers.appendChild(coverImg);
+      } else {
+        var coverPh = document.createElement('div');
+        coverPh.className = 'arc-card-cover-placeholder';
+        covers.appendChild(coverPh);
+      }
+    }
+    desireCard.appendChild(covers);
+
+    examplesSec.appendChild(desireCard);
+  }
+
+  var flowCard = document.createElement('div');
+  flowCard.className = 'arc-card arc-card-illustrated';
+
+  var flowLabel = document.createElement('span');
+  flowLabel.className = 'arc-card-label';
+  flowLabel.textContent = 'Illustrated example';
+  flowCard.appendChild(flowLabel);
+
+  var flowText = document.createElement('div');
+  flowText.className = 'arc-card-text';
+
+  var flowTitle = document.createElement('h3');
+  flowTitle.className = 'arc-card-title';
+  flowTitle.textContent = 'A Pedagogy of Flow';
+  flowText.appendChild(flowTitle);
+
+  var flowDesc = document.createElement('p');
+  flowDesc.className = 'arc-card-description';
+  flowDesc.textContent =
+    'Five books on intersectionality as connective tissue — ' +
+    'sound studies, relationships, psychoanalysis, systems, ' +
+    'and environment, read as one weather.';
+  flowText.appendChild(flowDesc);
+
+  flowCard.appendChild(flowText);
+  examplesSec.appendChild(flowCard);
+
+  wrap.appendChild(examplesSec);
+
   host.appendChild(wrap);
 }
 
@@ -2467,7 +2577,29 @@ function renderArcDetail(arcId) {
   var arc = state.arcs && state.arcs[arcId];
   var user = getCurrentUser();
 
-  if (!arc || !user || arc.userId !== user.uid) {
+  // Stage 5.3 Stage 3b: seed-owned arcs (userId === '__praxis_seed__')
+  // are visible to any signed-in user. The sentinel was written by the
+  // Stage 3a migration step so the Pedagogy of Desire worked example
+  // could live globally rather than per-user-cloned. The user-filter
+  // still requires a signed-in user (no unauthenticated arc viewing)
+  // and still isolates user-authored arcs to their owner -- the only
+  // relaxation is that arc.userId may equal the sentinel without
+  // matching user.uid. Any future seed arcs reuse the same sentinel
+  // and inherit the same access pass.
+  if (!arc || !user) {
+    var nf = document.createElement('section');
+    nf.className = 'arc-detail-not-found';
+    var nfMsg = document.createElement('p');
+    nfMsg.textContent = 'That arc could not be found.';
+    var nfLink = document.createElement('a');
+    nfLink.href = '#notebook';
+    nfLink.textContent = 'Back to Notebook';
+    nf.appendChild(nfMsg);
+    nf.appendChild(nfLink);
+    host.appendChild(nf);
+    return;
+  }
+  if (arc.userId !== user.uid && arc.userId !== '__praxis_seed__') {
     var nf = document.createElement('section');
     nf.className = 'arc-detail-not-found';
     var nfMsg = document.createElement('p');
@@ -2501,10 +2633,20 @@ function renderArcDetail(arcId) {
 
   // 3.9-b: delete button opens the in-DOM confirm panel mounted in
   // #arc-detail-confirm-host. arcId captured in the click closure.
+  //
+  // Stage 5.3 Stage 3b: button label flips to "Hide arc" for seed-owned
+  // arcs (userId === '__praxis_seed__'). The action against a seed arc
+  // is conceptually a hide (the books in it belong to the global
+  // catalog, not the user; the only thing removed is the path through
+  // them on this user's Arcs page). The user-authored branch keeps the
+  // pre-3b "Delete arc" label intact. openArcDeleteConfirm reads
+  // arc.userId off state.arcs[arcId] internally to mirror this branch
+  // in the confirm-panel copy + the confirm-action link label.
+  var isSeedArc = (arc.userId === '__praxis_seed__');
   var deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
   deleteBtn.className = 'arc-detail-delete';
-  deleteBtn.textContent = 'Delete arc';
+  deleteBtn.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
   deleteBtn.addEventListener('click', function() {
     openArcDeleteConfirm(arcId);
   });
@@ -2620,14 +2762,40 @@ function openArcDeleteConfirm(arcId) {
   if (!host) return;
   host.innerHTML = '';
 
+  // Stage 5.3 Stage 3b: branch copy + action-link label by arc
+  // ownership. Seed-owned arcs (userId === '__praxis_seed__') get
+  // "Hide" framing -- the books in them are part of the global
+  // catalog, not the user's library, and shouldn't be described as
+  // "staying in your library" (truth-telling: the user never had
+  // them there). User-authored arcs keep the pre-3b "Delete" framing
+  // verbatim. The post-action redirect also branches: hiding a seed
+  // arc lands on #arcs (where the seed-arc card lived), while
+  // deleting a user-authored arc lands on #notebook (where the
+  // Notebook arc-list lives) -- each return surface matches where
+  // the affordance came from. arcOwned is read from state.arcs at
+  // panel-open time; if the arc was already deleted between Delete-
+  // button click and confirm, we fall back to the seed-side label
+  // safely (because the action's deleteArc call will return false
+  // and trip the stale-note branch below anyway).
+  var arcRecord = state.arcs && state.arcs[arcId];
+  var isSeedArc = !!(arcRecord &&
+                     arcRecord.userId === '__praxis_seed__');
+
   var panel = document.createElement('div');
   panel.className = 'arc-confirm-panel';
 
   var copy = document.createElement('p');
   copy.className = 'arc-confirm-copy';
-  copy.textContent =
-    'Delete this arc? The books and entries in it stay in your ' +
-    'library and notebook — only the arc is removed.';
+  if (isSeedArc) {
+    copy.textContent =
+      'Hide this example arc? The books in it are part of the ' +
+      'global catalog and stay where they are. This arc won\'t ' +
+      'reappear on your Arcs page.';
+  } else {
+    copy.textContent =
+      'Delete this arc? The books and entries in it stay in your ' +
+      'library and notebook — only the arc is removed.';
+  }
   panel.appendChild(copy);
 
   var actions = document.createElement('div');
@@ -2636,13 +2804,20 @@ function openArcDeleteConfirm(arcId) {
   var confirmLink = document.createElement('a');
   confirmLink.href = '#';
   confirmLink.className = 'arc-confirm-confirm';
-  confirmLink.textContent = 'Delete arc';
+  confirmLink.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
   confirmLink.addEventListener('click', function(ev) {
     ev.preventDefault();
     var ok = deleteArc(arcId);
     if (ok) {
       saveState();
-      location.hash = '#notebook';
+      // Stage 5.3 Stage 3b: seed-arc hide returns the user to the
+      // Arcs page (the surface they came from); user-authored delete
+      // returns to the Notebook (where their other arcs live). Both
+      // are safe destinations -- the seed-arc card guard in
+      // renderArcsPage will skip-render after delete, and the
+      // Notebook arc-list filter excludes the sentinel-owned arc
+      // anyway.
+      location.hash = isSeedArc ? '#arcs' : '#notebook';
     } else {
       // Arc already gone (race / console-side delete). Quiet stale-
       // note in place of the panel; user can step back to the
