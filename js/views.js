@@ -318,6 +318,18 @@ function renderRoute() {
     renderShelf();
     return;
   }
+  if (parts[0] === 'arcs') {
+    // Stage 5.3 Stage 1: Arcs page (singular hash, no parameter).
+    // The teaching surface; distinct from #arc/<id> (arc detail).
+    // Symmetric clear of both pointer fields, mirroring the books
+    // and notebook branches -- entering the Arcs page is leaving
+    // both any book and any specific arc.
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    saveState();
+    renderArcsPage();
+    return;
+  }
   // Notebook (explicit), empty hash, and any unknown route all
   // converge on the unified Notebook view. currentBookId clears
   // symmetrically on the way in so yumi-brain's retrieval path
@@ -704,6 +716,41 @@ function openArcEditor() {
       renderNotebook();
     }
   });
+}
+
+// Stage 5.3 Stage 1: the Arcs page. Empty scaffold only -- the
+// teaching panel (Stage 2), worked examples (Stage 3), and Find-
+// this-book line (Stage 4) land in subsequent sub-stages. Routes
+// from the new #arcs hash via renderRoute. Distinct from the
+// existing #arc/<id> arc-detail surface (renderArcDetail) -- this
+// is the plural list/teaching surface that lives in the top nav.
+// Container shape mirrors renderShelf (max-width container, page
+// header with title + subtitle); content inside the header is
+// placeholder copy that Stage 2 replaces with the locked C2
+// teaching paragraph.
+function renderArcsPage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'arcs-page';
+
+  var header = document.createElement('header');
+  header.className = 'arcs-page-header';
+
+  var title = document.createElement('h1');
+  title.className = 'arcs-page-title';
+  title.textContent = 'Arcs';
+  header.appendChild(title);
+
+  var subtitle = document.createElement('p');
+  subtitle.className = 'arcs-page-subtitle';
+  subtitle.textContent = '…';
+  header.appendChild(subtitle);
+
+  wrap.appendChild(header);
+  host.appendChild(wrap);
 }
 
 // Theme taxonomy mirror of docs/themes.md (locked 2026-05-15).

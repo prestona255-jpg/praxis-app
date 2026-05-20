@@ -444,6 +444,49 @@
 /* ===== END SHELF PAGE HEADER + ACTION BUTTONS ===== */
 
 
+/* ===== ARCS PAGE -- Stage 5.3 Stage 1 =====
+   The Arcs page is the third top-nav surface (Books / Notebook /
+   Arcs). Stage 1 wires only the empty scaffold -- container, page
+   header, title, placeholder subtitle. The teaching panel, worked
+   examples, and Find-this-book line land in 5.3 Stages 2-4.
+
+   Container shape mirrors .shelf (max-width 1280, 32px horizontal
+   padding). Header register matches .shelf-title (Cormorant
+   Garamond 40px, --ink) and .shelf-subtitle (DM Sans muted ink) --
+   but without text-transform:uppercase, because the subtitle here
+   is sentence-cased teaching copy, not a metadata strap. No new
+   CSS variables; reuses --font-serif, --font-body, --ink, --ink-3. */
+
+.arcs-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.arcs-page-header {
+  padding: 48px 0 32px 0;
+}
+
+.arcs-page-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.arcs-page-subtitle {
+  margin: 8px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* ===== END ARCS PAGE ===== */
+
+
 /* ===== SHELF LAYOUT + FILTER SIDEBAR + GRID -- Stage 3.10a Stage 2 =====
    Two-column container below the page header. Sidebar 220px on the
    left, grid flex-fills the right. The sidebar is transparent --
