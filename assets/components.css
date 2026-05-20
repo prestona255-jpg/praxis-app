@@ -3084,3 +3084,34 @@
 .arc-detail-toggle-btn.is-active:hover {
   color: var(--gold-text);
 }
+
+
+/* ===== STAGE 5.4 STAGE 1e -- ARC-DETAIL WEB-VIEW WHEAT-FIELD MOUNT =====
+   Surface-scoped wheat-field mirroring .shelf / .shelf::before
+   (components.css:828-896). Path B from Stage 0 recon: NO
+   background-color on the container -- the wheat field IS the ground,
+   shows through by design. One deliberate divergence from the
+   precedent: background-position is `center` (vs `top left` on .shelf)
+   because the Stage 2 spine will sit on-center.
+   ===================================================================== */
+
+.arc-detail-web-view {
+  position: relative;
+  isolation: isolate;
+  min-height: 400px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.arc-detail-web-view::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: url('/assets/wheat-field.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: var(--field-presence, 1);
+}
