@@ -257,8 +257,17 @@ function renderRoute() {
   // are sub-surfaces of the shelf so they keep Books highlighted.
   // Empty / unknown hashes converge on Notebook downstream, so the
   // active-link signal matches that convergence here.
+  //
+  // Stage 5.3 Stage 2: arc detail (#arc/<id>) is the sub-surface of
+  // the Arcs page in the same way book detail is the sub-surface of
+  // the shelf -- both keep Arcs highlighted. #arcs (plural, the
+  // teaching page) is the canonical Arcs route. Order matters: the
+  // 'arc' / 'arcs' branch must come BEFORE the books branch so a hash
+  // like 'arc/abc' (parts[0] === 'arc') is caught here, not later.
   var activeRoute;
-  if (parts[0] === 'book' || parts[0] === 'artifact' ||
+  if (parts[0] === 'arc' || parts[0] === 'arcs') {
+    activeRoute = 'arcs';
+  } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
     activeRoute = 'books';
   } else {
@@ -718,16 +727,25 @@ function openArcEditor() {
   });
 }
 
-// Stage 5.3 Stage 1: the Arcs page. Empty scaffold only -- the
-// teaching panel (Stage 2), worked examples (Stage 3), and Find-
-// this-book line (Stage 4) land in subsequent sub-stages. Routes
-// from the new #arcs hash via renderRoute. Distinct from the
-// existing #arc/<id> arc-detail surface (renderArcDetail) -- this
+// Stage 5.3 Stage 2: the Arcs page. Renders the locked C2 teaching
+// paragraph (design-system v2 Part C) and the C4 Create-an-arc CTA
+// alongside three steps from living-doc Section 10. Worked examples
+// (Stage 3) and Find-this-book (Stage 4) land in subsequent sub-
+// stages. Routes from the #arcs hash via renderRoute. Distinct from
+// the existing #arc/<id> arc-detail surface (renderArcDetail) -- this
 // is the plural list/teaching surface that lives in the top nav.
-// Container shape mirrors renderShelf (max-width container, page
-// header with title + subtitle); content inside the header is
-// placeholder copy that Stage 2 replaces with the locked C2
-// teaching paragraph.
+//
+// CTA wiring: the "Create an arc" button calls the existing
+// openArcEditor() unchanged. openArcEditor mounts into the hostId
+// 'notebook-arc-editor-host', so this page renders that div NESTED
+// inside the spec-named #arcs-create-host wrapper -- the wrapper is
+// the Arcs-page CSS scope; the inner div is the openArcEditor mount
+// point. On save / cancel openArcEditor calls renderNotebook(), so
+// the user lands on the Notebook surface after creating from here.
+// (Stage 2 question for Preston: is that the intended post-create
+// landing, or should the CTA path return to the Arcs page or the new
+// arc's detail page? Implementation today preserves openArcEditor
+// strictly.)
 function renderArcsPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -744,12 +762,77 @@ function renderArcsPage() {
   title.textContent = 'Arcs';
   header.appendChild(title);
 
-  var subtitle = document.createElement('p');
-  subtitle.className = 'arcs-page-subtitle';
-  subtitle.textContent = '…';
-  header.appendChild(subtitle);
+  // C2 teaching paragraph, verbatim from docs/praxis-design-system.md
+  // Part C. Em dashes are U+2014 (real), not "--". One paragraph, in
+  // Yumi's voice -- the paragraph IS the teaching panel.
+  var teaching = document.createElement('p');
+  teaching.className = 'arcs-teaching';
+  teaching.textContent =
+    'An arc is a path you build through your reading — ' +
+    'books from any tradition, set side by side, so they speak ' +
+    'to each other.';
+  header.appendChild(teaching);
 
   wrap.appendChild(header);
+
+  // C4 Create-an-arc section. Two-part layout: button on the left,
+  // three-step numbered list on the right (collapses to stacked on
+  // mobile via components.css). Button mount: arcs-create-host is the
+  // page-scoped wrapper; the nested notebook-arc-editor-host is the
+  // mount point openArcEditor looks up by id. Hosting both means
+  // openArcEditor's hard-coded hostId still resolves.
+  var createSec = document.createElement('section');
+  createSec.className = 'arcs-create';
+
+  var createHost = document.createElement('div');
+  createHost.id = 'arcs-create-host';
+  createHost.className = 'arcs-create-host';
+
+  var createBtn = document.createElement('button');
+  createBtn.type = 'button';
+  createBtn.className = 'arcs-create-btn';
+  createBtn.textContent = 'Create an arc';
+  createBtn.addEventListener('click', function() {
+    openArcEditor();
+  });
+  createHost.appendChild(createBtn);
+
+  // Editor mount point. openArcEditor (views.js openArcEditor) calls
+  // openEditor({ hostId: 'notebook-arc-editor-host', ... }) -- this
+  // div provides the lookup target on the Arcs page.
+  var arcEditorHost = document.createElement('div');
+  arcEditorHost.id = 'notebook-arc-editor-host';
+  createHost.appendChild(arcEditorHost);
+
+  createSec.appendChild(createHost);
+
+  // Three steps from living-doc Section 10, compressed to fit beside
+  // the CTA without losing substance. Real <ol>; default numbering
+  // styled by .arcs-create-steps in components.css.
+  var steps = document.createElement('ol');
+  steps.className = 'arcs-create-steps';
+
+  var step1 = document.createElement('li');
+  step1.textContent =
+    'Name the question. The arc\'s title is the question ' +
+    'you\'re following, in your words.';
+  steps.appendChild(step1);
+
+  var step2 = document.createElement('li');
+  step2.textContent =
+    'Link your books. Add books from your shelf that speak to ' +
+    'the question.';
+  steps.appendChild(step2);
+
+  var step3 = document.createElement('li');
+  step3.textContent =
+    'Tag your notes. Pull marginalia and journal entries from ' +
+    'those books into the arc.';
+  steps.appendChild(step3);
+
+  createSec.appendChild(steps);
+  wrap.appendChild(createSec);
+
   host.appendChild(wrap);
 }
 
