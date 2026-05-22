@@ -3843,56 +3843,141 @@ var STAGES = [
       },
 
       {
-        id: 's5-4',
+        id: 's5-4-spine-archived',
         num: '5.4',
-        name: 'The arc web — chronological-spine visualization',
-        depConfirm: '3.9 Shipped (chronological arc list view is the substrate the toggle sits beside). 5.3 Shipped (Arcs page exists; arc detail is a known surface). praxis-design-system.md v2 Part D is the spec.',
-        purpose: 'The one genuinely new design in v2. Arc detail today shows a flat chronological stream. The web is the richer lens — nodes are member books and entries laid out along a chronological spine, edges implicit by chronology and shared books. A rendered artifact, beautiful, fixed — you look at it. List view stays as a toggle alongside.',
+        name: 'The arc web — chronological-spine visualization (SHIPPED THEN REVERTED, archived)',
+        status: 'archived',
+        depConfirm: 'Shipped at commit (see git log for the spine commits and revert chain ending at 0749f00). Reverted via git revert when chronological axis was judged the wrong organizing principle for arcs.',
+        purpose: 'Preserved as a teaching artifact. The spine treatment laid books along a vertical chronological line, oldest-first. It worked as engineering; it failed the brief — chronology is not the axis that organizes arcs. Books in an arc form a constellation by resonance, not a timeline. The build-and-revert is part of the project pedagogy: ship small enough that learning is cheap; revert when learning says to.',
         scope: [
-          'D1 — Nodes are existing arc objects only (member books, member entries). No new "concept" node type',
-          'D2 — Edges are implicit, laid out automatically by chronology and shared books. No user-drawn edges',
-          'D3 — Layout: chronological spine — first → then → now reads along the spine; entries branch off it; oldest-first honors the 3.9 ordering',
-          'D4 — Static / rendered artifact. No drag-nodes, no draw-edges, no editing in the web',
-          'D5 — Toggle between "list" (3.9) and "web" on the same arc; both views read the same data',
-          'D6 — Aesthetic: nodes are small book covers and cherry-ink entry cards along the spine; edges are thin --ink-4 hairlines; --river drop marks the focused node; web sits on the wheat field (5.2); reads as drawn-and-crafted, not generic mind-map'
+          'D1 — Nodes were existing arc objects only (member books, member entries). No concept node type.',
+          'D2 — Edges were implicit, by chronology and shared books.',
+          'D3 — Layout: vertical chronological spine, oldest-first.',
+          'D4 — Static rendered artifact. No drag, no edit.',
+          'D5 — Toggle alongside list view.',
+          'D6 — Aesthetic: small book covers and cherry-ink entry cards along a thin spine.'
         ],
         nonGoals: [
-          'No concept-node system (D1 — explicitly deferred as a Phase-scale build)',
-          'No user-drawn edges (D2 — paired with concept-nodes, deferred together)',
-          'No drag, no draw, no edit in the web (D4)',
-          'No alternative layouts beyond chronological spine in 5.4 (D3 — the legible default; richer layouts later if first users want them)',
-          'No generic mind-map / force-directed graph aesthetic (D6)'
+          'Archived — no further work on the spine.',
+          'Future arc-web work continues under s5-4 (constellation) below.'
         ],
         subsystems: ['views', 'arcs'],
         files: [
-          'js/views.js (arc detail — list/web toggle; web render path)',
-          'assets/theme.css (web-specific tokens if needed: spine width, node sizes)'
+          'Reverted from js/views.js and assets/theme.css; no current files.'
         ],
         acceptance: [
-          'Live URL: arc detail page shows a list/web toggle; default is list (3.9 baseline) until the user switches',
-          'Live URL: web view renders the chronological spine with member books as small-cover nodes and entries as cherry-ink cards branching off the spine',
-          'Live URL: --river drop appears on whichever node is currently focused',
-          'Live URL: web sits on top of the wheat field (5.2) for arcs viewed from a shelf-adjacent path, or on the plain page where appropriate — direction-consistency holds',
-          'Visual: no concept-nodes, no user-drawn edges, no drag affordances'
+          'Archived as teaching artifact. Build-and-revert visible in git history.'
         ],
         evidence: [
-          "Static: grep -c 'concept' js/views.js returns 0 (no concept-node code)",
-          "Static: grep -c 'drag' js/views.js returns 0 in the arc-web render path",
-          'Live URL: open Pedagogy of Desire (seeded in 5.3), toggle to web, see five member-book nodes laid out along the spine; entries branch off',
-          'Live URL: toggle back to list — exact same data, just the 3.9 rendering'
+          'git log shows the spine commits and the three-revert chain ending at 0749f00.',
+          'docs/knowledge-arcs/knowledge-arcs-visual-system.md §3.2 names the constellation as the redesign direction.'
         ],
-        rollback: 'Web view is additive on top of 3.9 list; revert the commit and the toggle disappears, list view becomes the default again.',
+        rollback: 'N/A — already reverted.',
         risks: [
-          'Aesthetic drift toward generic mind-map (D6 governing rule) — the web must look drawn, part of the Praxis world, not like a force-directed graph library',
-          'Concept-node scope creep — D1 is explicit: nodes are existing arc objects ONLY. Any "let me add a concept here" affordance is the deferred phase leaking',
-          'Edge legibility — implicit chronological edges may read as too sparse on small arcs (2-3 members) or too crowded on large arcs (10+). Test on Pedagogy of Desire (5 members) and confirm legibility'
+          'Carryforward risk: future work must not slide back into chronological-axis thinking. The constellation is the inquiry shape; chronology is a property of individual books, not an organizing layout.'
         ],
-        promptSkeleton:
-'Stage 0: confirm 3.9 list view stable and 5.3 Arcs page Shipped. Confirm Pedagogy of Desire arc exists with five live member books.\n\n' +
-'Stage 1: arc detail — add list/web toggle. Default list.\n\n' +
-'Stage 2: web render — chronological spine, small-cover book nodes, cherry-ink entry cards branching off, --ink-4 hairline edges.\n\n' +
-'Stage 3: --river focused-node marker; sit web on wheat field where appropriate.\n\n' +
-'Verification per Evidence block. Visual audit confirms drawn-not-mind-map aesthetic.'
+        promptSkeleton: 'N/A — archived.'
+      },
+
+      {
+        id: 's5-4-stage-2-0',
+        num: '5.4 Stage 2.0',
+        name: 'Dark constellation field (the night-sky window)',
+        depConfirm: '5.4 Stage 1 Shipped (wheat-field arc-web container). 5.4 Stage 2a Shipped (renderArcWebBookNode primitive, one Giroux cover mounted). docs/knowledge-arcs/shelf-and-field-decisions.md §5 is the spec.',
+        purpose: 'Replace the wheat-field background inside the arc-web container with a deep purple-blue dark field, preserving the Stage 5.1 grain layers as bleed and the upper-left light direction. The constellation is the same surface as the wheat field, seen at night — not a different room.',
+        scope: [
+          'Add CSS tokens to assets/theme.css: --field-dark, --field-dark-glow, --field-dark-grain.',
+          'Modify the arc-web container background to use --field-dark as the ground.',
+          'Preserve the Stage 5.1 grain layers at adjusted opacity inside the dark field (wheat-grain bleed).',
+          'Add a faint warm glow at upper-left of the dark field; shadows behave per Stage 5.1 light direction.',
+          'The existing renderArcWebBookNode primitive (one Giroux cover) keeps rendering against the new ground. No glyph changes in this stage.'
+        ],
+        nonGoals: [
+          'No glyph changes — the cover thumbnail keeps rendering as-is.',
+          'No wheat-field page-ground changes — only the arc-web container background changes.',
+          'No constellation rendering — that ships in Stage 2.',
+          'No new files. Token additions go in existing theme.css.'
+        ],
+        subsystems: ['views', 'theme'],
+        files: [
+          'assets/theme.css (new tokens, arc-web container background)',
+          'assets/components.css (only if arc-web container styling lives there — verify in Stage 0 of that stage brief)'
+        ],
+        acceptance: [
+          'Live URL: open Pedagogy of Desire arc detail, toggle to web view — arc-web container shows the dark purple-blue ground.',
+          'Live URL: wheat-grain texture visible inside the dark field at low opacity.',
+          'Live URL: faint warm glow at upper-left of the dark field; shadows fall down-right per Stage 5.1.',
+          'Live URL: the one Giroux cover from Stage 2a still renders inside the new dark ground.',
+          'Live URL: wheat-field page ground outside the arc-web container is UNCHANGED.'
+        ],
+        evidence: [
+          'Static: grep -c "--field-dark" assets/theme.css returns >= 3 (three new tokens defined).',
+          'Static: grep -c "wheat-field" assets/theme.css returns the SAME count as pre-change (no wheat tokens removed).',
+          'Live URL: eyes-on verification. Hard refresh (Cmd+Shift+R) before reading.'
+        ],
+        rollback: 'Single-commit revert. The tokens and container background change are additive.',
+        risks: [
+          'Wheat-grain bleed at wrong opacity reads as muddy. Iterate the opacity value with eyes-on, not from theory.',
+          'Light direction continuity — the upper-left glow must match the page-ground glow direction. Mixed light direction is the load-bearing failure (Stage 5.1 C1 light-direction comment).',
+          'Color choice — purple-blue must match the reference SVGs at docs/knowledge-arcs/, not invented from CSS theory.'
+        ],
+        promptSkeleton: 'Stage 0: recon assets/theme.css for token namespace conflicts and arc-web container styling location. Stage 1: add three tokens. Stage 2: wire container background. Stage 3: tune grain bleed opacity with eyes-on. Verification per Evidence block.'
+      },
+
+      {
+        id: 's5-4',
+        num: '5.4',
+        name: 'The arc web — constellation visualization',
+        depConfirm: '5.3 Shipped (Arcs page exists; arc detail is a known surface). 5.4 Stage 1 Shipped (toolbar, view-mode persistence, wheat-field arc-web container). 5.4 Stage 2a Shipped (renderArcWebBookNode primitive, one Giroux node mounted as scaffold). 5.4 Stage 2b spine work shipped then reverted (see s5-4-spine-archived). docs/knowledge-arcs/knowledge-arcs-visual-system.md and docs/knowledge-arcs/shelf-and-field-decisions.md are the spec.',
+        purpose: 'Arc detail renders the arc as a constellation: books scattered across a dark field by resonance, not chronology. The arc question sits at the gravitational center. Threads of varying weight connect books that speak to each other. Marginalia and journal entries appear as small luminous marks. Yumi observes from the edge. The constellation is the inquiry shape — what the arc looks like.',
+        scope: [
+          'See docs/knowledge-arcs/knowledge-arcs-visual-system.md for the full vocabulary and docs/knowledge-arcs/shelf-and-field-decisions.md for the locked decisions.',
+          'Multi-stage build. Stages 2.0, 2, 3, 4, 5, 6, 7, 8, 9, 10 below. Stages 11 and 12 are deferred / optional.',
+          'Stage 2.0 — Dark constellation field as background inside arc-web container (deep purple-blue, wheat-grain bleed, upper-left light preserved).',
+          'Stage 2 — Constellation surface and shape primitives. SVG canvas replaces wheat-field placeholder; each book in the seed arc renders as a register-shape glyph at hand-authored coordinates. No edges, no marks, no question, no Yumi.',
+          'Stage 3 — Register palette + engagement saturation. Wires one color ramp per register; engagement-depth maps to saturation. No quality signal.',
+          'Stage 4 — Resonance threads (scaffold). Hand-authored thread records with thickness, opacity, dashed encoding strength, recency, certainty.',
+          'Stage 5 — Marginalia dots and journal circles. Teal-green dots clustered near books; larger circles between books with leader lines.',
+          'Stage 6 — The question as gravity. Faint italic serif at center, soft radial glow if articulated, empty space if not.',
+          'Stage 7 — Yumi peripheral. Small dashed circle at the edge, faint dashed leaders to recently-noticed books.',
+          'Stage 8 — Tap-to-explore interaction model. Six tap targets: book → artifact, thread → linked notes, mark → entry, question → editor, Yumi → her arc view, current → anchor view.',
+          'Stage 9 — Legend and voice phrase. Bottom-placed editorial legend rendering only on-screen elements; arc-specific voice line; collapsible.',
+          'Stage 10 — Derived threads. Replace scaffolded thread records with computation from Notebook entries linked-books graph. Gated on Notebook data layer.',
+          'Stage 11 (deferred) — The Field as default home view. Curved-arc layout with books hanging along it.',
+          'Stage 12 (deferred) — Concept-currents and the Loom. Faint horizontal currents; Loom as analytic view.'
+        ],
+        nonGoals: [
+          'No chronological-axis layout (see s5-4-spine-archived).',
+          'No concept-node system in the early stages (deferred to Stage 12).',
+          'No user-drawn edges (threads emerge from Notebook in Stage 10).',
+          'No drag, no draw, no edit in the constellation.',
+          'No generic mind-map or force-directed graph aesthetic.',
+          'No fixed shape — the arc is whatever pattern these books make together (the §3.2 voice phrase).'
+        ],
+        subsystems: ['views', 'arcs'],
+        files: [
+          'js/arcs.js (constellation render path)',
+          'js/views.js (arc detail toolbar, view-mode toggle)',
+          'assets/theme.css (register tokens added in Stage 6; dark-field tokens added in Stage 2.0; constellation-specific tokens added per stage)'
+        ],
+        acceptance: [
+          'See per-stage acceptance criteria in the individual stage briefs (Stages 2.0 through 10).',
+          'Each stage ships with: live-URL eye verification, parse check (PowerShell or cscript on Windows; node on Mac), grep counts, byte deltas.',
+          'No stage closes until live-URL eyes-on confirms the visual.'
+        ],
+        evidence: [
+          'docs/knowledge-arcs/knowledge-arcs-visual-system.md is the canonical spec.',
+          'docs/knowledge-arcs/shelf-and-field-decisions.md is the locked-decisions companion doc.',
+          'Three reference SVGs in docs/knowledge-arcs/ (visual-sketch, dense-field, constellation) are visual references.'
+        ],
+        rollback: 'Each sub-stage is independently revertable. The constellation track is additive on top of 5.4 Stage 1 and 2a (toolbar + primitive); reverting any sub-stage leaves earlier stages live.',
+        risks: [
+          'Vocabulary drift toward generic data-viz aesthetics — the constellation must look like the reference SVGs, not like d3 or vis.js defaults.',
+          'Notebook dependency on Stage 10 (derived threads) — earlier stages scaffold against hand-authored thread records to avoid the gate.',
+          'Coordinate authoring at Stage 2 is hand-placed for the seed arc; a generalized layout algorithm is a future track.',
+          'Builder-Intellectual pattern — perfecting Stage 2 visuals is the trap. Ship in small pieces; revert when learning says to.'
+        ],
+        promptSkeleton: 'See per-stage Claude Code briefs. Each stage gets its own brief with Stage 0 recon, staged checkpoints, parse checks, byte deltas, and live-URL verification.'
       },
 
       {
@@ -3948,6 +4033,62 @@ var STAGES = [
 'Stage 3: wire field motion to sound-on state; field-still when sound-off.\n\n' +
 'Stage 4: state.js — sound-preference flag, never autoplay from cold start.\n\n' +
 'Verification per Evidence block. Cold-start test confirms default-off is constitutional, not just behavioral.'
+      },
+
+      {
+        id: 's5-6',
+        num: '5.6',
+        name: 'Shelf register vocabulary — visual system extension to the Books shelf',
+        depConfirm: 'Stage 5.6 is the sixth substage of Stage 5. Prereqs follow the Stage 5 parent depConfirm (5.1 material system Shipped, 5.2 wheat field Shipped, 5.3 Arcs page Shipped). 5.4 and 5.5 are sibling substages and 5.6 does not depend on them. docs/knowledge-arcs/shelf-and-field-decisions.md §1–§4 is the spec.',
+        purpose: 'Extend the constellation visual system to the Books shelf. Every cover gets a register-glyph in the top-right corner — a small shape filled with engagement-saturation. The shelf becomes the proving ground for the 9-register data model and the theme→register default map. Cover art stays primary; register and engagement appear as quiet metadata.',
+        scope: [
+          'Six sub-steps, sequenced for verifiability.',
+          'Sub-step 1 — Register data model. Add book.register and book.registerOverride fields. Define theme→register default map. Migrate the existing 109 books.',
+          'Sub-step 2 — Material + shape CSS tokens. Nine register-color tokens, three engagement-saturation variants per register (27 tokens total), nine SVG shape path constants.',
+          'Sub-step 3 — renderRegisterGlyph primitive. Returns an SVG string for the shape filled with the engagement-saturation. Standalone, testable, not wired yet.',
+          'Sub-step 4 — Shelf glyph integration. Wire renderRegisterGlyph into renderShelfBook. Glyph appears top-right corner of every cover.',
+          'Sub-step 5 — Edit-book modal override. Add register dropdown. Saving sets book.registerOverride; shelf glyph reflects on next render.',
+          'Sub-step 6 — Engagement-saturation wiring. Compute notes count per book; apply 0 / 1–4 / 5+ banding; glyph fill reflects live count. Wires against scaffolded zero counts initially; real counts when Notebook data layer lands.'
+        ],
+        nonGoals: [
+          'No engagement ring around the cover — glyph alone carries the signal.',
+          'No marginalia dots on the shelf — dots are arc-local.',
+          'No resonance threads on the shelf — threads need a question to mean anything.',
+          'No shelf-wide layout changes — covers stay in the existing grid.',
+          'No legend on the shelf — the vocabulary will be taught inside arc surfaces first; shelf is reference, not first-encounter.',
+          'No user-customizable shape or material vocabulary — the 9 are locked defaults; pluralization is a future track.'
+        ],
+        subsystems: ['views', 'data', 'theme'],
+        files: [
+          'js/state.js (book.register, book.registerOverride fields, migration)',
+          'js/views.js (renderShelfBook integration, renderRegisterGlyph primitive)',
+          'assets/theme.css (register and saturation tokens)',
+          'assets/components.css (glyph positioning on the cover)'
+        ],
+        acceptance: [
+          'Per-sub-step acceptance criteria. Each sub-step ships independently with: live-URL eyes-on verification, parse check, grep counts, byte deltas.',
+          'Sub-step 1 PASS: all 109 books have a non-null book.register value.',
+          'Sub-step 2 PASS: 9 + 27 + 9 tokens visible in theme.css; no existing tokens broken.',
+          'Sub-step 3 PASS: renderRegisterGlyph(book) returns valid SVG for each of the 9 registers, callable in isolation.',
+          'Sub-step 4 PASS: live URL shows a register-glyph in the top-right corner of every cover on the shelf.',
+          'Sub-step 5 PASS: editing a book and changing its register updates the shelf glyph on next render.',
+          'Sub-step 6 PASS: increasing the notes count on a book (scaffolded or real) increases the glyph fill saturation.'
+        ],
+        evidence: [
+          'Static: grep -c "book.register" js/state.js returns >= 1.',
+          'Static: grep -c "renderRegisterGlyph" js/views.js returns >= 2 (definition + at least one call).',
+          'Static: grep -c "register-theory" assets/theme.css returns >= 4 (one register token + three saturation variants).',
+          'Live URL: visual audit of the shelf — all 109 covers carry a top-right glyph.',
+          'Live URL: edit-book modal shows a register dropdown.'
+        ],
+        rollback: 'Each sub-step is independently revertable. Sub-step 1 (data model) is the only sub-step that needs migration thought on revert; the others are additive.',
+        risks: [
+          'Glyph competing with cover art at small sizes — the glyph must read as quiet metadata, not as a badge. Iterate size and opacity with eyes-on.',
+          'Theme→register default map disagreeing with reader intuition — that is what registerOverride exists for. Do not over-tune the defaults.',
+          'Engagement-saturation depending on Notebook data — Sub-step 6 scaffolds against zero counts; when Notebook lands, real counts wire in. Do not block Sub-step 6 on Notebook.',
+          'Builder-Intellectual pattern — the 9 registers are locked. Do not redesign the vocabulary inside the build; that is a separate design conversation.'
+        ],
+        promptSkeleton: 'Six per-sub-step Claude Code briefs to follow. Each includes Stage 0 recon, parse checks, byte deltas, live-URL verification. See docs/knowledge-arcs/shelf-and-field-decisions.md for the locked vocabulary.'
       }
 
     ]
