@@ -2835,19 +2835,73 @@ function renderArcDetail(arcId) {
   if (viewMode === 'web') {
     var webContainer = document.createElement('div');
     webContainer.className = 'arc-detail-web-view';
-    // Stage 5.4 Stage 2a TEMP: one-node verification mount. Stage 2b
-    // removes this and adds the spine + all member books in
-    // chronological order. Renders only the first member to verify
-    // the primitive in isolation. Book lookup uses the inline
-    // state.books pattern (mirrors views.js:2860 in the list branch);
-    // there is no getBookById helper in the codebase.
-    if (arc.bookIds && arc.bookIds.length > 0) {
-      var firstBookId = arc.bookIds[0].id;
-      var firstBook = state.books && state.books[firstBookId];
-      if (firstBook) {
-        var firstNode = renderArcWebBookNode(firstBook);
-        webContainer.appendChild(firstNode);
+    // Stage 5.4 Stage 2b: spine + multi-node render. Builds the merged
+    // chronological members array (book + entry items, ascending by
+    // addedAt), then renders the spine layout: a vertical spine line
+    // running behind the column of book nodes. Entries are not rendered
+    // in Stage 2b -- they are member objects in the array but the loop
+    // only mounts kind === 'book' members. Stage 3 adds entry branching.
+    // The merge+sort below duplicates the logic from renderArcDetail's
+    // list branch by deliberate choice -- list branch stays byte-frozen
+    // as the Stage 5.3 baseline; extraction can be a separate Stage 3+
+    // cleanup when that branch is touched anyway. Spine appended BEFORE
+    // node rows so document order paints spine behind nodes (no z-index
+    // needed -- see components.css Stage 2b lead comment).
+    var webMembers = [];
+    var wi;
+    for (wi = 0; wi < arc.bookIds.length; wi++) {
+      var wbm = arc.bookIds[wi];
+      if (wbm && wbm.id) {
+        webMembers.push({ kind: 'book', id: wbm.id, addedAt: wbm.addedAt || 0 });
       }
+    }
+    for (wi = 0; wi < arc.entryIds.length; wi++) {
+      var wem = arc.entryIds[wi];
+      if (wem && wem.id) {
+        webMembers.push({ kind: 'entry', id: wem.id, addedAt: wem.addedAt || 0 });
+      }
+    }
+    webMembers.sort(function(x, y) {
+      return (x.addedAt || 0) - (y.addedAt || 0);
+    });
+
+    // bookCount gate: empty-as-is per Stage 2b locked decision -- a
+    // 0-book arc (or 0-book-N-entry arc) renders nothing, wheat field
+    // alone. The 5-book Pedagogy of Desire is the only seeded arc and
+    // never hits this path; the gate is fail-soft for user-authored
+    // arcs that haven't attached books yet.
+    var bookCount = 0;
+    for (wi = 0; wi < webMembers.length; wi++) {
+      if (webMembers[wi].kind === 'book') {
+        bookCount++;
+      }
+    }
+
+    if (bookCount > 0) {
+      var spineLayout = document.createElement('div');
+      spineLayout.className = 'arc-web-spine-layout';
+
+      var spineLine = document.createElement('div');
+      spineLine.className = 'arc-web-spine';
+      spineLayout.appendChild(spineLine);
+
+      for (wi = 0; wi < webMembers.length; wi++) {
+        var webMember = webMembers[wi];
+        if (webMember.kind !== 'book') {
+          continue;
+        }
+        var webBook = state.books && state.books[webMember.id];
+        if (!webBook) {
+          continue;
+        }
+        var nodeRow = document.createElement('div');
+        nodeRow.className = 'arc-web-spine-node-row';
+        var webNode = renderArcWebBookNode(webBook);
+        nodeRow.appendChild(webNode);
+        spineLayout.appendChild(nodeRow);
+      }
+
+      webContainer.appendChild(spineLayout);
     }
     wrap.appendChild(webContainer);
   } else {
