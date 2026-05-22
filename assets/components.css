@@ -3128,3 +3128,46 @@
   font-style: italic;
   text-align: center;
 }
+
+
+/* ===== STAGE 5.4 STAGE 2a -- ARC-WEB BOOK NODE PRIMITIVE =====
+   Mirrors .shelf-book-cover-area pattern (components.css:1089-1110)
+   at smaller scale. Surface-isolated from .shelf-book-* by class --
+   no cascade overrides. Stage 2b positions; Stage 2a only styles.
+   ============================================================ */
+
+.arc-web-book-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* No width set here -- Stage 2b will constrain via positioning context. */
+}
+
+.arc-web-book-node-cover-area {
+  width: 80px;
+  height: var(--arc-web-node-cover-height);
+  margin-bottom: var(--sp-2);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.arc-web-book-node-cover,
+.arc-web-book-node-cover-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.arc-web-book-node-cover {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.arc-web-book-node-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+  text-align: center;
+  max-width: 100px;
+  line-height: 1.3;
+}
