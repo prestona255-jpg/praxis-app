@@ -200,6 +200,33 @@
 // so any pre-existing entries are test fixtures only and tolerate
 // a missing title.
 //
+// Schema 1.11.0 adds two fields to state.books records:
+//
+//   tradition:          string  // one of nine values from TRADITIONS,
+//                               // plus 'unassigned' as a tenth case.
+//                               // Derived from book.genre via the
+//                               // THEME_TO_TRADITION map. The shelf
+//                               // glyph (5.6 sub-step 4) reads this
+//                               // field to pick its shape.
+//
+//   traditionOverride:  string | null
+//                               // User-set override from the edit-
+//                               // book modal (5.6 sub-step 5). When
+//                               // present, the renderer uses this
+//                               // instead of the genre-derived
+//                               // default. null until the user
+//                               // explicitly overrides.
+//
+// Schema 1.11.0 was introduced for Stage 5.6 sub-step 1 (shelf
+// register vocabulary). Field is named 'tradition' rather than
+// 'register' because 'register' is already in use on notebookEntries
+// (values 'journal' | 'marginalia'). Backfill is delegated to the
+// ensureBookFieldsAll chokepoint which is also called from the
+// Firestore merge path (integrations.js) and new-book creation
+// (views.js). All write paths into state.books call ensureBookFields
+// before or after the write so the schema is honored regardless of
+// which path the book entered through.
+//
 // Status-editing on book detail (status-selector flip, un-finish
 // render) is NOT in 3.7; it ships in 3.7c. Stage 3.7's only path
 // to status === 'finished' is the "I've finished this" button in
@@ -243,6 +270,99 @@ var state = {
   arcs:            {}
 };
 window.state = state;
+
+// Stage 5.6 sub-step 1: tradition data model.
+//
+// 'tradition' is what the visual system spec
+// (docs/knowledge-arcs/knowledge-arcs-visual-system.md) calls
+// 'register'. Renamed in code to avoid collision with
+// notebookEntries[id].register (values 'journal' | 'marginalia').
+// See docs/knowledge-arcs/shelf-and-field-decisions.md.
+//
+// THEME_TO_TRADITION maps the 15 SHELF_THEMES values (from views.js)
+// onto 8 of the 9 traditions. Poetry is theme-less and reachable only
+// via user override (sub-step 5). Empty or non-canonical genre lands
+// on 'unassigned' (the 10th case, renders as no glyph).
+var THEME_TO_TRADITION = {
+  'Philosophy & wisdom':         'wisdom',
+  'Critical theory & pedagogy':  'theory',
+  'Power & systems':             'theory',
+  'Political economy & society': 'theory',
+  'Mind & behavior':             'empirical',
+  'History & memory':            'history',
+  'Liberation':                  'history',
+  'Love & connection':           'memoir',
+  'Grief & witness':             'memoir',
+  'Joy & wonder':                'memoir',
+  'Faith & meaning':             'wisdom',
+  'Place & belonging':           'place',
+  'Nature & ecology':            'place',
+  'Story & imagination':         'novel',
+  'Craft & practice':            'practice'
+};
+
+// Canonical tradition values. The renderer (sub-step 3+) reads
+// book.tradition against this list. 'unassigned' is the 10th value
+// and renders as no glyph (deliberate empty-corner signal).
+var TRADITIONS = [
+  'theory',
+  'wisdom',
+  'empirical',
+  'history',
+  'memoir',
+  'novel',
+  'poetry',
+  'place',
+  'practice',
+  'unassigned'
+];
+
+function deriveTraditionFromGenre(genre) {
+  if (typeof genre !== 'string' || genre === '') {
+    return 'unassigned';
+  }
+  if (typeof THEME_TO_TRADITION[genre] === 'string') {
+    return THEME_TO_TRADITION[genre];
+  }
+  return 'unassigned';
+}
+
+// ensureBookFields — the chokepoint. Backfills any 5.6 sub-step 1
+// schema fields that are missing on a book record. Idempotent: if
+// the field is already present, no-op. Returns true if anything
+// was changed, false otherwise (mirrors normalizeCoverUrlsToHttps
+// pattern). EVERY write path into state.books must call this — see
+// integrations.js Firestore merge and views.js new-book sites.
+function ensureBookFields(book) {
+  if (!book || typeof book !== 'object') { return false; }
+  var changed = false;
+  if (typeof book.tradition !== 'string') {
+    book.tradition = deriveTraditionFromGenre(book.genre);
+    changed = true;
+  }
+  if (typeof book.traditionOverride === 'undefined') {
+    book.traditionOverride = null;
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureBookFieldsAll — convenience for backfilling an entire books
+// map (migration, Firestore merge). Returns true if any single book
+// was changed, false if all books were already complete.
+function ensureBookFieldsAll(booksMap) {
+  if (!booksMap || typeof booksMap !== 'object') { return false; }
+  var anyChanged = false;
+  var bk;
+  for (bk in booksMap) {
+    if (booksMap.hasOwnProperty(bk)) {
+      if (ensureBookFields(booksMap[bk])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
 
 // Firestore Stage 2: dirty flag for the per-user book doc. The 10
 // book-mutation sites in views.js call markBooksDirty() after
@@ -470,9 +590,14 @@ function loadState() {
     // object is safe: it walks the same version chain a stored state
     // does (1.9.3 is the default), and migrate steps that are
     // version-stamp no-ops (e.g. 1.4.0 -> 1.5.0) are skipped because
-    // the default SCHEMA_VERSION starts at 1.9.3. Default literal
-    // SCHEMA_VERSION is intentionally NOT bumped to 1.10.0 -- a fresh
-    // default needs to walk THROUGH the seed step, not past it.
+    // the default SCHEMA_VERSION default literal is the ANCHOR for
+    // fresh state, intentionally pinned at the earliest documented
+    // schema (1.9.3) so a brand-new user walks through EVERY
+    // migration step including the seed migration (e.g., the
+    // Pedagogy of Desire seed at 1.9.3 → 1.10.0). Do NOT bump this
+    // default literal when adding a new schema version. New
+    // migration steps land in the migrate() chain only. The chain
+    // does the work; the default literal stays the anchor.
     state = migrate(state);
     return state;
   }
@@ -852,6 +977,18 @@ function migrate(stored) {
       };
     }
     stored.SCHEMA_VERSION = '1.10.0';
+  }
+  // 5.6 sub-step 1: state.books gains tradition + traditionOverride.
+  // Delegated to the ensureBookFieldsAll chokepoint so the migration
+  // logic and the runtime write-path logic (Firestore merge in
+  // integrations.js, new-book creation in views.js) share a single
+  // source of truth. ensureBookFieldsAll is idempotent — re-running
+  // it on already-migrated state is a no-op.
+  if (stored.SCHEMA_VERSION === '1.10.0') {
+    if (stored.books) {
+      ensureBookFieldsAll(stored.books);
+    }
+    stored.SCHEMA_VERSION = '1.11.0';
   }
   return stored;
 }
