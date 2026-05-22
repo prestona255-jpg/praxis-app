@@ -82,6 +82,14 @@ firebase.auth().onAuthStateChanged(function (u) {
         // it returns false and no extra Firestore write fires. Self-
         // terminating, not a write-every-boot.
         var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
+        // 5.6 sub-step 1: backfill tradition + traditionOverride on
+        // remote books before the merge loop assigns them into
+        // state.books. Without this call, Firestore-synced books
+        // bypass migrate() and arrive without 5.6 schema fields. The
+        // chokepoint mirrors the normalizeCoverUrlsToHttps pattern
+        // above; ensureBookFieldsAll lives in state.js (globally
+        // accessible via the no-strict-mode discipline).
+        ensureBookFieldsAll(remoteBooks);
         state.userBooks[u.uid].bookIds = remoteIds.slice();
         var r;
         for (r = 0; r < remoteIds.length; r++) {
