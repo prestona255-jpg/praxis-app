@@ -3116,6 +3116,19 @@
   opacity: var(--field-presence, 1);
 }
 
+/* Stage 5.4 Stage 1f: transitional placeholder line shown inside the
+   empty web container until Stage 2 draws the spine. Mirrors the
+   .arc-detail-empty-body precedent (components.css:2580-2588): same
+   margin / padding / italic / --ink-3 / centered text. font-family +
+   font-size from the precedent are inheritable defaults and dropped. */
+.arc-detail-web-placeholder {
+  margin: 48px 0;
+  padding: var(--sp-6) var(--sp-4);
+  color: var(--ink-3);
+  font-style: italic;
+  text-align: center;
+}
+
 
 /* ===== STAGE 5.4 STAGE 2a -- ARC-WEB BOOK NODE PRIMITIVE =====
    Mirrors .shelf-book-cover-area pattern (components.css:1089-1110)
@@ -3157,42 +3170,4 @@
   text-align: center;
   max-width: 100px;
   line-height: 1.3;
-}
-
-
-/* ===== STAGE 5.4 STAGE 2b -- ARC-WEB SPINE + LAYOUT =====
-   Left-anchored spine; covers sit ON the spine via overlap, with the
-   spine rendering behind nodes via document append order (no z-index).
-   Spine extends 24px (--sp-5) past first/last node via the layout's
-   vertical padding, implying the chronology continues.
-   Geometry (load-bearing): spine at left: 80px; each node row has
-   padding-left: 40px; cover is 80px wide. Cover horizontal center
-   sits at 40 + 40 = 80px from row-left -- exactly where the spine
-   sits. Spine passes through each cover's horizontal midline.
-   ============================================================ */
-
-.arc-web-spine-layout {
-  position: relative;
-  padding: var(--sp-5) 0 var(--sp-5) 0;
-}
-
-.arc-web-spine {
-  position: absolute;
-  left: 80px;
-  top: 0;
-  bottom: 0;
-  width: var(--arc-web-spine-width);
-  background: var(--ink-4);
-}
-
-.arc-web-spine-node-row {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  padding-left: 40px;
-  margin-bottom: var(--arc-web-node-gap);
-}
-
-.arc-web-spine-node-row:last-child {
-  margin-bottom: 0;
 }
