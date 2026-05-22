@@ -1497,6 +1497,30 @@ function renderShelfBook(book) {
     coverPlaceholder.className = 'shelf-book-cover-placeholder';
     coverArea.appendChild(coverPlaceholder);
   }
+
+  // Stage 5.6 sub-step 4: register glyph in top-right corner of cover-area.
+  // Tradition resolution: traditionOverride wins if set (user choice
+  // from the edit-book modal in sub-step 5), else fall back to the
+  // genre-derived tradition. Both fields are guaranteed non-null by
+  // the ensureBookFields chokepoint from sub-step 1.
+  //
+  // Engagement band is hard-coded 0 (light) in this sub-step. Sub-step 6
+  // computes the real band from notebook-entry counts and wires it
+  // here; the call signature stays identical.
+  //
+  // renderRegisterGlyph returns empty string for 'unassigned' (the
+  // §2.6 empty-corner signal), so the wrapper renders empty when a
+  // book hasn't been assigned a tradition. Wrapper still mounts —
+  // empty wrapper means no DOM cost and no visual artifact.
+  var glyphTradition = book.traditionOverride || book.tradition;
+  var glyphHtml = renderRegisterGlyph(glyphTradition, 0);
+  if (glyphHtml !== '') {
+    var glyphWrap = document.createElement('div');
+    glyphWrap.className = 'register-glyph-wrap';
+    glyphWrap.innerHTML = glyphHtml;
+    coverArea.appendChild(glyphWrap);
+  }
+
   card.appendChild(coverArea);
 
   var titleEl = document.createElement('h2');

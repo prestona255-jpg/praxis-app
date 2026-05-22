@@ -1087,11 +1087,37 @@
 }
 
 .shelf-book-cover-area {
+  /* Stage 5.6 sub-step 4: position context for absolute-positioned
+     register-glyph-wrap. The wrapper is inset 8px from top + right
+     of the cover-area; without position: relative, it would anchor
+     to the next positioned ancestor (usually body) and float in
+     the wrong place. overflow: hidden stays in place — the glyph
+     wrapper is sized to fit inside the inset, never clips. */
+  position: relative;
   width: 100%;
   height: 200px;
   margin-bottom: 16px;
   background: var(--color-surface);
   overflow: hidden;
+}
+
+/* Stage 5.6 sub-step 4: register glyph wrapper + SVG sizing.
+   The wrapper is the absolute-positioned anchor; the inner SVG
+   from renderRegisterGlyph fills it. pointer-events: none so the
+   glyph never intercepts clicks on the underlying cover anchor. */
+.register-glyph-wrap {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.register-glyph-wrap svg.register-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .shelf-book-cover,
