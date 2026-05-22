@@ -1913,6 +1913,10 @@ function openShelfEditor() {
       genre:    genreTrimmed,
       coverUrl: null
     };
+    // 5.6 sub-step 1: chokepoint call — see js/state.js ensureBookFields.
+    // Stamps tradition + traditionOverride on the new book so it carries
+    // the 5.6 schema regardless of which write path it entered through.
+    ensureBookFields(state.books[id]);
 
     // ensureUser is defensive against fresh accounts whose state.users
     // and state.userBooks records have not been seeded yet. After this
@@ -2147,6 +2151,7 @@ function processBulkLines(raw) {
         genre:    '',
         coverUrl: null
       };
+      ensureBookFields(state.books[id]);    // 5.6 sub-step 1 chokepoint
       isbnQueue.push({ kind: 'isbn', bookId: id, isbn: entry.value });
     } else {
       state.books[id] = {
@@ -2159,6 +2164,7 @@ function processBulkLines(raw) {
         genre:    '',
         coverUrl: null
       };
+      ensureBookFields(state.books[id]);    // 5.6 sub-step 1 chokepoint
       // 3.10e: title-form bulk lines now queue for background
       // resolution alongside ISBN-form lines. Same sequential queue,
       // discriminated by the kind field.
