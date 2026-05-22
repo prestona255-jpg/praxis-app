@@ -317,6 +317,22 @@ var TRADITIONS = [
   'unassigned'
 ];
 
+// Human-readable labels for the tradition dropdown (sub-step 5a).
+// Keys match TRADITIONS exactly. 'unassigned' gets a prose label so the
+// dropdown reads as natural language rather than typographic shorthand.
+var TRADITION_LABELS = {
+  theory: 'Theory',
+  wisdom: 'Wisdom',
+  empirical: 'Empirical',
+  history: 'History',
+  memoir: 'Memoir',
+  novel: 'Novel',
+  poetry: 'Poetry',
+  place: 'Place',
+  practice: 'Practice',
+  unassigned: 'No tradition assigned'
+};
+
 function deriveTraditionFromGenre(genre) {
   if (typeof genre !== 'string' || genre === '') {
     return 'unassigned';

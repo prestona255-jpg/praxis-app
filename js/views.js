@@ -2632,6 +2632,45 @@ function renderBookDetail(bookId) {
   isbnRow.appendChild(isbnField);
   wrap.appendChild(isbnRow);
 
+  // Stage 5.6 sub-step 5a: tradition dropdown.
+  // Always rendered, no host, no toggle. Mirrors status-radio pattern:
+  // change-on-flip writes traditionOverride and re-renders. Dropdown
+  // DISPLAYS effective tradition (override || base), WRITES only override.
+  var traditionRow = document.createElement('div');
+  traditionRow.className = 'book-detail-tradition-row';
+
+  var traditionLabel = document.createElement('label');
+  traditionLabel.className = 'book-detail-tradition-label';
+  traditionLabel.textContent = 'Tradition';
+  traditionRow.appendChild(traditionLabel);
+
+  var traditionSelect = document.createElement('select');
+  traditionSelect.className = 'book-detail-tradition-select';
+
+  var effectiveTradition = state.books[bookId].traditionOverride || state.books[bookId].tradition;
+  var ti;
+  var topt;
+  for (ti = 0; ti < TRADITIONS.length; ti++) {
+    topt = document.createElement('option');
+    topt.value = TRADITIONS[ti];
+    topt.textContent = TRADITION_LABELS[TRADITIONS[ti]];
+    if (TRADITIONS[ti] === effectiveTradition) {
+      topt.selected = true;
+    }
+    traditionSelect.appendChild(topt);
+  }
+
+  traditionSelect.onchange = function (ev) {
+    state.books[bookId].traditionOverride = ev.target.value;
+    ensureBookFields(state.books[bookId]);
+    markBooksDirty();
+    saveState();
+    renderBookDetail(bookId);
+  };
+
+  traditionRow.appendChild(traditionSelect);
+  wrap.appendChild(traditionRow);
+
   // Editor host -- empty on every render; openMarginaliaEditor
   // mounts its block here on demand.
   var editorHost = document.createElement('div');

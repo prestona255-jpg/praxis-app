@@ -2006,6 +2006,40 @@
   cursor: pointer;
 }
 
+/* Stage 5.6 sub-step 5a: tradition dropdown row on book detail page.
+   Lives next to status radios; matches their visual rhythm. */
+.book-detail-tradition-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.book-detail-tradition-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.book-detail-tradition-select {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: var(--sp-2);
+  background: var(--color-surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.book-detail-tradition-select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
 /* A6.3 grouped — large-body textareas across bulk-add and the
    shared notebook-editor (journal / marginalia / artifact). */
 .shelf-bulk-editor-textarea,
