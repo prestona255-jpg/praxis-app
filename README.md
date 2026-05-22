@@ -18,6 +18,7 @@ Right now: planning documents only. Code starts at Stage 1.
 - `docs/00-template.docx` — reusable scaffold for future stage prompts.
 - `docs/setup-bookshop.md`, `setup-firebase.md`, `setup-netlify.md` — handoff prompts for external accounts.
 - `docs/yumi-book-app-living-document.html` — narrative living document (open in browser, edit in Claude chats).
+- `docs/knowledge-arcs/knowledge-arcs-visual-system.md` — Knowledge Arcs visual system spec (constellation model; the arc-web design source-of-truth, with companion SVG references in the same folder).
 
 ## Build sequence
 
