@@ -1535,6 +1535,62 @@ function renderShelfBook(book) {
   return card;
 }
 
+// Stage 5.6 sub-step 3: renderRegisterGlyph primitive.
+//
+// Pure function. Returns an SVG string for the tradition's glyph
+// at the requested engagement band, or empty string if the inputs
+// don't resolve to a valid glyph. Empty string is a real signal —
+// the §2.6 "empty space is a real signal" principle from
+// docs/knowledge-arcs/knowledge-arcs-visual-system.md.
+//
+// Inputs:
+//   tradition       - one of the 10 TRADITIONS values (see state.js).
+//                     'unassigned' deliberately returns empty string.
+//   engagementBand  - integer 0, 1, or 2.
+//                     0 = light (0 notes), 1 = mid (1-4 notes),
+//                     2 = deep (5+ notes). Out-of-range returns empty.
+//
+// Output:
+//   SVG string for valid inputs, ready to drop into the DOM via
+//   innerHTML (sub-step 4 wires the shelf integration).
+//   Empty string for invalid tradition or band, OR for 'unassigned'.
+//
+// Reads REGISTER_SHAPE_PATHS (defined in state.js, available at top
+// level via the vanilla-JS no-strict-mode pattern). CSS variables
+// (--register-X-light/-mid/-deep) are referenced by name in the
+// fill attribute; the browser resolves them at paint time.
+//
+// Pure: same inputs always produce the same output. No state reads
+// beyond REGISTER_SHAPE_PATHS, no side effects, no DOM access.
+function renderRegisterGlyph(tradition, engagementBand) {
+  // Validate band first — cheap integer check.
+  if (engagementBand !== 0 && engagementBand !== 1 && engagementBand !== 2) {
+    return '';
+  }
+  // Validate tradition + look up path.
+  if (typeof tradition !== 'string') {
+    return '';
+  }
+  var path = REGISTER_SHAPE_PATHS[tradition];
+  if (typeof path !== 'string' || path === '') {
+    // Catches both unknown traditions (undefined) and 'unassigned' (''empty string).
+    return '';
+  }
+  // Map band to CSS variable suffix.
+  var bandSuffix;
+  if (engagementBand === 0) {
+    bandSuffix = 'light';
+  } else if (engagementBand === 1) {
+    bandSuffix = 'mid';
+  } else {
+    bandSuffix = 'deep';
+  }
+  var fillVar = 'var(--register-' + tradition + '-' + bandSuffix + ')';
+  return '<svg viewBox="0 0 24 24" class="register-glyph" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="' + path + '" fill="' + fillVar + '"></path>' +
+    '</svg>';
+}
+
 // Stage 5.4 Stage 2a: arc-web book node primitive. Cover + title only.
 // Surface isolation from renderShelfBook by design -- no chrome (no
 // author, status, genre). The arc-web speaks chronology; cover-as-
