@@ -2835,11 +2835,20 @@ function renderArcDetail(arcId) {
   if (viewMode === 'web') {
     var webContainer = document.createElement('div');
     webContainer.className = 'arc-detail-web-view';
-    var placeholder = document.createElement('p');
-    placeholder.className = 'arc-detail-web-placeholder';
-    placeholder.textContent =
-      'The web view is coming. For now, switch back to list.';
-    webContainer.appendChild(placeholder);
+    // Stage 5.4 Stage 2a TEMP: one-node verification mount. Stage 2b
+    // removes this and adds the spine + all member books in
+    // chronological order. Renders only the first member to verify
+    // the primitive in isolation. Book lookup uses the inline
+    // state.books pattern (mirrors views.js:2860 in the list branch);
+    // there is no getBookById helper in the codebase.
+    if (arc.bookIds && arc.bookIds.length > 0) {
+      var firstBookId = arc.bookIds[0].id;
+      var firstBook = state.books && state.books[firstBookId];
+      if (firstBook) {
+        var firstNode = renderArcWebBookNode(firstBook);
+        webContainer.appendChild(firstNode);
+      }
+    }
     wrap.appendChild(webContainer);
   } else {
 
