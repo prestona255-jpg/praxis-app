@@ -58,6 +58,78 @@
   --arc-web-node-gap: var(--sp-5);
 
   /* =====================================================================
+     Stage 5.6 sub-step 2: Register tokens + saturation variants.
+
+     Nine traditions (theory, wisdom, empirical, history, memoir, novel,
+     poetry, place, practice) plus 'unassigned' as the 10th case (which
+     renders no glyph at all, so no token needed). See
+     docs/knowledge-arcs/shelf-and-field-decisions.md §1.
+
+     Three registers reuse existing palette anchors (theory = cherry oak
+     via --br-deep, wisdom = gold, memoir = water via --river). Three
+     are derived via color-mix from existing tokens (history = bronze,
+     empirical = clay, practice = paper-and-ink). Three are new hex
+     values where the existing palette had no anchor (novel = wheat,
+     poetry = indigo, place = tea).
+
+     Saturation variants follow the pattern from Stage 5.1: color-mix
+     toward --bg at three discrete ratios. Light = 30/70 (book is in
+     the shelf but barely engaged), mid = 65/35 (actively reading or
+     noting), deep = pure register color (deeply worked through).
+     Discrete bands not continuous opacity — saturation differences
+     at 20px corner-glyph size don't read continuously.
+
+     The 'unassigned' tradition deliberately has NO token here. The
+     renderer (sub-step 3) returns empty string for unassigned books;
+     the cover renders without a corner glyph, which is itself a
+     signal per the §2.6 "empty space is a real signal" principle.
+     ===================================================================== */
+
+  /* Base register colors -- 6 reused/derived, 3 new */
+  --register-theory:    var(--br-deep);
+  --register-wisdom:    var(--gold);
+  --register-memoir:    var(--river);
+  --register-history:   color-mix(in srgb, var(--gold) 60%, var(--br-deep) 40%);
+  --register-empirical: color-mix(in srgb, var(--gold-text) 50%, var(--br-deep) 50%);
+  --register-practice:  color-mix(in srgb, var(--ink-2) 60%, var(--ink-4) 40%);
+  --register-novel:     #c9a85a;
+  --register-poetry:    #3a3573;
+  --register-place:     #5a6b3a;
+
+  /* Light variant -- 30% register color + 70% bg */
+  --register-theory-light:    color-mix(in srgb, var(--register-theory) 30%, var(--bg) 70%);
+  --register-wisdom-light:    color-mix(in srgb, var(--register-wisdom) 30%, var(--bg) 70%);
+  --register-empirical-light: color-mix(in srgb, var(--register-empirical) 30%, var(--bg) 70%);
+  --register-history-light:   color-mix(in srgb, var(--register-history) 30%, var(--bg) 70%);
+  --register-memoir-light:    color-mix(in srgb, var(--register-memoir) 30%, var(--bg) 70%);
+  --register-novel-light:     color-mix(in srgb, var(--register-novel) 30%, var(--bg) 70%);
+  --register-poetry-light:    color-mix(in srgb, var(--register-poetry) 30%, var(--bg) 70%);
+  --register-place-light:     color-mix(in srgb, var(--register-place) 30%, var(--bg) 70%);
+  --register-practice-light:  color-mix(in srgb, var(--register-practice) 30%, var(--bg) 70%);
+
+  /* Mid variant -- 65% register color + 35% bg */
+  --register-theory-mid:    color-mix(in srgb, var(--register-theory) 65%, var(--bg) 35%);
+  --register-wisdom-mid:    color-mix(in srgb, var(--register-wisdom) 65%, var(--bg) 35%);
+  --register-empirical-mid: color-mix(in srgb, var(--register-empirical) 65%, var(--bg) 35%);
+  --register-history-mid:   color-mix(in srgb, var(--register-history) 65%, var(--bg) 35%);
+  --register-memoir-mid:    color-mix(in srgb, var(--register-memoir) 65%, var(--bg) 35%);
+  --register-novel-mid:     color-mix(in srgb, var(--register-novel) 65%, var(--bg) 35%);
+  --register-poetry-mid:    color-mix(in srgb, var(--register-poetry) 65%, var(--bg) 35%);
+  --register-place-mid:     color-mix(in srgb, var(--register-place) 65%, var(--bg) 35%);
+  --register-practice-mid:  color-mix(in srgb, var(--register-practice) 65%, var(--bg) 35%);
+
+  /* Deep variant -- pure register color (Band 3 = 5+ notes) */
+  --register-theory-deep:    var(--register-theory);
+  --register-wisdom-deep:    var(--register-wisdom);
+  --register-empirical-deep: var(--register-empirical);
+  --register-history-deep:   var(--register-history);
+  --register-memoir-deep:    var(--register-memoir);
+  --register-novel-deep:     var(--register-novel);
+  --register-poetry-deep:    var(--register-poetry);
+  --register-place-deep:     var(--register-place);
+  --register-practice-deep:  var(--register-practice);
+
+  /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
 
      LIGHT DIRECTION (load-bearing): light rakes from the upper-left of

@@ -327,6 +327,27 @@ function deriveTraditionFromGenre(genre) {
   return 'unassigned';
 }
 
+// Stage 5.6 sub-step 2: SVG path strings for the 9 tradition glyphs.
+// Each path is drawn within a 24x24 viewBox and rendered as a single
+// filled shape (sub-step 3's renderRegisterGlyph wraps these in an
+// <svg> element with viewBox="0 0 24 24" and applies the register
+// color via fill). 'unassigned' deliberately maps to empty string —
+// books with tradition === 'unassigned' render no glyph at all,
+// per the §2.6 "empty space is a real signal" principle from
+// docs/knowledge-arcs/knowledge-arcs-visual-system.md.
+var REGISTER_SHAPE_PATHS = {
+  'theory':     'M4 4 L20 4 L20 20 L4 20 Z',
+  'wisdom':     'M12 2 L21 7 L21 17 L12 22 L3 17 L3 7 Z',
+  'empirical':  'M12 2 L22 9 L18 21 L6 21 L2 9 Z',
+  'history':    'M12 2 L22 12 L12 22 L2 12 Z',
+  'memoir':     'M12 2 A10 10 0 1 1 12 22 A10 10 0 1 1 12 2 Z',
+  'novel':      'M12 4 A10 7 0 1 1 12 18 A10 7 0 1 1 12 4 Z',
+  'poetry':     'M12 3 L22 21 L2 21 Z',
+  'place':      'M19 12 A8 8 0 1 1 8 4 A6 6 0 1 0 19 12 Z',
+  'practice':   'M7 4 L17 4 L21 20 L3 20 Z',
+  'unassigned': ''
+};
+
 // ensureBookFields — the chokepoint. Backfills any 5.6 sub-step 1
 // schema fields that are missing on a book record. Idempotent: if
 // the field is already present, no-op. Returns true if anything
