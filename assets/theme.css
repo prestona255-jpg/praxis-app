@@ -52,6 +52,11 @@
   --fs-body: 0.9375rem;
   --fs-display: 1.5rem;
 
+  /* Stage 5.4: arc-web spine + node tokens. */
+  --arc-web-spine-width: 2px;
+  --arc-web-node-cover-height: 100px;
+  --arc-web-node-gap: var(--sp-5);
+
   /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
 
