@@ -200,30 +200,6 @@
 // so any pre-existing entries are test fixtures only and tolerate
 // a missing title.
 //
-// Schema 1.11.0 adds two fields to state.books records:
-//
-//   tradition:          string  // one of nine values from TRADITIONS,
-//                               // plus 'unassigned' as a tenth case.
-//                               // Derived from book.genre via the
-//                               // THEME_TO_TRADITION map. The shelf
-//                               // glyph (5.6 sub-step 4) reads this
-//                               // field to pick its shape.
-//
-//   traditionOverride:  string | null
-//                               // User-set override from the edit-
-//                               // book modal (5.6 sub-step 5). When
-//                               // present, the renderer uses this
-//                               // instead of the genre-derived
-//                               // default. null until the user
-//                               // explicitly overrides.
-//
-// Schema 1.11.0 was introduced for Stage 5.6 sub-step 1 (shelf
-// register vocabulary). The field is named 'tradition' rather than
-// 'register' because 'register' is already in use on notebookEntries
-// (values 'journal' | 'marginalia'). See
-// docs/knowledge-arcs/shelf-and-field-decisions.md for the
-// nine-tradition design vocabulary and the theme→tradition map.
-//
 // Status-editing on book detail (status-selector flip, un-finish
 // render) is NOT in 3.7; it ships in 3.7c. Stage 3.7's only path
 // to status === 'finished' is the "I've finished this" button in
@@ -267,56 +243,6 @@ var state = {
   arcs:            {}
 };
 window.state = state;
-
-// Stage 5.6 sub-step 1: theme → tradition default map.
-// Reads from book.genre (a SHELF_THEMES value or '') and produces
-// a tradition string. The 15 SHELF_THEMES values from views.js map
-// to 8 of the 9 traditions; Poetry is theme-less and can only be
-// reached via user override. Empty / unrecognized genre → 'unassigned'.
-// See docs/knowledge-arcs/shelf-and-field-decisions.md §1.
-var THEME_TO_TRADITION = {
-  'Philosophy & wisdom':         'wisdom',
-  'Critical theory & pedagogy':  'theory',
-  'Power & systems':             'theory',
-  'Political economy & society': 'theory',
-  'Mind & behavior':             'empirical',
-  'History & memory':            'history',
-  'Liberation':                  'history',
-  'Love & connection':           'memoir',
-  'Grief & witness':             'memoir',
-  'Joy & wonder':                'memoir',
-  'Faith & meaning':             'wisdom',
-  'Place & belonging':           'place',
-  'Nature & ecology':            'place',
-  'Story & imagination':         'novel',
-  'Craft & practice':            'practice'
-};
-
-// Canonical tradition values. The renderer (sub-step 3+) reads
-// book.tradition against this list. 'unassigned' is the 10th value
-// and renders as no glyph (deliberate empty-corner signal).
-var TRADITIONS = [
-  'theory',
-  'wisdom',
-  'empirical',
-  'history',
-  'memoir',
-  'novel',
-  'poetry',
-  'place',
-  'practice',
-  'unassigned'
-];
-
-function deriveTraditionFromGenre(genre) {
-  if (typeof genre !== 'string' || genre === '') {
-    return 'unassigned';
-  }
-  if (typeof THEME_TO_TRADITION[genre] === 'string') {
-    return THEME_TO_TRADITION[genre];
-  }
-  return 'unassigned';
-}
 
 // Firestore Stage 2: dirty flag for the per-user book doc. The 10
 // book-mutation sites in views.js call markBooksDirty() after
@@ -544,14 +470,9 @@ function loadState() {
     // object is safe: it walks the same version chain a stored state
     // does (1.9.3 is the default), and migrate steps that are
     // version-stamp no-ops (e.g. 1.4.0 -> 1.5.0) are skipped because
-    // the default SCHEMA_VERSION default literal is the ANCHOR for
-    // fresh state, intentionally pinned at the earliest documented
-    // schema (1.9.3) so a brand-new user walks through EVERY
-    // migration step including the seed migration (e.g., the
-    // Pedagogy of Desire seed at 1.9.3 → 1.10.0). Do NOT bump this
-    // default literal when adding a new schema version. New
-    // migration steps land in the migrate() chain only. The chain
-    // does the work; the default literal stays the anchor.
+    // the default SCHEMA_VERSION starts at 1.9.3. Default literal
+    // SCHEMA_VERSION is intentionally NOT bumped to 1.10.0 -- a fresh
+    // default needs to walk THROUGH the seed step, not past it.
     state = migrate(state);
     return state;
   }
@@ -931,29 +852,6 @@ function migrate(stored) {
       };
     }
     stored.SCHEMA_VERSION = '1.10.0';
-  }
-  // 5.6 sub-step 1: state.books gains tradition + traditionOverride.
-  // tradition is computed from existing book.genre via the
-  // THEME_TO_TRADITION map; books with empty or non-canonical genre
-  // land on 'unassigned'. traditionOverride starts null (no override);
-  // the edit-book modal in 5.6 sub-step 5 sets it when the user
-  // chooses a different tradition than the genre default suggests.
-  if (stored.SCHEMA_VERSION === '1.10.0') {
-    if (stored.books) {
-      var bk;
-      for (bk in stored.books) {
-        if (stored.books.hasOwnProperty(bk)) {
-          var book = stored.books[bk];
-          if (typeof book.tradition !== 'string') {
-            book.tradition = deriveTraditionFromGenre(book.genre);
-          }
-          if (typeof book.traditionOverride === 'undefined') {
-            book.traditionOverride = null;
-          }
-        }
-      }
-    }
-    stored.SCHEMA_VERSION = '1.11.0';
   }
   return stored;
 }
