@@ -533,7 +533,7 @@ function renderNotebook() {
   for (arcKey in arcMap) {
     if (Object.prototype.hasOwnProperty.call(arcMap, arcKey)) {
       var arc = arcMap[arcKey];
-      if (arc && user && arc.userId === user.uid) {
+      if (arc && user && (arc.userId === user.uid || arc.userId === '__praxis_seed__')) {
         arcItems.push(arc);
       }
     }
@@ -3304,7 +3304,7 @@ function buildArcPickerPanel(opts) {
   for (arcKey in arcMap) {
     if (Object.prototype.hasOwnProperty.call(arcMap, arcKey)) {
       var arc = arcMap[arcKey];
-      if (arc && arc.userId === opts.user.uid) {
+      if (arc && (arc.userId === opts.user.uid || arc.userId === '__praxis_seed__')) {
         arcItems.push(arc);
       }
     }
