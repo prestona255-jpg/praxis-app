@@ -3501,6 +3501,59 @@ function renderNotebookEntry(entry) {
   });
   meta.appendChild(addToArcLink);
 
+  // Stage 5.7 sub-step 1: delete affordance. Click-to-confirm matches
+  // openArcDeleteConfirm precedent — explicit Cancel/Confirm clicks,
+  // no auto-revert, no click-outside dismiss. capturedId already in
+  // scope from privacy-toggle block above. Re-render dispatch mirrors
+  // togglePrivacy:3631–3635 verbatim (location.hash branch).
+  var deleteLink = document.createElement('a');
+  deleteLink.href = '#';
+  deleteLink.className = 'notebook-entry-delete';
+  deleteLink.textContent = 'delete';
+
+  var confirmLink = document.createElement('a');
+  confirmLink.href = '#';
+  confirmLink.className = 'notebook-entry-delete-confirm';
+  confirmLink.textContent = 'confirm delete';
+  confirmLink.style.display = 'none';
+
+  var cancelLink = document.createElement('a');
+  cancelLink.href = '#';
+  cancelLink.className = 'notebook-entry-delete-cancel';
+  cancelLink.textContent = 'cancel';
+  cancelLink.style.display = 'none';
+
+  deleteLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    deleteLink.style.display = 'none';
+    confirmLink.style.display = '';
+    cancelLink.style.display = '';
+  });
+
+  cancelLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    confirmLink.style.display = 'none';
+    cancelLink.style.display = 'none';
+    deleteLink.style.display = '';
+  });
+
+  confirmLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var ok = deleteEntry(capturedId);
+    if (ok) {
+      saveState();
+      if (location.hash.indexOf('#book/') === 0) {
+        renderBookDetail(state.currentBookId);
+      } else {
+        renderNotebook();
+      }
+    }
+  });
+
+  meta.appendChild(deleteLink);
+  meta.appendChild(confirmLink);
+  meta.appendChild(cancelLink);
+
   var bodyEl = document.createElement('div');
   bodyEl.className = 'notebook-entry-body';
   bodyEl.textContent = entry.body || '';

@@ -2407,6 +2407,42 @@
   text-decoration-color: var(--ink-2);
 }
 
+.notebook-entry-delete,
+.notebook-entry-delete-confirm,
+.notebook-entry-delete-cancel {
+  font-family: var(--font-body);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notebook-entry-delete {
+  color: var(--ink-3);
+  text-decoration-color: var(--ink-4);
+}
+.notebook-entry-delete:hover {
+  color: var(--ink-2);
+  text-decoration-color: var(--ink-3);
+}
+
+.notebook-entry-delete-confirm {
+  color: var(--gold);
+  text-decoration-color: var(--gold-light);
+}
+.notebook-entry-delete-confirm:hover {
+  color: var(--gold-text);
+  text-decoration-color: var(--gold);
+}
+
+.notebook-entry-delete-cancel {
+  color: var(--ink-3);
+  text-decoration-color: var(--ink-4);
+}
+.notebook-entry-delete-cancel:hover {
+  color: var(--ink-2);
+  text-decoration-color: var(--ink-3);
+}
+
 .notebook-entry-body {
   margin: 0;
   font-family: var(--font-body);

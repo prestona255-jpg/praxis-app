@@ -640,6 +640,34 @@ function deleteArc(arcId) {
   return true;
 }
 
+// Stage 5.7 sub-step 1: hard-delete a notebook entry.
+// Walks entry.arcIds back-reference to clean up only the arcs this
+// entry belongs to (O(entry-arc-count), not O(all-arcs)). For each
+// such arc, splice this entryId out of arc.entryIds. Reverse iter
+// so splicing doesn't skip indices. Then delete the entry itself.
+// Returns true on success, false if entry missing. Caller persists
+// (matches deleteArc convention).
+function deleteEntry(entryId) {
+  var entry = state.notebookEntries[entryId];
+  if (!entry) return false;
+  var i;
+  var j;
+  var arcIds = entry.arcIds || [];
+  for (i = 0; i < arcIds.length; i++) {
+    var arcId = arcIds[i];
+    if (!arcId) continue;
+    var arc = state.arcs[arcId];
+    if (!arc || !arc.entryIds || !arc.entryIds.length) continue;
+    for (j = arc.entryIds.length - 1; j >= 0; j--) {
+      if (arc.entryIds[j] && arc.entryIds[j].id === entryId) {
+        arc.entryIds.splice(j, 1);
+      }
+    }
+  }
+  delete state.notebookEntries[entryId];
+  return true;
+}
+
 function loadState() {
   var stored = ls('praxis_state', null);
   if (stored === null) {
