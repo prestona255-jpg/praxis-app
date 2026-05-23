@@ -1504,16 +1504,16 @@ function renderShelfBook(book) {
   // genre-derived tradition. Both fields are guaranteed non-null by
   // the ensureBookFields chokepoint from sub-step 1.
   //
-  // Engagement band is hard-coded 0 (light) in this sub-step. Sub-step 6
-  // computes the real band from notebook-entry counts and wires it
-  // here; the call signature stays identical.
+  // Engagement band derives from notebook-entry count via
+  // getEngagementBand (sub-step 5b). Bands 0/1/2 resolve to light/mid/
+  // deep saturation via renderRegisterGlyph from sub-step 3.
   //
   // renderRegisterGlyph returns empty string for 'unassigned' (the
   // §2.6 empty-corner signal), so the wrapper renders empty when a
   // book hasn't been assigned a tradition. Wrapper still mounts —
   // empty wrapper means no DOM cost and no visual artifact.
   var glyphTradition = book.traditionOverride || book.tradition;
-  var glyphHtml = renderRegisterGlyph(glyphTradition, 0);
+  var glyphHtml = renderRegisterGlyph(glyphTradition, getEngagementBand(book.id));
   if (glyphHtml !== '') {
     var glyphWrap = document.createElement('div');
     glyphWrap.className = 'register-glyph-wrap';

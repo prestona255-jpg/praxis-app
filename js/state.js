@@ -401,6 +401,32 @@ function ensureBookFieldsAll(booksMap) {
   return anyChanged;
 }
 
+// Stage 5.6 sub-step 5b: engagement band derivation for shelf glyph
+// saturation. Counts notebook entries that link to a given book and
+// returns band 0/1/2. Read-only — no writes, no caching. Re-runs per
+// shelf render. Multi-book entries count once toward each linked book.
+// Thresholds tunable here; deliberately low to avoid gamification.
+var BAND_1_MIN = 1;
+var BAND_2_MIN = 3;
+
+function getEngagementBand(bookId) {
+  if (!bookId) return 0;
+  if (!state.notebookEntries) return 0;
+  var count = 0;
+  var key;
+  var entry;
+  for (key in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(key)) continue;
+    entry = state.notebookEntries[key];
+    if (entry && entry.bookIds && entry.bookIds.indexOf(bookId) !== -1) {
+      count = count + 1;
+    }
+  }
+  if (count >= BAND_2_MIN) return 2;
+  if (count >= BAND_1_MIN) return 1;
+  return 0;
+}
+
 // Firestore Stage 2: dirty flag for the per-user book doc. The 10
 // book-mutation sites in views.js call markBooksDirty() after
 // mutating state.books / state.userBooks; saveState() consumes the
