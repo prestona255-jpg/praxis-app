@@ -223,13 +223,16 @@ function _arcRenderThreads(threads, posById, isSpareFocal) {
     var moreId = _arcMoreEngagedId(pa.book, pb.book, t.bookAId, t.bookBId);
     var mx = (pa.x + pb.x) / 2;
     var my = (pa.y + pb.y) / 2;
+    // Delta between segments. Spec doc says 0.4px; lifted to 1.0px after
+    // Stage 3 visual review showed 0.4px was below the perceptual threshold
+    // at scale 60. Re-evaluate if scale changes.
     var wA, wB;
     if (moreId === t.bookAId) {
-      wA = w + 0.4;
+      wA = w + 1.0;
       wB = w;
     } else {
       wA = w;
-      wB = w + 0.4;
+      wB = w + 1.0;
     }
     out = out
       + '<line x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y)
@@ -353,17 +356,41 @@ function _arcRenderLegend(arc, positions, width, height) {
     if (typeof nc === 'number' && nc >= 5) { hasRosette = true; }
   }
   var parts = [];
-  if (hasMarginalia) { parts.push('green dot · a note'); }
-  if (hasRosette) { parts.push('three-dot rosette · five or more notes'); }
-  if (hasThreads) { parts.push('green line · thread between books'); }
-  if (hasSpeculative) { parts.push('dashed thread · speculative'); }
-  if (hasYumi) { parts.push('faint dashes from upper-right · Yumi is noticing'); }
+  if (hasMarginalia)  { parts.push('green dot · note'); }
+  if (hasRosette)     { parts.push('rosette · five+ notes'); }
+  if (hasThreads)     { parts.push('green line · thread'); }
+  if (hasSpeculative) { parts.push('dashed · speculative'); }
+  if (hasYumi)        { parts.push('faint dashes · Yumi noticing'); }
   if (!parts.length) { return ''; }
-  var legend = parts.join('     ');
-  return '<text x="16" y="' + _arcR(height - 14)
-    + '" font-family="\'Cormorant Garamond\', Georgia, serif"'
-    + ' font-style="italic" font-size="11"'
-    + ' fill="var(--ink-2, #633806)" opacity="0.8">' + _arcEscapeXml(legend) + '</text>';
+
+  // Wrap into at most two lines so the legend never overflows the
+  // container. <=2 items fit on one line; >=3 items split balanced.
+  var lines = [];
+  if (parts.length <= 2) {
+    lines.push(parts.join('     '));
+  } else {
+    var split = Math.ceil(parts.length / 2);
+    var line1 = [];
+    var line2 = [];
+    for (i = 0; i < parts.length; i = i + 1) {
+      if (i < split) { line1.push(parts[i]); } else { line2.push(parts[i]); }
+    }
+    lines.push(line1.join('     '));
+    lines.push(line2.join('     '));
+  }
+
+  var out = '';
+  var lineHeight = 14;
+  var baseY = height - 12 - (lines.length - 1) * lineHeight;
+  for (i = 0; i < lines.length; i = i + 1) {
+    out = out
+      + '<text x="16" y="' + _arcR(baseY + i * lineHeight)
+      + '" font-family="\'Cormorant Garamond\', Georgia, serif"'
+      + ' font-style="italic" font-size="11"'
+      + ' fill="var(--ink-2, #633806)" opacity="0.8">'
+      + _arcEscapeXml(lines[i]) + '</text>';
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
