@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stage 2 — arc-scale tradition form renderer</title>
+<title>Stage 3 — arc constellation renderer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
@@ -19,8 +19,15 @@
   h1 {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-weight: 500;
-    font-size: 22px;
+    font-size: 24px;
     margin: 0 0 4px;
+    text-align: center;
+  }
+  h2 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    font-size: 19px;
+    margin: 48px 0 4px;
     text-align: center;
   }
   .sub {
@@ -31,6 +38,36 @@
     text-align: center;
     margin: 0 0 24px;
   }
+
+  /* Three-arc row */
+  .arc-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: center;
+    margin: 0 auto;
+    max-width: 1400px;
+  }
+  .arc-card {
+    width: 440px;
+  }
+  .arc-card-label {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #633806;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .arc-svg {
+    display: block;
+    width: 440px;
+    height: 440px;
+    background: var(--tradition-ground, #FAEEDA);
+    border: 0.5px solid rgba(133, 79, 11, 0.18);
+  }
+
+  /* 9x3 form grid */
   .grid {
     display: grid;
     grid-template-columns: 110px repeat(3, 110px);
@@ -41,7 +78,6 @@
     margin: 0 auto;
     max-width: 560px;
   }
-  .corner { }
   .col-head, .row-head {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: 13px;
@@ -70,7 +106,7 @@
     height: 100px;
     overflow: visible;
   }
-  .legend {
+  .footnote {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-style: italic;
     font-size: 12px;
@@ -82,20 +118,114 @@
 </head>
 <body>
 
-<h1>Stage 2 — arc-scale tradition form renderer</h1>
+<h1>Stage 3 — arc constellation renderer</h1>
+<p class="sub">three sample arcs &middot; spare focal, constellation, constellation stress</p>
+
+<div class="arc-row">
+  <div class="arc-card">
+    <div class="arc-card-label">Spare focal &middot; 3 books</div>
+    <svg class="arc-svg" id="arc-spare" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="arc-card">
+    <div class="arc-card-label">Constellation &middot; 7 books</div>
+    <svg class="arc-svg" id="arc-constellation" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="arc-card">
+    <div class="arc-card-label">Constellation stress &middot; 12 books</div>
+    <svg class="arc-svg" id="arc-stress" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<h2>Reference — 9&times;3 form grid</h2>
 <p class="sub">nine traditions &middot; three engagement bands &middot; scale 60</p>
 
 <div id="grid-host"></div>
 
-<p class="legend">
+<p class="footnote">
   Band 0: silhouette only, 35% opacity over wheat ground.
   Band 1: full grain + rings + core, no halo.
   Band 2: + halo + inner-light.
 </p>
 
 <script src="/js/tradition-forms-arc.js"></script>
+<script src="/js/arc-constellation.js"></script>
 <script>
 (function () {
+  // ---- Sample arc 1 -- spare focal (3 books) ----
+  var arcSpare = {
+    id: 'arc-sample-spare',
+    question: 'What does it mean to inherit?',
+    books: [
+      { id: 'sf-1', tradition: 'history',  band: 2, noteCount: 6 },
+      { id: 'sf-2', tradition: 'memoir',   band: 1, noteCount: 3 },
+      { id: 'sf-3', tradition: 'poetry',   band: 0, noteCount: 0 }
+    ],
+    threads: [
+      { bookAId: 'sf-1', bookBId: 'sf-2', strength: 4, daysSinceLastTouch: 2,  speculative: false },
+      { bookAId: 'sf-2', bookBId: 'sf-3', strength: 2, daysSinceLastTouch: 8,  speculative: true  }
+    ],
+    yumiNoticing: ['sf-1']
+  };
+
+  // ---- Sample arc 2 -- constellation (7 books) ----
+  var arcConstellation = {
+    id: 'arc-sample-constellation',
+    question: 'How do place and memory shape political theory?',
+    books: [
+      { id: 'c-1', tradition: 'theory',    band: 2, noteCount: 4 },
+      { id: 'c-2', tradition: 'place',     band: 1, noteCount: 2 },
+      { id: 'c-3', tradition: 'memoir',    band: 1, noteCount: 1 },
+      { id: 'c-4', tradition: 'history',   band: 2, noteCount: 5 },
+      { id: 'c-5', tradition: 'wisdom',    band: 0, noteCount: 0 },
+      { id: 'c-6', tradition: 'novel',     band: 1, noteCount: 3 },
+      { id: 'c-7', tradition: 'practice',  band: 2, noteCount: 2 }
+    ],
+    threads: [
+      { bookAId: 'c-1', bookBId: 'c-2', strength: 5, daysSinceLastTouch: 1,  speculative: false },
+      { bookAId: 'c-2', bookBId: 'c-4', strength: 3, daysSinceLastTouch: 7,  speculative: false },
+      { bookAId: 'c-1', bookBId: 'c-7', strength: 4, daysSinceLastTouch: 3,  speculative: false },
+      { bookAId: 'c-3', bookBId: 'c-6', strength: 2, daysSinceLastTouch: 14, speculative: true  },
+      { bookAId: 'c-4', bookBId: 'c-7', strength: 6, daysSinceLastTouch: 0,  speculative: false }
+    ],
+    yumiNoticing: ['c-1', 'c-4']
+  };
+
+  // ---- Sample arc 3 -- constellation stress (12 books) ----
+  var arcStress = {
+    id: 'arc-sample-stress',
+    question: 'A long inquiry into knowledge under conditions of doubt',
+    books: [
+      { id: 's-01', tradition: 'theory',    band: 2, noteCount: 7 },
+      { id: 's-02', tradition: 'wisdom',    band: 1, noteCount: 2 },
+      { id: 's-03', tradition: 'empirical', band: 0, noteCount: 0 },
+      { id: 's-04', tradition: 'history',   band: 2, noteCount: 5 },
+      { id: 's-05', tradition: 'memoir',    band: 1, noteCount: 3 },
+      { id: 's-06', tradition: 'novel',     band: 0, noteCount: 1 },
+      { id: 's-07', tradition: 'poetry',    band: 2, noteCount: 4 },
+      { id: 's-08', tradition: 'place',     band: 1, noteCount: 6 },
+      { id: 's-09', tradition: 'practice',  band: 2, noteCount: 2 },
+      { id: 's-10', tradition: 'theory',    band: 1, noteCount: 0 },
+      { id: 's-11', tradition: 'memoir',    band: 2, noteCount: 8 },
+      { id: 's-12', tradition: 'empirical', band: 2, noteCount: 1 }
+    ],
+    threads: [
+      { bookAId: 's-01', bookBId: 's-04', strength: 5, daysSinceLastTouch: 1,  speculative: false },
+      { bookAId: 's-01', bookBId: 's-07', strength: 3, daysSinceLastTouch: 4,  speculative: false },
+      { bookAId: 's-04', bookBId: 's-08', strength: 4, daysSinceLastTouch: 6,  speculative: false },
+      { bookAId: 's-05', bookBId: 's-11', strength: 6, daysSinceLastTouch: 0,  speculative: false },
+      { bookAId: 's-02', bookBId: 's-09', strength: 2, daysSinceLastTouch: 12, speculative: false },
+      { bookAId: 's-06', bookBId: 's-11', strength: 3, daysSinceLastTouch: 9,  speculative: true  },
+      { bookAId: 's-03', bookBId: 's-12', strength: 4, daysSinceLastTouch: 2,  speculative: false },
+      { bookAId: 's-07', bookBId: 's-10', strength: 1, daysSinceLastTouch: 22, speculative: true  }
+    ],
+    yumiNoticing: ['s-01', 's-05', 's-11']
+  };
+
+  renderArcConstellation(arcSpare,         document.getElementById('arc-spare'));
+  renderArcConstellation(arcConstellation, document.getElementById('arc-constellation'));
+  renderArcConstellation(arcStress,        document.getElementById('arc-stress'));
+
+  // ---- 9x3 reference grid (unchanged from Stage 2) ----
   var traditions = [
     { id: 'theory',    label: 'Theory',    sub: 'terracotta &middot; square' },
     { id: 'wisdom',    label: 'Wisdom',    sub: 'sunflower &middot; hexagon' },
@@ -109,33 +239,27 @@
   ];
 
   var host = document.getElementById('grid-host');
+  var html = '<div class="grid">';
+  html = html + '<div class="corner"></div>';
+  html = html + '<div class="col-head">Band 0<em>light fill</em></div>';
+  html = html + '<div class="col-head">Band 1<em>full pattern</em></div>';
+  html = html + '<div class="col-head">Band 2<em>+ halo + light</em></div>';
 
-  function buildGrid() {
-    var html = '<div class="grid">';
-    html = html + '<div class="corner"></div>';
-    html = html + '<div class="col-head">Band 0<em>light fill</em></div>';
-    html = html + '<div class="col-head">Band 1<em>full pattern</em></div>';
-    html = html + '<div class="col-head">Band 2<em>+ halo + light</em></div>';
-
-    var i;
-    for (i = 0; i < traditions.length; i = i + 1) {
-      var t = traditions[i];
-      html = html + '<div class="row-head">' + t.label + '<em>' + t.sub + '</em></div>';
-      var b;
-      for (b = 0; b < 3; b = b + 1) {
-        var inner = renderTraditionFormArc(t.id, b, 60);
-        // Center the form inside the 100x100 viewBox.
-        html = html + '<div class="cell"><svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">';
-        html = html + getTraditionFormsArcDefs();
-        html = html + inner;
-        html = html + '</svg></div>';
-      }
+  var i;
+  for (i = 0; i < traditions.length; i = i + 1) {
+    var t = traditions[i];
+    html = html + '<div class="row-head">' + t.label + '<em>' + t.sub + '</em></div>';
+    var b;
+    for (b = 0; b < 3; b = b + 1) {
+      var inner = renderTraditionFormArc(t.id, b, 60);
+      html = html + '<div class="cell"><svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">';
+      html = html + getTraditionFormsArcDefs();
+      html = html + inner;
+      html = html + '</svg></div>';
     }
-    html = html + '</div>';
-    host.innerHTML = html;
   }
-
-  buildGrid();
+  html = html + '</div>';
+  host.innerHTML = html;
 })();
 </script>
 
