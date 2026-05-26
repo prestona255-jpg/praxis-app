@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 2 — arc-scale tradition form renderer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+  body {
+    margin: 0;
+    padding: 32px;
+    background: var(--tradition-ground, #FAEEDA);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: #412402;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    color: #633806;
+    text-align: center;
+    margin: 0 0 24px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 110px repeat(3, 110px);
+    grid-auto-rows: 110px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin: 0 auto;
+    max-width: 560px;
+  }
+  .corner { }
+  .col-head, .row-head {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #412402;
+    text-align: center;
+  }
+  .col-head em, .row-head em {
+    display: block;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 11px;
+    color: #633806;
+    margin-top: 2px;
+  }
+  .row-head { text-align: right; padding-right: 8px; }
+  .cell {
+    width: 110px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell svg {
+    width: 100px;
+    height: 100px;
+    overflow: visible;
+  }
+  .legend {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #633806;
+    text-align: center;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Stage 2 — arc-scale tradition form renderer</h1>
+<p class="sub">nine traditions &middot; three engagement bands &middot; scale 60</p>
+
+<div id="grid-host"></div>
+
+<p class="legend">
+  Band 0: silhouette only, 35% opacity over wheat ground.
+  Band 1: full grain + rings + core, no halo.
+  Band 2: + halo + inner-light.
+</p>
+
+<script src="/js/tradition-forms-arc.js"></script>
+<script>
+(function () {
+  var traditions = [
+    { id: 'theory',    label: 'Theory',    sub: 'terracotta &middot; square' },
+    { id: 'wisdom',    label: 'Wisdom',    sub: 'sunflower &middot; hexagon' },
+    { id: 'empirical', label: 'Empirical', sub: 'peach &middot; pentagon' },
+    { id: 'history',   label: 'History',   sub: 'bronze &middot; diamond' },
+    { id: 'memoir',    label: 'Memoir',    sub: 'olive &middot; circle' },
+    { id: 'novel',     label: 'Novel',     sub: 'rose &middot; oval' },
+    { id: 'poetry',    label: 'Poetry',    sub: 'cobalt &middot; triangle' },
+    { id: 'place',     label: 'Place',     sub: 'spring green &middot; crescent' },
+    { id: 'practice',  label: 'Practice',  sub: 'wood &middot; trapezoid' }
+  ];
+
+  var host = document.getElementById('grid-host');
+
+  function buildGrid() {
+    var html = '<div class="grid">';
+    html = html + '<div class="corner"></div>';
+    html = html + '<div class="col-head">Band 0<em>light fill</em></div>';
+    html = html + '<div class="col-head">Band 1<em>full pattern</em></div>';
+    html = html + '<div class="col-head">Band 2<em>+ halo + light</em></div>';
+
+    var i;
+    for (i = 0; i < traditions.length; i = i + 1) {
+      var t = traditions[i];
+      html = html + '<div class="row-head">' + t.label + '<em>' + t.sub + '</em></div>';
+      var b;
+      for (b = 0; b < 3; b = b + 1) {
+        var inner = renderTraditionFormArc(t.id, b, 60);
+        // Center the form inside the 100x100 viewBox.
+        html = html + '<div class="cell"><svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">';
+        html = html + getTraditionFormsArcDefs();
+        html = html + inner;
+        html = html + '</svg></div>';
+      }
+    }
+    html = html + '</div>';
+    host.innerHTML = html;
+  }
+
+  buildGrid();
+})();
+</script>
+
+</body>
+</html>
