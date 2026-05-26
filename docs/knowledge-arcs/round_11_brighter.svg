@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1000" viewBox="0 0 1200 1000">
+  <title>Round 11 — brighter palette with yellow and peach</title>
+  <desc>All nine traditions, same geometric forms, brighter saturations across the board, with yellow and peach added to the palette.</desc>
+  <defs>
+    <pattern id="ground11" x="0" y="0" width="55" height="55" patternUnits="userSpaceOnUse">
+      <rect width="55" height="55" fill="#FAEEDA"/>
+      <path d="M5 8 L7 6 M15 22 L17 20 M28 12 L30 10 M35 30 L37 28 M10 35 L12 33 M22 5 L24 3 M3 25 L5 23 M32 38 L34 36 M42 18 L44 16 M45 42 L47 40 M50 8 L52 6" stroke="#854F0B" stroke-width="0.5" stroke-opacity="0.22" stroke-linecap="round"/>
+      <circle cx="18" cy="14" r="0.6" fill="#BA7517" fill-opacity="0.28"/>
+      <circle cx="33" cy="22" r="0.5" fill="#BA7517" fill-opacity="0.25"/>
+      <circle cx="8" cy="30" r="0.6" fill="#BA7517" fill-opacity="0.28"/>
+      <circle cx="25" cy="34" r="0.5" fill="#BA7517" fill-opacity="0.22"/>
+      <circle cx="42" cy="42" r="0.5" fill="#BA7517" fill-opacity="0.25"/>
+    </pattern>
+    <!-- 1. THEORY — vibrant terracotta -->
+    <pattern id="t1b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#D67248"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#7A3A18" stroke-width="0.7" fill="none" opacity="0.65"/></pattern>
+    <radialGradient id="h1b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#F0A88A" stop-opacity="0"/><stop offset="78%" stop-color="#F0A88A" stop-opacity="0.7"/><stop offset="100%" stop-color="#D67248" stop-opacity="0"/></radialGradient>
+    <!-- 2. WISDOM — bright sunflower yellow (NEW) -->
+    <pattern id="t2b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#F0C82A"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#8A6F0A" stroke-width="0.7" fill="none" opacity="0.6"/></pattern>
+    <radialGradient id="h2b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#F8E078" stop-opacity="0"/><stop offset="78%" stop-color="#F8E078" stop-opacity="0.75"/><stop offset="100%" stop-color="#F0C82A" stop-opacity="0"/></radialGradient>
+    <!-- 3. EMPIRICAL — bright peach (NEW) -->
+    <pattern id="t3b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#F0A075"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#8A4825" stroke-width="0.7" fill="none" opacity="0.6"/></pattern>
+    <radialGradient id="h3b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#F8C8AA" stop-opacity="0"/><stop offset="78%" stop-color="#F8C8AA" stop-opacity="0.75"/><stop offset="100%" stop-color="#F0A075" stop-opacity="0"/></radialGradient>
+    <!-- 4. HISTORY — bright bronze/copper -->
+    <pattern id="t4b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#C8842A"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#6A3F08" stroke-width="0.7" fill="none" opacity="0.65"/></pattern>
+    <radialGradient id="h4b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#E8B068" stop-opacity="0"/><stop offset="78%" stop-color="#E8B068" stop-opacity="0.7"/><stop offset="100%" stop-color="#C8842A" stop-opacity="0"/></radialGradient>
+    <!-- 5. MEMOIR — brighter olive (more chartreuse-leaning) -->
+    <pattern id="t5b" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#9AAA48"/><path d="M0 5 Q11 2 22 5 M0 11 Q11 8 22 11 M0 17 Q11 14 22 17" stroke="#5A6520" stroke-width="0.7" fill="none" opacity="0.65"/></pattern>
+    <radialGradient id="h5b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#C5D080" stop-opacity="0"/><stop offset="78%" stop-color="#C5D080" stop-opacity="0.65"/><stop offset="100%" stop-color="#9AAA48" stop-opacity="0"/></radialGradient>
+    <!-- 6. NOVEL — vibrant rose pink -->
+    <pattern id="t6b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#E07A98"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#8A3258" stroke-width="0.7" fill="none" opacity="0.6"/></pattern>
+    <radialGradient id="h6b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#F5BACE" stop-opacity="0"/><stop offset="78%" stop-color="#F5BACE" stop-opacity="0.75"/><stop offset="100%" stop-color="#E07A98" stop-opacity="0"/></radialGradient>
+    <!-- 7. POETRY — vibrant cobalt/indigo (brighter blue) -->
+    <pattern id="t7b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#4858B8"/><circle cx="5" cy="4" r="0.6" fill="#F8EFC8" opacity="0.7"/><circle cx="15" cy="12" r="0.5" fill="#F8EFC8" opacity="0.6"/><circle cx="9" cy="17" r="0.5" fill="#F8EFC8" opacity="0.6"/></pattern>
+    <radialGradient id="h7b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#8590D8" stop-opacity="0"/><stop offset="78%" stop-color="#8590D8" stop-opacity="0.7"/><stop offset="100%" stop-color="#4858B8" stop-opacity="0"/></radialGradient>
+    <!-- 8. PLACE — vibrant tea green (brighter, more spring-leaning) -->
+    <pattern id="t8b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#5FB082"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#2A6248" stroke-width="0.7" fill="none" opacity="0.65"/></pattern>
+    <radialGradient id="h8b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#98D4B0" stop-opacity="0"/><stop offset="78%" stop-color="#98D4B0" stop-opacity="0.7"/><stop offset="100%" stop-color="#5FB082" stop-opacity="0"/></radialGradient>
+    <!-- 9. PRACTICE — warmer brown (lifted, less paper-ink, more wood) -->
+    <pattern id="t9b" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#8A5A38"/><path d="M0 5 Q10 3 20 5 M0 10 Q10 8 20 10 M0 15 Q10 13 20 15" stroke="#4A2A10" stroke-width="0.7" fill="none" opacity="0.7"/></pattern>
+    <radialGradient id="h9b" cx="50%" cy="50%" r="50%"><stop offset="55%" stop-color="#B8896C" stop-opacity="0"/><stop offset="78%" stop-color="#B8896C" stop-opacity="0.65"/><stop offset="100%" stop-color="#8A5A38" stop-opacity="0"/></radialGradient>
+    <radialGradient id="innerL11" cx="50%" cy="50%" r="30%">
+      <stop offset="0%" stop-color="#FFF8E7" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#FFF8E7" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="csq11"><rect x="-55" y="-55" width="110" height="110" rx="8"/></clipPath>
+    <clipPath id="chx11"><polygon points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30"/></clipPath>
+    <clipPath id="cpn11"><polygon points="0,-60 57,-18 35,55 -35,55 -57,-18"/></clipPath>
+    <clipPath id="cdi11"><polygon points="0,-65 55,0 0,65 -55,0"/></clipPath>
+    <clipPath id="cci11"><circle cx="0" cy="0" r="58"/></clipPath>
+    <clipPath id="cov11"><ellipse cx="0" cy="0" rx="60" ry="52"/></clipPath>
+    <clipPath id="ctr11"><polygon points="0,-65 56,38 -56,38"/></clipPath>
+    <clipPath id="ccr11"><path d="M-50 -35 Q-15 -55 30 -45 Q40 -10 25 25 Q5 50 -25 40 Q-55 15 -50 -35 Z"/></clipPath>
+    <clipPath id="ctp11"><polygon points="-38,-50 38,-50 55,50 -55,50"/></clipPath>
+  </defs>
+  <rect width="1200" height="1000" fill="#F5F1E8"/>
+  <text x="600" y="50" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#412402">Round 11 — brighter, with yellow and peach</text>
+  <text x="600" y="78" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#633806" font-style="italic">all nine lifted in saturation · sunflower yellow for Wisdom · peach for Empirical</text>
+  <rect x="50" y="120" width="1100" height="720" fill="url(#ground11)" stroke="#D4972A" stroke-width="0.4" stroke-opacity="0.5"/>
+  <!-- ROW 1: Theory, Wisdom, Empirical -->
+  <g transform="translate(225, 245)">
+    <rect x="-70" y="-70" width="140" height="140" rx="14" fill="url(#h1b)"/>
+    <g clip-path="url(#csq11)"><rect x="-60" y="-60" width="120" height="120" fill="url(#t1b)"/><circle cx="0" cy="0" r="40" fill="none" stroke="#3A1A05" stroke-width="0.7" opacity="0.6"/><circle cx="0" cy="0" r="24" fill="none" stroke="#3A1A05" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="0" r="12" fill="#5C2A0A" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="11" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="225" y="335" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Theory</text>
+  <text x="225" y="352" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">terracotta · square</text>
+  <g transform="translate(600, 245)">
+    <polygon points="0,-70 60,-35 60,35 0,70 -60,35 -60,-35" fill="url(#h2b)"/>
+    <g clip-path="url(#chx11)"><rect x="-60" y="-60" width="120" height="120" fill="url(#t2b)"/><circle cx="0" cy="0" r="40" fill="none" stroke="#6A5A0A" stroke-width="0.7" opacity="0.6"/><circle cx="0" cy="0" r="24" fill="none" stroke="#6A5A0A" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="0" r="12" fill="#8A6F0A" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="11" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="600" y="335" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Wisdom</text>
+  <text x="600" y="352" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">sunflower yellow · hexagon</text>
+  <g transform="translate(975, 245)">
+    <polygon points="0,-72 68,-22 42,66 -42,66 -68,-22" fill="url(#h3b)"/>
+    <g clip-path="url(#cpn11)"><rect x="-65" y="-65" width="130" height="130" fill="url(#t3b)"/><circle cx="0" cy="0" r="36" fill="none" stroke="#5A2810" stroke-width="0.7" opacity="0.6"/><circle cx="0" cy="0" r="22" fill="none" stroke="#5A2810" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="0" r="11" fill="#8A4830" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="10" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="975" y="335" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Empirical</text>
+  <text x="975" y="352" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">peach · pentagon</text>
+  <!-- ROW 2: History, Memoir, Novel -->
+  <g transform="translate(225, 485)">
+    <polygon points="0,-75 65,0 0,75 -65,0" fill="url(#h4b)"/>
+    <g clip-path="url(#cdi11)"><rect x="-60" y="-65" width="120" height="130" fill="url(#t4b)"/><circle cx="0" cy="0" r="34" fill="none" stroke="#3A2008" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="0" r="20" fill="none" stroke="#3A2008" stroke-width="0.7" opacity="0.7"/><circle cx="0" cy="0" r="10" fill="#6A3F08" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="10" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="225" y="575" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">History</text>
+  <text x="225" y="592" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">bronze · diamond</text>
+  <g transform="translate(600, 485)">
+    <circle cx="0" cy="0" r="68" fill="url(#h5b)"/>
+    <g clip-path="url(#cci11)"><rect x="-60" y="-60" width="120" height="120" fill="url(#t5b)"/><circle cx="0" cy="0" r="40" fill="none" stroke="#3A4520" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="0" r="24" fill="none" stroke="#3A4520" stroke-width="0.7" opacity="0.7"/><circle cx="0" cy="0" r="12" fill="#5A6520" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="11" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="600" y="575" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Memoir</text>
+  <text x="600" y="592" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">olive · circle</text>
+  <g transform="translate(975, 485)">
+    <ellipse cx="0" cy="0" rx="72" ry="62" fill="url(#h6b)"/>
+    <g clip-path="url(#cov11)"><rect x="-65" y="-55" width="130" height="110" fill="url(#t6b)"/><ellipse cx="0" cy="0" rx="40" ry="32" fill="none" stroke="#5A2538" stroke-width="0.7" opacity="0.65"/><ellipse cx="0" cy="0" rx="22" ry="18" fill="none" stroke="#5A2538" stroke-width="0.7" opacity="0.7"/><ellipse cx="0" cy="0" rx="10" ry="8" fill="#8A3258" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="10" ry="8" fill="url(#innerL11)"/>
+  </g>
+  <text x="975" y="575" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Novel</text>
+  <text x="975" y="592" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">rose pink · oval</text>
+  <!-- ROW 3: Poetry, Place, Practice -->
+  <g transform="translate(225, 725)">
+    <polygon points="0,-75 64,42 -64,42" fill="url(#h7b)"/>
+    <g clip-path="url(#ctr11)"><rect x="-60" y="-70" width="120" height="120" fill="url(#t7b)"/><circle cx="0" cy="3" r="30" fill="none" stroke="#1A2280" stroke-width="0.7" opacity="0.65"/><circle cx="0" cy="3" r="18" fill="none" stroke="#1A2280" stroke-width="0.7" opacity="0.7"/><circle cx="0" cy="3" r="9" fill="#1A2280" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="9" ry="8" fill="url(#innerL11)"/>
+  </g>
+  <text x="225" y="815" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Poetry</text>
+  <text x="225" y="832" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">cobalt · triangle</text>
+  <g transform="translate(600, 725)">
+    <path d="M-58 -42 Q-18 -62 35 -52 Q47 -12 30 30 Q8 58 -28 47 Q-63 18 -58 -42 Z" fill="url(#h8b)"/>
+    <g clip-path="url(#ccr11)"><rect x="-60" y="-60" width="120" height="120" fill="url(#t8b)"/><ellipse cx="-10" cy="0" rx="32" ry="28" fill="none" stroke="#1A4030" stroke-width="0.7" opacity="0.65"/><ellipse cx="-10" cy="0" rx="18" ry="16" fill="none" stroke="#1A4030" stroke-width="0.7" opacity="0.7"/><ellipse cx="-10" cy="0" rx="9" ry="8" fill="#2A6248" opacity="0.85"/></g>
+    <ellipse cx="-10" cy="-3" rx="9" ry="7" fill="url(#innerL11)"/>
+  </g>
+  <text x="600" y="815" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Place</text>
+  <text x="600" y="832" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">spring green · crescent</text>
+  <g transform="translate(975, 725)">
+    <polygon points="-46,-60 46,-60 64,60 -64,60" fill="url(#h9b)"/>
+    <g clip-path="url(#ctp11)"><rect x="-65" y="-55" width="130" height="110" fill="url(#t9b)"/><circle cx="0" cy="0" r="35" fill="none" stroke="#2A1A08" stroke-width="0.7" opacity="0.7"/><circle cx="0" cy="0" r="21" fill="none" stroke="#2A1A08" stroke-width="0.7" opacity="0.75"/><circle cx="0" cy="0" r="11" fill="#4A2A10" opacity="0.85"/></g>
+    <ellipse cx="0" cy="-3" rx="11" ry="9" fill="url(#innerL11)"/>
+  </g>
+  <text x="975" y="815" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">Practice</text>
+  <text x="975" y="832" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#633806">warm wood · trapezoid</text>
+  <!-- principles -->
+  <g transform="translate(80, 890)">
+    <text x="0" y="0" font-family="Georgia, serif" font-size="13" font-weight="500" fill="#412402">What changed</text>
+    <text x="0" y="22" font-family="Georgia, serif" font-size="12" fill="#633806">• All nine colors lifted in saturation. The library now sings rather than whispers.</text>
+    <text x="0" y="40" font-family="Georgia, serif" font-size="12" fill="#633806">• Wisdom: sunflower yellow (was cream) — vibrant, generous, the sun-color the project asked for.</text>
+    <text x="0" y="58" font-family="Georgia, serif" font-size="12" fill="#633806">• Empirical: peach (was clay pink) — warmer, more sun-on-stone, sits beautifully next to terracotta.</text>
+    <text x="0" y="76" font-family="Georgia, serif" font-size="12" fill="#633806">• Poetry: cobalt (was deep indigo), Place: spring green, Practice: warmer wood brown.</text>
+    <text x="0" y="94" font-family="Georgia, serif" font-size="12" fill="#633806">• Halos lifted to match — softer, brighter, more luminous against wheat ground.</text>
+  </g>
+</svg>
