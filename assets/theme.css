@@ -129,6 +129,22 @@
   --register-place-deep:     var(--register-place);
   --register-practice-deep:  var(--register-practice);
 
+  /* Arc constellation tokens — additive, not replacing --register-* */
+  --tradition-ground: #FAEEDA;
+  --tradition-inner-light: #FFF8E7;
+  --thread-color: #1D9E75;
+  --marginalia-color: #1D9E75;
+  --arc-question-glow: #854F0B;
+  --tradition-theory-halo: #F0A88A;
+  --tradition-wisdom-halo: #F8E078;
+  --tradition-empirical-halo: #F8C8AA;
+  --tradition-history-halo: #E8B068;
+  --tradition-memoir-halo: #C5D080;
+  --tradition-novel-halo: #F5BACE;
+  --tradition-poetry-halo: #8590D8;
+  --tradition-place-halo: #98D4B0;
+  --tradition-practice-halo: #B8896C;
+
   /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
 
