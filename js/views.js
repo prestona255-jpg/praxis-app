@@ -2998,19 +2998,29 @@ function renderArcDetail(arcId) {
   if (viewMode === 'web') {
     var webContainer = document.createElement('div');
     webContainer.className = 'arc-detail-web-view';
-    // Stage 5.4 Stage 2a TEMP: one-node verification mount. Stage 2b
-    // removes this and adds the spine + all member books in
-    // chronological order. Renders only the first member to verify
-    // the primitive in isolation. Book lookup uses the inline
-    // state.books pattern (mirrors views.js:2860 in the list branch);
-    // there is no getBookById helper in the codebase.
-    if (arc.bookIds && arc.bookIds.length > 0) {
-      var firstBookId = arc.bookIds[0].id;
-      var firstBook = state.books && state.books[firstBookId];
-      if (firstBook) {
-        var firstNode = renderArcWebBookNode(firstBook);
-        webContainer.appendChild(firstNode);
-      }
+    // Stage 7.1B: wire the constellation renderer in place of the
+    // Stage 5.4 Stage 2a single-book temp. Container stays a <div>
+    // (keeps the wheat-field ::before backdrop intact); the renderer
+    // gets an inner <svg viewBox="0 0 600 500"> created via the SVG
+    // namespace (document.createElement('svg') would produce an HTML
+    // element with no SVG semantics). Defensive guard fails soft to a
+    // text notice if either script tag failed to load -- both files
+    // are now in APP_SHELL (sw.js 'praxis-v3.12-a') so this branch
+    // should be unreachable in steady state, but the SW can serve
+    // mid-deploy mixed states.
+    if (typeof window.renderArcConstellation !== 'function') {
+      var unavailable = document.createElement('p');
+      unavailable.className = 'arc-detail-web-placeholder';
+      unavailable.textContent = 'Constellation renderer unavailable.';
+      webContainer.appendChild(unavailable);
+    } else {
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 600 500');
+      svg.setAttribute('xmlns', SVG_NS);
+      webContainer.appendChild(svg);
+      var arcData = _arcDetailBuildConstellationData(arc);
+      window.renderArcConstellation(arcData, svg);
     }
     wrap.appendChild(webContainer);
   } else {

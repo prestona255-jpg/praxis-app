@@ -3212,6 +3212,15 @@
   opacity: var(--field-presence, 1);
 }
 
+/* Stage 7.1B: inner constellation SVG fills the container width and
+   scales by intrinsic 600x500 viewBox aspect ratio. display:block
+   removes the default inline baseline gap. */
+.arc-detail-web-view svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* Stage 5.4 Stage 1f: transitional placeholder line shown inside the
    empty web container until Stage 2 draws the spine. Mirrors the
    .arc-detail-empty-body precedent (components.css:2580-2588): same
