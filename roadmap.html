@@ -4346,38 +4346,578 @@ var STAGES = [
     ]
   },
 
-  // ----- PHASE 2 -----
+
+
+  // ----- STAGE 7 -----
   {
     id: 's7',
-    num: 'Phase 2',
-    name: 'The Social Layer',
-    purpose: 'Profiles, published arcs, book pages, arc completion, author pages, and connection mechanics. Already specced in living-document Sections 7-9. Phase 2 is when Praxis grows from a personal practice into a multi-user fabric — but the personal workspace must hold its own weight first.',
+    num: 'Stage 7',
+    name: 'Books view of arc',
+    purpose: 'Wire the constellation renderer (built in Stage 5.4 and test-arc-constellation.html) into the live arc-detail web view. The constellation becomes the books view of an arc, one of two views that arcs will have once Stage 9 ships the theory view. After Stage 7 ships, opening any arc and toggling to Web shows a real constellation of the arcs books arranged by deterministic layout, with marginalia dots, threads (stubbed empty for v1), and gravity-as-question at center.',
+    stageStatus: 'not-started',
+    active: true,
+    summary: 'Two sub-stages. 7.1 adds the script tags to index.html, writes the data adapter that translates real arc state into the renderers expected shape, and replaces the Stage 5.4 Stage 2a single-book temp in renderArcDetail with the real renderArcConstellation call. 7.2 tests against a real seeded arc (Pedagogy of Desire, which has 11 real books in state after the visual handoff and sub-theory writing exercise) and identifies any adjustments needed before Stage 8 interactivity lands.',
+    nonGoals: [
+      'No hover or click interactivity yet (Stage 8 owns this)',
+      'No theory view yet (Stage 9)',
+      'No sub-theory data model yet (Stage 9.1)',
+      'No threads or yumiNoticing populated from real data (stubbed empty for v1; threads return in Stage 9 once sub-theories exist to derive them from)',
+      'No changes to the test-arc-constellation.html test page (it stays as the standalone reference)',
+      'No changes to the shelf, the book detail page, or any 5.6 shipped work'
+    ],
+    dependencies: 'Stage 5.4 constellation renderer shipped to test-arc-constellation.html. Stage 5.6 register glyph and tradition data model shipped. arc-constellation.js and tradition-forms-arc.js exist in js/ and parse cleanly. arc-detail web view exists in renderArcDetail (views.js:2818) with a List and Web toggle in place.',
+    substages: [
+      {
+        id: 's7-1',
+        num: '7.1',
+        name: 'Wire constellation into arc-detail web view',
+        depConfirm: 'arc-constellation.js and tradition-forms-arc.js exist in js/. renderArcDetail (views.js:2818) has the List and Web toggle. The Stage 5.4 Stage 2a single-book temp is at views.js:2960-2976 and renders one book via renderArcWebBookNode.',
+        purpose: 'Replace the Stage 5.4 Stage 2a single-book verification temp with a real call to renderArcConstellation. Add the two missing script tags to index.html so the renderer is loaded into the live shell. Write the adapter function that translates from real arc data shape (bookIds array of id+addedAt, entryIds array) into the renderers expected shape (books, threads, yumiNoticing, question).',
+        scope: [
+          'Add two script tags to index.html: one for tradition-forms-arc.js and one for arc-constellation.js. Load order: after state.js, before views.js. Confirm the existing script tag order in index.html and insert at the correct position.',
+          'Write _arcDetailBuildConstellationData(arc) in views.js (near renderArcDetail). Input: real arc object from state.arcs[arcId]. Output: object matching the renderer contract (id, question, books, threads, yumiNoticing).',
+          'Adapter logic for books: iterate arc.bookIds, look up each book in state.books, build (id, tradition, band, noteCount). tradition uses traditionOverride if set, otherwise tradition. band comes from getEngagementBand(bookId). noteCount comes from counting linked notebook entries. Skip books not in state.books (defensive, log and continue).',
+          'Adapter logic for threads: empty array for v1. Threads return in Stage 9 once sub-theories exist to derive them from.',
+          'Adapter logic for yumiNoticing: empty array for v1. Populated in Stage 11 when Yumi noticing state becomes a real data layer.',
+          'Adapter logic for question: arc.title for v1 (becomes arc.question in Stage 9 when the data model gains a dedicated question field separate from title).',
+          'Replace lines 2960-2976 (the single-book temp) with: create an SVG element with id arc-constellation-svg, append it to webContainer, then call renderArcConstellation(_arcDetailBuildConstellationData(arc), svg). Wrap in defensive check that the two renderer functions exist on window (fail-soft to a constellation unavailable message if not).',
+          'Cache version bump in sw.js (visible-UI change rule).',
+          'Test: deploy, open Pedagogy of Desire seed arc, toggle to Web view, confirm constellation renders with all 11 books from the seed.'
+        ],
+        nonGoals: [
+          'No interactivity (Stage 8 owns hover and click)',
+          'No styling changes to webContainer or the toolbar',
+          'No removal of renderArcWebBookNode (it stays in views.js as dead code until a later cleanup pass; deleting it is out of scope for Stage 7)',
+          'No changes to renderArcDetail outside the web-view branch',
+          'No new CSS (the constellation has its own internal styling via the SVG defs)'
+        ]
+      },
+      {
+        id: 's7-2',
+        num: '7.2',
+        name: 'Test books view with real arc and adjust',
+        depConfirm: '7.1 Shipped. Constellation renders inside arc-detail web view on the live deploy. Pedagogy of Desire seed arc loads with all 11 books in books view.',
+        purpose: 'Sit with the books view as a working surface, not a test page. Open the Pedagogy of Desire arc with its real 11 books and the questions actually being thought about. Identify what is missing, what reads wrong, what wants to change before interactivity (Stage 8) and theory view (Stage 9) build on top.',
+        scope: [
+          'Open the live arc on desktop. Spend at least 20 minutes with it. Notice what is missing. Is the layout balanced? Do the engagement bands read truly against real books? Do the marginalia dots cluster well?',
+          'Open the same arc on mobile (Praxis runs as PWA). Notice what is missing or broken at mobile width. Does the constellation scale? Does the legend wrap?',
+          'Document findings as a checklist in docs/knowledge-arcs/STAGE_7_FIELD_NOTES.md. Each finding is one bullet with a one-line description of the issue and a suggested fix or defer-to-later-stage tag.',
+          'If any finding is a blocker (broken render, console error, illegible at any breakpoint), file it as a hotfix back into Stage 7.1. Do not advance to Stage 8 with broken visuals.',
+          'If findings are polish items (could be better but not broken), they roll forward as polish backlog items in docs/knowledge-arcs/ARC_POLISH_BACKLOG.md (which already exists from the May 24 work).',
+          'No code changes in this sub-stage unless 7.1 produced a regression. The work is observation and documentation.'
+        ],
+        nonGoals: [
+          'No new features, no design changes, no interactivity additions',
+          'No formal user testing with other users (Stage 7 ships internally first, broader testing is Phase 2)',
+          'No changes to the renderer based on aesthetic preference alone, only changes that fix demonstrable problems',
+          'No mobile-specific UX work yet (that lands in Stage 6 onboarding or a later mobile pass)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 8 -----
+  {
+    id: 's8',
+    num: 'Stage 8',
+    name: 'Constellation interactivity layer',
+    purpose: 'The static constellation gains an interaction layer that lets a reader navigate from the visual surface into the underlying data. Hover any book to see its title and engagement, click to open book detail, hover threads and marginalia to see what they encode, hover the Yumi cluster to see what she is currently noticing. The constellation stops being a picture and becomes a navigable surface.',
     stageStatus: 'not-started',
     active: false,
-    skeleton: true,
-    skeletonReason: 'Phase 2 needs a multi-user backend; it gets its own infrastructure pre-flight before any sub-stage. Detailed sub-stages depend on backend choices (Firestore extension vs. dedicated backend), commercial model decisions, and the post-beta learning from Phase 1 testers.',
-    summary: 'Skeleton phase. The social layer is fully specced in living-document Sections 7-9 — profiles, published arcs, book pages, arc completion, connection mechanics, author pages. Detail intentionally deferred until Phase 1 testers surface what the personal practice actually needs the social layer to hold.',
+    summary: 'One sub-stage covering all interaction work. The constellation already exposes its semantic structure through deterministic positioning. The interactivity layer adds tooltip surfaces, click handlers, focus management for keyboard users, and prefers-reduced-motion respect. No new SVG elements, no layout changes. The static surface stays exactly as Stage 7 ships it. Interactivity layers on top via event listeners attached after render.',
     nonGoals: [
-      'No sub-stage detail until the backend foundation pre-flight is run',
-      'No commitment to a specific backend (Firestore-extended vs. dedicated server) until the local-first-to-multi-user transition is designed',
-      'No commerce surfaces beyond the v1 Bookshop affiliate (C5 from design system v2) until the commercial model center-of-gravity is decided'
+      'No drag-to-rearrange books on the surface (constellation layout stays deterministic from book IDs; moving a book is a hard data semantic that arrives much later if at all)',
+      'No multi-select or batch operations on books from the constellation',
+      'No inline editing of book metadata from the constellation (book detail page handles edits)',
+      'No animation on layout changes (books appearing or disappearing as the arc grows is a static re-render, not a transition)',
+      'No mobile-specific touch gestures beyond tap (long-press, pinch, etc. deferred)',
+      'No sub-theory interactions yet (those land in Stage 9 when sub-theories exist as a data type)'
     ],
-    dependencies: 'Stage 4 (Phase 1 testing readiness), Stage 5 (Material Build-Out), and Stage 6 (Onboarding & Utility) all Shipped. Phase 1 testers\' feedback synthesized into a Phase 2 brief before any sub-stage opens.',
-    tentativeSubstages: [
-      { num: '7.1', name: 'Backend foundation — multi-user data model, auth scopes, the local-first-to-multi-user transition' },
-      { num: '7.2', name: 'Profiles + viewing another reader\'s library / arcs (read-only first)' },
-      { num: '7.3', name: 'Published arcs — publish, browse, fork mechanics' },
-      { num: '7.4', name: 'Book pages — the book as a surface other readers can land on' },
-      { num: '7.5', name: 'Arc completion — Yumi-scaffolded summative review' },
-      { num: '7.6', name: 'Connection — comment / follow / save, consent-based throughout' },
-      { num: '7.7', name: 'Author pages + discovery' }
+    dependencies: 'Stage 7 Shipped. Constellation renders in arc-detail web view. Real books, real engagement bands, real marginalia counts visible.',
+    substages: [
+      {
+        id: 's8-1',
+        num: '8.1',
+        name: 'Hover, click, and keyboard interactions',
+        depConfirm: 'Stage 7.1 Shipped. arc-constellation-svg element exists inside webContainer with rendered book groups, threads, dots, and Yumi cluster. Each book group has a deterministic data-book-id attribute (or can be given one in this sub-stage).',
+        purpose: 'Make every interactive element in the constellation respond to hover, click, and keyboard focus with appropriate feedback. The goal is that a reader can move from the visual constellation into deeper engagement with any element without thinking about how to get there.',
+        scope: [
+          'Add data-book-id attribute to each book group in the renderer output. Confirms which book the reader is interacting with on hover or click. (May require small edit to arc-constellation.js to emit the attribute. If so, scope contained to that one change.)',
+          'Hover on book glyph: wheat-toned tooltip surfaces title (Cormorant Garamond italic 14px), author (DM Sans 12px secondary), engagement band as plain language (Lightly read, Read with notes, Worked through), note count if greater than zero. Tooltip background var --parchment-2, edge var --border, shadow var --shadow-2, position offset 12px from cursor, follows cursor on mousemove within the book glyph hit area.',
+          'Click on book glyph: navigates to the books detail route via location.hash. No new view, the click is a router shortcut.',
+          'Hover on thread: small label near thread midpoint surfaces N linked notes, last touched D days ago where N and D come from the threads strength and daysSinceLastTouch fields. Label positioned to avoid crossing other strokes. Use a simple bounding box check or position above or below based on thread angle.',
+          'Hover on Yumi cluster (the dashed circle upper-right): tooltip surfaces what Yumi is currently noticing as a short list of book titles, one per line. If Yumi is noticing nothing (yumiNoticing array empty), tooltip reads Quiet today. (For v1, yumiNoticing is always empty per Stage 7, this tooltip will read Quiet today until Stage 11 wires real Yumi noticing state.)',
+          'Hover on marginalia dot cluster: tooltip surfaces note count as plain language (3 notes) and an open notebook affordance that, on click, navigates to the notebook filtered by this book.',
+          'Click on question text (gravity center): opens arc rename or redescribe inline. For v1, uses the existing arc edit flow if one exists, or surfaces a small inline editor (design call during build). If no existing edit flow, scope to a small modal that lets the user change arc.title and arc.description.',
+          'All interactions respect prefers-reduced-motion: no tooltip entry animations when reduced motion is requested (tooltip appears instantly, no fade).',
+          'Keyboard navigation: each interactive element is focusable via tab. Tab order: books in deterministic id order, then threads, then marginalia clusters, then Yumi, then question text. Pressing Enter on a focused book glyph activates the click handler. Focus ring uses var --gold at 2px outline-offset 3px.',
+          'All interaction code lives in a new top-level function _arcConstellationAttachInteractions(svgEl, arc) called immediately after renderArcConstellation. Single attachment point, easy to disable or test in isolation.'
+        ],
+        nonGoals: [
+          'No drag and drop, no rearrangement, no editing book data from the constellation',
+          'No animation other than instant tooltip appearance (and CSS opacity transition where reduced motion permits)',
+          'No tooltips on thread color or stroke style (the existing legend handles encoding documentation)',
+          'No keyboard shortcut for jumping between books (tab order is enough for v1)',
+          'No accessibility audit of the SVG itself (that is a Phase 2 pass with screen reader testing)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 9 -----
+  {
+    id: 's9',
+    num: 'Stage 9',
+    name: 'Sub-theory writing surface',
+    purpose: 'The core post-pivot work. Praxis becomes a place where users develop and write theories anchored in their reading, not just organize their library. Stage 9 ships the sub-theory as a first-class data type, the writing surface that lets a user develop one, the theory view of an arc that shows all sub-theories together, and the first real test of the system: writing one of the three Pedagogy of Desire sub-theories already drafted on May 27 directly inside Praxis.',
+    stageStatus: 'not-started',
+    active: false,
+    summary: 'Four sub-stages. 9.1 lands the sub-theory data model alongside book and notebookEntry. 9.2 builds the writing surface as a new top-level page with header, body fields (public and intellectual registers), evidence panel, linked-sub-theories panel, and Yumi presence. 9.3 adds the theory view as a third toggle on arc-detail alongside List and Web (joining the books view shipped in Stage 7). 9.4 tests the surface by writing one of the May 27 sub-theory drafts directly inside Praxis to surface what is missing.',
+    nonGoals: [
+      'No public publishing (Stage 12)',
+      'No comment system, no sharing, no discovery (Stage 13)',
+      'No format flexibility beyond prose for v1 (embeds, lists, dialogue forms come later)',
+      'No rich text editor (plain text with paragraph breaks and italics is enough for v1; the writing register matters more than formatting fidelity)',
+      'No real-time collaboration, no multi-user editing (single-user only)',
+      'No sub-theory-to-sub-theory linking UI in v1 (the data model supports it via linkedSubTheories array, but the UI for managing those links is deferred to Stage 10)',
+      'No export of individual sub-theories yet (Stage 12.5)'
     ],
-    openQuestions: [
-      'The local-first to multi-user transition: how does today\'s Firestore-per-user doc model extend to a read-other-users shape without breaking the privacy guarantees that #2 and #5 enforce today?',
-      'The commercial model center-of-gravity: Bookshop affiliate stays as the floor, but does Phase 2 add subscription, author tipping, paid arcs — or does the practice stay free with affiliate as the only commerce surface?'
+    dependencies: 'Stage 7 Shipped (books view exists, can compare with). Stage 8 Shipped (interactivity proven before the theory view also needs it). Stage 6 onboarding need NOT be shipped first internally. A real test user requires onboarding, but internal development against the writing surface can proceed in parallel with Stage 6.',
+    substages: [
+      {
+        id: 's9-1',
+        num: '9.1',
+        name: 'Sub-theory data model',
+        depConfirm: 'state.js exists with the ensureBookFields chokepoint pattern (line 373) and an established naming convention (book, notebookEntry as top-level types).',
+        purpose: 'Add subTheory as a top-level data type alongside book and notebookEntry. Mirror the ensureBookFields chokepoint pattern so future schema changes are clean. Migration backfills any existing data (none expected, but the chokepoint must run cleanly against an empty state).',
+        scope: [
+          'New top-level state.subTheories map keyed by subTheoryId',
+          'subTheory schema fields: id, arcId, header, bodyPublic, bodyIntellectual, evidence array, linkedSubTheories array, status, createdAt, updatedAt, publishedAt, format',
+          'evidence array contains items of shape: kind (book or note or external), refId, quote, annotation. quote and annotation optional.',
+          'status field: draft (default) or published. publishedAt set when status flips to published.',
+          'format field: prose for v1. Reserved for future flexibility (dialogue, list, fragment, poem).',
+          'ensureSubTheoryFields(subTheory) chokepoint mirroring ensureBookFields. Backfills missing fields with defaults.',
+          'ensureSubTheoryFieldsAll(subTheoriesMap) bulk-apply.',
+          'createSubTheory(arcId, userId) factory matching createArc pattern.',
+          'CRUD functions: addEvidenceToSubTheory, removeEvidenceFromSubTheory, linkSubTheories, unlinkSubTheories, publishSubTheory, unpublishSubTheory, deleteSubTheory.',
+          'Migration in load path: if state.subTheories does not exist, initialize as empty object. If existing sub-theory records lack any field, ensureSubTheoryFieldsAll backfills.',
+          'Firestore integration mirroring books and notebookEntries (in integrations.js): subTheories sync per-user, draft sub-theories private, published sub-theories readable per the Stage 12 visibility rules.'
+        ],
+        nonGoals: [
+          'No UI in this sub-stage (data model only)',
+          'No publishing logic (publishSubTheory toggles status and timestamp but does not make anything public; Stage 12 handles real publishing)',
+          'No validation of sub-theory content (free-form prose, no schema beyond field presence)',
+          'No versioning, no edit history, no track-changes (current state only)'
+        ]
+      },
+      {
+        id: 's9-2',
+        num: '9.2',
+        name: 'Sub-theory writing surface page',
+        depConfirm: '9.1 Shipped. subTheory data model exists with create and update and delete CRUD. State migrations clean.',
+        purpose: 'Build the writing page where a user actually develops a sub-theory. New top-level routes for opening an existing sub-theory and for creating a new draft. The page surfaces the header field, two body fields (public and intellectual registers, toggleable), evidence panel as a side rail, linked-sub-theories panel quieter, save-as-draft only. Yumi present in her existing panel, designed thoughtfully but not heavy-handed.',
+        scope: [
+          'Two new routes: subtheory by id opens an existing sub-theory for edit; arc by id with new-subtheory suffix creates a new draft and immediately redirects to its edit page.',
+          'Page layout: 2-column at desktop (writing on left, evidence and links on right). 1-column at mobile (evidence collapses to a button that opens a bottom sheet).',
+          'Header field: single-line input, 18px Cormorant Garamond, placeholder asking what the sub-theory is called.',
+          'Body field, public register: textarea, 14px DM Sans, line-height 1.7, autoresizes vertically. Supports italics via wrapping selection with asterisks. Placeholder invites the user to write for a reader who does not yet share their vocabulary.',
+          'Body field, intellectual register: same as public, toggleable visibility via a small Add intellectual register affordance. If toggled on, both fields visible stacked or tabbed (design call during build).',
+          'Evidence panel (right rail): scrollable list of the users books and notebook entries from this arc, with a small search filter. Each item has an attach as evidence affordance. Attaching opens a small inline editor for quote (optional) and annotation (optional). Attached evidence renders as a list of evidence items at the top of the panel.',
+          'External evidence affordance: Add external source button below the evidence list opens a small modal for entering a citation (title, author, optional quote, optional annotation) for a source not in the users library.',
+          'Linked sub-theories panel (smaller, below evidence): list of other sub-theories in this arc that can be cross-referenced. Each item has a link affordance. Linked sub-theories render at the top of the panel.',
+          'Save button: writes to state and Firestore. Save is explicit, not auto (sub-theory drafts are slow writing; autosave creates anxiety). Last-saved timestamp visible.',
+          'Yumi presence: existing Yumi panel toggleable via the existing Cmd+J shortcut. When open and the user is on a sub-theory page, Yumis context awareness recognizes user is writing a sub-theory and adapts greeting. No automatic suggestions, no interruption, no inline help. Yumi waits to be asked. This sub-stage is where the writing-surface Yumi presence model is designed and locked.',
+          'No publish button yet (Stage 12). Status visible in page header as Draft.'
+        ],
+        nonGoals: [
+          'No rich text editing (bold, headings, lists) (italics via asterisks is enough for v1)',
+          'No image attachment in evidence (text and quotes only)',
+          'No real-time validation, no spell-check beyond browser default',
+          'No autosave (explicit save only)',
+          'No inline citation marks in body text yet (Stage 10 handles the autoresolution between in-body book references and the evidence array)',
+          'No publish flow yet (drafts only)'
+        ]
+      },
+      {
+        id: 's9-3',
+        num: '9.3',
+        name: 'Theory view as third arc-detail toggle',
+        depConfirm: '9.1 Shipped. 9.2 Shipped (writing surface exists, sub-theories can be created and edited). arc-detail toolbar at views.js:2926 has List and Web toggles.',
+        purpose: 'Add a third toggle to the arc-detail toolbar (Theory) alongside List and Web. The Theory view shows all sub-theories belonging to this arc as cards or simple shapes. Click any sub-theory to open the writing surface (existing draft) or a read-only view (Stage 12 published state).',
+        scope: [
+          'Extend the existing setArcViewMode helper to accept theory in addition to list and web.',
+          'Add a third button to the toolbar: Theory. Active when viewMode is theory.',
+          'When viewMode is theory, render a new theoryContainer div populated with sub-theory cards.',
+          'Sub-theory card: header (Cormorant Garamond 18px), first 1-2 lines of body as preview (DM Sans 13px secondary), draft or published status badge, last-updated relative time. Click navigates to the writing surface.',
+          'Empty state: if the arc has no sub-theories yet, render a Start your first sub-theory affordance that creates a new draft and navigates to it.',
+          'New sub-theory affordance always visible at top of the theory view, even when there are existing sub-theories.',
+          'Sub-theory cards ordered by updatedAt descending (most recently worked-on first). Drafts and published mixed in same order; status badge differentiates them visually.',
+          'Mobile: cards stack one per row. Desktop: 2-column grid where width allows.',
+          'No shape encoding for v1 (cards are neutral rounded rects). Shape vocabulary (does shape encode form-of-argument, tradition, something else?) is a Stage 13 question; for now, neutral.'
+        ],
+        nonGoals: [
+          'No shape encoding (deferred, see Stage 13)',
+          'No color hybridization for cross-tradition sub-theories (deferred)',
+          'No drag-to-reorder (deferred)',
+          'No bulk actions on sub-theories (deferred)',
+          'No filtering or search on sub-theories within the theory view (deferred)',
+          'No animation between views (instant toggle for v1, motion polish later)'
+        ]
+      },
+      {
+        id: 's9-4',
+        num: '9.4',
+        name: 'Write one sub-theory inside Praxis',
+        depConfirm: '9.1, 9.2, 9.3 Shipped. Writing surface live. Theory view live. Sub-theory data model integrated.',
+        purpose: 'The load-bearing test of Stage 9. Take one of the three Pedagogy of Desire sub-theories drafted on May 27 (likely the recognition sub-theory, which is furthest along) and write it directly inside Praxis using the new writing surface. The goal is to surface what is missing: what feels wrong in the body field, what is awkward about evidence attachment, what is missing from Yumis presence model, what reveals itself only by doing the work in the surface.',
+        scope: [
+          'Open Praxis. Navigate to the Pedagogy of Desire arc. Open the theory view. Click Start your first sub-theory or the new sub-theory affordance.',
+          'Write the header (the recognition framing from the May 27 draft).',
+          'Write the body in the public register field. Aim for the May 27 drafts level of length and care.',
+          'If the intellectual register feels needed, toggle it on and write that version too.',
+          'For each evidence item in the draft (Epsteins Range, Benjamins Bonds of Love, De Lissovoy, hooks, Hurston, plus the autobiographical anchors), attach evidence using the evidence panel. Test attaching books from the shelf. Test attaching notebook entries if any exist for these books. Test attaching external sources (for any books not in the shelf).',
+          'Save the draft. Close the page. Reopen it via the theory view. Confirm everything saved.',
+          'Document findings as STAGE_9_FIELD_NOTES.md in docs/. What worked, what broke, what was missing, what was wrong. This document becomes the input to Stage 10 (Evidence and citation) and Stage 11 (Yumi transparency) design decisions.',
+          'If any finding is a blocker (cannot save, breaks data integrity, makes the surface unusable), file it as a hotfix back into 9.2. Do not advance to Stage 10 with a broken surface.',
+          'If the writing process surfaces a missing feature that is downstream (e.g., inline citation marks that Stage 10 handles), note it but do not implement it here.'
+        ],
+        nonGoals: [
+          'No formal user testing with other users (this is Preston, or anyone with the May 27 sub-theory drafts, using the surface to write one real sub-theory)',
+          'No quality bar on the resulting sub-theory beyond it is the May 27 draft, now living in Praxis',
+          'No publishing the sub-theory (it stays as draft until Stage 12)',
+          'No comparison with other writing tools (the goal is to surface gaps, not benchmark against Notion or Roam)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 10 -----
+  {
+    id: 's10',
+    num: 'Stage 10',
+    name: 'Evidence and citation',
+    purpose: 'The channel from a book or a notebook entry into a sub-theory becomes a real UI mechanic. Inline citation marks in the body autoresolve to the evidence array. External quotes can be cited without requiring the source to be a full shelf entry. Published sub-theories render both in-body italic refs and a closing evidence block, both autogenerated from the same underlying evidence data.',
+    stageStatus: 'not-started',
+    active: false,
+    summary: 'Four sub-stages building the evidence subsystem on top of Stage 9. 10.1 adds the send to sub-theory affordance on marginalia and journal entries. 10.2 implements inline citation rendering (write a book title in italics in the body and it becomes a clickable reference). 10.3 adds external quotes that do not require the source to be a shelf book. 10.4 implements the dual rendering (inline marks during writing, evidence block at close when published).',
+    nonGoals: [
+      'No formal citation styles (MLA, Chicago, APA) (sub-theories are not academic papers)',
+      'No bibliography export to BibTeX or RIS (Phase 2)',
+      'No DOI or ISBN resolution beyond what already exists in 5.6 book metadata',
+      'No automatic detection of un-cited claims (no you may have forgotten to cite something warnings)',
+      'No citation network visualization (deferred to Stage 13.5)'
     ],
+    dependencies: 'Stage 9 Shipped. Sub-theory data model includes evidence array. Writing surface has evidence panel. Theory view renders sub-theory cards.',
+    substages: [
+      {
+        id: 's10-1',
+        num: '10.1',
+        name: 'Channel from book or notebook entry into sub-theory',
+        depConfirm: 'Stage 9 Shipped. Book detail page exists. Notebook entry detail or list view exists. Sub-theory writing surface has an evidence panel that accepts attachment.',
+        purpose: 'Add a send to sub-theory affordance on marginalia entries, journal entries, and (optionally) book detail pages. The affordance opens a small picker showing the users in-progress sub-theory drafts; selecting one attaches the source as evidence to that sub-theory.',
+        scope: [
+          'On marginalia entry detail (or in-list): add a Send to sub-theory menu option in the existing kebab or ellipsis menu.',
+          'On journal entry detail: same affordance.',
+          'On book detail page: Send to sub-theory appears as a button alongside existing actions. Behavior: attach the book itself as evidence (without a specific quote).',
+          'Picker UI: small modal listing draft sub-theories grouped by arc. Each item: arc name (small), sub-theory header. Click to attach.',
+          'On attach: the evidence item is appended to the sub-theorys evidence array with kind book or kind note depending on source, refId set, quote optional (pre-filled from marginalia text if attaching marginalia), annotation empty (user can edit later in the writing surface).',
+          'Confirmation: small toast or inline feedback indicating attachment. No modal interruption.',
+          'Multi-attach: a single marginalia entry can be attached to multiple sub-theories. Picker shows which sub-theories already have this attachment (small checkmark).',
+          'Desktop convenience: drag-and-drop from marginalia list onto an open sub-theory writing surface. The drop target is the evidence panel. Drop attaches the same way the picker does. Mobile uses tap-based picker only.'
+        ],
+        nonGoals: [
+          'No bulk send (attach 10 marginalia entries to one sub-theory in one operation)',
+          'No automatic suggestion of which sub-theory to attach to based on content similarity',
+          'No threading or grouping of evidence items within a sub-theory',
+          'No removal of the attached source from the marginalia entry (the marginalia entry stays where it is; the sub-theory just gains a reference to it)'
+        ]
+      },
+      {
+        id: 's10-2',
+        num: '10.2',
+        name: 'Inline citation rendering',
+        depConfirm: '10.1 Shipped. Writing surface body field exists and supports italics via asterisks.',
+        purpose: 'When a user writes a book title in italics within the sub-theory body, it autoresolves to a corresponding evidence item if that book is already attached as evidence. The rendered text becomes a small clickable reference; the evidence block at the end of the published sub-theory lists the same book with full citation.',
+        scope: [
+          'Parser pass on body text: detect italicized phrases (text wrapped in asterisks per the markdown-light convention from Stage 9.2). For each italicized phrase, check against the evidence array. If a book title (case-insensitive partial match) matches an attached evidence item, mark the phrase as a citation.',
+          'Render in the writing surface: citation phrases get a small underline-dot indicator beneath the italic, signaling this is linked to evidence. Hover surfaces a small tooltip with the full evidence citation (author, title, optional quote).',
+          'Render in the read-only view (Stage 12 published state): citation phrases render as italic with a subscript number linking to the evidence block at the close. The evidence block lists evidence in order of first appearance in the body.',
+          'Disambiguation: if multiple evidence items match an italicized phrase, the writer can right-click (or long-press on mobile) to choose which evidence item this italic refers to.',
+          'No-match handling: italicized phrases that do not match any evidence item render as plain italics (no underline-dot, no citation link). Encourages the writer to attach the source if they want the link.',
+          'Update path: when evidence is added or removed from the sub-theory, re-run the parser pass and update inline citations.'
+        ],
+        nonGoals: [
+          'No automatic detection of un-italicized book mentions (the italicization is the signal)',
+          'No fuzzy matching beyond case-insensitive substring (no machine-learning citation resolution)',
+          'No author-name detection (only book titles trigger linking; authors are bibliographic only)',
+          'No support for arbitrary phrase linking (only book titles map to book evidence)'
+        ]
+      },
+      {
+        id: 's10-3',
+        num: '10.3',
+        name: 'External quotes',
+        depConfirm: '10.1 Shipped. Evidence array accepts kind external.',
+        purpose: 'Allow a user to cite a source not in their library. External evidence items carry their own metadata (title, author) and an optional quote, without requiring the source to be a shelf book or notebook entry.',
+        scope: [
+          'Add external source affordance in the evidence panel (already scoped in 9.2; this sub-stage implements it).',
+          'Modal: title (required), author (optional), quote (optional), annotation (optional). Save to evidence array with kind external, refId is a new UUID for this external citation, the rest of the fields stored on the evidence item itself.',
+          'External evidence renders in the evidence block at close of a published sub-theory using the title and author as the citation. If quote is present, renders below the citation. If annotation is present, renders below the quote.',
+          'External evidence can be linked inline via italics (10.2) the same way books are: italicize the external title, it becomes a citation.',
+          'External evidence cannot be re-used across sub-theories without re-entry (each sub-theory holds its own external evidence; intentional: external sources are sub-theory-local, not promoted to the library; if a user finds themselves citing the same external source repeatedly, that is a signal to add it to the shelf).'
+        ],
+        nonGoals: [
+          'No promote external to shelf book affordance in v1 (manual re-entry as a shelf book is the path)',
+          'No DOI lookup or automatic metadata fetch for external sources',
+          'No external image attachments',
+          'No URL embedding (a URL can be put in the annotation field as plain text but does not auto-render as a link in v1)'
+        ]
+      },
+      {
+        id: 's10-4',
+        num: '10.4',
+        name: 'Dual rendering: inline marks plus evidence block',
+        depConfirm: '10.2 Shipped. 10.3 Shipped. Sub-theory writing surface renders inline citations. Evidence array contains book, note, and external items.',
+        purpose: 'When a sub-theory is rendered in any read-only context (the theory view card preview, future public arc page, future export), it renders with both inline italic refs in the body (with superscript numbers when published) and a full evidence block at the close listing all evidence in order. Both are autogenerated from the same underlying evidence array.',
+        scope: [
+          'renderSubTheoryReadOnly(subTheory) helper that produces the read-only HTML for a sub-theory. Used by theory view card preview (truncated), full sub-theory detail page (Stage 12), and future export (Stage 12.5).',
+          'Body rendering: convert markdown-light italics, mark citation phrases with superscript numbers (only when status is published; drafts use the underline-dot indicator from 10.2 instead).',
+          'Evidence block: rendered at close of body. Numbered list. Each item: full citation (Author, Title for books; same plus external metadata for external). Optional quote in italic blockquote. Optional annotation as plain text below quote.',
+          'Evidence ordering: by first appearance in the body. Evidence items never cited in the body render at the end of the block in their attachment order (so attached-but-uncited evidence is still surfaced).',
+          'Linked sub-theories: if the sub-theory has linkedSubTheories, render a small see also block after the evidence block listing them with anchor links (within the arc).',
+          'Empty states: a sub-theory with no evidence renders no evidence block. A sub-theory with no linked sub-theories renders no see also block.'
+        ],
+        nonGoals: [
+          'No print-specific styling (Phase 2 if export to PDF lands)',
+          'No formal academic citation formatting (the dual rendering is editorial, not scholarly)',
+          'No footnotes vs endnotes choice (the evidence block at close is the convention)',
+          'No DOI or URL rendering as links in evidence (plain text only for v1)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 11 -----
+  {
+    id: 's11',
+    num: 'Stage 11',
+    name: 'Yumi transparency surface',
+    purpose: 'Replace the older privacy panel concept with a real transparency surface that shows the user what Yumi can see of their private work, what she has done with it, and what controls the user has. This stage gates public publishing. Stage 12 cannot ship without Stage 11 Shipped, because a user cannot responsibly publish work to a public arc without understanding what part of their private reading and writing Yumi has accessed during the development of that work.',
+    stageStatus: 'not-started',
+    active: false,
+    summary: 'Two sub-stages. 11.1 builds the transparency view itself: a new surface (probably in settings or as a Yumi-panel-accessible page) listing what Yumi has access to and what she has read recently. 11.2 adds the controls and consent layer: the user can scope Yumis access per surface (shelf, notebook, sub-theory drafts), see a recent-access log, and revoke access to specific items.',
+    nonGoals: [
+      'No retroactive deletion of Yumi conversation history from the user side (Phase 2 if needed)',
+      'No fine-grained access control per book or per note (per-surface is enough for v1)',
+      'No external audit of Yumi behavior (the transparency surface is what the user sees, not a third-party verification)',
+      'No model-side access control (Yumi runs through Claude Proxy; the transparency surface shows what was sent to her, not what the model retained)',
+      'No data export of the access log in v1 (Phase 2)'
+    ],
+    dependencies: 'Stage 9 Shipped (sub-theory drafts exist as a content type Yumi can see). yumi-brain.js context injection logic (existing from Stage 2.6) provides the access surface this stage exposes.',
+    substages: [
+      {
+        id: 's11-1',
+        num: '11.1',
+        name: 'Transparency view of what Yumi can access',
+        depConfirm: 'yumi-brain.js context injection from Stage 2.6 Shipped. State has shelf books, notebook entries, sub-theory drafts as accessible content types.',
+        purpose: 'Build a transparency view that, in plain language, tells the user what Yumi has access to right now. Categories: shelf books, notebook entries, current sub-theory draft (if writing), arc-level context. For each category, surface what is currently in Yumis context window and what is excluded.',
+        scope: [
+          'New route for the transparency page that opens a dedicated page (or settings sub-page).',
+          'Page layout: section per category (shelf, notebook, sub-theory drafts, arc context). Each section shows: what Yumi can see right now, what she cannot see (e.g., private notes flagged as excluded), and a last-access timestamp where applicable.',
+          'Plain-language explanation per category, written editorially (not legalistically). The transparency view is part of the Praxis voice; it should read like Yumi explaining herself, not like a privacy policy.',
+          'Surface what Yumi has accessed in the last 7 days as a brief activity summary. Not a granular log: a paragraph per day summarizing what categories of content Yumi referenced.',
+          'Visual style: matches the rest of Praxis. Wheat ground, Cormorant Garamond for category headings, DM Sans for body. No alarming colors (no red), no defensive framing.',
+          'Empty states: if Yumi has not accessed anything in a category in the last 7 days, that category surfaces Quiet this week.'
+        ],
+        nonGoals: [
+          'No real-time stream of Yumi access (the summary is daily-batched)',
+          'No diffing what changed in Yumis context across sessions',
+          'No explanation of why Yumi accessed what she accessed (the activity log is descriptive, not causal)',
+          'No access logs older than 30 days (storage decision for v1)'
+        ]
+      },
+      {
+        id: 's11-2',
+        num: '11.2',
+        name: 'Controls and consent',
+        depConfirm: '11.1 Shipped. Transparency view exists. Yumi context injection has clean per-category scope.',
+        purpose: 'Give the user real controls over what Yumi can see. Per-category toggles (exclude shelf, exclude notebook, exclude sub-theory drafts) and per-item exclusions (flag a specific book or note as private; Yumi cannot see it). When public publishing ships in Stage 12, this consent layer is what makes publishing responsible: the user can audit and constrain what was visible to Yumi during the development of any published work.',
+        scope: [
+          'Per-category toggles on the transparency page: Allow Yumi to see (shelf, notebook, sub-theory drafts). Default all on. Toggling off removes that category from Yumis context.',
+          'Per-item private flag on books and notebook entries: an Exclude from Yumi affordance in the existing kebab or ellipsis menu. Toggling on adds the item to a private set Yumis context injection respects.',
+          'Private-flag visual indicator on excluded items: small lock-glyph or similar marker, visible in shelf and notebook lists.',
+          'Consent at sub-theory level: when a user starts a new sub-theory draft, they see a one-time inline notice explaining that Yumi can see the draft as they write, with a link to the transparency page.',
+          'Publishing consent (anticipating Stage 12): when a user attempts to publish a sub-theory (Stage 12), the publish flow includes a transparency check: a brief summary of what Yumi had access to during this sub-theorys development. The user confirms they understand this before publishing.',
+          'Per-category and per-item exclusions persist across sessions. State.privacy holds the exclusion lists.',
+          'Yumi context injection logic in yumi-brain.js updated to respect all exclusion layers: category, per-item, and any sub-theory-specific exclusion flags.'
+        ],
+        nonGoals: [
+          'No retroactive Yumi conversation deletion when items are flagged private (the flag is forward-acting only; Yumi will not see this item from now on)',
+          'No multi-user delegation (the user is the only one who can flag items private)',
+          'No per-conversation context exclusion (the unit is the item, not the conversation)',
+          'No automated detection of sensitive content (no this note looks personal, should I exclude it prompts)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 12 -----
+  {
+    id: 's12',
+    num: 'Stage 12',
+    name: 'Public publishing',
+    purpose: 'Arcs become public-facing. A user can publish a sub-theory, which makes it readable at a public URL by anyone. Pen-name support is first-class. Users publish under whatever name they choose (the author publishes as Roland Blair). Export rounds out the stage so users can take their work out of Praxis if they want to. Stage 12 is where Praxis fully becomes a public writing platform.',
+    stageStatus: 'not-started',
+    active: false,
+    summary: 'Five sub-stages. 12.1 ships the publish toggle on sub-theories. 12.2 builds the public sub-theory page at a stable URL. 12.3 builds the public arc page showing question, books view, theory view, all published sub-theories. 12.4 adds first-class pen-name support so users publish under chosen identities. 12.5 adds export so users can take their work out as Markdown, Word, or PDF.',
+    nonGoals: [
+      'No commenting system on published work (Stage 13)',
+      'No social features (following, feeds, discovery) (Stage 13)',
+      'No paid tiers, no subscription model in v1',
+      'No automated content moderation (rely on the existing Anthropic safety layer and clear terms of use)',
+      'No public profile customization beyond pen-name and bio in v1',
+      'No SEO optimization beyond standard meta tags in v1'
+    ],
+    dependencies: 'Stage 9 Shipped (sub-theories exist). Stage 10 Shipped (citation rendering works). Stage 11 Shipped (transparency surface is the gate before publishing).',
+    substages: [
+      {
+        id: 's12-1',
+        num: '12.1',
+        name: 'Publish toggle on sub-theories',
+        depConfirm: 'Stage 11 Shipped. Transparency check exists as a pre-publish flow. Sub-theory data model has status field.',
+        purpose: 'Add the publish or unpublish toggle on the sub-theory writing surface. Publishing flips status to published, sets publishedAt, and runs the transparency check from Stage 11. Unpublishing reverts to draft and clears publishedAt.',
+        scope: [
+          'Publish button visible on the sub-theory writing surface when status is draft. Click opens a small confirmation flow.',
+          'Confirmation flow: (1) transparency summary from Stage 11.2 explaining what Yumi had access to during this sub-theorys development. (2) Public URL preview showing where the sub-theory will be readable. (3) Confirm button to publish to public arc.',
+          'On confirm: status flips to published, publishedAt set, sync to Firestore with public-read permission, public URL becomes live.',
+          'Unpublish button visible when status is published. Click immediately unpublishes (no confirmation; undoing a publish should be quick when the user changes their mind). status flips to draft, publishedAt cleared, public URL returns 404.',
+          'Visual indicator on the writing surface: status badge prominent in the page header (Draft or Published).',
+          'In the theory view, published sub-theory cards have a small Public indicator distinguishing them from drafts.'
+        ],
+        nonGoals: [
+          'No scheduled publishing (publish-now only for v1)',
+          'No edit-after-publish lock (published sub-theories can still be edited; edits go live immediately at the same URL)',
+          'No version history on edits (current state is what is published)',
+          'No bulk publish across multiple sub-theories'
+        ]
+      },
+      {
+        id: 's12-2',
+        num: '12.2',
+        name: 'Public sub-theory page',
+        depConfirm: '12.1 Shipped. Published sub-theories exist in Firestore with public-read permission.',
+        purpose: 'Build the read-only public page for a published sub-theory at a stable URL. Anyone can read it. No login required. Shows the sub-theory header, body (public register by default, with toggle to intellectual register if both exist), evidence block, linked sub-theories, attribution to the authors pen name, link to the arc this sub-theory belongs to.',
+        scope: [
+          'New public route for sub-theory by id. Serves the published sub-theory content via the existing PWA shell or a server-rendered fallback.',
+          'Layout: page-centered, max-width readable column (around 720px), Cormorant Garamond for header (32px), DM Sans for body (16px, line-height 1.7).',
+          'Header: sub-theory header text. Below: small attribution line (By pen-name, in arc-name). Both author and arc are clickable links.',
+          'Body: rendered via renderSubTheoryReadOnly (Stage 10.4). Inline citations as superscript numbers. Evidence block at close.',
+          'Register toggle: if both bodyPublic and bodyIntellectual exist, a small toggle near the header lets the reader switch. Default to public.',
+          'Linked sub-theories: rendered as a see also block at the bottom listing other sub-theories in the same arc.',
+          'Sharing: standard meta tags (Open Graph title, description, og:type article, author) so links share well in messaging and social.',
+          'No comments. No reactions. No view count. The page is a piece of writing, not a social object.',
+          'Fail-soft: if the sub-theory is unpublished or does not exist, render a clean 404 page in Praxis style.'
+        ],
+        nonGoals: [
+          'No editing on the public page (drafts and edits stay in the authenticated writing surface)',
+          'No social embedding (Twitter cards, oEmbed) beyond basic Open Graph',
+          'No print stylesheet (export handles this in 12.5)',
+          'No language selection (English only for v1)'
+        ]
+      },
+      {
+        id: 's12-3',
+        num: '12.3',
+        name: 'Public arc page',
+        depConfirm: '12.2 Shipped. Public sub-theory pages live.',
+        purpose: 'Build the read-only public arc page. Shows the arc question, books view (constellation), theory view (all published sub-theories as cards), no drafts. Anyone can read it. The arc page is the unit of public intellectual work in Praxis.',
+        scope: [
+          'New public route for arc by id. Serves the arc data via the existing PWA shell.',
+          'Layout: page-centered, full-width allowance for the constellation visualization.',
+          'Arc header: question prominent, Cormorant Garamond italic 28px. Below: attribution to pen-name, arc creation date relative.',
+          'Books view: the same constellation renderer from Stage 7 renders the arcs books on the public page. Read-only. Clicks open public book pages (or the arc owners shelf entry if the owners shelf is public, see future Phase 2).',
+          'Theory view: cards for each published sub-theory. Click to open the public sub-theory page. Drafts not visible.',
+          'Toggle between books view and theory view (and any future views) same as the private arc-detail toolbar.',
+          'No interactivity beyond click-through to sub-theory pages and book pages.',
+          'Sharing: Open Graph meta tags for the arc.',
+          'Fail-soft: if the arc has no published sub-theories, render a notice that this arc has not yet been published and only the books view is available.',
+          'Arc-level publishing: a separate publish toggle on the arc itself controls whether the arc page is public at all. If the arc is unpublished, all sub-theory URLs in that arc 404 too.'
+        ],
+        nonGoals: [
+          'No editing on the public arc page',
+          'No commenting on the arc',
+          'No multi-arc browsing UI yet (that is Stage 13 discovery)',
+          'No subscribe-to-arc notifications (Phase 2)'
+        ]
+      },
+      {
+        id: 's12-4',
+        num: '12.4',
+        name: 'Pen-name support',
+        depConfirm: '12.2 Shipped. Public pages render author attribution.',
+        purpose: 'First-class pen-name support. Every user has a primary display name. They can optionally publish individual arcs or sub-theories under a separate pen-name. The author publishes as Roland Blair; the system needs to support this as a feature, not a hack.',
+        scope: [
+          'User settings: primary display name (defaults to email-derived name on signup, editable thereafter).',
+          'Optional pen name: a single secondary identity per user for v1 (Phase 2 may support multiple).',
+          'Pen-name fields: pen name (display), pen-name bio (optional, short, 280 chars), pen-name avatar (optional, defaults to a placeholder).',
+          'Per-arc and per-sub-theory pen-name selector: when publishing, a small Publish as dropdown lets the user choose primary display name or pen name. Default to whatever was used last; primary-only if no pen name is set.',
+          'Public attribution: the author byline on public pages uses whichever identity was selected at publish time. Subsequent edits to the pen name update existing public pages automatically (the public URL is stable; only the attribution display changes).',
+          'Public profile page: lists all published arcs and sub-theories under that identity.',
+          'Identity is per-publication, not per-user-session: a user can switch identities between publishing different sub-theories without changing global state.',
+          'Pen-name uniqueness: at signup or pen-name creation, check that the pen-name is not already in use. Conflict resolution is simple: the requested pen-name is unavailable, the user picks another. No suffix-numbering, no automated alternatives.'
+        ],
+        nonGoals: [
+          'No anonymous publishing (every public piece is attributed to either display name or pen name; no Anonymous)',
+          'No multiple pen names per user in v1 (single optional pen name)',
+          'No identity verification or verified badges',
+          'No pen-name marketplace or transfer between users'
+        ]
+      },
+      {
+        id: 's12-5',
+        num: '12.5',
+        name: 'Export',
+        depConfirm: '12.4 Shipped. Pen-name attribution stable. Public sub-theory and arc pages rendering correctly.',
+        purpose: 'Users can export their work out of Praxis as Markdown, Word, or PDF. Export is per-sub-theory or per-arc. The exported file contains the same content as the public page (header, body, evidence block, linked sub-theories) plus metadata (created date, author, arc context). Praxis is a place users come back to; export is what makes them trust it enough to do real work here.',
+        scope: [
+          'Export affordance on sub-theory writing surface: Export button opens a small dialog with format options (Markdown, Word, PDF).',
+          'Export affordance on theory view: per-arc export. Exports all published sub-theories in the arc as a single file (Word) or a folder of files (Markdown).',
+          'Markdown export: standard markdown. Body fields with italics preserved. Evidence block as a numbered list. Linked sub-theories as a see also section. Front-matter YAML with metadata (title, author, arc, date).',
+          'Word export: uses the existing docx generation pattern if any (or imports docx-js for the export path). Cormorant Garamond title, DM Sans body. Evidence block as a footnotes-or-endnotes block (endnotes for v1). Letter-size pages, 1-inch margins.',
+          'PDF export: render the public sub-theory page (or arc page) to PDF via the browser print path. Includes a print stylesheet that hides navigation and styles for paper.',
+          'Both author identities respected in exports (primary or pen name based on which one published the work).',
+          'Export does not require the sub-theory or arc to be published (drafts can also be exported).',
+          'Fail-soft: if a format fails (e.g., docx-js bundle missing), surface a clean error and offer the other formats.'
+        ],
+        nonGoals: [
+          'No batch export of all of a users work in one operation (Phase 2)',
+          'No EPUB or other ebook formats (Phase 2 if requested)',
+          'No round-trip import (exported content cannot be re-imported into Praxis as a sub-theory; export is one-way)',
+          'No collaborative formats (Google Docs, Notion, Roam) (Praxis is the source of truth)'
+        ]
+      }
+    ]
+  },
+
+  // ----- STAGE 13 -----
+  {
+    id: 's13',
+    num: 'Stage 13',
+    name: 'Social and discovery',
+    purpose: 'The social layer of Praxis: comments and responses to public work, following other users, discovery of arcs and sub-theories beyond what one is directly connected to, cross-arc citations between users. Stage 13 is deferred because it should not be designed until Stage 12 has shipped and is actually used. The shape of social features depends on how people use the publishing surface, which we cannot know in advance.',
+    stageStatus: 'deferred',
+    active: false,
+    pivotNote: 'Stage 13 absorbs the older Phase 2 social-layer skeleton that previously held s7 in the roadmap. The social-layer work has not been canceled. It has been re-articulated under the new direction (post-May 27 pivot toward arcs as theory-publishing surfaces). The Phase 2 entry was conceptual placeholder; Stage 13 is the same conceptual placeholder restated under the new vision. Same deferral logic, new framing.',
+    summary: 'Five conceptual sub-stages, all deferred until Stage 12 ships and is used in the wild. 13.1 comments and responses on public sub-theories. 13.2 following other users with feed of new published work. 13.3 discovery: how readers find arcs and sub-theories beyond their immediate connections. 13.4 cross-arc citations, where one users sub-theory cites another users sub-theory. 13.5 visualization of citation networks across users.',
+    nonGoals: [
+      'No design work on Stage 13 sub-stages until Stage 12 has been live for at least 60 days with real users',
+      'No assumption that all five sub-stages will ship (Stage 13 may end up being smaller after observation of actual usage)',
+      'No comment-system design before deciding whether Praxis hosts comments at all or links out to other discussion venues'
+    ],
+    dependencies: 'Stage 12 Shipped and proven with real users over at least 60 days. Decisions about whether Praxis is a discussion venue or a publishing-only venue must be made before any 13.x sub-stage is scoped.',
     substages: []
   }
+
 ];
 
 // =====================================================================
