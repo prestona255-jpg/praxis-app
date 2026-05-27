@@ -2799,6 +2799,44 @@ function renderArtifact(bookId) {
   host.appendChild(wrap);
 }
 
+// Stage 7.1A: adapter from real arc shape (state.arcs[id]) to the
+// constellation renderer's expected input. Renderer contract is set
+// by js/arc-constellation.js:renderArcConstellation -- top-level
+// question, books array of {id, tradition, band[, noteCount]}, plus
+// optional threads + yumiNoticing. Stubs threads + yumiNoticing
+// empty for v1 (later stages wire them). noteCount intentionally
+// omitted -- renderer defaults missing to 0, so no marginalia dots
+// render until that wiring lands. Effective tradition inlines the
+// override pattern (book.traditionOverride || book.tradition) used
+// everywhere else in the file -- no helper exists. bookIds element
+// shape is {id, addedAt} per state.js:71-72; the .id || el fallback
+// is defensive against any legacy plain-string entry.
+function _arcDetailBuildConstellationData(arc) {
+  var books = [];
+  var i, bookId, book, effectiveTradition, band;
+  var bookIdsArr = (arc && arc.bookIds) ? arc.bookIds : [];
+  for (i = 0; i < bookIdsArr.length; i++) {
+    bookId = bookIdsArr[i].id || bookIdsArr[i];
+    book = state.books && state.books[bookId];
+    if (!book) { continue; }
+    effectiveTradition = book.traditionOverride || book.tradition;
+    band = getEngagementBand(bookId);
+    books.push({
+      id:        bookId,
+      title:     book.title,
+      author:    book.author,
+      tradition: effectiveTradition,
+      band:      band
+    });
+  }
+  return {
+    question:     (arc && arc.title) ? arc.title : '',
+    books:        books,
+    threads:      [],
+    yumiNoticing: []
+  };
+}
+
 // Stage 3.9-a: arc detail view at #arc/<arcId>. Renders the arc's
 // members as ONE chronological stream merged from bookIds + entryIds,
 // sorted ASCENDING by addedAt (oldest-first: first -> then -> now;
