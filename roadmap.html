@@ -1405,9 +1405,9 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       <h1 class="title">Praxis Roadmap</h1>
       <p class="subtitle">A reading community organized by depth of engagement, not metrics of attention.</p>
       <div class="meta-row">
-        <span><strong>Active stage</strong> · Stage 5 — The Material Build-Out</span>
+        <span><strong>Active stage</strong> · Stage 7 — Books view of arc (wiring)</span>
         <span><strong>Version</strong> · v1.0</span>
-        <span><strong>Last updated</strong> · May 19, 2026</span>
+        <span><strong>Last updated</strong> · May 27, 2026</span>
       </div>
     </div>
     <div class="pivot-callout">
@@ -3700,8 +3700,9 @@ var STAGES = [
     num: 'Stage 5',
     name: 'The Material Build-Out',
     purpose: 'The beautiful-surfaces layer — material, light, depth, motion, the wheat field, the Arcs page, and the arc web. Built against the locked praxis-design-system.md v2. Stage 5 is where Praxis stops looking like a wireframe and starts looking like the room.',
-    stageStatus: 'not-started',
-    active: true,
+    stageStatus: 'in-progress',
+    active: false,
+    pivotNote: '5.3 shipped (Arcs page). 5.4 partially shipped as the constellation renderer in test-arc-constellation.html. Full 5.4 wiring into the live arc-detail web view moved to Stage 7. The renderer itself is now framed as the books view of an arc, not "the arc seen, not edited" — that older framing is superseded by Stage 9 (theory view).',
     summary: 'Five sub-stages, sequenced per the v2 design system Build sequencing section. 5.1 lands the material pass (light, grain, depth, motion) across existing surfaces. 5.2 paints the still SVG wheat field behind the shelf. 5.3 builds the Arcs page (top-nav item, teaching panel, worked examples, how-to, the Find-this-book affiliate surface). 5.4 renders the arc web (chronological-spine visualization as a toggle on arc detail). 5.5 adds opt-in ambient sound + the synced field motion. Each sub-stage is checked against the governing rule: Praxis is the room, the books are why you came.',
     nonGoals: [
       'No concept-node system (deferred — a new data model, Phase-scale)',
