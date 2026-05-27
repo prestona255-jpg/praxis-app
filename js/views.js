@@ -1615,37 +1615,6 @@ function renderRegisterGlyph(tradition, engagementBand) {
     '</svg>';
 }
 
-// Stage 5.4 Stage 2a: arc-web book node primitive. Cover + title only.
-// Surface isolation from renderShelfBook by design -- no chrome (no
-// author, status, genre). The arc-web speaks chronology; cover-as-
-// identifier is enough. Returns a DOM element; caller mounts.
-function renderArcWebBookNode(book) {
-  var node = document.createElement('div');
-  node.className = 'arc-web-book-node';
-
-  var coverArea = document.createElement('div');
-  coverArea.className = 'arc-web-book-node-cover-area';
-  if (book.coverUrl) {
-    var cover = document.createElement('img');
-    cover.className = 'arc-web-book-node-cover';
-    cover.src = book.coverUrl;
-    cover.alt = '';
-    coverArea.appendChild(cover);
-  } else {
-    var coverPlaceholder = document.createElement('div');
-    coverPlaceholder.className = 'arc-web-book-node-cover-placeholder';
-    coverArea.appendChild(coverPlaceholder);
-  }
-  node.appendChild(coverArea);
-
-  var title = document.createElement('div');
-  title.className = 'arc-web-book-node-title';
-  title.textContent = book.title || 'Untitled';
-  node.appendChild(title);
-
-  return node;
-}
-
 // Stage 3.5b fail-soft cover fetch wrapper. Used by both the add-book
 // save path (background fetch after sync save completes) and the
 // book detail page ISBN re-fetch path (3.5b Stage 2). Contract:

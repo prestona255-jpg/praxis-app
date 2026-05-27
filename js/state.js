@@ -1000,23 +1000,36 @@ function migrate(stored) {
       if (!stored.arcs)  stored.arcs  = {};
 
       var seedNow = Date.now();
+      // Cleanup post-7.1B: tradition baked into seed literal so the
+      // constellation renders 5 visible glyphs on fresh state without
+      // a per-book user override. ensureBookFields' string-guard
+      // (state.js:373-385) sees `tradition` already set and skips the
+      // derive-from-genre fallback, so genre stays '' (no false
+      // shelf-theme assignment) while tradition carries the intended
+      // intrinsic value. Existing accounts already have tradition
+      // 'unassigned' persisted -- they're unaffected by this change.
       var seedBooks = [
-        { title:  'Zombie Politics and Culture in the Age of Casino ' +
-                  'Capitalism',
-          author: 'Henry Giroux',
-          isbn:   '9781433127199' },
-        { title:  'Yearning: Race, Gender, and Cultural Politics',
-          author: 'bell hooks',
-          isbn:   '9781138821750' },
-        { title:  'Hidden Potential',
-          author: 'Adam Grant',
-          isbn:   '9780593653142' },
-        { title:  'Range: Why Generalists Triumph in a Specialized World',
-          author: 'David Epstein',
-          isbn:   '9780735214507' },
-        { title:  'Their Eyes Were Watching God',
-          author: 'Zora Neale Hurston',
-          isbn:   '9780061120060' }
+        { title:     'Zombie Politics and Culture in the Age of Casino ' +
+                     'Capitalism',
+          author:    'Henry Giroux',
+          isbn:      '9781433127199',
+          tradition: 'theory' },
+        { title:     'Yearning: Race, Gender, and Cultural Politics',
+          author:    'bell hooks',
+          isbn:      '9781138821750',
+          tradition: 'memoir' },
+        { title:     'Hidden Potential',
+          author:    'Adam Grant',
+          isbn:      '9780593653142',
+          tradition: 'empirical' },
+        { title:     'Range: Why Generalists Triumph in a Specialized World',
+          author:    'David Epstein',
+          isbn:      '9780735214507',
+          tradition: 'empirical' },
+        { title:     'Their Eyes Were Watching God',
+          author:    'Zora Neale Hurston',
+          isbn:      '9780061120060',
+          tradition: 'novel' }
       ];
 
       var seedBookIds = [];
@@ -1032,6 +1045,7 @@ function migrate(stored) {
           addedAt:    seedNow,
           status:     'reading',
           genre:      '',
+          tradition:  sb.tradition,
           finishedAt: null,
           coverUrl:   null
         };
