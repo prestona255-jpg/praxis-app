@@ -194,6 +194,37 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   align-self: center;
 }
 
+.pivot-callout {
+  background: var(--parchment-2);
+  border-left: 4px solid var(--gold-deep);
+  border-radius: 8px;
+  padding: 16px 22px;
+  margin: 20px 0 0;
+  max-width: 100%;
+}
+.pivot-callout-eyebrow {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--gold-deep);
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+.pivot-callout-body {
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.pivot-callout-body em {
+  color: var(--ink);
+  font-style: italic;
+}
+.pivot-callout-body strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
 /* ====================  TOOLBAR  ==================== */
 
 .toolbar {
@@ -1378,6 +1409,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         <span><strong>Version</strong> · v1.0</span>
         <span><strong>Last updated</strong> · May 19, 2026</span>
       </div>
+    </div>
+    <div class="pivot-callout">
+      <div class="pivot-callout-eyebrow">Direction note · May 27, 2026</div>
+      <div class="pivot-callout-body">The roadmap pivoted from <em>arcs as book constellations</em> to <em>arcs as theory-publishing surfaces with books underneath as substrate</em>. The constellation renderer built in Stage 5.4 is now the <strong>books view</strong> of an arc — one of two views. The new <strong>theory view</strong> (Stage 9) is the core post-pivot work and where Praxis becomes a public writing platform for developing theories from one's reading life.</div>
     </div>
   </div>
 </header>
