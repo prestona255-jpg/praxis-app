@@ -1,3 +1,5 @@
+> **Historical.** This document describes the books-as-glyphs constellation visual system, superseded by `knowledge-arcs-subtheory-pivot.md` following the May 27 2026 pivot. The general arc vocabulary (what an arc is, the resonance concept) may still hold; the books-as-glyphs shape and rendering vocabulary is superseded. Retained as a record of pre-pivot design. Not the current spec.
+
 # Knowledge Arcs — Visual System Spec
 
 A design language for rendering Knowledge Arcs in Praxis. Written to be portable to another Claude session that will help implement this in the app.

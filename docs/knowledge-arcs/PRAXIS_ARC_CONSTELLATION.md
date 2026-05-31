@@ -1,3 +1,8 @@
+> **Historical.** This document describes the books-as-glyphs
+> constellation, superseded by `knowledge-arcs-subtheory-pivot.md`
+> following the May 27 2026 pivot. Retained as a record of pre-pivot
+> design. Not the current spec.
+
 # Praxis Arc Constellation — Visual + Implementation Spec
 Date locked: May 23, 2026
 Scope: arc constellation renderer ONLY

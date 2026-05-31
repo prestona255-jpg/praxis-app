@@ -1,3 +1,8 @@
+> **See also** `knowledge-arcs-subtheory-pivot.md` — the current
+> constellation design. This document remains current for the
+> 9-tradition vocabulary and the shelf surface, which the pivot does
+> not change.
+
 # Knowledge Arcs — Shelf and Field Decisions
 
 Companion document to `knowledge-arcs-visual-system.md`. Captures decisions extending the visual system to the Books shelf (Stage 5.6) and the dark constellation field (Stage 5.4 Stage 2.0). Source-of-truth for the 9-tradition vocabulary, shape and material assignments, engagement-saturation banding, dark-field treatment, and per-book tradition override location.

@@ -1,3 +1,7 @@
+> **See also** `knowledge-arcs-subtheory-pivot.md` — the current
+> constellation design. This document remains relevant for polish
+> treatment that carries forward to sub-theory glyphs.
+
 # Arc constellation — polish backlog
 
 Known visual polish items observed during arc constellation build. Not blocking; not part of any open stage. Roll into a dedicated polish pass once the constellation renderer is in place and threads/marginalia are wired.
