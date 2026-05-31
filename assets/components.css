@@ -3293,6 +3293,34 @@
 }
 
 
+/* ===== STAGE 8.1C -- CONSTELLATION KEYBOARD FOCUS RING =====
+   Matches the house focus convention (components.css:2239-2268):
+   :focus-visible (not :focus, so mouse-click leaves no stuck ring),
+   outline (not box-shadow), 2px solid --river, outline-offset 2px.
+   The brief specified :focus + --gold + 3px; overridden to the house
+   standard on purpose -- the Yumi-toggle --gold exception is for
+   floating-element contrast, not the page norm. The non-:focus-visible
+   rule clears the UA default ring on these now-focusable SVG elements.
+   ============================================================ */
+
+.arc-detail-web-view [data-book-id],
+.arc-detail-web-view [data-thread-a],
+.arc-detail-web-view [data-marginalia-book-id],
+.arc-detail-web-view [data-yumi-cluster],
+.arc-detail-web-view [data-question] {
+  outline: none;
+}
+
+.arc-detail-web-view [data-book-id]:focus-visible,
+.arc-detail-web-view [data-thread-a]:focus-visible,
+.arc-detail-web-view [data-marginalia-book-id]:focus-visible,
+.arc-detail-web-view [data-yumi-cluster]:focus-visible,
+.arc-detail-web-view [data-question]:focus-visible {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+}
+
+
 /* ===== STAGE 5.4 STAGE 2a -- ARC-WEB BOOK NODE PRIMITIVE =====
    Mirrors .shelf-book-cover-area pattern (components.css:1089-1110)
    at smaller scale. Surface-isolated from .shelf-book-* by class --

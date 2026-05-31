@@ -2822,14 +2822,17 @@ function _arcConstellationAttachInteractions(svgEl, arc) {
 
   var isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
   if (isTouch) {
-    // Touch: no hover layer. Click handlers still bind so taps navigate.
+    // Touch: no hover layer. Click + keyboard still bind so taps and
+    // (Stage 8.1C) Enter/Space navigate.
     _arcAttachClickHandlers(svgEl, arc);
+    _arcAttachKeyboardHandlers(svgEl, arc);
     return;
   }
 
   var prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   _arcAttachClickHandlers(svgEl, arc);
   _arcAttachTooltipHandlers(svgEl, arc, prefersReducedMotion);
+  _arcAttachKeyboardHandlers(svgEl, arc);
 }
 
 // Plain-language engagement-band label (Stage 0 item 10: getEngagementBand
@@ -3059,6 +3062,62 @@ function _arcAttachTooltipHandlers(svgEl, arc, prefersReducedMotion) {
   for (i = 0; i < yumiEls.length; i = i + 1) {
     bindHover(yumiEls[i], yumiLines);
   }
+}
+
+// Stage 8.1C: keyboard focus + activation. Runs on every device (touch
+// users with keyboards get it too). Makes each interactive element a
+// focusable role=button with an aria-label, and binds Enter/Space to
+// re-fire the click handler 8.1B bound (via a synthetic click, so the
+// single source of navigation logic stays in the click binders).
+// Question text is focusable + labeled but has NO click handler, so its
+// Enter/Space is a no-op -- the edit flow lands in Stage 8.2. Tab order
+// follows DOM emit order (no positive tabindex): question -> threads ->
+// books -> marginalia -> Yumi, since the renderer paints the question
+// first for z-order. See checkpoint note -- this differs from a
+// books-first reading order.
+function _arcAttachKeyboardHandlers(svgEl, arc) {
+  var bookIndex = _arcBuildBookIndex(arc);
+  var bookEls = svgEl.querySelectorAll('[data-book-id]');
+  var threadEls = svgEl.querySelectorAll('[data-thread-a]');
+  var margEls = svgEl.querySelectorAll('[data-marginalia-book-id]');
+  var yumiEls = svgEl.querySelectorAll('[data-yumi-cluster]');
+  var questionEls = svgEl.querySelectorAll('[data-question]');
+  var i, el, book, title, label;
+
+  for (i = 0; i < bookEls.length; i = i + 1) {
+    el = bookEls[i];
+    book = bookIndex[el.getAttribute('data-book-id')];
+    title = (book && book.title) ? book.title : 'Untitled';
+    label = (book && book.author) ? title + ' by ' + book.author : title;
+    _arcMakeFocusable(el, label);
+  }
+  for (i = 0; i < threadEls.length; i = i + 1) {
+    _arcMakeFocusable(threadEls[i], 'Thread between two books');
+  }
+  for (i = 0; i < margEls.length; i = i + 1) {
+    el = margEls[i];
+    book = bookIndex[el.getAttribute('data-marginalia-book-id')];
+    title = (book && book.title) ? book.title : 'Untitled';
+    _arcMakeFocusable(el, 'Notes on ' + title);
+  }
+  for (i = 0; i < yumiEls.length; i = i + 1) {
+    _arcMakeFocusable(yumiEls[i], 'Yumi noticing');
+  }
+  for (i = 0; i < questionEls.length; i = i + 1) {
+    _arcMakeFocusable(questionEls[i], 'Arc question');
+  }
+}
+
+function _arcMakeFocusable(el, label) {
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', label);
+  el.addEventListener('keydown', function(evt) {
+    if (evt.key === 'Enter' || evt.key === ' ') {
+      evt.preventDefault();
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  });
 }
 
 // Stage 3.9-a: arc detail view at #arc/<arcId>. Renders the arc's
