@@ -2806,6 +2806,261 @@ function _arcDetailBuildConstellationData(arc) {
   };
 }
 
+// Stage 8.1B: read-only interaction layer over the rendered
+// constellation. svgEl is the inner <svg> the renderer filled; arc is
+// the constellation DATA object built by _arcDetailBuildConstellationData
+// (fields: question, books[{id,title,author,band}], threads,
+// yumiNoticing) -- NOT the raw state.arcs record. Pure reads, no
+// mutation. Touch devices (detected once via matchMedia) skip the whole
+// hover/tooltip layer and get tap-to-navigate only. Hover devices get
+// tooltips + click + (Stage 8.1C) keyboard. Each renderArcDetail pass
+// builds a fresh container + svg, so listeners and the lazily-created
+// tooltip are scoped per render -- toggling List<->Web cannot leak
+// duplicate or stuck tooltips.
+function _arcConstellationAttachInteractions(svgEl, arc) {
+  if (!svgEl || !arc) { return; }
+
+  var isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (isTouch) {
+    // Touch: no hover layer. Click handlers still bind so taps navigate.
+    _arcAttachClickHandlers(svgEl, arc);
+    return;
+  }
+
+  var prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  _arcAttachClickHandlers(svgEl, arc);
+  _arcAttachTooltipHandlers(svgEl, arc, prefersReducedMotion);
+}
+
+// Plain-language engagement-band label (Stage 0 item 10: getEngagementBand
+// returns 0/1/2, no existing label producer).
+function _arcEngagementLabel(band) {
+  if (band === 2) { return 'Worked through'; }
+  if (band === 1) { return 'Read with notes'; }
+  return 'Lightly read';
+}
+
+// {bookId -> book} index off the constellation data so hover/click
+// handlers resolve title/author/band without re-scanning the array.
+function _arcBuildBookIndex(arc) {
+  var index = {};
+  var books = (arc && arc.books) ? arc.books : [];
+  var i;
+  for (i = 0; i < books.length; i = i + 1) {
+    index[books[i].id] = books[i];
+  }
+  return index;
+}
+
+// Find the thread joining two book ids regardless of endpoint order.
+// Seed arc has no threads (adapter stubs threads: []), so this returns
+// null there -- the hover path is written for when real threads land.
+function _arcFindThread(arc, aId, bId) {
+  var threads = (arc && arc.threads) ? arc.threads : [];
+  var i, t;
+  for (i = 0; i < threads.length; i = i + 1) {
+    t = threads[i];
+    if ((t.bookAId === aId && t.bookBId === bId) ||
+        (t.bookAId === bId && t.bookBId === aId)) {
+      return t;
+    }
+  }
+  return null;
+}
+
+// Click handlers. Bound on both touch and hover paths. Each binder takes
+// the element as a parameter so the closure captures the right node (no
+// loop-variable capture bug). Book glyph -> book detail. Marginalia
+// cluster -> notebook (plain #notebook; no book-filter URL exists per
+// Stage 0 item 5 -- filtering is a follow-up). No click on threads (no
+// destination), Yumi cluster (deferred), or question (deferred to 8.2).
+function _arcAttachClickHandlers(svgEl, arc) {
+  var bookEls = svgEl.querySelectorAll('[data-book-id]');
+  var margEls = svgEl.querySelectorAll('[data-marginalia-book-id]');
+  var i;
+  for (i = 0; i < bookEls.length; i = i + 1) {
+    _arcBindBookClick(bookEls[i]);
+  }
+  for (i = 0; i < margEls.length; i = i + 1) {
+    _arcBindMarginaliaClick(margEls[i]);
+  }
+}
+
+function _arcBindBookClick(el) {
+  el.addEventListener('click', function() {
+    var bookId = el.getAttribute('data-book-id');
+    if (bookId) { location.hash = '#book/' + bookId; }
+  });
+}
+
+function _arcBindMarginaliaClick(el) {
+  el.addEventListener('click', function() {
+    location.hash = '#notebook';
+  });
+}
+
+// Hover tooltips (desktop only). One shared tooltip node, created lazily
+// on first hover and appended to the web-view container (svgEl.parentNode,
+// which is position:relative). Reused across all targets. Reduced-motion
+// adds a modifier that kills the fade.
+function _arcAttachTooltipHandlers(svgEl, arc, prefersReducedMotion) {
+  var container = svgEl.parentNode;
+  if (!container) { return; }
+  var bookIndex = _arcBuildBookIndex(arc);
+  var tip = { el: null };
+
+  function ensureTip() {
+    if (tip.el) { return tip.el; }
+    var el = document.createElement('div');
+    el.className = 'arc-tooltip'
+      + (prefersReducedMotion ? ' arc-tooltip--reduced-motion' : '');
+    container.appendChild(el);
+    tip.el = el;
+    return el;
+  }
+
+  // Render structured lines as child <div>s via textContent -- never
+  // innerHTML with book data, which would be an XSS surface (titles +
+  // authors are user-entered).
+  function renderLines(el, lines) {
+    el.textContent = '';
+    var j, line;
+    for (j = 0; j < lines.length; j = j + 1) {
+      line = document.createElement('div');
+      line.className = lines[j].cls;
+      line.textContent = lines[j].text;
+      el.appendChild(line);
+    }
+  }
+
+  function positionTip(el, evt) {
+    var rect = container.getBoundingClientRect();
+    var x = evt.clientX - rect.left + 12;
+    var y = evt.clientY - rect.top + 12;
+    var tw = el.offsetWidth;
+    var th = el.offsetHeight;
+    // Flip to the cursor's other side if the tooltip would clip the
+    // container's right / bottom edge.
+    if (x + tw + 12 > container.clientWidth) {
+      x = evt.clientX - rect.left - tw - 12;
+    }
+    if (y + th + 12 > container.clientHeight) {
+      y = evt.clientY - rect.top - th - 12;
+    }
+    if (x < 0) { x = 0; }
+    if (y < 0) { y = 0; }
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
+  function showTip(lines, evt) {
+    if (!lines || !lines.length) { return; }
+    var el = ensureTip();
+    renderLines(el, lines);
+    el.classList.add('arc-tooltip--visible');
+    positionTip(el, evt);
+  }
+
+  function hideTip() {
+    if (tip.el) {
+      tip.el.classList.remove('arc-tooltip--visible');
+    }
+  }
+
+  function bindHover(el, linesFn) {
+    el.addEventListener('mouseenter', function(evt) {
+      showTip(linesFn(el), evt);
+    });
+    el.addEventListener('mousemove', function(evt) {
+      if (tip.el && tip.el.classList.contains('arc-tooltip--visible')) {
+        positionTip(tip.el, evt);
+      }
+    });
+    el.addEventListener('mouseleave', function() {
+      hideTip();
+    });
+  }
+
+  function bookLines(el) {
+    var book = bookIndex[el.getAttribute('data-book-id')];
+    var lines = [];
+    if (!book) { return lines; }
+    lines.push({ cls: 'arc-tooltip-title', text: book.title || 'Untitled' });
+    if (book.author) {
+      lines.push({ cls: 'arc-tooltip-meta', text: book.author });
+    }
+    lines.push({ cls: 'arc-tooltip-meta', text: _arcEngagementLabel(book.band) });
+    if (typeof book.noteCount === 'number' && book.noteCount > 0) {
+      lines.push({
+        cls: 'arc-tooltip-meta',
+        text: book.noteCount + (book.noteCount === 1 ? ' note' : ' notes')
+      });
+    }
+    return lines;
+  }
+
+  function threadLines(el) {
+    var thread = _arcFindThread(
+      arc, el.getAttribute('data-thread-a'), el.getAttribute('data-thread-b'));
+    var lines = [];
+    if (!thread) { return lines; }
+    var strength = (typeof thread.strength === 'number') ? thread.strength : 0;
+    var days = (typeof thread.daysSinceLastTouch === 'number')
+      ? thread.daysSinceLastTouch : 0;
+    lines.push({
+      cls: 'arc-tooltip-meta',
+      text: strength + ' linked notes, last touched ' + days + ' days ago'
+    });
+    return lines;
+  }
+
+  function marginaliaLines(el) {
+    var book = bookIndex[el.getAttribute('data-marginalia-book-id')];
+    var nc = (book && typeof book.noteCount === 'number') ? book.noteCount : 0;
+    var lines = [];
+    lines.push({
+      cls: 'arc-tooltip-meta',
+      text: nc + (nc === 1 ? ' note' : ' notes')
+    });
+    lines.push({ cls: 'arc-tooltip-affordance', text: 'Open notebook' });
+    return lines;
+  }
+
+  function yumiLines() {
+    var noticing = (arc && arc.yumiNoticing) ? arc.yumiNoticing : [];
+    var lines = [];
+    if (!noticing.length) {
+      lines.push({ cls: 'arc-tooltip-meta', text: 'Quiet today.' });
+      return lines;
+    }
+    var k, b, title;
+    for (k = 0; k < noticing.length; k = k + 1) {
+      b = state.books && state.books[noticing[k]];
+      title = (b && b.title) ? b.title : 'Untitled';
+      lines.push({ cls: 'arc-tooltip-meta', text: title });
+    }
+    return lines;
+  }
+
+  var bookEls = svgEl.querySelectorAll('[data-book-id]');
+  var threadEls = svgEl.querySelectorAll('[data-thread-a]');
+  var margEls = svgEl.querySelectorAll('[data-marginalia-book-id]');
+  var yumiEls = svgEl.querySelectorAll('[data-yumi-cluster]');
+  var i;
+  for (i = 0; i < bookEls.length; i = i + 1) {
+    bindHover(bookEls[i], bookLines);
+  }
+  for (i = 0; i < threadEls.length; i = i + 1) {
+    bindHover(threadEls[i], threadLines);
+  }
+  for (i = 0; i < margEls.length; i = i + 1) {
+    bindHover(margEls[i], marginaliaLines);
+  }
+  for (i = 0; i < yumiEls.length; i = i + 1) {
+    bindHover(yumiEls[i], yumiLines);
+  }
+}
+
 // Stage 3.9-a: arc detail view at #arc/<arcId>. Renders the arc's
 // members as ONE chronological stream merged from bookIds + entryIds,
 // sorted ASCENDING by addedAt (oldest-first: first -> then -> now;
@@ -3003,6 +3258,10 @@ function renderArcDetail(arcId) {
       webContainer.appendChild(svg);
       var arcData = _arcDetailBuildConstellationData(arc);
       window.renderArcConstellation(arcData, svg);
+      // Stage 8.1B: bind the read-only interaction layer. Pass arcData
+      // (resolved books/threads/yumiNoticing), not the raw arc record --
+      // the tooltip needs title/author/band already resolved.
+      _arcConstellationAttachInteractions(svg, arcData);
     }
     wrap.appendChild(webContainer);
   } else {

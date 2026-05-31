@@ -3235,6 +3235,64 @@
 }
 
 
+/* ===== STAGE 8.1B -- CONSTELLATION INTERACTION TOOLTIP =====
+   Read-only hover tooltip for the arc constellation (desktop only;
+   _arcConstellationAttachInteractions suppresses it on touch). The
+   container .arc-detail-web-view is already position:relative (Stage
+   5.4 1e, above), which is the positioning context the JS relies on --
+   no re-declaration needed. Background uses --surface-2 (the warm
+   off-white; brief's --parchment-2 does not exist -- Stage 0 item 7).
+   Fonts use the --font-* tokens per house convention, not the brief's
+   hardcoded family names. The --reduced-motion modifier kills the fade
+   (set by JS from matchMedia; no @media block).
+   ============================================================ */
+
+.arc-tooltip {
+  position: absolute;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  padding: 8px 12px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+  max-width: 240px;
+  z-index: 50;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.arc-tooltip--visible { opacity: 1; }
+
+.arc-tooltip--reduced-motion { transition: none; }
+
+.arc-tooltip-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.arc-tooltip-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.arc-tooltip-affordance {
+  font-size: 12px;
+  color: var(--gold);
+  margin-top: 4px;
+}
+
+.arc-detail-web-view [data-book-id],
+.arc-detail-web-view [data-marginalia-book-id] {
+  cursor: pointer;
+}
+
+
 /* ===== STAGE 5.4 STAGE 2a -- ARC-WEB BOOK NODE PRIMITIVE =====
    Mirrors .shelf-book-cover-area pattern (components.css:1089-1110)
    at smaller scale. Surface-isolated from .shelf-book-* by class --
