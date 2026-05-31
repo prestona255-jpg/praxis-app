@@ -4484,7 +4484,7 @@ var STAGES = [
     purpose: 'The core post-pivot work. Praxis becomes a place where users develop and write theories anchored in their reading, not just organize their library. Stage 9 ships the sub-theory as a first-class data type, the writing surface that lets a user develop one, the theory view of an arc that shows all sub-theories together, and the first real test of the system: writing one of the three Pedagogy of Desire sub-theories already drafted on May 27 directly inside Praxis.',
     stageStatus: 'not-started',
     active: false,
-    summary: 'Four sub-stages. 9.1 lands the sub-theory data model alongside book and notebookEntry. 9.2 builds the writing surface as a new top-level page with header, body fields (public and intellectual registers), evidence panel, linked-sub-theories panel, and Yumi presence. 9.3 adds the theory view as a third toggle on arc-detail alongside List and Web (joining the books view shipped in Stage 7). 9.4 tests the surface by writing one of the May 27 sub-theory drafts directly inside Praxis to surface what is missing.',
+    summary: 'Four sub-stages. 9.1 lands the sub-theory data model alongside book and notebookEntry. 9.2 builds the writing surface as a new top-level page with header, body fields (public and intellectual registers), evidence panel, linked-sub-theories panel, and Yumi presence. 9.4 tests the surface by writing one of the May 27 sub-theory drafts directly inside Praxis to surface what is missing. 9.5 replaces the books-as-glyphs constellation (shipped 7.1/8.1) with the sub-theory constellation per the knowledge-arcs subtheory-pivot spec — the constellation becomes the theory view of an arc, with no separate card view.',
     diagram: '<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sub-theory writing surface layout sketch"><rect width="400" height="200" fill="#FAEEDA"/><rect x="20" y="18" width="240" height="22" rx="3" fill="#EDE3D2" stroke="#C8B89A" stroke-width="0.5"/><text x="32" y="33" font-family="DM Sans, sans-serif" font-size="10" fill="#8a7f72" font-style="italic">Sub-theory header</text><rect x="20" y="50" width="240" height="130" rx="4" fill="#FFFFFF" stroke="#C8B89A" stroke-width="0.5"/><line x1="32" y1="68" x2="240" y2="68" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="80" x2="240" y2="80" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="92" x2="220" y2="92" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="104" x2="240" y2="104" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="116" x2="200" y2="116" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="128" x2="240" y2="128" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><line x1="32" y1="140" x2="170" y2="140" stroke="#8a7f72" stroke-width="0.5" opacity="0.4"/><rect x="278" y="18" width="100" height="162" rx="4" fill="#EDE3D2" stroke="#C8B89A" stroke-width="0.5"/><text x="284" y="33" font-family="Cormorant Garamond, Georgia, serif" font-size="10" font-style="italic" fill="#5A3F24">Evidence</text><rect x="284" y="42" width="88" height="22" rx="2" fill="#FFFFFF" stroke="#C8B89A" stroke-width="0.4"/><rect x="284" y="68" width="88" height="22" rx="2" fill="#FFFFFF" stroke="#C8B89A" stroke-width="0.4"/><rect x="284" y="94" width="88" height="22" rx="2" fill="#FFFFFF" stroke="#C8B89A" stroke-width="0.4"/><circle cx="354" cy="166" r="10" fill="none" stroke="#B88A3A" stroke-width="1" stroke-dasharray="2 2"/><text x="354" y="170" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="10" font-style="italic" fill="#8b6a26">Y</text></svg>',
     nonGoals: [
       'No public publishing (Stage 12)',
@@ -4505,8 +4505,9 @@ var STAGES = [
         purpose: 'Add subTheory as a top-level data type alongside book and notebookEntry. Mirror the ensureBookFields chokepoint pattern so future schema changes are clean. Migration backfills any existing data (none expected, but the chokepoint must run cleanly against an empty state).',
         scope: [
           'New top-level state.subTheories map keyed by subTheoryId',
-          'subTheory schema fields: id, arcId, header, bodyPublic, bodyIntellectual, evidence array, linkedSubTheories array, status, createdAt, updatedAt, publishedAt, format',
+          'subTheory schema fields: id, arcId, header, bodyPublic, bodyIntellectual, evidence array, linkedSubTheories array, attachedMarginalia array, status, createdAt, updatedAt, publishedAt, format',
           'evidence array contains items of shape: kind (book or note or external), refId, quote, annotation. quote and annotation optional.',
+          'attachedMarginalia array (per docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md): references (not copies) to marginalia entries, many-to-many. Each item shape: refId (marginalia entry id), state (gathered or incorporated), proseAnchor (for incorporated attachments, an anchor into the body where the marginalia is woven in; null while gathered).',
           'status field: draft (default) or published. publishedAt set when status flips to published.',
           'format field: prose for v1. Reserved for future flexibility (dialogue, list, fragment, poem).',
           'ensureSubTheoryFields(subTheory) chokepoint mirroring ensureBookFields. Backfills missing fields with defaults.',
@@ -4552,44 +4553,18 @@ var STAGES = [
         ]
       },
       {
-        id: 's9-3',
-        num: '9.3',
-        name: 'Theory view as third arc-detail toggle',
-        depConfirm: '9.1 Shipped. 9.2 Shipped (writing surface exists, sub-theories can be created and edited). arc-detail toolbar at views.js:2926 has List and Web toggles.',
-        purpose: 'Add a third toggle to the arc-detail toolbar (Theory) alongside List and Web. The Theory view shows all sub-theories belonging to this arc as cards or simple shapes. Click any sub-theory to open the writing surface (existing draft) or a read-only view (Stage 12 published state).',
-        scope: [
-          'Extend the existing setArcViewMode helper to accept theory in addition to list and web.',
-          'Add a third button to the toolbar: Theory. Active when viewMode is theory.',
-          'When viewMode is theory, render a new theoryContainer div populated with sub-theory cards.',
-          'Sub-theory card: header (Cormorant Garamond 18px), first 1-2 lines of body as preview (DM Sans 13px secondary), draft or published status badge, last-updated relative time. Click navigates to the writing surface.',
-          'Empty state: if the arc has no sub-theories yet, render a Start your first sub-theory affordance that creates a new draft and navigates to it.',
-          'New sub-theory affordance always visible at top of the theory view, even when there are existing sub-theories.',
-          'Sub-theory cards ordered by updatedAt descending (most recently worked-on first). Drafts and published mixed in same order; status badge differentiates them visually.',
-          'Mobile: cards stack one per row. Desktop: 2-column grid where width allows.',
-          'No shape encoding for v1 (cards are neutral rounded rects). Shape vocabulary (does shape encode form-of-argument, tradition, something else?) is a Stage 13 question; for now, neutral.'
-        ],
-        nonGoals: [
-          'No shape encoding (deferred, see Stage 13)',
-          'No color hybridization for cross-tradition sub-theories (deferred)',
-          'No drag-to-reorder (deferred)',
-          'No bulk actions on sub-theories (deferred)',
-          'No filtering or search on sub-theories within the theory view (deferred)',
-          'No animation between views (instant toggle for v1, motion polish later)'
-        ]
-      },
-      {
         id: 's9-4',
         num: '9.4',
         name: 'Write one sub-theory inside Praxis',
-        depConfirm: '9.1, 9.2, 9.3 Shipped. Writing surface live. Theory view live. Sub-theory data model integrated.',
+        depConfirm: '9.1, 9.2 Shipped. Writing surface live. Sub-theory data model integrated.',
         purpose: 'The load-bearing test of Stage 9. Take one of the three Pedagogy of Desire sub-theories drafted on May 27 (likely the recognition sub-theory, which is furthest along) and write it directly inside Praxis using the new writing surface. The goal is to surface what is missing: what feels wrong in the body field, what is awkward about evidence attachment, what is missing from Yumis presence model, what reveals itself only by doing the work in the surface.',
         scope: [
-          'Open Praxis. Navigate to the Pedagogy of Desire arc. Open the theory view. Click Start your first sub-theory or the new sub-theory affordance.',
+          'Open Praxis. Navigate to the Pedagogy of Desire arc. Create a new draft via the 9.2 writing-surface route (the new-subtheory affordance), which opens the writing page directly. (No card theory view to enter — that is replaced by the 9.5 constellation, which ships after this test.)',
           'Write the header (the recognition framing from the May 27 draft).',
           'Write the body in the public register field. Aim for the May 27 drafts level of length and care.',
           'If the intellectual register feels needed, toggle it on and write that version too.',
           'For each evidence item in the draft (Epsteins Range, Benjamins Bonds of Love, De Lissovoy, hooks, Hurston, plus the autobiographical anchors), attach evidence using the evidence panel. Test attaching books from the shelf. Test attaching notebook entries if any exist for these books. Test attaching external sources (for any books not in the shelf).',
-          'Save the draft. Close the page. Reopen it via the theory view. Confirm everything saved.',
+          'Save the draft. Close the page. Reopen the sub-theory via its writing-surface route (open existing sub-theory by id). Confirm everything saved.',
           'Document findings as STAGE_9_FIELD_NOTES.md in docs/. What worked, what broke, what was missing, what was wrong. This document becomes the input to Stage 10 (Evidence and citation) and Stage 11 (Yumi transparency) design decisions.',
           'If any finding is a blocker (cannot save, breaks data integrity, makes the surface unusable), file it as a hotfix back into 9.2. Do not advance to Stage 10 with a broken surface.',
           'If the writing process surfaces a missing feature that is downstream (e.g., inline citation marks that Stage 10 handles), note it but do not implement it here.'
@@ -4599,6 +4574,29 @@ var STAGES = [
           'No quality bar on the resulting sub-theory beyond it is the May 27 draft, now living in Praxis',
           'No publishing the sub-theory (it stays as draft until Stage 12)',
           'No comparison with other writing tools (the goal is to surface gaps, not benchmark against Notion or Roam)'
+        ]
+      },
+      {
+        id: 's9-5',
+        num: '9.5',
+        name: 'Replace books-constellation with sub-theory constellation',
+        depConfirm: '9.4 Shipped (a real sub-theory written inside Praxis; the constellation is built against real data, not a stub). 9.1 sub-theory data model carries attachedMarginalia with gathered/incorporated state. Books-as-glyphs constellation renderer shipped 7.1/8.1 exists as the surface being replaced.',
+        purpose: 'Replace the books-as-glyphs constellation (shipped 7.1/8.1) with the sub-theory constellation per docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md. Sub-theories as identity-shapes orbiting the arc question; color saturation encodes maturity; marginalia clouds around each shape in two states (gathered = hollow, incorporated = solid + tethered); resonance edges between linked sub-theories; Yumi as noticing entity. Built against a real sub-theory written in 9.4. Layout is a swappable function (radial or curved sweep), vocabulary constant. Open questions deferred: luminosity formula, high-density legibility, map-vs-workspace.',
+        scope: [
+          'Replace the books-as-glyphs constellation (shipped 7.1/8.1) with the sub-theory constellation per docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md. The constellation IS the theory view of an arc; there is no separate card view.',
+          'Sub-theories render as identity-shapes orbiting the arc question at center.',
+          'Color saturation encodes sub-theory maturity.',
+          'Marginalia clouds around each shape in two states: gathered (hollow) and incorporated (solid, tethered to a prose anchor in the body).',
+          'Resonance edges drawn between linked sub-theories.',
+          'Yumi present as a noticing entity at the edge of the field.',
+          'Built and verified against a real sub-theory written in 9.4, not a stub.',
+          'Layout is a swappable function (radial or curved sweep); the visual vocabulary stays constant across layouts.'
+        ],
+        nonGoals: [
+          'No separate card view (the constellation replaces it; old 9.3 absorbed here)',
+          'Luminosity formula not settled in this stage (deferred open question)',
+          'High-density legibility not solved in this stage (deferred open question)',
+          'Map-vs-workspace question not resolved in this stage (deferred open question)'
         ]
       }
     ]
@@ -4620,7 +4618,7 @@ var STAGES = [
       'No automatic detection of un-cited claims (no you may have forgotten to cite something warnings)',
       'No citation network visualization (deferred to Stage 13.5)'
     ],
-    dependencies: 'Stage 9 Shipped. Sub-theory data model includes evidence array. Writing surface has evidence panel. Theory view renders sub-theory cards.',
+    dependencies: 'Stage 9 Shipped. Sub-theory data model includes evidence array. Writing surface has evidence panel. Theory view (the sub-theory constellation, 9.5) renders the arc\'s sub-theories.',
     substages: [
       {
         id: 's10-1',
@@ -4691,9 +4689,9 @@ var STAGES = [
         num: '10.4',
         name: 'Dual rendering: inline marks plus evidence block',
         depConfirm: '10.2 Shipped. 10.3 Shipped. Sub-theory writing surface renders inline citations. Evidence array contains book, note, and external items.',
-        purpose: 'When a sub-theory is rendered in any read-only context (the theory view card preview, future public arc page, future export), it renders with both inline italic refs in the body (with superscript numbers when published) and a full evidence block at the close listing all evidence in order. Both are autogenerated from the same underlying evidence array.',
+        purpose: 'When a sub-theory is rendered in any read-only context (the theory view / constellation preview, future public arc page, future export), it renders with both inline italic refs in the body (with superscript numbers when published) and a full evidence block at the close listing all evidence in order. Both are autogenerated from the same underlying evidence array.',
         scope: [
-          'renderSubTheoryReadOnly(subTheory) helper that produces the read-only HTML for a sub-theory. Used by theory view card preview (truncated), full sub-theory detail page (Stage 12), and future export (Stage 12.5).',
+          'renderSubTheoryReadOnly(subTheory) helper that produces the read-only HTML for a sub-theory. Used by the theory view / constellation preview (truncated), full sub-theory detail page (Stage 12), and future export (Stage 12.5).',
           'Body rendering: convert markdown-light italics, mark citation phrases with superscript numbers (only when status is published; drafts use the underline-dot indicator from 10.2 instead).',
           'Evidence block: rendered at close of body. Numbered list. Each item: full citation (Author, Title for books; same plus external metadata for external). Optional quote in italic blockquote. Optional annotation as plain text below quote.',
           'Evidence ordering: by first appearance in the body. Evidence items never cited in the body render at the end of the block in their attachment order (so attached-but-uncited evidence is still surfaced).',
