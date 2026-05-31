@@ -2830,16 +2830,20 @@ function renderArcDetail(arcId) {
   var arc = state.arcs && state.arcs[arcId];
   var user = getCurrentUser();
 
-  // Stage 5.3 Stage 3b: seed-owned arcs (userId === '__praxis_seed__')
-  // are visible to any signed-in user. The sentinel was written by the
-  // Stage 3a migration step so the Pedagogy of Desire worked example
-  // could live globally rather than per-user-cloned. The user-filter
-  // still requires a signed-in user (no unauthenticated arc viewing)
-  // and still isolates user-authored arcs to their owner -- the only
-  // relaxation is that arc.userId may equal the sentinel without
-  // matching user.uid. Any future seed arcs reuse the same sentinel
-  // and inherit the same access pass.
-  if (!arc || !user) {
+  // Stage 5.3 Stage 3b + post-7.1 bugfix: seed-owned arcs
+  // (userId === '__praxis_seed__') are globally viewable, INCLUDING
+  // signed-out. The Pedagogy of Desire worked example was authored
+  // under the sentinel so it could live globally rather than per-
+  // user-cloned; the gate below honors that by requiring only that
+  // the arc record exist, then bypassing the auth/ownership check
+  // entirely when the sentinel matches. User-authored arcs still
+  // require a signed-in user whose uid matches arc.userId. Pre-bugfix
+  // the gate conflated "arc missing" and "user missing" into a single
+  // !arc || !user check, which short-circuited the sentinel bypass on
+  // mobile devices that had never signed in -- the seed arc was in
+  // state.arcs but the not-found render fired anyway. Any future seed
+  // arcs reuse the same sentinel and inherit the same access pass.
+  if (!arc) {
     var nf = document.createElement('section');
     nf.className = 'arc-detail-not-found';
     var nfMsg = document.createElement('p');
@@ -2852,7 +2856,7 @@ function renderArcDetail(arcId) {
     host.appendChild(nf);
     return;
   }
-  if (arc.userId !== user.uid && arc.userId !== '__praxis_seed__') {
+  if (arc.userId !== '__praxis_seed__' && (!user || arc.userId !== user.uid)) {
     var nf = document.createElement('section');
     nf.className = 'arc-detail-not-found';
     var nfMsg = document.createElement('p');
