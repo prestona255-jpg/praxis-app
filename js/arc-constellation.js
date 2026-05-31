@@ -200,7 +200,7 @@ function _arcRenderQuestion(question, width, height, isSpareFocal) {
   var glowR = Math.min(width, height) * 0.35;
   out = out + '<circle cx="' + _arcR(cx) + '" cy="' + _arcR(cy) + '" r="' + _arcR(glowR) + '" fill="var(--arc-question-glow)" opacity="0.08"/>';
   var fs = isSpareFocal ? 20 : 14;
-  out = out + '<text x="' + _arcR(cx) + '" y="' + _arcR(cy) + '" text-anchor="middle" dominant-baseline="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="' + fs + '" fill="var(--ink-2)" opacity="0.78">' + _arcEscapeXml(question) + '</text>';
+  out = out + '<text data-question="1" x="' + _arcR(cx) + '" y="' + _arcR(cy) + '" text-anchor="middle" dominant-baseline="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="' + fs + '" fill="var(--ink-2)" opacity="0.78">' + _arcEscapeXml(question) + '</text>';
   return out;
 }
 
@@ -235,6 +235,7 @@ function _arcRenderThreads(threads, posById, isSpareFocal) {
       wB = w + 1.0;
     }
     out = out
+      + '<g data-thread-a="' + t.bookAId + '" data-thread-b="' + t.bookBId + '">'
       + '<line x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y)
       + '" x2="' + _arcR(mx) + '" y2="' + _arcR(my)
       + '" stroke="var(--thread-color)" stroke-width="' + _arcR(wA)
@@ -243,7 +244,7 @@ function _arcRenderThreads(threads, posById, isSpareFocal) {
       + '<line x1="' + _arcR(mx) + '" y1="' + _arcR(my)
       + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y)
       + '" stroke="var(--thread-color)" stroke-width="' + _arcR(wB)
-      + '" opacity="' + _arcR(op) + '" stroke-linecap="round"' + dash + '/>';
+      + '" opacity="' + _arcR(op) + '" stroke-linecap="round"' + dash + '/></g>';
   }
   return out;
 }
@@ -274,7 +275,7 @@ function _arcRenderBooks(positions) {
     var band = (p.book && typeof p.book.band === 'number') ? p.book.band : 0;
     var form = renderTraditionFormArc(p.book.tradition, band, 60);
     if (!form) { continue; }
-    out = out + '<g transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">' + form + '</g>';
+    out = out + '<g data-book-id="' + p.id + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">' + form + '</g>';
   }
   return out;
 }
@@ -291,6 +292,7 @@ function _arcRenderMarginalia(positions) {
     var p = positions[i];
     var nc = (p.book && typeof p.book.noteCount === 'number') ? p.book.noteCount : 0;
     if (nc <= 0) { continue; }
+    out = out + '<g data-marginalia-book-id="' + p.id + '">';
     if (nc >= 5) {
       var anchorAngle = _arcHash(p.id, 50) * Math.PI * 2;
       var ax = p.x + Math.cos(anchorAngle) * ringR;
@@ -319,13 +321,14 @@ function _arcRenderMarginalia(positions) {
           + '" r="4" fill="var(--marginalia-color)"/>';
       }
     }
+    out = out + '</g>';
   }
   return out;
 }
 
 // Yumi cluster -- dashed circle + italic serif label, upper-right.
 function _arcRenderYumiCluster(yx, yy) {
-  var out = '';
+  var out = '<g data-yumi-cluster="1">';
   out = out
     + '<circle cx="' + _arcR(yx) + '" cy="' + _arcR(yy) + '" r="14"'
     + ' fill="none" stroke="var(--ink, #412402)" stroke-width="1"'
@@ -334,6 +337,7 @@ function _arcRenderYumiCluster(yx, yy) {
     + '<text x="' + _arcR(yx) + '" y="' + _arcR(yy + 28)
     + '" text-anchor="middle" font-family="\'Cormorant Garamond\', Georgia, serif"'
     + ' font-style="italic" font-size="11" fill="var(--ink-2, #633806)">Yumi</text>';
+  out = out + '</g>';
   return out;
 }
 
