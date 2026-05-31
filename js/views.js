@@ -2908,14 +2908,23 @@ function renderArcDetail(arcId) {
   // arc.userId off state.arcs[arcId] internally to mirror this branch
   // in the confirm-panel copy + the confirm-action link label.
   var isSeedArc = (arc.userId === '__praxis_seed__');
-  var deleteBtn = document.createElement('button');
-  deleteBtn.type = 'button';
-  deleteBtn.className = 'arc-detail-delete';
-  deleteBtn.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
-  deleteBtn.addEventListener('click', function() {
-    openArcDeleteConfirm(arcId);
-  });
-  header.appendChild(deleteBtn);
+  // Suppress the destructive button for signed-out seed viewers: the
+  // click handler (openArcDeleteConfirm -> getCurrentUser) no-ops
+  // without a user, so a visible button would dead-click. Signed-in
+  // users always see it (Hide on the seed, Delete on their own arcs);
+  // signed-out viewers only ever reach the seed-arc render path (the
+  // gate above blocks signed-out access to user-authored arcs), so
+  // this collapses to "hide it when there is no user."
+  if (user || !isSeedArc) {
+    var deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'arc-detail-delete';
+    deleteBtn.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
+    deleteBtn.addEventListener('click', function() {
+      openArcDeleteConfirm(arcId);
+    });
+    header.appendChild(deleteBtn);
+  }
 
   wrap.appendChild(header);
 
