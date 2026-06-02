@@ -334,7 +334,7 @@ function renderRoute() {
   // 'arc' / 'arcs' branch must come BEFORE the books branch so a hash
   // like 'arc/abc' (parts[0] === 'arc') is caught here, not later.
   var activeRoute;
-  if (parts[0] === 'arc' || parts[0] === 'arcs') {
+  if (parts[0] === 'arc' || parts[0] === 'arcs' || parts[0] === 'subtheory') {
     activeRoute = 'arcs';
   } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
@@ -361,6 +361,7 @@ function renderRoute() {
   if (parts[0] === 'book' && parts[1]) {
     state.currentBookId = parts[1];
     state.currentArcId  = null;
+    state.currentSubTheoryId = null;
     saveState();
     renderBookDetail(parts[1]);
     return;
@@ -372,8 +373,41 @@ function renderRoute() {
     // retrospective surface rather than the in-progress one.
     state.currentBookId = parts[1];
     state.currentArcId  = null;
+    state.currentSubTheoryId = null;
     saveState();
     renderArtifact(parts[1]);
+    return;
+  }
+  // 9.2: sub-theory creation. The hash 'arc/<arcId>/new-subtheory'
+  // mints a fresh draft under the arc and redirects to its stable
+  // detail route. Must come BEFORE the 'arc && parts[1]' block below:
+  // 'arc/<id>/new-subtheory' has parts[1] truthy, so the arc-detail
+  // block would otherwise swallow it. location.replace (not assign)
+  // keeps the create-hash out of history so a Back press does not
+  // re-mint a second empty draft, and a refresh on the resulting
+  // #subtheory/<id> is stable. A bad/absent arc yields null from
+  // createSubTheory -> fall back to the Arcs page.
+  if (parts[0] === 'arc' && parts[2] === 'new-subtheory') {
+    var draft = createSubTheory(parts[1], {});
+    if (draft) {
+      location.replace('#subtheory/' + draft.id);
+    } else {
+      location.replace('#arcs');
+    }
+    return;
+  }
+  // 9.2: sub-theory detail / writing surface. Setting currentSubTheoryId
+  // drives yumi-brain's currentSubTheory lens; currentArcId is set to
+  // the parent arc so the arc lens stays coherent (the sub-theory lives
+  // inside that arc), and currentBookId clears. A dangling id still sets
+  // the pointer -- renderSubTheoryPage owns the not-found render.
+  if (parts[0] === 'subtheory' && parts[1]) {
+    var stRec = state.subTheories[parts[1]];
+    state.currentSubTheoryId = parts[1];
+    state.currentArcId  = stRec ? stRec.arcId : null;
+    state.currentBookId = null;
+    saveState();
+    renderSubTheoryPage(parts[1]);
     return;
   }
   if (parts[0] === 'arc' && parts[1]) {
@@ -382,6 +416,7 @@ function renderRoute() {
     // symmetric half (entering an arc is leaving any book).
     state.currentArcId  = parts[1];
     state.currentBookId = null;
+    state.currentSubTheoryId = null;
     saveState();
     renderArcDetail(parts[1]);
     return;
@@ -392,6 +427,7 @@ function renderRoute() {
     // reference into a shelf-scoped session.
     state.currentBookId = null;
     state.currentArcId  = null;
+    state.currentSubTheoryId = null;
     saveState();
     renderShelf();
     return;
@@ -404,6 +440,7 @@ function renderRoute() {
     // both any book and any specific arc.
     state.currentBookId = null;
     state.currentArcId  = null;
+    state.currentSubTheoryId = null;
     saveState();
     renderArcsPage();
     return;
@@ -414,6 +451,7 @@ function renderRoute() {
   // does not carry a stale book reference.
   state.currentBookId = null;
   state.currentArcId  = null;
+  state.currentSubTheoryId = null;
   saveState();
   renderNotebook();
 }
@@ -1724,6 +1762,13 @@ var shelfFilter = { theme: null, author: null };
 // fresh one, dismiss() removes and clears it.
 var shelfSidebarEscapeHandler = null;
 
+// 9.2: module-scope Escape handler slot for the sub-theory evidence
+// rail's mobile bottom sheet, mirroring shelfSidebarEscapeHandler.
+// Parked here (not in renderSubTheoryPage's closure) so a re-render
+// can purge a stale handler closed over a detached rail. Null when no
+// handler is bound.
+var subTheoryRailEscapeHandler = null;
+
 // 3.10b Stage 3: single-select toggle. Called by both the click and
 // keydown handlers on every .shelf-filter-row. If the section's
 // current value === the clicked row's value, clear it (toggle off);
@@ -2703,6 +2748,470 @@ function renderBookDetail(bookId) {
 // are reachable only via direct URL entry. textContent (not
 // innerHTML) for body keeps writing un-rendered as plain text;
 // markdown rendering and visual treatment are 3.10 territory.
+// 9.2 sub-theory writing surface. Renders into #app: a header field, a
+// public body, and an optional intellectual-register body revealed by a
+// toggle (shown immediately if the field already carries text). Header
+// and bodies persist on blur through updateSubTheory (the field-only
+// writer; status/arrays/timestamps are owned elsewhere). The two-column
+// shell mounts an empty evidence rail (#subtheory-rail) that Checkpoint
+// C populates. Italics are authored inline via *asterisks*; the raw
+// text is stored verbatim (in-prose rendering is deferred to Stage 10).
+function renderSubTheoryPage(id) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var subTheory = state.subTheories && state.subTheories[id];
+  if (!subTheory) {
+    var nf = document.createElement('section');
+    nf.className = 'arc-detail-not-found';
+    var nfMsg = document.createElement('p');
+    nfMsg.textContent = 'That sub-theory could not be found.';
+    var nfLink = document.createElement('a');
+    nfLink.href = '#arcs';
+    nfLink.textContent = 'Back to Arcs';
+    nf.appendChild(nfMsg);
+    nf.appendChild(nfLink);
+    host.appendChild(nf);
+    return;
+  }
+
+  var wrap = document.createElement('section');
+  wrap.className = 'subtheory-page';
+
+  var layout = document.createElement('div');
+  layout.className = 'subtheory-layout';
+
+  var main = document.createElement('div');
+  main.className = 'subtheory-main';
+
+  var headerInput = document.createElement('input');
+  headerInput.type = 'text';
+  headerInput.className = 'subtheory-header-input';
+  headerInput.setAttribute('placeholder', 'Untitled sub-theory');
+  headerInput.value = subTheory.header || '';
+  headerInput.addEventListener('blur', function() {
+    updateSubTheory(id, { header: headerInput.value });
+  });
+  main.appendChild(headerInput);
+
+  var publicLabel = document.createElement('div');
+  publicLabel.className = 'book-detail-tradition-label';
+  publicLabel.textContent = 'Public';
+  main.appendChild(publicLabel);
+
+  var publicBody = document.createElement('textarea');
+  publicBody.className = 'notebook-editor-body';
+  publicBody.value = subTheory.bodyPublic || '';
+  publicBody.addEventListener('blur', function() {
+    updateSubTheory(id, { bodyPublic: publicBody.value });
+  });
+  main.appendChild(publicBody);
+
+  // Intellectual register -- optional second body. Shown immediately
+  // when the field already carries text (so a reload of a started
+  // register does not hide existing writing); otherwise hidden behind
+  // the toggle below.
+  var intelWrap = document.createElement('div');
+  intelWrap.className = 'subtheory-intellectual';
+
+  var intelLabel = document.createElement('div');
+  intelLabel.className = 'book-detail-tradition-label';
+  intelLabel.textContent = 'Intellectual register';
+  intelWrap.appendChild(intelLabel);
+
+  var intelBody = document.createElement('textarea');
+  intelBody.className = 'notebook-editor-body';
+  intelBody.value = subTheory.bodyIntellectual || '';
+  intelBody.addEventListener('blur', function() {
+    updateSubTheory(id, { bodyIntellectual: intelBody.value });
+  });
+  intelWrap.appendChild(intelBody);
+
+  var hasIntel = (typeof subTheory.bodyIntellectual === 'string' &&
+    subTheory.bodyIntellectual.length > 0);
+
+  var toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.className = 'notebook-editor-cancel subtheory-register-toggle';
+  toggleBtn.textContent = 'Add intellectual register';
+  toggleBtn.addEventListener('click', function() {
+    intelWrap.style.display = '';
+    toggleBtn.style.display = 'none';
+    intelBody.focus();
+  });
+
+  if (hasIntel) {
+    toggleBtn.style.display = 'none';
+  } else {
+    intelWrap.style.display = 'none';
+  }
+
+  main.appendChild(toggleBtn);
+  main.appendChild(intelWrap);
+
+  // ===== Evidence rail (Checkpoint C) =====
+  var rail = document.createElement('aside');
+  rail.className = 'subtheory-rail';
+  rail.id = 'subtheory-rail';
+
+  // Backdrop sibling for the mobile bottom sheet. Default-hidden by CSS;
+  // toggled in lockstep with the rail's open class.
+  var backdrop = document.createElement('div');
+  backdrop.className = 'subtheory-rail-backdrop';
+
+  // Mobile open/close, mirroring the shelf filter-panel pattern: the
+  // rail is the desktop second column; at <=720px it hides and reopens
+  // as a fixed bottom sheet toggled by the Evidence button, with a
+  // backdrop and an Escape / close-x / backdrop-click dismiss. The
+  // Escape handler is parked at module scope so this render can purge a
+  // stale one bound by a previous render.
+  if (subTheoryRailEscapeHandler) {
+    document.removeEventListener('keydown', subTheoryRailEscapeHandler);
+    subTheoryRailEscapeHandler = null;
+  }
+  function openRail() {
+    rail.classList.add('subtheory-rail-mobile-open');
+    backdrop.classList.add('subtheory-rail-backdrop-open');
+    if (subTheoryRailEscapeHandler) {
+      document.removeEventListener('keydown', subTheoryRailEscapeHandler);
+    }
+    subTheoryRailEscapeHandler = function(ev) {
+      if (ev.key === 'Escape' || ev.key === 'Esc') {
+        dismissRail();
+      }
+    };
+    document.addEventListener('keydown', subTheoryRailEscapeHandler);
+  }
+  function dismissRail() {
+    rail.classList.remove('subtheory-rail-mobile-open');
+    backdrop.classList.remove('subtheory-rail-backdrop-open');
+    if (subTheoryRailEscapeHandler) {
+      document.removeEventListener('keydown', subTheoryRailEscapeHandler);
+      subTheoryRailEscapeHandler = null;
+    }
+  }
+  backdrop.addEventListener('click', dismissRail);
+
+  var railToggle = document.createElement('button');
+  railToggle.type = 'button';
+  railToggle.className = 'subtheory-rail-toggle';
+  railToggle.textContent = 'Evidence';
+  railToggle.addEventListener('click', openRail);
+
+  // Close-x first in source order so panel-open tab focus lands on the
+  // dismiss path. Mobile-only via CSS.
+  var railClose = document.createElement('button');
+  railClose.type = 'button';
+  railClose.className = 'subtheory-rail-close';
+  railClose.setAttribute('aria-label', 'Close evidence');
+  railClose.textContent = '×';
+  railClose.addEventListener('click', dismissRail);
+  rail.appendChild(railClose);
+
+  var railTitle = document.createElement('h2');
+  railTitle.className = 'subtheory-rail-title';
+  railTitle.textContent = 'Evidence';
+  rail.appendChild(railTitle);
+
+  var arc = state.arcs && state.arcs[subTheory.arcId];
+
+  // Resolve a display label for one attached evidence element. Book and
+  // entry labels are read live off state (so a renamed book updates on
+  // next render); external reads the stored {title, author} pair.
+  function evidenceLabel(el) {
+    if (el.kind === 'book') {
+      var bk = state.books && state.books[el.refId];
+      if (bk) {
+        return bk.author ? (bk.title + ' — ' + bk.author) : bk.title;
+      }
+      return 'Book';
+    }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      if (en) {
+        if (en.title) { return en.title; }
+        if (en.body) {
+          return en.body.length > 60
+            ? en.body.substring(0, 57) + '...' : en.body;
+        }
+      }
+      return 'Note';
+    }
+    var ext = el.external || {};
+    if (ext.title && ext.author) { return ext.title + ' — ' + ext.author; }
+    if (ext.title) { return ext.title; }
+    return 'External source';
+  }
+
+  function buildAttachedRow(el) {
+    var row = document.createElement('div');
+    row.className = 'subtheory-attached-row';
+    var label = document.createElement('div');
+    label.className = 'subtheory-attached-label';
+    label.textContent = evidenceLabel(el);
+    row.appendChild(label);
+    if (el.quote) {
+      var q = document.createElement('p');
+      q.className = 'subtheory-attached-quote';
+      q.textContent = '“' + el.quote + '”';
+      row.appendChild(q);
+    }
+    if (el.annotation) {
+      var a = document.createElement('p');
+      a.className = 'subtheory-attached-annotation';
+      a.textContent = el.annotation;
+      row.appendChild(a);
+    }
+    return row;
+  }
+
+  // Attached-evidence list owns its own container so attaching an item
+  // repopulates only this list -- a full renderSubTheoryPage re-render
+  // would drop un-blurred prose-column text. refreshAttached re-reads
+  // the live evidence[] each call.
+  var attachedSection = document.createElement('div');
+  attachedSection.className = 'subtheory-rail-section';
+  var attachedLabel = document.createElement('h3');
+  attachedLabel.className = 'book-detail-tradition-label';
+  attachedLabel.textContent = 'Attached';
+  attachedSection.appendChild(attachedLabel);
+  var attachedList = document.createElement('div');
+  attachedList.className = 'subtheory-attached-list';
+  attachedSection.appendChild(attachedList);
+
+  function refreshAttached() {
+    attachedList.innerHTML = '';
+    var rec = state.subTheories[id];
+    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
+    if (ev.length === 0) {
+      var none = document.createElement('p');
+      none.className = 'subtheory-attached-empty';
+      none.textContent = 'No evidence attached yet.';
+      attachedList.appendChild(none);
+      return;
+    }
+    var ei;
+    for (ei = 0; ei < ev.length; ei++) {
+      attachedList.appendChild(buildAttachedRow(ev[ei]));
+    }
+  }
+
+  // Inline attach editor (mirrors openEditor's structure): optional
+  // quote + annotation, Attach / Cancel. onSave receives the two raw
+  // string values; both are optional per addEvidence.
+  function buildInlineEvidenceEditor(onSave, onCancel) {
+    var editor = document.createElement('div');
+    editor.className = 'notebook-editor subtheory-attach-editor';
+    var quoteInput = document.createElement('textarea');
+    quoteInput.className = 'notebook-editor-body';
+    quoteInput.setAttribute('placeholder', 'Quote (optional)');
+    quoteInput.rows = 2;
+    var annInput = document.createElement('textarea');
+    annInput.className = 'notebook-editor-body';
+    annInput.setAttribute('placeholder', 'Annotation (optional)');
+    annInput.rows = 2;
+    var actions = document.createElement('div');
+    actions.className = 'notebook-editor-actions';
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'notebook-editor-save';
+    saveBtn.textContent = 'Attach';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'notebook-editor-cancel';
+    cancelBtn.textContent = 'Cancel';
+    saveBtn.addEventListener('click', function() {
+      onSave(quoteInput.value, annInput.value);
+    });
+    cancelBtn.addEventListener('click', function() {
+      onCancel();
+    });
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    editor.appendChild(quoteInput);
+    editor.appendChild(annInput);
+    editor.appendChild(actions);
+    return editor;
+  }
+
+  // One source row (a book or a visible notebook entry). The attach
+  // button toggles an inline editor; saving routes through addEvidence
+  // with this row's kind + refId, then refreshes the attached list. The
+  // kind/refId close over buildSourceRow's params -- fresh per call, so
+  // no var-loop closure trap.
+  function buildSourceRow(kind, refId, labelText) {
+    var row = document.createElement('div');
+    row.className = 'subtheory-source-row';
+    var head = document.createElement('div');
+    head.className = 'subtheory-source-head';
+    var label = document.createElement('span');
+    label.className = 'subtheory-source-label';
+    label.textContent = labelText;
+    head.appendChild(label);
+    var attachBtn = document.createElement('button');
+    attachBtn.type = 'button';
+    attachBtn.className = 'subtheory-source-attach';
+    attachBtn.textContent = 'Attach as evidence';
+    head.appendChild(attachBtn);
+    row.appendChild(head);
+    var editorHost = document.createElement('div');
+    editorHost.className = 'subtheory-source-editor-host';
+    row.appendChild(editorHost);
+    attachBtn.addEventListener('click', function() {
+      if (editorHost.firstChild) {
+        editorHost.innerHTML = '';
+        return;
+      }
+      editorHost.appendChild(buildInlineEvidenceEditor(
+        function(quote, annotation) {
+          addEvidence(id, { kind: kind, refId: refId,
+            quote: quote, annotation: annotation });
+          editorHost.innerHTML = '';
+          refreshAttached();
+        },
+        function() {
+          editorHost.innerHTML = '';
+        }));
+    });
+    return row;
+  }
+
+  // Source list: books from arc.bookIds + visible entries from
+  // arc.entryIds. Private entries are skipped (principle #5 -- private
+  // writing never becomes citable substrate). Scrollable via CSS.
+  var sourceSection = document.createElement('div');
+  sourceSection.className = 'subtheory-rail-section';
+  var sourceLabel = document.createElement('h3');
+  sourceLabel.className = 'book-detail-tradition-label';
+  sourceLabel.textContent = 'From this arc';
+  sourceSection.appendChild(sourceLabel);
+  var sourceList = document.createElement('div');
+  sourceList.className = 'subtheory-source-list';
+  sourceSection.appendChild(sourceList);
+
+  var bookMembers = (arc && Array.isArray(arc.bookIds)) ? arc.bookIds : [];
+  var bmi;
+  for (bmi = 0; bmi < bookMembers.length; bmi++) {
+    var bm = bookMembers[bmi];
+    var bk = state.books && state.books[bm.id];
+    if (!bk) { continue; }
+    var bkLabel = bk.author ? (bk.title + ' — ' + bk.author) : bk.title;
+    sourceList.appendChild(buildSourceRow('book', bm.id, bkLabel));
+  }
+
+  var entryMembers = (arc && Array.isArray(arc.entryIds)) ? arc.entryIds : [];
+  var eli;
+  for (eli = 0; eli < entryMembers.length; eli++) {
+    var elm = entryMembers[eli];
+    var en = state.notebookEntries && state.notebookEntries[elm.id];
+    if (!en) { continue; }
+    if (en.isPrivate === true) { continue; }
+    var enLabel;
+    if (en.title) {
+      enLabel = en.title;
+    } else if (en.body) {
+      enLabel = en.body.length > 60
+        ? en.body.substring(0, 57) + '...' : en.body;
+    } else {
+      enLabel = 'Note';
+    }
+    sourceList.appendChild(buildSourceRow('entry', elm.id, enLabel));
+  }
+
+  if (!sourceList.firstChild) {
+    var emptySrc = document.createElement('p');
+    emptySrc.className = 'subtheory-source-empty';
+    emptySrc.textContent = 'No books or notes in this arc yet.';
+    sourceList.appendChild(emptySrc);
+  }
+
+  // External-source affordance: a toggle revealing a {title, author,
+  // quote, annotation} form. Saving routes through addEvidence with
+  // kind 'external'.
+  var externalSection = document.createElement('div');
+  externalSection.className = 'subtheory-rail-section';
+  var externalToggle = document.createElement('button');
+  externalToggle.type = 'button';
+  externalToggle.className = 'notebook-editor-cancel subtheory-external-toggle';
+  externalToggle.textContent = 'Add external source';
+  externalSection.appendChild(externalToggle);
+  var externalHost = document.createElement('div');
+  externalHost.className = 'subtheory-external-host';
+  externalSection.appendChild(externalHost);
+
+  function buildExternalForm() {
+    var editor = document.createElement('div');
+    editor.className = 'notebook-editor subtheory-external-form';
+    var titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.className = 'notebook-editor-title-input';
+    titleInput.setAttribute('placeholder', 'Title');
+    var authorInput = document.createElement('input');
+    authorInput.type = 'text';
+    authorInput.className = 'notebook-editor-title-input';
+    authorInput.setAttribute('placeholder', 'Author');
+    var quoteInput = document.createElement('textarea');
+    quoteInput.className = 'notebook-editor-body';
+    quoteInput.setAttribute('placeholder', 'Quote (optional)');
+    quoteInput.rows = 2;
+    var annInput = document.createElement('textarea');
+    annInput.className = 'notebook-editor-body';
+    annInput.setAttribute('placeholder', 'Annotation (optional)');
+    annInput.rows = 2;
+    var actions = document.createElement('div');
+    actions.className = 'notebook-editor-actions';
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'notebook-editor-save';
+    saveBtn.textContent = 'Attach';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'notebook-editor-cancel';
+    cancelBtn.textContent = 'Cancel';
+    saveBtn.addEventListener('click', function() {
+      addEvidence(id, { kind: 'external',
+        external: { title: titleInput.value, author: authorInput.value },
+        quote: quoteInput.value, annotation: annInput.value });
+      externalHost.innerHTML = '';
+      refreshAttached();
+    });
+    cancelBtn.addEventListener('click', function() {
+      externalHost.innerHTML = '';
+    });
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    editor.appendChild(titleInput);
+    editor.appendChild(authorInput);
+    editor.appendChild(quoteInput);
+    editor.appendChild(annInput);
+    editor.appendChild(actions);
+    return editor;
+  }
+
+  externalToggle.addEventListener('click', function() {
+    if (externalHost.firstChild) {
+      externalHost.innerHTML = '';
+      return;
+    }
+    externalHost.appendChild(buildExternalForm());
+  });
+
+  rail.appendChild(sourceSection);
+  rail.appendChild(externalSection);
+  rail.appendChild(attachedSection);
+  refreshAttached();
+
+  // Mobile-only Evidence toggle sits at the top of the prose column.
+  main.insertBefore(railToggle, main.firstChild);
+
+  layout.appendChild(main);
+  layout.appendChild(rail);
+  layout.appendChild(backdrop);
+  wrap.appendChild(layout);
+  host.appendChild(wrap);
+}
+
 function renderArtifact(bookId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;

@@ -93,6 +93,10 @@
 //   currentArcId:  string | null   // foreign key into state.arcs,
 //                                  // or null if no arc is active
 //
+//   currentSubTheoryId: string | null // foreign key into
+//                                  // state.subTheories, or null if no
+//                                  // sub-theory is open
+//
 // Schema 1.3.0 adds a per-user yumiMemory field carrying a rolling
 // conversation summary that survives across sessions. Lives on each
 // user record under state.users[uid]. Shape:
@@ -261,6 +265,7 @@ var state = {
   SCHEMA_VERSION:  '1.9.3',
   currentBookId:   null,
   currentArcId:    null,
+  currentSubTheoryId: null,
   users:           {},
   books:           {},
   userBooks:       {},
@@ -559,6 +564,13 @@ function genSubTheoryId() {
   return 'subtheory_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
+// Canonical evidence id generator (9.2). Shaped identically to
+// genSubTheoryId; the 'evidence_' prefix keeps an evidence element's
+// id from colliding with any sub-theory, arc, book, or notebook entry.
+function genEvidenceId() {
+  return 'evidence_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
 // Lazy initializer for per-user records. The schema-versioned shape of
 // a user record is owned here so that future writers (notebook entries,
 // artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
@@ -800,6 +812,54 @@ function deleteSubTheory(id) {
   delete state.subTheories[id];
   saveState();
   return true;
+}
+
+// 9.2 evidence layer. Appends one well-formed evidence element to a
+// sub-theory's evidence[] array. kind is validated to the three legal
+// values ('book' | 'entry' | 'external'); anything else is rejected
+// with a null return. refId is the bookId (book) or entryId (entry),
+// and null for external. external is the {title, author} pair for an
+// external source, and null otherwise. quote and annotation are
+// optional free text, normalized to strings. Bumps updatedAt and
+// persists (localStorage-only, mirroring the sub-theory CRUD above --
+// no Firestore path, no booksDirty). Returns the new element, or null
+// on a bad/absent record or invalid kind. proseAnchor / in-prose
+// citation is deferred to Stage 10; evidence stays un-cited-in-prose.
+function addEvidence(subTheoryId, fields) {
+  var subTheory = state.subTheories[subTheoryId];
+  if (!subTheory) return null;
+  var src = fields || {};
+  if (src.kind !== 'book' && src.kind !== 'entry' && src.kind !== 'external') {
+    return null;
+  }
+  var refId = null;
+  if (src.kind === 'book' || src.kind === 'entry') {
+    refId = (typeof src.refId === 'string') ? src.refId : null;
+  }
+  var external = null;
+  if (src.kind === 'external') {
+    var extSrc = src.external || {};
+    external = {
+      title:  (typeof extSrc.title === 'string') ? extSrc.title : '',
+      author: (typeof extSrc.author === 'string') ? extSrc.author : ''
+    };
+  }
+  if (!Array.isArray(subTheory.evidence)) {
+    subTheory.evidence = [];
+  }
+  var element = {
+    id:         genEvidenceId(),
+    kind:       src.kind,
+    refId:      refId,
+    external:   external,
+    quote:      (typeof src.quote === 'string') ? src.quote : '',
+    annotation: (typeof src.annotation === 'string') ? src.annotation : '',
+    addedAt:    Date.now()
+  };
+  subTheory.evidence.push(element);
+  subTheory.updatedAt = Date.now();
+  saveState();
+  return element;
 }
 
 function loadState() {

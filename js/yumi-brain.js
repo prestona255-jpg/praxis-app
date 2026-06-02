@@ -211,6 +211,16 @@ function assembleContextData() {
     }
   }
 
+  var currentSubTheory = null;
+  if (state.currentSubTheoryId !== null) {
+    var subTheory = state.subTheories[state.currentSubTheoryId];
+    if (!subTheory) {
+      console.warn('yumi-brain: dangling currentSubTheoryId ' + state.currentSubTheoryId);
+    } else {
+      currentSubTheory = { header: subTheory.header };
+    }
+  }
+
   var collected = [];
   var key;
   for (key in state.notebookEntries) {
@@ -320,8 +330,9 @@ function assembleContextData() {
   }
 
   return {
-    currentBook:     currentBook,
-    currentArc:      currentArc,
+    currentBook:      currentBook,
+    currentArc:       currentArc,
+    currentSubTheory: currentSubTheory,
     recentEntries:   recentEntries,
     recentArtifacts: recentArtifacts,
     summary:         summary,
@@ -353,6 +364,13 @@ function buildContext() {
     arcLine = 'none';
   } else {
     arcLine = data.currentArc.title;
+  }
+
+  var subTheoryLine;
+  if (data.currentSubTheory === null) {
+    subTheoryLine = 'none';
+  } else {
+    subTheoryLine = data.currentSubTheory.header;
   }
 
   var entriesLine;
@@ -411,6 +429,7 @@ function buildContext() {
          'recentEntries: ' + entriesLine + '\n' +
          'recentArtifacts: ' + artifactsLine + '\n' +
          'currentArc: ' + arcLine + '\n' +
+         'currentSubTheory: ' + subTheoryLine + '\n' +
          summaryLine +
          turnsLine;
 }
@@ -435,7 +454,8 @@ function buildYumiSystem() {
     'memories of past conversations with this reader. They ' +
     'show how you sound, not what has been said.\n\n' +
     'The CONTEXT section below has structured slots ' +
-    '(currentBook, recentEntries, recentArtifacts, currentArc) ' +
+    '(currentBook, recentEntries, recentArtifacts, currentArc, ' +
+    'currentSubTheory) ' +
     'and a conversation log (recentTurns, and EARLIER IN OUR ' +
     'CONVERSATION when summary exists). Treat structured ' +
     'slots as facts about the reader\'s current state, not ' +

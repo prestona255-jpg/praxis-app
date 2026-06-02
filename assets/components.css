@@ -3362,3 +3362,240 @@
   max-width: 100px;
   line-height: 1.3;
 }
+
+/* ===== SUB-THEORY WRITING SURFACE -- Stage 9.2 =====
+   Two-column writing surface: the prose column (.subtheory-main) on the
+   left, the evidence rail (.subtheory-rail, populated in 9.2 Checkpoint
+   C) on the right. Collapses to a single column at the 720px breakpoint
+   used elsewhere in this file. The header input borrows Cormorant
+   Garamond (--font-serif) to read as a page title; the body fields reuse
+   .notebook-editor-body and the section labels reuse
+   .book-detail-tradition-label. */
+.subtheory-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.subtheory-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 48px;
+  align-items: start;
+}
+
+.subtheory-main {
+  min-width: 0;
+}
+
+.subtheory-rail {
+  align-self: start;
+}
+
+.subtheory-header-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 24px;
+  padding: 8px 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.subtheory-header-input:focus {
+  outline: none;
+  border-bottom-color: var(--ink-3);
+}
+
+.subtheory-intellectual {
+  margin-top: 24px;
+}
+
+.subtheory-register-toggle {
+  margin-top: 16px;
+}
+
+/* Evidence rail (Checkpoint C). Transparent on desktop -- dissolves
+   into the page like .shelf-sidebar; becomes a surface-filled bottom
+   sheet on mobile (the @media block below). */
+.subtheory-rail-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.subtheory-rail-section + .subtheory-rail-section {
+  margin-top: 28px;
+}
+
+.subtheory-source-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.subtheory-source-row {
+  padding: 10px 0;
+}
+
+.subtheory-source-row + .subtheory-source-row {
+  border-top: 1px solid var(--border);
+}
+
+.subtheory-source-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.subtheory-source-label {
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.subtheory-source-attach {
+  flex: 0 0 auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--river);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.subtheory-source-attach:hover {
+  color: var(--ink);
+}
+
+.subtheory-attach-editor,
+.subtheory-external-form {
+  margin-top: 12px;
+}
+
+.subtheory-source-empty,
+.subtheory-attached-empty {
+  margin-top: 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.subtheory-attached-list {
+  margin-top: 12px;
+}
+
+.subtheory-attached-row {
+  padding: 10px 0;
+}
+
+.subtheory-attached-row + .subtheory-attached-row {
+  border-top: 1px solid var(--border);
+}
+
+.subtheory-attached-label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.subtheory-attached-quote {
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.subtheory-attached-annotation {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* Mobile bottom-sheet chrome -- hidden on desktop, revealed in the
+   720px block below. */
+.subtheory-rail-toggle,
+.subtheory-rail-close,
+.subtheory-rail-backdrop {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .subtheory-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Evidence button: top of the prose column, opens the bottom sheet. */
+  .subtheory-rail-toggle {
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  /* Rail hidden by default; reopens as a fixed bottom sheet. Mirrors
+     the shelf mobile filter panel (.shelf-sidebar-mobile-open) but
+     anchored to the bottom edge. */
+  .subtheory-rail {
+    display: none;
+  }
+
+  .subtheory-rail.subtheory-rail-mobile-open {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 70vh;
+    margin: 0;
+    padding: 24px 16px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border-top: 1px solid var(--border);
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+    z-index: 100;
+  }
+
+  .subtheory-rail-backdrop.subtheory-rail-backdrop-open {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: color-mix(in srgb, var(--ink) 40%, transparent);
+    z-index: 99;
+  }
+
+  .subtheory-rail-close {
+    display: block;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+
+  .subtheory-rail-close:hover {
+    color: var(--ink);
+  }
+}
+/* ===== END SUB-THEORY WRITING SURFACE ===== */
