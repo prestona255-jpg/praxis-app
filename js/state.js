@@ -267,7 +267,8 @@ var state = {
   notebooks:       {},
   notebookEntries: {},
   bookArtifacts:   {},
-  arcs:            {}
+  arcs:            {},
+  subTheories:     {}
 };
 window.state = state;
 
@@ -401,6 +402,73 @@ function ensureBookFieldsAll(booksMap) {
   return anyChanged;
 }
 
+// ensureSubTheoryFields — the 9.1 chokepoint, mirroring ensureBookFields.
+// Backfills any sub-theory schema field that is missing or the wrong
+// type on a record. Idempotent: a field already the correct type is a
+// no-op. Returns true if anything was changed, false otherwise. id and
+// arcId are deliberately left untouched — a record missing either is
+// malformed and is not repaired here. EVERY write path into
+// state.subTheories must call this.
+function ensureSubTheoryFields(st) {
+  if (!st || typeof st !== 'object') { return false; }
+  var changed = false;
+  if (typeof st.header !== 'string') {
+    st.header = '';
+    changed = true;
+  }
+  if (typeof st.bodyPublic !== 'string') {
+    st.bodyPublic = '';
+    changed = true;
+  }
+  if (typeof st.bodyIntellectual !== 'string') {
+    st.bodyIntellectual = '';
+    changed = true;
+  }
+  if (!Array.isArray(st.evidence)) {
+    st.evidence = [];
+    changed = true;
+  }
+  if (!Array.isArray(st.attachedMarginalia)) {
+    st.attachedMarginalia = [];
+    changed = true;
+  }
+  if (!Array.isArray(st.linkedSubTheories)) {
+    st.linkedSubTheories = [];
+    changed = true;
+  }
+  if (st.status !== 'draft' && st.status !== 'published') {
+    st.status = 'draft';
+    changed = true;
+  }
+  if (typeof st.format !== 'string') {
+    st.format = '';
+    changed = true;
+  }
+  if (typeof st.publishedAt === 'undefined') {
+    st.publishedAt = null;
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureSubTheoryFieldsAll — convenience for backfilling an entire
+// subTheories map (migration). Returns true if any single record was
+// changed, false if all were already complete. Mirrors
+// ensureBookFieldsAll.
+function ensureSubTheoryFieldsAll(map) {
+  if (!map || typeof map !== 'object') { return false; }
+  var anyChanged = false;
+  var stk;
+  for (stk in map) {
+    if (map.hasOwnProperty(stk)) {
+      if (ensureSubTheoryFields(map[stk])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
+
 // Stage 5.6 sub-step 5b: engagement band derivation for shelf glyph
 // saturation. Counts notebook entries that link to a given book and
 // returns band 0/1/2. Read-only — no writes, no caching. Re-runs per
@@ -481,6 +549,14 @@ function genBookId() {
 // id cannot collide across notebookEntries, books, and arcs.
 function genArcId() {
   return 'arc_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
+// Canonical sub-theory id generator (9.1). Shaped identically to
+// genEntryId / genBookId / genArcId; the 'subtheory_' prefix keeps a
+// single id from colliding across notebookEntries, books, arcs, and
+// subTheories.
+function genSubTheoryId() {
+  return 'subtheory_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
 // Lazy initializer for per-user records. The schema-versioned shape of
@@ -665,6 +741,64 @@ function deleteEntry(entryId) {
     }
   }
   delete state.notebookEntries[entryId];
+  return true;
+}
+
+// 9.1B sub-theory CRUD. createSubTheory mirrors createArc's guard +
+// return shape (null on a bad/absent parent, otherwise the new record),
+// but unlike the arc data layer these three DO call saveState() — the
+// 9.1 stage design owns persistence here rather than deferring it to a
+// views.js caller. No Firestore path: 9.1 is localStorage-only, so none
+// of the three touch booksDirty.
+function createSubTheory(arcId, fields) {
+  if (typeof arcId !== 'string' || !state.arcs[arcId]) return null;
+  var src = fields || {};
+  var now = Date.now();
+  var id = genSubTheoryId();
+  var subTheory = {
+    id:                 id,
+    arcId:              arcId,
+    header:             (typeof src.header === 'string') ? src.header : '',
+    bodyPublic:         (typeof src.bodyPublic === 'string') ? src.bodyPublic : '',
+    bodyIntellectual:   (typeof src.bodyIntellectual === 'string') ? src.bodyIntellectual : '',
+    evidence:           [],
+    attachedMarginalia: [],
+    linkedSubTheories:  [],
+    status:             'draft',
+    format:             '',
+    publishedAt:        null,
+    createdAt:          now,
+    updatedAt:          now
+  };
+  state.subTheories[id] = subTheory;
+  saveState();
+  return subTheory;
+}
+
+// Edits only the three text fields, and only when a string is supplied
+// for that field. status, the three arrays, publishedAt, and createdAt
+// are deliberately left alone — later stages own those transitions.
+// updatedAt is always bumped. Returns the record, or null if absent.
+function updateSubTheory(id, fields) {
+  var subTheory = state.subTheories[id];
+  if (!subTheory) return null;
+  var src = fields || {};
+  if (typeof src.header === 'string') subTheory.header = src.header;
+  if (typeof src.bodyPublic === 'string') subTheory.bodyPublic = src.bodyPublic;
+  if (typeof src.bodyIntellectual === 'string') subTheory.bodyIntellectual = src.bodyIntellectual;
+  subTheory.updatedAt = Date.now();
+  saveState();
+  return subTheory;
+}
+
+// Hard-delete. No cascade: no links or published docs reference a
+// sub-theory yet (those seams arrive in later stages). Returns true on
+// success, false if the record was already absent.
+function deleteSubTheory(id) {
+  var subTheory = state.subTheories[id];
+  if (!subTheory) return false;
+  delete state.subTheories[id];
+  saveState();
   return true;
 }
 
@@ -1094,6 +1228,17 @@ function migrate(stored) {
       ensureBookFieldsAll(stored.books);
     }
     stored.SCHEMA_VERSION = '1.11.0';
+  }
+  // 9.1A: introduce the subTheories map and its schema fields.
+  // Delegated to the ensureSubTheoryFieldsAll chokepoint so the
+  // migration logic and future runtime write paths share a single
+  // source of truth, mirroring the 1.10.0 -> 1.11.0 step.
+  // ensureSubTheoryFieldsAll is idempotent — re-running on already-
+  // migrated state is a no-op.
+  if (stored.SCHEMA_VERSION === '1.11.0') {
+    if (!stored.subTheories) stored.subTheories = {};
+    ensureSubTheoryFieldsAll(stored.subTheories);
+    stored.SCHEMA_VERSION = '1.12.0';
   }
   return stored;
 }
