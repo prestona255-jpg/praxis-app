@@ -3719,6 +3719,22 @@ function renderArcDetail(arcId) {
     header.appendChild(desc);
   }
 
+  // 9.2 Checkpoint E: launch a new sub-theory under this arc. Gated on a
+  // signed-in user exactly like the notebook "+ New entry" / "+ New arc"
+  // affordances. onClick routes to the new-subtheory hash; renderRoute
+  // mints the draft and redirects to #subtheory/<id>. Reuses the
+  // notebook create-button class -- no new CSS this stage.
+  if (user) {
+    var newSubTheoryBtn = document.createElement('button');
+    newSubTheoryBtn.type = 'button';
+    newSubTheoryBtn.className = 'notebook-new-arc';
+    newSubTheoryBtn.textContent = '+ Sub-theory';
+    newSubTheoryBtn.addEventListener('click', function() {
+      location.hash = 'arc/' + arcId + '/new-subtheory';
+    });
+    header.appendChild(newSubTheoryBtn);
+  }
+
   // 3.9-b: delete button opens the in-DOM confirm panel mounted in
   // #arc-detail-confirm-host. arcId captured in the click closure.
   //
