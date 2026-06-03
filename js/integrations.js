@@ -130,6 +130,45 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.warn('loadBooksFromFirestore: fetch failed, keeping cache', result.error);
       }
     });
+
+    // Stage 14.1a: fetch this user's arc-doc from /userArcs/{uid} and
+    // REPLACE-merge into state.arcs. Independent of the book fetch above
+    // (separate docs). REPLACE: clear THIS uid's locally-known arcs
+    // before splatting the remote set, so a delete on another device
+    // does not resurrect from cache. Ownership is arc.userId (direct),
+    // so clear-predicate and remote-set share the key. Cold open still
+    // runs migrate(); this listener fires post-first-render.
+    loadArcsFromFirestore(u.uid, function (arcResult) {
+      if (arcResult.status === 'found') {
+        var aid;
+        if (state.arcs) {
+          for (aid in state.arcs) {
+            if (Object.prototype.hasOwnProperty.call(state.arcs, aid) &&
+                state.arcs[aid] && state.arcs[aid].userId === u.uid) {
+              delete state.arcs[aid];
+            }
+          }
+        }
+        var remoteArcs = (arcResult.data && arcResult.data.arcs)
+          ? arcResult.data.arcs
+          : {};
+        var raid;
+        for (raid in remoteArcs) {
+          if (Object.prototype.hasOwnProperty.call(remoteArcs, raid)) {
+            state.arcs[raid] = remoteArcs[raid];
+          }
+        }
+        saveState();
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadArcsFromFirestore: merged remote arc doc');
+      } else if (arcResult.status === 'absent') {
+        console.log('loadArcsFromFirestore: no remote arc doc for uid, keeping cache');
+      } else {
+        console.warn('loadArcsFromFirestore: fetch failed, keeping cache', arcResult.error);
+      }
+    });
   } else {
     sv('praxis_user', null);
     console.log('onAuthStateChanged: signed out');
@@ -270,6 +309,98 @@ function saveBooksToFirestore(uid, payload, callback) {
   try {
     firebase.firestore()
       .collection('userBooks')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1a (workspace sync): per-user arc-doc read from
+// /userArcs/{uid}. Typed callback in the loadBooksFromFirestore house
+// style -- found / absent / error. Idempotent fire-once via a local
+// done flag. firebase.firestore() per-use, matching firebase.auth().
+function loadArcsFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadArcsFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userArcs')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1a: build the per-user arc-doc payload. Denormalized
+// single-doc model: { schemaVersion, arcs: { arcId: {...} }, updatedAt }.
+// FILTERED to records whose arc.userId === uid -- arcs carry their owner
+// directly (state.js createArc), so unlike books there is no separate
+// per-uid index to consult. serverTimestamp() stamps server write time.
+function buildUserArcsDoc(uid) {
+  var arcs = {};
+  var aid;
+  if (state.arcs) {
+    for (aid in state.arcs) {
+      if (Object.prototype.hasOwnProperty.call(state.arcs, aid)) {
+        var arc = state.arcs[aid];
+        if (arc && arc.userId === uid) {
+          arcs[aid] = arc;
+        }
+      }
+    }
+  }
+  return {
+    schemaVersion: state.SCHEMA_VERSION,
+    arcs:          arcs,
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// Stage 14.1a: per-user arc-doc write to /userArcs/{uid}. .set() is a
+// full-doc overwrite -- matches the denormalized model and REPLACE read
+// semantics. Fire-and-forget: caller (saveState) does not block, does
+// not mutate state in the callback, does not re-render. Typed callback,
+// idempotent fire-once.
+function saveArcsToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveArcsToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userArcs')
       .doc(uid)
       .set(payload)
       .then(function () {
