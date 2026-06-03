@@ -3315,6 +3315,313 @@ function _arcDetailBuildConstellationData(arc) {
   };
 }
 
+// Stage 9.5: adapter from real sub-theory records (state.subTheories) to
+// the sub-theory constellation renderer's DATA CONTRACT (set by
+// js/arc-constellation.js:renderSubTheoryConstellation):
+//   { id, question,
+//     subTheories: [ { id, header, shapeKey, color, maturity /*0..1*/,
+//       marks: [ {state:'gathered', kind, label, quote, annotation} ] } ],
+//     edges: [], yumiNoticing: [] }
+// _arcDetailBuildConstellationData (the books adapter) is left in place,
+// dead, so the books-constellation is a one-line revert away.
+//
+// header is carried beyond the contract's original field list so the
+// shape hover/tooltip has something to show (the contract omitted it).
+// shapeKey/color come from _stIdentity (the renderer's fixed-pairing hash)
+// so the builder is the single producer of identity; the renderer keeps
+// _stIdentity only as a defensive fallback. maturity is derived here via
+// _stComputeMaturity because the raw fields (bodyPublic/bodyIntellectual/
+// evidence) live on state.subTheories, not in the contract; the renderer
+// maps that 0..1 to luminosity. edges are [] this stage (the dormant
+// linkedSubTheories->edges wiring is deferred to the linking-UI stage),
+// and yumiNoticing is [] (renderer/tooltip shows "Quiet today").
+function _arcDetailBuildSubTheoryData(arc) {
+  var arcId = (arc && arc.id) ? arc.id : null;
+  var records = [];
+  var key, sub;
+  if (arcId && state.subTheories) {
+    for (key in state.subTheories) {
+      if (!state.subTheories.hasOwnProperty(key)) { continue; }
+      sub = state.subTheories[key];
+      if (sub && sub.arcId === arcId) { records.push(sub); }
+    }
+  }
+  // Stable radial slot assignment: oldest-first by createdAt, id as the
+  // tie-break, so a sub-theory keeps its orbit position across renders.
+  records.sort(function(a, b) {
+    var ca = (a && typeof a.createdAt === 'number') ? a.createdAt : 0;
+    var cb = (b && typeof b.createdAt === 'number') ? b.createdAt : 0;
+    if (ca !== cb) { return ca - cb; }
+    return (a.id < b.id) ? -1 : ((a.id > b.id) ? 1 : 0);
+  });
+  var subTheories = [];
+  var i, rec, ident;
+  for (i = 0; i < records.length; i = i + 1) {
+    rec = records[i];
+    ident = (typeof _stIdentity === 'function')
+      ? _stIdentity(rec.id)
+      : { shapeKey: undefined, color: undefined };
+    subTheories.push({
+      id:       rec.id,
+      header:   (typeof rec.header === 'string') ? rec.header : '',
+      shapeKey: ident.shapeKey,
+      color:    ident.color,
+      maturity: _stComputeMaturity(rec),
+      marks:    _stBuildMarks(rec)
+    });
+  }
+  return {
+    id:           arcId,
+    question:     (arc && arc.title) ? arc.title : '',
+    subTheories:  subTheories,
+    edges:        [],
+    yumiNoticing: []
+  };
+}
+
+// v1 maturity proxy (builder-side, where the raw fields live). Normalizes
+// bodyPublic.length + bodyIntellectual.length + a per-evidence weight into
+// [0,1]; the renderer maps this to luminosity. Final formula deferred --
+// this is the single isolated derivation point, swap it here later.
+function _stComputeMaturity(sub) {
+  var pub = (sub && typeof sub.bodyPublic === 'string') ? sub.bodyPublic.length : 0;
+  var intel = (sub && typeof sub.bodyIntellectual === 'string') ? sub.bodyIntellectual.length : 0;
+  var evCount = (sub && Array.isArray(sub.evidence)) ? sub.evidence.length : 0;
+  var EVIDENCE_WEIGHT = 80; // chars-equivalent per gathered evidence item
+  var CAP = 1500;           // raw signal at which maturity saturates
+  var raw = pub + intel + EVIDENCE_WEIGHT * evCount;
+  var m = raw / CAP;
+  if (m < 0) { m = 0; }
+  if (m > 1) { m = 1; }
+  return m;
+}
+
+// Synthesize gathered marks from a sub-theory's evidence[]. state is the
+// constant 'gathered' in 9.5 (incorporation is Stage 10); label is derived
+// per evidence kind via _stEvidenceLabel.
+function _stBuildMarks(sub) {
+  var marks = [];
+  var evidence = (sub && Array.isArray(sub.evidence)) ? sub.evidence : [];
+  var i, ev;
+  for (i = 0; i < evidence.length; i = i + 1) {
+    ev = evidence[i] || {};
+    marks.push({
+      state:      'gathered',
+      kind:       (typeof ev.kind === 'string') ? ev.kind : '',
+      label:      _stEvidenceLabel(ev),
+      quote:      (typeof ev.quote === 'string') ? ev.quote : '',
+      annotation: (typeof ev.annotation === 'string') ? ev.annotation : ''
+    });
+  }
+  return marks;
+}
+
+// Human label for one evidence element: book title for 'book', a short
+// body preview for 'entry' (notebook entries have no title field), and the
+// external source's title/author for 'external'. Defensive defaults so a
+// dangling refId never produces a blank mark.
+function _stEvidenceLabel(ev) {
+  if (!ev) { return 'Evidence'; }
+  if (ev.kind === 'book') {
+    var book = (ev.refId && state.books) ? state.books[ev.refId] : null;
+    return (book && book.title) ? book.title : 'Book';
+  }
+  if (ev.kind === 'entry') {
+    var entry = (ev.refId && state.notebookEntries) ? state.notebookEntries[ev.refId] : null;
+    return _stEntryPreview(entry);
+  }
+  if (ev.kind === 'external') {
+    var ext = ev.external || {};
+    if (ext.title) { return ext.title; }
+    if (ext.author) { return ext.author; }
+    return 'External source';
+  }
+  return 'Evidence';
+}
+
+function _stEntryPreview(entry) {
+  if (!entry || typeof entry.body !== 'string') { return 'Note'; }
+  var t = entry.body.replace(/\s+/g, ' ').trim();
+  if (!t) { return 'Note'; }
+  if (t.length > 48) { t = t.slice(0, 48) + '…'; }
+  return t;
+}
+
+// Stage 9.5: interaction layer for the sub-theory constellation. Sibling
+// of _arcConstellationAttachInteractions -- the book interaction layer is
+// NOT mutated. svgEl is the inner <svg> the renderer filled; arc is the
+// DATA object built by _arcDetailBuildSubTheoryData (subTheories carry
+// header + marks). Shape click navigates to #subtheory/<id>; gathered-mark
+// click surfaces that mark's evidence content (label/quote/annotation) in
+// the shared .arc-tooltip; hover mirrors the book layer (shape, mark, and
+// Yumi tooltips). Shapes are selected as [data-st-sub-id]:not([data-st-
+// mark]) so mark groups -- which carry both attributes -- are excluded.
+// Each render builds a fresh svg, so listeners + the lazily-created tooltip
+// are scoped per render and cannot leak across List<->Web toggles.
+function _stConstellationAttachInteractions(svgEl, arc) {
+  if (!svgEl || !arc) { return; }
+
+  var subById = {};
+  var subs = (arc && arc.subTheories) ? arc.subTheories : [];
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) { subById[subs[i].id] = subs[i]; }
+
+  var isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+  var prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var container = svgEl.parentNode;
+  var tip = { el: null };
+
+  function ensureTip() {
+    if (tip.el) { return tip.el; }
+    if (!container) { return null; }
+    var el = document.createElement('div');
+    el.className = 'arc-tooltip'
+      + (prefersReducedMotion ? ' arc-tooltip--reduced-motion' : '');
+    container.appendChild(el);
+    tip.el = el;
+    return el;
+  }
+
+  // Structured lines via textContent only -- never innerHTML with sub-theory
+  // data (headers, quotes, annotations are user-entered: an XSS surface).
+  function renderLines(el, lines) {
+    el.textContent = '';
+    var j, line;
+    for (j = 0; j < lines.length; j = j + 1) {
+      if (!lines[j] || !lines[j].text) { continue; }
+      line = document.createElement('div');
+      line.className = lines[j].cls;
+      line.textContent = lines[j].text;
+      el.appendChild(line);
+    }
+  }
+
+  function positionTip(el, evt) {
+    if (!container) { return; }
+    var rect = container.getBoundingClientRect();
+    var x = evt.clientX - rect.left + 12;
+    var y = evt.clientY - rect.top + 12;
+    var tw = el.offsetWidth;
+    var th = el.offsetHeight;
+    if (x + tw + 12 > container.clientWidth) { x = evt.clientX - rect.left - tw - 12; }
+    if (y + th + 12 > container.clientHeight) { y = evt.clientY - rect.top - th - 12; }
+    if (x < 0) { x = 0; }
+    if (y < 0) { y = 0; }
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
+  function hasText(lines) {
+    var k;
+    for (k = 0; k < lines.length; k = k + 1) {
+      if (lines[k] && lines[k].text) { return true; }
+    }
+    return false;
+  }
+
+  function showTip(lines, evt) {
+    if (!hasText(lines)) { return; }
+    var el = ensureTip();
+    if (!el) { return; }
+    renderLines(el, lines);
+    el.classList.add('arc-tooltip--visible');
+    positionTip(el, evt);
+  }
+
+  function hideTip() {
+    if (tip.el) { tip.el.classList.remove('arc-tooltip--visible'); }
+  }
+
+  function shapeLines(el) {
+    var sub = subById[el.getAttribute('data-st-sub-id')];
+    var lines = [];
+    if (!sub) { return lines; }
+    lines.push({ cls: 'arc-tooltip-title', text: sub.header || 'Untitled sub-theory' });
+    lines.push({ cls: 'arc-tooltip-affordance', text: 'Open sub-theory' });
+    return lines;
+  }
+
+  function markLines(el) {
+    var sub = subById[el.getAttribute('data-st-sub-id')];
+    var idx = parseInt(el.getAttribute('data-st-mark-index'), 10);
+    var lines = [];
+    if (!sub || !sub.marks || isNaN(idx) || !sub.marks[idx]) { return lines; }
+    var mark = sub.marks[idx];
+    lines.push({ cls: 'arc-tooltip-title', text: mark.label || 'Evidence' });
+    if (mark.quote) { lines.push({ cls: 'arc-tooltip-meta', text: '“' + mark.quote + '”' }); }
+    if (mark.annotation) { lines.push({ cls: 'arc-tooltip-meta', text: mark.annotation }); }
+    return lines;
+  }
+
+  function yumiLines() {
+    var noticing = (arc && arc.yumiNoticing) ? arc.yumiNoticing : [];
+    if (!noticing.length) {
+      return [{ cls: 'arc-tooltip-meta', text: 'Quiet today.' }];
+    }
+    var lines = [];
+    var k;
+    for (k = 0; k < noticing.length; k = k + 1) {
+      lines.push({ cls: 'arc-tooltip-meta', text: String(noticing[k]) });
+    }
+    return lines;
+  }
+
+  function bindShapeClick(el) {
+    el.addEventListener('click', function() {
+      var id = el.getAttribute('data-st-sub-id');
+      if (id) { location.hash = 'subtheory/' + id; }
+    });
+  }
+
+  function bindMarkClick(el) {
+    el.addEventListener('click', function(evt) {
+      showTip(markLines(el), evt);
+    });
+  }
+
+  function bindHover(el, linesFn) {
+    el.addEventListener('mouseenter', function(evt) {
+      showTip(linesFn(el), evt);
+    });
+    el.addEventListener('mousemove', function(evt) {
+      if (tip.el && tip.el.classList.contains('arc-tooltip--visible')) {
+        positionTip(tip.el, evt);
+      }
+    });
+    el.addEventListener('mouseleave', function() {
+      hideTip();
+    });
+  }
+
+  var shapeEls = svgEl.querySelectorAll('[data-st-sub-id]:not([data-st-mark])');
+  var markEls = svgEl.querySelectorAll('[data-st-mark]');
+  var yumiEls = svgEl.querySelectorAll('[data-st-yumi]');
+
+  // Click: shapes navigate, marks surface evidence content. Bound on every
+  // device (touch taps + desktop clicks; keyboard re-fires via synthetic
+  // click below).
+  for (i = 0; i < shapeEls.length; i = i + 1) { bindShapeClick(shapeEls[i]); }
+  for (i = 0; i < markEls.length; i = i + 1) { bindMarkClick(markEls[i]); }
+
+  // Hover tooltips: desktop only (mirrors the book layer's touch guard).
+  if (!isTouch) {
+    for (i = 0; i < shapeEls.length; i = i + 1) { bindHover(shapeEls[i], shapeLines); }
+    for (i = 0; i < markEls.length; i = i + 1) { bindHover(markEls[i], markLines); }
+    for (i = 0; i < yumiEls.length; i = i + 1) { bindHover(yumiEls[i], yumiLines); }
+  }
+
+  // Keyboard parity: reuse the book layer's _arcMakeFocusable (generic --
+  // sets tabindex/role/aria-label and re-fires our click via synthetic
+  // click). Not a mutation of the book interaction path.
+  for (i = 0; i < shapeEls.length; i = i + 1) {
+    var s = subById[shapeEls[i].getAttribute('data-st-sub-id')];
+    _arcMakeFocusable(shapeEls[i], (s && s.header) ? s.header : 'Sub-theory');
+  }
+  for (i = 0; i < markEls.length; i = i + 1) {
+    _arcMakeFocusable(markEls[i], 'Evidence mark');
+  }
+}
+
 // Stage 8.1B: read-only interaction layer over the rendered
 // constellation. svgEl is the inner <svg> the renderer filled; arc is
 // the constellation DATA object built by _arcDetailBuildConstellationData
@@ -3829,7 +4136,7 @@ function renderArcDetail(arcId) {
     // are now in APP_SHELL (sw.js 'praxis-v3.12-a') so this branch
     // should be unreachable in steady state, but the SW can serve
     // mid-deploy mixed states.
-    if (typeof window.renderArcConstellation !== 'function') {
+    if (typeof window.renderSubTheoryConstellation !== 'function') {
       var unavailable = document.createElement('p');
       unavailable.className = 'arc-detail-web-placeholder';
       unavailable.textContent = 'Constellation renderer unavailable.';
@@ -3840,12 +4147,12 @@ function renderArcDetail(arcId) {
       svg.setAttribute('viewBox', '0 0 600 500');
       svg.setAttribute('xmlns', SVG_NS);
       webContainer.appendChild(svg);
-      var arcData = _arcDetailBuildConstellationData(arc);
-      window.renderArcConstellation(arcData, svg);
-      // Stage 8.1B: bind the read-only interaction layer. Pass arcData
-      // (resolved books/threads/yumiNoticing), not the raw arc record --
-      // the tooltip needs title/author/band already resolved.
-      _arcConstellationAttachInteractions(svg, arcData);
+      var arcData = _arcDetailBuildSubTheoryData(arc);
+      window.renderSubTheoryConstellation(arcData, svg);
+      // Stage 9.5: bind the sub-theory interaction layer. Pass arcData
+      // (resolved subTheories/marks), not the raw arc record -- the
+      // tooltip needs header/label/quote already resolved.
+      _stConstellationAttachInteractions(svg, arcData);
     }
     wrap.appendChild(webContainer);
   } else {

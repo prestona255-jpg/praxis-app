@@ -814,6 +814,71 @@ function deleteSubTheory(id) {
   return true;
 }
 
+// 9.5 Stage 1: resonance links between two sub-theories. linkSubTheories
+// records a symmetric edge — each id is added to the other's
+// linkedSubTheories array — and bumps updatedAt on both; unlinkSubTheories
+// reverses it. Both guard that BOTH sub-theories exist (return false
+// otherwise) so a dangling half-edge can never be written, and a self-link
+// (aId === bId) is rejected. Membership is deduped on a linear indexOf
+// scan, matching addBookToArc's idempotency style — link arrays are short
+// by design. A call that changes nothing (already linked / already
+// unlinked) returns false WITHOUT a write, so the no-op path stays cheap;
+// the mutating path bumps updatedAt on both and persists. localStorage-
+// only, mirroring the rest of the 9.x sub-theory CRUD — no Firestore path,
+// no booksDirty.
+function linkSubTheories(aId, bId) {
+  if (typeof aId !== 'string' || typeof bId !== 'string') return false;
+  if (aId === bId) return false;
+  var a = state.subTheories[aId];
+  var b = state.subTheories[bId];
+  if (!a || !b) return false;
+  if (!Array.isArray(a.linkedSubTheories)) a.linkedSubTheories = [];
+  if (!Array.isArray(b.linkedSubTheories)) b.linkedSubTheories = [];
+  var changed = false;
+  if (a.linkedSubTheories.indexOf(bId) === -1) {
+    a.linkedSubTheories.push(bId);
+    changed = true;
+  }
+  if (b.linkedSubTheories.indexOf(aId) === -1) {
+    b.linkedSubTheories.push(aId);
+    changed = true;
+  }
+  if (!changed) return false;
+  var now = Date.now();
+  a.updatedAt = now;
+  b.updatedAt = now;
+  saveState();
+  return true;
+}
+
+function unlinkSubTheories(aId, bId) {
+  if (typeof aId !== 'string' || typeof bId !== 'string') return false;
+  var a = state.subTheories[aId];
+  var b = state.subTheories[bId];
+  if (!a || !b) return false;
+  var changed = false;
+  if (Array.isArray(a.linkedSubTheories)) {
+    var ia = a.linkedSubTheories.indexOf(bId);
+    if (ia !== -1) {
+      a.linkedSubTheories.splice(ia, 1);
+      changed = true;
+    }
+  }
+  if (Array.isArray(b.linkedSubTheories)) {
+    var ib = b.linkedSubTheories.indexOf(aId);
+    if (ib !== -1) {
+      b.linkedSubTheories.splice(ib, 1);
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+  var now = Date.now();
+  a.updatedAt = now;
+  b.updatedAt = now;
+  saveState();
+  return true;
+}
+
 // 9.2 evidence layer. Appends one well-formed evidence element to a
 // sub-theory's evidence[] array. kind is validated to the three legal
 // values ('book' | 'entry' | 'external'); anything else is rejected
