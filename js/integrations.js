@@ -181,8 +181,7 @@ firebase.auth().onAuthStateChanged(function (u) {
             for (sid in state.subTheories) {
               if (Object.prototype.hasOwnProperty.call(state.subTheories, sid)) {
                 var lst = state.subTheories[sid];
-                var lparent = (lst && lst.arcId && state.arcs) ? state.arcs[lst.arcId] : null;
-                if (lparent && lparent.userId === u.uid) {
+                if (lst && lst.userId === u.uid) {
                   delete state.subTheories[sid];
                 }
               }
@@ -196,6 +195,9 @@ firebase.auth().onAuthStateChanged(function (u) {
             if (Object.prototype.hasOwnProperty.call(remoteSubs, rsid)) {
               state.subTheories[rsid] = remoteSubs[rsid];
             }
+          }
+          if (typeof backfillSubTheoryUserId === 'function') {
+            backfillSubTheoryUserId(state.subTheories, state.arcs);
           }
           saveState();
           if (window.views && window.views.renderRoute) {
@@ -628,8 +630,7 @@ function buildUserSubTheoriesDoc(uid) {
     for (sid in state.subTheories) {
       if (Object.prototype.hasOwnProperty.call(state.subTheories, sid)) {
         var st = state.subTheories[sid];
-        var parentArc = (st && st.arcId && state.arcs) ? state.arcs[st.arcId] : null;
-        if (parentArc && parentArc.userId === uid) {
+        if (st && st.userId === uid) {
           subTheories[sid] = st;
         }
       }

@@ -474,6 +474,33 @@ function ensureSubTheoryFieldsAll(map) {
   return anyChanged;
 }
 
+// Stage 14.1c-fix (workspace sync): backfill sub-theory userId from the
+// parent arc's owner. Sub-theories created before this stage carry no
+// userId (ownership was transitive); this stamps a direct owner so the
+// sync filter can match on st.userId. Used by migrate() over stored
+// records AND by the Firestore merge over remote records (which bypass
+// migrate). Orphans (parent arc missing) are left unset -- they were not
+// syncing under the transitive model either. Idempotent: a record that
+// already carries a string userId is skipped. New records get their
+// userId from the creating user in createSubTheory, not from here.
+function backfillSubTheoryUserId(stMap, arcsMap) {
+  if (!stMap || typeof stMap !== 'object') { return false; }
+  var changed = false;
+  var sid;
+  for (sid in stMap) {
+    if (Object.prototype.hasOwnProperty.call(stMap, sid)) {
+      var st = stMap[sid];
+      if (st && typeof st.userId !== 'string' && st.arcId &&
+          arcsMap && arcsMap[st.arcId] &&
+          typeof arcsMap[st.arcId].userId === 'string') {
+        st.userId = arcsMap[st.arcId].userId;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
 // Stage 5.6 sub-step 5b: engagement band derivation for shelf glyph
 // saturation. Counts notebook entries that link to a given book and
 // returns band 0/1/2. Read-only — no writes, no caching. Re-runs per
@@ -805,9 +832,11 @@ function createSubTheory(arcId, fields) {
   var src = fields || {};
   var now = Date.now();
   var id = genSubTheoryId();
+  var creator = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   var subTheory = {
     id:                 id,
     arcId:              arcId,
+    userId:             (creator && creator.uid) ? creator.uid : null,
     header:             (typeof src.header === 'string') ? src.header : '',
     bodyPublic:         (typeof src.bodyPublic === 'string') ? src.bodyPublic : '',
     bodyIntellectual:   (typeof src.bodyIntellectual === 'string') ? src.bodyIntellectual : '',
@@ -1471,6 +1500,16 @@ function migrate(stored) {
     if (!stored.subTheories) stored.subTheories = {};
     ensureSubTheoryFieldsAll(stored.subTheories);
     stored.SCHEMA_VERSION = '1.12.0';
+  }
+  // 14.1c-fix: sub-theory ownership moves from transitive (via parent arc)
+  // to a direct userId field. Backfill existing records from their parent
+  // arc's owner so the new st.userId filter does not regress already-synced
+  // sub-theories. Orphans left unset (were not syncing). Default literal
+  // (1.9.3) is unchanged -- new users still walk the whole chain.
+  if (stored.SCHEMA_VERSION === '1.12.0') {
+    if (!stored.subTheories) stored.subTheories = {};
+    backfillSubTheoryUserId(stored.subTheories, stored.arcs);
+    stored.SCHEMA_VERSION = '1.13.0';
   }
   return stored;
 }
