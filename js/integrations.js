@@ -169,6 +169,44 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.warn('loadArcsFromFirestore: fetch failed, keeping cache', arcResult.error);
       }
     });
+
+    // Stage 14.1b: fetch this user's notebook-doc from /userNotebook/{uid}
+    // and REPLACE-merge into state.notebookEntries. Independent of the
+    // book/arc fetches (separate docs). REPLACE: clear THIS uid's locally-
+    // known entries before splatting the remote set, so a delete on another
+    // device does not resurrect from cache. Ownership is entry.userId
+    // (direct), so clear-predicate and remote-set share the key.
+    loadNotebookFromFirestore(u.uid, function (nbResult) {
+      if (nbResult.status === 'found') {
+        var eid;
+        if (state.notebookEntries) {
+          for (eid in state.notebookEntries) {
+            if (Object.prototype.hasOwnProperty.call(state.notebookEntries, eid) &&
+                state.notebookEntries[eid] && state.notebookEntries[eid].userId === u.uid) {
+              delete state.notebookEntries[eid];
+            }
+          }
+        }
+        var remoteEntries = (nbResult.data && nbResult.data.notebookEntries)
+          ? nbResult.data.notebookEntries
+          : {};
+        var reid;
+        for (reid in remoteEntries) {
+          if (Object.prototype.hasOwnProperty.call(remoteEntries, reid)) {
+            state.notebookEntries[reid] = remoteEntries[reid];
+          }
+        }
+        saveState();
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadNotebookFromFirestore: merged remote notebook doc');
+      } else if (nbResult.status === 'absent') {
+        console.log('loadNotebookFromFirestore: no remote notebook doc for uid, keeping cache');
+      } else {
+        console.warn('loadNotebookFromFirestore: fetch failed, keeping cache', nbResult.error);
+      }
+    });
   } else {
     sv('praxis_user', null);
     console.log('onAuthStateChanged: signed out');
@@ -401,6 +439,95 @@ function saveArcsToFirestore(uid, payload, callback) {
   try {
     firebase.firestore()
       .collection('userArcs')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1b (workspace sync): per-user notebook-doc read from
+// /userNotebook/{uid}. Same typed-callback contract as the arc/book
+// loaders -- found / absent / error, idempotent fire-once.
+function loadNotebookFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadNotebookFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userNotebook')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1b: build the per-user notebook-doc payload. Denormalized
+// single-doc model: { schemaVersion, notebookEntries: { entryId: {...} },
+// updatedAt }. FILTERED to entries whose entry.userId === uid -- entries
+// carry their owner directly (both creators set userId), so like arcs
+// there is no separate per-uid index. serverTimestamp() stamps write time.
+function buildUserNotebookDoc(uid) {
+  var entries = {};
+  var eid;
+  if (state.notebookEntries) {
+    for (eid in state.notebookEntries) {
+      if (Object.prototype.hasOwnProperty.call(state.notebookEntries, eid)) {
+        var entry = state.notebookEntries[eid];
+        if (entry && entry.userId === uid) {
+          entries[eid] = entry;
+        }
+      }
+    }
+  }
+  return {
+    schemaVersion:  state.SCHEMA_VERSION,
+    notebookEntries: entries,
+    updatedAt:      firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// Stage 14.1b: per-user notebook-doc write to /userNotebook/{uid}.
+// .set() full-doc overwrite, fire-and-forget, typed callback,
+// idempotent fire-once -- identical contract to saveArcsToFirestore.
+function saveNotebookToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveNotebookToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userNotebook')
       .doc(uid)
       .set(payload)
       .then(function () {

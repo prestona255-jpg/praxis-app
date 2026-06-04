@@ -524,6 +524,17 @@ function markArcsDirty() {
   arcsDirty = true;
 }
 
+// Stage 14.1b (workspace sync): dirty flag for the per-user notebook doc,
+// mirroring booksDirty / arcsDirty. The entry mutators (in views.js for
+// create + privacy toggle, in state.js for addEntryToArc + deleteEntry)
+// mark it; saveState() consumes it and fires a fire-and-forget
+// /userNotebook/{uid} write.
+var notebookDirty = false;
+
+function markNotebookDirty() {
+  notebookDirty = true;
+}
+
 // Composite key for the bookArtifacts map. Kept as a function so the
 // format is changed in one place if it ever needs to change. The ':'
 // separator is safe because neither id is allowed to contain one.
@@ -693,6 +704,7 @@ function addEntryToArc(arcId, entryId) {
   arc.entryIds.push({ id: entryId, addedAt: now });
   arc.updatedAt = now;
   markArcsDirty();
+  markNotebookDirty();
   var entry = state.notebookEntries[entryId];
   if (!entry) {
     console.warn('addEntryToArc: entry not found ' + entryId
@@ -768,6 +780,7 @@ function deleteEntry(entryId) {
   }
   delete state.notebookEntries[entryId];
   markArcsDirty();
+  markNotebookDirty();
   return true;
 }
 
@@ -1028,6 +1041,27 @@ function saveState() {
         } else {
           console.warn(
             'saveArcsToFirestore: failed',
+            result ? result.error : null
+          );
+        }
+      });
+    }
+  }
+  if (notebookDirty) {
+    notebookDirty = false;
+    var nbUser = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (nbUser && nbUser.uid &&
+        typeof saveNotebookToFirestore === 'function' &&
+        typeof buildUserNotebookDoc === 'function') {
+      var nbPayload = buildUserNotebookDoc(nbUser.uid);
+      saveNotebookToFirestore(nbUser.uid, nbPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveNotebookToFirestore: ok');
+        } else {
+          console.warn(
+            'saveNotebookToFirestore: failed',
             result ? result.error : null
           );
         }

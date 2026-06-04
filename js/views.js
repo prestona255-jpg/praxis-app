@@ -796,6 +796,7 @@ function openJournalEditor() {
         updatedAt:  now
       };
       state.notebookEntries[id] = entry;
+      markNotebookDirty();
       saveState();
       renderNotebook();
     },
@@ -4398,6 +4399,7 @@ function openMarginaliaEditor(bookId) {
         updatedAt:  now
       };
       state.notebookEntries[id] = entry;
+      markNotebookDirty();
       saveState();
       renderBookDetail(bookId);
     },
@@ -4860,6 +4862,7 @@ function togglePrivacy(entryId) {
   var entry = state.notebookEntries && state.notebookEntries[entryId];
   if (!entry) return;
   entry.isPrivate = !(entry.isPrivate === true);
+  markNotebookDirty();
   saveState();
   if (location.hash.indexOf('#book/') === 0) {
     renderBookDetail(state.currentBookId);
