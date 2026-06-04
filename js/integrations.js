@@ -168,6 +168,46 @@ firebase.auth().onAuthStateChanged(function (u) {
       } else {
         console.warn('loadArcsFromFirestore: fetch failed, keeping cache', arcResult.error);
       }
+
+      // Stage 14.1c: NESTED here so arcs are reconciled (merged, absent, or
+      // kept-on-error) BEFORE this runs -- sub-theory ownership is transitive
+      // (subTheories[id].arcId -> arcs[arcId].userId), so both the clear-
+      // predicate and buildUserSubTheoriesDoc need arcs present. Fires once
+      // per sign-in regardless of the arc branch above.
+      loadSubTheoriesFromFirestore(u.uid, function (stResult) {
+        if (stResult.status === 'found') {
+          var sid;
+          if (state.subTheories) {
+            for (sid in state.subTheories) {
+              if (Object.prototype.hasOwnProperty.call(state.subTheories, sid)) {
+                var lst = state.subTheories[sid];
+                var lparent = (lst && lst.arcId && state.arcs) ? state.arcs[lst.arcId] : null;
+                if (lparent && lparent.userId === u.uid) {
+                  delete state.subTheories[sid];
+                }
+              }
+            }
+          }
+          var remoteSubs = (stResult.data && stResult.data.subTheories)
+            ? stResult.data.subTheories
+            : {};
+          var rsid;
+          for (rsid in remoteSubs) {
+            if (Object.prototype.hasOwnProperty.call(remoteSubs, rsid)) {
+              state.subTheories[rsid] = remoteSubs[rsid];
+            }
+          }
+          saveState();
+          if (window.views && window.views.renderRoute) {
+            window.views.renderRoute();
+          }
+          console.log('loadSubTheoriesFromFirestore: merged remote sub-theory doc');
+        } else if (stResult.status === 'absent') {
+          console.log('loadSubTheoriesFromFirestore: no remote sub-theory doc for uid, keeping cache');
+        } else {
+          console.warn('loadSubTheoriesFromFirestore: fetch failed, keeping cache', stResult.error);
+        }
+      });
     });
 
     // Stage 14.1b: fetch this user's notebook-doc from /userNotebook/{uid}
@@ -528,6 +568,97 @@ function saveNotebookToFirestore(uid, payload, callback) {
   try {
     firebase.firestore()
       .collection('userNotebook')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1c (workspace sync): per-user sub-theory-doc read from
+// /userSubTheories/{uid}. Same typed-callback contract as the other
+// loaders -- found / absent / error, idempotent fire-once.
+function loadSubTheoriesFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadSubTheoriesFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userSubTheories')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.1c: build the per-user sub-theory-doc payload. Denormalized
+// single-doc model: { schemaVersion, subTheories: { id: {...} }, updatedAt }.
+// Ownership is TRANSITIVE -- sub-theories carry no userId, only arcId, so a
+// record is "this user's" iff its parent arc exists AND that arc.userId ===
+// uid. An orphaned sub-theory (parent arc deleted) resolves to no owner and
+// is intentionally dropped from the doc (deferred: cascade-delete).
+function buildUserSubTheoriesDoc(uid) {
+  var subTheories = {};
+  var sid;
+  if (state.subTheories) {
+    for (sid in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, sid)) {
+        var st = state.subTheories[sid];
+        var parentArc = (st && st.arcId && state.arcs) ? state.arcs[st.arcId] : null;
+        if (parentArc && parentArc.userId === uid) {
+          subTheories[sid] = st;
+        }
+      }
+    }
+  }
+  return {
+    schemaVersion: state.SCHEMA_VERSION,
+    subTheories:   subTheories,
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// Stage 14.1c: per-user sub-theory-doc write to /userSubTheories/{uid}.
+// .set() full-doc overwrite, fire-and-forget, typed callback, idempotent
+// fire-once -- identical contract to saveArcsToFirestore.
+function saveSubTheoriesToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveSubTheoriesToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userSubTheories')
       .doc(uid)
       .set(payload)
       .then(function () {

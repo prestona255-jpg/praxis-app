@@ -535,6 +535,16 @@ function markNotebookDirty() {
   notebookDirty = true;
 }
 
+// Stage 14.1c (workspace sync): dirty flag for the per-user sub-theory doc.
+// The six sub-theory mutators (which already call saveState themselves) mark
+// it; saveState() consumes it and fires a fire-and-forget
+// /userSubTheories/{uid} write.
+var subTheoriesDirty = false;
+
+function markSubTheoriesDirty() {
+  subTheoriesDirty = true;
+}
+
 // Composite key for the bookArtifacts map. Kept as a function so the
 // format is changed in one place if it ever needs to change. The ':'
 // separator is safe because neither id is allowed to contain one.
@@ -811,6 +821,7 @@ function createSubTheory(arcId, fields) {
     updatedAt:          now
   };
   state.subTheories[id] = subTheory;
+  markSubTheoriesDirty();
   saveState();
   return subTheory;
 }
@@ -827,6 +838,7 @@ function updateSubTheory(id, fields) {
   if (typeof src.bodyPublic === 'string') subTheory.bodyPublic = src.bodyPublic;
   if (typeof src.bodyIntellectual === 'string') subTheory.bodyIntellectual = src.bodyIntellectual;
   subTheory.updatedAt = Date.now();
+  markSubTheoriesDirty();
   saveState();
   return subTheory;
 }
@@ -838,6 +850,7 @@ function deleteSubTheory(id) {
   var subTheory = state.subTheories[id];
   if (!subTheory) return false;
   delete state.subTheories[id];
+  markSubTheoriesDirty();
   saveState();
   return true;
 }
@@ -875,6 +888,7 @@ function linkSubTheories(aId, bId) {
   var now = Date.now();
   a.updatedAt = now;
   b.updatedAt = now;
+  markSubTheoriesDirty();
   saveState();
   return true;
 }
@@ -903,6 +917,7 @@ function unlinkSubTheories(aId, bId) {
   var now = Date.now();
   a.updatedAt = now;
   b.updatedAt = now;
+  markSubTheoriesDirty();
   saveState();
   return true;
 }
@@ -951,6 +966,7 @@ function addEvidence(subTheoryId, fields) {
   };
   subTheory.evidence.push(element);
   subTheory.updatedAt = Date.now();
+  markSubTheoriesDirty();
   saveState();
   return element;
 }
@@ -1062,6 +1078,27 @@ function saveState() {
         } else {
           console.warn(
             'saveNotebookToFirestore: failed',
+            result ? result.error : null
+          );
+        }
+      });
+    }
+  }
+  if (subTheoriesDirty) {
+    subTheoriesDirty = false;
+    var stUser = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (stUser && stUser.uid &&
+        typeof saveSubTheoriesToFirestore === 'function' &&
+        typeof buildUserSubTheoriesDoc === 'function') {
+      var stPayload = buildUserSubTheoriesDoc(stUser.uid);
+      saveSubTheoriesToFirestore(stUser.uid, stPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveSubTheoriesToFirestore: ok');
+        } else {
+          console.warn(
+            'saveSubTheoriesToFirestore: failed',
             result ? result.error : null
           );
         }
