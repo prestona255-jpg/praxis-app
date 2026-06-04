@@ -514,6 +514,16 @@ function markBooksDirty() {
   booksDirty = true;
 }
 
+// Stage 14.1a (workspace sync): dirty flag for the per-user arc doc,
+// mirroring booksDirty. The arc mutators mark it; saveState() consumes
+// it and fires a fire-and-forget /userArcs/{uid} write. Saves touching
+// no arc leave it unset and incur no arc round-trip.
+var arcsDirty = false;
+
+function markArcsDirty() {
+  arcsDirty = true;
+}
+
 // Composite key for the bookArtifacts map. Kept as a function so the
 // format is changed in one place if it ever needs to change. The ':'
 // separator is safe because neither id is allowed to contain one.
@@ -641,6 +651,7 @@ function createArc(title, description, userId) {
     updatedAt:   now
   };
   state.arcs[id] = arc;
+  markArcsDirty();
   return arc;
 }
 
@@ -656,6 +667,7 @@ function addBookToArc(arcId, bookId) {
   var now = Date.now();
   arc.bookIds.push({ id: bookId, addedAt: now });
   arc.updatedAt = now;
+  markArcsDirty();
   return true;
 }
 
@@ -680,6 +692,7 @@ function addEntryToArc(arcId, entryId) {
   var now = Date.now();
   arc.entryIds.push({ id: entryId, addedAt: now });
   arc.updatedAt = now;
+  markArcsDirty();
   var entry = state.notebookEntries[entryId];
   if (!entry) {
     console.warn('addEntryToArc: entry not found ' + entryId
@@ -725,6 +738,7 @@ function deleteArc(arcId) {
     }
   }
   delete state.arcs[arcId];
+  markArcsDirty();
   return true;
 }
 
@@ -753,6 +767,7 @@ function deleteEntry(entryId) {
     }
   }
   delete state.notebookEntries[entryId];
+  markArcsDirty();
   return true;
 }
 
@@ -992,6 +1007,27 @@ function saveState() {
         } else {
           console.warn(
             'saveBooksToFirestore: failed',
+            result ? result.error : null
+          );
+        }
+      });
+    }
+  }
+  if (arcsDirty) {
+    arcsDirty = false;
+    var arcUser = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (arcUser && arcUser.uid &&
+        typeof saveArcsToFirestore === 'function' &&
+        typeof buildUserArcsDoc === 'function') {
+      var arcPayload = buildUserArcsDoc(arcUser.uid);
+      saveArcsToFirestore(arcUser.uid, arcPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveArcsToFirestore: ok');
+        } else {
+          console.warn(
+            'saveArcsToFirestore: failed',
             result ? result.error : null
           );
         }
