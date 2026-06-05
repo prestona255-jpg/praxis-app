@@ -3599,3 +3599,146 @@
   }
 }
 /* ===== END SUB-THEORY WRITING SURFACE ===== */
+
+
+/* ===== ACCOUNT PAGE -- Stage 14.3.4.1 =====
+   Styling pass for the #account surface (renderAccountPage). Inputs
+   mirror the .shelf-editor-*-input field pattern; the delete affordance
+   reuses the --br-deep danger fill of .arc-confirm-confirm. CSS variables
+   only for color; layout dims in px/rem. The h1 stays Cormorant
+   (--font-serif), body copy DM Sans (--font-body). The delete-confirm
+   panel reuses the existing .arc-confirm-* rules (the extra
+   .account-confirm-panel class is a styling hook, no rule needed). */
+
+.account {
+  padding: 48px 0 64px 0;
+}
+
+.account-header {
+  padding: 0 0 24px 0;
+}
+
+.account-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.account-signin-copy {
+  margin: 0 0 16px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* Stacked content blocks with vertical rhythm between them. */
+.account-block {
+  margin: 0 0 32px 0;
+}
+
+/* Each label sits on its own line above its input -- no side-by-side
+   collision between the Display name and Pen name fields. */
+.account-field-label {
+  display: block;
+  margin: 0 0 6px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* Muted helper text under the Pen name label ("Publish as ..."). */
+.account-field-hint {
+  margin: 0 0 8px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* Single-line text input -- mirrors .shelf-editor-*-input, width capped
+   so the field does not run the full page measure. */
+.account-field-input {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 0 20px 0;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.account-field-input:hover {
+  border-color: var(--ink-3);
+}
+
+.account-field-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+/* Inline "Saved" confirmation beside the Save profile button. */
+.account-save-note {
+  margin-left: 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* Account buttons share the dark-fill primary treatment of the editor
+   Save CTAs. Scoped under .account so the bare .notebook-new-entry
+   elsewhere (intentionally unstyled, separate ticket) stays untouched. */
+.account .notebook-new-entry {
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.account .notebook-new-entry:hover {
+  background: var(--br-deep);
+}
+
+/* Export + Sign out as a secondary row with horizontal rhythm. */
+.account-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Danger zone -- separated from the actions above by a hairline rule and
+   generous top spacing so deletion never sits adjacent to routine
+   actions. */
+.account-danger {
+  margin-top: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Destructive primary -- --br-deep fill, matching .arc-confirm-confirm
+   (the codebase's established danger affordance). The compound
+   .notebook-new-entry.account-delete-btn selector outranks the base
+   .account .notebook-new-entry rule so the danger fill wins. */
+.account .notebook-new-entry.account-delete-btn {
+  background: var(--br-deep);
+  color: var(--text-on-dark);
+}
+
+.account .notebook-new-entry.account-delete-btn:hover {
+  background: var(--ink);
+}
+/* ===== END ACCOUNT PAGE ===== */

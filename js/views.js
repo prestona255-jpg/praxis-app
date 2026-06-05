@@ -5447,8 +5447,8 @@ function renderAccountPage() {
 
   saveBtn.addEventListener('click', function() {
     setProfile(uid, {
-      displayNameOverride: dnInput.value,
-      penName:             pnInput.value
+      displayNameOverride: dnInput.value.trim(),
+      penName:             pnInput.value.trim()
     });
     saveNote.textContent = 'Saving...';
     saveProfileToFirestore(uid, getProfile(uid), function(r) {
@@ -5464,7 +5464,7 @@ function renderAccountPage() {
 
   // Workspace actions block: export + sign out.
   var actionsBlock = document.createElement('div');
-  actionsBlock.className = 'account-block';
+  actionsBlock.className = 'account-block account-actions';
 
   var exportBtn = document.createElement('button');
   exportBtn.type = 'button';
