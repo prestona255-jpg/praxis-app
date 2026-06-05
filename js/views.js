@@ -339,6 +339,9 @@ function renderRoute() {
   } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
     activeRoute = 'books';
+  } else if (parts[0] === 'account') {
+    // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
+    activeRoute = 'account';
   } else {
     activeRoute = 'notebook';
   }
@@ -443,6 +446,19 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderArcsPage();
+    return;
+  }
+  // Stage 14.3 Stage 4: Account page (#account). Symmetric clear of the
+  // three pointer fields, mirroring the books / arcs / notebook branches
+  // -- entering the Account page is leaving any book, arc, and sub-theory.
+  // Placed BEFORE the notebook fallthrough so #account is caught here, not
+  // swallowed by the catch-all below.
+  if (parts[0] === 'account') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderAccountPage();
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -5258,8 +5274,255 @@ function closeTransparencyView() {
   host.innerHTML = '';
 }
 
+// Stage 14.3 Stage 4: yyyy-mm-dd stamp for the export filename. Uses the
+// browser Date (runtime only -- this never runs under the cscript parse
+// harness, which only PARSES the file). Zero-pads month/day via string
+// concat to keep the var/function-only, no-template-literal house style.
+function exportDateStamp() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  var mm = (m < 10) ? ('0' + m) : ('' + m);
+  var dd = (day < 10) ? ('0' + day) : ('' + day);
+  return y + '-' + mm + '-' + dd;
+}
+
+// Stage 14.3 Stage 4: in-DOM delete-account confirmation. Mirrors
+// openArcDeleteConfirm -- mounts into #account-delete-host, explicit
+// irreversible wording, no native confirm(). Confirm calls deleteAccount
+// (definition in integrations.js); on status:'error' the data is
+// untouched (retryable) so the panel stays open with an inline error and
+// the confirm link is reset. On 'deleted' OR 'deleted-data-only' the data
+// is gone and the user is signed out -- location.reload() gives a clean
+// signed-out slate (the soft note for 'deleted-data-only' is discarded by
+// the reload, which is acceptable per the Stage 4 brief). Cancel clears
+// the host; the account page underneath is untouched.
+function openAccountDeleteConfirm(uid) {
+  var host = document.getElementById('account-delete-host');
+  if (!host) return;
+  host.innerHTML = '';
+
+  var panel = document.createElement('div');
+  panel.className = 'arc-confirm-panel account-confirm-panel';
+
+  var copy = document.createElement('p');
+  copy.className = 'arc-confirm-copy';
+  copy.textContent =
+    'Delete your account? This permanently removes your books, arcs, ' +
+    'sub-theories, notebook, and profile from Praxis. This cannot be ' +
+    'undone.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'arc-confirm-actions';
+
+  var confirmLink = document.createElement('a');
+  confirmLink.href = '#';
+  confirmLink.className = 'arc-confirm-confirm';
+  confirmLink.textContent = 'Delete my account';
+  confirmLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    confirmLink.textContent = 'Deleting...';
+    deleteAccount(function(r) {
+      if (r && r.status === 'error') {
+        confirmLink.textContent = 'Delete my account';
+        var errNote = document.createElement('p');
+        errNote.className = 'arc-confirm-stale-note';
+        errNote.textContent = 'Could not delete the account: ' +
+          (r.error ? ('' + r.error) : 'unknown error') +
+          '. Nothing was removed -- please try again.';
+        host.appendChild(errNote);
+        return;
+      }
+      // 'deleted' or 'deleted-data-only': data is gone, user signed out.
+      location.reload();
+    });
+  });
+  actions.appendChild(confirmLink);
+
+  var cancelLink = document.createElement('a');
+  cancelLink.href = '#';
+  cancelLink.className = 'arc-confirm-cancel';
+  cancelLink.textContent = 'Cancel';
+  cancelLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var h = document.getElementById('account-delete-host');
+    if (h) h.innerHTML = '';
+  });
+  actions.appendChild(cancelLink);
+
+  panel.appendChild(actions);
+  host.appendChild(panel);
+}
+
+// Stage 14.3 Stage 4: the Account page -- the reachable surface tying the
+// 14.3 lifecycle together (profile edit + Firestore sync, workspace
+// export, sign-out, account deletion). getCurrentUser-gated: a signed-out
+// visitor gets a sign-in prompt rather than a broken page. Cormorant
+// header / DM Sans body inherit from the page-level type rules; all
+// colour comes from CSS variables (visual treatment of the new account-*
+// classes is a later styling ticket, per the unstyled-classes precedent).
+function renderAccountPage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'account';
+
+  var header = document.createElement('header');
+  header.className = 'account-header';
+  var title = document.createElement('h1');
+  title.className = 'account-title';
+  title.textContent = 'Account';
+  header.appendChild(title);
+  wrap.appendChild(header);
+
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    var signinCopy = document.createElement('p');
+    signinCopy.className = 'account-signin-copy';
+    signinCopy.textContent = 'Sign in to manage your account.';
+    wrap.appendChild(signinCopy);
+
+    var signinBtn = document.createElement('button');
+    signinBtn.type = 'button';
+    signinBtn.className = 'shelf-signin-prompt';
+    signinBtn.textContent = 'Sign in';
+    signinBtn.addEventListener('click', function() {
+      signInWithGoogle();
+    });
+    wrap.appendChild(signinBtn);
+
+    host.appendChild(wrap);
+    return;
+  }
+
+  var uid = user.uid;
+  var profile = getProfile(uid);
+
+  // Profile block: display-name override + optional pen name.
+  var profileBlock = document.createElement('div');
+  profileBlock.className = 'account-block';
+
+  var dnLabel = document.createElement('label');
+  dnLabel.className = 'account-field-label';
+  dnLabel.textContent = 'Display name';
+  profileBlock.appendChild(dnLabel);
+
+  var dnInput = document.createElement('input');
+  dnInput.type = 'text';
+  dnInput.className = 'account-field-input';
+  dnInput.value = profile.displayNameOverride
+    ? profile.displayNameOverride
+    : (user.displayName ? user.displayName : '');
+  profileBlock.appendChild(dnInput);
+
+  var pnLabel = document.createElement('label');
+  pnLabel.className = 'account-field-label';
+  pnLabel.textContent = 'Pen name';
+  profileBlock.appendChild(pnLabel);
+
+  var pnHint = document.createElement('p');
+  pnHint.className = 'account-field-hint';
+  pnHint.textContent = 'Publish as -- e.g. Roland Blair';
+  profileBlock.appendChild(pnHint);
+
+  var pnInput = document.createElement('input');
+  pnInput.type = 'text';
+  pnInput.className = 'account-field-input';
+  pnInput.value = profile.penName ? profile.penName : '';
+  profileBlock.appendChild(pnInput);
+
+  var saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'notebook-new-entry';
+  saveBtn.textContent = 'Save profile';
+  profileBlock.appendChild(saveBtn);
+
+  var saveNote = document.createElement('span');
+  saveNote.className = 'account-save-note';
+  profileBlock.appendChild(saveNote);
+
+  saveBtn.addEventListener('click', function() {
+    setProfile(uid, {
+      displayNameOverride: dnInput.value,
+      penName:             pnInput.value
+    });
+    saveNote.textContent = 'Saving...';
+    saveProfileToFirestore(uid, getProfile(uid), function(r) {
+      if (r && r.status === 'ok') {
+        saveNote.textContent = 'Saved';
+      } else {
+        saveNote.textContent = 'Saved locally -- sync will retry on reload.';
+      }
+    });
+  });
+
+  wrap.appendChild(profileBlock);
+
+  // Workspace actions block: export + sign out.
+  var actionsBlock = document.createElement('div');
+  actionsBlock.className = 'account-block';
+
+  var exportBtn = document.createElement('button');
+  exportBtn.type = 'button';
+  exportBtn.className = 'notebook-new-entry';
+  exportBtn.textContent = 'Export workspace';
+  exportBtn.addEventListener('click', function() {
+    var data = exportWorkspace();
+    if (!data) return;
+    var json = JSON.stringify(data, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'praxis-workspace-' + uid.slice(0, 6) + '-' +
+                 exportDateStamp() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+  actionsBlock.appendChild(exportBtn);
+
+  var signoutBtn = document.createElement('button');
+  signoutBtn.type = 'button';
+  signoutBtn.className = 'notebook-new-entry';
+  signoutBtn.textContent = 'Sign out';
+  signoutBtn.addEventListener('click', function() {
+    signOut();
+  });
+  actionsBlock.appendChild(signoutBtn);
+
+  wrap.appendChild(actionsBlock);
+
+  // Danger zone: irreversible account deletion behind an in-DOM confirm.
+  var dangerBlock = document.createElement('div');
+  dangerBlock.className = 'account-block account-danger';
+
+  var deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'notebook-new-entry account-delete-btn';
+  deleteBtn.textContent = 'Delete account';
+  deleteBtn.addEventListener('click', function() {
+    openAccountDeleteConfirm(uid);
+  });
+  dangerBlock.appendChild(deleteBtn);
+
+  var deleteHost = document.createElement('div');
+  deleteHost.id = 'account-delete-host';
+  dangerBlock.appendChild(deleteHost);
+
+  wrap.appendChild(dangerBlock);
+
+  host.appendChild(wrap);
+}
+
 window.views = {
   renderRoute:           renderRoute,
+  renderAccountPage:     renderAccountPage,
   renderNotebook:        renderNotebook,
   renderShelf:           renderShelf,
   renderBookDetail:      renderBookDetail,
