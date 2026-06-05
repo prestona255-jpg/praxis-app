@@ -517,6 +517,105 @@ function saveProfileToFirestore(uid, profile, callback) {
   }
 }
 
+// Stage 14.3 Stage 3: account deletion. Irreversible. Definition only --
+// no UI trigger (Stage 4) and no console call this stage. Contract:
+//   - No signed-in user -> callback({status:'error', error:'no signed-in
+//     user'}) and do nothing.
+//   STEP 1: delete all five per-user Firestore docs (doc id = uid) via a
+//     counted-callback fan-out -- userBooks, userArcs, userNotebook,
+//     userSubTheories, userProfiles. Firestore .delete() RESOLVES for a
+//     missing doc, so not-found naturally counts as success; only a real
+//     reject is a hard error. Any hard error -> callback({status:'error',
+//     phase:'firestore', error}) and ABORT with NO local changes (retry-
+//     able). The aborted flag guards against a second done() once any
+//     delete has rejected.
+//   STEP 2: only after all five settle -> wipeActiveUserLocal() (empties
+//     the per-uid localStorage bucket + wipes in-memory maps).
+//   STEP 3: attempt firebase.auth().currentUser.delete().
+//     - success -> sv('praxis_user', null); callback({status:'deleted'}).
+//     - 'auth/requires-recent-login' OR any other error -> the DATA IS
+//       ALREADY GONE (steps 1+2 done). Sign out anyway (the observer
+//       clears praxis_user) and surface a soft note via
+//       {status:'deleted-data-only'}. Do NOT resurrect data, do NOT abort.
+//   INVARIANT: once the five docs are deleted, local is wiped and the user
+//   is signed out regardless of whether currentUser.delete() succeeds.
+//   Data deletion never blocks on auth-record deletion.
+function deleteAccount(callback) {
+  function done(result) {
+    if (typeof callback === 'function') callback(result);
+  }
+  var u = getCurrentUser();
+  if (!u || !u.uid) {
+    done({ status: 'error', error: 'no signed-in user' });
+    return;
+  }
+  var uid = u.uid;
+  var collections = ['userBooks', 'userArcs', 'userNotebook',
+                     'userSubTheories', 'userProfiles'];
+  var total = collections.length;
+  var settled = 0;
+  var aborted = false;
+
+  function afterFirestore() {
+    // STEP 2: wipe local (per-uid bucket + in-memory maps). praxis_user
+    // is intentionally left for STEP 3 / sign-out to clear.
+    wipeActiveUserLocal();
+    // STEP 3: attempt the auth-record deletion.
+    var authUser = firebase.auth().currentUser;
+    if (!authUser) {
+      // No live auth record -- data already wiped; clear the cache and
+      // report a clean delete.
+      sv('praxis_user', null);
+      done({ status: 'deleted' });
+      return;
+    }
+    authUser.delete().then(function () {
+      sv('praxis_user', null);
+      done({ status: 'deleted' });
+    }).catch(function (err) {
+      // 'auth/requires-recent-login' or any other error: data is already
+      // gone, so sign out (observer clears praxis_user) and surface the
+      // soft note rather than aborting or resurrecting data.
+      firebase.auth().signOut();
+      done({
+        status: 'deleted-data-only',
+        note:   'Account data removed. Sign in again to finish removing the login.'
+      });
+    });
+  }
+
+  function onSettle(err, isHardError) {
+    if (aborted) return;
+    if (isHardError) {
+      aborted = true;
+      done({ status: 'error', phase: 'firestore', error: err });
+      return;
+    }
+    settled++;
+    if (settled === total) {
+      afterFirestore();
+    }
+  }
+
+  var i;
+  for (i = 0; i < collections.length; i++) {
+    try {
+      firebase.firestore()
+        .collection(collections[i])
+        .doc(uid)
+        .delete()
+        .then(function () {
+          onSettle(null, false);
+        })
+        .catch(function (err) {
+          onSettle(err, true);
+        });
+    } catch (e) {
+      onSettle(e, true);
+    }
+  }
+}
+
 // Stage 14.1a (workspace sync): per-user arc-doc read from
 // /userArcs/{uid}. Typed callback in the loadBooksFromFirestore house
 // style -- found / absent / error. Idempotent fire-once via a local
