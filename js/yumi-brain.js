@@ -39,27 +39,16 @@ function getYumiContext() {
 }
 
 // Resolve the uid of the user this conversation belongs to. Firebase
-// auth (via integrations.js getCurrentUser) is the primary source. If
-// no signed-in user, fall back to state.users contents: 0 keys -> null,
-// 1 key -> that key, 2+ keys -> first alphabetically with a deferred-#6
-// warning (multi-user is not yet supported).
+// auth (via integrations.js getCurrentUser) is the sole source of
+// truth: return the signed-in user's uid, or null when no one is
+// signed in. No in-memory user-map fallback -- isolation is enforced
+// at the data layer (state cleared on sign-out / account switch).
 function resolveActiveUid() {
   var current = getCurrentUser();
   if (current && current.uid) {
     return current.uid;
   }
-  var keys = [];
-  var k;
-  for (k in state.users) {
-    if (Object.prototype.hasOwnProperty.call(state.users, k)) {
-      keys.push(k);
-    }
-  }
-  if (keys.length === 0) return null;
-  if (keys.length === 1) return keys[0];
-  keys.sort();
-  console.warn('yumi-brain: multiple users in state.users (deferred #6); using first alphabetically: ' + keys[0]);
-  return keys[0];
+  return null;
 }
 
 // Summarize a single dropped turn into yumiMemory.summary via a

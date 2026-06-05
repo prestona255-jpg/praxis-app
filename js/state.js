@@ -655,6 +655,21 @@ function ensureUser(uid) {
   }
 }
 
+function clearUserState() {
+  state.currentBookId = null;
+  state.currentArcId = null;
+  state.currentSubTheoryId = null;
+  state.users = {};
+  state.books = {};
+  state.userBooks = {};
+  state.notebooks = {};
+  state.notebookEntries = {};
+  state.bookArtifacts = {};
+  state.arcs = {};
+  state.subTheories = {};
+  state.SCHEMA_VERSION = '1.9.3';
+}
+
 // 3.8 arc data layer. createArc / addBookToArc / addEntryToArc are
 // pure in-memory mutators: they write into state.arcs (and, for
 // addEntryToArc, into the entry-side back-reference state.notebook-
@@ -1000,8 +1015,16 @@ function addEvidence(subTheoryId, fields) {
   return element;
 }
 
+function stateKey() {
+  var u = ls('praxis_user', null);
+  if (u && u.uid) {
+    return 'praxis_state_' + u.uid;
+  }
+  return 'praxis_state_anon';
+}
+
 function loadState() {
-  var stored = ls('praxis_state', null);
+  var stored = ls(stateKey(), null);
   if (stored === null) {
     // Stage 5.3 Stage 3a: cold-open path now runs migrate(state) too,
     // so the Pedagogy of Desire seed migration step (1.9.3 -> 1.10.0)
@@ -1021,6 +1044,26 @@ function loadState() {
     // default literal when adding a new schema version. New
     // migration steps land in the migrate() chain only. The chain
     // does the work; the default literal stays the anchor.
+    //
+    // 14.2.2: per-uid keying. stateKey() now buckets the blob by uid.
+    // On a signed-in user's FIRST cold-open under the new scheme, adopt
+    // the legacy shared praxis_state blob into this uid's bucket, then
+    // consume (null) it so a second user on the same browser can't adopt
+    // the first user's data. The for-in copy intentionally inherits the
+    // legacy SCHEMA_VERSION stamp (no anchor reset here) so the seed
+    // ladder does NOT re-run and duplicate seeded arcs.
+    var legacy = ls('praxis_state', null);
+    if (legacy !== null && stateKey() !== 'praxis_state_anon') {
+      var migratedLegacy = migrate(legacy);
+      for (var lk in migratedLegacy) {
+        if (Object.prototype.hasOwnProperty.call(migratedLegacy, lk)) {
+          state[lk] = migratedLegacy[lk];
+        }
+      }
+      sv(stateKey(), state);
+      sv('praxis_state', null);
+      return state;
+    }
     state = migrate(state);
     return state;
   }
@@ -1038,7 +1081,7 @@ function saveState() {
   // Unchanged from the pre-Firestore behavior; bulk-add's per-entry
   // saveState crash-consistency contract is preserved (a mid-import
   // tab close leaves localStorage consistent).
-  var ok = sv('praxis_state', state);
+  var ok = sv(stateKey(), state);
   // Firestore Stage 2: if a book mutation marked the flag, fire a
   // fire-and-forget per-user-doc write. localStorage is already
   // durable; the Firestore write is a best-effort remote mirror.

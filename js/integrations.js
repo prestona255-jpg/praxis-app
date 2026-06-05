@@ -36,7 +36,21 @@ firebase.auth().onAuthStateChanged(function (u) {
       email:       u.email,
       photoURL:    u.photoURL
     };
+    // 14.2 account switch in a shared browser: read the prior cached
+    // user BEFORE overwriting praxis_user. If a different uid was
+    // signed in, wipe all in-memory maps so A's data cannot leak into
+    // B's session before the Firestore loads fire.
+    var prevUser = getCurrentUser();
+    if (prevUser && prevUser.uid && prevUser.uid !== u.uid) {
+      clearUserState();
+    }
     sv('praxis_user', userObj);
+    ensureUser(u.uid);
+    // 14.2.2: praxis_user is now the new uid, so loadState hydrates
+    // THIS user's per-uid localStorage bucket (via stateKey()) before
+    // the Firestore book load fires. Firestore is the source of truth
+    // and REPLACE-wins over any stale localStorage book cache below.
+    loadState();
     console.log('onAuthStateChanged: signed in', userObj);
 
     // Firestore Stage 1: fetch this user's book-doc from
@@ -250,6 +264,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       }
     });
   } else {
+    clearUserState();
     sv('praxis_user', null);
     console.log('onAuthStateChanged: signed out');
   }
@@ -274,9 +289,11 @@ function signInWithGoogle() {
 
 function signOut() {
   firebase.auth().signOut().then(function () {
+    clearUserState();
     sv('praxis_user', null);
     console.log('signOut: success');
   }).catch(function (err) {
+    clearUserState();
     sv('praxis_user', null);
     console.warn('signOut: error', err);
   });
