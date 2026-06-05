@@ -263,6 +263,31 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.warn('loadNotebookFromFirestore: fetch failed, keeping cache', nbResult.error);
       }
     });
+
+    // Stage 14.3 Stage 1: fetch this user's profile doc from
+    // /userProfiles/{uid}. REPLACE-on-found into the ensureUser-seeded
+    // profile slot; 'absent' (fresh account, no remote doc) KEEPS the
+    // local cache -- do NOT clear, a brand-new user simply has empty
+    // override fields. setProfile is reused so the write also persists
+    // the merged profile into the per-uid localStorage bucket.
+    loadProfileFromFirestore(u.uid, function (profResult) {
+      if (profResult.status === 'found') {
+        ensureUser(u.uid);
+        var rd = profResult.data || {};
+        setProfile(u.uid, {
+          displayNameOverride: rd.displayNameOverride ? rd.displayNameOverride : '',
+          penName:             rd.penName ? rd.penName : ''
+        });
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadProfileFromFirestore: merged remote profile doc');
+      } else if (profResult.status === 'absent') {
+        console.log('loadProfileFromFirestore: no remote profile doc for uid, keeping cache');
+      } else {
+        console.warn('loadProfileFromFirestore: fetch failed, keeping cache', profResult.error);
+      }
+    });
   } else {
     clearUserState();
     sv('praxis_user', null);
@@ -408,6 +433,79 @@ function saveBooksToFirestore(uid, payload, callback) {
       .collection('userBooks')
       .doc(uid)
       .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.3 Stage 1: per-user profile-doc read from /userProfiles/{uid}.
+// Typed callback in the loadBooksFromFirestore house style -- found /
+// absent / error. REPLACE-on-read contract: the caller overwrites the
+// local profile cache with the remote doc on 'found'; on 'absent' (a
+// fresh account with no remote doc yet) the local cache is KEPT, not
+// cleared. Idempotent fire-once via a local done flag.
+function loadProfileFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadProfileFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userProfiles')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 14.3 Stage 1: per-user profile-doc write to /userProfiles/{uid}.
+// .set() is a full-doc overwrite, matching the single-doc model and the
+// REPLACE read semantics above. Single-arg typed callback in the house
+// style: { status: 'ok' } / { status: 'error', error }. Idempotent
+// fire-once via a local done flag.
+function saveProfileToFirestore(uid, profile, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveProfileToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userProfiles')
+      .doc(uid)
+      .set({
+        displayNameOverride: (profile && profile.displayNameOverride) ? profile.displayNameOverride : '',
+        penName:             (profile && profile.penName) ? profile.penName : '',
+        updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
+      })
       .then(function () {
         finish({ status: 'ok' });
       })

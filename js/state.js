@@ -637,7 +637,8 @@ function ensureUser(uid) {
   if (!state.users[uid]) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
-      registerDefaults: { journal: false, marginalia: false }
+      registerDefaults: { journal: false, marginalia: false },
+      profile:          { displayNameOverride: '', penName: '' }
     };
   }
   if (!state.users[uid].yumiMemory) {
@@ -650,9 +651,45 @@ function ensureUser(uid) {
       journal: false, marginalia: false
     };
   }
+  // Stage 14.3 Stage 1: profile override layer (display-name override +
+  // optional pen name). Additive guard for users seeded before 14.3 so
+  // an existing in-memory user gains the slot without disturbing
+  // yumiMemory / registerDefaults.
+  if (!state.users[uid].profile) {
+    state.users[uid].profile = { displayNameOverride: '', penName: '' };
+  }
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
   }
+}
+
+// Stage 14.3 Stage 1: profile reader. Returns the uid's profile object
+// (ensureUser-seeded { displayNameOverride, penName }). Tolerates a
+// never-seeded uid by returning a fresh empty-fields object rather than
+// undefined, so callers can read .displayNameOverride / .penName
+// unconditionally.
+function getProfile(uid) {
+  if (uid && state.users[uid] && state.users[uid].profile) {
+    return state.users[uid].profile;
+  }
+  return { displayNameOverride: '', penName: '' };
+}
+
+// Stage 14.3 Stage 1: profile mutator. Writes the two string fields
+// (only when present in fields) and persists via saveState. ensureUser
+// guarantees the slot exists before assignment. String-coerced via
+// concatenation to keep the stored shape strictly { string, string }.
+function setProfile(uid, fields) {
+  if (!uid) return;
+  ensureUser(uid);
+  var p = state.users[uid].profile;
+  if (fields && typeof fields.displayNameOverride !== 'undefined') {
+    p.displayNameOverride = '' + fields.displayNameOverride;
+  }
+  if (fields && typeof fields.penName !== 'undefined') {
+    p.penName = '' + fields.penName;
+  }
+  saveState();
 }
 
 function clearUserState() {
