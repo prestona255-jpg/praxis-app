@@ -692,6 +692,52 @@ function setProfile(uid, fields) {
   saveState();
 }
 
+// Stage 14.3 Stage 2: serialize the ACTIVE user's workspace into a single
+// JSON-serializable object. No download trigger here -- Stage 4 (views)
+// owns the Blob/anchor. uid is resolved at CALL time via getCurrentUser
+// (defined in integrations.js, which loads AFTER state.js; referencing it
+// only inside this function body is safe because the call happens at
+// runtime, never at parse/define time). Null user -> null return.
+//
+// Scoping asymmetry is intentional (locked Stage 2 decision):
+//   - books: walk state.userBooks[uid].bookIds and map each id to its
+//     state.books record, SKIPPING any id with no matching record. The
+//     ownership list makes export immune to a stale cross-uid book ever
+//     present in the flat state.books map.
+//   - arcs / subTheories / notebookEntries: serialized DIRECTLY from
+//     their flat maps. They have no per-uid ownership list and ride the
+//     clearUserState single-user wipe guarantee; a userId filter would
+//     wrongly drop the shared __praxis_seed__ "A Pedagogy of Desire" arc.
+function exportWorkspace() {
+  var u = getCurrentUser();
+  if (!u || !u.uid) {
+    return null;
+  }
+  var uid = u.uid;
+  var books = {};
+  var bookIds = (state.userBooks &&
+                 state.userBooks[uid] &&
+                 state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds
+    : [];
+  var i;
+  for (i = 0; i < bookIds.length; i++) {
+    var bid = bookIds[i];
+    if (state.books && state.books[bid]) {
+      books[bid] = state.books[bid];
+    }
+  }
+  return {
+    schemaVersion:   state.SCHEMA_VERSION,
+    exportedAt:      Date.now(),
+    profile:         getProfile(uid),
+    books:           books,
+    arcs:            state.arcs ? state.arcs : {},
+    subTheories:     state.subTheories ? state.subTheories : {},
+    notebookEntries: state.notebookEntries ? state.notebookEntries : {}
+  };
+}
+
 function clearUserState() {
   state.currentBookId = null;
   state.currentArcId = null;
