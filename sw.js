@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.17';
+var CACHE_VERSION = 'praxis-v3.18';
 
 var APP_SHELL = [
   '/',
@@ -75,7 +75,6 @@ self.addEventListener('install', function (event) {
       return Promise.all(puts);
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', function (event) {
@@ -116,4 +115,15 @@ self.addEventListener('fetch', function (event) {
       });
     })
   );
+});
+
+// 14.4(INF-4): controlled skip-waiting. install() no longer calls
+// skipWaiting() unconditionally; a new SW now parks in 'waiting' until
+// the page tells it to take over (after the user clicks Reload on the
+// update banner). This stops a surprise activation from reloading a tab
+// mid-session and eating unsaved Notebook/Yumi text.
+self.addEventListener('message', function (event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
