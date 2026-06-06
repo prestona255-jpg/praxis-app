@@ -292,6 +292,15 @@ firebase.auth().onAuthStateChanged(function (u) {
     clearUserState();
     sv('praxis_user', null);
     console.log('onAuthStateChanged: signed out');
+    // Stage 14.3 Stage 4.2: repaint the current route so the UI reflects
+    // the signed-out state immediately (e.g. the Account page falls back
+    // to its sign-in prompt). typeof-guarded because renderRoute lives in
+    // views.js, which loads AFTER integrations.js; the guard is belt-and-
+    // suspenders since this callback only fires at runtime, by which point
+    // views.js is loaded. Signed-IN branch deliberately left untouched --
+    // its loader callbacks already drive the render; a repaint here would
+    // risk a double-paint.
+    if (typeof renderRoute === 'function') { renderRoute(); }
   }
 });
 
