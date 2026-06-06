@@ -5402,6 +5402,16 @@ function renderAccountPage() {
   var uid = user.uid;
   var profile = getProfile(uid);
 
+  // Stage 14.3 fix: read-only "Signed in as <email>" line directly under
+  // the Account h1, so two accounts sharing a display name are still
+  // distinguishable. Reuses the muted .account-signin-copy class; not an
+  // input. Email comes from the cached praxis_user object (.email).
+  var emailLine = document.createElement('p');
+  emailLine.className = 'account-signin-copy';
+  emailLine.textContent = 'Signed in as ' +
+    (getCurrentUser().email ? getCurrentUser().email : '(no email on file)');
+  wrap.appendChild(emailLine);
+
   // Profile block: display-name override + optional pen name.
   var profileBlock = document.createElement('div');
   profileBlock.className = 'account-block';
