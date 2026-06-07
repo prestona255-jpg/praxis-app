@@ -745,7 +745,10 @@ function _stTreatment(key, u, c) {
 function _stLuminosity(maturity) {
   var m = (typeof maturity === 'number' && isFinite(maturity)) ? maturity : 0;
   m = _arcClamp(0, m, 1);
-  return _arcR(0.35 + m * 0.65);
+  // 9.6b.1: luminosity now drives the GLOW ONLY (halo + inner-light); the
+  // body pane is decoupled to a constant opacity. Floor lifted 0.35 -> 0.45
+  // so a brand-new (0-maturity) mark still glows gently rather than near-zero.
+  return _arcR(0.45 + m * 0.55);
 }
 
 // Radial layout: question at center, sub-theories on an even orbiting ring
@@ -819,12 +822,18 @@ function _stRenderEmpty(width, height) {
 }
 
 // Identity marks. Each sub-theory: a backlit luminosity-scaled halo, a
-// translucent identity-color body carrying its surface treatment + grain
-// overlay (all clipped to the silhouette), and a bright inner-light
-// ellipse. The silhouette/treatment/color triple is self-derived from the
-// id via _stIndices -- the contract's shapeKey/color are ignored here (this
-// renderer is their only consumer; see the _stIdentity shim note). Color is
-// always a --subtheory-N token, so no hardcoded hex enters the mark code.
+// translucent identity-color body pane (surface treatment + grain overlay,
+// all clipped to the silhouette), a bright inner-light ellipse, and a
+// deeper-toned silhouette outline. 9.6b.1 contrast tuning: the body PANE is
+// DECOUPLED from luminosity -- it renders at a CONSTANT opacity so every
+// mark reads on the wheat at any maturity -- while luminosity drives the
+// GLOW ONLY (halo + inner-light). The outline is drawn outside the lum group
+// at constant strength, so the edge is defined even for a 0-maturity mark.
+// The silhouette/treatment/color triple is self-derived from the id via
+// _stIndices -- the contract's shapeKey/color are ignored here (this
+// renderer is their only consumer; see the _stIdentity shim note). Body
+// color is var(--subtheory-N) and the outline is its companion
+// var(--subtheory-N-edge); no hardcoded hex enters the mark code.
 function _stRenderShapes(positions) {
   var out = '';
   var u = _ST_SCALE / 120;
@@ -845,12 +854,13 @@ function _stRenderShapes(positions) {
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
     out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
-    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="' + _arcR(lum) + '">';
-    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '" opacity="0.42"/>';
+    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.55">';
+    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '"/>';
     out = out +     _stTreatment(treatKey, u, colorVar);
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
+    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.8" opacity="0.9"/>');
     out = out + '</g>';
   }
   return out;

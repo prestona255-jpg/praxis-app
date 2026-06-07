@@ -166,6 +166,26 @@
   --subtheory-15: #A98FCE; /* purple */
   --subtheory-16: #BE93C6; /* mauve */
 
+  /* Stage 9.6b.1: companion edge tones -- each ~40% darker, same-hue shade
+     of --subtheory-N, used for the silhouette outline so a mark reads a
+     defined edge on the wheat ground at any maturity. */
+  --subtheory-1-edge:  #916474;
+  --subtheory-2-edge:  #8F5F68;
+  --subtheory-3-edge:  #906553;
+  --subtheory-4-edge:  #8B6040;
+  --subtheory-5-edge:  #8B6A3E;
+  --subtheory-6-edge:  #8E7A40;
+  --subtheory-7-edge:  #7A7D4D;
+  --subtheory-8-edge:  #65794E;
+  --subtheory-9-edge:  #567A5C;
+  --subtheory-10-edge: #567D6E;
+  --subtheory-11-edge: #4C7378;
+  --subtheory-12-edge: #566D80;
+  --subtheory-13-edge: #505682;
+  --subtheory-14-edge: #4C4A73;
+  --subtheory-15-edge: #65567C;
+  --subtheory-16-edge: #725877;
+
   /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
 
