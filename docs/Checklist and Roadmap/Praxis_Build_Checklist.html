@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis Build Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1f1a14;
+  --ink-2: #3a3026;
+  --ink-3: #6a5e51;
+  --ink-4: #8a7f72;
+  --gold: #b88a3a;
+  --gold-soft: #d4b876;
+  --gold-deep: #8b6a26;
+  --br-deep: #5a3f24;
+  --parchment: #f5ede0;
+  --parchment-2: #ede3d2;
+  --parchment-3: #e3d6bf;
+  --border: #c8b89a;
+  --border-soft: #d8cab0;
+  --shadow-1: 0 1px 2px rgba(30,20,10,0.04), 0 2px 6px rgba(30,20,10,0.04);
+  --shadow-2: 0 2px 4px rgba(30,20,10,0.06), 0 8px 20px rgba(30,20,10,0.08);
+  --display: 'Cormorant Garamond', Georgia, serif;
+  --body: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(184,138,58,0.05), transparent 55%),
+    radial-gradient(circle at 85% 80%, rgba(90,63,36,0.04), transparent 55%);
+}
+.page { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 48px 32px 80px; }
+.header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+.eyebrow { font-family: var(--display); font-style: italic; color: var(--gold-deep); margin: 0 0 8px; font-size: 15px; letter-spacing: 0.02em; }
+.title { font-family: var(--display); font-weight: 500; color: var(--ink); margin: 0 0 12px; font-size: 38px; line-height: 1.15; }
+.subtitle { font-size: 15px; color: var(--ink-2); margin: 0 0 16px; }
+.meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--ink-3); font-family: var(--mono); }
+.meta-row strong { color: var(--ink-2); font-weight: 500; }
+
+.progress-card {
+  background: var(--parchment-2);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap;
+}
+.progress-label { font-size: 13px; color: var(--ink-3); margin: 0 0 4px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.progress-count { font-family: var(--display); font-size: 30px; font-weight: 500; color: var(--ink); }
+.progress-bar { flex: 1; min-width: 240px; height: 10px; background: var(--parchment-3); border-radius: 5px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--gold); transition: width 0.3s ease; border-radius: 5px; }
+.reset-btn {
+  font-size: 12px; padding: 8px 14px; background: transparent;
+  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+  color: var(--ink-3); font-family: var(--body);
+}
+.reset-btn:hover { background: var(--parchment); color: var(--ink); }
+
+.milestone {
+  background: rgba(255,250,240,0.55);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.milestone::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: 10px 0 0 10px;
+}
+.milestone.m1::before, .milestone.m2::before, .milestone.m3::before { background: var(--gold); }
+.milestone.m4::before, .milestone.m5::before { background: #c8842a; }
+.milestone.m6::before { background: #5fb082; }
+.milestone.m7::before, .milestone.m8::before, .milestone.m9::before, .milestone.m10::before { background: #534ab7; }
+.milestone.m11::before { background: #0f6e56; }
+.milestone.m12::before { background: #888780; }
+.milestone.m13::before { background: #993c1d; }
+.milestone.m14::before { background: var(--gold-deep); }
+.milestone.m15::before { background: var(--ink-4); }
+.milestone.m16::before { background: var(--ink-4); opacity: 0.6; }
+.milestone.deferred { opacity: 0.7; }
+
+.milestone-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+.milestone-num { font-family: var(--display); font-style: italic; font-size: 14px; color: var(--gold-deep); }
+.milestone-title { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--ink); margin: 0; line-height: 1.25; }
+.milestone-badge { font-size: 11px; padding: 4px 10px; border-radius: 12px; white-space: nowrap; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.badge-active { background: var(--gold); color: var(--parchment); }
+.badge-shipped { background: rgba(15, 110, 86, 0.16); color: #0a4030; }
+.badge-foundation { background: var(--parchment-3); color: var(--gold-deep); }
+.badge-onboarding { background: rgba(200, 132, 42, 0.18); color: #6a3f08; }
+.badge-polish { background: rgba(95, 176, 130, 0.18); color: #1a4030; }
+.badge-core { background: rgba(83, 74, 183, 0.18); color: #26215c; }
+.badge-evidence { background: rgba(15, 110, 86, 0.18); color: var(--ink); }
+.badge-utility { background: var(--parchment-3); color: var(--ink-3); }
+.badge-transparency { background: rgba(153, 60, 29, 0.18); color: #4a1b0c; }
+.badge-publishing { background: rgba(139, 106, 38, 0.22); color: var(--br-deep); }
+.badge-atmosphere { background: var(--parchment-3); color: var(--ink-4); font-style: italic; }
+.badge-deferred { background: var(--parchment-3); color: var(--ink-4); font-style: italic; }
+
+.milestone-purpose { font-size: 14px; color: var(--ink-2); line-height: 1.6; margin: 0 0 18px; }
+
+.diagram-wrap { margin: 0 0 20px; padding: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-soft); }
+.diagram-wrap svg { display: block; width: 100%; height: auto; }
+
+.substages-label {
+  font-size: 11px; color: var(--ink-3);
+  font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em;
+  padding-top: 14px; margin: 0 0 8px;
+  border-top: 1px solid var(--border-soft);
+}
+.sub {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0; cursor: pointer;
+  border-top: 1px dashed var(--border-soft);
+}
+.sub:first-of-type { border-top: 0; }
+.sub:hover { background: rgba(245, 237, 224, 0.4); }
+.sub input { margin-top: 4px; flex-shrink: 0; cursor: pointer; width: 16px; height: 16px; accent-color: var(--gold-deep); }
+.sub-text { flex: 1; }
+.sub-num { font-size: 14px; font-weight: 500; color: var(--ink); }
+.sub-desc { display: block; font-size: 13px; color: var(--ink-3); margin-top: 3px; line-height: 1.55; }
+.sub-checked .sub-num, .sub-checked .sub-desc { text-decoration: line-through; opacity: 0.55; }
+
+.deferred-body { font-size: 13px; color: var(--ink-3); font-style: italic; padding-top: 12px; border-top: 1px solid var(--border-soft); margin-top: 4px; }
+
+.section-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 36px 0 20px;
+}
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider-label {
+  font-family: var(--display); font-style: italic;
+  color: var(--gold-deep); font-size: 17px;
+  white-space: nowrap;
+}
+
+.footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-3); font-family: var(--mono); text-align: center; line-height: 1.6; }
+.footer em { font-style: italic; font-family: var(--display); }
+
+@media (max-width: 600px) {
+  .page { padding: 24px 16px 60px; }
+  .title { font-size: 28px; }
+  .milestone { padding: 18px 18px; }
+  .milestone-title { font-size: 19px; }
+  .progress-card { padding: 16px 18px; }
+}
+
+.buildprep { background: rgba(255,250,240,0.7); border:1px solid var(--border); border-radius:10px; padding:24px 28px; margin-bottom:24px; }
+.buildprep h2 { font-family:var(--display); font-size:23px; font-weight:500; margin:0 0 6px; color:var(--ink); }
+.buildprep .lead { font-size:14px; color:var(--ink-2); margin:0 0 16px; line-height:1.6; }
+.opener-box { font-family:var(--mono); font-size:12px; color:var(--ink-2); background:var(--parchment); border:1px solid var(--border); border-radius:8px; padding:16px 18px; white-space:pre-wrap; line-height:1.55; margin:0 0 20px; }
+.prep-sub { font-family:var(--mono); text-transform:uppercase; letter-spacing:0.07em; font-size:11px; color:var(--ink-3); margin:0 0 8px; }
+.filemap { font-size:12px; color:var(--ink-3); font-family:var(--mono); margin:0 0 20px; line-height:1.8; }
+.filemap b { color:var(--br-deep); font-weight:500; }
+.filetable { width:100%; border-collapse:collapse; font-size:12.5px; }
+.filetable th { text-align:left; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.06em; font-size:10.5px; color:var(--ink-3); border-bottom:1px solid var(--border); padding:8px 12px 8px 0; }
+.filetable td { vertical-align:top; padding:10px 12px 10px 0; border-bottom:1px dashed var(--border-soft); line-height:1.45; color:var(--ink-2); }
+.filetable td.stg { font-weight:500; color:var(--ink); white-space:nowrap; font-family:var(--mono); font-size:11.5px; }
+.filetable td.files { font-family:var(--mono); font-size:11px; color:var(--br-deep); }
+.prep-note { font-size:12px; font-style:italic; color:var(--ink-3); margin:16px 0 0; line-height:1.5; }
+
+.milestone.m-infra::before { background: #2a4a5c; }
+.milestone.m-core::before { background: #534ab7; }
+.milestone.m-visual::before { background: #5fb082; }
+.milestone.m-onboard::before { background: #c8842a; }
+.launch-line { display:flex; align-items:center; gap:14px; margin:44px 0 10px; }
+.launch-line-bar { flex:1; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+.launch-line-label { font-family:var(--display); font-style:italic; color:var(--gold-deep); font-size:18px; white-space:nowrap; }
+.launch-note { font-size:13px; color:var(--ink-3); font-style:italic; text-align:center; max-width:560px; margin:0 auto 28px; line-height:1.55; }
+@page { size: A4; margin: 14mm 12mm; }
+@media print {
+  .reset-btn { display:none; }
+  .milestone, .buildprep, .progress-card, .diagram-wrap { break-inside: avoid; }
+  .section-divider, .launch-line { break-after: avoid; }
+}
+</style>
+<style>
+.launch-line.gate .launch-line-bar{background:linear-gradient(90deg,transparent,#5fb082,transparent);}
+.launch-line.gate .launch-line-label{color:#1a6b48;}
+.milestone code, .sub-desc code, .milestone-purpose code{font-family:var(--mono);font-size:0.9em;background:var(--parchment-2);padding:1px 5px;border-radius:4px;color:var(--br-deep);}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="header">
+  <p class="eyebrow">Personal working document &middot; resequenced June 3, 2026 &middot; three-week plan</p>
+  <h1 class="title">Praxis Build Checklist</h1>
+  <p class="subtitle">Every remaining sub-stage banded into a three-week sprint, with a two-tier launch line: a safe-to-ship gate at the end of week&nbsp;2 and full launch at the end of week&nbsp;3. Full scope &mdash; only social/discovery (Stage&nbsp;13) is held.</p>
+  <div class="meta-row">
+    <span><strong>Owner</strong> &middot; Preston Allen</span>
+    <span><strong>Launch target</strong> &middot; Fri Jun 26, 2026</span>
+    <span><strong>Live</strong> &middot; praxis-reading.netlify.app</span>
+    <span><strong>Roadmap</strong> &middot; /roadmap.html</span>
+  </div>
+</header>
+<div class="progress-card">
+  <div><p class="progress-label">Sub-stages complete</p>
+  <span class="progress-count" id="count">19 of 76</span></div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="bar" style="width:25%"></div></div>
+  <button class="reset-btn" onclick="resetAll()">Reset all</button>
+</div>
+<div class="buildprep">
+  <h2>Build prep — paste this, pull these files</h2>
+  <p class="lead">Two things to do before any new build chat: paste the opener (fill in the stage), and upload the files that stage needs. The sub-stage line below tells Claude <em>what</em> to build; these give it the <em>context</em> to build it without surprises.</p>
+  <p class="prep-sub">1 · The opener — paste at the top of every build chat</p>
+  <div class="opener-box">Praxis build — new-chat opener
+
+Read userPreferences + memory first (praxis.md, dev-patterns). Engineering mode.
+Two-tool workflow: you = design partner + brief author (conclusion-first, single
+copy-paste blocks for Claude Code); Claude Code = executor on staged briefs
+(Stage 0 recon, PASS/FAIL checkpoints, byte deltas, parse checks, no commit
+without the words &quot;commit and push&quot;).
+
+Building: Stage ____  — and read its neighbors below for dependencies.
+Uploaded: the files listed for this stage in the table + current checklist.html.
+
+Conventions: var/function only, string concat, CSS variables, ls/sv wrappers;
+load order state → integrations → yumi-brain → arcs → voice-input → yumi-ui
+→ views → app (arc-constellation + tradition-forms-arc load before views).
+Node blocked on Windows — live-deploy parse check; commit+push to main from
+Claude Code, no branch-offs. Read the pivot spec for any sub-theory work.
+
+Start with Stage 0 recon against the uploaded files: confirm anchors, report
+stats, STOP for my go-ahead. Don&#x27;t draft a Claude Code prompt until settled.</div>
+  <p class="prep-sub">2 · The files we have</p>
+  <p class="filemap"><b>JS (load order):</b> state.js · integrations.js · yumi-brain.js · arcs.js (stub) · arc-constellation.js · tradition-forms-arc.js · voice-input.js · yumi-ui.js · views.js · app.js<br>
+  <b>Shell / infra:</b> index.html · sw.js · the stylesheet · Netlify functions (claude-proxy.js, google-books-proxy.js)<br>
+  <b>Docs:</b> docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md (the pivot spec) · visual-system.md · field notes · roadmap.html · checklist.html</p>
+  <p class="prep-sub">3 · What to pull per stage</p>
+  <table class="filetable">
+    <thead><tr><th>Stage</th><th>What it builds</th><th>Pull these files</th><th>Stage-0 focus</th></tr></thead>
+    <tbody>
+<tr><td class="stg">9.4</td><td>Write the recognition sub-theory inside Praxis — load-bearing test, document findings.</td><td class="files">none up front — usage stage; pull views.js + state.js only if a bug surfaces</td><td>—</td></tr>
+<tr><td class="stg">9.5</td><td>Replace books-constellation with sub-theory glyphs + marginalia clouds + edges. <b>Build linkSubTheories().</b></td><td class="files">arc-constellation.js, tradition-forms-arc.js, views.js, state.js, pivot spec, stylesheet</td><td>renderer entry points + the swappable layout-function seam</td></tr>
+<tr><td class="stg">10.1–10.4</td><td>Evidence & citation: note→sub-theory channel, inline citation render, external quotes, dual-render helper.</td><td class="files">state.js, views.js, arc-constellation.js, pivot spec</td><td>proseAnchor handling + how evidence array is read</td></tr>
+<tr><td class="stg">6.1</td><td>Shelf photo capture + vision extraction + bulk-add hand-off.</td><td class="files">views.js, integrations.js, claude-proxy.js (mirror reference), index.html</td><td>bulk-add entry point + claude-proxy structure</td></tr>
+<tr><td class="stg">6.2</td><td>Extracted-titles review screen + first-run six-beat Yumi greeting.</td><td class="files">views.js, yumi-ui.js, yumi-brain.js, state.js</td><td>first-run / empty-shelf detection</td></tr>
+<tr><td class="stg">5.1</td><td>Material pass A1–A4 across every surface (light, grain, depth, motion).</td><td class="files">stylesheet, index.html</td><td>CSS variable inventory + which surfaces exist now</td></tr>
+<tr><td class="stg">6.3</td><td>Shelf search — input + client-side filter of state.books.</td><td class="files">views.js, state.js</td><td>shelf-grid render site</td></tr>
+<tr><td class="stg">11.1–11.2</td><td>Yumi transparency surface + controls/consent.</td><td class="files">views.js, yumi-brain.js, state.js</td><td>buildContext + the isPrivate filter</td></tr>
+<tr><td class="stg">12.1–12.5</td><td>Publish toggle, public sub-theory/arc pages, pen name, export. <b>Build publish/unpublish + Firestore mirror.</b></td><td class="files">state.js, integrations.js, views.js, sw.js</td><td>userBooks Firestore pattern (the mirror reference) + Firestore rules</td></tr>
+<tr><td class="stg">5.5 + 6.4</td><td>Ambient sound + immersive mode; Yumi speaks aloud (TTS).</td><td class="files">views.js or app.js, yumi-ui.js, voice-input.js (reference)</td><td>Yumi message render site + voice-input hooks</td></tr>
+    </tbody>
+  <tr><td class="stg">5.7</td><td>Theme hybridization: editorial card language into the app theme.</td><td class="files">theme.css, components.css, this checklist (reference)</td><td>token inventory + the card/badge classes</td></tr><tr><td class="stg">INF-1</td><td>Workspace sync: arcs/notebook/sub-theories to Firestore per-uid.</td><td class="files">state.js, integrations.js (userBooks mirror)</td><td>saveState dirty-flag chokepoint + userBooks pattern</td></tr><tr><td class="stg">INF-2</td><td>Multi-user isolation: per-uid scoping.</td><td class="files">yumi-brain.js, integrations.js, state.js</td><td>resolveActiveUid + every read/write path</td></tr><tr><td class="stg">INF-3</td><td>Account lifecycle: sign-up/out, profile, export, delete.</td><td class="files">integrations.js, views.js, state.js</td><td>auth surface + Firestore rules</td></tr><tr><td class="stg">INF-4</td><td>Service-worker freshness: end stale-cache poisoning.</td><td class="files">sw.js, index.html</td><td>CACHE_VERSION lifecycle + activate purge</td></tr><tr><td class="stg">6.5</td><td>Empty/first-run states + manual add + transparency intro.</td><td class="files">views.js, yumi-ui.js, state.js</td><td>empty-shelf detection per surface</td></tr><tr><td class="stg">2.6</td><td>Yumi context + arc voice: wire getYumiContext, arc-level turns.</td><td class="files">yumi-brain.js, yumi-ui.js, state.js</td><td>getYumiContext stub + buildContext</td></tr></table>
+  <p class="prep-note">These file sets are best-guess touch points, not gospel — Stage 0 recon confirms the exact files and lines on disk every time. When you're building something modeled on an existing pattern (a new Netlify function, the published Firestore mirror), pull the file it mirrors as a reference even if it's not in the list.</p>
+</div>
+<div class="section-divider"><span class="section-divider-line"></span><span class="section-divider-label">Already in the room &mdash; shipped foundations</span><span class="section-divider-line"></span></div>
+<div class="milestone m1">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 1</span>
+      <h2 class="milestone-title">Stage 7.1 &middot; Wire constellation into arc-detail web view</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">Replace the Stage 5.4 Stage 2a single-book temp at views.js with the real constellation renderer. Add the missing script tags to index.html. Write the data adapter that translates real arc state into the renderer's expected shape.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="160" fill="#FAEEDA"/>
+      <rect x="40" y="20" width="520" height="120" rx="8" fill="#F5EDE0" stroke="#BA7517" stroke-width="0.5"/>
+      <rect x="60" y="32" width="60" height="20" rx="4" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="90" y="46" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#854F0B">List</text>
+      <rect x="124" y="32" width="60" height="20" rx="4" fill="#BA7517"/>
+      <text x="154" y="46" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#FAEEDA">Web</text>
+      <line x1="240" y1="90" x2="360" y2="85" stroke="#1D9E75" stroke-width="1.5" opacity="0.5"/>
+      <line x1="280" y1="110" x2="440" y2="90" stroke="#1D9E75" stroke-width="1.5" opacity="0.5"/>
+      <rect x="225" y="80" width="22" height="22" fill="#D67248" stroke="#7A3A18" stroke-width="0.5"/>
+      <circle cx="290" cy="110" r="11" fill="#9AAA48" stroke="#5A6520" stroke-width="0.5"/>
+      <polygon points="350,95 361,75 372,95" fill="#4858B8" stroke="#1A2280" stroke-width="0.5"/>
+      <polygon points="430,90 441,80 452,90 441,100" fill="#C8842A" stroke="#6A3F08" stroke-width="0.5"/>
+      <rect x="475" y="78" width="22" height="22" fill="#F0A075" stroke="#8A4825" stroke-width="0.5" opacity="0.7"/>
+      <circle cx="293" cy="92" r="2" fill="#1D9E75"/>
+      <circle cx="298" cy="97" r="2" fill="#1D9E75"/>
+      <circle cx="295" cy="100" r="2" fill="#1D9E75"/>
+      <text x="300" y="135" text-anchor="middle" font-size="12" font-style="italic" font-family="Cormorant Garamond, serif" fill="#5F5E5A">books view of an arc</text>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m1-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Add script tags + write the adapter</span><span class="sub-desc">Two script tags into index.html (after state.js, before views.js). _arcDetailBuildConstellationData(arc) translates real arc shape into renderer shape. Threads and yumiNoticing stubbed empty for v1.</span></span></label>
+  <label class="sub" data-id="m1-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Replace single-book temp with renderArcConstellation call</span><span class="sub-desc">Lines 2960-2976 of views.js get the real renderer call. Defensive check that the renderer functions exist on window. Cache bump in sw.js.</span></span></label>
+</div>
+<div class="milestone m2">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 2</span>
+      <h2 class="milestone-title">Stage 7.2 &middot; Test books view with real arc</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">Sit with the books view as a working surface, not a test page. Open the Pedagogy of Desire arc on desktop and mobile. Document field notes. Adjust before interactivity lands on top.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m2-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Spend 20+ minutes with the live arc on desktop</span><span class="sub-desc">Open Pedagogy of Desire. Notice what reads wrong, what is missing, what wants adjustment. Layout balanced? Engagement bands true to real books? Marginalia clusters working?</span></span></label>
+  <label class="sub" data-id="m2-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Open on mobile, document findings</span><span class="sub-desc">Praxis runs as PWA. Test constellation scaling and legend wrapping at narrow width. Findings as bullets in docs/knowledge-arcs/STAGE_7_FIELD_NOTES.md.</span></span></label>
+</div>
+<div class="milestone m3">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 3</span>
+      <h2 class="milestone-title">Stage 8.1 &middot; Constellation interactivity layer</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">The static constellation becomes navigable. Hover for tooltips, click for navigation, keyboard focus for accessibility. The picture becomes a surface you can move through.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="160" fill="#EEEDFE"/>
+      <line x1="180" y1="85" x2="320" y2="85" stroke="#1D9E75" stroke-width="1.5" opacity="0.4"/>
+      <circle cx="180" cy="85" r="11" fill="#9AAA48" stroke="#5A6520" stroke-width="0.5"/>
+      <rect x="305" y="70" width="28" height="28" fill="#D67248" stroke="#7F77DD" stroke-width="2"/>
+      <rect x="345" y="55" width="200" height="60" rx="4" fill="#FAEEDA" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="355" y="74" font-size="13" font-style="italic" font-family="Cormorant Garamond, serif" fill="#3C3489">Their Eyes Were Watching God</text>
+      <text x="355" y="91" font-size="11" font-family="DM Sans, sans-serif" fill="#5F5E5A">Zora Neale Hurston</text>
+      <text x="355" y="105" font-size="11" font-family="DM Sans, sans-serif" fill="#0F6E56">Worked through &middot; 7 notes</text>
+      <line x1="345" y1="84" x2="335" y2="84" stroke="#534AB7" stroke-width="0.5" stroke-dasharray="2,2"/>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m3-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Hover, click, and keyboard interactions</span><span class="sub-desc">Tooltips on books, threads, marginalia, Yumi cluster. Click on book glyph navigates to book detail. Click on question opens arc edit. Tab order and focus rings. Respects prefers-reduced-motion.</span></span></label>
+</div>
+<div class="milestone m7">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 4</span>
+      <h2 class="milestone-title">Stage 9.1 &middot; Sub-theory data model</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">Add subTheory as a top-level data type alongside book and notebookEntry. Mirror the ensureBookFields chokepoint pattern so future schema changes are clean.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m7-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">state.subTheories map + schema</span><span class="sub-desc">Fields: id, arcId, header, bodyPublic, bodyIntellectual, evidence array, attachedMarginalia array, linkedSubTheories array, status (draft/published), createdAt, updatedAt, publishedAt, format. attachedMarginalia holds references (not copies), many-to-many, each with per-attachment state (gathered/incorporated) and, for incorporated, a proseAnchor into the body. Shipped with the ensureSubTheoryFields/ensureSubTheoryFieldsAll chokepoint and SCHEMA_VERSION 1.12.0; proseAnchor reserved as an opaque stable id (marker format finalized in 9.2).</span></span></label>
+  <label class="sub" data-id="m7-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Core CRUD + localStorage persistence</span><span class="sub-desc">Shipped: createSubTheory, updateSubTheory, deleteSubTheory (self-persisting via saveState, localStorage-only, no Firestore). Relocated to their consuming stages so they don't orphan: addEvidence &rarr; 9.2, linkSubTheories &rarr; 9.5, publish/unpublish + the drafts-private / published-readable Firestore mirror &rarr; Stage 12.</span></span></label>
+</div>
+<div class="milestone m8">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 5</span>
+      <h2 class="milestone-title">Stage 9.2 &middot; Sub-theory writing surface page</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">A new top-level page where a user actually develops a sub-theory. Header field, two body fields (public and intellectual registers, toggleable), evidence panel as a side rail, linked-sub-theories panel quieter. Yumi present but designed thoughtfully.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="200" fill="#EEEDFE"/>
+      <rect x="40" y="20" width="520" height="160" rx="8" fill="#F5EDE0" stroke="#534AB7" stroke-width="0.5"/>
+      <rect x="60" y="32" width="320" height="20" rx="3" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="68" y="46" font-size="12" font-style="italic" font-family="Cormorant Garamond, serif" fill="#3C3489">Sub-theory header</text>
+      <rect x="60" y="60" width="320" height="100" rx="3" fill="#FBEAF0" stroke="#534AB7" stroke-width="0.5"/>
+      <line x1="68" y1="78" x2="370" y2="78" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="90" x2="370" y2="90" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="102" x2="360" y2="102" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="114" x2="370" y2="114" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="126" x2="300" y2="126" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="138" x2="365" y2="138" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <line x1="68" y1="150" x2="340" y2="150" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+      <rect x="400" y="32" width="140" height="128" rx="3" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="410" y="46" font-size="10" font-family="DM Sans, sans-serif" fill="#854F0B" font-weight="500">Evidence</text>
+      <rect x="410" y="54" width="120" height="22" rx="2" fill="#FAC775" stroke="#854F0B" stroke-width="0.3"/>
+      <text x="417" y="69" font-size="9" font-family="Cormorant Garamond, serif" fill="#412402">bell hooks &middot; Yearning</text>
+      <rect x="410" y="80" width="120" height="22" rx="2" fill="#FAC775" stroke="#854F0B" stroke-width="0.3"/>
+      <text x="417" y="95" font-size="9" font-family="Cormorant Garamond, serif" fill="#412402">Lorde &middot; Sister Outsider</text>
+      <rect x="410" y="106" width="120" height="22" rx="2" fill="#FAC775" stroke="#854F0B" stroke-width="0.3"/>
+      <text x="417" y="121" font-size="9" font-family="Cormorant Garamond, serif" fill="#412402">+ Add external source</text>
+      <circle cx="540" cy="160" r="10" fill="none" stroke="#7F77DD" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <text x="540" y="164" text-anchor="middle" font-size="9" font-family="Cormorant Garamond, serif" fill="#3C3489">Y</text>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m8-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">New routes and page layout</span><span class="sub-desc">#subtheory/&lt;id&gt; opens an existing sub-theory. #arc/&lt;arcId&gt;/new-subtheory creates a draft. 2-column at desktop, 1-column at mobile with evidence in bottom sheet.</span></span></label>
+  <label class="sub" data-id="m8-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Header field and two body fields</span><span class="sub-desc">Header in Cormorant Garamond. Public register body. Optional intellectual register toggleable via "Add intellectual register". Italics via asterisks.</span></span></label>
+  <label class="sub" data-id="m8-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Evidence panel side rail</span><span class="sub-desc">Scrollable list of books and notebook entries from this arc. Attach as evidence opens inline editor for optional quote and annotation. External source affordance below the list. Build the addEvidence() data-layer function here (relocated from 9.1).</span></span></label>
+  <label class="sub" data-id="m8-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">Yumi presence model designed and locked</span><span class="sub-desc">Yumi quiet by default. When her panel is open and user is writing, she recognizes context and adapts greeting. No automatic suggestions, no interruption. This sub-stage is where the writing-surface Yumi presence is decided.</span></span></label>
+</div>
+<div class="milestone m-core">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 6</span>
+      <h2 class="milestone-title">Stage 9.3 &middot; Note &rarr; evidence channel</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">The smallest path that lets a notebook entry reach the writing surface. The "Add to arc" picker turned out to already be present (Stage 3.8 Stage 2b) and was never actually deferred &mdash; so 9.3 became a verification checkpoint rather than a build. Confirmed the full note &rarr; arc &rarr; rail &rarr; evidence channel end-to-end on the live URL (June 2, 2026), including the duplicate-add guard and isPrivate exclusion. Unblocks 9.4's ability to cite marginalia.</p>
+  <div class="diagram-wrap"><svg viewBox="0 0 600 150" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="150" fill="#FAEEDA"/><rect x="40" y="40" width="120" height="70" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/><text x="100" y="70" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#04342C" font-weight="500">notebook entry</text><text x="100" y="88" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#085041">marginalia</text><line x1="162" y1="75" x2="222" y2="75" stroke="#888780" stroke-width="1.2" marker-end="url(#nx)"/><text x="192" y="68" text-anchor="middle" font-size="8.5" font-family="DM Mono,monospace" fill="#6a5e51">add to arc</text><rect x="226" y="40" width="120" height="70" rx="6" fill="#F5EDE0" stroke="#BA7517" stroke-width="0.5"/><text x="286" y="72" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#5a3f24" font-weight="500">arc member</text><text x="286" y="90" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#6a5e51">entryIds</text><line x1="348" y1="75" x2="408" y2="75" stroke="#888780" stroke-width="1.2" marker-end="url(#nx)"/><rect x="412" y="40" width="148" height="70" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/><text x="486" y="68" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#26215c" font-weight="500">evidence rail</text><text x="486" y="86" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#3C3489">attach as evidence</text><defs><marker id="nx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/></marker></defs></svg></div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="n93-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">"Add to arc" picker on notes + book detail</span><span class="sub-desc">Reuse the arc-membership data layer (addEntryToArc). Picker writes entry.arcIds + arc.entryIds. Already present from Stage 3.8 Stage 2b (never actually deferred) &mdash; verified live, not newly built.</span></span></label>
+  <label class="sub" data-id="n93-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Verify rail renders arc notebook entries</span><span class="sub-desc">The entry loop already exists in renderSubTheoryPage. Attach a note to an arc, confirm the row appears, isPrivate excluded.</span></span></label>
+  <label class="sub" data-id="n93-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Attach a note as evidence, end to end</span><span class="sub-desc">addEvidence({kind:'entry'}) round-trips: attach, reload, confirm persistence. The richer send-to-sub-theory channel stays Stage 10.1.</span></span></label>
+</div>
+<div class="milestone m10">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 8</span>
+      <h2 class="milestone-title">Stage 9.5 &middot; Replace books-constellation with sub-theory constellation</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Shipped</span>
+  </div>
+  <p class="milestone-purpose">SHIPPED as a static render &mdash; <code>renderSubTheoryConstellation</code> is live and wired in the arc web view. Muted earth-tone palette; <strong>9.6b re-skins it</strong> to Scheme A luminous. Replace the books-as-glyphs constellation (shipped 7.1/8.1) with the sub-theory constellation per docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md. The constellation becomes the theory view &mdash; no separate card view. Built against a real sub-theory written in 9.4.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 230" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="230" fill="#f5ede0"/>
+      <circle cx="300" cy="118" r="74" fill="#b88a3a" fill-opacity="0.06"/>
+      <circle cx="300" cy="118" r="46" fill="#b88a3a" fill-opacity="0.07"/>
+      <line x1="180" y1="60" x2="404" y2="180" stroke="#888780" stroke-width="1.4" opacity="0.34"/>
+      <line x1="180" y1="60" x2="430" y2="92" stroke="#888780" stroke-width="0.6" opacity="0.2" stroke-dasharray="3 3"/>
+      <text x="300" y="116" text-anchor="middle" font-family="'Cormorant Garamond',serif" font-style="italic" font-size="15" fill="#8b6a26">A Pedagogy</text>
+      <text x="300" y="132" text-anchor="middle" font-family="'Cormorant Garamond',serif" font-style="italic" font-size="15" fill="#8b6a26">of Desire</text>
+      <polygon points="150,46 222,40 230,86 158,92" fill="#639922" stroke="#27500A" stroke-width="1"/>
+      <polygon points="404,90 452,90 428,134" fill="#D4537E" stroke="#72243E" stroke-width="0.9"/>
+      <ellipse cx="404" cy="182" rx="42" ry="26" fill="#CECBF6" stroke="#534AB7" stroke-width="0.9"/>
+      <line x1="196" y1="50" x2="216" y2="30" stroke="#27500A" stroke-width="1.1" opacity="0.55"/>
+      <circle cx="216" cy="28" r="5" fill="#27500A"/>
+      <circle cx="238" cy="22" r="5" fill="#27500A"/>
+      <circle cx="132" cy="40" r="4" fill="none" stroke="#27500A" stroke-width="1.3" opacity="0.7"/>
+      <circle cx="142" cy="104" r="4" fill="none" stroke="#27500A" stroke-width="1.3" opacity="0.7"/>
+      <line x1="420" y1="100" x2="444" y2="80" stroke="#72243E" stroke-width="1.1" opacity="0.5"/>
+      <circle cx="446" cy="78" r="5" fill="#72243E"/>
+      <circle cx="468" cy="112" r="4" fill="none" stroke="#72243E" stroke-width="1.3" opacity="0.6"/>
+      <circle cx="372" cy="208" r="4" fill="none" stroke="#534AB7" stroke-width="1.3" opacity="0.6"/>
+      <circle cx="448" cy="196" r="4" fill="none" stroke="#534AB7" stroke-width="1.3" opacity="0.6"/>
+      <circle cx="520" cy="36" r="13" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="3 3" opacity="0.8"/>
+      <text x="520" y="62" text-anchor="middle" font-family="'Cormorant Garamond',serif" font-style="italic" font-size="11" fill="#5F5E5A">Yumi</text>
+      <text x="300" y="216" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="11" fill="#6a5e51">Sub-theories as identity-shapes &middot; brightness = maturity &middot; solid mark = incorporated &middot; hollow = gathered</text>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m10-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Sub-theory glyphs + marginalia clouds</span><span class="sub-desc">Sub-theories as identity-shapes orbiting the arc question; color saturation encodes maturity. Marginalia clouds around each shape in two states: gathered (hollow) and incorporated (solid + tethered). Resonance edges between linked sub-theories. Yumi as noticing entity. Layout is a swappable function (radial or curved sweep); vocabulary constant. Click a gathered mark to see the note; click an incorporated mark to jump to its passage. Build the linkSubTheories() data-layer function here, feeding the resonance edges (relocated from 9.1). Deferred: luminosity formula, high-density legibility, map-vs-workspace.</span></span></label>
+</div>
+<div class="milestone m6">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 9</span>
+      <h2 class="milestone-title">Stage 5.1 &middot; Material pass across surfaces</h2>
+    </div>
+    <span class="milestone-badge badge-shipped">Tokens shipped</span>
+  </div>
+  <p class="milestone-purpose">TOKENS SHIPPED &mdash; the material layer (light, grain, depth, motion) lives in <code>theme.css</code> today. Per-surface <em>application</em> is owned by the Visual System Uplift below. The deferred material pass. Design-system v2 sections A1 through A4 applied to every existing surface: light direction, wood grain, depth and elevation, slow ease-out motion. Praxis stops looking like a wireframe and starts looking like the room.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="140" fill="#FAEEDA"/>
+      <rect x="60" y="30" width="140" height="80" rx="6" fill="#F5EDE0" stroke="#888780" stroke-width="0.5"/>
+      <text x="130" y="68" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#5F5E5A">before</text>
+      <text x="130" y="84" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#888780">flat / wireframe</text>
+      <path d="M 220 70 L 250 70" stroke="#BA7517" stroke-width="1.2" marker-end="url(#a6)"/>
+      <rect x="260" y="30" width="280" height="80" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <rect x="262" y="32" width="276" height="78" rx="6" fill="url(#grain)" opacity="0.5"/>
+      <text x="400" y="58" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#412402" font-weight="500">A1 light &middot; A2 grain</text>
+      <text x="400" y="74" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#412402" font-weight="500">A3 depth &middot; A4 motion</text>
+      <text x="400" y="94" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#854F0B" font-style="italic">applied across every surface</text>
+      <defs>
+        <marker id="a6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#BA7517" stroke-width="1.5" stroke-linecap="round"/></marker>
+        <pattern id="grain" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+          <rect width="40" height="40" fill="#FAEEDA"/>
+          <path d="M5 8 L7 6 M15 22 L17 20 M28 12 L30 10 M35 30 L37 28" stroke="#854F0B" stroke-width="0.4" stroke-opacity="0.3"/>
+        </pattern>
+      </defs>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m6-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">A1 light direction + radial page glow</span><span class="sub-desc">Low-angle warm light raking from one upper corner. Surface gains the faint radial page glow. Cards catch a highlight on the lit edge and cast shadow on the opposite side.</span></span></label>
+  <label class="sub" data-id="m6-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">A2 grain + hairline edges + corner radius</span><span class="sub-desc">Faint wood-grain texture on the page (strength 2/10, running with the light). 1px ink-4 hairline on every card edge. 10px corner radius across cards, pills, pickers, panels.</span></span></label>
+  <label class="sub" data-id="m6-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">A3 depth + three elevation tiers</span><span class="sub-desc">Warm-brown shadows in the br-deep family at ~10% opacity (never grey-black). Three tiers: page, cards/sidebar, floating panels.</span></span></label>
+  <label class="sub" data-id="m6-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">A4 motion: slow ease-out, 350ms base</span><span class="sub-desc">No spring, no bounce, no overshoot, never linear. Only the four permitted motions: route cross-fade, card hover lift, nav gold underline slide, picker/panel fade-and-rise.</span></span></label>
+</div>
+<div class="section-divider"><span class="section-divider-line"></span><span class="section-divider-label">Week 1 &middot; Foundation &mdash; make it safe + persistent</span><span class="section-divider-line"></span></div>
+<div class="milestone m-infra">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 11</span>
+      <h2 class="milestone-title">INF-1 &middot; Workspace sync</h2>
+    </div>
+    <span class="milestone-badge badge-foundation">Foundation</span>
+  </div>
+  <p class="milestone-purpose">The single biggest launch blocker. Arcs, notebook entries, and sub-theory drafts are localStorage-only &mdash; only books touch Firestore. A second user who switches devices or clears cache loses everything they wrote. This puts the private workspace behind per-user Firestore sync.</p>
+  <div class="diagram-wrap"><svg viewBox="0 0 600 150" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="150" fill="#FAEEDA"/><rect x="40" y="35" width="150" height="80" rx="6" fill="#F5EDE0" stroke="#888780" stroke-width="0.5"/><text x="115" y="62" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#5a3f24" font-weight="500">device localStorage</text><text x="115" y="80" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#6a5e51">arcs · notebook</text><text x="115" y="94" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#6a5e51">sub-theory drafts</text><line x1="195" y1="75" x2="255" y2="75" stroke="#888780" stroke-width="1.2" marker-end="url(#sx)"/><line x1="255" y1="90" x2="195" y2="90" stroke="#888780" stroke-width="1.2" marker-end="url(#sx2)"/><rect x="260" y="35" width="130" height="80" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/><text x="325" y="68" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#04342C" font-weight="500">saveState</text><text x="325" y="86" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#085041">per-collection dirty</text><line x1="395" y1="75" x2="455" y2="75" stroke="#888780" stroke-width="1.2" marker-end="url(#sx)"/><rect x="460" y="35" width="100" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/><text x="510" y="68" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#26215c" font-weight="500">Firestore</text><text x="510" y="86" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#3C3489">per-uid</text><defs><marker id="sx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/></marker><marker id="sx2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/></marker></defs></svg></div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="inf1-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Dirty-flag the workspace collections</span><span class="sub-desc">Extend the saveState chokepoint with per-collection dirty flags mirroring booksDirty &mdash; arcsDirty, notebookDirty, subTheoriesDirty.</span></span></label>
+  <label class="sub" data-id="inf1-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Firestore doc shape per collection</span><span class="sub-desc">Denormalized, REPLACE-on-read, mirroring the userBooks pattern. /userArcs/{uid}, /userNotebook/{uid}, /userSubTheories/{uid}.</span></span></label>
+  <label class="sub" data-id="inf1-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Load-merge on sign-in</span><span class="sub-desc">On auth, pull remote and reconcile into state before first render. Cold-open path runs migrate() as today.</span></span></label>
+  <label class="sub" data-id="inf1-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">Conflict policy</span><span class="sub-desc">Last-write-wins, documented. No multi-device live merge in round one.</span></span></label>
+</div>
+<div class="milestone m-infra">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 12</span>
+      <h2 class="milestone-title">INF-2 &middot; Multi-user isolation</h2>
+    </div>
+    <span class="milestone-badge badge-foundation">Foundation</span>
+  </div>
+  <p class="milestone-purpose">Make the app genuinely single-tenant-per-user. resolveActiveUid currently warns "multiple users not supported" and falls back to the first user alphabetically. Every read and write must be scoped to the signed-in uid before a second person logs in.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="inf2-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Replace the first-alphabetical fallback</span><span class="sub-desc">resolveActiveUid resolves to the authenticated uid only; no silent fallback across users.</span></span></label>
+  <label class="sub" data-id="inf2-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Scope all reads/writes to uid</span><span class="sub-desc">Audit every state read/write path; none may leak another user's data.</span></span></label>
+  <label class="sub" data-id="inf2-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Clean sign-out</span><span class="sub-desc">Sign-out clears in-memory state so the next user starts clean &mdash; no cross-user bleed in a shared browser.</span></span></label>
+</div>
+<div class="milestone m-infra">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 13</span>
+      <h2 class="milestone-title">INF-3 &middot; Account lifecycle</h2>
+    </div>
+    <span class="milestone-badge badge-foundation">Foundation</span>
+  </div>
+  <p class="milestone-purpose">The plumbing a real account needs beyond a first sign-in: sign-up, sign-out, profile, the pen name publishing already assumes, the ability to leave with your work, and a clean empty-account entry that is not only the photo-shelf flow.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="inf3-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Sign-up + sign-out UI</span><span class="sub-desc">First-class affordances, not just Google auth wired silently.</span></span></label>
+  <label class="sub" data-id="inf3-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Profile + pen name</span><span class="sub-desc">Primary display name plus optional pen name (you publish as Roland Blair). The per-publication selector lands in 12.4.</span></span></label>
+  <label class="sub" data-id="inf3-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Data export</span><span class="sub-desc">Markdown / JSON export of a user's workspace. Praxis is the source of truth, but the door is unlocked.</span></span></label>
+  <label class="sub" data-id="inf3-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">Account deletion</span><span class="sub-desc">Remove Firestore + local data on request.</span></span></label>
+  <label class="sub" data-id="inf3-5"><input type="checkbox"><span class="sub-text"><span class="sub-num">Empty-account entry path</span><span class="sub-desc">A brand-new account with no shelf photo still has a way in (manual add, ISBN).</span></span></label>
+</div>
+<div class="milestone m-infra">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 14</span>
+      <h2 class="milestone-title">INF-4 &middot; Service-worker freshness</h2>
+    </div>
+    <span class="milestone-badge badge-foundation">Foundation</span>
+  </div>
+  <p class="milestone-purpose">Your own field notes flag stale-SW poisoning across deploys &mdash; old service workers serving old caches. With external users that means people stuck on broken old versions with no way forward. This makes updates land reliably.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="inf4-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Versioned cache + lifecycle discipline</span><span class="sub-desc">CACHE_VERSION bump on every deploy, skipWaiting / clients.claim handled deliberately.</span></span></label>
+  <label class="sub" data-id="inf4-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Update path</span><span class="sub-desc">An update-available prompt or a controlled silent refresh so a new deploy reaches the user.</span></span></label>
+  <label class="sub" data-id="inf4-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Purge old caches on activate</span><span class="sub-desc">Confirm prior caches are deleted; no poisoning carryover.</span></span></label>
+</div>
+<div class="milestone m9">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 7</span>
+      <h2 class="milestone-title">Stage 9.4 &middot; Write one sub-theory inside Praxis</h2>
+    </div>
+    <span class="milestone-badge badge-core">Load-bearing test</span>
+  </div>
+  <p class="milestone-purpose">The load-bearing test. Take the recognition sub-theory from the May 27 drafts and write it directly inside Praxis using the new writing surface. Surface what is missing, what breaks, what reveals itself only by doing the work in the surface.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m9-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Write recognition sub-theory + document findings</span><span class="sub-desc">Open the Pedagogy of Desire arc. Click "Start your first sub-theory". Write header + body in public register. Toggle intellectual register if needed. Attach evidence. Save, close, reopen. Document findings as STAGE_9_FIELD_NOTES.md.</span></span></label>
+</div>
+<div class="milestone m-core">
+  <div class="milestone-head">
+    <div><span class="milestone-num">Stage 9.6</span>
+    <h2 class="milestone-title">Constellation becomes a workspace</h2></div>
+    <span class="milestone-badge badge-core">Flagship</span>
+  </div>
+  <p class="milestone-purpose">The 9.5 sub-theory constellation shipped as a static, muted render. Stage 9.6 turns it into the thinking-workspace from the locked <code>PRAXIS_9_6</code> doc: Scheme&nbsp;A luminous panes on golden wheat, draggable sub-theories, a derived book-evidence layer. Substages are week-tagged &mdash; <strong>a + b</strong> land by the safe-to-ship gate, <strong>c + d</strong> in week&nbsp;3.</p>
+  <p class="substages-label">Sub-stages</p>
+<label class="sub" data-id="st96-a"><input type="checkbox"><span class="sub-text"><span class="sub-num">9.6a &middot; Position schema + persistence</span><span class="sub-desc"><b>Week 1.</b> Add x/y to the sub-theory record plus arc layout; migrate; persist through saveState (now Firestore-backed via INF-1). Foundation, no visual change.</span></span></label><label class="sub" data-id="st96-b"><input type="checkbox"><span class="sub-text"><span class="sub-num">9.6b &middot; Luminous re-skin</span><span class="sub-desc"><b>Week 2.</b> Scheme A (lavender / peach / rose / amber-rust / sage / slate-blue) on golden wheat; luminous translucent panes; gathered (hollow) vs incorporated (solid + tether) marks; maturity &rarr; luminosity; marginalia toggle. Replaces the muted 9.5 render.</span></span></label><label class="sub" data-id="st96-c"><input type="checkbox"><span class="sub-text"><span class="sub-num">9.6c &middot; Interactivity</span><span class="sub-desc"><b>Week 3.</b> Drag (persists position), hover cards, add-sub-theory inline, resonance connect (wires <code>linkSubTheories</code>).</span></span></label><label class="sub" data-id="st96-d"><input type="checkbox"><span class="sub-text"><span class="sub-num">9.6d &middot; Book evidence layer</span><span class="sub-desc"><b>Week 3.</b> Derived book nodes from <code>evidence[].refId</code> deduped across the arc; tethers; intersection bridges; book-attach (<code>addEvidence</code>); Books toggle. A book feeding 2+ sub-theories renders once and bridges them.</span></span></label></div>
+<div class="section-divider"><span class="section-divider-line"></span><span class="section-divider-label">Week 2 &middot; Legibility, flagship re-skin, citation, onboarding</span><span class="section-divider-line"></span></div>
+<div class="milestone m-onboard">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 17</span>
+      <h2 class="milestone-title">Stage 6.5 &middot; Empty &amp; first-run states</h2>
+    </div>
+    <span class="milestone-badge badge-onboarding">Onboarding</span>
+  </div>
+  <p class="milestone-purpose">What a new reader sees before they have done anything. Empty shelf, empty notebook, empty arc, and the network / error fail-soft behavior across surfaces &mdash; plus the first-run "what Yumi can see" transparency intro that replaces the old privacy panel.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="n65-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Empty-state components per surface</span><span class="sub-desc">Shelf, notebook, arc, sub-theory rail each have a warm empty state that teaches the next move, not a blank page.</span></span></label>
+  <label class="sub" data-id="n65-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Manual add surfaced</span><span class="sub-desc">Add-book / ISBN path is visible for the reader who never photographs a shelf.</span></span></label>
+  <label class="sub" data-id="n65-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Network + error fail-soft</span><span class="sub-desc">Vision-proxy, book lookup, and sync failures degrade gracefully with no partial writes.</span></span></label>
+  <label class="sub" data-id="n65-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">First-run transparency intro</span><span class="sub-desc">A plain-language "what Yumi can see" pass on first sign-in.</span></span></label>
+</div>
+<div class="milestone m-core">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 18</span>
+      <h2 class="milestone-title">Stage 2.6 &middot; Yumi context + arc voice</h2>
+    </div>
+    <span class="milestone-badge badge-core">Yumi presence</span>
+  </div>
+  <p class="milestone-purpose">Wire the context Yumi already needs. getYumiContext is still a dead stub returning nulls; buildContext reads current book/arc but the greeting ignores all of it. This connects Yumi to where the reader actually is, and gives her the arc-level participation your living document calls the minimum-viable Yumi.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="n26-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Wire getYumiContext</span><span class="sub-desc">Replace the stub so it reads current book / arc / sub-theory + recent entries, feeding the model call and greeting.</span></span></label>
+  <label class="sub" data-id="n26-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Arc-level participation</span><span class="sub-desc">One pattern, one offering across an arc, in voice (per the voice document) &mdash; not a per-book chat and not a syllabus.</span></span></label>
+  <label class="sub" data-id="n26-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Weekly-prompt scaffold</span><span class="sub-desc">The noticing posture: Yumi initiates briefly, one question, no manager check-in. Tooltip moves off "Quiet today".</span></span></label>
+</div>
+<div class="milestone m-visual">
+  <div class="milestone-head">
+    <div><span class="milestone-num">Initiative</span>
+    <h2 class="milestone-title">Visual System Uplift &middot; per-surface</h2></div>
+    <span class="milestone-badge badge-polish">Visual system</span>
+  </div>
+  <p class="milestone-purpose">Collapses the old 5.1 material pass and 5.7 theme hybridization into one per-surface initiative. The material tokens already live in <code>theme.css</code> (shadows, grain, light, register + Scheme&nbsp;A halos); this finishes applying them surface by surface, plus the editorial card language. <strong>&#9733; = the critical slice that lands by the safe-to-ship gate</strong>; the rest is week&nbsp;3.</p>
+<div class="diagram-wrap"><svg viewBox="0 0 600 150" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="150" fill="#FAEEDA"/><rect x="40" y="35" width="220" height="80" rx="6" fill="#F6ECD2"/><text x="150" y="60" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#8a7f72">atmospheric ground</text><text x="150" y="92" text-anchor="middle" font-size="13" font-style="italic" font-family="Cormorant Garamond,serif" fill="#8a7f72">wheat · grain · warm light</text><line x1="270" y1="75" x2="320" y2="75" stroke="#b88a3a" stroke-width="1.5" marker-end="url(#tx)"/><rect x="330" y="35" width="230" height="80" rx="10" fill="rgba(255,250,240,0.6)" stroke="#c8b89a" stroke-width="1"/><rect x="330" y="35" width="4" height="80" rx="2" fill="#534ab7"/><rect x="346" y="48" width="58" height="15" rx="7" fill="rgba(83,74,183,0.18)"/><text x="375" y="59" text-anchor="middle" font-size="8.5" font-family="DM Mono,monospace" fill="#26215c">CORE</text><text x="445" y="83" text-anchor="middle" font-size="13" font-style="italic" font-family="Cormorant Garamond,serif" fill="#1f1a14">editorial card definition</text><text x="445" y="100" text-anchor="middle" font-size="9.5" font-family="DM Mono,monospace" fill="#6a5e51">hairline · accent bar · pill</text><defs><marker id="tx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#b88a3a" stroke-width="1.5" stroke-linecap="round"/></marker></defs></svg></div>
+  <p class="substages-label">Sub-stages</p>
+<label class="sub" data-id="up-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">&#9733; Post-pivot surfaces</span><span class="sub-desc"><b>Week 2.</b> Writing surface + evidence rail + arc detail read as designed, not wireframe (the old 5.7-3). The load-bearing surfaces a tester touches first.</span></span></label><label class="sub" data-id="up-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">&#9733; Empty / first-run states</span><span class="sub-desc"><b>Week 2.</b> Pairs with Stage 6.5 &mdash; warm teaching states across every surface, not blank pages.</span></span></label><label class="sub" data-id="up-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">&#9733; theme.css reconcile</span><span class="sub-desc"><b>Week 2.</b> Make the Scheme A constellation palette and the wheat ground cohere; resolve any design-system &harr; theme.css drift.</span></span></label><label class="sub" data-id="up-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">Shelf</span><span class="sub-desc"><b>Week 3.</b> Confirm cards consume <code>--shadow-1</code> / <code>--highlight-edge</code> / hairline consistently.</span></span></label><label class="sub" data-id="up-5"><input type="checkbox"><span class="sub-text"><span class="sub-num">Notebook (Marginalia + Journal graph)</span><span class="sub-desc"><b>Week 3.</b> Editorial pass; keep it a clean writing surface &mdash; no field behind it, per B2.</span></span></label><label class="sub" data-id="up-6"><input type="checkbox"><span class="sub-text"><span class="sub-num">Book detail</span><span class="sub-desc"><b>Week 3.</b> Card definition + the Find-this-book affiliate line.</span></span></label><label class="sub" data-id="up-7"><input type="checkbox"><span class="sub-text"><span class="sub-num">Yumi panel</span><span class="sub-desc"><b>Week 3.</b> Tier-2-gentle shadow per A3.3 &mdash; afloat, never looming.</span></span></label><label class="sub" data-id="up-8"><input type="checkbox"><span class="sub-text"><span class="sub-num">Settings / onboarding</span><span class="sub-desc"><b>Week 3.</b> Last, after the shape settles (INF-3 surfaces these).</span></span></label></div>
+<div class="milestone m11">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 20</span>
+      <h2 class="milestone-title">Stage 10 &middot; Evidence and citation (four sub-stages)</h2>
+    </div>
+    <span class="milestone-badge badge-evidence">Citation subsystem</span>
+  </div>
+  <p class="milestone-purpose">The channel from book or notebook entry to sub-theory. Inline italic refs auto-link to the evidence array. External quotes without shelf entry. Dual rendering when published: inline marks plus closing evidence block, both autogenerated.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="160" fill="#E1F5EE"/>
+      <rect x="40" y="20" width="520" height="120" rx="8" fill="#F5EDE0" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="60" y="48" font-size="13" font-family="Cormorant Garamond, serif" fill="#04342C">Recognition is what makes desire possible &mdash; as</text>
+      <text x="60" y="66" font-size="13" font-family="Cormorant Garamond, serif" fill="#04342C">Lorde writes in </text>
+      <text x="135" y="66" font-size="13" font-style="italic" font-family="Cormorant Garamond, serif" fill="#0F6E56" text-decoration="underline">Sister Outsider</text>
+      <text x="225" y="66" font-size="13" font-family="Cormorant Garamond, serif" fill="#04342C">, the silences we carry are themselves a form of being unseen.</text>
+      <line x1="60" y1="82" x2="540" y2="82" stroke="#0F6E56" stroke-width="0.3" stroke-dasharray="2,2"/>
+      <text x="60" y="102" font-size="11" font-family="DM Sans, sans-serif" fill="#04342C" font-weight="500">Evidence</text>
+      <text x="60" y="118" font-size="11" font-family="Cormorant Garamond, serif" fill="#085041">1. Lorde, A. </text>
+      <text x="122" y="118" font-size="11" font-style="italic" font-family="Cormorant Garamond, serif" fill="#085041">Sister Outsider</text>
+      <text x="190" y="118" font-size="11" font-family="Cormorant Garamond, serif" fill="#085041">. The Crossing Press, 1984.</text>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m11-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">10.1 &middot; Channel from book/note to sub-theory</span><span class="sub-desc">"Send to sub-theory" affordance on marginalia, journal entries, and book detail. Picker shows draft sub-theories grouped by arc. Desktop drag-and-drop onto open writing surface.</span></span></label>
+  <label class="sub" data-id="m11-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">10.2 &middot; Inline citation rendering</span><span class="sub-desc">Italicized phrases in body auto-resolve to evidence items. Underline-dot indicator in draft; superscript number when published. Disambiguation via right-click.</span></span></label>
+  <label class="sub" data-id="m11-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">10.3 &middot; External quotes</span><span class="sub-desc">Cite sources not in the library. External evidence carries its own metadata. Can be inline-linked the same way books are. Sub-theory-local, not promoted to library.</span></span></label>
+  <label class="sub" data-id="m11-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">10.4 &middot; Dual rendering helper</span><span class="sub-desc">renderSubTheoryReadOnly produces the read-only HTML used by the sub-theory constellation (9.5), public pages, and export. Inline marks plus closing evidence block autogenerated from evidence array.</span></span></label>
+</div>
+<div class="milestone m4">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 15</span>
+      <h2 class="milestone-title">Stage 6.1 &middot; Shelf photo capture and vision extraction</h2>
+    </div>
+    <span class="milestone-badge badge-onboarding">Onboarding</span>
+  </div>
+  <p class="milestone-purpose">The first half of the photograph-your-shelf flow. A browser camera input captures a photo of a bookshelf. A Netlify function sends the image to the Anthropic Messages API with a JSON-only extraction prompt. The returned title list feeds the existing bulk-add pipeline.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="140" fill="#FAEEDA"/>
+      <rect x="40" y="30" width="100" height="80" rx="6" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="90" y="60" text-anchor="middle" font-size="22" font-family="DM Sans, sans-serif" fill="#5F5E5A">+</text>
+      <text x="90" y="80" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#5F5E5A">photograph</text>
+      <text x="90" y="93" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#5F5E5A">your shelf</text>
+      <line x1="150" y1="70" x2="180" y2="70" stroke="#888780" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="190" y="30" width="120" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="250" y="58" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#3C3489" font-weight="500">vision extract</text>
+      <text x="250" y="74" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#3C3489">Anthropic API</text>
+      <text x="250" y="88" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#3C3489">via Netlify fn</text>
+      <line x1="320" y1="70" x2="350" y2="70" stroke="#888780" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="360" y="30" width="140" height="80" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="430" y="58" text-anchor="middle" font-size="11" font-family="DM Sans, sans-serif" fill="#04342C" font-weight="500">title list</text>
+      <text x="430" y="74" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#085041">to bulk-add editor</text>
+      <text x="430" y="88" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#085041">covers auto-resolved</text>
+      <defs><marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m4-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Camera/file capture UI on shelf header</span><span class="sub-desc">"Photograph your shelf" affordance beside Add book and Bulk add. Standard file input with capture attribute so mobile opens the camera.</span></span></label>
+  <label class="sub" data-id="m4-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">vision-proxy.js Netlify function</span><span class="sub-desc">Mirrors claude-proxy.js structure. Receives base64 image, calls Anthropic API with image content block plus JSON-only extraction prompt, returns parsed title list.</span></span></label>
+  <label class="sub" data-id="m4-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Client hand-off to openBulkAddEditor</span><span class="sub-desc">Capture, base64-encode, POST to vision-proxy, receive titles, hand to existing bulk-add path. Fail-soft on vision error, no partial writes.</span></span></label>
+</div>
+<div class="milestone m5">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 16</span>
+      <h2 class="milestone-title">Stage 6.2 &middot; Review screen and first-run Yumi greeting</h2>
+    </div>
+    <span class="milestone-badge badge-onboarding">Onboarding</span>
+  </div>
+  <p class="milestone-purpose">The second half of onboarding. A review step where the user confirms or edits the extracted titles before they land on the shelf. The first-run Yumi greeting introduces what Praxis is, what an arc is, and how Yumi works.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m5-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Review screen between extraction and shelf write</span><span class="sub-desc">Editable list of extracted titles. User can remove, edit, or add titles before confirming. Confirms land on shelf via existing path.</span></span></label>
+  <label class="sub" data-id="m5-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">First-run Yumi greeting (six-beat conversation)</span><span class="sub-desc">The six-beat onboarding designed back in May. Yumi introduces herself, asks what the user is reading, helps set up the first arc. Triggered once on first sign-in with empty shelf.</span></span></label>
+</div>
+<div class="launch-line gate"><span class="launch-line-bar"></span><span class="launch-line-label">&#9679;&nbsp; Safe-to-ship gate &mdash; the private tool is shippable here</span><span class="launch-line-bar"></span></div>
+<p class="launch-note">End of week 2: synced, multi-user-safe, onboarded, Yumi-aware, citation-capable, with a re-skinned constellation. If week 3 compresses, you launch here and the public layer trails by days.</p>
+<div class="section-divider"><span class="section-divider-line"></span><span class="section-divider-label">Week 3 &middot; Interactivity, the public layer, full polish</span><span class="section-divider-line"></span></div>
+<div class="milestone m13">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 21</span>
+      <h2 class="milestone-title">Stage 11 &middot; Yumi transparency surface</h2>
+    </div>
+    <span class="milestone-badge badge-transparency">Gates publishing</span>
+  </div>
+  <p class="milestone-purpose">Required before Stage 12 ships. Replace the older privacy panel with a real transparency surface that shows the user what Yumi can see, what she has accessed, and what controls the user has over her access.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="160" fill="#FAECE7"/>
+      <rect x="40" y="20" width="520" height="120" rx="8" fill="#F5EDE0" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="60" y="44" font-size="13" font-family="Cormorant Garamond, serif" font-style="italic" fill="#4A1B0C">What Yumi can see</text>
+      <line x1="60" y1="52" x2="540" y2="52" stroke="#993C1D" stroke-width="0.3"/>
+      <text x="60" y="74" font-size="12" font-family="DM Sans, sans-serif" fill="#4A1B0C" font-weight="500">Shelf books</text>
+      <text x="60" y="88" font-size="11" font-family="DM Sans, sans-serif" fill="#712B13">All 121 books</text>
+      <rect x="490" y="68" width="32" height="14" rx="7" fill="#1D9E75"/>
+      <circle cx="515" cy="75" r="5" fill="#FFFFFF"/>
+      <text x="60" y="110" font-size="12" font-family="DM Sans, sans-serif" fill="#4A1B0C" font-weight="500">Notebook entries</text>
+      <text x="60" y="124" font-size="11" font-family="DM Sans, sans-serif" fill="#712B13">42 entries, 3 excluded</text>
+      <rect x="490" y="104" width="32" height="14" rx="7" fill="#1D9E75"/>
+      <circle cx="515" cy="111" r="5" fill="#FFFFFF"/>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m13-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">11.1 &middot; Transparency view</span><span class="sub-desc">New page listing what Yumi can access by category: shelf, notebook, sub-theory drafts, arc context. Plain-language explanation per section. Daily activity summary, not real-time log.</span></span></label>
+  <label class="sub" data-id="m13-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">11.2 &middot; Controls and consent</span><span class="sub-desc">Per-category toggles. Per-item private flag on books and notes. Sub-theory consent notice on first draft. Pre-publish transparency check that surfaces what Yumi had access to during this sub-theory's development.</span></span></label>
+</div>
+<div class="milestone m14">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 22</span>
+      <h2 class="milestone-title">Stage 12 &middot; Public publishing (five sub-stages)</h2>
+    </div>
+    <span class="milestone-badge badge-publishing">Praxis goes public</span>
+  </div>
+  <p class="milestone-purpose">Publish a sub-theory, it becomes readable at a public URL by anyone. Pen-name support first-class &mdash; you publish as Roland Blair. Export rounds out the stage so users can take their work out of Praxis if they want to.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="100" fill="#FAEEDA"/>
+      <rect x="20" y="30" width="110" height="40" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="75" y="48" text-anchor="middle" font-size="12" font-family="DM Sans, sans-serif" fill="#2C2C2A" font-weight="500">Draft</text>
+      <text x="75" y="62" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#5F5E5A">writing surface</text>
+      <line x1="135" y1="50" x2="160" y2="50" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a14)"/>
+      <rect x="165" y="30" width="130" height="40" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="2"/>
+      <text x="230" y="48" text-anchor="middle" font-size="12" font-family="DM Sans, sans-serif" fill="#4A1B0C" font-weight="500">Transparency check</text>
+      <text x="230" y="62" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#712B13">the gate</text>
+      <line x1="300" y1="50" x2="325" y2="50" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a14)"/>
+      <rect x="330" y="30" width="110" height="40" rx="6" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="385" y="48" text-anchor="middle" font-size="12" font-family="DM Sans, sans-serif" fill="#412402" font-weight="500">Publish</text>
+      <text x="385" y="62" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#854F0B">status toggle</text>
+      <line x1="445" y1="50" x2="470" y2="50" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a14)"/>
+      <rect x="475" y="30" width="105" height="40" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="527" y="48" text-anchor="middle" font-size="12" font-family="DM Sans, sans-serif" fill="#04342C" font-weight="500">Public URL</text>
+      <text x="527" y="62" text-anchor="middle" font-size="10" font-family="DM Sans, sans-serif" fill="#085041">anyone can read</text>
+      <defs><marker id="a14" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    </svg>
+  </div>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m14-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">12.1 &middot; Publish toggle</span><span class="sub-desc">Publish button on writing surface. Confirmation flow includes transparency summary. Unpublish is one click without confirmation. Build the publish/unpublish() functions and the drafts-private / published-readable Firestore mirror here (relocated from 9.1).</span></span></label>
+  <label class="sub" data-id="m14-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">12.2 &middot; Public sub-theory page</span><span class="sub-desc">Read-only URL. Anyone can read. Header, body, evidence block, linked sub-theories, attribution to pen name. Standard Open Graph meta tags.</span></span></label>
+  <label class="sub" data-id="m14-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">12.3 &middot; Public arc page</span><span class="sub-desc">Public URL for the whole arc. Question, books view, theory view, all published sub-theories. Arc-level publish toggle separate from sub-theory level.</span></span></label>
+  <label class="sub" data-id="m14-4"><input type="checkbox"><span class="sub-text"><span class="sub-num">12.4 &middot; Pen-name support</span><span class="sub-desc">Primary display name plus optional pen name. Per-publication selector. Public profile page. You publish as Roland Blair.</span></span></label>
+  <label class="sub" data-id="m14-5"><input type="checkbox"><span class="sub-text"><span class="sub-num">12.5 &middot; Export</span><span class="sub-desc">Markdown, Word, PDF export per sub-theory or per arc. Praxis is the source of truth but users can take their work out.</span></span></label>
+</div>
+<div class="milestone m12">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 23</span>
+      <h2 class="milestone-title">Stage 6.3 &middot; Shelf search</h2>
+    </div>
+    <span class="milestone-badge badge-utility">Utility</span>
+  </div>
+  <p class="milestone-purpose">Once libraries grow large, finding books matters. Shelf search lands here, after content has accumulated.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m12-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Search input + result filtering on shelf</span><span class="sub-desc">Search by title, author, tradition. Real-time filtering of the shelf grid. No new search index; client-side filtering of state.books.</span></span></label>
+</div>
+<div class="milestone m15">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 24</span>
+      <h2 class="milestone-title">Stages 5.5 + 6.4 &middot; Ambient sound and Yumi speaking aloud</h2>
+    </div>
+    <span class="milestone-badge badge-atmosphere">Atmosphere</span>
+  </div>
+  <p class="milestone-purpose">Ship together as a small atmospheric polish piece. Both are opt-in by default. Both make the app feel more alive without being load-bearing for anything else.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="m15-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">5.5 &middot; Ambient sound + immersive mode</span><span class="sub-desc">Opt-in low-volume ambient layer matching the wheat field motion. Always-visible mute. Synced field motion when sound is on.</span></span></label>
+  <label class="sub" data-id="m15-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">6.4 &middot; Yumi speaks aloud (TTS)</span><span class="sub-desc">Browser TTS layer for Yumi messages. Opt-in. Pairs with the voice mic input that already ships. Yumi has voice now, both directions.</span></span></label>
+</div>
+<div class="milestone m-core">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 19</span>
+      <h2 class="milestone-title">Stage 2.7 &middot; Yumi eval layer</h2>
+    </div>
+    <span class="milestone-badge badge-core">Can trail launch</span>
+  </div>
+  <p class="milestone-purpose">The external eval the Stage 2 design always called for: behavioral (per-conversation), relationship (over time), pedagogical (long-term). Eval is external, never self-report. It can trail the launch by days but should exist before the testers are leaned on hard.</p>
+  <p class="substages-label">Sub-stages</p>
+  <label class="sub" data-id="ev-1"><input type="checkbox"><span class="sub-text"><span class="sub-num">Behavioral harness</span><span class="sub-desc">Per-conversation checks against the voice document (the 2.x audit pattern, automated).</span></span></label>
+  <label class="sub" data-id="ev-2"><input type="checkbox"><span class="sub-text"><span class="sub-num">Relationship layer</span><span class="sub-desc">Does Yumi stay coherent and non-flattering over many sessions with one reader.</span></span></label>
+  <label class="sub" data-id="ev-3"><input type="checkbox"><span class="sub-text"><span class="sub-num">Pedagogical layer</span><span class="sub-desc">Long-arc: is the reader thinking differently, not just engaging more.</span></span></label>
+</div>
+<div class="launch-line "><span class="launch-line-bar"></span><span class="launch-line-label">&#9650;&nbsp; Full launch &mdash; everything above ships to the three testers</span><span class="launch-line-bar"></span></div>
+<p class="launch-note">Target launch <strong>Friday, June 26, 2026</strong>. Code-complete June 24, two-day verification buffer. Below the line is the one item that genuinely cannot be designed before launch.</p>
+<div class="section-divider"><span class="section-divider-line"></span><span class="section-divider-label">Below the line &mdash; designed after launch lives in the wild</span><span class="section-divider-line"></span></div>
+<div class="milestone m16 deferred">
+  <div class="milestone-head">
+    <div>
+      <span class="milestone-num">Milestone 25</span>
+      <h2 class="milestone-title">Stage 13 &middot; Social and discovery</h2>
+    </div>
+    <span class="milestone-badge badge-deferred">Deferred</span>
+  </div>
+  <p class="milestone-purpose">Comments, following, discovery, cross-arc citations. The shape of social features depends on how people use the publishing surface, which cannot be known in advance. No sub-stages to check off yet.</p>
+  <p class="deferred-body">Design and scoping happen after Stage 12 ships and is used in the wild for at least 60 days. Conceptual placeholder: 13.1 comments, 13.2 following, 13.3 discovery, 13.4 cross-arc citations, 13.5 citation network visualization. May end up smaller after observation of actual usage.</p>
+</div>
+<div class="footer">
+  <em>Praxis is the room. The books are why you came.</em><br>
+  Resequenced June 3, 2026 &middot; three-week plan &middot; launch target Fri Jun 26 &middot; your check-offs persist in localStorage<br>
+  Live roadmap with full stage detail at praxis-reading.netlify.app/roadmap.html
+</div>
+</div>
+<script>
+(function(){
+  var ids = ["m1-1", "m1-2", "m2-1", "m2-2", "m3-1", "m7-1", "m7-2", "m8-1", "m8-2", "m8-3", "m8-4", "n93-1", "n93-2", "n93-3", "m10-1", "m6-1", "m6-2", "m6-3", "m6-4", "inf1-1", "inf1-2", "inf1-3", "inf1-4", "inf2-1", "inf2-2", "inf2-3", "inf3-1", "inf3-2", "inf3-3", "inf3-4", "inf3-5", "inf4-1", "inf4-2", "inf4-3", "m9-1", "st96-a", "st96-b", "st96-c", "st96-d", "n65-1", "n65-2", "n65-3", "n65-4", "n26-1", "n26-2", "n26-3", "up-1", "up-2", "up-3", "up-4", "up-5", "up-6", "up-7", "up-8", "m11-1", "m11-2", "m11-3", "m11-4", "m4-1", "m4-2", "m4-3", "m5-1", "m5-2", "m13-1", "m13-2", "m14-1", "m14-2", "m14-3", "m14-4", "m14-5", "m12-1", "m15-1", "m15-2", "ev-1", "ev-2", "ev-3"];
+  var KEY = 'praxis_build_checklist_v3';
+  var SEED = {"m1-1": true, "m1-2": true, "m2-1": true, "m2-2": true, "m3-1": true, "m7-1": true, "m7-2": true, "m8-1": true, "m8-2": true, "m8-3": true, "m8-4": true, "n93-1": true, "n93-2": true, "n93-3": true, "m10-1": true, "m6-1": true, "m6-2": true, "m6-3": true, "m6-4": true};
+  function loadState(){try{var raw=localStorage.getItem(KEY);if(raw===null){return SEED;}return JSON.parse(raw)||{};}catch(e){return {};}}
+  function saveState(st){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+  function updateProgress(st){var done=0;for(var i=0;i<ids.length;i++){if(st[ids[i]])done++;}document.getElementById('count').textContent=done+' of '+ids.length;document.getElementById('bar').style.width=Math.round(done/ids.length*100)+'%';}
+  function bindCheckbox(label,id,st){var cb=label.querySelector('input');cb.checked=!!st[id];if(cb.checked)label.classList.add('sub-checked');cb.addEventListener('change',function(){st[id]=cb.checked;if(cb.checked)label.classList.add('sub-checked');else label.classList.remove('sub-checked');saveState(st);updateProgress(st);});}
+  window.resetAll=function(){if(!confirm('Reset all check-offs?'))return;var st={};saveState(st);var ls=document.querySelectorAll('.sub');for(var i=0;i<ls.length;i++){ls[i].querySelector('input').checked=false;ls[i].classList.remove('sub-checked');}updateProgress(st);};
+  var st=loadState();var ls=document.querySelectorAll('.sub');for(var i=0;i<ls.length;i++){bindCheckbox(ls[i],ls[i].getAttribute('data-id'),st);}updateProgress(st);
+})();
+</script>
+</body>
+</html>
