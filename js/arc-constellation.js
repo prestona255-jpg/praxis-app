@@ -509,15 +509,44 @@ function _stNextId() {
   return 'st-clip-' + _stCounter;
 }
 
-// Deterministic identity triple. Three independent salted hashes of the id
-// pick a silhouette (0-3), a treatment (0-13), and a color (0-15). Distinct
-// salts keep the three axes from correlating, so similar ids still read as
-// different marks. Pure function of the id -> stable per id, matching the
-// book layout's determinism.
+// 9.6b.2: identity hash for the mark grammar. Distinct from _arcHash (which
+// many other consumers depend on -- book layout, marginalia clusters,
+// stipple -- so it is left byte-identical). The old grammar reused _arcHash,
+// which APPENDS ':'+salt: its three salted calls then differed only in the
+// final character, so silhouette/treatment/color stayed correlated and ids
+// whose hashes happened to differ by a multiple of the moduli collapsed onto
+// the same mark (the seed arc's sub-theories all rendered as one silhouette;
+// inter-id bucket deltas were identical across all three salts). The fix:
+// PREPEND the salt so FNV diverges from the first character, then run a
+// light ES3-safe avalanche finalizer (xorshift + a 32-bit mix multiply via
+// the |0 emulation, no Math.imul) so small id deltas spread through the low
+// bits before each mod. Returns an unsigned 32-bit int; _stIndices takes it
+// mod 4 / 14 / 16. Deterministic + stable per id (a theory always wears the
+// same mark); this fix is a one-time permanent reshuffle of existing marks.
+function _stIdentityHash(id, salt) {
+  var s = String(salt) + ':' + String(id);
+  var h = 2166136261;
+  var i;
+  for (i = 0; i < s.length; i = i + 1) {
+    h = h ^ s.charCodeAt(i);
+    h = (h * 16777619) | 0;
+  }
+  h = h ^ (h >>> 15);
+  h = (h * 16777619) | 0;
+  h = (h >>> 0) ^ ((h >>> 0) >>> 13);
+  return h >>> 0;
+}
+
+// Deterministic identity triple. Three salted avalanche hashes of the id
+// (via _stIdentityHash, salt prepended) pick a silhouette (0-3), a treatment
+// (0-13), and a color (0-15). The prepended salt + finalizer keep the three
+// axes genuinely independent, so similar ids read as different marks. Pure
+// function of the id -> stable per id, matching the book layout's
+// determinism.
 function _stIndices(id) {
-  var sIdx = Math.floor(_arcHash(id, 11) * _ST_SILHOUETTES.length);
-  var tIdx = Math.floor(_arcHash(id, 13) * _ST_TREATMENTS.length);
-  var cIdx = Math.floor(_arcHash(id, 17) * 16);
+  var sIdx = _stIdentityHash(id, 11) % _ST_SILHOUETTES.length;
+  var tIdx = _stIdentityHash(id, 13) % _ST_TREATMENTS.length;
+  var cIdx = _stIdentityHash(id, 17) % 16;
   if (sIdx < 0) { sIdx = 0; }
   if (sIdx >= _ST_SILHOUETTES.length) { sIdx = _ST_SILHOUETTES.length - 1; }
   if (tIdx < 0) { tIdx = 0; }
