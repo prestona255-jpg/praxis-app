@@ -3384,7 +3384,9 @@ function _arcDetailBuildSubTheoryData(arc) {
       shapeKey: ident.shapeKey,
       color:    ident.color,
       maturity: _stComputeMaturity(rec),
-      marks:    _stBuildMarks(rec)
+      marks:    _stBuildMarks(rec),
+      x:        (typeof rec.x === 'number') ? rec.x : null,
+      y:        (typeof rec.y === 'number') ? rec.y : null
     });
   }
   return {

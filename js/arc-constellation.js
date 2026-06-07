@@ -607,17 +607,29 @@ function _stRadialLayout(subs, width, height) {
   var positions = [];
   if (n === 0) { return positions; }
   var orbit = Math.min(width, height) * 0.32;
-  var i, theta;
+  var i, theta, px, py;
   for (i = 0; i < n; i = i + 1) {
-    if (n === 1) {
-      theta = -Math.PI / 2;
+    // 9.6a: honor a persisted position when both coords are real
+    // numbers (a dragged placement); otherwise fall back to the
+    // index-derived radial slot. Coords are absolute SVG units in
+    // the same space the radial branch produces, so 9.6c's drag
+    // handler must record drop coords in that same space.
+    if (typeof subs[i].x === 'number' && typeof subs[i].y === 'number') {
+      px = subs[i].x;
+      py = subs[i].y;
     } else {
-      theta = (i / n) * Math.PI * 2 - Math.PI / 2;
+      if (n === 1) {
+        theta = -Math.PI / 2;
+      } else {
+        theta = (i / n) * Math.PI * 2 - Math.PI / 2;
+      }
+      px = cx + Math.cos(theta) * orbit;
+      py = cy + Math.sin(theta) * orbit;
     }
     positions.push({
       id:  subs[i].id,
-      x:   cx + Math.cos(theta) * orbit,
-      y:   cy + Math.sin(theta) * orbit,
+      x:   px,
+      y:   py,
       sub: subs[i]
     });
   }

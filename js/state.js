@@ -453,6 +453,14 @@ function ensureSubTheoryFields(st) {
     st.publishedAt = null;
     changed = true;
   }
+  if (typeof st.x !== 'number' && st.x !== null) {
+    st.x = null;
+    changed = true;
+  }
+  if (typeof st.y !== 'number' && st.y !== null) {
+    st.y = null;
+    changed = true;
+  }
   return changed;
 }
 
@@ -957,6 +965,8 @@ function createSubTheory(arcId, fields) {
     status:             'draft',
     format:             '',
     publishedAt:        null,
+    x:                  null,
+    y:                  null,
     createdAt:          now,
     updatedAt:          now
   };
@@ -1649,6 +1659,17 @@ function migrate(stored) {
     if (!stored.subTheories) stored.subTheories = {};
     backfillSubTheoryUserId(stored.subTheories, stored.arcs);
     stored.SCHEMA_VERSION = '1.13.0';
+  }
+  // 9.6a: sub-theories gain persisted x/y (number|null) for the
+  // workspace layout. null = unset; renderer falls back to the radial
+  // slot until a drag (9.6c) stamps a real position. Delegated to the
+  // ensureSubTheoryFieldsAll chokepoint, mirroring the 1.11.0 -> 1.12.0
+  // step; idempotent, so re-running is a no-op. Default literal (1.9.3)
+  // unchanged -- new users still walk the whole chain.
+  if (stored.SCHEMA_VERSION === '1.13.0') {
+    if (!stored.subTheories) stored.subTheories = {};
+    ensureSubTheoryFieldsAll(stored.subTheories);
+    stored.SCHEMA_VERSION = '1.14.0';
   }
   return stored;
 }
