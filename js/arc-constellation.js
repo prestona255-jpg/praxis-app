@@ -953,9 +953,13 @@ function _stRenderEdges(edges, posById) {
     var pa = posById[e.aId];
     var pb = posById[e.bId];
     if (!pa || !pb) { continue; }
-    var strength = (typeof e.strength === 'number' && isFinite(e.strength)) ? e.strength : 0;
-    var w = _arcClamp(0.6, strength * 0.4, 3);
-    out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="' + _arcR(w) + '" opacity="0.5" stroke-linecap="round"/>';
+    // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
+    // plain ids), so they take the SOLID branch -- fixed weight + opacity, tan.
+    // The weighted formula is left intact for a future strength-bearing stage.
+    var hasStrength = (typeof e.strength === 'number' && isFinite(e.strength) && e.strength > 0);
+    var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.4;
+    var op = hasStrength ? 0.5 : 0.85;
+    out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
   }
   return out;
 }
@@ -1112,6 +1116,22 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
 // touch is a flagged later item.
 var _ST_DRAG_THRESHOLD = 4; // client px of movement before a press is a drag
 
+// 9.6c.4 Connect mode. _stConnectArmed is MODULE-level so the armed state
+// survives the renderArcDetail re-render a new link triggers (a per-render
+// closure would reset to false). It resets on a full reload -- reload never
+// comes back armed. _stConnectDisarm holds the CURRENT render's disarm() so
+// the once-bound Esc keydown can reach the live svg/button after a re-render.
+var _stConnectArmed = false;
+var _stConnectDisarm = null;
+var _stConnectEscBound = false;
+
+function _stConnectKeydown(evt) {
+  if (!_stConnectArmed) { return; }
+  if (evt.key === 'Escape' || evt.keyCode === 27) {
+    if (_stConnectDisarm) { _stConnectDisarm(); }
+  }
+}
+
 function attachSubTheoryDrag(svg, opts) {
   if (!svg) { return; }
   var options = opts || {};
@@ -1158,6 +1178,7 @@ function attachSubTheoryDrag(svg, opts) {
     // Clear any stale swallow flag from a prior drag whose click never
     // fired, so this press's own click is never wrongly swallowed.
     didDrag = false;
+    if (_stConnectArmed) { return; } // armed: clicks select/connect, no drag
     if (typeof evt.button === 'number' && evt.button !== 0) { return; }
     var g = evt.target && evt.target.closest
       ? evt.target.closest('[data-st-sub-id]')
@@ -1225,6 +1246,15 @@ function attachSubTheoryDrag(svg, opts) {
   }
 
   function onClickCapture(evt) {
+    if (_stConnectArmed) {
+      // Pre-empt BOTH the nav click (views bindShapeClick) and the mark-
+      // tooltip click (views bindMarkClick): they bubble, this fires in the
+      // capture phase first, so stopping it here keeps them from running.
+      evt.stopPropagation();
+      evt.preventDefault();
+      handleConnectClick(evt);
+      return;
+    }
     if (didDrag) {
       didDrag = false;
       evt.stopPropagation();
@@ -1313,7 +1343,7 @@ function attachSubTheoryDrag(svg, opts) {
   }
 
   function onShapeEnter(evt) {
-    if (drag) { return; } // never appear mid-drag
+    if (drag || _stConnectArmed) { return; } // never mid-drag or while arming
     var g = evt.currentTarget;
     var sub = subById[g.getAttribute('data-st-sub-id')];
     if (!sub) { return; }
@@ -1335,11 +1365,95 @@ function attachSubTheoryDrag(svg, opts) {
     }
   }
 
+  // ---- 9.6c.4 Connect mode ----
+  // Selection highlight is runtime-only (a class on the shape <g>, styled with
+  // a tan drop-shadow), so the render emit for shapes/marks stays byte-
+  // identical. One mark selected at a time per render.
+  var selectedId = null;
+  var selectedG = null;
+
+  function clearSelection() {
+    if (selectedG) { selectedG.removeAttribute('class'); }
+    selectedId = null;
+    selectedG = null;
+  }
+
+  function applySelection(id, g) {
+    clearSelection();
+    selectedId = id;
+    selectedG = g;
+    if (g) { g.setAttribute('class', 'st-shape--connect-selected'); }
+  }
+
+  // Reflect armed state on the live chrome: the Connect button highlights and
+  // the canvas gets a crosshair "pick two" affordance. Called on arm/disarm
+  // AND on attach, so a re-render that lands while still armed re-applies it.
+  function updateArmedChrome() {
+    if (options.connectBtn) {
+      if (_stConnectArmed) { options.connectBtn.classList.add('is-connecting'); }
+      else { options.connectBtn.classList.remove('is-connecting'); }
+    }
+    if (_stConnectArmed) { svg.setAttribute('class', 'st-canvas--connecting'); }
+    else { svg.removeAttribute('class'); }
+  }
+
+  function arm() {
+    _stConnectArmed = true;
+    clearSelection();
+    updateArmedChrome();
+  }
+
+  function disarm() {
+    _stConnectArmed = false;
+    clearSelection();
+    updateArmedChrome();
+  }
+
+  function onConnectBtn() {
+    if (_stConnectArmed) { disarm(); } else { arm(); }
+  }
+
+  // A click while armed: pick A, then a DIFFERENT B links them. Clicking the
+  // same mark again, or empty canvas / a marginalia mark (no shape target),
+  // cancels via disarm(). Stays armed after a real link so connections chain.
+  function handleConnectClick(evt) {
+    var g = (evt.target && evt.target.closest)
+      ? evt.target.closest('[data-st-sub-id]:not([data-st-mark])')
+      : null;
+    if (!g) { disarm(); return; }
+    var id = g.getAttribute('data-st-sub-id');
+    if (!id) { disarm(); return; }
+    if (!selectedId) { applySelection(id, g); return; }
+    if (id === selectedId) { disarm(); return; }
+    var aId = selectedId;
+    clearSelection();
+    // onLink only re-renders on a REAL new link (linkSubTheories true). On a
+    // no-op (already linked / invalid) it does nothing -- selection is already
+    // cleared here, we stay armed, no duplicate edge, no needless re-render.
+    if (options.onLink) { options.onLink(aId, id); }
+  }
+
   svg.addEventListener('pointerdown', onPointerDown);
   svg.addEventListener('pointermove', onPointerMove);
   svg.addEventListener('pointerup', onPointerUp);
   svg.addEventListener('pointercancel', onPointerUp);
   svg.addEventListener('click', onClickCapture, true); // capture: pre-empt group click
+
+  if (options.connectBtn) {
+    options.connectBtn.addEventListener('click', onConnectBtn);
+  }
+
+  // Point the module handles at THIS render, then re-apply armed chrome (a
+  // link-triggered re-render lands here with _stConnectArmed still true).
+  _stConnectDisarm = disarm;
+  updateArmedChrome();
+
+  // Esc cancels. Bound ONCE on document (module guard) so re-renders never
+  // stack duplicate listeners; it routes through the current render's disarm.
+  if (!_stConnectEscBound) {
+    _stConnectEscBound = true;
+    document.addEventListener('keydown', _stConnectKeydown);
+  }
 
   return;
 }

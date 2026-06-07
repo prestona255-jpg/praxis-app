@@ -3389,11 +3389,35 @@ function _arcDetailBuildSubTheoryData(arc) {
       y:        (typeof rec.y === 'number') ? rec.y : null
     });
   }
+  // 9.6c.4: derive resonance edges from each record's linkedSubTheories (bare
+  // reciprocal id pairs). Keep only pairs where BOTH endpoints belong to this
+  // arc, and dedupe the symmetric a<->b duplicate. No strength field -- the
+  // renderer's bare-link branch draws these solid tan. Empty until 9.6c.4's
+  // Connect path writes the first link.
+  var inArc = {};
+  for (i = 0; i < records.length; i = i + 1) { inArc[records[i].id] = true; }
+  var edges = [];
+  var seenEdge = {};
+  var ei, links, lj, otherId, pairKey;
+  for (ei = 0; ei < records.length; ei = ei + 1) {
+    links = records[ei].linkedSubTheories;
+    if (!links || !links.length) { continue; }
+    for (lj = 0; lj < links.length; lj = lj + 1) {
+      otherId = links[lj];
+      if (!inArc[otherId]) { continue; }
+      pairKey = (records[ei].id < otherId)
+        ? records[ei].id + '|' + otherId
+        : otherId + '|' + records[ei].id;
+      if (seenEdge[pairKey]) { continue; }
+      seenEdge[pairKey] = true;
+      edges.push({ aId: records[ei].id, bId: otherId });
+    }
+  }
   return {
     id:           arcId,
     question:     (arc && arc.title) ? arc.title : '',
     subTheories:  subTheories,
-    edges:        [],
+    edges:        edges,
     yumiNoticing: []
   };
 }
@@ -4173,10 +4197,10 @@ function renderArcDetail(arcId) {
       // Stage 9.6c.1: the constellation control bar -- one chrome row
       // above the SVG. + Sub-theory navigates to the new-subtheory route
       // (it replaces the header button, which is suppressed in web view
-      // above). Connect + Reset render in the mockup layout but are INERT
-      // this sub-stage: Reset is wired in 9.6c.2, Connect in 9.6c.4. Each
-      // carries a data-st-control hook so those stages can bind without
-      // re-querying by text. The marginalia toggle is folded in from 9.6b
+      // above). Reset (9.6c.2) and Connect (9.6c.4) are now both wired via
+      // their data-st-control hooks: Reset clears placements below, Connect
+      // is handed to attachSubTheoryDrag, which toggles the resonance-edge
+      // arming layer. The marginalia toggle is folded in from 9.6b
       // unchanged: reads the persisted flag via ls() (default ON, strict
       // boolean), flips through sv(), and re-enters renderArcDetail in
       // place (idempotent -- host.innerHTML is cleared at the top, so the
@@ -4262,6 +4286,13 @@ function renderArcDetail(arcId) {
       if (typeof window.attachSubTheoryDrag === 'function') {
         window.attachSubTheoryDrag(svg, {
           arc: arcData,
+          connectBtn: connectBtn,
+          // Stage 9.6c.4: Connect arming lives in attachSubTheoryDrag; on a
+          // confirmed pick-two it calls onLink. Re-render ONLY on a real new
+          // link (linkSubTheories returns false for a dup/self/missing pair).
+          onLink: function(aId, bId) {
+            if (linkSubTheories(aId, bId)) { renderArcDetail(arcId); }
+          },
           onCommit: function(id, x, y) {
             setSubTheoryPosition(id, x, y);
             renderArcDetail(arcId);

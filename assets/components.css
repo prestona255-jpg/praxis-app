@@ -3352,6 +3352,23 @@
   .st-hover-card { transition: none; }
 }
 
+/* Stage 9.6c.4: Connect mode. The armed Connect button reads in resonance
+   tan (--thread-color) to distinguish it from the gold marginalia toggle;
+   the canvas shows a crosshair "pick two" affordance; a selected shape glows
+   tan. All token-only, no new palette -- edges + selection share the same
+   --thread-color the resonance edges use. */
+.arc-detail-toggle-btn.is-connecting {
+  background: var(--thread-color);
+  color: var(--surface-2);
+  border-color: var(--thread-color);
+}
+
+.st-canvas--connecting { cursor: crosshair; }
+
+.st-shape--connect-selected {
+  filter: drop-shadow(0 0 6px var(--thread-color));
+}
+
 
 /* ===== STAGE 8.1C -- CONSTELLATION KEYBOARD FOCUS RING =====
    Matches the house focus convention (components.css:2239-2268):
