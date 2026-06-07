@@ -4161,13 +4161,37 @@ function renderArcDetail(arcId) {
       unavailable.textContent = 'Constellation renderer unavailable.';
       webContainer.appendChild(unavailable);
     } else {
+      // Stage 9.6b: standalone marginalia-visibility control (the full
+      // header control bar is 9.6c). Reads the persisted flag via the ls()
+      // wrapper (default ON, read strictly as a boolean like the yumi-open
+      // pattern); the click flips it through sv() and re-enters
+      // renderArcDetail in place (host.innerHTML is cleared at the top, so
+      // the rebuild is idempotent and re-reads the fresh value). The same
+      // flag feeds the renderer's showMarginalia option below.
+      var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
+      var marginaliaBtn = document.createElement('button');
+      marginaliaBtn.type = 'button';
+      marginaliaBtn.className = 'arc-detail-toggle-btn'
+        + (stShowMarginalia ? ' is-active' : '');
+      marginaliaBtn.setAttribute('data-st-marginalia',
+        stShowMarginalia ? 'on' : 'off');
+      marginaliaBtn.textContent = stShowMarginalia
+        ? 'Marginalia: shown' : 'Marginalia: hidden';
+      marginaliaBtn.addEventListener('click', function() {
+        sv('praxis_st_marginalia_on',
+          !(ls('praxis_st_marginalia_on', true) === true));
+        renderArcDetail(arcId);
+      });
+      webContainer.appendChild(marginaliaBtn);
+
       var SVG_NS = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(SVG_NS, 'svg');
       svg.setAttribute('viewBox', '0 0 600 500');
       svg.setAttribute('xmlns', SVG_NS);
       webContainer.appendChild(svg);
       var arcData = _arcDetailBuildSubTheoryData(arc);
-      window.renderSubTheoryConstellation(arcData, svg);
+      window.renderSubTheoryConstellation(arcData, svg,
+        { showMarginalia: stShowMarginalia });
       // Stage 9.5: bind the sub-theory interaction layer. Pass arcData
       // (resolved subTheories/marks), not the raw arc record -- the
       // tooltip needs header/label/quote already resolved.

@@ -145,6 +145,27 @@
   --tradition-place-halo: #98D4B0;
   --tradition-practice-halo: #B8896C;
 
+  /* Stage 9.6b: sub-theory identity palette -- 16 soft hues, picked by
+     id-hash so each sub-theory wears a unique, stable color. Kept soft
+     to harmonize on the wheat ground. Renderer indexes var(--subtheory-N),
+     N = (idHash % 16) + 1. */
+  --subtheory-1:  #F2A6C2; /* rose */
+  --subtheory-2:  #EF9FAE; /* blush */
+  --subtheory-3:  #F0A88A; /* peach */
+  --subtheory-4:  #E8A06A; /* apricot */
+  --subtheory-5:  #E8B068; /* amber */
+  --subtheory-6:  #ECCB6A; /* gold */
+  --subtheory-7:  #CBD081; /* sage */
+  --subtheory-8:  #A9C982; /* leaf-green */
+  --subtheory-9:  #8FCB9A; /* green */
+  --subtheory-10: #8FD0B8; /* mint */
+  --subtheory-11: #7FBFC8; /* aqua */
+  --subtheory-12: #8FB6D6; /* sky */
+  --subtheory-13: #8590D8; /* lavender */
+  --subtheory-14: #7E7BC0; /* violet */
+  --subtheory-15: #A98FCE; /* purple */
+  --subtheory-16: #BE93C6; /* mauve */
+
   /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
 

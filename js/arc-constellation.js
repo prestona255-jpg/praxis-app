@@ -486,13 +486,19 @@ function renderArcConstellation(arc, parentSvgElement) {
 //           yumiNoticing: [] }
 // ===========================================================================
 
-// Fixed identity vocabulary. shapeKey[i] is permanently paired with
-// palette[i] (6 fixed pairings, not 36 combos) -- _stIdentity hashes the
-// sub-theory id to ONE slot index, giving shape+color together. No dedup
-// within an arc: identity stability beats guaranteed distinctness, so
-// adding/removing a sub-theory never shifts another one's appearance.
-var _ST_SHAPES = ['disc', 'lozenge', 'petal', 'squircle', 'drop', 'bloom'];
-var _ST_PALETTE = ['#7A6E5D', '#6E7468', '#8A7A6A', '#6B6F78', '#80726A', '#75695C'];
+// Stage 9.6b identity grammar. A sub-theory's appearance is a deterministic
+// TRIPLE hashed from its id: one of 4 silhouettes, one of 14 surface
+// treatments, one of 16 palette colors -- 896 visual combinations, each
+// stable per id across renders/sessions (matching the book layout's
+// determinism). No dedup within an arc: identity stability beats guaranteed
+// distinctness, so adding/removing a sub-theory never shifts another one's
+// appearance. The old muted shape/palette vocabulary is gone -- color now
+// comes from the theme's --subtheory-1..16 tokens, so NO hex is hardcoded
+// in the mark code (the grain stroke is a separate ground detail).
+var _ST_SILHOUETTES = ['circle', 'hexagon', 'diamond', 'triangle'];
+var _ST_TREATMENTS = ['rings', 'hatch', 'halftone', 'dotgrid', 'labyrinth',
+  'linefade', 'burst', 'waves', 'crossweave', 'stipple', 'spiral',
+  'herringbone', 'nested', 'sunburst'];
 var _ST_SCALE = 64; // identity-shape baseline diameter (px), echoing book scale 60
 
 // Unique clip-path id counter, mirroring _tfaNextId -- clip ids must be
@@ -503,33 +509,60 @@ function _stNextId() {
   return 'st-clip-' + _stCounter;
 }
 
-// Deterministic identity: hash the sub-theory id to a single slot index,
-// then read shape + color from that one slot (the fixed pairing). Stable
-// per id across renders/sessions, matching the book layout's determinism.
+// Deterministic identity triple. Three independent salted hashes of the id
+// pick a silhouette (0-3), a treatment (0-13), and a color (0-15). Distinct
+// salts keep the three axes from correlating, so similar ids still read as
+// different marks. Pure function of the id -> stable per id, matching the
+// book layout's determinism.
+function _stIndices(id) {
+  var sIdx = Math.floor(_arcHash(id, 11) * _ST_SILHOUETTES.length);
+  var tIdx = Math.floor(_arcHash(id, 13) * _ST_TREATMENTS.length);
+  var cIdx = Math.floor(_arcHash(id, 17) * 16);
+  if (sIdx < 0) { sIdx = 0; }
+  if (sIdx >= _ST_SILHOUETTES.length) { sIdx = _ST_SILHOUETTES.length - 1; }
+  if (tIdx < 0) { tIdx = 0; }
+  if (tIdx >= _ST_TREATMENTS.length) { tIdx = _ST_TREATMENTS.length - 1; }
+  if (cIdx < 0) { cIdx = 0; }
+  if (cIdx >= 16) { cIdx = 15; }
+  return { silhouetteIdx: sIdx, treatmentIdx: tIdx, colorIdx: cIdx };
+}
+
+// Back-compat shim. views.js:_arcDetailBuildSubTheoryData still calls
+// _stIdentity(id) and stores .shapeKey/.color into the data contract; the
+// renderer now self-derives its triple from _stIndices and ignores those
+// contract fields (grep-confirmed the renderer is their only consumer), so
+// this shim exists purely to keep the builder's assignment well-formed. It
+// returns the silhouette key + the color TOKEN (no hex) for that id.
 function _stIdentity(id) {
-  var i = Math.floor(_arcHash(id, 7) * _ST_SHAPES.length);
-  if (i < 0) { i = 0; }
-  if (i >= _ST_SHAPES.length) { i = _ST_SHAPES.length - 1; }
-  return { index: i, shapeKey: _ST_SHAPES[i], color: _ST_PALETTE[i] };
+  var ix = _stIndices(id);
+  return {
+    shapeKey: _ST_SILHOUETTES[ix.silhouetteIdx],
+    color: 'var(--subtheory-' + (ix.colorIdx + 1) + ')'
+  };
 }
 
 // New st-* defs. Echoes the tradition grain/halo technique with a
 // tradition-NEUTRAL vocabulary: one color-agnostic grain overlay (faint
-// dark contour strokes on a transparent tile, layered over the solid
-// identity color) and one halo gradient per palette slot (the identity
-// color fading out). tfa-ground + tfa-innerL are reused from
+// dark contour strokes on a transparent tile, layered over the translucent
+// identity color) and one backlit halo gradient per palette token. The
+// grain stroke (#2A2018) is a pre-existing ground detail and stays bare;
+// the halos read the --subtheory-N CSS tokens via stop-color (the same
+// var() mechanism every fill in this renderer already uses), so the mark
+// grammar adds NO hardcoded hex. tfa-ground + tfa-innerL are reused from
 // getTraditionFormsArcDefs(), NOT redefined here.
 function _stGetDefs() {
   var s = '<defs>';
   s = s + '<pattern id="st-grain" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">';
   s = s +   '<path d="M0 5 Q9 3 18 5 M0 11 Q9 9 18 11 M0 16 Q9 14 18 16" stroke="#2A2018" stroke-width="0.6" fill="none" opacity="0.18"/>';
   s = s + '</pattern>';
-  var i;
-  for (i = 0; i < _ST_PALETTE.length; i = i + 1) {
-    var c = _ST_PALETTE[i];
+  // One backlit halo gradient per palette token (1..16): transparent core
+  // -> ~0.72 ring at 78% -> transparent rim, the 9.6b "backlit" profile.
+  var i, c;
+  for (i = 1; i <= 16; i = i + 1) {
+    c = 'var(--subtheory-' + i + ')';
     s = s + '<radialGradient id="st-halo-' + i + '" cx="50%" cy="50%" r="50%">';
     s = s +   '<stop offset="55%" stop-color="' + c + '" stop-opacity="0"/>';
-    s = s +   '<stop offset="80%" stop-color="' + c + '" stop-opacity="0.55"/>';
+    s = s +   '<stop offset="78%" stop-color="' + c + '" stop-opacity="0.72"/>';
     s = s +   '<stop offset="100%" stop-color="' + c + '" stop-opacity="0"/>';
     s = s + '</radialGradient>';
   }
@@ -537,51 +570,169 @@ function _stGetDefs() {
   return s;
 }
 
-// Per-shape silhouette geometry. Takes the unit scale factor u (= scale /
-// 120, matching _tfaGeometry's convention) and returns ONE self-closing
-// SVG element string with no fill -- the caller injects fill (for the
-// halo) or uses it as a clipPath child (for the body). Centered on origin
-// so the same generator at a larger u produces the halo silhouette.
-function _stShapeGeometry(shapeKey, u) {
+// Silhouette geometry. Takes a silhouette key + the unit scale factor u
+// (= scale / 120, matching _tfaGeometry's convention) and returns ONE
+// self-closing SVG element string with no fill -- the caller injects fill
+// (for the halo) or uses it as a clipPath child (for the body). Centered
+// on origin so the same generator at a larger u produces the halo
+// silhouette. Four silhouettes: circle, hexagon, diamond, triangle.
+function _stSilhouette(key, u) {
   var R = _arcR;
-  if (shapeKey === 'lozenge') {
-    return '<rect x="' + R(-58 * u) + '" y="' + R(-28 * u) + '" width="' + R(116 * u) + '" height="' + R(56 * u) + '" rx="' + R(28 * u) + '" ry="' + R(28 * u) + '"/>';
-  }
-  if (shapeKey === 'petal') {
-    var px = 50 * u;
-    var py = 46 * u;
-    return '<path d="M' + R(-px) + ' 0 Q0 ' + R(-py) + ' ' + R(px) + ' 0 Q0 ' + R(py) + ' ' + R(-px) + ' 0 Z"/>';
-  }
-  if (shapeKey === 'squircle') {
-    return '<rect x="' + R(-46 * u) + '" y="' + R(-46 * u) + '" width="' + R(92 * u) + '" height="' + R(92 * u) + '" rx="' + R(26 * u) + '" ry="' + R(26 * u) + '"/>';
-  }
-  if (shapeKey === 'drop') {
-    return '<path d="M0 ' + R(-56 * u) + ' C ' + R(36 * u) + ' ' + R(-28 * u) + ' ' + R(46 * u) + ' ' + R(30 * u) + ' 0 ' + R(52 * u) + ' C ' + R(-46 * u) + ' ' + R(30 * u) + ' ' + R(-36 * u) + ' ' + R(-28 * u) + ' 0 ' + R(-56 * u) + ' Z"/>';
-  }
-  if (shapeKey === 'bloom') {
-    var lobes = 5;
-    var outer = 54 * u;
-    var inner = 24 * u;
-    var k, ang, mang, nang, ox, oy, mx, my, nx, ny;
-    var d = '';
-    for (k = 0; k < lobes; k = k + 1) {
-      ang = (k / lobes) * Math.PI * 2 - Math.PI / 2;
-      ox = Math.cos(ang) * outer;
-      oy = Math.sin(ang) * outer;
-      if (k === 0) { d = 'M' + R(ox) + ' ' + R(oy); }
-      mang = ((k + 0.5) / lobes) * Math.PI * 2 - Math.PI / 2;
-      mx = Math.cos(mang) * inner;
-      my = Math.sin(mang) * inner;
-      nang = ((k + 1) / lobes) * Math.PI * 2 - Math.PI / 2;
-      nx = Math.cos(nang) * outer;
-      ny = Math.sin(nang) * outer;
-      d = d + ' Q' + R(mx) + ' ' + R(my) + ' ' + R(nx) + ' ' + R(ny);
+  var k, ang, x, y, pts;
+  if (key === 'hexagon') {
+    pts = '';
+    for (k = 0; k < 6; k = k + 1) {
+      ang = (k / 6) * Math.PI * 2 - Math.PI / 2;
+      x = Math.cos(ang) * 56 * u;
+      y = Math.sin(ang) * 56 * u;
+      pts = pts + (k === 0 ? '' : ' ') + R(x) + ',' + R(y);
     }
-    d = d + ' Z';
-    return '<path d="' + d + '"/>';
+    return '<polygon points="' + pts + '"/>';
   }
-  // default + 'disc'
+  if (key === 'diamond') {
+    return '<polygon points="0,' + R(-58 * u) + ' ' + R(50 * u) + ',0 0,' + R(58 * u) + ' ' + R(-50 * u) + ',0"/>';
+  }
+  if (key === 'triangle') {
+    pts = '';
+    for (k = 0; k < 3; k = k + 1) {
+      ang = (k / 3) * Math.PI * 2 - Math.PI / 2;
+      x = Math.cos(ang) * 58 * u;
+      y = Math.sin(ang) * 58 * u;
+      pts = pts + (k === 0 ? '' : ' ') + R(x) + ',' + R(y);
+    }
+    return '<polygon points="' + pts + '"/>';
+  }
+  // default + 'circle'
   return '<circle cx="0" cy="0" r="' + R(52 * u) + '"/>';
+}
+
+// Surface treatment. Draws one of 14 motifs across the silhouette's
+// bounding box; the caller clips it to the silhouette. Every stroke/fill
+// uses the mark's color TOKEN (c) at a deeper opacity than the translucent
+// body, so the motif reads as a darker grain of the same hue -- NO
+// hardcoded hex. The motif field spans roughly [-E, E] in both axes.
+function _stTreatment(key, u, c) {
+  var R = _arcR;
+  var E = 60 * u;
+  var s = '';
+  var i, x, y, r, n, a, ang, w, d;
+
+  if (key === 'rings') { // concentric rings
+    for (i = 1; i <= 5; i = i + 1) {
+      r = (i / 5) * E;
+      s = s + '<circle cx="0" cy="0" r="' + R(r) + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.4 * u) + '" opacity="0.5"/>';
+    }
+    return s;
+  }
+  if (key === 'hatch') { // diagonal hatch
+    for (x = -2 * E; x <= 2 * E; x = x + 11 * u) {
+      s = s + '<line x1="' + R(x) + '" y1="' + R(-E) + '" x2="' + R(x + 2 * E) + '" y2="' + R(E) + '" stroke="' + c + '" stroke-width="' + R(1.3 * u) + '" opacity="0.45"/>';
+    }
+    return s;
+  }
+  if (key === 'halftone') { // halftone dots (grow left -> right)
+    for (y = -E; y <= E; y = y + 15 * u) {
+      for (x = -E; x <= E; x = x + 15 * u) {
+        r = (1.2 + ((x + E) / (2 * E)) * 4) * u;
+        s = s + '<circle cx="' + R(x) + '" cy="' + R(y) + '" r="' + R(r) + '" fill="' + c + '" opacity="0.5"/>';
+      }
+    }
+    return s;
+  }
+  if (key === 'dotgrid') { // even dot grid
+    for (y = -E; y <= E; y = y + 13 * u) {
+      for (x = -E; x <= E; x = x + 13 * u) {
+        s = s + '<circle cx="' + R(x) + '" cy="' + R(y) + '" r="' + R(1.8 * u) + '" fill="' + c + '" opacity="0.5"/>';
+      }
+    }
+    return s;
+  }
+  if (key === 'labyrinth') { // broken-labyrinth rings
+    for (i = 1; i <= 5; i = i + 1) {
+      r = (i / 5) * E;
+      s = s + '<circle cx="0" cy="0" r="' + R(r) + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.6 * u) + '" opacity="0.5" stroke-dasharray="' + R(10 * u) + ' ' + R(6 * u) + '"/>';
+    }
+    return s;
+  }
+  if (key === 'linefade') { // fading line-gradient (top opaque -> bottom faint)
+    n = 9;
+    for (i = 0; i < n; i = i + 1) {
+      y = -E + (i / (n - 1)) * (2 * E);
+      s = s + '<line x1="' + R(-E) + '" y1="' + R(y) + '" x2="' + R(E) + '" y2="' + R(y) + '" stroke="' + c + '" stroke-width="' + R(1.6 * u) + '" opacity="' + R(0.65 - (i / (n - 1)) * 0.5) + '"/>';
+    }
+    return s;
+  }
+  if (key === 'burst') { // radiating burst from center
+    n = 16;
+    for (i = 0; i < n; i = i + 1) {
+      ang = (i / n) * Math.PI * 2;
+      s = s + '<line x1="0" y1="0" x2="' + R(Math.cos(ang) * E) + '" y2="' + R(Math.sin(ang) * E) + '" stroke="' + c + '" stroke-width="' + R(1.3 * u) + '" opacity="0.45"/>';
+    }
+    return s;
+  }
+  if (key === 'waves') { // woven waves
+    w = 9 * u;
+    for (y = -E; y <= E; y = y + 13 * u) {
+      d = 'M' + R(-E) + ' ' + R(y);
+      for (x = -E; x < E; x = x + 12 * u) {
+        d = d + ' Q' + R(x + 6 * u) + ' ' + R(y - w) + ' ' + R(x + 12 * u) + ' ' + R(y);
+      }
+      s = s + '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.3 * u) + '" opacity="0.45"/>';
+    }
+    return s;
+  }
+  if (key === 'crossweave') { // cross-weave grid of lines
+    for (x = -E; x <= E; x = x + 12 * u) {
+      s = s + '<line x1="' + R(x) + '" y1="' + R(-E) + '" x2="' + R(x) + '" y2="' + R(E) + '" stroke="' + c + '" stroke-width="' + R(1.1 * u) + '" opacity="0.4"/>';
+    }
+    for (y = -E; y <= E; y = y + 12 * u) {
+      s = s + '<line x1="' + R(-E) + '" y1="' + R(y) + '" x2="' + R(E) + '" y2="' + R(y) + '" stroke="' + c + '" stroke-width="' + R(1.1 * u) + '" opacity="0.4"/>';
+    }
+    return s;
+  }
+  if (key === 'stipple') { // deterministic stipple scatter
+    n = 80;
+    for (i = 0; i < n; i = i + 1) {
+      x = (_arcHash('st-stipple-x', i) - 0.5) * 2 * E;
+      y = (_arcHash('st-stipple-y', i) - 0.5) * 2 * E;
+      s = s + '<circle cx="' + R(x) + '" cy="' + R(y) + '" r="' + R(1.5 * u) + '" fill="' + c + '" opacity="0.5"/>';
+    }
+    return s;
+  }
+  if (key === 'spiral') { // archimedean spiral
+    n = 120;
+    d = '';
+    for (i = 0; i <= n; i = i + 1) {
+      a = (i / n) * Math.PI * 6;
+      r = (i / n) * E;
+      d = d + (i === 0 ? 'M' : ' L') + R(Math.cos(a) * r) + ' ' + R(Math.sin(a) * r);
+    }
+    return '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.4 * u) + '" opacity="0.5"/>';
+  }
+  if (key === 'herringbone') { // chevron / herringbone rows
+    w = 7 * u;
+    for (y = -E; y <= E; y = y + 13 * u) {
+      for (x = -E; x <= E; x = x + 14 * u) {
+        s = s + '<path d="M' + R(x) + ' ' + R(y + w) + ' L' + R(x + 7 * u) + ' ' + R(y - w) + ' L' + R(x + 14 * u) + ' ' + R(y + w) + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.2 * u) + '" opacity="0.45"/>';
+      }
+    }
+    return s;
+  }
+  if (key === 'nested') { // nested line-art squares
+    for (i = 1; i <= 5; i = i + 1) {
+      r = (i / 5) * E;
+      s = s + '<rect x="' + R(-r) + '" y="' + R(-r) + '" width="' + R(2 * r) + '" height="' + R(2 * r) + '" fill="none" stroke="' + c + '" stroke-width="' + R(1.3 * u) + '" opacity="0.45"/>';
+    }
+    return s;
+  }
+  // default + 'sunburst' -- fan of lines spreading up from a low anchor
+  n = 15;
+  y = E * 0.9;
+  for (i = 0; i < n; i = i + 1) {
+    ang = -Math.PI / 2 + (i / (n - 1) - 0.5) * (Math.PI * 0.95);
+    s = s + '<line x1="0" y1="' + R(y) + '" x2="' + R(Math.cos(ang) * E * 1.6) + '" y2="' + R(y + Math.sin(ang) * E * 1.6) + '" stroke="' + c + '" stroke-width="' + R(1.2 * u) + '" opacity="0.45"/>';
+  }
+  return s;
 }
 
 // Maturity -> luminosity proxy. The ONE isolated, swappable render-side
@@ -667,11 +818,13 @@ function _stRenderEmpty(width, height) {
   return '<text data-st-empty="1" x="' + _arcR(cx) + '" y="' + _arcR(cy + 34) + '" text-anchor="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="13" fill="var(--ink-2, #633806)" opacity="0.7">Begin a sub-theory to map this question.</text>';
 }
 
-// Identity shapes. Each sub-theory: a luminosity-scaled halo, a solid
-// identity-color body (grain overlay) clipped to the silhouette, and a
-// bright inner-light ellipse. shapeKey/color come from the contract, with
-// _stIdentity as the deterministic fallback so the renderer is correct
-// even if the builder omitted them.
+// Identity marks. Each sub-theory: a backlit luminosity-scaled halo, a
+// translucent identity-color body carrying its surface treatment + grain
+// overlay (all clipped to the silhouette), and a bright inner-light
+// ellipse. The silhouette/treatment/color triple is self-derived from the
+// id via _stIndices -- the contract's shapeKey/color are ignored here (this
+// renderer is their only consumer; see the _stIdentity shim note). Color is
+// always a --subtheory-N token, so no hardcoded hex enters the mark code.
 function _stRenderShapes(positions) {
   var out = '';
   var u = _ST_SCALE / 120;
@@ -679,21 +832,22 @@ function _stRenderShapes(positions) {
   for (i = 0; i < positions.length; i = i + 1) {
     var p = positions[i];
     var sub = p.sub || {};
-    var ident = _stIdentity(p.id);
-    var shapeKey = sub.shapeKey || ident.shapeKey;
-    var color = sub.color || ident.color;
-    var haloIndex = _ST_PALETTE.indexOf(color);
-    if (haloIndex < 0) { haloIndex = ident.index; }
+    var ix = _stIndices(p.id);
+    var silKey = _ST_SILHOUETTES[ix.silhouetteIdx];
+    var treatKey = _ST_TREATMENTS[ix.treatmentIdx];
+    var colorVar = 'var(--subtheory-' + (ix.colorIdx + 1) + ')';
+    var haloId = 'st-halo-' + (ix.colorIdx + 1);
     var lum = _stLuminosity(sub.maturity);
     var clipId = _stNextId();
-    var sil = _stShapeGeometry(shapeKey, u);
-    var haloShape = _stShapeGeometry(shapeKey, u * 1.2)
-      .replace('/>', ' fill="url(#st-halo-' + haloIndex + ')"/>');
+    var sil = _stSilhouette(silKey, u);
+    var haloShape = _stSilhouette(silKey, u * 1.25)
+      .replace('/>', ' fill="url(#' + haloId + ')"/>');
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
     out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
     out = out +   '<g clip-path="url(#' + clipId + ')" opacity="' + _arcR(lum) + '">';
-    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + color + '"/>';
+    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '" opacity="0.42"/>';
+    out = out +     _stTreatment(treatKey, u, colorVar);
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
@@ -703,11 +857,15 @@ function _stRenderShapes(positions) {
 }
 
 // Marginalia marks -- the gathered evidence cloud. GATHERED marks render
-// hollow (stroke only) in a deterministic cluster outside the silhouette.
+// hollow (stroke only) in TEAL (--marginalia-color), echoing the book
+// renderer's marginalia, in a deterministic cluster outside the silhouette.
 // The INCORPORATED branch (solid + tether back to the shape) is built but
 // DORMANT: no evidence carries state:'incorporated' until Stage 10 supplies
-// proseAnchors, so it does not execute in 9.5. Each mark group is tagged
-// with sub id + mark index for the Stage 3 click/tooltip layer.
+// proseAnchors, so it does not execute in 9.6b. Incorporated marks use the
+// sub-theory's own --subtheory-N token (self-derived, like the body), so a
+// woven mark reads as the shape's color while gathered evidence stays
+// neutral teal. Each mark group is tagged with sub id + mark index for the
+// Stage 3 click/tooltip layer.
 function _stRenderMarks(positions) {
   var out = '';
   var ringR = _ST_SCALE * 0.5 + 14;
@@ -717,8 +875,8 @@ function _stRenderMarks(positions) {
     var sub = p.sub || {};
     var marks = sub.marks || [];
     if (!marks.length) { continue; }
-    var ident = _stIdentity(p.id);
-    var color = sub.color || ident.color;
+    var ix = _stIndices(p.id);
+    var colorVar = 'var(--subtheory-' + (ix.colorIdx + 1) + ')';
     var clusterCenter = _arcHash(p.id, 300) * Math.PI * 2;
     out = out + '<g data-st-marks-sub-id="' + _arcEscapeXml(p.id) + '">';
     for (j = 0; j < marks.length; j = j + 1) {
@@ -731,10 +889,10 @@ function _stRenderMarks(positions) {
       var my = p.y + Math.sin(ang) * rr;
       out = out + '<g data-st-mark="1" data-st-sub-id="' + _arcEscapeXml(p.id) + '" data-st-mark-index="' + j + '">';
       if (mark.state === 'incorporated') {
-        out = out + '<line x1="' + _arcR(mx) + '" y1="' + _arcR(my) + '" x2="' + _arcR(p.x) + '" y2="' + _arcR(p.y) + '" stroke="' + color + '" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>';
-        out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.4" fill="' + color + '"/>';
+        out = out + '<line x1="' + _arcR(mx) + '" y1="' + _arcR(my) + '" x2="' + _arcR(p.x) + '" y2="' + _arcR(p.y) + '" stroke="' + colorVar + '" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>';
+        out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.4" fill="' + colorVar + '"/>';
       } else {
-        out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.6" fill="none" stroke="' + color + '" stroke-width="1.2" opacity="0.85"/>';
+        out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.6" fill="none" stroke="var(--marginalia-color)" stroke-width="1.2" opacity="0.85"/>';
       }
       out = out + '</g>';
     }
@@ -824,8 +982,14 @@ function _stRenderLegend(arc, positions, width, height) {
 // ---------------------------------------------------------------------------
 // Public entry -- sub-theory constellation.
 // ---------------------------------------------------------------------------
-function renderSubTheoryConstellation(arc, parentSvgElement) {
+function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   if (!arc || !parentSvgElement) { return; }
+
+  // Stage 9.6b: options arg. showMarginalia (default true) gates the
+  // gathered-evidence cloud so the Stage 3 toggle can hide it. Only an
+  // explicit false hides it; anything else keeps the cloud visible.
+  var options = opts || {};
+  var showMarginalia = (options.showMarginalia === false) ? false : true;
 
   var width = 600;
   var height = 500;
@@ -873,7 +1037,9 @@ function renderSubTheoryConstellation(arc, parentSvgElement) {
 
   svg = svg + _stRenderEdges(arc.edges || [], posById); // dormant (empty)
   svg = svg + _stRenderShapes(positions);
-  svg = svg + _stRenderMarks(positions);
+  if (showMarginalia) {
+    svg = svg + _stRenderMarks(positions);
+  }
   svg = svg + _stRenderYumi(yumiX, yumiY);
   svg = svg + _stRenderLegend(arc, positions, width, height);
 
