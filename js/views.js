@@ -4202,6 +4202,21 @@ function renderArcDetail(arcId) {
       resetBtn.className = 'arc-detail-toggle-btn';
       resetBtn.setAttribute('data-st-control', 'reset');
       resetBtn.textContent = 'Reset';
+      // Stage 9.6c.2: Reset is the explicit "give me the default back"
+      // affordance -- it clears every placement in this arc to null
+      // (persisting), so _stRadialLayout falls back to the composed radial
+      // slots. Locked semantics: persisted, not session-only.
+      resetBtn.addEventListener('click', function() {
+        var k, s;
+        for (k in state.subTheories) {
+          if (!state.subTheories.hasOwnProperty(k)) { continue; }
+          s = state.subTheories[k];
+          if (s && s.arcId === arcId) {
+            setSubTheoryPosition(k, null, null);
+          }
+        }
+        renderArcDetail(arcId);
+      });
       stControlBar.appendChild(resetBtn);
 
       var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
@@ -4234,6 +4249,19 @@ function renderArcDetail(arcId) {
       // (resolved subTheories/marks), not the raw arc record -- the
       // tooltip needs header/label/quote already resolved.
       _stConstellationAttachInteractions(svg, arcData);
+      // Stage 9.6c.2: bind the drag-to-arrange layer on the freshly-built
+      // svg. onCommit persists the dropped position via setSubTheoryPosition
+      // then re-enters renderArcDetail, which rebuilds the svg and re-binds
+      // both layers -- no teardown needed (the old svg + its listeners are
+      // GC'd). Runs on initial render and every drag-commit/Reset re-render.
+      if (typeof window.attachSubTheoryDrag === 'function') {
+        window.attachSubTheoryDrag(svg, {
+          onCommit: function(id, x, y) {
+            setSubTheoryPosition(id, x, y);
+            renderArcDetail(arcId);
+          }
+        });
+      }
     }
     wrap.appendChild(webContainer);
   } else {

@@ -1056,6 +1056,144 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   parentSvgElement.innerHTML = svg;
 }
 
+// ===========================================================================
+// Stage 9.6c.2 -- WORKSPACE DRAG LAYER. Pointer-drag a sub-theory mark into
+// the user's own arrangement; on drag-end the caller persists the new x/y.
+// Re-bound on the freshly-built svg each render (matching
+// _stConstellationAttachInteractions -- listeners GC with the discarded svg,
+// so no teardown or wired-flag is needed). This function adds NO SVG output:
+// the 9.6b.1 render stays byte-for-byte identical and the file stays LF.
+//
+// Drag vs tap: a press that moves past a small client-px threshold is a
+// DRAG (live-translate the mark group, commit x/y on release via
+// opts.onCommit). A press below threshold is a TAP -- left to the existing
+// click handler in views.js (which navigates to #subtheory/<id>), so tap
+// navigation is NOT reimplemented here. After a real drag we swallow the
+// synthetic click in the CAPTURE phase so the drag never also navigates;
+// the swallow flag is cleared both when it fires AND defensively at the
+// next pointerdown, so a drag the browser does not follow with a click can
+// never leave the flag stuck and kill the next tap.
+//
+// setPointerCapture on the grabbed group keeps pointermove/up bound even
+// when the pointer leaves the svg; captured events still bubble to the
+// svg-level listeners. Reads data-st-sub-id off the shape group (set by
+// _stRenderShapes); marginalia mark groups carry data-st-mark and are
+// excluded. NO edge-follow this stage (edges arrive in 9.6c.4); a full
+// re-render on commit is fine. Desktop pointer/mouse is the 9.6c target;
+// touch is a flagged later item.
+var _ST_DRAG_THRESHOLD = 4; // client px of movement before a press is a drag
+
+function attachSubTheoryDrag(svg, opts) {
+  if (!svg) { return; }
+  var options = opts || {};
+  var onCommit = (typeof options.onCommit === 'function') ? options.onCommit : null;
+
+  var drag = null;     // active drag state, or null between presses
+  var didDrag = false; // true after a real drag; gates the click swallow
+
+  function svgPoint(evt) {
+    var ctm = svg.getScreenCTM();
+    if (!ctm) { return null; }
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+    return pt.matrixTransform(ctm.inverse());
+  }
+
+  function parseTranslate(g) {
+    var t = g.getAttribute('transform') || '';
+    var m = t.match(/translate\(\s*(-?[0-9.]+)[ ,]+(-?[0-9.]+)\s*\)/);
+    if (!m) { return { x: 0, y: 0 }; }
+    return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+  }
+
+  function onPointerDown(evt) {
+    // Clear any stale swallow flag from a prior drag whose click never
+    // fired, so this press's own click is never wrongly swallowed.
+    didDrag = false;
+    if (typeof evt.button === 'number' && evt.button !== 0) { return; }
+    var g = evt.target && evt.target.closest
+      ? evt.target.closest('[data-st-sub-id]')
+      : null;
+    if (!g || g.getAttribute('data-st-mark')) { return; } // shape groups only
+    var id = g.getAttribute('data-st-sub-id');
+    if (!id) { return; }
+    var start = svgPoint(evt);
+    if (!start) { return; }
+    var origin = parseTranslate(g);
+    drag = {
+      id: id,
+      g: g,
+      pointerId: evt.pointerId,
+      startClientX: evt.clientX,
+      startClientY: evt.clientY,
+      startUserX: start.x,
+      startUserY: start.y,
+      originX: origin.x,
+      originY: origin.y,
+      curX: origin.x,
+      curY: origin.y,
+      moved: false
+    };
+    if (g.setPointerCapture) {
+      try { g.setPointerCapture(evt.pointerId); } catch (e) {}
+    }
+  }
+
+  function onPointerMove(evt) {
+    if (!drag || evt.pointerId !== drag.pointerId) { return; }
+    if (!drag.moved) {
+      var dxc = evt.clientX - drag.startClientX;
+      var dyc = evt.clientY - drag.startClientY;
+      if (dxc * dxc + dyc * dyc < _ST_DRAG_THRESHOLD * _ST_DRAG_THRESHOLD) {
+        return; // still within tap tolerance
+      }
+      drag.moved = true;
+    }
+    var p = svgPoint(evt);
+    if (!p) { return; }
+    drag.curX = drag.originX + (p.x - drag.startUserX);
+    drag.curY = drag.originY + (p.y - drag.startUserY);
+    drag.g.setAttribute('transform',
+      'translate(' + _arcR(drag.curX) + ',' + _arcR(drag.curY) + ')');
+  }
+
+  function onPointerUp(evt) {
+    if (!drag || evt.pointerId !== drag.pointerId) { return; }
+    var wasMoved = drag.moved;
+    var id = drag.id;
+    var fx = drag.curX;
+    var fy = drag.curY;
+    if (drag.g.releasePointerCapture) {
+      try { drag.g.releasePointerCapture(drag.pointerId); } catch (e) {}
+    }
+    drag = null;
+    if (wasMoved) {
+      didDrag = true; // swallow the click this drag is about to emit
+      if (onCommit) { onCommit(id, fx, fy); }
+    }
+    // Below threshold: a tap -- leave navigation to the existing click
+    // handler; didDrag stays false so that click passes through.
+  }
+
+  function onClickCapture(evt) {
+    if (didDrag) {
+      didDrag = false;
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
+  }
+
+  svg.addEventListener('pointerdown', onPointerDown);
+  svg.addEventListener('pointermove', onPointerMove);
+  svg.addEventListener('pointerup', onPointerUp);
+  svg.addEventListener('pointercancel', onPointerUp);
+  svg.addEventListener('click', onClickCapture, true); // capture: pre-empt group click
+
+  return;
+}
+
 if (typeof window !== 'undefined') {
   window.renderSubTheoryConstellation = renderSubTheoryConstellation;
+  window.attachSubTheoryDrag = attachSubTheoryDrag;
 }

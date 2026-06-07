@@ -993,6 +993,26 @@ function updateSubTheory(id, fields) {
   return subTheory;
 }
 
+// 9.6c.2: position writer for the workspace drag layer. Writes the
+// existing 9.6a x/y fields and self-persists, mirroring createSubTheory/
+// deleteSubTheory. Deliberately separate from updateSubTheory, which owns
+// only the three text fields and ignores x/y. A finite number is stored
+// as-is; anything else (including null, NaN, Infinity) coerces to null,
+// which restores the radial default in _stRadialLayout -- so Reset passes
+// null to clear a placement. Bumps updatedAt so the Firestore by-reference
+// copy picks the move up. No new schema. Returns the record, or null if
+// the sub-theory is absent.
+function setSubTheoryPosition(id, x, y) {
+  var subTheory = state.subTheories[id];
+  if (!subTheory) return null;
+  subTheory.x = (typeof x === 'number' && isFinite(x)) ? x : null;
+  subTheory.y = (typeof y === 'number' && isFinite(y)) ? y : null;
+  subTheory.updatedAt = Date.now();
+  markSubTheoriesDirty();
+  saveState();
+  return subTheory;
+}
+
 // Hard-delete. No cascade: no links or published docs reference a
 // sub-theory yet (those seams arrive in later stages). Returns true on
 // success, false if the record was already absent.
