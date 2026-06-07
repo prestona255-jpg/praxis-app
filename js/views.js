@@ -4050,7 +4050,11 @@ function renderArcDetail(arcId) {
   // affordances. onClick routes to the new-subtheory hash; renderRoute
   // mints the draft and redirects to #subtheory/<id>. Reuses the
   // notebook create-button class -- no new CSS this stage.
-  if (user) {
+  //
+  // Stage 9.6c.1: suppressed in web view -- the constellation control bar
+  // below carries its own + Sub-theory button, so showing this header one
+  // too would duplicate the affordance. List view keeps it.
+  if (user && viewMode !== 'web') {
     var newSubTheoryBtn = document.createElement('button');
     newSubTheoryBtn.type = 'button';
     newSubTheoryBtn.className = 'notebook-new-arc';
@@ -4161,13 +4165,45 @@ function renderArcDetail(arcId) {
       unavailable.textContent = 'Constellation renderer unavailable.';
       webContainer.appendChild(unavailable);
     } else {
-      // Stage 9.6b: standalone marginalia-visibility control (the full
-      // header control bar is 9.6c). Reads the persisted flag via the ls()
-      // wrapper (default ON, read strictly as a boolean like the yumi-open
-      // pattern); the click flips it through sv() and re-enters
-      // renderArcDetail in place (host.innerHTML is cleared at the top, so
-      // the rebuild is idempotent and re-reads the fresh value). The same
-      // flag feeds the renderer's showMarginalia option below.
+      // Stage 9.6c.1: the constellation control bar -- one chrome row
+      // above the SVG. + Sub-theory navigates to the new-subtheory route
+      // (it replaces the header button, which is suppressed in web view
+      // above). Connect + Reset render in the mockup layout but are INERT
+      // this sub-stage: Reset is wired in 9.6c.2, Connect in 9.6c.4. Each
+      // carries a data-st-control hook so those stages can bind without
+      // re-querying by text. The marginalia toggle is folded in from 9.6b
+      // unchanged: reads the persisted flag via ls() (default ON, strict
+      // boolean), flips through sv(), and re-enters renderArcDetail in
+      // place (idempotent -- host.innerHTML is cleared at the top, so the
+      // rebuild re-reads the fresh value). That flag feeds the renderer's
+      // showMarginalia option below.
+      var stControlBar = document.createElement('div');
+      stControlBar.className = 'st-control-bar';
+
+      var addSubBtn = document.createElement('button');
+      addSubBtn.type = 'button';
+      addSubBtn.className = 'arc-detail-toggle-btn';
+      addSubBtn.setAttribute('data-st-control', 'add');
+      addSubBtn.textContent = '+ Sub-theory';
+      addSubBtn.addEventListener('click', function() {
+        location.hash = 'arc/' + arcId + '/new-subtheory';
+      });
+      stControlBar.appendChild(addSubBtn);
+
+      var connectBtn = document.createElement('button');
+      connectBtn.type = 'button';
+      connectBtn.className = 'arc-detail-toggle-btn';
+      connectBtn.setAttribute('data-st-control', 'connect');
+      connectBtn.textContent = 'Connect';
+      stControlBar.appendChild(connectBtn);
+
+      var resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'arc-detail-toggle-btn';
+      resetBtn.setAttribute('data-st-control', 'reset');
+      resetBtn.textContent = 'Reset';
+      stControlBar.appendChild(resetBtn);
+
       var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
       var marginaliaBtn = document.createElement('button');
       marginaliaBtn.type = 'button';
@@ -4182,7 +4218,9 @@ function renderArcDetail(arcId) {
           !(ls('praxis_st_marginalia_on', true) === true));
         renderArcDetail(arcId);
       });
-      webContainer.appendChild(marginaliaBtn);
+      stControlBar.appendChild(marginaliaBtn);
+
+      webContainer.appendChild(stControlBar);
 
       var SVG_NS = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(SVG_NS, 'svg');

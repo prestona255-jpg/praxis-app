@@ -3181,6 +3181,19 @@
   color: var(--gold-text);
 }
 
+/* Stage 9.6c.1: constellation control bar -- one chrome row above the
+   SVG holding the workspace controls (+ Sub-theory / Connect / Reset)
+   plus the folded marginalia toggle. Mirrors .arc-detail-toolbar
+   (flex + gap + margin) and reuses .arc-detail-toggle-btn for the
+   buttons, so no new palette enters here. flex-wrap keeps the row from
+   overflowing the container at narrow widths. */
+.st-control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
 
 /* ===== STAGE 5.4 STAGE 1e -- ARC-DETAIL WEB-VIEW WHEAT-FIELD MOUNT =====
    Surface-scoped wheat-field mirroring .shelf / .shelf::before
