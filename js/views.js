@@ -3623,8 +3623,13 @@ function _stConstellationAttachInteractions(svgEl, arc) {
   for (i = 0; i < markEls.length; i = i + 1) { bindMarkClick(markEls[i]); }
 
   // Hover tooltips: desktop only (mirrors the book layer's touch guard).
+  // 9.6c.3: the SHAPE hover is superseded by the richer hover card in
+  // attachSubTheoryDrag (which adds maturity + gathered count and suppresses
+  // during a drag), so its binding is intentionally dropped here. The
+  // evidence-mark and Yumi tooltips stay -- the card does not cover them.
+  // (shapeLines is left defined but now unused -- harmless; not removed to
+  // keep this diff to the single binding line.)
   if (!isTouch) {
-    for (i = 0; i < shapeEls.length; i = i + 1) { bindHover(shapeEls[i], shapeLines); }
     for (i = 0; i < markEls.length; i = i + 1) { bindHover(markEls[i], markLines); }
     for (i = 0; i < yumiEls.length; i = i + 1) { bindHover(yumiEls[i], yumiLines); }
   }
@@ -4256,6 +4261,7 @@ function renderArcDetail(arcId) {
       // GC'd). Runs on initial render and every drag-commit/Reset re-render.
       if (typeof window.attachSubTheoryDrag === 'function') {
         window.attachSubTheoryDrag(svg, {
+          arc: arcData,
           onCommit: function(id, x, y) {
             setSubTheoryPosition(id, x, y);
             renderArcDetail(arcId);

@@ -1120,6 +1120,24 @@ function attachSubTheoryDrag(svg, opts) {
   var drag = null;     // active drag state, or null between presses
   var didDrag = false; // true after a real drag; gates the click swallow
 
+  // 9.6c.3 hover card: shares this function's per-render scope so it can read
+  // the drag flag above (suppress the card mid-drag) and re-binds on the
+  // fresh svg like the drag layer. arc (the data contract, passed by views.js)
+  // supplies header/maturity/marks per sub-theory id; container is the
+  // position:relative web-view wrapper the card overlays.
+  var arc = options.arc || null;
+  var container = svg.parentNode;
+  var isTouch = (typeof matchMedia === 'function')
+    && matchMedia('(hover: none) and (pointer: coarse)').matches;
+  var subById = {};
+  var sbI;
+  if (arc && arc.subTheories) {
+    for (sbI = 0; sbI < arc.subTheories.length; sbI = sbI + 1) {
+      subById[arc.subTheories[sbI].id] = arc.subTheories[sbI];
+    }
+  }
+  var card = null; // lazily-created hover card; one at a time per render
+
   function svgPoint(evt) {
     var ctm = svg.getScreenCTM();
     if (!ctm) { return null; }
@@ -1147,6 +1165,7 @@ function attachSubTheoryDrag(svg, opts) {
     if (!g || g.getAttribute('data-st-mark')) { return; } // shape groups only
     var id = g.getAttribute('data-st-sub-id');
     if (!id) { return; }
+    hideCard(); // a press may become a drag -- never leave a card up under it
     var start = svgPoint(evt);
     if (!start) { return; }
     var origin = parseTranslate(g);
@@ -1210,6 +1229,109 @@ function attachSubTheoryDrag(svg, opts) {
       didDrag = false;
       evt.stopPropagation();
       evt.preventDefault();
+    }
+  }
+
+  // ---- 9.6c.3 hover card ----
+  // A press-band maturity word; luminosity-style read, no numbers.
+  function maturityRead(m) {
+    var v = (typeof m === 'number' && isFinite(m)) ? m : 0;
+    if (v < 0.25) { return 'Nascent'; }
+    if (v < 0.5) { return 'Forming'; }
+    if (v < 0.75) { return 'Developing'; }
+    return 'Mature';
+  }
+
+  // Count only state:'gathered' marks (incorporated is dormant today, but
+  // this stays correct when Stage 10 lights it up).
+  function gatheredCount(sub) {
+    var marks = (sub && sub.marks) ? sub.marks : [];
+    var n = 0, gi;
+    for (gi = 0; gi < marks.length; gi = gi + 1) {
+      if (marks[gi] && marks[gi].state === 'gathered') { n = n + 1; }
+    }
+    return n;
+  }
+
+  function ensureCard() {
+    if (card) { return card; }
+    if (!container) { return null; }
+    card = document.createElement('div');
+    card.className = 'st-hover-card';
+    container.appendChild(card);
+    return card;
+  }
+
+  // textContent only -- header is user-entered (an XSS surface); never
+  // innerHTML with sub-theory data.
+  function fillCard(el, sub) {
+    el.textContent = '';
+    var title = document.createElement('div');
+    title.className = 'st-hover-card-title';
+    title.textContent = (sub.header && sub.header.length) ? sub.header : 'Untitled sub-theory';
+    el.appendChild(title);
+    var meta = document.createElement('div');
+    meta.className = 'st-hover-card-meta';
+    meta.textContent = maturityRead(sub.maturity) + '  ·  ' + gatheredCount(sub) + ' gathered';
+    el.appendChild(meta);
+    var aff = document.createElement('div');
+    aff.className = 'st-hover-card-affordance';
+    aff.textContent = 'tap to open';
+    el.appendChild(aff);
+  }
+
+  // Anchor above the mark, centered; flip below and clamp to the container
+  // so the card never clips off-screen.
+  function positionCard(el, markEl) {
+    if (!container) { return; }
+    var crect = container.getBoundingClientRect();
+    var mrect = markEl.getBoundingClientRect();
+    var cw = el.offsetWidth;
+    var ch = el.offsetHeight;
+    var x = (mrect.left - crect.left) + mrect.width / 2 - cw / 2;
+    var y = (mrect.top - crect.top) - ch - 10;
+    if (y < 0) { y = (mrect.bottom - crect.top) + 10; }
+    if (x < 0) { x = 0; }
+    if (x + cw > container.clientWidth) { x = container.clientWidth - cw; }
+    if (x < 0) { x = 0; }
+    if (y + ch > container.clientHeight) { y = container.clientHeight - ch; }
+    if (y < 0) { y = 0; }
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
+  function showCard(sub, markEl) {
+    var el = ensureCard();
+    if (!el) { return; }
+    fillCard(el, sub);
+    el.classList.add('st-hover-card--visible');
+    positionCard(el, markEl); // measure after fill + show
+  }
+
+  function hideCard() {
+    if (card) { card.classList.remove('st-hover-card--visible'); }
+  }
+
+  function onShapeEnter(evt) {
+    if (drag) { return; } // never appear mid-drag
+    var g = evt.currentTarget;
+    var sub = subById[g.getAttribute('data-st-sub-id')];
+    if (!sub) { return; }
+    showCard(sub, g);
+  }
+
+  function onShapeLeave() {
+    hideCard();
+  }
+
+  // Per-shape hover binding (mouseenter/leave don't bubble, so no
+  // delegation). Desktop only: touch has no hover and tap already navigates.
+  if (!isTouch) {
+    var shapeEls = svg.querySelectorAll('[data-st-sub-id]:not([data-st-mark])');
+    var hi;
+    for (hi = 0; hi < shapeEls.length; hi = hi + 1) {
+      shapeEls[hi].addEventListener('mouseenter', onShapeEnter);
+      shapeEls[hi].addEventListener('mouseleave', onShapeLeave);
     }
   }
 
