@@ -554,6 +554,74 @@
 /* ===== END SHELF PAGE HEADER + ACTION BUTTONS ===== */
 
 
+/* ===== NOTEBOOK PAGE HEADER + ACTION BUTTONS -- Stage 3.2a =====
+   Twins the Shelf header (sibling grammar): transparent container (NO
+   glass -- glass stays on the chrome pills per 3.1), Cormorant title
+   matching .shelf-title, action buttons pushed right. Flex (not the
+   shelf's grid) because this header is title + 4 buttons with no
+   subtitle row -- .notebook-title { margin-right:auto } drives the
+   title-left / buttons-right split. The Settings + "What does Yumi
+   see?" toggles keep their existing secondary rule (1726) which
+   already mirrors .shelf-new-book-bulk; only the two NEW buttons
+   (+ New entry primary, + New arc secondary) are styled here. */
+
+.notebook-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0 32px 0;
+}
+
+.notebook-title {
+  margin: 0 auto 0 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.notebook-new-entry,
+.notebook-new-arc {
+  align-self: start;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* Primary -- mirrors .shelf-new-book: the signature gold->river
+   gradient (--grad), warm-white text, brightness lift on hover. */
+.notebook-new-entry {
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+}
+
+.notebook-new-entry:hover {
+  filter: brightness(1.06);
+}
+
+/* Secondary -- mirrors .shelf-new-book-bulk: transparent + --border
+   hairline, warming on hover. Matches the Settings / What-does-Yumi-see
+   toggles' existing treatment so all four header buttons read as a set. */
+.notebook-new-arc {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+
+.notebook-new-arc:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* ===== END NOTEBOOK PAGE HEADER + ACTION BUTTONS ===== */
+
+
 /* ===== ARCS PAGE -- Stage 5.3 Stage 1 =====
    The Arcs page is the third top-nav surface (Books / Notebook /
    Arcs). Stage 1 wires only the empty scaffold -- container, page
@@ -2516,8 +2584,10 @@
   padding: 16px;
   margin-bottom: 16px;
   background: var(--surface-2);
-  border: 1px solid var(--ink-4);
-  border-radius: var(--radius-md);
+  /* Stage 3.2a: lift 5.1->3.1 chrome -- --line-2 hairline + content
+     radius (--radius-lg). Highlight-edge + --shadow-1 set unchanged. */
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
   box-shadow:
     inset 1px 1px 0 var(--highlight-edge),
     var(--shadow-1);
