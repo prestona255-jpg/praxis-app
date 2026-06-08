@@ -253,6 +253,13 @@
   --river-l:       #3f7d92;
   --grad:          linear-gradient(92deg,#b8841f,#27566a);
   --radius-xl:     22px;
+
+  /* --- Batch 1 foundation: deep-honey ground radial + chrome roles --- */
+  --ground-base:   #cbb074;
+  --ground-edge:   #c4a35a;
+  --wordmark:      #8a5e15;
+  --wash:          rgba(58,40,16,.1);
+  --radius-pill:   999px;
 }
 
 body {
@@ -339,11 +346,14 @@ body::before {
       color-mix(in srgb, var(--ink-2) 1%, transparent) 29px,
       color-mix(in srgb, var(--ink-2) 1%, transparent) 31px
     ),
+    /* Batch 1: the mockup's top-centered deep-honey page radial,
+       superseding the A1.2 top-left warm-white glow. The 3 grain
+       layers above are unchanged; --ground-base is the bottom fill. */
     radial-gradient(
-      ellipse 70% 60% at 12% 8%,
-      color-mix(in srgb, var(--text-on-dark) 28%, transparent) 0%,
-      color-mix(in srgb, var(--text-on-dark) 10%, transparent) 35%,
-      transparent 70%
+      1100px 560px at 50% -6%,
+      var(--ground-center),
+      var(--bg) 55%,
+      var(--ground-edge)
     ),
-    var(--color-surface);
+    var(--ground-base);
 }

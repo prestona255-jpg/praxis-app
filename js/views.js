@@ -355,6 +355,21 @@ function renderRoute() {
     }
   }
 
+  // Batch 1: populate the gradient avatar's initial from the cached
+  // user (getCurrentUser -> .displayName, then .email), falling back
+  // to 'P' when signed out or nameless. Plain var/string-concat.
+  var initialEl = document.querySelector('.app-nav-profile-initial');
+  if (initialEl) {
+    var navUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    var initial = 'P';
+    if (navUser && typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
+      initial = navUser.displayName.charAt(0).toUpperCase();
+    } else if (navUser && typeof navUser.email === 'string' && navUser.email.length > 0) {
+      initial = navUser.email.charAt(0).toUpperCase();
+    }
+    initialEl.textContent = initial;
+  }
+
   // 3.9: every route block leaves exactly one of {currentBookId,
   // currentArcId} set (or both null), never a stale pairing. Entering a
   // book leaves any arc; entering an arc leaves any book; the shelf and

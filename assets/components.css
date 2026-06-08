@@ -292,7 +292,7 @@
   font-size: 20px;
   font-weight: 600;
   line-height: 1;
-  color: var(--ink);
+  color: var(--wordmark);
   text-decoration: none;
 }
 
@@ -354,37 +354,32 @@
 }
 
 .app-nav-link {
-  /* Reserve the active-underline's 2px so toggling the active class
-     does not push the link text up or down. Hover and active swap
-     in the border-bottom color; spec wants hover thinner than active
-     but the visual distinction is carried by color contrast (gold
-     vs ink-3) rather than literal 1px-vs-2px geometry. */
+  /* Batch 1: pill nav links (mockup .nav .links a) -- padding + pill
+     radius; the active state is a --wash background fill rather than
+     the prior gold underline. */
   display: inline-block;
-  padding-bottom: 8px;
+  padding: 8px 12px;
   font-family: var(--font-body);
   font-size: 15px;
   font-weight: 500;
   color: var(--ink-2);
   text-decoration: none;
-  border-bottom: 2px solid transparent;
-  /* Stage 5.1 motion: nav-underline slide (A4.3 permitted motion).
-     Color + border-color cross-fade between active and inactive items.
-     A literal slide between tabs would require a single absolute
-     underline element + JS positioning; not in 5.1 scope. Re-timed
-     from 120ms to --motion-base / --ease so the swap feels gentle. */
+  border-radius: var(--radius-pill);
   transition: color var(--motion-base) var(--ease),
-              border-color var(--motion-base) var(--ease);
+              background-color var(--motion-base) var(--ease);
 }
 
 .app-nav-link:hover {
   color: var(--ink);
-  border-bottom-color: var(--ink-3);
 }
 
-.app-nav-link.app-nav-link-active,
-.app-nav-link.app-nav-link-active:hover {
+/* Active = filled wash pill. Scoped :not(.app-nav-profile) so the
+   avatar chip (also an .app-nav-link) keeps its gradient + gets its
+   own gold-outline active treatment below, not a wash fill. */
+.app-nav-link.app-nav-link-active:not(.app-nav-profile),
+.app-nav-link.app-nav-link-active:not(.app-nav-profile):hover {
   color: var(--ink);
-  border-bottom-color: var(--gold);
+  background: var(--wash);
 }
 
 /* Phase 3.1: static profile chip -- replaces the Account nav item.
@@ -395,33 +390,38 @@
    reserved 2px transparent bottom; active swaps the ring to gold. A
    dynamic user-initial is a deliberate later follow-up. */
 .app-nav-profile {
+  /* Batch 1: gradient avatar circle showing the user's initial
+     (populated in renderRoute). Mockup .nav .me. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-xl);
-  background: var(--glass-2);
-  color: var(--ink-2);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--grad);
+  color: var(--text-on-dark);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .app-nav-profile:hover {
-  color: var(--ink);
-  border-color: var(--ink-3);
+  filter: brightness(1.06);
 }
 
+/* Active (on the Account route) = gold-light outline ring, mockup
+   .me outline treatment. */
 .app-nav-profile.app-nav-link-active,
 .app-nav-profile.app-nav-link-active:hover {
-  color: var(--ink);
-  border-color: var(--gold);
+  outline: 2px solid var(--gold-light);
+  outline-offset: 2px;
 }
 
-.app-nav-profile-glyph {
+.app-nav-profile-initial {
   display: block;
-  width: 20px;
-  height: 20px;
+  line-height: 1;
 }
 
 /* Phase 3.1: desktop pill geometry. Stays in-flow (no fixed/sticky) --
@@ -440,6 +440,19 @@
 }
 
 /* ===== END TOP NAV ===== */
+
+
+/* ===== SHARED TYPE -- Stage 3.2 Batch 1 =====
+   Generic mono-kicker eyebrow (mockup .eyebrow), reusable above any
+   page title. Not surface-specific -- chrome/shared-type role. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* ===== END SHARED TYPE ===== */
 
 
 /* ===== SHELF PAGE HEADER + ACTION BUTTONS -- Stage 3.10a Stage 1 =====
@@ -466,7 +479,7 @@
   margin: 0;
   font-family: var(--font-serif);
   font-size: 40px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--ink);
 }
@@ -577,7 +590,7 @@
   margin: 0 auto 0 0;
   font-family: var(--font-serif);
   font-size: 40px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--ink);
 }
@@ -649,7 +662,7 @@
   margin: 0;
   font-family: var(--font-serif);
   font-size: 40px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--ink);
 }
