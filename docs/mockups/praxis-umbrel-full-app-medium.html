@@ -1,0 +1,264 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis — Umbrel architecture, medium honey skin · every page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#d8bd80;--bg2:#e3c98c;--panel:#ecdcae;--panel-2:#f2e6c2;--sunk:#c9a85f;
+ --glass:rgba(245,233,200,.5);--glass-2:rgba(245,233,200,.82);--line:rgba(58,40,16,.2);--line-2:rgba(58,40,16,.32);
+ --ink-1:#2a1810;--ink-2:#5c3e26;--ink-3:#7a5c34;--ink-4:#9a7e4e;
+ --gold:#a8741a;--gold-l:#c5912b;--river:#27566a;--river-l:#3f7d92;--teal:#1d8f68;
+ --s1:#F2A6C2;--s3:#F0A88A;--s5:#E8B068;--s6:#ECCB6A;--s9:#8FCB9A;--s10:#8FD0B8;--s12:#8FB6D6;--s14:#7E7BC0;--s16:#BE93C6;
+ --grad:linear-gradient(92deg,#b8841f,#27566a);
+ --serif:'Cormorant Garamond',Georgia,serif;--ui:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;
+ --r:10px;--r-lg:16px;--r-xl:22px;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ui);background:#cbb074;color:var(--ink-1);-webkit-font-smoothing:antialiased}
+.page{position:relative;min-height:740px;padding:26px 34px 44px;background:radial-gradient(1100px 560px at 50% -6%, #e6cb8e, var(--bg) 55%, #c4a35a 100%);overflow:hidden;border-bottom:1px solid rgba(58,40,16,.16)}
+.lab{position:absolute;top:0;left:0;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:#2a1810;padding:5px 12px;border-bottom-right-radius:8px;z-index:40}
+.nav{display:flex;align-items:center;gap:18px;padding:11px 14px 11px 20px;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);box-shadow:0 8px 30px -18px rgba(58,40,16,.4);max-width:1080px;margin:14px auto 0}
+.nav .wm{font-family:var(--serif);font-weight:600;font-size:21px;color:#8a5e15;letter-spacing:.3px}
+.nav .search{flex:1;display:flex;align-items:center;gap:10px;height:38px;padding:0 14px;border-radius:999px;background:rgba(58,40,16,.07);border:1px solid var(--line);color:var(--ink-3);font-size:13px}
+.nav .search .k{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-4);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.nav .links{display:flex;gap:6px}.nav .links a{font-size:13.5px;color:var(--ink-3);text-decoration:none;padding:8px 12px;border-radius:999px}.nav .links a.on{color:var(--ink-1);background:rgba(58,40,16,.1)}
+.nav .me{width:34px;height:34px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.wrap{max-width:1080px;margin:0 auto}
+.btn{font-family:var(--ui);font-size:13.5px;font-weight:500;border-radius:var(--r);padding:11px 18px;display:inline-flex;align-items:center;gap:8px;cursor:default;border:1px solid transparent;text-decoration:none}
+.bg{background:var(--grad);color:#fff;font-weight:600}.gl{background:var(--glass-2);border-color:var(--line-2);color:var(--ink-1)}.bq{background:transparent;color:var(--ink-3)}.dang{background:transparent;border-color:rgba(150,50,24,.45);color:#9c3f1c}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 1px 0 rgba(255,250,230,.5) inset, 0 16px 36px -24px rgba(58,40,16,.5)}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.h-pg{font-family:var(--serif);font-weight:500;font-size:40px;color:var(--ink-1);line-height:1}
+.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mk{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.mk .h{position:absolute;inset:-24%;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 60%);opacity:.45;filter:blur(8px)}
+.mk .b{position:relative;width:62%;height:62%;border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff8e7,var(--c) 80%);opacity:.66;box-shadow:0 0 0 1.5px var(--c)}
+.mk.hex .b{border-radius:18%;transform:rotate(12deg)}.mk.dia .b{border-radius:20%;transform:rotate(45deg)}
+.hero{text-align:center;padding:70px 0 30px}
+.hero h1{font-family:var(--ui);font-weight:700;font-size:62px;letter-spacing:-1.5px;line-height:1;color:var(--ink-1)}
+.hero p{font-size:17px;color:var(--ink-2);margin:20px auto 26px;max-width:540px}
+.hero .cta{display:flex;gap:12px;justify-content:center}
+.preview{margin:18px auto 0;max-width:940px;height:340px;border-radius:var(--r-xl);position:relative;overflow:hidden;border:1px solid var(--line);background:radial-gradient(120% 130% at 50% 0%, #f5ead0, #e3c98c 58%, #cba85f);box-shadow:0 30px 70px -42px rgba(58,40,16,.55)}
+.preview .qt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-style:italic;font-size:22px;color:#7a4f10}
+.preview .ttl{position:absolute;left:24px;top:18px;font-family:var(--serif);font-size:19px;color:var(--ink-1)}
+.spot-bg{background:radial-gradient(900px 500px at 50% 0%,#e6cb8e,var(--bg))}
+.spot{max-width:640px;margin:40px auto 0;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line-2);background:rgba(246,235,205,.94);backdrop-filter:blur(14px);box-shadow:0 40px 100px -34px rgba(58,40,16,.5)}
+.spot .in{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.spot .in input{flex:1;background:transparent;border:0;outline:0;color:var(--ink-1);font-size:18px;font-family:var(--serif)}
+.spot .grp{padding:10px 0}.spot .gh{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4);padding:8px 20px 4px}
+.spot .it{display:flex;align-items:center;gap:12px;padding:9px 20px;font-size:14px;color:var(--ink-2)}
+.spot .it .ic{width:22px;height:22px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);flex-shrink:0}
+.spot .it.on{background:rgba(58,40,16,.07)}.spot .it b{color:var(--ink-1);font-weight:500}.spot .it .ty{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-4)}
+.shelf-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:26px 0 18px}
+.shelf-search{display:flex;gap:10px;align-items:center;margin-bottom:22px}
+.shelf-search .big{flex:1;display:flex;align-items:center;gap:11px;height:46px;padding:0 18px;border-radius:var(--r);background:rgba(58,40,16,.06);border:1px solid var(--line);color:var(--ink-3);font-size:15px}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}.seg span{font-size:12px;color:var(--ink-3);padding:9px 14px;border-right:1px solid var(--line)}.seg span.on{background:rgba(58,40,16,.1);color:var(--ink-1)}.seg span:last-child{border-right:0}
+.shelf-body{display:grid;grid-template-columns:180px 1fr;gap:34px}
+.fil .fh{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.fil ul{list-style:none;display:flex;flex-direction:column;margin:0 0 24px}
+.fil li{font-size:13px;color:var(--ink-2);padding:7px 0 7px 12px;position:relative;display:flex}
+.fil li.on{color:var(--ink-1);font-weight:500}.fil li.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--gold)}
+.fil .cnt{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-4)}
+.books{display:grid;grid-template-columns:repeat(5,1fr);gap:24px 18px}
+.bk .cov{aspect-ratio:2/3;border-radius:var(--r);overflow:hidden;position:relative;border:1px solid var(--line);box-shadow:0 12px 30px -16px rgba(58,40,16,.5)}
+.bk .cov img{width:100%;height:100%;object-fit:cover}
+.bk .cov .sp{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--reg)}
+.bk .tt{font-family:var(--serif);font-weight:500;font-size:16px;color:var(--ink-1);margin-top:9px;line-height:1.12}
+.bk .au{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.bk .st{display:flex;align-items:center;gap:6px;margin-top:7px}.bk .st .d{width:5px;height:5px;background:var(--gold)}.bk .st .l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.cov.fb{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:14px;background:linear-gradient(160deg,#ecdcae,#cfb06a)}
+.cov.fb .t{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--ink-2)}.cov.fb .m{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-top:9px}
+.cstage{position:relative;height:540px;margin-top:18px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);background:radial-gradient(130% 120% at 55% 16%,#fbf2da,#ecd9a6 55%,#d8bd80)}
+.cbar{position:absolute;top:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.cbar .at{font-family:var(--serif);font-weight:500;font-size:24px;color:var(--ink-1)}
+.cbar .ctrls{display:flex;gap:8px}.cbar .c{font-size:12.5px;color:var(--ink-2);background:var(--glass);border:1px solid var(--line);border-radius:8px;padding:8px 13px;backdrop-filter:blur(6px)}.cbar .c.k{background:var(--grad);color:#fff;border-color:transparent;font-weight:600}
+.qh{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(133,79,11,.2),transparent 62%);filter:blur(6px)}
+.qtt{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--serif);font-style:italic;font-size:24px;color:#7a4f10}
+.ed{position:absolute;transform-origin:left center;height:1.5px;background:linear-gradient(90deg,transparent,rgba(150,110,40,.7),transparent)}
+.gath{position:absolute;width:15px;height:15px;border-radius:50%;border:2px solid var(--teal);transform:translate(-50%,-50%);opacity:.9}
+.bookg{position:absolute;width:22px;height:28px;border-radius:3px;background:rgba(110,85,45,.2);border:1px solid var(--line);transform:translate(-50%,-50%)}
+.yum{position:absolute;right:6%;top:14%;text-align:center}.yum .ring{width:54px;height:54px;border-radius:50%;border:1.5px dashed rgba(29,143,104,.7);margin:0 auto}.yum .nm{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--teal);margin-top:7px}
+.leg{position:absolute;bottom:14px;left:18px;display:flex;gap:20px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3)}.leg .i{display:flex;align-items:center;gap:7px}
+.cols{display:grid;gap:22px}.two{grid-template-columns:300px 1fr}.twoB{grid-template-columns:1fr 300px}.pad{padding:24px}
+.reg-tag{display:inline-flex;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#27566a;border:1px solid rgba(39,86,106,.45);border-radius:6px;padding:3px 9px}
+.q-pull{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--ink-2);line-height:1.4;border-left:2px solid var(--gold);padding-left:16px}
+.regtoggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.regtoggle span{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;color:var(--ink-3)}.regtoggle span.on{background:rgba(58,40,16,.1);color:var(--ink-1)}
+.read{font-family:var(--serif);font-size:18px;line-height:1.6;color:var(--ink-1)}
+.rail-it{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.rail-it .ring{width:14px;height:14px;border-radius:50%;border:2px solid var(--teal);flex-shrink:0}.rail-it .t{font-family:var(--serif);font-size:15px;color:var(--ink-1)}
+.noticing{border:1px solid rgba(29,143,104,.35);border-radius:var(--r);padding:14px;background:rgba(29,143,104,.08)}.noticing .yh{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}.noticing p{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--ink-2);line-height:1.4}
+.row{padding:16px 18px;border-bottom:1px solid var(--line);position:relative}.row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--reg);opacity:.8}
+.eh{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.tagk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:5px}.tagk.m{color:var(--teal);border:1px solid rgba(29,143,104,.45)}.tagk.j{color:var(--ink-3);border:1px solid var(--line)}
+.ts{font-family:var(--mono);font-size:10px;color:var(--ink-4)}
+.vis{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px}.vis .vd{width:6px;height:6px}.vis.on{color:var(--teal)}.vis.on .vd{background:var(--teal)}.vis.off{color:var(--ink-4)}.vis.off .vd{background:var(--line-2)}
+.src{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--ink-2)}.body{font-family:var(--serif);font-size:16px;color:var(--ink-1);margin-top:4px}
+.acts{display:flex;gap:14px;margin-top:11px}.acts a{font-size:12px;color:#8a5e15;text-decoration:none}
+.yumipanel{border:1px solid rgba(29,143,104,.35);border-radius:var(--r-lg);overflow:hidden;position:relative;background:linear-gradient(180deg,rgba(214,234,224,.55),rgba(216,189,128,.5))}
+.yumipanel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--teal);box-shadow:0 0 14px rgba(29,143,104,.4)}
+.yfield{padding-top:14px;margin-top:14px;border-top:1px solid var(--line)}.fl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}.fv.em{font-family:var(--serif);font-style:italic;color:var(--ink-4);font-size:15px}
+.field{margin-bottom:18px}.field label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}.field .hint{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--ink-4);margin-bottom:6px}.field input{width:100%;max-width:380px;padding:11px 14px;border-radius:var(--r);border:1px solid var(--line);background:rgba(58,40,16,.06);color:var(--ink-1);font-size:15px;font-family:var(--ui)}
+.tog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.tog span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;color:var(--ink-3)}.tog span.on{background:var(--teal);color:#06241a}
+.dz{margin-top:24px;padding:18px;border:1px dashed rgba(150,50,24,.4);border-radius:var(--r);background:rgba(150,50,24,.06);max-width:420px}.dz .dl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9c3f1c;margin-bottom:10px}
+</style></head><body>
+
+<!-- HOME -->
+<section class="page"><span class="lab">Home</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a class="on">Home</a><a>Shelf</a><a>Arcs</a><a>Notebook</a></nav><span class="me">P</span></div>
+  <div class="hero">
+    <h1>Your reading becomes <span class="grad">theory.</span></h1>
+    <p>Read, gather evidence, and build a living constellation of your own thinking — in practice, with Yumi.</p>
+    <div class="cta"><span class="btn bg">Open the constellation</span><span class="btn gl">Take the tour</span></div>
+  </div>
+  <div class="preview"><div class="ttl">A Pedagogy of Desire</div>
+    <div class="qh" style="width:300px;height:300px"></div><div class="qtt">the question</div>
+    <div class="ed" style="left:30%;top:42%;width:230px;transform:rotate(-10deg)"></div>
+    <div class="mk" style="left:30%;top:42%;width:84px;height:84px;--c:var(--s14)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk hex" style="left:62%;top:34%;width:66px;height:66px;--c:var(--s1)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk dia" style="left:72%;top:64%;width:54px;height:54px;--c:var(--s10)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk" style="left:40%;top:70%;width:48px;height:48px;--c:var(--s6)"><span class="h"></span><span class="b"></span></div>
+  </div>
+</section>
+
+<!-- SPOTLIGHT / GLOBAL SEARCH -->
+<section class="page spot-bg"><span class="lab">Global search · ⌘K — books · authors · ideas</span>
+  <div class="spot">
+    <div class="in"><span style="color:var(--ink-3)">⌕</span><input value="desire" readonly><span class="k" style="font-family:var(--mono);font-size:10px;color:var(--ink-4);border:1px solid var(--line);border-radius:6px;padding:3px 8px">esc</span></div>
+    <div class="grp"><div class="gh">Sub-theories &amp; ideas</div>
+      <div class="it on"><span class="ic" style="background:radial-gradient(circle,#fff8e7,var(--s14) 80%)"></span><b>You can't desire what you can't be recognized in</b><span class="ty">idea</span></div>
+      <div class="it"><span class="ic" style="background:radial-gradient(circle,#fff8e7,var(--s6) 80%)"></span><b>Recognition &amp; desire</b><span class="ty">idea</span></div></div>
+    <div class="grp"><div class="gh">Books</div>
+      <div class="it"><span class="ic"></span><b>Yearning: Race, Gender &amp; Cultural Politics</b><span class="ty">book</span></div>
+      <div class="it"><span class="ic"></span><b>Intimate Justice</b><span class="ty">book</span></div></div>
+    <div class="grp"><div class="gh">Authors</div>
+      <div class="it"><span class="ic"></span><b>bell hooks</b><span class="ty">author · 6</span></div></div>
+    <div class="grp"><div class="gh">Arcs &amp; notes</div>
+      <div class="it"><span class="ic"></span><b>A Pedagogy of Desire</b><span class="ty">arc</span></div>
+      <div class="it"><span class="ic"></span><b>from Zami — “new info”</b><span class="ty">marginalia</span></div></div>
+  </div>
+</section>
+
+<!-- SHELF -->
+<section class="page"><span class="lab">Shelf</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a class="on">Shelf</a><a>Arcs</a><a>Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap">
+    <div class="shelf-top"><div><div class="eyebrow">Your library</div><div class="h-pg">Your shelf</div></div><div style="display:flex;gap:10px;align-items:center"><span class="seg"><span class="on">Covers</span><span>List</span></span><span class="btn gl">Resolve covers</span><span class="btn bg">+ Add book</span></div></div>
+    <div class="shelf-search"><div class="big"><span>⌕</span>Search books, authors, ideas…</div></div>
+    <div class="shelf-body">
+      <div class="fil"><div class="fh">Theme</div><ul><li class="on">Critical theory &amp; pedagogy<span class="cnt">23</span></li><li>Power &amp; systems<span class="cnt">18</span></li><li>Liberation<span class="cnt">15</span></li><li>Love &amp; connection<span class="cnt">9</span></li><li>History &amp; memory<span class="cnt">12</span></li></ul><div class="fh">Author</div><ul><li>bell hooks<span class="cnt">6</span></li><li>Henry Giroux<span class="cnt">4</span></li><li>Paulo Freire<span class="cnt">3</span></li></ul></div>
+      <div class="books">
+        <div class="bk" style="--reg:var(--s14)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=240&q=60"></div><div class="tt">Zombie Politics and Culture</div><div class="au">Henry Giroux</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s1)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=240&q=60"></div><div class="tt">Yearning</div><div class="au">bell hooks</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s9)"><div class="cov fb"><span class="sp"></span><div class="t">Threadcraft</div><div class="m">cover pending</div></div><div class="tt">Threadcraft</div><div class="au">Shatema Threadcraft</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s6)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1589998059171-988d887df646?w=240&q=60"></div><div class="tt">Hidden Potential</div><div class="au">Adam Grant</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s12)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=240&q=60"></div><div class="tt">Range</div><div class="au">David Epstein</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s16)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=240&q=60"></div><div class="tt">Intimate Justice</div><div class="au">Shatema Threadcraft</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s3)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=240&q=60"></div><div class="tt">The New Jim Crow</div><div class="au">Michelle Alexander</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s5)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=240&q=60"></div><div class="tt">Race After Technology</div><div class="au">Ruha Benjamin</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+        <div class="bk" style="--reg:var(--s10)"><div class="cov"><span class="sp"></span><img src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=240&q=60"></div><div class="tt">Fearing the Black Body</div><div class="au">Sabrina Strings</div><div class="st"><span class="d"></span><span class="l">Reading</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONSTELLATION -->
+<section class="page"><span class="lab">Arcs · the constellation</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a class="on">Arcs</a><a>Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap"><div class="cstage">
+    <div class="cbar"><span class="at">A Pedagogy of Desire</span><div class="ctrls"><span class="c k">+ Sub-theory</span><span class="c">Connect</span><span class="c">Books</span><span class="c">Reset</span></div></div>
+    <div class="qh"></div><div class="qtt">the question</div>
+    <div class="ed" style="left:26%;top:44%;width:300px;transform:rotate(-8deg)"></div><div class="ed" style="left:40%;top:66%;width:230px;transform:rotate(-30deg)"></div>
+    <div class="mk" style="left:24%;top:44%;width:108px;height:108px;--c:var(--s14)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk hex" style="left:60%;top:34%;width:88px;height:88px;--c:var(--s1)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk dia" style="left:72%;top:62%;width:64px;height:64px;--c:var(--s10)"><span class="h"></span><span class="b"></span></div>
+    <div class="mk" style="left:40%;top:70%;width:78px;height:78px;--c:var(--s6)"><span class="h"></span><span class="b"></span></div>
+    <div class="gath" style="left:15%;top:54%"></div><div class="gath" style="left:50%;top:80%"></div><div class="gath" style="left:80%;top:46%"></div>
+    <div class="bookg" style="left:47%;top:32%"></div><div class="bookg" style="left:69%;top:48%"></div>
+    <div class="yum"><div class="ring"></div><div class="nm">Yumi</div></div>
+    <div class="leg"><span class="i"><span style="width:22px;height:2px;background:#caa86a;display:block"></span>resonance</span><span class="i"><span style="width:13px;height:13px;border-radius:50%;border:2px solid var(--teal);display:block"></span>gathered</span><span class="i"><span style="width:14px;height:18px;border-radius:3px;background:rgba(246,236,210,.13);border:1px solid var(--line);display:block"></span>book</span></div>
+  </div></div>
+</section>
+
+<!-- BOOK DETAIL -->
+<section class="page"><span class="lab">Book detail</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a class="on">Shelf</a><a>Arcs</a><a>Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap" style="margin-top:24px"><div class="cols two">
+    <div><div class="cov" style="aspect-ratio:2/3;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);box-shadow:0 24px 50px -20px #000"><img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=70" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="display:flex;gap:8px;margin-top:14px"><span class="btn bg" style="flex:1;justify-content:center">Add to arc</span><span class="btn gl">Cite</span></div></div>
+    <div>
+      <span class="reg-tag">Critical theory</span>
+      <div style="font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.02;margin:12px 0 4px">Yearning</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:20px;color:var(--ink-2)">bell hooks · Race, Gender, and Cultural Politics</div>
+      <div style="display:flex;gap:18px;margin:18px 0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)"><span>Reading</span><span>·</span><span>in 2 arcs</span><span>·</span><span>4 marginalia</span></div>
+      <div class="glass pad" style="margin-bottom:18px"><div class="eyebrow" style="margin-bottom:8px">Your Book Artifact</div><div class="read" style="font-size:16px">A standing place for what this book is doing in your thinking — written once, yours, and visible to Yumi only when you choose.</div></div>
+      <div class="q-pull">“The moment we choose to love we begin to move toward freedom.”</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- WRITING SURFACE -->
+<section class="page"><span class="lab">Writing surface · a sub-theory</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a class="on">Arcs</a><a>Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap" style="margin-top:24px"><div class="cols twoB">
+    <div>
+      <div class="eyebrow">A Pedagogy of Desire · sub-theory</div>
+      <div style="font-family:var(--serif);font-weight:500;font-size:34px;line-height:1.05;margin:8px 0 16px">You can't desire what you can't be recognized in</div>
+      <div class="regtoggle" style="margin-bottom:20px"><span class="on">Public register</span><span>Intellectual register</span></div>
+      <div class="read"><p style="margin-bottom:14px">Desire is not only wanting — it is wanting <em>toward</em> a world that can hold you. To be recognized is the first light; to recognize another is the second.</p><p>Where recognition is withheld, desire bends around the absence, learning to want what will be permitted rather than what is true.</p></div>
+      <div class="noticing" style="margin-top:20px"><div class="yh">Yumi is noticing</div><p>You've leaned on Lorde twice without citing her yet — want to gather <em>Zami</em> into this?</p></div>
+    </div>
+    <div><div class="eyebrow" style="margin-bottom:10px">Evidence</div>
+      <div class="rail-it"><span class="ring"></span><span class="t">Yearning — bell hooks</span></div>
+      <div class="rail-it"><span class="ring"></span><span class="t">Zami — Audre Lorde</span></div>
+      <div class="rail-it" style="border-bottom:0"><span class="ring"></span><span class="t">The Politics of Education</span></div>
+      <div class="btn gl" style="margin-top:14px;width:100%;justify-content:center">+ Attach a book</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- NOTEBOOK -->
+<section class="page"><span class="lab">Notebook</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a>Arcs</a><a class="on">Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap" style="margin-top:24px"><div style="display:flex;align-items:flex-end;justify-content:space-between"><div><div class="eyebrow">Structurally private</div><div class="h-pg">Notebook</div></div><div style="display:flex;gap:10px"><span class="btn bg">+ New entry</span><span class="btn gl">+ New arc</span><span class="btn bq">Settings</span><span class="btn bq" style="color:var(--teal)">What does Yumi see?</span></div></div>
+    <div class="eyebrow" style="margin:24px 0 8px">Entries</div>
+    <div class="glass">
+      <div class="row" style="--reg:var(--teal)"><div class="eh"><span class="tagk m">Marginalia</span><span class="ts">6/4/2026 · 8:21 AM</span><span class="vis off"><span class="vd"></span>Private</span></div><div class="src">from Zami</div><div class="body">new info</div><div class="acts"><a style="color:var(--teal)">Make visible</a><a>Add to arc</a><a>Delete</a></div></div>
+      <div class="row" style="--reg:var(--s14)"><div class="eh"><span class="tagk j">Journal</span><span class="ts">6/4/2026 · 8:19 AM</span><span class="vis on"><span class="vd"></span>Visible to Yumi</span></div><div class="body">new entry</div><div class="acts"><a>Make private</a><a>Add to arc</a><a>Delete</a></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YUMI SEES -->
+<section class="page"><span class="lab">What Yumi sees · the trust surface</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a>Arcs</a><a class="on">Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap" style="margin-top:24px;max-width:760px"><div class="yumipanel pad">
+    <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:9px;margin-bottom:14px"><span style="width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 9px var(--teal)"></span>What Yumi sees</div>
+    <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--ink-2);line-height:1.5;max-width:640px">Everything Yumi sees right now: the book you're reading, the arc you're following, recent visible notebook entries, and the conversation you've been having. Nothing else.</div>
+    <div class="yfield"><div class="fl">Current arc</div><div class="fv" style="font-size:15px">A Pedagogy of Desire</div></div>
+    <div class="yfield"><div class="fl">Current book</div><div class="fv em">No book is open right now.</div></div>
+    <div class="yfield"><div class="fl">Recent visible entries</div><div style="margin-top:8px;font-size:14px">new entry &nbsp;·&nbsp; <span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">journal · 6/4</span></div></div>
+  </div></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="page"><span class="lab">Settings · notebook defaults</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a>Arcs</a><a class="on">Notebook</a></nav><span class="me">P</span></div>
+  <div class="wrap" style="margin-top:24px;max-width:620px">
+    <div class="glass pad" style="margin-bottom:14px"><div class="fl">Journal default</div><div style="margin:8px 0"><span class="tog"><span class="on">Visible</span><span>Private</span></span></div><div style="font-size:12.5px;color:var(--ink-3)">New Journal entries inherit this visibility on creation. Existing entries keep whatever they were last set to.</div></div>
+    <div class="glass pad"><div class="fl">Marginalia default</div><div style="margin:8px 0"><span class="tog"><span class="on">Visible</span><span>Private</span></span></div><div style="font-size:12.5px;color:var(--ink-3)">New Marginalia inherit this visibility on creation.</div></div>
+  </div>
+</section>
+
+<!-- ACCOUNT -->
+<section class="page"><span class="lab">Account</span>
+  <div class="nav"><span class="wm">praxis</span><div class="search"><span class="si">⌕</span>Search books, authors, ideas…<span class="k">⌘K</span></div><nav class="links"><a>Home</a><a>Shelf</a><a>Arcs</a><a>Notebook</a></nav><span class="me" style="outline:2px solid var(--gold-l);outline-offset:2px">P</span></div>
+  <div class="wrap" style="margin-top:24px;max-width:620px">
+    <div class="h-pg" style="margin-bottom:6px">Account</div>
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);margin-bottom:24px">Signed in as prestona255@gmail.com</div>
+    <div class="field"><label>Display name</label><input value="Preston Allen"></div>
+    <div class="field"><label>Pen name</label><div class="hint">Publish as — e.g. Roland Blair</div><input value="Roland Blair"></div>
+    <div style="display:flex;gap:10px;margin-bottom:12px"><span class="btn bg">Save profile</span></div>
+    <div style="display:flex;gap:10px"><span class="btn gl">Export workspace</span><span class="btn gl">Sign out</span></div>
+    <div class="dz"><div class="dl">Danger zone</div><span class="btn dang">Delete account</span></div>
+  </div>
+</section>
+
+</body></html>
