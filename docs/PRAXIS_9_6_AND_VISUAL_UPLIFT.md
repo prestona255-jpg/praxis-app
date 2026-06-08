@@ -128,8 +128,9 @@ onboarding. The deep-dive (Part 3) turns it into a sequenced plan.
 **Why a new chat:** clean context for a whole-app audit.
 
 **What to audit:** (1) setup & onboarding; (2) data & channels — what's Firestore-synced
-vs localStorage-only (note: arcs/notebook/sub-theories DO sync per the live-console
-finding; reconcile against the old "A2 launch gap" framing), the `saveState` chokepoint,
+vs localStorage-only (RESOLVED — arcs/notebook/sub-theories sync via Stage 14.1
+REPLACE-merge loaders; the strategic roadmap's "localStorage-only / biggest launch
+blocker" framing is superseded), the `saveState` chokepoint,
 `ensureBookFields` / `ensureSubTheoryFields`, the Netlify Anthropic proxy, `getYumiContext`
 (stubbed); (3) surfaces — each scored for functionality gap AND design-language gap;
 (4) functionality gaps — the Stage 9.4 field-notes items (F1–F6), persistence, Yumi
