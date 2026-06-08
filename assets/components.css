@@ -273,13 +273,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--sp-4);
   height: 64px;
   padding: 0 24px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--border);
+  /* Phase 3.1 Umbrel glass chrome: honey glass + blur + a stronger
+     hairline (--line-2). In normal flow (not fixed/sticky) so no
+     page-content offset changes on any route; the translucent fill
+     reads as glass over the honey ground below it. */
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line-2);
 }
 
 .app-nav-wordmark {
+  flex: 0 0 auto;
   font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 600;
@@ -288,7 +296,55 @@
   text-decoration: none;
 }
 
+/* Phase 3.1: global search chrome -- VISUAL ONLY (scope A). The input
+   is focusable native chrome; no query logic, no results, no word-mark
+   handler. Recessed honey well (--sunk) with the pill radius; the river
+   accent marks focus. The mono ⌘K badge is a styled affordance hint,
+   not a wired shortcut. */
+.app-nav-search {
+  flex: 1 1 auto;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--sunk);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-xl);
+}
+
+.app-nav-search:focus-within {
+  border-color: var(--river-l);
+}
+
+.app-nav-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  outline: none;
+}
+
+.app-nav-search-input::placeholder {
+  color: var(--ink-3);
+}
+
+.app-nav-search-kbd {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  color: var(--ink-3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--sp-2);
+}
+
 .app-nav-list {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 32px;
@@ -329,6 +385,58 @@
 .app-nav-link.app-nav-link-active:hover {
   color: var(--ink);
   border-bottom-color: var(--gold);
+}
+
+/* Phase 3.1: static profile chip -- replaces the Account nav item.
+   STATIC glyph (a person silhouette, fill: currentColor so it carries
+   no hardcoded color); routes to #account. It keeps the .app-nav-link
+   class + data-route="account" so renderRoute's active-toggle marks it
+   with no JS change. The full-border treatment overrides .app-nav-link's
+   reserved 2px transparent bottom; active swaps the ring to gold. A
+   dynamic user-initial is a deliberate later follow-up. */
+.app-nav-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-xl);
+  background: var(--glass-2);
+  color: var(--ink-2);
+}
+
+.app-nav-profile:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.app-nav-profile.app-nav-link-active,
+.app-nav-profile.app-nav-link-active:hover {
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+.app-nav-profile-glyph {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Phase 3.1: desktop pill geometry. Stays in-flow (no fixed/sticky) --
+   only margin (inset from the viewport edges so the honey ground shows
+   around it), full corner rounding, and a warm lift give the floating-
+   pill read. No content-offset math, no per-page breakage. Scoped to
+   >=760px so the 56px mobile hamburger bar (max-width:759px) is
+   untouched. The full border overrides the base bar's border-bottom. */
+@media (min-width: 760px) {
+  .app-nav {
+    margin: var(--sp-4) var(--sp-5) 0;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-1);
+  }
 }
 
 /* ===== END TOP NAV ===== */
@@ -389,13 +497,15 @@
 
 .shelf-new-book {
   grid-column: 2;
-  background: var(--ink);
+  /* Phase 3.1: signature gold->river gradient (--grad). The gradient's
+     stops live in theme.css; components.css only references the token. */
+  background: var(--grad);
   color: var(--text-on-dark);
   border: none;
 }
 
 .shelf-new-book:hover {
-  background: var(--br-deep);
+  filter: brightness(1.06);
 }
 
 .shelf-new-book-bulk {
@@ -912,6 +1022,32 @@
   align-self: start;
 }
 
+/* Phase 3.1: glass filter rail -- DESKTOP ONLY (>=760px). Scoped so the
+   mobile slide-over panel (.shelf-sidebar.shelf-sidebar-mobile-open in
+   the max-width:759px block, which sets its own opaque --color-surface
+   fill) is left untouched. Restyle only -- filter behavior is unchanged. */
+@media (min-width: 760px) {
+  .shelf-sidebar {
+    background: var(--glass);
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Phase 3.1: per-value book-match count, right-aligned in each filter
+   row (margin-left:auto pushes it to the row's right edge in the flex
+   layout). Mono metadata register. Display only -- no filter logic. */
+.shelf-filter-count {
+  margin-left: auto;
+  padding-left: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--ink-4);
+}
+
 .shelf-filter-section + .shelf-filter-section {
   margin-top: 48px;
 }
@@ -993,26 +1129,29 @@
      layout and producing horizontal page overflow. Card / image
      constraints land in Stage 3; this is the Stage 2 layout-level
      guard so the page does not overflow between stages. */
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  column-gap: 32px;
-  row-gap: 48px;
+  /* Phase 3.1: denser cover grid -- 5 columns at desktop (was 4),
+     tighter gaps, and the responsive ladder shifted one step denser
+     (4/3/2 instead of 3/2/1). */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 32px;
 }
 
 @media (max-width: 1099px) {
   .shelf-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 759px) {
   .shelf-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 499px) {
   .shelf-list {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1056,6 +1195,9 @@
    2026-05-16 decision D1. */
 
 .shelf-book {
+  /* Phase 3.1: position context for the absolute left-edge register
+     tick (.shelf-book-tick). */
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -1098,6 +1240,11 @@
   height: 200px;
   margin-bottom: 16px;
   background: var(--color-surface);
+  /* Phase 3.1: unified cover frame -- every cover (image or pending
+     placeholder) sits in the same hairline-framed, rounded box so the
+     grid reads as one consistent set. */
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -1133,6 +1280,39 @@
      cover area per spec ("justify-center, align-flex-end"). */
   object-fit: contain;
   object-position: center bottom;
+}
+
+/* Phase 3.1: graceful missing-cover frame. The placeholder becomes a
+   centered recessed (--sunk) well carrying a real "COVER PENDING" label
+   (rendered as a <span> in renderShelfBook), replacing the prior empty
+   blank. Overrides the display:block from the combined rule above. */
+.shelf-book-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sunk);
+}
+
+.shelf-book-cover-pending {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Phase 3.1: register tick -- a left-edge accent bar whose color is set
+   per-card via the --tick custom property (= var(--register-<tradition>),
+   assigned in renderShelfBook). 'unassigned' books get no tick element,
+   so none renders. Read-only consumption of the register palette. */
+.shelf-book-tick {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--tick);
 }
 
 .shelf-book-title {
@@ -2898,6 +3078,12 @@
 
   .app-nav-hamburger {
     display: block;
+  }
+
+  /* Phase 3.1: the glass search is desktop chrome; hide it on the
+     56px mobile bar so the hamburger layout is unchanged from before. */
+  .app-nav-search {
+    display: none;
   }
 
   .app-nav-list {

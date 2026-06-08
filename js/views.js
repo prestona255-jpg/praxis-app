@@ -1237,6 +1237,29 @@ function renderShelf() {
   }
   authors.sort();
 
+  // Phase 3.1: per-value book-match tallies for the filter rail counts.
+  // DISPLAY ONLY -- a count over state.books, NOT a filter and NOT a
+  // change to which rows render. The theme predicate (genre === value)
+  // is the SAME one the filter pass uses, counted rather than applied;
+  // the author predicate mirrors it. Rows with zero matches still show
+  // (count 0); no row is hidden.
+  var themeCounts = {};
+  var authorCounts = {};
+  var tcid;
+  var tcb;
+  for (tcid in booksMap) {
+    if (Object.prototype.hasOwnProperty.call(booksMap, tcid)) {
+      tcb = booksMap[tcid];
+      if (!tcb) continue;
+      if (typeof tcb.genre === 'string' && tcb.genre.length > 0) {
+        themeCounts[tcb.genre] = (themeCounts[tcb.genre] || 0) + 1;
+      }
+      if (typeof tcb.author === 'string' && tcb.author.length > 0) {
+        authorCounts[tcb.author] = (authorCounts[tcb.author] || 0) + 1;
+      }
+    }
+  }
+
   var layout = document.createElement('div');
   layout.className = 'shelf-layout';
 
@@ -1290,6 +1313,13 @@ function renderShelf() {
     themeRow.setAttribute('data-filter-section', 'theme');
     themeRow.setAttribute('data-filter-value', SHELF_THEMES[ti]);
     themeRow.textContent = SHELF_THEMES[ti];
+    // Phase 3.1: per-value book-match count (display only). data-filter-
+    // value carries the clean theme name, so the appended count span does
+    // not affect the click handler's read.
+    var themeRowCount = document.createElement('span');
+    themeRowCount.className = 'shelf-filter-count';
+    themeRowCount.textContent = '' + (themeCounts[SHELF_THEMES[ti]] || 0);
+    themeRow.appendChild(themeRowCount);
     themeRow.addEventListener('click', onShelfFilterRowClick);
     themeRow.addEventListener('keydown', onShelfFilterRowKeydown);
     themeList.appendChild(themeRow);
@@ -1323,6 +1353,12 @@ function renderShelf() {
     authorRow.setAttribute('data-filter-section', 'author');
     authorRow.setAttribute('data-filter-value', authors[ai]);
     authorRow.textContent = authors[ai];
+    // Phase 3.1: per-value book-match count (display only). data-filter-
+    // value carries the clean author name; the count span is cosmetic.
+    var authorRowCount = document.createElement('span');
+    authorRowCount.className = 'shelf-filter-count';
+    authorRowCount.textContent = '' + (authorCounts[authors[ai]] || 0);
+    authorRow.appendChild(authorRowCount);
     authorRow.addEventListener('click', onShelfFilterRowClick);
     authorRow.addEventListener('keydown', onShelfFilterRowKeydown);
     authorListEl.appendChild(authorRow);
@@ -1550,6 +1586,14 @@ function renderShelfBook(book) {
   } else {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'shelf-book-cover-placeholder';
+    // Phase 3.1: graceful "COVER PENDING" label as a real <span> (not a
+    // CSS ::after) so the text is in the DOM for assistive tech. The
+    // async cover fetch may still resolve, so the framing reads as
+    // pending, not permanently absent.
+    var pendingLabel = document.createElement('span');
+    pendingLabel.className = 'shelf-book-cover-pending';
+    pendingLabel.textContent = 'COVER PENDING';
+    coverPlaceholder.appendChild(pendingLabel);
     coverArea.appendChild(coverPlaceholder);
   }
 
@@ -1577,6 +1621,22 @@ function renderShelfBook(book) {
   }
 
   card.appendChild(coverArea);
+
+  // Phase 3.1: register tick -- left-edge accent bar colored by the
+  // book's tradition. Data-driven token only: set --tick to
+  // var(--register-<tradition>); CSS paints background: var(--tick).
+  // 'unassigned' (and any tradition without a register token) gets NO
+  // tick, mirroring renderRegisterGlyph's empty-corner signal. Uses the
+  // same glyphTradition resolved above (traditionOverride || tradition).
+  if (glyphTradition && glyphTradition !== 'unassigned' &&
+      typeof REGISTER_SHAPE_PATHS[glyphTradition] === 'string' &&
+      REGISTER_SHAPE_PATHS[glyphTradition] !== '') {
+    var tick = document.createElement('span');
+    tick.className = 'shelf-book-tick';
+    tick.setAttribute('aria-hidden', 'true');
+    tick.style.setProperty('--tick', 'var(--register-' + glyphTradition + ')');
+    card.appendChild(tick);
+  }
 
   var titleEl = document.createElement('h2');
   titleEl.className = 'shelf-book-title';
