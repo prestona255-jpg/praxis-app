@@ -1237,13 +1237,9 @@ function renderShelf() {
   }
   authors.sort();
 
-  // Phase 3.1: per-value book-match tallies for the filter rail counts.
-  // DISPLAY ONLY -- a count over state.books, NOT a filter and NOT a
-  // change to which rows render. The theme predicate (genre === value)
-  // is the SAME one the filter pass uses, counted rather than applied;
-  // the author predicate mirrors it. Rows with zero matches still show
-  // (count 0); no row is hidden.
-  var themeCounts = {};
+  // Phase 3.1: per-value book-match tally for the author filter counts.
+  // DISPLAY ONLY -- a count over state.books, not a filter. Rows with
+  // zero matches still show (count 0); no row is hidden.
   var authorCounts = {};
   var tcid;
   var tcb;
@@ -1251,9 +1247,6 @@ function renderShelf() {
     if (Object.prototype.hasOwnProperty.call(booksMap, tcid)) {
       tcb = booksMap[tcid];
       if (!tcb) continue;
-      if (typeof tcb.genre === 'string' && tcb.genre.length > 0) {
-        themeCounts[tcb.genre] = (themeCounts[tcb.genre] || 0) + 1;
-      }
       if (typeof tcb.author === 'string' && tcb.author.length > 0) {
         authorCounts[tcb.author] = (authorCounts[tcb.author] || 0) + 1;
       }
@@ -1286,47 +1279,6 @@ function renderShelf() {
   closeBtn.textContent = '×';
   sidebar.appendChild(closeBtn);
 
-  // Theme section -- 15 rows, file order from docs/themes.md mirror.
-  var themeSection = document.createElement('div');
-  themeSection.className = 'shelf-filter-section';
-  var themeLabel = document.createElement('h3');
-  themeLabel.className = 'shelf-filter-label';
-  themeLabel.textContent = 'Filter by theme';
-  themeSection.appendChild(themeLabel);
-  var themeList = document.createElement('ul');
-  themeList.className = 'shelf-filter-list';
-  var ti;
-  var themeRow;
-  for (ti = 0; ti < SHELF_THEMES.length; ti++) {
-    themeRow = document.createElement('li');
-    // 3.10b Stage 3: bare <li> -> real interactive control. role +
-    // tabindex make the row focusable and screen-reader-announced as
-    // a button; data-* carries the filter section + value so the
-    // handlers can read directly from the element (avoids the
-    // var-loop closure trap). Selected class is applied on render
-    // by re-reading shelfFilter -- the single source of truth.
-    themeRow.className = shelfFilter.theme === SHELF_THEMES[ti]
-      ? 'shelf-filter-row shelf-filter-row-selected'
-      : 'shelf-filter-row';
-    themeRow.setAttribute('role', 'button');
-    themeRow.setAttribute('tabindex', '0');
-    themeRow.setAttribute('data-filter-section', 'theme');
-    themeRow.setAttribute('data-filter-value', SHELF_THEMES[ti]);
-    themeRow.textContent = SHELF_THEMES[ti];
-    // Phase 3.1: per-value book-match count (display only). data-filter-
-    // value carries the clean theme name, so the appended count span does
-    // not affect the click handler's read.
-    var themeRowCount = document.createElement('span');
-    themeRowCount.className = 'shelf-filter-count';
-    themeRowCount.textContent = '' + (themeCounts[SHELF_THEMES[ti]] || 0);
-    themeRow.appendChild(themeRowCount);
-    themeRow.addEventListener('click', onShelfFilterRowClick);
-    themeRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    themeList.appendChild(themeRow);
-  }
-  themeSection.appendChild(themeList);
-  sidebar.appendChild(themeSection);
-
   // Author section -- dedup'd alphabetical list from state.books.
   var authorSection = document.createElement('div');
   authorSection.className = 'shelf-filter-section';
@@ -1340,11 +1292,10 @@ function renderShelf() {
   var authorRow;
   for (ai = 0; ai < authors.length; ai++) {
     authorRow = document.createElement('li');
-    // 3.10b Stage 3: same treatment as theme rows -- role, tabindex,
-    // data-* for section + value, selected class on render, click +
-    // keydown handlers. Both row types share the handler pair via
-    // the data-filter-section attribute, so the handler reads
-    // 'theme' or 'author' directly off the activated element.
+    // 3.10b Stage 3: role, tabindex, data-* for section + value,
+    // selected class on render, click + keydown handlers. The handler
+    // reads the 'author' section + value directly off the activated
+    // element's data-filter-section attribute.
     authorRow.className = shelfFilter.author === authors[ai]
       ? 'shelf-filter-row shelf-filter-row-selected'
       : 'shelf-filter-row';
@@ -1472,17 +1423,13 @@ function renderShelf() {
   var filtered = [];
   var fi;
   var fb;
-  var themeOk;
   var authorOk;
   for (fi = 0; fi < books.length; fi++) {
     fb = books[fi];
-    themeOk = shelfFilter.theme === null ||
-      (typeof fb.genre === 'string' && fb.genre.length > 0 &&
-       fb.genre === shelfFilter.theme);
     authorOk = shelfFilter.author === null ||
       (typeof fb.author === 'string' && fb.author.length > 0 &&
        fb.author === shelfFilter.author);
-    if (themeOk && authorOk) {
+    if (authorOk) {
       filtered.push(fb);
     }
   }
@@ -1507,8 +1454,7 @@ function renderShelf() {
     // conditional action button stays identical in BOTH branches per
     // the brief -- signed-out users still get the sign-in prompt
     // even when their filter yields zero.
-    var filterActive = shelfFilter.theme !== null ||
-                       shelfFilter.author !== null;
+    var filterActive = shelfFilter.author !== null;
     var empty = document.createElement('div');
     empty.className = 'shelf-empty';
     var emptyHeadline = document.createElement('h2');
@@ -1828,7 +1774,7 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // theme filter matches ~zero books on current data -- expected and
 // correct, the genre-dropdown retrofit is 3.10c. Author values come
 // from state.books so they match by construction.
-var shelfFilter = { theme: null, author: null };
+var shelfFilter = { author: null };
 
 // 3.10b-i: module-scope reference to the document-level Escape
 // listener bound when the mobile filter panel is open. Tracked here
