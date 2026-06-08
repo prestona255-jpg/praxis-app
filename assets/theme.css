@@ -13,11 +13,11 @@
   /* Core colors */
   --ink:     #2a1810;
   --ink-2:   #5c3e26;
-  --ink-3:   #8a6b48;
-  --gold:    #d4972a;
-  --bg:      #faf6ec;
-  --surface: #ebe0c4;
-  --border:  #e5dfd2;
+  --ink-3:   #7a5c34;
+  --gold:    #a8741a;
+  --bg:      #d8bd80;
+  --surface: #ecdcae;
+  --border:  rgba(58,40,16,.2);
 
   /* Stage 3.10a additions (Oshun / wheat field / cherry oak).
      Existing --ink / --ink-2 / --ink-3 / --gold left untouched per
@@ -26,12 +26,12 @@
      3.10a lands surface-first; deeper ink-tone retune is deferred.
      --surface was pure white pre-3.10a -- wildly off the locked
      wheat target -- so it is the one existing token updated here. */
-  --ink-4:        #b8997a;
+  --ink-4:        #9a7e4e;
   --br-deep:      #4a2810;
-  --surface-2:    #f6ecd2;
-  --gold-light:   #f0c46a;
+  --surface-2:    #f2e6c2;
+  --gold-light:   #c5912b;
   --gold-text:    #6b4516;
-  --river:        #2a4a5c;
+  --river:        #27566a;
   --color-surface: var(--surface);
   /* Warm off-white for text on dark-ink button fills. Sits clearly
      lighter than --surface-2 / --bg (the wheat tokens) while staying
@@ -47,7 +47,7 @@
   --sp-6: 32px;
 
   --radius-sm: 6px;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
   --fs-sm: 0.8125rem;
   --fs-body: 0.9375rem;
   --fs-display: 1.5rem;
@@ -242,6 +242,17 @@
      are effectively invisible on the wheat-cream + 5.1-grain
      background. Tune from 0.22. */
   --field-presence: 0.22;
+
+  /* --- medium-skin additive roles --- */
+  --ground-center: #e6cb8e;
+  --bg-2:          #e3c98c;
+  --sunk:          #c9a85f;
+  --glass:         rgba(245,233,200,.5);
+  --glass-2:       rgba(245,233,200,.82);
+  --line-2:        rgba(58,40,16,.32);
+  --river-l:       #3f7d92;
+  --grad:          linear-gradient(92deg,#b8841f,#27566a);
+  --radius-xl:     22px;
 }
 
 body {
