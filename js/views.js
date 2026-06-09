@@ -339,6 +339,9 @@ function renderRoute() {
   } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
     activeRoute = 'books';
+  } else if (parts[0] === 'home') {
+    // Batch 4A: Home is its own top-nav surface (landing route).
+    activeRoute = 'home';
   } else if (parts[0] === 'account') {
     // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
     activeRoute = 'account';
@@ -476,6 +479,19 @@ function renderRoute() {
     renderAccountPage();
     return;
   }
+  // Batch 4A: Home landing surface (#home). Symmetric clear of the three
+  // pointer fields, mirroring the books / arcs / account branches --
+  // entering Home is leaving any book, arc, and sub-theory. Placed BEFORE
+  // the notebook fallthrough so #home is caught here, not swallowed by the
+  // catch-all (which is left as-is for empty / unknown hashes).
+  if (parts[0] === 'home') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderHome();
+    return;
+  }
   // Notebook (explicit), empty hash, and any unknown route all
   // converge on the unified Notebook view. currentBookId clears
   // symmetrically on the way in so yumi-brain's retrieval path
@@ -485,6 +501,77 @@ function renderRoute() {
   state.currentSubTheoryId = null;
   saveState();
   renderNotebook();
+}
+
+// Batch 4A: Home landing surface, reconciled from the mockup's Home
+// section (a centered hero + a static preview frame). Presentational
+// only -- no marks, no constellation canvas, no data read. The CTA
+// anchors reuse the established gradient-primary / outline-secondary
+// button variants (scoped under .home-cta-* so book-detail grid rules do
+// not leak in) and navigate via the hash router like every other link.
+function renderHome() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'home-page';
+
+  // ----- Hero -----
+  var hero = document.createElement('div');
+  hero.className = 'home-hero';
+
+  var h1 = document.createElement('h1');
+  h1.className = 'home-hero-title';
+  h1.appendChild(document.createTextNode('Your reading becomes '));
+  var accent = document.createElement('span');
+  accent.className = 'home-hero-accent';
+  accent.textContent = 'theory.';
+  h1.appendChild(accent);
+  hero.appendChild(h1);
+
+  var sub = document.createElement('p');
+  sub.className = 'home-hero-sub';
+  sub.textContent = 'Read, gather evidence, and build a living ' +
+    'constellation of your own thinking -- in practice, with Yumi.';
+  hero.appendChild(sub);
+
+  var cta = document.createElement('div');
+  cta.className = 'home-cta';
+
+  var ctaPrimary = document.createElement('a');
+  ctaPrimary.className = 'home-cta-primary';
+  ctaPrimary.href = '#arcs';
+  ctaPrimary.textContent = 'Open the constellation';
+  cta.appendChild(ctaPrimary);
+
+  var ctaSecondary = document.createElement('a');
+  ctaSecondary.className = 'home-cta-secondary';
+  ctaSecondary.href = '#books';
+  ctaSecondary.textContent = 'Browse your shelf';
+  cta.appendChild(ctaSecondary);
+
+  hero.appendChild(cta);
+  wrap.appendChild(hero);
+
+  // ----- Static preview frame (no marks, no canvas, no data) -----
+  var preview = document.createElement('div');
+  preview.className = 'home-preview';
+
+  var pvEyebrow = document.createElement('p');
+  pvEyebrow.className = 'eyebrow';
+  pvEyebrow.textContent = 'A living constellation';
+  preview.appendChild(pvEyebrow);
+
+  var pvLine = document.createElement('p');
+  pvLine.className = 'home-preview-line';
+  pvLine.textContent =
+    'Your arcs and the ideas between them, drawn as you read.';
+  preview.appendChild(pvLine);
+
+  wrap.appendChild(preview);
+
+  host.appendChild(wrap);
 }
 
 function renderNotebook() {

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadState();
   saveState();
   if (location.hash === '') {
-    location.hash = '#notebook';
+    location.hash = '#home';
   }
   window.views.renderRoute();
   window.addEventListener('hashchange', function() {

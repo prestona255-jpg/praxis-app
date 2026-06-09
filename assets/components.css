@@ -455,6 +455,115 @@
 /* ===== END SHARED TYPE ===== */
 
 
+/* ===== HOME PAGE -- Batch 4A =====
+   Landing surface reconciled from the mockup's Home section: a centered
+   hero with a --grad gradient-clip accent, and a static honey-radial
+   preview frame (presentational only -- no marks, no canvas, no data).
+   The CTA buttons reuse the established gradient-primary / outline-
+   secondary variants under .home-cta-* (the app has no generic .btn
+   class, and the book-detail button classes carry grid-column baggage).
+   Tokens only; no hardcoded color; no blur (4B's spotlight owns the
+   second blur surface). */
+.home-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.home-hero {
+  text-align: center;
+  padding: 70px 0 30px;
+}
+
+/* Mockup hero is DM Sans 700; the loaded DM Sans set is 400/500, so 500
+   here avoids faux-bold without touching the font link. */
+.home-hero-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 62px;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.home-hero-accent {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-hero-sub {
+  max-width: 540px;
+  margin: 20px auto 26px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.home-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.home-cta-primary,
+.home-cta-secondary {
+  display: inline-block;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  border-radius: 2px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.home-cta-primary {
+  font-weight: 600;
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+}
+
+.home-cta-primary:hover {
+  filter: brightness(1.06);
+}
+
+.home-cta-secondary {
+  font-weight: 400;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+
+.home-cta-secondary:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* Static preview frame -- honey radial built from the wheat tokens
+   (--surface -> --bg-2 -> --bg); this wires the previously-unused
+   --bg-2. OPAQUE; no blur. */
+.home-preview {
+  max-width: 940px;
+  margin: 18px auto 0;
+  padding: 28px 32px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-xl);
+  background: radial-gradient(120% 130% at 50% 0%,
+    var(--surface), var(--bg-2) 58%, var(--bg));
+}
+
+.home-preview-line {
+  margin: 8px 0 0 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: var(--ink);
+}
+
+
 /* ===== SHELF PAGE HEADER + ACTION BUTTONS -- Stage 3.10a Stage 1 =====
    /books header. Title-block left, action buttons top-right. CSS
    grid carries the layout so no wrapper divs were added to
