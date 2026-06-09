@@ -1331,6 +1331,11 @@
    Mirrors the arc-detail-member treatment so the line reads the same
    way on both surfaces -- honest availability, not a destination. */
 .book-detail-header .find-this-book {
+  /* Stage 4: pin to the right (content) column. Previously the cover's
+     grid-row:1/span 6 forced this to auto-place into col 2; that span was
+     dropped when the cover moved into .book-detail-cover-col, so it must be
+     declared explicitly or it auto-places into the now-free col 1. */
+  grid-column: 2;
   margin-top: 16px;
 }
 
