@@ -924,6 +924,13 @@
 }
 
 
+.notebook {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+
 /* ===== NOTEBOOK PAGE HEADER + ACTION BUTTONS -- Stage 3.2a =====
    Twins the Shelf header (sibling grammar): transparent container (NO
    glass -- glass stays on the chrome pills per 3.1), Cormorant title
