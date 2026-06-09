@@ -2553,6 +2553,13 @@ function processBulkLines(raw) {
   processNext();
 }
 
+// Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
+// scoped (mirrors _stLayersOpen) so it survives the in-panel re-renders that
+// editing a field triggers (status / ISBN blur / tradition each re-enter
+// renderBookDetail) -- otherwise the panel would snap shut mid-edit. Resets
+// to collapsed on a fresh page load (reading-first view); NOT persisted to ls.
+var _bookDetailEditOpen = false;
+
 function renderBookDetail(bookId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -2585,17 +2592,25 @@ function renderBookDetail(bookId) {
   // 3.5b: cover image or placeholder block. Truthy guard treats
   // null, undefined, and '' as missing -- same shape as the shelf
   // row. CSS constrains max-width on both elements (styling pass).
+  // Stage 4 (chrome-fidelity): the cover and the action buttons share a
+  // left-column wrapper so the buttons sit UNDER the cover (mockup layout).
+  // The cover/placeholder mounts here; .book-detail-actions (the buttons) is
+  // appended below the artifact-card block. reg-tag/title/author/meta/artifact
+  // card + Find-this-book stay in the right (content) column.
+  var coverCol = document.createElement('div');
+  coverCol.className = 'book-detail-cover-col';
   if (book.coverUrl) {
     var cover = document.createElement('img');
     cover.className = 'book-detail-cover';
     cover.src = book.coverUrl;
     cover.alt = '';
-    header.appendChild(cover);
+    coverCol.appendChild(cover);
   } else {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'book-detail-cover-placeholder';
-    header.appendChild(coverPlaceholder);
+    coverCol.appendChild(coverPlaceholder);
   }
+  header.appendChild(coverCol);
 
   // Batch 3: reg-tag -- outlined river-toned mono pill above the title,
   // rendered ONLY when the book carries a real tradition (omitted for the
@@ -2690,6 +2705,12 @@ function renderBookDetail(bookId) {
   artCard.appendChild(artBody);
   header.appendChild(artCard);
 
+  // Stage 4: the action buttons live UNDER the cover -- they append into
+  // .book-detail-actions inside the cover column, not the right column.
+  var actions = document.createElement('div');
+  actions.className = 'book-detail-actions';
+  coverCol.appendChild(actions);
+
   if (user) {
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
@@ -2698,7 +2719,7 @@ function renderBookDetail(bookId) {
     newBtn.addEventListener('click', function() {
       openMarginaliaEditor(bookId);
     });
-    header.appendChild(newBtn);
+    actions.appendChild(newBtn);
 
     var addToArcBtn = document.createElement('button');
     addToArcBtn.type = 'button';
@@ -2707,7 +2728,7 @@ function renderBookDetail(bookId) {
     addToArcBtn.addEventListener('click', function() {
       openBookArcPicker(bookId);
     });
-    header.appendChild(addToArcBtn);
+    actions.appendChild(addToArcBtn);
 
     // Stage 3.7c stage 2: explicit six-branch (status, hasArtifact)
     // render matrix. Each branch handled standalone -- no shared tails
@@ -2743,7 +2764,7 @@ function renderBookDetail(bookId) {
         renderBookDetail(bookId);
         openArtifactEditor(bookId);
       });
-      header.appendChild(finishedBtn);
+      actions.appendChild(finishedBtn);
     } else if (book.status === 'finished' && !hasArtifact) {
       // Branch 3 -- (finished, no-artifact): reachable when the user
       // cancelled the auto-opened Artifact editor after marking
@@ -2758,7 +2779,7 @@ function renderBookDetail(bookId) {
       createBtn.addEventListener('click', function() {
         openArtifactEditor(bookId);
       });
-      header.appendChild(createBtn);
+      actions.appendChild(createBtn);
     } else if (book.status === 'reading' && hasArtifact) {
       // Branch 4 -- (reading, has-artifact): un-finish state, reached
       // via 3.7c selector flip 'finished' -> 'reading' on a book whose
@@ -2772,7 +2793,7 @@ function renderBookDetail(bookId) {
       openArtLink.className = 'book-detail-open-artifact';
       openArtLink.href = '#artifact/' + bookId;
       openArtLink.textContent = 'Open Artifact';
-      header.appendChild(openArtLink);
+      actions.appendChild(openArtLink);
     } else if (book.status === 'finished' && hasArtifact) {
       // Branch 5 -- (finished, has-artifact): canonical post-Artifact
       // state. Both creation CTAs are gone; the link is the only
@@ -2781,7 +2802,7 @@ function renderBookDetail(bookId) {
       openArtLink.className = 'book-detail-open-artifact';
       openArtLink.href = '#artifact/' + bookId;
       openArtLink.textContent = 'Open Artifact';
-      header.appendChild(openArtLink);
+      actions.appendChild(openArtLink);
     } else if (book.status === 'want' && hasArtifact) {
       // Branch 6 -- (want, has-artifact): defensive, only reachable
       // via 3.7c selector flip 'finished' -> 'want' on a book whose
@@ -2793,7 +2814,7 @@ function renderBookDetail(bookId) {
       openArtLink.className = 'book-detail-open-artifact';
       openArtLink.href = '#artifact/' + bookId;
       openArtLink.textContent = 'Open Artifact';
-      header.appendChild(openArtLink);
+      actions.appendChild(openArtLink);
     }
   } else {
     var signinBtn = document.createElement('button');
@@ -2803,7 +2824,7 @@ function renderBookDetail(bookId) {
     signinBtn.addEventListener('click', function() {
       signInWithGoogle();
     });
-    header.appendChild(signinBtn);
+    actions.appendChild(signinBtn);
   }
 
   // Stage 5.3 Stage 4: "Find this book" line in the header region.
@@ -2845,6 +2866,22 @@ function renderBookDetail(bookId) {
   // Batch 3: edit fields (status / ISBN / tradition) grouped into a
   // styled details section below the reading-view chrome. Function
   // unchanged; no edit-mode toggle.
+  // Stage 4: the Edit panel collapses behind this toggle (default collapsed).
+  // Flipping _bookDetailEditOpen + re-rendering shows/hides the panel; the
+  // flag is module-level so an in-panel field edit (which re-renders) leaves
+  // it open. The editSection build below is byte-unchanged -- only its final
+  // append is gated on the flag.
+  var editToggle = document.createElement('button');
+  editToggle.type = 'button';
+  editToggle.className = 'book-detail-edit-toggle';
+  editToggle.textContent = 'Edit';
+  editToggle.setAttribute('aria-expanded', _bookDetailEditOpen ? 'true' : 'false');
+  editToggle.addEventListener('click', function() {
+    _bookDetailEditOpen = !_bookDetailEditOpen;
+    renderBookDetail(bookId);
+  });
+  wrap.appendChild(editToggle);
+
   var editSection = document.createElement('div');
   editSection.className = 'book-detail-edit-section';
   var editEyebrow = document.createElement('p');
@@ -2973,7 +3010,10 @@ function renderBookDetail(bookId) {
 
   traditionRow.appendChild(traditionSelect);
   editSection.appendChild(traditionRow);
-  wrap.appendChild(editSection);
+  // Stage 4: only mount the panel when expanded (default collapsed).
+  if (_bookDetailEditOpen) {
+    wrap.appendChild(editSection);
+  }
 
   // Editor host -- empty on every render; openMarginaliaEditor
   // mounts its block here on demand.

@@ -1897,11 +1897,23 @@
   margin-bottom: 32px;
 }
 
+/* Stage 4: left column = cover + the action buttons stacked under it. */
+.book-detail-cover-col {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.book-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .book-detail-cover,
 .book-detail-cover-placeholder {
-  grid-column: 1;
-  grid-row: 1 / span 6;
-  width: 240px;
+  width: 100%;
   max-width: 100%;
   /* Stage 5.1: hairline + radius retune to align with the v2 surface
      family. The full surface-set (highlight + shadow) does NOT apply
@@ -1993,10 +2005,9 @@
 
 /* "Add to arc" -- gradient primary (mockup bottom CTA). */
 .book-detail-add-to-arc {
-  grid-column: 2;
-  display: inline-block;
-  justify-self: start;
-  margin-top: 8px;
+  display: block;
+  width: 100%;
+  text-align: center;
   padding: 10px 20px;
   font-family: var(--font-body);
   font-size: 14px;
@@ -2020,6 +2031,32 @@
   border: 1px solid var(--line-2);
   border-radius: var(--radius-lg);
 }
+
+/* Stage 4: the Edit-panel collapse toggle (panel default-collapsed). */
+.book-detail-edit-toggle {
+  margin-top: 32px;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.book-detail-edit-toggle:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* When expanded, the panel follows the toggle -- tighten so the toggle's
+   own margin-top doesn't double with the panel's. */
+.book-detail-edit-toggle + .book-detail-edit-section {
+  margin-top: 12px;
+}
 /* ===== END Batch 3 book-detail chrome ===== */
 
 /* Primary affordance — the creation CTAs (buttons) and the Open
@@ -2029,10 +2066,9 @@
 .book-detail-create-artifact,
 .book-detail-signin-prompt,
 .book-detail-open-artifact {
-  grid-column: 2;
-  display: inline-block;
-  justify-self: start;
-  margin-top: 8px;
+  display: block;
+  width: 100%;
+  text-align: center;
   padding: 10px 20px;
   font-family: var(--font-body);
   font-size: 14px;
@@ -2056,10 +2092,9 @@
    entry point, lighter weight than the closure CTAs. Mirrors
    .shelf-new-book-bulk transparent + border treatment. */
 .book-detail-new-entry {
-  grid-column: 2;
-  display: inline-block;
-  justify-self: start;
-  margin-top: 8px;
+  display: block;
+  width: 100%;
+  text-align: center;
   padding: 10px 20px;
   font-family: var(--font-body);
   font-size: 14px;
