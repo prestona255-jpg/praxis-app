@@ -475,12 +475,12 @@
   padding: 70px 0 30px;
 }
 
-/* Mockup hero is DM Sans 700; the loaded DM Sans set is 400/500, so 500
-   here avoids faux-bold without touching the font link. */
+/* Chrome-fidelity Stage 1: DM Sans 700 is now loaded (index.html font link),
+   so the hero matches the mockup's bolder headline. */
 .home-hero-title {
   margin: 0;
   font-family: var(--font-body);
-  font-weight: 500;
+  font-weight: 700;
   font-size: 62px;
   letter-spacing: -1.5px;
   line-height: 1;
