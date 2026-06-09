@@ -3886,6 +3886,38 @@
   margin-bottom: var(--sp-4);
 }
 
+/* Hybrid Stage C: the Layers popover -- one button opening a small panel of
+   independent layer switches (Books / Marginalia / Faint links). OPAQUE
+   --surface (a content surface, not glass -- no blur); tokens only. */
+.st-layers {
+  position: relative;
+  display: inline-flex;
+}
+
+.st-layers-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+}
+
+.st-layers-popover--open {
+  display: flex;
+}
+
+.st-layers-switch {
+  white-space: nowrap;
+  text-align: left;
+}
+
 
 /* ===== STAGE 5.4 STAGE 1e -- ARC-DETAIL WEB-VIEW WHEAT-FIELD MOUNT =====
    Surface-scoped wheat-field mirroring .shelf / .shelf::before

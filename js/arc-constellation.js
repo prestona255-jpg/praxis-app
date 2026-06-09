@@ -945,7 +945,7 @@ function _stRenderMarks(positions) {
 // DORMANT: arc.edges is empty in 9.5 (one sub-theory exists, no links), so
 // nothing draws. Stroke width scales with edge strength, matching the
 // thread-width feel of the book renderer.
-function _stRenderEdges(edges, posById) {
+function _stRenderEdges(edges, posById, showFaint) {
   if (!edges || !edges.length) { return ''; }
   var out = '';
   var i;
@@ -960,6 +960,7 @@ function _stRenderEdges(edges, posById) {
     // branch emits nothing live; it lights up when a future stage supplies
     // faint relationships.
     if (e.faint) {
+      if (showFaint === false) { continue; } // Faint links layer hidden
       out = out + '<line data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="1" stroke-dasharray="4 4" opacity="0.5" stroke-linecap="round"/>';
       continue;
     }
@@ -991,44 +992,52 @@ function _stRenderYumi(yx, yy) {
 // lights up incorporation). Resonance + Yumi items appear only when
 // present, mirroring the book legend's "only what's on screen" principle.
 function _stRenderLegend(arc, positions, width, height) {
-  var hasMarks = false;
-  var i, j, sub, marks;
-  for (i = 0; i < positions.length; i = i + 1) {
-    sub = positions[i].sub || {};
-    marks = sub.marks || [];
-    if (marks.length) { hasMarks = true; break; }
-  }
-  var hasEdges = !!(arc.edges && arc.edges.length);
-  var hasYumi = !!(arc.yumiNoticing && arc.yumiNoticing.length);
-  var parts = [];
-  if (hasMarks) {
-    parts.push('hollow ring · gathered evidence');
-    parts.push('solid mark · woven into the writing');
-  }
-  if (hasEdges) { parts.push('line · resonance between sub-theories'); }
-  if (hasYumi)  { parts.push('dashed circle · Yumi noticing'); }
-  if (!parts.length) { return ''; }
+  // Hybrid Stage C: the full reading grammar. Five keyed entries -- each a
+  // small token-colored sample swatch + an italic label -- then a quieter
+  // interaction hint. Always shown (it teaches the vocabulary); Yumi stays
+  // labeled inline at its own node, not here. Swatch colors reuse the SAME
+  // tokens as the live elements (--thread-color for resonance/faint,
+  // --marginalia-color for gathered/incorporated, --sunk for book) so the
+  // key reads true. The var(--token, #fallback) form matches this file's
+  // existing pattern -- no NEW hardcoded color enters.
+  var serif = '\'Cormorant Garamond\', Georgia, serif';
+  var rowY = height - 30;
+  var hintY = height - 12;
+  var ink = 'var(--ink-2, #633806)';
+  var marg = 'var(--marginalia-color)';
+  var thread = 'var(--thread-color)';
+  var sy = rowY - 4; // swatch vertical center
+  var out = '<g data-st-legend="1">';
+  var x = 16;
 
-  var lines = [];
-  if (parts.length <= 2) {
-    lines.push(parts.join('     '));
-  } else {
-    var split = Math.ceil(parts.length / 2);
-    var l1 = [];
-    var l2 = [];
-    for (i = 0; i < parts.length; i = i + 1) {
-      if (i < split) { l1.push(parts[i]); } else { l2.push(parts[i]); }
-    }
-    lines.push(l1.join('     '));
-    lines.push(l2.join('     '));
-  }
+  // resonance -- solid line
+  out = out + '<line x1="' + _arcR(x) + '" y1="' + _arcR(sy) + '" x2="' + _arcR(x + 18) + '" y2="' + _arcR(sy) + '" stroke="' + thread + '" stroke-width="2" stroke-linecap="round"/>';
+  out = out + '<text x="' + _arcR(x + 24) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">resonance</text>';
+  x = x + 86;
 
-  var out = '';
-  var lineHeight = 14;
-  var baseY = height - 12 - (lines.length - 1) * lineHeight;
-  for (i = 0; i < lines.length; i = i + 1) {
-    out = out + '<text x="16" y="' + _arcR(baseY + i * lineHeight) + '" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="11" fill="var(--ink-2, #633806)" opacity="0.8">' + _arcEscapeXml(lines[i]) + '</text>';
-  }
+  // faint -- dashed line
+  out = out + '<line x1="' + _arcR(x) + '" y1="' + _arcR(sy) + '" x2="' + _arcR(x + 18) + '" y2="' + _arcR(sy) + '" stroke="' + thread + '" stroke-width="1" stroke-dasharray="4 4" opacity="0.6" stroke-linecap="round"/>';
+  out = out + '<text x="' + _arcR(x + 24) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">faint</text>';
+  x = x + 64;
+
+  // gathered -- hollow dot
+  out = out + '<circle cx="' + _arcR(x + 5) + '" cy="' + _arcR(sy) + '" r="4" fill="none" stroke="' + marg + '" stroke-width="1.2"/>';
+  out = out + '<text x="' + _arcR(x + 16) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">gathered</text>';
+  x = x + 74;
+
+  // incorporated -- filled dot
+  out = out + '<circle cx="' + _arcR(x + 5) + '" cy="' + _arcR(sy) + '" r="4" fill="' + marg + '"/>';
+  out = out + '<text x="' + _arcR(x + 16) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">incorporated</text>';
+  x = x + 96;
+
+  // book -- neutral square
+  out = out + '<rect x="' + _arcR(x) + '" y="' + _arcR(rowY - 11) + '" width="10" height="10" rx="2" fill="var(--sunk)" stroke="var(--ink-4)" stroke-width="1"/>';
+  out = out + '<text x="' + _arcR(x + 16) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">book</text>';
+
+  // interaction hint
+  out = out + '<text x="16" y="' + _arcR(hintY) + '" font-family="' + serif + '" font-style="italic" font-size="10.5" fill="var(--ink-3, #7a5c34)" opacity="0.72">drag · connect two sub-theories or attach a book · hover for a card</text>';
+
+  out = out + '</g>';
   return out;
 }
 
@@ -1045,7 +1054,12 @@ function _stRenderBooks(books, width, height) {
   if (!books || !books.length) { return ''; }
   var cx = width / 2;
   var cy = height / 2;
-  var ring = Math.min(width, height) * 0.46;
+  // Hybrid Stage C polish: an ELLIPTICAL ring (wider than tall) pushes books
+  // into the left/right field gaps, clear of the central mark cluster (mark
+  // orbit ~0.32), and the fill moves --surface-2 -> --sunk for clear contrast
+  // against the light field. Position stays deterministic per id.
+  var rx = width * 0.45;
+  var ry = height * 0.42;
   var sz = 16;
   var out = '<g data-st-books="1">';
   var i;
@@ -1053,10 +1067,10 @@ function _stRenderBooks(books, width, height) {
     var b = books[i] || {};
     if (!b.id) { continue; }
     var ang = _arcHash(b.id, 700) * Math.PI * 2;
-    var bx = cx + Math.cos(ang) * ring;
-    var by = cy + Math.sin(ang) * ring;
+    var bx = cx + Math.cos(ang) * rx;
+    var by = cy + Math.sin(ang) * ry;
     out = out + '<g data-st-book-id="' + _arcEscapeXml(b.id) + '" transform="translate(' + _arcR(bx) + ',' + _arcR(by) + ')">';
-    out = out +   '<rect x="' + _arcR(-sz / 2) + '" y="' + _arcR(-sz / 2) + '" width="' + sz + '" height="' + sz + '" rx="3" fill="var(--surface-2)" stroke="var(--ink-4)" stroke-width="1.4" opacity="0.92"/>';
+    out = out +   '<rect x="' + _arcR(-sz / 2) + '" y="' + _arcR(-sz / 2) + '" width="' + sz + '" height="' + sz + '" rx="3" fill="var(--sunk)" stroke="var(--ink-4)" stroke-width="1.4" opacity="0.95"/>';
     out = out + '</g>';
   }
   out = out + '</g>';
@@ -1074,6 +1088,10 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // explicit false hides it; anything else keeps the cloud visible.
   var options = opts || {};
   var showMarginalia = (options.showMarginalia === false) ? false : true;
+  // Hybrid Stage C: Books + Faint links are independent Layers switches
+  // (default ON). Resonance is NOT a switch -- it always renders (the spine).
+  var showBooks = (options.showBooks === false) ? false : true;
+  var showFaint = (options.showFaint === false) ? false : true;
 
   var width = 600;
   var height = 500;
@@ -1119,8 +1137,10 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   var yumiX = width - 30;
   var yumiY = 30;
 
-  svg = svg + _stRenderEdges(arc.edges || [], posById); // dormant (empty)
-  svg = svg + _stRenderBooks(arc.books || [], width, height); // Stage B: inert neutral squares (behind marks)
+  svg = svg + _stRenderEdges(arc.edges || [], posById, showFaint); // solid resonance always; faint gated + dormant
+  if (showBooks) {
+    svg = svg + _stRenderBooks(arc.books || [], width, height); // inert neutral squares (behind marks)
+  }
   svg = svg + _stRenderShapes(positions);
   if (showMarginalia) {
     svg = svg + _stRenderMarks(positions);

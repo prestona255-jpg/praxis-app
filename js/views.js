@@ -4185,6 +4185,11 @@ function _arcMakeFocusable(el, label) {
 // to NO handler -- 3.9-b adds the confirm-panel handler. The
 // arc-detail-confirm-host div is mounted now so 3.9-b's panel has a
 // stable mount point without re-rendering the header.
+// Hybrid Stage C: Layers popover open-state, module-scoped so it survives the
+// renderArcDetail re-render a layer-switch toggle triggers (a per-render local
+// would reset to closed on every rebuild). Resets to closed on a full reload.
+var _stLayersOpen = false;
+
 function renderArcDetail(arcId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -4433,21 +4438,65 @@ function renderArcDetail(arcId) {
       });
       stControlBar.appendChild(resetBtn);
 
+      // Hybrid Stage C: all visibility layers consolidate into ONE "Layers"
+      // popover -- Books / Marginalia / Faint links, each an independent
+      // persisted switch (ls/sv, default ON). Resonance is NOT a switch (it
+      // always renders -- the spine). The popover open-state lives in the
+      // module-level _stLayersOpen so a switch toggle (which re-enters
+      // renderArcDetail) leaves the popover open across the rebuild.
       var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
-      var marginaliaBtn = document.createElement('button');
-      marginaliaBtn.type = 'button';
-      marginaliaBtn.className = 'arc-detail-toggle-btn'
-        + (stShowMarginalia ? ' is-active' : '');
-      marginaliaBtn.setAttribute('data-st-marginalia',
-        stShowMarginalia ? 'on' : 'off');
-      marginaliaBtn.textContent = stShowMarginalia
-        ? 'Marginalia: shown' : 'Marginalia: hidden';
-      marginaliaBtn.addEventListener('click', function() {
-        sv('praxis_st_marginalia_on',
-          !(ls('praxis_st_marginalia_on', true) === true));
-        renderArcDetail(arcId);
+      var stShowBooks = ls('praxis_st_books_on', true) === true;
+      var stShowFaint = ls('praxis_st_faint_on', true) === true;
+
+      var layersWrap = document.createElement('div');
+      layersWrap.className = 'st-layers';
+
+      var layersBtn = document.createElement('button');
+      layersBtn.type = 'button';
+      layersBtn.className = 'arc-detail-toggle-btn';
+      layersBtn.setAttribute('data-st-control', 'layers');
+      layersBtn.textContent = 'Layers';
+      layersWrap.appendChild(layersBtn);
+
+      var layersPopover = document.createElement('div');
+      layersPopover.className = 'st-layers-popover'
+        + (_stLayersOpen ? ' st-layers-popover--open' : '');
+
+      // One switch per layer: reads/flips its own ls flag, then re-enters
+      // renderArcDetail (idempotent rebuild). _stLayersOpen stays true so the
+      // popover is still open after the rebuild.
+      var stLayerSwitch = function(labelText, flagKey, isOn) {
+        var sw = document.createElement('button');
+        sw.type = 'button';
+        sw.className = 'arc-detail-toggle-btn st-layers-switch'
+          + (isOn ? ' is-active' : '');
+        sw.setAttribute('data-st-layer', flagKey);
+        sw.textContent = labelText;
+        sw.addEventListener('click', function() {
+          sv(flagKey, !(ls(flagKey, true) === true));
+          _stLayersOpen = true;
+          renderArcDetail(arcId);
+        });
+        return sw;
+      };
+
+      layersPopover.appendChild(
+        stLayerSwitch('Books', 'praxis_st_books_on', stShowBooks));
+      layersPopover.appendChild(
+        stLayerSwitch('Marginalia', 'praxis_st_marginalia_on', stShowMarginalia));
+      layersPopover.appendChild(
+        stLayerSwitch('Faint links', 'praxis_st_faint_on', stShowFaint));
+      layersWrap.appendChild(layersPopover);
+
+      // The Layers button just opens/closes the popover in place (no re-render
+      // needed); the module flag carries the state across switch rebuilds.
+      layersBtn.addEventListener('click', function() {
+        _stLayersOpen = !_stLayersOpen;
+        layersPopover.className = 'st-layers-popover'
+          + (_stLayersOpen ? ' st-layers-popover--open' : '');
       });
-      stControlBar.appendChild(marginaliaBtn);
+
+      stControlBar.appendChild(layersWrap);
 
       webContainer.appendChild(stControlBar);
 
@@ -4458,7 +4507,9 @@ function renderArcDetail(arcId) {
       webContainer.appendChild(svg);
       var arcData = _arcDetailBuildSubTheoryData(arc);
       window.renderSubTheoryConstellation(arcData, svg,
-        { showMarginalia: stShowMarginalia });
+        { showMarginalia: stShowMarginalia,
+          showBooks: stShowBooks,
+          showFaint: stShowFaint });
       // Stage 9.5: bind the sub-theory interaction layer. Pass arcData
       // (resolved subTheories/marks), not the raw arc record -- the
       // tooltip needs header/label/quote already resolved.
