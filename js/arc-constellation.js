@@ -884,17 +884,17 @@ function _stRenderShapes(positions) {
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
     out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
-    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.72">';
+    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.58">';
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '"/>';
     // Hybrid Stage C.2: draw the treatment in the darker EDGE companion token
     // (not the body color) so the pattern CONTRASTS against the body pane and
     // reads at field scale -- a rings mark is now legibly distinct from waves
     // / hatch. Mapping is unchanged: same colorIdx, just its -edge variant.
-    out = out +     _stTreatment(treatKey, u, 'var(--subtheory-' + (ix.colorIdx + 1) + '-edge)');
+    out = out +     '<g opacity="0.74">' + _stTreatment(treatKey, u, 'var(--subtheory-' + (ix.colorIdx + 1) + '-edge)') + '</g>';
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
-    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.6" opacity="0.95"/>');
+    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.2" opacity="0.40"/>');
     out = out + '</g>';
   }
   return out;
