@@ -613,7 +613,7 @@ function renderHome() {
     preview.appendChild(pvLink);
     // Read-only: render the field only. NO interaction layers attached, so
     // there is no per-mark drag / connect / tap / hover-card anywhere.
-    window.renderSubTheoryConstellation(homeArcData, pvSvg, {});
+    window.renderSubTheoryConstellation(homeArcData, pvSvg, { showLegend: false });
   } else {
     var pvLine = document.createElement('p');
     pvLine.className = 'home-preview-line';

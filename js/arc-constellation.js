@@ -499,7 +499,7 @@ var _ST_SILHOUETTES = ['circle', 'hexagon', 'diamond', 'triangle'];
 var _ST_TREATMENTS = ['rings', 'hatch', 'halftone', 'dotgrid', 'labyrinth',
   'linefade', 'burst', 'waves', 'crossweave', 'stipple', 'spiral',
   'herringbone', 'nested', 'sunburst'];
-var _ST_SCALE = 60; // Hybrid Stage A: bumped 64->78 so each mark reads crisp (silhouette + treatment legible), echoing the vocabulary strip
+var _ST_SCALE = 60; // B1: quieted 78->60 so marks read quiet (silhouette + treatment still legible), echoing the vocabulary strip
 
 // Unique clip-path id counter, mirroring _tfaNextId -- clip ids must be
 // document-unique so two constellations on one page can't collide.
@@ -585,7 +585,7 @@ function _stGetDefs() {
   s = s +   '<path d="M0 5 Q9 3 18 5 M0 11 Q9 9 18 11 M0 16 Q9 14 18 16" stroke="#2A2018" stroke-width="0.6" fill="none" opacity="0.18"/>';
   s = s + '</pattern>';
   // One backlit halo gradient per palette token (1..16): transparent core
-  // -> ~0.72 ring at 78% -> transparent rim, the 9.6b "backlit" profile.
+  // -> ~0.50 ring at 78% -> transparent rim, the 9.6b "backlit" profile.
   var i, c;
   for (i = 1; i <= 16; i = i + 1) {
     c = 'var(--subtheory-' + i + ')';
@@ -1113,6 +1113,9 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // (default ON). Resonance is NOT a switch -- it always renders (the spine).
   var showBooks = (options.showBooks === false) ? false : true;
   var showFaint = (options.showFaint === false) ? false : true;
+  // B2: showLegend (default ON) gates the whole reading-key legend <g> so the
+  // Home embed can suppress it; Arcs keeps the full legend.
+  var showLegend = (options.showLegend === false) ? false : true;
 
   var width = 600;
   var height = 500;
@@ -1167,7 +1170,9 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
     svg = svg + _stRenderMarks(positions);
   }
   svg = svg + _stRenderYumi(yumiX, yumiY);
-  svg = svg + _stRenderLegend(arc, positions, width, height);
+  if (showLegend) {
+    svg = svg + _stRenderLegend(arc, positions, width, height);
+  }
 
   parentSvgElement.innerHTML = svg;
 }
