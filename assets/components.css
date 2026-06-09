@@ -821,6 +821,87 @@
 /* ===== END SHELF PAGE HEADER + ACTION BUTTONS ===== */
 
 
+/* ===== SHELF VIEW TOGGLE + LIST VIEW -- Stage 3 (chrome-fidelity) =====
+   The right-side header cluster (Covers|List seg + action buttons) as one
+   right-aligned flex row, spanning the header's two auto columns so the
+   Covers header reads exactly as before, with the seg added at its left.
+   Tokens only; no blur. */
+.shelf-actions {
+  grid-column: 2 / span 2;
+  justify-self: end;
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Segmented Covers|List toggle -- the app's pill idiom (mirrors the
+   sub-theory register toggle): mono-uppercase options, active gets --wash. */
+.shelf-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.shelf-seg-option {
+  padding: 7px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.shelf-seg-option.is-active {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+/* List view -- compact text rows of the same books (no cover thumbnails). */
+.shelf-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.shelf-book-row {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 16px 12px 20px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.shelf-book-row:hover {
+  background: var(--wash);
+}
+
+.shelf-book-row-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.shelf-book-row-author {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* Right-align the carried status pill (reuses .shelf-book-status* styling). */
+.shelf-book-row .shelf-book-status {
+  margin-left: auto;
+  align-self: center;
+}
+
+
 /* ===== NOTEBOOK PAGE HEADER + ACTION BUTTONS -- Stage 3.2a =====
    Twins the Shelf header (sibling grammar): transparent container (NO
    glass -- glass stays on the chrome pills per 3.1), Cormorant title

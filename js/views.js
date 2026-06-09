@@ -274,6 +274,25 @@ function setArcViewMode(mode) {
   sv('praxis_arc_view_mode', mode);
 }
 
+// Stage 3 (chrome-fidelity): shelf view-mode persistence. Mirrors the arc
+// view-mode pattern above -- localStorage, one global preference, default
+// 'covers'. The allow-list coerces any corrupt/hand-edited value back to
+// the safe default in both the getter and setter.
+function getShelfView() {
+  var v = ls('praxis_shelf_view', 'covers');
+  if (v !== 'covers' && v !== 'list') {
+    return 'covers';
+  }
+  return v;
+}
+
+function setShelfView(v) {
+  if (v !== 'covers' && v !== 'list') {
+    return;
+  }
+  sv('praxis_shelf_view', v);
+}
+
 // 3.10a Stage 4: guards initNavMobileToggle so the hamburger
 // listener binds exactly once across the session. Module-level so
 // the flag persists across renderRoute calls.
@@ -1212,6 +1231,39 @@ function renderShelf() {
   // inline editor; signed-out user gets a sign-in prompt routed
   // through signInWithGoogle (the same path used by the Notebook
   // and book-detail surfaces).
+  // Stage 3 (chrome-fidelity): right-side controls grouped in a flex
+  // .shelf-actions, with the Covers|List segmented toggle as its first child
+  // (mockup header layout). VIEW-NEUTRAL for Covers -- eyebrow/title are
+  // untouched and Add/Bulk/Resolve keep their classes, order, and handlers;
+  // only their container changed (header child -> actions child).
+  var actions = document.createElement('div');
+  actions.className = 'shelf-actions';
+
+  var shelfViewMode = getShelfView();
+  var seg = document.createElement('div');
+  seg.className = 'shelf-seg';
+  var segCovers = document.createElement('button');
+  segCovers.type = 'button';
+  segCovers.className = 'shelf-seg-option'
+    + (shelfViewMode === 'covers' ? ' is-active' : '');
+  segCovers.textContent = 'Covers';
+  segCovers.addEventListener('click', function() {
+    setShelfView('covers');
+    renderShelf();
+  });
+  seg.appendChild(segCovers);
+  var segList = document.createElement('button');
+  segList.type = 'button';
+  segList.className = 'shelf-seg-option'
+    + (shelfViewMode === 'list' ? ' is-active' : '');
+  segList.textContent = 'List';
+  segList.addEventListener('click', function() {
+    setShelfView('list');
+    renderShelf();
+  });
+  seg.appendChild(segList);
+  actions.appendChild(seg);
+
   var user = getCurrentUser();
   if (user) {
     var newBtn = document.createElement('button');
@@ -1221,7 +1273,7 @@ function renderShelf() {
     newBtn.addEventListener('click', function() {
       openShelfEditor();
     });
-    header.appendChild(newBtn);
+    actions.appendChild(newBtn);
 
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
@@ -1230,7 +1282,7 @@ function renderShelf() {
     bulkBtn.addEventListener('click', function() {
       openBulkAddEditor();
     });
-    header.appendChild(bulkBtn);
+    actions.appendChild(bulkBtn);
 
     // 3.10d: resolve missing covers (title-imported books). The 109-
     // book bulk-import wrote coverUrl: null for every title-form line
@@ -1250,7 +1302,7 @@ function renderShelf() {
     resolveBtn.addEventListener('click', function() {
       startCoverBackfill();
     });
-    header.appendChild(resolveBtn);
+    actions.appendChild(resolveBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -1259,9 +1311,10 @@ function renderShelf() {
     signinBtn.addEventListener('click', function() {
       signInWithGoogle();
     });
-    header.appendChild(signinBtn);
+    actions.appendChild(signinBtn);
   }
 
+  header.appendChild(actions);
   wrap.appendChild(header);
 
   // 3.10a Stage 2: two-column layout below the full-width header.
@@ -1553,13 +1606,28 @@ function renderShelf() {
     }
     main.appendChild(empty);
   } else {
-    var list = document.createElement('div');
-    list.className = 'shelf-list';
-    var i;
-    for (i = 0; i < books.length; i++) {
-      list.appendChild(renderShelfBook(books[i]));
+    // Stage 3: branch on the persisted shelf view. Both consume the SAME
+    // post-sort/post-filter `books` array, so sort/filter/search work
+    // identically in either view. 'covers' = the existing grid via
+    // renderShelfBook (untouched); 'list' = compact rows via the new
+    // renderShelfBookRow.
+    if (getShelfView() === 'list') {
+      var rows = document.createElement('div');
+      rows.className = 'shelf-rows';
+      var ri;
+      for (ri = 0; ri < books.length; ri++) {
+        rows.appendChild(renderShelfBookRow(books[ri]));
+      }
+      main.appendChild(rows);
+    } else {
+      var list = document.createElement('div');
+      list.className = 'shelf-list';
+      var i;
+      for (i = 0; i < books.length; i++) {
+        list.appendChild(renderShelfBook(books[i]));
+      }
+      main.appendChild(list);
     }
-    main.appendChild(list);
   }
 
   layout.appendChild(main);
@@ -1680,6 +1748,52 @@ function renderShelfBook(book) {
 
   card.appendChild(meta);
   return card;
+}
+
+// Stage 3 (chrome-fidelity): compact List-view row. Whole-row anchor to
+// #book/<id> (browser hashchange handles nav). Title + muted author byline,
+// right-aligned status pill (OMITTED when status is falsy -- no invented
+// default, unlike the covers card). NO cover thumbnail. The register tick is
+// CARRIED from renderShelfBook using the SAME data-driven mechanism + the
+// existing .shelf-book-tick class (no new tick CSS authored); omitted for
+// unassigned / tokenless traditions, same guard as the covers card.
+function renderShelfBookRow(book) {
+  var row = document.createElement('a');
+  row.className = 'shelf-book-row';
+  row.href = '#book/' + book.id;
+
+  var rowTradition = book.traditionOverride || book.tradition;
+  if (rowTradition && rowTradition !== 'unassigned' &&
+      typeof REGISTER_SHAPE_PATHS[rowTradition] === 'string' &&
+      REGISTER_SHAPE_PATHS[rowTradition] !== '') {
+    var tick = document.createElement('span');
+    tick.className = 'shelf-book-tick';
+    tick.setAttribute('aria-hidden', 'true');
+    tick.style.setProperty('--tick', 'var(--register-' + rowTradition + ')');
+    row.appendChild(tick);
+  }
+
+  var titleEl = document.createElement('span');
+  titleEl.className = 'shelf-book-row-title';
+  titleEl.textContent = book.title || '';
+  row.appendChild(titleEl);
+
+  if (book.author) {
+    var authorEl = document.createElement('span');
+    authorEl.className = 'shelf-book-row-author';
+    authorEl.textContent = book.author;
+    row.appendChild(authorEl);
+  }
+
+  // Reuse the covers card's status-pill classes; omit entirely when falsy.
+  if (book.status) {
+    var statusEl = document.createElement('span');
+    statusEl.className = 'shelf-book-status shelf-book-status-' + book.status;
+    statusEl.textContent = book.status;
+    row.appendChild(statusEl);
+  }
+
+  return row;
 }
 
 // Stage 5.6 sub-step 3: renderRegisterGlyph primitive.
