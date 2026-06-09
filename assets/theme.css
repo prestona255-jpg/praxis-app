@@ -256,8 +256,11 @@
   --radius-xl:     22px;
 
   /* --- Batch 1 foundation: deep-honey ground radial + chrome roles --- */
-  --ground-base:   #cbb074;
-  --ground-edge:   #c4a35a;
+  /* Batch 5: the dark goldenrod stops retired -- both now resolve to the
+     paler --bg-2 so the ground reads as light airy honey with no dark
+     band. Tokens kept (not renamed) to avoid touching any consumer. */
+  --ground-base:   var(--bg-2);
+  --ground-edge:   var(--bg-2);
   --wordmark:      #8a5e15;
   --wash:          rgba(58,40,16,.1);
   --radius-pill:   999px;
@@ -356,14 +359,15 @@ body::before {
       color-mix(in srgb, var(--ink-2) 1%, transparent) 29px,
       color-mix(in srgb, var(--ink-2) 1%, transparent) 31px
     ),
-    /* Batch 1: the mockup's top-centered deep-honey page radial,
-       superseding the A1.2 top-left warm-white glow. The 3 grain
-       layers above are unchanged; --ground-base is the bottom fill. */
+    /* Batch 5: viewport-covering honey lift (was the Batch 1 560px
+       top radial that left a dark lower band). Viewport-relative size
+       scales with the window; honey center fades to the paler --bg-2 at
+       the edge -- a clean monotonic lift, no dark stop. The 3 grain
+       layers above are unchanged; --bg-2 is the bottom fill. */
     radial-gradient(
-      1100px 560px at 50% -6%,
+      135% 115% at 50% -12%,
       var(--ground-center),
-      var(--bg) 55%,
-      var(--ground-edge)
+      var(--bg-2) 100%
     ),
-    var(--ground-base);
+    var(--bg-2);
 }
