@@ -1551,4 +1551,8 @@ function attachSubTheoryDrag(svg, opts) {
 if (typeof window !== 'undefined') {
   window.renderSubTheoryConstellation = renderSubTheoryConstellation;
   window.attachSubTheoryDrag = attachSubTheoryDrag;
+  // Chrome-fidelity Stage 2: a thin id->color accessor so the ⌘K spotlight can
+  // tint a sub-theory's result chip with the SAME hue as its constellation
+  // mark. Single source -- reuses _stIdentity/_stIndices (no hash duplication).
+  window.stColorForId = function(id) { return _stIdentity(id).color; };
 }

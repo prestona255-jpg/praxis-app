@@ -65,7 +65,12 @@ function spotlightSearch(query) {
         ideaItems.push({
           label: st.header || 'Untitled sub-theory',
           type:  'idea',
-          route: '#subtheory/' + stk
+          route: '#subtheory/' + stk,
+          // Stage 2: this sub-theory's constellation hue (same id->color
+          // source as the mark). Guarded -- neutral fallback if the
+          // constellation module did not load. Only idea chips carry a tint.
+          tint:  (typeof window.stColorForId === 'function')
+            ? window.stColorForId(stk) : null
         });
       }
     }
@@ -226,6 +231,13 @@ function spotlightRender(query) {
       var icon = document.createElement('span');
       icon.className = 'spotlight-item-icon';
       icon.setAttribute('aria-hidden', 'true');
+      // Stage 2: idea chips take their sub-theory hue as a LIT radial (pale
+      // --surface-2 core -> the hue), echoing the mark halo. Tokens only.
+      // Books / authors / arcs&notes have no tint -> neutral CSS default.
+      if (item.tint) {
+        icon.style.background =
+          'radial-gradient(circle, var(--surface-2), ' + item.tint + ' 80%)';
+      }
       rowEl.appendChild(icon);
 
       var labelEl = document.createElement('b');
