@@ -1927,6 +1927,7 @@
 /* Stage 4: left column = cover + the action buttons stacked under it. */
 .book-detail-cover-col {
   grid-column: 1;
+  grid-row: 1 / span 6;
   display: flex;
   flex-direction: column;
   gap: 14px;
