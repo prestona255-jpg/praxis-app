@@ -499,7 +499,7 @@ var _ST_SILHOUETTES = ['circle', 'hexagon', 'diamond', 'triangle'];
 var _ST_TREATMENTS = ['rings', 'hatch', 'halftone', 'dotgrid', 'labyrinth',
   'linefade', 'burst', 'waves', 'crossweave', 'stipple', 'spiral',
   'herringbone', 'nested', 'sunburst'];
-var _ST_SCALE = 78; // Hybrid Stage A: bumped 64->78 so each mark reads crisp (silhouette + treatment legible), echoing the vocabulary strip
+var _ST_SCALE = 60; // Hybrid Stage A: bumped 64->78 so each mark reads crisp (silhouette + treatment legible), echoing the vocabulary strip
 
 // Unique clip-path id counter, mirroring _tfaNextId -- clip ids must be
 // document-unique so two constellations on one page can't collide.
@@ -591,7 +591,7 @@ function _stGetDefs() {
     c = 'var(--subtheory-' + i + ')';
     s = s + '<radialGradient id="st-halo-' + i + '" cx="50%" cy="50%" r="50%">';
     s = s +   '<stop offset="55%" stop-color="' + c + '" stop-opacity="0"/>';
-    s = s +   '<stop offset="78%" stop-color="' + c + '" stop-opacity="0.72"/>';
+    s = s +   '<stop offset="78%" stop-color="' + c + '" stop-opacity="0.50"/>';
     s = s +   '<stop offset="100%" stop-color="' + c + '" stop-opacity="0"/>';
     s = s + '</radialGradient>';
   }
@@ -894,7 +894,7 @@ function _stRenderShapes(positions) {
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
-    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="2.4" opacity="0.95"/>');
+    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.6" opacity="0.95"/>');
     out = out + '</g>';
   }
   return out;
