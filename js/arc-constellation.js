@@ -884,9 +884,13 @@ function _stRenderShapes(positions) {
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
     out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
-    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.62">';
+    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.72">';
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '"/>';
-    out = out +     _stTreatment(treatKey, u, colorVar);
+    // Hybrid Stage C.2: draw the treatment in the darker EDGE companion token
+    // (not the body color) so the pattern CONTRASTS against the body pane and
+    // reads at field scale -- a rings mark is now legibly distinct from waves
+    // / hatch. Mapping is unchanged: same colorIdx, just its -edge variant.
+    out = out +     _stTreatment(treatKey, u, 'var(--subtheory-' + (ix.colorIdx + 1) + '-edge)');
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
@@ -1050,25 +1054,42 @@ function _stRenderLegend(arc, positions, width, height) {
 // data-st-sub-id / data-st-mark), so the drag + connect hit-tests in
 // attachSubTheoryDrag skip them; an explicit bail there is the belt-and-
 // suspenders inertness guard.
-function _stRenderBooks(books, width, height) {
+function _stRenderBooks(books, positions, width, height) {
   if (!books || !books.length) { return ''; }
   var cx = width / 2;
   var cy = height / 2;
-  // Hybrid Stage C polish: an ELLIPTICAL ring (wider than tall) pushes books
-  // into the left/right field gaps, clear of the central mark cluster (mark
-  // orbit ~0.32), and the fill moves --surface-2 -> --sunk for clear contrast
-  // against the light field. Position stays deterministic per id.
-  var rx = width * 0.45;
-  var ry = height * 0.42;
+  // Hybrid Stage C.2: deterministic anti-overlap. Each book starts at its
+  // id-hashed angle on an OUTER ellipse (wider than the mark orbit), then if
+  // that spot lands within a clearance radius of ANY sub-theory mark (incl.
+  // dragged ones) it is rotated in fixed steps around the ellipse until clear
+  // -- or, after a full turn, left at its base spot. Pure function of (id,
+  // mark positions): stable per id and per arrangement. Fill is --sunk for
+  // contrast against the light field; books stay inert.
+  var rx = width * 0.46;
+  var ry = height * 0.44;
   var sz = 16;
+  var clear = _ST_SCALE * 0.5 + sz; // mark radius (~39) + book half + gap
+  var marks = positions || [];
   var out = '<g data-st-books="1">';
-  var i;
+  var i, j, t;
   for (i = 0; i < books.length; i = i + 1) {
     var b = books[i] || {};
     if (!b.id) { continue; }
-    var ang = _arcHash(b.id, 700) * Math.PI * 2;
-    var bx = cx + Math.cos(ang) * rx;
-    var by = cy + Math.sin(ang) * ry;
+    var base = _arcHash(b.id, 700) * Math.PI * 2;
+    var bx = cx + Math.cos(base) * rx;
+    var by = cy + Math.sin(base) * ry;
+    for (t = 0; t < 24; t = t + 1) {
+      var ang = base + t * (Math.PI * 2 / 24);
+      bx = cx + Math.cos(ang) * rx;
+      by = cy + Math.sin(ang) * ry;
+      var okay = true;
+      for (j = 0; j < marks.length; j = j + 1) {
+        var dx = bx - marks[j].x;
+        var dy = by - marks[j].y;
+        if (dx * dx + dy * dy < clear * clear) { okay = false; break; }
+      }
+      if (okay) { break; }
+    }
     out = out + '<g data-st-book-id="' + _arcEscapeXml(b.id) + '" transform="translate(' + _arcR(bx) + ',' + _arcR(by) + ')">';
     out = out +   '<rect x="' + _arcR(-sz / 2) + '" y="' + _arcR(-sz / 2) + '" width="' + sz + '" height="' + sz + '" rx="3" fill="var(--sunk)" stroke="var(--ink-4)" stroke-width="1.4" opacity="0.95"/>';
     out = out + '</g>';
@@ -1139,7 +1160,7 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
 
   svg = svg + _stRenderEdges(arc.edges || [], posById, showFaint); // solid resonance always; faint gated + dormant
   if (showBooks) {
-    svg = svg + _stRenderBooks(arc.books || [], width, height); // inert neutral squares (behind marks)
+    svg = svg + _stRenderBooks(arc.books || [], positions, width, height); // inert neutral squares (behind marks), nudged clear
   }
   svg = svg + _stRenderShapes(positions);
   if (showMarginalia) {
