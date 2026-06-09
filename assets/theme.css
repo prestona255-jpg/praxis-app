@@ -260,6 +260,11 @@
   --wordmark:      #8a5e15;
   --wash:          rgba(58,40,16,.1);
   --radius-pill:   999px;
+
+  /* --- Batch 2: trust-cluster roles --- */
+  --on-teal:       #06241a;  /* dark text on a teal FILL (tog.on, vis.on) */
+  --panel-yumi:    color-mix(in srgb, var(--surface) 90%, var(--marginalia-color) 10%);
+                   /* opaque honey with a faint teal cast -- What-Yumi-Sees body */
 }
 
 body {

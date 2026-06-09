@@ -676,7 +676,9 @@ function renderNotebook() {
     wrap.appendChild(empty);
   } else {
     var list = document.createElement('div');
-    list.className = 'notebook-entry-list';
+    // Batch 2: the entry stream is one opaque --surface panel
+    // (.notebook-entries-panel) containing .row entries, per the mockup.
+    list.className = 'notebook-entry-list notebook-entries-panel';
     var i;
     for (i = 0; i < items.length; i++) {
       if (items[i].kind === 'artifact') {
@@ -1139,6 +1141,13 @@ function renderShelf() {
   var header = document.createElement('header');
   header.className = 'shelf-header';
 
+  // Batch 2: generic .eyebrow kicker above the title (mockup .shelf-top),
+  // replacing the DM-Mono book-count subtitle.
+  var eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow shelf-eyebrow';
+  eyebrow.textContent = 'Your library';
+  header.appendChild(eyebrow);
+
   var title = document.createElement('h1');
   title.className = 'shelf-title';
   title.textContent = 'Your shelf';
@@ -1151,22 +1160,6 @@ function renderShelf() {
   // and book-detail surfaces).
   var user = getCurrentUser();
   if (user) {
-    // Stage 3.10a Stage 1: book-count subtitle. Signed-in branch
-    // only -- signed-out users have no uid and therefore no
-    // userBooks bucket to count against (Q1 resolution 2026-05-15).
-    // Singular case is "1 BOOK", plural "N BOOKS"; both uppercase
-    // because the .shelf-subtitle rule applies text-transform but
-    // we keep the source string uppercase too so the DOM matches
-    // what the user sees and assistive tech reads.
-    var subtitle = document.createElement('p');
-    subtitle.className = 'shelf-subtitle';
-    var bookCount = (state.userBooks && state.userBooks[user.uid] &&
-                     state.userBooks[user.uid].bookIds &&
-                     state.userBooks[user.uid].bookIds.length) || 0;
-    var bookNoun = bookCount === 1 ? 'BOOK' : 'BOOKS';
-    subtitle.textContent = bookCount + ' ' + bookNoun;
-    header.appendChild(subtitle);
-
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
     newBtn.className = 'shelf-new-book';
@@ -4772,71 +4765,89 @@ function openEntryArcPicker(entryId, mountEl, statusMsg) {
 }
 
 function renderNotebookEntry(entry) {
+  // Batch 2: reshaped from a separate card into a .row inside the
+  // .notebook-entries-panel. Left register spine via ::before reads
+  // --reg: marginalia = teal (--marginalia-color, Yumi), journal =
+  // --ink-4 (no subtheory token -- those are workspace-only). All
+  // affordance wiring (togglePrivacy / openEntryArcPicker / deleteEntry)
+  // is preserved verbatim; only the DOM grouping + labels changed.
+  var isMarg = entry.register === 'marginalia';
+  var priv = entry.isPrivate === true;
+  var capturedId = entry.id;
+
   var card = document.createElement('article');
   card.className = 'notebook-entry';
+  card.style.setProperty('--reg',
+    isMarg ? 'var(--marginalia-color)' : 'var(--ink-4)');
 
-  var meta = document.createElement('div');
-  meta.className = 'notebook-entry-meta';
+  // Entry head: register pill + timestamp + visibility indicator.
+  var eh = document.createElement('div');
+  eh.className = 'notebook-entry-head';
 
   var registerEl = document.createElement('span');
-  registerEl.className = 'notebook-entry-register';
-  registerEl.textContent = entry.register || 'journal';
+  registerEl.className = 'notebook-entry-tag ' +
+    (isMarg ? 'notebook-entry-tag-m' : 'notebook-entry-tag-j');
+  registerEl.textContent = isMarg ? 'Marginalia' : 'Journal';
+  eh.appendChild(registerEl);
 
   var timeEl = document.createElement('time');
+  timeEl.className = 'notebook-entry-ts';
   var ts = new Date(entry.createdAt || 0);
   timeEl.textContent = ts.toLocaleString();
   if (entry.createdAt) {
     timeEl.setAttribute('datetime', ts.toISOString());
   }
+  eh.appendChild(timeEl);
 
-  meta.appendChild(registerEl);
-  meta.appendChild(timeEl);
+  // Visibility indicator -- reads the EXISTING isPrivate field (no new
+  // data). Teal when visible to Yumi; muted when private.
+  var visEl = document.createElement('span');
+  visEl.className = 'notebook-entry-vis ' +
+    (priv ? 'notebook-entry-vis-off' : 'notebook-entry-vis-on');
+  var visDot = document.createElement('span');
+  visDot.className = 'notebook-entry-vis-dot';
+  visEl.appendChild(visDot);
+  visEl.appendChild(document.createTextNode(priv ? 'Private' : 'Visible to Yumi'));
+  eh.appendChild(visEl);
 
-  // For marginalia entries, add a second meta line naming the book.
-  // Fail soft if state.books does not know the referenced book.
-  if (entry.register === 'marginalia') {
-    var bookMeta = document.createElement('div');
-    bookMeta.className = 'notebook-entry-book-meta';
+  card.appendChild(eh);
+
+  // Marginalia source line. Fail soft if the book is unknown.
+  if (isMarg) {
+    var src = document.createElement('div');
+    src.className = 'notebook-entry-src';
     var bookId = (entry.bookIds && entry.bookIds[0]) || null;
     var book = (bookId && state.books && state.books[bookId]) || null;
     var bookTitle = (book && book.title) || '(unknown book)';
-    bookMeta.textContent = 'from ' + bookTitle;
-    meta.appendChild(bookMeta);
+    src.textContent = 'from ' + bookTitle;
+    card.appendChild(src);
   }
 
-  // Privacy indicator + flip affordance. The text reflects the
-  // current value; the link inverts it. Principle #5: anything
-  // captured is visible and correctable to the user.
-  var privacyEl = document.createElement('span');
-  privacyEl.className = 'notebook-entry-privacy';
-  privacyEl.appendChild(document.createTextNode(
-    entry.isPrivate === true ? 'private ' : 'visible to Yumi '
-  ));
+  var bodyEl = document.createElement('div');
+  bodyEl.className = 'notebook-entry-body';
+  bodyEl.textContent = entry.body || '';
+  card.appendChild(bodyEl);
+
+  // Actions row. Wiring unchanged: privacy flip (togglePrivacy), add to
+  // arc (openEntryArcPicker, inline lazy mount), delete (click-to-confirm
+  // via deleteEntry, same location.hash re-render branch).
+  var acts = document.createElement('div');
+  acts.className = 'notebook-entry-acts';
+
   var privacyToggle = document.createElement('a');
   privacyToggle.href = '#';
   privacyToggle.className = 'notebook-entry-privacy-toggle';
-  privacyToggle.textContent =
-    entry.isPrivate === true ? 'make visible' : 'make private';
-  var capturedId = entry.id;
+  privacyToggle.textContent = priv ? 'Make visible' : 'Make private';
   privacyToggle.addEventListener('click', function(ev) {
     ev.preventDefault();
     togglePrivacy(capturedId);
   });
-  privacyEl.appendChild(privacyToggle);
-  meta.appendChild(privacyEl);
+  acts.appendChild(privacyToggle);
 
-  // Stage 3.8 sub-stage 2b-ii: per-card "add to arc" link. Mirrors the
-  // privacy-toggle link shape inside the meta row -- <a href="#"> with
-  // capturedId in closure. The picker mounts inline inside this card,
-  // not in a global host: per-card scope can't live on a shared host
-  // because the click attribution would be ambiguous. The inline mount
-  // element is created lazily on first click and reused on subsequent
-  // clicks (the picker's mountEl.innerHTML = '' resets the contents
-  // each time it opens).
   var addToArcLink = document.createElement('a');
   addToArcLink.href = '#';
   addToArcLink.className = 'notebook-entry-add-to-arc';
-  addToArcLink.textContent = 'add to arc';
+  addToArcLink.textContent = 'Add to arc';
   addToArcLink.addEventListener('click', function(ev) {
     ev.preventDefault();
     var mount = card.querySelector('.notebook-entry-arc-picker-host');
@@ -4847,17 +4858,12 @@ function renderNotebookEntry(entry) {
     }
     openEntryArcPicker(capturedId, mount);
   });
-  meta.appendChild(addToArcLink);
+  acts.appendChild(addToArcLink);
 
-  // Stage 5.7 sub-step 1: delete affordance. Click-to-confirm matches
-  // openArcDeleteConfirm precedent — explicit Cancel/Confirm clicks,
-  // no auto-revert, no click-outside dismiss. capturedId already in
-  // scope from privacy-toggle block above. Re-render dispatch mirrors
-  // togglePrivacy:3631–3635 verbatim (location.hash branch).
   var deleteLink = document.createElement('a');
   deleteLink.href = '#';
   deleteLink.className = 'notebook-entry-delete';
-  deleteLink.textContent = 'delete';
+  deleteLink.textContent = 'Delete';
 
   var confirmLink = document.createElement('a');
   confirmLink.href = '#';
@@ -4898,16 +4904,11 @@ function renderNotebookEntry(entry) {
     }
   });
 
-  meta.appendChild(deleteLink);
-  meta.appendChild(confirmLink);
-  meta.appendChild(cancelLink);
+  acts.appendChild(deleteLink);
+  acts.appendChild(confirmLink);
+  acts.appendChild(cancelLink);
 
-  var bodyEl = document.createElement('div');
-  bodyEl.className = 'notebook-entry-body';
-  bodyEl.textContent = entry.body || '';
-
-  card.appendChild(meta);
-  card.appendChild(bodyEl);
+  card.appendChild(acts);
   return card;
 }
 
@@ -5056,6 +5057,46 @@ function openNotebookSettings() {
   var panel = document.createElement('div');
   panel.className = 'notebook-settings-panel';
 
+  // Batch 2: segmented Visible|Private pill (mockup .tog) replacing the
+  // underline-link toggle. Reads/writes the EXISTING register default via
+  // getRegisterDefault/setRegisterDefault (wiring unchanged); clicking the
+  // already-active option is a no-op. role=button + keydown preserve the
+  // keyboard access the prior <a> had. setRegisterDefault re-paints the
+  // panel, so the pill restyles after a flip.
+  function buildTog(register) {
+    var isPriv = getRegisterDefault(register);
+    var tog = document.createElement('div');
+    tog.className = 'notebook-settings-tog';
+    tog.setAttribute('role', 'group');
+    function makeOpt(label, wantPrivate, active) {
+      var opt = document.createElement('span');
+      opt.className = 'notebook-settings-tog-opt' +
+        (active ? ' notebook-settings-tog-opt-on' : '');
+      opt.textContent = label;
+      opt.setAttribute('role', 'button');
+      opt.setAttribute('tabindex', '0');
+      function activate() {
+        if (getRegisterDefault(register) !== wantPrivate) {
+          setRegisterDefault(register, wantPrivate);
+        }
+      }
+      opt.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        activate();
+      });
+      opt.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+          ev.preventDefault();
+          activate();
+        }
+      });
+      return opt;
+    }
+    tog.appendChild(makeOpt('Visible', false, !isPriv));
+    tog.appendChild(makeOpt('Private', true, isPriv));
+    return tog;
+  }
+
   // Journal section.
   var jSec = document.createElement('div');
   jSec.className = 'notebook-settings-section';
@@ -5065,21 +5106,7 @@ function openNotebookSettings() {
   jLabel.textContent = 'Journal default';
   jSec.appendChild(jLabel);
 
-  var jCurrent = document.createElement('span');
-  jCurrent.className = 'notebook-settings-current';
-  var jPrivate = getRegisterDefault('journal');
-  jCurrent.textContent = jPrivate ? 'private' : 'visible';
-  jSec.appendChild(jCurrent);
-
-  var jToggle = document.createElement('a');
-  jToggle.href = '#';
-  jToggle.className = 'notebook-settings-toggle-link';
-  jToggle.textContent = jPrivate ? 'Set to visible' : 'Set to private';
-  jToggle.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    setRegisterDefault('journal', !getRegisterDefault('journal'));
-  });
-  jSec.appendChild(jToggle);
+  jSec.appendChild(buildTog('journal'));
 
   var jExp = document.createElement('p');
   jExp.className = 'notebook-settings-explanation';
@@ -5099,21 +5126,7 @@ function openNotebookSettings() {
   mLabel.textContent = 'Marginalia default';
   mSec.appendChild(mLabel);
 
-  var mCurrent = document.createElement('span');
-  mCurrent.className = 'notebook-settings-current';
-  var mPrivate = getRegisterDefault('marginalia');
-  mCurrent.textContent = mPrivate ? 'private' : 'visible';
-  mSec.appendChild(mCurrent);
-
-  var mToggle = document.createElement('a');
-  mToggle.href = '#';
-  mToggle.className = 'notebook-settings-toggle-link';
-  mToggle.textContent = mPrivate ? 'Set to visible' : 'Set to private';
-  mToggle.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    setRegisterDefault('marginalia', !getRegisterDefault('marginalia'));
-  });
-  mSec.appendChild(mToggle);
+  mSec.appendChild(buildTog('marginalia'));
 
   var mExp = document.createElement('p');
   mExp.className = 'notebook-settings-explanation';
