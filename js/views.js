@@ -499,10 +499,21 @@ function renderNotebook() {
   var header = document.createElement('header');
   header.className = 'notebook-header';
 
+  // Batch 3 F1: eyebrow + title in a left block (mockup notebook header).
+  var titleBlock = document.createElement('div');
+  titleBlock.className = 'notebook-title-block';
+
+  var eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Structurally private';
+  titleBlock.appendChild(eyebrow);
+
   var title = document.createElement('h1');
   title.className = 'notebook-title';
   title.textContent = 'Notebook';
-  header.appendChild(title);
+  titleBlock.appendChild(title);
+
+  header.appendChild(titleBlock);
 
   var user = getCurrentUser();
   if (user) {
@@ -581,53 +592,9 @@ function renderNotebook() {
   arcEditorHost.id = 'notebook-arc-editor-host';
   wrap.appendChild(arcEditorHost);
 
-  // Stage 3.8: arc-list block. Always renders (the heading is the
-  // durable cue that arcs exist, surviving past first-create when the
-  // empty-state line goes away). Filter by current user, newest-first
-  // by createdAt -- mirrors the chronological stream's ordering
-  // convention. Rows are inert this stage; arc detail navigation is
-  // 3.9. Block lives ABOVE the chronological item stream and BELOW
-  // the header / editor hosts.
-  var arcBlock = document.createElement('section');
-  arcBlock.className = 'notebook-arc-list-block';
-
-  var arcHeading = document.createElement('h2');
-  arcHeading.className = 'notebook-arc-list-title';
-  arcHeading.textContent = 'Arcs';
-  arcBlock.appendChild(arcHeading);
-
-  var arcItems = [];
-  var arcMap = state.arcs || {};
-  var arcKey;
-  for (arcKey in arcMap) {
-    if (Object.prototype.hasOwnProperty.call(arcMap, arcKey)) {
-      var arc = arcMap[arcKey];
-      if (arc && user && (arc.userId === user.uid || arc.userId === '__praxis_seed__')) {
-        arcItems.push(arc);
-      }
-    }
-  }
-  arcItems.sort(function(x, y) {
-    return (y.createdAt || 0) - (x.createdAt || 0);
-  });
-
-  if (arcItems.length === 0) {
-    var arcEmpty = document.createElement('p');
-    arcEmpty.className = 'notebook-arc-empty-body';
-    arcEmpty.textContent =
-      'No arcs yet. Use + New arc to start one.';
-    arcBlock.appendChild(arcEmpty);
-  } else {
-    var arcList = document.createElement('div');
-    arcList.className = 'notebook-arc-list';
-    var ai;
-    for (ai = 0; ai < arcItems.length; ai++) {
-      arcList.appendChild(renderArcRow(arcItems[ai]));
-    }
-    arcBlock.appendChild(arcList);
-  }
-
-  wrap.appendChild(arcBlock);
+  // Batch 3 F3: the Notebook arcs-list block was removed -- the Arcs
+  // index page is the canonical arc list, and the mockup omits it here.
+  // The "+ New arc" header button (above) is retained.
 
   var entryHeading = document.createElement('h2');
   entryHeading.className = 'notebook-entry-list-title';
@@ -2429,6 +2396,21 @@ function renderBookDetail(bookId) {
     header.appendChild(coverPlaceholder);
   }
 
+  // Batch 3: reg-tag -- outlined river-toned mono pill above the title,
+  // rendered ONLY when the book carries a real tradition (omitted for the
+  // ~95% 'unassigned'). NOTE: the mockup's q-pull pull-quote is omitted
+  // this batch -- books carry no quote field; a future book.quote field
+  // is the proper home for it (do not fake it from marginalia).
+  var effTrad = book.traditionOverride || book.tradition;
+  if (effTrad && effTrad !== 'unassigned') {
+    var regTag = document.createElement('span');
+    regTag.className = 'book-detail-reg-tag';
+    regTag.textContent =
+      (typeof TRADITION_LABELS === 'object' && TRADITION_LABELS[effTrad])
+        ? TRADITION_LABELS[effTrad] : effTrad;
+    header.appendChild(regTag);
+  }
+
   var title = document.createElement('h1');
   title.className = 'book-detail-title';
   title.textContent = book.title || '';
@@ -2440,6 +2422,44 @@ function renderBookDetail(bookId) {
     author.textContent = book.author;
     header.appendChild(author);
   }
+
+  // Batch 3: meta line -- status + derived (read-only) arc + marginalia
+  // counts. Arc membership = arc.bookIds entries whose id === bookId;
+  // marginalia = marginalia-register entries naming this book.
+  var bdArcCount = 0;
+  var bdArcMap = state.arcs || {};
+  var bdAmk;
+  for (bdAmk in bdArcMap) {
+    if (Object.prototype.hasOwnProperty.call(bdArcMap, bdAmk)) {
+      var bdArc = bdArcMap[bdAmk];
+      if (bdArc && bdArc.bookIds) {
+        var bdBi;
+        for (bdBi = 0; bdBi < bdArc.bookIds.length; bdBi++) {
+          var bdEntry = bdArc.bookIds[bdBi];
+          var bdId = (bdEntry && bdEntry.id) ? bdEntry.id : bdEntry;
+          if (bdId === bookId) { bdArcCount = bdArcCount + 1; break; }
+        }
+      }
+    }
+  }
+  var bdMargCount = 0;
+  var bdEmap = state.notebookEntries || {};
+  var bdEmk;
+  for (bdEmk in bdEmap) {
+    if (Object.prototype.hasOwnProperty.call(bdEmap, bdEmk)) {
+      var bdE = bdEmap[bdEmk];
+      if (bdE && bdE.register === 'marginalia' && bdE.bookIds &&
+          bdE.bookIds.indexOf(bookId) !== -1) {
+        bdMargCount = bdMargCount + 1;
+      }
+    }
+  }
+  var metaLine = document.createElement('p');
+  metaLine.className = 'book-detail-meta';
+  metaLine.textContent = (book.status || 'reading') + ' · in ' +
+    bdArcCount + (bdArcCount === 1 ? ' arc' : ' arcs') +
+    ' · ' + bdMargCount + ' marginalia';
+  header.appendChild(metaLine);
 
   var user = getCurrentUser();
   if (user) {
@@ -2579,6 +2599,32 @@ function renderBookDetail(bookId) {
     header.appendChild(bdFindLink);
   }
 
+  // Batch 3: "Your Book Artifact" card -- OPAQUE --surface. Shows the
+  // real artifact body when one exists (the "Open Artifact" link above
+  // opens the full view); otherwise the teaser copy.
+  var artCard = document.createElement('div');
+  artCard.className = 'book-detail-artifact-card';
+  var artEyebrow = document.createElement('p');
+  artEyebrow.className = 'eyebrow';
+  artEyebrow.textContent = 'Your Book Artifact';
+  artCard.appendChild(artEyebrow);
+  var artBody = document.createElement('p');
+  artBody.className = 'book-detail-artifact-body';
+  var bdArtRec = null;
+  if (user && state.bookArtifacts) {
+    var bdArtKey = artifactKey(user.uid, bookId);
+    if (state.bookArtifacts[bdArtKey]) bdArtRec = state.bookArtifacts[bdArtKey];
+  }
+  if (bdArtRec && typeof bdArtRec.body === 'string' && bdArtRec.body.length > 0) {
+    artBody.textContent = bdArtRec.body;
+  } else {
+    artBody.textContent =
+      'A standing place for what this book is doing in your thinking -- ' +
+      'written once, yours, and visible to Yumi only when you choose.';
+  }
+  artCard.appendChild(artBody);
+  header.appendChild(artCard);
+
   wrap.appendChild(header);
 
   // Stage 3.7c: status selector. Editable on book detail; sibling to
@@ -2594,6 +2640,16 @@ function renderBookDetail(bookId) {
   // the header above is unchanged in Stage 1; Stage 2 ships the
   // (reading, hasArtifact) un-finish branch, and between the two
   // commits that state will render incoherently. Expected.
+  // Batch 3: edit fields (status / ISBN / tradition) grouped into a
+  // styled details section below the reading-view chrome. Function
+  // unchanged; no edit-mode toggle.
+  var editSection = document.createElement('div');
+  editSection.className = 'book-detail-edit-section';
+  var editEyebrow = document.createElement('p');
+  editEyebrow.className = 'eyebrow';
+  editEyebrow.textContent = 'Edit details';
+  editSection.appendChild(editEyebrow);
+
   if (user) {
     var currentStatus = book.status || 'reading';
     var statusWrap = document.createElement('div');
@@ -2619,7 +2675,7 @@ function renderBookDetail(bookId) {
       statusLabel.appendChild(document.createTextNode(' ' + statuses[s]));
       statusWrap.appendChild(statusLabel);
     }
-    wrap.appendChild(statusWrap);
+    editSection.appendChild(statusWrap);
   }
 
   // 3.5b: editable ISBN row with onblur re-fetch. priorIsbn is the
@@ -2675,7 +2731,7 @@ function renderBookDetail(bookId) {
 
   isbnRow.appendChild(isbnLabel);
   isbnRow.appendChild(isbnField);
-  wrap.appendChild(isbnRow);
+  editSection.appendChild(isbnRow);
 
   // Stage 5.6 sub-step 5a: tradition dropdown.
   // Always rendered, no host, no toggle. Mirrors status-radio pattern:
@@ -2714,7 +2770,8 @@ function renderBookDetail(bookId) {
   };
 
   traditionRow.appendChild(traditionSelect);
-  wrap.appendChild(traditionRow);
+  editSection.appendChild(traditionRow);
+  wrap.appendChild(editSection);
 
   // Editor host -- empty on every render; openMarginaliaEditor
   // mounts its block here on demand.
@@ -2758,7 +2815,8 @@ function renderBookDetail(bookId) {
     wrap.appendChild(empty);
   } else {
     var list = document.createElement('div');
-    list.className = 'notebook-entry-list';
+    // Batch 3: wrap book-detail marginalia in the opaque entries panel.
+    list.className = 'notebook-entry-list notebook-entries-panel';
     var i;
     for (i = 0; i < entries.length; i++) {
       list.appendChild(renderNotebookEntry(entries[i]));
@@ -2815,6 +2873,16 @@ function renderSubTheoryPage(id) {
 
   var main = document.createElement('div');
   main.className = 'subtheory-main';
+
+  // Batch 3: eyebrow "<arc title> · sub-theory" (mockup). Fail-soft to a
+  // generic label when the parent arc can't be resolved. (Register
+  // PUBLIC|INTELLECTUAL toggle + read view are deferred to Batch 3B --
+  // the additive register model below is untouched here.)
+  var stArc = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
+  var stEyebrow = document.createElement('p');
+  stEyebrow.className = 'eyebrow';
+  stEyebrow.textContent = ((stArc && stArc.title) ? stArc.title : 'Arc') + ' · sub-theory';
+  main.appendChild(stEyebrow);
 
   var headerInput = document.createElement('input');
   headerInput.type = 'text';
@@ -4100,7 +4168,7 @@ function renderArcDetail(arcId) {
   if (user && viewMode !== 'web') {
     var newSubTheoryBtn = document.createElement('button');
     newSubTheoryBtn.type = 'button';
-    newSubTheoryBtn.className = 'notebook-new-arc';
+    newSubTheoryBtn.className = 'notebook-new-arc arc-detail-addsub';
     newSubTheoryBtn.textContent = '+ Sub-theory';
     newSubTheoryBtn.addEventListener('click', function() {
       location.hash = 'arc/' + arcId + '/new-subtheory';
@@ -4225,7 +4293,7 @@ function renderArcDetail(arcId) {
 
       var addSubBtn = document.createElement('button');
       addSubBtn.type = 'button';
-      addSubBtn.className = 'arc-detail-toggle-btn';
+      addSubBtn.className = 'arc-detail-toggle-btn arc-detail-addsub';
       addSubBtn.setAttribute('data-st-control', 'add');
       addSubBtn.textContent = '+ Sub-theory';
       addSubBtn.addEventListener('click', function() {
@@ -5536,6 +5604,10 @@ function renderAccountPage() {
 
   var header = document.createElement('header');
   header.className = 'account-header';
+  var acctEyebrow = document.createElement('p');
+  acctEyebrow.className = 'eyebrow';
+  acctEyebrow.textContent = 'Your account';
+  header.appendChild(acctEyebrow);
   var title = document.createElement('h1');
   title.className = 'account-title';
   title.textContent = 'Account';
@@ -5610,7 +5682,7 @@ function renderAccountPage() {
 
   var saveBtn = document.createElement('button');
   saveBtn.type = 'button';
-  saveBtn.className = 'notebook-new-entry';
+  saveBtn.className = 'notebook-new-entry account-save-btn';
   saveBtn.textContent = 'Save profile';
   profileBlock.appendChild(saveBtn);
 
@@ -5641,7 +5713,7 @@ function renderAccountPage() {
 
   var exportBtn = document.createElement('button');
   exportBtn.type = 'button';
-  exportBtn.className = 'notebook-new-entry';
+  exportBtn.className = 'notebook-new-entry account-secondary-btn';
   exportBtn.textContent = 'Export workspace';
   exportBtn.addEventListener('click', function() {
     var data = exportWorkspace();
@@ -5662,7 +5734,7 @@ function renderAccountPage() {
 
   var signoutBtn = document.createElement('button');
   signoutBtn.type = 'button';
-  signoutBtn.className = 'notebook-new-entry';
+  signoutBtn.className = 'notebook-new-entry account-secondary-btn';
   signoutBtn.textContent = 'Sign out';
   signoutBtn.addEventListener('click', function() {
     signOut();

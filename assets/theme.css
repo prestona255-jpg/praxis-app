@@ -263,8 +263,12 @@
 
   /* --- Batch 2: trust-cluster roles --- */
   --on-teal:       #06241a;  /* dark text on a teal FILL (tog.on, vis.on) */
-  --panel-yumi:    color-mix(in srgb, var(--surface) 90%, var(--marginalia-color) 10%);
+  --panel-yumi:    color-mix(in srgb, var(--surface) 93%, var(--marginalia-color) 7%);
                    /* opaque honey with a faint teal cast -- What-Yumi-Sees body */
+
+  /* --- Batch 3: danger zone (Account delete) --- */
+  --danger:        #9c3f1c;
+  --danger-line:   rgba(150,50,24,.45);
 }
 
 body {

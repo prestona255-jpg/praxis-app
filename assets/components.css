@@ -587,8 +587,12 @@
   padding: 48px 0 32px 0;
 }
 
+.notebook-title-block {
+  margin-right: auto;
+}
+
 .notebook-title {
-  margin: 0 auto 0 0;
+  margin: 0;
   font-family: var(--font-serif);
   font-size: 40px;
   font-weight: 500;
@@ -731,14 +735,15 @@
   padding: 10px 20px;
   border-radius: 2px;
   cursor: pointer;
-  background: var(--ink);
+  /* Batch 3: gradient primary for consistency with the other CTAs. */
+  background: var(--grad);
   color: var(--text-on-dark);
   border: none;
   align-self: start;
 }
 
 .arcs-create-btn:hover {
-  background: var(--br-deep);
+  filter: brightness(1.06);
 }
 
 /* Three-step list. Real <ol> with default decimal markers; styled
@@ -1598,10 +1603,90 @@
 .book-detail-author {
   grid-column: 2;
   margin: 0;
-  font-family: var(--font-body);
-  font-size: 16px;
+  /* Batch 3: italic-serif byline (mockup author line). */
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--ink-2);
+}
+
+/* ===== Batch 3: book-detail reading-view chrome (content column) ===== */
+.book-detail-reg-tag {
+  grid-column: 2;
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--river);
+  border: 1px solid var(--river);
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  margin-bottom: 4px;
+}
+
+.book-detail-meta {
+  grid-column: 2;
+  margin: 8px 0 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--ink-3);
 }
+
+/* "Your Book Artifact" -- OPAQUE --surface card. */
+.book-detail-artifact-card {
+  grid-column: 2;
+  margin-top: 18px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-1);
+}
+
+.book-detail-artifact-body {
+  margin: 8px 0 0 0;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+/* "Add to arc" -- gradient primary (mockup bottom CTA). */
+.book-detail-add-to-arc {
+  grid-column: 2;
+  display: inline-block;
+  justify-self: start;
+  margin-top: 16px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.book-detail-add-to-arc:hover {
+  filter: brightness(1.06);
+}
+
+/* Edit-details section -- relocated status/ISBN/tradition, opaque. */
+.book-detail-edit-section {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+}
+/* ===== END Batch 3 book-detail chrome ===== */
 
 /* Primary affordance — the creation CTAs (buttons) and the Open
    Artifact link (the intentional <a>) share the dark-fill treatment
@@ -2637,12 +2722,15 @@
    register spine (::before reads --reg, set per-entry in JS:
    marginalia=--marginalia-color, journal=--ink-4). */
 .notebook-entries-panel {
-  background: var(--surface);
-  border: 1px solid var(--line-2);
+  /* Batch 3 F2: lift to the arc-card family -- lighter --surface-2 tone,
+     defined --ink-4 hairline, larger --shadow-2 cast -- so the panel
+     reads raised off the honey ground instead of flat. */
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
   border-radius: var(--radius-lg);
   box-shadow:
     inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-1);
+    var(--shadow-2);
   overflow: hidden;
 }
 
@@ -3505,6 +3593,19 @@
   cursor: pointer;
 }
 
+/* Batch 3: "+ Sub-theory" is the control bar's primary -- gradient pill
+   (mockup .cbar .c.k). Overrides the quiet toggle/new-arc base via the
+   compound selector + source order. */
+.arc-detail-addsub {
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+}
+.arc-detail-addsub:hover {
+  background: var(--grad);
+  filter: brightness(1.06);
+}
+
 .arc-detail-toggle-btn:hover {
   border-color: var(--ink-3);
   color: var(--ink);
@@ -3872,9 +3973,23 @@
 
 .subtheory-source-label {
   min-width: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
+  /* Batch 3: .rail-it treatment -- hollow teal "gathered" ring + serif
+     title (mockup evidence rail). Ring via ::before, no JS change. */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-serif);
+  font-size: 15px;
   color: var(--ink);
+}
+
+.subtheory-source-label::before {
+  content: "";
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--marginalia-color);
 }
 
 .subtheory-source-attach {
@@ -4060,10 +4175,12 @@
 .account-field-label {
   display: block;
   margin: 0 0 6px 0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-2);
+  /* Batch 3: mono-uppercase field label (mockup .field label). */
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 /* Muted helper text under the Pen name label ("Publish as ..."). */
@@ -4135,22 +4252,47 @@
   gap: 12px;
 }
 
-/* Danger zone -- separated from the actions above by a hairline rule and
-   generous top spacing so deletion never sits adjacent to routine
-   actions. */
-.account-danger {
-  margin-top: 8px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+/* Batch 3: Save = gradient primary; Export/Sign out = secondary
+   (transparent + --line-2 -- buttons stay opaque, glass is nav-only). */
+.account .account-save-btn {
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+}
+.account .account-save-btn:hover {
+  background: var(--grad);
+  filter: brightness(1.06);
 }
 
-/* Destructive primary -- --br-deep fill, matching .arc-confirm-confirm
-   (the codebase's established danger affordance). The compound
-   .notebook-new-entry.account-delete-btn selector outranks the base
-   .account .notebook-new-entry rule so the danger fill wins. */
+.account .account-secondary-btn {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+}
+.account .account-secondary-btn:hover {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+/* Batch 3: danger zone -- .dz dashed danger frame + faint danger wash. */
+.account-danger {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px dashed var(--danger-line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+/* Batch 3: delete = .dang -- transparent + danger outline + danger text
+   (overrides the base dark .account .notebook-new-entry). */
 .account .notebook-new-entry.account-delete-btn {
-  background: var(--br-deep);
-  color: var(--text-on-dark);
+  background: transparent;
+  border: 1px solid var(--danger-line);
+  color: var(--danger);
+}
+.account .notebook-new-entry.account-delete-btn:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .account .notebook-new-entry.account-delete-btn:hover {
