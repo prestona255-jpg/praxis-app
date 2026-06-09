@@ -2462,6 +2462,33 @@ function renderBookDetail(bookId) {
   header.appendChild(metaLine);
 
   var user = getCurrentUser();
+
+  // Batch 3: "Your Book Artifact" card -- OPAQUE --surface. Shows the
+  // real artifact body when one exists (the "Open Artifact" link below
+  // opens the full view); otherwise the teaser copy.
+  var artCard = document.createElement('div');
+  artCard.className = 'book-detail-artifact-card';
+  var artEyebrow = document.createElement('p');
+  artEyebrow.className = 'eyebrow';
+  artEyebrow.textContent = 'Your Book Artifact';
+  artCard.appendChild(artEyebrow);
+  var artBody = document.createElement('p');
+  artBody.className = 'book-detail-artifact-body';
+  var bdArtRec = null;
+  if (user && state.bookArtifacts) {
+    var bdArtKey = artifactKey(user.uid, bookId);
+    if (state.bookArtifacts[bdArtKey]) bdArtRec = state.bookArtifacts[bdArtKey];
+  }
+  if (bdArtRec && typeof bdArtRec.body === 'string' && bdArtRec.body.length > 0) {
+    artBody.textContent = bdArtRec.body;
+  } else {
+    artBody.textContent =
+      'A standing place for what this book is doing in your thinking -- ' +
+      'written once, yours, and visible to Yumi only when you choose.';
+  }
+  artCard.appendChild(artBody);
+  header.appendChild(artCard);
+
   if (user) {
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
@@ -2598,32 +2625,6 @@ function renderBookDetail(bookId) {
     bdFindLink.textContent = 'Find this book';
     header.appendChild(bdFindLink);
   }
-
-  // Batch 3: "Your Book Artifact" card -- OPAQUE --surface. Shows the
-  // real artifact body when one exists (the "Open Artifact" link above
-  // opens the full view); otherwise the teaser copy.
-  var artCard = document.createElement('div');
-  artCard.className = 'book-detail-artifact-card';
-  var artEyebrow = document.createElement('p');
-  artEyebrow.className = 'eyebrow';
-  artEyebrow.textContent = 'Your Book Artifact';
-  artCard.appendChild(artEyebrow);
-  var artBody = document.createElement('p');
-  artBody.className = 'book-detail-artifact-body';
-  var bdArtRec = null;
-  if (user && state.bookArtifacts) {
-    var bdArtKey = artifactKey(user.uid, bookId);
-    if (state.bookArtifacts[bdArtKey]) bdArtRec = state.bookArtifacts[bdArtKey];
-  }
-  if (bdArtRec && typeof bdArtRec.body === 'string' && bdArtRec.body.length > 0) {
-    artBody.textContent = bdArtRec.body;
-  } else {
-    artBody.textContent =
-      'A standing place for what this book is doing in your thinking -- ' +
-      'written once, yours, and visible to Yumi only when you choose.';
-  }
-  artCard.appendChild(artBody);
-  header.appendChild(artCard);
 
   wrap.appendChild(header);
 
