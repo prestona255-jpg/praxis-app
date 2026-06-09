@@ -573,7 +573,8 @@ function renderHome() {
   hero.appendChild(cta);
   wrap.appendChild(hero);
 
-  // ----- Static preview frame (no marks, no canvas, no data) -----
+  // ----- Preview frame: a live, INERT mini-constellation of the seed arc
+  // when it resolves with sub-theories; otherwise the static copy. -----
   var preview = document.createElement('div');
   preview.className = 'home-preview';
 
@@ -582,11 +583,44 @@ function renderHome() {
   pvEyebrow.textContent = 'A living constellation';
   preview.appendChild(pvEyebrow);
 
-  var pvLine = document.createElement('p');
-  pvLine.className = 'home-preview-line';
-  pvLine.textContent =
-    'Your arcs and the ideas between them, drawn as you read.';
-  preview.appendChild(pvLine);
+  // FINALE (chrome-fidelity): embed the seed arc's constellation READ-ONLY.
+  // Resolve the globally-viewable sentinel-owned seed arc, build the same data
+  // contract the arc-detail web view uses, and render it into an <svg> with NO
+  // interaction layers (no _stConstellationAttachInteractions, no
+  // attachSubTheoryDrag) -- inert by construction. The whole svg is wrapped in
+  // a link to the full seed arc. Falls back to the static copy when the seed
+  // arc is absent or has zero sub-theories (never a blank canvas; no faked
+  // data). arc-constellation.js is only CALLED here, never edited.
+  var homeSeedArcId = (state.seeds && state.seeds.pedagogyOfDesire)
+    ? state.seeds.pedagogyOfDesire.arcId : null;
+  var homeSeedArc = (homeSeedArcId && state.arcs)
+    ? state.arcs[homeSeedArcId] : null;
+  var homeArcData = (homeSeedArc &&
+    typeof _arcDetailBuildSubTheoryData === 'function')
+    ? _arcDetailBuildSubTheoryData(homeSeedArc) : null;
+
+  if (homeArcData && homeArcData.subTheories &&
+      homeArcData.subTheories.length &&
+      typeof window.renderSubTheoryConstellation === 'function') {
+    var pvLink = document.createElement('a');
+    pvLink.className = 'home-preview-embed';
+    pvLink.href = '#arc/' + homeSeedArcId;
+    var HOME_SVG_NS = 'http://www.w3.org/2000/svg';
+    var pvSvg = document.createElementNS(HOME_SVG_NS, 'svg');
+    pvSvg.setAttribute('viewBox', '0 0 600 500');
+    pvSvg.setAttribute('xmlns', HOME_SVG_NS);
+    pvLink.appendChild(pvSvg);
+    preview.appendChild(pvLink);
+    // Read-only: render the field only. NO interaction layers attached, so
+    // there is no per-mark drag / connect / tap / hover-card anywhere.
+    window.renderSubTheoryConstellation(homeArcData, pvSvg, {});
+  } else {
+    var pvLine = document.createElement('p');
+    pvLine.className = 'home-preview-line';
+    pvLine.textContent =
+      'Your arcs and the ideas between them, drawn as you read.';
+    preview.appendChild(pvLine);
+  }
 
   wrap.appendChild(preview);
 

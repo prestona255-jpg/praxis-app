@@ -563,6 +563,28 @@
   color: var(--ink);
 }
 
+/* FINALE: live mini-constellation embed in the Home preview panel. The svg
+   keeps its 600x500 aspect at panel width; the whole panel links to the seed
+   arc, so a quiet pointer affordance reads as tappable. Tokens only. */
+.home-preview-embed {
+  display: block;
+  margin-top: 12px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: filter var(--motion-base) var(--ease);
+}
+
+.home-preview-embed:hover {
+  filter: brightness(1.03);
+}
+
+.home-preview-embed svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 
 /* ===== SPOTLIGHT -- global search (Cmd/Ctrl+K) -- Batch 4B =====
    The 2nd sanctioned blur surface (alongside .app-nav): a backdrop scrim
