@@ -499,7 +499,7 @@ var _ST_SILHOUETTES = ['circle', 'hexagon', 'diamond', 'triangle'];
 var _ST_TREATMENTS = ['rings', 'hatch', 'halftone', 'dotgrid', 'labyrinth',
   'linefade', 'burst', 'waves', 'crossweave', 'stipple', 'spiral',
   'herringbone', 'nested', 'sunburst'];
-var _ST_SCALE = 64; // identity-shape baseline diameter (px), echoing book scale 60
+var _ST_SCALE = 78; // Hybrid Stage A: bumped 64->78 so each mark reads crisp (silhouette + treatment legible), echoing the vocabulary strip
 
 // Unique clip-path id counter, mirroring _tfaNextId -- clip ids must be
 // document-unique so two constellations on one page can't collide.
@@ -835,9 +835,10 @@ function _stRenderQuestion(question, width, height) {
   if (!question || !question.length) { return ''; }
   var cx = width / 2;
   var cy = height / 2;
-  var glowR = Math.min(width, height) * 0.35;
+  // Hybrid Stage A: the heavy center disc/glow is dropped -- the arc's
+  // question now floats as just the quiet italic serif label. Text kept
+  // byte-identical.
   var out = '';
-  out = out + '<circle cx="' + _arcR(cx) + '" cy="' + _arcR(cy) + '" r="' + _arcR(glowR) + '" fill="var(--arc-question-glow)" opacity="0.08"/>';
   out = out + '<text data-st-question="1" x="' + _arcR(cx) + '" y="' + _arcR(cy) + '" text-anchor="middle" dominant-baseline="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="18" fill="var(--ink-2)" opacity="0.82">' + _arcEscapeXml(question) + '</text>';
   return out;
 }
@@ -883,13 +884,13 @@ function _stRenderShapes(positions) {
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
     out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
-    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.55">';
+    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.62">';
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '"/>';
     out = out +     _stTreatment(treatKey, u, colorVar);
     out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
     out = out +   '</g>';
     out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
-    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.8" opacity="0.9"/>');
+    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="2.4" opacity="0.95"/>');
     out = out + '</g>';
   }
   return out;
