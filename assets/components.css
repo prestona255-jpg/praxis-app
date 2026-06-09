@@ -564,6 +564,150 @@
 }
 
 
+/* ===== SPOTLIGHT -- global search (Cmd/Ctrl+K) -- Batch 4B =====
+   The 2nd sanctioned blur surface (alongside .app-nav): a backdrop scrim
+   plus a centered near-opaque glass panel, reconciled from the mockup's
+   global search. Tokens only -- the translucent fill is the new
+   --glass-spotlight; the scrim is a color-mix of --ink (no hardcoded
+   color). Icon chips are uniform --surface-2 (no per-hue marks). */
+.spotlight-backdrop {
+  display: none;
+}
+
+.spotlight-backdrop.spotlight-backdrop-open {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--ink) 40%, transparent);
+  z-index: 10000;
+}
+
+.spotlight-panel {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 640px;
+  max-width: calc(100vw - var(--sp-5) - var(--sp-5));
+  max-height: calc(100vh - 160px);
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--glass-spotlight);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  z-index: 10001;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.spotlight-panel.spotlight-open {
+  display: flex;
+}
+
+.spotlight-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.spotlight-input-glyph {
+  font-size: 18px;
+  color: var(--ink-3);
+}
+
+.spotlight-input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.spotlight-input-kbd {
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.spotlight-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.spotlight-results {
+  overflow-y: auto;
+}
+
+.spotlight-group {
+  padding: 10px 0;
+}
+
+.spotlight-group-head {
+  padding: 8px 20px 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.spotlight-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.spotlight-item-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.spotlight-item-label {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.spotlight-item-type {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+
+.spotlight-item-active {
+  background: var(--wash);
+}
+
+
 /* ===== SHELF PAGE HEADER + ACTION BUTTONS -- Stage 3.10a Stage 1 =====
    /books header. Title-block left, action buttons top-right. CSS
    grid carries the layout so no wrapper divs were added to

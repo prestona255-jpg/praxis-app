@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.38';
+var CACHE_VERSION = 'praxis-v3.39';
 
 var APP_SHELL = [
   '/',
@@ -25,6 +25,7 @@ var APP_SHELL = [
   '/js/arcs.js',
   '/js/voice-input.js',
   '/js/yumi-ui.js',
+  '/js/spotlight.js',
   '/js/views.js',
   '/js/app.js'
 ];

@@ -533,7 +533,7 @@ function renderHome() {
   var sub = document.createElement('p');
   sub.className = 'home-hero-sub';
   sub.textContent = 'Read, gather evidence, and build a living ' +
-    'constellation of your own thinking -- in practice, with Yumi.';
+    'constellation of your own thinking \u2014 in practice, with Yumi.';
   hero.appendChild(sub);
 
   var cta = document.createElement('div');

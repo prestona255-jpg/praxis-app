@@ -249,6 +249,7 @@
   --sunk:          #c9a85f;
   --glass:         rgba(245,233,200,.5);
   --glass-2:       rgba(245,233,200,.82);
+  --glass-spotlight: rgba(245,233,200,.94);
   --line-2:        rgba(58,40,16,.32);
   --river-l:       #3f7d92;
   --grad:          linear-gradient(92deg,#b8841f,#27566a);
