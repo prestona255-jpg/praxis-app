@@ -2894,60 +2894,61 @@ function renderSubTheoryPage(id) {
   });
   main.appendChild(headerInput);
 
-  var publicLabel = document.createElement('div');
-  publicLabel.className = 'book-detail-tradition-label';
-  publicLabel.textContent = 'Public';
-  main.appendChild(publicLabel);
+  // Batch 3B: segmented PUBLIC | INTELLECTUAL register toggle. One
+  // register's textarea is visible at a time; Public is the default on
+  // load. Both bodies stay in the DOM bound to their fields with the
+  // blur->updateSubTheory save -- the tabs only swap visibility, so this
+  // is view-state only (nothing persisted about which register shows).
+  // Replaces the prior additive model (always-on Public + a button that
+  // revealed Intellectual); the Intellectual tab now reveals its textarea
+  // on demand even when empty.
+  var regToggle = document.createElement('div');
+  regToggle.className = 'subtheory-register-toggle';
 
   var publicBody = document.createElement('textarea');
-  publicBody.className = 'notebook-editor-body';
+  publicBody.className = 'notebook-editor-body subtheory-register-body';
   publicBody.value = subTheory.bodyPublic || '';
   publicBody.addEventListener('blur', function() {
     updateSubTheory(id, { bodyPublic: publicBody.value });
   });
-  main.appendChild(publicBody);
-
-  // Intellectual register -- optional second body. Shown immediately
-  // when the field already carries text (so a reload of a started
-  // register does not hide existing writing); otherwise hidden behind
-  // the toggle below.
-  var intelWrap = document.createElement('div');
-  intelWrap.className = 'subtheory-intellectual';
-
-  var intelLabel = document.createElement('div');
-  intelLabel.className = 'book-detail-tradition-label';
-  intelLabel.textContent = 'Intellectual register';
-  intelWrap.appendChild(intelLabel);
 
   var intelBody = document.createElement('textarea');
-  intelBody.className = 'notebook-editor-body';
+  intelBody.className = 'notebook-editor-body subtheory-register-body';
   intelBody.value = subTheory.bodyIntellectual || '';
   intelBody.addEventListener('blur', function() {
     updateSubTheory(id, { bodyIntellectual: intelBody.value });
   });
-  intelWrap.appendChild(intelBody);
 
-  var hasIntel = (typeof subTheory.bodyIntellectual === 'string' &&
-    subTheory.bodyIntellectual.length > 0);
+  var publicTab = document.createElement('button');
+  publicTab.type = 'button';
+  publicTab.className = 'subtheory-register-tab';
+  publicTab.textContent = 'Public';
 
-  var toggleBtn = document.createElement('button');
-  toggleBtn.type = 'button';
-  toggleBtn.className = 'notebook-editor-cancel subtheory-register-toggle';
-  toggleBtn.textContent = 'Add intellectual register';
-  toggleBtn.addEventListener('click', function() {
-    intelWrap.style.display = '';
-    toggleBtn.style.display = 'none';
-    intelBody.focus();
-  });
+  var intelTab = document.createElement('button');
+  intelTab.type = 'button';
+  intelTab.className = 'subtheory-register-tab';
+  intelTab.textContent = 'Intellectual';
 
-  if (hasIntel) {
-    toggleBtn.style.display = 'none';
-  } else {
-    intelWrap.style.display = 'none';
+  function showRegister(showPublic) {
+    publicBody.style.display = showPublic ? '' : 'none';
+    intelBody.style.display = showPublic ? 'none' : '';
+    publicTab.className = 'subtheory-register-tab' +
+      (showPublic ? ' subtheory-register-tab-active' : '');
+    intelTab.className = 'subtheory-register-tab' +
+      (showPublic ? '' : ' subtheory-register-tab-active');
   }
+  publicTab.addEventListener('click', function() { showRegister(true); });
+  intelTab.addEventListener('click', function() { showRegister(false); });
 
-  main.appendChild(toggleBtn);
-  main.appendChild(intelWrap);
+  regToggle.appendChild(publicTab);
+  regToggle.appendChild(intelTab);
+
+  main.appendChild(regToggle);
+  main.appendChild(publicBody);
+  main.appendChild(intelBody);
+
+  // Public default on load.
+  showRegister(true);
 
   // ===== Evidence rail (Checkpoint C) =====
   var rail = document.createElement('aside');

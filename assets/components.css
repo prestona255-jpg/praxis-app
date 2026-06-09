@@ -3932,8 +3932,41 @@
   margin-top: 24px;
 }
 
+/* Batch 3B: segmented PUBLIC | INTELLECTUAL register toggle -- a pill of
+   two mono-uppercase tabs; the active tab gets the --wash ground. */
 .subtheory-register-toggle {
-  margin-top: 16px;
+  display: inline-flex;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.subtheory-register-tab {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.subtheory-register-tab-active {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+/* Register textareas read like prose -- serif, larger, generous leading
+   over the inherited quiet --border -- so the surface feels like writing,
+   not a form field. */
+.subtheory-register-body {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.6;
 }
 
 /* Evidence rail (Checkpoint C). Transparent on desktop -- dissolves
