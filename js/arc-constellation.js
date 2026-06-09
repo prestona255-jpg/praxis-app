@@ -954,6 +954,15 @@ function _stRenderEdges(edges, posById) {
     var pa = posById[e.aId];
     var pb = posById[e.bId];
     if (!pa || !pb) { continue; }
+    // Hybrid Stage B: FAINT resonance -- a thin DASHED line, distinct from
+    // the solid resonance below. Built-dormant (option A): no edge carries
+    // faint:true today (the builder emits only bare resonance), so this
+    // branch emits nothing live; it lights up when a future stage supplies
+    // faint relationships.
+    if (e.faint) {
+      out = out + '<line data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="1" stroke-dasharray="4 4" opacity="0.5" stroke-linecap="round"/>';
+      continue;
+    }
     // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
     // plain ids), so they take the SOLID branch -- fixed weight + opacity, tan.
     // The weighted formula is left intact for a future strength-bearing stage.
@@ -1023,6 +1032,37 @@ function _stRenderLegend(arc, positions, width, height) {
   return out;
 }
 
+// Hybrid Stage B: attached books as INERT neutral squares in the field. Each
+// book is a small rounded square (neutral --surface-2 fill + muted --ink-4
+// outline -- deliberately NOT a --subtheory-N hue, so a book never reads as a
+// sub-theory mark). Position is deterministic from the book id (_arcHash) on
+// an OUTER ring (0.46) distinct from the mark orbit (0.32), so squares sit in
+// the field without overlapping marks. Tagged data-st-book-id only (NO
+// data-st-sub-id / data-st-mark), so the drag + connect hit-tests in
+// attachSubTheoryDrag skip them; an explicit bail there is the belt-and-
+// suspenders inertness guard.
+function _stRenderBooks(books, width, height) {
+  if (!books || !books.length) { return ''; }
+  var cx = width / 2;
+  var cy = height / 2;
+  var ring = Math.min(width, height) * 0.46;
+  var sz = 16;
+  var out = '<g data-st-books="1">';
+  var i;
+  for (i = 0; i < books.length; i = i + 1) {
+    var b = books[i] || {};
+    if (!b.id) { continue; }
+    var ang = _arcHash(b.id, 700) * Math.PI * 2;
+    var bx = cx + Math.cos(ang) * ring;
+    var by = cy + Math.sin(ang) * ring;
+    out = out + '<g data-st-book-id="' + _arcEscapeXml(b.id) + '" transform="translate(' + _arcR(bx) + ',' + _arcR(by) + ')">';
+    out = out +   '<rect x="' + _arcR(-sz / 2) + '" y="' + _arcR(-sz / 2) + '" width="' + sz + '" height="' + sz + '" rx="3" fill="var(--surface-2)" stroke="var(--ink-4)" stroke-width="1.4" opacity="0.92"/>';
+    out = out + '</g>';
+  }
+  out = out + '</g>';
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Public entry -- sub-theory constellation.
 // ---------------------------------------------------------------------------
@@ -1080,6 +1120,7 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   var yumiY = 30;
 
   svg = svg + _stRenderEdges(arc.edges || [], posById); // dormant (empty)
+  svg = svg + _stRenderBooks(arc.books || [], width, height); // Stage B: inert neutral squares (behind marks)
   svg = svg + _stRenderShapes(positions);
   if (showMarginalia) {
     svg = svg + _stRenderMarks(positions);
@@ -1181,6 +1222,10 @@ function attachSubTheoryDrag(svg, opts) {
     didDrag = false;
     if (_stConnectArmed) { return; } // armed: clicks select/connect, no drag
     if (typeof evt.button === 'number' && evt.button !== 0) { return; }
+    // Hybrid Stage B: book squares are INERT -- a press on a book never starts
+    // a drag (mirrors the data-st-mark exclusion below; books carry only
+    // data-st-book-id).
+    if (evt.target && evt.target.closest && evt.target.closest('[data-st-book-id]')) { return; }
     var g = evt.target && evt.target.closest
       ? evt.target.closest('[data-st-sub-id]')
       : null;
@@ -1418,6 +1463,9 @@ function attachSubTheoryDrag(svg, opts) {
   // same mark again, or empty canvas / a marginalia mark (no shape target),
   // cancels via disarm(). Stays armed after a real link so connections chain.
   function handleConnectClick(evt) {
+    // Hybrid Stage B: book squares are INERT -- never connectable. A book
+    // click is a no-op (stays armed), mirroring the data-st-mark exclusion.
+    if (evt.target && evt.target.closest && evt.target.closest('[data-st-book-id]')) { return; }
     var g = (evt.target && evt.target.closest)
       ? evt.target.closest('[data-st-sub-id]:not([data-st-mark])')
       : null;

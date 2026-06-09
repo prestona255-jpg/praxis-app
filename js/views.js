@@ -3584,11 +3584,25 @@ function _arcDetailBuildSubTheoryData(arc) {
       edges.push({ aId: records[ei].id, bId: otherId });
     }
   }
+  // Hybrid Stage B: pass the arc's attached books through as inert field
+  // squares (id only -- the renderer derives a deterministic position and
+  // draws a neutral square; books are NOT draggable/connectable). Built from
+  // arc.bookIds, the same source the list view reads.
+  var books = [];
+  var bk;
+  if (arc && arc.bookIds && arc.bookIds.length) {
+    for (bk = 0; bk < arc.bookIds.length; bk = bk + 1) {
+      if (arc.bookIds[bk] && arc.bookIds[bk].id) {
+        books.push({ id: arc.bookIds[bk].id });
+      }
+    }
+  }
   return {
     id:           arcId,
     question:     (arc && arc.title) ? arc.title : '',
     subTheories:  subTheories,
     edges:        edges,
+    books:        books,
     yumiNoticing: []
   };
 }
