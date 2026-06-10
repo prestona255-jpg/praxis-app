@@ -217,6 +217,11 @@
   --shadow-yumi:
     3px 4px 10px color-mix(in srgb, var(--br-deep) 9%, transparent),
     6px 12px 24px color-mix(in srgb, var(--br-deep) 7%, transparent);
+  /* S5: book-detail cover. The mockup (B.6) specifies a literal #000
+     drop -- a deliberate deviation from the warm-brown A3.1 family for
+     the one heavy media frame. This token is the sole home for the
+     #000; components.css references the var, never the literal. */
+  --shadow-cover: 0 24px 50px -20px #000;
 
   /* Lit-edge highlight (A1.3) -- a warm near-white at low opacity for
      the top + left of every surface. Derived from --text-on-dark so it

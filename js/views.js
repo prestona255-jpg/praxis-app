@@ -2919,6 +2919,18 @@ function renderBookDetail(bookId) {
   artCard.appendChild(artBody);
   header.appendChild(artCard);
 
+  // S5: pull-quote (mockup B.6 .q-pull), render-when-exists against
+  // book.quote. No live record carries a quote field today (0/112), so
+  // this renders nothing -- it lights up only if a future book.quote is
+  // populated. NOT faked from marginalia; textContent (not innerHTML).
+  var bq = book.quote ? ('' + book.quote) : '';
+  if (bq.replace(/^\s+|\s+$/g, '') !== '') {
+    var quoteEl = document.createElement('div');
+    quoteEl.className = 'book-detail-quote';
+    quoteEl.textContent = bq;
+    header.appendChild(quoteEl);
+  }
+
   // Stage 4: the action buttons live UNDER the cover -- they append into
   // .book-detail-actions inside the cover column, not the right column.
   var actions = document.createElement('div');
