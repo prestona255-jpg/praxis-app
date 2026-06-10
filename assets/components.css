@@ -4554,24 +4554,14 @@
 }
 
 .subtheory-source-label {
+  /* S6.4: picker rows are available-to-attach, NOT gathered -- the
+     hollow teal ring (a vestigial Batch-3 .rail-it treatment) is removed
+     so the gathered ring means ATTACHED evidence only. The label is now
+     a plain serif title; min-width:0 keeps it shrinkable in the flex head. */
   min-width: 0;
-  /* Batch 3: .rail-it treatment -- hollow teal "gathered" ring + serif
-     title (mockup evidence rail). Ring via ::before, no JS change. */
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-family: var(--font-serif);
   font-size: 15px;
   color: var(--ink);
-}
-
-.subtheory-source-label::before {
-  content: "";
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--marginalia-color);
 }
 
 .subtheory-source-attach {
