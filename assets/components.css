@@ -4484,9 +4484,13 @@
    into the page like .shelf-sidebar; becomes a surface-filled bottom
    sheet on mobile (the @media block below). */
 .subtheory-rail-title {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  color: var(--ink);
+  /* S6.1: mono-caps section label (mirrors .eyebrow / shelf rail headers),
+     dropping the serif so the rail header reads as a quiet label, not a title. */
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
   margin-bottom: 16px;
 }
 
@@ -4498,6 +4502,23 @@
   max-height: 320px;
   overflow-y: auto;
   margin-top: 12px;
+  /* S6.1: quiet the native scrollbar -- a thin --ink-4 thumb on a
+     transparent track instead of the chunky OS bar. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+
+.subtheory-source-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.subtheory-source-list::-webkit-scrollbar-thumb {
+  background: var(--ink-4);
+  border-radius: 3px;
+}
+
+.subtheory-source-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .subtheory-source-row {
