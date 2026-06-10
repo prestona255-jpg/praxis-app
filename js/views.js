@@ -3393,12 +3393,12 @@ function renderSubTheoryPage(id) {
   var publicTab = document.createElement('button');
   publicTab.type = 'button';
   publicTab.className = 'subtheory-register-tab';
-  publicTab.textContent = 'Public';
+  publicTab.textContent = 'Public register';
 
   var intelTab = document.createElement('button');
   intelTab.type = 'button';
   intelTab.className = 'subtheory-register-tab';
-  intelTab.textContent = 'Intellectual';
+  intelTab.textContent = 'Intellectual register';
 
   function showRegister(showPublic) {
     publicBody.style.display = showPublic ? '' : 'none';
@@ -3518,22 +3518,32 @@ function renderSubTheoryPage(id) {
   function buildAttachedRow(el) {
     var row = document.createElement('div');
     row.className = 'subtheory-attached-row';
+    // S6: hollow teal ring = gathered (every attached element is gathered;
+    // the filled "incorporated" state has no data until Stage 10's prose
+    // anchors, so no filled variant renders). Mockup .rail-it .ring.
+    var ring = document.createElement('span');
+    ring.className = 'subtheory-attached-ring';
+    ring.setAttribute('aria-hidden', 'true');
+    row.appendChild(ring);
+    var body = document.createElement('div');
+    body.className = 'subtheory-attached-body';
     var label = document.createElement('div');
     label.className = 'subtheory-attached-label';
     label.textContent = evidenceLabel(el);
-    row.appendChild(label);
+    body.appendChild(label);
     if (el.quote) {
       var q = document.createElement('p');
       q.className = 'subtheory-attached-quote';
       q.textContent = '“' + el.quote + '”';
-      row.appendChild(q);
+      body.appendChild(q);
     }
     if (el.annotation) {
       var a = document.createElement('p');
       a.className = 'subtheory-attached-annotation';
       a.textContent = el.annotation;
-      row.appendChild(a);
+      body.appendChild(a);
     }
+    row.appendChild(body);
     return row;
   }
 
