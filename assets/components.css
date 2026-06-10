@@ -2381,6 +2381,9 @@
 
 /* Settings panel */
 .notebook-settings-panel {
+  /* S7b: cap to the mockup's settings proportion (~620), left-aligned in
+     the notebook column (margin 24px 0 keeps the existing alignment). */
+  max-width: 620px;
   margin: 24px 0;
   padding: 24px;
   /* Stage 3.2 Batch 2: OPAQUE --surface content panel (3.2b's
@@ -2406,27 +2409,19 @@
 
 .notebook-settings-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-3);
   margin-bottom: 8px;
 }
 
-.notebook-settings-current {
-  display: inline-block;
-  margin-right: 16px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink);
-}
-
-/* The toggle link is intentionally an <a>, not a button. Style it
-   as a clear actionable link — slate text, no underline by default,
-   --ink on hover, --river focus ring (from the existing
-   :focus-visible group below). Distinct from primary CTAs. */
-.notebook-settings-toggle-link,
+/* The Done link is intentionally an <a>, not a button. Style it
+   as a clear actionable link — slate text, underline, --ink on hover,
+   --river focus ring (from the :focus-visible group below).
+   (S7b: dropped the dead underline-link-toggle + current-value rules,
+   orphaned when the pill toggle replaced the underline-link toggle.) */
 .notebook-settings-done {
   display: inline-block;
   font-family: var(--font-body);
@@ -2438,7 +2433,6 @@
   cursor: pointer;
 }
 
-.notebook-settings-toggle-link:hover,
 .notebook-settings-done:hover {
   color: var(--ink);
   text-decoration-color: var(--ink-2);
@@ -2451,7 +2445,7 @@
 .notebook-settings-explanation {
   margin: 8px 0 0 0;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink-3);
   line-height: 1.5;
 }
@@ -2462,7 +2456,7 @@
    var(--on-teal) dark text. Wiring (setRegisterDefault) unchanged. */
 .notebook-settings-tog {
   display: inline-flex;
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   overflow: hidden;
 }
@@ -3117,7 +3111,6 @@
 .artifact-substrate-link:focus-visible,
 .notebook-settings-toggle:focus-visible,
 .notebook-transparency-toggle:focus-visible,
-.notebook-settings-toggle-link:focus-visible,
 .notebook-settings-done:focus-visible,
 .transparency-close:focus-visible,
 .shelf-editor-save:focus-visible,
