@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.59';
+var CACHE_VERSION = 'praxis-v3.60';
 
 var APP_SHELL = [
   '/',
@@ -96,10 +96,11 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
-  if (isApiRequest(event.request.url)) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // API + streaming requests (incl. Firestore Listen channels) pass through
+  // untouched. respondWith() on a continuously re-opening stream pins the
+  // active worker as busy, which blocks waiting-worker promotion -- the
+  // Reload banner stalls until every client closes (3 deploys observed).
+  if (isApiRequest(event.request.url)) return;
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       if (cached) return cached;
