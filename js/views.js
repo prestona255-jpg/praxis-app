@@ -1300,14 +1300,27 @@ function renderShelf() {
 
   var user = getCurrentUser();
   if (user) {
-    var newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'shelf-new-book';
-    newBtn.textContent = '+ Add book';
-    newBtn.addEventListener('click', function() {
-      openShelfEditor();
+    // 3.10d: resolve missing covers (title-imported books). The 109-
+    // book bulk-import wrote coverUrl: null for every title-form line
+    // and never fired a cover fetch (fetchAndApplyCover is ISBN-only).
+    // Label + disabled state read from coverResolveState, which lives
+    // outside the DOM so progress survives the per-settle renderShelf.
+    // Stage 4a: cluster order conformed to spec B.5 -- seg | Resolve
+    // covers | + Bulk add | + Add book (primary sits last).
+    var resolveBtn = document.createElement('button');
+    resolveBtn.type = 'button';
+    resolveBtn.className = 'shelf-resolve-covers-btn';
+    if (coverResolveState.running) {
+      resolveBtn.textContent = 'Resolving ' +
+        coverResolveState.completed + ' of ' + coverResolveState.total;
+      resolveBtn.disabled = true;
+    } else {
+      resolveBtn.textContent = 'Resolve covers';
+    }
+    resolveBtn.addEventListener('click', function() {
+      startCoverBackfill();
     });
-    actions.appendChild(newBtn);
+    actions.appendChild(resolveBtn);
 
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
@@ -1318,25 +1331,14 @@ function renderShelf() {
     });
     actions.appendChild(bulkBtn);
 
-    // 3.10d: resolve missing covers (title-imported books). The 109-
-    // book bulk-import wrote coverUrl: null for every title-form line
-    // and never fired a cover fetch (fetchAndApplyCover is ISBN-only).
-    // Label + disabled state read from coverResolveState, which lives
-    // outside the DOM so progress survives the per-settle renderShelf.
-    var resolveBtn = document.createElement('button');
-    resolveBtn.type = 'button';
-    resolveBtn.className = 'shelf-resolve-covers-btn';
-    if (coverResolveState.running) {
-      resolveBtn.textContent = 'Resolving ' +
-        coverResolveState.completed + ' of ' + coverResolveState.total;
-      resolveBtn.disabled = true;
-    } else {
-      resolveBtn.textContent = 'Resolve missing covers';
-    }
-    resolveBtn.addEventListener('click', function() {
-      startCoverBackfill();
+    var newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.className = 'shelf-new-book';
+    newBtn.textContent = '+ Add book';
+    newBtn.addEventListener('click', function() {
+      openShelfEditor();
     });
-    actions.appendChild(resolveBtn);
+    actions.appendChild(newBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -1700,9 +1702,13 @@ function renderShelfBook(book) {
     // CSS ::after) so the text is in the DOM for assistive tech. The
     // async cover fetch may still resolve, so the framing reads as
     // pending, not permanently absent.
+    var pendingTitle = document.createElement('span');
+    pendingTitle.className = 'shelf-book-cover-pending-title';
+    pendingTitle.textContent = book.title || '';
+    coverPlaceholder.appendChild(pendingTitle);
     var pendingLabel = document.createElement('span');
     pendingLabel.className = 'shelf-book-cover-pending';
-    pendingLabel.textContent = 'COVER PENDING';
+    pendingLabel.textContent = 'cover pending';
     coverPlaceholder.appendChild(pendingLabel);
     coverArea.appendChild(coverPlaceholder);
   }
@@ -1745,7 +1751,7 @@ function renderShelfBook(book) {
     tick.className = 'shelf-book-tick';
     tick.setAttribute('aria-hidden', 'true');
     tick.style.setProperty('--tick', 'var(--register-' + glyphTradition + ')');
-    card.appendChild(tick);
+    coverArea.appendChild(tick);
   }
 
   var titleEl = document.createElement('h2');

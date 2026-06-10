@@ -1472,8 +1472,8 @@
 
 .shelf-layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 48px;
+  grid-template-columns: 180px 1fr;
+  gap: 34px;
   align-items: start;
 }
 
@@ -1497,7 +1497,7 @@
   margin-left: auto;
   padding-left: var(--sp-2);
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: 9.5px;
   color: var(--ink-4);
 }
 
@@ -1507,10 +1507,11 @@
 
 .shelf-filter-label {
   margin: 0 0 16px 0;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -1531,7 +1532,7 @@
   align-items: center;
   height: 28px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink-2);
   /* 3.10b Stage 3: cursor flipped from default to pointer because the
      row is now a real interactive control (role="button" + tabindex
@@ -1544,25 +1545,29 @@
   color: var(--ink);
 }
 
-/* 3.10b Stage 2: selected-row state. JS toggles
-   .shelf-filter-row-selected on exactly one row per section when its
-   value matches the active shelfFilter for that section; cleared
-   when shelfFilter is null. --gold-light fill is the locked palette
-   choice for "selected" (one drop of warmth, mirrors the gold-family
-   idiom of the reading-status pill at .shelf-book-status-reading
-   above); --gold-text is the token paired with gold-family fills for
-   text contrast. The :hover override is needed because the existing
-   .shelf-filter-row:hover rule above shifts color to --ink -- when a
-   row is selected, hover should not steal the selected text color.
-   No padding/border-radius added: the full-row bar is intentional
-   and consistent with the sidebar's borderless, listy treatment. */
+/* Stage 4a: selected-row state per spec B.5 -- ink text at weight 500
+   plus a 2px --gold left bar (::before), replacing the gold-light
+   fill. The :hover override keeps the selected color stable under
+   the .shelf-filter-row:hover --ink shift. */
 .shelf-filter-row-selected {
-  background: var(--gold-light);
-  color: var(--gold-text);
+  position: relative;
+  padding-left: 10px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.shelf-filter-row-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  background: var(--gold);
 }
 
 .shelf-filter-row-selected:hover {
-  color: var(--gold-text);
+  color: var(--ink);
 }
 
 .shelf-main {
@@ -1586,8 +1591,8 @@
      tighter gaps, and the responsive ladder shifted one step denser
      (4/3/2 instead of 3/2/1). */
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  column-gap: 24px;
-  row-gap: 32px;
+  column-gap: 18px;
+  row-gap: 24px;
 }
 
 @media (max-width: 1099px) {
@@ -1653,15 +1658,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--ink-4);
-  border-radius: var(--radius-md);
-  /* Stage 5.1 surface-set: --ink-4 hairline + lit-edge highlight
-     (inset top-left, A1.3) + Tier 1 card shadow (A3.2). */
-  box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-1);
+  /* Stage 4a: bare card per spec B.5 -- the cover carries the frame
+     (radius/hairline/shadow); the card itself has no panel chrome. */
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
@@ -1676,9 +1674,6 @@
 
 .shelf-book:hover {
   transform: translateY(-3px);
-  box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-2);
 }
 
 .shelf-book-cover-area {
@@ -1698,8 +1693,9 @@
   /* Phase 3.1: unified cover frame -- every cover (image or pending
      placeholder) sits in the same hairline-framed, rounded box so the
      grid reads as one consistent set. */
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px -16px rgba(58,40,16,.5);
   overflow: hidden;
 }
 
@@ -1743,16 +1739,28 @@
    blank. Overrides the display:block from the combined rule above. */
 .shelf-book-cover-placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--sunk);
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+  background: linear-gradient(160deg,#ecdcae,#cfb06a);
+}
+
+.shelf-book-cover-pending-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--ink-2);
 }
 
 .shelf-book-cover-pending {
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: 10px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  text-transform: lowercase;
   color: var(--ink-3);
 }
 
@@ -1763,19 +1771,18 @@
 .shelf-book-tick {
   position: absolute;
   left: 0;
-  top: 14px;
-  bottom: 14px;
+  top: 0;
+  bottom: 0;
   width: 3px;
-  border-radius: 999px;
   background: var(--tick);
 }
 
 .shelf-book-title {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.25;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.12;
   color: var(--ink);
   /* 2-line clamp via the standard -webkit-box idiom. */
   display: -webkit-box;
@@ -1787,8 +1794,8 @@
 .shelf-book-author {
   margin: 6px 0 0 0;
   font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--ink-2);
+  font-size: 11.5px;
+  color: var(--ink-3);
   /* 1-line clamp. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1805,36 +1812,24 @@
 }
 
 .shelf-book-status {
-  display: inline-block;
-  /* Reserve 1px border on the base so all three variants are the
-     same total height; only .shelf-book-status-want fills the
-     border color, but every pill carries the same box dimensions
-     so a row of mixed-status pills sits on the same baseline. */
-  border: 1px solid transparent;
-  padding: 3px 8px;
-  border-radius: 999px;
+  /* Stage 4a: spec B.5 status = 5x5 --gold square + mono 9px
+     uppercase label, replacing the pill treatment. */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 9px;
   line-height: 1.2;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.shelf-book-status-reading {
-  background: color-mix(in srgb, var(--gold) 15%, transparent);
-  color: var(--gold);
-}
-
-.shelf-book-status-finished {
-  background: color-mix(in srgb, var(--ink-4) 15%, transparent);
   color: var(--ink-3);
 }
 
-.shelf-book-status-want {
-  background: transparent;
-  border-color: var(--ink-4);
-  color: var(--ink-3);
+.shelf-book-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--gold);
 }
 
 .shelf-book-genre {
