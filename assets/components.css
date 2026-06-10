@@ -952,7 +952,7 @@
 .notebook-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
   padding: 48px 0 32px 0;
 }
@@ -966,7 +966,7 @@
   font-family: var(--font-serif);
   font-size: 40px;
   font-weight: 500;
-  line-height: 1.1;
+  line-height: 1;
   color: var(--ink);
 }
 
@@ -3219,8 +3219,14 @@
   color: var(--ink);
 }
 
-.notebook-entry + .notebook-entry {
-  border-top: 1px solid var(--line-2);
+.notebook-entry {
+  /* S7a: per-row bottom hairline (mockup .row's --line == live --border),
+     last row none. */
+  border-bottom: 1px solid var(--border);
+}
+
+.notebook-entry:last-child {
+  border-bottom: 0;
 }
 
 .notebook-entry::before {
@@ -3231,6 +3237,8 @@
   bottom: 0;
   width: 2px;
   background: var(--reg);
+  /* S7a: spine reads at .8 (mockup .row::before opacity). */
+  opacity: 0.8;
 }
 
 .notebook-entry-head {
@@ -3254,8 +3262,9 @@
 }
 
 .notebook-entry-tag-m {
+  /* S7a: softer .45 teal border (mockup .tagk.m); text stays full teal. */
   color: var(--marginalia-color);
-  border-color: var(--marginalia-color);
+  border-color: rgba(29,143,104,.45);
 }
 
 .notebook-entry-ts {

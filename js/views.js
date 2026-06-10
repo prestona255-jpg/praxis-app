@@ -5420,7 +5420,7 @@ function renderNotebookEntry(entry) {
   var card = document.createElement('article');
   card.className = 'notebook-entry';
   card.style.setProperty('--reg',
-    isMarg ? 'var(--marginalia-color)' : 'var(--ink-4)');
+    isMarg ? 'var(--marginalia-color)' : 'var(--journal-color)');
 
   // Entry head: register pill + timestamp + visibility indicator.
   var eh = document.createElement('div');
