@@ -4431,7 +4431,14 @@
   color: var(--ink);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border);
+  /* S6.2: plain serif title at rest (mockup) -- the 1px reserves the
+     row so focus/hover doesn't shift layout, but stays transparent
+     until the field is engaged. */
+  border-bottom: 1px solid transparent;
+}
+
+.subtheory-header-input:hover {
+  border-bottom-color: var(--border);
 }
 
 .subtheory-header-input:focus {
@@ -4475,9 +4482,19 @@
    over the inherited quiet --border -- so the surface feels like writing,
    not a form field. */
 .subtheory-register-body {
+  /* S6.2: override the base .notebook-editor-body form chrome so this
+     reads as a borderless writing surface (mockup .read) -- no box, no
+     fill, no resize grip; prose aligns flush to the column's left edge. */
   font-family: var(--font-serif);
   font-size: 18px;
   line-height: 1.6;
+  width: 100%;
+  min-height: 40vh;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  resize: none;
 }
 
 /* Evidence rail (Checkpoint C). Transparent on desktop -- dissolves
@@ -4571,6 +4588,33 @@
 
 .subtheory-source-attach:hover {
   color: var(--ink);
+}
+
+/* S6.2: quiet the "Add external source" affordance from a bordered
+   secondary button to a link matching .subtheory-source-attach. Scoped
+   to .subtheory-external-toggle so the shared .notebook-editor-cancel
+   (notebook + attach-editor Cancel buttons) is untouched; this rule
+   sits after .notebook-editor-cancel so it wins on source order. */
+.subtheory-external-toggle {
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--river);
+  cursor: pointer;
+}
+
+.subtheory-external-toggle:hover {
+  color: var(--ink);
+}
+
+/* S6.2: rail section labels -> .eyebrow scale (DM Mono 10.5 / .16em).
+   Scoped to .subtheory-rail so the book-detail .book-detail-tradition-label
+   (a different surface) keeps its own size. */
+.subtheory-rail .book-detail-tradition-label {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
 }
 
 .subtheory-attach-editor,

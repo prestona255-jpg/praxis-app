@@ -3378,6 +3378,7 @@ function renderSubTheoryPage(id) {
 
   var publicBody = document.createElement('textarea');
   publicBody.className = 'notebook-editor-body subtheory-register-body';
+  publicBody.setAttribute('placeholder', 'Write the public register…');
   publicBody.value = subTheory.bodyPublic || '';
   publicBody.addEventListener('blur', function() {
     updateSubTheory(id, { bodyPublic: publicBody.value });
@@ -3385,6 +3386,7 @@ function renderSubTheoryPage(id) {
 
   var intelBody = document.createElement('textarea');
   intelBody.className = 'notebook-editor-body subtheory-register-body';
+  intelBody.setAttribute('placeholder', 'Write the intellectual register…');
   intelBody.value = subTheory.bodyIntellectual || '';
   intelBody.addEventListener('blur', function() {
     updateSubTheory(id, { bodyIntellectual: intelBody.value });
