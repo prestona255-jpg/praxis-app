@@ -1404,6 +1404,22 @@ function renderShelf() {
     }
   }
 
+  // Stage 4c: per-genre tally for the theme rail counts, mirroring
+  // authorCounts. book.genre holds one of the 5 canonical theme
+  // strings verbatim (4b backfill, 112/112 coverage).
+  var genreCounts = {};
+  var gcid;
+  var gcb;
+  for (gcid in booksMap) {
+    if (Object.prototype.hasOwnProperty.call(booksMap, gcid)) {
+      gcb = booksMap[gcid];
+      if (!gcb) continue;
+      if (typeof gcb.genre === 'string' && gcb.genre.length > 0) {
+        genreCounts[gcb.genre] = (genreCounts[gcb.genre] || 0) + 1;
+      }
+    }
+  }
+
   var layout = document.createElement('div');
   layout.className = 'shelf-layout';
 
@@ -1429,6 +1445,50 @@ function renderShelf() {
   closeBtn.setAttribute('aria-label', 'Close filters');
   closeBtn.textContent = '×';
   sidebar.appendChild(closeBtn);
+
+  // Stage 4c: theme section -- the 5 canonical themes in the spec B.5
+  // rail order, ABOVE the author section. Rows reuse the exact author-
+  // row mechanism: data-filter-section/-value + the shared click and
+  // keydown handlers; selected class reads shelfFilter.theme. Counts
+  // come from the genreCounts tally above.
+  var themeRail = [
+    'Critical theory & pedagogy',
+    'Power & systems',
+    'Liberation',
+    'Love & connection',
+    'History & memory'
+  ];
+  var themeSection = document.createElement('div');
+  themeSection.className = 'shelf-filter-section';
+  var themeLabel = document.createElement('h3');
+  themeLabel.className = 'shelf-filter-label';
+  themeLabel.textContent = 'Theme';
+  themeSection.appendChild(themeLabel);
+  var themeListEl = document.createElement('ul');
+  themeListEl.className = 'shelf-filter-list shelf-filter-list-theme';
+  var ti;
+  var themeRow;
+  var themeRowCount;
+  for (ti = 0; ti < themeRail.length; ti++) {
+    themeRow = document.createElement('li');
+    themeRow.className = shelfFilter.theme === themeRail[ti]
+      ? 'shelf-filter-row shelf-filter-row-selected'
+      : 'shelf-filter-row';
+    themeRow.setAttribute('role', 'button');
+    themeRow.setAttribute('tabindex', '0');
+    themeRow.setAttribute('data-filter-section', 'theme');
+    themeRow.setAttribute('data-filter-value', themeRail[ti]);
+    themeRow.textContent = themeRail[ti];
+    themeRowCount = document.createElement('span');
+    themeRowCount.className = 'shelf-filter-count';
+    themeRowCount.textContent = '' + (genreCounts[themeRail[ti]] || 0);
+    themeRow.appendChild(themeRowCount);
+    themeRow.addEventListener('click', onShelfFilterRowClick);
+    themeRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    themeListEl.appendChild(themeRow);
+  }
+  themeSection.appendChild(themeListEl);
+  sidebar.appendChild(themeSection);
 
   // Author section -- dedup'd alphabetical list from state.books.
   var authorSection = document.createElement('div');
@@ -1575,12 +1635,16 @@ function renderShelf() {
   var fi;
   var fb;
   var authorOk;
+  var themeOk;
   for (fi = 0; fi < books.length; fi++) {
     fb = books[fi];
     authorOk = shelfFilter.author === null ||
       (typeof fb.author === 'string' && fb.author.length > 0 &&
        fb.author === shelfFilter.author);
-    if (authorOk) {
+    themeOk = shelfFilter.theme === null ||
+      (typeof fb.genre === 'string' && fb.genre.length > 0 &&
+       fb.genre === shelfFilter.theme);
+    if (authorOk && themeOk) {
       filtered.push(fb);
     }
   }
@@ -1605,7 +1669,8 @@ function renderShelf() {
     // conditional action button stays identical in BOTH branches per
     // the brief -- signed-out users still get the sign-in prompt
     // even when their filter yields zero.
-    var filterActive = shelfFilter.author !== null;
+    var filterActive = shelfFilter.author !== null ||
+      shelfFilter.theme !== null;
     var empty = document.createElement('div');
     empty.className = 'shelf-empty';
     var emptyHeadline = document.createElement('h2');
@@ -1985,12 +2050,13 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // tab clears it. Same shape precedent as coverResolveState above: a
 // single object var at file scope, named fields, direct read/write
 // from renderShelf and the row click handlers (3.10b Stage 3).
-// Theme match is STRICT EQUALITY against the locked 15-theme
-// taxonomy (SHELF_THEMES); book.genre is free-text today, so the
-// theme filter matches ~zero books on current data -- expected and
-// correct, the genre-dropdown retrofit is 3.10c. Author values come
-// from state.books so they match by construction.
-var shelfFilter = { author: null };
+// Theme match is STRICT EQUALITY against book.genre, which the 4b
+// backfill wrote from the 5 canonical theme strings verbatim
+// (112/112 coverage) -- exact match is correct by construction.
+// Author values come from state.books so they match the same way.
+// Stage 4c: sections are EXCLUSIVE single-select -- setting a value
+// in one section clears the other (see toggleShelfFilter).
+var shelfFilter = { author: null, theme: null };
 
 // 3.10b-i: module-scope reference to the document-level Escape
 // listener bound when the mobile filter panel is open. Tracked here
@@ -2019,6 +2085,15 @@ function toggleShelfFilter(section, value) {
   if (shelfFilter[section] === value) {
     shelfFilter[section] = null;
   } else {
+    // Stage 4c: exclusive select -- a new pick in one section clears
+    // every other section (generic loop, no hardcoded names).
+    var sk;
+    for (sk in shelfFilter) {
+      if (Object.prototype.hasOwnProperty.call(shelfFilter, sk) &&
+          sk !== section) {
+        shelfFilter[sk] = null;
+      }
+    }
     shelfFilter[section] = value;
   }
   renderShelf();
