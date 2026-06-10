@@ -4641,10 +4641,43 @@
   gap: 10px;
   align-items: flex-start;
   padding: 10px 0;
+  /* S6.3: per-row bottom hairline (mockup .rail-it), last row none. */
+  border-bottom: 1px solid var(--border);
 }
 
-.subtheory-attached-row + .subtheory-attached-row {
-  border-top: 1px solid var(--border);
+.subtheory-attached-row:last-child {
+  border-bottom: 0;
+}
+
+/* S6.3: "+ Attach a book" -- the S2-conformed secondary button (.gl),
+   full-width + centered, gating the picker below it (mockup rail). */
+.subtheory-attach-book {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 18px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--glass-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* S6.3: the from-this-arc + external-source picker, collapsed by default;
+   the attach button flips .open via a local classList toggle (no
+   re-render -- preserves un-blurred prose). */
+.subtheory-picker-wrap {
+  display: none;
+  margin-top: 14px;
+}
+
+.subtheory-picker-wrap.open {
+  display: block;
 }
 
 /* S6: gathered ring -- hollow 2px teal circle (constellation gathered

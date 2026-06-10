@@ -3780,9 +3780,34 @@ function renderSubTheoryPage(id) {
     externalHost.appendChild(buildExternalForm());
   });
 
-  rail.appendChild(sourceSection);
-  rail.appendChild(externalSection);
+  // S6.3: default rail = attached list + a full-width "+ Attach a book"
+  // button; the picker (from-this-arc + external source) collapses behind
+  // it. Disclosure is a LOCAL classList flip on pickerWrap -- NO
+  // renderSubTheoryPage re-render, so un-blurred prose survives (the same
+  // contract refreshAttached protects). Attaching does NOT close the
+  // picker (multi-attach); refreshAttached repaints the attached list.
+  var pickerWrap = document.createElement('div');
+  pickerWrap.className = 'subtheory-picker-wrap';
+  pickerWrap.appendChild(sourceSection);
+  pickerWrap.appendChild(externalSection);
+
+  var attachBtn = document.createElement('button');
+  attachBtn.type = 'button';
+  attachBtn.className = 'subtheory-attach-book';
+  attachBtn.textContent = '+ Attach a book';
+  attachBtn.addEventListener('click', function() {
+    if (pickerWrap.classList.contains('open')) {
+      pickerWrap.classList.remove('open');
+      attachBtn.textContent = '+ Attach a book';
+    } else {
+      pickerWrap.classList.add('open');
+      attachBtn.textContent = 'Done';
+    }
+  });
+
   rail.appendChild(attachedSection);
+  rail.appendChild(attachBtn);
+  rail.appendChild(pickerWrap);
   refreshAttached();
 
   // Mobile-only Evidence toggle sits at the top of the prose column.
