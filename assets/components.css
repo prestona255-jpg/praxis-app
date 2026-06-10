@@ -2499,7 +2499,9 @@
      an accent, never a fill; scoped here so it never bleeds onto the
      Settings panel. */
   background: var(--panel-yumi);
-  border: 1px solid var(--line-2);
+  /* S7c: teal-cast hairline (mockup .yumipanel border); rgba teal
+     literal follows the S7a marginalia-border precedent. */
+  border: 1px solid rgba(29,143,104,.35);
   border-radius: var(--radius-lg);
   box-shadow:
     inset 3px 0 0 var(--marginalia-color),
@@ -2518,6 +2520,8 @@
   margin-right: 9px;
   border-radius: var(--radius-pill);
   background: var(--marginalia-color);
+  /* S7c: teal glow on the heading dot (mockup .yumipanel dot). */
+  box-shadow: 0 0 9px var(--marginalia-color);
   vertical-align: middle;
 }
 
@@ -2533,11 +2537,12 @@
 .transparency-title {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 11px;
+  /* S7c: teal eyebrow at the mockup's 10.5/.16em (was ink-3 11/.08em). */
+  font-size: 10.5px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--marginalia-color);
 }
 
 .transparency-close {
@@ -2557,26 +2562,36 @@
 
 .transparency-framing {
   margin: 0 0 24px 0;
-  font-family: var(--font-body);
-  font-size: 13px;
+  /* S7c: serif italic 17px ink-2 (mockup framing). Both paragraphs stay;
+     style only. */
+  font-family: var(--font-serif);
+  font-size: 17px;
   font-style: italic;
-  color: var(--ink-3);
+  color: var(--ink-2);
   line-height: 1.5;
 }
 
 .transparency-section {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
-.transparency-section:last-child {
-  margin-bottom: 0;
+/* S7c: per-section top hairline for the mockup .yfield rhythm. The
+   adjacent-sibling selector skips the first section so it sits flush
+   under the framing copy; spacing now rides the divider, not a
+   per-section margin. */
+.transparency-section + .transparency-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .transparency-section-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  /* S7c: match the S7b .notebook-settings-label sibling + mockup .fl
+     (was 11/.08em). */
+  font-size: 9.5px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-3);
   margin-bottom: 8px;
@@ -2589,6 +2604,15 @@
   line-height: 1.5;
 }
 
+/* S7c: empty-state values read as quiet placeholders -- serif italic
+   ink-4 (mockup .fv.em). Applied to every "nothing here yet" line. */
+.transparency-section-body.transparency-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-4);
+}
+
 /* Individual entry / artifact / turn cards inside a section body.
    Quiet boxed treatment — wheat-tone surface-2 fill so each card
    reads as a discrete item without competing with the panel's
@@ -2597,19 +2621,13 @@
 .transparency-artifact {
   padding: 12px 16px;
   margin-bottom: 8px;
-  /* Stage 3.2b: opaque --surface-2 sub-cards stay legible on the glass
-     panel; lifted to the --line-2 hairline + content radius. */
+  /* S7c: calmer rows toward the mockup -- drop the Tier-1 card shadow +
+     lit edge and soften the hairline (--line-2 -> --border) so these
+     read as quiet rows, not lifted cards. The title + body excerpt +
+     meta content is unchanged. */
   background: var(--surface-2);
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  /* Stage 5.1 surface-set: hairline + lit-edge highlight + Tier 1
-     card shadow. These are diagnostic sub-cards inside the Tier 2
-     transparency-panel; same --surface-2 fill as parent is OK
-     because the hairline + highlight + Tier 1 cast distinguish
-     them visually from the panel ground. */
-  box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-1);
 }
 
 .transparency-entry:last-child,

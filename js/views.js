@@ -5854,9 +5854,10 @@ function openTransparencyView() {
   var p1 = document.createElement('p');
   p1.textContent =
     'This is everything Yumi sees right now: the book you are ' +
-    'reading, the arc you are following, recent notebook entries ' +
-    'that are marked visible, and the conversation you and Yumi ' +
-    'have been having. Yumi does not see anything else.';
+    'reading, the arc you are following, the sub-theory you are ' +
+    'writing, recent notebook entries that are marked visible, ' +
+    'and the conversation you and Yumi have been having. Yumi ' +
+    'does not see anything else.';
   framing.appendChild(p1);
 
   var p2 = document.createElement('p');
@@ -5875,6 +5876,7 @@ function openTransparencyView() {
   var bookBody = bookSec.querySelector('.transparency-section-body');
   if (snap.currentBook === null) {
     bookBody.textContent = 'No book is open right now.';
+    bookBody.className = 'transparency-section-body transparency-empty';
   } else {
     var bookText = snap.currentBook.title;
     if (snap.currentBook.author && snap.currentBook.author.length > 0) {
@@ -5889,10 +5891,25 @@ function openTransparencyView() {
   var arcBody = arcSec.querySelector('.transparency-section-body');
   if (snap.currentArc === null) {
     arcBody.textContent = 'No arc is active right now.';
+    arcBody.className = 'transparency-section-body transparency-empty';
   } else {
     arcBody.textContent = snap.currentArc.title;
   }
   panel.appendChild(arcSec);
+
+  // Section: Current sub-theory. Render-only -- assembleContextData
+  // already carries currentSubTheory.header and buildContext sends it
+  // to Yumi, so the surface must show it for the framing's "Yumi does
+  // not see anything else" to stay true. Placed in the current-* group.
+  var subTheorySec = renderTransparencySection('Current sub-theory');
+  var subTheoryBody = subTheorySec.querySelector('.transparency-section-body');
+  if (snap.currentSubTheory === null) {
+    subTheoryBody.textContent = 'No sub-theory is open right now.';
+    subTheoryBody.className = 'transparency-section-body transparency-empty';
+  } else {
+    subTheoryBody.textContent = snap.currentSubTheory.header;
+  }
+  panel.appendChild(subTheorySec);
 
   // Section: Recent notebook entries. Bodies are already truncated
   // to 200 chars by assembleContextData -- this is exactly the form
@@ -5903,6 +5920,7 @@ function openTransparencyView() {
     entriesBody.textContent =
       'No notebook entries are visible to Yumi right now. New ' +
       'entries or entries marked visible will appear here.';
+    entriesBody.className = 'transparency-section-body transparency-empty';
   } else {
     var i;
     for (i = 0; i < snap.recentEntries.length; i++) {
@@ -5923,6 +5941,7 @@ function openTransparencyView() {
     artifactsBody.textContent =
       'No Artifacts are visible to Yumi right now. Marking a book ' +
       'finished and writing its Artifact will surface it here.';
+    artifactsBody.className = 'transparency-section-body transparency-empty';
   } else {
     var ai;
     for (ai = 0; ai < snap.recentArtifacts.length; ai++) {
@@ -5942,6 +5961,7 @@ function openTransparencyView() {
     summaryBody.textContent =
       'Nothing has been summarized yet — this happens after a ' +
       'conversation grows past its short-term memory.';
+    summaryBody.className = 'transparency-section-body transparency-empty';
   } else {
     summaryBody.textContent = snap.summary;
   }
@@ -5955,6 +5975,7 @@ function openTransparencyView() {
   if (snap.recentTurns.length === 0) {
     turnsBody.textContent =
       'No conversation has happened yet in this session.';
+    turnsBody.className = 'transparency-section-body transparency-empty';
   } else {
     var t;
     for (t = 0; t < snap.recentTurns.length; t++) {
