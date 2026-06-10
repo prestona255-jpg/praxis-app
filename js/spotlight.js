@@ -231,12 +231,13 @@ function spotlightRender(query) {
       var icon = document.createElement('span');
       icon.className = 'spotlight-item-icon';
       icon.setAttribute('aria-hidden', 'true');
-      // Stage 2: idea chips take their sub-theory hue as a LIT radial (pale
-      // --surface-2 core -> the hue), echoing the mark halo. Tokens only.
-      // Books / authors / arcs&notes have no tint -> neutral CSS default.
+      // Stage 2: idea chips take their sub-theory hue as a LIT radial
+      // (#FFF8E7 inner-light core -> the hue), single-sourced with the mark's
+      // tfa-innerL core so chip and constellation mark match. Books /
+      // authors / arcs&notes have no tint -> neutral CSS default.
       if (item.tint) {
         icon.style.background =
-          'radial-gradient(circle, var(--surface-2), ' + item.tint + ' 80%)';
+          'radial-gradient(circle, #FFF8E7, ' + item.tint + ' 80%)';
       }
       rowEl.appendChild(icon);
 

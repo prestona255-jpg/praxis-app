@@ -215,6 +215,7 @@
   --shadow-2:
     3px 5px 12px color-mix(in srgb, var(--br-deep) 10%, transparent),
     8px 16px 32px color-mix(in srgb, var(--br-deep) 8%, transparent);
+  --shadow-spotlight: 0 40px 100px -34px rgba(58,40,16,.5);
   --shadow-yumi:
     3px 4px 10px color-mix(in srgb, var(--br-deep) 9%, transparent),
     6px 12px 24px color-mix(in srgb, var(--br-deep) 7%, transparent);

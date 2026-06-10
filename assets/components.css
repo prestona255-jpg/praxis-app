@@ -597,7 +597,8 @@
    plus a centered near-opaque glass panel, reconciled from the mockup's
    global search. Tokens only -- the translucent fill is the new
    --glass-spotlight; the scrim is a color-mix of --ink (no hardcoded
-   color). Icon chips are uniform --surface-2 (no per-hue marks). */
+   color). Default chips use --surface-2; sub-theory (idea) chips get a
+   per-id luminous radial inline via spotlightRender (hue = stColorForId). */
 .spotlight-backdrop {
   display: none;
 }
@@ -629,7 +630,7 @@
   backdrop-filter: blur(14px);
   border: 1px solid var(--line-2);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-spotlight);
   z-index: 10001;
   font-family: var(--font-body);
   color: var(--ink);
