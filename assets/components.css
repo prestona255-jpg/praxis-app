@@ -553,8 +553,9 @@
   max-width: 940px;
   margin: 18px auto 0;
   padding: 28px 32px;
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
+  box-shadow: 0 30px 70px -42px rgba(58,40,16,.55);
   background: radial-gradient(120% 130% at 50% 0%,
     #f5ead0, var(--bg-2) 58%, #cba85f);
 }

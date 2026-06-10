@@ -162,7 +162,9 @@ Centered, `padding:70px 0 30px`.
 - Sub `p`: 17px `--ink-2`, `max-width:540px`, margins `20px auto 26px`.
 - CTA row `.cta`: `gap:12px`, centered. Buttons = `Open the constellation` (`.btn.bg`)
   + `Take the tour` (`.btn.gl`). `[reconcile]` live shows "Browse your shelf" as the
-  second CTA — mockup says "Take the tour."
+  second CTA — mockup says "Take the tour." [settled deviation, Stage 3: live
+  keeps 'Browse your shelf' → #books until tour machinery exists — a label
+  without its feature would lie; flip when a tour ships.]
 
 ## B.3 Buttons (`.btn`)
 Base: DM Sans 13.5px **500**, `border-radius:10px`, `padding:11px 18px`,
