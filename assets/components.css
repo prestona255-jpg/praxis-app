@@ -1976,8 +1976,14 @@
 .book-detail-header {
   display: grid;
   grid-template-columns: 300px 1fr;
-  gap: 22px;
+  /* S5.1: column-gap keeps the 22px cover<->content separation; row-gap
+     0 + align-content:start stop the auto-rows from stretching to the
+     cover's height (which spread the right column 65-80px apart). With
+     no stretch, the per-element margins below own the vertical rhythm. */
+  column-gap: 22px;
+  row-gap: 0;
   align-items: start;
+  align-content: start;
   margin-bottom: 32px;
 }
 
@@ -1996,35 +2002,49 @@
   gap: 8px;
 }
 
+/* S5.1: Add to arc + Add Marginalia share a row (mockup side-by-side);
+   the status-branch button stays a full-width line below it. */
+.book-detail-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.book-detail-actions-row .book-detail-add-to-arc {
+  flex: 1;
+}
+
+.book-detail-actions-row .book-detail-new-entry {
+  flex: 0 0 auto;
+  width: auto;
+}
+
 .book-detail-cover,
 .book-detail-cover-placeholder {
   width: 100%;
   max-width: 100%;
-  /* Stage 5.1: hairline + radius retune to align with the v2 surface
-     family. The full surface-set (highlight + shadow) does NOT apply
-     here -- this is a media frame, not a card/panel. The frame
-     borrows the chrome edge so it sits in the same material world
-     as nearby surfaces; the image content owns the interior. */
+  /* S5.1: fixed 2/3 frame so the cover fills the 300px column (300 ->
+     450) at a uniform shape regardless of each image's intrinsic
+     ratio -- the mockup's media-frame proportion. object-fit:cover on
+     the image fills + crops to the frame. Border/radius/shadow are the
+     S5-conformed chrome, untouched. */
+  aspect-ratio: 2 / 3;
   border: 1px solid var(--ink-4);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-cover);
 }
 
 .book-detail-cover {
-  height: auto;
-  max-height: 360px;
-  object-fit: contain;
+  object-fit: cover;
   background: var(--color-surface);
 }
 
 .book-detail-cover-placeholder {
-  height: 360px;
   background: color-mix(in srgb, var(--ink-3) 8%, transparent);
 }
 
 .book-detail-title {
   grid-column: 2;
-  margin: 0;
+  margin: 12px 0 4px 0;
   font-family: var(--font-serif);
   font-size: 42px;
   font-weight: 500;
@@ -2054,12 +2074,12 @@
   border: 1px solid var(--river);
   border-radius: var(--radius-sm);
   padding: 3px 9px;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .book-detail-meta {
   grid-column: 2;
-  margin: 8px 0 0 0;
+  margin: 18px 0;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -2070,7 +2090,7 @@
 /* "Your Book Artifact" -- OPAQUE --surface card. */
 .book-detail-artifact-card {
   grid-column: 2;
-  margin-top: 18px;
+  margin-top: 0;
   padding: 20px 24px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2136,21 +2156,22 @@
 
 /* Stage 4: the Edit-panel collapse toggle (panel default-collapsed). */
 .book-detail-edit-toggle {
+  /* S5.1: quiet text link (mirrors .find-this-book) -- the pill fill,
+     border, and 999px radius dropped so it stops competing as a
+     primary affordance. Label + wiring unchanged. */
   margin-top: 32px;
-  padding: 8px 16px;
+  padding: 0;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border: none;
   cursor: pointer;
 }
 
 .book-detail-edit-toggle:hover {
-  border-color: var(--ink-3);
   color: var(--ink);
 }
 

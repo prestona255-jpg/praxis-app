@@ -2945,7 +2945,6 @@ function renderBookDetail(bookId) {
     newBtn.addEventListener('click', function() {
       openMarginaliaEditor(bookId);
     });
-    actions.appendChild(newBtn);
 
     var addToArcBtn = document.createElement('button');
     addToArcBtn.type = 'button';
@@ -2954,7 +2953,15 @@ function renderBookDetail(bookId) {
     addToArcBtn.addEventListener('click', function() {
       openBookArcPicker(bookId);
     });
-    actions.appendChild(addToArcBtn);
+
+    // S5.1: Add to arc (primary, first) + Add Marginalia share one row
+    // (mockup's side-by-side button block); the status-branch button
+    // below appends to .book-detail-actions as its own full-width line.
+    var actionsRow = document.createElement('div');
+    actionsRow.className = 'book-detail-actions-row';
+    actionsRow.appendChild(addToArcBtn);
+    actionsRow.appendChild(newBtn);
+    actions.appendChild(actionsRow);
 
     // Stage 3.7c stage 2: explicit six-branch (status, hasArtifact)
     // render matrix. Each branch handled standalone -- no shared tails
