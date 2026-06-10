@@ -1353,6 +1353,30 @@ function renderShelf() {
   header.appendChild(actions);
   wrap.appendChild(header);
 
+  // Stage 4d: in-page shelf search -- a LIVE GRID FILTER over the
+  // rendered shelf (title OR author substring, case-insensitive),
+  // debounced 250ms in onShelfSearchInput. Honest behavior only: no
+  // network, no suggestions, no navigation. Mockup .shelf-search/.big
+  // well between the header and the rail+grid body.
+  var searchWrap = document.createElement('div');
+  searchWrap.className = 'shelf-search';
+  var searchWell = document.createElement('div');
+  searchWell.className = 'shelf-search-well';
+  var searchGlyph = document.createElement('span');
+  searchGlyph.className = 'shelf-search-glyph';
+  searchGlyph.textContent = '⌕';
+  searchWell.appendChild(searchGlyph);
+  var searchInput = document.createElement('input');
+  searchInput.id = 'shelf-search-input';
+  searchInput.className = 'shelf-search-input';
+  searchInput.type = 'text';
+  searchInput.setAttribute('placeholder', 'Search books, authors, ideas…');
+  searchInput.value = shelfSearchRaw;
+  searchInput.addEventListener('input', onShelfSearchInput);
+  searchWell.appendChild(searchInput);
+  searchWrap.appendChild(searchWell);
+  wrap.appendChild(searchWrap);
+
   // 3.10a Stage 2: two-column layout below the full-width header.
   // .shelf-layout holds .shelf-sidebar (left, 220px, transparent --
   // dissolves into the page, not a card) and .shelf-main (right,
@@ -1386,8 +1410,6 @@ function renderShelf() {
       }
     }
   }
-  authors.sort();
-
   // Phase 3.1: per-value book-match tally for the author filter counts.
   // DISPLAY ONLY -- a count over state.books, not a filter. Rows with
   // zero matches still show (count 0); no row is hidden.
@@ -1403,6 +1425,25 @@ function renderShelf() {
       }
     }
   }
+
+  // Stage 4d: rank authors by book count (desc), case-insensitive
+  // alpha tiebreak, and collapse the rail to the top 12 unless the
+  // user expanded it (shelfAuthorRailExpanded). The toggle row at the
+  // bottom of the list flips the flag and re-renders.
+  authors.sort(function (a, b) {
+    var ca = authorCounts[a] || 0;
+    var cb = authorCounts[b] || 0;
+    if (cb !== ca) { return cb - ca; }
+    var la = a.toLowerCase();
+    var lb = b.toLowerCase();
+    if (la < lb) { return -1; }
+    if (la > lb) { return 1; }
+    return 0;
+  });
+  var totalAuthorCount = authors.length;
+  var visibleAuthors = shelfAuthorRailExpanded
+    ? authors
+    : authors.slice(0, 12);
 
   // Stage 4c: per-genre tally for the theme rail counts, mirroring
   // authorCounts. book.genre holds one of the 5 canonical theme
@@ -1501,29 +1542,44 @@ function renderShelf() {
   authorListEl.className = 'shelf-filter-list shelf-filter-list-author';
   var ai;
   var authorRow;
-  for (ai = 0; ai < authors.length; ai++) {
+  for (ai = 0; ai < visibleAuthors.length; ai++) {
     authorRow = document.createElement('li');
     // 3.10b Stage 3: role, tabindex, data-* for section + value,
     // selected class on render, click + keydown handlers. The handler
     // reads the 'author' section + value directly off the activated
     // element's data-filter-section attribute.
-    authorRow.className = shelfFilter.author === authors[ai]
+    authorRow.className = shelfFilter.author === visibleAuthors[ai]
       ? 'shelf-filter-row shelf-filter-row-selected'
       : 'shelf-filter-row';
     authorRow.setAttribute('role', 'button');
     authorRow.setAttribute('tabindex', '0');
     authorRow.setAttribute('data-filter-section', 'author');
-    authorRow.setAttribute('data-filter-value', authors[ai]);
-    authorRow.textContent = authors[ai];
+    authorRow.setAttribute('data-filter-value', visibleAuthors[ai]);
+    authorRow.textContent = visibleAuthors[ai];
     // Phase 3.1: per-value book-match count (display only). data-filter-
     // value carries the clean author name; the count span is cosmetic.
     var authorRowCount = document.createElement('span');
     authorRowCount.className = 'shelf-filter-count';
-    authorRowCount.textContent = '' + (authorCounts[authors[ai]] || 0);
+    authorRowCount.textContent = '' + (authorCounts[visibleAuthors[ai]] || 0);
     authorRow.appendChild(authorRowCount);
     authorRow.addEventListener('click', onShelfFilterRowClick);
     authorRow.addEventListener('keydown', onShelfFilterRowKeydown);
     authorListEl.appendChild(authorRow);
+  }
+  // Stage 4d: expand/collapse toggle row, rendered only when the full
+  // list exceeds the collapsed cap. Quiet row -- no count, no gold
+  // bar, no data-filter attributes (it is not a filter).
+  if (totalAuthorCount > 12) {
+    var authorToggleRow = document.createElement('li');
+    authorToggleRow.className = 'shelf-filter-row shelf-filter-row-toggle';
+    authorToggleRow.setAttribute('role', 'button');
+    authorToggleRow.setAttribute('tabindex', '0');
+    authorToggleRow.textContent = shelfAuthorRailExpanded
+      ? 'Show fewer'
+      : 'Show all (' + totalAuthorCount + ')';
+    authorToggleRow.addEventListener('click', onShelfAuthorToggleClick);
+    authorToggleRow.addEventListener('keydown', onShelfAuthorToggleKeydown);
+    authorListEl.appendChild(authorToggleRow);
   }
   authorSection.appendChild(authorListEl);
   sidebar.appendChild(authorSection);
@@ -1636,6 +1692,7 @@ function renderShelf() {
   var fb;
   var authorOk;
   var themeOk;
+  var searchOk;
   for (fi = 0; fi < books.length; fi++) {
     fb = books[fi];
     authorOk = shelfFilter.author === null ||
@@ -1644,7 +1701,12 @@ function renderShelf() {
     themeOk = shelfFilter.theme === null ||
       (typeof fb.genre === 'string' && fb.genre.length > 0 &&
        fb.genre === shelfFilter.theme);
-    if (authorOk && themeOk) {
+    // Stage 4d: live search -- case-insensitive substring over title
+    // OR author, AND-composed with the rail filters.
+    searchOk = shelfSearchQuery === '' ||
+      ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
+       (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
+    if (authorOk && themeOk && searchOk) {
       filtered.push(fb);
     }
   }
@@ -1670,7 +1732,8 @@ function renderShelf() {
     // the brief -- signed-out users still get the sign-in prompt
     // even when their filter yields zero.
     var filterActive = shelfFilter.author !== null ||
-      shelfFilter.theme !== null;
+      shelfFilter.theme !== null ||
+      shelfSearchQuery !== '';
     var empty = document.createElement('div');
     empty.className = 'shelf-empty';
     var emptyHeadline = document.createElement('h2');
@@ -1735,6 +1798,21 @@ function renderShelf() {
   wrap.appendChild(layout);
 
   host.appendChild(wrap);
+
+  // Stage 4d: the render above rebuilt the search input; when the
+  // render was triggered by typing, restore focus + caret-to-end so
+  // the user keeps typing uninterrupted.
+  if (shelfSearchRefocus) {
+    shelfSearchRefocus = false;
+    var refocusInput = document.getElementById('shelf-search-input');
+    if (refocusInput) {
+      refocusInput.focus();
+      var caretEnd = refocusInput.value.length;
+      if (typeof refocusInput.setSelectionRange === 'function') {
+        refocusInput.setSelectionRange(caretEnd, caretEnd);
+      }
+    }
+  }
 }
 
 // Single shelf row. Anchor element so the browser's hashchange path
@@ -1778,28 +1856,13 @@ function renderShelfBook(book) {
     coverArea.appendChild(coverPlaceholder);
   }
 
-  // Stage 5.6 sub-step 4: register glyph in top-right corner of cover-area.
-  // Tradition resolution: traditionOverride wins if set (user choice
-  // from the edit-book modal in sub-step 5), else fall back to the
-  // genre-derived tradition. Both fields are guaranteed non-null by
-  // the ensureBookFields chokepoint from sub-step 1.
-  //
-  // Engagement band derives from notebook-entry count via
-  // getEngagementBand (sub-step 5b). Bands 0/1/2 resolve to light/mid/
-  // deep saturation via renderRegisterGlyph from sub-step 3.
-  //
-  // renderRegisterGlyph returns empty string for 'unassigned' (the
-  // §2.6 empty-corner signal), so the wrapper renders empty when a
-  // book hasn't been assigned a tradition. Wrapper still mounts —
-  // empty wrapper means no DOM cost and no visual artifact.
+  // Tradition resolution for the spine tick below: traditionOverride
+  // wins if set (user choice from the edit-book modal, 5.6 sub-step
+  // 5), else the genre-derived tradition. Stage 4d removed the 5.6
+  // sub-step 4 corner glyph from shelf covers (mockup parity, D4);
+  // renderRegisterGlyph stays intact for other surfaces -- re-adding
+  // one call site here reverses this.
   var glyphTradition = book.traditionOverride || book.tradition;
-  var glyphHtml = renderRegisterGlyph(glyphTradition, getEngagementBand(book.id));
-  if (glyphHtml !== '') {
-    var glyphWrap = document.createElement('div');
-    glyphWrap.className = 'register-glyph-wrap';
-    glyphWrap.innerHTML = glyphHtml;
-    coverArea.appendChild(glyphWrap);
-  }
 
   card.appendChild(coverArea);
 
@@ -1843,13 +1906,6 @@ function renderShelfBook(book) {
   statusEl.className = 'shelf-book-status shelf-book-status-' + statusValue;
   statusEl.textContent = statusValue;
   meta.appendChild(statusEl);
-
-  if (book.genre) {
-    var genreEl = document.createElement('span');
-    genreEl.className = 'shelf-book-genre';
-    genreEl.textContent = book.genre;
-    meta.appendChild(genreEl);
-  }
 
   card.appendChild(meta);
   return card;
@@ -2058,6 +2114,16 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // in one section clears the other (see toggleShelfFilter).
 var shelfFilter = { author: null, theme: null };
 
+// Stage 4d: author-rail collapse + in-page search state. Memory-only,
+// same lifetime contract as shelfFilter above. shelfSearchRaw keeps
+// the user's exact text for the re-render's input restore;
+// shelfSearchQuery is its trimmed lowercase form, the filter key.
+var shelfAuthorRailExpanded = false;
+var shelfSearchRaw = '';
+var shelfSearchQuery = '';
+var shelfSearchTimer = null;
+var shelfSearchRefocus = false;
+
 // 3.10b-i: module-scope reference to the document-level Escape
 // listener bound when the mobile filter panel is open. Tracked here
 // (not inside renderShelf's closure) so a re-render can purge a
@@ -2108,6 +2174,39 @@ function onShelfFilterRowClick() {
     this.getAttribute('data-filter-section'),
     this.getAttribute('data-filter-value')
   );
+}
+
+// Stage 4d: author-rail expand/collapse toggle. Shared by the click
+// and keydown handlers on the .shelf-filter-row-toggle row.
+function onShelfAuthorToggleClick() {
+  shelfAuthorRailExpanded = !shelfAuthorRailExpanded;
+  renderShelf();
+}
+
+function onShelfAuthorToggleKeydown(ev) {
+  if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+    ev.preventDefault();
+    shelfAuthorRailExpanded = !shelfAuthorRailExpanded;
+    renderShelf();
+  }
+}
+
+// Stage 4d: debounced search input handler (250ms). Stores the raw
+// text for the input restore (casing/spacing preserved) and the
+// trimmed lowercase form for the filter predicate; empty input
+// clears the filter. Plain function callback -- no arrow.
+function onShelfSearchInput() {
+  var raw = this.value;
+  if (shelfSearchTimer !== null) {
+    clearTimeout(shelfSearchTimer);
+  }
+  shelfSearchTimer = setTimeout(function () {
+    shelfSearchTimer = null;
+    shelfSearchRaw = raw;
+    shelfSearchQuery = raw.toLowerCase().replace(/^\s+|\s+$/g, '');
+    shelfSearchRefocus = true;
+    renderShelf();
+  }, 250);
 }
 
 // 3.10b Stage 3: keyboard activation for the same rows. Enter and

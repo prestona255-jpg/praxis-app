@@ -1470,6 +1470,49 @@
 
 /* ===== END WHEAT FIELD ===== */
 
+/* Stage 4d: in-page shelf search (mockup .shelf-search/.big) -- a
+   live grid filter between the header and the rail+grid body. The
+   well is the mockup's recessed translucent ink wash; radius is the
+   10px content radius (mockup --r), NOT the nav pill. */
+.shelf-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.shelf-search-well {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  background: rgba(58,40,16,.06);
+  border: 1px solid var(--border);
+}
+
+.shelf-search-glyph {
+  font-size: 15px;
+  color: var(--ink-3);
+}
+
+.shelf-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.shelf-search-input::placeholder {
+  color: var(--ink-3);
+}
+
 .shelf-layout {
   display: grid;
   grid-template-columns: 180px 1fr;
@@ -1522,15 +1565,13 @@
   list-style: none;
 }
 
-.shelf-filter-list-author {
-  max-height: 320px;
-  overflow-y: auto;
-}
-
 .shelf-filter-row {
   display: flex;
   align-items: center;
-  height: 28px;
+  /* Stage 4d: padding-driven natural height (mockup .fil li) -- long
+     wrapped names grow the row instead of overflowing it; constant
+     12px left gutter hosts the selected gold bar without text shift. */
+  padding: 7px 0 7px 12px;
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--ink-2);
@@ -1551,7 +1592,6 @@
    the .shelf-filter-row:hover --ink shift. */
 .shelf-filter-row-selected {
   position: relative;
-  padding-left: 10px;
   font-weight: 500;
   color: var(--ink);
 }
@@ -1560,14 +1600,22 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 5px;
-  bottom: 5px;
+  top: 8px;
+  bottom: 8px;
   width: 2px;
   background: var(--gold);
 }
 
 .shelf-filter-row-selected:hover {
   color: var(--ink);
+}
+
+/* Stage 4d: author-rail expand/collapse row. Quiet text affordance --
+   ink-3, smaller scale, no count, no gold bar; pointer cursor and the
+   warm hover come from the shared .shelf-filter-row rules. */
+.shelf-filter-row-toggle {
+  color: var(--ink-3);
+  font-size: 12px;
 }
 
 .shelf-main {
