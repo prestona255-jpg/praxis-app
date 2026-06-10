@@ -273,24 +273,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-4);
-  height: 64px;
-  padding: 0 24px;
+  gap: 18px;
+  max-width: 1080px;
+  padding: 11px 14px 11px 20px;
   /* Phase 3.1 Umbrel glass chrome: honey glass + blur + a stronger
      hairline (--line-2). In normal flow (not fixed/sticky) so no
      page-content offset changes on any route; the translucent fill
      reads as glass over the honey ground below it. */
   background: var(--glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line-2);
 }
 
 .app-nav-wordmark {
   flex: 0 0 auto;
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 600;
+  letter-spacing: 0.3px;
   line-height: 1;
   color: var(--wordmark);
   text-decoration: none;
@@ -303,14 +304,14 @@
    not a wired shortcut. */
 .app-nav-search {
   flex: 1 1 auto;
-  max-width: 420px;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+  height: 38px;
   padding: var(--sp-2) var(--sp-3);
-  background: var(--sunk);
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-xl);
+  background: rgba(58,40,16,.07);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
 }
 
 .app-nav-search:focus-within {
@@ -322,9 +323,9 @@
   min-width: 0;
   border: none;
   background: transparent;
-  color: var(--ink);
+  color: var(--ink-3);
   font-family: var(--font-body);
-  font-size: var(--fs-body);
+  font-size: 13px;
   outline: none;
 }
 
@@ -335,9 +336,9 @@
 .app-nav-search-kbd {
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: 10px;
   line-height: 1.4;
-  color: var(--ink-3);
+  color: var(--ink-4);
   border: 1px solid var(--line-2);
   border-radius: var(--radius-sm);
   padding: 0 var(--sp-2);
@@ -360,9 +361,9 @@
   display: inline-block;
   padding: 8px 12px;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 500;
-  color: var(--ink-2);
+  color: var(--ink-3);
   text-decoration: none;
   border-radius: var(--radius-pill);
   transition: color var(--motion-base) var(--ease),
@@ -395,8 +396,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: none;
   border-radius: var(--radius-pill);
@@ -432,10 +433,10 @@
    untouched. The full border overrides the base bar's border-bottom. */
 @media (min-width: 760px) {
   .app-nav {
-    margin: var(--sp-4) var(--sp-5) 0;
-    border: 1px solid var(--line-2);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-1);
+    margin: 14px auto 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 8px 30px -18px rgba(58,40,16,.4);
   }
 }
 
@@ -511,11 +512,13 @@
 
 .home-cta-primary,
 .home-cta-secondary {
-  display: inline-block;
-  padding: 10px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
-  border-radius: 2px;
+  font-size: 13.5px;
+  border-radius: 10px;
   text-decoration: none;
   cursor: pointer;
 }
@@ -524,7 +527,7 @@
   font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
 }
 
 .home-cta-primary:hover {
@@ -533,9 +536,9 @@
 
 .home-cta-secondary {
   font-weight: 400;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
 }
 
 .home-cta-secondary:hover {
@@ -779,10 +782,10 @@
   grid-row: 1 / 3;
   align-self: end;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  padding: 10px 20px;
-  border-radius: 2px;
+  padding: 11px 18px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -790,9 +793,10 @@
   grid-column: 2;
   /* Phase 3.1: signature gold->river gradient (--grad). The gradient's
      stops live in theme.css; components.css only references the token. */
+  font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
 }
 
 .shelf-new-book:hover {
@@ -801,9 +805,9 @@
 
 .shelf-new-book-bulk {
   grid-column: 3;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
 }
 
 .shelf-new-book-bulk:hover {
@@ -816,9 +820,9 @@
    1fr auto auto; grid-auto-columns: auto creates column 4 on demand. */
 .shelf-resolve-covers-btn {
   grid-column: 4;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
 }
 
 .shelf-resolve-covers-btn:hover {
@@ -927,7 +931,7 @@
 
 
 .notebook {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 32px;
 }
@@ -969,19 +973,20 @@
 .notebook-new-arc {
   align-self: start;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  padding: 10px 20px;
-  border-radius: 2px;
+  padding: 11px 18px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
 /* Primary -- mirrors .shelf-new-book: the signature gold->river
    gradient (--grad), warm-white text, brightness lift on hover. */
 .notebook-new-entry {
+  font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
 }
 
 .notebook-new-entry:hover {
@@ -992,9 +997,9 @@
    hairline, warming on hover. Matches the Settings / What-does-Yumi-see
    toggles' existing treatment so all four header buttons read as a set. */
 .notebook-new-arc {
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
 }
 
 .notebook-new-arc:hover {
@@ -1019,7 +1024,7 @@
    CSS variables; reuses --font-serif, --font-body, --ink, --ink-3. */
 
 .arcs-page {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 32px;
 }
@@ -1095,15 +1100,15 @@
    change to that selector list. */
 .arcs-create-btn {
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 10px 20px;
-  border-radius: 2px;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 11px 18px;
+  border-radius: 10px;
   cursor: pointer;
   /* Batch 3: gradient primary for consistency with the other CTAs. */
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
   align-self: start;
 }
 
@@ -1393,7 +1398,7 @@
    Stage 4; only the grid's column-count breakpoints land here. */
 
 .shelf {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 32px;
   /* Stage 5.2 1f-A: .shelf is a stacking context (isolation:isolate);
@@ -1899,7 +1904,7 @@
    .shelf-editor-status (they render the same data shape). */
 
 .book-detail {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 48px 32px;
   font-family: var(--font-body);
@@ -2045,14 +2050,14 @@
   display: block;
   width: 100%;
   text-align: center;
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
-  border-radius: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -2106,14 +2111,14 @@
   display: block;
   width: 100%;
   text-align: center;
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   background: var(--ink);
   color: var(--text-on-dark);
-  border: none;
-  border-radius: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
   text-decoration: none;
 }
@@ -2132,14 +2137,14 @@
   display: block;
   width: 100%;
   text-align: center;
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 400;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -2290,20 +2295,24 @@
 
 .notebook-settings-toggle,
 .notebook-transparency-toggle {
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  color: var(--ink-3);
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
+}
+
+/* Spec B.3 quiet teal variant -- "What does Yumi see?". */
+.notebook-transparency-toggle {
+  color: var(--marginalia-color);
 }
 
 .notebook-settings-toggle:hover,
 .notebook-transparency-toggle:hover {
-  border-color: var(--ink-3);
   color: var(--ink);
 }
 
@@ -2315,11 +2324,11 @@
      translucent --glass + blur removed -- glass is nav/spotlight only).
      --line-2 hairline, content radius, Tier-1 shadow + highlight. */
   background: var(--surface);
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-1);
+    0 1px 0 rgba(255,250,230,.5) inset,
+    0 16px 36px -24px rgba(58,40,16,.5);
   font-family: var(--font-body);
 }
 
@@ -2878,14 +2887,14 @@
 .shelf-editor-save,
 .shelf-bulk-editor-submit,
 .notebook-editor-save {
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   background: var(--ink);
   color: var(--text-on-dark);
-  border: none;
-  border-radius: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -2906,14 +2915,14 @@
 .shelf-editor-cancel,
 .shelf-bulk-editor-cancel,
 .notebook-editor-cancel {
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -3131,12 +3140,12 @@
   /* Batch 3 F2: lift to the arc-card family -- lighter --surface-2 tone,
      defined --ink-4 hairline, larger --shadow-2 cast -- so the panel
      reads raised off the honey ground instead of flat. */
-  background: var(--surface-2);
-  border: 1px solid var(--ink-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-2);
+    0 1px 0 rgba(255,250,230,.5) inset,
+    0 16px 36px -24px rgba(58,40,16,.5);
   overflow: hidden;
 }
 
@@ -3295,14 +3304,14 @@
 .notebook-artifact-card {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 24px;
   margin-bottom: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--ink-4);
-  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-1);
+    0 1px 0 rgba(255,250,230,.5) inset,
+    0 16px 36px -24px rgba(58,40,16,.5);
   font-family: var(--font-body);
   color: var(--ink);
   cursor: pointer;
@@ -3416,15 +3425,15 @@
    wrapper. The user accepted this divergence at C2 go-ahead. */
 
 .arc-detail {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 32px auto;
-  padding: 32px;
-  background: var(--surface-2);
-  border: 1px solid var(--ink-4);
-  border-radius: var(--radius-md);
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   box-shadow:
-    inset 1px 1px 0 var(--highlight-edge),
-    var(--shadow-2);
+    0 1px 0 rgba(255,250,230,.5) inset,
+    0 16px 36px -24px rgba(58,40,16,.5);
   font-family: var(--font-body);
 }
 
@@ -3989,13 +3998,13 @@
 
 .arc-detail-toggle-btn {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  padding: 10px 20px;
-  background: transparent;
-  color: var(--ink-2);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  padding: 11px 18px;
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -4003,9 +4012,10 @@
    (mockup .cbar .c.k). Overrides the quiet toggle/new-arc base via the
    compound selector + source order. */
 .arc-detail-addsub {
+  font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
 }
 .arc-detail-addsub:hover {
   background: var(--grad);
@@ -4326,7 +4336,7 @@
    .notebook-editor-body and the section labels reuse
    .book-detail-tradition-label. */
 .subtheory-page {
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 32px;
 }
@@ -4702,14 +4712,14 @@
    Save CTAs. Scoped under .account so the bare .notebook-new-entry
    elsewhere (intentionally unstyled, separate ticket) stays untouched. */
 .account .notebook-new-entry {
-  padding: 10px 20px;
+  padding: 11px 18px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   background: var(--ink);
   color: var(--text-on-dark);
-  border: none;
-  border-radius: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -4726,9 +4736,10 @@
 /* Batch 3: Save = gradient primary; Export/Sign out = secondary
    (transparent + --line-2 -- buttons stay opaque, glass is nav-only). */
 .account .account-save-btn {
+  font-weight: 600;
   background: var(--grad);
   color: var(--text-on-dark);
-  border: none;
+  border: 1px solid transparent;
 }
 .account .account-save-btn:hover {
   background: var(--grad);
@@ -4736,12 +4747,12 @@
 }
 
 .account .account-secondary-btn {
-  background: transparent;
-  color: var(--ink-2);
+  background: var(--glass-2);
+  color: var(--ink);
   border: 1px solid var(--line-2);
 }
 .account .account-secondary-btn:hover {
-  background: transparent;
+  background: var(--glass-2);
   color: var(--ink);
   border-color: var(--ink-3);
 }

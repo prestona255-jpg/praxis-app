@@ -99,6 +99,10 @@ legitimately lighter than the page (it's a recessed luminous stage: `#fbf2da` ce
 but the **page ground stays goldenrod** (`#e6cb8e → #d8bd80 → #c4a35a`). Do not flatten
 the page to cream. Pull marks/toggles/dots/motion from comp-v2; never its background.
 
+Anchor note (settled, Stage 1): live paints the page ground on a fixed
+body::before (viewport-anchored) rather than the mockup's per-page element —
+stops are canonical, anchoring is live's; keep viewport anchoring.
+
 ## A.4 Sub-theory hues `[mockup]` (subset of the 16)
 
 The mockup defines 9 of the 16-hue palette; the values are byte-identical to the live
