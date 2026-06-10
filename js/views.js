@@ -6237,7 +6237,7 @@ function renderAccountPage() {
   // distinguishable. Reuses the muted .account-signin-copy class; not an
   // input. Email comes from the cached praxis_user object (.email).
   var emailLine = document.createElement('p');
-  emailLine.className = 'account-signin-copy';
+  emailLine.className = 'account-signin-copy account-email-line';
   emailLine.textContent = 'Signed in as ' +
     (getCurrentUser().email ? getCurrentUser().email : '(no email on file)');
   wrap.appendChild(emailLine);
@@ -6341,6 +6341,11 @@ function renderAccountPage() {
   // Danger zone: irreversible account deletion behind an in-DOM confirm.
   var dangerBlock = document.createElement('div');
   dangerBlock.className = 'account-block account-danger';
+
+  var dangerLabel = document.createElement('p');
+  dangerLabel.className = 'account-danger-label';
+  dangerLabel.textContent = 'Danger zone';
+  dangerBlock.appendChild(dangerLabel);
 
   var deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';

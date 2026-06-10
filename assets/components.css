@@ -4814,6 +4814,9 @@
    .account-confirm-panel class is a styling hook, no rule needed). */
 
 .account {
+  /* S7d: cap + center to the mockup's account measure (620). */
+  max-width: 620px;
+  margin: 0 auto;
   padding: 48px 0 64px 0;
 }
 
@@ -4825,8 +4828,9 @@
   margin: 0;
   font-family: var(--font-serif);
   font-size: 40px;
-  font-weight: 600;
-  line-height: 1.1;
+  /* S7d: match the mockup .h-pg (500 / lh 1). */
+  font-weight: 500;
+  line-height: 1;
   color: var(--ink);
 }
 
@@ -4836,6 +4840,16 @@
   font-size: 15px;
   line-height: 1.5;
   color: var(--ink-3);
+}
+
+/* S7d: scoped override for the "Signed in as <email>" line only (mockup
+   mono signed-in line). The shared .account-signin-copy base above still
+   governs the sign-in prompt copy, which keeps the body treatment. */
+.account-email-line {
+  margin-bottom: 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 /* Stacked content blocks with vertical rhythm between them. */
@@ -4872,13 +4886,15 @@
   width: 100%;
   max-width: 22rem;
   margin: 0 0 20px 0;
-  padding: 8px 10px;
+  /* S7d: conform to the mockup .field input -- recessed .06 fill, 15px,
+     11x14 padding, --radius-md (no hardcoded radius). */
+  padding: 11px 14px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink);
-  background: var(--color-surface);
+  background: rgba(58,40,16,.06);
   border: 1px solid var(--border);
-  border-radius: 2px;
+  border-radius: var(--radius-md);
 }
 
 .account-field-input:hover {
@@ -4952,10 +4968,22 @@
 /* Batch 3: danger zone -- .dz dashed danger frame + faint danger wash. */
 .account-danger {
   margin-top: 24px;
+  /* S7d: cap to the mockup .dz measure. */
+  max-width: 420px;
   padding: 18px;
   border: 1px dashed var(--danger-line);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+/* S7d: "Danger zone" label (mockup .dz .dl) above the Delete button. */
+.account-danger-label {
+  margin: 0 0 10px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--danger);
 }
 
 /* Batch 3: delete = .dang -- transparent + danger outline + danger text
@@ -4967,9 +4995,5 @@
 }
 .account .notebook-new-entry.account-delete-btn:hover {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.account .notebook-new-entry.account-delete-btn:hover {
-  background: var(--ink);
 }
 /* ===== END ACCOUNT PAGE ===== */
