@@ -1368,11 +1368,9 @@
    Mirrors the arc-detail-member treatment so the line reads the same
    way on both surfaces -- honest availability, not a destination. */
 .book-detail-header .find-this-book {
-  /* Stage 4: pin to the right (content) column. Previously the cover's
-     grid-row:1/span 6 forced this to auto-place into col 2; that span was
-     dropped when the cover moved into .book-detail-cover-col, so it must be
-     declared explicitly or it auto-places into the now-free col 1. */
-  grid-column: 2;
+  /* S5.2: find-this-book now lives inside .book-detail-content, so it
+     needs no grid placement -- just a small top margin to seat it
+     under the artifact card. */
   margin-top: 16px;
 }
 
@@ -1976,21 +1974,22 @@
 .book-detail-header {
   display: grid;
   grid-template-columns: 300px 1fr;
-  /* S5.1: column-gap keeps the 22px cover<->content separation; row-gap
-     0 + align-content:start stop the auto-rows from stretching to the
-     cover's height (which spread the right column 65-80px apart). With
-     no stretch, the per-element margins below own the vertical rhythm. */
-  column-gap: 22px;
-  row-gap: 0;
+  gap: 22px;
+  /* S5.2: two cells only -- cover-col (1) + content cell (2). align-items
+     start tops the content cell against the tall cover; the content's
+     own margins (a single normal-flow column) own the vertical rhythm,
+     so the cover height can't inflate per-element rows anymore. */
   align-items: start;
-  align-content: start;
   margin-bottom: 32px;
+}
+
+.book-detail-content {
+  grid-column: 2;
 }
 
 /* Stage 4: left column = cover + the action buttons stacked under it. */
 .book-detail-cover-col {
   grid-column: 1;
-  grid-row: 1 / span 6;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2043,8 +2042,9 @@
 }
 
 .book-detail-title {
-  grid-column: 2;
-  margin: 12px 0 4px 0;
+  /* S5.2: title is the top element of the content cell -- flush top, 4px
+     to the subtitle. Position comes from the content cell, not grid-column. */
+  margin: 0 0 4px 0;
   font-family: var(--font-serif);
   font-size: 42px;
   font-weight: 500;
@@ -2053,8 +2053,7 @@
 }
 
 .book-detail-author {
-  grid-column: 2;
-  margin: 0;
+  margin: 0 0 18px 0;
   /* Batch 3: italic-serif byline (mockup author line). */
   font-family: var(--font-serif);
   font-style: italic;
@@ -2063,23 +2062,8 @@
 }
 
 /* ===== Batch 3: book-detail reading-view chrome (content column) ===== */
-.book-detail-reg-tag {
-  grid-column: 2;
-  justify-self: start;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--river);
-  border: 1px solid var(--river);
-  border-radius: var(--radius-sm);
-  padding: 3px 9px;
-  margin-bottom: 0;
-}
-
 .book-detail-meta {
-  grid-column: 2;
-  margin: 18px 0;
+  margin: 0 0 18px 0;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -2089,7 +2073,6 @@
 
 /* "Your Book Artifact" -- OPAQUE --surface card. */
 .book-detail-artifact-card {
-  grid-column: 2;
   margin-top: 0;
   padding: 20px 24px;
   background: var(--surface);
@@ -2105,7 +2088,6 @@
    grid-column:2 seats it in the content column like the other right-
    column blocks. */
 .book-detail-quote {
-  grid-column: 2;
   margin: 18px 0 0 0;
   font-family: var(--font-serif);
   font-style: italic;

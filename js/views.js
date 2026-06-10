@@ -2809,8 +2809,8 @@ function renderBookDetail(bookId) {
   // Stage 4 (chrome-fidelity): the cover and the action buttons share a
   // left-column wrapper so the buttons sit UNDER the cover (mockup layout).
   // The cover/placeholder mounts here; .book-detail-actions (the buttons) is
-  // appended below the artifact-card block. reg-tag/title/author/meta/artifact
-  // card + Find-this-book stay in the right (content) column.
+  // appended below it. title/author/meta/artifact-card + Find-this-book live in
+  // the right column's single .book-detail-content cell (S5.2).
   var coverCol = document.createElement('div');
   coverCol.className = 'book-detail-cover-col';
   if (book.coverUrl) {
@@ -2826,31 +2826,25 @@ function renderBookDetail(bookId) {
   }
   header.appendChild(coverCol);
 
-  // Batch 3: reg-tag -- outlined river-toned mono pill above the title,
-  // rendered ONLY when the book carries a real tradition (omitted for the
-  // ~95% 'unassigned'). NOTE: the mockup's q-pull pull-quote is omitted
-  // this batch -- books carry no quote field; a future book.quote field
-  // is the proper home for it (do not fake it from marginalia).
-  var effTrad = book.traditionOverride || book.tradition;
-  if (effTrad && effTrad !== 'unassigned') {
-    var regTag = document.createElement('span');
-    regTag.className = 'book-detail-reg-tag';
-    regTag.textContent =
-      (typeof TRADITION_LABELS === 'object' && TRADITION_LABELS[effTrad])
-        ? TRADITION_LABELS[effTrad] : effTrad;
-    header.appendChild(regTag);
-  }
+  // S5.2: the right column is ONE grid cell (.book-detail-content) so the
+  // cover's height no longer inflates per-element grid rows -- the content's
+  // vertical rhythm is pure margin flow inside this cell. The S5.1 reg-tag
+  // ("THEORY" register pill) is removed here per owner decision (overrides
+  // the mockup, which keeps it); the global TRADITION_LABELS map is untouched.
+  var contentCell = document.createElement('div');
+  contentCell.className = 'book-detail-content';
+  header.appendChild(contentCell);
 
   var title = document.createElement('h1');
   title.className = 'book-detail-title';
   title.textContent = book.title || '';
-  header.appendChild(title);
+  contentCell.appendChild(title);
 
   if (book.author) {
     var author = document.createElement('p');
     author.className = 'book-detail-author';
     author.textContent = book.author;
-    header.appendChild(author);
+    contentCell.appendChild(author);
   }
 
   // Batch 3: meta line -- status + derived (read-only) arc + marginalia
@@ -2889,7 +2883,7 @@ function renderBookDetail(bookId) {
   metaLine.textContent = (book.status || 'reading') + ' · in ' +
     bdArcCount + (bdArcCount === 1 ? ' arc' : ' arcs') +
     ' · ' + bdMargCount + ' marginalia';
-  header.appendChild(metaLine);
+  contentCell.appendChild(metaLine);
 
   var user = getCurrentUser();
 
@@ -2917,7 +2911,7 @@ function renderBookDetail(bookId) {
       'written once, yours, and visible to Yumi only when you choose.';
   }
   artCard.appendChild(artBody);
-  header.appendChild(artCard);
+  contentCell.appendChild(artCard);
 
   // S5: pull-quote (mockup B.6 .q-pull), render-when-exists against
   // book.quote. No live record carries a quote field today (0/112), so
@@ -2928,7 +2922,7 @@ function renderBookDetail(bookId) {
     var quoteEl = document.createElement('div');
     quoteEl.className = 'book-detail-quote';
     quoteEl.textContent = bq;
-    header.appendChild(quoteEl);
+    contentCell.appendChild(quoteEl);
   }
 
   // Stage 4: the action buttons live UNDER the cover -- they append into
@@ -3078,7 +3072,9 @@ function renderBookDetail(bookId) {
     bdFindLink.target = '_blank';
     bdFindLink.rel = 'noopener noreferrer';
     bdFindLink.textContent = 'Find this book';
-    header.appendChild(bdFindLink);
+    // S5.2: find-this-book seats inside the content cell, last, so it
+    // hugs the card instead of floating down beside the tall cover.
+    contentCell.appendChild(bdFindLink);
   }
 
   wrap.appendChild(header);
