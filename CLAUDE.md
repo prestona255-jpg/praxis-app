@@ -34,5 +34,13 @@ state → integrations → yumi-brain → arcs → arc-constellation → traditi
 - For any sub-theory work, also read `docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md`.
 - `Praxis_Roadmap.html` is the strategic narrative — read on request, never import (large JS-rendered SPA).
 
+## Visual / UI work — read the design spec first
+
+Before any UI, styling, layout, or constellation work, read `docs/design-spec.md`
+and conform to its tokens and rules. It is the code-derived visual source of truth
+(tokens, per-component rules, and the constellation spec). The mockup and screenshots
+are cross-checks; the spec is canonical. When live disagrees with the spec, live is
+the drift — conform live toward the spec, staged and live-verified, never a bulk swing.
+
 ## After a stage
 Record the stage as claimed-done with its evidence (byte deltas, grep, commit hash, live check) — but leave the PASS stamp to Preston.
