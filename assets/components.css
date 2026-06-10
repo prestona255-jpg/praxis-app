@@ -553,7 +553,7 @@
   border: 1px solid var(--line-2);
   border-radius: var(--radius-xl);
   background: radial-gradient(120% 130% at 50% 0%,
-    var(--surface), var(--bg-2) 58%, var(--bg));
+    #f5ead0, var(--bg-2) 58%, #cba85f);
 }
 
 .home-preview-line {

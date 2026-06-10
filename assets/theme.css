@@ -134,7 +134,7 @@
   --tradition-inner-light: #FFF8E7;
   --thread-color: #B89A62;        /* 9.6c: resonance tan (was teal #1D9E75) */
   --thread-color-faint: #C9B68A;  /* 9.6c: speculative/faint dashed weight */
-  --marginalia-color: #1D9E75;
+  --marginalia-color: #1d8f68;
   --arc-question-glow: #854F0B;
   --tradition-theory-halo: #F0A88A;
   --tradition-wisdom-halo: #F8E078;
@@ -359,15 +359,11 @@ body::before {
       color-mix(in srgb, var(--ink-2) 1%, transparent) 29px,
       color-mix(in srgb, var(--ink-2) 1%, transparent) 31px
     ),
-    /* Batch 5: viewport-covering honey lift (was the Batch 1 560px
-       top radial that left a dark lower band). Viewport-relative size
-       scales with the window; honey center fades to the paler --bg-2 at
-       the edge -- a clean monotonic lift, no dark stop. The 3 grain
-       layers above are unchanged; --bg-2 is the bottom fill. */
-    radial-gradient(
-      135% 115% at 50% -12%,
-      var(--ground-center),
-      var(--bg-2) 100%
-    ),
-    var(--bg-2);
+    /* Stage 1 token conformance: spec Part A.3 page ground -- the fixed-px
+       3-stop radial from design-spec.md. The ellipse resolves in the top
+       ~560px then settles to the uniform #c4a35a edge; the flat fill below
+       matches the settle color so gradient-off rendering stays coherent.
+       The 3 grain layers above are unchanged. */
+    radial-gradient(1100px 560px at 50% -6%, #e6cb8e, #d8bd80 55%, #c4a35a 100%),
+    #c4a35a;
 }
