@@ -3977,7 +3977,12 @@ function _arcDetailBuildSubTheoryData(arc) {
       maturity: _stComputeMaturity(rec),
       marks:    _stBuildMarks(rec),
       x:        (typeof rec.x === 'number') ? rec.x : null,
-      y:        (typeof rec.y === 'number') ? rec.y : null
+      y:        (typeof rec.y === 'number') ? rec.y : null,
+      // 9b-ii: per-sub mark overrides ride through on the data object so the
+      // renderer never reads global state. Absent today (no picker UI yet) --
+      // null => the renderer falls back to the id-hash shape/color.
+      markShape: (typeof rec.markShape === 'number') ? rec.markShape : null,
+      markColor: (typeof rec.markColor === 'number') ? rec.markColor : null
     });
   }
   // 9.6c.4: derive resonance edges from each record's linkedSubTheories (bare

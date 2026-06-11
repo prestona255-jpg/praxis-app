@@ -547,13 +547,19 @@ function _stIndices(id) {
   var sIdx = _stIdentityHash(id, 11) % _ST_SILHOUETTES.length;
   var tIdx = _stIdentityHash(id, 13) % _ST_TREATMENTS.length;
   var cIdx = _stIdentityHash(id, 17) % 16;
+  // 9b-ii: the new 16-mark shapeIdx default -- reuse the silhouette hash
+  // (seed 11) widened to %16, so the default shape is stable-from-id and
+  // independent of color (seed 17).
+  var shIdx = _stIdentityHash(id, 11) % 16;
   if (sIdx < 0) { sIdx = 0; }
   if (sIdx >= _ST_SILHOUETTES.length) { sIdx = _ST_SILHOUETTES.length - 1; }
   if (tIdx < 0) { tIdx = 0; }
   if (tIdx >= _ST_TREATMENTS.length) { tIdx = _ST_TREATMENTS.length - 1; }
   if (cIdx < 0) { cIdx = 0; }
   if (cIdx >= 16) { cIdx = 15; }
-  return { silhouetteIdx: sIdx, treatmentIdx: tIdx, colorIdx: cIdx };
+  if (shIdx < 0) { shIdx = 0; }
+  if (shIdx >= 16) { shIdx = 15; }
+  return { silhouetteIdx: sIdx, treatmentIdx: tIdx, colorIdx: cIdx, shapeIdx: shIdx };
 }
 
 // Back-compat shim. views.js:_arcDetailBuildSubTheoryData still calls
@@ -774,10 +780,10 @@ function _stTreatment(key, u, c) {
 function _stLuminosity(maturity) {
   var m = (typeof maturity === 'number' && isFinite(maturity)) ? maturity : 0;
   m = _arcClamp(0, m, 1);
-  // 9.6b.1: luminosity now drives the GLOW ONLY (halo + inner-light); the
-  // body pane is decoupled to a constant opacity. Floor lifted 0.35 -> 0.45
-  // so a brand-new (0-maturity) mark still glows gently rather than near-zero.
-  return _arcR(0.45 + m * 0.55);
+  // 9b-ii: luminosity drives the mark HALO opacity only (the full-fill body
+  // is constant). Mapped to [0.32, 0.62] (mid ~0.47) so maturity stays
+  // visible without the new halo glowing too hot.
+  return _arcR(0.32 + m * 0.30);
 }
 
 // Radial layout: question at center, sub-theories on an even orbiting ring
@@ -856,50 +862,67 @@ function _stRenderEmpty(width, height) {
   return '<text data-st-empty="1" x="' + _arcR(cx) + '" y="' + _arcR(cy + 34) + '" text-anchor="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="13" fill="var(--ink-2, #633806)" opacity="0.7">Begin a sub-theory to map this question.</text>';
 }
 
-// Identity marks. Each sub-theory: a backlit luminosity-scaled halo, a
-// translucent identity-color body pane (surface treatment + grain overlay,
-// all clipped to the silhouette), a bright inner-light ellipse, and a
-// deeper-toned silhouette outline. 9.6b.1 contrast tuning: the body PANE is
-// DECOUPLED from luminosity -- it renders at a CONSTANT opacity so every
-// mark reads on the wheat at any maturity -- while luminosity drives the
-// GLOW ONLY (halo + inner-light). The outline is drawn outside the lum group
-// at constant strength, so the edge is defined even for a 0-maturity mark.
-// The silhouette/treatment/color triple is self-derived from the id via
-// _stIndices -- the contract's shapeKey/color are ignored here (this
-// renderer is their only consumer; see the _stIdentity shim note). Body
-// color is var(--subtheory-N) and the outline is its companion
-// var(--subtheory-N-edge); no hardcoded hex enters the mark code.
+// 9b-ii: the frozen sixteen marks -- body path + inner-design paths, copied
+// VERBATIM from docs/mockups/praxis-marks-16-spec.html (body = the spec
+// table's "body path" column; inner = the rendered gallery's fill=none deep
+// strokes). Keyed 0-15 by shapeIdx. Local coords span ~+/-44; the renderer
+// scales the whole mark by 0.8.
+var _ST_MARK_TABLE = [
+  /*01 hexagon*/      { body: 'M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z', inner: ['M0,-29 L25,-14.5 L25,14.5 L0,29 L-25,14.5 L-25,-14.5 Z', 'M0,-14 L12,-7 L12,7 L0,14 L-12,7 L-12,-7 Z'] },
+  /*02 teardrop*/     { body: 'M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z', inner: ['M-19,14 A19,19 0 0,1 19,14', 'M-12,22 A12,12 0 0,1 12,22', 'M-5.5,29 A5.5,5.5 0 0,1 5.5,29'] },
+  /*03 4-pt star*/    { body: 'M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z', inner: ['M0,-30 L0,30', 'M-30,0 L30,0', 'M0,-9 A9,9 0 1,0 0.01,-9 Z'] },
+  /*04 pentagon*/     { body: 'M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z', inner: ['M0,-40 L-24,26', 'M0,-40 L0,30', 'M0,-40 L24,26'] },
+  /*05 vesica*/       { body: 'M0,-46 C26,-30 26,30 0,46 C-26,30 -26,-30 0,-46 Z', inner: ['M-11,-32 C-3,-12 -19,12 -11,32', 'M0,-36 C8,-14 -8,14 0,36', 'M11,-32 C19,-12 3,12 11,32'] },
+  /*06 arch*/         { body: 'M-32,40 L-32,-6 A32,32 0 0,1 32,-6 L32,40 Z', inner: ['M-18,-6 A18,18 0 0,1 18,-6', 'M-16,4 L-16,32', 'M0,2 L0,32', 'M16,4 L16,32'] },
+  /*07 rhombus*/      { body: 'M0,-46 L34,0 L0,46 L-34,0 Z', inner: ['M0,-46 L0,46', 'M-17,-23 L17,23', 'M17,-23 L-17,23'] },
+  /*08 rosette*/      { body: 'M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z', inner: ['M0,-8 A8,8 0 1,0 0.01,-8 Z', 'M-15,-15 L-26,-26', 'M15,-15 L26,-26', 'M-15,15 L-26,26', 'M15,15 L26,26'] },
+  /*09 triangle*/     { body: 'M0,-44 L40,36 L-40,36 Z', inner: ['M-13,-12 L13,-12', 'M-22,4 L22,4', 'M-31,20 L31,20'] },
+  /*10 octagon*/      { body: 'M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z', inner: ['M10,-24 L24,-10 L24,10 L10,24 L-10,24 L-24,10 L-24,-10 L-10,-24 Z', 'M0,-4 A4,4 0 1,0 0.01,-4 Z'] },
+  /*11 egg*/          { body: 'M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z', inner: ['M0,4 m0,-2 a2,2 0 1,1 -2,2 a5,5 0 1,1 5,-5 a9,9 0 1,1 -9,9 a14,14 0 1,1 14,-14 a20,20 0 1,1 -20,20'] },
+  /*12 kite*/         { body: 'M0,-48 L28,-8 L0,44 L-28,-8 Z', inner: ['M0,-48 L0,44', 'M-20,-8 L20,-8', 'M-12,12 L12,12'] },
+  /*13 semicircle*/   { body: 'M-44,26 A44,44 0 0,1 44,26 Z', inner: ['M-30,26 A30,30 0 0,1 30,26', 'M-17,26 A17,17 0 0,1 17,26', 'M-44,26 L44,26'] },
+  /*14 6-pt star*/    { body: 'M0,-46 L8,-16 L36,-26 L16,-2 L40,14 L11,11 L13,40 L0,17 L-13,40 L-11,11 L-40,14 L-16,-2 L-36,-26 L-8,-16 Z', inner: ['M0,-8 L0,8', 'M-8,0 L8,0', 'M-6,-6 L6,6', 'M6,-6 L-6,6'] },
+  /*15 mound*/        { body: 'M-46,32 C-30,-26 -8,-40 6,-38 C30,-34 44,-6 46,32 Z', inner: ['M-34,12 C-12,2 14,4 36,14', 'M-26,24 C-6,16 10,18 30,24'] },
+  /*16 squircle*/     { body: 'M-18,-36 L18,-36 Q36,-36 36,-18 L36,18 Q36,36 18,36 L-18,36 Q-36,36 -36,18 L-36,-18 Q-36,-36 -18,-36 Z', inner: ['M-12,-28 L-12,28', 'M12,-28 L12,28', 'M-28,-12 L28,-12', 'M-28,12 L28,12'] }
+];
+
+// 9b-ii: render each sub-theory as one of the sixteen frozen marks -- a soft
+// hue halo (CSS blur in user units; NO svg filter -> no Chrome gray-flash; NO
+// opacity animation, that is 9b-iv), then a full-fill body (hue fill + same-hue
+// ring + cream shine + deep-shade inner design at .62/1.8). shapeIdx/colorIdx
+// default to the id hash; a per-sub markShape/markColor override (threaded by
+// views.js ON THE SUB DATA -- the renderer never reads global state) wins when
+// present and in [0,15]. The old silhouette x treatment construction retires
+// from the render path; tfa-innerL + the silhouette/treatment helpers + the
+// st-halo/st-grain defs remain as dead code (removal is a later cleanup).
 function _stRenderShapes(positions) {
   var out = '';
-  var u = _ST_SCALE / 120;
   var i;
   for (i = 0; i < positions.length; i = i + 1) {
     var p = positions[i];
     var sub = p.sub || {};
     var ix = _stIndices(p.id);
-    var silKey = _ST_SILHOUETTES[ix.silhouetteIdx];
-    var treatKey = _ST_TREATMENTS[ix.treatmentIdx];
-    var colorVar = 'var(--subtheory-' + (ix.colorIdx + 1) + ')';
-    var haloId = 'st-halo-' + (ix.colorIdx + 1);
+    var shapeIdx = (typeof sub.markShape === 'number' && sub.markShape >= 0 && sub.markShape <= 15)
+      ? sub.markShape : ix.shapeIdx;
+    var colorIdx = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
+      ? sub.markColor : ix.colorIdx;
+    var mark = _ST_MARK_TABLE[shapeIdx];
+    var colorVar = 'var(--subtheory-' + (colorIdx + 1) + ')';
+    var edgeVar = 'var(--subtheory-' + (colorIdx + 1) + '-edge)';
     var lum = _stLuminosity(sub.maturity);
-    var clipId = _stNextId();
-    var sil = _stSilhouette(silKey, u);
-    var haloShape = _stSilhouette(silKey, u * 1.25)
-      .replace('/>', ' fill="url(#' + haloId + ')"/>');
-    out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
-    out = out +   '<g opacity="' + _arcR(lum) + '">' + haloShape + '</g>';
-    out = out +   '<clipPath id="' + clipId + '">' + sil + '</clipPath>';
-    out = out +   '<g clip-path="url(#' + clipId + ')" opacity="0.58">';
-    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="' + colorVar + '"/>';
-    // Hybrid Stage C.2: draw the treatment in the darker EDGE companion token
-    // (not the body color) so the pattern CONTRASTS against the body pane and
-    // reads at field scale -- a rings mark is now legibly distinct from waves
-    // / hatch. Mapping is unchanged: same colorIdx, just its -edge variant.
-    out = out +     '<g opacity="0.74">' + _stTreatment(treatKey, u, 'var(--subtheory-' + (ix.colorIdx + 1) + '-edge)') + '</g>';
-    out = out +     '<rect x="' + _arcR(-70 * u) + '" y="' + _arcR(-70 * u) + '" width="' + _arcR(140 * u) + '" height="' + _arcR(140 * u) + '" fill="url(#st-grain)"/>';
+    out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ') scale(0.8)">';
+    // halo: CSS blur ~9 user units -> ~13 display px inside scale(0.8) at the
+    // arcs viewBox-to-CSS ratio. style filter (not an svg <filter>) dodges the
+    // shared-defs currentColor/gray-flash trap.
+    out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum) + '" style="filter:blur(9px)"/>';
+    out = out +   '<g opacity="0.92">';
+    out = out +     '<path d="' + mark.body + '" fill="' + colorVar + '" stroke="' + colorVar + '" stroke-width="2"/>';
+    out = out +     '<path d="' + mark.body + '" fill="url(#tfa-shine)"/>';
+    var j;
+    for (j = 0; j < mark.inner.length; j = j + 1) {
+      out = out +   '<path d="' + mark.inner[j] + '" stroke="' + edgeVar + '" stroke-opacity="0.62" stroke-width="1.8" fill="none"/>';
+    }
     out = out +   '</g>';
-    out = out +   '<ellipse cx="0" cy="' + _arcR(-4 * u) + '" rx="' + _arcR(13 * u) + '" ry="' + _arcR(11 * u) + '" fill="url(#tfa-innerL)" opacity="' + _arcR(lum) + '"/>';
-    out = out +   _stSilhouette(silKey, u).replace('/>', ' fill="none" stroke="var(--subtheory-' + (ix.colorIdx + 1) + '-edge)" stroke-width="1.2" opacity="0.40"/>');
     out = out + '</g>';
   }
   return out;
@@ -1575,5 +1598,19 @@ if (typeof window !== 'undefined') {
   // Chrome-fidelity Stage 2: a thin id->color accessor so the ⌘K spotlight can
   // tint a sub-theory's result chip with the SAME hue as its constellation
   // mark. Single source -- reuses _stIdentity/_stIndices (no hash duplication).
-  window.stColorForId = function(id) { return _stIdentity(id).color; };
+  // 9b-ii: override-aware. The spotlight calls this with only an id (no sub
+  // data object), so -- outside the data-driven render path -- it reads a
+  // per-sub markColor override straight from window.state, falling back to the
+  // id-hash color. Fully guarded: any miss / bad value yields the hash color,
+  // and it never throws.
+  window.stColorForId = function(id) {
+    if (window.state && window.state.subTheories) {
+      var rec = window.state.subTheories[id];
+      if (rec && typeof rec.markColor === 'number' &&
+          rec.markColor >= 0 && rec.markColor <= 15) {
+        return 'var(--subtheory-' + (rec.markColor + 1) + ')';
+      }
+    }
+    return _stIdentity(id).color;
+  };
 }

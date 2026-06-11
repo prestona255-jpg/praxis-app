@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Praxis · 9b Arcs target motion demo — celestial drift + twinkle</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#c4a35a; --ink:#2b1f0e; --ink-2:#4a3a20; --ink-3:#7a6336; --ink-4:#9a7e4e;
+    --border:rgba(58,40,16,.2); --border-2:rgba(58,40,16,.32);
+    --gold:#c98f2b; --gold-l:#e3b964; --thread:#B89A62;
+    --teal:#1d8f68; --inner:#FFF8E7;
+    --glass:rgba(246,235,205,.82);
+    --serif:'Cormorant Garamond',Georgia,serif; --sans:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+    --r-lg:16px; --r-xl:22px;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:radial-gradient(140% 110% at 50% -4%, #dec083, var(--bg) 62%, #b3924b);min-height:100vh;font-family:var(--sans);color:var(--ink);padding:26px 18px 60px}
+  .lab{position:fixed;left:0;top:0;background:#221708;color:#f3e6c8;font-family:var(--mono);font-size:10px;letter-spacing:.12em;padding:5px 10px;text-transform:uppercase;z-index:9}
+
+  .nav{max-width:1080px;margin:0 auto 26px;display:flex;align-items:center;gap:18px;background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:999px;padding:10px 16px 10px 22px;box-shadow:0 14px 34px -22px rgba(58,40,16,.5)}
+  .wm{font-family:var(--serif);font-size:19px;color:#8a5e14;letter-spacing:.02em}
+  .search{flex:1;display:flex;align-items:center;gap:9px;background:rgba(58,40,16,.07);border:1px solid var(--border);border-radius:999px;padding:8px 12px;color:var(--ink-3);font-size:13px}
+  .search .k{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-4);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+  .links{display:flex;gap:6px;font-size:13.5px}
+  .links a{padding:7px 13px;border-radius:999px;color:var(--ink-2)}
+  .links a.on{background:rgba(58,40,16,.1);color:var(--ink);font-weight:500}
+  .me{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#9a6f1e,#155f47);color:#fdf6e4;display:grid;place-items:center;font-size:12.5px;font-weight:600}
+
+  .card{max-width:1080px;margin:0 auto;background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px 26px 22px;box-shadow:0 26px 60px -36px rgba(58,40,16,.55)}
+  .head{display:flex;align-items:flex-start;gap:14px}
+  .head h1{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.05}
+  .head p{margin-top:5px;font-size:13.5px;color:var(--ink-2);max-width:560px}
+  .ctrl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0}
+  .btn{font-size:13px;border:1px solid var(--border);border-radius:10px;padding:8px 14px;background:rgba(252,245,226,.6);color:var(--ink-2);cursor:default;white-space:nowrap}
+  .btn.pri{background:linear-gradient(135deg,#b07d1f,#155f47);border:0;color:#fdf6e4;font-weight:600}
+  .seg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .seg span{font-size:12.5px;padding:7px 13px;color:var(--ink-3);cursor:pointer}
+  .seg span.on{background:var(--gold-l);color:var(--ink);font-weight:500}
+  .row2{margin-top:12px;display:flex;gap:8px;align-items:center;position:relative}
+  .pal-label{margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin-right:8px}
+
+  .layers{position:absolute;right:0;top:44px;z-index:6;background:rgba(252,245,226,.95);border:1px solid var(--border-2);border-radius:12px;padding:12px 14px 10px;box-shadow:0 18px 40px -24px rgba(58,40,16,.55);min-width:168px}
+  .layers .lh{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4);margin-bottom:8px}
+  .lrow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2);padding:4px 0}
+  .tog{margin-left:auto;width:34px;height:18px;border-radius:999px;background:linear-gradient(135deg,#a8761c,#8a5e14);position:relative;border:1px solid rgba(58,40,16,.25)}
+  .tog::after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fdf6e4}
+  .lnote{margin-top:7px;font-size:11px;color:var(--ink-4);font-style:italic;font-family:var(--serif)}
+
+  .stage{position:relative;height:540px;margin-top:14px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);
+    background:radial-gradient(130% 120% at 55% 16%, #fbf2da, #ecd9a6 55%, #d8bd80)}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%}
+
+  .qh{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(133,79,11,.2),transparent 62%);filter:blur(6px);pointer-events:none}
+  .qtt{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--serif);font-style:italic;font-size:24px;color:#7a4f10;pointer-events:none}
+
+  .yumi{position:absolute;right:34px;top:26px;text-align:center}
+  .yumi .c{width:46px;height:46px;border-radius:50%;border:1.6px dashed var(--teal);opacity:.75;margin:0 auto}
+  .yumi .t{margin-top:5px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--teal);opacity:.85}
+
+  /* channel card — what a click opens */
+  .chan-card{position:absolute;z-index:8;display:none;max-width:240px;background:rgba(252,245,226,.97);border:1px solid var(--border-2);border-radius:12px;padding:11px 13px;box-shadow:0 18px 40px -24px rgba(58,40,16,.55)}
+  .chan-card .ct{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4)}
+  .chan-card .cn{font-family:var(--serif);font-size:16px;color:var(--ink);margin:3px 0 2px;line-height:1.15}
+  .chan-card .ca{font-size:11px;color:var(--teal);font-weight:500}
+  [data-chan]{cursor:pointer}
+
+  /* ── celestial motion: weightless wandering orbits, center origin ── */
+  @keyframes wanderA{0%{transform:translate(0,0)}25%{transform:translate(12px,-8px)}50%{transform:translate(5px,-17px)}75%{transform:translate(-9px,-6px)}100%{transform:translate(0,0)}}
+  @keyframes wanderB{0%{transform:translate(0,0)}25%{transform:translate(-10px,10px)}50%{transform:translate(-16px,-4px)}75%{transform:translate(-4px,12px)}100%{transform:translate(0,0)}}
+  @keyframes wanderC{0%{transform:translate(0,0)}25%{transform:translate(9px,12px)}50%{transform:translate(16px,2px)}75%{transform:translate(6px,-10px)}100%{transform:translate(0,0)}}
+  @keyframes wanderD{0%{transform:translate(0,0)}25%{transform:translate(-7px,-12px)}50%{transform:translate(4px,-16px)}75%{transform:translate(13px,-5px)}100%{transform:translate(0,0)}}
+  .d1{animation:wanderA 11.5s ease-in-out infinite}
+  .d2{animation:wanderB 14s ease-in-out infinite;animation-delay:-5s}
+  .d3{animation:wanderC 12.5s ease-in-out infinite;animation-delay:-9s}
+  .d1.alt{animation:wanderD 15s ease-in-out infinite;animation-delay:-3s}
+  /* ── twinkle: luminosity pulse on the halo, per palette ── */
+  @keyframes twkC{0%,100%{opacity:.34}50%{opacity:.66}}
+  @keyframes twkM{0%,100%{opacity:.22}50%{opacity:.46}}
+  /* ── marginalia dots twinkle like faint companion stars ── */
+  @keyframes dotTw{0%,100%{opacity:.35}50%{opacity:1}}
+  .mdot{animation:dotTw 3s ease-in-out infinite}
+  .mdot.t2{animation-duration:3.8s;animation-delay:-1.3s}
+  .mdot.t3{animation-duration:4.5s;animation-delay:-2.6s}
+  @media (prefers-reduced-motion:reduce){.d1,.d2,.d3,.halo,.mdot{animation:none!important}}
+  .mkg{transform-box:fill-box;transform-origin:center;color:var(--c)}
+
+  /* ── hues: the frozen 16-sheet pairs, 8 on stage ── */
+  .colorful .mk-beacon    {--c:#6FC9BC;--t:#37968A}  .muted .mk-beacon    {--c:#8fcdc3;--t:#4f9389}
+  .colorful .mk-wellspring{--c:#8FB8E8;--t:#5580C2}  .muted .mk-wellspring{--c:#a9bfe3;--t:#5d76a8}
+  .colorful .mk-compass   {--c:#E8998D;--t:#C4685B}  .muted .mk-compass   {--c:#e0a099;--t:#b2625a}
+  .colorful .mk-keystone  {--c:#E8B45C;--t:#C08A28}  .muted .mk-keystone  {--c:#e3b964;--t:#a8781f}
+  .colorful .mk-bloom     {--c:#F2A8C6;--t:#CC6E9A}  .muted .mk-bloom     {--c:#f2b8cc;--t:#c97f9b}
+  .colorful .mk-chamber   {--c:#AC9DE2;--t:#7A66C2}  .muted .mk-chamber   {--c:#b9a8dc;--t:#7e69ad}
+  .colorful .mk-summit    {--c:#A8CD8E;--t:#6FA052}  .muted .mk-summit    {--c:#b5cf9e;--t:#74955c}
+  .colorful .mk-seed      {--c:#C0A8E0;--t:#8E6EC0}  .muted .mk-seed      {--c:#c4b2e0;--t:#8a76b8}
+
+  /* full-fill recipe (frozen) — halo & body are painted by each mark's
+     own hue var; no currentColor-in-gradient (renders black in Chrome) */
+  .bf{fill:var(--c)}
+  .halo{fill:var(--c)}
+  .colorful .halo{opacity:.5;animation:twkC 4.6s ease-in-out infinite}
+  .mk-wellspring .halo,.mk-bloom .halo{animation-duration:3.6s;animation-delay:-1.7s}
+  .mk-keystone .halo,.mk-seed .halo{animation-duration:5.6s;animation-delay:-3.1s}
+  .colorful .shine{fill:url(#shineLite);opacity:1}
+  .colorful .bod{opacity:.92}
+  .colorful .tx{stroke-opacity:.62}
+  .muted .halo{opacity:.34;animation-name:twkM}
+  .muted .shine{fill:url(#creamCore);opacity:1}
+  .muted .bod{opacity:.66}
+  .muted .tx{stroke-opacity:.5}
+  .stage svg, .mkg, .bod, .shine{transition:opacity .4s ease}
+
+  .legend{display:flex;gap:22px;align-items:center;margin-top:13px;font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
+  .legend .sw{display:inline-flex;align-items:center;gap:7px}
+  .lw-res{width:26px;height:0;border-top:2px solid var(--thread)}
+  .lw-faint{width:26px;height:0;border-top:2px dashed rgba(150,110,40,.45)}
+  .lw-gath{width:11px;height:11px;border-radius:50%;border:2px solid var(--teal)}
+  .lw-inc{width:11px;height:11px;border-radius:50%;background:var(--teal)}
+  .lw-book{width:13px;height:13px;border-radius:3.5px;background:#d9c08c;border:1px solid rgba(58,40,16,.3)}
+  .hint{margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--ink-4);letter-spacing:.04em}
+</style>
+</head>
+<body>
+<span class="lab">9b-iv motion demo v2 · wider orbits · deeper twinkle</span>
+
+<div class="nav"><span class="wm">praxis</span>
+  <div class="search">⌕ Search books, authors, ideas…<span class="k">⌘K</span></div>
+  <nav class="links"><a>Home</a><a>Shelf</a><a class="on">Arcs</a><a>Notebook</a></nav>
+  <span class="me">P</span>
+</div>
+
+<div class="card colorful" id="card">
+  <div class="head">
+    <div>
+      <h1>A Pedagogy of Desire</h1>
+      <p>Five books on desire as a pedagogical force — what it shapes us toward, and who we become when we don’t.</p>
+    </div>
+    <div class="ctrl">
+      <div class="seg"><span>List</span><span class="on">Web</span></div>
+      <span class="btn">Hide arc</span>
+    </div>
+  </div>
+
+  <div class="row2">
+    <span class="btn pri">+ Sub-theory</span>
+    <span class="btn">Connect</span>
+    <span class="btn" style="background:rgba(58,40,16,.08)">Layers ▾</span>
+    <span class="btn">Reset</span>
+
+    <span class="pal-label">Palette</span>
+    <div class="seg" id="palseg">
+      <span class="on" data-s="colorful">Colorful</span><span data-s="muted">Muted</span>
+    </div>
+
+    <div class="layers">
+      <div class="lh">Layers</div>
+      <div class="lrow">Books<span class="tog"></span></div>
+      <div class="lrow">Marginalia<span class="tog"></span></div>
+      <div class="lrow">Faint links<span class="tog"></span></div>
+      <div class="lnote">resonance stays on — the spine</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="qh"></div>
+    <svg viewBox="0 0 1030 540" preserveAspectRatio="xMidYMid slice" aria-label="constellation">
+      <defs>
+        <filter id="soft" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="12"/></filter>
+        <radialGradient id="shineLite" cx="50%" cy="34%" r="62%"><stop offset="0%" stop-color="#FFF8E7" stop-opacity=".38"/><stop offset="70%" stop-color="#FFF8E7" stop-opacity="0"/></radialGradient>
+        <radialGradient id="creamCore" cx="50%" cy="42%" r="72%"><stop offset="0%" stop-color="#FFF8E7" stop-opacity=".92"/><stop offset="45%" stop-color="#FFF8E7" stop-opacity=".55"/><stop offset="78%" stop-color="#FFF8E7" stop-opacity="0"/></radialGradient>
+        <linearGradient id="res1" gradientUnits="userSpaceOnUse" x1="200" y1="170" x2="705" y2="145">
+          <stop offset="0" stop-color="rgba(150,110,40,0)"/><stop offset=".5" stop-color="rgba(150,110,40,.7)"/><stop offset="1" stop-color="rgba(150,110,40,0)"/>
+        </linearGradient>
+        <linearGradient id="res2" gradientUnits="userSpaceOnUse" x1="705" y1="160" x2="690" y2="380">
+          <stop offset="0" stop-color="rgba(150,110,40,0)"/><stop offset=".5" stop-color="rgba(150,110,40,.7)"/><stop offset="1" stop-color="rgba(150,110,40,0)"/>
+        </linearGradient>
+      </defs>
+
+      <!-- sub-theory edges -->
+      <path d="M200,170 C380,110 540,108 705,145" fill="none" stroke="url(#res1)" stroke-width="1.6"/>
+      <path d="M705,162 C720,240 705,310 690,380" fill="none" stroke="url(#res2)" stroke-width="1.6"/>
+      <path d="M195,196 C180,280 175,330 185,385" fill="none" stroke="rgba(150,110,40,.4)" stroke-width="1.3" stroke-dasharray="2 6"/>
+      <path d="M480,420 C545,425 620,415 668,400" fill="none" stroke="rgba(150,110,40,.4)" stroke-width="1.3" stroke-dasharray="2 6"/>
+      <path d="M730,140 C790,185 830,235 852,278" fill="none" stroke="rgba(150,110,40,.4)" stroke-width="1.3" stroke-dasharray="2 6"/>
+
+      <!-- ════ THE MARKS — each group drifts with its own channels attached ════ -->
+
+      <!-- 01 the beacon · hexagon · nested hexagons · book: The Politics of Education -->
+      <g class="mkg d1 alt mk-beacon">
+        <circle class="halo" cx="200" cy="170" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(200,170) scale(.78)">
+          <path class="bf" d="M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z" fill="#6FC9BC" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M0,-29 L25,-14.5 L25,14.5 L0,29 L-25,14.5 L-25,-14.5 Z"/>
+            <path d="M0,-14 L12,-7 L12,7 L0,14 L-12,7 L-12,-7 Z"/></g>
+        </g>
+        <!-- book channel: tether + clickable square -->
+        <path d="M228,150 C255,135 275,127 292,122" fill="none" stroke="rgba(150,110,40,.35)" stroke-width="1"/>
+        <rect x="292" y="113" width="17" height="17" rx="4" fill="#d9c08c" stroke="rgba(58,40,16,.3)"
+              data-chan data-type="book · evidence" data-name="The Politics of Education — Paulo Freire" data-act="Opens this book’s page ↗"/>
+        <!-- marginalia channels -->
+        <path d="M172,194 L160,204" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t2" cx="156" cy="208" r="5" fill="none" stroke="#1d8f68" stroke-width="2"
+                data-chan data-type="gathered marginalia" data-name="“banking model vs problem-posing”" data-act="Opens the note ↗"/>
+        <path d="M186,202 L180,214" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t3" cx="178" cy="219" r="4" fill="#1d8f68"
+                data-chan data-type="incorporated marginalia" data-name="“education as the practice of freedom”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 02 the wellspring · teardrop · ripple arcs · book: Zami + its note -->
+      <g class="mkg d2 mk-wellspring">
+        <circle class="halo" cx="705" cy="145" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(705,145) scale(.78)">
+          <path class="bf" d="M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z" fill="#8FB8E8" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M-19,14 A19,19 0 0,1 19,14"/><path d="M-12,22 A12,12 0 0,1 12,22"/><path d="M-5.5,29 A5.5,5.5 0 0,1 5.5,29"/></g>
+        </g>
+        <path d="M733,135 C760,125 778,120 793,118" fill="none" stroke="rgba(150,110,40,.35)" stroke-width="1"/>
+        <rect x="793" y="109" width="17" height="17" rx="4" fill="#d9c08c" stroke="rgba(58,40,16,.3)"
+              data-chan data-type="book · evidence" data-name="Zami: A New Spelling of My Name — Audre Lorde" data-act="Opens this book’s page ↗"/>
+        <path d="M731,168 L742,178" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot" cx="746" cy="182" r="5" fill="none" stroke="#1d8f68" stroke-width="2"
+                data-chan data-type="gathered marginalia" data-name="from Zami — “new info”" data-act="Opens the note ↗"/>
+        <path d="M716,176 L722,188" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t2" cx="724" cy="193" r="4" fill="#1d8f68"
+                data-chan data-type="incorporated marginalia" data-name="“the very house of difference”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 03 the compass · four-point star · book: Yearning -->
+      <g class="mkg d3 mk-compass">
+        <circle class="halo" cx="510" cy="200" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(510,200) scale(.78)">
+          <path class="bf" d="M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z" fill="#E8998D" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M0,-30 L0,30"/><path d="M-30,0 L30,0"/><circle r="9"/></g>
+        </g>
+        <path d="M483,180 C460,165 442,155 428,148" fill="none" stroke="rgba(150,110,40,.35)" stroke-width="1"/>
+        <rect x="411" y="139" width="17" height="17" rx="4" fill="#d9c08c" stroke="rgba(58,40,16,.3)"
+              data-chan data-type="book · evidence" data-name="Yearning: Race, Gender & Cultural Politics — bell hooks" data-act="Opens this book’s page ↗"/>
+        <path d="M535,222 L546,230" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t3" cx="550" cy="234" r="5" fill="none" stroke="#1d8f68" stroke-width="2"
+                data-chan data-type="gathered marginalia" data-name="“the moment we choose to love…”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 04 the keystone · pentagon -->
+      <g class="mkg d1 mk-keystone">
+        <circle class="halo" cx="870" cy="295" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(870,295) scale(.78)">
+          <path class="bf" d="M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z" fill="#E8B45C" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M0,-40 L-24,26"/><path d="M0,-40 L0,30"/><path d="M0,-40 L24,26"/></g>
+        </g>
+        <path d="M896,318 L908,328" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot" cx="912" cy="332" r="4" fill="#1d8f68"
+                data-chan data-type="incorporated marginalia" data-name="“desire bends around the absence”" data-act="Opens the note ↗"/>
+        <path d="M842,316 L832,326" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t2" cx="828" cy="330" r="5" fill="none" stroke="#1d8f68" stroke-width="2"
+                data-chan data-type="gathered marginalia" data-name="“recognition is the first light”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 09 the summit · triangle -->
+      <g class="mkg d2 mk-summit">
+        <circle class="halo" cx="185" cy="405" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(185,408) scale(.78)">
+          <path class="bf" d="M0,-44 L40,36 L-40,36 Z" fill="#A8CD8E" stroke="var(--c)" stroke-width="2" stroke-linejoin="round"/>
+          <path class="shine" d="M0,-44 L40,36 L-40,36 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M-13,-12 L13,-12"/><path d="M-22,4 L22,4"/><path d="M-31,20 L31,20"/></g>
+        </g>
+      </g>
+
+      <!-- 08 the bloom · rosette -->
+      <g class="mkg d3 mk-bloom">
+        <circle class="halo" cx="455" cy="420" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(455,420) scale(.72)">
+          <path class="bf" d="M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z" fill="#F2A8C6" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <circle r="8"/><path d="M-15,-15 L-26,-26"/><path d="M15,-15 L26,-26"/><path d="M-15,15 L-26,26"/><path d="M15,15 L26,26"/></g>
+        </g>
+        <path d="M478,440 L490,448" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t3" cx="494" cy="452" r="5" fill="none" stroke="#1d8f68" stroke-width="2"
+                data-chan data-type="gathered marginalia" data-name="“love as the practice of freedom”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 10 the chamber · octagon · book: All About Love -->
+      <g class="mkg d1 mk-chamber">
+        <circle class="halo" cx="690" cy="395" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(690,395) scale(.78)">
+          <path class="bf" d="M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z" fill="#AC9DE2" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z"/>
+          <g class="tx" fill="none" stroke="var(--t)" stroke-width="1.8">
+            <path d="M10,-24 L24,-10 L24,10 L10,24 L-10,24 L-24,10 L-24,-10 L-10,-24 Z"/><circle r="4"/></g>
+        </g>
+        <path d="M718,375 C745,362 765,355 782,350" fill="none" stroke="rgba(150,110,40,.35)" stroke-width="1"/>
+        <rect x="782" y="341" width="17" height="17" rx="4" fill="#d9c08c" stroke="rgba(58,40,16,.3)"
+              data-chan data-type="book · evidence" data-name="All About Love — bell hooks" data-act="Opens this book’s page ↗"/>
+        <path d="M712,422 L720,432" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot" cx="724" cy="436" r="4" fill="#1d8f68"
+                data-chan data-type="incorporated marginalia" data-name="“love is an action, never simply a feeling”" data-act="Opens the note ↗"/>
+        <path d="M668,424 L660,434" stroke="rgba(150,110,40,.3)" stroke-width="1"/>
+        <circle class="mdot t2" cx="656" cy="438" r="4" fill="#1d8f68"
+                data-chan data-type="incorporated marginalia" data-name="“without justice there can be no love”" data-act="Opens the note ↗"/>
+      </g>
+
+      <!-- 11 the seed · egg -->
+      <g class="mkg d2 mk-seed">
+        <circle class="halo" cx="330" cy="295" r="42" filter="url(#soft)"/>
+        <g class="bod" transform="translate(330,295) scale(.7)">
+          <path class="bf" d="M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z" fill="#C0A8E0" stroke="var(--c)" stroke-width="2"/>
+          <path class="shine" d="M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z"/>
+          <path class="tx" d="M0,4 m0,-2 a2,2 0 1,1 -2,2 a5,5 0 1,1 5,-5 a9,9 0 1,1 -9,9 a14,14 0 1,1 14,-14 a20,20 0 1,1 -20,20" fill="none" stroke="var(--t)" stroke-width="1.8"/>
+        </g>
+      </g>
+    </svg>
+    <div class="qtt">the question</div>
+    <div class="yumi"><div class="c"></div><div class="t">Yumi</div></div>
+    <div class="chan-card" id="chanCard"><div class="ct" id="ccType"></div><div class="cn" id="ccName"></div><div class="ca" id="ccAct"></div></div>
+  </div>
+
+  <div class="legend">
+    <span class="sw"><span class="lw-book"></span>book</span>
+    <span class="sw"><span class="lw-res"></span>resonance</span>
+    <span class="sw"><span class="lw-faint"></span>faint</span>
+    <span class="sw"><span class="lw-gath"></span>gathered</span>
+    <span class="sw"><span class="lw-inc"></span>incorporated</span>
+  </div>
+  <div class="hint">drag · connect two sub-theories or attach a book · hover for a card · click a book square or marginalia dot to open it</div>
+</div>
+
+<script>
+  var seg = document.getElementById('palseg');
+  var card = document.getElementById('card');
+  seg.addEventListener('click', function(e){
+    var s = e.target.getAttribute('data-s');
+    if(!s) return;
+    card.classList.remove('colorful','muted');
+    card.classList.add(s);
+    var kids = seg.children;
+    for(var i=0;i<kids.length;i++){ kids[i].className = kids[i].getAttribute('data-s')===s ? 'on' : ''; }
+  });
+
+  /* channel cards — every book square and marginalia dot is a live channel
+     to its real record; click shows what it opens */
+  var stage = document.getElementById('stage');
+  var cc = document.getElementById('chanCard');
+  stage.addEventListener('click', function(e){
+    var t = e.target;
+    if (t.hasAttribute && t.hasAttribute('data-chan')) {
+      document.getElementById('ccType').textContent = t.getAttribute('data-type');
+      document.getElementById('ccName').textContent = t.getAttribute('data-name');
+      document.getElementById('ccAct').textContent  = t.getAttribute('data-act');
+      var r = stage.getBoundingClientRect();
+      var x = e.clientX - r.left + 14, y = e.clientY - r.top + 10;
+      if (x > r.width - 260) x = r.width - 260;
+      if (y > r.height - 90) y = r.height - 90;
+      cc.style.left = x + 'px'; cc.style.top = y + 'px';
+      cc.style.display = 'block';
+      e.stopPropagation();
+    } else {
+      cc.style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>

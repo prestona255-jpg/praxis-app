@@ -84,6 +84,14 @@ function getTraditionFormsArcDefs() {
   s = s +   '<stop offset="62%" stop-color="#854F0B" stop-opacity="0"/>';
   s = s + '</radialGradient>';
 
+  // 9b-ii: the sixteen marks' cream SHINE (frozen spec #shine1). Hue-
+  // independent (cream only) -> safe to share across all marks; no
+  // currentColor, so no Chrome black-render trap.
+  s = s + '<radialGradient id="tfa-shine" cx="50%" cy="34%" r="62%">';
+  s = s +   '<stop offset="0%" stop-color="#FFF8E7" stop-opacity="0.38"/>';
+  s = s +   '<stop offset="70%" stop-color="#FFF8E7" stop-opacity="0"/>';
+  s = s + '</radialGradient>';
+
   // Theory -- terracotta.
   s = s + '<pattern id="tfa-t1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">';
   s = s +   '<rect width="20" height="20" fill="#D67248"/>';
