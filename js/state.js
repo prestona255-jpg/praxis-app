@@ -1013,13 +1013,24 @@ function setSubTheoryPosition(id, x, y) {
   return subTheory;
 }
 
-// Hard-delete. No cascade: no links or published docs reference a
-// sub-theory yet (those seams arrive in later stages). Returns true on
-// success, false if the record was already absent.
+// Hard-delete WITH cascade. Resonance links exist since 9.5, so a delete must
+// drop this id from every partner's linkedSubTheories or a dangling half-edge
+// survives (the old "no cascade" note was stale). Reuses unlinkSubTheories for
+// the symmetric removal -- it needs BOTH subs to exist, so it runs BEFORE the
+// record is removed, over a SNAPSHOT of the partner ids (unlinkSubTheories
+// splices the array we'd otherwise be iterating). Also clears a dangling
+// currentSubTheoryId pointer. Returns true on success, false if absent.
 function deleteSubTheory(id) {
   var subTheory = state.subTheories[id];
   if (!subTheory) return false;
+  var partners = Array.isArray(subTheory.linkedSubTheories)
+    ? subTheory.linkedSubTheories.slice() : [];
+  var i;
+  for (i = 0; i < partners.length; i = i + 1) {
+    unlinkSubTheories(id, partners[i]);
+  }
   delete state.subTheories[id];
+  if (state.currentSubTheoryId === id) { state.currentSubTheoryId = null; }
   markSubTheoriesDirty();
   saveState();
   return true;

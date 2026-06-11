@@ -3565,6 +3565,73 @@ function _stPickerColorCell(idx, onPick, store) {
 // arc-constellation.js) can open it without reaching across layers.
 window.openSymbolPicker = openSymbolPicker;
 
+// Fix (v3.81): a small reusable danger-confirm modal for deleting a sub-theory,
+// callable from any surface (the Web-view hover card is transient, so a
+// from-anywhere modal beats a host-mounted panel). On confirm it runs
+// deleteSubTheory(id) -- which cascades the resonance links + clears the current
+// pointer (state.js) -- then the caller's afterDelete (writing page -> route to
+// the arc; hover card -> re-render in place). esc + backdrop = cancel.
+function confirmDeleteSubTheory(id, afterDelete) {
+  var rec = state.subTheories && state.subTheories[id];
+  if (!rec) { return; }
+  var opener = document.activeElement;
+  var title = (rec.header && rec.header.length) ? rec.header : 'this sub-theory';
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'st-confirm-backdrop';
+  backdrop.addEventListener('click', close);
+
+  var panel = document.createElement('div');
+  panel.className = 'st-confirm';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-label', 'Delete sub-theory');
+  panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  var copy = document.createElement('p');
+  copy.className = 'st-confirm-copy';
+  copy.textContent = 'Delete “' + title + '”? Its evidence and any '
+    + 'resonance links are removed. This can’t be undone.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'st-confirm-actions';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'st-confirm-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', close);
+  var delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.className = 'st-confirm-btn st-confirm-btn-danger';
+  delBtn.textContent = 'Delete sub-theory';
+  delBtn.addEventListener('click', function() {
+    var ok = deleteSubTheory(id);
+    close();
+    if (ok && typeof afterDelete === 'function') { afterDelete(); }
+  });
+  actions.appendChild(cancelBtn);
+  actions.appendChild(delBtn);
+  panel.appendChild(actions);
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    if (backdrop.parentNode) { backdrop.parentNode.removeChild(backdrop); }
+    if (panel.parentNode) { panel.parentNode.removeChild(panel); }
+    if (opener && opener.focus) { try { opener.focus(); } catch (e) {} }
+  }
+  function onKey(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); close(); }
+  }
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(panel);
+  document.addEventListener('keydown', onKey);
+  if (panel.focus) { try { panel.setAttribute('tabindex', '-1'); panel.focus(); } catch (e) {} }
+}
+// Exposed so the constellation hover card (arc-constellation.js) can open it.
+window.confirmDeleteSubTheory = confirmDeleteSubTheory;
+
 function renderSubTheoryPage(id) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -3624,6 +3691,20 @@ function renderSubTheoryPage(id) {
   markChip.appendChild(document.createTextNode('Mark'));
   markChip.addEventListener('click', function() { openSymbolPicker(id); });
   main.appendChild(markChip);
+
+  // Fix (v3.81): a reachable Delete on the writing page (the sub's own surface).
+  // Subordinate danger chip beside the Mark chip; on confirm, route to the
+  // parent arc (R69 -- can't stay on a deleted page).
+  var stDeleteBtn = document.createElement('button');
+  stDeleteBtn.type = 'button';
+  stDeleteBtn.className = 'st-mark-chip subtheory-delete-chip';
+  stDeleteBtn.textContent = 'Delete';
+  stDeleteBtn.addEventListener('click', function() {
+    confirmDeleteSubTheory(id, function() {
+      location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
+    });
+  });
+  main.appendChild(stDeleteBtn);
 
   var headerInput = document.createElement('input');
   headerInput.type = 'text';

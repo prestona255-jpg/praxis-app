@@ -5286,3 +5286,78 @@
 }
 .st-hover-card-link:hover { color: var(--ink); }
 /* ===== END SYMBOL PICKER ===== */
+
+
+/* ===== v3.81 SUB-THEORY DELETE -- confirm modal + danger affordances ===== */
+.st-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  z-index: 10020;
+}
+.st-confirm {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-width: calc(100vw - var(--sp-5) - var(--sp-5));
+  background: var(--surface-2);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: 22px 24px 18px;
+  z-index: 10021;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+.st-confirm-copy {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0 0 18px 0;
+}
+.st-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.st-confirm-btn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.st-confirm-btn:hover { background: var(--surface); border-color: var(--ink-4); }
+.st-confirm-btn:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; }
+.st-confirm-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--text-on-dark);
+}
+.st-confirm-btn-danger:hover {
+  background: var(--danger);
+  filter: brightness(1.08);
+  border-color: var(--danger);
+}
+
+/* Writing-page Delete chip -- subordinate danger variant of the Mark chip. */
+.subtheory-delete-chip {
+  color: var(--danger);
+  border-color: var(--danger-line);
+}
+.subtheory-delete-chip:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+/* Hover-card Delete link -- subordinate to Open (danger color). */
+.st-hover-card-link-danger { color: var(--danger); }
+.st-hover-card-link-danger:hover { color: var(--danger); filter: brightness(0.9); }
+/* ===== END SUB-THEORY DELETE ===== */

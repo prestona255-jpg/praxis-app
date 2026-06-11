@@ -1558,6 +1558,26 @@ function attachSubTheoryDrag(svg, opts) {
       }
     });
     foot.appendChild(changeLink);
+    // Fix (v3.81 / R67): a subordinate danger Delete link in the hover card --
+    // the only per-sub surface in the Web view. Hands off to the views.js
+    // confirm modal (window hook keeps the layering); afterDelete re-renders the
+    // current route in place (R69).
+    var delLink = document.createElement('button');
+    delLink.type = 'button';
+    delLink.className = 'st-hover-card-link st-hover-card-link-danger';
+    delLink.textContent = 'Delete';
+    delLink.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (sub.id && typeof window.confirmDeleteSubTheory === 'function') {
+        hideCard();
+        window.confirmDeleteSubTheory(sub.id, function() {
+          if (window.views && typeof window.views.renderRoute === 'function') {
+            window.views.renderRoute();
+          }
+        });
+      }
+    });
+    foot.appendChild(delLink);
     el.appendChild(foot);
   }
 
