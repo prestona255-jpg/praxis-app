@@ -3073,6 +3073,79 @@
   color: var(--ink);
 }
 
+/* 6.2a: scan review editor. Container chrome + the actions/submit/cancel
+   buttons reuse the .shelf-bulk-editor family above; only the per-title
+   rows, the remove control, the add control, and the quiet heading carry
+   their own rules. Calm by design -- a review moment, not a form. */
+.shelf-scan-review-heading {
+  margin-bottom: 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.shelf-scan-review-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.shelf-scan-review-input {
+  flex: 1;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.shelf-scan-review-input:hover {
+  border-color: var(--ink-3);
+}
+
+.shelf-scan-review-input:focus {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+  border-color: var(--ink-3);
+}
+
+.shelf-scan-review-remove {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.shelf-scan-review-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.shelf-scan-review-add {
+  margin-top: 4px;
+  padding: 6px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.shelf-scan-review-add:hover {
+  color: var(--ink);
+}
+
 /* ===== END EDITOR MODALS ===== */
 
 

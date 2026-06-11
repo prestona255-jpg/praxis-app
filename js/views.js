@@ -2636,6 +2636,135 @@ function openBulkAddEditor(prefillText) {
   textarea.focus();
 }
 
+// 6.2a: scan review editor. Mounts inline into #shelf-editor-host (same
+// idiom as openBulkAddEditor) and shows one editable row per extracted
+// title, plus add/remove controls. Confirm collects the row values and
+// hands the joined list to processBulkLines -- byte-for-byte the same
+// write path the bulk textarea uses; this editor never writes directly.
+// Reuses the .shelf-bulk-editor container chrome + the submit/cancel
+// button family; only the rows/heading/remove/add carry new classes.
+function openScanReviewEditor(titles) {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) return;
+
+  hostEl.innerHTML = '';
+
+  var editor = document.createElement('div');
+  editor.className = 'shelf-bulk-editor shelf-scan-review';
+
+  var heading = document.createElement('div');
+  heading.className = 'shelf-scan-review-heading';
+  heading.textContent = 'Review scanned titles';
+
+  var rowsWrap = document.createElement('div');
+  rowsWrap.className = 'shelf-scan-review-rows';
+
+  // Build one editable row. The row element is closure-captured so the
+  // remove button targets the right node regardless of add/remove order.
+  // Enter inside a row input is absorbed (preventDefault) so a stray
+  // keystroke never commits the list -- Confirm is the only commit path.
+  function addRow(value, focusIt) {
+    var row = document.createElement('div');
+    row.className = 'shelf-scan-review-row';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'shelf-scan-review-input';
+    if (typeof value === 'string') {
+      input.value = value;
+    }
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+      }
+    });
+
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'shelf-scan-review-remove';
+    removeBtn.setAttribute('aria-label', 'Remove title');
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', function() {
+      if (row.parentNode) {
+        row.parentNode.removeChild(row);
+      }
+    });
+
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    rowsWrap.appendChild(row);
+    if (focusIt) {
+      input.focus();
+    }
+    return input;
+  }
+
+  var i;
+  for (i = 0; i < titles.length; i++) {
+    var t = titles[i];
+    if (typeof t !== 'string') {
+      t = String(t);
+    }
+    addRow(t, false);
+  }
+
+  var addCtl = document.createElement('button');
+  addCtl.type = 'button';
+  addCtl.className = 'shelf-scan-review-add';
+  addCtl.textContent = '+ Add a title';
+  addCtl.addEventListener('click', function() {
+    addRow('', true);
+  });
+
+  var actions = document.createElement('div');
+  actions.className = 'shelf-bulk-editor-actions';
+
+  var confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'shelf-bulk-editor-submit';
+  confirmBtn.textContent = 'Confirm';
+  confirmBtn.addEventListener('click', function() {
+    var inputs = rowsWrap.querySelectorAll('.shelf-scan-review-input');
+    var lines = [];
+    var k;
+    for (k = 0; k < inputs.length; k++) {
+      var v = inputs[k].value.replace(/^\s+|\s+$/g, '');
+      if (v.length > 0) {
+        lines.push(v);
+      }
+    }
+    // Zero non-empty rows on Confirm behaves like Cancel -- no write.
+    if (lines.length === 0) {
+      renderShelf();
+      return;
+    }
+    processBulkLines(lines.join('\n'));
+  });
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'shelf-bulk-editor-cancel';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function() {
+    renderShelf();
+  });
+
+  // Esc anywhere in the editor cancels (cheap; matches the picker idiom).
+  editor.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      renderShelf();
+    }
+  });
+
+  actions.appendChild(confirmBtn);
+  actions.appendChild(cancelBtn);
+  editor.appendChild(heading);
+  editor.appendChild(rowsWrap);
+  editor.appendChild(addCtl);
+  editor.appendChild(actions);
+  hostEl.appendChild(editor);
+}
+
 // Parse a pasted blob into entries, write each entry to state, then
 // drain a sequential ISBN fetch queue. Per-entry write mirrors the
 // openShelfEditor save path (state.books record + userBooks push +
@@ -2882,13 +3011,14 @@ function handleShelfScanFile(input, btn) {
         res.json().then(function(json) {
           console.log('[scan] titles:', json.titles);
           restore();
-          // Prefill the bulk editor with the extracted titles (one per
-          // line) for the user to review and submit -- never auto-write.
-          // Empty result gets framing guidance, not the editor.
+          // 6.2a: open the review editor (one editable row per title)
+          // for the user to review and Confirm -- never auto-write.
+          // Confirm routes through processBulkLines, the same hand-off
+          // the bulk textarea makes. Empty result gets framing guidance.
           if (json &&
               Object.prototype.toString.call(json.titles) === '[object Array]' &&
               json.titles.length > 0) {
-            openBulkAddEditor(json.titles.join('\n'));
+            openScanReviewEditor(json.titles);
           } else {
             showScanStatus('No readable titles found. Try photographing one shelf at a time, filling the frame.');
           }
