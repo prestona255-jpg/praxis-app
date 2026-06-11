@@ -787,6 +787,7 @@
 .shelf-new-book,
 .shelf-new-book-bulk,
 .shelf-resolve-covers-btn,
+.shelf-scan-btn,
 .shelf-signin-prompt {
   /* Batch 2: span both header rows + bottom-align so the action cluster
      sits at the title baseline (mockup .shelf-top align-items:flex-end),
@@ -845,6 +846,40 @@
 .shelf-resolve-covers-btn:disabled {
   cursor: default;
   opacity: 0.6;
+}
+
+/* 6.1b: shelf-photo scan trigger -- secondary shape, mirrors
+   .shelf-resolve-covers-btn. The :disabled state carries the
+   'Scanning…' busy label. */
+.shelf-scan-btn {
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+}
+
+.shelf-scan-btn:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.shelf-scan-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* 6.1b: the file input paired with .shelf-scan-btn. Offscreen-clip
+   (not display:none, which suppresses the iOS camera capture intent)
+   so the input stays focusable/operable while invisible. */
+.shelf-scan-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .shelf-signin-prompt {
@@ -3128,6 +3163,7 @@
 .shelf-new-book:focus-visible,
 .shelf-new-book-bulk:focus-visible,
 .shelf-resolve-covers-btn:focus-visible,
+.shelf-scan-btn:focus-visible,
 .shelf-signin-prompt:focus-visible,
 .shelf-filter-button:focus-visible,
 .shelf-filter-row:focus-visible,
@@ -3157,6 +3193,7 @@
 .shelf-new-book:active,
 .shelf-new-book-bulk:active,
 .shelf-resolve-covers-btn:active,
+.shelf-scan-btn:active,
 .shelf-signin-prompt:active,
 .shelf-filter-button:active,
 .shelf-filter-row:active,

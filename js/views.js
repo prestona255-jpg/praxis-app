@@ -1329,6 +1329,29 @@ function renderShelf() {
     });
     actions.appendChild(resolveBtn);
 
+    // 6.1b: shelf-photo scan. A secondary button forwards its click to
+    // an offscreen-clipped file input (capture="environment" opens the
+    // mobile camera). On a chosen file: downscale on a canvas, POST bare
+    // base64 to vision-proxy, console-log the returned titles. No UI
+    // consumes the titles yet -- the bulk-add hand-off is 6.1c.
+    var scanBtn = document.createElement('button');
+    scanBtn.type = 'button';
+    scanBtn.className = 'shelf-scan-btn';
+    scanBtn.textContent = 'Scan shelf';
+    var scanInput = document.createElement('input');
+    scanInput.type = 'file';
+    scanInput.accept = 'image/*';
+    scanInput.setAttribute('capture', 'environment');
+    scanInput.className = 'shelf-scan-input';
+    scanBtn.addEventListener('click', function() {
+      scanInput.click();
+    });
+    scanInput.addEventListener('change', function() {
+      handleShelfScanFile(scanInput, scanBtn);
+    });
+    actions.appendChild(scanBtn);
+    actions.appendChild(scanInput);
+
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
     bulkBtn.className = 'shelf-new-book-bulk';
@@ -2772,6 +2795,94 @@ function processBulkLines(raw) {
     });
   }
   processNext();
+}
+
+// 6.1b: downscale a chosen photo on a canvas before upload. The longest
+// edge is clamped to 1600px (never upscaled; aspect preserved); the
+// canvas re-encodes to JPEG quality 0.85, so the output mediaType is
+// always image/jpeg regardless of the input format. cb(err) on failure,
+// cb(null, bareBase64, outW, outH) on success -- the data: prefix is
+// stripped so the bare base64 matches vision-proxy's contract. The
+// object URL is revoked on both the load and error paths.
+function downscaleShelfPhoto(file, cb) {
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function() {
+    var w = img.naturalWidth;
+    var h = img.naturalHeight;
+    var scale = Math.min(1, 1600 / Math.max(w, h));
+    var outW = Math.max(1, Math.round(w * scale));
+    var outH = Math.max(1, Math.round(h * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, outW, outH);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    URL.revokeObjectURL(url);
+    var base64 = dataUrl.replace(/^data:[^;]*;base64,/, '');
+    cb(null, base64, outW, outH);
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    cb(new Error('image decode failed'));
+  };
+  img.src = url;
+}
+
+// 6.1b: scan handler. Runs only once a file is actually chosen (the
+// cancel path leaves the picker with no files, so the busy state never
+// engages). Downscales, logs the payload size, POSTs bare base64 to
+// vision-proxy, and console-logs the returned titles. Two-arg
+// .then(onOk, onErr) throughout -- never .catch (ES3 parse harness).
+// restore() clears the busy label and resets input.value in every
+// terminal path so re-selecting the same photo re-fires the change event.
+function handleShelfScanFile(input, btn) {
+  if (!input.files || !input.files.length) return;
+  var file = input.files[0];
+  var originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Scanning' + '…';
+  function restore() {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    input.value = '';
+  }
+  downscaleShelfPhoto(file, function(err, base64, w, h) {
+    if (err) {
+      console.warn('[scan] error downscale', err);
+      restore();
+      return;
+    }
+    console.log('[scan] ' + w + 'x' + h + ' → ' +
+      Math.round(base64.length / 1024) + 'KB base64');
+    fetch('/.netlify/functions/vision-proxy', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ image: base64, mediaType: 'image/jpeg' })
+    }).then(function(res) {
+      if (res.status === 200) {
+        res.json().then(function(json) {
+          console.log('[scan] titles:', json.titles);
+          restore();
+        }, function(parseErr) {
+          console.warn('[scan] error parse', parseErr);
+          restore();
+        });
+      } else {
+        res.text().then(function(body) {
+          console.warn('[scan] error ' + res.status, body);
+          restore();
+        }, function(readErr) {
+          console.warn('[scan] error ' + res.status, readErr);
+          restore();
+        });
+      }
+    }, function(netErr) {
+      console.warn('[scan] error network', netErr);
+      restore();
+    });
+  });
 }
 
 // Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
