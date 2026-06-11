@@ -71,17 +71,36 @@ exports.handler = async function(event) {
     // Extraction prompt built server-side so prompt + model cannot drift
     // from the client. JSON-only contract, never-invent rule explicit.
     var extractionPrompt =
-      'Identify the book titles visible on the spines or covers in this '
-      + 'photograph of books. For each book, give the title; append the '
-      + 'author after the title separated by a single space ONLY when the '
-      + 'author is clearly legible. Output ONLY a JSON object of the form '
-      + '{"titles": ["...", "..."]} with no prose and no markdown code '
-      + 'fences. If no books are identifiable, output {"titles": []}. '
-      + 'Never invent a title that cannot actually be read in the image.';
+      'Transcribe the titles of the books whose spine or cover text is '
+      + 'ACTUALLY LEGIBLE in this photograph. Work systematically across '
+      + 'the whole image -- left to right, shelf by shelf -- so that no '
+      + 'readable spine is skipped. '
+      + 'This is transcription, not identification: output a title ONLY '
+      + 'if you can read its characters in the image. NEVER complete, '
+      + 'correct, or guess a title from your knowledge of popular or '
+      + 'bestselling books. If a spine is blurry, partial, angled, or too '
+      + 'small to read, OMIT it entirely. '
+      + 'Returning fewer titles than there are books in the photo is '
+      + 'correct and expected. An invented title is a serious error; a '
+      + 'missed book is not. '
+      + 'Spine text is often printed across multiple stacked lines -- join '
+      + 'those lines into ONE complete title (a title set on two or three '
+      + 'lines is still a single book). Never output a fragment of a '
+      + 'longer title as its own entry. '
+      + 'Append the author ONLY when it is clearly legible, after the '
+      + 'title and separated by a single space. Never output an author '
+      + 'name, publisher, or series name on its own as if it were a title. '
+      + 'List each physical book at most once -- no duplicate entries. '
+      + 'The photo may include non-book objects (speakers, frames, plants, '
+      + 'decor) -- ignore them entirely. '
+      + 'Output ONLY a JSON object of the form {"titles": ["...", "..."]} '
+      + 'with no prose and no markdown code fences. If nothing is legible, '
+      + 'output {"titles": []}.';
 
     var anthropicBody = {
-      model:      'claude-sonnet-4-20250514',
-      max_tokens: 1500,
+      model:       'claude-sonnet-4-6',
+      max_tokens:  2000,
+      temperature: 0,
       messages: [
         {
           role: 'user',
