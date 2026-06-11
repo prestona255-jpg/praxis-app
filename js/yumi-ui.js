@@ -280,6 +280,31 @@ function maybeStartOnboarding(uid) {
   startOnboarding();
 }
 
+// 6.2b.1: repaint the body-level Yumi panel on an auth change. A route
+// repaint never touches the panel, so without this a stale onboarding
+// transcript can survive an in-app re-auth. force=true (sign-out) is a
+// definitive end-of-session: abandon any in-progress onboarding and reset
+// the session-start guard so a half-finished transcript never survives
+// for the next user and a later sign-in begins clean. Without force
+// (sign-in) it is a no-op while onboarding is active, so a freshly-started
+// Beat A is not stomped. Either way the panel resets to idle (empty-state
+// when open, cleared when closed).
+function refreshYumiPanelForAuthChange(force) {
+  if (force) {
+    onb.active = false;
+    onb.beat = '';
+    onboardingStartedThisSession = false;
+  } else if (onb.active) {
+    return;
+  }
+  if (!yumiBodyEl) { return; }
+  if (isYumiPanelOpen()) {
+    renderYumiEmptyState();
+  } else {
+    yumiBodyEl.innerHTML = '';
+  }
+}
+
 function buildYumiToggle() {
   var btn = document.createElement('button');
   btn.id = YUMI_TOGGLE_ID;
@@ -506,7 +531,10 @@ window.YumiUI = {
   // callbacks; startOnboarding is the ungated beginner (also the Phase C
   // verification entry point).
   maybeStartOnboarding: maybeStartOnboarding,
-  startOnboarding:      startOnboarding
+  startOnboarding:      startOnboarding,
+  // 6.2b.1: called by the auth callbacks to keep the body-level panel from
+  // showing a stale onboarding transcript across an in-app re-auth.
+  refreshPanelForAuth:  refreshYumiPanelForAuthChange
 };
 
 console.log('yumi-ui.js loaded');

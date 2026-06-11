@@ -53,6 +53,15 @@ firebase.auth().onAuthStateChanged(function (u) {
     loadState();
     console.log('onAuthStateChanged: signed in', userObj);
 
+    // 6.2b.1: clear any stale onboarding transcript left in the body-level
+    // panel from a prior session's flow (the route repaint below never
+    // touches the panel). No-op while onboarding is mid-flow (guarded
+    // inside refreshPanelForAuth); a passing gate re-renders Beat A over
+    // the idle state via the load callbacks below.
+    if (window.YumiUI && typeof window.YumiUI.refreshPanelForAuth === 'function') {
+      window.YumiUI.refreshPanelForAuth();
+    }
+
     // Firestore Stage 1: fetch this user's book-doc from
     // /userBooks/{uid}. Optimistic-UI contract -- the first render
     // already painted from the localStorage cache by the time this
@@ -320,6 +329,13 @@ firebase.auth().onAuthStateChanged(function (u) {
     // its loader callbacks already drive the render; a repaint here would
     // risk a double-paint.
     if (typeof renderRoute === 'function') { renderRoute(); }
+    // 6.2b.1: sign-out is a definitive end-of-session -- wipe the panel
+    // body UNCONDITIONALLY (force=true) so a half-finished onboarding
+    // transcript never survives for the next user, and reset the onboarding
+    // session state so a later sign-in starts clean.
+    if (window.YumiUI && typeof window.YumiUI.refreshPanelForAuth === 'function') {
+      window.YumiUI.refreshPanelForAuth(true);
+    }
   }
 });
 
