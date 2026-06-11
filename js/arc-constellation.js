@@ -834,11 +834,16 @@ function _stLayout(mode, subs, width, height) {
 function _stRenderQuestion(question, width, height) {
   if (!question || !question.length) { return ''; }
   var cx = width / 2;
-  var cy = height / 2;
+  // 9b-i: question + its amber halo sit slightly low of center (h*0.52),
+  // matching the comp's off-center composition. Halo radius is a soft
+  // min(w,h)*0.42 disc drawn UNDER the text (pointer-events none so it never
+  // eats mark/hover hits).
+  var cy = height * 0.52;
+  var qhr = Math.min(width, height) * 0.42;
   // Hybrid Stage A: the heavy center disc/glow is dropped -- the arc's
-  // question now floats as just the quiet italic serif label. Text kept
-  // byte-identical.
+  // question now floats as the quiet italic serif label over a soft halo.
   var out = '';
+  out = out + '<ellipse data-st-qhalo="1" cx="' + _arcR(cx) + '" cy="' + _arcR(cy) + '" rx="' + _arcR(qhr) + '" ry="' + _arcR(qhr) + '" fill="url(#tfa-qhalo)" pointer-events="none"/>';
   out = out + '<text data-st-question="1" x="' + _arcR(cx) + '" y="' + _arcR(cy) + '" text-anchor="middle" dominant-baseline="middle" font-family="\'Cormorant Garamond\', Georgia, serif" font-style="italic" font-size="18" fill="var(--ink-2)" opacity="0.82">' + _arcEscapeXml(question) + '</text>';
   return out;
 }
@@ -965,16 +970,27 @@ function _stRenderEdges(edges, posById, showFaint) {
     // faint relationships.
     if (e.faint) {
       if (showFaint === false) { continue; } // Faint links layer hidden
-      out = out + '<line data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="1" stroke-dasharray="4 4" opacity="0.5" stroke-linecap="round"/>';
+      out = out + '<line data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="#966E28" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
       continue;
     }
     // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
     // plain ids), so they take the SOLID branch -- fixed weight + opacity, tan.
     // The weighted formula is left intact for a future strength-bearing stage.
     var hasStrength = (typeof e.strength === 'number' && isFinite(e.strength) && e.strength > 0);
-    var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.4;
+    var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.6;
     var op = hasStrength ? 0.5 : 0.85;
-    out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="var(--thread-color)" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
+    // 9b-i: resonance reads as a gradient thread (transparent -> amber .7 ->
+    // transparent) along its own axis. userSpaceOnUse endpoints = the edge's
+    // own pa/pb so the fade tracks the line. _stNextId() keeps the def id
+    // unique; the whole svg innerHTML is replaced each render, so old defs are
+    // discarded -- no id pileup across re-renders. #966E28 == rgb(150,110,40).
+    var edgeGradId = _stNextId();
+    out = out + '<linearGradient id="' + edgeGradId + '" gradientUnits="userSpaceOnUse" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '">';
+    out = out +   '<stop offset="0%" stop-color="#966E28" stop-opacity="0"/>';
+    out = out +   '<stop offset="50%" stop-color="#966E28" stop-opacity="0.7"/>';
+    out = out +   '<stop offset="100%" stop-color="#966E28" stop-opacity="0"/>';
+    out = out + '</linearGradient>';
+    out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="url(#' + edgeGradId + ')" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
   }
   return out;
 }
@@ -1141,7 +1157,7 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // tradition defs are emitted inert -- referenced by nothing here.
   svg = svg + getTraditionFormsArcDefs();
   svg = svg + _stGetDefs();
-  svg = svg + '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="url(#tfa-ground)"/>';
+  svg = svg + '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="url(#tfa-stage)"/>';
   svg = svg + _stRenderQuestion(arc.question || '', width, height);
 
   if (!subTheories.length) {

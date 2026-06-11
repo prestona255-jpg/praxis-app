@@ -65,6 +65,25 @@ function getTraditionFormsArcDefs() {
   s = s +   '<circle cx="42" cy="42" r="0.5" fill="#BA7517" fill-opacity="0.25"/>';
   s = s + '</pattern>';
 
+  // 9b-i: goldenrod stage ground (mockup .cstage radial). Approximated as an
+  // objectBoundingBox radialGradient -- cx/cy place the light high-left of
+  // center; r 130% lets the wheat falloff reach the far corners (the comp's
+  // 130%/120% ellipse is stretched to the rect aspect by objectBoundingBox).
+  // Literal stops only -- no currentColor in a shared def (Chrome black trap).
+  s = s + '<radialGradient id="tfa-stage" cx="55%" cy="16%" r="130%">';
+  s = s +   '<stop offset="0%" stop-color="#fbf2da"/>';
+  s = s +   '<stop offset="55%" stop-color="#ecd9a6"/>';
+  s = s +   '<stop offset="100%" stop-color="#d8bd80"/>';
+  s = s + '</radialGradient>';
+
+  // 9b-i: question amber halo. #854F0B == rgb(133,79,11) (the existing amber
+  // literal used in the ground stipple). stop-opacity carries the fade --
+  // matches the tfa-innerL stop style, not rgba-in-stop-color.
+  s = s + '<radialGradient id="tfa-qhalo" cx="50%" cy="50%" r="50%">';
+  s = s +   '<stop offset="0%" stop-color="#854F0B" stop-opacity="0.2"/>';
+  s = s +   '<stop offset="62%" stop-color="#854F0B" stop-opacity="0"/>';
+  s = s + '</radialGradient>';
+
   // Theory -- terracotta.
   s = s + '<pattern id="tfa-t1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">';
   s = s +   '<rect width="20" height="20" fill="#D67248"/>';

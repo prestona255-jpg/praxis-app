@@ -4179,7 +4179,9 @@
   position: relative;
   isolation: isolate;
   min-height: 400px;
-  border-radius: var(--radius-md);
+  /* 9b-i: framed stage -- hairline + lg radius (mockup .cstage). */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
