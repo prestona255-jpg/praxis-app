@@ -4233,11 +4233,36 @@
   cursor: pointer;
 }
 
+/* 9b-iv: celestial drift (verbatim from praxis-arcs-9b-motion-demo-v3). Pure
+   translate, GPU-friendly, center-origin, ease-in-out, infinite -- four
+   hash-stable wander paths, each returning to (0,0) at 0%/100%. NO opacity or
+   filter animation anywhere (twinkle is cancelled). Translate px = viewBox
+   user units; the amplitudes are small bounded wanders. ALL drift rules are
+   scoped under .arc-detail-web-view so the home embed wrapper stays inert. */
+@keyframes wanderA { 0% { transform: translate(0, 0); } 25% { transform: translate(12px, -8px); } 50% { transform: translate(5px, -17px); } 75% { transform: translate(-9px, -6px); } 100% { transform: translate(0, 0); } }
+@keyframes wanderB { 0% { transform: translate(0, 0); } 25% { transform: translate(-10px, 10px); } 50% { transform: translate(-16px, -4px); } 75% { transform: translate(-4px, 12px); } 100% { transform: translate(0, 0); } }
+@keyframes wanderC { 0% { transform: translate(0, 0); } 25% { transform: translate(9px, 12px); } 50% { transform: translate(16px, 2px); } 75% { transform: translate(6px, -10px); } 100% { transform: translate(0, 0); } }
+@keyframes wanderD { 0% { transform: translate(0, 0); } 25% { transform: translate(-7px, -12px); } 50% { transform: translate(4px, -16px); } 75% { transform: translate(13px, -5px); } 100% { transform: translate(0, 0); } }
+.arc-detail-web-view .st-drift {
+  /* R63: belt-and-suspenders center origin (inert for pure translate, demo
+     parity + future-proofing). */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.arc-detail-web-view .st-drift[data-st-drift="A"] { animation: wanderA 11.5s ease-in-out infinite; }
+.arc-detail-web-view .st-drift[data-st-drift="B"] { animation: wanderB 14s ease-in-out infinite; animation-delay: -5s; }
+.arc-detail-web-view .st-drift[data-st-drift="C"] { animation: wanderC 12.5s ease-in-out infinite; animation-delay: -9s; }
+.arc-detail-web-view .st-drift[data-st-drift="D"] { animation: wanderD 15s ease-in-out infinite; animation-delay: -3s; }
+
 @media (prefers-reduced-motion: reduce) {
   .arc-detail-web-view .st-layer-books,
   .arc-detail-web-view .st-layer-dots,
   .arc-detail-web-view .st-layer-faint {
     transition: none;
+  }
+  /* 9b-iv: drift off under reduced-motion -- marks sit still. */
+  .arc-detail-web-view .st-drift {
+    animation: none;
   }
 }
 

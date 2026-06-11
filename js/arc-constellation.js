@@ -910,12 +910,20 @@ function _stRenderShapes(positions, muted) {
     var colorVar = 'var(--subtheory-' + (colorIdx + 1) + ')';
     var edgeVar = 'var(--subtheory-' + (colorIdx + 1) + '-edge)';
     var lum = _stLuminosity(sub.maturity);
+    // 9b-iv (R62/R64): celestial drift. One of four hash-stable wander paths
+    // (seed 23 -- independent of shape seed 11 / color 17). The .st-drift
+    // wrapper carries NO transform attribute and is CSS-animated; it sits
+    // BETWEEN the outer drag/translate group and the body+dots, so drag
+    // (attribute on the outer g) and drift (CSS on the wrapper) compose, and
+    // the dots drift with their mark. The animation CSS is scoped to
+    // .arc-detail-web-view, so the home embed's wrapper stays inert (non-goal).
+    var driftLetter = 'ABCD'.charAt(_stIdentityHash(p.id, 23) % 4);
     // R55: the OUTER group is translate-only -- the per-mark MOTION group the
-    // drag layer moves (and 9b-iv drift will animate). The body+halo sit in an
-    // inner scale(0.8) sub-group (the CSS-blurred halo stays here, never a
-    // faded layer -- GUARD 45); the dots/tethers are a filter-free sibling so
-    // they travel with the mark.
+    // drag layer moves. The body+halo sit in an inner scale(0.8) sub-group (the
+    // CSS-blurred halo stays here, never a faded layer -- GUARD 45); the
+    // dots/tethers are a filter-free sibling so they travel with the mark.
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
+    out = out +   '<g class="st-drift" data-st-drift="' + driftLetter + '">';
     out = out +   '<g transform="scale(0.8)">';
     if (muted) {
       // R53 + sheet muted recipe: body = inline radial #FFF8E7 -> hue@80% (hue
@@ -949,6 +957,7 @@ function _stRenderShapes(positions, muted) {
     }
     out = out +   '</g>';
     out = out +   _stRenderDotsForMark(p);
+    out = out +   '</g>';
     out = out + '</g>';
   }
   return out;
