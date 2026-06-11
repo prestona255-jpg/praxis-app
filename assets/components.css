@@ -882,6 +882,25 @@
   border: 0;
 }
 
+/* 6.1c: scan status line -- empty/error messaging under the header
+   actions. Full-width row (degrades to a block if the header is not a
+   grid), right-aligned to sit beneath the action cluster, muted. The
+   :empty rule collapses it whenever the text is cleared. */
+.shelf-scan-status {
+  grid-column: 1 / -1;
+  justify-self: end;
+  max-width: 420px;
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.shelf-scan-status:empty {
+  display: none;
+}
+
 .shelf-signin-prompt {
   grid-column: 2 / span 2;
   background: var(--ink);

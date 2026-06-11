@@ -1338,6 +1338,7 @@ function renderShelf() {
     scanBtn.type = 'button';
     scanBtn.className = 'shelf-scan-btn';
     scanBtn.textContent = 'Scan shelf';
+    scanBtn.title = 'Photograph one shelf at a time, filling the frame';
     var scanInput = document.createElement('input');
     scanInput.type = 'file';
     scanInput.accept = 'image/*';
@@ -1381,6 +1382,15 @@ function renderShelf() {
   }
 
   header.appendChild(actions);
+
+  // 6.1c: visible scan status line (empty/error messaging). Lives under
+  // the header actions; collapsed when empty (:empty in CSS). Filled and
+  // auto-cleared by showScanStatus/clearScanStatus.
+  var scanStatus = document.createElement('div');
+  scanStatus.className = 'shelf-scan-status';
+  scanStatus.id = 'shelf-scan-status';
+  header.appendChild(scanStatus);
+
   wrap.appendChild(header);
 
   // Stage 4d: in-page shelf search -- a LIVE GRID FILTER over the
@@ -2577,7 +2587,7 @@ function openShelfEditor() {
 // into a shared writer: at one-and-a-maybe callers (3.5d/3.5e may or
 // may not want the same writer), the abstraction does not yet earn
 // its keep. Extract when a second real caller arrives.
-function openBulkAddEditor() {
+function openBulkAddEditor(prefillText) {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) return;
 
@@ -2590,6 +2600,11 @@ function openBulkAddEditor() {
   textarea.className = 'shelf-bulk-editor-textarea';
   textarea.placeholder = 'One ISBN or title per line';
   textarea.rows = 8;
+  // 6.1c: optional prefill (scan hand-off passes the extracted titles,
+  // one per line). Zero-arg callers leave prefillText undefined -> empty.
+  if (typeof prefillText === 'string' && prefillText.length > 0) {
+    textarea.value = prefillText;
+  }
 
   var actions = document.createElement('div');
   actions.className = 'shelf-bulk-editor-actions';
@@ -2843,6 +2858,7 @@ function handleShelfScanFile(input, btn) {
   var originalLabel = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Scanning' + '…';
+  clearScanStatus();
   function restore() {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -2852,6 +2868,7 @@ function handleShelfScanFile(input, btn) {
     if (err) {
       console.warn('[scan] error downscale', err);
       restore();
+      showScanStatus('Scan failed — please try again.');
       return;
     }
     console.log('[scan] ' + w + 'x' + h + ' → ' +
@@ -2865,24 +2882,66 @@ function handleShelfScanFile(input, btn) {
         res.json().then(function(json) {
           console.log('[scan] titles:', json.titles);
           restore();
+          // Prefill the bulk editor with the extracted titles (one per
+          // line) for the user to review and submit -- never auto-write.
+          // Empty result gets framing guidance, not the editor.
+          if (json &&
+              Object.prototype.toString.call(json.titles) === '[object Array]' &&
+              json.titles.length > 0) {
+            openBulkAddEditor(json.titles.join('\n'));
+          } else {
+            showScanStatus('No readable titles found. Try photographing one shelf at a time, filling the frame.');
+          }
         }, function(parseErr) {
           console.warn('[scan] error parse', parseErr);
           restore();
+          showScanStatus('Scan failed — please try again.');
         });
       } else {
         res.text().then(function(body) {
           console.warn('[scan] error ' + res.status, body);
           restore();
+          showScanStatus('Scan failed — please try again.');
         }, function(readErr) {
           console.warn('[scan] error ' + res.status, readErr);
           restore();
+          showScanStatus('Scan failed — please try again.');
         });
       }
     }, function(netErr) {
       console.warn('[scan] error network', netErr);
       restore();
+      showScanStatus('Scan failed — please try again.');
     });
   });
+}
+
+// 6.1c: scan status line plumbing. One shared auto-clear timer (module-
+// scoped, mirrors the _stLayersOpen idiom) so a new message replaces any
+// pending clear. The element is created per-render in renderShelf with a
+// stable id, so these helpers find it by id regardless of closure scope.
+var _scanStatusTimer = null;
+function clearScanStatus() {
+  if (_scanStatusTimer) {
+    clearTimeout(_scanStatusTimer);
+    _scanStatusTimer = null;
+  }
+  var el = document.getElementById('shelf-scan-status');
+  if (el) el.textContent = '';
+}
+function showScanStatus(msg) {
+  var el = document.getElementById('shelf-scan-status');
+  if (!el) return;
+  if (_scanStatusTimer) {
+    clearTimeout(_scanStatusTimer);
+    _scanStatusTimer = null;
+  }
+  el.textContent = msg;
+  _scanStatusTimer = setTimeout(function() {
+    var e2 = document.getElementById('shelf-scan-status');
+    if (e2) e2.textContent = '';
+    _scanStatusTimer = null;
+  }, 6000);
 }
 
 // Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
