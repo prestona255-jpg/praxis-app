@@ -586,9 +586,19 @@
 .home-preview-embed svg {
   display: block;
   width: 100%;
-  max-width: 600px;
   margin: 0 auto;
   height: auto;
+}
+
+/* 9a: embed-only suppressions. The Yumi node + the book-square layer are a
+   workspace affordance; the home embed is a still preview, so hide both HERE
+   (the data-st-books fade is scoped to .arc-detail-web-view, so it does not
+   reach the embed -- a direct display:none is the clean embed-scoped hide).
+   Drift is already inert on the embed (its animation CSS is .arc-detail-web-
+   view-scoped), so no rule is needed for that. */
+.home-preview-embed [data-st-yumi],
+.home-preview-embed .st-layer-books {
+  display: none;
 }
 
 

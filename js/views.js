@@ -607,13 +607,20 @@ function renderHome() {
     pvLink.href = '#arc/' + homeSeedArcId;
     var HOME_SVG_NS = 'http://www.w3.org/2000/svg';
     var pvSvg = document.createElementNS(HOME_SVG_NS, 'svg');
-    pvSvg.setAttribute('viewBox', '0 0 600 500');
+    // 9a: wide-banner viewBox (was 600x500). Set ONLY here -- arc-detail keeps
+    // its own 0 0 600 500 independently, so this is embed-scoped by construction.
+    pvSvg.setAttribute('viewBox', '0 0 940 340');
     pvSvg.setAttribute('xmlns', HOME_SVG_NS);
     pvLink.appendChild(pvSvg);
     preview.appendChild(pvLink);
     // Read-only: render the field only. NO interaction layers attached, so
-    // there is no per-mark drag / connect / tap / hover-card anywhere.
-    window.renderSubTheoryConstellation(homeArcData, pvSvg, { showLegend: false });
+    // there is no per-mark drag / connect / tap / hover-card anywhere. The arc's
+    // off-center question (= arc.title, via _stRenderQuestion) already serves as
+    // the banner's title, so no separate title overlay is added (would duplicate
+    // it). markScale sizes the embed marks independently of the wide viewBox
+    // (arc-detail passes no markScale -> unchanged).
+    window.renderSubTheoryConstellation(homeArcData, pvSvg,
+      { showLegend: false, markScale: 1.15 });
   } else {
     var pvLine = document.createElement('p');
     pvLine.className = 'home-preview-line';

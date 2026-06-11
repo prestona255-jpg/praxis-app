@@ -895,8 +895,11 @@ var _ST_MARK_TABLE = [
 // present and in [0,15]. The old silhouette x treatment construction retires
 // from the render path; tfa-innerL + the silhouette/treatment helpers + the
 // st-halo/st-grain defs remain as dead code (removal is a later cleanup).
-function _stRenderShapes(positions, muted) {
+function _stRenderShapes(positions, muted, markScale) {
   var out = '';
+  // 9a: embed-only size seam. Default 0.8 reproduces the shipped mark size
+  // EXACTLY (arc-detail + picker pass nothing -> byte-identical 'scale(0.8)').
+  var sc = (typeof markScale === 'number' && markScale > 0) ? markScale : 0.8;
   var i;
   for (i = 0; i < positions.length; i = i + 1) {
     var p = positions[i];
@@ -924,7 +927,7 @@ function _stRenderShapes(positions, muted) {
     // dots/tethers are a filter-free sibling so they travel with the mark.
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g class="st-drift" data-st-drift="' + driftLetter + '">';
-    out = out +   '<g transform="scale(0.8)">';
+    out = out +   '<g transform="scale(' + sc + ')">';
     if (muted) {
       // R53 + sheet muted recipe: body = inline radial #FFF8E7 -> hue@80% (hue
       // is a var -> GUARD-37-safe), NO shine, body opacity .66, inner .5, halo
@@ -1288,7 +1291,7 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // _stRenderDotsForMark, ruling 35), so there is no separate marginalia layer.
   svg = svg + _stRenderEdges(arc.edges || [], posById, true);
   svg = svg + _stRenderBooks(arc.books || [], positions, width, height);
-  svg = svg + _stRenderShapes(positions, muted);
+  svg = svg + _stRenderShapes(positions, muted, options.markScale);
   svg = svg + _stRenderYumi(yumiX, yumiY);
   if (showLegend) {
     svg = svg + _stRenderLegend(arc, positions, width, height);
