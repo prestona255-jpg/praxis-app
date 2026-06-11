@@ -135,6 +135,151 @@ function handleVoiceError(reason) {
   }
 }
 
+// =====================================================================
+// 6.2b: first-run Yumi greeting -- six scripted beats, NO LLM calls.
+// Copy is FROZEN (comp spec); reproduced character-for-character below.
+// The state machine intercepts the send handler when active: the user's
+// text routes here (rendered as a user bubble) instead of YumiBrain, and
+// Yumi's lines are painted client-side via renderYumiMessage. Only the
+// three Q&A pairs are appended to memory (6 turns -- under the >10
+// summarizer trigger). The flag is set at Beat F completion.
+// =====================================================================
+var ONB_A       = 'Hello. I\'m Yumi — I\'ll be reading alongside you here. Before we put anything on a shelf, I\'d like to know a little about how you read. Three questions, and there\'s no right answer to any of them.';
+var ONB_Q1      = 'First — are you usually in the middle of one book at a time, or a few at once?';
+var ONB_ACK     = 'Good — that tells me the shape your shelf is likely to take.';
+var ONB_Q2      = 'When a line or an idea stops you mid-page — do you mark it, write it down somewhere, or let it go and keep reading?';
+var ONB_FOLLOW  = 'Here, the things that stop you have a place — the notebook. Only if you want them there.';
+var ONB_Q3      = 'And — what are you reading for, right now? Whatever comes to mind.';
+var ONB_RECEIVE = 'Thank you. I\'ll hold onto that.';
+var ONB_E1      = 'One thing before we start. Your notebook here is yours. I can see the notes you choose to attach to a book — that\'s how I stay useful. Anything you keep in your journal stays private unless you decide otherwise.';
+var ONB_E2      = 'Now — tell me one book. Something you\'re reading now, or one you mean to start.';
+
+// Module onboarding state. beat = which input the next Send maps to:
+// 'q1'|'q2'|'q3' = the three stance answers, 'book' = the Beat-E title.
+// transcript holds rendered bubbles so a close/reopen resumes in place.
+// onboardingStartedThisSession is the idempotency guard for the dual
+// trigger (profile + books callbacks); it resets on reload, so a reload
+// before completion correctly restarts at Beat A.
+var onb = { active: false, beat: '', transcript: [], lastTitle: '' };
+var onboardingStartedThisSession = false;
+
+function onbYumi(text) {
+  renderYumiMessage(text);
+  onb.transcript.push({ who: 'yumi', text: text });
+}
+
+function onbUser(text) {
+  renderUserMessage(text);
+  onb.transcript.push({ who: 'user', text: text });
+}
+
+function renderOnboardingTranscript() {
+  if (!yumiBodyEl) { return; }
+  yumiBodyEl.innerHTML = '';
+  var i;
+  for (i = 0; i < onb.transcript.length; i++) {
+    var t = onb.transcript[i];
+    if (t.who === 'user') {
+      renderUserMessage(t.text);
+    } else {
+      renderYumiMessage(t.text);
+    }
+  }
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+// Open the panel into Beat A WITHOUT the rotating empty-state line. Also
+// the exported test entry point (ungated); maybeStartOnboarding calls it
+// after the gate passes.
+function startOnboarding() {
+  onboardingStartedThisSession = true;
+  onb.active = true;
+  onb.beat = 'q1';
+  onb.transcript = [];
+  onb.lastTitle = '';
+  if (!yumiPanelEl) { renderYumiPanel(); }
+  sv('praxis_yumi_open', true);
+  if (yumiPanelEl) { yumiPanelEl.classList.add('yumi-panel-open'); }
+  if (yumiBodyEl) { yumiBodyEl.innerHTML = ''; }
+  onbYumi(ONB_A);
+  onbYumi(ONB_Q1);
+  if (yumiInputEl) { yumiInputEl.focus(); }
+}
+
+// Advance on a trimmed, non-empty answer. appendTurn ONLY the three Q&A
+// pairs so Yumi's memory carries the reading stance; the greeting, acks,
+// transparency, and close are never appended.
+function advanceOnboarding(text) {
+  if (onb.beat === 'q1') {
+    if (typeof appendTurn === 'function') {
+      appendTurn('assistant', ONB_Q1);
+      appendTurn('user', text);
+    }
+    onbYumi(ONB_ACK);
+    onbYumi(ONB_Q2);
+    onb.beat = 'q2';
+  } else if (onb.beat === 'q2') {
+    if (typeof appendTurn === 'function') {
+      appendTurn('assistant', ONB_Q2);
+      appendTurn('user', text);
+    }
+    onbYumi(ONB_FOLLOW);
+    onbYumi(ONB_Q3);
+    onb.beat = 'q3';
+  } else if (onb.beat === 'q3') {
+    if (typeof appendTurn === 'function') {
+      appendTurn('assistant', ONB_Q3);
+      appendTurn('user', text);
+    }
+    onbYumi(ONB_RECEIVE);
+    onbYumi(ONB_E1);
+    onbYumi(ONB_E2);
+    onb.beat = 'book';
+  } else if (onb.beat === 'book') {
+    finishOnboarding(text);
+  }
+}
+
+// Beat E placement + Beat F close. Route to #books FIRST so the existing
+// bulk path's trailing renderShelf paints the correct surface (the shelf
+// host is #app; rendering it while on #home would clobber home). The Yumi
+// panel is body-level, so it survives the route render. Title echoes the
+// user's trimmed input (plain -- the renderer is textContent-only, so the
+// frozen *italics* render plain with the asterisks dropped). Flag is set
+// and persisted only here, at completion.
+function finishOnboarding(title) {
+  onb.lastTitle = title;
+  if (location.hash !== '#books') {
+    location.hash = '#books';
+  }
+  if (typeof processBulkLines === 'function') {
+    processBulkLines(title);
+  }
+  onbYumi(title + ' is on your Reading shelf.');
+  onbYumi('Then I\'ll leave you to it — ' + title + ' is waiting whenever you are.');
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (u && u.uid && typeof setProfile === 'function') {
+    setProfile(u.uid, { onboardingSeen: true });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(u.uid, getProfile(u.uid), function () {});
+    }
+  }
+  onb.active = false;
+  onb.beat = 'done';
+}
+
+// Gated entry, called by the profile + books auth callbacks. Idempotent
+// (the session guard + the active check), so the dual trigger fires the
+// greeting at most once. Gate: signed-in AND empty shelf AND flag unset.
+function maybeStartOnboarding(uid) {
+  if (onboardingStartedThisSession || onb.active) { return; }
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!u || !u.uid || u.uid !== uid) { return; }
+  if (!state.userBooks[uid] || state.userBooks[uid].bookIds.length !== 0) { return; }
+  if (getProfile(uid).onboardingSeen === true) { return; }
+  startOnboarding();
+}
+
 function buildYumiToggle() {
   var btn = document.createElement('button');
   btn.id = YUMI_TOGGLE_ID;
@@ -231,6 +376,16 @@ function buildYumiPanel() {
       }
     }
 
+    // 6.2b: when onboarding is active, the answer drives the scripted
+    // state machine instead of YumiBrain -- no fetch, no typing indicator.
+    // Empty input is already filtered above, so it never advances a beat.
+    if (onb.active) {
+      if (yumiInputEl) { yumiInputEl.value = ''; }
+      onbUser(trimmed);
+      advanceOnboarding(trimmed);
+      return;
+    }
+
     renderUserMessage(trimmed);
     if (yumiInputEl) { yumiInputEl.value = ''; }
 
@@ -277,7 +432,13 @@ function openYumiPanel() {
   if (!yumiPanelEl) { renderYumiPanel(); }
   sv('praxis_yumi_open', true);
   yumiPanelEl.classList.add('yumi-panel-open');
-  renderYumiEmptyState();
+  // 6.2b: if onboarding is mid-flow, resume by re-rendering its transcript
+  // instead of the rotating empty-state line (which would wipe the beats).
+  if (onb.active) {
+    renderOnboardingTranscript();
+  } else {
+    renderYumiEmptyState();
+  }
   if (yumiInputEl) {
     yumiInputEl.focus();
   }
@@ -335,12 +496,17 @@ if (document.readyState === 'loading') {
 }
 
 window.YumiUI = {
-  render:    renderYumiPanel,
-  open:      openYumiPanel,
-  close:     closeYumiPanel,
-  toggle:    toggleYumiPanel,
-  isOpen:    isYumiPanelOpen,
-  greetings: YUMI_GREETINGS
+  render:               renderYumiPanel,
+  open:                 openYumiPanel,
+  close:                closeYumiPanel,
+  toggle:               toggleYumiPanel,
+  isOpen:               isYumiPanelOpen,
+  greetings:            YUMI_GREETINGS,
+  // 6.2b: maybeStartOnboarding is the gated entry called by the auth
+  // callbacks; startOnboarding is the ungated beginner (also the Phase C
+  // verification entry point).
+  maybeStartOnboarding: maybeStartOnboarding,
+  startOnboarding:      startOnboarding
 };
 
 console.log('yumi-ui.js loaded');

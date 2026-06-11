@@ -646,7 +646,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: false, marginalia: false },
-      profile:          { displayNameOverride: '', penName: '' }
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false }
     };
   }
   if (!state.users[uid].yumiMemory) {
@@ -664,7 +664,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '' };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false };
   }
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
@@ -680,7 +680,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '' };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -696,6 +696,11 @@ function setProfile(uid, fields) {
   }
   if (fields && typeof fields.penName !== 'undefined') {
     p.penName = '' + fields.penName;
+  }
+  // 6.2b: first-run greeting flag. Boolean-coerced so the stored shape
+  // stays strict; set true only at onboarding (Beat F) completion.
+  if (fields && typeof fields.onboardingSeen !== 'undefined') {
+    p.onboardingSeen = fields.onboardingSeen === true;
   }
   saveState();
 }

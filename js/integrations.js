@@ -143,6 +143,14 @@ firebase.auth().onAuthStateChanged(function (u) {
         // and continue; the cached shelf stays visible.
         console.warn('loadBooksFromFirestore: fetch failed, keeping cache', result.error);
       }
+      // 6.2b: second (idempotent) first-run greeting trigger. The shelf-
+      // empty gate is only accurate once books have merged; calling here
+      // closes the race where the profile callback resolves first and sees
+      // a falsely-empty shelf. Skipped on 'error' (book set unknown).
+      if (result.status !== 'error' &&
+          window.YumiUI && typeof window.YumiUI.maybeStartOnboarding === 'function') {
+        window.YumiUI.maybeStartOnboarding(u.uid);
+      }
     });
 
     // Stage 14.1a: fetch this user's arc-doc from /userArcs/{uid} and
@@ -276,7 +284,8 @@ firebase.auth().onAuthStateChanged(function (u) {
         var rd = profResult.data || {};
         setProfile(u.uid, {
           displayNameOverride: rd.displayNameOverride ? rd.displayNameOverride : '',
-          penName:             rd.penName ? rd.penName : ''
+          penName:             rd.penName ? rd.penName : '',
+          onboardingSeen:      rd.onboardingSeen === true
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -286,6 +295,16 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadProfileFromFirestore: no remote profile doc for uid, keeping cache');
       } else {
         console.warn('loadProfileFromFirestore: fetch failed, keeping cache', profResult.error);
+      }
+      // 6.2b: first-run greeting trigger. Evaluated only after the remote
+      // profile is known (found = merged flag; absent = definitively fresh)
+      // -- never on 'error', where the remote onboardingSeen is unknown and
+      // firing could replay the greeting on a device that already saw it.
+      // maybeStartOnboarding is idempotent + re-checks the empty-shelf gate,
+      // so the dual call (here + the books callback) is race-safe.
+      if (profResult.status !== 'error' &&
+          window.YumiUI && typeof window.YumiUI.maybeStartOnboarding === 'function') {
+        window.YumiUI.maybeStartOnboarding(u.uid);
       }
     });
   } else {
@@ -513,6 +532,11 @@ function saveProfileToFirestore(uid, profile, callback) {
       .set({
         displayNameOverride: (profile && profile.displayNameOverride) ? profile.displayNameOverride : '',
         penName:             (profile && profile.penName) ? profile.penName : '',
+        // 6.2b: persist the first-run greeting flag. .set() is a full-doc
+        // overwrite, so this field must be present or it would be wiped on
+        // every Account-page save. Callers pass getProfile(uid), which now
+        // carries onboardingSeen.
+        onboardingSeen:      (profile && profile.onboardingSeen === true),
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {
