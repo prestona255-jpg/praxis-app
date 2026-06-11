@@ -3316,6 +3316,255 @@ function renderBookDetail(bookId) {
 // shell mounts an empty evidence rail (#subtheory-rail) that Checkpoint
 // C populates. Italics are authored inline via *asterisks*; the raw
 // text is stored verbatim (in-prose rendering is deferred to Stage 10).
+// 9b-iii (R54): the symbol picker modal. Hosted here (the renderer stays
+// state-pure). Opens for a sub-theory; the preview renders through the LIVE
+// path (window.stRenderMarkMarkup -> _stRenderShapes), so it is byte-identical
+// to a constellation mark. Save writes 0-based markShape/markColor (R52) or
+// DELETES them for Auto, then saveState + re-renders the current view in place.
+// Canonical names (sheet, ruling 49); shapes for the detail line.
+var ST_MARK_NAMES = ['the beacon', 'the wellspring', 'the compass', 'the keystone',
+  'the river', 'the lantern', 'the facet', 'the bloom', 'the summit', 'the chamber',
+  'the seed', 'the kite', 'the harbor', 'the spark', 'the dune', 'the gate'];
+var ST_MARK_SHAPES = ['hexagon', 'teardrop', 'four-point star', 'pentagon',
+  'lens (vesica)', 'arch', 'rhombus', 'rosette', 'triangle', 'octagon', 'egg',
+  'kite', 'semicircle', 'six-point star', 'mound', 'squircle'];
+
+function _stPickerMarkSvg(subId, shapeIdx, colorIdx, pal, neutral) {
+  if (typeof window.stRenderMarkMarkup !== 'function') { return ''; }
+  var inner = window.stRenderMarkMarkup(shapeIdx, colorIdx,
+    { id: subId, palette: pal, maturity: 1, neutral: neutral });
+  var defs = neutral ? '' :
+    ((typeof window.stMarkPreviewDefs === 'function') ? window.stMarkPreviewDefs() : '');
+  return '<svg viewBox="-60 -60 120 120" xmlns="http://www.w3.org/2000/svg" '
+    + 'aria-hidden="true" style="width:100%;height:100%;display:block;overflow:visible">'
+    + defs + inner + '</svg>';
+}
+
+function openSymbolPicker(subId) {
+  var rec = state.subTheories && state.subTheories[subId];
+  if (!rec) { return; }
+  var opener = document.activeElement;
+  var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+  var hash = (typeof window.stHashIndices === 'function')
+    ? window.stHashIndices(subId) : { shapeIdx: 0, colorIdx: 0 };
+  // working state -- null = Auto (no override)
+  var pick = {
+    shape: (typeof rec.markShape === 'number' && rec.markShape >= 0 && rec.markShape <= 15) ? rec.markShape : null,
+    color: (typeof rec.markColor === 'number' && rec.markColor >= 0 && rec.markColor <= 15) ? rec.markColor : null
+  };
+  function effShape() { return (pick.shape === null) ? hash.shapeIdx : pick.shape; }
+  function effColor() { return (pick.color === null) ? hash.colorIdx : pick.color; }
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'st-picker-backdrop';
+  backdrop.addEventListener('click', cancel);
+
+  var dialog = document.createElement('div');
+  dialog.className = 'st-picker';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-label', 'Choose a mark');
+  dialog.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  // ---- header ----
+  var head = document.createElement('div');
+  head.className = 'st-picker-head';
+  var headText = document.createElement('div');
+  var eyebrow = document.createElement('div');
+  eyebrow.className = 'st-picker-eyebrow';
+  eyebrow.textContent = 'Mark';
+  var subName = document.createElement('div');
+  subName.className = 'st-picker-sub';
+  subName.textContent = (rec.header && rec.header.length) ? rec.header : 'Untitled sub-theory';
+  headText.appendChild(eyebrow);
+  headText.appendChild(subName);
+  head.appendChild(headText);
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'st-picker-close';
+  closeBtn.textContent = 'esc';
+  closeBtn.setAttribute('aria-label', 'Cancel');
+  closeBtn.addEventListener('click', cancel);
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  // ---- preview ----
+  var preview = document.createElement('div');
+  preview.className = 'st-picker-preview';
+  var previewMark = document.createElement('div');
+  previewMark.className = 'st-picker-preview-mark';
+  var previewMeta = document.createElement('div');
+  var previewName = document.createElement('div');
+  previewName.className = 'st-picker-preview-name';
+  var previewDetail = document.createElement('div');
+  previewDetail.className = 'st-picker-preview-detail';
+  var badge = document.createElement('span');
+  badge.className = 'st-picker-badge';
+  badge.textContent = 'auto — from its id';
+  previewMeta.appendChild(previewName);
+  previewMeta.appendChild(previewDetail);
+  previewMeta.appendChild(badge);
+  preview.appendChild(previewMark);
+  preview.appendChild(previewMeta);
+  dialog.appendChild(preview);
+
+  // ---- shape grid ----
+  dialog.appendChild(_stPickerRowLabel('Shape', 'independent of color'));
+  var shapeGrid = document.createElement('div');
+  shapeGrid.className = 'st-picker-grid st-picker-grid-shapes';
+  dialog.appendChild(shapeGrid);
+
+  // ---- color grid (always colorful swatches) ----
+  dialog.appendChild(_stPickerRowLabel('Color', 'identity hues · muted follows the palette'));
+  var colorGrid = document.createElement('div');
+  colorGrid.className = 'st-picker-grid st-picker-grid-colors';
+  colorGrid.setAttribute('data-st-palette', 'colorful');
+  dialog.appendChild(colorGrid);
+
+  // ---- footer ----
+  var foot = document.createElement('div');
+  foot.className = 'st-picker-foot';
+  var resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'st-picker-btn st-picker-btn-text';
+  resetBtn.textContent = 'Reset to auto';
+  resetBtn.addEventListener('click', function() { pick.shape = null; pick.color = null; renderPicker(); });
+  var footRight = document.createElement('div');
+  footRight.className = 'st-picker-foot-right';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'st-picker-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', cancel);
+  var saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'st-picker-btn st-picker-btn-primary';
+  saveBtn.textContent = 'Save mark';
+  saveBtn.addEventListener('click', save);
+  footRight.appendChild(cancelBtn);
+  footRight.appendChild(saveBtn);
+  foot.appendChild(resetBtn);
+  foot.appendChild(footRight);
+  dialog.appendChild(foot);
+
+  // ---- build grids once ----
+  var shapeCells = [];
+  var colorCells = [];
+  shapeGrid.appendChild(_stPickerAutoCell('shape', function() { pick.shape = null; renderPicker(); }, shapeCells));
+  var gi;
+  for (gi = 0; gi < 16; gi = gi + 1) {
+    shapeGrid.appendChild(_stPickerShapeCell(subId, gi, pal, function(idx) {
+      pick.shape = idx; renderPicker();
+    }, shapeCells));
+  }
+  colorGrid.appendChild(_stPickerAutoCell('color', function() { pick.color = null; renderPicker(); }, colorCells));
+  for (gi = 0; gi < 16; gi = gi + 1) {
+    colorGrid.appendChild(_stPickerColorCell(gi, function(idx) {
+      pick.color = idx; renderPicker();
+    }, colorCells));
+  }
+
+  function renderPicker() {
+    var s = effShape(), c = effColor();
+    previewMark.innerHTML = _stPickerMarkSvg(subId, s, c, pal, false);
+    previewName.textContent = ST_MARK_NAMES[s];
+    previewDetail.textContent = ST_MARK_SHAPES[s] + ' · hue ' + (c + 1) + ' of 16';
+    badge.style.display = (pick.shape === null && pick.color === null) ? '' : 'none';
+    // shape cells reflect the live color; selection state
+    var k;
+    for (k = 0; k < shapeCells.length; k = k + 1) {
+      var sv = shapeCells[k].getAttribute('data-val');
+      _stPickerSel(shapeCells[k], (sv === 'auto') ? (pick.shape === null) : (parseInt(sv, 10) === pick.shape));
+    }
+    for (k = 0; k < colorCells.length; k = k + 1) {
+      var cv = colorCells[k].getAttribute('data-val');
+      _stPickerSel(colorCells[k], (cv === 'auto') ? (pick.color === null) : (parseInt(cv, 10) === pick.color));
+    }
+  }
+
+  function save() {
+    if (pick.shape === null) { delete rec.markShape; } else { rec.markShape = pick.shape; }
+    if (pick.color === null) { delete rec.markColor; } else { rec.markColor = pick.color; }
+    saveState();
+    close();
+    if (typeof renderRoute === 'function') { renderRoute(); }
+  }
+  function cancel() { close(); }
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    if (backdrop.parentNode) { backdrop.parentNode.removeChild(backdrop); }
+    if (dialog.parentNode) { dialog.parentNode.removeChild(dialog); }
+    if (opener && opener.focus) { try { opener.focus(); } catch (e) {} }
+  }
+  function onKey(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); cancel(); }
+  }
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(dialog);
+  document.addEventListener('keydown', onKey);
+  renderPicker();
+  if (dialog.focus) { try { dialog.setAttribute('tabindex', '-1'); dialog.focus(); } catch (e) {} }
+}
+
+// picker cell/label helpers (module scope so the closure above stays lean).
+function _stPickerRowLabel(text, hint) {
+  var row = document.createElement('div');
+  row.className = 'st-picker-row-label';
+  var a = document.createElement('span');
+  a.textContent = text;
+  var b = document.createElement('span');
+  b.className = 'st-picker-hint';
+  b.textContent = hint;
+  row.appendChild(a);
+  row.appendChild(b);
+  return row;
+}
+function _stPickerSel(cell, on) {
+  cell.className = cell.className.replace(/\s*is-sel/g, '') + (on ? ' is-sel' : '');
+}
+function _stPickerAutoCell(kind, onPick, store) {
+  var cell = document.createElement('button');
+  cell.type = 'button';
+  cell.className = 'st-picker-cell st-picker-cell-auto';
+  cell.setAttribute('data-val', 'auto');
+  cell.setAttribute('title', 'Hashed from its id');
+  cell.textContent = 'Auto';
+  cell.addEventListener('click', onPick);
+  store.push(cell);
+  return cell;
+}
+function _stPickerShapeCell(subId, idx, pal, onPick, store) {
+  var cell = document.createElement('button');
+  cell.type = 'button';
+  cell.className = 'st-picker-cell st-picker-cell-shape';
+  cell.setAttribute('data-val', '' + idx);
+  cell.setAttribute('title', ST_MARK_NAMES[idx] + ' · ' + ST_MARK_SHAPES[idx]);
+  cell.innerHTML = _stPickerMarkSvg(subId, idx, 0, pal, true);
+  cell.addEventListener('click', function() { onPick(idx); });
+  store.push(cell);
+  return cell;
+}
+function _stPickerColorCell(idx, onPick, store) {
+  var cell = document.createElement('button');
+  cell.type = 'button';
+  cell.className = 'st-picker-cell st-picker-cell-color';
+  cell.setAttribute('data-val', '' + idx);
+  cell.setAttribute('title', ST_MARK_NAMES[idx]);
+  var sw = document.createElement('span');
+  sw.className = 'st-picker-swatch';
+  sw.setAttribute('style', 'background:var(--subtheory-' + (idx + 1)
+    + ');box-shadow:0 0 0 2px var(--subtheory-' + (idx + 1) + '-edge) inset');
+  cell.appendChild(sw);
+  cell.addEventListener('click', function() { onPick(idx); });
+  store.push(cell);
+  return cell;
+}
+
+// 9b-iii: expose the picker so the constellation hover card (in
+// arc-constellation.js) can open it without reaching across layers.
+window.openSymbolPicker = openSymbolPicker;
+
 function renderSubTheoryPage(id) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -3354,6 +3603,27 @@ function renderSubTheoryPage(id) {
   stEyebrow.className = 'eyebrow';
   stEyebrow.textContent = ((stArc && stArc.title) ? stArc.title : 'Arc') + ' · sub-theory';
   main.appendChild(stEyebrow);
+
+  // 9b-iii (entry A): a "Mark" chip sitting with the title -- a live mini render
+  // of this sub's current mark that opens the symbol picker. The mini-mark
+  // re-renders on each page render, so it always reflects the saved override.
+  var markChip = document.createElement('button');
+  markChip.type = 'button';
+  markChip.className = 'st-mark-chip';
+  var chipMark = document.createElement('span');
+  chipMark.className = 'st-mark-chip-mark';
+  var chipPal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+  var chipHash = (typeof window.stHashIndices === 'function')
+    ? window.stHashIndices(id) : { shapeIdx: 0, colorIdx: 0 };
+  var chipShape = (typeof subTheory.markShape === 'number' && subTheory.markShape >= 0 && subTheory.markShape <= 15)
+    ? subTheory.markShape : chipHash.shapeIdx;
+  var chipColor = (typeof subTheory.markColor === 'number' && subTheory.markColor >= 0 && subTheory.markColor <= 15)
+    ? subTheory.markColor : chipHash.colorIdx;
+  chipMark.innerHTML = _stPickerMarkSvg(id, chipShape, chipColor, chipPal, false);
+  markChip.appendChild(chipMark);
+  markChip.appendChild(document.createTextNode('Mark'));
+  markChip.addEventListener('click', function() { openSymbolPicker(id); });
+  main.appendChild(markChip);
 
   var headerInput = document.createElement('input');
   headerInput.type = 'text';
@@ -4061,6 +4331,9 @@ function _stBuildMarks(sub) {
     marks.push({
       state:      'gathered',
       kind:       (typeof ev.kind === 'string') ? ev.kind : '',
+      // 9b-iii: carry the source id so the dot's click can channel to it
+      // (book -> #book/<refId>; entry -> #notebook interim). Previously dropped.
+      refId:      (typeof ev.refId === 'string') ? ev.refId : '',
       label:      _stEvidenceLabel(ev),
       quote:      (typeof ev.quote === 'string') ? ev.quote : '',
       annotation: (typeof ev.annotation === 'string') ? ev.annotation : ''
@@ -4228,7 +4501,26 @@ function _stConstellationAttachInteractions(svgEl, arc) {
 
   function bindMarkClick(el) {
     el.addEventListener('click', function(evt) {
+      // 9b-iii: the dot now lives INSIDE the shape group, so stop the click
+      // bubbling to the shape's #subtheory navigation. Channel by kind: book
+      // evidence -> the book page; entry -> the notebook (interim, ruling 40).
+      // No routable target -> fall back to the evidence tooltip.
+      evt.stopPropagation();
+      var kind = el.getAttribute('data-st-kind');
+      var ref = el.getAttribute('data-st-ref');
+      if (kind === 'book' && ref) { location.hash = 'book/' + ref; return; }
+      if (kind === 'entry') { location.hash = 'notebook'; return; }
       showTip(markLines(el), evt);
+    });
+  }
+
+  // 9b-iii: arc-level book squares (data-st-book-id) -> the book page. Inert
+  // until now; a plain click handler (squares never start a drag, so no
+  // drag-guard is needed).
+  function bindBookSquareClick(el) {
+    el.addEventListener('click', function() {
+      var id = el.getAttribute('data-st-book-id');
+      if (id) { location.hash = 'book/' + id; }
     });
   }
 
@@ -4249,12 +4541,14 @@ function _stConstellationAttachInteractions(svgEl, arc) {
   var shapeEls = svgEl.querySelectorAll('[data-st-sub-id]:not([data-st-mark])');
   var markEls = svgEl.querySelectorAll('[data-st-mark]');
   var yumiEls = svgEl.querySelectorAll('[data-st-yumi]');
+  var bookSquareEls = svgEl.querySelectorAll('[data-st-book-id]');
 
-  // Click: shapes navigate, marks surface evidence content. Bound on every
-  // device (touch taps + desktop clicks; keyboard re-fires via synthetic
-  // click below).
+  // Click: shapes navigate, marks channel to their source, book squares open
+  // the book page. Bound on every device (touch taps + desktop clicks;
+  // keyboard re-fires via synthetic click below).
   for (i = 0; i < shapeEls.length; i = i + 1) { bindShapeClick(shapeEls[i]); }
   for (i = 0; i < markEls.length; i = i + 1) { bindMarkClick(markEls[i]); }
+  for (i = 0; i < bookSquareEls.length; i = i + 1) { bindBookSquareClick(bookSquareEls[i]); }
 
   // Hover tooltips: desktop only (mirrors the book layer's touch guard).
   // 9.6c.3: the SHAPE hover is superseded by the richer hover card in
@@ -4872,6 +5166,11 @@ function renderArcDetail(arcId) {
       var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
       var stShowBooks = ls('praxis_st_books_on', true) === true;
       var stShowFaint = ls('praxis_st_faint_on', true) === true;
+      // 9b-iii: the global palette. Set the document-root attribute now so the
+      // hue remap is live for both the constellation and the spotlight chips.
+      var stPalette = (ls('praxis_constellation_palette', 'colorful') === 'muted')
+        ? 'muted' : 'colorful';
+      document.documentElement.setAttribute('data-st-palette', stPalette);
 
       var layersWrap = document.createElement('div');
       layersWrap.className = 'st-layers';
@@ -4887,10 +5186,11 @@ function renderArcDetail(arcId) {
       layersPopover.className = 'st-layers-popover'
         + (_stLayersOpen ? ' st-layers-popover--open' : '');
 
-      // One switch per layer: reads/flips its own ls flag, then re-enters
-      // renderArcDetail (idempotent rebuild). _stLayersOpen stays true so the
-      // popover is still open after the rebuild.
-      var stLayerSwitch = function(labelText, flagKey, isOn) {
+      // 9b-iii (R56): each layer switch flips its ls flag AND the matching root
+      // attribute on the LIVE svg -- the CSS in components.css fades the
+      // filter-free descendant group. No re-render, so node identity is
+      // preserved; the popover stays put. (webContainer is in closure scope.)
+      var stLayerSwitch = function(labelText, flagKey, attrName, isOn) {
         var sw = document.createElement('button');
         sw.type = 'button';
         sw.className = 'arc-detail-toggle-btn st-layers-switch'
@@ -4898,19 +5198,43 @@ function renderArcDetail(arcId) {
         sw.setAttribute('data-st-layer', flagKey);
         sw.textContent = labelText;
         sw.addEventListener('click', function() {
-          sv(flagKey, !(ls(flagKey, true) === true));
-          _stLayersOpen = true;
-          renderArcDetail(arcId);
+          var nowOn = !(ls(flagKey, true) === true);
+          sv(flagKey, nowOn);
+          var svgEl = webContainer.querySelector('svg');
+          if (svgEl) { svgEl.setAttribute(attrName, nowOn ? 'on' : 'off'); }
+          sw.className = 'arc-detail-toggle-btn st-layers-switch'
+            + (nowOn ? ' is-active' : '');
         });
         return sw;
       };
 
       layersPopover.appendChild(
-        stLayerSwitch('Books', 'praxis_st_books_on', stShowBooks));
+        stLayerSwitch('Books', 'praxis_st_books_on', 'data-st-books', stShowBooks));
       layersPopover.appendChild(
-        stLayerSwitch('Marginalia', 'praxis_st_marginalia_on', stShowMarginalia));
+        stLayerSwitch('Marginalia', 'praxis_st_marginalia_on', 'data-st-marginalia', stShowMarginalia));
       layersPopover.appendChild(
-        stLayerSwitch('Faint links', 'praxis_st_faint_on', stShowFaint));
+        stLayerSwitch('Faint links', 'praxis_st_faint_on', 'data-st-faint', stShowFaint));
+
+      // 9b-iii: palette toggle. Unlike the layer fades, switching palette
+      // changes the mark ANATOMY markup (muted body radial / no shine), so it
+      // re-enters renderArcDetail. The hue itself follows the root attribute set
+      // above; spotlight chips inherit it automatically.
+      var paletteSwitch = document.createElement('button');
+      paletteSwitch.type = 'button';
+      paletteSwitch.className = 'arc-detail-toggle-btn st-layers-switch'
+        + (stPalette === 'muted' ? ' is-active' : '');
+      paletteSwitch.setAttribute('data-st-layer', 'palette');
+      paletteSwitch.textContent = 'Muted palette';
+      paletteSwitch.addEventListener('click', function() {
+        var next = (ls('praxis_constellation_palette', 'colorful') === 'muted')
+          ? 'colorful' : 'muted';
+        sv('praxis_constellation_palette', next);
+        document.documentElement.setAttribute('data-st-palette', next);
+        _stLayersOpen = true;
+        renderArcDetail(arcId);
+      });
+      layersPopover.appendChild(paletteSwitch);
+
       layersWrap.appendChild(layersPopover);
 
       // The Layers button just opens/closes the popover in place (no re-render
@@ -4934,7 +5258,8 @@ function renderArcDetail(arcId) {
       window.renderSubTheoryConstellation(arcData, svg,
         { showMarginalia: stShowMarginalia,
           showBooks: stShowBooks,
-          showFaint: stShowFaint });
+          showFaint: stShowFaint,
+          palette: stPalette });
       // Stage 9.5: bind the sub-theory interaction layer. Pass arcData
       // (resolved subTheories/marks), not the raw arc record -- the
       // tooltip needs header/label/quote already resolved.

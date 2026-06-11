@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Praxis · 9b Arcs target motion demo — celestial drift + twinkle</title>
+<title>Praxis · 9b Arcs target motion demo v3 — celestial drift + twinkle</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -99,7 +99,7 @@
   /* full-fill recipe (frozen) — halo & body are painted by each mark's
      own hue var; no currentColor-in-gradient (renders black in Chrome) */
   .bf{fill:var(--c)}
-  .halo{fill:var(--c)}
+  .halo{fill:var(--c);filter:blur(13px);will-change:opacity}
   .colorful .halo{opacity:.5;animation:twkC 4.6s ease-in-out infinite}
   .mk-wellspring .halo,.mk-bloom .halo{animation-duration:3.6s;animation-delay:-1.7s}
   .mk-keystone .halo,.mk-seed .halo{animation-duration:5.6s;animation-delay:-3.1s}
@@ -123,7 +123,7 @@
 </style>
 </head>
 <body>
-<span class="lab">9b-iv motion demo v2 · wider orbits · deeper twinkle</span>
+<span class="lab">9b-iv motion demo v3 · gray-flash fix (CSS blur)</span>
 
 <div class="nav"><span class="wm">praxis</span>
   <div class="search">⌕ Search books, authors, ideas…<span class="k">⌘K</span></div>
@@ -189,7 +189,7 @@
 
       <!-- 01 the beacon · hexagon · nested hexagons · book: The Politics of Education -->
       <g class="mkg d1 alt mk-beacon">
-        <circle class="halo" cx="200" cy="170" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="200" cy="170" r="42"/>
         <g class="bod" transform="translate(200,170) scale(.78)">
           <path class="bf" d="M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z" fill="#6FC9BC" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z"/>
@@ -212,7 +212,7 @@
 
       <!-- 02 the wellspring · teardrop · ripple arcs · book: Zami + its note -->
       <g class="mkg d2 mk-wellspring">
-        <circle class="halo" cx="705" cy="145" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="705" cy="145" r="42"/>
         <g class="bod" transform="translate(705,145) scale(.78)">
           <path class="bf" d="M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z" fill="#8FB8E8" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z"/>
@@ -232,7 +232,7 @@
 
       <!-- 03 the compass · four-point star · book: Yearning -->
       <g class="mkg d3 mk-compass">
-        <circle class="halo" cx="510" cy="200" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="510" cy="200" r="42"/>
         <g class="bod" transform="translate(510,200) scale(.78)">
           <path class="bf" d="M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z" fill="#E8998D" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z"/>
@@ -249,7 +249,7 @@
 
       <!-- 04 the keystone · pentagon -->
       <g class="mkg d1 mk-keystone">
-        <circle class="halo" cx="870" cy="295" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="870" cy="295" r="42"/>
         <g class="bod" transform="translate(870,295) scale(.78)">
           <path class="bf" d="M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z" fill="#E8B45C" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z"/>
@@ -266,7 +266,7 @@
 
       <!-- 09 the summit · triangle -->
       <g class="mkg d2 mk-summit">
-        <circle class="halo" cx="185" cy="405" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="185" cy="405" r="42"/>
         <g class="bod" transform="translate(185,408) scale(.78)">
           <path class="bf" d="M0,-44 L40,36 L-40,36 Z" fill="#A8CD8E" stroke="var(--c)" stroke-width="2" stroke-linejoin="round"/>
           <path class="shine" d="M0,-44 L40,36 L-40,36 Z"/>
@@ -277,7 +277,7 @@
 
       <!-- 08 the bloom · rosette -->
       <g class="mkg d3 mk-bloom">
-        <circle class="halo" cx="455" cy="420" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="455" cy="420" r="42"/>
         <g class="bod" transform="translate(455,420) scale(.72)">
           <path class="bf" d="M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z" fill="#F2A8C6" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z"/>
@@ -291,7 +291,7 @@
 
       <!-- 10 the chamber · octagon · book: All About Love -->
       <g class="mkg d1 mk-chamber">
-        <circle class="halo" cx="690" cy="395" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="690" cy="395" r="42"/>
         <g class="bod" transform="translate(690,395) scale(.78)">
           <path class="bf" d="M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z" fill="#AC9DE2" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z"/>
@@ -311,7 +311,7 @@
 
       <!-- 11 the seed · egg -->
       <g class="mkg d2 mk-seed">
-        <circle class="halo" cx="330" cy="295" r="42" filter="url(#soft)"/>
+        <circle class="halo" cx="330" cy="295" r="42"/>
         <g class="bod" transform="translate(330,295) scale(.7)">
           <path class="bf" d="M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z" fill="#C0A8E0" stroke="var(--c)" stroke-width="2"/>
           <path class="shine" d="M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z"/>

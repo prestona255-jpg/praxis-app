@@ -4207,6 +4207,40 @@
   display: block;
 }
 
+/* 9b-iii (R56): Layers fades. Each layer group transitions opacity; the root
+   data-attribute on the live <svg> drives it, so a switch toggle fades in
+   place with no re-render (node identity preserved). GUARD 45: these groups
+   are filter-free -- the CSS-blurred halo lives in the per-mark body
+   sub-group, never here -- so no opacity is ever transitioned on a filtered
+   element. pointer-events:none when off so a hidden layer can't catch a
+   click (resolved immediately -- stricter than transition-end). */
+.arc-detail-web-view .st-layer-books,
+.arc-detail-web-view .st-layer-dots,
+.arc-detail-web-view .st-layer-faint {
+  transition: opacity var(--motion-base) var(--ease);
+}
+.arc-detail-web-view svg[data-st-books="off"] .st-layer-books,
+.arc-detail-web-view svg[data-st-marginalia="off"] .st-layer-dots,
+.arc-detail-web-view svg[data-st-faint="off"] .st-layer-faint {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 9b-iii: channel affordance -- evidence dots + book squares read as tappable
+   (cursor only; the existing tooltip is the hover treatment -- no new visuals). */
+.arc-detail-web-view [data-st-mark],
+.arc-detail-web-view [data-st-book-id] {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc-detail-web-view .st-layer-books,
+  .arc-detail-web-view .st-layer-dots,
+  .arc-detail-web-view .st-layer-faint {
+    transition: none;
+  }
+}
+
 /* Stage 5.4 Stage 1f: transitional placeholder line shown inside the
    empty web container until Stage 2 draws the spine. Mirrors the
    .arc-detail-empty-body precedent (components.css:2580-2588): same
@@ -5000,3 +5034,230 @@
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 /* ===== END ACCOUNT PAGE ===== */
+
+
+/* ===== 9b-iii SYMBOL PICKER + ENTRY POINTS =====
+   Modal mark picker (views.js openSymbolPicker), the writing-page Mark chip,
+   and the constellation hover-card footer. Tokens only. */
+.st-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  z-index: 10010;
+}
+.st-picker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-width: calc(100vw - var(--sp-5) - var(--sp-5));
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: 24px 26px 20px;
+  z-index: 10011;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+.st-picker-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.st-picker-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.st-picker-sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.st-picker-close {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.st-picker-close:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.st-picker-preview {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 12px 4px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.st-picker-preview-mark { width: 116px; height: 116px; flex: none; }
+.st-picker-preview-name {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink);
+}
+.st-picker-preview-detail {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-top: 3px;
+}
+.st-picker-badge {
+  display: inline-block;
+  margin-top: 9px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px dashed var(--ink-4);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+}
+.st-picker-row-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 14px 0 9px;
+}
+.st-picker-hint {
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-4);
+}
+.st-picker-grid { display: grid; gap: 7px; }
+.st-picker-grid-shapes { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+.st-picker-grid-colors { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
+.st-picker-cell {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.st-picker-cell:hover { background: var(--surface-2); border-color: var(--ink-4); }
+.st-picker-cell:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; }
+.st-picker-cell.is-sel {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 0 1.5px var(--gold-light) inset;
+  background: var(--surface-2);
+}
+.st-picker-cell-shape { height: 52px; }
+.st-picker-cell-shape svg { width: 40px; height: 40px; display: block; }
+.st-picker-cell-color { height: 40px; }
+.st-picker-swatch { width: 22px; height: 22px; border-radius: var(--radius-pill); }
+.st-picker-cell-auto {
+  border-style: dashed;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.st-picker-cell-auto.is-sel { border-style: solid; }
+.st-picker-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 14px;
+}
+.st-picker-foot-right { display: flex; gap: 10px; }
+.st-picker-btn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.st-picker-btn:hover { background: var(--surface); border-color: var(--ink-4); }
+.st-picker-btn:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; }
+.st-picker-btn-primary {
+  background: var(--gold-light);
+  border-color: var(--gold-deep, var(--gold-light));
+  color: var(--text-on-dark);
+}
+.st-picker-btn-text {
+  border: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  padding: 8px 4px;
+}
+.st-picker-btn-text:hover { color: var(--ink); background: none; }
+
+/* Writing-page Mark chip (entry A). */
+.st-mark-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 6px 0 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  padding: 5px 13px;
+  cursor: pointer;
+}
+.st-mark-chip:hover { border-color: var(--ink-4); color: var(--ink); }
+.st-mark-chip-mark { width: 16px; height: 16px; display: inline-block; }
+.st-mark-chip-mark svg { width: 16px; height: 16px; display: block; }
+
+/* Hover-card footer (entry B). */
+.st-hover-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.st-hover-card-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--marginalia-color);
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.st-hover-card-link:hover { color: var(--ink); }
+/* ===== END SYMBOL PICKER ===== */

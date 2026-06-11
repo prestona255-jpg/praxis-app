@@ -895,7 +895,7 @@ var _ST_MARK_TABLE = [
 // present and in [0,15]. The old silhouette x treatment construction retires
 // from the render path; tfa-innerL + the silhouette/treatment helpers + the
 // st-halo/st-grain defs remain as dead code (removal is a later cleanup).
-function _stRenderShapes(positions) {
+function _stRenderShapes(positions, muted) {
   var out = '';
   var i;
   for (i = 0; i < positions.length; i = i + 1) {
@@ -910,21 +910,89 @@ function _stRenderShapes(positions) {
     var colorVar = 'var(--subtheory-' + (colorIdx + 1) + ')';
     var edgeVar = 'var(--subtheory-' + (colorIdx + 1) + '-edge)';
     var lum = _stLuminosity(sub.maturity);
-    out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ') scale(0.8)">';
-    // halo: CSS blur ~9 user units -> ~13 display px inside scale(0.8) at the
-    // arcs viewBox-to-CSS ratio. style filter (not an svg <filter>) dodges the
-    // shared-defs currentColor/gray-flash trap.
-    out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum) + '" style="filter:blur(9px)"/>';
-    out = out +   '<g opacity="0.92">';
-    out = out +     '<path d="' + mark.body + '" fill="' + colorVar + '" stroke="' + colorVar + '" stroke-width="2"/>';
-    out = out +     '<path d="' + mark.body + '" fill="url(#tfa-shine)"/>';
-    var j;
-    for (j = 0; j < mark.inner.length; j = j + 1) {
-      out = out +   '<path d="' + mark.inner[j] + '" stroke="' + edgeVar + '" stroke-opacity="0.62" stroke-width="1.8" fill="none"/>';
+    // R55: the OUTER group is translate-only -- the per-mark MOTION group the
+    // drag layer moves (and 9b-iv drift will animate). The body+halo sit in an
+    // inner scale(0.8) sub-group (the CSS-blurred halo stays here, never a
+    // faded layer -- GUARD 45); the dots/tethers are a filter-free sibling so
+    // they travel with the mark.
+    out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
+    out = out +   '<g transform="scale(0.8)">';
+    if (muted) {
+      // R53 + sheet muted recipe: body = inline radial #FFF8E7 -> hue@80% (hue
+      // is a var -> GUARD-37-safe), NO shine, body opacity .66, inner .5, halo
+      // opacity = lum*0.68 (gentler). cx/cy/r place the cream highlight high.
+      var gradId = _stNextId();
+      out = out +   '<radialGradient id="' + gradId + '" cx="50%" cy="38%" r="75%">';
+      out = out +     '<stop offset="0%" stop-color="#FFF8E7"/>';
+      out = out +     '<stop offset="80%" stop-color="' + colorVar + '"/>';
+      out = out +   '</radialGradient>';
+      out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum * 0.68) + '" style="filter:blur(9px)"/>';
+      out = out +   '<g opacity="0.66">';
+      out = out +     '<path d="' + mark.body + '" fill="url(#' + gradId + ')" stroke="' + colorVar + '" stroke-width="2"/>';
+      var jm;
+      for (jm = 0; jm < mark.inner.length; jm = jm + 1) {
+        out = out + '<path d="' + mark.inner[jm] + '" stroke="' + edgeVar + '" stroke-opacity="0.5" stroke-width="1.8" fill="none"/>';
+      }
+      out = out +   '</g>';
+    } else {
+      // colorful: solid hue fill + same-hue 2px ring + cream shine + DEEP inner
+      // design at .62 (the shipped 9b-ii recipe, unchanged).
+      out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum) + '" style="filter:blur(9px)"/>';
+      out = out +   '<g opacity="0.92">';
+      out = out +     '<path d="' + mark.body + '" fill="' + colorVar + '" stroke="' + colorVar + '" stroke-width="2"/>';
+      out = out +     '<path d="' + mark.body + '" fill="url(#tfa-shine)"/>';
+      var j;
+      for (j = 0; j < mark.inner.length; j = j + 1) {
+        out = out + '<path d="' + mark.inner[j] + '" stroke="' + edgeVar + '" stroke-opacity="0.62" stroke-width="1.8" fill="none"/>';
+      }
+      out = out +   '</g>';
     }
     out = out +   '</g>';
+    out = out +   _stRenderDotsForMark(p);
     out = out + '</g>';
   }
+  return out;
+}
+
+// 9b-iii (ruling 35): the gathered-evidence dots for ONE sub, in LOCAL coords
+// relative to its mark center (0,0) -- emitted INSIDE the per-mark motion group
+// by _stRenderShapes, so a drag (and future drift) carries them. Visuals are
+// the 9.6b dots unchanged (gathered = hollow teal r3.6; incorporated = solid +
+// tether, still dormant); this only relocates them and threads the channel data
+// attrs (data-st-kind / data-st-ref) for the click router. The wrapping group
+// carries .st-layer-dots so the Marginalia switch can fade it via CSS; it is
+// filter-free (the blurred halo is in the body sub-group, never here).
+function _stRenderDotsForMark(p) {
+  var sub = p.sub || {};
+  var marks = sub.marks || [];
+  if (!marks.length) { return ''; }
+  var ringR = _ST_SCALE * 0.5 + 14;
+  var ix = _stIndices(p.id);
+  var colorVar = 'var(--subtheory-' + (ix.colorIdx + 1) + ')';
+  var clusterCenter = _arcHash(p.id, 300) * Math.PI * 2;
+  var out = '<g class="st-layer-dots" data-st-marks-sub-id="' + _arcEscapeXml(p.id) + '">';
+  var j;
+  for (j = 0; j < marks.length; j = j + 1) {
+    var mark = marks[j] || {};
+    var s1 = _arcHash(p.id, 310 + j);
+    var s2 = _arcHash(p.id, 360 + j);
+    var ang = clusterCenter + (s1 - 0.5) * (Math.PI * 0.9);
+    var rr = ringR + (s2 - 0.5) * 8;
+    var mx = Math.cos(ang) * rr;
+    var my = Math.sin(ang) * rr;
+    var attrs = '';
+    if (mark.kind)  { attrs = attrs + ' data-st-kind="' + _arcEscapeXml(mark.kind) + '"'; }
+    if (mark.refId) { attrs = attrs + ' data-st-ref="' + _arcEscapeXml(mark.refId) + '"'; }
+    out = out + '<g data-st-mark="1" data-st-sub-id="' + _arcEscapeXml(p.id) + '" data-st-mark-index="' + j + '"' + attrs + '>';
+    if (mark.state === 'incorporated') {
+      out = out + '<line x1="' + _arcR(mx) + '" y1="' + _arcR(my) + '" x2="0" y2="0" stroke="' + colorVar + '" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>';
+      out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.4" fill="' + colorVar + '"/>';
+    } else {
+      out = out + '<circle cx="' + _arcR(mx) + '" cy="' + _arcR(my) + '" r="3.6" fill="none" stroke="var(--marginalia-color)" stroke-width="1.2" opacity="0.85"/>';
+    }
+    out = out + '</g>';
+  }
+  out = out + '</g>';
   return out;
 }
 
@@ -993,7 +1061,7 @@ function _stRenderEdges(edges, posById, showFaint) {
     // faint relationships.
     if (e.faint) {
       if (showFaint === false) { continue; } // Faint links layer hidden
-      out = out + '<line data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="#966E28" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
+      out = out + '<line class="st-layer-faint" data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="#966E28" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
       continue;
     }
     // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
@@ -1109,7 +1177,7 @@ function _stRenderBooks(books, positions, width, height) {
   var sz = 16;
   var clear = _ST_SCALE * 0.5 + sz; // mark radius (~39) + book half + gap
   var marks = positions || [];
-  var out = '<g data-st-books="1">';
+  var out = '<g class="st-layer-books" data-st-books="1">';
   var i, j, t;
   for (i = 0; i < books.length; i = i + 1) {
     var b = books[i] || {};
@@ -1155,6 +1223,11 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // B2: showLegend (default ON) gates the whole reading-key legend <g> so the
   // Home embed can suppress it; Arcs keeps the full legend.
   var showLegend = (options.showLegend === false) ? false : true;
+  // 9b-iii: palette gates the mark ANATOMY (muted = body radial / no shine /
+  // gentler halo). The HUE is handled separately by a global [data-st-palette]
+  // token remap (set on the document root by views.js), so this only switches
+  // the recipe markup. Default colorful.
+  var muted = (options.palette === 'muted');
 
   var width = 600;
   var height = 500;
@@ -1200,20 +1273,27 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   var yumiX = width - 30;
   var yumiY = 30;
 
-  svg = svg + _stRenderEdges(arc.edges || [], posById, showFaint); // solid resonance always; faint gated + dormant
-  if (showBooks) {
-    svg = svg + _stRenderBooks(arc.books || [], positions, width, height); // inert neutral squares (behind marks), nudged clear
-  }
-  svg = svg + _stRenderShapes(positions);
-  if (showMarginalia) {
-    svg = svg + _stRenderMarks(positions);
-  }
+  // 9b-iii (R56): every layer is ALWAYS rendered so a Layers toggle can fade it
+  // via CSS (root attribute below) without a re-render. Resonance is the spine
+  // (no switch). Dots now live INSIDE each per-mark group (_stRenderShapes ->
+  // _stRenderDotsForMark, ruling 35), so there is no separate marginalia layer.
+  svg = svg + _stRenderEdges(arc.edges || [], posById, true);
+  svg = svg + _stRenderBooks(arc.books || [], positions, width, height);
+  svg = svg + _stRenderShapes(positions, muted);
   svg = svg + _stRenderYumi(yumiX, yumiY);
   if (showLegend) {
     svg = svg + _stRenderLegend(arc, positions, width, height);
   }
 
   parentSvgElement.innerHTML = svg;
+  // R56: layer visibility rides on root attributes; the CSS in components.css
+  // fades the filter-free descendant groups (.st-layer-books / -dots / -faint).
+  // The switches flip these attributes in place -- no re-render, node identity
+  // preserved. The blurred halo lives in the body sub-group, never a faded
+  // group (GUARD 45).
+  parentSvgElement.setAttribute('data-st-books', showBooks ? 'on' : 'off');
+  parentSvgElement.setAttribute('data-st-marginalia', showMarginalia ? 'on' : 'off');
+  parentSvgElement.setAttribute('data-st-faint', showFaint ? 'on' : 'off');
 }
 
 // ===========================================================================
@@ -1284,6 +1364,8 @@ function attachSubTheoryDrag(svg, opts) {
     }
   }
   var card = null; // lazily-created hover card; one at a time per render
+  var cardHideTimer = null; // 9b-iii: delayed hide so the pointer can reach the
+                            // card's "Open" / "Change mark" links
 
   function svgPoint(evt) {
     var ctm = svg.getScreenCTM();
@@ -1419,6 +1501,12 @@ function attachSubTheoryDrag(svg, opts) {
     if (!container) { return null; }
     card = document.createElement('div');
     card.className = 'st-hover-card';
+    // 9b-iii: keep the card up while the pointer is over it (so its links are
+    // clickable); leaving the card hides it.
+    card.addEventListener('mouseenter', function() {
+      if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
+    });
+    card.addEventListener('mouseleave', hideCard);
     container.appendChild(card);
     return card;
   }
@@ -1435,10 +1523,33 @@ function attachSubTheoryDrag(svg, opts) {
     meta.className = 'st-hover-card-meta';
     meta.textContent = maturityRead(sub.maturity) + '  ·  ' + gatheredCount(sub) + ' gathered';
     el.appendChild(meta);
-    var aff = document.createElement('div');
-    aff.className = 'st-hover-card-affordance';
-    aff.textContent = 'tap to open';
-    el.appendChild(aff);
+    // 9b-iii (mock vignette B): an Open + Change-mark footer. Change-mark hands
+    // off to the views.js picker via a window hook (keeps the layering: this
+    // renderer never reaches into views.js directly).
+    var foot = document.createElement('div');
+    foot.className = 'st-hover-card-foot';
+    var openLink = document.createElement('button');
+    openLink.type = 'button';
+    openLink.className = 'st-hover-card-link';
+    openLink.textContent = 'Open';
+    openLink.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (sub.id) { location.hash = 'subtheory/' + sub.id; }
+    });
+    foot.appendChild(openLink);
+    var changeLink = document.createElement('button');
+    changeLink.type = 'button';
+    changeLink.className = 'st-hover-card-link';
+    changeLink.textContent = 'Change mark';
+    changeLink.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (sub.id && typeof window.openSymbolPicker === 'function') {
+        hideCard();
+        window.openSymbolPicker(sub.id);
+      }
+    });
+    foot.appendChild(changeLink);
+    el.appendChild(foot);
   }
 
   // Anchor above the mark, centered; flip below and clamp to the container
@@ -1462,6 +1573,7 @@ function attachSubTheoryDrag(svg, opts) {
   }
 
   function showCard(sub, markEl) {
+    if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
     var el = ensureCard();
     if (!el) { return; }
     fillCard(el, sub);
@@ -1470,6 +1582,7 @@ function attachSubTheoryDrag(svg, opts) {
   }
 
   function hideCard() {
+    if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
     if (card) { card.classList.remove('st-hover-card--visible'); }
   }
 
@@ -1481,8 +1594,11 @@ function attachSubTheoryDrag(svg, opts) {
     showCard(sub, g);
   }
 
+  // 9b-iii: delay the hide so the pointer can travel onto the card (whose own
+  // mouseenter cancels the timer) to reach its links.
   function onShapeLeave() {
-    hideCard();
+    if (cardHideTimer) { clearTimeout(cardHideTimer); }
+    cardHideTimer = setTimeout(hideCard, 140);
   }
 
   // Per-shape hover binding (mouseenter/leave don't bubble, so no
@@ -1612,5 +1728,56 @@ if (typeof window !== 'undefined') {
       }
     }
     return _stIdentity(id).color;
+  };
+
+  // 9b-iii (R54): single-source preview. Render ONE mark through the EXACT
+  // _stRenderShapes code path (same table + anatomy) so the picker preview is
+  // byte-identical to a constellation mark. shapeIdx/colorIdx are 0-15 or null
+  // (null -> the id hash via opts.id). opts: { id, palette, maturity, neutral }.
+  // neutral -> a flat ink shape cell (real table paths, no hue, no halo) for
+  // the picker's shape grid.
+  window.stRenderMarkMarkup = function(shapeIdx, colorIdx, opts) {
+    opts = opts || {};
+    if (opts.neutral) {
+      var nIx = (typeof shapeIdx === 'number' && shapeIdx >= 0 && shapeIdx <= 15) ? shapeIdx : 0;
+      var nMark = _ST_MARK_TABLE[nIx];
+      var ns = '<g transform="scale(0.8)">';
+      ns = ns + '<path d="' + nMark.body + '" fill="var(--border)" stroke="var(--ink-3)" stroke-width="2"/>';
+      var ni;
+      for (ni = 0; ni < nMark.inner.length; ni = ni + 1) {
+        ns = ns + '<path d="' + nMark.inner[ni] + '" fill="none" stroke="var(--ink-4)" stroke-width="1.8" stroke-linecap="round"/>';
+      }
+      ns = ns + '</g>';
+      return ns;
+    }
+    var pos = [{
+      id: opts.id || '__st_preview__',
+      x: 0,
+      y: 0,
+      sub: {
+        markShape: (typeof shapeIdx === 'number') ? shapeIdx : null,
+        markColor: (typeof colorIdx === 'number') ? colorIdx : null,
+        maturity: (typeof opts.maturity === 'number') ? opts.maturity : 1,
+        marks: []
+      }
+    }];
+    return _stRenderShapes(pos, opts.palette === 'muted');
+  };
+
+  // 9b-iii: the id-hash default indices (shape + color), so the picker can show
+  // the correct "Auto" mark + caption without duplicating the hash.
+  window.stHashIndices = function(id) {
+    var ix = _stIndices(id);
+    return { shapeIdx: ix.shapeIdx, colorIdx: ix.colorIdx };
+  };
+
+  // 9b-iii: the shared cream-shine def the colorful preview body references --
+  // exposed so the picker svg can inject just this one def (rather than the
+  // whole tradition defs blob). Hue-independent -> safe to share.
+  window.stMarkPreviewDefs = function() {
+    return '<defs><radialGradient id="tfa-shine" cx="50%" cy="34%" r="62%">'
+      + '<stop offset="0%" stop-color="#FFF8E7" stop-opacity="0.38"/>'
+      + '<stop offset="70%" stop-color="#FFF8E7" stop-opacity="0"/>'
+      + '</radialGradient></defs>';
   };
 }

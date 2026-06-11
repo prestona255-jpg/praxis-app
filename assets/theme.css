@@ -374,3 +374,50 @@ body::before {
     radial-gradient(1100px 560px at 50% -6%, #e6cb8e, #d8bd80 55%, #c4a35a 100%),
     #c4a35a;
 }
+
+/* 9b-iii: MUTED constellation palette (frozen sheet). A global remap activated
+   by [data-st-palette="muted"] on the document root, so constellation marks AND
+   spotlight chips follow the same toggle. Colorful is the default (no attribute
+   / "colorful"). Token NAMES unchanged -- only the resolved values shift. The
+   picker's own swatches use literal colorful hexes, so they are immune. */
+[data-st-palette="muted"] {
+  --subtheory-1:  #8fcdc3; --subtheory-1-edge:  #4f9389;
+  --subtheory-2:  #a9bfe3; --subtheory-2-edge:  #5d76a8;
+  --subtheory-3:  #e0a099; --subtheory-3-edge:  #b2625a;
+  --subtheory-4:  #e3b964; --subtheory-4-edge:  #a8781f;
+  --subtheory-5:  #9accd6; --subtheory-5-edge:  #5d99a8;
+  --subtheory-6:  #ecd494; --subtheory-6-edge:  #b09238;
+  --subtheory-7:  #b0b5e0; --subtheory-7-edge:  #6d74b8;
+  --subtheory-8:  #f2b8cc; --subtheory-8-edge:  #c97f9b;
+  --subtheory-9:  #b5cf9e; --subtheory-9-edge:  #74955c;
+  --subtheory-10: #b9a8dc; --subtheory-10-edge: #7e69ad;
+  --subtheory-11: #c4b2e0; --subtheory-11-edge: #8a76b8;
+  --subtheory-12: #d2d89e; --subtheory-12-edge: #9aa35e;
+  --subtheory-13: #a5d2bc; --subtheory-13-edge: #62a386;
+  --subtheory-14: #e2aabb; --subtheory-14-edge: #b87490;
+  --subtheory-15: #ddc9a0; --subtheory-15-edge: #a68f5e;
+  --subtheory-16: #e7b3a8; --subtheory-16-edge: #bb7e6e;
+}
+
+/* 9b-iii: explicit COLORFUL re-assert so a subtree can force the identity hues
+   even when the page root is muted -- the picker's color swatches set
+   data-st-palette="colorful" on themselves so they always read colorful
+   (ruling: swatches show identity hues regardless of the global palette). */
+[data-st-palette="colorful"] {
+  --subtheory-1:  #6FC9BC; --subtheory-1-edge:  #37968A;
+  --subtheory-2:  #8FB8E8; --subtheory-2-edge:  #5580C2;
+  --subtheory-3:  #E8998D; --subtheory-3-edge:  #C4685B;
+  --subtheory-4:  #E8B45C; --subtheory-4-edge:  #C08A28;
+  --subtheory-5:  #7CC6DA; --subtheory-5-edge:  #3D93AC;
+  --subtheory-6:  #F0D468; --subtheory-6-edge:  #C4A22E;
+  --subtheory-7:  #9BA4E8; --subtheory-7-edge:  #5F6AC4;
+  --subtheory-8:  #F2A8C6; --subtheory-8-edge:  #CC6E9A;
+  --subtheory-9:  #A8CD8E; --subtheory-9-edge:  #6FA052;
+  --subtheory-10: #AC9DE2; --subtheory-10-edge: #7A66C2;
+  --subtheory-11: #C0A8E0; --subtheory-11-edge: #8E6EC0;
+  --subtheory-12: #C9D67E; --subtheory-12-edge: #94A33E;
+  --subtheory-13: #8FD4B8; --subtheory-13-edge: #4AA582;
+  --subtheory-14: #E89BB4; --subtheory-14-edge: #C25E84;
+  --subtheory-15: #DFC089; --subtheory-15-edge: #AE8C46;
+  --subtheory-16: #EFA89A; --subtheory-16-edge: #CC6E5C;
+}

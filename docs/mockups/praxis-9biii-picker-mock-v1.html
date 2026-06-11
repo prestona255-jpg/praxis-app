@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praxis · 9b-iii · Symbol picker mock v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#3a2810;
+  --ink-2:#5c4424;
+  --ink-3:#7a5f38;
+  --ink-4:#9a7e4e;
+  --border:rgba(58,40,16,.2);
+  --border-soft:rgba(58,40,16,.12);
+  --gold:#a8842e;
+  --gold-deep:#8a6a1e;
+  --thread-color:#B89A62;
+  --surface:#f6ead0;
+  --surface-2:#fdf6e4;
+  --page:#dfc089;
+  --inner-light:#FFF8E7;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --font-serif:'Cormorant Garamond',serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(255,244,214,.55), rgba(255,244,214,0) 70%),
+    linear-gradient(180deg,#e3c48f 0%, #d9b878 55%, #cfae6c 100%);
+  min-height:100vh;
+  padding:48px 24px 80px;
+}
+.wrap{max-width:1040px;margin:0 auto}
+
+/* ---------- mock chrome ---------- */
+.eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;
+  color:var(--ink-3);text-transform:uppercase;margin-bottom:10px;
+}
+h1{font-family:var(--font-serif);font-weight:500;font-size:40px;line-height:1.1;margin-bottom:8px}
+.lede{font-size:14px;color:var(--ink-2);max-width:62ch;line-height:1.55}
+.section{margin-top:52px}
+.section-label{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-3);border-bottom:1px solid var(--border-soft);padding-bottom:8px;margin-bottom:22px;
+}
+
+/* ---------- backdrop stage ---------- */
+.stage{
+  position:relative;border-radius:var(--radius-lg);overflow:hidden;
+  border:1px solid var(--border);
+  background:radial-gradient(560px 380px at 50% 46%, #fbf0d6 0%, #f3e4c2 58%, #ecd9ad 100%);
+  padding:56px 24px;
+  display:flex;justify-content:center;
+}
+.stage::before{
+  content:"";position:absolute;inset:0;
+  background:rgba(58,40,16,.16);
+}
+
+/* ---------- the picker dialog ---------- */
+.picker{
+  position:relative;width:600px;max-width:100%;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:0 18px 50px rgba(58,40,16,.28), 0 2px 8px rgba(58,40,16,.12);
+  padding:26px 28px 22px;
+}
+.picker-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:6px}
+.picker-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:.24em;color:var(--ink-4);text-transform:uppercase}
+.picker-sub{font-family:var(--font-serif);font-style:italic;font-size:21px;color:var(--ink);font-weight:500}
+.picker-close{
+  font-family:var(--font-mono);font-size:12px;color:var(--ink-3);background:none;border:0;cursor:pointer;
+  padding:4px 6px;border-radius:6px;
+}
+.picker-close:hover{background:rgba(58,40,16,.06)}
+
+/* preview */
+.preview{
+  display:flex;align-items:center;gap:22px;
+  padding:14px 4px 18px;border-bottom:1px solid var(--border-soft);margin-bottom:16px;
+}
+.preview-mark{width:124px;height:124px;flex:none}
+.preview-meta{line-height:1.5}
+.preview-name{font-family:var(--font-serif);font-style:italic;font-size:22px;color:var(--ink)}
+.preview-detail{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--ink-3);margin-top:3px}
+.badge-auto{
+  display:inline-block;margin-top:9px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);border:1px dashed var(--ink-4);border-radius:999px;padding:3px 10px;
+}
+.badge-auto.off{display:none}
+
+/* grids */
+.row-label{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink-3);margin:14px 0 9px;
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.row-label .hint{letter-spacing:.04em;text-transform:none;color:var(--ink-4);font-size:10px}
+.grid{display:grid;gap:7px}
+.grid-shapes{grid-template-columns:repeat(auto-fill,minmax(52px,1fr))}
+.grid-colors{grid-template-columns:repeat(auto-fill,minmax(40px,1fr))}
+.cell{
+  position:relative;border:1px solid var(--border-soft);border-radius:var(--radius-md);
+  background:rgba(255,250,236,.6);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:border-color .12s, box-shadow .12s, background .12s;
+  padding:0;
+}
+.cell:hover{background:#fffaef;border-color:var(--ink-4)}
+.cell:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.cell.sel{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold) inset;background:#fffaef}
+.cell-shape{height:52px}
+.cell-shape svg{width:40px;height:40px;display:block}
+.cell-color{height:40px}
+.swatch{width:22px;height:22px;border-radius:50%}
+.cell-auto{
+  border-style:dashed;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+}
+.cell-auto.sel{border-style:solid}
+
+/* footer */
+.picker-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid var(--border-soft);margin-top:20px;padding-top:16px;
+}
+.btn{
+  font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;
+  border-radius:999px;padding:8px 18px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--ink-2);
+  transition:background .12s, border-color .12s;
+}
+.btn:hover{background:#fffaef;border-color:var(--ink-4)}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn-primary{background:var(--gold);border-color:var(--gold-deep);color:#fffaef}
+.btn-primary:hover{background:#b58f33;border-color:var(--gold-deep)}
+.btn-text{border:0;background:none;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--ink-3);padding:8px 4px}
+.btn-text:hover{color:var(--ink);background:none}
+.foot-right{display:flex;gap:10px}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:var(--inner-light);
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.06em;
+  padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;
+  transition:opacity .18s, transform .18s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- entry-point vignettes ---------- */
+.vignettes{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media (max-width:760px){.vignettes{grid-template-columns:1fr}}
+.vig{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:22px;
+}
+.vig-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-4);margin-bottom:16px}
+.writing-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.writing-mark{width:44px;height:44px;flex:none}
+.writing-title{font-family:var(--font-serif);font-style:italic;font-size:24px;font-weight:500}
+.chip-btn{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);border:1px solid var(--border);border-radius:999px;background:rgba(255,250,236,.7);
+  padding:5px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+}
+.chip-btn:hover{border-color:var(--ink-4);color:var(--ink)}
+.chip-btn .dotmark{width:14px;height:14px}
+.writing-sub{font-size:12.5px;color:var(--ink-3);margin-top:12px;line-height:1.55;max-width:46ch}
+
+.hovercard{
+  width:250px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius-md);box-shadow:0 10px 28px rgba(58,40,16,.2);
+  padding:16px 16px 13px;margin:6px auto 0;
+}
+.hc-top{display:flex;align-items:center;gap:12px}
+.hc-mark{width:46px;height:46px;flex:none}
+.hc-name{font-family:var(--font-serif);font-style:italic;font-size:17px;line-height:1.2}
+.hc-kind{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-4);margin-top:2px}
+.hc-bar{height:4px;border-radius:999px;background:rgba(58,40,16,.12);margin:13px 0 5px;overflow:hidden}
+.hc-bar i{display:block;height:100%;width:34%;background:var(--thread-color);border-radius:999px}
+.hc-barlabel{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--ink-4);text-transform:uppercase}
+.hc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:1px solid var(--border-soft);padding-top:10px}
+.hc-link{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--gold-deep);text-transform:uppercase;cursor:pointer;background:none;border:0;padding:2px 0}
+.hc-link:hover{color:var(--ink)}
+
+/* ---------- notes ---------- */
+.notes{font-size:13px;color:var(--ink-2);line-height:1.65;max-width:74ch}
+.notes p{margin-bottom:10px}
+.notes b{color:var(--ink)}
+.flag{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  border:1px solid var(--border-soft);border-left:3px solid var(--gold);border-radius:0 var(--radius-md) var(--radius-md) 0;
+  background:rgba(255,250,236,.55);padding:11px 14px;margin-bottom:10px;line-height:1.6;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Praxis · Visual System · 9b-iii · Comp gate</div>
+  <h1>Symbol picker — mock v1</h1>
+  <p class="lede">Interactive layout mock for the mark picker (ruling 43: shape and color chosen separately; hash default; Reset). Click around — the preview re-renders live. Silhouettes here are hand-approximated for layout judging only; the shipped picker renders every mark through the live verbatim path table, so what you pick is pixel-identical to the constellation.</p>
+
+  <!-- ============ THE DIALOG ============ -->
+  <div class="section">
+    <div class="section-label">01 · The picker dialog — modal over the arc page</div>
+    <div class="stage">
+      <div class="picker" role="dialog" aria-label="Choose a mark">
+        <div class="picker-head">
+          <div>
+            <div class="picker-eyebrow">Mark</div>
+            <div class="picker-sub">The Hidden Curriculum of Wanting</div>
+          </div>
+          <button class="picker-close" title="Close (mock)">esc</button>
+        </div>
+
+        <div class="preview">
+          <div class="preview-mark" id="previewMark"></div>
+          <div class="preview-meta">
+            <div class="preview-name" id="previewName">the wellspring</div>
+            <div class="preview-detail" id="previewDetail">teardrop · hue 15 of 16</div>
+            <span class="badge-auto" id="badgeAuto">auto — from its id</span>
+          </div>
+        </div>
+
+        <div class="row-label"><span>Shape</span><span class="hint">independent of color</span></div>
+        <div class="grid grid-shapes" id="shapeGrid"></div>
+
+        <div class="row-label"><span>Color</span><span class="hint">shown colorful · muted follows the palette toggle</span></div>
+        <div class="grid grid-colors" id="colorGrid"></div>
+
+        <div class="picker-foot">
+          <button class="btn btn-text" id="btnReset">Reset to auto</button>
+          <div class="foot-right">
+            <button class="btn" id="btnCancel">Cancel</button>
+            <button class="btn btn-primary" id="btnSave">Save mark</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ENTRY POINTS ============ -->
+  <div class="section">
+    <div class="section-label">02 · Entry points</div>
+    <div class="vignettes">
+      <div class="vig">
+        <div class="vig-tag">A · Sub-theory writing page — header</div>
+        <div class="writing-head">
+          <div class="writing-mark" id="vigMarkA"></div>
+          <div class="writing-title">The Hidden Curriculum of Wanting</div>
+          <button class="chip-btn"><span class="dotmark" id="vigChipMark"></span>Mark</button>
+        </div>
+        <p class="writing-sub">The "Mark" chip sits with the title, carries a live 14px render of the current mark, and opens the dialog above.</p>
+      </div>
+      <div class="vig">
+        <div class="vig-tag">B · Constellation hover card</div>
+        <div class="hovercard">
+          <div class="hc-top">
+            <div class="hc-mark" id="vigMarkB"></div>
+            <div>
+              <div class="hc-name">The Hidden Curriculum of Wanting</div>
+              <div class="hc-kind">sub-theory · gathered</div>
+            </div>
+          </div>
+          <div class="hc-bar"><i></i></div>
+          <div class="hc-barlabel">maturity</div>
+          <div class="hc-foot">
+            <button class="hc-link">Open</button>
+            <button class="hc-link">Change mark</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NOTES ============ -->
+  <div class="section">
+    <div class="section-label">03 · Decisions baked into v1 — rule on these</div>
+    <div class="flag"><b>F1 · Per-row Auto cells + global Reset.</b> Each grid leads with a dashed "Auto" cell, so you can override color while leaving shape hashed (the data model already supports independent absence). "Reset to auto" clears both. Alternative: a single Reset only, no per-row Auto.</div>
+    <div class="flag"><b>F2 · Modal dialog, not anchored popover.</b> One surface serves both entry points and survives small screens. Alternative: popover anchored to the hover card, modal only from the writing page.</div>
+    <div class="flag"><b>F3 · Names appear in the preview caption only</b> ("the wellspring"), never as grid labels — keeps the grid quiet, and display names ship only after the 06–16 roster reconcile (ruling 49). Shape cells get the name as a hover tooltip.</div>
+    <div class="notes" style="margin-top:18px">
+      <p><b>Mock caveats:</b> silhouettes and inner designs are approximations drawn for this layout; the live picker reuses the in-repo verbatim table and the constellation's own renderer (halo · body · ring · shine · inner), so the preview equals the shipped mark byte-for-byte. Save persists <code style="font-family:var(--font-mono);font-size:11px">sub.markShape</code> / <code style="font-family:var(--font-mono);font-size:11px">sub.markColor</code>; Cancel and esc discard. Swatches always display the colorful identity hues; the global palette toggle mutes everything downstream.</p>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast">mock — nothing persisted</div>
+
+<script>
+// ============ frozen roster (canonical sheet names + colorful hues) ============
+var ROSTER = [
+  {name:'the beacon',     shape:'hexagon',        fill:'#6FC9BC', deep:'#37968A'},
+  {name:'the wellspring', shape:'teardrop',       fill:'#8FB8E8', deep:'#5580C2'},
+  {name:'the compass',    shape:'four-point star',fill:'#E8998D', deep:'#C4685B'},
+  {name:'the keystone',   shape:'pentagon',       fill:'#E8B45C', deep:'#C08A28'},
+  {name:'the river',      shape:'lens (vesica)',  fill:'#7CC6DA', deep:'#3D93AC'},
+  {name:'the lantern',    shape:'arch',           fill:'#F0D468', deep:'#C4A22E'},
+  {name:'the facet',      shape:'rhombus',        fill:'#9BA4E8', deep:'#5F6AC4'},
+  {name:'the bloom',      shape:'rosette',        fill:'#F2A8C6', deep:'#CC6E9A'},
+  {name:'the summit',     shape:'triangle',       fill:'#A8CD8E', deep:'#6FA052'},
+  {name:'the chamber',    shape:'octagon',        fill:'#AC9DE2', deep:'#7A66C2'},
+  {name:'the seed',       shape:'egg',            fill:'#C0A8E0', deep:'#8E6EC0'},
+  {name:'the kite',       shape:'kite',           fill:'#C9D67E', deep:'#94A33E'},
+  {name:'the harbor',     shape:'semicircle',     fill:'#8FD4B8', deep:'#4AA582'},
+  {name:'the spark',      shape:'six-point star', fill:'#E89BB4', deep:'#C25E84'},
+  {name:'the dune',       shape:'mound',          fill:'#DFC089', deep:'#AE8C46'},
+  {name:'the gate',       shape:'squircle',       fill:'#EFA89A', deep:'#CC6E5C'}
+];
+
+// ============ APPROXIMATED silhouettes (±44 local) — layout judging only ============
+var BODY = [
+  'M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z',
+  'M0,-46 C24,-18 30,2 30,16 A30,30 0 1 1 -30,16 C-30,2 -24,-18 0,-46 Z',
+  'M0,-46 C6,-14 14,-6 46,0 C14,6 6,14 0,46 C-6,14 -14,6 -46,0 C-14,-6 -6,-14 0,-46 Z',
+  'M0,-44 L41.8,-13.6 L25.9,35.6 L-25.9,35.6 L-41.8,-13.6 Z',
+  'M0,-44 C23,-26 23,26 0,44 C-23,26 -23,-26 0,-44 Z',
+  'M-30,40 L-30,-4 A30,36 0 0 1 30,-4 L30,40 Z',
+  'M0,-46 L30,0 L0,46 L-30,0 Z',
+  'M-23.7,-23.7 A24,24 0 1 1 23.7,-23.7 A24,24 0 1 1 23.7,23.7 A24,24 0 1 1 -23.7,23.7 A24,24 0 1 1 -23.7,-23.7 Z',
+  'M0,-42 L40,34 L-40,34 Z',
+  'M18.2,-44 L44,-18.2 L44,18.2 L18.2,44 L-18.2,44 L-44,18.2 L-44,-18.2 L-18.2,-44 Z',
+  'M0,-44 C24,-44 34,-16 34,6 A34,34 0 1 1 -34,6 C-34,-16 -24,-44 0,-44 Z',
+  'M0,-46 L26,-8 L0,46 L-26,-8 Z',
+  'M-44,24 A44,44 0 0 1 44,24 Z',
+  'M0,-46 L10,-17.3 L39.8,-23 L20,0 L39.8,23 L10,17.3 L0,46 L-10,17.3 L-39.8,23 L-20,0 L-39.8,-23 L-10,-17.3 Z',
+  'M-42,30 C-42,-10 -20,-40 0,-40 C20,-40 42,-10 42,30 Z',
+  'M-16,-38 L16,-38 Q38,-38 38,-16 L38,16 Q38,38 16,38 L-16,38 Q-38,38 -38,16 L-38,-16 Q-38,-38 -16,-38 Z'
+];
+var INNER = [
+  'M0,-26 L22,-13 L22,13 L0,26 L-22,13 L-22,-13 Z M0,-12 L10,-6 L10,6 L0,12 L-10,6 L-10,-6 Z',
+  'M-14,8 Q0,18 14,8 M-9,-6 Q0,1 9,-6',
+  'M0,-26 L0,26 M-26,0 L26,0 M0,-9 A9,9 0 1 1 -0.1,-9 Z',
+  'M0,-36 L-20,28 M0,-36 L0,30 M0,-36 L20,28',
+  'M-5,-30 C7,-12 -7,12 5,30 M5,-26 C13,-10 1,12 9,26',
+  'M-16,12 A16,20 0 0 1 16,12 M-8,16 L-8,34 M0,12 L0,34 M8,16 L8,34',
+  'M0,-40 L0,40 M-13,-14 L13,-6 M-11,12 L11,18',
+  'M0,-7 A7,7 0 1 1 -0.1,-7 Z M0,-12 L0,-26 M12,0 L26,0 M0,12 L0,26 M-12,0 L-26,0',
+  'M-26,18 L26,18 M-18,4 L18,4 M-10,-10 L10,-10',
+  'M9,-22 L22,-9 L22,9 L9,22 L-9,22 L-22,9 L-22,-9 L-9,-22 Z M0,-6 A6,6 0 1 1 -0.1,-6 Z',
+  'M6,2 A8,8 0 1 1 -8,-3 A14,14 0 1 1 12,8',
+  'M0,-40 L0,40 M-13,-10 L13,-10 M-9,10 L9,10',
+  'M-26,22 A26,26 0 0 1 26,22 M-15,22 A15,15 0 0 1 15,22 M-38,22 L38,22',
+  'M0,-14 L0,-4 M12,-7 L4,-2 M12,7 L4,2 M0,14 L0,4 M-12,7 L-4,2 M-12,-7 L-4,-2',
+  'M-26,16 Q0,5 26,16 M-17,2 Q0,-7 17,2',
+  'M-11,-30 L-11,30 M11,-30 L11,30 M-30,-11 L30,-11 M-30,11 L30,11'
+];
+
+// ============ state ============
+var HASH_DEFAULT = { shape:1, color:14 };   // teardrop + the dune hue (mirrors the live seed sub)
+var state = { shape:null, color:null };     // null = auto
+var uid = 0;
+
+function effShape(){ return state.shape === null ? HASH_DEFAULT.shape : state.shape; }
+function effColor(){ return state.color === null ? HASH_DEFAULT.color : state.color; }
+
+// ============ mark renderer (mock anatomy: halo · body · ring · shine · inner) ============
+function markSVG(shapeIdx, colorIdx, opts){
+  opts = opts || {};
+  var hue = ROSTER[colorIdx];
+  var id = 'sh' + (uid++);
+  var s = '';
+  s += '<svg viewBox="-58 -58 116 116" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;height:100%;display:block;overflow:visible">';
+  s += '<defs><radialGradient id="' + id + '" cx="50%" cy="34%" r="62%">';
+  s += '<stop offset="0%" stop-color="#FFF8E7" stop-opacity="0.38"/><stop offset="70%" stop-color="#FFF8E7" stop-opacity="0"/>';
+  s += '</radialGradient></defs>';
+  if(!opts.flat){
+    s += '<circle r="50" fill="' + hue.fill + '" opacity="0.5" style="filter:blur(9px)"/>';
+  }
+  s += '<g transform="scale(0.92)">';
+  if(opts.neutral){
+    s += '<path d="' + BODY[shapeIdx] + '" fill="#e8dab6" fill-opacity="0.9" stroke="#b39c6e" stroke-width="2"/>';
+    s += '<path d="' + INNER[shapeIdx] + '" fill="none" stroke="#7a5f38" stroke-opacity="0.5" stroke-width="2.4" stroke-linecap="round"/>';
+  } else {
+    s += '<path d="' + BODY[shapeIdx] + '" fill="' + hue.fill + '" fill-opacity="0.92" stroke="' + hue.fill + '" stroke-width="2"/>';
+    s += '<path d="' + BODY[shapeIdx] + '" fill="url(#' + id + ')"/>';
+    s += '<path d="' + INNER[shapeIdx] + '" fill="none" stroke="' + hue.deep + '" stroke-opacity="0.62" stroke-width="1.8" stroke-linecap="round"/>';
+  }
+  s += '</g></svg>';
+  return s;
+}
+
+// ============ grids ============
+function buildShapeGrid(){
+  var g = document.getElementById('shapeGrid');
+  var html = '<button class="cell cell-shape cell-auto" data-shape="auto" title="Hashed from its id">Auto</button>';
+  var i;
+  for(i=0;i<16;i++){
+    html += '<button class="cell cell-shape" data-shape="' + i + '" title="' + ROSTER[i].name + ' · ' + ROSTER[i].shape + '">' + markSVG(i, effColor(), {neutral:true, flat:true}) + '</button>';
+  }
+  g.innerHTML = html;
+}
+function buildColorGrid(){
+  var g = document.getElementById('colorGrid');
+  var html = '<button class="cell cell-color cell-auto" data-color="auto" title="Hashed from its id">Auto</button>';
+  var i;
+  for(i=0;i<16;i++){
+    html += '<button class="cell cell-color" data-color="' + i + '" title="' + ROSTER[i].name + '"><span class="swatch" style="background:' + ROSTER[i].fill + ';box-shadow:0 0 0 2px ' + ROSTER[i].deep + ' inset"></span></button>';
+  }
+  g.innerHTML = html;
+}
+
+// ============ render ============
+function renderAll(){
+  var sIdx = effShape(), cIdx = effColor();
+  document.getElementById('previewMark').innerHTML = markSVG(sIdx, cIdx, {});
+  document.getElementById('previewName').textContent = ROSTER[sIdx].name;
+  document.getElementById('previewDetail').textContent = ROSTER[sIdx].shape + ' \u00b7 hue ' + (cIdx+1) + ' of 16';
+  var auto = (state.shape === null && state.color === null);
+  document.getElementById('badgeAuto').className = 'badge-auto' + (auto ? '' : ' off');
+
+  var cells = document.querySelectorAll('#shapeGrid .cell');
+  var i, v;
+  for(i=0;i<cells.length;i++){
+    v = cells[i].getAttribute('data-shape');
+    cells[i].className = cells[i].className.replace(' sel','');
+    if((v==='auto' && state.shape===null) || (v!=='auto' && parseInt(v,10)===state.shape)) cells[i].className += ' sel';
+  }
+  cells = document.querySelectorAll('#colorGrid .cell');
+  for(i=0;i<cells.length;i++){
+    v = cells[i].getAttribute('data-color');
+    cells[i].className = cells[i].className.replace(' sel','');
+    if((v==='auto' && state.color===null) || (v!=='auto' && parseInt(v,10)===state.color)) cells[i].className += ' sel';
+  }
+  // entry-point vignettes follow the live selection
+  document.getElementById('vigMarkA').innerHTML = markSVG(sIdx, cIdx, {});
+  document.getElementById('vigMarkB').innerHTML = markSVG(sIdx, cIdx, {});
+  document.getElementById('vigChipMark').innerHTML = markSVG(sIdx, cIdx, {flat:true});
+}
+
+// ============ wiring ============
+function onGridClick(e){
+  var t = e.target;
+  while(t && t !== document.body && !t.getAttribute('data-shape') && !t.getAttribute('data-color')) t = t.parentNode;
+  if(!t || t === document.body) return;
+  var s = t.getAttribute('data-shape'), c = t.getAttribute('data-color');
+  if(s !== null && s !== undefined && s !== ''){ state.shape = (s==='auto') ? null : parseInt(s,10); }
+  if(c !== null && c !== undefined && c !== ''){ state.color = (c==='auto') ? null : parseInt(c,10); }
+  renderAll();
+}
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(function(){ t.className = 'toast'; }, 1800);
+}
+
+document.getElementById('shapeGrid').addEventListener('click', onGridClick);
+document.getElementById('colorGrid').addEventListener('click', onGridClick);
+document.getElementById('btnReset').addEventListener('click', function(){ state.shape=null; state.color=null; renderAll(); });
+document.getElementById('btnSave').addEventListener('click', function(){ toast('mock \u2014 would save markShape/markColor'); });
+document.getElementById('btnCancel').addEventListener('click', function(){ toast('mock \u2014 would discard'); });
+
+buildShapeGrid();
+buildColorGrid();
+renderAll();
+</script>
+</body>
+</html>
