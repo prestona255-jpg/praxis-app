@@ -57,7 +57,7 @@
 // retroactively flipped when a register default changes.
 //
 // Stage 3.6: principle #5's third leg -- the transparency view.
-// "What does Yumi see?" affordance in the Notebook header opens an
+// The "What Yumi sees" affordance in the Notebook header opens an
 // inline panel at #notebook-transparency-host (between settings
 // host and editor host). The panel reads
 // window.YumiBrain.getContextSnapshot() at mount time -- fresh on
@@ -710,7 +710,7 @@ function renderNotebook() {
     var transparencyBtn = document.createElement('button');
     transparencyBtn.type = 'button';
     transparencyBtn.className = 'notebook-transparency-toggle';
-    transparencyBtn.textContent = 'What does Yumi see?';
+    transparencyBtn.textContent = 'What Yumi sees';
     transparencyBtn.addEventListener('click', function() {
       openTransparencyView();
     });
@@ -6555,7 +6555,7 @@ function openTransparencyView() {
   if (!host) return;
   var snap = window.YumiBrain.getContextSnapshot();
   host.innerHTML = '';
-  var panel = buildTransparencyContent(snap);
+  var panel = buildTransparencyContent(snap, 'panel');
   // The Notebook panel keeps its Close affordance; the routed page
   // navigates away instead. Re-append after the builder so the header
   // order stays title -> close, byte-equivalent to the pre-extraction panel.
@@ -6577,7 +6577,7 @@ function openTransparencyView() {
 // (openTransparencyView) and the routed page (renderWhatYumiSeesPage) both
 // render from this ONE builder so they never drift. The close button is
 // panel-only and added by openTransparencyView, not here.
-function buildTransparencyContent(snap) {
+function buildTransparencyContent(snap, context) {
   var panel = document.createElement('section');
   panel.className = 'transparency-panel';
 
@@ -6606,13 +6606,22 @@ function buildTransparencyContent(snap) {
     'does not see anything else.';
   framing.appendChild(p1);
 
-  var p2 = document.createElement('p');
-  p2.textContent =
+  // 6.2-polish: the panel-return clause is true only for the Notebook
+  // panel. The shared prefix is identical; only the trailing sentence
+  // differs by context ('page' drops it, the page has no Close). Panel
+  // branch is byte-identical to the pre-split literal.
+  var p2Base =
     'Entries marked private do not appear here. They stay in the ' +
     'Notebook for the reader and are excluded from what Yumi ' +
     'receives. Yumi sees the three most recent visible entries, ' +
     'trimmed; older or longer writing lives in the Notebook but ' +
-    'not in this view. Closing this panel returns to the Notebook.';
+    'not in this view.';
+  var p2 = document.createElement('p');
+  if (context === 'page') {
+    p2.textContent = p2Base;
+  } else {
+    p2.textContent = p2Base + ' Closing this panel returns to the Notebook.';
+  }
   framing.appendChild(p2);
 
   panel.appendChild(framing);
@@ -6748,7 +6757,7 @@ function renderWhatYumiSeesPage() {
   wrap.className = 'yumi-sees-page';
 
   var snap = window.YumiBrain.getContextSnapshot();
-  wrap.appendChild(buildTransparencyContent(snap));
+  wrap.appendChild(buildTransparencyContent(snap, 'page'));
 
   var closing = document.createElement('p');
   closing.className = 'yumi-sees-closing';
