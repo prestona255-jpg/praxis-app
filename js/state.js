@@ -1160,6 +1160,58 @@ function addEvidence(subTheoryId, fields) {
   return element;
 }
 
+// 10.1 read helper. True if the sub-theory already carries an evidence
+// element of this kind + refId. Used to power the picker's checkmark
+// and the dedupe guard in addEvidenceToSubTheory. Tolerant of a
+// missing/absent record or a non-array evidence field (returns false).
+// kind/refId are compared exactly; refId for 'book'/'entry' is the
+// bookId/entryId string. external evidence (refId null) is not a
+// dedupe target here -- 10.3 owns external attachment.
+function isEvidenceAttached(subTheoryId, kind, refId) {
+  var subTheory = state.subTheories[subTheoryId];
+  if (!subTheory || !Array.isArray(subTheory.evidence)) return false;
+  if (typeof refId !== 'string' || refId.length === 0) return false;
+  var i;
+  for (i = 0; i < subTheory.evidence.length; i = i + 1) {
+    var el = subTheory.evidence[i];
+    if (el && el.kind === kind && el.refId === refId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// 10.1 attach path. Thin dedupe wrapper over addEvidence -- the single
+// canonical append. Validates kind to the two attachable values
+// ('book' | 'entry'; 'external' is 10.3's modal, not this picker) and a
+// non-empty refId. On a kind+refId already present, returns
+// {status:'already-attached'} WITHOUT appending or persisting (so the
+// picker can show a checkmark with no second write). Otherwise delegates
+// to addEvidence -- which owns id-gen, push, markSubTheoriesDirty, and
+// saveState -- and returns {status:'added', element}. A delegate that
+// returns null (bad/absent record) surfaces as {status:'error'}.
+function addEvidenceToSubTheory(subTheoryId, item) {
+  var src = item || {};
+  if (src.kind !== 'book' && src.kind !== 'entry') {
+    return { status: 'error' };
+  }
+  if (typeof src.refId !== 'string' || src.refId.length === 0) {
+    return { status: 'error' };
+  }
+  if (isEvidenceAttached(subTheoryId, src.kind, src.refId)) {
+    return { status: 'already-attached' };
+  }
+  var element = addEvidence(subTheoryId, {
+    kind:  src.kind,
+    refId: src.refId,
+    quote: (typeof src.quote === 'string') ? src.quote : ''
+  });
+  if (!element) {
+    return { status: 'error' };
+  }
+  return { status: 'added', element: element };
+}
+
 function stateKey() {
   var u = ls('praxis_user', null);
   if (u && u.uid) {

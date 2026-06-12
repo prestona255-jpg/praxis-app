@@ -3271,12 +3271,23 @@ function renderBookDetail(bookId) {
       openBookArcPicker(bookId);
     });
 
+    // 10.1: Send to sub-theory — attaches this book as evidence (kind
+    // 'book', no quote). Sits beside "Add to arc…" in the same row.
+    var sendToSubBtn = document.createElement('button');
+    sendToSubBtn.type = 'button';
+    sendToSubBtn.className = 'book-detail-send-to-subtheory';
+    sendToSubBtn.textContent = 'Send to sub-theory…';
+    sendToSubBtn.addEventListener('click', function() {
+      openBookSendToSubTheory(bookId);
+    });
+
     // S5.1: Add to arc (primary, first) + Add Marginalia share one row
     // (mockup's side-by-side button block); the status-branch button
     // below appends to .book-detail-actions as its own full-width line.
     var actionsRow = document.createElement('div');
     actionsRow.className = 'book-detail-actions-row';
     actionsRow.appendChild(addToArcBtn);
+    actionsRow.appendChild(sendToSubBtn);
     actionsRow.appendChild(newBtn);
     actions.appendChild(actionsRow);
 
@@ -3581,6 +3592,13 @@ function renderBookDetail(bookId) {
   var arcPickerHost = document.createElement('div');
   arcPickerHost.id = 'book-detail-arc-picker-host';
   wrap.appendChild(arcPickerHost);
+
+  // 10.1: dedicated host for the Send-to-sub-theory picker, one host per
+  // concern (same precedent as the arc picker host above) so the two
+  // pickers never collide in a shared slot.
+  var subPickerHost = document.createElement('div');
+  subPickerHost.id = 'book-detail-subtheory-picker-host';
+  wrap.appendChild(subPickerHost);
 
   // Filtered entry list: this user's entries that name this book in
   // bookIds, newest first.
@@ -6140,6 +6158,203 @@ function openEntryArcPicker(entryId, mountEl, statusMsg) {
   }));
 }
 
+// 10.1 minimal toast. No toast/snackbar utility existed before this; this
+// is the first. Appends a transient message to <body> and auto-dismisses
+// after ~2.6s. Styled inline with CSS-variable references only (no
+// stylesheet edit this slice; no hardcoded colors). A new toast removes
+// any prior one so rapid taps do not stack. Reused for both the confirm
+// ("Attached to ...") and the already-attached notice.
+var praxisToastEl = null;
+var praxisToastTimer = null;
+function showToast(message) {
+  if (praxisToastEl && praxisToastEl.parentNode) {
+    praxisToastEl.parentNode.removeChild(praxisToastEl);
+  }
+  if (praxisToastTimer) {
+    clearTimeout(praxisToastTimer);
+    praxisToastTimer = null;
+  }
+  var t = document.createElement('div');
+  t.className = 'praxis-toast';
+  t.setAttribute('role', 'status');
+  t.textContent = message || '';
+  t.style.cssText =
+    'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);' +
+    'max-width:90%;z-index:1000;padding:10px 16px;' +
+    'border-radius:var(--radius-md);' +
+    'background:var(--ink);color:var(--color-surface);' +
+    'border:1px solid var(--border);box-shadow:var(--shadow-2);' +
+    'font-size:14px;line-height:1.3;';
+  document.body.appendChild(t);
+  praxisToastEl = t;
+  praxisToastTimer = setTimeout(function() {
+    if (t.parentNode) { t.parentNode.removeChild(t); }
+    if (praxisToastEl === t) { praxisToastEl = null; }
+    praxisToastTimer = null;
+  }, 2600);
+}
+
+// 10.1 send-to-sub-theory picker. Mirrors buildArcPickerPanel's INLINE
+// panel (no centered overlay): reuses the arc-picker-* chrome classes for
+// the shared look, adds subtheory-picker-* hooks for the grouped rows and
+// checkmarks a later styling ticket will own. Lists DRAFT sub-theories
+// (status === 'draft') the user owns (or the seed), grouped by parent
+// arc (group header = arc title, rows = sub-theory headers). Self-closing:
+// Done and Esc remove the panel from its mount and drop the key listener.
+// sourceKind is 'book' | 'entry'; refId is the bookId/entryId; quoteText
+// is the optional quote (notes pass their body, books pass '').
+function buildSubTheoryPickerPanel(sourceKind, refId, quoteText) {
+  var panel = document.createElement('div');
+  panel.className = 'arc-picker-panel subtheory-picker-panel';
+
+  var labelEl = document.createElement('div');
+  labelEl.className = 'arc-picker-label';
+  labelEl.textContent = 'Send to a sub-theory';
+  panel.appendChild(labelEl);
+
+  function closePanel() {
+    document.removeEventListener('keydown', onKeydown);
+    if (panel.parentNode) { panel.parentNode.removeChild(panel); }
+  }
+  function onKeydown(ev) {
+    if (ev.keyCode === 27) { closePanel(); }
+  }
+  document.addEventListener('keydown', onKeydown);
+
+  // Gather draft, owned sub-theories grouped by arc, arcs in first-seen
+  // order (mirrors the arc picker's createdAt-agnostic listing -- grouping
+  // is by parent arc, not a global sort).
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = (user && user.uid) ? user.uid : null;
+  var stMap = state.subTheories || {};
+  var byArc = {};
+  var arcOrder = [];
+  var stk;
+  for (stk in stMap) {
+    if (Object.prototype.hasOwnProperty.call(stMap, stk)) {
+      var st = stMap[stk];
+      if (!st || st.status !== 'draft') { continue; }
+      if (!(st.userId === uid || st.userId === '__praxis_seed__')) { continue; }
+      var aId = st.arcId || '__no_arc__';
+      if (!byArc[aId]) { byArc[aId] = []; arcOrder.push(aId); }
+      byArc[aId].push(st);
+    }
+  }
+
+  if (arcOrder.length === 0) {
+    var empty = document.createElement('p');
+    empty.className = 'arc-picker-empty';
+    empty.textContent =
+      'No draft sub-theories yet — start one from an arc to collect evidence.';
+    panel.appendChild(empty);
+  } else {
+    var i, j;
+    for (i = 0; i < arcOrder.length; i = i + 1) {
+      var arcId = arcOrder[i];
+      var arc = (state.arcs && state.arcs[arcId]) || null;
+      var head = document.createElement('div');
+      head.className = 'subtheory-picker-arc';
+      head.textContent = (arc && arc.title) ? arc.title : 'Unfiled';
+      panel.appendChild(head);
+      var list = byArc[arcId];
+      for (j = 0; j < list.length; j = j + 1) {
+        appendSubTheoryPickerRow(panel, list[j], sourceKind, refId, quoteText);
+      }
+    }
+  }
+
+  var done = document.createElement('a');
+  done.href = '#';
+  done.className = 'arc-picker-done';
+  done.textContent = 'Done';
+  done.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    closePanel();
+  });
+  panel.appendChild(done);
+
+  return panel;
+}
+
+// One picker row, closure-scoped per sub-theory (a var-in-for-loop would
+// bind every row to the last -- same reason appendArcPickerRow exists).
+// An already-attached row renders a checkmark and is inert on tap (an
+// 'Already attached' toast, no re-add). An unattached tap attaches via
+// addEvidenceToSubTheory and flips THIS row to a checkmark in place
+// without closing the panel -- multi-attach.
+function appendSubTheoryPickerRow(panel, subTheory, sourceKind, refId, quoteText) {
+  var stId = subTheory.id;
+  var row = document.createElement('a');
+  row.href = '#';
+  row.className = 'arc-picker-row subtheory-picker-row';
+
+  var labelSpan = document.createElement('span');
+  labelSpan.className = 'subtheory-picker-row-label';
+  labelSpan.textContent = subTheory.header || '(untitled sub-theory)';
+  row.appendChild(labelSpan);
+
+  function markAttached() {
+    if (row.className.indexOf('subtheory-picker-row-attached') === -1) {
+      row.className = row.className + ' subtheory-picker-row-attached';
+    }
+    if (!row.querySelector('.subtheory-picker-check')) {
+      var check = document.createElement('span');
+      check.className = 'subtheory-picker-check';
+      check.textContent = '✓';
+      row.appendChild(check);
+    }
+  }
+
+  if (isEvidenceAttached(stId, sourceKind, refId)) {
+    markAttached();
+  }
+
+  row.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var name = subTheory.header || 'sub-theory';
+    if (isEvidenceAttached(stId, sourceKind, refId)) {
+      showToast('Already attached to "' + name + '"');
+      return;
+    }
+    var res = addEvidenceToSubTheory(stId,
+      { kind: sourceKind, refId: refId, quote: quoteText });
+    if (res.status === 'added') {
+      markAttached();
+      showToast('Attached to "' + name + '"');
+    } else if (res.status === 'already-attached') {
+      markAttached();
+      showToast('Already attached to "' + name + '"');
+    }
+    // status 'error' -> silent no-op; no state change, no toast.
+  });
+
+  panel.appendChild(row);
+}
+
+// 10.1 mount wrappers, mirroring openEntryArcPicker / openBookArcPicker.
+// The Stage-2 panel self-closes (Esc/Done) and manages its own teardown,
+// so these only clear the host and mount a fresh panel. The entry quote
+// is the entry body (the evidence quote field); a book attaches with no
+// quote per the 10.1 scope.
+function openEntrySendToSubTheory(entryId, mountEl) {
+  if (!mountEl) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  var entry = state.notebookEntries ? state.notebookEntries[entryId] : null;
+  var quote = (entry && typeof entry.body === 'string') ? entry.body : '';
+  mountEl.innerHTML = '';
+  mountEl.appendChild(buildSubTheoryPickerPanel('entry', entryId, quote));
+}
+
+function openBookSendToSubTheory(bookId) {
+  var host = document.getElementById('book-detail-subtheory-picker-host');
+  if (!host) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  host.innerHTML = '';
+  host.appendChild(buildSubTheoryPickerPanel('book', bookId, ''));
+}
+
 function renderNotebookEntry(entry) {
   // Batch 2: reshaped from a separate card into a .row inside the
   // .notebook-entries-panel. Left register spine via ::before reads
@@ -6235,6 +6450,27 @@ function renderNotebookEntry(entry) {
     openEntryArcPicker(capturedId, mount);
   });
   acts.appendChild(addToArcLink);
+
+  // 10.1: Send to sub-theory — attaches this entry as evidence (kind
+  // 'entry', quote = the entry body). Present on EVERY entry regardless
+  // of register or privacy: attaching is the user's own deliberate act,
+  // so a private journal entry carries the affordance just like a
+  // marginalia entry does. Per-card lazy mount mirrors "Add to arc".
+  var sendToSubLink = document.createElement('a');
+  sendToSubLink.href = '#';
+  sendToSubLink.className = 'notebook-entry-send-to-subtheory';
+  sendToSubLink.textContent = 'Send to sub-theory';
+  sendToSubLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var subMount = card.querySelector('.notebook-entry-subtheory-picker-host');
+    if (!subMount) {
+      subMount = document.createElement('div');
+      subMount.className = 'notebook-entry-subtheory-picker-host';
+      card.appendChild(subMount);
+    }
+    openEntrySendToSubTheory(capturedId, subMount);
+  });
+  acts.appendChild(sendToSubLink);
 
   var deleteLink = document.createElement('a');
   deleteLink.href = '#';
