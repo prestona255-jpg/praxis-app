@@ -44,3 +44,38 @@ the drift — conform live toward the spec, staged and live-verified, never a bu
 
 ## After a stage
 Record the stage as claimed-done with its evidence (byte deltas, grep, commit hash, live check) — but leave the PASS stamp to Preston.
+
+## Plan-file execution protocol (added June 2026)
+
+When Preston says "Execute Stage <N> from docs/stage-10-plan.md" (or a
+future plan file), this protocol governs:
+
+- Read the named substage's section fully before any action. The plan
+  file is authoritative for scope; this file is authoritative for
+  conventions. Conflict = halt and ask.
+- Run the substage's Stage 0 recon first, write findings to
+  docs/checkpoints/<substage>-recon.md. If the plan marks a DECISION
+  GATE, halt after recon and wait.
+- Build slice by slice in the plan's order. After each slice, self-verify
+  the mechanical gates and append results to
+  docs/checkpoints/<substage>.md. Proceed only if ALL pass.
+- MECHANICAL HALT CONDITIONS (stop immediately, write the failure to the
+  checkpoint file, await Preston):
+  - any parse check FAILs (cscript harness for promise-free files;
+    parse-check-views.js for views.js; full-diff for harness-exempt)
+  - a byte delta falls outside the plan's stated expected band
+  - a grep count does not match the plan's stated expectation
+  - any tracked file is dirty that the slice did not intend to touch
+  - the diffstat suggests an EOL flip (whole-file change)
+  - any genuine ambiguity about what the plan means
+- Never bundle slices. Never proceed past a FAIL "because the fix is
+  obvious." Never trust your own narrative over computed evidence.
+- Commit/push only on Preston's exact words. After push, wait for the
+  Netlify build, then open https://praxis-reading.netlify.app in the
+  browser, hard-refresh, confirm the new CACHE_VERSION in DevTools,
+  exercise the substage's pass-check list from the plan, and save
+  screenshots of each relevant surface into the checkpoint report.
+- End every substage with the report file complete: slice table (parse,
+  bytes, greps), live-verify results, screenshots, honest residuals.
+  Then STOP. Preston does his eyes-on check and decides what's next.
+  Do not start the next substage unprompted.
