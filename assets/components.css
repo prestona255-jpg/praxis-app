@@ -86,6 +86,20 @@
   color: var(--ink);
 }
 
+/* 6.2c: quiet affordance to the 'What Yumi sees' page. Muted and small
+   so it does not compete with the serif title; hover lifts to --ink. */
+.yumi-panel-sight-link {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-3);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.yumi-panel-sight-link:hover {
+  color: var(--ink);
+}
+
 .yumi-panel-close {
   background: transparent;
   border: none;
@@ -2754,6 +2768,24 @@
   font-size: 14px;
   color: var(--ink);
   line-height: 1.5;
+}
+
+/* 6.2c: 'What Yumi sees' routed page. Page shell mirrors .home-page
+   width/centering; the .transparency-panel chrome inside is kept
+   intentionally (visual identity with the Notebook panel). */
+.yumi-sees-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+
+/* Page-only quiet closing line (does not appear in the Notebook panel). */
+.yumi-sees-closing {
+  margin: 18px 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
 }
 
 /* ===== END TRANSPARENCY VIEW ===== */

@@ -364,6 +364,10 @@ function renderRoute() {
   } else if (parts[0] === 'account') {
     // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
     activeRoute = 'account';
+  } else if (parts[0] === 'yumi-sees') {
+    // 6.2c: the 'What Yumi sees' page is reached from Yumi's panel, not
+    // the top nav -- this value matches no data-route so no link highlights.
+    activeRoute = 'yumi-sees';
   } else {
     activeRoute = 'notebook';
   }
@@ -509,6 +513,18 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderHome();
+    return;
+  }
+  // 6.2c: 'What Yumi sees' transparency page (#yumi-sees). Reached from
+  // Yumi's panel affordance, not the top nav. Symmetric pointer clear
+  // mirroring the account / home branches. Placed BEFORE the notebook
+  // fallthrough so the route is caught here, not swallowed by the catch-all.
+  if (parts[0] === 'yumi-sees') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderWhatYumiSeesPage();
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -6537,23 +6553,12 @@ function setRegisterDefault(register, isPrivate) {
 function openTransparencyView() {
   var host = document.getElementById('notebook-transparency-host');
   if (!host) return;
-
   var snap = window.YumiBrain.getContextSnapshot();
-
   host.innerHTML = '';
-
-  var panel = document.createElement('section');
-  panel.className = 'transparency-panel';
-
-  // Header: title + close button.
-  var header = document.createElement('header');
-  header.className = 'transparency-header';
-
-  var title = document.createElement('h2');
-  title.className = 'transparency-title';
-  title.textContent = 'What Yumi sees';
-  header.appendChild(title);
-
+  var panel = buildTransparencyContent(snap);
+  // The Notebook panel keeps its Close affordance; the routed page
+  // navigates away instead. Re-append after the builder so the header
+  // order stays title -> close, byte-equivalent to the pre-extraction panel.
   var closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'transparency-close';
@@ -6561,7 +6566,30 @@ function openTransparencyView() {
   closeBtn.addEventListener('click', function() {
     closeTransparencyView();
   });
-  header.appendChild(closeBtn);
+  var hdr = panel.querySelector('.transparency-header');
+  if (hdr) { hdr.appendChild(closeBtn); }
+  host.appendChild(panel);
+}
+
+// 6.2c (R90): shared transparency-content builder. Takes a
+// getContextSnapshot() result and returns the .transparency-panel element
+// (header + title + framing + all sections). The Notebook panel
+// (openTransparencyView) and the routed page (renderWhatYumiSeesPage) both
+// render from this ONE builder so they never drift. The close button is
+// panel-only and added by openTransparencyView, not here.
+function buildTransparencyContent(snap) {
+  var panel = document.createElement('section');
+  panel.className = 'transparency-panel';
+
+  // Header: title only. The close button is panel-only and re-appended
+  // by openTransparencyView after this builder returns.
+  var header = document.createElement('header');
+  header.className = 'transparency-header';
+
+  var title = document.createElement('h2');
+  title.className = 'transparency-title';
+  title.textContent = 'What Yumi sees';
+  header.appendChild(title);
 
   panel.appendChild(header);
 
@@ -6702,7 +6730,32 @@ function openTransparencyView() {
   }
   panel.appendChild(turnsSec);
 
-  host.appendChild(panel);
+  return panel;
+}
+
+// 6.2c: 'What Yumi sees' as a standalone routed page. renderHome shell
+// idiom (clear #app, section wrapper, append). Fed by a FRESH
+// getContextSnapshot() through the SAME buildTransparencyContent builder
+// the Notebook panel uses (R90) -- so the page can never claim Yumi sees
+// something she doesn't. Panel chrome is kept intentionally (visual
+// identity with the Notebook panel). The closing line is page-only.
+function renderWhatYumiSeesPage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'yumi-sees-page';
+
+  var snap = window.YumiBrain.getContextSnapshot();
+  wrap.appendChild(buildTransparencyContent(snap));
+
+  var closing = document.createElement('p');
+  closing.className = 'yumi-sees-closing';
+  closing.textContent = 'This page is always here — one tap away in Yumi\'s panel.';
+  wrap.appendChild(closing);
+
+  host.appendChild(wrap);
 }
 
 // Build the shell of a transparency-section (label + empty body

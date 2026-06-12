@@ -151,7 +151,7 @@ var ONB_Q2      = 'When a line or an idea stops you mid-page — do you mark it,
 var ONB_FOLLOW  = 'Here, the things that stop you have a place — the notebook. Only if you want them there.';
 var ONB_Q3      = 'And — what are you reading for, right now? Whatever comes to mind.';
 var ONB_RECEIVE = 'Thank you. I\'ll hold onto that.';
-var ONB_E1      = 'One thing before we start. Your notebook here is yours. I can see the notes you choose to attach to a book — that\'s how I stay useful. Anything you keep in your journal stays private unless you decide otherwise.';
+var ONB_E1      = 'One thing before we start. Your notebook here is yours. I can see the notes you choose to attach to a book — that\'s how I stay useful — and you can check exactly what I can see whenever you like. Anything you keep in your journal stays private unless you decide otherwise.';
 var ONB_E2      = 'Now — tell me one book. Something you\'re reading now, or one you mean to start.';
 
 // Module onboarding state. beat = which input the next Send maps to:
@@ -331,6 +331,14 @@ function buildYumiPanel() {
   title.className = 'yumi-panel-title';
   title.textContent = 'Yumi';
   header.appendChild(title);
+  // 6.2c: quiet affordance to the 'What Yumi sees' transparency page.
+  // A native hash anchor -- the panel is body-mounted and survives the
+  // route change, so it stays open. Sits between the title and the close.
+  var sightLink = document.createElement('a');
+  sightLink.className = 'yumi-panel-sight-link';
+  sightLink.href = '#yumi-sees';
+  sightLink.textContent = 'What I can see';
+  header.appendChild(sightLink);
   var closeBtn = document.createElement('button');
   closeBtn.className = 'yumi-panel-close';
   closeBtn.setAttribute('type', 'button');
