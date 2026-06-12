@@ -4808,6 +4808,44 @@
   resize: none;
 }
 
+/* ----- 10.2 citation preview + marks (var() tokens only) -----
+   A read-only echo of the active register: same serif prose metrics as the
+   textarea but muted, set off by a quiet left rule. white-space:pre-wrap
+   preserves the author's line breaks. An empty pane is 0-height so the rule
+   does not show. */
+.subtheory-cite-preview {
+  margin-top: 16px;
+  padding-left: 14px;
+  border-left: 2px solid var(--border);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* A resolved citation: italic (authored in *asterisks*) plus the underline-dot
+   indicator the spec calls for. */
+.subtheory-cite {
+  font-style: italic;
+  border-bottom: 1px dotted var(--gold);
+  cursor: default;
+}
+
+/* Ambiguous (>1 candidate): a quieter dotted rule + a context-menu cursor
+   hinting the right-click / long-press chooser. */
+.subtheory-cite-ambiguous {
+  border-bottom-color: var(--ink-4);
+  cursor: context-menu;
+}
+
+/* The disambiguation chooser is the arc-picker panel floated as a popover
+   (position/z-index set inline by openCiteChooser); just cap its width. */
+.subtheory-cite-chooser {
+  max-width: 260px;
+}
+
 /* Evidence rail (Checkpoint C). Transparent on desktop -- dissolves
    into the page like .shelf-sidebar; becomes a surface-filled bottom
    sheet on mobile (the @media block below). */

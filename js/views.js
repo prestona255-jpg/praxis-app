@@ -3973,6 +3973,77 @@ function confirmDeleteSubTheory(id, afterDelete) {
 // Exposed so the constellation hover card (arc-constellation.js) can open it.
 window.confirmDeleteSubTheory = confirmDeleteSubTheory;
 
+// 10.2: pure citation parser. Splits bodyText into ordered segments,
+// detecting *asterisk*-wrapped italic spans (the markdown-light convention
+// from 9.2). Each italic span is matched, case-insensitively, against the
+// supplied evidence titles; a span carrying one or more matches is a
+// citation (ids array; length > 1 means ambiguous). Returns an ordered
+// array of segments, each one of:
+//   { text: '...' }                              plain (non-italic) run
+//   { text: '...', italic: true }                italic, no citation match
+//   { text: '...', italic: true, ids: [..] }     italic citation (1+ ids)
+// evidenceTitles is [{ id, title }] resolved by the CALLER (book title /
+// entry label / external title via its 10.3 refId) -- title resolution
+// touches state, so it stays out of here and this function remains pure:
+// no state reads, no DOM, no writes. Matching is bidirectional substring
+// (the span text contains a title, or a title contains the span text) so a
+// writer can italicize either a full title or a recognizable fragment.
+// A '*' with no closing partner is not a span: from that '*' onward the
+// literal text (asterisk included) is emitted as plain. An empty span
+// ('**') collapses to literal plain text as well.
+function parseCitations(bodyText, evidenceTitles) {
+  var segments = [];
+  var text = (typeof bodyText === 'string') ? bodyText : '';
+  var titles = Array.isArray(evidenceTitles) ? evidenceTitles : [];
+  var n = text.length;
+  var i = 0;
+  var plainStart = 0;
+
+  function flushPlain(end) {
+    if (end > plainStart) {
+      segments.push({ text: text.substring(plainStart, end) });
+    }
+  }
+
+  while (i < n) {
+    if (text.charAt(i) !== '*') {
+      i = i + 1;
+      continue;
+    }
+    var close = text.indexOf('*', i + 1);
+    if (close === -1) {
+      // Unclosed asterisk -- the remainder is literal plain text.
+      break;
+    }
+    var inner = text.substring(i + 1, close);
+    if (inner.length === 0) {
+      // '**' -- leave both asterisks for the next flushPlain as literal.
+      i = close + 1;
+      continue;
+    }
+    flushPlain(i);
+    var ids = [];
+    var lc = inner.toLowerCase();
+    var ti;
+    for (ti = 0; ti < titles.length; ti = ti + 1) {
+      var t = titles[ti];
+      if (t && typeof t.title === 'string' && t.title.length) {
+        var tl = t.title.toLowerCase();
+        if (lc.indexOf(tl) !== -1 || tl.indexOf(lc) !== -1) {
+          ids.push(t.id);
+        }
+      }
+    }
+    var seg = { text: inner, italic: true };
+    if (ids.length) { seg.ids = ids; }
+    segments.push(seg);
+    i = close + 1;
+    plainStart = i;
+  }
+  flushPlain(n);
+  return segments;
+}
+
 function renderSubTheoryPage(id) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -4097,6 +4168,8 @@ function renderSubTheoryPage(id) {
   function showRegister(showPublic) {
     publicBody.style.display = showPublic ? '' : 'none';
     intelBody.style.display = showPublic ? 'none' : '';
+    if (publicPreview) { publicPreview.style.display = showPublic ? '' : 'none'; }
+    if (intelPreview) { intelPreview.style.display = showPublic ? 'none' : ''; }
     publicTab.className = 'subtheory-register-tab' +
       (showPublic ? ' subtheory-register-tab-active' : '');
     intelTab.className = 'subtheory-register-tab' +
@@ -4111,6 +4184,258 @@ function renderSubTheoryPage(id) {
   main.appendChild(regToggle);
   main.appendChild(publicBody);
   main.appendChild(intelBody);
+
+  // ===== 10.2 citation preview (Option A), slice 2: panes + parser + dots =====
+  // A read-only pane under each register mirrors that register's prose with
+  // *asterisk* italics resolved against attached evidence (parseCitations):
+  // matched book/external titles get a .subtheory-cite underline-dot span;
+  // unmatched italics render as plain <em>. Only book/external titles (and a
+  // titled entry) contribute match titles -- untitled marginalia/journal do
+  // not (honors "only book titles" linking). Panes sync on input (debounced)
+  // and on evidence change (via refreshAttached). The hover card is slice 2b.
+  var publicPreview = document.createElement('div');
+  publicPreview.className = 'subtheory-cite-preview';
+  var intelPreview = document.createElement('div');
+  intelPreview.className = 'subtheory-cite-preview';
+  main.appendChild(publicPreview);
+  main.appendChild(intelPreview);
+
+  // Bare match-title per evidence item: book.title / external title / a
+  // titled entry; untitled entries return '' (skipped by the matcher).
+  function citationMatchTitle(el) {
+    if (el.kind === 'book') {
+      var bk = state.books && state.books[el.refId];
+      return (bk && bk.title) ? bk.title : '';
+    }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      return (en && en.title) ? en.title : '';
+    }
+    var ext = el.external || {};
+    return ext.title || '';
+  }
+
+  // Live evidence -> the matcher's title list [{id,title}]. Read fresh each
+  // call so attach/detach/rename reflect immediately.
+  function buildCitationTitles() {
+    var rec = state.subTheories[id];
+    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
+    var titles = [];
+    var k;
+    for (k = 0; k < ev.length; k = k + 1) {
+      var el = ev[k];
+      if (!el || !el.id) { continue; }
+      var mt = citationMatchTitle(el);
+      if (mt) { titles.push({ id: el.id, title: mt }); }
+    }
+    return titles;
+  }
+
+  // 10.2 slice 2b: per-id info (display label + quote) for the hover card.
+  function buildCitationInfo() {
+    var rec = state.subTheories[id];
+    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
+    var info = {};
+    var k;
+    for (k = 0; k < ev.length; k = k + 1) {
+      var el = ev[k];
+      if (!el || !el.id) { continue; }
+      info[el.id] = {
+        label: evidenceLabel(el),
+        quote: (typeof el.quote === 'string') ? el.quote : ''
+      };
+    }
+    return info;
+  }
+
+  // Slice 2b: shared hover card -- the house .arc-tooltip, one element on
+  // <body>, positioned in page coords to the hovered span (pointer-events:none).
+  var citeTip = null;
+  // Shared positioner: place a body-mounted element just below a span, in
+  // page coords, clamped to viewport width. Used by the 2b hover card AND
+  // the slice-3 chooser (one positioning implementation, not two).
+  function positionToSpan(el, spanEl) {
+    var sr = spanEl.getBoundingClientRect();
+    var px = window.pageXOffset || 0;
+    var py = window.pageYOffset || 0;
+    var left = sr.left + px;
+    var maxLeft = px + document.documentElement.clientWidth - el.offsetWidth - 8;
+    if (left > maxLeft) { left = maxLeft; }
+    if (left < px + 8) { left = px + 8; }
+    el.style.left = left + 'px';
+    el.style.top = (sr.bottom + py + 6) + 'px';
+  }
+  function showCiteTip(spanEl, lines) {
+    if (!citeTip) {
+      citeTip = document.createElement('div');
+      citeTip.className = 'arc-tooltip';
+      document.body.appendChild(citeTip);
+    }
+    citeTip.textContent = '';
+    var li;
+    for (li = 0; li < lines.length; li = li + 1) {
+      if (!lines[li] || !lines[li].text) { continue; }
+      var ln = document.createElement('div');
+      ln.className = lines[li].cls;
+      ln.textContent = lines[li].text;
+      citeTip.appendChild(ln);
+    }
+    citeTip.classList.add('arc-tooltip--visible');
+    positionToSpan(citeTip, spanEl);
+  }
+  function hideCiteTip() {
+    if (citeTip) { citeTip.classList.remove('arc-tooltip--visible'); }
+  }
+  function bindCiteHover(span, infoItem) {
+    if (!infoItem) { return; }
+    span.addEventListener('mouseenter', function() {
+      var lines = [{ cls: 'arc-tooltip-title', text: infoItem.label }];
+      if (infoItem.quote) {
+        lines.push({ cls: 'arc-tooltip-meta', text: '“' + infoItem.quote + '”' });
+      }
+      showCiteTip(span, lines);
+    });
+    span.addEventListener('mouseleave', hideCiteTip);
+  }
+
+  // ===== 10.2 slice 3: disambiguation chooser (session-only pins) =====
+  // An ambiguous citation (>1 candidate) can be pinned to one source via
+  // right-click (desktop) or long-press (touch). The pin is keyed by the
+  // lowercased phrase and lives ONLY for this render session -- it is NOT
+  // persisted (the sub-theory record has no pin field; adding one would be a
+  // schema migration, out of scope). Navigating away resets the pins. This
+  // session-only limit is recorded as a residual in docs/checkpoints/10-2.md.
+  var citePins = {};
+  var citeChooser = null;
+  function idIn(ids, x) {
+    var i;
+    for (i = 0; i < ids.length; i = i + 1) {
+      if (ids[i] === x) { return true; }
+    }
+    return false;
+  }
+  function closeCiteChooser() {
+    if (citeChooser && citeChooser.parentNode) {
+      citeChooser.parentNode.removeChild(citeChooser);
+    }
+    citeChooser = null;
+    document.removeEventListener('click', onCiteChooserOutside);
+    document.removeEventListener('keydown', onCiteChooserKey);
+  }
+  function onCiteChooserOutside(ev) {
+    if (citeChooser && !citeChooser.contains(ev.target)) { closeCiteChooser(); }
+  }
+  function onCiteChooserKey(ev) {
+    if (ev.keyCode === 27) { closeCiteChooser(); }
+  }
+  function appendCiteChooserRow(panel, cid, phraseLower, info) {
+    var row = document.createElement('a');
+    row.href = '#';
+    row.className = 'arc-picker-row subtheory-picker-row';
+    row.textContent = (info && info[cid]) ? info[cid].label : 'Source';
+    row.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      citePins[phraseLower] = cid;
+      closeCiteChooser();
+      refreshCitationPreviews();
+    });
+    panel.appendChild(row);
+  }
+  function openCiteChooser(spanEl, phraseLower, ids, info) {
+    closeCiteChooser();
+    var panel = document.createElement('div');
+    panel.className = 'arc-picker-panel subtheory-cite-chooser';
+    var label = document.createElement('div');
+    label.className = 'arc-picker-label';
+    label.textContent = 'Which source?';
+    panel.appendChild(label);
+    var ci;
+    for (ci = 0; ci < ids.length; ci = ci + 1) {
+      appendCiteChooserRow(panel, ids[ci], phraseLower, info);
+    }
+    document.body.appendChild(panel);
+    citeChooser = panel;
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '60';
+    positionToSpan(panel, spanEl);
+    setTimeout(function() {
+      document.addEventListener('click', onCiteChooserOutside);
+    }, 0);
+    document.addEventListener('keydown', onCiteChooserKey);
+  }
+  function bindCiteChooser(span, phraseLower, ids, info) {
+    span.addEventListener('contextmenu', function(ev) {
+      ev.preventDefault();
+      openCiteChooser(span, phraseLower, ids, info);
+    });
+    var lpTimer = null;
+    span.addEventListener('touchstart', function() {
+      lpTimer = setTimeout(function() {
+        openCiteChooser(span, phraseLower, ids, info);
+      }, 500);
+    });
+    function cancelLongPress() {
+      if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+    }
+    span.addEventListener('touchend', cancelLongPress);
+    span.addEventListener('touchmove', cancelLongPress);
+  }
+
+  // Paint one pane from parsed segments. textContent/createElement only --
+  // never innerHTML with body text. A citation span resolves to one source
+  // (ids[0], or a session pin among candidates); >1 unpinned candidate stays
+  // .subtheory-cite-ambiguous and carries the slice-3 right-click/long-press
+  // chooser. Plain italics render as <em>.
+  function renderCitationPreview(paneEl, bodyText, titles, info) {
+    paneEl.textContent = '';
+    var segs = parseCitations(bodyText, titles);
+    var si;
+    for (si = 0; si < segs.length; si = si + 1) {
+      var s = segs[si];
+      if (s.ids && s.ids.length) {
+        var span = document.createElement('span');
+        var effId = s.ids[0];
+        var ambiguous = s.ids.length > 1;
+        if (ambiguous) {
+          var pinned = citePins[s.text.toLowerCase()];
+          if (pinned && idIn(s.ids, pinned)) {
+            effId = pinned;
+            ambiguous = false;
+          }
+        }
+        span.className = 'subtheory-cite' +
+          (ambiguous ? ' subtheory-cite-ambiguous' : '');
+        span.textContent = s.text;
+        if (info) { bindCiteHover(span, info[effId]); }
+        if (ambiguous) {
+          bindCiteChooser(span, s.text.toLowerCase(), s.ids, info);
+        }
+        paneEl.appendChild(span);
+      } else if (s.italic) {
+        var em = document.createElement('em');
+        em.textContent = s.text;
+        paneEl.appendChild(em);
+      } else {
+        paneEl.appendChild(document.createTextNode(s.text));
+      }
+    }
+  }
+
+  function refreshCitationPreviews() {
+    var titles = buildCitationTitles();
+    var info = buildCitationInfo();
+    renderCitationPreview(publicPreview, publicBody.value, titles, info);
+    renderCitationPreview(intelPreview, intelBody.value, titles, info);
+  }
+
+  var citeDebounce = null;
+  function onCiteBodyInput() {
+    if (citeDebounce) { clearTimeout(citeDebounce); }
+    citeDebounce = setTimeout(refreshCitationPreviews, 200);
+  }
+  publicBody.addEventListener('input', onCiteBodyInput);
+  intelBody.addEventListener('input', onCiteBodyInput);
+  refreshCitationPreviews();
 
   // Public default on load.
   showRegister(true);
@@ -4257,6 +4582,8 @@ function renderSubTheoryPage(id) {
 
   function refreshAttached() {
     attachedList.innerHTML = '';
+    // 10.2: evidence changed -> re-resolve citations in both preview panes.
+    refreshCitationPreviews();
     var rec = state.subTheories[id];
     var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
     if (ev.length === 0) {
