@@ -3867,6 +3867,64 @@
   text-decoration-color: var(--ink-2);
 }
 
+/* ----- Send-to-sub-theory picker (10.1 polish) -----
+   The panel also carries .arc-picker-panel, so it inherits the arc
+   picker chrome; these rules add what the grouped, multi-attach
+   sub-theory picker needs over that base: a scroll cap, a mono section
+   eyebrow for the arc-name headers, indented rows with a right-aligned
+   checkmark, and a subtle tint on attached rows. var() tokens only. */
+.subtheory-picker-panel {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.subtheory-picker-arc {
+  margin: 14px 0 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.subtheory-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+  margin-bottom: 0;
+  padding-left: 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.subtheory-picker-row-label {
+  flex: 1 1 auto;
+}
+
+.subtheory-picker-row:hover {
+  background: var(--gold-light);
+  color: var(--gold-text);
+}
+
+.subtheory-picker-row-attached {
+  background: var(--surface-2);
+}
+
+.subtheory-picker-check {
+  flex: 0 0 auto;
+  color: var(--marginalia-color);
+  font-weight: 600;
+}
+
+/* Book-detail Send-to-sub-theory shares .book-detail-add-to-arc's button
+   base + flex:1 (wired in views.js); keep its label on one line. */
+.book-detail-send-to-subtheory {
+  white-space: nowrap;
+}
+
 /* ----- Arc delete-confirm panel (Tier 2) ----- */
 
 .arc-confirm-panel {

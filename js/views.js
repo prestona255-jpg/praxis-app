@@ -3275,7 +3275,7 @@ function renderBookDetail(bookId) {
     // 'book', no quote). Sits beside "Add to arc…" in the same row.
     var sendToSubBtn = document.createElement('button');
     sendToSubBtn.type = 'button';
-    sendToSubBtn.className = 'book-detail-send-to-subtheory';
+    sendToSubBtn.className = 'book-detail-add-to-arc book-detail-send-to-subtheory';
     sendToSubBtn.textContent = 'Send to sub-theory…';
     sendToSubBtn.addEventListener('click', function() {
       openBookSendToSubTheory(bookId);
@@ -6276,6 +6276,28 @@ function buildSubTheoryPickerPanel(sourceKind, refId, quoteText) {
   return panel;
 }
 
+// 10.1 polish: a readable row label even when a draft has no header yet.
+// Falls back to the first line (~40 chars) of bodyPublic, then
+// bodyIntellectual, then the generic placeholder. Display only -- never
+// writes back to the record.
+function subTheoryRowLabel(st) {
+  if (st.header && st.header.length) { return st.header; }
+  var body = '';
+  if (st.bodyPublic && st.bodyPublic.length) {
+    body = st.bodyPublic;
+  } else if (st.bodyIntellectual && st.bodyIntellectual.length) {
+    body = st.bodyIntellectual;
+  }
+  if (body.length) {
+    var firstLine = body.split('\n')[0].replace(/\s+/g, ' ').trim();
+    if (firstLine.length > 40) {
+      firstLine = firstLine.substring(0, 40) + '…';
+    }
+    if (firstLine.length) { return firstLine; }
+  }
+  return '(untitled sub-theory)';
+}
+
 // One picker row, closure-scoped per sub-theory (a var-in-for-loop would
 // bind every row to the last -- same reason appendArcPickerRow exists).
 // An already-attached row renders a checkmark and is inert on tap (an
@@ -6290,7 +6312,7 @@ function appendSubTheoryPickerRow(panel, subTheory, sourceKind, refId, quoteText
 
   var labelSpan = document.createElement('span');
   labelSpan.className = 'subtheory-picker-row-label';
-  labelSpan.textContent = subTheory.header || '(untitled sub-theory)';
+  labelSpan.textContent = subTheoryRowLabel(subTheory);
   row.appendChild(labelSpan);
 
   function markAttached() {
@@ -6458,7 +6480,7 @@ function renderNotebookEntry(entry) {
   // marginalia entry does. Per-card lazy mount mirrors "Add to arc".
   var sendToSubLink = document.createElement('a');
   sendToSubLink.href = '#';
-  sendToSubLink.className = 'notebook-entry-send-to-subtheory';
+  sendToSubLink.className = 'notebook-entry-add-to-arc notebook-entry-send-to-subtheory';
   sendToSubLink.textContent = 'Send to sub-theory';
   sendToSubLink.addEventListener('click', function(ev) {
     ev.preventDefault();
