@@ -4440,11 +4440,23 @@ function renderSubTheoryPage(id) {
     saveBtn.type = 'button';
     saveBtn.className = 'notebook-editor-save';
     saveBtn.textContent = 'Attach';
+    // 10.3: title is required. Mirror the house required-field pattern (the
+    // createX inline editor): Attach stays disabled until the title trims
+    // non-empty, re-evaluated on input, with a defensive guard on save.
+    function externalTitleOk() {
+      return titleInput.value.replace(/^\s+|\s+$/g, '').length > 0;
+    }
+    function refreshExternalSave() {
+      saveBtn.disabled = !externalTitleOk();
+    }
+    titleInput.addEventListener('input', refreshExternalSave);
+    refreshExternalSave();
     var cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'notebook-editor-cancel';
     cancelBtn.textContent = 'Cancel';
     saveBtn.addEventListener('click', function() {
+      if (!externalTitleOk()) { return; }
       addEvidence(id, { kind: 'external',
         external: { title: titleInput.value, author: authorInput.value },
         quote: quoteInput.value, annotation: annInput.value });

@@ -1132,6 +1132,11 @@ function addEvidence(subTheoryId, fields) {
   var refId = null;
   if (src.kind === 'book' || src.kind === 'entry') {
     refId = (typeof src.refId === 'string') ? src.refId : null;
+  } else if (src.kind === 'external') {
+    // 10.3: external evidence gets a stable id of its own so 10.2 can link
+    // an italicized external title back to this element. The refId is
+    // generated here, never supplied by the caller.
+    refId = genEvidenceId();
   }
   var external = null;
   if (src.kind === 'external') {
@@ -1796,6 +1801,34 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.15.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.15.0') {
+    // 10.3: external evidence items gain a stable refId (a fresh id) so
+    // inline citation (10.2) can link an italicized external title to its
+    // evidence element. Pre-10.3 externals were created with refId null;
+    // backfill assigns each one an id. Idempotent two ways -- the version
+    // stamp AND a null-guard, so only null/absent refIds are filled and a
+    // re-run touches nothing. Books/entries are untouched: their refId is
+    // the bookId/entryId and was never null.
+    if (stored.subTheories) {
+      var exstk;
+      for (exstk in stored.subTheories) {
+        if (Object.prototype.hasOwnProperty.call(stored.subTheories, exstk)) {
+          var exst = stored.subTheories[exstk];
+          if (exst && Array.isArray(exst.evidence)) {
+            var exi;
+            for (exi = 0; exi < exst.evidence.length; exi = exi + 1) {
+              var exel = exst.evidence[exi];
+              if (exel && exel.kind === 'external' &&
+                  (typeof exel.refId !== 'string' || exel.refId.length === 0)) {
+                exel.refId = genEvidenceId();
+              }
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.16.0';
   }
   return stored;
 }
