@@ -264,10 +264,30 @@ firebase.auth().onAuthStateChanged(function (u) {
           ? nbResult.data.notebookEntries
           : {};
         var reid;
+        var journalPrivacyChanged = false;
         for (reid in remoteEntries) {
           if (Object.prototype.hasOwnProperty.call(remoteEntries, reid)) {
             state.notebookEntries[reid] = remoteEntries[reid];
+            // 6.2c-pre: merge-boundary normalizer. The Firestore REPLACE-
+            // splat bypasses migrate(), so force journal entries private as
+            // they land -- an unmigrated remote entry (another device, or a
+            // pre-flip backup) must not re-enter VISIBLE on a later sign-in
+            // after the one-time migrate has already stamped-and-skipped.
+            // Marginalia is NOT normalized (correctly visible-by-default).
+            // The isPrivate !== true guard makes this write back to
+            // Firestore (markNotebookDirty below) ONLY when something
+            // actually changed -- bringing the remote source-of-truth to
+            // rest private without churning a write on every all-private load.
+            if (state.notebookEntries[reid] &&
+                state.notebookEntries[reid].register === 'journal' &&
+                state.notebookEntries[reid].isPrivate !== true) {
+              state.notebookEntries[reid].isPrivate = true;
+              journalPrivacyChanged = true;
+            }
           }
+        }
+        if (journalPrivacyChanged && typeof markNotebookDirty === 'function') {
+          markNotebookDirty();
         }
         saveState();
         if (window.views && window.views.renderRoute) {

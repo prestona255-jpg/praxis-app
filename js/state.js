@@ -147,11 +147,14 @@
 //
 //   registerDefaults: { journal: boolean, marginalia: boolean }
 //
-// Initial values are { journal: false, marginalia: false } -- the
-// same fail-open default Stage 3.2/3.3 writers stamp on each new
-// entry. The 1.7.0 -> 1.8.0 migration seeds the field on every
-// user record and backfills entry.isPrivate (per-register) for
-// any entry where the field is not a boolean. The toggle UI and
+// Initial values are { journal: true, marginalia: false }. journal is
+// private-by-default as of 6.2c-pre (schema 1.15.0; it was false --
+// fail-open -- through 1.14.0, until the honesty fix made the code match
+// Yumi's promise); marginalia stays fail-open (visible), as the
+// notes-attached-to-a-book Yumi is meant to see. The 1.7.0 -> 1.8.0
+// migration seeds the field on every user record and backfills
+// entry.isPrivate (per-register) for any entry where the field is not a
+// boolean; the 1.14.0 -> 1.15.0 step flips journal to private retroactively. The toggle UI and
 // the register-default settings affordance ship in 3.4b; the
 // filter that consumes isPrivate ships in 3.4a inside
 // yumi-brain.js buildContext(), enforcing principle #5
@@ -645,7 +648,7 @@ function ensureUser(uid) {
   if (!state.users[uid]) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
-      registerDefaults: { journal: false, marginalia: false },
+      registerDefaults: { journal: true, marginalia: false },
       profile:          { displayNameOverride: '', penName: '', onboardingSeen: false }
     };
   }
@@ -656,7 +659,7 @@ function ensureUser(uid) {
   }
   if (!state.users[uid].registerDefaults) {
     state.users[uid].registerDefaults = {
-      journal: false, marginalia: false
+      journal: true, marginalia: false
     };
   }
   // Stage 14.3 Stage 1: profile override layer (display-name override +
@@ -1706,6 +1709,41 @@ function migrate(stored) {
     if (!stored.subTheories) stored.subTheories = {};
     ensureSubTheoryFieldsAll(stored.subTheories);
     stored.SCHEMA_VERSION = '1.14.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.14.0') {
+    // 6.2c-pre: journal becomes private-by-default (honesty fix -- Yumi's
+    // Beat E promise that the journal stays private). Two retroactive
+    // moves, both touching ONLY isPrivate / the journal registerDefault:
+    //   (1) flip every existing user's journal registerDefault to true so
+    //       NEW journal entries are born private (ensureUser only seeds
+    //       defaults when ABSENT, so an existing false would otherwise
+    //       stick);
+    //   (2) set isPrivate=true on every existing journal-register entry.
+    // Marginalia is deliberately untouched -- it is the notes-attached-to-
+    // a-book Yumi is meant to see. Idempotent via the version stamp; the
+    // merge-boundary normalizer in integrations.js closes the Firestore-
+    // bypass gap for remote entries that never walk migrate().
+    if (stored.users) {
+      var pjuid;
+      for (pjuid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, pjuid) &&
+            stored.users[pjuid] && stored.users[pjuid].registerDefaults) {
+          stored.users[pjuid].registerDefaults.journal = true;
+        }
+      }
+    }
+    if (stored.notebookEntries) {
+      var pjeid;
+      for (pjeid in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, pjeid)) {
+          var pjent = stored.notebookEntries[pjeid];
+          if (pjent && pjent.register === 'journal') {
+            pjent.isPrivate = true;
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.15.0';
   }
   return stored;
 }
