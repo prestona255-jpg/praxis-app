@@ -4846,6 +4846,102 @@
   max-width: 260px;
 }
 
+/* ----- 10.4 read-only render + preview toggle (var() tokens only) ----- */
+.subtheory-preview-toggle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  margin-bottom: 16px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.subtheory-preview-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink-4);
+}
+
+.subtheory-readonly-header {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0 0 20px 0;
+}
+.subtheory-readonly-body {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.subtheory-cite-num {
+  font-size: 0.7em;
+  color: var(--gold);
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 1px;
+}
+.subtheory-readonly-evidence {
+  margin: 28px 0 0 0;
+  padding-left: 22px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.subtheory-readonly-evidence-item {
+  margin-bottom: 14px;
+}
+.subtheory-readonly-cite-line {
+  color: var(--ink);
+}
+.subtheory-readonly-quote {
+  margin: 4px 0 0 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+  font-style: italic;
+  color: var(--ink-3);
+}
+.subtheory-readonly-annotation {
+  margin-top: 4px;
+  color: var(--ink-3);
+}
+.subtheory-readonly-seealso {
+  margin-top: 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.subtheory-readonly-seealso-item {
+  margin-top: 6px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+/* Editing-rail tag marking a private/missing-entry evidence row that the
+   published render drops. Muted, small. */
+.subtheory-attached-private-tag {
+  display: inline-block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
 /* Evidence rail (Checkpoint C). Transparent on desktop -- dissolves
    into the page like .shelf-sidebar; becomes a surface-filled bottom
    sheet on mobile (the @media block below). */

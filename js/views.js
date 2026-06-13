@@ -4044,6 +4044,193 @@ function parseCitations(bodyText, evidenceTitles) {
   return segments;
 }
 
+// 10.4: read-only render of a sub-theory, returned as a DOM node. mode
+// 'published' marks citations with superscript numbers (first-appearance
+// order); 'draft' uses the 10.2 underline-dot. Builds a numbered evidence
+// block (cited items in appearance order, then uncited in attachment order)
+// and a "see also" list of linked sub-theories. Empty arrays suppress their
+// sections. Reads state for resolution; writes nothing.
+// PRIVACY (Preston, A): published mode EXCLUDES evidence referencing a private
+// or missing journal entry -- no marker, no count; its inline citations fall
+// back to plain italics. Draft mode keeps those rows with a muted
+// "private -- excluded when published" tag so the author sees what will drop.
+// Body renders the PUBLIC register (bodyPublic). Reuses parseCitations.
+function renderSubTheoryReadOnly(subTheory, mode) {
+  var published = (mode === 'published');
+  var root = document.createElement('div');
+  root.className = 'subtheory-readonly ' +
+    (published ? 'subtheory-readonly-published' : 'subtheory-readonly-draft');
+
+  var head = document.createElement('h2');
+  head.className = 'subtheory-readonly-header';
+  head.textContent = subTheory.header || 'Untitled sub-theory';
+  root.appendChild(head);
+
+  var evidence = Array.isArray(subTheory.evidence) ? subTheory.evidence : [];
+
+  // A kind:'entry' evidence whose live entry is private or missing. Books and
+  // external sources are never private.
+  function evidencePrivate(el) {
+    if (!el || el.kind !== 'entry') { return false; }
+    var en = state.notebookEntries && state.notebookEntries[el.refId];
+    return (!en) || en.isPrivate === true;
+  }
+
+  // Evidence this render shows: published drops private; draft keeps all.
+  var visible = [];
+  var k;
+  for (k = 0; k < evidence.length; k = k + 1) {
+    if (published && evidencePrivate(evidence[k])) { continue; }
+    visible.push(evidence[k]);
+  }
+
+  // Bare match-title (book.title / external title / titled entry); only visible
+  // evidence is a citation target, so a published phrase that named a private
+  // entry no longer resolves (-> plain italics).
+  function citeTitle(el) {
+    if (el.kind === 'book') {
+      var bk = state.books && state.books[el.refId];
+      return (bk && bk.title) ? bk.title : '';
+    }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      return (en && en.title) ? en.title : '';
+    }
+    var ext = el.external || {};
+    return ext.title || '';
+  }
+  // Full citation line: "Author, Title" for books, label for entries,
+  // "Title -- Author" for external.
+  function citeLine(el) {
+    if (el.kind === 'book') {
+      var bk = state.books && state.books[el.refId];
+      if (bk) {
+        return bk.author ? (bk.author + ', ' + bk.title) : (bk.title || 'Book');
+      }
+      return 'Book';
+    }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      if (en) {
+        if (en.title) { return en.title; }
+        if (en.body) {
+          return en.body.length > 60 ? en.body.substring(0, 57) + '...' : en.body;
+        }
+      }
+      return 'Note';
+    }
+    var ext = el.external || {};
+    if (ext.title && ext.author) { return ext.title + ' — ' + ext.author; }
+    if (ext.title) { return ext.title; }
+    return 'External source';
+  }
+  function findById(list, eid) {
+    var i;
+    for (i = 0; i < list.length; i = i + 1) {
+      if (list[i] && list[i].id === eid) { return list[i]; }
+    }
+    return null;
+  }
+
+  var titles = [];
+  var ti;
+  for (ti = 0; ti < visible.length; ti = ti + 1) {
+    var mt = citeTitle(visible[ti]);
+    if (mt) { titles.push({ id: visible[ti].id, title: mt }); }
+  }
+
+  // Body: parse the public register, number citations by first appearance.
+  var segs = parseCitations(subTheory.bodyPublic || '', titles);
+  var order = [];
+  var numberOf = {};
+  var bodyEl = document.createElement('div');
+  bodyEl.className = 'subtheory-readonly-body';
+  var si;
+  for (si = 0; si < segs.length; si = si + 1) {
+    var s = segs[si];
+    if (s.ids && s.ids.length) {
+      var eid = s.ids[0];
+      if (!numberOf[eid]) { order.push(eid); numberOf[eid] = order.length; }
+      var span = document.createElement('span');
+      span.className = 'subtheory-cite';
+      span.textContent = s.text;
+      bodyEl.appendChild(span);
+      if (published) {
+        var sup = document.createElement('sup');
+        sup.className = 'subtheory-cite-num';
+        sup.textContent = String(numberOf[eid]);
+        bodyEl.appendChild(sup);
+      }
+    } else if (s.italic) {
+      var em = document.createElement('em');
+      em.textContent = s.text;
+      bodyEl.appendChild(em);
+    } else {
+      bodyEl.appendChild(document.createTextNode(s.text));
+    }
+  }
+  root.appendChild(bodyEl);
+
+  // Evidence block: cited (appearance order) then uncited (attachment order).
+  // No visible evidence -> no block.
+  if (visible.length) {
+    var ordered = [];
+    var oi;
+    for (oi = 0; oi < order.length; oi = oi + 1) {
+      var found = findById(visible, order[oi]);
+      if (found) { ordered.push(found); }
+    }
+    for (oi = 0; oi < visible.length; oi = oi + 1) {
+      if (!numberOf[visible[oi].id]) { ordered.push(visible[oi]); }
+    }
+    var block = document.createElement('ol');
+    block.className = 'subtheory-readonly-evidence';
+    var bi;
+    for (bi = 0; bi < ordered.length; bi = bi + 1) {
+      var el = ordered[bi];
+      var li = document.createElement('li');
+      li.className = 'subtheory-readonly-evidence-item';
+      var cl = document.createElement('div');
+      cl.className = 'subtheory-readonly-cite-line';
+      cl.textContent = citeLine(el);
+      li.appendChild(cl);
+      if (el.quote) {
+        var q = document.createElement('blockquote');
+        q.className = 'subtheory-readonly-quote';
+        q.textContent = el.quote;
+        li.appendChild(q);
+      }
+      if (el.annotation) {
+        var an = document.createElement('div');
+        an.className = 'subtheory-readonly-annotation';
+        an.textContent = el.annotation;
+        li.appendChild(an);
+      }
+      block.appendChild(li);
+    }
+    root.appendChild(block);
+  }
+
+  // See-also: linked sub-theories by header. Empty -> no block.
+  var links = Array.isArray(subTheory.linkedSubTheories) ? subTheory.linkedSubTheories : [];
+  if (links.length) {
+    var see = document.createElement('div');
+    see.className = 'subtheory-readonly-seealso';
+    var li2;
+    for (li2 = 0; li2 < links.length; li2 = li2 + 1) {
+      var partner = state.subTheories && state.subTheories[links[li2]];
+      if (!partner) { continue; }
+      var row = document.createElement('div');
+      row.className = 'subtheory-readonly-seealso-item';
+      row.textContent = partner.header || 'Untitled sub-theory';
+      see.appendChild(row);
+    }
+    if (see.firstChild) { root.appendChild(see); }
+  }
+
+  return root;
+}
+
 function renderSubTheoryPage(id) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -4165,7 +4352,9 @@ function renderSubTheoryPage(id) {
   intelTab.className = 'subtheory-register-tab';
   intelTab.textContent = 'Intellectual register';
 
+  var activeRegisterPublic = true;
   function showRegister(showPublic) {
+    activeRegisterPublic = showPublic;
     publicBody.style.display = showPublic ? '' : 'none';
     intelBody.style.display = showPublic ? 'none' : '';
     if (publicPreview) { publicPreview.style.display = showPublic ? '' : 'none'; }
@@ -4199,6 +4388,42 @@ function renderSubTheoryPage(id) {
   intelPreview.className = 'subtheory-cite-preview';
   main.appendChild(publicPreview);
   main.appendChild(intelPreview);
+
+  // 10.4 SLICE 2: Preview toggle -- swap the editor for the PUBLISHED read-only
+  // render ("what readers see": private evidence excluded, superscript cites)
+  // and back. 10.5.6 upgrades this to the polished Write|Preview tabs.
+  var previewHost = document.createElement('div');
+  previewHost.className = 'subtheory-preview-host';
+  previewHost.style.display = 'none';
+  main.appendChild(previewHost);
+
+  var previewBtn = document.createElement('button');
+  previewBtn.type = 'button';
+  previewBtn.className = 'subtheory-preview-toggle';
+  previewBtn.textContent = 'Preview';
+  var previewing = false;
+  function setPreview(on) {
+    previewing = on;
+    headerInput.style.display = on ? 'none' : '';
+    regToggle.style.display = on ? 'none' : '';
+    if (on) {
+      publicBody.style.display = 'none';
+      intelBody.style.display = 'none';
+      publicPreview.style.display = 'none';
+      intelPreview.style.display = 'none';
+      previewHost.innerHTML = '';
+      previewHost.appendChild(
+        renderSubTheoryReadOnly(state.subTheories[id], 'published'));
+      previewHost.style.display = '';
+      previewBtn.textContent = 'Write';
+    } else {
+      previewHost.style.display = 'none';
+      showRegister(activeRegisterPublic);
+      previewBtn.textContent = 'Preview';
+    }
+  }
+  previewBtn.addEventListener('click', function() { setPreview(!previewing); });
+  main.insertBefore(previewBtn, publicBody);
 
   // Bare match-title per evidence item: book.title / external title / a
   // titled entry; untitled entries return '' (skipped by the matcher).
@@ -4550,6 +4775,18 @@ function renderSubTheoryPage(id) {
     label.className = 'subtheory-attached-label';
     label.textContent = evidenceLabel(el);
     body.appendChild(label);
+    // 10.4: a private (or missing) journal entry is excluded when published.
+    // Tag the row here in the editing rail so the owner sees it at manage time
+    // (the read-only published render simply drops it, with no marker).
+    if (el.kind === 'entry') {
+      var ren = state.notebookEntries && state.notebookEntries[el.refId];
+      if (!ren || ren.isPrivate === true) {
+        var ptag = document.createElement('span');
+        ptag.className = 'subtheory-attached-private-tag';
+        ptag.textContent = 'private — excluded when published';
+        body.appendChild(ptag);
+      }
+    }
     if (el.quote) {
       var q = document.createElement('p');
       q.className = 'subtheory-attached-quote';
