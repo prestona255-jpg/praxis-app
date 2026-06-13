@@ -277,14 +277,6 @@ function maybeStartOnboarding(uid) {
   if (!u || !u.uid || u.uid !== uid) { return; }
   if (!state.userBooks[uid] || state.userBooks[uid].bookIds.length !== 0) { return; }
   if (getProfile(uid).onboardingSeen === true) { return; }
-  // 6.2c: never auto-open the greeting onto an arc-detail surface. The Yumi
-  // panel is a fixed bottom-right overlay (z-9998); on the constellation Web
-  // view it parks over the sub-theory marks and swallows Connect clicks --
-  // handleConnectClick's hit-test resolves to the panel, then disarm() fires
-  // and the pick silently cancels. The empty-shelf gate above means a genuine
-  // first-run user is on #home, so this skips nothing in practice; manual
-  // Yumi-open (the toggle) is unaffected -- this gates AUTO-open only.
-  if (location.hash.indexOf('#arc/') === 0) { return; }
   startOnboarding();
 }
 
