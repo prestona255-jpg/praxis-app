@@ -72,9 +72,24 @@ future plan file), this protocol governs:
   obvious." Never trust your own narrative over computed evidence.
 - Commit/push only on Preston's exact words. After push, wait for the
   Netlify build, then open https://praxis-reading.netlify.app in the
-  browser, hard-refresh, confirm the new CACHE_VERSION in DevTools,
-  exercise the substage's pass-check list from the plan, and save
-  screenshots of each relevant surface into the checkpoint report.
+  browser, hard-refresh, confirm the new CACHE_VERSION in DevTools, and
+  run EVERY pass-check in the substage plan yourself. The human
+  provisions the test account and its connected browser session ONCE;
+  the executor seeds all data and runs all checks within it, after
+  confirming account identity (email + empty/expected state) before any
+  write. If no test session is connected, requesting one is the only
+  verification step that may be handed to the human — an auth limitation
+  is never a reason to hand a check to the human; it is a reason to use
+  the test session. Evidence standard: live-DOM structural proof is the
+  hard PASS/FAIL evidence; screenshots corroborate, embedded as repo
+  files when the tooling exposes a path, else recorded as session IDs
+  with descriptions. A pass-check without recorded evidence is
+  UNVERIFIED, and a substage cannot be declared complete with any
+  UNVERIFIED check. Human-only gates, the complete list — hand the human
+  nothing else: (1) commit/push authorization by exact words; (2) design
+  comp-gates, visual judgment on live screenshots; (3) real-data
+  verification only where test data cannot represent the case, presented
+  as a single named check with a click-path.
 - End every substage with the report file complete: slice table (parse,
   bytes, greps), live-verify results, screenshots, honest residuals.
   Then STOP. Preston does his eyes-on check and decides what's next.
