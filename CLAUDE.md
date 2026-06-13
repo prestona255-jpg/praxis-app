@@ -29,10 +29,9 @@ state → integrations → yumi-brain → arcs → arc-constellation → traditi
 - "I did X" is never proof on its own — show the diff/grep/count.
 
 ## Where the work stands (read first, every session)
-- Current and next stage live in `docs/Checklist and Roadmap/Praxis_Build_Checklist.html` — read it first.
+- Current status, every stage's real state, and the open work live in `docs/Checklist and Roadmap/BUILD_STATE.md` — read it first. It is the single canonical tracker, updated per-substage in the same commit that finalizes each checkpoint. (The old `Praxis_Build_Checklist.html` and `Praxis_Roadmap.html` were deleted — they stored state in localStorage, not git, and drifted; recover the old blobs at SHAs `c0ddfe5` and `40de91f` if needed.)
 - The locked 9.6 design and stage scope live in `docs/PRAXIS_9_6_AND_VISUAL_UPLIFT.md` — the source of truth the build briefs are written against.
 - For any sub-theory work, also read `docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md`.
-- `Praxis_Roadmap.html` is the strategic narrative — read on request, never import (large JS-rendered SPA).
 
 ## Visual / UI work — read the design spec first
 
