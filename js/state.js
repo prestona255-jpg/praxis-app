@@ -444,6 +444,13 @@ function ensureSubTheoryFields(st) {
     st.linkedSubTheories = [];
     changed = true;
   }
+  // 10.5.7: citationPins maps a lowercased citation phrase -> the chosen
+  // evidence id, persisting the author's disambiguation so a pinned
+  // ambiguous citation survives reload and routes the read-only render.
+  if (!st.citationPins || typeof st.citationPins !== 'object') {
+    st.citationPins = {};
+    changed = true;
+  }
   if (st.status !== 'draft' && st.status !== 'published') {
     st.status = 'draft';
     changed = true;
@@ -970,6 +977,7 @@ function createSubTheory(arcId, fields) {
     evidence:           [],
     attachedMarginalia: [],
     linkedSubTheories:  [],
+    citationPins:       {},
     status:             'draft',
     format:             '',
     publishedAt:        null,
@@ -1829,6 +1837,24 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.16.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.16.0') {
+    // 10.5.7: every sub-theory gains a citationPins map (lowercased phrase ->
+    // evidence id) so author pin choices persist and route the read-only
+    // render. Backfill {} where absent; idempotent (only sets when missing).
+    // ensureSubTheoryFields also guarantees the field on every write path.
+    if (stored.subTheories) {
+      var cpstk;
+      for (cpstk in stored.subTheories) {
+        if (Object.prototype.hasOwnProperty.call(stored.subTheories, cpstk)) {
+          var cpst = stored.subTheories[cpstk];
+          if (cpst && (!cpst.citationPins || typeof cpst.citationPins !== 'object')) {
+            cpst.citationPins = {};
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.17.0';
   }
   return stored;
 }

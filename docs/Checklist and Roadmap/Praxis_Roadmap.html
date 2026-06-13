@@ -5056,6 +5056,28 @@ var STAGES = [
           'No footnotes vs endnotes choice (the evidence block at close is the convention)',
           'No DOI or URL rendering as links in evidence (plain text only for v1)'
         ]
+      },
+      {
+        id: 's10-5',
+        num: '10.5',
+        name: 'Citation UX',
+        depConfirm: '10.4 Shipped. Inline citation preview (10.2), external evidence refIds (10.3), and renderSubTheoryReadOnly (10.4) are live.',
+        purpose: 'Close the discoverability and friction gaps in the 10.2 citation surface: the asterisk convention is invisible until known, citing requires retyping a title, and ambiguous-pin choices do not survive a reload.',
+        scope: [
+          'Attach-disclosure rename/flatten: the rail button becomes + Attach evidence; Add external source surfaces at the same disclosure level as the book list.',
+          'Cite button: each evidence row in the rail gets a small Cite action that inserts *Title* at the cursor of the most recently focused register body (fallback: append + focus).',
+          'Autocomplete: typing * in a register body opens a small picker of attached evidence titles; selection writes plain *Title* text. The textarea blur-save contract is untouched.',
+          'Coach line: when the preview pane has no citations, one muted sentence teaches the asterisk convention.',
+          'Tap support: on touch, tapping a resolved citation dot shows the hover card (long-press chooser behavior unchanged).',
+          'Write/Preview toggle: replace the stacked raw+preview with a two-tab toggle per register (design comp-gated on live screenshots).',
+          'Persist pins: schema 1.16.0 to 1.17.0 adds subTheory.citationPins; the editor pin map reads through to it, and renderSubTheoryReadOnly resolves citations through the persisted pin (first candidate remains the unpinned fallback).'
+        ],
+        nonGoals: [
+          'No contenteditable or WYSIWYG rewrite',
+          'No fuzzy or author-name matching; parseCitations semantics unchanged',
+          'No print styling, no publish workflow',
+          'No Firestore-merge changes beyond the citationPins field'
+        ]
       }
     ]
   },

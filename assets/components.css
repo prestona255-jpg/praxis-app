@@ -4789,6 +4789,27 @@
   color: var(--ink);
 }
 
+/* 10.5.6: the register pill, the Write|Preview pill, and the Published toggle
+   share one row; the Write|Preview pill sits to the register pill's right. The
+   row wraps gracefully on narrow widths. */
+.subtheory-toggles-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+}
+.subtheory-toggles-row .subtheory-register-toggle,
+.subtheory-toggles-row .subtheory-preview-toggle {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+/* The Published toggle drops the bottom-margin it carried as a block element. */
+.subtheory-wp-toggle {
+  margin: 0;
+}
+
 /* Register textareas read like prose -- serif, larger, generous leading
    over the inherited quiet --border -- so the surface feels like writing,
    not a form field. */
@@ -4823,6 +4844,17 @@
   color: var(--ink-3);
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* 10.5.4 coach line: a quiet teaching prompt shown in a preview pane while it
+   holds no resolved citation; removed by renderCitationPreview once one exists. */
+.subtheory-cite-coach {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  color: var(--ink-4);
 }
 
 /* A resolved citation: italic (authored in *asterisks*) plus the underline-dot

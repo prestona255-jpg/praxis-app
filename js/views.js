@@ -4055,6 +4055,16 @@ function parseCitations(bodyText, evidenceTitles) {
 // back to plain italics. Draft mode keeps those rows with a muted
 // "private -- excluded when published" tag so the author sees what will drop.
 // Body renders the PUBLIC register (bodyPublic). Reuses parseCitations.
+// 10.5.7: ES3 array membership (no Array.indexOf), shared by the editor's pin
+// resolution and the read-only render's pin routing.
+function citeIdIn(ids, x) {
+  var i;
+  for (i = 0; i < ids.length; i = i + 1) {
+    if (ids[i] === x) { return true; }
+  }
+  return false;
+}
+
 function renderSubTheoryReadOnly(subTheory, mode) {
   var published = (mode === 'published');
   var root = document.createElement('div');
@@ -4140,6 +4150,10 @@ function renderSubTheoryReadOnly(subTheory, mode) {
   }
 
   // Body: parse the public register, number citations by first appearance.
+  // 10.5.7: an ambiguous phrase resolves through the author's persisted pin
+  // when one is set among the candidates; otherwise the first candidate.
+  var pins = (subTheory.citationPins && typeof subTheory.citationPins === 'object')
+    ? subTheory.citationPins : {};
   var segs = parseCitations(subTheory.bodyPublic || '', titles);
   var order = [];
   var numberOf = {};
@@ -4150,6 +4164,8 @@ function renderSubTheoryReadOnly(subTheory, mode) {
     var s = segs[si];
     if (s.ids && s.ids.length) {
       var eid = s.ids[0];
+      var rpin = pins[s.text.toLowerCase()];
+      if (rpin && citeIdIn(s.ids, rpin)) { eid = rpin; }
       if (!numberOf[eid]) { order.push(eid); numberOf[eid] = order.length; }
       var span = document.createElement('span');
       span.className = 'subtheory-cite';
@@ -4342,6 +4358,36 @@ function renderSubTheoryPage(id) {
     updateSubTheory(id, { bodyIntellectual: intelBody.value });
   });
 
+  // 10.5.2: Cite-from-the-rail. Track which register body last held focus
+  // so the rail's Cite action can insert *Title* at that caret; a surface
+  // never focused falls back to appending at the end of the visible
+  // register. The insert writes the textarea value directly and focuses
+  // the target -- the blur-save contract is untouched (the eventual blur
+  // persists the new text) -- then repaints the citation previews so the
+  // dot appears without waiting for the debounce.
+  var lastFocusedBody = null;
+  publicBody.addEventListener('focus', function() { lastFocusedBody = publicBody; });
+  intelBody.addEventListener('focus', function() { lastFocusedBody = intelBody; });
+  function insertCitationAtCursor(text) {
+    var target = lastFocusedBody;
+    var caret;
+    if (target) {
+      caret = (typeof target.selectionStart === 'number')
+        ? target.selectionStart : target.value.length;
+      target.value = target.value.substring(0, caret) + text +
+        target.value.substring(caret);
+    } else {
+      target = activeRegisterPublic ? publicBody : intelBody;
+      target.value = target.value + text;
+      caret = target.value.length - text.length;
+    }
+    target.focus();
+    if (typeof target.setSelectionRange === 'function') {
+      target.setSelectionRange(caret + text.length, caret + text.length);
+    }
+    refreshCitationPreviews();
+  }
+
   var publicTab = document.createElement('button');
   publicTab.type = 'button';
   publicTab.className = 'subtheory-register-tab';
@@ -4353,24 +4399,60 @@ function renderSubTheoryPage(id) {
   intelTab.textContent = 'Intellectual register';
 
   var activeRegisterPublic = true;
+  var draftPreview = false;
+
+  // 10.5.6: per-register Write | Preview toggle, a sibling pill to the right of
+  // the register toggle. Write shows the textarea; Preview shows THAT register's
+  // live citation preview in the editor slot (the always-stacked pane is gone).
+  // Distinct from the Published toggle below, which renders the whole sub-theory
+  // read-only ("what readers see").
+  var wpToggle = document.createElement('div');
+  wpToggle.className = 'subtheory-register-toggle subtheory-wp-toggle';
+  var writeTab = document.createElement('button');
+  writeTab.type = 'button';
+  writeTab.className = 'subtheory-register-tab';
+  writeTab.textContent = 'Write';
+  var previewTab = document.createElement('button');
+  previewTab.type = 'button';
+  previewTab.className = 'subtheory-register-tab';
+  previewTab.textContent = 'Preview';
+  wpToggle.appendChild(writeTab);
+  wpToggle.appendChild(previewTab);
+
+  // Single source of truth for the editor's visible surface, given the active
+  // register and the Write/Preview state. Textareas show only in Write; the
+  // matching preview pane shows only in Preview; tab actives reflect both axes.
+  function applyEditorView() {
+    var pub = activeRegisterPublic;
+    publicBody.style.display = (!draftPreview && pub) ? '' : 'none';
+    intelBody.style.display = (!draftPreview && !pub) ? '' : 'none';
+    if (publicPreview) { publicPreview.style.display = (draftPreview && pub) ? '' : 'none'; }
+    if (intelPreview) { intelPreview.style.display = (draftPreview && !pub) ? '' : 'none'; }
+    publicTab.className = 'subtheory-register-tab' +
+      (pub ? ' subtheory-register-tab-active' : '');
+    intelTab.className = 'subtheory-register-tab' +
+      (pub ? '' : ' subtheory-register-tab-active');
+    writeTab.className = 'subtheory-register-tab' +
+      (!draftPreview ? ' subtheory-register-tab-active' : '');
+    previewTab.className = 'subtheory-register-tab' +
+      (draftPreview ? ' subtheory-register-tab-active' : '');
+  }
   function showRegister(showPublic) {
     activeRegisterPublic = showPublic;
-    publicBody.style.display = showPublic ? '' : 'none';
-    intelBody.style.display = showPublic ? 'none' : '';
-    if (publicPreview) { publicPreview.style.display = showPublic ? '' : 'none'; }
-    if (intelPreview) { intelPreview.style.display = showPublic ? 'none' : ''; }
-    publicTab.className = 'subtheory-register-tab' +
-      (showPublic ? ' subtheory-register-tab-active' : '');
-    intelTab.className = 'subtheory-register-tab' +
-      (showPublic ? '' : ' subtheory-register-tab-active');
+    applyEditorView();
+  }
+  function setDraftPreview(on) {
+    draftPreview = on;
+    applyEditorView();
   }
   publicTab.addEventListener('click', function() { showRegister(true); });
   intelTab.addEventListener('click', function() { showRegister(false); });
+  writeTab.addEventListener('click', function() { setDraftPreview(false); });
+  previewTab.addEventListener('click', function() { setDraftPreview(true); });
 
   regToggle.appendChild(publicTab);
   regToggle.appendChild(intelTab);
 
-  main.appendChild(regToggle);
   main.appendChild(publicBody);
   main.appendChild(intelBody);
 
@@ -4400,12 +4482,13 @@ function renderSubTheoryPage(id) {
   var previewBtn = document.createElement('button');
   previewBtn.type = 'button';
   previewBtn.className = 'subtheory-preview-toggle';
-  previewBtn.textContent = 'Preview';
+  previewBtn.textContent = 'Published';
   var previewing = false;
   function setPreview(on) {
     previewing = on;
     headerInput.style.display = on ? 'none' : '';
     regToggle.style.display = on ? 'none' : '';
+    wpToggle.style.display = on ? 'none' : '';
     if (on) {
       publicBody.style.display = 'none';
       intelBody.style.display = 'none';
@@ -4415,15 +4498,22 @@ function renderSubTheoryPage(id) {
       previewHost.appendChild(
         renderSubTheoryReadOnly(state.subTheories[id], 'published'));
       previewHost.style.display = '';
-      previewBtn.textContent = 'Write';
+      previewBtn.textContent = 'Edit';
     } else {
       previewHost.style.display = 'none';
-      showRegister(activeRegisterPublic);
-      previewBtn.textContent = 'Preview';
+      applyEditorView();
+      previewBtn.textContent = 'Published';
     }
   }
   previewBtn.addEventListener('click', function() { setPreview(!previewing); });
-  main.insertBefore(previewBtn, publicBody);
+
+  // 10.5.6: register pill + Write|Preview toggle + Published toggle on one row.
+  var togglesRow = document.createElement('div');
+  togglesRow.className = 'subtheory-toggles-row';
+  togglesRow.appendChild(regToggle);
+  togglesRow.appendChild(wpToggle);
+  togglesRow.appendChild(previewBtn);
+  main.insertBefore(togglesRow, publicBody);
 
   // Bare match-title per evidence item: book.title / external title / a
   // titled entry; untitled entries return '' (skipped by the matcher).
@@ -4476,6 +4566,7 @@ function renderSubTheoryPage(id) {
   // Slice 2b: shared hover card -- the house .arc-tooltip, one element on
   // <body>, positioned in page coords to the hovered span (pointer-events:none).
   var citeTip = null;
+  var citeTapTimer = null;
   // Shared positioner: place a body-mounted element just below a span, in
   // page coords, clamped to viewport width. Used by the 2b hover card AND
   // the slice-3 chooser (one positioning implementation, not two).
@@ -4511,34 +4602,43 @@ function renderSubTheoryPage(id) {
   function hideCiteTip() {
     if (citeTip) { citeTip.classList.remove('arc-tooltip--visible'); }
   }
+  function citeLines(infoItem) {
+    var lines = [{ cls: 'arc-tooltip-title', text: infoItem.label }];
+    if (infoItem.quote) {
+      lines.push({ cls: 'arc-tooltip-meta', text: '“' + infoItem.quote + '”' });
+    }
+    return lines;
+  }
   function bindCiteHover(span, infoItem) {
     if (!infoItem) { return; }
     span.addEventListener('mouseenter', function() {
-      var lines = [{ cls: 'arc-tooltip-title', text: infoItem.label }];
-      if (infoItem.quote) {
-        lines.push({ cls: 'arc-tooltip-meta', text: '“' + infoItem.quote + '”' });
-      }
-      showCiteTip(span, lines);
+      showCiteTip(span, citeLines(infoItem));
     });
     span.addEventListener('mouseleave', hideCiteTip);
+    // 10.5.5: touch has no hover -- a tap shows the same card, auto-dismissed
+    // after a few seconds (tapping another citation just repositions it). The
+    // long-press chooser on ambiguous spans is unaffected.
+    span.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      showCiteTip(span, citeLines(infoItem));
+      if (citeTapTimer) { clearTimeout(citeTapTimer); }
+      citeTapTimer = setTimeout(hideCiteTip, 3200);
+    });
   }
 
-  // ===== 10.2 slice 3: disambiguation chooser (session-only pins) =====
+  // ===== 10.2 slice 3 + 10.5.7: disambiguation chooser (persisted pins) =====
   // An ambiguous citation (>1 candidate) can be pinned to one source via
   // right-click (desktop) or long-press (touch). The pin is keyed by the
-  // lowercased phrase and lives ONLY for this render session -- it is NOT
-  // persisted (the sub-theory record has no pin field; adding one would be a
-  // schema migration, out of scope). Navigating away resets the pins. This
-  // session-only limit is recorded as a residual in docs/checkpoints/10-2.md.
-  var citePins = {};
-  var citeChooser = null;
-  function idIn(ids, x) {
-    var i;
-    for (i = 0; i < ids.length; i = i + 1) {
-      if (ids[i] === x) { return true; }
-    }
-    return false;
+  // lowercased phrase. 10.5.7: citePins references the sub-theory record's
+  // persisted citationPins map, so a choice survives reload and routes the
+  // read-only render. Membership uses the shared top-level citeIdIn.
+  var citePinsRec = state.subTheories[id];
+  if (citePinsRec && (!citePinsRec.citationPins ||
+      typeof citePinsRec.citationPins !== 'object')) {
+    citePinsRec.citationPins = {};
   }
+  var citePins = citePinsRec ? citePinsRec.citationPins : {};
+  var citeChooser = null;
   function closeCiteChooser() {
     if (citeChooser && citeChooser.parentNode) {
       citeChooser.parentNode.removeChild(citeChooser);
@@ -4560,7 +4660,11 @@ function renderSubTheoryPage(id) {
     row.textContent = (info && info[cid]) ? info[cid].label : 'Source';
     row.addEventListener('click', function(ev) {
       ev.preventDefault();
+      // 10.5.7: citePins references the record's citationPins; persist the
+      // choice so it survives reload and routes the read-only render.
       citePins[phraseLower] = cid;
+      if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+      saveState();
       closeCiteChooser();
       refreshCitationPreviews();
     });
@@ -4606,6 +4710,79 @@ function renderSubTheoryPage(id) {
     span.addEventListener('touchmove', cancelLongPress);
   }
 
+  // ===== 10.5.3: citation autocomplete =====
+  // Typing '*' in a register body opens a small picker of attached evidence
+  // titles; choosing one writes plain '<Title>*' at the caret, completing the
+  // '*Title*' the writer just started. Plain text only -- no rendering change,
+  // blur-save contract untouched. Mounts/dismisses like the chooser and
+  // positions via the shared positionToSpan, anchored to the active textarea.
+  var citeAutocomplete = null;
+  function closeAutocomplete() {
+    if (citeAutocomplete && citeAutocomplete.parentNode) {
+      citeAutocomplete.parentNode.removeChild(citeAutocomplete);
+    }
+    citeAutocomplete = null;
+    document.removeEventListener('click', onAutocompleteOutside);
+    document.removeEventListener('keydown', onAutocompleteKey);
+  }
+  function onAutocompleteOutside(ev) {
+    if (citeAutocomplete && !citeAutocomplete.contains(ev.target)) { closeAutocomplete(); }
+  }
+  function onAutocompleteKey(ev) {
+    if (ev.keyCode === 27) { closeAutocomplete(); }
+  }
+  function appendAutocompleteRow(panel, title) {
+    var row = document.createElement('a');
+    row.href = '#';
+    row.className = 'arc-picker-row subtheory-picker-row';
+    row.textContent = title;
+    row.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      closeAutocomplete();
+      insertCitationAtCursor(title + '*');
+    });
+    panel.appendChild(row);
+  }
+  function openAutocomplete(body) {
+    closeAutocomplete();
+    var titles = buildCitationTitles();
+    var seen = {};
+    var panel = document.createElement('div');
+    panel.className = 'arc-picker-panel subtheory-cite-autocomplete';
+    var label = document.createElement('div');
+    label.className = 'arc-picker-label';
+    label.textContent = 'Cite a source';
+    panel.appendChild(label);
+    var ti, n = 0;
+    for (ti = 0; ti < titles.length; ti = ti + 1) {
+      var t = titles[ti].title;
+      var key = t.toLowerCase();
+      if (seen[key]) { continue; }
+      seen[key] = true;
+      appendAutocompleteRow(panel, t);
+      n = n + 1;
+    }
+    if (n === 0) { return; }
+    document.body.appendChild(panel);
+    citeAutocomplete = panel;
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '60';
+    positionToSpan(panel, body);
+    setTimeout(function() {
+      document.addEventListener('click', onAutocompleteOutside);
+    }, 0);
+    document.addEventListener('keydown', onAutocompleteKey);
+  }
+  function maybeAutocomplete(body) {
+    var caret = (typeof body.selectionStart === 'number')
+      ? body.selectionStart : body.value.length;
+    if (caret > 0 && body.value.charAt(caret - 1) === '*') {
+      openAutocomplete(body);
+    } else if (citeAutocomplete) {
+      closeAutocomplete();
+    }
+  }
+
   // Paint one pane from parsed segments. textContent/createElement only --
   // never innerHTML with body text. A citation span resolves to one source
   // (ids[0], or a session pin among candidates); >1 unpinned candidate stays
@@ -4614,16 +4791,18 @@ function renderSubTheoryPage(id) {
   function renderCitationPreview(paneEl, bodyText, titles, info) {
     paneEl.textContent = '';
     var segs = parseCitations(bodyText, titles);
+    var hasCitation = false;
     var si;
     for (si = 0; si < segs.length; si = si + 1) {
       var s = segs[si];
       if (s.ids && s.ids.length) {
+        hasCitation = true;
         var span = document.createElement('span');
         var effId = s.ids[0];
         var ambiguous = s.ids.length > 1;
         if (ambiguous) {
           var pinned = citePins[s.text.toLowerCase()];
-          if (pinned && idIn(s.ids, pinned)) {
+          if (pinned && citeIdIn(s.ids, pinned)) {
             effId = pinned;
             ambiguous = false;
           }
@@ -4644,6 +4823,14 @@ function renderSubTheoryPage(id) {
         paneEl.appendChild(document.createTextNode(s.text));
       }
     }
+    // 10.5.4: coach line — teach the asterisk convention while the pane
+    // carries no resolved citation; it disappears the moment one exists.
+    if (!hasCitation) {
+      var coach = document.createElement('p');
+      coach.className = 'subtheory-cite-coach';
+      coach.textContent = 'Wrap a source title in *asterisks* to cite it.';
+      paneEl.appendChild(coach);
+    }
   }
 
   function refreshCitationPreviews() {
@@ -4660,6 +4847,8 @@ function renderSubTheoryPage(id) {
   }
   publicBody.addEventListener('input', onCiteBodyInput);
   intelBody.addEventListener('input', onCiteBodyInput);
+  publicBody.addEventListener('input', function() { maybeAutocomplete(publicBody); });
+  intelBody.addEventListener('input', function() { maybeAutocomplete(intelBody); });
   refreshCitationPreviews();
 
   // Public default on load.
@@ -4775,6 +4964,22 @@ function renderSubTheoryPage(id) {
     label.className = 'subtheory-attached-label';
     label.textContent = evidenceLabel(el);
     body.appendChild(label);
+    // 10.5.2: Cite — inserts *Title* at the caret of the last-focused
+    // register (insertCitationAtCursor owns the fallback). Only rendered
+    // when the element HAS a citable title (citationMatchTitle returns ''
+    // for an untitled marginalia/journal entry -- nothing to italicize).
+    var citeTitle = citationMatchTitle(el);
+    if (citeTitle) {
+      var citeBtn = document.createElement('a');
+      citeBtn.href = '#';
+      citeBtn.className = 'subtheory-attached-cite';
+      citeBtn.textContent = 'Cite';
+      citeBtn.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        insertCitationAtCursor('*' + citeTitle + '*');
+      });
+      body.appendChild(citeBtn);
+    }
     // 10.4: a private (or missing) journal entry is excluded when published.
     // Tag the row here in the editing rail so the owner sees it at manage time
     // (the read-only published render simply drops it, with no marker).
@@ -5048,25 +5253,29 @@ function renderSubTheoryPage(id) {
     externalHost.appendChild(buildExternalForm());
   });
 
-  // S6.3: default rail = attached list + a full-width "+ Attach a book"
-  // button; the picker (from-this-arc + external source) collapses behind
-  // it. Disclosure is a LOCAL classList flip on pickerWrap -- NO
-  // renderSubTheoryPage re-render, so un-blurred prose survives (the same
-  // contract refreshAttached protects). Attaching does NOT close the
-  // picker (multi-attach); refreshAttached repaints the attached list.
+  // S6.3: default rail = attached list + a full-width disclosure button;
+  // the picker collapses behind it. Disclosure is a LOCAL classList flip
+  // on pickerWrap -- NO renderSubTheoryPage re-render, so un-blurred prose
+  // survives (the same contract refreshAttached protects). Attaching does
+  // NOT close the picker (multi-attach); refreshAttached repaints the
+  // attached list. 10.5.1: label is "+ Attach evidence" (books are not the
+  // only evidence), single literal via attachLabel; the external-source
+  // section mounts FIRST so it reads at the same disclosure level as the
+  // book list instead of buried beneath every from-this-arc row.
   var pickerWrap = document.createElement('div');
   pickerWrap.className = 'subtheory-picker-wrap';
-  pickerWrap.appendChild(sourceSection);
   pickerWrap.appendChild(externalSection);
+  pickerWrap.appendChild(sourceSection);
 
+  var attachLabel = '+ Attach evidence';
   var attachBtn = document.createElement('button');
   attachBtn.type = 'button';
   attachBtn.className = 'subtheory-attach-book';
-  attachBtn.textContent = '+ Attach a book';
+  attachBtn.textContent = attachLabel;
   attachBtn.addEventListener('click', function() {
     if (pickerWrap.classList.contains('open')) {
       pickerWrap.classList.remove('open');
-      attachBtn.textContent = '+ Attach a book';
+      attachBtn.textContent = attachLabel;
     } else {
       pickerWrap.classList.add('open');
       attachBtn.textContent = 'Done';
