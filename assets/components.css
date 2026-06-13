@@ -5185,6 +5185,23 @@
   color: var(--ink-3);
 }
 
+/* 10.5.9: the rail's Cite action is an <a> -- without a rule it would render
+   as a default blue underlined link. Quiet it to match .subtheory-source-attach
+   (the rail's other action affordance): muted --river, no underline, hover -> ink. */
+.subtheory-attached-cite {
+  display: inline-block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--river);
+  text-decoration: none;
+  cursor: pointer;
+}
+.subtheory-attached-cite:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
 /* Mobile bottom-sheet chrome -- hidden on desktop, revealed in the
    720px block below. */
 .subtheory-rail-toggle,

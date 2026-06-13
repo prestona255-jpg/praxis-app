@@ -230,6 +230,15 @@ firebase.auth().onAuthStateChanged(function (u) {
           if (typeof backfillSubTheoryUserId === 'function') {
             backfillSubTheoryUserId(state.subTheories, state.arcs);
           }
+          // 10.5.9: the wholesale remote copy above bypasses migrate() and
+          // ensureSubTheoryFields, so a record synced from a client on an older
+          // schema lands missing newer fields (e.g. citationPins). Backfill the
+          // FULL field set here -- the standing pattern for every future schema
+          // field, mirroring the userId backfill above -- so synced records match
+          // the local schema before they are saved and rendered.
+          if (typeof ensureSubTheoryFieldsAll === 'function') {
+            ensureSubTheoryFieldsAll(state.subTheories);
+          }
           saveState();
           if (window.views && window.views.renderRoute) {
             window.views.renderRoute();
