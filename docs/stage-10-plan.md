@@ -151,3 +151,69 @@ mode shows superscripts in appearance order, block lists cited then
 uncited; zero evidence -> no empty block; draft mode still dots; see-also
 lists linked sub-theories; private-entry exposure matches the decision
 made at the gate. Screenshots: published render + evidence block.
+
+## SUBSTAGE 10.5 — Citation UX
+
+PURPOSE: close the discoverability and friction gaps in the 10.2 citation
+surface. Runs ONLY after 10.4 ships.
+
+STAGE 0 RECON (write to docs/checkpoints/10-5-recon.md): re-measure
+state.js / views.js / components.css and CACHE_VERSION; confirm the 10.2
+anchors are still where this plan expects (buildExternalForm / externalToggle
+disclosure, the rail evidence rows / buildAttachedRow, the register textareas
++ preview panes, the citePins closure, the schema-chain terminal). Set each
+slice's byte band from the re-measured baselines. Slice 10.5.6 carries a
+design decision gate -- halt there before any build.
+
+SLICES, in build order:
+10.5.1 (views.js) Attach-disclosure rename/flatten — button becomes
+"+ Attach evidence"; "Add external source" surfaced at the same disclosure
+level as the book list, not nested below it. Gates: parse PASS; byte band
+per recon; grep the new label appears once.
+10.5.2 (views.js) Cite button — each evidence row in the rail gets a small
+"Cite" action that inserts *Title* at the cursor of the most recently focused
+register body (fallback: append + focus). Gates: parse PASS; byte band per
+recon; grep the insert helper defined once.
+10.5.3 (views.js) Autocomplete — typing * in a register body opens a small
+picker of attached evidence titles; selection writes plain *Title* text. The
+textarea blur-save contract is untouched — this is an input helper, not a
+rendering change. Gates: parse PASS; byte band per recon; grep the picker
+opener defined once.
+10.5.4 (views.js + components.css) Coach line — when the preview pane has no
+citations, show one muted sentence teaching the asterisk convention. Gates:
+parse PASS; CSS brace balance + zero hex; byte bands per recon.
+10.5.5 (views.js) Tap support — on touch, tapping a resolved dot shows the
+.arc-tooltip card (chooser long-press behavior unchanged). Gates: parse
+PASS; byte band per recon.
+10.5.6 (views.js + components.css) Write/Preview toggle — replace stacked
+raw+preview with a two-tab toggle per register. DESIGN DECISION GATE: present
+layout options at recon; Preston comp-gates via live screenshots before
+build. Gates: parse PASS; CSS brace balance + zero hex; byte bands per recon.
+10.5.7 (state.js) Persist pins — schema 1.16.0 → 1.17.0, idempotent migration
+adding subTheory.citationPins; citePins closure map reads through to it. The
+1.9.3 literal anchor is never bumped. Gates: cscript parse PASS state.js;
+byte band per recon; grep '1.17.0' = terminal-step count; console harness
+proves the migration idempotent.
+
+GATES: per-slice byte bands set at 10.5's own Stage 0 recon (baselines will
+have moved after 10.4). SW bump → one version at the substage's final slice.
+Standard mechanical self-gates apply (parse, byte band, grep counts, no
+unintended dirty file, no EOL flip); deviations follow the recorded-deviation
+discipline (component accounting, no silent band widen).
+
+ROADMAP NOTE: the app's roadmap HTML gets its 10.5 entry as 10.5's own
+first slice, not now — recorded here so the divergence is honest, never
+fake-stamped.
+
+NON-GOALS for 10.5: no contenteditable/WYSIWYG rewrite; no fuzzy or
+author-name matching; no changes to parseCitations semantics; no print
+styling; no publish workflow; no Firestore-merge changes beyond the
+citationPins field.
+
+LIVE PASS-CHECKS (after Preston-authorized push): "+ Attach evidence" reads
+at the flattened disclosure with external source beside the book list; a rail
+row's Cite inserts *Title* at the cursor; typing * opens the title picker and
+writes *Title*; an empty preview shows the coach line, which vanishes on the
+first citation; tapping a dot on touch shows the card; the Write/Preview
+toggle matches the gated comp; a pinned ambiguous citation survives reload
+(persisted citationPins). Screenshots per slice.
