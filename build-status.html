@@ -85,6 +85,7 @@
   .audit-item.checked .audit-title{color:var(--ink-faint);text-decoration:line-through}
   .audit-note{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
   .pri{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--gold-deep);padding:2px 7px;border-radius:99px;margin-left:8px;vertical-align:middle}
+  .pri.defer{color:var(--ink-soft);background:var(--rule)}
   .footnote{text-align:center;margin-top:36px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);line-height:1.7}
   @media (max-width:560px){body{padding:34px 14px 72px}.stage-title{font-size:22px}.subs-inner{padding-left:62px}.stage-right .frac{display:none}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -291,26 +292,37 @@
   }
 
   // Parse §4 (## 4. .. next ##) into the audit array.
+  // §4 is a GitHub task-list: "- [ ] **N.** Title · FLAGS — note". Checkbox =
+  // open/done; **N.** = number; the FIRST " — " splits the title-segment from
+  // the note (the note keeps its own em-dashes); the title-segment splits on
+  // " · " into the clean title + status descriptors (TOP PRIORITY / DEFERRED).
   function parseAudit(md){
-    var ls=lines(md),i,started=false,items=[];
+    var ls=lines(md),i,started=false,items=[],EM=' — ',MID=' · ';
     for(i=0;i<ls.length;i++){
       var ln=ls[i];
       if(ln.indexOf('## 4.')===0){started=true;continue;}
       if(started&&ln.indexOf('## ')===0)break;
       if(!started)continue;
-      if(ln.charAt(0)==='|'){
-        if(isSeparator(ln))continue;
-        var parts=ln.split('|');
-        var num=colAt(parts,1),bug=colAt(parts,2),st=colAt(parts,3);
-        var note=parts.length>5?clean(parts.slice(4,parts.length-1).join('|')):colAt(parts,4);
-        if(num===''||num==='#')continue;
-        var up=st.toUpperCase();
-        items.push({
-          num:num,bug:bug,note:note,statusRaw:st,
-          priority:up.indexOf('TOP PRIORITY')!==-1,
-          done:/(^|[^A-Z])(DONE|CLOSED|FIXED|RESOLVED)([^A-Z]|$)/.test(up)
-        });
-      }
+      var m=/^\s*-\s*\[( |x|X)\]\s*(.*)$/.exec(ln);
+      if(!m)continue;
+      var done=m[1].toLowerCase()==='x';
+      var body=m[2];
+      var nm=/^\*{0,2}(\d+)\.\*{0,2}\s*/.exec(body);
+      var num='';
+      if(nm){num=nm[1];body=body.substring(nm[0].length);}
+      var sep=body.indexOf(EM);
+      var titleSeg=sep===-1?body:body.substring(0,sep);
+      var note=sep===-1?'':body.substring(sep+EM.length);
+      var segs=titleSeg.split(MID);
+      var descr=segs.slice(1).join(MID).toUpperCase();
+      items.push({
+        num:num,
+        bug:clean(segs[0]),
+        note:clean(note),
+        priority:descr.indexOf('TOP PRIORITY')!==-1,
+        deferred:descr.indexOf('DEFERRED')!==-1,
+        done:done
+      });
     }
     return items;
   }
@@ -406,7 +418,7 @@
       var it=items[i],cls=it.done?' checked':'';
       html+='<div class="audit-item'+cls+'" role="checkbox" aria-checked="'+(it.done?'true':'false')+'">'+
         '<span class="check">'+TICK+'</span>'+
-        '<span class="audit-body"><span class="audit-title">'+esc(it.num)+'. '+esc(it.bug)+(it.priority?'<span class="pri">top priority</span>':'')+'</span>'+
+        '<span class="audit-body"><span class="audit-title">'+esc(it.num)+'. '+esc(it.bug)+(it.priority?'<span class="pri">top priority</span>':'')+(it.deferred?'<span class="pri defer">deferred</span>':'')+'</span>'+
         (it.note?'<span class="audit-note">'+esc(it.note)+'</span>':'')+'</span></div>';
     }
     document.getElementById("audit").innerHTML=html;
@@ -423,7 +435,10 @@
   }
 
   function showError(){
-    document.getElementById("stages").innerHTML='<p style="text-align:center;color:var(--ink-soft);font-family:var(--mono);font-size:13px">Couldn’t load build status — the source file didn’t respond</p>';
+    var msg=(location.protocol==='file:')
+      ? 'Open this from praxis-reading.netlify.app/build-status.html — a local file can’t load the data.'
+      : 'Couldn’t load build status — the source file didn’t respond';
+    document.getElementById("stages").innerHTML='<p style="text-align:center;color:var(--ink-soft);font-family:var(--mono);font-size:13px">'+esc(msg)+'</p>';
     document.getElementById("audit").innerHTML='';
   }
 
@@ -442,6 +457,7 @@
   }
 
   function boot(){
+    if(location.protocol==='file:'){showError();return;}
     var url='docs/Checklist and Roadmap/BUILD_STATE.md'.replace(/ /g,'%20')+'?t='+(new Date()).getTime();
     fetch(url,{cache:'no-store'}).then(function(resp){
       if(!resp||!resp.ok){showError();return;}

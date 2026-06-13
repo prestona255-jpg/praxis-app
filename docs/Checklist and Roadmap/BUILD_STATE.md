@@ -270,16 +270,14 @@ transcribed, as `audit bug #5` in `10-5.md`). Ordered **strongest-first**. #1 ou
 all (broken core function, pre-launch). "A Pedagogy of Desire" content work is saved for
 the very end (after this list).
 
-| # | Bug | Status | Notes / next step |
-|---|---|---|---|
-| **1** | **Connect sub-theories no longer works** | **OPEN · REGRESSION since 9.6c.4 · TOP PRIORITY** | Symptom only, no diagnosis yet. **Next step = Stage 0 DIAGNOSIS pass**: reproduce in test session, trace what changed since 9.6c.4 (`7a2c976`) — suspect Stage 10 `views.js` work on the constellation / `linkedSubTheories` path — report root cause, then **HALT before any fix**. Do not bundle a fix. |
-| 2 | Global search-result click does not navigate | OPEN | ⌘K spotlight (`js/spotlight.js`) result selection does not route. |
-| 3 | Enter does not send in Yumi | OPEN | Yumi input: Enter should send. |
-| 4 | Mobile pass, all pages | OPEN | Full-app mobile sweep. |
-| **5** | Writing boxes feel weird / hard to engage | OPEN · DEFERRED-with-comp-gate | **Same tracked item as 10.5.8** (app-wide writing-surface field treatment; overrides a locked borderless spec). #5 ⟷ 10.5.8 — one item, two references, not two. |
-| 6 | Screen uploaded books for titles + read-status | OPEN (feature) | Extends the 6.1 shelf-photo scan toward read-status capture. |
-| 7 | User-created themes, Yumi-assisted | OPEN (feature) | |
-| 8 | Developed account page | OPEN (feature) | Enhances the shipped 14.3.4 `#account` page. |
+- [ ] **1.** Connect sub-theories no longer works · regression since 9.6c.4 · TOP PRIORITY — Symptom only, no diagnosis yet. **Next step = Stage 0 DIAGNOSIS pass**: reproduce in test session, trace what changed since 9.6c.4 (`7a2c976`) — suspect Stage 10 `views.js` work on the constellation / `linkedSubTheories` path — report root cause, then **HALT before any fix**. Do not bundle a fix.
+- [ ] **2.** Global search-result click does not navigate — ⌘K spotlight (`js/spotlight.js`) result selection does not route.
+- [ ] **3.** Enter does not send in Yumi — Yumi input: Enter should send.
+- [ ] **4.** Mobile pass, all pages — Full-app mobile sweep.
+- [ ] **5.** Writing boxes feel weird / hard to engage · DEFERRED (comp-gate) — **Same tracked item as 10.5.8** (app-wide writing-surface field treatment; overrides a locked borderless spec). #5 ⟷ 10.5.8 — one item, two references, not two.
+- [ ] **6.** Screen uploaded books for titles + read-status · feature — Extends the 6.1 shelf-photo scan toward read-status capture.
+- [ ] **7.** User-created themes, Yumi-assisted · feature
+- [ ] **8.** Developed account page · feature — Enhances the shipped 14.3.4 `#account` page.
 
 ---
 
