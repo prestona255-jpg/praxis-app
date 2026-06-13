@@ -34,6 +34,24 @@ function isYumiPanelOpen() {
   return ls('praxis_yumi_open', false) === true;
 }
 
+// 6.2c: the Yumi panel is a fixed bottom-right overlay (z-9998). On an arc's
+// constellation Web view it parks over the sub-theory marks and swallows
+// Connect clicks (a click resolves to the panel, handleConnectClick disarms).
+// Onboarding parked it two ways -- auto-open and the persisted praxis_yumi_open
+// flag it sets. Rule: never PARK the panel over the constellation. While an arc
+// route is active the panel stays closed; the toggle is untouched, so the user
+// can still open Yumi there deliberately -- this only suppresses a panel carried
+// in from a prior page / the persisted flag / onboarding.
+function isArcRoute() {
+  return location.hash.indexOf('#arc/') === 0;
+}
+
+function suppressYumiOnArc() {
+  if (isArcRoute() && yumiPanelEl) {
+    yumiPanelEl.classList.remove('yumi-panel-open');
+  }
+}
+
 function pickYumiGreeting() {
   if (YUMI_GREETINGS.length <= 1) {
     return YUMI_GREETINGS[0] || '';
@@ -277,6 +295,9 @@ function maybeStartOnboarding(uid) {
   if (!u || !u.uid || u.uid !== uid) { return; }
   if (!state.userBooks[uid] || state.userBooks[uid].bookIds.length !== 0) { return; }
   if (getProfile(uid).onboardingSeen === true) { return; }
+  // 6.2c: do not auto-open the greeting onto an arc surface (it would park the
+  // panel over the constellation -- see isArcRoute / suppressYumiOnArc above).
+  if (isArcRoute()) { return; }
   startOnboarding();
 }
 
@@ -453,7 +474,7 @@ function renderYumiPanel() {
     yumiPanelEl = buildYumiPanel();
     document.body.appendChild(yumiPanelEl);
   }
-  if (isYumiPanelOpen()) {
+  if (isYumiPanelOpen() && !isArcRoute()) {
     yumiPanelEl.classList.add('yumi-panel-open');
     renderYumiEmptyState();
   } else {
@@ -485,7 +506,12 @@ function closeYumiPanel() {
 }
 
 function toggleYumiPanel() {
-  if (isYumiPanelOpen()) {
+  // 6.2c: key off the VISIBLE state, not the persisted flag. On an arc the
+  // panel is suppressed (class stripped) while the flag may still read open;
+  // a flag-based toggle would "close" an already-hidden panel (a dead first
+  // click). The class is the source of truth for what the user actually sees.
+  var visiblyOpen = !!(yumiPanelEl && yumiPanelEl.classList.contains('yumi-panel-open'));
+  if (visiblyOpen) {
     closeYumiPanel();
   } else {
     openYumiPanel();
@@ -520,6 +546,9 @@ function onYumiKeydown(e) {
 function initYumiUI() {
   renderYumiPanel();
   document.addEventListener('keydown', onYumiKeydown);
+  // 6.2c: close the panel when navigating into an arc, so an open Yumi carried
+  // in from a prior page never parks over the constellation.
+  window.addEventListener('hashchange', suppressYumiOnArc);
 }
 
 if (document.readyState === 'loading') {
