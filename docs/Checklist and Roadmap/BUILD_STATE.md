@@ -191,7 +191,7 @@ landed out of alpha order; 10.3 shipped before 10.2. Sections below are in build
 |---|---|---|---|---|---|
 | 9.6a | Position schema + persistence | SHIPPED+VERIFIED | v3.20 | `caf86f7` | |
 | 9.6b | Luminous 16-mark static re-skin | SHIPPED+VERIFIED | v3.21–v3.25 | `d39e05a`,`e5427da`,`d3bf42b` | Contrast tuned (b.1), mark-distribution fixed (b.2). |
-| 9.6c | Interactivity: control bar / drag / hover cards / **Connect** + resonance edges | SHIPPED+VERIFIED | v3.23–v3.27 | `66ff194`,`54e0108`,`fba9a12`,`7a2c976` | **Connect shipped at 9.6c.4 (`7a2c976`)** — see audit bug #1, now regressed. |
+| 9.6c | Interactivity: control bar / drag / hover cards / **Connect** + resonance edges | SHIPPED+VERIFIED | v3.23–v3.27 | `66ff194`,`54e0108`,`fba9a12`,`7a2c976` | **Connect shipped at 9.6c.4 (`7a2c976`)** — later regressed by 6.2b onboarding (panel overlay), **RESOLVED** at `2e2f028` / v3.98 (audit #1). |
 | 9.6d | **Book evidence layer** (gray book glyphs from `evidence[].refId`, dotted tethers, intersection bridges, book-attach, Books toggle) | **PLANNED** | — | — | Authored in spec/checklist/roadmap (`s9-6d`); never shipped. Nearest unshipped constellation sub-stage. |
 
 ### Visual Uplift / Theme / Hybrid / Chrome / design-spec — SHIPPED+VERIFIED (2026-06-08→11)
@@ -238,7 +238,7 @@ Checkpoints: `docs/checkpoints/10-2..10-5(+recon).md`. 10.1 predates the checkpo
 
 | Priority | Item | Status | Pointer |
 |---|---|---|---|
-| **1 (top)** | **Connect sub-theories regression** — broken since 9.6c.4 | OPEN · REGRESSION | **audit bug #1 (§4)**. Next action is a **Stage 0 diagnosis pass**, not a fix. |
+| ~~1~~ | **Connect sub-theories regression** — broken since 9.6c.4 | ✅ RESOLVED · `2e2f028` / v3.98 | Closed — see **audit bug #1 (§4)**. Onboarding parked the z-9998 Yumi panel over the constellation; suppressed on `#arc/` routes + class-based toggle. |
 | 2 | 10.2 / 10.3 verification residuals | SHIPPED-UNVERIFIED | Close in a dedicated verification pass (§5). Not a code change. |
 | 3 | 9.6d book-evidence layer | PLANNED | Authored, never shipped; nearest unshipped constellation sub-stage. |
 | 4 | 10.5.8 = audit bug #5 writing-surface field treatment | DEFERRED | Own comp-gate; cross-linked to audit #5 (§4). |
@@ -270,7 +270,7 @@ transcribed, as `audit bug #5` in `10-5.md`). Ordered **strongest-first**. #1 ou
 all (broken core function, pre-launch). "A Pedagogy of Desire" content work is saved for
 the very end (after this list).
 
-- [ ] **1.** Connect sub-theories no longer works · regression since 9.6c.4 · TOP PRIORITY — Symptom only, no diagnosis yet. **Next step = Stage 0 DIAGNOSIS pass**: reproduce in test session, trace what changed since 9.6c.4 (`7a2c976`) — suspect Stage 10 `views.js` work on the constellation / `linkedSubTheories` path — report root cause, then **HALT before any fix**. Do not bundle a fix.
+- [x] **1.** Connect sub-theories no longer works · regression since 9.6c.4 · **RESOLVED** at `2e2f028` / live **v3.98**. Root cause: onboarding parked the z-9998 Yumi panel over the constellation via two paths — auto-open on `#arc/` routes + the persisted `praxis_yumi_open` flag it set and never cleared; a real click on a covered mark hit the panel, `closest('[data-st-sub-id]')` returned null, `disarm()` fired (the connect handler / `linkedSubTheories` path / panel base CSS were byte-identical to 9.6c.4 — see A-1..A-3 diagnosis). Fix: suppress the panel on `#arc/` routes (`maybeStartOnboarding` gate + `renderYumiPanel` `!isArcRoute` + `hashchange` `suppressYumiOnArc`) and make the toggle class-based (no dead first click under suppression); connect handler / constellation render / panel CSS untouched. (A first route-gate-only attempt `a0458a2` was reverted `96d7cf3` — it missed the persisted-flag path.) **PARKED (logged, do NOT fix now):** (a) pre-existing manual-open overlap — deliberately opening Yumi on an arc still covers marks; not the regression. (b) onboarding still leaves `praxis_yumi_open=true` on non-arc pages — minor UX wart. (c) Preston's personal real-account "click panes, no connection" was never confirmed to be this overlay (account onboarded, panel closed); if it recurs, the parked lead is drift-target instability on the animated marks.
 - [ ] **2.** Global search-result click does not navigate — ⌘K spotlight (`js/spotlight.js`) result selection does not route.
 - [ ] **3.** Enter does not send in Yumi — Yumi input: Enter should send.
 - [ ] **4.** Mobile pass, all pages — Full-app mobile sweep.
