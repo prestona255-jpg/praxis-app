@@ -461,6 +461,15 @@ function buildYumiPanel() {
   });
   row.appendChild(sendBtn);
 
+  // R#3: Enter sends, mirroring the Send button. Single-line <input>, so no
+  // newline to preserve; .click() reuses the button's in-flight/empty/onboarding guards.
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (yumiSendBtnEl) { yumiSendBtnEl.click(); }
+    }
+  });
+
   panel.appendChild(row);
   return panel;
 }
