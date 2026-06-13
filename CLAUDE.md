@@ -47,8 +47,10 @@ Record the stage as claimed-done with its evidence (byte deltas, grep, commit ha
 
 ## Plan-file execution protocol (added June 2026)
 
-When Preston says "Execute Stage <N> from docs/stage-10-plan.md" (or a
-future plan file), this protocol governs:
+This protocol is the DEFAULT for all build work — not a Stage 10
+special. Stages are authored into a plan file (docs/<stage>-plan.md);
+"Execute <substage> from <plan file>" is the trigger, and the
+discipline below governs every build task, plan-file or ad-hoc:
 
 - Read the named substage's section fully before any action. The plan
   file is authoritative for scope; this file is authoritative for
