@@ -577,6 +577,9 @@ function saveProfileToFirestore(uid, profile, callback) {
       .set({
         displayNameOverride: (profile && profile.displayNameOverride) ? profile.displayNameOverride : '',
         penName:             (profile && profile.penName) ? profile.penName : '',
+        // #8 Stage 4b: persist the additive tagline. .set() is a full-doc
+        // overwrite, so this MUST be listed or it would be wiped on every save.
+        tagline:             (profile && profile.tagline) ? profile.tagline : '',
         // 6.2b: persist the first-run greeting flag. .set() is a full-doc
         // overwrite, so this field must be present or it would be wiped on
         // every Account-page save. Callers pass getProfile(uid), which now

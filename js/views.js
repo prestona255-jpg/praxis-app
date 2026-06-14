@@ -8063,34 +8063,114 @@ function _accountStatCard(label, value, key) {
   l.className = 'account-stat-label';
   l.textContent = label;
   card.appendChild(l);
+  // #8 Stage 4c: quiet tap-affordance caret (token color via CSS).
+  var caret = document.createElement('span');
+  caret.className = 'account-stat-caret';
+  caret.setAttribute('aria-hidden', 'true');
+  caret.textContent = '›';
+  card.appendChild(caret);
   card.addEventListener('click', function() {
     _accountToggleCategory(key, card);
   });
   return card;
 }
 
-// #8 Stage 2 (expand-in-place): toggle the ONE inline panel under the stat
-// cards. PURE DOM -- never touches location.hash and never re-renders the
-// page, so an open panel survives until the user navigates via an item link.
-// Open one -> shows; click another -> swaps; click the open one -> collapses.
-// data-open-cat on the host tracks the current open category.
+// #8 Stage 2/4c: the ONE inline panel under the stat cards. PURE DOM -- never
+// touches location.hash. A single open-state lives on the host's data-open
+// attribute ('cat:<key>' for a stat category, 'sub:<id>' for a tapped mark),
+// so the category path and the mark path MUTUALLY REPLACE and a same-item click
+// collapses. _accountHostReset clears the panel, the marker, and every stat-card
+// active state.
+function _accountHostReset() {
+  var host = document.querySelector('.account-expand-host');
+  if (host) { host.innerHTML = ''; host.removeAttribute('data-open'); }
+  var cards = document.querySelectorAll('.account-stat');
+  var i;
+  for (i = 0; i < cards.length; i = i + 1) { cards[i].className = 'account-stat'; }
+}
+
 function _accountToggleCategory(key, cardEl) {
   var host = document.querySelector('.account-expand-host');
   if (!host) { return; }
-  var cards = document.querySelectorAll('.account-stat');
-  var i;
-  for (i = 0; i < cards.length; i = i + 1) {
-    cards[i].className = 'account-stat';
-  }
-  if (host.getAttribute('data-open-cat') === key) {
-    host.innerHTML = '';
-    host.removeAttribute('data-open-cat');
-    return;
-  }
-  host.innerHTML = '';
+  var was = host.getAttribute('data-open');
+  _accountHostReset();
+  if (was === 'cat:' + key) { return; }
   host.appendChild(_accountBuildCategoryPanel(key));
-  host.setAttribute('data-open-cat', key);
+  host.setAttribute('data-open', 'cat:' + key);
   if (cardEl) { cardEl.className = 'account-stat account-stat-active'; }
+}
+
+// #8 Stage 4c: open a tapped mark's "standing place" panel in the shared host.
+// Mutually replaces any open category (and clears its active card); clicking the
+// same mark again collapses.
+function _accountOpenMark(subId) {
+  var host = document.querySelector('.account-expand-host');
+  if (!host) { return; }
+  var was = host.getAttribute('data-open');
+  _accountHostReset();
+  if (was === 'sub:' + subId) { return; }
+  host.appendChild(_accountBuildMarkPanel(subId));
+  host.setAttribute('data-open', 'sub:' + subId);
+  if (typeof host.scrollIntoView === 'function') {
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// #8 Stage 4c: the "standing place" panel for one sub-theory (mark-click target).
+// Reads the live record: title + context line ("in <arc>" ONLY when the arc is
+// the user's OWN -- hidden for the sentinel seed -- plus N evidence / N
+// marginalia) + "open in full ->" (#subtheory/<id>) + a reflection footer. The
+// close (x) resets the host.
+function _accountBuildMarkPanel(subId) {
+  var panel = document.createElement('div');
+  panel.className = 'account-expand-panel account-mark-panel';
+  var sub = (state.subTheories && state.subTheories[subId]) ? state.subTheories[subId] : null;
+  if (!sub) {
+    panel.appendChild(_accountEmptyRow('That idea is no longer here.'));
+    return panel;
+  }
+  var user = getCurrentUser();
+  var uid = user && user.uid;
+
+  var head = document.createElement('div');
+  head.className = 'account-mark-head';
+  var title = document.createElement('h3');
+  title.className = 'account-mark-title';
+  title.textContent = subTheoryRowLabel(sub);
+  head.appendChild(title);
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'account-mark-close';
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '✕';
+  close.addEventListener('click', function() { _accountHostReset(); });
+  head.appendChild(close);
+  panel.appendChild(head);
+
+  var arc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
+  var parts = [];
+  if (arc && arc.userId === uid && arc.title) { parts.push('in ' + arc.title); }
+  var evCount = (sub.evidence && sub.evidence.length) ? sub.evidence.length : 0;
+  var margCount = (sub.attachedMarginalia && sub.attachedMarginalia.length)
+    ? sub.attachedMarginalia.length : 0;
+  parts.push(evCount + ' evidence');
+  parts.push(margCount + ' marginalia');
+  var ctx = document.createElement('p');
+  ctx.className = 'account-mark-context';
+  ctx.textContent = parts.join(' · ');
+  panel.appendChild(ctx);
+
+  var open = document.createElement('a');
+  open.className = 'account-expand-more account-mark-open';
+  open.href = '#subtheory/' + sub.id;
+  open.textContent = 'open in full →';
+  panel.appendChild(open);
+
+  var foot = document.createElement('p');
+  foot.className = 'account-mark-foot';
+  foot.textContent = 'A standing place for what this idea is doing in your thinking.';
+  panel.appendChild(foot);
+  return panel;
 }
 
 // #8 Stage 2: one quiet empty-state line for a category with no items.
@@ -8477,6 +8557,15 @@ function renderAccountPage() {
     : (user.displayName ? user.displayName : 'Your account');
   heroText.appendChild(heroName);
 
+  // #8 Stage 4b: one-line self-description under the name (italic-serif),
+  // rendered ONLY when set (additive profile.tagline, default-on-read '').
+  if (profile.tagline) {
+    var heroTagline = document.createElement('p');
+    heroTagline.className = 'account-hero-tagline';
+    heroTagline.textContent = profile.tagline;
+    heroText.appendChild(heroTagline);
+  }
+
   // Pen name as the existing italic sub-line (.account-field-hint), shown
   // only when a pen name is set.
   if (profile.penName) {
@@ -8532,6 +8621,19 @@ function renderAccountPage() {
   pnInput.value = profile.penName ? profile.penName : '';
   profileBlock.appendChild(pnInput);
 
+  // #8 Stage 4b: self-description (tagline) -- additive profile field, default ''.
+  var sdLabel = document.createElement('label');
+  sdLabel.className = 'account-field-label';
+  sdLabel.textContent = 'Self-description';
+  profileBlock.appendChild(sdLabel);
+
+  var sdInput = document.createElement('input');
+  sdInput.type = 'text';
+  sdInput.className = 'account-field-input';
+  sdInput.setAttribute('placeholder', 'A one-line description of your reading life');
+  sdInput.value = profile.tagline ? profile.tagline : '';
+  profileBlock.appendChild(sdInput);
+
   var saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'notebook-new-entry account-save-btn';
@@ -8545,7 +8647,8 @@ function renderAccountPage() {
   saveBtn.addEventListener('click', function() {
     setProfile(uid, {
       displayNameOverride: dnInput.value.trim(),
-      penName:             pnInput.value.trim()
+      penName:             pnInput.value.trim(),
+      tagline:             sdInput.value.trim()
     });
     saveNote.textContent = 'Saving...';
     saveProfileToFirestore(uid, getProfile(uid), function(r) {
@@ -8562,7 +8665,7 @@ function renderAccountPage() {
   // ----- SECTION EYEBROW (#8 Stage 4a) -----
   var slotEyebrow = document.createElement('p');
   slotEyebrow.className = 'eyebrow';
-  slotEyebrow.textContent = 'the shape of your thinking';
+  slotEyebrow.textContent = 'the shape of your thinking — tap a mark';
   wrap.appendChild(slotEyebrow);
 
   // ----- CONSTELLATION SLOT (Stage 3: inert owner-keyed constellation) -----
@@ -8591,6 +8694,18 @@ function renderAccountPage() {
       showFaint:      false,
       showLegend:     false
     });
+    // #8 Stage 4c: delegated mark-click -> open the sub-theory's standing-place
+    // panel in the shared host (no navigation, no tooltip, no drag). Marks are
+    // <g data-st-sub-id> shape groups; evidence dots carry data-st-mark and are
+    // excluded so a dot-click resolves to its parent mark.
+    constSvg.style.cursor = 'pointer';
+    constSvg.addEventListener('click', function(ev) {
+      var g = (ev.target && ev.target.closest)
+        ? ev.target.closest('[data-st-sub-id]:not([data-st-mark])') : null;
+      if (!g) { return; }
+      var sid = g.getAttribute('data-st-sub-id');
+      if (sid) { _accountOpenMark(sid); }
+    });
   }
   wrap.appendChild(constSlot);
 
@@ -8598,7 +8713,7 @@ function renderAccountPage() {
   var counts = _accountCounts(uid);
   var statsEyebrow = document.createElement('p');
   statsEyebrow.className = 'eyebrow';
-  statsEyebrow.textContent = 'your reading life';
+  statsEyebrow.textContent = 'your reading life — tap to open it here';
   wrap.appendChild(statsEyebrow);
   var stats = document.createElement('div');
   stats.className = 'account-stats';
@@ -8624,7 +8739,7 @@ function renderAccountPage() {
 
   var covenant = document.createElement('p');
   covenant.className = 'account-covenant';
-  covenant.textContent = 'Your library, your arcs, your notebook -- they ' +
+  covenant.textContent = 'Your library, your arcs, your notebook — they ' +
     'live in your account, and they\'re yours. Take a copy or remove them ' +
     'whenever you like.';
   dataCard.appendChild(covenant);
@@ -8674,16 +8789,21 @@ function renderAccountPage() {
   });
   actionsBlock.appendChild(signoutBtn);
 
-  dataCard.appendChild(actionsBlock);
   wrap.appendChild(dataCard);
+
+  // #8 Stage 4c: the actions row lives in its OWN card below the covenant card.
+  var actionsCard = document.createElement('section');
+  actionsCard.className = 'account-card account-actions-card';
+  actionsCard.appendChild(actionsBlock);
+  wrap.appendChild(actionsCard);
 
   // Danger zone: irreversible account deletion behind an in-DOM confirm.
   var dangerBlock = document.createElement('div');
-  dangerBlock.className = 'account-block account-danger';
+  dangerBlock.className = 'account-card account-danger';
 
   var dangerLabel = document.createElement('p');
   dangerLabel.className = 'account-danger-label';
-  dangerLabel.textContent = 'Danger zone';
+  dangerLabel.textContent = 'Delete account';
   dangerBlock.appendChild(dangerLabel);
 
   var dangerDesc = document.createElement('p');

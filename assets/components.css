@@ -5441,13 +5441,13 @@
 
 /* Batch 3: danger zone -- .dz dashed danger frame + faint danger wash. */
 .account-danger {
-  margin-top: 24px;
-  /* S7d: cap to the mockup .dz measure. */
-  max-width: 420px;
-  padding: 18px;
-  border: 1px dashed var(--danger-line);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  margin-top: 8px;
+}
+/* #8 Stage 4c: solid card with a red accent (the .account-card frame +
+   danger border + faint danger tint) -- replaces the old dashed box. */
+.account-card.account-danger {
+  border-color: var(--danger-line);
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface-2));
 }
 
 /* S7d: "Danger zone" label (mockup .dz .dl) above the Delete button. */
@@ -5719,11 +5719,12 @@
 
 /* Covenant line in the "your data" card. */
 .account-covenant {
-  margin: 8px 0 16px 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--ink-3);
+  margin: 8px 0 0 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 
 /* One-line danger-zone description under the "Danger zone" label. */
@@ -5747,6 +5748,78 @@
 .account .account-secondary-btn.account-edit-active {
   border-color: var(--gold);
   color: var(--gold-text);
+}
+
+/* ===== #8 STAGE 4b/4c -- TAGLINE / TAP AFFORDANCES / MARK PANEL =====
+   Token-only, zero new hex. */
+
+/* Hero tagline -- one-line self-description, italic serif under the name. */
+.account-hero-tagline {
+  margin: 0 0 4px 0;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+/* Stat-card tap caret. */
+.account-stat-caret {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--gold-text);
+}
+
+/* Suppress the constellation's Yumi anchor inside the account slot (CSS only,
+   no renderer change) -- mirrors Home's .home-preview-embed [data-st-yumi]. */
+.account-constellation-slot [data-st-yumi] {
+  display: none;
+}
+
+/* Standing-place panel (a tapped mark's detail; sits in .account-expand-panel). */
+.account-mark-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.account-mark-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.account-mark-close {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.account-mark-close:hover {
+  color: var(--ink);
+}
+.account-mark-context {
+  margin: 6px 0 12px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.account-mark-foot {
+  margin: 12px 0 0 0;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-3);
 }
 /* ===== END ACCOUNT PAGE ===== */
 

@@ -656,7 +656,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false }
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' }
     };
   }
   if (!state.users[uid].yumiMemory) {
@@ -674,7 +674,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' };
   }
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
@@ -690,7 +690,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -706,6 +706,11 @@ function setProfile(uid, fields) {
   }
   if (fields && typeof fields.penName !== 'undefined') {
     p.penName = '' + fields.penName;
+  }
+  // #8 Stage 4b: additive one-line self-description (tagline). String-coerced
+  // like the others; default-on-read handles records saved before this field.
+  if (fields && typeof fields.tagline !== 'undefined') {
+    p.tagline = '' + fields.tagline;
   }
   // 6.2b: first-run greeting flag. Boolean-coerced so the stored shape
   // stays strict; set true only at onboarding (Beat F) completion.
