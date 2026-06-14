@@ -5288,8 +5288,8 @@
    .account-confirm-panel class is a styling hook, no rule needed). */
 
 .account {
-  /* S7d: cap + center to the mockup's account measure (620). */
-  max-width: 620px;
+  /* S7d capped at 620; #8 Stage 3 widens to 800 for the constellation. */
+  max-width: 800px;
   margin: 0 auto;
   padding: 48px 0 64px 0;
 }
@@ -5502,6 +5502,21 @@
   border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-2);
+}
+
+/* #8 Stage 3: when the slot holds the inert constellation, shed the dashed
+   placeholder chrome -- the renderer draws its own cream stage. The svg fills
+   the slot width and keeps the field's aspect via its viewBox. */
+.account-constellation-slot-filled {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.account-constellation-slot-filled svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* Four stat cards in a row; wraps gracefully on narrow widths. */
