@@ -5470,6 +5470,92 @@
 .account .notebook-new-entry.account-delete-btn:hover {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
+
+/* ===== #8 STAGE 1 -- ACCOUNT HUB FRAME =====
+   Hub shell deepening the S7d form: hero, an empty constellation slot
+   (Stage 3), four stat cards, an empty expand-panel host (Stage 2). The
+   cards + slot are token-built surfaces (no .card class exists):
+   --surface-2 fill + --radius-md + --shadow-1 + --border. CSS variables
+   only -- zero hardcoded hex. */
+
+.account-hero {
+  padding: 0 0 24px 0;
+}
+
+/* Display name as the hero heading -- Cormorant, replacing the static
+   "Account" h1 of the S7d form. */
+.account-hero-name {
+  margin: 0 0 4px 0;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+/* Empty placeholder reserving the constellation's vertical space until
+   Stage 3 mounts the inert mini-field. Faint inset ground + dashed rule so
+   the slot reads as "reserved", not broken. */
+.account-constellation-slot {
+  min-height: 220px;
+  margin: 0 0 32px 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+/* Four stat cards in a row; wraps gracefully on narrow widths. */
+.account-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 32px 0;
+}
+
+/* One stat card -- token-built surface; clickable affordance (cursor +
+   hover lift) but INERT this stage (no handler until Stage 2). */
+.account-stat {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transition: box-shadow var(--motion-base) var(--ease),
+              transform var(--motion-base) var(--ease);
+}
+
+.account-stat:hover {
+  box-shadow: var(--shadow-2);
+  transform: translateY(-2px);
+}
+
+/* The count -- Cormorant numeral, large. */
+.account-stat-value {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* The label -- mono uppercase, mirroring .account-field-label. */
+.account-stat-label {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Empty expand-panel host -- no visible chrome until Stage 2 mounts a
+   panel into it; only holds flow position + bottom rhythm. */
+.account-expand-host {
+  margin: 0 0 32px 0;
+}
 /* ===== END ACCOUNT PAGE ===== */
 
 

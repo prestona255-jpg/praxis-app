@@ -8005,13 +8005,74 @@ function openAccountDeleteConfirm(uid) {
   host.appendChild(panel);
 }
 
-// Stage 14.3 Stage 4: the Account page -- the reachable surface tying the
-// 14.3 lifecycle together (profile edit + Firestore sync, workspace
-// export, sign-out, account deletion). getCurrentUser-gated: a signed-out
-// visitor gets a sign-in prompt rather than a broken page. Cormorant
-// header / DM Sans body inherit from the page-level type rules; all
-// colour comes from CSS variables (visual treatment of the new account-*
-// classes is a later styling ticket, per the unstyled-classes precedent).
+// #8 Stage 1 (hub frame): per-uid live counts for the stat cards, seed
+// excluded by ownership (userId !== '__praxis_seed__'). Books read from the
+// per-user shelf (state.userBooks[uid].bookIds), which never holds the
+// sentinel seed books; arcs / sub-theories / marginalia are own-records
+// only. Promise-free, hasOwnProperty-guarded -> ES3 / cscript-parseable.
+function _accountCounts(uid) {
+  var out = { books: 0, arcs: 0, subTheories: 0, marginalia: 0 };
+  if (!uid) { return out; }
+  if (state.userBooks && state.userBooks[uid] &&
+      state.userBooks[uid].bookIds) {
+    out.books = state.userBooks[uid].bookIds.length;
+  }
+  var k;
+  if (state.arcs) {
+    for (k in state.arcs) {
+      if (state.arcs.hasOwnProperty(k) && state.arcs[k] &&
+          state.arcs[k].userId === uid) {
+        out.arcs = out.arcs + 1;
+      }
+    }
+  }
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (state.subTheories.hasOwnProperty(k) && state.subTheories[k] &&
+          state.subTheories[k].userId === uid) {
+        out.subTheories = out.subTheories + 1;
+      }
+    }
+  }
+  if (state.notebookEntries) {
+    for (k in state.notebookEntries) {
+      if (state.notebookEntries.hasOwnProperty(k) &&
+          state.notebookEntries[k] &&
+          state.notebookEntries[k].register === 'marginalia' &&
+          state.notebookEntries[k].userId === uid) {
+        out.marginalia = out.marginalia + 1;
+      }
+    }
+  }
+  return out;
+}
+
+// #8 Stage 1: one stat card -- a token-built surface (no .card class
+// exists). Clickable affordance lives in CSS (.account-stat cursor/hover);
+// INERT this stage -- no handler is attached (Stage 2 wires expand-in-place).
+// A zero count renders as "0" via string coercion.
+function _accountStatCard(label, value) {
+  var card = document.createElement('div');
+  card.className = 'account-stat';
+  var v = document.createElement('div');
+  v.className = 'account-stat-value';
+  v.textContent = '' + value;
+  card.appendChild(v);
+  var l = document.createElement('div');
+  l.className = 'account-stat-label';
+  l.textContent = label;
+  card.appendChild(l);
+  return card;
+}
+
+// #8 Stage 1 (hub FRAME): the Account page deepened into the "your standing
+// place" hub. Top->bottom: hero (eyebrow + display name + pen sub-line +
+// email + the wired profile editor), an empty constellation slot (Stage 3),
+// four live stat cards (Books / Arcs / Sub-theories / Marginalia, seed
+// excluded, clickable-but-inert), an empty expand-panel host (Stage 2), and
+// the data block (export / sign out / delete) reused verbatim at the foot.
+// getCurrentUser-gated: a signed-out visitor gets a sign-in prompt. All
+// colour from CSS variables; Cormorant via --font-serif on .account-hero-name.
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -8020,20 +8081,22 @@ function renderAccountPage() {
   var wrap = document.createElement('section');
   wrap.className = 'account';
 
-  var header = document.createElement('header');
-  header.className = 'account-header';
+  // ----- HERO -----
+  var hero = document.createElement('header');
+  hero.className = 'account-hero';
   var acctEyebrow = document.createElement('p');
   acctEyebrow.className = 'eyebrow';
-  acctEyebrow.textContent = 'Your account';
-  header.appendChild(acctEyebrow);
-  var title = document.createElement('h1');
-  title.className = 'account-title';
-  title.textContent = 'Account';
-  header.appendChild(title);
-  wrap.appendChild(header);
+  acctEyebrow.textContent = 'your standing place';
+  hero.appendChild(acctEyebrow);
 
   var user = getCurrentUser();
   if (!user || !user.uid) {
+    var soName = document.createElement('h1');
+    soName.className = 'account-hero-name';
+    soName.textContent = 'Account';
+    hero.appendChild(soName);
+    wrap.appendChild(hero);
+
     var signinCopy = document.createElement('p');
     signinCopy.className = 'account-signin-copy';
     signinCopy.textContent = 'Sign in to manage your account.';
@@ -8055,17 +8118,34 @@ function renderAccountPage() {
   var uid = user.uid;
   var profile = getProfile(uid);
 
-  // Stage 14.3 fix: read-only "Signed in as <email>" line directly under
-  // the Account h1, so two accounts sharing a display name are still
-  // distinguishable. Reuses the muted .account-signin-copy class; not an
-  // input. Email comes from the cached praxis_user object (.email).
+  // Display name (Cormorant via .account-hero-name) -- the override, else the
+  // auth display name, else a neutral fallback.
+  var heroName = document.createElement('h1');
+  heroName.className = 'account-hero-name';
+  heroName.textContent = profile.displayNameOverride
+    ? profile.displayNameOverride
+    : (user.displayName ? user.displayName : 'Your account');
+  hero.appendChild(heroName);
+
+  // Pen name as the existing italic sub-line (.account-field-hint), shown
+  // only when a pen name is set.
+  if (profile.penName) {
+    var heroPen = document.createElement('p');
+    heroPen.className = 'account-field-hint';
+    heroPen.textContent = 'Publishing as ' + profile.penName;
+    hero.appendChild(heroPen);
+  }
+
+  // Read-only "Signed in as <email>" line (mono), preserved from S7d.
   var emailLine = document.createElement('p');
   emailLine.className = 'account-signin-copy account-email-line';
   emailLine.textContent = 'Signed in as ' +
-    (getCurrentUser().email ? getCurrentUser().email : '(no email on file)');
-  wrap.appendChild(emailLine);
+    (user.email ? user.email : '(no email on file)');
+  hero.appendChild(emailLine);
 
-  // Profile block: display-name override + optional pen name.
+  wrap.appendChild(hero);
+
+  // Profile editor: display-name override + optional pen name (wired as today).
   var profileBlock = document.createElement('div');
   profileBlock.className = 'account-block';
 
@@ -8125,6 +8205,27 @@ function renderAccountPage() {
 
   wrap.appendChild(profileBlock);
 
+  // ----- CONSTELLATION SLOT (empty placeholder; Stage 3 populates) -----
+  var constSlot = document.createElement('div');
+  constSlot.className = 'account-constellation-slot';
+  wrap.appendChild(constSlot);
+
+  // ----- STAT CARDS (live counts, seed excluded; clickable but inert) -----
+  var counts = _accountCounts(uid);
+  var stats = document.createElement('div');
+  stats.className = 'account-stats';
+  stats.appendChild(_accountStatCard('Books', counts.books));
+  stats.appendChild(_accountStatCard('Arcs', counts.arcs));
+  stats.appendChild(_accountStatCard('Sub-theories', counts.subTheories));
+  stats.appendChild(_accountStatCard('Marginalia', counts.marginalia));
+  wrap.appendChild(stats);
+
+  // ----- EXPAND-PANEL HOST (empty container; Stage 2 wires) -----
+  var expandHost = document.createElement('div');
+  expandHost.className = 'account-expand-host';
+  wrap.appendChild(expandHost);
+
+  // ----- DATA BLOCK (reused verbatim; demoted to the foot) -----
   // Workspace actions block: export + sign out.
   var actionsBlock = document.createElement('div');
   actionsBlock.className = 'account-block account-actions';
