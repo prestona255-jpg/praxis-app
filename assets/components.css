@@ -5667,6 +5667,87 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ===== #8 STAGE 4a -- ACCOUNT HUB PRESENTATION PASS =====
+   Hero + "your data" reframed as cards (the shared token recipe from
+   .account-stat / .account-expand-panel), a hero gradient avatar, section
+   eyebrows, covenant + danger copy. var() tokens only, zero new hex. */
+
+/* Shared card frame -- same recipe as .account-stat / .account-expand-panel. */
+.account-card {
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
+}
+
+/* Signed-in hero card: gradient avatar left, text column right. Scoped to the
+   card variant so the signed-out .account-hero keeps its plain stacked layout. */
+.account-hero.account-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 32px 0;
+}
+.account-hero-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Hero avatar -- the nav gradient-circle recipe (.app-nav-profile) at hero size. */
+.account-hero-avatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-pill);
+  background: var(--grad);
+  color: var(--text-on-dark);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 24px;
+}
+
+/* Section eyebrows above the constellation slot + stat cards (direct children
+   of .account). The hero/data eyebrows are nested, so they are unaffected. */
+.account > .eyebrow {
+  margin: 0 0 10px 0;
+}
+
+/* Covenant line in the "your data" card. */
+.account-covenant {
+  margin: 8px 0 16px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* One-line danger-zone description under the "Danger zone" label. */
+.account-danger-desc {
+  margin: 0 0 12px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* #8 Stage 4a revision: the DISPLAY NAME / PEN NAME form is hidden by default
+   (clean identity hero); the "Edit profile" action reveals it (pure-DOM class
+   toggle). Active state marks the toggled button. var() tokens only. */
+.account-edit-form {
+  display: none;
+}
+.account-edit-form.account-edit-form-open {
+  display: block;
+}
+.account .account-secondary-btn.account-edit-active {
+  border-color: var(--gold);
+  color: var(--gold-text);
+}
 /* ===== END ACCOUNT PAGE ===== */
 
 

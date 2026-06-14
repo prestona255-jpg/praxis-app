@@ -8339,6 +8339,52 @@ function _accountBuildConstellationData() {
   return out;
 }
 
+// #8 Stage 4a: schema-free "reading since" label from the LIVE Firebase auth
+// creation time (firebase.auth().currentUser.metadata.creationTime -- a built-in
+// auth field, no stored field / no migration). Returns "Month YYYY", or '' when
+// unavailable (cold pre-auth load / offline) so the caller drops the line rather
+// than printing "undefined". ES3 month-name array; try/catch, no promises.
+function _accountReadingSince() {
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  var ct = null;
+  try {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      var au = firebase.auth().currentUser;
+      if (au && au.metadata && au.metadata.creationTime) {
+        ct = au.metadata.creationTime;
+      }
+    }
+  } catch (e) {
+    ct = null;
+  }
+  if (!ct) { return ''; }
+  var d = new Date(ct);
+  if (!d || isNaN(d.getTime())) { return ''; }
+  return MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+// #8 Stage 4a revision: pure-DOM toggle for the hero's hidden edit form (the
+// DISPLAY NAME / PEN NAME / Save-profile block). classList toggle only -- never
+// touches location.hash, so the form survives. Mirrors the Stage-2 toggle
+// pattern; the button carries an active state, and a reveal scrolls the form
+// into view (the "Edit profile" button lives in the data card at the foot). No
+// modal, no new view -- it only gates the existing form's visibility.
+function _accountToggleEditForm(formEl, btnEl) {
+  if (!formEl) { return; }
+  var nowOpen = formEl.classList.toggle('account-edit-form-open');
+  if (btnEl) {
+    if (nowOpen) {
+      btnEl.classList.add('account-edit-active');
+    } else {
+      btnEl.classList.remove('account-edit-active');
+    }
+  }
+  if (nowOpen && typeof formEl.scrollIntoView === 'function') {
+    formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 // #8 Stage 1 (hub FRAME): the Account page deepened into the "your standing
 // place" hub. Top->bottom: hero (eyebrow + display name + pen sub-line +
 // email + the wired profile editor), an empty constellation slot (Stage 3),
@@ -8361,10 +8407,10 @@ function renderAccountPage() {
   var acctEyebrow = document.createElement('p');
   acctEyebrow.className = 'eyebrow';
   acctEyebrow.textContent = 'your standing place';
-  hero.appendChild(acctEyebrow);
 
   var user = getCurrentUser();
   if (!user || !user.uid) {
+    hero.appendChild(acctEyebrow);
     var soName = document.createElement('h1');
     soName.className = 'account-hero-name';
     soName.textContent = 'Account';
@@ -8392,6 +8438,36 @@ function renderAccountPage() {
   var uid = user.uid;
   var profile = getProfile(uid);
 
+  // #8 Stage 4a: the hero is now a card -- a gradient avatar beside a text
+  // column (eyebrow + name + pen + email). Signed-out keeps the plain stack.
+  hero.className = 'account-hero account-card';
+
+  // Avatar: hero-sized gradient circle holding the initial. The initial recipe
+  // REPLICATES renderRoute's avatar derivation: displayName -> email -> 'P',
+  // uppercased. Token-only (--grad / --text-on-dark via .account-hero-avatar).
+  var heroInitial = 'P';
+  if (typeof user.displayName === 'string' && user.displayName.length > 0) {
+    heroInitial = user.displayName.charAt(0).toUpperCase();
+  } else if (typeof user.email === 'string' && user.email.length > 0) {
+    heroInitial = user.email.charAt(0).toUpperCase();
+  }
+  var avatar = document.createElement('div');
+  avatar.className = 'account-hero-avatar';
+  avatar.setAttribute('aria-hidden', 'true');
+  avatar.textContent = heroInitial;
+  hero.appendChild(avatar);
+
+  var heroText = document.createElement('div');
+  heroText.className = 'account-hero-text';
+
+  // #8 Stage 4a: append "reading since <Month YYYY>" to the eyebrow when the
+  // live Firebase creation time resolves; otherwise leave the base eyebrow.
+  var sinceLabel = _accountReadingSince();
+  if (sinceLabel) {
+    acctEyebrow.textContent = 'your standing place · reading since ' + sinceLabel;
+  }
+  heroText.appendChild(acctEyebrow);
+
   // Display name (Cormorant via .account-hero-name) -- the override, else the
   // auth display name, else a neutral fallback.
   var heroName = document.createElement('h1');
@@ -8399,7 +8475,7 @@ function renderAccountPage() {
   heroName.textContent = profile.displayNameOverride
     ? profile.displayNameOverride
     : (user.displayName ? user.displayName : 'Your account');
-  hero.appendChild(heroName);
+  heroText.appendChild(heroName);
 
   // Pen name as the existing italic sub-line (.account-field-hint), shown
   // only when a pen name is set.
@@ -8407,7 +8483,7 @@ function renderAccountPage() {
     var heroPen = document.createElement('p');
     heroPen.className = 'account-field-hint';
     heroPen.textContent = 'Publishing as ' + profile.penName;
-    hero.appendChild(heroPen);
+    heroText.appendChild(heroPen);
   }
 
   // Read-only "Signed in as <email>" line (mono), preserved from S7d.
@@ -8415,13 +8491,17 @@ function renderAccountPage() {
   emailLine.className = 'account-signin-copy account-email-line';
   emailLine.textContent = 'Signed in as ' +
     (user.email ? user.email : '(no email on file)');
-  hero.appendChild(emailLine);
+  heroText.appendChild(emailLine);
 
+  hero.appendChild(heroText);
   wrap.appendChild(hero);
 
-  // Profile editor: display-name override + optional pen name (wired as today).
+  // Profile editor (DISPLAY NAME / PEN NAME + Save). #8 Stage 4a revision:
+  // wrapped as .account-edit-form, HIDDEN by default so the hero reads as a
+  // clean identity card; the "Edit profile" action toggles it open. The form
+  // markup + its Save-profile handler below are UNCHANGED -- only visibility.
   var profileBlock = document.createElement('div');
-  profileBlock.className = 'account-block';
+  profileBlock.className = 'account-block account-edit-form';
 
   var dnLabel = document.createElement('label');
   dnLabel.className = 'account-field-label';
@@ -8479,6 +8559,12 @@ function renderAccountPage() {
 
   wrap.appendChild(profileBlock);
 
+  // ----- SECTION EYEBROW (#8 Stage 4a) -----
+  var slotEyebrow = document.createElement('p');
+  slotEyebrow.className = 'eyebrow';
+  slotEyebrow.textContent = 'the shape of your thinking';
+  wrap.appendChild(slotEyebrow);
+
   // ----- CONSTELLATION SLOT (Stage 3: inert owner-keyed constellation) -----
   // Render-then-attach-NOTHING, exactly like Home's embed (views.js Home path):
   // call renderSubTheoryConstellation, then attach no interaction layers (no
@@ -8508,8 +8594,12 @@ function renderAccountPage() {
   }
   wrap.appendChild(constSlot);
 
-  // ----- STAT CARDS (live counts, seed excluded; clickable but inert) -----
+  // ----- SECTION EYEBROW + STAT CARDS (#8 Stage 4a eyebrow) -----
   var counts = _accountCounts(uid);
+  var statsEyebrow = document.createElement('p');
+  statsEyebrow.className = 'eyebrow';
+  statsEyebrow.textContent = 'your reading life';
+  wrap.appendChild(statsEyebrow);
   var stats = document.createElement('div');
   stats.className = 'account-stats';
   stats.appendChild(_accountStatCard('Books', counts.books, 'books'));
@@ -8523,15 +8613,41 @@ function renderAccountPage() {
   expandHost.className = 'account-expand-host';
   wrap.appendChild(expandHost);
 
-  // ----- DATA BLOCK (reused verbatim; demoted to the foot) -----
-  // Workspace actions block: export + sign out.
+  // ----- DATA BLOCK -> "YOUR DATA" CARD (#8 Stage 4a) -----
+  var dataCard = document.createElement('section');
+  dataCard.className = 'account-card account-data-card';
+
+  var dataEyebrow = document.createElement('p');
+  dataEyebrow.className = 'eyebrow';
+  dataEyebrow.textContent = 'your data';
+  dataCard.appendChild(dataEyebrow);
+
+  var covenant = document.createElement('p');
+  covenant.className = 'account-covenant';
+  covenant.textContent = 'Your library, your arcs, your notebook -- they ' +
+    'live in your account, and they\'re yours. Take a copy or remove them ' +
+    'whenever you like.';
+  dataCard.appendChild(covenant);
+
+  // Workspace actions: edit profile (toggles the hero form) + export + sign out.
   var actionsBlock = document.createElement('div');
   actionsBlock.className = 'account-block account-actions';
+
+  // #8 Stage 4a revision: Edit profile is the FIRST action -- it toggles the
+  // hidden DISPLAY NAME / PEN NAME form (pure DOM, no hash). No Theme button.
+  var editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'notebook-new-entry account-secondary-btn';
+  editBtn.textContent = 'Edit profile';
+  editBtn.addEventListener('click', function() {
+    _accountToggleEditForm(profileBlock, editBtn);
+  });
+  actionsBlock.appendChild(editBtn);
 
   var exportBtn = document.createElement('button');
   exportBtn.type = 'button';
   exportBtn.className = 'notebook-new-entry account-secondary-btn';
-  exportBtn.textContent = 'Export workspace';
+  exportBtn.textContent = 'Export to JSON';
   exportBtn.addEventListener('click', function() {
     var data = exportWorkspace();
     if (!data) return;
@@ -8558,7 +8674,8 @@ function renderAccountPage() {
   });
   actionsBlock.appendChild(signoutBtn);
 
-  wrap.appendChild(actionsBlock);
+  dataCard.appendChild(actionsBlock);
+  wrap.appendChild(dataCard);
 
   // Danger zone: irreversible account deletion behind an in-DOM confirm.
   var dangerBlock = document.createElement('div');
@@ -8568,6 +8685,12 @@ function renderAccountPage() {
   dangerLabel.className = 'account-danger-label';
   dangerLabel.textContent = 'Danger zone';
   dangerBlock.appendChild(dangerLabel);
+
+  var dangerDesc = document.createElement('p');
+  dangerDesc.className = 'account-danger-desc';
+  dangerDesc.textContent = 'Permanently removes your account and everything ' +
+    'in it. This can\'t be undone.';
+  dangerBlock.appendChild(dangerDesc);
 
   var deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
