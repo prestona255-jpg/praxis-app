@@ -8067,7 +8067,7 @@ function _accountStatCard(label, value, key) {
   var caret = document.createElement('span');
   caret.className = 'account-stat-caret';
   caret.setAttribute('aria-hidden', 'true');
-  caret.textContent = '›';
+  caret.textContent = '▾';
   card.appendChild(caret);
   card.addEventListener('click', function() {
     _accountToggleCategory(key, card);
@@ -8132,20 +8132,9 @@ function _accountBuildMarkPanel(subId) {
   var user = getCurrentUser();
   var uid = user && user.uid;
 
-  var head = document.createElement('div');
-  head.className = 'account-mark-head';
-  var title = document.createElement('h3');
-  title.className = 'account-mark-title';
-  title.textContent = subTheoryRowLabel(sub);
-  head.appendChild(title);
-  var close = document.createElement('button');
-  close.type = 'button';
-  close.className = 'account-mark-close';
-  close.setAttribute('aria-label', 'Close');
-  close.textContent = '✕';
-  close.addEventListener('click', function() { _accountHostReset(); });
-  head.appendChild(close);
-  panel.appendChild(head);
+  // #8 v3.105: reuse the shared header (adds the STILL ON YOUR ACCOUNT eyebrow
+  // to match the category panels). Title = the sub-theory label.
+  panel.appendChild(_accountBuildPanelHead(subTheoryRowLabel(sub), 'account-panel-title'));
 
   var arc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
   var parts = [];
@@ -8190,13 +8179,40 @@ function _accountMoreLink(label, hash) {
   return a;
 }
 
+// #8 v3.105: shared panel header (category + mark panels). A mono "STILL ON
+// YOUR ACCOUNT" eyebrow over a serif title, plus a close (x) wired to collapse
+// the host (_accountHostReset clears the panel, the marker, and active cards).
+function _accountBuildPanelHead(titleText, titleClass) {
+  var head = document.createElement('div');
+  head.className = 'account-panel-head';
+  var col = document.createElement('div');
+  col.className = 'account-panel-head-text';
+  var eb = document.createElement('p');
+  eb.className = 'account-panel-eyebrow';
+  eb.textContent = 'STILL ON YOUR ACCOUNT';
+  col.appendChild(eb);
+  var title = document.createElement('h3');
+  title.className = titleClass;
+  title.textContent = titleText;
+  col.appendChild(title);
+  head.appendChild(col);
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'account-mark-close';
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '✕';
+  close.addEventListener('click', function() { _accountHostReset(); });
+  head.appendChild(close);
+  return head;
+}
+
 // #8 Stage 2: composed sub-theory row (no row renderer exists). Reuses the
 // glyph primitive _stPickerMarkSvg (NOT reimplemented), honoring
 // sub.markShape / sub.markColor with stHashIndices(id) as the default, plus
 // subTheoryRowLabel for the label; the whole row links to #subtheory/<id>.
 function _accountSubTheoryRow(sub) {
   var row = document.createElement('a');
-  row.className = 'account-sub-row';
+  row.className = 'account-row';
   row.href = '#subtheory/' + sub.id;
   var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
   var hash = (typeof window.stHashIndices === 'function')
@@ -8206,13 +8222,74 @@ function _accountSubTheoryRow(sub) {
   var color = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
     ? sub.markColor : hash.colorIdx;
   var glyph = document.createElement('span');
-  glyph.className = 'account-sub-row-mark';
+  glyph.className = 'account-row-mark';
   glyph.innerHTML = _stPickerMarkSvg(sub.id, shape, color, pal, false);
   row.appendChild(glyph);
-  var label = document.createElement('span');
-  label.className = 'account-sub-row-label';
-  label.textContent = subTheoryRowLabel(sub);
-  row.appendChild(label);
+  var txt = document.createElement('span');
+  txt.className = 'account-row-text';
+  var title = document.createElement('span');
+  title.className = 'account-row-title';
+  title.textContent = subTheoryRowLabel(sub);
+  txt.appendChild(title);
+  // Subtitle: "in <arc> · N evidence". The "in <arc>" clause appears ONLY when
+  // the arc is the user's OWN (seed-attached subs hide it), mirroring the mark
+  // panel's context line.
+  var meta = document.createElement('span');
+  meta.className = 'account-row-sub';
+  var arc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
+  var u = getCurrentUser();
+  var uid = u && u.uid;
+  var parts = [];
+  if (arc && arc.userId === uid && arc.title) { parts.push('in ' + arc.title); }
+  var evCount = (sub.evidence && sub.evidence.length) ? sub.evidence.length : 0;
+  parts.push(evCount + ' evidence');
+  meta.textContent = parts.join(' · ');
+  txt.appendChild(meta);
+  row.appendChild(txt);
+  var open = document.createElement('span');
+  open.className = 'account-row-open';
+  open.textContent = 'open →';
+  row.appendChild(open);
+  return row;
+}
+
+// #8 v3.105: account-only arc row (the SHARED renderArcRow is left untouched).
+// Arc title (italic-serif) + "N sub-theories" meta (the user's OWN subs in this
+// arc) + a teal "open ->" to #arc/<id>.
+function _accountCountSubsInArc(arcId, uid) {
+  var n = 0, k;
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (state.subTheories.hasOwnProperty(k) && state.subTheories[k] &&
+          state.subTheories[k].arcId === arcId && state.subTheories[k].userId === uid) {
+        n = n + 1;
+      }
+    }
+  }
+  return n;
+}
+
+function _accountArcRow(arc) {
+  var row = document.createElement('a');
+  row.className = 'account-row';
+  row.href = '#arc/' + arc.id;
+  var txt = document.createElement('span');
+  txt.className = 'account-row-text';
+  var title = document.createElement('span');
+  title.className = 'account-row-title';
+  title.textContent = arc.title || '';
+  txt.appendChild(title);
+  var u = getCurrentUser();
+  var n = _accountCountSubsInArc(arc.id, u && u.uid);
+  var meta = document.createElement('span');
+  meta.className = 'account-row-sub';
+  meta.textContent = n + (n === 1 ? ' sub-theory' : ' sub-theories');
+  txt.appendChild(meta);
+  row.appendChild(txt);
+  var open = document.createElement('span');
+  open.className = 'account-row-open';
+  open.textContent = 'open →';
+  row.appendChild(open);
   return row;
 }
 
@@ -8222,19 +8299,26 @@ function _accountSubTheoryRow(sub) {
 // row shows only the source + a one-line snippet (full text + actions live
 // behind the panel's "See all in Notebook ->" deep path). No per-item route.
 function _accountMarginaliaRow(entry) {
+  // #8 v3.105: snippet (italic-serif title) over a "from <book>" subtitle.
+  // READ-ONLY -- emitted as a <div>, so the a.account-row:hover never applies
+  // and there is no per-row open-> (full text lives behind "See all in
+  // Notebook ->").
   var row = document.createElement('div');
-  row.className = 'account-marg-row';
+  row.className = 'account-row account-marg-row';
+  var txt = document.createElement('span');
+  txt.className = 'account-row-text';
+  var snip = document.createElement('span');
+  snip.className = 'account-row-title';
+  snip.textContent = (typeof entry.body === 'string') ? entry.body : '';
+  txt.appendChild(snip);
   var bookId = (entry.bookIds && entry.bookIds[0]) || null;
   var book = (bookId && state.books && state.books[bookId]) || null;
   var bookTitle = (book && book.title) || '(unknown book)';
-  var src = document.createElement('div');
-  src.className = 'account-marg-src';
+  var src = document.createElement('span');
+  src.className = 'account-row-sub';
   src.textContent = 'from ' + bookTitle;
-  row.appendChild(src);
-  var snip = document.createElement('div');
-  snip.className = 'account-marg-snippet';
-  snip.textContent = (typeof entry.body === 'string') ? entry.body : '';
-  row.appendChild(snip);
+  txt.appendChild(src);
+  row.appendChild(txt);
   return row;
 }
 
@@ -8252,6 +8336,10 @@ function _accountBuildCategoryPanel(key) {
     return panel;
   }
   var uid = user.uid;
+  // #8 v3.105: panel header -- "Your <cat>" serif title + STILL ON YOUR ACCOUNT
+  // eyebrow + a close (x). Sits above the reused rows; close collapses the host.
+  var catLabels = { books: 'Books', arcs: 'Arcs', subtheories: 'Sub-theories', marginalia: 'Marginalia' };
+  panel.appendChild(_accountBuildPanelHead('Your ' + (catLabels[key] || key), 'account-panel-title'));
   var k, i;
 
   if (key === 'books') {
@@ -8283,7 +8371,7 @@ function _accountBuildCategoryPanel(key) {
     }
     arcs.sort(function(a, b) { return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0); });
     if (!arcs.length) { panel.appendChild(_accountEmptyRow('No arcs yet.')); return panel; }
-    for (i = 0; i < arcs.length; i = i + 1) { panel.appendChild(renderArcRow(arcs[i])); }
+    for (i = 0; i < arcs.length; i = i + 1) { panel.appendChild(_accountArcRow(arcs[i])); }
     return panel;
   }
 

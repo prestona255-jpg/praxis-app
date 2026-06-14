@@ -5291,7 +5291,8 @@
   /* S7d capped at 620; #8 Stage 3 widens to 800 for the constellation. */
   max-width: 800px;
   margin: 0 auto;
-  padding: 48px 0 64px 0;
+  /* #8 v3.105: airier outer padding (was 48 0 64 0). */
+  padding: 56px 0 72px 0;
 }
 
 .account-header {
@@ -5328,7 +5329,8 @@
 
 /* Stacked content blocks with vertical rhythm between them. */
 .account-block {
-  margin: 0 0 32px 0;
+  /* #8 v3.105: airier inter-section rhythm (was 32px). */
+  margin: 0 0 40px 0;
 }
 
 /* Each label sits on its own line above its input -- no side-by-side
@@ -5498,7 +5500,7 @@
    the slot reads as "reserved", not broken. */
 .account-constellation-slot {
   min-height: 220px;
-  margin: 0 0 32px 0;
+  margin: 0 0 40px 0;
   border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-2);
@@ -5524,7 +5526,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin: 0 0 32px 0;
+  margin: 0 0 40px 0;
 }
 
 /* One stat card -- token-built surface; clickable affordance (cursor +
@@ -5569,7 +5571,7 @@
 /* Empty expand-panel host -- no visible chrome until Stage 2 mounts a
    panel into it; only holds flow position + bottom rhythm. */
 .account-expand-host {
-  margin: 0 0 32px 0;
+  margin: 0 0 40px 0;
 }
 
 /* ===== #8 STAGE 2 -- ACCOUNT HUB EXPAND-IN-PLACE =====
@@ -5580,11 +5582,19 @@
 
 /* Active stat card -- the open category reads as pressed. */
 .account-stat-active {
-  border-color: var(--gold);
+  /* #8 v3.105: teal active ring (was --gold). */
+  border-color: var(--marginalia-color);
   box-shadow: var(--shadow-2);
 }
 
 /* The opened panel: a token surface stacking the reused rows. */
+/* #8 v3.105: panel entrance. The host swaps innerHTML on open, so the panel
+   element is created fresh on each open -- a CSS animation (not a transition,
+   which would need a pre-existing element to change state) runs on insertion. */
+@keyframes account-panel-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .account-expand-panel {
   display: flex;
   flex-direction: column;
@@ -5594,35 +5604,70 @@
   border-radius: var(--radius-md);
   background: var(--surface-2);
   box-shadow: var(--shadow-1);
+  animation: account-panel-in 0.24s var(--ease) both;
 }
 
-/* Composed sub-theory row: mark glyph + label; whole row links to
-   #subtheory/<id>. */
-.account-sub-row {
+/* #8 v3.105: unified account-panel rows. The account-only renderers
+   (_accountSubTheoryRow / _accountArcRow / _accountMarginaliaRow) emit
+   .account-row; the SHARED .shelf-book-row (renderShelfBookRow, untouched at
+   source) is restyled here ACCOUNT-SCOPED only. Top-border dividers, italic-
+   serif titles, mono/faint subtitles, a teal "open ->" -- tokens only. */
+.account-expand-panel .account-row,
+.account-expand-panel .shelf-book-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  gap: 12px;
+  padding: 12px 10px;
+  border-top: 1px solid var(--border);
+  border-bottom: none;
   text-decoration: none;
   color: var(--ink);
 }
-.account-sub-row:hover {
+.account-expand-panel a.account-row:hover,
+.account-expand-panel .shelf-book-row:hover {
   background: var(--wash);
 }
-.account-sub-row-mark {
+.account-row-mark {
   flex: 0 0 auto;
   width: 26px;
   height: 26px;
   display: block;
 }
-.account-sub-row-label {
-  font-family: var(--font-body);
-  font-size: 15px;
+.account-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-expand-panel .account-row-title,
+.account-expand-panel .shelf-book-row-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.25;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.account-row-sub,
+.account-expand-panel .shelf-book-row-author {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-row-open {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--marginalia-color);
 }
 
 /* Quiet tail link ("+N more ->" / "See all in Notebook ->"). */
@@ -5631,7 +5676,8 @@
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--gold-text);
+  /* #8 v3.105: teal interactive (was --gold-text). */
+  color: var(--marginalia-color);
   text-decoration: none;
 }
 .account-expand-more:hover {
@@ -5646,27 +5692,8 @@
   color: var(--ink-3);
 }
 
-/* Read-only marginalia row -- source + one-line snippet, no actions. */
-.account-marg-row {
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-}
-.account-marg-src {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 3px;
-}
-.account-marg-snippet {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* #8 v3.105: read-only marginalia rows now use the unified .account-row* rules
+   above (snippet as the italic-serif title, "from <book>" as the subtitle). */
 
 /* ===== #8 STAGE 4a -- ACCOUNT HUB PRESENTATION PASS =====
    Hero + "your data" reframed as cards (the shared token recipe from
@@ -5678,7 +5705,13 @@
   padding: 20px 24px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--surface-2);
+  /* #8 v3.105: frosted -- translucent wheat (color-mix on the existing
+     --surface-2 token, NO new hex) over the global page ground + a soft blur.
+     The page background stays GLOBAL (body::before); this only lets it show
+     through the card. */
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   box-shadow: var(--shadow-1);
 }
 
@@ -5688,7 +5721,7 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  margin: 0 0 32px 0;
+  margin: 0 0 40px 0;
 }
 .account-hero-text {
   flex: 1 1 auto;
@@ -5778,14 +5811,44 @@
   display: none;
 }
 
+/* #8 v3.105: account constellation mark hover (account-scoped). Targets the
+   transform-attribute-FREE .st-drift wrapper -- the outer translate + inner
+   scale presentation attrs are NEVER clobbered (a CSS transform would REPLACE
+   them and break positioning/size). .st-drift's drift animation is
+   .arc-detail-web-view-scoped, so it is inert here and free to take a hover
+   transform. arc-constellation.js untouched; Home/arc-detail unaffected. */
+.account-constellation-slot .st-drift {
+  transition: transform var(--motion-base) var(--ease),
+              filter var(--motion-base) var(--ease);
+}
+.account-constellation-slot g[data-st-sub-id]:hover .st-drift {
+  transform: scale(1.08);
+  filter: brightness(1.12);
+}
+
 /* Standing-place panel (a tapped mark's detail; sits in .account-expand-panel). */
-.account-mark-head {
+/* #8 v3.105: shared panel header (category + mark panels). Eyebrow over a serif
+   title in a text column; close (x) on the right. Replaces .account-mark-head /
+   .account-mark-title (the mark panel now reuses .account-panel-*). */
+.account-panel-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin: 0 0 4px 0;
 }
-.account-mark-title {
+.account-panel-head-text {
+  min-width: 0;
+}
+.account-panel-eyebrow {
+  margin: 0 0 4px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.account-panel-title {
   margin: 0;
   font-family: var(--font-serif);
   font-size: 22px;
