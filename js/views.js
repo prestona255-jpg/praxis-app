@@ -8047,13 +8047,14 @@ function _accountCounts(uid) {
   return out;
 }
 
-// #8 Stage 1: one stat card -- a token-built surface (no .card class
-// exists). Clickable affordance lives in CSS (.account-stat cursor/hover);
-// INERT this stage -- no handler is attached (Stage 2 wires expand-in-place).
-// A zero count renders as "0" via string coercion.
-function _accountStatCard(label, value) {
+// #8 Stage 1/2: one stat card -- a token-built surface (no .card class
+// exists). Stage 2: each card carries its category key and a click that
+// toggles the one inline panel via _accountToggleCategory. A zero count
+// renders as "0" via string coercion.
+function _accountStatCard(label, value, key) {
   var card = document.createElement('div');
   card.className = 'account-stat';
+  card.setAttribute('data-account-cat', key);
   var v = document.createElement('div');
   v.className = 'account-stat-value';
   v.textContent = '' + value;
@@ -8062,7 +8063,184 @@ function _accountStatCard(label, value) {
   l.className = 'account-stat-label';
   l.textContent = label;
   card.appendChild(l);
+  card.addEventListener('click', function() {
+    _accountToggleCategory(key, card);
+  });
   return card;
+}
+
+// #8 Stage 2 (expand-in-place): toggle the ONE inline panel under the stat
+// cards. PURE DOM -- never touches location.hash and never re-renders the
+// page, so an open panel survives until the user navigates via an item link.
+// Open one -> shows; click another -> swaps; click the open one -> collapses.
+// data-open-cat on the host tracks the current open category.
+function _accountToggleCategory(key, cardEl) {
+  var host = document.querySelector('.account-expand-host');
+  if (!host) { return; }
+  var cards = document.querySelectorAll('.account-stat');
+  var i;
+  for (i = 0; i < cards.length; i = i + 1) {
+    cards[i].className = 'account-stat';
+  }
+  if (host.getAttribute('data-open-cat') === key) {
+    host.innerHTML = '';
+    host.removeAttribute('data-open-cat');
+    return;
+  }
+  host.innerHTML = '';
+  host.appendChild(_accountBuildCategoryPanel(key));
+  host.setAttribute('data-open-cat', key);
+  if (cardEl) { cardEl.className = 'account-stat account-stat-active'; }
+}
+
+// #8 Stage 2: one quiet empty-state line for a category with no items.
+function _accountEmptyRow(msg) {
+  var d = document.createElement('div');
+  d.className = 'account-expand-empty';
+  d.textContent = msg;
+  return d;
+}
+
+// #8 Stage 2: a quiet "more ->" / "see all ->" tail link to a list surface.
+function _accountMoreLink(label, hash) {
+  var a = document.createElement('a');
+  a.className = 'account-expand-more';
+  a.href = hash;
+  a.textContent = label;
+  return a;
+}
+
+// #8 Stage 2: composed sub-theory row (no row renderer exists). Reuses the
+// glyph primitive _stPickerMarkSvg (NOT reimplemented), honoring
+// sub.markShape / sub.markColor with stHashIndices(id) as the default, plus
+// subTheoryRowLabel for the label; the whole row links to #subtheory/<id>.
+function _accountSubTheoryRow(sub) {
+  var row = document.createElement('a');
+  row.className = 'account-sub-row';
+  row.href = '#subtheory/' + sub.id;
+  var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+  var hash = (typeof window.stHashIndices === 'function')
+    ? window.stHashIndices(sub.id) : { shapeIdx: 0, colorIdx: 0 };
+  var shape = (typeof sub.markShape === 'number' && sub.markShape >= 0 && sub.markShape <= 15)
+    ? sub.markShape : hash.shapeIdx;
+  var color = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
+    ? sub.markColor : hash.colorIdx;
+  var glyph = document.createElement('span');
+  glyph.className = 'account-sub-row-mark';
+  glyph.innerHTML = _stPickerMarkSvg(sub.id, shape, color, pal, false);
+  row.appendChild(glyph);
+  var label = document.createElement('span');
+  label.className = 'account-sub-row-label';
+  label.textContent = subTheoryRowLabel(sub);
+  row.appendChild(label);
+  return row;
+}
+
+// #8 Stage 2: lightweight READ-ONLY marginalia row for the hub panel. The
+// shared renderNotebookEntry carries live privacy/delete/add-to-arc
+// affordances and is reused in ~4 places, so it is NOT modified here; this
+// row shows only the source + a one-line snippet (full text + actions live
+// behind the panel's "See all in Notebook ->" deep path). No per-item route.
+function _accountMarginaliaRow(entry) {
+  var row = document.createElement('div');
+  row.className = 'account-marg-row';
+  var bookId = (entry.bookIds && entry.bookIds[0]) || null;
+  var book = (bookId && state.books && state.books[bookId]) || null;
+  var bookTitle = (book && book.title) || '(unknown book)';
+  var src = document.createElement('div');
+  src.className = 'account-marg-src';
+  src.textContent = 'from ' + bookTitle;
+  row.appendChild(src);
+  var snip = document.createElement('div');
+  snip.className = 'account-marg-snippet';
+  snip.textContent = (typeof entry.body === 'string') ? entry.body : '';
+  row.appendChild(snip);
+  return row;
+}
+
+// #8 Stage 2: build the inline panel for one category, reusing the located
+// row renderers and reading FRESH seed-excluded (userId===uid) state on each
+// open. Books cap at 8 most-recent (+ "more ->"); arcs / sub-theories (incl.
+// drafts) / marginalia list all. Marginalia rows (_accountMarginaliaRow,
+// read-only) carry no per-item route, so the panel tail routes to #notebook.
+function _accountBuildCategoryPanel(key) {
+  var panel = document.createElement('div');
+  panel.className = 'account-expand-panel';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    panel.appendChild(_accountEmptyRow('Sign in to see this.'));
+    return panel;
+  }
+  var uid = user.uid;
+  var k, i;
+
+  if (key === 'books') {
+    var ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+      ? state.userBooks[uid].bookIds : [];
+    var books = [];
+    for (i = 0; i < ids.length; i = i + 1) {
+      if (state.books && state.books[ids[i]]) { books.push(state.books[ids[i]]); }
+    }
+    books.sort(function(a, b) { return (b.addedAt || 0) - (a.addedAt || 0); });
+    if (!books.length) { panel.appendChild(_accountEmptyRow('No books on your shelf yet.')); return panel; }
+    var cap = 8;
+    var shown = (books.length > cap) ? cap : books.length;
+    for (i = 0; i < shown; i = i + 1) { panel.appendChild(renderShelfBookRow(books[i])); }
+    if (books.length > cap) {
+      panel.appendChild(_accountMoreLink('+' + (books.length - cap) + ' more →', '#books'));
+    }
+    return panel;
+  }
+
+  if (key === 'arcs') {
+    var arcs = [];
+    if (state.arcs) {
+      for (k in state.arcs) {
+        if (state.arcs.hasOwnProperty(k) && state.arcs[k] && state.arcs[k].userId === uid) {
+          arcs.push(state.arcs[k]);
+        }
+      }
+    }
+    arcs.sort(function(a, b) { return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0); });
+    if (!arcs.length) { panel.appendChild(_accountEmptyRow('No arcs yet.')); return panel; }
+    for (i = 0; i < arcs.length; i = i + 1) { panel.appendChild(renderArcRow(arcs[i])); }
+    return panel;
+  }
+
+  if (key === 'subtheories') {
+    var subs = [];
+    if (state.subTheories) {
+      for (k in state.subTheories) {
+        if (state.subTheories.hasOwnProperty(k) && state.subTheories[k] && state.subTheories[k].userId === uid) {
+          subs.push(state.subTheories[k]);
+        }
+      }
+    }
+    subs.sort(function(a, b) { return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0); });
+    if (!subs.length) { panel.appendChild(_accountEmptyRow('No sub-theories yet.')); return panel; }
+    for (i = 0; i < subs.length; i = i + 1) { panel.appendChild(_accountSubTheoryRow(subs[i])); }
+    return panel;
+  }
+
+  if (key === 'marginalia') {
+    var ents = [];
+    if (state.notebookEntries) {
+      for (k in state.notebookEntries) {
+        if (state.notebookEntries.hasOwnProperty(k) && state.notebookEntries[k] &&
+            state.notebookEntries[k].register === 'marginalia' &&
+            state.notebookEntries[k].userId === uid) {
+          ents.push(state.notebookEntries[k]);
+        }
+      }
+    }
+    ents.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    if (!ents.length) { panel.appendChild(_accountEmptyRow('No marginalia yet.')); return panel; }
+    for (i = 0; i < ents.length; i = i + 1) { panel.appendChild(_accountMarginaliaRow(ents[i])); }
+    panel.appendChild(_accountMoreLink('See all in Notebook →', '#notebook'));
+    return panel;
+  }
+
+  return panel;
 }
 
 // #8 Stage 1 (hub FRAME): the Account page deepened into the "your standing
@@ -8214,10 +8392,10 @@ function renderAccountPage() {
   var counts = _accountCounts(uid);
   var stats = document.createElement('div');
   stats.className = 'account-stats';
-  stats.appendChild(_accountStatCard('Books', counts.books));
-  stats.appendChild(_accountStatCard('Arcs', counts.arcs));
-  stats.appendChild(_accountStatCard('Sub-theories', counts.subTheories));
-  stats.appendChild(_accountStatCard('Marginalia', counts.marginalia));
+  stats.appendChild(_accountStatCard('Books', counts.books, 'books'));
+  stats.appendChild(_accountStatCard('Arcs', counts.arcs, 'arcs'));
+  stats.appendChild(_accountStatCard('Sub-theories', counts.subTheories, 'subtheories'));
+  stats.appendChild(_accountStatCard('Marginalia', counts.marginalia, 'marginalia'));
   wrap.appendChild(stats);
 
   // ----- EXPAND-PANEL HOST (empty container; Stage 2 wires) -----
