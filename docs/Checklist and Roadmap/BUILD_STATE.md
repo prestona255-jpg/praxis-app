@@ -277,7 +277,7 @@ the very end (after this list).
 - [ ] **5.** Writing boxes feel weird / hard to engage · DEFERRED (comp-gate) — **Same tracked item as 10.5.8** (app-wide writing-surface field treatment; overrides a locked borderless spec). #5 ⟷ 10.5.8 — one item, two references, not two.
 - [ ] **6.** Screen uploaded books for titles + read-status · feature — Extends the 6.1 shelf-photo scan toward read-status capture.
 - [ ] **7.** User-created themes, Yumi-assisted · feature
-- [ ] **8.** Developed account page · feature — Enhances the shipped 14.3.4 `#account` page.
+- [x] **8.** Developed account page · feature — Enhances the shipped 14.3.4 `#account` page.
 
 ---
 
