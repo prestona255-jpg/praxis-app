@@ -978,6 +978,43 @@
   gap: 10px;
 }
 
+/* Canon §4-E: decluttered toolbar -- the secondary actions (Scan shelf /
+   Bulk add / Resolve covers) move out of the header cluster into a quiet
+   chip row below it, leaving only the primary "+ Add book" + the seg up
+   top. Chip look is supplied via the container so the buttons keep their
+   functional classes + disabled states. */
+.shelf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px 0;
+}
+
+.shelf-chips button {
+  height: 38px;
+  padding: 0 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--motion-base) var(--ease),
+              color var(--motion-base) var(--ease);
+}
+
+.shelf-chips button:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.shelf-chips button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* Segmented Covers|List toggle -- the app's pill idiom (mirrors the
    sub-theory register toggle): mono-uppercase options, active gets --wash. */
 .shelf-seg {
@@ -1273,10 +1310,12 @@
    so they read as siblings; the live/illustrated split is carried by
    opacity + cursor + hover behavior, not by structural redesign. */
 
+/* Canon §4-F: arcs grids are 3-up on desktop (base), 1-up on mobile (the
+   max-width:759 override). Applies to both the examples and "Your arcs". */
 .arcs-examples {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
   margin: 0 0 64px 0;
 }
 
@@ -1284,13 +1323,15 @@
    examples. Cards reuse .arc-card / .arc-card-live; this block only
    supplies the section stack + heading. Tokens only. */
 .arcs-yours {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
   margin: 0 0 56px 0;
 }
 
 .arcs-yours-heading {
+  /* Span the full grid row so the heading sits above the card columns. */
+  grid-column: 1 / -1;
   margin: 0;
   font-family: var(--font-serif);
   font-size: 24px;
@@ -1309,8 +1350,8 @@
   display: block;
   background: var(--surface-2);
   border: 1px solid var(--ink-4);
-  border-radius: 4px;
-  padding: 28px 32px;
+  border-radius: var(--radius-lg);
+  padding: 20px;
   color: inherit;
   text-decoration: none;
   /* Stage 5.1 motion: card-lift on hover is a permitted micro-motion
@@ -1342,6 +1383,44 @@
   font-size: 15px;
   line-height: 1.55;
   color: var(--ink-2);
+}
+
+/* Canon §4-G: a single constellation thumb banner (top), then title +
+   description, then a mono meta line of computed counts. Replaces the
+   5-cover row (the cover CSS below is now unused by renderArcsPage). */
+.arc-card-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  margin: 0 0 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: radial-gradient(circle at 50% 42%,
+    color-mix(in srgb, var(--gold-light) 26%, var(--surface-2)),
+    var(--surface-2) 72%);
+}
+
+.arc-card-thumb-spark {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 0 10px
+    color-mix(in srgb, var(--gold-light) 50%, transparent));
+}
+
+.arc-card-thumb-spark path {
+  fill: var(--gold-light);
+}
+
+.arc-card-meta {
+  margin: 14px 0 0 0;
+  padding: 14px 0 0 0;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 /* Live card: full visual weight, anchor cursor, subtle lift on hover.
@@ -4363,6 +4442,35 @@
 
   .shelf-sidebar-close:active {
     transform: translateY(1px);
+  }
+
+  /* ===== Stage 2 (full-app redesign) mobile splits ===== */
+  /* J: Home actions stack full-width; hero scales down to fit the phone. */
+  .home-cta {
+    flex-direction: column;
+  }
+  .home-cta-primary,
+  .home-cta-secondary {
+    justify-content: center;
+  }
+  .home-hero-title {
+    font-size: 44px;
+    letter-spacing: -1px;
+  }
+
+  /* F: Arcs grids collapse to 1-up (desktop base is 3-up). */
+  .arcs-yours,
+  .arcs-examples {
+    grid-template-columns: 1fr;
+  }
+
+  /* Account stats: 2x2 on phones (desktop base is 4-up). A 2-col grid,
+     scoped `.account .account-stats` (0,2,0) to outrank the later base
+     flex rule, guarantees exactly two columns with no flex-basis rounding
+     (the base `gap:12px` carries over to the grid). */
+  .account .account-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
 }

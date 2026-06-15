@@ -1032,6 +1032,68 @@ function openArcEditor() {
 // landing, or should the CTA path return to the Arcs page or the new
 // arc's detail page? Implementation today preserves openArcEditor
 // strictly.)
+// Canon §4-G: per-arc computed counts (display-only; no data-model change).
+// books = arc.bookIds; sub-theories = sub-theories whose arcId matches;
+// marginalia = attached entries (arc.entryIds) whose register is marginalia.
+function _arcCardCounts(arcId, arcRec) {
+  var c = { books: 0, subTheories: 0, marginalia: 0 };
+  if (arcRec && arcRec.bookIds && arcRec.bookIds.length) {
+    c.books = arcRec.bookIds.length;
+  }
+  var k;
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, k) &&
+          state.subTheories[k] && state.subTheories[k].arcId === arcId) {
+        c.subTheories = c.subTheories + 1;
+      }
+    }
+  }
+  if (arcRec && arcRec.entryIds && arcRec.entryIds.length &&
+      state.notebookEntries) {
+    var i;
+    for (i = 0; i < arcRec.entryIds.length; i = i + 1) {
+      var eid = arcRec.entryIds[i] && arcRec.entryIds[i].id;
+      var entry = eid ? state.notebookEntries[eid] : null;
+      if (entry && entry.register === 'marginalia') {
+        c.marginalia = c.marginalia + 1;
+      }
+    }
+  }
+  return c;
+}
+
+// Canon §4-G: the mono meta line. Always books + sub-theories; marginalia
+// only when present (the mockup omits a zero marginalia count).
+function _arcCardMetaText(counts) {
+  var parts = [];
+  parts.push(counts.books + (counts.books === 1 ? ' book' : ' books'));
+  parts.push(counts.subTheories +
+    (counts.subTheories === 1 ? ' sub-theory' : ' sub-theories'));
+  if (counts.marginalia > 0) {
+    parts.push(counts.marginalia + ' marginalia');
+  }
+  return parts.join(' · ');
+}
+
+// Canon §4-G: the constellation thumb -- a luminous banner with a small
+// spark glyph (CSS supplies the radial glow + token fill). Inline SVG so it
+// scales; aria-hidden (decorative).
+function _arcCardThumb() {
+  var thumb = document.createElement('div');
+  thumb.className = 'arc-card-thumb';
+  thumb.setAttribute('aria-hidden', 'true');
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'arc-card-thumb-spark');
+  var path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', 'M12 0L14 10 24 12 14 14 12 24 10 14 0 12 10 10Z');
+  svg.appendChild(path);
+  thumb.appendChild(svg);
+  return thumb;
+}
+
 function renderArcsPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -1155,6 +1217,8 @@ function renderArcsPage() {
         yCard.className = 'arc-card arc-card-live';
         yCard.href = '#arc/' + ownArcs[yi].id;
 
+        yCard.appendChild(_arcCardThumb());
+
         var yText = document.createElement('div');
         yText.className = 'arc-card-text';
 
@@ -1171,6 +1235,13 @@ function renderArcsPage() {
         }
 
         yCard.appendChild(yText);
+
+        var yMeta = document.createElement('p');
+        yMeta.className = 'arc-card-meta';
+        yMeta.textContent = _arcCardMetaText(
+          _arcCardCounts(ownArcs[yi].id, ownArcs[yi].rec));
+        yCard.appendChild(yMeta);
+
         yoursSec.appendChild(yCard);
       }
 
@@ -1214,6 +1285,8 @@ function renderArcsPage() {
     desireCard.className = 'arc-card arc-card-live';
     desireCard.href = '#arc/' + seedInfo.arcId;
 
+    desireCard.appendChild(_arcCardThumb());
+
     var desireText = document.createElement('div');
     desireText.className = 'arc-card-text';
 
@@ -1229,38 +1302,20 @@ function renderArcsPage() {
 
     desireCard.appendChild(desireText);
 
-    // Five cover thumbnails read from state.books at render time. Null
-    // coverUrl falls back to a placeholder block matching the shelf
-    // pattern -- covers may still be backfilling on first load (the
-    // app.js async fetchAndApplyCover loop hasn't settled yet) and
-    // again on later loads if Open Library / Google Books couldn't
-    // resolve a particular ISBN. The card stays well-formed either way.
-    var covers = document.createElement('div');
-    covers.className = 'arc-card-covers';
-    var bookIds = (seedInfo.bookIds && seedInfo.bookIds.length)
-      ? seedInfo.bookIds : [];
-    var ci;
-    for (ci = 0; ci < bookIds.length; ci++) {
-      var coverBook = state.books && state.books[bookIds[ci]];
-      if (coverBook && coverBook.coverUrl) {
-        var coverImg = document.createElement('img');
-        coverImg.className = 'arc-card-cover';
-        coverImg.src = coverBook.coverUrl;
-        coverImg.alt = '';
-        covers.appendChild(coverImg);
-      } else {
-        var coverPh = document.createElement('div');
-        coverPh.className = 'arc-card-cover-placeholder';
-        covers.appendChild(coverPh);
-      }
-    }
-    desireCard.appendChild(covers);
+    // Canon §4-G: computed-count meta line replaces the 5 cover thumbnails.
+    var desireMeta = document.createElement('p');
+    desireMeta.className = 'arc-card-meta';
+    desireMeta.textContent = _arcCardMetaText(
+      _arcCardCounts(seedInfo.arcId, seedArc));
+    desireCard.appendChild(desireMeta);
 
     examplesSec.appendChild(desireCard);
   }
 
   var flowCard = document.createElement('div');
   flowCard.className = 'arc-card arc-card-illustrated';
+
+  flowCard.appendChild(_arcCardThumb());
 
   var flowLabel = document.createElement('span');
   flowLabel.className = 'arc-card-label';
@@ -1395,6 +1450,13 @@ function renderShelf() {
   seg.appendChild(segList);
   actions.appendChild(seg);
 
+  // Canon §4-E: secondary actions (Scan / Bulk / Resolve) move into a quiet
+  // chip row appended below the header; only the primary "+ Add book" stays
+  // in the header actions cluster. Built always (empty + unappended when
+  // signed out).
+  var shelfChips = document.createElement('div');
+  shelfChips.className = 'shelf-chips';
+
   var user = getCurrentUser();
   if (user) {
     // 3.10d: resolve missing covers (title-imported books). The 109-
@@ -1417,7 +1479,7 @@ function renderShelf() {
     resolveBtn.addEventListener('click', function() {
       startCoverBackfill();
     });
-    actions.appendChild(resolveBtn);
+    shelfChips.appendChild(resolveBtn);
 
     // 6.1b: shelf-photo scan. A secondary button forwards its click to
     // an offscreen-clipped file input (capture="environment" opens the
@@ -1440,8 +1502,8 @@ function renderShelf() {
     scanInput.addEventListener('change', function() {
       handleShelfScanFile(scanInput, scanBtn);
     });
-    actions.appendChild(scanBtn);
-    actions.appendChild(scanInput);
+    shelfChips.appendChild(scanBtn);
+    shelfChips.appendChild(scanInput);
 
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
@@ -1450,7 +1512,7 @@ function renderShelf() {
     bulkBtn.addEventListener('click', function() {
       openBulkAddEditor();
     });
-    actions.appendChild(bulkBtn);
+    shelfChips.appendChild(bulkBtn);
 
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
@@ -1482,6 +1544,11 @@ function renderShelf() {
   header.appendChild(scanStatus);
 
   wrap.appendChild(header);
+
+  // Canon §4-E: the chip row sits below the header, above the search.
+  if (shelfChips.childNodes.length > 0) {
+    wrap.appendChild(shelfChips);
+  }
 
   // Stage 4d: in-page shelf search -- a LIVE GRID FILTER over the
   // rendered shelf (title OR author substring, case-insensitive),
