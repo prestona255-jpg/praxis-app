@@ -1,7 +1,7 @@
 # Praxis — build agent guide
 
 ## Project
-Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work directly on `main` (no worktrees, no branches).
+Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
 
 ## How we work
 Two tools: a Claude chat is the design partner and brief author; you (Claude Code) are the executor. Engineering mode — lead with the conclusion, work in staged briefs with PASS/FAIL checkpoints, never bundle unrelated changes into one commit.
@@ -95,6 +95,49 @@ discipline below governs every build task, plan-file or ad-hoc:
   bytes, greps), live-verify results, screenshots, honest residuals.
   Then STOP. Preston does his eyes-on check and decides what's next.
   Do not start the next substage unprompted.
+
+## Worktree & Merge Protocol
+
+Use git worktrees to run parallel builds that touch DIFFERENT files.
+Rule: two lanes may run concurrently ONLY if they share zero files.
+Same-file work (anything editing views.js) stays in ONE worktree,
+sequential. Usual collision points: components.css, views.js,
+sw.js CACHE_VERSION.
+
+### Create a lane (from a clean, current main)
+git worktree add ../praxis-<lane> -b <lane>-lane
+One worktree per lane; open each in its own session. Build, verify,
+and commit inside it. Never push a lane branch to its own live
+deploy — only main ships to Netlify.
+
+### Merge a lane back — GUARDED, run WITH the human
+Never merge onto main directly. Rebase the lane onto main FIRST so
+conflicts surface in the lane, never on main.
+0. RECON (read-only): confirm main + ../praxis-<lane> are clean
+   (git status); report both HEADs; list files differing between
+   <lane> and main. STOP — one question: proceed?
+1. REBASE: git checkout <lane>; git rebase main. For EACH conflict,
+   show the hunk, propose a resolution, and WAIT for human ok before
+   writing it. CACHE_VERSION → take the higher number. One at a time.
+2. RE-VERIFY the lane: re-run that build's pass-checks (diffs, grep
+   counts, parse/computed-style). FAIL → git rebase --abort, report,
+   STOP.
+3. MERGE: git checkout main; git merge <lane> (expect clean
+   fast-forward). Show git diff --stat. STOP for the human's exact
+   commit words — do NOT push yet.
+4. SHIP + LIVE-VERIFY: on exact words, commit via git commit -F
+   (UTF-8 file, em-dash, verify %s before push), push; drive
+   SKIP_WAITING; hard-refresh the live URL; re-run live PASS checks
+   on the merged result. Report PASS/FAIL per check. Regression →
+   report, never paper over.
+5. CLEANUP on confirm: git worktree remove ../praxis-<lane>;
+   git branch -d <lane>.
+
+### Always
+- Merge ONE lane at a time → re-verify → ship → next (single live
+  deploy can't verify two branches at once).
+- Never accept "done" without a diff, grep count, or computed-style
+  readout. One question per step. Ambiguity → STOP and ask.
 
 ## Design canon — full-app redesign (mobile + desktop) — added June 2026
 
