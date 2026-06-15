@@ -6632,3 +6632,94 @@
   background: var(--gold);
 }
 /* ===== END SHARED PRIMITIVES ===== */
+
+/* ===== 10.5.8 WRITING SURFACES — composition fields as writing lines =====
+   Additive: in-scope composition fields shed their box chrome and become
+   underlined writing lines (dashed idle -> teal solid focus, serif-italic
+   placeholder). These grouped rules + the sub-theory pair below override the
+   per-screen field rules above purely by source order (this block is last);
+   no existing rule is rewritten, so revert = delete this block.
+
+   CARVE-OUT: .subtheory-register-body carries .notebook-editor-body but is a
+   deliberate borderless serif prose canvas -- excluded via :not() so the sans +
+   dashed-baseline grammar never leaks onto it. The excluded utility/search
+   inputs (nav search, spotlight, Yumi composer, shelf filter) are not listed
+   here and stay as-is. Selects keep their native caret (no appearance:none --
+   a custom caret would need new hex or a third file). */
+
+.notebook-editor-title-input,
+.notebook-editor-body:not(.subtheory-register-body),
+.shelf-editor-title-input,
+.shelf-editor-author-input,
+.shelf-editor-genre-input,
+.shelf-editor-isbn-input,
+.shelf-bulk-editor-textarea,
+.account-field-input,
+.book-detail-isbn-input,
+.book-detail-tradition-select,
+.shelf-scan-review-input {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1px dashed var(--line-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.notebook-editor-title-input:focus,
+.notebook-editor-title-input:focus-visible,
+.notebook-editor-body:not(.subtheory-register-body):focus,
+.notebook-editor-body:not(.subtheory-register-body):focus-visible,
+.shelf-editor-title-input:focus,
+.shelf-editor-title-input:focus-visible,
+.shelf-editor-author-input:focus,
+.shelf-editor-author-input:focus-visible,
+.shelf-editor-genre-input:focus,
+.shelf-editor-genre-input:focus-visible,
+.shelf-editor-isbn-input:focus,
+.shelf-editor-isbn-input:focus-visible,
+.shelf-bulk-editor-textarea:focus,
+.shelf-bulk-editor-textarea:focus-visible,
+.account-field-input:focus,
+.account-field-input:focus-visible,
+.book-detail-isbn-input:focus,
+.book-detail-isbn-input:focus-visible,
+.book-detail-tradition-select:focus,
+.book-detail-tradition-select:focus-visible,
+.shelf-scan-review-input:focus,
+.shelf-scan-review-input:focus-visible {
+  outline: none;
+  border-bottom: 1.5px solid var(--marginalia-color);
+}
+
+.notebook-editor-title-input::placeholder,
+.notebook-editor-body:not(.subtheory-register-body)::placeholder,
+.shelf-editor-title-input::placeholder,
+.shelf-editor-author-input::placeholder,
+.shelf-editor-isbn-input::placeholder,
+.shelf-bulk-editor-textarea::placeholder,
+.account-field-input::placeholder,
+.book-detail-isbn-input::placeholder,
+.shelf-scan-review-input::placeholder {
+  font-style: italic;
+  font-family: var(--font-serif);
+  color: var(--ink-4);
+}
+
+/* Sub-theory NAME: already a borderless serif title -- take only the underline
+   grammar (dashed idle -> teal focus), keep the serif font untouched. */
+.subtheory-header-input {
+  border-bottom: 1px dashed var(--line-2);
+}
+.subtheory-header-input:focus,
+.subtheory-header-input:focus-visible {
+  outline: none;
+  border-bottom: 1.5px solid var(--marginalia-color);
+}
+
+/* Sub-theory register BODY: excluded from the treatment (stays serif prose, no
+   baseline) -- recolor only its inherited focus ring to the app teal. */
+.subtheory-register-body:focus,
+.subtheory-register-body:focus-visible {
+  outline-color: var(--marginalia-color);
+}
