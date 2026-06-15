@@ -4047,6 +4047,15 @@
     height: 56px;
     padding: 0 16px;
     position: relative;
+    /* iOS WebKit mis-composites the open nav panel (its abs-positioned
+       child overflowing this 56px bar) when the bar carries backdrop-filter
+       -- the panel paints see-through + scattered. The relative, top-of-flow
+       mobile bar has nothing behind it to blur, so drop the filter; a solid
+       surface matches the panel and keeps the bar opaque. Desktop (>=760px)
+       keeps the glass pill. */
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .app-nav-hamburger {
@@ -4080,6 +4089,20 @@
 
   .app-nav.app-nav-mobile-open .app-nav-list li {
     padding: 12px 0;
+  }
+
+  /* Book detail: stack the 300px-cover / content grid into a single column
+     so the content column isn't crushed beside the fixed cover at phone
+     width (it collapsed to ~40px at 390px, overlapping the cover and
+     clipping Add Marginalia). Cover capped so it doesn't fill the row. */
+  .book-detail-header {
+    grid-template-columns: 1fr;
+  }
+  .book-detail-content {
+    grid-column: 1;
+  }
+  .book-detail-cover-col {
+    max-width: 200px;
   }
 
   /* Shelf container: 16px horizontal padding (was 32px on desktop). */
