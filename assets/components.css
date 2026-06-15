@@ -290,13 +290,11 @@
   gap: 18px;
   max-width: 1080px;
   padding: 11px 14px 11px 20px;
-  /* Phase 3.1 Umbrel glass chrome: honey glass + blur + a stronger
-     hairline (--line-2). In normal flow (not fixed/sticky) so no
-     page-content offset changes on any route; the translucent fill
-     reads as glass over the honey ground below it. */
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  /* Canon §4-A (June 2026): nav chrome is SOLID -- no backdrop-filter,
+     no blur -- at every width (the iOS overflow-composite bug). Opaque
+     --surface over the honey ground; in normal flow (not fixed/sticky)
+     so no page-content offset on any route. --line-2 hairline kept. */
+  background: var(--surface);
   border-bottom: 1px solid var(--line-2);
 }
 
@@ -388,13 +386,14 @@
   color: var(--ink);
 }
 
-/* Active = filled wash pill. Scoped :not(.app-nav-profile) so the
-   avatar chip (also an .app-nav-link) keeps its gradient + gets its
-   own gold-outline active treatment below, not a wash fill. */
+/* Canon §4-B: active is NOT a wash pill anymore -- it is a gold
+   underline (desktop) / gold left-bar (mobile menu), applied per
+   breakpoint below. Scoped :not(.app-nav-profile) so the avatar chip
+   (also an .app-nav-link) keeps its gradient + its own gold-outline
+   active treatment, never this. */
 .app-nav-link.app-nav-link-active:not(.app-nav-profile),
 .app-nav-link.app-nav-link-active:not(.app-nav-profile):hover {
   color: var(--ink);
-  background: var(--wash);
 }
 
 /* Phase 3.1: static profile chip -- replaces the Account nav item.
@@ -439,6 +438,13 @@
   line-height: 1;
 }
 
+/* Canon §4 mobile-menu profile row: name + "Account" label, shown only
+   inside the open mobile menu (rule in the max-width:759 block); hidden
+   everywhere else so the desktop avatar stays a bare gradient circle. */
+.app-nav-profile-meta {
+  display: none;
+}
+
 /* Phase 3.1: desktop pill geometry. Stays in-flow (no fixed/sticky) --
    only margin (inset from the viewport edges so the honey ground shows
    around it), full corner rounding, and a warm lift give the floating-
@@ -451,6 +457,34 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
     box-shadow: 0 8px 30px -18px rgba(58,40,16,.4);
+  }
+
+  /* Canon §4-B: desktop nav links = mono uppercase; active = a 2px gold
+     underline. The transparent border-bottom reserves the underline's
+     space so toggling active never shifts layout. */
+  .app-nav-link:not(.app-nav-profile) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 6px 2px;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+  }
+  .app-nav-link.app-nav-link-active:not(.app-nav-profile),
+  .app-nav-link.app-nav-link-active:not(.app-nav-profile):hover {
+    border-bottom-color: var(--gold);
+  }
+
+  /* Canon §4-C: keep the wired Cmd/Ctrl+K search but recess it -- no
+     longer flex-grow across the bar, capped width, quieter --wash
+     hairline so it does not compete with wordmark + links + avatar. */
+  .app-nav-search {
+    flex: 0 1 auto;
+    max-width: 240px;
+    border-color: var(--wash);
   }
 }
 
@@ -4105,8 +4139,80 @@
     z-index: 100;
   }
 
+  /* Canon §4-A/B: refined mobile menu -- ~50px serif rows, gold active
+     left-bar, profile row (avatar + name + "Account") below a divider. */
   .app-nav.app-nav-mobile-open .app-nav-list li {
-    padding: 12px 0;
+    padding: 0;
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-link {
+    display: flex;
+    align-items: center;
+    min-height: 50px;
+    padding: 0 6px;
+    border-radius: 0;
+    border-bottom: none;
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-link.app-nav-link-active:not(.app-nav-profile) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-link.app-nav-link-active:not(.app-nav-profile)::before {
+    content: "";
+    width: 3px;
+    height: 22px;
+    margin-left: -6px;
+    margin-right: 15px;
+    border-radius: 2px;
+    background: var(--gold);
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-profile {
+    width: auto;
+    height: auto;
+    min-height: 58px;
+    margin-top: 8px;
+    padding: 0 6px;
+    border-radius: 0;
+    border-top: 1px solid var(--border);
+    background: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-profile .app-nav-profile-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-pill);
+    background: var(--grad);
+    color: var(--text-on-dark);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-profile-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-profile-name {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .app-nav.app-nav-mobile-open .app-nav-list .app-nav-profile-account {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
   }
 
   /* Book detail: stack the 300px-cover / content grid into a single column
@@ -6228,3 +6334,121 @@
 .st-hover-card-link-danger { color: var(--danger); }
 .st-hover-card-link-danger:hover { color: var(--danger); filter: brightness(0.9); }
 /* ===== END SUB-THEORY DELETE ===== */
+
+
+/* =====================================================================
+   SHARED PRIMITIVES (canon §4-D) -- added June 2026, full-app redesign
+   Stage 1. ADDITIVE shared classes for LATER stages to adopt where a
+   stage's markup is already being touched -- NOT applied per-screen now.
+   Do NOT retrofit the existing per-surface classes (home-cta-*,
+   shelf-new-book, book-detail-*) onto these. The mono eyebrow (.eyebrow)
+   and the Yumi FAB (.yumi-toggle) already exist and are NOT redefined.
+   Tokens only -- no raw hex. No width-specific rules: the comfortable
+   48px touch target and token sizing hold at both breakpoints, so each
+   primitive renders identically at 390 and ~1280 (cross-width safe).
+   ===================================================================== */
+
+/* Button family: shared geometry + three weights. */
+.px-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter var(--motion-base) var(--ease),
+              border-color var(--motion-base) var(--ease),
+              color var(--motion-base) var(--ease);
+}
+
+/* Primary: the signature gold->river gradient. One per screen. */
+.px-btn-primary {
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border-color: transparent;
+}
+.px-btn-primary:hover { filter: brightness(1.06); }
+
+/* Ghost: glass secondary with a hairline. */
+.px-btn-ghost {
+  background: var(--glass-2);
+  color: var(--ink);
+  border-color: var(--line-2);
+  font-weight: 500;
+}
+.px-btn-ghost:hover { border-color: var(--ink-3); }
+
+/* Quiet: transparent, minimal -- for recessed/tertiary actions. */
+.px-btn-quiet {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--line-2);
+  font-weight: 500;
+}
+.px-btn-quiet:hover { color: var(--ink); border-color: var(--ink-3); }
+
+/* Card surface: opaque lighter wheat over the honey ground. */
+.px-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+
+/* Field: text input / textarea. Recessed ink-tint well, river focus. */
+.px-field {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+.px-field:focus { border-color: var(--river-l); }
+.px-field::placeholder { color: var(--ink-3); }
+
+/* Segmented control: pill track + mono options; active swaps to surface. */
+.px-seg {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--wash);
+  border-radius: var(--radius-md);
+}
+.px-seg-option {
+  padding: 7px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.px-seg-option.is-active {
+  background: var(--surface-2);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+/* Status dot: small gold square marker (mockup .dot). */
+.px-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+/* ===== END SHARED PRIMITIVES ===== */

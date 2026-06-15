@@ -394,6 +394,21 @@ function renderRoute() {
       initial = navUser.email.charAt(0).toUpperCase();
     }
     initialEl.textContent = initial;
+
+    // Canon §4-D: populate the mobile-menu profile-row name. Mirrors the
+    // avatar derivation (displayName -> email) so the row matches the
+    // avatar initial; the account-page display-name override is an
+    // account-surface concern, not the nav's. Hidden on desktop via CSS.
+    var navNameEl = document.querySelector('.app-nav-profile-name');
+    if (navNameEl) {
+      var navName = 'Your account';
+      if (navUser && typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
+        navName = navUser.displayName;
+      } else if (navUser && typeof navUser.email === 'string' && navUser.email.length > 0) {
+        navName = navUser.email;
+      }
+      navNameEl.textContent = navName;
+    }
   }
 
   // 3.9: every route block leaves exactly one of {currentBookId,
