@@ -2211,20 +2211,14 @@
   gap: 8px;
 }
 
-/* S5.1: Add to arc + Add Marginalia share a row (mockup side-by-side);
-   the status-branch button stays a full-width line below it. */
+/* Canon §4-I: Add-to-an-arc is the standalone primary (its own line in
+   .book-detail-actions). The secondary PAIR [Send-to-sub | Add-marginalia]
+   lives here -- stacked full-width on desktop (the mockup action stack),
+   a side-by-side pair on mobile (the ≤759 block re-rows it). */
 .book-detail-actions-row {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-}
-
-.book-detail-actions-row .book-detail-add-to-arc {
-  flex: 1;
-}
-
-.book-detail-actions-row .book-detail-new-entry {
-  flex: 0 0 auto;
-  width: auto;
 }
 
 .book-detail-cover,
@@ -4294,18 +4288,55 @@
     color: var(--ink-3);
   }
 
-  /* Book detail: stack the 300px-cover / content grid into a single column
-     so the content column isn't crushed beside the fixed cover at phone
-     width (it collapsed to ~40px at 390px, overlapping the cover and
-     clipping Add Marginalia). Cover capped so it doesn't fill the row. */
+  /* Canon §4-I: single-column reorder via display:contents + order. The
+     header becomes a flex column; .book-detail-cover-col and
+     .book-detail-content dissolve (display:contents) so their children
+     flatten into the header flex and order into the §4-I sequence:
+     cover → title → author → meta → actions → artifact → find-this-book.
+     Desktop (≥760) keeps the untouched 300px/1fr grid. */
   .book-detail-header {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
+  .book-detail-cover-col,
   .book-detail-content {
-    grid-column: 1;
+    display: contents;
   }
-  .book-detail-cover-col {
+  /* Cover cap re-homed onto the cover element -- the column box is gone
+     under display:contents, so its max-width no longer applies. */
+  .book-detail-cover,
+  .book-detail-cover-placeholder {
+    align-self: center;
     max-width: 200px;
+    order: 1;
+  }
+  .book-detail-title { order: 2; }
+  .book-detail-author { order: 3; }
+  .book-detail-meta { order: 4; }
+  .book-detail-actions { order: 5; }
+  .book-detail-artifact-card { order: 6; }
+  .book-detail-quote { order: 7; }
+  .find-this-book { order: 8; }
+  /* The secondary pair sits side-by-side on mobile (desktop stacks it). */
+  .book-detail-actions-row {
+    flex-direction: row;
+  }
+  .book-detail-actions-row .book-detail-send-to-subtheory,
+  .book-detail-actions-row .book-detail-new-entry {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  /* Notebook (Stage 3 polish): 16px horizontal padding on mobile (matches
+     the shelf); the 48px header top tightens to 32px. Single-column feed,
+     card surfaces, and the composition fields are all untouched (#5 stays
+     deferred). */
+  .notebook {
+    padding: 0 16px;
+  }
+  .notebook-header {
+    padding-top: 32px;
   }
 
   /* Shelf container: 16px horizontal padding (was 32px on desktop). */
@@ -4558,10 +4589,34 @@
    live-URL verification rather than diverging from the precedent here.
    ===================================================================== */
 
+/* Canon §4-H chrome polish: the List|Web toggle reads as the app's
+   segmented control (track + options, active = surface), matching
+   .shelf-seg / the mockup .seg. Visual only -- the buttons keep their
+   classes + click handlers; the render/graph logic is untouched. */
 .arc-detail-toolbar {
-  display: flex;
-  gap: var(--sp-2);
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--wash);
+  border-radius: var(--radius-pill);
   margin-bottom: var(--sp-4);
+}
+.arc-detail-toolbar .arc-detail-toggle-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: var(--ink-3);
+}
+.arc-detail-toolbar .arc-detail-toggle-btn:hover {
+  color: var(--ink);
+  border-color: transparent;
+}
+.arc-detail-toolbar .arc-detail-toggle-btn.is-active,
+.arc-detail-toolbar .arc-detail-toggle-btn.is-active:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: transparent;
 }
 
 .arc-detail-toggle-btn {
@@ -4615,6 +4670,23 @@
   flex-wrap: wrap;
   gap: var(--sp-2);
   margin-bottom: var(--sp-4);
+}
+
+/* Canon §4-H chrome polish: the constellation control buttons (Connect /
+   Reset / Layers) read as quiet chips so the gradient "+ Sub-theory" is the
+   single primary. Excludes .arc-detail-addsub (keeps its gradient) and
+   .is-connecting (preserves Connect's armed --thread-color state). Visual
+   only -- handlers/layer logic untouched. */
+.st-control-bar .arc-detail-toggle-btn:not(.arc-detail-addsub):not(.is-connecting) {
+  padding: 9px 14px;
+  font-size: 13px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+.st-control-bar .arc-detail-toggle-btn:not(.arc-detail-addsub):not(.is-connecting):hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 
 /* Hybrid Stage C: the Layers popover -- one button opening a small panel of

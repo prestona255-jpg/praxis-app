@@ -3422,12 +3422,15 @@ function renderBookDetail(bookId) {
       openBookSendToSubTheory(bookId);
     });
 
-    // S5.1: Add to arc (primary, first) + Add Marginalia share one row
-    // (mockup's side-by-side button block); the status-branch button
-    // below appends to .book-detail-actions as its own full-width line.
+    // Canon §4-I: Add-to-an-arc is the standalone primary on its own
+    // full-width line in .book-detail-actions; the secondary PAIR
+    // [Send-to-sub | Add-marginalia] shares .book-detail-actions-row
+    // (stacked full-width on desktop, side-by-side on mobile). The
+    // status-branch button below appends to .book-detail-actions as its
+    // own line.
+    actions.appendChild(addToArcBtn);
     var actionsRow = document.createElement('div');
     actionsRow.className = 'book-detail-actions-row';
-    actionsRow.appendChild(addToArcBtn);
     actionsRow.appendChild(sendToSubBtn);
     actionsRow.appendChild(newBtn);
     actions.appendChild(actionsRow);
