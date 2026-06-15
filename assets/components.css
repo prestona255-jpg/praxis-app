@@ -1246,6 +1246,24 @@
   margin: 0 0 64px 0;
 }
 
+/* Your arcs: the signed-in user's own arc list, rendered above the worked
+   examples. Cards reuse .arc-card / .arc-card-live; this block only
+   supplies the section stack + heading. Tokens only. */
+.arcs-yours {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0 0 56px 0;
+}
+
+.arcs-yours-heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
 /* Base card register. --surface-2 fill + --ink-4 hairline matches the
    tier-1 card pattern named in components.css line 2038 (the shelf
    book cards, the notebook entry cards, the artifact cards) -- the

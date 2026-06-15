@@ -1104,6 +1104,65 @@ function renderArcsPage() {
   createSec.appendChild(steps);
   wrap.appendChild(createSec);
 
+  // Your arcs: the signed-in user's own arcs (userId === uid), newest
+  // first. Excludes the __praxis_seed__ example (it renders in the
+  // examples section below). Rendered only when the user has at least one
+  // arc; with none, the teaching + examples below stand alone (the cold-
+  // start view). Fixes the bug where a user's arcs were counted by the
+  // account stat but had no surface on this page.
+  var arcsUser = getCurrentUser();
+  if (arcsUser) {
+    var ownArcs = [];
+    var ownArcId;
+    for (ownArcId in state.arcs) {
+      if (Object.prototype.hasOwnProperty.call(state.arcs, ownArcId)) {
+        var ownArcRec = state.arcs[ownArcId];
+        if (ownArcRec && ownArcRec.userId === arcsUser.uid) {
+          ownArcs.push({ id: ownArcId, rec: ownArcRec });
+        }
+      }
+    }
+    ownArcs.sort(function(a, b) {
+      return (b.rec.createdAt || 0) - (a.rec.createdAt || 0);
+    });
+    if (ownArcs.length > 0) {
+      var yoursSec = document.createElement('section');
+      yoursSec.className = 'arcs-yours';
+
+      var yoursHeading = document.createElement('h2');
+      yoursHeading.className = 'arcs-yours-heading';
+      yoursHeading.textContent = 'Your arcs';
+      yoursSec.appendChild(yoursHeading);
+
+      var yi;
+      for (yi = 0; yi < ownArcs.length; yi++) {
+        var yCard = document.createElement('a');
+        yCard.className = 'arc-card arc-card-live';
+        yCard.href = '#arc/' + ownArcs[yi].id;
+
+        var yText = document.createElement('div');
+        yText.className = 'arc-card-text';
+
+        var yTitle = document.createElement('h3');
+        yTitle.className = 'arc-card-title';
+        yTitle.textContent = ownArcs[yi].rec.title || 'Untitled arc';
+        yText.appendChild(yTitle);
+
+        if (ownArcs[yi].rec.description) {
+          var yDesc = document.createElement('p');
+          yDesc.className = 'arc-card-description';
+          yDesc.textContent = ownArcs[yi].rec.description;
+          yText.appendChild(yDesc);
+        }
+
+        yCard.appendChild(yText);
+        yoursSec.appendChild(yCard);
+      }
+
+      wrap.appendChild(yoursSec);
+    }
+  }
+
   // Stage 5.3 Stage 3b: worked-example cards. Two cards in one section,
   // no parent heading -- the visual contrast (live opaque card with
   // five book covers vs. illustrated muted card with an "Illustrated
@@ -6902,6 +6961,12 @@ function openBookArcPicker(bookId, statusMsg) {
       if (h) h.innerHTML = '';
     }
   }));
+  // Bring the picker into view: its host sits below the book-detail
+  // header, so on a tall mobile page the panel would open off-screen and
+  // the tap would read as a no-op. Mirrors _accountOpenMark's reveal.
+  if (typeof host.scrollIntoView === 'function') {
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 // Entry arc picker (2b-ii). Mounts the shared panel into a per-card
@@ -7160,6 +7225,12 @@ function openBookSendToSubTheory(bookId) {
   if (!user) { return; }
   host.innerHTML = '';
   host.appendChild(buildSubTheoryPickerPanel('book', bookId, ''));
+  // Bring the picker into view (see openBookArcPicker): the host sits
+  // below the book-detail header, so on a tall mobile page the panel
+  // would open off-screen and the tap would read as a no-op.
+  if (typeof host.scrollIntoView === 'function') {
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function renderNotebookEntry(entry) {
