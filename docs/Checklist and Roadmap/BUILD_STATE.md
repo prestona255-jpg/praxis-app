@@ -6,13 +6,13 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-06-12
+**Authoritative as of:** 2026-06-16
 **Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.97`
-**HEAD == origin/main:** `276d3db`
+**Live CACHE_VERSION:** `praxis-v3.112`
+**HEAD == origin/main:** `9c6608b`
 **Schema:** `state.js` static initializer `SCHEMA_VERSION: '1.9.3'` (the pinned
-seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.17.0**
-(`state.js` ~line 1857). Runtime schema is 1.17.0; the 1.9.3 literal is expected.
+seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.19.0**
+(`state.js` ~line 1968). Runtime schema is 1.19.0; the 1.9.3 literal is expected.
 
 **Provenance:** reconstructed and verified against `git log` (300 commits) +
 `sw.js` CACHE_VERSION + `docs/checkpoints/` on 2026-06-12 (recon:
@@ -232,6 +232,20 @@ Checkpoints: `docs/checkpoints/10-2..10-5(+recon).md`. 10.1 predates the checkpo
 | 10.5.9 | Cleanup: fix Defect A (blue Cite link → muted) + Defect B (`citationPins` backfill on Firestore merge via standing `ensureSubTheoryFieldsAll`) | SHIPPED+VERIFIED | v3.97 | `2356479`,`276d3db` | `10-5.md` | Both re-verified live at v3.97: Cite link computed color = `--river`, no underline; 4 pre-existing fixtures report `citationPins` after synced reload. | — |
 | 10.5.8 | App-wide writing-surface field treatment (border/surface tint, padding, prose max-width on **every** textarea) | **DEFERRED** | — | — | `10-5.md` (lines 120, 171) | — | = **audit bug #5** (see §4). Carries own comp-gate (before/after desktop+mobile, both registers, every textarea) + the 9.2/6.2 borderless-spec override note. Only open Stage 10 item. Not yet authored into a plan. |
 
+### Notebook N1–N3 — the spread (capture · consent · gather→sub-theory) — SHIPPED+VERIFIED (2026-06-16)
+Checkpoints: `docs/checkpoints/N0-recon.md`, `N-foundation.md`, `N1.md`, `N2.md`, `N3.md`, `N-review-fixes.md`.
+
+| ID | Status | Cache@ship | Commit | Live-verify evidence | Residuals |
+|---|---|---|---|---|---|
+| Foundation | SHIPPED+VERIFIED | v3.112 | `ec8bd62` | Schema 1.19.0 live on `prestona255`; `filed`/`question`/`yumiReadsAlong` added; migrate harness ALL PASS; **F5** — deliberately-hidden marginalia stays private through a real Firestore round-trip. | — |
+| N1 spread shell | SHIPPED+VERIFIED | v3.112 | `44e2dbc` | Tabs Inbox/Journal/<books> + live counts + F3 filtering; per-entry toggle removed (grep + DOM); routing harness ALL PASS. | — |
+| N2 capture + consent | SHIPPED+VERIFIED | v3.112 | `b0a7bc0` | Writeline 3-register capture (by-kind `isPrivate` + `filed` routing); master switch persists + gates `assembleContextData` (live: off→nothing, on→excludes private); file Inbox→book; Stage-11 copy + `question` count buckets. | Mic = N2b (deferred); camera deferred. |
+| N3 gather→sub-theory | SHIPPED+VERIFIED | v3.112 | `e46bd1b` | Gather→name→arc (F6)→Create reuses `createSubTheory` + `addEvidenceToSubTheory`; live: real sub-theory in real arc with 2 `entry` evidence, persists across reload. | — |
+| Review fixes | SHIPPED+VERIFIED | v3.112 | `ed621a8` | Logged-out guard (live: no crash, "Sign in" note) + **book-aware `filed` backfill** (live: no-`filed` cross-device entry → Inbox via the auth-merge normalizer). | — |
+| Profile tagline sync fix | SHIPPED+VERIFIED | v3.112 | `d8dbe80` | `loadProfileFromFirestore` merge reads `tagline` back — read/write symmetric with `.set()`. | Pre-existing bug; separate from the epic. |
+
+> Ship commit `9c6608b` (CACHE_VERSION v3.111→v3.112). **9/9 post-push live checks PASS** on `prestona255@gmail.com` (incl. the auth-merge `filed` normalizer cross-device + the F5 real-data round-trip); `ZZVERIFY` test data cleaned up. Data model: `docs/PRAXIS_9_6_AND_VISUAL_UPLIFT.md` lineage; N0 forks F1–F6 resolved by Claude. N4 (Yumi generative gather) remains DEFERRED (SEC + eval-gated).
+
 ---
 
 ## 2. In-flight / nearest-next
@@ -320,4 +334,5 @@ the very end (after this list).
 | v3.94 | 10.2 inline citation preview |
 | v3.95 | 10.4 read-only render + Privacy Gate A |
 | v3.96 | 10.5 Citation UX |
-| **v3.97** | **10.5.9 cleanup (Defects A+B) — current live** |
+| v3.97 | 10.5.9 cleanup (Defects A+B) |
+| **v3.112** | **Notebook N1–N3 epic + profile tagline fix — current live** |
