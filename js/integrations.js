@@ -373,6 +373,10 @@ firebase.auth().onAuthStateChanged(function (u) {
         setProfile(u.uid, {
           displayNameOverride: rd.displayNameOverride ? rd.displayNameOverride : '',
           penName:             rd.penName ? rd.penName : '',
+          // Fix: the merge omitted tagline, so saveProfileToFirestore persisted
+          // it but a second device never pulled it back (silently wiped on a
+          // cross-device sign-in). Read/write now symmetric with the .set() list.
+          tagline:             rd.tagline ? rd.tagline : '',
           onboardingSeen:      rd.onboardingSeen === true,
           // N-epic: master consent switch. Absent in a remote doc written
           // before this field existed -> default TRUE (never silently flip
