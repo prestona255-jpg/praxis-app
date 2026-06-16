@@ -9109,6 +9109,79 @@ function renderAccountPage() {
   expandHost.className = 'account-expand-host';
   wrap.appendChild(expandHost);
 
+  // ----- STAGE 11: TRANSPARENCY ("what Praxis records / what Yumi sees") -----
+  // Plain disclosure of what Praxis records (aggregate counts only, never
+  // content) and the boundary on what Yumi can and cannot see, plus the
+  // covenant figures themselves. The content-bearing figures come from
+  // window.YumiBrain.getAggregateCounts(uid), which splits visible/private
+  // through the SAME isPrivate filter Yumi reads through -- so private writing
+  // is counted but never crosses to Yumi. Reuses existing card / copy / button
+  // classes (no new styling -- logic only). Disclosure copy is accurate to the
+  // live filter (journal private by default, marginalia visible by default,
+  // Yumi sees any non-private entry); final wording set at the gate.
+  var transCard = document.createElement('section');
+  transCard.className = 'account-card account-data-card';
+
+  var transEyebrow = document.createElement('p');
+  transEyebrow.className = 'eyebrow';
+  transEyebrow.textContent = 'what praxis records — and what yumi sees';
+  transCard.appendChild(transEyebrow);
+
+  var discRecords = document.createElement('p');
+  discRecords.className = 'account-covenant';
+  discRecords.textContent = 'What Praxis records: aggregate counts of your '
+    + 'activity and which features you use. We never read the content of your '
+    + 'notebook entries or marginalia for analytics.';
+  transCard.appendChild(discRecords);
+
+  var discYumiSees = document.createElement('p');
+  discYumiSees.className = 'account-covenant';
+  discYumiSees.textContent = 'What Yumi can see: your notebook entries and '
+    + 'marginalia that you have not marked private — she reads through the same '
+    + 'privacy filter you control. New journal entries start private and new '
+    + 'marginalia start visible; you decide each one.';
+  transCard.appendChild(discYumiSees);
+
+  var discYumiCannot = document.createElement('p');
+  discYumiCannot.className = 'account-covenant';
+  discYumiCannot.textContent = 'What Yumi cannot see: anything you mark '
+    + 'private. Your themes and collections are private to you.';
+  transCard.appendChild(discYumiCannot);
+
+  var discCovenant = document.createElement('p');
+  discCovenant.className = 'account-covenant';
+  discCovenant.textContent = 'The covenant: no asymmetric knowledge — the '
+    + 'same boundary holds for the people who build Praxis.';
+  transCard.appendChild(discCovenant);
+
+  // The covenant figures, computed client-side through the isPrivate filter.
+  var agg = (window.YumiBrain &&
+    typeof window.YumiBrain.getAggregateCounts === 'function')
+    ? window.YumiBrain.getAggregateCounts(uid) : null;
+  if (agg) {
+    var figures = document.createElement('p');
+    figures.className = 'account-covenant';
+    figures.textContent = 'Visible to Yumi right now: '
+      + (agg.notebookVisible + agg.marginaliaVisible) + ' entries ('
+      + agg.notebookVisible + ' notebook, ' + agg.marginaliaVisible
+      + ' marginalia). Private to you, never sent to Yumi: '
+      + (agg.notebookPrivate + agg.marginaliaPrivate) + '. Across your work: '
+      + agg.books + ' books, ' + agg.arcs + ' arcs, '
+      + agg.subTheories + ' sub-theories.';
+    transCard.appendChild(figures);
+  }
+
+  var seesBtn = document.createElement('button');
+  seesBtn.type = 'button';
+  seesBtn.className = 'notebook-new-entry account-secondary-btn';
+  seesBtn.textContent = 'See what Yumi sees right now';
+  seesBtn.addEventListener('click', function() {
+    location.hash = 'yumi-sees';
+  });
+  transCard.appendChild(seesBtn);
+
+  wrap.appendChild(transCard);
+
   // ----- DATA BLOCK -> "YOUR DATA" CARD (#8 Stage 4a) -----
   var dataCard = document.createElement('section');
   dataCard.className = 'account-card account-data-card';

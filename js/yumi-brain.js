@@ -329,6 +329,61 @@ function assembleContextData() {
   };
 }
 
+// Stage 11 (transparency): aggregate activity counts for the account
+// disclosure surface. Counts ONLY -- never content. Books / arcs /
+// sub-theories are structural (no privacy dimension). Notebook and marginalia
+// entries are split visible/private through the SAME `isPrivate === true`
+// predicate assembleContextData applies above (principle #5) -- so the
+// "visible to Yumi" figures the surface shows are exactly what crosses to
+// Yumi, and private writing is only ever counted, never surfaced. uid-scoped
+// so the figures are the signed-in reader's own.
+function getAggregateCounts(uid) {
+  var out = {
+    books: 0, arcs: 0, subTheories: 0,
+    notebookVisible: 0, notebookPrivate: 0,
+    marginaliaVisible: 0, marginaliaPrivate: 0
+  };
+  if (!uid) { return out; }
+  if (state.userBooks && state.userBooks[uid] &&
+      state.userBooks[uid].bookIds) {
+    out.books = state.userBooks[uid].bookIds.length;
+  }
+  var k;
+  if (state.arcs) {
+    for (k in state.arcs) {
+      if (Object.prototype.hasOwnProperty.call(state.arcs, k) &&
+          state.arcs[k] && state.arcs[k].userId === uid) {
+        out.arcs = out.arcs + 1;
+      }
+    }
+  }
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, k) &&
+          state.subTheories[k] && state.subTheories[k].userId === uid) {
+        out.subTheories = out.subTheories + 1;
+      }
+    }
+  }
+  if (state.notebookEntries) {
+    var e, priv;
+    for (k in state.notebookEntries) {
+      if (!Object.prototype.hasOwnProperty.call(state.notebookEntries, k)) { continue; }
+      e = state.notebookEntries[k];
+      if (!e || e.userId !== uid) { continue; }
+      priv = e.isPrivate === true;
+      if (e.register === 'marginalia') {
+        if (priv) { out.marginaliaPrivate = out.marginaliaPrivate + 1; }
+        else { out.marginaliaVisible = out.marginaliaVisible + 1; }
+      } else {
+        if (priv) { out.notebookPrivate = out.notebookPrivate + 1; }
+        else { out.notebookVisible = out.notebookVisible + 1; }
+      }
+    }
+  }
+  return out;
+}
+
 // Format the structured snapshot into the labeled-prose blob Yumi's
 // model call expects. Pre-3.6 prose was load-bearing: any drift in
 // the existing slots changes what Yumi sees. Stage 3.7 adds one new
@@ -516,6 +571,7 @@ window.YumiBrain = {
   buildContext:       buildContext,
   getContext:         getYumiContext,
   getContextSnapshot: assembleContextData,
+  getAggregateCounts: getAggregateCounts,
   sendMessage:        sendMessage
 };
 
