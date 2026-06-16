@@ -4139,6 +4139,105 @@ function confirmDeleteSubTheory(id, afterDelete) {
 // Exposed so the constellation hover card (arc-constellation.js) can open it.
 window.confirmDeleteSubTheory = confirmDeleteSubTheory;
 
+// Stage R #4: a deliberate-act confirm for removing a resonance link between
+// two sub-theories. Sibling of confirmDeleteSubTheory -- same .st-confirm
+// chrome, callable from the transient Web-view hover card. Lists this
+// sub-theory's CURRENT connections; each row carries its own Unlink button
+// (per-connection -- never a bulk wipe). Each removal reuses the existing
+// unlinkSubTheories(id, partnerId) state fn (symmetric splice + persist),
+// drops its row in place, and fires afterUnlink so the constellation behind
+// the modal re-renders without the gone edge. Emptying the list closes the
+// modal. esc + backdrop = cancel.
+function confirmUnlinkSubTheory(id, afterUnlink) {
+  var rec = state.subTheories && state.subTheories[id];
+  if (!rec) { return; }
+  var raw = Array.isArray(rec.linkedSubTheories) ? rec.linkedSubTheories : [];
+  var partners = [];
+  var pi;
+  for (pi = 0; pi < raw.length; pi = pi + 1) {
+    if (state.subTheories[raw[pi]]) { partners.push(raw[pi]); }
+  }
+  if (partners.length === 0) { return; }
+  var opener = document.activeElement;
+  var title = (rec.header && rec.header.length) ? rec.header : 'this sub-theory';
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'st-confirm-backdrop';
+  backdrop.addEventListener('click', close);
+
+  var panel = document.createElement('div');
+  panel.className = 'st-confirm';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-label', 'Remove a connection');
+  panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  var copy = document.createElement('p');
+  copy.className = 'st-confirm-copy';
+  copy.textContent = 'Remove a connection from “' + title + '”? Both '
+    + 'sub-theories stay; only the link between them is removed.';
+  panel.appendChild(copy);
+
+  var list = document.createElement('div');
+  list.className = 'st-confirm-unlink-list';
+  panel.appendChild(list);
+
+  function addRow(partnerId) {
+    var partner = state.subTheories[partnerId];
+    var pHeader = (partner && partner.header && partner.header.length)
+      ? partner.header : 'Untitled sub-theory';
+    var row = document.createElement('div');
+    row.className = 'st-confirm-unlink-row';
+    var name = document.createElement('span');
+    name.className = 'st-confirm-unlink-name';
+    name.textContent = pHeader;
+    row.appendChild(name);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'st-confirm-btn st-confirm-btn-danger';
+    btn.textContent = 'Unlink';
+    btn.addEventListener('click', function() {
+      var ok = unlinkSubTheories(id, partnerId);
+      if (row.parentNode) { row.parentNode.removeChild(row); }
+      if (ok && typeof afterUnlink === 'function') { afterUnlink(); }
+      if (!list.firstChild) { close(); }
+    });
+    row.appendChild(btn);
+    list.appendChild(row);
+  }
+  var ri;
+  for (ri = 0; ri < partners.length; ri = ri + 1) {
+    addRow(partners[ri]);
+  }
+
+  var actions = document.createElement('div');
+  actions.className = 'st-confirm-actions';
+  var doneBtn = document.createElement('button');
+  doneBtn.type = 'button';
+  doneBtn.className = 'st-confirm-btn';
+  doneBtn.textContent = 'Done';
+  doneBtn.addEventListener('click', close);
+  actions.appendChild(doneBtn);
+  panel.appendChild(actions);
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    if (backdrop.parentNode) { backdrop.parentNode.removeChild(backdrop); }
+    if (panel.parentNode) { panel.parentNode.removeChild(panel); }
+    if (opener && opener.focus) { try { opener.focus(); } catch (e) {} }
+  }
+  function onKey(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); close(); }
+  }
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(panel);
+  document.addEventListener('keydown', onKey);
+  if (panel.focus) { try { panel.setAttribute('tabindex', '-1'); panel.focus(); } catch (e) {} }
+}
+// Exposed so the constellation hover card (arc-constellation.js) can open it.
+window.confirmUnlinkSubTheory = confirmUnlinkSubTheory;
+
 // 10.2: pure citation parser. Splits bodyText into ordered segments,
 // detecting *asterisk*-wrapped italic spans (the markdown-light convention
 // from 9.2). Each italic span is matched, case-insensitively, against the

@@ -1561,6 +1561,40 @@ function attachSubTheoryDrag(svg, opts) {
       }
     });
     foot.appendChild(changeLink);
+    // Stage R #4: an Unlink control, shown only when this sub-theory has at
+    // least one resonance link. Hands off to the views.js confirm (window hook
+    // keeps the layering); afterUnlink re-renders the current route in place so
+    // the dropped edge disappears. Mirrors the Delete hand-off directly below.
+    // The renderer's data contract carries resonance links at the arc level
+    // (arc.edges = reciprocal {aId,bId} pairs), not per sub-theory, so detect
+    // this sub's connections by scanning arc.edges -- stays inside the contract
+    // (no reach into global state).
+    var stHasLink = false;
+    var stEdges = (arc && Array.isArray(arc.edges)) ? arc.edges : [];
+    var stEi;
+    for (stEi = 0; stEi < stEdges.length; stEi = stEi + 1) {
+      if (stEdges[stEi] && (stEdges[stEi].aId === sub.id || stEdges[stEi].bId === sub.id)) {
+        stHasLink = true; break;
+      }
+    }
+    if (stHasLink) {
+      var unlinkLink = document.createElement('button');
+      unlinkLink.type = 'button';
+      unlinkLink.className = 'st-hover-card-link';
+      unlinkLink.textContent = 'Unlink';
+      unlinkLink.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (sub.id && typeof window.confirmUnlinkSubTheory === 'function') {
+          hideCard();
+          window.confirmUnlinkSubTheory(sub.id, function() {
+            if (window.views && typeof window.views.renderRoute === 'function') {
+              window.views.renderRoute();
+            }
+          });
+        }
+      });
+      foot.appendChild(unlinkLink);
+    }
     // Fix (v3.81 / R67): a subordinate danger Delete link in the hover card --
     // the only per-sub surface in the Web view. Hands off to the views.js
     // confirm modal (window hook keeps the layering); afterDelete re-renders the
