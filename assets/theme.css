@@ -136,6 +136,7 @@
   --thread-color-faint: #C9B68A;  /* 9.6c: speculative/faint dashed weight */
   --marginalia-color: #1d8f68;
   --journal-color: #7E7BC0;        /* S7a: journal register spine (mockup --s14 violet) */
+  --question-color: var(--river);  /* N-epic: question register spine (mockup blue) */
   --arc-question-glow: #854F0B;
   --tradition-theory-halo: #F0A88A;
   --tradition-wisdom-halo: #F8E078;

@@ -3585,6 +3585,12 @@
   border-color: rgba(29,143,104,.45);
 }
 
+.notebook-entry-tag-q {
+  /* N-epic: question register -> blue (mockup .et-ques). */
+  color: var(--question-color);
+  border-color: rgba(39,86,106,.45);
+}
+
 .notebook-entry-ts {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -3649,7 +3655,6 @@
   margin-top: 11px;
 }
 
-.notebook-entry-privacy-toggle,
 .notebook-entry-add-to-arc,
 .notebook-entry-delete,
 .notebook-entry-delete-confirm,
@@ -3660,11 +3665,9 @@
   cursor: pointer;
 }
 
-.notebook-entry-privacy-toggle,
 .notebook-entry-add-to-arc {
   color: var(--wordmark);
 }
-.notebook-entry-privacy-toggle:hover,
 .notebook-entry-add-to-arc:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -3688,6 +3691,150 @@
 
 .notebook-entry-arc-picker-host {
   margin-top: 12px;
+}
+
+/* ===== N1: the spread (Alt 1) -- structural layout. Full style pass is N5;
+   these rules use existing tokens only and establish the two-leaf grid, the
+   tab row, and the display-only master switch. ===== */
+.notebook-hright {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.notebook-mtog {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.notebook-mtog .notebook-sw {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--sunk);
+  border: 1px solid var(--line-2);
+}
+.notebook-mtog .notebook-sw::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.notebook-mtog-on .notebook-sw {
+  background: var(--marginalia-color);
+  border-color: var(--marginalia-color);
+}
+.notebook-mtog-on .notebook-sw::after {
+  left: 15px;
+}
+.notebook-hright-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wordmark);
+}
+.notebook-hright-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notebook-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.notebook-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.notebook-tab:hover { color: var(--ink-2); }
+.notebook-tab-on {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+.notebook-tab-count {
+  margin-left: 4px;
+  color: var(--ink-4);
+}
+.notebook-tab-on .notebook-tab-count { color: var(--gold-text); }
+
+.notebook-spread {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.notebook-leaf {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notebook-leaf-right {
+  border-left: 1px solid var(--border);
+  padding-left: 28px;
+  min-height: 200px;
+}
+.notebook-secthead-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--ink);
+}
+.notebook-secthead-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+.notebook-leaftag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.notebook-working-hint {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+@media (max-width: 759px) {
+  .notebook-spread { grid-template-columns: 1fr; gap: 20px; }
+  .notebook-leaf-right {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
 }
 
 /* ----- Notebook artifact card (Tier 1) -----
@@ -4155,7 +4302,6 @@
    as the rest of the file -- --river ring on focus-visible, 1px
    press on :active for buttons only (links don't get the press). */
 
-.notebook-entry-privacy-toggle:focus-visible,
 .notebook-entry-add-to-arc:focus-visible,
 .notebook-artifact-card:focus-visible,
 .notebook-arc-row:focus-visible,

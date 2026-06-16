@@ -665,6 +665,11 @@ function renderHome() {
   host.appendChild(wrap);
 }
 
+// N1: the active spread tab persists across re-renders (tab clicks call
+// renderNotebook). Keys: 'inbox', 'journal', or a bookId. Resolved against the
+// live tab model each render, falling back to the first tab if it went stale.
+var notebookActiveTab = 'inbox';
+
 function renderNotebook() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -695,41 +700,28 @@ function renderNotebook() {
 
   var user = getCurrentUser();
   if (user) {
-    var newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'notebook-new-entry';
-    newBtn.textContent = '+ New entry';
-    newBtn.addEventListener('click', function() {
-      openJournalEditor();
-    });
-    header.appendChild(newBtn);
+    // N1 spread header-right: the master consent switch (DISPLAY-ONLY in N1 --
+    // wired interactive in N2) + the existing "What Yumi sees" transparency
+    // link (reused verbatim -> openTransparencyView). The old +New entry /
+    // +New arc / Settings buttons are superseded by the spread: inline capture
+    // (N2 writeline) and the master switch replace them. (openJournalEditor /
+    // openArcEditor / openNotebookSettings remain defined but unreferenced --
+    // cleanup deferred to N5.)
+    var hright = document.createElement('div');
+    hright.className = 'notebook-hright';
 
-    var newArcBtn = document.createElement('button');
-    newArcBtn.type = 'button';
-    newArcBtn.className = 'notebook-new-arc';
-    newArcBtn.textContent = '+ New arc';
-    newArcBtn.addEventListener('click', function() {
-      openArcEditor();
-    });
-    header.appendChild(newArcBtn);
-
-    var settingsBtn = document.createElement('button');
-    settingsBtn.type = 'button';
-    settingsBtn.className = 'notebook-settings-toggle';
-    settingsBtn.textContent = 'Settings';
-    settingsBtn.addEventListener('click', function() {
-      openNotebookSettings();
-    });
-    header.appendChild(settingsBtn);
+    hright.appendChild(buildNotebookMasterSwitch(user));
 
     var transparencyBtn = document.createElement('button');
     transparencyBtn.type = 'button';
-    transparencyBtn.className = 'notebook-transparency-toggle';
+    transparencyBtn.className = 'notebook-transparency-toggle notebook-hright-link';
     transparencyBtn.textContent = 'What Yumi sees';
     transparencyBtn.addEventListener('click', function() {
       openTransparencyView();
     });
-    header.appendChild(transparencyBtn);
+    hright.appendChild(transparencyBtn);
+
+    header.appendChild(hright);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';
@@ -743,99 +735,236 @@ function renderNotebook() {
 
   wrap.appendChild(header);
 
-  // Settings host -- empty on every render; openNotebookSettings
-  // mounts the register-default panel here on demand.
-  var settingsHost = document.createElement('div');
-  settingsHost.id = 'notebook-settings-host';
-  wrap.appendChild(settingsHost);
-
-  // Transparency host -- empty on every render; openTransparencyView
-  // mounts the "What Yumi sees" panel here on demand. Created
-  // unconditionally; gating happens at the header button level.
+  // Transparency host -- "What Yumi sees" (openTransparencyView) mounts here.
   var transparencyHost = document.createElement('div');
   transparencyHost.id = 'notebook-transparency-host';
   wrap.appendChild(transparencyHost);
 
-  // Editor host -- empty on every render; openJournalEditor mounts
-  // its block here on demand.
+  // Editor host -- the N2 inline writeline will mount its editor here. Empty in N1.
   var editorHost = document.createElement('div');
   editorHost.id = 'notebook-editor-host';
   wrap.appendChild(editorHost);
 
-  // Stage 3.8: arc editor host -- empty on every render; openArcEditor
-  // mounts the title + description form here on demand. Placed
-  // adjacent to the entry editor host so the arc affordance and the
-  // entry affordance share the same mount-region of the surface.
-  var arcEditorHost = document.createElement('div');
-  arcEditorHost.id = 'notebook-arc-editor-host';
-  wrap.appendChild(arcEditorHost);
-
-  // Batch 3 F3: the Notebook arcs-list block was removed -- the Arcs
-  // index page is the canonical arc list, and the mockup omits it here.
-  // The "+ New arc" header button (above) is retained.
-
-  var entryHeading = document.createElement('h2');
-  entryHeading.className = 'notebook-entry-list-title';
-  entryHeading.textContent = 'Entries';
-  wrap.appendChild(entryHeading);
-
-  // Stage 3.7: /notebook unifies notebookEntries + bookArtifacts as
-  // distinct card kinds in one chronological stream owned by the
-  // current user. Interleaved by createdAt, newest first. Each item
-  // is tagged with its kind so the render loop can dispatch to the
-  // right card renderer -- entry cards keep their existing affordances
-  // (privacy toggle, register marker, book attribution); Artifact
-  // cards are click-through navigation to #artifact/<bookId>.
-  var items = [];
-  var entryMap = state.notebookEntries || {};
-  var key;
-  for (key in entryMap) {
-    if (Object.prototype.hasOwnProperty.call(entryMap, key)) {
-      var e = entryMap[key];
-      if (e && user && e.userId === user.uid) {
-        items.push({ kind: 'entry', createdAt: e.createdAt || 0, data: e });
-      }
+  // N1: one pass over the signed-in user's entries -> tab membership + counts,
+  // then the tab row and the two-leaf spread. READ-ONLY: no capture/gather/writes.
+  // (Artifacts are out of the spread for N1; they remain reachable via book detail.)
+  var entries = [];
+  var emap = state.notebookEntries || {};
+  var ekey;
+  for (ekey in emap) {
+    if (Object.prototype.hasOwnProperty.call(emap, ekey)) {
+      var ent = emap[ekey];
+      if (ent && ent.userId === user.uid) { entries.push(ent); }
     }
   }
-  var artifactMap = state.bookArtifacts || {};
-  var aKey;
-  for (aKey in artifactMap) {
-    if (Object.prototype.hasOwnProperty.call(artifactMap, aKey)) {
-      var a = artifactMap[aKey];
-      if (a && user && a.userId === user.uid) {
-        items.push({ kind: 'artifact', createdAt: a.createdAt || 0, data: a });
-      }
-    }
-  }
-  items.sort(function(x, y) {
-    return y.createdAt - x.createdAt;
-  });
+  entries.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
 
-  if (items.length === 0) {
-    var empty = document.createElement('p');
-    empty.className = 'notebook-empty-body';
-    empty.textContent =
-      'A notebook holds two kinds of writing: marginalia kept close ' +
-      'to particular books, and journal entries that range further. ' +
-      'Both live here. Nothing has been written yet.';
-    wrap.appendChild(empty);
-  } else {
-    var list = document.createElement('div');
-    // Batch 2: the entry stream is one opaque --surface panel
-    // (.notebook-entries-panel) containing .row entries, per the mockup.
-    list.className = 'notebook-entry-list notebook-entries-panel';
-    var i;
-    for (i = 0; i < items.length; i++) {
-      if (items[i].kind === 'artifact') {
-        list.appendChild(renderArtifactCard(items[i].data));
-      } else {
-        list.appendChild(renderNotebookEntry(items[i].data));
-      }
-    }
-    wrap.appendChild(list);
+  var tabs = buildNotebookTabModel(user, entries);
+  var activeKey = notebookActiveTab;
+  var foundActive = false;
+  var ti;
+  for (ti = 0; ti < tabs.length; ti = ti + 1) {
+    if (tabs[ti].key === activeKey) { foundActive = true; break; }
   }
+  if (!foundActive) {
+    activeKey = tabs.length ? tabs[0].key : 'inbox';
+    notebookActiveTab = activeKey;
+  }
+
+  wrap.appendChild(buildNotebookTabRow(tabs, activeKey));
+
+  var spread = document.createElement('div');
+  spread.className = 'notebook-spread';
+  spread.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
+  spread.appendChild(buildNotebookRightLeaf());
+  wrap.appendChild(spread);
 
   host.appendChild(wrap);
+}
+
+// ===== N1 spread helpers. Display / aggregation only -- no writes. =====
+
+// Membership predicate shared by the counts AND the left-leaf render, so a
+// tab's count and its rendered entries can never disagree. Routing (locked F3):
+//   journal : register === 'journal'
+//   inbox   : register !== 'journal' && filed === false
+//   <bookId>: register !== 'journal' && filed === true && bookId in bookIds
+function notebookEntryMatchesTab(entry, tabKey) {
+  if (tabKey === 'journal') { return entry.register === 'journal'; }
+  if (tabKey === 'inbox') {
+    return entry.register !== 'journal' && entry.filed === false;
+  }
+  if (entry.register === 'journal' || entry.filed !== true || !entry.bookIds) {
+    return false;
+  }
+  var i;
+  for (i = 0; i < entry.bookIds.length; i = i + 1) {
+    if (entry.bookIds[i] === tabKey) { return true; }
+  }
+  return false;
+}
+
+// Build the ordered tab model [{key,label,count}]: Inbox, Journal, then one tab
+// per book that has >=1 placed note (shelf order first, orphan books appended
+// so no placed note is ever tab-less).
+function buildNotebookTabModel(user, entries) {
+  var model = [];
+  var inboxCount = 0;
+  var journalCount = 0;
+  var bookCounts = {};
+  var i;
+  for (i = 0; i < entries.length; i = i + 1) {
+    var e = entries[i];
+    if (e.register === 'journal') {
+      journalCount = journalCount + 1;
+    } else if (e.filed === false) {
+      inboxCount = inboxCount + 1;
+    } else if (e.filed === true && e.bookIds) {
+      var bi;
+      for (bi = 0; bi < e.bookIds.length; bi = bi + 1) {
+        var bid = e.bookIds[bi];
+        bookCounts[bid] = (bookCounts[bid] || 0) + 1;
+      }
+    }
+  }
+  model.push({ key: 'inbox', label: 'Inbox', count: inboxCount });
+  model.push({ key: 'journal', label: 'Journal', count: journalCount });
+
+  var shelf = (state.userBooks && state.userBooks[user.uid] &&
+               state.userBooks[user.uid].bookIds)
+    ? state.userBooks[user.uid].bookIds : [];
+  var ordered = [];
+  var seen = {};
+  var s;
+  for (s = 0; s < shelf.length; s = s + 1) {
+    if (bookCounts[shelf[s]] && !seen[shelf[s]]) {
+      ordered.push(shelf[s]); seen[shelf[s]] = true;
+    }
+  }
+  var bk;
+  for (bk in bookCounts) {
+    if (Object.prototype.hasOwnProperty.call(bookCounts, bk) && !seen[bk]) {
+      ordered.push(bk); seen[bk] = true;
+    }
+  }
+  var j;
+  for (j = 0; j < ordered.length; j = j + 1) {
+    var bookId = ordered[j];
+    var title = (state.books && state.books[bookId] && state.books[bookId].title)
+      ? state.books[bookId].title : '(unknown book)';
+    model.push({ key: bookId, label: title, count: bookCounts[bookId] });
+  }
+  return model;
+}
+
+// The tab row. Each tab re-renders the notebook on click (sets the module-level
+// notebookActiveTab). Closure-per-tab via appendNotebookTab (a var-in-for-loop
+// would bind every handler to the last tab).
+function buildNotebookTabRow(tabs, activeKey) {
+  var row = document.createElement('div');
+  row.className = 'notebook-tabs';
+  var i;
+  for (i = 0; i < tabs.length; i = i + 1) {
+    appendNotebookTab(row, tabs[i], activeKey);
+  }
+  return row;
+}
+
+function appendNotebookTab(row, tab, activeKey) {
+  var el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'notebook-tab' + (tab.key === activeKey ? ' notebook-tab-on' : '');
+  el.appendChild(document.createTextNode(tab.label + ' '));
+  var ct = document.createElement('span');
+  ct.className = 'notebook-tab-count';
+  ct.textContent = String(tab.count);
+  el.appendChild(ct);
+  el.addEventListener('click', function() {
+    notebookActiveTab = tab.key;
+    renderNotebook();
+  });
+  row.appendChild(el);
+}
+
+// Left leaf: section header (label + note count) then the tab's entries
+// (createdAt-desc), rendered via renderNotebookEntry (no per-entry toggle).
+function buildNotebookLeftLeaf(activeKey, tabs, entries) {
+  var leaf = document.createElement('div');
+  leaf.className = 'notebook-leaf notebook-leaf-left';
+
+  var activeTab = null;
+  var t;
+  for (t = 0; t < tabs.length; t = t + 1) {
+    if (tabs[t].key === activeKey) { activeTab = tabs[t]; break; }
+  }
+
+  var sechead = document.createElement('div');
+  sechead.className = 'notebook-secthead';
+  var secTitle = document.createElement('div');
+  secTitle.className = 'notebook-secthead-title';
+  secTitle.textContent = activeTab ? activeTab.label : 'Inbox';
+  sechead.appendChild(secTitle);
+  var secMeta = document.createElement('div');
+  secMeta.className = 'notebook-secthead-meta';
+  var n = activeTab ? activeTab.count : 0;
+  secMeta.textContent = n + (n === 1 ? ' note' : ' notes');
+  sechead.appendChild(secMeta);
+  leaf.appendChild(sechead);
+
+  var shown = 0;
+  var i;
+  for (i = 0; i < entries.length; i = i + 1) {
+    if (notebookEntryMatchesTab(entries[i], activeKey)) {
+      leaf.appendChild(renderNotebookEntry(entries[i]));
+      shown = shown + 1;
+    }
+  }
+  if (shown === 0) {
+    var empty = document.createElement('p');
+    empty.className = 'notebook-empty-body';
+    if (activeKey === 'inbox') {
+      empty.textContent = 'Nothing in your inbox. Quick captures land here, awaiting a home.';
+    } else if (activeKey === 'journal') {
+      empty.textContent = 'No journal entries yet.';
+    } else {
+      empty.textContent = 'No notes on this book yet.';
+    }
+    leaf.appendChild(empty);
+  }
+  return leaf;
+}
+
+// Right leaf: the working page. Empty in N1 -- N3 fills it via gather.
+function buildNotebookRightLeaf() {
+  var leaf = document.createElement('div');
+  leaf.className = 'notebook-leaf notebook-leaf-right';
+  var tag = document.createElement('div');
+  tag.className = 'notebook-leaftag';
+  tag.textContent = 'Working page';
+  leaf.appendChild(tag);
+  var hint = document.createElement('p');
+  hint.className = 'notebook-working-hint';
+  hint.textContent = 'Gather a selection of notes from the left to form a sub-theory here.';
+  leaf.appendChild(hint);
+  return leaf;
+}
+
+// Display-only master consent switch (N1). Reflects profile.yumiReadsAlong
+// (default true). N2 makes it interactive (persist + /userProfiles mirror +
+// assembleContextData gating).
+function buildNotebookMasterSwitch(user) {
+  var reads = true;
+  if (typeof getProfile === 'function' && user && user.uid) {
+    var prof = getProfile(user.uid);
+    if (prof && prof.yumiReadsAlong === false) { reads = false; }
+  }
+  var tog = document.createElement('span');
+  tog.className = 'notebook-mtog' + (reads ? ' notebook-mtog-on' : '');
+  var sw = document.createElement('span');
+  sw.className = 'notebook-sw';
+  tog.appendChild(sw);
+  tog.appendChild(document.createTextNode('Yumi reads along'));
+  return tog;
 }
 
 // Stage 3.7: shared editor shell. Mounts a title (optional) + body
@@ -7339,7 +7468,7 @@ function openBookArcPicker(bookId, statusMsg) {
 // shared host). On a true return from addEntryToArc, saveState then a
 // route-aware re-render: #book/<id> stays on book detail (entries
 // render in the marginalia list there too), anything else returns to
-// the Notebook. Same route-check shape as togglePrivacy. On false
+// the Notebook. Same route-aware re-render shape used elsewhere. On false
 // (already attached), re-open the picker in place with a quiet inline
 // status note. Done clears mountEl.innerHTML; the inline mount element
 // itself is left in the DOM, but its empty state is visually inert
@@ -7599,20 +7728,21 @@ function openBookSendToSubTheory(bookId) {
 }
 
 function renderNotebookEntry(entry) {
-  // Batch 2: reshaped from a separate card into a .row inside the
-  // .notebook-entries-panel. Left register spine via ::before reads
-  // --reg: marginalia = teal (--marginalia-color, Yumi), journal =
-  // --ink-4 (no subtheory token -- those are workspace-only). All
-  // affordance wiring (togglePrivacy / openEntryArcPicker / deleteEntry)
-  // is preserved verbatim; only the DOM grouping + labels changed.
+  // Left register spine via ::before reads --reg: marginalia = teal
+  // (--marginalia-color), question = --question-color (blue), journal =
+  // --journal-color. N1: the per-entry privacy toggle is removed (see the
+  // actions row); openEntryArcPicker / openEntrySendToSubTheory / deleteEntry
+  // wiring is preserved.
   var isMarg = entry.register === 'marginalia';
+  var isQues = entry.register === 'question';
   var priv = entry.isPrivate === true;
   var capturedId = entry.id;
 
   var card = document.createElement('article');
   card.className = 'notebook-entry';
   card.style.setProperty('--reg',
-    isMarg ? 'var(--marginalia-color)' : 'var(--journal-color)');
+    isMarg ? 'var(--marginalia-color)'
+           : (isQues ? 'var(--question-color)' : 'var(--journal-color)'));
 
   // Entry head: register pill + timestamp + visibility indicator.
   var eh = document.createElement('div');
@@ -7620,8 +7750,9 @@ function renderNotebookEntry(entry) {
 
   var registerEl = document.createElement('span');
   registerEl.className = 'notebook-entry-tag ' +
-    (isMarg ? 'notebook-entry-tag-m' : 'notebook-entry-tag-j');
-  registerEl.textContent = isMarg ? 'Marginalia' : 'Journal';
+    (isMarg ? 'notebook-entry-tag-m'
+            : (isQues ? 'notebook-entry-tag-q' : 'notebook-entry-tag-j'));
+  registerEl.textContent = isMarg ? 'Marginalia' : (isQues ? 'Question' : 'Journal');
   eh.appendChild(registerEl);
 
   var timeEl = document.createElement('time');
@@ -7662,21 +7793,13 @@ function renderNotebookEntry(entry) {
   bodyEl.textContent = entry.body || '';
   card.appendChild(bodyEl);
 
-  // Actions row. Wiring unchanged: privacy flip (togglePrivacy), add to
-  // arc (openEntryArcPicker, inline lazy mount), delete (click-to-confirm
-  // via deleteEntry, same location.hash re-render branch).
+  // Actions row. Add to arc (openEntryArcPicker, inline lazy mount), send to
+  // sub-theory, delete (click-to-confirm via deleteEntry, same location.hash
+  // re-render branch). N1: the per-entry privacy toggle is REMOVED -- visibility
+  // is governed by the by-kind default + the master "Yumi reads along" switch,
+  // never a per-entry flip. The read-only visibility indicator above remains.
   var acts = document.createElement('div');
   acts.className = 'notebook-entry-acts';
-
-  var privacyToggle = document.createElement('a');
-  privacyToggle.href = '#';
-  privacyToggle.className = 'notebook-entry-privacy-toggle';
-  privacyToggle.textContent = priv ? 'Make visible' : 'Make private';
-  privacyToggle.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    togglePrivacy(capturedId);
-  });
-  acts.appendChild(privacyToggle);
 
   var addToArcLink = document.createElement('a');
   addToArcLink.href = '#';
@@ -7876,22 +7999,9 @@ function getRegisterDefault(register) {
   return defaults[register];
 }
 
-// Flip an entry's isPrivate flag in place, persist, and re-render
-// the surface the user is currently looking at. Reads location.hash
-// at call time so per-entry toggles fired from #book/... stay on
-// the book-detail page instead of bouncing to the Notebook.
-function togglePrivacy(entryId) {
-  var entry = state.notebookEntries && state.notebookEntries[entryId];
-  if (!entry) return;
-  entry.isPrivate = !(entry.isPrivate === true);
-  markNotebookDirty();
-  saveState();
-  if (location.hash.indexOf('#book/') === 0) {
-    renderBookDetail(state.currentBookId);
-  } else {
-    renderNotebook();
-  }
-}
+// N1: togglePrivacy (the per-entry visibility flip) was REMOVED. Visibility is
+// now the by-kind default (journal private; marginalia + question visible) plus
+// the master "Yumi reads along" switch -- never a per-entry flip.
 
 // Mount the register-default settings panel into
 // #notebook-settings-host. Called from the header Settings button
@@ -9443,7 +9553,6 @@ window.views = {
   openMarginaliaEditor:  openMarginaliaEditor,
   openShelfEditor:       openShelfEditor,
   openNotebookSettings:  openNotebookSettings,
-  togglePrivacy:         togglePrivacy,
   setRegisterDefault:    setRegisterDefault,
   openTransparencyView:  openTransparencyView,
   closeTransparencyView: closeTransparencyView
