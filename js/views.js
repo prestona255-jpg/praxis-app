@@ -6496,12 +6496,21 @@ function renderArcDetail(arcId) {
       });
       stControlBar.appendChild(addSubBtn);
 
+      // Stage 4 (mockup-fidelity): Connect / Reset / Layers move to a bottom
+      // control bar AFTER the constellation (mockup line 202, bottom-right).
+      // The + Sub-theory control stays in the top bar. The connectBtn / resetBtn
+      // / layersWrap NODES are MOVED into this bar (re-pointed appendChild),
+      // never re-created -- connectBtn stays the same reference handed to
+      // attachSubTheoryDrag and keeps its data-st-control='connect' hook.
+      var stControlBarBottom = document.createElement('div');
+      stControlBarBottom.className = 'st-control-bar st-control-bar-bottom';
+
       var connectBtn = document.createElement('button');
       connectBtn.type = 'button';
       connectBtn.className = 'arc-detail-toggle-btn';
       connectBtn.setAttribute('data-st-control', 'connect');
       connectBtn.textContent = 'Connect';
-      stControlBar.appendChild(connectBtn);
+      stControlBarBottom.appendChild(connectBtn);
 
       var resetBtn = document.createElement('button');
       resetBtn.type = 'button';
@@ -6523,7 +6532,7 @@ function renderArcDetail(arcId) {
         }
         renderArcDetail(arcId);
       });
-      stControlBar.appendChild(resetBtn);
+      stControlBarBottom.appendChild(resetBtn);
 
       // Hybrid Stage C: all visibility layers consolidate into ONE "Layers"
       // popover -- Books / Marginalia / Faint links, each an independent
@@ -6613,7 +6622,7 @@ function renderArcDetail(arcId) {
           + (_stLayersOpen ? ' st-layers-popover--open' : '');
       });
 
-      stControlBar.appendChild(layersWrap);
+      stControlBarBottom.appendChild(layersWrap);
 
       webContainer.appendChild(stControlBar);
 
@@ -6622,6 +6631,8 @@ function renderArcDetail(arcId) {
       svg.setAttribute('viewBox', '0 0 600 500');
       svg.setAttribute('xmlns', SVG_NS);
       webContainer.appendChild(svg);
+      // Stage 4: the Connect/Reset/Layers bar sits AFTER the svg (bottom).
+      webContainer.appendChild(stControlBarBottom);
       var arcData = _arcDetailBuildSubTheoryData(arc);
       window.renderSubTheoryConstellation(arcData, svg,
         { showMarginalia: stShowMarginalia,

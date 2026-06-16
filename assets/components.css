@@ -4661,6 +4661,15 @@
   margin-bottom: var(--sp-4);
 }
 
+/* Stage 4 (mockup-fidelity): the Connect/Reset/Layers bar sits BELOW the
+   constellation, bottom-right (mockup line 202). It keeps the .st-control-bar
+   class (same quiet chip styling); only the margins + alignment flip. */
+.st-control-bar-bottom {
+  margin-top: var(--sp-4);
+  margin-bottom: 0;
+  justify-content: flex-end;
+}
+
 /* Canon §4-H chrome polish: the constellation control buttons (Connect /
    Reset / Layers) read as quiet chips so the gradient "+ Sub-theory" is the
    single primary. Excludes .arc-detail-addsub (keeps its gradient) and
