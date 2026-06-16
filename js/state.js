@@ -2002,7 +2002,12 @@ function migrate(stored) {
         if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, nfeid)) {
           var nfent = stored.notebookEntries[nfeid];
           if (nfent && typeof nfent.filed !== 'boolean') {
-            nfent.filed = true;
+            // Book-aware: journal is always placed (routes by register); a
+            // non-journal note is placed (true) only if it has a book, else it
+            // lands in Inbox (false). A flat true would make a bookless
+            // non-journal note match NO tab (invisible). isPrivate untouched.
+            nfent.filed = (nfent.register === 'journal') ? true
+              : !!(nfent.bookIds && nfent.bookIds.length > 0);
           }
         }
       }

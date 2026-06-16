@@ -750,6 +750,17 @@ function renderNotebook() {
   editorHost.id = 'notebook-editor-host';
   wrap.appendChild(editorHost);
 
+  // Signed out: the header already carries the sign-in prompt; the spread is
+  // per-user, so render a quiet note instead of reading a null user's uid.
+  if (!user) {
+    var signedOut = document.createElement('p');
+    signedOut.className = 'notebook-empty-body';
+    signedOut.textContent = 'Sign in to open your notebook.';
+    wrap.appendChild(signedOut);
+    host.appendChild(wrap);
+    return;
+  }
+
   // N1: one pass over the signed-in user's entries -> tab membership + counts,
   // then the tab row and the two-leaf spread. READ-ONLY: no capture/gather/writes.
   // (Artifacts are out of the spread for N1; they remain reachable via book detail.)

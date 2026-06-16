@@ -317,12 +317,15 @@ firebase.auth().onAuthStateChanged(function (u) {
             state.notebookEntries[reid] = remoteEntries[reid];
             // N-epic: merge-boundary 'filed' default. The REPLACE-splat
             // bypasses migrate(), so a remote entry lacking 'filed' (a device
-            // on an older build) gains it here -- default true (placed),
-            // matching migrate()'s backfill -- or it would route to no tab.
-            // Never touches isPrivate.
+            // on an older build) gains it here, BOOK-AWARE (matching migrate):
+            // journal -> placed; a non-journal note -> placed only if it has a
+            // book, else Inbox. A flat true would make a bookless non-journal
+            // note match no tab. Never touches isPrivate.
             if (state.notebookEntries[reid] &&
                 typeof state.notebookEntries[reid].filed !== 'boolean') {
-              state.notebookEntries[reid].filed = true;
+              var rne = state.notebookEntries[reid];
+              rne.filed = (rne.register === 'journal') ? true
+                : !!(rne.bookIds && rne.bookIds.length > 0);
             }
             // 6.2c-pre: merge-boundary normalizer. The Firestore REPLACE-
             // splat bypasses migrate(), so force journal entries private as
