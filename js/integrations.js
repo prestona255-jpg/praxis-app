@@ -1031,8 +1031,7 @@ function loadThemesFromFirestore(uid, callback) {
         } else {
           finish({ status: 'absent' });
         }
-      })
-      .catch(function (err) {
+      }, function (err) {
         finish({ status: 'error', error: err });
       });
   } catch (e) {
@@ -1084,8 +1083,7 @@ function saveThemesToFirestore(uid, payload, callback) {
       .set(payload)
       .then(function () {
         finish({ status: 'ok' });
-      })
-      .catch(function (err) {
+      }, function (err) {
         finish({ status: 'error', error: err });
       });
   } catch (e) {
