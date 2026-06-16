@@ -315,6 +315,15 @@ firebase.auth().onAuthStateChanged(function (u) {
         for (reid in remoteEntries) {
           if (Object.prototype.hasOwnProperty.call(remoteEntries, reid)) {
             state.notebookEntries[reid] = remoteEntries[reid];
+            // N-epic: merge-boundary 'filed' default. The REPLACE-splat
+            // bypasses migrate(), so a remote entry lacking 'filed' (a device
+            // on an older build) gains it here -- default true (placed),
+            // matching migrate()'s backfill -- or it would route to no tab.
+            // Never touches isPrivate.
+            if (state.notebookEntries[reid] &&
+                typeof state.notebookEntries[reid].filed !== 'boolean') {
+              state.notebookEntries[reid].filed = true;
+            }
             // 6.2c-pre: merge-boundary normalizer. The Firestore REPLACE-
             // splat bypasses migrate(), so force journal entries private as
             // they land -- an unmigrated remote entry (another device, or a
@@ -361,7 +370,12 @@ firebase.auth().onAuthStateChanged(function (u) {
         setProfile(u.uid, {
           displayNameOverride: rd.displayNameOverride ? rd.displayNameOverride : '',
           penName:             rd.penName ? rd.penName : '',
-          onboardingSeen:      rd.onboardingSeen === true
+          onboardingSeen:      rd.onboardingSeen === true,
+          // N-epic: master consent switch. Absent in a remote doc written
+          // before this field existed -> default TRUE (never silently flip
+          // Yumi OFF on a legacy profile). Only an explicit stored false
+          // turns it off.
+          yumiReadsAlong:      (typeof rd.yumiReadsAlong === 'boolean') ? rd.yumiReadsAlong : true
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -623,6 +637,10 @@ function saveProfileToFirestore(uid, profile, callback) {
         // every Account-page save. Callers pass getProfile(uid), which now
         // carries onboardingSeen.
         onboardingSeen:      (profile && profile.onboardingSeen === true),
+        // N-epic: master consent switch. Full-doc .set() -> must be listed or
+        // it would be wiped. Default-true-preserving: writes true unless the
+        // local value is explicitly false.
+        yumiReadsAlong:      !(profile && profile.yumiReadsAlong === false),
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {

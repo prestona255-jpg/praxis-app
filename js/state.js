@@ -36,11 +36,12 @@
 //       {
 //         id:         string,
 //         userId:     string,
-//         register:   string,    // 'journal' | 'marginalia'
+//         register:   string,    // 'journal' | 'marginalia' | 'question'
 //         isPrivate:  boolean,   // register default; toggle UI in 3.4
 //         body:       string,    // raw text / markdown
 //         bookIds:    array of string,   // foreign keys into state.books
 //         arcIds:     array of string,   // foreign keys into state.arcs
+//         filed:      boolean,   // false = Inbox (untriaged); true = placed (N-epic)
 //         createdAt:  number,    // ms epoch
 //         updatedAt:  number
 //       }
@@ -145,7 +146,7 @@
 // default isPrivate value for each register a user writes in.
 // Lives on each user record under state.users[uid]. Shape:
 //
-//   registerDefaults: { journal: boolean, marginalia: boolean }
+//   registerDefaults: { journal: boolean, marginalia: boolean, question: boolean }
 //
 // Initial values are { journal: true, marginalia: false }. journal is
 // private-by-default as of 6.2c-pre (schema 1.15.0; it was false --
@@ -666,8 +667,8 @@ function ensureUser(uid) {
   if (!state.users[uid]) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
-      registerDefaults: { journal: true, marginalia: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' }
+      registerDefaults: { journal: true, marginalia: false, question: false },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true }
     };
   }
   if (!state.users[uid].yumiMemory) {
@@ -677,15 +678,28 @@ function ensureUser(uid) {
   }
   if (!state.users[uid].registerDefaults) {
     state.users[uid].registerDefaults = {
-      journal: true, marginalia: false
+      journal: true, marginalia: false, question: false
     };
+  }
+  // N-epic: question register default (visible, like marginalia). Additive
+  // field guard for a user record seeded before the N-epic.
+  if (state.users[uid].registerDefaults &&
+      typeof state.users[uid].registerDefaults.question !== 'boolean') {
+    state.users[uid].registerDefaults.question = false;
   }
   // Stage 14.3 Stage 1: profile override layer (display-name override +
   // optional pen name). Additive guard for users seeded before 14.3 so
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true };
+  }
+  // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
+  // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
+  // field guard for a profile seeded before the N-epic.
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.yumiReadsAlong !== 'boolean') {
+    state.users[uid].profile.yumiReadsAlong = true;
   }
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
@@ -701,7 +715,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '' };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -727,6 +741,11 @@ function setProfile(uid, fields) {
   // stays strict; set true only at onboarding (Beat F) completion.
   if (fields && typeof fields.onboardingSeen !== 'undefined') {
     p.onboardingSeen = fields.onboardingSeen === true;
+  }
+  // N-epic: master consent switch. Boolean-coerced; default-true is handled
+  // on read (getProfile / ensureUser), so only an explicit value writes here.
+  if (fields && typeof fields.yumiReadsAlong !== 'undefined') {
+    p.yumiReadsAlong = fields.yumiReadsAlong === true;
   }
   saveState();
 }
@@ -1963,6 +1982,50 @@ function migrate(stored) {
     // so no per-record field ensure is needed.
     if (!stored.userThemes) { stored.userThemes = {}; }
     stored.SCHEMA_VERSION = '1.18.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.18.0') {
+    // Notebook N-epic: three additive fields. NONE reads or writes isPrivate
+    // (F5 -- the migration must not change any existing entry's visibility).
+    //   (1) entry.filed (boolean): false = Inbox (untriaged capture), true =
+    //       placed (a book bank, or the Journal section). Backfilled TRUE on
+    //       every existing entry -- Inbox did not exist pre-epic, so no legacy
+    //       entry is an untriaged capture; true keeps book-attached marginalia
+    //       in its book bank and leaves Inbox empty for legacy data. (A flat
+    //       false-backfill would dump every existing marginalia into Inbox.)
+    //   (2) registerDefaults.question (boolean): the new third register's
+    //       visibility default -- false (visible to Yumi, like marginalia).
+    //   (3) profile.yumiReadsAlong (boolean): the master consent switch,
+    //       default true (the pre-epic behavior -- Yumi reads visible writing).
+    if (stored.notebookEntries) {
+      var nfeid;
+      for (nfeid in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, nfeid)) {
+          var nfent = stored.notebookEntries[nfeid];
+          if (nfent && typeof nfent.filed !== 'boolean') {
+            nfent.filed = true;
+          }
+        }
+      }
+    }
+    if (stored.users) {
+      var nuuid;
+      for (nuuid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, nuuid)) {
+          var nurec = stored.users[nuuid];
+          if (nurec) {
+            if (nurec.registerDefaults &&
+                typeof nurec.registerDefaults.question !== 'boolean') {
+              nurec.registerDefaults.question = false;
+            }
+            if (nurec.profile &&
+                typeof nurec.profile.yumiReadsAlong !== 'boolean') {
+              nurec.profile.yumiReadsAlong = true;
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.19.0';
   }
   return stored;
 }

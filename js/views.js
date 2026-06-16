@@ -970,6 +970,7 @@ function openJournalEditor() {
         body:       bodyVal,
         bookIds:    [],
         arcIds:     [],
+        filed:      true,
         createdAt:  now,
         updatedAt:  now
       };
@@ -7155,6 +7156,7 @@ function openMarginaliaEditor(bookId) {
         body:       bodyVal,
         bookIds:    [bookId],
         arcIds:     [],
+        filed:      true,
         createdAt:  now,
         updatedAt:  now
       };
