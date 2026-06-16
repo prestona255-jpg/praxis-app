@@ -274,7 +274,7 @@ the very end (after this list).
 - [x] **2.** Global search-result click does not navigate — ⌘K spotlight (`js/spotlight.js`) result selection does not route. — resolved: recon found no routing defect; no longer reproduces (desktop + mobile)
 - [x] **3.** Enter does not send in Yumi — Yumi input: Enter should send.
 - [ ] **4.** Mobile pass, all pages — Full-app mobile sweep.
-- [ ] **5.** Writing boxes feel weird / hard to engage · DEFERRED (comp-gate) — **Same tracked item as 10.5.8** (app-wide writing-surface field treatment; overrides a locked borderless spec). #5 ⟷ 10.5.8 — one item, two references, not two.
+- [x] **5.** Writing boxes feel weird / hard to engage · DEFERRED (comp-gate) — **Same tracked item as 10.5.8** (app-wide writing-surface field treatment; overrides a locked borderless spec). #5 ⟷ 10.5.8 — one item, two references, not two.
 - [ ] **6.** Screen uploaded books for titles + read-status · feature — Extends the 6.1 shelf-photo scan toward read-status capture.
 - [ ] **7.** User-created themes, Yumi-assisted · feature
 - [x] **8.** Developed account page · feature — Enhances the shipped 14.3.4 `#account` page.
