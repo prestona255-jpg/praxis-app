@@ -1105,81 +1105,46 @@ function renderArcsPage() {
   var header = document.createElement('header');
   header.className = 'arcs-page-header';
 
+  // Stage 3 (mockup-fidelity): header is the mockup .pagehd -- "Your arcs" h1
+  // + teaching on the left, a "+ Create an arc" button top-right (mockup lines
+  // 168-171). The page h1 now carries "Your arcs", so the former lower h2 of
+  // the same text is dropped below, and the 1/2/3 explainer is removed.
+  var headline = document.createElement('div');
+  headline.className = 'arcs-headline';
+
   var title = document.createElement('h1');
   title.className = 'arcs-page-title';
-  title.textContent = 'Arcs';
-  header.appendChild(title);
+  title.textContent = 'Your arcs';
+  headline.appendChild(title);
 
-  // C2 teaching paragraph, verbatim from docs/praxis-design-system.md
-  // Part C. Em dashes are U+2014 (real), not "--". One paragraph, in
-  // Yumi's voice -- the paragraph IS the teaching panel.
+  // C2 teaching paragraph (mockup .sub role). Em dashes are U+2014, not "--".
   var teaching = document.createElement('p');
   teaching.className = 'arcs-teaching';
   teaching.textContent =
     'An arc is a path you build through your reading — ' +
     'books from any tradition, set side by side, so they speak ' +
     'to each other.';
-  header.appendChild(teaching);
+  headline.appendChild(teaching);
 
-  wrap.appendChild(header);
-
-  // C4 Create-an-arc section. Two-part layout: button on the left,
-  // three-step numbered list on the right (collapses to stacked on
-  // mobile via components.css). Button mount: arcs-create-host is the
-  // page-scoped wrapper; the nested notebook-arc-editor-host is the
-  // mount point openArcEditor looks up by id. Hosting both means
-  // openArcEditor's hard-coded hostId still resolves.
-  var createSec = document.createElement('section');
-  createSec.className = 'arcs-create';
-
-  var createHost = document.createElement('div');
-  createHost.id = 'arcs-create-host';
-  createHost.className = 'arcs-create-host';
+  header.appendChild(headline);
 
   var createBtn = document.createElement('button');
   createBtn.type = 'button';
   createBtn.className = 'arcs-create-btn';
-  createBtn.textContent = 'Create an arc';
+  createBtn.textContent = '+ Create an arc';
   createBtn.addEventListener('click', function() {
     openArcEditor();
   });
-  createHost.appendChild(createBtn);
+  header.appendChild(createBtn);
 
-  // Editor mount point. openArcEditor (views.js openArcEditor) calls
-  // openEditor({ hostId: 'notebook-arc-editor-host', ... }) -- this
-  // div provides the lookup target on the Arcs page.
+  wrap.appendChild(header);
+
+  // Editor mount point. openArcEditor mounts into #notebook-arc-editor-host;
+  // it stays in the DOM (now below the header, above the grids) so the lookup
+  // still resolves after the old two-column create section was removed.
   var arcEditorHost = document.createElement('div');
   arcEditorHost.id = 'notebook-arc-editor-host';
-  createHost.appendChild(arcEditorHost);
-
-  createSec.appendChild(createHost);
-
-  // Three steps from living-doc Section 10, compressed to fit beside
-  // the CTA without losing substance. Real <ol>; default numbering
-  // styled by .arcs-create-steps in components.css.
-  var steps = document.createElement('ol');
-  steps.className = 'arcs-create-steps';
-
-  var step1 = document.createElement('li');
-  step1.textContent =
-    'Name the question. The arc\'s title is the question ' +
-    'you\'re following, in your words.';
-  steps.appendChild(step1);
-
-  var step2 = document.createElement('li');
-  step2.textContent =
-    'Link your books. Add books from your shelf that speak to ' +
-    'the question.';
-  steps.appendChild(step2);
-
-  var step3 = document.createElement('li');
-  step3.textContent =
-    'Tag your notes. Pull marginalia and journal entries from ' +
-    'those books into the arc.';
-  steps.appendChild(step3);
-
-  createSec.appendChild(steps);
-  wrap.appendChild(createSec);
+  wrap.appendChild(arcEditorHost);
 
   // Your arcs: the signed-in user's own arcs (userId === uid), newest
   // first. Excludes the __praxis_seed__ example (it renders in the
@@ -1202,51 +1167,70 @@ function renderArcsPage() {
     ownArcs.sort(function(a, b) {
       return (b.rec.createdAt || 0) - (a.rec.createdAt || 0);
     });
-    if (ownArcs.length > 0) {
-      var yoursSec = document.createElement('section');
-      yoursSec.className = 'arcs-yours';
+    // Stage 3 (mockup-fidelity): render the "Your arcs" grid for any signed-in
+    // user (even with zero arcs) so the dashed "Start another arc" tile always
+    // has a home. The page <h1> already says "Your arcs"; the former section
+    // h2 of the same text is dropped.
+    var yoursSec = document.createElement('section');
+    yoursSec.className = 'arcs-yours';
 
-      var yoursHeading = document.createElement('h2');
-      yoursHeading.className = 'arcs-yours-heading';
-      yoursHeading.textContent = 'Your arcs';
-      yoursSec.appendChild(yoursHeading);
+    var yi;
+    for (yi = 0; yi < ownArcs.length; yi++) {
+      var yCard = document.createElement('a');
+      yCard.className = 'arc-card arc-card-live';
+      yCard.href = '#arc/' + ownArcs[yi].id;
 
-      var yi;
-      for (yi = 0; yi < ownArcs.length; yi++) {
-        var yCard = document.createElement('a');
-        yCard.className = 'arc-card arc-card-live';
-        yCard.href = '#arc/' + ownArcs[yi].id;
+      yCard.appendChild(_arcCardThumb());
 
-        yCard.appendChild(_arcCardThumb());
+      var yText = document.createElement('div');
+      yText.className = 'arc-card-text';
 
-        var yText = document.createElement('div');
-        yText.className = 'arc-card-text';
+      var yTitle = document.createElement('h3');
+      yTitle.className = 'arc-card-title';
+      yTitle.textContent = ownArcs[yi].rec.title || 'Untitled arc';
+      yText.appendChild(yTitle);
 
-        var yTitle = document.createElement('h3');
-        yTitle.className = 'arc-card-title';
-        yTitle.textContent = ownArcs[yi].rec.title || 'Untitled arc';
-        yText.appendChild(yTitle);
-
-        if (ownArcs[yi].rec.description) {
-          var yDesc = document.createElement('p');
-          yDesc.className = 'arc-card-description';
-          yDesc.textContent = ownArcs[yi].rec.description;
-          yText.appendChild(yDesc);
-        }
-
-        yCard.appendChild(yText);
-
-        var yMeta = document.createElement('p');
-        yMeta.className = 'arc-card-meta';
-        yMeta.textContent = _arcCardMetaText(
-          _arcCardCounts(ownArcs[yi].id, ownArcs[yi].rec));
-        yCard.appendChild(yMeta);
-
-        yoursSec.appendChild(yCard);
+      if (ownArcs[yi].rec.description) {
+        var yDesc = document.createElement('p');
+        yDesc.className = 'arc-card-description';
+        yDesc.textContent = ownArcs[yi].rec.description;
+        yText.appendChild(yDesc);
       }
 
-      wrap.appendChild(yoursSec);
+      yCard.appendChild(yText);
+
+      var yMeta = document.createElement('p');
+      yMeta.className = 'arc-card-meta';
+      yMeta.textContent = _arcCardMetaText(
+        _arcCardCounts(ownArcs[yi].id, ownArcs[yi].rec));
+      yCard.appendChild(yMeta);
+
+      yoursSec.appendChild(yCard);
     }
+
+    // Dashed "Start another arc" create tile as a grid cell (mockup line 175).
+    var startTile = document.createElement('button');
+    startTile.type = 'button';
+    startTile.className = 'arc-card arc-card-start';
+    startTile.addEventListener('click', function() {
+      openArcEditor();
+    });
+    var startIcon = document.createElement('span');
+    startIcon.className = 'arc-card-start-icon';
+    startIcon.setAttribute('aria-hidden', 'true');
+    startIcon.innerHTML =
+      '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.5">' +
+      '<circle cx="12" cy="12" r="10"></circle>' +
+      '<path d="M12 8v8M8 12h8"></path></svg>';
+    startTile.appendChild(startIcon);
+    var startLabel = document.createElement('span');
+    startLabel.className = 'arc-card-start-label';
+    startLabel.textContent = 'Start another arc';
+    startTile.appendChild(startLabel);
+    yoursSec.appendChild(startTile);
+
+    wrap.appendChild(yoursSec);
   }
 
   // Stage 5.3 Stage 3b: worked-example cards. Two cards in one section,

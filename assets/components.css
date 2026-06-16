@@ -1180,8 +1180,20 @@
   padding: 0 32px;
 }
 
+/* Stage 3 (mockup-fidelity): header is the mockup flex .pagehd -- the left
+   headline (title + teaching) and a top-right "+ Create an arc" button,
+   bottom-aligned and pushed apart. */
 .arcs-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
   padding: 48px 0 32px 0;
+}
+
+.arcs-headline {
+  min-width: 0;
 }
 
 .arcs-page-title {
@@ -1218,37 +1230,9 @@
   color: var(--ink);
 }
 
-/* C4 Create-an-arc section. Two-column grid: button host on the left,
-   three-step numbered list on the right. Lives inside .arcs-page so
-   it inherits the 32px horizontal padding -- no padding of its own.
-   Generous top margin separates it from the teaching paragraph;
-   bottom margin gives the page breathing room before Stage 3's
-   worked-examples block lands beneath it. Collapses to a single
-   stacked column on mobile (button above, steps below) at the same
-   720px breakpoint the shelf grid uses elsewhere in this file. */
-.arcs-create {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 48px;
-  align-items: start;
-  margin: 56px 0 64px 0;
-}
-
-.arcs-create-host {
-  /* Container for the button + the openArcEditor mount point. The
-     editor mounts below the button on demand; absent that, the host
-     is just the button's column placement. */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* Primary-button register mirroring .shelf-new-book exactly:
-   --ink fill, --text-on-dark text, no border, --br-deep hover.
-   Shared padding/font/radius/cursor properties from the multi-
-   selector at .shelf-new-book et al. (lines 376-388) are re-stated
-   inline here so .arcs-create-btn does not depend on a structural
-   change to that selector list. */
+/* Stage 3 (mockup-fidelity): "+ Create an arc" button -- moved into the page
+   header (top-right). Gradient primary; the former two-column create section
+   and its align-self placement are removed. */
 .arcs-create-btn {
   font-family: var(--font-body);
   font-size: 13.5px;
@@ -1256,54 +1240,18 @@
   padding: 11px 18px;
   border-radius: 10px;
   cursor: pointer;
-  /* Batch 3: gradient primary for consistency with the other CTAs. */
   background: var(--grad);
   color: var(--text-on-dark);
   border: 1px solid transparent;
-  align-self: start;
+  white-space: nowrap;
 }
 
 .arcs-create-btn:hover {
   filter: brightness(1.06);
 }
 
-/* Three-step list. Real <ol> with default decimal markers; styled
-   via ::marker so the numerals pick up the serif face the page
-   header uses. Body copy in --ink-2 (muted vs the teaching --ink),
-   leaving the teaching paragraph as the dominant text on the page. */
-.arcs-create-steps {
-  margin: 0;
-  padding: 0 0 0 28px;
-  max-width: 56ch;
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--ink-2);
-}
-
-.arcs-create-steps li {
-  margin: 0 0 12px 0;
-  padding-left: 4px;
-}
-
-.arcs-create-steps li:last-child {
-  margin-bottom: 0;
-}
-
-.arcs-create-steps li::marker {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  color: var(--ink-3);
-}
-
-/* Mobile: stack the CTA column above the steps column. 720px matches
-   the breakpoint used elsewhere for two-column-to-one collapses. */
-@media (max-width: 720px) {
-  .arcs-create {
-    grid-template-columns: 1fr;
-    row-gap: 32px;
-  }
-}
+/* Stage 3 (mockup-fidelity): the 1/2/3 explainer list and its mobile stack
+   rule are removed with the create section. */
 
 /* Stage 5.3 Stage 3b: worked-example cards (Pedagogy of Desire live,
    Pedagogy of Flow illustrated). Both cards share the base register
@@ -1327,16 +1275,6 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
   margin: 0 0 56px 0;
-}
-
-.arcs-yours-heading {
-  /* Span the full grid row so the heading sits above the card columns. */
-  grid-column: 1 / -1;
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 500;
-  color: var(--ink);
 }
 
 /* Base card register. --surface-2 fill + --ink-4 hairline matches the
@@ -1511,6 +1449,39 @@
   .arc-card-cover-placeholder {
     width: 40px;
   }
+}
+
+/* Stage 3 (mockup-fidelity): dashed "Start another arc" create tile -- a grid
+   cell (a reset <button>) that opens the arc editor (mockup line 175). Reuses
+   the .arc-card box (surface-2 fill, ink-4 border, radius, 20px padding) but
+   overrides to a dashed, centered, button-reset affordance. */
+.arc-card-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  border-style: dashed;
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  cursor: pointer;
+}
+
+.arc-card-start:hover {
+  color: var(--ink-2);
+  border-color: var(--ink-3);
+}
+
+.arc-card-start-icon {
+  display: inline-flex;
+}
+
+.arc-card-start-label {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--ink-2);
 }
 
 /* ===== END ARCS PAGE ===== */
