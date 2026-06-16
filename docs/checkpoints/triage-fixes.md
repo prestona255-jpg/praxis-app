@@ -26,3 +26,12 @@ data recovery (D/E) last after a Firestore backup. Local commits only; no push u
   sub-theory lands in the arc with **both notes as `entry` evidence** (`refIds n1,n2`), gather
   cleared, navigated to `#subtheory/…`. Directly fixes the "can't create" (the name gate was the
   blocker). No `prestona255` writes.
+
+## FIX C — Yumi model (user-approved, in-scope) — DONE (local commit)
+- **Root cause:** `claude-sonnet-4-20250514` is retired → Anthropic `404 not_found_error` → proxy
+  forwards 404 → "Something went wrong reaching Yumi." Not `assembleContextData`.
+- **Change (yumi-brain.js:84,543):** `'claude-sonnet-4-20250514'` → `'claude-sonnet-4-6'` (latest
+  Sonnet). No pedagogy/prompt change.
+- **Gates:** old id gone (grep 0), new id bound ×2; diff `+2/−2`; ES3 clean (parse-exempt → grepped).
+  **Model verified working via the deployed proxy: `claude-sonnet-4-6` → HTTP 200** (`claude-sonnet-4-5`
+  also 200; chose the newer). Full Yumi UI 200 round-trip confirms at the ship gate (local has no proxy).

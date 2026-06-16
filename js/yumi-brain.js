@@ -81,7 +81,7 @@ function summarizeAndRoll(uid, droppedTurn) {
     + 'quotation marks. Keep it warm.';
 
   var payload = {
-    model:      'claude-sonnet-4-20250514',
+    model:      'claude-sonnet-4-6',
     max_tokens: 512,
     system:     YUMI_VOICE_TEXT,
     messages: [
@@ -540,7 +540,7 @@ function sendMessage(userText) {
   appendTurn('user', userText);
 
   var payload = {
-    model:      'claude-sonnet-4-20250514',
+    model:      'claude-sonnet-4-6',
     max_tokens: 1024,
     system:     buildYumiSystem(),
     messages: [
