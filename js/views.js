@@ -1846,15 +1846,12 @@ function renderShelf() {
   var main = document.createElement('div');
   main.className = 'shelf-main';
 
-  // 3.10a Stage 4: mobile filter-panel toggle. Button is hidden on
-  // desktop (CSS display:none default; mobile media query reveals
-  // it). On mobile it sits at the top of the main column and
-  // toggles .shelf-sidebar-mobile-open on the sidebar element above.
-  // One addEventListener; open/close only. The sidebar's theme +
-  // author rows remain inert -- 3.10b owns filter behavior. The
-  // panel OPENS and CLOSES; its contents do not act.
-  // Reuses .shelf-new-book-bulk visual treatment per Stage 0
-  // decision (no new button class authored).
+  // Filter affordance. Stage 2 (mockup-fidelity): the rail is folded behind
+  // this button at all widths. Stage 2 fix: the button is appended ABOVE
+  // .shelf-layout (to wrap, outside the columns) so it holds a stable position
+  // when the rail toggles, instead of riding the right column.
+  // Reuses .shelf-new-book-bulk visual treatment per Stage 0 decision
+  // (no new button class authored).
   var filterBtn = document.createElement('button');
   filterBtn.type = 'button';
   filterBtn.className = 'shelf-filter-button shelf-new-book-bulk';
@@ -1878,7 +1875,7 @@ function renderShelf() {
       openShelfFilterPanel();
     }
   });
-  main.appendChild(filterBtn);
+  wrap.appendChild(filterBtn);
 
   // Editor host -- empty on every render; openShelfEditor mounts
   // its block here on demand. Lives above the book list so the
