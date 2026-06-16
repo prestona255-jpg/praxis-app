@@ -1227,10 +1227,18 @@ function buildNotebookWriteline(activeKey) {
   var line = document.createElement('div');
   line.className = 'notebook-writeline';
 
-  var input = document.createElement('input');
-  input.type = 'text';
+  // FIX A: auto-growing textarea (was a single-line <input>, which clipped any
+  // note past the visible width / height). Grows to fit content; Enter commits,
+  // Shift+Enter inserts a newline (the keydown handler below).
+  var input = document.createElement('textarea');
   input.className = 'notebook-writeline-input';
+  input.setAttribute('rows', '1');
   input.setAttribute('placeholder', 'Write a note…');
+  function autogrowWriteline() {
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+  }
+  input.addEventListener('input', autogrowWriteline);
 
   // Default register by context: Journal tab -> journal, else marginalia.
   var selected = (activeKey === 'journal') ? 'journal' : 'marginalia';

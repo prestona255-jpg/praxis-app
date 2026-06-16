@@ -3831,7 +3831,7 @@
 /* N2: inline capture (writeline) + register chips. */
 .notebook-writeline {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
   flex-wrap: wrap;
   padding: 10px 12px;
@@ -3847,8 +3847,11 @@
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 17px;
+  line-height: 1.4;
   color: var(--ink);
   outline: none;
+  resize: none;
+  overflow: hidden;
 }
 .notebook-writeline-input::placeholder { color: var(--ink-4); }
 .notebook-writeline-chips {
