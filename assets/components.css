@@ -3523,45 +3523,39 @@
    glass/blur (content-surface fidelity rule). Each row carries a left
    register spine (::before reads --reg, set per-entry in JS:
    marginalia=--marginalia-color, journal=--ink-4). */
+/* Stage 7 (mockup-fidelity): the entries container is a single-column stack
+   with gap -- the per-entry cards carry the chrome, so the panel itself is a
+   transparent flow (no opaque fill / divider rows). NOT a 2-col grid. */
 .notebook-entries-panel {
-  /* Batch 3 F2: lift to the arc-card family -- lighter --surface-2 tone,
-     defined --ink-4 hairline, larger --shadow-2 cast -- so the panel
-     reads raised off the honey ground instead of flat. */
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 1px 0 rgba(255,250,230,.5) inset,
-    0 16px 36px -24px rgba(58,40,16,.5);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
+/* Stage 7 (mockup-fidelity): each entry is its own card on --surface-2 (mockup
+   .card.entry: 1px border, 18px radius, 22px padding), replacing the hairline-
+   divided rows in one panel. Single-column + all controls/metadata kept. */
 .notebook-entry {
   position: relative;
-  padding: 16px 18px;
+  padding: 22px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
   font-family: var(--font-body);
   color: var(--ink);
-}
-
-.notebook-entry {
-  /* S7a: per-row bottom hairline (mockup .row's --line == live --border),
-     last row none. */
-  border-bottom: 1px solid var(--border);
-}
-
-.notebook-entry:last-child {
-  border-bottom: 0;
 }
 
 .notebook-entry::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
+  /* Stage 7: inset vertically + rounded so the register spine sits cleanly
+     inside the card's 18px corners (was full-height for the flat rows). */
+  top: 18px;
+  bottom: 18px;
   width: 2px;
+  border-radius: 1px;
   background: var(--reg);
-  /* S7a: spine reads at .8 (mockup .row::before opacity). */
   opacity: 0.8;
 }
 
@@ -3627,20 +3621,24 @@
   background: var(--line-2);
 }
 
+/* Stage 7 (mockup-fidelity): source label -> DM-Mono uppercase (mockup .src). */
 .notebook-entry-src {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 15px;
-  color: var(--ink-2);
-  margin-bottom: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
 }
 
+/* Stage 7 (mockup-fidelity): note text -> Cormorant italic (mockup .entry .n). */
 .notebook-entry-body {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-style: italic;
+  font-size: 20px;
   color: var(--ink);
-  line-height: 1.5;
+  line-height: 1.32;
   white-space: pre-wrap;
 }
 
