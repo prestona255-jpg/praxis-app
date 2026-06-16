@@ -524,14 +524,15 @@
   padding: 70px 0 30px;
 }
 
-/* Chrome-fidelity Stage 1: DM Sans 700 is now loaded (index.html font link),
-   so the hero matches the mockup's bolder headline. */
+/* Mockup-fidelity Stage 1: hero is Cormorant serif per design/praxis-desktop-mockup.html
+   .hero-d (Cormorant Garamond 600 / 70px / -.015em). Cormorant loads only 400-600
+   (index.html font link), so weight is 600 -- 700 would synthesize fake-bold. */
 .home-hero-title {
   margin: 0;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 62px;
-  letter-spacing: -1.5px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 70px;
+  letter-spacing: -0.015em;
   line-height: 1;
   color: var(--ink);
 }
@@ -4485,8 +4486,8 @@
     justify-content: center;
   }
   .home-hero-title {
-    font-size: 44px;
-    letter-spacing: -1px;
+    font-size: 52px;
+    letter-spacing: -0.01em;
   }
 
   /* F: Arcs grids collapse to 1-up (desktop base is 3-up). */
