@@ -5888,7 +5888,7 @@
 .account-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
   margin: 0 0 40px 0;
 }
 
@@ -5912,23 +5912,31 @@
   transform: translateY(-2px);
 }
 
-/* The count -- Cormorant numeral, large. */
+/* The count -- Cormorant numeral, large. Stage 6: 34 -> 38px (mockup .stat .n). */
 .account-stat-value {
   font-family: var(--font-serif);
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 500;
   line-height: 1;
   color: var(--ink);
 }
 
-/* The label -- mono uppercase, mirroring .account-field-label. */
+/* Stage 6 (mockup-fidelity): label + caret on one row, justified apart
+   (mockup .stat .l); the row carries the top margin. */
+.account-stat-labelrow {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* The label -- mono uppercase. Stage 6: color --ink-3 -> --gold (mockup .eyebrow). */
 .account-stat-label {
-  margin-top: 6px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--gold);
 }
 
 /* Empty expand-panel host -- no visible chrome until Stage 2 mounts a
@@ -6160,9 +6168,9 @@
 }
 
 /* Stat-card tap caret. */
+/* Stage 6: caret is now a flex item in .account-stat-labelrow (was a stacked
+   block); keep its size + tone, drop the block/margin placement. */
 .account-stat-caret {
-  display: block;
-  margin-top: 8px;
   font-size: 14px;
   line-height: 1;
   color: var(--gold-text);

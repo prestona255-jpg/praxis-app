@@ -8248,16 +8248,21 @@ function _accountStatCard(label, value, key) {
   v.className = 'account-stat-value';
   v.textContent = '' + value;
   card.appendChild(v);
+  // Stage 6 (mockup-fidelity): label + caret share one flex row, justified
+  // apart (mockup .stat .l), instead of two stacked blocks.
+  var labelRow = document.createElement('div');
+  labelRow.className = 'account-stat-labelrow';
   var l = document.createElement('div');
   l.className = 'account-stat-label';
   l.textContent = label;
-  card.appendChild(l);
+  labelRow.appendChild(l);
   // #8 Stage 4c: quiet tap-affordance caret (token color via CSS).
   var caret = document.createElement('span');
   caret.className = 'account-stat-caret';
   caret.setAttribute('aria-hidden', 'true');
   caret.textContent = '▾';
-  card.appendChild(caret);
+  labelRow.appendChild(caret);
+  card.appendChild(labelRow);
   card.addEventListener('click', function() {
     _accountToggleCategory(key, card);
   });
