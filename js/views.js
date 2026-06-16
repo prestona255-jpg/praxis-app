@@ -3388,10 +3388,25 @@ function renderBookDetail(bookId) {
     artBody.textContent = bdArtRec.body;
   } else {
     artBody.textContent =
-      'A standing place for what this book is doing in your thinking -- ' +
+      'A standing place for what this book is doing in your thinking — ' +
       'written once, yours, and visible to Yumi only when you choose.';
   }
   artCard.appendChild(artBody);
+
+  // Stage 5 (mockup-fidelity): fold the standalone "Create Artifact" button
+  // into the card as a gold "Write your artifact →" link (mockup line 233),
+  // for the no-artifact state (finished + no artifact == the old Create-
+  // Artifact branch). The has-artifact state keeps "Open Artifact" below.
+  if (user && book.status === 'finished' && !bdArtRec) {
+    var writeArtLink = document.createElement('button');
+    writeArtLink.type = 'button';
+    writeArtLink.className = 'book-detail-write-artifact';
+    writeArtLink.textContent = 'Write your artifact →';
+    writeArtLink.addEventListener('click', function() {
+      openArtifactEditor(bookId);
+    });
+    artCard.appendChild(writeArtLink);
+  }
   contentCell.appendChild(artCard);
 
   // S5: pull-quote (mockup B.6 .q-pull), render-when-exists against
@@ -3488,20 +3503,10 @@ function renderBookDetail(bookId) {
       });
       actions.appendChild(finishedBtn);
     } else if (book.status === 'finished' && !hasArtifact) {
-      // Branch 3 -- (finished, no-artifact): reachable when the user
-      // cancelled the auto-opened Artifact editor after marking
-      // finished, OR via 3.7c selector flip 'reading'/'want' ->
-      // 'finished' on a book that never had an Artifact. Persistent
-      // CTA gets the user back into the editor without re-flipping
-      // status. The !hasArtifact gate prevents a second creation path.
-      var createBtn = document.createElement('button');
-      createBtn.type = 'button';
-      createBtn.className = 'book-detail-create-artifact';
-      createBtn.textContent = 'Create Artifact';
-      createBtn.addEventListener('click', function() {
-        openArtifactEditor(bookId);
-      });
-      actions.appendChild(createBtn);
+      // Branch 3 -- (finished, no-artifact): Stage 5 folded the former
+      // standalone "Create Artifact" button into the artifact card as the gold
+      // "Write your artifact →" link (built above), so no actions-row button
+      // renders in this branch now.
     } else if (book.status === 'reading' && hasArtifact) {
       // Branch 4 -- (reading, has-artifact): un-finish state, reached
       // via 3.7c selector flip 'finished' -> 'reading' on a book whose

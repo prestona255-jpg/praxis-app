@@ -2297,6 +2297,29 @@
   white-space: pre-wrap;
 }
 
+/* Stage 5 (mockup-fidelity): folded "Write your artifact →" affordance inside
+   the artifact card (mockup line 233) -- a gold inline button-reset link that
+   opens the artifact editor for the no-artifact state. */
+.book-detail-write-artifact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.book-detail-write-artifact:hover {
+  color: var(--gold-text);
+}
+
 /* "Add to arc" -- gradient primary (mockup bottom CTA). */
 .book-detail-add-to-arc {
   display: block;
@@ -2354,9 +2377,12 @@
 }
 /* ===== END Batch 3 book-detail chrome ===== */
 
-/* Primary affordance — the creation CTAs (buttons) and the Open
-   Artifact link (the intentional <a>) share the dark-fill treatment
-   so the semantic split does not become a visual split. */
+/* Stage 5 (mockup-fidelity): only "Add to an arc" stays gradient; every other
+   book-detail affordance (Mark finished / Open Artifact / Sign in, and Send-to-
+   sub-theory below) is GHOST -- glass-2 fill, ink text, line-2 border, weight
+   400 (mirrors .book-detail-new-entry). The former dark-fill treatment is
+   dropped. (.book-detail-create-artifact is retained here, but its button is
+   now folded into the artifact card as "Write your artifact →".) */
 .book-detail-mark-finished,
 .book-detail-create-artifact,
 .book-detail-signin-prompt,
@@ -2367,10 +2393,10 @@
   padding: 11px 18px;
   font-family: var(--font-body);
   font-size: 13.5px;
-  font-weight: 600;
-  background: var(--ink);
-  color: var(--text-on-dark);
-  border: 1px solid transparent;
+  font-weight: 400;
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
   border-radius: 10px;
   cursor: pointer;
   text-decoration: none;
@@ -2380,7 +2406,8 @@
 .book-detail-create-artifact:hover,
 .book-detail-signin-prompt:hover,
 .book-detail-open-artifact:hover {
-  background: var(--br-deep);
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 
 /* Secondary affordance — Add Marginalia is the workshop-floor
@@ -4033,10 +4060,21 @@
   font-weight: 600;
 }
 
-/* Book-detail Send-to-sub-theory shares .book-detail-add-to-arc's button
-   base + flex:1 (wired in views.js); keep its label on one line. */
+/* Stage 5 (mockup-fidelity): Send-to-sub-theory shares .book-detail-add-to-arc's
+   button base but is GHOST, not gradient (only "Add to an arc" is gradient).
+   Override the gradient fill with the ghost treatment; keep label on one line. */
 .book-detail-send-to-subtheory {
   white-space: nowrap;
+  background: var(--glass-2);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  font-weight: 400;
+}
+
+.book-detail-send-to-subtheory:hover {
+  filter: none;
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 
 /* ----- Arc delete-confirm panel (Tier 2) ----- */
