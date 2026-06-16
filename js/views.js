@@ -911,6 +911,9 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   sechead.appendChild(secMeta);
   leaf.appendChild(sechead);
 
+  // N2: inline capture (writeline) at the top of the left leaf.
+  leaf.appendChild(buildNotebookWriteline(activeKey));
+
   var shown = 0;
   var i;
   for (i = 0; i < entries.length; i = i + 1) {
@@ -949,9 +952,10 @@ function buildNotebookRightLeaf() {
   return leaf;
 }
 
-// Display-only master consent switch (N1). Reflects profile.yumiReadsAlong
-// (default true). N2 makes it interactive (persist + /userProfiles mirror +
-// assembleContextData gating).
+// N2: master consent switch -- interactive. Reflects profile.yumiReadsAlong
+// (default true), toggles it, persists via setProfile + the /userProfiles
+// mirror (saveProfileToFirestore), and re-renders. assembleContextData reads
+// the same field as its single consent gate (OFF -> Yumi sees no writing).
 function buildNotebookMasterSwitch(user) {
   var reads = true;
   if (typeof getProfile === 'function' && user && user.uid) {
@@ -960,11 +964,227 @@ function buildNotebookMasterSwitch(user) {
   }
   var tog = document.createElement('span');
   tog.className = 'notebook-mtog' + (reads ? ' notebook-mtog-on' : '');
+  tog.setAttribute('role', 'button');
+  tog.setAttribute('tabindex', '0');
+  tog.setAttribute('aria-pressed', reads ? 'true' : 'false');
   var sw = document.createElement('span');
   sw.className = 'notebook-sw';
   tog.appendChild(sw);
   tog.appendChild(document.createTextNode('Yumi reads along'));
+  function flip() {
+    if (!user || !user.uid) { return; }
+    setProfile(user.uid, { yumiReadsAlong: !reads });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(user.uid, getProfile(user.uid), function() {});
+    }
+    renderNotebook();
+  }
+  tog.addEventListener('click', function() { flip(); });
+  tog.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+      ev.preventDefault(); flip();
+    }
+  });
   return tog;
+}
+
+// N2: inline capture (the writeline). A text input + MARG/JRNL/QUES register
+// chips (the mic is DEFERRED to N2b; camera is out of scope). The selected
+// register is closure-local so a chip click never loses typed text. Enter (no
+// shift) commits via captureNote. Mounted at the top of the left leaf.
+function buildNotebookWriteline(activeKey) {
+  var line = document.createElement('div');
+  line.className = 'notebook-writeline';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'notebook-writeline-input';
+  input.setAttribute('placeholder', 'Write a note…');
+
+  // Default register by context: Journal tab -> journal, else marginalia.
+  var selected = (activeKey === 'journal') ? 'journal' : 'marginalia';
+
+  var chips = document.createElement('div');
+  chips.className = 'notebook-writeline-chips';
+  var defs = [
+    { r: 'marginalia', l: 'Marg' },
+    { r: 'journal', l: 'Jrnl' },
+    { r: 'question', l: 'Ques' }
+  ];
+  var chipEls = {};
+  function paint() {
+    var r;
+    for (r in chipEls) {
+      if (Object.prototype.hasOwnProperty.call(chipEls, r)) {
+        chipEls[r].className = 'notebook-writeline-chip'
+          + (r === selected ? ' notebook-writeline-chip-on' : '');
+      }
+    }
+  }
+  var d;
+  for (d = 0; d < defs.length; d = d + 1) {
+    appendWritelineChip(chips, defs[d], chipEls, function(reg) {
+      selected = reg; paint(); input.focus();
+    });
+  }
+  paint();
+
+  function commit() {
+    var body = (input.value || '').replace(/^\s+|\s+$/g, '');
+    if (!body) { return; }
+    captureNote(selected, body, activeKey);
+  }
+  input.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); }
+  });
+
+  line.appendChild(input);
+  line.appendChild(chips);
+  return line;
+}
+
+// One writeline chip, closure-scoped per register (a var-in-for-loop would bind
+// every chip to the last register).
+function appendWritelineChip(chips, def, chipEls, onPick) {
+  var c = document.createElement('span');
+  c.className = 'notebook-writeline-chip';
+  c.setAttribute('role', 'button');
+  c.setAttribute('tabindex', '0');
+  c.textContent = def.l;
+  c.addEventListener('click', function() { onPick(def.r); });
+  c.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+      ev.preventDefault(); onPick(def.r);
+    }
+  });
+  chipEls[def.r] = c;
+  chips.appendChild(c);
+}
+
+// N2: create an entry from the writeline. register = chip; isPrivate = by-kind
+// default (journal private; marginalia + question visible). Placement:
+//   journal           -> filed true, no book (Journal tab)
+//   marg/ques on book  -> filed true, bookIds = [activeKey] (that book's bank)
+//   marg/ques elsewhere-> filed false, no book (Inbox, awaiting triage)
+// Then "follow the note" to the tab it routed into, and re-render.
+function captureNote(register, body, activeKey) {
+  var user = getCurrentUser();
+  if (!user) { return; }
+  var now = Date.now();
+  var id = genEntryId();
+  var bookIds = [];
+  var filed;
+  if (register === 'journal') {
+    filed = true;
+  } else if (activeKey !== 'inbox' && activeKey !== 'journal') {
+    filed = true; bookIds = [activeKey];
+  } else {
+    filed = false;
+  }
+  state.notebookEntries[id] = {
+    id:        id,
+    userId:    user.uid,
+    register:  register,
+    isPrivate: getRegisterDefault(register),
+    body:      body,
+    bookIds:   bookIds,
+    arcIds:    [],
+    filed:     filed,
+    createdAt: now,
+    updatedAt: now
+  };
+  markNotebookDirty();
+  saveState();
+  if (register === 'journal') { notebookActiveTab = 'journal'; }
+  else if (filed) { notebookActiveTab = bookIds[0]; }
+  else { notebookActiveTab = 'inbox'; }
+  renderNotebook();
+}
+
+// N2: file an Inbox entry to a book -- set filed true + add the bookId (deduped).
+function fileEntryToBook(entryId, bookId) {
+  var entry = state.notebookEntries && state.notebookEntries[entryId];
+  if (!entry || !bookId) { return false; }
+  entry.filed = true;
+  if (!entry.bookIds) { entry.bookIds = []; }
+  var present = false;
+  var i;
+  for (i = 0; i < entry.bookIds.length; i = i + 1) {
+    if (entry.bookIds[i] === bookId) { present = true; break; }
+  }
+  if (!present) { entry.bookIds.push(bookId); }
+  entry.updatedAt = Date.now();
+  markNotebookDirty();
+  saveState();
+  return true;
+}
+
+// N2: a book picker (mirrors buildArcPickerPanel). Lists the user's shelf
+// books; onPick(bookId). Self-closing (Esc / Done).
+function buildBookPickerPanel(opts) {
+  var panel = document.createElement('div');
+  panel.className = 'arc-picker-panel book-picker-panel';
+  var labelEl = document.createElement('div');
+  labelEl.className = 'arc-picker-label';
+  labelEl.textContent = opts.label || 'File to a book';
+  panel.appendChild(labelEl);
+  function closePanel() {
+    document.removeEventListener('keydown', onKeydown);
+    if (panel.parentNode) { panel.parentNode.removeChild(panel); }
+  }
+  function onKeydown(ev) { if (ev.keyCode === 27) { closePanel(); } }
+  document.addEventListener('keydown', onKeydown);
+  var uid = (opts.user && opts.user.uid) ? opts.user.uid : null;
+  var bookIds = (uid && state.userBooks && state.userBooks[uid] &&
+                 state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+  if (!bookIds.length) {
+    var empty = document.createElement('p');
+    empty.className = 'arc-picker-empty';
+    empty.textContent = 'No books on your shelf yet — add a book first.';
+    panel.appendChild(empty);
+  } else {
+    var i;
+    for (i = 0; i < bookIds.length; i = i + 1) {
+      appendBookPickerRow(panel, bookIds[i], opts.onPick);
+    }
+  }
+  var done = document.createElement('a');
+  done.href = '#';
+  done.className = 'arc-picker-done';
+  done.textContent = 'Done';
+  done.addEventListener('click', function(ev) { ev.preventDefault(); closePanel(); });
+  panel.appendChild(done);
+  return panel;
+}
+
+function appendBookPickerRow(panel, bookId, onPick) {
+  var book = (state.books && state.books[bookId]) || null;
+  var row = document.createElement('a');
+  row.href = '#';
+  row.className = 'arc-picker-row';
+  row.textContent = (book && book.title) ? book.title : '(untitled book)';
+  row.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    onPick(bookId);
+  });
+  panel.appendChild(row);
+}
+
+function openFileToBookPicker(entryId, mountEl) {
+  if (!mountEl) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  mountEl.innerHTML = '';
+  mountEl.appendChild(buildBookPickerPanel({
+    user: user,
+    label: 'File this note to a book',
+    onPick: function(bookId) {
+      if (fileEntryToBook(entryId, bookId)) {
+        notebookActiveTab = bookId;
+        renderNotebook();
+      }
+    }
+  }));
 }
 
 // Stage 3.7: shared editor shell. Mounts a title (optional) + body
@@ -7817,6 +8037,26 @@ function renderNotebookEntry(entry) {
   });
   acts.appendChild(addToArcLink);
 
+  // N2: File to book -- only for an Inbox item (filed === false). Sets
+  // filed = true + the bookId, routing it from Inbox into that book's bank.
+  if (entry.filed === false) {
+    var fileLink = document.createElement('a');
+    fileLink.href = '#';
+    fileLink.className = 'notebook-entry-add-to-arc notebook-entry-file-to-book';
+    fileLink.textContent = 'File to book';
+    fileLink.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      var fmount = card.querySelector('.notebook-entry-book-picker-host');
+      if (!fmount) {
+        fmount = document.createElement('div');
+        fmount.className = 'notebook-entry-book-picker-host';
+        card.appendChild(fmount);
+      }
+      openFileToBookPicker(capturedId, fmount);
+    });
+    acts.appendChild(fileLink);
+  }
+
   // 10.1: Send to sub-theory — attaches this entry as evidence (kind
   // 'entry', quote = the entry body). Present on EVERY entry regardless
   // of register or privacy: attaching is the user's own deliberate act,
@@ -9394,16 +9634,18 @@ function renderAccountPage() {
 
   var discYumiSees = document.createElement('p');
   discYumiSees.className = 'account-covenant';
-  discYumiSees.textContent = 'What Yumi can see: your notebook entries and '
-    + 'marginalia that you have not marked private — she reads through the same '
-    + 'privacy filter you control. New journal entries start private and new '
-    + 'marginalia start visible; you decide each one.';
+  discYumiSees.textContent = 'What Yumi can see: your notebook entries, '
+    + 'marginalia, and questions that are not private — she reads through the '
+    + 'same privacy filter you control. Journal entries are private by default; '
+    + 'marginalia and questions are visible by default. The "Yumi reads along" '
+    + 'switch in your notebook turns all of it on or off.';
   transCard.appendChild(discYumiSees);
 
   var discYumiCannot = document.createElement('p');
   discYumiCannot.className = 'account-covenant';
-  discYumiCannot.textContent = 'What Yumi cannot see: anything you mark '
-    + 'private. Your themes and collections are private to you.';
+  discYumiCannot.textContent = 'What Yumi cannot see: your private writing — '
+    + 'journal entries by default, and everything when "Yumi reads along" is '
+    + 'off. Your themes and collections are private to you.';
   transCard.appendChild(discYumiCannot);
 
   var discCovenant = document.createElement('p');
@@ -9420,11 +9662,12 @@ function renderAccountPage() {
     var figures = document.createElement('p');
     figures.className = 'account-covenant';
     figures.textContent = 'Visible to Yumi right now: '
-      + (agg.notebookVisible + agg.marginaliaVisible) + ' entries ('
-      + agg.notebookVisible + ' notebook, ' + agg.marginaliaVisible
-      + ' marginalia). Private to you, never sent to Yumi: '
-      + (agg.notebookPrivate + agg.marginaliaPrivate) + '. Across your work: '
-      + agg.books + ' books, ' + agg.arcs + ' arcs, '
+      + (agg.notebookVisible + agg.marginaliaVisible + agg.questionVisible)
+      + ' entries (' + agg.notebookVisible + ' notebook, '
+      + agg.marginaliaVisible + ' marginalia, ' + agg.questionVisible
+      + ' questions). Private to you, never sent to Yumi: '
+      + (agg.notebookPrivate + agg.marginaliaPrivate + agg.questionPrivate)
+      + '. Across your work: ' + agg.books + ' books, ' + agg.arcs + ' arcs, '
       + agg.subTheories + ' sub-theories.';
     transCard.appendChild(figures);
   }

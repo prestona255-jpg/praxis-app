@@ -3711,6 +3711,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+  cursor: pointer; /* N2: interactive */
 }
 .notebook-mtog .notebook-sw {
   position: relative;
@@ -3825,6 +3826,50 @@
   font-size: 16px;
   color: var(--ink-3);
   line-height: 1.4;
+}
+
+/* N2: inline capture (writeline) + register chips. */
+.notebook-writeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.notebook-writeline-input {
+  flex: 1 1 160px;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
+  outline: none;
+}
+.notebook-writeline-input::placeholder { color: var(--ink-4); }
+.notebook-writeline-chips {
+  display: inline-flex;
+  gap: 4px;
+}
+.notebook-writeline-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-2);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.notebook-writeline-chip-on {
+  background: var(--marginalia-color);
+  border-color: var(--marginalia-color);
+  color: var(--text-on-dark);
 }
 
 @media (max-width: 759px) {

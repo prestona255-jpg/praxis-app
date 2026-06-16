@@ -318,6 +318,17 @@ function assembleContextData() {
     }
   }
 
+  // N-epic: master "Yumi reads along" switch. OFF -> none of the user's
+  // notebook writing crosses to Yumi (entries + artifacts emptied). Default ON
+  // (absent profile / absent field reads as on). Navigation context, summary,
+  // and conversation memory are unaffected; the by-kind isPrivate filter above
+  // still applies when ON. Single consent gate.
+  if (activeUid && state.users[activeUid] && state.users[activeUid].profile &&
+      state.users[activeUid].profile.yumiReadsAlong === false) {
+    recentEntries = [];
+    recentArtifacts = [];
+  }
+
   return {
     currentBook:      currentBook,
     currentArc:       currentArc,
@@ -341,7 +352,8 @@ function getAggregateCounts(uid) {
   var out = {
     books: 0, arcs: 0, subTheories: 0,
     notebookVisible: 0, notebookPrivate: 0,
-    marginaliaVisible: 0, marginaliaPrivate: 0
+    marginaliaVisible: 0, marginaliaPrivate: 0,
+    questionVisible: 0, questionPrivate: 0
   };
   if (!uid) { return out; }
   if (state.userBooks && state.userBooks[uid] &&
@@ -375,6 +387,10 @@ function getAggregateCounts(uid) {
       if (e.register === 'marginalia') {
         if (priv) { out.marginaliaPrivate = out.marginaliaPrivate + 1; }
         else { out.marginaliaVisible = out.marginaliaVisible + 1; }
+      } else if (e.register === 'question') {
+        // N-epic: questions are their own visible-by-default register.
+        if (priv) { out.questionPrivate = out.questionPrivate + 1; }
+        else { out.questionVisible = out.questionVisible + 1; }
       } else {
         if (priv) { out.notebookPrivate = out.notebookPrivate + 1; }
         else { out.notebookVisible = out.notebookVisible + 1; }
