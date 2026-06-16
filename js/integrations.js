@@ -252,6 +252,44 @@ firebase.auth().onAuthStateChanged(function (u) {
       });
     });
 
+    // Stage 7 (manual themes): fetch this user's theme overlay from
+    // /userThemes/{uid} and REPLACE-merge into state.userThemes. Independent
+    // of the other docs. REPLACE: clear THIS uid's locally-known themes before
+    // splatting the remote set, so a delete on another device does not
+    // resurrect from cache. Ownership is theme.userId (direct).
+    loadThemesFromFirestore(u.uid, function (themeResult) {
+      if (themeResult.status === 'found') {
+        var tid;
+        if (state.userThemes) {
+          for (tid in state.userThemes) {
+            if (Object.prototype.hasOwnProperty.call(state.userThemes, tid) &&
+                state.userThemes[tid] && state.userThemes[tid].userId === u.uid) {
+              delete state.userThemes[tid];
+            }
+          }
+        }
+        if (!state.userThemes) { state.userThemes = {}; }
+        var remoteThemes = (themeResult.data && themeResult.data.userThemes)
+          ? themeResult.data.userThemes
+          : {};
+        var rtid;
+        for (rtid in remoteThemes) {
+          if (Object.prototype.hasOwnProperty.call(remoteThemes, rtid)) {
+            state.userThemes[rtid] = remoteThemes[rtid];
+          }
+        }
+        saveState();
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadThemesFromFirestore: merged remote theme doc');
+      } else if (themeResult.status === 'absent') {
+        console.log('loadThemesFromFirestore: no remote theme doc for uid, keeping cache');
+      } else {
+        console.warn('loadThemesFromFirestore: fetch failed, keeping cache', themeResult.error);
+      }
+    });
+
     // Stage 14.1b: fetch this user's notebook-doc from /userNotebook/{uid}
     // and REPLACE-merge into state.notebookEntries. Independent of the
     // book/arc fetches (separate docs). REPLACE: clear THIS uid's locally-
@@ -632,7 +670,7 @@ function deleteAccount(callback) {
   }
   var uid = u.uid;
   var collections = ['userBooks', 'userArcs', 'userNotebook',
-                     'userSubTheories', 'userProfiles'];
+                     'userSubTheories', 'userProfiles', 'userThemes'];
   var total = collections.length;
   var settled = 0;
   var aborted = false;
@@ -955,6 +993,93 @@ function saveSubTheoriesToFirestore(uid, payload, callback) {
   try {
     firebase.firestore()
       .collection('userSubTheories')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 7 (manual themes): per-user theme-overlay doc at /userThemes/{uid}.
+// Same typed-callback contract as the other loaders -- found / absent /
+// error, idempotent fire-once.
+function loadThemesFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadThemesFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userThemes')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// Stage 7: build the per-user theme-overlay payload. Denormalized single-doc
+// model: { schemaVersion, userThemes: { id: {...} }, updatedAt }. Ownership is
+// DIRECT (theme.userId === uid), mirroring userArcs.
+function buildUserThemesDoc(uid) {
+  var userThemes = {};
+  var tid;
+  if (state.userThemes) {
+    for (tid in state.userThemes) {
+      if (Object.prototype.hasOwnProperty.call(state.userThemes, tid)) {
+        var th = state.userThemes[tid];
+        if (th && th.userId === uid) {
+          userThemes[tid] = th;
+        }
+      }
+    }
+  }
+  return {
+    schemaVersion: state.SCHEMA_VERSION,
+    userThemes:    userThemes,
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// Stage 7: per-user theme-doc write to /userThemes/{uid}. .set() full-doc
+// overwrite, fire-and-forget, typed callback, idempotent fire-once --
+// identical contract to saveSubTheoriesToFirestore.
+function saveThemesToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveThemesToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userThemes')
       .doc(uid)
       .set(payload)
       .then(function () {

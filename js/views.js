@@ -1688,49 +1688,107 @@ function renderShelf() {
   closeBtn.textContent = '×';
   sidebar.appendChild(closeBtn);
 
-  // Stage 4c: theme section -- the 5 canonical themes in the spec B.5
-  // rail order, ABOVE the author section. Rows reuse the exact author-
-  // row mechanism: data-filter-section/-value + the shared click and
-  // keydown handlers; selected class reads shelfFilter.theme. Counts
-  // come from the genreCounts tally above.
-  var themeRail = [
+  // Stage 7 (manual themes): the user-created THEME overlay rail, ABOVE the
+  // Genre rail. Filter rows read shelfFilter.theme (a theme id); membership is
+  // state.userThemes[id].bookIds (off the book record). Counts are the theme's
+  // member count. Empty -> a quiet hint row (themes are created from a book).
+  var utUser = getCurrentUser();
+  var userThemeList = [];
+  var uttk;
+  if (utUser && utUser.uid && state.userThemes) {
+    for (uttk in state.userThemes) {
+      if (Object.prototype.hasOwnProperty.call(state.userThemes, uttk) &&
+          state.userThemes[uttk] && state.userThemes[uttk].userId === utUser.uid) {
+        userThemeList.push(state.userThemes[uttk]);
+      }
+    }
+  }
+  userThemeList.sort(function(a, b) {
+    return (a.name || '').localeCompare(b.name || '');
+  });
+  var utSection = document.createElement('div');
+  utSection.className = 'shelf-filter-section';
+  var utLabel = document.createElement('h3');
+  utLabel.className = 'shelf-filter-label';
+  utLabel.textContent = 'Theme';
+  utSection.appendChild(utLabel);
+  var utListEl = document.createElement('ul');
+  utListEl.className = 'shelf-filter-list shelf-filter-list-usertheme';
+  if (userThemeList.length === 0) {
+    var utEmpty = document.createElement('li');
+    utEmpty.className = 'shelf-filter-row shelf-filter-row-toggle';
+    utEmpty.textContent = 'No themes yet — add one from a book';
+    utListEl.appendChild(utEmpty);
+  } else {
+    var uti;
+    var utRow;
+    var utRowCount;
+    for (uti = 0; uti < userThemeList.length; uti++) {
+      utRow = document.createElement('li');
+      utRow.className = shelfFilter.theme === userThemeList[uti].id
+        ? 'shelf-filter-row shelf-filter-row-selected'
+        : 'shelf-filter-row';
+      utRow.setAttribute('role', 'button');
+      utRow.setAttribute('tabindex', '0');
+      utRow.setAttribute('data-filter-section', 'theme');
+      utRow.setAttribute('data-filter-value', userThemeList[uti].id);
+      utRow.textContent = userThemeList[uti].name;
+      utRowCount = document.createElement('span');
+      utRowCount.className = 'shelf-filter-count';
+      utRowCount.textContent = '' + (Array.isArray(userThemeList[uti].bookIds)
+        ? userThemeList[uti].bookIds.length : 0);
+      utRow.appendChild(utRowCount);
+      utRow.addEventListener('click', onShelfFilterRowClick);
+      utRow.addEventListener('keydown', onShelfFilterRowKeydown);
+      utListEl.appendChild(utRow);
+    }
+  }
+  utSection.appendChild(utListEl);
+  sidebar.appendChild(utSection);
+
+  // Stage 4c (relabeled at Stage 7): the GENRE rail -- the 5 canonical genre
+  // values, filtering books by their book.genre field. The former 'theme'
+  // slot was freed for the user-theme overlay above; this rail now reads
+  // shelfFilter.genre. Rows reuse the author-row mechanism (data-filter-
+  // section/-value + shared handlers). Counts come from genreCounts above.
+  var genreRail = [
     'Critical theory & pedagogy',
     'Power & systems',
     'Liberation',
     'Love & connection',
     'History & memory'
   ];
-  var themeSection = document.createElement('div');
-  themeSection.className = 'shelf-filter-section';
-  var themeLabel = document.createElement('h3');
-  themeLabel.className = 'shelf-filter-label';
-  themeLabel.textContent = 'Theme';
-  themeSection.appendChild(themeLabel);
-  var themeListEl = document.createElement('ul');
-  themeListEl.className = 'shelf-filter-list shelf-filter-list-theme';
-  var ti;
-  var themeRow;
-  var themeRowCount;
-  for (ti = 0; ti < themeRail.length; ti++) {
-    themeRow = document.createElement('li');
-    themeRow.className = shelfFilter.theme === themeRail[ti]
+  var genreSection = document.createElement('div');
+  genreSection.className = 'shelf-filter-section';
+  var genreLabel = document.createElement('h3');
+  genreLabel.className = 'shelf-filter-label';
+  genreLabel.textContent = 'Genre';
+  genreSection.appendChild(genreLabel);
+  var genreListEl = document.createElement('ul');
+  genreListEl.className = 'shelf-filter-list shelf-filter-list-genre';
+  var gi;
+  var genreRow;
+  var genreRowCount;
+  for (gi = 0; gi < genreRail.length; gi++) {
+    genreRow = document.createElement('li');
+    genreRow.className = shelfFilter.genre === genreRail[gi]
       ? 'shelf-filter-row shelf-filter-row-selected'
       : 'shelf-filter-row';
-    themeRow.setAttribute('role', 'button');
-    themeRow.setAttribute('tabindex', '0');
-    themeRow.setAttribute('data-filter-section', 'theme');
-    themeRow.setAttribute('data-filter-value', themeRail[ti]);
-    themeRow.textContent = themeRail[ti];
-    themeRowCount = document.createElement('span');
-    themeRowCount.className = 'shelf-filter-count';
-    themeRowCount.textContent = '' + (genreCounts[themeRail[ti]] || 0);
-    themeRow.appendChild(themeRowCount);
-    themeRow.addEventListener('click', onShelfFilterRowClick);
-    themeRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    themeListEl.appendChild(themeRow);
+    genreRow.setAttribute('role', 'button');
+    genreRow.setAttribute('tabindex', '0');
+    genreRow.setAttribute('data-filter-section', 'genre');
+    genreRow.setAttribute('data-filter-value', genreRail[gi]);
+    genreRow.textContent = genreRail[gi];
+    genreRowCount = document.createElement('span');
+    genreRowCount.className = 'shelf-filter-count';
+    genreRowCount.textContent = '' + (genreCounts[genreRail[gi]] || 0);
+    genreRow.appendChild(genreRowCount);
+    genreRow.addEventListener('click', onShelfFilterRowClick);
+    genreRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    genreListEl.appendChild(genreRow);
   }
-  themeSection.appendChild(themeListEl);
-  sidebar.appendChild(themeSection);
+  genreSection.appendChild(genreListEl);
+  sidebar.appendChild(genreSection);
 
   // Author section -- dedup'd alphabetical list from state.books.
   var authorSection = document.createElement('div');
@@ -1897,22 +1955,41 @@ function renderShelf() {
   var fi;
   var fb;
   var authorOk;
+  var genreOk;
   var themeOk;
   var searchOk;
+  // Stage 7 (manual themes): precompute the selected user-theme's membership
+  // set (book ids) once, so the per-book themeOk test is an O(1) lookup. Null
+  // when no theme filter is active or the selected theme no longer exists.
+  var selectedThemeBookIds = null;
+  if (shelfFilter.theme !== null && state.userThemes &&
+      state.userThemes[shelfFilter.theme]) {
+    selectedThemeBookIds = {};
+    var stbArr = state.userThemes[shelfFilter.theme].bookIds || [];
+    var stbI;
+    for (stbI = 0; stbI < stbArr.length; stbI++) {
+      selectedThemeBookIds[stbArr[stbI]] = true;
+    }
+  }
   for (fi = 0; fi < books.length; fi++) {
     fb = books[fi];
     authorOk = shelfFilter.author === null ||
       (typeof fb.author === 'string' && fb.author.length > 0 &&
        fb.author === shelfFilter.author);
-    themeOk = shelfFilter.theme === null ||
+    // Genre rail: strict equality against book.genre (the former 'theme' slot).
+    genreOk = shelfFilter.genre === null ||
       (typeof fb.genre === 'string' && fb.genre.length > 0 &&
-       fb.genre === shelfFilter.theme);
+       fb.genre === shelfFilter.genre);
+    // Theme rail: the user-created overlay -- book is a member of the selected
+    // theme (membership lives in state.userThemes, never on the book record).
+    themeOk = shelfFilter.theme === null ||
+      (selectedThemeBookIds !== null && selectedThemeBookIds[fb.id] === true);
     // Stage 4d: live search -- case-insensitive substring over title
     // OR author, AND-composed with the rail filters.
     searchOk = shelfSearchQuery === '' ||
       ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
        (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
-    if (authorOk && themeOk && searchOk) {
+    if (authorOk && genreOk && themeOk && searchOk) {
       filtered.push(fb);
     }
   }
@@ -1938,6 +2015,7 @@ function renderShelf() {
     // the brief -- signed-out users still get the sign-in prompt
     // even when their filter yields zero.
     var filterActive = shelfFilter.author !== null ||
+      shelfFilter.genre !== null ||
       shelfFilter.theme !== null ||
       shelfSearchQuery !== '';
     var empty = document.createElement('div');
@@ -2318,7 +2396,7 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // Author values come from state.books so they match the same way.
 // Stage 4c: sections are EXCLUSIVE single-select -- setting a value
 // in one section clears the other (see toggleShelfFilter).
-var shelfFilter = { author: null, theme: null };
+var shelfFilter = { author: null, genre: null, theme: null };
 
 // Stage 4d: author-rail collapse + in-page search state. Memory-only,
 // same lifetime contract as shelfFilter above. shelfSearchRaw keeps
@@ -3543,6 +3621,74 @@ function renderBookDetail(bookId) {
       openArtLink.textContent = 'Open Artifact';
       actions.appendChild(openArtLink);
     }
+
+    // Stage 7 (manual themes): assign this book to the reader's themes, or
+    // create a new theme and add it. Membership lives in state.userThemes
+    // (off the book record). Chips toggle membership; the inline field creates
+    // a theme and adds this book. Reuses existing input / button classes; chip
+    // styling is a small token-based block in components.css.
+    var themesWrap = document.createElement('div');
+    themesWrap.className = 'book-detail-themes';
+    var themesLabel = document.createElement('div');
+    themesLabel.className = 'book-detail-themes-label';
+    themesLabel.textContent = 'Themes';
+    themesWrap.appendChild(themesLabel);
+
+    var bdThemes = [];
+    var bdtk;
+    if (state.userThemes) {
+      for (bdtk in state.userThemes) {
+        if (Object.prototype.hasOwnProperty.call(state.userThemes, bdtk) &&
+            state.userThemes[bdtk] && state.userThemes[bdtk].userId === user.uid) {
+          bdThemes.push(state.userThemes[bdtk]);
+        }
+      }
+    }
+    bdThemes.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    var bdChipRow = document.createElement('div');
+    bdChipRow.className = 'book-detail-theme-chips';
+    var bdi;
+    for (bdi = 0; bdi < bdThemes.length; bdi++) {
+      (function(theme) {
+        var member = Array.isArray(theme.bookIds) &&
+          theme.bookIds.indexOf(bookId) !== -1;
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = member
+          ? 'book-detail-theme-chip book-detail-theme-chip-on'
+          : 'book-detail-theme-chip';
+        chip.textContent = (member ? '✓ ' : '+ ') + theme.name;
+        chip.addEventListener('click', function() {
+          if (member) { unassignBookFromTheme(theme.id, bookId); }
+          else { assignBookToTheme(theme.id, bookId); }
+          renderBookDetail(bookId);
+        });
+        bdChipRow.appendChild(chip);
+      })(bdThemes[bdi]);
+    }
+    themesWrap.appendChild(bdChipRow);
+
+    var bdNewRow = document.createElement('div');
+    bdNewRow.className = 'book-detail-theme-new';
+    var bdNewInput = document.createElement('input');
+    bdNewInput.type = 'text';
+    bdNewInput.className = 'account-field-input book-detail-theme-input';
+    bdNewInput.setAttribute('placeholder', 'New theme name');
+    bdNewRow.appendChild(bdNewInput);
+    var bdNewBtn = document.createElement('button');
+    bdNewBtn.type = 'button';
+    bdNewBtn.className = 'notebook-new-entry account-secondary-btn';
+    bdNewBtn.textContent = 'Create & add';
+    bdNewBtn.addEventListener('click', function() {
+      var theme = createUserTheme(bdNewInput.value);
+      if (theme) {
+        assignBookToTheme(theme.id, bookId);
+        renderBookDetail(bookId);
+      }
+    });
+    bdNewRow.appendChild(bdNewBtn);
+    themesWrap.appendChild(bdNewRow);
+    actions.appendChild(themesWrap);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';

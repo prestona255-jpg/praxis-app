@@ -276,7 +276,8 @@ var state = {
   notebookEntries: {},
   bookArtifacts:   {},
   arcs:            {},
-  subTheories:     {}
+  subTheories:     {},
+  userThemes:      {}
 };
 window.state = state;
 
@@ -588,6 +589,16 @@ var subTheoriesDirty = false;
 
 function markSubTheoriesDirty() {
   subTheoriesDirty = true;
+}
+
+// Stage 7 (manual themes): dirty flag for the per-user theme-overlay doc,
+// mirroring subTheoriesDirty. createUserTheme / assignBookToTheme /
+// unassignBookFromTheme mark it; saveState() consumes it and fires a
+// fire-and-forget /userThemes/{uid} write.
+var themesDirty = false;
+
+function markThemesDirty() {
+  themesDirty = true;
 }
 
 // Composite key for the bookArtifacts map. Kept as a function so the
@@ -1057,6 +1068,70 @@ function deleteSubTheory(id) {
   return true;
 }
 
+// Stage 7 (manual themes): id generator for the user-theme overlay, shaped
+// like genArcId / genSubTheoryId; the 'theme_' prefix avoids cross-collection
+// id collisions.
+function genThemeId() {
+  return 'theme_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
+// Stage 7 (manual themes): a user-owned overlay of named book collections,
+// kept OFF the book record (membership lives here as bookIds) so themes never
+// entangle the seed-books-in-state split or force a book-schema migration.
+// Private to the user by design (userId-scoped; never read into Yumi's
+// context). localStorage-first via saveState; mirrored to /userThemes/{uid}
+// on the markThemesDirty chokepoint, like the arc / sub-theory collections.
+// MANUAL only -- no Yumi naming or noticing.
+function createUserTheme(name) {
+  var trimmed = (typeof name === 'string') ? name.trim() : '';
+  if (trimmed === '') { return null; }
+  var creator = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var now = Date.now();
+  var id = genThemeId();
+  var theme = {
+    id:        id,
+    userId:    (creator && creator.uid) ? creator.uid : null,
+    name:      trimmed,
+    bookIds:   [],
+    createdAt: now,
+    updatedAt: now
+  };
+  if (!state.userThemes) { state.userThemes = {}; }
+  state.userThemes[id] = theme;
+  markThemesDirty();
+  saveState();
+  return theme;
+}
+
+// Add a book to a theme (idempotent; a no-op call writes nothing). Membership
+// is the book's id, never a field on the book.
+function assignBookToTheme(themeId, bookId) {
+  if (typeof themeId !== 'string' || typeof bookId !== 'string') { return false; }
+  var theme = state.userThemes && state.userThemes[themeId];
+  if (!theme) { return false; }
+  if (!Array.isArray(theme.bookIds)) { theme.bookIds = []; }
+  if (theme.bookIds.indexOf(bookId) !== -1) { return false; }
+  theme.bookIds.push(bookId);
+  theme.updatedAt = Date.now();
+  markThemesDirty();
+  saveState();
+  return true;
+}
+
+// Remove a book from a theme (idempotent). The theme persists when emptied.
+function unassignBookFromTheme(themeId, bookId) {
+  if (typeof themeId !== 'string' || typeof bookId !== 'string') { return false; }
+  var theme = state.userThemes && state.userThemes[themeId];
+  if (!theme || !Array.isArray(theme.bookIds)) { return false; }
+  var ix = theme.bookIds.indexOf(bookId);
+  if (ix === -1) { return false; }
+  theme.bookIds.splice(ix, 1);
+  theme.updatedAt = Date.now();
+  markThemesDirty();
+  saveState();
+  return true;
+}
+
 // 9.5 Stage 1: resonance links between two sub-theories. linkSubTheories
 // records a symmetric edge — each id is added to the other's
 // linkedSubTheories array — and bumps updatedAt on both; unlinkSubTheories
@@ -1386,6 +1461,27 @@ function saveState() {
         } else {
           console.warn(
             'saveSubTheoriesToFirestore: failed',
+            result ? result.error : null
+          );
+        }
+      });
+    }
+  }
+  if (themesDirty) {
+    themesDirty = false;
+    var thUser = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (thUser && thUser.uid &&
+        typeof saveThemesToFirestore === 'function' &&
+        typeof buildUserThemesDoc === 'function') {
+      var thPayload = buildUserThemesDoc(thUser.uid);
+      saveThemesToFirestore(thUser.uid, thPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveThemesToFirestore: ok');
+        } else {
+          console.warn(
+            'saveThemesToFirestore: failed',
             result ? result.error : null
           );
         }
@@ -1860,6 +1956,13 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.17.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.17.0') {
+    // Stage 7 (manual themes): the user-theme overlay collection. Backfill {}
+    // where absent; records are flat (id / name / userId / bookIds / stamps),
+    // so no per-record field ensure is needed.
+    if (!stored.userThemes) { stored.userThemes = {}; }
+    stored.SCHEMA_VERSION = '1.18.0';
   }
   return stored;
 }

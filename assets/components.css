@@ -6562,6 +6562,47 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Stage 7 (manual themes): book-detail theme assign chips + create field. */
+.book-detail-themes {
+  margin-top: var(--sp-4);
+}
+.book-detail-themes-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--sp-2);
+}
+.book-detail-theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.book-detail-theme-chip {
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+}
+.book-detail-theme-chip-on {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--text-on-dark);
+}
+.book-detail-theme-new {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.book-detail-theme-input {
+  flex: 1;
+}
 
 /* Writing-page Delete chip -- subordinate danger variant of the Mark chip. */
 .subtheory-delete-chip {
