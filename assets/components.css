@@ -3872,6 +3872,87 @@
   color: var(--text-on-dark);
 }
 
+/* N3: gather selection + the working-page sub-theory builder. */
+.notebook-entry-gathered {
+  outline: 2px solid var(--marginalia-color);
+  outline-offset: 2px;
+}
+.notebook-working-name {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 8px 10px;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+}
+.notebook-wnote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wash);
+}
+.notebook-wnote-tag {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.notebook-working-arc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.notebook-working-arc-change {
+  color: var(--wordmark);
+  cursor: pointer;
+}
+.notebook-working-gather-line {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-3);
+}
+.notebook-working-acts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.notebook-working-create {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--grad);
+  color: var(--text-on-dark);
+  cursor: pointer;
+}
+.notebook-working-create:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.notebook-working-clear {
+  color: var(--ink-3);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
 @media (max-width: 759px) {
   .notebook-spread { grid-template-columns: 1fr; gap: 20px; }
   .notebook-leaf-right {

@@ -669,6 +669,11 @@ function renderHome() {
 // renderNotebook). Keys: 'inbox', 'journal', or a bookId. Resolved against the
 // live tab model each render, falling back to the first tab if it went stale.
 var notebookActiveTab = 'inbox';
+// N3 gather -> sub-theory: the gathered entry set + the chosen arc + the typed
+// name, persisted across re-renders (gather toggles re-render the spread).
+var notebookGathered = {};
+var notebookGatherArc = null;
+var notebookGatherName = '';
 
 function renderNotebook() {
   var host = document.getElementById(APP_EL_ID);
@@ -776,7 +781,7 @@ function renderNotebook() {
   var spread = document.createElement('div');
   spread.className = 'notebook-spread';
   spread.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
-  spread.appendChild(buildNotebookRightLeaf());
+  spread.appendChild(buildNotebookRightLeaf(user));
   wrap.appendChild(spread);
 
   host.appendChild(wrap);
@@ -918,7 +923,7 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   var i;
   for (i = 0; i < entries.length; i = i + 1) {
     if (notebookEntryMatchesTab(entries[i], activeKey)) {
-      leaf.appendChild(renderNotebookEntry(entries[i]));
+      leaf.appendChild(renderNotebookEntry(entries[i], true));
       shown = shown + 1;
     }
   }
@@ -937,19 +942,234 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   return leaf;
 }
 
-// Right leaf: the working page. Empty in N1 -- N3 fills it via gather.
-function buildNotebookRightLeaf() {
+// Right leaf: the working page. Empty until notes are gathered; then it shows
+// the gathered notes + an editable name + arc selection (F6) + Create. Create
+// REUSES createSubTheory + addEvidenceToSubTheory (no new data path).
+function buildNotebookRightLeaf(user) {
   var leaf = document.createElement('div');
   leaf.className = 'notebook-leaf notebook-leaf-right';
+
+  var ids = notebookGatheredIds();
+
+  if (!ids.length) {
+    var tag0 = document.createElement('div');
+    tag0.className = 'notebook-leaftag';
+    tag0.textContent = 'Working page';
+    leaf.appendChild(tag0);
+    var hint = document.createElement('p');
+    hint.className = 'notebook-working-hint';
+    hint.textContent = 'Gather a selection of notes from the left to form a sub-theory here.';
+    leaf.appendChild(hint);
+    return leaf;
+  }
+
   var tag = document.createElement('div');
   tag.className = 'notebook-leaftag';
-  tag.textContent = 'Working page';
+  tag.textContent = 'Working page · forming a sub-theory';
   leaf.appendChild(tag);
-  var hint = document.createElement('p');
-  hint.className = 'notebook-working-hint';
-  hint.textContent = 'Gather a selection of notes from the left to form a sub-theory here.';
-  leaf.appendChild(hint);
+
+  var nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'notebook-working-name';
+  nameInput.setAttribute('placeholder', 'Name this sub-theory');
+  nameInput.value = notebookGatherName || '';
+  leaf.appendChild(nameInput);
+
+  var i;
+  for (i = 0; i < ids.length; i = i + 1) {
+    var e = state.notebookEntries[ids[i]];
+    var w = document.createElement('div');
+    w.className = 'notebook-wnote';
+    var wt = document.createElement('span');
+    wt.className = 'notebook-wnote-tag';
+    wt.textContent = notebookRegisterLabel(e.register);
+    w.appendChild(wt);
+    var wb = (e && typeof e.body === 'string') ? e.body : '';
+    if (wb.length > 140) { wb = wb.substring(0, 137) + '…'; }
+    w.appendChild(document.createTextNode(wb));
+    leaf.appendChild(w);
+  }
+
+  // Arc selection (F6): default to the arc shared by all gathered notes' arcIds,
+  // else let the user pick an existing arc (reuses buildArcPickerPanel). If the
+  // user has no arcs, guide them to make one first.
+  var arcId = notebookGatherArc || notebookSharedArc(ids);
+  var hasArcs = notebookUserHasArcs(user);
+  var arcRow = document.createElement('div');
+  arcRow.className = 'notebook-working-arc';
+  if (!hasArcs) {
+    arcRow.textContent = 'Create an arc first — sub-theories live inside an arc.';
+  } else {
+    var arcLabel = document.createElement('span');
+    arcLabel.className = 'notebook-working-arc-label';
+    if (arcId && state.arcs[arcId]) {
+      arcLabel.textContent = 'Into arc: ' + (state.arcs[arcId].title || '(untitled arc)');
+    } else {
+      arcLabel.textContent = 'No arc chosen';
+    }
+    arcRow.appendChild(arcLabel);
+    var changeLink = document.createElement('a');
+    changeLink.href = '#';
+    changeLink.className = 'notebook-working-arc-change';
+    changeLink.textContent = (arcId && state.arcs[arcId]) ? 'Change' : 'Choose an arc';
+    changeLink.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      var host = arcRow.querySelector('.notebook-working-arc-picker-host');
+      if (!host) {
+        host = document.createElement('div');
+        host.className = 'notebook-working-arc-picker-host';
+        arcRow.appendChild(host);
+      }
+      openGatherArcPicker(host);
+    });
+    arcRow.appendChild(changeLink);
+  }
+  leaf.appendChild(arcRow);
+
+  // Static line -- NOT a Yumi generative call (N4). Plain UI copy.
+  var gline = document.createElement('p');
+  gline.className = 'notebook-working-gather-line';
+  gline.textContent = ids.length + ' gathered — name it and I’ll carry them into your arc.';
+  leaf.appendChild(gline);
+
+  var acts = document.createElement('div');
+  acts.className = 'notebook-working-acts';
+  var createBtn = document.createElement('button');
+  createBtn.type = 'button';
+  createBtn.className = 'notebook-working-create';
+  createBtn.textContent = 'Create';
+  function canCreate() {
+    var nm = (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
+    return !!(nm && (notebookGatherArc || notebookSharedArc(ids)) && hasArcs);
+  }
+  createBtn.disabled = !canCreate();
+  createBtn.addEventListener('click', function() { notebookCreateSubTheory(); });
+  nameInput.addEventListener('input', function() {
+    notebookGatherName = nameInput.value;
+    createBtn.disabled = !canCreate();
+  });
+  acts.appendChild(createBtn);
+
+  var clearLink = document.createElement('a');
+  clearLink.href = '#';
+  clearLink.className = 'notebook-working-clear';
+  clearLink.textContent = 'Clear';
+  clearLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    notebookGathered = {};
+    notebookGatherArc = null;
+    notebookGatherName = '';
+    renderNotebook();
+  });
+  acts.appendChild(clearLink);
+  leaf.appendChild(acts);
+
   return leaf;
+}
+
+// ===== N3 gather helpers =====
+
+function notebookRegisterLabel(reg) {
+  if (reg === 'marginalia') { return 'Marginalia'; }
+  if (reg === 'question') { return 'Question'; }
+  return 'Journal';
+}
+
+function arrHas(arr, val) {
+  var i;
+  for (i = 0; i < arr.length; i = i + 1) { if (arr[i] === val) { return true; } }
+  return false;
+}
+
+// The gathered entry ids that still exist (a deleted entry drops out).
+function notebookGatheredIds() {
+  var out = [];
+  var k;
+  for (k in notebookGathered) {
+    if (Object.prototype.hasOwnProperty.call(notebookGathered, k) &&
+        notebookGathered[k] === true &&
+        state.notebookEntries && state.notebookEntries[k]) {
+      out.push(k);
+    }
+  }
+  return out;
+}
+
+function toggleGather(entryId) {
+  if (notebookGathered[entryId] === true) { delete notebookGathered[entryId]; }
+  else { notebookGathered[entryId] = true; }
+  renderNotebook();
+}
+
+// F6: the arc common to ALL gathered entries' arcIds (intersection), or null.
+function notebookSharedArc(ids) {
+  if (!ids.length) { return null; }
+  var first = state.notebookEntries[ids[0]];
+  var candidate = (first && first.arcIds) ? first.arcIds.slice(0) : [];
+  var i, j, next;
+  for (i = 1; i < ids.length; i = i + 1) {
+    var e = state.notebookEntries[ids[i]];
+    var eArcs = (e && e.arcIds) ? e.arcIds : [];
+    next = [];
+    for (j = 0; j < candidate.length; j = j + 1) {
+      if (arrHas(eArcs, candidate[j])) { next.push(candidate[j]); }
+    }
+    candidate = next;
+    if (!candidate.length) { return null; }
+  }
+  return candidate.length ? candidate[0] : null;
+}
+
+function notebookUserHasArcs(user) {
+  if (!user || !state.arcs) { return false; }
+  var k;
+  for (k in state.arcs) {
+    if (Object.prototype.hasOwnProperty.call(state.arcs, k) && state.arcs[k] &&
+        (state.arcs[k].userId === user.uid || state.arcs[k].userId === '__praxis_seed__')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function openGatherArcPicker(mountEl) {
+  if (!mountEl) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  mountEl.innerHTML = '';
+  mountEl.appendChild(buildArcPickerPanel({
+    user: user,
+    label: 'Choose an arc for this sub-theory',
+    onPick: function(arcId) {
+      notebookGatherArc = arcId;
+      renderNotebook();
+    },
+    onDone: function() {}
+  }));
+}
+
+// N3: gather -> sub-theory. REUSES createSubTheory + addEvidenceToSubTheory
+// (the same path "Send to sub-theory" uses, kind 'entry', quote = body). On
+// success, clears the gather and routes to the new sub-theory page.
+function notebookCreateSubTheory() {
+  var user = getCurrentUser();
+  if (!user) { return; }
+  var ids = notebookGatheredIds();
+  var name = (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
+  var arcId = notebookGatherArc || notebookSharedArc(ids);
+  if (!ids.length || !name || !arcId || !state.arcs[arcId]) { return; }
+  var st = createSubTheory(arcId, { header: name });
+  if (!st) { return; }
+  var i;
+  for (i = 0; i < ids.length; i = i + 1) {
+    var e = state.notebookEntries[ids[i]];
+    var quote = (e && typeof e.body === 'string') ? e.body : '';
+    addEvidenceToSubTheory(st.id, { kind: 'entry', refId: ids[i], quote: quote });
+  }
+  notebookGathered = {};
+  notebookGatherArc = null;
+  notebookGatherName = '';
+  location.hash = 'subtheory/' + st.id;
 }
 
 // N2: master consent switch -- interactive. Reflects profile.yumiReadsAlong
@@ -7947,7 +8167,7 @@ function openBookSendToSubTheory(bookId) {
   }
 }
 
-function renderNotebookEntry(entry) {
+function renderNotebookEntry(entry, gatherable) {
   // Left register spine via ::before reads --reg: marginalia = teal
   // (--marginalia-color), question = --question-color (blue), journal =
   // --journal-color. N1: the per-entry privacy toggle is removed (see the
@@ -7957,9 +8177,10 @@ function renderNotebookEntry(entry) {
   var isQues = entry.register === 'question';
   var priv = entry.isPrivate === true;
   var capturedId = entry.id;
+  var gathered = gatherable && notebookGathered[entry.id] === true;
 
   var card = document.createElement('article');
-  card.className = 'notebook-entry';
+  card.className = 'notebook-entry' + (gathered ? ' notebook-entry-gathered' : '');
   card.style.setProperty('--reg',
     isMarg ? 'var(--marginalia-color)'
            : (isQues ? 'var(--question-color)' : 'var(--journal-color)'));
@@ -8020,6 +8241,20 @@ function renderNotebookEntry(entry) {
   // never a per-entry flip. The read-only visibility indicator above remains.
   var acts = document.createElement('div');
   acts.className = 'notebook-entry-acts';
+
+  // N3: gather toggle -- only on the notebook spread (gatherable). Adds/removes
+  // this entry from the gathered set that forms a sub-theory on the right leaf.
+  if (gatherable) {
+    var gatherLink = document.createElement('a');
+    gatherLink.href = '#';
+    gatherLink.className = 'notebook-entry-add-to-arc notebook-entry-gather';
+    gatherLink.textContent = gathered ? 'Gathered ✓' : 'Gather';
+    gatherLink.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      toggleGather(capturedId);
+    });
+    acts.appendChild(gatherLink);
+  }
 
   var addToArcLink = document.createElement('a');
   addToArcLink.href = '#';
