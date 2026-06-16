@@ -805,18 +805,24 @@
    / grid-row. Signed-out branch has only the sign-in prompt; it
    spans the action columns so it sits where the buttons would. */
 
+/* Stage 2 (mockup-fidelity): header is the mockup's flex .pagehd -- the left
+   headline block (title + count) and the right actions cluster, bottom-aligned
+   and pushed apart. Replaces the Batch-2 grid whose shared top row caused the
+   eyebrow/seg overlap (the eyebrow is now gone). */
 .shelf-header {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  column-gap: 12px;
-  row-gap: 8px;
-  align-items: start;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
   padding: 48px 0 32px 0;
 }
 
+.shelf-headline {
+  min-width: 0;
+}
+
 .shelf-title {
-  grid-column: 1;
-  grid-row: 2;
   margin: 0;
   font-family: var(--font-serif);
   font-size: 40px;
@@ -825,12 +831,12 @@
   color: var(--ink);
 }
 
-/* Batch 2: eyebrow kicker in row 1 above the title (row 2). The shared
-   .eyebrow type role supplies the mono styling; this only places it. */
-.shelf-eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-  margin: 0 0 4px 0;
+/* Mockup .pagehd .sub: the book-count line under the title. */
+.shelf-count {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  color: var(--ink-2);
 }
 
 .shelf-new-book,
@@ -838,11 +844,8 @@
 .shelf-resolve-covers-btn,
 .shelf-scan-btn,
 .shelf-signin-prompt {
-  /* Batch 2: span both header rows + bottom-align so the action cluster
-     sits at the title baseline (mockup .shelf-top align-items:flex-end),
-     now that an eyebrow occupies row 1. */
-  grid-row: 1 / 3;
-  align-self: end;
+  /* Stage 2: header is now flex (.pagehd); the former grid-row / align-self
+     placement is dropped. These keep only their type + shape. */
   font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 500;
@@ -852,7 +855,6 @@
 }
 
 .shelf-new-book {
-  grid-column: 2;
   /* Phase 3.1: signature gold->river gradient (--grad). The gradient's
      stops live in theme.css; components.css only references the token. */
   font-weight: 600;
@@ -970,9 +972,6 @@
    Covers header reads exactly as before, with the seg added at its left.
    Tokens only; no blur. */
 .shelf-actions {
-  grid-column: 2 / span 2;
-  justify-self: end;
-  align-self: start;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1683,22 +1682,18 @@
    live grid filter between the header and the rail+grid body. The
    well is the mockup's recessed translucent ink wash; radius is the
    10px content radius (mockup --r), NOT the nav pill. */
-.shelf-search {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 22px;
-}
-
+/* Stage 2 (mockup-fidelity): the search is now an inline pill in the header
+   actions row (mockup .search at design/praxis-desktop-mockup.html:59); the
+   former below-header .shelf-search wrapper is removed. */
 .shelf-search-well {
-  flex: 1;
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 46px;
-  padding: 0 18px;
-  border-radius: var(--radius-md);
-  background: rgba(58,40,16,.06);
+  gap: 10px;
+  min-width: 280px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--glass);
   border: 1px solid var(--border);
 }
 
@@ -1722,19 +1717,38 @@
   color: var(--ink-3);
 }
 
+/* Stage 2 (mockup-fidelity): the theme+author rail is folded behind the Filter
+   button. Default = single column, rail hidden. Desktop reveals it inline via
+   .shelf-rail-open (the min-width:760 block below); mobile reveals it as the
+   existing fixed overlay panel (.shelf-sidebar-mobile-open). */
 .shelf-layout {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 34px;
+  grid-template-columns: 1fr;
+  gap: 0;
   align-items: start;
 }
 
 .shelf-sidebar {
+  display: none;
   background: transparent;
   border: none;
   position: sticky;
   top: 88px;
   align-self: start;
+}
+
+/* Desktop inline rail reveal. shelfRailOpen drives .shelf-rail-open on
+   .shelf-layout; restore the 2-col rail+grid. Gated to >=760 so a desktop-set
+   open state never forces 2-col onto the mobile overlay path. */
+@media (min-width: 760px) {
+  .shelf-layout.shelf-rail-open {
+    grid-template-columns: 180px 1fr;
+    gap: 34px;
+  }
+
+  .shelf-layout.shelf-rail-open .shelf-sidebar {
+    display: block;
+  }
 }
 
 /* Batch 2: filter rail is BARE (mockup .fil -- no panel bg/border/blur,
@@ -3355,9 +3369,12 @@
 }
 
 .shelf-filter-button {
-  /* Override the Stage 1 .shelf-new-book-bulk grid placement on
-     desktop -- the filter button is hidden on desktop entirely. */
-  display: none;
+  /* Stage 2 (mockup-fidelity): the rail is folded behind this button at all
+     widths, so it is visible everywhere (was desktop display:none). It reuses
+     the .shelf-new-book-bulk chip look; the former header grid placement is
+     inert now that it lives in .shelf-main. */
+  display: inline-block;
+  margin-bottom: 24px;
 }
 
 /* ===== END MOBILE NAV HAMBURGER + FILTER BUTTON (DEFAULTS) ===== */

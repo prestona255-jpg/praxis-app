@@ -1400,17 +1400,34 @@ function renderShelf() {
   var header = document.createElement('header');
   header.className = 'shelf-header';
 
-  // Batch 2: generic .eyebrow kicker above the title (mockup .shelf-top),
-  // replacing the DM-Mono book-count subtitle.
-  var eyebrow = document.createElement('p');
-  eyebrow.className = 'eyebrow shelf-eyebrow';
-  eyebrow.textContent = 'Your library';
-  header.appendChild(eyebrow);
+  // Stage 2 (mockup-fidelity): per design/praxis-desktop-mockup.html:147 the
+  // header is a left block of "Your shelf" h1 + an "N books" count .sub, with
+  // the actions cluster to its right (.pagehd flex). The former "Your library"
+  // eyebrow shared the header grid's top row with the actions and overlapped
+  // the tall Covers|List seg; dropping it fixes the overlap by removal.
+  var headline = document.createElement('div');
+  headline.className = 'shelf-headline';
 
   var title = document.createElement('h1');
   title.className = 'shelf-title';
   title.textContent = 'Your shelf';
-  header.appendChild(title);
+  headline.appendChild(title);
+
+  var shelfBookCount = 0;
+  var sbcId;
+  var sbcMap = state.books || {};
+  for (sbcId in sbcMap) {
+    if (Object.prototype.hasOwnProperty.call(sbcMap, sbcId) && sbcMap[sbcId]) {
+      shelfBookCount++;
+    }
+  }
+  var countEl = document.createElement('div');
+  countEl.className = 'shelf-count';
+  countEl.textContent = shelfBookCount
+    + (shelfBookCount === 1 ? ' book' : ' books');
+  headline.appendChild(countEl);
+
+  header.appendChild(headline);
 
   // Auth-aware add affordance. Mirrors renderBookDetail at
   // views.js:358-377: signed-in user gets a button that opens the
@@ -1449,6 +1466,26 @@ function renderShelf() {
   });
   seg.appendChild(segList);
   actions.appendChild(seg);
+
+  // Stage 2 (mockup-fidelity): the live grid-filter search moves inline into
+  // the header actions, between the seg and the add button (mockup .search at
+  // design/praxis-desktop-mockup.html:148). Still a LIVE GRID FILTER (title OR
+  // author substring via onShelfSearchInput) -- functional, not a dead pill.
+  var searchWell = document.createElement('div');
+  searchWell.className = 'shelf-search-well';
+  var searchGlyph = document.createElement('span');
+  searchGlyph.className = 'shelf-search-glyph';
+  searchGlyph.textContent = '⌕';
+  searchWell.appendChild(searchGlyph);
+  var searchInput = document.createElement('input');
+  searchInput.id = 'shelf-search-input';
+  searchInput.className = 'shelf-search-input';
+  searchInput.type = 'text';
+  searchInput.setAttribute('placeholder', 'Search books, authors, ideas…');
+  searchInput.value = shelfSearchRaw;
+  searchInput.addEventListener('input', onShelfSearchInput);
+  searchWell.appendChild(searchInput);
+  actions.appendChild(searchWell);
 
   // Canon §4-E: secondary actions (Scan / Bulk / Resolve) move into a quiet
   // chip row appended below the header; only the primary "+ Add book" stays
@@ -1517,7 +1554,7 @@ function renderShelf() {
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
     newBtn.className = 'shelf-new-book';
-    newBtn.textContent = '+ Add book';
+    newBtn.textContent = '+ Add a book';
     newBtn.addEventListener('click', function() {
       openShelfEditor();
     });
@@ -1550,29 +1587,9 @@ function renderShelf() {
     wrap.appendChild(shelfChips);
   }
 
-  // Stage 4d: in-page shelf search -- a LIVE GRID FILTER over the
-  // rendered shelf (title OR author substring, case-insensitive),
-  // debounced 250ms in onShelfSearchInput. Honest behavior only: no
-  // network, no suggestions, no navigation. Mockup .shelf-search/.big
-  // well between the header and the rail+grid body.
-  var searchWrap = document.createElement('div');
-  searchWrap.className = 'shelf-search';
-  var searchWell = document.createElement('div');
-  searchWell.className = 'shelf-search-well';
-  var searchGlyph = document.createElement('span');
-  searchGlyph.className = 'shelf-search-glyph';
-  searchGlyph.textContent = '⌕';
-  searchWell.appendChild(searchGlyph);
-  var searchInput = document.createElement('input');
-  searchInput.id = 'shelf-search-input';
-  searchInput.className = 'shelf-search-input';
-  searchInput.type = 'text';
-  searchInput.setAttribute('placeholder', 'Search books, authors, ideas…');
-  searchInput.value = shelfSearchRaw;
-  searchInput.addEventListener('input', onShelfSearchInput);
-  searchWell.appendChild(searchInput);
-  searchWrap.appendChild(searchWell);
-  wrap.appendChild(searchWrap);
+  // Stage 2 (mockup-fidelity): the in-page shelf search (a LIVE GRID FILTER,
+  // title OR author substring) now lives inline in the header actions cluster
+  // above -- it is no longer a separate well below the header.
 
   // 3.10a Stage 2: two-column layout below the full-width header.
   // .shelf-layout holds .shelf-sidebar (left, 220px, transparent --
@@ -1659,7 +1676,10 @@ function renderShelf() {
   }
 
   var layout = document.createElement('div');
-  layout.className = 'shelf-layout';
+  // Stage 2: shelfRailOpen drives the desktop inline rail reveal (>=760).
+  layout.className = shelfRailOpen
+    ? 'shelf-layout shelf-rail-open'
+    : 'shelf-layout';
 
   var sidebar = document.createElement('aside');
   sidebar.className = 'shelf-sidebar';
@@ -1843,8 +1863,16 @@ function renderShelf() {
   // Panel so the backdrop and Escape handler move in lockstep with
   // .shelf-sidebar-mobile-open. The 3.10a-era class-flip-only handler
   // would leave the backdrop in whatever state was last seen.
+  // Stage 2 (mockup-fidelity): the rail is folded behind this button at all
+  // widths. Desktop (>=760) toggles an inline collapse -- shelfRailOpen drives
+  // the .shelf-rail-open class on .shelf-layout (2-col rail+grid when open),
+  // persisted across re-renders so a filter-row click does not snap it shut.
+  // Mobile keeps the existing fixed overlay panel (openShelfFilterPanel).
   filterBtn.addEventListener('click', function() {
-    if (sidebar.classList.contains('shelf-sidebar-mobile-open')) {
+    if (window.matchMedia('(min-width: 760px)').matches) {
+      shelfRailOpen = !shelfRailOpen;
+      renderShelf();
+    } else if (sidebar.classList.contains('shelf-sidebar-mobile-open')) {
       dismissShelfFilterPanel();
     } else {
       openShelfFilterPanel();
@@ -1950,7 +1978,7 @@ function renderShelf() {
       var emptyAddBtn = document.createElement('button');
       emptyAddBtn.type = 'button';
       emptyAddBtn.className = 'shelf-new-book';
-      emptyAddBtn.textContent = '+ Add book';
+      emptyAddBtn.textContent = '+ Add a book';
       emptyAddBtn.addEventListener('click', function() {
         openShelfEditor();
       });
@@ -2320,6 +2348,14 @@ var shelfSearchRaw = '';
 var shelfSearchQuery = '';
 var shelfSearchTimer = null;
 var shelfSearchRefocus = false;
+
+// Stage 2 (mockup-fidelity): desktop inline filter-rail collapse state.
+// Memory-only, same lifetime as shelfFilter. On desktop (>=760) the
+// theme+author rail is folded behind the Filter button; this flag keeps
+// it expanded across re-renders (e.g. a filter-row click) so picking a
+// filter does not snap the rail shut. Mobile ignores it and keeps the
+// existing overlay panel (shelf-sidebar-mobile-open).
+var shelfRailOpen = false;
 
 // 3.10b-i: module-scope reference to the document-level Escape
 // listener bound when the mobile filter panel is open. Tracked here
