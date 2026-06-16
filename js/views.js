@@ -1050,8 +1050,12 @@ function buildNotebookRightLeaf(user) {
   createBtn.className = 'notebook-working-create';
   createBtn.textContent = 'Create';
   function canCreate() {
-    var nm = (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
-    return !!(nm && (notebookGatherArc || notebookSharedArc(ids)) && hasArcs);
+    // FIX B: the name is OPTIONAL (createSubTheory accepts an empty header -- a
+    // draft you name in the editor, like the "+ Sub-theory" flow). The arc must
+    // EXIST: a gathered set may share an arcId whose arc was deleted, which
+    // would enable Create but no-op in notebookCreateSubTheory's guard.
+    var aid = notebookGatherArc || notebookSharedArc(ids);
+    return !!(ids.length && aid && state.arcs && state.arcs[aid] && hasArcs);
   }
   createBtn.disabled = !canCreate();
   createBtn.addEventListener('click', function() { notebookCreateSubTheory(); });
@@ -1128,7 +1132,13 @@ function notebookSharedArc(ids) {
     candidate = next;
     if (!candidate.length) { return null; }
   }
-  return candidate.length ? candidate[0] : null;
+  // FIX B: return the first shared arc that STILL EXISTS -- a deleted arc must
+  // not surface as the default (it would enable Create but no-op).
+  var k;
+  for (k = 0; k < candidate.length; k = k + 1) {
+    if (state.arcs && state.arcs[candidate[k]]) { return candidate[k]; }
+  }
+  return null;
 }
 
 function notebookUserHasArcs(user) {
@@ -1168,7 +1178,9 @@ function notebookCreateSubTheory() {
   var ids = notebookGatheredIds();
   var name = (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
   var arcId = notebookGatherArc || notebookSharedArc(ids);
-  if (!ids.length || !name || !arcId || !state.arcs[arcId]) { return; }
+  // FIX B: name optional (empty header = a draft, named in the editor); arc
+  // must exist.
+  if (!ids.length || !arcId || !state.arcs[arcId]) { return; }
   var st = createSubTheory(arcId, { header: name });
   if (!st) { return; }
   var i;
