@@ -7499,3 +7499,66 @@
   .lens-panel { animation: none; }
   .lens-glyph-petals { animation: none; }
 }
+
+/* Lens-gen (S3): proposed-lens cards stack name -> why -> books over an
+   actions row; the adopt ("Name it") action carries the primary gradient. */
+.lens-card-proposed {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+}
+
+.lens-card-why {
+  margin-top: 2px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.lens-card-books {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--ink-4);
+}
+
+.lens-card-actions-proposed {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.lens-card-action-adopt {
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+}
+
+.lens-card-action-adopt:hover {
+  color: var(--text-on-dark);
+  opacity: 0.92;
+}
+
+.lens-suggest-loading {
+  animation: lens-suggest-pulse 1.4s ease-in-out infinite;
+}
+
+.lens-suggest-covenant {
+  margin-top: var(--sp-3);
+  font-size: 12px;
+}
+
+.lens-suggest-retry {
+  margin-top: var(--sp-2);
+}
+
+@keyframes lens-suggest-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-suggest-loading { animation: none; }
+}
