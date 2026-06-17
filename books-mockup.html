@@ -1,0 +1,1337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis — Books #6 · shelf-upload redesign mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   Praxis — Books #6 mockup.  STANDALONE visual artifact.
+   Every color literal lives inside :root below; everything else uses
+   var(--token).  The token block is a verbatim copy of the REAL
+   assets/theme.css values (NOT the praxis-desktop-mockup approximations)
+   plus a small clearly-commented mockup-scaffolding group.
+   ===================================================================== */
+:root{
+  /* ---- Fonts (real theme.css) ---- */
+  --font-serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --font-body:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'DM Mono','SF Mono',Menlo,Consolas,monospace;
+
+  /* ---- Core colors (real theme.css) ---- */
+  --ink:#2a1810; --ink-2:#5c3e26; --ink-3:#7a5c34; --ink-4:#9a7e4e;
+  --gold:#a8741a; --gold-light:#c5912b; --gold-text:#6b4516;
+  --bg:#d8bd80; --bg-2:#e3c98c; --sunk:#c9a85f;
+  --surface:#ecdcae; --surface-2:#f2e6c2; --color-surface:var(--surface);
+  --br-deep:#4a2810; --river:#27566a; --river-l:#3f7d92;
+  --border:rgba(58,40,16,.2); --line-2:rgba(58,40,16,.32); --wash:rgba(58,40,16,.1);
+  --glass:rgba(245,233,200,.5); --glass-2:rgba(245,233,200,.82);
+  --text-on-dark:#fdfaf3; --wordmark:#8a5e15;
+  --marginalia-color:#1d8f68; --danger:#9c3f1c; --danger-line:rgba(150,50,24,.45);
+  --grad:linear-gradient(92deg,#b8841f,#27566a);
+
+  /* ---- Register palette (real theme.css; used for on-palette cover art) ---- */
+  --register-theory:var(--br-deep);
+  --register-wisdom:var(--gold);
+  --register-memoir:var(--river);
+  --register-novel:#c9a85a;
+  --register-poetry:#3a3573;
+  --register-place:#5a6b3a;
+
+  /* ---- Radii / spacing / motion (real theme.css) ---- */
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:22px; --radius-pill:999px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --ease:cubic-bezier(0.22,1,0.36,1); --motion-base:350ms;
+
+  /* ---- Shadows (real theme.css family — warm, never black-rgba) ---- */
+  --shadow-1:2px 3px 6px color-mix(in srgb,var(--br-deep) 8%,transparent),4px 8px 18px color-mix(in srgb,var(--br-deep) 6%,transparent);
+  --shadow-2:3px 5px 12px color-mix(in srgb,var(--br-deep) 10%,transparent),8px 16px 32px color-mix(in srgb,var(--br-deep) 8%,transparent);
+  --shadow-cover:0 24px 50px -20px #000;
+
+  /* ---- Page ground (real theme.css body::before radial) ---- */
+  --ground-center:#e6cb8e; --ground-settle:#c4a35a;
+
+  /* ---- Mockup scaffolding ONLY (the dark display ground + chrome), not app tokens.
+         Every literal the mockup needs OUTSIDE the app palette lives here so the
+         rest of the stylesheet is 100% var()-driven. ---- */
+  --mock-ground:#312814;       /* the dark ground the app "windows" float on */
+  --mock-caption:#e9dcb4;      /* cream caption text on the dark ground */
+  --mock-winbar:rgba(243,234,206,.94);
+  --mock-dot-r:#e0654f; --mock-dot-y:#e7b24a; --mock-dot-g:#73a857;
+  --mock-white:#fff;                       /* white on the dark display ground */
+  --mock-switcher:rgba(28,22,11,.86);      /* sticky switcher bar over the ground */
+  --mock-drop:rgba(0,0,0,.42);             /* app-window drop on the dark ground */
+  --mock-drop-2:rgba(0,0,0,.5);            /* phone-frame drop */
+  --mock-hairline:rgba(255,255,255,.06);   /* 1px top hairline on dark chrome */
+  --cam-1:#3a2a1a; --cam-2:#1a1109;        /* barcode camera viewfinder interior (intentionally near-black) */
+  --phone-frame:#1a130a;                   /* phone bezel */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:var(--mock-ground);
+  padding:0 0 90px;
+  -webkit-font-smoothing:antialiased;
+}
+.serif{font-family:var(--font-serif)}
+.mono{font-family:var(--font-mono)}
+
+/* =====================================================================
+   Mockup scaffolding — page head + the sticky screen switcher.
+   ===================================================================== */
+.mockhead{max-width:1180px;margin:0 auto;padding:34px 22px 10px;text-align:center;color:var(--mock-caption)}
+.mockhead h1{font-family:var(--font-serif);font-size:30px;font-weight:600;color:var(--mock-white);letter-spacing:.01em}
+.mockhead p{font-size:13.5px;line-height:1.6;margin:9px auto 0;max-width:80ch;opacity:.86}
+.mockhead .ver{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:10px}
+
+.switcher{position:sticky;top:0;z-index:50;background:var(--mock-switcher);backdrop-filter:blur(6px);
+  border-bottom:1px solid color-mix(in srgb,var(--mock-caption) 16%,transparent);margin-top:18px}
+.switcher-in{max-width:1180px;margin:0 auto;padding:11px 22px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.swbtn{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mock-caption);background:transparent;border:1px solid color-mix(in srgb,var(--mock-caption) 26%,transparent);
+  border-radius:var(--radius-pill);padding:8px 15px;cursor:pointer;transition:all var(--motion-base) var(--ease)}
+.swbtn:hover{border-color:color-mix(in srgb,var(--mock-caption) 60%,transparent);color:var(--mock-white)}
+.swbtn.on{background:var(--mock-caption);color:var(--mock-ground);border-color:var(--mock-caption);font-weight:500}
+.swsep{width:1px;height:22px;background:color-mix(in srgb,var(--mock-caption) 20%,transparent);margin:0 4px}
+
+.screen{display:none;max-width:1180px;margin:0 auto;padding:30px 22px 0}
+.screen.is-active{display:block}
+.cap{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--mock-caption);opacity:.92;margin:0 0 13px 3px}
+.cap b{color:var(--mock-white);font-weight:500}
+.dualwrap{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.dualcol{flex:1 1 540px;min-width:320px;max-width:760px}
+.dualcol.phonecol{flex:0 0 auto;max-width:none}
+
+/* =====================================================================
+   App "window" chrome — a browser frame the real app renders inside.
+   ===================================================================== */
+.win{width:100%;border-radius:16px;overflow:hidden;box-shadow:0 26px 70px var(--mock-drop);
+  border:1px solid var(--mock-hairline);background:var(--ground-settle)}
+.winbar{height:38px;background:var(--mock-winbar);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 15px;gap:14px}
+.dots{display:flex;gap:7px}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:var(--mock-dot-r)}
+.dots i:nth-child(2){background:var(--mock-dot-y)}
+.dots i:nth-child(3){background:var(--mock-dot-g)}
+.urlpill{margin:0 auto;background:var(--wash);border-radius:7px;padding:5px 18px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+
+/* the real Praxis page ground (honey radial) inside the window */
+.appground{position:relative;
+  background:radial-gradient(1100px 560px at 50% -6%,var(--ground-center),var(--bg) 55%,var(--ground-settle) 100%),var(--ground-settle)}
+
+/* =====================================================================
+   Nav (canon §4: solid, no blur; mono uppercase links; gold underline
+   active; gradient avatar; quiet recessed search).
+   ===================================================================== */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:22px;
+  padding:16px 30px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.wm{font-family:var(--font-serif);font-size:24px;font-weight:500;color:var(--wordmark)}
+.nlinks{display:flex;gap:30px;align-items:center}
+.nlink{font-family:var(--font-mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+.nlink.on{color:var(--ink);border-bottom-color:var(--gold)}
+.navright{display:flex;align-items:center;gap:16px}
+.nav-search{display:flex;align-items:center;gap:9px;height:34px;padding:0 13px;
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-pill);
+  color:var(--ink-3);font-size:12.5px;min-width:170px}
+.nav-search .k{margin-left:auto;font-family:var(--font-mono);font-size:10px;
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--ink-4)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;color:var(--text-on-dark);
+  font-family:var(--font-serif);font-size:17px}
+
+.appbody{padding:34px 30px 44px;position:relative}
+.appbody.tight{padding:26px 24px 34px}
+
+/* page heading inside the app */
+.pgeyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+.pgtitle{font-family:var(--font-serif);font-size:34px;font-weight:500;line-height:1.08;color:var(--ink)}
+.pgsub{font-size:14px;color:var(--ink-2);margin-top:7px;line-height:1.5}
+
+/* =====================================================================
+   Shared primitives (canon §4-D: additive primitive classes).
+   ===================================================================== */
+.eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.btn{font-family:var(--font-body);font-size:13.5px;font-weight:500;border-radius:var(--radius-md);
+  padding:11px 18px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;
+  justify-content:center;gap:7px;line-height:1;transition:filter var(--motion-base) var(--ease),border-color var(--motion-base) var(--ease),color var(--motion-base) var(--ease)}
+.btn-primary{background:var(--grad);color:var(--text-on-dark);font-weight:600}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:var(--glass-2);color:var(--ink);border-color:var(--line-2)}
+.btn-ghost:hover{border-color:var(--ink-3)}
+.btn-quiet{background:var(--surface-2);color:var(--ink-2);border-color:var(--border)}
+.btn-quiet:hover{border-color:var(--ink-3);color:var(--ink)}
+.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger-line)}
+.btn-sm{padding:8px 13px;font-size:12.5px}
+.btn-lg{padding:14px 24px;font-size:15px;border-radius:13px}
+
+.chip{height:38px;padding:0 14px;font-family:var(--font-body);font-size:13px;font-weight:500;
+  color:var(--ink-2);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius-md);cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  transition:border-color var(--motion-base) var(--ease),color var(--motion-base) var(--ease)}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+
+.lenschip{font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-2);background:var(--wash);border:1px solid var(--border);border-radius:var(--radius-pill);
+  padding:5px 11px;display:inline-flex;align-items:center}
+
+.search{height:48px;border-radius:12px;background:var(--glass);border:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;padding:0 16px;color:var(--ink-3);font-size:15px;min-width:260px;flex:1 1 auto}
+.search input{flex:1 1 auto;min-width:0;border:none;background:transparent;outline:none;
+  font-family:var(--font-body);font-size:15px;color:var(--ink)}
+.search input::placeholder{color:var(--ink-3)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text-on-dark) 50%,transparent) inset,0 16px 36px -24px color-mix(in srgb,var(--br-deep) 50%,transparent)}
+
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--gold)}
+
+/* segmented control (the app pill idiom) */
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius-pill);overflow:hidden;background:var(--glass)}
+.seg-opt{padding:7px 15px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);background:transparent;border:none;cursor:pointer}
+.seg-opt.on{background:var(--wash);color:var(--ink)}
+
+/* =====================================================================
+   Read-status control (the heart of the review flow).  Three options:
+   Currently reading / Have read / Will read — DEFAULTS to "Have read".
+   ===================================================================== */
+.rstatus{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius-pill);overflow:hidden;background:var(--glass-2)}
+.rs-opt{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);background:transparent;border:none;padding:8px 13px;cursor:pointer;white-space:nowrap;
+  border-left:1px solid var(--border)}
+.rs-opt:first-child{border-left:none}
+.rs-opt.on{background:var(--gold);color:var(--text-on-dark)}
+.rs-opt .dotmark{display:inline-block;width:5px;height:5px;margin-right:5px;background:currentColor;vertical-align:middle}
+
+/* =====================================================================
+   Cover art — on-palette typographic covers (fully offline).  A "real"
+   cover = .cover-art (token gradient + typeset).  Missing cover =
+   .cover-pending (the app's recessed COVER PENDING well).  No-match =
+   .cover-unknown (a "?" frame).
+   ===================================================================== */
+.cover{aspect-ratio:2/3;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--ink-4);
+  box-shadow:var(--shadow-1);position:relative;flex:0 0 auto}
+.cover-art{width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;
+  padding:11% 12%;color:var(--text-on-dark)}
+.cover-art .ca-au{font-family:var(--font-mono);font-size:.62em;letter-spacing:.08em;text-transform:uppercase;opacity:.86}
+.cover-art .ca-ti{font-family:var(--font-serif);font-weight:600;font-size:1.18em;line-height:1.05}
+.cover-art .ca-pub{font-family:var(--font-mono);font-size:.5em;letter-spacing:.1em;text-transform:uppercase;opacity:.7;border-top:1px solid color-mix(in srgb,var(--text-on-dark) 40%,transparent);padding-top:6%}
+.ca-theory{background:linear-gradient(165deg,var(--br-deep),color-mix(in srgb,var(--br-deep) 60%,var(--ink)))}
+.ca-wisdom{background:linear-gradient(165deg,var(--gold-light),var(--gold-text))}
+.ca-memoir{background:linear-gradient(165deg,var(--river-l),var(--river))}
+.ca-poetry{background:linear-gradient(165deg,color-mix(in srgb,var(--register-poetry) 78%,var(--text-on-dark)),var(--register-poetry))}
+.ca-place{background:linear-gradient(165deg,color-mix(in srgb,var(--register-place) 74%,var(--text-on-dark)),var(--register-place))}
+
+.cover-pending{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:12%;text-align:center;background:linear-gradient(160deg,var(--surface),var(--sunk))}
+.cover-pending .cp-ti{font-family:var(--font-serif);font-style:italic;font-size:.95em;line-height:1.2;color:var(--ink-2)}
+.cover-pending .cp-lab{font-family:var(--font-mono);font-size:.6em;letter-spacing:.08em;text-transform:lowercase;color:var(--ink-3)}
+.cover-unknown{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background:repeating-linear-gradient(45deg,var(--sunk),var(--sunk) 9px,var(--surface) 9px,var(--surface) 18px)}
+.cover-unknown .cu-q{font-family:var(--font-serif);font-size:1.9em;color:var(--ink-3);background:var(--surface-2);
+  width:1.7em;height:1.7em;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.cover-unknown .cu-lab{font-family:var(--font-mono);font-size:.55em;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+
+/* =====================================================================
+   Screen A — Review & Confirm.
+   ===================================================================== */
+.review-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin:22px 0 16px;padding:16px 18px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.review-bar .rb-left{display:flex;align-items:center;gap:12px}
+.review-bar .rb-count{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.review-bar .rb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.review-rows{display:flex;flex-direction:column;gap:12px}
+.rrow{display:grid;grid-template-columns:54px 1fr auto;gap:16px;align-items:center;
+  padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-1);position:relative}
+.rrow.flagged{border-color:color-mix(in srgb,var(--gold) 55%,var(--border));
+  box-shadow:var(--shadow-1),inset 3px 0 0 var(--gold-light)}
+.rrow.nomatch{border-style:dashed;border-color:var(--line-2);background:color-mix(in srgb,var(--surface) 86%,var(--danger) 5%)}
+.rrow .cover{width:54px}
+.rrow-main{min-width:0}
+.rrow-ti{font-family:var(--font-serif);font-size:19px;font-weight:500;line-height:1.1;color:var(--ink)}
+.rrow-au{font-family:var(--font-serif);font-style:italic;font-size:15px;color:var(--ink-2);margin-top:1px}
+.rrow-meta{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+.rrow-flags{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px}
+.rrow-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+
+.conf{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:var(--radius-pill);border:1px solid transparent}
+.conf-high{color:var(--marginalia-color);background:color-mix(in srgb,var(--marginalia-color) 12%,transparent);
+  border-color:color-mix(in srgb,var(--marginalia-color) 30%,transparent)}
+.conf-low{color:var(--gold-text);background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.conf-none{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent);border-color:var(--danger-line)}
+.notthis{font-family:var(--font-body);font-size:12px;color:var(--river);background:transparent;border:none;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0}
+.notthis:hover{color:var(--ink)}
+.flagnote{font-family:var(--font-body);font-size:12px;color:var(--gold-text);font-style:italic}
+
+/* manual-entry inline fields (no-match row) */
+.manual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.manual .fld{display:flex;flex-direction:column;gap:3px}
+.manual label{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.manual input{font-family:var(--font-body);font-size:13.5px;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:7px 9px;outline:none}
+.manual input:focus{border-color:var(--gold)}
+.manual .fld-wide{grid-column:1 / -1}
+.scanned-as{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;color:var(--ink-3);margin-bottom:8px}
+.scanned-as b{color:var(--danger);font-weight:500;letter-spacing:0}
+
+/* =====================================================================
+   Screen B — Edition picker (one row expanded).
+   ===================================================================== */
+.edition-picker{grid-column:1 / -1;margin-top:14px;padding:16px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:var(--radius-md)}
+.ep-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ep-head .ep-t{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.ep-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.edition-card{display:flex;gap:11px;padding:11px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--motion-base) var(--ease),box-shadow var(--motion-base) var(--ease)}
+.edition-card:hover{border-color:var(--ink-3)}
+.edition-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),var(--shadow-1)}
+.edition-card .cover{width:46px}
+.ec-main{min-width:0}
+.ec-pub{font-family:var(--font-serif);font-size:15px;color:var(--ink);line-height:1.15}
+.ec-au{font-family:var(--font-serif);font-style:italic;font-size:13px;color:var(--ink-2)}
+.ec-meta{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+.ec-pick{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--marginalia-color);margin-top:7px;visibility:hidden}
+.edition-card.selected .ec-pick{visibility:visible}
+
+/* =====================================================================
+   Screen C — Add entry points + barcode scan.
+   ===================================================================== */
+.addrow{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
+.add-menu{width:300px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-2);overflow:hidden}
+.add-menu .am-head{padding:14px 18px;border-bottom:1px solid var(--border);font-family:var(--font-mono);
+  font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.am-item{display:flex;align-items:center;gap:13px;padding:15px 18px;cursor:pointer;border-bottom:1px solid var(--border);
+  background:transparent;width:100%;text-align:left;border-left:none;border-right:none;border-top:none}
+.am-item:last-child{border-bottom:none}
+.am-item:hover{background:var(--wash)}
+.am-item.on{background:var(--wash)}
+.am-ico{width:38px;height:38px;border-radius:var(--radius-md);background:var(--surface-2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink-2);flex:0 0 auto}
+.am-tx{display:flex;flex-direction:column;gap:2px}
+.am-tx .am-t{font-family:var(--font-body);font-size:14.5px;font-weight:600;color:var(--ink)}
+.am-tx .am-d{font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.35}
+
+/* barcode scan view */
+.scan-frame{width:300px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--ink-4);box-shadow:var(--shadow-2);background:var(--br-deep)}
+.scan-view{position:relative;aspect-ratio:3/4;
+  background:radial-gradient(120% 90% at 50% 25%,var(--cam-1),var(--cam-2) 90%);display:flex;align-items:center;justify-content:center}
+.scan-cam{position:absolute;inset:0;background:
+  repeating-linear-gradient(transparent,transparent 13px,color-mix(in srgb,var(--text-on-dark) 3%,transparent) 13px,color-mix(in srgb,var(--text-on-dark) 3%,transparent) 14px)}
+.reticle{position:relative;width:74%;height:30%;border-radius:10px;
+  box-shadow:0 0 0 2000px color-mix(in srgb,var(--br-deep) 38%,transparent)}
+.reticle::before,.reticle::after{content:"";position:absolute;width:26px;height:26px}
+.corner{position:absolute;width:26px;height:26px;border:3px solid var(--gold-light)}
+.corner.tl{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.corner.tr{top:-2px;right:-2px;border-left:none;border-bottom:none;border-radius:0 8px 0 0}
+.corner.bl{bottom:-2px;left:-2px;border-right:none;border-top:none;border-radius:0 0 0 8px}
+.corner.br{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 8px 0}
+.barcode{display:flex;gap:2px;align-items:stretch;height:54%;padding:0 14px;opacity:.92}
+.barcode i{display:block;width:3px;background:var(--text-on-dark)}
+.scanline{position:absolute;left:13%;right:13%;height:2px;background:var(--gold-light);box-shadow:0 0 9px 2px color-mix(in srgb,var(--gold-light) 70%,transparent);
+  top:50%;animation:scanmove 2.4s var(--ease) infinite alternate}
+@keyframes scanmove{from{transform:translateY(-44px)}to{transform:translateY(44px)}}
+.scan-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-on-dark);opacity:.92}
+.isbn-fallback{padding:15px;background:var(--surface)}
+.isbn-fallback .if-lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+.isbn-fallback .if-row{display:flex;gap:8px}
+.isbn-fallback input{flex:1 1 auto;min-width:0;font-family:var(--font-mono);font-size:14px;letter-spacing:.04em;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:9px 11px;outline:none}
+.isbn-fallback input:focus{border-color:var(--gold)}
+
+/* =====================================================================
+   Screen D — Book-detail card.
+   ===================================================================== */
+.bd{display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start}
+.bd-covercol{display:flex;flex-direction:column;gap:14px}
+.bd-cover{width:100%;aspect-ratio:2/3;border:1px solid var(--ink-4);border-radius:var(--radius-lg);box-shadow:var(--shadow-cover);overflow:hidden}
+.bd-actions{display:flex;flex-direction:column;gap:8px}
+.bd-actions .btn{width:100%}
+.bd-actions-row{display:flex;flex-direction:column;gap:8px}
+.bd-content{min-width:0}
+.bd-title{font-family:var(--font-serif);font-size:42px;font-weight:500;line-height:1.02;color:var(--ink);margin-bottom:4px}
+.bd-author{font-family:var(--font-serif);font-style:italic;font-size:20px;color:var(--ink-2);margin-bottom:16px}
+.bd-meta{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px}
+.bd-statusrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.bd-statusrow .lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.bd-desc{font-size:15px;line-height:1.62;color:var(--ink-2);margin-bottom:16px;max-width:60ch}
+.bd-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.bd-rate{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 18px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:18px}
+.bd-rate .rate-stars{font-size:19px;letter-spacing:3px;color:var(--gold)}
+.bd-rate .rate-stars .off{color:var(--ink-4);opacity:.5}
+.bd-rate .rate-date{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.bd-rate .rate-sep{width:1px;height:20px;background:var(--border)}
+.bd-artifact{padding:20px 24px;margin-bottom:18px}
+.bd-artifact .ar-body{font-family:var(--font-serif);font-style:italic;font-size:16px;line-height:1.55;color:var(--ink-2);margin-top:8px}
+.bd-fix{font-family:var(--font-body);font-size:13px;color:var(--river);background:transparent;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;padding:0;text-decoration:underline;text-underline-offset:2px}
+.bd-fix:hover{color:var(--ink)}
+
+/* =====================================================================
+   Screen E — Existing-library cleanup.
+   ===================================================================== */
+.cl-summary{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0 18px}
+.cl-stat{flex:1 1 180px;padding:18px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-1)}
+.cl-stat .n{font-family:var(--font-serif);font-size:34px;font-weight:500;color:var(--ink);line-height:1}
+.cl-stat .l{font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.4}
+.cl-stat.warn .n{color:var(--danger)}
+.cl-stat.warn{border-color:var(--danger-line)}
+.cl-list{display:flex;flex-direction:column;gap:12px}
+.cl-item{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;
+  padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-1)}
+.cl-kind{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:var(--radius-pill);
+  color:var(--ink-2);background:var(--wash);border:1px solid var(--border);white-space:nowrap}
+.cl-kind.dup{color:var(--danger);background:color-mix(in srgb,var(--danger) 9%,transparent);border-color:var(--danger-line)}
+.cl-kind.miss{color:var(--gold-text);background:color-mix(in srgb,var(--gold) 14%,transparent);border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.cl-mid .cl-ti{font-family:var(--font-serif);font-size:18px;font-weight:500;color:var(--ink);line-height:1.1}
+.cl-mid .cl-au{font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink-2)}
+.cl-mid .cl-note{font-size:12.5px;color:var(--ink-3);margin-top:5px;line-height:1.4}
+.cl-actions{display:flex;gap:8px;align-items:center}
+.before-after{display:flex;align-items:center;gap:12px}
+.before-after .ba-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.before-after .ba-lab{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.before-after .cover{width:48px}
+.before-after .ba-arrow{font-size:20px;color:var(--ink-3)}
+
+/* the cleanup before→after hero example */
+.cl-hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:20px 24px;margin-bottom:20px}
+.cl-hero .ba-big .cover{width:90px}
+.cl-hero .cl-hero-tx{flex:1 1 240px;min-width:0}
+.cl-hero .cl-hero-tx h3{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--ink);margin-bottom:6px}
+.cl-hero .cl-hero-tx p{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+
+/* =====================================================================
+   Phone frame (~390px) for mobile review + mobile book-detail.
+   ===================================================================== */
+.phone{width:390px;border-radius:42px;background:var(--phone-frame);padding:12px;box-shadow:0 30px 70px var(--mock-drop-2);border:1px solid var(--mock-hairline)}
+.phone-screen{border-radius:32px;overflow:hidden;background:var(--ground-settle);height:760px;overflow-y:auto;position:relative}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:var(--phone-frame);border-radius:0 0 16px 16px;z-index:5}
+.m-ground{min-height:100%;background:radial-gradient(900px 460px at 50% -6%,var(--ground-center),var(--bg) 55%,var(--ground-settle) 100%),var(--ground-settle)}
+.m-nav{display:flex;align-items:center;justify-content:space-between;padding:30px 18px 12px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.m-nav .wm{font-size:21px}
+.m-burger{display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.m-burger i{width:21px;height:2px;background:var(--ink-2);display:block}
+.m-body{padding:20px 16px 30px}
+.m-h{font-family:var(--font-serif);font-size:26px;font-weight:500;color:var(--ink);line-height:1.1}
+.m-sub{font-size:13px;color:var(--ink-2);margin-top:5px}
+
+/* mobile review rows */
+.m-rrow{padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-1);margin-top:12px}
+.m-rrow.flagged{border-color:color-mix(in srgb,var(--gold) 55%,var(--border));box-shadow:var(--shadow-1),inset 3px 0 0 var(--gold-light)}
+.m-rrow.nomatch{border-style:dashed;background:color-mix(in srgb,var(--surface) 86%,var(--danger) 5%)}
+.m-rrow-top{display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:start}
+.m-rrow .cover{width:48px}
+.m-rrow-ti{font-family:var(--font-serif);font-size:17px;font-weight:500;line-height:1.08;color:var(--ink)}
+.m-rrow-au{font-family:var(--font-serif);font-style:italic;font-size:13px;color:var(--ink-2)}
+.m-rrow-meta{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
+.m-rrow .rstatus{display:flex;margin-top:11px;width:100%}
+.m-rrow .rs-opt{flex:1 1 0;text-align:center;padding:8px 4px}
+.m-rrow-flags{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px}
+
+/* mobile book-detail — canon §4-I reorder via source order */
+.m-bd .cover{width:150px;aspect-ratio:2/3;margin:0 auto;display:block}
+.m-bd-title{font-family:var(--font-serif);font-size:28px;font-weight:500;line-height:1.05;color:var(--ink);text-align:center;margin-top:16px}
+.m-bd-author{font-family:var(--font-serif);font-style:italic;font-size:16px;color:var(--ink-2);text-align:center;margin-top:3px}
+.m-bd-meta{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-top:10px}
+.m-bd .rstatus{display:flex;width:100%;margin:16px 0}
+.m-bd .rs-opt{flex:1 1 0;text-align:center;padding:9px 4px}
+.m-bd-stack{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.m-bd-stack .btn{width:100%}
+.m-bd-pair{display:flex;gap:9px}
+.m-bd-pair .btn{flex:1 1 0}
+.m-bd-artifact{margin-top:16px;padding:16px 18px}
+.m-bd-artifact .ar-body{font-family:var(--font-serif);font-style:italic;font-size:14.5px;line-height:1.5;color:var(--ink-2);margin-top:7px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--text-on-dark);font-size:14px;padding:13px 22px;border-radius:var(--radius-pill);
+  box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:all var(--motion-base) var(--ease);z-index:200;
+  display:flex;align-items:center;gap:9px}
+.toast .status-dot{background:var(--marginalia-color)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.legend{margin-top:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--mock-caption);opacity:.78;line-height:1.7}
+.legend b{color:var(--mock-white);font-weight:500}
+
+/* responsive: stack the desktop book-detail grid if the window is narrow */
+@media (max-width:720px){
+  .bd{grid-template-columns:1fr}
+  .ep-grid{grid-template-columns:1fr}
+  .manual{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="mockhead">
+  <h1 class="serif">Praxis — Books&nbsp;#6</h1>
+  <p>The redesigned <b>Books / shelf-upload</b> experience — review &amp; confirm a scanned batch, the
+  edition picker, add &amp; barcode-scan entry points, the book-detail card, and the one-time
+  library cleanup pass. Standalone visual spec; wired to Praxis's real <span class="mono">theme.css</span>
+  tokens. No backend.</p>
+  <div class="ver">visual mockup · for eyes-on review · not a build</div>
+</div>
+
+<!-- ============ SCREEN SWITCHER ============ -->
+<nav class="switcher">
+  <div class="switcher-in">
+    <button class="swbtn on" data-go="A">A · Review &amp; Confirm</button>
+    <button class="swbtn" data-go="B">B · Edition picker</button>
+    <button class="swbtn" data-go="C">C · Add &amp; Barcode</button>
+    <button class="swbtn" data-go="D">D · Book detail</button>
+    <button class="swbtn" data-go="E">E · Library cleanup</button>
+  </div>
+</nav>
+
+<!-- ===================================================================
+     SCREEN A — REVIEW & CONFIRM  (desktop + mobile frame)
+     =================================================================== -->
+<section class="screen is-active" data-screen="A">
+  <p class="cap"><b>Screen A — Review &amp; Confirm</b> · the heart: auto-matched scan batch, per-row read-status (defaults <b>Have read</b>), all row states</p>
+
+  <div class="dualwrap">
+    <!-- DESKTOP -->
+    <div class="dualcol">
+      <p class="cap">Desktop</p>
+      <div class="win">
+        <div class="winbar"><span class="dots"><i></i><i></i><i></i></span><span class="urlpill">praxis-reading.netlify.app/#shelf/review</span></div>
+        <div class="appground">
+          <div class="nav">
+            <span class="wm serif">Praxis</span>
+            <span class="nlinks">
+              <a class="nlink" href="#A">Home</a>
+              <a class="nlink on" href="#A">Shelf</a>
+              <a class="nlink" href="#A">Arcs</a>
+              <a class="nlink" href="#A">Notebook</a>
+              <a class="nlink" href="#A">Account</a>
+            </span>
+            <span class="navright">
+              <span class="nav-search">⌕ Search<span class="k">⌘K</span></span>
+              <span class="avatar serif">P</span>
+            </span>
+          </div>
+          <div class="appbody">
+            <div class="pgeyebrow">Shelf · scan review</div>
+            <div class="pgtitle serif">Review your shelf</div>
+            <div class="pgsub">We matched 6 books from your photo. Confirm each one, set how you've read it, then save them to your shelf.</div>
+
+            <!-- bulk bar -->
+            <div class="review-bar">
+              <div class="rb-left">
+                <span class="rb-count">6 books matched · 1 needs a look</span>
+              </div>
+              <div class="rb-right">
+                <button class="btn btn-quiet btn-sm" id="markAll">Mark all as read</button>
+                <button class="btn btn-ghost btn-sm" data-go="C">+ Add another</button>
+                <button class="btn btn-primary" id="confirmA">Confirm &amp; save 6 →</button>
+              </div>
+            </div>
+
+            <div class="review-rows">
+
+              <!-- ROW 1 — HIGH CONFIDENCE, CLEAN -->
+              <div class="rrow" data-state="high-confidence">
+                <div class="cover"><div class="cover-art ca-theory"><span class="ca-au">Paulo Freire</span><span class="ca-ti serif">Pedagogy of the Oppressed</span><span class="ca-pub">Continuum</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">Pedagogy of the Oppressed</div>
+                  <div class="rrow-au serif">Paulo Freire</div>
+                  <div class="rrow-meta">1970 · Continuum · 183 pp · ISBN 978-0826412768</div>
+                  <div class="rrow-flags">
+                    <span class="conf conf-high"><span class="status-dot" style="background:var(--marginalia-color)"></span>99% match</span>
+                    <button class="notthis">not this one?</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ROW 2 — LOW CONFIDENCE, FLAGGED "check this" -->
+              <div class="rrow flagged" data-state="low-confidence">
+                <div class="cover"><div class="cover-art ca-wisdom"><span class="ca-au">bell hooks</span><span class="ca-ti serif">Teaching to Transgress</span><span class="ca-pub">Routledge</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">Teaching to Transgress</div>
+                  <div class="rrow-au serif">bell hooks</div>
+                  <div class="rrow-meta">1994 · Routledge · 216 pp · ISBN 978-0415908085</div>
+                  <div class="rrow-flags">
+                    <span class="conf conf-low">check this · 71%</span>
+                    <span class="flagnote">spine was blurry — confirm the edition</span>
+                    <button class="notthis" data-go="B">not this one?</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ROW 3 — AMBIGUOUS SHARED-TITLE (expands in Screen B) -->
+              <div class="rrow flagged" data-state="ambiguous">
+                <div class="cover"><div class="cover-art ca-memoir"><span class="ca-au">Angela Y. Davis</span><span class="ca-ti serif">Women, Race &amp; Class</span><span class="ca-pub">Vintage</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">Women, Race &amp; Class</div>
+                  <div class="rrow-au serif">Angela Y. Davis</div>
+                  <div class="rrow-meta">3 editions share this title · pick the right one</div>
+                  <div class="rrow-flags">
+                    <span class="conf conf-low">ambiguous · 3 editions</span>
+                    <button class="notthis" data-go="B">choose edition →</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ROW 4 — NO COVER, clean text placeholder -->
+              <div class="rrow" data-state="no-cover">
+                <div class="cover"><div class="cover-pending"><span class="cp-ti serif">The Fire Next Time</span><span class="cp-lab mono">cover pending</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">The Fire Next Time</div>
+                  <div class="rrow-au serif">James Baldwin</div>
+                  <div class="rrow-meta">1963 · Dial Press · 106 pp · cover not found — will keep looking</div>
+                  <div class="rrow-flags">
+                    <span class="conf conf-high"><span class="status-dot" style="background:var(--marginalia-color)"></span>match confirmed</span>
+                    <button class="notthis">not this one?</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ROW 5 — HIGH CONFIDENCE (shows a non-default status pick is possible) -->
+              <div class="rrow" data-state="high-confidence">
+                <div class="cover"><div class="cover-art ca-poetry"><span class="ca-au">Robin D. G. Kelley</span><span class="ca-ti serif">Freedom Dreams</span><span class="ca-pub">Beacon</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">Freedom Dreams</div>
+                  <div class="rrow-au serif">Robin D. G. Kelley</div>
+                  <div class="rrow-meta">2002 · Beacon Press · 264 pp · ISBN 978-0807009772</div>
+                  <div class="rrow-flags">
+                    <span class="conf conf-high"><span class="status-dot" style="background:var(--marginalia-color)"></span>97% match</span>
+                    <button class="notthis">not this one?</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ROW 6 — NO MATCH, editable manual entry -->
+              <div class="rrow nomatch" data-state="no-match">
+                <div class="cover"><div class="cover-unknown"><span class="cu-q serif">?</span><span class="cu-lab mono">no match</span></div></div>
+                <div class="rrow-main">
+                  <div class="scanned-as">scanned as <b>“Hammr &amp; Hoe · Alabama Comm…”</b> — no confident match. Edit below to add it by hand.</div>
+                  <div class="manual">
+                    <div class="fld fld-wide"><label>Title</label><input type="text" value="Hammer and Hoe"></div>
+                    <div class="fld"><label>Author</label><input type="text" value="Robin D. G. Kelley"></div>
+                    <div class="fld"><label>Year</label><input type="text" value="1990"></div>
+                    <div class="fld fld-wide"><label>ISBN (optional)</label><input type="text" placeholder="search again by ISBN…"></div>
+                  </div>
+                  <div class="rrow-flags" style="margin-top:11px">
+                    <span class="conf conf-none">no match — manual entry</span>
+                    <button class="notthis" data-go="C">search again →</button>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /review-rows -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE FRAME (~390px) -->
+    <div class="dualcol phonecol">
+      <p class="cap">Mobile · 390px</p>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="m-ground">
+            <div class="m-nav">
+              <span class="wm serif">Praxis</span>
+              <span class="m-burger"><i></i><i></i><i></i></span>
+            </div>
+            <div class="m-body">
+              <div class="m-h serif">Review your shelf</div>
+              <div class="m-sub">6 matched · 1 needs a look</div>
+
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button class="btn btn-quiet btn-sm" onclick="markAllMobile()">Mark all read</button>
+                <button class="btn btn-primary btn-sm" style="flex:1 1 auto" onclick="praxToast('Saved 6 books to your shelf')">Confirm &amp; save →</button>
+              </div>
+
+              <!-- mobile row: high-confidence -->
+              <div class="m-rrow" data-state="high-confidence">
+                <div class="m-rrow-top">
+                  <div class="cover"><div class="cover-art ca-theory"><span class="ca-au">Freire</span><span class="ca-ti serif">Pedagogy of the Oppressed</span><span class="ca-pub">Continuum</span></div></div>
+                  <div>
+                    <div class="m-rrow-ti serif">Pedagogy of the Oppressed</div>
+                    <div class="m-rrow-au serif">Paulo Freire</div>
+                    <div class="m-rrow-meta">1970 · 183 pp</div>
+                    <div class="m-rrow-flags"><span class="conf conf-high">99%</span><button class="notthis">not this one?</button></div>
+                  </div>
+                </div>
+                <div class="rstatus" data-status="read">
+                  <button class="rs-opt" data-v="reading">Reading</button>
+                  <button class="rs-opt on" data-v="read">Have read</button>
+                  <button class="rs-opt" data-v="will">Will read</button>
+                </div>
+              </div>
+
+              <!-- mobile row: low-confidence flagged -->
+              <div class="m-rrow flagged" data-state="low-confidence">
+                <div class="m-rrow-top">
+                  <div class="cover"><div class="cover-art ca-wisdom"><span class="ca-au">hooks</span><span class="ca-ti serif">Teaching to Transgress</span><span class="ca-pub">Routledge</span></div></div>
+                  <div>
+                    <div class="m-rrow-ti serif">Teaching to Transgress</div>
+                    <div class="m-rrow-au serif">bell hooks</div>
+                    <div class="m-rrow-meta">1994 · 216 pp</div>
+                    <div class="m-rrow-flags"><span class="conf conf-low">check this</span><button class="notthis" data-go="B">not this one?</button></div>
+                  </div>
+                </div>
+                <div class="rstatus" data-status="read">
+                  <button class="rs-opt" data-v="reading">Reading</button>
+                  <button class="rs-opt on" data-v="read">Have read</button>
+                  <button class="rs-opt" data-v="will">Will read</button>
+                </div>
+              </div>
+
+              <!-- mobile row: no-cover -->
+              <div class="m-rrow" data-state="no-cover">
+                <div class="m-rrow-top">
+                  <div class="cover"><div class="cover-pending"><span class="cp-ti serif">The Fire Next Time</span><span class="cp-lab mono">cover pending</span></div></div>
+                  <div>
+                    <div class="m-rrow-ti serif">The Fire Next Time</div>
+                    <div class="m-rrow-au serif">James Baldwin</div>
+                    <div class="m-rrow-meta">1963 · 106 pp</div>
+                    <div class="m-rrow-flags"><span class="conf conf-high">confirmed</span></div>
+                  </div>
+                </div>
+                <div class="rstatus" data-status="read">
+                  <button class="rs-opt" data-v="reading">Reading</button>
+                  <button class="rs-opt on" data-v="read">Have read</button>
+                  <button class="rs-opt" data-v="will">Will read</button>
+                </div>
+              </div>
+
+              <!-- mobile row: no-match manual -->
+              <div class="m-rrow nomatch" data-state="no-match">
+                <div class="m-rrow-top">
+                  <div class="cover"><div class="cover-unknown"><span class="cu-q serif">?</span><span class="cu-lab mono">no match</span></div></div>
+                  <div>
+                    <div class="scanned-as">scanned “Hammr &amp; Hoe…”</div>
+                    <div class="manual" style="grid-template-columns:1fr">
+                      <div class="fld"><label>Title</label><input type="text" value="Hammer and Hoe"></div>
+                      <div class="fld"><label>Author</label><input type="text" value="Robin D. G. Kelley"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rstatus" data-status="read">
+                  <button class="rs-opt" data-v="reading">Reading</button>
+                  <button class="rs-opt on" data-v="read">Have read</button>
+                  <button class="rs-opt" data-v="will">Will read</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <b>Row states shown:</b> high-confidence clean · low-confidence “check this” · ambiguous shared-title ·
+    “not this one?” affordance (every row) · no-cover text placeholder · no-match editable manual entry &nbsp;|&nbsp;
+    <b>read-status</b> defaults to <b>Have read</b> on every auto-matched row.
+  </div>
+</section>
+
+<!-- ===================================================================
+     SCREEN B — EDITION PICKER OPEN
+     =================================================================== -->
+<section class="screen" data-screen="B">
+  <p class="cap"><b>Screen B — Edition picker open</b> · the shared-title fix: one row expanded into 3 alternate editions, one selectable</p>
+  <div class="dualwrap">
+    <div class="dualcol" style="max-width:860px;flex-basis:860px">
+      <div class="win">
+        <div class="winbar"><span class="dots"><i></i><i></i><i></i></span><span class="urlpill">praxis-reading.netlify.app/#shelf/review</span></div>
+        <div class="appground">
+          <div class="nav">
+            <span class="wm serif">Praxis</span>
+            <span class="nlinks">
+              <a class="nlink" href="#B">Home</a><a class="nlink on" href="#B">Shelf</a>
+              <a class="nlink" href="#B">Arcs</a><a class="nlink" href="#B">Notebook</a><a class="nlink" href="#B">Account</a>
+            </span>
+            <span class="navright"><span class="nav-search">⌕ Search<span class="k">⌘K</span></span><span class="avatar serif">P</span></span>
+          </div>
+          <div class="appbody">
+            <div class="pgeyebrow">Shelf · scan review · choose edition</div>
+            <div class="pgtitle serif">Which edition?</div>
+            <div class="pgsub">“Women, Race &amp; Class” has three editions in our index. Pick the one on your shelf — the cover, year and publisher will be saved.</div>
+
+            <div class="review-rows" style="margin-top:20px">
+              <!-- the expanded row -->
+              <div class="rrow flagged" data-state="ambiguous" style="grid-template-columns:54px 1fr auto;align-items:start">
+                <div class="cover"><div class="cover-art ca-memoir"><span class="ca-au">Angela Y. Davis</span><span class="ca-ti serif">Women, Race &amp; Class</span><span class="ca-pub">Vintage</span></div></div>
+                <div class="rrow-main">
+                  <div class="rrow-ti serif">Women, Race &amp; Class</div>
+                  <div class="rrow-au serif">Angela Y. Davis</div>
+                  <div class="rrow-meta">3 editions share this title</div>
+
+                  <!-- the picker -->
+                  <div class="edition-picker" data-state="edition-picker">
+                    <div class="ep-head">
+                      <span class="ep-t">Choose the edition on your shelf</span>
+                      <button class="notthis" onclick="praxToast('Searching all editions…')">search all editions →</button>
+                    </div>
+                    <div class="ep-grid">
+                      <div class="edition-card selected" data-edition>
+                        <div class="cover"><div class="cover-art ca-memoir" style="font-size:.74em"><span class="ca-au">Davis</span><span class="ca-ti serif">Women, Race &amp; Class</span><span class="ca-pub">Vintage</span></div></div>
+                        <div class="ec-main">
+                          <div class="ec-pub serif">Vintage Books</div>
+                          <div class="ec-au serif">Angela Y. Davis</div>
+                          <div class="ec-meta">1983 · paperback · 271 pp</div>
+                          <div class="ec-pick">✓ selected</div>
+                        </div>
+                      </div>
+                      <div class="edition-card" data-edition>
+                        <div class="cover"><div class="cover-art ca-theory" style="font-size:.74em"><span class="ca-au">Davis</span><span class="ca-ti serif">Women, Race &amp; Class</span><span class="ca-pub">Random House</span></div></div>
+                        <div class="ec-main">
+                          <div class="ec-pub serif">Random House</div>
+                          <div class="ec-au serif">Angela Y. Davis</div>
+                          <div class="ec-meta">1981 · 1st ed · hardcover</div>
+                          <div class="ec-pick">✓ selected</div>
+                        </div>
+                      </div>
+                      <div class="edition-card" data-edition>
+                        <div class="cover"><div class="cover-art ca-place" style="font-size:.74em"><span class="ca-au">Davis</span><span class="ca-ti serif">Women, Race &amp; Class</span><span class="ca-pub">Penguin</span></div></div>
+                        <div class="ec-main">
+                          <div class="ec-pub serif">Penguin Modern</div>
+                          <div class="ec-au serif">Angela Y. Davis</div>
+                          <div class="ec-meta">2019 · reissue · 304 pp</div>
+                          <div class="ec-pick">✓ selected</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rrow-right">
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                  <button class="btn btn-primary btn-sm" onclick="praxToast('Edition saved · Vintage, 1983')">Use this edition</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="legend"><b>Selectable:</b> click any of the three edition cards — the gold ring + “✓ selected” move. “Use this edition” writes its cover, year &amp; publisher back to the review row.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     SCREEN C — ADD ENTRY POINTS + BARCODE SCAN
+     =================================================================== -->
+<section class="screen" data-screen="C">
+  <p class="cap"><b>Screen C — Add entry points + barcode scan</b> · the add menu (3 ways in) and the barcode-scan-in-progress view with ISBN fallback</p>
+  <div class="dualwrap">
+    <!-- DESKTOP: add menu -->
+    <div class="dualcol">
+      <p class="cap">Desktop · add menu open</p>
+      <div class="win">
+        <div class="winbar"><span class="dots"><i></i><i></i><i></i></span><span class="urlpill">praxis-reading.netlify.app/#shelf</span></div>
+        <div class="appground">
+          <div class="nav">
+            <span class="wm serif">Praxis</span>
+            <span class="nlinks">
+              <a class="nlink" href="#C">Home</a><a class="nlink on" href="#C">Shelf</a>
+              <a class="nlink" href="#C">Arcs</a><a class="nlink" href="#C">Notebook</a><a class="nlink" href="#C">Account</a>
+            </span>
+            <span class="navright"><span class="nav-search">⌕ Search<span class="k">⌘K</span></span><span class="avatar serif">P</span></span>
+          </div>
+          <div class="appbody">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+              <div>
+                <div class="pgtitle serif">Your shelf</div>
+                <div class="pgsub" style="margin-top:4px">112 books</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="seg"><button class="seg-opt on">Covers</button><button class="seg-opt">List</button></span>
+                <button class="btn btn-primary" id="addBtn">+ Add a book ▾</button>
+              </div>
+            </div>
+
+            <div class="addrow" style="margin-top:18px">
+              <div class="add-menu" data-state="add-menu">
+                <div class="am-head">Add to your shelf</div>
+                <button class="am-item" data-go="A">
+                  <span class="am-ico">▦</span>
+                  <span class="am-tx"><span class="am-t">Scan shelf photo</span><span class="am-d">Snap one shelf at a time — we read the spines and match them.</span></span>
+                </button>
+                <button class="am-item on" data-go="Cscan">
+                  <span class="am-ico">|||</span>
+                  <span class="am-tx"><span class="am-t">Scan barcode</span><span class="am-d">Point at a book's barcode for an exact ISBN match.</span></span>
+                </button>
+                <button class="am-item" onclick="praxToast('Manual entry — blank book form')">
+                  <span class="am-ico">✎</span>
+                  <span class="am-tx"><span class="am-t">Add manually</span><span class="am-d">Type the title &amp; author yourself.</span></span>
+                </button>
+              </div>
+              <div style="flex:1 1 240px;min-width:220px;align-self:center">
+                <p class="eyebrow" style="margin-bottom:8px">Three ways in</p>
+                <p style="font-size:14px;line-height:1.6;color:var(--ink-2);max-width:40ch">
+                  The fastest path is a <b>shelf photo</b> (batch). <b>Barcode</b> is the surgical single-book add.
+                  <b>Manual</b> is always there for the un-scannable. Each lands the new book(s) in the same
+                  review flow as Screen&nbsp;A.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE: barcode scan in progress -->
+    <div class="dualcol phonecol">
+      <p class="cap">Mobile · barcode scan in progress</p>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="m-ground">
+            <div class="m-nav">
+              <span class="wm serif">Praxis</span>
+              <span class="m-burger"><i></i><i></i><i></i></span>
+            </div>
+            <div class="m-body">
+              <div class="m-h serif" style="font-size:23px">Scan a barcode</div>
+              <div class="m-sub">Point your camera at the book's barcode</div>
+
+              <!-- the camera frame -->
+              <div class="scan-frame" data-state="barcode-scan" style="width:100%;margin-top:16px">
+                <div class="scan-view">
+                  <div class="scan-cam"></div>
+                  <div class="reticle">
+                    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+                    <span class="barcode" aria-hidden="true">
+                      <i></i><i style="width:2px"></i><i></i><i style="width:5px"></i><i></i><i style="width:2px"></i><i style="width:6px"></i><i></i><i style="width:2px"></i><i></i><i style="width:4px"></i><i></i><i style="width:2px"></i><i style="width:6px"></i><i></i><i></i><i style="width:5px"></i><i></i><i style="width:2px"></i><i style="width:3px"></i><i></i>
+                    </span>
+                    <span class="scanline"></span>
+                  </div>
+                  <div class="scan-hint">point at the barcode</div>
+                </div>
+                <!-- ISBN type-in fallback (iPhone Safari may lack the scanner) -->
+                <div class="isbn-fallback" data-state="isbn-fallback">
+                  <div class="if-lab">No scanner? Type the ISBN</div>
+                  <div class="if-row">
+                    <input type="text" placeholder="978…" value="978-0826412768">
+                    <button class="btn btn-primary btn-sm" onclick="praxToast('Looked up · Pedagogy of the Oppressed')">Find</button>
+                  </div>
+                </div>
+              </div>
+
+              <p style="font-size:12.5px;color:var(--ink-3);line-height:1.5;margin-top:14px">
+                On iPhone Safari the live scanner may be unavailable — the ISBN field always works as a fallback.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend"><b>Entry points:</b> Scan shelf photo · Scan barcode · Add manually. <b>Barcode view:</b> camera frame + reticle + “point at the barcode” + type-in-the-ISBN fallback beneath.</div>
+</section>
+
+<!-- ===================================================================
+     SCREEN D — BOOK-DETAIL CARD  (desktop + mobile frame)
+     =================================================================== -->
+<section class="screen" data-screen="D">
+  <p class="cap"><b>Screen D — Book-detail card</b> · full record: cover, title, author, year, pages, publisher, description, lens chips, read-status, rating + date-read, “Fix this book”</p>
+  <div class="dualwrap">
+    <!-- DESKTOP -->
+    <div class="dualcol">
+      <p class="cap">Desktop</p>
+      <div class="win">
+        <div class="winbar"><span class="dots"><i></i><i></i><i></i></span><span class="urlpill">praxis-reading.netlify.app/#book/freire-pedagogy</span></div>
+        <div class="appground">
+          <div class="nav">
+            <span class="wm serif">Praxis</span>
+            <span class="nlinks">
+              <a class="nlink" href="#D">Home</a><a class="nlink on" href="#D">Shelf</a>
+              <a class="nlink" href="#D">Arcs</a><a class="nlink" href="#D">Notebook</a><a class="nlink" href="#D">Account</a>
+            </span>
+            <span class="navright"><span class="nav-search">⌕ Search<span class="k">⌘K</span></span><span class="avatar serif">P</span></span>
+          </div>
+          <div class="appbody">
+            <div class="bd">
+              <!-- left: cover + actions -->
+              <div class="bd-covercol">
+                <div class="bd-cover"><div class="cover-art ca-theory" style="font-size:1.5em;border-radius:0"><span class="ca-au">Paulo Freire</span><span class="ca-ti serif">Pedagogy of the Oppressed</span><span class="ca-pub">Continuum</span></div></div>
+                <div class="bd-actions">
+                  <button class="btn btn-primary" onclick="praxToast('Pick an arc…')">Add to an arc…</button>
+                  <div class="bd-actions-row">
+                    <button class="btn btn-ghost" onclick="praxToast('Send to sub-theory…')">Send to sub-theory…</button>
+                    <button class="btn btn-ghost" onclick="praxToast('New marginalia')">Add marginalia</button>
+                  </div>
+                  <button class="btn btn-quiet" onclick="praxToast('Marked as finished')">Mark as finished</button>
+                </div>
+              </div>
+              <!-- right: content -->
+              <div class="bd-content">
+                <div class="bd-title serif">Pedagogy of the Oppressed</div>
+                <div class="bd-author serif">Paulo Freire</div>
+                <div class="bd-meta">1970 · Continuum · 183 pages · ISBN 978-0826412768</div>
+
+                <div class="bd-statusrow">
+                  <span class="lab">Read status</span>
+                  <div class="rstatus" data-status="read">
+                    <button class="rs-opt" data-v="reading">Currently reading</button>
+                    <button class="rs-opt on" data-v="read"><span class="dotmark"></span>Have read</button>
+                    <button class="rs-opt" data-v="will">Will read</button>
+                  </div>
+                </div>
+
+                <p class="bd-desc">Freire's classic of critical pedagogy: the “banking model” of education, conscientização,
+                  and a praxis of reflection and action through which the oppressed reclaim their humanity. The book the
+                  whole shelf keeps arguing with.</p>
+
+                <div class="bd-chips">
+                  <span class="lenschip">Critical pedagogy</span>
+                  <span class="lenschip">Liberation</span>
+                  <span class="lenschip">Education</span>
+                  <span class="lenschip">Theory</span>
+                </div>
+
+                <!-- rating + date read -->
+                <div class="bd-rate">
+                  <span class="rate-stars" title="Your rating">★★★★<span class="off">★</span></span>
+                  <span class="rate-sep"></span>
+                  <span class="rate-date">finished · 14 Mar 2026</span>
+                  <span class="rate-sep"></span>
+                  <button class="bd-fix" onclick="praxToast('Re-match this book…')">↺ Fix this book</button>
+                </div>
+
+                <!-- artifact card -->
+                <div class="card bd-artifact">
+                  <p class="eyebrow">Your book artifact</p>
+                  <p class="ar-body serif">“What this book is doing in my thinking — the seam between the banking-model
+                    critique and how I actually run a seminar.”</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE FRAME -->
+    <div class="dualcol phonecol">
+      <p class="cap">Mobile · 390px (reorder)</p>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="m-ground">
+            <div class="m-nav">
+              <span class="wm serif">Praxis</span>
+              <span class="m-burger"><i></i><i></i><i></i></span>
+            </div>
+            <div class="m-body m-bd">
+              <!-- canon §4-I order: cover → title → author → meta → status → primary → pair → quiet → artifact -->
+              <div class="cover" style="border-radius:var(--radius-md);box-shadow:var(--shadow-cover)"><div class="cover-art ca-theory" style="font-size:.9em"><span class="ca-au">Paulo Freire</span><span class="ca-ti serif">Pedagogy of the Oppressed</span><span class="ca-pub">Continuum</span></div></div>
+              <div class="m-bd-title serif">Pedagogy of the Oppressed</div>
+              <div class="m-bd-author serif">Paulo Freire</div>
+              <div class="m-bd-meta">1970 · 183 pp · Continuum</div>
+
+              <div class="rstatus" data-status="read">
+                <button class="rs-opt" data-v="reading">Reading</button>
+                <button class="rs-opt on" data-v="read">Have read</button>
+                <button class="rs-opt" data-v="will">Will read</button>
+              </div>
+
+              <div class="m-bd-stack">
+                <button class="btn btn-primary" onclick="praxToast('Pick an arc…')">Add to an arc…</button>
+                <div class="m-bd-pair">
+                  <button class="btn btn-ghost btn-sm" onclick="praxToast('Send to sub-theory…')">Sub-theory…</button>
+                  <button class="btn btn-ghost btn-sm" onclick="praxToast('New marginalia')">Marginalia</button>
+                </div>
+                <button class="btn btn-quiet btn-sm" onclick="praxToast('Marked finished')">Mark as finished</button>
+              </div>
+
+              <div class="bd-chips" style="margin-top:16px">
+                <span class="lenschip">Critical pedagogy</span><span class="lenschip">Liberation</span><span class="lenschip">Education</span>
+              </div>
+
+              <div class="bd-rate" style="margin-top:14px">
+                <span class="rate-stars">★★★★<span class="off">★</span></span>
+                <span class="rate-sep"></span>
+                <span class="rate-date">14 Mar 2026</span>
+                <button class="bd-fix" style="margin-left:auto" onclick="praxToast('Re-match…')">↺ Fix</button>
+              </div>
+
+              <div class="card m-bd-artifact">
+                <p class="eyebrow">Your book artifact</p>
+                <p class="ar-body serif">“The seam between the banking-model critique and how I run a seminar.”</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend"><b>Full record:</b> large cover · title · author · year · pages · publisher · description · lens chips · read-status (defaults Have read) · rating + date-read · <b>“Fix this book”</b> re-match. Mobile reorders to a single column (cover → title → … → artifact).</div>
+</section>
+
+<!-- ===================================================================
+     SCREEN E — EXISTING-LIBRARY CLEANUP
+     =================================================================== -->
+<section class="screen" data-screen="E">
+  <p class="cap"><b>Screen E — Existing-library cleanup</b> · the one-time pass: a summary, a before→after cover fix, per-item review, and “Resolve all”</p>
+  <div class="dualwrap">
+    <div class="dualcol" style="max-width:900px;flex-basis:900px">
+      <div class="win">
+        <div class="winbar"><span class="dots"><i></i><i></i><i></i></span><span class="urlpill">praxis-reading.netlify.app/#shelf/cleanup</span></div>
+        <div class="appground">
+          <div class="nav">
+            <span class="wm serif">Praxis</span>
+            <span class="nlinks">
+              <a class="nlink" href="#E">Home</a><a class="nlink on" href="#E">Shelf</a>
+              <a class="nlink" href="#E">Arcs</a><a class="nlink" href="#E">Notebook</a><a class="nlink" href="#E">Account</a>
+            </span>
+            <span class="navright"><span class="nav-search">⌕ Search<span class="k">⌘K</span></span><span class="avatar serif">P</span></span>
+          </div>
+          <div class="appbody">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <div>
+                <div class="pgeyebrow">Shelf · one-time cleanup</div>
+                <div class="pgtitle serif">Tidy your library</div>
+                <div class="pgsub">A one-time pass over the 112 books already on your shelf. Resolve duplicates and fill in missing or wrong covers — review each, or fix them all at once.</div>
+              </div>
+              <button class="btn btn-primary btn-lg" onclick="praxToast('Resolving all 13 items…')">Resolve all →</button>
+            </div>
+
+            <!-- summary stats -->
+            <div class="cl-summary">
+              <div class="cl-stat warn"><div class="n serif">5</div><div class="l">duplicate records<br>to merge</div></div>
+              <div class="cl-stat warn"><div class="n serif">8</div><div class="l">books missing or<br>wrong covers</div></div>
+              <div class="cl-stat"><div class="n serif">112</div><div class="l">books on your<br>shelf total</div></div>
+            </div>
+
+            <!-- before → after hero example -->
+            <div class="card cl-hero">
+              <div class="ba-big before-after">
+                <div class="ba-col">
+                  <span class="ba-lab">before</span>
+                  <div class="cover"><div class="cover-pending"><span class="cp-ti serif">The Fire Next Time</span><span class="cp-lab mono">no cover</span></div></div>
+                </div>
+                <span class="ba-arrow">→</span>
+                <div class="ba-col">
+                  <span class="ba-lab">after</span>
+                  <div class="cover"><div class="cover-art ca-memoir"><span class="ca-au">Baldwin</span><span class="ca-ti serif">The Fire Next Time</span><span class="ca-pub">Dial</span></div></div>
+                </div>
+              </div>
+              <div class="cl-hero-tx">
+                <h3 class="serif">We found the missing covers</h3>
+                <p>8 of your books were imported by title alone and never got a cover. We matched each one against the
+                  catalog — here's a typical fix. Review them below, or hit <b>Resolve all</b>.</p>
+              </div>
+            </div>
+
+            <!-- per-item review -->
+            <p class="eyebrow" style="margin:6px 0 12px">Review each item</p>
+            <div class="cl-list">
+
+              <!-- duplicate -->
+              <div class="cl-item" data-state="cleanup-duplicate">
+                <span class="cl-kind dup">duplicate</span>
+                <div class="cl-mid">
+                  <div class="cl-ti serif">Teaching to Transgress</div>
+                  <div class="cl-au serif">bell hooks</div>
+                  <div class="cl-note">2 records — one “reading”, one “finished”. Merge keeps your notes &amp; the finished status.</div>
+                </div>
+                <div class="cl-actions">
+                  <button class="btn btn-quiet btn-sm" onclick="praxToast('Kept both as separate')">Keep both</button>
+                  <button class="btn btn-primary btn-sm" onclick="praxToast('Merged · 1 record')">Merge</button>
+                </div>
+              </div>
+
+              <!-- missing cover -->
+              <div class="cl-item" data-state="cleanup-cover">
+                <span class="cl-kind miss">missing cover</span>
+                <div class="cl-mid" style="display:flex;align-items:center;gap:16px">
+                  <div class="before-after">
+                    <div class="cover"><div class="cover-pending"><span class="cp-ti serif">The Fire Next Time</span><span class="cp-lab mono">—</span></div></div>
+                    <span class="ba-arrow">→</span>
+                    <div class="cover"><div class="cover-art ca-memoir"><span class="ca-au">Baldwin</span><span class="ca-ti serif">The Fire Next Time</span><span class="ca-pub">Dial</span></div></div>
+                  </div>
+                  <div>
+                    <div class="cl-ti serif">The Fire Next Time</div>
+                    <div class="cl-au serif">James Baldwin</div>
+                    <div class="cl-note">Found a cover · Dial Press, 1963.</div>
+                  </div>
+                </div>
+                <div class="cl-actions">
+                  <button class="btn btn-quiet btn-sm" onclick="praxToast('Skipped')">Skip</button>
+                  <button class="btn btn-primary btn-sm" onclick="praxToast('Cover applied')">Use cover</button>
+                </div>
+              </div>
+
+              <!-- wrong cover -->
+              <div class="cl-item" data-state="cleanup-cover">
+                <span class="cl-kind miss">wrong cover</span>
+                <div class="cl-mid" style="display:flex;align-items:center;gap:16px">
+                  <div class="before-after">
+                    <div class="cover"><div class="cover-art ca-place"><span class="ca-au">?</span><span class="ca-ti serif">Freedom Dreams</span><span class="ca-pub">wrong</span></div></div>
+                    <span class="ba-arrow">→</span>
+                    <div class="cover"><div class="cover-art ca-poetry"><span class="ca-au">Kelley</span><span class="ca-ti serif">Freedom Dreams</span><span class="ca-pub">Beacon</span></div></div>
+                  </div>
+                  <div>
+                    <div class="cl-ti serif">Freedom Dreams</div>
+                    <div class="cl-au serif">Robin D. G. Kelley</div>
+                    <div class="cl-note">Current cover is a different edition — swap to the Beacon 2002.</div>
+                  </div>
+                </div>
+                <div class="cl-actions">
+                  <button class="btn btn-quiet btn-sm" onclick="praxToast('Kept current cover')">Keep</button>
+                  <button class="btn btn-primary btn-sm" onclick="praxToast('Cover swapped')">Swap</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="legend"><b>Cleanup pass:</b> summary (5 duplicates · 8 missing/wrong covers · 112 total) · a before→after cover hero · per-item review (merge duplicate / use cover / swap wrong cover) · a single <b>Resolve all</b>.</div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"><span class="status-dot"></span><span id="toastMsg">Saved</span></div>
+
+<script>
+/* ---- screen switching ---- */
+function showScreen(id){
+  var secs=document.querySelectorAll('.screen'),i;
+  for(i=0;i<secs.length;i++){secs[i].classList.toggle('is-active',secs[i].getAttribute('data-screen')===id);}
+  var btns=document.querySelectorAll('.swbtn');
+  for(i=0;i<btns.length;i++){btns[i].classList.toggle('on',btns[i].getAttribute('data-go')===id);}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-go]');
+  if(!t) return;
+  var g=t.getAttribute('data-go');
+  if(g==='Cscan'){showScreen('C');return;}
+  if(g==='A'||g==='B'||g==='C'||g==='D'||g==='E'){e.preventDefault();showScreen(g);}
+});
+
+/* ---- read-status segmented control ---- */
+document.addEventListener('click',function(e){
+  var opt=e.target.closest('.rs-opt');
+  if(!opt) return;
+  var box=opt.closest('.rstatus');
+  var opts=box.querySelectorAll('.rs-opt'),i;
+  for(i=0;i<opts.length;i++){opts[i].classList.remove('on');var d=opts[i].querySelector('.dotmark');if(d)d.remove();}
+  opt.classList.add('on');
+  if(!opt.querySelector('.dotmark')){var s=document.createElement('span');s.className='dotmark';opt.insertBefore(s,opt.firstChild);}
+  box.setAttribute('data-status',opt.getAttribute('data-v'));
+});
+
+/* ---- Mark all as read (desktop screen A) ---- */
+function setAllRead(scope){
+  var boxes=scope.querySelectorAll('.rstatus'),i,j;
+  for(i=0;i<boxes.length;i++){
+    var opts=boxes[i].querySelectorAll('.rs-opt');
+    for(j=0;j<opts.length;j++){
+      var on=opts[j].getAttribute('data-v')==='read';
+      opts[j].classList.toggle('on',on);
+      var d=opts[j].querySelector('.dotmark');
+      if(on&&!d){var s=document.createElement('span');s.className='dotmark';opts[j].insertBefore(s,opts[j].firstChild);}
+      if(!on&&d)d.remove();
+    }
+    boxes[i].setAttribute('data-status','read');
+  }
+}
+var markAllBtn=document.getElementById('markAll');
+if(markAllBtn)markAllBtn.addEventListener('click',function(){setAllRead(document.querySelector('[data-screen="A"] .dualcol'));praxToast('All 6 marked as read');});
+function markAllMobile(){setAllRead(document.querySelector('[data-screen="A"] .phonecol'));praxToast('All marked as read');}
+
+var confirmBtn=document.getElementById('confirmA');
+if(confirmBtn)confirmBtn.addEventListener('click',function(){praxToast('Saved 6 books to your shelf');});
+
+/* ---- edition picker selection ---- */
+document.addEventListener('click',function(e){
+  var card=e.target.closest('[data-edition]');
+  if(!card) return;
+  var grid=card.parentNode,cards=grid.querySelectorAll('[data-edition]'),i;
+  for(i=0;i<cards.length;i++)cards[i].classList.remove('selected');
+  card.classList.add('selected');
+});
+
+/* ---- add menu item highlight ---- */
+document.addEventListener('click',function(e){
+  var item=e.target.closest('.am-item');
+  if(!item) return;
+  var menu=item.closest('.add-menu'),items=menu.querySelectorAll('.am-item'),i;
+  for(i=0;i<items.length;i++)items[i].classList.remove('on');
+  item.classList.add('on');
+});
+
+/* ---- toast ---- */
+var toastTimer=null;
+function praxToast(msg){
+  var t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('show');},2200);
+}
+</script>
+</body>
+</html>
