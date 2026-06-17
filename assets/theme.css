@@ -201,7 +201,7 @@
 
      The previous --shadow-1 was two-layer black rgba (A3.1 violation).
      It is redefined here in the warm --br-deep family; its callers
-     (.yumi-toggle, .yumi-panel) are in 5.1 scope and re-tuned at
+     (.yumi-bloom, .yumi-panel) are in 5.1 scope and re-tuned at
      Checkpoint 2 anyway -- the Yumi panel migrates to --shadow-yumi
      and the toggle picks up the warm Tier 1 directly.
      ===================================================================== */

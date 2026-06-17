@@ -18,12 +18,13 @@ var YUMI_GREETINGS = [
 ];
 
 var YUMI_PANEL_ID  = 'yumi-panel';
-var YUMI_TOGGLE_ID = 'yumi-toggle';
+var YUMI_BLOOM_ID  = 'yumi-bloom';
 var YUMI_INPUT_ID  = 'yumi-input';
 var YUMI_BODY_ID   = 'yumi-panel-body';
 
 var yumiPanelEl    = null;
-var yumiToggleEl   = null;
+var yumiBloomEl    = null;
+var yumiBloomLineEl = null;
 var yumiInputEl    = null;
 var yumiBodyEl     = null;
 var yumiSendBtnEl  = null;
@@ -326,13 +327,58 @@ function refreshYumiPanelForAuthChange(force) {
   }
 }
 
-function buildYumiToggle() {
+function buildYumiBloom() {
   var btn = document.createElement('button');
-  btn.id = YUMI_TOGGLE_ID;
-  btn.className = 'yumi-toggle';
+  btn.id = YUMI_BLOOM_ID;
+  btn.className = 'yumi-bloom';
   btn.setAttribute('type', 'button');
-  btn.setAttribute('aria-label', 'Toggle Yumi');
-  btn.textContent = 'Y';
+  btn.setAttribute('aria-label', 'Talk to Yumi');
+  // Petal-rays: eight amber ellipses radiating from Bloom's centre (32,32),
+  // each rotated around it. CSS spins the group slowly (yumi-bloom-spin).
+  var petals = '';
+  var pa;
+  for (pa = 0; pa < 360; pa = pa + 45) {
+    petals = petals +
+      '<ellipse cx="32" cy="15" rx="3.4" ry="9.6" transform="rotate(' + pa + ' 32 32)"/>';
+  }
+  // Bloom sits on the warm surface -- NO dark vessel. Legibility comes from
+  // her internal range (white-hot core -> amber petals) + warm halo + motion.
+  // Token colours go straight into fill/stop-color attributes, matching the
+  // constellation's SVG pattern (arc-constellation.js:597-601, 938-942).
+  btn.innerHTML =
+    '<span class="yumi-bloom-orb" aria-hidden="true">' +
+    '<svg viewBox="0 0 64 64" width="56" height="56" role="img" focusable="false">' +
+    '<defs>' +
+    '<radialGradient id="yumi-bloom-core" cx="50%" cy="50%" r="50%">' +
+    '<stop offset="0%" stop-color="var(--text-on-dark)"/>' +
+    '<stop offset="42%" stop-color="var(--gold-light)"/>' +
+    '<stop offset="100%" stop-color="var(--gold)"/>' +
+    '</radialGradient>' +
+    '<radialGradient id="yumi-bloom-petal" cx="50%" cy="28%" r="72%">' +
+    '<stop offset="0%" stop-color="var(--tradition-wisdom-halo)"/>' +
+    '<stop offset="58%" stop-color="var(--gold-light)"/>' +
+    '<stop offset="100%" stop-color="var(--gold)"/>' +
+    '</radialGradient>' +
+    '<radialGradient id="yumi-bloom-halo" cx="50%" cy="50%" r="50%">' +
+    '<stop offset="0%" stop-color="var(--tradition-theory-halo)" stop-opacity="0.55"/>' +
+    '<stop offset="55%" stop-color="var(--tradition-empirical-halo)" stop-opacity="0.20"/>' +
+    '<stop offset="100%" stop-color="var(--tradition-empirical-halo)" stop-opacity="0"/>' +
+    '</radialGradient>' +
+    '</defs>' +
+    '<circle class="yumi-bloom-halo" cx="32" cy="32" r="31" fill="url(#yumi-bloom-halo)"/>' +
+    '<g class="yumi-bloom-petals" fill="url(#yumi-bloom-petal)" opacity="0.9">' +
+    petals +
+    '</g>' +
+    '<g class="yumi-bloom-core">' +
+    '<circle cx="32" cy="32" r="9" fill="url(#yumi-bloom-core)"/>' +
+    '<circle cx="32" cy="32" r="3.4" fill="var(--text-on-dark)" opacity="0.92"/>' +
+    '</g>' +
+    '<circle class="yumi-bloom-ember yumi-bloom-ember-a" cx="49" cy="17" r="1.7" fill="var(--gold-light)"/>' +
+    '<circle class="yumi-bloom-ember yumi-bloom-ember-b" cx="15" cy="47" r="1.4" fill="var(--gold-light)"/>' +
+    '</svg>' +
+    '</span>' +
+    '<span class="yumi-bloom-line">tap to talk</span>';
+  yumiBloomLineEl = btn.querySelector('.yumi-bloom-line');
   btn.addEventListener('click', function() {
     toggleYumiPanel();
   });
@@ -475,9 +521,9 @@ function buildYumiPanel() {
 }
 
 function renderYumiPanel() {
-  if (!yumiToggleEl) {
-    yumiToggleEl = buildYumiToggle();
-    document.body.appendChild(yumiToggleEl);
+  if (!yumiBloomEl) {
+    yumiBloomEl = buildYumiBloom();
+    document.body.appendChild(yumiBloomEl);
   }
   if (!yumiPanelEl) {
     yumiPanelEl = buildYumiPanel();
