@@ -2261,21 +2261,48 @@ function renderShelf() {
     ? authors
     : authors.slice(0, 12);
 
-  // Stage 4c: per-genre tally for the theme rail counts, mirroring
-  // authorCounts. book.genre holds one of the 5 canonical theme
-  // strings verbatim (4b backfill, 112/112 coverage).
-  var genreCounts = {};
-  var gcid;
-  var gcb;
-  for (gcid in booksMap) {
-    if (Object.prototype.hasOwnProperty.call(booksMap, gcid)) {
-      gcb = booksMap[gcid];
-      if (!gcb) continue;
-      if (typeof gcb.genre === 'string' && gcb.genre.length > 0) {
-        genreCounts[gcb.genre] = (genreCounts[gcb.genre] || 0) + 1;
+  // Lenses (S3): baseline lenses are the DISTINCT book.genre values actually
+  // present, counted off the DEDUPED membership source -- the signed-in user's
+  // bookIds index (shelfBookIds), or raw state.books when signed out. Reading
+  // the deduped set means orphan/duplicate records never inflate a lens count
+  // (retires the old genre-count-over-state.books inflation). lensOrder keeps
+  // first-seen genres, then is re-sorted by count (desc) for a stable render.
+  var lensCounts = {};
+  var lensOrder = [];
+  var lcArr = [];
+  var lcId;
+  var lcb;
+  if (shelfBookIds) {
+    for (lcId = 0; lcId < shelfBookIds.length; lcId = lcId + 1) {
+      lcArr.push(sbcMap[shelfBookIds[lcId]]);
+    }
+  } else {
+    for (lcId in sbcMap) {
+      if (Object.prototype.hasOwnProperty.call(sbcMap, lcId)) {
+        lcArr.push(sbcMap[lcId]);
       }
     }
   }
+  var lcj;
+  for (lcj = 0; lcj < lcArr.length; lcj = lcj + 1) {
+    lcb = lcArr[lcj];
+    if (lcb && typeof lcb.genre === 'string' && lcb.genre.length > 0) {
+      if (!Object.prototype.hasOwnProperty.call(lensCounts, lcb.genre)) {
+        lensOrder.push(lcb.genre);
+      }
+      lensCounts[lcb.genre] = (lensCounts[lcb.genre] || 0) + 1;
+    }
+  }
+  lensOrder.sort(function (a, b) {
+    var ca = lensCounts[a] || 0;
+    var cb = lensCounts[b] || 0;
+    if (cb !== ca) { return cb - ca; }
+    var la = a.toLowerCase();
+    var lb = b.toLowerCase();
+    if (la < lb) { return -1; }
+    if (la > lb) { return 1; }
+    return 0;
+  });
 
   var layout = document.createElement('div');
   // Stage 2: shelfRailOpen drives the desktop inline rail reveal (>=760).
@@ -2306,10 +2333,10 @@ function renderShelf() {
   closeBtn.textContent = '×';
   sidebar.appendChild(closeBtn);
 
-  // Stage 7 (manual themes): the user-created THEME overlay rail, ABOVE the
-  // Genre rail. Filter rows read shelfFilter.theme (a theme id); membership is
-  // state.userThemes[id].bookIds (off the book record). Counts are the theme's
-  // member count. Empty -> a quiet hint row (themes are created from a book).
+  // userThemes (manual lenses, S3): the user-created lenses, rendered in the
+  // unified Lenses rail below alongside the baseline (genre) lenses. Filter
+  // rows read shelfFilter.theme (a theme id); membership is
+  // state.userThemes[id].bookIds (off the book record) -- counts are orphan-free.
   var utUser = getCurrentUser();
   var userThemeList = [];
   var uttk;
@@ -2324,89 +2351,98 @@ function renderShelf() {
   userThemeList.sort(function(a, b) {
     return (a.name || '').localeCompare(b.name || '');
   });
-  var utSection = document.createElement('div');
-  utSection.className = 'shelf-filter-section';
-  var utLabel = document.createElement('h3');
-  utLabel.className = 'shelf-filter-label';
-  utLabel.textContent = 'Theme';
-  utSection.appendChild(utLabel);
-  var utListEl = document.createElement('ul');
-  utListEl.className = 'shelf-filter-list shelf-filter-list-usertheme';
-  if (userThemeList.length === 0) {
-    var utEmpty = document.createElement('li');
-    utEmpty.className = 'shelf-filter-row shelf-filter-row-toggle';
-    utEmpty.textContent = 'No themes yet — add one from a book';
-    utListEl.appendChild(utEmpty);
-  } else {
-    var uti;
-    var utRow;
-    var utRowCount;
-    for (uti = 0; uti < userThemeList.length; uti++) {
-      utRow = document.createElement('li');
-      utRow.className = shelfFilter.theme === userThemeList[uti].id
-        ? 'shelf-filter-row shelf-filter-row-selected'
-        : 'shelf-filter-row';
-      utRow.setAttribute('role', 'button');
-      utRow.setAttribute('tabindex', '0');
-      utRow.setAttribute('data-filter-section', 'theme');
-      utRow.setAttribute('data-filter-value', userThemeList[uti].id);
-      utRow.textContent = userThemeList[uti].name;
-      utRowCount = document.createElement('span');
-      utRowCount.className = 'shelf-filter-count';
-      utRowCount.textContent = '' + (Array.isArray(userThemeList[uti].bookIds)
-        ? userThemeList[uti].bookIds.length : 0);
-      utRow.appendChild(utRowCount);
-      utRow.addEventListener('click', onShelfFilterRowClick);
-      utRow.addEventListener('keydown', onShelfFilterRowKeydown);
-      utListEl.appendChild(utRow);
-    }
-  }
-  utSection.appendChild(utListEl);
-  sidebar.appendChild(utSection);
+  // Lenses (S3): ONE rail unifying the data-driven baseline lenses (distinct
+  // book.genre values present, deduped counts) and the user's hand-made lenses
+  // (state.userThemes). Both render as identical .shelf-filter-row items and
+  // share the existing single-select toggle: a baseline row carries
+  // data-filter-section="genre", a manual row data-filter-section="theme", so
+  // the same handlers + match predicate apply with NO filter-machinery change.
+  var lensSection = document.createElement('div');
+  lensSection.className = 'shelf-filter-section shelf-filter-section-lenses';
+  var lensLabel = document.createElement('h3');
+  lensLabel.className = 'shelf-filter-label';
+  lensLabel.textContent = 'Lenses';
+  lensSection.appendChild(lensLabel);
+  var lensListEl = document.createElement('ul');
+  lensListEl.className = 'shelf-filter-list shelf-filter-list-lenses';
 
-  // Stage 4c (relabeled at Stage 7): the GENRE rail -- the 5 canonical genre
-  // values, filtering books by their book.genre field. The former 'theme'
-  // slot was freed for the user-theme overlay above; this rail now reads
-  // shelfFilter.genre. Rows reuse the author-row mechanism (data-filter-
-  // section/-value + shared handlers). Counts come from genreCounts above.
-  var genreRail = [
-    'Critical theory & pedagogy',
-    'Power & systems',
-    'Liberation',
-    'Love & connection',
-    'History & memory'
-  ];
-  var genreSection = document.createElement('div');
-  genreSection.className = 'shelf-filter-section';
-  var genreLabel = document.createElement('h3');
-  genreLabel.className = 'shelf-filter-label';
-  genreLabel.textContent = 'Genre';
-  genreSection.appendChild(genreLabel);
-  var genreListEl = document.createElement('ul');
-  genreListEl.className = 'shelf-filter-list shelf-filter-list-genre';
-  var gi;
-  var genreRow;
-  var genreRowCount;
-  for (gi = 0; gi < genreRail.length; gi++) {
-    genreRow = document.createElement('li');
-    genreRow.className = shelfFilter.genre === genreRail[gi]
+  // (a) baseline lenses -- from book.genre, counts off the deduped set.
+  var lbi;
+  var lbRow;
+  var lbCount;
+  var lbName;
+  for (lbi = 0; lbi < lensOrder.length; lbi++) {
+    lbName = lensOrder[lbi];
+    lbRow = document.createElement('li');
+    lbRow.className = shelfFilter.genre === lbName
       ? 'shelf-filter-row shelf-filter-row-selected'
       : 'shelf-filter-row';
-    genreRow.setAttribute('role', 'button');
-    genreRow.setAttribute('tabindex', '0');
-    genreRow.setAttribute('data-filter-section', 'genre');
-    genreRow.setAttribute('data-filter-value', genreRail[gi]);
-    genreRow.textContent = genreRail[gi];
-    genreRowCount = document.createElement('span');
-    genreRowCount.className = 'shelf-filter-count';
-    genreRowCount.textContent = '' + (genreCounts[genreRail[gi]] || 0);
-    genreRow.appendChild(genreRowCount);
-    genreRow.addEventListener('click', onShelfFilterRowClick);
-    genreRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    genreListEl.appendChild(genreRow);
+    lbRow.setAttribute('role', 'button');
+    lbRow.setAttribute('tabindex', '0');
+    lbRow.setAttribute('data-filter-section', 'genre');
+    lbRow.setAttribute('data-filter-value', lbName);
+    lbRow.textContent = lbName;
+    lbCount = document.createElement('span');
+    lbCount.className = 'shelf-filter-count';
+    lbCount.textContent = '' + (lensCounts[lbName] || 0);
+    lbRow.appendChild(lbCount);
+    lbRow.addEventListener('click', onShelfFilterRowClick);
+    lbRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    lensListEl.appendChild(lbRow);
   }
-  genreSection.appendChild(genreListEl);
-  sidebar.appendChild(genreSection);
+
+  // (b) hand-made lenses -- the SAME display object; membership lives in
+  // state.userThemes[id].bookIds, so the count is already orphan-free.
+  var lmi;
+  var lmRow;
+  var lmCount;
+  for (lmi = 0; lmi < userThemeList.length; lmi++) {
+    lmRow = document.createElement('li');
+    lmRow.className = shelfFilter.theme === userThemeList[lmi].id
+      ? 'shelf-filter-row shelf-filter-row-selected shelf-filter-row-manual'
+      : 'shelf-filter-row shelf-filter-row-manual';
+    lmRow.setAttribute('role', 'button');
+    lmRow.setAttribute('tabindex', '0');
+    lmRow.setAttribute('data-filter-section', 'theme');
+    lmRow.setAttribute('data-filter-value', userThemeList[lmi].id);
+    lmRow.textContent = userThemeList[lmi].name;
+    lmCount = document.createElement('span');
+    lmCount.className = 'shelf-filter-count';
+    lmCount.textContent = '' + (Array.isArray(userThemeList[lmi].bookIds)
+      ? userThemeList[lmi].bookIds.length : 0);
+    lmRow.appendChild(lmCount);
+    lmRow.addEventListener('click', onShelfFilterRowClick);
+    lmRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    lensListEl.appendChild(lmRow);
+  }
+
+  // (c) empty hint only when there are no lenses of either kind.
+  if (lensOrder.length === 0 && userThemeList.length === 0) {
+    var lensEmpty = document.createElement('li');
+    lensEmpty.className = 'shelf-filter-row shelf-filter-row-toggle';
+    lensEmpty.textContent = 'No lenses yet — add one from a book';
+    lensListEl.appendChild(lensEmpty);
+  }
+  lensSection.appendChild(lensListEl);
+
+  // (d) "Ask Yumi for more lenses" -- opens the lens panel (S4). Guarded so
+  // it is inert until S4 defines window.PraxisLensPanel; its AI suggestions
+  // are a feature-flagged stub (default off).
+  var lensAsk = document.createElement('button');
+  lensAsk.type = 'button';
+  lensAsk.className = 'shelf-lens-ask';
+  lensAsk.textContent = 'Ask Yumi for more lenses';
+  lensAsk.addEventListener('click', function () {
+    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') {
+      window.PraxisLensPanel.open();
+    }
+  });
+  lensSection.appendChild(lensAsk);
+
+  sidebar.appendChild(lensSection);
+
+  // S3: the former separate GENRE rail is merged into the single Lenses rail
+  // above (baseline lenses are derived from the distinct book.genre values).
 
   // Author section -- dedup'd alphabetical list from state.books.
   var authorSection = document.createElement('div');

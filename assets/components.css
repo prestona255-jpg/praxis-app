@@ -1889,6 +1889,48 @@
   font-size: 12px;
 }
 
+/* Lenses (S3): hand-made lenses sit in the same rail as the baseline
+   (genre) lenses and read the same; a small teal dot (the canon's
+   marginalia accent) quietly marks their user-made provenance. The dot
+   yields to the gold selected-bar when the row is active. */
+.shelf-filter-row-manual {
+  position: relative;
+}
+
+.shelf-filter-row-manual:not(.shelf-filter-row-selected)::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: var(--marginalia-color);
+  opacity: 0.7;
+}
+
+/* Lenses (S3): quiet "Ask Yumi for more lenses" affordance under the rail
+   -- mono, recessed gold; opens the lens panel (S4). */
+.shelf-lens-ask {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-3);
+  padding: 7px 0 7px 12px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  color: var(--gold-text);
+  cursor: pointer;
+}
+
+.shelf-lens-ask:hover {
+  color: var(--gold);
+}
+
 .shelf-main {
   /* min-width: 0 lets the grid track shrink below its intrinsic
      content size on narrow viewports -- without it, long card titles
