@@ -726,6 +726,87 @@ function generateLenses(meta) {
   });
 }
 
+// EDITABLE blocklist: lens names that are bare market genres, not lenses.
+var LENS_GEN_BLOCKLIST = [
+  'fiction', 'nonfiction', 'non-fiction', 'self-help',
+  'general', 'miscellaneous', 'uncategorized', 'other'
+];
+
+function normalizeLensTitle(t) {
+  return (typeof t === 'string')
+    ? t.toLowerCase().replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ')
+    : '';
+}
+
+function isBlockedLensName(name) {
+  var n = (typeof name === 'string') ? name.toLowerCase().replace(/^\s+|\s+$/g, '') : '';
+  var i;
+  for (i = 0; i < LENS_GEN_BLOCKLIST.length; i++) {
+    if (n === LENS_GEN_BLOCKLIST[i]) { return true; }
+  }
+  return false;
+}
+
+// Client-side eval (v1): structural + grounding validation before any lens
+// reaches the user. Tolerant parse (handles a JSON array wrapped in prose),
+// then per-lens: GROUNDED (every book must exist in the library; >=2 real,
+// distinct books or the lens is dropped), STRUCTURE (name + why + books;
+// malformed dropped; cap 5), FIT GUARD (drop bare generic-genre names).
+// Returns surviving lenses with canonical library titles, or [] (the caller
+// shows a graceful empty state). Never throws.
+function evalLensResponse(rawText, libraryTitles) {
+  var titleSet = {};
+  var i;
+  if (libraryTitles) {
+    for (i = 0; i < libraryTitles.length; i++) {
+      titleSet[normalizeLensTitle(libraryTitles[i])] = libraryTitles[i];
+    }
+  }
+  var parsed = null;
+  if (typeof rawText === 'string') {
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (e) {
+      var start = rawText.indexOf('[');
+      var end = rawText.lastIndexOf(']');
+      if (start !== -1 && end !== -1 && end > start) {
+        try { parsed = JSON.parse(rawText.substring(start, end + 1)); }
+        catch (e2) { parsed = null; }
+      }
+    }
+  }
+  if (!parsed || Object.prototype.toString.call(parsed) !== '[object Array]') {
+    return [];
+  }
+  var out = [];
+  for (i = 0; i < parsed.length; i++) {
+    var lens = parsed[i];
+    if (!lens || typeof lens.name !== 'string' || typeof lens.why !== 'string' ||
+        Object.prototype.toString.call(lens.books) !== '[object Array]') {
+      continue;
+    }
+    var name = lens.name.replace(/^\s+|\s+$/g, '');
+    if (name === '') { continue; }
+    if (isBlockedLensName(name)) { continue; }
+    var kept = [];
+    var seen = {};
+    var j;
+    for (j = 0; j < lens.books.length; j++) {
+      var norm = normalizeLensTitle(lens.books[j]);
+      if (norm !== '' &&
+          Object.prototype.hasOwnProperty.call(titleSet, norm) &&
+          !Object.prototype.hasOwnProperty.call(seen, norm)) {
+        seen[norm] = true;
+        kept.push(titleSet[norm]);
+      }
+    }
+    if (kept.length < 2) { continue; }
+    out.push({ name: name, why: lens.why.replace(/^\s+|\s+$/g, ''), books: kept });
+    if (out.length >= 5) { break; }
+  }
+  return out;
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -735,7 +816,8 @@ window.YumiBrain = {
   getAggregateCounts: getAggregateCounts,
   sendMessage:        sendMessage,
   gatherLensMetadata: gatherLensLibraryMetadata,
-  generateLenses:     generateLenses
+  generateLenses:     generateLenses,
+  evalLensResponse:   evalLensResponse
 };
 
 // Kick off preload at script-load time so buildYumiSystem can return
