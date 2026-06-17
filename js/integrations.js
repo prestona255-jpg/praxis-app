@@ -12,6 +12,11 @@
 var CLAUDE_PROXY_URL       = '/.netlify/functions/claude-proxy';
 var GOOGLE_BOOKS_PROXY_URL = '/.netlify/functions/google-books-proxy';
 
+// Soft shared gate for the three Netlify proxies -- ships in the public
+// client bundle by design (NOT a secret; deters casual abuse). Proxies
+// enforce it only when the Netlify env var PRAXIS_CLIENT_KEY is set.
+var PRAXIS_CLIENT_KEY      = '25a123effd6138469e8ca7a1103528338b94fc6c6466c8c34f283da9779bcdd5';
+
 var firebaseConfig = {
   apiKey:            "AIzaSyDegS-mT0hrBVuptm-I-ByrogeLmJis6rE",
   authDomain:        "praxis-b25d6.firebaseapp.com",
@@ -1245,7 +1250,7 @@ function fetchGoogleBooks(isbn, callback) {
   try {
     fetch(GOOGLE_BOOKS_PROXY_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
       body:    JSON.stringify({ q: 'isbn:' + isbn })
     }).then(function (res) {
       return res.json();
@@ -1324,7 +1329,7 @@ function fetchBookByTitle(title, author, callback) {
     }
     fetch(GOOGLE_BOOKS_PROXY_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
       body:    JSON.stringify({ q: q })
     }).then(function (res) {
       return res.json();

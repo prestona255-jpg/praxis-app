@@ -91,7 +91,7 @@ function summarizeAndRoll(uid, droppedTurn) {
 
   return fetch('/.netlify/functions/claude-proxy', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
     body:    JSON.stringify(payload)
   }).then(function (res) {
     if (!res.ok) {
@@ -551,7 +551,7 @@ function sendMessage(userText) {
 
   return fetch('/.netlify/functions/claude-proxy', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
     body:    JSON.stringify(payload)
   }).then(function (res) {
     if (!res.ok) {

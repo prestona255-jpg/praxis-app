@@ -3881,7 +3881,7 @@ function handleShelfScanFile(input, btn) {
       Math.round(base64.length / 1024) + 'KB base64');
     fetch('/.netlify/functions/vision-proxy', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
       body:    JSON.stringify({ image: base64, mediaType: 'image/jpeg' })
     }).then(function(res) {
       if (res.status === 200) {
