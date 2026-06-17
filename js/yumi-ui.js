@@ -327,6 +327,38 @@ function refreshYumiPanelForAuthChange(force) {
   }
 }
 
+// S2: the contextual line under Bloom, keyed off parts[0] of the hash.
+// Copy is in Yumi's voice and inside the covenant -- it never implies she
+// reads private notes or summarizes a book. PLACEHOLDERS -- Preston finalizes.
+var YUMI_BLOOM_LINES = {
+  home:      'tap to see what I\'m noticing',
+  books:     'tap to find lenses in your library',
+  book:      'tap to sit with this book together',
+  artifact:  'tap to sit with this book together',
+  arcs:      'tap to trace threads between your arcs',
+  arc:       'tap to think this through with me',
+  subtheory: 'tap to think this through with me',
+  notebook:  'I\'m here when you want to talk it through'
+};
+var YUMI_BLOOM_LINE_DEFAULT = 'tap to talk';
+
+function yumiBloomLineFor(route) {
+  if (route && Object.prototype.hasOwnProperty.call(YUMI_BLOOM_LINES, route)) {
+    return YUMI_BLOOM_LINES[route];
+  }
+  return YUMI_BLOOM_LINE_DEFAULT;
+}
+
+// Read parts[0] of the hash (the route family, e.g. 'book' for #book/<id>)
+// and paint the matching line. Account / yumi-sees / empty / unknown fall
+// through to the safe default.
+function updateYumiBloomLine() {
+  if (!yumiBloomLineEl) { return; }
+  var rest = location.hash.replace(/^#/, '');
+  var route = rest.split('/')[0];
+  yumiBloomLineEl.textContent = yumiBloomLineFor(route);
+}
+
 function buildYumiBloom() {
   var btn = document.createElement('button');
   btn.id = YUMI_BLOOM_ID;
@@ -379,6 +411,7 @@ function buildYumiBloom() {
     '</span>' +
     '<span class="yumi-bloom-line">tap to talk</span>';
   yumiBloomLineEl = btn.querySelector('.yumi-bloom-line');
+  updateYumiBloomLine();
   btn.addEventListener('click', function() {
     toggleYumiPanel();
   });
@@ -604,6 +637,8 @@ function initYumiUI() {
   // 6.2c: close the panel when navigating into an arc, so an open Yumi carried
   // in from a prior page never parks over the constellation.
   window.addEventListener('hashchange', suppressYumiOnArc);
+  // S2: keep Bloom's contextual line in sync with the active route.
+  window.addEventListener('hashchange', updateYumiBloomLine);
 }
 
 if (document.readyState === 'loading') {
