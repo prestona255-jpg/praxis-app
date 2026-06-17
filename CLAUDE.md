@@ -272,3 +272,54 @@ For this build only, this canon overrides these design-spec points:
 - The two functional fixes (Arcs "Your arcs" list; picker `scrollIntoView`) are already
   shipped at v3.107 — they are **verify-only**, not build. Fix #1's card *styling* to §4-G
   is the one residual, folded into the Arcs stage.
+
+## Live Forensic Smoke Test — MANDATORY before any "done" or ship
+
+**Why this exists.** Data-layer checks ("I called the function and it returned" / "I wrote the doc and
+read it back") are necessary but **not sufficient**. Render regressions, CSS bleed across surfaces,
+broken hover/affordances, dead buttons, and data duplication/orphaning are **invisible** to
+function-level verification — they only surface when you drive the real rendered UI a human touches.
+The Notebook v3.112 ship passed a "9/9" data-layer check and still shipped a dead Create button, a dead
+Yumi chat, a broken Arcs List view, lost hover affordances, and a duplicated shelf — all of which a
+60-second UI pass catches instantly. **If a human can't see it or click it, it isn't done.**
+
+### Verification-safety rules (always, no exceptions)
+- **UI-driven > function-call.** Prove behavior by clicking/typing through the rendered app, not by
+  invoking functions in the console. A green function-level check is a precondition, never the proof.
+- **Never run destructive verification on a real user account.** No clearing its `localStorage`, no
+  forced auth-merges, no write/delete cycles on `prestona255` (or any real account). Use a **fresh
+  throwaway Firebase account** for all write/behavior tests. (Destructive verification on the real
+  account is the suspected cause of the v3.112 shelf-duplication damage.)
+- **Back up before any recovery write** to a real account — export the relevant Firestore docs to a
+  local JSON file first, so the action is reversible.
+- **Counts must match data.** On every data-bearing surface, the rendered count must equal the stored
+  count (this is how you catch duplication and orphaning).
+- **Console must be clean** on every surface you check.
+
+### When to run
+- **FULL smoke test before every final acceptance gate / ship.**
+- **Any change touching `views.js` or shared CSS (`components.css` / `theme.css`)** automatically
+  triggers, at minimum, a render check of **Shelf + Arcs (List & Web) + Notebook + a console scan** —
+  because the stylesheet is global and a single over-broad selector bleeds across surfaces (exactly how
+  the notebook epic broke the Arcs List view from a notebook-only change).
+
+### The surface checklist (drive each, signed in, on representative data)
+- **Home** — hero + "open the constellation" render; no console errors.
+- **Shelf** — books render **once each (no duplicates)**, covers correct, read-status chips present;
+  Covers + List views both render; add/scan/bulk controls present. **Rendered count == stored count.**
+- **Arcs — List** — arcs render; each arc's sub-theories render as a **proper list (NOT blown-up book
+  covers)**; descriptions intact.
+- **Arcs — Web / constellation** — glyphs + links render; no crash.
+- **Sub-theory** — **hover a sub-theory card reveals its action affordances (unlink, etc.) and they
+  click**; the sub-theory detail opens (evidence rail + register/publish controls present).
+- **Notebook (the spread, Alt 1)** — tabs + counts correct; **writeline grows with content (type past
+  one line — nothing is clipped or unreachable)**; capture in each register (marginalia / journal /
+  question) routes correctly (by-kind visibility; bookless → Inbox); **gather → Choose an arc → Create
+  produces a real sub-theory** with the gathered notes as evidence (verify end-to-end **by clicking**);
+  master "Yumi reads along" switch + "What Yumi sees" present and reflect state.
+- **Yumi** — chat opens and a message **round-trips**; if the endpoint is gated or down, it must **fail
+  gracefully with the expected message**, not a generic crash.
+- **Logged-out** — protected pages (Notebook, Arcs) render a sign-in prompt with **no crash**.
+
+Record each surface as **PASS/FAIL with the actual observed evidence** (rendered values, console
+output, screenshots where useful). **A single FAIL blocks "done."**
