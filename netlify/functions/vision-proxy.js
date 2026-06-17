@@ -134,15 +134,17 @@ exports.handler = async function(event) {
 
     var data = await response.json();
 
-    // Upstream error -- pass the status through with detail, do not 200.
+    // Upstream error -- pass the status through, do not 200. Log the
+    // upstream detail server-side; never echo it to the client.
     if (response.status !== 200) {
+      console.error('[vision-proxy] upstream error', response.status, data);
       return {
         statusCode: response.status,
         headers: {
           'Content-Type':                'application/json',
           'Access-Control-Allow-Origin': '*'
         },
-        body: JSON.stringify({ error: 'vision-upstream-error', detail: data })
+        body: JSON.stringify({ error: 'vision-upstream-error' })
       };
     }
 
@@ -197,10 +199,13 @@ exports.handler = async function(event) {
     }
 
   } catch(err) {
+    // Keep the detail server-side only; never echo internal error
+    // text to the client.
+    console.error('[vision-proxy] error', err);
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: 'server-error' })
     };
   }
 };
