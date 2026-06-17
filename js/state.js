@@ -1151,6 +1151,34 @@ function unassignBookFromTheme(themeId, bookId) {
   return true;
 }
 
+// Rename a theme/lens (S4 lens panel). Trims; rejects empty; no-op (no write)
+// when unchanged. Bumps updatedAt and persists on a real change.
+function renameUserTheme(themeId, name) {
+  if (typeof themeId !== 'string') { return false; }
+  var theme = state.userThemes && state.userThemes[themeId];
+  if (!theme) { return false; }
+  var trimmed = (typeof name === 'string') ? name.trim() : '';
+  if (trimmed === '') { return false; }
+  if (theme.name === trimmed) { return false; }
+  theme.name = trimmed;
+  theme.updatedAt = Date.now();
+  markThemesDirty();
+  saveState();
+  return true;
+}
+
+// Delete a theme/lens entirely (S4 lens panel "Not this"). Membership lives
+// on the theme record, so removing it removes the lens and its bookIds; no
+// book record is touched.
+function deleteUserTheme(themeId) {
+  if (typeof themeId !== 'string') { return false; }
+  if (!state.userThemes || !state.userThemes[themeId]) { return false; }
+  delete state.userThemes[themeId];
+  markThemesDirty();
+  saveState();
+  return true;
+}
+
 // 9.5 Stage 1: resonance links between two sub-theories. linkSubTheories
 // records a symmetric edge — each id is added to the other's
 // linkedSubTheories array — and bumps updatedAt on both; unlinkSubTheories

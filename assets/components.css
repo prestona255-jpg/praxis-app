@@ -7229,3 +7229,273 @@
 .subtheory-register-body:focus-visible {
   outline-color: var(--marginalia-color);
 }
+
+/* ===== LENS PANEL (S4) =====
+   The "Ask Yumi for more lenses" modal. SOLID chrome per canon (no
+   backdrop-filter / blur anywhere); parchment surface, tokens only. */
+.lens-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+
+.lens-panel-overlay.lens-panel-open {
+  display: flex;
+}
+
+.lens-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  /* solid scrim, NO blur (canon overlay rule) */
+  background: color-mix(in srgb, var(--br-deep) 52%, transparent);
+}
+
+.lens-panel {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - var(--sp-6) - var(--sp-6));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 1px 1px 0 var(--highlight-edge),
+    var(--shadow-spotlight);
+  animation: lens-panel-in 0.24s var(--ease) both;
+}
+
+.lens-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.lens-panel-glyph {
+  flex: 0 0 auto;
+  display: block;
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--gold) 32%, transparent));
+}
+
+.lens-panel-glyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lens-panel-headtext {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lens-panel-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  color: var(--ink);
+}
+
+.lens-panel-sub {
+  margin: 2px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.lens-panel-close {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: var(--fs-display);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+}
+
+.lens-panel-close:hover {
+  color: var(--ink);
+}
+
+.lens-panel-body {
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.lens-panel-section {
+  margin-bottom: var(--sp-5);
+}
+
+.lens-panel-section-label {
+  margin-bottom: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lens-panel-stub {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.lens-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.lens-card-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lens-card-name {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.lens-card-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+
+.lens-card-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.lens-card-action {
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.lens-card-action:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.lens-card-action-drop:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.lens-card-rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+
+.lens-panel-make {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+}
+
+.lens-panel-make-label {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lens-panel-make-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.lens-panel-make-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.lens-panel-make-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.lens-panel-make-btn {
+  flex: 0 0 auto;
+  background: var(--grad);
+  color: var(--text-on-dark);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.lens-panel-covenant {
+  margin: var(--sp-4) 0 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.lens-glyph-petals {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: yumi-bloom-spin 26s linear infinite;
+}
+
+@keyframes lens-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-panel { animation: none; }
+  .lens-glyph-petals { animation: none; }
+}

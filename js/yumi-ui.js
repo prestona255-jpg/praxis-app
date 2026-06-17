@@ -664,4 +664,328 @@ window.YumiUI = {
   refreshPanelForAuth:  refreshYumiPanelForAuthChange
 };
 
+// =====================================================================
+// LENS PANEL (S4) -- opened by the shelf's "Ask Yumi for more lenses".
+// Yumi at the head, the user's hand-made lenses as cards (Rename / Not
+// this), an "or name one yourself" input (reuses createUserTheme), and the
+// covenant line. AI-PROPOSED lenses are a feature-flagged STUB (default
+// off) -- live generation is the gated SEC follow-on. Esc / backdrop /
+// close dismiss; focus is saved on open and restored on close.
+// =====================================================================
+var LENS_PANEL_ID    = 'lens-panel';
+var lensPanelEl      = null;
+var lensPanelBodyEl  = null;
+var lensPanelLastFocus = null;
+
+// Feature flag for Yumi's AI lens suggestions. Default OFF -- the live
+// model proposing lenses is the gated follow-on (needs Stage SEC + authored
+// prompts + an eval rubric), out of scope here.
+function lensAiSuggestionsEnabled() {
+  return ls('praxis_lens_ai_suggestions', false) === true;
+}
+
+// The signed-in user's hand-made lenses (userThemes), name-sorted.
+function lensPanelUserThemes() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var out = [];
+  if (u && u.uid && state.userThemes) {
+    var k;
+    for (k in state.userThemes) {
+      if (Object.prototype.hasOwnProperty.call(state.userThemes, k) &&
+          state.userThemes[k] && state.userThemes[k].userId === u.uid) {
+        out.push(state.userThemes[k]);
+      }
+    }
+  }
+  out.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+  return out;
+}
+
+// A small static Bloom glyph for the panel head (slow-spinning petals,
+// frozen under reduced-motion). Token colours straight into fill/stop-color.
+function lensGlyphSvg() {
+  var petals = '';
+  var pa;
+  for (pa = 0; pa < 360; pa = pa + 60) {
+    petals = petals + '<ellipse cx="24" cy="11" rx="2.6" ry="7" transform="rotate(' + pa + ' 24 24)"/>';
+  }
+  return '<svg viewBox="0 0 48 48" width="40" height="40" role="img" focusable="false">' +
+    '<defs><radialGradient id="lens-glyph-core" cx="50%" cy="50%" r="50%">' +
+    '<stop offset="0%" stop-color="var(--text-on-dark)"/>' +
+    '<stop offset="45%" stop-color="var(--gold-light)"/>' +
+    '<stop offset="100%" stop-color="var(--gold)"/>' +
+    '</radialGradient></defs>' +
+    '<g class="lens-glyph-petals" fill="var(--gold-light)" opacity="0.85">' + petals + '</g>' +
+    '<circle cx="24" cy="24" r="7" fill="url(#lens-glyph-core)"/>' +
+    '</svg>';
+}
+
+function buildLensCard(theme) {
+  var card = document.createElement('div');
+  card.className = 'lens-card';
+  card.setAttribute('data-lens-id', theme.id);
+
+  var main = document.createElement('div');
+  main.className = 'lens-card-main';
+  var name = document.createElement('span');
+  name.className = 'lens-card-name';
+  name.textContent = theme.name;
+  main.appendChild(name);
+  var meta = document.createElement('span');
+  meta.className = 'lens-card-meta';
+  var n = Array.isArray(theme.bookIds) ? theme.bookIds.length : 0;
+  meta.textContent = n + (n === 1 ? ' book' : ' books');
+  main.appendChild(meta);
+  card.appendChild(main);
+
+  var actions = document.createElement('div');
+  actions.className = 'lens-card-actions';
+  var renameBtn = document.createElement('button');
+  renameBtn.type = 'button';
+  renameBtn.className = 'lens-card-action';
+  renameBtn.textContent = 'Rename';
+  renameBtn.addEventListener('click', function () { lensCardRename(theme.id); });
+  actions.appendChild(renameBtn);
+  var dropBtn = document.createElement('button');
+  dropBtn.type = 'button';
+  dropBtn.className = 'lens-card-action lens-card-action-drop';
+  dropBtn.textContent = 'Not this';
+  dropBtn.addEventListener('click', function () {
+    if (typeof deleteUserTheme === 'function' && deleteUserTheme(theme.id)) {
+      lensPanelRefresh();
+    }
+  });
+  actions.appendChild(dropBtn);
+  card.appendChild(actions);
+  return card;
+}
+
+// Inline rename: swap the card for an input + Save. Enter commits, Escape
+// cancels (and is stopped from bubbling to the panel's Escape-to-close).
+function lensCardRename(themeId) {
+  if (!lensPanelBodyEl) { return; }
+  var card = lensPanelBodyEl.querySelector('[data-lens-id="' + themeId + '"]');
+  var theme = state.userThemes && state.userThemes[themeId];
+  if (!card || !theme) { return; }
+  card.innerHTML = '';
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'lens-card-rename-input';
+  inp.value = theme.name;
+  inp.setAttribute('autocomplete', 'off');
+  card.appendChild(inp);
+  var save = document.createElement('button');
+  save.type = 'button';
+  save.className = 'lens-card-action';
+  save.textContent = 'Save';
+  function commit() {
+    if (typeof renameUserTheme === 'function') { renameUserTheme(themeId, inp.value); }
+    lensPanelRefresh();
+  }
+  save.addEventListener('click', commit);
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.stopPropagation(); lensPanelRefresh(); }
+  });
+  card.appendChild(save);
+  inp.focus();
+  inp.select();
+}
+
+// Re-render the panel body and, if the shelf is the current route, refresh
+// its Lenses rail so a create/rename/delete shows immediately.
+function lensPanelRefresh() {
+  renderLensPanelBody();
+  var route = location.hash.replace(/^#/, '').split('/')[0];
+  if (route === 'books' && typeof renderShelf === 'function') {
+    renderShelf();
+  }
+}
+
+function renderLensPanelBody() {
+  if (!lensPanelBodyEl) { return; }
+  lensPanelBodyEl.innerHTML = '';
+
+  // Suggested (AI) lenses -- STUB behind the feature flag (default off).
+  var sug = document.createElement('div');
+  sug.className = 'lens-panel-section';
+  var sugLabel = document.createElement('div');
+  sugLabel.className = 'lens-panel-section-label';
+  sugLabel.textContent = 'Yumi’s suggestions';
+  sug.appendChild(sugLabel);
+  var stub = document.createElement('p');
+  stub.className = 'lens-panel-stub';
+  if (lensAiSuggestionsEnabled()) {
+    stub.textContent = 'Looking across your shelf…';
+  } else {
+    stub.textContent = 'Soon, Yumi will notice possible lenses from the shape of your shelf — never from inside your books. For now, name your own below.';
+  }
+  sug.appendChild(stub);
+  lensPanelBodyEl.appendChild(sug);
+
+  // Your hand-made lenses.
+  var mine = document.createElement('div');
+  mine.className = 'lens-panel-section';
+  var mineLabel = document.createElement('div');
+  mineLabel.className = 'lens-panel-section-label';
+  mineLabel.textContent = 'Your lenses';
+  mine.appendChild(mineLabel);
+  var list = lensPanelUserThemes();
+  if (list.length === 0) {
+    var none = document.createElement('p');
+    none.className = 'lens-panel-stub';
+    none.textContent = 'No hand-made lenses yet — name one below.';
+    mine.appendChild(none);
+  } else {
+    var i;
+    for (i = 0; i < list.length; i++) {
+      mine.appendChild(buildLensCard(list[i]));
+    }
+  }
+  lensPanelBodyEl.appendChild(mine);
+
+  // Name your own -- reuses the existing createUserTheme write path.
+  var make = document.createElement('div');
+  make.className = 'lens-panel-make';
+  var makeLabel = document.createElement('label');
+  makeLabel.className = 'lens-panel-make-label';
+  makeLabel.setAttribute('for', 'lens-panel-make-input');
+  makeLabel.textContent = 'or name one yourself';
+  make.appendChild(makeLabel);
+  var row = document.createElement('div');
+  row.className = 'lens-panel-make-row';
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'lens-panel-make-input';
+  input.className = 'lens-panel-make-input';
+  input.setAttribute('placeholder', 'e.g. Books that changed my mind');
+  input.setAttribute('autocomplete', 'off');
+  row.appendChild(input);
+  var addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'lens-panel-make-btn';
+  addBtn.textContent = 'Create lens';
+  function doCreate() {
+    var v = input.value.replace(/^\s+|\s+$/g, '');
+    if (v === '') { return; }
+    if (typeof createUserTheme === 'function' && createUserTheme(v)) {
+      input.value = '';
+      lensPanelRefresh();
+      var again = lensPanelEl ? lensPanelEl.querySelector('#lens-panel-make-input') : null;
+      if (again) { again.focus(); }
+    }
+  }
+  addBtn.addEventListener('click', doCreate);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); doCreate(); }
+  });
+  row.appendChild(addBtn);
+  make.appendChild(row);
+  lensPanelBodyEl.appendChild(make);
+
+  // Covenant.
+  var cov = document.createElement('p');
+  cov.className = 'lens-panel-covenant';
+  cov.textContent = 'Yumi works only from what your books are — never from what’s inside them, and never from your private notes.';
+  lensPanelBodyEl.appendChild(cov);
+}
+
+function buildLensPanel() {
+  var overlay = document.createElement('div');
+  overlay.id = LENS_PANEL_ID;
+  overlay.className = 'lens-panel-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Lenses');
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'lens-panel-backdrop';
+  backdrop.addEventListener('click', function () { closeLensPanel(); });
+  overlay.appendChild(backdrop);
+
+  var panel = document.createElement('div');
+  panel.className = 'lens-panel';
+
+  var header = document.createElement('div');
+  header.className = 'lens-panel-header';
+  var glyph = document.createElement('span');
+  glyph.className = 'lens-panel-glyph';
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.innerHTML = lensGlyphSvg();
+  header.appendChild(glyph);
+  var headtext = document.createElement('div');
+  headtext.className = 'lens-panel-headtext';
+  var title = document.createElement('h2');
+  title.className = 'lens-panel-title';
+  title.textContent = 'Lenses';
+  var sub = document.createElement('p');
+  sub.className = 'lens-panel-sub';
+  sub.textContent = 'Ways of reading across your shelf.';
+  headtext.appendChild(title);
+  headtext.appendChild(sub);
+  header.appendChild(headtext);
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'lens-panel-close';
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '×';
+  close.addEventListener('click', function () { closeLensPanel(); });
+  header.appendChild(close);
+  panel.appendChild(header);
+
+  var body = document.createElement('div');
+  body.className = 'lens-panel-body';
+  body.id = 'lens-panel-body';
+  panel.appendChild(body);
+  lensPanelBodyEl = body;
+
+  overlay.appendChild(panel);
+  return overlay;
+}
+
+function onLensPanelKeydown(e) {
+  if (e.key === 'Escape') { e.preventDefault(); closeLensPanel(); return; }
+  if (e.key === 'Tab' && lensPanelEl) {
+    var f = lensPanelEl.querySelectorAll('button, input, [tabindex]');
+    if (f.length) {
+      var first = f[0];
+      var last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+}
+
+function openLensPanel() {
+  if (!lensPanelEl) {
+    lensPanelEl = buildLensPanel();
+    document.body.appendChild(lensPanelEl);
+  }
+  lensPanelLastFocus = document.activeElement;
+  renderLensPanelBody();
+  lensPanelEl.classList.add('lens-panel-open');
+  document.addEventListener('keydown', onLensPanelKeydown);
+  var inp = lensPanelEl.querySelector('#lens-panel-make-input');
+  if (inp) { inp.focus(); }
+}
+
+function closeLensPanel() {
+  if (lensPanelEl) { lensPanelEl.classList.remove('lens-panel-open'); }
+  document.removeEventListener('keydown', onLensPanelKeydown);
+  // Restore focus to the opener. A create/rename/delete re-renders the shelf
+  // rail, which detaches the original "Ask Yumi" button; fall back to the
+  // live one (or leave focus alone) so close never throws into a dead node.
+  var restore = lensPanelLastFocus;
+  if (!restore || !document.body.contains(restore)) {
+    restore = document.querySelector('.shelf-lens-ask');
+  }
+  if (restore && restore.focus) { restore.focus(); }
+  lensPanelLastFocus = null;
+}
+
+window.PraxisLensPanel = {
+  open:  openLensPanel,
+  close: closeLensPanel
+};
+
 console.log('yumi-ui.js loaded');
