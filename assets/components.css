@@ -1533,6 +1533,15 @@
 .arc-detail-book-member {
   display: flex;
   flex-direction: column;
+  /* Triage FIX C2 (#7): cap a member book to a shelf-cell width. The Batch-2
+     cover-area (.shelf-book-cover-area: width:100%; aspect-ratio:2/3) takes
+     its width from this parent; in the shelf grid the column constrains it,
+     but the single-column .arc-detail-member-list does not, so an arc member
+     book filled the whole content column (~1080px) at 1.5x height -- the
+     "blown-up book cover" #7. 200px matches the desktop shelf cell and reads
+     sanely at mobile too (book cards are smaller than the column either way),
+     so no breakpoint is needed. Notebook-entry members stay full-width. */
+  max-width: 200px;
 }
 
 .arc-detail-book-member .find-this-book {
@@ -5224,7 +5233,14 @@
   color: var(--ink-2);
 }
 
-.st-hover-card--visible { opacity: 1; }
+/* Triage FIX C2 (#6): the idle card keeps pointer-events:none (above) so it
+   never intercepts the hover/pointer it describes -- but the SHOWN card must
+   be interactive, or its Open / Change mark / Unlink / Delete buttons are
+   dead click-through targets (clicks fall through to the SVG mark behind),
+   and the card's own mouseenter -- which cancels the 140ms hide timer so the
+   pointer can travel onto it -- never fires, so it vanishes before a button
+   can be reached. Re-enable pointer events only while visible. */
+.st-hover-card--visible { opacity: 1; pointer-events: auto; }
 
 .st-hover-card-title {
   font-family: var(--font-serif);
