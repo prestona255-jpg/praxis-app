@@ -1998,12 +1998,29 @@ function renderShelf() {
   title.textContent = 'Your shelf';
   headline.appendChild(title);
 
+  // FIX D: the shelf renders the signed-in user's bookIds INDEX, not all of
+  // state.books. state.books can hold orphan/duplicate records (added but never
+  // indexed, or whose index entry was lost) that are NOT on the shelf -- reading
+  // state.books showed them as duplicates with divergent read-status. Signed out
+  // keeps the legacy state.books read (seed / cached demo). shelfBookIds is
+  // reused by the grid assembly below.
+  var shelfUserForList = getCurrentUser();
+  var shelfBookIds = (shelfUserForList && state.userBooks &&
+                      state.userBooks[shelfUserForList.uid] &&
+                      state.userBooks[shelfUserForList.uid].bookIds)
+    ? state.userBooks[shelfUserForList.uid].bookIds : null;
+  var sbcMap = state.books || {};
   var shelfBookCount = 0;
   var sbcId;
-  var sbcMap = state.books || {};
-  for (sbcId in sbcMap) {
-    if (Object.prototype.hasOwnProperty.call(sbcMap, sbcId) && sbcMap[sbcId]) {
-      shelfBookCount++;
+  if (shelfBookIds) {
+    for (sbcId = 0; sbcId < shelfBookIds.length; sbcId = sbcId + 1) {
+      if (sbcMap[shelfBookIds[sbcId]]) { shelfBookCount++; }
+    }
+  } else {
+    for (sbcId in sbcMap) {
+      if (Object.prototype.hasOwnProperty.call(sbcMap, sbcId) && sbcMap[sbcId]) {
+        shelfBookCount++;
+      }
     }
   }
   var countEl = document.createElement('div');
@@ -2534,9 +2551,16 @@ function renderShelf() {
   // User-scoping the shelf is a future seam.
   var books = [];
   var bid;
-  for (bid in booksMap) {
-    if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
-      if (booksMap[bid]) books.push(booksMap[bid]);
+  if (shelfBookIds) {
+    // FIX D: signed in -> render the bookIds index (deduped, no orphans).
+    for (bid = 0; bid < shelfBookIds.length; bid = bid + 1) {
+      if (booksMap[shelfBookIds[bid]]) { books.push(booksMap[shelfBookIds[bid]]); }
+    }
+  } else {
+    for (bid in booksMap) {
+      if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
+        if (booksMap[bid]) books.push(booksMap[bid]);
+      }
     }
   }
   books.sort(function(a, b) {

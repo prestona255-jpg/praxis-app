@@ -35,3 +35,15 @@ data recovery (D/E) last after a Firestore backup. Local commits only; no push u
 - **Gates:** old id gone (grep 0), new id bound ×2; diff `+2/−2`; ES3 clean (parse-exempt → grepped).
   **Model verified working via the deployed proxy: `claude-sonnet-4-6` → HTTP 200** (`claude-sonnet-4-5`
   also 200; chose the newer). Full Yumi UI 200 round-trip confirms at the ship gate (local has no proxy).
+
+## FIX D (code-side) — shelf renders the index, not state.books — DONE (local commit)
+- **Change (views.js renderShelf):** the "N books" count + the grid `books` array now read the
+  signed-in user's **`bookIds` index** (deduped), not all of `state.books` (which carries orphan
+  records). Signed-out keeps the legacy `state.books` read (seed/cached). `shelfBookIds` computed once,
+  reused by both.
+- **Gates:** cscript parse PASS (417536); diff `+31/−7`; ES3 clean.
+- **UI-driven local verify:** seeded `state.books` = 5 (3 indexed + 2 orphans incl. a dup "Title A"
+  `reading` vs indexed `finished`) with `bookIds` = 3 → shelf renders **3** (count "3 books"), **0 dup
+  titles**, orphan "Title D" hidden, "Title A" rendered once (the indexed `finished` record). Duplication
+  cannot recur. **Orphan removal from `prestona255` localStorage = the gated Stage-R cleanup.** No
+  `prestona255` writes.
