@@ -581,6 +581,151 @@ function sendMessage(userText) {
   });
 }
 
+// =====================================================================
+// LENS GENERATION (gated AI suggestions). A ONE-SHOT proxy call that
+// proposes personalized lenses from the library METADATA ONLY -- never
+// the chat transcript, never notebook/marginalia/artifact text. Reuses
+// the same claude-proxy call path as summarizeAndRoll/sendMessage.
+// =====================================================================
+
+// EDITABLE system prompt for lens generation.
+var LENS_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You are grounded in '
+  + 'critical pedagogy -- Freire, hooks, Lorde -- and you hold that a reader '
+  + 'naming their own intellectual world is itself an act of freedom. You are '
+  + 'not a recommender engine, and you do not sort books into market genres.\n\n'
+  + 'You are given a reader\'s library as METADATA ONLY: a list of books '
+  + '(title, author, and the reader\'s own genre tag), plus any lenses they '
+  + 'have already made. You are NOT given their private notes or marginalia, '
+  + 'and you never ask for them.\n\n'
+  + 'Your task: read across the whole library, notice the throughlines the '
+  + 'reader keeps returning to, and propose 3-5 LENSES -- ways of seeing their '
+  + 'shelf that are personal to them and named in the language of ideas, not '
+  + 'the language of bookstores. A lens is "Technologies of Liberation and '
+  + 'Oppression," not "Technology." It is "Selfhood," not "Self-Help." It names '
+  + 'a preoccupation -- a question the reader seems to be living inside.\n\n'
+  + 'For each lens give: name (a few words, evocative and precise, in the '
+  + 'spirit of critical pedagogy); why (one or two sentences, spoken to the '
+  + 'reader -- "you keep circling..." -- naming what you see WITHOUT '
+  + 'summarizing any single book); books (the titles from their library this '
+  + 'lens gathers; only titles actually present).\n\n'
+  + 'Rules: work only from titles, authors, genre tags -- never summarize, '
+  + 'review, or describe a book\'s contents. Propose, never impose -- these are '
+  + 'offerings the reader keeps, renames, or waves away. Invent nothing; every '
+  + 'book named is already on their shelf. Don\'t diagnose, flatter, or '
+  + 'over-claim about the reader. A lens gathers at least two books; if the '
+  + 'library is too small or scattered to name honest lenses, propose fewer '
+  + 'rather than forcing them. Warmth over cleverness.\n\n'
+  + 'Return ONLY a JSON array, nothing around it:\n'
+  + '[{"name":"...","why":"...","books":["title","title"]}]';
+
+// Gather the deduped library as METADATA ONLY (title/author/genre per book)
+// plus the names of lenses the reader already has (distinct present genres +
+// their userThemes). titleToId is carried for the caller's adoption step and
+// is NEVER serialized into the model payload. Signed out falls back to raw
+// state.books (no bookIds index available).
+function gatherLensLibraryMetadata() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var books = [];
+  var titleToId = {};
+  var ids = (u && u.uid && state.userBooks && state.userBooks[u.uid] &&
+             state.userBooks[u.uid].bookIds) ? state.userBooks[u.uid].bookIds : null;
+  function pushBook(b) {
+    if (!b) { return; }
+    var title = (typeof b.title === 'string') ? b.title : '';
+    if (title === '') { return; }
+    books.push({
+      title:  title,
+      author: (typeof b.author === 'string') ? b.author : '',
+      genre:  (typeof b.genre === 'string') ? b.genre : ''
+    });
+    if (b.id) { titleToId[title.toLowerCase().replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ')] = b.id; }
+  }
+  var i;
+  if (ids) {
+    for (i = 0; i < ids.length; i++) { pushBook(state.books[ids[i]]); }
+  } else {
+    var k;
+    for (k in state.books) {
+      if (Object.prototype.hasOwnProperty.call(state.books, k)) { pushBook(state.books[k]); }
+    }
+  }
+  var lensNames = [];
+  var genreSeen = {};
+  for (i = 0; i < books.length; i++) {
+    var g = books[i].genre;
+    if (g && !Object.prototype.hasOwnProperty.call(genreSeen, g)) { genreSeen[g] = true; lensNames.push(g); }
+  }
+  if (u && u.uid && state.userThemes) {
+    var tk;
+    for (tk in state.userThemes) {
+      if (Object.prototype.hasOwnProperty.call(state.userThemes, tk) &&
+          state.userThemes[tk] && state.userThemes[tk].userId === u.uid) {
+        lensNames.push(state.userThemes[tk].name);
+      }
+    }
+  }
+  return { books: books, lensNames: lensNames, titleToId: titleToId };
+}
+
+// Serialize ONLY title/author/genre + existing lens names into the user
+// message. titleToId and any other state are never touched here, so the
+// outgoing payload is provably metadata-only.
+function buildLensGenUserMessage(meta) {
+  var s = 'Here is the reader\'s library (metadata only):\n\n';
+  var i;
+  for (i = 0; i < meta.books.length; i++) {
+    var b = meta.books[i];
+    s = s + '- "' + b.title + '"'
+      + (b.author ? ' by ' + b.author : '')
+      + (b.genre ? ' [' + b.genre + ']' : '') + '\n';
+  }
+  if (meta.lensNames && meta.lensNames.length) {
+    s = s + '\nLenses they already have: ' + meta.lensNames.join(', ') + '\n';
+  }
+  s = s + '\nPropose 3-5 lenses as specified. Return ONLY the JSON array.';
+  return s;
+}
+
+// ONE-SHOT lens generation. Returns a Promise of the raw model text; the
+// caller runs evalLensResponse before showing anything. Does NOT append to
+// the chat transcript. Reuses the claude-proxy call path verbatim.
+function generateLenses(meta) {
+  var payload = {
+    model:      'claude-sonnet-4-6',
+    max_tokens: 1024,
+    system:     LENS_GEN_SYSTEM,
+    messages: [
+      { role: 'user', content: buildLensGenUserMessage(meta) }
+    ]
+  };
+  return fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (body) {
+        throw new Error('proxy ' + res.status + ': ' + body);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    var blocks = data && data.content;
+    var text = '';
+    var i;
+    if (blocks && blocks.length) {
+      for (i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        if (block && block.type === 'text' && typeof block.text === 'string') {
+          text = text + block.text;
+        }
+      }
+    }
+    return text;
+  });
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -588,7 +733,9 @@ window.YumiBrain = {
   getContext:         getYumiContext,
   getContextSnapshot: assembleContextData,
   getAggregateCounts: getAggregateCounts,
-  sendMessage:        sendMessage
+  sendMessage:        sendMessage,
+  gatherLensMetadata: gatherLensLibraryMetadata,
+  generateLenses:     generateLenses
 };
 
 // Kick off preload at script-load time so buildYumiSystem can return
