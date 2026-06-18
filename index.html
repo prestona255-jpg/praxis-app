@@ -119,7 +119,18 @@
         document.addEventListener('visibilitychange', function() {
           if (document.visibilityState === 'visible') {
             reg.update();
+          } else if (document.visibilityState === 'hidden') {
+            // P0: best-effort flush of any unsynced book adds before the tab
+            // backgrounds or closes. Pushes to Firestore via saveState's
+            // booksDirty chokepoint; no-op when nothing is pending. Does NOT
+            // replace the SW update check above.
+            if (typeof flushPendingBooks === 'function') { flushPendingBooks(); }
           }
+        });
+        // P0: pagehide backstop -- fires on actual unload / bfcache, where a
+        // 'hidden' transition may already have passed. Same best-effort flush.
+        window.addEventListener('pagehide', function() {
+          if (typeof flushPendingBooks === 'function') { flushPendingBooks(); }
         });
       })
       .catch(function(err) {

@@ -626,6 +626,21 @@ function clearPendingBookSync(uid, ids) {
   sv(pendingBooksKey(uid), next);
 }
 
+// Phase 0 (Stage 3): best-effort flush of any unsynced book adds. Called on
+// page-hide (visibilitychange hidden / pagehide) so a scan/bulk add gets one
+// more push to Firestore before the tab backgrounds or closes. No-op when
+// nothing is pending. The push goes through saveState's existing booksDirty
+// -> saveBooksToFirestore chokepoint (clears pending on success, re-dirties
+// on failure). Forward refs (getCurrentUser/saveState) resolve at call time.
+function flushPendingBooks() {
+  var fpUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!fpUser || !fpUser.uid) return;
+  var fpPend = getPendingBookSync(fpUser.uid);
+  if (!fpPend || fpPend.length === 0) return;
+  markBooksDirty();
+  saveState();
+}
+
 // Stage 14.1a (workspace sync): dirty flag for the per-user arc doc,
 // mirroring booksDirty. The arc mutators mark it; saveState() consumes
 // it and fires a fire-and-forget /userArcs/{uid} write. Saves touching
@@ -1518,6 +1533,11 @@ function saveState() {
             'saveBooksToFirestore: failed',
             result ? result.error : null
           );
+          // P0 (Stage 3): the push failed -- re-dirty so the NEXT saveState
+          // (a later mutation, or the page-hide flush) retries. pendingBookSync
+          // is intentionally NOT cleared (clear only on success), so the books
+          // stay protected from the REPLACE merge until they confirm.
+          booksDirty = true;
         }
       });
     }
