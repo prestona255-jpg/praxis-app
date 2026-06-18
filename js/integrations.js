@@ -1505,10 +1505,31 @@ function scoreVolume(query, vi) {
       if (qaToks.length > 0) { score += (matched / qaToks.length) * 25; }
     }
   }
-  if (volumeIsbn(vi)) { score += 10; }
-  if (vi.imageLinks) { score += 8; }
+  // ISBN is a strong confidence signal; its ABSENCE is a real down-rank (a
+  // confident modern match almost always carries an ISBN-13).
+  if (volumeIsbn(vi)) { score += 10; } else { score -= 10; }
+  // A real cover is a positive; absence is a SOFT down-rank only -- some legit
+  // editions lack a cover (e.g. The Fire Next Time), so this never alone flags.
+  if (vi.imageLinks) { score += 8; } else { score -= 6; }
   if (vi.language === 'en') { score += 4; }
-  if (vi._printType === 'BOOK') { score += 5; } else if (vi._printType) { score -= 10; }
+  if (vi._printType === 'BOOK') { score += 5; } else if (vi._printType) { score -= 12; }
+  // Stage 2: implausibly-old editions for a modern shelf scan are almost always
+  // Google Books scanned-periodical / first-edition artifacts (the "The Builder"
+  // 1890 case). Down-rank pre-1900 hard, pre-1950 lightly, so the modern reprint
+  // (with its cover + ISBN) ranks above the scan.
+  var ym = ('' + (vi.publishedDate || '')).match(/(\d{4})/);
+  if (ym) {
+    var yr = parseInt(ym[1], 10);
+    if (yr < 1900) { score -= 30; }
+    else if (yr < 1950) { score -= 6; }
+  }
+  // Stage 2: periodical / index / proceedings artifacts -- a bound journal
+  // volume or a scanned index page is never the book a reader photographed.
+  var hay = (((vi.title || '') + ' ' + (vi.subtitle || '')) + '').toLowerCase();
+  if (/\b(index|proceedings|transactions|periodical|magazine|bulletin|gazette|catalogue|catalog|annual report)\b/.test(hay) ||
+      /\bvol\.?\s*\d/.test(hay) || /\bno\.\s*\d/.test(hay)) {
+    score -= 25;
+  }
   return score;
 }
 
@@ -1612,10 +1633,14 @@ function resolveBook(query, callback) {
     for (k = 1; k < scored.length && alts.length < 5; k++) {
       alts.push(volumeToBook(scored[k].vi, volumeIsbn(scored[k].vi)));
     }
-    // Strong only when the top is a close title match AND scores well; else
-    // weak -> the review row flags "check this".
+    // Stage 2: a confident auto-pick now requires a strong score AND a close
+    // title match AND an ISBN on the top result. A junk/weak top (no ISBN,
+    // periodical, implausibly old, low score) falls to 'weak' -> the review row
+    // flags "check this" rather than silently auto-confirming. (ISBN-kind
+    // queries above stay 'strong' -- an exact ISBN match is authoritative.)
     var topClose = titleCloseness((query && query.title) || '', top.vi.title || '');
-    var status = (top.score >= 55 && topClose >= 0.6) ? 'strong' : 'weak';
+    var topHasIsbn = !!volumeIsbn(top.vi);
+    var status = (top.score >= 60 && topClose >= 0.65 && topHasIsbn) ? 'strong' : 'weak';
     finish({ status: status, book: book, alternates: alts, query: query });
   });
 }
