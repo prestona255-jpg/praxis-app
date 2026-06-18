@@ -678,6 +678,65 @@ function clearPendingBookSync(uid, ids) {
   sv(pendingBooksKey(uid), next);
 }
 
+// =====================================================================
+// Stage 6 -- pendingBookDeletes guard (symmetric to pendingBookSync).
+//
+// A per-user persisted set of locally-DELETED book ids whose Firestore
+// removal has NOT yet been confirmed by a remote read. The REPLACE merge
+// (mergeRemoteBookDoc) rebuilds the index from the remote doc; a delete whose
+// write has not yet propagated would otherwise be RESURRECTED from a stale
+// remote read. This set lets the merge SKIP such ids (never copy them back)
+// until the remote no longer lists them, at which point the merge clears the
+// mark. Same dedicated per-uid localStorage key pattern as pendingBookSync;
+// promise-free (cscript-parseable).
+// =====================================================================
+function pendingBookDeletesKey(uid) {
+  return 'praxis_pending_book_deletes_' + (uid || 'anon');
+}
+
+function getPendingBookDeletes(uid) {
+  var arr = ls(pendingBookDeletesKey(uid), []);
+  if (!arr || typeof arr.length !== 'number') return [];
+  return arr;
+}
+
+function markBookDeletePending(uid, bookId) {
+  if (!uid || !bookId) return;
+  var arr = getPendingBookDeletes(uid);
+  var i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i] === bookId) return;
+  }
+  arr.push(bookId);
+  sv(pendingBookDeletesKey(uid), arr);
+}
+
+function isBookDeletePending(uid, bookId) {
+  if (!uid || !bookId) return false;
+  var arr = getPendingBookDeletes(uid);
+  var i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i] === bookId) return true;
+  }
+  return false;
+}
+
+// Clear exactly the ids in `ids` (confirmed-removed on the server) from the
+// delete-pending set. No-op for ids that were never pending.
+function clearPendingBookDelete(uid, ids) {
+  if (!uid || !ids || typeof ids.length !== 'number' || ids.length === 0) return;
+  var arr = getPendingBookDeletes(uid);
+  if (arr.length === 0) return;
+  var remove = {};
+  var i;
+  for (i = 0; i < ids.length; i++) { remove[ids[i]] = true; }
+  var next = [];
+  for (i = 0; i < arr.length; i++) {
+    if (!remove[arr[i]]) next.push(arr[i]);
+  }
+  sv(pendingBookDeletesKey(uid), next);
+}
+
 // Phase 0 (Stage 3): best-effort flush of any unsynced book adds. Called on
 // page-hide (visibilitychange hidden / pagehide) so a scan/bulk add gets one
 // more push to Firestore before the tab backgrounds or closes. No-op when
@@ -688,7 +747,9 @@ function flushPendingBooks() {
   var fpUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   if (!fpUser || !fpUser.uid) return;
   var fpPend = getPendingBookSync(fpUser.uid);
-  if (!fpPend || fpPend.length === 0) return;
+  // Stage 6: a pending DELETE also needs the doc re-pushed so the removal lands.
+  var fpDel = getPendingBookDeletes(fpUser.uid);
+  if ((!fpPend || fpPend.length === 0) && (!fpDel || fpDel.length === 0)) return;
   markBooksDirty();
   saveState();
 }

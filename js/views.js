@@ -4609,6 +4609,96 @@ function confirmReviewBooks(rowStates, user) {
   renderShelf();
 }
 
+// Stage 6: delete a book DURABLY. Removes it from state.books + the user's
+// index, scrubs every reference (arc membership, sub-theory book-evidence,
+// notebook entry bookIds, theme membership, the book artifact), then marks the
+// delete pending (so a stale remote read cannot resurrect it -- see
+// mergeRemoteBookDoc) and flushes through the booksDirty -> Firestore chokepoint.
+// Each scrubbed collection is marked dirty so its cleanup also syncs. Returns
+// true on success.
+function deleteBook(uid, id) {
+  if (!uid || !id || !state.books || !state.books[id]) { return false; }
+
+  // 1. the user's book index
+  if (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) {
+    var ub = state.userBooks[uid].bookIds, nextUb = [], ui;
+    for (ui = 0; ui < ub.length; ui++) { if (ub[ui] !== id) { nextUb.push(ub[ui]); } }
+    state.userBooks[uid].bookIds = nextUb;
+  }
+
+  // 2. the record itself
+  delete state.books[id];
+
+  // 3. arc membership (bookIds entries are {id,addedAt} or a bare id string)
+  var arcsTouched = false;
+  var am = state.arcs || {}, ak;
+  for (ak in am) {
+    if (am.hasOwnProperty(ak) && am[ak] && am[ak].bookIds) {
+      var arr = am[ak].bookIds, kept = [], bi, hit = false;
+      for (bi = 0; bi < arr.length; bi++) {
+        var ent = arr[bi]; var eid = (ent && ent.id) ? ent.id : ent;
+        if (eid === id) { hit = true; } else { kept.push(ent); }
+      }
+      if (hit) { am[ak].bookIds = kept; arcsTouched = true; }
+    }
+  }
+
+  // 4. sub-theory book-evidence ({kind:'book', refId:<bookId>})
+  var subsTouched = false;
+  var sm = state.subTheories || {}, sk;
+  for (sk in sm) {
+    if (sm.hasOwnProperty(sk) && sm[sk] && sm[sk].evidence) {
+      var ev = sm[sk].evidence, keptEv = [], ei, evHit = false;
+      for (ei = 0; ei < ev.length; ei++) {
+        if (ev[ei] && ev[ei].kind === 'book' && ev[ei].refId === id) { evHit = true; }
+        else { keptEv.push(ev[ei]); }
+      }
+      if (evHit) { sm[sk].evidence = keptEv; subsTouched = true; }
+    }
+  }
+
+  // 5. notebook entry bookIds (covers marginalia / journal / question)
+  var notesTouched = false;
+  var em = state.notebookEntries || {}, ek;
+  for (ek in em) {
+    if (em.hasOwnProperty(ek) && em[ek] && em[ek].bookIds) {
+      var be = em[ek].bookIds, nb = [], bj, nHit = false;
+      for (bj = 0; bj < be.length; bj++) { if (be[bj] === id) { nHit = true; } else { nb.push(be[bj]); } }
+      if (nHit) { em[ek].bookIds = nb; notesTouched = true; }
+    }
+  }
+
+  // 6. theme membership
+  var themesTouched = false;
+  var tm = state.userThemes || {}, tk;
+  for (tk in tm) {
+    if (tm.hasOwnProperty(tk) && tm[tk] && tm[tk].bookIds) {
+      var tbb = tm[tk].bookIds, nt = [], tj, thHit = false;
+      for (tj = 0; tj < tbb.length; tj++) { if (tbb[tj] === id) { thHit = true; } else { nt.push(tbb[tj]); } }
+      if (thHit) { tm[tk].bookIds = nt; themesTouched = true; }
+    }
+  }
+
+  // 7. the book artifact for this (uid, book)
+  if (state.bookArtifacts && typeof artifactKey === 'function') {
+    var artK = artifactKey(uid, id);
+    if (state.bookArtifacts[artK]) { delete state.bookArtifacts[artK]; }
+  }
+
+  // 8. durability: stop guarding it as a pending ADD; start guarding the DELETE
+  if (typeof clearPendingBookSync === 'function') { clearPendingBookSync(uid, [id]); }
+  if (typeof markBookDeletePending === 'function') { markBookDeletePending(uid, id); }
+
+  // mark every collection we scrubbed so its cleanup persists to Firestore
+  markBooksDirty();
+  if (arcsTouched && typeof markArcsDirty === 'function') { markArcsDirty(); }
+  if (notesTouched && typeof markNotebookDirty === 'function') { markNotebookDirty(); }
+  if (subsTouched && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  if (themesTouched && typeof markThemesDirty === 'function') { markThemesDirty(); }
+  saveState();
+  return true;
+}
+
 // =====================================================================
 // Phase 6 -- existing-library cleanup (mockup E). Mechanism + UI.
 // =====================================================================
@@ -5535,6 +5625,46 @@ function renderBookDetail(bookId) {
     bdNewRow.appendChild(bdNewBtn);
     themesWrap.appendChild(bdNewRow);
     actions.appendChild(themesWrap);
+
+    // Stage 6: "Remove from shelf" -- confirm-gated (never one-tap). The app
+    // avoids native confirm(), so the button swaps in an inline confirm row.
+    // deleteBook scrubs all refs + guards the delete (pendingBookDeletes) so it
+    // survives reload without resurrecting. Reachable from the shelf via the
+    // card -> this detail view.
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'book-detail-remove';
+    removeBtn.textContent = 'Remove from shelf';
+    removeBtn.addEventListener('click', function() {
+      var confirmRow = document.createElement('div');
+      confirmRow.className = 'book-detail-remove-confirm';
+      var msg = document.createElement('p');
+      msg.className = 'book-detail-remove-msg';
+      msg.textContent = 'Delete “' + (book.title || 'this book') + '”? This can’t be undone.';
+      var btnRow = document.createElement('div');
+      btnRow.className = 'book-detail-remove-actions';
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'book-detail-remove-cancel';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function() {
+        if (confirmRow.parentNode) { confirmRow.parentNode.replaceChild(removeBtn, confirmRow); }
+      });
+      var confirmDel = document.createElement('button');
+      confirmDel.type = 'button';
+      confirmDel.className = 'book-detail-remove-confirm-btn';
+      confirmDel.textContent = 'Delete';
+      confirmDel.addEventListener('click', function() {
+        if (deleteBook(user.uid, bookId)) {
+          if (typeof showToast === 'function') { showToast('Removed from your shelf'); }
+          location.hash = 'shelf';
+        }
+      });
+      btnRow.appendChild(cancelBtn); btnRow.appendChild(confirmDel);
+      confirmRow.appendChild(msg); confirmRow.appendChild(btnRow);
+      if (removeBtn.parentNode) { removeBtn.parentNode.replaceChild(confirmRow, removeBtn); }
+    });
+    actions.appendChild(removeBtn);
   } else {
     var signinBtn = document.createElement('button');
     signinBtn.type = 'button';

@@ -481,6 +481,17 @@ function mergeRemoteBookDoc(uid, data) {
   var ri;
   for (ri = 0; ri < remoteIds.length; ri++) { remoteHas[remoteIds[ri]] = true; }
 
+  // Stage 6: ids the user DELETED whose remote removal may still be in flight.
+  // A remote doc read BEFORE the deletion propagated still lists them -- they
+  // must NOT be copied back (resurrected). When the remote no longer lists a
+  // pending-delete id, the removal is confirmed -> clear the pending mark.
+  var delPend = (typeof getPendingBookDeletes === 'function') ? getPendingBookDeletes(uid) : [];
+  var delSet = {}, dk, confirmedDeletes = [];
+  for (dk = 0; dk < delPend.length; dk++) {
+    delSet[delPend[dk]] = true;
+    if (!remoteHas[delPend[dk]]) { confirmedDeletes.push(delPend[dk]); }
+  }
+
   // Delete a previously-known local id ONLY if absent from remote AND not
   // pending-sync. Pending ids (unsynced local adds) are kept.
   var p;
@@ -494,26 +505,40 @@ function mergeRemoteBookDoc(uid, data) {
   // 3.10i cover normalization stays on the remote payload, pre-copy.
   var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
 
-  // New index = remote set, then any still-pending local id not already in
-  // remote -- preserving the unsynced book's shelf position.
-  var nextIds = remoteIds.slice();
+  // New index = remote set MINUS pending-deletes, then any still-pending local
+  // add not already in remote -- preserving the unsynced book's shelf position.
+  var nextIds = [];
+  for (ri = 0; ri < remoteIds.length; ri++) {
+    if (!delSet[remoteIds[ri]]) { nextIds.push(remoteIds[ri]); }
+  }
   var pend = getPendingBookSync(uid);
   var pk;
   for (pk = 0; pk < pend.length; pk++) {
     var pendId = pend[pk];
-    if (!remoteHas[pendId] && state.books[pendId]) {
+    if (!remoteHas[pendId] && !delSet[pendId] && state.books[pendId]) {
       nextIds.push(pendId);
     }
   }
   state.userBooks[uid].bookIds = nextIds;
 
-  // Remote wins for synced ids; pending-only ids keep their local record.
+  // Remote wins for synced ids; a pending-delete id is SKIPPED (not resurrected)
+  // and any stray local copy of it is dropped; pending-add ids keep their local
+  // record.
   var r;
   for (r = 0; r < remoteIds.length; r++) {
     var rbid = remoteIds[r];
+    if (delSet[rbid]) {
+      if (state.books[rbid]) { delete state.books[rbid]; }
+      continue;
+    }
     if (remoteBooks[rbid]) {
       state.books[rbid] = remoteBooks[rbid];
     }
+  }
+
+  // Stage 6: removals the remote has now dropped are confirmed -> stop guarding.
+  if (confirmedDeletes.length > 0 && typeof clearPendingBookDelete === 'function') {
+    clearPendingBookDelete(uid, confirmedDeletes);
   }
   // Phase 1 footgun fix: backfill schema fields AFTER the wholesale remote
   // copy, on the MERGED state.books -- so a remote record arriving without the

@@ -2554,6 +2554,66 @@
   color: var(--ink);
 }
 
+/* Stage 6: Remove-from-shelf -- a quiet danger ghost (mockup .btn-danger), the
+   last action under the cover. Confirm-gated: clicking swaps in the inline
+   confirm row below (the app avoids native confirm()). */
+.book-detail-remove {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 11px 18px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 400;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger-line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.book-detail-remove:hover {
+  border-color: var(--danger);
+}
+.book-detail-remove-confirm {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  border: 1px solid var(--danger-line);
+  border-radius: 10px;
+}
+.book-detail-remove-msg {
+  margin: 0 0 10px 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.book-detail-remove-actions {
+  display: flex;
+  gap: 8px;
+}
+.book-detail-remove-cancel,
+.book-detail-remove-confirm-btn {
+  flex: 1 1 0;
+  padding: 9px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.book-detail-remove-cancel {
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+.book-detail-remove-cancel:hover { border-color: var(--ink-3); color: var(--ink); }
+.book-detail-remove-confirm-btn {
+  background: var(--danger);
+  color: var(--text-on-dark);
+  border: 1px solid var(--danger);
+}
+.book-detail-remove-confirm-btn:hover { filter: brightness(1.06); }
+
 /* Secondary affordance — Add Marginalia is the workshop-floor
    entry point, lighter weight than the closure CTAs. Mirrors
    .shelf-new-book-bulk transparent + border treatment. */
