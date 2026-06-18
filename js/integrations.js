@@ -1416,4 +1416,208 @@ function fetchBookByTitle(title, author, callback) {
   }
 }
 
+// =====================================================================
+// Phase 2 -- the accuracy engine (shared resolver).
+//
+// resolveBook(query, callback): the single book-matching path that the inputs
+// (ISBN/barcode/title/manual) AND the cleanup pass call. Returns a typed result
+// describing the auto-picked match, its confidence tier, and ranked alternates
+// for the edition picker. NEVER drops: no match yields a manual-entry stub
+// flagged 'none'; no cover yields coverUrl null (the UI renders a typographic
+// placeholder). ES3, two-arg .then(ok, err), fail-soft (never throws).
+//
+//   query:    { kind:'isbn'|'title', isbn?, title?, author? }
+//   callback(result):
+//     { status:'strong'|'weak'|'none',
+//       book:{ title,author,year,pageCount,publisher,description,isbn,coverUrl,coverCandidates },
+//       alternates:[ <book>, ... ],   // ranked editions for the picker (excl. picked)
+//       query }
+// =====================================================================
+
+// High-res OpenLibrary cover by ISBN. ?default=false makes OL 404 (instead of
+// returning a 1x1 blank) when it has no cover, so an <img> onerror can fall
+// through to the Google Books image (coverCandidates[1]).
+function openLibraryIsbnCover(isbn) {
+  if (typeof isbn !== 'string' || isbn.length === 0) { return null; }
+  return 'https://covers.openlibrary.org/b/isbn/' + encodeURIComponent(isbn) + '-L.jpg?default=false';
+}
+
+// Largest Google Books image from volumeInfo.imageLinks, https-normalized,
+// page-curl artifact stripped. Order: extraLarge..smallThumbnail. null if none.
+function googleBooksLargestCover(imageLinks) {
+  if (!imageLinks) { return null; }
+  var order = ['extraLarge', 'large', 'medium', 'small', 'thumbnail', 'smallThumbnail'];
+  var i, u;
+  for (i = 0; i < order.length; i++) {
+    u = imageLinks[order[i]];
+    if (typeof u === 'string' && u.length > 0) {
+      if (u.indexOf('http://') === 0) { u = 'https://' + u.slice(7); }
+      u = u.replace('&edge=curl', '').replace('?edge=curl', '');
+      return u;
+    }
+  }
+  return null;
+}
+
+// ISBN-13 (preferred) or ISBN-10 from a volumeInfo.industryIdentifiers.
+function volumeIsbn(vi) {
+  if (!vi || !vi.industryIdentifiers) { return null; }
+  var ids = vi.industryIdentifiers, i;
+  for (i = 0; i < ids.length; i++) { if (ids[i].type === 'ISBN_13') { return ids[i].identifier; } }
+  for (i = 0; i < ids.length; i++) { if (ids[i].type === 'ISBN_10') { return ids[i].identifier; } }
+  return null;
+}
+
+// Comparison normalize: lowercase, strip punctuation, collapse whitespace.
+function resolverNormalize(s) {
+  if (typeof s !== 'string') { return ''; }
+  var t = s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ');
+  return t.replace(/^\s+|\s+$/g, '');
+}
+
+// Token-overlap closeness 0..1 between two strings, with a containment bonus.
+function titleCloseness(a, b) {
+  var na = resolverNormalize(a), nb = resolverNormalize(b);
+  if (na.length === 0 || nb.length === 0) { return 0; }
+  if (na === nb) { return 1; }
+  var ta = na.split(' '), tb = nb.split(' ');
+  var setb = {}, i;
+  for (i = 0; i < tb.length; i++) { setb[tb[i]] = true; }
+  var hits = 0;
+  for (i = 0; i < ta.length; i++) { if (setb[ta[i]]) { hits++; } }
+  var denom = Math.max(ta.length, tb.length);
+  var ratio = denom > 0 ? hits / denom : 0;
+  if (na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1) { ratio = Math.max(ratio, 0.85); }
+  return ratio;
+}
+
+// Score a volumeInfo against the query (higher = better). vi._printType is the
+// item-level printType set by the caller.
+function scoreVolume(query, vi) {
+  if (!vi) { return -1; }
+  var score = titleCloseness((query && query.title) || '', vi.title || '') * 50;
+  if (query && query.author && vi.authors && vi.authors.length > 0) {
+    var qa = resolverNormalize(query.author), joined = '', ai;
+    for (ai = 0; ai < vi.authors.length; ai++) { joined += ' ' + resolverNormalize(vi.authors[ai]); }
+    if (qa.length > 0) {
+      var qaToks = qa.split(' '), matched = 0, qi;
+      for (qi = 0; qi < qaToks.length; qi++) { if (joined.indexOf(qaToks[qi]) !== -1) { matched++; } }
+      if (qaToks.length > 0) { score += (matched / qaToks.length) * 25; }
+    }
+  }
+  if (volumeIsbn(vi)) { score += 10; }
+  if (vi.imageLinks) { score += 8; }
+  if (vi.language === 'en') { score += 4; }
+  if (vi._printType === 'BOOK') { score += 5; } else if (vi._printType) { score -= 10; }
+  return score;
+}
+
+// Build a normalized book record from a volumeInfo (+ a known isbn override).
+// Cover preference: OpenLibrary-by-ISBN first (when isbn known), Google image
+// second; coverUrl is the first candidate (null when neither exists).
+function volumeToBook(vi, knownIsbn) {
+  var isbn = knownIsbn || volumeIsbn(vi) || '';
+  var author = '';
+  if (vi && vi.authors && vi.authors.length > 0) { author = vi.authors.join(', '); }
+  var year = null;
+  if (vi && vi.publishedDate) { var m = ('' + vi.publishedDate).match(/(\d{4})/); if (m) { year = m[1]; } }
+  var olCover = openLibraryIsbnCover(isbn);
+  var gCover = googleBooksLargestCover(vi ? vi.imageLinks : null);
+  var candidates = [];
+  if (olCover) { candidates.push(olCover); }
+  if (gCover) { candidates.push(gCover); }
+  return {
+    title:           (vi && vi.title) ? vi.title : '',
+    author:          author,
+    year:            year,
+    pageCount:       (vi && typeof vi.pageCount === 'number') ? vi.pageCount : null,
+    publisher:       (vi && typeof vi.publisher === 'string') ? vi.publisher : '',
+    description:     (vi && typeof vi.description === 'string') ? vi.description : '',
+    isbn:            isbn,
+    coverUrl:        candidates.length > 0 ? candidates[0] : null,
+    coverCandidates: candidates
+  };
+}
+
+// Low-level Google Books search via the proxy. callback(itemsArray | []).
+// Two-arg .then on every hop -> fail-soft to [] (never throws/drops).
+function googleBooksSearch(q, callback) {
+  var done = false;
+  function finish(items) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(items); } }
+  try {
+    fetch(GOOGLE_BOOKS_PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+      body:    JSON.stringify({ q: q })
+    }).then(function (res) { return res.json(); }, function () { finish([]); })
+      .then(function (data) {
+        if (!data || !data.items || data.items.length === 0) { finish([]); return; }
+        finish(data.items);
+      }, function () { finish([]); });
+  } catch (e) { finish([]); }
+}
+
+function resolveBook(query, callback) {
+  var done = false;
+  function finish(result) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(result); } }
+  function manualStub(stubIsbn) {
+    return {
+      status: 'none',
+      book: {
+        title:   (query && query.title) ? query.title : '',
+        author:  (query && query.author) ? query.author : '',
+        year: null, pageCount: null, publisher: '', description: '',
+        isbn:    stubIsbn || (query && query.isbn) || '',
+        coverUrl: null, coverCandidates: []
+      },
+      alternates: [], query: query
+    };
+  }
+  if (!query || (query.kind !== 'isbn' && query.kind !== 'title')) { finish(manualStub('')); return; }
+
+  if (query.kind === 'isbn') {
+    var isbn = ('' + (query.isbn || '')).replace(/[\s-]/g, '');
+    if (isbn.length === 0) { finish(manualStub('')); return; }
+    googleBooksSearch('isbn:' + isbn, function (items) {
+      if (!items || items.length === 0) { finish(manualStub(isbn)); return; }
+      var vi0 = items[0].volumeInfo || {};
+      vi0._printType = items[0].printType;
+      var book = volumeToBook(vi0, isbn);
+      var alts = [], k;
+      for (k = 1; k < items.length && alts.length < 5; k++) {
+        var viK = items[k].volumeInfo || {};
+        alts.push(volumeToBook(viK, volumeIsbn(viK)));
+      }
+      finish({ status: 'strong', book: book, alternates: alts, query: query });
+    });
+    return;
+  }
+
+  var qTitle = ('' + (query.title || '')).replace(/^\s+|\s+$/g, '');
+  if (qTitle.length === 0) { finish(manualStub('')); return; }
+  var q = 'intitle:' + qTitle;
+  if (typeof query.author === 'string' && query.author.length > 0) { q = q + '+inauthor:' + query.author; }
+  googleBooksSearch(q, function (items) {
+    if (!items || items.length === 0) { finish(manualStub('')); return; }
+    var scored = [], i;
+    for (i = 0; i < items.length; i++) {
+      var vi = items[i].volumeInfo || {};
+      vi._printType = items[i].printType;
+      scored.push({ vi: vi, score: scoreVolume(query, vi) });
+    }
+    scored.sort(function (a, b) { return b.score - a.score; });
+    var top = scored[0];
+    var book = volumeToBook(top.vi, volumeIsbn(top.vi));
+    var alts = [], k;
+    for (k = 1; k < scored.length && alts.length < 5; k++) {
+      alts.push(volumeToBook(scored[k].vi, volumeIsbn(scored[k].vi)));
+    }
+    // Strong only when the top is a close title match AND scores well; else
+    // weak -> the review row flags "check this".
+    var topClose = titleCloseness((query && query.title) || '', top.vi.title || '');
+    var status = (top.score >= 55 && topClose >= 0.6) ? 'strong' : 'weak';
+    finish({ status: status, book: book, alternates: alts, query: query });
+  });
+}
+
 console.log('integrations.js loaded');
