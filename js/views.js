@@ -3952,20 +3952,64 @@ function handoffResolvedSingle(result, source) {
   }
 }
 
-// Phase 3: barcode / ISBN input (mockup C). Native BarcodeDetector where
-// available drives a live camera decode; an ISBN type-in fallback is ALWAYS
-// present (iPhone Safari lacks BarcodeDetector). No external barcode library.
-// A decoded/typed ISBN runs through the shared resolver, then the review screen.
+// Stage 5: lazy-load @zxing/library (UMD) ON DEMAND -- only when the barcode
+// scanner opens on a browser WITHOUT native BarcodeDetector (iPhone Safari).
+// NEVER part of the core bundle / SW precache. The external lib is exempt from
+// the ES3 client rules; this loader + its call sites are ES3. Idempotent and
+// queues concurrent callers; cb(true) once window.ZXing is ready, cb(false) on
+// failure (the ISBN type-in fallback always remains the safety net).
+var zxingLoadState = 'idle'; // idle | loading | ready | failed
+var zxingLoadQueue = [];
+function zxingReady() {
+  return !!(window.ZXing && typeof window.ZXing.BrowserMultiFormatReader === 'function');
+}
+function flushZxingQueue(ok) {
+  var q = zxingLoadQueue, i;
+  zxingLoadQueue = [];
+  for (i = 0; i < q.length; i++) { q[i](ok); }
+}
+function loadZxingLibrary(cb) {
+  if (zxingReady()) { cb(true); return; }
+  if (zxingLoadState === 'failed') { cb(false); return; }
+  zxingLoadQueue.push(cb);
+  if (zxingLoadState === 'loading') { return; }
+  zxingLoadState = 'loading';
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js';
+  s.async = true;
+  s.onload = function() {
+    var ok = zxingReady();
+    zxingLoadState = ok ? 'ready' : 'failed';
+    flushZxingQueue(ok);
+  };
+  s.onerror = function() {
+    zxingLoadState = 'failed';
+    flushZxingQueue(false);
+  };
+  document.head.appendChild(s);
+}
+
+// Phase 3 / Stage 5: barcode / ISBN input (mockup C). A live camera decode runs
+// via native BarcodeDetector where present (Chrome/Android) and via an
+// on-demand @zxing/library decode where it is not (iPhone Safari). An ISBN
+// type-in fallback is ALWAYS present. A decoded/typed ISBN runs through the
+// shared resolver, then the review screen.
 function openBarcodeScanner() {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) { return; }
   hostEl.innerHTML = '';
 
   var hasDetector = (typeof window.BarcodeDetector === 'function');
+  var canCamera = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
   var stream = null;
   var scanning = false;
+  var zxingReader = null;
   function stopCamera() {
     scanning = false;
+    if (zxingReader) {
+      try { zxingReader.reset(); } catch (eR) {}
+      zxingReader = null;
+    }
     if (stream) {
       var tracks = stream.getTracks(), ti;
       for (ti = 0; ti < tracks.length; ti++) { tracks[ti].stop(); }
@@ -3982,7 +4026,7 @@ function openBarcodeScanner() {
   wrap.appendChild(heading);
   var sub = document.createElement('p');
   sub.className = 'barcode-scanner-sub';
-  sub.textContent = hasDetector
+  sub.textContent = canCamera
     ? 'Point your camera at the back-cover barcode.'
     : 'Your browser can’t scan live — type the ISBN below.';
   wrap.appendChild(sub);
@@ -4022,7 +4066,7 @@ function openBarcodeScanner() {
   fb.className = 'isbn-fallback';
   var fbLab = document.createElement('div');
   fbLab.className = 'if-lab';
-  fbLab.textContent = hasDetector ? 'No scanner? Type the ISBN' : 'Type the ISBN';
+  fbLab.textContent = canCamera ? 'No scanner? Type the ISBN' : 'Type the ISBN';
   fb.appendChild(fbLab);
   var fbRow = document.createElement('div');
   fbRow.className = 'if-row';
@@ -4074,7 +4118,7 @@ function openBarcodeScanner() {
   // Start the live camera + decode loop only when BarcodeDetector + getUserMedia
   // are both available. Any failure (no permission, no camera) silently leaves
   // the ISBN fallback as the path -- never blocks the user.
-  if (hasDetector && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+  if (hasDetector && canCamera) {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
       stream = s;
       video.srcObject = s;
@@ -4098,6 +4142,37 @@ function openBarcodeScanner() {
       if (typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
     }, function() {
       status.textContent = 'Camera unavailable — type the ISBN above.';
+    });
+  } else if (canCamera) {
+    // Stage 5: no native BarcodeDetector (iPhone Safari). Lazy-load zxing ONLY
+    // now and decode EAN-13/ISBN from the live camera. Any failure falls back to
+    // the ever-present ISBN type-in -- never blocks the user.
+    status.textContent = 'Starting camera…';
+    loadZxingLibrary(function(ok) {
+      // Bail if the user left the scanner while the lib was loading.
+      if (!video || !document.body.contains(video)) { return; }
+      if (!ok || !zxingReady()) {
+        status.textContent = 'Live scan unavailable — type the ISBN above.';
+        return;
+      }
+      try {
+        zxingReader = new window.ZXing.BrowserMultiFormatReader();
+        scanning = true;
+        status.textContent = '';
+        var onZxResult = function(result) {
+          if (!scanning) { return; }
+          if (result && typeof result.getText === 'function') { lookupIsbn(result.getText()); }
+        };
+        if (typeof zxingReader.decodeFromConstraints === 'function') {
+          zxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, video, onZxResult);
+        } else if (typeof zxingReader.decodeFromVideoDevice === 'function') {
+          zxingReader.decodeFromVideoDevice(null, video, onZxResult);
+        } else {
+          status.textContent = 'Live scan unavailable — type the ISBN above.';
+        }
+      } catch (eZ) {
+        status.textContent = 'Camera unavailable — type the ISBN above.';
+      }
     });
   }
 }
