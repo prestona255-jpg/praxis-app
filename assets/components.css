@@ -7794,7 +7794,22 @@
 .cl-actions { display: flex; gap: 8px; align-items: center; }
 .cl-actions .review-mark-all, .cl-actions .review-confirm { font-size: 12.5px; padding: 8px 14px; }
 
+/* Stage 3 (mockup E): before -> after hero + per-item cover before/after. */
+.cl-hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 20px 24px; margin-bottom: 20px; }
+.cl-hero .ba-big .cover { width: 90px; }
+.cl-hero-tx { flex: 1 1 240px; min-width: 0; }
+.cl-hero-tx h3 { font-family: var(--font-serif); font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+.cl-hero-tx p { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.before-after { display: flex; align-items: center; gap: 12px; }
+.before-after .ba-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.before-after .ba-lab { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.before-after .cover { width: 48px; }
+.before-after .ba-arrow { font-size: 20px; color: var(--ink-3); }
+.cl-mid-cover { display: flex; align-items: center; gap: 16px; }
+.cl-mid-text { min-width: 0; }
+
 @media (max-width: 759px) {
   .cl-item { grid-template-columns: auto 1fr; }
   .cl-actions { grid-column: 1 / -1; }
+  .cl-mid-cover { flex-wrap: wrap; }
 }

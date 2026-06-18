@@ -4178,6 +4178,14 @@ function openManualLookup() {
   titleInput.focus();
 }
 
+// Stage 3: a session registry of book ids whose stored cover URL(s) all FAILED
+// to load -- i.e. the shelf is showing the typographic placeholder for them.
+// The cleanup pass reads this so its "missing / wrong cover" count matches what
+// the shelf actually shows (a stored-but-broken coverUrl is invisible to a
+// null-only check). Populated by buildSelfHealingCover as covers render.
+var coverBrokenIds = {};
+function isCoverBroken(id) { return !!(id && coverBrokenIds[id]); }
+
 // Phase 6 (Stage 1): a self-healing cover element shared by the shelf card,
 // the book-detail header, and the review row. Walks coverCandidates
 // (OpenLibrary-by-ISBN -> Google image) on <img> onerror and, once they are
@@ -4195,12 +4203,18 @@ function buildSelfHealingCover(book, imgClass, placeholderFn) {
   img.alt = '';
   var ci = 0;
   img.src = candidates[ci];
+  // A cover that loads is NOT broken -- clear any stale registry mark (Stage 3).
+  img.addEventListener('load', function() {
+    if (book && book.id) { delete coverBrokenIds[book.id]; }
+  });
   img.addEventListener('error', function() {
     ci = ci + 1;
     if (ci < candidates.length) {
       img.src = candidates[ci];
-    } else if (img.parentNode) {
-      img.parentNode.replaceChild(placeholderFn(), img);
+    } else {
+      // Stage 3: all candidates exhausted -> mark broken so cleanup counts it.
+      if (book && book.id) { coverBrokenIds[book.id] = true; }
+      if (img.parentNode) { img.parentNode.replaceChild(placeholderFn(), img); }
     }
   });
   return img;
@@ -4528,7 +4542,7 @@ function confirmReviewBooks(rowStates, user) {
 // with no cover. Duplicate key = normalized ISBN when present, else normalized
 // title+author. Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
 function scanLibraryForCleanup(uid) {
-  var out = { duplicates: [], missingCovers: [], total: 0 };
+  var out = { duplicates: [], missingCovers: [], wrongCovers: [], total: 0 };
   var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
     ? state.userBooks[uid].bookIds : [];
   var groups = {};
@@ -4537,7 +4551,12 @@ function scanLibraryForCleanup(uid) {
     id = ub[i]; b = state.books[id];
     if (!b) { continue; }
     out.total = out.total + 1;
+    // Stage 3: a book is "missing cover" when coverUrl is null/empty (never had
+    // one), and "wrong cover" when it HAS a coverUrl that failed to load (the
+    // shelf is showing the placeholder -- coverBrokenIds registry). Both feed
+    // the count, so it matches the blank cards on the shelf, not just nulls.
     if (!b.coverUrl || ('' + b.coverUrl).replace(/^\s+|\s+$/g, '') === '') { out.missingCovers.push(id); }
+    else if (isCoverBroken(id)) { out.wrongCovers.push(id); }
     // Group by normalized title+author so a title-only copy and an ISBN-bearing
     // copy of the same book still collide (the prior ISBN-vs-title key split
     // missed that). Different editions of one work also surface for review.
@@ -4636,7 +4655,15 @@ function reResolveCover(bookId, callback) {
     var applied = false;
     if (result && result.status !== 'none' && result.book && state.books[bookId]) {
       var rb = result.book, bb = state.books[bookId];
-      if (rb.coverUrl) { bb.coverUrl = rb.coverUrl; applied = true; }
+      if (rb.coverUrl) {
+        bb.coverUrl = rb.coverUrl;
+        // Stage 3: refresh the candidate list too (the shelf walks it first) and
+        // clear the broken mark so the re-resolved cover stops counting as wrong.
+        bb.coverCandidates = (rb.coverCandidates && rb.coverCandidates.length > 0)
+          ? rb.coverCandidates.slice() : [rb.coverUrl];
+        delete coverBrokenIds[bookId];
+        applied = true;
+      }
       if (!bb.isbn && rb.isbn) { bb.isbn = rb.isbn; }
       if (!bb.year && rb.year) { bb.year = rb.year; }
       if (typeof bb.pageCount !== 'number' && typeof rb.pageCount === 'number') { bb.pageCount = rb.pageCount; }
@@ -4676,10 +4703,47 @@ function openLibraryCleanup() {
       var ll = document.createElement('div'); ll.className = 'l'; ll.textContent = label;
       s.appendChild(nn); s.appendChild(ll); return s;
     }
-    summary.appendChild(stat(report.duplicates.length, 'duplicate groups to merge', true));
-    summary.appendChild(stat(report.missingCovers.length, 'books missing covers', true));
-    summary.appendChild(stat(report.total, 'books on your shelf', false));
+    summary.appendChild(stat(report.duplicates.length, 'duplicate records to merge', true));
+    summary.appendChild(stat(report.missingCovers.length + report.wrongCovers.length, 'books missing or wrong covers', true));
+    summary.appendChild(stat(report.total, 'books on your shelf total', false));
     wrap.appendChild(summary);
+
+    // Stage 3 (mockup E): the before -> after hero. Renders when there is any
+    // cover work; the first such book illustrates the fix.
+    var coverWork = report.missingCovers.concat(report.wrongCovers);
+    if (coverWork.length > 0) {
+      var heroBook = state.books[coverWork[0]] || { title: '' };
+      var hero = document.createElement('div'); hero.className = 'card cl-hero';
+      var baBig = document.createElement('div'); baBig.className = 'ba-big before-after';
+      var beforeCol = document.createElement('div'); beforeCol.className = 'ba-col';
+      var beforeLab = document.createElement('span'); beforeLab.className = 'ba-lab'; beforeLab.textContent = 'before';
+      var beforeCover = document.createElement('div'); beforeCover.className = 'cover';
+      var bpend = document.createElement('div'); bpend.className = 'cover-pending';
+      var bpt = document.createElement('span'); bpt.className = 'cp-ti'; bpt.textContent = heroBook.title || '';
+      var bpl = document.createElement('span'); bpl.className = 'cp-lab'; bpl.textContent = 'no cover';
+      bpend.appendChild(bpt); bpend.appendChild(bpl); beforeCover.appendChild(bpend);
+      beforeCol.appendChild(beforeLab); beforeCol.appendChild(beforeCover);
+      var heroArrow = document.createElement('span'); heroArrow.className = 'ba-arrow'; heroArrow.textContent = '→';
+      var afterCol = document.createElement('div'); afterCol.className = 'ba-col';
+      var afterLab = document.createElement('span'); afterLab.className = 'ba-lab'; afterLab.textContent = 'after';
+      var afterCover = document.createElement('div'); afterCover.className = 'cover';
+      afterCover.appendChild(buildSelfHealingCover(heroBook, 'cover-img', function() {
+        var hp = document.createElement('div'); hp.className = 'cover-pending';
+        var hpt = document.createElement('span'); hpt.className = 'cp-ti'; hpt.textContent = heroBook.title || '';
+        var hpl = document.createElement('span'); hpl.className = 'cp-lab'; hpl.textContent = 'searching…';
+        hp.appendChild(hpt); hp.appendChild(hpl); return hp;
+      }));
+      afterCol.appendChild(afterLab); afterCol.appendChild(afterCover);
+      baBig.appendChild(beforeCol); baBig.appendChild(heroArrow); baBig.appendChild(afterCol);
+      var heroTx = document.createElement('div'); heroTx.className = 'cl-hero-tx';
+      var heroH = document.createElement('h3'); heroH.textContent = 'We found the missing covers';
+      var heroP = document.createElement('p');
+      heroP.textContent = coverWork.length + ' of your books are missing or have a broken cover. ' +
+        'We match each one against the catalog — review them below, or hit Resolve all.';
+      heroTx.appendChild(heroH); heroTx.appendChild(heroP);
+      hero.appendChild(baBig); hero.appendChild(heroTx);
+      wrap.appendChild(hero);
+    }
 
     var resolveAll = document.createElement('button');
     resolveAll.type = 'button'; resolveAll.className = 'review-confirm cl-resolve-all';
@@ -4693,7 +4757,7 @@ function openLibraryCleanup() {
         mergeBookDuplicates(user.uid, grp[0], grp.slice(1));
       }
       var fresh = scanLibraryForCleanup(user.uid);
-      var pending = fresh.missingCovers.slice();
+      var pending = fresh.missingCovers.concat(fresh.wrongCovers);
       var idx = 0;
       function nextCover() {
         if (idx >= pending.length) { render(); return; }
@@ -4729,28 +4793,55 @@ function openLibraryCleanup() {
       })(report.duplicates[di]);
     }
 
-    // missing-cover items
-    var mi;
-    for (mi = 0; mi < report.missingCovers.length && mi < 40; mi++) {
-      (function(id) {
-        var b = state.books[id];
-        if (!b) { return; }
-        var item = document.createElement('div'); item.className = 'cl-item'; item.setAttribute('data-state', 'cleanup-cover');
-        var kind = document.createElement('span'); kind.className = 'cl-kind miss'; kind.textContent = 'missing cover'; item.appendChild(kind);
-        var mid = document.createElement('div'); mid.className = 'cl-mid';
-        var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = b.title || '';
-        var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = b.author || '';
-        mid.appendChild(ti); mid.appendChild(au); item.appendChild(mid);
-        var acts = document.createElement('div'); acts.className = 'cl-actions';
-        var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'review-mark-all'; skip.textContent = 'Skip';
-        var useCover = document.createElement('button'); useCover.type = 'button'; useCover.className = 'review-confirm cl-use-cover'; useCover.textContent = 'Find cover';
-        useCover.addEventListener('click', function() {
-          useCover.disabled = true; useCover.textContent = 'Looking…';
-          reResolveCover(id, function() { render(); });
-        });
-        acts.appendChild(skip); acts.appendChild(useCover); item.appendChild(acts);
-        list.appendChild(item);
-      })(report.missingCovers[mi]);
+    // Stage 3 (mockup E): cover items -- "missing cover" (Skip / Find cover)
+    // and "wrong cover" (Keep / Swap), each with a before -> after. Capped at
+    // 40 combined so a large library does not render thousands of rows.
+    function coverItem(id, isWrong) {
+      var b = state.books[id];
+      if (!b) { return null; }
+      var item = document.createElement('div'); item.className = 'cl-item'; item.setAttribute('data-state', 'cleanup-cover');
+      var kind = document.createElement('span'); kind.className = 'cl-kind miss'; kind.textContent = isWrong ? 'wrong cover' : 'missing cover'; item.appendChild(kind);
+      var mid = document.createElement('div'); mid.className = 'cl-mid cl-mid-cover';
+      var ba = document.createElement('div'); ba.className = 'before-after';
+      var beforeCover = document.createElement('div'); beforeCover.className = 'cover';
+      var bp = document.createElement('div'); bp.className = 'cover-pending';
+      var bpt2 = document.createElement('span'); bpt2.className = 'cp-ti'; bpt2.textContent = b.title || '';
+      var bpl2 = document.createElement('span'); bpl2.className = 'cp-lab'; bpl2.textContent = isWrong ? 'wrong' : 'no cover';
+      bp.appendChild(bpt2); bp.appendChild(bpl2); beforeCover.appendChild(bp);
+      var arrow2 = document.createElement('span'); arrow2.className = 'ba-arrow'; arrow2.textContent = '→';
+      var afterCover2 = document.createElement('div'); afterCover2.className = 'cover';
+      afterCover2.appendChild(buildSelfHealingCover(b, 'cover-img', function() {
+        var p = document.createElement('div'); p.className = 'cover-pending';
+        var pt = document.createElement('span'); pt.className = 'cp-ti'; pt.textContent = b.title || '';
+        var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'searching…';
+        p.appendChild(pt); p.appendChild(pl); return p;
+      }));
+      ba.appendChild(beforeCover); ba.appendChild(arrow2); ba.appendChild(afterCover2);
+      var txt = document.createElement('div'); txt.className = 'cl-mid-text';
+      var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = b.title || '';
+      var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = b.author || '';
+      var note = document.createElement('div'); note.className = 'cl-note';
+      note.textContent = isWrong ? 'Saved cover won’t load — swap it for a fresh match.' : 'Imported by title alone — find a cover.';
+      txt.appendChild(ti); txt.appendChild(au); txt.appendChild(note);
+      mid.appendChild(ba); mid.appendChild(txt); item.appendChild(mid);
+      var acts = document.createElement('div'); acts.className = 'cl-actions';
+      var leftBtn = document.createElement('button'); leftBtn.type = 'button'; leftBtn.className = 'review-mark-all'; leftBtn.textContent = isWrong ? 'Keep' : 'Skip';
+      var rightBtn = document.createElement('button'); rightBtn.type = 'button'; rightBtn.className = 'review-confirm cl-use-cover'; rightBtn.textContent = isWrong ? 'Swap' : 'Find cover';
+      rightBtn.addEventListener('click', function() {
+        rightBtn.disabled = true; rightBtn.textContent = 'Looking…';
+        reResolveCover(id, function() { render(); });
+      });
+      acts.appendChild(leftBtn); acts.appendChild(rightBtn); item.appendChild(acts);
+      return item;
+    }
+    var coverShown = 0, ci2;
+    for (ci2 = 0; ci2 < report.missingCovers.length && coverShown < 40; ci2++) {
+      var miItem = coverItem(report.missingCovers[ci2], false);
+      if (miItem) { list.appendChild(miItem); coverShown = coverShown + 1; }
+    }
+    for (ci2 = 0; ci2 < report.wrongCovers.length && coverShown < 40; ci2++) {
+      var wcItem = coverItem(report.wrongCovers[ci2], true);
+      if (wcItem) { list.appendChild(wcItem); coverShown = coverShown + 1; }
     }
 
     wrap.appendChild(list);
