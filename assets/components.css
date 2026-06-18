@@ -7719,3 +7719,29 @@
   .ep-grid { grid-template-columns: 1fr; }
   .manual { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   Phase 5 -- book-detail mockup-D additions. Tokens only.
+   ===================================================================== */
+.book-detail-biblio { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 16px; }
+.book-detail-status-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.book-detail-status-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.book-detail-description { font-size: 15px; line-height: 1.62; color: var(--ink-2); margin: 0 0 16px; max-width: 60ch; }
+.book-detail-lens-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.lenschip { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2); background: var(--wash); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 5px 11px; display: inline-flex; align-items: center; }
+.book-detail-rate { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 18px; }
+.bd-rate-stars { display: inline-flex; gap: 2px; }
+.bd-star { font-size: 19px; line-height: 1; color: var(--ink-4); background: transparent; border: none; cursor: pointer; padding: 0; opacity: 0.45; }
+.bd-star.on { color: var(--gold); opacity: 1; }
+.bd-star:hover { color: var(--gold-light); opacity: 1; }
+.bd-rate-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.bd-rate-sep { width: 1px; height: 20px; background: var(--border); }
+.bd-fix { font-family: var(--font-body); font-size: 13px; color: var(--river); background: transparent; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.bd-fix:hover { color: var(--ink); }
+.bd-fix:disabled { color: var(--ink-3); cursor: default; text-decoration: none; }
+
+@media (max-width: 759px) {
+  .book-detail-status-row { flex-direction: column; align-items: flex-start; }
+  .book-detail-status-row .rstatus { display: flex; width: 100%; }
+  .book-detail-status-row .rs-opt { flex: 1 1 0; text-align: center; }
+}

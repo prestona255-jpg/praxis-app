@@ -4721,7 +4721,135 @@ function renderBookDetail(bookId) {
     ' · ' + bdMargCount + ' marginalia';
   contentCell.appendChild(metaLine);
 
+  // Phase 5 (mockup D): bibliographic meta -- year · publisher · pages · ISBN.
+  var biblioParts = [];
+  if (book.year) { biblioParts.push('' + book.year); }
+  if (book.publisher) { biblioParts.push(book.publisher); }
+  if (typeof book.pageCount === 'number' && book.pageCount > 0) { biblioParts.push(book.pageCount + ' pages'); }
+  if (book.isbn) { biblioParts.push('ISBN ' + book.isbn); }
+  if (biblioParts.length > 0) {
+    var biblioLine = document.createElement('p');
+    biblioLine.className = 'book-detail-biblio';
+    biblioLine.textContent = biblioParts.join(' · ');
+    contentCell.appendChild(biblioLine);
+  }
+
   var user = getCurrentUser();
+
+  // Phase 5 (mockup D): prominent read-status control (canonical vocab). Writes
+  // status + re-renders; the collapsed Edit-details radios remain in sync.
+  if (user) {
+    var statusRow = document.createElement('div');
+    statusRow.className = 'book-detail-status-row';
+    var statusRowLab = document.createElement('span');
+    statusRowLab.className = 'book-detail-status-lab';
+    statusRowLab.textContent = 'Read status';
+    statusRow.appendChild(statusRowLab);
+    statusRow.appendChild(makeReadStatusControl(normalizeStatus(book.status), function(v) {
+      if (!state.books[bookId]) { return; }
+      state.books[bookId].status = v;
+      markBooksDirty(); saveState(); renderBookDetail(bookId);
+    }));
+    contentCell.appendChild(statusRow);
+  }
+
+  // Phase 5 (mockup D): description.
+  if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
+    var descEl = document.createElement('p');
+    descEl.className = 'book-detail-description';
+    descEl.textContent = book.description;
+    contentCell.appendChild(descEl);
+  }
+
+  // Phase 5 (mockup D): lens chips -- genre + tradition (read-only descriptors).
+  var lensChips = [];
+  if (book.genre && ('' + book.genre).replace(/^\s+|\s+$/g, '') !== '') { lensChips.push(book.genre); }
+  var bdTrad = book.traditionOverride || book.tradition;
+  if (bdTrad && bdTrad !== 'unassigned') {
+    if (typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[bdTrad]) { lensChips.push(TRADITION_LABELS[bdTrad]); }
+    else { lensChips.push(bdTrad); }
+  }
+  if (lensChips.length > 0) {
+    var chipsWrap = document.createElement('div');
+    chipsWrap.className = 'book-detail-lens-chips';
+    var lci;
+    for (lci = 0; lci < lensChips.length; lci++) {
+      var chip = document.createElement('span');
+      chip.className = 'lenschip';
+      chip.textContent = lensChips[lci];
+      chipsWrap.appendChild(chip);
+    }
+    contentCell.appendChild(chipsWrap);
+  }
+
+  // Phase 5 (mockup D): rating (click stars) + date-read + "Fix this book"
+  // (re-runs the resolver on this record and patches its fields).
+  if (user) {
+    var rateRow = document.createElement('div');
+    rateRow.className = 'book-detail-rate';
+    var stars = document.createElement('span');
+    stars.className = 'bd-rate-stars';
+    var curRating = (typeof book.rating === 'number') ? book.rating : 0;
+    var st;
+    for (st = 1; st <= 5; st++) {
+      (function(val) {
+        var star = document.createElement('button');
+        star.type = 'button';
+        star.className = 'bd-star' + (val <= curRating ? ' on' : '');
+        star.setAttribute('aria-label', val + (val === 1 ? ' star' : ' stars'));
+        star.textContent = '★';
+        star.addEventListener('click', function() {
+          if (!state.books[bookId]) { return; }
+          state.books[bookId].rating = (state.books[bookId].rating === val) ? null : val;
+          markBooksDirty(); saveState(); renderBookDetail(bookId);
+        });
+        stars.appendChild(star);
+      })(st);
+    }
+    rateRow.appendChild(stars);
+
+    var dateStr = '';
+    if (book.dateRead) { dateStr = '' + book.dateRead; }
+    else if (typeof book.finishedAt === 'number') {
+      try { dateStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eDate) { dateStr = ''; }
+    }
+    if (dateStr) {
+      var drSep = document.createElement('span'); drSep.className = 'bd-rate-sep'; rateRow.appendChild(drSep);
+      var dr = document.createElement('span'); dr.className = 'bd-rate-date'; dr.textContent = 'read · ' + dateStr;
+      rateRow.appendChild(dr);
+    }
+
+    var fixSep = document.createElement('span'); fixSep.className = 'bd-rate-sep'; rateRow.appendChild(fixSep);
+    var fixBtn = document.createElement('button');
+    fixBtn.type = 'button';
+    fixBtn.className = 'bd-fix';
+    fixBtn.textContent = '↺ Fix this book';
+    fixBtn.addEventListener('click', function() {
+      fixBtn.disabled = true;
+      fixBtn.textContent = 'Looking up…';
+      var fixQuery = (book.isbn && ('' + book.isbn).length > 0)
+        ? { kind: 'isbn', isbn: book.isbn }
+        : { kind: 'title', title: book.title || '', author: book.author || '' };
+      resolveBook(fixQuery, function(result) {
+        if (!state.books[bookId]) { return; }
+        if (result && result.status !== 'none' && result.book) {
+          var rb = result.book, b = state.books[bookId];
+          if (rb.title) { b.title = rb.title; }
+          if (rb.author) { b.author = rb.author; }
+          if (rb.isbn) { b.isbn = rb.isbn; }
+          if (rb.year) { b.year = rb.year; }
+          if (typeof rb.pageCount === 'number') { b.pageCount = rb.pageCount; }
+          if (rb.publisher) { b.publisher = rb.publisher; }
+          if (rb.description) { b.description = rb.description; }
+          if (rb.coverUrl) { b.coverUrl = rb.coverUrl; }
+          markBooksDirty(); saveState();
+        }
+        renderBookDetail(bookId);
+      });
+    });
+    rateRow.appendChild(fixBtn);
+    contentCell.appendChild(rateRow);
+  }
 
   // Batch 3: "Your Book Artifact" card -- OPAQUE --surface. Shows the
   // real artifact body when one exists (the "Open Artifact" link below
