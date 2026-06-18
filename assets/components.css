@@ -4613,8 +4613,13 @@
   /* Nav: 56px height, 16px padding, hamburger visible, link list
      collapsed to a slide-down panel anchored below the nav. */
   .app-nav {
-    height: 56px;
-    padding: 0 16px;
+    /* Stage 4: clear the iOS status bar. The bar extends up under the notch
+       (env top inset) with its content seated below it; min-height keeps the
+       56px bar. env() is 0 where there is no inset, so this is a no-op on
+       Android / desktop-narrow. height:auto + min-height is box-sizing-agnostic. */
+    height: auto;
+    min-height: 56px;
+    padding: env(safe-area-inset-top) 16px 0 16px;
     position: relative;
     /* iOS WebKit mis-composites the open nav panel (its abs-positioned
        child overflowing this 56px bar) when the bar carries backdrop-filter
@@ -4630,6 +4635,13 @@
   .app-nav-hamburger {
     display: block;
   }
+
+  /* Stage 4: the Yumi bloom is a fixed FAB. On mobile its sprawling hint line
+     overlaps page content, so show the orb only; a bottom scroll-gutter lets
+     the last content clear the orb (and the home indicator). Desktop keeps the
+     per-route hint line untouched. The orb still renders on every surface. */
+  .yumi-bloom-line { display: none; }
+  #app { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 
   /* Phase 3.1: the glass search is desktop chrome; hide it on the
      56px mobile bar so the hamburger layout is unchanged from before. */
