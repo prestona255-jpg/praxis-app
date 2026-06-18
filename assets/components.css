@@ -2106,7 +2106,9 @@
   gap: 8px;
   padding: 12px;
   text-align: center;
-  background: linear-gradient(160deg,#ecdcae,#cfb06a);
+  /* Stage 1: token-only recessed well (was hardcoded #ecdcae/#cfb06a) --
+     matches the mockup .cover-pending gradient. */
+  background: linear-gradient(160deg, var(--surface), var(--sunk));
 }
 
 .shelf-book-cover-pending-title {
@@ -2347,7 +2349,30 @@
 }
 
 .book-detail-cover-placeholder {
-  background: color-mix(in srgb, var(--ink-3) 8%, transparent);
+  /* Stage 1: typographic "cover pending" well (was an empty tinted box) so a
+     null/broken cover never shows a blank card. Mirrors .cover-pending. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14%;
+  text-align: center;
+  background: linear-gradient(160deg, var(--surface), var(--sunk));
+}
+.book-detail-cover-pending-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+.book-detail-cover-pending-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--ink-3);
 }
 
 .book-detail-title {

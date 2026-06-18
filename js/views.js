@@ -2798,19 +2798,15 @@ function renderShelfBook(book) {
   // affordances) hang off this container.
   var coverArea = document.createElement('div');
   coverArea.className = 'shelf-book-cover-area';
-  if (book.coverUrl) {
-    var cover = document.createElement('img');
-    cover.className = 'shelf-book-cover';
-    cover.src = book.coverUrl;
-    cover.alt = '';
-    coverArea.appendChild(cover);
-  } else {
+  // Stage 1: self-healing cover. A broken OR null coverUrl walks any
+  // coverCandidates, then falls to the graceful "cover pending" placeholder
+  // (title + label) -- never a broken <img> ("?") or an empty card. The
+  // placeholder label is a real <span> (not a CSS ::after) so the text is in
+  // the DOM for assistive tech; the async cover fetch may still resolve, so it
+  // reads as pending, not permanently absent.
+  coverArea.appendChild(buildSelfHealingCover(book, 'shelf-book-cover', function() {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'shelf-book-cover-placeholder';
-    // Phase 3.1: graceful "COVER PENDING" label as a real <span> (not a
-    // CSS ::after) so the text is in the DOM for assistive tech. The
-    // async cover fetch may still resolve, so the framing reads as
-    // pending, not permanently absent.
     var pendingTitle = document.createElement('span');
     pendingTitle.className = 'shelf-book-cover-pending-title';
     pendingTitle.textContent = book.title || '';
@@ -2819,8 +2815,8 @@ function renderShelfBook(book) {
     pendingLabel.className = 'shelf-book-cover-pending';
     pendingLabel.textContent = 'cover pending';
     coverPlaceholder.appendChild(pendingLabel);
-    coverArea.appendChild(coverPlaceholder);
-  }
+    return coverPlaceholder;
+  }));
 
   // Tradition resolution for the spine tick below: traditionOverride
   // wins if set (user choice from the edit-book modal, 5.6 sub-step
@@ -4182,9 +4178,37 @@ function openManualLookup() {
   titleInput.focus();
 }
 
-// Phase 4: a cover element for a resolved book. Walks coverCandidates on <img>
-// onerror (OpenLibrary-by-ISBN -> Google image) and finally swaps to a
-// typographic placeholder -- so a 404/blank cover never leaves a broken image.
+// Phase 6 (Stage 1): a self-healing cover element shared by the shelf card,
+// the book-detail header, and the review row. Walks coverCandidates
+// (OpenLibrary-by-ISBN -> Google image) on <img> onerror and, once they are
+// all exhausted -- or when there are none -- shows the typographic placeholder
+// built by placeholderFn. So a 404 / blank / null cover NEVER leaves a broken
+// image or an empty card on any surface. imgClass is the surface's cover-image
+// class; returns the <img> OR the placeholder node for the caller to append.
+function buildSelfHealingCover(book, imgClass, placeholderFn) {
+  var candidates = (book && book.coverCandidates && book.coverCandidates.length > 0)
+    ? book.coverCandidates.slice()
+    : ((book && book.coverUrl) ? [book.coverUrl] : []);
+  if (candidates.length === 0) { return placeholderFn(); }
+  var img = document.createElement('img');
+  img.className = imgClass;
+  img.alt = '';
+  var ci = 0;
+  img.src = candidates[ci];
+  img.addEventListener('error', function() {
+    ci = ci + 1;
+    if (ci < candidates.length) {
+      img.src = candidates[ci];
+    } else if (img.parentNode) {
+      img.parentNode.replaceChild(placeholderFn(), img);
+    }
+  });
+  return img;
+}
+
+// Phase 4: a cover element for a resolved book (review row). No-match yields a
+// "?" frame; otherwise a self-healing cover (candidate-walk -> "cover pending"
+// typographic placeholder) via the shared buildSelfHealingCover helper.
 function makeReviewCover(book, isNoMatch) {
   var cover = document.createElement('div');
   cover.className = 'cover';
@@ -4195,31 +4219,13 @@ function makeReviewCover(book, isNoMatch) {
     unk.appendChild(q); unk.appendChild(lab); cover.appendChild(unk);
     return cover;
   }
-  var candidates = (book.coverCandidates && book.coverCandidates.length > 0)
-    ? book.coverCandidates.slice()
-    : (book.coverUrl ? [book.coverUrl] : []);
-  function pendingPlaceholder() {
+  cover.appendChild(buildSelfHealingCover(book, 'cover-img', function() {
     var pend = document.createElement('div'); pend.className = 'cover-pending';
     var pt = document.createElement('span'); pt.className = 'cp-ti'; pt.textContent = book.title || '';
-    var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'no cover';
+    var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'cover pending';
     pend.appendChild(pt); pend.appendChild(pl);
     return pend;
-  }
-  if (candidates.length === 0) { cover.appendChild(pendingPlaceholder()); return cover; }
-  var img = document.createElement('img');
-  img.className = 'cover-img';
-  img.alt = '';
-  var ci = 0;
-  img.src = candidates[ci];
-  img.addEventListener('error', function() {
-    ci = ci + 1;
-    if (ci < candidates.length) {
-      img.src = candidates[ci];
-    } else if (img.parentNode) {
-      img.parentNode.replaceChild(pendingPlaceholder(), img);
-    }
-  });
-  cover.appendChild(img);
+  }));
   return cover;
 }
 
@@ -4472,13 +4478,13 @@ function confirmReviewBooks(rowStates, user) {
   var i;
   for (i = 0; i < rowStates.length; i++) {
     var rs = rowStates[i];
-    var title, author, isbn, year, pageCount, publisher, description, coverUrl;
+    var title, author, isbn, year, pageCount, publisher, description, coverUrl, coverCandidates;
     if (rs.isNoMatch) {
       title = rs._titleInput ? rs._titleInput.value.replace(/^\s+|\s+$/g, '') : (rs.book.title || '');
       if (title.length === 0) { continue; }
       author = rs._authorInput ? rs._authorInput.value.replace(/^\s+|\s+$/g, '') : '';
       isbn = (rs.result.query && rs.result.query.isbn) || '';
-      year = null; pageCount = null; publisher = ''; description = ''; coverUrl = null;
+      year = null; pageCount = null; publisher = ''; description = ''; coverUrl = null; coverCandidates = [];
     } else {
       title = rs.book.title || '';
       if (title.length === 0) { continue; }
@@ -4489,12 +4495,19 @@ function confirmReviewBooks(rowStates, user) {
       publisher = rs.book.publisher || '';
       description = rs.book.description || '';
       coverUrl = rs.book.coverUrl || null;
+      // Stage 1: persist the FULL candidate list, not just coverUrl[0]. The
+      // review row may have shown a later candidate (coverUrl[0] 404'd); the
+      // shelf walks the same list so "shown == saved" after confirm + reload.
+      coverCandidates = (rs.book.coverCandidates && rs.book.coverCandidates.length > 0)
+        ? rs.book.coverCandidates.slice()
+        : (coverUrl ? [coverUrl] : []);
     }
     var now = Date.now();
     var id = genBookId();
     state.books[id] = {
       id: id, title: title, author: author, isbn: isbn, addedAt: now,
       status: rs.status || 'read', genre: '', coverUrl: coverUrl,
+      coverCandidates: coverCandidates,
       pageCount: pageCount, publisher: publisher, year: year,
       description: description, rating: null, dateRead: null
     };
@@ -4903,17 +4916,22 @@ function renderBookDetail(bookId) {
   // the right column's single .book-detail-content cell (S5.2).
   var coverCol = document.createElement('div');
   coverCol.className = 'book-detail-cover-col';
-  if (book.coverUrl) {
-    var cover = document.createElement('img');
-    cover.className = 'book-detail-cover';
-    cover.src = book.coverUrl;
-    cover.alt = '';
-    coverCol.appendChild(cover);
-  } else {
+  // Stage 1: self-healing cover (candidate-walk -> typographic "cover pending"
+  // placeholder). A broken OR null cover renders the placeholder -- never a
+  // broken <img> or an empty box.
+  coverCol.appendChild(buildSelfHealingCover(book, 'book-detail-cover', function() {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'book-detail-cover-placeholder';
-    coverCol.appendChild(coverPlaceholder);
-  }
+    var pdt = document.createElement('span');
+    pdt.className = 'book-detail-cover-pending-title';
+    pdt.textContent = book.title || '';
+    coverPlaceholder.appendChild(pdt);
+    var pdl = document.createElement('span');
+    pdl.className = 'book-detail-cover-pending-label';
+    pdl.textContent = 'cover pending';
+    coverPlaceholder.appendChild(pdl);
+    return coverPlaceholder;
+  }));
   header.appendChild(coverCol);
 
   // S5.2: the right column is ONE grid cell (.book-detail-content) so the
