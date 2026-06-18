@@ -4519,15 +4519,16 @@ function scanLibraryForCleanup(uid) {
   var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
     ? state.userBooks[uid].bookIds : [];
   var groups = {};
-  var i, id, b, key, normIsbn;
+  var i, id, b, key;
   for (i = 0; i < ub.length; i++) {
     id = ub[i]; b = state.books[id];
     if (!b) { continue; }
     out.total = out.total + 1;
     if (!b.coverUrl || ('' + b.coverUrl).replace(/^\s+|\s+$/g, '') === '') { out.missingCovers.push(id); }
-    normIsbn = ('' + (b.isbn || '')).replace(/[\s-]/g, '');
-    if (normIsbn.length > 0) { key = 'isbn:' + normIsbn; }
-    else { key = 'ta:' + resolverNormalize(b.title) + '|' + resolverNormalize(b.author); }
+    // Group by normalized title+author so a title-only copy and an ISBN-bearing
+    // copy of the same book still collide (the prior ISBN-vs-title key split
+    // missed that). Different editions of one work also surface for review.
+    key = 'ta:' + resolverNormalize(b.title) + '|' + resolverNormalize(b.author);
     if (!groups[key]) { groups[key] = []; }
     groups[key].push(id);
   }
