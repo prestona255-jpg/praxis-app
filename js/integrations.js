@@ -78,61 +78,14 @@ firebase.auth().onAuthStateChanged(function (u) {
     // migrate existing localStorage shelves into it.
     loadBooksFromFirestore(u.uid, function (result) {
       if (result.status === 'found') {
-        // REPLACE merge -- Firestore is the source of truth. Clear
-        // this uid's previously-known bookIds from state.books
-        // BEFORE writing the remote set so deleted-on-the-server
-        // entries don't resurrect from the cache. ensureUser keeps
-        // state.users[uid] and state.userBooks[uid] coherent in
-        // case this device has never seen this uid before.
-        ensureUser(u.uid);
-        var prevIds = state.userBooks[u.uid].bookIds.slice();
-        var p;
-        for (p = 0; p < prevIds.length; p++) {
-          if (state.books[prevIds[p]]) {
-            delete state.books[prevIds[p]];
-          }
-        }
-        var remoteIds = (result.data && result.data.bookIds)
-          ? result.data.bookIds
-          : [];
-        var remoteBooks = (result.data && result.data.books)
-          ? result.data.books
-          : {};
-        // 3.10i: rewrite leading-http:// coverUrls on the remote
-        // payload BEFORE the replace-merge below. The Firestore doc
-        // may still hold pre-3.10i http:// URLs from past Google
-        // Books fetches; without this, the replace-merge would undo
-        // the local migrate() step within seconds of every signed-in
-        // boot. Capture the boolean to drive a one-shot conditional
-        // flush-back AFTER the existing saveState() below: the helper
-        // returns true exactly once (the first post-deploy boot,
-        // while Firestore still holds http:// data); every later boot
-        // it returns false and no extra Firestore write fires. Self-
-        // terminating, not a write-every-boot.
-        var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
-        // 5.6 sub-step 1: backfill tradition + traditionOverride on
-        // remote books before the merge loop assigns them into
-        // state.books. Without this call, Firestore-synced books
-        // bypass migrate() and arrive without 5.6 schema fields. The
-        // chokepoint mirrors the normalizeCoverUrlsToHttps pattern
-        // above; ensureBookFieldsAll lives in state.js (globally
-        // accessible via the no-strict-mode discipline).
-        ensureBookFieldsAll(remoteBooks);
-        state.userBooks[u.uid].bookIds = remoteIds.slice();
-        var r;
-        for (r = 0; r < remoteIds.length; r++) {
-          var rbid = remoteIds[r];
-          if (remoteBooks[rbid]) {
-            state.books[rbid] = remoteBooks[rbid];
-          }
-        }
+        // P0: the REPLACE merge now lives in mergeRemoteBookDoc, which
+        // preserves locally-added-but-unsynced books (pendingBookSync)
+        // instead of deleting them -- the scan/bulk data-loss fix. When
+        // nothing is pending it behaves exactly as the prior inline merge.
+        // saveState persists the merged shelf; the 3.10i conditional
+        // flush-back is unchanged (fires only when a coverUrl was rewritten).
+        var coversNormalized = mergeRemoteBookDoc(u.uid, result.data);
         saveState();
-        // 3.10i: conditional flush-back. ONLY when the helper above
-        // rewrote at least one coverUrl: mark dirty + saveState so the
-        // corrected payload flushes to Firestore via the existing
-        // saveBooksToFirestore chokepoint in state.js's saveState. If
-        // coversNormalized is false, the existing saveState() above
-        // stands and no second write fires.
         if (coversNormalized) {
           markBooksDirty();
           saveState();
@@ -146,7 +99,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           window.views.renderRoute();
         }
         console.log('loadBooksFromFirestore: merged remote doc, '
-          + remoteIds.length + ' books');
+          + state.userBooks[u.uid].bookIds.length + ' books');
       } else if (result.status === 'absent') {
         // Stage 1 expected path. No remote doc exists for this
         // user yet; keep the localStorage cache intact, no
@@ -505,6 +458,65 @@ function loadBooksFromFirestore(uid, callback) {
   } catch (e) {
     finish({ status: 'error', error: e });
   }
+}
+
+// Phase 0: apply a remote /userBooks doc onto local state -- the REPLACE
+// merge formerly inline in the onAuthStateChanged 'found' branch, extracted
+// so it is testable and so the pendingBookSync guard has one home. Returns
+// true iff at least one coverUrl was rewritten (caller flushes back).
+//
+// GUARD (the data-loss fix): a local book id is deleted ONLY when it is BOTH
+// absent from the remote doc AND not in pendingBookSync (= a genuine server-
+// side delete of a previously-synced book). A pending id -- added locally by
+// scan/bulk, not yet confirmed in Firestore -- is PRESERVED: its state.books
+// record is kept and its id is unioned back into bookIds. When nothing is
+// pending this is byte-for-byte the original REPLACE.
+function mergeRemoteBookDoc(uid, data) {
+  ensureUser(uid);
+  var prevIds = state.userBooks[uid].bookIds.slice();
+  var remoteIds = (data && data.bookIds) ? data.bookIds : [];
+  var remoteBooks = (data && data.books) ? data.books : {};
+
+  var remoteHas = {};
+  var ri;
+  for (ri = 0; ri < remoteIds.length; ri++) { remoteHas[remoteIds[ri]] = true; }
+
+  // Delete a previously-known local id ONLY if absent from remote AND not
+  // pending-sync. Pending ids (unsynced local adds) are kept.
+  var p;
+  for (p = 0; p < prevIds.length; p++) {
+    var pid = prevIds[p];
+    if (state.books[pid] && !remoteHas[pid] && !isBookPending(uid, pid)) {
+      delete state.books[pid];
+    }
+  }
+
+  // 3.10i + 5.6 chokepoints over the remote payload (unchanged).
+  var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
+  ensureBookFieldsAll(remoteBooks);
+
+  // New index = remote set, then any still-pending local id not already in
+  // remote -- preserving the unsynced book's shelf position.
+  var nextIds = remoteIds.slice();
+  var pend = getPendingBookSync(uid);
+  var pk;
+  for (pk = 0; pk < pend.length; pk++) {
+    var pendId = pend[pk];
+    if (!remoteHas[pendId] && state.books[pendId]) {
+      nextIds.push(pendId);
+    }
+  }
+  state.userBooks[uid].bookIds = nextIds;
+
+  // Remote wins for synced ids; pending-only ids keep their local record.
+  var r;
+  for (r = 0; r < remoteIds.length; r++) {
+    var rbid = remoteIds[r];
+    if (remoteBooks[rbid]) {
+      state.books[rbid] = remoteBooks[rbid];
+    }
+  }
+  return coversNormalized;
 }
 
 // Firestore Stage 2: build the per-user book-doc payload from

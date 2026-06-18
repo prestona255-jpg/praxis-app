@@ -3385,6 +3385,7 @@ function openShelfEditor() {
       ensureUser(user.uid);
     }
     state.userBooks[user.uid].bookIds.push(id);
+    markBookPending(user.uid, id);  // P0: protect until Firestore-confirmed
 
     markBooksDirty();
     saveState();
@@ -3765,6 +3766,7 @@ function processBulkLines(raw) {
       isbnQueue.push({ kind: 'title', bookId: id, title: entry.value });
     }
     state.userBooks[user.uid].bookIds.push(id);
+    markBookPending(user.uid, id);  // P0: protect until Firestore-confirmed
     markBooksDirty();
     saveState();
     renderShelf();

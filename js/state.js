@@ -561,6 +561,71 @@ function markBooksDirty() {
   booksDirty = true;
 }
 
+// =====================================================================
+// Phase 0 -- pendingBookSync guard.
+//
+// A per-user persisted set of locally-written book ids whose Firestore
+// write has NOT yet been confirmed. The REPLACE merge in integrations.js
+// (onAuthStateChanged 'found' branch) deletes any local book id absent
+// from the just-read remote doc; a book added by scan/bulk that has not
+// finished syncing is therefore wiped on the next auth event / reload.
+// This set lets that merge tell "added locally, not yet synced" (KEEP)
+// apart from "genuinely deleted on the server" (DROP).
+//
+// Stored in a dedicated per-uid localStorage key via ls/sv -- NOT inside
+// the big state blob -- so it is namespaced by uid in a shared browser
+// and is untouched by the REPLACE merge over state.books. Marked at every
+// shelf write site; cleared for exactly the payload snapshot ids on a
+// confirmed saveBooksToFirestore success. Promise-free (cscript-parseable).
+// =====================================================================
+function pendingBooksKey(uid) {
+  return 'praxis_pending_books_' + (uid || 'anon');
+}
+
+function getPendingBookSync(uid) {
+  var arr = ls(pendingBooksKey(uid), []);
+  if (!arr || typeof arr.length !== 'number') return [];
+  return arr;
+}
+
+function markBookPending(uid, bookId) {
+  if (!uid || !bookId) return;
+  var arr = getPendingBookSync(uid);
+  var i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i] === bookId) return;
+  }
+  arr.push(bookId);
+  sv(pendingBooksKey(uid), arr);
+}
+
+function isBookPending(uid, bookId) {
+  if (!uid || !bookId) return false;
+  var arr = getPendingBookSync(uid);
+  var i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i] === bookId) return true;
+  }
+  return false;
+}
+
+// Clear exactly the ids in `ids` (the payload snapshot from a confirmed
+// save) from the pending set, leaving any id marked AFTER that snapshot
+// still pending. No-op for ids that were never pending.
+function clearPendingBookSync(uid, ids) {
+  if (!uid || !ids || typeof ids.length !== 'number' || ids.length === 0) return;
+  var arr = getPendingBookSync(uid);
+  if (arr.length === 0) return;
+  var remove = {};
+  var i;
+  for (i = 0; i < ids.length; i++) { remove[ids[i]] = true; }
+  var next = [];
+  for (i = 0; i < arr.length; i++) {
+    if (!remove[arr[i]]) next.push(arr[i]);
+  }
+  sv(pendingBooksKey(uid), next);
+}
+
 // Stage 14.1a (workspace sync): dirty flag for the per-user arc doc,
 // mirroring booksDirty. The arc mutators mark it; saveState() consumes
 // it and fires a fire-and-forget /userArcs/{uid} write. Saves touching
@@ -1442,6 +1507,12 @@ function saveState() {
       saveBooksToFirestore(user.uid, payload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveBooksToFirestore: ok');
+          // P0: this snapshot is now durable on the server -- clear exactly
+          // its ids from the pending-sync set (ids added AFTER the snapshot
+          // stay pending so a later add is still protected).
+          if (typeof clearPendingBookSync === 'function') {
+            clearPendingBookSync(user.uid, payload.bookIds);
+          }
         } else {
           console.warn(
             'saveBooksToFirestore: failed',
