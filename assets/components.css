@@ -7562,3 +7562,72 @@
 @media (prefers-reduced-motion: reduce) {
   .lens-suggest-loading { animation: none; }
 }
+
+/* =====================================================================
+   Phase 3 -- barcode scanner + manual lookup (mockup C). Tokens only.
+   ===================================================================== */
+.barcode-scanner { max-width: 360px; margin: 0 auto; padding: 8px 0 4px; }
+.barcode-scanner-heading { font-family: var(--font-serif); font-size: 24px; font-weight: 500; color: var(--ink); }
+.barcode-scanner-sub { font-size: 13px; color: var(--ink-2); margin-top: 5px; line-height: 1.4; }
+
+.scan-frame { width: 100%; margin-top: 16px; border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--ink-4); box-shadow: var(--shadow-2); background: var(--br-deep); }
+.scan-view { position: relative; aspect-ratio: 3 / 4; overflow: hidden; display: flex;
+  align-items: center; justify-content: center;
+  background: radial-gradient(120% 90% at 50% 25%, color-mix(in srgb, var(--br-deep) 70%, var(--ink)), var(--ink) 90%); }
+.scan-cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.reticle { position: relative; width: 74%; height: 30%; border-radius: 10px;
+  box-shadow: 0 0 0 2000px color-mix(in srgb, var(--br-deep) 38%, transparent); }
+.reticle .corner { position: absolute; width: 26px; height: 26px; border: 3px solid var(--gold-light); }
+.reticle .corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+.reticle .corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
+.reticle .corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
+.reticle .corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
+.scanline { position: absolute; left: 6%; right: 6%; height: 2px; top: 50%; background: var(--gold-light);
+  box-shadow: 0 0 9px 2px color-mix(in srgb, var(--gold-light) 70%, transparent);
+  animation: scanmove 2.4s var(--ease) infinite alternate; }
+@keyframes scanmove { from { transform: translateY(-44px); } to { transform: translateY(44px); } }
+.scan-hint { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-on-dark); opacity: 0.92; }
+
+.isbn-fallback { padding: 15px; background: var(--surface); }
+.isbn-fallback .if-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.isbn-fallback .if-row { display: flex; gap: 8px; }
+.isbn-fallback input { flex: 1 1 auto; min-width: 0; font-family: var(--font-mono); font-size: 14px;
+  letter-spacing: 0.04em; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm); padding: 9px 11px; outline: none; }
+.isbn-fallback input:focus { border-color: var(--gold); }
+.barcode-find-btn { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; padding: 9px 18px;
+  border-radius: var(--radius-md); background: var(--grad); color: var(--text-on-dark); border: 1px solid transparent; cursor: pointer; }
+.barcode-find-btn:hover { filter: brightness(1.06); }
+.barcode-scanner-status { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+  min-height: 16px; margin-top: 10px; text-align: center; }
+.barcode-scanner-status:empty { display: none; }
+.barcode-scanner-cancel { display: block; margin: 12px auto 0; font-family: var(--font-body); font-size: 13px;
+  color: var(--ink-2); background: transparent; border: 1px solid var(--line-2); border-radius: var(--radius-md);
+  padding: 8px 18px; cursor: pointer; }
+.barcode-scanner-cancel:hover { border-color: var(--ink-3); color: var(--ink); }
+
+.manual-lookup { max-width: 420px; margin: 0 auto; padding: 8px 0; }
+.manual-lookup-heading { font-family: var(--font-serif); font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 14px; }
+.manual-lookup-field { display: block; margin-bottom: 12px; }
+.manual-lookup-label { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+.manual-lookup-input { width: 100%; font-family: var(--font-body); font-size: 14.5px; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 9px 11px; outline: none; }
+.manual-lookup-input:focus { border-color: var(--gold); }
+.manual-lookup-status { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); min-height: 16px; margin: 4px 0; }
+.manual-lookup-status:empty { display: none; }
+.manual-lookup-actions { display: flex; gap: 10px; margin-top: 8px; }
+.manual-lookup-submit { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; padding: 10px 20px;
+  border-radius: var(--radius-md); background: var(--grad); color: var(--text-on-dark); border: 1px solid transparent; cursor: pointer; }
+.manual-lookup-submit:hover { filter: brightness(1.06); }
+.manual-lookup-cancel { font-family: var(--font-body); font-size: 13.5px; padding: 10px 20px;
+  border-radius: var(--radius-md); background: var(--glass-2); color: var(--ink); border: 1px solid var(--line-2); cursor: pointer; }
+.manual-lookup-cancel:hover { border-color: var(--ink-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .scanline { animation: none; }
+}

@@ -1620,4 +1620,27 @@ function resolveBook(query, callback) {
   });
 }
 
+// resolveBatch(queries, callback): run resolveBook over each query
+// SEQUENTIALLY (one proxy round-trip in flight at a time -- gentle on the
+// rate limit) and callback(resultsArray) once all settle. Every query yields
+// a result (resolveBook never drops), so results.length === queries.length.
+function resolveBatch(queries, callback) {
+  if (!queries || queries.length === 0) {
+    if (typeof callback === 'function') { callback([]); }
+    return;
+  }
+  var results = [];
+  var idx = 0;
+  function next() {
+    if (idx >= queries.length) {
+      if (typeof callback === 'function') { callback(results); }
+      return;
+    }
+    var q = queries[idx];
+    idx = idx + 1;
+    resolveBook(q, function (r) { results.push(r); next(); });
+  }
+  next();
+}
+
 console.log('integrations.js loaded');

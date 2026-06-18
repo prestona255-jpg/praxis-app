@@ -2144,6 +2144,17 @@ function renderShelf() {
     shelfChips.appendChild(scanBtn);
     shelfChips.appendChild(scanInput);
 
+    // Phase 3: barcode / ISBN entry point (native BarcodeDetector + ISBN
+    // type-in fallback) -> resolver -> review screen.
+    var barcodeBtn = document.createElement('button');
+    barcodeBtn.type = 'button';
+    barcodeBtn.className = 'shelf-barcode-btn';
+    barcodeBtn.textContent = 'Scan barcode';
+    barcodeBtn.addEventListener('click', function() {
+      openBarcodeScanner();
+    });
+    shelfChips.appendChild(barcodeBtn);
+
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
     bulkBtn.className = 'shelf-new-book-bulk';
@@ -3896,6 +3907,271 @@ function downscaleShelfPhoto(file, cb) {
 // engages). Downscales, logs the payload size, POSTs bare base64 to
 // vision-proxy, and console-logs the returned titles. Two-arg
 // .then(onOk, onErr) throughout -- never .catch (ES3 parse harness).
+// Phase 3: normalize a vision-proxy response into [{title,author,legibility}].
+// Accepts the new {books:[{title,author,legibility}]} shape and the legacy
+// {titles:[...]} string array (lifted to author '', legibility 'partial').
+function scanResponseToSpecs(json) {
+  var specs = [];
+  if (!json) { return specs; }
+  var i, b, t, s;
+  if (Object.prototype.toString.call(json.books) === '[object Array]') {
+    for (i = 0; i < json.books.length; i++) {
+      b = json.books[i];
+      if (!b || typeof b !== 'object') { continue; }
+      t = (typeof b.title === 'string') ? b.title.replace(/^\s+|\s+$/g, '') : '';
+      if (t.length === 0) { continue; }
+      specs.push({
+        title:      t,
+        author:     (typeof b.author === 'string') ? b.author.replace(/^\s+|\s+$/g, '') : '',
+        legibility: (b.legibility === 'clear') ? 'clear' : 'partial'
+      });
+    }
+  } else if (Object.prototype.toString.call(json.titles) === '[object Array]') {
+    for (i = 0; i < json.titles.length; i++) {
+      s = json.titles[i];
+      if (typeof s !== 'string') { s = String(s); }
+      s = s.replace(/^\s+|\s+$/g, '');
+      if (s.length === 0) { continue; }
+      specs.push({ title: s, author: '', legibility: 'partial' });
+    }
+  }
+  return specs;
+}
+
+// Phase 3: hand a resolved single-book lookup (barcode / manual) to the review
+// screen. Guarded so Stage-3 inputs are verifiable before the Stage-4 screen lands.
+function handoffResolvedSingle(result, source) {
+  if (typeof openBookReview === 'function') {
+    openBookReview([result], source);
+  }
+}
+
+// Phase 3: barcode / ISBN input (mockup C). Native BarcodeDetector where
+// available drives a live camera decode; an ISBN type-in fallback is ALWAYS
+// present (iPhone Safari lacks BarcodeDetector). No external barcode library.
+// A decoded/typed ISBN runs through the shared resolver, then the review screen.
+function openBarcodeScanner() {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) { return; }
+  hostEl.innerHTML = '';
+
+  var hasDetector = (typeof window.BarcodeDetector === 'function');
+  var stream = null;
+  var scanning = false;
+  function stopCamera() {
+    scanning = false;
+    if (stream) {
+      var tracks = stream.getTracks(), ti;
+      for (ti = 0; ti < tracks.length; ti++) { tracks[ti].stop(); }
+      stream = null;
+    }
+  }
+
+  var wrap = document.createElement('div');
+  wrap.className = 'barcode-scanner';
+
+  var heading = document.createElement('div');
+  heading.className = 'barcode-scanner-heading';
+  heading.textContent = 'Scan a barcode';
+  wrap.appendChild(heading);
+  var sub = document.createElement('p');
+  sub.className = 'barcode-scanner-sub';
+  sub.textContent = hasDetector
+    ? 'Point your camera at the back-cover barcode.'
+    : 'Your browser can’t scan live — type the ISBN below.';
+  wrap.appendChild(sub);
+
+  var frame = document.createElement('div');
+  frame.className = 'scan-frame';
+  var view = document.createElement('div');
+  view.className = 'scan-view';
+
+  var video = document.createElement('video');
+  video.className = 'scan-cam-video';
+  video.setAttribute('playsinline', 'true');
+  video.muted = true;
+  view.appendChild(video);
+
+  var reticle = document.createElement('div');
+  reticle.className = 'reticle';
+  var corners = ['tl', 'tr', 'bl', 'br'], ci;
+  for (ci = 0; ci < corners.length; ci++) {
+    var corner = document.createElement('span');
+    corner.className = 'corner ' + corners[ci];
+    reticle.appendChild(corner);
+  }
+  var scanline = document.createElement('span');
+  scanline.className = 'scanline';
+  reticle.appendChild(scanline);
+  view.appendChild(reticle);
+
+  var hint = document.createElement('div');
+  hint.className = 'scan-hint';
+  hint.textContent = 'point at the barcode';
+  view.appendChild(hint);
+  frame.appendChild(view);
+
+  // ISBN type-in fallback (always present).
+  var fb = document.createElement('div');
+  fb.className = 'isbn-fallback';
+  var fbLab = document.createElement('div');
+  fbLab.className = 'if-lab';
+  fbLab.textContent = hasDetector ? 'No scanner? Type the ISBN' : 'Type the ISBN';
+  fb.appendChild(fbLab);
+  var fbRow = document.createElement('div');
+  fbRow.className = 'if-row';
+  var isbnInput = document.createElement('input');
+  isbnInput.type = 'text';
+  isbnInput.setAttribute('inputmode', 'numeric');
+  isbnInput.setAttribute('placeholder', '978…');
+  fbRow.appendChild(isbnInput);
+  var findBtn = document.createElement('button');
+  findBtn.type = 'button';
+  findBtn.className = 'barcode-find-btn';
+  findBtn.textContent = 'Find';
+  fbRow.appendChild(findBtn);
+  fb.appendChild(fbRow);
+  frame.appendChild(fb);
+  wrap.appendChild(frame);
+
+  var status = document.createElement('div');
+  status.className = 'barcode-scanner-status';
+  wrap.appendChild(status);
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'barcode-scanner-cancel';
+  cancelBtn.textContent = 'Cancel';
+  wrap.appendChild(cancelBtn);
+
+  function lookupIsbn(rawIsbn) {
+    var isbn = ('' + (rawIsbn || '')).replace(/[\s-]/g, '');
+    if (isbn.length === 0) { return; }
+    stopCamera();
+    status.textContent = 'Looking up ' + isbn + '…';
+    resolveBook({ kind: 'isbn', isbn: isbn }, function(result) {
+      handoffResolvedSingle(result, 'barcode');
+    });
+  }
+
+  findBtn.addEventListener('click', function() { lookupIsbn(isbnInput.value); });
+  isbnInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) { e.preventDefault(); lookupIsbn(isbnInput.value); }
+  });
+  cancelBtn.addEventListener('click', function() { stopCamera(); renderShelf(); });
+  wrap.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) { stopCamera(); renderShelf(); }
+  });
+
+  hostEl.appendChild(wrap);
+
+  // Start the live camera + decode loop only when BarcodeDetector + getUserMedia
+  // are both available. Any failure (no permission, no camera) silently leaves
+  // the ISBN fallback as the path -- never blocks the user.
+  if (hasDetector && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
+      stream = s;
+      video.srcObject = s;
+      var playPromise = video.play();
+      if (playPromise && typeof playPromise.then === 'function') { playPromise.then(function(){}, function(){}); }
+      scanning = true;
+      var detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+      function tick() {
+        if (!scanning || !stream) { return; }
+        detector.detect(video).then(function(codes) {
+          if (!scanning) { return; }
+          if (codes && codes.length > 0 && codes[0].rawValue) {
+            lookupIsbn(codes[0].rawValue);
+            return;
+          }
+          if (typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
+        }, function() {
+          if (scanning && typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
+        });
+      }
+      if (typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
+    }, function() {
+      status.textContent = 'Camera unavailable — type the ISBN above.';
+    });
+  }
+}
+
+// Phase 3: manual lookup (mockup C "Add manually"). Title/author OR ISBN ->
+// the shared resolver -> the review screen. Distinct from the legacy direct-add
+// editor: this path verifies the book before it lands.
+function openManualLookup() {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) { return; }
+  hostEl.innerHTML = '';
+  var wrap = document.createElement('div');
+  wrap.className = 'manual-lookup';
+  var heading = document.createElement('div');
+  heading.className = 'manual-lookup-heading';
+  heading.textContent = 'Add a book';
+  wrap.appendChild(heading);
+
+  function field(labelText, ph) {
+    var f = document.createElement('label');
+    f.className = 'manual-lookup-field';
+    var lab = document.createElement('span');
+    lab.className = 'manual-lookup-label';
+    lab.textContent = labelText;
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'manual-lookup-input';
+    inp.setAttribute('placeholder', ph);
+    f.appendChild(lab);
+    f.appendChild(inp);
+    wrap.appendChild(f);
+    return inp;
+  }
+  var titleInput = field('Title', 'Book title');
+  var authorInput = field('Author', 'Author (optional)');
+  var isbnInput = field('or ISBN', '978… (optional)');
+
+  var status = document.createElement('div');
+  status.className = 'manual-lookup-status';
+  wrap.appendChild(status);
+
+  var actions = document.createElement('div');
+  actions.className = 'manual-lookup-actions';
+  var lookupBtn = document.createElement('button');
+  lookupBtn.type = 'button';
+  lookupBtn.className = 'manual-lookup-submit';
+  lookupBtn.textContent = 'Look up';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'manual-lookup-cancel';
+  cancelBtn.textContent = 'Cancel';
+  actions.appendChild(lookupBtn);
+  actions.appendChild(cancelBtn);
+  wrap.appendChild(actions);
+
+  function doLookup() {
+    var isbn = isbnInput.value.replace(/[\s-]/g, '');
+    var title = titleInput.value.replace(/^\s+|\s+$/g, '');
+    var author = authorInput.value.replace(/^\s+|\s+$/g, '');
+    var query;
+    if (isbn.length > 0) {
+      query = { kind: 'isbn', isbn: isbn };
+    } else if (title.length > 0) {
+      query = { kind: 'title', title: title, author: author };
+    } else {
+      status.textContent = 'Enter a title or an ISBN.';
+      return;
+    }
+    status.textContent = 'Looking up…';
+    resolveBook(query, function(result) { handoffResolvedSingle(result, 'manual'); });
+  }
+  lookupBtn.addEventListener('click', doLookup);
+  cancelBtn.addEventListener('click', function() { renderShelf(); });
+  wrap.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) { renderShelf(); }
+  });
+  hostEl.appendChild(wrap);
+  titleInput.focus();
+}
+
 // restore() clears the busy label and resets input.value in every
 // terminal path so re-selecting the same photo re-fires the change event.
 function handleShelfScanFile(input, btn) {
@@ -3926,19 +4202,30 @@ function handleShelfScanFile(input, btn) {
     }).then(function(res) {
       if (res.status === 200) {
         res.json().then(function(json) {
-          console.log('[scan] titles:', json.titles);
           restore();
-          // 6.2a: open the review editor (one editable row per title)
-          // for the user to review and Confirm -- never auto-write.
-          // Confirm routes through processBulkLines, the same hand-off
-          // the bulk textarea makes. Empty result gets framing guidance.
-          if (json &&
-              Object.prototype.toString.call(json.titles) === '[object Array]' &&
-              json.titles.length > 0) {
-            openScanReviewEditor(json.titles);
-          } else {
+          // Phase 3: vision returns {books:[{title,author,legibility}]} (legacy
+          // {titles:[...]} accepted). Build a resolver query per spine, resolve
+          // the batch through the shared accuracy engine, and hand the resolved
+          // matches to the review screen. Never auto-writes.
+          var specs = scanResponseToSpecs(json);
+          if (specs.length === 0) {
             showScanStatus('No readable titles found. Try photographing one shelf at a time, filling the frame.');
+            return;
           }
+          var queries = [];
+          var si;
+          for (si = 0; si < specs.length; si++) {
+            queries.push({ kind: 'title', title: specs[si].title, author: specs[si].author, legibility: specs[si].legibility });
+          }
+          showScanStatus('Looking up ' + queries.length + (queries.length === 1 ? ' book…' : ' books…'));
+          resolveBatch(queries, function(resolved) {
+            clearScanStatus();
+            // openBookReview is the Stage-4 review screen; guard so the resolve
+            // pipeline is independently verifiable before it lands.
+            if (typeof openBookReview === 'function') {
+              openBookReview(resolved, 'scan');
+            }
+          });
         }, function(parseErr) {
           console.warn('[scan] error parse', parseErr);
           restore();
