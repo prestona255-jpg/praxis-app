@@ -7745,3 +7745,31 @@
   .book-detail-status-row .rstatus { display: flex; width: 100%; }
   .book-detail-status-row .rs-opt { flex: 1 1 0; text-align: center; }
 }
+
+/* =====================================================================
+   Phase 6 -- library cleanup (mockup E). Tokens only.
+   ===================================================================== */
+.library-cleanup { padding: 8px 0 16px; }
+.cl-summary { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 16px; }
+.cl-stat { flex: 1 1 180px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
+.cl-stat .n { font-family: var(--font-serif); font-size: 34px; font-weight: 500; color: var(--ink); line-height: 1; }
+.cl-stat .l { font-size: 13px; color: var(--ink-2); margin-top: 6px; line-height: 1.4; }
+.cl-stat.warn { border-color: var(--danger-line); }
+.cl-stat.warn .n { color: var(--danger); }
+.cl-resolve-all { margin-bottom: 18px; }
+.cl-list { display: flex; flex-direction: column; gap: 12px; }
+.cl-item { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-1); }
+.cl-kind { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 9px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--wash); border: 1px solid var(--border); white-space: nowrap; align-self: start; }
+.cl-kind.dup { color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, transparent); border-color: var(--danger-line); }
+.cl-kind.miss { color: var(--gold-text); background: color-mix(in srgb, var(--gold) 14%, transparent); border-color: color-mix(in srgb, var(--gold) 38%, transparent); }
+.cl-mid { min-width: 0; }
+.cl-mid .cl-ti { font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: var(--ink); line-height: 1.1; }
+.cl-mid .cl-au { font-family: var(--font-serif); font-style: italic; font-size: 14px; color: var(--ink-2); }
+.cl-mid .cl-note { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.4; }
+.cl-actions { display: flex; gap: 8px; align-items: center; }
+.cl-actions .review-mark-all, .cl-actions .review-confirm { font-size: 12.5px; padding: 8px 14px; }
+
+@media (max-width: 759px) {
+  .cl-item { grid-template-columns: auto 1fr; }
+  .cl-actions { grid-column: 1 / -1; }
+}

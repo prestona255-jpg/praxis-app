@@ -2155,6 +2155,16 @@ function renderShelf() {
     });
     shelfChips.appendChild(barcodeBtn);
 
+    // Phase 6: one-time library cleanup (de-dupe + missing covers).
+    var tidyBtn = document.createElement('button');
+    tidyBtn.type = 'button';
+    tidyBtn.className = 'shelf-tidy-btn';
+    tidyBtn.textContent = 'Tidy library';
+    tidyBtn.addEventListener('click', function() {
+      openLibraryCleanup();
+    });
+    shelfChips.appendChild(tidyBtn);
+
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
     bulkBtn.className = 'shelf-new-book-bulk';
@@ -4495,6 +4505,249 @@ function confirmReviewBooks(rowStates, user) {
     saveState();
   }
   renderShelf();
+}
+
+// =====================================================================
+// Phase 6 -- existing-library cleanup (mockup E). Mechanism + UI.
+// =====================================================================
+
+// Scan one user's shelf for (a) duplicate/near-duplicate records and (b) books
+// with no cover. Duplicate key = normalized ISBN when present, else normalized
+// title+author. Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
+function scanLibraryForCleanup(uid) {
+  var out = { duplicates: [], missingCovers: [], total: 0 };
+  var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var groups = {};
+  var i, id, b, key, normIsbn;
+  for (i = 0; i < ub.length; i++) {
+    id = ub[i]; b = state.books[id];
+    if (!b) { continue; }
+    out.total = out.total + 1;
+    if (!b.coverUrl || ('' + b.coverUrl).replace(/^\s+|\s+$/g, '') === '') { out.missingCovers.push(id); }
+    normIsbn = ('' + (b.isbn || '')).replace(/[\s-]/g, '');
+    if (normIsbn.length > 0) { key = 'isbn:' + normIsbn; }
+    else { key = 'ta:' + resolverNormalize(b.title) + '|' + resolverNormalize(b.author); }
+    if (!groups[key]) { groups[key] = []; }
+    groups[key].push(id);
+  }
+  var gk;
+  for (gk in groups) {
+    if (groups.hasOwnProperty(gk) && groups[gk].length > 1) { out.duplicates.push(groups[gk].slice()); }
+  }
+  return out;
+}
+
+// Merge duplicate records into keepId: preserve the read/finished status (if any
+// copy is 'read', keep is read with the earliest finishedAt), fill keep's blank
+// bibliographic fields from the dropped copies, re-point marginalia + arc
+// membership from dropped ids onto keepId (deduped), then drop the extras. The
+// kept record's own notes/status are never discarded.
+function mergeBookDuplicates(uid, keepId, dropIds) {
+  var keep = state.books[keepId];
+  if (!keep || !dropIds || dropIds.length === 0) { return; }
+  var dropSet = {}, di, d;
+  for (di = 0; di < dropIds.length; di++) { dropSet[dropIds[di]] = true; }
+
+  var anyRead = (normalizeStatus(keep.status) === 'read');
+  var earliest = (typeof keep.finishedAt === 'number') ? keep.finishedAt : null;
+  for (di = 0; di < dropIds.length; di++) {
+    d = state.books[dropIds[di]];
+    if (!d) { continue; }
+    if (normalizeStatus(d.status) === 'read') {
+      anyRead = true;
+      if (typeof d.finishedAt === 'number' && (earliest === null || d.finishedAt < earliest)) { earliest = d.finishedAt; }
+    }
+    if (!keep.coverUrl && d.coverUrl) { keep.coverUrl = d.coverUrl; }
+    if (!keep.isbn && d.isbn) { keep.isbn = d.isbn; }
+    if (typeof keep.pageCount !== 'number' && typeof d.pageCount === 'number') { keep.pageCount = d.pageCount; }
+    if (!keep.publisher && d.publisher) { keep.publisher = d.publisher; }
+    if (!keep.year && d.year) { keep.year = d.year; }
+    if (!keep.description && d.description) { keep.description = d.description; }
+    if (!keep.genre && d.genre) { keep.genre = d.genre; }
+  }
+  if (anyRead) { keep.status = 'read'; if (earliest !== null) { keep.finishedAt = earliest; } }
+  ensureBookFields(keep);
+
+  var em = state.notebookEntries || {}, ek;
+  for (ek in em) {
+    if (em.hasOwnProperty(ek) && em[ek] && em[ek].bookIds) {
+      var nb = [], seen = {}, bi, bid;
+      for (bi = 0; bi < em[ek].bookIds.length; bi++) {
+        bid = em[ek].bookIds[bi];
+        if (dropSet[bid]) { bid = keepId; }
+        if (!seen[bid]) { seen[bid] = true; nb.push(bid); }
+      }
+      em[ek].bookIds = nb;
+    }
+  }
+
+  var am = state.arcs || {}, ak;
+  for (ak in am) {
+    if (am.hasOwnProperty(ak) && am[ak] && am[ak].bookIds) {
+      var nbids = [], seenA = {}, ai, entry, eid, mapped;
+      for (ai = 0; ai < am[ak].bookIds.length; ai++) {
+        entry = am[ak].bookIds[ai];
+        eid = (entry && entry.id) ? entry.id : entry;
+        mapped = dropSet[eid] ? keepId : eid;
+        if (!seenA[mapped]) {
+          seenA[mapped] = true;
+          nbids.push((entry && entry.id) ? { id: mapped, addedAt: entry.addedAt } : mapped);
+        }
+      }
+      am[ak].bookIds = nbids;
+    }
+  }
+
+  var ub = state.userBooks[uid].bookIds, newUb = [], ui;
+  for (ui = 0; ui < ub.length; ui++) { if (!dropSet[ub[ui]]) { newUb.push(ub[ui]); } }
+  state.userBooks[uid].bookIds = newUb;
+  for (di = 0; di < dropIds.length; di++) { delete state.books[dropIds[di]]; }
+  markBookPending(uid, keepId);
+  markBooksDirty();
+  if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+  if (typeof markNotebookDirty === 'function') { markNotebookDirty(); }
+  saveState();
+}
+
+// Re-resolve one book through the shared resolver and apply a found cover (and
+// fill any blank bibliographic fields). callback(applied:boolean).
+function reResolveCover(bookId, callback) {
+  var b = state.books[bookId];
+  if (!b) { if (typeof callback === 'function') { callback(false); } return; }
+  var query = (b.isbn && ('' + b.isbn).replace(/[\s-]/g, '').length > 0)
+    ? { kind: 'isbn', isbn: b.isbn }
+    : { kind: 'title', title: b.title || '', author: b.author || '' };
+  resolveBook(query, function(result) {
+    var applied = false;
+    if (result && result.status !== 'none' && result.book && state.books[bookId]) {
+      var rb = result.book, bb = state.books[bookId];
+      if (rb.coverUrl) { bb.coverUrl = rb.coverUrl; applied = true; }
+      if (!bb.isbn && rb.isbn) { bb.isbn = rb.isbn; }
+      if (!bb.year && rb.year) { bb.year = rb.year; }
+      if (typeof bb.pageCount !== 'number' && typeof rb.pageCount === 'number') { bb.pageCount = rb.pageCount; }
+      if (!bb.publisher && rb.publisher) { bb.publisher = rb.publisher; }
+      if (!bb.description && rb.description) { bb.description = rb.description; }
+      if (applied) { markBookPending(getCurrentUser() ? getCurrentUser().uid : '', bookId); markBooksDirty(); saveState(); }
+    }
+    if (typeof callback === 'function') { callback(applied); }
+  });
+}
+
+// The one-time cleanup pass UI (mockup E): summary stats, per-item review
+// (merge duplicates / resolve missing covers), and a "Resolve all" bulk.
+function openLibraryCleanup() {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  hostEl.innerHTML = '';
+
+  function render() {
+    var report = scanLibraryForCleanup(user.uid);
+    hostEl.innerHTML = '';
+    var wrap = document.createElement('section');
+    wrap.className = 'library-cleanup';
+
+    var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow'; eyebrow.textContent = 'Shelf · one-time cleanup';
+    var h1 = document.createElement('h1'); h1.className = 'book-review-title'; h1.textContent = 'Tidy your library';
+    var sub = document.createElement('p'); sub.className = 'book-review-sub';
+    sub.textContent = 'Resolve duplicates and fill in missing covers across your ' + report.total + ' books.';
+    wrap.appendChild(eyebrow); wrap.appendChild(h1); wrap.appendChild(sub);
+
+    var summary = document.createElement('div'); summary.className = 'cl-summary';
+    function stat(n, label, warn) {
+      var s = document.createElement('div'); s.className = 'cl-stat' + (warn && n > 0 ? ' warn' : '');
+      var nn = document.createElement('div'); nn.className = 'n'; nn.textContent = '' + n;
+      var ll = document.createElement('div'); ll.className = 'l'; ll.textContent = label;
+      s.appendChild(nn); s.appendChild(ll); return s;
+    }
+    summary.appendChild(stat(report.duplicates.length, 'duplicate groups to merge', true));
+    summary.appendChild(stat(report.missingCovers.length, 'books missing covers', true));
+    summary.appendChild(stat(report.total, 'books on your shelf', false));
+    wrap.appendChild(summary);
+
+    var resolveAll = document.createElement('button');
+    resolveAll.type = 'button'; resolveAll.className = 'review-confirm cl-resolve-all';
+    resolveAll.textContent = 'Resolve all →';
+    resolveAll.addEventListener('click', function() {
+      resolveAll.disabled = true; resolveAll.textContent = 'Resolving…';
+      // merge every duplicate group (keep the first), then re-resolve covers.
+      var g;
+      for (g = 0; g < report.duplicates.length; g++) {
+        var grp = report.duplicates[g];
+        mergeBookDuplicates(user.uid, grp[0], grp.slice(1));
+      }
+      var fresh = scanLibraryForCleanup(user.uid);
+      var pending = fresh.missingCovers.slice();
+      var idx = 0;
+      function nextCover() {
+        if (idx >= pending.length) { render(); return; }
+        var id = pending[idx]; idx = idx + 1;
+        reResolveCover(id, function() { nextCover(); });
+      }
+      nextCover();
+    });
+    wrap.appendChild(resolveAll);
+
+    var list = document.createElement('div'); list.className = 'cl-list';
+
+    // duplicate items
+    var di;
+    for (di = 0; di < report.duplicates.length; di++) {
+      (function(grp) {
+        var keep = state.books[grp[0]];
+        var item = document.createElement('div'); item.className = 'cl-item'; item.setAttribute('data-state', 'cleanup-duplicate');
+        var kind = document.createElement('span'); kind.className = 'cl-kind dup'; kind.textContent = 'duplicate'; item.appendChild(kind);
+        var mid = document.createElement('div'); mid.className = 'cl-mid';
+        var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = keep ? (keep.title || '') : '';
+        var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = keep ? (keep.author || '') : '';
+        var note = document.createElement('div'); note.className = 'cl-note';
+        note.textContent = grp.length + ' copies — merge keeps your notes and the read status.';
+        mid.appendChild(ti); mid.appendChild(au); mid.appendChild(note); item.appendChild(mid);
+        var acts = document.createElement('div'); acts.className = 'cl-actions';
+        var keepBoth = document.createElement('button'); keepBoth.type = 'button'; keepBoth.className = 'review-mark-all'; keepBoth.textContent = 'Keep both';
+        keepBoth.addEventListener('click', function() { /* leave as-is; re-render drops it from this pass only on merge */ });
+        var mergeBtn = document.createElement('button'); mergeBtn.type = 'button'; mergeBtn.className = 'review-confirm cl-merge'; mergeBtn.textContent = 'Merge';
+        mergeBtn.addEventListener('click', function() { mergeBookDuplicates(user.uid, grp[0], grp.slice(1)); render(); });
+        acts.appendChild(keepBoth); acts.appendChild(mergeBtn); item.appendChild(acts);
+        list.appendChild(item);
+      })(report.duplicates[di]);
+    }
+
+    // missing-cover items
+    var mi;
+    for (mi = 0; mi < report.missingCovers.length && mi < 40; mi++) {
+      (function(id) {
+        var b = state.books[id];
+        if (!b) { return; }
+        var item = document.createElement('div'); item.className = 'cl-item'; item.setAttribute('data-state', 'cleanup-cover');
+        var kind = document.createElement('span'); kind.className = 'cl-kind miss'; kind.textContent = 'missing cover'; item.appendChild(kind);
+        var mid = document.createElement('div'); mid.className = 'cl-mid';
+        var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = b.title || '';
+        var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = b.author || '';
+        mid.appendChild(ti); mid.appendChild(au); item.appendChild(mid);
+        var acts = document.createElement('div'); acts.className = 'cl-actions';
+        var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'review-mark-all'; skip.textContent = 'Skip';
+        var useCover = document.createElement('button'); useCover.type = 'button'; useCover.className = 'review-confirm cl-use-cover'; useCover.textContent = 'Find cover';
+        useCover.addEventListener('click', function() {
+          useCover.disabled = true; useCover.textContent = 'Looking…';
+          reResolveCover(id, function() { render(); });
+        });
+        acts.appendChild(skip); acts.appendChild(useCover); item.appendChild(acts);
+        list.appendChild(item);
+      })(report.missingCovers[mi]);
+    }
+
+    wrap.appendChild(list);
+
+    var done = document.createElement('button'); done.type = 'button'; done.className = 'book-review-cancel'; done.textContent = 'Done';
+    done.addEventListener('click', function() { renderShelf(); });
+    wrap.appendChild(done);
+
+    hostEl.appendChild(wrap);
+  }
+  render();
 }
 
 // restore() clears the busy label and resets input.value in every
