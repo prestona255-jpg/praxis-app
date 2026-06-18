@@ -4172,6 +4172,331 @@ function openManualLookup() {
   titleInput.focus();
 }
 
+// Phase 4: a cover element for a resolved book. Walks coverCandidates on <img>
+// onerror (OpenLibrary-by-ISBN -> Google image) and finally swaps to a
+// typographic placeholder -- so a 404/blank cover never leaves a broken image.
+function makeReviewCover(book, isNoMatch) {
+  var cover = document.createElement('div');
+  cover.className = 'cover';
+  if (isNoMatch) {
+    var unk = document.createElement('div'); unk.className = 'cover-unknown';
+    var q = document.createElement('span'); q.className = 'cu-q'; q.textContent = '?';
+    var lab = document.createElement('span'); lab.className = 'cu-lab'; lab.textContent = 'no match';
+    unk.appendChild(q); unk.appendChild(lab); cover.appendChild(unk);
+    return cover;
+  }
+  var candidates = (book.coverCandidates && book.coverCandidates.length > 0)
+    ? book.coverCandidates.slice()
+    : (book.coverUrl ? [book.coverUrl] : []);
+  function pendingPlaceholder() {
+    var pend = document.createElement('div'); pend.className = 'cover-pending';
+    var pt = document.createElement('span'); pt.className = 'cp-ti'; pt.textContent = book.title || '';
+    var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'no cover';
+    pend.appendChild(pt); pend.appendChild(pl);
+    return pend;
+  }
+  if (candidates.length === 0) { cover.appendChild(pendingPlaceholder()); return cover; }
+  var img = document.createElement('img');
+  img.className = 'cover-img';
+  img.alt = '';
+  var ci = 0;
+  img.src = candidates[ci];
+  img.addEventListener('error', function() {
+    ci = ci + 1;
+    if (ci < candidates.length) {
+      img.src = candidates[ci];
+    } else if (img.parentNode) {
+      img.parentNode.replaceChild(pendingPlaceholder(), img);
+    }
+  });
+  cover.appendChild(img);
+  return cover;
+}
+
+// Phase 4: the per-row read-status control (mockup .rstatus). Defaults to the
+// passed value; onChange(canonicalValue) fires on select.
+function makeReadStatusControl(current, onChange) {
+  var box = document.createElement('div');
+  box.className = 'rstatus';
+  box.setAttribute('data-status', current);
+  var opts = [
+    { v: 'reading',   l: 'Currently reading' },
+    { v: 'read',      l: 'Have read' },
+    { v: 'will-read', l: 'Will read' }
+  ];
+  var i;
+  for (i = 0; i < opts.length; i++) {
+    (function(opt) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rs-opt' + (opt.v === current ? ' on' : '');
+      b.setAttribute('data-v', opt.v);
+      b.textContent = opt.l;
+      b.addEventListener('click', function() {
+        var sibs = box.querySelectorAll('.rs-opt'), k;
+        for (k = 0; k < sibs.length; k++) { sibs[k].classList.remove('on'); }
+        b.classList.add('on');
+        box.setAttribute('data-status', opt.v);
+        if (typeof onChange === 'function') { onChange(opt.v); }
+      });
+      box.appendChild(b);
+    })(opts[i]);
+  }
+  return box;
+}
+
+// Phase 4: the Review & Confirm screen (mockup A + B). Consumes resolved
+// results from the inputs (S3) through the resolver (S2), one editable row per
+// book: auto-picked match (cover/author/year/meta), a confidence flag, a
+// "not this one?" edition picker, a per-row read-status control DEFAULTING to
+// "Have read", a "Mark all as read" bulk, and never-drop states (no-cover
+// placeholder, no-match editable manual entry). Confirm writes through the
+// P0-safe path (pendingBookSync + the schema-1.20 fields).
+function openBookReview(resolved, source) {
+  var hostEl = document.getElementById('shelf-editor-host');
+  if (!hostEl) { return; }
+  var user = getCurrentUser();
+  if (!user) { return; }
+  hostEl.innerHTML = '';
+
+  var rowStates = [];
+  var ri;
+  for (ri = 0; ri < resolved.length; ri++) {
+    rowStates.push({
+      result:    resolved[ri],
+      book:      resolved[ri].book,
+      status:    'read',
+      isNoMatch: (resolved[ri].status === 'none'),
+      pickerOpen: false,
+      _titleInput: null,
+      _authorInput: null
+    });
+  }
+
+  var wrap = document.createElement('section');
+  wrap.className = 'book-review';
+  var eyebrow = document.createElement('div');
+  eyebrow.className = 'book-review-eyebrow';
+  eyebrow.textContent = (source === 'scan') ? 'Shelf scan · review' : 'Review';
+  var h1 = document.createElement('h1');
+  h1.className = 'book-review-title';
+  h1.textContent = 'Review your books';
+  var sub = document.createElement('p');
+  sub.className = 'book-review-sub';
+  wrap.appendChild(eyebrow); wrap.appendChild(h1); wrap.appendChild(sub);
+
+  var bar = document.createElement('div'); bar.className = 'review-bar';
+  var rbLeft = document.createElement('div'); rbLeft.className = 'rb-left';
+  var rbCount = document.createElement('span'); rbCount.className = 'rb-count';
+  rbLeft.appendChild(rbCount);
+  var rbRight = document.createElement('div'); rbRight.className = 'rb-right';
+  var markAllBtn = document.createElement('button');
+  markAllBtn.type = 'button'; markAllBtn.className = 'review-mark-all'; markAllBtn.textContent = 'Mark all as read';
+  var confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button'; confirmBtn.className = 'review-confirm';
+  rbRight.appendChild(markAllBtn); rbRight.appendChild(confirmBtn);
+  bar.appendChild(rbLeft); bar.appendChild(rbRight);
+  wrap.appendChild(bar);
+
+  var rowsWrap = document.createElement('div'); rowsWrap.className = 'review-rows';
+  wrap.appendChild(rowsWrap);
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button'; cancelBtn.className = 'book-review-cancel'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function() { renderShelf(); });
+  wrap.appendChild(cancelBtn);
+
+  function flagOf(rs) {
+    if (rs.isNoMatch) { return 'none'; }
+    var weak = (rs.result.status === 'weak') ||
+      (rs.result.query && rs.result.query.legibility === 'partial');
+    return weak ? 'low' : 'high';
+  }
+
+  function updateBar() {
+    var flagged = 0, i;
+    for (i = 0; i < rowStates.length; i++) { if (flagOf(rowStates[i]) !== 'high') { flagged++; } }
+    rbCount.textContent = rowStates.length + (rowStates.length === 1 ? ' book' : ' books') + ' matched'
+      + (flagged > 0 ? ' · ' + flagged + ' need a look' : '');
+    confirmBtn.textContent = 'Confirm & save ' + rowStates.length + ' →';
+    sub.textContent = 'We matched ' + rowStates.length + (rowStates.length === 1 ? ' book' : ' books')
+      + '. Confirm each, set how you read it, then save.';
+  }
+
+  function renderRow(rs) {
+    var flag = flagOf(rs);
+    var row = document.createElement('div');
+    row.className = 'rrow' + (flag === 'low' ? ' flagged' : '') + (flag === 'none' ? ' nomatch' : '');
+    var dataState = (flag === 'none') ? 'no-match' : (flag === 'low' ? 'low-confidence' : 'high-confidence');
+    if (flag !== 'none' && !rs.book.coverUrl &&
+        (!rs.book.coverCandidates || rs.book.coverCandidates.length === 0)) {
+      dataState = 'no-cover';
+    }
+    row.setAttribute('data-state', dataState);
+
+    row.appendChild(makeReviewCover(rs.book, rs.isNoMatch));
+
+    var main = document.createElement('div'); main.className = 'rrow-main';
+    if (rs.isNoMatch) {
+      var scannedAs = document.createElement('div'); scannedAs.className = 'scanned-as';
+      scannedAs.appendChild(document.createTextNode('scanned as '));
+      var sab = document.createElement('b');
+      sab.textContent = '“' + ((rs.result.query && (rs.result.query.title || rs.result.query.isbn)) || '') + '”';
+      scannedAs.appendChild(sab);
+      scannedAs.appendChild(document.createTextNode(' — no confident match. Edit below.'));
+      main.appendChild(scannedAs);
+      var manualGrid = document.createElement('div'); manualGrid.className = 'manual';
+      var fT = document.createElement('div'); fT.className = 'fld fld-wide';
+      var lT = document.createElement('label'); lT.textContent = 'Title'; fT.appendChild(lT);
+      rs._titleInput = document.createElement('input'); rs._titleInput.type = 'text';
+      rs._titleInput.value = rs.book.title || (rs.result.query && rs.result.query.title) || '';
+      fT.appendChild(rs._titleInput); manualGrid.appendChild(fT);
+      var fA = document.createElement('div'); fA.className = 'fld fld-wide';
+      var lA = document.createElement('label'); lA.textContent = 'Author'; fA.appendChild(lA);
+      rs._authorInput = document.createElement('input'); rs._authorInput.type = 'text';
+      rs._authorInput.value = rs.book.author || '';
+      fA.appendChild(rs._authorInput); manualGrid.appendChild(fA);
+      main.appendChild(manualGrid);
+    } else {
+      var ti = document.createElement('div'); ti.className = 'rrow-ti'; ti.textContent = rs.book.title || '';
+      main.appendChild(ti);
+      if (rs.book.author) {
+        var au = document.createElement('div'); au.className = 'rrow-au'; au.textContent = rs.book.author;
+        main.appendChild(au);
+      }
+      var metaParts = [];
+      if (rs.book.year) { metaParts.push(rs.book.year); }
+      if (rs.book.publisher) { metaParts.push(rs.book.publisher); }
+      if (rs.book.pageCount) { metaParts.push(rs.book.pageCount + ' pp'); }
+      if (rs.book.isbn) { metaParts.push('ISBN ' + rs.book.isbn); }
+      var meta = document.createElement('div'); meta.className = 'rrow-meta';
+      meta.textContent = metaParts.join(' · ');
+      main.appendChild(meta);
+    }
+
+    var flags = document.createElement('div'); flags.className = 'rrow-flags';
+    var conf = document.createElement('span');
+    if (flag === 'high') { conf.className = 'conf conf-high'; conf.textContent = 'match'; }
+    else if (flag === 'low') { conf.className = 'conf conf-low'; conf.textContent = 'check this'; }
+    else { conf.className = 'conf conf-none'; conf.textContent = 'no match'; }
+    flags.appendChild(conf);
+    if (!rs.isNoMatch && rs.result.alternates && rs.result.alternates.length > 0) {
+      var notThis = document.createElement('button');
+      notThis.type = 'button'; notThis.className = 'notthis';
+      notThis.textContent = rs.pickerOpen ? 'close editions' : 'not this one?';
+      notThis.addEventListener('click', function() { rs.pickerOpen = !rs.pickerOpen; rebuild(); });
+      flags.appendChild(notThis);
+    }
+    main.appendChild(flags);
+
+    if (rs.pickerOpen && rs.result.alternates && rs.result.alternates.length > 0) {
+      var picker = document.createElement('div');
+      picker.className = 'edition-picker'; picker.setAttribute('data-state', 'edition-picker');
+      var epHead = document.createElement('div'); epHead.className = 'ep-head';
+      var epT = document.createElement('span'); epT.className = 'ep-t'; epT.textContent = 'Choose the right edition';
+      epHead.appendChild(epT); picker.appendChild(epHead);
+      var epGrid = document.createElement('div'); epGrid.className = 'ep-grid';
+      var allEds = [rs.result.book].concat(rs.result.alternates);
+      var ei;
+      for (ei = 0; ei < allEds.length; ei++) {
+        (function(ed) {
+          var card = document.createElement('div');
+          card.className = 'edition-card' + (ed === rs.book ? ' selected' : '');
+          card.setAttribute('data-edition', '');
+          card.appendChild(makeReviewCover(ed, false));
+          var em = document.createElement('div'); em.className = 'ec-main';
+          var epub = document.createElement('div'); epub.className = 'ec-pub'; epub.textContent = ed.publisher || ed.title || '';
+          var eau = document.createElement('div'); eau.className = 'ec-au'; eau.textContent = ed.author || '';
+          var emeta = document.createElement('div'); emeta.className = 'ec-meta';
+          var edParts = [];
+          if (ed.year) { edParts.push(ed.year); }
+          if (ed.pageCount) { edParts.push(ed.pageCount + ' pp'); }
+          emeta.textContent = edParts.join(' · ');
+          var epick = document.createElement('div'); epick.className = 'ec-pick'; epick.textContent = '✓ selected';
+          em.appendChild(epub); em.appendChild(eau); em.appendChild(emeta); em.appendChild(epick);
+          card.appendChild(em);
+          card.addEventListener('click', function() { rs.book = ed; rs.pickerOpen = false; rebuild(); });
+          epGrid.appendChild(card);
+        })(allEds[ei]);
+      }
+      picker.appendChild(epGrid);
+      main.appendChild(picker);
+    }
+
+    row.appendChild(main);
+
+    var right = document.createElement('div'); right.className = 'rrow-right';
+    right.appendChild(makeReadStatusControl(rs.status, (function(rsRef) {
+      return function(v) { rsRef.status = v; };
+    })(rs)));
+    row.appendChild(right);
+
+    return row;
+  }
+
+  function rebuild() {
+    rowsWrap.innerHTML = '';
+    var i;
+    for (i = 0; i < rowStates.length; i++) { rowsWrap.appendChild(renderRow(rowStates[i])); }
+    updateBar();
+  }
+
+  markAllBtn.addEventListener('click', function() {
+    var i;
+    for (i = 0; i < rowStates.length; i++) { rowStates[i].status = 'read'; }
+    rebuild();
+  });
+  confirmBtn.addEventListener('click', function() { confirmReviewBooks(rowStates, user); });
+
+  hostEl.appendChild(wrap);
+  rebuild();
+}
+
+// Phase 4: write confirmed review rows to the shelf through the P0-safe path.
+// One state.books record per row carrying the schema-1.20 fields; markBookPending
+// protects each id until Firestore confirms (mergeRemoteBookDoc guard). Empty
+// manual rows are skipped. Per-entry saveState mirrors processBulkLines' crash
+// consistency.
+function confirmReviewBooks(rowStates, user) {
+  if (typeof ensureUser === 'function') { ensureUser(user.uid); }
+  var i;
+  for (i = 0; i < rowStates.length; i++) {
+    var rs = rowStates[i];
+    var title, author, isbn, year, pageCount, publisher, description, coverUrl;
+    if (rs.isNoMatch) {
+      title = rs._titleInput ? rs._titleInput.value.replace(/^\s+|\s+$/g, '') : (rs.book.title || '');
+      if (title.length === 0) { continue; }
+      author = rs._authorInput ? rs._authorInput.value.replace(/^\s+|\s+$/g, '') : '';
+      isbn = (rs.result.query && rs.result.query.isbn) || '';
+      year = null; pageCount = null; publisher = ''; description = ''; coverUrl = null;
+    } else {
+      title = rs.book.title || '';
+      if (title.length === 0) { continue; }
+      author = rs.book.author || '';
+      isbn = rs.book.isbn || '';
+      year = rs.book.year || null;
+      pageCount = (typeof rs.book.pageCount === 'number') ? rs.book.pageCount : null;
+      publisher = rs.book.publisher || '';
+      description = rs.book.description || '';
+      coverUrl = rs.book.coverUrl || null;
+    }
+    var now = Date.now();
+    var id = genBookId();
+    state.books[id] = {
+      id: id, title: title, author: author, isbn: isbn, addedAt: now,
+      status: rs.status || 'read', genre: '', coverUrl: coverUrl,
+      pageCount: pageCount, publisher: publisher, year: year,
+      description: description, rating: null, dateRead: null
+    };
+    ensureBookFields(state.books[id]);
+    state.userBooks[user.uid].bookIds.push(id);
+    markBookPending(user.uid, id);
+    markBooksDirty();
+    saveState();
+  }
+  renderShelf();
+}
+
 // restore() clears the busy label and resets input.value in every
 // terminal path so re-selecting the same photo re-fires the change event.
 function handleShelfScanFile(input, btn) {
