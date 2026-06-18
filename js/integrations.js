@@ -491,9 +491,8 @@ function mergeRemoteBookDoc(uid, data) {
     }
   }
 
-  // 3.10i + 5.6 chokepoints over the remote payload (unchanged).
+  // 3.10i cover normalization stays on the remote payload, pre-copy.
   var coversNormalized = normalizeCoverUrlsToHttps(remoteBooks);
-  ensureBookFieldsAll(remoteBooks);
 
   // New index = remote set, then any still-pending local id not already in
   // remote -- preserving the unsynced book's shelf position.
@@ -516,6 +515,13 @@ function mergeRemoteBookDoc(uid, data) {
       state.books[rbid] = remoteBooks[rbid];
     }
   }
+  // Phase 1 footgun fix: backfill schema fields AFTER the wholesale remote
+  // copy, on the MERGED state.books -- so a remote record arriving without the
+  // Phase-1 fields (pageCount/publisher/year/description/rating/dateRead, plus
+  // tradition/traditionOverride) is completed in place, and a remote payload
+  // that lacks a field cannot strip it post-copy. Also covers the pending-only
+  // local records preserved above. (Was ensureBookFieldsAll(remoteBooks) pre-copy.)
+  ensureBookFieldsAll(state.books);
   return coversNormalized;
 }
 

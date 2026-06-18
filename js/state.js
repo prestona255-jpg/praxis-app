@@ -164,7 +164,10 @@
 //
 // Schema 1.9.0 adds two user-facing fields to state.books records:
 //
-//   status: string   // 'want' | 'reading' | 'finished'
+//   status: string   // stored: legacy 'want'|'reading'|'finished' OR canonical
+//                    // 'will-read'|'reading'|'read'. Read THROUGH normalizeStatus
+//                    // (Phase 1): finished===read, want===will-read. Stored
+//                    // values are never rewritten; new/changed records write canonical.
 //   genre:  string   // free-form singular tag, empty string allowed
 //
 // status is not just metadata -- it is the state-machine field
@@ -392,6 +395,15 @@ function ensureBookFields(book) {
     book.traditionOverride = null;
     changed = true;
   }
+  // Phase 1: extended bibliographic fields. null / '' defaults, never undefined.
+  // Idempotent (only stamps when missing/wrong-typed). NOT status -- read-status
+  // is normalized on read (normalizeStatus), never rewritten here.
+  if (typeof book.pageCount === 'undefined') { book.pageCount = null; changed = true; }
+  if (typeof book.publisher !== 'string')    { book.publisher = '';   changed = true; }
+  if (typeof book.year === 'undefined')      { book.year = null;      changed = true; }
+  if (typeof book.description !== 'string')   { book.description = ''; changed = true; }
+  if (typeof book.rating === 'undefined')    { book.rating = null;    changed = true; }
+  if (typeof book.dateRead === 'undefined')  { book.dateRead = null;  changed = true; }
   return changed;
 }
 
@@ -411,6 +423,46 @@ function ensureBookFieldsAll(booksMap) {
   }
   return anyChanged;
 }
+
+// =====================================================================
+// Phase 1 -- read-status normalization.
+//
+// Stored vocabulary is the legacy {want, reading, finished}; the canonical
+// display vocabulary is {will-read, reading, read} (mockup: Will read /
+// Currently reading / Have read). normalizeStatus maps ANY stored value
+// (legacy OR canonical) onto the canonical set so reads and comparisons are
+// uniform, WITHOUT rewriting stored values -- existing books' stored status
+// is preserved (build non-goal). New and user-changed records WRITE the
+// canonical vocabulary; legacy values normalize on read.
+//   legacy 'finished'  ===  canonical 'read'       (done reading)
+//   legacy 'want'      ===  canonical 'will-read'
+//   'reading' unchanged. Unknown/falsy -> 'reading'.
+// =====================================================================
+function normalizeStatus(s) {
+  if (s === 'finished' || s === 'read') { return 'read'; }
+  if (s === 'want' || s === 'will-read') { return 'will-read'; }
+  if (s === 'reading') { return 'reading'; }
+  return 'reading';
+}
+
+// Canonical status -> human label (mockup vocabulary).
+var STATUS_LABELS = {
+  'reading':   'Currently reading',
+  'read':      'Have read',
+  'will-read': 'Will read'
+};
+
+// statusText(stored) -> display label for any stored value. Named statusText
+// (not statusLabel) to avoid shadowing a local DOM var in the book-detail
+// status selector.
+function statusText(s) {
+  var c = normalizeStatus(s);
+  return STATUS_LABELS[c] || STATUS_LABELS.reading;
+}
+
+// Canonical vocabulary in mockup display order (Currently reading / Have
+// read / Will read) -- used by the status selectors and the review control.
+var STATUS_VOCAB = ['reading', 'read', 'will-read'];
 
 // ensureSubTheoryFields — the 9.1 chokepoint, mirroring ensureBookFields.
 // Backfills any sub-theory schema field that is missing or the wrong
@@ -2150,6 +2202,17 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.19.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.19.0') {
+    // Phase 1: additive bibliographic fields (pageCount, publisher, year,
+    // description, rating, dateRead) backfilled onto every existing book via
+    // ensureBookFieldsAll. ADDITIVE ONLY -- does NOT touch read-status
+    // (existing statuses preserved per the build non-goal; status normalizes
+    // on read). Idempotent (ensureBookFields only stamps missing fields).
+    if (stored.books) {
+      ensureBookFieldsAll(stored.books);
+    }
+    stored.SCHEMA_VERSION = '1.20.0';
   }
   return stored;
 }

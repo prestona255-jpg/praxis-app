@@ -2842,14 +2842,15 @@ function renderShelfBook(book) {
   var meta = document.createElement('div');
   meta.className = 'shelf-book-meta';
 
-  // 3.10a Stage 3: status-modifier class hook for the three pill
-  // variants (reading / finished / want). statusValue is reused for
-  // class and textContent so the fallback 'reading' applies to both
-  // without recomputing book.status || 'reading' twice.
+  // 3.10a Stage 3 + Phase 1: status-modifier class hook. statusCanon is the
+  // normalized canonical value (reading / read / will-read), reused for class
+  // and textContent so legacy {want,reading,finished} render uniformly.
   var statusEl = document.createElement('span');
-  var statusValue = book.status || 'reading';
-  statusEl.className = 'shelf-book-status shelf-book-status-' + statusValue;
-  statusEl.textContent = statusValue;
+  // Phase 1: normalize legacy {want,reading,finished} -> canonical
+  // {will-read,reading,read} for both the class hook and the pill text.
+  var statusCanon = normalizeStatus(book.status);
+  statusEl.className = 'shelf-book-status shelf-book-status-' + statusCanon;
+  statusEl.textContent = statusCanon;
   meta.appendChild(statusEl);
 
   card.appendChild(meta);
@@ -2894,8 +2895,9 @@ function renderShelfBookRow(book) {
   // Reuse the covers card's status-pill classes; omit entirely when falsy.
   if (book.status) {
     var statusEl = document.createElement('span');
-    statusEl.className = 'shelf-book-status shelf-book-status-' + book.status;
-    statusEl.textContent = book.status;
+    var rowStatusCanon = normalizeStatus(book.status);
+    statusEl.className = 'shelf-book-status shelf-book-status-' + rowStatusCanon;
+    statusEl.textContent = rowStatusCanon;
     row.appendChild(statusEl);
   }
 
@@ -3261,12 +3263,12 @@ function openShelfEditor() {
   authorInput.className = 'shelf-editor-author-input';
   authorInput.placeholder = 'Author (optional)';
 
-  // Status radios: want | reading | finished. Default 'reading' --
-  // same default the migration backfills onto pre-existing records
-  // and the same default 3.7 will treat as the pre-Artifact state.
+  // Phase 1: canonical status radios (Currently reading / Have read / Will
+  // read). Default 'reading' (manual add of a book you're starting). Writes
+  // the canonical vocabulary; labels via STATUS_LABELS.
   var statusWrap = document.createElement('div');
   statusWrap.className = 'shelf-editor-status';
-  var statuses = ['want', 'reading', 'finished'];
+  var statuses = STATUS_VOCAB;
   var statusRadios = [];
   var s;
   for (s = 0; s < statuses.length; s++) {
@@ -3279,7 +3281,7 @@ function openShelfEditor() {
     if (statuses[s] === 'reading') radio.checked = true;
     statusRadios.push(radio);
     label.appendChild(radio);
-    label.appendChild(document.createTextNode(' ' + statuses[s]));
+    label.appendChild(document.createTextNode(' ' + STATUS_LABELS[statuses[s]]));
     statusWrap.appendChild(label);
   }
 
@@ -4102,7 +4104,7 @@ function renderBookDetail(bookId) {
   }
   var metaLine = document.createElement('p');
   metaLine.className = 'book-detail-meta';
-  metaLine.textContent = (book.status || 'reading') + ' · in ' +
+  metaLine.textContent = statusText(book.status) + ' · in ' +
     bdArcCount + (bdArcCount === 1 ? ' arc' : ' arcs') +
     ' · ' + bdMargCount + ' marginalia';
   contentCell.appendChild(metaLine);
@@ -4138,7 +4140,7 @@ function renderBookDetail(bookId) {
   // into the card as a gold "Write your artifact →" link (mockup line 233),
   // for the no-artifact state (finished + no artifact == the old Create-
   // Artifact branch). The has-artifact state keeps "Open Artifact" below.
-  if (user && book.status === 'finished' && !bdArtRec) {
+  if (user && normalizeStatus(book.status) === 'read' && !bdArtRec) {
     var writeArtLink = document.createElement('button');
     writeArtLink.type = 'button';
     writeArtLink.className = 'book-detail-write-artifact';
@@ -4222,10 +4224,13 @@ function renderBookDetail(bookId) {
       var artKey = artifactKey(user.uid, bookId);
       if (state.bookArtifacts[artKey]) hasArtifact = true;
     }
-    if (book.status === 'want' && !hasArtifact) {
+    // Phase 1: branch on normalized status (legacy 'finished'≡'read',
+    // 'want'≡'will-read') so the six-branch matrix works for both vocabularies.
+    var stCanon = normalizeStatus(book.status);
+    if (stCanon === 'will-read' && !hasArtifact) {
       // Branch 1 -- (want, no-artifact): no header Artifact-affordance.
       // User has not begun reading; no finish or Artifact paths apply.
-    } else if (book.status === 'reading' && !hasArtifact) {
+    } else if (stCanon === 'reading' && !hasArtifact) {
       // Branch 2 -- (reading, no-artifact): first-finish ceremonial
       // path. Click stamps status + finishedAt and chains the Artifact
       // editor open. Mirrors 3.7 stage 1+2 behavior; unchanged in 3.7c.
@@ -4235,7 +4240,7 @@ function renderBookDetail(bookId) {
       finishedBtn.textContent = 'I\'ve finished this';
       finishedBtn.addEventListener('click', function() {
         if (!state.books[bookId]) return;
-        state.books[bookId].status     = 'finished';
+        state.books[bookId].status     = 'read';
         state.books[bookId].finishedAt = Date.now();
         markBooksDirty();
         saveState();
@@ -4243,12 +4248,12 @@ function renderBookDetail(bookId) {
         openArtifactEditor(bookId);
       });
       actions.appendChild(finishedBtn);
-    } else if (book.status === 'finished' && !hasArtifact) {
+    } else if (stCanon === 'read' && !hasArtifact) {
       // Branch 3 -- (finished, no-artifact): Stage 5 folded the former
       // standalone "Create Artifact" button into the artifact card as the gold
       // "Write your artifact →" link (built above), so no actions-row button
       // renders in this branch now.
-    } else if (book.status === 'reading' && hasArtifact) {
+    } else if (stCanon === 'reading' && hasArtifact) {
       // Branch 4 -- (reading, has-artifact): un-finish state, reached
       // via 3.7c selector flip 'finished' -> 'reading' on a book whose
       // Artifact already exists. "I've finished this" does NOT render
@@ -4262,7 +4267,7 @@ function renderBookDetail(bookId) {
       openArtLink.href = '#artifact/' + bookId;
       openArtLink.textContent = 'Open Artifact';
       actions.appendChild(openArtLink);
-    } else if (book.status === 'finished' && hasArtifact) {
+    } else if (stCanon === 'read' && hasArtifact) {
       // Branch 5 -- (finished, has-artifact): canonical post-Artifact
       // state. Both creation CTAs are gone; the link is the only
       // book-detail surface that references the Artifact.
@@ -4271,7 +4276,7 @@ function renderBookDetail(bookId) {
       openArtLink.href = '#artifact/' + bookId;
       openArtLink.textContent = 'Open Artifact';
       actions.appendChild(openArtLink);
-    } else if (book.status === 'want' && hasArtifact) {
+    } else if (stCanon === 'will-read' && hasArtifact) {
       // Branch 6 -- (want, has-artifact): defensive, only reachable
       // via 3.7c selector flip 'finished' -> 'want' on a book whose
       // Artifact already exists. User expectation is undefined for
@@ -4428,10 +4433,13 @@ function renderBookDetail(bookId) {
   editSection.appendChild(editEyebrow);
 
   if (user) {
-    var currentStatus = book.status || 'reading';
+    // Phase 1: canonical status radios. currentStatus normalizes the stored
+    // value (legacy or canonical) so the right radio is pre-checked; onChange
+    // writes the canonical vocabulary. Labels via STATUS_LABELS.
+    var currentStatus = normalizeStatus(book.status);
     var statusWrap = document.createElement('div');
     statusWrap.className = 'book-detail-status';
-    var statuses = ['want', 'reading', 'finished'];
+    var statuses = STATUS_VOCAB;
     var s;
     for (s = 0; s < statuses.length; s++) {
       var statusLabel = document.createElement('label');
@@ -4449,7 +4457,7 @@ function renderBookDetail(bookId) {
         renderBookDetail(bookId);
       });
       statusLabel.appendChild(statusRadio);
-      statusLabel.appendChild(document.createTextNode(' ' + statuses[s]));
+      statusLabel.appendChild(document.createTextNode(' ' + STATUS_LABELS[statuses[s]]));
       statusWrap.appendChild(statusLabel);
     }
     editSection.appendChild(statusWrap);
