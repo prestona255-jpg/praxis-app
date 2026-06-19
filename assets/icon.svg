@@ -1,4 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#faf6ec"/>
-  <text x="50%" y="58%" text-anchor="middle" font-size="280" fill="#b8860b" font-family="serif">P</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Umebloom crest. A favicon renders in isolation (no app CSS), so it uses
+       literal hexes that EQUAL the theme.css design tokens. Keep in sync with
+       the single in-app source, yumiGlyph() in js/yumi-ui.js. Mapping:
+       ring #4a2810 is br-deep, petals #a8741a is gold, core #c5912b is
+       gold-light. -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="#4a2810" stroke-width="2.4"/>
+  <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(0 50 50)"/>
+  <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(72 50 50)"/>
+  <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(144 50 50)"/>
+  <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(216 50 50)"/>
+  <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(288 50 50)"/>
+  <circle cx="50" cy="50" r="11" fill="#c5912b"/>
 </svg>

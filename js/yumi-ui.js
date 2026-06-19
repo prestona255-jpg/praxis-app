@@ -66,12 +66,95 @@ function pickYumiGreeting() {
   return YUMI_GREETINGS[next];
 }
 
+// =====================================================================
+// THE Yumi GLYPH (Umebloom crest) -- the ONE static Yumi mark, shared by
+// every surface the animated nav Bloom cannot reach: the favicon
+// (assets/icon.svg, a literal-hex twin kept in sync), the lens-panel
+// header, the in-flight "thinking" line, proposed-lens cards, adopted-
+// lens cards, and the chat empty-state greeting. Design-locked geometry
+// (viewBox 0 0 100 100): a --br-deep ring, five --gold petals at 72-deg
+// steps, a --gold-light core. Token rule: NO literal hex -- colours are
+// var(--token), or currentColor when mono is true so the surface owns
+// the colour. size is the rendered px (width == height; default 28).
+// This function is the single in-app source of the glyph markup -- no
+// other surface inlines its own copy.
+// =====================================================================
+var YUMI_GLYPH_PETAL =
+  'M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z';
+var YUMI_GLYPH_ROT = [0, 72, 144, 216, 288];
+
+function yumiGlyph(size, mono) {
+  var px = (size && size > 0) ? size : 28;
+  var ringFill  = mono ? 'currentColor' : 'var(--br-deep)';
+  var petalFill = mono ? 'currentColor' : 'var(--gold)';
+  var coreFill  = mono ? 'currentColor' : 'var(--gold-light)';
+  var petals = '';
+  var i;
+  for (i = 0; i < YUMI_GLYPH_ROT.length; i++) {
+    petals = petals +
+      '<path d="' + YUMI_GLYPH_PETAL + '" fill="' + petalFill +
+      '" transform="rotate(' + YUMI_GLYPH_ROT[i] + ' 50 50)"/>';
+  }
+  return '<svg class="yumi-glyph" viewBox="0 0 100 100" width="' + px +
+    '" height="' + px + '" focusable="false" aria-hidden="true">' +
+    '<circle cx="50" cy="50" r="46" fill="none" stroke="' + ringFill +
+    '" stroke-width="2.4"/>' + petals +
+    '<circle cx="50" cy="50" r="11" fill="' + coreFill + '"/>' +
+    '</svg>';
+}
+
+// One-time stylesheet for the shared glyph -- injected from JS (not
+// components.css) to hold this build's blast radius to yumi-ui.js +
+// assets/icon.svg + sw.js. Colour stays in the SVG token fills; this only
+// carries layout helpers + a reduced-motion-safe "thinking" pulse (under
+// prefers-reduced-motion: reduce the keyframes rule is absent, so the crest
+// stays static). No hex.
+var yumiGlyphStyleDone = false;
+function ensureGlyphStyle() {
+  if (yumiGlyphStyleDone || document.getElementById('praxis-yumi-glyph-style')) {
+    yumiGlyphStyleDone = true;
+    return;
+  }
+  var st = document.createElement('style');
+  st.id = 'praxis-yumi-glyph-style';
+  // .yumi-empty is flex (row by default); the 5th-surface crest must stack
+  // ABOVE the greeting, so this flips that one container to a column (its
+  // only children are the crest block + the greeting). Runtime-appended, so
+  // it wins over the linked components.css at equal specificity.
+  st.textContent =
+    '.yumi-glyph-host{display:inline-flex;vertical-align:middle;line-height:0}' +
+    '.yumi-glyph-lead{margin-right:.5em}' +
+    '.yumi-glyph-block{display:flex;justify-content:center;margin-bottom:.55em}' +
+    '.yumi-empty{flex-direction:column}' +
+    '@media (prefers-reduced-motion: no-preference){' +
+    '@keyframes praxisGlyphPulse{0%,100%{opacity:1}50%{opacity:.55}}' +
+    '.yumi-glyph-pulse{animation:praxisGlyphPulse 1.6s ease-in-out infinite}}';
+  (document.head || document.documentElement).appendChild(st);
+  yumiGlyphStyleDone = true;
+}
+
+// DOM convenience: a host span carrying the shared glyph at the given size,
+// plus any extra classes. Every in-app surface builds its mark through this
+// so the glyph markup has exactly one source. Decorative: aria-hidden host.
+function yumiGlyphNode(size, extraClass) {
+  ensureGlyphStyle();
+  var host = document.createElement('span');
+  host.className = extraClass ? ('yumi-glyph-host ' + extraClass) : 'yumi-glyph-host';
+  host.setAttribute('aria-hidden', 'true');
+  host.innerHTML = yumiGlyph(size, false);
+  return host;
+}
+
 function renderYumiEmptyState() {
   if (!yumiBodyEl) { return; }
   var greeting = pickYumiGreeting();
   yumiBodyEl.innerHTML = '';
   var wrap = document.createElement('div');
   wrap.className = 'yumi-empty';
+  // 5th surface: the shared crest sits above the rotating greeting -- the
+  // static Yumi mark for the chat empty state (Bloom is the nav FAB, which
+  // cannot reach inside the panel body).
+  wrap.appendChild(yumiGlyphNode(32, 'yumi-glyph-block'));
   var line = document.createElement('div');
   line.className = 'yumi-greeting';
   line.textContent = greeting;
@@ -811,7 +894,9 @@ function buildProposedLensCard(lens) {
   main.className = 'lens-card-main';
   var name = document.createElement('span');
   name.className = 'lens-card-name';
-  name.textContent = lens.name;
+  // S4: the shared crest marks this card as proposed by Yumi (one source).
+  name.appendChild(yumiGlyphNode(16, 'yumi-glyph-lead'));
+  name.appendChild(document.createTextNode(lens.name));
   main.appendChild(name);
   var why = document.createElement('span');
   why.className = 'lens-card-why';
@@ -864,25 +949,6 @@ function lensPanelUserThemes() {
   return out;
 }
 
-// A small static Bloom glyph for the panel head (slow-spinning petals,
-// frozen under reduced-motion). Token colours straight into fill/stop-color.
-function lensGlyphSvg() {
-  var petals = '';
-  var pa;
-  for (pa = 0; pa < 360; pa = pa + 60) {
-    petals = petals + '<ellipse cx="24" cy="11" rx="2.6" ry="7" transform="rotate(' + pa + ' 24 24)"/>';
-  }
-  return '<svg viewBox="0 0 48 48" width="40" height="40" role="img" focusable="false">' +
-    '<defs><radialGradient id="lens-glyph-core" cx="50%" cy="50%" r="50%">' +
-    '<stop offset="0%" stop-color="var(--text-on-dark)"/>' +
-    '<stop offset="45%" stop-color="var(--gold-light)"/>' +
-    '<stop offset="100%" stop-color="var(--gold)"/>' +
-    '</radialGradient></defs>' +
-    '<g class="lens-glyph-petals" fill="var(--gold-light)" opacity="0.85">' + petals + '</g>' +
-    '<circle cx="24" cy="24" r="7" fill="url(#lens-glyph-core)"/>' +
-    '</svg>';
-}
-
 function buildLensCard(theme) {
   var card = document.createElement('div');
   card.className = 'lens-card';
@@ -892,7 +958,9 @@ function buildLensCard(theme) {
   main.className = 'lens-card-main';
   var name = document.createElement('span');
   name.className = 'lens-card-name';
-  name.textContent = theme.name;
+  // S5: the shared crest sits in the kept-lens icon slot (one source).
+  name.appendChild(yumiGlyphNode(16, 'yumi-glyph-lead'));
+  name.appendChild(document.createTextNode(theme.name));
   main.appendChild(name);
   var meta = document.createElement('span');
   meta.className = 'lens-card-meta';
@@ -988,7 +1056,10 @@ function renderLensPanelBody() {
     if (lensSuggestStatus === 'loading') {
       var loading = document.createElement('p');
       loading.className = 'lens-panel-stub lens-suggest-loading';
-      loading.textContent = 'Reading across your shelf…';
+      // S3: the shared crest pulses (reduced-motion-safe) beside the line
+      // while generateLenses is in flight; the resolve re-render drops it.
+      loading.appendChild(yumiGlyphNode(20, 'yumi-glyph-lead yumi-glyph-pulse'));
+      loading.appendChild(document.createTextNode('Reading across your shelf…'));
       sug.appendChild(loading);
     } else if (lensSuggestStatus === 'error') {
       var errp = document.createElement('p');
@@ -1105,7 +1176,9 @@ function buildLensPanel() {
   var glyph = document.createElement('span');
   glyph.className = 'lens-panel-glyph';
   glyph.setAttribute('aria-hidden', 'true');
-  glyph.innerHTML = lensGlyphSvg();
+  // S6: the panel-head crest routes through the single shared source so
+  // there is ONE glyph geometry app-wide (the .lens-panel-glyph CSS sizes it).
+  glyph.innerHTML = yumiGlyph(40, false);
   header.appendChild(glyph);
   var headtext = document.createElement('div');
   headtext.className = 'lens-panel-headtext';
