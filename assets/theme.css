@@ -281,6 +281,13 @@
   /* --- Batch 3: danger zone (Account delete) --- */
   --danger:        #9c3f1c;
   --danger-line:   rgba(150,50,24,.45);
+
+  /* --- Notebook bound-leaf chrome (hybrid spread) --- */
+  /* Dot-grid leaf texture: a 22px-pitch honey stipple over the leaf fill.
+     Derived from --ink-4 so it reads as faint graphite on wheat. */
+  --dots:          radial-gradient(circle, color-mix(in srgb, var(--ink-4) 26%, transparent) 1.3px, transparent 1.5px);
+  /* Faded brick-red margin rule down the left leaf (notebook ruling). */
+  --margin-rule:   color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 body {

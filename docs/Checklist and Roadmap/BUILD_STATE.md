@@ -6,9 +6,9 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-06-18
+**Authoritative as of:** 2026-06-19
 **Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.122`
+**Live CACHE_VERSION:** `praxis-v3.123`
 **HEAD == origin/main:** `9c6608b`
 **Schema:** `state.js` static initializer `SCHEMA_VERSION: '1.9.3'` (the pinned
 seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.21.0**
@@ -248,6 +248,8 @@ Checkpoints: `docs/checkpoints/N0-recon.md`, `N-foundation.md`, `N1.md`, `N2.md`
 > Ship commit `9c6608b` (CACHE_VERSION v3.111→v3.112). **9/9 post-push live checks PASS** on `prestona255@gmail.com` (incl. the auth-merge `filed` normalizer cross-device + the F5 real-data round-trip); `ZZVERIFY` test data cleaned up. Data model: `docs/PRAXIS_9_6_AND_VISUAL_UPLIFT.md` lineage; N0 forks F1–F6 resolved by Claude. N4 (Yumi generative gather) remains DEFERRED (SEC + eval-gated).
 
 > **Notebook State-5 (Gathered) layout — CLAIMED-DONE, awaiting live-verify (2026-06-18).** Right-leaf working page reskinned to `design/notebook-hybrid-mockup.html` State 5: reserved (resting) Yumi name-attribution eyebrow + gather-bar "Y" avatar + reserved COMPLICATE slot — all static, **zero generative wiring** (dormancy grep clean on the diff). N3 gather→sub-theory mechanic + data model reused unchanged; arc picker kept functional, restyled quiet. Additive namespaced CSS (`.notebook-nameblock/-yname-tag/-gather/-ybubble/-complicate/-ctag/-ctext` + restyles); states 1–4 / composer byte-untouched. CACHE_VERSION v3.121→v3.122. Recon: `docs/checkpoints/notebook-state5-recon.md`.
+
+> **Notebook Hybrid (bound-notebook chrome + book header + composer integration) — CLAIMED-DONE, awaiting live-verify (2026-06-19).** The live notebook spread is brought up to `design/notebook-hybrid-mockup.html` across all 5 states: (A) shared **bound-notebook chrome** — a `--surface`-filled, `--radius-lg` (symmetric, decision A), shadowed `.notebook-spread` filling the 1080 column (decision B), with dot-grid (`--dots`) `--surface-2` leaves + a center seam (left-leaf 2px spine + opposed `--br-deep` inset shadows) + a left margin ruling (`--margin-rule`); single-column degrade preserved ≤760. (B) **book-header** on the left page for book tabs — self-healing cover (reused `buildSelfHealingCover`) + Cormorant title + "AUTHOR · STATUS", **read-only** on `state.books` (Inbox/Journal + stale records show no cover, no error). (C) **composer integrated** into the page — `.notebook-writeline` card fill/border/radius dropped; the v3.121 input metrics (66ch / DM-Sans 17.5px / lh 1.65 / ink caret / serif-italic 26px placeholder) + capture behavior **byte-preserved**. (D) **at-rest cards** reconciled (translucent `--surface` fill, `--radius-md`, `--shadow-1` + hover lift) **scoped** to `.notebook-leaf-left` so the shared base `.notebook-entry` (book detail) is untouched; Cormorant-italic body **KEPT** (decision C). KEEP list intact (Yumi switch, action links, visibility badges, arc picker + Create, dormant working-page copy). **Yumi stays DORMANT** — zero generative wiring (dormancy grep clean on the full diff). 2 new theme tokens (`--dots`, `--margin-rule`). CACHE_VERSION v3.122→v3.123. Recon: `docs/checkpoints/notebook-hybrid-recon.md`; build: `docs/checkpoints/notebook-hybrid.md`.
 
 ---
 

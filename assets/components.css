@@ -3763,6 +3763,29 @@
   opacity: 0.8;
 }
 
+/* Hybrid Gate D: at-rest cards in the notebook spread are reconciled to the
+   mockup's lighter card -- translucent --surface fill (the dot-grid leaf reads
+   faintly through), --radius-md corners, tighter padding, a soft shadow + hover
+   lift. SCOPED to the spread leaf so the shared base .notebook-entry (book
+   detail / banks) is untouched. The Cormorant-italic body is KEPT (decision C);
+   only the card chrome changes. The spine inset tracks the smaller radius. */
+.notebook-leaf-left .notebook-entry {
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow var(--motion-base) var(--ease),
+              border-color var(--motion-base) var(--ease);
+}
+.notebook-leaf-left .notebook-entry:hover {
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-2);
+}
+.notebook-leaf-left .notebook-entry::before {
+  top: 10px;
+  bottom: 10px;
+}
+
 .notebook-entry-head {
   display: flex;
   align-items: center;
@@ -3988,21 +4011,50 @@
 }
 .notebook-tab-on .notebook-tab-count { color: var(--gold-text); }
 
+/* Hybrid: the two leaves abut inside an open bound notebook -- a single
+   surface-filled, rounded, shadowed spread (symmetric --radius-lg per the
+   locked decision A; fills the .notebook 1080 column, no 880 constraint). */
 .notebook-spread {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 28px;
-  align-items: start;
+  gap: 0;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-2);
 }
+/* Each leaf is dot-grid paper over the lighter --surface-2 fill, with an
+   asymmetric gutter (wide 46px left edge for the margin ruling). */
 .notebook-leaf {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: relative;
+  background-color: var(--surface-2);
+  background-image: var(--dots);
+  background-size: 22px 22px;
+  padding: 22px 26px 26px 46px;
+  min-height: 430px;
+}
+/* Center seam: the left leaf's right edge is the spine (2px rule), and both
+   leaves cast opposed inner shadows so the gutter reads as a bound valley. */
+.notebook-leaf-left {
+  border-right: 2px solid var(--line-2);
+  box-shadow: inset -14px 0 22px -16px color-mix(in srgb, var(--br-deep) 30%, transparent);
+}
+.notebook-leaf-left::before {
+  content: "";
+  position: absolute;
+  left: 32px;
+  top: 16px;
+  bottom: 16px;
+  width: 1.5px;
+  background: var(--margin-rule);
 }
 .notebook-leaf-right {
-  border-left: 1px solid var(--border);
-  padding-left: 28px;
-  min-height: 200px;
+  box-shadow: inset 14px 0 22px -16px color-mix(in srgb, var(--br-deep) 30%, transparent);
 }
 .notebook-secthead-title {
   font-family: var(--font-serif);
@@ -4016,6 +4068,60 @@
   text-transform: uppercase;
   color: var(--ink-4);
   margin-top: 2px;
+}
+/* Book-tab header (Gap 2): cover thumb + serif title + "AUTHOR · STATUS",
+   anchoring the left page to its book. Wired read-only from state.books. */
+.notebook-bookhead {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 18px;
+}
+.notebook-bookhead-cover {
+  width: 34px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  object-fit: cover;
+  background: var(--br-deep);
+  box-shadow: var(--shadow-1);
+}
+.notebook-bookhead-cover-ph {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 3px;
+  overflow: hidden;
+  color: var(--surface-2);
+  line-height: 1.05;
+}
+.notebook-bookhead-cover-ph-title {
+  font-family: var(--font-serif);
+  font-size: 7.5px;
+}
+.notebook-bookhead-cover-ph-label {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.notebook-bookhead-text { min-width: 0; }
+.notebook-bookhead-title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.04;
+  color: var(--ink);
+}
+.notebook-bookhead-sub {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
 }
 .notebook-leaftag {
   font-family: var(--font-mono);
@@ -4037,15 +4143,18 @@
 /* N2 upgrade: the writeline becomes a comfortable composer -- chips above, a
    wide DM-Sans writing measure below (the capture bar mounts under it in N2b).
    Comfort metrics track design/writing-surface-mockup.html (.editor/.flow). */
+/* Hybrid: the composer is integrated INTO the dot-grid page -- no card fill,
+   border, or radius (the leaf gutter supplies the inset). The chips above, the
+   dashed capturebar rule below, and the writing measure are unchanged (v3.121). */
 .notebook-writeline {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
-  padding: 14px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 .notebook-writeline-input {
   width: 100%;
@@ -4141,6 +4250,12 @@
 .notebook.notebook-composing .notebook-leaf-right {
   opacity: 0;
   overflow: hidden;
+}
+/* While composing, the writing leaf takes the full spread -- drop the spine so
+   no dangling seam shows at its right edge. */
+.notebook.notebook-composing .notebook-leaf-left {
+  border-right: none;
+  box-shadow: none;
 }
 @media (min-width: 760px) {
   .notebook.notebook-composing .notebook-spread {
@@ -4444,10 +4559,22 @@
 }
 
 @media (max-width: 759px) {
-  .notebook-spread { grid-template-columns: 1fr; gap: 20px; }
+  /* The bound book becomes a single column: the two leaves stack inside the
+     one rounded/shadowed spread. Drop the vertical seam + margin rule; the
+     right leaf carries a top hairline instead. Tighter gutter for narrow
+     screens, and no tall min-height so short leaves don't leave dead space. */
+  .notebook-spread { grid-template-columns: 1fr; gap: 0; }
+  .notebook-leaf {
+    padding: 20px 18px;
+    min-height: 0;
+  }
+  .notebook-leaf-left {
+    border-right: none;
+    box-shadow: none;
+  }
+  .notebook-leaf-left::before { display: none; }
   .notebook-leaf-right {
-    border-left: none;
-    padding-left: 0;
+    box-shadow: none;
     border-top: 1px solid var(--border);
     padding-top: 20px;
   }

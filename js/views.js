@@ -914,18 +914,58 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
     if (tabs[t].key === activeKey) { activeTab = tabs[t]; break; }
   }
 
-  var sechead = document.createElement('div');
-  sechead.className = 'notebook-secthead';
-  var secTitle = document.createElement('div');
-  secTitle.className = 'notebook-secthead-title';
-  secTitle.textContent = activeTab ? activeTab.label : 'Inbox';
-  sechead.appendChild(secTitle);
-  var secMeta = document.createElement('div');
-  secMeta.className = 'notebook-secthead-meta';
-  var n = activeTab ? activeTab.count : 0;
-  secMeta.textContent = n + (n === 1 ? ' note' : ' notes');
-  sechead.appendChild(secMeta);
-  leaf.appendChild(sechead);
+  // Book-tab header (Gap 2): a book tab's key IS its bookId, so anchor the left
+  // page to that book -- cover (self-healing) + serif title + "AUTHOR · STATUS".
+  // READ-ONLY on state.books; Inbox/Journal (and any stale/missing record) fall
+  // to the plain title + count heading below.
+  var headerBook = (activeKey !== 'inbox' && activeKey !== 'journal' && state.books)
+    ? state.books[activeKey] : null;
+  if (headerBook) {
+    var bh = document.createElement('div');
+    bh.className = 'notebook-bookhead';
+    bh.appendChild(buildSelfHealingCover(headerBook, 'notebook-bookhead-cover',
+      function() {
+        var ph = document.createElement('div');
+        ph.className = 'notebook-bookhead-cover notebook-bookhead-cover-ph';
+        var pht = document.createElement('span');
+        pht.className = 'notebook-bookhead-cover-ph-title';
+        pht.textContent = headerBook.title || '';
+        ph.appendChild(pht);
+        var phl = document.createElement('span');
+        phl.className = 'notebook-bookhead-cover-ph-label';
+        phl.textContent = 'cover pending';
+        ph.appendChild(phl);
+        return ph;
+      }));
+    var bhText = document.createElement('div');
+    bhText.className = 'notebook-bookhead-text';
+    var bhTitle = document.createElement('div');
+    bhTitle.className = 'notebook-bookhead-title';
+    bhTitle.textContent = headerBook.title || '(untitled)';
+    bhText.appendChild(bhTitle);
+    var bhSub = document.createElement('div');
+    bhSub.className = 'notebook-bookhead-sub';
+    var subParts = [];
+    if (headerBook.author) { subParts.push(headerBook.author); }
+    subParts.push(normalizeStatus(headerBook.status).split('-').join(' '));
+    bhSub.textContent = subParts.join(' · ');
+    bhText.appendChild(bhSub);
+    bh.appendChild(bhText);
+    leaf.appendChild(bh);
+  } else {
+    var sechead = document.createElement('div');
+    sechead.className = 'notebook-secthead';
+    var secTitle = document.createElement('div');
+    secTitle.className = 'notebook-secthead-title';
+    secTitle.textContent = activeTab ? activeTab.label : 'Inbox';
+    sechead.appendChild(secTitle);
+    var secMeta = document.createElement('div');
+    secMeta.className = 'notebook-secthead-meta';
+    var n = activeTab ? activeTab.count : 0;
+    secMeta.textContent = n + (n === 1 ? ' note' : ' notes');
+    sechead.appendChild(secMeta);
+    leaf.appendChild(sechead);
+  }
 
   // N2: inline capture (writeline) at the top of the left leaf.
   leaf.appendChild(buildNotebookWriteline(activeKey));
