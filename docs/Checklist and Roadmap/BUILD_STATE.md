@@ -8,7 +8,7 @@
 
 **Authoritative as of:** 2026-06-18
 **Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.121`
+**Live CACHE_VERSION:** `praxis-v3.122`
 **HEAD == origin/main:** `9c6608b`
 **Schema:** `state.js` static initializer `SCHEMA_VERSION: '1.9.3'` (the pinned
 seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.21.0**
@@ -246,6 +246,8 @@ Checkpoints: `docs/checkpoints/N0-recon.md`, `N-foundation.md`, `N1.md`, `N2.md`
 | Profile tagline sync fix | SHIPPED+VERIFIED | v3.112 | `d8dbe80` | `loadProfileFromFirestore` merge reads `tagline` back — read/write symmetric with `.set()`. | Pre-existing bug; separate from the epic. |
 
 > Ship commit `9c6608b` (CACHE_VERSION v3.111→v3.112). **9/9 post-push live checks PASS** on `prestona255@gmail.com` (incl. the auth-merge `filed` normalizer cross-device + the F5 real-data round-trip); `ZZVERIFY` test data cleaned up. Data model: `docs/PRAXIS_9_6_AND_VISUAL_UPLIFT.md` lineage; N0 forks F1–F6 resolved by Claude. N4 (Yumi generative gather) remains DEFERRED (SEC + eval-gated).
+
+> **Notebook State-5 (Gathered) layout — CLAIMED-DONE, awaiting live-verify (2026-06-18).** Right-leaf working page reskinned to `design/notebook-hybrid-mockup.html` State 5: reserved (resting) Yumi name-attribution eyebrow + gather-bar "Y" avatar + reserved COMPLICATE slot — all static, **zero generative wiring** (dormancy grep clean on the diff). N3 gather→sub-theory mechanic + data model reused unchanged; arc picker kept functional, restyled quiet. Additive namespaced CSS (`.notebook-nameblock/-yname-tag/-gather/-ybubble/-complicate/-ctag/-ctext` + restyles); states 1–4 / composer byte-untouched. CACHE_VERSION v3.121→v3.122. Recon: `docs/checkpoints/notebook-state5-recon.md`.
 
 ---
 

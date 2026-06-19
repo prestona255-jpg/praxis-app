@@ -979,12 +979,23 @@ function buildNotebookRightLeaf(user) {
   tag.textContent = 'Working page · forming a sub-theory';
   leaf.appendChild(tag);
 
+  // Name block: a reserved (resting) Yumi-attribution eyebrow + the N3 naming
+  // field. Yumi does NOT generate the name here, so the eyebrow stays honest
+  // ("yours to set"); the field is the same <input> the N3 gather path reads
+  // from (notebookGatherName).
+  var nameBlock = document.createElement('div');
+  nameBlock.className = 'notebook-nameblock';
+  var ynameTag = document.createElement('div');
+  ynameTag.className = 'notebook-yname-tag';
+  ynameTag.textContent = 'Name this sub-theory · yours to set';
+  nameBlock.appendChild(ynameTag);
   var nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.className = 'notebook-working-name';
-  nameInput.setAttribute('placeholder', 'Name this sub-theory');
+  nameInput.setAttribute('placeholder', 'Name it…');
   nameInput.value = notebookGatherName || '';
-  leaf.appendChild(nameInput);
+  nameBlock.appendChild(nameInput);
+  leaf.appendChild(nameBlock);
 
   var i;
   for (i = 0; i < ids.length; i = i + 1) {
@@ -992,7 +1003,10 @@ function buildNotebookRightLeaf(user) {
     var w = document.createElement('div');
     w.className = 'notebook-wnote';
     var wt = document.createElement('span');
-    wt.className = 'notebook-wnote-tag';
+    var wtcls = 'notebook-wnote-tag-jour';
+    if (e.register === 'marginalia') { wtcls = 'notebook-wnote-tag-marg'; }
+    else if (e.register === 'question') { wtcls = 'notebook-wnote-tag-ques'; }
+    wt.className = 'notebook-wnote-tag ' + wtcls;
     wt.textContent = notebookRegisterLabel(e.register);
     w.appendChild(wt);
     var wb = (e && typeof e.body === 'string') ? e.body : '';
@@ -1037,14 +1051,21 @@ function buildNotebookRightLeaf(user) {
   }
   leaf.appendChild(arcRow);
 
-  // Static line -- NOT a Yumi generative call (N4). Plain UI copy.
+  // Gather bar: Yumi's resting presence (a quiet "Y" avatar) beside the static
+  // gather line, with Create. NOT a generative call -- the line is plain UI copy
+  // and the avatar never speaks (the active NAME move is a later build).
+  var gather = document.createElement('div');
+  gather.className = 'notebook-gather';
+  var ybubble = document.createElement('span');
+  ybubble.className = 'notebook-ybubble';
+  ybubble.textContent = 'Y';
+  gather.appendChild(ybubble);
+
   var gline = document.createElement('p');
   gline.className = 'notebook-working-gather-line';
   gline.textContent = ids.length + ' gathered — name it and I’ll carry them into your arc.';
-  leaf.appendChild(gline);
+  gather.appendChild(gline);
 
-  var acts = document.createElement('div');
-  acts.className = 'notebook-working-acts';
   var createBtn = document.createElement('button');
   createBtn.type = 'button';
   createBtn.className = 'notebook-working-create';
@@ -1063,8 +1084,32 @@ function buildNotebookRightLeaf(user) {
     notebookGatherName = nameInput.value;
     createBtn.disabled = !canCreate();
   });
-  acts.appendChild(createBtn);
+  gather.appendChild(createBtn);
+  leaf.appendChild(gather);
 
+  // Reserved (resting) Yumi COMPLICATE slot. The position is held for the later
+  // generative build; here she is quiet -- a static, honest placeholder, never a
+  // generated question and never a brain call.
+  var complicate = document.createElement('div');
+  complicate.className = 'notebook-complicate';
+  var cbubble = document.createElement('span');
+  cbubble.className = 'notebook-ybubble notebook-ybubble-sm';
+  cbubble.textContent = 'Y';
+  complicate.appendChild(cbubble);
+  var cbody = document.createElement('div');
+  var ctag = document.createElement('div');
+  ctag.className = 'notebook-ctag';
+  ctag.textContent = 'Yumi · complicates — a question, never a verdict';
+  cbody.appendChild(ctag);
+  var ctext = document.createElement('div');
+  ctext.className = 'notebook-ctext';
+  ctext.textContent = 'Once Yumi’s reading along, she’ll open a question here — never a verdict.';
+  cbody.appendChild(ctext);
+  complicate.appendChild(cbody);
+  leaf.appendChild(complicate);
+
+  var acts = document.createElement('div');
+  acts.className = 'notebook-working-acts';
   var clearLink = document.createElement('a');
   clearLink.href = '#';
   clearLink.className = 'notebook-working-clear';
