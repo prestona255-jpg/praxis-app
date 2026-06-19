@@ -1231,10 +1231,25 @@ function buildNotebookMasterSwitch(user) {
   return tog;
 }
 
-// N2: inline capture (the writeline). A text input + MARG/JRNL/QUES register
-// chips (the mic is DEFERRED to N2b; camera is out of scope). The selected
-// register is closure-local so a chip click never loses typed text. Enter (no
-// shift) commits via captureNote. Mounted at the top of the left leaf.
+// N2 upgrade: toggle the composing focus treatment on the notebook wrap. Adds /
+// removes the .notebook-composing class on section.notebook ONLY -- the global
+// app nav (outside the view) is never touched (design-canon A).
+function setNotebookComposing(on) {
+  var wrap = document.querySelector('.notebook');
+  if (!wrap) { return; }
+  if (on) {
+    if (wrap.className.indexOf('notebook-composing') === -1) {
+      wrap.className = wrap.className + ' notebook-composing';
+    }
+  } else {
+    wrap.className = wrap.className.replace(/\s*\bnotebook-composing\b/g, '');
+  }
+}
+
+// N2: inline capture (the writeline). A composer + register chips (the mic is
+// DEFERRED to N2b; camera arrives in N2b photo capture). The selected register
+// is closure-local so a chip click never loses typed text. Enter (no shift)
+// commits via captureNote. Mounted at the top of the left leaf.
 function buildNotebookWriteline(activeKey) {
   var line = document.createElement('div');
   line.className = 'notebook-writeline';
@@ -1258,9 +1273,9 @@ function buildNotebookWriteline(activeKey) {
   var chips = document.createElement('div');
   chips.className = 'notebook-writeline-chips';
   var defs = [
-    { r: 'marginalia', l: 'Marg' },
-    { r: 'journal', l: 'Jrnl' },
-    { r: 'question', l: 'Ques' }
+    { r: 'journal', l: 'Journal' },
+    { r: 'marginalia', l: 'Marginalia' },
+    { r: 'question', l: 'Question' }
   ];
   var chipEls = {};
   function paint() {
@@ -1289,8 +1304,20 @@ function buildNotebookWriteline(activeKey) {
     if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); }
   });
 
-  line.appendChild(input);
+  // N2 upgrade: focusing the composer recedes the in-view chrome (composing);
+  // when focus leaves the writeline entirely, return to resting. A chip click
+  // blurs the textarea then refocuses it, so the check is deferred a tick.
+  input.addEventListener('focus', function() { setNotebookComposing(true); });
+  input.addEventListener('blur', function() {
+    window.setTimeout(function() {
+      var ae = document.activeElement;
+      if (!(ae && line.contains(ae))) { setNotebookComposing(false); }
+    }, 120);
+  });
+
+  // Chips above the writing measure (mockup .registers over .flow).
   line.appendChild(chips);
+  line.appendChild(input);
   return line;
 }
 
@@ -1301,7 +1328,11 @@ function appendWritelineChip(chips, def, chipEls, onPick) {
   c.className = 'notebook-writeline-chip';
   c.setAttribute('role', 'button');
   c.setAttribute('tabindex', '0');
-  c.textContent = def.l;
+  c.setAttribute('data-reg', def.r);
+  var dot = document.createElement('span');
+  dot.className = 'notebook-writeline-chip-dot';
+  c.appendChild(dot);
+  c.appendChild(document.createTextNode(def.l));
   c.addEventListener('click', function() { onPick(def.r); });
   c.addEventListener('keydown', function(ev) {
     if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {

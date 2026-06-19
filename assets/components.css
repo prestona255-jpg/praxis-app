@@ -4033,50 +4033,119 @@
 }
 
 /* N2: inline capture (writeline) + register chips. */
+/* N2 upgrade: the writeline becomes a comfortable composer -- chips above, a
+   wide DM-Sans writing measure below (the capture bar mounts under it in N2b).
+   Comfort metrics track design/writing-surface-mockup.html (.editor/.flow). */
 .notebook-writeline {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding: 14px 16px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
 .notebook-writeline-input {
-  flex: 1 1 160px;
-  min-width: 120px;
+  width: 100%;
+  max-width: 66ch;
   border: none;
   background: transparent;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 17px;
-  line-height: 1.4;
+  font-family: var(--font-body);
+  font-size: 17.5px;
+  line-height: 1.65;
   color: var(--ink);
+  caret-color: var(--ink);
   outline: none;
   resize: none;
   overflow: hidden;
+  min-height: 128px;
+  padding: 2px 0;
 }
-.notebook-writeline-input::placeholder { color: var(--ink-4); }
+/* The resting invitation: a serif italic prompt, larger than the prose it
+   becomes (the textarea's own font stays DM Sans for typed text). */
+.notebook-writeline-input::placeholder {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.5;
+  color: var(--ink-4);
+  opacity: 1;
+}
 .notebook-writeline-chips {
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 .notebook-writeline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--line-2);
-  color: var(--ink-3);
+  border: 1px solid var(--border);
+  color: var(--gold-text);
+  background: transparent;
   cursor: pointer;
+  transition: all var(--motion-base) var(--ease);
+}
+.notebook-writeline-chip:hover { border-color: var(--line-2); }
+.notebook-writeline-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
 }
 .notebook-writeline-chip-on {
+  color: var(--text-on-dark);
+  font-weight: 500;
+}
+.notebook-writeline-chip-on .notebook-writeline-chip-dot {
+  opacity: 1;
+  background: var(--text-on-dark);
+}
+.notebook-writeline-chip-on[data-reg="marginalia"] {
   background: var(--marginalia-color);
   border-color: var(--marginalia-color);
-  color: var(--text-on-dark);
+}
+.notebook-writeline-chip-on[data-reg="journal"] {
+  background: var(--journal-color);
+  border-color: var(--journal-color);
+}
+.notebook-writeline-chip-on[data-reg="question"] {
+  background: var(--question-color);
+  border-color: var(--question-color);
+}
+
+/* N2 upgrade: resting -> composing focus treatment. A .notebook-composing class
+   on the section.notebook wrap recedes the in-view chrome and (desktop) expands
+   the writing leaf. SCOPED to the notebook view -- the global app nav is
+   intentionally untouched (design-canon A: nav stays solid). */
+.notebook-header,
+.notebook-tabs,
+.notebook-secthead,
+.notebook-leaf-right {
+  transition: opacity var(--motion-base) var(--ease);
+}
+.notebook.notebook-composing .notebook-header,
+.notebook.notebook-composing .notebook-tabs,
+.notebook.notebook-composing .notebook-secthead {
+  opacity: 0.4;
+}
+.notebook.notebook-composing .notebook-leaf-right {
+  opacity: 0;
+  overflow: hidden;
+}
+@media (min-width: 760px) {
+  .notebook.notebook-composing .notebook-spread {
+    grid-template-columns: 1fr 0fr;
+    gap: 0;
+  }
 }
 
 /* N3: gather selection + the working-page sub-theory builder. */
