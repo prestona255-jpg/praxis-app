@@ -6,13 +6,14 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-06-16
+**Authoritative as of:** 2026-06-18
 **Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.112`
+**Live CACHE_VERSION:** `praxis-v3.121`
 **HEAD == origin/main:** `9c6608b`
 **Schema:** `state.js` static initializer `SCHEMA_VERSION: '1.9.3'` (the pinned
-seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.19.0**
-(`state.js` ~line 1968). Runtime schema is 1.19.0; the 1.9.3 literal is expected.
+seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.21.0**
+(N2b photo capture adds the additive `images:[]` step 1.20.0 -> 1.21.0). Runtime
+schema is 1.21.0; the 1.9.3 literal is expected.
 
 **Provenance:** reconstructed and verified against `git log` (300 commits) +
 `sw.js` CACHE_VERSION + `docs/checkpoints/` on 2026-06-12 (recon:
