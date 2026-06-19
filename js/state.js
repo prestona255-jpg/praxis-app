@@ -2275,6 +2275,23 @@ function migrate(stored) {
     }
     stored.SCHEMA_VERSION = '1.20.0';
   }
+  if (stored.SCHEMA_VERSION === '1.20.0') {
+    // N2b photo capture: every notebook entry gains images:[] -- an array of
+    // {id, idbKey, w, h, caption} REFS only (the photo blobs live in IndexedDB,
+    // never in state or the /userNotebook Firestore doc). ADDITIVE ONLY: never
+    // touches isPrivate (F5) or any existing field. Idempotent -- only stamps a
+    // missing / non-array images.
+    if (stored.notebookEntries) {
+      var nbeId;
+      for (nbeId in stored.notebookEntries) {
+        if (Object.prototype.hasOwnProperty.call(stored.notebookEntries, nbeId)) {
+          var nbe = stored.notebookEntries[nbeId];
+          if (nbe && !(nbe.images instanceof Array)) { nbe.images = []; }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.21.0';
+  }
   return stored;
 }
 

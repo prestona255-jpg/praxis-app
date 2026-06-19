@@ -1231,6 +1231,137 @@ function buildNotebookMasterSwitch(user) {
   return tog;
 }
 
+// ===== N2b notebook photo storage: device-local IndexedDB blob store =====
+// Photos attach inline to a notebook entry; the entry persists only refs
+// ({id, idbKey, w, h, caption}). The blobs live HERE (IndexedDB), never in
+// localStorage or the /userNotebook Firestore doc -- so cross-device the refs
+// sync but the blob is absent (graceful placeholder). ES3 / event-based (no
+// promises) so views.js stays parse-clean.
+var NB_PHOTO_DB = 'praxisNotebook';
+var NB_PHOTO_STORE = 'photos';
+var nbPhotoSeq = 0;
+
+function genNotebookImageId() {
+  nbPhotoSeq = nbPhotoSeq + 1;
+  return 'nbimg_' + Date.now() + '_' + nbPhotoSeq;
+}
+
+function nbPhotoIdbOpen(onOk, onErr) {
+  if (!window.indexedDB) { onErr(new Error('indexedDB unavailable')); return; }
+  var req;
+  try {
+    req = window.indexedDB.open(NB_PHOTO_DB, 1);
+  } catch (e) { onErr(e); return; }
+  req.onupgradeneeded = function() {
+    var db = req.result;
+    if (!db.objectStoreNames.contains(NB_PHOTO_STORE)) {
+      db.createObjectStore(NB_PHOTO_STORE);
+    }
+  };
+  req.onsuccess = function() { onOk(req.result); };
+  req.onerror = function() { onErr(req.error || new Error('idb open failed')); };
+}
+
+function nbPhotoIdbPut(key, blob, onOk, onErr) {
+  nbPhotoIdbOpen(function(db) {
+    var tx, st, pr;
+    try {
+      tx = db.transaction(NB_PHOTO_STORE, 'readwrite');
+      st = tx.objectStore(NB_PHOTO_STORE);
+      pr = st.put(blob, key);
+    } catch (e) { onErr(e); return; }
+    tx.oncomplete = function() { onOk(); };
+    tx.onerror = function() { onErr(tx.error || new Error('idb put failed')); };
+    pr.onerror = function() { onErr(pr.error || new Error('idb put failed')); };
+  }, onErr);
+}
+
+function nbPhotoIdbGet(key, onOk, onErr) {
+  nbPhotoIdbOpen(function(db) {
+    var tx, st, pr;
+    try {
+      tx = db.transaction(NB_PHOTO_STORE, 'readonly');
+      st = tx.objectStore(NB_PHOTO_STORE);
+      pr = st.get(key);
+    } catch (e) { onErr(e); return; }
+    pr.onsuccess = function() { onOk(pr.result); };
+    pr.onerror = function() { onErr(pr.error || new Error('idb get failed')); };
+  }, onErr);
+}
+
+// Downscale a chosen image File on a canvas, then hand back a JPEG Blob plus its
+// pixel dimensions. Mirrors the shelf-scan downscale (max edge + 0.85 JPEG) but
+// yields a Blob (lean for IndexedDB) rather than base64.
+function nbDownscaleImageToBlob(file, maxEdge, onOk, onErr) {
+  if (!file) { onErr(new Error('no file')); return; }
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function() {
+    var w = img.naturalWidth || img.width;
+    var h = img.naturalHeight || img.height;
+    var scale = Math.min(1, maxEdge / Math.max(w, h || 1));
+    var outW = Math.max(1, Math.round(w * scale));
+    var outH = Math.max(1, Math.round(h * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, outW, outH);
+    URL.revokeObjectURL(url);
+    if (canvas.toBlob) {
+      canvas.toBlob(function(blob) {
+        if (blob) { onOk(blob, outW, outH); }
+        else { onErr(new Error('toBlob returned null')); }
+      }, 'image/jpeg', 0.85);
+    } else {
+      onErr(new Error('canvas.toBlob unsupported'));
+    }
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    onErr(new Error('image decode failed'));
+  };
+  img.src = url;
+}
+
+// Build the at-rest inline shot for a stored image ref. Renders a sized
+// placeholder synchronously (renderNotebookEntry is sync), then fills the blob
+// from IndexedDB async; a missing blob (another device) keeps a graceful label.
+function buildNotebookShot(ref) {
+  var fig = document.createElement('figure');
+  fig.className = 'notebook-shot';
+  var media = document.createElement('div');
+  media.className = 'notebook-shot-media notebook-shot-media-ph';
+  if (ref && ref.w && ref.h) { media.style.aspectRatio = ref.w + ' / ' + ref.h; }
+  var phLabel = document.createElement('span');
+  phLabel.className = 'notebook-shot-ph-label';
+  phLabel.textContent = 'Photo';
+  media.appendChild(phLabel);
+  fig.appendChild(media);
+  if (ref && ref.caption) {
+    var cap = document.createElement('figcaption');
+    cap.className = 'notebook-shot-cap';
+    cap.textContent = ref.caption;
+    fig.appendChild(cap);
+  }
+  if (ref && ref.idbKey) {
+    nbPhotoIdbGet(ref.idbKey, function(blob) {
+      if (!blob) { phLabel.textContent = 'Photo not on this device'; return; }
+      var objUrl = URL.createObjectURL(blob);
+      var im = document.createElement('img');
+      im.className = 'notebook-shot-img';
+      im.alt = ref.caption || '';
+      im.src = objUrl;
+      media.className = 'notebook-shot-media';
+      while (media.firstChild) { media.removeChild(media.firstChild); }
+      media.appendChild(im);
+    }, function() {
+      phLabel.textContent = 'Photo unavailable';
+    });
+  }
+  return fig;
+}
+
 // N2 upgrade: toggle the composing focus treatment on the notebook wrap. Adds /
 // removes the .notebook-composing class on section.notebook ONLY -- the global
 // app nav (outside the view) is never touched (design-canon A).
@@ -1295,10 +1426,142 @@ function buildNotebookWriteline(activeKey) {
   }
   paint();
 
+  // N2b: photo capture -- two paths (camera + library) attach inline, stored
+  // device-local in IndexedDB on commit; the entry persists refs only. Staged
+  // blobs are held in memory until commit, so an abandoned compose leaks nothing.
+  var stagedImages = [];   // {id, blob, w, h, caption, url}
+
+  var shotsHost = document.createElement('div');
+  shotsHost.className = 'notebook-writeline-shots';
+
+  function renderStagedShot(si) {
+    var fig = document.createElement('figure');
+    fig.className = 'notebook-shot';
+    var media = document.createElement('div');
+    media.className = 'notebook-shot-media';
+    if (si.w && si.h) { media.style.aspectRatio = si.w + ' / ' + si.h; }
+    var im = document.createElement('img');
+    im.className = 'notebook-shot-img';
+    im.alt = '';
+    im.src = si.url;
+    media.appendChild(im);
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'notebook-shot-remove';
+    rm.setAttribute('aria-label', 'Remove photo');
+    rm.textContent = '×';
+    rm.addEventListener('click', function() {
+      var k;
+      for (k = 0; k < stagedImages.length; k = k + 1) {
+        if (stagedImages[k] === si) { stagedImages.splice(k, 1); break; }
+      }
+      if (si.url) { URL.revokeObjectURL(si.url); }
+      if (fig.parentNode) { fig.parentNode.removeChild(fig); }
+    });
+    media.appendChild(rm);
+    fig.appendChild(media);
+    var cap = document.createElement('input');
+    cap.type = 'text';
+    cap.className = 'notebook-shot-cap-input';
+    cap.setAttribute('placeholder', 'Add a caption…');
+    cap.addEventListener('input', function() { si.caption = cap.value; });
+    fig.appendChild(cap);
+    shotsHost.appendChild(fig);
+  }
+
+  function addStagedPhoto(file) {
+    if (!file) { return; }
+    setNotebookComposing(true);
+    nbDownscaleImageToBlob(file, 1600, function(blob, w, h) {
+      var si = {
+        id: genNotebookImageId(), blob: blob, w: w, h: h,
+        caption: '', url: URL.createObjectURL(blob)
+      };
+      stagedImages.push(si);
+      renderStagedShot(si);
+    }, function(err) {
+      if (window.console) { console.warn('notebook photo decode/downscale failed', err); }
+    });
+  }
+
+  var cameraInput = document.createElement('input');
+  cameraInput.type = 'file';
+  cameraInput.accept = 'image/*';
+  cameraInput.setAttribute('capture', 'environment');
+  cameraInput.className = 'notebook-capture-input';
+  cameraInput.addEventListener('change', function() {
+    addStagedPhoto(cameraInput.files && cameraInput.files[0]);
+    cameraInput.value = '';
+  });
+
+  var libraryInput = document.createElement('input');
+  libraryInput.type = 'file';
+  libraryInput.accept = 'image/*';
+  libraryInput.className = 'notebook-capture-input';
+  libraryInput.addEventListener('change', function() {
+    addStagedPhoto(libraryInput.files && libraryInput.files[0]);
+    libraryInput.value = '';
+  });
+
+  var capturebar = document.createElement('div');
+  capturebar.className = 'notebook-capturebar';
+  var photoBtn = document.createElement('button');
+  photoBtn.type = 'button';
+  photoBtn.className = 'notebook-capbtn';
+  photoBtn.textContent = 'Take a photo';
+  photoBtn.addEventListener('click', function() { cameraInput.click(); });
+  var imageBtn = document.createElement('button');
+  imageBtn.type = 'button';
+  imageBtn.className = 'notebook-capbtn';
+  imageBtn.textContent = 'Add image';
+  imageBtn.addEventListener('click', function() { libraryInput.click(); });
+  var caphint = document.createElement('span');
+  caphint.className = 'notebook-caphint';
+  caphint.textContent = 'attaches inline · on this device';
+  capturebar.appendChild(photoBtn);
+  capturebar.appendChild(imageBtn);
+  capturebar.appendChild(caphint);
+  capturebar.appendChild(cameraInput);
+  capturebar.appendChild(libraryInput);
+
   function commit() {
     var body = (input.value || '').replace(/^\s+|\s+$/g, '');
-    if (!body) { return; }
-    captureNote(selected, body, activeKey);
+    if (!body && stagedImages.length === 0) { return; }
+    if (stagedImages.length === 0) {
+      captureNote(selected, body, activeKey, []);
+      return;
+    }
+    // Persist each staged blob to IndexedDB, then create the note with refs.
+    // refs is index-keyed so display order survives the async puts.
+    var refs = new Array(stagedImages.length);
+    var remaining = stagedImages.length;
+    var done = false;
+    function finalize() {
+      if (done) { return; }
+      done = true;
+      var clean = [], j;
+      for (j = 0; j < refs.length; j = j + 1) { if (refs[j]) { clean.push(refs[j]); } }
+      var s;
+      for (s = 0; s < stagedImages.length; s = s + 1) {
+        if (stagedImages[s].url) { URL.revokeObjectURL(stagedImages[s].url); }
+      }
+      captureNote(selected, body, activeKey, clean);
+    }
+    var i;
+    for (i = 0; i < stagedImages.length; i = i + 1) {
+      (function(si, idx) {
+        nbPhotoIdbPut(si.id, si.blob, function() {
+          refs[idx] = { id: si.id, idbKey: si.id, w: si.w, h: si.h, caption: si.caption || '' };
+          remaining = remaining - 1;
+          if (remaining === 0) { finalize(); }
+        }, function(err) {
+          if (window.console) { console.warn('notebook photo store failed', err); }
+          refs[idx] = null;
+          remaining = remaining - 1;
+          if (remaining === 0) { finalize(); }
+        });
+      })(stagedImages[i], i);
+    }
   }
   input.addEventListener('keydown', function(ev) {
     if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); }
@@ -1306,7 +1569,8 @@ function buildNotebookWriteline(activeKey) {
 
   // N2 upgrade: focusing the composer recedes the in-view chrome (composing);
   // when focus leaves the writeline entirely, return to resting. A chip click
-  // blurs the textarea then refocuses it, so the check is deferred a tick.
+  // (or a capture button / caption field, all inside `line`) keeps focus within
+  // the writeline, so the deferred check leaves composing on.
   input.addEventListener('focus', function() { setNotebookComposing(true); });
   input.addEventListener('blur', function() {
     window.setTimeout(function() {
@@ -1315,9 +1579,12 @@ function buildNotebookWriteline(activeKey) {
     }, 120);
   });
 
-  // Chips above the writing measure (mockup .registers over .flow).
+  // Chips, then the writing measure, then staged shots + the capture bar
+  // (mockup .registers over .flow over .capturebar).
   line.appendChild(chips);
   line.appendChild(input);
+  line.appendChild(shotsHost);
+  line.appendChild(capturebar);
   return line;
 }
 
@@ -1349,7 +1616,7 @@ function appendWritelineChip(chips, def, chipEls, onPick) {
 //   marg/ques on book  -> filed true, bookIds = [activeKey] (that book's bank)
 //   marg/ques elsewhere-> filed false, no book (Inbox, awaiting triage)
 // Then "follow the note" to the tab it routed into, and re-render.
-function captureNote(register, body, activeKey) {
+function captureNote(register, body, activeKey, images) {
   var user = getCurrentUser();
   if (!user) { return; }
   var now = Date.now();
@@ -1371,6 +1638,7 @@ function captureNote(register, body, activeKey) {
     body:      body,
     bookIds:   bookIds,
     arcIds:    [],
+    images:    (images && images.length) ? images : [],
     filed:     filed,
     createdAt: now,
     updatedAt: now
@@ -1601,6 +1869,7 @@ function openJournalEditor() {
         body:       bodyVal,
         bookIds:    [],
         arcIds:     [],
+        images:     [],
         filed:      true,
         createdAt:  now,
         updatedAt:  now
@@ -9165,6 +9434,7 @@ function openMarginaliaEditor(bookId) {
         body:       bodyVal,
         bookIds:    [bookId],
         arcIds:     [],
+        images:     [],
         filed:      true,
         createdAt:  now,
         updatedAt:  now
@@ -9673,6 +9943,18 @@ function renderNotebookEntry(entry, gatherable) {
   bodyEl.className = 'notebook-entry-body';
   bodyEl.textContent = entry.body || '';
   card.appendChild(bodyEl);
+
+  // N2b: inline captured photos (refs only on the entry; blob from IndexedDB,
+  // graceful placeholder cross-device). Rendered after the prose, before acts.
+  if (entry.images && entry.images.length) {
+    var shots = document.createElement('div');
+    shots.className = 'notebook-entry-shots';
+    var si;
+    for (si = 0; si < entry.images.length; si = si + 1) {
+      shots.appendChild(buildNotebookShot(entry.images[si]));
+    }
+    card.appendChild(shots);
+  }
 
   // Actions row. Add to arc (openEntryArcPicker, inline lazy mount), send to
   // sub-theory, delete (click-to-confirm via deleteEntry, same location.hash

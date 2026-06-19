@@ -301,6 +301,15 @@ firebase.auth().onAuthStateChanged(function (u) {
               state.notebookEntries[reid].isPrivate = true;
               journalPrivacyChanged = true;
             }
+            // N2b: merge-boundary images default. The REPLACE-splat bypasses
+            // migrate(), so a remote entry from a pre-N2b device gains images:[]
+            // as it lands (refs only; the photo blobs are device-local in
+            // IndexedDB). Non-dirtying -- a missing array is just defaulted, not
+            // a real change, so it never churns a write back to Firestore.
+            if (state.notebookEntries[reid] &&
+                !(state.notebookEntries[reid].images instanceof Array)) {
+              state.notebookEntries[reid].images = [];
+            }
           }
         }
         if (journalPrivacyChanged && typeof markNotebookDirty === 'function') {
