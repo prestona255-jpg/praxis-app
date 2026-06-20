@@ -692,6 +692,15 @@ function toggleYumiPanel() {
   }
 }
 
+// Stage B-1: the VISIBLE open state -- the panel's open marker, not the
+// persisted praxis_yumi_open flag (which reads open even when the marker is
+// stripped on an arc route). The Yumi-moves orchestrator surfaces only when
+// this is true.
+function isYumiPanelVisiblyOpen() {
+  return !!(yumiPanelEl && yumiPanelEl.classList &&
+            yumiPanelEl.classList.contains('yumi-panel-open'));
+}
+
 function isYumiKeyboardEventEligible(e) {
   // Allow shortcut from inside the Yumi panel (so the user can close
   // it while focused in its own input). Block when focus is in any
@@ -739,6 +748,7 @@ window.YumiUI = {
   close:                closeYumiPanel,
   toggle:               toggleYumiPanel,
   isOpen:               isYumiPanelOpen,
+  visiblyOpen:          isYumiPanelVisiblyOpen,
   greetings:            YUMI_GREETINGS,
   // 6.2b: maybeStartOnboarding is the gated entry called by the auth
   // callbacks; startOnboarding is the ungated beginner (also the Phase C

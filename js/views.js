@@ -1748,6 +1748,27 @@ function captureNote(register, body, activeKey, images) {
   else if (filed) { notebookActiveTab = bookIds[0]; }
   else { notebookActiveTab = 'inbox'; }
   renderNotebook();
+  maybeDrawOut(id);
+}
+
+// Stage B-1: fire the Yumi-moves orchestrator on a fresh note-write. The
+// orchestrator gates (consent / private / panel-open / budget) and decides
+// DRAW OUT vs STAY QUIET; a surfaced draw-out renders into the open Yumi
+// panel via the Stage-A renderYumiMessage path. Fire-and-forget -- never
+// blocks or alters the capture. panelOpen is read here (UI side) so the
+// brain stays DOM-free. Hooked on the two VISIBLE-note seams (this writeline
+// + book-detail marginalia); private/journal notes are skipped by the
+// orchestrator's isPrivate gate.
+function maybeDrawOut(entryId) {
+  if (!(window.YumiBrain && YumiBrain.considerDrawOut)) { return; }
+  var entry = state.notebookEntries && state.notebookEntries[entryId];
+  if (!entry) { return; }
+  var panelOpen = !!(window.YumiUI && YumiUI.visiblyOpen && YumiUI.visiblyOpen());
+  YumiBrain.considerDrawOut(entry, panelOpen).then(function (r) {
+    if (r && r.surface && typeof renderYumiMessage === 'function') {
+      renderYumiMessage(r.text);
+    }
+  });
 }
 
 // N2: file an Inbox entry to a book -- set filed true + add the bookId (deduped).
@@ -9542,6 +9563,7 @@ function openMarginaliaEditor(bookId) {
       markNotebookDirty();
       saveState();
       renderBookDetail(bookId);
+      maybeDrawOut(id);
     },
     onCancel: function() {
       renderBookDetail(bookId);

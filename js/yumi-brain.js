@@ -1090,6 +1090,275 @@ function runYumiGateHarness() {
   return runOne(0);
 }
 
+// =====================================================================
+// YUMI MOVES -- ORCHESTRATOR (Stage B-1): STAY QUIET + DRAW OUT.
+// When the reader writes a non-private note with consent on and the Yumi
+// panel open, the orchestrator decides whether a DRAW OUT applies -- a
+// personal note opened outward toward the structures / institutions /
+// relations that produce the experience -- or Yumi STAYS QUIET (the
+// default). One generator call self-classifies (a question OR "quiet"); a
+// question then routes through the Stage-A gate (gradeUtterance) and
+// surfaces only if it PASSES. Fail-quiet everywhere: consent off, private
+// note, panel closed, over budget, generator "quiet" / error, or gate
+// FAIL -> silence (nothing rendered, nothing added to memory). At most two
+// proxy calls (generate -> grade); often zero (an early gate) or one (a
+// "quiet"). Reuses the gate and its budget record verbatim; never
+// modifies them. COMPLICATE / NOTICE / NAME are later stages (B-2+).
+// =====================================================================
+
+// EDITABLE generator instruction: Part-1 voice + Part-2 DRAW OUT (move 2)
+// and STAY QUIET (move 1), so a single call self-classifies. Returns a
+// draw-out question, or the single word "quiet". The Part-2 gold is
+// carried as a few-shot, alongside quiet exemplars (a tidy/factual note, a
+// to-do, a bare quote -- a bare quote is COMPLICATE's trigger, B-3, not
+// built here, so for B-1 it stays quiet).
+var DRAW_OUT_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You sit beside a reader '
+  + 'as they think -- never in front of them. You are an interlocutor in the '
+  + 'problem-posing tradition: you draw out. You never deposit information, '
+  + 'summarize, explain, teach, or hand over conclusions. You think in the '
+  + 'spirit of critical pedagogy -- attentive to the structures, '
+  + 'institutions, and relations of power beneath personal experience -- but '
+  + 'that is your posture, the angle a question comes from, never something '
+  + 'you lecture. You are quiet by default and surface only when you '
+  + 'genuinely have something worth surfacing.\n\n'
+  + 'You are given a single note the reader just wrote, and sometimes the '
+  + 'book they are reading. Decide ONE thing: does the DRAW OUT move apply?'
+  + '\n\n'
+  + 'DRAW OUT applies when the note is PERSONAL -- about the reader\'s own '
+  + 'life, experience, or feeling. When it applies: take what is personal in '
+  + 'the note and open it outward, toward the structures, institutions, or '
+  + 'relations that produce that experience, and ask one genuine, opening '
+  + 'question. Stay strictly inside what they actually wrote: never attribute a '
+  + 'thought, feeling, or history they did not express; never summarize or '
+  + 'interpret the book; never flatter or praise for approval; never propose '
+  + 'a name or conclusion. Keep it to that one opening: a single question, '
+  + 'or a question with a brief sharpening follow-up like the example. Warm '
+  + 'and plain.\n\n'
+  + 'STAY QUIET (the default) for everything else: a tidy or already-settled '
+  + 'note, a fact or a pasted quote with little of the reader\'s own thinking '
+  + 'attached, an administrative or to-do note, or anything not personal. '
+  + 'Restraint is the move.\n\n'
+  + 'EXAMPLES (note -> response):\n'
+  + '1. Book "Range" by David Epstein. Note: "like me, something I went '
+  + 'through." -> Why do you think so many people in our society go through '
+  + 'this? What institutions or structures of relation push it that way?\n'
+  + '2. Note: "Chapter 7 covers deliberate practice and the 10,000-hour '
+  + 'rule." -> quiet\n'
+  + '3. Note: "Return this book to the library by Friday." -> quiet\n'
+  + '4. Note: a pasted quotation with no comment of the reader\'s own. '
+  + '-> quiet\n\n'
+  + 'Output ONLY the question text if DRAW OUT applies, or the single word '
+  + 'quiet if it does not. Nothing else: no quotation marks, no label, no '
+  + 'JSON.';
+
+// Read the first book title attached to a note, for generator context (the
+// DRAW OUT gold is grounded in the book). Empty string when none.
+function _drawOutBookTitle(entry) {
+  if (!entry || !entry.bookIds || !entry.bookIds.length) { return ''; }
+  var b = state.books && state.books[entry.bookIds[0]];
+  return (b && typeof b.title === 'string') ? b.title : '';
+}
+
+// Build the generator user message: the note text plus optional book
+// context. The note is the reader's actual writing -- the only ground.
+function buildDrawOutUserMessage(noteText, bookTitle) {
+  var ctx = (typeof bookTitle === 'string' &&
+             bookTitle.replace(/^\s+|\s+$/g, '') !== '')
+    ? 'The reader is reading "' + bookTitle + '".\n\n' : '';
+  return ctx + 'The note the reader just wrote:\n\n' + noteText +
+    '\n\nIf DRAW OUT applies, reply with ONE question and nothing else. ' +
+    'Otherwise reply with exactly: quiet';
+}
+
+// Parse the generator response into a question string, or 'quiet'. An
+// empty or quiet-only response (case- and punctuation-insensitive) maps to
+// 'quiet' (fail-quiet at the parse layer).
+function _drawOutParse(data) {
+  var blocks = data && data.content;
+  var text = '';
+  var i;
+  if (blocks && blocks.length) {
+    for (i = 0; i < blocks.length; i = i + 1) {
+      var b = blocks[i];
+      if (b && b.type === 'text' && typeof b.text === 'string') {
+        text = text + b.text;
+      }
+    }
+  }
+  text = text.replace(/^\s+|\s+$/g, '');
+  if (text === '') { return 'quiet'; }
+  var probe = text.toLowerCase().replace(/^["'\s]+/, '').replace(/["'.\s!?]+$/, '');
+  if (probe === 'quiet') { return 'quiet'; }
+  return text;
+}
+
+// THE DRAW-OUT GENERATOR. note text (+ book) -> Promise<question|'quiet'>.
+// One proxy call on the same claude-proxy path (temp 0). Always resolves;
+// every failure mode resolves 'quiet' so the orchestrator stays silent.
+function generateDrawOut(noteText, bookTitle) {
+  if (typeof noteText !== 'string' ||
+      noteText.replace(/^\s+|\s+$/g, '') === '') {
+    return Promise.resolve('quiet');
+  }
+  var payload = {
+    model:       'claude-sonnet-4-6',
+    max_tokens:  256,
+    temperature: 0,
+    system:      DRAW_OUT_GEN_SYSTEM,
+    messages: [
+      { role: 'user', content: buildDrawOutUserMessage(noteText, bookTitle) }
+    ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (body) {
+        throw new Error('proxy ' + res.status + ': ' + body);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    return _drawOutParse(data);
+  });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) {
+    return v;
+  }, function (err) {
+    console.warn('yumi-drawout: generate fail-quiet (' + (err && err.message) + ')');
+    return 'quiet';
+  });
+}
+
+// Read-only peek of the Stage-A grader budget (same praxis_yumi_gate_budget
+// record + YUMI_GATE_DAILY_CAP). Returns true while today's grader spend is
+// under cap. NEVER records a spend -- the single spend still happens inside
+// gradeUtterance. Lets the orchestrator skip GENERATION when the grader
+// budget is exhausted, so we never pay to generate then suppress.
+function _drawOutBudgetOk() {
+  var rec = ls('praxis_yumi_gate_budget', { day: '', count: 0 });
+  var now = new Date();
+  var day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+  if (!rec || rec.day !== day) { return true; }
+  return rec.count < YUMI_GATE_DAILY_CAP;
+}
+
+// THE ORCHESTRATOR. A note-write -> Promise<decision>. Early gates in order
+// (consent -> private -> panel-open -> budget), each resolving
+// { quiet:true, reason } with NO proxy call. Then generate; a 'quiet' /
+// empty generator result stays silent. A question routes through the
+// Stage-A gate; PASS appends to memory and resolves { surface:true, text },
+// anything else stays silent. Always resolves (never rejects). panelOpen is
+// supplied by the UI-side caller, so the brain stays DOM-free.
+function considerDrawOut(entry, panelOpen) {
+  if (!entry || typeof entry.body !== 'string' ||
+      entry.body.replace(/^\s+|\s+$/g, '') === '') {
+    return Promise.resolve({ quiet: true, reason: 'empty' });
+  }
+  var uid = resolveActiveUid();
+  if (!uid) { return Promise.resolve({ quiet: true, reason: 'no-user' }); }
+  // 1. consent -- the master "Yumi reads along" switch (same gate as context).
+  if (state.users[uid] && state.users[uid].profile &&
+      state.users[uid].profile.yumiReadsAlong === false) {
+    return Promise.resolve({ quiet: true, reason: 'consent' });
+  }
+  // 2. private -- never read or act on a private note.
+  if (entry.isPrivate === true) {
+    return Promise.resolve({ quiet: true, reason: 'private' });
+  }
+  // 3. panel open -- B-1 surfaces only into an open panel; closed -> no proxy.
+  if (panelOpen !== true) {
+    return Promise.resolve({ quiet: true, reason: 'panel-closed' });
+  }
+  // 4. budget peek -- exhausted grader budget -> no generation.
+  if (!_drawOutBudgetOk()) {
+    return Promise.resolve({ quiet: true, reason: 'budget' });
+  }
+  // 5. generate (self-classifies: a question, or 'quiet').
+  var bookTitle = _drawOutBookTitle(entry);
+  return generateDrawOut(entry.body, bookTitle).then(function (question) {
+    if (typeof question !== 'string' ||
+        question.replace(/^\s+|\s+$/g, '') === '' || question === 'quiet') {
+      return { quiet: true, reason: 'quiet' };
+    }
+    // 6. gate (Stage A) -- the question judged against the note text.
+    return gradeUtterance(question, entry.body).then(function (verdict) {
+      if (!verdict || !verdict.pass) {
+        return { quiet: true, reason: 'gate',
+                 layer: (verdict && verdict.layer) || 'unknown' };
+      }
+      appendTurn('assistant', question);
+      return { surface: true, text: question };
+    });
+  });
+}
+
+// =====================================================================
+// DRAW-OUT SUPPRESSION HARNESS (the Stage-A carry-forward). Generates a
+// draw-out for each of a fixed set of legitimate PERSONAL notes, then runs
+// each generated question through the live gate (gradeUtterance). Reports
+// the surfacing rate -- legitimate personal->structural draw-outs must
+// PASS. Over-suppression here is the signal to recalibrate the gate's
+// Fidelity clarifiers (NOT to loosen blindly). Read-only: it grades, it
+// never renders or writes memory. Returns Promise<summary>.
+// =====================================================================
+function runDrawOutSuppressionHarness() {
+  var notes = [
+    { id: 'Range / went through it',  book: 'Range',
+      body: 'like me, something I went through.' },
+    { id: 'overwork / guilt',         book: 'Can\'t Even',
+      body: 'I keep working straight through the weekend and feel guilty the moment I stop. I burned out last year and I am scared of it happening again.' },
+    { id: 'caregiving fell to me',    book: 'The Body Keeps the Score',
+      body: 'When my mom got sick the caregiving all landed on me while my brothers just sent money. I felt it but never said anything.' },
+    { id: 'student-debt shame',       book: 'Debt: The First 5,000 Years',
+      body: 'I still feel ashamed about the loans I took out for school, like it was a personal failure of mine.' },
+    { id: 'code-switching at work',   book: 'Blink',
+      body: 'In every job I have had I felt I had to code-switch to be taken seriously, and it wore me down over the years.' },
+    { id: 'childhood moves / rent',   book: 'Evicted',
+      body: 'We moved six times before I was twelve because the rent kept going up. I always thought that was just our bad luck.' }
+  ];
+  var results = [];
+  var surfaced = 0;
+  var generated = 0;
+  function runOne(i) {
+    if (i >= notes.length) {
+      var total = notes.length;
+      console.log('=== DRAW-OUT SUPPRESSION: ' + surfaced + '/' + total +
+        ' surfaced (' + generated + ' generated) ===');
+      var r;
+      for (r = 0; r < results.length; r = r + 1) {
+        console.log(results[r].mark + ' ' + results[r].id +
+          ' | gen=' + results[r].gen + ' gate=' + results[r].gate +
+          (results[r].layer ? ' (' + results[r].layer + ')' : '') +
+          (results[r].question ? ' | q="' + results[r].question + '"' : ''));
+      }
+      return { total: total, surfaced: surfaced, generated: generated, results: results };
+    }
+    var n = notes[i];
+    return generateDrawOut(n.body, n.book).then(function (q) {
+      var didGen = (typeof q === 'string' && q !== 'quiet' &&
+                    q.replace(/^\s+|\s+$/g, '') !== '');
+      if (!didGen) {
+        results.push({ id: n.id, gen: 'quiet', gate: '-', layer: '', mark: 'QQ ', question: '' });
+        return runOne(i + 1);
+      }
+      generated = generated + 1;
+      return gradeUtterance(q, n.body).then(function (verdict) {
+        var pass = !!(verdict && verdict.pass);
+        if (pass) { surfaced = surfaced + 1; }
+        results.push({ id: n.id, gen: 'yes',
+          gate: pass ? 'PASS' : 'FAIL',
+          layer: (verdict && verdict.layer) || '',
+          question: q, mark: pass ? 'OK ' : 'XX ' });
+        return runOne(i + 1);
+      });
+    });
+  }
+  return runOne(0);
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -1102,11 +1371,17 @@ window.YumiBrain = {
   generateLenses:     generateLenses,
   evalLensResponse:   evalLensResponse,
   gradeUtterance:     gradeUtterance,
-  runGateHarness:     runYumiGateHarness
+  runGateHarness:     runYumiGateHarness,
+  considerDrawOut:    considerDrawOut,
+  generateDrawOut:    generateDrawOut,
+  runDrawOutSuppression: runDrawOutSuppressionHarness
 };
 
 // Stage A: expose the gate harness at top level for live verification.
 window.YumiGateHarness = runYumiGateHarness;
+
+// Stage B-1: expose the draw-out suppression harness for live verification.
+window.YumiDrawOutHarness = runDrawOutSuppressionHarness;
 
 // Kick off preload at script-load time so buildYumiSystem can return
 // synchronously by the time anything calls it.
