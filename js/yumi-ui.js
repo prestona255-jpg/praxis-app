@@ -611,6 +611,9 @@ function buildYumiPanel() {
 
     window.YumiBrain.sendMessage(trimmed).then(function (result) {
       removeTypingIndicator();
+      // Fail-closed gate: a suppressed utterance renders nothing -- no
+      // error, no fallback line, no chrome. Yumi simply stays silent.
+      if (result && result.silent) { return; }
       renderYumiMessage(result.text);
     }).catch(function (err) {
       console.error('[yumi] sendMessage failed', err);
