@@ -12021,13 +12021,13 @@ function renderAbout() {
   html +=         '</div>';
   html +=       '</div>';
   html +=     '</div>';
-  html +=     '<h2 class="about-h2" style="margin-bottom:8px;">An interlocutor, not an authority.</h2>';
-  html +=     '<p class="about-lede" style="font-size:1.2rem;">Yumi reads alongside you. She is here to ask the better question &mdash; not to summarize your books, not to grade your thoughts, and never to hand you the answer.</p>';
+  html +=     '<h2 class="about-h2 about-yumi-h2">An interlocutor, not an authority.</h2>';
+  html +=     '<p class="about-lede about-yumi-lede">Yumi reads alongside you. She is here to ask the better question &mdash; not to summarize your books, not to grade your thoughts, and never to hand you the answer.</p>';
   html +=     '<div class="yumi-contrast">';
-  html +=       '<div class="yumi-col yumi-col--is"><h4>She is</h4><ul><li>A problem-posing interlocutor</li><li>A reader of only what you\'ve written</li><li>The one who asks the question back to you</li></ul></div>';
-  html +=       '<div class="yumi-col yumi-col--isnot"><h4>She is not</h4><ul><li>A tutor or a grader</li><li>A summarizer or a search box</li><li>The banking move &mdash; she won\'t deposit conclusions into you</li></ul></div>';
+  html +=       '<div class="yumi-col yumi-col--is"><h3>She is</h3><ul><li>A problem-posing interlocutor</li><li>A reader of only what you\'ve written</li><li>The one who asks the question back to you</li></ul></div>';
+  html +=       '<div class="yumi-col yumi-col--isnot"><h3>She is not</h3><ul><li>A tutor or a grader</li><li>A summarizer or a search box</li><li>The banking move &mdash; she won\'t deposit conclusions into you</li></ul></div>';
   html +=     '</div>';
-  html +=     '<p class="about-body" style="margin-top:18px;">Yumi works only from what you choose to show her &mdash; the notes you attach to a book, the questions you pose. She cannot see your private journal unless you decide to share it, and you can always check exactly what she sees. She is useful precisely <b>because</b> she does not do the thinking for you.</p>';
+  html +=     '<p class="about-body about-yumi-note">Yumi works only from what you choose to show her &mdash; the notes you attach to a book, the questions you pose. She cannot see your private journal unless you decide to share it, and you can always check exactly what she sees. She is useful precisely <b>because</b> she does not do the thinking for you.</p>';
   html +=     '<dl class="lex lex--yumi">';
   html +=       '<div class="lex-entry">';
   html +=         '<dt class="lex-head"><span class="lex-word">Yumi</span><span class="lex-script" lang="ja">由美</span><span class="lex-pos">n., Japanese given name</span></dt>';
@@ -12052,19 +12052,19 @@ function renderAbout() {
   html +=   '<div class="rearm-list">';
   html +=     '<div class="rearm-card is-open" style="--card-accent:var(--gold);">';
   html +=       '<button type="button" class="rearm-card-head" aria-expanded="true" aria-controls="rearm-body-home"><span class="rearm-card-label">Home</span><span class="rearm-card-teaser">The long view.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
-  html +=       '<div class="rearm-card-body" id="rearm-body-home"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Home is where you stand back and see the whole field &mdash; the constellation of everything you\'ve read and thought, drifting together. Start here when you want perspective, not a task.</p></div></div>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-home" aria-hidden="false"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Home is where you stand back and see the whole field &mdash; the constellation of everything you\'ve read and thought, drifting together. Start here when you want perspective, not a task.</p></div></div>';
   html +=     '</div>';
   html +=     '<div class="rearm-card" style="--card-accent:var(--br-deep);">';
   html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-shelf"><span class="rearm-card-label">Shelf</span><span class="rearm-card-teaser">Everything you\'re reading.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
-  html +=       '<div class="rearm-card-body" id="rearm-body-shelf"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Your shelf holds every book you\'re reading, have read, or mean to begin. Add one and it takes its place; mark it as you move through it. This is the honest record of your attention &mdash; only you decide what belongs here.</p></div></div>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-shelf" aria-hidden="true"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Your shelf holds every book you\'re reading, have read, or mean to begin. Add one and it takes its place; mark it as you move through it. This is the honest record of your attention &mdash; only you decide what belongs here.</p></div></div>';
   html +=     '</div>';
   html +=     '<div class="rearm-card" style="--card-accent:var(--river);">';
   html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-arcs"><span class="rearm-card-label">Arcs</span><span class="rearm-card-teaser">A line of thought across books.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
-  html +=       '<div class="rearm-card-body" id="rearm-body-arcs"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>An arc is a question that won\'t leave you alone &mdash; one you find yourself following across more than one book. Gather what speaks to it, and watch a constellation form: your thinking, made visible.</p></div></div>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-arcs" aria-hidden="true"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>An arc is a question that won\'t leave you alone &mdash; one you find yourself following across more than one book. Gather what speaks to it, and watch a constellation form: your thinking, made visible.</p></div></div>';
   html +=     '</div>';
   html +=     '<div class="rearm-card" style="--card-accent:var(--marginalia-color);">';
   html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-notebook"><span class="rearm-card-label">Notebook</span><span class="rearm-card-teaser">Where what stops you lives.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
-  html +=       '<div class="rearm-card-body" id="rearm-body-notebook"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>The notebook is where the lines that stop you mid-page have a home &mdash; marginalia, journal, and questions. Only what you choose to keep. What you attach to a book, I can read; your journal stays yours unless you say otherwise.</p></div></div>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-notebook" aria-hidden="true"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>The notebook is where the lines that stop you mid-page have a home &mdash; marginalia, journal, and questions. Only what you choose to keep. What you attach to a book, I can read; your journal stays yours unless you say otherwise.</p></div></div>';
   html +=     '</div>';
   html +=   '</div>';
   html += '</section>';
@@ -12084,7 +12084,7 @@ function renderAbout() {
   // S3: wire the banking <-> problem-posing toggle.
   var bpFig = page.querySelector('#bp');
   if (bpFig) {
-    var bpButtons = bpFig.getElementsByTagName('button');
+    var bpButtons = bpFig.querySelectorAll('.bp-btn');
     var bpi;
     for (bpi = 0; bpi < bpButtons.length; bpi++) {
       aboutWireBp(bpButtons[bpi], bpFig, bpButtons);
@@ -12156,15 +12156,19 @@ function aboutWireHead(head, page) {
     var card = head.parentNode;
     var wasOpen = card.classList.contains('is-open');
     var cards = page.querySelectorAll('.rearm-card');
-    var j, hb;
+    var j, hb, body;
     for (j = 0; j < cards.length; j++) {
       cards[j].classList.remove('is-open');
       hb = cards[j].getElementsByTagName('button')[0];
       if (hb) { hb.setAttribute('aria-expanded', 'false'); }
+      body = cards[j].querySelector('.rearm-card-body');
+      if (body) { body.setAttribute('aria-hidden', 'true'); }
     }
     if (!wasOpen) {
       card.classList.add('is-open');
       head.setAttribute('aria-expanded', 'true');
+      body = card.querySelector('.rearm-card-body');
+      if (body) { body.setAttribute('aria-hidden', 'false'); }
     }
   });
 }

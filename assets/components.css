@@ -8388,6 +8388,9 @@
 
 /* ----- S2: §04 Yumi card + 由美 breakdown + is/is-not grid ----- */
 .about-page .about-yumi-card { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px 30px; box-shadow:var(--shadow-1); }
+.about-page .about-yumi-h2 { margin-bottom:8px; }
+.about-page .about-yumi-lede { font-size:1.2rem; }
+.about-page .about-yumi-note { margin-top:18px; }
 .about-page .yumi-hero { display:flex; align-items:center; gap:24px; margin:0 0 22px 0; flex-wrap:wrap; }
 .about-page .yumi-hero-mark { flex:0 0 auto; line-height:0; }
 .about-page .yumi-breakdown { flex:1 1 240px; min-width:0; }
@@ -8402,9 +8405,9 @@
 .about-page .ideo-op { font-family:var(--font-serif); font-size:1.5rem; color:var(--ink-4); }
 .about-page .yumi-contrast { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0 6px 0; }
 .about-page .yumi-col { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px 18px; }
-.about-page .yumi-col h4 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; margin:0 0 12px 0; }
-.about-page .yumi-col--is h4 { color:var(--marginalia-color); }
-.about-page .yumi-col--isnot h4 { color:var(--gold-text); }
+.about-page .yumi-col h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; margin:0 0 12px 0; }
+.about-page .yumi-col--is h3 { color:var(--marginalia-color); }
+.about-page .yumi-col--isnot h3 { color:var(--gold-text); }
 .about-page .yumi-col ul { margin:0; padding:0; list-style:none; }
 .about-page .yumi-col li { font-family:var(--font-body); font-size:0.95rem; line-height:1.45; color:var(--ink-2); padding:7px 0 7px 18px; position:relative; }
 .about-page .yumi-col li::before { content:""; position:absolute; left:0; top:14px; width:7px; height:7px; border-radius:var(--radius-pill); }
@@ -8494,7 +8497,7 @@
 .about-page .rearm-chevron { flex:0 0 auto; color:var(--ink-3); font-size:13px; transition:transform var(--motion-base) var(--ease); }
 .about-page .rearm-card.is-open .rearm-chevron { transform:rotate(180deg); }
 .about-page .rearm-card-body { max-height:0; overflow:hidden; transition:max-height var(--motion-base) var(--ease); }
-.about-page .rearm-card.is-open .rearm-card-body { max-height:460px; }
+.about-page .rearm-card.is-open .rearm-card-body { max-height:640px; }
 .about-page .rearm-card-inner { padding:0 20px 22px 20px; display:flex; gap:14px; align-items:flex-start; }
 .about-page .rearm-glyph-slot { flex:0 0 auto; line-height:0; margin-top:2px; }
 .about-page .rearm-yumi-line { font-family:var(--font-serif); font-size:1.16rem; line-height:1.55; color:var(--ink-2); margin:0; }
