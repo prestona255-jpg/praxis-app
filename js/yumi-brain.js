@@ -1794,6 +1794,244 @@ function runMoveHarness() {
   return runOne(0);
 }
 
+// =====================================================================
+// STAGE C -- ARC VOICE. Yumi's pedagogical commentary on an ALREADY-BUILT
+// arc, SOLICITED inline on the arc page (never the suppressed floating
+// panel). NOT one of the five rubric moves: it extends the Part-1 persona at
+// the arc level. A one-shot gated utterance -- NO write to the arc, NO
+// pending state. Because it is solicited, fail / error / over-budget renders
+// a FIXED graceful fallback inline (the UI's job), NOT silence; the gate
+// still suppresses any bad utterance. Reuses the Stage-A gate VERBATIM and
+// the existing budget peek. Grounding comes from gatherArcContext (a
+// dedicated, isPrivate-filtered gatherer) -- assembleContextData and the five
+// move generators are untouched.
+// =====================================================================
+
+// EDITABLE arc-voice instruction: Part-1 voice + the arc-voice covenant
+// (problem-posing, opens the arc OUTWARD, never summarizes/imposes/does the
+// reader's thinking; a thin arc gets an honest light open, not fake depth).
+var ARC_VOICE_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You sit beside a reader '
+  + 'as they think -- never in front of them. You are an interlocutor in the '
+  + 'problem-posing tradition: you draw out and you open. You never deposit '
+  + 'information, summarize, explain, teach, or hand over conclusions. You '
+  + 'think in the spirit of critical pedagogy -- attentive to the structures, '
+  + 'institutions, and relations of power beneath ideas -- but that is your '
+  + 'posture, the angle a question comes from, never something you lecture.\n\n'
+  + 'The reader has asked what you see in an ARC they are building -- a theory '
+  + 'they are assembling out of sub-theories and evidence. The arc\'s content '
+  + 'is given below.\n\n'
+  + 'Your task: open the arc OUTWARD. Offer ONE problem-posing observation or '
+  + 'question that helps the reader see their OWN arc more deeply -- a tension '
+  + 'between its parts, an edge or a crack they have not yet named, a structure '
+  + 'or assumption underneath it, or the through-line they seem to be reaching '
+  + 'for. NEVER summarize the arc back at them (that is doing their work for '
+  + 'them). NEVER impose a reading or a conclusion. NEVER do the thinking for '
+  + 'them. Stay strictly inside what the arc actually contains; never attribute '
+  + 'a claim or an intent they have not put there.\n'
+  + 'If the arc is thin -- one sub-theory, little evidence -- do not fabricate '
+  + 'depth: offer an honest, light open instead (for example, name that they '
+  + 'are early here and ask what through-line they are reaching for).\n\n'
+  + 'Warm and plain. One or two sentences. Output ONLY the utterance -- no '
+  + 'preamble, no quotation marks, no label, no JSON.';
+
+// Gather an arc's reader-facing content for arc-voice. Walks the sub-theories
+// under arcId (draft + published), collecting each header + bodyPublic +
+// evidence quotes. isPrivate-FILTERED: kind:'entry' evidence whose source
+// notebookEntry is private (or missing/unverifiable) is EXCLUDED -- Yumi must
+// never see private content (principle #5). bodyIntellectual is excluded for
+// v1 (conservative). Returns { arcId, title, description, subTheories:[...] }
+// or null if the arc is absent.
+function gatherArcContext(arcId) {
+  if (!arcId || !state.arcs || !state.arcs[arcId]) { return null; }
+  var arc = state.arcs[arcId];
+  var sts = [];
+  var key;
+  for (key in state.subTheories) {
+    if (Object.prototype.hasOwnProperty.call(state.subTheories, key)) {
+      var st = state.subTheories[key];
+      if (st && st.arcId === arcId) { sts.push(st); }
+    }
+  }
+  sts.sort(function (a, b) { return a.createdAt - b.createdAt; });
+  var out = [];
+  var i, j;
+  for (i = 0; i < sts.length; i = i + 1) {
+    var s = sts[i];
+    var ev = [];
+    var evList = s.evidence || [];
+    for (j = 0; j < evList.length; j = j + 1) {
+      var item = evList[j];
+      if (!item) { continue; }
+      if (item.kind === 'entry') {
+        // covenant: exclude private (or unverifiable) entry evidence
+        var src = state.notebookEntries && state.notebookEntries[item.refId];
+        if (!src || src.isPrivate === true) { continue; }
+      }
+      var quote = (typeof item.quote === 'string') ? item.quote.replace(/^\s+|\s+$/g, '') : '';
+      if (quote !== '') { ev.push({ kind: item.kind, text: quote }); }
+      else if (item.kind === 'book') {
+        var b = state.books && state.books[item.refId];
+        if (b && typeof b.title === 'string' && b.title !== '') { ev.push({ kind: 'book', text: b.title }); }
+      }
+    }
+    out.push({
+      header:   (typeof s.header === 'string') ? s.header : '',
+      body:     (typeof s.bodyPublic === 'string') ? s.bodyPublic : '',
+      evidence: ev
+    });
+  }
+  return {
+    arcId: arcId,
+    title: (typeof arc.title === 'string') ? arc.title : '',
+    description: (typeof arc.description === 'string') ? arc.description : '',
+    subTheories: out
+  };
+}
+
+// Format the arc payload for the generator.
+function buildArcVoiceUserMessage(ctx) {
+  var lines = [];
+  lines.push('ARC: ' + (ctx.title || '(untitled)'));
+  if (ctx.description) { lines.push('Description: ' + ctx.description); }
+  lines.push('');
+  if (!ctx.subTheories.length) {
+    lines.push('(No sub-theories yet -- the arc is only just begun.)');
+  } else {
+    var i, j;
+    for (i = 0; i < ctx.subTheories.length; i = i + 1) {
+      var st = ctx.subTheories[i];
+      lines.push('Sub-theory ' + (i + 1) + ': ' + (st.header || '(untitled)'));
+      if (st.body) { lines.push('  ' + st.body); }
+      for (j = 0; j < st.evidence.length; j = j + 1) {
+        lines.push('  - evidence (' + st.evidence[j].kind + '): ' + st.evidence[j].text);
+      }
+    }
+  }
+  return 'Here is the arc the reader is building:\n\n' + lines.join('\n') +
+    '\n\nOffer one problem-posing opening. Reply with ONLY the utterance.';
+}
+
+// The gate's reader-input for arc-voice: the arc's own content (so Fidelity
+// judges the utterance against what the arc actually holds).
+function _arcVoiceReaderInput(ctx) {
+  var parts = [];
+  if (ctx.title) { parts.push(ctx.title); }
+  if (ctx.description) { parts.push(ctx.description); }
+  var i, j;
+  for (i = 0; i < ctx.subTheories.length; i = i + 1) {
+    var st = ctx.subTheories[i];
+    if (st.header) { parts.push(st.header); }
+    if (st.body) { parts.push(st.body); }
+    for (j = 0; j < st.evidence.length; j = j + 1) { parts.push(st.evidence[j].text); }
+  }
+  return parts.join('\n\n');
+}
+
+// THE ARC-VOICE GENERATOR. arc context -> Promise<utterance|''>. One proxy
+// call (B-1 config verbatim). Always resolves; failure -> '' (the orchestrator
+// turns that into the fallback).
+function generateArcVoice(ctx) {
+  var payload = {
+    model: 'claude-sonnet-4-6', max_tokens: 256, temperature: 0,
+    system: ARC_VOICE_GEN_SYSTEM,
+    messages: [ { role: 'user', content: buildArcVoiceUserMessage(ctx) } ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
+    return res.json();
+  }).then(function (data) {
+    var blocks = data && data.content; var t = ''; var i;
+    if (blocks && blocks.length) {
+      for (i = 0; i < blocks.length; i = i + 1) {
+        var bk = blocks[i];
+        if (bk && bk.type === 'text' && typeof bk.text === 'string') { t = t + bk.text; }
+      }
+    }
+    return t.replace(/^\s+|\s+$/g, '');
+  });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
+    console.warn('yumi-arcvoice: generate fail (' + (err && err.message) + ')');
+    return '';
+  });
+}
+
+// THE ARC-VOICE ORCHESTRATOR. arcId -> Promise<{ok,text} | {fallback,reason}>.
+// consent -> budget peek -> gather -> generate -> grade. PASS -> {ok,text};
+// any miss -> {fallback}. Always resolves. No appendTurn (arc-voice is an
+// inline arc-page surface, not the chat conversation), no write to the arc,
+// no pending state.
+function considerArcVoice(arcId) {
+  var uid = resolveActiveUid();
+  if (!uid) { return Promise.resolve({ fallback: true, reason: 'no-user' }); }
+  if (state.users[uid] && state.users[uid].profile &&
+      state.users[uid].profile.yumiReadsAlong === false) {
+    return Promise.resolve({ fallback: true, reason: 'consent' });
+  }
+  if (!_drawOutBudgetOk()) {
+    return Promise.resolve({ fallback: true, reason: 'budget' });
+  }
+  var ctx = gatherArcContext(arcId);
+  if (!ctx) { return Promise.resolve({ fallback: true, reason: 'no-arc' }); }
+  return generateArcVoice(ctx).then(function (utterance) {
+    if (typeof utterance !== 'string' || utterance.replace(/^\s+|\s+$/g, '') === '') {
+      return { fallback: true, reason: 'empty' };
+    }
+    return gradeUtterance(utterance, _arcVoiceReaderInput(ctx)).then(function (verdict) {
+      if (!verdict || !verdict.pass) {
+        return { fallback: true, reason: 'gate', layer: (verdict && verdict.layer) || 'unknown' };
+      }
+      return { ok: true, text: utterance };
+    });
+  });
+}
+
+// =====================================================================
+// ARC-VOICE HARNESS. Runs synthetic arc contexts through the live generator
+// + gate (read-only: grades, never writes). Reports raw outcomes + suppression
+// -- arc-voice opens outward near the Fidelity boundary like NOTICE.
+// =====================================================================
+function runArcVoiceHarness() {
+  var ctxs = [
+    { id: 'substantive arc', ctx: { arcId: 'h1', title: 'Technologies of Liberation and Oppression',
+      description: 'How tools both free and bind.', subTheories: [
+        { header: 'The classroom as a sorting machine', body: 'Schools claim to lift everyone but quietly track kids by background.', evidence: [{kind:'entry', text:'School always made me feel the problem was me.'}, {kind:'book', text:'Pedagogy of the Oppressed'}] },
+        { header: 'Debt as a leash', body: 'Borrowing to study turns education into a lifelong obligation.', evidence: [{kind:'entry', text:'I feel ashamed about my student debt, as if it was my failing.'}] },
+        { header: 'The tool that frees also tracks', body: 'The same platforms that connect us also surveil us.', evidence: [{kind:'external', text:'Every app that helps me also watches me.'}] }
+      ] } },
+    { id: 'thin arc', ctx: { arcId: 'h2', title: 'Something about care', description: '',
+      subTheories: [ { header: 'Who does the caring', body: 'In my family it always fell to the women.', evidence: [{kind:'entry', text:'The caregiving all landed on me while my brothers sent money.'}] } ] } }
+  ];
+  var results = [];
+  function runOne(i) {
+    if (i >= ctxs.length) {
+      var r; console.log('=== ARC-VOICE HARNESS ===');
+      for (r = 0; r < results.length; r = r + 1) {
+        console.log(results[r].mark + ' ' + results[r].id + ' | gate=' + results[r].gate +
+          (results[r].layer ? ' (' + results[r].layer + ')' : '') + ' | "' + results[r].text + '"');
+      }
+      return { results: results };
+    }
+    var c = ctxs[i];
+    return generateArcVoice(c.ctx).then(function (utt) {
+      if (typeof utt !== 'string' || utt.replace(/^\s+|\s+$/g, '') === '') {
+        results.push({ id: c.id, gate: 'EMPTY', text: '', mark: 'XX ' });
+        return runOne(i + 1);
+      }
+      return gradeUtterance(utt, _arcVoiceReaderInput(c.ctx)).then(function (v) {
+        var pass = !!(v && v.pass);
+        results.push({ id: c.id, gate: pass ? 'PASS' : 'FAIL', layer: (v && v.layer) || '', text: utt, mark: pass ? 'OK ' : 'XX ' });
+        return runOne(i + 1);
+      });
+    });
+  }
+  return runOne(0);
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -1817,7 +2055,11 @@ window.YumiBrain = {
   pendingNotice:      getPendingNotice,
   clearPendingNotice: clearPendingNotice,
   recordThreadNamed:     recordThreadNamed,
-  recordThreadDismissed: recordThreadDismissed
+  recordThreadDismissed: recordThreadDismissed,
+  considerArcVoice:   considerArcVoice,
+  generateArcVoice:   generateArcVoice,
+  gatherArcContext:   gatherArcContext,
+  runArcVoiceHarness: runArcVoiceHarness
 };
 
 // Stage A: expose the gate harness at top level for live verification.
@@ -1825,6 +2067,9 @@ window.YumiGateHarness = runYumiGateHarness;
 
 // Stage B-2: expose the move harness for live verification.
 window.YumiMoveHarness = runMoveHarness;
+
+// Stage C: expose the arc-voice harness for live verification.
+window.YumiArcVoiceHarness = runArcVoiceHarness;
 
 // Kick off preload at script-load time so buildYumiSystem can return
 // synchronously by the time anything calls it.

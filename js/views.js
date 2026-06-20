@@ -8980,6 +8980,62 @@ function _arcMakeFocusable(el, label) {
 // would reset to closed on every rebuild). Resets to closed on a full reload.
 var _stLayersOpen = false;
 
+// Stage C: the fixed, claim-free arc-voice fallback. Arc-voice is SOLICITED,
+// so a fail / error / over-budget / gate-suppressed outcome shows this line
+// inline (NOT silence -- the reader explicitly asked). It fires only when no
+// real utterance surfaced; it makes no claim about the reader.
+var ARC_VOICE_FALLBACK = 'I don\'t have a useful angle on this one right now — keep building it, and ask me again.';
+
+// Stage C: render the solicited arc-voice inline. On click -> considerArcVoice
+// (gates -> gather isPrivate-filtered content -> generate -> grade); a PASS
+// utterance renders inline, anything else renders the fixed fallback. The
+// floating Yumi panel stays suppressed on #arc/ routes by design; arc-voice
+// lives inline here. Token-based inline styles only (no components.css).
+function requestArcVoice(arcId, hostEl, triggerEl) {
+  if (!hostEl || !(window.YumiBrain && YumiBrain.considerArcVoice)) { return; }
+  hostEl.innerHTML = '';
+  var line = document.createElement('div');
+  line.className = 'arc-voice-line';
+  line.style.cssText = 'padding:10px 12px; font-family:var(--font-serif); '
+    + 'font-size:16px; line-height:1.5; color:var(--ink); background:var(--surface-2); '
+    + 'border-left:2px solid var(--gold); border-radius:var(--radius-sm);';
+  line.textContent = '…';
+  hostEl.appendChild(line);
+  if (triggerEl) { triggerEl.disabled = true; }
+  YumiBrain.considerArcVoice(arcId).then(function (r) {
+    if (r && r.ok && typeof r.text === 'string' && r.text.replace(/^\s+|\s+$/g, '') !== '') {
+      line.textContent = r.text;
+    } else {
+      line.textContent = ARC_VOICE_FALLBACK;
+      line.style.fontStyle = 'italic';
+      line.style.opacity = '0.85';
+    }
+    if (triggerEl) { triggerEl.disabled = false; }
+  });
+}
+
+// Stage C: the quiet "Ask Yumi what she sees here" affordance + its inline
+// host, returned as one box for renderArcDetail to mount under the view toggle.
+function buildArcVoiceAffordance(arcId) {
+  var box = document.createElement('div');
+  box.className = 'arc-voice-box';
+  box.style.cssText = 'margin:10px 0 4px;';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'arc-voice-ask';
+  btn.textContent = 'Ask Yumi what she sees here';
+  btn.style.cssText = 'cursor:pointer; padding:6px 14px; font-family:var(--font-mono); '
+    + 'font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-text); '
+    + 'background:transparent; border:1px solid var(--line-2); border-radius:var(--radius-pill);';
+  var hostEl = document.createElement('div');
+  hostEl.className = 'arc-voice-host';
+  hostEl.style.cssText = 'margin-top:10px;';
+  btn.addEventListener('click', function () { requestArcVoice(arcId, hostEl, btn); });
+  box.appendChild(btn);
+  box.appendChild(hostEl);
+  return box;
+}
+
 function renderArcDetail(arcId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -9149,6 +9205,14 @@ function renderArcDetail(arcId) {
   toolbar.appendChild(webBtn);
 
   wrap.appendChild(toolbar);
+
+  // Stage C: solicited arc-voice affordance + inline host, under the view
+  // toggle (so it sits on both List and Web). Signed-in only (consent +
+  // budget are per-user; arc-voice needs a reader to gate on). The floating
+  // panel stays suppressed on this route -- arc-voice surfaces inline.
+  if (user) {
+    wrap.appendChild(buildArcVoiceAffordance(arcId));
+  }
 
   // Stage 5.4 Stage 1d: branch on viewMode. Web mounts an empty
   // container (1f fills it, Stage 2 draws the spine). List wraps the
