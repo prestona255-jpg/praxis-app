@@ -8295,3 +8295,52 @@
   .cl-actions { grid-column: 1 / -1; }
   .cl-mid-cover { flex-wrap: wrap; }
 }
+
+/* =====================================================================
+   ABOUT PAGE (#about) -- live port of design/about-praxis-mockup.html (@3228aa0).
+   Orientation surface. EVERY rule is scoped under .about-page (additive; no
+   restyle of any other surface). Color via theme.css tokens only. --font-script
+   is a CJK/Greek fallback declared LOCALLY on this scope so 由美 / πρᾶξις never
+   tofu (Greek also rides --font-serif = Cormorant). Layout dims in px/rem.
+   S1: page shell + hero. Panels / lexicon / infographics / rearm land in S2-S4.
+   ===================================================================== */
+.about-page {
+  --font-script: 'Cormorant Garamond', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', 'Noto Sans CJK JP', 'Songti SC', 'MS PMincho', serif;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 24px 96px 24px;
+}
+.about-page .about-hero {
+  padding: 32px 0 22px 0;
+  text-align: center;
+}
+.about-page .about-eyebrow {
+  margin: 0 0 18px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.about-page .about-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.02;
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  color: var(--ink);
+}
+.about-page .about-title em {
+  font-style: italic;
+  color: var(--gold-text);
+}
+.about-page .about-lede-hero {
+  max-width: 600px;
+  margin: 22px auto 0 auto;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  line-height: 1.5;
+  color: var(--ink-2);
+}

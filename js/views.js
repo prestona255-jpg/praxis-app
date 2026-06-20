@@ -364,6 +364,9 @@ function renderRoute() {
   } else if (parts[0] === 'account') {
     // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
     activeRoute = 'account';
+  } else if (parts[0] === 'about') {
+    // About page (#about): its own top-nav surface (the last text link).
+    activeRoute = 'about';
   } else if (parts[0] === 'yumi-sees') {
     // 6.2c: the 'What Yumi sees' page is reached from Yumi's panel, not
     // the top nav -- this value matches no data-route so no link highlights.
@@ -515,6 +518,17 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderAccountPage();
+    return;
+  }
+  // About page (#about): a static orientation surface. Symmetric pointer clear
+  // mirroring the account / home branches; placed BEFORE the notebook
+  // fallthrough so #about is caught here, not swallowed by the catch-all.
+  if (parts[0] === 'about') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderAbout();
     return;
   }
   // Batch 4A: Home landing surface (#home). Symmetric clear of the three
@@ -11827,9 +11841,37 @@ function renderAccountPage() {
   host.appendChild(wrap);
 }
 
+// =====================================================================
+// ABOUT PAGE (#about) -- orientation surface ported from the approved mockup
+// (design/about-praxis-mockup.html @ 3228aa0). Static doctrine content built
+// as an ES3 innerHTML string (no user data -> no injection surface); Yumi's
+// mark reuses the live yumiGlyphNode() (no second sprite, no second :root).
+// Two panels (What Praxis is / Re-enter a page) wired across S2-S4; this is
+// the S1 stub: route + nav + a minimal hero.
+// =====================================================================
+function renderAbout() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+
+  var page = document.createElement('section');
+  page.className = 'about-page';
+  page.innerHTML =
+    '<header class="about-hero">' +
+      '<p class="about-eyebrow">Orientation &middot; return here anytime</p>' +
+      '<h1 class="about-title">What is <em>Praxis</em>?</h1>' +
+      '<p class="about-lede-hero">A reading practice with a point of view. Read this ' +
+      'once to get your bearings &mdash; then come back whenever you want to remember ' +
+      'what this place is for.</p>' +
+    '</header>';
+
+  host.appendChild(page);
+}
+
 window.views = {
   renderRoute:           renderRoute,
   renderAccountPage:     renderAccountPage,
+  renderAbout:           renderAbout,
   renderNotebook:        renderNotebook,
   renderShelf:           renderShelf,
   renderBookDetail:      renderBookDetail,
