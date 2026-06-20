@@ -11856,14 +11856,121 @@ function renderAbout() {
 
   var page = document.createElement('section');
   page.className = 'about-page';
-  page.innerHTML =
-    '<header class="about-hero">' +
-      '<p class="about-eyebrow">Orientation &middot; return here anytime</p>' +
-      '<h1 class="about-title">What is <em>Praxis</em>?</h1>' +
-      '<p class="about-lede-hero">A reading practice with a point of view. Read this ' +
-      'once to get your bearings &mdash; then come back whenever you want to remember ' +
-      'what this place is for.</p>' +
-    '</header>';
+
+  var html = '';
+
+  // ----- hero (switcher added in S4) -----
+  html += '<header class="about-hero">';
+  html +=   '<div class="about-hero-mark" data-yumi-glyph="56"></div>';
+  html +=   '<p class="about-eyebrow">Orientation &middot; return here anytime</p>';
+  html +=   '<h1 class="about-title">What is <em>Praxis</em>?</h1>';
+  html +=   '<p class="about-lede-hero">A reading practice with a point of view. Read this once to get your bearings &mdash; then come back whenever you want to remember what this place is for.</p>';
+  html +=   '<hr class="hairline-gold about-hero-rule">';
+  html += '</header>';
+
+  // ----- Panel 1: the four explainer sections -----
+  html += '<section class="about-panel is-active" data-panel="learn"><div class="about-reading">';
+
+  // 01 -- What Praxis is (no lexicon card)
+  html += '<article class="about-section">';
+  html +=   '<p class="about-section-no">01 &middot; What Praxis is</p>';
+  html +=   '<h2 class="about-h2">A place to read like it matters.</h2>';
+  html +=   '<hr class="about-rule">';
+  html +=   '<p class="about-lede about-lede-drop">Praxis is not a library app. It is a reading practice &mdash; a place to hold the books you are working through, the ideas that stop you mid-page, and the questions you find yourself following across them. Nothing here is for display. Your shelf is a record of your attention, not a performance of it.</p>';
+  html +=   '<p class="about-body">Most reading tools help you <b>collect</b>. Praxis is built to help you <b>think</b> &mdash; to notice what moves you, to set it down somewhere it won\'t be lost, and to watch the lines of thought you didn\'t know you were drawing take shape over time. You bring the reading; Praxis gives it a form you can return to.</p>';
+  html += '</article>';
+
+  // 02 -- critical pedagogy (pedagogy + critical pedagogy lexicon; banking infographic in S3)
+  html += '<article class="about-section">';
+  html +=   '<p class="about-section-no">02 &middot; What critical pedagogy is</p>';
+  html +=   '<h2 class="about-h2">Knowledge made <em>with</em> you, not poured into you.</h2>';
+  html +=   '<hr class="about-rule">';
+  html +=   '<dl class="lex">';
+  html +=     '<div class="lex-entry">';
+  html +=       '<dt class="lex-head"><span class="lex-word">pedagogy</span><span class="lex-pron">/ˈpɛd.ə.ɡɒdʒi/</span><span class="lex-pos">n.</span></dt>';
+  html +=       '<dd class="lex-body">';
+  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>from Greek <i>paidagōgia</i>, from <i>paîs/paidos</i> &ldquo;child&rdquo; + <i>agōgos</i> &ldquo;leader&rdquo; &mdash; literally, the one who leads a child to school.</p>';
+  html +=         '<p class="lex-gloss">the art, method, and politics of teaching &mdash; not only what is taught, but how, by whom, and to what end.</p>';
+  html +=       '</dd>';
+  html +=     '</div>';
+  html +=     '<div class="lex-entry">';
+  html +=       '<dt class="lex-head"><span class="lex-word">critical pedagogy</span><span class="lex-pos">n.</span></dt>';
+  html +=       '<dd class="lex-body">';
+  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>Paulo Freire and after (Giroux, hooks, Lorde, McLaren).</p>';
+  html +=         '<p class="lex-gloss">a philosophy of teaching that treats education as never neutral &mdash; helping learners read &ldquo;the word and the world,&rdquo; build critical consciousness (<i>conscientização</i>), question how power shapes knowledge, and act to change unjust conditions; problem-posing in place of &ldquo;banking.&rdquo;</p>';
+  html +=       '</dd>';
+  html +=     '</div>';
+  html +=   '</dl>';
+  html +=   '<p class="about-lede">Critical pedagogy is a tradition of teaching that begins from a simple refusal: education is never neutral. How we learn &mdash; and who gets to make meaning &mdash; is always a question of power.</p>';
+  html +=   '<p class="about-body">It runs through <b>Paulo Freire</b>, <b>bell hooks</b>, and <b>Audre Lorde</b>, among others. Freire named the &ldquo;banking&rdquo; model &mdash; where a teacher deposits facts into a student treated as an empty account &mdash; and set against it a <b>problem-posing</b> education, where teacher and learner make knowledge together, beginning from the learner\'s own world. hooks insisted this could be done with love, as a practice of freedom. Lorde reminded us that the master\'s tools will never dismantle the master\'s house.</p>';
+  html +=   '<p class="about-body">Praxis is built in that lineage. You are not an empty account to be filled.</p>';
+  html += '</article>';
+
+  // 03 -- praxis (lexicon + pullquote + body; Aristotle triad + reflection loop in S3)
+  html += '<article class="about-section">';
+  html +=   '<p class="about-section-no">03 &middot; What praxis means</p>';
+  html +=   '<dl class="lex">';
+  html +=     '<div class="lex-entry" id="lex-praxis">';
+  html +=       '<dt class="lex-head"><span class="lex-word">praxis</span><span class="lex-script" lang="grc">πρᾶξις</span><span class="lex-pron">/ˈpræk.sɪs/</span><span class="lex-pos">n.</span></dt>';
+  html +=       '<dd class="lex-body">';
+  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>from Ancient Greek <i lang="grc">πρᾶξις</i> (<i>prâxis</i>) &ldquo;action, doing,&rdquo; from <i>prássein</i> &ldquo;to do.&rdquo;</p>';
+  html +=         '<p class="lex-gloss">in Aristotle, action itself &mdash; alongside <i>theōria</i> (contemplation) and <i>poiēsis</i> (making); in Freire, reflection and action upon the world in order to transform it &mdash; theory and practice folded into one.</p>';
+  html +=       '</dd>';
+  html +=     '</div>';
+  html +=   '</dl>';
+  html +=   '<div class="about-pullquote"><p>Praxis is reflection and action upon the world in order to transform it.</p><cite>after Freire, by way of Aristotle</cite></div>';
+  html +=   '<p class="about-body">Theory and practice are not two steps &mdash; first you learn, then you apply. Praxis folds them together: reflection that acts, and action that reflects back on itself. It is <b>theory lived</b>. That is the wager of this whole place &mdash; that what you read should change how you move through the world, and what you do should sharpen what you read next.</p>';
+  html += '</article>';
+
+  // 04 -- Yumi (large Umebloom + 由美 breakdown + interlocutor + is/is-not grid + lexicon)
+  html += '<article class="about-section">';
+  html +=   '<p class="about-section-no">04 &middot; The meaning of Yumi</p>';
+  html +=   '<div class="about-yumi-card">';
+  html +=     '<div class="yumi-hero">';
+  html +=       '<div class="yumi-hero-mark" data-yumi-glyph="84"></div>';
+  html +=       '<div class="yumi-breakdown">';
+  html +=         '<p class="yumi-eyebrow">Your reading companion</p>';
+  html +=         '<div class="ideo" role="img" aria-label="由 (reason or cause) plus 美 (beauty) makes 由美 — reasoned beauty">';
+  html +=           '<span class="ideo-cell"><span class="ideo-char" lang="ja">由</span><span class="ideo-en">reason / cause</span></span>';
+  html +=           '<span class="ideo-op" aria-hidden="true">+</span>';
+  html +=           '<span class="ideo-cell"><span class="ideo-char" lang="ja">美</span><span class="ideo-en">beauty</span></span>';
+  html +=           '<span class="ideo-op" aria-hidden="true">&rarr;</span>';
+  html +=           '<span class="ideo-cell ideo-cell--sum"><span class="ideo-sum" lang="ja">由美</span><span class="ideo-en">reasoned beauty</span></span>';
+  html +=         '</div>';
+  html +=       '</div>';
+  html +=     '</div>';
+  html +=     '<h2 class="about-h2" style="margin-bottom:8px;">An interlocutor, not an authority.</h2>';
+  html +=     '<p class="about-lede" style="font-size:1.2rem;">Yumi reads alongside you. She is here to ask the better question &mdash; not to summarize your books, not to grade your thoughts, and never to hand you the answer.</p>';
+  html +=     '<div class="yumi-contrast">';
+  html +=       '<div class="yumi-col yumi-col--is"><h4>She is</h4><ul><li>A problem-posing interlocutor</li><li>A reader of only what you\'ve written</li><li>The one who asks the question back to you</li></ul></div>';
+  html +=       '<div class="yumi-col yumi-col--isnot"><h4>She is not</h4><ul><li>A tutor or a grader</li><li>A summarizer or a search box</li><li>The banking move &mdash; she won\'t deposit conclusions into you</li></ul></div>';
+  html +=     '</div>';
+  html +=     '<p class="about-body" style="margin-top:18px;">Yumi works only from what you choose to show her &mdash; the notes you attach to a book, the questions you pose. She cannot see your private journal unless you decide to share it, and you can always check exactly what she sees. She is useful precisely <b>because</b> she does not do the thinking for you.</p>';
+  html +=     '<dl class="lex lex--yumi">';
+  html +=       '<div class="lex-entry">';
+  html +=         '<dt class="lex-head"><span class="lex-word">Yumi</span><span class="lex-script" lang="ja">由美</span><span class="lex-pos">n., Japanese given name</span></dt>';
+  html +=         '<dd class="lex-body">';
+  html +=           '<p class="lex-origin"><span class="lex-label">Origin</span><span class="lex-cjk" lang="ja">由</span> &ldquo;reason / cause&rdquo; + <span class="lex-cjk" lang="ja">美</span> &ldquo;beauty.&rdquo;</p>';
+  html +=           '<p class="lex-gloss">reasoned beauty &mdash; beauty with a why behind it. Her mark is the Umebloom; her purpose is to make your thinking more beautiful by making it more reasoned.</p>';
+  html +=         '</dd>';
+  html +=       '</div>';
+  html +=     '</dl>';
+  html +=   '</div>';
+  html += '</article>';
+
+  html += '</div></section>';
+
+  page.innerHTML = html;
+
+  // Crests reuse the live shared glyph component -- no second sprite, no second
+  // :root. Each placeholder carries its pixel size in data-yumi-glyph.
+  var glyphSlots = page.querySelectorAll('[data-yumi-glyph]');
+  var gi;
+  for (gi = 0; gi < glyphSlots.length; gi++) {
+    glyphSlots[gi].appendChild(
+      yumiGlyphNode(parseInt(glyphSlots[gi].getAttribute('data-yumi-glyph'), 10))
+    );
+  }
 
   host.appendChild(page);
 }
