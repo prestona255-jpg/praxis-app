@@ -1790,6 +1790,41 @@ function integrateReflection(entryId, replyText) {
   return true;
 }
 
+// Stage B-3: NAME-accept. Create a sub-theory from a noticed thread, REUSING
+// the existing create path verbatim (createSubTheory + addEvidenceToSubTheory).
+// Attaches to the arc shared by the member notes, or creates one if none
+// (never asks the reader). Marks the thread named (idempotency) and re-renders.
+// Inert until called (Accept only); returns the sub-theory, or null.
+function nameSubTheoryFromThread(finalName, memberIds, threadLabel, oneLineRead) {
+  var user = getCurrentUser();
+  if (!user) { return null; }
+  var name = (typeof finalName === 'string') ? finalName.replace(/^\s+|\s+$/g, '') : '';
+  if (name === '' || !memberIds || memberIds.length < 3) { return null; }
+  var arcId = notebookSharedArc(memberIds);
+  if (!arcId) {
+    var label = (typeof threadLabel === 'string' && threadLabel.replace(/^\s+|\s+$/g, '') !== '')
+      ? threadLabel : name;
+    var arc = createArc(label, '', user.uid);
+    if (!arc) { return null; }
+    arcId = arc.id;
+  }
+  // Seed the sub-theory's public body with Yumi's proposed one-line read (the
+  // s5 "read" the reader accepted) -- an editable draft, not imposed.
+  var read = (typeof oneLineRead === 'string') ? oneLineRead.replace(/^\s+|\s+$/g, '') : '';
+  var st = createSubTheory(arcId, { header: name, bodyPublic: read });
+  if (!st) { return null; }
+  var i;
+  for (i = 0; i < memberIds.length; i = i + 1) {
+    var e = state.notebookEntries[memberIds[i]];
+    var quote = (e && typeof e.body === 'string') ? e.body : '';
+    addEvidenceToSubTheory(st.id, { kind: 'entry', refId: memberIds[i], quote: quote });
+  }
+  if (window.YumiBrain && YumiBrain.recordThreadNamed) { YumiBrain.recordThreadNamed(memberIds); }
+  saveState();
+  if (typeof renderRoute === 'function') { renderRoute(); }
+  return st;
+}
+
 // N2: file an Inbox entry to a book -- set filed true + add the bookId (deduped).
 function fileEntryToBook(entryId, bookId) {
   var entry = state.notebookEntries && state.notebookEntries[entryId];

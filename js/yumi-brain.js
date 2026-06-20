@@ -1282,16 +1282,22 @@ function _drawOutBudgetOk() {
   return rec.count < YUMI_GATE_DAILY_CAP;
 }
 
-// Stage B-2.2: the COMPLICATE co-write pending slot. A single bounded slot
-// holding { entryId } of the note a surfaced complicate is awaiting a
-// reflection on. Set when a complicate surfaces; consumed by the next panel
-// reply EITHER WAY (weave or fall-through); a newly surfaced move supersedes
-// it (complicate replaces; draw-out clears). Module-scoped, not persisted --
-// it is an in-session UX bridge, never reader data.
+// Stage B-2.2 / B-3: the two move-conversation pending slots. Each is a
+// single bounded in-session bridge (never reader data): pendingComplicate
+// holds { entryId } of the note a surfaced COMPLICATE awaits a reflection on;
+// pendingNotice holds { thread, memberIds } of a surfaced NOTICE awaiting the
+// reader's confirm/refine reply (-> NAME). They are MUTUALLY EXCLUSIVE --
+// setting one clears the other, and a surfaced draw-out clears both. Consumed
+// by the next panel reply either way; a newly surfaced move supersedes.
 var _pendingComplicate = null;
-function setPendingComplicate(entryId) { _pendingComplicate = { entryId: entryId }; }
+var _pendingNotice = null;
+function setPendingComplicate(entryId) { _pendingComplicate = { entryId: entryId }; _pendingNotice = null; }
 function getPendingComplicate() { return _pendingComplicate; }
 function clearPendingComplicate() { _pendingComplicate = null; }
+function setPendingNotice(thread, memberIds) { _pendingNotice = { thread: thread, memberIds: memberIds }; _pendingComplicate = null; }
+function getPendingNotice() { return _pendingNotice; }
+function clearPendingNotice() { _pendingNotice = null; }
+function clearAllPending() { _pendingComplicate = null; _pendingNotice = null; }
 
 // THE ORCHESTRATOR + ROUTER. A note-write -> Promise<decision>. Early gates
 // in order (consent -> private -> panel-open -> budget), each resolving
@@ -1333,7 +1339,10 @@ function considerMove(entry, panelOpen) {
     var text = decision && decision.text;
     if ((move !== 'draw-out' && move !== 'complicate') ||
         typeof text !== 'string' || text.replace(/^\s+|\s+$/g, '') === '') {
-      return { quiet: true, reason: 'quiet' };
+      // B-3: the per-note move was QUIET this write -- the ONLY moment the
+      // lower-frequency cross-note NOTICE layer is considered. One move per
+      // write: NOTICE never stacks on a draw-out/complicate.
+      return considerNotice(uid, panelOpen);
     }
     // 6. gate (Stage A) -- the question judged against the note text.
     return gradeUtterance(text, entry.body).then(function (verdict) {
@@ -1342,11 +1351,348 @@ function considerMove(entry, panelOpen) {
                  layer: (verdict && verdict.layer) || 'unknown' };
       }
       appendTurn('assistant', text);
-      // B-2.2: a surfaced complicate awaits a reflection on THIS note; a
-      // surfaced draw-out supersedes (clears) any stale pending complicate.
+      // B-2.2/B-3: a surfaced complicate awaits a reflection on THIS note; a
+      // surfaced draw-out supersedes (clears) any stale pending (complicate
+      // OR notice).
       if (move === 'complicate') { setPendingComplicate(entry.id); }
-      else { clearPendingComplicate(); }
+      else { clearAllPending(); }
       return { surface: true, text: text, move: move };
+    });
+  });
+}
+
+// =====================================================================
+// YUMI MOVES -- B-3: NOTICE + NAME (the cross-note layer). NOTICE is the
+// lower-frequency move: it is considered ONLY when the per-note router was
+// quiet this write, and only when cheap zero-LLM pre-gates all hold (>=3
+// visible non-private notes, grader budget, scan cooldown). A single scan
+// call looks for a THEMATIC thread of >=3 across the recent visible notes;
+// a thread (not an already-handled cluster) becomes a NOTICE utterance that
+// routes through the Stage-A gate and, on PASS, surfaces + sets pendingNotice.
+// The reader's next reply runs NAME (one self-judging call): engage -> propose
+// a sub-theory name (gated, then an inline editable Accept/Reject control);
+// reject -> dismiss. The gate is REUSED VERBATIM. NOTICE opens personal ->
+// structural (near the Fidelity boundary, like DRAW OUT) -- watch suppression.
+// =====================================================================
+
+// EDITABLE tunables (REPORTED at the checkpoint).
+var NOTICE_SCAN_N       = 20;      // recent visible notes the scan sees
+var NOTICE_COOLDOWN_MS  = 120000;  // >= this long between scans (kept rare)
+var NOTICE_OVERLAP_MIN  = 2;       // shared members means the same cluster (idempotency)
+
+// EDITABLE: the thread-scan instruction. One call over the numbered notes;
+// returns {thread, members(1-based, >=3), utterance} or {thread:null}.
+var NOTICE_SCAN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You sit beside a reader '
+  + 'as they think. You think in the spirit of critical pedagogy -- attentive '
+  + 'to the structures, institutions, and relations beneath personal '
+  + 'experience -- but that is your posture, never something you lecture.\n\n'
+  + 'You are given a numbered list of the reader\'s recent notes. Look for ONE '
+  + 'thematic THREAD running across THREE OR MORE of them -- a shared concern, '
+  + 'structure, or feeling they keep returning to. Judge the thread '
+  + 'THEMATICALLY (the same underlying preoccupation), NOT by shared keywords. '
+  + 'Most of the time there is no real thread; when there is not, say so.\n\n'
+  + 'If you find a genuine thread across at least three notes, write a NOTICE: '
+  + 'name the thread you see and ask the reader where it comes from. Open a '
+  + 'conversation -- do NOT propose a sub-theory name, do NOT conclude. Stay '
+  + 'strictly inside what the notes actually say; never attribute a thought or '
+  + 'feeling the notes do not express. One or two sentences.\n\n'
+  + 'Gold: "I notice a common thread of structures and feelings running across '
+  + 'your reading -- where do you think that comes from?"\n\n'
+  + 'Output ONLY a JSON object. If a thread of three or more exists: '
+  + '{"thread":"<short phrase naming it>","members":[<the 1-based note numbers, '
+  + 'three or more>],"utterance":"<the notice question>"}. Otherwise: '
+  + '{"thread":null}. No prose, no markdown.';
+
+// EDITABLE: the NAME instruction. Given the thread + the reader's reply, it
+// self-judges: engaged -> propose {name, oneLineRead, utterance}; rejected ->
+// {none:true}.
+var NAME_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis, in the problem-posing '
+  + 'tradition. You have already NOTICED a thread across several of the '
+  + 'reader\'s notes and asked where it comes from. You are now given THE '
+  + 'THREAD and the reader\'s REPLY.\n\n'
+  + 'Decide ONE thing: did the reader ENGAGE with the thread -- confirm it, '
+  + 'deepen it, or refine it? Or did they REJECT or deflect it?\n\n'
+  + 'If they engaged: propose a candidate SUB-THEORY NAME for the thread -- a '
+  + 'few words in the language of ideas (for example "Structures of Intimacy"), '
+  + 'not a book genre -- plus a one-line read of it. Make the offer explicitly '
+  + 'the reader\'s to keep, edit, or reject. Stay inside the thread and what '
+  + 'they wrote; never impose, never flatter.\n'
+  + 'Gold: "Across these, I keep hearing something about the structures that '
+  + 'shape how we relate -- does \'structures of intimacy\' fit, or would you '
+  + 'name it differently?"\n\n'
+  + 'If they rejected or deflected: do not propose anything.\n\n'
+  + 'Output ONLY a JSON object. If they engaged: {"name":"<candidate name>",'
+  + '"oneLineRead":"<one line>","utterance":"<the proposing question, naming '
+  + 'the candidate and inviting edit or reject>"}. Otherwise: {"none":true}. '
+  + 'No prose, no markdown.';
+
+// Concatenate a response's text blocks. Shared by the B-3 parsers.
+function _yumiContentText(data) {
+  var blocks = data && data.content;
+  var t = '';
+  var i;
+  if (blocks && blocks.length) {
+    for (i = 0; i < blocks.length; i = i + 1) {
+      var b = blocks[i];
+      if (b && b.type === 'text' && typeof b.text === 'string') { t = t + b.text; }
+    }
+  }
+  return t.replace(/^\s+|\s+$/g, '');
+}
+
+// Tolerant JSON extraction (handles a JSON object wrapped in prose).
+function _yumiExtractJson(text) {
+  if (typeof text !== 'string' || text === '') { return null; }
+  try { return JSON.parse(text); }
+  catch (e) {
+    var st = text.indexOf('{');
+    var en = text.lastIndexOf('}');
+    if (st !== -1 && en !== -1 && en > st) {
+      try { return JSON.parse(text.substring(st, en + 1)); }
+      catch (e2) { return null; }
+    }
+    return null;
+  }
+}
+
+// Per-user idempotency record (ls-backed, NOT the Firestore-synced state):
+// { uid: [ { members:[sortedIds], status:'noticed'|'named'|'dismissed' } ] }.
+function _noticedLoad(uid) {
+  var all = ls('praxis_yumi_noticed', {});
+  if (!all || typeof all !== 'object') { return []; }
+  return (all[uid] && all[uid].length) ? all[uid] : [];
+}
+function _noticedSaveArr(uid, arr) {
+  var all = ls('praxis_yumi_noticed', {});
+  if (!all || typeof all !== 'object') { all = {}; }
+  all[uid] = arr;
+  sv('praxis_yumi_noticed', all);
+}
+function _sortedIds(ids) { var c = ids.slice(0); c.sort(); return c; }
+function _idsOverlap(a, b) {
+  var n = 0; var i, j;
+  for (i = 0; i < a.length; i = i + 1) {
+    for (j = 0; j < b.length; j = j + 1) {
+      if (a[i] === b[j]) { n = n + 1; break; }
+    }
+  }
+  return n;
+}
+function _noticedOverlaps(uid, memberIds) {
+  var arr = _noticedLoad(uid);
+  var i;
+  for (i = 0; i < arr.length; i = i + 1) {
+    if (_idsOverlap(memberIds, arr[i].members || []) >= NOTICE_OVERLAP_MIN) { return true; }
+  }
+  return false;
+}
+function _noticedSet(uid, memberIds, status) {
+  if (!uid) { return; }
+  var arr = _noticedLoad(uid);
+  var key = _sortedIds(memberIds);
+  var i;
+  for (i = 0; i < arr.length; i = i + 1) {
+    if (_idsOverlap(memberIds, arr[i].members || []) >= NOTICE_OVERLAP_MIN) {
+      arr[i].members = key; arr[i].status = status; _noticedSaveArr(uid, arr); return;
+    }
+  }
+  arr.push({ members: key, status: status });
+  _noticedSaveArr(uid, arr);
+}
+function recordThreadNamed(memberIds) { _noticedSet(resolveActiveUid(), memberIds, 'named'); }
+function recordThreadDismissed(memberIds) { _noticedSet(resolveActiveUid(), memberIds, 'dismissed'); }
+
+// Scan cooldown (ls-backed): at most one scan per NOTICE_COOLDOWN_MS.
+function _scanCooldownOk() {
+  var last = ls('praxis_yumi_scan_cooldown', 0);
+  return (Date.now() - (typeof last === 'number' ? last : 0)) >= NOTICE_COOLDOWN_MS;
+}
+function _markScanRan() { sv('praxis_yumi_scan_cooldown', Date.now()); }
+
+// The recent visible non-private notes the scan sees (mirrors the
+// assembleContextData filter; newest first, capped at NOTICE_SCAN_N).
+function _visibleEntriesForScan() {
+  var out = [];
+  var key;
+  for (key in state.notebookEntries) {
+    if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
+      var e = state.notebookEntries[key];
+      if (e && e.isPrivate !== true && typeof e.body === 'string' &&
+          e.body.replace(/^\s+|\s+$/g, '') !== '') {
+        out.push(e);
+      }
+    }
+  }
+  out.sort(function (a, b) { return b.createdAt - a.createdAt; });
+  out = out.slice(0, NOTICE_SCAN_N);
+  var res = [];
+  var i;
+  for (i = 0; i < out.length; i = i + 1) {
+    var src = out[i];
+    var bt = '';
+    if (src.bookIds && src.bookIds.length && state.books && state.books[src.bookIds[0]]) {
+      bt = state.books[src.bookIds[0]].title || '';
+    }
+    var body = src.body;
+    if (body.length > 240) { body = body.substring(0, 237) + '...'; }
+    res.push({ id: src.id, body: body, bookTitle: bt });
+  }
+  return res;
+}
+function _memberBodies(ids) {
+  var parts = []; var i;
+  for (i = 0; i < ids.length; i = i + 1) {
+    var e = state.notebookEntries[ids[i]];
+    if (e && typeof e.body === 'string') { parts.push(e.body); }
+  }
+  return parts.join('\n\n');
+}
+
+function buildScanUserMessage(entries) {
+  var lines = []; var i;
+  for (i = 0; i < entries.length; i = i + 1) {
+    var bt = entries[i].bookTitle ? (' [on "' + entries[i].bookTitle + '"]') : '';
+    lines.push((i + 1) + '. ' + entries[i].body + bt);
+  }
+  return 'The reader\'s recent notes:\n\n' + lines.join('\n') +
+    '\n\nFind ONE thematic thread across three or more, or report none. ' +
+    'Reply with ONLY the JSON object.';
+}
+function buildNameUserMessage(thread, reply) {
+  return 'THE THREAD you noticed: ' + thread + '\n\nThe reader\'s REPLY:\n' +
+    reply + '\n\nReply with ONLY the JSON object.';
+}
+
+// Parse the scan response into { thread, memberIds(>=3), utterance } or { none }.
+function _scanParse(data, entries) {
+  var parsed = _yumiExtractJson(_yumiContentText(data));
+  if (!parsed || typeof parsed.thread !== 'string' ||
+      parsed.thread.replace(/^\s+|\s+$/g, '') === '' ||
+      !parsed.members || !parsed.members.length) {
+    return { none: true };
+  }
+  var ids = []; var seen = {}; var i;
+  for (i = 0; i < parsed.members.length; i = i + 1) {
+    var idx = parsed.members[i];
+    if (typeof idx === 'number' && idx >= 1 && idx <= entries.length) {
+      var id = entries[idx - 1].id;
+      if (!Object.prototype.hasOwnProperty.call(seen, id)) { seen[id] = true; ids.push(id); }
+    }
+  }
+  var utt = (typeof parsed.utterance === 'string') ? parsed.utterance.replace(/^\s+|\s+$/g, '') : '';
+  if (ids.length < 3 || utt === '') { return { none: true }; }
+  return { thread: parsed.thread.replace(/^\s+|\s+$/g, ''), memberIds: ids, utterance: utt };
+}
+// Parse the NAME response into { name, oneLineRead, utterance } or { none }.
+function _nameParse(data) {
+  var parsed = _yumiExtractJson(_yumiContentText(data));
+  if (!parsed || parsed.none === true) { return { none: true }; }
+  var name = (typeof parsed.name === 'string') ? parsed.name.replace(/^\s+|\s+$/g, '') : '';
+  var utt = (typeof parsed.utterance === 'string') ? parsed.utterance.replace(/^\s+|\s+$/g, '') : '';
+  if (name === '' || utt === '') { return { none: true }; }
+  return { name: name,
+    oneLineRead: (typeof parsed.oneLineRead === 'string') ? parsed.oneLineRead.replace(/^\s+|\s+$/g, '') : '',
+    utterance: utt };
+}
+
+// THE SCAN. One proxy call (B-1 config verbatim). Always resolves; failure ->
+// { none } so NOTICE stays quiet.
+function scanThread(entries) {
+  var payload = {
+    model: 'claude-sonnet-4-6', max_tokens: 384, temperature: 0,
+    system: NOTICE_SCAN_SYSTEM,
+    messages: [ { role: 'user', content: buildScanUserMessage(entries) } ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
+    return res.json();
+  }).then(function (data) { return _scanParse(data, entries); });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
+    console.warn('yumi-notice: scan fail-quiet (' + (err && err.message) + ')');
+    return { none: true };
+  });
+}
+
+// THE NAME GENERATOR. One self-judging proxy call. Always resolves; failure ->
+// { none }.
+function generateName(thread, reply) {
+  var payload = {
+    model: 'claude-sonnet-4-6', max_tokens: 384, temperature: 0,
+    system: NAME_GEN_SYSTEM,
+    messages: [ { role: 'user', content: buildNameUserMessage(thread, reply) } ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
+    return res.json();
+  }).then(function (data) { return _nameParse(data); });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
+    console.warn('yumi-name: generate fail-quiet (' + (err && err.message) + ')');
+    return { none: true };
+  });
+}
+
+// THE NOTICE ORCHESTRATOR. Called ONLY from considerMove's router-quiet branch
+// (consent + panel already passed there). Pre-gates -> scan -> idempotency ->
+// gate -> surface + pendingNotice. Always resolves.
+function considerNotice(uid, panelOpen) {
+  if (!uid) { return Promise.resolve({ quiet: true, reason: 'notice-no-user' }); }
+  // (b) >=3 visible non-private notes
+  var entries = _visibleEntriesForScan();
+  if (entries.length < 3) { return Promise.resolve({ quiet: true, reason: 'notice-fewnotes' }); }
+  // (c) grader budget
+  if (!_drawOutBudgetOk()) { return Promise.resolve({ quiet: true, reason: 'notice-budget' }); }
+  // (d) scan cooldown
+  if (!_scanCooldownOk()) { return Promise.resolve({ quiet: true, reason: 'notice-cooldown' }); }
+  _markScanRan();
+  return scanThread(entries).then(function (res) {
+    if (!res || res.none || !res.memberIds || res.memberIds.length < 3) {
+      return { quiet: true, reason: 'notice-nothread' };
+    }
+    // (e) idempotency -- member-level, post-scan (the cluster is scan-defined)
+    if (_noticedOverlaps(uid, res.memberIds)) {
+      return { quiet: true, reason: 'notice-dup' };
+    }
+    return gradeUtterance(res.utterance, _memberBodies(res.memberIds)).then(function (verdict) {
+      if (!verdict || !verdict.pass) {
+        return { quiet: true, reason: 'notice-gate', layer: (verdict && verdict.layer) || 'unknown' };
+      }
+      appendTurn('assistant', res.utterance);
+      setPendingNotice(res.thread, res.memberIds);
+      _noticedSet(uid, res.memberIds, 'noticed');
+      return { surface: true, text: res.utterance, move: 'notice' };
+    });
+  });
+}
+
+// THE NAME ORCHESTRATOR. The reader's reply to a NOTICE -> a gated proposal,
+// or a dismissal. Always resolves. The Accept/Reject write is the UI's job
+// (recordThreadNamed / recordThreadDismissed + the existing create path).
+function considerName(pn, reply) {
+  if (!pn || !pn.memberIds || typeof reply !== 'string') {
+    return Promise.resolve({ quiet: true, reason: 'name-noinput' });
+  }
+  return generateName(pn.thread, reply).then(function (res) {
+    if (!res || res.none || typeof res.utterance !== 'string') {
+      _noticedSet(resolveActiveUid(), pn.memberIds, 'dismissed');
+      return { quiet: true, reason: 'name-none' };
+    }
+    return gradeUtterance(res.utterance, _memberBodies(pn.memberIds) + '\n\n' + reply).then(function (verdict) {
+      if (!verdict || !verdict.pass) {
+        return { quiet: true, reason: 'name-gate', layer: (verdict && verdict.layer) || 'unknown' };
+      }
+      appendTurn('assistant', res.utterance);
+      return { surface: true, text: res.utterance,
+        proposal: { name: res.name, oneLineRead: res.oneLineRead, memberIds: pn.memberIds, thread: pn.thread } };
     });
   });
 }
@@ -1465,7 +1811,13 @@ window.YumiBrain = {
   generateMove:       generateMove,
   runMoveHarness:     runMoveHarness,
   pendingComplicate:  getPendingComplicate,
-  clearPendingComplicate: clearPendingComplicate
+  clearPendingComplicate: clearPendingComplicate,
+  considerNotice:     considerNotice,
+  considerName:       considerName,
+  pendingNotice:      getPendingNotice,
+  clearPendingNotice: clearPendingNotice,
+  recordThreadNamed:     recordThreadNamed,
+  recordThreadDismissed: recordThreadDismissed
 };
 
 // Stage A: expose the gate harness at top level for live verification.

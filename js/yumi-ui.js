@@ -236,6 +236,61 @@ function isSubstantiveReflection(reply) {
   return true;
 }
 
+// Stage B-3: the inline NAME-proposal control -- an editable name field +
+// Accept / Reject, rendered into the panel beneath the NAME utterance. INERT
+// until Accept (nothing is written before that). Styled with existing theme
+// tokens via inline CSS-var references -- no new design system, no CSS file.
+function mountNameProposal(proposal) {
+  if (!yumiBodyEl || !proposal || !proposal.memberIds) { return; }
+  var wrap = document.createElement('div');
+  wrap.className = 'yumi-name-proposal';
+  wrap.style.cssText = 'margin:6px 0 10px; padding:10px; border:1px solid var(--border); ' +
+    'border-radius:var(--radius-md); background:var(--surface-2);';
+  var field = document.createElement('input');
+  field.type = 'text';
+  field.value = proposal.name || '';
+  field.setAttribute('aria-label', 'Sub-theory name');
+  field.style.cssText = 'width:100%; box-sizing:border-box; padding:7px 9px; ' +
+    'font-family:var(--font-serif); font-size:15px; color:var(--ink); ' +
+    'background:var(--glass-2); border:1px solid var(--line-2); border-radius:var(--radius-sm);';
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex; gap:8px; margin-top:8px;';
+  var accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Accept';
+  accept.style.cssText = 'flex:0 0 auto; padding:6px 14px; border:none; cursor:pointer; ' +
+    'font-family:var(--font-body); font-size:13px; color:var(--text-on-dark); ' +
+    'background:var(--grad); border-radius:var(--radius-pill);';
+  var reject = document.createElement('button');
+  reject.type = 'button';
+  reject.textContent = 'Reject';
+  reject.style.cssText = 'flex:0 0 auto; padding:6px 14px; cursor:pointer; ' +
+    'font-family:var(--font-body); font-size:13px; color:var(--ink-2); ' +
+    'background:transparent; border:1px solid var(--line-2); border-radius:var(--radius-pill);';
+  accept.addEventListener('click', function () {
+    var finalName = (field.value || '').replace(/^\s+|\s+$/g, '');
+    if (finalName === '') { finalName = proposal.name || ''; }
+    if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+    var st = (typeof nameSubTheoryFromThread === 'function')
+      ? nameSubTheoryFromThread(finalName, proposal.memberIds, proposal.thread, proposal.oneLineRead) : null;
+    renderYumiMessage(st
+      ? ('Done — I\'ve started a sub-theory, "' + finalName + '", from those notes.')
+      : 'I could not start that sub-theory just now.');
+  });
+  reject.addEventListener('click', function () {
+    if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+    if (window.YumiBrain && YumiBrain.recordThreadDismissed) {
+      YumiBrain.recordThreadDismissed(proposal.memberIds);
+    }
+  });
+  row.appendChild(accept);
+  row.appendChild(reject);
+  wrap.appendChild(field);
+  wrap.appendChild(row);
+  yumiBodyEl.appendChild(wrap);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
 function handleVoiceTranscript(text) {
   if (!yumiInputEl || typeof text !== 'string') { return; }
   var current = yumiInputEl.value || '';
@@ -645,6 +700,46 @@ function buildYumiPanel() {
           renderYumiMessage('Thank you — I\'ve folded that into your note.');
           return;
         }
+      }
+    }
+
+    // Stage B-3: NAME interception, also BEFORE sendMessage (mutually exclusive
+    // with the co-write -- only one pending slot is ever set). If a NOTICE is
+    // pending, the reply runs NAME (async, 2 proxy calls). A gated proposal
+    // surfaces with the inline editable Accept/Reject control and does NOT call
+    // sendMessage; a rejection/deflection dismisses the thread (recorded in
+    // considerName) and FALLS THROUGH to a normal chat reply. Consumed either way.
+    if (window.YumiBrain && YumiBrain.pendingNotice) {
+      var _pn = YumiBrain.pendingNotice();
+      if (_pn && _pn.memberIds) {
+        YumiBrain.clearPendingNotice();
+        yumi_request_in_flight = true;
+        if (yumiSendBtnEl) { yumiSendBtnEl.disabled = true; }
+        renderTypingIndicator();
+        YumiBrain.considerName(_pn, trimmed).then(function (r) {
+          if (r && r.surface) {
+            removeTypingIndicator();
+            renderYumiMessage(r.text);
+            mountNameProposal(r.proposal);
+            yumi_request_in_flight = false;
+            if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+            return;
+          }
+          // none / gate-fail -> normal chat (the dismissal is recorded in considerName)
+          return window.YumiBrain.sendMessage(trimmed).then(function (result) {
+            removeTypingIndicator();
+            if (!(result && result.silent)) { renderYumiMessage(result.text); }
+            yumi_request_in_flight = false;
+            if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+          });
+        }).then(null, function (err) {
+          console.error('[yumi] considerName failed', err);
+          removeTypingIndicator();
+          renderError();
+          yumi_request_in_flight = false;
+          if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+        });
+        return;
       }
     }
 
