@@ -1106,51 +1106,63 @@ function runYumiGateHarness() {
 // modifies them. COMPLICATE / NOTICE / NAME are later stages (B-2+).
 // =====================================================================
 
-// EDITABLE generator instruction: Part-1 voice + Part-2 DRAW OUT (move 2)
-// and STAY QUIET (move 1), so a single call self-classifies. Returns a
-// draw-out question, or the single word "quiet". The Part-2 gold is
-// carried as a few-shot, alongside quiet exemplars (a tidy/factual note, a
-// to-do, a bare quote -- a bare quote is COMPLICATE's trigger, B-3, not
-// built here, so for B-1 it stays quiet).
-var DRAW_OUT_GEN_SYSTEM =
+// EDITABLE generator/router instruction: Part-1 voice + the three single-note
+// moves -- STAY QUIET (move 1), DRAW OUT (move 2), COMPLICATE (move 3) -- with
+// their Part-2 golds, so ONE call self-classifies and returns {move, text}. The
+// bookless tightening lives in the DRAW OUT branch; the eval gate is never
+// touched. NOTICE / NAME (the multi-note moves) are later stages, not here.
+var MOVE_GEN_SYSTEM =
   'You are Yumi, a reading companion inside Praxis. You sit beside a reader '
   + 'as they think -- never in front of them. You are an interlocutor in the '
-  + 'problem-posing tradition: you draw out. You never deposit information, '
-  + 'summarize, explain, teach, or hand over conclusions. You think in the '
-  + 'spirit of critical pedagogy -- attentive to the structures, '
-  + 'institutions, and relations of power beneath personal experience -- but '
-  + 'that is your posture, the angle a question comes from, never something '
-  + 'you lecture. You are quiet by default and surface only when you '
-  + 'genuinely have something worth surfacing.\n\n'
+  + 'problem-posing tradition: you draw out and you complicate. You never '
+  + 'deposit information, summarize, explain, teach, or hand over conclusions. '
+  + 'You think in the spirit of critical pedagogy -- attentive to the '
+  + 'structures, institutions, and relations of power beneath personal '
+  + 'experience -- but that is your posture, the angle a question comes from, '
+  + 'never something you lecture. You are quiet by default and surface only '
+  + 'when you genuinely have something worth surfacing.\n\n'
   + 'You are given a single note the reader just wrote, and sometimes the '
-  + 'book they are reading. Decide ONE thing: does the DRAW OUT move apply?'
-  + '\n\n'
-  + 'DRAW OUT applies when the note is PERSONAL -- about the reader\'s own '
-  + 'life, experience, or feeling. When it applies: take what is personal in '
-  + 'the note and open it outward, toward the structures, institutions, or '
-  + 'relations that produce that experience, and ask one genuine, opening '
-  + 'question. Stay strictly inside what they actually wrote: never attribute a '
-  + 'thought, feeling, or history they did not express; never summarize or '
-  + 'interpret the book; never flatter or praise for approval; never propose '
-  + 'a name or conclusion. Keep it to that one opening: a single question, '
-  + 'or a question with a brief sharpening follow-up like the example. Warm '
-  + 'and plain.\n\n'
-  + 'STAY QUIET (the default) for everything else: a tidy or already-settled '
-  + 'note, a fact or a pasted quote with little of the reader\'s own thinking '
-  + 'attached, an administrative or to-do note, or anything not personal. '
+  + 'book they are reading. Choose EXACTLY ONE move.\n\n'
+  + 'DRAW OUT -- when the note is PERSONAL: about the reader\'s own life, '
+  + 'experience, or feeling. Take what is personal in it and open it outward, '
+  + 'toward the structures, institutions, or relations that produce that '
+  + 'experience, and ask one genuine, opening question. Stay strictly inside '
+  + 'what they actually wrote: never attribute a thought, feeling, or history '
+  + 'they did not express; never summarize or interpret the book; never '
+  + 'flatter; never name a conclusion. Keep it to one opening -- a single '
+  + 'question, or a question with a brief sharpening follow-up. Warm and '
+  + 'plain.\n'
+  + 'WHEN NO BOOK is given with a personal note: anchor the question strictly '
+  + 'in the reader\'s OWN words and the specific situation they named. Do NOT '
+  + 'introduce structures, institutions, or framings the note did not invoke. '
+  + 'If the note is too thin to open outward without reaching for something '
+  + 'they did not say, choose QUIET instead -- staying quiet is the right '
+  + 'move, never force a draw-out.\n\n'
+  + 'COMPLICATE -- when the note is too tidy or already settled, OR is a '
+  + 'pasted quote with little of the reader\'s own thinking attached. Do not '
+  + 'correct it. Ask one genuine question about the reader\'s OWN RELATIONSHIP '
+  + 'to the note -- what drew them to it, or what they see in it. NEVER '
+  + 'explain, interpret, or summarize the text itself; the question is about '
+  + 'them, not about the content of the book or quote.\n\n'
+  + 'QUIET (the default) -- for everything else: a factual or administrative '
+  + 'note, a to-do, a note that is neither personal nor a settled-tidy note '
+  + 'or quote, or any personal note too thin to open without reaching. '
   + 'Restraint is the move.\n\n'
-  + 'EXAMPLES (note -> response):\n'
+  + 'EXAMPLES (note -> move):\n'
   + '1. Book "Range" by David Epstein. Note: "like me, something I went '
-  + 'through." -> Why do you think so many people in our society go through '
-  + 'this? What institutions or structures of relation push it that way?\n'
-  + '2. Note: "Chapter 7 covers deliberate practice and the 10,000-hour '
-  + 'rule." -> quiet\n'
-  + '3. Note: "Return this book to the library by Friday." -> quiet\n'
-  + '4. Note: a pasted quotation with no comment of the reader\'s own. '
-  + '-> quiet\n\n'
-  + 'Output ONLY the question text if DRAW OUT applies, or the single word '
-  + 'quiet if it does not. Nothing else: no quotation marks, no label, no '
-  + 'JSON.';
+  + 'through." -> {"move":"draw-out","text":"Why do you think so many people '
+  + 'in our society go through this? What institutions or structures of '
+  + 'relation push it that way?"}\n'
+  + '2. Note (no book): a pasted quotation with no comment of the reader\'s '
+  + 'own. -> {"move":"complicate","text":"What pulled you toward this one -- '
+  + 'is it the damage it names, or the healing it asks for?"}\n'
+  + '3. Note: "Chapter 7 covers deliberate practice and the 10,000-hour '
+  + 'rule." -> {"move":"quiet","text":""}\n'
+  + '4. Note: "Return this book to the library by Friday." -> '
+  + '{"move":"quiet","text":""}\n\n'
+  + 'Output ONLY a JSON object, nothing around it: '
+  + '{"move":"draw-out","text":"..."} or {"move":"complicate","text":"..."} '
+  + 'or {"move":"quiet","text":""}. No prose, no markdown fences, no label.';
 
 // Read the first book title attached to a note, for generator context (the
 // DRAW OUT gold is grounded in the book). Empty string when none.
@@ -1160,21 +1172,23 @@ function _drawOutBookTitle(entry) {
   return (b && typeof b.title === 'string') ? b.title : '';
 }
 
-// Build the generator user message: the note text plus optional book
-// context. The note is the reader's actual writing -- the only ground.
-function buildDrawOutUserMessage(noteText, bookTitle) {
+// Build the router user message: the note text plus optional book context.
+// The note is the reader's actual writing -- the only ground. No-book is
+// signalled by omission, which the DRAW OUT branch reads as the tightening cue.
+function buildMoveUserMessage(noteText, bookTitle) {
   var ctx = (typeof bookTitle === 'string' &&
              bookTitle.replace(/^\s+|\s+$/g, '') !== '')
-    ? 'The reader is reading "' + bookTitle + '".\n\n' : '';
+    ? 'The reader is reading "' + bookTitle + '".\n\n'
+    : 'No book is attached to this note.\n\n';
   return ctx + 'The note the reader just wrote:\n\n' + noteText +
-    '\n\nIf DRAW OUT applies, reply with ONE question and nothing else. ' +
-    'Otherwise reply with exactly: quiet';
+    '\n\nChoose one move and reply with ONLY the JSON object.';
 }
 
-// Parse the generator response into a question string, or 'quiet'. An
-// empty or quiet-only response (case- and punctuation-insensitive) maps to
-// 'quiet' (fail-quiet at the parse layer).
-function _drawOutParse(data) {
+// Parse the router response into { move, text }. Tolerant JSON extraction
+// (handles a JSON object wrapped in prose). Anything not an explicit draw-out
+// or complicate with non-empty text collapses to { move:'quiet', text:'' }
+// (fail-quiet at the parse layer).
+function _moveParse(data) {
   var blocks = data && data.content;
   var text = '';
   var i;
@@ -1187,27 +1201,50 @@ function _drawOutParse(data) {
     }
   }
   text = text.replace(/^\s+|\s+$/g, '');
-  if (text === '') { return 'quiet'; }
-  var probe = text.toLowerCase().replace(/^["'\s]+/, '').replace(/["'.\s!?]+$/, '');
-  if (probe === 'quiet') { return 'quiet'; }
-  return text;
+  var parsed = null;
+  if (text !== '') {
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      var st = text.indexOf('{');
+      var en = text.lastIndexOf('}');
+      if (st !== -1 && en !== -1 && en > st) {
+        try { parsed = JSON.parse(text.substring(st, en + 1)); }
+        catch (e2) { parsed = null; }
+      }
+    }
+  }
+  if (!parsed || typeof parsed.move !== 'string') {
+    return { move: 'quiet', text: '' };
+  }
+  var mv = parsed.move.replace(/^\s+|\s+$/g, '').toLowerCase();
+  var txt = (typeof parsed.text === 'string') ? parsed.text.replace(/^\s+|\s+$/g, '') : '';
+  if (mv === 'drawout' || mv === 'draw out') { mv = 'draw-out'; }
+  if (mv !== 'draw-out' && mv !== 'complicate') {
+    return { move: 'quiet', text: '' };
+  }
+  if (txt === '') {
+    return { move: 'quiet', text: '' };
+  }
+  return { move: mv, text: txt };
 }
 
-// THE DRAW-OUT GENERATOR. note text (+ book) -> Promise<question|'quiet'>.
-// One proxy call on the same claude-proxy path (temp 0). Always resolves;
-// every failure mode resolves 'quiet' so the orchestrator stays silent.
-function generateDrawOut(noteText, bookTitle) {
+// THE MOVE ROUTER. note text (+ book) -> Promise<{move, text}>. One proxy
+// call on the same claude-proxy path (config reused verbatim from B-1: model,
+// temperature, key, _yumiWithTimeout). Always resolves; every failure mode
+// resolves { move:'quiet', text:'' } so the orchestrator stays silent.
+function generateMove(noteText, bookTitle) {
   if (typeof noteText !== 'string' ||
       noteText.replace(/^\s+|\s+$/g, '') === '') {
-    return Promise.resolve('quiet');
+    return Promise.resolve({ move: 'quiet', text: '' });
   }
   var payload = {
     model:       'claude-sonnet-4-6',
     max_tokens:  256,
     temperature: 0,
-    system:      DRAW_OUT_GEN_SYSTEM,
+    system:      MOVE_GEN_SYSTEM,
     messages: [
-      { role: 'user', content: buildDrawOutUserMessage(noteText, bookTitle) }
+      { role: 'user', content: buildMoveUserMessage(noteText, bookTitle) }
     ]
   };
   var call = fetch('/.netlify/functions/claude-proxy', {
@@ -1222,13 +1259,13 @@ function generateDrawOut(noteText, bookTitle) {
     }
     return res.json();
   }).then(function (data) {
-    return _drawOutParse(data);
+    return _moveParse(data);
   });
   return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) {
     return v;
   }, function (err) {
-    console.warn('yumi-drawout: generate fail-quiet (' + (err && err.message) + ')');
-    return 'quiet';
+    console.warn('yumi-move: router fail-quiet (' + (err && err.message) + ')');
+    return { move: 'quiet', text: '' };
   });
 }
 
@@ -1245,14 +1282,27 @@ function _drawOutBudgetOk() {
   return rec.count < YUMI_GATE_DAILY_CAP;
 }
 
-// THE ORCHESTRATOR. A note-write -> Promise<decision>. Early gates in order
-// (consent -> private -> panel-open -> budget), each resolving
-// { quiet:true, reason } with NO proxy call. Then generate; a 'quiet' /
-// empty generator result stays silent. A question routes through the
-// Stage-A gate; PASS appends to memory and resolves { surface:true, text },
-// anything else stays silent. Always resolves (never rejects). panelOpen is
-// supplied by the UI-side caller, so the brain stays DOM-free.
-function considerDrawOut(entry, panelOpen) {
+// Stage B-2.2: the COMPLICATE co-write pending slot. A single bounded slot
+// holding { entryId } of the note a surfaced complicate is awaiting a
+// reflection on. Set when a complicate surfaces; consumed by the next panel
+// reply EITHER WAY (weave or fall-through); a newly surfaced move supersedes
+// it (complicate replaces; draw-out clears). Module-scoped, not persisted --
+// it is an in-session UX bridge, never reader data.
+var _pendingComplicate = null;
+function setPendingComplicate(entryId) { _pendingComplicate = { entryId: entryId }; }
+function getPendingComplicate() { return _pendingComplicate; }
+function clearPendingComplicate() { _pendingComplicate = null; }
+
+// THE ORCHESTRATOR + ROUTER. A note-write -> Promise<decision>. Early gates
+// in order (consent -> private -> panel-open -> budget), each resolving
+// { quiet:true, reason } with NO proxy call. Then the router self-classifies
+// the move; a 'quiet' / empty result stays silent. A draw-out OR complicate
+// question routes through the Stage-A gate; PASS appends to memory and
+// resolves { surface:true, text, move }, anything else stays silent. Always
+// resolves (never rejects). panelOpen is supplied by the UI-side caller, so
+// the brain stays DOM-free. (B-2.2 will set the complicate pending-reflection
+// flag inside the complicate PASS branch.)
+function considerMove(entry, panelOpen) {
   if (!entry || typeof entry.body !== 'string' ||
       entry.body.replace(/^\s+|\s+$/g, '') === '') {
     return Promise.resolve({ quiet: true, reason: 'empty' });
@@ -1268,7 +1318,7 @@ function considerDrawOut(entry, panelOpen) {
   if (entry.isPrivate === true) {
     return Promise.resolve({ quiet: true, reason: 'private' });
   }
-  // 3. panel open -- B-1 surfaces only into an open panel; closed -> no proxy.
+  // 3. panel open -- surface only into an open panel; closed -> no proxy.
   if (panelOpen !== true) {
     return Promise.resolve({ quiet: true, reason: 'panel-closed' });
   }
@@ -1276,82 +1326,121 @@ function considerDrawOut(entry, panelOpen) {
   if (!_drawOutBudgetOk()) {
     return Promise.resolve({ quiet: true, reason: 'budget' });
   }
-  // 5. generate (self-classifies: a question, or 'quiet').
+  // 5. route (self-classifies: draw-out / complicate question, or quiet).
   var bookTitle = _drawOutBookTitle(entry);
-  return generateDrawOut(entry.body, bookTitle).then(function (question) {
-    if (typeof question !== 'string' ||
-        question.replace(/^\s+|\s+$/g, '') === '' || question === 'quiet') {
+  return generateMove(entry.body, bookTitle).then(function (decision) {
+    var move = decision && decision.move;
+    var text = decision && decision.text;
+    if ((move !== 'draw-out' && move !== 'complicate') ||
+        typeof text !== 'string' || text.replace(/^\s+|\s+$/g, '') === '') {
       return { quiet: true, reason: 'quiet' };
     }
     // 6. gate (Stage A) -- the question judged against the note text.
-    return gradeUtterance(question, entry.body).then(function (verdict) {
+    return gradeUtterance(text, entry.body).then(function (verdict) {
       if (!verdict || !verdict.pass) {
-        return { quiet: true, reason: 'gate',
+        return { quiet: true, reason: 'gate', move: move,
                  layer: (verdict && verdict.layer) || 'unknown' };
       }
-      appendTurn('assistant', question);
-      return { surface: true, text: question };
+      appendTurn('assistant', text);
+      // B-2.2: a surfaced complicate awaits a reflection on THIS note; a
+      // surfaced draw-out supersedes (clears) any stale pending complicate.
+      if (move === 'complicate') { setPendingComplicate(entry.id); }
+      else { clearPendingComplicate(); }
+      return { surface: true, text: text, move: move };
     });
   });
 }
 
 // =====================================================================
-// DRAW-OUT SUPPRESSION HARNESS (the Stage-A carry-forward). Generates a
-// draw-out for each of a fixed set of legitimate PERSONAL notes, then runs
-// each generated question through the live gate (gradeUtterance). Reports
-// the surfacing rate -- legitimate personal->structural draw-outs must
-// PASS. Over-suppression here is the signal to recalibrate the gate's
-// Fidelity clarifiers (NOT to loosen blindly). Read-only: it grades, it
-// never renders or writes memory. Returns Promise<summary>.
+// MOVE HARNESS (the Stage-A carry-forward, extended for the router). Three
+// sets run through the live router + gate, reporting RAW per-sample outcomes:
+//   (i)   book-context personal notes -- must DRAW OUT and PASS (6/6).
+//   (ii)  BOOKLESS personal notes -- each a clean draw-out (PASS) OR a clean
+//         quiet; NEVER draw-out-then-gate-FAIL (silent drift-and-suppress).
+//   (iii) tidy notes + bare quotes -- must COMPLICATE and PASS (the gate's
+//         no-leakage layer must not trip on a legitimate "what drew you?").
+// Read-only: it routes + grades, never renders or writes memory.
+// Returns Promise<summary>.
 // =====================================================================
-function runDrawOutSuppressionHarness() {
-  var notes = [
-    { id: 'Range / went through it',  book: 'Range',
+function runMoveHarness() {
+  var samples = [
+    { id: 'Range / went through it', set: 'book-drawout', book: 'Range',
       body: 'like me, something I went through.' },
-    { id: 'overwork / guilt',         book: 'Can\'t Even',
+    { id: 'overwork / guilt', set: 'book-drawout', book: 'Can\'t Even',
       body: 'I keep working straight through the weekend and feel guilty the moment I stop. I burned out last year and I am scared of it happening again.' },
-    { id: 'caregiving fell to me',    book: 'The Body Keeps the Score',
+    { id: 'caregiving fell to me', set: 'book-drawout', book: 'The Body Keeps the Score',
       body: 'When my mom got sick the caregiving all landed on me while my brothers just sent money. I felt it but never said anything.' },
-    { id: 'student-debt shame',       book: 'Debt: The First 5,000 Years',
+    { id: 'student-debt shame', set: 'book-drawout', book: 'Debt: The First 5,000 Years',
       body: 'I still feel ashamed about the loans I took out for school, like it was a personal failure of mine.' },
-    { id: 'code-switching at work',   book: 'Blink',
+    { id: 'code-switching at work', set: 'book-drawout', book: 'Blink',
       body: 'In every job I have had I felt I had to code-switch to be taken seriously, and it wore me down over the years.' },
-    { id: 'childhood moves / rent',   book: 'Evicted',
-      body: 'We moved six times before I was twelve because the rent kept going up. I always thought that was just our bad luck.' }
+    { id: 'childhood moves / rent', set: 'book-drawout', book: 'Evicted',
+      body: 'We moved six times before I was twelve because the rent kept going up. I always thought that was just our bad luck.' },
+
+    { id: 'college / laziness (B-1 drift case)', set: 'bookless', book: '',
+      body: 'I always blamed myself for failing out of college, like it was just my own laziness.' },
+    { id: 'apologizing at work', set: 'bookless', book: '',
+      body: 'I keep apologizing at work even when nothing is my fault, and I hate that I do it.' },
+    { id: 'money kept me up', set: 'bookless', book: '',
+      body: 'Money stress kept me up most of last night again.' },
+    { id: 'never read enough', set: 'bookless', book: '',
+      body: 'I never feel like I read enough, no matter how much I get through.' },
+    { id: 'thin / down today', set: 'bookless', book: '',
+      body: 'Felt kind of down today.' },
+
+    { id: 'bare quote / masters tools', set: 'complicate', book: '',
+      body: '"The master\'s tools will never dismantle the master\'s house."' },
+    { id: 'bare quote / freedom', set: 'complicate', book: 'Pedagogy of the Oppressed',
+      body: '"Education is the practice of freedom."' },
+    { id: 'tidy / settled summary', set: 'complicate', book: 'Pedagogy of the Oppressed',
+      body: 'This book is basically about how oppression works and how to resist it. Makes sense.' },
+    { id: 'tidy / solid read', set: 'complicate', book: '',
+      body: 'Good points about dialogue versus the banking model. Solid read.' }
   ];
   var results = [];
-  var surfaced = 0;
-  var generated = 0;
-  function runOne(i) {
-    if (i >= notes.length) {
-      var total = notes.length;
-      console.log('=== DRAW-OUT SUPPRESSION: ' + surfaced + '/' + total +
-        ' surfaced (' + generated + ' generated) ===');
-      var r;
-      for (r = 0; r < results.length; r = r + 1) {
-        console.log(results[r].mark + ' ' + results[r].id +
-          ' | gen=' + results[r].gen + ' gate=' + results[r].gate +
-          (results[r].layer ? ' (' + results[r].layer + ')' : '') +
-          (results[r].question ? ' | q="' + results[r].question + '"' : ''));
-      }
-      return { total: total, surfaced: surfaced, generated: generated, results: results };
+  function classify(s, move, pass) {
+    if (s.set === 'book-drawout') {
+      return (move === 'draw-out' && pass) ? 'OK drew-out' : 'XX expected draw-out+PASS';
     }
-    var n = notes[i];
-    return generateDrawOut(n.body, n.book).then(function (q) {
-      var didGen = (typeof q === 'string' && q !== 'quiet' &&
-                    q.replace(/^\s+|\s+$/g, '') !== '');
-      if (!didGen) {
-        results.push({ id: n.id, gen: 'quiet', gate: '-', layer: '', mark: 'QQ ', question: '' });
+    if (s.set === 'bookless') {
+      if (move === 'draw-out' && pass) { return 'OK drew-out'; }
+      if (move === 'quiet') { return 'OK quiet'; }
+      if (move === 'draw-out' && !pass) { return 'XX DRIFT-SUPPRESS'; }
+      if (move === 'complicate' && pass) { return 'ok complicate'; }
+      return 'XX ' + move + (pass ? '+pass' : '+fail');
+    }
+    if (move === 'complicate' && pass) { return 'OK complicate'; }
+    if (move === 'complicate' && !pass) { return 'XX complicate gate-FAIL'; }
+    return 'XX expected complicate, got ' + move;
+  }
+  function runOne(i) {
+    if (i >= samples.length) {
+      var r, line;
+      console.log('=== MOVE HARNESS (raw per-sample) ===');
+      for (r = 0; r < results.length; r = r + 1) {
+        var x = results[r];
+        line = '[' + x.set + '] ' + x.id + ' | move=' + x.move +
+          ' gate=' + x.gate + (x.layer ? ' (' + x.layer + ')' : '') +
+          ' | ' + x.outcome;
+        if (x.text) { line = line + ' | "' + x.text + '"'; }
+        console.log(line);
+      }
+      return { results: results };
+    }
+    var s = samples[i];
+    return generateMove(s.body, s.book).then(function (d) {
+      var move = (d && d.move) || 'quiet';
+      var text = (d && d.text) || '';
+      if (move !== 'draw-out' && move !== 'complicate') {
+        results.push({ set: s.set, id: s.id, move: move, gate: '-', layer: '',
+          text: '', outcome: classify(s, move, false) });
         return runOne(i + 1);
       }
-      generated = generated + 1;
-      return gradeUtterance(q, n.body).then(function (verdict) {
-        var pass = !!(verdict && verdict.pass);
-        if (pass) { surfaced = surfaced + 1; }
-        results.push({ id: n.id, gen: 'yes',
-          gate: pass ? 'PASS' : 'FAIL',
-          layer: (verdict && verdict.layer) || '',
-          question: q, mark: pass ? 'OK ' : 'XX ' });
+      return gradeUtterance(text, s.body).then(function (v) {
+        var pass = !!(v && v.pass);
+        results.push({ set: s.set, id: s.id, move: move,
+          gate: pass ? 'PASS' : 'FAIL', layer: (v && v.layer) || '',
+          text: text, outcome: classify(s, move, pass) });
         return runOne(i + 1);
       });
     });
@@ -1372,16 +1461,18 @@ window.YumiBrain = {
   evalLensResponse:   evalLensResponse,
   gradeUtterance:     gradeUtterance,
   runGateHarness:     runYumiGateHarness,
-  considerDrawOut:    considerDrawOut,
-  generateDrawOut:    generateDrawOut,
-  runDrawOutSuppression: runDrawOutSuppressionHarness
+  considerMove:       considerMove,
+  generateMove:       generateMove,
+  runMoveHarness:     runMoveHarness,
+  pendingComplicate:  getPendingComplicate,
+  clearPendingComplicate: clearPendingComplicate
 };
 
 // Stage A: expose the gate harness at top level for live verification.
 window.YumiGateHarness = runYumiGateHarness;
 
-// Stage B-1: expose the draw-out suppression harness for live verification.
-window.YumiDrawOutHarness = runDrawOutSuppressionHarness;
+// Stage B-2: expose the move harness for live verification.
+window.YumiMoveHarness = runMoveHarness;
 
 // Kick off preload at script-load time so buildYumiSystem can return
 // synchronously by the time anything calls it.

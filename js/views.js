@@ -1751,24 +1751,43 @@ function captureNote(register, body, activeKey, images) {
   maybeDrawOut(id);
 }
 
-// Stage B-1: fire the Yumi-moves orchestrator on a fresh note-write. The
-// orchestrator gates (consent / private / panel-open / budget) and decides
-// DRAW OUT vs STAY QUIET; a surfaced draw-out renders into the open Yumi
-// panel via the Stage-A renderYumiMessage path. Fire-and-forget -- never
-// blocks or alters the capture. panelOpen is read here (UI side) so the
-// brain stays DOM-free. Hooked on the two VISIBLE-note seams (this writeline
-// + book-detail marginalia); private/journal notes are skipped by the
-// orchestrator's isPrivate gate.
+// Stage B-1/B-2: fire the Yumi-moves orchestrator on a fresh note-write. The
+// orchestrator gates (consent / private / panel-open / budget) and the router
+// decide the move -- DRAW OUT, COMPLICATE, or STAY QUIET; a surfaced question
+// renders into the open Yumi panel via the Stage-A renderYumiMessage path.
+// Fire-and-forget -- never blocks or alters the capture. panelOpen is read
+// here (UI side) so the brain stays DOM-free. Hooked on the two VISIBLE-note
+// seams (this writeline + book-detail marginalia); private/journal notes are
+// skipped by the orchestrator's isPrivate gate.
 function maybeDrawOut(entryId) {
-  if (!(window.YumiBrain && YumiBrain.considerDrawOut)) { return; }
+  if (!(window.YumiBrain && YumiBrain.considerMove)) { return; }
   var entry = state.notebookEntries && state.notebookEntries[entryId];
   if (!entry) { return; }
   var panelOpen = !!(window.YumiUI && YumiUI.visiblyOpen && YumiUI.visiblyOpen());
-  YumiBrain.considerDrawOut(entry, panelOpen).then(function (r) {
+  YumiBrain.considerMove(entry, panelOpen).then(function (r) {
     if (r && r.surface && typeof renderYumiMessage === 'function') {
       renderYumiMessage(r.text);
     }
   });
+}
+
+// Stage B-2.2: the COMPLICATE co-write. ADDITIVELY append the reader's
+// reflection to the target note's body (original text preserved), stamp
+// updatedAt, persist, and re-render the active route. Reuses the
+// fileEntryToBook mutation pattern. Touches ONLY this one note's body --
+// never other notes, never other fields, never a delete. Reversible via the
+// existing Delete affordance. Returns true only when an append happened.
+function integrateReflection(entryId, replyText) {
+  var entry = state.notebookEntries && state.notebookEntries[entryId];
+  if (!entry || typeof replyText !== 'string') { return false; }
+  var add = replyText.replace(/^\s+|\s+$/g, '');
+  if (add === '') { return false; }
+  entry.body = (typeof entry.body === 'string' ? entry.body : '') + '\n\n' + add;
+  entry.updatedAt = Date.now();
+  markNotebookDirty();
+  saveState();
+  if (typeof renderRoute === 'function') { renderRoute(); }
+  return true;
 }
 
 // N2: file an Inbox entry to a book -- set filed true + add the bookId (deduped).

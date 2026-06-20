@@ -213,6 +213,29 @@ function renderError(customText) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
+// Stage B-2.2: ZERO-LLM co-write guard (string check only, no model call). A
+// reply is woven into the pending complicate note ONLY when it reads as
+// substantive engagement. It FALLS THROUGH to normal chat (no weave) when the
+// reply is too short to be a reflection (< 3 words), a short
+// clarifying-question-back (ends with '?' and <= 8 words, e.g. "what do you
+// mean?"), or an explicit refusal. Bias: when unsure, do NOT weave.
+function isSubstantiveReflection(reply) {
+  var t = (typeof reply === 'string') ? reply.replace(/^\s+|\s+$/g, '') : '';
+  if (t === '') { return false; }
+  var words = t.split(/\s+/);
+  if (words.length < 3) { return false; }
+  if (t.charAt(t.length - 1) === '?' && words.length <= 8) { return false; }
+  var low = t.toLowerCase().replace(/[.!?,;:]+$/, '');
+  var refusals = ['no', 'nope', 'not now', 'not really', 'nevermind',
+    'never mind', 'skip', 'skip it', 'stop', 'pass', 'leave it', 'idk',
+    'i don\'t know', 'i dont know', 'dunno', 'no thanks', 'not sure'];
+  var i;
+  for (i = 0; i < refusals.length; i = i + 1) {
+    if (low === refusals[i]) { return false; }
+  }
+  return true;
+}
+
 function handleVoiceTranscript(text) {
   if (!yumiInputEl || typeof text !== 'string') { return; }
   var current = yumiInputEl.value || '';
@@ -604,6 +627,26 @@ function buildYumiPanel() {
 
     renderUserMessage(trimmed);
     if (yumiInputEl) { yumiInputEl.value = ''; }
+
+    // Stage B-2.2: co-write interception, BEFORE sendMessage. If a complicate
+    // is pending, the next panel reply is consumed EITHER WAY. Substantive
+    // engagement weaves into THAT note (+ a fixed claim-free ack, no LLM) and
+    // does NOT call sendMessage; a short question-back / refusal falls through
+    // to the normal chat path below (no weave, no ack). Pending is cleared
+    // either way (consumed). The onboarding branch above is the precedent.
+    if (window.YumiBrain && YumiBrain.pendingComplicate) {
+      var _pc = YumiBrain.pendingComplicate();
+      if (_pc && _pc.entryId) {
+        YumiBrain.clearPendingComplicate();
+        if (isSubstantiveReflection(trimmed)) {
+          if (typeof integrateReflection === 'function') {
+            integrateReflection(_pc.entryId, trimmed);
+          }
+          renderYumiMessage('Thank you — I\'ve folded that into your note.');
+          return;
+        }
+      }
+    }
 
     yumi_request_in_flight = true;
     if (yumiSendBtnEl) { yumiSendBtnEl.disabled = true; }
