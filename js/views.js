@@ -11866,6 +11866,10 @@ function renderAbout() {
   html +=   '<h1 class="about-title">What is <em>Praxis</em>?</h1>';
   html +=   '<p class="about-lede-hero">A reading practice with a point of view. Read this once to get your bearings &mdash; then come back whenever you want to remember what this place is for.</p>';
   html +=   '<hr class="hairline-gold about-hero-rule">';
+  html +=   '<div class="about-seg-wrap"><div class="about-seg" role="group" aria-label="Orientation view">';
+  html +=     '<button type="button" class="about-seg-btn on" data-go="learn" aria-pressed="true">What Praxis is</button>';
+  html +=     '<button type="button" class="about-seg-btn" data-go="rearm" aria-pressed="false">Re-enter a page</button>';
+  html +=   '</div></div>';
   html += '</header>';
 
   // ----- Panel 1: the four explainer sections -----
@@ -12038,6 +12042,33 @@ function renderAbout() {
 
   html += '</div></section>';
 
+  // ----- Panel 2: Re-enter a page (static rearm intros; switcher flips panels) -----
+  html += '<section class="about-panel" data-panel="rearm">';
+  html +=   '<div class="rearm-head">';
+  html +=     '<p class="rearm-eyebrow">Re-enter a page</p>';
+  html +=     '<h2 class="rearm-h2">The intros, here whenever you want them.</h2>';
+  html +=     '<p class="rearm-sub">The first time you open each part of Praxis, it introduces itself in Yumi\'s voice. Forgot what a page is for? Open it again here &mdash; nothing is hidden behind &ldquo;you\'ve already seen it once.&rdquo;</p>';
+  html +=   '</div>';
+  html +=   '<div class="rearm-list">';
+  html +=     '<div class="rearm-card is-open" style="--card-accent:var(--gold);">';
+  html +=       '<button type="button" class="rearm-card-head" aria-expanded="true" aria-controls="rearm-body-home"><span class="rearm-card-label">Home</span><span class="rearm-card-teaser">The long view.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-home"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Home is where you stand back and see the whole field &mdash; the constellation of everything you\'ve read and thought, drifting together. Start here when you want perspective, not a task.</p></div></div>';
+  html +=     '</div>';
+  html +=     '<div class="rearm-card" style="--card-accent:var(--br-deep);">';
+  html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-shelf"><span class="rearm-card-label">Shelf</span><span class="rearm-card-teaser">Everything you\'re reading.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-shelf"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>Your shelf holds every book you\'re reading, have read, or mean to begin. Add one and it takes its place; mark it as you move through it. This is the honest record of your attention &mdash; only you decide what belongs here.</p></div></div>';
+  html +=     '</div>';
+  html +=     '<div class="rearm-card" style="--card-accent:var(--river);">';
+  html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-arcs"><span class="rearm-card-label">Arcs</span><span class="rearm-card-teaser">A line of thought across books.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-arcs"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>An arc is a question that won\'t leave you alone &mdash; one you find yourself following across more than one book. Gather what speaks to it, and watch a constellation form: your thinking, made visible.</p></div></div>';
+  html +=     '</div>';
+  html +=     '<div class="rearm-card" style="--card-accent:var(--marginalia-color);">';
+  html +=       '<button type="button" class="rearm-card-head" aria-expanded="false" aria-controls="rearm-body-notebook"><span class="rearm-card-label">Notebook</span><span class="rearm-card-teaser">Where what stops you lives.</span><span class="rearm-chevron" aria-hidden="true">&#9662;</span></button>';
+  html +=       '<div class="rearm-card-body" id="rearm-body-notebook"><div class="rearm-card-inner"><span class="rearm-glyph-slot" data-yumi-glyph="26"></span><p class="rearm-yumi-line"><span class="who">Yumi</span>The notebook is where the lines that stop you mid-page have a home &mdash; marginalia, journal, and questions. Only what you choose to keep. What you attach to a book, I can read; your journal stays yours unless you say otherwise.</p></div></div>';
+  html +=     '</div>';
+  html +=   '</div>';
+  html += '</section>';
+
   page.innerHTML = html;
 
   // Crests reuse the live shared glyph component -- no second sprite, no second
@@ -12060,6 +12091,19 @@ function renderAbout() {
     }
   }
 
+  // S4: wire the panel switcher (segmented control) + the single-open accordion.
+  var segBtns = page.querySelectorAll('.about-seg-btn');
+  var aboutPanels = page.querySelectorAll('.about-panel');
+  var si;
+  for (si = 0; si < segBtns.length; si++) {
+    aboutWireSeg(segBtns[si], segBtns, aboutPanels);
+  }
+  var heads = page.querySelectorAll('.rearm-card-head');
+  var hi;
+  for (hi = 0; hi < heads.length; hi++) {
+    aboutWireHead(heads[hi], page);
+  }
+
   host.appendChild(page);
 }
 
@@ -12076,6 +12120,51 @@ function aboutWireBp(btn, fig, btns) {
       } else {
         btns[b].setAttribute('aria-pressed', 'false');
       }
+    }
+  });
+}
+
+// ES3 handlers for the S4 panel switcher (segmented control) + the single-open
+// re-enter accordion, scoped to the rendered About page element.
+function aboutShowPanel(name, segBtns, panels) {
+  var i;
+  for (i = 0; i < panels.length; i++) {
+    if (panels[i].getAttribute('data-panel') === name) {
+      panels[i].classList.add('is-active');
+    } else {
+      panels[i].classList.remove('is-active');
+    }
+  }
+  for (i = 0; i < segBtns.length; i++) {
+    if (segBtns[i].getAttribute('data-go') === name) {
+      segBtns[i].classList.add('on');
+      segBtns[i].setAttribute('aria-pressed', 'true');
+    } else {
+      segBtns[i].classList.remove('on');
+      segBtns[i].setAttribute('aria-pressed', 'false');
+    }
+  }
+  window.scrollTo(0, 0);
+}
+function aboutWireSeg(btn, segBtns, panels) {
+  btn.addEventListener('click', function() {
+    aboutShowPanel(btn.getAttribute('data-go'), segBtns, panels);
+  });
+}
+function aboutWireHead(head, page) {
+  head.addEventListener('click', function() {
+    var card = head.parentNode;
+    var wasOpen = card.classList.contains('is-open');
+    var cards = page.querySelectorAll('.rearm-card');
+    var j, hb;
+    for (j = 0; j < cards.length; j++) {
+      cards[j].classList.remove('is-open');
+      hb = cards[j].getElementsByTagName('button')[0];
+      if (hb) { hb.setAttribute('aria-expanded', 'false'); }
+    }
+    if (!wasOpen) {
+      card.classList.add('is-open');
+      head.setAttribute('aria-expanded', 'true');
     }
   });
 }
