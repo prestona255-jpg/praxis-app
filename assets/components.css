@@ -8414,3 +8414,59 @@
 @media (max-width: 759px) {
   .about-page .yumi-contrast { grid-template-columns:1fr; }
 }
+
+/* ----- S3: glass plate + figure caption (the infographic surface) ----- */
+.about-page .about-plate { background:var(--glass-2); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-2); padding:26px 28px; margin:24px 0 8px 0; }
+.about-page .about-figcap { font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; line-height:1.6; color:var(--ink-3); text-align:center; margin:16px 0 0 0; }
+.about-page .about-figcap b { color:var(--gold-text); font-weight:600; }
+
+/* ----- S3 infographic 1: Banking <-> Problem-posing (cross-fade on the plate) ----- */
+.about-page .bp { text-align:center; margin:28px 0 6px 0; }
+.about-page .bp-toggle { display:inline-flex; gap:4px; margin:0 0 18px 0; padding:4px; background:var(--wash); border:1px solid var(--border); border-radius:var(--radius-pill); }
+.about-page .bp-btn { appearance:none; border:none; cursor:pointer; background:transparent; font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); padding:8px 16px; border-radius:var(--radius-pill); transition:color var(--motion-base) var(--ease), background-color var(--motion-base) var(--ease), box-shadow var(--motion-base) var(--ease); }
+.about-page .bp-btn:hover { color:var(--ink); }
+.about-page .bp[data-state="banking"] .bp-btn[data-bp="banking"],
+.about-page .bp[data-state="problem"] .bp-btn[data-bp="problem"] { background:var(--surface-2); color:var(--gold-text); box-shadow:var(--shadow-1); }
+.about-page .bp-plate { margin:0; }
+.about-page .bp-stage { display:grid; }
+.about-page .bp-svg { grid-area:1 / 1; width:100%; height:auto; opacity:0; visibility:hidden; transition:opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
+.about-page .bp-banking { opacity:1; visibility:visible; }
+.about-page .bp[data-state="problem"] .bp-banking { opacity:0; visibility:hidden; }
+.about-page .bp[data-state="problem"] .bp-problem { opacity:1; visibility:visible; }
+.about-page .bp text { font-family:var(--font-mono); }
+.about-page .bp-lbl { font-size:13px; letter-spacing:0.14em; }
+.about-page .bp-sub { font-family:var(--font-serif); font-style:italic; font-size:13px; }
+.about-page .bp-tag { font-size:11px; letter-spacing:0.05em; }
+.about-page .bp-banking .bp-lbl { fill:var(--ink-2); }
+.about-page .bp-banking .bp-sub { fill:var(--ink-3); }
+.about-page .bp-banking .bp-tag { fill:var(--ink-4); }
+.about-page .bp-problem .bp-lbl { fill:var(--gold-text); }
+.about-page .bp-problem .bp-sub { fill:var(--ink-3); }
+.about-page .bp-problem .bp-tag { fill:var(--marginalia-color); }
+.about-page .bp-cap-problem { display:none; }
+.about-page .bp-cap b { color:var(--gold-text); font-weight:600; }
+.about-page .bp[data-state="problem"] .bp-cap-banking { display:none; }
+.about-page .bp[data-state="problem"] .bp-cap-problem { display:inline; }
+
+/* ----- S3 infographic 2: reflection <-> action loop ----- */
+.about-page .ra-fig { margin:26px 0 2px 0; }
+.about-page .ra { display:block; width:100%; max-width:420px; height:auto; margin:0 auto; }
+.about-page .ra-lbl { font-family:var(--font-mono); font-size:12px; letter-spacing:0.18em; fill:var(--gold-text); }
+.about-page .ra-core { font-family:var(--font-serif); font-style:italic; font-size:15px; fill:var(--ink); }
+.about-page .ra-spin { transform-box:view-box; transform-origin:230px 150px; animation:about-ra-rotate 26s linear infinite; }
+@keyframes about-ra-rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+/* ----- S3 infographic 3: Aristotle triad (praxis elevated, others recessed) ----- */
+.about-page .triad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0 4px 0; }
+.about-page .triad-cell { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 11px 13px; text-align:center; }
+.about-page .triad-cell--on { border-color:var(--gold); box-shadow:var(--shadow-1); transform:translateY(-3px); }
+.about-page .triad-term { display:block; font-family:var(--font-serif); font-style:italic; font-weight:600; font-size:1.16rem; line-height:1.1; color:var(--ink-4); margin:0 0 5px 0; }
+.about-page .triad-cell--on .triad-term { color:var(--gold-text); font-style:normal; }
+.about-page .triad-gloss { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:0.03em; line-height:1.5; color:var(--ink-4); }
+.about-page .triad-cell--on .triad-gloss { color:var(--ink-3); }
+
+/* ----- S3: reduced-motion -- banking cross-fade instant + loop ring static ----- */
+@media (prefers-reduced-motion: reduce) {
+  .about-page .bp-svg { transition:none; }
+  .about-page .ra-spin { animation:none; }
+}

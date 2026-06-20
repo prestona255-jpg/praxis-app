@@ -11904,6 +11904,57 @@ function renderAbout() {
   html +=   '<p class="about-lede">Critical pedagogy is a tradition of teaching that begins from a simple refusal: education is never neutral. How we learn &mdash; and who gets to make meaning &mdash; is always a question of power.</p>';
   html +=   '<p class="about-body">It runs through <b>Paulo Freire</b>, <b>bell hooks</b>, and <b>Audre Lorde</b>, among others. Freire named the &ldquo;banking&rdquo; model &mdash; where a teacher deposits facts into a student treated as an empty account &mdash; and set against it a <b>problem-posing</b> education, where teacher and learner make knowledge together, beginning from the learner\'s own world. hooks insisted this could be done with love, as a practice of freedom. Lorde reminded us that the master\'s tools will never dismantle the master\'s house.</p>';
   html +=   '<p class="about-body">Praxis is built in that lineage. You are not an empty account to be filled.</p>';
+  // S3 infographic 1 -- Banking <-> Problem-posing (two real buttons flip
+  // data-state; the two SVG states cross-fade on a glass plate).
+  html +=   '<figure class="bp" id="bp" data-state="banking">';
+  html +=     '<div class="bp-toggle" role="group" aria-label="Two models of education">';
+  html +=       '<button type="button" class="bp-btn" data-bp="banking" aria-pressed="true">Banking</button>';
+  html +=       '<button type="button" class="bp-btn" data-bp="problem" aria-pressed="false">Problem-posing</button>';
+  html +=     '</div>';
+  html +=     '<div class="about-plate bp-plate"><div class="bp-stage">';
+  html +=       '<svg class="bp-svg bp-banking" viewBox="0 0 640 250" role="img" aria-labelledby="bpBankT bpBankD" focusable="false">';
+  html +=         '<title id="bpBankT">The banking model of education</title>';
+  html +=         '<desc id="bpBankD">A teacher full of knowledge sends facts along a single one-way arrow into a student drawn as an empty vessel.</desc>';
+  html +=         '<circle cx="118" cy="112" r="50" fill="var(--ink-4)" fill-opacity="0.12" stroke="var(--ink-3)" stroke-width="2"/>';
+  html +=         '<rect x="92" y="96" width="52" height="6" rx="3" fill="var(--ink-3)"/>';
+  html +=         '<rect x="92" y="110" width="52" height="6" rx="3" fill="var(--ink-3)"/>';
+  html +=         '<rect x="92" y="124" width="34" height="6" rx="3" fill="var(--ink-4)"/>';
+  html +=         '<text x="118" y="192" text-anchor="middle" class="bp-lbl">TEACHER</text>';
+  html +=         '<text x="118" y="212" text-anchor="middle" class="bp-sub">the one who knows</text>';
+  html +=         '<line x1="182" y1="112" x2="450" y2="112" stroke="var(--line-2)" stroke-width="2.5"/>';
+  html +=         '<path d="M450,112 l-15,-8 v16 z" fill="var(--line-2)"/>';
+  html +=         '<circle cx="240" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
+  html +=         '<circle cx="304" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
+  html +=         '<circle cx="368" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
+  html +=         '<text x="312" y="80" text-anchor="middle" class="bp-tag">&ldquo;facts&rdquo; deposited</text>';
+  html +=         '<path d="M486,72 L486,140 Q486,170 516,170 L528,170 Q558,170 558,140 L558,72" fill="var(--ink-3)" fill-opacity="0.06" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round"/>';
+  html +=         '<text x="522" y="192" text-anchor="middle" class="bp-lbl">STUDENT</text>';
+  html +=         '<text x="522" y="212" text-anchor="middle" class="bp-sub">an empty account</text>';
+  html +=       '</svg>';
+  html +=       '<svg class="bp-svg bp-problem" viewBox="0 0 640 250" role="img" aria-labelledby="bpProbT bpProbD" focusable="false">';
+  html +=         '<title id="bpProbT">Problem-posing education</title>';
+  html +=         '<desc id="bpProbD">Teacher and learner are equal nodes joined by a two-way loop; knowledge forms as a gold node between them.</desc>';
+  html +=         '<defs>';
+  html +=           '<marker id="bpArG" markerWidth="9" markerHeight="9" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--gold)"/></marker>';
+  html +=           '<marker id="bpArT" markerWidth="9" markerHeight="9" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--marginalia-color)"/></marker>';
+  html +=         '</defs>';
+  html +=         '<path d="M212,104 Q320,66 428,104" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#bpArG)"/>';
+  html +=         '<path d="M428,136 Q320,174 212,136" fill="none" stroke="var(--marginalia-color)" stroke-width="2.5" marker-end="url(#bpArT)"/>';
+  html +=         '<circle cx="170" cy="120" r="46" fill="var(--gold)" fill-opacity="0.10" stroke="var(--gold)" stroke-width="2"/>';
+  html +=         '<text x="170" y="200" text-anchor="middle" class="bp-lbl">TEACHER</text>';
+  html +=         '<circle cx="470" cy="120" r="46" fill="var(--marginalia-color)" fill-opacity="0.10" stroke="var(--marginalia-color)" stroke-width="2"/>';
+  html +=         '<text x="470" y="200" text-anchor="middle" class="bp-lbl">LEARNER</text>';
+  html +=         '<circle cx="320" cy="120" r="27" fill="var(--gold)" fill-opacity="0.16"/>';
+  html +=         '<circle cx="320" cy="120" r="16" fill="var(--gold)"/>';
+  html +=         '<circle cx="320" cy="120" r="6" fill="var(--gold-light)"/>';
+  html +=         '<text x="320" y="200" text-anchor="middle" class="bp-sub">knowledge, made between</text>';
+  html +=       '</svg>';
+  html +=     '</div></div>';
+  html +=     '<figcaption class="about-figcap bp-cap">';
+  html +=       '<span class="bp-cap-banking">The <b>banking</b> model &mdash; knowledge flows one way: the teacher deposits, the student receives.</span>';
+  html +=       '<span class="bp-cap-problem">A <b>problem-posing</b> exchange &mdash; teacher and learner make knowledge together; it forms between them.</span>';
+  html +=     '</figcaption>';
+  html +=   '</figure>';
   html += '</article>';
 
   // 03 -- praxis (lexicon + pullquote + body; Aristotle triad + reflection loop in S3)
@@ -11915,11 +11966,38 @@ function renderAbout() {
   html +=       '<dd class="lex-body">';
   html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>from Ancient Greek <i lang="grc">πρᾶξις</i> (<i>prâxis</i>) &ldquo;action, doing,&rdquo; from <i>prássein</i> &ldquo;to do.&rdquo;</p>';
   html +=         '<p class="lex-gloss">in Aristotle, action itself &mdash; alongside <i>theōria</i> (contemplation) and <i>poiēsis</i> (making); in Freire, reflection and action upon the world in order to transform it &mdash; theory and practice folded into one.</p>';
+  // S3 infographic 3 -- Aristotle's triad, nested in the praxis entry: praxis
+  // elevated in gold, theōria + poiēsis recessed.
+  html +=         '<div class="triad" role="group" aria-label="Aristotle\'s three forms of activity">';
+  html +=           '<div class="triad-cell"><span class="triad-term">theōria</span><span class="triad-gloss">contemplation &mdash; knowing for its own sake</span></div>';
+  html +=           '<div class="triad-cell"><span class="triad-term">poiēsis</span><span class="triad-gloss">making &mdash; production toward an end</span></div>';
+  html +=           '<div class="triad-cell triad-cell--on"><span class="triad-term">praxis</span><span class="triad-gloss">action that carries its own end</span></div>';
+  html +=         '</div>';
   html +=       '</dd>';
   html +=     '</div>';
   html +=   '</dl>';
   html +=   '<div class="about-pullquote"><p>Praxis is reflection and action upon the world in order to transform it.</p><cite>after Freire, by way of Aristotle</cite></div>';
   html +=   '<p class="about-body">Theory and practice are not two steps &mdash; first you learn, then you apply. Praxis folds them together: reflection that acts, and action that reflects back on itself. It is <b>theory lived</b>. That is the wager of this whole place &mdash; that what you read should change how you move through the world, and what you do should sharpen what you read next.</p>';
+  // S3 infographic 2 -- the reflection <-> action loop (continuous gold cycle;
+  // the dashed guide ring rotates slowly, static under reduced motion).
+  html +=   '<figure class="ra-fig">';
+  html +=     '<div class="about-plate">';
+  html +=       '<svg class="ra" viewBox="0 0 460 300" role="img" aria-labelledby="raT raD" focusable="false">';
+  html +=         '<title id="raT">Praxis as a reflection–action loop</title>';
+  html +=         '<desc id="raD">Reflection and action feed one another in a continuous cycle whose centre is theory lived.</desc>';
+  html +=         '<defs><marker id="raAr" markerWidth="10" markerHeight="10" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--gold)"/></marker></defs>';
+  html +=         '<circle class="ra-spin" cx="230" cy="150" r="104" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 10" opacity="0.45"/>';
+  html +=         '<path d="M126,150 A104,104 0 0 1 334,150" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#raAr)"/>';
+  html +=         '<path d="M334,150 A104,104 0 0 1 126,150" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#raAr)"/>';
+  html +=         '<text x="230" y="30" text-anchor="middle" class="ra-lbl">REFLECTION</text>';
+  html +=         '<text x="230" y="284" text-anchor="middle" class="ra-lbl">ACTION</text>';
+  html +=         '<circle cx="230" cy="150" r="40" fill="var(--gold)" fill-opacity="0.12"/>';
+  html +=         '<text x="230" y="145" text-anchor="middle" class="ra-core">theory</text>';
+  html +=         '<text x="230" y="166" text-anchor="middle" class="ra-core">lived</text>';
+  html +=       '</svg>';
+  html +=     '</div>';
+  html +=     '<figcaption class="about-figcap">Reflection and action are one turning &mdash; each feeding the other, with <b>theory lived</b> at the centre.</figcaption>';
+  html +=   '</figure>';
   html += '</article>';
 
   // 04 -- Yumi (large Umebloom + 由美 breakdown + interlocutor + is/is-not grid + lexicon)
@@ -11972,7 +12050,34 @@ function renderAbout() {
     );
   }
 
+  // S3: wire the banking <-> problem-posing toggle.
+  var bpFig = page.querySelector('#bp');
+  if (bpFig) {
+    var bpButtons = bpFig.getElementsByTagName('button');
+    var bpi;
+    for (bpi = 0; bpi < bpButtons.length; bpi++) {
+      aboutWireBp(bpButtons[bpi], bpFig, bpButtons);
+    }
+  }
+
   host.appendChild(page);
+}
+
+// ES3 handler for the §02 banking <-> problem-posing toggle: flips the figure's
+// data-state (CSS cross-fades the SVG + swaps the caption) and updates aria-pressed.
+function aboutWireBp(btn, fig, btns) {
+  btn.addEventListener('click', function() {
+    var stateName = btn.getAttribute('data-bp');
+    fig.setAttribute('data-state', stateName);
+    var b;
+    for (b = 0; b < btns.length; b++) {
+      if (btns[b].getAttribute('data-bp') === stateName) {
+        btns[b].setAttribute('aria-pressed', 'true');
+      } else {
+        btns[b].setAttribute('aria-pressed', 'false');
+      }
+    }
+  });
 }
 
 window.views = {
