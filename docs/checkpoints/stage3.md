@@ -165,3 +165,37 @@ proxy directly; no Firestore/account writes) · no commit/merge/push/deploy.
 
 HALT — awaiting Preston's eyes-on (angle-not-answer moves + injection results) + build-lead
 chat confirmation + the exact words "commit and push."
+
+## SHIPPED + POST-DEPLOY LIVE FORENSIC SMOKE (test account)
+
+Shipped: commit 5d4e81d (em-dash subject intact), FF 9c87857..5d4e81d HEAD -> main,
+HEAD == origin/main == 5d4e81d. Live sw.js praxis-v3.133 (status 200); v3.133 code loaded
+(YumiBrain.considerWebAngle + buildGroundingChips present, 36 exports).
+
+Identity (re-confirmed AFTER reload, before any write): TEST account
+prestonpraxistest@gmail.com / uid IdeCZDWvmPMvoEcfAQnMXVApQUg2. Did not rehydrate to real.
+
+Render — shared surfaces (views.js + global CSS):
+- Home — hero. PASS.
+- Shelf (#books) — "1 book" == stored 1; cover + toolbar (Add a book / Covers|List / Resolve
+  covers / Scan / Tidy). PASS.
+- Arcs (#arcs) List — "Your arcs" + 2 arcs; Web (#arc/...) — SVG constellation + "Ask Yumi
+  what she sees here" affordance. PASS.
+- Notebook (#notebook) — 3 tabs + writeline. PASS.
+- Console: 0 errors across all surfaces. Ground-chip CSS loads (font-mono, radius-pill,
+  inline-flex via CSSOM).
+
+Stage III behavioral (test account):
+- Account consent toggle renders ("Let Yumi consult the web", aria-checked=false default,
+  disclosure note); click -> flag false->true, aria->true, on-class + sub-text update. PASS.
+- Consent gating: ON -> real web_search via the live proxy -> angle "Whether fixing the
+  attention crisis demands individual willpower or structural, collective systemic change" +
+  http(s) source; OFF (cooldown cleared) -> considerWebAngle returns empty. PASS.
+- Chip render (live DOM/CSS): .ground-chips "informed by a current source" + theme chip;
+  source line "Source - ... Yumi referenced it to angle the question, not to answer it"; link
+  http(s) + rel="noopener noreferrer nofollow" target="_blank". PASS.
+- F4 Firestore round-trip: yumiWebGrounding field present in /userProfiles doc (write-list
+  works), value false (restored default). Migrate-bypass discipline confirmed. PASS.
+
+Final state: test account restored to default (yumiWebGrounding=false); no Firestore
+pollution; NO real account touched. SMOKE GREEN — Stage III LIVE.
