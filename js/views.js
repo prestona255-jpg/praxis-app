@@ -5665,7 +5665,7 @@ function renderBookDetail(bookId) {
   // Header: optional cover, title, optional author byline, auth-
   // aware affordance.
   var header = document.createElement('header');
-  header.className = 'book-detail-header';
+  header.className = 'bd-grid';
 
   // 3.5b: cover image or placeholder block. Truthy guard treats
   // null, undefined, and '' as missing -- same shape as the shelf
@@ -5676,11 +5676,11 @@ function renderBookDetail(bookId) {
   // appended below it. title/author/meta/artifact-card + Find-this-book live in
   // the right column's single .book-detail-content cell (S5.2).
   var coverCol = document.createElement('div');
-  coverCol.className = 'book-detail-cover-col';
+  coverCol.className = 'bd-cover-col';
   // Stage 1: self-healing cover (candidate-walk -> typographic "cover pending"
   // placeholder). A broken OR null cover renders the placeholder -- never a
   // broken <img> or an empty box.
-  coverCol.appendChild(buildSelfHealingCover(book, 'book-detail-cover', function() {
+  coverCol.appendChild(buildSelfHealingCover(book, 'bd-cover', function() {
     var coverPlaceholder = document.createElement('div');
     coverPlaceholder.className = 'book-detail-cover-placeholder';
     var pdt = document.createElement('span');
@@ -5701,17 +5701,17 @@ function renderBookDetail(bookId) {
   // ("THEORY" register pill) is removed here per owner decision (overrides
   // the mockup, which keeps it); the global TRADITION_LABELS map is untouched.
   var contentCell = document.createElement('div');
-  contentCell.className = 'book-detail-content';
+  contentCell.className = 'bd-content';
   header.appendChild(contentCell);
 
   var title = document.createElement('h1');
-  title.className = 'book-detail-title';
+  title.className = 'bd-title';
   title.textContent = book.title || '';
   contentCell.appendChild(title);
 
   if (book.author) {
     var author = document.createElement('p');
-    author.className = 'book-detail-author';
+    author.className = 'bd-author';
     author.textContent = book.author;
     contentCell.appendChild(author);
   }
@@ -5748,7 +5748,7 @@ function renderBookDetail(bookId) {
     }
   }
   var metaLine = document.createElement('p');
-  metaLine.className = 'book-detail-meta';
+  metaLine.className = 'bd-meta';
   metaLine.textContent = statusText(book.status) + ' · in ' +
     bdArcCount + (bdArcCount === 1 ? ' arc' : ' arcs') +
     ' · ' + bdMargCount + ' marginalia';
@@ -5789,7 +5789,7 @@ function renderBookDetail(bookId) {
   // Phase 5 (mockup D): description.
   if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
     var descEl = document.createElement('p');
-    descEl.className = 'book-detail-description';
+    descEl.className = 'bd-desc';
     descEl.textContent = book.description;
     contentCell.appendChild(descEl);
   }
@@ -5804,11 +5804,11 @@ function renderBookDetail(bookId) {
   }
   if (lensChips.length > 0) {
     var chipsWrap = document.createElement('div');
-    chipsWrap.className = 'book-detail-lens-chips';
+    chipsWrap.className = 'bd-lenses';
     var lci;
     for (lci = 0; lci < lensChips.length; lci++) {
       var chip = document.createElement('span');
-      chip.className = 'lenschip';
+      chip.className = 'chip';
       chip.textContent = lensChips[lci];
       chipsWrap.appendChild(chip);
     }
@@ -5819,7 +5819,7 @@ function renderBookDetail(bookId) {
   // (re-runs the resolver on this record and patches its fields).
   if (user) {
     var rateRow = document.createElement('div');
-    rateRow.className = 'book-detail-rate';
+    rateRow.className = 'bd-rate';
     var stars = document.createElement('span');
     stars.className = 'bd-rate-stars';
     var curRating = (typeof book.rating === 'number') ? book.rating : 0;
@@ -5888,13 +5888,13 @@ function renderBookDetail(bookId) {
   // real artifact body when one exists (the "Open Artifact" link below
   // opens the full view); otherwise the teaser copy.
   var artCard = document.createElement('div');
-  artCard.className = 'book-detail-artifact-card';
+  artCard.className = 'bd-artifact';
   var artEyebrow = document.createElement('p');
   artEyebrow.className = 'eyebrow';
   artEyebrow.textContent = 'Your Book Artifact';
   artCard.appendChild(artEyebrow);
   var artBody = document.createElement('p');
-  artBody.className = 'book-detail-artifact-body';
+  artBody.className = 'body';
   var bdArtRec = null;
   if (user && state.bookArtifacts) {
     var bdArtKey = artifactKey(user.uid, bookId);
@@ -5916,7 +5916,7 @@ function renderBookDetail(bookId) {
   if (user && normalizeStatus(book.status) === 'read' && !bdArtRec) {
     var writeArtLink = document.createElement('button');
     writeArtLink.type = 'button';
-    writeArtLink.className = 'book-detail-write-artifact';
+    writeArtLink.className = 'btn btn-ghost bd-write';
     writeArtLink.textContent = 'Write your artifact →';
     writeArtLink.addEventListener('click', function() {
       openArtifactEditor(bookId);
@@ -5940,13 +5940,13 @@ function renderBookDetail(bookId) {
   // Stage 4: the action buttons live UNDER the cover -- they append into
   // .book-detail-actions inside the cover column, not the right column.
   var actions = document.createElement('div');
-  actions.className = 'book-detail-actions';
+  actions.className = 'bd-actions';
   coverCol.appendChild(actions);
 
   if (user) {
     var newBtn = document.createElement('button');
     newBtn.type = 'button';
-    newBtn.className = 'book-detail-new-entry';
+    newBtn.className = 'btn btn-ghost';
     newBtn.textContent = 'Add Marginalia';
     newBtn.addEventListener('click', function() {
       openMarginaliaEditor(bookId);
@@ -5954,7 +5954,7 @@ function renderBookDetail(bookId) {
 
     var addToArcBtn = document.createElement('button');
     addToArcBtn.type = 'button';
-    addToArcBtn.className = 'book-detail-add-to-arc';
+    addToArcBtn.className = 'btn btn-primary';
     addToArcBtn.textContent = 'Add to arc…';
     addToArcBtn.addEventListener('click', function() {
       openBookArcPicker(bookId);
@@ -5964,7 +5964,7 @@ function renderBookDetail(bookId) {
     // 'book', no quote). Sits beside "Add to arc…" in the same row.
     var sendToSubBtn = document.createElement('button');
     sendToSubBtn.type = 'button';
-    sendToSubBtn.className = 'book-detail-add-to-arc book-detail-send-to-subtheory';
+    sendToSubBtn.className = 'btn btn-ghost';
     sendToSubBtn.textContent = 'Send to sub-theory…';
     sendToSubBtn.addEventListener('click', function() {
       openBookSendToSubTheory(bookId);
@@ -5978,7 +5978,7 @@ function renderBookDetail(bookId) {
     // own line.
     actions.appendChild(addToArcBtn);
     var actionsRow = document.createElement('div');
-    actionsRow.className = 'book-detail-actions-row';
+    actionsRow.className = 'row2';
     actionsRow.appendChild(sendToSubBtn);
     actionsRow.appendChild(newBtn);
     actions.appendChild(actionsRow);
@@ -6009,7 +6009,7 @@ function renderBookDetail(bookId) {
       // editor open. Mirrors 3.7 stage 1+2 behavior; unchanged in 3.7c.
       var finishedBtn = document.createElement('button');
       finishedBtn.type = 'button';
-      finishedBtn.className = 'book-detail-mark-finished';
+      finishedBtn.className = 'btn btn-quiet';
       finishedBtn.textContent = 'I\'ve finished this';
       finishedBtn.addEventListener('click', function() {
         if (!state.books[bookId]) return;

@@ -2750,6 +2750,31 @@
   text-align: center;
 }
 
+/* ----- Umber layout port (surface 2): mock bd-* frame -----
+   Lifted from design/praxis-umber-mockup.html #s-book. Book detail is a BRIGHT
+   surface (data-ground=bright), so the page tokens read directly. These append
+   after the live book-detail block and win for the renamed elements; the live
+   .book-detail-* rules for the mapped classes are now dead (flagged), the
+   live-only sections (edit/themes/remove/status/biblio/isbn/cover-pending)
+   keep their existing classes + rules. .bd-rate-stars/.bd-star (live, clickable)
+   are preserved; the mock .bd-rate only styles the row. */
+.book-detail { max-width: 1000px; margin: 0 auto; padding: 0 var(--sp-5); }
+.bd-grid { display:grid; grid-template-columns:260px 1fr; gap:var(--sp-6); align-items:start; }
+.bd-cover-col { display:flex; flex-direction:column; gap:var(--sp-4); }
+.bd-cover { width:100%; aspect-ratio:2/3; border-radius:var(--radius-md); box-shadow:var(--shadow-cover); object-fit:cover; display:block; }
+.bd-actions { display:flex; flex-direction:column; gap:10px; }
+.bd-actions .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.bd-actions .btn { width:100%; }
+.bd-title { font-family:var(--font-serif); font-size:clamp(30px,4.5vw,46px); color:var(--ink); line-height:1.06; margin:0; }
+.bd-author { font-family:var(--font-serif); font-style:italic; font-size:20px; color:var(--ink-2); margin:6px 0 0; }
+.bd-meta { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--meta); margin:14px 0; display:flex; gap:16px; flex-wrap:wrap; }
+.bd-desc { font-family:var(--font-serif); font-size:17px; line-height:1.65; color:var(--ink); }
+.bd-lenses { display:flex; gap:8px; flex-wrap:wrap; margin:18px 0; }
+.bd-rate { display:flex; gap:4px; color:var(--gold-ink); font-size:20px; margin:14px 0; align-items:center; }
+.bd-artifact { margin-top:var(--sp-5); background:var(--page-2); border:1px solid var(--line-page); border-radius:var(--radius-lg); padding:var(--sp-5); box-shadow:var(--shadow-page); }
+.bd-artifact .body { font-family:var(--font-serif); font-size:17px; line-height:1.6; color:var(--ink); font-style:italic; }
+.bd-artifact .bd-write { margin-top:14px; }
+
 /* ===== END BOOK DETAIL ===== */
 
 
