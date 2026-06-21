@@ -1611,6 +1611,31 @@
   color: var(--ink-2);
 }
 
+/* ----- Umber layout port (surface 3): mock arcs frame (scoped under .arcs) -----
+   design/praxis-umber-mockup.html #s-arcs. Arcs is a DARK surface; tokens flip
+   via [data-ground="dark"] (--ink->text-d, --ink-3->muted, --surface->surface-d).
+   Appended -> wins for the renamed elements. The live arc-card nav (<a href=#arc/>),
+   _arcCardThumb, and the start-tile -> openArcEditor are unchanged. */
+.arcs { max-width:1080px; margin:0 auto; padding:0 var(--sp-5); }
+.arcs-head { margin-bottom:var(--sp-6); max-width:680px; }
+.arcs-title { font-family:var(--font-serif); font-size:clamp(30px,5vw,46px); color:var(--ink); margin:0 0 10px; }
+.arcs-teach { font-family:var(--font-serif); font-style:italic; font-size:18px; color:var(--ink-3); line-height:1.5; }
+.arcs-section-h { display:flex; align-items:baseline; gap:12px; margin:var(--sp-6) 0 var(--sp-4); }
+.arcs-section-h h2 { font-family:var(--font-serif); font-size:24px; color:var(--ink); margin:0; }
+.arcs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-5); }
+.arcs .arc-card { display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; text-decoration:none; transition:transform var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease); }
+.arcs .arc-card:hover { transform:translateY(-3px); border-color:var(--line-2); }
+.arcs .arc-card-thumb { height:140px; position:relative; overflow:hidden; border-bottom:1px solid var(--border); }
+.arcs .arc-card-thumb svg { width:100%; height:100%; display:block; }
+.arcs .arc-card-body { padding:16px 18px; display:flex; flex-direction:column; gap:8px; flex:1; }
+.arcs .arc-card-title { font-family:var(--font-serif); font-size:21px; color:var(--ink); line-height:1.15; }
+.arcs .arc-card-desc { font-size:13.5px; color:var(--ink-3); line-height:1.55; flex:1; }
+.arcs .arc-card-meta { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:var(--gold); opacity:.92; padding:16px 18px; border-top:1px solid var(--border); }
+.arcs .arc-card-start { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:300px; background:transparent; border:1px dashed var(--line-2); border-radius:var(--radius-lg); color:var(--ink-3); cursor:pointer; transition:color var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease); }
+.arcs .arc-card-start:hover { color:var(--gold); border-color:var(--gold); }
+.arcs .arc-card-start-icon { line-height:0; }
+.arcs .arc-card-start-label { font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; }
+
 /* ===== END ARCS PAGE ===== */
 
 

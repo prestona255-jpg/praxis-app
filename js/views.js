@@ -2206,42 +2206,32 @@ function renderArcsPage() {
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  wrap.className = 'arcs-page';
+  wrap.className = 'arcs';
 
-  var header = document.createElement('header');
-  header.className = 'arcs-page-header';
+  // Umber port (surface 3): the mock .arcs-head -- eyebrow + title + teaching.
+  // The header "+ Create an arc" button is dropped; create is reached via the
+  // dashed start-tile in the grid below (openArcEditor, preserved). The arc
+  // editor still mounts into #notebook-arc-editor-host.
+  var header = document.createElement('div');
+  header.className = 'arcs-head';
 
-  // Stage 3 (mockup-fidelity): header is the mockup .pagehd -- "Your arcs" h1
-  // + teaching on the left, a "+ Create an arc" button top-right (mockup lines
-  // 168-171). The page h1 now carries "Your arcs", so the former lower h2 of
-  // the same text is dropped below, and the 1/2/3 explainer is removed.
-  var headline = document.createElement('div');
-  headline.className = 'arcs-headline';
+  var arcsEyebrow = document.createElement('div');
+  arcsEyebrow.className = 'eyebrow';
+  arcsEyebrow.textContent = 'Constellations';
+  header.appendChild(arcsEyebrow);
 
   var title = document.createElement('h1');
-  title.className = 'arcs-page-title';
-  title.textContent = 'Your arcs';
-  headline.appendChild(title);
+  title.className = 'arcs-title';
+  title.textContent = 'Arcs';
+  header.appendChild(title);
 
-  // C2 teaching paragraph (mockup .sub role). Em dashes are U+2014, not "--".
   var teaching = document.createElement('p');
-  teaching.className = 'arcs-teaching';
+  teaching.className = 'arcs-teach';
   teaching.textContent =
     'An arc is a path you build through your reading — ' +
     'books from any tradition, set side by side, so they speak ' +
     'to each other.';
-  headline.appendChild(teaching);
-
-  header.appendChild(headline);
-
-  var createBtn = document.createElement('button');
-  createBtn.type = 'button';
-  createBtn.className = 'arcs-create-btn';
-  createBtn.textContent = '+ Create an arc';
-  createBtn.addEventListener('click', function() {
-    openArcEditor();
-  });
-  header.appendChild(createBtn);
+  header.appendChild(teaching);
 
   wrap.appendChild(header);
 
@@ -2277,8 +2267,16 @@ function renderArcsPage() {
     // user (even with zero arcs) so the dashed "Start another arc" tile always
     // has a home. The page <h1> already says "Your arcs"; the former section
     // h2 of the same text is dropped.
+    var yoursHd = document.createElement('div');
+    yoursHd.className = 'arcs-section-h';
+    var yoursHdH2 = document.createElement('h2');
+    yoursHdH2.textContent = 'Your arcs';
+    yoursHd.appendChild(yoursHdH2);
+    wrap.appendChild(yoursHd);
+
     var yoursSec = document.createElement('section');
-    yoursSec.className = 'arcs-yours';
+    yoursSec.className = 'arcs-grid';
+    yoursSec.id = 'arcs-yours';
 
     var yi;
     for (yi = 0; yi < ownArcs.length; yi++) {
@@ -2289,7 +2287,7 @@ function renderArcsPage() {
       yCard.appendChild(_arcCardThumb());
 
       var yText = document.createElement('div');
-      yText.className = 'arc-card-text';
+      yText.className = 'arc-card-body';
 
       var yTitle = document.createElement('h3');
       yTitle.className = 'arc-card-title';
@@ -2298,7 +2296,7 @@ function renderArcsPage() {
 
       if (ownArcs[yi].rec.description) {
         var yDesc = document.createElement('p');
-        yDesc.className = 'arc-card-description';
+        yDesc.className = 'arc-card-desc';
         yDesc.textContent = ownArcs[yi].rec.description;
         yText.appendChild(yDesc);
       }
@@ -2362,8 +2360,20 @@ function renderArcsPage() {
   // be without seeding two."). Rendered as <div>, not <a>, so it
   // carries no click target. The "Illustrated example" label and
   // the lighter CSS treatment carry the meaning.
+  var examplesHd = document.createElement('div');
+  examplesHd.className = 'arcs-section-h';
+  var examplesHdH2 = document.createElement('h2');
+  examplesHdH2.textContent = 'Arcs to learn from';
+  examplesHd.appendChild(examplesHdH2);
+  var examplesHdEy = document.createElement('span');
+  examplesHdEy.className = 'eyebrow';
+  examplesHdEy.textContent = 'examples';
+  examplesHd.appendChild(examplesHdEy);
+  wrap.appendChild(examplesHd);
+
   var examplesSec = document.createElement('section');
-  examplesSec.className = 'arcs-examples';
+  examplesSec.className = 'arcs-grid';
+  examplesSec.id = 'arcs-examples';
 
   var seedInfo = state.seeds && state.seeds.pedagogyOfDesire;
   var seedArc = seedInfo &&
@@ -2378,7 +2388,7 @@ function renderArcsPage() {
     desireCard.appendChild(_arcCardThumb());
 
     var desireText = document.createElement('div');
-    desireText.className = 'arc-card-text';
+    desireText.className = 'arc-card-body';
 
     var desireTitle = document.createElement('h3');
     desireTitle.className = 'arc-card-title';
@@ -2386,7 +2396,7 @@ function renderArcsPage() {
     desireText.appendChild(desireTitle);
 
     var desireDesc = document.createElement('p');
-    desireDesc.className = 'arc-card-description';
+    desireDesc.className = 'arc-card-desc';
     desireDesc.textContent = seedArc.description || '';
     desireText.appendChild(desireDesc);
 
@@ -2413,7 +2423,7 @@ function renderArcsPage() {
   flowCard.appendChild(flowLabel);
 
   var flowText = document.createElement('div');
-  flowText.className = 'arc-card-text';
+  flowText.className = 'arc-card-body';
 
   var flowTitle = document.createElement('h3');
   flowTitle.className = 'arc-card-title';
@@ -2421,7 +2431,7 @@ function renderArcsPage() {
   flowText.appendChild(flowTitle);
 
   var flowDesc = document.createElement('p');
-  flowDesc.className = 'arc-card-description';
+  flowDesc.className = 'arc-card-desc';
   flowDesc.textContent =
     'Five books on intersectionality as connective tissue — ' +
     'sound studies, relationships, psychoanalysis, systems, ' +
