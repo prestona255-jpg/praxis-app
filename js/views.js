@@ -340,6 +340,17 @@ function renderRoute() {
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
 
+  // UMBER dual-ground: tag <body> with the active route's ground so the
+  // theme.css [data-ground="dark"] override resolves. Keyed off the RAW
+  // hash head (parts[0]) -- NOT the collapsed activeRoute below -- because
+  // the BRIGHT sub-surfaces (book, subtheory, artifact) live under DARK
+  // parents (books, arcs). Dark study surfaces: home, books, arcs, arc,
+  // account. Everything else (book, subtheory, notebook, about, yumi-sees,
+  // artifact, and the empty / unknown -> notebook default) is the bright page.
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1 };
+  document.body.setAttribute('data-ground',
+    umberGroundDark[parts[0]] ? 'dark' : 'bright');
+
   // Stage 3.10a Stage A: toggle .app-nav-link-active on the top-nav
   // link that matches the current route. Book detail and Artifact
   // are sub-surfaces of the shelf so they keep Books highlighted.

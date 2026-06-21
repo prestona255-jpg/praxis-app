@@ -10,32 +10,67 @@
   --font-body:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:  'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Core colors */
-  --ink:     #2a1810;
-  --ink-2:   #5c3e26;
-  --ink-3:   #7a5c34;
-  --gold:    #a8741a;
-  --bg:      #d8bd80;
-  --surface: #ecdcae;
-  --border:  rgba(58,40,16,.2);
+  /* =====================================================================
+     UMBER palette (June 2026 re-skin) -- design/praxis-umber-mockup.html.
+     Dual-ground: this :root carries the BRIGHT-page values for the shared
+     tokens; the [data-ground="dark"] block below re-points the ~15
+     ground-sensitive shared tokens to the dark study set. New Umber-named
+     tokens are ADDED here; existing token NAMES are kept and re-pointed,
+     never renamed or deleted. The frozen --subtheory-* mark palette and the
+     --tradition-* renderer feed are intentionally left at their values
+     (tradition retint is a separate, deferred task). */
 
-  /* Stage 3.10a additions (Oshun / wheat field / cherry oak).
-     Existing --ink / --ink-2 / --ink-3 / --gold left untouched per
-     Stage A pre-flight: their current values were judged usable
-     warm-darks rather than wildly off, so the palette shift in
-     3.10a lands surface-first; deeper ink-tone retune is deferred.
-     --surface was pure white pre-3.10a -- wildly off the locked
-     wheat target -- so it is the one existing token updated here. */
-  --ink-4:        #9a7e4e;
-  --br-deep:      #4a2810;
-  --surface-2:    #f2e6c2;
-  --gold-light:   #c5912b;
-  --gold-text:    #6b4516;
-  --river:        #27566a;
-  --color-surface: var(--surface);
-  /* Warm off-white for text on dark-ink button fills. Sits clearly
-     lighter than --surface-2 / --bg (the wheat tokens) while staying
-     in the yellow-warm hue family -- pure #ffffff would be off-palette. */
+  /* -- new Umber: dark study surfaces -- */
+  --ground:        #2f1c0e;
+  --ground-grad:   radial-gradient(120% 90% at 26% 12%, #402812 0%, #311d0e 42%, #281609 78%, #1f1107 100%);
+  --surface-d:     #3e2814;
+  --surface-d2:    #4a3119;
+  --sunk-d:        #241406;
+  --dark-2:        #2a1a0c;
+  /* -- new Umber: bright page surfaces -- */
+  --page:          #f8f1e1;
+  --page-2:        #fcf6e8;
+  --meta:          #9a7e4e;
+  --text-d:        #f0e3c8;
+  --muted:         #c2a87f;
+  /* -- new Umber: accents -- */
+  --teal:          #2e8a93;
+  --thread:        #c2a463;
+  --gold-soft:     #e7c46a;
+  --gold-ink:      #855410;
+  --register-marginalia: var(--teal);
+  --register-journal:    #7d6db0;
+  --register-question:   #3a5a8a;
+  --grad-soft:     linear-gradient(92deg, #e7c46a, #3aa0a9);
+  /* -- new Umber: glass / lines / shadows -- */
+  --glass-bar:     linear-gradient(180deg, rgba(64,40,20,.86), rgba(48,28,14,.74));
+  --glass-pill:    rgba(64,40,20,.74);
+  --glass-border:  rgba(210,162,62,.22);
+  --border-2:      rgba(210,162,62,.30);
+  --line-page:     rgba(36,23,16,.16);
+  --line-page-2:   rgba(36,23,16,.30);
+  --wash-page:     rgba(36,23,16,.05);
+  --shadow-d:      0 3px 10px rgba(0,0,0,.34), 0 14px 38px rgba(0,0,0,.32);
+  --shadow-page:   3px 5px 12px rgba(28,18,9,.10), 8px 16px 32px rgba(28,18,9,.08);
+  /* Fixed dark scrim for modal/overlay backdrops -- NOT --ink-derived, so it
+     stays a darkening veil no matter which ground --ink resolves to. */
+  --scrim:         rgba(15,9,4,.6);
+
+  /* -- existing shared tokens, re-pointed to BRIGHT-page base values -- */
+  --ink:     #241710;
+  --ink-2:   #4d3b2a;
+  --ink-3:   var(--meta);
+  --ink-4:   var(--meta);
+  --gold:    var(--gold-ink);
+  --bg:      var(--page);
+  --surface: var(--page-2);
+  --border:  var(--line-page);
+  --br-deep:      #1c1209;
+  --surface-2:    var(--page-2);
+  --gold-light:   var(--gold-ink);
+  --gold-text:    var(--gold-ink);
+  --river:        #3a5a8a;
+  --color-surface: var(--page);
   --text-on-dark: #fdfaf3;
 
   /* Spacing scale */
@@ -132,12 +167,12 @@
   /* Arc constellation tokens — additive, not replacing --register-* */
   --tradition-ground: #FAEEDA;
   --tradition-inner-light: #FFF8E7;
-  --thread-color: #B89A62;        /* 9.6c: resonance tan (was teal #1D9E75) */
-  --thread-color-faint: #C9B68A;  /* 9.6c: speculative/faint dashed weight */
-  --marginalia-color: #1d8f68;
-  --journal-color: #7E7BC0;        /* S7a: journal register spine (mockup --s14 violet) */
-  --question-color: var(--river);  /* N-epic: question register spine (mockup blue) */
-  --arc-question-glow: #854F0B;
+  --thread-color: var(--thread);   /* Umber: resonance tan (re-point) */
+  --thread-color-faint: color-mix(in srgb, var(--thread) 65%, transparent);  /* speculative/faint */
+  --marginalia-color: var(--teal);  /* Umber: teal through-line */
+  --journal-color: #7d6db0;        /* Umber: journal register spine (violet) */
+  --question-color: var(--river);  /* question register spine (Umber indigo #3a5a8a) */
+  --arc-question-glow: var(--gold);  /* question gravity glow */
   --tradition-theory-halo: #F0A88A;
   --tradition-wisdom-halo: #F8E078;
   --tradition-empirical-halo: #F8C8AA;
@@ -251,16 +286,16 @@
      background. Tune from 0.22. */
   --field-presence: 0.22;
 
-  /* --- medium-skin additive roles --- */
-  --ground-center: #e6cb8e;
-  --bg-2:          #e3c98c;
-  --sunk:          #c9a85f;
-  --glass:         rgba(245,233,200,.5);
-  --glass-2:       rgba(245,233,200,.82);
-  --glass-spotlight: rgba(245,233,200,.94);
-  --line-2:        rgba(58,40,16,.32);
-  --river-l:       #3f7d92;
-  --grad:          linear-gradient(92deg,#b8841f,#27566a);
+  /* --- medium-skin additive roles (Umber-re-pointed) --- */
+  --ground-center: var(--page);
+  --bg-2:          var(--page-2);
+  --sunk:          #e3d4b0;
+  --glass:         rgba(248,241,225,.5);
+  --glass-2:       rgba(252,246,232,.82);
+  --glass-spotlight: rgba(48,30,16,.94);
+  --line-2:        var(--line-page-2);
+  --river-l:       #5a7ab0;
+  --grad:          linear-gradient(92deg,#d2a23e,#2e8a93);
   --radius-xl:     22px;
 
   /* --- Batch 1 foundation: deep-honey ground radial + chrome roles --- */
@@ -269,8 +304,8 @@
      band. Tokens kept (not renamed) to avoid touching any consumer. */
   --ground-base:   var(--bg-2);
   --ground-edge:   var(--bg-2);
-  --wordmark:      #8a5e15;
-  --wash:          rgba(58,40,16,.1);
+  --wordmark:      var(--gold-soft);
+  --wash:          var(--wash-page);
   --radius-pill:   999px;
 
   /* --- Batch 2: trust-cluster roles --- */
@@ -279,8 +314,8 @@
                    /* opaque honey with a faint teal cast -- What-Yumi-Sees body */
 
   /* --- Batch 3: danger zone (Account delete) --- */
-  --danger:        #9c3f1c;
-  --danger-line:   rgba(150,50,24,.45);
+  --danger:        #c2603a;
+  --danger-line:   rgba(194,96,58,.46);
 
   /* --- Notebook bound-leaf chrome (hybrid spread) --- */
   /* Dot-grid leaf texture: a 22px-pitch honey stipple over the leaf fill.
@@ -288,6 +323,41 @@
   --dots:          radial-gradient(circle, color-mix(in srgb, var(--ink-4) 26%, transparent) 1.3px, transparent 1.5px);
   /* Faded brick-red margin rule down the left leaf (notebook ruling). */
   --margin-rule:   color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+/* =====================================================================
+   UMBER dual-ground override. The :root above is the BRIGHT page; this
+   re-points the ~15 ground-sensitive shared tokens to the dark study set
+   wherever data-ground="dark" is set on <body> (per route, by renderRoute),
+   AND on the always-dark floating chrome (nav, Yumi Bloom/panel, spotlight)
+   so that chrome stays dark/brown even when it floats over a bright page.
+   Components keep referencing var(--ink) etc.; only the resolved values
+   shift here. Custom properties inherit, so descendants follow. */
+[data-ground="dark"],
+.app-nav,
+.yumi-bloom,
+.yumi-panel,
+.spotlight-panel {
+  --ink:           var(--text-d);
+  --ink-2:         var(--muted);
+  --ink-3:         var(--muted);
+  --ink-4:         var(--muted);
+  --surface:       var(--surface-d);
+  --surface-2:     var(--surface-d2);
+  --color-surface: var(--dark-2);
+  --bg:            var(--ground);
+  --bg-2:          var(--surface-d2);
+  --border:        rgba(210,162,62,.18);
+  --line-2:        var(--border-2);
+  --wash:          rgba(210,162,62,.08);
+  --glass:         var(--glass-pill);
+  --glass-2:       rgba(64,40,20,.86);
+  --sunk:          #6b4a23;
+  /* Gold goes BRIGHT on the dark study; the muted gold-ink base is for the
+     light page, where #d2a23e fails AA (2.08) and gold-ink passes (5.7). */
+  --gold:          #d2a23e;
+  --gold-light:    var(--gold-soft);
+  --gold-text:     var(--gold-soft);
 }
 
 body {
@@ -344,43 +414,26 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: -1;
+  /* Umber BRIGHT page ground: a faint warm grain over the flat page fill.
+     The dark-study ground is the [data-ground="dark"]::before override just
+     below (it swaps in --ground-grad). The old wheat radial and its three
+     hardcoded honey stops are retired here in favour of the --page token. */
   background:
-    /* Stage 5.1 grain (softened post-ship): three layers at distinct
-       non-harmonic angles (37 / 67 / 109) so they CROSS rather than
-       reinforce -- 45deg-on-all-three reads as fabric; crossed at
-       irregular angles, they interfere into faint texture. Opacities
-       ~halved (3->1.5, 2->1, 2->1) and periods shifted off the
-       previous clean 3x progression (3/9/27 -> 4/13/31) so the three
-       frequencies are not multiples of each other. Bands stay thin
-       (1-2px). Goal: warmth, never pattern. */
     repeating-linear-gradient(
       37deg,
       transparent 0,
       transparent 3px,
-      color-mix(in srgb, var(--ink-3) 1.5%, transparent) 3px,
-      color-mix(in srgb, var(--ink-3) 1.5%, transparent) 4px
+      color-mix(in srgb, var(--meta) 4%, transparent) 3px,
+      color-mix(in srgb, var(--meta) 4%, transparent) 4px
     ),
-    repeating-linear-gradient(
-      67deg,
-      transparent 0,
-      transparent 11px,
-      color-mix(in srgb, var(--br-deep) 1%, transparent) 11px,
-      color-mix(in srgb, var(--br-deep) 1%, transparent) 13px
-    ),
-    repeating-linear-gradient(
-      109deg,
-      transparent 0,
-      transparent 29px,
-      color-mix(in srgb, var(--ink-2) 1%, transparent) 29px,
-      color-mix(in srgb, var(--ink-2) 1%, transparent) 31px
-    ),
-    /* Stage 1 token conformance: spec Part A.3 page ground -- the fixed-px
-       3-stop radial from design-spec.md. The ellipse resolves in the top
-       ~560px then settles to the uniform #c4a35a edge; the flat fill below
-       matches the settle color so gradient-off rendering stays coherent.
-       The 3 grain layers above are unchanged. */
-    radial-gradient(1100px 560px at 50% -6%, #e6cb8e, #d8bd80 55%, #c4a35a 100%),
-    #c4a35a;
+    var(--page);
+}
+
+/* Umber DARK study ground -- swaps the bright page for the radial ground-grad
+   whenever the active route set data-ground="dark" on <body>. Higher
+   specificity (attr + element + pseudo) than the base body::before. */
+body[data-ground="dark"]::before {
+  background: var(--ground-grad), var(--ground);
 }
 
 /* 9b-iii: MUTED constellation palette (frozen sheet). A global remap activated
