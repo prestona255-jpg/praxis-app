@@ -852,6 +852,15 @@ function genEvidenceId() {
   return 'evidence_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
+// yumi-intelligence Stage I: reader-model thread id generator. Shaped
+// identically to genEvidenceId / genSubTheoryId; the 'thread_' prefix keeps a
+// reader-model thread id from colliding with any entry, book, arc, sub-theory,
+// or evidence element. NEVER an array index -- threads are addressed by this
+// stable id for manual edit/delete (and Stage II's NOTICE->NAME write).
+function genThreadId() {
+  return 'thread_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
 // Lazy initializer for per-user records. The schema-versioned shape of
 // a user record is owned here so that future writers (notebook entries,
 // artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
@@ -861,7 +870,8 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true }
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false },
+      readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
   if (!state.users[uid].yumiMemory) {
@@ -885,7 +895,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -893,6 +903,37 @@ function ensureUser(uid) {
   if (state.users[uid].profile &&
       typeof state.users[uid].profile.yumiReadsAlong !== 'boolean') {
     state.users[uid].profile.yumiReadsAlong = true;
+  }
+  // yumi-intelligence Stage I: reader-model opt-in, default FALSE (strictly
+  // opt-in -- a pre-build profile is NOT enrolled). Lives in profile{} so it
+  // mirrors via /userProfiles next to yumiReadsAlong. Additive field guard.
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.yumiReaderModel !== 'boolean') {
+    state.users[uid].profile.yumiReaderModel = false;
+  }
+  // yumi-intelligence Stage I: the reader-model store (named threads + a prose
+  // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
+  // guards backfill the default shape + each sub-field for a record seeded
+  // before this build, without disturbing yumiMemory / profile / registerDefaults.
+  if (!state.users[uid].readerModel ||
+      typeof state.users[uid].readerModel !== 'object') {
+    state.users[uid].readerModel = { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 };
+  }
+  if (!(state.users[uid].readerModel.threads instanceof Array)) {
+    state.users[uid].readerModel.threads = [];
+  }
+  if (!state.users[uid].readerModel.profile ||
+      typeof state.users[uid].readerModel.profile !== 'object') {
+    state.users[uid].readerModel.profile = { summary: '', updatedAt: 0 };
+  }
+  if (typeof state.users[uid].readerModel.profile.summary !== 'string') {
+    state.users[uid].readerModel.profile.summary = '';
+  }
+  if (typeof state.users[uid].readerModel.profile.updatedAt !== 'number') {
+    state.users[uid].readerModel.profile.updatedAt = 0;
+  }
+  if (typeof state.users[uid].readerModel.updatedAt !== 'number') {
+    state.users[uid].readerModel.updatedAt = 0;
   }
   if (!state.userBooks[uid]) {
     state.userBooks[uid] = { bookIds: [] };
@@ -908,7 +949,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -940,6 +981,172 @@ function setProfile(uid, fields) {
   if (fields && typeof fields.yumiReadsAlong !== 'undefined') {
     p.yumiReadsAlong = fields.yumiReadsAlong === true;
   }
+  // yumi-intelligence Stage I: reader-model opt-in. Boolean-coerced; default-
+  // false is handled on read (getProfile / ensureUser), so only an explicit
+  // value writes here.
+  if (fields && typeof fields.yumiReaderModel !== 'undefined') {
+    p.yumiReaderModel = fields.yumiReaderModel === true;
+  }
+  saveState();
+}
+
+// =====================================================================
+// yumi-intelligence Stage I: reader-model accessors + MANUAL CRUD.
+// The reader-model is { threads:[...], profile:{summary,updatedAt}, updatedAt }
+// nested per-user under state.users[uid].readerModel (mirrors yumiMemory).
+// Stage I writers are the panel's manual CRUD ONLY -- NOTICE->NAME auto-write
+// and the profile auto-refresh are Stage II. Every mutator persists locally via
+// saveState; the /userReaderModel Firestore mirror is driven by the UI caller
+// (views.js), exactly as the master switch calls saveProfileToFirestore after
+// setProfile. A thread row matches the locked schema: id (genThreadId, never an
+// index), label, oneLine, status ('noticed'|'named'|'dismissed'), memberNoteIds,
+// arcId (single derived arc, null until named), subTheoryId (null until named),
+// createdAt, updatedAt.
+// =====================================================================
+
+// Reader-model reader. Returns the uid's readerModel object (ensureUser-seeded).
+// Tolerates a never-seeded uid by returning a fresh default shape rather than
+// undefined, so callers can read .threads / .profile unconditionally.
+function getReaderModel(uid) {
+  if (uid && state.users[uid] && state.users[uid].readerModel) {
+    return state.users[uid].readerModel;
+  }
+  return { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 };
+}
+
+// Manual thread add (panel "Add a theme"). status 'named' (a manual add is
+// reader-affirmed by construction); memberNoteIds [] (no NOTICE cluster behind
+// a manual add); arcId / subTheoryId null (Stage II links those). Returns the
+// new thread, or null on an empty label. Persists via saveState.
+function addReaderThread(uid, label) {
+  if (!uid) { return null; }
+  var clean = (typeof label === 'string') ? label.replace(/^\s+|\s+$/g, '') : '';
+  if (clean === '') { return null; }
+  ensureUser(uid);
+  var now = Date.now();
+  var thread = {
+    id:            genThreadId(),
+    label:         clean,
+    oneLine:       '',
+    status:        'named',
+    memberNoteIds: [],
+    arcId:         null,
+    subTheoryId:   null,
+    createdAt:     now,
+    updatedAt:     now
+  };
+  state.users[uid].readerModel.threads.push(thread);
+  state.users[uid].readerModel.updatedAt = now;
+  saveState();
+  return thread;
+}
+
+// Manual thread label edit. Writes the trimmed label when non-empty; an empty
+// edit is rejected (the caller reverts to the original). Returns true on commit.
+function editReaderThread(uid, threadId, label) {
+  if (!uid || !threadId) { return false; }
+  var clean = (typeof label === 'string') ? label.replace(/^\s+|\s+$/g, '') : '';
+  if (clean === '') { return false; }
+  ensureUser(uid);
+  var threads = state.users[uid].readerModel.threads;
+  var i;
+  for (i = 0; i < threads.length; i = i + 1) {
+    if (threads[i] && threads[i].id === threadId) {
+      threads[i].label = clean;
+      threads[i].updatedAt = Date.now();
+      state.users[uid].readerModel.updatedAt = threads[i].updatedAt;
+      saveState();
+      return true;
+    }
+  }
+  return false;
+}
+
+// Manual thread delete. Removes the thread with the given id. Returns true if a
+// thread was removed. Persists via saveState. Available even when consent is OFF
+// (the reader always controls their own data).
+function deleteReaderThread(uid, threadId) {
+  if (!uid || !threadId) { return false; }
+  ensureUser(uid);
+  var threads = state.users[uid].readerModel.threads;
+  var kept = [];
+  var removed = false;
+  var i;
+  for (i = 0; i < threads.length; i = i + 1) {
+    if (threads[i] && threads[i].id === threadId) { removed = true; }
+    else { kept.push(threads[i]); }
+  }
+  if (removed) {
+    state.users[uid].readerModel.threads = kept;
+    state.users[uid].readerModel.updatedAt = Date.now();
+    saveState();
+  }
+  return removed;
+}
+
+// Reading-profile prose setter (the "arc you're building" block). String-
+// coerced + trimmed; persists via saveState. An empty string clears it. This
+// is the ONLY writer of profile.summary in Stage I (the auto-refresh is II).
+function setReaderProfile(uid, summary) {
+  if (!uid) { return; }
+  ensureUser(uid);
+  var clean = (typeof summary === 'string') ? summary.replace(/^\s+|\s+$/g, '') : '';
+  var now = Date.now();
+  state.users[uid].readerModel.profile.summary = clean;
+  state.users[uid].readerModel.profile.updatedAt = now;
+  state.users[uid].readerModel.updatedAt = now;
+  saveState();
+}
+
+// "Forget everything": wipe the reader-model DATA (threads + profile prose)
+// locally. Leaves the consent flag to the caller -- the covenant is a data
+// clear, not a forced opt-out. The /userReaderModel Firestore wipe is driven by
+// the UI caller (it re-saves the now-empty model). Persists via saveState.
+function clearReaderModel(uid) {
+  if (!uid) { return; }
+  ensureUser(uid);
+  var now = Date.now();
+  state.users[uid].readerModel.threads = [];
+  state.users[uid].readerModel.profile = { summary: '', updatedAt: now };
+  state.users[uid].readerModel.updatedAt = now;
+  saveState();
+}
+
+// REPLACE-on-found setter for the Firestore loader (integrations.js). Sanitizes
+// a remote readerModel doc into the locked shape -- defensive against a doc
+// written by a newer/older client -- then assigns + persists. KEEP-on-absent is
+// the caller's job (it simply does not call this on 'absent'/'error').
+function replaceReaderModel(uid, remote) {
+  if (!uid) { return; }
+  ensureUser(uid);
+  var src = (remote && typeof remote === 'object') ? remote : {};
+  var rawThreads = (src.threads instanceof Array) ? src.threads : [];
+  var threads = [];
+  var i;
+  for (i = 0; i < rawThreads.length; i = i + 1) {
+    var t = rawThreads[i];
+    if (!t || typeof t !== 'object') { continue; }
+    threads.push({
+      id:            (typeof t.id === 'string' && t.id) ? t.id : genThreadId(),
+      label:         (typeof t.label === 'string') ? t.label : '',
+      oneLine:       (typeof t.oneLine === 'string') ? t.oneLine : '',
+      status:        (t.status === 'noticed' || t.status === 'named' || t.status === 'dismissed') ? t.status : 'named',
+      memberNoteIds: (t.memberNoteIds instanceof Array) ? t.memberNoteIds : [],
+      arcId:         (typeof t.arcId === 'string') ? t.arcId : null,
+      subTheoryId:   (typeof t.subTheoryId === 'string') ? t.subTheoryId : null,
+      createdAt:     (typeof t.createdAt === 'number') ? t.createdAt : 0,
+      updatedAt:     (typeof t.updatedAt === 'number') ? t.updatedAt : 0
+    });
+  }
+  var prof = (src.profile && typeof src.profile === 'object') ? src.profile : {};
+  state.users[uid].readerModel = {
+    threads: threads,
+    profile: {
+      summary:   (typeof prof.summary === 'string') ? prof.summary : '',
+      updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0
+    },
+    updatedAt: (typeof src.updatedAt === 'number') ? src.updatedAt : 0
+  };
   saveState();
 }
 
@@ -2291,6 +2498,35 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.21.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.21.0') {
+    // yumi-intelligence Stage I: two additive per-user fields, both default-on-
+    // absence so legacy data is never broken or silently opted in.
+    //   (1) profile.yumiReaderModel (boolean): the reader-model opt-in, default
+    //       FALSE -- the reader-model is strictly opt-in, so a pre-build user is
+    //       NOT enrolled by the migration.
+    //   (2) users[*].readerModel (object): the reader-model store, backfilled to
+    //       the empty default shape { threads:[], profile:{summary,updatedAt},
+    //       updatedAt }. ADDITIVE ONLY -- never touches isPrivate (F5), the
+    //       profile's other fields, yumiMemory, or any existing field.
+    if (stored.users) {
+      var rmuid;
+      for (rmuid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, rmuid)) {
+          var rmrec = stored.users[rmuid];
+          if (rmrec) {
+            if (rmrec.profile &&
+                typeof rmrec.profile.yumiReaderModel !== 'boolean') {
+              rmrec.profile.yumiReaderModel = false;
+            }
+            if (!rmrec.readerModel || typeof rmrec.readerModel !== 'object') {
+              rmrec.readerModel = { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 };
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.22.0';
   }
   return stored;
 }

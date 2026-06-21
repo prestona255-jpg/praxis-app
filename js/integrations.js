@@ -349,7 +349,14 @@ firebase.auth().onAuthStateChanged(function (u) {
           // before this field existed -> default TRUE (never silently flip
           // Yumi OFF on a legacy profile). Only an explicit stored false
           // turns it off.
-          yumiReadsAlong:      (typeof rd.yumiReadsAlong === 'boolean') ? rd.yumiReadsAlong : true
+          yumiReadsAlong:      (typeof rd.yumiReadsAlong === 'boolean') ? rd.yumiReadsAlong : true,
+          // yumi-intelligence Stage I: reader-model opt-in. Absent in a remote
+          // doc written before this field existed -> default FALSE (the model is
+          // strictly opt-in; never enroll a legacy profile). Symmetric with the
+          // .set() write list in saveProfileToFirestore (the Firestore-merge
+          // gotcha: a doc from sign-in bypasses migrate(), so read AND write
+          // must both carry this field or a second device silently wipes it).
+          yumiReaderModel:     (typeof rd.yumiReaderModel === 'boolean') ? rd.yumiReaderModel : false
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -369,6 +376,25 @@ firebase.auth().onAuthStateChanged(function (u) {
       if (profResult.status !== 'error' &&
           window.YumiUI && typeof window.YumiUI.maybeStartOnboarding === 'function') {
         window.YumiUI.maybeStartOnboarding(u.uid);
+      }
+    });
+
+    // yumi-intelligence Stage I: hydrate this user's reader-model doc from
+    // /userReaderModel/{uid}. REPLACE-on-found into the ensureUser-seeded slot
+    // via replaceReaderModel; 'absent' (no remote doc yet) KEEPS the local seed;
+    // 'error' keeps the cache. Mirrors loadProfileFromFirestore's contract.
+    loadReaderModelFromFirestore(u.uid, function (rmResult) {
+      if (rmResult.status === 'found') {
+        ensureUser(u.uid);
+        replaceReaderModel(u.uid, rmResult.data || {});
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadReaderModelFromFirestore: merged remote reader-model doc');
+      } else if (rmResult.status === 'absent') {
+        console.log('loadReaderModelFromFirestore: no remote reader-model doc for uid, keeping cache');
+      } else {
+        console.warn('loadReaderModelFromFirestore: fetch failed, keeping cache', rmResult.error);
       }
     });
   } else {
@@ -705,7 +731,90 @@ function saveProfileToFirestore(uid, profile, callback) {
         // it would be wiped. Default-true-preserving: writes true unless the
         // local value is explicitly false.
         yumiReadsAlong:      !(profile && profile.yumiReadsAlong === false),
+        // yumi-intelligence Stage I: reader-model opt-in. Full-doc .set() -> must
+        // be listed or it would be wiped. Default-FALSE-preserving (opt-in):
+        // writes true ONLY when the local value is explicitly true.
+        yumiReaderModel:     !!(profile && profile.yumiReaderModel === true),
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(function () {
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// yumi-intelligence Stage I: per-user reader-model doc read from
+// /userReaderModel/{uid}. Same typed found/absent/error contract + REPLACE-on-
+// found / KEEP-on-absent semantics as loadProfileFromFirestore. The reader-model
+// data (named threads + a prose reading profile) is the reader's, fully
+// visible/editable; this loader hydrates it on sign-in. Idempotent fire-once.
+function loadReaderModelFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadReaderModelFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userReaderModel')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// yumi-intelligence Stage I: per-user reader-model doc write to
+// /userReaderModel/{uid}. .set() is a full-doc overwrite, matching the single-
+// doc model + the REPLACE read above. Stores the locked shape (threads + prose
+// profile + the model's own numeric updatedAt) plus a server-stamped syncedAt
+// marker. Single-arg typed callback in the house style. Idempotent fire-once.
+function saveReaderModelToFirestore(uid, model, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveReaderModelToFirestore: missing uid') });
+    return;
+  }
+  var m = (model && typeof model === 'object') ? model : {};
+  var threads = (m.threads instanceof Array) ? m.threads : [];
+  var prof = (m.profile && typeof m.profile === 'object') ? m.profile : {};
+  try {
+    firebase.firestore()
+      .collection('userReaderModel')
+      .doc(uid)
+      .set({
+        threads:   threads,
+        profile: {
+          summary:   (typeof prof.summary === 'string') ? prof.summary : '',
+          updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0
+        },
+        updatedAt: (typeof m.updatedAt === 'number') ? m.updatedAt : 0,
+        syncedAt:  firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {
         finish({ status: 'ok' });
@@ -752,7 +861,8 @@ function deleteAccount(callback) {
   }
   var uid = u.uid;
   var collections = ['userBooks', 'userArcs', 'userNotebook',
-                     'userSubTheories', 'userProfiles', 'userThemes'];
+                     'userSubTheories', 'userProfiles', 'userThemes',
+                     'userReaderModel'];
   var total = collections.length;
   var settled = 0;
   var aborted = false;

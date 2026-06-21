@@ -11548,6 +11548,369 @@ function _accountToggleEditForm(formEl, btnEl) {
 // the data block (export / sign out / delete) reused verbatim at the foot.
 // getCurrentUser-gated: a signed-out visitor gets a sign-in prompt. All
 // colour from CSS variables; Cormorant via --font-serif on .account-hero-name.
+// =====================================================================
+// yumi-intelligence Stage I: the reader-model section on the Account page.
+// One unified card: a consent control (opt-in, default OFF) + an in-place
+// "what Yumi remembers" panel (2 sections per the locked design calls --
+// editable THEMES list + an editable ARC PROSE block) + a "forget everything"
+// data wipe. MANUAL CRUD ONLY -- NOTICE->NAME auto-write and the profile auto-
+// refresh are Stage II. State accessors live in state.js (getReaderModel /
+// add|edit|deleteReaderThread / setReaderProfile / clearReaderModel); the
+// Firestore mirror is saveReaderModelToFirestore. The reader-model opt-in
+// (profile.yumiReaderModel) gates manual add/edit TOGETHER WITH the master
+// switch (profile.yumiReadsAlong) -- delete + forget stay available when off so
+// the reader always controls their own data. Re-renders coarsely via
+// renderAccountPage(), mirroring buildNotebookMasterSwitch -> renderNotebook().
+// Every new class is rm-* under .account-readermodel -> zero global CSS bleed.
+// =====================================================================
+function buildReaderModelSection(uid) {
+  var profile = getProfile(uid);
+  var model = getReaderModel(uid);
+  var optedIn = profile.yumiReaderModel === true;
+  var readsAlong = profile.yumiReadsAlong !== false;
+  var active = optedIn && readsAlong;   // both on -> manual add/edit enabled
+
+  function rerender() {
+    if (typeof renderAccountPage === 'function') { renderAccountPage(); }
+  }
+  function mirror() {
+    if (typeof saveReaderModelToFirestore === 'function') {
+      saveReaderModelToFirestore(uid, getReaderModel(uid), function() {});
+    }
+  }
+  function flipConsent() {
+    setProfile(uid, { yumiReaderModel: !optedIn });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function() {});
+    }
+    rerender();
+  }
+
+  // Inline thread-item builder: label text + edit/delete actions. Edit is
+  // gated on `active`; delete is ALWAYS available (reader owns their data).
+  function buildThreadItem(thread) {
+    var item = document.createElement('div');
+    item.className = 'rm-item';
+    var text = document.createElement('div');
+    text.className = 'rm-item-text';
+    text.textContent = thread.label ? thread.label : '(untitled theme)';
+    item.appendChild(text);
+    var actions = document.createElement('div');
+    actions.className = 'rm-item-actions';
+    if (active) {
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'rm-iconbtn rm-edit';
+      editBtn.setAttribute('title', 'Edit');
+      editBtn.setAttribute('aria-label', 'Edit theme');
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', function() { startEdit(item, thread); });
+      actions.appendChild(editBtn);
+    }
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'rm-iconbtn rm-del';
+    delBtn.setAttribute('title', 'Delete');
+    delBtn.setAttribute('aria-label', 'Delete theme');
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', function() {
+      deleteReaderThread(uid, thread.id);
+      mirror();
+      rerender();
+    });
+    actions.appendChild(delBtn);
+    item.appendChild(actions);
+    return item;
+  }
+
+  // Replace an item's text with an inline textarea + Save/Cancel. Save commits
+  // via editReaderThread; both Save and Cancel re-render (coarse, on commit).
+  function startEdit(item, thread) {
+    var textEl = item.querySelector('.rm-item-text');
+    var actionsEl = item.querySelector('.rm-item-actions');
+    if (!textEl || item.querySelector('.rm-edit-wrap')) { return; }
+    var original = thread.label ? thread.label : '';
+    var wrap = document.createElement('div');
+    wrap.className = 'rm-edit-wrap';
+    var ta = document.createElement('textarea');
+    ta.className = 'rm-edit-input';
+    ta.value = original;
+    var row = document.createElement('div');
+    row.className = 'rm-edit-actions';
+    var save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'rm-save';
+    save.textContent = 'Save';
+    var cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'rm-cancel';
+    cancel.textContent = 'Cancel';
+    row.appendChild(save);
+    row.appendChild(cancel);
+    wrap.appendChild(ta);
+    wrap.appendChild(row);
+    textEl.style.display = 'none';
+    if (actionsEl) { actionsEl.style.display = 'none'; }
+    item.insertBefore(wrap, actionsEl);
+    ta.focus();
+    save.addEventListener('click', function() {
+      var v = ta.value;
+      if (v && v.replace(/^\s+|\s+$/g, '') !== '') {
+        editReaderThread(uid, thread.id, v);
+        mirror();
+      }
+      rerender();
+    });
+    cancel.addEventListener('click', function() { rerender(); });
+  }
+
+  var card = document.createElement('section');
+  card.className = 'account-card account-readermodel' + (optedIn ? ' rm-on' : '');
+
+  // ---- consent header ----
+  var eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'reader model';
+  card.appendChild(eyebrow);
+
+  var title = document.createElement('h2');
+  title.className = 'rm-title';
+  title.textContent = 'Let Yumi remember what you explore?';
+  card.appendChild(title);
+
+  var lede = document.createElement('p');
+  lede.className = 'rm-lede';
+  lede.textContent = 'So she can theorize more personally with you — better ' +
+    'questions, drawn from the shape of your own reading.';
+  card.appendChild(lede);
+
+  // ---- consent toggle row ----
+  var togRow = document.createElement('div');
+  togRow.className = 'rm-toggle-row';
+  var togCopy = document.createElement('div');
+  togCopy.className = 'rm-toggle-copy';
+  var togLabel = document.createElement('div');
+  togLabel.className = 'rm-toggle-label';
+  togLabel.textContent = 'Let Yumi build a reader-model';
+  togCopy.appendChild(togLabel);
+  var togSub = document.createElement('div');
+  togSub.className = 'rm-toggle-sub';
+  togSub.textContent = optedIn
+    ? 'On · review or edit anything below, or turn it off'
+    : 'Off by default · turn it on anytime';
+  togCopy.appendChild(togSub);
+  togRow.appendChild(togCopy);
+
+  var toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'rm-toggle' + (optedIn ? ' rm-toggle-on' : '');
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', optedIn ? 'true' : 'false');
+  toggle.setAttribute('aria-label', 'Let Yumi build a reader-model');
+  var knob = document.createElement('span');
+  knob.className = 'rm-knob';
+  toggle.appendChild(knob);
+  toggle.addEventListener('click', function() { flipConsent(); });
+  togRow.appendChild(toggle);
+  card.appendChild(togRow);
+
+  // ---- will / won't grid (trimmed to THEMES + ARC per design call #1) ----
+  var grid = document.createElement('div');
+  grid.className = 'rm-grid';
+  var willCol = document.createElement('div');
+  willCol.className = 'rm-col rm-col-will';
+  var willH = document.createElement('div');
+  willH.className = 'rm-col-h';
+  willH.textContent = 'What she’ll remember';
+  willCol.appendChild(willH);
+  var willItems = ['The themes you keep returning to',
+                   'The arc you’re building across books'];
+  var wi;
+  for (wi = 0; wi < willItems.length; wi = wi + 1) {
+    var wli = document.createElement('div');
+    wli.className = 'rm-li rm-li-will';
+    wli.textContent = willItems[wi];
+    willCol.appendChild(wli);
+  }
+  grid.appendChild(willCol);
+  var wontCol = document.createElement('div');
+  wontCol.className = 'rm-col rm-col-wont';
+  var wontH = document.createElement('div');
+  wontH.className = 'rm-col-h';
+  wontH.textContent = 'What she won’t';
+  wontCol.appendChild(wontH);
+  var wontItems = ['Your name or personal details',
+                   'Anything you mark private',
+                   'Sensitive facts about your life — ever'];
+  var oi;
+  for (oi = 0; oi < wontItems.length; oi = oi + 1) {
+    var oli = document.createElement('div');
+    oli.className = 'rm-li rm-li-wont';
+    oli.textContent = wontItems[oi];
+    wontCol.appendChild(oli);
+  }
+  grid.appendChild(wontCol);
+  card.appendChild(grid);
+
+  // requires-master-switch note (truthful: turning off does NOT auto-clear).
+  var req = document.createElement('p');
+  req.className = 'rm-req-note';
+  if (optedIn && !readsAlong) {
+    req.textContent = 'Paused — turn on "Yumi reads along" in your Notebook ' +
+      'to let the reader-model grow. Your themes are kept until you forget them.';
+  } else {
+    req.textContent = 'Requires "Yumi reads along" (your Notebook master switch). ' +
+      'Turning the reader-model off keeps your themes until you forget them.';
+  }
+  card.appendChild(req);
+
+  // ---- the panel (ALWAYS rendered: shows + deletes even when off) ----
+  var panel = document.createElement('div');
+  panel.className = 'rm-panel';
+
+  var pHead = document.createElement('div');
+  pHead.className = 'rm-panel-head';
+  var pTitle = document.createElement('h3');
+  pTitle.className = 'rm-panel-title';
+  pTitle.textContent = 'What Yumi remembers about you';
+  pHead.appendChild(pTitle);
+  var status = document.createElement('span');
+  status.className = 'rm-status';
+  status.textContent = active ? 'Reader-model · on'
+    : (optedIn ? 'Reader-model · paused' : 'Reader-model · off');
+  pHead.appendChild(status);
+  panel.appendChild(pHead);
+
+  var framing = document.createElement('p');
+  framing.className = 'rm-framing';
+  framing.textContent = 'Everything Yumi’s reader-model holds about you — ' +
+    'the shape of your reading, never who you are. Every item is yours to edit ' +
+    'or delete. She sees this exactly as you do.';
+  panel.appendChild(framing);
+
+  // SECTION 1: recurring themes (editable list + manual add).
+  var sec1 = document.createElement('section');
+  sec1.className = 'rm-section';
+  var lbl1 = document.createElement('h4');
+  lbl1.className = 'rm-label';
+  lbl1.textContent = 'Recurring themes';
+  sec1.appendChild(lbl1);
+
+  var threads = (model.threads instanceof Array) ? model.threads : [];
+  if (threads.length === 0) {
+    var empty1 = document.createElement('p');
+    empty1.className = 'rm-empty';
+    empty1.textContent = active
+      ? 'Nothing yet — add a theme you keep returning to, or let Yumi notice one as you read.'
+      : 'Nothing yet.';
+    sec1.appendChild(empty1);
+  } else {
+    var ti;
+    for (ti = 0; ti < threads.length; ti = ti + 1) {
+      sec1.appendChild(buildThreadItem(threads[ti]));
+    }
+  }
+
+  if (active) {
+    var addRow = document.createElement('div');
+    addRow.className = 'rm-add-row';
+    var addInput = document.createElement('input');
+    addInput.type = 'text';
+    addInput.className = 'rm-add-input';
+    addInput.setAttribute('placeholder', 'Add a theme you keep returning to…');
+    addInput.setAttribute('aria-label', 'Add a theme');
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'rm-add-btn';
+    addBtn.textContent = 'Add';
+    var doAdd = function() {
+      var v = addInput.value;
+      if (v && v.replace(/^\s+|\s+$/g, '') !== '') {
+        addReaderThread(uid, v);
+        mirror();
+        rerender();
+      }
+    };
+    addBtn.addEventListener('click', function() { doAdd(); });
+    addInput.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); doAdd(); }
+    });
+    addRow.appendChild(addInput);
+    addRow.appendChild(addBtn);
+    sec1.appendChild(addRow);
+  }
+  panel.appendChild(sec1);
+
+  // SECTION 2: the arc you're building (editable PROSE block, not a list).
+  var sec2 = document.createElement('section');
+  sec2.className = 'rm-section';
+  var lbl2 = document.createElement('h4');
+  lbl2.className = 'rm-label';
+  lbl2.textContent = 'The arc you’re building';
+  sec2.appendChild(lbl2);
+
+  var summary = (model.profile && typeof model.profile.summary === 'string')
+    ? model.profile.summary : '';
+  if (active) {
+    var arcInput = document.createElement('textarea');
+    arcInput.className = 'rm-arc-input';
+    arcInput.setAttribute('placeholder',
+      'Describe the arc you’re building across books — in your own words.');
+    arcInput.value = summary;
+    sec2.appendChild(arcInput);
+    var arcActions = document.createElement('div');
+    arcActions.className = 'rm-arc-actions';
+    var arcSave = document.createElement('button');
+    arcSave.type = 'button';
+    arcSave.className = 'rm-save';
+    arcSave.textContent = 'Save';
+    arcSave.addEventListener('click', function() {
+      setReaderProfile(uid, arcInput.value);
+      mirror();
+      rerender();
+    });
+    arcActions.appendChild(arcSave);
+    sec2.appendChild(arcActions);
+  } else if (summary === '') {
+    var empty2 = document.createElement('p');
+    empty2.className = 'rm-empty';
+    empty2.textContent = 'Nothing yet.';
+    sec2.appendChild(empty2);
+  } else {
+    var arcText = document.createElement('p');
+    arcText.className = 'rm-arc-text';
+    arcText.textContent = summary;
+    sec2.appendChild(arcText);
+  }
+  panel.appendChild(sec2);
+
+  // foot: "forget everything" -- wipes the DATA (local + the Firestore doc via
+  // mirror). Shown only when there is data to forget. Available when off too.
+  var hasData = threads.length > 0 || summary !== '';
+  var foot = document.createElement('div');
+  foot.className = 'rm-foot';
+  var footNote = document.createElement('span');
+  footNote.className = 'rm-foot-note';
+  footNote.textContent = 'She only ever remembers what you can see here.';
+  foot.appendChild(footNote);
+  if (hasData) {
+    var forgetBtn = document.createElement('button');
+    forgetBtn.type = 'button';
+    forgetBtn.className = 'rm-forget';
+    forgetBtn.textContent = 'Forget everything';
+    forgetBtn.addEventListener('click', function() {
+      clearReaderModel(uid);
+      mirror();
+      rerender();
+    });
+    foot.appendChild(forgetBtn);
+  }
+  panel.appendChild(foot);
+
+  card.appendChild(panel);
+  return card;
+}
+
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -11878,6 +12241,13 @@ function renderAccountPage() {
   transCard.appendChild(seesBtn);
 
   wrap.appendChild(transCard);
+
+  // yumi-intelligence Stage I: the reader-model consent + "what Yumi remembers"
+  // panel, placed in the Yumi-transparency cluster (right after the "what praxis
+  // records — and what yumi sees" card). One unified section (state.js accessors
+  // + the /userReaderModel Firestore mirror); rm-* classes are namespaced under
+  // .account-readermodel so nothing bleeds onto other surfaces.
+  wrap.appendChild(buildReaderModelSection(uid));
 
   // ----- DATA BLOCK -> "YOUR DATA" CARD (#8 Stage 4a) -----
   var dataCard = document.createElement('section');
