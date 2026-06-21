@@ -356,7 +356,13 @@ firebase.auth().onAuthStateChanged(function (u) {
           // .set() write list in saveProfileToFirestore (the Firestore-merge
           // gotcha: a doc from sign-in bypasses migrate(), so read AND write
           // must both carry this field or a second device silently wipes it).
-          yumiReaderModel:     (typeof rd.yumiReaderModel === 'boolean') ? rd.yumiReaderModel : false
+          yumiReaderModel:     (typeof rd.yumiReaderModel === 'boolean') ? rd.yumiReaderModel : false,
+          // yumi-intelligence Stage III: live-web grounding opt-in. Absent in a
+          // remote doc written before this field existed -> default FALSE (a
+          // SEPARATE opt-in consent; never enroll a legacy profile). Symmetric
+          // with the .set() write list (the Firestore-merge gotcha: a doc from
+          // sign-in bypasses migrate(), so read AND write must both carry it).
+          yumiWebGrounding:    (typeof rd.yumiWebGrounding === 'boolean') ? rd.yumiWebGrounding : false
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -735,6 +741,10 @@ function saveProfileToFirestore(uid, profile, callback) {
         // be listed or it would be wiped. Default-FALSE-preserving (opt-in):
         // writes true ONLY when the local value is explicitly true.
         yumiReaderModel:     !!(profile && profile.yumiReaderModel === true),
+        // yumi-intelligence Stage III: live-web grounding opt-in. Full-doc
+        // .set() -> must be listed or it would be wiped. Default-FALSE-preserving
+        // (opt-in): writes true ONLY when the local value is explicitly true.
+        yumiWebGrounding:    !!(profile && profile.yumiWebGrounding === true),
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {

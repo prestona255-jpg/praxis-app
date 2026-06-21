@@ -1766,7 +1766,9 @@ function maybeDrawOut(entryId) {
   var panelOpen = !!(window.YumiUI && YumiUI.visiblyOpen && YumiUI.visiblyOpen());
   YumiBrain.considerMove(entry, panelOpen).then(function (r) {
     if (r && r.surface && typeof renderYumiMessage === 'function') {
-      renderYumiMessage(r.text);
+      // Stage III: r carries r.web / r.theme when a web lookup informed the
+      // angle; renderYumiMessage renders the grounding chip only then.
+      renderYumiMessage(r.text, r);
     }
   });
   // yumi-intelligence Stage II: a visible note-write is also a cue to refresh
@@ -9023,6 +9025,11 @@ function requestArcVoice(arcId, hostEl, triggerEl) {
   YumiBrain.considerArcVoice(arcId).then(function (r) {
     if (r && r.ok && typeof r.text === 'string' && r.text.replace(/^\s+|\s+$/g, '') !== '') {
       line.textContent = r.text;
+      // Stage III: when a web source angled the commentary, mount the grounding
+      // chip ABOVE the line (same DOM-safe builder as the chat path).
+      if (r.web && typeof buildGroundingChips === 'function') {
+        hostEl.insertBefore(buildGroundingChips({ web: r.web, theme: r.theme }), line);
+      }
     } else {
       line.textContent = ARC_VOICE_FALLBACK;
       line.style.fontStyle = 'italic';
@@ -11587,6 +11594,7 @@ function buildReaderModelSection(uid) {
   var optedIn = profile.yumiReaderModel === true;
   var readsAlong = profile.yumiReadsAlong !== false;
   var active = optedIn && readsAlong;   // both on -> manual add/edit enabled
+  var webOn = profile.yumiWebGrounding === true;   // Stage III: separate opt-in
 
   function rerender() {
     if (typeof renderAccountPage === 'function') { renderAccountPage(); }
@@ -11598,6 +11606,15 @@ function buildReaderModelSection(uid) {
   }
   function flipConsent() {
     setProfile(uid, { yumiReaderModel: !optedIn });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function() {});
+    }
+    rerender();
+  }
+  // Stage III: the SEPARATE live-web grounding opt-in. Same F4 write path
+  // (setProfile -> saveProfileToFirestore) so it round-trips default-false.
+  function flipWebConsent() {
+    setProfile(uid, { yumiWebGrounding: !webOn });
     if (typeof saveProfileToFirestore === 'function') {
       saveProfileToFirestore(uid, getProfile(uid), function() {});
     }
@@ -11782,6 +11799,43 @@ function buildReaderModelSection(uid) {
   }
   card.appendChild(req);
 
+  // ---- web-grounding consent (Stage III, SEPARATE opt-in, default OFF) ----
+  // Independent of the reader-model: it lets Yumi consult a current web source
+  // to ANGLE a question (never to answer). Gated additionally by the master
+  // "Yumi reads along" switch at use-time. Reuses the rm-toggle visual classes.
+  var webRow = document.createElement('div');
+  webRow.className = 'rm-toggle-row rm-web-row';
+  var webCopy = document.createElement('div');
+  webCopy.className = 'rm-toggle-copy';
+  var webLabel = document.createElement('div');
+  webLabel.className = 'rm-toggle-label';
+  webLabel.textContent = 'Let Yumi consult the web';
+  webCopy.appendChild(webLabel);
+  var webSub = document.createElement('div');
+  webSub.className = 'rm-toggle-sub';
+  webSub.textContent = webOn
+    ? 'On · she uses a current source only to angle a question — never to answer'
+    : 'Off by default · turn it on anytime';
+  webCopy.appendChild(webSub);
+  webRow.appendChild(webCopy);
+  var webToggle = document.createElement('button');
+  webToggle.type = 'button';
+  webToggle.className = 'rm-toggle' + (webOn ? ' rm-toggle-on' : '');
+  webToggle.setAttribute('role', 'switch');
+  webToggle.setAttribute('aria-checked', webOn ? 'true' : 'false');
+  webToggle.setAttribute('aria-label', 'Let Yumi consult the web');
+  var webKnob = document.createElement('span');
+  webKnob.className = 'rm-knob';
+  webToggle.appendChild(webKnob);
+  webToggle.addEventListener('click', function() { flipWebConsent(); });
+  webRow.appendChild(webToggle);
+  card.appendChild(webRow);
+  var webNote = document.createElement('p');
+  webNote.className = 'rm-req-note';
+  webNote.textContent = 'She never sends anything you wrote — only the book or theme — ' +
+    'and never repeats what she finds as fact.';
+  card.appendChild(webNote);
+
   // ---- the panel (ALWAYS rendered: shows + deletes even when off) ----
   var panel = document.createElement('div');
   panel.className = 'rm-panel';
@@ -11869,7 +11923,12 @@ function buildReaderModelSection(uid) {
 
   var summary = (model.profile && typeof model.profile.summary === 'string')
     ? model.profile.summary : '';
-  var profSource = (model.profile && model.profile.source === 'edited') ? 'edited' : 'auto';
+  // Stage III residual-1 fold: route through the content-aware resolver so a
+  // pre-Stage-II profile (non-empty summary, no source field) reads as a
+  // hand-edit -- consistent with setReaderProfileAuto's write guard.
+  var profSource = (typeof readerProfileSource === 'function')
+    ? readerProfileSource(model.profile)
+    : ((model.profile && model.profile.source === 'edited') ? 'edited' : 'auto');
   if (active) {
     var arcInput = document.createElement('textarea');
     arcInput.className = 'rm-arc-input';

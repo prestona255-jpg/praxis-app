@@ -171,8 +171,64 @@ function renderUserMessage(text) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
-function renderYumiMessage(text) {
+// yumi-intelligence Stage III: the live-web grounding indicator. Builds the two
+// quiet chips (web source + optional reader-model theme) + an honest source line
+// that sits ABOVE Yumi's reply. DOM-safe by construction: all text via
+// textContent / createTextNode; the source link's href is validated to http(s)
+// only (rel noopener/nofollow) -- web-derived strings are NEVER innerHTML'd. The
+// chip shows ONLY when web actually ran (grounding.web present). Returns a node.
+function buildGroundingChips(grounding) {
+  var wrap = document.createElement('div');
+  var chips = document.createElement('div');
+  chips.className = 'ground-chips';
+  var webChip = document.createElement('span');
+  webChip.className = 'ground-chip web';
+  var wdot = document.createElement('span');
+  wdot.className = 'gdot';
+  webChip.appendChild(wdot);
+  webChip.appendChild(document.createTextNode(' informed by a current source'));
+  chips.appendChild(webChip);
+  if (grounding && grounding.theme) {
+    var themeChip = document.createElement('span');
+    themeChip.className = 'ground-chip theme';
+    var tdot = document.createElement('span');
+    tdot.className = 'gdot';
+    themeChip.appendChild(tdot);
+    themeChip.appendChild(document.createTextNode(' drawn from a theme you keep returning to'));
+    chips.appendChild(themeChip);
+  }
+  wrap.appendChild(chips);
+  var src = document.createElement('p');
+  src.className = 'ground-source';
+  var web = (grounding && grounding.web) ? grounding.web : {};
+  var title = (typeof web.title === 'string' && web.title.replace(/^\s+|\s+$/g, '') !== '')
+    ? web.title : 'a current source';
+  src.appendChild(document.createTextNode('Source — '));
+  var url = (typeof web.url === 'string' && /^https?:\/\//i.test(web.url)) ? web.url : '';
+  if (url !== '') {
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer nofollow';
+    a.textContent = title;
+    src.appendChild(a);
+  } else {
+    var em = document.createElement('em');
+    em.textContent = title;
+    src.appendChild(em);
+  }
+  src.appendChild(document.createTextNode('. Yumi referenced it to angle the question, not to answer it.'));
+  wrap.appendChild(src);
+  return wrap;
+}
+
+function renderYumiMessage(text, grounding) {
   if (!yumiBodyEl) { return; }
+  // Stage III: prepend the grounding chip ONLY when web actually informed this
+  // move (grounding.web present). All other render paths pass no grounding.
+  if (grounding && grounding.web) {
+    yumiBodyEl.appendChild(buildGroundingChips(grounding));
+  }
   var msg = document.createElement('div');
   msg.className = 'yumi-msg yumi-msg-yumi';
   msg.textContent = text;

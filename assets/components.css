@@ -319,6 +319,66 @@
   color: var(--ink-3);
 }
 
+/* yumi-intelligence Stage III: live-web grounding indicator -- two quiet chips
+   (web source + optional reader-model theme) + an honest source line, sitting
+   ABOVE Yumi's reply. Both COLOR the question; neither answers it. Tokens only
+   (the mockup's one raw rgba theme-border is replaced by a color-mix of
+   --marginalia-color). Ported from design/yumi-intelligence-mockup.html. */
+.ground-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+.ground-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+}
+.ground-chip.web {
+  color: var(--river);
+  background: color-mix(in srgb, var(--river) 9%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--river) 32%, transparent);
+}
+.ground-chip.theme {
+  color: var(--marginalia-color);
+  background: color-mix(in srgb, var(--marginalia-color) 9%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--marginalia-color) 35%, transparent);
+}
+.ground-chip .gdot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  flex: 0 0 auto;
+}
+.ground-chip.web .gdot {
+  background: var(--river);
+  box-shadow: 0 0 7px var(--river);
+}
+.ground-chip.theme .gdot {
+  background: var(--marginalia-color);
+  box-shadow: 0 0 7px var(--marginalia-color);
+}
+.ground-source {
+  margin: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.ground-source a {
+  color: var(--river);
+  text-decoration: none;
+}
+.ground-source a:hover {
+  text-decoration: underline;
+}
+
 .yumi-send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

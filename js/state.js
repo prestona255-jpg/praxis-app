@@ -870,7 +870,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -895,7 +895,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -910,6 +910,14 @@ function ensureUser(uid) {
   if (state.users[uid].profile &&
       typeof state.users[uid].profile.yumiReaderModel !== 'boolean') {
     state.users[uid].profile.yumiReaderModel = false;
+  }
+  // yumi-intelligence Stage III: live-web grounding opt-in, default FALSE
+  // (reaching outside the app is a SEPARATE consent -- a pre-build profile is
+  // NOT enrolled). Lives in profile{} so it mirrors via /userProfiles next to
+  // yumiReaderModel. Additive field guard.
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.yumiWebGrounding !== 'boolean') {
+    state.users[uid].profile.yumiWebGrounding = false;
   }
   // yumi-intelligence Stage I: the reader-model store (named threads + a prose
   // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
@@ -949,7 +957,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -986,6 +994,12 @@ function setProfile(uid, fields) {
   // value writes here.
   if (fields && typeof fields.yumiReaderModel !== 'undefined') {
     p.yumiReaderModel = fields.yumiReaderModel === true;
+  }
+  // yumi-intelligence Stage III: live-web grounding opt-in. Boolean-coerced;
+  // default-false is handled on read (getProfile / ensureUser), so only an
+  // explicit value writes here.
+  if (fields && typeof fields.yumiWebGrounding !== 'undefined') {
+    p.yumiWebGrounding = fields.yumiWebGrounding === true;
   }
   saveState();
 }
@@ -2652,6 +2666,28 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.22.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.22.0') {
+    // yumi-intelligence Stage III: one additive per-user field, default-on-
+    // absence so legacy data is never broken or silently opted in.
+    //   profile.yumiWebGrounding (boolean): the live-web grounding opt-in,
+    //   default FALSE -- reaching outside the app is a distinct consent, so a
+    //   pre-build user is NOT enrolled by the migration. Lives in profile{} so
+    //   it mirrors via /userProfiles next to yumiReaderModel. ADDITIVE ONLY --
+    //   never touches isPrivate (F5), readerModel, or any existing field.
+    if (stored.users) {
+      var wguid;
+      for (wguid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, wguid)) {
+          var wgrec = stored.users[wguid];
+          if (wgrec && wgrec.profile &&
+              typeof wgrec.profile.yumiWebGrounding !== 'boolean') {
+            wgrec.profile.yumiWebGrounding = false;
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.23.0';
   }
   return stored;
 }
