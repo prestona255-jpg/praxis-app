@@ -12205,7 +12205,7 @@ function renderAccountPage() {
 
   var saveBtn = document.createElement('button');
   saveBtn.type = 'button';
-  saveBtn.className = 'notebook-new-entry account-save-btn';
+  saveBtn.className = 'btn btn-primary account-save-btn';
   saveBtn.textContent = 'Save profile';
   profileBlock.appendChild(saveBtn);
 
@@ -12364,7 +12364,7 @@ function renderAccountPage() {
 
   var seesBtn = document.createElement('button');
   seesBtn.type = 'button';
-  seesBtn.className = 'notebook-new-entry account-secondary-btn';
+  seesBtn.className = 'chip account-secondary-btn';
   seesBtn.textContent = 'See what Yumi sees right now';
   seesBtn.addEventListener('click', function() {
     location.hash = 'yumi-sees';
@@ -12404,7 +12404,7 @@ function renderAccountPage() {
   // hidden DISPLAY NAME / PEN NAME form (pure DOM, no hash). No Theme button.
   var editBtn = document.createElement('button');
   editBtn.type = 'button';
-  editBtn.className = 'notebook-new-entry account-secondary-btn';
+  editBtn.className = 'btn btn-ghost account-secondary-btn';
   editBtn.textContent = 'Edit profile';
   editBtn.addEventListener('click', function() {
     _accountToggleEditForm(profileBlock, editBtn);
@@ -12413,7 +12413,7 @@ function renderAccountPage() {
 
   var exportBtn = document.createElement('button');
   exportBtn.type = 'button';
-  exportBtn.className = 'notebook-new-entry account-secondary-btn';
+  exportBtn.className = 'btn btn-ghost account-secondary-btn';
   exportBtn.textContent = 'Export to JSON';
   exportBtn.addEventListener('click', function() {
     var data = exportWorkspace();
@@ -12434,7 +12434,7 @@ function renderAccountPage() {
 
   var signoutBtn = document.createElement('button');
   signoutBtn.type = 'button';
-  signoutBtn.className = 'notebook-new-entry account-secondary-btn';
+  signoutBtn.className = 'btn btn-ghost account-secondary-btn';
   signoutBtn.textContent = 'Sign out';
   signoutBtn.addEventListener('click', function() {
     signOut();
@@ -12466,7 +12466,7 @@ function renderAccountPage() {
 
   var deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
-  deleteBtn.className = 'notebook-new-entry account-delete-btn';
+  deleteBtn.className = 'btn btn-ghost account-delete-btn';
   deleteBtn.textContent = 'Delete account';
   deleteBtn.addEventListener('click', function() {
     openAccountDeleteConfirm(uid);
