@@ -1106,6 +1106,86 @@ function runYumiGateHarness() {
 // modifies them. COMPLICATE / NOTICE / NAME are later stages (B-2+).
 // =====================================================================
 
+// =====================================================================
+// READER-MODEL CONTEXT SEAM (yumi-intelligence Stage II). ONE shared gatherer
+// + ONE formatter, prepended to the USER message of the four move/arc-voice
+// builders (buildMoveUserMessage / buildScanUserMessage / buildNameUserMessage
+// / buildArcVoiceUserMessage). This is the ENRICHMENT layer: it touches ONLY
+// the user-message string -- the eval gate, the move *_SYSTEM constants, and
+// the fetch payload SHAPE are byte-untouched (Stage II function-diff invariant).
+// The context shapes the ANGLE of Yumi's question; it is NEVER a callback to
+// the reader's history (the formatter's anti-presumption guard enforces this --
+// if presumption ever appears, tune THIS copy, never the gate). Modeled on
+// assembleContextData's fail-closed privacy contract: returns EMPTY unless BOTH
+// the master switch (yumiReadsAlong) AND the reader-model opt-in (yumiReaderModel)
+// are on, and it reads ONLY the reader-model's own affirmed labels + editable
+// prose -- never a note body -- so a private note can never reach a prompt here.
+// =====================================================================
+
+// EDITABLE: how many named threads to carry as angle-context. Kept small to
+// avoid prompt bloat AND presumption (more themes listed -> more temptation to
+// reference them).
+var READER_MODEL_CONTEXT_N = 3;
+
+// Read the active reader's model for move context. Consent-gated on BOTH flags;
+// returns { threads:[label,...], profile:'<summary>' } or null when off/empty.
+// Labels are the reader's AFFIRMED themes (named threads only) + the editable
+// prose profile -- never note bodies, so no isPrivate content crosses here.
+function gatherReaderModel() {
+  var uid = resolveActiveUid();
+  if (!uid) { return null; }
+  var prof = (typeof getProfile === 'function') ? getProfile(uid) : null;
+  if (!prof || prof.yumiReadsAlong === false || prof.yumiReaderModel !== true) {
+    return null;   // fail-closed: no context unless BOTH consents are on
+  }
+  var rm = (typeof getReaderModel === 'function') ? getReaderModel(uid) : null;
+  if (!rm) { return null; }
+  var threads = (rm.threads instanceof Array) ? rm.threads : [];
+  var named = [];
+  var i;
+  for (i = 0; i < threads.length; i = i + 1) {
+    var t = threads[i];
+    if (t && t.status === 'named' && typeof t.label === 'string' &&
+        t.label.replace(/^\s+|\s+$/g, '') !== '') {
+      named.push(t);
+    }
+  }
+  named.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  if (named.length > READER_MODEL_CONTEXT_N) { named = named.slice(0, READER_MODEL_CONTEXT_N); }
+  var labels = [];
+  for (i = 0; i < named.length; i = i + 1) { labels.push(named[i].label); }
+  var summary = (rm.profile && typeof rm.profile.summary === 'string')
+    ? rm.profile.summary.replace(/^\s+|\s+$/g, '') : '';
+  if (labels.length === 0 && summary === '') { return null; }
+  return { threads: labels, profile: summary };
+}
+
+// EDITABLE: render the reader-model into a prompt PREAMBLE. The framing is the
+// covenant heart -- internal steering for the ANGLE only, never to be
+// referenced. Returns '' when there is no model, so the builders prepend
+// nothing when off/empty (un-personalized but fully functional). The explicit
+// anti-presumption clause is what keeps a personalized draw-out from becoming a
+// creepy callback; if a personalized move gets suppressed or presumes, THIS
+// copy is what gets tuned -- never the gate.
+function formatReaderModelPreamble(rm) {
+  if (!rm) { return ''; }
+  var lines = [];
+  lines.push('[READER-MODEL -- internal steering for your ANGLE only. NEVER reference it, quote it, or hint that you have it.]');
+  if (rm.threads && rm.threads.length) {
+    lines.push('Themes this reader has circled before: ' + rm.threads.join('; ') + '.');
+  }
+  if (rm.profile) {
+    lines.push('The shape of their reading so far: ' + rm.profile);
+  }
+  lines.push('Use this ONLY to choose a more fertile direction for your question about the material below -- a sharper angle, not a callback. Do NOT mention it. Do NOT tell the reader what you know about them. Do NOT say "you always / you tend to / you keep / as usual / every time you / your thing is." Ask a FRESH question about the material in front of them; the reader must not be able to tell a model was consulted.');
+  return lines.join('\n') + '\n\n';
+}
+
+// Convenience: the prepend the four builders use. '' when off/empty.
+function readerModelPreamble() {
+  return formatReaderModelPreamble(gatherReaderModel());
+}
+
 // EDITABLE generator/router instruction: Part-1 voice + the three single-note
 // moves -- STAY QUIET (move 1), DRAW OUT (move 2), COMPLICATE (move 3) -- with
 // their Part-2 golds, so ONE call self-classifies and returns {move, text}. The
@@ -1180,7 +1260,8 @@ function buildMoveUserMessage(noteText, bookTitle) {
              bookTitle.replace(/^\s+|\s+$/g, '') !== '')
     ? 'The reader is reading "' + bookTitle + '".\n\n'
     : 'No book is attached to this note.\n\n';
-  return ctx + 'The note the reader just wrote:\n\n' + noteText +
+  // Stage II: reader-model angle-context prepend ('' when off/empty).
+  return readerModelPreamble() + ctx + 'The note the reader just wrote:\n\n' + noteText +
     '\n\nChoose one move and reply with ONLY the JSON object.';
 }
 
@@ -1556,12 +1637,12 @@ function buildScanUserMessage(entries) {
     var bt = entries[i].bookTitle ? (' [on "' + entries[i].bookTitle + '"]') : '';
     lines.push((i + 1) + '. ' + entries[i].body + bt);
   }
-  return 'The reader\'s recent notes:\n\n' + lines.join('\n') +
+  return readerModelPreamble() + 'The reader\'s recent notes:\n\n' + lines.join('\n') +
     '\n\nFind ONE thematic thread across three or more, or report none. ' +
     'Reply with ONLY the JSON object.';
 }
 function buildNameUserMessage(thread, reply) {
-  return 'THE THREAD you noticed: ' + thread + '\n\nThe reader\'s REPLY:\n' +
+  return readerModelPreamble() + 'THE THREAD you noticed: ' + thread + '\n\nThe reader\'s REPLY:\n' +
     reply + '\n\nReply with ONLY the JSON object.';
 }
 
@@ -1908,7 +1989,7 @@ function buildArcVoiceUserMessage(ctx) {
       }
     }
   }
-  return 'Here is the arc the reader is building:\n\n' + lines.join('\n') +
+  return readerModelPreamble() + 'Here is the arc the reader is building:\n\n' + lines.join('\n') +
     '\n\nOffer one problem-posing opening. Reply with ONLY the utterance.';
 }
 
@@ -2032,6 +2113,111 @@ function runArcVoiceHarness() {
   return runOne(0);
 }
 
+// =====================================================================
+// PROFILE REFRESH (yumi-intelligence Stage II). The reader-model's prose
+// profile auto-grows from the reader's VISIBLE non-private notes. A budget-
+// gated + cooldown'd one-shot proxy call on a NEW system prompt, with its OWN
+// counter (praxis_yumi_profile_budget, state.js) -- SEPARATE from the gate
+// budget so it can never starve the gate. It is NOT a chat utterance, so it is
+// NOT routed through the eval gate; the prose is reader-visible + editable +
+// deletable (the transparency covenant covers it). Respects provenance: never
+// touches the prose once the reader has hand-edited it (source === 'edited').
+// Reads ONLY _visibleEntriesForScan (the same isPrivate selection the moves
+// use) -- private notes never reach it.
+// =====================================================================
+
+// EDITABLE profile-generation instruction (PLACEHOLDER copy -- Preston tunes).
+var PROFILE_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. Write a SHORT, plain read '
+  + 'of the SHAPE of this reader\'s reading -- the themes they keep returning '
+  + 'to and the trajectory they seem to be on across books -- to show them '
+  + 'openly in their reader-model. You are given a sample of their recent '
+  + 'VISIBLE notes; private notes are never shown to you.\n\n'
+  + 'Write two or three plain sentences naming the through-line you see and '
+  + 'where their reading seems to be moving. You may address the reader directly '
+  + '("you have been moving from ... toward ..."). Describe the READING, not the '
+  + 'person; never diagnose, never flatter, never claim to know more than the '
+  + 'notes show. It is a read they can edit or delete, not a verdict.\n\n'
+  + 'If there is too little to see a shape yet, say so honestly in one '
+  + 'sentence.\n\n'
+  + 'Output ONLY the prose -- no preamble, no quotation marks, no label, no JSON.';
+
+// Build the profile-refresh user message from the visible-note sample.
+function buildProfileUserMessage(entries) {
+  var lines = []; var i;
+  for (i = 0; i < entries.length; i = i + 1) {
+    var bt = entries[i].bookTitle ? (' [on "' + entries[i].bookTitle + '"]') : '';
+    lines.push('- ' + entries[i].body + bt);
+  }
+  return 'The reader\'s recent visible notes:\n\n' + lines.join('\n') +
+    '\n\nWrite the short read of the shape of their reading. Reply with ONLY the prose.';
+}
+
+// THE PROFILE GENERATOR. visible-note sample -> Promise<prose|''>. One proxy
+// call (move config reused: model, temp, key, _yumiWithTimeout). Own SYSTEM
+// prompt; NOT the gate. Always resolves; failure -> '' (the orchestrator skips
+// the write).
+function generateProfileSummary(entries) {
+  var payload = {
+    model: 'claude-sonnet-4-6', max_tokens: 256, temperature: 0,
+    system: PROFILE_GEN_SYSTEM,
+    messages: [ { role: 'user', content: buildProfileUserMessage(entries) } ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
+    return res.json();
+  }).then(function (data) { return _yumiContentText(data); });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
+    console.warn('yumi-profile: refresh fail (' + (err && err.message) + ')');
+    return '';
+  });
+}
+
+// THE PROFILE-REFRESH ORCHESTRATOR. Fire-and-forget from the note-write hook
+// and the panel open. Gates IN ORDER (each a no-LLM early-out): consent (BOTH
+// flags) -> provenance (skip if hand-edited) -> cooldown -> enough visible
+// material -> budget(spend). On a non-empty result, writes profile.summary via
+// the 'auto' writer + mirrors to /userReaderModel + invokes onWritten (the UI
+// re-render). Always resolves. NOT gated through gradeUtterance.
+function considerProfileRefresh(onWritten) {
+  var uid = resolveActiveUid();
+  if (!uid) { return Promise.resolve({ quiet: true, reason: 'no-user' }); }
+  var prof = (typeof getProfile === 'function') ? getProfile(uid) : null;
+  if (!prof || prof.yumiReadsAlong === false || prof.yumiReaderModel !== true) {
+    return Promise.resolve({ quiet: true, reason: 'consent' });
+  }
+  var rm = (typeof getReaderModel === 'function') ? getReaderModel(uid) : null;
+  if (rm && rm.profile && rm.profile.source === 'edited') {
+    return Promise.resolve({ quiet: true, reason: 'hand-edited' });
+  }
+  if (typeof _yumiProfileCooldownOk === 'function' && !_yumiProfileCooldownOk()) {
+    return Promise.resolve({ quiet: true, reason: 'cooldown' });
+  }
+  var entries = _visibleEntriesForScan();
+  if (!entries || entries.length < 2) {
+    return Promise.resolve({ quiet: true, reason: 'too-few' });
+  }
+  if (typeof _yumiProfileBudgetSpend === 'function' && !_yumiProfileBudgetSpend()) {
+    return Promise.resolve({ quiet: true, reason: 'budget' });
+  }
+  if (typeof _markProfileRefresh === 'function') { _markProfileRefresh(); }
+  return generateProfileSummary(entries).then(function (summary) {
+    if (typeof summary !== 'string' || summary.replace(/^\s+|\s+$/g, '') === '') {
+      return { quiet: true, reason: 'empty' };
+    }
+    setReaderProfileAuto(uid, summary);
+    if (typeof saveReaderModelToFirestore === 'function') {
+      saveReaderModelToFirestore(uid, getReaderModel(uid), function () {});
+    }
+    if (typeof onWritten === 'function') { onWritten(); }
+    return { written: true, text: summary };
+  });
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -2059,7 +2245,10 @@ window.YumiBrain = {
   considerArcVoice:   considerArcVoice,
   generateArcVoice:   generateArcVoice,
   gatherArcContext:   gatherArcContext,
-  runArcVoiceHarness: runArcVoiceHarness
+  runArcVoiceHarness: runArcVoiceHarness,
+  considerProfileRefresh: considerProfileRefresh,
+  gatherReaderModel:  gatherReaderModel,
+  readerModelPreamble: readerModelPreamble
 };
 
 // Stage A: expose the gate harness at top level for live verification.

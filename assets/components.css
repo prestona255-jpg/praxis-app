@@ -8569,6 +8569,7 @@
 .account-readermodel .rm-add-btn { flex:0 0 auto; font-family:var(--font-body); font-size:12.5px; font-weight:700; color:var(--on-teal); background:var(--marginalia-color); border:1px solid var(--marginalia-color); border-radius:var(--radius-pill); padding:8px 16px; cursor:pointer; }
 .account-readermodel .rm-add-btn:hover { filter:brightness(1.05); }
 .account-readermodel .rm-arc-text { font-family:var(--font-body); font-size:14px; color:var(--ink); line-height:1.55; margin:0; }
+.account-readermodel .rm-prov-note { font-family:var(--font-mono); font-size:10px; letter-spacing:0.03em; color:var(--ink-3); margin:8px 0 0; }
 .account-readermodel .rm-foot { margin-top:18px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
 .account-readermodel .rm-foot-note { font-family:var(--font-mono); font-size:10px; letter-spacing:0.03em; color:var(--ink-3); }
 .account-readermodel .rm-forget { font-family:var(--font-body); font-size:13px; font-weight:500; color:var(--danger); background:none; border:none; cursor:pointer; padding:0; text-decoration:none; }

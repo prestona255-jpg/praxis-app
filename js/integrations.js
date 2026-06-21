@@ -811,7 +811,11 @@ function saveReaderModelToFirestore(uid, model, callback) {
         threads:   threads,
         profile: {
           summary:   (typeof prof.summary === 'string') ? prof.summary : '',
-          updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0
+          updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0,
+          // yumi-intelligence Stage II: persist provenance so a hand-edit lock
+          // ('edited') survives the round-trip and is honored on another device.
+          // Full-doc .set() -> must be listed or it would be wiped. Default 'auto'.
+          source:    (prof.source === 'edited') ? 'edited' : 'auto'
         },
         updatedAt: (typeof m.updatedAt === 'number') ? m.updatedAt : 0,
         syncedAt:  firebase.firestore.FieldValue.serverTimestamp()

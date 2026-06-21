@@ -1094,6 +1094,10 @@ function setReaderProfile(uid, summary) {
   var now = Date.now();
   state.users[uid].readerModel.profile.summary = clean;
   state.users[uid].readerModel.profile.updatedAt = now;
+  // yumi-intelligence Stage II: a hand-edit flips provenance to 'edited' so the
+  // auto-refresh STOPS touching the prose -- a refresh must never silently
+  // clobber a hand-edit. Reset to 'auto' only on clearReaderModel (forget).
+  state.users[uid].readerModel.profile.source = 'edited';
   state.users[uid].readerModel.updatedAt = now;
   saveState();
 }
@@ -1107,7 +1111,9 @@ function clearReaderModel(uid) {
   ensureUser(uid);
   var now = Date.now();
   state.users[uid].readerModel.threads = [];
-  state.users[uid].readerModel.profile = { summary: '', updatedAt: now };
+  // Stage II: forget resets provenance to 'auto' so the auto-refresh may
+  // repopulate the cleared prose (a wipe clears the hand-edit lock too).
+  state.users[uid].readerModel.profile = { summary: '', updatedAt: now, source: 'auto' };
   state.users[uid].readerModel.updatedAt = now;
   saveState();
 }
@@ -1143,12 +1149,131 @@ function replaceReaderModel(uid, remote) {
     threads: threads,
     profile: {
       summary:   (typeof prof.summary === 'string') ? prof.summary : '',
-      updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0
+      updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0,
+      // Stage II: provenance survives the round-trip so a hand-edit lock made on
+      // one device is honored on another (default 'auto' on absence).
+      source:    (prof.source === 'edited') ? 'edited' : 'auto'
     },
     updatedAt: (typeof src.updatedAt === 'number') ? src.updatedAt : 0
   };
   saveState();
 }
+
+// yumi-intelligence Stage II HARDENING: the SINGLE content-aware provenance
+// resolver. An explicit source field wins; else a NON-EMPTY summary resolves to
+// 'edited' (a profile hand-authored in Stage I predates the source field --
+// protect it; never let the auto-refresh silently clobber it); else (empty
+// summary) 'auto' (nothing to clobber). The refresh write-guard routes through
+// this -- do NOT scatter the content-aware comparison across call sites.
+function readerProfileSource(profile) {
+  var s = (profile && profile.summary) ? profile.summary : '';
+  s = s.replace(/^\s+|\s+$/g, '');
+  return (profile && profile.source) ? profile.source : (s ? 'edited' : 'auto');
+}
+
+// yumi-intelligence Stage II: the auto-refresh's profile writer. WRITE-GUARDED:
+// writes the summary + stamps 'auto' ONLY when the effective provenance (via
+// readerProfileSource) is 'auto'. A hand-authored profile -- explicit 'edited',
+// OR a non-empty Stage I summary with no source field -- is left UNTOUCHED, so a
+// refresh never silently clobbers a hand-typed read. Persists via saveState.
+function setReaderProfileAuto(uid, summary) {
+  if (!uid) { return; }
+  ensureUser(uid);
+  if (readerProfileSource(state.users[uid].readerModel.profile) !== 'auto') { return; }
+  var clean = (typeof summary === 'string') ? summary.replace(/^\s+|\s+$/g, '') : '';
+  var now = Date.now();
+  state.users[uid].readerModel.profile.summary = clean;
+  state.users[uid].readerModel.profile.updatedAt = now;
+  state.users[uid].readerModel.profile.source = 'auto';
+  state.users[uid].readerModel.updatedAt = now;
+  saveState();
+}
+
+// yumi-intelligence Stage II: minimum shared member ids for two clusters to be
+// "the same thread" (matches NOTICE_OVERLAP_MIN). Used by the auto-write below.
+var READER_THREAD_OVERLAP_MIN = 2;
+
+// yumi-intelligence Stage II: the NOTICE->NAME auto-write. On a CONFIRMED name,
+// write the thread into the reader-model: status 'named', the member note ids
+// from the NOTICE cluster, the derived arcId, and the produced subTheoryId.
+// IDEMPOTENT -- if a thread already shares >= READER_THREAD_OVERLAP_MIN member
+// ids (a re-confirmation of the same cluster), UPDATE it in place rather than
+// duplicate. The CALLER gates on consent (yumiReaderModel && yumiReadsAlong);
+// the Firestore mirror is the UI caller's job. Returns the written thread, or
+// null on bad input. Persists via saveState.
+function addReaderThreadFromName(uid, fields) {
+  if (!uid || !fields) { return null; }
+  var label = (typeof fields.label === 'string') ? fields.label.replace(/^\s+|\s+$/g, '') : '';
+  if (label === '') { return null; }
+  var members = (fields.memberNoteIds instanceof Array) ? fields.memberNoteIds : [];
+  var oneLine = (typeof fields.oneLine === 'string') ? fields.oneLine.replace(/^\s+|\s+$/g, '') : '';
+  var arcId = (typeof fields.arcId === 'string') ? fields.arcId : null;
+  var subTheoryId = (typeof fields.subTheoryId === 'string') ? fields.subTheoryId : null;
+  ensureUser(uid);
+  var now = Date.now();
+  var threads = state.users[uid].readerModel.threads;
+  var i, a, b;
+  for (i = 0; i < threads.length; i = i + 1) {
+    var ex = threads[i];
+    if (!ex || !(ex.memberNoteIds instanceof Array)) { continue; }
+    var shared = 0;
+    for (a = 0; a < members.length; a = a + 1) {
+      for (b = 0; b < ex.memberNoteIds.length; b = b + 1) {
+        if (members[a] === ex.memberNoteIds[b]) { shared = shared + 1; break; }
+      }
+    }
+    if (shared >= READER_THREAD_OVERLAP_MIN) {
+      // idempotent update-in-place: same cluster re-confirmed, never duplicate.
+      ex.label = label;
+      ex.oneLine = oneLine;
+      ex.status = 'named';
+      ex.memberNoteIds = members.slice(0);
+      ex.arcId = arcId;
+      ex.subTheoryId = subTheoryId;
+      ex.updatedAt = now;
+      state.users[uid].readerModel.updatedAt = now;
+      saveState();
+      return ex;
+    }
+  }
+  var thread = {
+    id:            genThreadId(),
+    label:         label,
+    oneLine:       oneLine,
+    status:        'named',
+    memberNoteIds: members.slice(0),
+    arcId:         arcId,
+    subTheoryId:   subTheoryId,
+    createdAt:     now,
+    updatedAt:     now
+  };
+  threads.push(thread);
+  state.users[uid].readerModel.updatedAt = now;
+  saveState();
+  return thread;
+}
+
+// yumi-intelligence Stage II: the profile-refresh budget -- its OWN small daily
+// counter + a cooldown, SEPARATE from the gate budget (praxis_yumi_gate_budget)
+// so a refresh can never starve the gate. ls-backed + date-stamped (resets
+// daily). PROFILE_REFRESH_* are EDITABLE tunables.
+var PROFILE_REFRESH_DAILY_CAP   = 4;
+var PROFILE_REFRESH_COOLDOWN_MS = 1800000;  // >= 30 min between refreshes
+function _yumiProfileBudgetSpend() {
+  var rec = ls('praxis_yumi_profile_budget', { day: '', count: 0 });
+  var now = new Date();
+  var day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+  if (!rec || rec.day !== day) { rec = { day: day, count: 0 }; }
+  if (rec.count >= PROFILE_REFRESH_DAILY_CAP) { sv('praxis_yumi_profile_budget', rec); return false; }
+  rec.count = rec.count + 1;
+  sv('praxis_yumi_profile_budget', rec);
+  return true;
+}
+function _yumiProfileCooldownOk() {
+  var last = ls('praxis_yumi_profile_cooldown', 0);
+  return (Date.now() - (typeof last === 'number' ? last : 0)) >= PROFILE_REFRESH_COOLDOWN_MS;
+}
+function _markProfileRefresh() { sv('praxis_yumi_profile_cooldown', Date.now()); }
 
 // Stage 14.3 Stage 2: serialize the ACTIVE user's workspace into a single
 // JSON-serializable object. No download trigger here -- Stage 4 (views)

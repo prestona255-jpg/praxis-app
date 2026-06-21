@@ -1769,6 +1769,10 @@ function maybeDrawOut(entryId) {
       renderYumiMessage(r.text);
     }
   });
+  // yumi-intelligence Stage II: a visible note-write is also a cue to refresh
+  // the reader-model profile -- "grows as you read." Fire-and-forget; self-gated
+  // on consent + provenance + cooldown + its own budget (never the gate's).
+  if (YumiBrain.considerProfileRefresh) { YumiBrain.considerProfileRefresh(); }
 }
 
 // Stage B-2.2: the COMPLICATE co-write. ADDITIVELY append the reader's
@@ -1820,6 +1824,20 @@ function nameSubTheoryFromThread(finalName, memberIds, threadLabel, oneLineRead)
     addEvidenceToSubTheory(st.id, { kind: 'entry', refId: memberIds[i], quote: quote });
   }
   if (window.YumiBrain && YumiBrain.recordThreadNamed) { YumiBrain.recordThreadNamed(memberIds); }
+  // yumi-intelligence Stage II: auto-write the confirmed thread into the reader-
+  // model -- status 'named', the NOTICE member ids, the derived arcId, and the
+  // produced subTheoryId. Gated on BOTH consents; idempotent (state.js); mirrored
+  // to /userReaderModel. With consent off, NO write fires (un-personalized).
+  var rmProf = (typeof getProfile === 'function') ? getProfile(user.uid) : null;
+  if (rmProf && rmProf.yumiReadsAlong !== false && rmProf.yumiReaderModel === true &&
+      typeof addReaderThreadFromName === 'function') {
+    addReaderThreadFromName(user.uid, {
+      label: name, oneLine: read, memberNoteIds: memberIds, arcId: arcId, subTheoryId: st.id
+    });
+    if (typeof saveReaderModelToFirestore === 'function') {
+      saveReaderModelToFirestore(user.uid, getReaderModel(user.uid), function () {});
+    }
+  }
   saveState();
   if (typeof renderRoute === 'function') { renderRoute(); }
   return st;
@@ -11851,6 +11869,7 @@ function buildReaderModelSection(uid) {
 
   var summary = (model.profile && typeof model.profile.summary === 'string')
     ? model.profile.summary : '';
+  var profSource = (model.profile && model.profile.source === 'edited') ? 'edited' : 'auto';
   if (active) {
     var arcInput = document.createElement('textarea');
     arcInput.className = 'rm-arc-input';
@@ -11882,6 +11901,16 @@ function buildReaderModelSection(uid) {
     arcText.textContent = summary;
     sec2.appendChild(arcText);
   }
+  // Stage II: provenance note -- is the prose Yumi's auto read (refreshes as you
+  // read) or a hand-edit (Yumi won't overwrite it). Shown only when prose exists.
+  if (summary !== '') {
+    var srcNote = document.createElement('p');
+    srcNote.className = 'rm-prov-note';
+    srcNote.textContent = (profSource === 'edited')
+      ? 'Edited by you — Yumi won’t overwrite this.'
+      : 'Yumi’s read — refreshes as you read.';
+    sec2.appendChild(srcNote);
+  }
   panel.appendChild(sec2);
 
   // foot: "forget everything" -- wipes the DATA (local + the Firestore doc via
@@ -11908,6 +11937,16 @@ function buildReaderModelSection(uid) {
   panel.appendChild(foot);
 
   card.appendChild(panel);
+
+  // yumi-intelligence Stage II: opening the panel (consent on) also nudges a
+  // profile refresh -- fire-and-forget, self-gated (consent/provenance/cooldown/
+  // budget). On a successful write it re-renders the Account page so the prose
+  // updates live in place. The cooldown makes repeated renders a no-op.
+  if (active && window.YumiBrain && YumiBrain.considerProfileRefresh) {
+    YumiBrain.considerProfileRefresh(function() {
+      if (typeof renderAccountPage === 'function') { renderAccountPage(); }
+    });
+  }
   return card;
 }
 
