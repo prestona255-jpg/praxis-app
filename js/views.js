@@ -596,17 +596,23 @@ function renderHome() {
   var hero = document.createElement('div');
   hero.className = 'home-hero';
 
+  // Umber port (surface 4): mock home-hero -- eyebrow + title + sub + .btn CTAs.
+  var heroEyebrow = document.createElement('div');
+  heroEyebrow.className = 'eyebrow home-eyebrow';
+  heroEyebrow.textContent = 'A reading practice';
+  hero.appendChild(heroEyebrow);
+
   var h1 = document.createElement('h1');
-  h1.className = 'home-hero-title';
+  h1.className = 'home-title';
   h1.appendChild(document.createTextNode('Your reading becomes '));
   var accent = document.createElement('span');
-  accent.className = 'home-hero-accent';
+  accent.className = 'accent';
   accent.textContent = 'theory.';
   h1.appendChild(accent);
   hero.appendChild(h1);
 
   var sub = document.createElement('p');
-  sub.className = 'home-hero-sub';
+  sub.className = 'home-sub';
   sub.textContent = 'Read, gather evidence, and build a living ' +
     'constellation of your own thinking \u2014 in practice, with Yumi.';
   hero.appendChild(sub);
@@ -615,15 +621,15 @@ function renderHome() {
   cta.className = 'home-cta';
 
   var ctaPrimary = document.createElement('a');
-  ctaPrimary.className = 'home-cta-primary';
-  ctaPrimary.href = '#arcs';
-  ctaPrimary.textContent = 'Open the constellation';
+  ctaPrimary.className = 'btn btn-primary';
+  ctaPrimary.href = '#books';
+  ctaPrimary.textContent = 'Open your shelf';
   cta.appendChild(ctaPrimary);
 
   var ctaSecondary = document.createElement('a');
-  ctaSecondary.className = 'home-cta-secondary';
-  ctaSecondary.href = '#books';
-  ctaSecondary.textContent = 'Browse your shelf';
+  ctaSecondary.className = 'btn btn-ghost';
+  ctaSecondary.href = '#arcs';
+  ctaSecondary.textContent = 'Open the constellation';
   cta.appendChild(ctaSecondary);
 
   hero.appendChild(cta);
@@ -634,10 +640,16 @@ function renderHome() {
   var preview = document.createElement('div');
   preview.className = 'home-preview';
 
-  var pvEyebrow = document.createElement('p');
+  var pvCap = document.createElement('div');
+  pvCap.className = 'home-preview-cap';
+  var pvDot = document.createElement('span');
+  pvDot.className = 'dot';
+  pvCap.appendChild(pvDot);
+  var pvEyebrow = document.createElement('span');
   pvEyebrow.className = 'eyebrow';
   pvEyebrow.textContent = 'A living constellation';
-  preview.appendChild(pvEyebrow);
+  pvCap.appendChild(pvEyebrow);
+  preview.appendChild(pvCap);
 
   // FINALE (chrome-fidelity): embed the seed arc's constellation READ-ONLY.
   // Resolve the globally-viewable sentinel-owned seed arc, build the same data
@@ -659,7 +671,7 @@ function renderHome() {
       homeArcData.subTheories.length &&
       typeof window.renderSubTheoryConstellation === 'function') {
     var pvLink = document.createElement('a');
-    pvLink.className = 'home-preview-embed';
+    pvLink.className = 'home-preview-embed cstl-host';
     pvLink.href = '#arc/' + homeSeedArcId;
     var HOME_SVG_NS = 'http://www.w3.org/2000/svg';
     var pvSvg = document.createElementNS(HOME_SVG_NS, 'svg');

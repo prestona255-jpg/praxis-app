@@ -779,6 +779,23 @@
 }
 
 
+/* ----- Umber layout port (surface 4): mock home frame -----
+   design/praxis-umber-mockup.html #s-home. Home is a DARK surface; tokens flip
+   (--ink->text-d, --ink-3->muted). Appended -> wins over the live home rules.
+   The live CTA hash-nav (<a href=#books/#arcs>) + the renderSubTheoryConstellation
+   preview embed are unchanged; CTAs adopt the .btn primitives. */
+.home-hero { max-width:880px; margin:0 auto; text-align:center; padding:6vh var(--sp-5) 3vh; }
+.home-eyebrow { margin-bottom:18px; }
+.home-title { font-family:var(--font-serif); font-weight:500; font-size:clamp(40px,8vw,82px); line-height:1.02; letter-spacing:-.015em; color:var(--ink); margin:0; }
+.home-title .accent { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.home-sub { font-family:var(--font-serif); font-style:italic; font-size:clamp(18px,2.4vw,23px); line-height:1.5; color:var(--ink-3); max-width:60ch; margin:22px auto 0; }
+.home-cta { display:flex; gap:14px; justify-content:center; margin-top:32px; flex-wrap:wrap; }
+.home-preview { max-width:1000px; margin:54px auto 0; padding:0 var(--sp-5); }
+.home-preview-cap { display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:14px; }
+.home-preview-cap .dot { width:7px; height:7px; border-radius:var(--radius-pill); background:var(--marginalia-color); flex:0 0 auto; }
+.home-preview .cstl-host { display:block; }
+.home-preview .cstl-host svg { width:100%; height:auto; display:block; }
+
 /* ===== SPOTLIGHT -- global search (Cmd/Ctrl+K) -- Batch 4B =====
    The 2nd sanctioned blur surface (alongside .app-nav): a backdrop scrim
    plus a centered near-opaque glass panel, reconciled from the mockup's
