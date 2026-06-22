@@ -1989,11 +1989,17 @@ function openEditor(opts) {
     titleInput.className = 'notebook-editor-title-input';
     titleInput.value = (typeof opts.titlePrefill === 'string')
       ? opts.titlePrefill : '';
+    if (typeof opts.titlePlaceholder === 'string') {
+      titleInput.setAttribute('placeholder', opts.titlePlaceholder);
+    }
   }
 
   var bodyInput = document.createElement('textarea');
   bodyInput.className = 'notebook-editor-body';
   bodyInput.rows = 8;
+  if (typeof opts.bodyPlaceholder === 'string') {
+    bodyInput.setAttribute('placeholder', opts.bodyPlaceholder);
+  }
 
   var actions = document.createElement('div');
   actions.className = 'notebook-editor-actions';
@@ -2107,6 +2113,8 @@ function openArcEditor() {
   openEditor({
     hostId:         'notebook-arc-editor-host',
     showTitleField: true,
+    titlePlaceholder: 'Name this arc',
+    bodyPlaceholder: 'What question or thread runs through it?',
     onSave: function(titleVal, bodyVal) {
       var user = getCurrentUser();
       if (!user) return;

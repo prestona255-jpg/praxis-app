@@ -1652,6 +1652,8 @@
 .arcs .arc-card-start:hover { color:var(--gold); border-color:var(--gold); }
 .arcs .arc-card-start-icon { line-height:0; }
 .arcs .arc-card-start-label { font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; }
+/* Bug B — arc-create editor body: compact single-question field (base .notebook-editor-body is min-height:160px; the arc field mounts at #notebook-arc-editor-host under .arcs) */
+.arcs .notebook-editor-body { min-height:72px; }
 
 /* ===== END ARCS PAGE ===== */
 
