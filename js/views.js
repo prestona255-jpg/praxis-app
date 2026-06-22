@@ -2998,7 +2998,7 @@ function renderShelf() {
   authorSection.className = 'shelf-filter-group';
   var authorLabel = document.createElement('h3');
   authorLabel.className = 'shelf-filter-label';
-  authorLabel.textContent = 'Filter by author';
+  authorLabel.textContent = 'Author';
   authorSection.appendChild(authorLabel);
   var authorListEl = document.createElement('ul');
   authorListEl.className = 'shelf-filter-list shelf-filter-list-author';
