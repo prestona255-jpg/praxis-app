@@ -8980,7 +8980,11 @@
 /* head: mark chip + title + delete */
 .st-page .st-head { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
 .st-page .st-head .st-mark-chip { width:48px; height:48px; flex:none; border-radius:var(--radius-md); border:1px solid var(--line-page); background:var(--page-2); display:grid; place-items:center; cursor:pointer; padding:0; }
-.st-page .st-head .st-mark-chip svg { display:block; width:32px; height:32px; }
+/* Fidelity: the glyph svg fills its span (inline width:100%), so the span must
+   be sized -- the stale .st-mark-chip-mark{16px} rule made the mark tiny in the
+   48px chip. Size the span to ~32px so the mark reads at the mock's scale. */
+.st-page .st-head .st-mark-chip .st-mark-chip-mark { width:32px; height:32px; display:grid; place-items:center; }
+.st-page .st-head .st-mark-chip svg { display:block; }
 .st-page .st-title-input { flex:1; min-width:0; font-family:var(--font-serif); font-size:clamp(26px,3.4vw,38px); color:var(--ink); background:transparent; border:none; border-bottom:1px solid transparent; outline:none; padding:4px 0; }
 .st-page .st-title-input:focus-visible { border-bottom-color:var(--gold-ink); }
 .st-page .st-delete { background:transparent; border:none; color:var(--meta); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
