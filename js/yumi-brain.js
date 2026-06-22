@@ -2528,6 +2528,218 @@ function considerProfileRefresh(onWritten) {
   });
 }
 
+// =====================================================================
+// Alive Yumi -- Prompt 3: the CONVERSATION / COMMAND ROUTER (covenant keystone).
+// classifyUtterance(text) routes every utterance. CONVERSATION goes to the
+// existing pedagogical sendMessage path UNCHANGED; a utility COMMAND does
+// NAV / OPEN only (read-only v1). THE COVENANT: the command lane NEVER does
+// intellectual labor and NEVER writes -- both route back to CONVERSATION. Bias
+// hard to CONVERSATION (a misrouted command is a harmless retry; a misrouted
+// conversation breaks the app's promise). Fail-CLOSED to CONVERSATION on
+// error / timeout / over-budget / parse-fail. Lives BELOW the frozen gate;
+// mirrors the gate proxy pattern (claude-sonnet-4-6, temp 0, x-praxis-key,
+// _yumiWithTimeout); reuses _yumiHash + _yumiContentText; own memo + budget so
+// it never starves the gate budget.
+//
+// Resolves a Promise of an object with a .lane field:
+//   { lane: 'CONVERSATION' }
+//   { lane: 'COMMAND', kind: 'nav',  target: <routeKey> }   // home/books/arcs/...
+//   { lane: 'COMMAND', kind: 'open', query:  <title text> } // action layer scans
+//   { lane: 'AMBIGUOUS' }                                   // referent-less open
+//   { lane: 'DESTRUCTIVE', op: <text> }                     // DORMANT scaffold:
+//        v1 ROUTER_SYSTEM routes real mutations to CONVERSATION, so this never
+//        fires live yet (add-book-to-arc is the deferred fast-follow); the lane
+//        + the confirm-UI scaffold exist for that future, like 'acting' did.
+// The action layer (views.js) turns COMMAND/AMBIGUOUS into nav/open/ask.
+// =====================================================================
+
+// Valid NAV targets -- the live route keys the action layer can navigate to.
+var ROUTER_NAV_TARGETS = ['home', 'books', 'arcs', 'account', 'notebook', 'about', 'yumi-sees'];
+
+// Soft per-day classifier cap on its OWN counter, so the router never starves
+// the shared gate budget. Over cap -> fail-closed to CONVERSATION (chat still
+// works; only command routing pauses).
+var YUMI_ROUTER_DAILY_CAP = 400;
+var _yumiRouterCache = {};
+
+function _yumiRouterBudgetSpend() {
+  var rec = ls('praxis_yumi_router_budget', { day: '', count: 0 });
+  var now = new Date();
+  var day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+  if (!rec || rec.day !== day) { rec = { day: day, count: 0 }; }
+  if (rec.count >= YUMI_ROUTER_DAILY_CAP) { sv('praxis_yumi_router_budget', rec); return false; }
+  rec.count = rec.count + 1;
+  sv('praxis_yumi_router_budget', rec);
+  return true;
+}
+
+var ROUTER_SYSTEM =
+  'You are a strict INTENT ROUTER for a reading app called Praxis. You classify ONE reader ' +
+  'utterance into exactly one lane. You do NOT answer, converse, summarize, or act -- you ONLY ' +
+  'classify. Output STRICT minified JSON: a single object, no prose, no code fence.\n\n' +
+  'THE COVENANT (decisive): the COMMAND lane is a utility that ONLY navigates the app or opens a ' +
+  'screen. It NEVER thinks for the reader and NEVER changes data. When unsure, choose conversation -- ' +
+  'misrouting a command to conversation is a harmless retry; misrouting conversation to a command ' +
+  'breaks the app\'s promise.\n\n' +
+  'Lanes:\n' +
+  '1) {"lane":"conversation"} -- THE DEFAULT. Any reflection, feeling, statement, or question, and ' +
+  'ANY request for thinking even phrased as an imperative: summarize, explain, analyze, interpret, ' +
+  '"what are the themes", "what does this mean", "write my note", "give me the gist", "help me ' +
+  'understand". These are NOT commands.\n' +
+  '2) {"lane":"command","kind":"nav","target":T} -- a clear request to GO TO a top-level screen. T is ' +
+  'EXACTLY one of: home, books, arcs, account, notebook, about, yumi-sees. ("take me to my arcs"->arcs; ' +
+  '"go to my shelf"/"my books"->books; "open my notebook"->notebook; "home"->home; "account"/"settings"->account.)\n' +
+  '3) {"lane":"command","kind":"open","query":Q} -- a clear request to OPEN a SPECIFIC named book or ' +
+  'arc. Q is the verbatim name the reader said (e.g. "open The Republic"->Q="The Republic"). The app ' +
+  'resolves the name itself.\n' +
+  '4) {"lane":"ambiguous"} -- an OPEN command with NO nameable referent ("open this", "open it", ' +
+  '"open this book") where you cannot tell what to open.\n\n' +
+  'MUTATIONS ARE NOT COMMANDS HERE: any request to CHANGE data (add/remove/delete/create/move/mark/' +
+  'save something to or from an arc, shelf, or notebook) must be classified {"lane":"conversation"} -- ' +
+  'this version does not let the command lane write.\n\n' +
+  'Rules: Bias hard to conversation. A bare statement, feeling, or open question is conversation. Only ' +
+  'a clear nav/open utility intent is a command. Never invent a target or query not present in the ' +
+  'utterance. Output ONLY the JSON object.';
+
+// Parse the router model's JSON verdict; validate against the contract; on ANY
+// doubt return CONVERSATION (fail-closed). Never emits DESTRUCTIVE in v1.
+function _yumiParseRouterVerdict(rawText) {
+  var t = (typeof rawText === 'string') ? rawText : '';
+  var lo = t.indexOf('{');
+  var hi = t.lastIndexOf('}');
+  if (lo < 0 || hi < lo) { return { lane: 'CONVERSATION' }; }
+  var obj;
+  try { obj = JSON.parse(t.slice(lo, hi + 1)); } catch (e) { return { lane: 'CONVERSATION' }; }
+  if (!obj || typeof obj.lane !== 'string') { return { lane: 'CONVERSATION' }; }
+  var lane = obj.lane.toLowerCase();
+  if (lane === 'command') {
+    if (obj.kind === 'nav') {
+      var target = ('' + (obj.target || '')).toLowerCase().replace(/^\s+|\s+$/g, '');
+      if (target === 'shelf') { target = 'books'; }
+      var i;
+      for (i = 0; i < ROUTER_NAV_TARGETS.length; i = i + 1) {
+        if (ROUTER_NAV_TARGETS[i] === target) {
+          return { lane: 'COMMAND', kind: 'nav', target: target };
+        }
+      }
+      return { lane: 'CONVERSATION' };   // unknown nav target -> safe
+    }
+    if (obj.kind === 'open') {
+      var q = ('' + (obj.query || '')).replace(/^\s+|\s+$/g, '');
+      if (q === '') { return { lane: 'AMBIGUOUS' }; }
+      return { lane: 'COMMAND', kind: 'open', query: q };
+    }
+    return { lane: 'CONVERSATION' };     // command without a clean kind -> safe
+  }
+  if (lane === 'ambiguous') { return { lane: 'AMBIGUOUS' }; }
+  // 'conversation', a stray 'destructive', or anything else -> CONVERSATION
+  return { lane: 'CONVERSATION' };
+}
+
+function classifyUtterance(text) {
+  var t = (typeof text === 'string') ? text.replace(/^\s+|\s+$/g, '') : '';
+  if (t === '') { return Promise.resolve({ lane: 'CONVERSATION' }); }
+  var key = _yumiHash('R:' + t);
+  if (Object.prototype.hasOwnProperty.call(_yumiRouterCache, key)) {
+    return Promise.resolve(_yumiRouterCache[key]);
+  }
+  if (!_yumiRouterBudgetSpend()) {
+    return Promise.resolve({ lane: 'CONVERSATION' });   // over budget -> chat
+  }
+  var payload = {
+    model:       'claude-sonnet-4-6',
+    max_tokens:  64,
+    temperature: 0,
+    system:      ROUTER_SYSTEM,
+    messages: [ { role: 'user', content: t } ]
+  };
+  var call = fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (b) { throw new Error('router proxy ' + res.status + ' ' + b); });
+    }
+    return res.json();
+  }).then(function (data) {
+    var verdict = _yumiParseRouterVerdict(_yumiContentText(data));
+    _yumiRouterCache[key] = verdict;     // cache only definitive verdicts
+    return verdict;
+  });
+  return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) {
+    return v;
+  }, function () {
+    return { lane: 'CONVERSATION' };      // error / timeout -> fail-closed
+  });
+}
+
+// runRouterHarness -- covenant test sets. Mirrors runMoveHarness: labeled
+// samples, a recursive runOne(i), a console.log report. The HARD GATE is
+// covenantFailures===0 (every reflective / intellectual-labor / mutation
+// utterance must be CONVERSATION) AND nav/open route to the right COMMAND.
+function runRouterHarness() {
+  var samples = [
+    { set: 'reflective', text: 'I keep noticing the books I abandon say more about me than the ones I finish.' },
+    { set: 'reflective', text: 'Why do some ideas only land on a second reading?' },
+    { set: 'reflective', text: 'Lately reading feels like arguing with someone who left the room.' },
+    { set: 'nav', text: 'take me to my arcs', kind: 'nav', target: 'arcs' },
+    { set: 'nav', text: 'go to my shelf', kind: 'nav', target: 'books' },
+    { set: 'nav', text: 'open my notebook', kind: 'nav', target: 'notebook' },
+    { set: 'nav', text: 'show me my account', kind: 'nav', target: 'account' },
+    { set: 'open', text: 'open The Republic', kind: 'open' },
+    { set: 'open', text: 'pull up Pedagogy of the Oppressed', kind: 'open' },
+    { set: 'covenant', text: 'summarize this chapter for me' },
+    { set: 'covenant', text: 'what are the themes here' },
+    { set: 'covenant', text: 'write my note for me' },
+    { set: 'covenant', text: 'explain this passage' },
+    { set: 'covenant', text: 'give me the gist' },
+    { set: 'mutation', text: 'add The Republic to my Justice arc' },
+    { set: 'mutation', text: 'delete my Justice arc' },
+    { set: 'mutation', text: 'mark this book finished' },
+    { set: 'ambiguous', text: 'open this book' }
+  ];
+  function expectLane(s) {
+    if (s.set === 'nav' || s.set === 'open') { return 'COMMAND'; }
+    if (s.set === 'ambiguous') { return 'AMBIGUOUS'; }
+    return 'CONVERSATION';   // reflective / covenant / mutation
+  }
+  var results = [];
+  function runOne(i) {
+    if (i >= samples.length) {
+      var r, line, passCount = 0, covenantFail = 0;
+      console.log('=== ROUTER HARNESS (covenant) ===');
+      for (r = 0; r < results.length; r = r + 1) {
+        line = results[r];
+        console.log((line.pass ? 'PASS ' : 'FAIL ') + '[' + line.set + '] expect ' +
+          line.expect + ' got ' + line.got + ' :: "' + line.text + '"');
+        if (line.pass) { passCount = passCount + 1; }
+        if (!line.pass && (line.set === 'reflective' || line.set === 'covenant' || line.set === 'mutation')) {
+          covenantFail = covenantFail + 1;
+        }
+      }
+      console.log('=== ROUTER ' + passCount + '/' + results.length + ' pass; COVENANT FAILURES: ' +
+        covenantFail + ' (must be 0) ===');
+      return { results: results, pass: passCount, total: results.length, covenantFailures: covenantFail };
+    }
+    var s = samples[i];
+    return classifyUtterance(s.text).then(function (v) {
+      var expect = expectLane(s);
+      var got = (v && v.lane) ? v.lane : '?';
+      var ok = (got === expect);
+      if (ok && expect === 'COMMAND') {
+        if (s.kind && v.kind !== s.kind) { ok = false; }
+        if (s.target && v.target !== s.target) { ok = false; }
+      }
+      var detail = got + (v && v.kind ? '/' + v.kind : '') + (v && v.target ? '/' + v.target : '') +
+        (v && v.query ? '/"' + v.query + '"' : '');
+      results.push({ set: s.set, text: s.text, expect: expect, got: detail, pass: ok });
+      return runOne(i + 1);
+    });
+  }
+  return runOne(0);
+}
+
 window.YumiBrain = {
   loadVoice:          loadYumiVoice,
   buildSystem:        buildYumiSystem,
@@ -2564,7 +2776,9 @@ window.YumiBrain = {
   webAnglePreamble:   webAnglePreamble,
   sanitizeWebAngle:   _sanitizeWebAngle,
   webSubjectForBook:  _webSubjectForBook,
-  webSubjectForArc:   _webSubjectForArc
+  webSubjectForArc:   _webSubjectForArc,
+  classifyUtterance:  classifyUtterance,
+  runRouterHarness:   runRouterHarness
 };
 
 // Stage A: expose the gate harness at top level for live verification.
@@ -2575,6 +2789,9 @@ window.YumiMoveHarness = runMoveHarness;
 
 // Stage C: expose the arc-voice harness for live verification.
 window.YumiArcVoiceHarness = runArcVoiceHarness;
+
+// Prompt 3: expose the router covenant harness for live/offline verification.
+window.YumiRouterHarness = runRouterHarness;
 
 // Kick off preload at script-load time so buildYumiSystem can return
 // synchronously by the time anything calls it.
