@@ -19,11 +19,13 @@ var YUMI_GREETINGS = [
 
 var YUMI_PANEL_ID  = 'yumi-panel';
 var YUMI_BLOOM_ID  = 'yumi-bloom';
+var YUMI_PANEL_BLOOM_ID = 'yumi-panel-bloom';
 var YUMI_INPUT_ID  = 'yumi-input';
 var YUMI_BODY_ID   = 'yumi-panel-body';
 
 var yumiPanelEl    = null;
 var yumiBloomEl    = null;
+var yumiPanelBloomEl = null;
 var yumiBloomLineEl = null;
 var yumiInputEl    = null;
 var yumiBodyEl     = null;
@@ -244,6 +246,8 @@ function renderTypingIndicator() {
   msg.textContent = '...';
   yumiBodyEl.appendChild(msg);
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+  // Bloom reflects the in-flight request: thinking while a reply is pending.
+  setBloomState('thinking');
 }
 
 function removeTypingIndicator() {
@@ -252,6 +256,9 @@ function removeTypingIndicator() {
   if (el && el.parentNode) {
     el.parentNode.removeChild(el);
   }
+  // Request settled (resolve or error): Bloom returns to rest. A later voice
+  // stage may move it on to speaking when audio begins.
+  setBloomState('resting');
 }
 
 function renderError(customText) {
@@ -576,12 +583,26 @@ function updateYumiBloomLine() {
   yumiBloomLineEl.textContent = yumiBloomLineFor(route);
 }
 
-function buildYumiBloom() {
+// Build a Bloom. Default = the global FAB launcher (body-level, z-9999). When
+// inPanel is true, build the stateful in-chat presence that lives in the panel
+// head (decorative -- no launcher line, no toggle click); setBloomState drives
+// it. Both share this one SVG so the mark stays identical; a per-instance
+// gradient-id prefix (the FAB keeps the original ids) avoids duplicate element
+// ids. The hidden overlay layers (pulse/ripple/swirl/comet) stay inert until a
+// yumi-bloom--<state> class activates them; resting = the base motion.
+function buildYumiBloom(inPanel) {
   var btn = document.createElement('button');
-  btn.id = YUMI_BLOOM_ID;
-  btn.className = 'yumi-bloom';
   btn.setAttribute('type', 'button');
-  btn.setAttribute('aria-label', 'Talk to Yumi');
+  if (inPanel) {
+    btn.id = YUMI_PANEL_BLOOM_ID;
+    btn.className = 'yumi-bloom yumi-bloom--in-panel';
+    btn.setAttribute('aria-hidden', 'true');
+    btn.setAttribute('tabindex', '-1');
+  } else {
+    btn.id = YUMI_BLOOM_ID;
+    btn.className = 'yumi-bloom';
+    btn.setAttribute('aria-label', 'Talk to Yumi');
+  }
   // Petal-rays: eight amber ellipses radiating from Bloom's centre (32,32),
   // each rotated around it. CSS spins the group slowly (yumi-bloom-spin).
   var petals = '';
@@ -594,45 +615,76 @@ function buildYumiBloom() {
   // her internal range (white-hot core -> amber petals) + warm halo + motion.
   // Token colours go straight into fill/stop-color attributes, matching the
   // constellation's SVG pattern (arc-constellation.js:597-601, 938-942).
-  btn.innerHTML =
-    '<span class="yumi-bloom-orb" aria-hidden="true">' +
+  var pfx = inPanel ? 'yumi-bloom-p' : 'yumi-bloom';
+  var svg =
     '<svg viewBox="0 0 64 64" width="56" height="56" role="img" focusable="false">' +
     '<defs>' +
-    '<radialGradient id="yumi-bloom-core" cx="50%" cy="50%" r="50%">' +
+    '<radialGradient id="' + pfx + '-core" cx="50%" cy="50%" r="50%">' +
     '<stop offset="0%" stop-color="var(--text-on-dark)"/>' +
     '<stop offset="42%" stop-color="var(--gold-light)"/>' +
     '<stop offset="100%" stop-color="var(--gold)"/>' +
     '</radialGradient>' +
-    '<radialGradient id="yumi-bloom-petal" cx="50%" cy="28%" r="72%">' +
+    '<radialGradient id="' + pfx + '-petal" cx="50%" cy="28%" r="72%">' +
     '<stop offset="0%" stop-color="var(--tradition-wisdom-halo)"/>' +
     '<stop offset="58%" stop-color="var(--gold-light)"/>' +
     '<stop offset="100%" stop-color="var(--gold)"/>' +
     '</radialGradient>' +
-    '<radialGradient id="yumi-bloom-halo" cx="50%" cy="50%" r="50%">' +
+    '<radialGradient id="' + pfx + '-halo" cx="50%" cy="50%" r="50%">' +
     '<stop offset="0%" stop-color="var(--tradition-theory-halo)" stop-opacity="0.55"/>' +
     '<stop offset="55%" stop-color="var(--tradition-empirical-halo)" stop-opacity="0.20"/>' +
     '<stop offset="100%" stop-color="var(--tradition-empirical-halo)" stop-opacity="0"/>' +
     '</radialGradient>' +
     '</defs>' +
-    '<circle class="yumi-bloom-halo" cx="32" cy="32" r="31" fill="url(#yumi-bloom-halo)"/>' +
-    '<g class="yumi-bloom-petals" fill="url(#yumi-bloom-petal)" opacity="0.9">' +
+    '<circle class="yumi-bloom-halo" cx="32" cy="32" r="31" fill="url(#' + pfx + '-halo)"/>' +
+    // alive: outward pulse rings (speaking)
+    '<g class="bloom-pulse" fill="none" stroke="var(--gold-light)" stroke-width="1.4">' +
+    '<circle cx="32" cy="32" r="13"/><circle cx="32" cy="32" r="13"/></g>' +
+    // alive: inward ripple rings (listening)
+    '<g class="bloom-ripple" fill="none" stroke="var(--marginalia-color)" stroke-width="1.3" opacity="0.9">' +
+    '<circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="14"/></g>' +
+    // alive: swirl arc (thinking)
+    '<g class="bloom-swirl"><circle cx="32" cy="32" r="20" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-dasharray="10 86" stroke-linecap="round" opacity="0.85"/></g>' +
+    '<g class="yumi-bloom-petals" fill="url(#' + pfx + '-petal)" opacity="0.9">' +
     petals +
     '</g>' +
     '<g class="yumi-bloom-core">' +
-    '<circle cx="32" cy="32" r="9" fill="url(#yumi-bloom-core)"/>' +
+    '<circle cx="32" cy="32" r="9" fill="url(#' + pfx + '-core)"/>' +
     '<circle cx="32" cy="32" r="3.4" fill="var(--text-on-dark)" opacity="0.92"/>' +
     '</g>' +
+    // alive: directed comet (acting)
+    '<g class="bloom-comet"><circle cx="40" cy="24" r="2.4" fill="var(--text-on-dark)"/>' +
+    '<ellipse cx="35" cy="29" rx="6" ry="1.6" fill="var(--gold-light)" opacity="0.7" transform="rotate(-45 35 29)"/></g>' +
     '<circle class="yumi-bloom-ember yumi-bloom-ember-a" cx="49" cy="17" r="1.7" fill="var(--gold-light)"/>' +
     '<circle class="yumi-bloom-ember yumi-bloom-ember-b" cx="15" cy="47" r="1.4" fill="var(--gold-light)"/>' +
-    '</svg>' +
-    '</span>' +
-    '<span class="yumi-bloom-line">tap to talk</span>';
-  yumiBloomLineEl = btn.querySelector('.yumi-bloom-line');
-  updateYumiBloomLine();
-  btn.addEventListener('click', function() {
-    toggleYumiPanel();
-  });
+    '</svg>';
+  btn.innerHTML =
+    '<span class="yumi-bloom-orb" aria-hidden="true">' + svg + '</span>' +
+    (inPanel ? '' : '<span class="yumi-bloom-line">tap to talk</span>');
+  if (!inPanel) {
+    yumiBloomLineEl = btn.querySelector('.yumi-bloom-line');
+    updateYumiBloomLine();
+    btn.addEventListener('click', function() {
+      toggleYumiPanel();
+    });
+  }
   return btn;
+}
+
+// Bloom presence state. Toggles a single yumi-bloom--<state> class on the
+// in-chat Bloom (the body FAB stays at rest). 'resting' clears the class (base
+// motion). thinking couples to the in-flight request (the typing-indicator
+// signal); listening/speaking are driven by the voice stages; acting is fired
+// by the command lane (Prompt 3). CSS owns every state's motion.
+var YUMI_BLOOM_STATES = ['listening', 'thinking', 'speaking', 'acting'];
+function setBloomState(state) {
+  if (!yumiPanelBloomEl) { return; }
+  var i;
+  for (i = 0; i < YUMI_BLOOM_STATES.length; i++) {
+    yumiPanelBloomEl.classList.remove('yumi-bloom--' + YUMI_BLOOM_STATES[i]);
+  }
+  if (state && state !== 'resting') {
+    yumiPanelBloomEl.classList.add('yumi-bloom--' + state);
+  }
 }
 
 function buildYumiPanel() {
@@ -645,11 +697,14 @@ function buildYumiPanel() {
   var header = document.createElement('div');
   header.className = 'yumi-panel-head';
 
-  // Mock: the shared Yumi crest, then a title + sub block.
+  // The crest slot now hosts the stateful in-chat Bloom (the living presence),
+  // subsuming the former static glyph. setBloomState drives it; resting is the
+  // default. Sized to the crest in CSS (.yumi-panel-head #panel-crest .yumi-bloom).
   var crest = document.createElement('span');
   crest.id = 'panel-crest';
   crest.setAttribute('aria-hidden', 'true');
-  if (typeof yumiGlyphNode === 'function') { crest.appendChild(yumiGlyphNode(28)); }
+  yumiPanelBloomEl = buildYumiBloom(true);
+  crest.appendChild(yumiPanelBloomEl);
   header.appendChild(crest);
 
   var titleBlock = document.createElement('div');

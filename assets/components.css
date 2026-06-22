@@ -108,6 +108,88 @@
   }
 }
 
+/* ===== Alive Yumi — in-chat Bloom + presence states (additive) ===== */
+/* The in-panel Bloom lives in the panel-head crest slot: static, crest-sized,
+   no launcher line. Scoped under #panel-crest so the body FAB is untouched. */
+.yumi-panel .yumi-panel-head #panel-crest .yumi-bloom {
+  position: static;
+  bottom: auto;
+  right: auto;
+  z-index: auto;
+  gap: 0;
+}
+.yumi-panel .yumi-panel-head #panel-crest .yumi-bloom-orb {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 7px color-mix(in srgb, var(--gold) 32%, transparent));
+}
+.yumi-panel .yumi-panel-head #panel-crest .yumi-bloom-orb svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* Overlay layers stay hidden until a state activates them; transform anchored
+   to each group's own box so motion pivots on Bloom's centre. */
+.bloom-pulse,
+.bloom-ripple,
+.bloom-swirl,
+.bloom-comet {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Per-state living motion. Gated to no-preference so reduced-motion users get a
+   still Bloom; resting keeps the base spin/breathe/glow (untouched above). */
+@media (prefers-reduced-motion: no-preference) {
+  /* LISTENING -- lean in + inward ripple */
+  .yumi-bloom--listening .yumi-bloom-orb { transform: scale(0.93); }
+  .yumi-bloom--listening .yumi-bloom-petals { animation-duration: 15s; }
+  .yumi-bloom--listening .bloom-ripple { opacity: 1; }
+  .yumi-bloom--listening .bloom-ripple circle { animation: yumi-bloom-ripple-in 2s var(--ease) infinite; }
+  .yumi-bloom--listening .bloom-ripple circle:nth-child(2) { animation-delay: 0.66s; }
+  .yumi-bloom--listening .bloom-ripple circle:nth-child(3) { animation-delay: 1.33s; }
+  /* THINKING -- concentric swirl + tighter spin */
+  .yumi-bloom--thinking .yumi-bloom-orb { transform: scale(0.97); }
+  .yumi-bloom--thinking .yumi-bloom-petals { animation-duration: 7s; }
+  .yumi-bloom--thinking .yumi-bloom-core { animation-duration: 2.6s; opacity: 0.85; }
+  .yumi-bloom--thinking .bloom-swirl { opacity: 0.9; animation: yumi-bloom-swirl-spin 2.4s linear infinite; }
+  /* SPEAKING -- outward pulse + brighter core */
+  .yumi-bloom--speaking .bloom-pulse { opacity: 1; }
+  .yumi-bloom--speaking .bloom-pulse circle { animation: yumi-bloom-pulse-out 1.6s var(--ease) infinite; }
+  .yumi-bloom--speaking .bloom-pulse circle:nth-child(2) { animation-delay: 0.8s; }
+  .yumi-bloom--speaking .yumi-bloom-core { animation: yumi-bloom-core-speak 1.6s ease-in-out infinite; }
+  /* ACTING -- directed comet surge (trigger wired by the command lane, Prompt 3) */
+  .yumi-bloom--acting .yumi-bloom-orb { animation: yumi-bloom-orb-surge 720ms var(--ease); }
+  .yumi-bloom--acting .yumi-bloom-halo { opacity: 0.9; }
+  .yumi-bloom--acting .yumi-bloom-petals { animation-duration: 5s; }
+  .yumi-bloom--acting .bloom-comet { opacity: 1; animation: yumi-bloom-comet-surge 720ms var(--ease); }
+}
+
+@keyframes yumi-bloom-ripple-in { 0% { transform: scale(1.8); opacity: 0; } 25% { opacity: 0.5; } 100% { transform: scale(0.55); opacity: 0; } }
+@keyframes yumi-bloom-swirl-spin { to { transform: rotate(-360deg); } }
+@keyframes yumi-bloom-pulse-out { 0% { transform: scale(0.7); opacity: 0; } 25% { opacity: 0.55; } 100% { transform: scale(2); opacity: 0; } }
+@keyframes yumi-bloom-core-speak { 0%, 100% { transform: scale(0.96); opacity: 0.92; } 50% { transform: scale(1.18); opacity: 1; } }
+@keyframes yumi-bloom-orb-surge { 0% { transform: scale(1); } 35% { transform: scale(1.16); } 100% { transform: scale(1); } }
+@keyframes yumi-bloom-comet-surge { 0% { transform: translate(0, 0) scale(0.3); opacity: 0; } 25% { opacity: 1; } 100% { transform: translate(-10px, 8px) scale(1); opacity: 0; } }
+
+/* Reduced-motion: keep the alive states still. (State motion above is already
+   no-preference-gated; this names the new state classes explicitly.) */
+@media (prefers-reduced-motion: reduce) {
+  .yumi-bloom--listening .yumi-bloom-petals,
+  .yumi-bloom--listening .bloom-ripple circle,
+  .yumi-bloom--thinking .yumi-bloom-petals,
+  .yumi-bloom--thinking .yumi-bloom-core,
+  .yumi-bloom--thinking .bloom-swirl,
+  .yumi-bloom--speaking .yumi-bloom-core,
+  .yumi-bloom--speaking .bloom-pulse circle,
+  .yumi-bloom--acting .yumi-bloom-orb,
+  .yumi-bloom--acting .yumi-bloom-petals,
+  .yumi-bloom--acting .bloom-comet {
+    animation: none;
+  }
+}
+
 .yumi-panel {
   position: fixed;
   bottom: calc(var(--sp-5) + 100px);
