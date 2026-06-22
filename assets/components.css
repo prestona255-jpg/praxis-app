@@ -1652,8 +1652,14 @@
 .arcs .arc-card-start:hover { color:var(--gold); border-color:var(--gold); }
 .arcs .arc-card-start-icon { line-height:0; }
 .arcs .arc-card-start-label { font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; }
-/* Bug B — arc-create editor body: compact single-question field (base .notebook-editor-body is min-height:160px; the arc field mounts at #notebook-arc-editor-host under .arcs) */
-.arcs .notebook-editor-body { min-height:72px; }
+/* Bug B — arc-create editor body: compact single-question field. The shared
+   openEditor textarea is rows="8" (intrinsic ~193px) and content-box, so a
+   min-height floor can't shrink it; cap the actual height (height:72px) +
+   box-sizing:border-box so the field renders ~72px under .arcs without touching
+   the shared rows attr (which the journal/marginalia/artifact editors share).
+   resize:vertical is inherited from the base rule — the user can still drag it
+   taller. Scoped to .arcs → only the arc-create field is affected. */
+.arcs .notebook-editor-body { min-height:72px; height:72px; box-sizing:border-box; }
 
 /* ===== END ARCS PAGE ===== */
 
