@@ -33,6 +33,7 @@ var yumiSendBtnEl  = null;
 var yumiMicBtnEl   = null;
 var yumi_request_in_flight = false;
 var yumi_handsfree_active = false;
+var _voiceController = null;
 
 function isYumiPanelOpen() {
   return ls('praxis_yumi_open', false) === true;
@@ -247,7 +248,10 @@ function renderYumiMessage(text, grounding, opts) {
     playLine(text, function () {
       setBloomState('speaking');
     }, function () {
-      setBloomState(yumi_handsfree_active ? 'listening' : 'resting');
+      // Audio finished. In hands-free, re-arm listening (the out->in loop);
+      // otherwise settle to rest.
+      if (yumi_handsfree_active) { setBloomState('listening'); handsFreeReArm(); }
+      else { setBloomState('resting'); }
     });
   }
 }
@@ -368,18 +372,114 @@ function mountNameProposal(proposal) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
-function handleVoiceTranscript(text) {
-  if (!yumiInputEl || typeof text !== 'string') { return; }
-  var current = yumiInputEl.value || '';
-  var trimmed = current.replace(/\s+$/, '');
-  var next;
-  if (trimmed === '') {
-    next = text;
-  } else {
-    next = trimmed + ' ' + text;
+// ===== Alive Yumi -- voice-in (push-to-talk + hands-free) =====
+// Both modes go through VoiceInput.listen (the single SpeechRecognition site).
+// talkMode (Stage-5 pref, default push-to-talk) selects the interaction; text
+// input stays available regardless.
+
+// Read the talk-mode pref. Defaults to push-to-talk until the pref exists.
+function getTalkMode() {
+  var uid = (typeof resolveActiveUid === 'function') ? resolveActiveUid() : null;
+  if (uid && typeof getProfile === 'function') {
+    var prof = getProfile(uid);
+    if (prof && prof.talkMode === 'hands-free') { return 'hands-free'; }
   }
-  yumiInputEl.value = next;
-  yumiInputEl.focus();
+  return 'push-to-talk';
+}
+
+function setMicListening(on) {
+  if (!yumiMicBtnEl) { return; }
+  if (on) { yumiMicBtnEl.classList.add('yumi-mic-listening'); }
+  else { yumiMicBtnEl.classList.remove('yumi-mic-listening'); }
+}
+
+function setMicHandsFree(on) {
+  if (!yumiMicBtnEl) { return; }
+  if (on) { yumiMicBtnEl.classList.add('yumi-mic-handsfree'); }
+  else { yumiMicBtnEl.classList.remove('yumi-mic-handsfree'); }
+}
+
+// Put a recognized utterance into the input and send it via the normal chat
+// path -- the send button owns the in-flight / onboarding / co-write / NAME
+// guards, so voice reuses every protection text input has.
+function sendVoiceUtterance(text) {
+  if (!yumiInputEl || typeof text !== 'string') { return; }
+  var t = text.replace(/^\s+|\s+$/g, '');
+  if (t === '') { return; }
+  yumiInputEl.value = t;
+  if (yumiSendBtnEl) { yumiSendBtnEl.click(); }
+}
+
+// Soft voice-error surface: stay quiet on no-speech (normal silence); else use
+// the existing guidance lines.
+function voiceErrorSoft(reason) {
+  if (reason === 'no-speech') { return; }
+  handleVoiceError(reason);
+}
+
+// --- push-to-talk: listen while held, auto-send on release ---
+function startPushToTalk() {
+  if (yumi_request_in_flight || _voiceController) { return; }
+  _voiceController = window.VoiceInput.listen({
+    onStart:      function () { setMicListening(true); setBloomState('listening'); },
+    onTranscript: function (text) { sendVoiceUtterance(text); },
+    onError:      function (reason) { _voiceController = null; setMicListening(false); if (!yumi_request_in_flight) { setBloomState('resting'); } voiceErrorSoft(reason); },
+    onEnd:        function () { _voiceController = null; setMicListening(false); if (!yumi_request_in_flight) { setBloomState('resting'); } }
+  });
+}
+
+function stopPushToTalk() {
+  if (_voiceController) { _voiceController.stop(); }
+}
+
+// --- hands-free: listen -> auto-send -> reply (+TTS) -> re-arm on audio end ---
+// Re-arm is guarded: only while voice is on, the panel is open, the mode is
+// still hands-free, and the loop hasn't been stopped (degrades to text on a
+// denied mic / unsupported engine).
+function handsFreeCanRun() {
+  return yumi_handsfree_active && isVoiceOn() && isYumiPanelOpen() &&
+    !!(window.VoiceInput && window.VoiceInput.isSupported && window.VoiceInput.isSupported()) &&
+    getTalkMode() === 'hands-free';
+}
+
+function handsFreeListen() {
+  if (!handsFreeCanRun() || yumi_request_in_flight || _voiceController) { return; }
+  _voiceController = window.VoiceInput.listen({
+    onStart:      function () { setMicListening(true); setBloomState('listening'); },
+    onTranscript: function (text) { sendVoiceUtterance(text); },
+    onError:      function (reason) {
+      _voiceController = null;
+      setMicListening(false);
+      if (reason === 'denied' || reason === 'unsupported') { stopHandsFree(); voiceErrorSoft(reason); return; }
+      handsFreeReArm();   // transient (no-speech / recognition) -> keep looping
+    },
+    onEnd:        function () { _voiceController = null; setMicListening(false); }
+  });
+}
+
+function handsFreeReArm() {
+  if (!handsFreeCanRun()) { return; }
+  // a small beat so an instantly-ending session doesn't spin the loop.
+  setTimeout(function () { handsFreeListen(); }, 350);
+}
+
+function startHandsFree() {
+  if (!isVoiceOn()) { renderError('Turn Yumi\'s voice on to use hands-free.'); return; }
+  yumi_handsfree_active = true;
+  setMicHandsFree(true);
+  handsFreeListen();
+}
+
+function stopHandsFree() {
+  yumi_handsfree_active = false;
+  setMicHandsFree(false);
+  setMicListening(false);
+  if (_voiceController) { _voiceController.abort(); _voiceController = null; }
+  setBloomState('resting');
+}
+
+function toggleHandsFree() {
+  if (yumi_handsfree_active) { stopHandsFree(); } else { startHandsFree(); }
 }
 
 function handleVoiceError(reason) {
@@ -827,11 +927,21 @@ function buildYumiPanel() {
     '</svg>';
   yumiMicBtnEl = micBtn;
   row.appendChild(micBtn);
-  if (window.VoiceInput) {
-    window.VoiceInput.attachMicButton(micBtn, {
-      onTranscript: handleVoiceTranscript,
-      onError:      handleVoiceError
+  // Voice-in: push-to-talk = press-and-hold; hands-free = click toggles the
+  // loop. Both read talkMode at interaction time and go through
+  // VoiceInput.listen, so the engine stays the single SpeechRecognition site.
+  // The click that follows a push-release is a no-op (mode !== hands-free).
+  if (window.VoiceInput && window.VoiceInput.isSupported && window.VoiceInput.isSupported()) {
+    micBtn.addEventListener('pointerdown', function (e) {
+      if (getTalkMode() === 'push-to-talk') { e.preventDefault(); startPushToTalk(); }
     });
+    micBtn.addEventListener('pointerup',     function () { if (getTalkMode() === 'push-to-talk') { stopPushToTalk(); } });
+    micBtn.addEventListener('pointerleave',  function () { if (getTalkMode() === 'push-to-talk') { stopPushToTalk(); } });
+    micBtn.addEventListener('pointercancel', function () { if (getTalkMode() === 'push-to-talk') { stopPushToTalk(); } });
+    micBtn.addEventListener('click',         function () { if (getTalkMode() === 'hands-free')   { toggleHandsFree(); } });
+  } else {
+    micBtn.disabled = true;
+    micBtn.classList.add('yumi-mic-disabled');
   }
 
   var sendBtn = document.createElement('button');
@@ -934,14 +1044,20 @@ function buildYumiPanel() {
       removeTypingIndicator();
       // Fail-closed gate: a suppressed utterance renders nothing -- no
       // error, no fallback line, no chrome. Yumi simply stays silent.
-      if (result && result.silent) { return; }
+      if (result && result.silent) {
+        // No audio will play; keep the hands-free loop alive.
+        if (yumi_handsfree_active) { handsFreeReArm(); }
+        return;
+      }
       // The ONLY spoken site: the gated normal-chat reply. { speak: true } opts
-      // renderYumiMessage into voice-out (behind the voiceOn pref).
+      // renderYumiMessage into voice-out (behind the voiceOn pref). In
+      // hands-free, the loop re-arms from the TTS audio-end (playLine onEnd).
       renderYumiMessage(result.text, null, { speak: true });
     }).catch(function (err) {
       console.error('[yumi] sendMessage failed', err);
       removeTypingIndicator();
       renderError();
+      if (yumi_handsfree_active) { handsFreeReArm(); }
     }).finally(function () {
       yumi_request_in_flight = false;
       if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
@@ -1000,6 +1116,8 @@ function closeYumiPanel() {
   if (yumiPanelEl) {
     yumiPanelEl.classList.remove('yumi-panel-open');
   }
+  // Closing the panel stops any hands-free loop (and aborts a live capture).
+  if (typeof stopHandsFree === 'function' && yumi_handsfree_active) { stopHandsFree(); }
 }
 
 function toggleYumiPanel() {

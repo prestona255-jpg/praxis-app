@@ -481,6 +481,31 @@
   cursor: not-allowed;
 }
 
+/* Alive Yumi -- voice-in affordances. touch-action:none so a press-and-hold
+   does not scroll. Listening = pulsing gold ring (capture in either mode);
+   hands-free = a steady "armed" gradient while the loop is on. */
+.yumi-mic-btn { touch-action: none; }
+.yumi-mic-btn.yumi-mic-listening {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.yumi-mic-btn.yumi-mic-handsfree {
+  color: var(--br-deep);
+  background: var(--grad);
+  border-color: transparent;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .yumi-mic-btn.yumi-mic-listening { animation: yumi-mic-pulse 1.4s ease-in-out infinite; }
+}
+@keyframes yumi-mic-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 45%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--gold) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yumi-mic-btn.yumi-mic-listening { animation: none; }
+}
+
 /* ===== END YUMI PANEL ===== */
 
 
