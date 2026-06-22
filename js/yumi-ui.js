@@ -32,6 +32,7 @@ var yumiBodyEl     = null;
 var yumiSendBtnEl  = null;
 var yumiMicBtnEl   = null;
 var yumi_request_in_flight = false;
+var yumi_handsfree_active = false;
 
 function isYumiPanelOpen() {
   return ls('praxis_yumi_open', false) === true;
@@ -224,7 +225,7 @@ function buildGroundingChips(grounding) {
   return wrap;
 }
 
-function renderYumiMessage(text, grounding) {
+function renderYumiMessage(text, grounding, opts) {
   if (!yumiBodyEl) { return; }
   // Stage III: prepend the grounding chip ONLY when web actually informed this
   // move (grounding.web present). All other render paths pass no grounding.
@@ -236,6 +237,19 @@ function renderYumiMessage(text, grounding) {
   msg.textContent = text;
   yumiBodyEl.appendChild(msg);
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+  // Voice-out (opt-in): speak ONLY the gated normal-chat line (opts.speak) AND
+  // only when the reader has voice on. Replayed history, onboarding, acks and
+  // move surfaces pass no speak flag, so they are never spoken; a gate-
+  // suppressed reply never reaches here, so silence is preserved. Bloom moves
+  // to speaking when audio begins and back to resting (or listening in
+  // hands-free) when it ends.
+  if (opts && opts.speak === true && isVoiceOn() && typeof playLine === 'function') {
+    playLine(text, function () {
+      setBloomState('speaking');
+    }, function () {
+      setBloomState(yumi_handsfree_active ? 'listening' : 'resting');
+    });
+  }
 }
 
 function renderTypingIndicator() {
@@ -687,6 +701,16 @@ function setBloomState(state) {
   }
 }
 
+// Voice-out consent. True only when the reader has turned voice on (Stage 5
+// pref, default false). Until the flag exists the profile read is undefined,
+// so this is false and no TTS ever fires.
+function isVoiceOn() {
+  var uid = (typeof resolveActiveUid === 'function') ? resolveActiveUid() : null;
+  if (!uid || typeof getProfile !== 'function') { return false; }
+  var prof = getProfile(uid);
+  return !!(prof && prof.voiceOn === true);
+}
+
 function buildYumiPanel() {
   var panel = document.createElement('div');
   panel.id = YUMI_PANEL_ID;
@@ -911,7 +935,9 @@ function buildYumiPanel() {
       // Fail-closed gate: a suppressed utterance renders nothing -- no
       // error, no fallback line, no chrome. Yumi simply stays silent.
       if (result && result.silent) { return; }
-      renderYumiMessage(result.text);
+      // The ONLY spoken site: the gated normal-chat reply. { speak: true } opts
+      // renderYumiMessage into voice-out (behind the voiceOn pref).
+      renderYumiMessage(result.text, null, { speak: true });
     }).catch(function (err) {
       console.error('[yumi] sendMessage failed', err);
       removeTypingIndicator();

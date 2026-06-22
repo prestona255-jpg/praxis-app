@@ -1826,4 +1826,90 @@ function resolveBatch(queries, callback) {
   next();
 }
 
+// =====================================================================
+// Alive Yumi -- voice-out (TTS playback). playLine(text, onStart, onEnd)
+// speaks a gate-PASSED line via the ElevenLabs proxy (x-praxis-key gated).
+// Per-utterance in-memory cache reuses an object URL on replay (no re-fetch,
+// no budget spend). A soft daily budget (ls-backed, resets per day, mirrors
+// the gate's _yumiGateBudgetSpend) caps cost; over budget -> skip audio
+// silently (render-only, no error). onStart fires when audio begins, onEnd
+// when it ends/fails, so the caller drives Bloom. The voiceOn pref is checked
+// by the caller (yumi-ui.js isVoiceOn); playLine assumes voice is wanted.
+// =====================================================================
+var ELEVENLABS_PROXY_URL = '/.netlify/functions/elevenlabs-proxy';
+var TTS_DAILY_CAP = 120;
+var _ttsCache = {};      // text -> object URL (session-lived)
+var _ttsAudio = null;    // the single active Audio element
+
+function _ttsBudgetSpend() {
+  var rec = ls('praxis_tts_budget', { day: '', count: 0 });
+  var now = new Date();
+  var day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+  if (!rec || rec.day !== day) { rec = { day: day, count: 0 }; }
+  if (rec.count >= TTS_DAILY_CAP) { sv('praxis_tts_budget', rec); return false; }
+  rec.count = rec.count + 1;
+  sv('praxis_tts_budget', rec);
+  return true;
+}
+
+function _ttsPlayUrl(url, onStart, onEnd) {
+  // Stop any line currently speaking before starting the next.
+  if (_ttsAudio) {
+    try { _ttsAudio.pause(); } catch (e) {}
+    _ttsAudio = null;
+  }
+  var audio = new Audio(url);
+  _ttsAudio = audio;
+  var settled = false;
+  function done() {
+    if (settled) { return; }
+    settled = true;
+    if (_ttsAudio === audio) { _ttsAudio = null; }
+    if (typeof onEnd === 'function') { onEnd(); }
+  }
+  audio.addEventListener('playing', function () {
+    if (typeof onStart === 'function') { onStart(); }
+  });
+  audio.addEventListener('ended', done);
+  audio.addEventListener('error', done);
+  var p = audio.play();
+  if (p && typeof p.then === 'function') {
+    p.then(null, function () { done(); });   // autoplay blocked / decode error
+  }
+}
+
+function playLine(text, onStart, onEnd) {
+  var t = (typeof text === 'string') ? text.replace(/^\s+|\s+$/g, '') : '';
+  if (t === '') { if (typeof onEnd === 'function') { onEnd(); } return; }
+
+  // Cache hit -> replay without a fetch or a budget spend.
+  if (_ttsCache[t]) {
+    _ttsPlayUrl(_ttsCache[t], onStart, onEnd);
+    return;
+  }
+
+  // Over the soft daily budget -> render-only, skip audio silently.
+  if (!_ttsBudgetSpend()) {
+    if (typeof onEnd === 'function') { onEnd(); }
+    return;
+  }
+
+  fetch(ELEVENLABS_PROXY_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body:    JSON.stringify({ text: t })
+  }).then(function (res) {
+    if (!res || !res.ok) { return null; }
+    return res.blob();
+  }).then(function (blob) {
+    if (!blob) { if (typeof onEnd === 'function') { onEnd(); } return; }
+    var url = URL.createObjectURL(blob);
+    _ttsCache[t] = url;
+    _ttsPlayUrl(url, onStart, onEnd);
+  }, function () {
+    // network / proxy / decode error -> stay silent, no chrome.
+    if (typeof onEnd === 'function') { onEnd(); }
+  });
+}
+
 console.log('integrations.js loaded');
