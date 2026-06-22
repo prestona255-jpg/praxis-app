@@ -8879,3 +8879,86 @@
   .notebook .notebook-spread { grid-template-columns:1fr; }
   .notebook .leaf-left::before { display:none; }
 }
+
+/* ============================================================================
+   Umber port — Surface 7 (Shelf): mock #s-books frame over live data + features.
+   Scoped under .shelf so generic mock classes (.shelf-head/.shelf-toolbar/
+   .shelf-side/.shelf-filter/.shelf-grid/.nav-search/.empty-state/.seg) don't
+   bleed (.btn/.chip are the global foundation). Dark ground. The shared
+   renderShelfBook/.shelf-book card markup is UNTOUCHED (also used by sub-theory
+   + the account/book panel); the grid only lays the cards out. The old
+   .shelf-header/-actions/-headline/-seg/-search-well/-chips/-sidebar/
+   -filter-section/-filter-row/-list/-empty rules above go dead — drift, flagged.
+   ============================================================================ */
+.shelf { max-width:1180px; margin:0 auto; padding:0 var(--sp-5); }
+
+/* head */
+.shelf-head { display:flex; align-items:flex-end; gap:var(--sp-4); flex-wrap:wrap; margin-bottom:var(--sp-4); }
+.shelf .shelf-title { font-family:var(--font-serif); font-size:clamp(28px,4vw,40px); color:var(--text-d); margin:0; line-height:1.05; }
+.shelf .shelf-count { font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; color:var(--muted); }
+
+/* toolbar (decluttered §4-E) */
+.shelf-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:var(--sp-5); }
+.shelf-toolbar .spacer { flex:1; }
+.shelf .seg { display:inline-flex; padding:3px; gap:2px; background:var(--sunk-d); border:1px solid var(--border); border-radius:var(--radius-pill); }
+.shelf .seg-opt { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:6px 12px; border-radius:var(--radius-pill); border:none; background:transparent; color:var(--muted); cursor:pointer; transition:color var(--motion-base) var(--ease); }
+.shelf .seg-opt:hover { color:var(--text-d); }
+.shelf .seg-opt.is-on { background:var(--grad); color:var(--br-deep); font-weight:700; }
+.shelf .nav-search { flex:0 1 220px; display:flex; align-items:center; gap:8px; padding:7px 12px; border-radius:var(--radius-pill); background:rgba(20,12,5,.4); border:1px solid var(--border); color:var(--muted); font-size:13px; }
+.shelf .nav-search:hover { border-color:var(--border-2); }
+.shelf .nav-search input { flex:1; background:transparent; border:none; color:var(--text-d); font-family:var(--font-body); font-size:13px; outline:none; }
+.shelf .nav-search input::placeholder { color:var(--muted); }
+
+/* scan status (live) */
+.shelf .shelf-scan-status:empty { display:none; }
+.shelf .shelf-scan-status { font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--muted); margin:-12px 0 var(--sp-4); }
+
+/* layout: 2-col grid; sidebar always visible on desktop */
+.shelf .shelf-layout { display:grid; grid-template-columns:212px 1fr; gap:var(--sp-6); align-items:start; }
+.shelf .shelf-side { position:sticky; top:74px; }
+.shelf .shelf-side h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin:0 0 10px; }
+.shelf .shelf-filter-group { margin-bottom:var(--sp-5); }
+.shelf .shelf-filter-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.shelf .shelf-filter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; border-radius:var(--radius-sm); color:var(--muted); font-size:13px; cursor:pointer; border:1px solid transparent; }
+.shelf .shelf-filter:hover { background:var(--wash); color:var(--text-d); }
+.shelf .shelf-filter.is-on { background:var(--wash); color:var(--text-d); border-color:var(--border); }
+.shelf .shelf-filter .n { font-family:var(--font-mono); font-size:11px; opacity:.7; }
+.shelf .shelf-filter.is-toggle { justify-content:flex-start; color:var(--gold); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; }
+.shelf .shelf-filter.is-toggle:hover { background:transparent; color:var(--text-d); }
+.shelf .shelf-lens-ask { display:block; width:100%; margin-top:8px; text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--gold); background:transparent; border:1px dashed var(--border-2); border-radius:var(--radius-sm); padding:8px 12px; cursor:pointer; transition:color var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease); }
+.shelf .shelf-lens-ask:hover { color:var(--text-d); border-color:var(--gold); }
+
+/* main column + grids */
+.shelf .shelf-main { min-width:0; }
+.shelf .shelf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:var(--sp-5); }
+.shelf .shelf-rows { display:flex; flex-direction:column; }
+
+/* empty-state (dark) */
+.shelf .empty-state { max-width:520px; margin:8vh auto; text-align:center; padding:0 var(--sp-5); }
+.shelf .empty-state .em-mark { display:flex; justify-content:center; margin-bottom:20px; opacity:.9; }
+.shelf .empty-state .em-mark svg { width:56px; height:56px; }
+.shelf .empty-state h2 { font-family:var(--font-serif); font-size:30px; margin:0 0 12px; color:var(--text-d); }
+.shelf .empty-state p { font-family:var(--font-serif); font-style:italic; font-size:17px; line-height:1.6; margin:0 0 24px; color:var(--muted); }
+
+/* desktop: Filters toggle hidden (sidebar always shown) */
+@media (min-width:760px){
+  .shelf .shelf-filters-btn { display:none; }
+}
+
+/* mobile (≤759): single column; sidebar becomes a drawer (live JS toggles
+   .shelf-sidebar-mobile-open / .shelf-sidebar-backdrop-open) */
+.shelf .shelf-sidebar-close { display:none; }
+.shelf .shelf-sidebar-backdrop { display:none; position:fixed; inset:0; z-index:130; background:rgba(15,9,4,.6); }
+.shelf .shelf-sidebar-backdrop.shelf-sidebar-backdrop-open { display:block; }
+@media (max-width:759px){
+  .shelf .shelf-layout { grid-template-columns:1fr; }
+  .shelf .shelf-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
+  .shelf .shelf-side {
+    position:fixed; top:0; bottom:0; left:0; width:264px; z-index:131;
+    background:var(--dark-2); padding:var(--sp-5); overflow-y:auto;
+    transform:translateX(-110%); transition:transform var(--motion-base) var(--ease);
+    box-shadow:var(--shadow-page);
+  }
+  .shelf .shelf-side.shelf-sidebar-mobile-open { transform:none; }
+  .shelf .shelf-sidebar-close { display:block; position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--muted); font-size:22px; line-height:1; cursor:pointer; }
+}
