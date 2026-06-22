@@ -2862,6 +2862,30 @@ function renderShelf() {
     return 0;
   });
 
+  // Status + Tradition rails (Umber port — mock #s-books groups 1+2). Distinct
+  // canonical statuses + traditions present in the SAME deduped shelf set
+  // (lcArr) the lenses are counted over, so counts are orphan-free. Values are
+  // the real canon: normalizeStatus(book.status) -> reading/read/will-read, and
+  // (book.traditionOverride || book.tradition) over the TRADITIONS set (the
+  // 'unassigned' sentinel + empties are skipped, like the empty-genre skip).
+  // No new filter idiom: the rows reuse .shelf-filter + the shared
+  // onShelfFilterRowClick/Keydown + the generic toggleShelfFilter (whose for-in
+  // exclusive-clear already covers the two new sections).
+  var statusCounts = { reading: 0, read: 0, 'will-read': 0 };
+  var traditionCounts = {};
+  var srti;
+  var srtb;
+  var srtTrad;
+  for (srti = 0; srti < lcArr.length; srti = srti + 1) {
+    srtb = lcArr[srti];
+    if (!srtb) { continue; }
+    statusCounts[normalizeStatus(srtb.status)]++;
+    srtTrad = srtb.traditionOverride || srtb.tradition;
+    if (typeof srtTrad === 'string' && srtTrad.length > 0 && srtTrad !== 'unassigned') {
+      traditionCounts[srtTrad] = (traditionCounts[srtTrad] || 0) + 1;
+    }
+  }
+
   var layout = document.createElement('div');
   // Mock: the sidebar is always visible on desktop (2-col grid) and a drawer on
   // mobile (toggled by the Filters button). shelfRailOpen is retired on desktop.
@@ -2995,6 +3019,87 @@ function renderShelf() {
     }
   });
   lensSection.appendChild(lensAsk);
+
+  // Reading-status rail (mock group 1) — ABOVE Lenses. Canonical statuses in
+  // STATUS_VOCAB order, count > 0 only (mirrors the present-values rule of the
+  // genre/author rails). Compact labels match the shelf-head vocabulary
+  // (reading/finished); the row VALUES are the real canon. Reuses .shelf-filter
+  // + the shared row handlers; single-select via the generic toggleShelfFilter.
+  var STATUS_RAIL_LABEL = { reading: 'Reading', read: 'Finished', 'will-read': 'Unread' };
+  var statusSection = document.createElement('div');
+  statusSection.className = 'shelf-filter-group';
+  var statusLabel = document.createElement('h3');
+  statusLabel.className = 'shelf-filter-label';
+  statusLabel.textContent = 'Reading status';
+  statusSection.appendChild(statusLabel);
+  var statusListEl = document.createElement('ul');
+  statusListEl.className = 'shelf-filter-list shelf-filter-list-status';
+  var stvi;
+  var stvKey;
+  var stRow;
+  var stCountEl;
+  var statusRowCount = 0;
+  for (stvi = 0; stvi < STATUS_VOCAB.length; stvi = stvi + 1) {
+    stvKey = STATUS_VOCAB[stvi];
+    if ((statusCounts[stvKey] || 0) === 0) { continue; }
+    statusRowCount++;
+    stRow = document.createElement('li');
+    stRow.className = shelfFilter.status === stvKey ? 'shelf-filter is-on' : 'shelf-filter';
+    stRow.setAttribute('role', 'button');
+    stRow.setAttribute('tabindex', '0');
+    stRow.setAttribute('data-filter-section', 'status');
+    stRow.setAttribute('data-filter-value', stvKey);
+    stRow.textContent = STATUS_RAIL_LABEL[stvKey] || stvKey;
+    stCountEl = document.createElement('span');
+    stCountEl.className = 'n';
+    stCountEl.textContent = '' + (statusCounts[stvKey] || 0);
+    stRow.appendChild(stCountEl);
+    stRow.addEventListener('click', onShelfFilterRowClick);
+    stRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    statusListEl.appendChild(stRow);
+  }
+  statusSection.appendChild(statusListEl);
+  if (statusRowCount > 0) { sidebar.appendChild(statusSection); }
+
+  // Tradition rail (mock group 2). Distinct present traditions in TRADITIONS
+  // canonical order, count > 0, 'unassigned' skipped; labels via
+  // TRADITION_LABELS. Same row idiom + handlers as above.
+  var tradSection = document.createElement('div');
+  tradSection.className = 'shelf-filter-group';
+  var tradLabel = document.createElement('h3');
+  tradLabel.className = 'shelf-filter-label';
+  tradLabel.textContent = 'Tradition';
+  tradSection.appendChild(tradLabel);
+  var tradListEl = document.createElement('ul');
+  tradListEl.className = 'shelf-filter-list shelf-filter-list-tradition';
+  var trvi;
+  var trvKey;
+  var trRow;
+  var trCountEl;
+  var tradRowCount = 0;
+  for (trvi = 0; trvi < TRADITIONS.length; trvi = trvi + 1) {
+    trvKey = TRADITIONS[trvi];
+    if (trvKey === 'unassigned') { continue; }
+    if ((traditionCounts[trvKey] || 0) === 0) { continue; }
+    tradRowCount++;
+    trRow = document.createElement('li');
+    trRow.className = shelfFilter.tradition === trvKey ? 'shelf-filter is-on' : 'shelf-filter';
+    trRow.setAttribute('role', 'button');
+    trRow.setAttribute('tabindex', '0');
+    trRow.setAttribute('data-filter-section', 'tradition');
+    trRow.setAttribute('data-filter-value', trvKey);
+    trRow.textContent = (typeof TRADITION_LABELS === 'object' && TRADITION_LABELS[trvKey])
+      ? TRADITION_LABELS[trvKey] : trvKey;
+    trCountEl = document.createElement('span');
+    trCountEl.className = 'n';
+    trCountEl.textContent = '' + (traditionCounts[trvKey] || 0);
+    trRow.appendChild(trCountEl);
+    trRow.addEventListener('click', onShelfFilterRowClick);
+    trRow.addEventListener('keydown', onShelfFilterRowKeydown);
+    tradListEl.appendChild(trRow);
+  }
+  tradSection.appendChild(tradListEl);
+  if (tradRowCount > 0) { sidebar.appendChild(tradSection); }
 
   sidebar.appendChild(lensSection);
 
@@ -3147,6 +3252,8 @@ function renderShelf() {
   var authorOk;
   var genreOk;
   var themeOk;
+  var statusOk;
+  var traditionOk;
   var searchOk;
   // Stage 7 (manual themes): precompute the selected user-theme's membership
   // set (book ids) once, so the per-book themeOk test is an O(1) lookup. Null
@@ -3174,12 +3281,20 @@ function renderShelf() {
     // theme (membership lives in state.userThemes, never on the book record).
     themeOk = shelfFilter.theme === null ||
       (selectedThemeBookIds !== null && selectedThemeBookIds[fb.id] === true);
+    // Status rail: canonical-status equality (normalizeStatus collapses the
+    // dual stored vocabularies the same way the head count + the 6-branch
+    // matrix do, so the row count and the filtered set always agree).
+    statusOk = shelfFilter.status === null ||
+      (normalizeStatus(fb.status) === shelfFilter.status);
+    // Tradition rail: strict equality on the resolved tradition (override wins).
+    traditionOk = shelfFilter.tradition === null ||
+      ((fb.traditionOverride || fb.tradition) === shelfFilter.tradition);
     // Stage 4d: live search -- case-insensitive substring over title
     // OR author, AND-composed with the rail filters.
     searchOk = shelfSearchQuery === '' ||
       ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
        (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
-    if (authorOk && genreOk && themeOk && searchOk) {
+    if (authorOk && genreOk && themeOk && statusOk && traditionOk && searchOk) {
       filtered.push(fb);
     }
   }
@@ -3207,6 +3322,8 @@ function renderShelf() {
     var filterActive = shelfFilter.author !== null ||
       shelfFilter.genre !== null ||
       shelfFilter.theme !== null ||
+      shelfFilter.status !== null ||
+      shelfFilter.tradition !== null ||
       shelfSearchQuery !== '';
     var empty = document.createElement('div');
     empty.className = 'empty-state';
@@ -3589,7 +3706,7 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // Author values come from state.books so they match the same way.
 // Stage 4c: sections are EXCLUSIVE single-select -- setting a value
 // in one section clears the other (see toggleShelfFilter).
-var shelfFilter = { author: null, genre: null, theme: null };
+var shelfFilter = { author: null, genre: null, theme: null, status: null, tradition: null };
 
 // Stage 4d: author-rail collapse + in-page search state. Memory-only,
 // same lifetime contract as shelfFilter above. shelfSearchRaw keeps
