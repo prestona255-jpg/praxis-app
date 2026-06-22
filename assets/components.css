@@ -9083,3 +9083,31 @@
 @media (max-width:759px){
   .arcfield .arcfield-stage { grid-template-columns:1fr; }
 }
+
+/* ============================================================================
+   Umber port — Surface 10 (Yumi panel): mock aside#yumi-panel head + input +
+   the in-panel "What Yumi sees" fold. Scoped under .yumi-panel. The panel's
+   fixed slide-over + the .yumi-panel-open display/animation are KEPT (existing
+   CSS above; the JS open-class is unchanged). Old .yumi-panel-header /
+   .yumi-panel-sight-link rules go dead (renamed) — drift, flagged.
+   ============================================================================ */
+.yumi-panel .yumi-panel-head { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+.yumi-panel .yumi-panel-head #panel-crest { display:grid; place-items:center; flex:none; }
+.yumi-panel .yumi-panel-head #panel-crest svg { width:26px; height:26px; display:block; }
+.yumi-panel .yumi-panel-head .yumi-panel-title { font-family:var(--font-serif); font-size:18px; color:var(--text-d); line-height:1.1; }
+.yumi-panel .yumi-panel-sub { font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+.yumi-panel .yumi-panel-sight { margin-left:auto; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--gold); border:1px solid var(--border); border-radius:var(--radius-pill); padding:4px 10px; background:transparent; cursor:pointer; transition:color var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease); }
+.yumi-panel .yumi-panel-sight:hover { color:var(--text-d); border-color:var(--gold); }
+
+/* in-panel "What Yumi sees" fold: a flex item that takes the body's slot while
+   the body is display:none, so the conversation is preserved underneath */
+.yumi-panel .yumi-panel-sight-view { flex:1; overflow:auto; padding:16px; }
+.yumi-panel .yumi-panel-sight-back { font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--gold); background:transparent; border:none; cursor:pointer; margin-bottom:12px; padding:0; }
+.yumi-panel .yumi-panel-sight-back:hover { color:var(--text-d); }
+
+/* round icon buttons (mock voice + send); win over the base .yumi-send-btn/
+   .yumi-mic-btn via the .yumi-panel scope */
+.yumi-panel .yumi-icon-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--wash); color:var(--gold); display:grid; place-items:center; font-size:15px; line-height:1; cursor:pointer; flex:none; padding:0; }
+.yumi-panel .yumi-icon-btn:hover { color:var(--text-d); border-color:var(--gold); }
+.yumi-panel .yumi-icon-btn.yumi-send { background:var(--grad); color:var(--br-deep); border:none; }
+.yumi-panel .yumi-icon-btn.yumi-send:hover { color:var(--br-deep); }

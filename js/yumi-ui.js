@@ -643,19 +643,36 @@ function buildYumiPanel() {
   panel.setAttribute('aria-label', 'Yumi');
 
   var header = document.createElement('div');
-  header.className = 'yumi-panel-header';
-  var title = document.createElement('span');
+  header.className = 'yumi-panel-head';
+
+  // Mock: the shared Yumi crest, then a title + sub block.
+  var crest = document.createElement('span');
+  crest.id = 'panel-crest';
+  crest.setAttribute('aria-hidden', 'true');
+  if (typeof yumiGlyphNode === 'function') { crest.appendChild(yumiGlyphNode(28)); }
+  header.appendChild(crest);
+
+  var titleBlock = document.createElement('div');
+  var title = document.createElement('div');
   title.className = 'yumi-panel-title';
   title.textContent = 'Yumi';
-  header.appendChild(title);
-  // 6.2c: quiet affordance to the 'What Yumi sees' transparency page.
-  // A native hash anchor -- the panel is body-mounted and survives the
-  // route change, so it stays open. Sits between the title and the close.
-  var sightLink = document.createElement('a');
-  sightLink.className = 'yumi-panel-sight-link';
-  sightLink.href = '#yumi-sees';
-  sightLink.textContent = 'What I can see';
-  header.appendChild(sightLink);
+  titleBlock.appendChild(title);
+  var sub = document.createElement('div');
+  sub.className = 'yumi-panel-sub';
+  sub.textContent = '由美 · reasoned beauty';
+  titleBlock.appendChild(sub);
+  header.appendChild(titleBlock);
+
+  // "What Yumi sees" -- folds the shared transparency view INTO the panel
+  // (mock), shown OVER the body so the conversation is preserved underneath;
+  // falls back to the #yumi-sees page if the builder is unavailable. (Decision
+  // logged in the forensic block.) Wiring lives after the body is built.
+  var sightBtn = document.createElement('button');
+  sightBtn.type = 'button';
+  sightBtn.className = 'yumi-panel-sight';
+  sightBtn.textContent = 'What Yumi sees';
+  header.appendChild(sightBtn);
+
   var closeBtn = document.createElement('button');
   closeBtn.className = 'yumi-panel-close';
   closeBtn.setAttribute('type', 'button');
@@ -673,6 +690,36 @@ function buildYumiPanel() {
   panel.appendChild(body);
   yumiBodyEl = body;
 
+  // In-panel "What Yumi sees" view (the mock fold): an overlay built from the
+  // SAME buildTransparencyContent the #yumi-sees page uses, shown OVER the body
+  // so the conversation is PRESERVED (hidden, not cleared). Back returns to chat.
+  var sightView = document.createElement('div');
+  sightView.className = 'yumi-panel-sight-view';
+  sightView.style.display = 'none';
+  panel.appendChild(sightView);
+  function closeSightView() {
+    sightView.style.display = 'none';
+    sightView.innerHTML = '';
+    body.style.display = '';
+  }
+  sightBtn.addEventListener('click', function() {
+    if (typeof buildTransparencyContent !== 'function' ||
+        !(window.YumiBrain && YumiBrain.getContextSnapshot)) {
+      location.hash = 'yumi-sees';
+      return;
+    }
+    sightView.innerHTML = '';
+    var sightBack = document.createElement('button');
+    sightBack.type = 'button';
+    sightBack.className = 'yumi-panel-sight-back';
+    sightBack.textContent = '← Back to chat';
+    sightBack.addEventListener('click', closeSightView);
+    sightView.appendChild(sightBack);
+    sightView.appendChild(buildTransparencyContent(YumiBrain.getContextSnapshot(), 'panel'));
+    body.style.display = 'none';
+    sightView.style.display = '';
+  });
+
   var row = document.createElement('div');
   row.className = 'yumi-panel-input';
 
@@ -687,11 +734,12 @@ function buildYumiPanel() {
   input.type = 'text';
   input.className = 'yumi-input';
   input.setAttribute('autocomplete', 'off');
+  input.setAttribute('placeholder', 'Say something to Yumi…');
   row.appendChild(input);
   yumiInputEl = input;
 
   var micBtn = document.createElement('button');
-  micBtn.className = 'yumi-mic-btn';
+  micBtn.className = 'yumi-mic-btn yumi-icon-btn';
   micBtn.setAttribute('type', 'button');
   micBtn.setAttribute('aria-label', 'Voice input');
   micBtn.innerHTML =
@@ -708,10 +756,10 @@ function buildYumiPanel() {
   }
 
   var sendBtn = document.createElement('button');
-  sendBtn.className = 'yumi-send-btn';
+  sendBtn.className = 'yumi-send-btn yumi-icon-btn yumi-send';
   sendBtn.setAttribute('type', 'button');
   sendBtn.setAttribute('aria-label', 'Send message');
-  sendBtn.textContent = 'Send';
+  sendBtn.textContent = '↑';
   yumiSendBtnEl = sendBtn;
   sendBtn.addEventListener('click', function () {
     if (yumi_request_in_flight) { return; }
