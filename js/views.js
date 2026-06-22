@@ -12177,22 +12177,34 @@ function renderAccountPage() {
 
   // #8 Stage 4a: the hero is now a card -- a gradient avatar beside a text
   // column (eyebrow + name + pen + email). Signed-out keeps the plain stack.
-  hero.className = 'account-hero account-card';
+  hero.className = 'account-hero';
 
-  // Avatar: hero-sized gradient circle holding the initial. The initial recipe
-  // REPLICATES renderRoute's avatar derivation: displayName -> email -> 'P',
-  // uppercased. Token-only (--grad / --text-on-dark via .account-hero-avatar).
-  var heroInitial = 'P';
-  if (typeof user.displayName === 'string' && user.displayName.length > 0) {
-    heroInitial = user.displayName.charAt(0).toUpperCase();
-  } else if (typeof user.email === 'string' && user.email.length > 0) {
-    heroInitial = user.email.charAt(0).toUpperCase();
+  // Fidelity (mock .account-hero): the hero avatar IS the user's own
+  // constellation in a round .account-slot -- their thinking-shape as their
+  // avatar -- replacing the gradient initial. DECORATIVE here (aria-hidden, no
+  // mark-click); the interactive "tap a mark to open it here" field stays its
+  // own section below (behavior the 96px decorative avatar can't hold). Empty
+  // (no sub-theories) -> the faint round ground, no svg.
+  var heroSlot = document.createElement('div');
+  heroSlot.className = 'account-slot cstl-host';
+  heroSlot.id = 'account-cstl';
+  heroSlot.setAttribute('aria-hidden', 'true');
+  var heroConstData = _accountBuildConstellationData();
+  if (heroConstData.subTheories.length > 0 &&
+      typeof window.renderSubTheoryConstellation === 'function') {
+    var HERO_SVG_NS = 'http://www.w3.org/2000/svg';
+    var heroSvg = document.createElementNS(HERO_SVG_NS, 'svg');
+    heroSvg.setAttribute('viewBox', '0 0 600 500');
+    heroSvg.setAttribute('xmlns', HERO_SVG_NS);
+    heroSlot.appendChild(heroSvg);
+    window.renderSubTheoryConstellation(heroConstData, heroSvg, {
+      showBooks:      false,
+      showMarginalia: false,
+      showFaint:      false,
+      showLegend:     false
+    });
   }
-  var avatar = document.createElement('div');
-  avatar.className = 'account-hero-avatar';
-  avatar.setAttribute('aria-hidden', 'true');
-  avatar.textContent = heroInitial;
-  hero.appendChild(avatar);
+  hero.appendChild(heroSlot);
 
   var heroText = document.createElement('div');
   heroText.className = 'account-hero-text';
