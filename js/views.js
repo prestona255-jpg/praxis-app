@@ -9082,6 +9082,65 @@ function buildArcVoiceAffordance(arcId) {
   return box;
 }
 
+// Mock .arcfield-rail: "Books in this arc" as compact member rows (real book
+// data — a spine chip + title + author), a primary "+ Add a sub-theory" (the
+// new-subtheory route), and the drag/hover/connect hint. The mock's "+ Add a
+// book to this arc" is OMITTED: the app has no arc-page add-book flow (books
+// join an arc from book detail) — a fidelity item, not fabricated here.
+function buildArcFieldRail(arc, arcId, user) {
+  var rail = document.createElement('aside');
+  rail.className = 'arcfield-rail';
+  var h3 = document.createElement('h3');
+  h3.textContent = 'Books in this arc';
+  rail.appendChild(h3);
+  var bookIds = (arc && arc.bookIds && arc.bookIds.length) ? arc.bookIds : [];
+  var shown = 0, i;
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    var bm = bookIds[i];
+    var bk = (bm && bm.id && state.books) ? state.books[bm.id] : null;
+    if (!bk) { continue; }
+    var member = document.createElement('div');
+    member.className = 'arcfield-member';
+    var mc = document.createElement('span');
+    mc.className = 'mc';
+    mc.textContent = bk.title || '';
+    member.appendChild(mc);
+    var mtext = document.createElement('div');
+    var mt = document.createElement('div');
+    mt.className = 'mt';
+    mt.textContent = bk.title || '(untitled)';
+    mtext.appendChild(mt);
+    var ma = document.createElement('div');
+    ma.className = 'ma';
+    ma.textContent = bk.author || '';
+    mtext.appendChild(ma);
+    member.appendChild(mtext);
+    rail.appendChild(member);
+    shown = shown + 1;
+  }
+  if (shown === 0) {
+    var none = document.createElement('p');
+    none.className = 'arcfield-sub';
+    none.textContent = 'No books in this arc yet.';
+    rail.appendChild(none);
+  }
+  if (user) {
+    var addSub = document.createElement('button');
+    addSub.type = 'button';
+    addSub.className = 'btn btn-primary arcfield-add-sub';
+    addSub.textContent = '＋ Add a sub-theory';
+    addSub.addEventListener('click', function() {
+      location.hash = 'arc/' + arcId + '/new-subtheory';
+    });
+    rail.appendChild(addSub);
+  }
+  var hint = document.createElement('p');
+  hint.className = 'arcfield-sub arcfield-rail-hint';
+  hint.textContent = 'Drag a mark to arrange the field. Hover a sub-theory for its card; connect two to thread a resonance.';
+  rail.appendChild(hint);
+  return rail;
+}
+
 function renderArcDetail(arcId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -9139,22 +9198,60 @@ function renderArcDetail(arcId) {
   var viewMode = getArcViewMode();
 
   var wrap = document.createElement('section');
-  wrap.className = 'arc-detail';
+  wrap.className = 'arcfield';
 
+  // Head (mock .arcfield-head): .t block (eyebrow + the question + a computed
+  // sub-meta line) on the left, the List/Web .seg on the right. arc.title IS
+  // the question (no separate field); sub-meta is display-only aggregation.
   var header = document.createElement('header');
-  header.className = 'arc-detail-header';
+  header.className = 'arcfield-head';
+
+  var headT = document.createElement('div');
+  headT.className = 't';
+
+  var headEyebrow = document.createElement('div');
+  headEyebrow.className = 'eyebrow';
+  headEyebrow.textContent = 'Arc';
+  headT.appendChild(headEyebrow);
 
   var title = document.createElement('h1');
-  title.className = 'arc-detail-title';
+  title.className = 'arcfield-q';
   title.textContent = arc.title || '';
-  header.appendChild(title);
+  headT.appendChild(title);
 
   if (arc.description) {
     var desc = document.createElement('p');
-    desc.className = 'arc-detail-description';
+    desc.className = 'arcfield-desc';
     desc.textContent = arc.description;
-    header.appendChild(desc);
+    headT.appendChild(desc);
   }
+
+  // Sub-meta: N sub-theories · M books · tended <relative> (real counts).
+  var stCount = 0, _stk;
+  if (state.subTheories) {
+    for (_stk in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, _stk) &&
+          state.subTheories[_stk] && state.subTheories[_stk].arcId === arcId) {
+        stCount = stCount + 1;
+      }
+    }
+  }
+  var bkCount = (arc.bookIds && arc.bookIds.length) ? arc.bookIds.length : 0;
+  var subParts = [
+    stCount + (stCount === 1 ? ' sub-theory' : ' sub-theories'),
+    bkCount + (bkCount === 1 ? ' book' : ' books')
+  ];
+  if (arc.updatedAt) {
+    var arcDays = Math.floor((Date.now() - arc.updatedAt) / 86400000);
+    subParts.push(arcDays <= 0 ? 'tended today'
+      : (arcDays === 1 ? 'tended yesterday' : 'tended ' + arcDays + ' days ago'));
+  }
+  var subMeta = document.createElement('div');
+  subMeta.className = 'arcfield-sub';
+  subMeta.textContent = subParts.join(' · ');
+  headT.appendChild(subMeta);
+
+  header.appendChild(headT);
 
   // 9.2 Checkpoint E: launch a new sub-theory under this arc. Gated on a
   // signed-in user exactly like the notebook "+ New entry" / "+ New arc"
@@ -9206,30 +9303,17 @@ function renderArcDetail(arcId) {
     header.appendChild(deleteBtn);
   }
 
-  wrap.appendChild(header);
-
-  // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
-  var confirmHost = document.createElement('div');
-  confirmHost.id = 'arc-detail-confirm-host';
-  wrap.appendChild(confirmHost);
-
-  // Stage 5.4 Stage 1c: list/web view toggle row. Sits between the
-  // header (identity + destructive) and the member content so it
-  // reads as a view-control, not a destructive sibling. Active button
-  // gets .is-active; click writes the new mode through
-  // setArcViewMode() and re-enters renderArcDetail in place (the
-  // function clears host.innerHTML at its top, so the rebuild is
-  // idempotent). Stage 1c is scaffolding only -- viewMode is read
-  // and the toggle UI is live, but BOTH branches still render the
-  // existing list view. The web-vs-list rendering split lands in
-  // Stage 1d.
+  // List / Web view toggle (mock .seg, in the head). Active gets .is-on; click
+  // persists via setArcViewMode + re-enters renderArcDetail (idempotent — the
+  // top clears host.innerHTML).
   var toolbar = document.createElement('div');
-  toolbar.className = 'arc-detail-toolbar';
+  toolbar.className = 'seg';
+  toolbar.setAttribute('role', 'tablist');
+  toolbar.setAttribute('aria-label', 'Arc view');
 
   var listBtn = document.createElement('button');
   listBtn.type = 'button';
-  listBtn.className = 'arc-detail-toggle-btn'
-    + (viewMode === 'list' ? ' is-active' : '');
+  listBtn.className = 'seg-opt' + (viewMode === 'list' ? ' is-on' : '');
   listBtn.setAttribute('data-mode', 'list');
   listBtn.textContent = 'List';
   listBtn.addEventListener('click', function() {
@@ -9240,8 +9324,7 @@ function renderArcDetail(arcId) {
 
   var webBtn = document.createElement('button');
   webBtn.type = 'button';
-  webBtn.className = 'arc-detail-toggle-btn'
-    + (viewMode === 'web' ? ' is-active' : '');
+  webBtn.className = 'seg-opt' + (viewMode === 'web' ? ' is-on' : '');
   webBtn.setAttribute('data-mode', 'web');
   webBtn.textContent = 'Web';
   webBtn.addEventListener('click', function() {
@@ -9250,7 +9333,13 @@ function renderArcDetail(arcId) {
   });
   toolbar.appendChild(webBtn);
 
-  wrap.appendChild(toolbar);
+  header.appendChild(toolbar);
+  wrap.appendChild(header);
+
+  // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
+  var confirmHost = document.createElement('div');
+  confirmHost.id = 'arc-detail-confirm-host';
+  wrap.appendChild(confirmHost);
 
   // Stage C: solicited arc-voice affordance + inline host, under the view
   // toggle (so it sits on both List and Web). Signed-in only (consent +
@@ -9267,7 +9356,10 @@ function renderArcDetail(arcId) {
   // indent on purpose -- minimum-scope diff).
   if (viewMode === 'web') {
     var webContainer = document.createElement('div');
-    webContainer.className = 'arc-detail-web-view';
+    // Keep .arc-detail-web-view (ALL its constellation CSS — layer fades, drift,
+    // svg sizing — survives byte-identical) + ADD the mock .cstl-host + id.
+    webContainer.className = 'arc-detail-web-view cstl-host';
+    webContainer.id = 'arc-field';
     // Stage 7.1B: wire the constellation renderer in place of the
     // Stage 5.4 Stage 2a single-book temp. Container stays a <div>
     // (keeps the wheat-field ::before backdrop intact); the renderer
@@ -9437,7 +9529,10 @@ function renderArcDetail(arcId) {
 
       stControlBarBottom.appendChild(layersWrap);
 
-      webContainer.appendChild(stControlBar);
+      // The top "+ Sub-theory" bar is dropped here — the mock puts that
+      // affordance in the rail (built below); the bottom Connect/Reset/Layers
+      // bar IS the mock's .cstl-controls and stays. (stControlBar/addSubBtn
+      // remain built but unappended — harmless; rail owns add-sub now.)
 
       var SVG_NS = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(SVG_NS, 'svg');
@@ -9478,7 +9573,12 @@ function renderArcDetail(arcId) {
         });
       }
     }
-    wrap.appendChild(webContainer);
+    // Mock .arcfield-stage: the constellation host + the books/add rail.
+    var arcStage = document.createElement('div');
+    arcStage.className = 'arcfield-stage';
+    arcStage.appendChild(webContainer);
+    arcStage.appendChild(buildArcFieldRail(arc, arcId, user));
+    wrap.appendChild(arcStage);
   } else {
 
   // Merge books + entries into one stream, oldest-first by addedAt.

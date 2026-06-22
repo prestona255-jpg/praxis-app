@@ -9033,3 +9033,53 @@
   }
   .st-page .subtheory-rail-close { display:block; position:absolute; top:12px; right:12px; padding:4px 10px; background:transparent; border:none; font-size:22px; line-height:1; color:var(--ink-3); cursor:pointer; }
 }
+
+/* ============================================================================
+   Umber port — Surface 9 (Arc field): mock #s-arc frame over the live two-view
+   arc detail. Scoped under .arcfield; DARK ground. The constellation is KEPT as
+   .arc-detail-web-view (all its layer-fade/drift/svg CSS + the invariant
+   renderers stay byte-identical — Δ=0); only its host is also tagged .cstl-host
+   and placed in the mock .arcfield-stage beside the new .arcfield-rail. The
+   constellation control chrome (Connect/Reset/Layers + the .st-control-bar /
+   .st-layers rules) is LEFT as-is (already Umber-recolored; canon §4-H = visual-
+   only, don't rebuild). Old .arc-detail/-header/-title/-description/-toolbar(-btn)
+   rules go dead — drift, flagged.
+   ============================================================================ */
+.arcfield { max-width:1180px; margin:0 auto; padding:0 var(--sp-5); }
+
+/* head: question + sub-meta + the List/Web seg */
+.arcfield-head { display:flex; align-items:flex-start; gap:var(--sp-4); flex-wrap:wrap; margin-bottom:var(--sp-4); }
+.arcfield-head .t { flex:1; min-width:240px; }
+.arcfield .arcfield-q { font-family:var(--font-serif); font-style:italic; font-size:clamp(22px,3vw,30px); color:var(--text-d); line-height:1.25; margin:0; }
+.arcfield .arcfield-desc { font-family:var(--font-serif); font-size:15px; line-height:1.5; color:var(--muted); margin:8px 0 0; }
+.arcfield .arcfield-sub { font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--muted); margin-top:6px; }
+/* kept head affordances (mock omits them) — quiet */
+.arcfield-head .arc-detail-delete { background:transparent; border:none; color:var(--muted); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; align-self:center; }
+.arcfield-head .arc-detail-delete:hover { color:var(--danger); }
+.arcfield-head .arc-detail-addsub { background:transparent; border:1px solid var(--border-2); color:var(--gold); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; padding:6px 12px; border-radius:var(--radius-pill); cursor:pointer; align-self:center; }
+.arcfield-head .arc-detail-addsub:hover { color:var(--text-d); border-color:var(--gold); }
+
+/* List | Web seg (dark) */
+.arcfield .seg { display:inline-flex; padding:3px; gap:2px; background:var(--sunk-d); border:1px solid var(--border); border-radius:var(--radius-pill); align-self:center; }
+.arcfield .seg-opt { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:6px 14px; border-radius:var(--radius-pill); border:none; background:transparent; color:var(--muted); cursor:pointer; transition:color var(--motion-base) var(--ease); }
+.arcfield .seg-opt:hover { color:var(--text-d); }
+.arcfield .seg-opt.is-on { background:var(--grad); color:var(--br-deep); font-weight:700; }
+
+/* stage: constellation + rail (2-col) */
+.arcfield .arcfield-stage { display:grid; grid-template-columns:1fr 232px; gap:var(--sp-5); align-items:start; }
+.arcfield .arcfield-stage .arc-detail-web-view { min-width:0; }
+
+/* rail */
+.arcfield .arcfield-rail h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin:0 0 12px; }
+.arcfield .arcfield-member { display:flex; gap:10px; align-items:center; padding:8px; border-radius:var(--radius-sm); }
+.arcfield .arcfield-member:hover { background:var(--wash); }
+.arcfield .arcfield-member .mc { width:34px; height:50px; border-radius:3px; box-shadow:var(--shadow-cover); flex:none; display:grid; place-items:center; font-family:var(--font-serif); font-size:9px; line-height:1.1; text-align:center; color:var(--text-d); padding:3px; overflow:hidden; background:linear-gradient(155deg, var(--gold-light), var(--surface-d)); }
+.arcfield .arcfield-member .mt { font-family:var(--font-serif); font-size:14px; color:var(--text-d); line-height:1.2; }
+.arcfield .arcfield-member .ma { font-size:11px; color:var(--muted); }
+.arcfield .arcfield-add-sub { width:100%; justify-content:center; margin-top:14px; }
+.arcfield .arcfield-rail-hint { margin-top:14px; line-height:1.5; }
+
+/* mobile: single column */
+@media (max-width:759px){
+  .arcfield .arcfield-stage { grid-template-columns:1fr; }
+}
