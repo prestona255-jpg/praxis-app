@@ -9130,3 +9130,18 @@
 @media (max-width:759px){
   .account-hero { flex-direction:column; text-align:center; }
 }
+
+/* ============================================================================
+   Umber port — FIDELITY: Notebook cues. (1) The .bc spine chip now carries a
+   SHORT label (surname/first-word) so it reads at a slightly larger size. (2)
+   Per-entry privacy folded toward the mock — in the spread's left leaf, the
+   "Visible to Yumi" affirmation is hidden (visible = unmarked default, like the
+   mock) and "Private" is a quiet compact marker. SCOPED to .notebook .leaf-left
+   so the SHARED renderNotebookEntry markup is untouched and book-detail /
+   sub-theory keep the full vis indicator. (Composer placement is already the
+   mock's right-leaf position — unchanged.)
+   ============================================================================ */
+.notebook .nb-bookhead .bc { font-size:10.5px; }
+.notebook .leaf-left .notebook-entry-vis-on { display:none; }
+.notebook .leaf-left .notebook-entry-vis-off { font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
+.notebook .leaf-left .notebook-entry-vis-off .notebook-entry-vis-dot { display:none; }

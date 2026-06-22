@@ -965,7 +965,18 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   if (headerBook) {
     var bc = document.createElement('span');
     bc.className = 'bc';
-    bc.textContent = headerBook.title || '';
+    // Fidelity: a SHORT spine label (mock "hooks"), not the full clamped title
+    // (which read cramped in the 40px chip). Author surname when present, else
+    // the first word of the title.
+    var bcLabel = '';
+    if (headerBook.author) {
+      var bcAuthorWords = headerBook.author.replace(/^\s+|\s+$/g, '').split(/\s+/);
+      bcLabel = bcAuthorWords[bcAuthorWords.length - 1] || '';
+    }
+    if (!bcLabel && headerBook.title) {
+      bcLabel = headerBook.title.replace(/^\s+|\s+$/g, '').split(/\s+/)[0] || '';
+    }
+    bc.textContent = bcLabel;
     bh.appendChild(bc);
   }
   var bhText = document.createElement('div');
