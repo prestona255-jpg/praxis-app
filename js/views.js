@@ -720,60 +720,48 @@ function renderNotebook() {
   var wrap = document.createElement('section');
   wrap.className = 'notebook';
 
-  // Header: title + auth-aware affordance.
-  var header = document.createElement('header');
-  header.className = 'notebook-header';
+  var user = getCurrentUser();
 
-  // Batch 3 F1: eyebrow + title in a left block (mockup notebook header).
+  // Signed out: the mock's #notebook-signedout empty-state (glyph + covenant +
+  // Sign in). The head + spread are user-scoped, so render ONLY the empty-state
+  // (matches the mock's signed-out behavior: head + spread hidden).
+  if (!user) {
+    wrap.appendChild(buildNotebookSignedOut());
+    host.appendChild(wrap);
+    return;
+  }
+
+  // Head (mock .notebook-head): eyebrow + title block, spacer, the master consent
+  // switch (the privacy toggle), and the "What Yumi sees" transparency chip.
+  var header = document.createElement('header');
+  header.className = 'notebook-head';
+
   var titleBlock = document.createElement('div');
   titleBlock.className = 'notebook-title-block';
-
   var eyebrow = document.createElement('p');
   eyebrow.className = 'eyebrow';
   eyebrow.textContent = 'Structurally private';
   titleBlock.appendChild(eyebrow);
-
   var title = document.createElement('h1');
   title.className = 'notebook-title';
   title.textContent = 'Notebook';
   titleBlock.appendChild(title);
-
   header.appendChild(titleBlock);
 
-  var user = getCurrentUser();
-  if (user) {
-    // N1 spread header-right: the master consent switch (DISPLAY-ONLY in N1 --
-    // wired interactive in N2) + the existing "What Yumi sees" transparency
-    // link (reused verbatim -> openTransparencyView). The old +New entry /
-    // +New arc / Settings buttons are superseded by the spread: inline capture
-    // (N2 writeline) and the master switch replace them. (openJournalEditor /
-    // openArcEditor / openNotebookSettings remain defined but unreferenced --
-    // cleanup deferred to N5.)
-    var hright = document.createElement('div');
-    hright.className = 'notebook-hright';
+  var spacer = document.createElement('span');
+  spacer.className = 'spacer';
+  header.appendChild(spacer);
 
-    hright.appendChild(buildNotebookMasterSwitch(user));
+  header.appendChild(buildNotebookMasterSwitch(user));
 
-    var transparencyBtn = document.createElement('button');
-    transparencyBtn.type = 'button';
-    transparencyBtn.className = 'notebook-transparency-toggle notebook-hright-link';
-    transparencyBtn.textContent = 'What Yumi sees';
-    transparencyBtn.addEventListener('click', function() {
-      openTransparencyView();
-    });
-    hright.appendChild(transparencyBtn);
-
-    header.appendChild(hright);
-  } else {
-    var signinBtn = document.createElement('button');
-    signinBtn.type = 'button';
-    signinBtn.className = 'notebook-signin-prompt';
-    signinBtn.textContent = 'Sign in to write';
-    signinBtn.addEventListener('click', function() {
-      signInWithGoogle();
-    });
-    header.appendChild(signinBtn);
-  }
+  var transparencyBtn = document.createElement('button');
+  transparencyBtn.type = 'button';
+  transparencyBtn.className = 'chip';
+  transparencyBtn.textContent = 'What Yumi sees';
+  transparencyBtn.addEventListener('click', function() {
+    openTransparencyView();
+  });
+  header.appendChild(transparencyBtn);
 
   wrap.appendChild(header);
 
@@ -782,25 +770,12 @@ function renderNotebook() {
   transparencyHost.id = 'notebook-transparency-host';
   wrap.appendChild(transparencyHost);
 
-  // Editor host -- the N2 inline writeline will mount its editor here. Empty in N1.
+  // Editor host -- inline editor mount point. Preserved.
   var editorHost = document.createElement('div');
   editorHost.id = 'notebook-editor-host';
   wrap.appendChild(editorHost);
 
-  // Signed out: the header already carries the sign-in prompt; the spread is
-  // per-user, so render a quiet note instead of reading a null user's uid.
-  if (!user) {
-    var signedOut = document.createElement('p');
-    signedOut.className = 'notebook-empty-body';
-    signedOut.textContent = 'Sign in to open your notebook.';
-    wrap.appendChild(signedOut);
-    host.appendChild(wrap);
-    return;
-  }
-
-  // N1: one pass over the signed-in user's entries -> tab membership + counts,
-  // then the tab row and the two-leaf spread. READ-ONLY: no capture/gather/writes.
-  // (Artifacts are out of the spread for N1; they remain reachable via book detail.)
+  // One pass over the signed-in user's entries -> tab membership + counts.
   var entries = [];
   var emap = state.notebookEntries || {};
   var ekey;
@@ -824,15 +799,41 @@ function renderNotebook() {
     notebookActiveTab = activeKey;
   }
 
-  wrap.appendChild(buildNotebookTabRow(tabs, activeKey));
-
+  // The bound-leaf spread. Left leaf = book/section head + tabs + the note bank;
+  // right leaf = the working page (composer + gather), per the mock.
   var spread = document.createElement('div');
   spread.className = 'notebook-spread';
   spread.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
-  spread.appendChild(buildNotebookRightLeaf(user));
+  spread.appendChild(buildNotebookRightLeaf(user, activeKey));
   wrap.appendChild(spread);
 
   host.appendChild(wrap);
+}
+
+// Signed-out: the mock's #notebook-signedout empty-state. The em-mark is filled
+// with the real shared Yumi crest (yumiGlyphNode); the button runs the live auth.
+function buildNotebookSignedOut() {
+  var es = document.createElement('div');
+  es.className = 'empty-state';
+  es.id = 'notebook-signedout';
+  var mark = document.createElement('div');
+  mark.className = 'em-mark';
+  mark.id = 'nb-signedout-mark';
+  if (typeof yumiGlyphNode === 'function') { mark.appendChild(yumiGlyphNode(56)); }
+  es.appendChild(mark);
+  var h2 = document.createElement('h2');
+  h2.textContent = 'Your notebook is private';
+  es.appendChild(h2);
+  var p = document.createElement('p');
+  p.textContent = 'Sign in to keep your marginalia, journal, and questions — and to let Yumi read along, only ever as much as you allow. No asymmetry, ever.';
+  es.appendChild(p);
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-primary';
+  btn.textContent = 'Sign in';
+  btn.addEventListener('click', function() { signInWithGoogle(); });
+  es.appendChild(btn);
+  return es;
 }
 
 // ===== N1 spread helpers. Display / aggregation only -- no writes. =====
@@ -915,7 +916,7 @@ function buildNotebookTabModel(user, entries) {
 // would bind every handler to the last tab).
 function buildNotebookTabRow(tabs, activeKey) {
   var row = document.createElement('div');
-  row.className = 'notebook-tabs';
+  row.className = 'nb-tabs';
   var i;
   for (i = 0; i < tabs.length; i = i + 1) {
     appendNotebookTab(row, tabs[i], activeKey);
@@ -926,10 +927,10 @@ function buildNotebookTabRow(tabs, activeKey) {
 function appendNotebookTab(row, tab, activeKey) {
   var el = document.createElement('button');
   el.type = 'button';
-  el.className = 'notebook-tab' + (tab.key === activeKey ? ' notebook-tab-on' : '');
+  el.className = 'nb-tab' + (tab.key === activeKey ? ' is-on' : '');
   el.appendChild(document.createTextNode(tab.label + ' '));
   var ct = document.createElement('span');
-  ct.className = 'notebook-tab-count';
+  ct.className = 'c';
   ct.textContent = String(tab.count);
   el.appendChild(ct);
   el.addEventListener('click', function() {
@@ -943,7 +944,7 @@ function appendNotebookTab(row, tab, activeKey) {
 // (createdAt-desc), rendered via renderNotebookEntry (no per-entry toggle).
 function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   var leaf = document.createElement('div');
-  leaf.className = 'notebook-leaf notebook-leaf-left';
+  leaf.className = 'leaf leaf-left';
 
   var activeTab = null;
   var t;
@@ -951,61 +952,44 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
     if (tabs[t].key === activeKey) { activeTab = tabs[t]; break; }
   }
 
-  // Book-tab header (Gap 2): a book tab's key IS its bookId, so anchor the left
-  // page to that book -- cover (self-healing) + serif title + "AUTHOR · STATUS".
-  // READ-ONLY on state.books; Inbox/Journal (and any stale/missing record) fall
-  // to the plain title + count heading below.
+  // Head (mock .nb-bookhead): for a book tab the key IS the bookId -> a compact
+  // .bc spine chip (the mock's representation; the self-healing cover stays on
+  // shelf + book detail) + .bt title + .ba "author · N notes" (real count). For
+  // Inbox/Journal (no mock equivalent) the same head WITHOUT the .bc chip:
+  // label + count. READ-ONLY on state.books.
   var headerBook = (activeKey !== 'inbox' && activeKey !== 'journal' && state.books)
     ? state.books[activeKey] : null;
+  var count = activeTab ? activeTab.count : 0;
+  var bh = document.createElement('div');
+  bh.className = 'nb-bookhead';
   if (headerBook) {
-    var bh = document.createElement('div');
-    bh.className = 'notebook-bookhead';
-    bh.appendChild(buildSelfHealingCover(headerBook, 'notebook-bookhead-cover',
-      function() {
-        var ph = document.createElement('div');
-        ph.className = 'notebook-bookhead-cover notebook-bookhead-cover-ph';
-        var pht = document.createElement('span');
-        pht.className = 'notebook-bookhead-cover-ph-title';
-        pht.textContent = headerBook.title || '';
-        ph.appendChild(pht);
-        var phl = document.createElement('span');
-        phl.className = 'notebook-bookhead-cover-ph-label';
-        phl.textContent = 'cover pending';
-        ph.appendChild(phl);
-        return ph;
-      }));
-    var bhText = document.createElement('div');
-    bhText.className = 'notebook-bookhead-text';
-    var bhTitle = document.createElement('div');
-    bhTitle.className = 'notebook-bookhead-title';
-    bhTitle.textContent = headerBook.title || '(untitled)';
-    bhText.appendChild(bhTitle);
-    var bhSub = document.createElement('div');
-    bhSub.className = 'notebook-bookhead-sub';
-    var subParts = [];
-    if (headerBook.author) { subParts.push(headerBook.author); }
-    subParts.push(normalizeStatus(headerBook.status).split('-').join(' '));
-    bhSub.textContent = subParts.join(' · ');
-    bhText.appendChild(bhSub);
-    bh.appendChild(bhText);
-    leaf.appendChild(bh);
-  } else {
-    var sechead = document.createElement('div');
-    sechead.className = 'notebook-secthead';
-    var secTitle = document.createElement('div');
-    secTitle.className = 'notebook-secthead-title';
-    secTitle.textContent = activeTab ? activeTab.label : 'Inbox';
-    sechead.appendChild(secTitle);
-    var secMeta = document.createElement('div');
-    secMeta.className = 'notebook-secthead-meta';
-    var n = activeTab ? activeTab.count : 0;
-    secMeta.textContent = n + (n === 1 ? ' note' : ' notes');
-    sechead.appendChild(secMeta);
-    leaf.appendChild(sechead);
+    var bc = document.createElement('span');
+    bc.className = 'bc';
+    bc.textContent = headerBook.title || '';
+    bh.appendChild(bc);
   }
+  var bhText = document.createElement('div');
+  var bt = document.createElement('div');
+  bt.className = 'bt';
+  bt.textContent = headerBook
+    ? (headerBook.title || '(untitled)')
+    : (activeTab ? activeTab.label : 'Inbox');
+  bhText.appendChild(bt);
+  var ba = document.createElement('div');
+  ba.className = 'ba';
+  var noteWord = count + (count === 1 ? ' note' : ' notes');
+  if (headerBook && headerBook.author) {
+    ba.textContent = headerBook.author + ' · ' + noteWord;
+  } else {
+    ba.textContent = noteWord;
+  }
+  bhText.appendChild(ba);
+  bh.appendChild(bhText);
+  leaf.appendChild(bh);
 
-  // N2: inline capture (writeline) at the top of the left leaf.
-  leaf.appendChild(buildNotebookWriteline(activeKey));
+  // Tabs sit inside the left leaf (mock .nb-tabs), under the head. The tab MODEL
+  // (Inbox / Journal / per-book) is unchanged; only placement + visual adopt the mock.
+  leaf.appendChild(buildNotebookTabRow(tabs, activeKey));
 
   var shown = 0;
   var i;
@@ -1033,17 +1017,23 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
 // Right leaf: the working page. Empty until notes are gathered; then it shows
 // the gathered notes + an editable name + arc selection (F6) + Create. Create
 // REUSES createSubTheory + addEvidenceToSubTheory (no new data path).
-function buildNotebookRightLeaf(user) {
+function buildNotebookRightLeaf(user, activeKey) {
   var leaf = document.createElement('div');
-  leaf.className = 'notebook-leaf notebook-leaf-right';
+  leaf.className = 'leaf leaf-right';
 
   var ids = notebookGatheredIds();
 
+  var tag = document.createElement('h3');
+  tag.className = 'nb-leaftag';
+  tag.textContent = ids.length ? 'Working page · forming a sub-theory' : 'Working page';
+  leaf.appendChild(tag);
+
+  // Composer (mock .nb-composer): the writeline lives in the right leaf. It still
+  // routes captures by the active LEFT tab (activeKey) -- relocation only, no
+  // behavior change (autogrow / photo / register / Enter-commit preserved).
+  leaf.appendChild(buildNotebookWriteline(activeKey));
+
   if (!ids.length) {
-    var tag0 = document.createElement('div');
-    tag0.className = 'notebook-leaftag';
-    tag0.textContent = 'Working page';
-    leaf.appendChild(tag0);
     var hint = document.createElement('p');
     hint.className = 'notebook-working-hint';
     hint.textContent = 'Gather a selection of notes from the left to form a sub-theory here.';
@@ -1051,24 +1041,17 @@ function buildNotebookRightLeaf(user) {
     return leaf;
   }
 
-  var tag = document.createElement('div');
-  tag.className = 'notebook-leaftag';
-  tag.textContent = 'Working page · forming a sub-theory';
-  leaf.appendChild(tag);
-
-  // Name block: a reserved (resting) Yumi-attribution eyebrow + the N3 naming
-  // field. Yumi does NOT generate the name here, so the eyebrow stays honest
-  // ("yours to set"); the field is the same <input> the N3 gather path reads
-  // from (notebookGatherName).
+  // Name block: a reserved (resting) Yumi-attribution eyebrow + the naming field
+  // (the same <input> the gather path reads from via notebookGatherName).
   var nameBlock = document.createElement('div');
-  nameBlock.className = 'notebook-nameblock';
+  nameBlock.className = 'nb-nameblock';
   var ynameTag = document.createElement('div');
-  ynameTag.className = 'notebook-yname-tag';
+  ynameTag.className = 'nb-yname-tag';
   ynameTag.textContent = 'Name this sub-theory · yours to set';
   nameBlock.appendChild(ynameTag);
   var nameInput = document.createElement('input');
   nameInput.type = 'text';
-  nameInput.className = 'notebook-working-name';
+  nameInput.className = 'nb-working-name';
   nameInput.setAttribute('placeholder', 'Name it…');
   nameInput.value = notebookGatherName || '';
   nameBlock.appendChild(nameInput);
@@ -1078,12 +1061,12 @@ function buildNotebookRightLeaf(user) {
   for (i = 0; i < ids.length; i = i + 1) {
     var e = state.notebookEntries[ids[i]];
     var w = document.createElement('div');
-    w.className = 'notebook-wnote';
+    w.className = 'nb-wnote';
     var wt = document.createElement('span');
-    var wtcls = 'notebook-wnote-tag-jour';
-    if (e.register === 'marginalia') { wtcls = 'notebook-wnote-tag-marg'; }
-    else if (e.register === 'question') { wtcls = 'notebook-wnote-tag-ques'; }
-    wt.className = 'notebook-wnote-tag ' + wtcls;
+    var wtcls = 'nb-wnote-tag-jour';
+    if (e.register === 'marginalia') { wtcls = 'nb-wnote-tag-marg'; }
+    else if (e.register === 'question') { wtcls = 'nb-wnote-tag-ques'; }
+    wt.className = 'nb-wnote-tag ' + wtcls;
     wt.textContent = notebookRegisterLabel(e.register);
     w.appendChild(wt);
     var wb = (e && typeof e.body === 'string') ? e.body : '';
@@ -1092,61 +1075,58 @@ function buildNotebookRightLeaf(user) {
     leaf.appendChild(w);
   }
 
-  // Arc selection (F6): default to the arc shared by all gathered notes' arcIds,
-  // else let the user pick an existing arc (reuses buildArcPickerPanel). If the
-  // user has no arcs, guide them to make one first.
+  // Gather bar (mock .nb-gather): "N gathered ·" + arc selection (reuses
+  // buildArcPickerPanel via openGatherArcPicker) + Create. Default arc = the arc
+  // shared by all gathered notes' arcIds, else the user picks one; no arcs -> guide.
   var arcId = notebookGatherArc || notebookSharedArc(ids);
   var hasArcs = notebookUserHasArcs(user);
-  var arcRow = document.createElement('div');
-  arcRow.className = 'notebook-working-arc';
+
+  var gather = document.createElement('div');
+  gather.className = 'nb-gather';
+
+  var lab = document.createElement('span');
+  lab.className = 'lab';
+  lab.textContent = ids.length + ' gathered ·';
+  gather.appendChild(lab);
+
   if (!hasArcs) {
-    arcRow.textContent = 'Create an arc first — sub-theories live inside an arc.';
+    var noArc = document.createElement('span');
+    noArc.className = 'lab';
+    noArc.textContent = 'Create an arc first — sub-theories live inside an arc.';
+    gather.appendChild(noArc);
   } else {
     var arcLabel = document.createElement('span');
-    arcLabel.className = 'notebook-working-arc-label';
+    arcLabel.className = 'lab';
     if (arcId && state.arcs[arcId]) {
       arcLabel.textContent = 'Into arc: ' + (state.arcs[arcId].title || '(untitled arc)');
     } else {
       arcLabel.textContent = 'No arc chosen';
     }
-    arcRow.appendChild(arcLabel);
-    var changeLink = document.createElement('a');
-    changeLink.href = '#';
-    changeLink.className = 'notebook-working-arc-change';
+    gather.appendChild(arcLabel);
+    var changeLink = document.createElement('button');
+    changeLink.type = 'button';
+    changeLink.className = 'chip';
     changeLink.textContent = (arcId && state.arcs[arcId]) ? 'Change' : 'Choose an arc';
-    changeLink.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      var host = arcRow.querySelector('.notebook-working-arc-picker-host');
+    changeLink.addEventListener('click', function() {
+      var host = gather.querySelector('.notebook-working-arc-picker-host');
       if (!host) {
         host = document.createElement('div');
         host.className = 'notebook-working-arc-picker-host';
-        arcRow.appendChild(host);
+        gather.appendChild(host);
       }
       openGatherArcPicker(host);
     });
-    arcRow.appendChild(changeLink);
+    gather.appendChild(changeLink);
   }
-  leaf.appendChild(arcRow);
 
-  // Gather bar: Yumi's resting presence (a quiet "Y" avatar) beside the static
-  // gather line, with Create. NOT a generative call -- the line is plain UI copy
-  // and the avatar never speaks (the active NAME move is a later build).
-  var gather = document.createElement('div');
-  gather.className = 'notebook-gather';
-  var ybubble = document.createElement('span');
-  ybubble.className = 'notebook-ybubble';
-  ybubble.textContent = 'Y';
-  gather.appendChild(ybubble);
-
-  var gline = document.createElement('p');
-  gline.className = 'notebook-working-gather-line';
-  gline.textContent = ids.length + ' gathered — name it and I’ll carry them into your arc.';
-  gather.appendChild(gline);
+  var spacerG = document.createElement('span');
+  spacerG.className = 'spacer';
+  gather.appendChild(spacerG);
 
   var createBtn = document.createElement('button');
   createBtn.type = 'button';
-  createBtn.className = 'notebook-working-create';
-  createBtn.textContent = 'Create';
+  createBtn.className = 'btn btn-primary';
+  createBtn.textContent = 'Create sub-theory →';
   function canCreate() {
     // FIX B: the name is OPTIONAL (createSubTheory accepts an empty header -- a
     // draft you name in the editor, like the "+ Sub-theory" flow). The arc must
@@ -1168,28 +1148,28 @@ function buildNotebookRightLeaf(user) {
   // generative build; here she is quiet -- a static, honest placeholder, never a
   // generated question and never a brain call.
   var complicate = document.createElement('div');
-  complicate.className = 'notebook-complicate';
+  complicate.className = 'nb-complicate';
   var cbubble = document.createElement('span');
-  cbubble.className = 'notebook-ybubble notebook-ybubble-sm';
+  cbubble.className = 'nb-ybubble nb-ybubble-sm';
   cbubble.textContent = 'Y';
   complicate.appendChild(cbubble);
   var cbody = document.createElement('div');
   var ctag = document.createElement('div');
-  ctag.className = 'notebook-ctag';
+  ctag.className = 'nb-ctag';
   ctag.textContent = 'Yumi · complicates — a question, never a verdict';
   cbody.appendChild(ctag);
   var ctext = document.createElement('div');
-  ctext.className = 'notebook-ctext';
+  ctext.className = 'nb-ctext';
   ctext.textContent = 'Once Yumi’s reading along, she’ll open a question here — never a verdict.';
   cbody.appendChild(ctext);
   complicate.appendChild(cbody);
   leaf.appendChild(complicate);
 
   var acts = document.createElement('div');
-  acts.className = 'notebook-working-acts';
+  acts.className = 'nb-working-acts';
   var clearLink = document.createElement('a');
   clearLink.href = '#';
-  clearLink.className = 'notebook-working-clear';
+  clearLink.className = 'nb-working-clear';
   clearLink.textContent = 'Clear';
   clearLink.addEventListener('click', function(ev) {
     ev.preventDefault();
@@ -1327,15 +1307,19 @@ function buildNotebookMasterSwitch(user) {
     var prof = getProfile(user.uid);
     if (prof && prof.yumiReadsAlong === false) { reads = false; }
   }
-  var tog = document.createElement('span');
-  tog.className = 'notebook-mtog' + (reads ? ' notebook-mtog-on' : '');
-  tog.setAttribute('role', 'button');
-  tog.setAttribute('tabindex', '0');
+  // Umber frame: mock .nb-switch (label span + button.nb-toggle[aria-pressed]).
+  // The privacy/consent handler is preserved verbatim; a native <button> is
+  // keyboard-accessible (Enter/Space), so the explicit keydown is no longer needed.
+  var wrap = document.createElement('div');
+  wrap.className = 'nb-switch';
+  var label = document.createElement('span');
+  label.textContent = 'Yumi reads along';
+  wrap.appendChild(label);
+  var tog = document.createElement('button');
+  tog.type = 'button';
+  tog.className = 'nb-toggle';
   tog.setAttribute('aria-pressed', reads ? 'true' : 'false');
-  var sw = document.createElement('span');
-  sw.className = 'notebook-sw';
-  tog.appendChild(sw);
-  tog.appendChild(document.createTextNode('Yumi reads along'));
+  tog.setAttribute('aria-label', 'Yumi reads along: ' + (reads ? 'on' : 'off'));
   function flip() {
     if (!user || !user.uid) { return; }
     setProfile(user.uid, { yumiReadsAlong: !reads });
@@ -1345,12 +1329,8 @@ function buildNotebookMasterSwitch(user) {
     renderNotebook();
   }
   tog.addEventListener('click', function() { flip(); });
-  tog.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
-      ev.preventDefault(); flip();
-    }
-  });
-  return tog;
+  wrap.appendChild(tog);
+  return wrap;
 }
 
 // ===== N2b notebook photo storage: device-local IndexedDB blob store =====
@@ -1505,13 +1485,13 @@ function setNotebookComposing(on) {
 // commits via captureNote. Mounted at the top of the left leaf.
 function buildNotebookWriteline(activeKey) {
   var line = document.createElement('div');
-  line.className = 'notebook-writeline';
+  line.className = 'nb-composer';
 
   // FIX A: auto-growing textarea (was a single-line <input>, which clipped any
   // note past the visible width / height). Grows to fit content; Enter commits,
   // Shift+Enter inserts a newline (the keydown handler below).
   var input = document.createElement('textarea');
-  input.className = 'notebook-writeline-input';
+  input.className = 'nb-ce';
   input.setAttribute('rows', '1');
   input.setAttribute('placeholder', 'Write a note…');
   function autogrowWriteline() {
@@ -1524,7 +1504,7 @@ function buildNotebookWriteline(activeKey) {
   var selected = (activeKey === 'journal') ? 'journal' : 'marginalia';
 
   var chips = document.createElement('div');
-  chips.className = 'notebook-writeline-chips';
+  chips.className = 'seg';
   var defs = [
     { r: 'journal', l: 'Journal' },
     { r: 'marginalia', l: 'Marginalia' },
@@ -1535,8 +1515,8 @@ function buildNotebookWriteline(activeKey) {
     var r;
     for (r in chipEls) {
       if (Object.prototype.hasOwnProperty.call(chipEls, r)) {
-        chipEls[r].className = 'notebook-writeline-chip'
-          + (r === selected ? ' notebook-writeline-chip-on' : '');
+        chipEls[r].className = 'seg-opt'
+          + (r === selected ? ' is-on' : '');
       }
     }
   }
@@ -1554,7 +1534,7 @@ function buildNotebookWriteline(activeKey) {
   var stagedImages = [];   // {id, blob, w, h, caption, url}
 
   var shotsHost = document.createElement('div');
-  shotsHost.className = 'notebook-writeline-shots';
+  shotsHost.className = 'nb-shots';
 
   function renderStagedShot(si) {
     var fig = document.createElement('figure');
@@ -1625,26 +1605,32 @@ function buildNotebookWriteline(activeKey) {
     libraryInput.value = '';
   });
 
-  var capturebar = document.createElement('div');
-  capturebar.className = 'notebook-capturebar';
+  // Mock .crow: the photo chips (both live capture paths kept), the register
+  // segmented control (.seg, built above), a spacer, and the Capture button.
+  var crow = document.createElement('div');
+  crow.className = 'crow';
   var photoBtn = document.createElement('button');
   photoBtn.type = 'button';
-  photoBtn.className = 'notebook-capbtn';
-  photoBtn.textContent = 'Take a photo';
+  photoBtn.className = 'chip';
+  photoBtn.textContent = '📷 Photo';
   photoBtn.addEventListener('click', function() { cameraInput.click(); });
   var imageBtn = document.createElement('button');
   imageBtn.type = 'button';
-  imageBtn.className = 'notebook-capbtn';
+  imageBtn.className = 'chip';
   imageBtn.textContent = 'Add image';
   imageBtn.addEventListener('click', function() { libraryInput.click(); });
-  var caphint = document.createElement('span');
-  caphint.className = 'notebook-caphint';
-  caphint.textContent = 'attaches inline · on this device';
-  capturebar.appendChild(photoBtn);
-  capturebar.appendChild(imageBtn);
-  capturebar.appendChild(caphint);
-  capturebar.appendChild(cameraInput);
-  capturebar.appendChild(libraryInput);
+  var crowSpacer = document.createElement('span');
+  crowSpacer.className = 'spacer';
+  var captureBtn = document.createElement('button');
+  captureBtn.type = 'button';
+  captureBtn.className = 'btn btn-primary';
+  captureBtn.textContent = 'Capture';
+  captureBtn.addEventListener('click', function() { commit(); });
+  crow.appendChild(photoBtn);
+  crow.appendChild(imageBtn);
+  crow.appendChild(chips);
+  crow.appendChild(crowSpacer);
+  crow.appendChild(captureBtn);
 
   function commit() {
     var body = (input.value || '').replace(/^\s+|\s+$/g, '');
@@ -1701,33 +1687,26 @@ function buildNotebookWriteline(activeKey) {
     }, 120);
   });
 
-  // Chips, then the writing measure, then staged shots + the capture bar
-  // (mockup .registers over .flow over .capturebar).
-  line.appendChild(chips);
+  // Mock .nb-composer order: the writing measure (.ce), staged shots, then the
+  // .crow (photo chips + register seg + Capture). Hidden file inputs trail so
+  // .click() reaches them (they must be in the DOM).
   line.appendChild(input);
   line.appendChild(shotsHost);
-  line.appendChild(capturebar);
+  line.appendChild(crow);
+  line.appendChild(cameraInput);
+  line.appendChild(libraryInput);
   return line;
 }
 
 // One writeline chip, closure-scoped per register (a var-in-for-loop would bind
 // every chip to the last register).
 function appendWritelineChip(chips, def, chipEls, onPick) {
-  var c = document.createElement('span');
-  c.className = 'notebook-writeline-chip';
-  c.setAttribute('role', 'button');
-  c.setAttribute('tabindex', '0');
+  var c = document.createElement('button');
+  c.type = 'button';
+  c.className = 'seg-opt';
   c.setAttribute('data-reg', def.r);
-  var dot = document.createElement('span');
-  dot.className = 'notebook-writeline-chip-dot';
-  c.appendChild(dot);
   c.appendChild(document.createTextNode(def.l));
   c.addEventListener('click', function() { onPick(def.r); });
-  c.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
-      ev.preventDefault(); onPick(def.r);
-    }
-  });
   chipEls[def.r] = c;
   chips.appendChild(c);
 }

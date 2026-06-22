@@ -8760,3 +8760,122 @@
 }
 .chip:hover { color:var(--ink); border-color:var(--line-2); }
 .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+/* ============================================================================
+   Umber port — Surface 6 (Notebook): mock #s-notebook frame over live data +
+   features. EVERYTHING scoped under .notebook so the generic mock classes
+   (.seg/.empty-state/.spacer/.bc/.bt/.ba/.lab/.crow + the .nb-* set) never bleed
+   to other surfaces (.btn/.chip are the global foundation). Tokens are live
+   theme.css vars (auto-flip per body[data-ground]); the notebook is bright.
+   The old .notebook-header/-tabs/-bookhead/-leaf/-writeline/-gather/-working*
+   rules above go dead with this port (selectors no longer match) — drift,
+   flagged for a later cleanup pass, not reverted (Tier A precedent).
+   ============================================================================ */
+.notebook { max-width:1180px; margin:0 auto; padding:0 var(--sp-5); }
+.notebook .spacer { flex:1; }
+
+/* head: eyebrow + title, the consent (privacy) switch, the transparency chip */
+.notebook-head { display:flex; align-items:flex-end; gap:var(--sp-4); flex-wrap:wrap; margin-bottom:var(--sp-4); }
+.notebook .notebook-title { font-family:var(--font-serif); font-size:clamp(28px,4vw,40px); color:var(--ink); margin:0; line-height:1.05; }
+.notebook .nb-switch { display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-2); }
+.notebook .nb-toggle { width:42px; height:24px; border-radius:var(--radius-pill); background:var(--teal); position:relative; border:none; cursor:pointer; flex:none; transition:background var(--motion-base) var(--ease); }
+.notebook .nb-toggle::after { content:""; position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; background:var(--text-d); transition:right var(--motion-base) var(--ease), left var(--motion-base) var(--ease); }
+.notebook .nb-toggle[aria-pressed="false"] { background:var(--line-page-2); }
+.notebook .nb-toggle[aria-pressed="false"]::after { right:auto; left:3px; }
+.notebook .nb-toggle:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+/* the bound-leaf spread */
+.notebook .notebook-spread { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line-page-2); border:1px solid var(--line-page-2); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-page); }
+.notebook .leaf { background:var(--page-2); background-image:radial-gradient(circle, color-mix(in srgb, var(--meta) 22%, transparent) 1.2px, transparent 1.4px); background-size:22px 22px; padding:var(--sp-5); min-height:520px; }
+.notebook .leaf-left { border-right:1px solid var(--line-page); position:relative; }
+.notebook .leaf-left::before { content:""; position:absolute; top:0; bottom:0; left:46px; width:1px; background:color-mix(in srgb, var(--danger) 30%, transparent); }
+
+/* left leaf: book/section head */
+.notebook .nb-bookhead { display:flex; gap:12px; align-items:center; margin-bottom:var(--sp-4); padding-left:8px; }
+.notebook .nb-bookhead .bc { width:40px; height:58px; border-radius:3px; box-shadow:var(--shadow-cover); flex:none; display:grid; place-items:center; color:var(--text-d); font-family:var(--font-serif); font-size:9px; line-height:1.1; text-align:center; padding:3px; overflow:hidden; background:linear-gradient(155deg, var(--gold-light), var(--surface-d)); }
+.notebook .nb-bookhead .bt { font-family:var(--font-serif); font-size:18px; color:var(--ink); line-height:1.15; }
+.notebook .nb-bookhead .ba { font-size:12px; color:var(--meta); margin-top:2px; }
+
+/* left leaf: tabs (Inbox / Journal / per-book) */
+.notebook .nb-tabs { display:flex; gap:6px; margin-bottom:var(--sp-4); padding-left:8px; flex-wrap:wrap; }
+.notebook .nb-tab { font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; padding:6px 12px; border-radius:var(--radius-pill); background:transparent; border:1px solid var(--line-page); color:var(--ink-2); cursor:pointer; }
+.notebook .nb-tab.is-on { background:var(--ink); color:var(--page); border-color:var(--ink); }
+.notebook .nb-tab .c { opacity:.6; margin-left:2px; }
+
+/* left leaf: the note bank — mock .nb-entry look applied to the SHARED
+   .notebook-entry markup (renderNotebookEntry is untouched; book-detail +
+   sub-theory keep their styling). Register spine via the kept ::before/--reg. */
+.notebook .leaf-left .notebook-entry { padding:12px 14px; background:var(--page); border:1px solid var(--line-page); border-radius:var(--radius-sm); margin:0 0 12px 8px; box-shadow:none; }
+.notebook .leaf-left .notebook-entry:hover { border-color:var(--line-2); }
+.notebook .leaf-left .notebook-entry::before { top:10px; bottom:10px; width:3px; border-radius:0; left:-1px; }
+.notebook .leaf-left .notebook-entry-head { gap:8px; margin-bottom:7px; }
+.notebook .leaf-left .notebook-entry-tag { font-family:var(--font-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:var(--radius-pill); border:none; }
+.notebook .leaf-left .notebook-entry-tag-m { color:var(--register-marginalia); background:color-mix(in srgb,var(--register-marginalia) 14%,transparent); }
+.notebook .leaf-left .notebook-entry-tag-q { color:var(--register-question); background:color-mix(in srgb,var(--register-question) 16%,transparent); }
+.notebook .leaf-left .notebook-entry-tag-j { color:var(--register-journal); background:color-mix(in srgb,var(--register-journal) 16%,transparent); }
+.notebook .leaf-left .notebook-entry-ts { font-family:var(--font-mono); font-size:9.5px; color:var(--meta); }
+.notebook .leaf-left .notebook-entry-src { font-family:var(--font-mono); font-size:9.5px; color:var(--meta); margin-top:7px; }
+.notebook .leaf-left .notebook-entry-body { font-family:var(--font-serif); font-size:15px; line-height:1.5; color:var(--ink); }
+.notebook .leaf-left .notebook-entry-shots { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.notebook .leaf-left .notebook-entry.notebook-entry-gathered { box-shadow:0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent); }
+/* actions kept (gather / add-to-arc / file / send / delete) — quiet, revealed on hover/focus */
+.notebook .leaf-left .notebook-entry-acts { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; opacity:0; transition:opacity var(--motion-base) var(--ease); font-family:var(--font-mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase; }
+.notebook .leaf-left .notebook-entry:hover .notebook-entry-acts,
+.notebook .leaf-left .notebook-entry:focus-within .notebook-entry-acts { opacity:1; }
+.notebook .leaf-left .notebook-entry-acts a { color:var(--ink-3); text-decoration:none; border-bottom:1px solid transparent; cursor:pointer; }
+.notebook .leaf-left .notebook-entry-acts a:hover { color:var(--gold); border-bottom-color:var(--gold); }
+.notebook .leaf-left .notebook-empty-body { font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ink-2); margin:8px 0 0 8px; }
+
+/* right leaf: working page */
+.notebook .leaf-right .nb-leaftag { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-ink); margin:0 0 var(--sp-4); }
+.notebook .notebook-working-hint { font-family:var(--font-serif); font-style:italic; font-size:16px; line-height:1.6; color:var(--ink-2); margin:var(--sp-4) 0 0; }
+
+/* composer (mock .nb-composer) */
+.notebook .nb-composer { background:var(--page); border:1px solid var(--line-page); border-radius:var(--radius-md); padding:14px; }
+.notebook .nb-composer .nb-ce { width:100%; box-sizing:border-box; min-height:64px; resize:none; color:var(--ink); font-family:var(--font-serif); font-size:16px; line-height:1.5; outline:none; border:none; background:transparent; display:block; }
+.notebook .nb-composer .nb-ce::placeholder { color:var(--meta); }
+.notebook .nb-composer .nb-shots { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.notebook .nb-composer .crow { display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+
+/* register segmented control in the composer (mock .seg) */
+.notebook .seg { display:inline-flex; padding:3px; gap:2px; background:var(--sunk); border:1px solid var(--border); border-radius:var(--radius-pill); }
+.notebook .seg-opt { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:6px 12px; border-radius:var(--radius-pill); border:none; background:transparent; color:var(--ink-3); cursor:pointer; transition:color var(--motion-base) var(--ease); }
+.notebook .seg-opt:hover { color:var(--ink); }
+.notebook .seg-opt.is-on { background:var(--grad); color:var(--text-on-dark); font-weight:700; }
+
+/* gather → sub-theory (mock .nb-gather) */
+.notebook .nb-gather { margin-top:var(--sp-4); display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:12px 14px; border:1px dashed var(--line-page-2); border-radius:var(--radius-md); }
+.notebook .nb-gather .lab { font-family:var(--font-mono); font-size:11px; color:var(--ink-2); }
+
+/* gathered-notes working block (live; richer than the mock demo) */
+.notebook .nb-nameblock { margin-top:var(--sp-4); }
+.notebook .nb-yname-tag { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); margin-bottom:5px; }
+.notebook .nb-working-name { width:100%; box-sizing:border-box; font-family:var(--font-serif); font-size:18px; color:var(--ink); background:var(--page); border:1px solid var(--line-page); border-radius:var(--radius-sm); padding:8px 10px; }
+.notebook .nb-wnote { background:var(--page); border:1px solid var(--line-page); border-radius:var(--radius-sm); padding:8px 10px; margin-top:8px; font-family:var(--font-serif); font-size:14px; line-height:1.45; color:var(--ink); }
+.notebook .nb-wnote-tag { display:inline-block; font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; margin-right:6px; vertical-align:1px; }
+.notebook .nb-wnote-tag-marg { color:var(--register-marginalia); }
+.notebook .nb-wnote-tag-ques { color:var(--register-question); }
+.notebook .nb-wnote-tag-jour { color:var(--register-journal); }
+
+/* resting Yumi complicate slot + clear (live; honest placeholder) */
+.notebook .nb-complicate { margin-top:var(--sp-4); display:flex; gap:10px; align-items:flex-start; padding:12px 14px; background:color-mix(in srgb, var(--teal) 7%, var(--page)); border:1px solid var(--line-page); border-radius:var(--radius-md); }
+.notebook .nb-ybubble { flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; background:var(--grad); color:var(--text-on-dark); font-family:var(--font-mono); font-size:11px; }
+.notebook .nb-ybubble-sm { width:20px; height:20px; font-size:9px; }
+.notebook .nb-ctag { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-ink); margin-bottom:3px; }
+.notebook .nb-ctext { font-family:var(--font-serif); font-style:italic; font-size:14px; line-height:1.5; color:var(--ink-2); }
+.notebook .nb-working-acts { margin-top:12px; }
+.notebook .nb-working-clear { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-4); text-decoration:none; }
+.notebook .nb-working-clear:hover { color:var(--danger); }
+
+/* signed-out empty-state (mock #notebook-signedout) */
+.notebook .empty-state { max-width:520px; margin:8vh auto; text-align:center; padding:0 var(--sp-5); }
+.notebook .empty-state .em-mark { display:flex; justify-content:center; margin-bottom:20px; opacity:.9; }
+.notebook .empty-state .em-mark svg { width:56px; height:56px; }
+.notebook .empty-state h2 { font-family:var(--font-serif); font-size:30px; margin:0 0 12px; color:var(--ink); }
+.notebook .empty-state p { font-family:var(--font-serif); font-style:italic; font-size:17px; line-height:1.6; margin:0 0 24px; color:var(--ink-2); }
+
+/* mobile: single column (mock @media .notebook-spread{1fr}) */
+@media (max-width:759px){
+  .notebook .notebook-spread { grid-template-columns:1fr; }
+  .notebook .leaf-left::before { display:none; }
+}
