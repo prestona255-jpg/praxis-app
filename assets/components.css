@@ -506,6 +506,78 @@
   .yumi-mic-btn.yumi-mic-listening { animation: none; }
 }
 
+/* ===== Alive Yumi -- Prompt 3: command action layer (chip / takeover / ask /
+   confirm). Additive, tokens only, reduced-motion-safe. ===== */
+.yumi-cmd-chip {
+  position: fixed;
+  left: 50%;
+  top: 84px;
+  z-index: 10000;
+  transform: translate(-50%, -8px);
+  background: var(--surface);
+  border: 1px solid var(--river);
+  border-radius: var(--radius-pill);
+  padding: 9px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--river);
+  box-shadow: var(--shadow-1);
+  opacity: 0;
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+  pointer-events: none;
+}
+.yumi-cmd-chip.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+.yumi-takeover-sweep {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent 34%, color-mix(in srgb, var(--gold) 28%, transparent) 50%, transparent 66%);
+  opacity: 0;
+  transform: translateX(-60%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .yumi-takeover-sweep.is-sweep { animation: yumi-takeover-sweep-kf 560ms var(--ease); }
+}
+@keyframes yumi-takeover-sweep-kf {
+  0%   { opacity: 0; transform: translateX(-60%); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(60%); }
+}
+
+.yumi-cmd-ask,
+.yumi-cmd-confirm {
+  margin: 6px 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.yumi-cmd-ask-q {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.yumi-cmd-ask-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.yumi-cmd-pick,
+.yumi-cmd-go,
+.yumi-cmd-no {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.yumi-cmd-pick { color: var(--river); background: transparent; border: 1px solid var(--river); }
+.yumi-cmd-go   { color: var(--text-on-dark); background: var(--grad); border: none; }
+.yumi-cmd-no   { color: var(--ink-2); background: transparent; border: 1px solid var(--line-2); }
+@media (prefers-reduced-motion: reduce) {
+  .yumi-takeover-sweep.is-sweep { animation: none; }
+}
+
 /* ===== END YUMI PANEL ===== */
 
 

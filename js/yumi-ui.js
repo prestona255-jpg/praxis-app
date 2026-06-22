@@ -372,6 +372,197 @@ function mountNameProposal(proposal) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
+// ===== Alive Yumi -- Prompt 3: the COMMAND ACTION LAYER (NAV / OPEN only) =====
+// Reached only for a COMMAND/AMBIGUOUS/DESTRUCTIVE verdict from the router; the
+// command lane is READ-ONLY (it navigates and opens, never writes or thinks).
+// NAV uses the EXISTING routes via location.hash (no renderRoute change). OPEN
+// scans the keyed maps for a title match (no lookup helper exists). The acting
+// Bloom + a takeover sweep are the recognized-command cue. DESTRUCTIVE is a
+// dormant scaffold (the router never emits it in v1).
+
+var YUMI_NAV_LABELS = {
+  home: 'home', books: 'your shelf', arcs: 'your arcs', account: 'your account',
+  notebook: 'your notebook', about: 'About Praxis', 'yumi-sees': 'what I see'
+};
+var _yumiCmdChipEl = null;
+
+function showCommandChip(text) {
+  hideCommandChip();
+  var el = document.createElement('div');
+  el.className = 'yumi-cmd-chip';
+  el.textContent = text;
+  document.body.appendChild(el);
+  void el.offsetWidth;            // force reflow so the transition runs
+  el.classList.add('is-on');
+  _yumiCmdChipEl = el;
+}
+function hideCommandChip() {
+  if (_yumiCmdChipEl && _yumiCmdChipEl.parentNode) {
+    _yumiCmdChipEl.parentNode.removeChild(_yumiCmdChipEl);
+  }
+  _yumiCmdChipEl = null;
+}
+function playTakeoverSweep() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+  var sweep = document.createElement('div');
+  sweep.className = 'yumi-takeover-sweep';
+  document.body.appendChild(sweep);
+  void sweep.offsetWidth;
+  sweep.classList.add('is-sweep');
+  setTimeout(function () { if (sweep.parentNode) { sweep.parentNode.removeChild(sweep); } }, 700);
+}
+
+// The shared NAV/OPEN takeover: chip + acting Bloom + sweep, then navigate to an
+// EXISTING route and close the panel so the destination is revealed.
+function commandTakeover(chipText, destHash) {
+  showCommandChip(chipText);
+  setBloomState('acting');
+  playTakeoverSweep();
+  setTimeout(function () {
+    hideCommandChip();
+    setBloomState('resting');
+    location.hash = destHash;
+    closeYumiPanel();
+  }, 560);
+}
+
+// OPEN-by-name: scan the keyed maps (no lookup helper exists). Match book.title /
+// arc.title / subTheory.header (exact or title-contains-query). Returns
+// [{ id, title, hash }].
+function _openTitleMatch(title, q) {
+  var t = (typeof title === 'string') ? title.toLowerCase().replace(/^\s+|\s+$/g, '') : '';
+  return t !== '' && (t === q || t.indexOf(q) !== -1);
+}
+function scanOpenTargets(query) {
+  var q = (typeof query === 'string') ? query.toLowerCase().replace(/^\s+|\s+$/g, '') : '';
+  var out = [];
+  if (q === '' || !window.state) { return out; }
+  var id, rec;
+  for (id in state.books) {
+    if (Object.prototype.hasOwnProperty.call(state.books, id)) {
+      rec = state.books[id];
+      if (rec && _openTitleMatch(rec.title, q)) { out.push({ id: id, title: rec.title, hash: '#book/' + id }); }
+    }
+  }
+  for (id in state.arcs) {
+    if (Object.prototype.hasOwnProperty.call(state.arcs, id)) {
+      rec = state.arcs[id];
+      if (rec && _openTitleMatch(rec.title, q)) { out.push({ id: id, title: rec.title, hash: '#arc/' + id }); }
+    }
+  }
+  for (id in state.subTheories) {
+    if (Object.prototype.hasOwnProperty.call(state.subTheories, id)) {
+      rec = state.subTheories[id];
+      if (rec && _openTitleMatch(rec.header, q)) { out.push({ id: id, title: rec.header, hash: '#subtheory/' + id }); }
+    }
+  }
+  return out;
+}
+
+// AMBIGUOUS: ask which to open. With candidates -> disambiguation chips; with a
+// referent-less open ("open this") -> ask for the title (no action taken).
+function askWhichToOpen(matches) {
+  if (!yumiBodyEl) { return; }
+  if (!matches || matches.length === 0) {
+    renderYumiMessage('Which one would you like to open? Tell me the title.');
+    return;
+  }
+  var wrap = document.createElement('div');
+  wrap.className = 'yumi-cmd-ask';
+  var q = document.createElement('div');
+  q.className = 'yumi-cmd-ask-q';
+  q.textContent = 'Which one?';
+  wrap.appendChild(q);
+  var rowEl = document.createElement('div');
+  rowEl.className = 'yumi-cmd-ask-row';
+  var i;
+  for (i = 0; i < matches.length; i = i + 1) {
+    (function (m) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'yumi-cmd-pick';
+      b.textContent = m.title;
+      b.addEventListener('click', function () {
+        if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+        commandTakeover('Opening ' + m.title + ' →', m.hash);
+      });
+      rowEl.appendChild(b);
+    })(matches[i]);
+  }
+  wrap.appendChild(rowEl);
+  yumiBodyEl.appendChild(wrap);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+// DORMANT confirm-before-change scaffold (Prompt 3). The v1 command lane never
+// writes, so the router never returns DESTRUCTIVE and this is never shown live.
+// It is the wired skeleton for the deferred add-book-to-arc fast-follow.
+function mountCommandConfirm(label, onConfirm) {
+  if (!yumiBodyEl) { return; }
+  var wrap = document.createElement('div');
+  wrap.className = 'yumi-cmd-confirm';
+  var q = document.createElement('div');
+  q.className = 'yumi-cmd-ask-q';
+  q.textContent = label + ' I’ll only do it if you say go.';
+  wrap.appendChild(q);
+  var rowEl = document.createElement('div');
+  rowEl.className = 'yumi-cmd-ask-row';
+  var go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'yumi-cmd-go';
+  go.textContent = 'Go ahead';
+  go.addEventListener('click', function () {
+    if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+    if (typeof onConfirm === 'function') { onConfirm(); }
+  });
+  var no = document.createElement('button');
+  no.type = 'button';
+  no.className = 'yumi-cmd-no';
+  no.textContent = 'Not yet';
+  no.addEventListener('click', function () {
+    if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+    renderYumiMessage('Left exactly as it was.');
+  });
+  rowEl.appendChild(go);
+  rowEl.appendChild(no);
+  wrap.appendChild(rowEl);
+  yumiBodyEl.appendChild(wrap);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
+// The dispatch for a router verdict (called from the send handler).
+function routeCommand(verdict) {
+  if (!verdict || !verdict.lane) { return; }
+  if (verdict.lane === 'COMMAND' && verdict.kind === 'nav') {
+    var target = verdict.target;
+    commandTakeover('Taking you to ' + (YUMI_NAV_LABELS[target] || target) + ' →', '#' + target);
+    return;
+  }
+  if (verdict.lane === 'COMMAND' && verdict.kind === 'open') {
+    var matches = scanOpenTargets(verdict.query);
+    if (matches.length === 0) {
+      renderYumiMessage('I couldn’t find “' + verdict.query + '” on your shelf or in your arcs.');
+      return;
+    }
+    if (matches.length === 1) {
+      commandTakeover('Opening ' + matches[0].title + ' →', matches[0].hash);
+      return;
+    }
+    askWhichToOpen(matches);     // 2+ -> disambiguate, no action yet
+    return;
+  }
+  if (verdict.lane === 'AMBIGUOUS') {
+    askWhichToOpen(null);        // referent-less open -> ask for the title
+    return;
+  }
+  if (verdict.lane === 'DESTRUCTIVE') {
+    // DORMANT: the v1 command lane does not write. Honor the covenant by
+    // declining here (the confirm scaffold above is wired but unreached).
+    renderYumiMessage('I can take you places and open things, but I can’t change your library from here — tell me about it instead.');
+    return;
+  }
+}
+
 // ===== Alive Yumi -- voice-in (push-to-talk + hands-free) =====
 // Both modes go through VoiceInput.listen (the single SpeechRecognition site).
 // talkMode (Stage-5 pref, default push-to-talk) selects the interaction; text
@@ -1040,27 +1231,49 @@ function buildYumiPanel() {
     if (yumiSendBtnEl) { yumiSendBtnEl.disabled = true; }
     renderTypingIndicator();
 
-    window.YumiBrain.sendMessage(trimmed).then(function (result) {
-      removeTypingIndicator();
-      // Fail-closed gate: a suppressed utterance renders nothing -- no
-      // error, no fallback line, no chrome. Yumi simply stays silent.
-      if (result && result.silent) {
-        // No audio will play; keep the hands-free loop alive.
+    // The existing pedagogical chat path, UNCHANGED. Reached for CONVERSATION
+    // (the default) and -- by the covenant -- for ALL intellectual labor and
+    // mutations, which the router routes here, never to the command lane.
+    function runChat() {
+      window.YumiBrain.sendMessage(trimmed).then(function (result) {
+        removeTypingIndicator();
+        // Fail-closed gate: a suppressed utterance renders nothing -- no
+        // error, no fallback line, no chrome. Yumi simply stays silent.
+        if (result && result.silent) {
+          if (yumi_handsfree_active) { handsFreeReArm(); }
+          return;
+        }
+        // The ONLY spoken site: the gated normal-chat reply. { speak: true }
+        // opts renderYumiMessage into voice-out (behind the voiceOn pref).
+        renderYumiMessage(result.text, null, { speak: true });
+      }).catch(function (err) {
+        console.error('[yumi] sendMessage failed', err);
+        removeTypingIndicator();
+        renderError();
         if (yumi_handsfree_active) { handsFreeReArm(); }
+      }).finally(function () {
+        yumi_request_in_flight = false;
+        if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+      });
+    }
+
+    // Prompt 3 ROUTER: classify the utterance first. A COMMAND/AMBIGUOUS verdict
+    // is handled by the action layer (NAV/OPEN, read-only) and NEVER reaches
+    // sendMessage; CONVERSATION falls through to runChat. classifyUtterance
+    // fail-closes to CONVERSATION, and the rejection arm also routes to chat,
+    // so the reader's message is never dropped.
+    window.YumiBrain.classifyUtterance(trimmed).then(function (verdict) {
+      var lane = (verdict && verdict.lane) ? verdict.lane : 'CONVERSATION';
+      if (lane !== 'CONVERSATION') {
+        removeTypingIndicator();
+        yumi_request_in_flight = false;
+        if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+        routeCommand(verdict);
         return;
       }
-      // The ONLY spoken site: the gated normal-chat reply. { speak: true } opts
-      // renderYumiMessage into voice-out (behind the voiceOn pref). In
-      // hands-free, the loop re-arms from the TTS audio-end (playLine onEnd).
-      renderYumiMessage(result.text, null, { speak: true });
-    }).catch(function (err) {
-      console.error('[yumi] sendMessage failed', err);
-      removeTypingIndicator();
-      renderError();
-      if (yumi_handsfree_active) { handsFreeReArm(); }
-    }).finally(function () {
-      yumi_request_in_flight = false;
-      if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+      runChat();
+    }, function () {
+      runChat();
     });
   });
   row.appendChild(sendBtn);
