@@ -8962,3 +8962,74 @@
   .shelf .shelf-side.shelf-sidebar-mobile-open { transform:none; }
   .shelf .shelf-sidebar-close { display:block; position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--muted); font-size:22px; line-height:1; cursor:pointer; }
 }
+
+/* ============================================================================
+   Umber port — Surface 8 (Sub-theory writing): mock #s-subtheory frame over the
+   live manuscript editor + cite-weave + evidence rail. Scoped under .st-page;
+   BRIGHT ground. The cite-weave (preview/tip/chooser/autocomplete/pins), autosave
+   (blur->updateSubTheory), register switch, source/attached/external rail, and
+   mobile rail KEEP their behavior + live classes (restyled here) — only the outer
+   frame adopts the mock vocabulary. Old .subtheory-page/-layout/-main/-rail (incl.
+   the legacy 720 mobile block) + .subtheory-register-tab(-active)/-header-input/
+   -delete-chip rules go dead — drift, flagged.
+   ============================================================================ */
+.st-page { max-width:1100px; margin:0 auto; padding:0 var(--sp-5); display:grid; grid-template-columns:1fr 300px; gap:var(--sp-6); align-items:start; }
+.st-page .st-main { min-width:0; }
+.st-page .st-gutter { align-self:start; }
+
+/* head: mark chip + title + delete */
+.st-page .st-head { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+.st-page .st-head .st-mark-chip { width:48px; height:48px; flex:none; border-radius:var(--radius-md); border:1px solid var(--line-page); background:var(--page-2); display:grid; place-items:center; cursor:pointer; padding:0; }
+.st-page .st-head .st-mark-chip svg { display:block; width:32px; height:32px; }
+.st-page .st-title-input { flex:1; min-width:0; font-family:var(--font-serif); font-size:clamp(26px,3.4vw,38px); color:var(--ink); background:transparent; border:none; border-bottom:1px solid transparent; outline:none; padding:4px 0; }
+.st-page .st-title-input:focus-visible { border-bottom-color:var(--gold-ink); }
+.st-page .st-delete { background:transparent; border:none; color:var(--meta); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+.st-page .st-delete:hover { color:var(--danger); }
+
+/* maturity (computed) */
+.st-page .st-maturity { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); margin:0 0 22px 62px; display:flex; align-items:center; gap:8px; }
+.st-page .st-maturity .glow { width:11px; height:11px; border-radius:50%; background:var(--teal); color:var(--teal); box-shadow:0 0 10px 2px currentColor; }
+
+/* toggles row: register seg + write/preview seg + Published button */
+.st-page .subtheory-toggles-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.st-page .st-register-toggle { margin-bottom:0; }
+.st-page .seg { display:inline-flex; padding:3px; gap:2px; background:var(--wash-page); border:1px solid var(--line-page); border-radius:var(--radius-pill); }
+.st-page .seg-opt { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:6px 14px; border-radius:var(--radius-pill); border:none; background:transparent; color:var(--ink-3); cursor:pointer; transition:color var(--motion-base) var(--ease); }
+.st-page .seg-opt:hover { color:var(--ink); }
+.st-page .seg-opt.is-on { background:var(--grad); color:var(--text-on-dark); font-weight:700; }
+.st-page .subtheory-preview-toggle { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:7px 14px; border-radius:var(--radius-pill); border:1px solid var(--line-page); background:transparent; color:var(--ink-2); cursor:pointer; }
+.st-page .subtheory-preview-toggle:hover { color:var(--ink); border-color:var(--gold-ink); }
+
+/* manuscript: a paper card holding the textareas (Write) + cite-preview (Preview) */
+.st-page .manuscript { background:var(--page-2); border:1px solid var(--line-page); border-radius:var(--radius-lg); box-shadow:var(--shadow-page); padding:clamp(22px,4vw,48px); position:relative; }
+.st-page .manuscript .subtheory-register-body { width:100%; box-sizing:border-box; min-height:300px; resize:vertical; font-family:var(--font-serif); font-size:19px; line-height:1.72; color:var(--ink); background:transparent; border:none; outline:none; display:block; }
+.st-page .manuscript .subtheory-register-body::placeholder { color:var(--meta); }
+.st-page .manuscript .subtheory-cite-preview { font-family:var(--font-serif); font-size:19px; line-height:1.72; color:var(--ink); }
+.st-page .manuscript .subtheory-cite-preview em { font-style:italic; }
+.st-page .manuscript .subtheory-cite-coach { font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--meta); margin-top:14px; }
+
+/* gutter (the evidence/source rail): mock .st-gutter */
+.st-page .st-gutter h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-ink); margin:0 0 12px; }
+.st-page .st-gutter .subtheory-rail-title { font-family:var(--font-serif); font-size:20px; color:var(--ink); margin:0 0 14px; }
+
+/* mobile (≤759): single column; the rail becomes a bottom sheet (live JS toggles
+   .subtheory-rail-mobile-open / .subtheory-rail-backdrop-open on .st-gutter) */
+.st-page .subtheory-rail-toggle,
+.st-page .subtheory-rail-close,
+.st-page .subtheory-rail-backdrop { display:none; }
+@media (max-width:759px){
+  .st-page { grid-template-columns:1fr; }
+  .st-page .st-maturity { margin-left:0; }
+  .st-page .subtheory-rail-toggle { display:inline-block; margin-bottom:20px; }
+  .st-page .st-gutter { display:none; }
+  .st-page .st-gutter.subtheory-rail-mobile-open {
+    display:block; position:fixed; left:0; right:0; bottom:0; max-height:70vh;
+    margin:0; padding:24px 16px; overflow-y:auto; background:var(--page-2);
+    border-top:1px solid var(--line-page); border-top-left-radius:var(--radius-md);
+    border-top-right-radius:var(--radius-md); z-index:100;
+  }
+  .st-page .subtheory-rail-backdrop.subtheory-rail-backdrop-open {
+    display:block; position:fixed; inset:0; background:rgba(15,9,4,.5); z-index:99;
+  }
+  .st-page .subtheory-rail-close { display:block; position:absolute; top:12px; right:12px; padding:4px 10px; background:transparent; border:none; font-size:22px; line-height:1; color:var(--ink-3); cursor:pointer; }
+}

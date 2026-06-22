@@ -7152,13 +7152,10 @@ function renderSubTheoryPage(id) {
   }
 
   var wrap = document.createElement('section');
-  wrap.className = 'subtheory-page';
-
-  var layout = document.createElement('div');
-  layout.className = 'subtheory-layout';
+  wrap.className = 'st-page';
 
   var main = document.createElement('div');
-  main.className = 'subtheory-main';
+  main.className = 'st-main';
 
   // Batch 3: eyebrow "<arc title> · sub-theory" (mockup). Fail-soft to a
   // generic label when the parent arc can't be resolved. (Register
@@ -7169,6 +7166,10 @@ function renderSubTheoryPage(id) {
   stEyebrow.className = 'eyebrow';
   stEyebrow.textContent = ((stArc && stArc.title) ? stArc.title : 'Arc') + ' · sub-theory';
   main.appendChild(stEyebrow);
+
+  // Head (mock .st-head): the mark chip, the title input, and Delete in a row.
+  var stHead = document.createElement('div');
+  stHead.className = 'st-head';
 
   // 9b-iii (entry A): a "Mark" chip sitting with the title -- a live mini render
   // of this sub's current mark that opens the symbol picker. The mini-mark
@@ -7187,33 +7188,48 @@ function renderSubTheoryPage(id) {
     ? subTheory.markColor : chipHash.colorIdx;
   chipMark.innerHTML = _stPickerMarkSvg(id, chipShape, chipColor, chipPal, false);
   markChip.appendChild(chipMark);
-  markChip.appendChild(document.createTextNode('Mark'));
+  markChip.setAttribute('aria-label', 'Mark');
+  markChip.setAttribute('title', 'Change this sub-theory’s mark');
   markChip.addEventListener('click', function() { openSymbolPicker(id); });
-  main.appendChild(markChip);
+  stHead.appendChild(markChip);
 
   // Fix (v3.81): a reachable Delete on the writing page (the sub's own surface).
   // Subordinate danger chip beside the Mark chip; on confirm, route to the
   // parent arc (R69 -- can't stay on a deleted page).
   var stDeleteBtn = document.createElement('button');
   stDeleteBtn.type = 'button';
-  stDeleteBtn.className = 'st-mark-chip subtheory-delete-chip';
+  stDeleteBtn.className = 'st-delete';
   stDeleteBtn.textContent = 'Delete';
   stDeleteBtn.addEventListener('click', function() {
     confirmDeleteSubTheory(id, function() {
       location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
     });
   });
-  main.appendChild(stDeleteBtn);
 
   var headerInput = document.createElement('input');
   headerInput.type = 'text';
-  headerInput.className = 'subtheory-header-input';
+  headerInput.className = 'st-title-input';
   headerInput.setAttribute('placeholder', 'Untitled sub-theory');
   headerInput.value = subTheory.header || '';
   headerInput.addEventListener('blur', function() {
     updateSubTheory(id, { header: headerInput.value });
   });
-  main.appendChild(headerInput);
+  stHead.appendChild(headerInput);
+  stHead.appendChild(stDeleteBtn);
+  main.appendChild(stHead);
+
+  // Maturity (mock .st-maturity): the live computed signal (prose length +
+  // gathered evidence) as a band label + a glow whose opacity tracks it.
+  var stMatVal = _stComputeMaturity(subTheory);
+  var stMatBand = stMatVal < 0.34 ? 'nascent' : (stMatVal < 0.67 ? 'developing' : 'established');
+  var stMaturity = document.createElement('div');
+  stMaturity.className = 'st-maturity';
+  var stGlow = document.createElement('span');
+  stGlow.className = 'glow';
+  stGlow.style.opacity = String(0.35 + 0.65 * stMatVal);
+  stMaturity.appendChild(stGlow);
+  stMaturity.appendChild(document.createTextNode(' Maturity · ' + stMatBand));
+  main.appendChild(stMaturity);
 
   // Batch 3B: segmented PUBLIC | INTELLECTUAL register toggle. One
   // register's textarea is visible at a time; Public is the default on
@@ -7224,7 +7240,11 @@ function renderSubTheoryPage(id) {
   // revealed Intellectual); the Intellectual tab now reveals its textarea
   // on demand even when empty.
   var regToggle = document.createElement('div');
-  regToggle.className = 'subtheory-register-toggle';
+  regToggle.className = 'st-register-toggle';
+  var regSeg = document.createElement('div');
+  regSeg.className = 'seg';
+  regSeg.setAttribute('role', 'tablist');
+  regSeg.setAttribute('aria-label', 'Register');
 
   var publicBody = document.createElement('textarea');
   publicBody.className = 'notebook-editor-body subtheory-register-body';
@@ -7274,13 +7294,15 @@ function renderSubTheoryPage(id) {
 
   var publicTab = document.createElement('button');
   publicTab.type = 'button';
-  publicTab.className = 'subtheory-register-tab';
-  publicTab.textContent = 'Public register';
+  publicTab.className = 'seg-opt';
+  publicTab.setAttribute('data-reg', 'public');
+  publicTab.textContent = 'Public';
 
   var intelTab = document.createElement('button');
   intelTab.type = 'button';
-  intelTab.className = 'subtheory-register-tab';
-  intelTab.textContent = 'Intellectual register';
+  intelTab.className = 'seg-opt';
+  intelTab.setAttribute('data-reg', 'intellectual');
+  intelTab.textContent = 'Intellectual';
 
   var activeRegisterPublic = true;
   var draftPreview = false;
@@ -7291,14 +7313,14 @@ function renderSubTheoryPage(id) {
   // Distinct from the Published toggle below, which renders the whole sub-theory
   // read-only ("what readers see").
   var wpToggle = document.createElement('div');
-  wpToggle.className = 'subtheory-register-toggle subtheory-wp-toggle';
+  wpToggle.className = 'seg subtheory-wp-toggle';
   var writeTab = document.createElement('button');
   writeTab.type = 'button';
-  writeTab.className = 'subtheory-register-tab';
+  writeTab.className = 'seg-opt';
   writeTab.textContent = 'Write';
   var previewTab = document.createElement('button');
   previewTab.type = 'button';
-  previewTab.className = 'subtheory-register-tab';
+  previewTab.className = 'seg-opt';
   previewTab.textContent = 'Preview';
   wpToggle.appendChild(writeTab);
   wpToggle.appendChild(previewTab);
@@ -7312,14 +7334,10 @@ function renderSubTheoryPage(id) {
     intelBody.style.display = (!draftPreview && !pub) ? '' : 'none';
     if (publicPreview) { publicPreview.style.display = (draftPreview && pub) ? '' : 'none'; }
     if (intelPreview) { intelPreview.style.display = (draftPreview && !pub) ? '' : 'none'; }
-    publicTab.className = 'subtheory-register-tab' +
-      (pub ? ' subtheory-register-tab-active' : '');
-    intelTab.className = 'subtheory-register-tab' +
-      (pub ? '' : ' subtheory-register-tab-active');
-    writeTab.className = 'subtheory-register-tab' +
-      (!draftPreview ? ' subtheory-register-tab-active' : '');
-    previewTab.className = 'subtheory-register-tab' +
-      (draftPreview ? ' subtheory-register-tab-active' : '');
+    publicTab.className = 'seg-opt' + (pub ? ' is-on' : '');
+    intelTab.className = 'seg-opt' + (pub ? '' : ' is-on');
+    writeTab.className = 'seg-opt' + (!draftPreview ? ' is-on' : '');
+    previewTab.className = 'seg-opt' + (draftPreview ? ' is-on' : '');
   }
   function showRegister(showPublic) {
     activeRegisterPublic = showPublic;
@@ -7334,11 +7352,14 @@ function renderSubTheoryPage(id) {
   writeTab.addEventListener('click', function() { setDraftPreview(false); });
   previewTab.addEventListener('click', function() { setDraftPreview(true); });
 
-  regToggle.appendChild(publicTab);
-  regToggle.appendChild(intelTab);
+  regSeg.appendChild(publicTab);
+  regSeg.appendChild(intelTab);
+  regToggle.appendChild(regSeg);
 
-  main.appendChild(publicBody);
-  main.appendChild(intelBody);
+  var manuscript = document.createElement('div');
+  manuscript.className = 'manuscript';
+  manuscript.appendChild(publicBody);
+  manuscript.appendChild(intelBody);
 
   // ===== 10.2 citation preview (Option A), slice 2: panes + parser + dots =====
   // A read-only pane under each register mirrors that register's prose with
@@ -7352,8 +7373,8 @@ function renderSubTheoryPage(id) {
   publicPreview.className = 'subtheory-cite-preview';
   var intelPreview = document.createElement('div');
   intelPreview.className = 'subtheory-cite-preview';
-  main.appendChild(publicPreview);
-  main.appendChild(intelPreview);
+  manuscript.appendChild(publicPreview);
+  manuscript.appendChild(intelPreview);
 
   // 10.4 SLICE 2: Preview toggle -- swap the editor for the PUBLISHED read-only
   // render ("what readers see": private evidence excluded, superscript cites)
@@ -7361,7 +7382,7 @@ function renderSubTheoryPage(id) {
   var previewHost = document.createElement('div');
   previewHost.className = 'subtheory-preview-host';
   previewHost.style.display = 'none';
-  main.appendChild(previewHost);
+  manuscript.appendChild(previewHost);
 
   var previewBtn = document.createElement('button');
   previewBtn.type = 'button';
@@ -7397,7 +7418,8 @@ function renderSubTheoryPage(id) {
   togglesRow.appendChild(regToggle);
   togglesRow.appendChild(wpToggle);
   togglesRow.appendChild(previewBtn);
-  main.insertBefore(togglesRow, publicBody);
+  main.appendChild(togglesRow);
+  main.appendChild(manuscript);
 
   // Bare match-title per evidence item: book.title / external title / a
   // titled entry; untitled entries return '' (skipped by the matcher).
@@ -7740,7 +7762,7 @@ function renderSubTheoryPage(id) {
 
   // ===== Evidence rail (Checkpoint C) =====
   var rail = document.createElement('aside');
-  rail.className = 'subtheory-rail';
+  rail.className = 'st-gutter';
   rail.id = 'subtheory-rail';
 
   // Backdrop sibling for the mobile bottom sheet. Default-hidden by CSS;
@@ -8174,10 +8196,9 @@ function renderSubTheoryPage(id) {
   // Mobile-only Evidence toggle sits at the top of the prose column.
   main.insertBefore(railToggle, main.firstChild);
 
-  layout.appendChild(main);
-  layout.appendChild(rail);
-  layout.appendChild(backdrop);
-  wrap.appendChild(layout);
+  wrap.appendChild(main);
+  wrap.appendChild(rail);
+  wrap.appendChild(backdrop);
   host.appendChild(wrap);
 }
 
