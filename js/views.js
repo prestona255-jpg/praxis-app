@@ -2113,10 +2113,10 @@ function openArcEditor() {
       var arc = createArc(titleVal, bodyVal, user.uid);
       if (!arc) return;
       saveState();
-      renderNotebook();
+      renderRoute();
     },
     onCancel: function() {
-      renderNotebook();
+      renderRoute();
     }
   });
 }
