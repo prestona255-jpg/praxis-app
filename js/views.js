@@ -11852,6 +11852,8 @@ function buildReaderModelSection(uid) {
   var readsAlong = profile.yumiReadsAlong !== false;
   var active = optedIn && readsAlong;   // both on -> manual add/edit enabled
   var webOn = profile.yumiWebGrounding === true;   // Stage III: separate opt-in
+  var voiceOn = profile.voiceOn === true;          // Alive Yumi: TTS opt-in
+  var handsFree = profile.talkMode === 'hands-free';
 
   function rerender() {
     if (typeof renderAccountPage === 'function') { renderAccountPage(); }
@@ -11872,6 +11874,23 @@ function buildReaderModelSection(uid) {
   // (setProfile -> saveProfileToFirestore) so it round-trips default-false.
   function flipWebConsent() {
     setProfile(uid, { yumiWebGrounding: !webOn });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function() {});
+    }
+    rerender();
+  }
+  // Alive Yumi: voice-out opt-in. Same F4 write path so it round-trips
+  // default-false.
+  function flipVoiceOn() {
+    setProfile(uid, { voiceOn: !voiceOn });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function() {});
+    }
+    rerender();
+  }
+  // Alive Yumi: talk-mode toggle (off = push-to-talk, on = hands-free).
+  function flipTalkMode() {
+    setProfile(uid, { talkMode: handsFree ? 'push-to-talk' : 'hands-free' });
     if (typeof saveProfileToFirestore === 'function') {
       saveProfileToFirestore(uid, getProfile(uid), function() {});
     }
@@ -12092,6 +12111,76 @@ function buildReaderModelSection(uid) {
   webNote.textContent = 'She never sends anything you wrote — only the book or theme — ' +
     'and never repeats what she finds as fact.';
   card.appendChild(webNote);
+
+  // ---- Yumi's voice (Alive Yumi): TTS on/off + talk-mode. Same F4 write path
+  // (setProfile -> saveProfileToFirestore) so each round-trips default-safe.
+  // Reuses the rm-toggle visual classes. ----
+  var voiceEyebrow = document.createElement('p');
+  voiceEyebrow.className = 'eyebrow';
+  voiceEyebrow.textContent = 'voice';
+  card.appendChild(voiceEyebrow);
+
+  var voiceRow = document.createElement('div');
+  voiceRow.className = 'rm-toggle-row rm-voice-row';
+  var voiceCopy = document.createElement('div');
+  voiceCopy.className = 'rm-toggle-copy';
+  var voiceLabel = document.createElement('div');
+  voiceLabel.className = 'rm-toggle-label';
+  voiceLabel.textContent = 'Let Yumi speak';
+  voiceCopy.appendChild(voiceLabel);
+  var voiceSub = document.createElement('div');
+  voiceSub.className = 'rm-toggle-sub';
+  voiceSub.textContent = voiceOn
+    ? 'On · she reads her replies aloud'
+    : 'Off by default · turn it on anytime';
+  voiceCopy.appendChild(voiceSub);
+  voiceRow.appendChild(voiceCopy);
+  var voiceToggle = document.createElement('button');
+  voiceToggle.type = 'button';
+  voiceToggle.className = 'rm-toggle' + (voiceOn ? ' rm-toggle-on' : '');
+  voiceToggle.setAttribute('role', 'switch');
+  voiceToggle.setAttribute('aria-checked', voiceOn ? 'true' : 'false');
+  voiceToggle.setAttribute('aria-label', 'Let Yumi speak');
+  var voiceKnob = document.createElement('span');
+  voiceKnob.className = 'rm-knob';
+  voiceToggle.appendChild(voiceKnob);
+  voiceToggle.addEventListener('click', function() { flipVoiceOn(); });
+  voiceRow.appendChild(voiceToggle);
+  card.appendChild(voiceRow);
+
+  var tmRow = document.createElement('div');
+  tmRow.className = 'rm-toggle-row rm-talkmode-row';
+  var tmCopy = document.createElement('div');
+  tmCopy.className = 'rm-toggle-copy';
+  var tmLabel = document.createElement('div');
+  tmLabel.className = 'rm-toggle-label';
+  tmLabel.textContent = 'Hands-free conversation';
+  tmCopy.appendChild(tmLabel);
+  var tmSub = document.createElement('div');
+  tmSub.className = 'rm-toggle-sub';
+  tmSub.textContent = handsFree
+    ? 'On · she listens, replies, and listens again'
+    : 'Off · hold the mic to talk (push-to-talk)';
+  tmCopy.appendChild(tmSub);
+  tmRow.appendChild(tmCopy);
+  var tmToggle = document.createElement('button');
+  tmToggle.type = 'button';
+  tmToggle.className = 'rm-toggle' + (handsFree ? ' rm-toggle-on' : '');
+  tmToggle.setAttribute('role', 'switch');
+  tmToggle.setAttribute('aria-checked', handsFree ? 'true' : 'false');
+  tmToggle.setAttribute('aria-label', 'Hands-free conversation');
+  var tmKnob = document.createElement('span');
+  tmKnob.className = 'rm-knob';
+  tmToggle.appendChild(tmKnob);
+  tmToggle.addEventListener('click', function() { flipTalkMode(); });
+  tmRow.appendChild(tmToggle);
+  card.appendChild(tmRow);
+
+  var voiceNote = document.createElement('p');
+  voiceNote.className = 'rm-req-note';
+  voiceNote.textContent = 'Hands-free needs voice on and a browser mic. ' +
+    'Push-to-talk works without voice.';
+  card.appendChild(voiceNote);
 
   // ---- the panel (ALWAYS rendered: shows + deletes even when off) ----
   var panel = document.createElement('div');

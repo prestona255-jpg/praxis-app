@@ -362,7 +362,13 @@ firebase.auth().onAuthStateChanged(function (u) {
           // SEPARATE opt-in consent; never enroll a legacy profile). Symmetric
           // with the .set() write list (the Firestore-merge gotcha: a doc from
           // sign-in bypasses migrate(), so read AND write must both carry it).
-          yumiWebGrounding:    (typeof rd.yumiWebGrounding === 'boolean') ? rd.yumiWebGrounding : false
+          yumiWebGrounding:    (typeof rd.yumiWebGrounding === 'boolean') ? rd.yumiWebGrounding : false,
+          // Alive Yumi: voice prefs. Symmetric with the .set() write list (the
+          // Firestore-merge gotcha: a sign-in doc bypasses migrate(), so read
+          // AND write must both carry these or a second device silently wipes
+          // them). voiceOn default FALSE (opt-in); talkMode default push-to-talk.
+          voiceOn:             (typeof rd.voiceOn === 'boolean') ? rd.voiceOn : false,
+          talkMode:            (rd.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk'
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -745,6 +751,11 @@ function saveProfileToFirestore(uid, profile, callback) {
         // .set() -> must be listed or it would be wiped. Default-FALSE-preserving
         // (opt-in): writes true ONLY when the local value is explicitly true.
         yumiWebGrounding:    !!(profile && profile.yumiWebGrounding === true),
+        // Alive Yumi: voice prefs. Full-doc .set() -> must be listed or wiped.
+        // Default-preserving: voiceOn writes true only when explicitly true;
+        // talkMode writes hands-free only when explicitly hands-free.
+        voiceOn:             !!(profile && profile.voiceOn === true),
+        talkMode:            (profile && profile.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk',
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {

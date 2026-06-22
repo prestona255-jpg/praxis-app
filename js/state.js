@@ -870,7 +870,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -895,7 +895,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -918,6 +918,19 @@ function ensureUser(uid) {
   if (state.users[uid].profile &&
       typeof state.users[uid].profile.yumiWebGrounding !== 'boolean') {
     state.users[uid].profile.yumiWebGrounding = false;
+  }
+  // Alive Yumi: voice-out opt-in, default FALSE (strictly opt-in -- a pre-build
+  // profile never speaks). Lives in profile{} so it mirrors via /userProfiles.
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.voiceOn !== 'boolean') {
+    state.users[uid].profile.voiceOn = false;
+  }
+  // Alive Yumi: talk-mode, default 'push-to-talk'. Constrained to the two valid
+  // values; any other (or absent) backfills to push-to-talk.
+  if (state.users[uid].profile &&
+      state.users[uid].profile.talkMode !== 'push-to-talk' &&
+      state.users[uid].profile.talkMode !== 'hands-free') {
+    state.users[uid].profile.talkMode = 'push-to-talk';
   }
   // yumi-intelligence Stage I: the reader-model store (named threads + a prose
   // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
@@ -957,7 +970,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -1000,6 +1013,15 @@ function setProfile(uid, fields) {
   // explicit value writes here.
   if (fields && typeof fields.yumiWebGrounding !== 'undefined') {
     p.yumiWebGrounding = fields.yumiWebGrounding === true;
+  }
+  // Alive Yumi: voice-out opt-in. Boolean-coerced; default-false on read.
+  if (fields && typeof fields.voiceOn !== 'undefined') {
+    p.voiceOn = fields.voiceOn === true;
+  }
+  // Alive Yumi: talk-mode. Validated to the two values; anything else -> the
+  // push-to-talk default.
+  if (fields && typeof fields.talkMode !== 'undefined') {
+    p.talkMode = (fields.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk';
   }
   saveState();
 }
@@ -2688,6 +2710,32 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.23.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.23.0') {
+    // Alive Yumi: two additive per-user voice prefs, default-on-absence so
+    // legacy data is never broken or silently opted in.
+    //   profile.voiceOn (boolean): TTS read-aloud opt-in, default FALSE.
+    //   profile.talkMode (string): 'push-to-talk' (default) | 'hands-free'.
+    // Live in profile{} so they mirror via /userProfiles next to
+    // yumiWebGrounding. ADDITIVE ONLY -- never touches any existing field.
+    if (stored.users) {
+      var vouid;
+      for (vouid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, vouid)) {
+          var vorec = stored.users[vouid];
+          if (vorec && vorec.profile) {
+            if (typeof vorec.profile.voiceOn !== 'boolean') {
+              vorec.profile.voiceOn = false;
+            }
+            if (vorec.profile.talkMode !== 'push-to-talk' &&
+                vorec.profile.talkMode !== 'hands-free') {
+              vorec.profile.talkMode = 'push-to-talk';
+            }
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.24.0';
   }
   return stored;
 }
