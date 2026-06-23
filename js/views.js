@@ -12901,6 +12901,103 @@ function _portraitReturnsData(uid) {
 }
 
 // =====================================================================
+// PORTRAIT -- EMBLEM capstone (Stage 5). A generative emblem the reader is
+// ASKED about, not told. Composed from REAL signals -- VALUES (core gems) /
+// LENSES (rings) / CATEGORIES (outer arcs) / MARGINALIA (filaments) -- every
+// strand traceable to something of theirs. The framing is the QUESTION ("does
+// this look like you?"), never a caption that decides. Read-only (the ack only
+// shows text -- v6 specifies no persisted response). Geometry ported 1:1 from
+// the comp; COUNTS/opacities are data-driven; hues -> tokens. One gentle breath
+// (reduced-motion -> still).
+// =====================================================================
+
+function _portraitMadeRow(sw, part, from) {
+  return '<div class="portrait-mrow"><span class="portrait-swatch" style="background:' + sw + ';"></span>' +
+    '<span class="portrait-part">' + part + '</span><span class="portrait-from">' + from + '</span></div>';
+}
+
+// Derive the emblem from live state and build its inner SVG. Returns the SVG
+// markup plus the counts the "what it's made of" breakdown + EXPL strings read.
+function _portraitEmblem(uid) {
+  var cx = 100, cy = 100, eh = '', i, k;
+  var profile = getProfile(uid);
+  var vals = (profile.values instanceof Array) ? profile.values : [];
+  var vCount = vals.length;
+  var lCount = 0;
+  for (k in state.userThemes) {
+    if (state.userThemes.hasOwnProperty(k) && state.userThemes[k] && state.userThemes[k].userId === uid) { lCount = lCount + 1; }
+  }
+  var bookIds = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+  var tradCount = {};
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    var bk = state.books ? state.books[bookIds[i]] : null;
+    if (!bk) { continue; }
+    var tr = bk.traditionOverride || bk.tradition;
+    if (!tr || tr === 'unassigned') { continue; }
+    tradCount[tr] = (tradCount[tr] || 0) + 1;
+  }
+  var tradList = [];
+  for (k in tradCount) { if (tradCount.hasOwnProperty(k)) { tradList.push(tradCount[k]); } }
+  tradList.sort(function (a, b) { return b - a; });
+  var mCount = 0;
+  for (k in state.notebookEntries) {
+    if (state.notebookEntries.hasOwnProperty(k) && state.notebookEntries[k] &&
+        state.notebookEntries[k].userId === uid && state.notebookEntries[k].register === 'marginalia') { mCount = mCount + 1; }
+  }
+
+  // categories: outer soft arcs (clay), opacity by rank (lean -> thin)
+  var ARC_SLOTS = [{ a0: -40, a1: 30, o: 0.85 }, { a0: 40, a1: 95, o: 0.7 }, { a0: 110, a1: 150, o: 0.45 }, { a0: 165, a1: 200, o: 0.3 }, { a0: 210, a1: 240, o: 0.18 }];
+  var nArcs = Math.min(tradList.length, ARC_SLOTS.length), r = 84;
+  eh += '<g class="pe-grp pe-categories">';
+  for (i = 0; i < nArcs; i = i + 1) {
+    var s = ARC_SLOTS[i];
+    var x0 = cx + r * Math.cos(s.a0 * Math.PI / 180), y0 = cy + r * Math.sin(s.a0 * Math.PI / 180);
+    var x1 = cx + r * Math.cos(s.a1 * Math.PI / 180), y1 = cy + r * Math.sin(s.a1 * Math.PI / 180);
+    var large = (s.a1 - s.a0) > 180 ? 1 : 0;
+    eh += '<path d="M ' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" fill="none" stroke="var(--danger)" stroke-width="2.4" opacity="' + s.o + '" stroke-linecap="round"/>';
+  }
+  eh += '</g>';
+
+  // lenses: concentric rings (gold)
+  var RING_SLOTS = [{ r: 70, sw: 1.3, o: 0.85 }, { r: 60, sw: 0.7, o: 0.55 }, { r: 50, sw: 0.5, o: 0.4 }, { r: 40, sw: 0.4, o: 0.3 }];
+  var nRings = Math.min(lCount, RING_SLOTS.length);
+  eh += '<g class="pe-grp pe-lenses">';
+  for (i = 0; i < nRings; i = i + 1) {
+    var rg = RING_SLOTS[i];
+    eh += '<circle cx="100" cy="100" r="' + rg.r + '" fill="none" stroke="var(--gold)" stroke-width="' + rg.sw + '" opacity="' + rg.o + '"/>';
+  }
+  eh += '</g>';
+
+  // marginalia: filaments + nodes (teal)
+  var NODE_SLOTS = [{ a: -20, r: 46, s: 6 }, { a: 35, r: 52, s: 8 }, { a: 92, r: 42, s: 5 }, { a: 150, r: 50, s: 7 }, { a: 205, r: 44, s: 5 }, { a: 255, r: 54, s: 9 }, { a: 300, r: 40, s: 4 }, { a: 330, r: 48, s: 6 }];
+  var nNodes = Math.min(mCount, NODE_SLOTS.length);
+  eh += '<g class="pe-grp pe-marginalia">';
+  for (i = 0; i < nNodes; i = i + 1) {
+    var nd = NODE_SLOTS[i];
+    var nx = cx + nd.r * Math.cos(nd.a * Math.PI / 180), ny = cy + nd.r * Math.sin(nd.a * Math.PI / 180);
+    eh += '<line x1="100" y1="100" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '" stroke="var(--teal)" stroke-width="0.4" opacity="0.4"/>';
+  }
+  for (i = 0; i < nNodes; i = i + 1) {
+    var nd2 = NODE_SLOTS[i];
+    var mx = cx + nd2.r * Math.cos(nd2.a * Math.PI / 180), my = cy + nd2.r * Math.sin(nd2.a * Math.PI / 180);
+    eh += '<circle cx="' + mx.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="' + (nd2.s / 2.6).toFixed(2) + '" fill="var(--teal)" opacity="0.92"/>';
+  }
+  eh += '</g>';
+
+  // values: core gems (cream) + center ring
+  eh += '<g class="pe-grp pe-values">';
+  var nGems = Math.min(vCount, 6);
+  for (i = 0; i < nGems; i = i + 1) {
+    var ga = (i / (nGems > 0 ? nGems : 1)) * 360 + 90, gr = 9;
+    var gx = cx + gr * Math.cos(ga * Math.PI / 180), gy = cy + gr * Math.sin(ga * Math.PI / 180);
+    eh += '<circle cx="' + gx.toFixed(1) + '" cy="' + gy.toFixed(1) + '" r="2.6" fill="var(--ink)" opacity="0.95"/>';
+  }
+  eh += '<circle cx="100" cy="100" r="13" fill="none" stroke="var(--ink)" stroke-width="0.4" opacity="0.5"/></g>';
+
+  return { svg: eh, vCount: vCount, vList: vals, mCount: mCount, lCount: lCount, catCount: tradList.length };
+}
+
+// =====================================================================
 // PORTRAIT -- Reading JOURNEY (Stage 4). A narrated timeline of the reader's
 // becoming, in Yumi's voice, derived from REAL timestamps (book addedAt, entry
 // createdAt, lens + sub-theory createdAt). NO streaks / rings / completion -- a
@@ -13749,6 +13846,90 @@ function renderAccountPage() {
   journeyCard.innerHTML = jhtml;
   journeySec.appendChild(journeyCard);
   wrap.appendChild(journeySec);
+
+  // ===== CAPSTONE EMBLEM (Portrait Stage 5) -- before the transparency +
+  // "Your data" cluster (which stays LAST). The emblem is a QUESTION, not a
+  // verdict; every strand traces to a real signal. Read-only. =====
+  var capSec = document.createElement('div');
+  capSec.className = 'sec account-portrait-sec';
+  var capEyebrow = document.createElement('div');
+  capEyebrow.className = 'eyebrow account-values-eyebrow portrait-cap-eyebrow';
+  capEyebrow.textContent = 'And so —';
+  capSec.appendChild(capEyebrow);
+  var capCard = document.createElement('div');
+  capCard.className = 'account-card portrait-capstone';
+  var emblemData = _portraitEmblem(uid);
+  var capReduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var emCoreFrom = (emblemData.vCount > 0 ? 'the ' + emblemData.vCount + ' values you placed' : 'the values you place') +
+    (emblemData.vList.length ? ' — ' + _portraitEsc(emblemData.vList.slice(0, 4).join(', ')) : '');
+  capCard.innerHTML =
+    '<svg class="portrait-emblem' + (capReduce ? '' : ' breathe') + '" id="account-portrait-emblem" viewBox="0 0 200 200" aria-label="An emblem drawn from your reading">' + emblemData.svg + '</svg>' +
+    '<div class="portrait-e-chips" id="account-portrait-echips">' +
+      '<span class="portrait-e-chip" data-focus="values">your values</span>' +
+      '<span class="portrait-e-chip" data-focus="lenses">your lenses</span>' +
+      '<span class="portrait-e-chip" data-focus="categories">your categories</span>' +
+      '<span class="portrait-e-chip" data-focus="marginalia">your marginalia</span>' +
+    '</div>' +
+    '<div class="portrait-e-explain" id="account-portrait-eexplain">Tap a strand to see what it’s made of.</div>' +
+    '<h2 class="portrait-ask">Does this look like you?</h2>' +
+    '<div class="portrait-ask-sub">Woven from the values you placed, the lenses you keep, the categories you read across, and the marginalia underneath it all — every strand traces back to something of yours. It isn’t a verdict. It’s a question.</div>' +
+    '<div class="portrait-ask-acts">' +
+      '<span class="portrait-cap-btn" data-ack="yes">yes, that’s me</span>' +
+      '<span class="portrait-cap-btn" data-ack="no">not quite</span>' +
+      '<span class="portrait-cap-btn" id="account-portrait-showmade">show me what it’s made of</span>' +
+    '</div>' +
+    '<div class="portrait-ack" id="account-portrait-ack"></div>' +
+    '<div class="portrait-made" id="account-portrait-made">' +
+      _portraitMadeRow('var(--ink)', 'the core', emCoreFrom) +
+      _portraitMadeRow('var(--gold)', 'the rings', 'your lenses — the conceptual groupings you’ve built with Yumi') +
+      _portraitMadeRow('var(--danger)', 'the outer arcs', 'the categories your library leans into — and the ones it leaves thin') +
+      _portraitMadeRow('var(--teal)', 'the filaments', 'your ' + emblemData.mCount + ' marginalia, placed by how often you return to each') +
+    '</div>';
+  capSec.appendChild(capCard);
+  wrap.appendChild(capSec);
+
+  var emblemEl = document.getElementById('account-portrait-emblem');
+  var eChipsWrap = document.getElementById('account-portrait-echips');
+  var eExplainEl = document.getElementById('account-portrait-eexplain');
+  var madeEl = document.getElementById('account-portrait-made');
+  var ackEl = document.getElementById('account-portrait-ack');
+  var showMadeBtn = document.getElementById('account-portrait-showmade');
+  var EXPL = {
+    values: 'The core — ' + (emblemData.vCount > 0 ? 'the ' + emblemData.vCount + ' values' : 'the values') + ' you placed. They sit at the center because everything else is read through them.',
+    lenses: 'The rings — the lenses you’ve built with Yumi. Your own conceptual structure, holding the rest together.',
+    categories: 'The outer arcs — the categories your library leans into. The faint ones are where your reading goes thin.',
+    marginalia: 'The filaments — your ' + emblemData.mCount + ' marginalia, each reaching inward, sized by how often you return to it.'
+  };
+  var emFocus = null;
+  function setEChip(f) {
+    var chips = eChipsWrap.querySelectorAll('.portrait-e-chip'), ci;
+    for (ci = 0; ci < chips.length; ci = ci + 1) {
+      chips[ci].className = 'portrait-e-chip' + (chips[ci].getAttribute('data-focus') === f ? ' on' : '');
+    }
+  }
+  eChipsWrap.addEventListener('click', function (e) {
+    var chip = e.target;
+    var f = (chip && chip.getAttribute) ? chip.getAttribute('data-focus') : null;
+    if (!f) { return; }
+    if (emFocus === f) {
+      emFocus = null; emblemEl.removeAttribute('data-focus');
+      eExplainEl.textContent = 'Tap a strand to see what it’s made of.'; setEChip(null);
+    } else {
+      emFocus = f; emblemEl.setAttribute('data-focus', f);
+      eExplainEl.textContent = EXPL[f]; setEChip(f);
+    }
+  });
+  showMadeBtn.addEventListener('click', function () {
+    var open = madeEl.className.indexOf('show') === -1;
+    madeEl.className = open ? 'portrait-made show' : 'portrait-made';
+    showMadeBtn.textContent = open ? 'hide what it’s made of' : 'show me what it’s made of';
+  });
+  capCard.addEventListener('click', function (e) {
+    var b = e.target;
+    var ackv = (b && b.getAttribute) ? b.getAttribute('data-ack') : null;
+    if (ackv === 'yes') { ackEl.textContent = 'Then it’s yours. It’ll keep changing as you do.'; }
+    else if (ackv === 'no') { ackEl.textContent = 'Good — that gap is the interesting part. Keep reading against it.'; }
+  });
 
   // ----- STAGE 11: TRANSPARENCY ("what Praxis records / what Yumi sees") -----
   // Plain disclosure of what Praxis records (aggregate counts only, never
