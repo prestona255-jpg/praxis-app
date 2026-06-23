@@ -9545,6 +9545,15 @@
 .ic-guess:hover { border-color:var(--teal); }
 .ic-guess-au { color:var(--ink-3); font-size:12px; margin-left:5px; }
 .ic-guess.ic-alt { border-style:dashed; color:var(--ink-3); }
+/* review-panel: search the full library (book-picker) */
+.ic-book-search { margin-top:12px; }
+.ic-book-search-input {
+  width:100%; box-sizing:border-box; font-family:var(--font-body); font-size:14px;
+  color:var(--ink); background:var(--surface); border:1px solid var(--line-2);
+  border-radius:var(--radius-pill); padding:9px 15px;
+}
+.ic-book-search-input:focus-visible { outline:2px solid var(--teal); outline-offset:1px; }
+.ic-book-search-results { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
 .ic-qprog { font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); text-align:center; margin-top:6px; }
 
 /* Stage 4: dictation -- mic hero, listening, light filed-card confirmation */

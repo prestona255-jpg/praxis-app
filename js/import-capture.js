@@ -809,6 +809,45 @@
     return out;
   }
 
+  // A live search over the CURRENT user's full library. onPick(bid) files the
+  // note via the caller's existing write path (fileDictationToBook / fileToBook)
+  // -- adds NO new write surface. Reuses normTitle; existing library only (no
+  // book creation). Empty query -> no results. Matches title OR author.
+  function buildBookSearch(onPick) {
+    var wrap = el('div', 'ic-book-search');
+    var input = el('input', 'ic-book-search-input'); input.type = 'text';
+    input.setAttribute('placeholder', 'Search your books…');
+    var results = el('div', 'ic-book-search-results');
+    var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    var ids = (user && user.uid && state.userBooks && state.userBooks[user.uid] && state.userBooks[user.uid].bookIds)
+      ? state.userBooks[user.uid].bookIds : [];
+    input.addEventListener('input', function () {
+      results.innerHTML = '';
+      var q = normTitle(input.value || '');
+      if (q === '') { return; }
+      var n = 0, i;
+      for (i = 0; i < ids.length && n < 8; i = i + 1) {
+        var bid = ids[i];
+        var book = state.books ? state.books[bid] : null;
+        if (!book || typeof book.title !== 'string') { continue; }
+        var t = normTitle(book.title);
+        var a = normTitle(book.author);
+        if (t.indexOf(q) === -1 && a.indexOf(q) === -1) { continue; }
+        (function (id, b) {
+          var chip = el('button', 'ic-guess'); chip.type = 'button';
+          chip.appendChild(document.createTextNode(b.title));
+          if (typeof b.author === 'string' && b.author) { chip.appendChild(el('span', 'ic-guess-au', b.author)); }
+          chip.addEventListener('click', function () { onPick(id); });
+          results.appendChild(chip);
+        })(bid, book);
+        n = n + 1;
+      }
+    });
+    wrap.appendChild(input);
+    wrap.appendChild(results);
+    return wrap;
+  }
+
   // Flip a note's register. -> journal: detach from the book (bookIds:[]) and
   // filed:true (journal routes by register, matching captureNote); -> marginalia
   // / question: keep bookIds as-is (NO auto-restore), and filed then tracks
@@ -915,10 +954,14 @@
         chips.appendChild(chip);
       })(cands[i]);
     }
+    card.appendChild(chips);
+    // Search the FULL library (reuses the existing fileToBook write path).
+    card.appendChild(buildBookSearch(function (bid) { fileToBook(panel, dismissed, entry.id, bid); }));
+    var leaveRow = el('div', 'ic-guesses');
     var leave = el('button', 'ic-guess ic-alt', 'Leave in Inbox'); leave.type = 'button';
     leave.addEventListener('click', function () { leaveInInbox(panel, dismissed, entry.id); });
-    chips.appendChild(leave);
-    card.appendChild(chips);
+    leaveRow.appendChild(leave);
+    card.appendChild(leaveRow);
     return card;
   }
 
@@ -1290,13 +1333,19 @@
           chips.appendChild(chip);
         })(cands[i]);
       }
+      card.appendChild(chips);
+      // Search the FULL library so any unmatched note files in one tap, even
+      // when the guess yields no candidate chips. Reuses fileDictationToBook
+      // (the existing write path) -- unchanged.
+      card.appendChild(buildBookSearch(function (bid) { fileDictationToBook(panel, e.id, bid); }));
+      var keepRow = el('div', 'ic-guesses');
       var keep = el('button', 'ic-guess ic-alt', 'Keep in Inbox'); keep.type = 'button';
       keep.addEventListener('click', function () {
         if (lastDictation) { lastDictation.kept = true; }
         renderDictated(panel);
       });
-      chips.appendChild(keep);
-      card.appendChild(chips);
+      keepRow.appendChild(keep);
+      card.appendChild(keepRow);
     }
 
     var acts = el('div', 'ic-filed-acts');

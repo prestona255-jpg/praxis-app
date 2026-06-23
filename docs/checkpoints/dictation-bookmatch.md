@@ -33,4 +33,20 @@ candidateBooks: 'Freire'->[b1,b4] (both Freire) | 'the Oppressed'->[b1] | 'love'
 RESULT: 12 pass, 0 fail
 ```
 
-**Static gates:** ES3 banned tokens **0** (a backtick in a new comment was reworded to clear it); scope = `import-capture.js`; diffstat ~**+45/−23** (localized); byte delta LF **+1,473** (61,306→62,779); **no F5/commit-flow function** in the diff (`commitEntries`/`processDictation`/`undoDictation`/`ownsEntry`/`fileDictationToBook` untouched — only `matchBook`/`candidateBooks` + the new `hasSharedToken`); `CACHE_VERSION` untouched (`praxis-v3.140`); `main` untouched (`844f913`). Next: Stage 3 (review-panel picker/search).
+**Static gates:** ES3 banned tokens **0** (a backtick in a new comment was reworded to clear it); scope = `import-capture.js`; diffstat ~**+45/−23** (localized); byte delta LF **+1,473** (61,306→62,779); **no F5/commit-flow function** in the diff (`commitEntries`/`processDictation`/`undoDictation`/`ownsEntry`/`fileDictationToBook` untouched — only `matchBook`/`candidateBooks` + the new `hasSharedToken`); `CACHE_VERSION` untouched (`praxis-v3.140`); `main` untouched (`844f913`). Commit `606124b`. Next: Stage 3 (review-panel picker/search).
+
+---
+
+## Stage 3 — review-panel book-picker / search (committed local-only)
+
+`js/import-capture.js` + `assets/components.css`. New helper **`buildBookSearch(onPick)`** — a live `<input>` search over the CURRENT user's **full** library (title OR author substring via `normTitle`), up to 8 results, empty query → no results, **existing library only (no book creation)**. Each result chip calls `onPick(bid)`; `buildBookSearch` itself performs **no state write**.
+
+Wired into **BOTH** review blocks (Keep/Leave-in-Inbox moved to its own row **below** the search so the flow is candidates → search → explicit no-book opt-out):
+- **Dictation** (`renderDictated`, `!bid && !kept`): `buildBookSearch(function (bid) { fileDictationToBook(panel, e.id, bid); })` — reuses the existing write path.
+- **Bulk queue** (`buildQueueCard`): `buildBookSearch(function (bid) { fileToBook(panel, dismissed, entry.id, bid); })` — reuses the existing write path.
+
+CSS (`ic-`-prefixed, `var()` tokens only — `--font-body`/`--ink`/`--surface`/`--line-2`/`--radius-pill`/`--teal`): `.ic-book-search`, `.ic-book-search-input`, `.ic-book-search-results`.
+
+**Static gates:** ES3 banned tokens **0**; **0 raw hex** in new CSS; scope = `import-capture.js` + `components.css`; diffstat **+53/−4** (js) + **+9** (css), localized; byte deltas LF — `import-capture.js` **+2,531** (62,779→65,310), `components.css` **+518** (339,010→339,528); `CACHE_VERSION` untouched (`praxis-v3.140`); `main` untouched (`844f913`).
+
+**Adversarial check (write paths intact):** no `fileDictationToBook`/`fileToBook`/`leaveInInbox`/`commitEntries`/`deleteEntry`/`ownsEntry`/`processDictation`/`undoDictation` **definition** appears in the diff (byte-identical); `buildBookSearch` contains **no** direct write (`commitEntries`/`saveState`/`deleteEntry`/`markNotebookDirty`/`.bookIds=`/`.filed=`/`createdIds`/`notebookEntries[`) — it only reads the library + builds DOM and **delegates filing to the existing write fns via `onPick`**. No new entry-write surface; F5 path untouched. Next: Stage 4 (ship gate, `v3.141`).
