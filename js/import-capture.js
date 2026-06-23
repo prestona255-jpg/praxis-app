@@ -171,12 +171,23 @@
       .replace(/^\s+|\s+$/g, '');      // trim
   }
 
+  // True if any guess token of >= 4 chars appears as a whole word in the
+  // normalized text. Shared by matchBook (author fallback) + candidateBooks.
+  function hasSharedToken(tokens, text) {
+    var p = ' ' + text + ' ', k;
+    for (k = 0; k < tokens.length; k = k + 1) {
+      if (tokens[k].length >= 4 && p.indexOf(' ' + tokens[k] + ' ') !== -1) { return true; }
+    }
+    return false;
+  }
+
   // Resolve a free-text book name to a bookId in the CURRENT user's deduped
-  // library (state.userBooks[uid].bookIds -> state.books[bid]). Exact
-  // normalized match first; if none, a UNIQUE containment match (guess is a
-  // substring of exactly one title, or one title is a substring of guess) --
-  // covers edition suffixes without mis-filing. Null on no/ambiguous match.
-  // No network: this is library resolution, not metadata fetch.
+  // library. PASS 1 (TITLE -- unchanged): exact normalized match wins; else a
+  // UNIQUE bidirectional containment match; an ambiguous title (>1) -> null.
+  // PASS 2 runs ONLY when NO title matched -- AUTHOR: a UNIQUE author
+  // containment / shared-token match auto-files (covers "note on Freire");
+  // ambiguous author (>1) -> null -> Inbox. Conservative: never auto-files when
+  // more than one book qualifies. No network: library resolution, not fetch.
   function matchBook(guess) {
     var g = normTitle(guess);
     if (g === '') { return null; }
@@ -185,22 +196,32 @@
     var ids = (state.userBooks && state.userBooks[user.uid] && state.userBooks[user.uid].bookIds)
       ? state.userBooks[user.uid].bookIds : null;
     if (!ids || !ids.length) { return null; }
-    var i;
-    var containId = null;
-    var containCount = 0;
+    var gtok = g.split(' ');
+    var i, bid, book, t;
+    // pass 1 -- TITLE (unchanged behavior): exact wins; else unique containment.
+    var titleId = null, titleCount = 0;
     for (i = 0; i < ids.length; i = i + 1) {
-      var bid = ids[i];
-      var book = state.books ? state.books[bid] : null;
+      bid = ids[i];
+      book = state.books ? state.books[bid] : null;
       if (!book) { continue; }
-      var t = normTitle(book.title);
+      t = normTitle(book.title);
       if (t === '') { continue; }
-      if (t === g) { return bid; }                                  // exact -> done
-      if (t.indexOf(g) !== -1 || g.indexOf(t) !== -1) {             // candidate containment
-        containId = bid;
-        containCount = containCount + 1;
-      }
+      if (t === g) { return bid; }                                  // exact title -> done
+      if (t.indexOf(g) !== -1 || g.indexOf(t) !== -1) { titleId = bid; titleCount = titleCount + 1; }
     }
-    return (containCount === 1) ? containId : null;                 // unique containment only
+    if (titleCount === 1) { return titleId; }                       // unique title containment (unchanged)
+    if (titleCount > 1) { return null; }                            // ambiguous title -> Inbox (unchanged)
+    // pass 2 -- AUTHOR (only when NO title matched): unique author match auto-files.
+    var authId = null, authCount = 0;
+    for (i = 0; i < ids.length; i = i + 1) {
+      bid = ids[i];
+      book = state.books ? state.books[bid] : null;
+      if (!book) { continue; }
+      var a = normTitle(book.author);
+      if (a === '') { continue; }
+      if (a.indexOf(g) !== -1 || g.indexOf(a) !== -1 || hasSharedToken(gtok, a)) { authId = bid; authCount = authCount + 1; }
+    }
+    return (authCount === 1) ? authId : null;                       // unique author -> file; else Inbox
   }
 
   // ---- commitEntries --------------------------------------------------
@@ -768,20 +789,21 @@
     if (!ids || !ids.length) { return out; }
     var g = normTitle(guess || '');
     var gtok = g ? g.split(' ') : [];
-    var i, j;
+    var i;
     for (i = 0; i < ids.length && out.length < 4; i = i + 1) {
       var bid = ids[i];
       var book = state.books ? state.books[bid] : null;
       if (!book || typeof book.title !== 'string') { continue; }
       var t = normTitle(book.title);
       if (t === '') { continue; }
+      var a = normTitle(book.author);
+      // Generous (review chips only): title OR author containment, else a shared
+      // >=4-char token in EITHER title or author -- so "Freire" surfaces every
+      // Freire book. Author is matched here, not merely shown.
       var hit = false;
       if (g && (t.indexOf(g) !== -1 || g.indexOf(t) !== -1)) { hit = true; }
-      else {
-        for (j = 0; j < gtok.length; j = j + 1) {
-          if (gtok[j].length >= 4 && (' ' + t + ' ').indexOf(' ' + gtok[j] + ' ') !== -1) { hit = true; break; }
-        }
-      }
+      else if (g && a && (a.indexOf(g) !== -1 || g.indexOf(a) !== -1)) { hit = true; }
+      else if (hasSharedToken(gtok, t) || hasSharedToken(gtok, a)) { hit = true; }
       if (hit) { out.push({ bid: bid, title: book.title, author: (typeof book.author === 'string') ? book.author : '' }); }
     }
     return out;
