@@ -64,4 +64,20 @@ audio/mp4               OLD: ===b64 TRUE, round-trip PASS (no regression)       
 ```
 i.e. OLD pipeline fed `data:audio/webm;codecs=opus;base64,…` (not base64) to the decoder → 15-byte garbage → ElevenLabs 400; NEW pipeline delivers exactly the true base64 → clean 17-byte round-trip. mp4 already worked under OLD (no regression).
 
-**Static gates:** ES3 banned tokens **0**; diffstat localized (import-capture **+13/−2**, proxy **+10**); byte deltas LF — import-capture **+594** (57,858→58,452), proxy **+158** (6,335→6,493); scope = the 2 code files; `CACHE_VERSION` untouched (`praxis-v3.139`); `main` untouched (`1d7fb67`). Next: Stage 2 (timeout→textarea + renderProcessing escape hatch).
+**Static gates:** ES3 banned tokens **0**; diffstat localized (import-capture **+13/−2**, proxy **+10**); byte deltas LF — import-capture **+594** (57,858→58,452), proxy **+158** (6,335→6,493); scope = the 2 code files; `CACHE_VERSION` untouched (`praxis-v3.139`); `main` untouched (`1d7fb67`). Commit `9a1e9f4`. Next: Stage 2 (timeout→textarea + renderProcessing escape hatch).
+
+---
+
+## Stage 2 — stall guard + escape hatch (committed local-only)
+
+`js/import-capture.js` only. Two changes:
+
+**(a) Hard timeout on the transcribe POST.** `transcribeBlob` rewritten with a **single-settle guard** (`finishOk`/`finishErr` fire at most once) + an `AbortController` and a **20s `setTimeout`** (`TRANSCRIBE_TIMEOUT_MS`). On expiry → `controller.abort()` → the fetch reject funnels to `finishErr` → `onError('failed')` → textarea. The settle guard makes the timeout and a late real response mutually exclusive (no double-fire). `AbortController` is feature-detected (`typeof !== 'undefined'`); if absent the timer still escapes the UI. → **no more infinite "transcribing".**
+
+**(b) Escape hatch on the no-exit beat.** `renderProcessing(panel, label, onType)` — when `onType` is passed, it adds a `closeBtn(close)` + a **"Taking a while — type instead"** `ic-linkbtn` (reuses the existing class — **no new CSS**) wired to `onType`. `startDictation` passes `onType` on the **transcribing** beat → sets an `escaped` flag + `renderTypeNote`; and `onResult`/`onError` are **guarded by `escaped`** so a late transcript can't clobber what the reader is now typing. Bulk-import and the "sorting" beat omit `onType` → **byte-identical** (no close/link).
+
+**Noted follow-up (per plan, not trivial here):** `segmentDoc` (the "sorting" beat, path C) still has no timeout/escape — its clobber-safe escape needs a guard + segmentDoc cancellation, deferred.
+
+**Static gates:** ES3 banned tokens **0**; scope = `import-capture.js` only; diffstat **+50/−12** (localized); byte delta LF **+2,060** (58,452→60,512); `CACHE_VERSION` untouched (`praxis-v3.139`); `main` untouched (`1d7fb67`); **no new CSS**.
+
+**Adversarial check (transport still entry-safe):** the cumulative lane diff adds/removes **no** F5/commit-undo function definition (`commitEntries`/`processDictation`/`undoDictation`/`ownsEntry`/`fileDictationToBook` byte-identical to main); **no added line** touches `commitEntries`/`saveState`/`deleteEntry`/`markNotebookDirty`/`lastImport`/`lastDictation`/`notebookEntries`; entry writes still route ONLY through the unchanged `processDictation` (call sites: textarea `:1084`, dictation `:1155`). The timeout/escape code only renders views + fires callbacks. Next: Stage 3 ship gate (`v3.140`).

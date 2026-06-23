@@ -27,6 +27,7 @@
 
   var PROXY_URL = '/.netlify/functions/claude-proxy';
   var TRANSCRIBE_PROXY_URL = '/.netlify/functions/transcribe-proxy';
+  var TRANSCRIBE_TIMEOUT_MS = 20000; // hard cap on the transcribe POST -> textarea on expiry (never an infinite "transcribing")
   var SEG_MODEL = 'claude-sonnet-4-6';
 
   // ---- segmentation system prompt -------------------------------------
@@ -452,12 +453,22 @@
   }
 
   // ---- processing beat ------------------------------------------------
-  function renderProcessing(panel, label) {
+  // onType (optional): when provided, this beat can wait on the network (the
+  // dictation transcribe leg), so add a close affordance + a "type instead"
+  // escape wired to onType -- never a no-exit modal. Bulk-import callers omit
+  // it, so their beat is byte-identical (no close, no link).
+  function renderProcessing(panel, label, onType) {
     panel.innerHTML = '';
+    if (onType) { panel.appendChild(closeBtn(close)); }
     var proc = el('div', 'ic-proc');
     proc.appendChild(el('div', 'ic-orb', 'Y'));
     proc.appendChild(el('div', 'ic-proc-txt', 'Reading your notes…'));
     proc.appendChild(el('div', 'ic-proc-sub', label));
+    if (onType) {
+      var esc = el('button', 'ic-linkbtn', 'Taking a while — type instead'); esc.type = 'button';
+      esc.addEventListener('click', onType);
+      proc.appendChild(esc);
+    }
     panel.appendChild(proc);
   }
 
@@ -950,7 +961,14 @@
   // Hands the transcript STRING to cbs.onResult. Touches no state; never logs
   // the audio or the key. Two-arg .then(ok, err) handlers throughout (ES3).
   function transcribeBlob(blob, mimeType, cbs) {
+    var settled = false, timer = null, controller = null;
+    function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
+    // Single-settle guard: onResult/onError fire AT MOST ONCE. Makes the hard
+    // timeout (abort) and a late real response mutually exclusive -- no double-fire.
+    function finishOk(text) { if (settled) { return; } settled = true; clearTimer(); if (cbs.onResult) { cbs.onResult(text); } }
+    function finishErr() { if (settled) { return; } settled = true; clearTimer(); if (cbs.onError) { cbs.onError('failed'); } }
     var reader = new FileReader();
+    reader.onerror = function () { finishErr(); };
     reader.onload = function () {
       // Extract RAW base64 from the FileReader data URL: everything after the
       // first comma. Params-agnostic -- a /;base64,/ regex misses a media type
@@ -959,20 +977,32 @@
       var url = String(reader.result || '');
       var ci = url.indexOf(',');
       var b64 = (ci > -1) ? url.substring(ci + 1) : url;
-      if (!b64) { if (cbs.onError) { cbs.onError('failed'); } return; }
-      fetch(TRANSCRIBE_PROXY_URL, {
+      if (!b64) { finishErr(); return; }
+      // Hard timeout: abort the POST after TRANSCRIBE_TIMEOUT_MS so a slow or
+      // stalled proxy can never leave the UI hung on "transcribing". The abort
+      // funnels through the reject handler -> finishErr -> textarea fallback.
+      var opts = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
         body: JSON.stringify({ audio: b64, mimeType: mimeType })
-      }).then(function (res) {
-        if (!res.ok) { if (cbs.onError) { cbs.onError('failed'); } return; }
+      };
+      if (typeof AbortController !== 'undefined') {
+        controller = new AbortController();
+        opts.signal = controller.signal;
+      }
+      timer = setTimeout(function () {
+        timer = null;
+        if (controller) { try { controller.abort(); } catch (e0) {} }
+        finishErr();
+      }, TRANSCRIBE_TIMEOUT_MS);
+      fetch(TRANSCRIBE_PROXY_URL, opts).then(function (res) {
+        if (!res.ok) { finishErr(); return; }
         res.json().then(function (data) {
           var text = (data && typeof data.transcript === 'string') ? data.transcript : '';
-          if (cbs.onResult) { cbs.onResult(text); }
-        }, function () { if (cbs.onError) { cbs.onError('failed'); } });
-      }, function () { if (cbs.onError) { cbs.onError('failed'); } });
+          finishOk(text);
+        }, function () { finishErr(); });
+      }, function () { finishErr(); });
     };
-    reader.onerror = function () { if (cbs.onError) { cbs.onError('failed'); } };
     reader.readAsDataURL(blob);
   }
 
@@ -1104,13 +1134,20 @@
   function startDictation(panel) {
     if (!canRecord()) { renderTypeNote(panel, null); return; }
     var ui = renderListening(panel);
+    // escaped: the reader bailed to the textarea via the "type instead" escape
+    // mid-transcribe -- ignore any late result/error so it can't clobber what
+    // they are now typing. (The in-flight POST is harmless once ignored.)
+    var escaped = false;
     var session = recordAndTranscribe({
       onStart: function () { ui.state.textContent = 'Listening'; },
       onTranscribing: function () {
         ui.state.textContent = 'Transcribing';
-        renderProcessing(panel, 'transcribing your note…');
+        renderProcessing(panel, 'transcribing your note…', function () {
+          escaped = true; renderTypeNote(panel, null);
+        });
       },
       onResult: function (text) {
+        if (escaped) { return; }
         if (!(text && text.replace(/^\s+|\s+$/g, ''))) {
           renderError(panel, 'I didn’t catch that. Tap “Try again” and speak after the tap.');
           return;
@@ -1118,6 +1155,7 @@
         processDictation(panel, text);
       },
       onError: function (reason) {
+        if (escaped) { return; }
         if (reason === 'denied') {
           renderTypeNote(panel, 'Microphone access is blocked. Allow it in your browser, or type the note here.');
         } else if (reason === 'unsupported') {
@@ -1126,8 +1164,8 @@
           // nothing was recorded (0-byte blob) -- never POST; honest message.
           renderTypeNote(panel, 'I didn’t catch any audio — type your note here, or close and tap the mic to try again.');
         } else {
-          // transcribe transport failed (non-200 / network / malformed body):
-          // fall back to the textarea so the recording is never a dead end --
+          // transcribe transport failed (non-200 / network / malformed / 20s
+          // timeout): fall back to the textarea so it is never a dead end --
           // the reader can capture the note now (or close + tap the mic again).
           renderTypeNote(panel, 'Yumi couldn’t transcribe that just now — type your note here, or close and tap the mic to try again.');
         }
