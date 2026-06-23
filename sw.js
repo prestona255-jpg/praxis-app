@@ -27,6 +27,7 @@ var APP_SHELL = [
   '/js/yumi-ui.js',
   '/js/spotlight.js',
   '/js/views.js',
+  '/js/import-capture.js',
   '/js/app.js'
 ];
 
