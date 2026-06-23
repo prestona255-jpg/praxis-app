@@ -12491,6 +12491,113 @@ function renderAccountPage() {
   hero.appendChild(heroText);
   wrap.appendChild(hero);
 
+  // ===== VALUES -- declared "stones" (Portrait Stage 1) =====
+  // Ported VERBATIM from praxis-portrait-mockup-v6-instrument.html (VALUES
+  // section). The reader places these in their own words; Yumi never writes
+  // here. Seeded from profile.values; each add/remove persists via setProfile +
+  // saveProfileToFirestore (DECLARED, not inferred -- no consent gate, no Yumi
+  // write). Inserted directly after the live hero, before the live edit form.
+  var valuesSec = document.createElement('div');
+  valuesSec.className = 'sec account-values';
+
+  var valuesEyebrow = document.createElement('div');
+  valuesEyebrow.className = 'eyebrow account-values-eyebrow';
+  valuesEyebrow.appendChild(document.createTextNode('What you’re reading toward '));
+  var valuesHint = document.createElement('span');
+  valuesHint.className = 'hint';
+  valuesHint.textContent = '— in your own words';
+  valuesEyebrow.appendChild(valuesHint);
+  valuesSec.appendChild(valuesEyebrow);
+
+  var valuesCard = document.createElement('div');
+  valuesCard.className = 'account-card account-values-card';
+
+  var stonesEl = document.createElement('div');
+  stonesEl.className = 'stones';
+  stonesEl.id = 'account-values-stones';
+
+  var stoneAdd = document.createElement('button');
+  stoneAdd.type = 'button';
+  stoneAdd.className = 'stone-add';
+  stoneAdd.textContent = '＋ place a stone';
+
+  function accountValuesCollect() {
+    var out = [], svnodes = stonesEl.querySelectorAll('.stone'), svi;
+    for (svi = 0; svi < svnodes.length; svi = svi + 1) {
+      var sv = svnodes[svi].getAttribute('data-value');
+      if (sv) { out.push(sv); }
+    }
+    return out;
+  }
+  function accountValuesPersist() {
+    setProfile(uid, { values: accountValuesCollect() });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function () {});
+    }
+  }
+  function accountValuesMakeStone(text) {
+    var st = document.createElement('span');
+    st.className = 'stone';
+    st.setAttribute('data-value', text);
+    st.appendChild(document.createTextNode(text));
+    var rm = document.createElement('span');
+    rm.className = 'rm';
+    rm.textContent = '✕';
+    rm.addEventListener('click', function () {
+      if (st.parentNode) { st.parentNode.removeChild(st); }
+      accountValuesPersist();
+    });
+    st.appendChild(rm);
+    stonesEl.insertBefore(st, stoneAdd);
+  }
+
+  // The add button must be in the DOM before seeding so insertBefore(stone, add)
+  // has a valid reference node.
+  stonesEl.appendChild(stoneAdd);
+  var existingValues = (profile.values instanceof Array) ? profile.values : [];
+  var vsx;
+  for (vsx = 0; vsx < existingValues.length; vsx = vsx + 1) {
+    accountValuesMakeStone('' + existingValues[vsx]);
+  }
+
+  stoneAdd.addEventListener('click', function () {
+    var inp = document.createElement('input');
+    inp.className = 'stone-input';
+    inp.setAttribute('placeholder', 'what you care about…');
+    stonesEl.insertBefore(inp, stoneAdd);
+    inp.focus();
+    // Commit-once guard: pressing Enter detaches the input, which also fires
+    // blur on the (now removed) node; without this guard the value would be
+    // committed twice (a latent double-add in the mock). ES3-dialect correctness
+    // adaptation, not a design change.
+    var committed = false;
+    function commit() {
+      if (committed) { return; }
+      committed = true;
+      var cv = inp.value.trim();
+      if (inp.parentNode) { inp.parentNode.removeChild(inp); }
+      if (cv) { accountValuesMakeStone(cv); accountValuesPersist(); }
+    }
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { commit(); }
+      if (e.key === 'Escape') {
+        committed = true;
+        if (inp.parentNode) { inp.parentNode.removeChild(inp); }
+      }
+    });
+    inp.addEventListener('blur', commit);
+  });
+
+  valuesCard.appendChild(stonesEl);
+
+  var valuesNote = document.createElement('div');
+  valuesNote.className = 'account-values-note';
+  valuesNote.textContent = 'You place these. Yumi never fills them in.';
+  valuesCard.appendChild(valuesNote);
+
+  valuesSec.appendChild(valuesCard);
+  wrap.appendChild(valuesSec);
+
   // Profile editor (DISPLAY NAME / PEN NAME + Save). #8 Stage 4a revision:
   // wrapped as .account-edit-form, HIDDEN by default so the hero reads as a
   // clean identity card; the "Edit profile" action toggles it open. The form

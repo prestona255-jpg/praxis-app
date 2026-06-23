@@ -368,7 +368,12 @@ firebase.auth().onAuthStateChanged(function (u) {
           // AND write must both carry these or a second device silently wipes
           // them). voiceOn default FALSE (opt-in); talkMode default push-to-talk.
           voiceOn:             (typeof rd.voiceOn === 'boolean') ? rd.voiceOn : false,
-          talkMode:            (rd.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk'
+          talkMode:            (rd.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk',
+          // Portrait Stage 1: declared values (the "stones"). Symmetric with the
+          // .set() write list (the Firestore-merge gotcha: a sign-in doc bypasses
+          // migrate(), so read AND write must both carry it or a second device
+          // silently wipes it). Default [] when absent on the remote doc.
+          values:              (rd.values instanceof Array) ? rd.values : []
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -756,6 +761,10 @@ function saveProfileToFirestore(uid, profile, callback) {
         // talkMode writes hands-free only when explicitly hands-free.
         voiceOn:             !!(profile && profile.voiceOn === true),
         talkMode:            (profile && profile.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk',
+        // Portrait Stage 1: the reader's DECLARED values (the "stones"). Full-doc
+        // .set() -> must be listed or it would be wiped on every Account-page
+        // save. Default [] when absent.
+        values:              (profile && profile.values instanceof Array) ? profile.values : [],
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {

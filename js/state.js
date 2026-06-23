@@ -870,7 +870,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -895,7 +895,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -931,6 +931,13 @@ function ensureUser(uid) {
       state.users[uid].profile.talkMode !== 'push-to-talk' &&
       state.users[uid].profile.talkMode !== 'hands-free') {
     state.users[uid].profile.talkMode = 'push-to-talk';
+  }
+  // Portrait Stage 1: declared values list (the "stones"). Additive guard so a
+  // profile seeded before this build gains the slot. Default [] -- DECLARED by
+  // the reader, never inferred (Yumi does not write here).
+  if (state.users[uid].profile &&
+      !(state.users[uid].profile.values instanceof Array)) {
+    state.users[uid].profile.values = [];
   }
   // yumi-intelligence Stage I: the reader-model store (named threads + a prose
   // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
@@ -970,7 +977,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk' };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -1022,6 +1029,17 @@ function setProfile(uid, fields) {
   // push-to-talk default.
   if (fields && typeof fields.talkMode !== 'undefined') {
     p.talkMode = (fields.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk';
+  }
+  // Portrait Stage 1: declared values (the "stones"). Sanitized to an array of
+  // trimmed, non-empty strings; DECLARED by the reader, never inferred. Only an
+  // explicit array writes (absent -> the default-on-read [] stands).
+  if (fields && fields.values instanceof Array) {
+    var vv = [], vi;
+    for (vi = 0; vi < fields.values.length; vi = vi + 1) {
+      var vs = ('' + fields.values[vi]).trim();
+      if (vs) { vv.push(vs); }
+    }
+    p.values = vv;
   }
   saveState();
 }
@@ -2736,6 +2754,27 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.24.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.24.0') {
+    // Portrait Stage 1: one additive per-user field, default-on-absence so
+    // legacy data is never broken or silently populated.
+    //   profile.values (array of strings): the reader's DECLARED values (the
+    //   account "stones"), default []. Declared, never inferred -- Yumi does not
+    //   write here. Lives in profile{} so it mirrors via /userProfiles next to
+    //   talkMode. ADDITIVE ONLY -- never touches any existing field.
+    if (stored.users) {
+      var pvuid;
+      for (pvuid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, pvuid)) {
+          var pvrec = stored.users[pvuid];
+          if (pvrec && pvrec.profile &&
+              !(pvrec.profile.values instanceof Array)) {
+            pvrec.profile.values = [];
+          }
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.25.0';
   }
   return stored;
 }
