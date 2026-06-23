@@ -9502,3 +9502,47 @@
   background:none; border:none; cursor:pointer; padding:8px 4px; border-radius:var(--radius-sm);
 }
 .ic-linkbtn:hover { color:var(--ink); }
+
+/* Stage 3b-2: register-flip control (inside a note's ··· detail) */
+.ic-detail-line { margin-bottom:2px; }
+.ic-flip { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.ic-flip-label { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-4); }
+.ic-flip-pill {
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; color:var(--ink-3);
+  cursor:pointer; background:var(--surface); border:1px solid var(--line-2);
+  border-radius:var(--radius-pill); padding:3px 10px;
+}
+.ic-flip-pill:hover { border-color:var(--gold); color:var(--ink); }
+.ic-flip-pill.ic-on { color:var(--text-on-dark); background:var(--teal); border-color:var(--teal); cursor:default; }
+
+/* Stage 3b-2: "kept private" journal group label */
+.ic-brow-journal .ic-bk { color:var(--ink-3); }
+.ic-brow-journal .ic-au { color:var(--marginalia-color); }
+
+/* Stage 3b-2: exception queue */
+.ic-q-yumi { display:flex; gap:11px; align-items:flex-start; margin:18px 0 20px; }
+.ic-q-yorb {
+  width:28px; height:28px; border-radius:var(--radius-pill); flex:none; display:grid; place-items:center;
+  margin-top:1px; font-family:var(--font-serif); font-style:italic; font-weight:600; font-size:14px;
+  color:var(--teal); border:1.5px dashed var(--gold-soft); background:var(--surface-2);
+}
+.ic-q-ytxt { margin:0; font-size:14.5px; color:var(--ink-2); }
+.ic-qcard {
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-1); padding:17px; margin:0 0 13px;
+}
+.ic-qtext { font-size:14.5px; line-height:1.45; color:var(--ink-2); }
+.ic-qtext.ic-q {
+  font-family:var(--font-serif); font-style:italic; font-size:18px; color:var(--ink);
+  border-left:3px solid var(--gold-soft); padding-left:13px;
+}
+.ic-qask { font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.08em; font-size:10.5px; color:var(--gold); margin:14px 0 9px; }
+.ic-guesses { display:flex; flex-wrap:wrap; gap:8px; }
+.ic-guess {
+  font-family:var(--font-body); font-size:14px; cursor:pointer; border-radius:var(--radius-pill);
+  padding:9px 15px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink);
+}
+.ic-guess:hover { border-color:var(--teal); }
+.ic-guess-au { color:var(--ink-3); font-size:12px; margin-left:5px; }
+.ic-guess.ic-alt { border-style:dashed; color:var(--ink-3); }
+.ic-qprog { font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); text-align:center; margin-top:6px; }

@@ -493,11 +493,14 @@
     });
   }
 
-  // ---- receipt: book-grouped, progressively disclosed (Stage 3b-1) -----
-  // Display only. Reads LIVE entries from state.notebookEntries (so a 3b-2
-  // re-file / flip / undo re-render shows the real entry) plus lastImport.meta
-  // for the display-only fields that never live on an entry (page / type).
-  // Created entries with no book (filed:false) feed the Inbox needbar.
+  // ---- receipt: book-grouped, progressively disclosed -----------------
+  // Reads LIVE entries from state.notebookEntries (so a re-file / flip / undo
+  // re-render shows the real entry) plus lastImport.meta for the display-only
+  // fields that never live on an entry (page / type / bookGuess). Created
+  // entries bucket three ways: booked (under their book), bookless-journal (a
+  // private journal note -> the "kept private" group), and bookless-other
+  // (marginalia/question, no book -> the Inbox needbar). At import there are no
+  // journal notes; they arise only from the per-note flip below.
   function renderReceipt(panel) {
     panel.innerHTML = '';
     panel.appendChild(closeBtn(done));
@@ -507,24 +510,34 @@
     var groups = [];
     var gIndex = {};
     var inbox = [];
+    var journals = [];
     var i, e, bid;
     for (i = 0; i < ids.length; i = i + 1) {
       e = state.notebookEntries ? state.notebookEntries[ids[i]] : null;
       if (!e) { continue; }
       bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
-      if (!bid) { inbox.push(e); continue; }
+      if (!bid) {
+        if (e.register === 'journal') { journals.push(e); } else { inbox.push(e); }
+        continue;
+      }
       if (!Object.prototype.hasOwnProperty.call(gIndex, bid)) {
         var book = state.books ? state.books[bid] : null;
         gIndex[bid] = groups.length;
         groups.push({
           title:  (book && typeof book.title === 'string' && book.title) ? book.title : 'Untitled',
           author: (book && typeof book.author === 'string') ? book.author : '',
+          journal: false,
           entries: []
         });
       }
       groups[gIndex[bid]].entries.push(e);
     }
-    var bookedCount = ids.length - inbox.length;
+    // savedCount is the TRUE total of this import's rendered entries (booked +
+    // inbox + journal), counted from live entries -- so the headline number
+    // equals the stored count and reconciles with the Inbox needbar below.
+    var bookedCount = 0;
+    for (i = 0; i < groups.length; i = i + 1) { bookedCount = bookedCount + groups[i].entries.length; }
+    var savedCount = bookedCount + inbox.length + journals.length;
 
     // head: seal + "Filed" + count
     var head = el('div', 'ic-r-head');
@@ -535,41 +548,53 @@
     hb.appendChild(el('div', 'ic-eyebrow', 'Filed'));
     var titleTxt;
     if (groups.length > 0) {
-      titleTxt = bookedCount + (bookedCount === 1 ? ' note, ' : ' notes, ')
+      titleTxt = savedCount + (savedCount === 1 ? ' note, ' : ' notes, ')
         + groups.length + (groups.length === 1 ? ' book' : ' books');
     } else {
-      titleTxt = ids.length + (ids.length === 1 ? ' note saved' : ' notes saved');
+      titleTxt = savedCount + (savedCount === 1 ? ' note saved' : ' notes saved');
     }
     hb.appendChild(el('h2', 'ic-h1', titleTxt));
     head.appendChild(hb);
     panel.appendChild(head);
 
-    // Honest default-visibility copy. Replaces the Stage-2 "kept private" line,
-    // which is false now that own-notes file as PUBLIC marginalia. (3b-2 adds
-    // the per-note flip-to-private hint once that control is wired.)
-    var subTxt = 'Quotes and your notes are filed as marginalia Yumi can read. '
-      + 'Nothing added that you didn’t write.';
+    // Honest default-visibility copy + the flip-to-private hint (the control
+    // lives in each note's ··· detail). Replaces the false Stage-2 "kept
+    // private" line -- own-notes file as PUBLIC marginalia by default now.
+    var subTxt = 'Quotes and your notes are filed as marginalia Yumi can read — '
+      + 'open any note’s ··· to make it private. Nothing added that you didn’t write.';
     if (lastImport && lastImport.skipped) {
+      // skipped counts BOTH already-in-notebook and in-batch duplicates, so
+      // "duplicate" is the honest word -- not "already in your notebook".
       subTxt = subTxt + ' ' + lastImport.skipped
-        + (lastImport.skipped === 1 ? ' was already in your notebook.' : ' were already in your notebook.');
+        + (lastImport.skipped === 1 ? ' duplicate was skipped.' : ' duplicates were skipped.');
     }
     panel.appendChild(el('p', 'ic-sub', subTxt));
 
-    // book-grouped list
-    if (groups.length) {
+    // book-grouped list (+ a "kept private" group for any flipped journal notes)
+    if (groups.length || journals.length) {
       var list = el('div', 'ic-books');
       for (i = 0; i < groups.length; i = i + 1) {
-        list.appendChild(buildBookRow(groups[i], metaOf));
+        list.appendChild(buildBookRow(panel, groups[i], metaOf));
+      }
+      if (journals.length) {
+        list.appendChild(buildBookRow(panel, {
+          title: 'Kept private', author: 'journal — only you', journal: true, entries: journals
+        }, metaOf));
       }
       panel.appendChild(list);
     }
 
-    // Inbox needbar (display). Its click -> queue is wired in 3b-2.
-    panel.appendChild(buildNeedBar(inbox.length));
+    // Inbox needbar: bookless, non-journal entries. Click -> the queue.
+    var needbar = buildNeedBar(inbox.length);
+    if (inbox.length > 0) {
+      needbar.addEventListener('click', function () { openQueue(panel); });
+    }
+    panel.appendChild(needbar);
 
-    // foot: Undo import (wired in 3b-2) + Done
+    // foot: Undo import (deletes this import's entries) + Done
     var foot = el('div', 'ic-r-foot');
     var undo = el('button', 'ic-linkbtn', '↩ Undo import'); undo.type = 'button';
+    undo.addEventListener('click', function () { undoImport(panel); });
     var doneBtn = el('button', 'ic-cta', 'Done'); doneBtn.type = 'button';
     doneBtn.addEventListener('click', done);
     foot.appendChild(undo);
@@ -577,10 +602,12 @@
     panel.appendChild(foot);
   }
 
-  // One book row: a clickable header (chevron + title + author + count) over a
-  // hidden notes list that the header toggles open.
-  function buildBookRow(group, metaOf) {
-    var row = el('div', 'ic-brow');
+  // One group row: a clickable header (chevron + title + author + count) over a
+  // hidden notes list the header toggles open. Used for books and for the
+  // "kept private" journal group (group.journal -> a muted label).
+  function buildBookRow(panel, group, metaOf) {
+    var base = group.journal ? 'ic-brow ic-brow-journal' : 'ic-brow';
+    var row = el('div', base);
     var main = el('div', 'ic-brow-main');
     var chev = el('span', 'ic-chev');
     chev.innerHTML = CHEV_SVG; // static
@@ -589,22 +616,22 @@
     if (group.author) { main.appendChild(el('span', 'ic-au', group.author)); }
     main.appendChild(el('span', 'ic-n', String(group.entries.length)));
     main.addEventListener('click', function () {
-      row.className = (row.className.indexOf('ic-open') > -1) ? 'ic-brow' : 'ic-brow ic-open';
+      row.className = (row.className.indexOf('ic-open') > -1) ? base : (base + ' ic-open');
     });
     row.appendChild(main);
     var notes = el('div', 'ic-notes');
     var j;
     for (j = 0; j < group.entries.length; j = j + 1) {
-      notes.appendChild(buildNoteRow(group.entries[j], metaOf));
+      notes.appendChild(buildNoteRow(panel, group.entries[j], metaOf));
     }
     row.appendChild(notes);
     return row;
   }
 
   // One note row: the text (quote-styled if it was a quote) + a ··· toggle to a
-  // read-only mono detail line (register / visibility / kind / page). User text
-  // reaches the DOM only via textContent (el / createTextNode) -- no injection.
-  function buildNoteRow(entry, metaOf) {
+  // mono detail line (register / visibility / kind / page) AND the register-flip
+  // control. User text reaches the DOM only via textContent -- no injection.
+  function buildNoteRow(panel, entry, metaOf) {
     var m = metaOf[entry.id] || {};
     var isQuote = (m.type === 'quote');
     var nrow = el('div', 'ic-nrow');
@@ -615,12 +642,15 @@
     var bar = el('div', 'ic-nrow-bar');
     var dots = el('button', 'ic-dots', '···'); dots.type = 'button';
     var detail = el('div', 'ic-detail');
-    detail.appendChild(el('span', entry.isPrivate ? 'ic-pv' : 'ic-v', entry.register));
-    detail.appendChild(document.createTextNode(
+    var line = el('div', 'ic-detail-line');
+    line.appendChild(el('span', entry.isPrivate ? 'ic-pv' : 'ic-v', entry.register));
+    line.appendChild(document.createTextNode(
       ' · ' + (entry.isPrivate ? 'private' : 'Yumi sees')
       + (m.type ? (' · ' + m.type) : '')
       + (m.page ? (' · p.' + m.page) : '')
     ));
+    detail.appendChild(line);
+    detail.appendChild(buildFlip(panel, entry));
     dots.addEventListener('click', function () {
       detail.className = (detail.className.indexOf('ic-show') > -1) ? 'ic-detail' : 'ic-detail ic-show';
     });
@@ -628,6 +658,28 @@
     nrow.appendChild(bar);
     nrow.appendChild(detail);
     return nrow;
+  }
+
+  // The register-flip control inside a note's detail: three pills (marginalia /
+  // journal / question), the current one marked + inert. Flipping mutates ONLY
+  // this entry (it is in createdIds) -- see flipRegister.
+  function buildFlip(panel, entry) {
+    var flip = el('div', 'ic-flip');
+    flip.appendChild(el('span', 'ic-flip-label', 'file as'));
+    var regs = ['marginalia', 'journal', 'question'];
+    var fi;
+    for (fi = 0; fi < regs.length; fi = fi + 1) {
+      (function (r) {
+        var on = (entry.register === r);
+        var pill = el('button', on ? 'ic-flip-pill ic-on' : 'ic-flip-pill', r);
+        pill.type = 'button';
+        if (!on) {
+          pill.addEventListener('click', function () { flipRegister(panel, entry.id, r); });
+        }
+        flip.appendChild(pill);
+      })(regs[fi]);
+    }
+    return flip;
   }
 
   // The Inbox needbar: a count + an honest "sitting in your Inbox" line when
@@ -651,6 +703,177 @@
     bar.appendChild(txt);
     if (count > 0) { bar.appendChild(el('span', 'ic-need-arrow', '→')); }
     return bar;
+  }
+
+  // =====================================================================
+  // Stage 3b-2: interactive mutate / delete layer (queue + flip + undo).
+  // EVERY path here may read-modify-write or delete ONLY an entry whose id is
+  // in THIS import's createdIds. ownsEntry is the single guard; each mutator
+  // calls it first. One markNotebookDirty + saveState + render per action.
+  // =====================================================================
+  function ownsEntry(id) {
+    var ids = (lastImport && lastImport.createdIds) ? lastImport.createdIds : [];
+    var i;
+    for (i = 0; i < ids.length; i = i + 1) { if (ids[i] === id) { return true; } }
+    return false;
+  }
+
+  // Loose book candidates for an unmatched note: library books whose normalized
+  // title overlaps the guess (containment, or a shared word of >=4 chars).
+  // Capped at 4. Empty guess or no overlap -> [] (Inbox only). No network.
+  function candidateBooks(guess) {
+    var out = [];
+    var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !user.uid) { return out; }
+    var ids = (state.userBooks && state.userBooks[user.uid] && state.userBooks[user.uid].bookIds)
+      ? state.userBooks[user.uid].bookIds : null;
+    if (!ids || !ids.length) { return out; }
+    var g = normTitle(guess || '');
+    var gtok = g ? g.split(' ') : [];
+    var i, j;
+    for (i = 0; i < ids.length && out.length < 4; i = i + 1) {
+      var bid = ids[i];
+      var book = state.books ? state.books[bid] : null;
+      if (!book || typeof book.title !== 'string') { continue; }
+      var t = normTitle(book.title);
+      if (t === '') { continue; }
+      var hit = false;
+      if (g && (t.indexOf(g) !== -1 || g.indexOf(t) !== -1)) { hit = true; }
+      else {
+        for (j = 0; j < gtok.length; j = j + 1) {
+          if (gtok[j].length >= 4 && (' ' + t + ' ').indexOf(' ' + gtok[j] + ' ') !== -1) { hit = true; break; }
+        }
+      }
+      if (hit) { out.push({ bid: bid, title: book.title, author: (typeof book.author === 'string') ? book.author : '' }); }
+    }
+    return out;
+  }
+
+  // Flip a note's register. -> journal: detach from the book (bookIds:[]) and
+  // filed:true (journal routes by register, matching captureNote); -> marginalia
+  // / question: keep bookIds as-is (NO auto-restore), and filed then tracks
+  // whether a book remains. isPrivate always follows the new register's default.
+  function flipRegister(panel, entryId, newRegister) {
+    if (!ownsEntry(entryId)) { return; }
+    if (newRegister !== 'marginalia' && newRegister !== 'journal' && newRegister !== 'question') { return; }
+    var e = state.notebookEntries ? state.notebookEntries[entryId] : null;
+    if (!e) { return; }
+    e.register = newRegister;
+    if (newRegister === 'journal') {
+      e.bookIds = [];
+      e.filed = true;
+    } else {
+      e.filed = (e.bookIds && e.bookIds.length) ? true : false;
+    }
+    e.isPrivate = getRegisterDefault(newRegister);
+    e.updatedAt = Date.now();
+    markNotebookDirty();
+    saveState();
+    renderReceipt(panel);
+  }
+
+  // Re-file an Inbox note to a book IN PLACE (register unchanged). Re-renders
+  // the queue; the note drops out (it now has a book) and an empty queue
+  // returns to the receipt.
+  function fileToBook(panel, dismissed, entryId, bid) {
+    if (!ownsEntry(entryId) || !bid) { return; }
+    var e = state.notebookEntries ? state.notebookEntries[entryId] : null;
+    if (!e) { return; }
+    e.bookIds = [bid];
+    e.filed = true;
+    e.updatedAt = Date.now();
+    markNotebookDirty();
+    saveState();
+    renderQueue(panel, dismissed);
+  }
+
+  // Leave a note in the Inbox: a no-op on the entry (already filed:false); just
+  // dismiss its card from THIS queue pass so the reader can finish the rest.
+  function leaveInInbox(panel, dismissed, entryId) {
+    dismissed[entryId] = true;
+    renderQueue(panel, dismissed);
+  }
+
+  // Open a fresh queue pass over the current Inbox notes.
+  function openQueue(panel) {
+    renderQueue(panel, {});
+  }
+
+  // Render the exception queue: a card per Inbox note (createdIds, no book, not
+  // journal, not dismissed this pass). Empty -> back to the receipt.
+  function renderQueue(panel, dismissed) {
+    var ids = (lastImport && lastImport.createdIds) ? lastImport.createdIds : [];
+    var metaOf = (lastImport && lastImport.meta) ? lastImport.meta : {};
+    var pending = [];
+    var i, e, bid;
+    for (i = 0; i < ids.length; i = i + 1) {
+      e = state.notebookEntries ? state.notebookEntries[ids[i]] : null;
+      if (!e) { continue; }
+      bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
+      if (bid) { continue; }
+      if (e.register === 'journal') { continue; }
+      if (dismissed[e.id]) { continue; }
+      pending.push(e);
+    }
+    if (!pending.length) { renderReceipt(panel); return; }
+
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(done));
+    panel.appendChild(el('div', 'ic-eyebrow', 'Needs a moment'));
+    panel.appendChild(el('h2', 'ic-h1',
+      (pending.length === 1) ? 'One I wasn’t sure about' : (pending.length + ' I wasn’t sure about')));
+    var ywrap = el('div', 'ic-q-yumi');
+    ywrap.appendChild(el('span', 'ic-q-yorb', 'Y'));
+    ywrap.appendChild(el('p', 'ic-q-ytxt',
+      'I’d rather ask than guess wrong. Which book is each from?'));
+    panel.appendChild(ywrap);
+    for (i = 0; i < pending.length; i = i + 1) {
+      panel.appendChild(buildQueueCard(panel, dismissed, pending[i], metaOf));
+    }
+    panel.appendChild(el('div', 'ic-qprog', pending.length + ' left'));
+  }
+
+  // One queue card: the note + Yumi's guess as one-tap chips + "Leave in Inbox".
+  function buildQueueCard(panel, dismissed, entry, metaOf) {
+    var m = metaOf[entry.id] || {};
+    var isQuote = (m.type === 'quote');
+    var card = el('div', 'ic-qcard');
+    card.appendChild(el('div', isQuote ? 'ic-qtext ic-q' : 'ic-qtext',
+      isQuote ? ('“' + entry.body + '”') : entry.body));
+    card.appendChild(el('div', 'ic-qask', 'Which book?'));
+    var chips = el('div', 'ic-guesses');
+    var cands = candidateBooks(m.bookGuess);
+    var i;
+    for (i = 0; i < cands.length; i = i + 1) {
+      (function (c) {
+        var chip = el('button', 'ic-guess'); chip.type = 'button';
+        chip.appendChild(document.createTextNode(c.title));
+        if (c.author) { chip.appendChild(el('span', 'ic-guess-au', c.author)); }
+        chip.addEventListener('click', function () { fileToBook(panel, dismissed, entry.id, c.bid); });
+        chips.appendChild(chip);
+      })(cands[i]);
+    }
+    var leave = el('button', 'ic-guess ic-alt', 'Leave in Inbox'); leave.type = 'button';
+    leave.addEventListener('click', function () { leaveInInbox(panel, dismissed, entry.id); });
+    chips.appendChild(leave);
+    card.appendChild(chips);
+    return card;
+  }
+
+  // Undo the whole import: delete exactly this import's entries (each is in
+  // createdIds, arcIds:[] so deleteEntry's arc-cascade is a no-op), persist
+  // once, close, and repaint the notebook to its pre-import state.
+  function undoImport(panel) {
+    var ids = (lastImport && lastImport.createdIds) ? lastImport.createdIds : [];
+    var removed = 0;
+    var i;
+    for (i = 0; i < ids.length; i = i + 1) {
+      if (typeof deleteEntry === 'function' && deleteEntry(ids[i])) { removed = removed + 1; }
+    }
+    if (removed) { saveState(); }
+    lastImport = null;
+    close();
+    renderNotebookIfMounted();
   }
 
   function renderError(panel, msg) {
