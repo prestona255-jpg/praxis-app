@@ -319,14 +319,24 @@
   // =====================================================================
 
   var OVERLAY_ID = 'ic-overlay';
-  // Holds the most recent import for the Stage-3 receipt + undo:
-  //   { createdIds:[entryId], items:[{id,body,register,isPrivate,bookId,page}],
+  // Holds the most recent import for the receipt + undo. createdIds is the
+  // stable list of THIS import's entry ids (undo consumes it, and it is the
+  // ONLY set the queue / flip / undo may touch). meta is a display-only
+  // side-map keyed by entry id carrying page / type / bookGuess / confidence
+  // -- none of which live on the entry. Everything the receipt also shows
+  // (body, register, visibility, book) is read LIVE from state.notebookEntries
+  // so a re-file / flip / undo re-render reflects the real entry, not a stale
+  // snapshot.
+  //   { createdIds:[id], meta:{ id:{page,type,bookGuess,confidence} },
   //     total:Number, skipped:Number }
   var lastImport = null;
 
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
     + 'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
     + '<polyline points="20 6 9 17 4 12"></polyline></svg>';
+  var CHEV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    + 'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<polyline points="9 18 15 12 9 6"></polyline></svg>';
 
   // Tiny DOM helper (createElement + className + text). Keeps the builders terse
   // without any innerHTML of user text (so a pasted note can never inject).
@@ -446,68 +456,201 @@
         });
       }
       var createdIds = commitEntries(items);
-      var models = [];
-      for (i = 0; i < createdIds.length; i = i + 1) {
-        var e = state.notebookEntries[createdIds[i]];
-        if (e) {
-          models.push({
-            id: e.id, body: e.body, register: e.register, isPrivate: e.isPrivate,
-            bookId: (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null, page: null
-          });
+      // Index the inputs by the SAME (body|bookId) key + book resolution
+      // commitEntries uses, so each created entry maps back to its source
+      // segment's display-only data (page / type / guess / confidence -- none
+      // of which live on the entry). First occurrence wins, mirroring dedupe.
+      var idx = {};
+      for (i = 0; i < items.length; i = i + 1) {
+        var it = items[i];
+        var ibid = it.bookId ? it.bookId : (it.bookGuess ? matchBook(it.bookGuess) : null);
+        var ikey = bodyKey(it.text, ibid ? ibid : '');
+        if (!Object.prototype.hasOwnProperty.call(idx, ikey)) {
+          idx[ikey] = { page: it.page, type: it.type, bookGuess: it.bookGuess, confidence: it.confidence };
         }
       }
+      var meta = {};
+      for (i = 0; i < createdIds.length; i = i + 1) {
+        var e = state.notebookEntries[createdIds[i]];
+        if (!e) { continue; }
+        var ekey = bodyKey(e.body, (e.bookIds && e.bookIds.length) ? e.bookIds[0] : '');
+        var m = idx[ekey] || {};
+        meta[e.id] = {
+          page:       (m.page ? m.page : null),
+          type:       (m.type ? m.type : 'note'),
+          bookGuess:  (m.bookGuess ? m.bookGuess : null),
+          confidence: (m.confidence ? m.confidence : 'low')
+        };
+      }
       lastImport = {
-        createdIds: createdIds, items: models,
+        createdIds: createdIds, meta: meta,
         total: segs.length, skipped: segs.length - createdIds.length
       };
-      renderConfirm(panel);
+      renderReceipt(panel);
     }, function (err) {
       if (window.console && console.warn) { console.warn('import: ' + (err && err.message ? err.message : err)); }
       renderError(panel, 'Yumi couldn’t read those notes. Please try again.');
     });
   }
 
-  // ---- confirmation (Stage 2 minimal; Stage 3 replaces with receipt) --
-  function renderConfirm(panel) {
+  // ---- receipt: book-grouped, progressively disclosed (Stage 3b-1) -----
+  // Display only. Reads LIVE entries from state.notebookEntries (so a 3b-2
+  // re-file / flip / undo re-render shows the real entry) plus lastImport.meta
+  // for the display-only fields that never live on an entry (page / type).
+  // Created entries with no book (filed:false) feed the Inbox needbar.
+  function renderReceipt(panel) {
     panel.innerHTML = '';
-    var n = lastImport ? lastImport.createdIds.length : 0;
-    var books = {};
-    var bc = 0;
-    var i;
-    if (lastImport) {
-      for (i = 0; i < lastImport.items.length; i = i + 1) {
-        var bid = lastImport.items[i].bookId;
-        if (bid && !Object.prototype.hasOwnProperty.call(books, bid)) {
-          books[bid] = true; bc = bc + 1;
-        }
-      }
-    }
     panel.appendChild(closeBtn(done));
+
+    var ids = (lastImport && lastImport.createdIds) ? lastImport.createdIds : [];
+    var metaOf = (lastImport && lastImport.meta) ? lastImport.meta : {};
+    var groups = [];
+    var gIndex = {};
+    var inbox = [];
+    var i, e, bid;
+    for (i = 0; i < ids.length; i = i + 1) {
+      e = state.notebookEntries ? state.notebookEntries[ids[i]] : null;
+      if (!e) { continue; }
+      bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
+      if (!bid) { inbox.push(e); continue; }
+      if (!Object.prototype.hasOwnProperty.call(gIndex, bid)) {
+        var book = state.books ? state.books[bid] : null;
+        gIndex[bid] = groups.length;
+        groups.push({
+          title:  (book && typeof book.title === 'string' && book.title) ? book.title : 'Untitled',
+          author: (book && typeof book.author === 'string') ? book.author : '',
+          entries: []
+        });
+      }
+      groups[gIndex[bid]].entries.push(e);
+    }
+    var bookedCount = ids.length - inbox.length;
+
+    // head: seal + "Filed" + count
     var head = el('div', 'ic-r-head');
     var seal = el('span', 'ic-seal');
     seal.innerHTML = CHECK_SVG; // static markup only -- never user text
     head.appendChild(seal);
     var hb = el('div');
     hb.appendChild(el('div', 'ic-eyebrow', 'Filed'));
-    var titleTxt = n + (n === 1 ? ' note' : ' notes');
-    if (bc) { titleTxt = titleTxt + ', ' + bc + (bc === 1 ? ' book' : ' books'); }
+    var titleTxt;
+    if (groups.length > 0) {
+      titleTxt = bookedCount + (bookedCount === 1 ? ' note, ' : ' notes, ')
+        + groups.length + (groups.length === 1 ? ' book' : ' books');
+    } else {
+      titleTxt = ids.length + (ids.length === 1 ? ' note saved' : ' notes saved');
+    }
     hb.appendChild(el('h2', 'ic-h1', titleTxt));
     head.appendChild(hb);
     panel.appendChild(head);
 
-    var subTxt = 'All sorted to your shelf — quotes as marginalia, your own notes '
-      + 'kept private. Nothing added that you didn’t write.';
+    // Honest default-visibility copy. Replaces the Stage-2 "kept private" line,
+    // which is false now that own-notes file as PUBLIC marginalia. (3b-2 adds
+    // the per-note flip-to-private hint once that control is wired.)
+    var subTxt = 'Quotes and your notes are filed as marginalia Yumi can read. '
+      + 'Nothing added that you didn’t write.';
     if (lastImport && lastImport.skipped) {
       subTxt = subTxt + ' ' + lastImport.skipped
         + (lastImport.skipped === 1 ? ' was already in your notebook.' : ' were already in your notebook.');
     }
     panel.appendChild(el('p', 'ic-sub', subTxt));
 
+    // book-grouped list
+    if (groups.length) {
+      var list = el('div', 'ic-books');
+      for (i = 0; i < groups.length; i = i + 1) {
+        list.appendChild(buildBookRow(groups[i], metaOf));
+      }
+      panel.appendChild(list);
+    }
+
+    // Inbox needbar (display). Its click -> queue is wired in 3b-2.
+    panel.appendChild(buildNeedBar(inbox.length));
+
+    // foot: Undo import (wired in 3b-2) + Done
     var foot = el('div', 'ic-r-foot');
+    var undo = el('button', 'ic-linkbtn', '↩ Undo import'); undo.type = 'button';
     var doneBtn = el('button', 'ic-cta', 'Done'); doneBtn.type = 'button';
     doneBtn.addEventListener('click', done);
+    foot.appendChild(undo);
     foot.appendChild(doneBtn);
     panel.appendChild(foot);
+  }
+
+  // One book row: a clickable header (chevron + title + author + count) over a
+  // hidden notes list that the header toggles open.
+  function buildBookRow(group, metaOf) {
+    var row = el('div', 'ic-brow');
+    var main = el('div', 'ic-brow-main');
+    var chev = el('span', 'ic-chev');
+    chev.innerHTML = CHEV_SVG; // static
+    main.appendChild(chev);
+    main.appendChild(el('span', 'ic-bk', group.title));
+    if (group.author) { main.appendChild(el('span', 'ic-au', group.author)); }
+    main.appendChild(el('span', 'ic-n', String(group.entries.length)));
+    main.addEventListener('click', function () {
+      row.className = (row.className.indexOf('ic-open') > -1) ? 'ic-brow' : 'ic-brow ic-open';
+    });
+    row.appendChild(main);
+    var notes = el('div', 'ic-notes');
+    var j;
+    for (j = 0; j < group.entries.length; j = j + 1) {
+      notes.appendChild(buildNoteRow(group.entries[j], metaOf));
+    }
+    row.appendChild(notes);
+    return row;
+  }
+
+  // One note row: the text (quote-styled if it was a quote) + a ··· toggle to a
+  // read-only mono detail line (register / visibility / kind / page). User text
+  // reaches the DOM only via textContent (el / createTextNode) -- no injection.
+  function buildNoteRow(entry, metaOf) {
+    var m = metaOf[entry.id] || {};
+    var isQuote = (m.type === 'quote');
+    var nrow = el('div', 'ic-nrow');
+    nrow.appendChild(el(
+      'div', isQuote ? 'ic-ntext ic-q' : 'ic-ntext',
+      isQuote ? ('“' + entry.body + '”') : entry.body
+    ));
+    var bar = el('div', 'ic-nrow-bar');
+    var dots = el('button', 'ic-dots', '···'); dots.type = 'button';
+    var detail = el('div', 'ic-detail');
+    detail.appendChild(el('span', entry.isPrivate ? 'ic-pv' : 'ic-v', entry.register));
+    detail.appendChild(document.createTextNode(
+      ' · ' + (entry.isPrivate ? 'private' : 'Yumi sees')
+      + (m.type ? (' · ' + m.type) : '')
+      + (m.page ? (' · p.' + m.page) : '')
+    ));
+    dots.addEventListener('click', function () {
+      detail.className = (detail.className.indexOf('ic-show') > -1) ? 'ic-detail' : 'ic-detail ic-show';
+    });
+    bar.appendChild(dots);
+    nrow.appendChild(bar);
+    nrow.appendChild(detail);
+    return nrow;
+  }
+
+  // The Inbox needbar: a count + an honest "sitting in your Inbox" line when
+  // some notes are unmatched, or a calm "all filed" state when none are.
+  function buildNeedBar(count) {
+    var bar = el('div', count > 0 ? 'ic-needbar' : 'ic-needbar ic-clear');
+    var ico = el('span', 'ic-need-ico');
+    if (count > 0) { ico.textContent = String(count); }
+    else { ico.innerHTML = CHECK_SVG; } // static
+    bar.appendChild(ico);
+    var txt = el('span', 'ic-need-txt');
+    if (count > 0) {
+      txt.appendChild(document.createTextNode(
+        count + (count === 1 ? ' note ' : ' notes ') + 'sitting in your Inbox'));
+      txt.appendChild(el('span', 'ic-lo',
+        'Yumi wasn’t sure which book — tap to sort, or leave them in your Inbox.'));
+    } else {
+      txt.appendChild(document.createTextNode('All filed'));
+      txt.appendChild(el('span', 'ic-lo', 'Every note landed in its book.'));
+    }
+    bar.appendChild(txt);
+    if (count > 0) { bar.appendChild(el('span', 'ic-need-arrow', '→')); }
+    return bar;
   }
 
   function renderError(panel, msg) {
