@@ -7956,6 +7956,68 @@
   .account .portrait-named { transition: none !important; }
 }
 
+/* =====================================================================
+   PORTRAIT -- Reading JOURNEY (Stage 4). Ported from the v6 mockup (.journey /
+   .season), var-remapped to Umber dark tokens, .account-scoped + portrait-
+   prefixed. The timeline-node ::before ring uses --ground (the dark page behind
+   the translucent card) in place of the mockup's --bg-mid. No streaks. */
+.account .portrait-journey {
+  padding: 24px 26px;
+}
+.account .portrait-journey-help {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  font-style: italic;
+  font-family: var(--font-serif);
+  margin-bottom: 18px;
+}
+.account .portrait-season {
+  position: relative;
+  padding: 0 0 26px 28px;
+  border-left: 1px solid var(--border);
+}
+.account .portrait-season:last-child {
+  border-left-color: transparent;
+  padding-bottom: 6px;
+}
+.account .portrait-season::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 4px var(--ground);
+}
+.account .portrait-season .when {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.account .portrait-season .said {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin-top: 7px;
+}
+.account .portrait-season .said em {
+  font-style: italic;
+  color: var(--ink);
+}
+.account .portrait-season.open-end::before {
+  background: transparent;
+  border: 1px dashed var(--gold);
+}
+.account .portrait-season.open-end .said {
+  color: var(--gold);
+  font-style: italic;
+}
+
 /* Covenant line in the "your data" card. */
 .account-covenant {
   margin: 8px 0 0 0;

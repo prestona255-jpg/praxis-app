@@ -12900,6 +12900,86 @@ function _portraitReturnsData(uid) {
   return out;
 }
 
+// =====================================================================
+// PORTRAIT -- Reading JOURNEY (Stage 4). A narrated timeline of the reader's
+// becoming, in Yumi's voice, derived from REAL timestamps (book addedAt, entry
+// createdAt, lens + sub-theory createdAt). NO streaks / rings / completion -- a
+// goal is a predetermined outcome; the instrument refuses it. Milestones are
+// auto-derived factual events, narrated plainly, ending on an OPEN question.
+// Read-only. (new Date is fine in client JS -- the sandbox ban is for workflow
+// scripts only; the codebase uses Date.now()/new Date throughout.)
+// =====================================================================
+
+function _portraitJourneyMonth(ts) {
+  if (typeof ts !== 'number' || ts <= 0) { return ''; }
+  var MO = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+  var d = new Date(ts);
+  return MO[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function _portraitJourneyData(uid) {
+  var out = [];
+  if (!uid) { return out; }
+  var i, k;
+  var bookIds = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var firstBook = null, firstBookTs = Infinity;
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    var bk = state.books ? state.books[bookIds[i]] : null;
+    if (!bk) { continue; }
+    var bts = (typeof bk.addedAt === 'number') ? bk.addedAt : 0;
+    if (bts > 0 && bts < firstBookTs) { firstBookTs = bts; firstBook = bk; }
+  }
+  if (firstBook) {
+    var byAuthor = (firstBook.author) ? ' by ' + _portraitEsc(firstBook.author) : '';
+    out.push({ ts: firstBookTs, when: _portraitJourneyMonth(firstBookTs),
+      said: 'You opened with <em>' + _portraitEsc(firstBook.title || 'a book') + '</em>' + byAuthor + ' — where this began.' });
+  }
+  var firstEntryTs = Infinity, lastEntryTs = 0, entryCount = 0;
+  for (k in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(k)) { continue; }
+    var en = state.notebookEntries[k];
+    if (!en || en.userId !== uid) { continue; }
+    var ets = (typeof en.createdAt === 'number') ? en.createdAt : 0;
+    if (ets > 0) { entryCount = entryCount + 1; if (ets < firstEntryTs) { firstEntryTs = ets; } if (ets > lastEntryTs) { lastEntryTs = ets; } }
+  }
+  if (entryCount > 0 && firstEntryTs < Infinity) {
+    out.push({ ts: firstEntryTs, when: _portraitJourneyMonth(firstEntryTs),
+      said: 'Your first margins appeared — the reading started answering back.' });
+  }
+  var firstLens = null, firstLensTs = Infinity;
+  for (k in state.userThemes) {
+    if (!state.userThemes.hasOwnProperty(k)) { continue; }
+    var th = state.userThemes[k];
+    if (!th || th.userId !== uid) { continue; }
+    var lts = (typeof th.createdAt === 'number') ? th.createdAt : 0;
+    if (lts > 0 && lts < firstLensTs) { firstLensTs = lts; firstLens = th; }
+  }
+  if (firstLens) {
+    out.push({ ts: firstLensTs, when: _portraitJourneyMonth(firstLensTs),
+      said: 'You named your first lens — <em>' + _portraitEsc(firstLens.name || 'a lens') + '</em>.' });
+  }
+  var firstSub = null, firstSubTs = Infinity;
+  for (k in state.subTheories) {
+    if (!state.subTheories.hasOwnProperty(k)) { continue; }
+    var st = state.subTheories[k];
+    if (!st || st.userId !== uid) { continue; }
+    var sts = (typeof st.createdAt === 'number') ? st.createdAt : 0;
+    if (sts > 0 && sts < firstSubTs) { firstSubTs = sts; firstSub = st; }
+  }
+  if (firstSub) {
+    out.push({ ts: firstSubTs, when: _portraitJourneyMonth(firstSubTs),
+      said: 'You built <em>' + _portraitEsc(firstSub.header || 'a sub-theory') + '</em> into a sub-theory — reading becoming theory.' });
+  }
+  if (lastEntryTs > 0 && lastEntryTs !== firstEntryTs) {
+    out.push({ ts: lastEntryTs, when: _portraitJourneyMonth(lastEntryTs),
+      said: 'Lately, the margins have kept gathering — the freshest pull on the shelf.' });
+  }
+  out.sort(function (a, b) { return a.ts - b.ts; });
+  return out;
+}
+
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -13642,6 +13722,33 @@ function renderAccountPage() {
     portraitSetAxis(tgt.getAttribute('data-axis'));
   });
   portraitSetAxis('categories');
+
+  // ===== JOURNEY (Portrait Stage 4) -- after returns/threads, before the
+  // transparency + "Your data" cluster (which stays LAST). Read-only;
+  // milestones from real timestamps, narrated in Yumi's voice; no streaks,
+  // ending on an open question. =====
+  var journeySec = document.createElement('div');
+  journeySec.className = 'sec account-portrait-sec';
+  var journeyEyebrow = document.createElement('div');
+  journeyEyebrow.className = 'eyebrow account-values-eyebrow';
+  journeyEyebrow.textContent = 'How your reading has moved';
+  journeySec.appendChild(journeyEyebrow);
+  var journeyCard = document.createElement('div');
+  journeyCard.className = 'account-card portrait-journey';
+  var jdata = _portraitJourneyData(uid);
+  var jhtml = '<div class="portrait-journey-help">No streaks, no finish line — just the shape of the change.</div>';
+  if (jdata.length === 0) {
+    jhtml += '<div class="portrait-season"><div class="said">Your reading hasn’t left a trail yet — add a book, mark a margin, and the shape of the change starts here.</div></div>';
+  } else {
+    var ji;
+    for (ji = 0; ji < jdata.length; ji = ji + 1) {
+      jhtml += '<div class="portrait-season"><div class="when">' + _portraitEsc(jdata[ji].when) + '</div><div class="said">' + jdata[ji].said + '</div></div>';
+    }
+  }
+  jhtml += '<div class="portrait-season open-end"><div class="when">Now</div><div class="said">Where does it go next? That part isn’t written yet — it’s yours.</div></div>';
+  journeyCard.innerHTML = jhtml;
+  journeySec.appendChild(journeyCard);
+  wrap.appendChild(journeySec);
 
   // ----- STAGE 11: TRANSPARENCY ("what Praxis records / what Yumi sees") -----
   // Plain disclosure of what Praxis records (aggregate counts only, never
