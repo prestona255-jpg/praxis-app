@@ -97,7 +97,7 @@ The transcribing beat reuses the existing `.ic-proc` UI (no new beat CSS). Auto-
 | `js/import-capture.js` | 56,873 | 57,496 | **+623** |
 | `assets/components.css` | 338,474 | 339,010 | **+536** |
 
-(import-capture.js cumulative vs main = **+5,959** LF.)
+(import-capture.js cumulative vs main = **+5,959** LF at the Stage 2 commit; **+6,321** LF after the failure-path follow-up below.)
 
 ### Adversarial review — 3 independent lenses, **3/3 PASS, 0 findings**
 
@@ -110,6 +110,14 @@ The transcribing beat reuses the existing `.ic-proc` UI (no new beat CSS). Auto-
 - **UI smoke is Stage-3 live only** (no app run this session): tap-mic→record→transcribe→file; non-shelf book → inline `.ic-guess` confirm → resolve; undo→restored; iOS Safari (audio/mp4); permission-denied→textarea fallback; upload/paste no-regression; CSS-bleed sweep on Shelf/Arcs/Notebook (`components.css` is global — the `.ic-stop` rule is `ic-`-scoped, low bleed risk, but verify).
 - **Verification item #2 (`ELEVENLABS_API_KEY` STT scope)** still open for Preston (console).
 - **Stage 3:** rebase on main, bump `CACHE_VERSION` `v3.138`→`v3.139` in the same commit as shell changes + the new function, **HALT** for Preston's exact em-dash ship subject + "commit and push," then guarded ff-merge + full live smoke.
+
+### Stage 2 follow-up — transcribe-failure path (Preston gate, 4th Stage-2 change)
+
+Verified the FAILURE path the adversarial review didn't cover, and hardened it:
+
+- **Q2 (format forwarding) — PASS, no change.** The client passes the real recorded type (`rec.mimeType`, `import-capture.js:998` → `transcribeBlob`); the proxy forwards it verbatim as the upstream part's content-type + filename (`transcribe-proxy.js:96-103, 112` — `form.append('file', new Blob([buf], { type: mimeType }), filename)`). iOS Safari `audio/mp4` → `audio/mp4`/`audio.mp4`; Chrome `audio/webm;codecs=opus` as-is. No hardcoded format → no Safari 400.
+- **Q1 (graceful failure) — FIXED.** Previously a transcribe `'failed'` (non-200 / network / malformed-non-JSON) rendered `renderError` → "Try again" → back to the **mic only** — a persistent failure (key without STT scope, Scribe down) looped with no capture path. Now `'failed'` → `renderTypeNote` (the **textarea**) with an honest message ("Yumi couldn't transcribe that just now — type your note here, or close and tap the mic to try again."), so the recording is never a dead end. `denied`/`unsupported` already → textarea; the empty/no-speech case (`onResult('')` = 200 with empty transcript) stays as retry-the-mic (correct UX, not a failure). The textarea "Hand to Yumi" routes through the same unchanged `processDictation`.
+- Static gates on the fix: ES3 **0**; diffstat **6 ins / 2 del** (localized); `import-capture.js` **+362 B LF**; `VoiceInput` **0 code refs**; `CACHE_VERSION` untouched; main clean. No state/F5/key surface touched — only swaps which existing view function the failed branch calls.
 
 ### Stage 2 commit subject
 

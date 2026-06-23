@@ -1093,7 +1093,8 @@
   // gesture, iOS-safe) -> record -> tap-to-stop -> transcribe via the gated
   // proxy -> processDictation parses + commits. recordAndTranscribe yields a
   // STRING; this is the SOLE dictation transport (no VoiceInput). Errors fall
-  // back gracefully: denied/unsupported -> type-a-note; empty/failed -> retry.
+  // back gracefully: denied/unsupported/transcribe-failed -> type-a-note
+  // (textarea, never a dead end); empty/no-speech -> retry the mic.
   function startDictation(panel) {
     if (!canRecord()) { renderTypeNote(panel, null); return; }
     var ui = renderListening(panel);
@@ -1116,7 +1117,10 @@
         } else if (reason === 'unsupported') {
           renderTypeNote(panel, 'Voice isn’t available here — type the note instead.');
         } else {
-          renderError(panel, 'Yumi couldn’t hear that. Tap “Try again”.');
+          // transcribe transport failed (non-200 / network / malformed body):
+          // fall back to the textarea so the recording is never a dead end --
+          // the reader can capture the note now (or close + tap the mic again).
+          renderTypeNote(panel, 'Yumi couldn’t transcribe that just now — type your note here, or close and tap the mic to try again.');
         }
       }
     });
