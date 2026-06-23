@@ -7430,6 +7430,271 @@
   font-family: var(--font-serif);
 }
 
+/* =====================================================================
+   PORTRAIT -- Revealed self (Stage 2): shared toggle + FIELD + GALAXY.
+   Ported from the v6 mockup, var-remapped to Umber dark tokens (Option A),
+   every rule SCOPED under .account (anti-bleed). The mockup's generic
+   .field / .seg / .bloom names collide globally, so all portrait elements are
+   portrait- prefixed. Geometry/spacing ported 1:1 as px literals; JS-built
+   inline star/bloom colors use var() + color-mix (no hardcoded hex). */
+
+/* movement divider + shared toggle */
+.account .account-revealed {
+  margin-top: 42px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.account .account-portrait-sec {
+  margin-top: 30px;
+}
+.account .portrait-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.account .portrait-by {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.account .portrait-seg {
+  display: inline-flex;
+  background: color-mix(in srgb, var(--sunk-d) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+}
+.account .portrait-seg button {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 7px 17px;
+  border-radius: var(--radius-pill);
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color .18s, background .18s;
+}
+.account .portrait-seg button.on {
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--gold) 24%, transparent),
+    color-mix(in srgb, var(--gold) 8%, transparent));
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-on-dark) 6%, transparent);
+}
+
+/* FIELD */
+.account .portrait-field-wrap {
+  padding: 8px;
+  position: relative;
+}
+.account .portrait-field-help {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  padding: 2px 14px 12px;
+}
+.account .portrait-field {
+  position: relative;
+  width: 100%;
+  height: 330px;
+}
+.account .portrait-field-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.account .portrait-bloom {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(26px);
+  opacity: .32;
+  pointer-events: none;
+}
+.account .portrait-pole {
+  position: absolute;
+  transform: translate(-50%,-50%);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 6px var(--scrim);
+}
+.account .portrait-pole.dim {
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.account .portrait-tlabel {
+  position: absolute;
+  transform: translate(-50%,-50%);
+  cursor: pointer;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--sunk-d) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.account .portrait-tlabel:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+.account .portrait-treadout {
+  margin: 6px 12px 14px;
+}
+.account .portrait-tension-card {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  line-height: 1.42;
+  color: var(--ink);
+  padding: 16px 18px;
+  border-left: 2px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 6%, transparent);
+  border-radius: 0 12px 12px 0;
+}
+.account .portrait-tension-card .q {
+  font-style: italic;
+}
+.account .portrait-tension-card .sub {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--ink-4);
+  margin-top: 8px;
+}
+
+/* GALAXY */
+.account .portrait-galaxy-wrap {
+  padding: 18px 20px;
+}
+.account .portrait-galaxy-help {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  margin-bottom: 14px;
+}
+.account .portrait-galaxy-help b {
+  color: var(--gold);
+  font-weight: 500;
+}
+.account .portrait-galaxy {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: radial-gradient(ellipse 92% 82% at 50% 44%,
+    color-mix(in srgb, var(--surface-d) 40%, var(--sunk-d) 60%) 0%,
+    var(--sunk-d) 62%,
+    var(--scrim) 100%);
+  box-shadow: inset 0 0 60px var(--scrim);
+}
+.account .portrait-bonds {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.account .portrait-bonds path {
+  opacity: 0;
+  transition: opacity .3s;
+}
+.account .portrait-bonds path.show {
+  opacity: .75;
+}
+.account .portrait-galaxy .speck {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.account .portrait-star {
+  position: absolute;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: left 1.4s cubic-bezier(.22,.61,.36,1), top 1.4s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1), opacity .5s, box-shadow .25s, filter .25s;
+}
+.account .portrait-star .nm {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 5px;
+  white-space: nowrap;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  text-shadow: 0 1px 5px var(--scrim);
+  pointer-events: none;
+}
+.account .portrait-star .ct {
+  display: block;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: .06em;
+  color: var(--gold);
+  opacity: 0;
+  transition: opacity .2s;
+  text-align: center;
+  margin-top: 2px;
+}
+.account .portrait-galaxy.dim .portrait-star {
+  opacity: .22;
+  filter: saturate(.5);
+}
+.account .portrait-star.hi {
+  opacity: 1 !important;
+  filter: none !important;
+  z-index: 5;
+}
+.account .portrait-star.hi .ct {
+  opacity: .85;
+}
+.account .portrait-galaxy-readout {
+  min-height: 22px;
+  margin-top: 14px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--ink);
+  font-style: italic;
+}
+.account .portrait-galaxy-readout .where {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--gold);
+  letter-spacing: .04em;
+  margin-left: 8px;
+}
+
+/* empty states (sparse / no data) */
+.account .portrait-empty {
+  padding: 28px 20px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-4);
+  text-align: center;
+}
+
+/* reduced motion: stars settle to final positions, no drift (scoped). */
+@media (prefers-reduced-motion: reduce) {
+  .account .portrait-star { transition: none !important; }
+}
+
 /* Covenant line in the "your data" card. */
 .account-covenant {
   margin: 8px 0 0 0;

@@ -12367,6 +12367,434 @@ function buildReaderModelSection(uid) {
   return card;
 }
 
+// =====================================================================
+// PORTRAIT -- Revealed self (Stage 2): shared-axis data + FIELD + GALAXY.
+// Ported from praxis-portrait-mockup-v6-instrument.html. The "categories" axis
+// groups the reader's books by the EXISTING genre/tradition taxonomy (the field
+// a future Categories build will replace -- wired as the placeholder here, NOT
+// swapped); the "lenses" axis groups by userThemes membership. DECOUPLE honored:
+// stars encode SIZE (#books) + BRIGHTNESS (annotation density) only -- never
+// shape-as-category. All figures read live state; the comp's numbers were
+// illustrative. ES3 only (var/function, for-loops, string concat).
+// =====================================================================
+
+// Galaxy/field hue rotation -- canonical Umber dark tokens (Option A), used as
+// var() strings in JS-built inline SVG/style (no hardcoded hex).
+var PORTRAIT_HUES = ['var(--gold)', 'var(--teal)', 'var(--danger)', 'var(--journal-color)', 'var(--subtheory-15)', 'var(--subtheory-9)'];
+
+// Minimal HTML escape -- theme names are user input rendered via innerHTML.
+function _portraitEsc(s) {
+  return ('' + s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Shared per-axis aggregation. Returns groupings (label/key), per-grouping book
+// + note counts, the most-recent-note time (for the RISING tension), and
+// shared-note bonds: a notebook entry whose bookIds span 2+ groupings adds +1
+// to each spanned pair (the same bridging-notes signal the Weave used).
+function _portraitAxisData(uid, axis) {
+  var out = { cols: [], keys: [], books: [], notes: [], recent: [], bonds: [] };
+  if (!uid) { return out; }
+  var bookIds = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var bookGroups = {};   // bookId -> [groupIdx, ...]
+  var keyIndex = {};     // grouping key -> index
+  var i, j, bid, book, gi;
+
+  if (axis === 'lenses') {
+    var tid;
+    for (tid in state.userThemes) {
+      if (!state.userThemes.hasOwnProperty(tid)) { continue; }
+      var theme = state.userThemes[tid];
+      if (!theme || theme.userId !== uid) { continue; }
+      var tBookIds = (theme.bookIds instanceof Array) ? theme.bookIds : [];
+      if (tBookIds.length === 0) { continue; }
+      var gIdx = out.keys.length;
+      keyIndex[tid] = gIdx;
+      out.keys.push(tid);
+      out.cols.push((typeof theme.name === 'string' && theme.name) ? theme.name : 'Untitled lens');
+      out.books.push(0); out.notes.push(0); out.recent.push(0);
+      for (j = 0; j < tBookIds.length; j = j + 1) {
+        bid = tBookIds[j];
+        if (!bookGroups[bid]) { bookGroups[bid] = []; }
+        if (bookGroups[bid].indexOf(gIdx) === -1) {
+          bookGroups[bid].push(gIdx);
+          out.books[gIdx] = out.books[gIdx] + 1;
+        }
+      }
+    }
+  } else {
+    for (i = 0; i < bookIds.length; i = i + 1) {
+      bid = bookIds[i];
+      book = state.books ? state.books[bid] : null;
+      if (!book) { continue; }
+      var trad = book.traditionOverride || book.tradition;
+      if (!trad || trad === 'unassigned') { continue; }
+      if (typeof keyIndex[trad] !== 'number') {
+        keyIndex[trad] = out.keys.length;
+        out.keys.push(trad);
+        out.cols.push((typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[trad]) ? TRADITION_LABELS[trad] : trad);
+        out.books.push(0); out.notes.push(0); out.recent.push(0);
+      }
+      gi = keyIndex[trad];
+      if (!bookGroups[bid]) { bookGroups[bid] = []; }
+      if (bookGroups[bid].indexOf(gi) === -1) { bookGroups[bid].push(gi); }
+      out.books[gi] = out.books[gi] + 1;
+    }
+  }
+
+  var bondMap = {};
+  var eid, entry, gset, gk, a, b, key;
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    entry = state.notebookEntries[eid];
+    if (!entry || entry.userId !== uid) { continue; }
+    var eBookIds = (entry.bookIds instanceof Array) ? entry.bookIds : [];
+    gset = [];
+    for (j = 0; j < eBookIds.length; j = j + 1) {
+      var groups = bookGroups[eBookIds[j]];
+      if (!groups) { continue; }
+      for (gk = 0; gk < groups.length; gk = gk + 1) {
+        if (gset.indexOf(groups[gk]) === -1) { gset.push(groups[gk]); }
+      }
+    }
+    if (gset.length === 0) { continue; }
+    var ts = (typeof entry.createdAt === 'number') ? entry.createdAt : 0;
+    for (gk = 0; gk < gset.length; gk = gk + 1) {
+      gi = gset[gk];
+      out.notes[gi] = out.notes[gi] + 1;
+      if (ts > out.recent[gi]) { out.recent[gi] = ts; }
+    }
+    if (gset.length > 1) {
+      for (a = 0; a < gset.length; a = a + 1) {
+        for (b = a + 1; b < gset.length; b = b + 1) {
+          var lo = Math.min(gset[a], gset[b]), hi = Math.max(gset[a], gset[b]);
+          key = lo + '-' + hi;
+          bondMap[key] = (bondMap[key] || 0) + 1;
+        }
+      }
+    }
+  }
+  for (key in bondMap) {
+    if (!bondMap.hasOwnProperty(key)) { continue; }
+    var parts = key.split('-');
+    out.bonds.push({ i: parseInt(parts[0], 10), j: parseInt(parts[1], 10), w: bondMap[key] });
+  }
+  return out;
+}
+
+// Tiny gravity sim in a virtual box; returns positions as % of the box. Ported
+// 1:1 from the comp (forEach -> for; constants identical: VW720 VH340 pad14,
+// 440 iters, sep+40/push.5, rep 2600/d^2, spring rest+46/f.006*w, centre .012).
+function _portraitGalaxyLayout(R, bonds) {
+  var n = R.length, VW = 720, VH = 340, pad = 14, P = [], i, j, it;
+  for (i = 0; i < n; i = i + 1) {
+    var ang = i / n * Math.PI * 2;
+    P.push({ x: VW / 2 + VW * 0.28 * Math.cos(ang), y: VH / 2 + VH * 0.32 * Math.sin(ang) });
+  }
+  for (it = 0; it < 440; it = it + 1) {
+    for (i = 0; i < n; i = i + 1) {
+      for (j = i + 1; j < n; j = j + 1) {
+        var dx = P[j].x - P[i].x, dy = P[j].y - P[i].y, d = Math.sqrt(dx * dx + dy * dy) || 0.01, ux = dx / d, uy = dy / d;
+        var sep = R[i] + R[j] + 40;
+        if (d < sep) { var push = (sep - d) * 0.5; P[i].x -= ux * push; P[i].y -= uy * push; P[j].x += ux * push; P[j].y += uy * push; }
+        var rep = 2600 / (d * d); P[i].x -= ux * rep; P[i].y -= uy * rep; P[j].x += ux * rep; P[j].y += uy * rep;
+      }
+    }
+    for (i = 0; i < bonds.length; i = i + 1) {
+      var bd = bonds[i];
+      var bdx = P[bd.j].x - P[bd.i].x, bdy = P[bd.j].y - P[bd.i].y, bd2 = Math.sqrt(bdx * bdx + bdy * bdy) || 0.01, bux = bdx / bd2, buy = bdy / bd2;
+      var rest = R[bd.i] + R[bd.j] + 46, f = (bd2 - rest) * 0.006 * bd.w;
+      P[bd.i].x += bux * f; P[bd.i].y += buy * f; P[bd.j].x -= bux * f; P[bd.j].y -= buy * f;
+    }
+    for (i = 0; i < n; i = i + 1) { P[i].x += (VW / 2 - P[i].x) * 0.012; P[i].y += (VH / 2 - P[i].y) * 0.012; }
+    for (i = 0; i < n; i = i + 1) {
+      P[i].x = Math.max(R[i] + pad, Math.min(VW - R[i] - pad, P[i].x));
+      P[i].y = Math.max(R[i] + pad, Math.min(VH - R[i] - pad, P[i].y));
+    }
+  }
+  var pos = [];
+  for (i = 0; i < n; i = i + 1) { pos.push({ x: P[i].x / VW * 100, y: P[i].y / VH * 100 }); }
+  return pos;
+}
+
+function _portraitGalaxyHelp(axis) {
+  return 'Each star is one of your ' + (axis === 'lenses' ? 'lenses' : 'categories') + '. The more <b>books</b> inside, the larger it burns; the more you’ve <b>annotated</b>, the brighter. Stars that share notes are pulled together by gravity — hover one to see what it’s bound to.';
+}
+
+function _portraitBondWeight(bonds, i, j) {
+  var lo = Math.min(i, j), hi = Math.max(i, j), b;
+  for (b = 0; b < bonds.length; b = b + 1) {
+    if (bonds[b].i === lo && bonds[b].j === hi) { return bonds[b].w; }
+  }
+  return 0;
+}
+
+// Field tensions from real signals: GAP (two larger groupings that rarely share
+// a margin), THIN (densest vs thinnest), RISING (most-recent note). Each frames
+// a QUESTION (instrument, not verdict). Highlighted terms are escaped.
+function _portraitFieldTensions(data, dens, pos) {
+  var n = data.cols.length, out = [], i, j;
+  if (n >= 2) {
+    var order = [];
+    for (i = 0; i < n; i = i + 1) { order.push(i); }
+    order.sort(function (a, b) { return data.books[b] - data.books[a]; });
+    var topHalf = order.slice(0, Math.max(2, Math.ceil(n / 2)));
+    var bestA = -1, bestB = -1, bestW = Infinity;
+    for (i = 0; i < topHalf.length; i = i + 1) {
+      for (j = i + 1; j < topHalf.length; j = j + 1) {
+        var w = _portraitBondWeight(data.bonds, topHalf[i], topHalf[j]);
+        if (w < bestW) { bestW = w; bestA = topHalf[i]; bestB = topHalf[j]; }
+      }
+    }
+    if (bestA >= 0 && bestB >= 0) {
+      out.push({
+        a: pos[bestA], b: pos[bestB],
+        mx: (pos[bestA].x + pos[bestB].x) / 2, my: (pos[bestA].y + pos[bestB].y) / 2,
+        hue: PORTRAIT_HUES[bestA % PORTRAIT_HUES.length],
+        q: 'You read deep in <span class="q">' + _portraitEsc(data.cols[bestA]) + '</span> and in <span class="q">' + _portraitEsc(data.cols[bestB]) + '</span> — but they rarely share a margin.',
+        sub: 'What connects them, for you?'
+      });
+    }
+    var dMaxI = 0, dMinI = 0;
+    for (i = 1; i < n; i = i + 1) {
+      if (dens[i] > dens[dMaxI]) { dMaxI = i; }
+      if (dens[i] < dens[dMinI]) { dMinI = i; }
+    }
+    if (dMaxI !== dMinI) {
+      out.push({
+        mx: pos[dMinI].x, my: pos[dMinI].y - 6,
+        hue: PORTRAIT_HUES[dMinI % PORTRAIT_HUES.length],
+        q: 'Your shelf runs deep in <span class="q">' + _portraitEsc(data.cols[dMaxI]) + '</span> and thin in <span class="q">' + _portraitEsc(data.cols[dMinI]) + '</span>.',
+        sub: 'Is that the season you’re in — or the shape of how you read?'
+      });
+    }
+  }
+  var rIdx = -1, rTs = 0;
+  for (i = 0; i < n; i = i + 1) { if (data.recent[i] > rTs) { rTs = data.recent[i]; rIdx = i; } }
+  if (rIdx >= 0) {
+    out.push({
+      mx: pos[rIdx].x, my: pos[rIdx].y + 8,
+      hue: PORTRAIT_HUES[rIdx % PORTRAIT_HUES.length],
+      q: 'A cluster is gathering in <span class="q">' + _portraitEsc(data.cols[rIdx]) + '</span> you haven’t named yet.',
+      sub: 'Want to look at what’s pulling together?'
+    });
+  }
+  return out;
+}
+
+// Render the FIELD: deterministic pole layout (impressionistic regions, NOT a
+// force-sim), soft blooms behind the largest groupings, dim poles for the
+// low-density ones, and tension "?" markers that open a question card.
+function _portraitRenderField(field, treadout, data, axis) {
+  field.innerHTML = '';
+  treadout.innerHTML = '';
+  var n = data.cols.length, i;
+  if (n === 0) {
+    field.innerHTML = '<div class="portrait-empty">' + (axis === 'lenses'
+      ? 'No lenses yet. Group books into a lens and the field will show where they gather.'
+      : 'No categorized books yet. As your shelf grows, the field will show where your reading gathers — and where it pulls two ways.') + '</div>';
+    return;
+  }
+  var order = [];
+  for (i = 0; i < n; i = i + 1) { order.push(i); }
+  order.sort(function (a, b) { return data.books[b] - data.books[a]; });
+  var pos = [];
+  for (i = 0; i < n; i = i + 1) { pos.push({ x: 50, y: 46 }); }
+  var maxBooks = data.books[order[0]] || 1;
+  for (i = 0; i < n; i = i + 1) {
+    var idx = order[i];
+    var ang = (i / n) * Math.PI * 2 + 0.6;
+    var rank = (n > 1) ? (i / (n - 1)) : 0;
+    var rad = 16 + rank * 26;
+    pos[idx] = { x: 50 + rad * Math.cos(ang), y: 46 + rad * 0.86 * Math.sin(ang) };
+  }
+  var dens = [], maxD, minD;
+  for (i = 0; i < n; i = i + 1) { dens.push(data.books[i] > 0 ? data.notes[i] / data.books[i] : 0); }
+  maxD = dens[0]; minD = dens[0];
+  for (i = 1; i < n; i = i + 1) { if (dens[i] > maxD) { maxD = dens[i]; } if (dens[i] < minD) { minD = dens[i]; } }
+  var tensions = _portraitFieldTensions(data, dens, pos);
+
+  var svg = '<svg class="portrait-field-svg" viewBox="0 0 100 100" preserveAspectRatio="none">';
+  for (i = 0; i < tensions.length; i = i + 1) {
+    var t = tensions[i];
+    if (t.a && t.b) {
+      svg += '<line x1="' + t.a.x.toFixed(1) + '" y1="' + t.a.y.toFixed(1) + '" x2="' + t.b.x.toFixed(1) + '" y2="' + t.b.y.toFixed(1) + '" stroke="' + t.hue + '" stroke-width="0.4" stroke-dasharray="1.4 1.6" opacity="0.55"/>';
+    }
+  }
+  svg += '</svg>';
+  field.insertAdjacentHTML('beforeend', svg);
+
+  var topK = Math.min(3, n), bk;
+  for (bk = 0; bk < topK; bk = bk + 1) {
+    var bi = order[bk];
+    var bloomR = 110 + (data.books[bi] / maxBooks) * 60;
+    var bloom = document.createElement('div');
+    bloom.className = 'portrait-bloom';
+    bloom.style.left = pos[bi].x + '%';
+    bloom.style.top = pos[bi].y + '%';
+    bloom.style.width = bloomR + 'px';
+    bloom.style.height = bloomR + 'px';
+    bloom.style.marginLeft = (-bloomR / 2) + 'px';
+    bloom.style.marginTop = (-bloomR / 2) + 'px';
+    bloom.style.background = 'radial-gradient(circle, ' + PORTRAIT_HUES[bi % PORTRAIT_HUES.length] + ', transparent 70%)';
+    field.appendChild(bloom);
+  }
+
+  var mid = (minD + maxD) / 2;
+  for (i = 0; i < n; i = i + 1) {
+    var pole = document.createElement('div');
+    pole.className = 'portrait-pole' + ((dens[i] < mid && n > 2) ? ' dim' : '');
+    pole.style.left = pos[i].x + '%';
+    pole.style.top = pos[i].y + '%';
+    pole.textContent = ('' + data.cols[i]).toLowerCase();
+    field.appendChild(pole);
+  }
+
+  for (i = 0; i < tensions.length; i = i + 1) {
+    (function (tn) {
+      var el = document.createElement('div');
+      el.className = 'portrait-tlabel';
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'button');
+      el.textContent = '?';
+      el.style.left = tn.mx + '%';
+      el.style.top = tn.my + '%';
+      el.style.borderColor = tn.hue;
+      function open() {
+        treadout.innerHTML = '<div class="portrait-tension-card"><span class="q">' + tn.q + '</span><div class="sub">' + tn.sub + '</div></div>';
+      }
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+      field.appendChild(el);
+    })(tensions[i]);
+  }
+}
+
+// Render the GALAXY: two-channel stars (size = #books, brightness = density),
+// gravity-clustered, with a one-time settling drift (reduced-motion -> instant),
+// hover -> partner brighten + tidal-bridge filaments + readout. Ported 1:1 from
+// the comp; hues -> tokens, hexA -> color-mix, .forEach -> for.
+function _portraitRenderGalaxy(galaxy, galaxyReadout, galaxyHelp, data, axis, reduceMotion) {
+  var cols = data.cols, books = data.books, notes = data.notes, bonds = data.bonds, n = cols.length, i;
+  galaxy.className = 'portrait-galaxy';
+  galaxy.innerHTML = '';
+  galaxyHelp.innerHTML = _portraitGalaxyHelp(axis);
+  if (n === 0) {
+    galaxy.innerHTML = '<div class="portrait-empty">' + (axis === 'lenses'
+      ? 'No lenses yet — group books into a lens to see them gather here.'
+      : 'No categorized books yet — your shelf will gather into a sky as it grows.') + '</div>';
+    galaxyReadout.innerHTML = '';
+    return;
+  }
+  var maxB = books[0], minB = books[0];
+  for (i = 1; i < n; i = i + 1) { if (books[i] > maxB) { maxB = books[i]; } if (books[i] < minB) { minB = books[i]; } }
+  var R = [];
+  for (i = 0; i < n; i = i + 1) { var tB = (books[i] - minB) / ((maxB - minB) || 1); R.push(16 + tB * 30); }
+  var dens = [];
+  for (i = 0; i < n; i = i + 1) { dens.push(books[i] > 0 ? notes[i] / books[i] : 0); }
+  var maxD = dens[0], minD = dens[0];
+  for (i = 1; i < n; i = i + 1) { if (dens[i] > maxD) { maxD = dens[i]; } if (dens[i] < minD) { minD = dens[i]; } }
+  function bright(ix) { return (dens[ix] - minD) / ((maxD - minD) || 1); }
+  var pos = _portraitGalaxyLayout(R, bonds);
+
+  var sp = '';
+  for (i = 0; i < 34; i = i + 1) {
+    var sx = Math.random() * 100, sy = Math.random() * 100, sz = Math.random();
+    sp += '<div class="speck" style="left:' + sx.toFixed(1) + '%;top:' + sy.toFixed(1) + '%;width:' + (1 + sz * 1.6).toFixed(1) + 'px;height:' + (1 + sz * 1.6).toFixed(1) + 'px;background:' + (sz > 0.6 ? 'var(--ink)' : 'var(--gold)') + ';opacity:' + (0.1 + sz * 0.22).toFixed(2) + ';"></div>';
+  }
+  galaxy.insertAdjacentHTML('beforeend', sp);
+
+  var bsvg = '<svg class="portrait-bonds" viewBox="0 0 100 100" preserveAspectRatio="none">';
+  for (i = 0; i < bonds.length; i = i + 1) {
+    var bd = bonds[i];
+    var x1 = pos[bd.i].x, y1 = pos[bd.i].y, x2 = pos[bd.j].x, y2 = pos[bd.j].y;
+    var mx = (x1 + x2) / 2 + (y2 - y1) * 0.06, my = (y1 + y2) / 2 - (x2 - x1) * 0.06, sw = (0.3 + bd.w * 0.4).toFixed(2);
+    bsvg += '<path data-i="' + bd.i + '" data-j="' + bd.j + '" d="M ' + x1 + ' ' + y1 + ' Q ' + mx + ' ' + my + ' ' + x2 + ' ' + y2 + '" fill="none" stroke="var(--gold)" stroke-width="' + sw + '" stroke-linecap="round"/>';
+  }
+  bsvg += '</svg>';
+  galaxy.insertAdjacentHTML('beforeend', bsvg);
+
+  var els = [];
+  for (i = 0; i < n; i = i + 1) {
+    var d = R[i] * 2, hue = PORTRAIT_HUES[i % PORTRAIT_HUES.length], br = bright(i);
+    var hiPct = ((0.28 + br * 0.5) * 100).toFixed(2), glow = (10 + br * 30).toFixed(0), galphaPct = ((0.22 + br * 0.42) * 100).toFixed(2), op = (0.82 + br * 0.18).toFixed(2);
+    var el = document.createElement('div');
+    el.className = 'portrait-star';
+    el.setAttribute('data-i', i);
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.style.width = d + 'px';
+    el.style.height = d + 'px';
+    el.style.background = 'radial-gradient(circle at 36% 32%, color-mix(in srgb, var(--text-on-dark) ' + hiPct + '%, transparent), ' + hue + ' 52%, color-mix(in srgb, var(--sunk-d) 92%, transparent))';
+    el.style.boxShadow = '0 0 ' + glow + 'px ' + (2 + br * 6).toFixed(0) + 'px color-mix(in srgb, ' + hue + ' ' + galphaPct + '%, transparent), inset 0 0 ' + (d / 3).toFixed(0) + 'px color-mix(in srgb, var(--text-on-dark) 12%, transparent)';
+    el.style.left = '50%'; el.style.top = '50%';
+    el.style.transform = 'translate(-50%,-50%) scale(' + (reduceMotion ? 1 : 0.25) + ')';
+    el.style.opacity = reduceMotion ? op : '0';
+    el.innerHTML = '<span class="nm">' + _portraitEsc(cols[i]) + '<span class="ct">' + books[i] + ' books · ' + notes[i] + ' notes</span></span>';
+    galaxy.appendChild(el);
+    els.push(el);
+  }
+  function place() {
+    var p;
+    for (p = 0; p < n; p = p + 1) {
+      els[p].style.left = pos[p].x + '%';
+      els[p].style.top = pos[p].y + '%';
+      els[p].style.transform = 'translate(-50%,-50%) scale(1)';
+      els[p].style.opacity = (0.82 + bright(p) * 0.18).toFixed(2);
+    }
+  }
+  if (reduceMotion) { place(); } else { requestAnimationFrame(function () { requestAnimationFrame(place); }); }
+
+  var paths = galaxy.querySelectorAll('.portrait-bonds path');
+  function partnerOf(idx) {
+    var best = -1, bw = -1, b;
+    for (b = 0; b < bonds.length; b = b + 1) {
+      if (bonds[b].i === idx && bonds[b].w > bw) { bw = bonds[b].w; best = bonds[b].j; }
+      if (bonds[b].j === idx && bonds[b].w > bw) { bw = bonds[b].w; best = bonds[b].i; }
+    }
+    return best;
+  }
+  function lite(idx) {
+    galaxy.className = 'portrait-galaxy dim';
+    els[idx].className = 'portrait-star hi';
+    var b;
+    for (b = 0; b < bonds.length; b = b + 1) {
+      if (bonds[b].i === idx || bonds[b].j === idx) {
+        if (paths[b]) { paths[b].setAttribute('class', 'show'); }
+        var other = bonds[b].i === idx ? bonds[b].j : bonds[b].i;
+        els[other].className = 'portrait-star hi';
+      }
+    }
+    var pn = partnerOf(idx), pname = pn >= 0 ? cols[pn] : null;
+    var dn = dens[idx] >= (minD + maxD) / 2 ? 'among your densest margins' : 'lightly annotated so far';
+    galaxyReadout.innerHTML = '<em>' + _portraitEsc(cols[idx]) + '</em> <span class="where">' + books[idx] + ' books · ' + notes[idx] + ' notes · ' + dn + (pname ? ' · bound most to ' + _portraitEsc(pname) : ' · stands on its own') + '</span>';
+  }
+  function clear() {
+    galaxy.className = 'portrait-galaxy';
+    var k;
+    for (k = 0; k < els.length; k = k + 1) { els[k].className = 'portrait-star'; }
+    for (k = 0; k < paths.length; k = k + 1) { paths[k].setAttribute('class', ''); }
+    galaxyReadout.innerHTML = 'Hover a star to see its mass and what it’s bound to. Nearer stars share more of your notes.';
+  }
+  (function () {
+    var z;
+    for (z = 0; z < n; z = z + 1) {
+      (function (idx) {
+        els[idx].addEventListener('mouseenter', function () { lite(idx); });
+        els[idx].addEventListener('mouseleave', clear);
+        els[idx].addEventListener('click', function () { lite(idx); });
+        els[idx].addEventListener('focus', function () { lite(idx); });
+        els[idx].addEventListener('blur', clear);
+      })(z);
+    }
+  })();
+  galaxyReadout.innerHTML = 'Hover a star to see its mass and what it’s bound to. Nearer stars share more of your notes.';
+}
+
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -12740,6 +13168,117 @@ function renderAccountPage() {
   var expandHost = document.createElement('div');
   expandHost.className = 'account-expand-host';
   wrap.appendChild(expandHost);
+
+  // ===== REVEALED SELF -- shared toggle + FIELD + GALAXY (Portrait Stage 2) =====
+  // Inserted AFTER the stat cards (COUNTS), before the transparency card. One
+  // toggle drives the field + galaxy together; all figures read live state.
+  // (Eyebrows reuse the Stage-1 gold portrait eyebrow .account-values-eyebrow.)
+  var revSec = document.createElement('div');
+  revSec.className = 'account-revealed';
+  var revEyebrow = document.createElement('div');
+  revEyebrow.className = 'eyebrow account-values-eyebrow';
+  revEyebrow.appendChild(document.createTextNode('What your reading shows '));
+  var revHint = document.createElement('span');
+  revHint.className = 'hint';
+  revHint.textContent = '— for you to name';
+  revEyebrow.appendChild(revHint);
+  revSec.appendChild(revEyebrow);
+  var portraitToolbar = document.createElement('div');
+  portraitToolbar.className = 'portrait-toolbar';
+  var portraitBy = document.createElement('span');
+  portraitBy.className = 'portrait-by';
+  portraitBy.textContent = 'View by';
+  portraitToolbar.appendChild(portraitBy);
+  var portraitSeg = document.createElement('div');
+  portraitSeg.className = 'portrait-seg';
+  var segCat = document.createElement('button');
+  segCat.type = 'button';
+  segCat.setAttribute('data-axis', 'categories');
+  segCat.className = 'on';
+  segCat.textContent = 'Book categories';
+  var segLens = document.createElement('button');
+  segLens.type = 'button';
+  segLens.setAttribute('data-axis', 'lenses');
+  segLens.textContent = 'Your lenses';
+  portraitSeg.appendChild(segCat);
+  portraitSeg.appendChild(segLens);
+  portraitToolbar.appendChild(portraitSeg);
+  revSec.appendChild(portraitToolbar);
+  wrap.appendChild(revSec);
+
+  // FIELD
+  var fieldSec = document.createElement('div');
+  fieldSec.className = 'sec account-portrait-sec';
+  var fieldEyebrow = document.createElement('div');
+  fieldEyebrow.className = 'eyebrow account-values-eyebrow';
+  fieldEyebrow.appendChild(document.createTextNode('The field you read across '));
+  var fieldHintEl = document.createElement('span');
+  fieldHintEl.className = 'hint';
+  fieldHintEl.textContent = '— and its edges';
+  fieldEyebrow.appendChild(fieldHintEl);
+  fieldSec.appendChild(fieldEyebrow);
+  var fieldCard = document.createElement('div');
+  fieldCard.className = 'account-card portrait-field-wrap';
+  var fieldHelp = document.createElement('div');
+  fieldHelp.className = 'portrait-field-help';
+  fieldHelp.textContent = 'Soft regions are where your reading gathers. The marked points are where it pulls two ways, or thins out — tap one.';
+  fieldCard.appendChild(fieldHelp);
+  var portraitFieldEl = document.createElement('div');
+  portraitFieldEl.className = 'portrait-field';
+  portraitFieldEl.id = 'account-portrait-field';
+  fieldCard.appendChild(portraitFieldEl);
+  var portraitTreadout = document.createElement('div');
+  portraitTreadout.className = 'portrait-treadout';
+  portraitTreadout.id = 'account-portrait-treadout';
+  fieldCard.appendChild(portraitTreadout);
+  fieldSec.appendChild(fieldCard);
+  wrap.appendChild(fieldSec);
+
+  // GALAXY
+  var galSec = document.createElement('div');
+  galSec.className = 'sec account-portrait-sec';
+  var galEyebrow = document.createElement('div');
+  galEyebrow.className = 'eyebrow account-values-eyebrow';
+  galEyebrow.appendChild(document.createTextNode('Your reading as a galaxy '));
+  var galHintEl = document.createElement('span');
+  galHintEl.className = 'hint';
+  galHintEl.textContent = '— bigger stars hold more; nearer stars share more';
+  galEyebrow.appendChild(galHintEl);
+  galSec.appendChild(galEyebrow);
+  var galCard = document.createElement('div');
+  galCard.className = 'account-card portrait-galaxy-wrap';
+  var galHelp = document.createElement('div');
+  galHelp.className = 'portrait-galaxy-help';
+  galHelp.id = 'account-portrait-galaxy-help';
+  galCard.appendChild(galHelp);
+  var portraitGalaxyEl = document.createElement('div');
+  portraitGalaxyEl.className = 'portrait-galaxy';
+  portraitGalaxyEl.id = 'account-portrait-galaxy';
+  galCard.appendChild(portraitGalaxyEl);
+  var galReadout = document.createElement('div');
+  galReadout.className = 'portrait-galaxy-readout';
+  galReadout.id = 'account-portrait-galaxy-readout';
+  galCard.appendChild(galReadout);
+  galSec.appendChild(galCard);
+  wrap.appendChild(galSec);
+
+  // Shared toggle: recompute axis data + re-render field + galaxy together.
+  var portraitReduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function portraitSetAxis(name) {
+    var btns = portraitSeg.querySelectorAll('button'), bi2;
+    for (bi2 = 0; bi2 < btns.length; bi2 = bi2 + 1) {
+      btns[bi2].className = (btns[bi2].getAttribute('data-axis') === name) ? 'on' : '';
+    }
+    var axisData = _portraitAxisData(uid, name);
+    _portraitRenderField(portraitFieldEl, portraitTreadout, axisData, name);
+    _portraitRenderGalaxy(portraitGalaxyEl, galReadout, galHelp, axisData, name, portraitReduce);
+  }
+  portraitSeg.addEventListener('click', function (e) {
+    var tgt = e.target;
+    if (!tgt || tgt.tagName !== 'BUTTON') { return; }
+    portraitSetAxis(tgt.getAttribute('data-axis'));
+  });
+  portraitSetAxis('categories');
 
   // ----- STAGE 11: TRANSPARENCY ("what Praxis records / what Yumi sees") -----
   // Plain disclosure of what Praxis records (aggregate counts only, never
