@@ -7695,6 +7695,267 @@
   .account .portrait-star { transition: none !important; }
 }
 
+/* =====================================================================
+   PORTRAIT -- Categorize-as-dialogue + returns + threads (Stage 3).
+   Ported from the v6 mockup (dialogue/returns/threads CSS), var-remapped to
+   Umber dark tokens (Option A), all rules .account-scoped + portrait-prefixed.
+   Offers reuse .account-card for the frame; geometry ported 1:1. */
+
+/* dialogue */
+.account .portrait-offer {
+  padding: 18px 22px;
+  margin-top: 13px;
+}
+.account .portrait-offer .body {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.account .portrait-offer .body em {
+  font-style: italic;
+  color: var(--ink);
+}
+.account .portrait-yumi-says {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.account .portrait-yumi-says .pre {
+  font-size: 12.5px;
+  color: var(--ink-4);
+}
+.account .portrait-proposed {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--gold);
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius-pill);
+  padding: 5px 16px;
+}
+.account .portrait-acts {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.account .portrait-chip {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 7px 15px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-on-dark) 4%, transparent);
+  color: var(--ink-2);
+}
+.account .portrait-chip:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+.account .portrait-chip.yes {
+  border-color: color-mix(in srgb, var(--teal) 50%, transparent);
+  color: var(--teal);
+}
+.account .portrait-chip.no {
+  color: var(--ink-4);
+}
+.account .portrait-offer.confirmed {
+  border-color: color-mix(in srgb, var(--teal) 32%, transparent);
+}
+.account .portrait-yours {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--ink);
+}
+.account .portrait-yours b {
+  color: var(--teal);
+  font-weight: 600;
+}
+.account .portrait-offer-meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-left: 8px;
+}
+.account .portrait-rename-in {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-pill);
+  padding: 5px 16px;
+  outline: none;
+  width: 240px;
+}
+.account .portrait-holding {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  padding: 14px 4px 2px;
+  font-style: italic;
+  font-family: var(--font-serif);
+}
+.account .portrait-suggest {
+  font-style: normal;
+  color: var(--gold);
+  cursor: pointer;
+}
+.account .portrait-suggest:hover {
+  text-decoration: underline;
+}
+
+/* returns */
+.account .portrait-returns {
+  padding: 18px 22px;
+}
+.account .portrait-ret-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.account .portrait-ret-row:first-of-type {
+  border-top: 0;
+}
+.account .portrait-ret-row .ph {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+  flex: 1;
+}
+.account .portrait-ret-row .ph em {
+  font-style: italic;
+}
+.account .portrait-ret-row .ct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.account .portrait-ret-help {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  margin-top: 14px;
+  font-style: italic;
+  font-family: var(--font-serif);
+}
+
+/* threads */
+.account .portrait-threads {
+  padding: 20px 22px;
+  margin-top: 13px;
+  border-color: color-mix(in srgb, var(--journal-color) 28%, transparent);
+}
+.account .portrait-threads-ti {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.account .portrait-threads-ti .sig {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--journal-color);
+  font-size: 24px;
+}
+.account .portrait-threads-blurb {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin-top: 10px;
+  max-width: 62ch;
+}
+.account .portrait-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.account .portrait-switch {
+  width: 42px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-on-dark) 8%, transparent);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background .2s, border-color .2s;
+}
+.account .portrait-switch .portrait-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  transition: left .2s, background .2s;
+}
+.account .portrait-toggle.on .portrait-switch {
+  background: color-mix(in srgb, var(--journal-color) 30%, transparent);
+  border-color: var(--journal-color);
+}
+.account .portrait-toggle.on .portrait-switch .portrait-knob {
+  left: 20px;
+  background: var(--journal-color);
+}
+.account .portrait-toggle-lbl {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--gold);
+}
+.account .portrait-toggle.on .portrait-toggle-lbl {
+  color: var(--journal-color);
+}
+.account .portrait-named {
+  margin-top: 16px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height .35s ease, opacity .25s ease;
+}
+.account .portrait-named.show {
+  max-height: 420px;
+  opacity: 1;
+}
+.account .portrait-thread-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.account .portrait-thread-row .body {
+  flex: 1;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.account .portrait-thread-row .body .s {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-4);
+  margin-top: 3px;
+}
+
+/* reduced motion: the threads reveal settles instant (scoped). */
+@media (prefers-reduced-motion: reduce) {
+  .account .portrait-named { transition: none !important; }
+}
+
 /* Covenant line in the "your data" card. */
 .account-covenant {
   margin: 8px 0 0 0;

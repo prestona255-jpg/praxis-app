@@ -12795,6 +12795,111 @@ function _portraitRenderGalaxy(galaxy, galaxyReadout, galaxyHelp, data, axis, re
   galaxyReadout.innerHTML = 'Hover a star to see its mass and what it’s bound to. Nearer stars share more of your notes.';
 }
 
+// =====================================================================
+// PORTRAIT -- Categorize-as-dialogue + raw returns (Stage 3) support.
+// The dialogue PROPOSES groupings; the reader confirms/renames/rejects and OWNS
+// the buckets (instrument, never auto-label). A confirmed/renamed grouping
+// becomes a lens via the EXISTING createUserTheme + assignBookToTheme path
+// (-> Firestore on the markThemesDirty chokepoint; same path the Shelf lens-gen
+// adopt uses). A rejected categories proposal is dismissed locally so it is not
+// re-proposed (ls-backed nag-suppression, like praxis_lens_ai_suggestions -- NOT
+// core data, NOT a Firestore field, NO migrate). Lenses proposals come from the
+// reader's existing Yumi generateLenses, ON DEMAND. Raw RETURNS = factual
+// recurrence, counts only, no interpretation. Reviewable calls (smoke): proposer
+// granularity (minimal vs split), lenses on-demand-vs-auto, ls-dismiss store.
+// =====================================================================
+
+var PORTRAIT_DISMISS_KEY = 'praxis_portrait_dismissed';
+
+function _portraitDismissedGet() {
+  var raw = ls(PORTRAIT_DISMISS_KEY, null);
+  if (raw && typeof raw === 'object' && raw.keys instanceof Array) { return raw.keys; }
+  return [];
+}
+function _portraitDismissAdd(key) {
+  var keys = _portraitDismissedGet();
+  if (keys.indexOf(key) === -1) { keys.push(key); sv(PORTRAIT_DISMISS_KEY, { keys: keys }); }
+}
+
+// Categories proposals: the reader's top traditions (>=2 books) as tentative
+// buckets to name, skipping any already dismissed/confirmed. Derivational, no
+// LLM, no interpretation; capped to a SMALL high-confidence set (MINIMAL).
+function _portraitCategoryProposals(uid) {
+  if (!uid) { return []; }
+  var bookIds = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var byTrad = {};
+  var i, bid, book, trad;
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    bid = bookIds[i];
+    book = state.books ? state.books[bid] : null;
+    if (!book) { continue; }
+    trad = book.traditionOverride || book.tradition;
+    if (!trad || trad === 'unassigned') { continue; }
+    if (!byTrad[trad]) { byTrad[trad] = []; }
+    if (byTrad[trad].indexOf(bid) === -1) { byTrad[trad].push(bid); }
+  }
+  var dismissed = _portraitDismissedGet();
+  var out = [], t;
+  for (t in byTrad) {
+    if (!byTrad.hasOwnProperty(t)) { continue; }
+    if (byTrad[t].length < 2) { continue; }
+    if (dismissed.indexOf('cat:' + t) !== -1) { continue; }
+    out.push({
+      key: 'cat:' + t,
+      label: (typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[t]) ? TRADITION_LABELS[t] : t,
+      bookIds: byTrad[t],
+      count: byTrad[t].length
+    });
+  }
+  out.sort(function (a, b) { return b.count - a.count; });
+  return out.slice(0, 3);
+}
+
+// Raw returns: factual recurrence across the reader's notebook entries -- the
+// densest-margins books + the author returned to, as counts. No interpretation.
+function _portraitReturnsData(uid) {
+  var out = [];
+  if (!uid) { return out; }
+  var notesPerBook = {}, eid, entry, j, bid;
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    entry = state.notebookEntries[eid];
+    if (!entry || entry.userId !== uid) { continue; }
+    var eb = (entry.bookIds instanceof Array) ? entry.bookIds : [];
+    for (j = 0; j < eb.length; j = j + 1) { bid = eb[j]; notesPerBook[bid] = (notesPerBook[bid] || 0) + 1; }
+  }
+  var ranked = [], b;
+  for (b in notesPerBook) {
+    if (!notesPerBook.hasOwnProperty(b)) { continue; }
+    var bk = state.books ? state.books[b] : null;
+    if (!bk) { continue; }
+    ranked.push({ id: b, title: bk.title || 'Untitled', author: bk.author || '', n: notesPerBook[b] });
+  }
+  ranked.sort(function (x, y) { return y.n - x.n; });
+  if (ranked.length > 0 && ranked[0].n >= 2) {
+    out.push({ ph: _portraitEsc(ranked[0].title) + ' — your densest margins', ct: ranked[0].n + ' notes' });
+  }
+  var byAuthor = {};
+  for (b = 0; b < ranked.length; b = b + 1) {
+    var au = ('' + ranked[b].author).replace(/^\s+|\s+$/g, '');
+    if (!au) { continue; }
+    byAuthor[au] = (byAuthor[au] || 0) + 1;
+  }
+  var topAuthor = null, topN = 0, a2;
+  for (a2 in byAuthor) {
+    if (!byAuthor.hasOwnProperty(a2)) { continue; }
+    if (byAuthor[a2] > topN) { topN = byAuthor[a2]; topAuthor = a2; }
+  }
+  if (topAuthor && topN >= 2) {
+    out.push({ ph: 'you return to <em>' + _portraitEsc(topAuthor) + '</em>', ct: 'across ' + topN + ' books' });
+  }
+  if (ranked.length > 1 && ranked[1].n >= 2) {
+    out.push({ ph: _portraitEsc(ranked[1].title), ct: ranked[1].n + ' notes' });
+  }
+  return out;
+}
+
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -13206,6 +13311,192 @@ function renderAccountPage() {
   revSec.appendChild(portraitToolbar);
   wrap.appendChild(revSec);
 
+  // ===== CATEGORIZE-AS-DIALOGUE (Portrait Stage 3) -- between toggle + field =====
+  // The app PROPOSES groupings tentatively; the reader confirms/renames/rejects
+  // and owns the buckets. Confirm/rename -> createUserTheme + assignBookToTheme
+  // (existing userThemes path -> Firestore via markThemesDirty). Categories
+  // reject -> ls dismissal (not re-proposed). Lenses proposals = on-demand
+  // generateLenses (reusing YumiBrain). Axis-driven (re-rendered by the toggle).
+  var dialogSec = document.createElement('div');
+  dialogSec.className = 'sec account-portrait-sec';
+  var dialogEyebrow = document.createElement('div');
+  dialogEyebrow.className = 'eyebrow account-values-eyebrow';
+  dialogEyebrow.appendChild(document.createTextNode('How your library sorts '));
+  var dialogHintEl = document.createElement('span');
+  dialogHintEl.className = 'hint';
+  dialogHintEl.textContent = '— you hold the names';
+  dialogEyebrow.appendChild(dialogHintEl);
+  dialogSec.appendChild(dialogEyebrow);
+  var dialogHost = document.createElement('div');
+  dialogHost.className = 'portrait-sorts';
+  dialogSec.appendChild(dialogHost);
+  var holdEl = document.createElement('div');
+  holdEl.className = 'portrait-holding';
+  dialogSec.appendChild(holdEl);
+  wrap.appendChild(dialogSec);
+
+  var portraitCurrentAxis = 'categories';
+  var portraitCatProps = [];
+  var portraitLensSuggest = { status: 'idle', proposals: [], meta: null };
+
+  function _portraitOfferOpenHTML(id, body, pre, proposed, rejectLabel) {
+    return '<div class="account-card portrait-offer" data-offer="' + id + '">' +
+      '<div class="body">' + body + '</div>' +
+      '<div class="portrait-yumi-says"><span class="pre">' + pre + '</span><span class="portrait-proposed">' + _portraitEsc(proposed) + '</span></div>' +
+      '<div class="portrait-acts"><span class="portrait-chip yes" data-act="confirm">that’s it</span><span class="portrait-chip" data-act="rename">rename ✎</span><span class="portrait-chip no" data-act="reject">' + rejectLabel + '</span></div></div>';
+  }
+  function _portraitOfferConfirmedHTML(id, yoursLabel, yours, meta) {
+    return '<div class="account-card portrait-offer confirmed" data-offer="' + id + '">' +
+      '<div class="portrait-yours">' + yoursLabel + ' <b>' + _portraitEsc(yours) + '</b> <span class="portrait-offer-meta">' + meta + '</span></div></div>';
+  }
+
+  function renderPortraitDialog(axisName) {
+    var html = '', i;
+    if (axisName === 'lenses') {
+      var tid;
+      for (tid in state.userThemes) {
+        if (!state.userThemes.hasOwnProperty(tid)) { continue; }
+        var th = state.userThemes[tid];
+        if (!th || th.userId !== uid) { continue; }
+        var nb = (th.bookIds instanceof Array) ? th.bookIds.length : 0;
+        html += _portraitOfferConfirmedHTML('lens-' + th.id, 'Your lens:', (th.name || 'Untitled lens'), nb + ' book' + (nb === 1 ? '' : 's'));
+      }
+      if (portraitLensSuggest.status === 'loading') {
+        html += '<div class="portrait-holding">Yumi is looking for lenses…</div>';
+      } else if (portraitLensSuggest.status === 'error') {
+        html += '<div class="portrait-holding">Yumi could not look just now. <span class="portrait-suggest" data-act="suggest">try again</span></div>';
+      } else if (portraitLensSuggest.status === 'done' && portraitLensSuggest.proposals.length) {
+        for (i = 0; i < portraitLensSuggest.proposals.length; i = i + 1) {
+          html += _portraitOfferOpenHTML('plens-' + i, 'A lens forming around your notes.', 'Yumi would make a lens called', portraitLensSuggest.proposals[i].name, 'not a lens');
+        }
+      } else {
+        html += '<div class="portrait-holding"><span class="portrait-suggest" data-act="suggest">Ask Yumi to suggest a lens →</span></div>';
+      }
+      holdEl.textContent = 'Lenses are yours to shape — keep what fits your thinking, rename it, or let it go.';
+    } else {
+      portraitCatProps = _portraitCategoryProposals(uid);
+      if (portraitCatProps.length === 0) {
+        html = '<div class="portrait-holding">Nothing to sort yet — as your shelf grows, groupings will surface here for you to name.</div>';
+      } else {
+        for (i = 0; i < portraitCatProps.length; i = i + 1) {
+          html += _portraitOfferOpenHTML('cat-' + i, '<em>' + portraitCatProps[i].count + '</em> books read as <em>' + _portraitEsc(portraitCatProps[i].label) + '</em>.', 'Yumi would file these under', portraitCatProps[i].label, 'not really');
+        }
+      }
+      holdEl.textContent = 'These buckets are yours — rename them, merge them, or throw them out. The sorting is the thinking.';
+    }
+    dialogHost.innerHTML = html;
+  }
+
+  function portraitConfirmOffer(offerId, overrideName) {
+    var name = overrideName, books = [], dismissKey = null;
+    if (offerId.indexOf('cat-') === 0) {
+      var cp = portraitCatProps[parseInt(offerId.slice(4), 10)];
+      if (!cp) { return; }
+      if (!name) { name = cp.label; }
+      books = cp.bookIds;
+      dismissKey = cp.key;
+    } else if (offerId.indexOf('plens-') === 0) {
+      var li = parseInt(offerId.slice(6), 10);
+      var lp = portraitLensSuggest.proposals[li];
+      if (!lp) { return; }
+      if (!name) { name = lp.name; }
+      var k, bid;
+      var lpBooks = (lp.books instanceof Array) ? lp.books : [];
+      for (k = 0; k < lpBooks.length; k = k + 1) {
+        var norm = ('' + lpBooks[k]).toLowerCase().replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ');
+        bid = (portraitLensSuggest.meta && portraitLensSuggest.meta.titleToId) ? portraitLensSuggest.meta.titleToId[norm] : null;
+        if (bid) { books.push(bid); }
+      }
+      portraitLensSuggest.proposals.splice(li, 1);
+    } else { return; }
+    if (typeof createUserTheme === 'function') {
+      var theme = createUserTheme(name);
+      if (theme && theme.id && typeof assignBookToTheme === 'function') {
+        var z;
+        for (z = 0; z < books.length; z = z + 1) { assignBookToTheme(theme.id, books[z]); }
+      }
+    }
+    if (dismissKey) { _portraitDismissAdd(dismissKey); }
+    renderPortraitDialog(portraitCurrentAxis);
+  }
+  function portraitRejectOffer(offerId) {
+    if (offerId.indexOf('cat-') === 0) {
+      var cp = portraitCatProps[parseInt(offerId.slice(4), 10)];
+      if (cp) { _portraitDismissAdd(cp.key); }
+    } else if (offerId.indexOf('plens-') === 0) {
+      var ri2 = parseInt(offerId.slice(6), 10);
+      if (ri2 >= 0 && ri2 < portraitLensSuggest.proposals.length) {
+        portraitLensSuggest.proposals.splice(ri2, 1);
+      }
+    }
+    renderPortraitDialog(portraitCurrentAxis);
+  }
+  function portraitRenameOffer(card) {
+    var offerId = card.getAttribute('data-offer');
+    var pill = card.querySelector('.portrait-proposed');
+    if (!pill) { return; }
+    var cur = pill.textContent;
+    var inp = document.createElement('input');
+    inp.className = 'portrait-rename-in';
+    inp.value = cur;
+    pill.parentNode.replaceChild(inp, pill);
+    inp.focus();
+    if (inp.select) { inp.select(); }
+    var done = false;
+    function commit() {
+      if (done) { return; }
+      done = true;
+      portraitConfirmOffer(offerId, inp.value.trim() || cur);
+    }
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { commit(); } });
+    inp.addEventListener('blur', commit);
+  }
+  function startPortraitLensSuggest() {
+    if (!window.YumiBrain || typeof window.YumiBrain.generateLenses !== 'function' ||
+        typeof window.YumiBrain.evalLensResponse !== 'function' ||
+        typeof window.YumiBrain.gatherLensMetadata !== 'function') {
+      portraitLensSuggest.status = 'error';
+      renderPortraitDialog('lenses');
+      return;
+    }
+    portraitLensSuggest.status = 'loading';
+    renderPortraitDialog('lenses');
+    // try/catch (an ES3 statement, NOT the banned promise catch() method) so a
+    // synchronous throw from gatherLensMetadata / payload build sets 'error'
+    // instead of leaving the dialogue stuck on 'loading'. The async rejection
+    // is handled by the two-arg .then reject handler.
+    try {
+      var meta = window.YumiBrain.gatherLensMetadata();
+      portraitLensSuggest.meta = meta;
+      var titles = [], i;
+      var mbooks = (meta && meta.books instanceof Array) ? meta.books : [];
+      for (i = 0; i < mbooks.length; i = i + 1) { titles.push(mbooks[i].title); }
+      window.YumiBrain.generateLenses(meta).then(function (raw) {
+        portraitLensSuggest.proposals = window.YumiBrain.evalLensResponse(raw, titles) || [];
+        portraitLensSuggest.status = 'done';
+        renderPortraitDialog('lenses');
+      }, function () {
+        portraitLensSuggest.status = 'error';
+        renderPortraitDialog('lenses');
+      });
+    } catch (e) {
+      portraitLensSuggest.status = 'error';
+      renderPortraitDialog('lenses');
+    }
+  }
+  dialogHost.addEventListener('click', function (e) {
+    var t = e.target, act = (t && t.getAttribute) ? t.getAttribute('data-act') : null;
+    if (!act) { return; }
+    if (act === 'suggest') { startPortraitLensSuggest(); return; }
+    var card = t;
+    while (card && card !== dialogHost && !(card.getAttribute && card.getAttribute('data-offer'))) { card = card.parentNode; }
+    if (!card || !card.getAttribute) { return; }
+    var offerId = card.getAttribute('data-offer');
+    if (act === 'confirm') { portraitConfirmOffer(offerId, null); }
+    else if (act === 'rename') { portraitRenameOffer(card); }
+    else if (act === 'reject') { portraitRejectOffer(offerId); }
+  });
+
   // FIELD
   var fieldSec = document.createElement('div');
   fieldSec.className = 'sec account-portrait-sec';
@@ -13262,13 +13553,85 @@ function renderAccountPage() {
   galSec.appendChild(galCard);
   wrap.appendChild(galSec);
 
+  // ===== RETURNS (raw, factual) + THREADS (interpreted, consent-gated) =====
+  var returnsSec = document.createElement('div');
+  returnsSec.className = 'sec account-portrait-sec';
+  var returnsEyebrow = document.createElement('div');
+  returnsEyebrow.className = 'eyebrow account-values-eyebrow';
+  returnsEyebrow.textContent = 'What your margins keep returning to';
+  returnsSec.appendChild(returnsEyebrow);
+  var returnsCard = document.createElement('div');
+  returnsCard.className = 'account-card portrait-returns';
+  var rdata = _portraitReturnsData(uid);
+  var rhtml = '', ri;
+  if (rdata.length === 0) {
+    rhtml = '<div class="portrait-empty">No marginalia yet — your returns will appear here as you mark up your reading.</div>';
+  } else {
+    for (ri = 0; ri < rdata.length; ri = ri + 1) {
+      rhtml += '<div class="portrait-ret-row"><div class="ph">' + rdata[ri].ph + '</div><div class="ct">' + rdata[ri].ct + '</div></div>';
+    }
+    rhtml += '<div class="portrait-ret-help">Just the count — drawn straight from your notes. What it adds up to is yours to say.</div>';
+  }
+  returnsCard.innerHTML = rhtml;
+  returnsSec.appendChild(returnsCard);
+
+  // THREADS: consent-gated on yumiReaderModel (default off). OFF -> invitation
+  // (NOT hidden); ON -> render the reader-model threads (read-only). The toggle
+  // flips the real consent via the existing setProfile + saveProfileToFirestore
+  // path (same flag the reader-model section controls).
+  var threadsCard = document.createElement('div');
+  threadsCard.className = 'account-card portrait-threads';
+  returnsSec.appendChild(threadsCard);
+  wrap.appendChild(returnsSec);
+
+  function renderPortraitThreads() {
+    var prof = getProfile(uid);
+    var optedIn = prof.yumiReaderModel === true;
+    var html = '<div class="portrait-threads-ti"><span class="sig">~</span> Yumi can go one step further</div>' +
+      '<div class="portrait-threads-blurb">Turn on her reader-model and she’ll name the threads she sees weaving through your margins — patterns you might not catch yourself. She only ever names what’s actually there, and you can dismiss anything that doesn’t fit.</div>' +
+      '<div class="portrait-toggle' + (optedIn ? ' on' : '') + '" data-act="rmtoggle" tabindex="0" role="button"><span class="portrait-switch"><span class="portrait-knob"></span></span><span class="portrait-toggle-lbl">' + (optedIn ? 'Yumi is noticing' : 'Let Yumi notice') + '</span></div>';
+    if (optedIn) {
+      var model = (typeof getReaderModel === 'function') ? getReaderModel(uid) : { threads: [] };
+      var threads = (model && model.threads instanceof Array) ? model.threads : [];
+      var named = '', ti, shown = 0;
+      for (ti = 0; ti < threads.length; ti = ti + 1) {
+        var th = threads[ti];
+        if (!th || th.status === 'dismissed') { continue; }
+        var label = (typeof th.label === 'string') ? th.label : '';
+        if (!label) { continue; }
+        var nc = (th.memberNoteIds instanceof Array) ? th.memberNoteIds.length : 0;
+        named += '<div class="portrait-thread-row"><div class="body">' + _portraitEsc(label) + '<div class="s">noticed across ' + nc + ' note' + (nc === 1 ? '' : 's') + '</div></div></div>';
+        shown = shown + 1;
+      }
+      if (shown === 0) {
+        named = '<div class="portrait-thread-row"><div class="body"><div class="s">Yumi hasn’t named a thread yet — keep reading and marking, and patterns will surface here.</div></div></div>';
+      }
+      html += '<div class="portrait-named show">' + named + '</div>';
+    }
+    threadsCard.innerHTML = html;
+  }
+  threadsCard.addEventListener('click', function (e) {
+    var node = e.target;
+    while (node && node !== threadsCard && !(node.getAttribute && node.getAttribute('data-act') === 'rmtoggle')) { node = node.parentNode; }
+    if (!node || !node.getAttribute || node.getAttribute('data-act') !== 'rmtoggle') { return; }
+    var next = !(getProfile(uid).yumiReaderModel === true);
+    setProfile(uid, { yumiReaderModel: next });
+    if (typeof saveProfileToFirestore === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function () {});
+    }
+    renderPortraitThreads();
+  });
+  renderPortraitThreads();
+
   // Shared toggle: recompute axis data + re-render field + galaxy together.
   var portraitReduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   function portraitSetAxis(name) {
+    portraitCurrentAxis = name;
     var btns = portraitSeg.querySelectorAll('button'), bi2;
     for (bi2 = 0; bi2 < btns.length; bi2 = bi2 + 1) {
       btns[bi2].className = (btns[bi2].getAttribute('data-axis') === name) ? 'on' : '';
     }
+    renderPortraitDialog(name);
     var axisData = _portraitAxisData(uid, name);
     _portraitRenderField(portraitFieldEl, portraitTreadout, axisData, name);
     _portraitRenderGalaxy(portraitGalaxyEl, galReadout, galHelp, axisData, name, portraitReduce);
