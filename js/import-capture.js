@@ -26,6 +26,7 @@
 (function () {
 
   var PROXY_URL = '/.netlify/functions/claude-proxy';
+  var TRANSCRIBE_PROXY_URL = '/.netlify/functions/transcribe-proxy';
   var SEG_MODEL = 'claude-sonnet-4-6';
 
   // ---- segmentation system prompt -------------------------------------
@@ -913,6 +914,109 @@
   // (lastImport.createdIds=[id]), so ownsEntry / deleteEntry guard it exactly
   // like the bulk path -- F5: only this id is ever read-modify-written/deleted.
   // =====================================================================
+
+  // ---------------------------------------------------------------------
+  // Dictation v2 transport: record-and-transcribe (MediaRecorder + a gated
+  // server STT proxy). Replaces the Web Speech / VoiceInput dependency with a
+  // path that works consistently on every HTTPS browser. These helpers yield
+  // a transcript STRING and call back; they NEVER read or write state -- the
+  // sole entry mutator stays processDictation. Wired into the UI in Stage 2;
+  // dormant (uncalled) until then.
+  // ---------------------------------------------------------------------
+
+  // True when this browser can capture + record mic audio (HTTPS-only APIs).
+  // When false the dictation UI keeps the textarea fallback (never a dead mic).
+  function canRecord() {
+    return !!(navigator.mediaDevices &&
+              navigator.mediaDevices.getUserMedia &&
+              typeof MediaRecorder !== 'undefined');
+  }
+
+  // Negotiate a container the running browser can actually record, in
+  // preference order: Chrome/Firefox -> audio/webm;codecs=opus; Safari/iOS ->
+  // audio/mp4. '' means MediaRecorder picks (read rec.mimeType after).
+  function pickAudioMimeType() {
+    if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) { return ''; }
+    var candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+    var i;
+    for (i = 0; i < candidates.length; i = i + 1) {
+      if (MediaRecorder.isTypeSupported(candidates[i])) { return candidates[i]; }
+    }
+    return '';
+  }
+
+  // Read the recorded blob as base64 and POST it to the gated transcribe proxy.
+  // Hands the transcript STRING to cbs.onResult. Touches no state; never logs
+  // the audio or the key. Two-arg .then(ok, err) handlers throughout (ES3).
+  function transcribeBlob(blob, mimeType, cbs) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var b64 = String(reader.result || '').replace(/^data:[^;]*;base64,/, '');
+      if (!b64) { if (cbs.onError) { cbs.onError('failed'); } return; }
+      fetch(TRANSCRIBE_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+        body: JSON.stringify({ audio: b64, mimeType: mimeType })
+      }).then(function (res) {
+        if (!res.ok) { if (cbs.onError) { cbs.onError('failed'); } return; }
+        res.json().then(function (data) {
+          var text = (data && typeof data.transcript === 'string') ? data.transcript : '';
+          if (cbs.onResult) { cbs.onResult(text); }
+        }, function () { if (cbs.onError) { cbs.onError('failed'); } });
+      }, function () { if (cbs.onError) { cbs.onError('failed'); } });
+    };
+    reader.onerror = function () { if (cbs.onError) { cbs.onError('failed'); } };
+    reader.readAsDataURL(blob);
+  }
+
+  // Start recording mic audio; return a session handle { stop: fn } so the UI
+  // can tap-to-stop. On stop: release the mic (clears the iOS indicator),
+  // assemble ONE blob, then transcribe. Callbacks:
+  //   onStart()        recording began
+  //   onTranscribing() recording stopped, awaiting the transcript
+  //   onResult(text)   transcript ready (a string; may be '')
+  //   onError(reason)  'unsupported' | 'denied' | 'failed' -> textarea fallback
+  // Must be called inside a user-gesture handler (iOS requirement).
+  function recordAndTranscribe(cbs) {
+    cbs = cbs || {};
+    if (!canRecord()) { if (cbs.onError) { cbs.onError('unsupported'); } return null; }
+    var session = { stop: function () {}, stopped: false };
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var releaseTracks = function () {
+        try {
+          var tr = stream.getTracks(); var j;
+          for (j = 0; j < tr.length; j = j + 1) { tr[j].stop(); }
+        } catch (e1) {}
+      };
+      var mt = pickAudioMimeType();
+      var rec = mt ? new MediaRecorder(stream, { mimeType: mt }) : new MediaRecorder(stream);
+      var chunks = [];
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) { chunks.push(e.data); } };
+      rec.onstop = function () {
+        releaseTracks();
+        var type = rec.mimeType || mt || (chunks.length ? chunks[0].type : '') || 'audio/webm';
+        var blob = new Blob(chunks, { type: type });
+        if (!blob.size) { if (cbs.onError) { cbs.onError('failed'); } return; }
+        if (cbs.onTranscribing) { cbs.onTranscribing(); }
+        transcribeBlob(blob, type, cbs);
+      };
+      rec.onerror = function () { releaseTracks(); if (cbs.onError) { cbs.onError('failed'); } };
+      session.stop = function () {
+        if (session.stopped) { return; }
+        session.stopped = true;
+        try {
+          if (rec.state !== 'inactive') { rec.stop(); } else { releaseTracks(); }
+        } catch (e2) { releaseTracks(); if (cbs.onError) { cbs.onError('failed'); } }
+      };
+      try { rec.start(); } catch (e3) { releaseTracks(); if (cbs.onError) { cbs.onError('failed'); } return; }
+      if (cbs.onStart) { cbs.onStart(); }
+    }, function (err) {
+      var n = err && err.name;
+      var reason = (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') ? 'denied' : 'failed';
+      if (cbs.onError) { cbs.onError(reason); }
+    });
+    return session;
+  }
 
   // Mic hero (shown when SpeechRecognition is supported).
   function buildMicHero(panel) {
