@@ -204,8 +204,10 @@
   // ---- commitEntries --------------------------------------------------
   // Decide the register for an item from its type. Quote -> marginalia;
   // an own-note that reads as an explicit question (ends with '?') ->
-  // question; otherwise journal. An explicit item.register overrides
-  // (used by the Stage-3 queue when the reader picks).
+  // question; otherwise marginalia. (Journal is no longer a commit-time
+  // default -- it is an opt-in flip in the Stage-3 review, which clears
+  // bookIds when chosen.) An explicit item.register overrides (used by
+  // the Stage-3 queue when the reader picks).
   function looksLikeQuestion(t) {
     var s = String(t).replace(/\s+$/, '');
     return s.charAt(s.length - 1) === '?';
@@ -216,7 +218,7 @@
     }
     if (item.type === 'quote') { return 'marginalia'; }
     if (looksLikeQuestion(item.text)) { return 'question'; }
-    return 'journal';
+    return 'marginalia';
   }
 
   // Dedupe key: collapsed body + the (single) bookId, or empty for Inbox.
