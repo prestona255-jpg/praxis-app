@@ -1046,7 +1046,21 @@
         } catch (e2) { releaseTracks(); if (cbs.onError) { cbs.onError('failed'); } }
       };
       try { rec.start(); } catch (e3) { releaseTracks(); if (cbs.onError) { cbs.onError('failed'); } return; }
-      if (cbs.onStart) { cbs.onStart(); }
+      // Leading-clip fix: do NOT fire onStart synchronously -- rec.start() flips
+      // rec.state asynchronously, so the recorder may not be capturing yet (the
+      // first ~100-300ms is lost if the UI invites speech now). Poll rec.state
+      // (safer than rec.onstart on iOS) and reveal "Listening" only once it is
+      // 'recording'; a ~600ms safety cap fires regardless so the UI never wedges
+      // on "Warming up...". onStart fires at most once.
+      var started = false, ticks = 0;
+      var warm = setInterval(function () {
+        if (rec.state === 'inactive') { clearInterval(warm); return; }
+        ticks = ticks + 1;
+        if (rec.state === 'recording' || ticks >= 15) {
+          clearInterval(warm);
+          if (!started) { started = true; if (cbs.onStart) { cbs.onStart(); } }
+        }
+      }, 40);
     }, function (err) {
       var n = err && err.name;
       var reason = (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') ? 'denied' : 'failed';
@@ -1115,7 +1129,7 @@
     var k;
     for (k = 0; k < 5; k = k + 1) { bars.appendChild(el('span')); }
     wrap.appendChild(bars);
-    var st = el('div', 'ic-listen-state', 'Listening');
+    var st = el('div', 'ic-listen-state', 'Warming up…');
     wrap.appendChild(st);
     var tx = el('div', 'ic-transcript');
     wrap.appendChild(tx);
