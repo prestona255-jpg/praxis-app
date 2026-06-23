@@ -511,33 +511,42 @@
     var gIndex = {};
     var inbox = [];
     var journals = [];
-    var i, e, bid;
+    // savedCount = distinct created entries (the headline total; a multi-book
+    // entry is ONE note even though it shows under each book), counted live so
+    // it equals the stored count and reconciles with the Inbox needbar.
+    var savedCount = 0;
+    var i, j, e;
     for (i = 0; i < ids.length; i = i + 1) {
       e = state.notebookEntries ? state.notebookEntries[ids[i]] : null;
       if (!e) { continue; }
-      bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
-      if (!bid) {
-        if (e.register === 'journal') { journals.push(e); } else { inbox.push(e); }
-        continue;
+      savedCount = savedCount + 1;
+      // Bucket on the SAME fields notebookEntryMatchesTab (views.js) routes on
+      // -- register, filed, and EVERY bookId -- so the receipt can never
+      // structurally diverge from the notebook: journal by register; a filed,
+      // booked note under EACH of its books; everything else to the Inbox.
+      // (Imports write 0/1 book today, but iterating all bookIds keeps this
+      // honest if a multi-book entry ever reaches here.)
+      if (e.register === 'journal') { journals.push(e); continue; }
+      if (e.filed === true && e.bookIds && e.bookIds.length) {
+        for (j = 0; j < e.bookIds.length; j = j + 1) {
+          var bid = e.bookIds[j];
+          if (!bid) { continue; }
+          if (!Object.prototype.hasOwnProperty.call(gIndex, bid)) {
+            var book = state.books ? state.books[bid] : null;
+            gIndex[bid] = groups.length;
+            groups.push({
+              title:  (book && typeof book.title === 'string' && book.title) ? book.title : 'Untitled',
+              author: (book && typeof book.author === 'string') ? book.author : '',
+              journal: false,
+              entries: []
+            });
+          }
+          groups[gIndex[bid]].entries.push(e);
+        }
+      } else {
+        inbox.push(e);
       }
-      if (!Object.prototype.hasOwnProperty.call(gIndex, bid)) {
-        var book = state.books ? state.books[bid] : null;
-        gIndex[bid] = groups.length;
-        groups.push({
-          title:  (book && typeof book.title === 'string' && book.title) ? book.title : 'Untitled',
-          author: (book && typeof book.author === 'string') ? book.author : '',
-          journal: false,
-          entries: []
-        });
-      }
-      groups[gIndex[bid]].entries.push(e);
     }
-    // savedCount is the TRUE total of this import's rendered entries (booked +
-    // inbox + journal), counted from live entries -- so the headline number
-    // equals the stored count and reconciles with the Inbox needbar below.
-    var bookedCount = 0;
-    for (i = 0; i < groups.length; i = i + 1) { bookedCount = bookedCount + groups[i].entries.length; }
-    var savedCount = bookedCount + inbox.length + journals.length;
 
     // head: seal + "Filed" + count
     var head = el('div', 'ic-r-head');
@@ -805,13 +814,15 @@
     var ids = (lastImport && lastImport.createdIds) ? lastImport.createdIds : [];
     var metaOf = (lastImport && lastImport.meta) ? lastImport.meta : {};
     var pending = [];
-    var i, e, bid;
+    var i, e;
     for (i = 0; i < ids.length; i = i + 1) {
       e = state.notebookEntries ? state.notebookEntries[ids[i]] : null;
       if (!e) { continue; }
-      bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
-      if (bid) { continue; }
+      // pending == the Inbox routing predicate (notebookEntryMatchesTab):
+      // non-journal AND filed === false. filed is the canonical signal (no
+      // bookIds[0] check); a re-file sets filed:true and drops it from here.
       if (e.register === 'journal') { continue; }
+      if (e.filed !== false) { continue; }
       if (dismissed[e.id]) { continue; }
       pending.push(e);
     }
