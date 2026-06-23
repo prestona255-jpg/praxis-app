@@ -400,9 +400,9 @@
       'Dictate, paste, or drop in a file. Yumi files each note to the right book '
       + '— you only weigh in when she’s unsure.'));
 
-    // Dictation hero: the mic when SpeechRecognition is supported, else a
+    // Dictation hero: the mic when this browser can record audio, else a
     // single-note textarea on the SAME engine path -- never a dead mic.
-    if (window.VoiceInput && VoiceInput.isSupported()) {
+    if (canRecord()) {
       panel.appendChild(buildMicHero(panel));
     } else {
       panel.appendChild(buildTypeNoteHero(panel));
@@ -906,10 +906,11 @@
   }
 
   // =====================================================================
-  // Stage 4: dictation -- "Talk to Yumi". VoiceInput (SpeechRecognition,
-  // single-utterance, final-only) -> segmentDoc parses the transcript (NO new
-  // parser) -> commitEntries writes ONE note -> a light confirmation. An
-  // unsupported browser falls back to a single-note textarea on the SAME path
+  // Stage 4: dictation -- "Talk to Yumi". v2 transport: MediaRecorder capture
+  // -> a gated server STT proxy (recordAndTranscribe) yields the transcript
+  // -> segmentDoc parses it (NO new parser) -> commitEntries writes ONE note
+  // -> a light confirmation. A browser that cannot record (no getUserMedia /
+  // permission denied) falls back to a single-note textarea on the SAME path
   // (never a dead mic). The dictated note is its own 1-item import
   // (lastImport.createdIds=[id]), so ownsEntry / deleteEntry guard it exactly
   // like the bulk path -- F5: only this id is ever read-modify-written/deleted.
@@ -1018,7 +1019,7 @@
     return session;
   }
 
-  // Mic hero (shown when SpeechRecognition is supported).
+  // Mic hero (shown when this browser can record audio).
   function buildMicHero(panel) {
     var hero = el('div', 'ic-mic-hero');
     var mic = el('button', 'ic-mic'); mic.type = 'button';
@@ -1082,34 +1083,46 @@
     wrap.appendChild(st);
     var tx = el('div', 'ic-transcript');
     wrap.appendChild(tx);
+    var stop = el('button', 'ic-stop', 'Tap to stop'); stop.type = 'button';
+    wrap.appendChild(stop);
     panel.appendChild(wrap);
-    return { state: st, transcript: tx };
+    return { state: st, transcript: tx, stop: stop };
   }
 
-  // Start one single-utterance recognition. onTranscript (final only) parses +
-  // commits; errors fall back gracefully (no-speech -> retry; denied/unavailable
-  // -> the type-a-note screen). VoiceInput is the SOLE SpeechRecognition site.
+  // Start record-and-transcribe. Tap the mic -> getUserMedia (inside this
+  // gesture, iOS-safe) -> record -> tap-to-stop -> transcribe via the gated
+  // proxy -> processDictation parses + commits. recordAndTranscribe yields a
+  // STRING; this is the SOLE dictation transport (no VoiceInput). Errors fall
+  // back gracefully: denied/unsupported -> type-a-note; empty/failed -> retry.
   function startDictation(panel) {
-    if (!(window.VoiceInput && VoiceInput.isSupported())) { renderTypeNote(panel, null); return; }
+    if (!canRecord()) { renderTypeNote(panel, null); return; }
     var ui = renderListening(panel);
-    VoiceInput.listen({
+    var session = recordAndTranscribe({
       onStart: function () { ui.state.textContent = 'Listening'; },
-      onTranscript: function (text) {
-        ui.state.textContent = 'Yumi heard you';
-        ui.transcript.textContent = text;
+      onTranscribing: function () {
+        ui.state.textContent = 'Transcribing';
+        renderProcessing(panel, 'transcribing your note…');
+      },
+      onResult: function (text) {
+        if (!(text && text.replace(/^\s+|\s+$/g, ''))) {
+          renderError(panel, 'I didn’t catch that. Tap “Try again” and speak after the tap.');
+          return;
+        }
         processDictation(panel, text);
       },
       onError: function (reason) {
-        if (reason === 'no-speech') {
-          renderError(panel, 'I didn’t catch that. Tap “Try again” and speak after the chime.');
-        } else if (reason === 'denied') {
+        if (reason === 'denied') {
           renderTypeNote(panel, 'Microphone access is blocked. Allow it in your browser, or type the note here.');
-        } else {
+        } else if (reason === 'unsupported') {
           renderTypeNote(panel, 'Voice isn’t available here — type the note instead.');
+        } else {
+          renderError(panel, 'Yumi couldn’t hear that. Tap “Try again”.');
         }
-      },
-      onEnd: function () {}
+      }
     });
+    if (ui.stop && session) {
+      ui.stop.addEventListener('click', function () { ui.stop.disabled = true; session.stop(); });
+    }
   }
 
   // Parse the transcript with the SAME engine the bulk path uses (segmentDoc),

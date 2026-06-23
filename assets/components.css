@@ -9586,6 +9586,15 @@
 .ic-bars span:nth-child(5) { animation-delay:.48s; }
 .ic-listen-state { font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.16em; font-size:11px; color:var(--gold); margin-bottom:14px; }
 .ic-transcript { font-family:var(--font-serif); font-size:24px; line-height:1.3; color:var(--ink); min-height:64px; max-width:38ch; }
+/* dictation v2: tap-to-stop control on the listening screen */
+.ic-stop {
+  margin-top:18px; font-family:var(--font-mono); font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-pill); padding:10px 22px;
+}
+.ic-stop:hover { color:var(--ink); border-color:var(--ink-4); }
+.ic-stop:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.ic-stop[disabled] { opacity:.5; cursor:default; }
 
 .ic-filed-card { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-1); padding:20px; margin:18px 0 0; text-align:left; }
 .ic-filed-top { display:flex; align-items:center; gap:10px; margin-bottom:13px; }
