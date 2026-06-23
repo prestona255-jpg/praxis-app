@@ -9343,3 +9343,108 @@
    so order:-1 moves the voice (mic) button to the left without a DOM/JS change.
    ============================================================================ */
 .yumi-panel .yumi-panel-input .yumi-mic-btn { order:-1; }
+
+/* ============================================================================
+   Import & Capture (Stage 2) — the unified capture overlay. A fixed modal over
+   the (bright-ground) notebook: entry surface (paste + upload) → "Yumi's
+   reading" beat → filed confirmation. Every selector is ic-* so it is fully
+   isolated from existing surfaces; all colours are theme.css tokens (no raw
+   hex). Built to design/praxis-import-capture-mockup-v2.html. Stage 3 adds the
+   book-grouped receipt, the exception queue, progressive disclosure, and undo.
+   ============================================================================ */
+.ic-overlay {
+  position:fixed; inset:0; z-index:10000;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:48px 18px; overflow-y:auto;
+  background:var(--scrim);
+  animation:ic-fade var(--motion-base) var(--ease) both;
+}
+.ic-panel {
+  position:relative; width:100%; max-width:520px; margin:auto;
+  background:var(--surface); color:var(--ink-2);
+  border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-2); padding:30px 26px 26px;
+  animation:ic-fadeup var(--motion-base) var(--ease) both;
+}
+.ic-close {
+  position:absolute; top:12px; right:12px; width:32px; height:32px;
+  border:none; background:transparent; color:var(--ink-3);
+  font-size:22px; line-height:1; cursor:pointer; border-radius:var(--radius-pill);
+}
+.ic-close:hover { color:var(--ink); background:var(--wash); }
+
+.ic-eyebrow {
+  font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.18em;
+  font-size:11px; color:var(--gold); margin:0;
+}
+.ic-h1 {
+  font-family:var(--font-serif); font-weight:600; color:var(--ink);
+  font-size:30px; line-height:1.08; margin:8px 0 0;
+}
+.ic-h1 em { font-style:italic; }
+.ic-sub { color:var(--ink-3); font-size:14.5px; line-height:1.5; margin:11px 0 0; max-width:42ch; }
+
+/* entry: paste + upload pills */
+.ic-ins { display:flex; gap:11px; flex-wrap:wrap; margin-top:22px; }
+.ic-pill {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--font-body); font-size:14px; color:var(--ink); cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:var(--radius-pill); padding:11px 18px; box-shadow:var(--shadow-1);
+}
+.ic-pill:hover { border-color:var(--gold-soft); }
+.ic-file { display:none; }
+
+.ic-paste { display:none; margin-top:18px; }
+.ic-paste.ic-show { display:block; animation:ic-fadeup var(--motion-base) var(--ease) both; }
+.ic-textarea {
+  width:100%; min-height:140px; resize:vertical;
+  font-family:var(--font-body); font-size:15px; color:var(--ink); line-height:1.5;
+  background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:var(--radius-md); padding:14px 15px;
+}
+.ic-textarea:focus-visible { outline:2px solid var(--teal); outline-offset:1px; }
+.ic-cta-wrap { text-align:center; margin-top:14px; }
+.ic-cta {
+  font-family:var(--font-body); font-size:15px; font-weight:600; color:var(--text-on-dark);
+  cursor:pointer; border:none; border-radius:var(--radius-pill); padding:12px 24px;
+  background:var(--grad); box-shadow:var(--shadow-1);
+}
+.ic-cta:hover { filter:brightness(1.04); }
+.ic-cta:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+
+/* processing beat */
+.ic-proc { display:flex; flex-direction:column; align-items:center; text-align:center; margin:46px 0 28px; }
+.ic-orb {
+  width:54px; height:54px; border-radius:var(--radius-pill); display:grid; place-items:center;
+  margin-bottom:22px; font-family:var(--font-serif); font-style:italic; font-weight:600;
+  font-size:24px; color:var(--teal); border:2px dashed var(--gold-soft);
+  background:var(--surface-2); animation:ic-breathe 1.8s ease-in-out infinite;
+}
+.ic-proc-txt { font-family:var(--font-serif); font-style:italic; font-size:21px; color:var(--ink); }
+.ic-proc-sub { font-family:var(--font-mono); font-size:13px; letter-spacing:.04em; color:var(--ink-3); margin-top:5px; }
+
+/* filed confirmation */
+.ic-r-head { display:flex; align-items:flex-start; gap:13px; margin-bottom:2px; }
+.ic-seal {
+  width:40px; height:40px; border-radius:var(--radius-pill); flex:none; display:grid; place-items:center;
+  color:var(--text-on-dark); margin-top:3px; background:var(--grad); box-shadow:var(--shadow-1);
+}
+.ic-seal svg { width:22px; height:22px; }
+.ic-r-foot { display:flex; align-items:center; gap:16px; justify-content:center; margin-top:24px; }
+
+@keyframes ic-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes ic-fadeup { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:translateY(0); } }
+@keyframes ic-breathe { 0%,100% { transform:scale(1); opacity:.9; } 50% { transform:scale(1.08); opacity:1; } }
+@media (prefers-reduced-motion:reduce) {
+  .ic-overlay, .ic-panel, .ic-paste.ic-show { animation:none; }
+  .ic-orb { animation:none; }
+}
+
+/* notebook-header trigger that opens the overlay */
+.ic-trigger {
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--gold); cursor:pointer; background:transparent;
+  border:1px solid var(--border-2); border-radius:var(--radius-pill); padding:7px 14px;
+}
+.ic-trigger:hover { color:var(--ink); border-color:var(--gold); }

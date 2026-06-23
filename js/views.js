@@ -748,6 +748,18 @@ function renderNotebook() {
   titleBlock.appendChild(title);
   header.appendChild(titleBlock);
 
+  // Import & Capture trigger -- opens the unified capture overlay (paste +
+  // upload). Guarded so the notebook still renders if import-capture.js did
+  // not load; the overlay itself lives entirely in that module.
+  if (window.ImportCapture && typeof window.ImportCapture.open === 'function') {
+    var importBtn = document.createElement('button');
+    importBtn.type = 'button';
+    importBtn.className = 'ic-trigger';
+    importBtn.textContent = '+ Bring in notes';
+    importBtn.addEventListener('click', function() { window.ImportCapture.open(); });
+    header.appendChild(importBtn);
+  }
+
   var spacer = document.createElement('span');
   spacer.className = 'spacer';
   header.appendChild(spacer);

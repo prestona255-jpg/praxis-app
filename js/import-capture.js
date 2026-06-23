@@ -306,12 +306,230 @@
     } catch (e) { /* a repaint must never break a successful write */ }
   }
 
-  // ---- public API (Stage 1: engine only; UI wires in Stage 2-3) -------
+  // =====================================================================
+  // Stage 2: capture overlay -- entry surface (paste + upload) -> the
+  // "Yumi's reading" beat -> commit -> a filed confirmation. Dictation is
+  // Prompt 3 (no mic here). The whole flow mounts as a FIXED overlay over
+  // the notebook, so routing is untouched. Every selector is ic-* so it cannot
+  // collide with or bleed into any existing surface; new colors live in
+  // theme.css, never inline. The rich receipt + exception queue + undo are
+  // Stage 3 -- this stage lands a minimal filed-confirmation handoff.
+  // =====================================================================
+
+  var OVERLAY_ID = 'ic-overlay';
+  // Holds the most recent import for the Stage-3 receipt + undo:
+  //   { createdIds:[entryId], items:[{id,body,register,isPrivate,bookId,page}],
+  //     total:Number, skipped:Number }
+  var lastImport = null;
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    + 'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
+    + '<polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+  // Tiny DOM helper (createElement + className + text). Keeps the builders terse
+  // without any innerHTML of user text (so a pasted note can never inject).
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (txt !== null && txt !== undefined) { n.textContent = txt; }
+    return n;
+  }
+
+  function closeBtn(onClick) {
+    var b = el('button', 'ic-close', '×');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Close');
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function close() {
+    var o = document.getElementById(OVERLAY_ID);
+    if (o && o.parentNode) { o.parentNode.removeChild(o); }
+  }
+
+  // Close the overlay AND repaint the notebook so freshly-filed entries show.
+  function done() {
+    close();
+    renderNotebookIfMounted();
+  }
+
+  function open() {
+    close(); // never stack two overlays
+    var ov = el('div', 'ic-overlay');
+    ov.id = OVERLAY_ID;
+    var panel = el('div', 'ic-panel');
+    ov.appendChild(panel);
+    // Scrim click (outside the panel) closes; panel clicks do not.
+    ov.addEventListener('click', function (e) { if (e.target === ov) { close(); } });
+    document.body.appendChild(ov);
+    renderEntry(panel);
+  }
+
+  // ---- entry screen: paste + upload -----------------------------------
+  function renderEntry(panel) {
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(close));
+    panel.appendChild(el('div', 'ic-eyebrow', 'Add to notebook'));
+    var h = el('h2', 'ic-h1');
+    h.appendChild(document.createTextNode('Bring in your '));
+    h.appendChild(el('em', null, 'notes'));
+    panel.appendChild(h);
+    panel.appendChild(el('p', 'ic-sub',
+      'Paste your notes or drop in a file. Yumi files each to the right book '
+      + '— you only weigh in when she’s unsure.'));
+
+    var ins = el('div', 'ic-ins');
+    var pasteToggle = el('button', 'ic-pill', 'Paste notes'); pasteToggle.type = 'button';
+    var uploadBtn = el('button', 'ic-pill', 'Upload a file'); uploadBtn.type = 'button';
+    ins.appendChild(pasteToggle);
+    ins.appendChild(uploadBtn);
+    panel.appendChild(ins);
+
+    var file = el('input', 'ic-file');
+    file.type = 'file';
+    file.accept = '.txt,.md,text/plain';
+    panel.appendChild(file);
+
+    var pasteArea = el('div', 'ic-paste');
+    var ta = el('textarea', 'ic-textarea');
+    ta.setAttribute('placeholder', 'Paste notes here — Yumi will sort them to your books…');
+    pasteArea.appendChild(ta);
+    var goWrap = el('div', 'ic-cta-wrap');
+    var go = el('button', 'ic-cta', 'Hand to Yumi'); go.type = 'button';
+    goWrap.appendChild(go);
+    pasteArea.appendChild(goWrap);
+    panel.appendChild(pasteArea);
+
+    pasteToggle.addEventListener('click', function () {
+      var showing = pasteArea.className.indexOf('ic-show') > -1;
+      pasteArea.className = showing ? 'ic-paste' : 'ic-paste ic-show';
+      if (!showing) { ta.focus(); }
+    });
+    uploadBtn.addEventListener('click', function () { file.click(); });
+    file.addEventListener('change', function () {
+      if (!file.files || !file.files.length) { return; }
+      var f = file.files[0];
+      var reader = new FileReader();
+      reader.onload = function () { runImport(panel, String(reader.result || ''), f.name); };
+      reader.onerror = function () { renderError(panel, 'Could not read that file.'); };
+      reader.readAsText(f);
+    });
+    go.addEventListener('click', function () {
+      if ((ta.value || '').replace(/^\s+|\s+$/g, '') === '') { ta.focus(); return; }
+      runImport(panel, ta.value, 'pasted notes');
+    });
+  }
+
+  // ---- processing beat ------------------------------------------------
+  function renderProcessing(panel, label) {
+    panel.innerHTML = '';
+    var proc = el('div', 'ic-proc');
+    proc.appendChild(el('div', 'ic-orb', 'Y'));
+    proc.appendChild(el('div', 'ic-proc-txt', 'Reading your notes…'));
+    proc.appendChild(el('div', 'ic-proc-sub', label));
+    panel.appendChild(proc);
+  }
+
+  // ---- orchestration: segment -> commit -> confirm --------------------
+  function runImport(panel, rawText, label) {
+    renderProcessing(panel, label);
+    segmentDoc(rawText).then(function (segs) {
+      var items = [];
+      var i;
+      for (i = 0; i < segs.length; i = i + 1) {
+        items.push({
+          text: segs[i].text, type: segs[i].type, bookGuess: segs[i].bookGuess,
+          confidence: segs[i].confidence, page: segs[i].page
+        });
+      }
+      var createdIds = commitEntries(items);
+      var models = [];
+      for (i = 0; i < createdIds.length; i = i + 1) {
+        var e = state.notebookEntries[createdIds[i]];
+        if (e) {
+          models.push({
+            id: e.id, body: e.body, register: e.register, isPrivate: e.isPrivate,
+            bookId: (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null, page: null
+          });
+        }
+      }
+      lastImport = {
+        createdIds: createdIds, items: models,
+        total: segs.length, skipped: segs.length - createdIds.length
+      };
+      renderConfirm(panel);
+    }, function (err) {
+      if (window.console && console.warn) { console.warn('import: ' + (err && err.message ? err.message : err)); }
+      renderError(panel, 'Yumi couldn’t read those notes. Please try again.');
+    });
+  }
+
+  // ---- confirmation (Stage 2 minimal; Stage 3 replaces with receipt) --
+  function renderConfirm(panel) {
+    panel.innerHTML = '';
+    var n = lastImport ? lastImport.createdIds.length : 0;
+    var books = {};
+    var bc = 0;
+    var i;
+    if (lastImport) {
+      for (i = 0; i < lastImport.items.length; i = i + 1) {
+        var bid = lastImport.items[i].bookId;
+        if (bid && !Object.prototype.hasOwnProperty.call(books, bid)) {
+          books[bid] = true; bc = bc + 1;
+        }
+      }
+    }
+    panel.appendChild(closeBtn(done));
+    var head = el('div', 'ic-r-head');
+    var seal = el('span', 'ic-seal');
+    seal.innerHTML = CHECK_SVG; // static markup only -- never user text
+    head.appendChild(seal);
+    var hb = el('div');
+    hb.appendChild(el('div', 'ic-eyebrow', 'Filed'));
+    var titleTxt = n + (n === 1 ? ' note' : ' notes');
+    if (bc) { titleTxt = titleTxt + ', ' + bc + (bc === 1 ? ' book' : ' books'); }
+    hb.appendChild(el('h2', 'ic-h1', titleTxt));
+    head.appendChild(hb);
+    panel.appendChild(head);
+
+    var subTxt = 'All sorted to your shelf — quotes as marginalia, your own notes '
+      + 'kept private. Nothing added that you didn’t write.';
+    if (lastImport && lastImport.skipped) {
+      subTxt = subTxt + ' ' + lastImport.skipped
+        + (lastImport.skipped === 1 ? ' was already in your notebook.' : ' were already in your notebook.');
+    }
+    panel.appendChild(el('p', 'ic-sub', subTxt));
+
+    var foot = el('div', 'ic-r-foot');
+    var doneBtn = el('button', 'ic-cta', 'Done'); doneBtn.type = 'button';
+    doneBtn.addEventListener('click', done);
+    foot.appendChild(doneBtn);
+    panel.appendChild(foot);
+  }
+
+  function renderError(panel, msg) {
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(close));
+    panel.appendChild(el('div', 'ic-eyebrow', 'Hm'));
+    panel.appendChild(el('h2', 'ic-h1', 'Couldn’t read that'));
+    panel.appendChild(el('p', 'ic-sub', msg));
+    var foot = el('div', 'ic-r-foot');
+    var retry = el('button', 'ic-cta', 'Try again'); retry.type = 'button';
+    retry.addEventListener('click', function () { open(); });
+    foot.appendChild(retry);
+    panel.appendChild(foot);
+  }
+
+  // ---- public API -----------------------------------------------------
   window.ImportCapture = {
+    open:          open,
+    close:         close,
     segmentDoc:    segmentDoc,
     matchBook:     matchBook,
     commitEntries: commitEntries,
     // exposed for the dev harness / Stage-3 reuse:
+    _lastImport:   function () { return lastImport; },
     _normTitle:    normTitle,
     _registerFor:  registerFor
   };
