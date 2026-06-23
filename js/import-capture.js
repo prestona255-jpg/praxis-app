@@ -330,6 +330,9 @@
   //   { createdIds:[id], meta:{ id:{page,type,bookGuess,confidence} },
   //     total:Number, skipped:Number }
   var lastImport = null;
+  // The most recent dictated note (Stage 4), a 1-entry import: { id, kept }. Its
+  // id is also lastImport.createdIds[0], so ownsEntry / undo guard it identically.
+  var lastDictation = null;
 
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
     + 'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
@@ -337,6 +340,11 @@
   var CHEV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
     + 'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
     + '<polyline points="9 18 15 12 9 6"></polyline></svg>';
+  var MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>'
+    + '<path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>'
+    + '<line x1="12" y1="19" x2="12" y2="22"></line></svg>';
 
   // Tiny DOM helper (createElement + className + text). Keeps the builders terse
   // without any innerHTML of user text (so a pasted note can never inject).
@@ -388,8 +396,17 @@
     h.appendChild(el('em', null, 'notes'));
     panel.appendChild(h);
     panel.appendChild(el('p', 'ic-sub',
-      'Paste your notes or drop in a file. Yumi files each to the right book '
+      'Dictate, paste, or drop in a file. Yumi files each note to the right book '
       + '— you only weigh in when she’s unsure.'));
+
+    // Dictation hero: the mic when SpeechRecognition is supported, else a
+    // single-note textarea on the SAME engine path -- never a dead mic.
+    if (window.VoiceInput && VoiceInput.isSupported()) {
+      panel.appendChild(buildMicHero(panel));
+    } else {
+      panel.appendChild(buildTypeNoteHero(panel));
+    }
+    panel.appendChild(el('div', 'ic-or-row', 'or'));
 
     var ins = el('div', 'ic-ins');
     var pasteToggle = el('button', 'ic-pill', 'Paste notes'); pasteToggle.type = 'button';
@@ -885,6 +902,239 @@
     lastImport = null;
     close();
     renderNotebookIfMounted();
+  }
+
+  // =====================================================================
+  // Stage 4: dictation -- "Talk to Yumi". VoiceInput (SpeechRecognition,
+  // single-utterance, final-only) -> segmentDoc parses the transcript (NO new
+  // parser) -> commitEntries writes ONE note -> a light confirmation. An
+  // unsupported browser falls back to a single-note textarea on the SAME path
+  // (never a dead mic). The dictated note is its own 1-item import
+  // (lastImport.createdIds=[id]), so ownsEntry / deleteEntry guard it exactly
+  // like the bulk path -- F5: only this id is ever read-modify-written/deleted.
+  // =====================================================================
+
+  // Mic hero (shown when SpeechRecognition is supported).
+  function buildMicHero(panel) {
+    var hero = el('div', 'ic-mic-hero');
+    var mic = el('button', 'ic-mic'); mic.type = 'button';
+    mic.setAttribute('aria-label', 'Dictate a note');
+    mic.innerHTML = MIC_SVG; // static markup only -- never user text
+    mic.addEventListener('click', function () { startDictation(panel); });
+    hero.appendChild(mic);
+    hero.appendChild(el('div', 'ic-mic-label', 'Talk to Yumi'));
+    hero.appendChild(el('div', 'ic-mic-hint',
+      '“Note on Freire — the banking metaphor keeps showing up…”'));
+    return hero;
+  }
+
+  // The textarea composer that feeds the single-note path -- shared by the
+  // unsupported-browser hero and the mic-error fallback screen.
+  function buildNoteComposer(panel) {
+    var box = el('div', 'ic-compose');
+    var ta = el('textarea', 'ic-textarea');
+    ta.setAttribute('placeholder', 'A note on a book — Yumi will file it…');
+    box.appendChild(ta);
+    var wrap = el('div', 'ic-cta-wrap');
+    var go = el('button', 'ic-cta', 'Hand to Yumi'); go.type = 'button';
+    go.addEventListener('click', function () {
+      var v = (ta.value || '').replace(/^\s+|\s+$/g, '');
+      if (v === '') { ta.focus(); return; }
+      processDictation(panel, v);
+    });
+    wrap.appendChild(go);
+    box.appendChild(wrap);
+    return box;
+  }
+
+  // Unsupported-browser hero: a labelled single-note composer in place of the mic.
+  function buildTypeNoteHero(panel) {
+    var hero = el('div', 'ic-typenote');
+    hero.appendChild(el('div', 'ic-mic-label', 'Type a quick note'));
+    hero.appendChild(buildNoteComposer(panel));
+    return hero;
+  }
+
+  // Mic-error fallback screen: the composer with an explanatory line.
+  function renderTypeNote(panel, msg) {
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(close));
+    panel.appendChild(el('div', 'ic-eyebrow', 'Type a note'));
+    panel.appendChild(el('h2', 'ic-h1', 'Type your note'));
+    if (msg) { panel.appendChild(el('p', 'ic-sub', msg)); }
+    panel.appendChild(buildNoteComposer(panel));
+  }
+
+  // The listening screen: equalizer bars + a state label + the final transcript.
+  function renderListening(panel) {
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(close));
+    var wrap = el('div', 'ic-listen');
+    var bars = el('div', 'ic-bars');
+    var k;
+    for (k = 0; k < 5; k = k + 1) { bars.appendChild(el('span')); }
+    wrap.appendChild(bars);
+    var st = el('div', 'ic-listen-state', 'Listening');
+    wrap.appendChild(st);
+    var tx = el('div', 'ic-transcript');
+    wrap.appendChild(tx);
+    panel.appendChild(wrap);
+    return { state: st, transcript: tx };
+  }
+
+  // Start one single-utterance recognition. onTranscript (final only) parses +
+  // commits; errors fall back gracefully (no-speech -> retry; denied/unavailable
+  // -> the type-a-note screen). VoiceInput is the SOLE SpeechRecognition site.
+  function startDictation(panel) {
+    if (!(window.VoiceInput && VoiceInput.isSupported())) { renderTypeNote(panel, null); return; }
+    var ui = renderListening(panel);
+    VoiceInput.listen({
+      onStart: function () { ui.state.textContent = 'Listening'; },
+      onTranscript: function (text) {
+        ui.state.textContent = 'Yumi heard you';
+        ui.transcript.textContent = text;
+        processDictation(panel, text);
+      },
+      onError: function (reason) {
+        if (reason === 'no-speech') {
+          renderError(panel, 'I didn’t catch that. Tap “Try again” and speak after the chime.');
+        } else if (reason === 'denied') {
+          renderTypeNote(panel, 'Microphone access is blocked. Allow it in your browser, or type the note here.');
+        } else {
+          renderTypeNote(panel, 'Voice isn’t available here — type the note instead.');
+        }
+      },
+      onEnd: function () {}
+    });
+  }
+
+  // Parse the transcript with the SAME engine the bulk path uses (segmentDoc),
+  // commit the ONE note, stash it as a 1-item import, show the light confirm.
+  // An empty/unstructured transcript becomes a plain own-note (never dropped).
+  function processDictation(panel, transcript) {
+    renderProcessing(panel, 'sorting your note…');
+    segmentDoc(transcript).then(function (segs) {
+      var item;
+      if (segs && segs.length) {
+        item = { text: segs[0].text, type: segs[0].type, bookGuess: segs[0].bookGuess,
+                 confidence: segs[0].confidence, page: segs[0].page };
+      } else {
+        item = { text: transcript, type: 'note', bookGuess: null, confidence: 'low', page: null };
+      }
+      var createdIds = commitEntries([item]);
+      if (!createdIds.length) { renderError(panel, 'You already have that note in your notebook.'); return; }
+      var id = createdIds[0];
+      lastDictation = { id: id, kept: false };
+      lastImport = { createdIds: [id], meta: {}, total: 1, skipped: 0 };
+      lastImport.meta[id] = { page: item.page, type: item.type, bookGuess: item.bookGuess, confidence: item.confidence };
+      renderDictated(panel);
+    }, function (err) {
+      if (window.console && console.warn) { console.warn('dictation: ' + (err && err.message ? err.message : err)); }
+      renderError(panel, 'Yumi couldn’t read that. Tap “Try again”.');
+    });
+  }
+
+  // Light dictation confirmation. Reads the ONE created entry LIVE. Filed to a
+  // book -> "Filed as <register> to <book>". No book -> the inline confirm (the
+  // queue chip pattern, NOT the full queue): tap a candidate to re-file, or keep
+  // it in the Inbox. Undo deletes only this note; Another note re-opens entry.
+  function renderDictated(panel) {
+    panel.innerHTML = '';
+    panel.appendChild(closeBtn(done));
+    var e = (lastDictation && state.notebookEntries) ? state.notebookEntries[lastDictation.id] : null;
+    if (!e) { renderEntry(panel); return; }
+    var meta = (lastImport && lastImport.meta && lastImport.meta[e.id]) ? lastImport.meta[e.id] : {};
+    var isQuote = (meta.type === 'quote');
+    var bid = (e.bookIds && e.bookIds.length) ? e.bookIds[0] : null;
+    var kept = !!(lastDictation && lastDictation.kept);
+
+    panel.appendChild(el('div', 'ic-eyebrow', 'Captured'));
+    panel.appendChild(el('h2', 'ic-h1',
+      bid ? 'Got it.' : (kept ? 'Saved to your Inbox.' : 'Saved — one question.')));
+
+    var card = el('div', 'ic-filed-card');
+    var top = el('div', 'ic-filed-top');
+    var seal = el('span', 'ic-seal-sm'); seal.innerHTML = CHECK_SVG; // static
+    top.appendChild(seal);
+    if (bid) {
+      var book = state.books ? state.books[bid] : null;
+      var ft = el('span', 'ic-filed-to');
+      ft.appendChild(document.createTextNode('Filed as ' + e.register + ' to'));
+      ft.appendChild(el('span', 'ic-filed-bk',
+        (book && typeof book.title === 'string' && book.title) ? book.title : 'your book'));
+      top.appendChild(ft);
+    } else {
+      top.appendChild(el('span', 'ic-filed-to', 'Saved to your Inbox'));
+    }
+    card.appendChild(top);
+
+    card.appendChild(el('div', isQuote ? 'ic-quoted ic-q' : 'ic-quoted',
+      isQuote ? ('“' + e.body + '”') : e.body));
+
+    // Inline confirm for an unmatched note (skip once the reader keeps it / files it).
+    if (!bid && !kept) {
+      card.appendChild(el('div', 'ic-qask', 'Which book is it from?'));
+      var chips = el('div', 'ic-guesses');
+      var cands = candidateBooks(meta.bookGuess);
+      var i;
+      for (i = 0; i < cands.length; i = i + 1) {
+        (function (c) {
+          var chip = el('button', 'ic-guess'); chip.type = 'button';
+          chip.appendChild(document.createTextNode(c.title));
+          if (c.author) { chip.appendChild(el('span', 'ic-guess-au', c.author)); }
+          chip.addEventListener('click', function () { fileDictationToBook(panel, e.id, c.bid); });
+          chips.appendChild(chip);
+        })(cands[i]);
+      }
+      var keep = el('button', 'ic-guess ic-alt', 'Keep in Inbox'); keep.type = 'button';
+      keep.addEventListener('click', function () {
+        if (lastDictation) { lastDictation.kept = true; }
+        renderDictated(panel);
+      });
+      chips.appendChild(keep);
+      card.appendChild(chips);
+    }
+
+    var acts = el('div', 'ic-filed-acts');
+    var doneBtn = el('button', 'ic-cta', 'Done'); doneBtn.type = 'button';
+    doneBtn.addEventListener('click', done);
+    var undo = el('button', 'ic-linkbtn', '↩ Undo'); undo.type = 'button';
+    undo.addEventListener('click', function () { undoDictation(panel); });
+    var another = el('button', 'ic-linkbtn', '+ Another note'); another.type = 'button';
+    another.addEventListener('click', function () { renderEntry(panel); });
+    acts.appendChild(doneBtn);
+    acts.appendChild(undo);
+    acts.appendChild(another);
+    card.appendChild(acts);
+
+    panel.appendChild(card);
+  }
+
+  // Inline confirm: re-file the dictated note to a book IN PLACE (F5: it is in
+  // createdIds; ownsEntry guards). Register unchanged. Re-renders as "filed".
+  function fileDictationToBook(panel, entryId, bid) {
+    if (!ownsEntry(entryId) || !bid) { return; }
+    var e = state.notebookEntries ? state.notebookEntries[entryId] : null;
+    if (!e) { return; }
+    e.bookIds = [bid];
+    e.filed = true;
+    e.updatedAt = Date.now();
+    markNotebookDirty();
+    saveState();
+    renderDictated(panel);
+  }
+
+  // Undo a dictated note: delete ONLY this note (in createdIds; arcIds:[] so the
+  // arc-cascade is a no-op), persist, and return to entry so the reader can redo.
+  // Never touches a pre-existing entry.
+  function undoDictation(panel) {
+    var id = (lastDictation && lastDictation.id) ? lastDictation.id : null;
+    if (id && ownsEntry(id) && typeof deleteEntry === 'function' && deleteEntry(id)) {
+      saveState();
+    }
+    lastDictation = null;
+    lastImport = null;
+    renderEntry(panel);
   }
 
   function renderError(panel, msg) {
