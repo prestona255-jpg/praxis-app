@@ -952,7 +952,13 @@
   function transcribeBlob(blob, mimeType, cbs) {
     var reader = new FileReader();
     reader.onload = function () {
-      var b64 = String(reader.result || '').replace(/^data:[^;]*;base64,/, '');
+      // Extract RAW base64 from the FileReader data URL: everything after the
+      // first comma. Params-agnostic -- a /;base64,/ regex misses a media type
+      // with a parameter (data:audio/webm;codecs=opus;base64,...). Raw base64
+      // has no comma, so indexOf -> -1 -> used as-is.
+      var url = String(reader.result || '');
+      var ci = url.indexOf(',');
+      var b64 = (ci > -1) ? url.substring(ci + 1) : url;
       if (!b64) { if (cbs.onError) { cbs.onError('failed'); } return; }
       fetch(TRANSCRIBE_PROXY_URL, {
         method: 'POST',
@@ -997,7 +1003,7 @@
         releaseTracks();
         var type = rec.mimeType || mt || (chunks.length ? chunks[0].type : '') || 'audio/webm';
         var blob = new Blob(chunks, { type: type });
-        if (!blob.size) { if (cbs.onError) { cbs.onError('failed'); } return; }
+        if (!blob.size) { if (cbs.onError) { cbs.onError('empty'); } return; }
         if (cbs.onTranscribing) { cbs.onTranscribing(); }
         transcribeBlob(blob, type, cbs);
       };
@@ -1116,6 +1122,9 @@
           renderTypeNote(panel, 'Microphone access is blocked. Allow it in your browser, or type the note here.');
         } else if (reason === 'unsupported') {
           renderTypeNote(panel, 'Voice isn’t available here — type the note instead.');
+        } else if (reason === 'empty') {
+          // nothing was recorded (0-byte blob) -- never POST; honest message.
+          renderTypeNote(panel, 'I didn’t catch any audio — type your note here, or close and tap the mic to try again.');
         } else {
           // transcribe transport failed (non-200 / network / malformed body):
           // fall back to the textarea so the recording is never a dead end --

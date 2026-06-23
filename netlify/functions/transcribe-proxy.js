@@ -62,12 +62,14 @@ exports.handler = async function(event) {
   try {
     var body = JSON.parse(event.body || '{}');
 
-    // Audio: bare base64 string. Defensively strip a leading data:*;base64,
-    // prefix -- the client sends bare base64, but a stray data URL must not
-    // 500 the function.
+    // Audio: bare base64 string. Defensively accept a data: URL of ANY media
+    // type (incl. a parameter like audio/webm;codecs=opus) by taking everything
+    // after the FIRST comma -- a /;base64,/ regex misses parameterized types.
+    // Raw base64 has no comma, so indexOf -> -1 -> used as-is.
     var audio = body.audio;
     if (typeof audio === 'string') {
-      audio = audio.replace(/^data:[^;]*;base64,/, '');
+      var ci = audio.indexOf(',');
+      if (ci > -1) { audio = audio.substring(ci + 1); }
     }
     if (typeof audio !== 'string' || audio.length === 0) {
       return {
