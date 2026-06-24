@@ -13207,6 +13207,11 @@ function renderAccountPage() {
   // here. Seeded from profile.values; each add/remove persists via setProfile +
   // saveProfileToFirestore (DECLARED, not inferred -- no consent gate, no Yumi
   // write). Inserted directly after the live hero, before the live edit form.
+  // UMBRELLA (v3.143): each portrait section is wrapped in try/catch (an ES3
+  // statement -- NOT the banned promise catch() method) so a failure in any one
+  // degrades to "section absent" and can never again abort renderAccountPage /
+  // blank the page; the live hero / stats / transparency / data-card always render.
+  try {
   var valuesSec = document.createElement('div');
   valuesSec.className = 'sec account-values';
 
@@ -13307,6 +13312,7 @@ function renderAccountPage() {
 
   valuesSec.appendChild(valuesCard);
   wrap.appendChild(valuesSec);
+  } catch (e) { console.error('portrait VALUES section failed', e); }
 
   // Profile editor (DISPLAY NAME / PEN NAME + Save). #8 Stage 4a revision:
   // wrapped as .account-edit-form, HIDDEN by default so the hero reads as a
@@ -13455,6 +13461,7 @@ function renderAccountPage() {
   // Inserted AFTER the stat cards (COUNTS), before the transparency card. One
   // toggle drives the field + galaxy together; all figures read live state.
   // (Eyebrows reuse the Stage-1 gold portrait eyebrow .account-values-eyebrow.)
+  try {
   var revSec = document.createElement('div');
   revSec.className = 'account-revealed';
   var revEyebrow = document.createElement('div');
@@ -13819,11 +13826,13 @@ function renderAccountPage() {
     portraitSetAxis(tgt.getAttribute('data-axis'));
   });
   portraitSetAxis('categories');
+  } catch (e) { console.error('portrait REVEALED-SELF section failed', e); }
 
   // ===== JOURNEY (Portrait Stage 4) -- after returns/threads, before the
   // transparency + "Your data" cluster (which stays LAST). Read-only;
   // milestones from real timestamps, narrated in Yumi's voice; no streaks,
   // ending on an open question. =====
+  try {
   var journeySec = document.createElement('div');
   journeySec.className = 'sec account-portrait-sec';
   var journeyEyebrow = document.createElement('div');
@@ -13846,10 +13855,12 @@ function renderAccountPage() {
   journeyCard.innerHTML = jhtml;
   journeySec.appendChild(journeyCard);
   wrap.appendChild(journeySec);
+  } catch (e) { console.error('portrait JOURNEY section failed', e); }
 
   // ===== CAPSTONE EMBLEM (Portrait Stage 5) -- before the transparency +
   // "Your data" cluster (which stays LAST). The emblem is a QUESTION, not a
   // verdict; every strand traces to a real signal. Read-only. =====
+  try {
   var capSec = document.createElement('div');
   capSec.className = 'sec account-portrait-sec';
   var capEyebrow = document.createElement('div');
@@ -13888,12 +13899,18 @@ function renderAccountPage() {
   capSec.appendChild(capCard);
   wrap.appendChild(capSec);
 
-  var emblemEl = document.getElementById('account-portrait-emblem');
-  var eChipsWrap = document.getElementById('account-portrait-echips');
-  var eExplainEl = document.getElementById('account-portrait-eexplain');
-  var madeEl = document.getElementById('account-portrait-made');
-  var ackEl = document.getElementById('account-portrait-ack');
-  var showMadeBtn = document.getElementById('account-portrait-showmade');
+  // ROOT-CAUSE FIX (v3.143): query from capCard (the detached card node), NOT
+  // document. The account wrap is not appended to the document until the END of
+  // renderAccountPage (host.appendChild(wrap)), so document.getElementById
+  // returned null here and the first .addEventListener threw -- aborting the
+  // whole render and blanking the body. querySelector works on the detached
+  // subtree, so the handlers now actually attach. Each attach is null-guarded.
+  var emblemEl = capCard.querySelector('#account-portrait-emblem');
+  var eChipsWrap = capCard.querySelector('#account-portrait-echips');
+  var eExplainEl = capCard.querySelector('#account-portrait-eexplain');
+  var madeEl = capCard.querySelector('#account-portrait-made');
+  var ackEl = capCard.querySelector('#account-portrait-ack');
+  var showMadeBtn = capCard.querySelector('#account-portrait-showmade');
   var EXPL = {
     values: 'The core — ' + (emblemData.vCount > 0 ? 'the ' + emblemData.vCount + ' values' : 'the values') + ' you placed. They sit at the center because everything else is read through them.',
     lenses: 'The rings — the lenses you’ve built with Yumi. Your own conceptual structure, holding the rest together.',
@@ -13902,34 +13919,44 @@ function renderAccountPage() {
   };
   var emFocus = null;
   function setEChip(f) {
+    if (!eChipsWrap) { return; }
     var chips = eChipsWrap.querySelectorAll('.portrait-e-chip'), ci;
     for (ci = 0; ci < chips.length; ci = ci + 1) {
       chips[ci].className = 'portrait-e-chip' + (chips[ci].getAttribute('data-focus') === f ? ' on' : '');
     }
   }
-  eChipsWrap.addEventListener('click', function (e) {
-    var chip = e.target;
-    var f = (chip && chip.getAttribute) ? chip.getAttribute('data-focus') : null;
-    if (!f) { return; }
-    if (emFocus === f) {
-      emFocus = null; emblemEl.removeAttribute('data-focus');
-      eExplainEl.textContent = 'Tap a strand to see what it’s made of.'; setEChip(null);
-    } else {
-      emFocus = f; emblemEl.setAttribute('data-focus', f);
-      eExplainEl.textContent = EXPL[f]; setEChip(f);
-    }
-  });
-  showMadeBtn.addEventListener('click', function () {
-    var open = madeEl.className.indexOf('show') === -1;
-    madeEl.className = open ? 'portrait-made show' : 'portrait-made';
-    showMadeBtn.textContent = open ? 'hide what it’s made of' : 'show me what it’s made of';
-  });
-  capCard.addEventListener('click', function (e) {
-    var b = e.target;
-    var ackv = (b && b.getAttribute) ? b.getAttribute('data-ack') : null;
-    if (ackv === 'yes') { ackEl.textContent = 'Then it’s yours. It’ll keep changing as you do.'; }
-    else if (ackv === 'no') { ackEl.textContent = 'Good — that gap is the interesting part. Keep reading against it.'; }
-  });
+  if (eChipsWrap) {
+    eChipsWrap.addEventListener('click', function (e) {
+      var chip = e.target;
+      var f = (chip && chip.getAttribute) ? chip.getAttribute('data-focus') : null;
+      if (!f) { return; }
+      if (emFocus === f) {
+        emFocus = null; if (emblemEl) { emblemEl.removeAttribute('data-focus'); }
+        if (eExplainEl) { eExplainEl.textContent = 'Tap a strand to see what it’s made of.'; } setEChip(null);
+      } else {
+        emFocus = f; if (emblemEl) { emblemEl.setAttribute('data-focus', f); }
+        if (eExplainEl) { eExplainEl.textContent = EXPL[f]; } setEChip(f);
+      }
+    });
+  }
+  if (showMadeBtn) {
+    showMadeBtn.addEventListener('click', function () {
+      if (!madeEl) { return; }
+      var open = madeEl.className.indexOf('show') === -1;
+      madeEl.className = open ? 'portrait-made show' : 'portrait-made';
+      showMadeBtn.textContent = open ? 'hide what it’s made of' : 'show me what it’s made of';
+    });
+  }
+  if (capCard) {
+    capCard.addEventListener('click', function (e) {
+      var b = e.target;
+      var ackv = (b && b.getAttribute) ? b.getAttribute('data-ack') : null;
+      if (!ackEl) { return; }
+      if (ackv === 'yes') { ackEl.textContent = 'Then it’s yours. It’ll keep changing as you do.'; }
+      else if (ackv === 'no') { ackEl.textContent = 'Good — that gap is the interesting part. Keep reading against it.'; }
+    });
+  }
+  } catch (e) { console.error('portrait CAPSTONE section failed', e); }
 
   // ----- STAGE 11: TRANSPARENCY ("what Praxis records / what Yumi sees") -----
   // Plain disclosure of what Praxis records (aggregate counts only, never
