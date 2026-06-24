@@ -7073,32 +7073,6 @@
   color: var(--ink);
 }
 
-/* Empty placeholder reserving the constellation's vertical space until
-   Stage 3 mounts the inert mini-field. Faint inset ground + dashed rule so
-   the slot reads as "reserved", not broken. */
-.account-constellation-slot {
-  min-height: 220px;
-  margin: 0 0 40px 0;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-}
-
-/* #8 Stage 3: when the slot holds the inert constellation, shed the dashed
-   placeholder chrome -- the renderer draws its own cream stage. The svg fills
-   the slot width and keeps the field's aspect via its viewBox. */
-.account-constellation-slot-filled {
-  min-height: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-.account-constellation-slot-filled svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 /* Four stat cards in a row (mockup COUNTS = grid repeat(4,1fr); the <760 block
    below steps it down to 2-up). Desktop-first base per canon §3. */
 .account-stats {
@@ -8258,27 +8232,6 @@
   line-height: 1;
   color: var(--gold);
   opacity: .5;
-}
-
-/* Suppress the constellation's Yumi anchor inside the account slot (CSS only,
-   no renderer change) -- mirrors Home's .home-preview-embed [data-st-yumi]. */
-.account-constellation-slot [data-st-yumi] {
-  display: none;
-}
-
-/* #8 v3.105: account constellation mark hover (account-scoped). Targets the
-   transform-attribute-FREE .st-drift wrapper -- the outer translate + inner
-   scale presentation attrs are NEVER clobbered (a CSS transform would REPLACE
-   them and break positioning/size). .st-drift's drift animation is
-   .arc-detail-web-view-scoped, so it is inert here and free to take a hover
-   transform. arc-constellation.js untouched; Home/arc-detail unaffected. */
-.account-constellation-slot .st-drift {
-  transition: transform var(--motion-base) var(--ease),
-              filter var(--motion-base) var(--ease);
-}
-.account-constellation-slot g[data-st-sub-id]:hover .st-drift {
-  transform: scale(1.08);
-  filter: brightness(1.12);
 }
 
 /* Standing-place panel (a tapped mark's detail; sits in .account-expand-panel). */

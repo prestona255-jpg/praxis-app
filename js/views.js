@@ -11692,102 +11692,6 @@ function _accountBuildCategoryPanel(key) {
   return panel;
 }
 
-// #8 Stage 3 (constellation): OWNER-KEYED aggregator -> ONE synthetic contract
-// in renderSubTheoryConstellation's shape, from the user's OWN sub-theories
-// only (userId === uid -- auto-excludes the '__praxis_seed__' sentinel). Marks
-// are built by REUSE: for each distinct arc the user's subs sit in, call
-// _arcDetailBuildSubTheoryData(arc) and keep only entries that map back to a
-// userId===uid record -- so a user sub attached to the seed arc still renders,
-// while the seed's own example subs are dropped, and the seed arc is never
-// rendered AS an arc (no seed question, no seed books). arcId is scalar so the
-// per-arc sets are disjoint (no dedup). A user sub whose arc record is missing
-// is excluded (no position to render). Edges are recomputed from
-// linkedSubTheories among the RENDERED set only ({aId,bId}, symmetric-deduped)
-// so both endpoints always resolve. question is '' -- _stRenderQuestion returns
-// '' for an empty string (verified), so the center stays clean. ES3, sync.
-function _accountBuildConstellationData() {
-  var out = {
-    id:           '__account_constellation__',
-    question:     '',
-    subTheories:  [],
-    edges:        [],
-    books:        [],
-    yumiNoticing: []
-  };
-  var user = getCurrentUser();
-  if (!user || !user.uid) { return out; }
-  var uid = user.uid;
-
-  // 1. The user's own sub-theory ids (excludes the sentinel by construction).
-  var ownIds = {};
-  var k, s;
-  if (state.subTheories) {
-    for (k in state.subTheories) {
-      if (!state.subTheories.hasOwnProperty(k)) { continue; }
-      s = state.subTheories[k];
-      if (s && s.userId === uid && s.id) { ownIds[s.id] = true; }
-    }
-  }
-
-  // 2. Distinct arcIds those subs sit in.
-  var arcIdList = [];
-  var arcSeen = {};
-  if (state.subTheories) {
-    for (k in state.subTheories) {
-      if (!state.subTheories.hasOwnProperty(k)) { continue; }
-      s = state.subTheories[k];
-      if (s && s.userId === uid && s.arcId && !arcSeen[s.arcId]) {
-        arcSeen[s.arcId] = true;
-        arcIdList.push(s.arcId);
-      }
-    }
-  }
-
-  // 3. Per existing arc, reuse the shipped builder and keep only the user's
-  //    entries -> pixel-identical marks via the same mapping.
-  var kept = [];
-  var keptIds = {};
-  var i, arcRec, contract, j, entry;
-  for (i = 0; i < arcIdList.length; i = i + 1) {
-    arcRec = state.arcs ? state.arcs[arcIdList[i]] : null;
-    if (!arcRec) { continue; }
-    contract = _arcDetailBuildSubTheoryData(arcRec);
-    for (j = 0; j < contract.subTheories.length; j = j + 1) {
-      entry = contract.subTheories[j];
-      if (entry && ownIds[entry.id] && !keptIds[entry.id]) {
-        kept.push(entry);
-        keptIds[entry.id] = true;
-      }
-    }
-  }
-  out.subTheories = kept;
-
-  // 4. Edges among the RENDERED set only (both endpoints guaranteed present).
-  var edges = [];
-  var seenEdge = {};
-  var links, lj, bId, pairKey;
-  if (state.subTheories) {
-    for (k in state.subTheories) {
-      if (!state.subTheories.hasOwnProperty(k)) { continue; }
-      s = state.subTheories[k];
-      if (!s || s.userId !== uid || !keptIds[s.id]) { continue; }
-      links = s.linkedSubTheories;
-      if (!links || !links.length) { continue; }
-      for (lj = 0; lj < links.length; lj = lj + 1) {
-        bId = links[lj];
-        if (!keptIds[bId]) { continue; }
-        pairKey = (s.id < bId) ? (s.id + '|' + bId) : (bId + '|' + s.id);
-        if (seenEdge[pairKey]) { continue; }
-        seenEdge[pairKey] = true;
-        edges.push({ aId: s.id, bId: bId });
-      }
-    }
-  }
-  out.edges = edges;
-
-  return out;
-}
-
 // #8 Stage 4a: schema-free "reading since" label from the LIVE Firebase auth
 // creation time (firebase.auth().currentUser.metadata.creationTime -- a built-in
 // auth field, no stored field / no migration). Returns "Month YYYY", or '' when
@@ -13402,52 +13306,10 @@ function renderAccountPage() {
 
   wrap.appendChild(profileBlock);
 
-  // ----- SECTION EYEBROW (#8 Stage 4a) -----
-  var slotEyebrow = document.createElement('p');
-  slotEyebrow.className = 'eyebrow';
-  slotEyebrow.textContent = 'the shape of your thinking — tap a mark';
-  wrap.appendChild(slotEyebrow);
-
-  // ----- CONSTELLATION SLOT (Stage 3: inert owner-keyed constellation) -----
-  // Render-then-attach-NOTHING, exactly like Home's embed (views.js Home path):
-  // call renderSubTheoryConstellation, then attach no interaction layers (no
-  // _stConstellationAttachInteractions, no attachSubTheoryDrag) -- so there is
-  // no drag / connect / tap / hover anywhere. Marks only (showBooks:false,
-  // showMarginalia:false, showFaint:false, showLegend:false); empty drafts read
-  // faint via low maturity glow. When populated, the slot sheds its dashed
-  // placeholder chrome (the renderer draws its own cream stage). Empty -> the
-  // dashed placeholder stays.
-  var constSlot = document.createElement('div');
-  constSlot.className = 'account-constellation-slot';
-  var constData = _accountBuildConstellationData();
-  if (constData.subTheories.length > 0 &&
-      typeof window.renderSubTheoryConstellation === 'function') {
-    var ACCT_SVG_NS = 'http://www.w3.org/2000/svg';
-    var constSvg = document.createElementNS(ACCT_SVG_NS, 'svg');
-    constSvg.setAttribute('viewBox', '0 0 940 340');
-    constSvg.setAttribute('xmlns', ACCT_SVG_NS);
-    constSlot.appendChild(constSvg);
-    constSlot.className = 'account-constellation-slot account-constellation-slot-filled';
-    window.renderSubTheoryConstellation(constData, constSvg, {
-      showBooks:      false,
-      showMarginalia: false,
-      showFaint:      false,
-      showLegend:     false
-    });
-    // #8 Stage 4c: delegated mark-click -> open the sub-theory's standing-place
-    // panel in the shared host (no navigation, no tooltip, no drag). Marks are
-    // <g data-st-sub-id> shape groups; evidence dots carry data-st-mark and are
-    // excluded so a dot-click resolves to its parent mark.
-    constSvg.style.cursor = 'pointer';
-    constSvg.addEventListener('click', function(ev) {
-      var g = (ev.target && ev.target.closest)
-        ? ev.target.closest('[data-st-sub-id]:not([data-st-mark])') : null;
-      if (!g) { return; }
-      var sid = g.getAttribute('data-st-sub-id');
-      if (sid) { _accountOpenMark(sid); }
-    });
-  }
-  wrap.appendChild(constSlot);
+  // (Portrait fidelity G3: the "shape of your thinking -- tap a mark" inert
+  // constellation slot was removed here -- it has no v6-mockup counterpart and
+  // its light-cream stage broke the dark ground. The hero avatar + the GALAXY
+  // section carry the thinking-shape now; COUNTS follows VALUES directly.)
 
   // ----- SECTION EYEBROW + STAT CARDS (#8 Stage 4a eyebrow) -----
   var counts = _accountCounts(uid);
