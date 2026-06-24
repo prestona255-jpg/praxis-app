@@ -10140,7 +10140,7 @@ function openBookArcPicker(bookId, statusMsg) {
   }));
   // Bring the picker into view: its host sits below the book-detail
   // header, so on a tall mobile page the panel would open off-screen and
-  // the tap would read as a no-op. Mirrors _accountOpenMark's reveal.
+  // the tap would read as a no-op.
   if (typeof host.scrollIntoView === 'function') {
     host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -11381,68 +11381,6 @@ function _accountToggleCategory(key, cardEl) {
   if (cardEl) { cardEl.className = 'account-stat account-stat-active'; }
 }
 
-// #8 Stage 4c: open a tapped mark's "standing place" panel in the shared host.
-// Mutually replaces any open category (and clears its active card); clicking the
-// same mark again collapses.
-function _accountOpenMark(subId) {
-  var host = document.querySelector('.account-expand-host');
-  if (!host) { return; }
-  var was = host.getAttribute('data-open');
-  _accountHostReset();
-  if (was === 'sub:' + subId) { return; }
-  host.appendChild(_accountBuildMarkPanel(subId));
-  host.setAttribute('data-open', 'sub:' + subId);
-  if (typeof host.scrollIntoView === 'function') {
-    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-}
-
-// #8 Stage 4c: the "standing place" panel for one sub-theory (mark-click target).
-// Reads the live record: title + context line ("in <arc>" ONLY when the arc is
-// the user's OWN -- hidden for the sentinel seed -- plus N evidence / N
-// marginalia) + "open in full ->" (#subtheory/<id>) + a reflection footer. The
-// close (x) resets the host.
-function _accountBuildMarkPanel(subId) {
-  var panel = document.createElement('div');
-  panel.className = 'account-expand-panel account-mark-panel';
-  var sub = (state.subTheories && state.subTheories[subId]) ? state.subTheories[subId] : null;
-  if (!sub) {
-    panel.appendChild(_accountEmptyRow('That idea is no longer here.'));
-    return panel;
-  }
-  var user = getCurrentUser();
-  var uid = user && user.uid;
-
-  // #8 v3.105: reuse the shared header (adds the STILL ON YOUR ACCOUNT eyebrow
-  // to match the category panels). Title = the sub-theory label.
-  panel.appendChild(_accountBuildPanelHead(subTheoryRowLabel(sub), 'account-panel-title'));
-
-  var arc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
-  var parts = [];
-  if (arc && arc.userId === uid && arc.title) { parts.push('in ' + arc.title); }
-  var evCount = (sub.evidence && sub.evidence.length) ? sub.evidence.length : 0;
-  var margCount = (sub.attachedMarginalia && sub.attachedMarginalia.length)
-    ? sub.attachedMarginalia.length : 0;
-  parts.push(evCount + ' evidence');
-  parts.push(margCount + ' marginalia');
-  var ctx = document.createElement('p');
-  ctx.className = 'account-mark-context';
-  ctx.textContent = parts.join(' · ');
-  panel.appendChild(ctx);
-
-  var open = document.createElement('a');
-  open.className = 'account-expand-more account-mark-open';
-  open.href = '#subtheory/' + sub.id;
-  open.textContent = 'open in full →';
-  panel.appendChild(open);
-
-  var foot = document.createElement('p');
-  foot.className = 'account-mark-foot';
-  foot.textContent = 'A standing place for what this idea is doing in your thinking.';
-  panel.appendChild(foot);
-  return panel;
-}
-
 // #8 Stage 2: one quiet empty-state line for a category with no items.
 function _accountEmptyRow(msg) {
   var d = document.createElement('div');
@@ -12636,11 +12574,20 @@ function _portraitRenderGalaxy(galaxy, galaxyReadout, galaxyHelp, data, axis, re
     el.style.background = 'radial-gradient(circle at 36% 32%, color-mix(in srgb, var(--text-on-dark) ' + hiPct + '%, transparent), ' + hue + ' 52%, color-mix(in srgb, var(--sunk-d) 92%, transparent))';
     el.style.boxShadow = '0 0 ' + glow + 'px ' + (2 + br * 6).toFixed(0) + 'px color-mix(in srgb, ' + hue + ' ' + galphaPct + '%, transparent), inset 0 0 ' + (d / 3).toFixed(0) + 'px color-mix(in srgb, var(--text-on-dark) 12%, transparent)';
     el.style.left = '50%'; el.style.top = '50%';
-    el.style.transform = 'translate(-50%,-50%) scale(' + (reduceMotion ? 1 : 0.25) + ')';
+    el.style.transform = 'translate(-50%,-50%) scale(' + (reduceMotion ? 1 : 0.12) + ')';
     el.style.opacity = reduceMotion ? op : '0';
     el.innerHTML = '<span class="nm">' + _portraitEsc(cols[i]) + '<span class="ct">' + books[i] + ' books · ' + notes[i] + ' notes</span></span>';
     galaxy.appendChild(el);
     els.push(el);
+  }
+  // No-bond invitation (G5): with stars but zero note-spanning bonds, the stars
+  // stand on their own -- do NOT fake filaments. Instead name the absence in the
+  // mockup's empty-state tone, scoped + typographic.
+  if (bonds.length === 0) {
+    var invite = document.createElement('div');
+    invite.className = 'portrait-galaxy-invite';
+    invite.textContent = 'nothing shares a margin yet — they’ll draw together as your notes start to bridge categories';
+    galaxy.appendChild(invite);
   }
   function place() {
     var p;
@@ -12868,7 +12815,10 @@ function _portraitEmblem(uid) {
   eh += '<g class="pe-grp pe-lenses">';
   for (i = 0; i < nRings; i = i + 1) {
     var rg = RING_SLOTS[i];
-    eh += '<circle cx="100" cy="100" r="' + rg.r + '" fill="none" stroke="var(--gold)" stroke-width="' + rg.sw + '" opacity="' + rg.o + '"/>';
+    // G6 fidelity: alternate odd rings to the deeper --gold-ink so the
+    // concentric rings keep the mockup's gold/deep/gold tonal step (it built 3
+    // fixed rings; ours are data-driven 1-4, so alternate rather than hardcode).
+    eh += '<circle cx="100" cy="100" r="' + rg.r + '" fill="none" stroke="' + ((i % 2 === 1) ? 'var(--gold-ink)' : 'var(--gold)') + '" stroke-width="' + rg.sw + '" opacity="' + rg.o + '"/>';
   }
   eh += '</g>';
 

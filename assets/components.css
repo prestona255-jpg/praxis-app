@@ -7616,7 +7616,10 @@
   position: absolute;
   border-radius: 50%;
   cursor: pointer;
-  transition: left 1.4s cubic-bezier(.22,.61,.36,1), top 1.4s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1), opacity .5s, box-shadow .25s, filter .25s;
+  /* G5: richer one-time settle (drift 1.4s->1.9s, scale-in .9s->1.2s, deeper
+     start scale 0.25->0.12 in JS) -- settles to REST, no perpetual motion;
+     reduced-motion still seeds final positions instantly (media query below). */
+  transition: left 1.9s cubic-bezier(.22,.61,.36,1), top 1.9s cubic-bezier(.22,.61,.36,1), transform 1.2s cubic-bezier(.22,.61,.36,1), opacity .6s, box-shadow .25s, filter .25s;
 }
 .account .portrait-star .nm {
   position: absolute;
@@ -7671,6 +7674,25 @@
   color: var(--gold);
   letter-spacing: .04em;
   margin-left: 8px;
+}
+
+/* G5: no-bond invitation -- a faint italic line inside the galaxy well, shown
+   only when there are stars but zero bonds (stars stand on their own). */
+.account .portrait-galaxy-invite {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: 86%;
+  max-width: 420px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-4);
+  text-shadow: 0 1px 6px var(--scrim);
+  pointer-events: none;
 }
 
 /* empty states (sparse / no data) */
@@ -7813,7 +7835,7 @@
   align-items: baseline;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--wash);
 }
 .account .portrait-ret-row:first-of-type {
   border-top: 0;
@@ -7928,7 +7950,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--wash);
 }
 .account .portrait-thread-row .body {
   flex: 1;
@@ -8140,7 +8162,7 @@
   display: flex;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--wash);
   align-items: baseline;
 }
 .account .portrait-mrow:first-child {
@@ -8279,21 +8301,25 @@
 .account-mark-close:hover {
   color: var(--ink);
 }
-.account-mark-context {
-  margin: 6px 0 12px 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--ink-3);
+/* G6 a11y: scoped :focus-visible ring (teal) for the portrait's interactive
+   controls -- the deferred port of the mockup's global :focus-visible, SCOPED
+   under .account .portrait-* (an app-global rule would bleed -- the reason it
+   was deferred). Stars / tension-labels / toggle / pencils / seg-buttons are
+   keyboard-focusable today; the dialogue + emblem chips are delegated-click
+   spans (no tabindex, as in the mockup) so their ring stays dormant until they
+   are made focusable -- a separate, pre-existing a11y item. */
+.account .portrait-star:focus-visible,
+.account .portrait-tlabel:focus-visible,
+.account .portrait-toggle:focus-visible,
+.account .portrait-pencil:focus-visible,
+.account .portrait-seg button:focus-visible,
+.account .portrait-chip:focus-visible,
+.account .portrait-e-chip:focus-visible,
+.account .portrait-cap-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
-.account-mark-foot {
-  margin: 12px 0 0 0;
-  font-family: var(--font-serif);
-  font-size: 14px;
-  font-style: italic;
-  line-height: 1.45;
-  color: var(--ink-3);
-}
+
 /* ===== END ACCOUNT PAGE ===== */
 
 
