@@ -13930,7 +13930,7 @@ function renderAccountPage() {
   var covenant = document.createElement('p');
   covenant.className = 'account-covenant';
   covenant.textContent = 'Your library, your arcs, your notebook — they ' +
-    'live in your account, and they\'re yours. Take a copy or remove them ' +
+    'live in your account, and they’re yours. Take a copy or remove them ' +
     'whenever you like.';
   dataCard.appendChild(covenant);
 
@@ -13950,7 +13950,7 @@ function renderAccountPage() {
   // hidden DISPLAY NAME / PEN NAME form (pure DOM, no hash). No Theme button.
   var editBtn = document.createElement('button');
   editBtn.type = 'button';
-  editBtn.className = 'btn btn-ghost account-secondary-btn';
+  editBtn.className = 'btn btn-primary';
   editBtn.textContent = 'Edit profile';
   editBtn.addEventListener('click', function() {
     _accountToggleEditForm(profileBlock, editBtn);
@@ -14007,7 +14007,7 @@ function renderAccountPage() {
   var dangerDesc = document.createElement('p');
   dangerDesc.className = 'account-danger-desc';
   dangerDesc.textContent = 'Permanently removes your account and everything ' +
-    'in it. This can\'t be undone.';
+    'in it. This can’t be undone.';
   dangerBlock.appendChild(dangerDesc);
 
   var deleteBtn = document.createElement('button');

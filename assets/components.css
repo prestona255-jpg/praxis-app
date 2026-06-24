@@ -7040,14 +7040,16 @@
   color: var(--danger);
 }
 
-/* Batch 3: delete = .dang -- transparent + danger outline + danger text
-   (overrides the base dark .account .notebook-new-entry). */
-.account .notebook-new-entry.account-delete-btn {
+/* Batch 3 / G4: delete button = clay danger -- transparent + danger outline +
+   danger text. (Re-scoped from the stale `.notebook-new-entry.account-delete-btn`
+   that never matched the live `btn btn-ghost account-delete-btn`, so the danger
+   styling now actually applies -- aligns to the v6 mockup's clay delete link.) */
+.account .account-delete-btn {
   background: transparent;
   border: 1px solid var(--danger-line);
   color: var(--danger);
 }
-.account .notebook-new-entry.account-delete-btn:hover {
+.account .account-delete-btn:hover {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
