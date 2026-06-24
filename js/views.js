@@ -13126,31 +13126,15 @@ function renderAccountPage() {
   // column (eyebrow + name + pen + email). Signed-out keeps the plain stack.
   hero.className = 'account-hero';
 
-  // Fidelity (mock .account-hero): the hero avatar IS the user's own
-  // constellation in a round .account-slot -- their thinking-shape as their
-  // avatar -- replacing the gradient initial. DECORATIVE here (aria-hidden, no
-  // mark-click); the interactive "tap a mark to open it here" field stays its
-  // own section below (behavior the 96px decorative avatar can't hold). Empty
-  // (no sub-theories) -> the faint round ground, no svg.
+  // Fidelity (v6 mockup .hero .av): the hero avatar is the reader's initial as a
+  // monogram on the primary gradient (var(--grad)) + a thin gold ring -- the
+  // same mark the nav avatar carries, enlarged. DECORATIVE (aria-hidden); the
+  // interactive thinking-shape lives in the GALAXY section below.
   var heroSlot = document.createElement('div');
-  heroSlot.className = 'account-slot cstl-host';
-  heroSlot.id = 'account-cstl';
+  heroSlot.className = 'account-slot account-hero-monogram';
   heroSlot.setAttribute('aria-hidden', 'true');
-  var heroConstData = _accountBuildConstellationData();
-  if (heroConstData.subTheories.length > 0 &&
-      typeof window.renderSubTheoryConstellation === 'function') {
-    var HERO_SVG_NS = 'http://www.w3.org/2000/svg';
-    var heroSvg = document.createElementNS(HERO_SVG_NS, 'svg');
-    heroSvg.setAttribute('viewBox', '0 0 600 500');
-    heroSvg.setAttribute('xmlns', HERO_SVG_NS);
-    heroSlot.appendChild(heroSvg);
-    window.renderSubTheoryConstellation(heroConstData, heroSvg, {
-      showBooks:      false,
-      showMarginalia: false,
-      showFaint:      false,
-      showLegend:     false
-    });
-  }
+  heroSlot.textContent = (profile.displayNameOverride || user.displayName ||
+    user.email || '?').charAt(0).toUpperCase();
   hero.appendChild(heroSlot);
 
   var heroText = document.createElement('div');
@@ -13164,6 +13148,25 @@ function renderAccountPage() {
   }
   heroText.appendChild(acctEyebrow);
 
+  // ✎ edit affordance (v6 mockup): a wired pencil after the name + descriptor
+  // that reveals the hidden profile editor via the SAME toggle the foot's "Edit
+  // profile" action uses. The handler closes over the function-scoped
+  // profileBlock + editBtn (both assigned later in this same render) -- it never
+  // looks anything up in the document, so it cannot throw before wrap is
+  // attached (the hero is OUTSIDE the portrait umbrella).
+  function _heroPencil(label) {
+    var pen = document.createElement('span');
+    pen.className = 'portrait-pencil';
+    pen.setAttribute('role', 'button');
+    pen.setAttribute('tabindex', '0');
+    pen.setAttribute('aria-label', label);
+    pen.textContent = '✎';
+    pen.addEventListener('click', function () {
+      _accountToggleEditForm(profileBlock, editBtn);
+    });
+    return pen;
+  }
+
   // Display name (Cormorant via .account-hero-name) -- the override, else the
   // auth display name, else a neutral fallback.
   var heroName = document.createElement('h1');
@@ -13171,6 +13174,7 @@ function renderAccountPage() {
   heroName.textContent = profile.displayNameOverride
     ? profile.displayNameOverride
     : (user.displayName ? user.displayName : 'Your account');
+  heroName.appendChild(_heroPencil('Edit profile'));
   heroText.appendChild(heroName);
 
   // #8 Stage 4b: one-line self-description under the name (italic-serif),
@@ -13179,6 +13183,7 @@ function renderAccountPage() {
     var heroTagline = document.createElement('p');
     heroTagline.className = 'account-hero-tagline';
     heroTagline.textContent = profile.tagline;
+    heroTagline.appendChild(_heroPencil('Edit description'));
     heroText.appendChild(heroTagline);
   }
 
@@ -13186,20 +13191,26 @@ function renderAccountPage() {
   // only when a pen name is set.
   if (profile.penName) {
     var heroPen = document.createElement('p');
-    heroPen.className = 'account-field-hint';
+    heroPen.className = 'account-hero-pubas';
     heroPen.textContent = 'Publishing as ' + profile.penName;
     heroText.appendChild(heroPen);
   }
 
-  // Read-only "Signed in as <email>" line (mono), preserved from S7d.
-  var emailLine = document.createElement('p');
-  emailLine.className = 'account-signin-copy account-email-line';
-  emailLine.textContent = 'Signed in as ' +
-    (user.email ? user.email : '(no email on file)');
-  heroText.appendChild(emailLine);
+  // (The "Signed in as <email>" line moved to the "your data" card below -- it
+  // is account metadata, not hero identity. See the GOVERNANCE block.)
 
   hero.appendChild(heroText);
   wrap.appendChild(hero);
+
+  // ----- STANCE (v6 mockup .stance): a bare covenant line between the hero and
+  // VALUES -- outside any card and OUTSIDE the portrait umbrella. -----
+  var stanceLine = document.createElement('p');
+  stanceLine.className = 'portrait-stance';
+  var stanceDot = document.createElement('span');
+  stanceDot.className = 'portrait-stance-dot';
+  stanceLine.appendChild(stanceDot);
+  stanceLine.appendChild(document.createTextNode('Everything below is yours. Yumi offers; you decide what it means.'));
+  wrap.appendChild(stanceLine);
 
   // ===== VALUES -- declared "stones" (Portrait Stage 1) =====
   // Ported VERBATIM from praxis-portrait-mockup-v6-instrument.html (VALUES
@@ -13441,8 +13452,12 @@ function renderAccountPage() {
   // ----- SECTION EYEBROW + STAT CARDS (#8 Stage 4a eyebrow) -----
   var counts = _accountCounts(uid);
   var statsEyebrow = document.createElement('p');
-  statsEyebrow.className = 'eyebrow';
-  statsEyebrow.textContent = 'your reading life — tap to open it here';
+  statsEyebrow.className = 'eyebrow account-values-eyebrow';
+  statsEyebrow.appendChild(document.createTextNode('your reading life '));
+  var statsHint = document.createElement('span');
+  statsHint.className = 'hint';
+  statsHint.textContent = '— tap to open it here';
+  statsEyebrow.appendChild(statsHint);
   wrap.appendChild(statsEyebrow);
   var stats = document.createElement('div');
   stats.className = 'account-stats';
@@ -14056,6 +14071,14 @@ function renderAccountPage() {
     'live in your account, and they\'re yours. Take a copy or remove them ' +
     'whenever you like.';
   dataCard.appendChild(covenant);
+
+  // "Signed in as <email>" -- relocated here from the hero (v6 mockup keeps the
+  // hero identity-only; the email is account metadata, shown quiet + mono).
+  var emailLine = document.createElement('p');
+  emailLine.className = 'account-email-line';
+  emailLine.textContent = 'Signed in as ' +
+    (user.email ? user.email : '(no email on file)');
+  dataCard.appendChild(emailLine);
 
   // Workspace actions: edit profile (toggles the hero form) + export + sign out.
   var actionsBlock = document.createElement('div');

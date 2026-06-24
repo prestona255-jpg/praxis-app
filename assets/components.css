@@ -7099,11 +7099,12 @@
   height: auto;
 }
 
-/* Four stat cards in a row; wraps gracefully on narrow widths. */
+/* Four stat cards in a row (mockup COUNTS = grid repeat(4,1fr); the <760 block
+   below steps it down to 2-up). Desktop-first base per canon §3. */
 .account-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 13px;
   margin: 0 0 40px 0;
 }
 
@@ -7298,6 +7299,19 @@
   background: color-mix(in srgb, var(--surface-2) 82%, transparent);
   /* UMBER / canon §4-A: account card is SOLID -- blur removed. */
   box-shadow: var(--shadow-1);
+}
+
+/* Portrait body cards -> mockup .card radius (17px). Nearest token is
+   --radius-lg (16px); the 1px gap is sub-perceptual and deliberately NOT a new
+   token. Additive, .account-scoped, anti-bleed (portrait-/values- prefixed). */
+.account .account-values-card,
+.account .portrait-field-wrap,
+.account .portrait-galaxy-wrap,
+.account .portrait-returns,
+.account .portrait-threads,
+.account .portrait-journey,
+.account .portrait-capstone {
+  border-radius: var(--radius-lg);
 }
 
 /* Signed-in hero card: gradient avatar left, text column right. Scoped to the
@@ -7595,9 +7609,12 @@
   height: 380px;
   border-radius: var(--radius-lg);
   overflow: hidden;
+  /* Deep-space well: deepened toward near-black via --br-deep (mockup center
+     #1b1207 ≈ --br-deep #1c1209), replacing the lighter --surface-d-tinted
+     center so the panel reads as space, not brown. Token-only. */
   background: radial-gradient(ellipse 92% 82% at 50% 44%,
-    color-mix(in srgb, var(--surface-d) 40%, var(--sunk-d) 60%) 0%,
-    var(--sunk-d) 62%,
+    color-mix(in srgb, var(--br-deep) 70%, var(--sunk-d)) 0%,
+    var(--br-deep) 62%,
     var(--scrim) 100%);
   box-shadow: inset 0 0 60px var(--scrim);
 }
@@ -8191,10 +8208,10 @@
 .account-covenant {
   margin: 8px 0 0 0;
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 19px;
   font-style: italic;
   line-height: 1.5;
-  color: var(--ink-2);
+  color: var(--text-d);
 }
 
 /* One-line danger-zone description under the "Danger zone" label. */
@@ -8237,9 +8254,10 @@
 /* Stage 6: caret is now a flex item in .account-stat-labelrow (was a stacked
    block); keep its size + tone, drop the block/margin placement. */
 .account-stat-caret {
-  font-size: 14px;
+  font-size: 11px;
   line-height: 1;
-  color: var(--gold-text);
+  color: var(--gold);
+  opacity: .5;
 }
 
 /* Suppress the constellation's Yumi anchor inside the account slot (CSS only,
@@ -10167,9 +10185,68 @@
 .account-hero .account-slot { width:96px; height:96px; border-radius:50%; overflow:hidden; flex:none; background:var(--ground-grad),var(--ground); border:1px solid var(--border); --ink:var(--text-d); --ink-2:var(--text-d); --ink-3:var(--muted); --ink-4:var(--muted); }
 .account-hero .account-slot svg { width:100%; height:100%; display:block; }
 .account-hero .account-hero-text { flex:1 1 auto; min-width:0; }
-.account-hero .account-hero-name { font-family:var(--font-serif); font-size:30px; font-weight:500; line-height:1.1; color:var(--text-d); margin:0 0 2px; }
-.account-hero .account-hero-tagline { font-family:var(--font-serif); font-style:italic; color:var(--muted); margin-top:4px; }
-.account-hero .account-email-line { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:8px; letter-spacing:.04em; }
+.account-hero .account-hero-name { font-family:var(--font-serif); font-size:35px; font-weight:500; line-height:1.04; color:var(--text-d); margin:0 0 2px; }
+.account-hero .account-hero-tagline { font-family:var(--font-serif); font-style:italic; font-size:18px; color:var(--text-d); margin-top:4px; }
+/* Broadened from .account-hero so the relocated email reads the same quiet mono
+   wherever it lives (now the "your data" card -- G2). */
+.account .account-email-line { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:8px; letter-spacing:.04em; }
+
+/* ===== Portrait Fidelity G2 -- hero reconciliation (v6 mockup) ===== */
+/* Hero avatar -> the reader's initial as a monogram on the primary gradient
+   (var(--grad)) + a thin gold ring -- the nav avatar's mark, enlarged. Overrides
+   the constellation .account-slot recipe (keeps its 96px round + overflow). */
+.account .account-hero .account-hero-monogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad);
+  border: none;
+  box-shadow: 0 0 0 1.5px var(--gold-light);
+  color: var(--text-on-dark);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 42px;
+  line-height: 1;
+}
+/* "Publishing as <pen>" de-emphasized to quiet meta (was the italic --ink-3
+   field-hint); the serif tagline above is now the prominent subtitle. */
+.account .account-hero-pubas {
+  margin: 3px 0 0 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--muted);
+}
+/* Inline edit pencil after the name + descriptor (v6 mockup ✎). */
+.account .portrait-pencil {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--gold);
+  opacity: .7;
+  cursor: pointer;
+}
+.account .portrait-pencil:hover,
+.account .portrait-pencil:focus-visible {
+  opacity: 1;
+}
+/* Stance line between the hero and VALUES (v6 mockup .stance): a bare covenant
+   line with a small gold dot, outside any card. */
+.account .portrait-stance {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 4px 0 4px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink-4);
+}
+.account .portrait-stance-dot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: .6;
+}
 @media (max-width:759px){
   .account-hero { flex-direction:column; text-align:center; }
 }
