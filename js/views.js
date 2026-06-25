@@ -3154,7 +3154,29 @@ function renderShelf() {
     // the user's records), and never while a pass is already in flight.
     if (catPending.length > 0 && !shelfCategorizing && getCurrentUser()) {
       shelfCategorizing = true;
+      shelfClassifyGen = shelfClassifyGen + 1;
+      var ccGen = shelfClassifyGen;
+      // Watchdog: classifyBooksViaLLM has no timeout/abort, so a hung fetch (or an
+      // unexpected throw inside a .then handler) would never reach the callback
+      // below, leaving shelfCategorizing stuck true -- spinner frozen, Re-classify
+      // hidden -- until a reload. If the callback has not fired by the deadline,
+      // abandon this pass: bump the generation so a late callback no-ops, clear the
+      // flag, and re-render so the UI recovers (and can retry). The deadline scales
+      // with the batch count and errs LONG on purpose -- tripping a slow-but-working
+      // pass would churn, so the budget is generous; a genuine hang just takes a
+      // little to recover.
+      var ccDeadline = 20000 + Math.ceil(catPending.length / 20) * 20000;
+      var ccWatchdog = setTimeout(function () {
+        if (ccGen !== shelfClassifyGen) { return; }
+        shelfClassifyGen = shelfClassifyGen + 1;
+        shelfCategorizing = false;
+        if (location.hash === '#books' && getShelfGrouping() === 'categories') {
+          renderShelf();
+        }
+      }, ccDeadline);
       classifyBooksViaLLM(catPending, function (resultMap) {
+        clearTimeout(ccWatchdog);
+        if (ccGen !== shelfClassifyGen) { return; }
         var rk;
         for (rk in resultMap) {
           if (Object.prototype.hasOwnProperty.call(resultMap, rk) && state.books[rk]) {
@@ -3881,6 +3903,7 @@ var shelfFilter = { author: null, genre: null, theme: null, status: null, tradit
 // flight, so a re-render does not fire a second pass. Memory-only, same lifetime
 // as shelfFilter. Cleared in the classify callback.
 var shelfCategorizing = false;
+var shelfClassifyGen = 0;        // generation token — invalidates an abandoned pass's late callback
 
 // Stage 4d: author-rail collapse + in-page search state. Memory-only,
 // same lifetime contract as shelfFilter above. shelfSearchRaw keeps
