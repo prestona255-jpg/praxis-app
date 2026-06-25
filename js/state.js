@@ -470,6 +470,168 @@ function statusText(s) {
 // read / Will read) -- used by the status selectors and the review control.
 var STATUS_VOCAB = ['reading', 'read', 'will-read'];
 
+// =====================================================================
+// Stage 2 (shelf categories): the fixed curated taxonomy + the PURE local
+// classifier. The shelf's Categories grouping sorts each book into ONE of
+// SHELF_CATEGORIES (or CATEGORY_UNCATEGORIZED). Web/LLM classification maps
+// INTO this set -- it never invents a free-form category. Only populated
+// categories render (views.js); CATEGORY_UNCATEGORIZED sinks to the bottom.
+// classifyBookLocal is the cheap, pure, offline resolver (cached -> seed ->
+// keyword -> null); a null return is the explicit "needs the LLM" signal the
+// 2C orchestrator consumes (null -> batch classifier -> CATEGORY_UNCATEGORIZED),
+// so the caller/UI never sees null or a blank label.
+// =====================================================================
+var SHELF_CATEGORIES = [
+  'Literary Fiction',
+  'Genre Fiction',
+  'Theory & Philosophy',
+  'Social & Political Thought',
+  'Race & Identity',
+  'Education',
+  'History',
+  'Memoir & Biography',
+  'Psychology & Mind',
+  'Science & Nature',
+  'Technology & Society',
+  'Religion & Spirituality',
+  'Poetry',
+  'Essays & Criticism',
+  'Arts & Culture',
+  'Business & Economics',
+  'Health & Living'
+];
+var CATEGORY_UNCATEGORIZED = 'Uncategorized';
+
+// True iff label is one of the 17 curated categories (NOT Uncategorized).
+function isShelfCategory(label) {
+  if (typeof label !== 'string' || label === '') { return false; }
+  var i;
+  for (i = 0; i < SHELF_CATEGORIES.length; i = i + 1) {
+    if (SHELF_CATEGORIES[i] === label) { return true; }
+  }
+  return false;
+}
+
+// True iff label is a valid RESOLVED category (the 17 OR Uncategorized) -- the
+// gate every cached value and every LLM answer passes through.
+function isValidCategoryLabel(label) {
+  return label === CATEGORY_UNCATEGORIZED || isShelfCategory(label);
+}
+
+// Seed map: only the FOUR unambiguous traditions map straight to a category.
+// The fuzzy ones (novel, empirical, wisdom, place, practice) deliberately fall
+// through to the keyword map / LLM so they classify on their own merits.
+var CATEGORY_TRADITION_SEED = {
+  theory:  'Theory & Philosophy',
+  history: 'History',
+  memoir:  'Memoir & Biography',
+  poetry:  'Poetry'
+};
+
+// Ordered, identity-first keyword map over raw BISAC subject strings. First
+// match wins (lowercased substring), so order is load-bearing: identity before
+// fiction; "literary criticism" before "literary"/"fiction"; the "literary" ->
+// Literary Fiction entry before the generic "fiction" -> Genre Fiction entry
+// (so "Fiction / Literary" splits correctly and "Science Fiction" lands in
+// Genre Fiction, NOT Science & Nature); topical subjects last, broad "history"
+// at the very bottom.
+var RAW_CATEGORY_MAP = [
+  ['ethnic',             'Race & Identity'],
+  ['african american',   'Race & Identity'],
+  ['feminism',           'Race & Identity'],
+  ['feminist',           'Race & Identity'],
+  ['gender',             'Race & Identity'],
+  ['lgbt',               'Race & Identity'],
+  ['queer',              'Race & Identity'],
+  ['literary criticism', 'Essays & Criticism'],
+  ['criticism',          'Essays & Criticism'],
+  ['essays',             'Essays & Criticism'],
+  ['poetry',             'Poetry'],
+  ['literary',           'Literary Fiction'],
+  ['fiction',            'Genre Fiction'],
+  ['biography',          'Memoir & Biography'],
+  ['autobiography',      'Memoir & Biography'],
+  ['memoir',             'Memoir & Biography'],
+  ['philosophy',         'Theory & Philosophy'],
+  ['political',          'Social & Political Thought'],
+  ['social science',     'Social & Political Thought'],
+  ['sociology',          'Social & Political Thought'],
+  ['anthropology',       'Social & Political Thought'],
+  ['psychology',         'Psychology & Mind'],
+  ['religion',           'Religion & Spirituality'],
+  ['spirit',             'Religion & Spirituality'],
+  ['theology',           'Religion & Spirituality'],
+  ['education',          'Education'],
+  ['teaching',           'Education'],
+  ['business',           'Business & Economics'],
+  ['economic',           'Business & Economics'],
+  ['technology',         'Technology & Society'],
+  ['computer',           'Technology & Society'],
+  ['internet',           'Technology & Society'],
+  ['science',            'Science & Nature'],
+  ['nature',             'Science & Nature'],
+  ['biology',            'Science & Nature'],
+  ['physics',            'Science & Nature'],
+  ['mathematics',        'Science & Nature'],
+  ['health',             'Health & Living'],
+  ['fitness',            'Health & Living'],
+  ['self-help',          'Health & Living'],
+  ['wellness',           'Health & Living'],
+  ['cooking',            'Health & Living'],
+  ['art',                'Arts & Culture'],
+  ['music',              'Arts & Culture'],
+  ['photography',        'Arts & Culture'],
+  ['design',             'Arts & Culture'],
+  ['film',               'Arts & Culture'],
+  ['performing arts',    'Arts & Culture'],
+  ['history',            'History']
+];
+
+// Map ONE raw subject string to a taxonomy category, or null if nothing in the
+// ordered map matches. Lowercased substring, first match wins.
+function rawCategoryToShelf(raw) {
+  var s = (typeof raw === 'string') ? raw.toLowerCase() : '';
+  if (s === '') { return null; }
+  var i;
+  for (i = 0; i < RAW_CATEGORY_MAP.length; i = i + 1) {
+    if (s.indexOf(RAW_CATEGORY_MAP[i][0]) !== -1) {
+      return RAW_CATEGORY_MAP[i][1];
+    }
+  }
+  return null;
+}
+
+// PURE local classifier: cached -> tradition seed -> rawCategories keyword ->
+// null (needs the LLM). A non-null return is ALWAYS a valid label (one of the
+// 17, or Uncategorized when that was the cached value); null means "send to the
+// LLM". It never returns a blank or invalid string. The 2C orchestrator turns
+// a null into an LLM call, and any book the LLM also can't place becomes
+// CATEGORY_UNCATEGORIZED -- so the caller/UI never sees null.
+function classifyBookLocal(book) {
+  if (!book || typeof book !== 'object') { return null; }
+  // (1) cached label from a prior classification (incl. a cached Uncategorized,
+  //     so already-classified books never re-hit the LLM)
+  if (typeof book.category === 'string' && isValidCategoryLabel(book.category)) {
+    return book.category;
+  }
+  // (2) seed from the resolved tradition (override wins) -- four unambiguous ones
+  var trad = book.traditionOverride || book.tradition;
+  if (typeof trad === 'string' &&
+      Object.prototype.hasOwnProperty.call(CATEGORY_TRADITION_SEED, trad)) {
+    return CATEGORY_TRADITION_SEED[trad];
+  }
+  // (3) keyword map over the raw BISAC strings, first match wins
+  if (book.rawCategories instanceof Array) {
+    var i, hit;
+    for (i = 0; i < book.rawCategories.length; i = i + 1) {
+      hit = rawCategoryToShelf(book.rawCategories[i]);
+      if (hit) { return hit; }
+    }
+  }
+  // (4) unresolved locally -> needs the LLM
+  return null;
+}
+
 // ensureSubTheoryFields — the 9.1 chokepoint, mirroring ensureBookFields.
 // Backfills any sub-theory schema field that is missing or the wrong
 // type on a record. Idempotent: a field already the correct type is a

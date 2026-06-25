@@ -1741,6 +1741,141 @@ function volumeToBook(vi, knownIsbn) {
   };
 }
 
+// =====================================================================
+// Stage 2 (shelf categories): the LLM batch classifier. Only books the pure
+// classifyBookLocal() could not place (it returned null) reach here. Mirrors
+// the segmentDoc proxy call (import-capture.js): same claude-proxy path +
+// x-praxis-key, strict-JSON contract, tolerant parse. Sequential throttle --
+// one batch of CLASSIFY_BATCH titles per request, the next firing only after
+// the previous resolves -- so a full-library first run is a handful of calls,
+// never a storm. Every input book ends up in the result map: a label from the
+// model (validated against the 17), or CATEGORY_UNCATEGORIZED on any miss,
+// transport failure, or parse failure. Never null, never blank.
+// =====================================================================
+var CLASSIFY_MODEL = 'claude-sonnet-4-6';
+var CLASSIFY_BATCH = 20;
+// Built from the single source of truth (SHELF_CATEGORIES, state.js) so the
+// prompt's allowed list never drifts from the validator.
+var CLASSIFY_SYSTEM =
+  'You are a librarian assigning each book to EXACTLY ONE shelf category from '
+  + 'this fixed list (choose the single closest):\n- '
+  + SHELF_CATEGORIES.join('\n- ') + '\n\n'
+  + 'Rules:\n'
+  + '- Use the EXACT category text above. Never invent a category outside the list.\n'
+  + '- If a "subjects:" hint is given for a book, weigh it heavily.\n'
+  + '- If you genuinely cannot tell, use "' + CATEGORY_UNCATEGORIZED + '".\n\n'
+  + 'Output ONLY a JSON object, NO prose, NO markdown fences, exactly:\n'
+  + '{"classifications":[{"index":1,"category":"History"}]}\n'
+  + 'One object per input book, echoing its 1-based index. Output every book.';
+
+// Collect the text blocks from an Anthropic Messages response (mirror segmentDoc).
+function collectClaudeText(data) {
+  var blocks = data && data.content;
+  var text = '';
+  var i;
+  if (blocks && blocks.length) {
+    for (i = 0; i < blocks.length; i = i + 1) {
+      var b = blocks[i];
+      if (b && b.type === 'text' && typeof b.text === 'string') { text = text + b.text; }
+    }
+  }
+  return text;
+}
+
+// Tolerant JSON parse: direct, then brace-substring fallback (mirror segmentDoc).
+function parseLooseJSON(text) {
+  if (text === '') { return null; }
+  try { return JSON.parse(text); }
+  catch (e) {
+    var st = text.indexOf('{');
+    var en = text.lastIndexOf('}');
+    if (st !== -1 && en !== -1 && en > st) {
+      try { return JSON.parse(text.substring(st, en + 1)); }
+      catch (e2) { return null; }
+    }
+    return null;
+  }
+}
+
+// Build the user prompt for one batch: a 1-based numbered list of
+// "N. Title -- Author" with an optional "[subjects: ...]" hint for books that
+// carry rawCategories (the BISAC strings the keyword map could not place).
+function buildClassifyPrompt(batch) {
+  var lines = 'Classify these books. Reply with one classification per index.\n\n';
+  var i, b, line, subj;
+  for (i = 0; i < batch.length; i = i + 1) {
+    b = batch[i] || {};
+    line = (i + 1) + '. ' + (b.title || '(untitled)');
+    if (b.author) { line = line + ' — ' + b.author; }
+    if (b.rawCategories instanceof Array && b.rawCategories.length > 0) {
+      subj = b.rawCategories.join('; ');
+      line = line + ' [subjects: ' + subj + ']';
+    }
+    lines = lines + line + '\n';
+  }
+  return lines;
+}
+
+// Apply one batch's parsed response into result{bookId:category}. Validates
+// each category against the 17+Uncategorized (unknown -> Uncategorized) and
+// maps back by 1-based index. Any batch book the model omitted, plus the whole
+// batch on a null/garbled response, default to CATEGORY_UNCATEGORIZED.
+function applyClassifyBatch(batch, data, result) {
+  var i, b;
+  var parsed = data ? parseLooseJSON(collectClaudeText(data)) : null;
+  var arr = (parsed && parsed.classifications instanceof Array) ? parsed.classifications : [];
+  // seed every batch book to Uncategorized; valid model answers overwrite below
+  for (i = 0; i < batch.length; i = i + 1) {
+    if (batch[i] && batch[i].id) { result[batch[i].id] = CATEGORY_UNCATEGORIZED; }
+  }
+  for (i = 0; i < arr.length; i = i + 1) {
+    var item = arr[i];
+    if (!item || typeof item !== 'object') { continue; }
+    var idx = (typeof item.index === 'number') ? (item.index - 1) : -1;
+    if (idx < 0 || idx >= batch.length) { continue; }
+    b = batch[idx];
+    if (!b || !b.id) { continue; }
+    result[b.id] = isValidCategoryLabel(item.category) ? item.category : CATEGORY_UNCATEGORIZED;
+  }
+}
+
+// Classify an array of books via the proxy in sequential batches. Calls back
+// with a map { bookId: category } covering EVERY input book (a label or
+// Uncategorized -- never null). Caching/persisting is the caller's job (2C).
+// Empty input -> empty map, no network call.
+function classifyBooksViaLLM(books, callback) {
+  var result = {};
+  var list = (books instanceof Array) ? books : [];
+  function finish() { if (typeof callback === 'function') { callback(result); } }
+  if (list.length === 0) { finish(); return; }
+  function processBatch(start) {
+    if (start >= list.length) { finish(); return; }
+    var batch = list.slice(start, start + CLASSIFY_BATCH);
+    var payload = {
+      model:       CLASSIFY_MODEL,
+      max_tokens:  1024,
+      temperature: 0,
+      system:      CLASSIFY_SYSTEM,
+      messages:    [ { role: 'user', content: buildClassifyPrompt(batch) } ]
+    };
+    fetch(CLAUDE_PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+      body:    JSON.stringify(payload)
+    }).then(function (res) {
+      return res.ok ? res.json() : null;
+    }, function () { return null; })
+      .then(function (data) {
+        applyClassifyBatch(batch, data, result);
+        processBatch(start + CLASSIFY_BATCH);
+      }, function () {
+        applyClassifyBatch(batch, null, result);
+        processBatch(start + CLASSIFY_BATCH);
+      });
+  }
+  processBatch(0);
+}
+
 // Low-level Google Books search via the proxy. callback(itemsArray | []).
 // Two-arg .then on every hop -> fail-soft to [] (never throws/drops).
 function googleBooksSearch(q, callback) {
