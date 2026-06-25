@@ -293,6 +293,25 @@ function setShelfView(v) {
   sv('praxis_shelf_view', v);
 }
 
+// Stage 1 (shelf categories): sidebar grouping persistence. Mirrors the shelf
+// view-mode pattern above -- localStorage, one global preference, default
+// 'lenses'. The allow-list coerces any corrupt/hand-edited value back to the
+// safe default in both the getter and setter.
+function getShelfGrouping() {
+  var v = ls('praxis_shelf_grouping', 'lenses');
+  if (v !== 'lenses' && v !== 'categories') {
+    return 'lenses';
+  }
+  return v;
+}
+
+function setShelfGrouping(v) {
+  if (v !== 'lenses' && v !== 'categories') {
+    return;
+  }
+  sv('praxis_shelf_grouping', v);
+}
+
 // 3.10a Stage 4: guards initNavMobileToggle so the hamburger
 // listener binds exactly once across the session. Module-level so
 // the flag persists across renderRoute calls.
@@ -2884,18 +2903,12 @@ function renderShelf() {
   // onShelfFilterRowClick/Keydown + the generic toggleShelfFilter (whose for-in
   // exclusive-clear already covers the two new sections).
   var statusCounts = { reading: 0, read: 0, 'will-read': 0 };
-  var traditionCounts = {};
   var srti;
   var srtb;
-  var srtTrad;
   for (srti = 0; srti < lcArr.length; srti = srti + 1) {
     srtb = lcArr[srti];
     if (!srtb) { continue; }
     statusCounts[normalizeStatus(srtb.status)]++;
-    srtTrad = srtb.traditionOverride || srtb.tradition;
-    if (typeof srtTrad === 'string' && srtTrad.length > 0 && srtTrad !== 'unassigned') {
-      traditionCounts[srtTrad] = (traditionCounts[srtTrad] || 0) + 1;
-    }
   }
 
   var layout = document.createElement('div');
@@ -3073,47 +3086,64 @@ function renderShelf() {
   statusSection.appendChild(statusListEl);
   if (statusRowCount > 0) { sidebar.appendChild(statusSection); }
 
-  // Tradition rail (mock group 2). Distinct present traditions in TRADITIONS
-  // canonical order, count > 0, 'unassigned' skipped; labels via
-  // TRADITION_LABELS. Same row idiom + handlers as above.
-  var tradSection = document.createElement('div');
-  tradSection.className = 'shelf-filter-group';
-  var tradLabel = document.createElement('h3');
-  tradLabel.className = 'shelf-filter-label';
-  tradLabel.textContent = 'Tradition';
-  tradSection.appendChild(tradLabel);
-  var tradListEl = document.createElement('ul');
-  tradListEl.className = 'shelf-filter-list shelf-filter-list-tradition';
-  var trvi;
-  var trvKey;
-  var trRow;
-  var trCountEl;
-  var tradRowCount = 0;
-  for (trvi = 0; trvi < TRADITIONS.length; trvi = trvi + 1) {
-    trvKey = TRADITIONS[trvi];
-    if (trvKey === 'unassigned') { continue; }
-    if ((traditionCounts[trvKey] || 0) === 0) { continue; }
-    tradRowCount++;
-    trRow = document.createElement('li');
-    trRow.className = shelfFilter.tradition === trvKey ? 'shelf-filter is-on' : 'shelf-filter';
-    trRow.setAttribute('role', 'button');
-    trRow.setAttribute('tabindex', '0');
-    trRow.setAttribute('data-filter-section', 'tradition');
-    trRow.setAttribute('data-filter-value', trvKey);
-    trRow.textContent = (typeof TRADITION_LABELS === 'object' && TRADITION_LABELS[trvKey])
-      ? TRADITION_LABELS[trvKey] : trvKey;
-    trCountEl = document.createElement('span');
-    trCountEl.className = 'n';
-    trCountEl.textContent = '' + (traditionCounts[trvKey] || 0);
-    trRow.appendChild(trCountEl);
-    trRow.addEventListener('click', onShelfFilterRowClick);
-    trRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    tradListEl.appendChild(trRow);
-  }
-  tradSection.appendChild(tradListEl);
-  if (tradRowCount > 0) { sidebar.appendChild(tradSection); }
+  // Stage 1 (shelf categories): sidebar grouping toggle [ Lenses | Categories ],
+  // modeled on the Covers|List seg. Reuses the .seg/.seg-opt/.is-on classes
+  // (inherits `.shelf .seg` -- no new CSS) plus role=tablist + per-opt
+  // role=tab/aria-selected. Default 'lenses' preserves the current behavior;
+  // picking an opt persists via setShelfGrouping then re-renders. Placed
+  // directly above the grouping section it controls (between the Reading-status
+  // rail and the Lenses/Categories section).
+  var shelfGrouping = getShelfGrouping();
+  var groupSeg = document.createElement('div');
+  groupSeg.className = 'seg';
+  groupSeg.setAttribute('role', 'tablist');
+  groupSeg.setAttribute('aria-label', 'Sidebar grouping');
+  var groupLenses = document.createElement('button');
+  groupLenses.type = 'button';
+  groupLenses.className = 'seg-opt' + (shelfGrouping === 'lenses' ? ' is-on' : '');
+  groupLenses.setAttribute('role', 'tab');
+  groupLenses.setAttribute('aria-selected', shelfGrouping === 'lenses' ? 'true' : 'false');
+  groupLenses.setAttribute('data-shelf-grouping', 'lenses');
+  groupLenses.textContent = 'Lenses';
+  groupLenses.addEventListener('click', function() {
+    setShelfGrouping('lenses');
+    renderShelf();
+  });
+  groupSeg.appendChild(groupLenses);
+  var groupCategories = document.createElement('button');
+  groupCategories.type = 'button';
+  groupCategories.className = 'seg-opt' + (shelfGrouping === 'categories' ? ' is-on' : '');
+  groupCategories.setAttribute('role', 'tab');
+  groupCategories.setAttribute('aria-selected', shelfGrouping === 'categories' ? 'true' : 'false');
+  groupCategories.setAttribute('data-shelf-grouping', 'categories');
+  groupCategories.textContent = 'Categories';
+  groupCategories.addEventListener('click', function() {
+    setShelfGrouping('categories');
+    renderShelf();
+  });
+  groupSeg.appendChild(groupCategories);
+  sidebar.appendChild(groupSeg);
 
-  sidebar.appendChild(lensSection);
+  // Stage 1 (shelf categories): grouping branch. 'lenses' appends the existing
+  // Lenses rail (built above, byte-for-byte unchanged); 'categories' builds and
+  // appends a Categories section whose body is a single "classifying..."
+  // placeholder for this stage (no fetch / no classification until Stage 2).
+  // Reading-status + Author stay in both modes.
+  if (shelfGrouping === 'lenses') {
+    sidebar.appendChild(lensSection);
+  } else {
+    var catSection = document.createElement('div');
+    catSection.className = 'shelf-filter-group shelf-filter-group-categories';
+    var catLabel = document.createElement('h3');
+    catLabel.className = 'shelf-filter-label';
+    catLabel.textContent = 'Categories';
+    catSection.appendChild(catLabel);
+    var catPlaceholder = document.createElement('div');
+    catPlaceholder.className = 'shelf-categories-placeholder';
+    catPlaceholder.textContent = 'classifying…';
+    catSection.appendChild(catPlaceholder);
+    sidebar.appendChild(catSection);
+  }
 
   // S3: the former separate GENRE rail is merged into the single Lenses rail
   // above (baseline lenses are derived from the distinct book.genre values).
