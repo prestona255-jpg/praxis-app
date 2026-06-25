@@ -518,16 +518,6 @@ function isValidCategoryLabel(label) {
   return label === CATEGORY_UNCATEGORIZED || isShelfCategory(label);
 }
 
-// Seed map: only the FOUR unambiguous traditions map straight to a category.
-// The fuzzy ones (novel, empirical, wisdom, place, practice) deliberately fall
-// through to the keyword map / LLM so they classify on their own merits.
-var CATEGORY_TRADITION_SEED = {
-  theory:  'Theory & Philosophy',
-  history: 'History',
-  memoir:  'Memoir & Biography',
-  poetry:  'Poetry'
-};
-
 // Ordered, identity-first keyword map over raw BISAC subject strings. First
 // match wins (lowercased substring), so order is load-bearing: identity before
 // fiction; "literary criticism" before "literary"/"fiction"; the "literary" ->
@@ -601,8 +591,8 @@ function rawCategoryToShelf(raw) {
   return null;
 }
 
-// PURE local classifier: cached -> tradition seed -> rawCategories keyword ->
-// null (needs the LLM). A non-null return is ALWAYS a valid label (one of the
+// PURE local classifier: cached -> rawCategories keyword -> null (needs the
+// LLM). A non-null return is ALWAYS a valid label (one of the
 // 17, or Uncategorized when that was the cached value); null means "send to the
 // LLM". It never returns a blank or invalid string. The 2C orchestrator turns
 // a null into an LLM call, and any book the LLM also can't place becomes
@@ -614,13 +604,7 @@ function classifyBookLocal(book) {
   if (typeof book.category === 'string' && isValidCategoryLabel(book.category)) {
     return book.category;
   }
-  // (2) seed from the resolved tradition (override wins) -- four unambiguous ones
-  var trad = book.traditionOverride || book.tradition;
-  if (typeof trad === 'string' &&
-      Object.prototype.hasOwnProperty.call(CATEGORY_TRADITION_SEED, trad)) {
-    return CATEGORY_TRADITION_SEED[trad];
-  }
-  // (3) keyword map over the raw BISAC strings, first match wins
+  // (2) keyword map over the raw BISAC strings, first match wins
   if (book.rawCategories instanceof Array) {
     var i, hit;
     for (i = 0; i < book.rawCategories.length; i = i + 1) {
@@ -628,7 +612,7 @@ function classifyBookLocal(book) {
       if (hit) { return hit; }
     }
   }
-  // (4) unresolved locally -> needs the LLM
+  // (3) unresolved locally -> needs the LLM
   return null;
 }
 
