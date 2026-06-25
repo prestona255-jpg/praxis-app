@@ -1734,7 +1734,10 @@ function volumeToBook(vi, knownIsbn) {
     description:     (vi && typeof vi.description === 'string') ? vi.description : '',
     isbn:            isbn,
     coverUrl:        candidates.length > 0 ? candidates[0] : null,
-    coverCandidates: candidates
+    coverCandidates: candidates,
+    // Stage 2 (shelf categories): raw BISAC subject strings from Google Books,
+    // captured for NEW adds (existing books backfill to [] via ensureBookFields).
+    rawCategories:   (vi && vi.categories instanceof Array) ? vi.categories : []
   };
 }
 

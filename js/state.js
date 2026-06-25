@@ -404,6 +404,12 @@ function ensureBookFields(book) {
   if (typeof book.description !== 'string')   { book.description = ''; changed = true; }
   if (typeof book.rating === 'undefined')    { book.rating = null;    changed = true; }
   if (typeof book.dateRead === 'undefined')  { book.dateRead = null;  changed = true; }
+  // Stage 2 (shelf categories): cached classification label (one of
+  // SHELF_CATEGORIES / CATEGORY_UNCATEGORIZED, or '' until classified) plus the
+  // raw subject strings from the metadata source (input to the deterministic
+  // classifier). '' / [] defaults, never undefined; idempotent like the above.
+  if (typeof book.category !== 'string')      { book.category = '';      changed = true; }
+  if (!(book.rawCategories instanceof Array)) { book.rawCategories = []; changed = true; }
   return changed;
 }
 
@@ -2775,6 +2781,16 @@ function migrate(stored) {
       }
     }
     stored.SCHEMA_VERSION = '1.25.0';
+  }
+  // Stage 2 (shelf categories): state.books gains category + rawCategories.
+  // Delegated to the ensureBookFieldsAll chokepoint -- the same single source
+  // of truth the Firestore merge and new-book creation use -- so the migration
+  // and runtime write paths never drift. Idempotent: a re-run is a no-op.
+  if (stored.SCHEMA_VERSION === '1.25.0') {
+    if (stored.books) {
+      ensureBookFieldsAll(stored.books);
+    }
+    stored.SCHEMA_VERSION = '1.26.0';
   }
   return stored;
 }
