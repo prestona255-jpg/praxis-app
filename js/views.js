@@ -3227,6 +3227,41 @@ function renderShelf() {
     }
 
     catSection.appendChild(catListEl);
+
+    // Re-classify control — clears every cached category so the lazy classifier
+    // re-runs over the whole shelf set, letting a classifier change (the
+    // seed-drop, and future improvements) land on the already-classified
+    // library. Signed-in only (it persists to the user's records) and hidden
+    // while a pass is in flight (the loading row above shows instead). Mirrors
+    // the Lenses rail's "Ask Yumi" button idiom.
+    if (getCurrentUser() && !shelfCategorizing) {
+      var catReclassify = document.createElement('button');
+      catReclassify.type = 'button';
+      catReclassify.className = 'shelf-lens-ask';
+      catReclassify.textContent = 'Re-classify';
+      catReclassify.addEventListener('click', function () {
+        if (shelfCategorizing) { return; }   // never stomp an in-flight pass
+        var rbid, rb;
+        var rcDirty = false;
+        for (rbid in state.books) {
+          if (!Object.prototype.hasOwnProperty.call(state.books, rbid)) { continue; }
+          rb = state.books[rbid];
+          if (!rb) { continue; }
+          // BUILD 2 hook — preserve a manual override here once it exists:
+          //   if (rb.categoryOverride) { continue; }
+          if (rb.category !== '') {
+            rb.category = '';
+            rcDirty = true;
+          }
+        }
+        if (rcDirty) {
+          markBooksDirty();
+          saveState();           // ONE batched write for the whole clear
+        }
+        renderShelf();           // re-render -> lazy orchestration re-fires over the now-null books
+      });
+      catSection.appendChild(catReclassify);
+    }
     sidebar.appendChild(catSection);
   }
 
