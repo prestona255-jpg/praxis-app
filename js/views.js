@@ -3124,24 +3124,109 @@ function renderShelf() {
   groupSeg.appendChild(groupCategories);
   sidebar.appendChild(groupSeg);
 
-  // Stage 1 (shelf categories): grouping branch. 'lenses' appends the existing
-  // Lenses rail (built above, byte-for-byte unchanged); 'categories' builds and
-  // appends a Categories section whose body is a single "classifying..."
-  // placeholder for this stage (no fetch / no classification until Stage 2).
+  // Stage 2C (shelf categories): grouping branch. 'lenses' appends the existing
+  // Lenses rail (built above, byte-for-byte unchanged). 'categories' classifies
+  // the deduped shelf set into the curated taxonomy and renders POPULATED
+  // categories in taxonomy order (Uncategorized last), reusing the .shelf-filter
+  // row idiom + shared handlers (same as the Reading-status rail). Classification
+  // is lazy + cached: classifyBookLocal resolves cached/seed/keyword rows
+  // synchronously; books it returns null for go to the Sonnet batch classifier
+  // ONCE (guarded by shelfCategorizing), the result cached on each record and
+  // persisted in a SINGLE batched write, then a re-render fills the rows in.
+  // Non-blocking: the rest of the shelf is already built and stays usable.
   // Reading-status + Author stay in both modes.
   if (shelfGrouping === 'lenses') {
     sidebar.appendChild(lensSection);
   } else {
+    var catCounts = {};
+    var catPending = [];
+    var cci, ccb, ccLabel;
+    for (cci = 0; cci < lcArr.length; cci = cci + 1) {
+      ccb = lcArr[cci];
+      if (!ccb) { continue; }
+      ccLabel = classifyBookLocal(ccb);
+      if (ccLabel === null) { catPending.push(ccb); continue; }
+      catCounts[ccLabel] = (catCounts[ccLabel] || 0) + 1;
+    }
+
+    // Lazy classify: fire once -- only when categories is the active grouping,
+    // only for the unresolved books, only when signed in (the result persists to
+    // the user's records), and never while a pass is already in flight.
+    if (catPending.length > 0 && !shelfCategorizing && getCurrentUser()) {
+      shelfCategorizing = true;
+      classifyBooksViaLLM(catPending, function (resultMap) {
+        var rk;
+        for (rk in resultMap) {
+          if (Object.prototype.hasOwnProperty.call(resultMap, rk) && state.books[rk]) {
+            state.books[rk].category = resultMap[rk];
+          }
+        }
+        markBooksDirty();
+        saveState();                 // ONE batched persist for the whole pass
+        shelfCategorizing = false;
+        // Re-render only if the user is still on the Categories grouping, so a
+        // background finish never yanks another view out from under them.
+        if (location.hash === '#books' && getShelfGrouping() === 'categories') {
+          renderShelf();
+        }
+      });
+    }
+
     var catSection = document.createElement('div');
     catSection.className = 'shelf-filter-group shelf-filter-group-categories';
     var catLabel = document.createElement('h3');
     catLabel.className = 'shelf-filter-label';
     catLabel.textContent = 'Categories';
     catSection.appendChild(catLabel);
-    var catPlaceholder = document.createElement('div');
-    catPlaceholder.className = 'shelf-categories-placeholder';
-    catPlaceholder.textContent = 'classifying…';
-    catSection.appendChild(catPlaceholder);
+    var catListEl = document.createElement('ul');
+    catListEl.className = 'shelf-filter-list shelf-filter-list-categories';
+
+    // One populated row -- reuses the shared row idiom + handlers (data-filter-
+    // section="category" routes through toggleShelfFilter's exclusive-clear).
+    var catRowsRendered = 0;
+    var appendCatRow = function (label, count) {
+      var cr = document.createElement('li');
+      cr.className = shelfFilter.category === label ? 'shelf-filter is-on' : 'shelf-filter';
+      cr.setAttribute('role', 'button');
+      cr.setAttribute('tabindex', '0');
+      cr.setAttribute('data-filter-section', 'category');
+      cr.setAttribute('data-filter-value', label);
+      cr.textContent = label;
+      var cn = document.createElement('span');
+      cn.className = 'n';
+      cn.textContent = '' + count;
+      cr.appendChild(cn);
+      cr.addEventListener('click', onShelfFilterRowClick);
+      cr.addEventListener('keydown', onShelfFilterRowKeydown);
+      catListEl.appendChild(cr);
+      catRowsRendered = catRowsRendered + 1;
+    };
+
+    var cti, ctLabel;
+    for (cti = 0; cti < SHELF_CATEGORIES.length; cti = cti + 1) {
+      ctLabel = SHELF_CATEGORIES[cti];
+      if ((catCounts[ctLabel] || 0) > 0) { appendCatRow(ctLabel, catCounts[ctLabel]); }
+    }
+    // Uncategorized always last, only when populated.
+    if ((catCounts[CATEGORY_UNCATEGORIZED] || 0) > 0) {
+      appendCatRow(CATEGORY_UNCATEGORIZED, catCounts[CATEGORY_UNCATEGORIZED]);
+    }
+
+    // Non-blocking loading row while a pass is in flight; else an empty hint.
+    if (shelfCategorizing) {
+      var catLoading = document.createElement('li');
+      catLoading.className = 'shelf-filter is-toggle shelf-categories-loading';
+      catLoading.textContent = 'Classifying ' + catPending.length
+        + (catPending.length === 1 ? ' book…' : ' books…');
+      catListEl.appendChild(catLoading);
+    } else if (catRowsRendered === 0) {
+      var catEmpty = document.createElement('li');
+      catEmpty.className = 'shelf-filter is-toggle';
+      catEmpty.textContent = 'No categories yet';
+      catListEl.appendChild(catEmpty);
+    }
+
+    catSection.appendChild(catListEl);
     sidebar.appendChild(catSection);
   }
 
@@ -3296,6 +3381,7 @@ function renderShelf() {
   var themeOk;
   var statusOk;
   var traditionOk;
+  var categoryOk;
   var searchOk;
   // Stage 7 (manual themes): precompute the selected user-theme's membership
   // set (book ids) once, so the per-book themeOk test is an O(1) lookup. Null
@@ -3331,12 +3417,17 @@ function renderShelf() {
     // Tradition rail: strict equality on the resolved tradition (override wins).
     traditionOk = shelfFilter.tradition === null ||
       ((fb.traditionOverride || fb.tradition) === shelfFilter.tradition);
+    // Stage 2C: category rail -- equality on the resolved category. Mirrors the
+    // dormant traditionOk: a harmless always-true no-op until a category row is
+    // picked. classifyBookLocal is O(1) for already-classified books (cache hit).
+    categoryOk = shelfFilter.category === null ||
+      (classifyBookLocal(fb) === shelfFilter.category);
     // Stage 4d: live search -- case-insensitive substring over title
     // OR author, AND-composed with the rail filters.
     searchOk = shelfSearchQuery === '' ||
       ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
        (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
-    if (authorOk && genreOk && themeOk && statusOk && traditionOk && searchOk) {
+    if (authorOk && genreOk && themeOk && statusOk && traditionOk && categoryOk && searchOk) {
       filtered.push(fb);
     }
   }
@@ -3366,6 +3457,7 @@ function renderShelf() {
       shelfFilter.theme !== null ||
       shelfFilter.status !== null ||
       shelfFilter.tradition !== null ||
+      shelfFilter.category !== null ||
       shelfSearchQuery !== '';
     var empty = document.createElement('div');
     empty.className = 'empty-state';
@@ -3748,7 +3840,12 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // Author values come from state.books so they match the same way.
 // Stage 4c: sections are EXCLUSIVE single-select -- setting a value
 // in one section clears the other (see toggleShelfFilter).
-var shelfFilter = { author: null, genre: null, theme: null, status: null, tradition: null };
+var shelfFilter = { author: null, genre: null, theme: null, status: null, tradition: null, category: null };
+
+// Stage 2C (shelf categories): true while a lazy LLM classification pass is in
+// flight, so a re-render does not fire a second pass. Memory-only, same lifetime
+// as shelfFilter. Cleared in the classify callback.
+var shelfCategorizing = false;
 
 // Stage 4d: author-rail collapse + in-page search state. Memory-only,
 // same lifetime contract as shelfFilter above. shelfSearchRaw keeps
