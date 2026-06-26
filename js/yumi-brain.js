@@ -602,6 +602,12 @@ var YUMI_GATE_SYSTEM =
 var YUMI_GATE_DAILY_CAP  = 200;
 var YUMI_GATE_TIMEOUT_MS = 12000;
 
+// 2.0 hardening (batch 1): bound the interactive chat fetch (sendMessage).
+// The chat response call had no timeout, so a proxy that accepts but never
+// responds left its promise unsettled and locked the chat. Generous bound
+// (matches YUMI_WEB_TIMEOUT_MS) since a normal-chat reply can run long.
+var YUMI_CHAT_TIMEOUT_MS = 30000;
+
 // In-memory, per-session memo: candidate hash -> verdict object. Only
 // definitive grader verdicts are stored; errors and over-budget are not
 // cached, so a later retry can still reach the grader.
@@ -767,7 +773,7 @@ function sendMessage(userText) {
     // stream parameter intentionally omitted — non-streaming for 2.4
   };
 
-  return fetch('/.netlify/functions/claude-proxy', {
+  var call = fetch('/.netlify/functions/claude-proxy', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
     body:    JSON.stringify(payload)
@@ -794,6 +800,15 @@ function sendMessage(userText) {
     if (text === '') {
       throw new Error('no text content in response');
     }
+    return text;
+  });
+  // 2.0 hardening (batch 1): bind the chat fetch with the shared
+  // _yumiWithTimeout idiom so a proxy that accepts but never responds rejects
+  // instead of hanging. The rejection flows to the caller's existing error
+  // path (yumi-ui renderError + clears yumi_request_in_flight), so the chat
+  // never locks. gradeUtterance keeps its OWN timeout, so the two bounds
+  // compose rather than summing into a false timeout on a slow-but-valid reply.
+  return _yumiWithTimeout(call, YUMI_CHAT_TIMEOUT_MS).then(function (text) {
     return gradeUtterance(text, userText).then(function (verdict) {
       if (!verdict || !verdict.pass) {
         // Fail-closed: suppress. Never append to memory, never render.
