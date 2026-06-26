@@ -2210,6 +2210,9 @@ function saveState() {
             'saveArcsToFirestore: failed',
             result ? result.error : null
           );
+          // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
+          // so the next saveState retries instead of silently dropping the write.
+          arcsDirty = true;
         }
       });
     }
@@ -2231,6 +2234,9 @@ function saveState() {
             'saveNotebookToFirestore: failed',
             result ? result.error : null
           );
+          // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
+          // so the next saveState retries instead of silently dropping the write.
+          notebookDirty = true;
         }
       });
     }
@@ -2252,6 +2258,9 @@ function saveState() {
             'saveSubTheoriesToFirestore: failed',
             result ? result.error : null
           );
+          // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
+          // so the next saveState retries instead of silently dropping the write.
+          subTheoriesDirty = true;
         }
       });
     }
@@ -2273,6 +2282,9 @@ function saveState() {
             'saveThemesToFirestore: failed',
             result ? result.error : null
           );
+          // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
+          // so the next saveState retries instead of silently dropping the write.
+          themesDirty = true;
         }
       });
     }
