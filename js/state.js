@@ -2150,6 +2150,16 @@ function saveState() {
   // saveState crash-consistency contract is preserved (a mid-import
   // tab close leaves localStorage consistent).
   var ok = sv(stateKey(), state);
+  // 2.0 hardening (batch 1): localStorage is the durability guarantee, but
+  // sv() returns false on a failed write (quota exceeded, or setItem throwing
+  // in private mode) and every caller invokes saveState() without checking the
+  // result -- so a failed local save was fully silent. Surface it through the
+  // app's existing toast idiom, guarded by typeof (mirroring the getCurrentUser
+  // cross-file pattern below; a no-op until views.js has defined showToast).
+  // The success path is unchanged.
+  if (!ok && typeof showToast === 'function') {
+    showToast('Could not save your change. Your browser storage may be full or unavailable.');
+  }
   // Firestore Stage 2: if a book mutation marked the flag, fire a
   // fire-and-forget per-user-doc write. localStorage is already
   // durable; the Firestore write is a best-effort remote mirror.
