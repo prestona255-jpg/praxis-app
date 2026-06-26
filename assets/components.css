@@ -10539,14 +10539,37 @@
 .wc-wrap { position:relative; max-width:680px; }
 .wc-input {
   display:block; width:100%; box-sizing:border-box;
-  min-height:220px; resize:none;
+  min-height:220px;
   border:0; outline:none; background:transparent;
   font-family:var(--font-serif); font-size:19px; line-height:1.66;
   color:var(--ink); caret-color:var(--marginalia-color);
   padding:6px 0 10px;
+  white-space:pre-wrap; word-wrap:break-word; overflow-wrap:break-word;
 }
-.wc-input::placeholder { color:color-mix(in srgb, var(--meta) 78%, transparent); font-style:italic; }
-.wc-input::selection { background:color-mix(in srgb, var(--marginalia-color) 20%, transparent); color:var(--ink); }
+/* contenteditable placeholder (the editor is truly empty until focus seeds a block) */
+.wc-input:empty::before { content:attr(data-ph); color:color-mix(in srgb, var(--meta) 78%, transparent); font-style:italic; pointer-events:none; }
+.wc-input::selection, .wc-input ::selection { background:color-mix(in srgb, var(--marginalia-color) 20%, transparent); color:var(--ink); }
+/* 2b: live-rendered block elements inside the contenteditable canvas (tokens only) */
+.wc-input h2 { font-family:var(--font-serif); font-weight:600; font-size:1.34em; color:var(--ink); margin:1.1em 0 .3em; letter-spacing:.004em; }
+.wc-input h3 { font-family:var(--font-serif); font-weight:600; font-size:1.12em; color:var(--ink); margin:.9em 0 .26em; }
+.wc-input h2:first-child, .wc-input h3:first-child, .wc-input p:first-child, .wc-input blockquote:first-child { margin-top:0; }
+.wc-input p { margin:0 0 .7em; }
+.wc-input strong { font-weight:700; color:var(--ink); }
+.wc-input em { font-style:italic; }
+.wc-input blockquote { margin:.7em 0; padding:2px 0 2px 18px; border-left:2px solid var(--gold-soft); font-style:italic; color:var(--ink-2); }
+.wc-input ul.wc-bul, .wc-input ol.wc-num, .wc-input ul.wc-chk { list-style:none; margin:.3em 0 .7em; padding:0; }
+.wc-input ul.wc-bul li { position:relative; padding-left:22px; margin:.12em 0; }
+.wc-input ul.wc-bul li::before { content:""; position:absolute; left:4px; top:.62em; width:6px; height:6px; border-radius:50%; background:color-mix(in srgb, var(--meta) 85%, var(--ink-2)); }
+.wc-input ol.wc-num { counter-reset:wcn; }
+.wc-input ol.wc-num li { position:relative; padding-left:30px; margin:.12em 0; counter-increment:wcn; }
+.wc-input ol.wc-num li::before { content:counter(wcn) "."; position:absolute; left:2px; top:0; font-family:var(--font-serif); font-weight:600; color:var(--gold-ink); }
+.wc-input ul.wc-chk li { position:relative; padding-left:30px; margin:.18em 0; cursor:pointer; }
+.wc-input ul.wc-chk li::before { content:""; position:absolute; left:0; top:.16em; width:19px; height:19px; border-radius:6px; border:1.5px solid var(--line-2); background:var(--page-2); transition:background 160ms var(--ease), border-color 160ms var(--ease); }
+.wc-input ul.wc-chk li::after { content:"✓"; position:absolute; left:0; top:.16em; width:19px; height:19px; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-size:12px; font-weight:700; color:var(--text-on-dark); opacity:0; transform:scale(.4); transition:opacity 160ms var(--ease), transform 160ms var(--ease); }
+.wc-input ul.wc-chk li.wc-on::before { background:var(--marginalia-color); border-color:var(--marginalia-color); }
+.wc-input ul.wc-chk li.wc-on::after { opacity:1; transform:scale(1); }
+.wc-input ul.wc-chk li.wc-on .wc-lbl { color:var(--meta); text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--meta) 55%, transparent); }
+@media (prefers-reduced-motion:reduce) { .wc-input ul.wc-chk li::after { transition:none; } }
 /* Quiet "Done" affordance for the inline marginalia adoption (replaces openEditor's
    Save/Cancel; the writing is already autosaved). A recessed pill, not a primary button. */
 .wc-done {
