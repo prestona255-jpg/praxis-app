@@ -26,6 +26,91 @@
      the control stays in the 2a top bar and focus mode dims the nav (safe).
    ===================================================================== */
 
+/* Top-level markdown -> DOM renderer, EXTRACTED in Stage 2c so the saved-card
+   display path (views.js renderNotebookEntry, marginalia only) reuses the SAME
+   renderer the editor uses -- closing the editor/card render split. PURE:
+   (targetEl, md string) fills targetEl with rendered block DOM; no editor or
+   closure state. Helpers are NESTED (no bare generic globals; only
+   wcRenderMarkdown is exposed). The canvas's setValue / undo / initial-render
+   call this too -- behavior-preserving. ES3 (var/function, for-loops, concat). */
+function wcRenderMarkdown(targetEl, md) {
+  if (!targetEl) { return; }
+  function trimEdge(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
+  function parseInline(text, parent) {
+    text = (typeof text === 'string') ? text : '';
+    var re = /(\*\*([^*]+?)\*\*)|(\*([^*]+?)\*)/g;
+    var last = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) { parent.appendChild(document.createTextNode(text.substring(last, m.index))); }
+      if (m[1] !== undefined && m[1] !== null) {
+        var st = document.createElement('strong');
+        st.appendChild(document.createTextNode(m[2]));
+        parent.appendChild(st);
+      } else {
+        var em = document.createElement('em');
+        em.appendChild(document.createTextNode(m[4]));
+        parent.appendChild(em);
+      }
+      last = re.lastIndex;
+    }
+    if (last < text.length) { parent.appendChild(document.createTextNode(text.substring(last))); }
+  }
+  function appendBlock(host, tag, text) {
+    var el = document.createElement(tag);
+    parseInline(text, el);
+    host.appendChild(el);
+    return el;
+  }
+  function makeList(host, kind) {
+    var tag = (kind === 'num') ? 'ol' : 'ul';
+    var list = document.createElement(tag);
+    list.className = 'wc-' + kind;
+    host.appendChild(list);
+    return list;
+  }
+  function appendListItem(list, kind, text, checked) {
+    var li = document.createElement('li');
+    if (kind === 'chk') {
+      if (checked) { li.className = 'wc-on'; }
+      var sp = document.createElement('span');
+      sp.className = 'wc-lbl';
+      parseInline(text, sp);
+      li.appendChild(sp);
+    } else {
+      parseInline(text, li);
+    }
+    list.appendChild(li);
+    return li;
+  }
+  targetEl.innerHTML = '';
+  md = (typeof md === 'string') ? md : '';
+  if (trimEdge(md) === '') { return; }
+  var lines = md.split('\n');
+  var curList = null, curKind = null;
+  var i, line, m;
+  for (i = 0; i < lines.length; i = i + 1) {
+    line = lines[i];
+    if (trimEdge(line) === '') { curList = null; curKind = null; continue; }
+    if ((m = line.match(/^##\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(targetEl, 'h3', m[1]); }
+    else if ((m = line.match(/^#\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(targetEl, 'h2', m[1]); }
+    else if ((m = line.match(/^>\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(targetEl, 'blockquote', m[1]); }
+    else if ((m = line.match(/^\[([ xX]?)\]\s+([\s\S]*)$/))) {
+      if (curKind !== 'chk') { curList = makeList(targetEl, 'chk'); curKind = 'chk'; }
+      appendListItem(curList, 'chk', m[2], /[xX]/.test(m[1]));
+    }
+    else if ((m = line.match(/^[-*]\s+([\s\S]*)$/))) {
+      if (curKind !== 'bul') { curList = makeList(targetEl, 'bul'); curKind = 'bul'; }
+      appendListItem(curList, 'bul', m[1], false);
+    }
+    else if ((m = line.match(/^\d+\.\s+([\s\S]*)$/))) {
+      if (curKind !== 'num') { curList = makeList(targetEl, 'num'); curKind = 'num'; }
+      appendListItem(curList, 'num', m[1], false);
+    }
+    else { curList = null; curKind = null; appendBlock(targetEl, 'p', line); }
+  }
+}
+
 function createWritingCanvas(mountEl, opts) {
   if (!mountEl) { return null; }
   opts = opts || {};
@@ -59,85 +144,8 @@ function createWritingCanvas(mountEl, opts) {
   // ========================================================================
   function trimEdge(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
 
-  // markdown inline (**bold** / *italic*) -> text + <strong>/<em> nodes
-  function parseInline(text, parent) {
-    text = (typeof text === 'string') ? text : '';
-    var re = /(\*\*([^*]+?)\*\*)|(\*([^*]+?)\*)/g;
-    var last = 0;
-    var m;
-    while ((m = re.exec(text)) !== null) {
-      if (m.index > last) { parent.appendChild(document.createTextNode(text.substring(last, m.index))); }
-      if (m[1] !== undefined && m[1] !== null) {
-        var st = document.createElement('strong');
-        st.appendChild(document.createTextNode(m[2]));
-        parent.appendChild(st);
-      } else {
-        var em = document.createElement('em');
-        em.appendChild(document.createTextNode(m[4]));
-        parent.appendChild(em);
-      }
-      last = re.lastIndex;
-    }
-    if (last < text.length) { parent.appendChild(document.createTextNode(text.substring(last))); }
-  }
-
-  function appendBlock(editorEl, tag, text) {
-    var el = document.createElement(tag);
-    parseInline(text, el);
-    editorEl.appendChild(el);
-    return el;
-  }
-  function makeList(editorEl, kind) {
-    var tag = (kind === 'num') ? 'ol' : 'ul';
-    var list = document.createElement(tag);
-    list.className = 'wc-' + kind;
-    editorEl.appendChild(list);
-    return list;
-  }
-  function appendListItem(list, kind, text, checked) {
-    var li = document.createElement('li');
-    if (kind === 'chk') {
-      if (checked) { li.className = 'wc-on'; }
-      var sp = document.createElement('span');
-      sp.className = 'wc-lbl';
-      parseInline(text, sp);
-      li.appendChild(sp);
-    } else {
-      parseInline(text, li);
-    }
-    list.appendChild(li);
-    return li;
-  }
-
-  // markdown string -> rendered DOM (replaces the editor contents)
-  function renderMarkdown(editorEl, md) {
-    editorEl.innerHTML = '';
-    md = (typeof md === 'string') ? md : '';
-    if (trimEdge(md) === '') { return; }
-    var lines = md.split('\n');
-    var curList = null, curKind = null;
-    var i, line, m;
-    for (i = 0; i < lines.length; i = i + 1) {
-      line = lines[i];
-      if (trimEdge(line) === '') { curList = null; curKind = null; continue; }
-      if ((m = line.match(/^##\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(editorEl, 'h3', m[1]); }
-      else if ((m = line.match(/^#\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(editorEl, 'h2', m[1]); }
-      else if ((m = line.match(/^>\s+([\s\S]*)$/))) { curList = null; curKind = null; appendBlock(editorEl, 'blockquote', m[1]); }
-      else if ((m = line.match(/^\[([ xX]?)\]\s+([\s\S]*)$/))) {
-        if (curKind !== 'chk') { curList = makeList(editorEl, 'chk'); curKind = 'chk'; }
-        appendListItem(curList, 'chk', m[2], /[xX]/.test(m[1]));
-      }
-      else if ((m = line.match(/^[-*]\s+([\s\S]*)$/))) {
-        if (curKind !== 'bul') { curList = makeList(editorEl, 'bul'); curKind = 'bul'; }
-        appendListItem(curList, 'bul', m[1], false);
-      }
-      else if ((m = line.match(/^\d+\.\s+([\s\S]*)$/))) {
-        if (curKind !== 'num') { curList = makeList(editorEl, 'num'); curKind = 'num'; }
-        appendListItem(curList, 'num', m[1], false);
-      }
-      else { curList = null; curKind = null; appendBlock(editorEl, 'p', line); }
-    }
-  }
+  // markdown -> DOM render lives in the top-level wcRenderMarkdown (extracted in
+  // 2c, shared with the card display path). The serialize side stays here.
 
   // inline DOM -> markdown
   function inlineOfNode(node) {
@@ -386,7 +394,7 @@ function createWritingCanvas(mountEl, opts) {
 
   function getValue() { return serializeMarkdown(ed); }
   function setValue(md) {
-    renderMarkdown(ed, md);
+    wcRenderMarkdown(ed, md);
     lastSaved = getValue();
     undoStack = [lastSaved];
     redoStack = [];
@@ -534,7 +542,7 @@ function createWritingCanvas(mountEl, opts) {
   }
   function scheduleSnapshot() { if (snapTimer) { clearTimeout(snapTimer); } snapTimer = setTimeout(snapshot, 400); }
   function applyHistory(md) {
-    renderMarkdown(ed, md);
+    wcRenderMarkdown(ed, md);
     caretToEndOfEditor();
     fireSelectionChange();
     refreshFmt();
@@ -607,7 +615,7 @@ function createWritingCanvas(mountEl, opts) {
   }
 
   // initial render BEFORE wiring (renderMarkdown sets innerHTML, no input event)
-  renderMarkdown(ed, (typeof opts.initialValue === 'string') ? opts.initialValue : '');
+  wcRenderMarkdown(ed, (typeof opts.initialValue === 'string') ? opts.initialValue : '');
   lastSaved = getValue();
   undoStack = [lastSaved];
 

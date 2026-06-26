@@ -10698,7 +10698,16 @@ function renderNotebookEntry(entry, gatherable) {
 
   var bodyEl = document.createElement('div');
   bodyEl.className = 'notebook-entry-body';
-  bodyEl.textContent = entry.body || '';
+  // Writing-Core 2c: MARGINALIA cards render entry.body via the SAME renderer the
+  // editor uses (wcRenderMarkdown, writing-canvas.js, loaded before views.js) so
+  // the saved card matches the live editor. Non-marginalia (journal/question)
+  // stay plain textContent -- unchanged. typeof guard = belt-and-suspenders.
+  if (isMarg && typeof wcRenderMarkdown === 'function') {
+    bodyEl.className = 'notebook-entry-body notebook-entry-body-md';
+    wcRenderMarkdown(bodyEl, entry.body || '');
+  } else {
+    bodyEl.textContent = entry.body || '';
+  }
   card.appendChild(bodyEl);
 
   // N2b: inline captured photos (refs only on the entry; blob from IndexedDB,
