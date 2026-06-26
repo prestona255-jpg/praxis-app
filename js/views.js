@@ -9921,8 +9921,16 @@ function renderArcDetail(arcId) {
   // injected legacy data only.
   var members = [];
   var i;
-  for (i = 0; i < arc.bookIds.length; i++) {
-    var bm = arc.bookIds[i];
+  // 2.0 hardening (batch 1): a Firestore-merged arc can arrive without
+  // bookIds/entryIds (the arc merge path runs no ensureArcFields backfill),
+  // so read both defensively -- an undefined .length here threw a TypeError
+  // that aborted the whole arc-detail render (the v3.143 white-screen failure).
+  // Mirrors the existing "arc.bookIds && arc.bookIds.length" guard idiom used
+  // elsewhere in this file.
+  var arcBookIds = arc.bookIds || [];
+  var arcEntryIds = arc.entryIds || [];
+  for (i = 0; i < arcBookIds.length; i++) {
+    var bm = arcBookIds[i];
     if (bm && bm.id) {
       members.push({
         kind:    'book',
@@ -9931,8 +9939,8 @@ function renderArcDetail(arcId) {
       });
     }
   }
-  for (i = 0; i < arc.entryIds.length; i++) {
-    var em = arc.entryIds[i];
+  for (i = 0; i < arcEntryIds.length; i++) {
+    var em = arcEntryIds[i];
     if (em && em.id) {
       members.push({
         kind:    'entry',
