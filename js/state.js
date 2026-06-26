@@ -698,6 +698,133 @@ function ensureSubTheoryFieldsAll(map) {
   return anyChanged;
 }
 
+// 2.0 hardening (batch 2a): ensureArcFields -- the load/merge chokepoint for
+// arc records, mirroring ensureBookFields / ensureSubTheoryFields. The
+// Firestore REPLACE-merge (integrations.js onAuthStateChanged) splats remote
+// arcs wholesale, bypassing migrate() and -- unlike books/subTheories -- with
+// no field backfill, so an arc synced from a client on an older schema could
+// land missing bookIds/entryIds, whose absence threw a TypeError that white-
+// screened the arc page (batch 1 guarded that at the render layer; this is the
+// load-side root fix). id and userId are identity/ownership and left untouched,
+// like ensureSubTheoryFields leaves id/arcId. Idempotent; returns true if
+// anything changed.
+function ensureArcFields(arc) {
+  if (!arc || typeof arc !== 'object') { return false; }
+  var changed = false;
+  if (typeof arc.title !== 'string') {
+    arc.title = '';
+    changed = true;
+  }
+  if (typeof arc.description !== 'string') {
+    arc.description = '';
+    changed = true;
+  }
+  if (!Array.isArray(arc.bookIds)) {
+    arc.bookIds = [];
+    changed = true;
+  }
+  if (!Array.isArray(arc.entryIds)) {
+    arc.entryIds = [];
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureArcFieldsAll -- backfill an entire arcs map on the merge path.
+// Mirrors ensureBookFieldsAll / ensureSubTheoryFieldsAll.
+function ensureArcFieldsAll(map) {
+  if (!map || typeof map !== 'object') { return false; }
+  var anyChanged = false;
+  var ak;
+  for (ak in map) {
+    if (map.hasOwnProperty(ak)) {
+      if (ensureArcFields(map[ak])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
+
+// 2.0 hardening (batch 2a): ensureNotebookEntryFields -- backfills the
+// STRUCTURAL entry fields the merge-path inline backfill does NOT already
+// cover. The onAuthStateChanged notebook merge already defaults filed (book-
+// aware), images, and normalizes journal isPrivate inline; this adds the
+// remaining render-critical fields (body string, bookIds / arcIds arrays) whose
+// absence on a remote entry from an older schema would render wrong or throw on
+// a .length read (the same failure mode as the arc bug). filed / isPrivate /
+// images / register are deliberately LEFT to that existing inline logic (no
+// duplication,
+// no re-implementing its book-aware / privacy-normalizer semantics); id /
+// userId are identity and left untouched. Idempotent; returns true if changed.
+function ensureNotebookEntryFields(entry) {
+  if (!entry || typeof entry !== 'object') { return false; }
+  var changed = false;
+  if (typeof entry.body !== 'string') {
+    entry.body = '';
+    changed = true;
+  }
+  if (!Array.isArray(entry.bookIds)) {
+    entry.bookIds = [];
+    changed = true;
+  }
+  if (!Array.isArray(entry.arcIds)) {
+    entry.arcIds = [];
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureNotebookEntryFieldsAll -- backfill an entire notebookEntries map.
+function ensureNotebookEntryFieldsAll(map) {
+  if (!map || typeof map !== 'object') { return false; }
+  var anyChanged = false;
+  var ek;
+  for (ek in map) {
+    if (map.hasOwnProperty(ek)) {
+      if (ensureNotebookEntryFields(map[ek])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
+
+// 2.0 hardening (batch 2a): ensureThemeFields -- load/merge chokepoint for
+// manual-theme records, mirroring the other ensures. The Firestore REPLACE-
+// merge splats remote themes wholesale (bypassing migrate()), so a theme from
+// an older schema could land missing name (string) or bookIds (array, read with
+// .length / .indexOf). id and userId are identity/ownership and left untouched.
+// Idempotent; returns true if anything changed.
+function ensureThemeFields(theme) {
+  if (!theme || typeof theme !== 'object') { return false; }
+  var changed = false;
+  if (typeof theme.name !== 'string') {
+    theme.name = '';
+    changed = true;
+  }
+  if (!Array.isArray(theme.bookIds)) {
+    theme.bookIds = [];
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureThemeFieldsAll -- backfill an entire userThemes map.
+function ensureThemeFieldsAll(map) {
+  if (!map || typeof map !== 'object') { return false; }
+  var anyChanged = false;
+  var tk;
+  for (tk in map) {
+    if (map.hasOwnProperty(tk)) {
+      if (ensureThemeFields(map[tk])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
+
 // Stage 14.1c-fix (workspace sync): backfill sub-theory userId from the
 // parent arc's owner. Sub-theories created before this stage carry no
 // userId (ownership was transitive); this stamps a direct owner so the

@@ -147,6 +147,15 @@ firebase.auth().onAuthStateChanged(function (u) {
             state.arcs[raid] = remoteArcs[raid];
           }
         }
+        // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
+        // and (unlike books / subTheories) had no field backfill, so a remote
+        // arc from an older schema landed missing bookIds / entryIds -- the
+        // TypeError that white-screened the arc page (batch 1 guarded it at the
+        // render layer; this is the load-side root fix). Mirrors the
+        // ensureSubTheoryFieldsAll call on the sub-theory merge below.
+        if (typeof ensureArcFieldsAll === 'function') {
+          ensureArcFieldsAll(state.arcs);
+        }
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -236,6 +245,13 @@ firebase.auth().onAuthStateChanged(function (u) {
             state.userThemes[rtid] = remoteThemes[rtid];
           }
         }
+        // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
+        // and had no field backfill, so a remote theme from an older schema
+        // landed missing name / bookIds. Backfill on the merge path, mirroring
+        // the ensureSubTheoryFieldsAll call on the sub-theory merge.
+        if (typeof ensureThemeFieldsAll === 'function') {
+          ensureThemeFieldsAll(state.userThemes);
+        }
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -314,6 +330,15 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
         if (journalPrivacyChanged && typeof markNotebookDirty === 'function') {
           markNotebookDirty();
+        }
+        // 2.0 hardening (batch 2a): the REPLACE-splat + inline backfill above
+        // cover filed / images / journal-isPrivate but NOT the structural fields
+        // body / bookIds / arcIds, so a remote entry from an older schema could
+        // render wrong or throw on a .length read. Backfill those remaining
+        // fields here (the inline-owned fields are left untouched), mirroring
+        // the ensureSubTheoryFieldsAll call on the sub-theory merge.
+        if (typeof ensureNotebookEntryFieldsAll === 'function') {
+          ensureNotebookEntryFieldsAll(state.notebookEntries);
         }
         saveState();
         if (window.views && window.views.renderRoute) {
