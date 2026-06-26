@@ -10133,39 +10133,78 @@ function openArcDeleteConfirm(arcId) {
   host.appendChild(panel);
 }
 
+// Writing-Core Stage 2a: marginalia is the FIRST-ADOPT of the shared
+// WritingCanvas core (design/writing-core-contract.md). openEditor is NOT
+// touched -- this surface routes through createWritingCanvas instead, on the
+// textarea substrate. Behavior preserved exactly: register/privacy on capture
+// (getRegisterDefault), bookIds tagging, the entry.body -> markNotebookDirty ->
+// saveState persist, and maybeDrawOut. The autosave model creates ONE entry per
+// editor session then updates it (create-then-update via the entryId closure);
+// it never persists an empty note and never re-renders mid-keystroke. The core
+// owns the autosave trigger + the "Saved" cue (wired in 2a.3); the persist body
+// below is the adopter's. A quiet "Done" replaces openEditor's Save/Cancel: the
+// writing is already saved (autosave), so Done just closes the inline editor and
+// re-renders book detail so the new marginalia shows in the list.
 function openMarginaliaEditor(bookId) {
-  openEditor({
-    hostId:         'book-detail-editor-host',
-    emptySelector:  '.book-detail-empty-body',
-    showTitleField: false,
-    onSave: function(_titleVal, bodyVal) {
+  var host = document.getElementById('book-detail-editor-host');
+  if (!host) { return; }
+  var emptyEl = document.querySelector('.book-detail-empty-body');
+  if (emptyEl) { emptyEl.style.display = 'none'; }
+
+  var entryId = null;
+
+  var canvas = createWritingCanvas(host, {
+    surfaceId:    'marginalia',
+    placeholder:  'Write in the margin…',
+    initialValue: '',
+    flags:        { focusMode: true },
+    onSave: function(markdown, report) {
+      var body = (typeof markdown === 'string') ? markdown.replace(/^\s+|\s+$/g, '') : '';
+      if (body === '') { return; }
       var user = getCurrentUser();
-      if (!user) return;
+      if (!user) { return; }
       var now = Date.now();
-      var id  = genEntryId();
-      var entry = {
-        id:         id,
-        userId:     user.uid,
-        register:   'marginalia',
-        isPrivate:  getRegisterDefault('marginalia'),
-        body:       bodyVal,
-        bookIds:    [bookId],
-        arcIds:     [],
-        images:     [],
-        filed:      true,
-        createdAt:  now,
-        updatedAt:  now
-      };
-      state.notebookEntries[id] = entry;
-      markNotebookDirty();
-      saveState();
-      renderBookDetail(bookId);
-      maybeDrawOut(id);
-    },
-    onCancel: function() {
-      renderBookDetail(bookId);
+      if (entryId === null) {
+        var id = genEntryId();
+        state.notebookEntries[id] = {
+          id:         id,
+          userId:     user.uid,
+          register:   'marginalia',
+          isPrivate:  getRegisterDefault('marginalia'),
+          body:       body,
+          bookIds:    [bookId],
+          arcIds:     [],
+          images:     [],
+          filed:      true,
+          createdAt:  now,
+          updatedAt:  now
+        };
+        entryId = id;
+        markNotebookDirty();
+        if (report && report.setLocal) { report.setLocal(saveState()); } else { saveState(); }
+        maybeDrawOut(id);
+      } else {
+        var entry = state.notebookEntries[entryId];
+        if (!entry) { return; }
+        entry.body = body;
+        entry.updatedAt = now;
+        markNotebookDirty();
+        if (report && report.setLocal) { report.setLocal(saveState()); } else { saveState(); }
+      }
     }
   });
+
+  var done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'wc-done';
+  done.textContent = 'Done';
+  done.addEventListener('click', function() {
+    if (canvas) { canvas.destroy(); }
+    renderBookDetail(bookId);
+  });
+  host.appendChild(done);
+
+  if (canvas) { canvas.focus(); }
 }
 
 // Stage 3.7: Artifact draft editor. Mounted into the book-detail

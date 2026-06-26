@@ -26,6 +26,7 @@ var APP_SHELL = [
   '/js/voice-input.js',
   '/js/yumi-ui.js',
   '/js/spotlight.js',
+  '/js/writing-canvas.js',
   '/js/views.js',
   '/js/import-capture.js',
   '/js/app.js'

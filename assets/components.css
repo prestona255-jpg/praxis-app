@@ -10527,3 +10527,57 @@
 
 @keyframes ic-eq { 0%,100% { height:14px; } 50% { height:46px; } }
 @media (prefers-reduced-motion:reduce) { .ic-bars span { animation:none; height:30px; } }
+
+/* ===================================================================
+   WRITING CANVAS (Writing-Core build, Stage 2a) -- additive.
+   The shared WritingCanvas substrate: a bright-page Cormorant serif prose
+   canvas per design/writing-core-mockup.html + the S10.5.8 writing-surface
+   grammar. Tokens only; resolves to the active ground (book detail is the
+   bright page, so --ink/--page read bright). 2a.3 appends the cue,
+   contextual-control, and focus-mode rules below this base block.
+   =================================================================== */
+.wc-wrap { position:relative; max-width:680px; }
+.wc-input {
+  display:block; width:100%; box-sizing:border-box;
+  min-height:220px; resize:none;
+  border:0; outline:none; background:transparent;
+  font-family:var(--font-serif); font-size:19px; line-height:1.66;
+  color:var(--ink); caret-color:var(--marginalia-color);
+  padding:6px 0 10px;
+}
+.wc-input::placeholder { color:color-mix(in srgb, var(--meta) 78%, transparent); font-style:italic; }
+.wc-input::selection { background:color-mix(in srgb, var(--marginalia-color) 20%, transparent); color:var(--ink); }
+/* Quiet "Done" affordance for the inline marginalia adoption (replaces openEditor's
+   Save/Cancel; the writing is already autosaved). A recessed pill, not a primary button. */
+.wc-done {
+  margin-top:12px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--meta); background:transparent;
+  border:1px solid var(--border); border-radius:var(--radius-pill);
+  padding:7px 16px; cursor:pointer;
+  transition:background var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease), color var(--motion-base) var(--ease);
+}
+.wc-done:hover { background:var(--wash); border-color:var(--line-2); color:var(--ink-2); }
+
+/* 2a.3: the thin top bar (contextual control on the left, the "Saved" cue on the
+   right) + focus mode. Tokens only; motion is the one --ease curve. */
+.wc-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px; margin-bottom:2px; }
+.wc-fmt { display:flex; align-items:center; gap:2px; opacity:0; pointer-events:none; transform:translateY(-3px); transition:opacity 150ms var(--ease), transform 150ms var(--ease); }
+.wc-fmt.wc-fmt-on { opacity:1; pointer-events:auto; transform:none; }
+.wc-fmt-btn { min-width:28px; height:26px; padding:0 7px; border:0; background:transparent; border-radius:var(--radius-sm); color:var(--ink-2); cursor:pointer; font-size:13px; line-height:1; transition:background 140ms var(--ease), color 140ms var(--ease); }
+.wc-fmt-btn:hover { background:var(--wash); color:var(--ink); }
+.wc-fmt-b { font-family:var(--font-serif); font-weight:700; font-size:15px; }
+.wc-fmt-i { font-family:var(--font-serif); font-style:italic; font-size:15px; }
+.wc-fmt-g { font-family:var(--font-mono); font-size:12px; letter-spacing:.01em; }
+.wc-saved { display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); opacity:0; transition:opacity 500ms var(--ease); }
+.wc-saved.wc-saving, .wc-saved.wc-shown, .wc-saved.wc-failed { opacity:1; }
+.wc-saved.wc-rest { opacity:.5; }
+.wc-sdot { width:6px; height:6px; border-radius:50%; background:var(--marginalia-color); transition:background 300ms var(--ease); }
+.wc-saved.wc-saving .wc-sdot { animation:wc-pulse 950ms ease-in-out infinite; }
+.wc-saved.wc-failed .wc-sdot { background:var(--danger); }
+@keyframes wc-pulse { 0%,100% { transform:scale(.7); opacity:.5; } 50% { transform:scale(1.15); opacity:1; } }
+@media (prefers-reduced-motion:reduce) { .wc-saved.wc-saving .wc-sdot { animation:none; } }
+/* Focus mode: the nav recedes via OPACITY only -- it stays solid (no blur, no
+   filter/transform), so the iOS fixed-child composite bug is never triggered. */
+.app-nav { transition:opacity var(--motion-base) var(--ease); }
+body.wc-focus .app-nav { opacity:.26; }
