@@ -264,6 +264,70 @@ firebase.auth().onAuthStateChanged(function (u) {
       }
     });
 
+    // 2.0 hardening (batch 2b): fetch this user's artifact-doc from
+    // /userArtifacts/{uid} and REPLACE-merge into state.bookArtifacts. Mirrors
+    // the theme handler (owner-keyed flat map; ownership is artifact.userId).
+    // On 'absent' WITH local artifacts present, SEED them (markArtifactsDirty +
+    // saveState) -- the one-time migration that pushes a user's pre-existing
+    // localStorage artifacts to the cloud so they appear on a fresh device
+    // (artifacts were localStorage-only before this batch; audit CRIT #2).
+    loadArtifactsFromFirestore(u.uid, function (artResult) {
+      if (artResult.status === 'found') {
+        var aki;
+        if (state.bookArtifacts) {
+          for (aki in state.bookArtifacts) {
+            if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, aki) &&
+                state.bookArtifacts[aki] && state.bookArtifacts[aki].userId === u.uid) {
+              delete state.bookArtifacts[aki];
+            }
+          }
+        }
+        if (!state.bookArtifacts) { state.bookArtifacts = {}; }
+        var remoteArts = (artResult.data && artResult.data.bookArtifacts)
+          ? artResult.data.bookArtifacts
+          : {};
+        var raki;
+        for (raki in remoteArts) {
+          if (Object.prototype.hasOwnProperty.call(remoteArts, raki)) {
+            state.bookArtifacts[raki] = remoteArts[raki];
+          }
+        }
+        if (typeof ensureArtifactFieldsAll === 'function') {
+          ensureArtifactFieldsAll(state.bookArtifacts);
+        }
+        saveState();
+        if (window.views && window.views.renderRoute) {
+          window.views.renderRoute();
+        }
+        console.log('loadArtifactsFromFirestore: merged remote artifact doc');
+      } else if (artResult.status === 'absent') {
+        // One-time seed: no remote artifact doc yet. If this user has local
+        // artifacts (created before sync existed), push them so a fresh device
+        // gets them. A user with none writes nothing. Once seeded, later
+        // sign-ins return 'found' and this branch no longer fires.
+        var hasLocalArt = false;
+        var lak;
+        if (state.bookArtifacts) {
+          for (lak in state.bookArtifacts) {
+            if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, lak) &&
+                state.bookArtifacts[lak] && state.bookArtifacts[lak].userId === u.uid) {
+              hasLocalArt = true;
+              break;
+            }
+          }
+        }
+        if (hasLocalArt && typeof markArtifactsDirty === 'function') {
+          markArtifactsDirty();
+          saveState();
+          console.log('loadArtifactsFromFirestore: no remote doc, seeded local artifacts');
+        } else {
+          console.log('loadArtifactsFromFirestore: no remote artifact doc for uid, keeping cache');
+        }
+      } else {
+        console.warn('loadArtifactsFromFirestore: fetch failed, keeping cache', artResult.error);
+      }
+    });
+
     // Stage 14.1b: fetch this user's notebook-doc from /userNotebook/{uid}
     // and REPLACE-merge into state.notebookEntries. Independent of the
     // book/arc fetches (separate docs). REPLACE: clear THIS uid's locally-
@@ -1334,6 +1398,39 @@ function saveThemesToFirestore(uid, payload, callback) {
       .set(payload)
       .then(function () {
         finish({ status: 'ok' });
+      }, function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// 2.0 hardening (batch 2b): per-user artifact-doc read from /userArtifacts/{uid}.
+// Same typed-callback contract as the theme / arc loaders -- found / absent /
+// error, idempotent fire-once.
+function loadArtifactsFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('loadArtifactsFromFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userArtifacts')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) {
+          finish({ status: 'found', data: doc.data() });
+        } else {
+          finish({ status: 'absent' });
+        }
       }, function (err) {
         finish({ status: 'error', error: err });
       });

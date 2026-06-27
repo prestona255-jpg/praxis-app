@@ -1104,6 +1104,42 @@ function ensureOneArtifact(userId, bookId, artifact) {
   return artifact;
 }
 
+// 2.0 hardening (batch 2b): ensureArtifactFields -- load/merge chokepoint for
+// artifact records, mirroring ensureBookFields / ensureThemeFields. The
+// Firestore REPLACE-merge splats remote artifacts wholesale (bypassing
+// migrate()), so an artifact from an older schema could land missing title /
+// body (both rendered). userId and bookId are identity (owner + the book link)
+// and left untouched. Idempotent; returns true if anything changed.
+function ensureArtifactFields(artifact) {
+  if (!artifact || typeof artifact !== 'object') { return false; }
+  var changed = false;
+  if (typeof artifact.title !== 'string') {
+    artifact.title = '';
+    changed = true;
+  }
+  if (typeof artifact.body !== 'string') {
+    artifact.body = '';
+    changed = true;
+  }
+  return changed;
+}
+
+// ensureArtifactFieldsAll -- backfill an entire bookArtifacts map on the merge
+// path. Mirrors ensureThemeFieldsAll / ensureBookFieldsAll.
+function ensureArtifactFieldsAll(map) {
+  if (!map || typeof map !== 'object') { return false; }
+  var anyChanged = false;
+  var artk;
+  for (artk in map) {
+    if (map.hasOwnProperty(artk)) {
+      if (ensureArtifactFields(map[artk])) {
+        anyChanged = true;
+      }
+    }
+  }
+  return anyChanged;
+}
+
 // Canonical entry id generator. Shared by 3.2 (Journal writes) and
 // 3.3 (Marginalia writes) so both registers produce ids with the
 // same prefix and timestamp ordering. Format is opaque to callers;
