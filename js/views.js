@@ -5507,9 +5507,10 @@ function deleteBook(uid, id) {
   }
 
   // 7. the book artifact for this (uid, book)
+  var artifactTouched = false;
   if (state.bookArtifacts && typeof artifactKey === 'function') {
     var artK = artifactKey(uid, id);
-    if (state.bookArtifacts[artK]) { delete state.bookArtifacts[artK]; }
+    if (state.bookArtifacts[artK]) { delete state.bookArtifacts[artK]; artifactTouched = true; }
   }
 
   // 8. durability: stop guarding it as a pending ADD; start guarding the DELETE
@@ -5522,6 +5523,7 @@ function deleteBook(uid, id) {
   if (notesTouched && typeof markNotebookDirty === 'function') { markNotebookDirty(); }
   if (subsTouched && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
   if (themesTouched && typeof markThemesDirty === 'function') { markThemesDirty(); }
+  if (artifactTouched && typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
   saveState();
   return true;
 }
@@ -10247,6 +10249,9 @@ function openArtifactEditor(bookId) {
         updatedAt: now
       };
       ensureOneArtifact(user.uid, bookId, artifact);
+      // 2.0 hardening (batch 2b): mark the artifact doc dirty so saveState
+      // pushes it to Firestore (mirrors how book mutations call markBooksDirty).
+      if (typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
       saveState();
       renderBookDetail(bookId);
     },

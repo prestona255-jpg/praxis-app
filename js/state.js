@@ -1074,6 +1074,17 @@ function markThemesDirty() {
   themesDirty = true;
 }
 
+// 2.0 hardening (batch 2b): dirty flag for the per-user artifact doc,
+// mirroring themesDirty / booksDirty. The artifact create + delete sites mark
+// it; saveState() consumes it and fires a fire-and-forget /userArtifacts/{uid}
+// write. Before this batch bookArtifacts were localStorage-only (audit CRIT #2);
+// this makes them a fully-synced record type (owner-keyed flat map, like themes).
+var artifactsDirty = false;
+
+function markArtifactsDirty() {
+  artifactsDirty = true;
+}
+
 // Composite key for the bookArtifacts map. Kept as a function so the
 // format is changed in one place if it ever needs to change. The ':'
 // separator is safe because neither id is allowed to contain one.
@@ -2422,6 +2433,30 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           themesDirty = true;
+        }
+      });
+    }
+  }
+  if (artifactsDirty) {
+    artifactsDirty = false;
+    var artUser = (typeof getCurrentUser === 'function')
+      ? getCurrentUser()
+      : null;
+    if (artUser && artUser.uid &&
+        typeof saveArtifactsToFirestore === 'function' &&
+        typeof buildUserArtifactsDoc === 'function') {
+      var artPayload = buildUserArtifactsDoc(artUser.uid);
+      saveArtifactsToFirestore(artUser.uid, artPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveArtifactsToFirestore: ok');
+        } else {
+          console.warn(
+            'saveArtifactsToFirestore: failed',
+            result ? result.error : null
+          );
+          // 2.0 hardening (batch 1 pattern): re-dirty so the next saveState
+          // retries instead of silently dropping the write.
+          artifactsDirty = true;
         }
       });
     }

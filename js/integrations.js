@@ -1342,6 +1342,59 @@ function saveThemesToFirestore(uid, payload, callback) {
   }
 }
 
+// 2.0 hardening (batch 2b): build the per-user artifact-doc payload.
+// Denormalized single-doc model: { schemaVersion, bookArtifacts: { key: {...} },
+// updatedAt }. Ownership is DIRECT (artifact.userId === uid), mirroring
+// buildUserThemesDoc / buildUserArcsDoc. The map key is artifactKey(uid, bookId).
+function buildUserArtifactsDoc(uid) {
+  var bookArtifacts = {};
+  var akey;
+  if (state.bookArtifacts) {
+    for (akey in state.bookArtifacts) {
+      if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, akey)) {
+        var art = state.bookArtifacts[akey];
+        if (art && art.userId === uid) {
+          bookArtifacts[akey] = art;
+        }
+      }
+    }
+  }
+  return {
+    schemaVersion: state.SCHEMA_VERSION,
+    bookArtifacts: bookArtifacts,
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// 2.0 hardening (batch 2b): per-user artifact-doc write to /userArtifacts/{uid}.
+// .set() full-doc overwrite, fire-and-forget, typed callback, idempotent
+// fire-once -- identical contract to saveThemesToFirestore.
+function saveArtifactsToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  if (!uid) {
+    finish({ status: 'error', error: new Error('saveArtifactsToFirestore: missing uid') });
+    return;
+  }
+  try {
+    firebase.firestore()
+      .collection('userArtifacts')
+      .doc(uid)
+      .set(payload)
+      .then(function () {
+        finish({ status: 'ok' });
+      }, function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
 // ISBN lookup: Open Library is primary, Google Books is fallback.
 // Public API is callback-only; internal Promise chains stay inside.
 // Normalized shape: { isbn, title, author, coverUrl, publishYear,
