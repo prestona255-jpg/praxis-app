@@ -1,0 +1,236 @@
+/* =============================================================================
+   PRAXIS 2.0 — THE LUMEN DESIGN SYSTEM · AMBER KEY  (LOCKED 2026-06-29)
+   Single source of truth for the 2.0 build. Surfaces reference these tokens
+   and materials so the look is correct by construction.
+
+   THE CONSTANT (Lumen):  frosted glass at two elevations · glowing idea
+   light-marks · near-white type · Cormorant / DM Sans / DM Mono.
+   THE KEY (Amber):       warm honey/amber/bronze — lamplight + old paper.
+
+   ATMOSPHERE → REGION
+     .lum-amber        Home, Your field            (your thinking)
+     .lum-amber-deep   Shelf, Book pages, Notebook, Build/writing  (reading room)
+     .lum-amber-ember  Commons, Profiles, Discovery  (the public square)
+   Yumi panel / capture / tools → .lum-amber or .lum-amber-deep.
+   ============================================================================= */
+
+/* ----- FONTS (load once in the app shell) ----------------------------------
+   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+---------------------------------------------------------------------------- */
+
+:root{
+  /* base + ink ramp (warm near-white) */
+  --lum-base:#231708;
+  --lum-ink:#fdf8ec;
+  --lum-ink-2:#e8dcc4;
+  --lum-ink-3:#b6a888;
+  --lum-ink-4:#867a5e;
+
+  /* glass material — two elevations */
+  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.04) 100%);
+  --lum-glass-raised:linear-gradient(157deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.06) 100%);
+  --lum-glass-bd:rgba(255,236,200,.28);
+  --lum-glass-bd-2:rgba(255,236,200,.16);
+  --lum-glass-blur:16px;
+
+  /* accents */
+  --lum-gold:#ffce4a;       /* the lead accent */
+  --lum-gold-l:#ffe79a;
+  --lum-gold-d:#cf9c2a;
+  --lum-gold-ink:#241a02;   /* text on a gold fill */
+  --lum-cyan:#7fd0f0;       /* Yumi — always */
+  --lum-coral:#ff9a6e;      /* warmth / build-on heat */
+  --lum-rose:#ff8e8e;       /* tension / friction */
+  --lum-cloth:#5a4632;      /* book covers */
+
+  /* type */
+  --lum-serif:"Cormorant Garamond", Georgia, serif;
+  --lum-sans:"DM Sans", system-ui, sans-serif;
+  --lum-mono:"DM Mono", ui-monospace, monospace;
+
+  /* radii */
+  --lum-r-card:16px;
+  --lum-r-pill:999px;
+}
+
+/* base reset hook (apply to the app root) */
+.lum-root{
+  background:var(--lum-base);
+  color:var(--lum-ink);
+  font-family:var(--lum-sans);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============================================================================
+   ATMOSPHERES  — set the ground for a surface region. Put one on the surface
+   root (or a full-bleed backdrop layer). They expose --lum-bg too, in case a
+   child needs to echo the ground.
+   ============================================================================ */
+.lum-amber{
+  --lum-bg:
+    radial-gradient(70% 55% at 14% 2%,  rgba(255,202,92,.50) 0%, rgba(255,202,92,0) 60%),
+    radial-gradient(62% 52% at 89% 12%, rgba(228,150,56,.44) 0%, rgba(228,150,56,0) 62%),
+    radial-gradient(82% 62% at 72% 104%,rgba(255,160,70,.40) 0%, rgba(255,160,70,0) 60%),
+    radial-gradient(58% 50% at 26% 96%, rgba(210,120,50,.26) 0%, rgba(210,120,50,0) 60%),
+    radial-gradient(120% 120% at 50% 44%, #3a2912 0%, #2a1d0c 50%, #1c1208 100%);
+  background:var(--lum-bg);
+}
+.lum-amber-deep{
+  --lum-bg:
+    radial-gradient(72% 56% at 16% 4%,  rgba(255,190,80,.42) 0%, rgba(255,190,80,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(216,130,60,.34) 0%, rgba(216,130,60,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(230,150,64,.42) 0%, rgba(230,150,64,0) 60%),
+    radial-gradient(120% 120% at 50% 44%, #33240f 0%, #241a0a 50%, #181006 100%);
+  background:var(--lum-bg);
+}
+.lum-amber-ember{
+  --lum-bg:
+    radial-gradient(70% 55% at 14% 4%,  rgba(255,200,90,.40) 0%, rgba(255,200,90,0) 60%),
+    radial-gradient(64% 52% at 88% 10%, rgba(232,120,120,.36) 0%, rgba(232,120,120,0) 62%),
+    radial-gradient(82% 62% at 72% 104%,rgba(255,140,80,.44) 0%, rgba(255,140,80,0) 60%),
+    radial-gradient(120% 120% at 50% 44%, #381f12 0%, #2a160d 50%, #1c0f08 100%);
+  background:var(--lum-bg);
+}
+
+/* ============================================================================
+   TYPE
+   ============================================================================ */
+.lum-display{ font-family:var(--lum-serif); font-weight:500; color:#fffaf0; line-height:1.04; }
+.lum-h{ font-family:var(--lum-serif); font-weight:600; color:#fff; line-height:1.08; }
+.lum-h-em{ font-style:italic; }
+.lum-body{ font-family:var(--lum-sans); color:var(--lum-ink-2); }
+.lum-quote{ font-family:var(--lum-serif); font-style:italic; color:var(--lum-ink-2); }
+.lum-meta{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-3); }
+
+/* ============================================================================
+   GLASS MATERIAL  — two elevations. Add .lum-glass or .lum-glass-raised to any
+   panel/card. Both blur the ground behind them.
+   ============================================================================ */
+.lum-glass{
+  background:var(--lum-glass);
+  border:1px solid var(--lum-glass-bd-2);
+  border-radius:var(--lum-r-card);
+  -webkit-backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
+  backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 18px 40px -30px rgba(0,0,0,.6);
+}
+.lum-glass-raised{
+  background:var(--lum-glass-raised);
+  border:1px solid var(--lum-glass-bd);
+  border-radius:var(--lum-r-card);
+  -webkit-backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
+  backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
+  box-shadow:
+    0 30px 60px -24px rgba(0,0,0,.6),
+    0 6px 18px -8px rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.30),
+    inset 0 -30px 50px -38px rgba(0,0,0,.36);
+}
+
+/* ============================================================================
+   THE GLOWING IDEA LIGHT-MARK  — the signature. An idea = silhouette (shape) ×
+   treatment × hue. Size via --cd (the core diameter).
+     <span class="lum-light lg s-orb" style="--cd:38px"><i class="halo"></i><i class="core"></i></span>
+   Default presence is "lit"; dim/asleep states scale --cd and lower opacity.
+   ============================================================================ */
+.lum-light{ position:relative; display:inline-block; overflow:visible; width:var(--cd,22px); height:var(--cd,22px); vertical-align:middle; }
+.lum-light .halo{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:calc(var(--cd,22px) * 3.3); height:calc(var(--cd,22px) * 3.3);
+  border-radius:50%;
+  background:radial-gradient(circle, var(--hg) 0%, transparent 66%);
+  opacity:.5;
+}
+.lum-light .core{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:var(--cd,22px); height:var(--cd,22px);
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255,255,255,.86) 0%, rgba(255,255,255,0) 42%),
+    radial-gradient(circle at 38% 32%, var(--hl) 0%, var(--h) 46%, var(--hd) 100%);
+  box-shadow:0 0 calc(var(--cd,22px) * .8) var(--hg), 0 0 0 1px rgba(255,255,255,.1);
+}
+/* presence states (only the light changes) */
+.lum-light.is-dim{ opacity:.62; }
+.lum-light.is-asleep{ opacity:.4; }
+.lum-light.is-asleep .halo{ opacity:.25; }
+
+/* hue set — h core / hl highlight / hd shade / hg glow */
+.lg  { --h:#ffce4a; --hl:#ffeeb0; --hd:#bd8a1e; --hg:rgba(255,206,74,.62); }  /* gold    */
+.lam { --h:#ffab4a; --hl:#ffd9a0; --hd:#c47a1e; --hg:rgba(255,171,74,.55); }  /* amber   */
+.lcr { --h:#ffe6a0; --hl:#fff6d8; --hd:#c0a24a; --hg:rgba(255,230,160,.50); } /* cream   */
+.lco { --h:#ff9a6e; --hl:#ffd2bc; --hd:#c45a36; --hg:rgba(255,154,110,.55); } /* coral   */
+.lc  { --h:#6fd0ec; --hl:#c4f1ff; --hd:#2f8fb4; --hg:rgba(111,208,236,.58); } /* cyan    */
+.le  { --h:#46d08e; --hl:#b6f4d6; --hd:#1d8a5a; --hg:rgba(70,208,142,.52); }  /* emerald */
+.lm  { --h:#e16ad8; --hl:#f8c4f2; --hd:#a234a0; --hg:rgba(225,106,216,.55); } /* magenta */
+.lv  { --h:#b49cf0; --hl:#e2d4ff; --hd:#6e54a8; --hg:rgba(180,156,240,.50); } /* violet  */
+
+/* shape (silhouette) modifiers */
+.s-orb  .core{ border-radius:50%; }
+.s-lens .core{ clip-path:ellipse(50% 33% at 50% 50%); }
+.s-seed .core{ border-radius:54% 54% 54% 8%; transform:translate(-50%,-50%) rotate(45deg); }
+.s-hex  .core{ clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); }
+
+/* ============================================================================
+   IDEA CARD  — a raised glass card fronted by an idea light + Cormorant title.
+   ============================================================================ */
+.lum-idea{ padding:18px 20px; }                 /* compose with .lum-glass-raised */
+.lum-idea .head{ display:flex; align-items:center; gap:11px; }
+.lum-idea .title{ font-family:var(--lum-serif); font-weight:600; font-size:22px; color:#fff; margin:0; line-height:1.06; }
+.lum-idea .gloss{ font-family:var(--lum-serif); font-size:16px; color:var(--lum-ink-2); margin:11px 0 0; line-height:1.44; }
+
+/* ============================================================================
+   CHIPS
+   ============================================================================ */
+.lum-cite{                                        /* woven evidence / citation */
+  display:inline-flex; align-items:center; gap:5px;
+  font-family:var(--lum-sans); font-size:11px; color:var(--lum-gold-l);
+  background:rgba(255,206,74,.16); border:1px solid rgba(255,206,74,.40);
+  border-radius:7px; padding:2px 9px;
+}
+.lum-cite .dot{ width:6px; height:6px; border-radius:50%; background:var(--lum-gold); }
+.lum-chip-gold{                                   /* primary action */
+  font-family:var(--lum-sans); font-size:11.5px; font-weight:500;
+  color:var(--lum-gold-ink); background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold));
+  border:none; border-radius:var(--lum-r-pill); padding:6px 14px;
+}
+.lum-chip-line{                                   /* secondary action */
+  font-family:var(--lum-sans); font-size:11.5px; font-weight:500;
+  color:#fff; background:transparent; border:1px solid var(--lum-glass-bd);
+  border-radius:var(--lum-r-pill); padding:6px 14px;
+}
+
+/* ============================================================================
+   YUMI WHISPER  — connective tissue spoken AS THOUGHT. Cyan dot + Cormorant
+   italic. Never summary, never an answer. Optional tinted well (.has-well).
+   ============================================================================ */
+.lum-yumi{ display:flex; align-items:flex-start; gap:9px; }
+.lum-yumi .dot{
+  flex:none; width:11px; height:11px; border-radius:50%; margin-top:4px;
+  background:radial-gradient(circle at 38% 32%, #fff, var(--lum-cyan) 46%, #2f8fb4 100%);
+  box-shadow:0 0 9px rgba(127,208,240,.7);
+}
+.lum-yumi p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:#c4eafa; }
+.lum-yumi.has-well{
+  padding:11px 13px; border-radius:11px;
+  background:rgba(127,208,240,.08); border:1px solid rgba(127,208,240,.24);
+}
+
+/* ============================================================================
+   SEGMENTED TOGGLE  (e.g. Lenses ⇄ Categories)
+   ============================================================================ */
+.lum-seg{ display:inline-flex; border:1px solid var(--lum-glass-bd); border-radius:var(--lum-r-pill); padding:3px; background:rgba(255,255,255,.06); }
+.lum-seg > *{ font-family:var(--lum-sans); font-size:11.5px; font-weight:500; color:rgba(255,244,224,.72); border-radius:var(--lum-r-pill); padding:5px 13px; cursor:pointer; }
+.lum-seg > .is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold)); }
+
+/* ============================================================================
+   AMBIENT MOTES (optional dust over an atmosphere) — purely decorative.
+   ============================================================================ */
+.lum-motes{ position:absolute; inset:0; pointer-events:none; }
+.lum-motes i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff3da; opacity:.42; }
+
+/* ============================================================================
+   GUARDRAIL (the line no aesthetic crosses): legibility + content lead, chrome
+   recedes. Keep body text on the near-white ramp; never drop idea/title
+   contrast for decoration; the glow is the accent, not the text.
+   ============================================================================ */
