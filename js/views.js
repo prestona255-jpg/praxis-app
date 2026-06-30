@@ -11851,6 +11851,21 @@ function renderNotebookEntry(entry, gatherable) {
     acts.appendChild(gatherLink);
   }
 
+  // Wave 3 close-out: a quiet RESTING draw-out cue. Tapping it invokes the REAL
+  // maybeDrawOut (YumiBrain.considerMove) for THIS note -- an affordance, never a
+  // fabricated per-card question. Non-journal only (journal never reaches Yumi).
+  if (gatherable && entry.register !== 'journal' && typeof maybeDrawOut === 'function') {
+    var drawOutLink = document.createElement('a');
+    drawOutLink.href = '#';
+    drawOutLink.className = 'notebook-entry-add-to-arc notebook-entry-drawout';
+    drawOutLink.textContent = 'ask Yumi';
+    drawOutLink.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      maybeDrawOut(capturedId);
+    });
+    acts.appendChild(drawOutLink);
+  }
+
   var addToArcLink = document.createElement('a');
   addToArcLink.href = '#';
   addToArcLink.className = 'notebook-entry-add-to-arc';

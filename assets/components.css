@@ -10872,7 +10872,7 @@ body.wc-focus .app-nav { opacity:.26; }
    names (.sheet-like .st-main, .eyebrow) cannot bleed to other surfaces,
    and the .lum-amber-deep specificity overrides the legacy 2-col .st-page.
    ===================================================================== */
-.st-page.lum-amber-deep{ display:block; width:100%; max-width:none; min-height:100vh; margin:0; padding:26px 0 70px; color:var(--lum-ink); }
+.st-page.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:26px 0 70px; color:var(--lum-ink); }
 /* the deep-amber ground is full-bleed (edge-to-edge, like .bk-surface); the
    CONTENT (topbar + grid) is centered at the reading width. */
 .st-page.lum-amber-deep > .st-topbar,
@@ -10964,12 +10964,22 @@ body.wc-focus .app-nav { opacity:.26; }
 /* --- mobile: collapse the 3-col to a single column --- */
 @media (max-width:759px){
   .st-page.lum-amber-deep{ padding:18px 16px 60px; }
+  .st-page.lum-amber-deep > .st-topbar,
+  .st-page.lum-amber-deep > .st-grid{ padding-left:0; padding-right:0; }
+  .st-page.lum-amber-deep .st-topbar{ flex-wrap:wrap; gap:12px; }
   .st-page.lum-amber-deep .st-grid{ grid-template-columns:1fr; gap:20px; }
   .st-page.lum-amber-deep .st-main{ padding:26px 20px 24px; order:1; }
-  .st-page.lum-amber-deep .st-gutter{ order:2; }
+  /* override the LEGACY ≤720 bottom-sheet rule (.st-page .st-gutter{display:none})
+     -- the amber reflow stacks the evidence rail inline instead of hiding it. */
+  .st-page.lum-amber-deep .st-gutter{ order:2; display:block; position:static; transform:none; width:auto; }
+  .st-page.lum-amber-deep .subtheory-rail-toggle{ display:none; }
   .st-page.lum-amber-deep .st-yumi{ order:3; }
   .st-page.lum-amber-deep .st-title-input{ font-size:30px; }
   .st-page.lum-amber-deep .st-canvas-host .wc-input{ font-size:18px; }
+  .st-page.lum-amber-deep .st-pill-publish,
+  .st-page.lum-amber-deep .st-conn-add,
+  .st-page.lum-amber-deep .st-conn-row,
+  .st-page.lum-amber-deep .st-weave{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE PAGE ===== */
 
@@ -10980,7 +10990,7 @@ body.wc-focus .app-nav { opacity:.26; }
    the Page and .bk-surface); content centered at the reading width. Tokens
    only (lum and font vars); scoped under .st-build.lum-amber-deep.
    ===================================================================== */
-.st-build.lum-amber-deep{ display:block; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
+.st-build.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
 .st-build.lum-amber-deep > .stb-intro,
 .st-build.lum-amber-deep > .stb-build{ max-width:940px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
 
@@ -11069,9 +11079,16 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-build.lum-amber-deep .stb-build{ flex-direction:column; }
   .st-build.lum-amber-deep .stb-rail{ width:100%; }
   .st-build.lum-amber-deep .stb-sheet{ padding:24px 20px 20px; }
-  .st-build.lum-amber-deep .stb-head{ flex-wrap:wrap; }
+  .st-build.lum-amber-deep .stb-head{ flex-direction:column; align-items:flex-start; gap:10px; }
+  .st-build.lum-amber-deep .stb-title-wrap{ width:100%; }
+  .st-build.lum-amber-deep .stb-acts{ flex-wrap:wrap; }
   .st-build.lum-amber-deep .stb-title-input{ font-size:26px; }
   .st-build.lum-amber-deep .stb-canvas-host .wc-input{ font-size:18px; }
+  .st-build.lum-amber-deep .stb-pubpill,
+  .st-build.lum-amber-deep .stb-openpage,
+  .st-build.lum-amber-deep .stb-weave,
+  .st-build.lum-amber-deep .stb-conn-add,
+  .st-build.lum-amber-deep .stb-crow{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · SUB-THEORY BUILD ===== */
 
@@ -11082,8 +11099,8 @@ body.wc-focus .app-nav { opacity:.26; }
    right). Full-bleed deep-amber ground; content centered at the reading
    width. Tokens only (lum and font vars); scoped under .notebook.lum-amber-deep.
    ===================================================================== */
-.notebook.lum-amber-deep{ display:block; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
-.notebook.lum-amber-deep > *{ max-width:900px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+.notebook.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
+.notebook.lum-amber-deep > *{ box-sizing:border-box; max-width:900px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
 
 /* head */
 .notebook.lum-amber-deep .notebook-head{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
@@ -11144,11 +11161,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook.lum-amber-deep .notebook-entry-vis{ font-family:var(--lum-mono); font-size:9.5px; color:var(--lum-ink-4); margin-left:8px; }
 .notebook.lum-amber-deep .notebook-entry-src{ font-family:var(--lum-sans); font-size:11px; color:var(--lum-ink-3); margin-top:7px; font-style:italic; }
 .notebook.lum-amber-deep .notebook-entry-body{ font-family:var(--lum-serif); font-size:17px; line-height:1.4; color:var(--lum-ink); margin-top:8px; }
-.notebook.lum-amber-deep .notebook-entry-acts{ display:flex; gap:14px; margin-top:11px; flex-wrap:wrap; }
+/* override the LEGACY hover-gate (.notebook .leaf-left .notebook-entry-acts{opacity:0})
+   -- the amber notebook keeps the gather/lock affordances ALWAYS visible (no hover
+   on touch; the v3.112 lesson was lost-on-mobile affordances). */
+.notebook.lum-amber-deep .notebook-entry-acts{ display:flex; gap:14px; margin-top:11px; flex-wrap:wrap; opacity:1; }
 .notebook.lum-amber-deep .notebook-entry-acts a{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:var(--lum-ink-3); text-decoration:none; cursor:pointer; }
 .notebook.lum-amber-deep .notebook-entry-acts a:hover{ color:var(--lum-gold-l); }
 .notebook.lum-amber-deep .notebook-entry-gather{ color:var(--lum-gold-l); }
 .notebook.lum-amber-deep .notebook-entry-lock{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-ink-4); }
+/* beat the legacy .notebook .leaf-left .notebook-entry-acts a (0,3,1) with an
+   a.class selector so the gather stays gold and the draw-out cue stays Yumi-cyan. */
+.notebook.lum-amber-deep .notebook-entry-acts a.notebook-entry-gather{ color:var(--lum-gold-l); }
+.notebook.lum-amber-deep .notebook-entry-acts a.notebook-entry-drawout{ color:var(--lum-cyan); }
+.notebook.lum-amber-deep .notebook-entry-acts a.notebook-entry-drawout:hover{ color:var(--lum-cyan); opacity:.8; }
 
 /* working page (right leaf) */
 .notebook.lum-amber-deep .notebook-working-hint,
@@ -11179,5 +11204,17 @@ body.wc-focus .app-nav { opacity:.26; }
   .notebook.lum-amber-deep .notebook-leaves{ flex-direction:column; }
   .notebook.lum-amber-deep .leaf-left{ border-right:none; border-bottom:1px solid rgba(255,236,200,.12); }
   .notebook.lum-amber-deep .nb-bookband{ flex-wrap:wrap; gap:16px; }
+  .notebook.lum-amber-deep .nb-bb-cover{ width:74px; height:110px; }
+  .notebook.lum-amber-deep .nb-bb-consent{ flex-basis:100%; }
+  .notebook.lum-amber-deep .nb-tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:5px; }
+  .notebook.lum-amber-deep .nb-tab{ flex:none; }
+  .notebook.lum-amber-deep .nb-tab,
+  .notebook.lum-amber-deep .ic-trigger,
+  .notebook.lum-amber-deep .notebook-head .chip,
+  .notebook.lum-amber-deep .nb-bb-whatsees,
+  .notebook.lum-amber-deep .notebook-entry-gather,
+  .notebook.lum-amber-deep .notebook-entry-acts a,
+  .notebook.lum-amber-deep .nb-toggle,
+  .notebook.lum-amber-deep .btn-primary{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE NOTEBOOK ===== */
