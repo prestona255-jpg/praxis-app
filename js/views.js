@@ -366,7 +366,11 @@ function renderRoute() {
   // parents (books, arcs). Dark study surfaces: home, books, arcs, arc,
   // account. Everything else (book, subtheory, notebook, about, yumi-sees,
   // artifact, and the empty / unknown -> notebook default) is the bright page.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1 };
+  // Wave 4: 'book' joins the dark-ground set so the body sits DARK behind
+  // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
+  // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
+  // .lum-amber-deep root, so no bright paper shows at the surface edges.
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -450,6 +454,19 @@ function renderRoute() {
   // notebook clear both. yumi-brain reads both slots ([yumi-brain.js
   // currentArc lens]) so a stale value in either is a stale-context
   // bug. The symmetric-clear pattern below is the prevention.
+  // Wave 4 (S7): Book View -- the marks-and-lineage descent reached from
+  // Book Detail's "Open your marks & lineage ->". Sub-route of #book; MUST
+  // precede the #book/<id> detail block below, which would otherwise
+  // swallow it (parts[1] truthy -> renderBookDetail + return). Mirrors the
+  // arc/<id>/new-subtheory ordering note above.
+  if (parts[0] === 'book' && parts[1] && parts[2] === 'marks') {
+    state.currentBookId = parts[1];
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderBookView(parts[1]);
+    return;
+  }
   if (parts[0] === 'book' && parts[1]) {
     state.currentBookId = parts[1];
     state.currentArcId  = null;
@@ -5962,801 +5979,1112 @@ function showScanStatus(msg) {
 // to collapsed on a fresh page load (reading-first view); NOT persisted to ls.
 var _bookDetailEditOpen = false;
 
-function renderBookDetail(bookId) {
+// =====================================================================
+// WAVE 4 (Phase 5) -- BOOK PAIR (Amber): shared foundation.
+// Book Detail (redesign-in-place, route #book/<id>) and Book View
+// (net-new, route #book/<id>/marks) render in the .lum-amber-deep
+// reading-room atmosphere. The helpers below are authored ONCE here so
+// the two surfaces share one cover, one lens-tag row, one Yumi line, and
+// one sub-theory mark renderer. Marks come from PraxisMarks (marks.js),
+// never the mockup's stand-in hues. ES3 only (var/function, string
+// concat); the CSS lives in components.css under the WAVE 4 block.
+// =====================================================================
+
+// The full-bleed amber surface root + centered shell. Returns both so
+// callers append content into .shell. The root carries lum-amber-deep so
+// it self-paints the reading-room ground; book routes are in
+// umberGroundDark, so the body sits DARK behind -- no bright paper seam.
+function bookAmberSurface() {
+  var root = document.createElement('section');
+  root.className = 'bk-surface lum-amber-deep';
+  var shell = document.createElement('div');
+  shell.className = 'bk-shell';
+  root.appendChild(shell);
+  return { root: root, shell: shell };
+}
+
+// A sub-theory's idea-mark, rendered via PraxisMarks from its stored
+// { markShape, markColor } (optional 0-15 indices). When either is
+// absent we derive a deterministic index from the sub-theory id via the
+// app's existing scheme (window.stHashIndices -> _stIndices, FNV-1a), so
+// the mark is stable-from-id. Returns an HTML string -- inline SVG with a
+// per-instance gradient (no <use> shadow-boundary bug).
+function bookSubMarkHTML(sub, cd) {
+  if (typeof PraxisMarks === 'undefined' || !PraxisMarks.render) { return ''; }
+  var sh = (sub && typeof sub.markShape === 'number') ? sub.markShape : null;
+  var co = (sub && typeof sub.markColor === 'number') ? sub.markColor : null;
+  if (sh === null || co === null) {
+    var hx = (typeof window.stHashIndices === 'function' && sub && sub.id)
+      ? window.stHashIndices(sub.id)
+      : { shapeIdx: 0, colorIdx: 0 };
+    if (sh === null) { sh = hx.shapeIdx; }
+    if (co === null) { co = hx.colorIdx; }
+  }
+  if (sh < 0) { sh = 0; }
+  if (sh > 15) { sh = 15; }
+  if (co < 0) { co = 0; }
+  if (co > 15) { co = 15; }
+  var shapeId = (PraxisMarks.SHAPES[sh] && PraxisMarks.SHAPES[sh][0]) || '01';
+  return PraxisMarks.render(shapeId, co, cd || 22);
+}
+
+// A mark's fill colour (the lighter palette stop), for a small tinted
+// glint (e.g. the "became ->" dot). Mirrors bookSubMarkHTML's index
+// derivation so the glint matches the mark.
+function bookSubMarkFill(sub) {
+  var co = (sub && typeof sub.markColor === 'number') ? sub.markColor : null;
+  if (co === null) {
+    var hx = (typeof window.stHashIndices === 'function' && sub && sub.id)
+      ? window.stHashIndices(sub.id) : { colorIdx: 0 };
+    co = hx.colorIdx;
+  }
+  if (co < 0) { co = 0; }
+  if (co > 15) { co = 15; }
+  var c = (typeof PraxisMarks !== 'undefined' && PraxisMarks.COLORS && PraxisMarks.COLORS[co])
+    ? PraxisMarks.COLORS[co] : ['', '#ffce4a', '#cf9c2a'];
+  return c[1];
+}
+
+// A drop-in span holding a sub-theory mark at the given diameter.
+function bookSubMarkNode(sub, cd) {
+  var slot = document.createElement('span');
+  slot.className = 'bk-mark';
+  slot.innerHTML = bookSubMarkHTML(sub, cd);
+  return slot;
+}
+
+// The Amber book cover: cloth/spine/glow frame holding the REAL cover
+// image when present (self-healing candidate-walk), falling back to a
+// typeset cloth (title + author). When alight (the book has rooted
+// sub-theories) it gets the gold root-mark dot + the alight glow.
+function bookAmberCover(book, alight) {
+  var cover = document.createElement('div');
+  cover.className = 'bk-cover' + (alight ? ' bk-cover-alight' : '');
+  var spine = document.createElement('span');
+  spine.className = 'bk-cover-spine';
+  spine.setAttribute('aria-hidden', 'true');
+  cover.appendChild(spine);
+  if (alight) {
+    var rmark = document.createElement('span');
+    rmark.className = 'bk-cover-rmark';
+    rmark.setAttribute('aria-hidden', 'true');
+    cover.appendChild(rmark);
+  }
+  cover.appendChild(buildSelfHealingCover(book, 'bk-cover-img', function() {
+    var cloth = document.createElement('div');
+    cloth.className = 'bk-cover-cloth';
+    var ct = document.createElement('div');
+    ct.className = 'bk-cover-ct';
+    ct.textContent = (book && book.title) ? book.title : '';
+    var ca = document.createElement('div');
+    ca.className = 'bk-cover-ca';
+    ca.textContent = (book && book.author) ? book.author : '';
+    cloth.appendChild(ct);
+    cloth.appendChild(ca);
+    return cloth;
+  }));
+  return cover;
+}
+
+// The lens/category tag row: genre + tradition as lens tags (gold dot),
+// category as a category tag (square dot). Read-only descriptors pulled
+// from the live book record. Returns null when the book carries none.
+function bookLensTags(book) {
+  var tags = [];
+  if (book && book.genre && ('' + book.genre).replace(/^\s+|\s+$/g, '') !== '') {
+    tags.push({ label: book.genre, cat: false });
+  }
+  var trad = book ? (book.traditionOverride || book.tradition) : null;
+  if (trad && trad !== 'unassigned') {
+    var tlab = (typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[trad])
+      ? TRADITION_LABELS[trad] : trad;
+    tags.push({ label: tlab, cat: false });
+  }
+  if (book && book.category && ('' + book.category).replace(/^\s+|\s+$/g, '') !== '') {
+    tags.push({ label: book.category, cat: true });
+  }
+  if (tags.length === 0) { return null; }
+  var row = document.createElement('div');
+  row.className = 'bk-tags';
+  var i;
+  for (i = 0; i < tags.length; i++) {
+    var tag = document.createElement('span');
+    tag.className = 'bk-ltag' + (tags[i].cat ? ' bk-ltag-cat' : '');
+    var dot = document.createElement('span');
+    dot.className = 'bk-ltag-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    tag.appendChild(dot);
+    tag.appendChild(document.createTextNode(tags[i].label));
+    row.appendChild(tag);
+  }
+  return row;
+}
+
+// The Yumi whisper line (cyan dot + Cormorant italic) via the .lum-yumi
+// primitive. Text is set with textContent; callers pass copy true to the
+// computed counts -- never a fabricated data claim. Yumi is --lum-cyan.
+function bookYumiLine(text) {
+  var y = document.createElement('div');
+  y.className = 'lum-yumi';
+  var dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.setAttribute('aria-hidden', 'true');
+  var p = document.createElement('p');
+  p.textContent = text || '';
+  y.appendChild(dot);
+  y.appendChild(p);
+  return y;
+}
+
+// Display-only aggregation: the sub-theories ROOTED in this book -- those
+// whose evidence cites the book ({kind:'book', refId:bookId}) or whose
+// attached marginalia belong to it. Owner-filtered, oldest first. No
+// data-model change (canon §2 allows computed display-only aggregation).
+function rootedSubTheories(bookId) {
+  var out = [];
+  var map = state.subTheories || {};
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = user ? user.uid : null;
+  var k;
+  for (k in map) {
+    if (!Object.prototype.hasOwnProperty.call(map, k)) { continue; }
+    var st = map[k];
+    if (!st) { continue; }
+    if (uid && st.userId && st.userId !== uid) { continue; }
+    var rooted = false;
+    if (st.evidence && st.evidence.length) {
+      var i;
+      for (i = 0; i < st.evidence.length; i++) {
+        var ev = st.evidence[i];
+        if (ev && ev.kind === 'book' && ev.refId === bookId) { rooted = true; break; }
+      }
+    }
+    if (!rooted && st.attachedMarginalia && st.attachedMarginalia.length) {
+      var j;
+      for (j = 0; j < st.attachedMarginalia.length; j++) {
+        var ent = state.notebookEntries && state.notebookEntries[st.attachedMarginalia[j]];
+        if (ent && ent.bookIds && ent.bookIds.indexOf(bookId) !== -1) { rooted = true; break; }
+      }
+    }
+    if (rooted) { out.push(st); }
+  }
+  out.sort(function(a, b) {
+    var ax = (typeof a.createdAt === 'number') ? a.createdAt : 0;
+    var bx = (typeof b.createdAt === 'number') ? b.createdAt : 0;
+    if (ax !== bx) { return ax - bx; }
+    return ('' + (a.header || '')).localeCompare('' + (b.header || ''));
+  });
+  return out;
+}
+
+// All marginalia (notebook entries, register 'marginalia') for a book,
+// owner-filtered, oldest first.
+function marginaliaForBook(bookId) {
+  var out = [];
+  var map = state.notebookEntries || {};
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = user ? user.uid : null;
+  var k;
+  for (k in map) {
+    if (!Object.prototype.hasOwnProperty.call(map, k)) { continue; }
+    var e = map[k];
+    if (!e || e.register !== 'marginalia') { continue; }
+    if (uid && e.userId && e.userId !== uid) { continue; }
+    if (!e.bookIds || e.bookIds.indexOf(bookId) === -1) { continue; }
+    out.push(e);
+  }
+  out.sort(function(a, b) {
+    var ax = (typeof a.createdAt === 'number') ? a.createdAt : 0;
+    var bx = (typeof b.createdAt === 'number') ? b.createdAt : 0;
+    return ax - bx;
+  });
+  return out;
+}
+
+// The sub-theory a marginalia entry "became", by reverse lookup: a
+// sub-theory whose attachedMarginalia (or evidence {kind:'entry'})
+// references this entry id. Returns the sub-theory or null. No forward
+// "became" field is stored; this is the honest computed link.
+function marginaliaBecame(entryId) {
+  var map = state.subTheories || {};
+  var k;
+  for (k in map) {
+    if (!Object.prototype.hasOwnProperty.call(map, k)) { continue; }
+    var st = map[k];
+    if (!st) { continue; }
+    if (st.attachedMarginalia && st.attachedMarginalia.indexOf(entryId) !== -1) { return st; }
+    if (st.evidence && st.evidence.length) {
+      var i;
+      for (i = 0; i < st.evidence.length; i++) {
+        var ev = st.evidence[i];
+        if (ev && ev.kind === 'entry' && ev.refId === entryId) { return st; }
+      }
+    }
+  }
+  return null;
+}
+
+// The arc title a sub-theory lives in, for the "in <arc>" context line.
+function subTheoryArcName(sub) {
+  if (!sub || !sub.arcId) { return ''; }
+  var arc = state.arcs && state.arcs[sub.arcId];
+  if (!arc) { return ''; }
+  return ('' + (arc.title || arc.name || '')).replace(/^\s+|\s+$/g, '');
+}
+
+// One "What you marked" card. The store holds only the note body (no
+// distinct passage quote, no page/location), so we render the REAL note
+// and NEVER fabricate a quote or page -- the gold left-accent carries the
+// "marked" signature, and loc shows only the real date (or bare
+// "marked"). The "became ->" link resolves when this note is computed to
+// have become a sub-theory (reverse lookup), tinted to that mark's fill.
+function buildMargCard(marg) {
+  var card = document.createElement('div');
+  card.className = 'bk-marg lum-glass';
+  var annot = document.createElement('div');
+  annot.className = 'bk-annot';
+  var pen = document.createElement('span');
+  pen.className = 'bk-pen';
+  pen.setAttribute('aria-hidden', 'true');
+  pen.textContent = '✎';
+  var atext = document.createElement('span');
+  atext.className = 'bk-atext';
+  atext.textContent = marg.body || '';
+  annot.appendChild(pen);
+  annot.appendChild(atext);
+  card.appendChild(annot);
+  var meta = document.createElement('div');
+  meta.className = 'bk-margmeta';
+  var loc = document.createElement('span');
+  loc.className = 'bk-loc';
+  var when = '';
+  if (typeof marg.createdAt === 'number') {
+    try { when = new Date(marg.createdAt).toLocaleDateString(); } catch (eW) { when = ''; }
+  }
+  loc.textContent = when ? ('marked · ' + when) : 'marked';
+  meta.appendChild(loc);
+  var became = marginaliaBecame(marg.id);
+  if (became) {
+    var link = document.createElement('button');
+    link.type = 'button';
+    link.className = 'bk-becamelink';
+    var gl = document.createElement('span');
+    gl.className = 'bk-gl';
+    gl.setAttribute('aria-hidden', 'true');
+    gl.style.background = bookSubMarkFill(became);
+    link.appendChild(gl);
+    link.appendChild(document.createTextNode('became “' + (became.header || 'a sub-theory') + '” →'));
+    link.addEventListener('click', function() { location.hash = 'subtheory/' + became.id; });
+    meta.appendChild(link);
+  }
+  card.appendChild(meta);
+  return card;
+}
+
+// One "What it grew into" row: the rooted sub-theory's real PraxisMark
+// (cd 22) + title + the arc it lives in (+ draft badge) + Open ->. The
+// whole row navigates to the sub-theory's Page.
+function buildGrewRow(sub) {
+  var row = document.createElement('div');
+  row.className = 'bk-grew lum-glass';
+  var gli = document.createElement('span');
+  gli.className = 'bk-gli';
+  gli.appendChild(bookSubMarkNode(sub, 22));
+  row.appendChild(gli);
+  var body = document.createElement('div');
+  body.className = 'bk-gbody';
+  var t = document.createElement('div');
+  t.className = 'bk-grew-t';
+  t.textContent = sub.header || 'Untitled sub-theory';
+  body.appendChild(t);
+  var inLine = document.createElement('div');
+  inLine.className = 'bk-grew-in';
+  var arcName = subTheoryArcName(sub);
+  if (arcName) {
+    inLine.appendChild(document.createTextNode('in '));
+    var b = document.createElement('b');
+    b.textContent = arcName;
+    inLine.appendChild(b);
+  }
+  if (sub.status === 'draft') {
+    if (arcName) { inLine.appendChild(document.createTextNode(' ')); }
+    var draft = document.createElement('span');
+    draft.className = 'bk-draft';
+    draft.textContent = arcName ? 'draft' : 'private draft';
+    inLine.appendChild(draft);
+  }
+  body.appendChild(inLine);
+  row.appendChild(body);
+  var open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'bk-gopen';
+  open.textContent = 'Open →';
+  row.appendChild(open);
+  row.addEventListener('click', function() { location.hash = 'subtheory/' + sub.id; });
+  return row;
+}
+
+// Wave 4 (S7): Book View -- the marks-and-lineage descent. Book header
+// (cover root-alight, status, lens tags, the Yumi "this is a root" line),
+// "What you marked" (real notes; passage/location left neutral), and
+// "What it grew into" (the rooted sub-theories as real marks -> their
+// Page). Reached from Book Detail's "Open your marks & lineage ->".
+function renderBookView(bookId) {
   var host = document.getElementById(APP_EL_ID);
-  if (!host) return;
+  if (!host) { return; }
   host.innerHTML = '';
+  var surf = bookAmberSurface();
+  host.appendChild(surf.root);
 
   var book = (state.books && state.books[bookId]) || null;
-
   if (!book) {
-    var nf = document.createElement('section');
-    nf.className = 'book-detail-not-found';
-    var nfMsg = document.createElement('p');
-    nfMsg.textContent = 'Book not found.';
+    var nf = document.createElement('p');
+    nf.className = 'bk-empty';
+    nf.textContent = 'Book not found.';
+    surf.shell.appendChild(nf);
     var nfLink = document.createElement('a');
-    nfLink.href = '#notebook';
-    nfLink.textContent = 'Back to Notebook';
-    nf.appendChild(nfMsg);
-    nf.appendChild(nfLink);
-    host.appendChild(nf);
+    nfLink.className = 'bk-backlink';
+    nfLink.href = '#books';
+    nfLink.textContent = 'Back to your shelf';
+    surf.shell.appendChild(nfLink);
     return;
   }
 
-  var wrap = document.createElement('section');
-  wrap.className = 'book-detail';
+  var rooted = rootedSubTheories(bookId);
+  var margs = marginaliaForBook(bookId);
+  var alight = rooted.length > 0;
 
-  // Header: optional cover, title, optional author byline, auth-
-  // aware affordance.
-  var header = document.createElement('header');
-  header.className = 'bd-grid';
+  var back = document.createElement('a');
+  back.className = 'bk-backlink';
+  back.href = '#book/' + bookId;
+  back.textContent = '← Back to the book';
+  surf.shell.appendChild(back);
 
-  // 3.5b: cover image or placeholder block. Truthy guard treats
-  // null, undefined, and '' as missing -- same shape as the shelf
-  // row. CSS constrains max-width on both elements (styling pass).
-  // Stage 4 (chrome-fidelity): the cover and the action buttons share a
-  // left-column wrapper so the buttons sit UNDER the cover (mockup layout).
-  // The cover/placeholder mounts here; .book-detail-actions (the buttons) is
-  // appended below it. title/author/meta/artifact-card + Find-this-book live in
-  // the right column's single .book-detail-content cell (S5.2).
-  var coverCol = document.createElement('div');
-  coverCol.className = 'bd-cover-col';
-  // Stage 1: self-healing cover (candidate-walk -> typographic "cover pending"
-  // placeholder). A broken OR null cover renders the placeholder -- never a
-  // broken <img> or an empty box.
-  coverCol.appendChild(buildSelfHealingCover(book, 'bd-cover', function() {
-    var coverPlaceholder = document.createElement('div');
-    coverPlaceholder.className = 'book-detail-cover-placeholder';
-    var pdt = document.createElement('span');
-    pdt.className = 'book-detail-cover-pending-title';
-    pdt.textContent = book.title || '';
-    coverPlaceholder.appendChild(pdt);
-    var pdl = document.createElement('span');
-    pdl.className = 'book-detail-cover-pending-label';
-    pdl.textContent = 'cover pending';
-    coverPlaceholder.appendChild(pdl);
-    return coverPlaceholder;
-  }));
-  header.appendChild(coverCol);
-
-  // S5.2: the right column is ONE grid cell (.book-detail-content) so the
-  // cover's height no longer inflates per-element grid rows -- the content's
-  // vertical rhythm is pure margin flow inside this cell. The S5.1 reg-tag
-  // ("THEORY" register pill) is removed here per owner decision (overrides
-  // the mockup, which keeps it); the global TRADITION_LABELS map is untouched.
-  var contentCell = document.createElement('div');
-  contentCell.className = 'bd-content';
-  header.appendChild(contentCell);
-
-  var title = document.createElement('h1');
-  title.className = 'bd-title';
-  title.textContent = book.title || '';
-  contentCell.appendChild(title);
-
+  // ---- book header ----
+  var head = document.createElement('div');
+  head.className = 'bk-bookhead lum-glass';
+  head.appendChild(bookAmberCover(book, alight));
+  var meta = document.createElement('div');
+  meta.className = 'bk-bookmeta';
+  var bt = document.createElement('div');
+  bt.className = 'bk-bt';
+  bt.textContent = book.title || '';
+  meta.appendChild(bt);
   if (book.author) {
-    var author = document.createElement('p');
-    author.className = 'bd-author';
-    author.textContent = book.author;
-    contentCell.appendChild(author);
+    var ba = document.createElement('div');
+    ba.className = 'bk-ba';
+    ba.textContent = book.author;
+    meta.appendChild(ba);
   }
+  var brow = document.createElement('div');
+  brow.className = 'bk-brow';
+  var pill = document.createElement('span');
+  pill.className = 'bk-statuspill';
+  pill.textContent = statusText(book.status);
+  brow.appendChild(pill);
+  var htags = bookLensTags(book);
+  if (htags) { brow.appendChild(htags); }
+  meta.appendChild(brow);
+  if (rooted.length > 0) {
+    var rootText = (rooted.length === 1)
+      ? 'This one is a root — a thread in your thinking starts here.'
+      : ('This one is a root. ' + rooted.length + ' threads in your thinking start here — '
+          + 'you don’t just keep it, you build from it.');
+    meta.appendChild(bookYumiLine(rootText));
+  }
+  head.appendChild(meta);
+  surf.shell.appendChild(head);
 
-  // Batch 3: meta line -- status + derived (read-only) arc + marginalia
-  // counts. Arc membership = arc.bookIds entries whose id === bookId;
-  // marginalia = marginalia-register entries naming this book.
-  var bdArcCount = 0;
-  var bdArcMap = state.arcs || {};
-  var bdAmk;
-  for (bdAmk in bdArcMap) {
-    if (Object.prototype.hasOwnProperty.call(bdArcMap, bdAmk)) {
-      var bdArc = bdArcMap[bdAmk];
-      if (bdArc && bdArc.bookIds) {
-        var bdBi;
-        for (bdBi = 0; bdBi < bdArc.bookIds.length; bdBi++) {
-          var bdEntry = bdArc.bookIds[bdBi];
-          var bdId = (bdEntry && bdEntry.id) ? bdEntry.id : bdEntry;
-          if (bdId === bookId) { bdArcCount = bdArcCount + 1; break; }
-        }
-      }
+  // ---- What you marked ----
+  var sec1 = document.createElement('div');
+  sec1.className = 'bk-sec';
+  var s1h = document.createElement('h2');
+  s1h.className = 'bk-sechead';
+  s1h.textContent = 'What you marked';
+  sec1.appendChild(s1h);
+  var s1sub = document.createElement('p');
+  s1sub.className = 'bk-secsub';
+  s1sub.textContent = 'Your notes from this book — what you wrote in the margins.';
+  sec1.appendChild(s1sub);
+  if (margs.length > 0) {
+    var mi;
+    for (mi = 0; mi < margs.length; mi++) {
+      sec1.appendChild(buildMargCard(margs[mi]));
     }
-  }
-  var bdMargCount = 0;
-  var bdEmap = state.notebookEntries || {};
-  var bdEmk;
-  for (bdEmk in bdEmap) {
-    if (Object.prototype.hasOwnProperty.call(bdEmap, bdEmk)) {
-      var bdE = bdEmap[bdEmk];
-      if (bdE && bdE.register === 'marginalia' && bdE.bookIds &&
-          bdE.bookIds.indexOf(bookId) !== -1) {
-        bdMargCount = bdMargCount + 1;
-      }
-    }
-  }
-  var metaLine = document.createElement('p');
-  metaLine.className = 'bd-meta';
-  metaLine.textContent = statusText(book.status) + ' · in ' +
-    bdArcCount + (bdArcCount === 1 ? ' arc' : ' arcs') +
-    ' · ' + bdMargCount + ' marginalia';
-  contentCell.appendChild(metaLine);
-
-  // Phase 5 (mockup D): bibliographic meta -- year · publisher · pages · ISBN.
-  var biblioParts = [];
-  if (book.year) { biblioParts.push('' + book.year); }
-  if (book.publisher) { biblioParts.push(book.publisher); }
-  if (typeof book.pageCount === 'number' && book.pageCount > 0) { biblioParts.push(book.pageCount + ' pages'); }
-  if (book.isbn) { biblioParts.push('ISBN ' + book.isbn); }
-  if (biblioParts.length > 0) {
-    var biblioLine = document.createElement('p');
-    biblioLine.className = 'book-detail-biblio';
-    biblioLine.textContent = biblioParts.join(' · ');
-    contentCell.appendChild(biblioLine);
-  }
-
-  var user = getCurrentUser();
-
-  // Phase 5 (mockup D): prominent read-status control (canonical vocab). Writes
-  // status + re-renders; the collapsed Edit-details radios remain in sync.
-  if (user) {
-    var statusRow = document.createElement('div');
-    statusRow.className = 'book-detail-status-row';
-    var statusRowLab = document.createElement('span');
-    statusRowLab.className = 'book-detail-status-lab';
-    statusRowLab.textContent = 'Read status';
-    statusRow.appendChild(statusRowLab);
-    statusRow.appendChild(makeReadStatusControl(normalizeStatus(book.status), function(v) {
-      if (!state.books[bookId]) { return; }
-      state.books[bookId].status = v;
-      markBooksDirty(); saveState(); renderBookDetail(bookId);
-    }));
-    contentCell.appendChild(statusRow);
-  }
-
-  // Phase 5 (mockup D): description.
-  if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
-    var descEl = document.createElement('p');
-    descEl.className = 'bd-desc';
-    descEl.textContent = book.description;
-    contentCell.appendChild(descEl);
-  }
-
-  // Phase 5 (mockup D): lens chips -- genre + tradition (read-only descriptors).
-  var lensChips = [];
-  if (book.genre && ('' + book.genre).replace(/^\s+|\s+$/g, '') !== '') { lensChips.push(book.genre); }
-  var bdTrad = book.traditionOverride || book.tradition;
-  if (bdTrad && bdTrad !== 'unassigned') {
-    if (typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[bdTrad]) { lensChips.push(TRADITION_LABELS[bdTrad]); }
-    else { lensChips.push(bdTrad); }
-  }
-  if (lensChips.length > 0) {
-    var chipsWrap = document.createElement('div');
-    chipsWrap.className = 'bd-lenses';
-    var lci;
-    for (lci = 0; lci < lensChips.length; lci++) {
-      var chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = lensChips[lci];
-      chipsWrap.appendChild(chip);
-    }
-    contentCell.appendChild(chipsWrap);
-  }
-
-  // Phase 5 (mockup D): rating (click stars) + date-read + "Fix this book"
-  // (re-runs the resolver on this record and patches its fields).
-  if (user) {
-    var rateRow = document.createElement('div');
-    rateRow.className = 'bd-rate';
-    var stars = document.createElement('span');
-    stars.className = 'bd-rate-stars';
-    var curRating = (typeof book.rating === 'number') ? book.rating : 0;
-    var st;
-    for (st = 1; st <= 5; st++) {
-      (function(val) {
-        var star = document.createElement('button');
-        star.type = 'button';
-        star.className = 'bd-star' + (val <= curRating ? ' on' : '');
-        star.setAttribute('aria-label', val + (val === 1 ? ' star' : ' stars'));
-        star.textContent = '★';
-        star.addEventListener('click', function() {
-          if (!state.books[bookId]) { return; }
-          state.books[bookId].rating = (state.books[bookId].rating === val) ? null : val;
-          markBooksDirty(); saveState(); renderBookDetail(bookId);
-        });
-        stars.appendChild(star);
-      })(st);
-    }
-    rateRow.appendChild(stars);
-
-    var dateStr = '';
-    if (book.dateRead) { dateStr = '' + book.dateRead; }
-    else if (typeof book.finishedAt === 'number') {
-      try { dateStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eDate) { dateStr = ''; }
-    }
-    if (dateStr) {
-      var drSep = document.createElement('span'); drSep.className = 'bd-rate-sep'; rateRow.appendChild(drSep);
-      var dr = document.createElement('span'); dr.className = 'bd-rate-date'; dr.textContent = 'read · ' + dateStr;
-      rateRow.appendChild(dr);
-    }
-
-    var fixSep = document.createElement('span'); fixSep.className = 'bd-rate-sep'; rateRow.appendChild(fixSep);
-    var fixBtn = document.createElement('button');
-    fixBtn.type = 'button';
-    fixBtn.className = 'bd-fix';
-    fixBtn.textContent = '↺ Fix this book';
-    fixBtn.addEventListener('click', function() {
-      fixBtn.disabled = true;
-      fixBtn.textContent = 'Looking up…';
-      var fixQuery = (book.isbn && ('' + book.isbn).length > 0)
-        ? { kind: 'isbn', isbn: book.isbn }
-        : { kind: 'title', title: book.title || '', author: book.author || '' };
-      resolveBook(fixQuery, function(result) {
-        if (!state.books[bookId]) { return; }
-        if (result && result.status !== 'none' && result.book) {
-          var rb = result.book, b = state.books[bookId];
-          if (rb.title) { b.title = rb.title; }
-          if (rb.author) { b.author = rb.author; }
-          if (rb.isbn) { b.isbn = rb.isbn; }
-          if (rb.year) { b.year = rb.year; }
-          if (typeof rb.pageCount === 'number') { b.pageCount = rb.pageCount; }
-          if (rb.publisher) { b.publisher = rb.publisher; }
-          if (rb.description) { b.description = rb.description; }
-          if (rb.coverUrl) { b.coverUrl = rb.coverUrl; }
-          markBooksDirty(); saveState();
-        }
-        renderBookDetail(bookId);
-      });
-    });
-    rateRow.appendChild(fixBtn);
-    contentCell.appendChild(rateRow);
-  }
-
-  // Batch 3: "Your Book Artifact" card -- OPAQUE --surface. Shows the
-  // real artifact body when one exists (the "Open Artifact" link below
-  // opens the full view); otherwise the teaser copy.
-  var artCard = document.createElement('div');
-  artCard.className = 'bd-artifact';
-  var artEyebrow = document.createElement('p');
-  artEyebrow.className = 'eyebrow';
-  artEyebrow.textContent = 'Your Book Artifact';
-  artCard.appendChild(artEyebrow);
-  var artBody = document.createElement('p');
-  artBody.className = 'body';
-  var bdArtRec = null;
-  if (user && state.bookArtifacts) {
-    var bdArtKey = artifactKey(user.uid, bookId);
-    if (state.bookArtifacts[bdArtKey]) bdArtRec = state.bookArtifacts[bdArtKey];
-  }
-  if (bdArtRec && typeof bdArtRec.body === 'string' && bdArtRec.body.length > 0) {
-    artBody.textContent = bdArtRec.body;
   } else {
-    artBody.textContent =
-      'A standing place for what this book is doing in your thinking — ' +
-      'written once, yours, and visible to Yumi only when you choose.';
+    var e1 = document.createElement('p');
+    e1.className = 'bk-empty-note';
+    e1.textContent = 'No marginalia yet — your notes from this book will appear here.';
+    sec1.appendChild(e1);
   }
-  artCard.appendChild(artBody);
+  surf.shell.appendChild(sec1);
 
-  // Stage 5 (mockup-fidelity): fold the standalone "Create Artifact" button
-  // into the card as a gold "Write your artifact →" link (mockup line 233),
-  // for the no-artifact state (finished + no artifact == the old Create-
-  // Artifact branch). The has-artifact state keeps "Open Artifact" below.
-  if (user && normalizeStatus(book.status) === 'read' && !bdArtRec) {
-    var writeArtLink = document.createElement('button');
-    writeArtLink.type = 'button';
-    writeArtLink.className = 'btn btn-ghost bd-write';
-    writeArtLink.textContent = 'Write your artifact →';
-    writeArtLink.addEventListener('click', function() {
-      openArtifactEditor(bookId);
-    });
-    artCard.appendChild(writeArtLink);
-  }
-  contentCell.appendChild(artCard);
-
-  // S5: pull-quote (mockup B.6 .q-pull), render-when-exists against
-  // book.quote. No live record carries a quote field today (0/112), so
-  // this renders nothing -- it lights up only if a future book.quote is
-  // populated. NOT faked from marginalia; textContent (not innerHTML).
-  var bq = book.quote ? ('' + book.quote) : '';
-  if (bq.replace(/^\s+|\s+$/g, '') !== '') {
-    var quoteEl = document.createElement('div');
-    quoteEl.className = 'book-detail-quote';
-    quoteEl.textContent = bq;
-    contentCell.appendChild(quoteEl);
-  }
-
-  // Stage 4: the action buttons live UNDER the cover -- they append into
-  // .book-detail-actions inside the cover column, not the right column.
-  var actions = document.createElement('div');
-  actions.className = 'bd-actions';
-  coverCol.appendChild(actions);
-
-  if (user) {
-    var newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'btn btn-ghost';
-    newBtn.textContent = 'Add Marginalia';
-    newBtn.addEventListener('click', function() {
-      openMarginaliaEditor(bookId);
-    });
-
-    var addToArcBtn = document.createElement('button');
-    addToArcBtn.type = 'button';
-    addToArcBtn.className = 'btn btn-primary';
-    addToArcBtn.textContent = 'Add to arc…';
-    addToArcBtn.addEventListener('click', function() {
-      openBookArcPicker(bookId);
-    });
-
-    // 10.1: Send to sub-theory — attaches this book as evidence (kind
-    // 'book', no quote). Sits beside "Add to arc…" in the same row.
-    var sendToSubBtn = document.createElement('button');
-    sendToSubBtn.type = 'button';
-    sendToSubBtn.className = 'btn btn-ghost';
-    sendToSubBtn.textContent = 'Send to sub-theory…';
-    sendToSubBtn.addEventListener('click', function() {
-      openBookSendToSubTheory(bookId);
-    });
-
-    // Canon §4-I: Add-to-an-arc is the standalone primary on its own
-    // full-width line in .book-detail-actions; the secondary PAIR
-    // [Send-to-sub | Add-marginalia] shares .book-detail-actions-row
-    // (stacked full-width on desktop, side-by-side on mobile). The
-    // status-branch button below appends to .book-detail-actions as its
-    // own line.
-    actions.appendChild(addToArcBtn);
-    var actionsRow = document.createElement('div');
-    actionsRow.className = 'row2';
-    actionsRow.appendChild(sendToSubBtn);
-    actionsRow.appendChild(newBtn);
-    actions.appendChild(actionsRow);
-
-    // Stage 3.7c stage 2: explicit six-branch (status, hasArtifact)
-    // render matrix. Each branch handled standalone -- no shared tails
-    // and no collapsed conditionals like (status === 'finished' ||
-    // status === 'want'). Branches that render identical markup
-    // duplicate the call site by design: the spec matrix is the audit
-    // surface, and 3.10 may diverge visual treatment per branch.
-    // "I've finished this" stays first-finish-only (the ceremonial
-    // path that creates an Artifact); the status selector above is
-    // the path for subsequent flips, including un-finish.
-    var hasArtifact = false;
-    if (state.bookArtifacts) {
-      var artKey = artifactKey(user.uid, bookId);
-      if (state.bookArtifacts[artKey]) hasArtifact = true;
+  // ---- What it grew into ----
+  var sec2 = document.createElement('div');
+  sec2.className = 'bk-sec';
+  var s2h = document.createElement('h2');
+  s2h.className = 'bk-sechead';
+  s2h.textContent = 'What it grew into';
+  sec2.appendChild(s2h);
+  var s2sub = document.createElement('p');
+  s2sub.className = 'bk-secsub';
+  s2sub.textContent = 'The sub-theories rooted in this book — open one to step into its arc.';
+  sec2.appendChild(s2sub);
+  if (rooted.length > 0) {
+    var list = document.createElement('div');
+    list.className = 'bk-grewlist';
+    var ri;
+    for (ri = 0; ri < rooted.length; ri++) {
+      list.appendChild(buildGrewRow(rooted[ri]));
     }
-    // Phase 1: branch on normalized status (legacy 'finished'≡'read',
-    // 'want'≡'will-read') so the six-branch matrix works for both vocabularies.
-    var stCanon = normalizeStatus(book.status);
-    if (stCanon === 'will-read' && !hasArtifact) {
-      // Branch 1 -- (want, no-artifact): no header Artifact-affordance.
-      // User has not begun reading; no finish or Artifact paths apply.
-    } else if (stCanon === 'reading' && !hasArtifact) {
-      // Branch 2 -- (reading, no-artifact): first-finish ceremonial
-      // path. Click stamps status + finishedAt and chains the Artifact
-      // editor open. Mirrors 3.7 stage 1+2 behavior; unchanged in 3.7c.
-      var finishedBtn = document.createElement('button');
-      finishedBtn.type = 'button';
-      finishedBtn.className = 'btn btn-quiet';
-      finishedBtn.textContent = 'I\'ve finished this';
-      finishedBtn.addEventListener('click', function() {
-        if (!state.books[bookId]) return;
-        state.books[bookId].status     = 'read';
-        state.books[bookId].finishedAt = Date.now();
-        markBooksDirty();
-        saveState();
-        renderBookDetail(bookId);
-        openArtifactEditor(bookId);
-      });
-      actions.appendChild(finishedBtn);
-    } else if (stCanon === 'read' && !hasArtifact) {
-      // Branch 3 -- (finished, no-artifact): Stage 5 folded the former
-      // standalone "Create Artifact" button into the artifact card as the gold
-      // "Write your artifact →" link (built above), so no actions-row button
-      // renders in this branch now.
-    } else if (stCanon === 'reading' && hasArtifact) {
-      // Branch 4 -- (reading, has-artifact): un-finish state, reached
-      // via 3.7c selector flip 'finished' -> 'reading' on a book whose
-      // Artifact already exists. "I've finished this" does NOT render
-      // here -- first-finish stays ceremonial; the selector handles
-      // subsequent flips. "Open Artifact" link remains because the
-      // Artifact still represents the user's prior closure (the
-      // selector handler in 3.7c stage 1 deliberately retains the
-      // finish timestamp across un-flip for the same reason).
-      var openArtLink = document.createElement('a');
-      openArtLink.className = 'book-detail-open-artifact';
-      openArtLink.href = '#artifact/' + bookId;
-      openArtLink.textContent = 'Open Artifact';
-      actions.appendChild(openArtLink);
-    } else if (stCanon === 'read' && hasArtifact) {
-      // Branch 5 -- (finished, has-artifact): canonical post-Artifact
-      // state. Both creation CTAs are gone; the link is the only
-      // book-detail surface that references the Artifact.
-      var openArtLink = document.createElement('a');
-      openArtLink.className = 'book-detail-open-artifact';
-      openArtLink.href = '#artifact/' + bookId;
-      openArtLink.textContent = 'Open Artifact';
-      actions.appendChild(openArtLink);
-    } else if (stCanon === 'will-read' && hasArtifact) {
-      // Branch 6 -- (want, has-artifact): defensive, only reachable
-      // via 3.7c selector flip 'finished' -> 'want' on a book whose
-      // Artifact already exists. User expectation is undefined for
-      // this combination; the Artifact represents real reading work
-      // regardless of the user's intent to re-shelf as 'want', so
-      // the link stays visible.
-      var openArtLink = document.createElement('a');
-      openArtLink.className = 'book-detail-open-artifact';
-      openArtLink.href = '#artifact/' + bookId;
-      openArtLink.textContent = 'Open Artifact';
-      actions.appendChild(openArtLink);
-    }
-
-    // Stage 7 (manual themes): assign this book to the reader's themes, or
-    // create a new theme and add it. Membership lives in state.userThemes
-    // (off the book record). Chips toggle membership; the inline field creates
-    // a theme and adds this book. Reuses existing input / button classes; chip
-    // styling is a small token-based block in components.css.
-    var themesWrap = document.createElement('div');
-    themesWrap.className = 'book-detail-themes';
-    var themesLabel = document.createElement('div');
-    themesLabel.className = 'book-detail-themes-label';
-    themesLabel.textContent = 'Themes';
-    themesWrap.appendChild(themesLabel);
-
-    var bdThemes = [];
-    var bdtk;
-    if (state.userThemes) {
-      for (bdtk in state.userThemes) {
-        if (Object.prototype.hasOwnProperty.call(state.userThemes, bdtk) &&
-            state.userThemes[bdtk] && state.userThemes[bdtk].userId === user.uid) {
-          bdThemes.push(state.userThemes[bdtk]);
-        }
-      }
-    }
-    bdThemes.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
-    var bdChipRow = document.createElement('div');
-    bdChipRow.className = 'book-detail-theme-chips';
-    var bdi;
-    for (bdi = 0; bdi < bdThemes.length; bdi++) {
-      (function(theme) {
-        var member = Array.isArray(theme.bookIds) &&
-          theme.bookIds.indexOf(bookId) !== -1;
-        var chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = member
-          ? 'book-detail-theme-chip book-detail-theme-chip-on'
-          : 'book-detail-theme-chip';
-        chip.textContent = (member ? '✓ ' : '+ ') + theme.name;
-        chip.addEventListener('click', function() {
-          if (member) { unassignBookFromTheme(theme.id, bookId); }
-          else { assignBookToTheme(theme.id, bookId); }
-          renderBookDetail(bookId);
-        });
-        bdChipRow.appendChild(chip);
-      })(bdThemes[bdi]);
-    }
-    themesWrap.appendChild(bdChipRow);
-
-    var bdNewRow = document.createElement('div');
-    bdNewRow.className = 'book-detail-theme-new';
-    var bdNewInput = document.createElement('input');
-    bdNewInput.type = 'text';
-    bdNewInput.className = 'account-field-input book-detail-theme-input';
-    bdNewInput.setAttribute('placeholder', 'New theme name');
-    bdNewRow.appendChild(bdNewInput);
-    var bdNewBtn = document.createElement('button');
-    bdNewBtn.type = 'button';
-    bdNewBtn.className = 'notebook-new-entry account-secondary-btn';
-    bdNewBtn.textContent = 'Create & add';
-    bdNewBtn.addEventListener('click', function() {
-      var theme = createUserTheme(bdNewInput.value);
-      if (theme) {
-        assignBookToTheme(theme.id, bookId);
-        renderBookDetail(bookId);
-      }
-    });
-    bdNewRow.appendChild(bdNewBtn);
-    themesWrap.appendChild(bdNewRow);
-    actions.appendChild(themesWrap);
-
-    // Stage 6: "Remove from shelf" -- confirm-gated (never one-tap). The app
-    // avoids native confirm(), so the button swaps in an inline confirm row.
-    // deleteBook scrubs all refs + guards the delete (pendingBookDeletes) so it
-    // survives reload without resurrecting. Reachable from the shelf via the
-    // card -> this detail view.
-    var removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'book-detail-remove';
-    removeBtn.textContent = 'Remove from shelf';
-    removeBtn.addEventListener('click', function() {
-      var confirmRow = document.createElement('div');
-      confirmRow.className = 'book-detail-remove-confirm';
-      var msg = document.createElement('p');
-      msg.className = 'book-detail-remove-msg';
-      msg.textContent = 'Delete “' + (book.title || 'this book') + '”? This can’t be undone.';
-      var btnRow = document.createElement('div');
-      btnRow.className = 'book-detail-remove-actions';
-      var cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.className = 'book-detail-remove-cancel';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.addEventListener('click', function() {
-        if (confirmRow.parentNode) { confirmRow.parentNode.replaceChild(removeBtn, confirmRow); }
-      });
-      var confirmDel = document.createElement('button');
-      confirmDel.type = 'button';
-      confirmDel.className = 'book-detail-remove-confirm-btn';
-      confirmDel.textContent = 'Delete';
-      confirmDel.addEventListener('click', function() {
-        if (deleteBook(user.uid, bookId)) {
-          if (typeof showToast === 'function') { showToast('Removed from your shelf'); }
-          location.hash = 'shelf';
-        }
-      });
-      btnRow.appendChild(cancelBtn); btnRow.appendChild(confirmDel);
-      confirmRow.appendChild(msg); confirmRow.appendChild(btnRow);
-      if (removeBtn.parentNode) { removeBtn.parentNode.replaceChild(confirmRow, removeBtn); }
-    });
-    actions.appendChild(removeBtn);
+    sec2.appendChild(list);
+    var note = document.createElement('div');
+    note.className = 'bk-grewnote';
+    var rmark2 = document.createElement('span');
+    rmark2.className = 'bk-rmark2';
+    rmark2.setAttribute('aria-hidden', 'true');
+    note.appendChild(rmark2);
+    var noteText = (rooted.length === 1)
+      ? 'This is why the book is alight on your shelf — one line runs from it into your own field.'
+      : ('This is why the book is alight on your shelf — ' + rooted.length
+          + ' lines run from it into your own field.');
+    note.appendChild(document.createTextNode(noteText));
+    sec2.appendChild(note);
   } else {
-    var signinBtn = document.createElement('button');
-    signinBtn.type = 'button';
-    signinBtn.className = 'book-detail-signin-prompt';
-    signinBtn.textContent = 'Sign in to write';
-    signinBtn.addEventListener('click', function() {
-      signInWithGoogle();
-    });
-    actions.appendChild(signinBtn);
+    var e2 = document.createElement('p');
+    e2.className = 'bk-empty-note';
+    e2.textContent = 'Nothing has grown from this book yet. Marks you make here can become sub-theories in your arcs.';
+    sec2.appendChild(e2);
   }
+  surf.shell.appendChild(sec2);
+}
 
-  // Stage 5.3 Stage 4: "Find this book" line in the header region.
-  // Appended after all status-aware affordances and CTAs (Add
-  // Marginalia / Add to arc / status-branch buttons / Sign in to
-  // write) so it lives as the final header element -- typographic,
-  // not button-cluster. Same skip-if-no-ISBN rule as the arc-detail
-  // member rendering; books without an ISBN get no line. Renders for
-  // every viewer (signed-in or not) since availability is the same
-  // regardless of auth. target="_blank" so the user keeps their
-  // current Praxis context; rel="noopener noreferrer" is the
-  // standard cross-origin security pair.
-  var bdFindUrl = buildBookshopUrl(book.isbn);
-  if (bdFindUrl) {
-    var bdFindLink = document.createElement('a');
-    bdFindLink.className = 'find-this-book';
-    bdFindLink.href = bdFindUrl;
-    bdFindLink.target = '_blank';
-    bdFindLink.rel = 'noopener noreferrer';
-    bdFindLink.textContent = 'Find this book';
-    // S5.2: find-this-book seats inside the content cell, last, so it
-    // hugs the card instead of floating down beside the tall cover.
-    contentCell.appendChild(bdFindLink);
+// Wave 4: "+ Add to a lens" inline panel open-state (module-level, like
+// _bookDetailEditOpen: survives an in-panel re-render, resets on load).
+var _bdLensOpen = false;
+
+// ---- Book Detail Amber sub-builders (Detail-only; the cover/tag/yumi/
+// mark/aggregation primitives are the shared WAVE 4 helpers above). ----
+
+function bkBlabel(text) {
+  var p = document.createElement('p');
+  p.className = 'bk-blabel';
+  p.textContent = text;
+  return p;
+}
+
+function bkReadingRow(k, v, isRead) {
+  var row = document.createElement('div');
+  row.className = 'bk-rrow';
+  var ks = document.createElement('span');
+  ks.className = 'bk-rk';
+  ks.textContent = k;
+  var vs = document.createElement('span');
+  vs.className = 'bk-rv' + (isRead ? ' bk-rv-read' : '');
+  vs.textContent = v;
+  row.appendChild(ks);
+  row.appendChild(vs);
+  return row;
+}
+
+// One "In your thinking" glance item: the sub-theory's real PraxisMark
+// (cd 18) + its title + the arc it lives in (+ a draft badge). Click ->
+// the sub-theory's Page.
+function buildGlanceItem(sub) {
+  var item = document.createElement('div');
+  item.className = 'bk-gitem';
+  item.appendChild(bookSubMarkNode(sub, 18));
+  var gt = document.createElement('span');
+  gt.className = 'bk-gt';
+  gt.textContent = sub.header || 'Untitled sub-theory';
+  item.appendChild(gt);
+  var gin = document.createElement('span');
+  gin.className = 'bk-gin';
+  var arcName = subTheoryArcName(sub);
+  if (sub.status === 'draft') {
+    if (arcName) { gin.appendChild(document.createTextNode(arcName + ' ')); }
+    var draft = document.createElement('span');
+    draft.className = 'bk-draft';
+    draft.textContent = 'draft';
+    gin.appendChild(draft);
+  } else {
+    gin.textContent = arcName || '';
   }
-
-  wrap.appendChild(header);
-
-  // Stage 3.7c: status selector. Editable on book detail; sibling to
-  // ISBN editing below. DOM shape mirrors the shelf-editor 3.5a radio
-  // pattern at views.js:727-744 (div wrapper > one label per status,
-  // each label > radio + space + text node). Class names differ from
-  // 3.5a so 3.10 can style book-detail and shelf-editor independently.
-  // Auth-gated: editing user-owned state requires sign-in. onChange
-  // mirrors the finish-flip handler at views.js (status write,
-  // saveState, re-render); deliberately does NOT touch the finish
-  // timestamp -- the Artifact reflects the moment of finishing and
-  // un-flipping does not erase that. The (status, hasArtifact) matrix in
-  // the header above is unchanged in Stage 1; Stage 2 ships the
-  // (reading, hasArtifact) un-finish branch, and between the two
-  // commits that state will render incoherently. Expected.
-  // Batch 3: edit fields (status / ISBN / tradition) grouped into a
-  // styled details section below the reading-view chrome. Function
-  // unchanged; no edit-mode toggle.
-  // Stage 4: the Edit panel collapses behind this toggle (default collapsed).
-  // Flipping _bookDetailEditOpen + re-rendering shows/hides the panel; the
-  // flag is module-level so an in-panel field edit (which re-renders) leaves
-  // it open. The editSection build below is byte-unchanged -- only its final
-  // append is gated on the flag.
-  var editToggle = document.createElement('button');
-  editToggle.type = 'button';
-  editToggle.className = 'book-detail-edit-toggle';
-  editToggle.textContent = 'Edit';
-  editToggle.setAttribute('aria-expanded', _bookDetailEditOpen ? 'true' : 'false');
-  editToggle.addEventListener('click', function() {
-    _bookDetailEditOpen = !_bookDetailEditOpen;
-    renderBookDetail(bookId);
+  item.appendChild(gin);
+  item.addEventListener('click', function() {
+    location.hash = 'subtheory/' + sub.id;
   });
-  wrap.appendChild(editToggle);
+  return item;
+}
 
-  var editSection = document.createElement('div');
-  editSection.className = 'book-detail-edit-section';
-  var editEyebrow = document.createElement('p');
-  editEyebrow.className = 'eyebrow';
-  editEyebrow.textContent = 'Edit details';
-  editSection.appendChild(editEyebrow);
-
-  if (user) {
-    // Phase 1: canonical status radios. currentStatus normalizes the stored
-    // value (legacy or canonical) so the right radio is pre-checked; onChange
-    // writes the canonical vocabulary. Labels via STATUS_LABELS.
-    var currentStatus = normalizeStatus(book.status);
-    var statusWrap = document.createElement('div');
-    statusWrap.className = 'book-detail-status';
-    var statuses = STATUS_VOCAB;
-    var s;
-    for (s = 0; s < statuses.length; s++) {
-      var statusLabel = document.createElement('label');
-      statusLabel.className = 'book-detail-status-option';
-      var statusRadio = document.createElement('input');
-      statusRadio.type = 'radio';
-      statusRadio.name = 'book-detail-status';
-      statusRadio.value = statuses[s];
-      if (statuses[s] === currentStatus) statusRadio.checked = true;
-      statusRadio.addEventListener('change', function(ev) {
-        if (!state.books[bookId]) return;
-        state.books[bookId].status = ev.target.value;
+// Interactive rating stars (book.rating, click toggles). Stays VISIBLE in
+// "Your reading" per the Stage 0 decision.
+function buildBookRatingStars(bookId, book) {
+  var stars = document.createElement('span');
+  stars.className = 'bk-rate-stars';
+  var cur = (typeof book.rating === 'number') ? book.rating : 0;
+  var st;
+  for (st = 1; st <= 5; st++) {
+    (function(val) {
+      var star = document.createElement('button');
+      star.type = 'button';
+      star.className = 'bk-star' + (val <= cur ? ' on' : '');
+      star.setAttribute('aria-label', val + (val === 1 ? ' star' : ' stars'));
+      star.textContent = '★';
+      star.addEventListener('click', function() {
+        if (!state.books[bookId]) { return; }
+        state.books[bookId].rating = (state.books[bookId].rating === val) ? null : val;
         markBooksDirty();
         saveState();
         renderBookDetail(bookId);
       });
-      statusLabel.appendChild(statusRadio);
-      statusLabel.appendChild(document.createTextNode(' ' + STATUS_LABELS[statuses[s]]));
-      statusWrap.appendChild(statusLabel);
-    }
-    editSection.appendChild(statusWrap);
+      stars.appendChild(star);
+    })(st);
   }
+  return stars;
+}
 
-  // 3.5b: editable ISBN row with onblur re-fetch. priorIsbn is the
-  // closure-cached value the handler compares against on each blur
-  // so we never re-fetch when the user blurs without changing the
-  // field. The cache is local to this renderBookDetail invocation;
-  // a re-render rebuilds the closure with the new persisted value.
-  var priorIsbn = (typeof book.isbn === 'string' ? book.isbn : '')
-                    .replace(/^\s+|\s+$/g, '');
+// The book-artifact card (a real stored record: state.bookArtifacts). Kept
+// reachable (not behind Edit) -- it is the standing place for the book in
+// the reader's thinking.
+function buildBookArtifactCard(bookId, book, user) {
+  var card = document.createElement('div');
+  card.className = 'bk-block lum-glass bk-artifact';
+  card.appendChild(bkBlabel('Your book artifact'));
+  var rec = null;
+  if (state.bookArtifacts) {
+    var key = artifactKey(user.uid, bookId);
+    if (state.bookArtifacts[key]) { rec = state.bookArtifacts[key]; }
+  }
+  var body = document.createElement('p');
+  body.className = 'bk-artifact-body';
+  if (rec && typeof rec.body === 'string' && rec.body.length > 0) {
+    body.textContent = rec.body;
+  } else {
+    body.textContent = 'A standing place for what this book is doing in your '
+      + 'thinking — written once, yours, and visible to Yumi only when you choose.';
+  }
+  card.appendChild(body);
+  if (rec && typeof rec.body === 'string' && rec.body.length > 0) {
+    var openLink = document.createElement('a');
+    openLink.className = 'bk-artifact-open';
+    openLink.href = '#artifact/' + bookId;
+    openLink.textContent = 'Open artifact →';
+    card.appendChild(openLink);
+  } else if (normalizeStatus(book.status) === 'read') {
+    var writeBtn = document.createElement('button');
+    writeBtn.type = 'button';
+    writeBtn.className = 'bk-artifact-write';
+    writeBtn.textContent = 'Write your artifact →';
+    writeBtn.addEventListener('click', function() { openArtifactEditor(bookId); });
+    card.appendChild(writeBtn);
+  }
+  return card;
+}
+
+// The "+ Add to a lens" inline panel: the reader's themes are their lenses
+// (collections). Reuses assign/unassign/createUserTheme.
+function buildBookLensPanel(bookId, user) {
+  var panel = document.createElement('div');
+  panel.className = 'bk-lens-panel lum-glass';
+  panel.appendChild(bkBlabel('Add to a lens'));
+  var chipRow = document.createElement('div');
+  chipRow.className = 'bk-lens-chips';
+  var themes = [];
+  var tk;
+  if (state.userThemes) {
+    for (tk in state.userThemes) {
+      if (Object.prototype.hasOwnProperty.call(state.userThemes, tk) &&
+          state.userThemes[tk] && state.userThemes[tk].userId === user.uid) {
+        themes.push(state.userThemes[tk]);
+      }
+    }
+  }
+  themes.sort(function(a, b) { return ('' + (a.name || '')).localeCompare('' + (b.name || '')); });
+  if (themes.length === 0) {
+    var none = document.createElement('span');
+    none.className = 'bk-lens-none';
+    none.textContent = 'No lenses yet — name one below.';
+    chipRow.appendChild(none);
+  }
+  var ti;
+  for (ti = 0; ti < themes.length; ti++) {
+    (function(theme) {
+      var member = Array.isArray(theme.bookIds) && theme.bookIds.indexOf(bookId) !== -1;
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'bk-lens-chip' + (member ? ' on' : '');
+      chip.textContent = (member ? '✓ ' : '+ ') + theme.name;
+      chip.addEventListener('click', function() {
+        if (member) { unassignBookFromTheme(theme.id, bookId); }
+        else { assignBookToTheme(theme.id, bookId); }
+        renderBookDetail(bookId);
+      });
+      chipRow.appendChild(chip);
+    })(themes[ti]);
+  }
+  panel.appendChild(chipRow);
+  var newRow = document.createElement('div');
+  newRow.className = 'bk-lens-new';
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'bk-lens-input';
+  input.setAttribute('placeholder', 'New lens name');
+  newRow.appendChild(input);
+  var addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'bk-lens-add';
+  addBtn.textContent = 'Create & add';
+  addBtn.addEventListener('click', function() {
+    var theme = createUserTheme(input.value);
+    if (theme) {
+      assignBookToTheme(theme.id, bookId);
+      renderBookDetail(bookId);
+    }
+  });
+  newRow.appendChild(addBtn);
+  panel.appendChild(newRow);
+  return panel;
+}
+
+// The Edit/more disclosure body: the surplus power-controls (fix-this-book,
+// ISBN re-fetch, tradition, remove-from-shelf) per the Stage 0 decision.
+function buildBookEditPanel(bookId, book, user) {
+  var panel = document.createElement('div');
+  panel.className = 'bk-edit-panel lum-glass';
+  panel.appendChild(bkBlabel('Edit details'));
+
+  var fixRow = document.createElement('div');
+  fixRow.className = 'bk-edit-row';
+  var fixBtn = document.createElement('button');
+  fixBtn.type = 'button';
+  fixBtn.className = 'bk-edit-btn';
+  fixBtn.textContent = '↺ Fix this book';
+  fixBtn.addEventListener('click', function() {
+    fixBtn.disabled = true;
+    fixBtn.textContent = 'Looking up…';
+    var q = (book.isbn && ('' + book.isbn).length > 0)
+      ? { kind: 'isbn', isbn: book.isbn }
+      : { kind: 'title', title: book.title || '', author: book.author || '' };
+    resolveBook(q, function(result) {
+      if (!state.books[bookId]) { return; }
+      if (result && result.status !== 'none' && result.book) {
+        var rb = result.book, b = state.books[bookId];
+        if (rb.title) { b.title = rb.title; }
+        if (rb.author) { b.author = rb.author; }
+        if (rb.isbn) { b.isbn = rb.isbn; }
+        if (rb.year) { b.year = rb.year; }
+        if (typeof rb.pageCount === 'number') { b.pageCount = rb.pageCount; }
+        if (rb.publisher) { b.publisher = rb.publisher; }
+        if (rb.description) { b.description = rb.description; }
+        if (rb.coverUrl) { b.coverUrl = rb.coverUrl; }
+        markBooksDirty();
+        saveState();
+      }
+      renderBookDetail(bookId);
+    });
+  });
+  fixRow.appendChild(fixBtn);
+  panel.appendChild(fixRow);
+
   var isbnRow = document.createElement('div');
-  isbnRow.className = 'book-detail-isbn-row';
+  isbnRow.className = 'bk-edit-row';
   var isbnLabel = document.createElement('label');
-  isbnLabel.className = 'book-detail-isbn-label';
+  isbnLabel.className = 'bk-edit-label';
   isbnLabel.textContent = 'ISBN';
   var isbnField = document.createElement('input');
   isbnField.type = 'text';
-  isbnField.className = 'book-detail-isbn-input';
+  isbnField.className = 'bk-edit-input';
+  var priorIsbn = (typeof book.isbn === 'string' ? book.isbn : '').replace(/^\s+|\s+$/g, '');
   isbnField.value = priorIsbn;
-  isbnField.placeholder = 'ISBN (optional)';
-
+  isbnField.setAttribute('placeholder', 'ISBN (optional)');
   isbnField.addEventListener('blur', function() {
     var trimmed = isbnField.value.replace(/^\s+|\s+$/g, '');
     if (trimmed.length === 0) {
-      // Empty: clear isbn + coverUrl, persist, re-render. No fetch.
       if (state.books[bookId]) {
-        state.books[bookId].isbn     = '';
+        state.books[bookId].isbn = '';
         state.books[bookId].coverUrl = null;
         markBooksDirty();
         saveState();
       }
-      priorIsbn = '';
       renderBookDetail(bookId);
       return;
     }
-    if (trimmed === priorIsbn) {
-      return;  // No-op.
-    }
-    // Changed, non-empty: persist new isbn, fire background fetch,
-    // re-render only after fetch settles if user is still here.
+    if (trimmed === priorIsbn) { return; }
     if (state.books[bookId]) {
       state.books[bookId].isbn = trimmed;
       markBooksDirty();
       saveState();
     }
-    priorIsbn = trimmed;
     fetchAndApplyCover(bookId, trimmed, function() {
       var parts = location.hash.replace(/^#/, '').split('/');
-      if (parts[0] === 'book' && parts[1] === bookId) {
-        renderBookDetail(bookId);
-      }
+      if (parts[0] === 'book' && parts[1] === bookId) { renderBookDetail(bookId); }
     });
   });
-
   isbnRow.appendChild(isbnLabel);
   isbnRow.appendChild(isbnField);
-  editSection.appendChild(isbnRow);
+  panel.appendChild(isbnRow);
 
-  // Stage 5.6 sub-step 5a: tradition dropdown.
-  // Always rendered, no host, no toggle. Mirrors status-radio pattern:
-  // change-on-flip writes traditionOverride and re-renders. Dropdown
-  // DISPLAYS effective tradition (override || base), WRITES only override.
-  var traditionRow = document.createElement('div');
-  traditionRow.className = 'book-detail-tradition-row';
-
-  var traditionLabel = document.createElement('label');
-  traditionLabel.className = 'book-detail-tradition-label';
-  traditionLabel.textContent = 'Tradition';
-  traditionRow.appendChild(traditionLabel);
-
-  var traditionSelect = document.createElement('select');
-  traditionSelect.className = 'book-detail-tradition-select';
-
-  var effectiveTradition = state.books[bookId].traditionOverride || state.books[bookId].tradition;
-  var ti;
-  var topt;
-  for (ti = 0; ti < TRADITIONS.length; ti++) {
-    topt = document.createElement('option');
-    topt.value = TRADITIONS[ti];
-    topt.textContent = TRADITION_LABELS[TRADITIONS[ti]];
-    if (TRADITIONS[ti] === effectiveTradition) {
-      topt.selected = true;
-    }
-    traditionSelect.appendChild(topt);
+  var tradRow = document.createElement('div');
+  tradRow.className = 'bk-edit-row';
+  var tradLabel = document.createElement('label');
+  tradLabel.className = 'bk-edit-label';
+  tradLabel.textContent = 'Tradition';
+  var tradSelect = document.createElement('select');
+  tradSelect.className = 'bk-edit-select';
+  var eff = book.traditionOverride || book.tradition;
+  var i;
+  for (i = 0; i < TRADITIONS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = TRADITIONS[i];
+    opt.textContent = TRADITION_LABELS[TRADITIONS[i]];
+    if (TRADITIONS[i] === eff) { opt.selected = true; }
+    tradSelect.appendChild(opt);
   }
-
-  traditionSelect.onchange = function (ev) {
+  tradSelect.onchange = function(ev) {
+    if (!state.books[bookId]) { return; }
     state.books[bookId].traditionOverride = ev.target.value;
     ensureBookFields(state.books[bookId]);
     markBooksDirty();
     saveState();
     renderBookDetail(bookId);
   };
+  tradRow.appendChild(tradLabel);
+  tradRow.appendChild(tradSelect);
+  panel.appendChild(tradRow);
 
-  traditionRow.appendChild(traditionSelect);
-  editSection.appendChild(traditionRow);
-  // Stage 4: only mount the panel when expanded (default collapsed).
-  if (_bookDetailEditOpen) {
-    wrap.appendChild(editSection);
+  var removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'bk-edit-remove';
+  removeBtn.textContent = 'Remove from shelf';
+  removeBtn.addEventListener('click', function() {
+    var confirmRow = document.createElement('div');
+    confirmRow.className = 'bk-remove-confirm';
+    var msg = document.createElement('p');
+    msg.className = 'bk-remove-msg';
+    msg.textContent = 'Delete “' + (book.title || 'this book') + '”? This can’t be undone.';
+    var btnRow = document.createElement('div');
+    btnRow.className = 'bk-remove-actions';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'bk-remove-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function() {
+      if (confirmRow.parentNode) { confirmRow.parentNode.replaceChild(removeBtn, confirmRow); }
+    });
+    var confirmDel = document.createElement('button');
+    confirmDel.type = 'button';
+    confirmDel.className = 'bk-remove-confirm-btn';
+    confirmDel.textContent = 'Delete';
+    confirmDel.addEventListener('click', function() {
+      if (deleteBook(user.uid, bookId)) {
+        if (typeof showToast === 'function') { showToast('Removed from your shelf'); }
+        location.hash = 'books';
+      }
+    });
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmDel);
+    confirmRow.appendChild(msg);
+    confirmRow.appendChild(btnRow);
+    if (removeBtn.parentNode) { removeBtn.parentNode.replaceChild(confirmRow, removeBtn); }
+  });
+  panel.appendChild(removeBtn);
+
+  return panel;
+}
+
+// Wave 4 (S7b): Book Detail -- the canonical front of a book, redesigned to
+// the Amber spec. Hero (cover/title/author/tags/status/+lens/moved), front
+// actions, About, "In your thinking" glance -> Book View, metadata aside,
+// "Your reading" aside, the artifact card, and the Edit/more disclosure.
+// All write-paths are the existing wired ones (status, rating, themes, arc,
+// send-to-sub, marginalia, artifact, fix, isbn, tradition, remove).
+function renderBookDetail(bookId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+
+  var surf = bookAmberSurface();
+  host.appendChild(surf.root);
+
+  var book = (state.books && state.books[bookId]) || null;
+  if (!book) {
+    var nf = document.createElement('p');
+    nf.className = 'bk-empty';
+    nf.textContent = 'Book not found.';
+    surf.shell.appendChild(nf);
+    var nfLink = document.createElement('a');
+    nfLink.className = 'bk-backlink';
+    nfLink.href = '#books';
+    nfLink.textContent = 'Back to your shelf';
+    surf.shell.appendChild(nfLink);
+    return;
   }
 
-  // Editor host -- empty on every render; openMarginaliaEditor
-  // mounts its block here on demand.
+  var user = getCurrentUser();
+  var rooted = rootedSubTheories(bookId);
+  var margCount = marginaliaForBook(bookId).length;
+  var alight = rooted.length > 0;
+
+  // ---- HERO ----
+  var hero = document.createElement('div');
+  hero.className = 'bk-hero lum-glass';
+  hero.appendChild(bookAmberCover(book, alight));
+
+  var hinfo = document.createElement('div');
+  hinfo.className = 'bk-hinfo';
+
+  var bt = document.createElement('div');
+  bt.className = 'bk-bt';
+  bt.textContent = book.title || '';
+  hinfo.appendChild(bt);
+
+  if (book.author) {
+    var ba = document.createElement('div');
+    ba.className = 'bk-ba';
+    ba.textContent = book.author;
+    hinfo.appendChild(ba);
+  }
+
+  var tags = bookLensTags(book);
+  if (tags) { hinfo.appendChild(tags); }
+
+  if (user) {
+    var controls = document.createElement('div');
+    controls.className = 'bk-controls';
+    controls.appendChild(makeReadStatusControl(normalizeStatus(book.status), function(v) {
+      if (!state.books[bookId]) { return; }
+      state.books[bookId].status = v;
+      // Preserve the finish ceremony's timestamp: first time it goes 'read',
+      // stamp finishedAt (the old "I've finished this" button did this).
+      if (v === 'read' && !state.books[bookId].finishedAt) {
+        state.books[bookId].finishedAt = Date.now();
+      }
+      markBooksDirty();
+      saveState();
+      renderBookDetail(bookId);
+    }));
+
+    var addLensBtn = document.createElement('button');
+    addLensBtn.type = 'button';
+    addLensBtn.className = 'bk-ghostbtn';
+    addLensBtn.textContent = '+ Add to a lens';
+    addLensBtn.addEventListener('click', function() {
+      _bdLensOpen = !_bdLensOpen;
+      renderBookDetail(bookId);
+    });
+    controls.appendChild(addLensBtn);
+
+    // "This moved me" -- LOCAL visual toggle only (no persisted field).
+    var movedBtn = document.createElement('button');
+    movedBtn.type = 'button';
+    movedBtn.className = 'bk-moved';
+    movedBtn.textContent = '♡ This moved me';
+    movedBtn.addEventListener('click', function() {
+      var on = movedBtn.classList.toggle('on');
+      movedBtn.textContent = on ? '♥ Moved you' : '♡ This moved me';
+    });
+    controls.appendChild(movedBtn);
+
+    hinfo.appendChild(controls);
+    if (_bdLensOpen) { hinfo.appendChild(buildBookLensPanel(bookId, user)); }
+  }
+
+  hero.appendChild(hinfo);
+  surf.shell.appendChild(hero);
+
+  // ---- front actions (or sign-in prompt) ----
+  if (user) {
+    var actions = document.createElement('div');
+    actions.className = 'bk-actions';
+    var addArcBtn = document.createElement('button');
+    addArcBtn.type = 'button';
+    addArcBtn.className = 'bk-actionbtn bk-actionbtn-primary';
+    addArcBtn.textContent = 'Add to an arc';
+    addArcBtn.addEventListener('click', function() { openBookArcPicker(bookId); });
+    actions.appendChild(addArcBtn);
+    var sendSubBtn = document.createElement('button');
+    sendSubBtn.type = 'button';
+    sendSubBtn.className = 'bk-actionbtn';
+    sendSubBtn.textContent = 'Send to sub-theory';
+    sendSubBtn.addEventListener('click', function() { openBookSendToSubTheory(bookId); });
+    actions.appendChild(sendSubBtn);
+    var addMargBtn = document.createElement('button');
+    addMargBtn.type = 'button';
+    addMargBtn.className = 'bk-actionbtn';
+    addMargBtn.textContent = 'Add marginalia';
+    addMargBtn.addEventListener('click', function() { openMarginaliaEditor(bookId); });
+    actions.appendChild(addMargBtn);
+    surf.shell.appendChild(actions);
+  } else {
+    var signin = document.createElement('button');
+    signin.type = 'button';
+    signin.className = 'bk-signin';
+    signin.textContent = 'Sign in to write';
+    signin.addEventListener('click', function() { signInWithGoogle(); });
+    surf.shell.appendChild(signin);
+  }
+
+  // editor / picker hosts (openMarginaliaEditor / openBookArcPicker /
+  // openBookSendToSubTheory mount their panels into these on demand).
   var editorHost = document.createElement('div');
   editorHost.id = 'book-detail-editor-host';
-  wrap.appendChild(editorHost);
-
-  // Stage 3.8 sub-stage 2b-i: arc picker host -- empty on every render;
-  // openBookArcPicker mounts the arc list here when the user clicks
-  // "Add to arc…". One host per concern (mirrors the 2a precedent of
-  // #notebook-arc-editor-host parallel to #notebook-editor-host) so the
-  // picker never collides with the marginalia / artifact editors.
+  surf.shell.appendChild(editorHost);
   var arcPickerHost = document.createElement('div');
   arcPickerHost.id = 'book-detail-arc-picker-host';
-  wrap.appendChild(arcPickerHost);
-
-  // 10.1: dedicated host for the Send-to-sub-theory picker, one host per
-  // concern (same precedent as the arc picker host above) so the two
-  // pickers never collide in a shared slot.
+  surf.shell.appendChild(arcPickerHost);
   var subPickerHost = document.createElement('div');
   subPickerHost.id = 'book-detail-subtheory-picker-host';
-  wrap.appendChild(subPickerHost);
+  surf.shell.appendChild(subPickerHost);
 
-  // Filtered entry list: this user's entries that name this book in
-  // bookIds, newest first.
-  var entries = [];
-  var entryMap = state.notebookEntries || {};
-  var key;
-  for (key in entryMap) {
-    if (Object.prototype.hasOwnProperty.call(entryMap, key)) {
-      var e = entryMap[key];
-      if (e && user && e.userId === user.uid &&
-          e.bookIds && e.bookIds.indexOf(bookId) !== -1) {
-        entries.push(e);
-      }
-    }
+  // ---- COLS: main + aside ----
+  var cols = document.createElement('div');
+  cols.className = 'bk-cols';
+  var main = document.createElement('div');
+  main.className = 'bk-main';
+  var aside = document.createElement('div');
+  aside.className = 'bk-aside';
+
+  // About
+  if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
+    var aboutBlock = document.createElement('div');
+    aboutBlock.className = 'bk-block lum-glass';
+    aboutBlock.appendChild(bkBlabel('What it’s about'));
+    var syn = document.createElement('p');
+    syn.className = 'bk-synopsis';
+    syn.textContent = book.description;
+    aboutBlock.appendChild(syn);
+    main.appendChild(aboutBlock);
   }
-  entries.sort(function(a, b) {
-    return (b.createdAt || 0) - (a.createdAt || 0);
-  });
 
-  if (entries.length === 0) {
-    var empty = document.createElement('p');
-    empty.className = 'book-detail-empty-body';
-    empty.textContent =
-      'Marginalia for this book will appear here. ' +
-      'Nothing has been written yet.';
-    wrap.appendChild(empty);
+  // In your thinking (glance)
+  var thinkBlock = document.createElement('div');
+  thinkBlock.className = 'bk-block lum-glass bk-thinking';
+  thinkBlock.appendChild(bkBlabel('In your thinking'));
+  var tcount = document.createElement('p');
+  tcount.className = 'bk-tcount';
+  if (rooted.length > 0) {
+    var nphrase = rooted.length + (rooted.length === 1 ? ' sub-theory' : ' sub-theories');
+    var line = nphrase + ' grew from this book';
+    if (margCount > 0) {
+      line += ', across ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages');
+    }
+    tcount.textContent = line + '.';
+    thinkBlock.appendChild(tcount);
+    var glance = document.createElement('div');
+    glance.className = 'bk-glance';
+    var gi;
+    for (gi = 0; gi < rooted.length; gi++) {
+      glance.appendChild(buildGlanceItem(rooted[gi]));
+    }
+    thinkBlock.appendChild(glance);
   } else {
-    var list = document.createElement('div');
-    // Batch 3: wrap book-detail marginalia in the opaque entries panel.
-    list.className = 'notebook-entry-list notebook-entries-panel';
-    var i;
-    for (i = 0; i < entries.length; i++) {
-      list.appendChild(renderNotebookEntry(entries[i]));
-    }
-    wrap.appendChild(list);
+    tcount.className = 'bk-tcount bk-tcount-empty';
+    tcount.textContent = (margCount > 0)
+      ? ('You have ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages')
+          + ' here — nothing has grown into a sub-theory yet.')
+      : 'Nothing has grown from this book yet.';
+    thinkBlock.appendChild(tcount);
+  }
+  var marksBtn = document.createElement('button');
+  marksBtn.type = 'button';
+  marksBtn.className = 'bk-marksbtn';
+  marksBtn.textContent = 'Open your marks & lineage →';
+  marksBtn.addEventListener('click', function() {
+    location.hash = 'book/' + bookId + '/marks';
+  });
+  thinkBlock.appendChild(marksBtn);
+  if (rooted.length > 0) {
+    thinkBlock.appendChild(bookYumiLine('Threads of yours begin in this book. When one '
+      + 'stalls, the way back into it usually starts here.'));
+  }
+  main.appendChild(thinkBlock);
+
+  // Artifact card (kept reachable)
+  if (user) { main.appendChild(buildBookArtifactCard(bookId, book, user)); }
+
+  // ---- ASIDE: The book (factual metadata) ----
+  var metaBlock = document.createElement('div');
+  metaBlock.className = 'bk-block lum-glass bk-meta';
+  metaBlock.appendChild(bkBlabel('The book'));
+  var dl = document.createElement('dl');
+  function addMetaRow(term, val) {
+    if (val === null || val === undefined || ('' + val).replace(/^\s+|\s+$/g, '') === '') { return; }
+    var dt = document.createElement('dt');
+    dt.textContent = term;
+    var dd = document.createElement('dd');
+    dd.textContent = '' + val;
+    dl.appendChild(dt);
+    dl.appendChild(dd);
+  }
+  addMetaRow('First published', book.year ? ('' + book.year) : '');
+  addMetaRow('Pages', (typeof book.pageCount === 'number' && book.pageCount > 0) ? book.pageCount : '');
+  addMetaRow('Publisher', book.publisher || '');
+  addMetaRow('ISBN', book.isbn || '');
+  var subjects = [];
+  var btrad = book.traditionOverride || book.tradition;
+  if (btrad && btrad !== 'unassigned') {
+    subjects.push((typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[btrad]) ? TRADITION_LABELS[btrad] : btrad);
+  }
+  if (book.category && ('' + book.category).replace(/^\s+|\s+$/g, '') !== '') { subjects.push(book.category); }
+  if (subjects.length > 0) { addMetaRow('Subjects', subjects.join(' · ')); }
+  metaBlock.appendChild(dl);
+  aside.appendChild(metaBlock);
+
+  // ---- ASIDE: Your reading ----
+  var readBlock = document.createElement('div');
+  readBlock.className = 'bk-block lum-glass bk-reading';
+  readBlock.appendChild(bkBlabel('Your reading'));
+  readBlock.appendChild(bkReadingRow('Status', statusText(book.status), normalizeStatus(book.status) === 'read'));
+  var finStr = '';
+  if (book.dateRead) { finStr = '' + book.dateRead; }
+  else if (typeof book.finishedAt === 'number') {
+    try { finStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eF) { finStr = ''; }
+  }
+  if (finStr) { readBlock.appendChild(bkReadingRow('Finished', finStr, false)); }
+  if (user) {
+    var ratingRow = document.createElement('div');
+    ratingRow.className = 'bk-rrow';
+    var rk = document.createElement('span');
+    rk.className = 'bk-rk';
+    rk.textContent = 'Rating';
+    ratingRow.appendChild(rk);
+    ratingRow.appendChild(buildBookRatingStars(bookId, book));
+    readBlock.appendChild(ratingRow);
+  }
+  readBlock.appendChild(bkReadingRow('Passages marked', '' + margCount, false));
+  aside.appendChild(readBlock);
+
+  cols.appendChild(main);
+  cols.appendChild(aside);
+  surf.shell.appendChild(cols);
+
+  // ---- Edit / more disclosure (surplus controls) ----
+  if (user) {
+    var editToggle = document.createElement('button');
+    editToggle.type = 'button';
+    editToggle.className = 'bk-edit-toggle';
+    editToggle.textContent = _bookDetailEditOpen ? 'Close edit' : 'Edit / more';
+    editToggle.setAttribute('aria-expanded', _bookDetailEditOpen ? 'true' : 'false');
+    editToggle.addEventListener('click', function() {
+      _bookDetailEditOpen = !_bookDetailEditOpen;
+      renderBookDetail(bookId);
+    });
+    surf.shell.appendChild(editToggle);
+    if (_bookDetailEditOpen) { surf.shell.appendChild(buildBookEditPanel(bookId, book, user)); }
   }
 
-  host.appendChild(wrap);
+  // Find this book
+  var findUrl = buildBookshopUrl(book.isbn);
+  if (findUrl) {
+    var findLink = document.createElement('a');
+    findLink.className = 'bk-find';
+    findLink.href = findUrl;
+    findLink.target = '_blank';
+    findLink.rel = 'noopener noreferrer';
+    findLink.textContent = 'Find this book';
+    surf.shell.appendChild(findLink);
+  }
 }
 
 // Stage 3.7: Artifact view at #artifact/<bookId>. Paints the
@@ -14526,6 +14854,7 @@ window.views = {
   renderNotebook:        renderNotebook,
   renderShelf:           renderShelf,
   renderBookDetail:      renderBookDetail,
+  renderBookView:        renderBookView,
   renderArtifact:        renderArtifact,
   openJournalEditor:     openJournalEditor,
   openMarginaliaEditor:  openMarginaliaEditor,
