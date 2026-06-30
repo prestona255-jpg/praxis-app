@@ -770,7 +770,7 @@ var notebookGatherName = '';
 // panel (the exact window: marginalia + questions, never journal, never the
 // book's own text). Returns null for Inbox/Journal (no book crowns those).
 // Consent stays the reused header buildNotebookMasterSwitch (not duplicated).
-function buildNotebookBookBand(activeKey, book, tabs) {
+function buildNotebookBookBand(activeKey, book, tabs, masterSwitchNode) {
   if (!book) { return null; }
   var bandWrap = document.createElement('div');
   bandWrap.className = 'nb-bookband-wrap';
@@ -778,6 +778,13 @@ function buildNotebookBookBand(activeKey, book, tabs) {
   band.className = 'nb-bookband';
 
   var cover = document.createElement('div');
+  // mockup .spine (gilt edge) + .rmark (reading-status dot) crown the cover.
+  var spine = document.createElement('span');
+  spine.className = 'nb-bb-spine';
+  spine.setAttribute('aria-hidden', 'true');
+  var rmark = document.createElement('span');
+  rmark.className = 'nb-bb-rmark';
+  rmark.setAttribute('aria-hidden', 'true');
   if (book.coverUrl) {
     cover.className = 'nb-bb-cover';
     var img = document.createElement('img');
@@ -795,6 +802,8 @@ function buildNotebookBookBand(activeKey, book, tabs) {
     cca.textContent = book.author || '';
     cover.appendChild(cca);
   }
+  cover.appendChild(spine);
+  cover.appendChild(rmark);
   band.appendChild(cover);
 
   var meta = document.createElement('div');
@@ -846,9 +855,12 @@ function buildNotebookBookBand(activeKey, book, tabs) {
   meta.appendChild(banklabel);
   band.appendChild(meta);
 
-  // the inline covenant -- "What Yumi sees" (toggles the panel below the band)
+  // Band consent column (mockup .bandconsent): the "Yumi reads along" master
+  // switch (passed in -- same setProfile/saveProfileToFirestore covenant wiring)
+  // above the inline "What Yumi sees" covenant link.
   var consent = document.createElement('div');
   consent.className = 'nb-bb-consent';
+  if (masterSwitchNode) { consent.appendChild(masterSwitchNode); }
   var seesLink = document.createElement('button');
   seesLink.type = 'button';
   seesLink.className = 'nb-bb-whatsees';
@@ -892,8 +904,10 @@ function renderNotebook() {
     return;
   }
 
-  // Head (mock .notebook-head): eyebrow + title block, spacer, the master consent
-  // switch (the privacy toggle), and the "What Yumi sees" transparency chip.
+  // Intro (mock .intro): eyebrow + title + the descriptive paragraph. The master
+  // "Yumi reads along" consent moves into the book band (or a slim consent row on
+  // Inbox/Journal); capture/import lives in the left-leaf capmodes -- so the intro
+  // reads clean per the mockup (no header chrome).
   var header = document.createElement('header');
   header.className = 'notebook-head';
 
@@ -907,38 +921,17 @@ function renderNotebook() {
   title.className = 'notebook-title';
   title.textContent = 'Notebook';
   titleBlock.appendChild(title);
+  var introP = document.createElement('p');
+  introP.className = 'notebook-intro';
+  introP.textContent = 'Each book keeps its own notebook, and the book itself crowns it — cover, your reading, what it’s grown into. Below, two leaves: catch notes on the left, gather a few on the right and a sub-theory forms. Yumi reads along quietly, only ever from what you wrote, asking rather than explaining.';
+  titleBlock.appendChild(introP);
   header.appendChild(titleBlock);
-
-  // Import & Capture trigger -- opens the unified capture overlay (paste +
-  // upload). Guarded so the notebook still renders if import-capture.js did
-  // not load; the overlay itself lives entirely in that module.
-  if (window.ImportCapture && typeof window.ImportCapture.open === 'function') {
-    var importBtn = document.createElement('button');
-    importBtn.type = 'button';
-    importBtn.className = 'ic-trigger';
-    importBtn.textContent = '+ Bring in notes';
-    importBtn.addEventListener('click', function() { window.ImportCapture.open(); });
-    header.appendChild(importBtn);
-  }
-
-  var spacer = document.createElement('span');
-  spacer.className = 'spacer';
-  header.appendChild(spacer);
-
-  header.appendChild(buildNotebookMasterSwitch(user));
-
-  var transparencyBtn = document.createElement('button');
-  transparencyBtn.type = 'button';
-  transparencyBtn.className = 'chip';
-  transparencyBtn.textContent = 'What Yumi sees';
-  transparencyBtn.addEventListener('click', function() {
-    openTransparencyView();
-  });
-  header.appendChild(transparencyBtn);
 
   wrap.appendChild(header);
 
-  // Transparency host -- "What Yumi sees" (openTransparencyView) mounts here.
+  // Transparency host -- the in-panel "What Yumi sees" (openTransparencyView)
+  // mounts here when invoked. The primary transparency surface is the routed
+  // #yumi-sees page (reached from Yumi's panel) + the band covenant link.
   var transparencyHost = document.createElement('div');
   transparencyHost.id = 'notebook-transparency-host';
   wrap.appendChild(transparencyHost);
@@ -972,15 +965,30 @@ function renderNotebook() {
     notebookActiveTab = activeKey;
   }
 
-  // The bound-leaf spread. Left leaf = book/section head + tabs + the note bank;
-  // right leaf = the working page (composer + gather), per the mock.
+  // Tab row sits ABOVE the spread (mockup .tabs), not inside the left leaf.
+  wrap.appendChild(buildNotebookTabRow(tabs, activeKey));
+
+  // The master "Yumi reads along" consent rides in the book band (mockup); on
+  // Inbox/Journal (no band) it falls back to a slim consent row above the spread,
+  // so the toggle is never lost. ONE instance -- setProfile/covenant wiring intact.
+  var masterSwitch = buildNotebookMasterSwitch(user);
+
+  // The bound-leaf spread. Left leaf = "Catch a note" (composer + capmodes + note
+  // bank); right leaf = the working page (gathered + forming), per the mockup.
   var spread = document.createElement('div');
   spread.className = 'notebook-spread';
   // Wave 3: the real book band crowns the spread when a book tab is active.
   var bandBook = (activeKey !== 'inbox' && activeKey !== 'journal' && state.books)
     ? state.books[activeKey] : null;
-  var bookBand = buildNotebookBookBand(activeKey, bandBook, tabs);
-  if (bookBand) { spread.appendChild(bookBand); }
+  var bookBand = buildNotebookBookBand(activeKey, bandBook, tabs, bandBook ? masterSwitch : null);
+  if (bookBand) {
+    spread.appendChild(bookBand);
+  } else {
+    var consentRow = document.createElement('div');
+    consentRow.className = 'nb-consent-row';
+    consentRow.appendChild(masterSwitch);
+    wrap.appendChild(consentRow);
+  }
   var leaves = document.createElement('div');
   leaves.className = 'notebook-leaves';
   leaves.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
@@ -1121,67 +1129,56 @@ function appendNotebookTab(row, tab, activeKey) {
   row.appendChild(el);
 }
 
-// Left leaf: section header (label + note count) then the tab's entries
-// (createdAt-desc), rendered via renderNotebookEntry (no per-entry toggle).
+// Left leaf (mockup "Catch a note"): the capture composer + capmodes, then the
+// tab's entries (createdAt-desc) via renderNotebookEntry. Book identity now lives
+// in the band above; the tab row sits above the spread (both moved out of here).
 function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   var leaf = document.createElement('div');
   leaf.className = 'leaf leaf-left';
 
-  var activeTab = null;
-  var t;
-  for (t = 0; t < tabs.length; t = t + 1) {
-    if (tabs[t].key === activeKey) { activeTab = tabs[t]; break; }
-  }
+  var leafsub = document.createElement('p');
+  leafsub.className = 'nb-leaftag';
+  leafsub.textContent = 'Catch a note';
+  leaf.appendChild(leafsub);
 
-  // Head (mock .nb-bookhead): for a book tab the key IS the bookId -> a compact
-  // .bc spine chip (the mock's representation; the self-healing cover stays on
-  // shelf + book detail) + .bt title + .ba "author · N notes" (real count). For
-  // Inbox/Journal (no mock equivalent) the same head WITHOUT the .bc chip:
-  // label + count. READ-ONLY on state.books.
-  var headerBook = (activeKey !== 'inbox' && activeKey !== 'journal' && state.books)
-    ? state.books[activeKey] : null;
-  var count = activeTab ? activeTab.count : 0;
-  var bh = document.createElement('div');
-  bh.className = 'nb-bookhead';
-  if (headerBook) {
-    var bc = document.createElement('span');
-    bc.className = 'bc';
-    // Fidelity: a SHORT spine label (mock "hooks"), not the full clamped title
-    // (which read cramped in the 40px chip). Author surname when present, else
-    // the first word of the title.
-    var bcLabel = '';
-    if (headerBook.author) {
-      var bcAuthorWords = headerBook.author.replace(/^\s+|\s+$/g, '').split(/\s+/);
-      bcLabel = bcAuthorWords[bcAuthorWords.length - 1] || '';
-    }
-    if (!bcLabel && headerBook.title) {
-      bcLabel = headerBook.title.replace(/^\s+|\s+$/g, '').split(/\s+/)[0] || '';
-    }
-    bc.textContent = bcLabel;
-    bh.appendChild(bc);
-  }
-  var bhText = document.createElement('div');
-  var bt = document.createElement('div');
-  bt.className = 'bt';
-  bt.textContent = headerBook
-    ? (headerBook.title || '(untitled)')
-    : (activeTab ? activeTab.label : 'Inbox');
-  bhText.appendChild(bt);
-  var ba = document.createElement('div');
-  ba.className = 'ba';
-  var noteWord = count + (count === 1 ? ' note' : ' notes');
-  if (headerBook && headerBook.author) {
-    ba.textContent = headerBook.author + ' · ' + noteWord;
-  } else {
-    ba.textContent = noteWord;
-  }
-  bhText.appendChild(ba);
-  bh.appendChild(bhText);
-  leaf.appendChild(bh);
+  // The capture composer (relocated from the right leaf -- behavior identical;
+  // it still routes by the active tab). autogrow / photo / register / Enter-commit
+  // all preserved.
+  leaf.appendChild(buildNotebookWriteline(activeKey));
 
-  // Tabs sit inside the left leaf (mock .nb-tabs), under the head. The tab MODEL
-  // (Inbox / Journal / per-book) is unchanged; only placement + visual adopt the mock.
-  leaf.appendChild(buildNotebookTabRow(tabs, activeKey));
+  // capmodes (mockup .capmodes): paste/import, dictate, and "talk it through with
+  // Yumi" all open the unified capture overlay (ImportCapture houses paste + upload
+  // + the Talk-to-Yumi dictation). Guarded so the leaf renders without the module.
+  if (window.ImportCapture && typeof window.ImportCapture.open === 'function') {
+    var capmodes = document.createElement('div');
+    capmodes.className = 'nb-capmodes';
+    capmodes.appendChild(document.createTextNode('or '));
+    var cmPaste = document.createElement('button');
+    cmPaste.type = 'button';
+    cmPaste.textContent = 'paste / import';
+    cmPaste.addEventListener('click', function() { window.ImportCapture.open(); });
+    capmodes.appendChild(cmPaste);
+    var cmSep1 = document.createElement('span');
+    cmSep1.className = 'sep';
+    cmSep1.textContent = ' · ';
+    capmodes.appendChild(cmSep1);
+    var cmDictate = document.createElement('button');
+    cmDictate.type = 'button';
+    cmDictate.textContent = 'dictate';
+    cmDictate.addEventListener('click', function() { window.ImportCapture.open(); });
+    capmodes.appendChild(cmDictate);
+    var cmSep2 = document.createElement('span');
+    cmSep2.className = 'sep';
+    cmSep2.textContent = ' · ';
+    capmodes.appendChild(cmSep2);
+    var cmTalk = document.createElement('button');
+    cmTalk.type = 'button';
+    cmTalk.className = 'talk';
+    cmTalk.textContent = 'talk it through with Yumi';
+    cmTalk.addEventListener('click', function() { window.ImportCapture.open(); });
+    capmodes.appendChild(cmTalk);
+    leaf.appendChild(capmodes);
+  }
 
   var shown = 0;
   var i;
@@ -1206,9 +1203,11 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   return leaf;
 }
 
-// Right leaf: the working page. Empty until notes are gathered; then it shows
-// the gathered notes + an editable name + arc selection (F6) + Create. Create
-// REUSES createSubTheory + addEvidenceToSubTheory (no new data path).
+// Right leaf (mockup "The working page"): the Gathered list (each card with a ×
+// remove) + an empty placeholder; once notes are gathered it grows the forming
+// sub-theory (name + arc + Create). Create REUSES createSubTheory +
+// addEvidenceToSubTheory (no new data path). The capture composer now lives on
+// the LEFT leaf, per the mockup.
 function buildNotebookRightLeaf(user, activeKey) {
   var leaf = document.createElement('div');
   leaf.className = 'leaf leaf-right';
@@ -1217,19 +1216,49 @@ function buildNotebookRightLeaf(user, activeKey) {
 
   var tag = document.createElement('h3');
   tag.className = 'nb-leaftag';
-  tag.textContent = ids.length ? 'Working page · forming a sub-theory' : 'Working page';
+  tag.textContent = 'The working page · where a sub-theory forms';
   leaf.appendChild(tag);
 
-  // Composer (mock .nb-composer): the writeline lives in the right leaf. It still
-  // routes captures by the active LEFT tab (activeKey) -- relocation only, no
-  // behavior change (autogrow / photo / register / Enter-commit preserved).
-  leaf.appendChild(buildNotebookWriteline(activeKey));
+  // Gathered (mockup .glab + .gathered-list): the gathered notes, each with a ×
+  // remove (toggleGather), or the empty placeholder when nothing is gathered.
+  var glab = document.createElement('p');
+  glab.className = 'nb-glab';
+  glab.textContent = 'Gathered';
+  leaf.appendChild(glab);
+
+  var glist = document.createElement('div');
+  glist.className = 'nb-gathered-list';
+  if (!ids.length) {
+    var gempty = document.createElement('div');
+    gempty.className = 'nb-gempty';
+    gempty.textContent = 'Select notes on the left to gather them here…';
+    glist.appendChild(gempty);
+  } else {
+    var gi;
+    for (gi = 0; gi < ids.length; gi = gi + 1) {
+      (function(eid) {
+        var e = state.notebookEntries[eid];
+        var g = document.createElement('div');
+        g.className = 'nb-gnote';
+        var gtext = document.createElement('span');
+        var gb = (e && typeof e.body === 'string') ? e.body : '';
+        if (gb.length > 140) { gb = gb.substring(0, 137) + '…'; }
+        gtext.textContent = gb;
+        g.appendChild(gtext);
+        var gx = document.createElement('button');
+        gx.type = 'button';
+        gx.className = 'nb-gx';
+        gx.setAttribute('aria-label', 'Remove from gathered');
+        gx.textContent = '×';
+        gx.addEventListener('click', function() { toggleGather(eid); });
+        g.appendChild(gx);
+        glist.appendChild(g);
+      })(ids[gi]);
+    }
+  }
+  leaf.appendChild(glist);
 
   if (!ids.length) {
-    var hint = document.createElement('p');
-    hint.className = 'notebook-working-hint';
-    hint.textContent = 'Gather a selection of notes from the left to form a sub-theory here.';
-    leaf.appendChild(hint);
     return leaf;
   }
 
@@ -1260,24 +1289,6 @@ function buildNotebookRightLeaf(user, activeKey) {
       if (report && report.setLocal) { report.setLocal(true); }
     }
   });
-
-  var i;
-  for (i = 0; i < ids.length; i = i + 1) {
-    var e = state.notebookEntries[ids[i]];
-    var w = document.createElement('div');
-    w.className = 'nb-wnote';
-    var wt = document.createElement('span');
-    var wtcls = 'nb-wnote-tag-jour';
-    if (e.register === 'marginalia') { wtcls = 'nb-wnote-tag-marg'; }
-    else if (e.register === 'question') { wtcls = 'nb-wnote-tag-ques'; }
-    wt.className = 'nb-wnote-tag ' + wtcls;
-    wt.textContent = notebookRegisterLabel(e.register);
-    w.appendChild(wt);
-    var wb = (e && typeof e.body === 'string') ? e.body : '';
-    if (wb.length > 140) { wb = wb.substring(0, 137) + '…'; }
-    w.appendChild(document.createTextNode(wb));
-    leaf.appendChild(w);
-  }
 
   // Gather bar (mock .nb-gather): "N gathered ·" + arc selection (reuses
   // buildArcPickerPanel via openGatherArcPicker) + Create. Default arc = the arc
@@ -1713,9 +1724,9 @@ function buildNotebookWriteline(activeKey) {
   var chips = document.createElement('div');
   chips.className = 'seg';
   var defs = [
-    { r: 'journal', l: 'Journal' },
     { r: 'marginalia', l: 'Marginalia' },
-    { r: 'question', l: 'Question' }
+    { r: 'question', l: 'Question' },
+    { r: 'journal', l: 'Journal' }
   ];
   var chipEls = {};
   function paint() {
@@ -7978,11 +7989,22 @@ function renderSubTheoryPage(id) {
   var stBack = document.createElement('a');
   stBack.className = 'st-tb-back';
   stBack.href = subTheory.arcId ? ('#arc/' + subTheory.arcId) : '#arcs';
-  stBack.textContent = '‹ ' + ((stArcTop && stArcTop.title) ? stArcTop.title : 'Arc');
+  stBack.textContent = '‹ Field';
   stTbLeft.appendChild(stBack);
   var stHeroMark = document.createElement('span');
-  stHeroMark.className = 'st-hero-mark';
+  stHeroMark.className = 'st-hero-mark st-hero-mark-edit';
   stHeroMark.innerHTML = bookSubMarkHTML(subTheory, 30);
+  // Wave 3 ruling 3: mark-editing relocates to the TOPBAR mark (the separate
+  // sheet-head mark-chip is removed). The topbar mark IS the picker trigger,
+  // keyboard-accessible; openSymbolPicker is unchanged -- feature preserved.
+  stHeroMark.setAttribute('role', 'button');
+  stHeroMark.setAttribute('tabindex', '0');
+  stHeroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
+  stHeroMark.setAttribute('title', 'Change this sub-theory’s mark');
+  stHeroMark.addEventListener('click', function() { openSymbolPicker(id); });
+  stHeroMark.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openSymbolPicker(id); }
+  });
   stTbLeft.appendChild(stHeroMark);
   var stKicker = document.createElement('div');
   stKicker.className = 'st-tb-kicker';
@@ -7996,7 +8018,15 @@ function renderSubTheoryPage(id) {
   var stSavedDot = document.createElement('span');
   stSavedDot.className = 'st-tb-dot';
   stSaved.appendChild(stSavedDot);
-  stSaved.appendChild(document.createTextNode('saved'));
+  // Wave 3: "saved · <when>" from the REAL updatedAt (relative), per the mockup.
+  var stWhen = 'just now';
+  if (subTheory.updatedAt) {
+    var stAgo = Date.now() - subTheory.updatedAt;
+    if (stAgo >= 86400000) { var stWd = Math.round(stAgo / 86400000); stWhen = stWd + (stWd === 1 ? ' day ago' : ' days ago'); }
+    else if (stAgo >= 3600000) { var stWh = Math.round(stAgo / 3600000); stWhen = stWh + (stWh === 1 ? ' hr ago' : ' hrs ago'); }
+    else if (stAgo >= 60000) { var stWm = Math.round(stAgo / 60000); stWhen = stWm + (stWm === 1 ? ' min ago' : ' mins ago'); }
+  }
+  stSaved.appendChild(document.createTextNode('saved · ' + stWhen));
   stTbRight.appendChild(stSaved);
   var stPub = document.createElement('button');
   stPub.type = 'button';
@@ -8031,48 +8061,23 @@ function renderSubTheoryPage(id) {
   stBuildLink.className = 'st-tb-build';
   stBuildLink.href = '#subtheory/' + id + '/build';
   stBuildLink.textContent = 'Continue building →';
-  stTbRight.appendChild(stBuildLink);
+  // stBuildLink ("Continue building") is KEPT but tucked into the .st-tools
+  // toolbar below (not the topbar) so the top reads clean per the mockup.
   stTopbar.appendChild(stTbRight);
   wrap.appendChild(stTopbar);
 
   var main = document.createElement('div');
   main.className = 'st-main';
 
-  // Batch 3: eyebrow "<arc title> · sub-theory" (mockup). Fail-soft to a
-  // generic label when the parent arc can't be resolved. (Register
-  // PUBLIC|INTELLECTUAL toggle + read view are deferred to Batch 3B --
-  // the additive register model below is untouched here.)
+  // Wave 3 ruling 2: the in-sheet eyebrow "<arc> · sub-theory" is DROPPED -- it
+  // duplicated the topbar kicker (the mockup shows the arc only in the topbar).
   var stArc = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
-  var stEyebrow = document.createElement('p');
-  stEyebrow.className = 'eyebrow';
-  stEyebrow.textContent = ((stArc && stArc.title) ? stArc.title : 'Arc') + ' · sub-theory';
-  main.appendChild(stEyebrow);
 
-  // Head (mock .st-head): the mark chip, the title input, and Delete in a row.
+  // Head (mock .st-head): just the editable title + the discreet ••• Options
+  // disclosure. Wave 3 ruling 3: the separate sheet-head mark-chip is removed --
+  // mark-editing moved to the clickable topbar mark (stHeroMark) above.
   var stHead = document.createElement('div');
   stHead.className = 'st-head';
-
-  // 9b-iii (entry A): a "Mark" chip sitting with the title -- a live mini render
-  // of this sub's current mark that opens the symbol picker. The mini-mark
-  // re-renders on each page render, so it always reflects the saved override.
-  var markChip = document.createElement('button');
-  markChip.type = 'button';
-  markChip.className = 'st-mark-chip';
-  var chipMark = document.createElement('span');
-  chipMark.className = 'st-mark-chip-mark';
-  var chipPal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
-  var chipHash = (typeof window.stHashIndices === 'function')
-    ? window.stHashIndices(id) : { shapeIdx: 0, colorIdx: 0 };
-  var chipShape = (typeof subTheory.markShape === 'number' && subTheory.markShape >= 0 && subTheory.markShape <= 15)
-    ? subTheory.markShape : chipHash.shapeIdx;
-  var chipColor = (typeof subTheory.markColor === 'number' && subTheory.markColor >= 0 && subTheory.markColor <= 15)
-    ? subTheory.markColor : chipHash.colorIdx;
-  chipMark.innerHTML = _stPickerMarkSvg(id, chipShape, chipColor, chipPal, false);
-  markChip.appendChild(chipMark);
-  markChip.setAttribute('aria-label', 'Mark');
-  markChip.setAttribute('title', 'Change this sub-theory’s mark');
-  markChip.addEventListener('click', function() { openSymbolPicker(id); });
-  stHead.appendChild(markChip);
 
   // Fix (v3.81): a reachable Delete on the writing page (the sub's own surface).
   // Subordinate danger chip beside the Mark chip; on confirm, route to the
@@ -8096,11 +8101,21 @@ function renderSubTheoryPage(id) {
     updateSubTheory(id, { header: headerInput.value });
   });
   stHead.appendChild(headerInput);
-  stHead.appendChild(stDeleteBtn);
+  // Wave 3 ruling 1: a discreet, ALWAYS-visible ••• Options disclosure in the head
+  // opens the tucked write-path controls on CLICK (identical desktop + mobile,
+  // discoverable, touch-safe -- replaces the hover-reveal). Wired at .st-tools below.
+  var stToolsToggle = document.createElement('button');
+  stToolsToggle.type = 'button';
+  stToolsToggle.className = 'st-tools-toggle';
+  stToolsToggle.setAttribute('aria-label', 'Options');
+  stToolsToggle.setAttribute('aria-expanded', 'false');
+  stToolsToggle.textContent = '•••';
+  stHead.appendChild(stToolsToggle);
   main.appendChild(stHead);
 
-  // Maturity (mock .st-maturity): the live computed signal (prose length +
-  // gathered evidence) as a band label + a glow whose opacity tracks it.
+  // Maturity (KEPT): the live computed signal as a band label + glow. NOT appended
+  // to main here -- it tucks into the .st-tools hover/focus toolbar below so the
+  // sheet header reads clean per the mockup.
   var stMatVal = _stComputeMaturity(subTheory);
   var stMatBand = stMatVal < 0.34 ? 'nascent' : (stMatVal < 0.67 ? 'developing' : 'established');
   var stMaturity = document.createElement('div');
@@ -8110,7 +8125,37 @@ function renderSubTheoryPage(id) {
   stGlow.style.opacity = String(0.35 + 0.65 * stMatVal);
   stMaturity.appendChild(stGlow);
   stMaturity.appendChild(document.createTextNode(' Maturity · ' + stMatBand));
-  main.appendChild(stMaturity);
+
+  // Sub-line (mock .t-meta): "STARTED FROM <n> MARKED PASSAGES · <n> BOOKS" from
+  // REAL evidence -- marked passages = attached evidence count; books = distinct
+  // sources (kind book refId; kind entry's bookIds[]; kind external title).
+  var stEvArr = (subTheory.evidence && subTheory.evidence.length) ? subTheory.evidence : [];
+  var stPassageN = stEvArr.length;
+  var stSrcSeen = {}, stBookN = 0, stEi, stEvIt, stEnt, stBi, stKey;
+  for (stEi = 0; stEi < stEvArr.length; stEi = stEi + 1) {
+    stEvIt = stEvArr[stEi];
+    if (!stEvIt) { continue; }
+    if (stEvIt.kind === 'book' && stEvIt.refId) {
+      stKey = 'b:' + stEvIt.refId;
+      if (!stSrcSeen[stKey]) { stSrcSeen[stKey] = 1; stBookN = stBookN + 1; }
+    } else if (stEvIt.kind === 'entry' && stEvIt.refId && state.notebookEntries && state.notebookEntries[stEvIt.refId]) {
+      stEnt = state.notebookEntries[stEvIt.refId];
+      if (stEnt && Array.isArray(stEnt.bookIds)) {
+        for (stBi = 0; stBi < stEnt.bookIds.length; stBi = stBi + 1) {
+          stKey = 'b:' + stEnt.bookIds[stBi];
+          if (!stSrcSeen[stKey]) { stSrcSeen[stKey] = 1; stBookN = stBookN + 1; }
+        }
+      }
+    } else if (stEvIt.kind === 'external' && stEvIt.external && stEvIt.external.title) {
+      stKey = 'x:' + stEvIt.external.title;
+      if (!stSrcSeen[stKey]) { stSrcSeen[stKey] = 1; stBookN = stBookN + 1; }
+    }
+  }
+  var stTMeta = document.createElement('div');
+  stTMeta.className = 't-meta';
+  stTMeta.textContent = 'STARTED FROM ' + stPassageN + ' MARKED PASSAGE' + (stPassageN === 1 ? '' : 'S')
+    + ' · ' + stBookN + ' BOOK' + (stBookN === 1 ? '' : 'S');
+  main.appendChild(stTMeta);
 
   // Batch 3B: segmented PUBLIC | INTELLECTUAL register toggle. One
   // register's textarea is visible at a time; Public is the default on
@@ -8347,11 +8392,26 @@ function renderSubTheoryPage(id) {
   previewBtn.addEventListener('click', function() { setPreview(!previewing); });
 
   // 10.5.6: register pill + Write|Preview toggle + Published toggle on one row.
+  // Wave 3 structural: the kept write-path controls (PUBLIC|INTELLECTUAL,
+  // WRITE|PREVIEW, PUBLISHED, MATURITY, DELETE, Continue building) tuck into ONE
+  // hover/focus toolbar so the sheet header reads clean per the mockup -- every
+  // control stays wired. .st-tools fades in on .st-main hover/focus (CSS) and
+  // stays visible (recessed) on mobile where there is no hover.
   var togglesRow = document.createElement('div');
-  togglesRow.className = 'subtheory-toggles-row';
+  togglesRow.className = 'subtheory-toggles-row st-tools';
   togglesRow.appendChild(regToggle);
   togglesRow.appendChild(wpToggle);
   togglesRow.appendChild(previewBtn);
+  togglesRow.appendChild(stMaturity);
+  togglesRow.appendChild(stDeleteBtn);
+  togglesRow.appendChild(stBuildLink);
+  // Ruling 1: the ••• head disclosure opens/closes this panel on click (.st-tools is
+  // display:none until .is-open). Identical desktop + mobile -- no hover dependency.
+  stToolsToggle.addEventListener('click', function() {
+    var stToolsOpen = togglesRow.classList.toggle('is-open');
+    stToolsToggle.setAttribute('aria-expanded', stToolsOpen ? 'true' : 'false');
+    stToolsToggle.className = 'st-tools-toggle' + (stToolsOpen ? ' is-on' : '');
+  });
   main.appendChild(togglesRow);
   main.appendChild(manuscript);
 
@@ -8755,7 +8815,7 @@ function renderSubTheoryPage(id) {
 
   var railTitle = document.createElement('h2');
   railTitle.className = 'subtheory-rail-title';
-  railTitle.textContent = 'Evidence';
+  railTitle.textContent = 'FROM YOUR READING';
   rail.appendChild(railTitle);
 
   var arc = state.arcs && state.arcs[subTheory.arcId];
@@ -8905,10 +8965,9 @@ function renderSubTheoryPage(id) {
   // the live evidence[] each call.
   var attachedSection = document.createElement('div');
   attachedSection.className = 'subtheory-rail-section';
-  var attachedLabel = document.createElement('h3');
-  attachedLabel.className = 'book-detail-tradition-label';
-  attachedLabel.textContent = 'Attached';
-  attachedSection.appendChild(attachedLabel);
+  // Wave 3 fidelity (look-check): the redundant "Attached" sub-header is dropped --
+  // the rail title "FROM YOUR READING" already labels this section, and the mockup
+  // shows no sub-header above the book cards.
   var attachedList = document.createElement('div');
   attachedList.className = 'subtheory-attached-list';
   attachedSection.appendChild(attachedList);
@@ -9225,7 +9284,8 @@ function renderSubTheoryPage(id) {
     location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : 'arcs';
   });
   stConn.appendChild(stConnAdd);
-  main.appendChild(stConn);
+  // stConn (connections footer) is appended to the .st-center SIBLING below the
+  // sheet at the grid assembly (Wave 3 ruling 4) -- NOT inside .st-main.
 
   // Wave 3 (The Page): Yumi's cyan margin -- connective notes drawn ONLY from
   // real signals (the sub's marked passages + the reader-model summary), never a
@@ -9285,10 +9345,17 @@ function renderSubTheoryPage(id) {
 
   // Wave 3 (The Page): the 3-column reading-room grid -- evidence rail (left) ·
   // the lifted sheet + connections (center) · Yumi's cyan margin (right).
+  // Wave 3 ruling 4: connections become a SIBLING FOOTER below the sheet (mockup),
+  // not inside .st-main. The center grid column is .st-center = the sheet (.st-main)
+  // + the connections footer (stConn) as siblings.
+  var stCenter = document.createElement('div');
+  stCenter.className = 'st-center';
+  stCenter.appendChild(main);
+  stCenter.appendChild(stConn);
   var stGrid = document.createElement('div');
   stGrid.className = 'st-grid';
   stGrid.appendChild(rail);
-  stGrid.appendChild(main);
+  stGrid.appendChild(stCenter);
   stGrid.appendChild(stYumi);
   wrap.appendChild(stGrid);
   wrap.appendChild(backdrop);
@@ -9353,8 +9420,18 @@ function renderSubTheoryBuild(id) {
   var sthead = document.createElement('div');
   sthead.className = 'stb-head';
   var heroMark = document.createElement('span');
-  heroMark.className = 'stb-hero-mark';
+  heroMark.className = 'stb-hero-mark stb-hero-mark-edit';
   heroMark.innerHTML = bookSubMarkHTML(subTheory, 32);
+  // Wave 3 fidelity: the header mark IS the symbol-picker trigger (mirrors the
+  // Page) -- keyboard-accessible; openSymbolPicker is unchanged (feature parity).
+  heroMark.setAttribute('role', 'button');
+  heroMark.setAttribute('tabindex', '0');
+  heroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
+  heroMark.setAttribute('title', 'Change this sub-theory’s mark');
+  heroMark.addEventListener('click', function() { openSymbolPicker(id); });
+  heroMark.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openSymbolPicker(id); }
+  });
   sthead.appendChild(heroMark);
 
   var titleWrap = document.createElement('div');
@@ -9368,7 +9445,10 @@ function renderSubTheoryBuild(id) {
   titleWrap.appendChild(titleInput);
   var into = document.createElement('div');
   into.className = 'stb-into';
-  into.textContent = 'a forming sub-theory in ' + (arc && arc.title ? arc.title : 'this arc');
+  into.appendChild(document.createTextNode('a forming sub-theory in '));
+  var intoEm = document.createElement('em');
+  intoEm.textContent = (arc && arc.title ? arc.title : 'this arc');
+  into.appendChild(intoEm);
   titleWrap.appendChild(into);
   sthead.appendChild(titleWrap);
 
@@ -9560,9 +9640,10 @@ function renderSubTheoryBuild(id) {
     if (!book) { continue; }
     var margs = marginaliaFor(bookKeys[bi2]);
     if (margs.length === 0) { continue; }
+    var isFirstBook = !anyBook;
     anyBook = true;
     var bookEl = document.createElement('div');
-    bookEl.className = 'stb-book';
+    bookEl.className = isFirstBook ? 'stb-book open' : 'stb-book';
     var brow = document.createElement('div');
     brow.className = 'stb-brow';
     var cover = document.createElement('span');
@@ -9584,7 +9665,13 @@ function renderSubTheoryBuild(id) {
     binfo.appendChild(bt);
     var bc = document.createElement('div');
     bc.className = 'stb-bc';
-    bc.textContent = margs.length + (margs.length === 1 ? ' note' : ' notes');
+    var bcWoven = 0, bwi;
+    for (bwi = 0; bwi < margs.length; bwi++) {
+      if (typeof isEvidenceAttached === 'function' && isEvidenceAttached(id, 'entry', margs[bwi].id)) { bcWoven++; }
+    }
+    var bcText = margs.length + (margs.length === 1 ? ' note' : ' notes');
+    if (bcWoven > 0) { bcText += ' · ' + bcWoven + ' already woven'; }
+    bc.textContent = bcText;
     binfo.appendChild(bc);
     brow.appendChild(binfo);
     var chev = document.createElement('span');
@@ -9599,6 +9686,12 @@ function renderSubTheoryBuild(id) {
       (function(en, bookRef) {
         var m = document.createElement('div');
         m.className = 'stb-marg';
+        // Wave 3 fidelity (D2): real register provenance line, NO fabricated page
+        // number (the entry model has none); the book is this card's own header.
+        var pg = document.createElement('div');
+        pg.className = 'stb-pg';
+        pg.textContent = (en.register || 'marginalia');
+        m.appendChild(pg);
         var passage = document.createElement('div');
         passage.className = 'stb-passage';
         passage.textContent = (typeof en.body === 'string') ? en.body : '';
