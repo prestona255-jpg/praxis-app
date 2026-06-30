@@ -370,7 +370,7 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -764,13 +764,122 @@ var notebookGathered = {};
 var notebookGatherArc = null;
 var notebookGatherName = '';
 
+// Wave 3 (the Notebook): the BOOK BAND that crowns a book's notebook -- real
+// cover (coverUrl, cloth fallback) + title/author + reading status + real note
+// count + computed "became sub-theories" + the inline "What Yumi sees" covenant
+// panel (the exact window: marginalia + questions, never journal, never the
+// book's own text). Returns null for Inbox/Journal (no book crowns those).
+// Consent stays the reused header buildNotebookMasterSwitch (not duplicated).
+function buildNotebookBookBand(activeKey, book, tabs) {
+  if (!book) { return null; }
+  var bandWrap = document.createElement('div');
+  bandWrap.className = 'nb-bookband-wrap';
+  var band = document.createElement('div');
+  band.className = 'nb-bookband';
+
+  var cover = document.createElement('div');
+  if (book.coverUrl) {
+    cover.className = 'nb-bb-cover';
+    var img = document.createElement('img');
+    img.className = 'nb-bb-cover-img';
+    img.src = book.coverUrl; img.alt = '';
+    cover.appendChild(img);
+  } else {
+    cover.className = 'nb-bb-cover nb-bb-cover-cloth';
+    var cct = document.createElement('div');
+    cct.className = 'nb-bb-cover-title';
+    cct.textContent = book.title || '';
+    cover.appendChild(cct);
+    var cca = document.createElement('div');
+    cca.className = 'nb-bb-cover-author';
+    cca.textContent = book.author || '';
+    cover.appendChild(cca);
+  }
+  band.appendChild(cover);
+
+  var meta = document.createElement('div');
+  meta.className = 'nb-bb-meta';
+  var bt = document.createElement('div');
+  bt.className = 'nb-bb-title';
+  bt.textContent = book.title || '(untitled)';
+  meta.appendChild(bt);
+  var ba = document.createElement('div');
+  ba.className = 'nb-bb-author';
+  ba.textContent = book.author || '';
+  meta.appendChild(ba);
+
+  var noteCount = 0, ti2;
+  for (ti2 = 0; ti2 < tabs.length; ti2 = ti2 + 1) {
+    if (tabs[ti2].key === activeKey) { noteCount = tabs[ti2].count; break; }
+  }
+  // computed (display-only) "became sub-theories": sub-theories whose evidence
+  // resolves to this book (kind book = this id, or kind entry from this book).
+  var becameCount = 0, sk;
+  for (sk in state.subTheories) {
+    if (!Object.prototype.hasOwnProperty.call(state.subTheories, sk)) { continue; }
+    var st2 = state.subTheories[sk];
+    if (!st2 || !Array.isArray(st2.evidence)) { continue; }
+    var hit = false, ei2;
+    for (ei2 = 0; ei2 < st2.evidence.length; ei2 = ei2 + 1) {
+      var ev2 = st2.evidence[ei2];
+      if (!ev2) { continue; }
+      if (ev2.kind === 'book' && ev2.refId === activeKey) { hit = true; break; }
+      if (ev2.kind === 'entry') {
+        var en2 = state.notebookEntries && state.notebookEntries[ev2.refId];
+        if (en2 && Array.isArray(en2.bookIds) && en2.bookIds.indexOf(activeKey) !== -1) { hit = true; break; }
+      }
+    }
+    if (hit) { becameCount = becameCount + 1; }
+  }
+  var bstat = document.createElement('div');
+  bstat.className = 'nb-bb-stat';
+  var statusStr = (typeof statusText === 'function') ? statusText(book.status) : (book.status || '');
+  var statLine = '';
+  if (statusStr) { statLine = statusStr + ' · '; }
+  statLine = statLine + noteCount + (noteCount === 1 ? ' note' : ' notes');
+  if (becameCount) { statLine = statLine + ' · ' + becameCount + (becameCount === 1 ? ' became a sub-theory' : ' became sub-theories'); }
+  bstat.textContent = statLine;
+  meta.appendChild(bstat);
+  var banklabel = document.createElement('div');
+  banklabel.className = 'nb-bb-banklabel';
+  banklabel.textContent = 'Your notebook for this book';
+  meta.appendChild(banklabel);
+  band.appendChild(meta);
+
+  // the inline covenant -- "What Yumi sees" (toggles the panel below the band)
+  var consent = document.createElement('div');
+  consent.className = 'nb-bb-consent';
+  var seesLink = document.createElement('button');
+  seesLink.type = 'button';
+  seesLink.className = 'nb-bb-whatsees';
+  seesLink.textContent = 'What Yumi sees';
+  consent.appendChild(seesLink);
+  band.appendChild(consent);
+  bandWrap.appendChild(band);
+
+  var seesPanel = document.createElement('div');
+  seesPanel.className = 'nb-bb-seespanel';
+  seesPanel.appendChild(document.createTextNode('Yumi reads your '));
+  var spb1 = document.createElement('b'); spb1.textContent = 'marginalia'; seesPanel.appendChild(spb1);
+  seesPanel.appendChild(document.createTextNode(' and your '));
+  var spb2 = document.createElement('b'); spb2.textContent = 'questions'; seesPanel.appendChild(spb2);
+  seesPanel.appendChild(document.createTextNode(' — the notes you take with this book. She never reads your '));
+  var spb3 = document.createElement('b'); spb3.textContent = 'journal'; seesPanel.appendChild(spb3);
+  seesPanel.appendChild(document.createTextNode(', and never the book’s own text. A mirror held at an angle to your own thinking, nothing more.'));
+  seesLink.addEventListener('click', function() {
+    seesPanel.className = (seesPanel.className.indexOf(' on') !== -1) ? 'nb-bb-seespanel' : 'nb-bb-seespanel on';
+  });
+  bandWrap.appendChild(seesPanel);
+  return bandWrap;
+}
+
 function renderNotebook() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  wrap.className = 'notebook';
+  wrap.className = 'notebook lum-amber-deep';
 
   var user = getCurrentUser();
 
@@ -867,8 +976,16 @@ function renderNotebook() {
   // right leaf = the working page (composer + gather), per the mock.
   var spread = document.createElement('div');
   spread.className = 'notebook-spread';
-  spread.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
-  spread.appendChild(buildNotebookRightLeaf(user, activeKey));
+  // Wave 3: the real book band crowns the spread when a book tab is active.
+  var bandBook = (activeKey !== 'inbox' && activeKey !== 'journal' && state.books)
+    ? state.books[activeKey] : null;
+  var bookBand = buildNotebookBookBand(activeKey, bandBook, tabs);
+  if (bookBand) { spread.appendChild(bookBand); }
+  var leaves = document.createElement('div');
+  leaves.className = 'notebook-leaves';
+  leaves.appendChild(buildNotebookLeftLeaf(activeKey, tabs, entries));
+  leaves.appendChild(buildNotebookRightLeaf(user, activeKey));
+  spread.appendChild(leaves);
   wrap.appendChild(spread);
 
   host.appendChild(wrap);
@@ -1124,13 +1241,25 @@ function buildNotebookRightLeaf(user, activeKey) {
   ynameTag.className = 'nb-yname-tag';
   ynameTag.textContent = 'Name this sub-theory · yours to set';
   nameBlock.appendChild(ynameTag);
-  var nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.className = 'nb-working-name';
-  nameInput.setAttribute('placeholder', 'Name it…');
-  nameInput.value = notebookGatherName || '';
-  nameBlock.appendChild(nameInput);
+  // Wave 3: the forming sub-theory's NAME field adopts the SAME shared
+  // createWritingCanvas as the Page and Build (the writing trio shares one
+  // substrate). onSave mirrors the trimmed name into notebookGatherName -- the
+  // string the existing gather->create pipeline reads. writing-canvas.js UNCHANGED.
+  var nameHost = document.createElement('div');
+  nameHost.className = 'nb-working-name nb-name-canvas-host';
+  nameBlock.appendChild(nameHost);
   leaf.appendChild(nameBlock);
+  var nameCanvas = createWritingCanvas(nameHost, {
+    surfaceId:    'notebook-forming-name',
+    placeholder:  'Name it…',
+    initialValue: notebookGatherName || '',
+    flags:        { focusMode: false },
+    onSave: function(markdown, report) {
+      notebookGatherName = (typeof markdown === 'string') ? markdown.replace(/^\s+|\s+$/g, '') : '';
+      if (createBtn) { createBtn.disabled = !canCreate(); }
+      if (report && report.setLocal) { report.setLocal(true); }
+    }
+  });
 
   var i;
   for (i = 0; i < ids.length; i = i + 1) {
@@ -1212,10 +1341,8 @@ function buildNotebookRightLeaf(user, activeKey) {
   }
   createBtn.disabled = !canCreate();
   createBtn.addEventListener('click', function() { notebookCreateSubTheory(); });
-  nameInput.addEventListener('input', function() {
-    notebookGatherName = nameInput.value;
-    createBtn.disabled = !canCreate();
-  });
+  // Wave 3: the name now flows from the createWritingCanvas onSave above
+  // (notebookGatherName), so the old nameInput 'input' listener is retired.
   gather.appendChild(createBtn);
   leaf.appendChild(gather);
 
@@ -1288,6 +1415,11 @@ function notebookGatheredIds() {
 }
 
 function toggleGather(entryId) {
+  // Covenant (Wave 3 · the Notebook): journal notes are LOCKED -- ungatherable.
+  // A journal-register entry can never enter the gathered set that forms a
+  // sub-theory's evidence (mirrors the spec's `if (isJournal(el)) return;`).
+  var ent = state.notebookEntries && state.notebookEntries[entryId];
+  if (ent && ent.register === 'journal') { return; }
   if (notebookGathered[entryId] === true) { delete notebookGathered[entryId]; }
   else { notebookGathered[entryId] = true; }
   renderNotebook();
@@ -11699,7 +11831,15 @@ function renderNotebookEntry(entry, gatherable) {
 
   // N3: gather toggle -- only on the notebook spread (gatherable). Adds/removes
   // this entry from the gathered set that forms a sub-theory on the right leaf.
-  if (gatherable) {
+  // Covenant (Wave 3 · the Notebook): journal notes are LOCKED -- no gather
+  // affordance, a quiet lock indicator instead (toggleGather refuses them too).
+  if (gatherable && entry.register === 'journal') {
+    var lockEl = document.createElement('span');
+    lockEl.className = 'notebook-entry-lock';
+    lockEl.setAttribute('title', 'Journal notes stay private — never gathered, never read by Yumi.');
+    lockEl.textContent = '🔒 private';
+    acts.appendChild(lockEl);
+  } else if (gatherable) {
     var gatherLink = document.createElement('a');
     gatherLink.href = '#';
     gatherLink.className = 'notebook-entry-add-to-arc notebook-entry-gather';

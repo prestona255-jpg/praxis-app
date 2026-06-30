@@ -214,8 +214,14 @@ function assembleContextData() {
   var key;
   for (key in state.notebookEntries) {
     if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
+      // Covenant (Wave 3 · the Notebook): Yumi NEVER reads journal-register
+      // notes -- categorically, independent of the isPrivate default (which
+      // getRegisterDefault can leave false). Plus the existing isPrivate gate.
+      // The book's OWN TEXT never reaches here at all: only book.title/author
+      // are passed (currentBook above), and note bodies are marginalia/question.
       if (state.notebookEntries[key] &&
-          state.notebookEntries[key].isPrivate === true) {
+          (state.notebookEntries[key].isPrivate === true ||
+           state.notebookEntries[key].register === 'journal')) {
         continue;
       }
       collected.push(state.notebookEntries[key]);
