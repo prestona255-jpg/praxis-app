@@ -10893,6 +10893,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-page.lum-amber-deep .st-pub-flag{ width:7px; height:7px; border-radius:1.5px; background:var(--lum-gold); box-shadow:0 0 8px rgba(255,206,74,.6); }
 .st-page.lum-amber-deep .st-pill-publish.done{ color:var(--lum-ink-2); border-color:var(--lum-glass-bd-2); background:rgba(255,255,255,.05); }
 .st-page.lum-amber-deep .st-pill-publish.done .st-pub-flag{ background:var(--lum-cyan); box-shadow:0 0 8px rgba(127,208,240,.5); }
+/* Wave 3 (access fix): the Page -> Build entry link, mirroring Build's .stb-openpage (quiet mono). */
+.st-page.lum-amber-deep .st-tb-build{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-ink-2); text-decoration:none; white-space:nowrap; }
+.st-page.lum-amber-deep .st-tb-build:hover{ color:var(--lum-gold-l); }
 
 /* --- 3-col grid --- */
 .st-page.lum-amber-deep .st-grid{ display:grid; grid-template-columns:230px minmax(0,1fr) 190px; gap:34px; align-items:start; }

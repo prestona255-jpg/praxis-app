@@ -8021,6 +8021,17 @@ function renderSubTheoryPage(id) {
     paintStPub();
   });
   stTbRight.appendChild(stPub);
+  // Wave 3 (access fix): the Page -> Build entry. renderSubTheoryBuild
+  // (#subtheory/<id>/build) was reachable ONLY via the one-shot new-subtheory
+  // mint redirect (renderRoute ~505), so it orphaned for every EXISTING
+  // sub-theory. This quiet mono link is the reciprocal of Build's "Open the
+  // page →" -- it makes the pull-from-your-reading compose surface reachable
+  // again from the formed Page. Plain <a href>: refresh-stable, no handler.
+  var stBuildLink = document.createElement('a');
+  stBuildLink.className = 'st-tb-build';
+  stBuildLink.href = '#subtheory/' + id + '/build';
+  stBuildLink.textContent = 'Continue building →';
+  stTbRight.appendChild(stBuildLink);
   stTopbar.appendChild(stTbRight);
   wrap.appendChild(stTopbar);
 
