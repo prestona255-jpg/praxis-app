@@ -10914,6 +10914,11 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* --- the canvas as Cormorant prose (writing-canvas.js wc-* markup, restyled) --- */
 .st-page.lum-amber-deep .st-canvas-host .wc-wrap{ background:none; border:none; padding:0; }
+/* Wave 3 sheet fix: the legacy .st-page .manuscript (0,2,0) paints the writing box CREAM
+   (background:var(--page-2) -- a bright-only token never re-pointed under [data-ground=dark]).
+   This wrapper-scoped override (0,3,0, and later in source order than line ~10046) dissolves
+   the box so the prose sits directly on the dark .st-main glass, per the mockup. */
+.st-page.lum-amber-deep .manuscript{ background:none; border:none; box-shadow:none; border-radius:0; padding:0; }
 .st-page.lum-amber-deep .st-canvas-host .wc-input{ font-family:var(--lum-serif); font-size:20px; line-height:1.78; color:var(--lum-ink-2); min-height:240px; outline:none; }
 .st-page.lum-amber-deep .st-canvas-host .wc-input p{ margin:0 0 16px; }
 .st-page.lum-amber-deep .st-canvas-host .wc-input:empty:before,
@@ -11144,7 +11149,11 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* leaves */
 .notebook.lum-amber-deep .notebook-leaves{ display:flex; }
-.notebook.lum-amber-deep .leaf{ flex:1; min-width:0; padding:24px 26px; }
+/* Wave 3 sheet fix: the legacy .notebook .leaf (0,2,0, line ~9827) paints the leaves CREAM +
+   a light dotted-grid paper (background:var(--page-2) + background-image:radial-gradient dots).
+   This wrapper-scoped override (0,3,0, later in source order) kills BOTH (the shorthand resets
+   background-image too) -> the leaves show the dark .notebook-spread glass. */
+.notebook.lum-amber-deep .leaf{ flex:1; min-width:0; padding:24px 26px; background:none; }
 .notebook.lum-amber-deep .leaf-left{ border-right:1px solid rgba(255,236,200,.12); }
 .notebook.lum-amber-deep .nb-bookhead .bt{ font-family:var(--lum-serif); font-weight:600; font-size:19px; color:var(--lum-ink); }
 .notebook.lum-amber-deep .nb-bookhead .ba{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); margin-top:3px; }
