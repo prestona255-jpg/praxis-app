@@ -370,7 +370,7 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -7815,7 +7815,66 @@ function renderSubTheoryPage(id) {
   }
 
   var wrap = document.createElement('section');
-  wrap.className = 'st-page';
+  wrap.className = 'st-page lum-amber-deep';
+
+  // Wave 3 (The Page): topbar -- back to the arc, the sub-theory's own hero
+  // idea-mark (real markShape/markColor via the shared PraxisMarks bridge,
+  // per-instance url(#mgN) gradient), a saved cue, and the quiet private-
+  // milestone publish pill. The pill flips the EXISTING status/publishedAt
+  // fields (draft<->published); no broadcast, no schema change.
+  var stArcTop = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
+  var stTopbar = document.createElement('header');
+  stTopbar.className = 'st-topbar';
+  var stTbLeft = document.createElement('div');
+  stTbLeft.className = 'st-tb-left';
+  var stBack = document.createElement('a');
+  stBack.className = 'st-tb-back';
+  stBack.href = subTheory.arcId ? ('#arc/' + subTheory.arcId) : '#arcs';
+  stBack.textContent = '‹ ' + ((stArcTop && stArcTop.title) ? stArcTop.title : 'Arc');
+  stTbLeft.appendChild(stBack);
+  var stHeroMark = document.createElement('span');
+  stHeroMark.className = 'st-hero-mark';
+  stHeroMark.innerHTML = bookSubMarkHTML(subTheory, 30);
+  stTbLeft.appendChild(stHeroMark);
+  var stKicker = document.createElement('div');
+  stKicker.className = 'st-tb-kicker';
+  stKicker.textContent = 'A SUB-THEORY · STILL FORMING';
+  stTbLeft.appendChild(stKicker);
+  stTopbar.appendChild(stTbLeft);
+  var stTbRight = document.createElement('div');
+  stTbRight.className = 'st-tb-right';
+  var stSaved = document.createElement('span');
+  stSaved.className = 'st-tb-saved';
+  var stSavedDot = document.createElement('span');
+  stSavedDot.className = 'st-tb-dot';
+  stSaved.appendChild(stSavedDot);
+  stSaved.appendChild(document.createTextNode('saved'));
+  stTbRight.appendChild(stSaved);
+  var stPub = document.createElement('button');
+  stPub.type = 'button';
+  function stPubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
+  function paintStPub() {
+    stPub.className = 'st-pill-publish' + (stPubDone() ? ' done' : '');
+    stPub.innerHTML = '';
+    var flag = document.createElement('span');
+    flag.className = 'st-pub-flag';
+    stPub.appendChild(flag);
+    stPub.appendChild(document.createTextNode(stPubDone() ? 'Milestone set' : 'Set as milestone'));
+  }
+  paintStPub();
+  stPub.addEventListener('click', function() {
+    var r = state.subTheories[id];
+    if (!r) { return; }
+    if (stPubDone()) { r.status = 'draft'; r.publishedAt = null; }
+    else { r.status = 'published'; r.publishedAt = Date.now(); }
+    r.updatedAt = Date.now();
+    if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+    saveState();
+    paintStPub();
+  });
+  stTbRight.appendChild(stPub);
+  stTopbar.appendChild(stTbRight);
+  wrap.appendChild(stTopbar);
 
   var main = document.createElement('div');
   main.className = 'st-main';
@@ -7936,21 +7995,18 @@ function renderSubTheoryPage(id) {
   publicBody.addEventListener('focus', function() { lastFocusedBody = publicBody; });
   intelBody.addEventListener('focus', function() { lastFocusedBody = intelBody; });
   function insertCitationAtCursor(text) {
-    var target = lastFocusedBody;
-    var caret;
-    if (target) {
-      caret = (typeof target.selectionStart === 'number')
-        ? target.selectionStart : target.value.length;
-      target.value = target.value.substring(0, caret) + text +
-        target.value.substring(caret);
-    } else {
-      target = activeRegisterPublic ? publicBody : intelBody;
-      target.value = target.value + text;
-      caret = target.value.length - text.length;
-    }
-    target.focus();
-    if (typeof target.setSelectionRange === 'function') {
-      target.setSelectionRange(caret + text.length, caret + text.length);
+    // Wave 3: weave the citation into the visible canvas at the caret
+    // (handle.insertAtCaret -- no core change), then mirror the canvas markdown
+    // into the active register's hidden textarea so the citation engine + the
+    // persisted body stay consistent. (The old textarea-caret path is retired
+    // with the textareas now hidden; lastFocusedBody stays declared, unused.)
+    if (canvas) {
+      canvas.insertAtCaret(text);
+      var ta = activeRegisterPublic ? publicBody : intelBody;
+      ta.value = canvas.getValue();
+      var patch = {};
+      patch[activeRegisterPublic ? 'bodyPublic' : 'bodyIntellectual'] = ta.value;
+      updateSubTheory(id, patch);
     }
     refreshCitationPreviews();
   }
@@ -7993,8 +8049,13 @@ function renderSubTheoryPage(id) {
   // matching preview pane shows only in Preview; tab actives reflect both axes.
   function applyEditorView() {
     var pub = activeRegisterPublic;
-    publicBody.style.display = (!draftPreview && pub) ? '' : 'none';
-    intelBody.style.display = (!draftPreview && !pub) ? '' : 'none';
+    // Wave 3: the canvas is the editor; the register textareas stay hidden
+    // (citation-engine model only). canvasHost shows in Write, hides in Preview.
+    publicBody.style.display = 'none';
+    intelBody.style.display = 'none';
+    if (typeof canvasHost !== 'undefined' && canvasHost) {
+      canvasHost.style.display = draftPreview ? 'none' : '';
+    }
     if (publicPreview) { publicPreview.style.display = (draftPreview && pub) ? '' : 'none'; }
     if (intelPreview) { intelPreview.style.display = (draftPreview && !pub) ? '' : 'none'; }
     publicTab.className = 'seg-opt' + (pub ? ' is-on' : '');
@@ -8003,7 +8064,17 @@ function renderSubTheoryPage(id) {
     previewTab.className = 'seg-opt' + (draftPreview ? ' is-on' : '');
   }
   function showRegister(showPublic) {
+    // Wave 3: re-point the single canvas at the chosen register. Flush the
+    // canvas into the CURRENT register's textarea first (so an un-blurred edit
+    // is not lost), then load the other register's stored text.
+    if (canvas) {
+      var curTa = activeRegisterPublic ? publicBody : intelBody;
+      curTa.value = canvas.getValue();
+    }
     activeRegisterPublic = showPublic;
+    if (canvas) {
+      canvas.setValue((showPublic ? publicBody : intelBody).value);
+    }
     applyEditorView();
   }
   function setDraftPreview(on) {
@@ -8023,6 +8094,46 @@ function renderSubTheoryPage(id) {
   manuscript.className = 'manuscript';
   manuscript.appendChild(publicBody);
   manuscript.appendChild(intelBody);
+
+  // Wave 3 (The Page): adopt the shared WritingCanvas as the visible Cormorant
+  // body editor -- EXACTLY like openMarginaliaEditor (mount + opts.onSave),
+  // writing-canvas.js UNMODIFIED. The two register textareas above stay in the
+  // DOM as the citation engine's model (refreshCitationPreviews / maybeAutocomplete
+  // read their .value) but are hidden; the canvas mirrors getValue() into the
+  // active register's textarea and persists via updateSubTheory. bodyPublic is
+  // the PRIMARY editable body; the Public|Intellectual toggle re-points the canvas.
+  var canvas = null;
+  publicBody.style.display = 'none';
+  intelBody.style.display = 'none';
+  var canvasHost = document.createElement('div');
+  canvasHost.className = 'st-canvas-host';
+  manuscript.appendChild(canvasHost);
+  // light brightens as you write: a PASSIVE input listener on the mounted
+  // contenteditable element (no core change), driving --lit on the sheet.
+  function stBumpLight() {
+    var n = (canvas ? canvas.getValue().length : 0) + (headerInput.value || '').length;
+    var lit = 0.55 + Math.min(1.05, n / 1100);
+    main.style.setProperty('--lit', lit.toFixed(3));
+  }
+  canvas = createWritingCanvas(canvasHost, {
+    surfaceId:    'subtheory-page',
+    placeholder:  'Begin the prose…',
+    initialValue: subTheory.bodyPublic || '',
+    flags:        { focusMode: false },
+    onSave: function(markdown, report) {
+      var md = (typeof markdown === 'string') ? markdown : '';
+      var ta = activeRegisterPublic ? publicBody : intelBody;
+      ta.value = md;
+      var patch = {};
+      patch[activeRegisterPublic ? 'bodyPublic' : 'bodyIntellectual'] = md;
+      updateSubTheory(id, patch);
+      refreshCitationPreviews();
+      if (report && report.setLocal) { report.setLocal(true); }
+    }
+  });
+  var stWcInput = canvasHost.querySelector ? canvasHost.querySelector('.wc-input') : null;
+  if (stWcInput) { stWcInput.addEventListener('input', stBumpLight); }
+  stBumpLight();
 
   // ===== 10.2 citation preview (Option A), slice 2: panes + parser + dots =====
   // A read-only pane under each register mirrors that register's prose with
@@ -8060,6 +8171,7 @@ function renderSubTheoryPage(id) {
     if (on) {
       publicBody.style.display = 'none';
       intelBody.style.display = 'none';
+      if (typeof canvasHost !== 'undefined' && canvasHost) { canvasHost.style.display = 'none'; }
       publicPreview.style.display = 'none';
       intelPreview.style.display = 'none';
       previewHost.innerHTML = '';
@@ -8517,63 +8629,114 @@ function renderSubTheoryPage(id) {
     return 'External source';
   }
 
+  // Wave 3 (The Page): resolve an evidence element's SOURCE BOOK (real record)
+  // so the rail card can show a real cover. A 'book' evidence points at the
+  // book directly; an 'entry' (marginalia) resolves its first tagged book.
+  function stEvidenceSourceBook(el) {
+    if (el.kind === 'book') { return (state.books && state.books[el.refId]) || null; }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      if (en && Array.isArray(en.bookIds) && en.bookIds.length) {
+        return (state.books && state.books[en.bookIds[0]]) || null;
+      }
+    }
+    return null;
+  }
+  function stEvidenceTitle(el) {
+    var bk = stEvidenceSourceBook(el);
+    if (bk && bk.title) { return bk.title; }
+    if (el.kind === 'external' && el.external && el.external.title) { return el.external.title; }
+    if (el.kind === 'entry') {
+      var en = state.notebookEntries && state.notebookEntries[el.refId];
+      if (en && en.title) { return en.title; }
+      return 'Marked passage';
+    }
+    return 'Source';
+  }
+  function stEvidenceAuthor(el) {
+    var bk = stEvidenceSourceBook(el);
+    if (bk && bk.author) { return bk.author; }
+    if (el.kind === 'external' && el.external && el.external.author) { return el.external.author; }
+    return '';
+  }
+  function stEvidenceCover(el) {
+    var bk = stEvidenceSourceBook(el);
+    var cover = document.createElement('span');
+    if (bk && bk.coverUrl) {
+      cover.className = 'st-ev-cover';
+      var img = document.createElement('img');
+      img.className = 'st-ev-cover-img';
+      img.src = bk.coverUrl;
+      img.alt = '';
+      cover.appendChild(img);
+    } else {
+      // cloth fallback with the title's initial -- NOT a mark.
+      cover.className = 'st-ev-cover st-ev-cover-cloth';
+      var t = stEvidenceTitle(el);
+      cover.textContent = (t && t.length) ? t.charAt(0).toUpperCase() : '·';
+    }
+    return cover;
+  }
+
   function buildAttachedRow(el) {
     var row = document.createElement('div');
-    row.className = 'subtheory-attached-row';
-    // S6: hollow teal ring = gathered (every attached element is gathered;
-    // the filled "incorporated" state has no data until Stage 10's prose
-    // anchors, so no filled variant renders). Mockup .rail-it .ring.
-    var ring = document.createElement('span');
-    ring.className = 'subtheory-attached-ring';
-    ring.setAttribute('aria-hidden', 'true');
-    row.appendChild(ring);
-    var body = document.createElement('div');
-    body.className = 'subtheory-attached-body';
-    var label = document.createElement('div');
-    label.className = 'subtheory-attached-label';
-    label.textContent = evidenceLabel(el);
-    body.appendChild(label);
-    // 10.5.2: Cite — inserts *Title* at the caret of the last-focused
-    // register (insertCitationAtCursor owns the fallback). Only rendered
-    // when the element HAS a citable title (citationMatchTitle returns ''
-    // for an untitled marginalia/journal entry -- nothing to italicize).
-    var citeTitle = citationMatchTitle(el);
-    if (citeTitle) {
-      var citeBtn = document.createElement('a');
-      citeBtn.href = '#';
-      citeBtn.className = 'subtheory-attached-cite';
-      citeBtn.textContent = 'Cite';
-      citeBtn.addEventListener('click', function(ev) {
-        ev.preventDefault();
-        insertCitationAtCursor('*' + citeTitle + '*');
-      });
-      body.appendChild(citeBtn);
-    }
-    // 10.4: a private (or missing) journal entry is excluded when published.
-    // Tag the row here in the editing rail so the owner sees it at manage time
-    // (the read-only published render simply drops it, with no marker).
+    row.className = 'st-ev-card';
+    // top: real source-book cover (coverUrl, cloth fallback) + title + author.
+    var top = document.createElement('div');
+    top.className = 'st-ev-top';
+    top.appendChild(stEvidenceCover(el));
+    var meta = document.createElement('div');
+    meta.className = 'st-ev-meta';
+    var bookEl = document.createElement('div');
+    bookEl.className = 'st-ev-book';
+    bookEl.textContent = stEvidenceTitle(el);
+    meta.appendChild(bookEl);
+    var authEl = document.createElement('div');
+    authEl.className = 'st-ev-author';
+    authEl.textContent = stEvidenceAuthor(el);
+    meta.appendChild(authEl);
+    top.appendChild(meta);
+    row.appendChild(top);
+    // 10.4: private/missing journal entry is excluded when published -- tag it
+    // in the editing rail so the owner sees it at manage time.
     if (el.kind === 'entry') {
       var ren = state.notebookEntries && state.notebookEntries[el.refId];
       if (!ren || ren.isPrivate === true) {
         var ptag = document.createElement('span');
         ptag.className = 'subtheory-attached-private-tag';
         ptag.textContent = 'private — excluded when published';
-        body.appendChild(ptag);
+        row.appendChild(ptag);
       }
     }
     if (el.quote) {
       var q = document.createElement('p');
-      q.className = 'subtheory-attached-quote';
+      q.className = 'st-ev-quote';
       q.textContent = '“' + el.quote + '”';
-      body.appendChild(q);
+      row.appendChild(q);
     }
     if (el.annotation) {
       var a = document.createElement('p');
-      a.className = 'subtheory-attached-annotation';
+      a.className = 'st-ev-annotation';
       a.textContent = el.annotation;
-      body.appendChild(a);
+      row.appendChild(a);
     }
-    row.appendChild(body);
+    // weave in -> insertAtCaret a cite chip into the canvas + dim THIS card.
+    // Only when the element has a citable title (untitled marginalia returns
+    // '' -> nothing to italicize). Reuses the citation write-path verbatim.
+    var citeTitle = citationMatchTitle(el);
+    if (citeTitle) {
+      var weaveBtn = document.createElement('button');
+      weaveBtn.type = 'button';
+      weaveBtn.className = 'st-weave';
+      weaveBtn.textContent = 'weave in';
+      weaveBtn.addEventListener('click', function() {
+        if (row.className.indexOf('woven') !== -1) { return; }
+        insertCitationAtCursor(' *' + citeTitle + '* ');
+        row.className = 'st-ev-card woven';
+        weaveBtn.textContent = 'woven in';
+      });
+      row.appendChild(weaveBtn);
+    }
     return row;
   }
 
@@ -8859,8 +9022,116 @@ function renderSubTheoryPage(id) {
   // Mobile-only Evidence toggle sits at the top of the prose column.
   main.insertBefore(railToggle, main.firstChild);
 
-  wrap.appendChild(main);
-  wrap.appendChild(rail);
+  // Wave 3 (The Page): connections foot -- one row per real linkedSubTheories
+  // id: the partner's PraxisMarks glyph + its title. NO relation label (the data
+  // carries none; the mockup's relation words are placeholder). "+ draw a
+  // connection" routes to the parent arc constellation, where the existing
+  // linkSubTheories Connect flow lives (preserve, never rebuild).
+  var stConn = document.createElement('footer');
+  stConn.className = 'st-connections';
+  var stConnHead = document.createElement('div');
+  stConnHead.className = 'st-conn-head';
+  stConnHead.textContent = 'CONNECTIONS';
+  stConn.appendChild(stConnHead);
+  var stLinks = Array.isArray(subTheory.linkedSubTheories) ? subTheory.linkedSubTheories : [];
+  var sci, stConnShown = 0;
+  for (sci = 0; sci < stLinks.length; sci++) {
+    var partner = state.subTheories && state.subTheories[stLinks[sci]];
+    if (!partner) { continue; }
+    var crow = document.createElement('a');
+    crow.className = 'st-conn-row';
+    crow.href = '#subtheory/' + partner.id;
+    var cglyph = document.createElement('span');
+    cglyph.className = 'st-conn-glyph';
+    cglyph.innerHTML = bookSubMarkHTML(partner, 22);
+    crow.appendChild(cglyph);
+    var ctitle = document.createElement('span');
+    ctitle.className = 'st-conn-title';
+    ctitle.textContent = partner.header || 'Untitled sub-theory';
+    crow.appendChild(ctitle);
+    stConn.appendChild(crow);
+    stConnShown++;
+  }
+  if (stConnShown === 0) {
+    var cnone = document.createElement('p');
+    cnone.className = 'st-conn-empty';
+    cnone.textContent = 'No connections yet.';
+    stConn.appendChild(cnone);
+  }
+  var stConnAdd = document.createElement('button');
+  stConnAdd.type = 'button';
+  stConnAdd.className = 'st-conn-add';
+  stConnAdd.textContent = '＋ draw a connection';
+  stConnAdd.addEventListener('click', function() {
+    location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : 'arcs';
+  });
+  stConn.appendChild(stConnAdd);
+  main.appendChild(stConn);
+
+  // Wave 3 (The Page): Yumi's cyan margin -- connective notes drawn ONLY from
+  // real signals (the sub's marked passages + the reader-model summary), never a
+  // summary of the user's own prose. Each note is dismissable. Gated by the
+  // master yumiReadsAlong consent. Yumi is ALWAYS cyan (--lum-cyan), never a mark.
+  var stYumi = document.createElement('aside');
+  stYumi.className = 'st-yumi';
+  var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var stProf = (stUser && typeof getProfile === 'function') ? getProfile(stUser.uid) : null;
+  var stReadsAlong = !(stProf && stProf.yumiReadsAlong === false);
+  function stAddYumiNote(pre, emText, post) {
+    var note = document.createElement('div');
+    note.className = 'st-yumi-note';
+    var p = document.createElement('p');
+    if (pre) { p.appendChild(document.createTextNode(pre)); }
+    if (emText) { var em = document.createElement('em'); em.textContent = emText; p.appendChild(em); }
+    if (post) { p.appendChild(document.createTextNode(post)); }
+    note.appendChild(p);
+    var dz = document.createElement('button');
+    dz.type = 'button';
+    dz.className = 'st-yumi-dismiss';
+    dz.setAttribute('aria-label', 'Dismiss');
+    dz.textContent = '×';
+    dz.addEventListener('click', function() { if (note.parentNode) { note.parentNode.removeChild(note); } });
+    note.appendChild(dz);
+    stYumi.appendChild(note);
+  }
+  if (stReadsAlong) {
+    var stYumiEye = document.createElement('div');
+    stYumiEye.className = 'st-yumi-eyebrow';
+    var stYumiDot = document.createElement('span');
+    stYumiDot.className = 'lum-light';
+    stYumiEye.appendChild(stYumiDot);
+    stYumiEye.appendChild(document.createTextNode('YUMI'));
+    stYumi.appendChild(stYumiEye);
+    var stEv = Array.isArray(subTheory.evidence) ? subTheory.evidence : [];
+    var syi, stYumiNotes = 0;
+    for (syi = 0; syi < stEv.length && stYumiNotes < 2; syi++) {
+      var sbk = stEvidenceSourceBook(stEv[syi]);
+      if (sbk && sbk.title) {
+        stAddYumiNote('You marked this same nerve in ', sbk.title, ' — the two of you are circling one question.');
+        stYumiNotes++;
+      }
+    }
+    var stRMConsent = !!(stProf && stProf.yumiReaderModel === true);
+    if (stRMConsent && stUser && typeof getReaderModel === 'function') {
+      var stRM = getReaderModel(stUser.uid);
+      if (stRM && stRM.profile && stRM.profile.summary) {
+        stAddYumiNote('From how you read: ', stRM.profile.summary, '');
+        stYumiNotes++;
+      }
+    }
+    if (stYumiNotes === 0) {
+      stAddYumiNote('As you weave your marked passages in, I’ll notice where they press on each other.', '', '');
+    }
+  }
+
+  // Wave 3 (The Page): the 3-column reading-room grid -- evidence rail (left) ·
+  // the lifted sheet + connections (center) · Yumi's cyan margin (right).
+  var stGrid = document.createElement('div');
+  stGrid.className = 'st-grid';
+  stGrid.appendChild(rail);
+  stGrid.appendChild(main);
+  stGrid.appendChild(stYumi);
+  wrap.appendChild(stGrid);
   wrap.appendChild(backdrop);
   host.appendChild(wrap);
 }
