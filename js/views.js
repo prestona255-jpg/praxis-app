@@ -499,7 +499,10 @@ function renderRoute() {
   if (parts[0] === 'arc' && parts[2] === 'new-subtheory') {
     var draft = createSubTheory(parts[1], {});
     if (draft) {
-      location.replace('#subtheory/' + draft.id);
+      // Wave 3: mint at this seam (unchanged), then RENDER the Build surface at
+      // a refresh-stable URL (instead of bouncing to the Page). location.replace
+      // keeps the create-hash out of history so Back never re-mints a draft.
+      location.replace('#subtheory/' + draft.id + '/build');
     } else {
       location.replace('#arcs');
     }
@@ -510,6 +513,19 @@ function renderRoute() {
   // the parent arc so the arc lens stays coherent (the sub-theory lives
   // inside that arc), and currentBookId clears. A dangling id still sets
   // the pointer -- renderSubTheoryPage owns the not-found render.
+  if (parts[0] === 'subtheory' && parts[1] && parts[2] === 'build') {
+    // Wave 3 (Sub-theory Build): the create/compose surface for the freshly-
+    // minted draft (new-subtheory redirects here, refresh-stable). Dark ground
+    // comes from parts[0]==='subtheory' in umberGroundDark; 'arc' is untouched.
+    // MUST precede the plain #subtheory/<id> branch (parts[1] truthy).
+    var stbRec = state.subTheories[parts[1]];
+    state.currentSubTheoryId = parts[1];
+    state.currentArcId  = stbRec ? stbRec.arcId : null;
+    state.currentBookId = null;
+    saveState();
+    renderSubTheoryBuild(parts[1]);
+    return;
+  }
   if (parts[0] === 'subtheory' && parts[1]) {
     var stRec = state.subTheories[parts[1]];
     state.currentSubTheoryId = parts[1];
@@ -9133,6 +9149,345 @@ function renderSubTheoryPage(id) {
   stGrid.appendChild(stYumi);
   wrap.appendChild(stGrid);
   wrap.appendChild(backdrop);
+  host.appendChild(wrap);
+}
+
+// Wave 3 (Sub-theory Build): the create/compose surface for a freshly-minted
+// draft, reached from #arc/<arcId>/new-subtheory (mints the draft, then
+// redirects to the refresh-stable #subtheory/<id>/build). Two-column shell on
+// the FULL-BLEED .lum-amber-deep ground: MAIN = the forming sub-theory's hero
+// mark (ADDED via PraxisMarks -- the spec predates marks) + editable Cormorant
+// title + the SAME shared createWritingCanvas (bound to bodyPublic, like the
+// Page) with woven cite chips, Yumi's cyan margin, and the connections foot;
+// RIGHT RAIL = "Pull from your reading" -- the reader's real books, each
+// expandable to its real marginalia, each note weave-able (insertAtCaret cite +
+// addEvidence kind 'entry' so it becomes real evidence). "Open the page" commits
+// on to #subtheory/<id>. Reuses bookSubMarkHTML / addEvidence / updateSubTheory;
+// writing-canvas.js UNCHANGED.
+function renderSubTheoryBuild(id) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) return;
+  host.innerHTML = '';
+  var subTheory = state.subTheories && state.subTheories[id];
+  if (!subTheory) {
+    var nf = document.createElement('section');
+    nf.className = 'arc-detail-not-found';
+    var nfMsg = document.createElement('p');
+    nfMsg.textContent = 'That sub-theory could not be found.';
+    var nfLink = document.createElement('a');
+    nfLink.href = '#arcs';
+    nfLink.textContent = 'Back to Arcs';
+    nf.appendChild(nfMsg); nf.appendChild(nfLink); host.appendChild(nf);
+    return;
+  }
+  var arc = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
+
+  var wrap = document.createElement('section');
+  wrap.className = 'st-build lum-amber-deep';
+
+  var intro = document.createElement('div');
+  intro.className = 'stb-intro';
+  var introEye = document.createElement('p');
+  introEye.className = 'stb-eyebrow';
+  introEye.textContent = (arc && arc.title ? arc.title : 'Arc') + ' · build a sub-theory';
+  intro.appendChild(introEye);
+  var introH = document.createElement('h1');
+  introH.className = 'stb-h1';
+  introH.appendChild(document.createTextNode('Build a sub-theory '));
+  var introEm = document.createElement('em');
+  introEm.textContent = 'from your reading.';
+  introH.appendChild(introEm);
+  intro.appendChild(introH);
+  wrap.appendChild(intro);
+
+  var buildRow = document.createElement('div');
+  buildRow.className = 'stb-build';
+
+  // ===== MAIN =====
+  var main = document.createElement('div');
+  main.className = 'stb-main';
+
+  var sthead = document.createElement('div');
+  sthead.className = 'stb-head';
+  var heroMark = document.createElement('span');
+  heroMark.className = 'stb-hero-mark';
+  heroMark.innerHTML = bookSubMarkHTML(subTheory, 32);
+  sthead.appendChild(heroMark);
+
+  var titleWrap = document.createElement('div');
+  titleWrap.className = 'stb-title-wrap';
+  var titleInput = document.createElement('input');
+  titleInput.type = 'text';
+  titleInput.className = 'stb-title-input';
+  titleInput.setAttribute('placeholder', 'Name the forming sub-theory');
+  titleInput.value = subTheory.header || '';
+  titleInput.addEventListener('blur', function() { updateSubTheory(id, { header: titleInput.value }); });
+  titleWrap.appendChild(titleInput);
+  var into = document.createElement('div');
+  into.className = 'stb-into';
+  into.textContent = 'a forming sub-theory in ' + (arc && arc.title ? arc.title : 'this arc');
+  titleWrap.appendChild(into);
+  sthead.appendChild(titleWrap);
+
+  var acts = document.createElement('div');
+  acts.className = 'stb-acts';
+  var saved = document.createElement('span');
+  saved.className = 'stb-saved';
+  saved.textContent = 'saved';
+  acts.appendChild(saved);
+  var pub = document.createElement('button');
+  pub.type = 'button';
+  function pubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
+  function paintPub() {
+    pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '');
+    pub.textContent = pubDone() ? 'Published · private' : 'Publish';
+  }
+  paintPub();
+  pub.addEventListener('click', function() {
+    var r = state.subTheories[id]; if (!r) return;
+    if (pubDone()) { r.status = 'draft'; r.publishedAt = null; }
+    else { r.status = 'published'; r.publishedAt = Date.now(); }
+    r.updatedAt = Date.now();
+    if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
+    saveState(); paintPub();
+  });
+  acts.appendChild(pub);
+  var openPage = document.createElement('a');
+  openPage.className = 'stb-openpage';
+  openPage.href = '#subtheory/' + id;
+  openPage.textContent = 'Open the page →';
+  acts.appendChild(openPage);
+  sthead.appendChild(acts);
+  main.appendChild(sthead);
+
+  // the sheet (canvas + Yumi margin + connections)
+  var sheet = document.createElement('div');
+  sheet.className = 'stb-sheet';
+
+  var canvas = null;
+  var canvasHost = document.createElement('div');
+  canvasHost.className = 'stb-canvas-host';
+  sheet.appendChild(canvasHost);
+  function bumpLight() {
+    var n = (canvas ? canvas.getValue().length : 0) + (titleInput.value || '').length;
+    var lit = 0.55 + Math.min(1.05, n / 1100);
+    sheet.style.setProperty('--lit', lit.toFixed(3));
+  }
+  canvas = createWritingCanvas(canvasHost, {
+    surfaceId:    'subtheory-build',
+    placeholder:  'Begin the prose…',
+    initialValue: subTheory.bodyPublic || '',
+    flags:        { focusMode: false },
+    onSave: function(markdown, report) {
+      var md = (typeof markdown === 'string') ? markdown : '';
+      updateSubTheory(id, { bodyPublic: md });
+      if (report && report.setLocal) { report.setLocal(true); }
+    }
+  });
+  var wcInput = canvasHost.querySelector ? canvasHost.querySelector('.wc-input') : null;
+  if (wcInput) { wcInput.addEventListener('input', bumpLight); }
+  bumpLight();
+
+  // weave a marginalia note into the canvas (insertAtCaret, no core change) AND
+  // attach it as real evidence (addEvidence kind 'entry') so it carries to the Page.
+  function weaveNote(book, entryId, btn) {
+    if (btn.className.indexOf('done') !== -1) { return; }
+    var citeTitle = (book && book.title) ? book.title : 'a note';
+    if (canvas) { canvas.insertAtCaret(' *' + citeTitle + '* '); }
+    var en = state.notebookEntries && state.notebookEntries[entryId];
+    var quote = (en && typeof en.body === 'string') ? en.body : '';
+    addEvidence(id, { kind: 'entry', refId: entryId, quote: quote });
+    btn.className = 'stb-weave done';
+    btn.textContent = 'woven in';
+  }
+
+  // Yumi cyan margin -- one connective note from REAL signals only (reader-model
+  // summary, else a connective prompt), dismissable, gated by yumiReadsAlong.
+  var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var stProf = (stUser && typeof getProfile === 'function') ? getProfile(stUser.uid) : null;
+  var readsAlong = !(stProf && stProf.yumiReadsAlong === false);
+  if (readsAlong) {
+    var ym = document.createElement('div');
+    ym.className = 'stb-ymargin';
+    var yd = document.createElement('span');
+    yd.className = 'stb-yd';
+    ym.appendChild(yd);
+    var yp = document.createElement('p');
+    var ymPre = 'Pull a marked passage in from the right, and I’ll watch for where your books start ';
+    var ymEm = 'pressing on each other.';
+    var rmConsent = !!(stProf && stProf.yumiReaderModel === true);
+    if (rmConsent && stUser && typeof getReaderModel === 'function') {
+      var rm = getReaderModel(stUser.uid);
+      if (rm && rm.profile && rm.profile.summary) { ymPre = 'From how you read: '; ymEm = rm.profile.summary; }
+    }
+    yp.appendChild(document.createTextNode(ymPre));
+    var ymEmN = document.createElement('em');
+    ymEmN.textContent = ymEm;
+    yp.appendChild(ymEmN);
+    ym.appendChild(yp);
+    var yx = document.createElement('span');
+    yx.className = 'stb-yx';
+    yx.textContent = '×';
+    yx.addEventListener('click', function() { if (ym.parentNode) { ym.parentNode.removeChild(ym); } });
+    ym.appendChild(yx);
+    sheet.appendChild(ym);
+  }
+
+  // connections foot (glyph + title, NO relation label)
+  var conn = document.createElement('div');
+  conn.className = 'stb-conn';
+  var connHead = document.createElement('p');
+  connHead.className = 'stb-conn-head';
+  connHead.textContent = 'CONNECTIONS';
+  conn.appendChild(connHead);
+  var links = Array.isArray(subTheory.linkedSubTheories) ? subTheory.linkedSubTheories : [];
+  var ci, shown = 0;
+  for (ci = 0; ci < links.length; ci++) {
+    var partner = state.subTheories && state.subTheories[links[ci]];
+    if (!partner) { continue; }
+    var crow = document.createElement('a');
+    crow.className = 'stb-crow';
+    crow.href = '#subtheory/' + partner.id;
+    var cg = document.createElement('span');
+    cg.className = 'stb-crow-glyph';
+    cg.innerHTML = bookSubMarkHTML(partner, 18);
+    crow.appendChild(cg);
+    var ct = document.createElement('span');
+    ct.className = 'stb-crow-title';
+    ct.textContent = partner.header || 'Untitled sub-theory';
+    crow.appendChild(ct);
+    conn.appendChild(crow);
+    shown++;
+  }
+  if (shown === 0) {
+    var cnone = document.createElement('p');
+    cnone.className = 'stb-conn-empty';
+    cnone.textContent = 'No connections yet.';
+    conn.appendChild(cnone);
+  }
+  var connAdd = document.createElement('button');
+  connAdd.type = 'button';
+  connAdd.className = 'stb-conn-add';
+  connAdd.textContent = '＋ draw a connection';
+  connAdd.addEventListener('click', function() { location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : 'arcs'; });
+  conn.appendChild(connAdd);
+  sheet.appendChild(conn);
+
+  main.appendChild(sheet);
+  buildRow.appendChild(main);
+
+  // ===== RIGHT RAIL: pull from your reading =====
+  var rail = document.createElement('div');
+  rail.className = 'stb-rail';
+  var source = document.createElement('div');
+  source.className = 'stb-source';
+  var srchead = document.createElement('div');
+  srchead.className = 'stb-srchead';
+  var srcTitle = document.createElement('div');
+  srcTitle.className = 'stb-src-title';
+  srcTitle.textContent = 'Pull from your reading';
+  srchead.appendChild(srcTitle);
+  var srcSub = document.createElement('div');
+  srcSub.className = 'stb-src-sub';
+  srcSub.textContent = 'your marginalia — weave any in';
+  srchead.appendChild(srcSub);
+  source.appendChild(srchead);
+
+  function marginaliaFor(bookId) {
+    var out = [];
+    var entries = state.notebookEntries || {};
+    var ek;
+    for (ek in entries) {
+      if (!entries.hasOwnProperty(ek)) { continue; }
+      var en = entries[ek];
+      if (en && en.register === 'marginalia' && Array.isArray(en.bookIds) && en.bookIds.indexOf(bookId) !== -1) {
+        out.push(en);
+      }
+    }
+    return out;
+  }
+  var books = state.books || {};
+  var bookKeys = [];
+  var bk;
+  for (bk in books) { if (books.hasOwnProperty(bk)) { bookKeys.push(bk); } }
+  var anyBook = false;
+  var bi2;
+  for (bi2 = 0; bi2 < bookKeys.length; bi2++) {
+    var book = books[bookKeys[bi2]];
+    if (!book) { continue; }
+    var margs = marginaliaFor(bookKeys[bi2]);
+    if (margs.length === 0) { continue; }
+    anyBook = true;
+    var bookEl = document.createElement('div');
+    bookEl.className = 'stb-book';
+    var brow = document.createElement('div');
+    brow.className = 'stb-brow';
+    var cover = document.createElement('span');
+    if (book.coverUrl) {
+      cover.className = 'stb-bcover';
+      var cimg = document.createElement('img');
+      cimg.className = 'stb-bcover-img';
+      cimg.src = book.coverUrl; cimg.alt = '';
+      cover.appendChild(cimg);
+    } else {
+      cover.className = 'stb-bcover stb-bcover-cloth';
+    }
+    brow.appendChild(cover);
+    var binfo = document.createElement('div');
+    binfo.className = 'stb-binfo';
+    var bt = document.createElement('div');
+    bt.className = 'stb-bt';
+    bt.textContent = book.title || 'Untitled';
+    binfo.appendChild(bt);
+    var bc = document.createElement('div');
+    bc.className = 'stb-bc';
+    bc.textContent = margs.length + (margs.length === 1 ? ' note' : ' notes');
+    binfo.appendChild(bc);
+    brow.appendChild(binfo);
+    var chev = document.createElement('span');
+    chev.className = 'stb-bchev';
+    chev.innerHTML = '&#9656;';
+    brow.appendChild(chev);
+    bookEl.appendChild(brow);
+    var margWrap = document.createElement('div');
+    margWrap.className = 'stb-marg-wrap';
+    var mi;
+    for (mi = 0; mi < margs.length; mi++) {
+      (function(en, bookRef) {
+        var m = document.createElement('div');
+        m.className = 'stb-marg';
+        var passage = document.createElement('div');
+        passage.className = 'stb-passage';
+        passage.textContent = (typeof en.body === 'string') ? en.body : '';
+        m.appendChild(passage);
+        var wbtn = document.createElement('button');
+        wbtn.type = 'button';
+        var already = (typeof isEvidenceAttached === 'function') ? isEvidenceAttached(id, 'entry', en.id) : false;
+        if (already) { wbtn.className = 'stb-weave done'; wbtn.textContent = 'woven in'; }
+        else { wbtn.className = 'stb-weave'; wbtn.textContent = '+ weave in'; }
+        wbtn.addEventListener('click', function() { weaveNote(bookRef, en.id, wbtn); });
+        m.appendChild(wbtn);
+        margWrap.appendChild(m);
+      })(margs[mi], book);
+    }
+    bookEl.appendChild(margWrap);
+    brow.addEventListener('click', (function(bookElRef) {
+      return function() {
+        bookElRef.className = (bookElRef.className.indexOf('open') !== -1) ? 'stb-book' : 'stb-book open';
+      };
+    })(bookEl));
+    source.appendChild(bookEl);
+  }
+  if (!anyBook) {
+    var noBooks = document.createElement('div');
+    noBooks.className = 'stb-src-empty';
+    noBooks.textContent = 'No marked passages yet — add marginalia from a book to pull it in here.';
+    source.appendChild(noBooks);
+  }
+  rail.appendChild(source);
+  buildRow.appendChild(rail);
+
+  wrap.appendChild(buildRow);
   host.appendChild(wrap);
 }
 
