@@ -11442,3 +11442,243 @@ body.wc-focus .app-nav { opacity:.26; }
   .notebook.lum-amber-deep .btn-primary{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE NOTEBOOK ===== */
+
+/* ============================================================================
+   WAVE 1 · THE SHELF  (renderShelf on .lum-amber-deep)
+   Convert Surface 7 to the Amber/Lumen system per design/praxis-shelf-amber.html.
+   Full-bleed deep-amber "reading room" ground; content centered at the reading
+   width; frosted-glass toolbar + sidebar; gold accents; cyan Yumi line; REAL
+   covers (buildSelfHealingCover) kept + framed, alight (gold glow + root-mark)
+   when a book has grown into the reader's thinking (S-D2). ADDITIVE: layers over
+   the .shelf base (theme tokens, 9984-10055) + the shared .shelf-book card rules
+   (2355-2543) via the .shelf.lum-amber-deep wrapper -- SAME pattern as the
+   Notebook. The base rules stay UNTOUCHED (also used by the arc member list +
+   pickers, which keep the theme-token look). Tokens: --lum-* only.
+   ============================================================================ */
+.shelf.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 90px; color:var(--lum-ink); }
+.shelf.lum-amber-deep > *{ box-sizing:border-box; max-width:1080px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+
+/* head */
+.shelf.lum-amber-deep .shelf-head{ display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin:0 0 6px; }
+.shelf.lum-amber-deep .shelf-title{ font-family:var(--lum-serif); font-weight:500; font-size:clamp(30px,4vw,40px); line-height:1; color:var(--lum-ink); margin:0; }
+.shelf.lum-amber-deep .shelf-count{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.06em; color:var(--lum-ink-3); padding-bottom:4px; }
+
+/* S-D1: deterministic reading line (Yumi cyan .lum-yumi primitive) */
+.shelf.lum-amber-deep .shelf-yumiline{ margin:14px 0 20px; }
+.shelf.lum-amber-deep .shelf-yumiline p{ font-size:16px; }
+
+/* toolbar -- frosted glass */
+.shelf.lum-amber-deep .shelf-toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 22px; }
+.shelf.lum-amber-deep .shelf-toolbar .spacer{ flex:1; }
+.shelf.lum-amber-deep .btn{ font-family:var(--lum-sans); font-size:13px; font-weight:500; border-radius:var(--lum-r-pill,999px); padding:9px 16px; border:1px solid var(--lum-glass-bd); background:var(--lum-glass); color:var(--lum-ink-2); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+.shelf.lum-amber-deep .btn:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.shelf.lum-amber-deep .btn-primary{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; font-weight:600; box-shadow:0 8px 20px -10px rgba(255,206,74,.7); }
+.shelf.lum-amber-deep .btn-primary:hover{ color:var(--lum-gold-ink); filter:brightness(1.04); }
+.shelf.lum-amber-deep .chip{ font-family:var(--lum-sans); font-size:12.5px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 13px; background:transparent; }
+.shelf.lum-amber-deep .chip:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); background:rgba(255,236,200,.06); }
+.shelf.lum-amber-deep .seg{ display:inline-flex; padding:3px; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); background:rgba(255,236,200,.06); }
+.shelf.lum-amber-deep .seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; letter-spacing:0; text-transform:none; color:rgba(255,244,224,.66); background:none; border:none; border-radius:var(--lum-r-pill,999px); padding:6px 15px; cursor:pointer; }
+.shelf.lum-amber-deep .seg-opt:hover{ color:var(--lum-ink); }
+.shelf.lum-amber-deep .seg-opt.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); font-weight:600; }
+.shelf.lum-amber-deep .nav-search{ flex:0 1 220px; display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:var(--lum-r-pill,999px); background:rgba(255,236,200,.06); border:1px solid var(--lum-glass-bd-2); color:var(--lum-ink-3); font-size:13px; }
+.shelf.lum-amber-deep .nav-search:hover{ border-color:var(--lum-glass-bd); }
+.shelf.lum-amber-deep .nav-search input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--lum-ink); font-family:var(--lum-sans); font-size:13px; }
+.shelf.lum-amber-deep .nav-search input::placeholder{ color:var(--lum-ink-4); }
+.shelf.lum-amber-deep .shelf-scan-status{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-ink-3); }
+
+/* layout + sidebar rail */
+.shelf.lum-amber-deep .shelf-layout{ display:grid; grid-template-columns:204px 1fr; gap:38px; align-items:start; }
+.shelf.lum-amber-deep .shelf-side{ position:sticky; top:18px; }
+.shelf.lum-amber-deep .shelf-side .seg{ margin:0 0 11px; }
+.shelf.lum-amber-deep .shelf-side h3,
+.shelf.lum-amber-deep .shelf-filter-label{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-gold); margin:0 0 10px; }
+.shelf.lum-amber-deep .shelf-filter-group{ margin-bottom:26px; }
+.shelf.lum-amber-deep .shelf-filter-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.shelf.lum-amber-deep .shelf-filter{ display:flex; align-items:center; justify-content:space-between; gap:9px; padding:8px 12px; border-radius:8px; color:var(--lum-ink-3); font-size:13px; cursor:pointer; border:1px solid transparent; }
+.shelf.lum-amber-deep .shelf-filter:hover{ background:rgba(255,236,200,.06); color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-filter.is-on{ background:rgba(255,236,200,.06); color:var(--lum-ink); border-color:var(--lum-glass-bd-2); }
+.shelf.lum-amber-deep .shelf-filter .n{ font-family:var(--lum-mono); font-size:11px; opacity:.7; }
+.shelf.lum-amber-deep .shelf-filter.is-toggle{ justify-content:flex-start; color:var(--lum-gold); font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; }
+.shelf.lum-amber-deep .shelf-filter.is-toggle:hover{ background:transparent; color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-lens-ask{ display:block; width:100%; margin-top:8px; text-align:left; font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-gold); background:transparent; border:1px dashed var(--lum-glass-bd-2); border-radius:8px; padding:8px 12px; cursor:pointer; }
+.shelf.lum-amber-deep .shelf-lens-ask:hover{ color:var(--lum-ink); border-color:var(--lum-gold); }
+
+/* main + grids */
+.shelf.lum-amber-deep .shelf-main{ min-width:0; }
+.shelf.lum-amber-deep .shelf-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:26px 18px; }
+.shelf.lum-amber-deep .shelf-rows{ display:flex; flex-direction:column; }
+
+/* covers -- REAL image kept (S-D3), Amber frame + alight glow + gold root-mark */
+.shelf.lum-amber-deep .shelf-book{ color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-book-cover-area{ background:rgba(24,16,6,.5); border:1px solid var(--lum-glass-bd-2); border-radius:3px 6px 6px 3px; box-shadow:0 12px 24px -12px rgba(0,0,0,.72), inset 1px 0 0 rgba(255,255,255,.07); }
+.shelf.lum-amber-deep .shelf-book:hover .shelf-book-cover-area{ box-shadow:0 20px 32px -14px rgba(0,0,0,.78), inset 1px 0 0 rgba(255,255,255,.09); }
+.shelf.lum-amber-deep .shelf-book.is-alight .shelf-book-cover-area{ box-shadow:0 12px 26px -10px rgba(0,0,0,.7), 0 0 22px -3px rgba(255,206,74,.42), inset 1px 0 0 rgba(255,255,255,.07); }
+.shelf.lum-amber-deep .shelf-book.is-alight:hover .shelf-book-cover-area{ box-shadow:0 20px 34px -12px rgba(0,0,0,.78), 0 0 30px -2px rgba(255,206,74,.55), inset 1px 0 0 rgba(255,255,255,.09); }
+.shelf.lum-amber-deep .shelf-book-cover-placeholder{ background:linear-gradient(155deg, var(--lum-cloth), rgba(24,16,6,.94)); }
+.shelf.lum-amber-deep .shelf-book-cover-pending-title{ color:var(--lum-ink-2); }
+.shelf.lum-amber-deep .shelf-book-cover-pending{ color:var(--lum-ink-3); }
+.shelf.lum-amber-deep .shelf-book-rmark{ position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 45%, var(--lum-gold-d) 100%); box-shadow:0 0 8px var(--lum-gold); }
+.shelf.lum-amber-deep .shelf-book-title{ font-family:var(--lum-serif); font-weight:600; font-size:15px; color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-book-author{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); }
+.shelf.lum-amber-deep .shelf-book-status{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.08em; color:var(--lum-gold); }
+.shelf.lum-amber-deep .shelf-book-status::before{ background:var(--lum-gold); }
+
+/* list rows */
+.shelf.lum-amber-deep .shelf-book-row{ display:flex; align-items:center; gap:15px; padding:11px 4px; border-bottom:1px solid var(--lum-glass-bd-2); color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-book-row:hover{ background:rgba(255,236,200,.06); }
+.shelf.lum-amber-deep .shelf-book-row-title{ font-family:var(--lum-serif); font-weight:600; font-size:16px; color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-book-row-author{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); }
+.shelf.lum-amber-deep .shelf-book-row .shelf-book-status{ margin-left:auto; }
+.shelf.lum-amber-deep .shelf-book-row-rmark{ position:static; flex:none; width:7px; height:7px; box-shadow:0 0 7px var(--lum-gold); }
+
+/* empty state */
+.shelf.lum-amber-deep .empty-state h2{ font-family:var(--lum-serif); color:var(--lum-ink); }
+.shelf.lum-amber-deep .empty-state p{ font-family:var(--lum-serif); color:var(--lum-ink-2); }
+
+/* S-D2: the alight legend (static explanatory copy, not generative) */
+.shelf.lum-amber-deep .shelf-rootednote{ margin:26px 0 0; font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); display:flex; align-items:center; gap:9px; }
+.shelf.lum-amber-deep .shelf-rootednote-mark{ flex:none; width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 45%, var(--lum-gold-d) 100%); box-shadow:0 0 10px rgba(255,206,74,.6); }
+.shelf.lum-amber-deep .shelf-rootednote b{ color:var(--lum-ink-2); font-weight:600; }
+
+/* desktop: Filters toggle hidden (sidebar always shown) */
+@media (min-width:760px){
+  .shelf.lum-amber-deep .shelf-filters-btn{ display:none; }
+}
+
+/* mobile (<=759): the 759 reflow -- single column; sidebar becomes a SOLID glass
+   drawer (no blur; live JS toggles .shelf-sidebar-mobile-open /
+   .shelf-sidebar-backdrop-open); 44px touch targets. */
+.shelf.lum-amber-deep .shelf-sidebar-close{ display:none; }
+.shelf.lum-amber-deep .shelf-sidebar-backdrop{ display:none; position:fixed; inset:0; z-index:130; background:rgba(15,9,4,.6); }
+.shelf.lum-amber-deep .shelf-sidebar-backdrop.shelf-sidebar-backdrop-open{ display:block; }
+@media (max-width:759px){
+  .shelf.lum-amber-deep > *{ padding-left:16px; padding-right:16px; }
+  .shelf.lum-amber-deep .shelf-layout{ grid-template-columns:1fr; }
+  .shelf.lum-amber-deep .shelf-grid{ grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
+  .shelf.lum-amber-deep .shelf-side{
+    position:fixed; top:0; bottom:0; left:0; width:264px; z-index:131;
+    background:var(--lum-base); border-right:1px solid var(--lum-glass-bd-2);
+    padding:24px 20px; overflow-y:auto; transform:translateX(-110%);
+    transition:transform var(--motion-base,.2s) var(--ease,ease);
+  }
+  .shelf.lum-amber-deep .shelf-side.shelf-sidebar-mobile-open{ transform:none; }
+  .shelf.lum-amber-deep .shelf-sidebar-close{ display:block; position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--lum-ink-3); font-size:22px; line-height:1; cursor:pointer; }
+  .shelf.lum-amber-deep .btn,
+  .shelf.lum-amber-deep .chip,
+  .shelf.lum-amber-deep .seg-opt{ min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .shelf.lum-amber-deep .shelf-filter{ min-height:44px; }
+}
+/* ===== end WAVE 1 · THE SHELF ===== */
+
+/* ============================================================================
+   WAVE 1 · THE LIVING FIELD  (renderArcDetail on .lum-amber)
+   Convert the arc interior (S1) to Amber/Lumen per design/praxis-field-amber.html.
+   Faces = Field / Read / Page (List retired, F-D1). The constellation RENDERER
+   (arc-constellation.js) is UNTOUCHED (F-D4) -- this reskins its chrome only +
+   adds Tidy, the concentrate whisper (F-D3, deterministic), the Read face (F-D2,
+   deterministic) and the Page stub. Full-bleed .lum-amber "your thinking" ground;
+   ADDITIVE over the .arcfield base. Tokens: --lum-* only.
+   ============================================================================ */
+.arcfield.lum-amber{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:28px 0 70px; color:var(--lum-ink); }
+.arcfield.lum-amber > *{ box-sizing:border-box; max-width:1080px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+
+/* head */
+.arcfield.lum-amber .arcfield-head{ display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap; margin:0 0 6px; }
+.arcfield.lum-amber .arcfield-head .t{ flex:1; min-width:0; }
+.arcfield.lum-amber .eyebrow{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-gold); margin:0 0 7px; }
+.arcfield.lum-amber .arcfield-q{ font-family:var(--lum-serif); font-weight:500; font-size:clamp(28px,4vw,38px); line-height:1.04; color:var(--lum-ink); margin:0; }
+.arcfield.lum-amber .arcfield-desc{ font-family:var(--lum-serif); font-style:italic; font-size:18px; color:var(--lum-ink-2); margin:12px 0 0; max-width:620px; line-height:1.35; }
+.arcfield.lum-amber .arcfield-sub{ font-family:var(--lum-mono); font-size:11.5px; letter-spacing:.04em; color:var(--lum-ink-3); margin:9px 0 0; }
+
+/* faces seg + header buttons */
+.arcfield.lum-amber .seg{ display:inline-flex; padding:3px; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); background:rgba(255,236,200,.06); }
+.arcfield.lum-amber .seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; letter-spacing:0; text-transform:none; color:rgba(255,244,224,.66); background:none; border:none; border-radius:var(--lum-r-pill,999px); padding:6px 16px; cursor:pointer; }
+.arcfield.lum-amber .seg-opt:hover{ color:var(--lum-ink); }
+.arcfield.lum-amber .seg-opt.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); font-weight:600; }
+.arcfield.lum-amber .arc-detail-addsub,
+.arcfield.lum-amber .arc-detail-delete{ font-family:var(--lum-sans); font-size:12.5px; border-radius:var(--lum-r-pill,999px); padding:7px 14px; cursor:pointer; border:1px solid var(--lum-glass-bd-2); background:transparent; color:var(--lum-ink-2); }
+.arcfield.lum-amber .arc-detail-addsub:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.arcfield.lum-amber .arc-detail-delete:hover{ color:var(--lum-rose); border-color:var(--lum-rose); }
+
+/* stage: constellation host + rail */
+.arcfield.lum-amber .arcfield-stage{ display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; margin-top:14px; }
+.arcfield.lum-amber .arc-detail-web-view{ position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--lum-glass-bd-2); background:radial-gradient(120% 110% at 50% 38%, rgba(255,222,150,.05) 0%, rgba(255,222,150,0) 60%); }
+.arcfield.lum-amber .arc-detail-web-view svg{ display:block; width:100%; height:auto; }
+
+/* constellation chrome (reskin only; renderer untouched, F-D4) */
+.arcfield.lum-amber .st-control-bar{ display:flex; gap:8px; flex-wrap:wrap; padding:10px 12px; }
+.arcfield.lum-amber .st-control-bar-bottom{ border-top:1px solid var(--lum-glass-bd-2); }
+.arcfield.lum-amber .arc-detail-toggle-btn{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:6px 14px; cursor:pointer; background:rgba(255,236,200,.06); }
+.arcfield.lum-amber .arc-detail-toggle-btn:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.arcfield.lum-amber .arc-detail-toggle-btn.is-active,
+.arcfield.lum-amber .st-layers-switch.is-active{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; font-weight:600; }
+.arcfield.lum-amber .st-layers{ position:relative; }
+.arcfield.lum-amber .st-layers-popover{ background:var(--lum-base); border:1px solid var(--lum-glass-bd-2); border-radius:12px; padding:8px; }
+.arcfield.lum-amber .arc-tooltip{ background:var(--lum-base); border:1px solid var(--lum-glass-bd); border-radius:10px; color:var(--lum-ink); font-family:var(--lum-sans); }
+.arcfield.lum-amber .arc-tooltip-title{ font-family:var(--lum-serif); color:var(--lum-ink); }
+.arcfield.lum-amber .arc-tooltip-meta,
+.arcfield.lum-amber .arc-tooltip-affordance{ font-family:var(--lum-mono); color:var(--lum-ink-3); }
+
+/* CONCENTRATE (F-D3): additive classes on the LIVE svg groups (no renderer edit).
+   Emphasis by opacity, not transform (the <g> already carries a translate). */
+.arcfield.lum-amber .arc-detail-web-view svg [data-st-sub-id]{ transition:opacity .28s; }
+.arcfield.lum-amber svg.is-concentrated .st-dim{ opacity:.26; }
+.arcfield.lum-amber svg.is-concentrated .st-linked{ opacity:1; }
+.arcfield.lum-amber svg.is-concentrated .st-focal{ opacity:1; }
+
+/* whisper card (reuses .lum-yumi) */
+.arcfield.lum-amber .arcfield-whisper{ margin:16px auto 0; padding:14px 17px; border-radius:14px; background:rgba(127,208,240,.08); border:1px solid rgba(127,208,240,.24); opacity:0; max-height:0; overflow:hidden; transition:opacity .25s; }
+.arcfield.lum-amber .arcfield-whisper.is-on{ opacity:1; max-height:none; }
+.arcfield.lum-amber .arcfield-whisper-text{ font-family:var(--lum-serif); font-style:italic; font-size:16px; line-height:1.4; color:var(--lum-cyan); }
+.arcfield.lum-amber .arcfield-whisper-text b{ color:var(--lum-ink); font-weight:600; font-style:italic; }
+.arcfield.lum-amber .arcfield-whisper-open{ display:inline-block; margin-top:8px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-cyan); text-decoration:none; }
+.arcfield.lum-amber .arcfield-whisper-open:hover{ color:var(--lum-ink); }
+
+/* rail */
+.arcfield.lum-amber .arcfield-rail h3,
+.arcfield.lum-amber .arcfield-rail-notes-head{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-gold); margin:0 0 10px; }
+.arcfield.lum-amber .arcfield-rail-notes-head{ margin-top:18px; }
+.arcfield.lum-amber .arcfield-member{ display:flex; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--lum-glass-bd-2); }
+.arcfield.lum-amber .arcfield-member .mt{ font-family:var(--lum-serif); font-size:14px; color:var(--lum-ink); }
+.arcfield.lum-amber .arcfield-member .ma{ font-family:var(--lum-sans); font-size:11px; color:var(--lum-ink-3); }
+.arcfield.lum-amber .arcfield-member .mc{ display:none; }
+.arcfield.lum-amber .arcfield-note{ display:flex; gap:8px; align-items:baseline; padding:7px 0; text-decoration:none; border-bottom:1px solid var(--lum-glass-bd-2); }
+.arcfield.lum-amber .arcfield-note-tag{ font-family:var(--lum-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--lum-gold-d); flex:none; }
+.arcfield.lum-amber .arcfield-note-text{ font-family:var(--lum-serif); font-size:13px; color:var(--lum-ink-2); line-height:1.35; }
+.arcfield.lum-amber .arcfield-note:hover .arcfield-note-text{ color:var(--lum-ink); }
+.arcfield.lum-amber .arcfield-add-sub{ margin-top:14px; }
+.arcfield.lum-amber .arcfield-rail-hint{ font-family:var(--lum-mono); font-size:9.5px; color:var(--lum-ink-4); margin-top:12px; line-height:1.5; }
+
+/* READ face (F-D2, deterministic) */
+.arcfield.lum-amber .arcfield-read{ margin-top:18px; padding:26px 28px; border-radius:18px; background:var(--lum-glass); border:1px solid var(--lum-glass-bd-2); }
+.arcfield.lum-amber .arcfield-read-head{ display:flex; align-items:center; gap:9px; font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:rgba(127,208,240,.85); margin:0 0 18px; }
+.arcfield.lum-amber .arcfield-read-head .dot{ flex:none; width:8px; height:8px; border-radius:50%; background:var(--lum-cyan); box-shadow:0 0 8px rgba(127,208,240,.7); }
+.arcfield.lum-amber .arcfield-read-threads{ margin:0 0 20px; display:flex; flex-direction:column; gap:8px; }
+.arcfield.lum-amber .arcfield-thread-row{ font-family:var(--lum-serif); font-size:17px; color:var(--lum-ink-2); display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.arcfield.lum-amber .arcfield-thread-row .nm{ color:var(--lum-ink); font-style:italic; }
+.arcfield.lum-amber .arcfield-thread-link{ color:var(--lum-gold); }
+.arcfield.lum-amber .arcfield-read-empty{ font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--lum-ink-3); }
+.arcfield.lum-amber .arcfield-read-subs{ display:flex; flex-direction:column; }
+.arcfield.lum-amber .arcfield-read-sub{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:10px 0; border-top:1px solid var(--lum-glass-bd-2); text-decoration:none; }
+.arcfield.lum-amber .arcfield-read-sub-name{ font-family:var(--lum-serif); font-size:16px; color:var(--lum-ink); }
+.arcfield.lum-amber .arcfield-read-sub:hover .arcfield-read-sub-name{ color:var(--lum-gold-l); }
+.arcfield.lum-amber .arcfield-read-sub-meta{ font-family:var(--lum-mono); font-size:10.5px; color:var(--lum-ink-3); flex:none; }
+
+/* PAGE face (stub) */
+.arcfield.lum-amber .arcfield-page{ margin-top:18px; padding:40px 34px; border-radius:18px; text-align:center; background:var(--lum-glass); border:1px solid var(--lum-glass-bd-2); }
+.arcfield.lum-amber .arcfield-page-mark{ width:60px; height:60px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; }
+.arcfield.lum-amber .arcfield-page-title{ font-family:var(--lum-serif); font-weight:500; font-size:26px; color:var(--lum-ink); margin:0 0 6px; }
+.arcfield.lum-amber .arcfield-page-body{ font-family:var(--lum-sans); font-size:13.5px; color:var(--lum-ink-3); max-width:380px; margin:0 auto 18px; line-height:1.55; }
+.arcfield.lum-amber .arcfield-page-open{ display:inline-block; text-decoration:none; }
+
+/* mobile 759 reflow */
+@media (max-width:759px){
+  .arcfield.lum-amber > *{ padding-left:16px; padding-right:16px; }
+  .arcfield.lum-amber .arcfield-stage{ grid-template-columns:1fr; }
+  .arcfield.lum-amber .arcfield-head{ flex-direction:column; }
+  .arcfield.lum-amber .seg-opt,
+  .arcfield.lum-amber .arc-detail-toggle-btn,
+  .arcfield.lum-amber .arc-detail-addsub,
+  .arcfield.lum-amber .arc-detail-delete{ min-height:44px; display:inline-flex; align-items:center; }
+}
+/* ===== end WAVE 1 · THE LIVING FIELD ===== */

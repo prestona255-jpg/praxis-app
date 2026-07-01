@@ -2860,7 +2860,11 @@ function renderShelf() {
   }
 
   var wrap = document.createElement('section');
-  wrap.className = 'shelf';
+  // Wave 1: convert the Shelf to the Amber/Lumen system. The atmosphere class
+  // supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
+  // .shelf.lum-amber-deep block in components.css layers lumen glass/gold/cyan
+  // over the theme-token base (same additive pattern as the Notebook).
+  wrap.className = 'shelf lum-amber-deep';
 
   // Head (mock .shelf-head): "Your shelf" + a mono count line. The count is
   // display-only aggregation (books · reading · finished) filling the mock's
@@ -2919,6 +2923,21 @@ function renderShelf() {
   head.appendChild(countEl);
 
   wrap.appendChild(head);
+
+  // S-D1 (Wave 1): a deterministic, count-based reading line in Yumi's cyan
+  // voice -- NOT generative (no model call, no interpretive "leans toward").
+  // Text is filled from the real top lens once the lens tally is computed
+  // below; hidden entirely when no lens has books (never fabricated).
+  var shelfLean = document.createElement('div');
+  shelfLean.className = 'lum-yumi shelf-yumiline';
+  shelfLean.style.display = 'none';
+  var shelfLeanDot = document.createElement('span');
+  shelfLeanDot.className = 'dot';
+  shelfLeanDot.setAttribute('aria-hidden', 'true');
+  var shelfLeanP = document.createElement('p');
+  shelfLean.appendChild(shelfLeanDot);
+  shelfLean.appendChild(shelfLeanP);
+  wrap.appendChild(shelfLean);
 
   // Toolbar (mock .shelf-toolbar, canon §4-E declutter): one primary "Add a
   // book" + the Covers|List segmented + a quiet "Filters" toggle + spacer +
@@ -3217,6 +3236,17 @@ function renderShelf() {
     return 0;
   });
 
+  // S-D1 (Wave 1): fill the reading line from the real top lens (deterministic,
+  // count-based). lensOrder is already sorted by count desc, so [0] is the
+  // most-shelved lens. Omit the line entirely when there is no lens.
+  if (lensOrder.length > 0) {
+    var shelfTopLens = lensOrder[0];
+    var shelfTopLensN = lensCounts[shelfTopLens] || 0;
+    shelfLeanP.textContent = 'Most-shelved lens: ' + shelfTopLens + ' · ' +
+      shelfTopLensN + (shelfTopLensN === 1 ? ' book' : ' books');
+    shelfLean.style.display = '';
+  }
+
   // Status + Tradition rails (Umber port — mock #s-books groups 1+2). Distinct
   // canonical statuses + traditions present in the SAME deduped shelf set
   // (lcArr) the lenses are counted over, so counts are orphan-free. Values are
@@ -3388,9 +3418,31 @@ function renderShelf() {
   var stRow;
   var stCountEl;
   var statusRowCount = 0;
+  // S-D4 (Wave 1): an "All" row that clears the status filter. status === null
+  // IS the "all" predicate at the filter pass (statusOk below), so All just
+  // nulls it; is-on when no status is picked. Count = the whole shelf.
+  var stAllRow = document.createElement('li');
+  stAllRow.className = shelfFilter.status ? 'shelf-filter' : 'shelf-filter is-on';
+  stAllRow.setAttribute('role', 'button');
+  stAllRow.setAttribute('tabindex', '0');
+  stAllRow.setAttribute('data-filter-section', 'status');
+  stAllRow.setAttribute('data-filter-value', '');
+  stAllRow.textContent = 'All';
+  var stAllCount = document.createElement('span');
+  stAllCount.className = 'n';
+  stAllCount.textContent = '' + shelfBookCount;
+  stAllRow.appendChild(stAllCount);
+  stAllRow.addEventListener('click', function () { shelfFilter.status = null; renderShelf(); });
+  stAllRow.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+      ev.preventDefault(); shelfFilter.status = null; renderShelf();
+    }
+  });
+  statusListEl.appendChild(stAllRow);
+  statusRowCount++;
   for (stvi = 0; stvi < STATUS_VOCAB.length; stvi = stvi + 1) {
     stvKey = STATUS_VOCAB[stvi];
-    if ((statusCounts[stvKey] || 0) === 0) { continue; }
+    // S-D4 (Wave 1): show all four status rows always (incl. zero-count).
     statusRowCount++;
     stRow = document.createElement('li');
     stRow.className = shelfFilter.status === stvKey ? 'shelf-filter is-on' : 'shelf-filter';
@@ -3814,6 +3866,49 @@ function renderShelf() {
   }
   books = filtered;
 
+  // S-D2 (Wave 1): computed display-only "alight" set -- a book has grown into
+  // the reader's thinking when it has >=1 marginalia entry OR >=1 sub-theory
+  // derived from it (evidence {kind:'book'} OR attached marginalia). Real
+  // stores only (state.notebookEntries register 'marginalia' + state.subTheories),
+  // owner-filtered; one pass, no data-model change. Same predicate as
+  // marginaliaForBook() + rootedSubTheories() (Book Detail), unioned.
+  var shelfAlight = {};
+  (function () {
+    var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    var auid = au ? au.uid : null;
+    var entries = state.notebookEntries || {};
+    var subs = state.subTheories || {};
+    var ek, e, ei, s2k, s2, si, ev, sj, ent;
+    for (ek in entries) {
+      if (!Object.prototype.hasOwnProperty.call(entries, ek)) { continue; }
+      e = entries[ek];
+      if (!e || e.register !== 'marginalia') { continue; }
+      if (auid && e.userId && e.userId !== auid) { continue; }
+      if (!e.bookIds) { continue; }
+      for (ei = 0; ei < e.bookIds.length; ei = ei + 1) { shelfAlight[e.bookIds[ei]] = true; }
+    }
+    for (s2k in subs) {
+      if (!Object.prototype.hasOwnProperty.call(subs, s2k)) { continue; }
+      s2 = subs[s2k];
+      if (!s2) { continue; }
+      if (auid && s2.userId && s2.userId !== auid) { continue; }
+      if (s2.evidence) {
+        for (si = 0; si < s2.evidence.length; si = si + 1) {
+          ev = s2.evidence[si];
+          if (ev && ev.kind === 'book' && ev.refId) { shelfAlight[ev.refId] = true; }
+        }
+      }
+      if (s2.attachedMarginalia) {
+        for (sj = 0; sj < s2.attachedMarginalia.length; sj = sj + 1) {
+          ent = entries[s2.attachedMarginalia[sj]];
+          if (ent && ent.bookIds) {
+            for (ei = 0; ei < ent.bookIds.length; ei = ei + 1) { shelfAlight[ent.bookIds[ei]] = true; }
+          }
+        }
+      }
+    }
+  })();
+
   if (books.length === 0) {
     // 3.10a Stage 4: empty state. Structure supports both copy
     // variants (zero-books and zero-filter-results); 3.10a wired
@@ -3890,7 +3985,7 @@ function renderShelf() {
       rows.className = 'shelf-rows';
       var ri;
       for (ri = 0; ri < books.length; ri++) {
-        rows.appendChild(renderShelfBookRow(books[ri]));
+        rows.appendChild(renderShelfBookRow(books[ri], !!shelfAlight[books[ri].id]));
       }
       main.appendChild(rows);
     } else {
@@ -3899,10 +3994,25 @@ function renderShelf() {
       list.id = 'shelf-grid';
       var i;
       for (i = 0; i < books.length; i++) {
-        list.appendChild(renderShelfBook(books[i]));
+        list.appendChild(renderShelfBook(books[i], !!shelfAlight[books[i].id]));
       }
       main.appendChild(list);
     }
+
+    // S-D2 (Wave 1): the alight legend -- static explanatory copy (not
+    // generative). Shown with the grid/rows (books present), never on empty.
+    var shelfRootedNote = document.createElement('p');
+    shelfRootedNote.className = 'shelf-rootednote';
+    var shelfRootedMark = document.createElement('span');
+    shelfRootedMark.className = 'shelf-rootednote-mark';
+    shelfRootedMark.setAttribute('aria-hidden', 'true');
+    var shelfRootedB = document.createElement('b');
+    shelfRootedB.textContent = 'Alight';
+    shelfRootedNote.appendChild(shelfRootedMark);
+    shelfRootedNote.appendChild(shelfRootedB);
+    shelfRootedNote.appendChild(document.createTextNode(
+      ' = this book has grown into your thinking — marginalia, or a sub-theory built from it. The rest are read or waiting.'));
+    main.appendChild(shelfRootedNote);
   }
 
   layout.appendChild(main);
@@ -3928,9 +4038,9 @@ function renderShelf() {
 
 // Single shelf row. Anchor element so the browser's hashchange path
 // handles navigation -- no addEventListener needed.
-function renderShelfBook(book) {
+function renderShelfBook(book, isAlight) {
   var card = document.createElement('a');
-  card.className = 'shelf-book';
+  card.className = 'shelf-book' + (isAlight ? ' is-alight' : '');
   card.href = '#book/' + book.id;
 
   // 3.5b: cover thumbnail or placeholder block. The truthy check
@@ -3972,6 +4082,16 @@ function renderShelfBook(book) {
   var glyphTradition = book.traditionOverride || book.tradition;
 
   card.appendChild(coverArea);
+
+  // S-D2 (Wave 1): the gold root-mark on an alight cover (mirrors
+  // bookAmberCover's .bk-cover-rmark). Computed display-only; the caller passes
+  // isAlight from the real marginalia + sub-theory linkage.
+  if (isAlight) {
+    var shelfRmark = document.createElement('span');
+    shelfRmark.className = 'shelf-book-rmark';
+    shelfRmark.setAttribute('aria-hidden', 'true');
+    coverArea.appendChild(shelfRmark);
+  }
 
   // Phase 3.1: register tick -- left-edge accent bar colored by the
   // book's tradition. Data-driven token only: set --tick to
@@ -4026,10 +4146,20 @@ function renderShelfBook(book) {
 // CARRIED from renderShelfBook using the SAME data-driven mechanism + the
 // existing .shelf-book-tick class (no new tick CSS authored); omitted for
 // unassigned / tokenless traditions, same guard as the covers card.
-function renderShelfBookRow(book) {
+function renderShelfBookRow(book, isAlight) {
   var row = document.createElement('a');
-  row.className = 'shelf-book-row';
+  row.className = 'shelf-book-row' + (isAlight ? ' is-alight' : '');
   row.href = '#book/' + book.id;
+
+  // S-D2 (Wave 1): the list row has no cover thumbnail, so an alight book gets a
+  // small leading gold root-mark (BUILT-DIVERGES: the mockup puts it on the mini
+  // cover, which the live list row does not render).
+  if (isAlight) {
+    var rowRmark = document.createElement('span');
+    rowRmark.className = 'shelf-book-rmark shelf-book-row-rmark';
+    rowRmark.setAttribute('aria-hidden', 'true');
+    row.appendChild(rowRmark);
+  }
 
   var rowTradition = book.traditionOverride || book.tradition;
   if (rowTradition && rowTradition !== 'unassigned' &&
@@ -10277,12 +10407,93 @@ function _stConstellationAttachInteractions(svgEl, arc) {
     return lines;
   }
 
+  // Wave 1 (F-D3): CONCENTRATE. Tapping a mark focuses it -- dim the others,
+  // emphasize the focal + the marks it REALLY links to (arc.edges, derived from
+  // linkedSubTheories), and reveal the Yumi whisper card with DETERMINISTIC
+  // relational facts (thread count + the headers it connects to). No generated
+  // prose. An "Open the sub-theory ->" link keeps the old tap-to-open one step
+  // in. Emphasis is by opacity/class, NOT transform: an SVG <g> already carries a
+  // translate transform, so a CSS scale would fight the positioning (BUILT-DIVERGES
+  // vs the mockup's literal focal SCALE).
+  var _stFocalId = null;
+  var _stEdges = (arc && arc.edges) ? arc.edges : [];
+  function connectionsOf(id) {
+    var out = [], k;
+    for (k = 0; k < _stEdges.length; k = k + 1) {
+      if (_stEdges[k].aId === id && subById[_stEdges[k].bId]) { out.push(subById[_stEdges[k].bId]); }
+      else if (_stEdges[k].bId === id && subById[_stEdges[k].aId]) { out.push(subById[_stEdges[k].aId]); }
+    }
+    return out;
+  }
+  function markRelease() {
+    _stFocalId = null;
+    var groups = svgEl.querySelectorAll('[data-st-sub-id]');
+    var gi;
+    for (gi = 0; gi < groups.length; gi = gi + 1) {
+      groups[gi].classList.remove('st-focal', 'st-linked', 'st-dim');
+    }
+    svgEl.classList.remove('is-concentrated');
+    var card = document.getElementById('arcfield-whisper');
+    if (card) { card.classList.remove('is-on'); }
+  }
+  function markConcentrate(id) {
+    _stFocalId = id;
+    var links = connectionsOf(id);
+    var linkedSet = {}, li;
+    for (li = 0; li < links.length; li = li + 1) { linkedSet[links[li].id] = true; }
+    var groups = svgEl.querySelectorAll('[data-st-sub-id]');
+    var gi, g, gid;
+    for (gi = 0; gi < groups.length; gi = gi + 1) {
+      g = groups[gi];
+      gid = g.getAttribute('data-st-sub-id');
+      g.classList.remove('st-focal', 'st-linked', 'st-dim');
+      if (gid === id) { g.classList.add('st-focal'); }
+      else if (linkedSet[gid]) { g.classList.add('st-linked'); }
+      else { g.classList.add('st-dim'); }
+    }
+    svgEl.classList.add('is-concentrated');
+    var sub = subById[id];
+    var card = document.getElementById('arcfield-whisper');
+    if (!card || !sub) { return; }
+    var body = card.querySelector('.arcfield-whisper-body');
+    if (!body) { return; }
+    body.textContent = '';
+    var line = document.createElement('div');
+    line.className = 'arcfield-whisper-text';
+    var nameEl = document.createElement('b');
+    nameEl.textContent = sub.header || 'This idea';
+    line.appendChild(nameEl);
+    if (links.length === 0) {
+      line.appendChild(document.createTextNode(
+        ' has no threads yet — connect it to another idea, or open it.'));
+    } else {
+      var names = [], i2;
+      for (i2 = 0; i2 < links.length; i2 = i2 + 1) { names.push(links[i2].header || 'Untitled'); }
+      line.appendChild(document.createTextNode(
+        ' connects to ' + links.length + (links.length === 1 ? ' idea: ' : ' ideas: ')
+        + names.join(', ') + '.'));
+    }
+    body.appendChild(line);
+    var open = document.createElement('a');
+    open.className = 'arcfield-whisper-open';
+    open.href = '#subtheory/' + sub.id;
+    open.textContent = 'Open the sub-theory →';
+    body.appendChild(open);
+    card.classList.add('is-on');
+  }
   function bindShapeClick(el) {
-    el.addEventListener('click', function() {
+    el.addEventListener('click', function(evt) {
+      if (evt && typeof evt.stopPropagation === 'function') { evt.stopPropagation(); }
       var id = el.getAttribute('data-st-sub-id');
-      if (id) { location.hash = 'subtheory/' + id; }
+      if (!id) { return; }
+      if (_stFocalId === id) { markRelease(); } else { markConcentrate(id); }
     });
   }
+  // A tap on empty field space releases the concentration (mark taps stop
+  // propagation above, so this only fires for background clicks).
+  svgEl.addEventListener('click', function() {
+    if (_stFocalId) { markRelease(); }
+  });
 
   function bindMarkClick(el) {
     el.addEventListener('click', function(evt) {
@@ -10797,6 +11008,50 @@ function buildArcFieldRail(arc, arcId, user) {
     none.textContent = 'No books in this arc yet.';
     rail.appendChild(none);
   }
+  // Wave 1 (F-D1 ruling): "Notes in this arc" -- the attached notebook entries
+  // the retired List view used to show. Read-only compact rows; opening routes
+  // to the Notebook. Real data (arc.entryIds -> state.notebookEntries).
+  var entryIds = (arc && arc.entryIds && arc.entryIds.length) ? arc.entryIds : [];
+  var noteRows = [];
+  var eri, erec;
+  var railUid = (user && user.uid) ? user.uid : null;
+  for (eri = 0; eri < entryIds.length; eri = eri + 1) {
+    if (!entryIds[eri] || !entryIds[eri].id) { continue; }
+    erec = state.notebookEntries && state.notebookEntries[entryIds[eri].id];
+    if (!erec) { continue; }
+    // Principle #2 (structural privacy) / no-asymmetric-knowledge: only entries
+    // the VIEWER owns (or the public seed) ever surface here. Another user's
+    // note -- the future published-arc-viewed-by-another-user case -- is skipped,
+    // so this rail can never expose the author's private notebook. Mirrors
+    // marginaliaForBook's owner filter; robust even when railUid is null.
+    if (erec.userId && erec.userId !== railUid && erec.userId !== '__praxis_seed__') { continue; }
+    noteRows.push(erec);
+  }
+  if (noteRows.length > 0) {
+    var nh = document.createElement('h3');
+    nh.className = 'arcfield-rail-notes-head';
+    nh.textContent = 'Notes in this arc';
+    rail.appendChild(nh);
+    var nri;
+    for (nri = 0; nri < noteRows.length; nri = nri + 1) {
+      (function(rec) {
+        var nrow = document.createElement('a');
+        nrow.className = 'arcfield-note';
+        nrow.href = '#notebook';
+        var body = (typeof rec.body === 'string') ? rec.body : '';
+        var reg = (typeof rec.register === 'string') ? rec.register : 'note';
+        var ntag = document.createElement('span');
+        ntag.className = 'arcfield-note-tag';
+        ntag.textContent = reg;
+        var ntext = document.createElement('span');
+        ntext.className = 'arcfield-note-text';
+        ntext.textContent = (body.length > 90) ? (body.slice(0, 90) + '…') : (body || '(empty note)');
+        nrow.appendChild(ntag);
+        nrow.appendChild(ntext);
+        rail.appendChild(nrow);
+      })(noteRows[nri]);
+    }
+  }
   if (user) {
     var addSub = document.createElement('button');
     addSub.type = 'button';
@@ -10869,9 +11124,16 @@ function renderArcDetail(arcId) {
   // for this render pass. Re-renders triggered by the toggle click
   // handler re-enter renderArcDetail and re-read fresh.
   var viewMode = getArcViewMode();
+  // Wave 1 (F-D1): the interior FACE. getArcViewMode is locked to list/web, so
+  // the face is its own persisted preference. Default 'field'; List retired.
+  var arcFace = ls('praxis_arc_face', 'field');
+  if (arcFace !== 'read' && arcFace !== 'page') { arcFace = 'field'; }
 
   var wrap = document.createElement('section');
-  wrap.className = 'arcfield';
+  // Wave 1: convert the arc interior to the Amber/Lumen "your thinking" room
+  // (.lum-amber, lumen-amber.css:15). Faces = Field / Read / Page (List retired,
+  // F-D1). The .arcfield.lum-amber block layers lumen over the theme-token base.
+  wrap.className = 'arcfield lum-amber';
 
   // Head (mock .arcfield-head): .t block (eyebrow + the question + a computed
   // sub-meta line) on the left, the List/Web .seg on the right. arc.title IS
@@ -10935,7 +11197,7 @@ function renderArcDetail(arcId) {
   // Stage 9.6c.1: suppressed in web view -- the constellation control bar
   // below carries its own + Sub-theory button, so showing this header one
   // too would duplicate the affordance. List view keeps it.
-  if (user && viewMode !== 'web') {
+  if (user && arcFace !== 'field') {
     var newSubTheoryBtn = document.createElement('button');
     newSubTheoryBtn.type = 'button';
     newSubTheoryBtn.className = 'notebook-new-arc arc-detail-addsub';
@@ -10979,32 +11241,29 @@ function renderArcDetail(arcId) {
   // List / Web view toggle (mock .seg, in the head). Active gets .is-on; click
   // persists via setArcViewMode + re-enters renderArcDetail (idempotent — the
   // top clears host.innerHTML).
+  // Wave 1 (F-D1): Field / Read / Page faces (List retired). New persisted face
+  // pref (praxis_arc_face) -- getArcViewMode stays list/web-locked and untouched.
   var toolbar = document.createElement('div');
-  toolbar.className = 'seg';
+  toolbar.className = 'seg arcfield-faces';
   toolbar.setAttribute('role', 'tablist');
-  toolbar.setAttribute('aria-label', 'Arc view');
-
-  var listBtn = document.createElement('button');
-  listBtn.type = 'button';
-  listBtn.className = 'seg-opt' + (viewMode === 'list' ? ' is-on' : '');
-  listBtn.setAttribute('data-mode', 'list');
-  listBtn.textContent = 'List';
-  listBtn.addEventListener('click', function() {
-    setArcViewMode('list');
-    renderArcDetail(arcId);
-  });
-  toolbar.appendChild(listBtn);
-
-  var webBtn = document.createElement('button');
-  webBtn.type = 'button';
-  webBtn.className = 'seg-opt' + (viewMode === 'web' ? ' is-on' : '');
-  webBtn.setAttribute('data-mode', 'web');
-  webBtn.textContent = 'Web';
-  webBtn.addEventListener('click', function() {
-    setArcViewMode('web');
-    renderArcDetail(arcId);
-  });
-  toolbar.appendChild(webBtn);
+  toolbar.setAttribute('aria-label', 'Arc face');
+  var ARC_FACES = [['field', 'Field'], ['read', 'Read'], ['page', 'Page']];
+  var afi;
+  for (afi = 0; afi < ARC_FACES.length; afi = afi + 1) {
+    (function(faceKey, faceLabel) {
+      var faceBtn = document.createElement('button');
+      faceBtn.type = 'button';
+      faceBtn.className = 'seg-opt' + (arcFace === faceKey ? ' is-on' : '');
+      faceBtn.setAttribute('role', 'tab');
+      faceBtn.setAttribute('data-arc-face', faceKey);
+      faceBtn.textContent = faceLabel;
+      faceBtn.addEventListener('click', function() {
+        sv('praxis_arc_face', faceKey);
+        renderArcDetail(arcId);
+      });
+      toolbar.appendChild(faceBtn);
+    })(ARC_FACES[afi][0], ARC_FACES[afi][1]);
+  }
 
   header.appendChild(toolbar);
   wrap.appendChild(header);
@@ -11027,7 +11286,11 @@ function renderArcDetail(arcId) {
   // Stage 5.3 baseline render below in else; the brace moves, the
   // iteration logic is byte-for-byte unchanged (kept at its existing
   // indent on purpose -- minimum-scope diff).
-  if (viewMode === 'web') {
+  if (arcFace === 'field') {
+    // Wave 1 (F-D5): Tidy is an opt-in, session-only compose -- when on, arcData
+    // positions are nulled so the renderer draws its OWN composed radial layout,
+    // WITHOUT clearing the persisted placements. Restore reverts. Never auto.
+    var arcTidyOn = ls('praxis_arc_tidy', false) === true;
     var webContainer = document.createElement('div');
     // Keep .arc-detail-web-view (ALL its constellation CSS — layer fades, drift,
     // svg sizing — survives byte-identical) + ADD the mock .cstl-host + id.
@@ -11082,6 +11345,19 @@ function renderArcDetail(arcId) {
       // attachSubTheoryDrag and keeps its data-st-control='connect' hook.
       var stControlBarBottom = document.createElement('div');
       stControlBarBottom.className = 'st-control-bar st-control-bar-bottom';
+
+      // Wave 1 (F-D5): Tidy / Restore -- opt-in session compose (arcTidyOn above).
+      var tidyBtn = document.createElement('button');
+      tidyBtn.type = 'button';
+      tidyBtn.className = 'arc-detail-toggle-btn arcfield-tidy' + (arcTidyOn ? ' is-active' : '');
+      tidyBtn.setAttribute('data-st-control', 'tidy');
+      tidyBtn.title = 'Compose the field — opt-in, never automatic';
+      tidyBtn.textContent = arcTidyOn ? 'Restore' : 'Tidy';
+      tidyBtn.addEventListener('click', function() {
+        sv('praxis_arc_tidy', !arcTidyOn);
+        renderArcDetail(arcId);
+      });
+      stControlBarBottom.appendChild(tidyBtn);
 
       var connectBtn = document.createElement('button');
       connectBtn.type = 'button';
@@ -11215,6 +11491,16 @@ function renderArcDetail(arcId) {
       // Stage 4: the Connect/Reset/Layers bar sits AFTER the svg (bottom).
       webContainer.appendChild(stControlBarBottom);
       var arcData = _arcDetailBuildSubTheoryData(arc);
+      // Wave 1 (F-D5): Tidy on -> null every position so the renderer lays out
+      // its OWN composed radial arrangement this render only (never persisted;
+      // the stored placements are untouched, so Restore brings them straight back).
+      if (arcTidyOn && arcData && arcData.subTheories) {
+        var tdi;
+        for (tdi = 0; tdi < arcData.subTheories.length; tdi = tdi + 1) {
+          arcData.subTheories[tdi].x = null;
+          arcData.subTheories[tdi].y = null;
+        }
+      }
       window.renderSubTheoryConstellation(arcData, svg,
         { showMarginalia: stShowMarginalia,
           showBooks: stShowBooks,
@@ -11252,106 +11538,186 @@ function renderArcDetail(arcId) {
     arcStage.appendChild(webContainer);
     arcStage.appendChild(buildArcFieldRail(arc, arcId, user));
     wrap.appendChild(arcStage);
+
+    // Wave 1 (F-D3): the concentrate whisper card -- Yumi's cyan voice, but
+    // DETERMINISTIC (real thread facts only, no generated prose). Hidden until a
+    // mark is tapped; _stConstellationAttachInteractions populates + reveals it.
+    var arcWhisper = document.createElement('div');
+    arcWhisper.className = 'lum-yumi arcfield-whisper';
+    arcWhisper.id = 'arcfield-whisper';
+    var awDot = document.createElement('span');
+    awDot.className = 'dot';
+    awDot.setAttribute('aria-hidden', 'true');
+    var awBody = document.createElement('div');
+    awBody.className = 'arcfield-whisper-body';
+    arcWhisper.appendChild(awDot);
+    arcWhisper.appendChild(awBody);
+    wrap.appendChild(arcWhisper);
+  } else if (arcFace === 'read') {
+    // Wave 1 (F-D2): the READ face -- a DETERMINISTIC view of the arc's real
+    // threads (edges from linkedSubTheories) + the sub-theories they connect.
+    // No model call, no generated prose. Generative narration -> Deferred Log.
+    wrap.appendChild(_arcFieldReadFace(arc));
   } else {
-
-  // Merge books + entries into one stream, oldest-first by addedAt.
-  // The 3.8 attach mutators guarantee every push is well-formed
-  // {id, addedAt} (Stage 0 verified by code reading), so no shape
-  // check is needed. Defensive id checks protect against console-
-  // injected legacy data only.
-  var members = [];
-  var i;
-  // 2.0 hardening (batch 1): a Firestore-merged arc can arrive without
-  // bookIds/entryIds (the arc merge path runs no ensureArcFields backfill),
-  // so read both defensively -- an undefined .length here threw a TypeError
-  // that aborted the whole arc-detail render (the v3.143 white-screen failure).
-  // Mirrors the existing "arc.bookIds && arc.bookIds.length" guard idiom used
-  // elsewhere in this file.
-  var arcBookIds = arc.bookIds || [];
-  var arcEntryIds = arc.entryIds || [];
-  for (i = 0; i < arcBookIds.length; i++) {
-    var bm = arcBookIds[i];
-    if (bm && bm.id) {
-      members.push({
-        kind:    'book',
-        id:      bm.id,
-        addedAt: bm.addedAt || 0
-      });
-    }
+    // Wave 1: the PAGE face -- a real STUB that hands off to the existing writing
+    // route (#subtheory/<id>/build). The writing surface is NOT rebuilt here.
+    wrap.appendChild(_arcFieldPageFace(arc, arcId, user));
   }
-  for (i = 0; i < arcEntryIds.length; i++) {
-    var em = arcEntryIds[i];
-    if (em && em.id) {
-      members.push({
-        kind:    'entry',
-        id:      em.id,
-        addedAt: em.addedAt || 0
-      });
-    }
-  }
-  members.sort(function(x, y) {
-    return (x.addedAt || 0) - (y.addedAt || 0);
-  });
-
-  if (members.length === 0) {
-    var empty = document.createElement('p');
-    empty.className = 'arc-detail-empty-body';
-    empty.textContent =
-      'No books or entries in this arc yet. Open a book or an ' +
-      'entry and use "Add to arc…" to attach it here.';
-    wrap.appendChild(empty);
-  } else {
-    var list = document.createElement('div');
-    list.className = 'arc-detail-member-list';
-    var m;
-    for (m = 0; m < members.length; m++) {
-      var member = members[m];
-      if (member.kind === 'book') {
-        var book = state.books && state.books[member.id];
-        if (!book) {
-          list.appendChild(renderArcMissingMember('book'));
-        } else {
-          // Stage 5.3 Stage 4: each arc-member book gets a "Find this
-          // book" line beneath the shelf-book card. The shelf-book card
-          // itself is an <a> (whole-card link to #book/<id>), so the
-          // Bookshop link CANNOT nest inside it -- nested anchors are
-          // invalid HTML. Wrap the card + the find link in a
-          // .arc-detail-book-member container so the pair reads as one
-          // unit; the find link's CSS attaches it visually to the card
-          // above. buildBookshopUrl returns null for books without an
-          // ISBN -- in that case we skip the link entirely (no
-          // title-search fallback per the locked spec).
-          var memberWrap = document.createElement('div');
-          memberWrap.className = 'arc-detail-book-member';
-          memberWrap.appendChild(renderShelfBook(book));
-          var arcFindUrl = buildBookshopUrl(book.isbn);
-          if (arcFindUrl) {
-            var arcFindLink = document.createElement('a');
-            arcFindLink.className = 'find-this-book';
-            arcFindLink.href = arcFindUrl;
-            arcFindLink.target = '_blank';
-            arcFindLink.rel = 'noopener noreferrer';
-            arcFindLink.textContent = 'Find this book';
-            memberWrap.appendChild(arcFindLink);
-          }
-          list.appendChild(memberWrap);
-        }
-      } else {
-        var entry = state.notebookEntries
-          && state.notebookEntries[member.id];
-        if (!entry) {
-          list.appendChild(renderArcMissingMember('entry'));
-        } else {
-          list.appendChild(renderNotebookEntry(entry));
-        }
-      }
-    }
-    wrap.appendChild(list);
-  }
-
-  } // <-- Stage 5.4 Stage 1d: close the viewMode === 'web' else branch.
 
   host.appendChild(wrap);
+}
+
+// Wave 1 (F-D2): the READ face. A DETERMINISTIC real-data view of the arc's
+// connective tissue -- the threads (edges derived from linkedSubTheories) and
+// the sub-theories they join, with each sub-theory's real connection count. NO
+// model call, NO generated prose (that is the deferred generative narration).
+// Reuses _arcDetailBuildSubTheoryData so the edge set is exactly the Field's.
+function _arcFieldReadFace(arc) {
+  var wrap = document.createElement('div');
+  wrap.className = 'arcfield-read';
+  var head = document.createElement('div');
+  head.className = 'arcfield-read-head';
+  var hdot = document.createElement('span');
+  hdot.className = 'dot';
+  hdot.setAttribute('aria-hidden', 'true');
+  head.appendChild(hdot);
+  head.appendChild(document.createTextNode('The threads in your field'));
+  wrap.appendChild(head);
+
+  var data = _arcDetailBuildSubTheoryData(arc);
+  var subs = (data && data.subTheories) ? data.subTheories : [];
+  var edges = (data && data.edges) ? data.edges : [];
+  var byId = {};
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) { byId[subs[i].id] = subs[i]; }
+
+  if (subs.length === 0) {
+    var noneP = document.createElement('p');
+    noneP.className = 'arcfield-read-empty';
+    noneP.textContent = 'No sub-theories in this arc yet. Add one from the Field to begin.';
+    wrap.appendChild(noneP);
+    return wrap;
+  }
+
+  // (a) the threads: each a real linkedSubTheories A <-> B pair.
+  var threadsWrap = document.createElement('div');
+  threadsWrap.className = 'arcfield-read-threads';
+  if (edges.length === 0) {
+    var noThreads = document.createElement('p');
+    noThreads.className = 'arcfield-read-empty';
+    noThreads.textContent = 'No threads yet. Connect two ideas in the Field to thread a resonance.';
+    threadsWrap.appendChild(noThreads);
+  } else {
+    var e, a, b, row;
+    for (e = 0; e < edges.length; e = e + 1) {
+      a = byId[edges[e].aId];
+      b = byId[edges[e].bId];
+      if (!a || !b) { continue; }
+      row = document.createElement('div');
+      row.className = 'arcfield-thread-row';
+      var an = document.createElement('span');
+      an.className = 'nm';
+      an.textContent = a.header || 'Untitled';
+      var lk = document.createElement('span');
+      lk.className = 'arcfield-thread-link';
+      lk.setAttribute('aria-hidden', 'true');
+      lk.textContent = '⟷';
+      var bn = document.createElement('span');
+      bn.className = 'nm';
+      bn.textContent = b.header || 'Untitled';
+      row.appendChild(an);
+      row.appendChild(lk);
+      row.appendChild(bn);
+      threadsWrap.appendChild(row);
+    }
+  }
+  wrap.appendChild(threadsWrap);
+
+  // (b) each sub-theory + its real connection count (deterministic degree).
+  var degree = {};
+  var ej;
+  for (ej = 0; ej < edges.length; ej = ej + 1) {
+    degree[edges[ej].aId] = (degree[edges[ej].aId] || 0) + 1;
+    degree[edges[ej].bId] = (degree[edges[ej].bId] || 0) + 1;
+  }
+  var listWrap = document.createElement('div');
+  listWrap.className = 'arcfield-read-subs';
+  var s, srow, sn, sc, d;
+  for (s = 0; s < subs.length; s = s + 1) {
+    d = degree[subs[s].id] || 0;
+    srow = document.createElement('a');
+    srow.className = 'arcfield-read-sub';
+    srow.href = '#subtheory/' + subs[s].id;
+    sn = document.createElement('span');
+    sn.className = 'arcfield-read-sub-name';
+    sn.textContent = subs[s].header || 'Untitled sub-theory';
+    sc = document.createElement('span');
+    sc.className = 'arcfield-read-sub-meta';
+    sc.textContent = (d === 0) ? 'no threads' : (d + (d === 1 ? ' thread' : ' threads'));
+    srow.appendChild(sn);
+    srow.appendChild(sc);
+    listWrap.appendChild(srow);
+  }
+  wrap.appendChild(listWrap);
+  return wrap;
+}
+
+// Wave 1: the PAGE face -- a real STUB. Shows the focal (first) sub-theory's
+// mark + title and hands off to the EXISTING writing route (#subtheory/<id>/
+// build). Does NOT rebuild the writing surface. Empty arc -> an add prompt.
+function _arcFieldPageFace(arc, arcId, user) {
+  var wrap = document.createElement('div');
+  wrap.className = 'arcfield-page';
+  var data = _arcDetailBuildSubTheoryData(arc);
+  var subs = (data && data.subTheories) ? data.subTheories : [];
+  var bodyText = 'This is where a light becomes prose — the lifted sheet, your '
+    + 'marginalia woven in as evidence. The writing surface lives on its own page.';
+  if (subs.length === 0) {
+    var mk0 = document.createElement('div');
+    mk0.className = 'arcfield-page-mark';
+    wrap.appendChild(mk0);
+    var h0 = document.createElement('h2');
+    h0.className = 'arcfield-page-title';
+    h0.textContent = 'Write the first sub-theory';
+    wrap.appendChild(h0);
+    var p0 = document.createElement('p');
+    p0.className = 'arcfield-page-body';
+    p0.textContent = bodyText;
+    wrap.appendChild(p0);
+    if (user) {
+      var add0 = document.createElement('button');
+      add0.type = 'button';
+      add0.className = 'btn btn-primary arcfield-page-open';
+      add0.textContent = '＋ Add a sub-theory';
+      add0.addEventListener('click', function() {
+        location.hash = 'arc/' + arcId + '/new-subtheory';
+      });
+      wrap.appendChild(add0);
+    }
+    return wrap;
+  }
+  var focal = subs[0];
+  var mk = document.createElement('div');
+  mk.className = 'arcfield-page-mark';
+  if (typeof bookSubMarkHTML === 'function') {
+    var focalRec = (state.subTheories && state.subTheories[focal.id]) ? state.subTheories[focal.id] : focal;
+    mk.innerHTML = bookSubMarkHTML(focalRec, 60);
+  }
+  wrap.appendChild(mk);
+  var h = document.createElement('h2');
+  h.className = 'arcfield-page-title';
+  h.textContent = 'Write “' + (focal.header || 'this sub-theory') + '”';
+  wrap.appendChild(h);
+  var p = document.createElement('p');
+  p.className = 'arcfield-page-body';
+  p.textContent = bodyText;
+  wrap.appendChild(p);
+  var open = document.createElement('a');
+  open.className = 'btn btn-primary arcfield-page-open';
+  open.href = '#subtheory/' + focal.id + '/build';
+  open.textContent = 'Open the page →';
+  wrap.appendChild(open);
+  return wrap;
 }
 
 // Placeholder row for an arc member whose underlying book or entry
