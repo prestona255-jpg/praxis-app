@@ -399,7 +399,9 @@
 
   function open() {
     close(); // never stack two overlays
-    var ov = el('div', 'ic-overlay');
+    // Wave 7 · Surface B: .lum-amber-deep scopes the components.css token remap that
+    // reskins the whole modal (chrome only; segmentation/dictation/commit untouched).
+    var ov = el('div', 'ic-overlay lum-amber-deep');
     ov.id = OVERLAY_ID;
     var panel = el('div', 'ic-panel');
     ov.appendChild(panel);

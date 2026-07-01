@@ -2386,35 +2386,198 @@ function _arcCardCounts(arcId, arcRec) {
   return c;
 }
 
-// Canon §4-G: the mono meta line. Always books + sub-theories; marginalia
-// only when present (the mockup omits a zero marginalia count).
-function _arcCardMetaText(counts) {
-  var parts = [];
-  parts.push(counts.books + (counts.books === 1 ? ' book' : ' books'));
-  parts.push(counts.subTheories +
-    (counts.subTheories === 1 ? ' sub-theory' : ' sub-theories'));
-  if (counts.marginalia > 0) {
-    parts.push(counts.marginalia + ' marginalia');
+// (Wave 7 · Surface C: the books·sub-theories·marginalia meta line _arcCardMetaText
+// was replaced by _arcCardMeta2El (sub-theories · maturity · touched); removed as dead.)
+
+// (Wave 7 · Surface C: the static single-spark _arcCardThumb was replaced by the
+// per-arc _arcCardConstellation; the illustrated example uses its empty-band form.)
+
+// ============================================================================
+// Wave 7 · Surface C (Arcs -> .lum-amber): real-data helpers. Sort binds to real
+// fields (createdAt / title / aggregate maturity); the mini-constellation renders
+// each sub-theory's idea-light through the shared bookSubMarkHTML bridge (stored
+// markShape/markColor else stHashIndices(id); never hand-rolled SVG). Published
+// flag + consequence counts do NOT exist on the arc record -> their controls are
+// OMITTED, not fabricated (logged as a data-model task).
+// ============================================================================
+
+// Sub-theory records of an arc, oldest-first.
+function _arcSubsOf(arcId) {
+  var out = [];
+  var k;
+  if (!arcId || !state.subTheories) { return out; }
+  for (k in state.subTheories) {
+    if (Object.prototype.hasOwnProperty.call(state.subTheories, k) &&
+        state.subTheories[k] && state.subTheories[k].arcId === arcId) {
+      out.push(state.subTheories[k]);
+    }
   }
-  return parts.join(' · ');
+  out.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+  return out;
 }
 
-// Canon §4-G: the constellation thumb -- a luminous banner with a small
-// spark glyph (CSS supplies the radial glow + token fill). Inline SVG so it
-// scales; aria-hidden (decorative).
-function _arcCardThumb() {
+// Arc-level maturity in [0,1]: mean of the real per-sub _stComputeMaturity (the
+// same derivation the constellation + sub-theory detail use). Empty arc -> 0.
+function _arcAggregateMaturity(arcId) {
+  var subs = _arcSubsOf(arcId);
+  if (!subs.length) { return 0; }
+  var sum = 0, i;
+  for (i = 0; i < subs.length; i = i + 1) {
+    sum = sum + ((typeof _stComputeMaturity === 'function') ? _stComputeMaturity(subs[i]) : 0);
+  }
+  return sum / subs.length;
+}
+
+// Maturity ramp word (mock .ameta): seed -> forming -> warming -> mature -> bright,
+// derived from the real aggregate. Empty arc reads 'seed'.
+function _arcMaturityWord(arcId) {
+  if (!_arcSubsOf(arcId).length) { return 'seed'; }
+  var m = _arcAggregateMaturity(arcId);
+  if (m < 0.2) { return 'forming'; }
+  if (m < 0.4) { return 'warming'; }
+  if (m < 0.7) { return 'mature'; }
+  return 'bright';
+}
+
+// "touched <when>": newest real activity = max(arc.createdAt, max sub.updatedAt).
+function _arcTouchedWord(arcId, rec) {
+  var newest = (rec && rec.createdAt) ? rec.createdAt : 0;
+  var subs = _arcSubsOf(arcId);
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) {
+    var u = subs[i].updatedAt || subs[i].createdAt || 0;
+    if (u > newest) { newest = u; }
+  }
+  if (!newest) { return ''; }
+  var ago = Date.now() - newest;
+  if (ago < 86400000) { return 'touched today'; }
+  var d = Math.round(ago / 86400000);
+  if (d < 7) { return 'touched ' + d + (d === 1 ? ' day ago' : ' days ago'); }
+  if (d < 14) { return 'touched last week'; }
+  if (d < 30) { return 'touched ' + Math.round(d / 7) + ' weeks ago'; }
+  var mo = Math.round(d / 30);
+  return 'touched ' + (mo <= 1 ? 'a month ago' : mo + ' months ago');
+}
+
+// Mono meta line (mock .ameta): "N sub-theories · <maturity> · touched <when>".
+// Count is real (_arcCardCounts); maturity + touched are derived above.
+function _arcCardMeta2El(arcId, rec) {
+  var counts = _arcCardCounts(arcId, rec);
+  var meta = document.createElement('p');
+  meta.className = 'arc-card-meta';
+  var parts = [];
+  parts.push(counts.subTheories + (counts.subTheories === 1 ? ' sub-theory' : ' sub-theories'));
+  parts.push(_arcMaturityWord(arcId));
+  var touched = _arcTouchedWord(arcId, rec);
+  if (touched) { parts.push(touched); }
+  meta.textContent = parts.join(' · ');
+  return meta;
+}
+
+// Per-arc mini-constellation thumb (mock .const). Up to 5 of the arc's sub-theory
+// idea-lights via bookSubMarkHTML (the shared PraxisMarks bridge), positioned
+// deterministically from each sub's id, threaded with faint curves; each light's
+// size + glow scale with its real maturity. Empty arc -> a quiet dark band.
+function _arcCardConstellation(arcId) {
   var thumb = document.createElement('div');
-  thumb.className = 'arc-card-thumb';
+  thumb.className = 'arc-card-thumb arc-const';
   thumb.setAttribute('aria-hidden', 'true');
+  var subs = _arcSubsOf(arcId);
+  var usable = (typeof bookSubMarkHTML === 'function' &&
+                typeof PraxisMarks !== 'undefined' && PraxisMarks && PraxisMarks.render);
+  if (!subs.length || !usable) {
+    thumb.className = 'arc-card-thumb arc-const arc-const-empty';
+    return thumb;
+  }
+  var n = subs.length < 5 ? subs.length : 5;
+  var pos = [];
+  var i, j;
+  for (i = 0; i < n; i = i + 1) {
+    var id = subs[i].id || ('s' + i);
+    var h = 0;
+    for (j = 0; j < id.length; j = j + 1) { h = (h * 31 + id.charCodeAt(j)) >>> 0; }
+    var fx = (h % 1000) / 1000;
+    var fy = ((h >>> 10) % 1000) / 1000;
+    var x = 16 + (n === 1 ? 50 : (i * (68 / (n - 1)))) + (fx * 14 - 7);
+    var y = 32 + fy * 38;
+    if (x < 8) { x = 8; } if (x > 92) { x = 92; }
+    var mat = (typeof _stComputeMaturity === 'function') ? _stComputeMaturity(subs[i]) : 0.5;
+    pos.push({ x: x, y: y, cd: Math.round(15 + 13 * mat), mat: mat, sub: subs[i] });
+  }
   var NS = 'http://www.w3.org/2000/svg';
   var svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('class', 'arc-card-thumb-spark');
-  var path = document.createElementNS(NS, 'path');
-  path.setAttribute('d', 'M12 0L14 10 24 12 14 14 12 24 10 14 0 12 10 10Z');
-  svg.appendChild(path);
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('class', 'arc-const-threads');
+  for (i = 1; i < pos.length; i = i + 1) {
+    var p0 = pos[i - 1], p1 = pos[i];
+    var path = document.createElementNS(NS, 'path');
+    var mx = (p0.x + p1.x) / 2, my = (p0.y + p1.y) / 2 - 8;
+    path.setAttribute('d', 'M ' + p0.x + ' ' + p0.y + ' Q ' + mx + ' ' + my + ' ' + p1.x + ' ' + p1.y);
+    svg.appendChild(path);
+  }
   thumb.appendChild(svg);
+  for (i = 0; i < pos.length; i = i + 1) {
+    var p = pos[i];
+    var light = document.createElement('span');
+    light.className = 'arc-light';
+    light.style.left = p.x + '%';
+    light.style.top = p.y + '%';
+    light.style.opacity = String(0.5 + 0.5 * p.mat);
+    light.innerHTML = bookSubMarkHTML(p.sub, p.cd);
+    thumb.appendChild(light);
+  }
   return thumb;
+}
+
+// Sort mode (persisted): recent | name | maturity. Bound to real fields only.
+var _arcsSortMode = (typeof ls === 'function') ? ls('praxis_arcs_sort', 'recent') : 'recent';
+
+function _arcsSortApply(arr) {
+  var m = _arcsSortMode;
+  arr.sort(function (a, b) {
+    if (m === 'name') {
+      var ta = (a.rec.title || '').toLowerCase(), tb = (b.rec.title || '').toLowerCase();
+      return ta < tb ? -1 : (ta > tb ? 1 : 0);
+    }
+    if (m === 'maturity') {
+      return _arcAggregateMaturity(b.id) - _arcAggregateMaturity(a.id);
+    }
+    return (b.rec.createdAt || 0) - (a.rec.createdAt || 0);
+  });
+  return arr;
+}
+
+// Control bar (mock .bar): the Recent/Name/Maturity segmented sort + an "N arcs"
+// count. No Published-only toggle -- the arc record has no published flag (DEFERRED).
+function _arcsSortBar(count) {
+  var bar = document.createElement('div');
+  bar.className = 'arcs-bar';
+  var seg = document.createElement('div');
+  seg.className = 'arcs-seg';
+  var modes = [['recent', 'Recent'], ['name', 'Name'], ['maturity', 'Maturity']];
+  var i;
+  for (i = 0; i < modes.length; i = i + 1) {
+    (function (mode, label) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'arcs-seg-btn' + (_arcsSortMode === mode ? ' is-on' : '');
+      b.textContent = label;
+      b.addEventListener('click', function () {
+        if (_arcsSortMode === mode) { return; }
+        _arcsSortMode = mode;
+        if (typeof sv === 'function') { sv('praxis_arcs_sort', mode); }
+        renderArcsPage();
+      });
+      seg.appendChild(b);
+    })(modes[i][0], modes[i][1]);
+  }
+  bar.appendChild(seg);
+  var cnt = document.createElement('span');
+  cnt.className = 'arcs-count';
+  cnt.textContent = count + (count === 1 ? ' arc' : ' arcs');
+  bar.appendChild(cnt);
+  return bar;
 }
 
 function renderArcsPage() {
@@ -2423,7 +2586,9 @@ function renderArcsPage() {
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  wrap.className = 'arcs';
+  // Wave 7 · Surface C: .lum-amber atmosphere supplies the amber "your thinking"
+  // ground (lumen-amber.css); the existing .arcs layout rules are reskinned below.
+  wrap.className = 'arcs lum-amber';
 
   // Umber port (surface 3): the mock .arcs-head -- eyebrow + title + teaching.
   // The header "+ Create an arc" button is dropped; create is reached via the
@@ -2477,9 +2642,7 @@ function renderArcsPage() {
         }
       }
     }
-    ownArcs.sort(function(a, b) {
-      return (b.rec.createdAt || 0) - (a.rec.createdAt || 0);
-    });
+    _arcsSortApply(ownArcs);
     // Stage 3 (mockup-fidelity): render the "Your arcs" grid for any signed-in
     // user (even with zero arcs) so the dashed "Start another arc" tile always
     // has a home. The page <h1> already says "Your arcs"; the former section
@@ -2491,6 +2654,9 @@ function renderArcsPage() {
     yoursHd.appendChild(yoursHdH2);
     wrap.appendChild(yoursHd);
 
+    // Control bar (mock .bar): Recent/Name/Maturity sort + "N arcs" count.
+    wrap.appendChild(_arcsSortBar(ownArcs.length));
+
     var yoursSec = document.createElement('section');
     yoursSec.className = 'arcs-grid';
     yoursSec.id = 'arcs-yours';
@@ -2501,7 +2667,7 @@ function renderArcsPage() {
       yCard.className = 'arc-card arc-card-live';
       yCard.href = '#arc/' + ownArcs[yi].id;
 
-      yCard.appendChild(_arcCardThumb());
+      yCard.appendChild(_arcCardConstellation(ownArcs[yi].id));
 
       var yText = document.createElement('div');
       yText.className = 'arc-card-body';
@@ -2511,20 +2677,13 @@ function renderArcsPage() {
       yTitle.textContent = ownArcs[yi].rec.title || 'Untitled arc';
       yText.appendChild(yTitle);
 
-      if (ownArcs[yi].rec.description) {
-        var yDesc = document.createElement('p');
-        yDesc.className = 'arc-card-desc';
-        yDesc.textContent = ownArcs[yi].rec.description;
-        yText.appendChild(yDesc);
-      }
+      // Wave 7 C1: mockup arc tiles carry NO description — constellation + title +
+      // meta carry the card. Description paragraph removed (was arc-card-desc).
 
       yCard.appendChild(yText);
 
-      var yMeta = document.createElement('p');
-      yMeta.className = 'arc-card-meta';
-      yMeta.textContent = _arcCardMetaText(
-        _arcCardCounts(ownArcs[yi].id, ownArcs[yi].rec));
-      yCard.appendChild(yMeta);
+      // Meta = real sub-theory count · derived maturity word · touched-when.
+      yCard.appendChild(_arcCardMeta2El(ownArcs[yi].id, ownArcs[yi].rec));
 
       yoursSec.appendChild(yCard);
     }
@@ -2602,7 +2761,7 @@ function renderArcsPage() {
     desireCard.className = 'arc-card arc-card-live';
     desireCard.href = '#arc/' + seedInfo.arcId;
 
-    desireCard.appendChild(_arcCardThumb());
+    desireCard.appendChild(_arcCardConstellation(seedInfo.arcId));
 
     var desireText = document.createElement('div');
     desireText.className = 'arc-card-body';
@@ -2612,19 +2771,13 @@ function renderArcsPage() {
     desireTitle.textContent = seedArc.title || 'A Pedagogy of Desire';
     desireText.appendChild(desireTitle);
 
-    var desireDesc = document.createElement('p');
-    desireDesc.className = 'arc-card-desc';
-    desireDesc.textContent = seedArc.description || '';
-    desireText.appendChild(desireDesc);
+    // Wave 7 C1: no description on the arc tile (mockup-exact) — the seed example
+    // card matches the real arc cards: constellation + title + meta.
 
     desireCard.appendChild(desireText);
 
-    // Canon §4-G: computed-count meta line replaces the 5 cover thumbnails.
-    var desireMeta = document.createElement('p');
-    desireMeta.className = 'arc-card-meta';
-    desireMeta.textContent = _arcCardMetaText(
-      _arcCardCounts(seedInfo.arcId, seedArc));
-    desireCard.appendChild(desireMeta);
+    // Meta = real sub-theory count · derived maturity word · touched-when.
+    desireCard.appendChild(_arcCardMeta2El(seedInfo.arcId, seedArc));
 
     examplesSec.appendChild(desireCard);
   }
@@ -2632,7 +2785,7 @@ function renderArcsPage() {
   var flowCard = document.createElement('div');
   flowCard.className = 'arc-card arc-card-illustrated';
 
-  flowCard.appendChild(_arcCardThumb());
+  flowCard.appendChild(_arcCardConstellation(null));
 
   var flowLabel = document.createElement('span');
   flowLabel.className = 'arc-card-label';
@@ -2647,13 +2800,8 @@ function renderArcsPage() {
   flowTitle.textContent = 'A Pedagogy of Flow';
   flowText.appendChild(flowTitle);
 
-  var flowDesc = document.createElement('p');
-  flowDesc.className = 'arc-card-desc';
-  flowDesc.textContent =
-    'Five books on intersectionality as connective tissue — ' +
-    'sound studies, relationships, psychoanalysis, systems, ' +
-    'and environment, read as one weather.';
-  flowText.appendChild(flowDesc);
+  // Wave 7 C1: the illustrated example card is ON the Arcs page too, so its
+  // description is removed as well — the whole page is title-only per the mockup.
 
   flowCard.appendChild(flowText);
   examplesSec.appendChild(flowCard);

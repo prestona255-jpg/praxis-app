@@ -168,10 +168,18 @@ function renderYumiEmptyState() {
 
 function renderUserMessage(text) {
   if (!yumiBodyEl) { return; }
+  // Wave 7 A5: a quiet mono "You" eyebrow above the right-aligned bubble (mock .msg.you .who).
+  var wrap = document.createElement('div');
+  wrap.className = 'yumi-msg-userwrap';
+  var who = document.createElement('div');
+  who.className = 'yumi-msg-who';
+  who.textContent = 'You';
+  wrap.appendChild(who);
   var msg = document.createElement('div');
   msg.className = 'yumi-msg yumi-msg-user';
   msg.textContent = text;
-  yumiBodyEl.appendChild(msg);
+  wrap.appendChild(msg);
+  yumiBodyEl.appendChild(wrap);
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
@@ -259,9 +267,15 @@ function renderYumiMessage(text, grounding, opts) {
 function renderTypingIndicator() {
   if (!yumiBodyEl) { return; }
   removeTypingIndicator();
+  // Wave 7 A7: the mock's "still reaching Yumi" + 3 pulsing dots (mock .reaching).
   var msg = document.createElement('div');
   msg.className = 'yumi-msg yumi-msg-typing';
-  msg.textContent = '...';
+  msg.appendChild(document.createTextNode('still reaching Yumi'));
+  var tdots = document.createElement('span');
+  tdots.className = 'yumi-typing-dots';
+  tdots.setAttribute('aria-hidden', 'true');
+  tdots.innerHTML = '<i></i><i></i><i></i>';
+  msg.appendChild(tdots);
   yumiBodyEl.appendChild(msg);
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
   // Bloom reflects the in-flight request: thinking while a reply is pending.
@@ -1005,7 +1019,9 @@ function isVoiceOn() {
 function buildYumiPanel() {
   var panel = document.createElement('div');
   panel.id = YUMI_PANEL_ID;
-  panel.className = 'yumi-panel';
+  // Wave 7 · Surface A: the .lum-amber-deep atmosphere supplies --lum-bg for the
+  // reskin override (components.css); the slide-over base + open class are unchanged.
+  panel.className = 'yumi-panel lum-amber-deep';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', 'Yumi');
 
@@ -1104,7 +1120,7 @@ function buildYumiPanel() {
   input.type = 'text';
   input.className = 'yumi-input';
   input.setAttribute('autocomplete', 'off');
-  input.setAttribute('placeholder', 'Say something to Yumi…');
+  input.setAttribute('placeholder', 'Think out loud with Yumi…');
   row.appendChild(input);
   yumiInputEl = input;
 
@@ -1286,6 +1302,12 @@ function buildYumiPanel() {
       if (yumiSendBtnEl) { yumiSendBtnEl.click(); }
     }
   });
+
+  // Wave 7 A8: the reassurance line between the thread and the compose (mock .note).
+  var note = document.createElement('div');
+  note.className = 'yumi-note';
+  note.textContent = 'She’ll never tell you what to think. The thread is yours to take where you want.';
+  panel.appendChild(note);
 
   panel.appendChild(row);
   return panel;
