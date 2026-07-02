@@ -370,7 +370,7 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -395,8 +395,11 @@ function renderRoute() {
   } else if (parts[0] === 'home') {
     // Batch 4A: Home is its own top-nav surface (landing route).
     activeRoute = 'home';
-  } else if (parts[0] === 'account') {
+  } else if (parts[0] === 'account' || parts[0] === 'profile') {
     // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
+    // Wave 6 (re-scoped): the own-profile surface (#profile) is reached FROM the
+    // Account page (its nav link stays in index.html), so it keeps the Account
+    // top-nav link highlighted -- the same sub-surface pattern as book -> books.
     activeRoute = 'account';
   } else if (parts[0] === 'about') {
     // About page (#about): its own top-nav surface (the last text link).
@@ -617,6 +620,19 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderWhatYumiSeesPage();
+    return;
+  }
+  // Wave 6 (re-scoped): the reader's own profile surface (#profile). Real
+  // backing only (userProfiles + the user's own arcs); social counters are
+  // deferred (no cross-user data model). Symmetric pointer clear mirroring the
+  // account / home branches. Placed BEFORE the notebook fallthrough so #profile
+  // is caught here, not swallowed by the catch-all.
+  if (parts[0] === 'profile') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderOwnProfile();
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -15162,6 +15178,303 @@ function _portraitJourneyData(uid) {
   return out;
 }
 
+// ===== WAVE 6 (re-scoped): OWN PROFILE (social) =====
+// The reader's own profile surface (#profile). Real backing ONLY:
+//   - identity from userProfiles (getProfile), editable inline via the EXISTING
+//     saveProfileToFirestore path -- writing ONLY the three fields it already
+//     persists: displayNameOverride / penName / tagline (no new field).
+//   - the signed-in user's OWN arcs (state.arcs where userId === uid), each with
+//     its real idea-marks via bookSubMarkHTML -> PraxisMarks (per-instance
+//     inline gradient; stable-from-id when markShape/markColor absent).
+// Social counters (walk-with / consequence / followers) render a literal em
+// dash: NO cross-user data model exists (Stage-0 recon 2026-07-02). Reading
+// other readers, the commons, and cross-person writes are deferred this wave.
+function renderOwnProfile() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+
+  var wrap = document.createElement('section');
+  wrap.className = 'op-root lum-amber-ember';
+
+  var user = getCurrentUser();
+
+  // Logged-out: honest sign-in prompt, no crash.
+  if (!user || !user.uid) {
+    var soName = document.createElement('h1');
+    soName.className = 'op-name';
+    soName.textContent = 'Your profile';
+    wrap.appendChild(soName);
+    var soCopy = document.createElement('p');
+    soCopy.className = 'op-arcs-sub';
+    soCopy.textContent = 'Sign in to see your profile.';
+    wrap.appendChild(soCopy);
+    var soBtn = document.createElement('button');
+    soBtn.type = 'button';
+    soBtn.className = 'shelf-signin-prompt';
+    soBtn.textContent = 'Sign in';
+    soBtn.addEventListener('click', function () { signInWithGoogle(); });
+    wrap.appendChild(soBtn);
+    host.appendChild(wrap);
+    return;
+  }
+
+  var uid = user.uid;
+  var profile = getProfile(uid) || {};
+
+  var displayName = profile.displayNameOverride
+    ? profile.displayNameOverride
+    : (user.displayName ? user.displayName : (user.email ? user.email : 'Your profile'));
+  var initial = displayName.charAt(0).toUpperCase();
+
+  // ---- header card ----
+  var head = document.createElement('div');
+  head.className = 'op-head lum-glass';
+  var headTop = document.createElement('div');
+  headTop.className = 'op-head-top';
+
+  var mark = document.createElement('div');
+  mark.className = 'op-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  var markInitial = document.createElement('span');
+  markInitial.textContent = initial;
+  mark.appendChild(markInitial);
+  headTop.appendChild(mark);
+
+  var headId = document.createElement('div');
+  headId.className = 'op-head-id';
+
+  var nameRow = document.createElement('div');
+  nameRow.className = 'op-name-row';
+  var nameEl = document.createElement('span');
+  nameEl.className = 'op-name';
+  nameEl.textContent = displayName;
+  nameRow.appendChild(nameEl);
+  var youTag = document.createElement('span');
+  youTag.className = 'op-youtag';
+  youTag.textContent = 'you';
+  nameRow.appendChild(youTag);
+  headId.appendChild(nameRow);
+
+  var hasTagline = !!(profile.tagline);
+  var ident = document.createElement('div');
+  ident.className = hasTagline ? 'op-ident' : 'op-ident op-ident-empty';
+  ident.appendChild(document.createTextNode(
+    hasTagline ? profile.tagline : 'Add a line about your reading life'));
+  var editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'op-edit';
+  editBtn.textContent = 'edit';
+  ident.appendChild(editBtn);
+  headId.appendChild(ident);
+
+  if (profile.penName) {
+    var pubAs = document.createElement('div');
+    pubAs.className = 'op-ident';
+    pubAs.textContent = 'Publishing as ' + profile.penName;
+    headId.appendChild(pubAs);
+  }
+
+  // walk-with: social counters -> em dash (no cross-user model yet).
+  var walk = document.createElement('div');
+  walk.className = 'op-walk';
+  var walkB1 = document.createElement('b');
+  walkB1.textContent = '—';
+  var walkB2 = document.createElement('b');
+  walkB2.textContent = '—';
+  walk.appendChild(walkB1);
+  walk.appendChild(document.createTextNode(' readers walk with you'));
+  var walkSep = document.createElement('span');
+  walkSep.className = 'op-sep';
+  walkSep.textContent = '·';
+  walk.appendChild(walkSep);
+  walk.appendChild(document.createTextNode('you walk with '));
+  walk.appendChild(walkB2);
+  headId.appendChild(walk);
+
+  // ---- inline edit form: writes ONLY the 3 existing fields via the existing
+  // setProfile + saveProfileToFirestore path (no new field, full-doc .set()). ----
+  var editForm = document.createElement('div');
+  editForm.className = 'op-edit-form';
+  var inputs = {};
+  var fields = [
+    ['displayNameOverride', 'Display name', profile.displayNameOverride ? profile.displayNameOverride : '', 'How your name appears'],
+    ['penName', 'Pen name', profile.penName ? profile.penName : '', 'The name you publish under'],
+    ['tagline', 'Reading life', profile.tagline ? profile.tagline : '', 'A one-line description of your reading life']
+  ];
+  var ei;
+  for (ei = 0; ei < fields.length; ei = ei + 1) {
+    (function (key, label, val, ph) {
+      var field = document.createElement('label');
+      field.className = 'op-edit-field';
+      var lab = document.createElement('span');
+      lab.className = 'op-edit-label';
+      lab.textContent = label;
+      field.appendChild(lab);
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'op-edit-input';
+      inp.setAttribute('placeholder', ph);
+      inp.value = val;
+      field.appendChild(inp);
+      inputs[key] = inp;
+      editForm.appendChild(field);
+    })(fields[ei][0], fields[ei][1], fields[ei][2], fields[ei][3]);
+  }
+  var editActions = document.createElement('div');
+  editActions.className = 'op-edit-actions';
+  var saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'op-edit-save';
+  saveBtn.textContent = 'Save';
+  editActions.appendChild(saveBtn);
+  var editNote = document.createElement('span');
+  editNote.className = 'op-edit-note';
+  editActions.appendChild(editNote);
+  editForm.appendChild(editActions);
+
+  editBtn.addEventListener('click', function () {
+    editForm.classList.toggle('is-open');
+  });
+  saveBtn.addEventListener('click', function () {
+    setProfile(uid, {
+      displayNameOverride: inputs.displayNameOverride.value.trim(),
+      penName:             inputs.penName.value.trim(),
+      tagline:             inputs.tagline.value.trim()
+    });
+    editNote.textContent = 'Saving…';
+    saveProfileToFirestore(uid, getProfile(uid), function (r) {
+      if (r && r.status === 'ok') {
+        editNote.textContent = 'Saved';
+      } else {
+        editNote.textContent = 'Saved locally — sync will retry on reload.';
+      }
+      renderOwnProfile();
+    });
+  });
+
+  headTop.appendChild(headId);
+  head.appendChild(headTop);
+  head.appendChild(editForm);
+  wrap.appendChild(head);
+
+  // ---- consequence (deferred; social model absent -> counter is an em dash) ----
+  var conseq = document.createElement('div');
+  conseq.className = 'op-conseq lum-glass';
+  var cLabel = document.createElement('p');
+  cLabel.className = 'op-conseq-label';
+  cLabel.textContent = 'What your thinking has done';
+  conseq.appendChild(cLabel);
+  var cHead = document.createElement('p');
+  cHead.className = 'op-conseq-head';
+  cHead.appendChild(document.createTextNode('Your work is load-bearing in '));
+  var cNum = document.createElement('b');
+  cNum.textContent = '—';
+  cHead.appendChild(cNum);
+  cHead.appendChild(document.createTextNode(' other fields.'));
+  conseq.appendChild(cHead);
+  var cSub = document.createElement('p');
+  cSub.className = 'op-conseq-sub';
+  cSub.textContent = 'Who builds on your thinking, and the questions it holds, appears here once Praxis opens to other readers.';
+  conseq.appendChild(cSub);
+  wrap.appendChild(conseq);
+
+  // ---- your arcs (real: the user's own arcs) ----
+  var secHead = document.createElement('div');
+  secHead.className = 'op-section-head';
+  var arcsHd = document.createElement('h2');
+  arcsHd.className = 'op-arcs-head';
+  arcsHd.textContent = 'Your arcs';
+  secHead.appendChild(arcsHd);
+  var newArc = document.createElement('button');
+  newArc.type = 'button';
+  newArc.className = 'op-newarc';
+  newArc.textContent = '+ start an arc';
+  newArc.addEventListener('click', function () { location.hash = '#arcs'; });
+  secHead.appendChild(newArc);
+  wrap.appendChild(secHead);
+
+  var arcsSub = document.createElement('p');
+  arcsSub.className = 'op-arcs-sub';
+  arcsSub.textContent = 'The fields you have built — open one to move through your own thinking.';
+  wrap.appendChild(arcsSub);
+
+  var ownArcs = [];
+  var aId;
+  for (aId in state.arcs) {
+    if (Object.prototype.hasOwnProperty.call(state.arcs, aId)) {
+      var aRec = state.arcs[aId];
+      if (aRec && aRec.userId === uid) {
+        ownArcs.push({ id: aId, rec: aRec });
+      }
+    }
+  }
+  if (typeof _arcsSortApply === 'function') { _arcsSortApply(ownArcs); }
+
+  if (!ownArcs.length) {
+    var empty = document.createElement('div');
+    empty.className = 'op-empty lum-glass';
+    var eh = document.createElement('p');
+    eh.className = 'op-empty-h';
+    eh.textContent = 'You have not started an arc yet';
+    empty.appendChild(eh);
+    var ep = document.createElement('p');
+    ep.className = 'op-empty-p';
+    ep.textContent = 'An arc is a path through your reading. Begin one and watch your field take shape.';
+    empty.appendChild(ep);
+    var eb = document.createElement('button');
+    eb.type = 'button';
+    eb.className = 'op-empty-btn';
+    eb.textContent = 'Start an arc';
+    eb.addEventListener('click', function () { location.hash = '#arcs'; });
+    empty.appendChild(eb);
+    wrap.appendChild(empty);
+  } else {
+    var grid = document.createElement('div');
+    grid.className = 'op-arcs-grid';
+    var gi;
+    for (gi = 0; gi < ownArcs.length; gi = gi + 1) {
+      (function (arcId, rec) {
+        var card = document.createElement('a');
+        card.className = 'op-arc lum-glass';
+        card.href = '#arc/' + arcId;
+
+        var thumb = document.createElement('div');
+        thumb.className = 'op-thumb';
+        var subs = (typeof _arcSubsOf === 'function') ? _arcSubsOf(arcId) : [];
+        var markable = (typeof bookSubMarkHTML === 'function' &&
+          typeof PraxisMarks !== 'undefined' && PraxisMarks && PraxisMarks.render);
+        if (subs.length && markable) {
+          var n = subs.length < 5 ? subs.length : 5;
+          var mi;
+          for (mi = 0; mi < n; mi = mi + 1) {
+            var mspan = document.createElement('span');
+            mspan.innerHTML = bookSubMarkHTML(subs[mi], 26);
+            thumb.appendChild(mspan);
+          }
+        } else {
+          thumb.className = 'op-thumb op-thumb-empty';
+        }
+        card.appendChild(thumb);
+
+        var body = document.createElement('div');
+        var t = document.createElement('h3');
+        t.className = 'op-arc-title';
+        t.textContent = rec.title ? rec.title : 'Untitled arc';
+        body.appendChild(t);
+        if (typeof _arcCardMeta2El === 'function') {
+          body.appendChild(_arcCardMeta2El(arcId, rec));
+        }
+        card.appendChild(body);
+        grid.appendChild(card);
+      })(ownArcs[gi].id, ownArcs[gi].rec);
+    }
+    wrap.appendChild(grid);
+  }
+
+  host.appendChild(wrap);
+}
+
 function renderAccountPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -15298,6 +15611,16 @@ function renderAccountPage() {
 
   hero.appendChild(heroText);
   wrap.appendChild(hero);
+
+  // Wave 6 (re-scoped): discoverability entry to the own-profile surface
+  // (#profile). Kept OUT of index.html's static top-nav this wave per the build
+  // ruling (index.html untouched); reached from the Account page instead. Real,
+  // reversible link -- no new route chrome, no dead links to deferred surfaces.
+  var opProfileLink = document.createElement('a');
+  opProfileLink.className = 'op-account-link';
+  opProfileLink.href = '#profile';
+  opProfileLink.textContent = 'View your public profile →';
+  wrap.appendChild(opProfileLink);
 
   // ----- STANCE (v6 mockup .stance): a bare covenant line between the hero and
   // VALUES -- outside any card and OUTSIDE the portrait umbrella. -----

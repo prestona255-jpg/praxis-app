@@ -11839,3 +11839,160 @@ body.wc-focus .app-nav { opacity:.26; }
 .account.lum-amber-ember .portrait-galaxy-wrap.gal-show-bonds .portrait-bonds path{ opacity:.42; }
 .account.lum-amber-ember .portrait-galaxy-wrap.gal-show-counts .portrait-star .ct{ opacity:.9; }
 /* ===== end WAVE 5 · IDENTITY (Account) ===== */
+
+/* =============================================================================
+   WAVE 6 (re-scoped) · OWN PROFILE  (social surface, real backing only)
+   renderOwnProfile() -- the reader's own profile (#profile). Reached from the
+   Account page this wave (index.html nav left untouched per build ruling).
+   Everything is scoped under .op-root so no selector bleeds to another surface;
+   idea-marks render via bookSubMarkHTML -> PraxisMarks (global .lum-mark). The
+   social counters (walk-with / consequence) render em dashes -- no cross-user
+   data model exists yet (Stage-0 recon 2026-07-02). --lum-* tokens only.
+   ========================================================================== */
+.op-root { max-width: 840px; margin: 0 auto; padding: 34px 20px 70px; }
+
+.op-head { padding: 26px 28px; margin: 0 0 16px 0; }
+.op-head-top { display: flex; align-items: center; gap: 20px; }
+.op-mark {
+  flex: none; width: 74px; height: 74px; border-radius: 50%;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 38% 32%,
+    rgba(255, 236, 200, 0.30) 0%,
+    color-mix(in srgb, var(--lum-gold) 10%, transparent) 45%, transparent 72%);
+  box-shadow: 0 0 0 1px var(--lum-glass-bd);
+}
+.op-mark span {
+  font-family: var(--lum-serif); font-weight: 600; font-size: 34px;
+  color: var(--lum-gold-l); text-shadow: 0 0 18px rgba(255, 236, 200, 0.5);
+}
+.op-head-id { flex: 1; min-width: 0; }
+.op-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.op-name {
+  font-family: var(--lum-serif); font-weight: 600; font-size: 30px;
+  color: var(--lum-ink); line-height: 1.05;
+}
+.op-youtag {
+  font-family: var(--lum-mono); font-size: 9.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--lum-ink-3);
+  border: 1px solid var(--lum-glass-bd-2); border-radius: var(--lum-r-pill); padding: 3px 8px;
+}
+.op-ident {
+  font-family: var(--lum-serif); font-style: italic; font-size: 18px;
+  color: var(--lum-ink-2); margin-top: 3px;
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.op-ident-empty { color: var(--lum-ink-4); }
+.op-edit {
+  font-family: var(--lum-sans); font-style: normal; font-size: 11px;
+  color: var(--lum-ink-4); cursor: pointer; background: none; border: none;
+  padding: 0; border-bottom: 1px dotted var(--lum-ink-4);
+}
+.op-edit:hover { color: var(--lum-ink-2); border-bottom-color: var(--lum-ink-2); }
+.op-walk { margin-top: 16px; font-family: var(--lum-sans); font-size: 12.5px; color: var(--lum-ink-3); }
+.op-walk b { color: var(--lum-ink-2); font-weight: 600; }
+.op-walk .op-sep { color: var(--lum-ink-4); margin: 0 9px; }
+
+/* inline edit form -- writes ONLY displayNameOverride / penName / tagline via
+   the EXISTING saveProfileToFirestore full-doc .set() (integrations.js:810). */
+.op-edit-form {
+  display: none; margin: 18px 0 0 0; padding-top: 16px;
+  border-top: 1px solid var(--lum-glass-bd-2);
+}
+.op-edit-form.is-open { display: block; }
+.op-edit-field { display: block; margin: 0 0 12px 0; }
+.op-edit-label {
+  display: block; font-family: var(--lum-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--lum-ink-3); margin: 0 0 5px 0;
+}
+.op-edit-input {
+  width: 100%; font-family: var(--lum-sans); font-size: 14px; color: var(--lum-ink);
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--lum-glass-bd-2);
+  border-radius: 10px; padding: 9px 12px;
+}
+.op-edit-input:focus { outline: none; border-color: var(--lum-glass-bd); }
+.op-edit-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.op-edit-save {
+  font-family: var(--lum-sans); font-size: 12.5px; color: var(--lum-gold-ink);
+  background: var(--lum-gold); border: 1px solid var(--lum-gold);
+  border-radius: var(--lum-r-pill); padding: 8px 16px; cursor: pointer;
+}
+.op-edit-save:hover { background: var(--lum-gold-l); border-color: var(--lum-gold-l); }
+.op-edit-note { font-family: var(--lum-sans); font-size: 12px; color: var(--lum-ink-3); }
+
+/* consequence -- deferred; the social model is absent, so the counter is an em dash. */
+.op-conseq { padding: 22px 28px; margin: 0 0 24px 0; }
+.op-conseq-label {
+  font-family: var(--lum-mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--lum-ink-3); margin: 0 0 8px 0;
+}
+.op-conseq-head {
+  font-family: var(--lum-serif); font-weight: 500; font-size: 25px;
+  color: var(--lum-ink); line-height: 1.18; margin: 0 0 4px 0;
+}
+.op-conseq-head b { color: var(--lum-gold-l); font-weight: 600; }
+.op-conseq-sub {
+  font-family: var(--lum-serif); font-style: italic; font-size: 15px;
+  color: var(--lum-ink-3); margin: 0;
+}
+
+/* your arcs -- the signed-in user's OWN arcs (real). */
+.op-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px 0; }
+.op-arcs-head { font-family: var(--lum-serif); font-weight: 500; font-size: 22px; color: var(--lum-ink); margin: 0; }
+.op-newarc {
+  font-family: var(--lum-sans); font-size: 12.5px; color: var(--lum-ink-3);
+  border: 1px dashed var(--lum-glass-bd-2); border-radius: var(--lum-r-pill);
+  padding: 7px 14px; cursor: pointer; background: none;
+}
+.op-newarc:hover { color: var(--lum-ink-2); border-color: var(--lum-glass-bd); }
+.op-arcs-sub { font-family: var(--lum-sans); font-size: 13px; color: var(--lum-ink-3); margin: 0 0 16px 0; }
+.op-arcs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+.op-arc {
+  display: block; padding: 18px 20px; color: inherit; text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.op-arc:hover { transform: translateY(-2px); }
+.op-thumb {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 76px; margin: 0 0 14px 0; border-radius: var(--lum-r-card);
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--lum-glass-bd-2); overflow: hidden;
+}
+.op-thumb-empty::after {
+  content: ""; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle, var(--lum-gold-l), transparent 70%); opacity: 0.5;
+}
+.op-arc-title { font-family: var(--lum-serif); font-weight: 600; font-size: 20px; color: var(--lum-ink); line-height: 1.1; margin: 0; }
+/* real meta (reused _arcCardMeta2El .arc-card-meta) recoloured for the ember ground */
+.op-root .arc-card-meta { color: var(--lum-ink-3); border-top-color: var(--lum-glass-bd-2); }
+
+/* honest empty state -- an invitation, not placeholder cards. */
+.op-empty { padding: 28px; text-align: center; }
+.op-empty-h { font-family: var(--lum-serif); font-weight: 500; font-size: 20px; color: var(--lum-ink); margin: 0 0 6px 0; }
+.op-empty-p { font-family: var(--lum-sans); font-size: 13.5px; color: var(--lum-ink-3); margin: 0 auto 14px; max-width: 42ch; }
+.op-empty-btn {
+  font-family: var(--lum-sans); font-size: 12.5px; color: var(--lum-gold-ink);
+  background: var(--lum-gold); border: none; border-radius: var(--lum-r-pill); padding: 9px 18px; cursor: pointer;
+}
+.op-empty-btn:hover { background: var(--lum-gold-l); }
+
+/* Account-page discoverability link to #profile (index.html nav untouched this wave). */
+.op-account-link {
+  display: inline-block; margin: 0 0 20px 0; font-family: var(--lum-mono);
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--lum-ink-3); text-decoration: none;
+  border-bottom: 1px solid var(--lum-glass-bd-2); padding-bottom: 2px;
+}
+.op-account-link:hover { color: var(--lum-gold-l); border-bottom-color: var(--lum-gold-l); }
+
+@media (max-width: 759px) {
+  .op-root { padding: 22px 16px 60px; }
+  .op-head { padding: 22px 20px; }
+  .op-head-top { gap: 14px; }
+  .op-mark { width: 60px; height: 60px; }
+  .op-mark span { font-size: 28px; }
+  .op-name { font-size: 26px; }
+  .op-conseq { padding: 20px; }
+  .op-conseq-head { font-size: 22px; }
+  .op-arcs-grid { grid-template-columns: 1fr; }
+}
+/* ===== end WAVE 6 (re-scoped) · OWN PROFILE ===== */
