@@ -15168,12 +15168,13 @@ function renderAccountPage() {
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  // Wave 5 (Identity): convert #account to the Amber/Lumen system. The atmosphere
-  // class supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
-  // .account.lum-amber-deep block in components.css remaps the base theme tokens
-  // to --lum-* so the whole v6 portrait reskins by construction (same additive
-  // pattern as Shelf/Home). --teal is NOT remapped -> cyan stays Yumi-only.
-  wrap.className = 'account lum-amber-deep';
+  // Wave 5 (Identity); atmosphere per 5.1 #1: convert #account to the Amber/Lumen
+  // system. The atmosphere class supplies the ember "public square" ground
+  // (lumen-amber.css:17 -- the design system's atmosphere map assigns Profiles to
+  // ember, and #account is a profile); the .account.lum-amber-ember block in
+  // components.css remaps the base theme tokens to --lum-* so the whole v6 portrait
+  // reskins by construction. --teal is NOT remapped -> cyan stays Yumi-only.
+  wrap.className = 'account lum-amber-ember';
 
   // ----- HERO -----
   var hero = document.createElement('header');
@@ -15267,15 +15268,21 @@ function renderAccountPage() {
   heroName.appendChild(_heroPencil('Edit profile'));
   heroText.appendChild(heroName);
 
-  // #8 Stage 4b: one-line self-description under the name (italic-serif),
-  // rendered ONLY when set (additive profile.tagline, default-on-read '').
-  if (profile.tagline) {
-    var heroTagline = document.createElement('p');
-    heroTagline.className = 'account-hero-tagline';
-    heroTagline.textContent = profile.tagline;
-    heroTagline.appendChild(_heroPencil('Edit description'));
-    heroText.appendChild(heroTagline);
-  }
+  // #2 (Wave 5.1): the italic descriptor line renders ALWAYS -- profile.tagline
+  // when set, an editable placeholder inviting one when empty (mockup's always-shown
+  // ".ital.desc"). Reuses the existing edit-description flow via _heroPencil; no new
+  // data field. The empty state gets .account-hero-tagline-empty so it reads as a
+  // muted invitation, not a value.
+  var heroHasTagline = !!(profile.tagline);
+  var heroTagline = document.createElement('p');
+  heroTagline.className = heroHasTagline
+    ? 'account-hero-tagline'
+    : 'account-hero-tagline account-hero-tagline-empty';
+  heroTagline.textContent = heroHasTagline
+    ? profile.tagline
+    : 'Add a line about your reading life';
+  heroTagline.appendChild(_heroPencil('Edit description'));
+  heroText.appendChild(heroTagline);
 
   // Pen name as the existing italic sub-line (.account-field-hint), shown
   // only when a pen name is set.
@@ -15328,20 +15335,39 @@ function renderAccountPage() {
   var valuesCard = document.createElement('div');
   valuesCard.className = 'account-card account-values-card';
 
-  var stonesEl = document.createElement('div');
-  stonesEl.className = 'stones';
-  stonesEl.id = 'account-values-stones';
+  // #3 (Wave 5.1): declared values render as full-width vrows (mockup .vrow) --
+  // uniform glow material + name + Rename + remove -- NOT chips. The brightness
+  // meta ("Lives across N books") stays BLOCKED: no meta line, and the glow is a
+  // UNIFORM material, never a data-driven brightness claim.
+  var vlistEl = document.createElement('div');
+  vlistEl.className = 'account-vlist';
+  vlistEl.id = 'account-values-stones';
 
-  var stoneAdd = document.createElement('button');
-  stoneAdd.type = 'button';
-  stoneAdd.className = 'stone-add';
-  stoneAdd.textContent = '＋ place a stone';
+  // The declare row (mockup .declare) is the value-add affordance, kept LAST so
+  // vrows insert before it; Enter commits a new value.
+  var declareRow = document.createElement('div');
+  declareRow.className = 'account-declare';
+  var declarePlus = document.createElement('span');
+  declarePlus.className = 'account-declare-plus';
+  declarePlus.setAttribute('aria-hidden', 'true');
+  declarePlus.textContent = '+';
+  declareRow.appendChild(declarePlus);
+  var declareInput = document.createElement('input');
+  declareInput.type = 'text';
+  declareInput.className = 'account-declare-in';
+  declareInput.setAttribute('placeholder', 'Name a value you hold…');
+  declareInput.setAttribute('aria-label', 'Declare a value');
+  declareRow.appendChild(declareInput);
+  var declareHint = document.createElement('span');
+  declareHint.className = 'account-declare-hint';
+  declareHint.textContent = 'press enter';
+  declareRow.appendChild(declareHint);
 
   function accountValuesCollect() {
-    var out = [], svnodes = stonesEl.querySelectorAll('.stone'), svi;
-    for (svi = 0; svi < svnodes.length; svi = svi + 1) {
-      var sv = svnodes[svi].getAttribute('data-value');
-      if (sv) { out.push(sv); }
+    var out = [], nodes = vlistEl.querySelectorAll('.account-vrow'), i;
+    for (i = 0; i < nodes.length; i = i + 1) {
+      var v = nodes[i].getAttribute('data-value');
+      if (v) { out.push(v); }
     }
     return out;
   }
@@ -15351,60 +15377,92 @@ function renderAccountPage() {
       saveProfileToFirestore(uid, getProfile(uid), function () {});
     }
   }
-  function accountValuesMakeStone(text) {
-    var st = document.createElement('span');
-    st.className = 'stone';
-    st.setAttribute('data-value', text);
-    st.appendChild(document.createTextNode(text));
-    var rm = document.createElement('span');
-    rm.className = 'rm';
-    rm.textContent = '✕';
-    rm.addEventListener('click', function () {
-      if (st.parentNode) { st.parentNode.removeChild(st); }
-      accountValuesPersist();
-    });
-    st.appendChild(rm);
-    stonesEl.insertBefore(st, stoneAdd);
-  }
-
-  // The add button must be in the DOM before seeding so insertBefore(stone, add)
-  // has a valid reference node.
-  stonesEl.appendChild(stoneAdd);
-  var existingValues = (profile.values instanceof Array) ? profile.values : [];
-  var vsx;
-  for (vsx = 0; vsx < existingValues.length; vsx = vsx + 1) {
-    accountValuesMakeStone('' + existingValues[vsx]);
-  }
-
-  stoneAdd.addEventListener('click', function () {
+  // Rename swaps the name for an input; Enter/blur commits the trimmed value via
+  // the SAME setProfile flow. Escape/empty reverts. The current name span is looked
+  // up live (never a stale closure), so repeat renames work.
+  function accountValuesRename(row) {
+    var name = row.querySelector('.account-vname');
+    if (!name) { return; }
+    var cur = row.getAttribute('data-value') || name.textContent;
     var inp = document.createElement('input');
-    inp.className = 'stone-input';
-    inp.setAttribute('placeholder', 'what you care about…');
-    stonesEl.insertBefore(inp, stoneAdd);
+    inp.className = 'account-vrename-in';
+    inp.value = cur;
+    name.parentNode.replaceChild(inp, name);
     inp.focus();
-    // Commit-once guard: pressing Enter detaches the input, which also fires
-    // blur on the (now removed) node; without this guard the value would be
-    // committed twice (a latent double-add in the mock). ES3-dialect correctness
-    // adaptation, not a design change.
-    var committed = false;
+    if (inp.select) { inp.select(); }
+    var done = false;
+    function restore(val) {
+      var fresh = document.createElement('span');
+      fresh.className = 'account-vname';
+      fresh.appendChild(document.createTextNode(val));
+      if (inp.parentNode) { inp.parentNode.replaceChild(fresh, inp); }
+    }
     function commit() {
-      if (committed) { return; }
-      committed = true;
-      var cv = inp.value.trim();
-      if (inp.parentNode) { inp.parentNode.removeChild(inp); }
-      if (cv) { accountValuesMakeStone(cv); accountValuesPersist(); }
+      if (done) { return; }
+      done = true;
+      var nv = inp.value.replace(/^\s+|\s+$/g, '') || cur;
+      restore(nv);
+      row.setAttribute('data-value', nv);
+      accountValuesPersist();
     }
     inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { commit(); }
-      if (e.key === 'Escape') {
-        committed = true;
-        if (inp.parentNode) { inp.parentNode.removeChild(inp); }
-      }
+      if (e.key === 'Escape') { done = true; restore(cur); }
     });
     inp.addEventListener('blur', commit);
+  }
+  function accountValuesMakeRow(text) {
+    var row = document.createElement('div');
+    row.className = 'account-vrow';
+    row.setAttribute('data-value', text);
+    var glow = document.createElement('span');
+    glow.className = 'account-vglow';
+    glow.setAttribute('aria-hidden', 'true');
+    row.appendChild(glow);
+    var main = document.createElement('div');
+    main.className = 'account-vmain';
+    var name = document.createElement('span');
+    name.className = 'account-vname';
+    name.appendChild(document.createTextNode(text));
+    main.appendChild(name);
+    row.appendChild(main);
+    var acts = document.createElement('div');
+    acts.className = 'account-vacts';
+    var renameBtn = document.createElement('button');
+    renameBtn.type = 'button';
+    renameBtn.className = 'account-vrename';
+    renameBtn.textContent = 'Rename';
+    renameBtn.addEventListener('click', function () { accountValuesRename(row); });
+    acts.appendChild(renameBtn);
+    var rmBtn = document.createElement('button');
+    rmBtn.type = 'button';
+    rmBtn.className = 'account-vremove';
+    rmBtn.setAttribute('aria-label', 'remove');
+    rmBtn.innerHTML = '&times;';
+    rmBtn.addEventListener('click', function () {
+      if (row.parentNode) { row.parentNode.removeChild(row); }
+      accountValuesPersist();
+    });
+    acts.appendChild(rmBtn);
+    row.appendChild(acts);
+    vlistEl.insertBefore(row, declareRow);
+    return row;
+  }
+
+  // declare row in the DOM before seeding (insertBefore reference node).
+  vlistEl.appendChild(declareRow);
+  var existingValues = (profile.values instanceof Array) ? profile.values : [];
+  var vsx;
+  for (vsx = 0; vsx < existingValues.length; vsx = vsx + 1) {
+    accountValuesMakeRow('' + existingValues[vsx]);
+  }
+  declareInput.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') { return; }
+    var cv = declareInput.value.replace(/^\s+|\s+$/g, '');
+    if (cv) { accountValuesMakeRow(cv); declareInput.value = ''; accountValuesPersist(); }
   });
 
-  valuesCard.appendChild(stonesEl);
+  valuesCard.appendChild(vlistEl);
 
   var valuesNote = document.createElement('div');
   valuesNote.className = 'account-values-note';
@@ -15784,11 +15842,48 @@ function renderAccountPage() {
   galEyebrow.appendChild(galHintEl);
   galSec.appendChild(galEyebrow);
   var galCard = document.createElement('div');
-  galCard.className = 'account-card portrait-galaxy-wrap';
+  // #5 (Wave 5.1): Connections ON by default (mockup connToggle), Counts OFF. The
+  // toggle state rides galCard (STABLE) as gal-show-bonds / gal-show-counts --
+  // _portraitRenderGalaxy resets the galaxy element's className and clear() wipes
+  // path classes on mouseleave, so a persistent state cannot live on those.
+  galCard.className = 'account-card portrait-galaxy-wrap gal-show-bonds';
   var galHelp = document.createElement('div');
   galHelp.className = 'portrait-galaxy-help';
   galHelp.id = 'account-portrait-galaxy-help';
   galCard.appendChild(galHelp);
+  // Connections (show/hide the already-computed bond paths) + Counts (show/hide the
+  // per-star books.notes labels). Reuse .portrait-toggle; .portrait-gal-toggle forces
+  // a GOLD on-state -- non-cyan (the cyan on-state is Yumi's consent toggle only).
+  var galToggles = document.createElement('div');
+  galToggles.className = 'portrait-gal-toggles';
+  function _galToggle(key, label, on) {
+    var t = document.createElement('div');
+    t.className = 'portrait-toggle portrait-gal-toggle' + (on ? ' on' : '');
+    t.setAttribute('data-galtoggle', key);
+    t.setAttribute('role', 'switch');
+    t.setAttribute('aria-checked', on ? 'true' : 'false');
+    t.setAttribute('tabindex', '0');
+    t.innerHTML = '<span class="portrait-switch"><span class="portrait-knob"></span></span>' +
+      '<span class="portrait-toggle-lbl">' + label + '</span>';
+    return t;
+  }
+  galToggles.appendChild(_galToggle('bonds', 'Connections', true));
+  galToggles.appendChild(_galToggle('counts', 'Counts', false));
+  galToggles.addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== galToggles && !(t.getAttribute && t.getAttribute('data-galtoggle'))) { t = t.parentNode; }
+    if (!t || !t.getAttribute || !t.getAttribute('data-galtoggle')) { return; }
+    var cls = (t.getAttribute('data-galtoggle') === 'bonds') ? 'gal-show-bonds' : 'gal-show-counts';
+    var isOn = (' ' + galCard.className + ' ').indexOf(' ' + cls + ' ') > -1;
+    if (isOn) {
+      galCard.className = (' ' + galCard.className + ' ').split(' ' + cls + ' ').join(' ').replace(/^\s+|\s+$/g, '');
+    } else {
+      galCard.className = galCard.className + ' ' + cls;
+    }
+    t.className = 'portrait-toggle portrait-gal-toggle' + (isOn ? '' : ' on');
+    t.setAttribute('aria-checked', isOn ? 'false' : 'true');
+  });
+  galCard.appendChild(galToggles);
   var portraitGalaxyEl = document.createElement('div');
   portraitGalaxyEl.className = 'portrait-galaxy';
   portraitGalaxyEl.id = 'account-portrait-galaxy';

@@ -11743,23 +11743,16 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end HOME (renderHome on .lum-amber-deep) ===== */
 
 /* =============================================================================
-   WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-deep) — convert the
-   existing v6-portrait #account to Amber/Lumen (design/"Wave 5 - Identity.html",
-   minus the deferred nav rail/FAB). ADDITIVE + SCOPED: the ~311 existing
-   account/portrait rules are 100% theme-token based (zero raw hex), so remapping
-   the base tokens to --lum-* here reskins every section by construction — no
-   load-bearing rule is rewritten. Plus the full-bleed centered-1080 convention
-   (gutter on the root, column on `> *` with NO padding, so every card rectangle +
-   eyebrow shares one left edge — account's children are heterogeneous: some are
-   section wrappers around cards, some are bare cards, so `> *` padding would
-   double-inset the sectioned ones), and a glass-card material the token remap
-   cannot express. CYAN IS YUMI ONLY: --teal is deliberately NOT remapped to
-   --lum-cyan, so the galaxy star hues and the capstone "filaments" keep their
-   non-cyan tokens; the mockup's #7fd0f0 filament/active-stat cyan is NOT ported.
-   Fonts already match (--font-serif/body/mono == Cormorant / DM Sans / DM Mono).
-   Nav/overlay untouched; account cards stay SOLID (no backdrop-filter, iOS rule).
+   WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-ember). Additive +
+   scoped: the ~311 account/portrait rules are 100% token-based, so remapping the
+   base tokens to --lum-* here reskins every section (no load-bearing rule rewritten)
+   + glass cards + full-bleed centered-1080 (gutter on the ROOT, column on `> *` with
+   NO padding — account's children are heterogeneous, so `> *` padding would double-
+   inset the sectioned cards). CYAN IS YUMI ONLY: --teal is NOT remapped to --lum-cyan
+   (galaxy hues + capstone filament stay non-cyan; mockup #7fd0f0 not ported). Cards
+   SOLID (no backdrop-filter, iOS). Atmosphere = ember (5.1 #1, Profiles ground).
    ============================================================================= */
-.account.lum-amber-deep{
+.account.lum-amber-ember{
   display:block; box-sizing:border-box; width:100%; max-width:none;
   min-height:100vh; margin:0; padding:56px 24px 72px; color:var(--lum-ink);
   /* token remaps — the whole portrait reskins to Lumen by construction */
@@ -11778,41 +11771,71 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 /* centered-1080 column; gutter is the root padding above, so every direct child
    (bare card, section wrapper, eyebrow) shares one left edge — no double inset. */
-.account.lum-amber-deep > *{
+.account.lum-amber-ember > *{
   box-sizing:border-box; max-width:1080px;
   margin-left:auto; margin-right:auto;
 }
 /* glass cards (mock .card: frosted white gradient over the lamplit ground, a
    gold-cream hairline, 17px). SOLID gradient — no backdrop-filter. */
-.account.lum-amber-deep .account-card,
-.account.lum-amber-deep .account-hero{
+.account.lum-amber-ember .account-card,
+.account.lum-amber-ember .account-hero{
   background:var(--lum-glass);
   border:1px solid var(--lum-glass-bd-2);
   border-radius:17px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 18px 44px -28px rgba(0,0,0,.6);
 }
 /* stat cards + expand panel share the glass material (keep their own radius). */
-.account.lum-amber-deep .account-stat,
-.account.lum-amber-deep .account-expand-panel{
+.account.lum-amber-ember .account-stat,
+.account.lum-amber-ember .account-expand-panel{
   background:var(--lum-glass);
   border:1px solid var(--lum-glass-bd-2);
 }
+/* #2 (5.1): descriptor renders always; EMPTY = muted italic invitation. */
+.account.lum-amber-ember .account-hero .account-hero-tagline-empty{ color:var(--lum-ink-4); opacity:.85; }
 /* 759 reflow — tighten the root gutter for phones (matches Shelf/Home). */
 @media (max-width:759px){
-  .account.lum-amber-deep{ padding-left:16px; padding-right:16px; }
+  .account.lum-amber-ember{ padding-left:16px; padding-right:16px; }
 }
 /* Stage 2 — through-line THREADS sub-block: the label + gathered member-notes +
    keep/aside on real getReaderModel(uid).threads. Token-based (inherits the Amber
    remap above); NO cyan (these are the reader's own threads, not a Yumi element);
    the keep/aside chips reuse .portrait-chip (already reskinned). Column layout so
    the gathered notes + acts stack under the through-line name. */
-.account.lum-amber-deep .portrait-thread-row{ flex-direction:column; align-items:stretch; gap:0; }
-.account.lum-amber-deep .portrait-thread-name{ font-family:var(--lum-serif); font-weight:500; font-style:italic; font-size:19px; line-height:1.24; color:var(--lum-ink); }
-.account.lum-amber-deep .portrait-thread-gathered{ margin-top:11px; padding-top:11px; border-top:1px solid var(--lum-glass-bd-2); }
-.account.lum-amber-deep .portrait-thread-glab{ display:block; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-3); margin-bottom:8px; }
-.account.lum-amber-deep .portrait-thread-note{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:5px 0; }
-.account.lum-amber-deep .portrait-thread-note .tx{ font-family:var(--lum-serif); font-style:italic; font-size:14px; line-height:1.4; color:var(--lum-ink-2); }
-.account.lum-amber-deep .portrait-thread-note .bk{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-gold); flex:none; }
-.account.lum-amber-deep .portrait-thread-acts{ display:flex; gap:9px; flex-wrap:wrap; margin-top:13px; }
-.account.lum-amber-deep .portrait-thread-kept{ font-family:var(--lum-serif); font-style:italic; font-size:13.5px; color:var(--lum-ink-3); }
+.account.lum-amber-ember .portrait-thread-row{ flex-direction:column; align-items:stretch; gap:0; }
+.account.lum-amber-ember .portrait-thread-name{ font-family:var(--lum-serif); font-weight:500; font-style:italic; font-size:19px; line-height:1.24; color:var(--lum-ink); }
+.account.lum-amber-ember .portrait-thread-gathered{ margin-top:11px; padding-top:11px; border-top:1px solid var(--lum-glass-bd-2); }
+.account.lum-amber-ember .portrait-thread-glab{ display:block; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-3); margin-bottom:8px; }
+.account.lum-amber-ember .portrait-thread-note{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:5px 0; }
+.account.lum-amber-ember .portrait-thread-note .tx{ font-family:var(--lum-serif); font-style:italic; font-size:14px; line-height:1.4; color:var(--lum-ink-2); }
+.account.lum-amber-ember .portrait-thread-note .bk{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-gold); flex:none; }
+.account.lum-amber-ember .portrait-thread-acts{ display:flex; gap:9px; flex-wrap:wrap; margin-top:13px; }
+.account.lum-amber-ember .portrait-thread-kept{ font-family:var(--lum-serif); font-style:italic; font-size:13.5px; color:var(--lum-ink-3); }
+/* #3 (5.1): VALUES as full-width vrows — uniform glow (brightness BLOCKED, no meta)
+   + name + Rename + ×, persisted via setProfile. Token-based, non-cyan. */
+.account.lum-amber-ember .account-vlist{ display:flex; flex-direction:column; gap:0; }
+.account.lum-amber-ember .account-vrow{ display:flex; align-items:center; gap:16px; padding:14px 6px; border-bottom:1px solid var(--lum-glass-bd-2); }
+.account.lum-amber-ember .account-vglow{ flex:none; width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 48%, var(--lum-gold-d) 100%); box-shadow:0 0 10px color-mix(in srgb, var(--lum-gold) 55%, transparent); }
+.account.lum-amber-ember .account-vmain{ flex:1 1 auto; min-width:0; }
+.account.lum-amber-ember .account-vname{ font-family:var(--lum-serif); font-weight:600; font-size:22px; line-height:1.2; color:var(--lum-ink); }
+.account.lum-amber-ember .account-vacts{ flex:none; display:flex; align-items:center; gap:10px; }
+.account.lum-amber-ember .account-vrename{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-3); background:transparent; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:5px 13px; cursor:pointer; transition:color .15s, border-color .15s; }
+.account.lum-amber-ember .account-vrename:hover{ color:var(--lum-ink); border-color:var(--lum-gold); }
+.account.lum-amber-ember .account-vremove{ font-family:var(--lum-sans); font-size:16px; line-height:1; color:var(--lum-ink-4); background:transparent; border:none; cursor:pointer; padding:4px 6px; }
+.account.lum-amber-ember .account-vremove:hover{ color:var(--lum-coral); }
+.account.lum-amber-ember .account-vrename-in{ font-family:var(--lum-serif); font-size:22px; color:var(--lum-ink); background:color-mix(in srgb, var(--lum-ink) 6%, transparent); border:1px solid var(--lum-gold); border-radius:8px; padding:2px 8px; outline:none; width:100%; box-sizing:border-box; }
+.account.lum-amber-ember .account-declare{ display:flex; align-items:center; gap:10px; padding:14px 6px 4px; }
+.account.lum-amber-ember .account-declare-plus{ flex:none; font-family:var(--lum-sans); font-size:17px; color:var(--lum-gold); }
+.account.lum-amber-ember .account-declare-in{ flex:1 1 auto; min-width:0; font-family:var(--lum-serif); font-style:italic; font-size:17px; color:var(--lum-ink); background:transparent; border:none; outline:none; }
+.account.lum-amber-ember .account-declare-in::placeholder{ color:var(--lum-ink-4); }
+.account.lum-amber-ember .account-declare-hint{ flex:none; font-family:var(--lum-mono); font-size:10px; letter-spacing:.06em; color:var(--lum-ink-4); }
+/* #5 (5.1): galaxy Connections/Counts toggles; state rides the STABLE galCard
+   (galaxy el + paths reset on re-render/mouseleave). GOLD on-state (non-cyan). */
+.account.lum-amber-ember .portrait-gal-toggles{ display:flex; gap:20px; flex-wrap:wrap; margin:0 0 12px; }
+.account.lum-amber-ember .portrait-gal-toggle{ margin-top:0; }
+.account.lum-amber-ember .portrait-gal-toggle.on .portrait-switch{ background:color-mix(in srgb, var(--lum-gold) 30%, transparent); border-color:var(--lum-gold); }
+.account.lum-amber-ember .portrait-gal-toggle.on .portrait-switch .portrait-knob{ background:var(--lum-gold); }
+.account.lum-amber-ember .portrait-gal-toggle.on .portrait-toggle-lbl{ color:var(--lum-gold); }
+/* Connections ON → all bond paths; Counts ON → all per-star labels. */
+.account.lum-amber-ember .portrait-galaxy-wrap.gal-show-bonds .portrait-bonds path{ opacity:.42; }
+.account.lum-amber-ember .portrait-galaxy-wrap.gal-show-counts .portrait-star .ct{ opacity:.9; }
 /* ===== end WAVE 5 · IDENTITY (Account) ===== */
