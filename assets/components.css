@@ -10293,7 +10293,7 @@
    (no longer matches — account-card dropped). The interactive "tap a mark"
    constellation stays its own section below (logged divergence). Dark ground.
    ============================================================================ */
-.account-hero { display:flex; gap:var(--sp-5); align-items:center; padding:var(--sp-5); margin:0 0 var(--sp-5); background:var(--surface-d); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-d); }
+.account-hero { display:flex; gap:var(--sp-5); align-items:center; padding:var(--sp-5); margin:0 auto var(--sp-5); background:var(--surface-d); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-d); }
 .account-hero .account-slot { width:96px; height:96px; border-radius:50%; overflow:hidden; flex:none; background:var(--ground-grad),var(--ground); border:1px solid var(--border); --ink:var(--text-d); --ink-2:var(--text-d); --ink-3:var(--muted); --ink-4:var(--muted); }
 .account-hero .account-slot svg { width:100%; height:100%; display:block; }
 .account-hero .account-hero-text { flex:1 1 auto; min-width:0; }
@@ -11741,3 +11741,78 @@ body.wc-focus .app-nav { opacity:.26; }
   .home-page.lum-amber-deep .home-glimpse{ flex-basis:100%; }
 }
 /* ===== end HOME (renderHome on .lum-amber-deep) ===== */
+
+/* =============================================================================
+   WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-deep) — convert the
+   existing v6-portrait #account to Amber/Lumen (design/"Wave 5 - Identity.html",
+   minus the deferred nav rail/FAB). ADDITIVE + SCOPED: the ~311 existing
+   account/portrait rules are 100% theme-token based (zero raw hex), so remapping
+   the base tokens to --lum-* here reskins every section by construction — no
+   load-bearing rule is rewritten. Plus the full-bleed centered-1080 convention
+   (gutter on the root, column on `> *` with NO padding, so every card rectangle +
+   eyebrow shares one left edge — account's children are heterogeneous: some are
+   section wrappers around cards, some are bare cards, so `> *` padding would
+   double-inset the sectioned ones), and a glass-card material the token remap
+   cannot express. CYAN IS YUMI ONLY: --teal is deliberately NOT remapped to
+   --lum-cyan, so the galaxy star hues and the capstone "filaments" keep their
+   non-cyan tokens; the mockup's #7fd0f0 filament/active-stat cyan is NOT ported.
+   Fonts already match (--font-serif/body/mono == Cormorant / DM Sans / DM Mono).
+   Nav/overlay untouched; account cards stay SOLID (no backdrop-filter, iOS rule).
+   ============================================================================= */
+.account.lum-amber-deep{
+  display:block; box-sizing:border-box; width:100%; max-width:none;
+  min-height:100vh; margin:0; padding:56px 24px 72px; color:var(--lum-ink);
+  /* token remaps — the whole portrait reskins to Lumen by construction */
+  --ink:var(--lum-ink); --ink-2:var(--lum-ink-2);
+  --ink-3:var(--lum-ink-3); --ink-4:var(--lum-ink-4);
+  --text-d:var(--lum-ink); --muted:var(--lum-ink-3);
+  --gold:var(--lum-gold); --gold-light:var(--lum-gold-l);
+  --text-on-dark:var(--lum-gold-ink); --border:var(--lum-glass-bd-2);
+  --danger:var(--lum-coral);
+  --surface:color-mix(in srgb, var(--lum-ink) 4%, transparent);
+  --surface-2:color-mix(in srgb, var(--lum-ink) 6%, transparent);
+  --surface-d:color-mix(in srgb, var(--lum-ink) 6%, transparent);
+  --shadow-1:0 18px 40px -30px rgba(0,0,0,.6);
+  --shadow-d:0 18px 44px -28px rgba(0,0,0,.6);
+  --grad:linear-gradient(150deg, var(--lum-gold-l), var(--lum-coral));
+}
+/* centered-1080 column; gutter is the root padding above, so every direct child
+   (bare card, section wrapper, eyebrow) shares one left edge — no double inset. */
+.account.lum-amber-deep > *{
+  box-sizing:border-box; max-width:1080px;
+  margin-left:auto; margin-right:auto;
+}
+/* glass cards (mock .card: frosted white gradient over the lamplit ground, a
+   gold-cream hairline, 17px). SOLID gradient — no backdrop-filter. */
+.account.lum-amber-deep .account-card,
+.account.lum-amber-deep .account-hero{
+  background:var(--lum-glass);
+  border:1px solid var(--lum-glass-bd-2);
+  border-radius:17px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 18px 44px -28px rgba(0,0,0,.6);
+}
+/* stat cards + expand panel share the glass material (keep their own radius). */
+.account.lum-amber-deep .account-stat,
+.account.lum-amber-deep .account-expand-panel{
+  background:var(--lum-glass);
+  border:1px solid var(--lum-glass-bd-2);
+}
+/* 759 reflow — tighten the root gutter for phones (matches Shelf/Home). */
+@media (max-width:759px){
+  .account.lum-amber-deep{ padding-left:16px; padding-right:16px; }
+}
+/* Stage 2 — through-line THREADS sub-block: the label + gathered member-notes +
+   keep/aside on real getReaderModel(uid).threads. Token-based (inherits the Amber
+   remap above); NO cyan (these are the reader's own threads, not a Yumi element);
+   the keep/aside chips reuse .portrait-chip (already reskinned). Column layout so
+   the gathered notes + acts stack under the through-line name. */
+.account.lum-amber-deep .portrait-thread-row{ flex-direction:column; align-items:stretch; gap:0; }
+.account.lum-amber-deep .portrait-thread-name{ font-family:var(--lum-serif); font-weight:500; font-style:italic; font-size:19px; line-height:1.24; color:var(--lum-ink); }
+.account.lum-amber-deep .portrait-thread-gathered{ margin-top:11px; padding-top:11px; border-top:1px solid var(--lum-glass-bd-2); }
+.account.lum-amber-deep .portrait-thread-glab{ display:block; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-3); margin-bottom:8px; }
+.account.lum-amber-deep .portrait-thread-note{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:5px 0; }
+.account.lum-amber-deep .portrait-thread-note .tx{ font-family:var(--lum-serif); font-style:italic; font-size:14px; line-height:1.4; color:var(--lum-ink-2); }
+.account.lum-amber-deep .portrait-thread-note .bk{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-gold); flex:none; }
+.account.lum-amber-deep .portrait-thread-acts{ display:flex; gap:9px; flex-wrap:wrap; margin-top:13px; }
+.account.lum-amber-deep .portrait-thread-kept{ font-family:var(--lum-serif); font-style:italic; font-size:13.5px; color:var(--lum-ink-3); }
+/* ===== end WAVE 5 · IDENTITY (Account) ===== */

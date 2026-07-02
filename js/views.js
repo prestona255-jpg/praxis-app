@@ -15168,7 +15168,12 @@ function renderAccountPage() {
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  wrap.className = 'account';
+  // Wave 5 (Identity): convert #account to the Amber/Lumen system. The atmosphere
+  // class supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
+  // .account.lum-amber-deep block in components.css remaps the base theme tokens
+  // to --lum-* so the whole v6 portrait reskins by construction (same additive
+  // pattern as Shelf/Home). --teal is NOT remapped -> cyan stays Yumi-only.
+  wrap.className = 'account lum-amber-deep';
 
   // ----- HERO -----
   var hero = document.createElement('header');
@@ -15826,11 +15831,27 @@ function renderAccountPage() {
   returnsSec.appendChild(threadsCard);
   wrap.appendChild(returnsSec);
 
+  // Stage 2 (through-line THREADS): resolve one member-note id to a gathered
+  // item -- its snippet + the first book it references. Real data only
+  // (state.notebookEntries -> state.books); a missing note is skipped. The
+  // reader is viewing their OWN notes here -- no privacy filter needed.
+  function _portraitThreadNoteItem(noteId) {
+    var e = (state.notebookEntries && noteId) ? state.notebookEntries[noteId] : null;
+    if (!e) { return ''; }
+    var body = (typeof e.body === 'string') ? e.body.replace(/^\s+|\s+$/g, '') : '';
+    var snip = (body.length > 88) ? (body.slice(0, 88) + '…') : body;
+    var bk = '', bids = (e.bookIds instanceof Array) ? e.bookIds : [];
+    if (bids.length && state.books && state.books[bids[0]] && state.books[bids[0]].title) {
+      bk = '<span class="bk">' + _portraitEsc(state.books[bids[0]].title) + '</span>';
+    }
+    if (!snip && !bk) { return ''; }
+    return '<div class="portrait-thread-note"><span class="tx">' + _portraitEsc(snip || 'a margin note') + '</span>' + bk + '</div>';
+  }
   function renderPortraitThreads() {
     var prof = getProfile(uid);
     var optedIn = prof.yumiReaderModel === true;
     var html = '<div class="portrait-threads-ti"><span class="sig">~</span> Yumi can go one step further</div>' +
-      '<div class="portrait-threads-blurb">Turn on her reader-model and she’ll name the threads she sees weaving through your margins — patterns you might not catch yourself. She only ever names what’s actually there, and you can dismiss anything that doesn’t fit.</div>' +
+      '<div class="portrait-threads-blurb">Turn on her reader-model and she’ll name the through-lines she sees weaving through your margins — patterns you might not catch yourself. She only ever names what’s actually there; keep what fits, set aside what doesn’t.</div>' +
       '<div class="portrait-toggle' + (optedIn ? ' on' : '') + '" data-act="rmtoggle" tabindex="0" role="button"><span class="portrait-switch"><span class="portrait-knob"></span></span><span class="portrait-toggle-lbl">' + (optedIn ? 'Yumi is noticing' : 'Let Yumi notice') + '</span></div>';
     if (optedIn) {
       var model = (typeof getReaderModel === 'function') ? getReaderModel(uid) : { threads: [] };
@@ -15841,18 +15862,50 @@ function renderAccountPage() {
         if (!th || th.status === 'dismissed') { continue; }
         var label = (typeof th.label === 'string') ? th.label : '';
         if (!label) { continue; }
-        var nc = (th.memberNoteIds instanceof Array) ? th.memberNoteIds.length : 0;
-        named += '<div class="portrait-thread-row"><div class="body">' + _portraitEsc(label) + '<div class="s">noticed across ' + nc + ' note' + (nc === 1 ? '' : 's') + '</div></div></div>';
+        var mids = (th.memberNoteIds instanceof Array) ? th.memberNoteIds : [];
+        var nc = mids.length, gathered = '', gi, gcount = 0;
+        for (gi = 0; gi < mids.length && gcount < 4; gi = gi + 1) {
+          var item = _portraitThreadNoteItem(mids[gi]);
+          if (item) { gathered += item; gcount = gcount + 1; }
+        }
+        var gblock = gcount ? ('<div class="portrait-thread-gathered"><span class="portrait-thread-glab">Gathered from your reading</span>' + gathered + '</div>') : '';
+        named += '<div class="portrait-thread-row" data-tid="' + _portraitEsc(th.id) + '"><div class="body">' +
+          '<div class="portrait-thread-name">' + _portraitEsc(label) + '</div>' +
+          '<div class="s">noticed across ' + nc + ' note' + (nc === 1 ? '' : 's') + '</div>' +
+          gblock +
+          '<div class="portrait-thread-acts"><span class="portrait-chip yes" data-tact="keep">This is me</span><span class="portrait-chip no" data-tact="aside">Set aside</span></div>' +
+          '</div></div>';
         shown = shown + 1;
       }
       if (shown === 0) {
-        named = '<div class="portrait-thread-row"><div class="body"><div class="s">Yumi hasn’t named a thread yet — keep reading and marking, and patterns will surface here.</div></div></div>';
+        named = '<div class="portrait-thread-row"><div class="body"><div class="s">Yumi hasn’t named a through-line yet — keep reading and marking, and patterns will surface here.</div></div></div>';
       }
       html += '<div class="portrait-named show">' + named + '</div>';
     }
     threadsCard.innerHTML = html;
   }
+  // Delegated: consent toggle + per-thread keep/aside. "Set aside" removes the
+  // thread via the EXISTING deleteReaderThread accessor (real data; "won't raise
+  // this one again") + mirrors to Firestore. "This is me" is a non-persistent
+  // affirm (the thread already persists). NO writeback field is added (HALT rule);
+  // proposed-values + value-tensions are OMITTED (BLOCKED-NO-DATA).
   threadsCard.addEventListener('click', function (e) {
+    var an = e.target;
+    while (an && an !== threadsCard && !(an.getAttribute && an.getAttribute('data-tact'))) { an = an.parentNode; }
+    if (an && an.getAttribute && an.getAttribute('data-tact')) {
+      var tact = an.getAttribute('data-tact'), row = an;
+      while (row && row !== threadsCard && !(row.getAttribute && row.getAttribute('data-tid'))) { row = row.parentNode; }
+      var tid = (row && row.getAttribute) ? row.getAttribute('data-tid') : null;
+      if (tact === 'aside' && tid) {
+        if (typeof deleteReaderThread === 'function') { deleteReaderThread(uid, tid); }
+        if (typeof saveReaderModelToFirestore === 'function') { saveReaderModelToFirestore(uid, getReaderModel(uid), function () {}); }
+        renderPortraitThreads();
+      } else if (tact === 'keep' && row) {
+        var acts = row.querySelector('.portrait-thread-acts');
+        if (acts) { acts.innerHTML = '<span class="portrait-thread-kept">✓ part of how you read</span>'; }
+      }
+      return;
+    }
     var node = e.target;
     while (node && node !== threadsCard && !(node.getAttribute && node.getAttribute('data-act') === 'rmtoggle')) { node = node.parentNode; }
     if (!node || !node.getAttribute || node.getAttribute('data-act') !== 'rmtoggle') { return; }
