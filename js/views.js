@@ -630,128 +630,386 @@ function renderRoute() {
   renderNotebook();
 }
 
-// Batch 4A: Home landing surface, reconciled from the mockup's Home
-// section (a centered hero + a static preview frame). Presentational
-// only -- no marks, no constellation canvas, no data read. The CTA
-// anchors reuse the established gradient-primary / outline-secondary
-// button variants (scoped under .home-cta-* so book-detail grid rules do
-// not leak in) and navigate via the hash router like every other link.
+// HOME (renderHome on .lum-amber-deep) -- Amber threshold per design/"Wave 2 The
+// Shell.html" MINUS the nav rail. Variants A/B draw ONLY through the locked
+// renderer; reader-question / built-on / walk-with pieces omitted (no source).
+var HOME_GROWING_MAX = 0.7; // 'still growing' = aggregate maturity below 'bright'
+
+// Yumi's voice: cyan dot + Cormorant italic. Deterministic template text only.
+function homeYumiLine(text) {
+  var y = document.createElement('div');
+  y.className = 'home-yumi';
+  var dot = document.createElement('span');
+  dot.className = 'home-yumi-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  y.appendChild(dot);
+  var t = document.createElement('span');
+  t.className = 'home-yumi-text';
+  t.textContent = text;
+  y.appendChild(t);
+  return y;
+}
+
+// The signed-in user's OWN arcs (renderArcsPage predicate), oldest-first, defaulted.
+function homeOwnArcs() {
+  var out = [];
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = u ? u.uid : null;
+  if (!uid || !state.arcs) { return out; }
+  var id;
+  for (id in state.arcs) {
+    if (Object.prototype.hasOwnProperty.call(state.arcs, id)) {
+      var rec = state.arcs[id];
+      if (rec && rec.userId === uid) { out.push(rec); }
+    }
+  }
+  out.sort(function (a, b) {
+    var ca = (a && a.createdAt) ? a.createdAt : 0;
+    var cb = (b && b.createdAt) ? b.createdAt : 0;
+    if (ca !== cb) { return ca - cb; }
+    return (a.id < b.id) ? -1 : ((a.id > b.id) ? 1 : 0);
+  });
+  return out;
+}
+
+// OPTION A whole-field data: ONE node per arc (id = arc.id -> id-hash emblem,
+// maturity -> glow, marks:[] no dots, edges:[] unlinked).
+function buildHomeFieldData(arcs) {
+  var nodes = [];
+  var i;
+  for (i = 0; i < arcs.length; i = i + 1) {
+    var a = arcs[i];
+    if (!a || !a.id) { continue; }
+    nodes.push({
+      id: a.id,
+      header: (typeof a.title === 'string') ? a.title : '',
+      maturity: (typeof _arcAggregateMaturity === 'function') ? _arcAggregateMaturity(a.id) : 0,
+      marks: []
+    });
+  }
+  return { id: 'home-field', question: '', subTheories: nodes, edges: [], books: [], yumiNoticing: [] };
+}
+
+// Own arcs still growing (aggregate maturity below HOME_GROWING_MAX).
+function homeGrowingCount(arcs) {
+  var g = 0, i;
+  for (i = 0; i < arcs.length; i = i + 1) {
+    var m = (typeof _arcAggregateMaturity === 'function') ? _arcAggregateMaturity(arcs[i].id) : 0;
+    if (m < HOME_GROWING_MAX) { g = g + 1; }
+  }
+  return g;
+}
+
+// Derived last-worked (ms): max(arc.createdAt, max member sub.updatedAt||createdAt) --
+// the app's true "last touched", NOT arc.updatedAt. Orders Variant B.
+function homeLastWorked(arcId, rec) {
+  var newest = (rec && rec.createdAt) ? rec.createdAt : 0;
+  var subs = (typeof _arcSubsOf === 'function') ? _arcSubsOf(arcId) : [];
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) {
+    var u = subs[i].updatedAt || subs[i].createdAt || 0;
+    if (u > newest) { newest = u; }
+  }
+  return newest;
+}
+
+// Tap-to-descend: fixedArcId (seed demo) -> any tap opens it; null -> tapping a
+// light opens #arc/<data-st-sub-id> (= the node's arc id).
+function homeFieldNav(svg, fixedArcId) {
+  if (!svg) { return; }
+  svg.style.cursor = 'pointer';
+  svg.addEventListener('click', function (e) {
+    if (fixedArcId) { location.hash = '#arc/' + fixedArcId; return; }
+    var n = e.target;
+    while (n && n !== svg) {
+      if (n.getAttribute && n.getAttribute('data-st-sub-id')) {
+        location.hash = '#arc/' + n.getAttribute('data-st-sub-id');
+        return;
+      }
+      n = n.parentNode;
+    }
+  });
+}
+
+// Variant A field: own arcs -> one-emblem-per-arc; zero -> the static seed arc demo
+// (whole panel -> seed arc); none + no seed -> a quiet line. Locked renderer only.
+function homeRenderField(wf, ownArcs) {
+  if (!wf || typeof window.renderSubTheoryConstellation !== 'function') { return; }
+  var NS = 'http://www.w3.org/2000/svg';
+  if (ownArcs.length > 0) {
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 940 340');
+    svg.setAttribute('xmlns', NS);
+    wf.appendChild(svg);
+    window.renderSubTheoryConstellation(buildHomeFieldData(ownArcs), svg, { showLegend: false, markScale: 1.15 });
+    homeFieldNav(svg, null);
+    return;
+  }
+  var seedArcId = (state.seeds && state.seeds.pedagogyOfDesire) ? state.seeds.pedagogyOfDesire.arcId : null;
+  var seedArc = (seedArcId && state.arcs) ? state.arcs[seedArcId] : null;
+  var seedData = (seedArc && typeof _arcDetailBuildSubTheoryData === 'function') ? _arcDetailBuildSubTheoryData(seedArc) : null;
+  if (seedData && seedData.subTheories && seedData.subTheories.length) {
+    var svg2 = document.createElementNS(NS, 'svg');
+    svg2.setAttribute('viewBox', '0 0 940 340');
+    svg2.setAttribute('xmlns', NS);
+    wf.appendChild(svg2);
+    window.renderSubTheoryConstellation(seedData, svg2, { showLegend: false, markScale: 1.15 });
+    homeFieldNav(svg2, seedArcId);
+    return;
+  }
+  var line = document.createElement('p');
+  line.className = 'home-wfcap';
+  line.textContent = 'Your arcs and the ideas between them, drawn as you read.';
+  wf.appendChild(line);
+}
+
+// Alternator apply: show one variant, hide the other, mark its tab is-on.
+function homeShowVariant(root, which) {
+  var vs = root.querySelectorAll('.home-variant');
+  var i;
+  for (i = 0; i < vs.length; i = i + 1) {
+    vs[i].className = (vs[i].getAttribute('data-home-variant') === which)
+      ? 'home-variant' : 'home-variant home-variant-hidden';
+  }
+  var tabs = root.querySelectorAll('.home-alt .seg-opt');
+  for (i = 0; i < tabs.length; i = i + 1) {
+    tabs[i].className = (tabs[i].getAttribute('data-home-variant') === which)
+      ? 'seg-opt is-on' : 'seg-opt';
+  }
+}
+
+// A Variant B left-off card: per-arc mini-constellation (arc's own sub-theories via
+// _arcDetailBuildSubTheoryData + the locked renderer), title, count · touched, Continue.
+function homeLeftOffCard(arc) {
+  var card = document.createElement('div');
+  card.className = 'home-arc lum-glass';
+
+  var field = document.createElement('div');
+  field.className = 'home-arcfield';
+  var ff = document.createElement('div');
+  ff.className = 'home-arc-ff';
+  field.appendChild(ff);
+  card.appendChild(field);
+  if (typeof window.renderSubTheoryConstellation === 'function' &&
+      typeof _arcDetailBuildSubTheoryData === 'function') {
+    var data = _arcDetailBuildSubTheoryData(arc);
+    if (data) { data.question = ''; } // home mini-field: no center title (card heads it)
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 600 360');
+    svg.setAttribute('xmlns', NS);
+    ff.appendChild(svg);
+    window.renderSubTheoryConstellation(data, svg, { showLegend: false, markScale: 1.1 });
+  }
+
+  var body = document.createElement('div');
+  body.className = 'home-arcbody';
+  var top = document.createElement('div');
+  top.className = 'home-arctop';
+  var tt = document.createElement('span');
+  tt.className = 'home-arctitle';
+  tt.textContent = arc.title || 'Untitled arc';
+  top.appendChild(tt);
+  var mm = document.createElement('span');
+  mm.className = 'home-arcmeta';
+  var counts = (typeof _arcCardCounts === 'function') ? _arcCardCounts(arc.id, arc) : { subTheories: 0 };
+  var metaText = counts.subTheories + (counts.subTheories === 1 ? ' sub-theory' : ' sub-theories');
+  var touched = (typeof _arcTouchedWord === 'function') ? _arcTouchedWord(arc.id, arc) : '';
+  if (touched) { metaText = metaText + ' · ' + touched; }
+  mm.textContent = metaText;
+  top.appendChild(mm);
+  body.appendChild(top);
+
+  var act = document.createElement('div');
+  act.className = 'home-arcact';
+  var cont = document.createElement('a');
+  cont.className = 'home-arcbtn home-arcbtn-primary';
+  cont.href = '#arc/' + arc.id;
+  cont.textContent = 'Continue →';
+  act.appendChild(cont);
+  body.appendChild(act);
+  card.appendChild(body);
+  return card;
+}
+
+// Currently-reading books: normalizeStatus(status) === 'reading' (mirrors shelfReadingCount).
+function homeReadingBooks() {
+  var out = [];
+  if (!state.books) { return out; }
+  var id;
+  for (id in state.books) {
+    if (Object.prototype.hasOwnProperty.call(state.books, id)) {
+      var b = state.books[id];
+      if (!b) { continue; }
+      var st = (typeof normalizeStatus === 'function') ? normalizeStatus(b.status) : b.status;
+      if (st === 'reading') { out.push(b); }
+    }
+  }
+  return out;
+}
+
+// A still-reading spine -> the shelf.
+function homeReadingSpine(book) {
+  var s = document.createElement('a');
+  s.className = 'home-mspine';
+  s.href = '#books';
+  var edge = document.createElement('span');
+  edge.className = 'home-mspine-edge';
+  edge.setAttribute('aria-hidden', 'true');
+  s.appendChild(edge);
+  var t = document.createElement('span');
+  t.className = 'home-mspine-title';
+  t.textContent = book.title || 'Untitled';
+  s.appendChild(t);
+  return s;
+}
+
 function renderHome() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
 
   var wrap = document.createElement('section');
-  wrap.className = 'home-page';
+  wrap.className = 'home-page lum-amber-deep';
 
-  // ----- Hero -----
-  var hero = document.createElement('div');
-  hero.className = 'home-hero';
+  var ownArcs = homeOwnArcs();
+  var haveArcs = ownArcs.length > 0;
 
-  // Umber port (surface 4): mock home-hero -- eyebrow + title + sub + .btn CTAs.
-  var heroEyebrow = document.createElement('div');
-  heroEyebrow.className = 'eyebrow home-eyebrow';
-  heroEyebrow.textContent = 'A reading practice';
-  hero.appendChild(heroEyebrow);
+  // welcome + alternator
+  var welcome = document.createElement('div');
+  welcome.className = 'home-welcome';
+  var wTitle = document.createElement('h2');
+  wTitle.className = 'home-welcome-title';
+  wTitle.textContent = 'Welcome back.';
+  welcome.appendChild(wTitle);
 
-  var h1 = document.createElement('h1');
-  h1.className = 'home-title';
-  h1.appendChild(document.createTextNode('Your reading becomes '));
-  var accent = document.createElement('span');
-  accent.className = 'accent';
-  accent.textContent = 'theory.';
-  h1.appendChild(accent);
-  hero.appendChild(h1);
+  var alt = document.createElement('div');
+  alt.className = 'home-alt';
+  var seg = document.createElement('div');
+  seg.className = 'seg';
+  var segField = document.createElement('button');
+  segField.type = 'button';
+  segField.className = 'seg-opt';
+  segField.setAttribute('data-home-variant', 'field');
+  segField.textContent = 'The whole field';
+  seg.appendChild(segField);
+  var segLeft = document.createElement('button');
+  segLeft.type = 'button';
+  segLeft.className = 'seg-opt';
+  segLeft.setAttribute('data-home-variant', 'left');
+  segLeft.textContent = 'Where you left off';
+  seg.appendChild(segLeft);
+  alt.appendChild(seg);
+  var altNote = document.createElement('span');
+  altNote.className = 'home-altnote';
+  altNote.textContent = 'Home alternates between these on its own each visit — flip it yourself anytime.';
+  alt.appendChild(altNote);
+  welcome.appendChild(alt);
+  wrap.appendChild(welcome);
 
-  var sub = document.createElement('p');
-  sub.className = 'home-sub';
-  sub.textContent = 'Read, gather evidence, and build a living ' +
-    'constellation of your own thinking \u2014 in practice, with Yumi.';
-  hero.appendChild(sub);
-
-  var cta = document.createElement('div');
-  cta.className = 'home-cta';
-
-  var ctaPrimary = document.createElement('a');
-  ctaPrimary.className = 'btn btn-primary';
-  ctaPrimary.href = '#books';
-  ctaPrimary.textContent = 'Open your shelf';
-  cta.appendChild(ctaPrimary);
-
-  var ctaSecondary = document.createElement('a');
-  ctaSecondary.className = 'btn btn-ghost';
-  ctaSecondary.href = '#arcs';
-  ctaSecondary.textContent = 'Open the constellation';
-  cta.appendChild(ctaSecondary);
-
-  hero.appendChild(cta);
-  wrap.appendChild(hero);
-
-  // ----- Preview frame: a live, INERT mini-constellation of the seed arc
-  // when it resolves with sub-theories; otherwise the static copy. -----
-  var preview = document.createElement('div');
-  preview.className = 'home-preview';
-
-  var pvCap = document.createElement('div');
-  pvCap.className = 'home-preview-cap';
-  var pvDot = document.createElement('span');
-  pvDot.className = 'dot';
-  pvCap.appendChild(pvDot);
-  var pvEyebrow = document.createElement('span');
-  pvEyebrow.className = 'eyebrow';
-  pvEyebrow.textContent = 'A living constellation';
-  pvCap.appendChild(pvEyebrow);
-  preview.appendChild(pvCap);
-
-  // FINALE (chrome-fidelity): embed the seed arc's constellation READ-ONLY.
-  // Resolve the globally-viewable sentinel-owned seed arc, build the same data
-  // contract the arc-detail web view uses, and render it into an <svg> with NO
-  // interaction layers (no _stConstellationAttachInteractions, no
-  // attachSubTheoryDrag) -- inert by construction. The whole svg is wrapped in
-  // a link to the full seed arc. Falls back to the static copy when the seed
-  // arc is absent or has zero sub-theories (never a blank canvas; no faked
-  // data). arc-constellation.js is only CALLED here, never edited.
-  var homeSeedArcId = (state.seeds && state.seeds.pedagogyOfDesire)
-    ? state.seeds.pedagogyOfDesire.arcId : null;
-  var homeSeedArc = (homeSeedArcId && state.arcs)
-    ? state.arcs[homeSeedArcId] : null;
-  var homeArcData = (homeSeedArc &&
-    typeof _arcDetailBuildSubTheoryData === 'function')
-    ? _arcDetailBuildSubTheoryData(homeSeedArc) : null;
-
-  if (homeArcData && homeArcData.subTheories &&
-      homeArcData.subTheories.length &&
-      typeof window.renderSubTheoryConstellation === 'function') {
-    var pvLink = document.createElement('a');
-    pvLink.className = 'home-preview-embed cstl-host';
-    pvLink.href = '#arc/' + homeSeedArcId;
-    var HOME_SVG_NS = 'http://www.w3.org/2000/svg';
-    var pvSvg = document.createElementNS(HOME_SVG_NS, 'svg');
-    // 9a: wide-banner viewBox (was 600x500). Set ONLY here -- arc-detail keeps
-    // its own 0 0 600 500 independently, so this is embed-scoped by construction.
-    pvSvg.setAttribute('viewBox', '0 0 940 340');
-    pvSvg.setAttribute('xmlns', HOME_SVG_NS);
-    pvLink.appendChild(pvSvg);
-    preview.appendChild(pvLink);
-    // Read-only: render the field only. NO interaction layers attached, so
-    // there is no per-mark drag / connect / tap / hover-card anywhere. The arc's
-    // off-center question (= arc.title, via _stRenderQuestion) already serves as
-    // the banner's title, so no separate title overlay is added (would duplicate
-    // it). markScale sizes the embed marks independently of the wide viewBox
-    // (arc-detail passes no markScale -> unchanged).
-    window.renderSubTheoryConstellation(homeArcData, pvSvg,
-      { showLegend: false, markScale: 1.15 });
+  // Variant A: the whole field (Option A, lights = arcs)
+  var vField = document.createElement('div');
+  vField.className = 'home-variant';
+  vField.setAttribute('data-home-variant', 'field');
+  vField.appendChild(homeYumiLine(haveArcs
+    ? 'The whole shape of your thinking right now — no single path. Take it in, or step into any light.'
+    : 'You haven’t begun an arc yet — this is what your field becomes as you read.'));
+  var wholefield = document.createElement('div');
+  wholefield.className = 'home-wholefield lum-glass';
+  var wf = document.createElement('div');
+  wf.className = 'home-wf';
+  wholefield.appendChild(wf);
+  var wfcap = document.createElement('div');
+  wfcap.className = 'home-wfcap';
+  wfcap.textContent = haveArcs
+    ? 'Tap any light to step into that thread'
+    : 'An example field — begin an arc to grow your own';
+  wholefield.appendChild(wfcap);
+  vField.appendChild(wholefield);
+  var fieldstat = document.createElement('div');
+  fieldstat.className = 'home-fieldstat';
+  if (haveArcs) {
+    var growing = homeGrowingCount(ownArcs);
+    fieldstat.textContent = ownArcs.length + (ownArcs.length === 1 ? ' arc' : ' arcs') +
+      ' · ' + growing + ' still growing';
   } else {
-    var pvLine = document.createElement('p');
-    pvLine.className = 'home-preview-line';
-    pvLine.textContent =
-      'Your arcs and the ideas between them, drawn as you read.';
-    preview.appendChild(pvLine);
+    fieldstat.textContent = 'No arcs yet';
   }
+  vField.appendChild(fieldstat);
+  wrap.appendChild(vField);
+  homeRenderField(wf, ownArcs);
 
-  wrap.appendChild(preview);
+  // Variant B: where you left off — own arcs ordered by derived last-worked (desc)
+  var vLeft = document.createElement('div');
+  vLeft.className = 'home-variant';
+  vLeft.setAttribute('data-home-variant', 'left');
+  var leftSorted = ownArcs.slice();
+  leftSorted.sort(function (a, b) { return homeLastWorked(b.id, b) - homeLastWorked(a.id, a); });
+  var leftLead;
+  if (leftSorted.length > 0) {
+    var lt = (typeof _arcTouchedWord === 'function') ? _arcTouchedWord(leftSorted[0].id, leftSorted[0]) : '';
+    var since = lt ? lt.replace('touched ', '') : '';
+    leftLead = since
+      ? 'You last worked on ' + (leftSorted[0].title || 'a thread') + ', ' + since + ' — pick it back up?'
+      : 'You left a thread mid-thought — pick it back up whenever you like.';
+  } else {
+    leftLead = 'Nothing in progress yet — begin an arc and it will wait for you here.';
+  }
+  vLeft.appendChild(homeYumiLine(leftLead));
+  var sect = document.createElement('p');
+  sect.className = 'home-sectlabel';
+  sect.textContent = 'Where your thinking stands';
+  vLeft.appendChild(sect);
+  var li;
+  for (li = 0; li < leftSorted.length; li = li + 1) {
+    vLeft.appendChild(homeLeftOffCard(leftSorted[li]));
+  }
+  wrap.appendChild(vLeft);
+
+  // Glimpse: still reading (walk-with omitted). SPINE_CAP bounds the sample; count is true.
+  var readingBooks = homeReadingBooks();
+  var glimpses = document.createElement('div');
+  glimpses.className = 'home-glimpses';
+  var glimpse = document.createElement('div');
+  glimpse.className = 'home-glimpse lum-glass';
+  var gl = document.createElement('div');
+  gl.className = 'home-gl';
+  var glLabel = document.createElement('span');
+  glLabel.textContent = 'Still reading';
+  gl.appendChild(glLabel);
+  var glLink = document.createElement('a');
+  glLink.className = 'home-gl-link';
+  glLink.href = '#books';
+  glLink.textContent = 'Your shelf →';
+  gl.appendChild(glLink);
+  glimpse.appendChild(gl);
+  var spines = document.createElement('div');
+  spines.className = 'home-spines';
+  var SPINE_CAP = 8;
+  var si;
+  for (si = 0; si < readingBooks.length && si < SPINE_CAP; si = si + 1) {
+    spines.appendChild(homeReadingSpine(readingBooks[si]));
+  }
+  glimpse.appendChild(spines);
+  var rstat = document.createElement('div');
+  rstat.className = 'home-reading-status';
+  rstat.textContent = readingBooks.length
+    ? (readingBooks.length + (readingBooks.length === 1 ? ' book' : ' books') + ' open right now')
+    : 'Nothing open right now';
+  glimpse.appendChild(rstat);
+  glimpses.appendChild(glimpse);
+  wrap.appendChild(glimpses);
 
   host.appendChild(wrap);
+
+  // Alternator: per-visit default via a pure-local key, flipped each load; a tab tap
+  // overrides this view without disturbing the auto-alternation.
+  var homeVariant = (typeof ls === 'function') ? ls('praxis_home_variant', 'field') : 'field';
+  if (homeVariant !== 'left') { homeVariant = 'field'; }
+  if (typeof sv === 'function') { sv('praxis_home_variant', (homeVariant === 'field') ? 'left' : 'field'); }
+  segField.addEventListener('click', function () { homeShowVariant(wrap, 'field'); });
+  segLeft.addEventListener('click', function () { homeShowVariant(wrap, 'left'); });
+  homeShowVariant(wrap, homeVariant);
 }
 
 // N1: the active spread tab persists across re-renders (tab clicks call
