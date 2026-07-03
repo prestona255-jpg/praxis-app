@@ -2373,8 +2373,23 @@ function publishArc(arcId, opts, callback) {
       .doc(arcId)
       .set(doc, { merge: true })
       .then(function () {
+        // WRITE 1 committed -> the arc is PUBLIC. loadCommonsFeed reads
+        // publishedArcs directly, so the publish is DONE here: persist the local
+        // published flags and report success NOW, independent of WRITE 2 below.
+        // Nothing after this point may roll the publish back.
+        arc.published   = true;
+        arc.freshness   = freshness;
+        arc.publishTags = tags;
+        if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+        if (typeof saveState === 'function') { saveState(); }
+        finish({ status: 'ok' });
+
+        // WRITE 2 (best-effort follow-on): the public-profile projection powers
+        // #reader, NOT the commons feed. It has its OWN .catch so a failure never
+        // touches the publish result, the flag, or the button; publicProfiles
+        // re-derives on the next publish/edit. Logged, never silent.
         var prof = (typeof getProfile === 'function') ? getProfile(uid) : null;
-        return firebase.firestore()
+        firebase.firestore()
           .collection('publicProfiles')
           .doc(uid)
           .set({
@@ -2382,17 +2397,15 @@ function publishArc(arcId, opts, callback) {
             tagline:         (prof && prof.tagline) ? prof.tagline : '',
             publishedArcIds: firebase.firestore.FieldValue.arrayUnion(arcId),
             updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-      })
-      .then(function () {
-        arc.published   = true;
-        arc.freshness   = freshness;
-        arc.publishTags = tags;
-        if (typeof markArcsDirty === 'function') { markArcsDirty(); }
-        if (typeof saveState === 'function') { saveState(); }
-        finish({ status: 'ok' });
+          }, { merge: true })
+          .catch(function (perr) {
+            console.error('publishArc: publicProfiles follow-on failed (publish still succeeded)', perr);
+          });
       })
       .catch(function (err) {
+        // WRITE 1 failed -> the real publish failure (the arc did NOT reach the
+        // commons). Surface it AND log it so a future failure is visible.
+        console.error('publishArc: publishedArcs write failed', err);
         finish({ status: 'error', error: err });
       });
   } catch (e) {
