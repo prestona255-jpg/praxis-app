@@ -370,7 +370,7 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -395,11 +395,15 @@ function renderRoute() {
   } else if (parts[0] === 'home') {
     // Batch 4A: Home is its own top-nav surface (landing route).
     activeRoute = 'home';
-  } else if (parts[0] === 'account' || parts[0] === 'profile') {
+  } else if (parts[0] === 'account' || parts[0] === 'profile' ||
+      parts[0] === 'commons' || parts[0] === 'reader' || parts[0] === 'walk') {
     // Stage 14.3 Stage 4: the Account page is its own top-nav surface.
     // Wave 6 (re-scoped): the own-profile surface (#profile) is reached FROM the
     // Account page (its nav link stays in index.html), so it keeps the Account
     // top-nav link highlighted -- the same sub-surface pattern as book -> books.
+    // W6.5: the social surfaces (#commons discovery, #reader/<uid> other-profile,
+    // #walk/<arcId> interact) are reached from the Account/own-profile umbrella,
+    // so they keep the Account link lit too (no new top-nav link this wave).
     activeRoute = 'account';
   } else if (parts[0] === 'about') {
     // About page (#about): its own top-nav surface (the last text link).
@@ -633,6 +637,32 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderOwnProfile();
+    return;
+  }
+  // W6.5 social surfaces. Symmetric pointer clear like the branches above;
+  // placed BEFORE the notebook fallthrough so they are caught here.
+  if (parts[0] === 'commons') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderCommons();
+    return;
+  }
+  if (parts[0] === 'reader' && parts[1]) {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderOtherProfile(parts[1]);
+    return;
+  }
+  if (parts[0] === 'walk' && parts[1]) {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderInteract(parts[1]);
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -15275,22 +15305,21 @@ function renderOwnProfile() {
     headId.appendChild(pubAs);
   }
 
-  // walk-with: social counters -> em dash (no cross-user model yet).
+  // W6.5: REAL walked-by total across your published arcs (was an em dash pre-
+  // social-model). Async-patched from loadOwnProfileSocial below.
   var walk = document.createElement('div');
   walk.className = 'op-walk';
   var walkB1 = document.createElement('b');
   walkB1.textContent = '—';
-  var walkB2 = document.createElement('b');
-  walkB2.textContent = '—';
   walk.appendChild(walkB1);
-  walk.appendChild(document.createTextNode(' readers walk with you'));
-  var walkSep = document.createElement('span');
-  walkSep.className = 'op-sep';
-  walkSep.textContent = '·';
-  walk.appendChild(walkSep);
-  walk.appendChild(document.createTextNode('you walk with '));
-  walk.appendChild(walkB2);
+  walk.appendChild(document.createTextNode(' readers have walked your arcs'));
   headId.appendChild(walk);
+  // follows-you LIST (W6.5): who walks with you, per the follows model (edges
+  // targeting you are always readable). A list, not a hero count — follower
+  // count stays off primary UI. Async-populated below.
+  var opFollowsList = document.createElement('div');
+  opFollowsList.className = 'op-follows';
+  headId.appendChild(opFollowsList);
 
   // ---- inline edit form: writes ONLY the 3 existing fields via the existing
   // setProfile + saveProfileToFirestore path (no new field, full-doc .set()). ----
@@ -15466,13 +15495,828 @@ function renderOwnProfile() {
           body.appendChild(_arcCardMeta2El(arcId, rec));
         }
         card.appendChild(body);
-        grid.appendChild(card);
+        // W6.5: per-arc publish/unpublish control. The card stays a bare link
+        // (nav to the private #arc detail); the publish control is a sibling so
+        // no interactive button nests inside the anchor.
+        var cell = document.createElement('div');
+        cell.className = 'op-arc-cell';
+        cell.appendChild(card);
+        cell.appendChild(_opPublishControl(arcId, rec));
+        grid.appendChild(cell);
       })(ownArcs[gi].id, ownArcs[gi].rec);
     }
     wrap.appendChild(grid);
   }
 
+  // W6.5: replace the deferred em-dash counters with REAL data — walked-by total
+  // + build-on count across your published arcs — and the follows-you list.
+  // Async; patches the nodes created above once the reads return. A failed read
+  // simply leaves the em dash / empty list (never blanks the page).
+  if (user && user.uid && typeof loadOwnProfileSocial === 'function') {
+    loadOwnProfileSocial(user.uid, function (soc) {
+      if (!soc || soc.status !== 'ok') { return; }
+      walkB1.textContent = '' + soc.walkedByTotal;
+      cNum.textContent = '' + soc.buildOnTotal;
+      if (soc.followers && soc.followers.length) {
+        var names = [];
+        var fi;
+        for (fi = 0; fi < soc.followers.length; fi = fi + 1) { names.push(soc.followers[fi].name); }
+        opFollowsList.textContent = 'Walking with you: ' + names.join(', ');
+      } else {
+        opFollowsList.textContent = 'No readers walk with you yet.';
+      }
+    });
+  }
+
   host.appendChild(wrap);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// W6.5 STAGE 2 — SOCIAL SURFACES (#commons discovery, #reader/<uid>
+// other-profile, #walk/<arcId> interact) + shared helpers + own-profile
+// publish control. All render on .lum-amber-ember; marks via bookSubMarkHTML;
+// honest empty states; logged-out -> sign-in prompt. No comment affordance —
+// interaction is build-on / question only.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Shared: a logged-out sign-in prompt for any social surface.
+function _socialSignIn(host, title, copy) {
+  var wrap = document.createElement('section');
+  wrap.className = 'soc-signin lum-amber-ember';
+  var h = document.createElement('h1');
+  h.className = 'op-name';
+  h.textContent = title;
+  wrap.appendChild(h);
+  var p = document.createElement('p');
+  p.className = 'op-arcs-sub';
+  p.textContent = copy;
+  wrap.appendChild(p);
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'shelf-signin-prompt';
+  b.textContent = 'Sign in';
+  b.addEventListener('click', function () { signInWithGoogle(); });
+  wrap.appendChild(b);
+  host.appendChild(wrap);
+}
+
+// Shared: "tended today / yesterday / N days ago" from epoch ms (0 -> '').
+function _socialRelDays(ms) {
+  if (!ms) { return ''; }
+  var days = Math.floor((Date.now() - ms) / 86400000);
+  if (days <= 0) { return 'tended today'; }
+  if (days === 1) { return 'tended yesterday'; }
+  return 'tended ' + days + ' days ago';
+}
+
+// Shared: the "Example" badge for seed content.
+function _socialExampleBadge() {
+  var b = document.createElement('span');
+  b.className = 'soc-badge';
+  b.textContent = 'Example';
+  return b;
+}
+
+// Shared: a marks cluster (up to 5) for a projected arc. The projection carries
+// no per-sub mark metadata, so marks are stable-derived from a synthetic key
+// (arcId:index) via bookSubMarkHTML's id-hash path — stable across renders.
+function _socialMarkCluster(seedKey, subCount, size) {
+  var wrap = document.createElement('div');
+  wrap.className = 'soc-marks';
+  var markable = (typeof bookSubMarkHTML === 'function' &&
+    typeof PraxisMarks !== 'undefined' && PraxisMarks && PraxisMarks.render);
+  var n = (subCount < 1) ? 0 : (subCount < 5 ? subCount : 5);
+  if (!markable || n === 0) { wrap.className = 'soc-marks soc-marks-empty'; return wrap; }
+  var i;
+  for (i = 0; i < n; i = i + 1) {
+    var span = document.createElement('span');
+    span.innerHTML = bookSubMarkHTML({ id: seedKey + ':' + i }, size || 26);
+    wrap.appendChild(span);
+  }
+  return wrap;
+}
+
+// Shared: a discovery/profile arc card -> the interact surface (#walk/<id>).
+function _socialArcCard(id, data) {
+  var card = document.createElement('a');
+  card.className = 'dsc-card lum-glass';
+  card.href = '#walk/' + id;
+  var subs = (data && data.subTheories instanceof Array) ? data.subTheories.length : 0;
+  var thumb = _socialMarkCluster(id, subs, 26);
+  thumb.className = thumb.className + ' dsc-thumb';
+  card.appendChild(thumb);
+  var body = document.createElement('div');
+  body.className = 'dsc-body';
+  var titleRow = document.createElement('div');
+  titleRow.className = 'dsc-titlerow';
+  var t = document.createElement('h3');
+  t.className = 'dsc-title';
+  t.textContent = (data && data.title) ? data.title : 'Untitled arc';
+  titleRow.appendChild(t);
+  if (data && data.seed === true) { titleRow.appendChild(_socialExampleBadge()); }
+  body.appendChild(titleRow);
+  var who = document.createElement('div');
+  who.className = 'dsc-who';
+  who.textContent = 'by ' + ((data && data.authorPublicName) ? data.authorPublicName : 'a reader');
+  body.appendChild(who);
+  var meta = document.createElement('div');
+  meta.className = 'dsc-meta';
+  var parts = [];
+  var rel = _socialRelDays((typeof praxisTsMillis === 'function') ? praxisTsMillis(data && data.revisedAt) : 0);
+  if (rel) { parts.push(rel); }
+  var wb = (data && typeof data.walkedBy === 'number') ? data.walkedBy : 0;
+  parts.push(wb + (wb === 1 ? ' walk' : ' walks'));
+  meta.textContent = parts.join(' · ');
+  body.appendChild(meta);
+  card.appendChild(body);
+  return card;
+}
+
+// Shared: has the reader answered the publish-identity question (pen vs display)?
+function _socialIdentityAnswered() {
+  var c = ls('praxis_publish_identity', '');
+  return c === 'pen' || c === 'display';
+}
+
+// Shared: render the inline identity chooser into hostEl; onChosen(choice) fires
+// once the reader picks. Persists the choice via sv so it is asked only once.
+function _socialRenderIdentityChooser(hostEl, onChosen) {
+  hostEl.innerHTML = '';
+  var user = getCurrentUser();
+  var uid = (user && user.uid) ? user.uid : '';
+  var profile = getProfile(uid) || {};
+  var pen = profile.penName ? profile.penName : '';
+  var disp = profile.displayNameOverride ? profile.displayNameOverride
+    : (user && user.displayName ? user.displayName : (user && user.email ? user.email : 'You'));
+  var label = document.createElement('span');
+  label.className = 'itx-identity-label';
+  label.textContent = 'Post as';
+  hostEl.appendChild(label);
+  var opts = [];
+  if (pen) { opts.push(['pen', pen]); }
+  opts.push(['display', disp]);
+  var i;
+  for (i = 0; i < opts.length; i = i + 1) {
+    (function (val, lab) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'itx-identity-btn';
+      b.textContent = lab;
+      b.addEventListener('click', function () {
+        sv('praxis_publish_identity', val);
+        hostEl.innerHTML = '';
+        var chosen = document.createElement('span');
+        chosen.className = 'itx-identity-chosen';
+        chosen.textContent = 'Posting as ' + lab;
+        hostEl.appendChild(chosen);
+        if (typeof onChosen === 'function') { onChosen(val); }
+      });
+      hostEl.appendChild(b);
+    })(opts[i][0], opts[i][1]);
+  }
+}
+
+// Own-profile per-arc publish control (2D). Reads the LOCAL published flags
+// (arc.published / freshness). Publish opens an inline panel: identity (pen vs
+// display, first-publish question) + freshness (frozen/live). Unpublish removes
+// the projection. Both re-render the own profile on success.
+function _opPublishControl(arcId, rec) {
+  var user = getCurrentUser();
+  var uid = (user && user.uid) ? user.uid : '';
+  var wrap = document.createElement('div');
+  wrap.className = 'op-pub';
+
+  if (rec && rec.published === true) {
+    var status = document.createElement('span');
+    status.className = 'op-pub-status';
+    status.textContent = 'Published · ' + ((rec.freshness === 'live') ? 'live' : 'frozen');
+    wrap.appendChild(status);
+    var unpub = document.createElement('button');
+    unpub.type = 'button';
+    unpub.className = 'op-pub-btn op-pub-unpub';
+    unpub.textContent = 'Unpublish';
+    unpub.addEventListener('click', function () {
+      unpub.disabled = true;
+      unpub.textContent = 'Unpublishing…';
+      unpublishArc(arcId, function () { renderOwnProfile(); });
+    });
+    wrap.appendChild(unpub);
+    return wrap;
+  }
+
+  var pubBtn = document.createElement('button');
+  pubBtn.type = 'button';
+  pubBtn.className = 'op-pub-btn';
+  pubBtn.textContent = 'Publish';
+  var panel = document.createElement('div');
+  panel.className = 'op-pub-panel';
+
+  var profile = getProfile(uid) || {};
+  var pen = profile.penName ? profile.penName : '';
+  var disp = profile.displayNameOverride ? profile.displayNameOverride
+    : (user && user.displayName ? user.displayName : (user && user.email ? user.email : 'You'));
+  var chosenIdentity = ls('praxis_publish_identity', '');
+  if (chosenIdentity !== 'pen' && chosenIdentity !== 'display') { chosenIdentity = pen ? 'pen' : 'display'; }
+  var chosenFreshness = 'frozen';
+
+  var idRow = document.createElement('div');
+  idRow.className = 'op-pub-row';
+  var idLabel = document.createElement('span');
+  idLabel.className = 'op-pub-label';
+  idLabel.textContent = 'Publish as';
+  idRow.appendChild(idLabel);
+  var idSeg = document.createElement('div');
+  idSeg.className = 'op-pub-seg';
+  var idOpts = [];
+  if (pen) { idOpts.push(['pen', pen]); }
+  idOpts.push(['display', disp]);
+  var idBtns = {};
+  var io;
+  for (io = 0; io < idOpts.length; io = io + 1) {
+    (function (val, lab) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'op-pub-seg-btn' + (chosenIdentity === val ? ' is-on' : '');
+      b.textContent = lab;
+      b.addEventListener('click', function () {
+        chosenIdentity = val;
+        var kk;
+        for (kk in idBtns) { if (idBtns.hasOwnProperty(kk)) { idBtns[kk].className = 'op-pub-seg-btn' + (kk === val ? ' is-on' : ''); } }
+      });
+      idBtns[val] = b;
+      idSeg.appendChild(b);
+    })(idOpts[io][0], idOpts[io][1]);
+  }
+  idRow.appendChild(idSeg);
+  panel.appendChild(idRow);
+
+  var frRow = document.createElement('div');
+  frRow.className = 'op-pub-row';
+  var frLabel = document.createElement('span');
+  frLabel.className = 'op-pub-label';
+  frLabel.textContent = 'Freshness';
+  frRow.appendChild(frLabel);
+  var frSeg = document.createElement('div');
+  frSeg.className = 'op-pub-seg';
+  var frOpts = [['frozen', 'Frozen'], ['live', 'Live']];
+  var frBtns = {};
+  var fo;
+  for (fo = 0; fo < frOpts.length; fo = fo + 1) {
+    (function (val, lab) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'op-pub-seg-btn' + (chosenFreshness === val ? ' is-on' : '');
+      b.textContent = lab;
+      b.addEventListener('click', function () {
+        chosenFreshness = val;
+        var kk;
+        for (kk in frBtns) { if (frBtns.hasOwnProperty(kk)) { frBtns[kk].className = 'op-pub-seg-btn' + (kk === val ? ' is-on' : ''); } }
+      });
+      frBtns[val] = b;
+      frSeg.appendChild(b);
+    })(frOpts[fo][0], frOpts[fo][1]);
+  }
+  frRow.appendChild(frSeg);
+  panel.appendChild(frRow);
+
+  var frHint = document.createElement('p');
+  frHint.className = 'op-pub-hint';
+  frHint.textContent = 'Frozen refreshes only when you re-publish. Live keeps the public copy in step with your edits.';
+  panel.appendChild(frHint);
+
+  var confirm = document.createElement('button');
+  confirm.type = 'button';
+  confirm.className = 'op-pub-confirm';
+  confirm.textContent = 'Publish to the commons';
+  var note = document.createElement('span');
+  note.className = 'op-pub-note';
+  confirm.addEventListener('click', function () {
+    confirm.disabled = true;
+    note.textContent = 'Publishing…';
+    publishArc(arcId, { freshness: chosenFreshness, identity: chosenIdentity }, function (r) {
+      if (r && r.status === 'ok') { renderOwnProfile(); }
+      else { confirm.disabled = false; note.textContent = 'Could not publish — try again.'; }
+    });
+  });
+  panel.appendChild(confirm);
+  panel.appendChild(note);
+
+  pubBtn.addEventListener('click', function () { panel.classList.toggle('is-open'); });
+  wrap.appendChild(pubBtn);
+  wrap.appendChild(panel);
+  return wrap;
+}
+
+// 2A — DISCOVERY (#commons): a finite, shuffled field of the newest published
+// arcs, with a "turn the field" re-shuffle/re-pull. No pagination, no ranking.
+function renderCommons() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    _socialSignIn(host, 'The commons', 'Sign in to explore arcs readers have published.');
+    return;
+  }
+  var wrap = document.createElement('section');
+  wrap.className = 'dsc-root lum-amber-ember';
+
+  var head = document.createElement('header');
+  head.className = 'dsc-head';
+  var eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'the commons';
+  head.appendChild(eyebrow);
+  var h1 = document.createElement('h1');
+  h1.className = 'dsc-h1';
+  h1.textContent = 'The commons';
+  head.appendChild(h1);
+  var sub = document.createElement('p');
+  sub.className = 'dsc-sub';
+  sub.textContent = 'Arcs readers have published. A finite field — turn it to draw a new handful.';
+  head.appendChild(sub);
+  var turn = document.createElement('button');
+  turn.type = 'button';
+  turn.className = 'dsc-turn';
+  turn.textContent = 'Turn the field';
+  head.appendChild(turn);
+  wrap.appendChild(head);
+
+  var field = document.createElement('div');
+  field.className = 'dsc-field';
+  wrap.appendChild(field);
+  host.appendChild(wrap);
+
+  function shuffle(arr) {
+    var i, j, tmp;
+    for (i = arr.length - 1; i > 0; i = i - 1) {
+      j = Math.floor(Math.random() * (i + 1));
+      tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+  function paint() {
+    field.innerHTML = '';
+    var loading = document.createElement('p');
+    loading.className = 'dsc-status';
+    loading.textContent = 'Gathering the commons…';
+    field.appendChild(loading);
+    loadCommonsFeed(function (res) {
+      field.innerHTML = '';
+      if (!res || res.status !== 'ok') {
+        var err = document.createElement('p');
+        err.className = 'dsc-status';
+        err.textContent = 'The commons could not be reached right now.';
+        field.appendChild(err);
+        return;
+      }
+      if (!res.arcs.length) {
+        var empty = document.createElement('div');
+        empty.className = 'dsc-empty lum-glass';
+        var eh = document.createElement('p');
+        eh.className = 'dsc-empty-h';
+        eh.textContent = 'The commons is quiet — publish an arc to begin.';
+        empty.appendChild(eh);
+        field.appendChild(empty);
+        return;
+      }
+      var arcs = shuffle(res.arcs.slice(0));
+      var i;
+      for (i = 0; i < arcs.length; i = i + 1) {
+        field.appendChild(_socialArcCard(arcs[i].id, arcs[i].data));
+      }
+    });
+  }
+  turn.addEventListener('click', paint);
+  paint();
+}
+
+// 2B — OTHER-PROFILE (#reader/<uid>): a reader's public profile + their
+// published arcs + follow/unfollow. Own uid routes to #profile. No follower
+// count on the hero.
+function renderOtherProfile(targetUid) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    _socialSignIn(host, 'A reader', 'Sign in to see this reader’s public profile.');
+    return;
+  }
+  if (targetUid === user.uid) { location.hash = '#profile'; return; }
+
+  var wrap = document.createElement('section');
+  wrap.className = 'otp-root lum-amber-ember';
+  var back = document.createElement('a');
+  back.className = 'otp-back';
+  back.href = '#commons';
+  back.textContent = '← the commons';
+  wrap.appendChild(back);
+
+  var hero = document.createElement('div');
+  hero.className = 'otp-hero lum-glass';
+  var loading = document.createElement('p');
+  loading.className = 'otp-status';
+  loading.textContent = 'Loading…';
+  hero.appendChild(loading);
+  wrap.appendChild(hero);
+
+  var arcsSec = document.createElement('div');
+  arcsSec.className = 'otp-arcs';
+  wrap.appendChild(arcsSec);
+  host.appendChild(wrap);
+
+  loadPublicProfile(targetUid, function (pRes) {
+    hero.innerHTML = '';
+    if (!pRes || pRes.status === 'error') {
+      var err = document.createElement('p');
+      err.className = 'otp-status';
+      err.textContent = 'This profile could not be reached right now.';
+      hero.appendChild(err);
+      return;
+    }
+    var data = (pRes.status === 'found') ? (pRes.data || {}) : {};
+    var name = (data && data.publicName) ? data.publicName : 'A reader';
+    var mark = document.createElement('div');
+    mark.className = 'otp-mark';
+    mark.setAttribute('aria-hidden', 'true');
+    var mi = document.createElement('span');
+    mi.textContent = name.charAt(0).toUpperCase();
+    mark.appendChild(mi);
+    hero.appendChild(mark);
+    var idBlock = document.createElement('div');
+    idBlock.className = 'otp-id';
+    var nameEl = document.createElement('h1');
+    nameEl.className = 'otp-name';
+    nameEl.textContent = name;
+    idBlock.appendChild(nameEl);
+    if (data && data.tagline) {
+      var tag = document.createElement('p');
+      tag.className = 'otp-tag';
+      tag.textContent = data.tagline;
+      idBlock.appendChild(tag);
+    }
+    var followBtn = document.createElement('button');
+    followBtn.type = 'button';
+    followBtn.className = 'otp-follow';
+    followBtn.textContent = 'Walk with ' + name;
+    followBtn.disabled = true;
+    idBlock.appendChild(followBtn);
+    hero.appendChild(idBlock);
+
+    var following = false;
+    function paintFollow() {
+      followBtn.className = 'otp-follow' + (following ? ' is-on' : '');
+      followBtn.textContent = following ? ('Walking with ' + name) : ('Walk with ' + name);
+    }
+    loadFollowEdge(targetUid, function (fRes) {
+      following = !!(fRes && fRes.following);
+      followBtn.disabled = false;
+      paintFollow();
+    });
+    followBtn.addEventListener('click', function () {
+      followBtn.disabled = true;
+      if (following) {
+        unfollowReader(targetUid, function () { following = false; followBtn.disabled = false; paintFollow(); });
+      } else {
+        followReader(targetUid, function () { following = true; followBtn.disabled = false; paintFollow(); });
+      }
+    });
+  });
+
+  loadArcsForAuthor(targetUid, function (aRes) {
+    arcsSec.innerHTML = '';
+    var hd = document.createElement('h2');
+    hd.className = 'otp-arcs-head';
+    hd.textContent = 'Published arcs';
+    arcsSec.appendChild(hd);
+    if (!aRes || aRes.status !== 'ok' || !aRes.arcs.length) {
+      var none = document.createElement('p');
+      none.className = 'otp-status';
+      none.textContent = (aRes && aRes.status === 'ok') ? 'No published arcs yet.' : 'Arcs could not be loaded right now.';
+      arcsSec.appendChild(none);
+      return;
+    }
+    var grid = document.createElement('div');
+    grid.className = 'otp-arcs-grid';
+    var i;
+    for (i = 0; i < aRes.arcs.length; i = i + 1) {
+      grid.appendChild(_socialArcCard(aRes.arcs[i].id, aRes.arcs[i].data));
+    }
+    arcsSec.appendChild(grid);
+  });
+}
+
+// interact: guard so a walk is counted at most once per page load per arc.
+var _itxWalked = {};
+
+// 2C — INTERACT (#walk/<arcId>): the projected arc + its build-ons/questions
+// threaded under each sub-theory (or the whole arc), + a two-mode composer
+// (build on / ask a question). Walk counted once per view of another's arc.
+function renderInteract(arcId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    _socialSignIn(host, 'An arc in the commons', 'Sign in to read this arc and build on it.');
+    return;
+  }
+  var wrap = document.createElement('section');
+  wrap.className = 'itx-root lum-amber-ember';
+  var loading = document.createElement('p');
+  loading.className = 'itx-status';
+  loading.textContent = 'Opening the arc…';
+  wrap.appendChild(loading);
+  host.appendChild(wrap);
+
+  loadPublishedArc(arcId, function (res) {
+    wrap.innerHTML = '';
+    if (!res || res.status === 'error') {
+      var err = document.createElement('p');
+      err.className = 'itx-status';
+      err.textContent = 'This arc could not be reached right now.';
+      wrap.appendChild(err);
+      return;
+    }
+    if (res.status === 'absent') {
+      var gone = document.createElement('div');
+      gone.className = 'itx-gone lum-glass';
+      var gh = document.createElement('p');
+      gh.className = 'itx-gone-h';
+      gh.textContent = 'This arc is no longer in the commons.';
+      gone.appendChild(gh);
+      var gl = document.createElement('a');
+      gl.className = 'itx-gone-link';
+      gl.href = '#commons';
+      gl.textContent = 'Back to the commons';
+      gone.appendChild(gl);
+      wrap.appendChild(gone);
+      return;
+    }
+    var data = res.data || {};
+    var isAuthor = (data.authorUid === user.uid);
+
+    if (!isAuthor && !_itxWalked[arcId]) {
+      _itxWalked[arcId] = true;
+      if (typeof incrementWalkedBy === 'function') { incrementWalkedBy(arcId, function () {}); }
+    }
+
+    var back = document.createElement('a');
+    back.className = 'itx-back';
+    back.href = '#commons';
+    back.textContent = '← the commons';
+    wrap.appendChild(back);
+
+    var head = document.createElement('header');
+    head.className = 'itx-head';
+    var eyebrow = document.createElement('p');
+    eyebrow.className = 'eyebrow';
+    eyebrow.textContent = 'an arc in the commons';
+    head.appendChild(eyebrow);
+    var titleRow = document.createElement('div');
+    titleRow.className = 'itx-titlerow';
+    var h1 = document.createElement('h1');
+    h1.className = 'itx-title';
+    h1.textContent = data.title ? data.title : 'Untitled arc';
+    titleRow.appendChild(h1);
+    if (data.seed === true) { titleRow.appendChild(_socialExampleBadge()); }
+    head.appendChild(titleRow);
+    var who = document.createElement('p');
+    who.className = 'itx-who';
+    var authorName = data.authorPublicName ? data.authorPublicName : 'a reader';
+    who.appendChild(document.createTextNode('by '));
+    if (!isAuthor && data.authorUid) {
+      var authorLink = document.createElement('a');
+      authorLink.className = 'itx-author-link';
+      authorLink.href = '#reader/' + data.authorUid;
+      authorLink.textContent = authorName;
+      who.appendChild(authorLink);
+    } else {
+      who.appendChild(document.createTextNode(authorName + (isAuthor ? ' (you)' : '')));
+    }
+    head.appendChild(who);
+    var meta = document.createElement('p');
+    meta.className = 'itx-meta';
+    var mp = [];
+    var rel = _socialRelDays((typeof praxisTsMillis === 'function') ? praxisTsMillis(data.revisedAt) : 0);
+    if (rel) { mp.push(rel); }
+    var wb = (typeof data.walkedBy === 'number') ? data.walkedBy : 0;
+    mp.push(wb + (wb === 1 ? ' walk' : ' walks'));
+    if (data.tags instanceof Array && data.tags.length) { mp.push(data.tags.join(' · ')); }
+    meta.textContent = mp.join('   ·   ');
+    head.appendChild(meta);
+    wrap.appendChild(head);
+
+    var subs = (data.subTheories instanceof Array) ? data.subTheories : [];
+    var threadHosts = {};
+
+    var subsWrap = document.createElement('div');
+    subsWrap.className = 'itx-subs';
+    var si;
+    for (si = 0; si < subs.length; si = si + 1) {
+      (function (idx, sub) {
+        if (!sub) { return; }
+        var block = document.createElement('article');
+        block.className = 'itx-sub';
+        var mk = document.createElement('span');
+        mk.className = 'itx-sub-mark';
+        if (typeof bookSubMarkHTML === 'function') { mk.innerHTML = bookSubMarkHTML({ id: arcId + ':' + idx }, 24); }
+        block.appendChild(mk);
+        var stBody = document.createElement('div');
+        stBody.className = 'itx-sub-body-wrap';
+        var sh = document.createElement('h3');
+        sh.className = 'itx-sub-head';
+        sh.textContent = sub.header ? sub.header : 'Untitled sub-theory';
+        stBody.appendChild(sh);
+        if (sub.body) {
+          var sbp = document.createElement('p');
+          sbp.className = 'itx-sub-body';
+          sbp.textContent = sub.body;
+          stBody.appendChild(sbp);
+        }
+        var thread = document.createElement('div');
+        thread.className = 'itx-thread';
+        threadHosts['' + idx] = thread;
+        stBody.appendChild(thread);
+        block.appendChild(stBody);
+        subsWrap.appendChild(block);
+      })(si, subs[si]);
+    }
+    wrap.appendChild(subsWrap);
+
+    var arcThreadWrap = document.createElement('div');
+    arcThreadWrap.className = 'itx-arclevel';
+    var atHead = document.createElement('h3');
+    atHead.className = 'itx-arclevel-head';
+    atHead.textContent = 'On the whole arc';
+    arcThreadWrap.appendChild(atHead);
+    var arcThread = document.createElement('div');
+    arcThread.className = 'itx-thread';
+    threadHosts[''] = arcThread;
+    arcThreadWrap.appendChild(arcThread);
+    wrap.appendChild(arcThreadWrap);
+
+    var contribStatus = document.createElement('p');
+    contribStatus.className = 'itx-status';
+    contribStatus.textContent = 'Loading contributions…';
+    wrap.appendChild(contribStatus);
+
+    function renderContribItem(item, kind) {
+      var el = document.createElement('div');
+      el.className = 'itx-contrib itx-contrib-' + kind;
+      var cmeta = document.createElement('div');
+      cmeta.className = 'itx-contrib-meta';
+      var tag = document.createElement('span');
+      tag.className = 'itx-contrib-tag';
+      tag.textContent = (kind === 'question') ? 'Question' : 'Build-on';
+      cmeta.appendChild(tag);
+      var from = document.createElement('span');
+      from.className = 'itx-contrib-from';
+      from.textContent = (item.data && item.data.fromPublicName) ? item.data.fromPublicName : 'a reader';
+      cmeta.appendChild(from);
+      if (item.data && item.data.seed === true) { cmeta.appendChild(_socialExampleBadge()); }
+      el.appendChild(cmeta);
+      var bodyP = document.createElement('p');
+      bodyP.className = 'itx-contrib-body';
+      bodyP.textContent = (item.data && item.data.body) ? item.data.body : '';
+      el.appendChild(bodyP);
+      return el;
+    }
+    function placeContrib(item, kind) {
+      var anchor = (item.data && typeof item.data.targetAnchor === 'string') ? item.data.targetAnchor : '';
+      var hostNode = threadHosts[anchor];
+      if (!hostNode) { hostNode = threadHosts['']; }
+      hostNode.appendChild(renderContribItem(item, kind));
+    }
+
+    loadBuildOnsForArc(arcId, isAuthor, user.uid, function (cRes) {
+      if (contribStatus.parentNode) { contribStatus.parentNode.removeChild(contribStatus); }
+      if (!cRes || cRes.status !== 'ok') {
+        var cerr = document.createElement('p');
+        cerr.className = 'itx-status';
+        cerr.textContent = 'Contributions could not be loaded right now.';
+        wrap.insertBefore(cerr, arcThreadWrap.nextSibling);
+      } else {
+        var bi;
+        for (bi = 0; bi < cRes.buildOns.length; bi = bi + 1) { placeContrib(cRes.buildOns[bi], 'build-on'); }
+        var qi;
+        for (qi = 0; qi < cRes.questions.length; qi = qi + 1) { placeContrib(cRes.questions[qi], 'question'); }
+        var an;
+        for (an in threadHosts) {
+          if (threadHosts.hasOwnProperty(an) && !threadHosts[an].childNodes.length) {
+            var emptyHint = document.createElement('p');
+            emptyHint.className = 'itx-thread-empty';
+            emptyHint.textContent = 'No contributions yet.';
+            threadHosts[an].appendChild(emptyHint);
+          }
+        }
+      }
+      wrap.appendChild(_itxComposer(arcId, subs));
+    });
+  });
+}
+
+// interact composer: two modes (build on / ask a question) + a target selector
+// + the first-post identity question. NO comment box — build-on/question only.
+function _itxComposer(arcId, subs) {
+  var wrap = document.createElement('div');
+  wrap.className = 'itx-composer lum-glass';
+  var head = document.createElement('p');
+  head.className = 'itx-composer-head';
+  head.textContent = 'Add to this arc';
+  wrap.appendChild(head);
+
+  var mode = 'build-on';
+  var modeRow = document.createElement('div');
+  modeRow.className = 'itx-composer-modes';
+  var buildBtn = document.createElement('button');
+  buildBtn.type = 'button';
+  buildBtn.className = 'itx-mode is-on';
+  buildBtn.textContent = 'Build on it';
+  var askBtn = document.createElement('button');
+  askBtn.type = 'button';
+  askBtn.className = 'itx-mode';
+  askBtn.textContent = 'Ask a question';
+  modeRow.appendChild(buildBtn);
+  modeRow.appendChild(askBtn);
+  wrap.appendChild(modeRow);
+
+  var targetSel = document.createElement('select');
+  targetSel.className = 'itx-target';
+  var optArc = document.createElement('option');
+  optArc.value = '';
+  optArc.textContent = 'On the whole arc';
+  targetSel.appendChild(optArc);
+  var ti;
+  for (ti = 0; ti < subs.length; ti = ti + 1) {
+    var opt = document.createElement('option');
+    opt.value = '' + ti;
+    opt.textContent = 'On: ' + (subs[ti].header ? subs[ti].header : ('sub-theory ' + (ti + 1)));
+    targetSel.appendChild(opt);
+  }
+  wrap.appendChild(targetSel);
+
+  var field = document.createElement('textarea');
+  field.className = 'itx-field';
+  field.setAttribute('rows', '3');
+  field.setAttribute('placeholder', 'Extend the thinking…');
+  wrap.appendChild(field);
+
+  var idNote = document.createElement('div');
+  idNote.className = 'itx-identity';
+  wrap.appendChild(idNote);
+
+  var actions = document.createElement('div');
+  actions.className = 'itx-composer-actions';
+  var sendBtn = document.createElement('button');
+  sendBtn.type = 'button';
+  sendBtn.className = 'itx-send';
+  sendBtn.textContent = 'Post';
+  actions.appendChild(sendBtn);
+  var note = document.createElement('span');
+  note.className = 'itx-send-note';
+  actions.appendChild(note);
+  wrap.appendChild(actions);
+
+  function setMode(m) {
+    mode = m;
+    buildBtn.className = 'itx-mode' + (m === 'build-on' ? ' is-on' : '');
+    askBtn.className = 'itx-mode' + (m === 'question' ? ' is-on' : '');
+    field.setAttribute('placeholder', m === 'question'
+      ? 'Ask a real question — one the author could answer…'
+      : 'Extend the thinking…');
+  }
+  buildBtn.addEventListener('click', function () { setMode('build-on'); });
+  askBtn.addEventListener('click', function () { setMode('question'); });
+
+  function doPost() {
+    var body = field.value.replace(/^\s+|\s+$/g, '');
+    if (body === '') { note.textContent = 'Write something first.'; return; }
+    sendBtn.disabled = true;
+    note.textContent = 'Posting…';
+    postBuildOn({ targetArcId: arcId, targetAnchor: targetSel.value, type: mode, body: body }, function (r) {
+      sendBtn.disabled = false;
+      if (r && r.status === 'ok') {
+        note.textContent = 'Posted.';
+        field.value = '';
+        renderInteract(arcId);
+      } else {
+        note.textContent = 'Could not post — try again.';
+      }
+    });
+  }
+
+  sendBtn.addEventListener('click', function () {
+    if (!_socialIdentityAnswered()) {
+      note.textContent = 'Choose how your name appears:';
+      _socialRenderIdentityChooser(idNote, function () { doPost(); });
+      return;
+    }
+    doPost();
+  });
+
+  return wrap;
 }
 
 function renderAccountPage() {
@@ -15621,6 +16465,14 @@ function renderAccountPage() {
   opProfileLink.href = '#profile';
   opProfileLink.textContent = 'View your public profile →';
   wrap.appendChild(opProfileLink);
+
+  // W6.5: discovery entry to the commons (#commons). Same Account-page link
+  // pattern as the own-profile link above; index.html top-nav stays untouched.
+  var opCommonsLink = document.createElement('a');
+  opCommonsLink.className = 'op-account-link';
+  opCommonsLink.href = '#commons';
+  opCommonsLink.textContent = 'Explore the commons →';
+  wrap.appendChild(opCommonsLink);
 
   // ----- STANCE (v6 mockup .stance): a bare covenant line between the hero and
   // VALUES -- outside any card and OUTSIDE the portrait umbrella. -----

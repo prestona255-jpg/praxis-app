@@ -2399,6 +2399,15 @@ function saveState() {
           arcsDirty = true;
         }
       });
+      // W6.5 write-through: a freshness:"live" published arc rewrites its public
+      // projection on this same save. GUARD IS CHEAP-FIRST -- republishLiveArcs
+      // iterates the in-memory arc map and touches Firestore ONLY for arcs
+      // flagged published===true && freshness==="live"; unpublished or frozen
+      // arcs incur zero reads and zero writes here. Fire-and-forget; it never
+      // calls saveState (no recursion) and never re-renders.
+      if (typeof republishLiveArcs === 'function') {
+        republishLiveArcs(arcUser.uid);
+      }
     }
   }
   if (notebookDirty) {

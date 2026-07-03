@@ -2245,4 +2245,770 @@ function playLine(text, onStart, onEnd) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// W6.5 — SOCIAL DATA LAYER (publish projections + write-through + seeds).
+// v8-compat Firestore throughout, matching the loaders above. Cross-user
+// READ paths (discovery / other-profile / interact loaders) land in Stage 2;
+// this block is publish/unpublish, the freshness:"live" write-through, and
+// the console-only seed fixtures. No cloud functions, no new infrastructure.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Resolve the public name a reader publishes under. The first-publish identity
+// question (pen name vs display name) is rendered in Stage 2; it persists the
+// answer via sv('praxis_publish_identity', 'pen'|'display'). Here we read that
+// stored choice and map it against the profile. Absent a stored choice we
+// prefer the pen name when one exists, else the display override / auth name.
+// Never invents a name: falls back to the generic 'A reader' only if the reader
+// truly has none set (real publish flow forces a name first).
+function praxisResolvePublicName(uid) {
+  var prof = (typeof getProfile === 'function') ? getProfile(uid) : null;
+  var user = getCurrentUser();
+  var choice = ls('praxis_publish_identity', '');
+  var pen = (prof && prof.penName) ? prof.penName : '';
+  var disp = (prof && prof.displayNameOverride)
+    ? prof.displayNameOverride
+    : ((user && user.displayName) ? user.displayName : '');
+  if (choice === 'pen' && pen) { return pen; }
+  if (choice === 'display' && (disp || pen)) { return disp || pen; }
+  return pen || disp || 'A reader';
+}
+
+// Build the public projection for an arc from the REAL render-path content:
+// gather this arc's sub-theories exactly as renderArcDetail does (iterate
+// state.subTheories, filter by arcId), order by createdAt for a stable public
+// sequence, and project ONLY the public register (bodyPublic). bodyIntellectual
+// and every private register are never read here. Sub-theories with an empty
+// header are skipped so the commons never shows a blank stub. Returns null when
+// the arc is absent. Timestamps + walkedBy are stamped by the writer, not here.
+function buildPublishedArcDoc(uid, arcId, opts) {
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  if (!arc) { return null; }
+  var o = opts || {};
+  var list = [];
+  var k;
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, k)) {
+        var st = state.subTheories[k];
+        if (st && st.arcId === arcId &&
+            typeof st.header === 'string' &&
+            st.header.replace(/^\s+|\s+$/g, '') !== '') {
+          list.push(st);
+        }
+      }
+    }
+  }
+  list.sort(function (a, b) {
+    var ac = (typeof a.createdAt === 'number') ? a.createdAt : 0;
+    var bc = (typeof b.createdAt === 'number') ? b.createdAt : 0;
+    if (ac !== bc) { return ac - bc; }
+    return ('' + a.id).localeCompare('' + b.id);
+  });
+  var subs = [];
+  var i;
+  for (i = 0; i < list.length; i = i + 1) {
+    subs.push({
+      header: list[i].header || '',
+      body:   (typeof list[i].bodyPublic === 'string') ? list[i].bodyPublic : ''
+    });
+  }
+  return {
+    title:            (typeof arc.title === 'string') ? arc.title : '',
+    subTheories:      subs,
+    tags:             (o.tags instanceof Array) ? o.tags : [],
+    authorUid:        uid,
+    authorPublicName: praxisResolvePublicName(uid),
+    freshness:        (o.freshness === 'live') ? 'live' : 'frozen',
+    seed:             (o.seed === true)
+  };
+}
+
+// publishArc: explicit opt-in publish. Writes publishedArcs/{arcId} (merge, so
+// walkedBy + the original publishedAt survive a re-publish) and upserts the
+// author's publicProfiles doc (arrayUnion adds the arc id). Flips the LOCAL arc
+// flags (published / freshness / publishTags) so the write-through guard and the
+// own-profile UI see the published state, and persists them via the existing
+// userArcs sync. opts: { freshness:'frozen'|'live', tags:[...], identity:'pen'|'display' }.
+function publishArc(arcId, opts, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  var o = opts || {};
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    finish({ status: 'error', error: new Error('publishArc: not signed in') });
+    return;
+  }
+  var uid = user.uid;
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  if (!arc || arc.userId !== uid) {
+    finish({ status: 'error', error: new Error('publishArc: arc not found or not owned') });
+    return;
+  }
+  // First publish stores the identity choice so we never re-ask.
+  if (o.identity === 'pen' || o.identity === 'display') {
+    sv('praxis_publish_identity', o.identity);
+  }
+  var freshness = (o.freshness === 'live') ? 'live' : 'frozen';
+  var tags = (o.tags instanceof Array) ? o.tags : [];
+  var doc = buildPublishedArcDoc(uid, arcId, { freshness: freshness, tags: tags, seed: false });
+  if (!doc) {
+    finish({ status: 'error', error: new Error('publishArc: projection build failed') });
+    return;
+  }
+  var firstPublish = (arc.published !== true);
+  doc.revisedAt = firebase.firestore.FieldValue.serverTimestamp();
+  if (firstPublish) {
+    // Stamp original publish time + seed the counter ONLY on first publish; a
+    // merge write on re-publish preserves both (walkedBy is never rewritten).
+    doc.publishedAt = firebase.firestore.FieldValue.serverTimestamp();
+    doc.walkedBy    = 0;
+  }
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .doc(arcId)
+      .set(doc, { merge: true })
+      .then(function () {
+        var prof = (typeof getProfile === 'function') ? getProfile(uid) : null;
+        return firebase.firestore()
+          .collection('publicProfiles')
+          .doc(uid)
+          .set({
+            publicName:      praxisResolvePublicName(uid),
+            tagline:         (prof && prof.tagline) ? prof.tagline : '',
+            publishedArcIds: firebase.firestore.FieldValue.arrayUnion(arcId),
+            updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+      })
+      .then(function () {
+        arc.published   = true;
+        arc.freshness   = freshness;
+        arc.publishTags = tags;
+        if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+        if (typeof saveState === 'function') { saveState(); }
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// unpublishArc: deletes the projection and drops the arc id from the author's
+// publicProfiles list (arrayRemove). Clears the LOCAL published flag so the
+// write-through guard skips it thereafter. freshness/publishTags are left as-is
+// (harmless — the guard checks published first).
+function unpublishArc(arcId, callback) {
+  var done = false;
+  function finish(result) {
+    if (done) return;
+    done = true;
+    if (typeof callback === 'function') callback(result);
+  }
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    finish({ status: 'error', error: new Error('unpublishArc: not signed in') });
+    return;
+  }
+  var uid = user.uid;
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .doc(arcId)
+      .delete()
+      .then(function () {
+        return firebase.firestore()
+          .collection('publicProfiles')
+          .doc(uid)
+          .set({
+            publishedArcIds: firebase.firestore.FieldValue.arrayRemove(arcId),
+            updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+      })
+      .then(function () {
+        if (arc) {
+          arc.published = false;
+          if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+          if (typeof saveState === 'function') { saveState(); }
+        }
+        finish({ status: 'ok' });
+      })
+      .catch(function (err) {
+        finish({ status: 'error', error: err });
+      });
+  } catch (e) {
+    finish({ status: 'error', error: e });
+  }
+}
+
+// republishLiveArcs: the freshness:"live" write-through, called from saveState's
+// arcsDirty flush. THE GUARD IS CHEAP-FIRST: this only iterates the in-memory
+// arc map and issues a Firestore write for arcs flagged published===true &&
+// freshness==="live". Unpublished or frozen arcs incur ZERO reads and ZERO
+// writes. Each live arc is re-projected and merge-written (preserving walkedBy +
+// publishedAt); revisedAt is bumped. Fire-and-forget: never calls saveState (no
+// recursion), never re-renders. A failed push simply retries on the next save.
+function republishLiveArcs(uid) {
+  if (!uid || !state.arcs) { return; }
+  var aid;
+  for (aid in state.arcs) {
+    if (Object.prototype.hasOwnProperty.call(state.arcs, aid)) {
+      var arc = state.arcs[aid];
+      if (arc && arc.userId === uid &&
+          arc.published === true && arc.freshness === 'live') {
+        var doc = buildPublishedArcDoc(uid, aid, {
+          freshness: 'live',
+          tags: (arc.publishTags instanceof Array) ? arc.publishTags : [],
+          seed: false
+        });
+        if (!doc) { continue; }
+        doc.revisedAt = firebase.firestore.FieldValue.serverTimestamp();
+        try {
+          firebase.firestore()
+            .collection('publishedArcs')
+            .doc(aid)
+            .set(doc, { merge: true })
+            .then(function () {}, function () {});
+        } catch (e) { /* fire-and-forget; retried on the next save */ }
+      }
+    }
+  }
+}
+
+// ── Console-only dev seeds (attached to window, NO UI). Every seeded doc
+// carries seed:true and renders with an "Example" badge in Stage 2. Fixed doc
+// ids make both directions idempotent: re-seed after clear works; double-seed
+// overwrites in place (no duplication). Seeds are authored under the signed-in
+// uid (rules require authorUid==caller) but labelled authorPublicName "Praxis".
+window.praxisSeedCommons = function () {
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    console.warn('praxisSeedCommons: sign in first');
+    return;
+  }
+  var uid = user.uid;
+  var ts = firebase.firestore.FieldValue.serverTimestamp;
+  var db = firebase.firestore();
+
+  var seedArcs = [
+    {
+      id: 'seed-arc-1',
+      title: 'The Hidden Curriculum of the Bell Schedule',
+      freshness: 'frozen',
+      tags: ['critical pedagogy', 'schooling'],
+      subTheories: [
+        {
+          header: 'Time discipline is the first lesson',
+          body: 'Before a student learns a single fact, they learn to move when a bell says move. The schedule teaches obedience to abstract time more reliably than any syllabus teaches its subject.'
+        },
+        {
+          header: 'The forty-seven-minute idea',
+          body: 'Any thought that takes longer than one period to develop is structurally discouraged. Depth becomes a scheduling error.'
+        }
+      ]
+    },
+    {
+      id: 'seed-arc-2',
+      title: 'Reading as Rehearsal',
+      freshness: 'live',
+      tags: ['reading', 'practice'],
+      subTheories: [
+        {
+          header: 'Annotation is rehearsal for a conversation',
+          body: 'A margin note is half of a dialogue waiting for its other half. Reading alone is rehearsal; the commons is the performance.'
+        },
+        {
+          header: 'Books answer each other',
+          body: 'No text is finished until another reader builds on it. A library is not a warehouse; it is an argument conducted slowly.'
+        }
+      ]
+    },
+    {
+      id: 'seed-arc-3',
+      title: 'What a Question Is For',
+      freshness: 'frozen',
+      tags: ['dialogue', 'pedagogy'],
+      subTheories: [
+        {
+          header: 'A real question transfers power',
+          body: 'Asking a genuine question hands the other person the authority to change your mind. Most classroom questions are tests wearing a question’s clothing.'
+        },
+        {
+          header: 'The answerable prompt',
+          body: 'One good question a person can actually answer beats five that merely display the asker.'
+        }
+      ]
+    }
+  ];
+
+  var seedArcIds = [];
+  var pending = 0;
+  var i;
+
+  function afterArcs() {
+    // Add the seed arc ids to this uid's public profile (non-destructive: does
+    // NOT overwrite publicName — discovery/interact read authorPublicName off
+    // each arc doc). Then write the seed build-on + question.
+    db.collection('publicProfiles').doc(uid).set({
+      publishedArcIds: firebase.firestore.FieldValue.arrayUnion(
+        'seed-arc-1', 'seed-arc-2', 'seed-arc-3'
+      ),
+      updatedAt: ts()
+    }, { merge: true }).then(function () {
+      return db.collection('buildOns').doc('seed-buildon-1').set({
+        fromUid:       uid,
+        fromPublicName: 'Praxis',
+        targetArcId:   'seed-arc-1',
+        targetAnchor:  '0',
+        type:          'build-on',
+        body:          'This extends past school: the workday inherits the bell schedule’s logic. The hidden curriculum graduates with us.',
+        createdAt:     ts(),
+        seed:          true
+      });
+    }).then(function () {
+      return db.collection('buildOns').doc('seed-question-1').set({
+        fromUid:       uid,
+        fromPublicName: 'Praxis',
+        targetArcId:   'seed-arc-1',
+        targetAnchor:  '',
+        type:          'question',
+        body:          'Where did the bell-schedule model originally come from — factory shifts, or something older?',
+        createdAt:     ts(),
+        seed:          true
+      });
+    }).then(function () {
+      console.log('praxisSeedCommons: done — 3 arcs, 1 build-on, 1 question seeded under ' + uid);
+    }).catch(function (err) {
+      console.warn('praxisSeedCommons: profile/buildOn write failed', err);
+    });
+  }
+
+  for (i = 0; i < seedArcs.length; i = i + 1) {
+    (function (sa) {
+      seedArcIds.push(sa.id);
+      pending = pending + 1;
+      db.collection('publishedArcs').doc(sa.id).set({
+        title:            sa.title,
+        subTheories:      sa.subTheories,
+        tags:             sa.tags,
+        authorUid:        uid,
+        authorPublicName: 'Praxis',
+        freshness:        sa.freshness,
+        seed:             true,
+        walkedBy:         0,
+        publishedAt:      ts(),
+        revisedAt:        ts()
+      }).then(function () {
+        pending = pending - 1;
+        if (pending === 0) { afterArcs(); }
+      }).catch(function (err) {
+        pending = pending - 1;
+        console.warn('praxisSeedCommons: arc ' + sa.id + ' write failed', err);
+        if (pending === 0) { afterArcs(); }
+      });
+    })(seedArcs[i]);
+  }
+};
+
+// praxisClearSeeds: deletes this uid's seed docs (seed==true) across
+// publishedArcs + buildOns and removes the seed arc ids from publicProfiles.
+// Queries are constrained to the caller's own docs (authorUid/fromUid == uid)
+// so deletes stay rules-compliant. Idempotent: safe to run when nothing exists.
+window.praxisClearSeeds = function () {
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    console.warn('praxisClearSeeds: sign in first');
+    return;
+  }
+  var uid = user.uid;
+  var db = firebase.firestore();
+
+  db.collection('publishedArcs')
+    .where('authorUid', '==', uid)
+    .where('seed', '==', true)
+    .get()
+    .then(function (snap) {
+      var jobs = [];
+      snap.forEach(function (d) { jobs.push(d.ref.delete()); });
+      return Promise.all(jobs);
+    })
+    .then(function () {
+      return db.collection('buildOns')
+        .where('fromUid', '==', uid)
+        .where('seed', '==', true)
+        .get();
+    })
+    .then(function (snap) {
+      var jobs = [];
+      snap.forEach(function (d) { jobs.push(d.ref.delete()); });
+      return Promise.all(jobs);
+    })
+    .then(function () {
+      return db.collection('publicProfiles').doc(uid).set({
+        publishedArcIds: firebase.firestore.FieldValue.arrayRemove(
+          'seed-arc-1', 'seed-arc-2', 'seed-arc-3'
+        ),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    })
+    .then(function () {
+      console.log('praxisClearSeeds: done — seed docs removed for ' + uid);
+    })
+    .catch(function (err) {
+      console.warn('praxisClearSeeds: failed', err);
+    });
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// W6.5 STAGE 2 — SOCIAL READ/INTERACT LOADERS (discovery / other-profile /
+// interact). All v8-compat, typed-callback (found/absent/error or ok/error).
+// Query shapes are RULES-CONSTRAINED so a query never asks for a doc the
+// caller cannot read: public build-ons via type filter; own questions via
+// fromUid; owner reads all buildOns on an arc it authored. Equality-only
+// filters (+ one single-field orderBy on the feed) — no composite indexes.
+// Every path fails safe via .catch -> {status:'error'}; views degrade to a
+// quiet message, never a crash.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Firestore Timestamp | {seconds} | epoch-ms -> epoch-ms (0 when absent).
+function praxisTsMillis(v) {
+  if (v && typeof v.toMillis === 'function') { return v.toMillis(); }
+  if (v && typeof v.seconds === 'number') { return v.seconds * 1000; }
+  if (typeof v === 'number') { return v; }
+  return 0;
+}
+
+function genBuildOnId() {
+  return 'buildon_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
+// Discovery feed: the newest published arcs, capped at 12. Single-field
+// orderBy (auto-indexed). Returns { status:'ok', arcs:[{id,data}] } or error.
+function loadCommonsFeed(callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .orderBy('publishedAt', 'desc')
+      .limit(12)
+      .get()
+      .then(function (snap) {
+        var arr = [];
+        snap.forEach(function (d) { arr.push({ id: d.id, data: d.data() }); });
+        finish({ status: 'ok', arcs: arr });
+      })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// One published-arc projection by id. found/absent/error.
+function loadPublishedArc(arcId, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!arcId) { finish({ status: 'error', error: new Error('loadPublishedArc: missing arcId') }); return; }
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .doc(arcId)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) { finish({ status: 'found', data: doc.data() }); }
+        else { finish({ status: 'absent' }); }
+      })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// A reader's public profile projection. found/absent/error.
+function loadPublicProfile(uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('loadPublicProfile: missing uid') }); return; }
+  try {
+    firebase.firestore()
+      .collection('publicProfiles')
+      .doc(uid)
+      .get()
+      .then(function (doc) {
+        if (doc && doc.exists) { finish({ status: 'found', data: doc.data() }); }
+        else { finish({ status: 'absent' }); }
+      })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// All published arcs authored by uid, client-sorted newest-first (avoids a
+// where+orderBy composite index). { status:'ok', arcs:[{id,data}] } or error.
+function loadArcsForAuthor(uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('loadArcsForAuthor: missing uid') }); return; }
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .where('authorUid', '==', uid)
+      .get()
+      .then(function (snap) {
+        var arr = [];
+        snap.forEach(function (d) { arr.push({ id: d.id, data: d.data() }); });
+        arr.sort(function (a, b) {
+          return praxisTsMillis(b.data && b.data.publishedAt) - praxisTsMillis(a.data && a.data.publishedAt);
+        });
+        finish({ status: 'ok', arcs: arr });
+      })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Build-ons + visible questions for an arc, via RULES-CONSTRAINED queries.
+// isAuthor === true (the signed-in viewer authored the arc): one arc-scoped
+// query returns everything the author may read (public build-ons + all
+// questions on their arc). Otherwise: public build-ons (type filter) + the
+// viewer's OWN questions on this arc (fromUid). Returns
+// { status:'ok', buildOns:[{id,data}], questions:[{id,data}] } or error.
+function loadBuildOnsForArc(arcId, isAuthor, uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!arcId) { finish({ status: 'error', error: new Error('loadBuildOnsForArc: missing arcId') }); return; }
+  var db = firebase.firestore();
+
+  function split(snap, out) {
+    snap.forEach(function (d) {
+      var data = d.data();
+      if (data && data.type === 'question') { out.questions.push({ id: d.id, data: data }); }
+      else { out.buildOns.push({ id: d.id, data: data }); }
+    });
+  }
+  function bySeq(a, b) { return praxisTsMillis(a.data && a.data.createdAt) - praxisTsMillis(b.data && b.data.createdAt); }
+
+  try {
+    if (isAuthor === true) {
+      // Author reads everything on their own arc in one arc-scoped query.
+      db.collection('buildOns').where('targetArcId', '==', arcId).get()
+        .then(function (snap) {
+          var out = { buildOns: [], questions: [] };
+          split(snap, out);
+          out.buildOns.sort(bySeq); out.questions.sort(bySeq);
+          finish({ status: 'ok', buildOns: out.buildOns, questions: out.questions });
+        })
+        .catch(function (err) { finish({ status: 'error', error: err }); });
+    } else {
+      // Non-author: public build-ons + own questions on this arc, two queries.
+      var out2 = { buildOns: [], questions: [] };
+      var pending = 2;
+      var failed = null;
+      function step() {
+        pending = pending - 1;
+        if (pending === 0) {
+          if (failed) { finish({ status: 'error', error: failed }); return; }
+          out2.buildOns.sort(bySeq); out2.questions.sort(bySeq);
+          finish({ status: 'ok', buildOns: out2.buildOns, questions: out2.questions });
+        }
+      }
+      db.collection('buildOns')
+        .where('targetArcId', '==', arcId).where('type', '==', 'build-on').get()
+        .then(function (snap) { snap.forEach(function (d) { out2.buildOns.push({ id: d.id, data: d.data() }); }); step(); })
+        .catch(function (err) { failed = err; step(); });
+      if (uid) {
+        db.collection('buildOns')
+          .where('targetArcId', '==', arcId).where('fromUid', '==', uid).get()
+          .then(function (snap) {
+            snap.forEach(function (d) { var dd = d.data(); if (dd && dd.type === 'question') { out2.questions.push({ id: d.id, data: dd }); } });
+            step();
+          })
+          .catch(function (err) { failed = err; step(); });
+      } else { step(); }
+    }
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Post a build-on or a question. fields: { targetArcId, targetAnchor, type,
+// body }. Stamps fromUid + the resolved public identity. Owner-gated by rules
+// (fromUid == caller). type coerced to the two legal values.
+function postBuildOn(fields, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  var f = fields || {};
+  var user = getCurrentUser();
+  if (!user || !user.uid) { finish({ status: 'error', error: new Error('postBuildOn: not signed in') }); return; }
+  if (!f.targetArcId) { finish({ status: 'error', error: new Error('postBuildOn: missing targetArcId') }); return; }
+  var body = (typeof f.body === 'string') ? f.body.replace(/^\s+|\s+$/g, '') : '';
+  if (body === '') { finish({ status: 'error', error: new Error('postBuildOn: empty body') }); return; }
+  var type = (f.type === 'question') ? 'question' : 'build-on';
+  var id = genBuildOnId();
+  try {
+    firebase.firestore()
+      .collection('buildOns')
+      .doc(id)
+      .set({
+        fromUid:        user.uid,
+        fromPublicName: praxisResolvePublicName(user.uid),
+        targetArcId:    f.targetArcId,
+        targetAnchor:   (typeof f.targetAnchor === 'string') ? f.targetAnchor : '',
+        type:           type,
+        body:           body,
+        createdAt:      firebase.firestore.FieldValue.serverTimestamp(),
+        seed:           false
+      })
+      .then(function () { finish({ status: 'ok', id: id }); })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Anonymous walk: raise walkedBy by exactly 1 (merge, touching ONLY walkedBy —
+// the one field any authed user may change, per the rules). Fire-and-forget.
+function incrementWalkedBy(arcId, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!arcId) { finish({ status: 'error', error: new Error('incrementWalkedBy: missing arcId') }); return; }
+  try {
+    firebase.firestore()
+      .collection('publishedArcs')
+      .doc(arcId)
+      .set({ walkedBy: firebase.firestore.FieldValue.increment(1) }, { merge: true })
+      .then(function () { finish({ status: 'ok' }); })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Follow edge id is deterministic: followerUid_targetUid (one edge per pair).
+function followEdgeId(followerUid, targetUid) { return followerUid + '_' + targetUid; }
+
+function followReader(targetUid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  var user = getCurrentUser();
+  if (!user || !user.uid) { finish({ status: 'error', error: new Error('followReader: not signed in') }); return; }
+  if (!targetUid || targetUid === user.uid) { finish({ status: 'error', error: new Error('followReader: bad target') }); return; }
+  try {
+    firebase.firestore()
+      .collection('follows')
+      .doc(followEdgeId(user.uid, targetUid))
+      .set({
+        followerUid: user.uid,
+        targetUid:   targetUid,
+        createdAt:   firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(function () { finish({ status: 'ok' }); })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+function unfollowReader(targetUid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  var user = getCurrentUser();
+  if (!user || !user.uid) { finish({ status: 'error', error: new Error('unfollowReader: not signed in') }); return; }
+  if (!targetUid) { finish({ status: 'error', error: new Error('unfollowReader: bad target') }); return; }
+  try {
+    firebase.firestore()
+      .collection('follows')
+      .doc(followEdgeId(user.uid, targetUid))
+      .delete()
+      .then(function () { finish({ status: 'ok' }); })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Am I following targetUid? { status:'ok', following:bool } or error.
+function loadFollowEdge(targetUid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  var user = getCurrentUser();
+  if (!user || !user.uid || !targetUid) { finish({ status: 'ok', following: false }); return; }
+  try {
+    firebase.firestore()
+      .collection('follows')
+      .doc(followEdgeId(user.uid, targetUid))
+      .get()
+      .then(function (doc) { finish({ status: 'ok', following: !!(doc && doc.exists) }); })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Readers who follow uid (edges targeting you — readable by the target per the
+// rules). { status:'ok', followerUids:[...] } or error.
+function loadFollowers(uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('loadFollowers: missing uid') }); return; }
+  try {
+    firebase.firestore()
+      .collection('follows')
+      .where('targetUid', '==', uid)
+      .get()
+      .then(function (snap) {
+        var arr = [];
+        snap.forEach(function (d) { var dd = d.data(); if (dd && dd.followerUid) { arr.push(dd.followerUid); } });
+        finish({ status: 'ok', followerUids: arr });
+      })
+      .catch(function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// Aggregate the own-profile social counters from real data:
+//   walkedByTotal  = sum of walkedBy across your published arcs
+//   buildOnTotal   = build-ons (type=='build-on') across your published arcs
+//   followers      = [{uid, name}] of readers who follow you (name resolved
+//                    from their public profile; falls back to a short id)
+// Follower COUNT is intentionally NOT surfaced as primary UI — the list is.
+function loadOwnProfileSocial(uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('loadOwnProfileSocial: missing uid') }); return; }
+  var out = { status: 'ok', walkedByTotal: 0, buildOnTotal: 0, followers: [] };
+
+  loadArcsForAuthor(uid, function (arcRes) {
+    var arcIds = [];
+    if (arcRes && arcRes.status === 'ok') {
+      var i;
+      for (i = 0; i < arcRes.arcs.length; i = i + 1) {
+        arcIds.push(arcRes.arcs[i].id);
+        var wb = arcRes.arcs[i].data && arcRes.arcs[i].data.walkedBy;
+        out.walkedByTotal = out.walkedByTotal + ((typeof wb === 'number') ? wb : 0);
+      }
+    }
+    // Count build-ons per arc, then resolve followers. Fire the build-on counts
+    // and the follower load; assemble when all return.
+    var pending = arcIds.length + 1;
+    function step() { pending = pending - 1; if (pending === 0) { finish(out); } }
+    if (arcIds.length === 0) { pending = 1; }
+    var j;
+    for (j = 0; j < arcIds.length; j = j + 1) {
+      (function (aid) {
+        firebase.firestore()
+          .collection('buildOns')
+          .where('targetArcId', '==', aid).where('type', '==', 'build-on').get()
+          .then(function (snap) { out.buildOnTotal = out.buildOnTotal + snap.size; step(); })
+          .catch(function () { step(); });
+      })(arcIds[j]);
+    }
+    loadFollowers(uid, function (fRes) {
+      if (fRes && fRes.status === 'ok' && fRes.followerUids.length) {
+        var fp = fRes.followerUids.length;
+        var k;
+        for (k = 0; k < fRes.followerUids.length; k = k + 1) {
+          (function (fuid) {
+            loadPublicProfile(fuid, function (pRes) {
+              var nm = (pRes && pRes.status === 'found' && pRes.data && pRes.data.publicName)
+                ? pRes.data.publicName : ('reader ' + fuid.slice(0, 6));
+              out.followers.push({ uid: fuid, name: nm });
+              fp = fp - 1;
+              if (fp === 0) { step(); }
+            });
+          })(fRes.followerUids[k]);
+        }
+      } else { step(); }
+    });
+  });
+}
+
 console.log('integrations.js loaded');

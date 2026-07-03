@@ -1,6 +1,37 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // An update that touches ONLY walkedBy and raises it by exactly 1. This is
+    // what lets any authed reader anonymously mark that they walked an arc,
+    // without being able to alter any authored content. Declared first so it
+    // is in scope for the publishedArcs match below. NB: relies on walkedBy
+    // being present on every published doc (publishArc stamps 0 on first
+    // publish; seeds stamp 0) — a missing field would make this deny.
+    function isWalkedByIncrement() {
+      return request.auth != null
+             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['walkedBy'])
+             && request.resource.data.walkedBy == resource.data.walkedBy + 1;
+    }
+
+    // The complete public field allow-list for a publishedArcs doc — every key
+    // any client writer (buildPublishedArcDoc + publishArc stamps + seeds) is
+    // permitted to place in the doc. Enforced via keys().hasOnly() on create +
+    // owner-update so a private field can never be smuggled into a public doc.
+    function publishedArcKeys() {
+      return ['authorUid', 'authorPublicName', 'title', 'subTheories',
+              'tags', 'freshness', 'seed', 'walkedBy', 'publishedAt', 'revisedAt'];
+    }
+
+    // The complete public field allow-list for a publicProfiles doc.
+    function publicProfileKeys() {
+      return ['publicName', 'tagline', 'publishedArcIds', 'updatedAt'];
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // PRIVATE, OWN-UID COLLECTIONS (unchanged through W6.5).
+    // Deny-by-default everywhere else; each doc keyed by owner uid.
+    // ─────────────────────────────────────────────────────────────────
     match /userBooks/{uid} {
       allow read, write: if request.auth != null
                          && request.auth.uid == uid;
@@ -32,6 +63,78 @@ service cloud.firestore {
     match /userArtifacts/{uid} {
       allow read, write: if request.auth != null
                          && request.auth.uid == uid;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // W6.5 SOCIAL PROJECTIONS. Cross-user READ opens on exactly these four
+    // collections and nowhere else — and ONLY to authenticated users (no
+    // unauthenticated/open-web reads; a future open-web loosening would be a
+    // deliberate change here). WRITES are owner-gated on the doc's owner field
+    // (authorUid / uid / followerUid / fromUid); the single exception is the
+    // walkedBy counter on publishedArcs, which any authed user may increment
+    // by exactly 1. Public docs additionally carry a field allow-list so a
+    // private field can never be written into a projection.
+    // ─────────────────────────────────────────────────────────────────
+
+    // publishedArcs/{arcId}: the public projection of an arc. Authed read.
+    // Owner (authorUid) may create / rewrite (within the allow-list) / delete.
+    // Any authed user may increment the anonymous walkedBy counter and NOTHING
+    // ELSE.
+    match /publishedArcs/{arcId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.authorUid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(publishedArcKeys());
+      allow delete: if request.auth != null
+                    && resource.data.authorUid == request.auth.uid;
+      allow update: if (request.auth != null
+                        && resource.data.authorUid == request.auth.uid
+                        && request.resource.data.keys().hasOnly(publishedArcKeys()))
+                    || isWalkedByIncrement();
+    }
+
+    // publicProfiles/{uid}: the public projection of a reader's identity
+    // (publicName, tagline, publishedArcIds). Authed read; owner-only
+    // create/update within the allow-list. No delete rule (projections are
+    // never deleted; that would be a deliberate future addition). The full
+    // userProfiles doc stays private (see above) — this is the only public
+    // identity artifact.
+    match /publicProfiles/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(publicProfileKeys());
+    }
+
+    // follows/{followerUid_targetUid}: a one-way edge. Readable by BOTH ends
+    // (your own edges + edges targeting you). Written only by the follower.
+    // Non-anonymous by design — the followed user can read the edge and learn
+    // followerUid (matches "always readable by the followed person").
+    match /follows/{edgeId} {
+      allow read: if request.auth != null
+                  && (resource.data.followerUid == request.auth.uid
+                      || resource.data.targetUid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.followerUid == request.auth.uid;
+      allow delete: if request.auth != null
+                    && resource.data.followerUid == request.auth.uid;
+    }
+
+    // buildOns/{id}: public contributions on a published arc. type=="build-on"
+    // is readable by any AUTHED user; type=="question" is readable ONLY by the
+    // asker (fromUid) and the arc's author (resolved from the public
+    // projection). Written only by the author of the contribution (fromUid).
+    match /buildOns/{id} {
+      allow read: if (request.auth != null && resource.data.type == 'build-on')
+                  || (request.auth != null
+                      && resource.data.fromUid == request.auth.uid)
+                  || (request.auth != null
+                      && exists(/databases/$(database)/documents/publishedArcs/$(resource.data.targetArcId))
+                      && get(/databases/$(database)/documents/publishedArcs/$(resource.data.targetArcId)).data.authorUid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.fromUid == request.auth.uid;
+      allow delete: if request.auth != null
+                    && resource.data.fromUid == request.auth.uid;
     }
   }
 }
