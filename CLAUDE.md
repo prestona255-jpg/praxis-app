@@ -1,5 +1,22 @@
 # Praxis — build agent guide
 
+## Session rules (read first, every session)
+
+- IMPORTANT: Read PROTOCOL.md before any wave or build work. It governs
+  all build discipline. If this file and PROTOCOL.md ever disagree,
+  PROTOCOL.md wins for build process.
+- Before answering ANY planning, status, or roadmap question, use the
+  praxis-recon agent to establish ground truth from the repo. Never
+  answer from memory of past sessions or from docs alone.
+- After any build completes and BEFORE any commit, use the
+  praxis-reviewer agent to grade the work. Its verdict gates the commit.
+- Docs ride with the diff: if this session's work contradicts any
+  committed doc (this file, BUILD_STATE, docs/checkpoints), correct that
+  doc in the SAME commit — never "separately later."
+- Known correction: there is NO parse-check-views.js harness in this
+  repo. The sanctioned JS parse check is cscript JScript on isolated
+  functions. (Remove any contrary claim found elsewhere in this file.)
+
 ## Project
 Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
 
@@ -63,7 +80,7 @@ discipline below governs every build task, plan-file or ad-hoc:
 - MECHANICAL HALT CONDITIONS (stop immediately, write the failure to the
   checkpoint file, await Preston):
   - any parse check FAILs (cscript harness for promise-free files;
-    parse-check-views.js for views.js; full-diff for harness-exempt)
+    full-diff for harness-exempt)
   - a byte delta falls outside the plan's stated expected band
   - a grep count does not match the plan's stated expectation
   - any tracked file is dirty that the slice did not intend to touch

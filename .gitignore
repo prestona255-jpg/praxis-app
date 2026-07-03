@@ -33,5 +33,7 @@ firebase-debug.log
 .firebase/
 
 # Claude Code session scratch (parse-check harnesses, isolated
-# worktrees, per-project settings). Never belongs on origin.
-.claude/
+# worktrees, per-project settings). Never belongs on origin, EXCEPT
+# .claude/agents/ (shared recon + reviewer agents, tracked deliberately).
+.claude/*
+!.claude/agents/
