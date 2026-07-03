@@ -10736,6 +10736,13 @@ function _stConstellationAttachInteractions(svgEl, arc) {
     for (gi = 0; gi < groups.length; gi = gi + 1) {
       groups[gi].classList.remove('st-focal', 'st-linked', 'st-dim');
     }
+    // Wave 8 (Lane A, item 2): clear the thread lit/dim classes set in
+    // markConcentrate so every thread returns to its resting amber gradient.
+    var edgeEls = svgEl.querySelectorAll('[data-st-edge-a]:not([data-st-edge-faint])');
+    var eix;
+    for (eix = 0; eix < edgeEls.length; eix = eix + 1) {
+      edgeEls[eix].classList.remove('st-edge-lit', 'st-edge-dim');
+    }
     svgEl.classList.remove('is-concentrated');
     var card = document.getElementById('arcfield-whisper');
     if (card) { card.classList.remove('is-on'); }
@@ -10756,6 +10763,24 @@ function _stConstellationAttachInteractions(svgEl, arc) {
       else { g.classList.add('st-dim'); }
     }
     svgEl.classList.add('is-concentrated');
+    // Wave 8 (Lane A, item 2): light the focal mark's own threads GOLD and dim
+    // the rest of the field's threads. Edges are <line data-st-edge-a/-b>; the
+    // focal's edges get st-edge-lit (CSS overrides the gradient stroke to
+    // --lum-gold at full opacity), every other edge gets st-edge-dim. The marks
+    // already dim via st-dim above; this is the thread half. Cleared in
+    // markRelease. Faint edges (data-st-edge-faint) are EXCLUDED so their
+    // distinct dashed identity is never clobbered by the gold stroke -- they
+    // stay exactly as the renderer/layer-toggle drew them (dormant in live data).
+    var edgeEls = svgEl.querySelectorAll('[data-st-edge-a]:not([data-st-edge-faint])');
+    var eix, edge, ea, eb;
+    for (eix = 0; eix < edgeEls.length; eix = eix + 1) {
+      edge = edgeEls[eix];
+      ea = edge.getAttribute('data-st-edge-a');
+      eb = edge.getAttribute('data-st-edge-b');
+      edge.classList.remove('st-edge-lit', 'st-edge-dim');
+      if (ea === id || eb === id) { edge.classList.add('st-edge-lit'); }
+      else { edge.classList.add('st-edge-dim'); }
+    }
     var sub = subById[id];
     var card = document.getElementById('arcfield-whisper');
     if (!card || !sub) { return; }
@@ -10783,6 +10808,8 @@ function _stConstellationAttachInteractions(svgEl, arc) {
     open.href = '#subtheory/' + sub.id;
     open.textContent = 'Open the sub-theory →';
     body.appendChild(open);
+    // Wave 8 (Lane A, item 1): the future generative Yumi whisper mounts HERE.
+    _stYumiWhisperSeam(sub, body);
     card.classList.add('is-on');
   }
   function bindShapeClick(el) {
@@ -10872,6 +10899,18 @@ function _stConstellationAttachInteractions(svgEl, arc) {
   for (i = 0; i < markEls.length; i = i + 1) {
     _arcMakeFocusable(markEls[i], 'Evidence mark');
   }
+}
+
+// Wave 8 (Lane A, item 1): the Yumi whisper SEAM. This is the single, named
+// mount point where a FUTURE generative arc-field whisper from Yumi will
+// attach her (cyan) line into the concentrate card. It is intentionally a
+// NO-OP today: it returns without touching the DOM, so nothing generative
+// appears now -- the deterministic relational line built above it is the only
+// whisper content. When Yumi's arc-field voice ships, it mounts HERE and
+// nowhere else. sub = the focused sub-theory record; cardBody = the
+// .arcfield-whisper-body element already holding the deterministic line.
+function _stYumiWhisperSeam(sub, cardBody) {
+  return;
 }
 
 // Stage 8.1B: read-only interaction layer over the rendered
@@ -11674,21 +11713,16 @@ function renderArcDetail(arcId) {
       resetBtn.type = 'button';
       resetBtn.className = 'arc-detail-toggle-btn';
       resetBtn.setAttribute('data-st-control', 'reset');
-      resetBtn.textContent = 'Reset';
-      // Stage 9.6c.2: Reset is the explicit "give me the default back"
-      // affordance -- it clears every placement in this arc to null
-      // (persisting), so _stRadialLayout falls back to the composed radial
-      // slots. Locked semantics: persisted, not session-only.
+      resetBtn.textContent = 'Reset placements';
+      // Stage 9.6c.2 + Wave 8 (Lane A, item 3): Reset clears EVERY placement in
+      // this arc to null (persisting -- setSubTheoryPosition write-through), so
+      // _stRadialLayout falls back to the composed radial slots. Because that is
+      // destructive and irreversible -- unlike session-only Tidy/Restore -- it is
+      // now gated behind an in-DOM confirm panel (openArcResetConfirm) instead of
+      // firing on the bare click. Relabeled "Reset placements" so it reads
+      // distinct from Tidy.
       resetBtn.addEventListener('click', function() {
-        var k, s;
-        for (k in state.subTheories) {
-          if (!state.subTheories.hasOwnProperty(k)) { continue; }
-          s = state.subTheories[k];
-          if (s && s.arcId === arcId) {
-            setSubTheoryPosition(k, null, null);
-          }
-        }
-        renderArcDetail(arcId);
+        openArcResetConfirm(arcId);
       });
       stControlBarBottom.appendChild(resetBtn);
 
@@ -12144,6 +12178,67 @@ function openArcDeleteConfirm(arcId) {
     ev.preventDefault();
     var h = document.getElementById('arc-detail-confirm-host');
     if (h) h.innerHTML = '';
+  });
+  actions.appendChild(cancelLink);
+
+  panel.appendChild(actions);
+  host.appendChild(panel);
+}
+
+// Wave 8 (Lane A, item 3): Reset-placements confirmation. Reset permanently
+// clears every hand-placed sub-theory position in this arc (setSubTheoryPosition
+// -> null, a persisted write-through), so -- unlike the session-only Tidy/Restore
+// -- it is destructive and needs an explicit gate. Mirrors openArcDeleteConfirm's
+// in-DOM panel (native confirm() is avoided per the file's precedent) and reuses
+// the .arc-confirm-* chrome, so no new CSS. Cancel clears the host; Confirm runs
+// the clear then re-renders the field (which rebuilds a fresh, empty confirm host).
+function openArcResetConfirm(arcId) {
+  var host = document.getElementById('arc-detail-confirm-host');
+  if (!host) { return; }
+  host.innerHTML = '';
+
+  var panel = document.createElement('div');
+  panel.className = 'arc-confirm-panel';
+
+  var copy = document.createElement('p');
+  copy.className = 'arc-confirm-copy';
+  copy.textContent =
+    'Reset every hand-placed position in this field? Each sub-theory returns ' +
+    'to its default slot. This clears your arrangement and can\'t be undone — ' +
+    'your sub-theories, threads, and books stay exactly as they are.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'arc-confirm-actions';
+
+  var confirmLink = document.createElement('a');
+  confirmLink.href = '#';
+  confirmLink.className = 'arc-confirm-confirm';
+  confirmLink.textContent = 'Reset placements';
+  confirmLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var k, s;
+    for (k in state.subTheories) {
+      if (!state.subTheories.hasOwnProperty(k)) { continue; }
+      s = state.subTheories[k];
+      if (s && s.arcId === arcId) {
+        setSubTheoryPosition(k, null, null);
+      }
+    }
+    var h = document.getElementById('arc-detail-confirm-host');
+    if (h) { h.innerHTML = ''; }
+    renderArcDetail(arcId);
+  });
+  actions.appendChild(confirmLink);
+
+  var cancelLink = document.createElement('a');
+  cancelLink.href = '#';
+  cancelLink.className = 'arc-confirm-cancel';
+  cancelLink.textContent = 'Cancel';
+  cancelLink.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    var h = document.getElementById('arc-detail-confirm-host');
+    if (h) { h.innerHTML = ''; }
   });
   actions.appendChild(cancelLink);
 

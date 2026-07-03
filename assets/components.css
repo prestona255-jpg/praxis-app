@@ -11625,6 +11625,13 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.lum-amber svg.is-concentrated .st-dim{ opacity:.26; }
 .arcfield.lum-amber svg.is-concentrated .st-linked{ opacity:1; }
 .arcfield.lum-amber svg.is-concentrated .st-focal{ opacity:1; }
+/* Wave 8 (Lane A, item 2): under concentrate, the focal mark's own threads
+   light GOLD (solid --lum-gold overrides their resting amber gradient stroke)
+   and every other thread dims. Threads carry data-st-edge-a/-b from the
+   renderer, so this needs no renderer edit. */
+.arcfield.lum-amber .arc-detail-web-view svg line[data-st-edge-a]{ transition:opacity .28s, stroke .28s; }
+.arcfield.lum-amber svg.is-concentrated line.st-edge-lit{ stroke:var(--lum-gold); opacity:1; }
+.arcfield.lum-amber svg.is-concentrated line.st-edge-dim{ opacity:.14; }
 
 /* whisper card (reuses .lum-yumi) */
 .arcfield.lum-amber .arcfield-whisper{ margin:16px auto 0; padding:14px 17px; border-radius:14px; background:rgba(127,208,240,.08); border:1px solid rgba(127,208,240,.24); opacity:0; max-height:0; overflow:hidden; transition:opacity .25s; }
