@@ -433,9 +433,13 @@ function initSpotlight() {
   if (pill) {
     pill.addEventListener('click', function(e) {
       e.preventDefault();
+      // W8 Lane B: the nav pill now routes to the full #search page. The ⌘K
+      // overlay stays (onSpotlightKeydown, bound globally below) for quick nav --
+      // coexisting quick-overlay + full-page search is intended. blur the static
+      // input first so focus does not linger on the inert pill during the route.
       var staticInput = pill.querySelector('.app-nav-search-input');
       if (staticInput && staticInput.blur) { staticInput.blur(); }
-      openSpotlight(staticInput || pill);
+      location.hash = '#search';
     });
   }
 }

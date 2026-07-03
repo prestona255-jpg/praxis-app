@@ -370,7 +370,7 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -412,6 +412,11 @@ function renderRoute() {
     // 6.2c: the 'What Yumi sees' page is reached from Yumi's panel, not
     // the top nav -- this value matches no data-route so no link highlights.
     activeRoute = 'yumi-sees';
+  } else if (parts[0] === 'search') {
+    // W8 Lane B: the global Search page is its own surface, reached from the nav
+    // pill (not a top-nav link) -- 'search' matches no data-route so no link
+    // highlights (like yumi-sees), and it avoids defaulting to lighting Notebook.
+    activeRoute = 'search';
   } else {
     activeRoute = 'notebook';
   }
@@ -665,6 +670,18 @@ function renderRoute() {
     renderInteract(parts[1]);
     return;
   }
+  // W8 Lane B: the global Search page (#search). Reads existing state only (a
+  // flatten-once index over books/arcs/sub-theories/notes); touches no write or
+  // publish path. Symmetric pointer clear like the branches above; placed BEFORE
+  // the notebook fallthrough so #search is caught here, not swallowed by the catch-all.
+  if (parts[0] === 'search') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderSearch();
+    return;
+  }
   // Notebook (explicit), empty hash, and any unknown route all
   // converge on the unified Notebook view. currentBookId clears
   // symmetrically on the way in so yumi-brain's retrieval path
@@ -674,6 +691,493 @@ function renderRoute() {
   state.currentSubTheoryId = null;
   saveState();
   renderNotebook();
+}
+
+// ============================================================================
+// W8 Lane B -- GLOBAL SEARCH (#search, renderSearch on .lum-amber). A flatten-
+// once index over the four content kinds (books, arcs, sub-theories, notes),
+// filtered in memory per keystroke. Reads existing state only (no write/publish
+// path). Binds REAL signal: mockup fields with no backing (arc status/glow, note
+// title, note page-ref, the "rooted/gathering/new" vocabulary) are replaced with
+// real accessors or omitted -- never fabricated. Sub-theory glyphs render through
+// the FIELD vocabulary via _stPickerMarkSvg (Verdict B), NOT marks.js. Yumi-cyan
+// is reserved for the (seam-only) cross-cut, never the note icon.
+// DEBT (logged, docs/checkpoints/w8-lane-b-search-recon.md): the per-kind haystack
+// enumeration below is duplicated with spotlight.js's spotlightSearch -- consolidate
+// into one shared corpus builder when spotlight is next touched.
+// ============================================================================
+
+function _searchEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Case-insensitive match highlight. XSS-safe: ALL text is escaped; the only
+// injected tag is <mark> around the matched span(s).
+function _searchHighlight(text, q) {
+  var t = String(text == null ? '' : text);
+  if (!q) { return _searchEsc(t); }
+  var lo = t.toLowerCase(), ql = q.toLowerCase();
+  var out = '', i = 0, idx;
+  while ((idx = lo.indexOf(ql, i)) > -1) {
+    out = out + _searchEsc(t.slice(i, idx))
+      + '<mark>' + _searchEsc(t.slice(idx, idx + ql.length)) + '</mark>';
+    i = idx + ql.length;
+  }
+  out = out + _searchEsc(t.slice(i));
+  return out;
+}
+
+// Real sub-theory maturity word (the shipped sub-theory-detail band, views.js
+// ~8702) -- the mockup's "rooted/gathering/new" has no backing.
+function _searchSubMaturityWord(v) {
+  var m = (typeof v === 'number' && isFinite(v)) ? v : 0;
+  if (m < 0.34) { return 'nascent'; }
+  if (m < 0.67) { return 'developing'; }
+  return 'established';
+}
+
+// Flatten all four kinds into a per-item search record ONCE (called on route
+// entry). Each: { kind, title, sub, snip, crumb, hay(lowercased), route, ...glyph }.
+function _searchBuildIndex() {
+  var items = [];
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = (user && user.uid) ? user.uid : null;
+  var SEED = '__praxis_seed__';
+  function ownVisible(rec) {
+    if (!rec) { return false; }
+    if (rec.userId === SEED) { return true; }
+    return !!(uid && rec.userId === uid);
+  }
+  var k;
+
+  // ARCS
+  if (state.arcs) {
+    for (k in state.arcs) {
+      if (!Object.prototype.hasOwnProperty.call(state.arcs, k)) { continue; }
+      var arc = state.arcs[k];
+      if (!ownVisible(arc)) { continue; }
+      var counts = (typeof _arcCardCounts === 'function')
+        ? _arcCardCounts(k, arc) : { subTheories: 0 };
+      var threadN = 0;
+      if (typeof _arcDetailBuildSubTheoryData === 'function') {
+        var ad = _arcDetailBuildSubTheoryData(arc);
+        threadN = (ad && ad.edges) ? ad.edges.length : 0;
+      }
+      var arcTitle = (typeof arc.title === 'string') ? arc.title : '';
+      var arcDesc = (typeof arc.description === 'string') ? arc.description : '';
+      var arcSub = counts.subTheories
+        + (counts.subTheories === 1 ? ' sub-theory' : ' sub-theories')
+        + ' · ' + threadN + (threadN === 1 ? ' thread' : ' threads');
+      items.push({
+        kind: 'arc',
+        title: arcTitle || 'Untitled arc',
+        sub: arcSub,
+        snip: '',
+        crumb: 'Arc · ' + ((typeof _arcMaturityWord === 'function') ? _arcMaturityWord(k) : ''),
+        hay: (arcTitle + ' ' + arcDesc + ' ' + arcSub).toLowerCase(),
+        route: '#arc/' + k
+      });
+    }
+  }
+
+  // SUB-THEORIES
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (!Object.prototype.hasOwnProperty.call(state.subTheories, k)) { continue; }
+      var sub = state.subTheories[k];
+      if (!ownVisible(sub)) { continue; }
+      var parentArc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
+      var parentTitle = (parentArc && typeof parentArc.title === 'string') ? parentArc.title : '';
+      var hdr = (typeof sub.header === 'string') ? sub.header : '';
+      var matV = (typeof _stComputeMaturity === 'function') ? _stComputeMaturity(sub) : 0;
+      var hash = (typeof window.stHashIndices === 'function')
+        ? window.stHashIndices(k) : { shapeIdx: 0, colorIdx: 0 };
+      var shp = (typeof sub.markShape === 'number' && sub.markShape >= 0 && sub.markShape <= 15)
+        ? sub.markShape : hash.shapeIdx;
+      var clr = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
+        ? sub.markColor : hash.colorIdx;
+      var body1 = (typeof sub.bodyPublic === 'string') ? sub.bodyPublic : '';
+      var body2 = (typeof sub.bodyIntellectual === 'string') ? sub.bodyIntellectual : '';
+      items.push({
+        kind: 'sub',
+        title: hdr || 'Untitled sub-theory',
+        sub: parentTitle ? ('in ' + parentTitle) : '',
+        snip: '',
+        crumb: 'Sub-theory · ' + _searchSubMaturityWord(matV),
+        hay: (hdr + ' ' + body1 + ' ' + body2 + ' ' + parentTitle).toLowerCase(),
+        route: '#subtheory/' + k,
+        subId: k, shape: shp, color: clr
+      });
+    }
+  }
+
+  // BOOKS -- signed-in reads the user's shelf (userBooks[uid].bookIds); signed-out
+  // reads the full catalog, mirroring renderShelf (views.js ~3190).
+  function pushBook(bid) {
+    var book = (bid && state.books) ? state.books[bid] : null;
+    if (!book) { return; }
+    var bt = (typeof book.title === 'string') ? book.title : '';
+    var ba = (typeof book.author === 'string') ? book.author : '';
+    items.push({
+      kind: 'book',
+      title: bt || 'Untitled',
+      sub: ba,
+      snip: '',
+      crumb: 'Library · ' + ((typeof statusText === 'function') ? statusText(book.status) : ''),
+      hay: (bt + ' ' + ba).toLowerCase(),
+      route: '#book/' + bid,
+      book: book
+    });
+  }
+  var bookIdList = (uid && state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : null;
+  if (bookIdList) {
+    var bi;
+    for (bi = 0; bi < bookIdList.length; bi = bi + 1) {
+      var raw = bookIdList[bi];
+      pushBook((typeof raw === 'string') ? raw : (raw && raw.id));
+    }
+  } else if (state.books) {
+    for (k in state.books) {
+      if (Object.prototype.hasOwnProperty.call(state.books, k)) { pushBook(k); }
+    }
+  }
+
+  // NOTES -- private/own only (no seed notes).
+  if (state.notebookEntries) {
+    for (k in state.notebookEntries) {
+      if (!Object.prototype.hasOwnProperty.call(state.notebookEntries, k)) { continue; }
+      var en = state.notebookEntries[k];
+      if (!en) { continue; }
+      if (!(uid && en.userId === uid)) { continue; }
+      var nbody = (typeof en.body === 'string') ? en.body : '';
+      var srcTitle = 'in Notebook';
+      if (en.bookIds && en.bookIds[0] && state.books
+          && state.books[en.bookIds[0]] && state.books[en.bookIds[0]].title) {
+        srcTitle = state.books[en.bookIds[0]].title;
+      } else if (en.arcIds && en.arcIds[0] && state.arcs
+          && state.arcs[en.arcIds[0]] && state.arcs[en.arcIds[0]].title) {
+        srcTitle = state.arcs[en.arcIds[0]].title;
+      }
+      items.push({
+        kind: 'note',
+        title: (typeof _stEntryPreview === 'function') ? _stEntryPreview(en) : (nbody || 'Note'),
+        sub: 'note · ' + srcTitle,
+        snip: nbody,
+        crumb: (typeof notebookRegisterLabel === 'function') ? notebookRegisterLabel(en.register) : 'Note',
+        hay: (nbody + ' ' + srcTitle).toLowerCase(),
+        route: '#notebook'
+      });
+    }
+  }
+
+  return items;
+}
+
+// The identity glyph for a row: sub-theory = REAL field mark (_stPickerMarkSvg,
+// Verdict B); book = cover (real image else typeset cloth); arc = neutral gold
+// constellation glyph (no per-arc color exists); note = non-cyan document icon
+// (cyan is reserved for the Yumi cross-cut seam).
+function _searchGlyphEl(it, pal) {
+  var g = document.createElement('span');
+  if (it.kind === 'sub') {
+    g.className = 'search-row-mark';
+    g.innerHTML = _stPickerMarkSvg(it.subId, it.shape, it.color, pal, false);
+    return g;
+  }
+  if (it.kind === 'book') {
+    var cu = it.book && it.book.coverUrl;
+    if (cu) {
+      g.className = 'search-row-cover';
+      var img = document.createElement('img');
+      img.className = 'search-row-cover-img';
+      img.setAttribute('alt', '');
+      img.src = cu;
+      g.appendChild(img);
+    } else {
+      g.className = 'search-row-cover search-row-cover-fallback';
+      var ft = document.createElement('span'); ft.className = 'src-t'; ft.textContent = it.title;
+      var fa = document.createElement('span'); fa.className = 'src-a'; fa.textContent = it.sub;
+      g.appendChild(ft); g.appendChild(fa);
+    }
+    return g;
+  }
+  if (it.kind === 'arc') {
+    g.className = 'search-row-arc';
+    g.innerHTML = '<svg viewBox="0 0 34 34" aria-hidden="true">'
+      + '<circle cx="17" cy="17" r="13" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.4"/>'
+      + '<circle cx="17" cy="17" r="4" fill="currentColor"/>'
+      + '<circle cx="27" cy="12" r="2.4" fill="currentColor" fill-opacity=".7"/>'
+      + '<circle cx="9" cy="23" r="2" fill="currentColor" fill-opacity=".6"/>'
+      + '</svg>';
+    return g;
+  }
+  // note
+  g.className = 'search-row-note';
+  g.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity=".85" aria-hidden="true">'
+    + '<path d="M6 3h9l4 4v14H6z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>'
+    + '</svg>';
+  return g;
+}
+
+// One result row -> routes to its item. Text goes in via textContent or the
+// escaped _searchHighlight (XSS-safe); only the glyph/highlight use innerHTML.
+function _searchRowEl(it, q, pal) {
+  var a = document.createElement('a');
+  a.className = 'search-res';
+  a.setAttribute('href', it.route);
+  a.appendChild(_searchGlyphEl(it, pal));
+  var body = document.createElement('div');
+  body.className = 'search-res-body';
+  var t = document.createElement('div');
+  t.className = 'search-res-title';
+  t.innerHTML = _searchHighlight(it.title, q);
+  body.appendChild(t);
+  if (it.sub) {
+    var s = document.createElement('div');
+    s.className = 'search-res-sub';
+    s.innerHTML = _searchHighlight(it.sub, q);
+    body.appendChild(s);
+  }
+  if (it.snip) {
+    var sn = document.createElement('div');
+    sn.className = 'search-res-snip';
+    sn.innerHTML = _searchHighlight(it.snip, q);
+    body.appendChild(sn);
+  }
+  var cr = document.createElement('div');
+  cr.className = 'search-res-crumb';
+  cr.textContent = it.crumb;
+  body.appendChild(cr);
+  a.appendChild(body);
+  return a;
+}
+
+// Initial invitation (no query) or honest empty ("Nothing matches ... yet").
+// When logged-out, the copy does NOT imply gathered content and a quiet sign-in
+// affordance is added -- reusing the sibling pattern (.btn btn-primary "Sign in"
+// -> signInWithGoogle, as in buildNotebookSignedOut / the shelf sign-in prompt);
+// no new treatment (logged-out was out of the original wave scope, added as a
+// consistency fix so Search matches its sibling surfaces).
+function _searchEmptyEl(isInitial, q, loggedOut) {
+  var e = document.createElement('div');
+  e.className = 'search-empty';
+  var mark = document.createElement('div');
+  mark.className = 'search-empty-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  e.appendChild(mark);
+  var text = document.createElement('div');
+  text.className = 'search-empty-text';
+  var sub = document.createElement('div');
+  sub.className = 'search-empty-sub';
+  if (isInitial) {
+    if (loggedOut) {
+      text.textContent = 'Sign in to search everything you’ve gathered.';
+      sub.innerHTML = 'your books, arcs, sub-theories, and notes'
+        + '<br>are yours to search once you sign in';
+    } else {
+      text.textContent = 'Everything you’ve gathered is searchable here.';
+      sub.innerHTML = 'a book title · an arc · a sub-theory · a note you wrote'
+        + '<br>try a word you’ve been circling';
+    }
+  } else {
+    text.textContent = 'Nothing matches “' + q + '” yet.';
+    sub.textContent = loggedOut
+      ? 'try a shorter word — or sign in to search everything you’ve gathered'
+      : 'try a shorter word, or clear the filter above';
+  }
+  e.appendChild(text);
+  e.appendChild(sub);
+  if (loggedOut) {
+    var signin = document.createElement('button');
+    signin.type = 'button';
+    signin.className = 'btn btn-primary search-signin';
+    signin.textContent = 'Sign in';
+    signin.addEventListener('click', function () {
+      if (typeof signInWithGoogle === 'function') { signInWithGoogle(); }
+    });
+    e.appendChild(signin);
+  }
+  return e;
+}
+
+// W8 Lane B: the "Yumi · across your results" cross-cut SEAM. The single named
+// mount point where a FUTURE generative cross-result Yumi line will attach. NO-OP
+// today: the gate (>=3 kinds AND >=4 hits) is computed by the caller and passed in,
+// but this renders NOTHING (no LLM call, no generated text) -- the container stays
+// empty (CSS :empty hides it). When Yumi's cross-cut voice ships, it mounts HERE.
+function _searchYumiCrosscutSeam(container, eligible) {
+  return;
+}
+
+function renderSearch() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+  var index = _searchBuildIndex();
+  var loggedOut = !((typeof getCurrentUser === 'function') && getCurrentUser() && getCurrentUser().uid);
+  var activeKind = 'all';
+  var debTimer = null;
+
+  var wrap = document.createElement('section');
+  wrap.className = 'search lum-amber';
+  var page = document.createElement('div');
+  page.className = 'search-page';
+  wrap.appendChild(page);
+
+  var shell = document.createElement('div');
+  shell.className = 'search-shell';
+  var icon = document.createElement('span');
+  icon.className = 'search-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
+    + '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>';
+  shell.appendChild(icon);
+  var input = document.createElement('input');
+  input.className = 'search-input';
+  input.setAttribute('type', 'text');
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('spellcheck', 'false');
+  input.setAttribute('aria-label', 'Search everything you have gathered');
+  input.setAttribute('placeholder', 'Search everything you’ve gathered…');
+  shell.appendChild(input);
+  page.appendChild(shell);
+
+  var scope = document.createElement('div');
+  scope.className = 'search-scope';
+  scope.textContent = 'Across books · arcs · sub-theories · notes';
+  page.appendChild(scope);
+
+  var chipsEl = document.createElement('div');
+  chipsEl.className = 'search-chips';
+  page.appendChild(chipsEl);
+
+  var crosscutEl = document.createElement('div');
+  crosscutEl.className = 'search-crosscut';
+  page.appendChild(crosscutEl);
+
+  var resultsEl = document.createElement('div');
+  resultsEl.className = 'search-results';
+  page.appendChild(resultsEl);
+
+  var KINDS = [
+    { key: 'all', label: 'All' },
+    { key: 'book', label: 'Books' },
+    { key: 'arc', label: 'Arcs' },
+    { key: 'sub', label: 'Sub-theories' },
+    { key: 'note', label: 'Notes' }
+  ];
+  var GROUP_ORDER = ['arc', 'sub', 'book', 'note'];
+  var GROUP_LABEL = { arc: 'Arcs', sub: 'Sub-theories', book: 'Books', note: 'Notes' };
+
+  function curQ() { return input.value.replace(/^\s+|\s+$/g, ''); }
+
+  // Chip counts respect the query but IGNORE the active-kind filter.
+  function kindCount(kind, q) {
+    var n = 0, i, it, ql = q.toLowerCase();
+    for (i = 0; i < index.length; i = i + 1) {
+      it = index[i];
+      if (kind !== 'all' && it.kind !== kind) { continue; }
+      if (q && it.hay.indexOf(ql) < 0) { continue; }
+      n = n + 1;
+    }
+    return n;
+  }
+
+  function renderChips(q) {
+    chipsEl.innerHTML = '';
+    var i;
+    for (i = 0; i < KINDS.length; i = i + 1) {
+      (function (kd) {
+        var b = document.createElement('button');
+        b.className = 'search-chip search-chip-' + kd.key + (activeKind === kd.key ? ' is-on' : '');
+        b.setAttribute('type', 'button');
+        if (kd.key !== 'all') {
+          var dot = document.createElement('span');
+          dot.className = 'search-chip-dot';
+          dot.setAttribute('aria-hidden', 'true');
+          b.appendChild(dot);
+        }
+        var lab = document.createElement('span');
+        lab.className = 'search-chip-label';
+        lab.textContent = kd.label;
+        b.appendChild(lab);
+        var nn = document.createElement('span');
+        nn.className = 'search-chip-n';
+        nn.textContent = kindCount(kd.key, q);
+        b.appendChild(nn);
+        b.addEventListener('click', function () { activeKind = kd.key; doRender(); });
+        chipsEl.appendChild(b);
+      })(KINDS[i]);
+    }
+  }
+
+  function doRender() {
+    var q = curQ();
+    renderChips(q);
+    crosscutEl.innerHTML = '';
+    resultsEl.innerHTML = '';
+
+    var hits = [], i, it, ql = q.toLowerCase();
+    for (i = 0; i < index.length; i = i + 1) {
+      it = index[i];
+      if (activeKind !== 'all' && it.kind !== activeKind) { continue; }
+      if (q && it.hay.indexOf(ql) < 0) { continue; }
+      hits.push(it);
+    }
+
+    if (!q) {
+      _searchYumiCrosscutSeam(crosscutEl, false);
+      resultsEl.appendChild(_searchEmptyEl(true, '', loggedOut));
+      return;
+    }
+    if (!hits.length) {
+      _searchYumiCrosscutSeam(crosscutEl, false);
+      resultsEl.appendChild(_searchEmptyEl(false, q, loggedOut));
+      return;
+    }
+
+    // cross-cut gate (seam only, no visible text)
+    var kmap = {}, kc = 0;
+    for (i = 0; i < hits.length; i = i + 1) {
+      if (!kmap[hits[i].kind]) { kmap[hits[i].kind] = 1; kc = kc + 1; }
+    }
+    _searchYumiCrosscutSeam(crosscutEl, (kc >= 3 && hits.length >= 4));
+
+    var gi, g, group, j;
+    for (gi = 0; gi < GROUP_ORDER.length; gi = gi + 1) {
+      g = GROUP_ORDER[gi];
+      group = [];
+      for (i = 0; i < hits.length; i = i + 1) { if (hits[i].kind === g) { group.push(hits[i]); } }
+      if (!group.length) { continue; }
+      var groupEl = document.createElement('div');
+      groupEl.className = 'search-group';
+      var head = document.createElement('div');
+      head.className = 'search-group-head';
+      var gl = document.createElement('span');
+      gl.className = 'search-group-label';
+      gl.textContent = GROUP_LABEL[g];
+      var gc = document.createElement('span');
+      gc.className = 'search-group-count';
+      gc.textContent = group.length;
+      head.appendChild(gl); head.appendChild(gc);
+      groupEl.appendChild(head);
+      for (j = 0; j < group.length; j = j + 1) { groupEl.appendChild(_searchRowEl(group[j], q, pal)); }
+      resultsEl.appendChild(groupEl);
+    }
+  }
+
+  // ~100ms debounce (notebookEntries can be large; the recon's index verdict).
+  input.addEventListener('input', function () {
+    if (debTimer) { clearTimeout(debTimer); }
+    debTimer = setTimeout(doRender, 100);
+  });
+
+  host.appendChild(wrap);
+  doRender();
+  input.focus();
 }
 
 // HOME (renderHome on .lum-amber-deep) -- Amber threshold per design/"Wave 2 The

@@ -11695,6 +11695,86 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end WAVE 1 · THE LIVING FIELD ===== */
 
 /* =============================================================================
+   W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;
+   serif-italic search bar w/ amber focus ring, kind chips w/ live counts, results
+   grouped Arcs→Sub-theories→Books→Notes with real glyphs + match highlight, honest
+   states. Tokens + the block's rgba-wash idiom only (no new hex). Yumi-cyan is
+   reserved for the seam-only cross-cut; note glyphs use neutral ink tokens.
+   ============================================================================= */
+.search.lum-amber{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:28px 0 80px; color:var(--lum-ink); }
+.search.lum-amber .search-page{ box-sizing:border-box; max-width:820px; margin:0 auto; padding:14px 26px 0; }
+
+/* search bar */
+.search.lum-amber .search-shell{ position:relative; margin-bottom:8px; }
+.search.lum-amber .search-icon{ position:absolute; left:20px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--lum-gold-l); opacity:.75; pointer-events:none; display:block; }
+.search.lum-amber .search-icon svg{ width:18px; height:18px; display:block; }
+.search.lum-amber .search-input{ width:100%; box-sizing:border-box; background:var(--lum-base); border:1px solid var(--lum-glass-bd-2); border-radius:16px; padding:20px 22px 20px 52px; font-family:var(--lum-serif); font-style:italic; font-size:24px; color:var(--lum-ink); outline:none; transition:border-color .25s, box-shadow .25s; }
+.search.lum-amber .search-input::placeholder{ color:var(--lum-ink-4); font-style:italic; }
+.search.lum-amber .search-input:focus{ border-color:var(--lum-gold-d); box-shadow:0 0 0 4px rgba(255,206,74,.10); }
+.search.lum-amber .search-scope{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-4); padding:0 4px 18px; }
+
+/* kind chips */
+.search.lum-amber .search-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+.search.lum-amber .search-chip{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--lum-ink-3); background:rgba(255,236,200,.05); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:color .2s, background .2s, border-color .2s; }
+.search.lum-amber .search-chip:hover{ color:var(--lum-ink); }
+.search.lum-amber .search-chip.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; }
+.search.lum-amber .search-chip-dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+.search.lum-amber .search-chip-book .search-chip-dot{ background:var(--lum-ink-3); }
+.search.lum-amber .search-chip-arc .search-chip-dot{ background:var(--lum-gold); }
+.search.lum-amber .search-chip-sub .search-chip-dot{ background:var(--lum-gold-l); }
+.search.lum-amber .search-chip-note .search-chip-dot{ background:var(--lum-ink-4); }
+.search.lum-amber .search-chip-n{ opacity:.6; }
+.search.lum-amber .search-chip.is-on .search-chip-n{ opacity:.8; }
+
+/* cross-cut seam (empty today -> hidden; future Yumi mounts here) */
+.search.lum-amber .search-crosscut{ margin-bottom:26px; }
+.search.lum-amber .search-crosscut:empty{ display:none; margin:0; }
+
+/* result groups + rows */
+.search.lum-amber .search-group{ margin-bottom:30px; }
+.search.lum-amber .search-group-head{ display:flex; align-items:baseline; gap:10px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--lum-gold-l); border-bottom:1px solid var(--lum-glass-bd-2); padding-bottom:8px; margin-bottom:12px; }
+.search.lum-amber .search-group-count{ color:var(--lum-ink-4); font-size:10px; }
+.search.lum-amber .search-res{ display:flex; gap:14px; align-items:flex-start; padding:12px; border-radius:12px; cursor:pointer; text-decoration:none; color:inherit; transition:background .18s; }
+.search.lum-amber .search-res:hover{ background:rgba(255,206,74,.06); }
+.search.lum-amber .search-res-body{ flex:1; min-width:0; }
+.search.lum-amber .search-res-title{ font-family:var(--lum-serif); font-style:italic; font-weight:600; font-size:19px; color:var(--lum-ink); line-height:1.25; }
+.search.lum-amber .search-res-sub{ font-size:12.5px; color:var(--lum-ink-3); margin-top:2px; }
+.search.lum-amber .search-res-snip{ font-size:13px; color:var(--lum-ink-3); margin-top:6px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.search.lum-amber .search-res-crumb{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--lum-ink-4); margin-top:7px; }
+.search.lum-amber mark{ background:rgba(255,206,74,.22); color:var(--lum-gold-l); border-radius:2px; padding:0 1px; }
+
+/* row glyphs */
+.search.lum-amber .search-row-mark,
+.search.lum-amber .search-row-arc,
+.search.lum-amber .search-row-note{ flex:0 0 44px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+.search.lum-amber .search-row-mark > svg{ width:34px; height:34px; display:block; }
+.search.lum-amber .search-row-arc > svg,
+.search.lum-amber .search-row-note > svg{ width:30px; height:30px; display:block; }
+.search.lum-amber .search-row-arc{ color:var(--lum-gold); }
+.search.lum-amber .search-row-note{ color:var(--lum-ink-3); }
+.search.lum-amber .search-row-cover{ flex:0 0 42px; width:42px; height:60px; border-radius:4px; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,.5); }
+.search.lum-amber .search-row-cover-img{ width:100%; height:100%; object-fit:cover; display:block; }
+.search.lum-amber .search-row-cover-fallback{ display:flex; flex-direction:column; justify-content:center; padding:6px; background:var(--lum-base); border:1px solid var(--lum-glass-bd-2); }
+.search.lum-amber .search-row-cover-fallback .src-t{ font-family:var(--lum-serif); font-style:italic; font-size:9px; line-height:1.15; color:var(--lum-ink-2); max-height:33px; overflow:hidden; }
+.search.lum-amber .search-row-cover-fallback .src-a{ font-family:var(--lum-mono); font-size:7px; color:var(--lum-ink-4); margin-top:3px; }
+
+/* honest states */
+.search.lum-amber .search-empty{ padding:50px 10px; text-align:center; }
+.search.lum-amber .search-empty-mark{ width:46px; height:46px; margin:0 auto 16px; border-radius:50%; background:radial-gradient(circle at 40% 34%, rgba(255,206,74,.5), rgba(255,206,74,0) 72%); }
+.search.lum-amber .search-empty-text{ font-family:var(--lum-serif); font-style:italic; font-size:19px; color:var(--lum-ink-3); }
+.search.lum-amber .search-empty-sub{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.06em; color:var(--lum-ink-4); margin-top:10px; line-height:1.9; }
+.search.lum-amber .search-empty .search-signin{ margin-top:18px; }
+
+/* mobile 759 reflow */
+@media (max-width:759px){
+  .search.lum-amber .search-page{ padding-top:6px; padding-left:16px; padding-right:16px; }
+  .search.lum-amber .search-input{ font-size:20px; padding:16px 18px 16px 46px; }
+  .search.lum-amber .search-icon{ left:16px; }
+  .search.lum-amber .search-res-title{ font-size:17px; }
+}
+/* ===== end W8 LANE B · GLOBAL SEARCH ===== */
+
+/* =============================================================================
    HOME (renderHome on .lum-amber-deep) — Amber threshold: welcome + alternator,
    whole-field panel, left-off arc cards, still-reading glimpse (rail deferred).
    Tokens --lum-* only; centered-1080 via `> *`; direct-child margins use `X auto Y`.
