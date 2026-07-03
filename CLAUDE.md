@@ -16,6 +16,9 @@
 - Known correction: there is NO parse-check-views.js harness in this
   repo. The sanctioned JS parse check is cscript JScript on isolated
   functions. (Remove any contrary claim found elsewhere in this file.)
+- BOARD.md at the repo root is the coverage board — one row per
+  surface. Any wave that changes a cell (Amber, mobile, states,
+  logged-out) updates BOARD.md in the SAME commit.
 
 ## Project
 Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
@@ -30,8 +33,8 @@ Two tools: a Claude chat is the design partner and brief author; you (Claude Cod
 - localStorage only via the `ls(key, default)` / `sv(key, value)` wrappers.
 
 ## File load order
-state → integrations → yumi-brain → arcs → arc-constellation → tradition-forms-arc → voice-input → yumi-ui → views → app
-(arc-constellation and tradition-forms-arc load before views.)
+state → tradition-forms-arc → arc-constellation → integrations → yumi-brain → arcs → voice-input → yumi-ui → spotlight → writing-canvas → views → import-capture → app
+(tradition-forms-arc loads before arc-constellation, which depends on it; both load before views.)
 
 ## Environment & deploy
 - Node is blocked on the Windows machine — never run `npm` or `node`. The cscript JScript parse harness is ES3: it cannot parse files using `.catch`/`.finally`, so it only validates promise-free files like state.js. Verify integrations.js, yumi-brain.js, and sw.js on the live deploy, not the harness.
@@ -283,11 +286,12 @@ For this build only, this canon overrides these design-spec points:
 
 ### 6. Cache + the two fixes
 
-- One commit per stage, all **local**; nothing is pushed until Preston's exact "push." A
-  single SW bump happens at the final push: **`CACHE_VERSION` v3.107 → v3.108** (live is
-  already v3.107 from the mobile-fixes commit `ebba9d6`; do NOT target v3.107).
+- One commit per stage, all **local**; nothing is pushed until Preston's exact "push." When a
+  stage ships a code change, bump the service worker cache once at the final push: read the
+  current `CACHE_VERSION` in `sw.js` at commit time and increment it by exactly one — never
+  target a hardcoded version number.
 - The two functional fixes (Arcs "Your arcs" list; picker `scrollIntoView`) are already
-  shipped at v3.107 — they are **verify-only**, not build. Fix #1's card *styling* to §4-G
+  shipped earlier — they are **verify-only**, not build. Fix #1's card *styling* to §4-G
   is the one residual, folded into the Arcs stage.
 
 ## Live Forensic Smoke Test — MANDATORY before any "done" or ship

@@ -6,10 +6,13 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-06-19
+**Authoritative as of:** 2026-07-03
 **Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.123`
-**HEAD == origin/main:** `9c6608b`
+**Live CACHE_VERSION:** `praxis-v3.172`
+**HEAD == origin/main:** `c3f0d2d`
+**Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
+appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
+retro-filled to current HEAD — treat them as historical beyond that point.
 **Schema:** `state.js` static initializer `SCHEMA_VERSION: '1.9.3'` (the pinned
 seed-ladder literal, never bumped); `migrate()` chain terminal step = **1.21.0**
 (N2b photo capture adds the additive `images:[]` step 1.20.0 -> 1.21.0). Runtime
