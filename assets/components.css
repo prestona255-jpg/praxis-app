@@ -11602,7 +11602,11 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* stage: constellation host + rail */
 .arcfield.lum-amber .arcfield-stage{ display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; margin-top:14px; }
-.arcfield.lum-amber .arc-detail-web-view{ position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--lum-glass-bd-2); background:radial-gradient(120% 110% at 50% 38%, rgba(255,222,150,.05) 0%, rgba(255,222,150,0) 60%); }
+/* W8 Lane A-VISUAL: dark luminous stage (mockup praxis-field-amber.html .stage).
+   Warm-center glow = --lum-gold at low alpha (rgba matches the token's RGB) over
+   the --lum-base dark; a subtle warm inset glow gives the panel depth. The SVG
+   stage rect is now transparent (arc-constellation.js), so THIS is the ground. */
+.arcfield.lum-amber .arc-detail-web-view{ position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--lum-glass-bd-2); background-color:var(--lum-base); background-image:radial-gradient(72% 60% at 44% 38%, rgba(255,206,74,.10) 0%, rgba(255,206,74,.03) 45%, rgba(255,206,74,0) 70%); box-shadow:inset 0 0 100px rgba(255,206,74,.05); }
 .arcfield.lum-amber .arc-detail-web-view svg{ display:block; width:100%; height:auto; }
 
 /* constellation chrome (reskin only; renderer untouched, F-D4) */

@@ -1073,7 +1073,7 @@ function _stRenderEdges(edges, posById, showFaint) {
     // faint relationships.
     if (e.faint) {
       if (showFaint === false) { continue; } // Faint links layer hidden
-      out = out + '<line class="st-layer-faint" data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="#966E28" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
+      out = out + '<line class="st-layer-faint" data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" style="stroke:var(--lum-gold-d)" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
       continue;
     }
     // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
@@ -1082,16 +1082,19 @@ function _stRenderEdges(edges, posById, showFaint) {
     var hasStrength = (typeof e.strength === 'number' && isFinite(e.strength) && e.strength > 0);
     var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.6;
     var op = hasStrength ? 0.5 : 0.85;
-    // 9b-i: resonance reads as a gradient thread (transparent -> amber .7 ->
+    // 9b-i: resonance reads as a gradient thread (transparent -> gold .7 ->
     // transparent) along its own axis. userSpaceOnUse endpoints = the edge's
     // own pa/pb so the fade tracks the line. _stNextId() keeps the def id
     // unique; the whole svg innerHTML is replaced each render, so old defs are
-    // discarded -- no id pileup across re-renders. #966E28 == rgb(150,110,40).
+    // discarded -- no id pileup across re-renders. W8 Lane A-VISUAL: the thread
+    // hue is now the DIM gold token --lum-gold-d (#cf9c2a), deliberately dimmer
+    // than the concentrate --lum-gold (#ffce4a) so the shipped hover light-up
+    // still reads. stop-color goes through style="" so the CSS var resolves.
     var edgeGradId = _stNextId();
     out = out + '<linearGradient id="' + edgeGradId + '" gradientUnits="userSpaceOnUse" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '">';
-    out = out +   '<stop offset="0%" stop-color="#966E28" stop-opacity="0"/>';
-    out = out +   '<stop offset="50%" stop-color="#966E28" stop-opacity="0.7"/>';
-    out = out +   '<stop offset="100%" stop-color="#966E28" stop-opacity="0"/>';
+    out = out +   '<stop offset="0%" style="stop-color:var(--lum-gold-d)" stop-opacity="0"/>';
+    out = out +   '<stop offset="50%" style="stop-color:var(--lum-gold-d)" stop-opacity="0.7"/>';
+    out = out +   '<stop offset="100%" style="stop-color:var(--lum-gold-d)" stop-opacity="0"/>';
     out = out + '</linearGradient>';
     out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="url(#' + edgeGradId + ')" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
   }
@@ -1265,7 +1268,11 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // tradition defs are emitted inert -- referenced by nothing here.
   svg = svg + getTraditionFormsArcDefs();
   svg = svg + _stGetDefs();
-  svg = svg + '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="url(#tfa-stage)"/>';
+  // W8 Lane A-VISUAL: the stage ground is now the DARK .lum-amber atmosphere + the
+  // .arc-detail-web-view dark stage gradient (components.css), shown through a
+  // TRANSPARENT stage rect. The old parchment tfa-stage fill is dropped; tfa-stage
+  // stays defined but unused (tradition-forms-arc.js untouched).
+  svg = svg + '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="none"/>';
   svg = svg + _stRenderQuestion(arc.question || '', width, height);
 
   if (!subTheories.length) {
