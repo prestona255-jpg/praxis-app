@@ -20,6 +20,35 @@
   surface. Any wave that changes a cell (Amber, mobile, states,
   logged-out) updates BOARD.md in the SAME commit.
 
+## Lessons — the seams (read before any wave)
+
+Almost every failure this project has hit came from a seam, not from
+syntax. Guard the seams:
+
+- VISUAL GATE: computed styles never prove a look. A wave that changes
+  what a surface *looks like* is not done until settled screenshots
+  render at 1280 + true 390 AND Preston's eyes pass it. (W8 Lane A
+  "verified" by computed style, then needed a second commit for the skin.)
+- MOCKUP FIRST: a signed-off mockup is committed to design/ BEFORE its
+  build prompt runs — it is the spec. (W9/W10 build prompts blocked on
+  mockups that lived only in chat.)
+- COPY IS A CONTRACT: never ship copy promising behavior that isn't
+  built. When touching a surface, grep its copy for promises. (About told
+  users each room "introduces itself in Yumi's voice" for weeks with no
+  such code.)
+- DOC = POINTER, LIVE FILE = SOURCE: when a committed doc and the code
+  disagree, build against the code and fix the doc in the SAME commit.
+  (CLAUDE.md's --grad values didn't match theme.css.)
+- AUTH-GATED WRITES: any HOLD report touching signed-in writes must state
+  "persistence unverified — rig is signed out" and list Preston's exact
+  live-smoke steps. "Fully real" without that line overstates.
+- SCREENSHOTS: force-settle reveal animations before capture; note dpr.
+  DOM geometry corroborates; neither alone suffices. (W9 stance screen
+  shot blank mid-animation, nearly read as a bug.)
+- THE FORK RULE: architecture forks, scope additions, and design-comp
+  changes surface at a HOLD for Preston's call; mechanical determinations
+  are carried silently.
+
 ## Project
 Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
 
@@ -344,3 +373,12 @@ Yumi chat, a broken Arcs List view, lost hover affordances, and a duplicated she
 
 Record each surface as **PASS/FAIL with the actual observed evidence** (rendered values, console
 output, screenshots where useful). **A single FAIL blocks "done."**
+
+## Operational notes
+
+- Z-INDEX LEDGER (consult before adding stacked chrome): Yumi Bloom 9999
+  · app modals/pickers 10021 · intro panels 10005 · intro summon 9990 ·
+  intro journey 10060.
+- RENDER RIG: clear the service worker + caches before verifying any edit
+  (the SW precaches index.html/components.css, so stale files serve
+  otherwise); reset per-surface seen-flags when testing first-run flows.
