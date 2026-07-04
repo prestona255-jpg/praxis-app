@@ -960,7 +960,10 @@ function _searchRowEl(it, q, pal) {
 // -> signInWithGoogle, as in buildNotebookSignedOut / the shelf sign-in prompt);
 // no new treatment (logged-out was out of the original wave scope, added as a
 // consistency fix so Search matches its sibling surfaces).
-function _searchEmptyEl(isInitial, q, loggedOut) {
+function _searchEmptyEl(isInitial, q) {
+  // W11 S8 Lane 1: signed-out never reaches Search (renderSearch hard-gates at
+  // the top), so this is the signed-in empty only -- the loggedOut sign-in
+  // branch was removed with the soft-CTA.
   var e = document.createElement('div');
   e.className = 'search-empty';
   var mark = document.createElement('div');
@@ -972,33 +975,15 @@ function _searchEmptyEl(isInitial, q, loggedOut) {
   var sub = document.createElement('div');
   sub.className = 'search-empty-sub';
   if (isInitial) {
-    if (loggedOut) {
-      text.textContent = 'Sign in to search everything you’ve gathered.';
-      sub.innerHTML = 'your books, arcs, sub-theories, and notes'
-        + '<br>are yours to search once you sign in';
-    } else {
-      text.textContent = 'Everything you’ve gathered is searchable here.';
-      sub.innerHTML = 'a book title · an arc · a sub-theory · a note you wrote'
-        + '<br>try a word you’ve been circling';
-    }
+    text.textContent = 'Everything you’ve gathered is searchable here.';
+    sub.innerHTML = 'a book title · an arc · a sub-theory · a note you wrote'
+      + '<br>try a word you’ve been circling';
   } else {
     text.textContent = 'Nothing matches “' + q + '” yet.';
-    sub.textContent = loggedOut
-      ? 'try a shorter word — or sign in to search everything you’ve gathered'
-      : 'try a shorter word, or clear the filter above';
+    sub.textContent = 'try a shorter word, or clear the filter above';
   }
   e.appendChild(text);
   e.appendChild(sub);
-  if (loggedOut) {
-    var signin = document.createElement('button');
-    signin.type = 'button';
-    signin.className = 'btn btn-primary search-signin';
-    signin.textContent = 'Sign in';
-    signin.addEventListener('click', function () {
-      if (typeof signInWithGoogle === 'function') { signInWithGoogle(); }
-    });
-    e.appendChild(signin);
-  }
   return e;
 }
 
@@ -1015,9 +1000,20 @@ function renderSearch() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
   host.innerHTML = '';
+  // W11 S8 Lane 1 (L3): search indexes your own gathered library (own arcs/subs,
+  // and notes that require a uid) -- hard-gate signed-out (mirror #notebook: in-
+  // place prompt, no redirect). Replaces the prior soft-CTA (the _searchEmptyEl
+  // loggedOut sign-in branch, now removed).
+  var searchGateUser = getCurrentUser();
+  if (!searchGateUser || !searchGateUser.uid) {
+    var soWrap = document.createElement('section');
+    soWrap.className = 'search lum-amber';
+    soWrap.appendChild(buildSignedOutPrompt('Search is private', 'Sign in to search everything you’ve gathered — your books, arcs, sub-theories, and the notes you wrote.'));
+    host.appendChild(soWrap);
+    return;
+  }
   var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
   var index = _searchBuildIndex();
-  var loggedOut = !((typeof getCurrentUser === 'function') && getCurrentUser() && getCurrentUser().uid);
   var activeKind = 'all';
   var debTimer = null;
 
@@ -1130,12 +1126,12 @@ function renderSearch() {
 
     if (!q) {
       _searchYumiCrosscutSeam(crosscutEl, false);
-      resultsEl.appendChild(_searchEmptyEl(true, '', loggedOut));
+      resultsEl.appendChild(_searchEmptyEl(true, ''));
       return;
     }
     if (!hits.length) {
       _searchYumiCrosscutSeam(crosscutEl, false);
-      resultsEl.appendChild(_searchEmptyEl(false, q, loggedOut));
+      resultsEl.appendChild(_searchEmptyEl(false, q));
       return;
     }
 
@@ -1823,6 +1819,32 @@ function buildNotebookSignedOut() {
   es.appendChild(h2);
   var p = document.createElement('p');
   p.textContent = 'Sign in to keep your marginalia, journal, and questions — and to let Yumi read along, only ever as much as you allow. No asymmetry, ever.';
+  es.appendChild(p);
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-primary';
+  btn.textContent = 'Sign in';
+  btn.addEventListener('click', function() { signInWithGoogle(); });
+  es.appendChild(btn);
+  return es;
+}
+
+// W11 S8 Lane 1: the shared signed-out gate prompt. A parameterized twin of
+// buildNotebookSignedOut (same .empty-state structure, real shared Yumi crest,
+// live auth) so every hard-gated surface shows ONE in-place prompt in its own
+// ground -- no new auth pattern, no new CSS, no location redirect.
+function buildSignedOutPrompt(headline, copy) {
+  var es = document.createElement('div');
+  es.className = 'empty-state';
+  var mark = document.createElement('div');
+  mark.className = 'em-mark';
+  if (typeof yumiGlyphNode === 'function') { mark.appendChild(yumiGlyphNode(56)); }
+  es.appendChild(mark);
+  var h2 = document.createElement('h2');
+  h2.textContent = headline;
+  es.appendChild(h2);
+  var p = document.createElement('p');
+  p.textContent = copy;
   es.appendChild(p);
   var btn = document.createElement('button');
   btn.type = 'button';
@@ -3674,6 +3696,16 @@ function renderShelf() {
   // over the theme-token base (same additive pattern as the Notebook).
   wrap.className = 'shelf lum-amber-deep';
 
+  // W11 S8 Lane 1 (L3): your shelf is personal -- hard-gate signed-out (mirror
+  // #notebook: in-place prompt, no redirect). Replaces the prior soft-CTA
+  // (the signed-out "Sign in to add books" toolbar/empty branches, now removed).
+  var shelfGateUser = getCurrentUser();
+  if (!shelfGateUser || !shelfGateUser.uid) {
+    wrap.appendChild(buildSignedOutPrompt('Your shelf is private', 'Sign in to build your shelf — scan a spine, search a title, or paste a whole list. Your library is yours.'));
+    host.appendChild(wrap);
+    return;
+  }
+
   // Head (mock .shelf-head): "Your shelf" + a mono count line. The count is
   // display-only aggregation (books · reading · finished) filling the mock's
   // "N books · R reading · F finished" format with real data.
@@ -3757,27 +3789,16 @@ function renderShelf() {
 
   var user = getCurrentUser();
 
-  // Primary: signed-in "Add a book" (opens the inline editor) / signed-out
-  // sign-in prompt -- both as the single .btn-primary.
-  if (user) {
-    var newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'btn btn-primary';
-    newBtn.textContent = '＋ Add a book';
-    newBtn.addEventListener('click', function() {
-      openShelfEditor();
-    });
-    toolbar.appendChild(newBtn);
-  } else {
-    var signinBtn = document.createElement('button');
-    signinBtn.type = 'button';
-    signinBtn.className = 'btn btn-primary';
-    signinBtn.textContent = 'Sign in to add books';
-    signinBtn.addEventListener('click', function() {
-      signInWithGoogle();
-    });
-    toolbar.appendChild(signinBtn);
-  }
+  // Primary: signed-in "Add a book" (opens the inline editor). Signed-out never
+  // reaches here -- the top-of-function hard-gate returns first (W11 S8 Lane 1).
+  var newBtn = document.createElement('button');
+  newBtn.type = 'button';
+  newBtn.className = 'btn btn-primary';
+  newBtn.textContent = '＋ Add a book';
+  newBtn.addEventListener('click', function() {
+    openShelfEditor();
+  });
+  toolbar.appendChild(newBtn);
 
   // Covers | List segmented (mock .seg). LIVE handlers preserved.
   var shelfViewMode = getShelfView();
@@ -4761,26 +4782,16 @@ function renderShelf() {
       ? 'Clear your filters or add a new book.'
       : 'Add your first book — scan a spine, search a title, or paste a whole list. Reading starts becoming thinking the moment it has somewhere to go.';
     empty.appendChild(emptySubtitle);
-    var emptyUser = getCurrentUser();
-    if (emptyUser) {
-      var emptyAddBtn = document.createElement('button');
-      emptyAddBtn.type = 'button';
-      emptyAddBtn.className = 'btn btn-primary';
-      emptyAddBtn.textContent = '＋ Add a book';
-      emptyAddBtn.addEventListener('click', function() {
-        openShelfEditor();
-      });
-      empty.appendChild(emptyAddBtn);
-    } else {
-      var emptySigninBtn = document.createElement('button');
-      emptySigninBtn.type = 'button';
-      emptySigninBtn.className = 'btn btn-primary';
-      emptySigninBtn.textContent = 'Sign in to add books';
-      emptySigninBtn.addEventListener('click', function() {
-        signInWithGoogle();
-      });
-      empty.appendChild(emptySigninBtn);
-    }
+    // Signed-out never reaches here (top-of-function hard-gate, W11 S8 Lane 1),
+    // so the empty state always offers the signed-in "Add a book" primary.
+    var emptyAddBtn = document.createElement('button');
+    emptyAddBtn.type = 'button';
+    emptyAddBtn.className = 'btn btn-primary';
+    emptyAddBtn.textContent = '＋ Add a book';
+    emptyAddBtn.addEventListener('click', function() {
+      openShelfEditor();
+    });
+    empty.appendChild(emptyAddBtn);
     main.appendChild(empty);
   } else {
     // Stage 3: branch on the persisted shelf view. Both consume the SAME
@@ -7578,6 +7589,15 @@ function renderBookView(bookId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
   host.innerHTML = '';
+  // W11 S8 Lane 1 (L3): marks + lineage are private notebook content -- hard-gate
+  // signed-out (mirror #notebook: in-place prompt, no redirect).
+  var bvUser = getCurrentUser();
+  if (!bvUser || !bvUser.uid) {
+    var bvSurf = bookAmberSurface();
+    bvSurf.shell.appendChild(buildSignedOutPrompt('Your marks are private', 'Sign in to see your marginalia and what this book grew into — your notes are yours alone.'));
+    host.appendChild(bvSurf.root);
+    return;
+  }
   var surf = bookAmberSurface();
   host.appendChild(surf.root);
 
@@ -9044,6 +9064,17 @@ function renderSubTheoryPage(id) {
   if (!host) return;
   host.innerHTML = '';
 
+  // W11 S8 Lane 1 (L3): a sub-theory is your authored thinking -- hard-gate
+  // signed-out (mirror #notebook: in-place prompt, no redirect).
+  var stpUser = getCurrentUser();
+  if (!stpUser || !stpUser.uid) {
+    var stpWrap = document.createElement('section');
+    stpWrap.className = 'st-page lum-amber-deep';
+    stpWrap.appendChild(buildSignedOutPrompt('This sub-theory is private', 'Sign in to read and shape your sub-theories — your thinking is yours alone.'));
+    host.appendChild(stpWrap);
+    return;
+  }
+
   var subTheory = state.subTheories && state.subTheories[id];
   if (!subTheory) {
     var nf = document.createElement('section');
@@ -10464,6 +10495,16 @@ function renderSubTheoryBuild(id) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
+  // W11 S8 Lane 1 (L3): the compose/publish workshop is authoring -- hard-gate
+  // signed-out (mirror #notebook; completes L4, which gated only the mint).
+  var stbUser = getCurrentUser();
+  if (!stbUser || !stbUser.uid) {
+    var stbWrap = document.createElement('section');
+    stbWrap.className = 'st-build lum-amber-deep';
+    stbWrap.appendChild(buildSignedOutPrompt('This workshop is private', 'Sign in to compose and publish your sub-theories — authorship needs a name.'));
+    host.appendChild(stbWrap);
+    return;
+  }
   var subTheory = state.subTheories && state.subTheories[id];
   if (!subTheory) {
     var nf = document.createElement('section');
@@ -10837,6 +10878,14 @@ function renderArtifact(bookId) {
   }
 
   var user = getCurrentUser();
+  // W11 S8 Lane 1 (copy): signed-out gets an honest sign-in invitation instead
+  // of the misleading "No Artifact yet" empty. Signed-in-no-artifact still falls
+  // through to the empty below.
+  if (!user || !user.uid) {
+    wrap.appendChild(buildSignedOutPrompt('Your Artifact is private', 'Sign in to see what this book became in your hands — the artifact is yours.'));
+    host.appendChild(wrap);
+    return;
+  }
   var artifact = null;
   if (user && state.bookArtifacts) {
     var key = artifactKey(user.uid, bookId);
@@ -11954,12 +12003,25 @@ function renderArcDetail(arcId) {
     var nf = document.createElement('section');
     nf.className = 'arc-detail-not-found';
     var nfMsg = document.createElement('p');
-    nfMsg.textContent = 'That arc could not be found.';
-    var nfLink = document.createElement('a');
-    nfLink.href = '#notebook';
-    nfLink.textContent = 'Back to Notebook';
-    nf.appendChild(nfMsg);
-    nf.appendChild(nfLink);
+    if (!user || !user.uid) {
+      // W11 S8 Lane 1 (copy): this is the owner's PRIVATE Field -- signed-out is
+      // a gated arc, not a missing one. Honest invitation + CTA; gate unchanged.
+      nfMsg.textContent = 'Sign in to see your arc.';
+      nf.appendChild(nfMsg);
+      var nfBtn = document.createElement('button');
+      nfBtn.type = 'button';
+      nfBtn.className = 'btn btn-primary';
+      nfBtn.textContent = 'Sign in';
+      nfBtn.addEventListener('click', function() { signInWithGoogle(); });
+      nf.appendChild(nfBtn);
+    } else {
+      nfMsg.textContent = 'That arc could not be found.';
+      nf.appendChild(nfMsg);
+      var nfLink = document.createElement('a');
+      nfLink.href = '#notebook';
+      nfLink.textContent = 'Back to Notebook';
+      nf.appendChild(nfLink);
+    }
     host.appendChild(nf);
     return;
   }
@@ -12373,6 +12435,24 @@ function renderArcDetail(arcId) {
           }
         });
       }
+    }
+    // W11 S8 Lane 1 (L2): a zero-member arc otherwise renders a bare field --
+    // give it an in-voice empty in the constellation host (mirrors the "your
+    // shelf is open" tone). stCount is computed above from state.subTheories.
+    if (stCount === 0) {
+      var arcEmpty = document.createElement('div');
+      arcEmpty.className = 'empty-state arcfield-empty';
+      var aeMark = document.createElement('div');
+      aeMark.className = 'em-mark';
+      if (typeof yumiGlyphNode === 'function') { aeMark.appendChild(yumiGlyphNode(56)); }
+      arcEmpty.appendChild(aeMark);
+      var aeH = document.createElement('h2');
+      aeH.textContent = 'This arc is open';
+      arcEmpty.appendChild(aeH);
+      var aeP = document.createElement('p');
+      aeP.textContent = 'No sub-theories yet — gather a few notes in your notebook and one will take its place in this field.';
+      arcEmpty.appendChild(aeP);
+      webContainer.appendChild(arcEmpty);
     }
     // Mock .arcfield-stage: the constellation host + the books/add rail.
     var arcStage = document.createElement('div');
@@ -16113,7 +16193,13 @@ function renderOwnProfile() {
   // simply leaves the em dash / empty list (never blanks the page).
   if (user && user.uid && typeof loadOwnProfileSocial === 'function') {
     loadOwnProfileSocial(user.uid, function (soc) {
-      if (!soc || soc.status !== 'ok') { return; }
+      if (!soc || soc.status !== 'ok') {
+        // W11 S8 Lane 1 (L2): graceful in-voice degrade instead of a silent
+        // return that leaves the em-dash counters unexplained. Counters stay em-
+        // dash; the follows line carries the honest word.
+        opFollowsList.textContent = 'Couldn’t reach your connections just now — they’ll be here in a moment.';
+        return;
+      }
       walkB1.textContent = '' + soc.walkedByTotal;
       cNum.textContent = '' + soc.buildOnTotal;
       if (soc.followers && soc.followers.length) {
