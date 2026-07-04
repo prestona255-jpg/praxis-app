@@ -57,6 +57,9 @@ Load/Error: 3✅ 1◐, rest sync-render with none.
 | Pickers ×8 (arc/sub/gather/file-to-book/mark…) | v12960/13077/13003/13437/2284/2945/8377 | ? unverified as a set |
 | Confirms ×6 (deletes/reset/unlink/review) | v12596/12699/8608/8678/14102/6654 | ? unverified as a set |
 | Reader-portrait offer | v17432 | ? |
+| **Intro journey** (first-run, 7 steps) | intros.js `startJourney`; body-level overlay; fired by yumi-ui `maybeStartOnboarding` (scripted chat greeting replaced) | ✅ `.lum-amber` |
+| **Intro per-page panels ×12** | intros.js `maybeShowPanel`; ls/sv seen-flags; 8 auto-show surfaces (home·shelf·notebook·field·search·commons·account·sees) | ✅ dual-ground |
+| **Intro ⓘ re-summon + About Orientation** | intros.js `updateSummon`; `buildAboutOrientation` single-sources INTROS into renderAbout | ✅ |
 
 ## 3 · Open-items ledger (from Census v2 mismatches)
 
@@ -79,7 +82,7 @@ Load/Error: 3✅ 1◐, rest sync-render with none.
 | Wave | Scope | Status |
 |------|-------|--------|
 | Housekeeping | Commit this file + fix H1/M2/M3 (docs only, zero code) | NEXT |
-| W9 | Interactive intro screens + About redo (mockups in chat → sign-off → build; single-sourced to About rearm per approved onboarding decisions) | PENDING MOCKUPS |
+| W9 | Intro system SHIPPED: first-run guided journey (real writes: shelve/note/consent) + 12 single-sourced per-page panels (dual-ground) + About Orientation; scripted chat greeting replaced. About kept bright (Amber ✗ unchanged, §1) | SHIPPED v3.173 |
 | W10 | Polish sweep: artifact + yumi-sees Amber/mobile conversion · loading/error states (L2) · logged-out unification (L3) · L4 auth gate · dead-code sweep (L1) | AFTER W9 |
 | Pre-audit prep | CRAFT.md + metrics · sound design doc · seed real arcs · writing-loop diagnosis session · census delta → refresh this board | AFTER W10 |
 | AUDIT | Fable, findings-report-only; charter = correctness + craft + writing-loop deep-dive; after July 7 | GATED ON ABOVE |

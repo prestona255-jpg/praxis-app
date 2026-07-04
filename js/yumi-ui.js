@@ -842,6 +842,14 @@ function maybeStartOnboarding(uid) {
   // 6.2c: do not auto-open the greeting onto an arc surface (it would park the
   // panel over the constellation -- see isArcRoute / suppressYumiOnArc above).
   if (isArcRoute()) { return; }
+  // W9: the guided journey REPLACES the scripted Yumi-chat greeting. Same gate,
+  // same call sites (the profile + books auth callbacks); the journey sets
+  // onboardingSeen on completion (markSeenAndClose), so this stays fire-once.
+  if (window.Intros && Intros.startJourney) {
+    onboardingStartedThisSession = true;
+    Intros.startJourney();
+    return;
+  }
   startOnboarding();
 }
 

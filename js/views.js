@@ -18335,16 +18335,9 @@ function renderAbout() {
   // the mock's .about-section / .about-accordion frame; the four live intros
   // (Home / Shelf / Arcs / Notebook) are preserved as the accordion bodies. -----
   html += '<section class="about-panel" data-panel="rearm">';
-  html +=   '<div class="about-section">';
-  html +=     '<p class="about-section-no">Re-arm</p>';
-  html +=     '<h2 class="about-h2">The intros, here whenever you want them.</h2>';
-  html +=     '<hr class="about-rule">';
-  html +=     '<p class="about-body">The first time you open each part of Praxis, it introduces itself in Yumi\'s voice. Forgot what a page is for? Open it again here &mdash; nothing is hidden behind &ldquo;you\'ve already seen it once.&rdquo;</p>';
-  html +=     '<details class="about-accordion" open><summary>Home &middot; the long view</summary><div class="ac-body"><span class="rearm-glyph-slot" data-yumi-glyph="22"></span>Home is where you stand back and see the whole field &mdash; the constellation of everything you\'ve read and thought, drifting together. Start here when you want perspective, not a task.</div></details>';
-  html +=     '<details class="about-accordion"><summary>Shelf &middot; everything you\'re reading</summary><div class="ac-body"><span class="rearm-glyph-slot" data-yumi-glyph="22"></span>Your shelf holds every book you\'re reading, have read, or mean to begin. Add one and it takes its place; mark it as you move through it. This is the honest record of your attention &mdash; only you decide what belongs here.</div></details>';
-  html +=     '<details class="about-accordion"><summary>Arcs &middot; a line of thought across books</summary><div class="ac-body"><span class="rearm-glyph-slot" data-yumi-glyph="22"></span>An arc is a question that won\'t leave you alone &mdash; one you find yourself following across more than one book. Gather what speaks to it, and watch a constellation form: your thinking, made visible.</div></details>';
-  html +=     '<details class="about-accordion"><summary>Notebook &middot; where what stops you lives</summary><div class="ac-body"><span class="rearm-glyph-slot" data-yumi-glyph="22"></span>The notebook is where the lines that stop you mid-page have a home &mdash; marginalia, journal, and questions. Only what you choose to keep. What you attach to a book, I can read; your journal stays yours unless you say otherwise.</div></details>';
-  html +=   '</div>';
+  // W9: the "Re-enter a page" section is single-sourced from Intros.INTROS
+  // (the same array the per-page panels render from) + the retakeable walk.
+  html +=   (window.Intros && window.Intros.buildAboutOrientation) ? window.Intros.buildAboutOrientation() : '';
   html += '</section>';
 
   page.innerHTML = html;
@@ -18357,6 +18350,12 @@ function renderAbout() {
     glyphSlots[gi].appendChild(
       yumiGlyphNode(parseInt(glyphSlots[gi].getAttribute('data-yumi-glyph'), 10))
     );
+  }
+
+  // W9: wire the "retake the first walk" button inside About Orientation.
+  var retakeBtn = page.querySelector('#about-retake-walk');
+  if (retakeBtn && window.Intros && window.Intros.startJourney) {
+    retakeBtn.onclick = function () { window.Intros.startJourney(); };
   }
 
   // S3: wire the banking <-> problem-posing toggle.
