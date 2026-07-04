@@ -1907,6 +1907,11 @@ function createSubTheory(arcId, fields) {
   var now = Date.now();
   var id = genSubTheoryId();
   var creator = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  // L4 (W10 Lane B): block a signed-out caller from minting a draft via a stale
+  // #arc/<id>/new-subtheory link. Mirrors exportWorkspace's auth guard -- reuse the
+  // creator capture above, guard on uid, return null. The views.js redirect already
+  // falls back to #arcs on a null return; no schema change, signed-in path unchanged.
+  if (!creator || !creator.uid) return null;
   var subTheory = {
     id:                 id,
     arcId:              arcId,

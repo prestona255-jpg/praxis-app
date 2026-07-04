@@ -2278,41 +2278,6 @@
   min-width: 0;
 }
 
-.shelf-list {
-  display: grid;
-  /* minmax(0, 1fr) instead of plain 1fr so grid tracks can shrink
-     below the intrinsic min-content of their grid items. Without
-     this, an unconstrained <img> in a card forces its column to be
-     at least the image's natural pixel width, blowing out the
-     layout and producing horizontal page overflow. Card / image
-     constraints land in Stage 3; this is the Stage 2 layout-level
-     guard so the page does not overflow between stages. */
-  /* Phase 3.1: denser cover grid -- 5 columns at desktop (was 4),
-     tighter gaps, and the responsive ladder shifted one step denser
-     (4/3/2 instead of 3/2/1). */
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  column-gap: 18px;
-  row-gap: 24px;
-}
-
-@media (max-width: 1099px) {
-  .shelf-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 759px) {
-  .shelf-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 499px) {
-  .shelf-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 /* ===== END SHELF LAYOUT + FILTER SIDEBAR + GRID ===== */
 
 
@@ -3113,6 +3078,18 @@
   text-align: center;
 }
 
+/* W10 Lane B: mobile reflow (<760). #artifact now sits on the dark Amber ground
+   (route keyed in umberGroundDark); the [data-ground=dark] token remap repaints
+   --ink/--ink-3 light-on-dark, so this block only tightens the read column for
+   phones -- no color work, no IA change (re-skin only). */
+@media (max-width: 759px) {
+  .artifact-view { padding: 56px 20px; }
+  .artifact-title { font-size: 30px; margin: 0 0 24px 0; }
+  .artifact-body { font-size: 17px; }
+  .artifact-not-found,
+  .artifact-empty { margin: 64px 0 24px 0; }
+}
+
 /* ===== END ARTIFACT VIEW ===== */
 
 
@@ -3492,6 +3469,34 @@
   font-size: 13px;
   color: var(--ink-3);
   text-align: center;
+}
+
+/* W10 Lane B -- #yumi-sees on the dark Amber ground (Option A).
+   The route is keyed in umberGroundDark, so the page ground flips dark. Everything
+   here is ADDITIVE and SCOPED to .yumi-sees-page: the shared .transparency-* base
+   rules and the in-Notebook openTransparencyView overlay are NOT touched and render
+   byte-identical.
+   Panel: KEPT bright. --panel-yumi is declared at :root and never re-pointed under
+   [data-ground=dark], so the honey fill inherits its bright computed value here. But
+   [data-ground=dark] does remap the ink tokens light, which would wash out text on the
+   honey panel -- so a LOCAL stable-token re-pin restores dark-on-honey inside the panel
+   (the Lane-A .about .orientation precedent; --br-deep/--meta/--page-2/--line-page are
+   stable, ground-agnostic). Teal accents (--marginalia-color) are the Yumi seam and stay.
+   Closing line: sits on the dark ground outside the panel -> re-pointed to the on-dark
+   muted tone. */
+.yumi-sees-page .transparency-panel {
+  --ink:       var(--br-deep);
+  --ink-2:     var(--br-deep);
+  --ink-3:     var(--meta);
+  --ink-4:     var(--meta);
+  --surface-2: var(--page-2);
+  --border:    var(--line-page);
+  --line-2:    var(--line-page-2);
+}
+.yumi-sees-page .yumi-sees-closing { color: var(--muted); }
+
+@media (max-width: 759px) {
+  .yumi-sees-page { padding: 28px 18px 60px; }
 }
 
 /* ===== END TRANSPARENCY VIEW ===== */
@@ -4127,29 +4132,6 @@
   opacity: 0.8;
 }
 
-/* Hybrid Gate D: at-rest cards in the notebook spread are reconciled to the
-   mockup's lighter card -- translucent --surface fill (the dot-grid leaf reads
-   faintly through), --radius-md corners, tighter padding, a soft shadow + hover
-   lift. SCOPED to the spread leaf so the shared base .notebook-entry (book
-   detail / banks) is untouched. The Cormorant-italic body is KEPT (decision C);
-   only the card chrome changes. The spine inset tracks the smaller radius. */
-.notebook-leaf-left .notebook-entry {
-  padding: 14px 16px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-1);
-  transition: box-shadow var(--motion-base) var(--ease),
-              border-color var(--motion-base) var(--ease);
-}
-.notebook-leaf-left .notebook-entry:hover {
-  border-color: var(--line-2);
-  box-shadow: var(--shadow-2);
-}
-.notebook-leaf-left .notebook-entry::before {
-  top: 10px;
-  bottom: 10px;
-}
-
 .notebook-entry-head {
   display: flex;
   align-items: center;
@@ -4389,37 +4371,6 @@
   overflow: hidden;
   box-shadow: var(--shadow-2);
 }
-/* Each leaf is dot-grid paper over the lighter --surface-2 fill, with an
-   asymmetric gutter (wide 46px left edge for the margin ruling). */
-.notebook-leaf {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  position: relative;
-  background-color: var(--surface-2);
-  background-image: var(--dots);
-  background-size: 22px 22px;
-  padding: 22px 26px 26px 46px;
-  min-height: 430px;
-}
-/* Center seam: the left leaf's right edge is the spine (2px rule), and both
-   leaves cast opposed inner shadows so the gutter reads as a bound valley. */
-.notebook-leaf-left {
-  border-right: 2px solid var(--line-2);
-  box-shadow: inset -14px 0 22px -16px color-mix(in srgb, var(--br-deep) 30%, transparent);
-}
-.notebook-leaf-left::before {
-  content: "";
-  position: absolute;
-  left: 32px;
-  top: 16px;
-  bottom: 16px;
-  width: 1.5px;
-  background: var(--margin-rule);
-}
-.notebook-leaf-right {
-  box-shadow: inset 14px 0 22px -16px color-mix(in srgb, var(--br-deep) 30%, transparent);
-}
 .notebook-secthead-title {
   font-family: var(--font-serif);
   font-size: 22px;
@@ -4486,14 +4437,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-4);
-}
-.notebook-leaftag {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gold-text);
-  margin-bottom: 13px;
 }
 .notebook-working-hint {
   font-family: var(--font-serif);
@@ -4602,24 +4545,13 @@
    intentionally untouched (design-canon A: nav stays solid). */
 .notebook-header,
 .notebook-tabs,
-.notebook-secthead,
-.notebook-leaf-right {
+.notebook-secthead {
   transition: opacity var(--motion-base) var(--ease);
 }
 .notebook.notebook-composing .notebook-header,
 .notebook.notebook-composing .notebook-tabs,
 .notebook.notebook-composing .notebook-secthead {
   opacity: 0.4;
-}
-.notebook.notebook-composing .notebook-leaf-right {
-  opacity: 0;
-  overflow: hidden;
-}
-/* While composing, the writing leaf takes the full spread -- drop the spine so
-   no dangling seam shows at its right edge. */
-.notebook.notebook-composing .notebook-leaf-left {
-  border-right: none;
-  box-shadow: none;
 }
 @media (min-width: 760px) {
   .notebook.notebook-composing .notebook-spread {
@@ -4928,20 +4860,6 @@
      right leaf carries a top hairline instead. Tighter gutter for narrow
      screens, and no tall min-height so short leaves don't leave dead space. */
   .notebook-spread { grid-template-columns: 1fr; gap: 0; }
-  .notebook-leaf {
-    padding: 20px 18px;
-    min-height: 0;
-  }
-  .notebook-leaf-left {
-    border-right: none;
-    box-shadow: none;
-  }
-  .notebook-leaf-left::before { display: none; }
-  .notebook-leaf-right {
-    box-shadow: none;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-  }
 }
 
 /* ----- Notebook artifact card (Tier 1) -----
