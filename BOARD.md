@@ -25,27 +25,29 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 1 | `#home` renderHome | ✅ v1423 | ✅ css11829 | ✅ v1464/1499/1546 | ✗ no gate (same as zero-data) | ✗ sync |
 | 2 | `#notebook` + catch-all, renderNotebook | ✅ v1702 | ✅ css11426 | ✅ v1999/2039 | ✅ hard v1709 | ✗ sync |
 | 3 | `#arcs` renderArcsPage | ✅ v3399 | ✅ css1894 | ✗ by-design v3454 | ◐ omission v3441 | ✗ sync |
-| 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ soft CTA v3771/4764 | ✗ sync |
-| 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✗ **NO GATE — gap vs parent** | ✗ sync |
+| 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ hard v3700 (W11-S8-L1; soft-CTA retired) | ✗ sync |
+| 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
 | 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
-| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✗ v10839 | ✗ sync |
+| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) | ✗ sync |
 | — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1905→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1914)** | — |
-| 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ v10482 | ✅ css11276 | ✅ v10468/10671/10803 | ✗ (v10615 = consent lookup, not gate) | ✗ sync |
-| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✗ (consent lookup only) | ✗ sync |
-| 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ v11940/11953/12439 | ? combined gate v11953 → "not found" copy, no sign-in CTA | ✗ sync |
+| 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ v10482 | ✅ css11276 | ✅ v10468/10671/10803 | ✅ hard v10498 (W11-S8-L1) | ✗ sync |
+| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✅ hard v9067 (W11-S8-L1) | ✗ sync |
+| 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) | ✗ sync |
 | 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
 | 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
 | 13 | `#yumi-sees` renderWhatYumiSeesPage | ✅ v373 key + scoped repin (W10-B) | ✅ css @759 | ✅ per-section v13827–13925 | ✗ | ✗ sync |
-| 14 | `#profile` renderOwnProfile | ✅ ember v15827 | ✅ css12078 | ✅ v16042 | ✅ hard v15832 | ◐ social stats silent-fail (v16114) |
+| 14 | `#profile` renderOwnProfile | ✅ ember v15827 | ✅ css12078 | ✅ v16042 | ✅ hard v15832 | ✅ graceful social-fetch error v16116 (W11-S8-L1) |
 | 15 | `#commons` renderCommons | ✅ ember v16421 | ✅ css12217 | ✅ v16472 | ✅ hard v16416 | ✅ v16459/16465 |
 | 16 | `#reader/<uid>` renderOtherProfile | ✅ ember v16508 | ✅ css12217 | ✅ v16592 | ✅ hard v16501 | ✅ v16517/16530 |
 | 17 | `#walk/<arcId>` renderInteract | ✅ ember v16625 | ✅ css12217 | ✅ v16634/16641/16805 | ✅ hard v16620 | ✅ v16626/16759 |
-| 18 | `#search` renderSearch (W8) | ✅ v1025 | ✅ css11768 | ✅ v963 | ◐ soft CTA v992–1000 | — sync by design (no fetch) |
+| 18 | `#search` renderSearch (W8) | ✅ v1025 | ✅ css11768 | ✅ v963 | ✅ hard v1005 (W11-S8-L1; soft-CTA retired) | — sync by design (no fetch) |
 
 **Tallies:** Amber 18/18 (W10-B closed artifact + yumi-sees) · Mobile 18/18
-· Empty 15✅ 1✗ 1? 1— · Logged-out: 7 hard,
-3 soft, 8 none/partial (three coexisting philosophies — see §3, L3) ·
-Load/Error: 3✅ 1◐, rest sync-render with none.
+· Empty 16✅ 1✗ 1— (W11-S8-L1 added #arc/<id>) · Logged-out (W11-S8-L1,
+f98dc82): 13 hard · 1 soft (#book/<id>) · 2 open (#arcs·#about) · 2 none
+(#home·#yumi-sees) — L3 front-end gating unified to CRAFT §3.1; commons-open
+(Lane 2) deferred · Load/Error: 4✅ (commons·reader·walk·profile), rest
+sync-render with none (W11-S8-L1: #profile social-fetch now graceful).
 
 ## 2 · Panels & overlays (non-router)
 
@@ -69,8 +71,8 @@ Load/Error: 3✅ 1◐, rest sync-render with none.
 | M2 | CLAUDE.md:32-33 load order reversed (load-bearing) + omits spotlight/writing-canvas/import-capture | HOUSEKEEPING WAVE |
 | M3 | CLAUDE.md:287-290 fossil cache target v3.107→108 | HOUSEKEEPING WAVE |
 | L4 | createSubTheory has no auth gate — signed-out can mint a draft via stale redirect link | ✅ DONE — W10-B: guard mirrors exportWorkspace (state.js:1914), signed-out → null → #arcs |
-| L2 | Loading/error states absent on 13 local surfaces | W10 system-states pass |
-| L3 | Logged-out handling = 3 coexisting philosophies (hard/soft/none) | W10 pick-one + retrofit; CRAFT.md coherence bar |
+| L2 | Loading/error states absent on 13 local surfaces | ✅ SHIPPED W11-S8-L1 (f98dc82): #arc/<id> empty + #profile graceful error. Reframed — the 13 are synchronous state.* surfaces that need no loading/error; real L2 was ~2. #account section-drops DEFERRED (defensive umbrellas, never fire) |
+| L3 | Logged-out handling = 3 coexisting philosophies (hard/soft/none) | ✅ front-end SHIPPED W11-S8-L1 (f98dc82): unified to CRAFT §3.1 — 5 hard-gates (book/marks · subtheory×2 · shelf · search) + 2 copy fixes (artifact · arc/<id>), in-place prompt via shared buildSignedOutPrompt. Commons-open (Lane 2: #commons/#reader/#walk) DEFERRED — auth-required firestore.rules loosening = backend security change / audit input |
 | L1 | Dead sweep — W10-B: ~~.shelf-list~~ REMOVED · ~~.notebook-leaf-* (14 rules + comma-group partial)~~ REMOVED · ~~renderArcConstellation~~ REMOVED. KEPT: legacy `.st-page` = EXCLUDED (LIVE — `st-page` class emitted at views.js:9063, base layer under `.st-page.lum-amber-deep`); `tfa-stage` gradient (tradition-forms-arc.js:73) = HELD this wave | ✅ b/c/e DONE; .st-page + tfa-stage carried |
 | L1b | Known-stale doc: 3 comment mentions of the removed `renderArcConstellation` remain (arc-constellation.js:8, :401; views.js:10883) — live-adjacent docs, left intact per ruling | Future doc pass (deferred) |
 | M1 | Field mark "flat-fill" debt is NOT clean — url(#tfa-shine) overlay exists (arc-constellation.js:954) | Re-inspect before any polish build; AUDIT INPUT |
@@ -113,5 +115,8 @@ W8: mark gradient-depth polish (see M1) · Dictation-quality tuning.
 ---
 *Board revision 1 — derived from Census v2 (c3f0d2d). Cell updates ride with
 each wave: W10 Lane B (v3.175) flipped rows 7 + 13 (Amber + Mobile), closed L4,
-and struck the b/c/e items of L1. Next full refresh: the census delta after the
-remaining W10 (L2/L3), before the audit charter freezes.*
+and struck the b/c/e items of L1. W11 S8 Lane 1 (v3.176, f98dc82) flipped the
+Logged-out column to 13 hard (rows 4·5·7·8·9·18 + copy on 10), added #arc/<id>'s
+empty state, and made #profile's social-fetch graceful — L2/L3 front-end DONE;
+Lane 2 (commons-open) deferred as an auth-required rules change. Next full
+refresh: the census delta before the audit charter freezes.*
