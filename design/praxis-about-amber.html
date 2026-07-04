@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praxis — About · Amber (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═════ AMBER / LUMEN TOKENS (build maps to lumen-amber.css / theme.css) ═════ */
+:root{
+  --base:#241406;
+  --base-grad:radial-gradient(110% 80% at 22% 8%, #482e13 0%, #341f0c 45%, #221305 100%);
+  --ember-grad:radial-gradient(120% 90% at 72% 0%, rgba(220,150,48,.18) 0%, rgba(220,150,48,0) 55%),
+               radial-gradient(140% 110% at 88% 100%, rgba(39,86,106,.15) 0%, rgba(39,86,106,0) 60%);
+  --grad:linear-gradient(92deg,#d2a23e,#2e8a93);
+  --pane:rgba(255,238,200,.06);
+  --pane-2:rgba(255,238,200,.11);
+  --pane-line:rgba(255,206,74,.22);
+  --pane-line-2:rgba(255,206,74,.45);
+  --gold:#ffce4a; --gold-soft:#e7c46a; --gold-dim:rgba(255,206,74,.5); --gold-deep:#b8841f;
+  --cyan:#7fd0f0; --cyan-dim:rgba(127,208,240,.55);
+  --lit:#f6ecd6; --lit-2:#cdbb92; --lit-3:#9a8660;
+  --page:#f8f1e1; --page-2:#fcf6e8;
+  --ink:#241710; --ink-2:#4d3b2a; --meta:#9a7e4e;
+  --teal:#2e8a93; --journal:#7d6db0;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--base);background-image:var(--ember-grad),var(--base-grad);background-attachment:fixed;color:var(--lit);font-weight:300;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(255,206,74,.25)}
+button{font-family:inherit}
+:focus-visible{outline:1.5px solid var(--cyan-dim);outline-offset:3px;border-radius:8px}
+
+.wrap{max-width:640px;margin:0 auto;padding:64px 24px 90px}
+
+/* reveal */
+.a{opacity:0;transform:translateY(14px);animation:up .7s cubic-bezier(.22,.8,.28,1) forwards}
+.a1{animation-delay:.05s}.a2{animation-delay:.16s}.a3{animation-delay:.28s}
+@keyframes up{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.a{animation:none;opacity:1;transform:none}.markpulse{animation:none !important}}
+
+/* ═════ HERO ═════ */
+.hero{text-align:center;padding-bottom:52px}
+.appmark{width:96px;height:96px;margin:0 auto 28px;border-radius:24px;background:var(--pane-2);border:1px solid var(--pane-line-2);box-shadow:inset 0 1px 0 rgba(255,238,200,.14),0 18px 50px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+.markpulse{animation:breathe 5.5s ease-in-out infinite;transform-origin:center;filter:drop-shadow(0 0 8px rgba(255,206,74,.55))}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,8vw,52px);letter-spacing:-.015em;line-height:1.04;color:var(--lit)}
+.hero h1 em{font-style:italic;font-weight:500;color:var(--gold-soft)}
+.hero .lede{max-width:420px;margin:16px auto 0;font-size:16.5px;line-height:1.6;color:var(--lit-2)}
+
+/* ═════ SECTIONS ═════ */
+.sect{padding:44px 0;border-top:1px solid rgba(255,206,74,.12)}
+.sk{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:14px}
+.sect h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,5vw,32px);letter-spacing:-.012em;line-height:1.12;color:var(--lit);margin-bottom:14px}
+.sect h2 em{font-style:italic;font-weight:500;color:var(--gold-soft)}
+.sect p{font-size:15px;line-height:1.75;color:var(--lit-2);max-width:56ch}
+.sect p + p{margin-top:14px}
+.pull{margin:26px 0 4px;padding-left:18px;border-left:2px solid var(--gold-dim);font-family:var(--serif);font-style:italic;font-size:20px;line-height:1.5;color:var(--gold-soft)}
+.pull .who{display:block;margin-top:8px;font-family:var(--mono);font-style:normal;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--lit-3)}
+
+/* covenant rows (v5 feature-row pattern) */
+.featrows{margin-top:26px;display:flex;flex-direction:column;gap:24px}
+.featrow{display:flex;gap:16px;align-items:flex-start}
+.fico{flex:none;width:44px;height:44px;border-radius:12px;background:var(--pane);border:1px solid var(--pane-line);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,238,200,.1)}
+.fico svg{width:22px;height:22px;stroke:var(--gold);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.featrow .ft{font-size:15px;font-weight:600;color:var(--lit);letter-spacing:-.01em}
+.featrow .fd{font-size:13.5px;line-height:1.6;color:var(--lit-3);margin-top:3px}
+.featrow .fd i{font-family:var(--serif);color:var(--cyan);font-size:14px}
+
+/* refusals */
+.refuse{margin-top:22px;display:flex;flex-direction:column;gap:12px}
+.ref{display:flex;gap:13px;align-items:baseline;background:var(--pane);border:1px solid var(--pane-line);border-radius:14px;padding:13px 17px;box-shadow:inset 0 1px 0 rgba(255,238,200,.06)}
+.ref .no{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);flex:none}
+.ref .rt{font-size:13.5px;line-height:1.55;color:var(--lit-2)}
+.ref .rt b{color:var(--lit);font-weight:600}
+
+/* lexicon */
+.lex{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lexi{background:var(--pane);border:1px solid var(--pane-line);border-radius:14px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,238,200,.06)}
+.lexi dt{font-family:var(--serif);font-style:italic;font-weight:500;font-size:17px;color:var(--gold-soft)}
+.lexi dd{margin-top:5px;font-size:12.5px;line-height:1.55;color:var(--lit-3)}
+.lexi.yu dt{color:var(--cyan)}
+.lexi.yu{border-color:rgba(127,208,240,.3)}
+
+/* ═════ ORIENTATION (bright parchment card — carried from v5 mode 3) ═════ */
+.about-page{background:linear-gradient(170deg,var(--page-2),var(--page));color:var(--ink);border-radius:22px;border:1px solid rgba(154,126,78,.35);padding:30px 30px 24px;margin-top:26px;box-shadow:0 20px 55px rgba(0,0,0,.35)}
+.about-page .ap-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--meta);margin-bottom:10px}
+.about-page h3{font-family:var(--serif);font-weight:600;font-size:26px;color:var(--ink);margin-bottom:6px;letter-spacing:-.012em}
+.about-page .ap-sub{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin-bottom:20px}
+.retake{display:inline-block;margin-bottom:18px;padding:11px 24px;border-radius:12px;border:1px solid rgba(154,126,78,.4);background:var(--grad);color:#fdf8ec;font-size:14px;font-weight:600;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,238,200,.25)}
+.acc{border-top:1px solid rgba(154,126,78,.3)}
+.acc-item{border-bottom:1px solid rgba(154,126,78,.3)}
+.acc-head{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:none;cursor:pointer;padding:14px 2px;text-align:left}
+.acc-head .t{font-family:var(--serif);font-weight:500;font-size:17.5px;color:var(--ink)}
+.acc-head .g{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--meta)}
+.acc-head .chev{color:var(--meta);transition:transform .3s;font-size:12px}
+.acc-item.open .chev{transform:rotate(90deg)}
+.acc-body{display:none;padding:2px 2px 16px;font-size:13.5px;line-height:1.7;color:var(--ink-2)}
+.acc-item.open .acc-body{display:block}
+.acc-body .eg{font-family:var(--serif);font-style:italic;color:var(--teal);margin-top:8px}
+.newflag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--gold-deep);border:1px solid rgba(184,132,31,.45);border-radius:99px;padding:2px 8px;vertical-align:2px;margin-left:8px}
+
+/* ═════ CONCEPT MODELS (cream cards in the live-About model language) ═════ */
+.model{background:linear-gradient(170deg,var(--page-2),var(--page));border:1px solid rgba(154,126,78,.35);border-radius:20px;padding:24px 18px;margin-top:24px;box-shadow:0 16px 45px rgba(0,0,0,.3)}
+.model svg{display:block;width:100%;height:auto}
+.model-cap{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--lit-3);text-align:center;margin-top:12px;line-height:1.65;max-width:56ch;margin-left:auto;margin-right:auto}
+.model-cap b{color:var(--gold-soft);font-weight:500}
+.mtoggle{display:flex;justify-content:center;margin-top:26px}
+.mtoggle .pillbox{display:flex;gap:4px;background:var(--pane);border:1px solid var(--pane-line);border-radius:99px;padding:4px}
+.mtog{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:8px 18px;border-radius:99px;border:none;background:none;color:var(--lit-3);cursor:pointer;transition:all .25s}
+.mtog.on{background:var(--page);color:var(--ink)}
+.pipe .stn,.evo .stn{cursor:pointer}
+.pipe .stn circle{fill:rgba(255,255,255,.85);stroke:rgba(36,23,16,.45);stroke-width:1.2;transition:fill .25s,stroke .25s}
+.pipe .stn.on circle{fill:#b8841f;stroke:#b8841f}
+.model text{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;fill:#6b5a3e;text-anchor:middle}
+.pipe .stn.on text{fill:#241710}
+.model .serifc{font-family:var(--serif);font-style:italic;font-size:16px;letter-spacing:0}
+.evo .stn{transition:opacity .3s}
+.evo.sel .stn{opacity:.4}
+.evo.sel .stn.on{opacity:1}
+.evo.sel .stn.on text{fill:#241710}
+.sect p b{color:var(--lit);font-weight:600}
+
+/* colophon */
+.colo{padding-top:40px;text-align:center}
+.colo .line{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--lit-3)}
+.colo .vow{margin-top:10px;font-family:var(--serif);font-style:italic;font-size:16px;color:var(--gold-soft)}
+
+@media (max-width:759px){
+  .wrap{padding:44px 18px 70px}
+  .lex{grid-template-columns:1fr}
+  .about-page{padding:24px 18px 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="appmark a a1">
+      <svg width="56" height="56" viewBox="0 0 60 60"><g class="markpulse">
+        <line x1="16" y1="38" x2="30" y2="18" stroke="rgba(255,206,74,.5)" stroke-width="1"/>
+        <line x1="30" y1="18" x2="46" y2="34" stroke="rgba(255,206,74,.5)" stroke-width="1"/>
+        <line x1="30" y1="18" x2="34" y2="44" stroke="rgba(127,208,240,.55)" stroke-width="1"/>
+        <circle cx="16" cy="38" r="5" fill="#ffce4a"/>
+        <rect x="26" y="14" width="9" height="9" rx="2" transform="rotate(45 30.5 18.5)" fill="#ffce4a"/>
+        <circle cx="46" cy="34" r="6" fill="#ffce4a"/>
+        <circle cx="34" cy="44" r="4" fill="#7fd0f0"/>
+      </g></svg>
+    </div>
+    <h1 class="a a2">A place to read like it <em>matters</em>.</h1>
+    <p class="lede a a3">Praxis holds your books, your margins, and the theories they grow into —
+    built on the belief that reading is thinking, and thinking deserves a home.</p>
+  </header>
+
+  <!-- WHAT PRAXIS IS -->
+  <section class="sect">
+    <div class="sk">What Praxis is</div>
+    <h2>Knowledge made <em>with</em> you.</h2>
+    <p>Most reading apps file what you read. Praxis is built for what reading does to you —
+    the note that argues back, the thread between two books that only you can see, the
+    conviction that hardens into theory. Here your marginalia are not exhaust; they are
+    the raw material of your own thought, gathered, connected, and eventually walked by others.</p>
+    <div class="model evo">
+      <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The evolution of reading: the book, the margin, reflection, Praxis">
+        <defs><marker id="ah7" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <line x1="128" y1="120" x2="216" y2="104" stroke="rgba(36,23,16,.45)" stroke-width="1.2" marker-end="url(#ah7)"/>
+        <line x1="282" y1="98" x2="372" y2="82" stroke="rgba(36,23,16,.45)" stroke-width="1.2" marker-end="url(#ah7)"/>
+        <line x1="440" y1="72" x2="534" y2="58" stroke="rgba(36,23,16,.45)" stroke-width="1.2" marker-end="url(#ah7)"/>
+        <g class="stn on" data-e="0">
+          <path d="M64 126 Q77 118 90 125 Q103 118 116 126 L116 140 Q103 133 90 139 Q77 133 64 140 Z" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+          <line x1="90" y1="125" x2="90" y2="139" stroke="rgba(36,23,16,.35)" stroke-width="1"/>
+          <text x="90" y="162">THE BOOK</text>
+        </g>
+        <g class="stn" data-e="1">
+          <rect x="232" y="84" width="26" height="38" rx="3" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+          <line x1="238" y1="94" x2="250" y2="94" stroke="rgba(36,23,16,.35)" stroke-width="1.2"/>
+          <line x1="238" y1="101" x2="250" y2="101" stroke="rgba(36,23,16,.35)" stroke-width="1.2"/>
+          <line x1="238" y1="108" x2="250" y2="108" stroke="rgba(36,23,16,.35)" stroke-width="1.2"/>
+          <line x1="264" y1="94" x2="272" y2="94" stroke="#b8841f" stroke-width="1.6"/>
+          <line x1="264" y1="102" x2="272" y2="102" stroke="#b8841f" stroke-width="1.6"/>
+          <text x="250" y="162">THE MARGIN</text>
+        </g>
+        <g class="stn" data-e="2">
+          <path d="M410 60 A18 18 0 1 1 392 78" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah7)"/>
+          <path d="M410 96 A18 18 0 1 1 428 78" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah7)"/>
+          <text x="410" y="162">REFLECTION</text>
+        </g>
+        <g class="stn" data-e="3">
+          <line x1="556" y1="64" x2="572" y2="44" stroke="rgba(184,132,31,.6)" stroke-width="1"/>
+          <line x1="572" y1="44" x2="586" y2="60" stroke="rgba(184,132,31,.6)" stroke-width="1"/>
+          <line x1="572" y1="44" x2="578" y2="68" stroke="#2e8a93" stroke-width="1"/>
+          <circle cx="556" cy="64" r="5" fill="#b8841f"/>
+          <rect x="566" y="38" width="12" height="12" rx="2" transform="rotate(45 572 44)" fill="#b8841f"/>
+          <circle cx="586" cy="60" r="5" fill="#b8841f"/>
+          <circle cx="578" cy="68" r="4" fill="#2e8a93"/>
+          <text x="570" y="162" fill="#b8841f">PRAXIS</text>
+        </g>
+      </svg>
+    </div>
+    <div class="model-cap" id="evocap">Readers have always worked this way — Praxis is the <b>next station</b>. Tap one.</div>
+    <p>The whole app is one pipeline: you read, you mark, the margin becomes a note, notes
+    gather into sub-theories, sub-theories thread into an arc, and an arc — when it is ready —
+    steps into the commons to be walked. Every surface exists to move thought one station
+    down that line. Nothing here is decoration.</p>
+    <div class="model pipe">
+      <svg viewBox="0 0 640 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The pipeline: read, mark, note, sub-theory, arc, commons">
+        <line x1="60" y1="44" x2="580" y2="44" stroke="rgba(36,23,16,.3)" stroke-width="1.2"/>
+        <path d="M107 39 L116 44 L107 49 Z" fill="rgba(36,23,16,.4)"/>
+        <path d="M211 39 L220 44 L211 49 Z" fill="rgba(36,23,16,.4)"/>
+        <path d="M315 39 L324 44 L315 49 Z" fill="rgba(36,23,16,.4)"/>
+        <path d="M419 39 L428 44 L419 49 Z" fill="rgba(36,23,16,.4)"/>
+        <path d="M523 39 L532 44 L523 49 Z" fill="rgba(36,23,16,.4)"/>
+        <g class="stn on" data-i="0"><circle cx="60" cy="44" r="14"/><text x="60" y="78">READ</text></g>
+        <g class="stn" data-i="1"><circle cx="164" cy="44" r="14"/><text x="164" y="78">MARK</text></g>
+        <g class="stn" data-i="2"><circle cx="268" cy="44" r="14"/><text x="268" y="78">NOTE</text></g>
+        <g class="stn" data-i="3"><circle cx="372" cy="44" r="14"/><text x="372" y="78">SUB-THEORY</text></g>
+        <g class="stn" data-i="4"><circle cx="476" cy="44" r="14"/><text x="476" y="78">ARC</text></g>
+        <g class="stn" data-i="5"><circle cx="580" cy="44" r="14"/><text x="580" y="78">COMMONS</text></g>
+      </svg>
+    </div>
+    <div class="model-cap" id="pipecap">The <b>pipeline</b> — every surface exists to move thought one station down this line. Tap a station.</div>
+    <p>(Build note: this page carries five models — the evolution of reading, the pipeline,
+    praxis ⇄ pedagogy, banking ⇄ problem-posing, and applause ⇄ consequence. The live page's two
+    original models are superseded by the evolved versions here; live doctrinal prose is preserved
+    verbatim wherever it exists.)</p>
+    <div class="pull">Reflection and action upon the world in order to transform it.
+      <span class="who">Paulo Freire · the word this app is named for</span></div>
+    <div class="mtoggle"><div class="pillbox">
+      <button class="mtog on" data-m="px">Praxis</button>
+      <button class="mtog" data-m="pd">Pedagogy</button>
+    </div></div>
+    <div class="model">
+      <svg id="m-px" viewBox="0 0 640 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Praxis: reflection and action, one turning, theory lived at the center">
+        <defs><marker id="ah3" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <path d="M316 90 C 262 18, 132 30, 130 95 C 132 160, 262 172, 316 100" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah3)"/>
+        <path d="M324 100 C 378 172, 508 160, 510 95 C 508 30, 378 18, 324 90" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah3)"/>
+        <text x="210" y="99">REFLECTION</text>
+        <text x="430" y="99">ACTION</text>
+        <circle cx="320" cy="95" r="27" fill="rgba(255,255,255,.92)" stroke="#b8841f" stroke-width="1.4"/>
+        <text x="320" y="92" class="serifc" style="font-size:14px">praxis</text>
+        <text x="320" y="110" style="font-size:8px">THEORY LIVED</text>
+      </svg>
+      <svg id="m-pd" viewBox="0 0 640 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pedagogy: teacher and learner overlapping, meaning co-created" style="display:none">
+        <defs><marker id="ah4" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <circle cx="252" cy="95" r="72" fill="rgba(255,255,255,.5)" stroke="rgba(36,23,16,.4)" stroke-width="1.2"/>
+        <circle cx="388" cy="95" r="72" fill="rgba(255,255,255,.5)" stroke="rgba(36,23,16,.4)" stroke-width="1.2"/>
+        <path d="M262 18 Q320 0 378 18" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah4)"/>
+        <path d="M378 172 Q320 190 262 172" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah4)"/>
+        <text x="200" y="99">TEACHER</text>
+        <text x="440" y="99">LEARNER</text>
+        <text x="320" y="92" class="serifc" style="font-size:15px">meaning</text>
+        <text x="320" y="110" style="font-size:8px">CO-CREATED</text>
+      </svg>
+    </div>
+    <div class="model-cap" id="pxcap"><b>Praxis</b> — reflection and action, one turning. Theory lived.</div>
+  </section>
+
+  <!-- CRITICAL PEDAGOGY -->
+  <section class="sect">
+    <div class="sk">Critical pedagogy</div>
+    <h2>You are not an empty <em>account</em>.</h2>
+    <div class="pull" style="margin-top:6px">Education is never neutral. How we learn — and who gets to make meaning — is always a question of power.</div>
+    <p>It runs through <b>Paulo Freire</b>, <b>bell hooks</b>, and <b>Audre Lorde</b>, among others.
+    Freire named the "banking" model — where a teacher deposits facts into a student treated as an
+    empty account — and set against it a <b>problem-posing</b> education, where teacher and learner
+    make knowledge together, beginning from the learner's own world. hooks insisted this could be
+    done with love, as a practice of freedom. Lorde reminded us that the master's tools will never
+    dismantle the master's house.</p>
+    <p>Praxis is built in that lineage.</p>
+    <div class="mtoggle"><div class="pillbox">
+      <button class="mtog on" data-m="bk">Banking</button>
+      <button class="mtog" data-m="pp">Problem-posing</button>
+    </div></div>
+    <div class="model">
+      <svg id="m-bk" viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The banking model: teacher deposits facts into a student treated as an empty account">
+        <defs><marker id="ah5" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <circle cx="120" cy="72" r="30" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <line x1="106" y1="63" x2="134" y2="63" stroke="#b8841f" stroke-width="2.4"/>
+        <line x1="106" y1="72" x2="134" y2="72" stroke="#b8841f" stroke-width="2.4"/>
+        <line x1="106" y1="81" x2="134" y2="81" stroke="#b8841f" stroke-width="2.4"/>
+        <text x="290" y="40">"FACTS" DEPOSITED</text>
+        <line x1="158" y1="72" x2="415" y2="72" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah5)"/>
+        <circle cx="215" cy="72" r="7" fill="rgba(184,132,31,.75)"/>
+        <circle cx="275" cy="72" r="7" fill="rgba(184,132,31,.75)"/>
+        <circle cx="335" cy="72" r="7" fill="rgba(184,132,31,.75)"/>
+        <path d="M436 44 L436 88 A26 26 0 0 0 488 88 L488 44" fill="rgba(255,255,255,.6)" stroke="rgba(36,23,16,.45)" stroke-width="1.3"/>
+        <text x="120" y="126">TEACHER</text>
+        <text x="120" y="143" class="serifc" style="font-size:12px">the one who knows</text>
+        <text x="462" y="126">STUDENT</text>
+        <text x="462" y="143" class="serifc" style="font-size:12px">an empty account</text>
+      </svg>
+      <svg id="m-pp" viewBox="0 0 640 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Problem-posing: teacher and learner face the world together" style="display:none">
+        <defs><marker id="ah6" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <circle cx="170" cy="58" r="22" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <circle cx="170" cy="132" r="22" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <line x1="170" y1="84" x2="170" y2="106" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <line x1="177" y1="106" x2="177" y2="84" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <line x1="196" y1="62" x2="352" y2="86" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <line x1="352" y1="96" x2="196" y2="72" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <line x1="196" y1="126" x2="352" y2="102" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <line x1="352" y1="112" x2="196" y2="136" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah6)"/>
+        <rect x="365" y="70" width="50" height="50" rx="6" transform="rotate(45 390 95)" fill="rgba(255,255,255,.85)" stroke="#b8841f" stroke-width="1.4"/>
+        <text x="390" y="101" class="serifc" style="font-size:18px">?</text>
+        <text x="170" y="24">TEACHER</text>
+        <text x="170" y="176">LEARNER</text>
+        <text x="390" y="164">THE WORLD · THE PROBLEM</text>
+      </svg>
+    </div>
+    <div class="model-cap" id="bkcap">The <b>banking</b> model — knowledge flows one way: the teacher deposits, the student receives.</div>
+  </section>
+
+  <!-- THE COVENANT -->
+  <section class="sect">
+    <div class="sk">The covenant</div>
+    <h2>Nothing <em>hidden</em>.</h2>
+    <div class="featrows">
+      <div class="featrow"><div class="fico"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+        <div><div class="ft">Yumi sees only what you allow</div><div class="fd">Listed plainly on <i>What Yumi Sees</i> — always current, always yours to change.</div></div></div>
+      <div class="featrow"><div class="fico"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <div><div class="ft">Memory is yours to grant</div><div class="fd">Off until you turn it on. Readable, correctable, endable.</div></div></div>
+      <div class="featrow"><div class="fico"><svg viewBox="0 0 24 24"><path d="M5 7h6v6H7a4 4 0 0 0 4 4"/><path d="M13 7h6v6h-4a4 4 0 0 0 4 4"/></svg></div>
+        <div><div class="ft">Your words stay yours</div><div class="fd">Yumi quotes you; she never replaces you. An interlocutor, not an authority.</div></div></div>
+    </div>
+  </section>
+
+  <!-- WHAT IT REFUSES -->
+  <section class="sect">
+    <div class="sk">What it refuses to become</div>
+    <h2>No counts that <em>flatter</em>.</h2>
+    <div class="refuse">
+      <div class="ref"><span class="no">no·1</span><span class="rt"><b>No feed.</b> Home is a desk, not a stream. Nothing scrolls forever.</span></div>
+      <div class="ref"><span class="no">no·2</span><span class="rt"><b>No likes, no ranks.</b> Thought travels by consequence — walked, questioned, built on — never by applause.</span></div>
+      <div class="ref"><span class="no">no·3</span><span class="rt"><b>No harvesting.</b> Your reading is not a product. What the app knows, you can read; what it remembers, you granted.</span></div>
+      <div class="ref"><span class="no">no·4</span><span class="rt"><b>No ghostwriting.</b> Yumi asks more than she answers. The theory that leaves this place is yours.</span></div>
+    </div>
+    <div class="mtoggle"><div class="pillbox">
+      <button class="mtog on" data-m="ap">Applause</button>
+      <button class="mtog" data-m="cq">Consequence</button>
+    </div></div>
+    <div class="model cq">
+      <svg id="m-ap" viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The applause model: one-way, then nothing">
+        <defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker></defs>
+        <circle cx="110" cy="66" r="28" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <text x="110" y="112">YOUR ARC</text>
+        <line x1="142" y1="66" x2="304" y2="66" stroke="rgba(36,23,16,.5)" stroke-width="1.2" marker-end="url(#ah)"/>
+        <rect x="314" y="44" width="118" height="44" rx="14" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <text x="373" y="71" style="font-size:13px">♡ 1,024</text>
+        <line x1="436" y1="66" x2="556" y2="66" stroke="rgba(36,23,16,.4)" stroke-width="1.2" stroke-dasharray="3 6"/>
+        <text x="575" y="71" style="font-size:15px" fill="rgba(36,23,16,.45)">×</text>
+        <text x="510" y="112">THEN NOTHING</text>
+      </svg>
+      <svg id="m-cq" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The consequence loop: published, walked, built on, returns to you" style="display:none">
+        <defs>
+          <marker id="ah2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="rgba(36,23,16,.5)"/></marker>
+          <marker id="aht2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="#2e8a93"/></marker>
+        </defs>
+        <path d="M336 46 Q 470 52 508 88" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah2)"/>
+        <path d="M508 112 Q 470 148 336 154" fill="none" stroke="rgba(36,23,16,.5)" stroke-width="1.3" marker-end="url(#ah2)"/>
+        <path d="M304 154 Q 170 148 130 114" fill="none" stroke="#2e8a93" stroke-width="1.3" marker-end="url(#aht2)"/>
+        <path d="M128 86 Q 170 48 304 42" fill="none" stroke="#2e8a93" stroke-width="1.3" marker-end="url(#aht2)"/>
+        <circle cx="320" cy="42" r="13" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <circle cx="515" cy="100" r="13" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <circle cx="320" cy="158" r="13" fill="rgba(255,255,255,.85)" stroke="rgba(36,23,16,.45)" stroke-width="1.2"/>
+        <circle cx="120" cy="100" r="15" fill="rgba(255,255,255,.9)" stroke="#2e8a93" stroke-width="1.6"/>
+        <text x="320" y="22">PUBLISHED</text>
+        <text x="552" y="138">WALKED</text>
+        <text x="320" y="190">QUESTIONED · BUILT ON</text>
+        <text x="106" y="138" fill="#2e8a93">RETURNS TO YOU</text>
+        <text x="320" y="106" class="serifc">consequence</text>
+      </svg>
+    </div>
+    <div class="model-cap" id="cqcap">The <b>applause</b> model — a count that flatters, travels one way, and ends there.</div>
+  </section>
+
+  <!-- LEXICON -->
+  <section class="sect">
+    <div class="sk">The lexicon</div>
+    <h2>The words this place <em>uses</em>.</h2>
+    <dl class="lex">
+      <div class="lexi"><dt>praxis</dt><dd>Reflection and action, together — Freire's word for reading that intends to change something. Not study for its own sake; study that returns to the world.</dd></div>
+      <div class="lexi"><dt>mark</dt><dd>The symbol a sub-theory wears — its face in the field. Chosen once from the shape-and-color vocabulary, then kept for life, so a thought stays recognizable as it grows.</dd></div>
+      <div class="lexi"><dt>arc</dt><dd>A body of thought under construction — the sub-theories it holds, the threads between them, and the books that feed it. An arc is where reading becomes a position.</dd></div>
+      <div class="lexi"><dt>sub-theory</dt><dd>One claim you are building — small enough to test against a page, real enough to defend in public. Arcs are made of these.</dd></div>
+      <div class="lexi"><dt>thread</dt><dd>A drawn connection between two sub-theories — the visible line of reasoning. Threads carry the flow of an arc; they are how an argument holds together.</dd></div>
+      <div class="lexi"><dt>register</dt><dd>What kind of note a note is. Marginalia sits beside the text and argues with it; journal sits beside your life and remembers why the text mattered. Same margin, different work.</dd></div>
+      <div class="lexi"><dt>lens</dt><dd>An idea your whole shelf regroups around — care, power, method — so the same books answer a different question. A lens changes what your library is for without changing what it holds.</dd></div>
+      <div class="lexi"><dt>maturity</dt><dd>How far a sub-theory has come — shown as glow in the field, never as a percentage. Thought ripens; it doesn't fill a progress bar.</dd></div>
+      <div class="lexi"><dt>concentrate</dt><dd>Tapping one mark in the field to bring it forward — its threads light, the rest dims. Attention as a gesture.</dd></div>
+      <div class="lexi"><dt>walk</dt><dd>Reading another person's arc the way it was built — thread by thread, in their order, at their pace. To walk an arc is to think alongside its author.</dd></div>
+      <div class="lexi"><dt>build-on</dt><dd>What you make in answer to someone's arc — an extension, an objection, a question that sticks. Build-ons travel back to the author: consequence, not applause.</dd></div>
+      <div class="lexi"><dt>the commons</dt><dd>Where published arcs live — walked, questioned, and built on by other readers. Thought moves here by what it sets in motion, never by counts.</dd></div>
+      <div class="lexi"><dt>the field</dt><dd>An arc's interior — every sub-theory lit as its mark, arranged by your hand, threads carrying the flow. The shape is yours; Praxis never tidies uninvited.</dd></div>
+      <div class="lexi"><dt>the portrait</dt><dd>Your account page — an instrument, not a mirror. Where your reading has been and what it keeps reaching for, drawn so you can ask it questions.</dd></div>
+      <div class="lexi yu"><dt>Yumi · 由美</dt><dd>"Reasoned beauty." A second mind, on request — she reads along only where you allow it, asks more than she answers, and never writes your thoughts for you. Not a tooltip, not a ghostwriter.</dd></div>
+    </dl>
+  </section>
+
+  <!-- ORIENTATION (bright card, single-sourced from INTROS) -->
+  <section class="sect">
+    <div class="sk">Orientation</div>
+    <h2>Learn any room <em>again</em>.</h2>
+    <p>Everything the app told you on first visit lives here permanently — including the guided
+    first walk, retakeable in full.</p>
+    <div class="about-page">
+      <div class="ap-kicker">About · Orientation</div>
+      <h3>Every room, re-readable</h3>
+      <p class="ap-sub">Renders from the same single source as the in-app panels — nothing is shown once and lost.</p>
+      <button class="retake">Retake the first walk</button>
+      <div class="acc" id="accordion"></div>
+    </div>
+  </section>
+
+  <!-- COLOPHON -->
+  <footer class="colo">
+    <div class="line">praxis · the covenant holds · version stamped at build</div>
+    <div class="vow">Built by a reader, for readers.</div>
+  </footer>
+
+</div>
+
+<script>
+/* Orientation accordion — in the build this reads the SAME INTROS as the panels (window.Intros). */
+var INTROS=[
+  {id:'home',title:'Where today gathers',body:'Home holds what is alive right now — the book you are inside, the last note you left, the thread you were following. It is a desk, not a feed.',eg:'Yesterday you marked Freire on "banking education." Home remembers so you don\u2019t have to.'},
+  {id:'shelf',title:'The shelf is the spine',body:'Every book you gather lives here — reading, read, still waiting. Group them by lens or by category; the shelf bends to how you actually think.',eg:'Pedagogy of the Oppressed sits beside Teaching to Transgress — as it should.'},
+  {id:'notebook',title:'Margins, kept',body:'Photograph a page, speak a thought, or paste a passage — every note keeps its register: marginalia beside the text, journal beside your life.',eg:'Your two-highlighter method survives here: the passage in gold, your objection in teal.'},
+  {id:'yumi',title:'A second mind, on request',body:'Yumi — 由美, "reasoned beauty" — reads along only where you allow it. She asks before she answers, and she never writes your thoughts for you.',eg:'"You underlined this twice — what is it defending you from?"'},
+  {id:'sees',title:'What Yumi sees',body:'The covenant, kept visible: this page lists exactly what Yumi can read — nothing more.',eg:'Nothing here is hidden from you.'},
+  {id:'memory',title:'Memory is yours to grant',body:'If you choose, Yumi keeps a reader\u2019s model — the questions you circle, the thinkers you return to. Off by default. Yours to end.',eg:'Consent is a setting, not a speech.'},
+  {id:'lenses',title:'Lenses',body:'A lens regroups your whole shelf around an idea — care, power, method — so the same books answer a different question.',eg:'Under the lens "love as practice," bell hooks moves to the center.'},
+  {id:'account',title:'A portrait, not a scoreboard',body:'Your account is an instrument: where your reading has been, what it keeps reaching for.',eg:'It measures nothing and ranks no one.'},
+  {id:'about',title:'The long version',body:'What Praxis is, what it refuses to become, and this orientation — re-readable forever.',eg:'You are reading it right now.'},
+  {id:'field',title:'The living field',body:'Inside an arc, every sub-theory is a lit mark you arrange by hand. Threads carry the flow; tap one to concentrate.',eg:'Maturity shows as glow, never as a percentage.'},
+  {id:'search',title:'Search everything you\u2019ve gathered',body:'One search across books, arcs, sub-theories, and notes — your own thought, findable.',eg:'"banking" finds Freire\u2019s passage and the night you argued with it.'},
+  {id:'commons',title:'The commons',body:'Publish an arc when it is ready to be walked. Walk other readers\u2019 arcs; build on what holds.',eg:'Thought travels by consequence, not applause.'}
+];
+(function(){
+  var h='',i;
+  h+='<div class="acc-item"><button class="acc-head"><span class="t">The first walk<span class="newflag">retake</span></span><span class="g">guided · <span class="chev">›</span></span></button>'
+    +'<div class="acc-body">The three-act guided walk from day one — shelf, margin, covenant — retakeable in full, any time.<div class="eg">Doing, not touring.</div></div></div>';
+  for(i=0;i<INTROS.length;i++){
+    var p=INTROS[i];
+    h+='<div class="acc-item"><button class="acc-head"><span class="t">'+p.title+'</span><span class="g">'+p.id+' · <span class="chev">›</span></span></button>'
+      +'<div class="acc-body">'+p.body+'<div class="eg">'+p.eg+'</div></div></div>';
+  }
+  document.getElementById('accordion').innerHTML=h;
+  var heads=document.querySelectorAll('.acc-head'),k;
+  for(k=0;k<heads.length;k++){
+    heads[k].onclick=function(){var it=this.parentNode;it.className=(it.className.match(/open/))?'acc-item':'acc-item open';};
+  }
+})();
+/* concept models */
+(function(){
+  var PIPECAPS=[
+    '<b>READ</b> — the book opens. Everything starts on a page.',
+    '<b>MARK</b> — the margin argues back; a passage is claimed.',
+    '<b>NOTE</b> — the mark becomes language of your own, kept by register.',
+    '<b>SUB-THEORY</b> — notes gather into one claim you are building.',
+    '<b>ARC</b> — claims thread into a body of thought.',
+    '<b>COMMONS</b> — the arc steps out to be walked and built on.'
+  ];
+  var stns=document.querySelectorAll('.pipe .stn'),i;
+  for(i=0;i<stns.length;i++){
+    stns[i].onclick=function(){
+      var all=document.querySelectorAll('.pipe .stn'),k;
+      for(k=0;k<all.length;k++){all[k].setAttribute('class','stn');}
+      this.setAttribute('class','stn on');
+      document.getElementById('pipecap').innerHTML=PIPECAPS[parseInt(this.getAttribute('data-i'),10)];
+    };
+  }
+  var CCAP={
+    ap:'The <b>applause</b> model — a count that flatters, travels one way, and ends there.',
+    cq:'<b>Consequence</b> — what your thinking set in motion returns to shape it. The loop closes on you.'
+  };
+  var togs=document.querySelectorAll('.mtog');
+  for(i=0;i<togs.length;i++){
+    togs[i].onclick=function(){
+      var all=document.querySelectorAll('.mtog'),k;
+      for(k=0;k<all.length;k++){all[k].className='mtog';}
+      this.className='mtog on';
+      var m=this.getAttribute('data-m');
+      document.getElementById('m-ap').style.display=(m==='ap')?'block':'none';
+      document.getElementById('m-cq').style.display=(m==='cq')?'block':'none';
+      document.getElementById('cqcap').innerHTML=CCAP[m];
+    };
+  }
+})();
+/* evolution stations + scoped toggle groups */
+(function(){
+  var EVOCAPS=[
+    '<b>THE BOOK</b> — reading: the conversation begins.',
+    '<b>THE MARGIN</b> — notes on the book: you answer back.',
+    '<b>REFLECTION</b> — the journal: the book meets your life.',
+    '<b>PRAXIS</b> — the next step: reflection becomes theory, and theory is threaded, walked, and built on.'
+  ];
+  var evns=document.querySelectorAll('.evo .stn'),i;
+  for(i=0;i<evns.length;i++){
+    evns[i].onclick=function(){
+      var model=document.querySelector('.model.evo');
+      model.setAttribute('class','model evo sel');
+      var all=document.querySelectorAll('.evo .stn'),k;
+      for(k=0;k<all.length;k++){all[k].setAttribute('class','stn');}
+      this.setAttribute('class','stn on');
+      document.getElementById('evocap').innerHTML=EVOCAPS[parseInt(this.getAttribute('data-e'),10)];
+    };
+  }
+  var GROUPS=[
+    {a:'ap',b:'cq',sa:'m-ap',sb:'m-cq',cap:'cqcap',
+     ta:'The <b>applause</b> model — a count that flatters, travels one way, and ends there.',
+     tb:'<b>Consequence</b> — what your thinking set in motion returns to shape it. The loop closes on you.'},
+    {a:'px',b:'pd',sa:'m-px',sb:'m-pd',cap:'pxcap',
+     ta:'<b>Praxis</b> — reflection and action, one turning. Theory lived.',
+     tb:'<b>Pedagogy</b> — the art and science of co-creating meaning. Never a deposit; always a making.'},
+    {a:'bk',b:'pp',sa:'m-bk',sb:'m-pp',cap:'bkcap',
+     ta:'The <b>banking</b> model — knowledge flows one way: the teacher deposits, the student receives.',
+     tb:'<b>Problem-posing</b> — teacher and learner face the world together. Knowledge is made, not deposited.'}
+  ];
+  function bind(g){
+    var ba=document.querySelector('[data-m="'+g.a+'"]'),bb=document.querySelector('[data-m="'+g.b+'"]');
+    if(!ba||!bb){return;}
+    ba.onclick=function(){ba.className='mtog on';bb.className='mtog';
+      document.getElementById(g.sa).style.display='block';document.getElementById(g.sb).style.display='none';
+      document.getElementById(g.cap).innerHTML=g.ta;};
+    bb.onclick=function(){bb.className='mtog on';ba.className='mtog';
+      document.getElementById(g.sb).style.display='block';document.getElementById(g.sa).style.display='none';
+      document.getElementById(g.cap).innerHTML=g.tb;};
+  }
+  for(i=0;i<GROUPS.length;i++){bind(GROUPS[i]);}
+})();
+</script>
+</body>
+</html>

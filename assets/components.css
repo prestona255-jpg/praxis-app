@@ -9509,243 +9509,154 @@
 }
 
 /* =====================================================================
-   ABOUT PAGE (#about) -- live port of design/about-praxis-mockup.html (@3228aa0).
-   Orientation surface. EVERY rule is scoped under .about (additive; no
-   restyle of any other surface). Color via theme.css tokens only. --font-script
-   is a CJK/Greek fallback declared LOCALLY on this scope so 由美 / πρᾶξις never
-   tofu (Greek also rides --font-serif = Cormorant). Layout dims in px/rem.
-   S1: page shell + hero. Panels / lexicon / infographics / rearm land in S2-S4.
+   ABOUT PAGE (#about) -- W10 Lane A: dark Amber ground + five interactive
+   models (design/praxis-about-amber.html). EVERY rule scoped under .about
+   (additive; no restyle of any other surface). Colour via theme.css /
+   lumen-amber.css tokens; a few documented rgba-of-token washes on the Lumen
+   ground are flagged inline. #about now sits on data-ground="dark"
+   (views.js umberGroundDark), so page chrome uses the ground-sensitive
+   tokens (they resolve light on dark); the five model cards + the Orientation
+   card are BRIGHT cream and either use stable tokens directly (--br-deep /
+   --text-on-dark / --teal / --page) or re-point the ground tokens locally
+   (.orientation) so their reused .about-section / .about-accordion / .intro-*
+   rules read dark-on-cream. --font-script is a local CJK/Greek fallback so
+   由美 never tofus.
    ===================================================================== */
 .about {
   --font-script: 'Cormorant Garamond', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', 'Noto Sans CJK JP', 'Songti SC', 'MS PMincho', serif;
-  max-width: 720px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 8px 24px 96px 24px;
-}
-.about .about-hero {
-  padding: 32px 0 22px 0;
-  text-align: center;
-}
-.about .about-eyebrow {
-  margin: 0 0 18px 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.about .about-title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 600;
-  line-height: 1.02;
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  color: var(--ink);
-}
-.about .about-title em {
-  font-style: italic;
-  color: var(--gold-text);
-}
-.about .about-lede-hero {
-  max-width: 600px;
-  margin: 22px auto 0 auto;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
-  line-height: 1.5;
-  color: var(--ink-2);
+  padding: 64px 24px 90px 24px;
 }
 
-/* ----- S2: hero mark + gold hairline ----- */
-.about .about-hero-mark { display:flex; justify-content:center; line-height:0; margin:0 0 20px 0; }
-.about .hairline-gold { height:1px; border:none; background:color-mix(in srgb, var(--gold) 55%, transparent); }
-.about .about-hero-rule { width:60px; margin:30px auto 0 auto; }
+/* ----- reveal (hero only; reduced-motion resets below) ----- */
+.about .about-reveal { opacity:0; transform:translateY(14px); animation:about-up .7s cubic-bezier(.22,.8,.28,1) forwards; }
+.about .about-reveal-1 { animation-delay:.05s; }
+.about .about-reveal-2 { animation-delay:.16s; }
+.about .about-reveal-3 { animation-delay:.28s; }
+@keyframes about-up { to { opacity:1; transform:none; } }
 
-/* ----- S2: the four explainer sections ----- */
-.about .about-reading { max-width:720px; margin:40px auto 0 auto; }
+/* ----- hero ----- */
+.about .hero { text-align:center; padding-bottom:52px; }
+.about .appmark { width:96px; height:96px; margin:0 auto 28px; border-radius:22px; background:var(--lum-glass); border:1px solid var(--border-2); box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 18px 50px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; }
+.about .markpulse { animation:about-breathe 5.5s ease-in-out infinite; transform-origin:center; filter:drop-shadow(0 0 8px rgba(255,206,74,.55)); } /* rgba = --lum-gold @.55 glow */
+@keyframes about-breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.07); } }
+.about .hero h1 { font-family:var(--font-serif); font-weight:600; font-size:clamp(38px,8vw,52px); letter-spacing:-.015em; line-height:1.04; color:var(--ink); }
+.about .hero h1 em { font-style:italic; font-weight:500; color:var(--gold-soft); }
+.about .hero .lede { max-width:420px; margin:16px auto 0; font-size:16.5px; line-height:1.6; color:var(--ink-2); }
+
+/* ----- sections + prose ----- */
+.about .sect { padding:44px 0; border-top:1px solid rgba(255,206,74,.12); } /* rgba = --lum-gold @.12 hairline */
+.about .sk { font-family:var(--font-mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+.about .sect h2 { font-family:var(--font-serif); font-weight:600; font-size:clamp(26px,5vw,32px); letter-spacing:-.012em; line-height:1.12; color:var(--ink); margin-bottom:14px; }
+.about .sect h2 em { font-style:italic; font-weight:500; color:var(--gold-soft); }
+.about .sect p { font-size:15px; line-height:1.75; color:var(--ink-2); max-width:56ch; }
+.about .sect p + p { margin-top:14px; }
+.about .sect p b { color:var(--ink); font-weight:600; }
+.about .pull { margin:26px 0 4px; padding-left:18px; border-left:2px solid rgba(255,206,74,.5); font-family:var(--font-serif); font-style:italic; font-size:20px; line-height:1.5; color:var(--gold-soft); } /* rgba = --lum-gold @.5 rule */
+.about .pull .who { display:block; margin-top:8px; font-family:var(--font-mono); font-style:normal; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); }
+
+/* ----- covenant feature-rows ----- */
+.about .featrows { margin-top:26px; display:flex; flex-direction:column; gap:24px; }
+.about .featrow { display:flex; gap:16px; align-items:flex-start; }
+.about .fico { flex:none; width:44px; height:44px; border-radius:12px; background:var(--lum-glass); border:1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 0 rgba(255,255,255,.1); }
+.about .fico svg { width:22px; height:22px; stroke:var(--gold); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.about .featrow .ft { font-size:15px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
+.about .featrow .fd { font-size:13.5px; line-height:1.6; color:var(--ink-3); margin-top:3px; }
+.about .featrow .fd i { font-family:var(--font-serif); color:var(--gold-soft); font-size:14px; } /* mockup cyan -> gold-soft (cyan = Yumi's voice only) */
+
+/* ----- refusals ----- */
+.about .refuse { margin-top:22px; display:flex; flex-direction:column; gap:12px; }
+.about .ref { display:flex; gap:13px; align-items:baseline; background:var(--lum-glass); border:1px solid var(--glass-border); border-radius:14px; padding:13px 17px; box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+.about .ref .no { font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); flex:none; }
+.about .ref .rt { font-size:13.5px; line-height:1.55; color:var(--ink-2); }
+.about .ref .rt b { color:var(--ink); font-weight:600; }
+
+/* ----- lexicon grid ----- */
+.about .lex { margin-top:24px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.about .lexi { background:var(--lum-glass); border:1px solid var(--glass-border); border-radius:14px; padding:14px 16px; box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+.about .lexi dt { font-family:var(--font-serif); font-style:italic; font-weight:500; font-size:17px; color:var(--gold-soft); }
+.about .lexi dd { margin-top:5px; font-size:12.5px; line-height:1.55; color:var(--ink-3); }
+.about .lexi.yu dt { color:var(--lum-cyan); } /* the one Yumi entry -- cyan is Yumi's */
+.about .lexi.yu { border-color:rgba(127,208,240,.3); } /* rgba = --lum-cyan @.3 (Yumi) */
+
+/* ----- concept models (bright cream cards; SVGs use stable tokens) ----- */
+.about .model { background:linear-gradient(170deg,var(--page-2),var(--page)); border:1px solid rgba(154,126,78,.35); border-radius:20px; padding:24px 18px; margin-top:24px; box-shadow:0 16px 45px rgba(0,0,0,.3); } /* border rgba = --meta @.35 on cream */
+.about .model svg { display:block; width:100%; height:auto; }
+.about .model-cap { font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); text-align:center; margin-top:12px; line-height:1.65; max-width:56ch; margin-left:auto; margin-right:auto; }
+.about .model-cap b { color:var(--gold-soft); font-weight:500; }
+.about .mtoggle { display:flex; justify-content:center; margin-top:26px; }
+.about .mtoggle .pillbox { display:flex; gap:4px; background:var(--lum-glass); border:1px solid var(--glass-border); border-radius:var(--radius-pill); padding:4px; }
+.about .mtog { font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; padding:8px 18px; border-radius:var(--radius-pill); border:none; background:none; color:var(--ink-3); cursor:pointer; transition:all .25s; }
+.about .mtog.on { background:var(--page); color:var(--br-deep); }
+.about .pipe .stn, .about .evo .stn { cursor:pointer; }
+.about .pipe .stn circle { fill:var(--text-on-dark); stroke:var(--br-deep); stroke-opacity:.45; stroke-width:1.2; transition:fill .25s, stroke .25s; }
+.about .pipe .stn.on circle { fill:var(--gold); stroke:var(--gold); stroke-opacity:1; }
+.about .model text { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; fill:var(--br-deep); fill-opacity:.62; text-anchor:middle; }
+.about .pipe .stn.on text { fill:var(--br-deep); fill-opacity:1; }
+.about .model .serifc { font-family:var(--font-serif); font-style:italic; font-size:16px; letter-spacing:0; }
+.about .evo .stn { transition:opacity .3s; }
+.about .evo.sel .stn { opacity:.4; }
+.about .evo.sel .stn.on { opacity:1; }
+.about .evo.sel .stn.on text { fill:var(--br-deep); fill-opacity:1; }
+
+/* ----- colophon ----- */
+.about .colo { padding-top:40px; text-align:center; }
+.about .colo .line { font-family:var(--font-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); }
+.about .colo .vow { margin-top:10px; font-family:var(--font-serif); font-style:italic; font-size:16px; color:var(--gold-soft); }
+
+/* ----- Orientation card (EXISTING buildAboutOrientation output; bright frame).
+   The frame re-points the ground-sensitive tokens back to the light page
+   (all STABLE tokens / var refs -- no raw hex) so the reused .about-section /
+   .about-accordion / .ac-body / .intro-* rules render dark-on-cream. ----- */
+.about .orientation {
+  margin-top:26px;
+  background:linear-gradient(170deg,var(--page-2),var(--page));
+  border:1px solid rgba(154,126,78,.35); /* --meta @.35 on cream */
+  border-radius:22px;
+  padding:30px 30px 24px;
+  box-shadow:0 20px 55px rgba(0,0,0,.35);
+  --ink:var(--br-deep);
+  --ink-2:var(--br-deep);
+  --ink-3:var(--meta);
+  --ink-4:var(--meta);
+  --surface:var(--page-2);
+  --surface-2:var(--page);
+  --border:var(--line-page);
+  --line-2:var(--line-page-2);
+  --gold:var(--gold-ink);
+  --gold-light:var(--gold-ink);
+  --gold-text:var(--gold-ink);
+}
+
+/* KEEP: buildAboutOrientation reuses these -- render dark-on-cream inside
+   .orientation via the re-point above. Do not retire. */
 .about .about-section { padding:36px 0; border-top:1px solid var(--border); }
 .about .about-section:first-child { border-top:none; padding-top:8px; }
 .about .about-section-no { font-family:var(--font-mono); font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin:0 0 14px 0; }
 .about .about-h2 { font-family:var(--font-serif); font-weight:600; line-height:1.08; font-size:clamp(1.8rem,3.6vw,2.5rem); color:var(--ink); margin:0 0 8px 0; }
 .about .about-h2 em { font-style:italic; color:var(--gold-text); }
 .about .about-rule { width:46px; height:2px; background:var(--gold); border:none; margin:0 0 22px 0; }
-.about .about-lede { font-family:var(--font-serif); font-size:1.32rem; line-height:1.5; color:var(--ink); margin:0 0 18px 0; }
-.about .about-lede-drop::first-letter { font-family:var(--font-serif); font-weight:600; color:var(--gold); font-size:3.6em; line-height:0.74; float:left; padding:8px 12px 0 0; }
 .about .about-body { font-family:var(--font-body); font-size:1rem; line-height:1.72; color:var(--ink-2); margin:0 0 14px 0; }
 .about .about-body b { color:var(--ink); font-weight:600; }
-
-/* ----- S2: lexicon (editorial dictionary) ----- */
-.about .lex { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:var(--radius-md); padding:4px 22px; margin:0 0 24px 0; }
-.about .lex--yumi { background:transparent; }
-.about .lex-entry { padding:18px 0; border-top:1px solid var(--border); }
-.about .lex-entry:first-child { border-top:none; }
-.about .lex-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; margin:0 0 12px 0; }
-.about .lex-word { font-family:var(--font-serif); font-weight:600; font-size:1.65rem; line-height:1; color:var(--ink); }
-.about .lex-script { font-family:var(--font-script); font-weight:600; font-size:1.4rem; line-height:1; color:var(--gold-text); }
-.about .lex-pron { font-family:var(--font-mono); font-size:12.5px; color:var(--ink-3); }
-.about .lex-pos { font-family:var(--font-serif); font-style:italic; font-size:1.02rem; color:var(--ink-3); }
-.about .lex-body { margin:0; }
-.about .lex-origin { font-family:var(--font-serif); font-style:italic; font-size:1.04rem; line-height:1.55; color:var(--ink-2); margin:0 0 8px 0; }
-.about .lex-origin i { font-style:normal; color:var(--ink); }
-.about .lex-cjk { font-family:var(--font-script); font-style:normal; color:var(--ink); }
-.about .lex-label { font-family:var(--font-mono); font-style:normal; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-right:10px; vertical-align:1px; }
-.about .lex-gloss { font-family:var(--font-body); font-size:1rem; line-height:1.62; color:var(--ink-2); margin:0; }
-.about .lex-gloss i { font-family:var(--font-serif); font-style:italic; font-size:1.05em; color:var(--ink); }
-
-/* ----- S2: §03 pullquote ----- */
-.about .about-pullquote { text-align:center; margin:8px 0 24px 0; padding:14px 0; border-top:2px solid var(--gold); border-bottom:2px solid var(--gold); }
-.about .about-pullquote p { font-family:var(--font-serif); font-style:italic; font-weight:500; font-size:clamp(1.5rem,3.4vw,2.15rem); line-height:1.28; color:var(--ink); margin:0; }
-.about .about-pullquote cite { display:block; font-family:var(--font-mono); font-style:normal; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-top:14px; }
-
-/* ----- S2: §04 Yumi card + 由美 breakdown + is/is-not grid ----- */
-.about .about-yumi-card { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px 30px; box-shadow:var(--shadow-1); }
-.about .about-yumi-h2 { margin-bottom:8px; }
-.about .about-yumi-lede { font-size:1.2rem; }
-.about .about-yumi-note { margin-top:18px; }
-.about .yumi-hero { display:flex; align-items:center; gap:24px; margin:0 0 22px 0; flex-wrap:wrap; }
-.about .yumi-hero-mark { flex:0 0 auto; line-height:0; }
-.about .yumi-breakdown { flex:1 1 240px; min-width:0; }
-.about .yumi-eyebrow { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin:0 0 14px 0; }
-.about .ideo { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-.about .ideo-cell { display:inline-flex; flex-direction:column; align-items:center; gap:5px; }
-.about .ideo-char, .about .ideo-sum { font-family:var(--font-script); font-size:2.1rem; line-height:1; }
-.about .ideo-char { color:var(--gold-text); }
-.about .ideo-sum { color:var(--gold); }
-.about .ideo-en { font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3); }
-.about .ideo-cell--sum .ideo-en { color:var(--gold-text); }
-.about .ideo-op { font-family:var(--font-serif); font-size:1.5rem; color:var(--ink-4); }
-.about .yumi-contrast { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0 6px 0; }
-.about .yumi-col { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px 18px; }
-.about .yumi-col h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; margin:0 0 12px 0; }
-.about .yumi-col--is h3 { color:var(--marginalia-color); }
-.about .yumi-col--isnot h3 { color:var(--gold-text); }
-.about .yumi-col ul { margin:0; padding:0; list-style:none; }
-.about .yumi-col li { font-family:var(--font-body); font-size:0.95rem; line-height:1.45; color:var(--ink-2); padding:7px 0 7px 18px; position:relative; }
-.about .yumi-col li::before { content:""; position:absolute; left:0; top:14px; width:7px; height:7px; border-radius:var(--radius-pill); }
-.about .yumi-col--is li::before { background:var(--marginalia-color); }
-.about .yumi-col--isnot li::before { background:var(--ink-4); }
-
-@media (max-width: 759px) {
-  .about .yumi-contrast { grid-template-columns:1fr; }
-}
-
-/* ----- S3: glass plate + figure caption (the infographic surface) ----- */
-.about .about-plate { background:var(--glass-2); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-2); padding:26px 28px; margin:24px 0 8px 0; }
-.about .about-figcap { font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; line-height:1.6; color:var(--ink-3); text-align:center; margin:16px 0 0 0; }
-.about .about-figcap b { color:var(--gold-text); font-weight:600; }
-
-/* ----- S3 infographic 1: Banking <-> Problem-posing (cross-fade on the plate) ----- */
-.about .bp { text-align:center; margin:28px 0 6px 0; }
-.about .bp-toggle { display:inline-flex; gap:4px; margin:0 0 18px 0; padding:4px; background:var(--wash); border:1px solid var(--border); border-radius:var(--radius-pill); }
-.about .bp-btn { appearance:none; border:none; cursor:pointer; background:transparent; font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); padding:8px 16px; border-radius:var(--radius-pill); transition:color var(--motion-base) var(--ease), background-color var(--motion-base) var(--ease), box-shadow var(--motion-base) var(--ease); }
-.about .bp-btn:hover { color:var(--ink); }
-.about .bp[data-state="banking"] .bp-btn[data-bp="banking"],
-.about .bp[data-state="problem"] .bp-btn[data-bp="problem"] { background:var(--surface-2); color:var(--gold-text); box-shadow:var(--shadow-1); }
-.about .bp-plate { margin:0; }
-.about .bp-stage { display:grid; }
-.about .bp-svg { grid-area:1 / 1; width:100%; height:auto; opacity:0; visibility:hidden; transition:opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
-.about .bp-banking { opacity:1; visibility:visible; }
-.about .bp[data-state="problem"] .bp-banking { opacity:0; visibility:hidden; }
-.about .bp[data-state="problem"] .bp-problem { opacity:1; visibility:visible; }
-.about .bp text { font-family:var(--font-mono); }
-.about .bp-lbl { font-size:13px; letter-spacing:0.14em; }
-.about .bp-sub { font-family:var(--font-serif); font-style:italic; font-size:13px; }
-.about .bp-tag { font-size:11px; letter-spacing:0.05em; }
-.about .bp-banking .bp-lbl { fill:var(--ink-2); }
-.about .bp-banking .bp-sub { fill:var(--ink-3); }
-.about .bp-banking .bp-tag { fill:var(--ink-4); }
-.about .bp-problem .bp-lbl { fill:var(--gold-text); }
-.about .bp-problem .bp-sub { fill:var(--ink-3); }
-.about .bp-problem .bp-tag { fill:var(--marginalia-color); }
-.about .bp-cap-problem { display:none; }
-.about .bp-cap b { color:var(--gold-text); font-weight:600; }
-.about .bp[data-state="problem"] .bp-cap-banking { display:none; }
-.about .bp[data-state="problem"] .bp-cap-problem { display:inline; }
-
-/* ----- S3 infographic 2: reflection <-> action loop ----- */
-.about .ra-fig { margin:26px 0 2px 0; }
-.about .ra { display:block; width:100%; max-width:420px; height:auto; margin:0 auto; }
-.about .ra-lbl { font-family:var(--font-mono); font-size:12px; letter-spacing:0.18em; fill:var(--gold-text); }
-.about .ra-core { font-family:var(--font-serif); font-style:italic; font-size:15px; fill:var(--ink); }
-.about .ra-spin { transform-box:view-box; transform-origin:230px 150px; animation:about-ra-rotate 26s linear infinite; }
-@keyframes about-ra-rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-
-/* ----- S3 infographic 3: Aristotle triad (praxis elevated, others recessed) ----- */
-.about .triad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0 4px 0; }
-.about .triad-cell { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 11px 13px; text-align:center; }
-.about .triad-cell--on { border-color:var(--gold); box-shadow:var(--shadow-1); transform:translateY(-3px); }
-.about .triad-term { display:block; font-family:var(--font-serif); font-style:italic; font-weight:600; font-size:1.16rem; line-height:1.1; color:var(--ink-4); margin:0 0 5px 0; }
-.about .triad-cell--on .triad-term { color:var(--gold-text); font-style:normal; }
-.about .triad-gloss { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:0.03em; line-height:1.5; color:var(--ink-4); }
-.about .triad-cell--on .triad-gloss { color:var(--ink-3); }
-
-/* ----- S3: reduced-motion -- banking cross-fade instant + loop ring static ----- */
-@media (prefers-reduced-motion: reduce) {
-  .about .bp-svg { transition:none; }
-  .about .ra-spin { animation:none; }
-}
-
-/* ----- S4: panel switcher (segmented control) + panel fade ----- */
-.about .about-seg-wrap { text-align:center; }
-.about .about-seg { display:inline-flex; gap:4px; margin:34px auto 0 auto; padding:4px; background:var(--wash); border:1px solid var(--border); border-radius:var(--radius-pill); }
-.about .about-seg-btn { appearance:none; border:none; cursor:pointer; background:transparent; font-family:var(--font-mono); font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); padding:9px 18px; border-radius:var(--radius-pill); transition:color var(--motion-base) var(--ease), background-color var(--motion-base) var(--ease), box-shadow var(--motion-base) var(--ease); }
-.about .about-seg-btn:hover { color:var(--ink); }
-.about .about-seg-btn.on { background:var(--surface-2); color:var(--gold-text); box-shadow:var(--shadow-1); }
-.about .about-panel { display:none; }
-.about .about-panel.is-active { display:block; animation:about-panel-fade var(--motion-base) var(--ease); }
-@keyframes about-panel-fade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-
-/* ----- S4: re-enter accordion (single-open; each card carries its page accent) ----- */
-.about .rearm-head { max-width:720px; margin:48px auto 8px auto; }
-.about .rearm-eyebrow { font-family:var(--font-mono); font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold); margin:0 0 12px 0; }
-.about .rearm-h2 { font-family:var(--font-serif); font-weight:600; line-height:1.08; font-size:clamp(1.9rem,3.8vw,2.6rem); color:var(--ink); margin:0 0 12px 0; }
-.about .rearm-sub { font-family:var(--font-body); font-size:1.02rem; line-height:1.65; color:var(--ink-2); margin:0; }
-.about .rearm-list { max-width:720px; margin:26px auto 0 auto; }
-.about .rearm-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--card-accent, var(--gold)); border-radius:var(--radius-md); margin:0 0 14px 0; overflow:hidden; box-shadow:var(--shadow-1); }
-.about .rearm-card-head { display:flex; align-items:center; gap:16px; width:100%; appearance:none; background:transparent; border:none; cursor:pointer; text-align:left; padding:18px 20px; }
-.about .rearm-card-label { font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--card-accent, var(--gold)); flex:0 0 96px; }
-.about .rearm-card-teaser { flex:1 1 auto; font-family:var(--font-serif); font-size:1.22rem; line-height:1.3; color:var(--ink); }
-.about .rearm-chevron { flex:0 0 auto; color:var(--ink-3); font-size:13px; transition:transform var(--motion-base) var(--ease); }
-.about .rearm-card.is-open .rearm-chevron { transform:rotate(180deg); }
-.about .rearm-card-body { max-height:0; overflow:hidden; transition:max-height var(--motion-base) var(--ease); }
-.about .rearm-card.is-open .rearm-card-body { max-height:640px; }
-.about .rearm-card-inner { padding:0 20px 22px 20px; display:flex; gap:14px; align-items:flex-start; }
-.about .rearm-glyph-slot { flex:0 0 auto; line-height:0; margin-top:2px; }
-.about .rearm-yumi-line { font-family:var(--font-serif); font-size:1.16rem; line-height:1.55; color:var(--ink-2); margin:0; }
-.about .rearm-yumi-line .who { display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
-
-/* ----- S4: reduced-motion -- panel fade off + accordion snaps ----- */
-@media (prefers-reduced-motion: reduce) {
-  .about .about-panel.is-active { animation:none; }
-  .about .rearm-card-body, .about .rearm-chevron { transition:none; }
-}
-
-/* ----- Umber layout port (surface 1): mock About frame overrides -----
-   Renaming the old root class to .about above carries the recolored About CSS
-   onto the mock root. These appended rules win the cascade and align the FRAME to
-   the mock (design/praxis-umber-mockup.html #s-about): centered 760 column,
-   the segmented gradient pill, each lexicon entry as its own gold-edged card,
-   and native <details> accordions for the re-arm panel. The live's developed
-   sections + infographics (#bp / .triad / .ra / .ideo / .yumi-contrast) are
-   unchanged and keep their existing rules under the renamed scope. */
-.about { max-width: 760px; padding: 0 var(--sp-5) 96px var(--sp-5); }
-.about .about-mark { display:flex; justify-content:center; margin-bottom:18px; line-height:0; }
-.about .about-mark svg { width:60px; height:60px; }
-.about .about-lede { font-family:var(--font-serif); font-style:italic; font-size:20px; color:var(--ink-2); line-height:1.5; max-width:48ch; margin:18px auto 0 auto; }
-.about .about-seg { display:flex; justify-content:center; margin:var(--sp-5) 0; }
-.about .seg { display:inline-flex; padding:3px; gap:2px; background:var(--sunk); border:1px solid var(--border); border-radius:var(--radius-pill); }
-.about .seg-opt { font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; padding:6px 14px; border-radius:var(--radius-pill); border:none; background:transparent; color:var(--ink-3); cursor:pointer; transition:color var(--motion-base) var(--ease); }
-.about .seg-opt.is-on { background:var(--grad); color:var(--text-on-dark); font-weight:700; }
-.about .lex { background:transparent; border:none; border-left:none; border-radius:0; padding:0; margin:18px 0; }
-.about .lex-entry { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:var(--radius-sm); padding:16px 20px; margin:0 0 14px 0; }
-.about .lex-entry:first-child { border-top:1px solid var(--border); padding-top:16px; }
 .about .about-accordion { border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; margin:0 0 12px 0; background:var(--surface); }
 .about .about-accordion summary { list-style:none; cursor:pointer; padding:16px 18px; font-family:var(--font-serif); font-size:18px; color:var(--ink); }
 .about .about-accordion summary::-webkit-details-marker { display:none; }
 .about .about-accordion[open] summary { border-bottom:1px solid var(--border); }
 .about .ac-body { padding:16px 18px; font-family:var(--font-serif); font-size:16px; line-height:1.65; color:var(--ink-2); }
-.about .ac-body .rearm-glyph-slot { display:inline-block; vertical-align:middle; margin-right:10px; line-height:0; }
+
+/* ----- reduced-motion: reveal + hero pulse off ----- */
+@media (prefers-reduced-motion: reduce) {
+  .about .about-reveal { animation:none; opacity:1; transform:none; }
+  .about .markpulse { animation:none; }
+}
+
+/* ----- mobile reflow (<760) ----- */
+@media (max-width: 759px) {
+  .about { padding:44px 18px 70px 18px; }
+  .about .lex { grid-template-columns:1fr; }
+  .about .orientation { padding:24px 18px 18px; }
+}
 
 /* =====================================================================
    yumi-intelligence Stage I -- reader-model section (Account page).
@@ -12437,9 +12348,11 @@ body.wc-focus .app-nav { opacity:.26; }
 .intro-summon:hover{ border-color:var(--lum-gold-d); color:var(--lum-gold-l); }
 
 /* About Orientation additions (bright About ground; theme + lum font tokens) */
-.about-panel .intro-eg{ font-family:var(--lum-serif); font-style:italic; color:var(--teal); margin-top:8px; font-size:13.5px; }
-.about-panel .intro-retake{ margin-top:12px; display:inline-block; background:var(--grad); color:var(--page); border:none; border-radius:999px; padding:8px 18px; font-family:var(--lum-sans); font-size:13px; font-weight:600; cursor:pointer; }
-.about-panel .intro-retake:hover{ filter:brightness(1.05); }
+/* W10: re-scoped from the retired .about-panel switcher to .about -- these
+   style the buildAboutOrientation card, now placed in the .orientation frame. */
+.about .intro-eg{ font-family:var(--lum-serif); font-style:italic; color:var(--teal); margin-top:8px; font-size:13.5px; }
+.about .intro-retake{ margin-top:12px; display:inline-block; background:var(--grad); color:var(--page); border:none; border-radius:999px; padding:8px 18px; font-family:var(--lum-sans); font-size:13px; font-weight:600; cursor:pointer; }
+.about .intro-retake:hover{ filter:brightness(1.05); }
 
 @media (prefers-reduced-motion:reduce){ .intro-panel{ animation:none; } }
 @media (max-width:759px){

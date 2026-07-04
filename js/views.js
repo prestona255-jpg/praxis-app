@@ -364,13 +364,13 @@ function renderRoute() {
   // hash head (parts[0]) -- NOT the collapsed activeRoute below -- because
   // the BRIGHT sub-surfaces (book, subtheory, artifact) live under DARK
   // parents (books, arcs). Dark study surfaces: home, books, arcs, arc,
-  // account. Everything else (book, subtheory, notebook, about, yumi-sees,
-  // artifact, and the empty / unknown -> notebook default) is the bright page.
+  // account. Everything else (yumi-sees, artifact, and the empty / unknown ->
+  // notebook default) is the bright page. (W10: #about joined the dark set.)
   // Wave 4: 'book' joins the dark-ground set so the body sits DARK behind
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -18149,208 +18149,286 @@ function renderAbout() {
 
   var html = '';
 
-  // ----- hero (switcher added in S4) -----
-  html += '<header class="about-hero">';
-  html +=   '<div class="about-mark" data-yumi-glyph="56"></div>';
-  html +=   '<p class="eyebrow">Orientation &middot; return here anytime</p>';
-  html +=   '<h1 class="about-title">What is <em>Praxis</em>?</h1>';
-  html +=   '<p class="about-lede">A reading practice with a point of view. Read this once to get your bearings &mdash; then come back whenever you want to remember what this place is for.</p>';
-  html +=   '<div class="about-seg"><div class="seg" role="tablist" aria-label="Orientation view">';
-  html +=     '<button type="button" class="seg-opt is-on" data-about="learn" aria-pressed="true">What Praxis is</button>';
-  html +=     '<button type="button" class="seg-opt" data-about="rearm" aria-pressed="false">Re-enter a page</button>';
-  html +=   '</div></div>';
+  // ===================== HERO =====================
+  html += '<header class="hero">';
+  html +=   '<div class="appmark about-reveal about-reveal-1">';
+  html +=     '<svg width="56" height="56" viewBox="0 0 60 60" aria-hidden="true"><g class="markpulse">';
+  html +=       '<line x1="16" y1="38" x2="30" y2="18" stroke="rgba(255,206,74,.5)" stroke-width="1"/>';
+  html +=       '<line x1="30" y1="18" x2="46" y2="34" stroke="rgba(255,206,74,.5)" stroke-width="1"/>';
+  html +=       '<line x1="30" y1="18" x2="34" y2="44" stroke="rgba(255,206,74,.5)" stroke-width="1"/>';
+  html +=       '<circle cx="16" cy="38" r="5" fill="var(--lum-gold)"/>';
+  html +=       '<rect x="26" y="14" width="9" height="9" rx="2" transform="rotate(45 30.5 18.5)" fill="var(--lum-gold)"/>';
+  html +=       '<circle cx="46" cy="34" r="6" fill="var(--lum-gold)"/>';
+  html +=       '<circle cx="34" cy="44" r="4" fill="var(--lum-cyan)"/>';
+  html +=     '</g></svg>';
+  html +=   '</div>';
+  html +=   '<h1 class="about-reveal about-reveal-2">A place to read like it <em>matters</em>.</h1>';
+  html +=   '<p class="lede about-reveal about-reveal-3">Praxis holds your books, your margins, and the theories they grow into &mdash; built on the belief that reading is thinking, and thinking deserves a home.</p>';
   html += '</header>';
 
-  // ----- Panel 1: the four explainer sections -----
-  html += '<section class="about-panel is-active" data-panel="learn"><div class="about-reading">';
+  // ===================== WHAT PRAXIS IS =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">What Praxis is</div>';
+  html +=   '<h2>Knowledge made <em>with</em> you.</h2>';
+  html +=   '<p>Most reading apps file what you read. Praxis is built for what reading does to you &mdash; the note that argues back, the thread between two books that only you can see, the conviction that hardens into theory. Here your marginalia are not exhaust; they are the raw material of your own thought, gathered, connected, and eventually walked by others.</p>';
 
-  // 01 -- What Praxis is (no lexicon card)
-  html += '<article class="about-section">';
-  html +=   '<p class="about-section-no">01 &middot; What Praxis is</p>';
-  html +=   '<h2 class="about-h2">A place to read like it matters.</h2>';
-  html +=   '<hr class="about-rule">';
-  html +=   '<p class="about-lede about-lede-drop">Praxis is not a library app. It is a reading practice &mdash; a place to hold the books you are working through, the ideas that stop you mid-page, and the questions you find yourself following across them. Nothing here is for display. Your shelf is a record of your attention, not a performance of it.</p>';
-  html +=   '<p class="about-body">Most reading tools help you <b>collect</b>. Praxis is built to help you <b>think</b> &mdash; to notice what moves you, to set it down somewhere it won\'t be lost, and to watch the lines of thought you didn\'t know you were drawing take shape over time. You bring the reading; Praxis gives it a form you can return to.</p>';
-  html += '</article>';
-
-  // 02 -- critical pedagogy (pedagogy + critical pedagogy lexicon; banking infographic in S3)
-  html += '<article class="about-section">';
-  html +=   '<p class="about-section-no">02 &middot; What critical pedagogy is</p>';
-  html +=   '<h2 class="about-h2">Knowledge made <em>with</em> you, not poured into you.</h2>';
-  html +=   '<hr class="about-rule">';
-  html +=   '<dl class="lex">';
-  html +=     '<div class="lex-entry">';
-  html +=       '<dt class="lex-head"><span class="lex-word">pedagogy</span><span class="lex-pron">/ˈpɛd.ə.ɡɒdʒi/</span><span class="lex-pos">n.</span></dt>';
-  html +=       '<dd class="lex-body">';
-  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>from Greek <i>paidagōgia</i>, from <i>paîs/paidos</i> &ldquo;child&rdquo; + <i>agōgos</i> &ldquo;leader&rdquo; &mdash; literally, the one who leads a child to school.</p>';
-  html +=         '<p class="lex-gloss">the art, method, and politics of teaching &mdash; not only what is taught, but how, by whom, and to what end.</p>';
-  html +=       '</dd>';
-  html +=     '</div>';
-  html +=     '<div class="lex-entry">';
-  html +=       '<dt class="lex-head"><span class="lex-word">critical pedagogy</span><span class="lex-pos">n.</span></dt>';
-  html +=       '<dd class="lex-body">';
-  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>Paulo Freire and after (Giroux, hooks, Lorde, McLaren).</p>';
-  html +=         '<p class="lex-gloss">a philosophy of teaching that treats education as never neutral &mdash; helping learners read &ldquo;the word and the world,&rdquo; build critical consciousness (<i>conscientização</i>), question how power shapes knowledge, and act to change unjust conditions; problem-posing in place of &ldquo;banking.&rdquo;</p>';
-  html +=       '</dd>';
-  html +=     '</div>';
-  html +=   '</dl>';
-  html +=   '<p class="about-lede">Critical pedagogy is a tradition of teaching that begins from a simple refusal: education is never neutral. How we learn &mdash; and who gets to make meaning &mdash; is always a question of power.</p>';
-  html +=   '<p class="about-body">It runs through <b>Paulo Freire</b>, <b>bell hooks</b>, and <b>Audre Lorde</b>, among others. Freire named the &ldquo;banking&rdquo; model &mdash; where a teacher deposits facts into a student treated as an empty account &mdash; and set against it a <b>problem-posing</b> education, where teacher and learner make knowledge together, beginning from the learner\'s own world. hooks insisted this could be done with love, as a practice of freedom. Lorde reminded us that the master\'s tools will never dismantle the master\'s house.</p>';
-  html +=   '<p class="about-body">Praxis is built in that lineage. You are not an empty account to be filled.</p>';
-  // S3 infographic 1 -- Banking <-> Problem-posing (two real buttons flip
-  // data-state; the two SVG states cross-fade on a glass plate).
-  html +=   '<figure class="bp" id="bp" data-state="banking">';
-  html +=     '<div class="bp-toggle" role="group" aria-label="Two models of education">';
-  html +=       '<button type="button" class="bp-btn" data-bp="banking" aria-pressed="true">Banking</button>';
-  html +=       '<button type="button" class="bp-btn" data-bp="problem" aria-pressed="false">Problem-posing</button>';
-  html +=     '</div>';
-  html +=     '<div class="about-plate bp-plate"><div class="bp-stage">';
-  html +=       '<svg class="bp-svg bp-banking" viewBox="0 0 640 250" role="img" aria-labelledby="bpBankT bpBankD" focusable="false">';
-  html +=         '<title id="bpBankT">The banking model of education</title>';
-  html +=         '<desc id="bpBankD">A teacher full of knowledge sends facts along a single one-way arrow into a student drawn as an empty vessel.</desc>';
-  html +=         '<circle cx="118" cy="112" r="50" fill="var(--ink-4)" fill-opacity="0.12" stroke="var(--ink-3)" stroke-width="2"/>';
-  html +=         '<rect x="92" y="96" width="52" height="6" rx="3" fill="var(--ink-3)"/>';
-  html +=         '<rect x="92" y="110" width="52" height="6" rx="3" fill="var(--ink-3)"/>';
-  html +=         '<rect x="92" y="124" width="34" height="6" rx="3" fill="var(--ink-4)"/>';
-  html +=         '<text x="118" y="192" text-anchor="middle" class="bp-lbl">TEACHER</text>';
-  html +=         '<text x="118" y="212" text-anchor="middle" class="bp-sub">the one who knows</text>';
-  html +=         '<line x1="182" y1="112" x2="450" y2="112" stroke="var(--line-2)" stroke-width="2.5"/>';
-  html +=         '<path d="M450,112 l-15,-8 v16 z" fill="var(--line-2)"/>';
-  html +=         '<circle cx="240" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
-  html +=         '<circle cx="304" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
-  html +=         '<circle cx="368" cy="112" r="11" fill="var(--ink-4)" fill-opacity="0.28" stroke="var(--ink-4)" stroke-width="1.5"/>';
-  html +=         '<text x="312" y="80" text-anchor="middle" class="bp-tag">&ldquo;facts&rdquo; deposited</text>';
-  html +=         '<path d="M486,72 L486,140 Q486,170 516,170 L528,170 Q558,170 558,140 L558,72" fill="var(--ink-3)" fill-opacity="0.06" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round"/>';
-  html +=         '<text x="522" y="192" text-anchor="middle" class="bp-lbl">STUDENT</text>';
-  html +=         '<text x="522" y="212" text-anchor="middle" class="bp-sub">an empty account</text>';
-  html +=       '</svg>';
-  html +=       '<svg class="bp-svg bp-problem" viewBox="0 0 640 250" role="img" aria-labelledby="bpProbT bpProbD" focusable="false">';
-  html +=         '<title id="bpProbT">Problem-posing education</title>';
-  html +=         '<desc id="bpProbD">Teacher and learner are equal nodes joined by a two-way loop; knowledge forms as a gold node between them.</desc>';
-  html +=         '<defs>';
-  html +=           '<marker id="bpArG" markerWidth="9" markerHeight="9" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--gold)"/></marker>';
-  html +=           '<marker id="bpArT" markerWidth="9" markerHeight="9" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--marginalia-color)"/></marker>';
-  html +=         '</defs>';
-  html +=         '<path d="M212,104 Q320,66 428,104" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#bpArG)"/>';
-  html +=         '<path d="M428,136 Q320,174 212,136" fill="none" stroke="var(--marginalia-color)" stroke-width="2.5" marker-end="url(#bpArT)"/>';
-  html +=         '<circle cx="170" cy="120" r="46" fill="var(--gold)" fill-opacity="0.10" stroke="var(--gold)" stroke-width="2"/>';
-  html +=         '<text x="170" y="200" text-anchor="middle" class="bp-lbl">TEACHER</text>';
-  html +=         '<circle cx="470" cy="120" r="46" fill="var(--marginalia-color)" fill-opacity="0.10" stroke="var(--marginalia-color)" stroke-width="2"/>';
-  html +=         '<text x="470" y="200" text-anchor="middle" class="bp-lbl">LEARNER</text>';
-  html +=         '<circle cx="320" cy="120" r="27" fill="var(--gold)" fill-opacity="0.16"/>';
-  html +=         '<circle cx="320" cy="120" r="16" fill="var(--gold)"/>';
-  html +=         '<circle cx="320" cy="120" r="6" fill="var(--gold-light)"/>';
-  html +=         '<text x="320" y="200" text-anchor="middle" class="bp-sub">knowledge, made between</text>';
-  html +=       '</svg>';
-  html +=     '</div></div>';
-  html +=     '<figcaption class="about-figcap bp-cap">';
-  html +=       '<span class="bp-cap-banking">The <b>banking</b> model &mdash; knowledge flows one way: the teacher deposits, the student receives.</span>';
-  html +=       '<span class="bp-cap-problem">A <b>problem-posing</b> exchange &mdash; teacher and learner make knowledge together; it forms between them.</span>';
-  html +=     '</figcaption>';
-  html +=   '</figure>';
-  html += '</article>';
-
-  // 03 -- praxis (lexicon + pullquote + body; Aristotle triad + reflection loop in S3)
-  html += '<article class="about-section">';
-  html +=   '<p class="about-section-no">03 &middot; What praxis means</p>';
-  html +=   '<dl class="lex">';
-  html +=     '<div class="lex-entry" id="lex-praxis">';
-  html +=       '<dt class="lex-head"><span class="lex-word">praxis</span><span class="lex-script" lang="grc">πρᾶξις</span><span class="lex-pron">/ˈpræk.sɪs/</span><span class="lex-pos">n.</span></dt>';
-  html +=       '<dd class="lex-body">';
-  html +=         '<p class="lex-origin"><span class="lex-label">Origin</span>from Ancient Greek <i lang="grc">πρᾶξις</i> (<i>prâxis</i>) &ldquo;action, doing,&rdquo; from <i>prássein</i> &ldquo;to do.&rdquo;</p>';
-  html +=         '<p class="lex-gloss">in Aristotle, action itself &mdash; alongside <i>theōria</i> (contemplation) and <i>poiēsis</i> (making); in Freire, reflection and action upon the world in order to transform it &mdash; theory and practice folded into one.</p>';
-  // S3 infographic 3 -- Aristotle's triad, nested in the praxis entry: praxis
-  // elevated in gold, theōria + poiēsis recessed.
-  html +=         '<div class="triad" role="group" aria-label="Aristotle\'s three forms of activity">';
-  html +=           '<div class="triad-cell"><span class="triad-term">theōria</span><span class="triad-gloss">contemplation &mdash; knowing for its own sake</span></div>';
-  html +=           '<div class="triad-cell"><span class="triad-term">poiēsis</span><span class="triad-gloss">making &mdash; production toward an end</span></div>';
-  html +=           '<div class="triad-cell triad-cell--on"><span class="triad-term">praxis</span><span class="triad-gloss">action that carries its own end</span></div>';
-  html +=         '</div>';
-  html +=       '</dd>';
-  html +=     '</div>';
-  html +=   '</dl>';
-  html +=   '<div class="about-pullquote"><p>Praxis is reflection and action upon the world in order to transform it.</p><cite>after Freire, by way of Aristotle</cite></div>';
-  html +=   '<p class="about-body">Theory and practice are not two steps &mdash; first you learn, then you apply. Praxis folds them together: reflection that acts, and action that reflects back on itself. It is <b>theory lived</b>. That is the wager of this whole place &mdash; that what you read should change how you move through the world, and what you do should sharpen what you read next.</p>';
-  // S3 infographic 2 -- the reflection <-> action loop (continuous gold cycle;
-  // the dashed guide ring rotates slowly, static under reduced motion).
-  html +=   '<figure class="ra-fig">';
-  html +=     '<div class="about-plate">';
-  html +=       '<svg class="ra" viewBox="0 0 460 300" role="img" aria-labelledby="raT raD" focusable="false">';
-  html +=         '<title id="raT">Praxis as a reflection–action loop</title>';
-  html +=         '<desc id="raD">Reflection and action feed one another in a continuous cycle whose centre is theory lived.</desc>';
-  html +=         '<defs><marker id="raAr" markerWidth="10" markerHeight="10" refX="5.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 z" fill="var(--gold)"/></marker></defs>';
-  html +=         '<circle class="ra-spin" cx="230" cy="150" r="104" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 10" opacity="0.45"/>';
-  html +=         '<path d="M126,150 A104,104 0 0 1 334,150" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#raAr)"/>';
-  html +=         '<path d="M334,150 A104,104 0 0 1 126,150" fill="none" stroke="var(--gold)" stroke-width="2.5" marker-end="url(#raAr)"/>';
-  html +=         '<text x="230" y="30" text-anchor="middle" class="ra-lbl">REFLECTION</text>';
-  html +=         '<text x="230" y="284" text-anchor="middle" class="ra-lbl">ACTION</text>';
-  html +=         '<circle cx="230" cy="150" r="40" fill="var(--gold)" fill-opacity="0.12"/>';
-  html +=         '<text x="230" y="145" text-anchor="middle" class="ra-core">theory</text>';
-  html +=         '<text x="230" y="166" text-anchor="middle" class="ra-core">lived</text>';
-  html +=       '</svg>';
-  html +=     '</div>';
-  html +=     '<figcaption class="about-figcap">Reflection and action are one turning &mdash; each feeding the other, with <b>theory lived</b> at the centre.</figcaption>';
-  html +=   '</figure>';
-  html += '</article>';
-
-  // 04 -- Yumi (large Umebloom + 由美 breakdown + interlocutor + is/is-not grid + lexicon)
-  html += '<article class="about-section">';
-  html +=   '<p class="about-section-no">04 &middot; The meaning of Yumi</p>';
-  html +=   '<div class="about-yumi-card">';
-  html +=     '<div class="yumi-hero">';
-  html +=       '<div class="yumi-hero-mark" data-yumi-glyph="84"></div>';
-  html +=       '<div class="yumi-breakdown">';
-  html +=         '<p class="yumi-eyebrow">Your reading companion</p>';
-  html +=         '<div class="ideo" role="img" aria-label="由 (reason or cause) plus 美 (beauty) makes 由美 — reasoned beauty">';
-  html +=           '<span class="ideo-cell"><span class="ideo-char" lang="ja">由</span><span class="ideo-en">reason / cause</span></span>';
-  html +=           '<span class="ideo-op" aria-hidden="true">+</span>';
-  html +=           '<span class="ideo-cell"><span class="ideo-char" lang="ja">美</span><span class="ideo-en">beauty</span></span>';
-  html +=           '<span class="ideo-op" aria-hidden="true">&rarr;</span>';
-  html +=           '<span class="ideo-cell ideo-cell--sum"><span class="ideo-sum" lang="ja">由美</span><span class="ideo-en">reasoned beauty</span></span>';
-  html +=         '</div>';
-  html +=       '</div>';
-  html +=     '</div>';
-  html +=     '<h2 class="about-h2 about-yumi-h2">An interlocutor, not an authority.</h2>';
-  html +=     '<p class="about-lede about-yumi-lede">Yumi reads alongside you. She is here to ask the better question &mdash; not to summarize your books, not to grade your thoughts, and never to hand you the answer.</p>';
-  html +=     '<div class="yumi-contrast">';
-  html +=       '<div class="yumi-col yumi-col--is"><h3>She is</h3><ul><li>A problem-posing interlocutor</li><li>A reader of only what you\'ve written</li><li>The one who asks the question back to you</li></ul></div>';
-  html +=       '<div class="yumi-col yumi-col--isnot"><h3>She is not</h3><ul><li>A tutor or a grader</li><li>A summarizer or a search box</li><li>The banking move &mdash; she won\'t deposit conclusions into you</li></ul></div>';
-  html +=     '</div>';
-  html +=     '<p class="about-body about-yumi-note">Yumi works only from what you choose to show her &mdash; the notes you attach to a book, the questions you pose. She cannot see your private journal unless you decide to share it, and you can always check exactly what she sees. She is useful precisely <b>because</b> she does not do the thinking for you.</p>';
-  html +=     '<dl class="lex lex--yumi">';
-  html +=       '<div class="lex-entry">';
-  html +=         '<dt class="lex-head"><span class="lex-word">Yumi</span><span class="lex-script" lang="ja">由美</span><span class="lex-pos">n., Japanese given name</span></dt>';
-  html +=         '<dd class="lex-body">';
-  html +=           '<p class="lex-origin"><span class="lex-label">Origin</span><span class="lex-cjk" lang="ja">由</span> &ldquo;reason / cause&rdquo; + <span class="lex-cjk" lang="ja">美</span> &ldquo;beauty.&rdquo;</p>';
-  html +=           '<p class="lex-gloss">reasoned beauty &mdash; beauty with a why behind it. Her mark is the Umebloom; her purpose is to make your thinking more beautiful by making it more reasoned.</p>';
-  html +=         '</dd>';
-  html +=       '</div>';
-  html +=     '</dl>';
+  // Model 1 -- the evolution of reading (tappable stations; dim others on select)
+  html +=   '<div class="model evo">';
+  html +=     '<svg viewBox="0 0 640 180" role="img" aria-label="The evolution of reading: the book, the margin, reflection, Praxis">';
+  html +=       '<defs><marker id="aEvo" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<line x1="128" y1="120" x2="216" y2="104" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2" marker-end="url(#aEvo)"/>';
+  html +=       '<line x1="282" y1="98" x2="372" y2="82" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2" marker-end="url(#aEvo)"/>';
+  html +=       '<line x1="440" y1="72" x2="534" y2="58" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2" marker-end="url(#aEvo)"/>';
+  html +=       '<g class="stn on" data-e="0">';
+  html +=         '<path d="M64 126 Q77 118 90 125 Q103 118 116 126 L116 140 Q103 133 90 139 Q77 133 64 140 Z" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=         '<line x1="90" y1="125" x2="90" y2="139" stroke="var(--br-deep)" stroke-opacity="0.35" stroke-width="1"/>';
+  html +=         '<text x="90" y="162">THE BOOK</text>';
+  html +=       '</g>';
+  html +=       '<g class="stn" data-e="1">';
+  html +=         '<rect x="232" y="84" width="26" height="38" rx="3" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=         '<line x1="238" y1="94" x2="250" y2="94" stroke="var(--br-deep)" stroke-opacity="0.35" stroke-width="1.2"/>';
+  html +=         '<line x1="238" y1="101" x2="250" y2="101" stroke="var(--br-deep)" stroke-opacity="0.35" stroke-width="1.2"/>';
+  html +=         '<line x1="238" y1="108" x2="250" y2="108" stroke="var(--br-deep)" stroke-opacity="0.35" stroke-width="1.2"/>';
+  html +=         '<line x1="264" y1="94" x2="272" y2="94" stroke="var(--gold)" stroke-width="1.6"/>';
+  html +=         '<line x1="264" y1="102" x2="272" y2="102" stroke="var(--gold)" stroke-width="1.6"/>';
+  html +=         '<text x="250" y="162">THE MARGIN</text>';
+  html +=       '</g>';
+  html +=       '<g class="stn" data-e="2">';
+  html +=         '<path d="M410 60 A18 18 0 1 1 392 78" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aEvo)"/>';
+  html +=         '<path d="M410 96 A18 18 0 1 1 428 78" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aEvo)"/>';
+  html +=         '<text x="410" y="162">REFLECTION</text>';
+  html +=       '</g>';
+  html +=       '<g class="stn" data-e="3">';
+  html +=         '<line x1="556" y1="64" x2="572" y2="44" stroke="var(--gold)" stroke-opacity="0.6" stroke-width="1"/>';
+  html +=         '<line x1="572" y1="44" x2="586" y2="60" stroke="var(--gold)" stroke-opacity="0.6" stroke-width="1"/>';
+  html +=         '<line x1="572" y1="44" x2="578" y2="68" stroke="var(--teal)" stroke-width="1"/>';
+  html +=         '<circle cx="556" cy="64" r="5" fill="var(--gold)"/>';
+  html +=         '<rect x="566" y="38" width="12" height="12" rx="2" transform="rotate(45 572 44)" fill="var(--gold)"/>';
+  html +=         '<circle cx="586" cy="60" r="5" fill="var(--gold)"/>';
+  html +=         '<circle cx="578" cy="68" r="4" fill="var(--teal)"/>';
+  html +=         '<text x="570" y="162" fill="var(--gold)">PRAXIS</text>';
+  html +=       '</g>';
+  html +=     '</svg>';
   html +=   '</div>';
-  html += '</article>';
+  html +=   '<div class="model-cap" id="about-evocap">Readers have always worked this way &mdash; Praxis is the <b>next station</b>. Tap one.</div>';
 
-  html += '</div></section>';
+  html +=   '<p>The whole app is one pipeline: you read, you mark, the margin becomes a note, notes gather into sub-theories, sub-theories thread into an arc, and an arc &mdash; when it is ready &mdash; steps into the commons to be walked. Every surface exists to move thought one station down that line. Nothing here is decoration.</p>';
 
-  // ----- Panel 2: Re-enter a page. Umber port: native <details> accordions in
-  // the mock's .about-section / .about-accordion frame; the four live intros
-  // (Home / Shelf / Arcs / Notebook) are preserved as the accordion bodies. -----
-  html += '<section class="about-panel" data-panel="rearm">';
-  // W9: the "Re-enter a page" section is single-sourced from Intros.INTROS
-  // (the same array the per-page panels render from) + the retakeable walk.
-  html +=   (window.Intros && window.Intros.buildAboutOrientation) ? window.Intros.buildAboutOrientation() : '';
+  // Model 2 -- the pipeline (tappable stations)
+  html +=   '<div class="model pipe">';
+  html +=     '<svg viewBox="0 0 640 96" role="img" aria-label="The pipeline: read, mark, note, sub-theory, arc, commons">';
+  html +=       '<line x1="60" y1="44" x2="580" y2="44" stroke="var(--br-deep)" stroke-opacity="0.3" stroke-width="1.2"/>';
+  html +=       '<path d="M107 39 L116 44 L107 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
+  html +=       '<path d="M211 39 L220 44 L211 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
+  html +=       '<path d="M315 39 L324 44 L315 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
+  html +=       '<path d="M419 39 L428 44 L419 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
+  html +=       '<path d="M523 39 L532 44 L523 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
+  html +=       '<g class="stn on" data-i="0"><circle cx="60" cy="44" r="14"/><text x="60" y="78">READ</text></g>';
+  html +=       '<g class="stn" data-i="1"><circle cx="164" cy="44" r="14"/><text x="164" y="78">MARK</text></g>';
+  html +=       '<g class="stn" data-i="2"><circle cx="268" cy="44" r="14"/><text x="268" y="78">NOTE</text></g>';
+  html +=       '<g class="stn" data-i="3"><circle cx="372" cy="44" r="14"/><text x="372" y="78">SUB-THEORY</text></g>';
+  html +=       '<g class="stn" data-i="4"><circle cx="476" cy="44" r="14"/><text x="476" y="78">ARC</text></g>';
+  html +=       '<g class="stn" data-i="5"><circle cx="580" cy="44" r="14"/><text x="580" y="78">COMMONS</text></g>';
+  html +=     '</svg>';
+  html +=   '</div>';
+  html +=   '<div class="model-cap" id="about-pipecap">The <b>pipeline</b> &mdash; every surface exists to move thought one station down this line. Tap a station.</div>';
+
+  // Freire pullquote -- live doctrinal words (views.js legacy 18272), mockup placement.
+  html +=   '<div class="pull">Praxis is reflection and action upon the world in order to transform it.<span class="who">after Freire, by way of Aristotle</span></div>';
+
+  // Model 3 -- praxis <-> pedagogy toggle
+  html +=   '<div class="mtoggle"><div class="pillbox">';
+  html +=     '<button type="button" class="mtog on" data-m="px" aria-pressed="true">Praxis</button>';
+  html +=     '<button type="button" class="mtog" data-m="pd" aria-pressed="false">Pedagogy</button>';
+  html +=   '</div></div>';
+  html +=   '<div class="model">';
+  html +=     '<svg id="about-m-px" viewBox="0 0 640 190" role="img" aria-label="Praxis: reflection and action, one turning, theory lived at the center">';
+  html +=       '<defs><marker id="aPx" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<path d="M316 90 C 262 18, 132 30, 130 95 C 132 160, 262 172, 316 100" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aPx)"/>';
+  html +=       '<path d="M324 100 C 378 172, 508 160, 510 95 C 508 30, 378 18, 324 90" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aPx)"/>';
+  html +=       '<text x="210" y="99">REFLECTION</text>';
+  html +=       '<text x="430" y="99">ACTION</text>';
+  html +=       '<circle cx="320" cy="95" r="27" fill="var(--text-on-dark)" stroke="var(--gold)" stroke-width="1.4"/>';
+  html +=       '<text x="320" y="92" class="serifc" style="font-size:14px">praxis</text>';
+  html +=       '<text x="320" y="110" style="font-size:8px">THEORY LIVED</text>';
+  html +=     '</svg>';
+  html +=     '<svg id="about-m-pd" viewBox="0 0 640 190" role="img" aria-label="Pedagogy: teacher and learner overlapping, meaning co-created" style="display:none">';
+  html +=       '<defs><marker id="aPd" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<circle cx="252" cy="95" r="72" fill="var(--text-on-dark)" fill-opacity="0.5" stroke="var(--br-deep)" stroke-opacity="0.4" stroke-width="1.2"/>';
+  html +=       '<circle cx="388" cy="95" r="72" fill="var(--text-on-dark)" fill-opacity="0.5" stroke="var(--br-deep)" stroke-opacity="0.4" stroke-width="1.2"/>';
+  html +=       '<path d="M262 18 Q320 0 378 18" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPd)"/>';
+  html +=       '<path d="M378 172 Q320 190 262 172" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPd)"/>';
+  html +=       '<text x="200" y="99">TEACHER</text>';
+  html +=       '<text x="440" y="99">LEARNER</text>';
+  html +=       '<text x="320" y="92" class="serifc" style="font-size:15px">meaning</text>';
+  html +=       '<text x="320" y="110" style="font-size:8px">CO-CREATED</text>';
+  html +=     '</svg>';
+  html +=   '</div>';
+  html +=   '<div class="model-cap" id="about-pxcap"><b>Praxis</b> &mdash; reflection and action, one turning. Theory lived.</div>';
   html += '</section>';
 
-  page.innerHTML = html;
+  // ===================== CRITICAL PEDAGOGY =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">Critical pedagogy</div>';
+  html +=   '<h2>You are not an empty <em>account</em>.</h2>';
+  // Neutrality epigraph -- live doctrinal words (views.js legacy 18197), byte-identical.
+  html +=   '<div class="pull" style="margin-top:6px">Critical pedagogy is a tradition of teaching that begins from a simple refusal: education is never neutral. How we learn &mdash; and who gets to make meaning &mdash; is always a question of power.</div>';
+  // Lineage prose -- preserved verbatim from views.js legacy 18198.
+  html +=   '<p>It runs through <b>Paulo Freire</b>, <b>bell hooks</b>, and <b>Audre Lorde</b>, among others. Freire named the &ldquo;banking&rdquo; model &mdash; where a teacher deposits facts into a student treated as an empty account &mdash; and set against it a <b>problem-posing</b> education, where teacher and learner make knowledge together, beginning from the learner\'s own world. hooks insisted this could be done with love, as a practice of freedom. Lorde reminded us that the master\'s tools will never dismantle the master\'s house.</p>';
+  html +=   '<p>Praxis is built in that lineage. You are not an empty account to be filled.</p>';
 
-  // Crests reuse the live shared glyph component -- no second sprite, no second
-  // :root. Each placeholder carries its pixel size in data-yumi-glyph.
-  var glyphSlots = page.querySelectorAll('[data-yumi-glyph]');
-  var gi;
-  for (gi = 0; gi < glyphSlots.length; gi++) {
-    glyphSlots[gi].appendChild(
-      yumiGlyphNode(parseInt(glyphSlots[gi].getAttribute('data-yumi-glyph'), 10))
-    );
-  }
+  // Model 4 -- banking <-> problem-posing toggle (supersedes the legacy #bp figure)
+  html +=   '<div class="mtoggle"><div class="pillbox">';
+  html +=     '<button type="button" class="mtog on" data-m="bk" aria-pressed="true">Banking</button>';
+  html +=     '<button type="button" class="mtog" data-m="pp" aria-pressed="false">Problem-posing</button>';
+  html +=   '</div></div>';
+  html +=   '<div class="model">';
+  html +=     '<svg id="about-m-bk" viewBox="0 0 640 160" role="img" aria-label="The banking model: teacher deposits facts into a student treated as an empty account">';
+  html +=       '<defs><marker id="aBk" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<circle cx="120" cy="72" r="30" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<line x1="106" y1="63" x2="134" y2="63" stroke="var(--gold)" stroke-width="2.4"/>';
+  html +=       '<line x1="106" y1="72" x2="134" y2="72" stroke="var(--gold)" stroke-width="2.4"/>';
+  html +=       '<line x1="106" y1="81" x2="134" y2="81" stroke="var(--gold)" stroke-width="2.4"/>';
+  html +=       '<text x="290" y="40">&ldquo;FACTS&rdquo; DEPOSITED</text>';
+  html +=       '<line x1="158" y1="72" x2="415" y2="72" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aBk)"/>';
+  html +=       '<circle cx="215" cy="72" r="7" fill="var(--gold)" fill-opacity="0.75"/>';
+  html +=       '<circle cx="275" cy="72" r="7" fill="var(--gold)" fill-opacity="0.75"/>';
+  html +=       '<circle cx="335" cy="72" r="7" fill="var(--gold)" fill-opacity="0.75"/>';
+  html +=       '<path d="M436 44 L436 88 A26 26 0 0 0 488 88 L488 44" fill="var(--text-on-dark)" fill-opacity="0.6" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.3"/>';
+  html +=       '<text x="120" y="126">TEACHER</text>';
+  html +=       '<text x="120" y="143" class="serifc" style="font-size:12px">the one who knows</text>';
+  html +=       '<text x="462" y="126">STUDENT</text>';
+  html +=       '<text x="462" y="143" class="serifc" style="font-size:12px">an empty account</text>';
+  html +=     '</svg>';
+  html +=     '<svg id="about-m-pp" viewBox="0 0 640 190" role="img" aria-label="Problem-posing: teacher and learner face the world together" style="display:none">';
+  html +=       '<defs><marker id="aPp" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<circle cx="170" cy="58" r="22" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<circle cx="170" cy="132" r="22" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<line x1="170" y1="84" x2="170" y2="106" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<line x1="177" y1="106" x2="177" y2="84" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<line x1="196" y1="62" x2="352" y2="86" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<line x1="352" y1="96" x2="196" y2="72" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<line x1="196" y1="126" x2="352" y2="102" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<line x1="352" y1="112" x2="196" y2="136" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aPp)"/>';
+  html +=       '<rect x="365" y="70" width="50" height="50" rx="6" transform="rotate(45 390 95)" fill="var(--text-on-dark)" stroke="var(--gold)" stroke-width="1.4"/>';
+  html +=       '<text x="390" y="101" class="serifc" style="font-size:18px">?</text>';
+  html +=       '<text x="170" y="24">TEACHER</text>';
+  html +=       '<text x="170" y="176">LEARNER</text>';
+  html +=       '<text x="390" y="164">THE WORLD &middot; THE PROBLEM</text>';
+  html +=     '</svg>';
+  html +=   '</div>';
+  html +=   '<div class="model-cap" id="about-bkcap">The <b>banking</b> model &mdash; knowledge flows one way: the teacher deposits, the student receives.</div>';
+  html += '</section>';
+
+  // ===================== THE COVENANT =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">The covenant</div>';
+  html +=   '<h2>Nothing <em>hidden</em>.</h2>';
+  html +=   '<div class="featrows">';
+  html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></div>';
+  html +=       '<div><div class="ft">Yumi sees only what you allow</div><div class="fd">Listed plainly on <i>What Yumi Sees</i> &mdash; always current, always yours to change.</div></div></div>';
+  html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>';
+  html +=       '<div><div class="ft">Memory is yours to grant</div><div class="fd">Off until you turn it on. Readable, correctable, endable.</div></div></div>';
+  html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h6v6H7a4 4 0 0 0 4 4"/><path d="M13 7h6v6h-4a4 4 0 0 0 4 4"/></svg></div>';
+  html +=       '<div><div class="ft">Your words stay yours</div><div class="fd">Yumi quotes you; she never replaces you. An interlocutor, not an authority.</div></div></div>';
+  html +=   '</div>';
+  html += '</section>';
+
+  // ===================== WHAT IT REFUSES =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">What it refuses to become</div>';
+  html +=   '<h2>No counts that <em>flatter</em>.</h2>';
+  html +=   '<div class="refuse">';
+  html +=     '<div class="ref"><span class="no">no&middot;1</span><span class="rt"><b>No feed.</b> Home is a desk, not a stream. Nothing scrolls forever.</span></div>';
+  html +=     '<div class="ref"><span class="no">no&middot;2</span><span class="rt"><b>No likes, no ranks.</b> Thought travels by consequence &mdash; walked, questioned, built on &mdash; never by applause.</span></div>';
+  html +=     '<div class="ref"><span class="no">no&middot;3</span><span class="rt"><b>No harvesting.</b> Your reading is not a product. What the app knows, you can read; what it remembers, you granted.</span></div>';
+  html +=     '<div class="ref"><span class="no">no&middot;4</span><span class="rt"><b>No ghostwriting.</b> Yumi asks more than she answers. The theory that leaves this place is yours.</span></div>';
+  html +=   '</div>';
+
+  // Model 5 -- applause <-> consequence toggle
+  html +=   '<div class="mtoggle"><div class="pillbox">';
+  html +=     '<button type="button" class="mtog on" data-m="ap" aria-pressed="true">Applause</button>';
+  html +=     '<button type="button" class="mtog" data-m="cq" aria-pressed="false">Consequence</button>';
+  html +=   '</div></div>';
+  html +=   '<div class="model cq">';
+  html +=     '<svg id="about-m-ap" viewBox="0 0 640 150" role="img" aria-label="The applause model: one-way, then nothing">';
+  html +=       '<defs><marker id="aAp" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
+  html +=       '<circle cx="110" cy="66" r="28" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<text x="110" y="112">YOUR ARC</text>';
+  html +=       '<line x1="142" y1="66" x2="304" y2="66" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.2" marker-end="url(#aAp)"/>';
+  html +=       '<rect x="314" y="44" width="118" height="44" rx="14" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<text x="373" y="71" style="font-size:13px">&#9825; 1,024</text>';
+  html +=       '<line x1="436" y1="66" x2="556" y2="66" stroke="var(--br-deep)" stroke-opacity="0.4" stroke-width="1.2" stroke-dasharray="3 6"/>';
+  html +=       '<text x="575" y="71" style="font-size:15px" fill="var(--br-deep)" fill-opacity="0.45">&times;</text>';
+  html +=       '<text x="510" y="112">THEN NOTHING</text>';
+  html +=     '</svg>';
+  html +=     '<svg id="about-m-cq" viewBox="0 0 640 200" role="img" aria-label="The consequence loop: published, walked, built on, returns to you" style="display:none">';
+  html +=       '<defs>';
+  html +=         '<marker id="aCq" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker>';
+  html +=         '<marker id="aCqT" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--teal)"/></marker>';
+  html +=       '</defs>';
+  html +=       '<path d="M336 46 Q 470 52 508 88" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aCq)"/>';
+  html +=       '<path d="M508 112 Q 470 148 336 154" fill="none" stroke="var(--br-deep)" stroke-opacity="0.5" stroke-width="1.3" marker-end="url(#aCq)"/>';
+  html +=       '<path d="M304 154 Q 170 148 130 114" fill="none" stroke="var(--teal)" stroke-width="1.3" marker-end="url(#aCqT)"/>';
+  html +=       '<path d="M128 86 Q 170 48 304 42" fill="none" stroke="var(--teal)" stroke-width="1.3" marker-end="url(#aCqT)"/>';
+  html +=       '<circle cx="320" cy="42" r="13" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<circle cx="515" cy="100" r="13" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<circle cx="320" cy="158" r="13" fill="var(--text-on-dark)" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2"/>';
+  html +=       '<circle cx="120" cy="100" r="15" fill="var(--text-on-dark)" stroke="var(--teal)" stroke-width="1.6"/>';
+  html +=       '<text x="320" y="22">PUBLISHED</text>';
+  html +=       '<text x="552" y="138">WALKED</text>';
+  html +=       '<text x="320" y="190">QUESTIONED &middot; BUILT ON</text>';
+  html +=       '<text x="106" y="138" fill="var(--teal)">RETURNS TO YOU</text>';
+  html +=       '<text x="320" y="106" class="serifc">consequence</text>';
+  html +=     '</svg>';
+  html +=   '</div>';
+  html +=   '<div class="model-cap" id="about-cqcap">The <b>applause</b> model &mdash; a count that flatters, travels one way, and ends there.</div>';
+  html += '</section>';
+
+  // ===================== THE LEXICON =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">The lexicon</div>';
+  html +=   '<h2>The words this place <em>uses</em>.</h2>';
+  html +=   '<dl class="lex">';
+  html +=     '<div class="lexi"><dt>praxis</dt><dd>Reflection and action, together &mdash; Freire&rsquo;s word for reading that intends to change something. Not study for its own sake; study that returns to the world.</dd></div>';
+  html +=     '<div class="lexi"><dt>mark</dt><dd>The symbol a sub-theory wears &mdash; its face in the field. Chosen once from the shape-and-color vocabulary, then kept for life, so a thought stays recognizable as it grows.</dd></div>';
+  html +=     '<div class="lexi"><dt>arc</dt><dd>A body of thought under construction &mdash; the sub-theories it holds, the threads between them, and the books that feed it. An arc is where reading becomes a position.</dd></div>';
+  html +=     '<div class="lexi"><dt>sub-theory</dt><dd>One claim you are building &mdash; small enough to test against a page, real enough to defend in public. Arcs are made of these.</dd></div>';
+  html +=     '<div class="lexi"><dt>thread</dt><dd>A drawn connection between two sub-theories &mdash; the visible line of reasoning. Threads carry the flow of an arc; they are how an argument holds together.</dd></div>';
+  html +=     '<div class="lexi"><dt>register</dt><dd>What kind of note a note is. Marginalia sits beside the text and argues with it; journal sits beside your life and remembers why the text mattered. Same margin, different work.</dd></div>';
+  html +=     '<div class="lexi"><dt>lens</dt><dd>An idea your whole shelf regroups around &mdash; care, power, method &mdash; so the same books answer a different question. A lens changes what your library is for without changing what it holds.</dd></div>';
+  html +=     '<div class="lexi"><dt>maturity</dt><dd>How far a sub-theory has come &mdash; shown as glow in the field, never as a percentage. Thought ripens; it doesn&rsquo;t fill a progress bar.</dd></div>';
+  html +=     '<div class="lexi"><dt>concentrate</dt><dd>Tapping one mark in the field to bring it forward &mdash; its threads light, the rest dims. Attention as a gesture.</dd></div>';
+  html +=     '<div class="lexi"><dt>walk</dt><dd>Reading another person&rsquo;s arc the way it was built &mdash; thread by thread, in their order, at their pace. To walk an arc is to think alongside its author.</dd></div>';
+  html +=     '<div class="lexi"><dt>build-on</dt><dd>What you make in answer to someone&rsquo;s arc &mdash; an extension, an objection, a question that sticks. Build-ons travel back to the author: consequence, not applause.</dd></div>';
+  html +=     '<div class="lexi"><dt>the commons</dt><dd>Where published arcs live &mdash; walked, questioned, and built on by other readers. Thought moves here by what it sets in motion, never by counts.</dd></div>';
+  html +=     '<div class="lexi"><dt>the field</dt><dd>An arc&rsquo;s interior &mdash; every sub-theory lit as its mark, arranged by your hand, threads carrying the flow. The shape is yours; Praxis never tidies uninvited.</dd></div>';
+  html +=     '<div class="lexi"><dt>the portrait</dt><dd>Your account page &mdash; an instrument, not a mirror. Where your reading has been and what it keeps reaching for, drawn so you can ask it questions.</dd></div>';
+  html +=     '<div class="lexi yu"><dt>Yumi &middot; 由美</dt><dd>&ldquo;Reasoned beauty.&rdquo; A second mind, on request &mdash; she reads along only where you allow it, asks more than she answers, and never writes your thoughts for you. Not a tooltip, not a ghostwriter.</dd></div>';
+  html +=   '</dl>';
+  html += '</section>';
+
+  // ===================== ORIENTATION (existing single-sourced card, bright frame) =====================
+  html += '<section class="sect">';
+  html +=   '<div class="sk">Orientation</div>';
+  // W9: single-sourced from Intros.INTROS (the same array the per-page panels
+  // render from) + the retakeable walk. buildAboutOrientation carries its own
+  // heading + intro copy, so the section adds only the eyebrow + bright frame.
+  // The frame re-points the ground-sensitive tokens back to the light page so
+  // the reused .about-section / .about-accordion / .intro-* rules read
+  // dark-on-cream.
+  html +=   '<div class="orientation">';
+  html +=     ((window.Intros && window.Intros.buildAboutOrientation) ? window.Intros.buildAboutOrientation() : '');
+  html +=   '</div>';
+  html += '</section>';
+
+  // ===================== COLOPHON =====================
+  html += '<footer class="colo">';
+  html +=   '<div class="line">praxis &middot; the covenant holds &middot; version stamped at build</div>';
+  html +=   '<div class="vow">Built by a reader, for readers.</div>';
+  html += '</footer>';
+
+  page.innerHTML = html;
 
   // W9: wire the "retake the first walk" button inside About Orientation.
   var retakeBtn = page.querySelector('#about-retake-walk');
@@ -18358,70 +18436,90 @@ function renderAbout() {
     retakeBtn.onclick = function () { window.Intros.startJourney(); };
   }
 
-  // S3: wire the banking <-> problem-posing toggle.
-  var bpFig = page.querySelector('#bp');
-  if (bpFig) {
-    var bpButtons = bpFig.querySelectorAll('.bp-btn');
-    var bpi;
-    for (bpi = 0; bpi < bpButtons.length; bpi++) {
-      aboutWireBp(bpButtons[bpi], bpFig, bpButtons);
-    }
-  }
+  // Model 1 -- evolution stations (container gets .sel so unselected stations dim).
+  aboutWireStations(page, '.evo .stn', 'about-evocap', [
+    '<b>THE BOOK</b> &mdash; reading: the conversation begins.',
+    '<b>THE MARGIN</b> &mdash; notes on the book: you answer back.',
+    '<b>REFLECTION</b> &mdash; the journal: the book meets your life.',
+    '<b>PRAXIS</b> &mdash; the next step: reflection becomes theory, and theory is threaded, walked, and built on.'
+  ], 'data-e', page.querySelector('.model.evo'));
 
-  // S4: wire the panel switcher (segmented control). Umber port: the re-arm
-  // accordions are native <details>, so no JS accordion wiring is needed.
-  var segBtns = page.querySelectorAll('.seg-opt');
-  var aboutPanels = page.querySelectorAll('.about-panel');
-  var si;
-  for (si = 0; si < segBtns.length; si++) {
-    aboutWireSeg(segBtns[si], segBtns, aboutPanels);
+  // Model 2 -- pipeline stations.
+  aboutWireStations(page, '.pipe .stn', 'about-pipecap', [
+    '<b>READ</b> &mdash; the book opens. Everything starts on a page.',
+    '<b>MARK</b> &mdash; the margin argues back; a passage is claimed.',
+    '<b>NOTE</b> &mdash; the mark becomes language of your own, kept by register.',
+    '<b>SUB-THEORY</b> &mdash; notes gather into one claim you are building.',
+    '<b>ARC</b> &mdash; claims thread into a body of thought.',
+    '<b>COMMONS</b> &mdash; the arc steps out to be walked and built on.'
+  ], 'data-i', null);
+
+  // Models 3-5 -- scoped toggle pairs (each swaps its two SVGs + caption).
+  var groups = [
+    { a: 'px', b: 'pd', sa: 'about-m-px', sb: 'about-m-pd', cap: 'about-pxcap',
+      ta: '<b>Praxis</b> &mdash; reflection and action, one turning. Theory lived.',
+      tb: '<b>Pedagogy</b> &mdash; the art and science of co-creating meaning. Never a deposit; always a making.' },
+    { a: 'bk', b: 'pp', sa: 'about-m-bk', sb: 'about-m-pp', cap: 'about-bkcap',
+      ta: 'The <b>banking</b> model &mdash; knowledge flows one way: the teacher deposits, the student receives.',
+      tb: '<b>Problem-posing</b> &mdash; teacher and learner face the world together. Knowledge is made, not deposited.' },
+    { a: 'ap', b: 'cq', sa: 'about-m-ap', sb: 'about-m-cq', cap: 'about-cqcap',
+      ta: 'The <b>applause</b> model &mdash; a count that flatters, travels one way, and ends there.',
+      tb: '<b>Consequence</b> &mdash; what your thinking set in motion returns to shape it. The loop closes on you.' }
+  ];
+  var gj;
+  for (gj = 0; gj < groups.length; gj++) {
+    aboutWireToggle(page, groups[gj]);
   }
 
   host.appendChild(page);
 }
 
-// ES3 handler for the §02 banking <-> problem-posing toggle: flips the figure's
-// data-state (CSS cross-fades the SVG + swaps the caption) and updates aria-pressed.
-function aboutWireBp(btn, fig, btns) {
-  btn.addEventListener('click', function() {
-    var stateName = btn.getAttribute('data-bp');
-    fig.setAttribute('data-state', stateName);
-    var b;
-    for (b = 0; b < btns.length; b++) {
-      if (btns[b].getAttribute('data-bp') === stateName) {
-        btns[b].setAttribute('aria-pressed', 'true');
-      } else {
-        btns[b].setAttribute('aria-pressed', 'false');
-      }
-    }
+// Station tapper for the evolution + pipeline models: sets .on on the tapped
+// station, clears the rest, swaps the caption. For the evolution model the
+// container also gets .sel so the non-selected stations dim (CSS-driven).
+function aboutWireStations(page, sel, capId, caps, dataAttr, dimModel) {
+  var stns = page.querySelectorAll(sel);
+  var i;
+  for (i = 0; i < stns.length; i++) {
+    aboutBindStation(page, stns[i], sel, capId, caps, dataAttr, dimModel);
+  }
+}
+function aboutBindStation(page, stn, sel, capId, caps, dataAttr, dimModel) {
+  stn.addEventListener('click', function () {
+    if (dimModel) { dimModel.setAttribute('class', 'model evo sel'); }
+    var all = page.querySelectorAll(sel);
+    var k;
+    for (k = 0; k < all.length; k++) { all[k].setAttribute('class', 'stn'); }
+    stn.setAttribute('class', 'stn on');
+    var cap = page.querySelector('#' + capId);
+    var idx = parseInt(stn.getAttribute(dataAttr), 10);
+    if (cap && caps[idx]) { cap.innerHTML = caps[idx]; }
   });
 }
 
-// ES3 handlers for the S4 panel switcher (segmented control) + the single-open
-// re-enter accordion, scoped to the rendered About page element.
-function aboutShowPanel(name, segBtns, panels) {
-  var i;
-  for (i = 0; i < panels.length; i++) {
-    if (panels[i].getAttribute('data-panel') === name) {
-      panels[i].classList.add('is-active');
-    } else {
-      panels[i].classList.remove('is-active');
-    }
-  }
-  for (i = 0; i < segBtns.length; i++) {
-    if (segBtns[i].getAttribute('data-about') === name) {
-      segBtns[i].classList.add('is-on');
-      segBtns[i].setAttribute('aria-pressed', 'true');
-    } else {
-      segBtns[i].classList.remove('is-on');
-      segBtns[i].setAttribute('aria-pressed', 'false');
-    }
-  }
-  window.scrollTo(0, 0);
-}
-function aboutWireSeg(btn, segBtns, panels) {
-  btn.addEventListener('click', function() {
-    aboutShowPanel(btn.getAttribute('data-about'), segBtns, panels);
+// Scoped toggle pair (praxis/pedagogy, banking/problem-posing, applause/
+// consequence): flips the two SVGs' display, swaps the caption, updates
+// aria-pressed. Scoped to the rendered page element.
+function aboutWireToggle(page, g) {
+  var ba = page.querySelector('[data-m="' + g.a + '"]');
+  var bb = page.querySelector('[data-m="' + g.b + '"]');
+  if (!ba || !bb) { return; }
+  var sa = page.querySelector('#' + g.sa);
+  var sb = page.querySelector('#' + g.sb);
+  var cap = page.querySelector('#' + g.cap);
+  ba.addEventListener('click', function () {
+    ba.className = 'mtog on'; bb.className = 'mtog';
+    ba.setAttribute('aria-pressed', 'true'); bb.setAttribute('aria-pressed', 'false');
+    if (sa) { sa.style.display = 'block'; }
+    if (sb) { sb.style.display = 'none'; }
+    if (cap) { cap.innerHTML = g.ta; }
+  });
+  bb.addEventListener('click', function () {
+    bb.className = 'mtog on'; ba.className = 'mtog';
+    bb.setAttribute('aria-pressed', 'true'); ba.setAttribute('aria-pressed', 'false');
+    if (sb) { sb.style.display = 'block'; }
+    if (sa) { sa.style.display = 'none'; }
+    if (cap) { cap.innerHTML = g.tb; }
   });
 }
 

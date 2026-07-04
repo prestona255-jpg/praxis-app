@@ -34,7 +34,7 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✗ (consent lookup only) | ✗ sync |
 | 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ v11940/11953/12439 | ? combined gate v11953 → "not found" copy, no sign-in CTA | ✗ sync |
 | 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
-| 12 | `#about` renderAbout | ✗ v18148 | ✗ | — static | ✗ static | — static |
+| 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
 | 13 | `#yumi-sees` renderWhatYumiSeesPage | ✗ v13952 | ✗ css3482 base only | ✅ per-section v13827–13925 | ✗ | ✗ sync |
 | 14 | `#profile` renderOwnProfile | ✅ ember v15827 | ✅ css12078 | ✅ v16042 | ✅ hard v15832 | ◐ social stats silent-fail (v16114) |
 | 15 | `#commons` renderCommons | ✅ ember v16421 | ✅ css12217 | ✅ v16472 | ✅ hard v16416 | ✅ v16459/16465 |
@@ -42,7 +42,7 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 17 | `#walk/<arcId>` renderInteract | ✅ ember v16625 | ✅ css12217 | ✅ v16634/16641/16805 | ✅ hard v16620 | ✅ v16626/16759 |
 | 18 | `#search` renderSearch (W8) | ✅ v1025 | ✅ css11768 | ✅ v963 | ◐ soft CTA v992–1000 | — sync by design (no fetch) |
 
-**Tallies:** Amber 15/18 (✗ artifact, about, yumi-sees) · Mobile 16/18
+**Tallies:** Amber 16/18 (✗ artifact, yumi-sees) · Mobile 16/18
 (✗ artifact, yumi-sees) · Empty 15✅ 1✗ 1? 1— · Logged-out: 7 hard,
 3 soft, 8 none/partial (three coexisting philosophies — see §3, L3) ·
 Load/Error: 3✅ 1◐, rest sync-render with none.
@@ -82,7 +82,8 @@ Load/Error: 3✅ 1◐, rest sync-render with none.
 | Wave | Scope | Status |
 |------|-------|--------|
 | Housekeeping | Commit this file + fix H1/M2/M3 (docs only, zero code) | NEXT |
-| W9 | Intro system SHIPPED: first-run guided journey (real writes: shelve/note/consent) + 12 single-sourced per-page panels (dual-ground) + About Orientation; scripted chat greeting replaced. About kept bright (Amber ✗ unchanged, §1) | SHIPPED v3.173 |
+| W9 | Intro system SHIPPED: first-run guided journey (real writes: shelve/note/consent) + 12 single-sourced per-page panels (dual-ground) + About Orientation; scripted chat greeting replaced. About kept bright at W9 (superseded by W10 Lane A) | SHIPPED v3.173 |
+| W10 Lane A | `#about` → dark Amber ground + five interactive models (evolution · pipeline · praxis⇄pedagogy · banking⇄problem-posing · applause⇄consequence); live doctrinal prose preserved verbatim; Orientation card preserved in a bright frame | SHIPPED v3.174 |
 | W10 | Polish sweep: artifact + yumi-sees Amber/mobile conversion · loading/error states (L2) · logged-out unification (L3) · L4 auth gate · dead-code sweep (L1) | AFTER W9 |
 | Pre-audit prep | CRAFT.md + metrics · sound design doc · seed real arcs · writing-loop diagnosis session · census delta → refresh this board | AFTER W10 |
 | AUDIT | Fable, findings-report-only; charter = correctness + craft + writing-loop deep-dive; after July 7 | GATED ON ABOVE |
