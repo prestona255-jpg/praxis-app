@@ -7445,7 +7445,10 @@ function marginaliaForBook(bookId) {
     if (!Object.prototype.hasOwnProperty.call(map, k)) { continue; }
     var e = map[k];
     if (!e || e.register !== 'marginalia') { continue; }
-    if (uid && e.userId && e.userId !== uid) { continue; }
+    // W12 S10: seed-owned marginalia (the Pedagogy of Desire worked example)
+    // always surfaces -- signed-in AND signed-out -- mirroring the sentinel
+    // open-check. Real marginalia still filters to the viewer exactly as before.
+    if (e.userId !== '__praxis_seed__' && uid && e.userId && e.userId !== uid) { continue; }
     if (!e.bookIds || e.bookIds.indexOf(bookId) === -1) { continue; }
     out.push(e);
   }
@@ -9067,11 +9070,36 @@ function renderSubTheoryPage(id) {
   // W11 S8 Lane 1 (L3): a sub-theory is your authored thinking -- hard-gate
   // signed-out (mirror #notebook: in-place prompt, no redirect).
   var stpUser = getCurrentUser();
-  if (!stpUser || !stpUser.uid) {
+  // W12 S10: the "A Pedagogy of Desire" worked example's sub-theories are
+  // seed-owned (userId === '__praxis_seed__'). Mirror renderArcDetail's sentinel
+  // open-check (arc.userId !== '__praxis_seed__' && (!user || ...)) so the READ
+  // page opens for them signed-out; the BUILD surface (renderSubTheoryBuild)
+  // stays hard-gated. Real, owner-authored sub-theories still wall signed-out
+  // exactly as W11 S8 Lane 1 shipped.
+  var stpSeedRec = state.subTheories && state.subTheories[id];
+  var stpIsSeed = !!(stpSeedRec && stpSeedRec.userId === '__praxis_seed__');
+  if (!stpIsSeed && (!stpUser || !stpUser.uid)) {
     var stpWrap = document.createElement('section');
     stpWrap.className = 'st-page lum-amber-deep';
     stpWrap.appendChild(buildSignedOutPrompt('This sub-theory is private', 'Sign in to read and shape your sub-theories — your thinking is yours alone.'));
     host.appendChild(stpWrap);
+    return;
+  }
+  // W12 S10: a seed-owned sub-theory renders READ-ONLY for everyone -- you VIEW
+  // the worked example, you don't edit it. Reuse the existing read-only renderer
+  // inside a back-to-Field wrap; the editable Page below is untouched for real,
+  // owner-authored sub-theories. This also closes an accidental affordance: pre-
+  // W12 a signed-in visitor reaching #subtheory/<seedId> got the editable Page.
+  if (stpIsSeed) {
+    var roWrap = document.createElement('section');
+    roWrap.className = 'st-page lum-amber-deep';
+    var roBack = document.createElement('a');
+    roBack.className = 'st-tb-back';
+    roBack.href = stpSeedRec.arcId ? ('#arc/' + stpSeedRec.arcId) : '#arcs';
+    roBack.textContent = '‹ Field';
+    roWrap.appendChild(roBack);
+    roWrap.appendChild(renderSubTheoryReadOnly(stpSeedRec, (stpSeedRec.status === 'published') ? 'published' : 'draft'));
+    host.appendChild(roWrap);
     return;
   }
 
@@ -10878,10 +10906,19 @@ function renderArtifact(bookId) {
   }
 
   var user = getCurrentUser();
+  // W12 S10: the Pedagogy of Desire worked example seeds a book artifact under
+  // artifactKey('__praxis_seed__', bookId). Its EXISTENCE for this book is the
+  // signal that this is a seed worked-example artifact -- mirror renderArcDetail's
+  // sentinel open-check so it renders signed-out, and fall back to it when a
+  // signed-in user's own-keyed lookup misses on a seed arc's book. Real books
+  // have no such key, so the signed-out gate + own-key lookup are byte-unchanged
+  // for them (W11 S8 Lane 1 copy preserved).
+  var podArtKey = (typeof artifactKey === 'function') ? artifactKey('__praxis_seed__', bookId) : ('__praxis_seed__:' + bookId);
+  var podArt = (state.bookArtifacts && state.bookArtifacts[podArtKey]) ? state.bookArtifacts[podArtKey] : null;
   // W11 S8 Lane 1 (copy): signed-out gets an honest sign-in invitation instead
   // of the misleading "No Artifact yet" empty. Signed-in-no-artifact still falls
-  // through to the empty below.
-  if (!user || !user.uid) {
+  // through to the empty below. A seed worked-example artifact bypasses the gate.
+  if ((!user || !user.uid) && !podArt) {
     wrap.appendChild(buildSignedOutPrompt('Your Artifact is private', 'Sign in to see what this book became in your hands — the artifact is yours.'));
     host.appendChild(wrap);
     return;
@@ -10893,6 +10930,7 @@ function renderArtifact(bookId) {
       artifact = state.bookArtifacts[key];
     }
   }
+  if (!artifact && podArt) { artifact = podArt; }
 
   if (!artifact) {
     var emptyMsg = document.createElement('p');

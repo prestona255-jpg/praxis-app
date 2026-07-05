@@ -28,10 +28,10 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ hard v3700 (W11-S8-L1; soft-CTA retired) | ✗ sync |
 | 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
 | 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
-| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) | ✗ sync |
+| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** | ✗ sync |
 | — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1905→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1914)** | — |
 | 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ v10482 | ✅ css11276 | ✅ v10468/10671/10803 | ✅ hard v10498 (W11-S8-L1) | ✗ sync |
-| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✅ hard v9067 (W11-S8-L1) | ✗ sync |
+| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✅ hard v9067 (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
 | 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) | ✗ sync |
 | 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
 | 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
@@ -118,5 +118,15 @@ each wave: W10 Lane B (v3.175) flipped rows 7 + 13 (Amber + Mobile), closed L4,
 and struck the b/c/e items of L1. W11 S8 Lane 1 (v3.176, f98dc82) flipped the
 Logged-out column to 13 hard (rows 4·5·7·8·9·18 + copy on 10), added #arc/<id>'s
 empty state, and made #profile's social-fetch graceful — L2/L3 front-end DONE;
-Lane 2 (commons-open) deferred as an auth-required rules change. Next full
-refresh: the census delta before the audit charter freezes.*
+Lane 2 (commons-open) deferred as an auth-required rules change. W12 S10
+(v3.177) completed the "A Pedagogy of Desire" seed (4 sub-theories + 16 notes
++ 1 artifact, all `__praxis_seed__`, pure-local) and extended the existing
+`#arc/<id>` sentinel open-exception to the `#subtheory/<id>` READ page (read-
+only) + `#artifact/<id>` + `marginaliaForBook` — real-user hard-gates unchanged
+(the 13-hard tally is for real content; the seed is an exception, as `#arc/<id>`
+already was). It also fixed a pre-existing wipe: `clearUserState` (state.js) now
+PRESERVES `__praxis_seed__`-owned records (+ seed books by id) across sign-out /
+signed-out auth resolution, so the whole seed now PERSISTS signed-out instead of
+flashing then vanishing ~1s after load — which is what made even the row-10
+`#arc/<id>` seed truly viewable signed-out. All real-user records are still
+wiped. Next full refresh: the census delta before the audit charter freezes.*

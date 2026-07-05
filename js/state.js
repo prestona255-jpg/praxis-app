@@ -1706,13 +1706,38 @@ function clearUserState() {
   state.currentArcId = null;
   state.currentSubTheoryId = null;
   state.users = {};
-  state.books = {};
   state.userBooks = {};
   state.notebooks = {};
-  state.notebookEntries = {};
-  state.bookArtifacts = {};
-  state.arcs = {};
-  state.subTheories = {};
+  // W12 S10: PRESERVE the shared '__praxis_seed__' worked example (the Pedagogy
+  // of Desire arc + its books / sub-theories / notes / artifact) across the wipe.
+  // These records are public and global -- never per-user -- so a sign-out or a
+  // signed-out onAuthStateChanged resolution (integrations.js:507, ~1s after
+  // load) must NOT drop them, or the signed-out worked example vanishes just
+  // after it paints. Every REAL-user record is still wiped: only sentinel-owned
+  // records survive. Mirrors the '__praxis_seed__' open-check used in
+  // renderArcDetail / renderSubTheoryPage / marginaliaForBook. Seed books carry
+  // no userId, so they are retained by id from the existing seeds bookkeeping.
+  var seedBookIds = (state.seeds && state.seeds.pedagogyOfDesire && state.seeds.pedagogyOfDesire.bookIds)
+    ? state.seeds.pedagogyOfDesire.bookIds : [];
+  var keepBooks = {}, kbi;
+  for (kbi = 0; kbi < seedBookIds.length; kbi = kbi + 1) {
+    if (state.books && state.books[seedBookIds[kbi]]) { keepBooks[seedBookIds[kbi]] = state.books[seedBookIds[kbi]]; }
+  }
+  state.books = keepBooks;
+  var seedMaps = ['arcs', 'subTheories', 'bookArtifacts', 'notebookEntries'];
+  var smi, kept, rk, srcMap;
+  for (smi = 0; smi < seedMaps.length; smi = smi + 1) {
+    kept = {};
+    srcMap = state[seedMaps[smi]];
+    if (srcMap && typeof srcMap === 'object') {
+      for (rk in srcMap) {
+        if (srcMap.hasOwnProperty(rk) && srcMap[rk] && srcMap[rk].userId === '__praxis_seed__') {
+          kept[rk] = srcMap[rk];
+        }
+      }
+    }
+    state[seedMaps[smi]] = kept;
+  }
   state.SCHEMA_VERSION = '1.9.3';
 }
 
@@ -3171,6 +3196,152 @@ function migrate(stored) {
       ensureBookFieldsAll(stored.books);
     }
     stored.SCHEMA_VERSION = '1.26.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.26.0') {
+    // W12 S10: complete the "A Pedagogy of Desire" worked example. The 1.9.3->
+    // 1.10.0 step seeded the arc + 5 books; this step adds the sub-theories,
+    // marginalia + journal notes, and the finished-piece artifact -- all under
+    // the same '__praxis_seed__' sentinel, written INLINE (createSubTheory /
+    // captureNote / ensureOneArtifact stamp the live uid, so they cannot mint
+    // seed-owned content). Pure-local like the arc: every Firestore build
+    // filters userId===uid, so none of this ever syncs; no rules change. Books
+    // and arc are EXTENDED, never rewritten -- notes/sub-theories/artifact
+    // attach to the existing seed ids read from stored.seeds.pedagogyOfDesire.
+    // Idempotent on two layers: the version stamp (fires once at 1.26.0) and
+    // the pod.contentSeeded guard (survives a version regression).
+    var pod = stored.seeds && stored.seeds.pedagogyOfDesire;
+    if (pod && pod.arcId && pod.bookIds && pod.bookIds.length === 5 && !pod.contentSeeded) {
+      if (!stored.subTheories)     stored.subTheories     = {};
+      if (!stored.notebookEntries) stored.notebookEntries = {};
+      if (!stored.bookArtifacts)   stored.bookArtifacts   = {};
+      var podNow = Date.now();
+      var podArcId = pod.arcId;
+      var podBk = pod.bookIds; // [0]Giroux [1]hooks [2]Grant [3]Epstein [4]Hurston
+
+      // --- Marginalia notes (register 'marginalia', book-scoped, visible) ---
+      var podMarg = [
+        { b: 0, t: 'The zombie is the anti-becoming — a public life that consumes and moves but does not think or feel, the opposite of a self coming awake. Giroux\'s move is to insist this deadening is manufactured, a politics, not an accident.' },
+        { b: 0, t: 'His "disimagination machine" names the systems that make imagining otherwise feel impossible. Every other book in this arc is, in its way, a refusal of that machine. Desire begins where its grip slips.' },
+        { b: 1, t: 'hooks\'s "homeplace": the home as a site of resistance and repair, not retreat. Desire for home is desire for a place to become. Repair is not the opposite of struggle — it is what struggle is for.' },
+        { b: 1, t: 'She insists yearning can be shared — that longing crosses race and class and can become a meeting ground. This is the seed of the arc\'s whole method: different people, the same ache, held in one conversation.' },
+        { b: 2, t: 'Grant\'s core move — talent is a starting point, not a destiny — is true, but it needs Giroux to be more than comforting. Disposability is a system deciding in advance who has potential. Grant tells you potential is buildable; Giroux tells you who is systematically denied the building.' },
+        { b: 2, t: 'Hold his "scaffolding" next to hooks\'s "homeplace": both are structures that let a self grow. One is psychological, one is political. The arc needs both.' },
+        { b: 3, t: 'Epstein\'s "match quality" — the fit between who you are and what you do, often found only after wandering — reframes becoming as a search rather than a straight line. You do not optimize toward a self; you find one by roaming.' },
+        { b: 3, t: 'The arc is an Epstein argument made literal: knowledge built across traditions rather than down one. Breadth as the condition under which desire can even find its object — you cannot want what you have never been allowed to encounter.' },
+        { b: 4, t: 'The pear tree: Janie\'s first awakening to desire is bodily — imagined through the bee and the blossom — desire as knowledge before it is language. This is Lorde\'s erotic in a single image (see Sub-theory 2).' },
+        { b: 4, t: 'The horizon: the far edge Janie refuses to stop reaching for is the central question in one figure — the possibility she will not let anyone shrink. The novel opens on it, too: "Ships at a distance have every man\'s wish on board." Desire as the ship that may or may not come in, held onto regardless.' },
+        { b: 4, t: 'Janie becomes herself through the marriages, the hurricane, the loss of Tea Cake, the trial — not despite the pain but through it. This is Sub-theory 3 rendered in fiction, which is why the novel anchors the arc.' }
+      ];
+      var podMargIds = [];
+      var pmi;
+      for (pmi = 0; pmi < podMarg.length; pmi = pmi + 1) {
+        var pmid = genEntryId();
+        stored.notebookEntries[pmid] = {
+          id: pmid, userId: '__praxis_seed__', register: 'marginalia',
+          isPrivate: false, body: podMarg[pmi].t,
+          bookIds: [ podBk[podMarg[pmi].b] ], arcIds: [], images: [],
+          filed: true, createdAt: podNow, updatedAt: podNow
+        };
+        podMargIds.push(pmid);
+      }
+
+      // --- Journal notes (register 'journal', book-scoped, private default) ---
+      var podJour = [
+        { b: 0, t: 'The sharpest use of Giroux for me is diagnostic: where in my own building does a student\'s, a colleague\'s, or my own imagination get quietly told what is realistic? Those small foreclosures are the machine running at the scale I actually touch — and the place this arc stops being theory and becomes Monday.' },
+        { b: 1, t: 'I keep returning to the idea that longing is a starting point for solidarity, not just a private feeling. If I take that seriously, my classroom is not a place to manage students\' wants but a place to legitimize them — to treat what my kids yearn for as the beginning of thought rather than a distraction from it.' },
+        { b: 2, t: 'The honest tension for me: I love Grant\'s optimism and I distrust where it can land. Read alone it can become bootstraps. Read through this arc it becomes a demand — that a just school would scaffold everyone\'s potential, not celebrate the few who scaffolded their own.' },
+        { b: 3, t: 'Range gives me permission for the shape of my own mind — the wandering across theory and fiction and psychology that I used to treat as a lack of focus. This arc is proof the wandering was the method all along.' },
+        { b: 4, t: 'Janie\'s insistence on her own horizon is the standard I want to teach toward — not "know your limits" but "refuse the fence someone drew and keep your eyes on the far edge." Everything I believe about teaching is in whether I help a kid do that or talk them out of it.' }
+      ];
+      var podJourIds = [];
+      var pji;
+      for (pji = 0; pji < podJour.length; pji = pji + 1) {
+        var pjid = genEntryId();
+        stored.notebookEntries[pjid] = {
+          id: pjid, userId: '__praxis_seed__', register: 'journal',
+          isPrivate: true, body: podJour[pji].t,
+          bookIds: [ podBk[podJour[pji].b] ], arcIds: [], images: [],
+          filed: true, createdAt: podNow, updatedAt: podNow
+        };
+        podJourIds.push(pjid);
+      }
+
+      // Hurston marginalia used as sub-theory evidence (content: pear-tree "see
+      // Sub-theory 2"; struggle "Sub-theory 3 rendered in fiction"). Hurston's
+      // three marginalia are the last pushed: indices 8,9,10.
+      var podPear = podMargIds[8];
+      var podStruggle = podMargIds[10];
+
+      // --- Sub-theories: generate ids first so linkedSubTheories can wire ---
+      var podS1 = genSubTheoryId();
+      var podS2 = genSubTheoryId();
+      var podS3 = genSubTheoryId();
+      var podS4 = genSubTheoryId();
+      var podEv = function (kind, refId, exTitle, exAuthor) {
+        return {
+          id: genEvidenceId(), kind: kind, refId: refId,
+          external: (kind === 'external') ? { title: exTitle, author: exAuthor } : null,
+          quote: '', annotation: '', addedAt: podNow
+        };
+      };
+      var podMkSt = function (id, header, body, evidence, attached, linked) {
+        return {
+          id: id, arcId: podArcId, userId: '__praxis_seed__',
+          header: header, bodyPublic: body, bodyIntellectual: '',
+          evidence: evidence, attachedMarginalia: attached,
+          linkedSubTheories: linked, citationPins: {},
+          status: 'published', format: '', publishedAt: podNow,
+          x: null, y: null, createdAt: podNow, updatedAt: podNow
+        };
+      };
+
+      stored.subTheories[podS1] = podMkSt(podS1,
+        'Desire as Political Refusal',
+        'A social order governs people in part by governing what they are allowed to want. It sets the horizon of the possible and calls everything past it unrealistic, immature, or naive. In that setting, desire that exceeds the permitted is not private feeling — it is refusal. To want what the system has declared impossible for someone like you is to reject the map it drew of your life. Wanting becomes the first political act.\n\nKelley grounds this. In Freedom Dreams he treats the radical imagination as the wellspring of movements: freedom is dreamed before it is built, and the dreaming is not decoration but the source. Lorde sharpens it to the body — the erotic, our deep knowledge of what genuinely satisfies, is a form of power the dominant order teaches us to distrust; reclaiming it, refusing to live numbed to our own wanting, is political work. Love carries it into schools: the demand to thrive, not merely survive, is itself a refusal of institutions built to grind mattering out of children. And Giroux names what refusal is up against — a culture engineered to make imagining otherwise feel impossible.\n\nThe pedagogical turn is the point. Refusal here is not tantrum and it is not despair. It is the first thing a liberatory teacher cultivates — in themselves and in their students — the capacity to want beyond the given, and to treat that wanting as legitimate knowledge rather than a problem to be managed. Lorde\'s warning haunts the whole sub-theory: "the master\'s tools will never dismantle the master\'s house." A desire borrowed from the system that caged you cannot free you; the refusal has to reach for something the system did not issue.',
+        [ podEv('external', null, 'Freedom Dreams', 'Robin D.G. Kelley'),
+          podEv('external', null, 'Uses of the Erotic', 'Audre Lorde'),
+          podEv('external', null, 'We Want to Do More Than Survive', 'Bettina Love'),
+          podEv('book', podBk[0]) ],
+        [], [ podS2 ]);
+
+      stored.subTheories[podS2] = podMkSt(podS2,
+        'Eros in the Classroom',
+        'hooks argues that education has tried to sever the mind from the body and passion from thought — to produce a bloodless classroom where the teacher is a delivery mechanism and the students are containers. That severing is not neutral; it kills the very thing that makes learning transformative. Eros — passion, care, the whole embodied self, the willingness to be moved — is not a distraction from rigorous teaching. It is the condition of it. Education becomes what she calls "the practice of freedom" only when the people in the room are permitted to be fully present, desiring, and alive.\n\nThis is the same insight as Lorde\'s erotic, moved into the classroom. For Lorde the erotic is a source of energy and honesty the institution wants suppressed, because a suppressed person is easier to manage; it is not the pornographic (sensation without feeling) but its opposite — feeling that refuses to be numbed. To teach with eros is to bring desire back into the room as a force for becoming: to let students want their own education, and to let yourself want theirs.\n\nThe link to the arc\'s question is direct. If desire is the engine of becoming, then a pedagogy that suppresses desire cannot help anyone become. Eros in the classroom is desire refusing to be schooled out of learning — and it is the daily, sustainable form of the political refusal in Sub-theory 1, small enough to practice every period, radical enough to change what a classroom is for.',
+        [ podEv('external', null, 'Teaching to Transgress', 'bell hooks'),
+          podEv('external', null, 'Uses of the Erotic', 'Audre Lorde'),
+          podEv('entry', podPear) ],
+        [ podPear ], [ podS1, podS3 ]);
+
+      stored.subTheories[podS3] = podMkSt(podS3,
+        'Pain and Struggle on the Path of Liberation',
+        'The dominant culture hands us a comfortable, pre-furnished picture of the world — a "metaspace" that tells us what is real, what is possible, and who we are, so that we never have to build any of it ourselves. This sub-theory\'s claim is that the pain of being pulled out of that comfort is not the threat to the self — it is the condition under which a real self gets built. The tensions that remove us from the hegemonic comfort zone, rather than places to flee, are where our deepest authenticity and our self-actualization become possible.\n\nPalmer makes the same case at the level of knowing itself, and gives it its sharpest language. He names two ways of staying safe. Objectivism keeps the knower at a controlling distance and reduces what is known to an object to be mastered — this is the "imperialism," knowledge as domination. Subjectivism, or relativism, retreats the other direction into it is only my private truth, where nothing is really at stake and nothing can change you. Both are comfortable precisely because neither costs you anything. Palmer\'s third way — knowing as troth, as love, as obedience to the reality of the other — is generative exactly because it changes the knower. You have to be willing to be undone a little. The transformation lives on the far side of a real cost. That is desire and becoming in the register of epistemology: the comfort is the trap, and you become yourself only by letting what you encounter change you, which hurts.\n\nThe distinction that makes this defensible, not romantic. This is not "suffering is redemptive." Critical pedagogy is rightly allergic to that, because it can valorize imposed suffering and slide into bootstraps logic. The claim is narrower and truer: it is the chosen, conscientizing struggle of leaving hegemonic comfort — Freire\'s kind of pain, the ache of seeing clearly — that is generative, not pain as such. Imposed suffering deforms; chosen struggle forms. Naming that line explicitly is what keeps the sub-theory from being read as the thing it is not.\n\nThe grounding. I did not learn this from Palmer first — I learned it in my first years teaching at Miami Northwestern, and found Palmer later putting words to it. I arrived with a picture of what a good teacher was and what a classroom was supposed to feel like — a picture I had been handed and never had to build, and so had never had to question. That picture did not survive contact. The gap between what I expected and what was actually in front of me pulled the floor out from under the comfortable version of myself I had walked in as. It would have been easier to protect that self, to blame the kids or the building or the odds, to retreat into either the objectivism of "I know how this is supposed to go" or the relativism of "everyone has their own truth and mine is fine." What I did instead — what the work demanded — was let the comfortable self come apart. The teacher I actually became, and the sense of purpose that has organized everything since, was forged in exactly the disorientation I would have avoided if I could. The pain was not the obstacle to becoming a teacher. It was the making of one.',
+        [ podEv('external', null, 'To Know as We Are Known', 'Parker Palmer'),
+          podEv('entry', podStruggle) ],
+        [ podStruggle ], [ podS2, podS4 ]);
+
+      stored.subTheories[podS4] = podMkSt(podS4,
+        'Radical Self-Actualization',
+        'If refusal, eros, and struggle are the path, this is where the path arrives. The arc\'s account of self-actualization is deliberately not the liberal one — not the individualist self-improvement the popular-press books can imply on their own. It is a radical self-actualization: coming into one\'s fullest self as a political and communal act, not a private optimization.\n\nThis is where Grant and Epstein finally do their real work in the arc. Read alone, "hidden potential" and "range" are self-help. Read through Giroux and hooks and Love, they become questions about liberation. Potential is no longer an individual asset to maximize but something a just world would scaffold for everyone; the arc turns Grant\'s psychology into Love\'s politics — from you can build your potential to a free society builds everyone\'s. Range stops being a career hack and becomes the freedom to grow across the whole of who you are, unbounded by the single track the system assigned — Epstein\'s breadth married to Kelley\'s freedom dreams. The arc does not reject the optimistic books. It reclaims their optimism from bootstraps and gives it a politics.\n\nRadical self-actualization, then, is what desire is for — not endless wanting, but becoming most fully oneself in a way that also refuses the order that tried to prevent it. It is Janie pulling in her horizon: a self she was told was not for her, built anyway, out of desire that would not shrink to the size she was handed. The arc\'s spine, in one line: desire → refusal → eros → struggle → a self the given world did not plan for.',
+        [ podEv('book', podBk[2]), podEv('book', podBk[3]) ],
+        [], [ podS3 ]);
+
+      // --- Artifact on Their Eyes Were Watching God (book 4) ---
+      var podArtKey = artifactKey('__praxis_seed__', podBk[4]);
+      stored.bookArtifacts[podArtKey] = {
+        userId: '__praxis_seed__', bookId: podBk[4],
+        title: 'On Their Eyes Were Watching God, and the horizon',
+        body: 'Janie Crawford spends the whole novel wanting something the people around her keep telling her is not for her — a love that meets her as an equal, a voice that is her own, a life measured against the far edge of what is possible rather than the near fence of what is allowed. The novel knows from its first line that this is what it is about: "Ships at a distance have every man\'s wish on board." Janie\'s ship is the self she can already feel under the pear tree before she has the words for it. She reaches it, but never cleanly, and never without cost — three marriages, a hurricane, and the loss of the one love that answered her teach her what it costs to keep wanting what she wants.\n\nWhat makes the novel the heart of this arc is that Janie does not become herself despite the pain. She becomes herself through it. The losses are not detours from her becoming; they are its ground. By the end, when she draws the horizon in like a great fish-net, she has not been given a self. She has built one, out of desire that refused to shrink to the size she was handed.\n\nThat is the arc\'s whole question in one woman: desire as the pull toward a self not permitted, becoming as what happens when you are willing to pay for it. Every sub-theory in this arc — the refusal, the eros, the struggle, the self on the far side — is already alive in Janie before a single theorist names it.',
+        createdAt: podNow, updatedAt: podNow
+      };
+
+      // --- Bookkeeping: EXTEND stored.seeds.pedagogyOfDesire, never replace ---
+      pod.contentSeeded   = true;
+      pod.subTheoryIds    = [ podS1, podS2, podS3, podS4 ];
+      pod.entryIds        = podMargIds.concat(podJourIds);
+      pod.artifactKeys    = [ podArtKey ];
+      pod.contentSeededAt = podNow;
+    }
+    stored.SCHEMA_VERSION = '1.27.0';
   }
   return stored;
 }
