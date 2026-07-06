@@ -42,14 +42,17 @@ firebase.initializeApp(firebaseConfig);
 // once the latch opens and the payload is built from POST-merge state.
 // Set true at the top of each load callback; the callback's tail (found
 // already has a saveState; absent/error get one added) flushes any write
-// deferred during the window. Books uses a different (pending-set) guard
-// and is out of this swing; profile/readerModel are deferred to F-DL2.
+// deferred during the window. Books ALSO carries this outgoing latch
+// (F-DL2) BESIDE its pendingBookSync guard -- orthogonal: the latch gates
+// the OUTGOING .set, pendingBookSync guards the INCOMING 3-way merge, so
+// the two never touch. profile/readerModel are deferred to F-DL3.
 // =====================================================================
 var arcsLoaded         = false;
 var notebookLoaded     = false;
 var subTheoriesLoaded  = false;
 var themesLoaded       = false;
 var artifactsLoaded    = false;
+var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendingBookSync).
 
 // Auth state is persisted to localStorage via sv()/ls() so
 // getCurrentUser() works synchronously across reloads. The Firebase
@@ -101,6 +104,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // because Stage 2 will start writing the doc and Stage 3 will
     // migrate existing localStorage shelves into it.
     loadBooksFromFirestore(u.uid, function (result) {
+      booksLoaded = true;   // F-DL2: load settled -> open the outgoing-write latch.
       if (result.status === 'found') {
         // P0: the REPLACE merge now lives in mergeRemoteBookDoc, which
         // preserves locally-added-but-unsynced books (pendingBookSync)
@@ -129,10 +133,15 @@ firebase.auth().onAuthStateChanged(function (u) {
         // user yet; keep the localStorage cache intact, no
         // re-render needed (nothing changed).
         console.log('loadBooksFromFirestore: no remote doc for uid, keeping cache');
+        // F-DL2: no remote doc -> flush any write deferred during the load
+        // window (nothing remote to clobber). Found already re-fires via saveState.
+        saveState();
       } else {
         // Network / permission / other failure. Keep cache, log
         // and continue; the cached shelf stays visible.
         console.warn('loadBooksFromFirestore: fetch failed, keeping cache', result.error);
+        // F-DL2 (R2): errored load -> latch open; flush any deferred write.
+        saveState();
       }
       // 6.2b: second (idempotent) first-run greeting trigger. The shelf-
       // empty gate is only accurate once books have merged; calling here
@@ -790,6 +799,15 @@ function saveBooksToFirestore(uid, payload, callback) {
   }
   if (!uid) {
     finish({ status: 'error', error: new Error('saveBooksToFirestore: missing uid') });
+    return;
+  }
+  // F-DL2: block the OUTGOING write until the books load has settled (see the
+  // latch block up top). Writing now would .set()-overwrite the remote doc with
+  // a pre-load LOCAL subset, destroying remote-only books. Re-mark dirty so the
+  // existing saveState retry re-runs post-merge; return WITHOUT writing or firing
+  // the callback. Orthogonal to pendingBookSync (which guards the incoming merge).
+  if (!booksLoaded) {
+    if (typeof markBooksDirty === 'function') { markBooksDirty(); }
     return;
   }
   try {
