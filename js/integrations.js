@@ -53,6 +53,13 @@ var subTheoriesLoaded  = false;
 var themesLoaded       = false;
 var artifactsLoaded    = false;
 var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendingBookSync).
+// F-DL3: profile + readerModel are single-doc writes fired DIRECTLY (no dirty flag), so
+// besides the load-settled latch they need a WRITE-PENDING flag + a tail re-fire in the
+// load callback -- the F-DL1 dirty-flag retry does not exist for them.
+var profileLoaded            = false;
+var readerModelLoaded        = false;
+var profileWritePending      = false;
+var readerModelWritePending  = false;
 
 // Auth state is persisted to localStorage via sv()/ls() so
 // getCurrentUser() works synchronously across reloads. The Firebase
@@ -475,6 +482,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // override fields. setProfile is reused so the write also persists
     // the merged profile into the per-uid localStorage bucket.
     loadProfileFromFirestore(u.uid, function (profResult) {
+      profileLoaded = true;   // F-DL3: load settled -> open the outgoing-write latch (all branches).
       if (profResult.status === 'found') {
         ensureUser(u.uid);
         var rd = profResult.data || {};
@@ -525,6 +533,13 @@ firebase.auth().onAuthStateChanged(function (u) {
       } else {
         console.warn('loadProfileFromFirestore: fetch failed, keeping cache', profResult.error);
       }
+      // F-DL3: flush a write deferred during the load window. Re-reads getProfile(u.uid)
+      // (the post-merge profile on found; the local edit on absent/error) and re-fires now
+      // that the latch is open -- mirrors the F-DL1/F-DL2 re-fire (re-read current local state).
+      if (profileWritePending && typeof getProfile === 'function') {
+        profileWritePending = false;
+        saveProfileToFirestore(u.uid, getProfile(u.uid), function () {});
+      }
       // 6.2b: first-run greeting trigger. Evaluated only after the remote
       // profile is known (found = merged flag; absent = definitively fresh)
       // -- never on 'error', where the remote onboardingSeen is unknown and
@@ -542,6 +557,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // via replaceReaderModel; 'absent' (no remote doc yet) KEEPS the local seed;
     // 'error' keeps the cache. Mirrors loadProfileFromFirestore's contract.
     loadReaderModelFromFirestore(u.uid, function (rmResult) {
+      readerModelLoaded = true;   // F-DL3: load settled -> open the outgoing-write latch (all branches).
       if (rmResult.status === 'found') {
         ensureUser(u.uid);
         replaceReaderModel(u.uid, rmResult.data || {});
@@ -553,6 +569,12 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadReaderModelFromFirestore: no remote reader-model doc for uid, keeping cache');
       } else {
         console.warn('loadReaderModelFromFirestore: fetch failed, keeping cache', rmResult.error);
+      }
+      // F-DL3: flush a write deferred during the load window (post-merge on found; the local
+      // model on absent/error). Mirrors the profile tail re-fire.
+      if (readerModelWritePending && typeof getReaderModel === 'function') {
+        readerModelWritePending = false;
+        saveReaderModelToFirestore(u.uid, getReaderModel(u.uid), function () {});
       }
     });
   } else {
@@ -879,6 +901,17 @@ function saveProfileToFirestore(uid, profile, callback) {
     finish({ status: 'error', error: new Error('saveProfileToFirestore: missing uid') });
     return;
   }
+  // F-DL3: block the OUTGOING write until the profile load has settled (see the latch block
+  // up top). A premature write of the fresh-device default profile would .set()-overwrite
+  // remote penName/tagline/values. THE VARIANT (vs the 6 dirty-flag latches): there is no
+  // dirty flag to re-fire this, so mark a write-pending flag and FIRE the callback with
+  // {status:'deferred'} -- the 2 r-inspecting callers fall to their "Saved locally -- sync
+  // will retry" else branch; the load-cb tail re-fires post-merge.
+  if (!profileLoaded) {
+    profileWritePending = true;
+    finish({ status: 'deferred' });
+    return;
+  }
   try {
     firebase.firestore()
       .collection('userProfiles')
@@ -978,6 +1011,15 @@ function saveReaderModelToFirestore(uid, model, callback) {
   }
   if (!uid) {
     finish({ status: 'error', error: new Error('saveReaderModelToFirestore: missing uid') });
+    return;
+  }
+  // F-DL3: block the outgoing write until the reader-model load has settled (see the latch
+  // block up top). Same variant as profile: no dirty flag, so mark write-pending + FIRE
+  // {status:'deferred'} (this fn's callers are no-op, so firing it is harmless) + return;
+  // the load-cb tail re-fires post-merge.
+  if (!readerModelLoaded) {
+    readerModelWritePending = true;
+    finish({ status: 'deferred' });
     return;
   }
   var m = (model && typeof model === 'object') ? model : {};
