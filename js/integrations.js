@@ -27,6 +27,30 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
+// =====================================================================
+// F-DL1 -- load-resolved sync latches (OUTGOING clobber guard).
+//
+// Each collection whose sign-in load does a REPLACE-splat + full-doc
+// .set() can, on a stale/empty-cache device, race a mutation-triggered
+// write ahead of the load: the write builds its payload from the
+// pre-load LOCAL subset and .set() overwrites the fuller remote doc,
+// destroying remote-only records (F-DL1). These per-collection latches
+// gate the OUTGOING write: false until that collection's load has
+// SETTLED (found / absent / error all count as settled). While a latch
+// is false, saveXToFirestore does NOT write -- it re-marks the dirty
+// flag (markXDirty) and returns, so the existing saveState retry re-runs
+// once the latch opens and the payload is built from POST-merge state.
+// Set true at the top of each load callback; the callback's tail (found
+// already has a saveState; absent/error get one added) flushes any write
+// deferred during the window. Books uses a different (pending-set) guard
+// and is out of this swing; profile/readerModel are deferred to F-DL2.
+// =====================================================================
+var arcsLoaded         = false;
+var notebookLoaded     = false;
+var subTheoriesLoaded  = false;
+var themesLoaded       = false;
+var artifactsLoaded    = false;
+
 // Auth state is persisted to localStorage via sv()/ls() so
 // getCurrentUser() works synchronously across reloads. The Firebase
 // auth observer below keeps the cache in sync with the source of
@@ -128,6 +152,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // so clear-predicate and remote-set share the key. Cold open still
     // runs migrate(); this listener fires post-first-render.
     loadArcsFromFirestore(u.uid, function (arcResult) {
+      arcsLoaded = true;   // F-DL1: load settled -> open the outgoing-write latch.
       if (arcResult.status === 'found') {
         var aid;
         if (state.arcs) {
@@ -163,8 +188,14 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadArcsFromFirestore: merged remote arc doc');
       } else if (arcResult.status === 'absent') {
         console.log('loadArcsFromFirestore: no remote arc doc for uid, keeping cache');
+        // F-DL1: no remote doc -> flush any write deferred during the load
+        // window (nothing remote to clobber). The found branch already saves.
+        saveState();
       } else {
         console.warn('loadArcsFromFirestore: fetch failed, keeping cache', arcResult.error);
+        // F-DL1 (R2): load errored -> latch is open; flush any deferred write.
+        // localStorage stayed durable; this pushes the local set.
+        saveState();
       }
 
       // Stage 14.1c: NESTED here so arcs are reconciled (merged, absent, or
@@ -173,6 +204,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       // predicate and buildUserSubTheoriesDoc need arcs present. Fires once
       // per sign-in regardless of the arc branch above.
       loadSubTheoriesFromFirestore(u.uid, function (stResult) {
+        subTheoriesLoaded = true;   // F-DL1: load settled -> open the latch.
         if (stResult.status === 'found') {
           var sid;
           if (state.subTheories) {
@@ -213,8 +245,10 @@ firebase.auth().onAuthStateChanged(function (u) {
           console.log('loadSubTheoriesFromFirestore: merged remote sub-theory doc');
         } else if (stResult.status === 'absent') {
           console.log('loadSubTheoriesFromFirestore: no remote sub-theory doc for uid, keeping cache');
+          saveState();   // F-DL1: flush any write deferred during the load window.
         } else {
           console.warn('loadSubTheoriesFromFirestore: fetch failed, keeping cache', stResult.error);
+          saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
         }
       });
     });
@@ -225,6 +259,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // splatting the remote set, so a delete on another device does not
     // resurrect from cache. Ownership is theme.userId (direct).
     loadThemesFromFirestore(u.uid, function (themeResult) {
+      themesLoaded = true;   // F-DL1: load settled -> open the latch.
       if (themeResult.status === 'found') {
         var tid;
         if (state.userThemes) {
@@ -259,8 +294,10 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadThemesFromFirestore: merged remote theme doc');
       } else if (themeResult.status === 'absent') {
         console.log('loadThemesFromFirestore: no remote theme doc for uid, keeping cache');
+        saveState();   // F-DL1: flush any write deferred during the load window.
       } else {
         console.warn('loadThemesFromFirestore: fetch failed, keeping cache', themeResult.error);
+        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
       }
     });
 
@@ -272,6 +309,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // localStorage artifacts to the cloud so they appear on a fresh device
     // (artifacts were localStorage-only before this batch; audit CRIT #2).
     loadArtifactsFromFirestore(u.uid, function (artResult) {
+      artifactsLoaded = true;   // F-DL1: load settled -> open the latch.
       if (artResult.status === 'found') {
         var aki;
         if (state.bookArtifacts) {
@@ -318,13 +356,15 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
         if (hasLocalArt && typeof markArtifactsDirty === 'function') {
           markArtifactsDirty();
-          saveState();
+          saveState();   // seeds local artifacts AND flushes any F-DL1-deferred write.
           console.log('loadArtifactsFromFirestore: no remote doc, seeded local artifacts');
         } else {
           console.log('loadArtifactsFromFirestore: no remote artifact doc for uid, keeping cache');
+          saveState();   // F-DL1: flush any write deferred during the load window.
         }
       } else {
         console.warn('loadArtifactsFromFirestore: fetch failed, keeping cache', artResult.error);
+        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
       }
     });
 
@@ -335,6 +375,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // device does not resurrect from cache. Ownership is entry.userId
     // (direct), so clear-predicate and remote-set share the key.
     loadNotebookFromFirestore(u.uid, function (nbResult) {
+      notebookLoaded = true;   // F-DL1: load settled -> open the latch.
       if (nbResult.status === 'found') {
         var eid;
         if (state.notebookEntries) {
@@ -411,8 +452,10 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadNotebookFromFirestore: merged remote notebook doc');
       } else if (nbResult.status === 'absent') {
         console.log('loadNotebookFromFirestore: no remote notebook doc for uid, keeping cache');
+        saveState();   // F-DL1: flush any write deferred during the load window.
       } else {
         console.warn('loadNotebookFromFirestore: fetch failed, keeping cache', nbResult.error);
+        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
       }
     });
 
@@ -1126,6 +1169,15 @@ function saveArcsToFirestore(uid, payload, callback) {
     finish({ status: 'error', error: new Error('saveArcsToFirestore: missing uid') });
     return;
   }
+  // F-DL1: block the OUTGOING write until this collection's sign-in load has
+  // settled (see the latch block up top). Writing now would .set()-overwrite
+  // the remote doc with a pre-load LOCAL subset, destroying remote-only records.
+  // Re-mark dirty so the existing saveState retry re-runs post-merge; return
+  // WITHOUT writing or firing the callback (keeps saveState's clean-console path).
+  if (!arcsLoaded) {
+    if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+    return;
+  }
   try {
     firebase.firestore()
       .collection('userArcs')
@@ -1213,6 +1265,12 @@ function saveNotebookToFirestore(uid, payload, callback) {
   }
   if (!uid) {
     finish({ status: 'error', error: new Error('saveNotebookToFirestore: missing uid') });
+    return;
+  }
+  // F-DL1: block the outgoing write until the notebook load has settled (see
+  // the latch block up top). Re-mark dirty so saveState retries post-merge.
+  if (!notebookLoaded) {
+    if (typeof markNotebookDirty === 'function') { markNotebookDirty(); }
     return;
   }
   try {
@@ -1305,6 +1363,12 @@ function saveSubTheoriesToFirestore(uid, payload, callback) {
     finish({ status: 'error', error: new Error('saveSubTheoriesToFirestore: missing uid') });
     return;
   }
+  // F-DL1: block the outgoing write until the sub-theory load has settled (see
+  // the latch block up top). Re-mark dirty so saveState retries post-merge.
+  if (!subTheoriesLoaded) {
+    if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+    return;
+  }
   try {
     firebase.firestore()
       .collection('userSubTheories')
@@ -1391,6 +1455,12 @@ function saveThemesToFirestore(uid, payload, callback) {
     finish({ status: 'error', error: new Error('saveThemesToFirestore: missing uid') });
     return;
   }
+  // F-DL1: block the outgoing write until the theme load has settled (see the
+  // latch block up top). Re-mark dirty so saveState retries post-merge.
+  if (!themesLoaded) {
+    if (typeof markThemesDirty === 'function') { markThemesDirty(); }
+    return;
+  }
   try {
     firebase.firestore()
       .collection('userThemes')
@@ -1475,6 +1545,12 @@ function saveArtifactsToFirestore(uid, payload, callback) {
   }
   if (!uid) {
     finish({ status: 'error', error: new Error('saveArtifactsToFirestore: missing uid') });
+    return;
+  }
+  // F-DL1: block the outgoing write until the artifact load has settled (see the
+  // latch block up top). Re-mark dirty so saveState retries post-merge.
+  if (!artifactsLoaded) {
+    if (typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
     return;
   }
   try {
