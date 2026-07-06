@@ -10,9 +10,9 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**Source of truth for this revision:** Ground-Truth Census v2, July 3 2026,
-HEAD `c3f0d2d` (`praxis-v3.172`). Route census = `renderRoute()` @
-`js/views.js:343`.
+**Source of truth for this revision:** Ground-Truth Census v3 — W13 pre-audit
+re-census, July 6 2026, HEAD `0ee5fad` (`praxis-v3.177`). Route census =
+`renderRoute()` @ `js/views.js:343` (18 render surfaces + 1 redirect, unchanged).
 
 Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguous
 
@@ -29,10 +29,10 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
 | 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
 | 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** | ✗ sync |
-| — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1905→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1914)** | — |
+| — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1929→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1939)** | — |
 | 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ v10482 | ✅ css11276 | ✅ v10468/10671/10803 | ✅ hard v10498 (W11-S8-L1) | ✗ sync |
 | 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✅ hard v9067 (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
-| 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) | ✗ sync |
+| 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) · **seed arc opens read-only (sentinel, pre-W12)** | ✗ sync |
 | 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
 | 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
 | 13 | `#yumi-sees` renderWhatYumiSeesPage | ✅ v373 key + scoped repin (W10-B) | ✅ css @759 | ✅ per-section v13827–13925 | ✗ | ✗ sync |
@@ -130,3 +130,20 @@ signed-out auth resolution, so the whole seed now PERSISTS signed-out instead of
 flashing then vanishing ~1s after load — which is what made even the row-10
 `#arc/<id>` seed truly viewable signed-out. All real-user records are still
 wiped. Next full refresh: the census delta before the audit charter freezes.*
+
+*Board revision 2 — W13 pre-audit re-census at HEAD `0ee5fad` (`praxis-v3.177`),
+July 6 2026 (recon: `docs/checkpoints/w13-precensus-recon.md`). The 18 render
+surfaces + 1 redirect are unchanged, and every §1 cell VALUE was re-verified at
+this HEAD — no flips. Confirmed unchanged: Amber 18/18; Empty 16 ✅ · 1 ✗ · 1 —;
+Logged-out 13 hard · 1 soft (`#book/<id>`) · 2 open (`#arcs`·`#about`) · 2 none
+(`#home`·`#yumi-sees`); Load/Error 4 ✅ async (`commons`·`reader`·`walk`·`profile`).
+`#account` and `#arc/<id>` were re-verified as HARD gates — each blocks real
+content behind an early return, so a branded sign-in shell is not a soft-CTA.
+SCHEMA_VERSION current = `1.11.0` (migrate-ladder landing @ state.js:2893; default
+literal `1.9.3`). Foundations MD5-locked: `lumen-amber.css` `9879ddb8…`, `marks.js`
+`772886c0…` (both unchanged since `5cfbea2`). This revision syncs ONLY the
+provenance header (→ `0ee5fad`), the redirect row's L4 anchor (`state.js:1914`→
+`1939`, `1905`→`1929`), and row-10's seed-read-only annotation. The ~40 drifted
+in-cell `v####` anchors are deliberately NOT rewritten — they re-drift as the file
+grows (per the maintenance rule above); the full refreshed per-surface anchor set
+lives in the recon doc.*
