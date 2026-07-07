@@ -7,11 +7,13 @@
 
 **What this is.** The fixed craft bar every wave is held to, and the rubric the
 Fable audit scores against. It is *not* the agent protocol (that's `CLAUDE.md`) or
-the full product spec (that's the living document) — it's the standard for what an
+the full product spec (historically the now-archived living document) — it's the standard for what an
 excellent Praxis surface looks like, stated concretely enough to check. When a wave
 ships, it either meets this bar or it doesn't.
 
-Inherits from: the **living document** (the six load-bearing principles + the spec),
+Inherits from: the **six load-bearing principles** (enumerated in the Fable audit —
+`docs/audit/fable-audit-combined.md` §2 Lane B, P-1–P-6 — and enforced in code), the
+product spec (historically the **living document**, now **archived** to `docs/archive/`),
 the **Yumi voice document**, **`CLAUDE.md`** (operational rules + seam guards),
 **`BOARD.md`** (the live coverage matrix).
 
@@ -19,7 +21,9 @@ the **Yumi voice document**, **`CLAUDE.md`** (operational rules + seam guards),
 
 ## 1. Principles → craft
 
-The six load-bearing principles are canonical in the living document; CRAFT's job is
+The six load-bearing principles are the covenant (enumerated in the Fable audit —
+`docs/audit/fable-audit-combined.md`, P-1–P-6 — and enforced in code; the **archived**
+living document is no longer canonical for them); CRAFT's job is
 to make them *checkable*. The rubric in §2 is that translation. The ethos underneath,
 in one line:
 
@@ -50,7 +54,7 @@ A surface passes when it meets every applicable line.
   `.about .orientation` — scoped tightly so it can't bleed into shared surfaces.
 - **Marks:** the constellation system (circle-only silhouettes, the treatment × hue
   grammar) is canonical; don't reinvent it.
-- *(Confirm container widths + the spacing scale against theme.css / the living doc.)*
+- *(Confirm container widths + the spacing scale against `theme.css`.)*
 
 ### 2.2 Interaction & state
 - Every surface has a **designed empty, loading, and error state** — not a
@@ -128,7 +132,7 @@ Tracked in `BOARD.md`, read by every wave and by the audit:
 
 ## 5. The Drift Check
 
-Canonical practice (living document): before shipping, hold the surface against the
+Canonical practice: before shipping, hold the surface against the
 principles + this rubric and name any drift — scope creep, a principle violation, a
 reinvented pattern. It's the reason a wave stays honest.
 
@@ -136,6 +140,8 @@ reinvented pattern. It's the reason a wave stays honest.
 
 ## Cross-references
 - **`CLAUDE.md`** — operational agent protocol (staging, gates, seams).
-- **Living document** — full spec + the six principles (canonical).
+- **Living document** — *archived* (`docs/archive/praxis-book-app-living-document.html`);
+  historical background, **not** current truth. Six principles: `docs/audit/fable-audit-combined.md`
+  (P-1–P-6). Visual/spec truth: the code + `docs/design-spec.md`.
 - **Yumi voice doc** — canonical voice.
 - **`BOARD.md`** — live coverage / metrics.

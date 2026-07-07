@@ -222,7 +222,7 @@ to keep the field a whisper.
 A dedicated, navigable surface for Knowledge Arcs. Today arcs live
 inside the Notebook (arc-list block + arc detail). The Arcs page is
 the teaching surface. Source material already exists — do not
-re-invent: living-document Section 7 (arc creation flow, inter-book
+re-invent: the archived living-document Section 7 (arc creation flow, inter-book
 reflection, arc completion), Section 10 (arcs as the central
 organizing structure), and the two locked example arcs.
 
@@ -248,7 +248,7 @@ organizing structure), and the two locked example arcs.
   the examples ARE the instructions.
 - **C4 — How to make one.** A single guided call-to-action button
   that opens the arc editor, with three short steps shown beside it.
-  Drawn from living-document Section 7.2 — this is presentation of
+  Drawn from the archived living-document Section 7.2 — this is presentation of
   an already-written flow, not new content.
 - **C5 — Reading list to purchase.** Inside an arc, member books can
   link out to be bought. Commercial model: Bookshop affiliate links —
@@ -317,7 +317,7 @@ is the richer lens on that same data.
 
 Held separately — Phase 2, the social layer (profiles, published
 arcs, book pages, arc completion, author pages, connection
-mechanics). Already specced in living-document Sections 7–9. Not new
+mechanics). Already specced in the archived living-document Sections 7–9. Not new
 design — but it needs a multi-user backend, so it is its own phase
 with its own infrastructure pre-flight, not folded into Stage 4.
 

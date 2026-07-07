@@ -4,7 +4,7 @@
 
 A design language for rendering Knowledge Arcs in Praxis. Written to be portable to another Claude session that will help implement this in the app.
 
-This is not a final visual design — it's a vocabulary and a set of principles that any specific arc visualization should respect. The Praxis decision to defer arc workspace visual design (see living document §10) stands. This spec gives the next implementer something coherent to build *with*.
+This is not a final visual design — it's a vocabulary and a set of principles that any specific arc visualization should respect. The Praxis decision to defer arc workspace visual design (context in the now-archived living document §10 — `docs/archive/praxis-book-app-living-document.html`, historical only) stands. This spec gives the next implementer something coherent to build *with*.
 
 ---
 
