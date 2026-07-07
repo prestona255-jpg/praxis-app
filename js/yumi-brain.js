@@ -168,13 +168,16 @@ function appendTurn(role, content) {
   shiftLoop();
 }
 
-// Assemble the structured context Yumi sees. Single source of truth
-// for both buildContext (prose blob for the model call) and
-// getContextSnapshot (structured object for the transparency view).
-// Enforces principle #5: the notebookEntries loop skips any entry
-// the user has flagged private so private writing never enters
-// Yumi's context. Top 3 newest visible entries, each body truncated
-// to 200 chars -- both consumers see the same set, byte for byte.
+// Assemble the structured context Yumi sees. Single source of truth for
+// buildContext (prose blob for the model call) and getContextSnapshot
+// (structured object for the transparency view) -- NOT a single enforcement
+// point: the move, scan, and arc-voice readers do not route through here, but
+// each independently applies the SAME predicate (skip isPrivate === true OR
+// register === 'journal'), so no path bypasses the covenant.
+// Enforces principle #5: the notebookEntries loop skips any entry the user
+// has flagged private OR any journal-register entry, so private / journal
+// writing never enters Yumi's context. Top 3 newest visible entries, each
+// body truncated to 200 chars -- both consumers see the same set, byte for byte.
 function assembleContextData() {
   var currentBook = null;
   if (state.currentBookId !== null) {
@@ -1708,7 +1711,7 @@ function considerMove(entry, panelOpen) {
     return Promise.resolve({ quiet: true, reason: 'consent' });
   }
   // 2. private -- never read or act on a private note.
-  if (entry.isPrivate === true) {
+  if (entry.isPrivate === true || entry.register === 'journal') {
     return Promise.resolve({ quiet: true, reason: 'private' });
   }
   // 3. panel open -- surface only into an open panel; closed -> no proxy.
@@ -1911,15 +1914,17 @@ function _scanCooldownOk() {
 }
 function _markScanRan() { sv('praxis_yumi_scan_cooldown', Date.now()); }
 
-// The recent visible non-private notes the scan sees (mirrors the
-// assembleContextData filter; newest first, capped at NOTICE_SCAN_N).
+// The recent visible notes the scan sees (mirrors the assembleContextData
+// filter: skips isPrivate === true OR register === 'journal'; newest first,
+// capped at NOTICE_SCAN_N).
 function _visibleEntriesForScan() {
   var out = [];
   var key;
   for (key in state.notebookEntries) {
     if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
       var e = state.notebookEntries[key];
-      if (e && e.isPrivate !== true && typeof e.body === 'string' &&
+      if (e && e.isPrivate !== true && e.register !== 'journal' &&
+          typeof e.body === 'string' &&
           e.body.replace(/^\s+|\s+$/g, '') !== '') {
         out.push(e);
       }
@@ -1945,7 +1950,7 @@ function _memberBodies(ids) {
   var parts = []; var i;
   for (i = 0; i < ids.length; i = i + 1) {
     var e = state.notebookEntries[ids[i]];
-    if (e && typeof e.body === 'string') { parts.push(e.body); }
+    if (e && e.isPrivate !== true && e.register !== 'journal' && typeof e.body === 'string') { parts.push(e.body); }
   }
   return parts.join('\n\n');
 }
@@ -2206,8 +2211,8 @@ function runMoveHarness() {
 // a FIXED graceful fallback inline (the UI's job), NOT silence; the gate
 // still suppresses any bad utterance. Reuses the Stage-A gate VERBATIM and
 // the existing budget peek. Grounding comes from gatherArcContext (a
-// dedicated, isPrivate-filtered gatherer) -- assembleContextData and the five
-// move generators are untouched.
+// dedicated, isPrivate + journal-register-filtered gatherer) --
+// assembleContextData and the five move generators are untouched.
 // =====================================================================
 
 // EDITABLE arc-voice instruction: Part-1 voice + the arc-voice covenant
@@ -2269,7 +2274,7 @@ function gatherArcContext(arcId) {
       if (item.kind === 'entry') {
         // covenant: exclude private (or unverifiable) entry evidence
         var src = state.notebookEntries && state.notebookEntries[item.refId];
-        if (!src || src.isPrivate === true) { continue; }
+        if (!src || src.isPrivate === true || src.register === 'journal') { continue; }
       }
       var quote = (typeof item.quote === 'string') ? item.quote.replace(/^\s+|\s+$/g, '') : '';
       if (quote !== '') { ev.push({ kind: item.kind, text: quote }); }
@@ -2453,8 +2458,8 @@ function runArcVoiceHarness() {
 // NOT routed through the eval gate; the prose is reader-visible + editable +
 // deletable (the transparency covenant covers it). Respects provenance: never
 // touches the prose once the reader has hand-edited it (source === 'edited').
-// Reads ONLY _visibleEntriesForScan (the same isPrivate selection the moves
-// use) -- private notes never reach it.
+// Reads ONLY _visibleEntriesForScan (the same isPrivate + journal-register
+// selection the moves use) -- private notes never reach it.
 // =====================================================================
 
 // EDITABLE profile-generation instruction (PLACEHOLDER copy -- Preston tunes).

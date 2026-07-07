@@ -16,6 +16,7 @@ independent audit.
 | F-DL1 | load-resolved sync latches — stop outgoing REPLACE clobber on 5 collections | `c70f0dc` | v3.178 |
 | F-DL2 | books outgoing-clobber latch beside `pendingBookSync`                        | `d1a8f6a` | v3.179 |
 | F-DL3 | profile + readerModel outgoing-clobber latch (pending-flag + tail re-fire)  | `9914dd9` | v3.180 |
+| VC1   | journal-register covenant leak — 4 readers (considerMove/scan/`_memberBodies`/gatherArcContext) now apply the isPrivate-OR-journal predicate; `#yumi-sees` no longer lies | (this commit) | v3.181 |
 
 ## Remaining — launch-critical
 
@@ -27,7 +28,8 @@ independent audit.
 - [ ] OG2
 - [ ] OG3
 - [ ] OG4
-- [ ] Pass 3
+- [x] VC1 — Pass 3's launch-critical journal-covenant leak — SHIPPED (this commit) / v3.181; live covenant smoke pending (throwaway acct: set journal register → Visible, write a journal note, confirm it is absent from `#yumi-sees` and Yumi never references it)
+- [ ] Pass 3 residuals — should-fix / post-launch (WL1/WL2/VC2/VC3/CR2/IA1/IA4/IA5/IA6 …); tracked in `docs/audit/fable-audit-combined.md`, not launch-critical
 
 ## Infra build log
 

@@ -2807,8 +2807,8 @@ function captureNote(register, body, activeKey, images) {
 // renders into the open Yumi panel via the Stage-A renderYumiMessage path.
 // Fire-and-forget -- never blocks or alters the capture. panelOpen is read
 // here (UI side) so the brain stays DOM-free. Hooked on the two VISIBLE-note
-// seams (this writeline + book-detail marginalia); private/journal notes are
-// skipped by the orchestrator's isPrivate gate.
+// seams (this writeline + book-detail marginalia); considerMove now skips
+// both isPrivate AND journal-register notes.
 function maybeDrawOut(entryId) {
   if (!(window.YumiBrain && YumiBrain.considerMove)) { return; }
   var entry = state.notebookEntries && state.notebookEntries[entryId];
