@@ -29,8 +29,16 @@ independent audit.
 - [ ] OG4
 - [ ] Pass 3
 
-## Infra (this Build 1)
+## Infra build log
 
-- Fix & build discipline: `docs/FIX-PROTOCOL.md` (v1.2)
-- Commit gate: `hooks/pre-commit` — activate with `git config core.hooksPath hooks` (this repo: armed)
-- Subagents: `.claude/agents/{repo-mapper, fix-red-team, fix-implementer}.md`
+- **Build 1** (`c8a05ca`): fix-infra foundation — `docs/FIX-PROTOCOL.md` (v1.2),
+  the 3 subagents (`repo-mapper`, `fix-red-team`, `fix-implementer`),
+  `hooks/pre-commit` commit gate, and this ledger.
+- **Build 2a** (this commit): protocol additions + scripts — §11 Post-push
+  rollback, §2 deploy build-lag header nuance, §10 Draft-for-OK (#7) +
+  `proposals/`, `tools/ground-truth` (session-start check), `tools/parse-check`
+  (cscript parse harness; extensionless so it is not treated as served source).
+
+Activation reminders (per clone / per session):
+- Commit gate: `hooks/pre-commit` — activate with `git config core.hooksPath hooks`.
+- Session start: run `sh tools/ground-truth`.

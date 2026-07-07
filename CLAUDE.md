@@ -8,6 +8,8 @@
 - IMPORTANT: Load docs/FIX-PROTOCOL.md every session — the standing fix &
   build discipline (v1.2) for any staged code change; its invariants are
   enforced by the hooks/pre-commit gate.
+- Run `sh tools/ground-truth` at session start to confirm the fix-infra is live
+  (agents, hook armed, protocol version, HEAD) before any build work.
 - Before answering ANY planning, status, or roadmap question, use the
   praxis-recon agent to establish ground truth from the repo. Never
   answer from memory of past sessions or from docs alone.
@@ -69,7 +71,7 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
 (tradition-forms-arc loads before arc-constellation, which depends on it; both load before views.)
 
 ## Environment & deploy
-- Node is blocked on the Windows machine — never run `npm` or `node`. The cscript JScript parse harness is ES3: it cannot parse files using `.catch`/`.finally`, so it only validates promise-free files like state.js. Verify integrations.js, yumi-brain.js, and sw.js on the live deploy, not the harness.
+- Node is blocked on the Windows machine — never run `npm` or `node`. The standard parse harness is `tools/parse-check` (cscript JScript, ES3, `new Function()`; run `cscript //nologo //E:jscript tools/parse-check <file.js>`): it neutralizes reserved-word method names (`.catch`/`.delete`/`.finally`) so promise-using files DO parse; ES5+ *syntax* (arrow, `const`, `let`, backtick) still fails — correct, since Praxis is ES3-only. It checks syntax, not runtime, so still live-verify integrations.js, yumi-brain.js, and sw.js on the deploy as a backstop.
 - Deploy = commit + push to `main`; Netlify auto-builds. No Drop, no branches, no preview deploys. Verify live behavior on praxis-reading.netlify.app AFTER the push.
 - Commit subjects use an em-dash (—).
 - Every JS change after a CACHE_VERSION bump needs its own bump, or the service worker serves a stale bundle. An already-open tab keeps the old SW until the user accepts the "new version ready — Reload" banner.
@@ -114,8 +116,8 @@ discipline below governs every build task, plan-file or ad-hoc:
   docs/checkpoints/<substage>.md. Proceed only if ALL pass.
 - MECHANICAL HALT CONDITIONS (stop immediately, write the failure to the
   checkpoint file, await Preston):
-  - any parse check FAILs (cscript harness for promise-free files;
-    full-diff for harness-exempt)
+  - any parse check FAILs (`tools/parse-check` cscript harness — now parses
+    promise files via method-name neutralization; else full-diff / live-verify)
   - a byte delta falls outside the plan's stated expected band
   - a grep count does not match the plan's stated expectation
   - any tracked file is dirty that the slice did not intend to touch

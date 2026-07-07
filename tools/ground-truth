@@ -1,0 +1,24 @@
+#!/bin/sh
+# Praxis session-start ground-truth — read-only. Prints the live fix-infra state
+# so a session never runs on phantom/stale assumptions (the check that would have
+# caught the phantom infra). Run from the repo root:
+#   sh tools/ground-truth
+echo "== Praxis ground-truth =="
+echo "HEAD:           $(git rev-parse --short HEAD 2>/dev/null || echo '?')"
+hp=$(git config core.hooksPath || echo '')
+if [ "$hp" = "hooks" ]; then
+  echo "hook gate:      ARMED (core.hooksPath = hooks)"
+else
+  echo "hook gate:      NOT ARMED (core.hooksPath = '${hp:-unset}') -- run: git config core.hooksPath hooks"
+fi
+if [ -f docs/FIX-PROTOCOL.md ]; then
+  echo "FIX-PROTOCOL:   $(head -1 docs/FIX-PROTOCOL.md)"
+else
+  echo "FIX-PROTOCOL:   MISSING"
+fi
+echo "agents (.claude/agents/):"
+found=0
+for f in .claude/agents/*.md; do
+  if [ -e "$f" ]; then echo "  - $(basename "$f")"; found=1; fi
+done
+[ "$found" = "0" ] && echo "  (none)"

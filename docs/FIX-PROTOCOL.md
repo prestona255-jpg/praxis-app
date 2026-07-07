@@ -90,6 +90,10 @@ either self-driven (§5) or a HALT (§5.5).
 - **Explicit-file staging always.** Never `git add -A`. Never stage
   `test-arc-constellation.html`.
 - **Bump CACHE_VERSION** (`sw.js`) on any shipped change; live-verify after push.
+  If the deployed CACHE_VERSION lags, check the response headers (`Age`,
+  `Cache-Control: must-revalidate`) to distinguish a still-building deploy
+  (build-queue lag) from a stale edge/browser cache BEFORE retrying — a slow
+  Netlify build is not a failed deploy.
 - **Seed sentinel is `__praxis_seed__`** — public worked-example paths depend on
   it; don't break them.
 
@@ -264,3 +268,39 @@ tagged `catastrophic` (by Preston, or by Claude flagging it). Procedure:
 Dual-build is the expensive tool (~2× cost/time). A normal data-loss fix does NOT
 need it — single implementer + the §9 red-team is the proven floor. Reserve it for
 the one fix a launch where being wrong is catastrophic.
+
+**Draft-for-OK (#7) — CC never self-activates its own machinery.** When a build
+surfaces a recurring need for a NEW subagent, a protocol change, or any new
+machinery, CC **drafts** it into `proposals/` (a spec file, INERT) and flags it in
+the final summary. A drafted proposal is NOT copied to `.claude/agents/`, NOT
+wired into this protocol, and NOT run — it stays inert until Preston reviews and
+lands it in a deliberate commit. A proposal is a suggestion, never a fait
+accompli. See `proposals/README.md`.
+
+---
+
+## 11. Post-push rollback
+
+To undo a pushed commit **X** that shipped a bad change:
+
+1. **`git revert --no-commit <X>`** — do not let revert auto-commit. X shipped
+   its source *with* a `sw.js` bump, so a plain `git revert` reverses BOTH hunks:
+   `sw.js` is re-staged too (the hook is *satisfied* — it does NOT catch this),
+   but CACHE_VERSION moves *downward*, which does NOT bust the cache for clients
+   already on the newer version. `--no-commit` lets you correct that first.
+2. **Bump `sw.js` CACHE_VERSION forward** to a NEW value ABOVE the current live
+   one (never the reverted-back number); stage `sw.js` with the revert. The hook
+   is now satisfied (source + sw.js together) and the SW actually invalidates.
+3. **Update `docs/LAUNCH-STATUS.md`** in the SAME commit: mark X reverted (its
+   SHA), record the rollback SHA + new CACHE_VERSION, and re-open whatever X had
+   closed.
+4. **Commit** (explicit-file, em-dash subject), **push**, wait for the Netlify
+   build.
+5. **Live-verify** the deployed CACHE_VERSION per §2 — use the header check to
+   tell build-queue lag from edge cache before declaring failure.
+
+A commit that stages only `docs/` files (or files with none of the
+`.js/.css/.html` extensions) needs no cache bump — a plain `git revert <X>`
+passes the hook. Any commit that stages one of those extensions outside `docs/`
+trips rule #3 and must ride a `sw.js` bump (or be handled per the gate's
+exemptions).

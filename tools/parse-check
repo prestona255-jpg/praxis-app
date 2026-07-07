@@ -1,0 +1,71 @@
+// tools/parse-check -- Praxis parse gate (cscript JScript, ES3). EXTENSIONLESS
+// on purpose: the pre-commit hook (rule #3) treats any top-level *.js as served
+// "source" that must ride a sw.js bump; this build tool is never served, so it
+// carries no extension and is run with an explicit engine flag instead.
+//
+// Node is blocked on this machine; this is the sanctioned new Function() parse
+// check that FIX-PROTOCOL.md sec.2 / sec.3 rely on.
+//
+// Usage:  cscript //nologo //E:jscript tools/parse-check <file.js>
+// Exit:   0 = parses clean · 1 = parse error in <file> · 2 = harness self-test
+//         failed or bad usage.
+//
+// It SELF-VALIDATES before trusting a real file: it must reject a known-broken
+// snippet and accept a known-good one, else it aborts (Quit 2). It neutralizes
+// reserved-word method names (.catch/.delete/.finally) for the parse only -- the
+// real JS engine allows them as property names but ES3 new Function() does not.
+// This does not touch the file on disk. NOTE: ES5+ *syntax* (arrow, const, let,
+// backtick) still fails to parse -- which is correct, Praxis is ES3-only; but
+// promise-heavy files should still be live-verified on the deploy as a backstop.
+
+function neutralize(src) {
+  src = src.replace(/\.catch\b/g, '.catch_');
+  src = src.replace(/\.finally\b/g, '.finally_');
+  src = src.replace(/\.delete\b/g, '.delete_');
+  return src;
+}
+
+function parses(src) {
+  try {
+    new Function(neutralize(src));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// --- self-test: the harness must fail a broken copy and pass a good one ---
+var GOOD = 'var x = 1; function f(a){ return a + 1; }';
+var BAD  = 'var x = ;;; function {{{';
+if (parses(BAD)) {
+  WScript.StdErr.WriteLine('HARNESS FAIL: broken snippet parsed as valid.');
+  WScript.Quit(2);
+}
+if (!parses(GOOD)) {
+  WScript.StdErr.WriteLine('HARNESS FAIL: good snippet failed to parse.');
+  WScript.Quit(2);
+}
+
+// --- parse the target file ---
+if (WScript.Arguments.length < 1) {
+  WScript.StdErr.WriteLine('usage: cscript //nologo //E:jscript tools/parse-check <file.js>');
+  WScript.Quit(2);
+}
+var path = WScript.Arguments(0);
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+if (!fso.FileExists(path)) {
+  WScript.StdErr.WriteLine('no such file: ' + path);
+  WScript.Quit(2);
+}
+var fh = fso.OpenTextFile(path, 1);
+var src = fh.AtEndOfStream ? '' : fh.ReadAll();
+fh.Close();
+
+if (parses(src)) {
+  WScript.StdOut.WriteLine('PARSE OK: ' + path);
+  WScript.Quit(0);
+} else {
+  try { new Function(neutralize(src)); }
+  catch (e) { WScript.StdErr.WriteLine('PARSE ERROR in ' + path + ': ' + e.message); }
+  WScript.Quit(1);
+}
