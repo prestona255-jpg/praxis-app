@@ -54,6 +54,12 @@ either self-driven (§5) or a HALT (§5.5).
   sign-in → the racing mutation → confirm the pre-existing cloud record survives),
   so the Stage-2 live smoke is ready, not improvised.
 - State the planned edit + a **byte FLOOR** per file.
+- **Recon reviewer gate (#8):** before building on the recon, dispatch
+  `fix-red-team` (or `repo-mapper` when a stale premise is the risk, §10) to
+  VALIDATE the recon itself — every anchor resolves to a real file:line, the
+  premises hold against source, scope/counts are complete, no collision missed. A
+  finding here STOPS the build before a line is written: catch a bad plan before
+  it is built on, not only after.
 - Clean and no fork → Stage 1. Fork → HALT.
 
 **Stage 1 — BUILD + PROVE**
@@ -139,12 +145,12 @@ None of these → proceed. Rote re-application of a proven pattern is NOT a fork
 
 ---
 
-## 5. The commit gate — self-drive vs. final pass
+## 5. The commit gate — self-drive, final pass, and the data-loss tier
 
 At the commit gate the fix is built, proven, green, red-teamed (§9), and written
-to its checkpoint file. Two paths:
+to its checkpoint file. Three paths, by tier:
 
-**A. Self-drive (commit-on-green).** If ALL of:
+**A. Self-drive (commit-on-green) — non-data-loss, proven pattern.** If ALL of:
 - the fix re-applies an already-shipped-and-proven pattern, AND
 - it does NOT touch data-loss / state-corruption logic, AND
 - every proof and check is green, AND
@@ -154,14 +160,33 @@ then Claude Code executes Stage 2 itself: stage the intended files + ledger,
 `hooks/pre-commit` gate (§2) is the hard backstop on staging mistakes. **Abort
 before push on any self-check or hook failure and report.** No human hop.
 
-**B. Final pass (HALT).** For a NOVEL fix or anything in the data-loss / state
-tier: HALT and emit the FINAL-PASS SUMMARY (§5.5). Preston routes it to Claude
-(chat) for a read, then types `commit and push`. An agent grading its own
-data-loss fix is the weakest link — the scary ones get a second set of eyes.
+**B. Final pass (HALT) — NOVEL, non-data-loss.** A novel fix that does not touch
+the data-loss / state tier is not a proven pattern, so it does not self-drive:
+HALT and emit the FINAL-PASS SUMMARY (§5.5); Preston reads it and types
+`commit and push`.
 
-**Default posture:** self-drive is scoped conservatively — proven-pattern +
-non-data-loss + fully-green + red-team-clean ONLY. To widen or narrow, change this
-one paragraph.
+**C. Data-loss / state tier — hands-off ONLY when doubly gated.** A fix that
+touches data-loss / state-corruption logic ships **hands-off** ONLY when BOTH:
+  (a) the fix-red-team pass (§9) returns clean, AND
+  (b) the automated live smoke PASSES on real Firestore (the Build-3 rig).
+Both green → Claude Code drives Stage 2 itself, as in path A.
+
+> **HANDS-OFF PENDING: Build 3 smoke.** Until the Build-3 automated smoke exists
+> and is proven deterministic, condition (b) cannot be satisfied, so the
+> data-loss tier does NOT ship hands-off. Interim rule: red-team clean + the
+> FINAL-PASS SUMMARY (§5.5) + a **genuine human read** of that summary — at least
+> as thorough as path B's read, and Preston may route it to Claude-chat — before
+> he types `commit and push`. This is deliberately NOT a glance or a one-tap: the
+> scariest tier gets the MOST human scrutiny in the interim, not the least. The
+> fix-red-team subagent (§9) raises the floor beneath that read; it does not lower
+> the bar or replace it. Any red-team finding, or any non-green proof, still
+> hard-STOPS — every tier. The no-human path is reserved strictly for when BOTH
+> (a) and (b) are satisfiable — i.e. once the Build-3 smoke is live.
+
+**Default posture:** self-drive stays scoped to proven-pattern + non-data-loss +
+fully-green + red-team-clean. The data-loss tier is hands-off only behind the
+(a)+(b) double gate; until Build 3 it takes a genuine human read (never lighter
+than a novel fix's). To widen or narrow, change this section.
 
 ---
 
@@ -235,10 +260,19 @@ for a pure version-bump / comment-only diff. It looks for: claims asserted but n
 proven; branches left uncovered (esp. absent/error flush paths); "fixed the test,
 not the code" (source byte-unchanged? failure reproduces with the mechanism
 removed?); trivially-passing checks (a parse harness that never failed a broken
-copy); scope drift; silently-absorbed residuals; prior-fix regressions. It returns
-`RED-TEAM: clean` or findings. A real block-commit finding = a failed check: the
-fix does NOT self-commit; it returns to a human. This raises the floor; it does
-NOT replace the human final pass on the data-loss tier.
+copy); **a script or tool asserted by its printed OUTPUT only, never its EXIT CODE
+on the success path** — re-run it and confirm `$?` is 0 when it should be (the
+exact gap that shipped `tools/ground-truth` exiting 1 on success); scope drift;
+silently-absorbed residuals; prior-fix regressions. It returns `RED-TEAM: clean`
+or findings. A real block-commit finding = a failed check: the fix does NOT
+self-commit; it returns to a human.
+
+This pass raises the floor on EVERY tier. Under §5 it does NOT lower the human bar
+on the data-loss tier: interim, that tier still gets a genuine human read of the
+FINAL-PASS SUMMARY (at least as thorough as a novel fix's), and it goes fully
+hands-off only once the Build-3 smoke gates it (§5 path C). The red-team is
+additive to that read, never a substitute, so a soft "looks fine" pass is itself a
+failure; when in doubt it returns a finding, not a blessing.
 
 ---
 
@@ -299,8 +333,8 @@ To undo a pushed commit **X** that shipped a bad change:
 5. **Live-verify** the deployed CACHE_VERSION per §2 — use the header check to
    tell build-queue lag from edge cache before declaring failure.
 
-A commit that stages only `docs/` files (or files with none of the
+A commit that stages only `docs/` or `tools/` files (or files with none of the
 `.js/.css/.html` extensions) needs no cache bump — a plain `git revert <X>`
 passes the hook. Any commit that stages one of those extensions outside `docs/`
-trips rule #3 and must ride a `sw.js` bump (or be handled per the gate's
-exemptions).
+and `tools/` trips rule #3 and must ride a `sw.js` bump (or be handled per the
+gate's exemptions).

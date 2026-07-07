@@ -34,10 +34,16 @@ independent audit.
 - **Build 1** (`c8a05ca`): fix-infra foundation — `docs/FIX-PROTOCOL.md` (v1.2),
   the 3 subagents (`repo-mapper`, `fix-red-team`, `fix-implementer`),
   `hooks/pre-commit` commit gate, and this ledger.
-- **Build 2a** (this commit): protocol additions + scripts — §11 Post-push
-  rollback, §2 deploy build-lag header nuance, §10 Draft-for-OK (#7) +
-  `proposals/`, `tools/ground-truth` (session-start check), `tools/parse-check`
-  (cscript parse harness; extensionless so it is not treated as served source).
+- **Build 2a** (`b8edb92`; ground-truth exit-0 fix `83f213e`): protocol additions
+  + scripts — §11 Post-push rollback, §2 deploy build-lag header nuance, §10
+  Draft-for-OK (#7) + `proposals/`, `tools/ground-truth` (session-start check),
+  `tools/parse-check` (cscript parse harness; extensionless so it is not treated
+  as served source).
+- **Build 2b** (this commit): reviewer wiring + hands-off data-loss — §5 rewritten
+  into three tiers (data-loss ships hands-off ONLY behind red-team-clean + Build-3
+  smoke; interim = genuine human read), §1 Stage-0 recon reviewer gate (#8), §9 now asserts a
+  script's EXIT CODE not just its output, and `hooks/pre-commit` rule #3 exempts
+  `tools/` (like `docs/`).
 
 Activation reminders (per clone / per session):
 - Commit gate: `hooks/pre-commit` — activate with `git config core.hooksPath hooks`.
