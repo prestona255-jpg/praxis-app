@@ -5,6 +5,9 @@
 - IMPORTANT: Read PROTOCOL.md before any wave or build work. It governs
   all build discipline. If this file and PROTOCOL.md ever disagree,
   PROTOCOL.md wins for build process.
+- IMPORTANT: Load docs/FIX-PROTOCOL.md every session — the standing fix &
+  build discipline (v1.2) for any staged code change; its invariants are
+  enforced by the hooks/pre-commit gate.
 - Before answering ANY planning, status, or roadmap question, use the
   praxis-recon agent to establish ground truth from the repo. Never
   answer from memory of past sessions or from docs alone.

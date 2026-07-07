@@ -1,0 +1,53 @@
+#!/bin/sh
+# Praxis commit gate — #5. Blocks a commit that violates a load-bearing invariant.
+#
+# Activate ONCE from the repo root:   git config core.hooksPath hooks
+# Make executable (git bash):         chmod +x hooks/pre-commit
+# Emergency bypass (use sparingly):   git commit --no-verify
+#
+# The BLOCKS below are structural and false-positive-free (they match staged
+# filenames only). ES3 is a WARNING, not a block: regex on a raw diff false-
+# positives on comments and strings, and a gate that wrongly stops a legit commit
+# is a gate you disable. Real ES3 enforcement lives upstream (the parse-gate +
+# the fix-red-team agent). See FIX-PROTOCOL.md §2 / §5.
+
+staged=$(git diff --cached --name-only)
+fail=0
+emit() { echo "$1" >&2; }
+
+# 1. Foundations are byte-locked — never commit them changed (match any path).
+if printf '%s\n' "$staged" | grep -Eq '(^|/)lumen-amber\.css$'; then
+  emit "BLOCK: lumen-amber.css is staged — it is byte-locked (FIX-PROTOCOL §2)."; fail=1
+fi
+if printf '%s\n' "$staged" | grep -Eq '(^|/)marks\.js$'; then
+  emit "BLOCK: marks.js is staged — it is byte-locked (FIX-PROTOCOL §2)."; fail=1
+fi
+
+# 2. Never commit the throwaway test artifact.
+if printf '%s\n' "$staged" | grep -Eq '(^|/)test-arc-constellation\.html$'; then
+  emit "BLOCK: test-arc-constellation.html is staged — never commit it (FIX-PROTOCOL §2)."; fail=1
+fi
+
+# 3. A source change must ride with a cache bump (sw.js in the same commit).
+src=$(printf '%s\n' "$staged" | grep -E '\.(js|css|html)$' | grep -Ev '(^|/)sw\.js$' | grep -Ev '^docs/')
+if [ -n "$src" ]; then
+  if ! printf '%s\n' "$staged" | grep -Eq '(^|/)sw\.js$'; then
+    emit "BLOCK: source files staged without sw.js — bump CACHE_VERSION and stage sw.js (FIX-PROTOCOL §2)."
+    emit "  staged source: $(printf '%s ' $src)"; fail=1
+  fi
+fi
+
+# 4. ES3 WARNING (non-blocking) — flag likely violations in added JS lines.
+es3=$(git diff --cached -- '*.js' 2>/dev/null | grep -E '^\+' | grep -Ev '^\+\+\+' \
+      | grep -E '=>|`|\bconst[[:space:]]|\blet[[:space:]]|\bclass[[:space:]]+[A-Za-z_$]')
+if [ -n "$es3" ]; then
+  emit "WARN: possible ES3 violation(s) in added JS — verify (may be a comment/string):"
+  printf '%s\n' "$es3" >&2
+fi
+
+if [ "$fail" -ne 0 ]; then
+  emit ""
+  emit "Commit blocked by the Praxis gate. Fix the above, or 'git commit --no-verify' to bypass in an emergency."
+  exit 1
+fi
+exit 0
