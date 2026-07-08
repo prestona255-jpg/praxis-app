@@ -9,10 +9,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
+  /* Praxis Universal token set v1.1 — see docs/studio/praxis-universal-token-sheet.md.
+     v1.1 warmth revision: four light-ground values adopt canon (gold / ink-2 / ink-3 / line);
+     dark-ground remaps, the .galaxy-night scope, gilding + decorative literals are unchanged.
+     --field-1..10 = the ten-hue field/planet spectrum (supersedes --sage). */
   --paper:#f4efe4; --surface:#fffdf8; --surface-2:#efe7d6;
-  --ink:#241d10; --ink-2:#645940; --ink-3:#978b6d;
-  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#8c5c10; --gold-hi:#d9a441; --ember:#c0492a;
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d;
+  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441; --lum-gold:#ffce4a; --ember:#c2603a;
   --radius:16px; --night-line:#3a2c15;
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 .gild{position:relative}
@@ -180,24 +186,25 @@ p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
   <section id="color">
     <div class="sh"><span class="num">02</span><h2>Color</h2></div>
     <p class="intro">Two worlds. The <b>paper chrome</b> is the warm room the reader sits in &mdash; every surface outside the galaxy. The <b>night</b> is the galaxy alone. They never blend; the contrast between them is the point.</p>
+    <p class="body" style="margin-top:10px">The values below are the <b>Praxis Universal</b> set. The authoritative token source is <span class="mono">docs/studio/praxis-universal-token-sheet.md</span> &mdash; wire tokens by name; read values there, not from these swatch hexes.</p>
 
     <h3>Paper chrome &mdash; the room</h3>
     <div class="swatches">
       <div class="sw"><div class="chip" style="background:#f4efe4"></div><div class="meta"><div class="nm">paper</div><div class="hx">#f4efe4</div><div class="use">page background</div></div></div>
       <div class="sw"><div class="chip" style="background:#fffdf8"></div><div class="meta"><div class="nm">surface</div><div class="hx">#fffdf8</div><div class="use">cards, panels</div></div></div>
       <div class="sw"><div class="chip" style="background:#efe7d6"></div><div class="meta"><div class="nm">surface-2</div><div class="hx">#efe7d6</div><div class="use">chips, wells, hints</div></div></div>
-      <div class="sw"><div class="chip" style="background:#241d10"></div><div class="meta"><div class="nm">ink</div><div class="hx">#241d10</div><div class="use">primary text</div></div></div>
+      <div class="sw"><div class="chip" style="background:#241710"></div><div class="meta"><div class="nm">ink</div><div class="hx">#241710</div><div class="use">primary text</div></div></div>
       <div class="sw"><div class="chip" style="background:#645940"></div><div class="meta"><div class="nm">ink-2</div><div class="hx">#645940</div><div class="use">body / secondary</div></div></div>
       <div class="sw"><div class="chip" style="background:#978b6d"></div><div class="meta"><div class="nm">ink-3</div><div class="hx">#978b6d</div><div class="use">meta, muted</div></div></div>
       <div class="sw"><div class="chip" style="background:#e3d8c1"></div><div class="meta"><div class="nm">line</div><div class="hx">#e3d8c1</div><div class="use">borders, rules</div></div></div>
       <div class="sw"><div class="chip" style="background:#a8761a"></div><div class="meta"><div class="nm">gold</div><div class="hx">#a8761a</div><div class="use">accent, kickers</div></div></div>
-      <div class="sw"><div class="chip" style="background:#8c5c10"></div><div class="meta"><div class="nm">gold-deep</div><div class="hx">#8c5c10</div><div class="use">on-cream text, fills</div></div></div>
-      <div class="sw"><div class="chip" style="background:#c0492a"></div><div class="meta"><div class="nm">ember</div><div class="hx">#c0492a</div><div class="use">destructive only</div></div></div>
+      <div class="sw"><div class="chip" style="background:#855410"></div><div class="meta"><div class="nm">gold-deep</div><div class="hx">#855410</div><div class="use">on-cream text, fills</div></div></div>
+      <div class="sw"><div class="chip" style="background:#c2603a"></div><div class="meta"><div class="nm">ember</div><div class="hx">#c2603a</div><div class="use">destructive only</div></div></div>
     </div>
     <h3>Gilding &mdash; the richness layer</h3>
     <div class="swatches">
       <div class="sw"><div class="chip" style="background:#d9a441"></div><div class="meta"><div class="nm">gold-hi</div><div class="hx">#d9a441</div><div class="use">gilded hairlines, glow</div></div></div>
-      <div class="sw"><div class="chip" style="background:linear-gradient(180deg,#b5851f,#8c5c10)"></div><div class="meta"><div class="nm">gilded fill</div><div class="hx">#b5851f &rarr; #8c5c10</div><div class="use">primary buttons</div></div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(180deg,#b5851f,#855410)"></div><div class="meta"><div class="nm">gilded fill</div><div class="hx">#b5851f &rarr; #855410</div><div class="use">primary buttons</div></div></div>
       <div class="sw"><div class="chip" style="background:linear-gradient(90deg,#fffdf8,#d9a441,#fffdf8)"></div><div class="meta"><div class="nm">gilded rule</div><div class="hx">gold-hi @ 60%, fading ends</div><div class="use">1px card top edge</div></div></div>
     </div>
     <p class="body" style="margin-top:16px">Gilding is how the room gets its richness without losing quiet: a <b>1px gilded hairline</b> across the top of cards (inset 18px each side, fading to nothing), a <b>gradient gold fill</b> with an inner top light on primary buttons, a faint <b>gold-hi glow</b> pooled behind the values statement like lamplight, metric numbers ink-to-gold at their feet, and a hairline <b>gold ring</b> offset around the avatar. Gilding is an edge treatment and a glow &mdash; never a fill on large surfaces.</p>
@@ -217,12 +224,16 @@ p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
     <h3>Field spectrum &mdash; the six planets</h3>
     <p class="body">Curated, warm-dominant, one cool-leaning tone (sage) for contrast. The same six hues serve Categories and Lenses in parallel, so a reader learns them once.</p>
     <div class="swatches">
-      <div class="sw"><div class="chip" style="background:#f2c25a"></div><div class="meta"><div class="nm">gold</div><div class="hx">#f2c25a</div><div class="use">densest field</div></div></div>
-      <div class="sw"><div class="chip" style="background:#dd8f5e"></div><div class="meta"><div class="nm">copper</div><div class="hx">#dd8f5e</div><div class="use"></div></div></div>
-      <div class="sw"><div class="chip" style="background:#e8cf88"></div><div class="meta"><div class="nm">champagne</div><div class="hx">#e8cf88</div><div class="use"></div></div></div>
-      <div class="sw"><div class="chip" style="background:#d98f8a"></div><div class="meta"><div class="nm">dusty rose</div><div class="hx">#d98f8a</div><div class="use"></div></div></div>
-      <div class="sw"><div class="chip" style="background:#a9b98c"></div><div class="meta"><div class="nm">sage</div><div class="hx">#a9b98c</div><div class="use">the cool counter</div></div></div>
-      <div class="sw"><div class="chip" style="background:#e07a52"></div><div class="meta"><div class="nm">terracotta</div><div class="hx">#e07a52</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#f2c25a"></div><div class="meta"><div class="nm">field-1 amber</div><div class="hx">#f2c25a</div><div class="use">densest field</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e07a52"></div><div class="meta"><div class="nm">field-2 coral</div><div class="hx">#e07a52</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#d98f8a"></div><div class="meta"><div class="nm">field-3 rose</div><div class="hx">#d98f8a</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#f5bace"></div><div class="meta"><div class="nm">field-4 pink</div><div class="hx">#f5bace</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#a9b98c"></div><div class="meta"><div class="nm">field-5 sage</div><div class="hx">#a9b98c</div><div class="use">the cool counter</div></div></div>
+      <div class="sw"><div class="chip" style="background:#98d4b0"></div><div class="meta"><div class="nm">field-6 mint</div><div class="hx">#98d4b0</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#8590d8"></div><div class="meta"><div class="nm">field-7 periwinkle</div><div class="hx">#8590d8</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#f8e078"></div><div class="meta"><div class="nm">field-8 pale gold</div><div class="hx">#f8e078</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#e8b068"></div><div class="meta"><div class="nm">field-9 honey</div><div class="hx">#e8b068</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#b8896c"></div><div class="meta"><div class="nm">field-10 russet</div><div class="hx">#b8896c</div><div class="use"></div></div></div>
     </div>
 
     <h3>Light in the sky &mdash; stars, threads, nebula</h3>

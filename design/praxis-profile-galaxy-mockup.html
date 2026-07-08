@@ -9,10 +9,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
+  /* Praxis Universal token set v1.1 — see docs/studio/praxis-universal-token-sheet.md.
+     v1.1 warmth revision: four light-ground values adopt canon (gold / ink-2 / ink-3 / line);
+     dark-ground remaps, the .galaxy-night scope, gilding + decorative literals are unchanged.
+     --field-1..10 = the ten-hue field/planet spectrum (supersedes --sage). */
   --paper:#f4efe4; --surface:#fffdf8; --surface-2:#efe7d6;
-  --ink:#241d10; --ink-2:#645940; --ink-3:#978b6d;
-  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#8c5c10; --gold-hi:#d9a441; --ember:#c0492a;
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d;
+  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441; --lum-gold:#ffce4a; --ember:#c2603a;
   --radius:16px; --night-line:#3a2c15;
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
 }
 /* ---- gilding ---- */
 .gild{position:relative}
@@ -29,7 +35,7 @@ body{background:var(--paper);color:var(--ink);font-family:'DM Sans',system-ui,sa
 
 /* ---- identity header ---- */
 .phead{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:40px}
-.pavatar{width:76px;height:76px;border-radius:50%;flex:none;background:radial-gradient(circle at 32% 28%,#f2c25a,#a8761a);outline:1px solid rgba(217,164,65,.55);outline-offset:3px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:32px;color:#2a1e0c;box-shadow:0 10px 26px -12px rgba(140,92,16,.6)}
+.pavatar{width:76px;height:76px;border-radius:50%;flex:none;background:radial-gradient(circle at 32% 28%,#f2c25a,var(--gold));outline:1px solid rgba(217,164,65,.55);outline-offset:3px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:32px;color:#2a1e0c;box-shadow:0 10px 26px -12px rgba(140,92,16,.6)}
 .pident{flex:1;min-width:220px}
 .pname{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;line-height:1.05}
 .phandle{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-3);letter-spacing:.03em;margin-top:3px}
@@ -74,6 +80,18 @@ body{background:var(--paper);color:var(--ink);font-family:'DM Sans',system-ui,sa
 .vchip.on{background:var(--gold-deep);border-color:var(--gold-deep);color:#fff6e2}
 
 .panel{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--night-line);background:#12100a;box-shadow:0 24px 60px -28px rgba(30,20,6,.6), inset 0 1px 0 rgba(255,224,160,.14), inset 0 0 60px rgba(255,200,120,.03)}
+/* §4 · contextual NIGHT — the starfield container ONLY. Scoped remap (never
+   document.body) so the light-paper profile chrome around it is untouched.
+   Values from praxis-universal-token-sheet.md §4. */
+.galaxy-night{
+  background:#0b0d16;         /* night sky ground (canon galaxy) */
+  --surface:#101019;         /* night panel/surface */
+  --night-line:#3a2c15;      /* night hairline (Universal) */
+  --ink:#f0e3c8;             /* labels read cream on blue-black (live --text-d) */
+  --gold:#d2a23e;            /* interactive gold — on-dark legibility */
+  --gold-hi:#d9a441;         /* gilding accents */
+  --lum-gold:#ffce4a;        /* stars / luminous */
+}
 svg.sky{display:block;width:100%;height:auto}
 .legend{position:absolute;left:18px;bottom:15px;right:18px;display:flex;flex-wrap:wrap;gap:12px 20px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.05em;color:#cbb488;pointer-events:none}
 .legend span{display:inline-flex;align-items:center;gap:7px}
@@ -250,7 +268,7 @@ svg.sky{display:block;width:100%;height:auto}
     <span id="vchips"></span>
   </div>
 
-  <div class="panel" id="panel">
+  <div class="panel galaxy-night" id="panel">
     <svg class="sky" viewBox="0 0 960 600" id="sky" role="img" aria-label="A galaxy: planets are the fields you read in, faint stars are the books you've read, and the bright glinting stars are your sub-theories. Tracing a value lights the fields and sub-theories that carry it.">
       <defs>
         <filter id="bloom" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2"/></filter>
@@ -352,19 +370,19 @@ var valueToSubs={};SUBKEYS.forEach(function(s){var v=SUBS[s].value;(valueToSubs[
 var PLANETS={
   categories:{
     critped:{label:'Critical Pedagogy',books:58,x:450,y:305,color:'#f2c25a'},
-    black:{label:'Black Study',books:44,x:712,y:220,color:'#dd8f5e'},
-    poli:{label:'Political Philosophy',books:34,x:236,y:198,color:'#e8cf88'},
-    poetics:{label:'Poetics & Literature',books:28,x:268,y:452,color:'#d98f8a'},
-    phenom:{label:'Phenomenology',books:22,x:690,y:452,color:'#a9b98c'},
-    abolition:{label:'Abolition & Justice',books:27,x:486,y:112,color:'#e07a52'}
+    black:{label:'Black Study',books:44,x:712,y:220,color:'#8590d8'},
+    poli:{label:'Political Philosophy',books:34,x:236,y:198,color:'#e07a52'},
+    poetics:{label:'Poetics & Literature',books:28,x:268,y:452,color:'#98d4b0'},
+    phenom:{label:'Phenomenology',books:22,x:690,y:452,color:'#e8b068'},
+    abolition:{label:'Abolition & Justice',books:27,x:486,y:112,color:'#f5bace'}
   },
   lenses:{
-    desire:{label:'Desire',books:45,x:456,y:300,color:'#f2c25a'},
-    refusal:{label:'Refusal',books:39,x:722,y:246,color:'#dd8f5e'},
-    praxis:{label:'Praxis',books:47,x:224,y:250,color:'#e8cf88'},
-    becoming:{label:'Becoming',books:31,x:300,y:456,color:'#d98f8a'},
-    lineage:{label:'Lineage',books:28,x:676,y:456,color:'#a9b98c'},
-    power:{label:'Power',books:22,x:486,y:120,color:'#e07a52'}
+    desire:{label:'Desire',books:45,x:456,y:300,color:'#d98f8a'},
+    refusal:{label:'Refusal',books:39,x:722,y:246,color:'#a9b98c'},
+    praxis:{label:'Praxis',books:47,x:224,y:250,color:'#f8e078'},
+    becoming:{label:'Becoming',books:31,x:300,y:456,color:'#98d4b0'},
+    lineage:{label:'Lineage',books:28,x:676,y:456,color:'#b8896c'},
+    power:{label:'Power',books:22,x:486,y:120,color:'#8590d8'}
   }
 };
 
