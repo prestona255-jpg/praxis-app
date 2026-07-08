@@ -9752,8 +9752,8 @@
 
 /* composer (mock .nb-composer) */
 .notebook .nb-composer { background:var(--page); border:1px solid var(--line-page); border-radius:var(--radius-md); padding:14px; }
-.notebook .nb-composer .nb-ce { width:100%; box-sizing:border-box; min-height:64px; resize:none; color:var(--ink); font-family:var(--font-serif); font-size:16px; line-height:1.5; outline:none; border:none; background:transparent; display:block; }
-.notebook .nb-composer .nb-ce::placeholder { color:var(--meta); }
+.notebook .nb-composer .nb-ce { width:100%; box-sizing:border-box; min-height:64px; resize:none; color:var(--br-deep); font-family:var(--font-serif); font-size:16px; line-height:1.5; outline:none; border:none; background:transparent; display:block; }
+.notebook .nb-composer .nb-ce::placeholder { color:var(--gold-ink); }
 .notebook .nb-composer .nb-shots { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .notebook .nb-composer .crow { display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap; }
 
