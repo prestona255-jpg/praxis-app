@@ -17,7 +17,9 @@ independent audit.
 | F-DL2 | books outgoing-clobber latch beside `pendingBookSync`                        | `d1a8f6a` | v3.179 |
 | F-DL3 | profile + readerModel outgoing-clobber latch (pending-flag + tail re-fire)  | `9914dd9` | v3.180 |
 | VC1   | journal-register covenant leak — 4 readers (considerMove/scan/`_memberBodies`/gatherArcContext) now apply the isPrivate-OR-journal predicate; `#yumi-sees` no longer lies | `165bbe3` | v3.181 |
-| NB1   | notebook writeline made visible — `.nb-ce` typed → `--br-deep` (16.4:1), placeholder → `--gold-ink` (5.70:1) on the cream composer; AA in every state | (this commit) | v3.182 |
+| NB1   | notebook writeline made visible — `.nb-ce` typed → `--br-deep` (16.4:1), placeholder → `--gold-ink` (5.70:1) on the cream composer; AA in every state | `165bbe3`… | v3.182 |
+| OG1-4 | honest front door — signed-out #home no longer fakes "Welcome back" + a personal dashboard (real Sign-in CTA); nav avatar no longer fabricates a "P"/"Your account" when signed out (silhouette + "Sign in"); signed-out #arcs and the public seed-arc payoff carry a "Build your own arc" CTA; new signed-in accounts greeted "Welcome to Praxis." | (this commit) | v3.183 |
+| IA4   | onboarding hand-off — "Enter Praxis" routes the finished new reader into the writing loop (`#book/<shelved>` else `#notebook`), not left on Home | (this commit) | v3.183 |
 
 ## Remaining — launch-critical
 
@@ -25,10 +27,12 @@ independent audit.
 - [ ] F-DL3 — live smoke (throwaway-account clobber repro; persistence unverified until run)
 - [ ] F-DL4
 - [x] NB1 — notebook writeline AA-legible (typed 16.4:1 / placeholder 5.70:1), SHIPPED (this commit) / v3.182
-- [ ] OG1
-- [ ] OG2
-- [ ] OG3
-- [ ] OG4
+- [x] OG1 — signed-out #home honest (no fake "Welcome back"/dashboard); new-account greeting "Welcome to Praxis." — SHIPPED (this commit) / v3.183
+- [x] OG2 — signed-out nav no longer fabricates a "P" avatar + "Your account" (person silhouette + "Sign in") — SHIPPED (this commit) / v3.183
+- [x] OG3 — signed-out #arcs + public seed-arc payoff carry a "Build your own arc" Sign-in CTA — SHIPPED (this commit) / v3.183
+- [x] OG4 — dead "No arcs yet / Nothing open" dashboard widgets removed for signed-out — SHIPPED (this commit) / v3.183
+- [x] IA4 — onboarding hands off into the writing loop, not Home — SHIPPED (this commit) / v3.183
+- [ ] OG/IA4 residual — VISUAL eyes-on: the signed-out front door / nav silhouette render at 390 + ~1280 is presentational (reuses the shipped `buildSignedOutPrompt` look); Preston's eyes-on pending. Not launch-blocking.
 - [x] VC1 — Pass 3's launch-critical journal-covenant leak — SHIPPED `165bbe3` / v3.181; live covenant smoke pending (throwaway acct: set journal register → Visible, write a journal note, confirm it is absent from `#yumi-sees` and Yumi never references it)
 - [ ] Pass 3 residuals — should-fix / post-launch (WL1/WL2/VC2/VC3/CR2/IA1/IA4/IA5/IA6 …); tracked in `docs/audit/fable-audit-combined.md`, not launch-critical
 

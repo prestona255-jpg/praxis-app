@@ -436,27 +436,54 @@ function renderRoute() {
   var initialEl = document.querySelector('.app-nav-profile-initial');
   if (initialEl) {
     var navUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    var initial = 'P';
-    if (navUser && typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
-      initial = navUser.displayName.charAt(0).toUpperCase();
-    } else if (navUser && typeof navUser.email === 'string' && navUser.email.length > 0) {
-      initial = navUser.email.charAt(0).toUpperCase();
-    }
-    initialEl.textContent = initial;
-
-    // Canon §4-D: populate the mobile-menu profile-row name. Mirrors the
-    // avatar derivation (displayName -> email) so the row matches the
-    // avatar initial; the account-page display-name override is an
-    // account-surface concern, not the nav's. Hidden on desktop via CSS.
     var navNameEl = document.querySelector('.app-nav-profile-name');
-    if (navNameEl) {
-      var navName = 'Your account';
-      if (navUser && typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
-        navName = navUser.displayName;
-      } else if (navUser && typeof navUser.email === 'string' && navUser.email.length > 0) {
-        navName = navUser.email;
+    var navAcctEl = document.querySelector('.app-nav-profile-account');
+    var navProfileEl = document.querySelector('.app-nav-profile');
+    // OG2: the signed-out nav must not fabricate an account. No 'P' avatar, no
+    // "Your account" -- restore the honest person-silhouette glyph (the avatar's
+    // original logged-out mark) and a "Sign in" label (shown in the mobile menu;
+    // desktop carries it as aria-label + title). The link still routes to
+    // #account, which renders a clean sign-in prompt (renderAccountPage signed-out).
+    if (!navUser || !navUser.uid) {
+      initialEl.innerHTML =
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="1.6" aria-hidden="true">' +
+        '<circle cx="12" cy="8" r="3.2"></circle>' +
+        '<path d="M5.5 19c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path></svg>';
+      if (navNameEl) { navNameEl.textContent = ''; }
+      if (navAcctEl) { navAcctEl.textContent = 'Sign in'; }
+      if (navProfileEl) {
+        navProfileEl.setAttribute('aria-label', 'Sign in');
+        navProfileEl.setAttribute('title', 'Sign in');
       }
-      navNameEl.textContent = navName;
+    } else {
+      var initial = 'P';
+      if (typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
+        initial = navUser.displayName.charAt(0).toUpperCase();
+      } else if (typeof navUser.email === 'string' && navUser.email.length > 0) {
+        initial = navUser.email.charAt(0).toUpperCase();
+      }
+      // textContent replaces any prior signed-out SVG child -- cycle-safe.
+      initialEl.textContent = initial;
+
+      // Canon §4-D: populate the mobile-menu profile-row name. Mirrors the
+      // avatar derivation (displayName -> email) so the row matches the
+      // avatar initial; the account-page display-name override is an
+      // account-surface concern, not the nav's. Hidden on desktop via CSS.
+      if (navNameEl) {
+        var navName = 'Your account';
+        if (typeof navUser.displayName === 'string' && navUser.displayName.length > 0) {
+          navName = navUser.displayName;
+        } else if (typeof navUser.email === 'string' && navUser.email.length > 0) {
+          navName = navUser.email;
+        }
+        navNameEl.textContent = navName;
+      }
+      if (navAcctEl) { navAcctEl.textContent = 'Account'; }
+      if (navProfileEl) {
+        navProfileEl.setAttribute('aria-label', 'Account');
+        navProfileEl.removeAttribute('title');
+      }
     }
   }
 
@@ -1418,6 +1445,20 @@ function renderHome() {
   var wrap = document.createElement('section');
   wrap.className = 'home-page lum-amber-deep';
 
+  // OG1/OG2/OG4: an honest front door. A signed-out visitor is NOT "welcomed
+  // back" onto a fabricated personal dashboard (no dead "No arcs yet / Nothing
+  // open" widgets) -- they get a real introduction and a Sign-in CTA. Reuses
+  // the existing buildSignedOutPrompt primitive (shared crest + signInWithGoogle);
+  // no new first-run UX.
+  var homeUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!homeUser || !homeUser.uid) {
+    wrap.appendChild(buildSignedOutPrompt(
+      'Welcome to Praxis',
+      'A place to build theory from your reading — set books side by side into arcs, and keep your marginalia, journal, and questions, with Yumi reading along only ever as much as you allow. Sign in to begin.'));
+    host.appendChild(wrap);
+    return;
+  }
+
   var ownArcs = homeOwnArcs();
   var haveArcs = ownArcs.length > 0;
 
@@ -1426,7 +1467,11 @@ function renderHome() {
   welcome.className = 'home-welcome';
   var wTitle = document.createElement('h2');
   wTitle.className = 'home-welcome-title';
-  wTitle.textContent = 'Welcome back.';
+  // OG1: honest greeting -- a brand-new account (no arcs AND an empty shelf) is
+  // not "welcomed back." haveArcs is computed above; hasShelf here.
+  var hasShelf = !!(state.userBooks && state.userBooks[homeUser.uid] &&
+    state.userBooks[homeUser.uid].bookIds && state.userBooks[homeUser.uid].bookIds.length > 0);
+  wTitle.textContent = (haveArcs || hasShelf) ? 'Welcome back.' : 'Welcome to Praxis.';
   welcome.appendChild(wTitle);
 
   var alt = document.createElement('div');
@@ -3637,6 +3682,15 @@ function renderArcsPage() {
   examplesSec.appendChild(flowCard);
 
   wrap.appendChild(examplesSec);
+
+  // OG3: a signed-out visitor exploring the public example arcs is the best
+  // conversion moment -- give it a real Sign-in CTA (the "Your arcs" block above
+  // is skipped when signed out, so without this the page asks for nothing).
+  if (!arcsUser) {
+    wrap.appendChild(buildSignedOutPrompt(
+      'Build your own arc',
+      'These are examples — arcs anyone can learn from. Sign in to start your own: set books side by side and draw the threads between them.'));
+  }
 
   host.appendChild(wrap);
 }
@@ -12522,6 +12576,16 @@ function renderArcDetail(arcId) {
     // Wave 1: the PAGE face -- a real STUB that hands off to the existing writing
     // route (#subtheory/<id>/build). The writing surface is NOT rebuilt here.
     wrap.appendChild(_arcFieldPageFace(arc, arcId, user));
+  }
+
+  // OG3: the public seed arc is the one shareable payoff a signed-out visitor
+  // reaches. It renders in full (the seed sentinel bypasses the gated-arc branch
+  // above), so append a "build your own" Sign-in CTA at the foot -- the best
+  // conversion moment, which otherwise asks for nothing.
+  if (arc && arc.userId === '__praxis_seed__' && !user) {
+    wrap.appendChild(buildSignedOutPrompt(
+      'Build your own arc',
+      'This is a worked example anyone can explore. Sign in to build your own — set your books side by side and draw the threads between them.'));
   }
 
   host.appendChild(wrap);

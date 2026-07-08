@@ -384,7 +384,18 @@ var Intros = (function () {
 
   /* ------------------------------- OPEN / CLOSE -------------------------- */
   function onNext() {
-    if (JOURNEY[step].kind === 'release') { markSeenAndClose(); return; }
+    if (JOURNEY[step].kind === 'release') {
+      markSeenAndClose();
+      // IA4: hand the finished new reader INTO the writing loop, not back onto
+      // Home. Prefer the book they shelved during the walk; else the notebook.
+      var dest = (picked && picked.bookId) ? '#book/' + picked.bookId : '#notebook';
+      if (location.hash === dest) {
+        if (typeof renderRoute === 'function') { renderRoute(); }
+      } else {
+        location.hash = dest;
+      }
+      return;
+    }
     step++;
     renderStep();
   }
