@@ -1,0 +1,149 @@
+/* ============================================================================
+   Universal depth v1.2 — canonical source; copies must cite this file+version.
+   ----------------------------------------------------------------------------
+   The buildable form of the Light & Depth law (docs/studio/praxis-universal-
+   token-sheet.md §8). The sheet §8 DOCUMENTS the law; THIS FILE is the law's
+   single authoring source. Rules of use:
+     - tools/studio-build INLINES this file's contents into builder.html at
+       generation time (one source; output stays a portable single file).
+     - Future mockups and surface builds COPY the recipes from here and cite
+       "Universal depth v1.2". Never fork N divergent inline copies.
+     - A recipe change = edit THIS file + regenerate the Builder. Never hand-sync.
+
+   The eight recipes: 1 gilded hairline · 2 luminous orb · 3 ink-to-gold ·
+   4 lamplight · 5 gilded button · 6 atmospheric ground · 7 constellation thread ·
+   8 glyph color language.
+
+   RESTRAINT (full text in sheet §8): glow ONLY on meaning-bearing elements
+   (state, values, primary actions, presence); ONE lamplight per view region;
+   gilding is edge + glow, NEVER a fill on large surfaces; the v3 reference is
+   the CEILING for light grounds — beyond it use the umber dark ground.
+   PERFORMANCE: glows cost paint — cap luminous orbs at ~30 per rendered view,
+   never glow scroll-animated elements, no filter:blur() for glow, list surfaces
+   glow only in-viewport/interactive rows. ACCESSIBILITY: ink-to-gold text is
+   DISPLAY-ONLY (≥18px titles/metrics), all text holds WCAG AA on its ground, a
+   lamplight wash never drops text above it below AA.
+
+   HOST CONTRACT — the surface embedding these classes must define these base
+   semantic tokens (canon / galaxy / builder / future mockups all do):
+     --ink --ink-2 --ink-3   (text tiers)
+     --gold --gold-deep      (interactive gold / deep gold text)
+     --surface --surface-2 --paper --line
+   This file DECLARES its own decorative depth tokens below.
+   ============================================================================ */
+
+:root{
+  /* decorative depth tokens — canonical values (do not hardcode these hexes
+     downstream; wire the token). Base semantic tokens come from the host. */
+  --gold-hi:#d9a441;          /* gilding highlight — edge + glow ONLY */
+  --lum-gold:#ffce4a;         /* luminous / star gold */
+  --thread:#c2a463;           /* constellation thread line */
+  /* the ten-hue field spectrum (supersedes --sage) */
+  --field-1:#f2c25a;  --field-2:#e07a52;  --field-3:#d98f8a;  --field-4:#f5bace;  --field-5:#a9b98c;
+  --field-6:#98d4b0;  --field-7:#8590d8;  --field-8:#f8e078;  --field-9:#e8b068;  --field-10:#b8896c;
+}
+
+/* --- Recipe 1 · GILDED HAIRLINE — card/panel top edge, edge treatment only --- */
+.u-gild-hairline{position:relative;}
+.u-gild-hairline::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:inherit;
+  background:linear-gradient(90deg,transparent 0%,var(--gold-hi) 15%,var(--field-1) 50%,var(--gold-hi) 85%,transparent 100%);
+  pointer-events:none;}
+
+/* --- Recipe 2 · LUMINOUS ORB — a lit sphere, never a flat circle.
+   Glow encodes state: --lit = active/closed (bright), --soft = in progress,
+   --unlit = untouched (flat --line fill, no shadow). Per-hue modifiers set the
+   sphere's field color. Compose: class="u-orb u-orb--soft u-orb--rose".        --- */
+.u-orb{
+  --orb-hi:#fff4d6;                 /* near-white specular highlight */
+  --orb-hue:var(--field-1);         /* mid tone (field hue) */
+  --orb-deep:var(--gold-deep);      /* shaded base */
+  --orb-glow:rgba(242,194,90,.55);  /* glow color (hue @ alpha) */
+  --orb-r:10px;                     /* glow blur radius */
+  --orb-s:2px;                      /* glow spread */
+  display:inline-block;width:.85em;height:.85em;border-radius:50%;flex:none;vertical-align:middle;
+  background:radial-gradient(circle at 35% 30%, var(--orb-hi) 0%, var(--orb-hue) 55%, var(--orb-deep) 100%);
+  box-shadow:0 0 var(--orb-r) var(--orb-s) var(--orb-glow);}
+.u-orb--lit{--orb-r:13px;--orb-s:3px;}                          /* active / closed — bright */
+.u-orb--soft{--orb-r:6px;--orb-s:1px;opacity:.94;}              /* in progress — soft */
+.u-orb--unlit{background:var(--line);box-shadow:none;opacity:.7;}/* untouched — flat, unlit */
+/* per-hue (mid / deep / glow); highlight stays warm-white for all */
+.u-orb--amber     {--orb-hue:var(--field-1); --orb-deep:#8a5a12; --orb-glow:rgba(242,194,90,.55);}
+.u-orb--coral     {--orb-hue:var(--field-2); --orb-deep:#8f3f22; --orb-glow:rgba(224,122,82,.5);}
+.u-orb--rose      {--orb-hue:var(--field-3); --orb-deep:#7d4642; --orb-glow:rgba(217,143,138,.5);}
+.u-orb--pink      {--orb-hue:var(--field-4); --orb-deep:#9a5f70; --orb-glow:rgba(245,186,206,.5);}
+.u-orb--sage      {--orb-hue:var(--field-5); --orb-deep:#5f6d45; --orb-glow:rgba(169,185,140,.5);}
+.u-orb--mint      {--orb-hue:var(--field-6); --orb-deep:#3f7a5c; --orb-glow:rgba(152,212,176,.5);}
+.u-orb--periwinkle{--orb-hue:var(--field-7); --orb-deep:#3f477e; --orb-glow:rgba(133,144,216,.5);}
+.u-orb--palegold  {--orb-hue:var(--field-8); --orb-deep:#8a7a20; --orb-glow:rgba(248,224,120,.5);}
+.u-orb--honey     {--orb-hue:var(--field-9); --orb-deep:#8a5f28; --orb-glow:rgba(232,176,104,.5);}
+.u-orb--russet    {--orb-hue:var(--field-10);--orb-deep:#6d4a34; --orb-glow:rgba(184,137,108,.5);}
+
+/* --- Recipe 3 · INK-TO-GOLD DISPLAY TEXT — titles & display numbers ONLY.
+   DISPLAY-ONLY: ≥18px, never body or meta text (A11y restraint).             --- */
+.u-inkgold{
+  background:linear-gradient(180deg,var(--ink) 38%,var(--gold) 108%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;}
+
+/* --- Recipe 4 · LAMPLIGHT — one warm radial wash behind the meaning-bearing
+   element in a region. HARD RULE: one lamplight per view region.             --- */
+.u-lamplight{position:relative;}
+.u-lamplight::before{
+  content:'';position:absolute;inset:-24% -12%;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 42%, rgba(242,194,90,.32) 0%, transparent 72%);}
+.u-lamplight > *{position:relative;z-index:1;}
+
+/* --- Recipe 5 · GILDED BUTTON — the primary action. Dark-ink text on a lit
+   gold gradient with an inner top light and a soft outer gold glow.          --- */
+.u-btn-gild{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--mono,'DM Mono',monospace);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#3d2807;border:1px solid var(--gold-deep);border-radius:999px;padding:9px 18px;cursor:pointer;
+  background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+  transition:transform .18s,box-shadow .18s;}
+.u-btn-gild:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72);}
+.u-btn-gild:focus-visible{outline:2px solid var(--gold-deep);outline-offset:2px;}
+
+/* --- Recipe 6 · ATMOSPHERIC GROUND + DEPTH PLANES.
+   Light grounds are weathered, not flat; depth stacks: ground → panel → sheet
+   → lit content. Never exceed the v3 ceiling — past it, use the umber dark ground. */
+.u-ground-atmo{
+  background:
+    radial-gradient(60% 46% at 22% 16%, rgba(248,228,176,.5), transparent 60%),
+    radial-gradient(55% 50% at 82% 30%, rgba(232,200,135,.4), transparent 66%),
+    linear-gradient(155deg,#f2e2bd,#dfc38a);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.12);}
+.u-panel{                       /* plane 2 — sub-panel */
+  background:linear-gradient(180deg,#f4e6c4,#eedcb2);border-radius:16px;
+  box-shadow:0 6px 24px rgba(120,75,15,.18);}
+.u-sheet{                       /* plane 3 — sheet (lit content sits here) */
+  background:linear-gradient(180deg,#fffdf6,#fdf8ea);border-radius:14px;
+  box-shadow:inset 0 1px 0 rgba(255,250,235,.9);}
+
+/* --- Recipe 7 · CONSTELLATION THREAD — related items strung on a 1px gilded
+   line with fading ends; field-spectrum orbs (recipe 2) sit at the nodes.    --- */
+.u-thread{                      /* horizontal HTML rule form */
+  height:1px;border:0;margin:0;
+  background:linear-gradient(90deg,transparent,var(--thread) 18%,var(--thread) 82%,transparent);}
+.u-thread--v{width:1px;height:auto;                 /* vertical form */
+  background:linear-gradient(180deg,transparent,var(--thread) 18%,var(--thread) 82%,transparent);}
+/* SVG form: stroke:var(--thread); stroke-width:1; nodes = <circle> filled per recipe 2. */
+.u-thread-stroke{stroke:var(--thread);stroke-width:1;fill:none;}
+
+/* --- Recipe 8 · GLYPH COLOR LANGUAGE — kinds of thinking carry field hues; the
+   spectrum lives ON surfaces, not only in planet data. Canonical kind→hue set. */
+.u-glyph{color:var(--glyph-hue,var(--gold));fill:var(--glyph-hue,var(--gold));}
+.u-glyph-margin    {--glyph-hue:var(--field-5);}   /* marginalia = sage */
+.u-glyph-seam      {--glyph-hue:var(--field-3);}   /* seam / connection = rose … */
+.u-glyph-seam-drop {--glyph-hue:var(--field-7);}   /*   … with a periwinkle droplet */
+.u-glyph-question  {--glyph-hue:var(--field-7);}   /* question = periwinkle */
+.u-glyph-journal   {--glyph-hue:var(--field-9);}   /* journal = honey */
+.u-glyph-subtheory {--glyph-hue:var(--field-1);}   /* sub-theory = amber */
+.u-glyph-book      {--glyph-hue:var(--field-10);}  /* book = russet */
+.u-glyph-value     {--glyph-hue:var(--gold-hi);}   /* value thread = gilding gold */
+
+@media (prefers-reduced-motion:reduce){
+  .u-btn-gild{transition:none;}
+}

@@ -389,3 +389,50 @@ output, screenshots where useful). **A single FAIL blocks "done."**
 - RENDER RIG: clear the service worker + caches before verifying any edit
   (the SW precaches index.html/components.css, so stale files serve
   otherwise); reset per-surface seen-flags when testing first-run flows.
+
+## Studio Protocol (added July 2026)
+
+How Praxis gets built now: a repeatable loop, one surface at a time, tracked in
+`docs/studio`. The Builder (`docs/studio/builder.html`) is a generated view of it.
+
+- THE LOOP — **scan → shape → build → close.** scan = the `studio-scan` agent
+  audits ONE surface through the seven lenses and drafts a round brief; shape =
+  forks resolved with Preston + the surface mockup reconstructed against Universal;
+  build = a staged Claude Code build under FIX-PROTOCOL discipline, one commit;
+  close = a round closes ONLY on Preston's felt pass.
+- THE SEVEN LENSES (every scan): code health · data/state integrity · performance ·
+  accessibility · UX/interaction · canon fidelity (against Universal + the gilding
+  law) · product gaps.
+- `docs/studio` IS THE STUDIO'S TRUTH — the markdown is the record: `sequence.md`
+  (the build sequence) + one `<slug>.md` per surface (census facts + Decisions,
+  Gap ledger, Round history, Next). The defect audit maps what's BROKEN; the studio
+  loop maps what's MISSING; both file here.
+- THE BUILDER IS A GENERATED VIEW — `docs/studio/builder.html`, emitted by
+  `tools/studio-build` (run `sh tools/studio-build`). Never hand-edit it; edit the
+  markdown and regenerate.
+
+Two standing rules — they join the existing session rituals:
+- SESSION-START — before any studio, build, or roadmap work, read
+  `docs/studio/sequence.md` for the current build state (alongside
+  `sh tools/ground-truth`).
+- CURRENCY — every round close and every studio-relevant build MUST update the
+  surface markdown + `sequence.md` and re-run `tools/studio-build`. Automatic, not
+  optional — the Builder drifts the moment the markdown moves without a regenerate.
+
+A round closes ONLY on Preston's felt pass — computed styles and green gates are
+necessary, never sufficient (the VISUAL GATE lesson).
+
+- THE SEQUENCE IS A LIVING PLAN, NOT A LOG. At every round close (and any build
+  that materially changes direction), re-evaluate `docs/studio/sequence.md` — not
+  just append: promote gaps that proved severe, demote or retire work that closed
+  or lost relevance, keep `## Now` to the 3 truest next moves, move completed items
+  to Shipped, and record a one-line rationale for any reordering under `## Re-plan
+  log` (dated). Then regenerate the Builder. The Builder's front sections must
+  always reflect the CURRENT direction, not the direction as of install.
+- GUARDRAIL — THE AGENT ADAPTS, PRESTON STEERS. Re-ordering WITHIN Now/Next on
+  fresh evidence is autonomous (with a dated rationale). But any re-plan that (a)
+  changes the launch spine, (b) retires an item outright, or (c) contradicts a
+  decision Preston made is NEVER applied silently — it is written as `PROPOSED:` in
+  the Re-plan log and rendered as a flagged, distinct entry at the top of the
+  Builder's sequence page for Preston to confirm or reject. The plan adapts to
+  reality; the direction stays his.

@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Light & Depth recipes (§13) render from the single canonical source. See
+     docs/studio/universal-depth.css (Universal depth v1.2) + token sheet §8. -->
+<link rel="stylesheet" href="../docs/studio/universal-depth.css">
 <style>
 :root{
   /* Praxis Universal token set v1.1 — see docs/studio/praxis-universal-token-sheet.md.
@@ -143,6 +146,38 @@ p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
 .ritem .rtag{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:999px;padding:3px 9px;margin-left:auto;flex:none;white-space:nowrap}
 
 .foot{padding:40px 0 0;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+
+/* ---- §13 light & depth — section-local layout only; the recipe visuals come
+        from the linked universal-depth.css (.u-* classes) ---- */
+.ld-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:6px 0 8px}
+.ld-cell{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:18px 20px;overflow:hidden}
+.ld-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ld-lbl b{color:var(--gold-deep);font-weight:500}
+.ld-note{font-size:12px;color:var(--ink-2);margin-top:12px;line-height:1.45}
+.ld-orbrow{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.ld-orbrow .u-orb{width:22px;height:22px}
+.ld-orbcap{display:flex;flex-direction:column;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.ld-spectrum{display:flex;gap:13px;flex-wrap:wrap;align-items:center}
+.ld-spectrum .u-orb{width:19px;height:19px}
+.ld-disp{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:52px;line-height:1;letter-spacing:-.012em}
+.ld-metric{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;line-height:1}
+.ld-value{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;line-height:1.02;color:var(--ink);padding:14px 16px;text-align:center}
+.ld-value em{font-style:italic;font-weight:500;color:var(--gold)}
+.ld-stack{padding:20px}
+.ld-stack .u-panel{padding:16px}
+.ld-stack .u-sheet{padding:16px 18px}
+.ld-stack .plane-lbl{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a6a2a;margin-bottom:8px}
+.ld-stack .u-sheet .plane-lbl{color:var(--ink-3)}
+.ld-stack .lit{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:19px;color:var(--ink)}
+.ld-thread-demo{display:flex;align-items:center;gap:0;margin:10px 0}
+.ld-thread-demo .u-orb{width:15px;height:15px}
+.ld-thread-demo .seg{flex:1;height:1px;min-width:26px;background:linear-gradient(90deg,var(--thread),var(--thread))}
+.ld-thread-demo .seg.end{background:linear-gradient(90deg,transparent,var(--thread))}
+.ld-thread-demo .seg.start{background:linear-gradient(90deg,var(--thread),transparent)}
+.ld-glyphs{display:flex;flex-wrap:wrap;gap:9px}
+.ld-glyph{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.ld-glyph .dot{width:9px;height:9px;border-radius:50%}
+.ld-btnrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -168,6 +203,7 @@ p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
     <a href="#voice"><span class="n">10</span> Voice</a>
     <a href="#empty"><span class="n">11</span> Forming states</a>
     <a href="#roadmap"><span class="n">12</span> What&rsquo;s next</a>
+    <a href="#lightdepth"><span class="n">13</span> Light &amp; depth</a>
   </nav>
 
   <!-- 01 -->
@@ -466,6 +502,96 @@ p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
       <div class="ritem"><div class="rn">5</div><div><div class="rt">Edit / authoring mode</div><div class="rd">The profile is written. Values, bio, and what leads should be editable in place.</div></div><span class="rtag">next</span></div>
       <div class="ritem"><div class="rn">6</div><div><div class="rt">Social &amp; commons hooks</div><div class="rd">Followers, following, and &ldquo;arcs others built on&rdquo; &mdash; reserved space now, wired post-launch.</div></div><span class="rtag">post-launch</span></div>
       <div class="ritem"><div class="rn">7</div><div><div class="rt">Longer about</div><div class="rd">An optional prose bio beneath the one-line identity, for readers who want the fuller story.</div></div><span class="rtag">optional</span></div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section id="lightdepth">
+    <div class="sh"><span class="num">13</span><h2>Light &amp; depth</h2></div>
+    <p class="intro">The room is warm because light <em>falls</em> in it. &sect;02 named the colors; this is how they catch the light &mdash; a gilded edge, a lit sphere, a pooled lamp, weathered paper stacked in planes. This is the depth law (v1.2). Its single buildable source is <span class="mono">docs/studio/universal-depth.css</span> (<span class="mono">Universal depth v1.2</span>); the samples below render straight from it, and the token sheet <span class="mono">&sect;8</span> carries the full recipes and restraint rails.</p>
+    <p class="note-line">Glow is not decoration. It falls only where meaning is.</p>
+
+    <h3>1 &middot; Gilded hairline &mdash; 2 &middot; Luminous orb</h3>
+    <div class="ld-grid">
+      <div class="ld-cell u-gild-hairline">
+        <div class="ld-lbl"><span>gilded hairline</span><b>edge only</b></div>
+        <p class="ld-note">A 2px gilded rule across a card&rsquo;s top edge, fading to nothing at both ends. Gilding is an <em>edge</em> and a <em>glow</em> &mdash; never a fill on a large surface. This whole cell wears one.</p>
+      </div>
+      <div class="ld-cell">
+        <div class="ld-lbl"><span>luminous orb</span><b>glow = state</b></div>
+        <div class="ld-orbrow">
+          <span class="ld-orbcap"><span class="u-orb u-orb--lit"></span>active / closed</span>
+          <span class="ld-orbcap"><span class="u-orb u-orb--soft"></span>in progress</span>
+          <span class="ld-orbcap"><span class="u-orb u-orb--unlit"></span>untouched</span>
+        </div>
+        <p class="ld-note">Every state or presence dot is a lit sphere, not a flat circle. Brightness carries the state: bright when it&rsquo;s alive, soft while it forms, unlit when it&rsquo;s never been touched.</p>
+      </div>
+    </div>
+    <div class="ld-cell" style="margin-bottom:14px">
+      <div class="ld-lbl"><span>the field spectrum, lit</span><b>&mdash;1 &hellip; &mdash;10</b></div>
+      <div class="ld-spectrum">
+        <span class="u-orb u-orb--amber"></span><span class="u-orb u-orb--coral"></span><span class="u-orb u-orb--rose"></span><span class="u-orb u-orb--pink"></span><span class="u-orb u-orb--sage"></span><span class="u-orb u-orb--mint"></span><span class="u-orb u-orb--periwinkle"></span><span class="u-orb u-orb--palegold"></span><span class="u-orb u-orb--honey"></span><span class="u-orb u-orb--russet"></span>
+      </div>
+      <p class="ld-note">The ten field hues as lit spheres &mdash; the same spectrum that colors planets and glyphs (&sect;8-8), now rendered as light.</p>
+    </div>
+
+    <h3>3 &middot; Ink-to-gold &mdash; 4 &middot; Lamplight &mdash; 5 &middot; Gilded button</h3>
+    <div class="ld-grid">
+      <div class="ld-cell">
+        <div class="ld-lbl"><span>ink-to-gold</span><b>display only</b></div>
+        <div class="ld-disp u-inkgold">becoming</div>
+        <div class="ld-metric u-inkgold" style="margin-top:10px">112</div>
+        <p class="ld-note">Titles and display numbers dip from ink to gold at their feet. Display-only &mdash; never body or meta type, never below 18px (it must still pass AA as ink).</p>
+      </div>
+      <div class="ld-cell u-lamplight">
+        <div class="ld-lbl"><span>lamplight</span><b>one per region</b></div>
+        <div class="ld-value">truth under pressure <em>/</em> becoming</div>
+        <p class="ld-note">A single warm wash pooled behind the one thing that matters most in a region &mdash; the named value, the key passage, the live whisper. One lamp per region; two, and neither reads as the answer.</p>
+      </div>
+      <div class="ld-cell">
+        <div class="ld-lbl"><span>gilded button</span><b>primary action</b></div>
+        <div class="ld-btnrow">
+          <button class="u-btn-gild" type="button">Add to an arc</button>
+          <span class="btn ghost">Ghost</span>
+        </div>
+        <p class="ld-note">The primary move wears a lit gold gradient with an inner top light and a soft outer glow, dark ink on gold. Everything secondary stays a quiet ghost.</p>
+      </div>
+    </div>
+
+    <h3>6 &middot; Atmospheric ground &amp; depth planes</h3>
+    <div class="u-ground-atmo ld-stack" style="border-radius:16px">
+      <div class="plane-lbl">ground &mdash; weathered paper</div>
+      <div class="u-panel" style="margin-top:8px">
+        <div class="plane-lbl">sub-panel</div>
+        <div class="u-sheet" style="margin-top:8px">
+          <div class="plane-lbl">sheet</div>
+          <div class="lit">and here the lit content sits, closest to the eye.</div>
+        </div>
+      </div>
+    </div>
+    <p class="body" style="margin-top:14px">Light grounds are weathered, not flat &mdash; two or three warm radial washes over a warm base, with a faint vignette. Depth then stacks in planes: <b>ground &rarr; sub-panel &rarr; sheet &rarr; lit content</b>, each a step nearer. The v3 reference is the ceiling for a light ground; past its warmth, use the umber dark ground instead.</p>
+
+    <h3>7 &middot; Constellation thread &mdash; 8 &middot; Glyph color language</h3>
+    <div class="ld-grid">
+      <div class="ld-cell">
+        <div class="ld-lbl"><span>constellation thread</span><b>value across fields</b></div>
+        <div class="ld-thread-demo">
+          <span class="u-orb u-orb--sage"></span><span class="seg start"></span><span class="u-orb u-orb--amber"></span><span class="seg"></span><span class="u-orb u-orb--rose"></span><span class="seg end"></span><span class="u-orb u-orb--periwinkle"></span>
+        </div>
+        <p class="ld-note">Related items are strung on a 1px gilded line with fading ends, field-spectrum orbs at the nodes &mdash; the same line that traces a value across the sky.</p>
+      </div>
+      <div class="ld-cell">
+        <div class="ld-lbl"><span>glyph color language</span><b>kinds of thinking</b></div>
+        <div class="ld-glyphs">
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-5)"></span>margin</span>
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-3)"></span>seam</span>
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-7)"></span>question</span>
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-9)"></span>journal</span>
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-1)"></span>sub-theory</span>
+          <span class="ld-glyph"><span class="dot" style="background:var(--field-10)"></span>book</span>
+        </div>
+        <p class="ld-note">Each kind of thinking carries a field hue &mdash; margin sage, seam rose, question periwinkle &mdash; so the spectrum lives on the surfaces themselves, not only in the planet data.</p>
+      </div>
     </div>
   </section>
 

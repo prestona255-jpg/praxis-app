@@ -1,7 +1,8 @@
-# Praxis Universal — Token Reconciliation Sheet v1.1 (R0 → R1 source)
+# Praxis Universal — Token Reconciliation Sheet v1.2 (R0 → R1 source + Light & Depth law)
 
 **Date:** 2026-07-08 · **Inputs:** `docs/studio/recon/r0-recon.md` (live 208 tokens) × `design/praxis-design-canon.html` + `design/praxis-profile-galaxy-mockup.html` (canon 13 tokens)
-**Status:** CONFIRMED v1.1 — R1 re-skinned the canon + mockup to this; R1.1 is the warmth revision below. Remains the source of truth; R2 proves on one live surface.
+**Status:** CONFIRMED v1.2 — R1 re-skinned the canon + mockup to this; R1.1 is the warmth revision below; **v1.2 adds §8 Light & Depth** (the gilding / glow / atmosphere law + its restraint rails). Remains the source of truth; R2 proves on one live surface.
+**v1.2 amendment:** §8 is the depth law Preston felt-passed (the "v3" writing-surface + profile direction). Its single buildable form is `docs/studio/universal-depth.css` (Universal depth v1.2) — copy recipes from there and cite the version; never fork inline copies.
 
 ---
 
@@ -132,3 +133,117 @@ These collisions resolved to keep-live because the canon delta is imperceptible 
 ## §7 · R1 handoff
 
 On Preston's confirm, R1 (staged Claude Code build, self-running gates) re-skins **the canon + mockup** to this sheet — meaning the two `design/*.html` files adopt the Universal semantic set and the galaxy mockup gets the §4 scoped night. R1 is where byte-deltas and grep-verification live; this sheet is the spec it implements against. R2 then proves Universal on one live surface (Shelf or Home), and that surface's gap audit writes the next round's brief.
+
+---
+
+## §8 · Light & Depth (v1.2)
+
+The depth law. Where §1–§7 fixed *which colors* Praxis wears, §8 fixes *how light falls
+on them* — the gilding, the glow, the weathered warmth, the stacked planes. This is the
+"v3" direction Preston felt-passed (the writing-surface + profile mockups). It reaches the
+live surfaces through the R2+ studio rounds, never in a single swing.
+
+**Single source.** The recipes below are *documented* here and *built* once in
+`docs/studio/universal-depth.css` (header: `Universal depth v1.2`). That file is the
+canonical, buildable form; `tools/studio-build` inlines it into `builder.html`; future
+mockups and surface builds copy from it and cite the version. The CSS shown below mirrors
+that file — **if the two ever disagree, `universal-depth.css` wins** and this doc is the
+drift to correct. A recipe change edits the file and regenerates; it never hand-syncs copies.
+
+The tokens are wired by NAME (`--gold-hi #d9a441`, `--field-1 … --field-10`, `--lum-gold
+#ffce4a`, `--thread #c2a463`, `--gold`, `--gold-deep`); read values from `theme.css` /
+§1–§2, never hardcode a literal downstream.
+
+### The eight recipes
+
+**1 · Gilded hairline** — a card/panel top edge, edge treatment only (never a fill):
+
+```css
+.u-gild-hairline{position:relative;}
+.u-gild-hairline::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--gold-hi) 15%,#f2c25a 50%,var(--gold-hi) 85%,transparent 100%);
+  pointer-events:none;border-radius:inherit;}
+```
+
+**2 · Luminous orb** — any state / presence dot is a lit sphere, never a flat circle.
+Glow intensity encodes state: **bright = active/closed, soft = in progress, unlit = untouched**
+(flat `--line` fill, no shadow):
+
+```css
+.u-orb{background:radial-gradient(circle at 35% 30%, <hi> 0%, <hue> 55%, <deep> 100%);
+  box-shadow:0 0 <r>px <s>px <hue @ .4–.7 alpha>;}
+.u-orb--lit{ /* active/closed — bright glow */ }
+.u-orb--soft{ /* in progress — soft glow */ }
+.u-orb--unlit{background:var(--line);box-shadow:none;} /* untouched — flat, unlit */
+```
+Per-hue modifiers (`.u-orb--amber … .u-orb--russet`) set the sphere's field color from
+`--field-1 … --field-10`.
+
+**3 · Ink-to-gold display text** — titles and display numbers only:
+
+```css
+.u-inkgold{background:linear-gradient(180deg,var(--ink) 38%,var(--gold) 108%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+```
+
+**4 · Lamplight** — the meaning-bearing element in a region (selected value, key passage,
+active whisper) gets a radial warm wash. **HARD RULE: one lamplight per view region.**
+
+```css
+.u-lamplight::before{content:'';position:absolute;inset:-24% -12%;pointer-events:none;
+  background:radial-gradient(ellipse, rgba(242,194,90,.32) 0%, transparent 72%);}
+```
+
+**5 · Gilded button** — the primary action: a lit gold gradient, an inner top light, a soft
+outer gold glow, dark-ink text `#3d2807`:
+
+```css
+.u-btn-gild{color:#3d2807;background:linear-gradient(180deg,#f2c25a 0%,var(--gold-hi) 40%,var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);}
+```
+
+**6 · Atmospheric ground** — light grounds are weathered, not flat: 2–3 radial warm washes
+(`#f8e4b0`, `#e8c887` family) over a `linear-gradient(155deg,#f2e2bd,#dfc38a)` base, plus an
+`inset 0 0 60px rgba(133,84,16,.12)` vignette. Depth stacks in planes:
+**ground → sub-panel → sheet → lit content.**
+
+```css
+.u-ground-atmo{background:
+    radial-gradient(60% 46% at 22% 16%, rgba(248,228,176,.5), transparent 60%),
+    radial-gradient(55% 50% at 82% 30%, rgba(232,200,135,.4), transparent 66%),
+    linear-gradient(155deg,#f2e2bd,#dfc38a);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.12);}
+.u-panel{background:linear-gradient(180deg,#f4e6c4,#eedcb2);border-radius:16px;box-shadow:0 6px 24px rgba(120,75,15,.18);}
+.u-sheet{background:linear-gradient(180deg,#fffdf6,#fdf8ea);box-shadow:inset 0 1px 0 rgba(255,250,235,.9);}
+```
+
+**7 · Constellation thread** — related items strung on a 1px gilded line
+(`--thread #c2a463`, fading ends) with field-spectrum orbs (recipe 2) at the nodes:
+
+```css
+.u-thread{height:1px;background:linear-gradient(90deg,transparent,var(--thread) 18%,var(--thread) 82%,transparent);}
+/* SVG: stroke:var(--thread); nodes are <circle> filled per recipe 2. */
+```
+
+**8 · Glyph color language** — kinds of thinking carry field hues (margin = sage, seam = rose
+with a periwinkle droplet, question = periwinkle, journal = honey, sub-theory = amber, book =
+russet, value = gilding gold); the field spectrum lives **ON surfaces**, not only in planet data
+(`.u-glyph-margin … .u-glyph-value` set `--glyph-hue` from the spectrum).
+
+### The restraint laws (binding — the discipline that keeps this from turning garish)
+
+- **Glow only on meaning-bearing elements** — state, values, primary actions, presence.
+  Nothing decorative glows.
+- **One lamplight per view region.** The wash marks the single most important thing in a
+  region; two lamplights and neither reads as the answer.
+- **Gilding is edge + glow, NEVER a fill on large surfaces.** A gilded hairline and a pooled
+  glow, not a gold panel.
+- **The v3 reference is the CEILING for light grounds** — beyond its warmth/depth, use the
+  umber dark ground instead; do not push the paper past it.
+- **PERFORMANCE** — glows are box-shadow / radial-gradient and cost paint: cap luminous orbs
+  at ~30 per rendered view, never attach glow to elements animated on scroll, no
+  `filter: blur()` for glow effects, and any list surface (shelf, search) applies orb glow
+  only to in-viewport / interactive rows.
+- **ACCESSIBILITY** — ink-to-gold gradient text is DISPLAY-ONLY (titles / metrics ≥18px, never
+  body or meta text); all text tokens must hold WCAG AA on their assigned grounds; and a
+  lamplight wash must never drop the text above it below AA (test the wash's densest point).
