@@ -56,6 +56,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
   this Builder (this run). No app files touched.
 - [ ] **R2 — first surface round** (Shelf or Home). Prove Universal on one live
   surface; that surface's gap audit writes the next round's brief.
+  touches: [books, home]
 
 ## Then
 
@@ -67,6 +68,7 @@ folded into the rounds — nothing dropped:
 - [ ] **Signed-out / first-run** — OG1–OG4 + IA4: honest signed-out state, a real
   sign-in CTA, onboarding that lands in the writing loop rather than Home. Pairs
   with First-run Path A. (launch-spine STEP 2)
+  touches: [home, onboarding]
 - [ ] **Shared-tab account-switch race** — F-DL4: reset the eight `*Loaded` and
   `*WritePending` latches in `clearUserState()`. Touches `state.js`.
   (launch-spine STEP 4)
@@ -77,14 +79,17 @@ folded into the rounds — nothing dropped:
   + post-launch #6 craft pass + post-launch #7 backport)
 - [ ] **Goodreads migration** — First-run Path B; the import infra is real work.
   (post-launch #1)
+  touches: [import-capture]
 - [ ] **Public commons + moderation** — public routes, signed-out rendering, a
   moderation surface; the consented door on the same covenant surface as VC1.
   (post-launch #2)
+  touches: [commons]
 - [ ] **Galaxy encoding** — real engagement + read-progress wiring behind the
   visual. (post-launch #3)
 - [ ] **Values–arcs wiring** — profile values shape how arcs form and what
   connections get suggested; a data-model change, done right not rushed.
   (post-launch #4)
+  touches: [profile, arcs]
 - [ ] **Register redesign + consented door** — registers named for what they are,
   visibility on the publish pill; journal → public evidence only via an explicit,
   loud, visibly-re-marked step. Never silent. (post-launch #5)
