@@ -1739,6 +1739,14 @@ function clearUserState() {
     state[seedMaps[smi]] = kept;
   }
   state.SCHEMA_VERSION = '1.9.3';
+  // F-DL4: also reset the cloud-sync latches (arcs/notebook/subTheories/themes/
+  // artifacts/books/profile/readerModel *Loaded + profile/readerModel *WritePending)
+  // so a same-tab account switch does not carry account A's "loaded / write-pending"
+  // state into B -- B's first outgoing .set() would otherwise clobber B's un-loaded
+  // remote data. The latches are module-global vars in integrations.js (loaded AFTER
+  // state.js), so this is a runtime-only typeof-guarded call, never referenced at
+  // parse/define time. Mirrors the exportWorkspace/getCurrentUser cross-file pattern.
+  if (typeof resetSyncLatches === 'function') { resetSyncLatches(); }
 }
 
 // Stage 14.3 Stage 3: account-deletion local wipe. Captures the per-uid

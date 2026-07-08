@@ -19,13 +19,15 @@ independent audit.
 | VC1   | journal-register covenant leak — 4 readers (considerMove/scan/`_memberBodies`/gatherArcContext) now apply the isPrivate-OR-journal predicate; `#yumi-sees` no longer lies | `165bbe3` | v3.181 |
 | NB1   | notebook writeline made visible — `.nb-ce` typed → `--br-deep` (16.4:1), placeholder → `--gold-ink` (5.70:1) on the cream composer; AA in every state | `165bbe3`… | v3.182 |
 | OG1-4 | honest front door — signed-out #home no longer fakes "Welcome back" + a personal dashboard (real Sign-in CTA); nav avatar no longer fabricates a "P"/"Your account" when signed out (silhouette + "Sign in"); signed-out #arcs and the public seed-arc payoff carry a "Build your own arc" CTA; new signed-in accounts greeted "Welcome to Praxis." | (this commit) | v3.183 |
-| IA4   | onboarding hand-off — "Enter Praxis" routes the finished new reader into the writing loop (`#book/<shelved>` else `#notebook`), not left on Home | (this commit) | v3.183 |
+| IA4   | onboarding hand-off — "Enter Praxis" routes the finished new reader into the writing loop (`#book/<shelved>` else `#notebook`), not left on Home | `599a6dd` | v3.183 |
+| F-DL4 | shared-tab account-switch latch race — `clearUserState()` now resets all 10 cloud-sync latches (8 `*Loaded` + 2 `*WritePending`) via a new `resetSyncLatches()` in integrations.js; account B no longer inherits A's loaded/write-pending state on a same-tab switch | (this commit) | v3.184 |
 
 ## Remaining — launch-critical
 
-- [ ] F-DL1 — live smoke (throwaway-account clobber repro; persistence unverified until run)
-- [ ] F-DL3 — live smoke (throwaway-account clobber repro; persistence unverified until run)
-- [ ] F-DL4
+- [ ] F-DL1 — live smoke (throwaway-account clobber repro; persistence unverified until run) — BLOCKED: no test session connected (only the real account); needs a provisioned throwaway
+- [ ] F-DL3 — live smoke (throwaway-account clobber repro; persistence unverified until run) — BLOCKED: same, needs a provisioned throwaway
+- [x] F-DL4 — clearUserState resets all 10 sync latches on account switch — SHIPPED (this commit) / v3.184; red-team clean. LIVE SMOKE PENDING (needs a provisioned 2-account test session — the shared-tab A→B switch; the only connected browser is the real account, not signed out)
+- [ ] F-DL5 (follow-up, not launch-critical) — the pre-existing stale-callback races the load callbacks carry no uid-guard: (a) an in-flight A read re-setting a `*Loaded` latch after reset; (b) A's deferred single-doc write dropped on a mid-load switch. F-DL4's reset does NOT worsen either. Proper close = an auth-generation token / per-callback uid-guard.
 - [x] NB1 — notebook writeline AA-legible (typed 16.4:1 / placeholder 5.70:1), SHIPPED (this commit) / v3.182
 - [x] OG1 — signed-out #home honest (no fake "Welcome back"/dashboard); new-account greeting "Welcome to Praxis." — SHIPPED (this commit) / v3.183
 - [x] OG2 — signed-out nav no longer fabricates a "P" avatar + "Your account" (person silhouette + "Sign in") — SHIPPED (this commit) / v3.183

@@ -61,6 +61,29 @@ var readerModelLoaded        = false;
 var profileWritePending      = false;
 var readerModelWritePending  = false;
 
+// F-DL4: reset ALL ten cloud-sync latches on a same-tab account switch. On an
+// A->B switch clearUserState() (state.js) wipes state.* but these module-global
+// latches survive, so B would inherit A's "already loaded / write-pending" state
+// and B's first outgoing .set() could clobber B's not-yet-loaded remote data (or
+// re-fire A's deferred single-doc write). clearUserState (loaded BEFORE this file)
+// calls this via a typeof guard -- a runtime-only cross-file reference, so the vars
+// stay in this file's scope. NOTE: this closes the common switch case; a stale
+// in-flight A-read callback re-setting a latch after the reset is a narrower
+// PRE-EXISTING race (the load callbacks carry no uid-guard) -- tracked as F-DL5,
+// not introduced here.
+function resetSyncLatches() {
+  arcsLoaded              = false;
+  notebookLoaded          = false;
+  subTheoriesLoaded       = false;
+  themesLoaded            = false;
+  artifactsLoaded         = false;
+  booksLoaded             = false;
+  profileLoaded           = false;
+  readerModelLoaded       = false;
+  profileWritePending     = false;
+  readerModelWritePending = false;
+}
+
 // Auth state is persisted to localStorage via sv()/ls() so
 // getCurrentUser() works synchronously across reloads. The Firebase
 // auth observer below keeps the cache in sync with the source of
