@@ -197,41 +197,43 @@ conflicts surface in the lane, never on main.
 
 The single source of truth for the full-app responsive restyle (global shell, Home,
 Shelf, Arcs, Account, Book detail, Arc/constellation, Notebook). **Governance order:**
-this canon > the two mockups (`design/praxis-full-app-mockup.html` = mobile,
-`design/praxis-desktop-mockup.html` = desktop) > everything else. Where this canon names
+this canon > the two reference mockups (`design/praxis-design-canon.html`,
+`design/praxis-profile-galaxy-mockup.html`) > everything else. Where this canon names
 a supersession of `docs/design-spec.md` (§5), this canon wins **for this build**;
 elsewhere design-spec.md and the mockups still stand. The mockups are
 **layout/style references only** — never copy their approximate hexes or their sample
 text (arc names, marginalia, the 112/2/7/2 stats, book titles); wire the real tokens (§1)
 and pull all content from live state.
 
-### 1. Tokens — wire these real `theme.css` vars (never the mockup hexes)
+### 1. Tokens — wire these real `theme.css` / `lumen-amber.css` vars (never hardcode a hex here)
+
+`theme.css` and `lumen-amber.css` are the canonical source for token VALUES — do NOT restate
+hex literals in this doc. (The prior hardcoded list drifted from the live tree — none of its
+literals matched live CSS; the R0 recon carries the verified resolved snapshot. See
+`docs/studio/recon/r0-recon.md` §1.2–§1.4.) Live values resolve through a **primitive →
+semantic → `[data-ground="dark"]`** layer, so no single literal can capture a token: wire the
+token by NAME and read its value from `theme.css` (or the recon report's Stage-1 snapshot).
 
 - **Fonts (3):** `--font-serif` = `'Cormorant Garamond', Georgia, 'Times New Roman', serif`
   (titles, prose, italics); `--font-body` = `'DM Sans', -apple-system, …, sans-serif`
   (body, nav, buttons, hero H1); `--font-mono` = `'DM Mono', 'SF Mono', Menlo, Consolas, monospace`
-  (eyebrows, labels, meta, desktop nav links per §4-B).
-- **Surfaces:** `--surface #ecdcae` (card fill) · `--surface-2 #f2e6c2` (lighter card) ·
-  `--color-surface` = `var(--surface)` (page fill / mobile panels) · `--bg #d8bd80` ·
-  `--bg-2 #e3c98c` · `--sunk #c9a85f` · `--glass rgba(245,233,200,.5)` ·
-  `--glass-2 rgba(245,233,200,.82)` · `--glass-spotlight rgba(245,233,200,.94)`.
-- **Page ground** (`body::before`, viewport-fixed — keep the anchoring):
-  `radial-gradient(1100px 560px at 50% -6%, #e6cb8e, #d8bd80 55%, #c4a35a 100%)` over flat
-  `#c4a35a`.
-- **Inks:** `--ink #2a1810` · `--ink-2 #5c3e26` · `--ink-3 #7a5c34` · `--ink-4 #9a7e4e` ·
-  `--br-deep #4a2810` · `--text-on-dark #fdfaf3` (text on dark / gradient fills).
-- **Gold:** `--gold #a8741a` · `--gold-light #c5912b` · `--gold-text #6b4516` ·
-  `--wordmark #8a5e15`.
-- **Primary gradient:** `--grad linear-gradient(92deg,#b8841f,#27566a)` (primary buttons,
-  avatar, gradient-clip "theory."). The mockups' `135deg #b58f3f→#46707c` is approximate —
-  use the real 92° token.
-- **Lines / accents:** `--border rgba(58,40,16,.2)` · `--line-2 rgba(58,40,16,.32)` ·
-  `--wash rgba(58,40,16,.1)` · `--river #27566a` · `--marginalia-color #1d8f68` (teal) ·
-  `--danger #9c3f1c`.
-- **Radii:** `--radius-sm 6px` · `--radius-md 10px` · `--radius-lg 16px` ·
-  `--radius-xl 22px` · `--radius-pill 999px`.
+  (eyebrows, labels, meta, desktop nav links per §4-B). (These three stacks DO match live
+  `theme.css:9-11`.)
+- **Surfaces:** `--surface` (card fill) · `--surface-2` (lighter card) · `--color-surface`
+  (page fill / mobile panels) · `--bg` · `--bg-2` · `--sunk` · `--glass` / `--glass-2` /
+  `--glass-spotlight` (translucent chrome fills).
+- **Page ground:** the viewport-fixed `body::before` radial gradient — keep the anchoring;
+  value lives in `theme.css`.
+- **Inks:** `--ink` · `--ink-2` · `--ink-3` · `--ink-4` (primary → tertiary text) ·
+  `--br-deep` · `--text-on-dark` (text on dark / gradient fills).
+- **Gold:** `--gold` · `--gold-light` · `--gold-text` · `--wordmark`.
+- **Primary gradient:** `--grad` (primary buttons, avatar, gradient-clip "theory."). Use the
+  token, not the mockups' approximate angle/stops.
+- **Lines / accents:** `--border` · `--line-2` · `--wash` · `--river` · `--marginalia-color`
+  (teal) · `--danger`.
+- **Radii:** `--radius-sm` · `--radius-md` · `--radius-lg` · `--radius-xl` · `--radius-pill`.
 - No new hardcoded hex: reuse the nearest token, or add one to theme.css with a comment —
-  never inline a literal in components.css.
+  never inline a literal in components.css (or in this doc).
 
 ### 2. Build guardrails (scope of this redesign)
 

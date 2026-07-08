@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praxis — Design Canon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4efe4; --surface:#fffdf8; --surface-2:#efe7d6;
+  --ink:#241d10; --ink-2:#645940; --ink-3:#978b6d;
+  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#8c5c10; --gold-hi:#d9a441; --ember:#c0492a;
+  --radius:16px; --night-line:#3a2c15;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+.gild{position:relative}
+.gild::before{content:'';position:absolute;top:0;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,rgba(217,164,65,.6),transparent);pointer-events:none}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15.5px;line-height:1.62;padding:0 20px 100px;background-image:radial-gradient(120% 70% at 50% -6%, rgba(255,247,230,.7), transparent 55%)}
+.wrap{max-width:1000px;margin:0 auto}
+a{color:var(--gold-deep);text-decoration:none;border-bottom:1px solid rgba(140,92,16,.3)}
+.mono{font-family:'DM Mono',monospace}
+
+/* ---- masthead ---- */
+.mast{padding:64px 0 40px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.kick{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+.mast h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(46px,8vw,86px);line-height:.96;letter-spacing:-.015em}
+.mast h1 em{font-style:italic;font-weight:500;color:var(--gold)}
+.mast .lede{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(19px,2.6vw,25px);color:var(--ink-2);max-width:60ch;margin-top:22px;line-height:1.42}
+.mast .ver{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);letter-spacing:.05em;margin-top:26px}
+
+/* ---- toc ---- */
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 28px;margin:34px 0 10px;padding:22px 0;border-bottom:1px solid var(--line)}
+.toc a{border:0;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.04em;color:var(--ink-2);padding:6px 0;display:flex;gap:10px;transition:color .18s}
+.toc a:hover{color:var(--gold-deep)}
+.toc a .n{color:var(--gold);width:20px;flex:none}
+
+/* ---- sections ---- */
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+.sh{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+.sh .num{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);letter-spacing:.05em}
+.sh h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.04;letter-spacing:-.01em}
+.intro{color:var(--ink-2);max-width:66ch;font-size:16px;margin:10px 0 30px}
+h3{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-deep);margin:34px 0 16px}
+p.body{max-width:66ch;color:var(--ink-2);margin-bottom:14px}
+.note-line{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:19px;color:var(--ink);max-width:60ch;margin:4px 0 8px}
+
+/* ---- swatches ---- */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.sw .chip{height:64px}
+.sw .meta{padding:9px 12px}
+.sw .nm{font-size:12.5px;font-weight:500}
+.sw .hx{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);margin-top:2px}
+.sw .use{font-size:11.5px;color:var(--ink-2);margin-top:5px;line-height:1.35}
+
+/* ---- type specimen ---- */
+.spec{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:22px 24px;margin-bottom:14px}
+.spec .label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.spec .label b{color:var(--gold-deep);font-weight:500}
+.disp{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:52px;line-height:1;letter-spacing:-.012em}
+.disp em{font-style:italic;font-weight:500;color:var(--gold)}
+.serif-i{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:var(--ink-2)}
+.bodyface{font-family:'DM Sans',sans-serif;font-size:16px;color:var(--ink)}
+.monoface{font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.05em;color:var(--ink-2)}
+.mono-lbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---- spec table ---- */
+.rows{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.row{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .k{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold-deep)}
+.row .v{font-size:14px;color:var(--ink-2)}
+.row .v b{color:var(--ink);font-weight:500}
+
+/* ---- galaxy demo ---- */
+.night{border:1px solid var(--night-line);border-radius:16px;overflow:hidden;background:#12100a;box-shadow:0 24px 60px -30px rgba(30,20,6,.6), inset 0 1px 0 rgba(255,224,160,.14)}
+.night svg{display:block;width:100%;height:auto}
+.gkey{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.gkey .item{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px}
+.gkey .t{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;margin-bottom:3px}
+.gkey .d{font-size:13px;color:var(--ink-2);line-height:1.45}
+.gkey .t .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+
+/* ---- component gallery ---- */
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.demo{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:18px 20px}
+.demo .dl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.demo .dn{font-size:12px;color:var(--ink-2);margin-top:12px;line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 13px}
+.chip.pub{border-color:rgba(168,118,26,.45);color:var(--gold-deep)}
+.chip.nav::after{content:'\2197';font-size:10px;opacity:.5;margin-left:5px}
+.btn{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--gold-deep);background:var(--gold-deep);color:#fff6e2;border-radius:999px;padding:9px 18px}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.badge{display:inline-flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);border:1px solid rgba(168,118,26,.4);border-radius:999px;padding:5px 13px}
+.badge .d{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.badge.priv{color:var(--ink-3);border-color:var(--line)}
+.badge.priv .d{background:var(--ink-3)}
+.mini-metric .num{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;line-height:1}
+.mini-metric .lab{font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-top:8px}
+.mnote{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.5;color:var(--ink);padding:2px 0 2px 16px;border-left:2px solid var(--gold)}
+.spineY{width:36px;height:52px;border-radius:5px;position:relative;overflow:hidden;background:linear-gradient(160deg,#f2c25a,#7a5c15)}
+.spineY::after{content:'';position:absolute;left:5px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25)}
+
+/* ---- two-face table ---- */
+.faces{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.faces{grid-template-columns:1fr}}
+.face{border:1px solid var(--line);border-radius:14px;padding:20px 22px;background:var(--surface)}
+.face h4{font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px}
+.face.pub h4{color:var(--gold-deep)}
+.face.pri h4{color:var(--ink-3)}
+.face ul{list-style:none}
+.face li{font-size:13.5px;color:var(--ink-2);padding:5px 0 5px 16px;position:relative;line-height:1.4}
+.face li::before{content:'';position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.6}
+.face.pri li::before{background:var(--ink-3)}
+
+/* ---- do/don't ---- */
+.dd{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.dd{grid-template-columns:1fr}}
+.dd .col{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--surface)}
+.dd .col h4{font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.dd .yes h4{color:#5f7a2e}
+.dd .no h4{color:var(--ember)}
+.dd .col p{font-size:14px;color:var(--ink-2);margin-bottom:9px;line-height:1.45}
+.dd .col p b{color:var(--ink);font-weight:500;font-family:'DM Mono',monospace;font-size:12.5px}
+
+/* ---- roadmap ---- */
+.road{display:grid;gap:10px}
+.ritem{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:15px 18px;display:flex;gap:14px;align-items:flex-start}
+.ritem .rn{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:24px;color:var(--gold);line-height:1;flex:none;width:26px}
+.ritem .rt{font-weight:500;font-size:15px;margin-bottom:3px}
+.ritem .rd{font-size:13.5px;color:var(--ink-2);line-height:1.45}
+.ritem .rtag{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:999px;padding:3px 9px;margin-left:auto;flex:none;white-space:nowrap}
+
+.foot{padding:40px 0 0;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <div class="kick">Praxis &middot; design canon</div>
+    <h1>A warm study, <em>at night</em></h1>
+    <p class="lede">The craft that leads every Praxis surface. A reading portrait rendered like an observatory: warm paper for the room you sit in, a deep cool-warm night for the galaxy of your thinking. This document is the reference &mdash; palette, type, the galaxy&rsquo;s laws, motion, components, voice, and the line between what&rsquo;s public and what stays yours.</p>
+    <div class="ver">v1 &middot; scoped July 2026 &middot; reference implementation: the Profile / Galaxy mockup</div>
+  </div>
+
+  <nav class="toc">
+    <a href="#philosophy"><span class="n">01</span> Philosophy</a>
+    <a href="#color"><span class="n">02</span> Color</a>
+    <a href="#type"><span class="n">03</span> Typography</a>
+    <a href="#space"><span class="n">04</span> Space &amp; form</a>
+    <a href="#galaxy"><span class="n">05</span> The galaxy</a>
+    <a href="#motion"><span class="n">06</span> Motion</a>
+    <a href="#components"><span class="n">07</span> Components</a>
+    <a href="#laws"><span class="n">08</span> Interaction laws</a>
+    <a href="#faces"><span class="n">09</span> Public &amp; private</a>
+    <a href="#voice"><span class="n">10</span> Voice</a>
+    <a href="#empty"><span class="n">11</span> Forming states</a>
+    <a href="#roadmap"><span class="n">12</span> What&rsquo;s next</a>
+  </nav>
+
+  <!-- 01 -->
+  <section id="philosophy">
+    <div class="sh"><span class="num">01</span><h2>Philosophy</h2></div>
+    <p class="intro">Praxis is a place to build theory from reading. The profile is not a dashboard and not a feed &mdash; it is a <b>portrait of a mind</b>: the values someone reads toward, and the thinking those values have grown into.</p>
+    <p class="note-line">The room is warm. The sky is deep. Your thinking is the light.</p>
+    <p class="body">Three commitments hold the whole system together:</p>
+    <p class="body"><b>The portrait teaches how you read, the interior stays yours.</b> Everything public is legible enough to show a stranger how a mind works; everything intimate &mdash; the margins, the drafts, the unfinished &mdash; stays with the reader. This line (&sect;09) is load-bearing, not a setting.</p>
+    <p class="body"><b>Poetry lives in the content, precision lives in the chrome.</b> Titles, excerpts, margin notes, and value articulations can sing. Labels, counts, and controls stay plainspoken and exact. The tension between a grand serif and a whisper-small mono label is the house style.</p>
+    <p class="body"><b>An instrument, not a mirror.</b> The portrait never concludes who the reader is &mdash; a profile that pronounces identity is the banking model wearing a nice suit. It offers, asks, and lets the reader play it: categorization is a dialogue (offer &rarr; confirm, rename, or reject), gaps and tensions render as questions, and the emblem asks &ldquo;does this look like you?&rdquo; rather than asserting it. This principle is already live on the account-page portrait and every future surface inherits it.</p>
+    <p class="body"><b>One deliberate risk, everything else quiet.</b> The signature is the galaxy, and specifically its <b>warm-core-to-cool-edge night</b> &mdash; a warm study that opens onto a cold sky. The warm-paper-and-serif shell is Praxis&rsquo;s established brand, kept consistent on purpose; the cool depth in the galaxy is the one place we spend boldness.</p>
+  </section>
+
+  <!-- 02 -->
+  <section id="color">
+    <div class="sh"><span class="num">02</span><h2>Color</h2></div>
+    <p class="intro">Two worlds. The <b>paper chrome</b> is the warm room the reader sits in &mdash; every surface outside the galaxy. The <b>night</b> is the galaxy alone. They never blend; the contrast between them is the point.</p>
+
+    <h3>Paper chrome &mdash; the room</h3>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#f4efe4"></div><div class="meta"><div class="nm">paper</div><div class="hx">#f4efe4</div><div class="use">page background</div></div></div>
+      <div class="sw"><div class="chip" style="background:#fffdf8"></div><div class="meta"><div class="nm">surface</div><div class="hx">#fffdf8</div><div class="use">cards, panels</div></div></div>
+      <div class="sw"><div class="chip" style="background:#efe7d6"></div><div class="meta"><div class="nm">surface-2</div><div class="hx">#efe7d6</div><div class="use">chips, wells, hints</div></div></div>
+      <div class="sw"><div class="chip" style="background:#241d10"></div><div class="meta"><div class="nm">ink</div><div class="hx">#241d10</div><div class="use">primary text</div></div></div>
+      <div class="sw"><div class="chip" style="background:#645940"></div><div class="meta"><div class="nm">ink-2</div><div class="hx">#645940</div><div class="use">body / secondary</div></div></div>
+      <div class="sw"><div class="chip" style="background:#978b6d"></div><div class="meta"><div class="nm">ink-3</div><div class="hx">#978b6d</div><div class="use">meta, muted</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e3d8c1"></div><div class="meta"><div class="nm">line</div><div class="hx">#e3d8c1</div><div class="use">borders, rules</div></div></div>
+      <div class="sw"><div class="chip" style="background:#a8761a"></div><div class="meta"><div class="nm">gold</div><div class="hx">#a8761a</div><div class="use">accent, kickers</div></div></div>
+      <div class="sw"><div class="chip" style="background:#8c5c10"></div><div class="meta"><div class="nm">gold-deep</div><div class="hx">#8c5c10</div><div class="use">on-cream text, fills</div></div></div>
+      <div class="sw"><div class="chip" style="background:#c0492a"></div><div class="meta"><div class="nm">ember</div><div class="hx">#c0492a</div><div class="use">destructive only</div></div></div>
+    </div>
+    <h3>Gilding &mdash; the richness layer</h3>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#d9a441"></div><div class="meta"><div class="nm">gold-hi</div><div class="hx">#d9a441</div><div class="use">gilded hairlines, glow</div></div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(180deg,#b5851f,#8c5c10)"></div><div class="meta"><div class="nm">gilded fill</div><div class="hx">#b5851f &rarr; #8c5c10</div><div class="use">primary buttons</div></div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(90deg,#fffdf8,#d9a441,#fffdf8)"></div><div class="meta"><div class="nm">gilded rule</div><div class="hx">gold-hi @ 60%, fading ends</div><div class="use">1px card top edge</div></div></div>
+    </div>
+    <p class="body" style="margin-top:16px">Gilding is how the room gets its richness without losing quiet: a <b>1px gilded hairline</b> across the top of cards (inset 18px each side, fading to nothing), a <b>gradient gold fill</b> with an inner top light on primary buttons, a faint <b>gold-hi glow</b> pooled behind the values statement like lamplight, metric numbers ink-to-gold at their feet, and a hairline <b>gold ring</b> offset around the avatar. Gilding is an edge treatment and a glow &mdash; never a fill on large surfaces.</p>
+    <p class="body">Gold is the accent, but <b>gold-deep</b> is what you use for gold-colored <em>text or icons on cream</em> &mdash; plain <span class="mono">--gold</span> fails contrast at body sizes. Ember is reserved strictly for destructive or error states; it never decorates.</p>
+
+    <h3>The night &mdash; the galaxy field</h3>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#2a1e10"></div><div class="meta"><div class="nm">night core</div><div class="hx">#2a1e10</div><div class="use">warm center of field</div></div></div>
+      <div class="sw"><div class="chip" style="background:#1a1410"></div><div class="meta"><div class="nm">night mid</div><div class="hx">#1a1410</div><div class="use">gradient middle</div></div></div>
+      <div class="sw"><div class="chip" style="background:#101019"></div><div class="meta"><div class="nm">night cool</div><div class="hx">#101019</div><div class="use">cool turn</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0b0d16"></div><div class="meta"><div class="nm">night edge</div><div class="hx">#0b0d16</div><div class="use">cold outer edge</div></div></div>
+      <div class="sw"><div class="chip" style="background:#12100a"></div><div class="meta"><div class="nm">panel base</div><div class="hx">#12100a</div><div class="use">panel behind sky</div></div></div>
+      <div class="sw"><div class="chip" style="background:#3a2c15"></div><div class="meta"><div class="nm">night-line</div><div class="hx">#3a2c15</div><div class="use">night borders</div></div></div>
+    </div>
+    <p class="body" style="margin-top:16px">The field is a single radial: warm <span class="mono">#2a1e10</span> at ~46% / 40%, turning through <span class="mono">#1a1410</span> to a cold blue-black <span class="mono">#0b0d16</span> at the rim. This temperature swing is the signature &mdash; do not flatten it to a uniform dark.</p>
+
+    <h3>Field spectrum &mdash; the six planets</h3>
+    <p class="body">Curated, warm-dominant, one cool-leaning tone (sage) for contrast. The same six hues serve Categories and Lenses in parallel, so a reader learns them once.</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#f2c25a"></div><div class="meta"><div class="nm">gold</div><div class="hx">#f2c25a</div><div class="use">densest field</div></div></div>
+      <div class="sw"><div class="chip" style="background:#dd8f5e"></div><div class="meta"><div class="nm">copper</div><div class="hx">#dd8f5e</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#e8cf88"></div><div class="meta"><div class="nm">champagne</div><div class="hx">#e8cf88</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#d98f8a"></div><div class="meta"><div class="nm">dusty rose</div><div class="hx">#d98f8a</div><div class="use"></div></div></div>
+      <div class="sw"><div class="chip" style="background:#a9b98c"></div><div class="meta"><div class="nm">sage</div><div class="hx">#a9b98c</div><div class="use">the cool counter</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e07a52"></div><div class="meta"><div class="nm">terracotta</div><div class="hx">#e07a52</div><div class="use"></div></div></div>
+    </div>
+
+    <h3>Light in the sky &mdash; stars, threads, nebula</h3>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#fff6df"></div><div class="meta"><div class="nm">sub-theory star</div><div class="hx">#fff6df</div><div class="use">bright, glinting</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e9d6a8"></div><div class="meta"><div class="nm">book star</div><div class="hx">#e9d6a8</div><div class="use">faint field, dim</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e9b24a"></div><div class="meta"><div class="nm">thread (rest)</div><div class="hx">#e9b24a</div><div class="use">value line, faint</div></div></div>
+      <div class="sw"><div class="chip" style="background:#f7d488"></div><div class="meta"><div class="nm">thread (active)</div><div class="hx">#f7d488</div><div class="use">traced value</div></div></div>
+      <div class="sw"><div class="chip" style="background:#e8a94a"></div><div class="meta"><div class="nm">nebula warm</div><div class="hx">#e8a94a</div><div class="use">dust bloom</div></div></div>
+      <div class="sw"><div class="chip" style="background:#8a6a9a"></div><div class="meta"><div class="nm">nebula plum</div><div class="hx">#8a6a9a</div><div class="use">dust bloom</div></div></div>
+      <div class="sw"><div class="chip" style="background:#5a7a72"></div><div class="meta"><div class="nm">nebula sage</div><div class="hx">#5a7a72</div><div class="use">dust bloom</div></div></div>
+    </div>
+    <p class="body" style="margin-top:16px">Star and book engagement is encoded by <b>luminosity</b>, interpolating warm amber <span class="mono">rgb(233,178,74)</span> at low engagement to near-white gold <span class="mono">rgb(255,244,214)</span> at high. Nebula blooms sit at 7&ndash;13% opacity under heavy blur &mdash; atmosphere, never shape.</p>
+  </section>
+
+  <!-- 03 -->
+  <section id="type">
+    <div class="sh"><span class="num">03</span><h2>Typography</h2></div>
+    <p class="intro">Three voices. <b>Cormorant Garamond</b> is the soul &mdash; every title, number, value, and piece of writing. <b>DM Sans</b> is the speaking voice &mdash; body and interface. <b>DM Mono</b> is the instrument panel &mdash; labels, counts, and meta, always small and tracked.</p>
+
+    <div class="spec gild">
+      <div class="label"><span>Display / values statement</span><b>Cormorant Garamond 600 &middot; -.012em &middot; lh .98</b></div>
+      <div class="disp">truth under pressure <em>/</em> becoming</div>
+    </div>
+    <div class="spec gild">
+      <div class="label"><span>Prose &amp; excerpt</span><b>Cormorant Garamond italic &middot; 19&ndash;24px</b></div>
+      <div class="serif-i">I read for the places where an idea is put under pressure and has to prove it can hold.</div>
+    </div>
+    <div class="spec gild">
+      <div class="label"><span>Body / interface</span><b>DM Sans 400/500 &middot; 15.5px &middot; lh 1.6</b></div>
+      <div class="bodyface">The classroom as commons &mdash; a shared holding where knowledge is tended together, not handed down.</div>
+    </div>
+    <div class="spec gild">
+      <div class="label"><span>Meta / data</span><b>DM Mono 400 &middot; 12px</b></div>
+      <div class="monoface">213 books read &middot; 6 published &middot; first read 2019</div>
+    </div>
+    <div class="spec gild">
+      <div class="label"><span>Kicker label</span><b>DM Mono &middot; 10&ndash;11px &middot; .16&ndash;.2em &middot; uppercase</b></div>
+      <div class="mono-lbl">knowledge arc</div>
+    </div>
+
+    <h3>Editorial rules</h3>
+    <div class="rows">
+      <div class="row"><div class="k">separators</div><div class="v">Values divide with a <b>1.5px gold hairline</b> at 45% opacity &mdash; never a slash or bullet.</div></div>
+      <div class="row"><div class="k">accents</div><div class="v">Emphasis inside a serif line is <b>italic + gold</b>, not bold. Bold is for DM Sans / DM Mono only.</div></div>
+      <div class="row"><div class="k">drop cap</div><div class="v">Long excerpts open with a two-line <b>initial-letter</b> drop cap in gold-deep.</div></div>
+      <div class="row"><div class="k">case</div><div class="v"><b>Sentence case</b> everywhere except mono kicker labels, which are uppercase.</div></div>
+      <div class="row"><div class="k">numbers</div><div class="v">All counts and metrics are <b>Cormorant</b>, large and confident &mdash; numbers are part of the portrait.</div></div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="space">
+    <div class="sh"><span class="num">04</span><h2>Space &amp; form</h2></div>
+    <p class="intro">Generous, editorial rhythm. The page breathes; density lives only inside the galaxy.</p>
+    <div class="rows">
+      <div class="row"><div class="k">column</div><div class="v"><b>1000&ndash;1010px</b> max content width, centered.</div></div>
+      <div class="row"><div class="k">section rhythm</div><div class="v"><b>52&ndash;56px</b> between major sections; a hairline rule separates reference sections.</div></div>
+      <div class="row"><div class="k">radius</div><div class="v"><b>16px</b> cards &amp; panels &middot; <b>12&ndash;13px</b> tiles &amp; wells &middot; <b>999px</b> chips, pills, buttons.</div></div>
+      <div class="row"><div class="k">card padding</div><div class="v"><b>22&ndash;26px</b> for content cards; <b>15&ndash;18px</b> for tiles.</div></div>
+      <div class="row"><div class="k">grids</div><div class="v"><b>auto-fit minmax</b> for tiles/cards so surfaces reflow to one column on mobile without bespoke breakpoints.</div></div>
+      <div class="row"><div class="k">elevation</div><div class="v">Cards lift on hover: <b>translateY(-2px)</b> + a soft warm shadow. The night panel carries an inner top <b>edge-light</b> so it reads as a window.</div></div>
+      <div class="row"><div class="k">gilding</div><div class="v">Content cards carry the <b>1px gilded hairline</b> at their top edge (&sect;02). Primary buttons take the gilded fill. One glow pools behind the hero.</div></div>
+      <div class="row"><div class="k">vignette</div><div class="v">The page has a faint warm radial glow at the top &mdash; the sense of a lamp in the room.</div></div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section id="galaxy">
+    <div class="sh"><span class="num">05</span><h2>The galaxy</h2></div>
+    <p class="intro">The signature. A portrait of a mind as an observatory field. Read it top-down: <b>fields</b> are where you read, <b>books</b> are the ground, <b>sub-theories</b> are the light your thinking makes, and <b>values</b> are the lines that run between fields.</p>
+
+    <div class="night">
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+          <filter id="g1" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="1.1"/></filter>
+          <filter id="n1" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="40"/></filter>
+          <radialGradient id="sb" cx="46%" cy="42%" r="80%"><stop offset="0%" stop-color="#2a1e10"/><stop offset="45%" stop-color="#1a1410"/><stop offset="100%" stop-color="#0b0d16"/></radialGradient>
+          <radialGradient id="pg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff4da"/><stop offset="32%" stop-color="#f2c25a"/><stop offset="100%" stop-color="#f2c25a" stop-opacity="0"/></radialGradient>
+          <radialGradient id="pg2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff4da"/><stop offset="32%" stop-color="#a9b98c"/><stop offset="100%" stop-color="#a9b98c" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect x="0" y="0" width="900" height="300" fill="url(#sb)"/>
+        <circle cx="250" cy="120" r="90" fill="#e8a94a" opacity=".1" filter="url(#n1)"/>
+        <circle cx="640" cy="200" r="80" fill="#8a6a9a" opacity=".08" filter="url(#n1)"/>
+        <g fill="#e9d6a8"><circle cx="120" cy="70" r=".8" opacity=".4"/><circle cx="200" cy="210" r=".6" opacity=".3"/><circle cx="330" cy="90" r=".7" opacity=".45"/><circle cx="470" cy="60" r=".5" opacity=".3"/><circle cx="560" cy="250" r=".8" opacity=".4"/><circle cx="700" cy="110" r=".6" opacity=".35"/><circle cx="780" cy="200" r=".7" opacity=".4"/><circle cx="410" cy="240" r=".6" opacity=".3"/><circle cx="620" cy="70" r=".5" opacity=".3"/><circle cx="150" cy="160" r=".7" opacity=".4"/><circle cx="850" cy="90" r=".6" opacity=".35"/><circle cx="300" cy="180" r=".5" opacity=".3"/></g>
+        <path d="M300 150 Q430 110 600 175" fill="none" stroke="#e9b24a" stroke-width="1.2" opacity=".22"/>
+        <g><circle cx="300" cy="150" r="90" fill="url(#pg)" opacity=".5"/><circle cx="300" cy="150" r="38" fill="url(#pg)"/><circle cx="300" cy="150" r="12" fill="#fff6e0" opacity=".85"/><text x="300" y="205" text-anchor="middle" fill="#dac496" font-family="DM Mono, monospace" font-size="11" letter-spacing="1.5">CRITICAL PEDAGOGY</text></g>
+        <g><circle cx="600" cy="175" r="66" fill="url(#pg2)" opacity=".5"/><circle cx="600" cy="175" r="26" fill="url(#pg2)"/><circle cx="600" cy="175" r="8" fill="#fff6e0" opacity=".85"/><text x="600" y="218" text-anchor="middle" fill="#dac496" font-family="DM Mono, monospace" font-size="11" letter-spacing="1.5">PHENOMENOLOGY</text></g>
+        <g><circle cx="370" cy="95" r="18" fill="#ffe6ac" opacity=".34" filter="url(#b1)"/><line x1="370" y1="47" x2="370" y2="143" stroke="#fff4d6" stroke-width="1" opacity=".6" filter="url(#g1)"/><line x1="322" y1="95" x2="418" y2="95" stroke="#fff4d6" stroke-width="1" opacity=".6" filter="url(#g1)"/><circle cx="370" cy="95" r="6.5" fill="#fff6df"/><circle cx="370" cy="95" r="3" fill="#fffef8"/></g>
+        <g><circle cx="660" cy="120" r="14" fill="#ffe6ac" opacity=".3" filter="url(#b1)"/><line x1="660" y1="82" x2="660" y2="158" stroke="#fff4d6" stroke-width="1" opacity=".55" filter="url(#g1)"/><line x1="622" y1="120" x2="698" y2="120" stroke="#fff4d6" stroke-width="1" opacity=".55" filter="url(#g1)"/><circle cx="660" cy="120" r="5" fill="#fff6df"/></g>
+      </svg>
+    </div>
+    <div class="gkey">
+      <div class="item"><div class="t"><span class="dot" style="background:radial-gradient(circle,#f3c266,#a9701c)"></span>Planet = field</div><div class="d">A category or lens. <b>Size = books read</b> there. The territory of your reading.</div></div>
+      <div class="item"><div class="t"><span class="dot" style="background:#fff6df;box-shadow:0 0 8px #ffe6ac"></span>Bright star = sub-theory</div><div class="d">A piece of your thinking, near its home field. <b>Size = books behind it.</b> Glints. Opens its page.</div></div>
+      <div class="item"><div class="t"><span class="dot" style="background:#d9c79a;opacity:.7"></span>Faint star = book</div><div class="d">One of the books you&rsquo;ve read &mdash; the ground the thinking rises from. Ambient, many, dim.</div></div>
+      <div class="item"><div class="t"><span class="dot" style="background:#e9b24a"></span>Thread = value</div><div class="d">A value that recurs across fields. Radiates from the field carrying it most.</div></div>
+    </div>
+
+    <h3>Encoding laws</h3>
+    <div class="rows">
+      <div class="row"><div class="k">planet size</div><div class="v"><span class="mono">r = 17 + booksRead &times; 0.42</span> &mdash; the more you&rsquo;ve read in a field, the larger its world.</div></div>
+      <div class="row"><div class="k">star size</div><div class="v">Sub-theory: <span class="mono">r = 3.3 + booksBehind &times; 0.85</span>. A sub-theory built on more reading burns bigger.</div></div>
+      <div class="row"><div class="k">luminosity</div><div class="v">A book&rsquo;s brightness encodes <b>engagement</b>; sub-theory stars are always bright (they&rsquo;re the heroes) and carry glints.</div></div>
+      <div class="row"><div class="k">star placement</div><div class="v">A sub-theory sits by its <b>home field</b> &mdash; the field of its highest-engagement source book &mdash; fanned by golden angle so clusters don&rsquo;t collide.</div></div>
+      <div class="row"><div class="k">a thread forms</div><div class="v">When a value has evidence in <b>two or more fields</b> &mdash; <b>&ge;1 sub-theory/arc</b> drawing on that field, <b>or &ge;2 annotated books</b> in it.</div></div>
+      <div class="row"><div class="k">constellation</div><div class="v">A value radiates from its <b>hub</b> (the field carrying it most) to each other carrying field &mdash; <span class="mono">n&minus;1</span> clean lines, never a tangle of pairs.</div></div>
+    </div>
+
+    <h3>The three views</h3>
+    <div class="rows">
+      <div class="row"><div class="k">Categories</div><div class="v">Planets are your reading <b>categories</b>. The default.</div></div>
+      <div class="row"><div class="k">Lenses</div><div class="v">The same books regroup around your <b>lenses</b> &mdash; the interpretive stances you read with.</div></div>
+      <div class="row"><div class="k">Numbers</div><div class="v">The galaxy recedes; the <b>quantitative half</b> of the portrait takes its place, in the same night. Gold figures on the dark.</div></div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section id="motion">
+    <div class="sh"><span class="num">06</span><h2>Motion</h2></div>
+    <p class="intro">Motion is rare and meaningful. One orchestrated moment &mdash; a value assembling &mdash; carries more than scattered effects. Everything below is gated by <span class="mono">prefers-reduced-motion</span>.</p>
+    <div class="rows">
+      <div class="row"><div class="k">constellation draw-in</div><div class="v">The signature. On value-select, each thread <b>draws itself</b> from the hub outward &mdash; <span class="mono">stroke-dashoffset, .6s ease</span>. Watch a value assemble across the sky.</div></div>
+      <div class="row"><div class="k">dim &amp; brighten</div><div class="v">Selecting a value fades non-members and lifts members &mdash; <span class="mono">opacity, .35s</span>. Nothing snaps.</div></div>
+      <div class="row"><div class="k">hover peek</div><div class="v">A star&rsquo;s core swells <b>&times;1.25&ndash;1.35</b>; the whisper fades in over <span class="mono">.14s</span>.</div></div>
+      <div class="row"><div class="k">twinkle</div><div class="v">~15% of the faint book-field breathes slowly &mdash; <span class="mono">2.5&ndash;6.5s</span>, opacity .14&harr;.55. Life, not sparkle.</div></div>
+      <div class="row"><div class="k">card lift</div><div class="v">Interactive cards rise <b>2px</b> with a warm shadow on hover &mdash; <span class="mono">.2s</span>.</div></div>
+      <div class="row"><div class="k">page turn</div><div class="v">Navigating to a book or sub-theory fades the destination up <span class="mono">.35s</span>; back restores the portrait at its prior scroll.</div></div>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section id="components">
+    <div class="sh"><span class="num">07</span><h2>Components</h2></div>
+    <p class="intro">The inventory every surface composes from. Build new surfaces out of these before inventing anything.</p>
+    <div class="gallery">
+      <div class="demo gild"><div class="dl">chip &mdash; plain / published / nav</div><div class="chips"><span class="chip">Black Study</span><span class="chip pub">Refusal as literacy &middot; published</span><span class="chip nav">In the Wake</span></div><div class="dn">Plain chips label. <b>Nav chips</b> carry a &#8599; and navigate. Published chips take the gold border.</div></div>
+      <div class="demo gild"><div class="dl">buttons</div><div class="chips"><span class="btn">Follow</span><span class="btn ghost">Share</span></div><div class="dn">Solid gold-deep for primary; ghost for secondary. Mono, tracked, uppercase.</div></div>
+      <div class="demo gild"><div class="dl">badges</div><div class="chips"><span class="badge"><span class="d"></span>published</span><span class="badge priv"><span class="d"></span>private draft</span></div><div class="dn">State markers on destination pages. Private uses ink-3, not gold.</div></div>
+      <div class="demo gild"><div class="dl">metric</div><div class="mini-metric"><div class="num">213</div><div class="lab">books read</div></div><div class="dn">Cormorant number, mono label. Clickable metrics gain a &#8599; and lift.</div></div>
+      <div class="demo gild"><div class="dl">cornerstone spine</div><div style="display:flex;gap:12px;align-items:center"><div class="spineY"></div><div><div style="font-family:'Cormorant Garamond',serif;font-size:17px">Beloved</div><div class="mono" style="font-size:10.5px;color:var(--ink-3)">Toni Morrison</div></div></div><div class="dn">A book as a colored spine in its field&rsquo;s hue. The way books enter a surface.</div></div>
+      <div class="demo gild"><div class="dl">margin note</div><div class="mnote">Rememory. The past is not behind you; it is a place you can walk back into.</div><div class="dn">The intimate layer. Serif, gold left-rule. Owner-only.</div></div>
+    </div>
+    <p class="body" style="margin-top:20px">Also in the system, all shown live in the mockup: the <b>detail panel</b> (kind &middot; title &middot; nested arc&rarr;sub-theory), the <b>value strip</b> and value chips, the three-way <b>toggle</b>, the <b>whisper</b> tooltip, the <b>sparkline</b> and bar rows, the <b>excerpt</b> block with drop cap, the <b>identity header</b> with avatar, and the <b>thinker</b> chip.</p>
+  </section>
+
+  <!-- 08 -->
+  <section id="laws">
+    <div class="sh"><span class="num">08</span><h2>Interaction laws</h2></div>
+    <p class="intro">Two rules govern every surface. Learn them once, they hold everywhere.</p>
+    <div class="rows">
+      <div class="row"><div class="k">hover = peek</div><div class="v">Hovering a star shows a <b>whisper</b> &mdash; a glance, no commitment.</div></div>
+      <div class="row"><div class="k">click = go</div><div class="v">Clicking a <b>leaf</b> (a book, a sub-theory) <b>navigates</b> to its page.</div></div>
+      <div class="row"><div class="k">structure opens a panel</div><div class="v">Clicking a <b>structural node</b> (a field/planet, a value) opens the <b>detail panel</b> in place &mdash; it does not navigate.</div></div>
+      <div class="row"><div class="k">the graph is walkable</div><div class="v">Field &rarr; sub-theory &rarr; its books &rarr; each book&rsquo;s margins &rarr; back &mdash; every node links to its neighbors.</div></div>
+      <div class="row"><div class="k">trace &amp; release</div><div class="v">A value chip toggles its constellation. Tapping empty sky or the chip again <b>clears</b>.</div></div>
+      <div class="row"><div class="k">back is faithful</div><div class="v">Returning restores the portrait exactly where it was left.</div></div>
+      <div class="row"><div class="k">addressable</div><div class="v">In the live app every node is a <b>URL</b> &mdash; books, sub-theories, arcs, and a traced value are all linkable.</div></div>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section id="faces">
+    <div class="sh"><span class="num">09</span><h2>Public &amp; private &mdash; the two faces</h2></div>
+    <p class="intro">The profile has two readers: <b>the visitor</b>, who sees the portrait, and <b>you</b>, who sees the portrait and its intimate interior. This line is the heart of the design, not a preference.</p>
+    <div class="faces">
+      <div class="face pub"><h4>Public &mdash; the portrait</h4><ul>
+        <li>Identity, values statement, the prose line</li>
+        <li>The galaxy: fields, the book-field, sub-theory stars, value threads</li>
+        <li>Knowledge arcs and their central questions</li>
+        <li>Published sub-theories &amp; their excerpts</li>
+        <li>Counts, cornerstone books, lineage</li>
+      </ul></div>
+      <div class="face pri"><h4>Private &mdash; stays yours</h4><ul>
+        <li>Every note in the margins</li>
+        <li>Drafts and unpublished sub-theories</li>
+        <li>In-progress reads and their progress</li>
+        <li>Per-book engagement and passages saved</li>
+        <li>The reading journal</li>
+      </ul></div>
+    </div>
+    <h3>How the interior shows</h3>
+    <p class="body">In the <b>owner</b> view, private items appear inline, marked plainly &mdash; a small <span class="badge priv" style="transform:scale(.9);transform-origin:left"><span class="d"></span>only you can see this</span> tag, never a wall or a warning. The <b>visitor</b> view simply omits them; it never shows a locked placeholder that advertises what&rsquo;s hidden.</p>
+    <p class="body"><b>The consented door.</b> A private margin note can become published evidence only through an explicit, loud <span class="mono">make this public</span> step &mdash; and the note is visibly re-marked afterward. Nothing private ever becomes public silently. First publish warns, plainly: anyone on the internet can read this.</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="voice">
+    <div class="sh"><span class="num">10</span><h2>Voice</h2></div>
+    <p class="intro">Plain nouns in the chrome; poetry only in the content. The interface names things by what they are; the writing is where a mind shows.</p>
+    <div class="dd">
+      <div class="col yes"><h4>Do</h4>
+        <p>Label with plain nouns: <b>Books &middot; Knowledge arcs &middot; Sub-theories &middot; Fields &middot; Published</b>.</p>
+        <p>Name a value with specificity: <b>truth under pressure</b>, not &ldquo;truth.&rdquo;</p>
+        <p>Let excerpts, margin notes, and value articulations carry the poetry.</p>
+        <p>Write empty states as invitations: <b>your first sub-theory will appear here.</b></p>
+      </div>
+      <div class="col no"><h4>Don&rsquo;t</h4>
+        <p>Dress labels in metaphor: <b>&ldquo;carried by,&rdquo; &ldquo;expressed in,&rdquo; &ldquo;the thinking it grows.&rdquo;</b></p>
+        <p>Flatten a value to a generic word that could mean anything.</p>
+        <p>Make the chrome poetic &mdash; a button says what it does.</p>
+        <p>Apologize in errors, or leave an empty screen as mood.</p>
+      </div>
+    </div>
+    <p class="body" style="margin-top:20px"><b>When Yumi speaks</b>, the register is a fellow reader &mdash; warm, brief, present: &ldquo;I ask questions while you read. No summaries, just thinking together.&rdquo; Never a mascot, never a cheerleader.</p>
+  </section>
+
+  <!-- 11 -->
+  <section id="empty">
+    <div class="sh"><span class="num">11</span><h2>Forming states</h2></div>
+    <p class="intro">A portrait begins empty. The forming states are not error screens &mdash; they are the first chapter, and they should feel like a beginning worth having.</p>
+    <div class="rows">
+      <div class="row"><div class="k">new galaxy</div><div class="v">No stars yet. The field shows faintly, a nebula waiting. One line: <b>&ldquo;Your portrait begins here.&rdquo;</b> The first read lights the first faint star.</div></div>
+      <div class="row"><div class="k">no sub-theories</div><div class="v">The bright-star layer is empty with a gentle marker: <b>&ldquo;Your first sub-theory will rise here as a star.&rdquo;</b></div></div>
+      <div class="row"><div class="k">no values named</div><div class="v">The values statement is a prompt, not a blank: an invitation to name what you read toward &mdash; Yumi helps if asked.</div></div>
+      <div class="row"><div class="k">sparse reading</div><div class="v">Few books &mdash; the field is quiet and honest. The portrait grows visibly as reading accrues; that growth is the reward.</div></div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section id="roadmap">
+    <div class="sh"><span class="num">12</span><h2>What the profile still needs</h2></div>
+    <p class="intro">The reference implementation covers the portrait and the galaxy. These are the surfaces the canon now governs but the mockup hasn&rsquo;t built &mdash; each should inherit everything above.</p>
+    <div class="road">
+      <div class="ritem"><div class="rn">1</div><div><div class="rt">Owner view vs. visitor view</div><div class="rd">The two faces made real &mdash; the toggle between the public portrait and the private interior. The home of the intimate layer.</div></div><span class="rtag">core</span></div>
+      <div class="ritem"><div class="rn">2</div><div><div class="rt">Recent thinking</div><div class="rd">A quiet feed &mdash; recent marginalia, recently finished, newly published &mdash; so the portrait visibly breathes.</div></div><span class="rtag">core</span></div>
+      <div class="ritem"><div class="rn">3</div><div><div class="rt">Published work section</div><div class="rd">A real dated list of published sub-theories, not just a metric &mdash; the portfolio face of the portrait.</div></div><span class="rtag">core</span></div>
+      <div class="ritem"><div class="rn">4</div><div><div class="rt">Into the full library</div><div class="rd">A path from the profile to all your books &mdash; the shelves behind the cornerstones and the faint field.</div></div><span class="rtag">next</span></div>
+      <div class="ritem"><div class="rn">5</div><div><div class="rt">Edit / authoring mode</div><div class="rd">The profile is written. Values, bio, and what leads should be editable in place.</div></div><span class="rtag">next</span></div>
+      <div class="ritem"><div class="rn">6</div><div><div class="rt">Social &amp; commons hooks</div><div class="rd">Followers, following, and &ldquo;arcs others built on&rdquo; &mdash; reserved space now, wired post-launch.</div></div><span class="rtag">post-launch</span></div>
+      <div class="ritem"><div class="rn">7</div><div><div class="rt">Longer about</div><div class="rd">An optional prose bio beneath the one-line identity, for readers who want the fuller story.</div></div><span class="rtag">optional</span></div>
+    </div>
+  </section>
+
+  <div class="foot">Praxis &middot; Design Canon v1 &middot; the craft that leads the builds</div>
+</div>
+</body>
+</html>
