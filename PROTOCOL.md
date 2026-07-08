@@ -115,7 +115,7 @@ Stop and wait for Preston before doing any of the following. No exceptions, no "
 
 1. **Byte-locked foundation files.** Any change to `lumen-amber.css` (locked at **14,681 B**) or `marks.js` (locked at **10,255 B**). If a wave appears to require touching these, HALT and say why.
 2. **Yumi covenant.** Anything touching the covenant path — `assembleContextData` lines **222–226**, Yumi's **cyan-only** color, the **never-summarizes** behavior. The covenant is a constraint, not a decision. Never bypass it, never "improve" it, never let another surface's change alter it.
-3. **The six load-bearing principles.** Any change that would violate: (1) Yumi never summarizes books; (2) Notebook is structurally private; (3) one Book Artifact per user per book; (4) stars de-emphasized, no follower counts as primary UI; (5) no asymmetric knowledge; (6) Knowledge Arcs are intersectional by design.
+3. **The six load-bearing principles.** Any change that would violate: (1) Yumi never summarizes books; (2) Notebook is structurally private; (3) one Book Artifact per user per book; (4) stars de-emphasized, no follower counts as primary UI; (5) no asymmetric knowledge; (6) Knowledge Arcs are intersectional by design. (Canonical articulation + enforcement seams: `docs/PRINCIPLES.md`.)
 4. **Dependencies and syntax floor.** Any new dependency of any kind. Any ES5-or-later syntax entering client JS (§7 — the floor is ES3).
 5. **Scope.** Anything beyond the surfaces declared in this wave's header, or anything named in `Out of scope this wave`.
 
