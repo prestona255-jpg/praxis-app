@@ -29,8 +29,9 @@ if printf '%s\n' "$staged" | grep -Eq '(^|/)test-arc-constellation\.html$'; then
 fi
 
 # 3. A served-source change must ride a cache bump (sw.js in the same commit).
-#    docs/ and tools/ are exempt — build-time files, never served to clients.
-src=$(printf '%s\n' "$staged" | grep -E '\.(js|css|html)$' | grep -Ev '(^|/)sw\.js$' | grep -Ev '^docs/' | grep -Ev '^tools/')
+#    docs/, tools/, and design/ are exempt — build-time / reference files
+#    (mockups, specs), never linked from index.html and never served to clients.
+src=$(printf '%s\n' "$staged" | grep -E '\.(js|css|html)$' | grep -Ev '(^|/)sw\.js$' | grep -Ev '^docs/' | grep -Ev '^tools/' | grep -Ev '^design/')
 if [ -n "$src" ]; then
   if ! printf '%s\n' "$staged" | grep -Eq '(^|/)sw\.js$'; then
     emit "BLOCK: source files staged without sw.js — bump CACHE_VERSION and stage sw.js (FIX-PROTOCOL §2)."
