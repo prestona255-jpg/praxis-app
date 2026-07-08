@@ -25,12 +25,13 @@ US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g.
 SURFACES="home books book-detail book-marks artifact arcs arc-detail subtheory-page subtheory-build notebook account about profile commons reader walk search yumi-sees yumi-panel onboarding import-capture spotlight"
 LAYERS="cross-cutting"
 
-# layer groups (slug lists) + display order
-G_CORE="home about search spotlight"
-G_READING="books book-detail book-marks artifact"
-G_WRITING="arcs arc-detail subtheory-page subtheory-build notebook import-capture"
-G_SOCIAL="account profile commons reader walk"
-G_YUMI="yumi-panel yumi-sees onboarding"
+# journey-ordered groups (fixed order everywhere: sidebar, overview, hue legend)
+G_ARRIVE="home onboarding about"
+G_READ="books book-detail book-marks artifact"
+G_WRITE="arcs arc-detail subtheory-page subtheory-build notebook import-capture"
+G_SHARE="account profile commons reader walk"
+G_YUMI="yumi-panel yumi-sees"
+G_FIND="search spotlight"
 G_SYSTEM="cross-cutting"
 
 # ground-truth stamp values (baked at generation time)
@@ -54,17 +55,18 @@ orbcls() { case "$1" in
 hname() { case "$1" in
   home) echo "Home";; about) echo "About";; search) echo "Search";; spotlight) echo "Spotlight";;
   books) echo "Shelf";; book-detail) echo "Book";; book-marks) echo "Marks &amp; lineage";; artifact) echo "Artifact";;
-  arcs) echo "Arcs";; arc-detail) echo "Arc";; subtheory-page) echo "Sub-theory page";; subtheory-build) echo "Sub-theory build";; notebook) echo "Notebook";; import-capture) echo "Import &amp; capture";;
+  arcs) echo "Arcs page";; arc-detail) echo "Arc interior";; subtheory-page) echo "Sub-theory page";; subtheory-build) echo "Sub-theory build";; notebook) echo "Notebook";; import-capture) echo "Import &amp; capture";;
   account) echo "Account";; profile) echo "Profile";; commons) echo "Commons";; reader) echo "Reader";; walk) echo "Walk";;
   yumi-panel) echo "Yumi panel";; yumi-sees) echo "What Yumi sees";; onboarding) echo "Onboarding";;
   cross-cutting) echo "Cross-cutting";; *) echo "$1";; esac; }
-# slug -> layer field hue (reach-map orbs)
+# slug -> journey-group field hue (reach-map orbs)
 layerhue() { case "$1" in
-  home|about|search|spotlight) echo "#f2c25a";;
+  home|onboarding|about) echo "#f2c25a";;
   books|book-detail|book-marks|artifact) echo "#e07a52";;
   arcs|arc-detail|subtheory-page|subtheory-build|notebook|import-capture) echo "#a9b98c";;
   account|profile|commons|reader|walk) echo "#8590d8";;
-  yumi-panel|yumi-sees|onboarding) echo "#f8e078";;
+  yumi-panel|yumi-sees) echo "#f8e078";;
+  search|spotlight) echo "#e8b068";;
   cross-cutting) echo "#b8896c";; *) echo "#f2c25a";; esac; }
 # a stable localStorage key from a title
 slug() { printf '%s' "$1" | tr 'A-Z' 'a-z' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-48; }
@@ -188,9 +190,27 @@ build_reachmap() {
   printf '<div class="rm-caption">GOLD THREAD = THE PLAN &middot; BRIGHT LINE = THE NOW MOVE&rsquo;S REACH &middot; ORBS = SURFACES, COLOR = LAYER</div>'
 }
 
-# render the sidebar group of surfaces
+# group rollup: given slugs -> "orbclass<US>gaps<US>closed<US>total"
+# orb: unlit if 0 closed, soft if some closed, bright if all closed
+group_rollup() {
+  gt=0; gcl=0; gnum=0
+  for s in "$@"; do
+    gnum=$((gnum+1)); gt=$((gt+$(qgap "$s")))
+    [ "$(qstate "$s")" = "closed" ] && gcl=$((gcl+1))
+  done
+  goc="u-orb--unlit"
+  if [ "$gcl" -gt 0 ] && [ "$gcl" -eq "$gnum" ]; then goc="u-orb--lit u-orb--amber"
+  elif [ "$gcl" -gt 0 ]; then goc="u-orb--soft u-orb--amber"; fi
+  printf '%s\037%s\037%s\037%s' "$goc" "$gt" "$gcl" "$gnum"
+}
+
+# render the sidebar group: label gid slugs... (header = anchor jump; surfaces in map order, NOT sorted)
 brail_group() {
-  printf '<div class="brail-group">%s</div>' "$1"; shift
+  lbl="$1"; gid="$2"; shift 2
+  IFS="$US" read -r roc rgt rcl rtl <<EOF
+$(group_rollup "$@")
+EOF
+  printf '<a class="brail-group" href="#group-%s"><span class="u-orb %s"></span><span class="bg-lbl">%s</span><span class="bg-roll">%s gaps &middot; %s/%s</span></a>' "$gid" "$roc" "$lbl" "$rgt" "$rcl" "$rtl"
   for s in "$@"; do
     st=$(qstate "$s")
     g=$(qgap "$s"); gc=''; [ "$g" -gt 0 ] && gc='<span class="brail-count">'"$g"'</span>'
@@ -217,17 +237,19 @@ render_node() {
   printf '</div><label class="ptick"><input type="checkbox" class="ptick-box" data-key="%s"><span>your ticks</span></label></div></div>' "$(slug "$ntitle")"
 }
 
-# render the heat-grid group
+# render the overview heat group: label gid slugs... (section id = anchor target; tiles gap-sorted DESC)
 heat_group() {
-  printf '<div class="heat-glabel">%s</div><div class="heat-row">' "$1"; shift
-  for s in "$@"; do
-    st=$(qstate "$s")
-    rn=$(qrounds "$s")
-    g=$(qgap "$s")
+  lbl="$1"; gid="$2"; shift 2
+  IFS="$US" read -r roc rgt rcl rtl <<EOF
+$(group_rollup "$@")
+EOF
+  printf '<section class="heat-section" id="group-%s"><div class="heat-glabel"><span class="u-orb %s"></span><span class="hg-lbl">%s</span><span class="hg-roll">%s gaps &middot; %s/%s</span></div><div class="heat-row">' "$gid" "$roc" "$lbl" "$rgt" "$rcl" "$rtl"
+  for s in $(i=0; for x in "$@"; do printf '%s %s %s\n' "$(qgap "$x")" "$i" "$x"; i=$((i+1)); done | sort -k1,1nr -k2,2n | awk '{print $3}'); do
+    st=$(qstate "$s"); rn=$(qrounds "$s"); g=$(qgap "$s")
     bf=''; [ "$(qbrief "$s")" = "1" ] && bf=' <span class="brief-star" title="brief ready">&#10022;</span>'
     printf '<a class="heat-tile u-gild-hairline" href="#s-%s"><span class="u-orb %s"></span><span class="heat-name">%s%s</span><span class="heat-meta">%s GAPS &middot; %s ROUNDS</span></a>' "$s" "$(orbcls "$st")" "$(hname "$s")" "$bf" "$g" "$rn"
   done
-  printf '</div>'
+  printf '</div></section>'
 }
 
 {
@@ -268,7 +290,11 @@ body{color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.62;
 .brail{position:fixed;left:0;top:0;bottom:0;width:236px;z-index:20;overflow-y:auto;
   background:var(--surface);border-right:1px solid var(--line);box-shadow:1px 0 0 rgba(217,164,65,.25);padding:14px 12px 44px;}
 .brail-brand{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);padding:4px 10px 6px;}
-.brail-group{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:16px 10px 6px;}
+.brail-group{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:15px 4px 5px;padding:3px 6px;text-decoration:none;border-radius:6px;}
+.brail-group:hover{color:var(--gold-deep);background:var(--surface-2);}
+.brail-group .u-orb{width:8px;height:8px;flex:none;}
+.bg-lbl{flex:1;min-width:0;color:var(--gold-deep);}
+.bg-roll{flex:none;font-size:8.5px;letter-spacing:.02em;text-transform:none;color:var(--ink-3);}
 .brail-link{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-size:13px;color:var(--ink-2);text-decoration:none;padding:6px 10px;border-radius:9px;border-left:2px solid transparent;transition:background .18s,color .18s;}
 .brail-link:hover{background:var(--surface-2);color:var(--gold-deep);}
 .brail-link.active{background:var(--surface-2);color:var(--gold-deep);border-left-color:var(--gold-hi);}
@@ -308,7 +334,11 @@ main{margin-left:236px;}
 
 /* heat grid */
 .heat-head{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 12px;}
-.heat-glabel{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin:18px 0 8px;}
+.heat-section{scroll-margin-top:62px;}
+.heat-glabel{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin:18px 0 8px;}
+.heat-glabel .u-orb{width:11px;height:11px;flex:none;}
+.hg-lbl{flex:none;}
+.hg-roll{font-size:9px;letter-spacing:.03em;text-transform:none;color:var(--ink-3);}
 .heat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:11px;}
 .heat-tile{display:flex;align-items:center;gap:11px;text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;transition:border-color .18s,transform .18s;}
 .heat-tile:hover{border-color:#cdbf9e;transform:translateY(-1px);}
@@ -455,12 +485,13 @@ printf '<div class="brail-brand">the studio</div>'
 printf '<a class="brail-link brail-dest" href="#page-overview">Overview</a>'
 printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
-brail_group "core" $G_CORE
-brail_group "reading" $G_READING
-brail_group "writing" $G_WRITING
-brail_group "social" $G_SOCIAL
-brail_group "yumi" $G_YUMI
-brail_group "system" $G_SYSTEM
+brail_group "ARRIVE" "arrive" $G_ARRIVE
+brail_group "READ" "read" $G_READ
+brail_group "WRITE" "write" $G_WRITE
+brail_group "SHARE" "share" $G_SHARE
+brail_group "YUMI" "yumi" $G_YUMI
+brail_group "FIND" "find" $G_FIND
+brail_group "SYSTEM" "system" $G_SYSTEM
 printf '</nav>\n'
 
 printf '<main>\n'
@@ -483,12 +514,13 @@ done
 printf '</div>'
 # heat grid
 printf '<div class="heat-head">THE SURFACES &mdash; brighter orb = further along &middot; number = open gaps</div>'
-heat_group "CORE" $G_CORE
-heat_group "READING" $G_READING
-heat_group "WRITING" $G_WRITING
-heat_group "SOCIAL" $G_SOCIAL
-heat_group "YUMI" $G_YUMI
-heat_group "SYSTEM" $G_SYSTEM
+heat_group "ARRIVE" "arrive" $G_ARRIVE
+heat_group "READ" "read" $G_READ
+heat_group "WRITE" "write" $G_WRITE
+heat_group "SHARE" "share" $G_SHARE
+heat_group "YUMI" "yumi" $G_YUMI
+heat_group "FIND" "find" $G_FIND
+heat_group "SYSTEM" "system" $G_SYSTEM
 # legend
 printf '<div class="legend"><span><span class="u-orb u-orb--lit u-orb--amber"></span>closed</span><span><span class="u-orb u-orb--soft u-orb--amber"></span>in a round</span><span><span class="u-orb u-orb--unlit"></span>untouched</span></div>'
 # recently
