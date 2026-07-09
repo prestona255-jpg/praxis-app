@@ -4089,36 +4089,47 @@ function renderShelf() {
 
   var booksMap = state.books || {};
 
-  // Author dedupe + alphabetic sort for the sidebar's "Filter by
-  // author" section. Object-as-set for dedupe; default lexicographic
-  // sort (no comparator means no arrow callback). Vanilla.
-  var authorSeen = {};
-  var authors = [];
-  var abid;
-  var abk;
-  for (abid in booksMap) {
-    if (Object.prototype.hasOwnProperty.call(booksMap, abid)) {
-      abk = booksMap[abid];
-      if (abk && abk.author &&
-          !Object.prototype.hasOwnProperty.call(authorSeen, abk.author)) {
-        authorSeen[abk.author] = true;
-        authors.push(abk.author);
-      }
+  // CX-3 (orphan-safe author rail): count authors over the SAME deduped shelf set
+  // the grid renders (shelfBookIds), not raw state.books -- else an orphan/
+  // duplicate record inflates an author count that yields ZERO cards when clicked
+  // ("rendered count == stored count" violation, books.md:179). Mirrors the
+  // lenses / reading-status / category rails, which were reworked to the deduped
+  // set; the author rail was the one sibling that block missed.
+  var authorSrc = [];
+  var asI;
+  if (shelfBookIds) {
+    for (asI = 0; asI < shelfBookIds.length; asI = asI + 1) {
+      if (booksMap[shelfBookIds[asI]]) { authorSrc.push(booksMap[shelfBookIds[asI]]); }
+    }
+  } else {
+    for (asI in booksMap) {
+      if (Object.prototype.hasOwnProperty.call(booksMap, asI) && booksMap[asI]) { authorSrc.push(booksMap[asI]); }
     }
   }
-  // Phase 3.1: per-value book-match tally for the author filter counts.
-  // DISPLAY ONLY -- a count over state.books, not a filter. Rows with
-  // zero matches still show (count 0); no row is hidden.
+
+  // Author dedupe + alphabetic sort for the sidebar's "Filter by author" section.
+  var authorSeen = {};
+  var authors = [];
+  var abi;
+  var abk;
+  for (abi = 0; abi < authorSrc.length; abi = abi + 1) {
+    abk = authorSrc[abi];
+    if (abk && abk.author &&
+        !Object.prototype.hasOwnProperty.call(authorSeen, abk.author)) {
+      authorSeen[abk.author] = true;
+      authors.push(abk.author);
+    }
+  }
+  // Phase 3.1: per-value book-match tally for the author filter counts, over the
+  // SAME deduped set (CX-3). Rows with zero matches still show (count 0).
   var authorCounts = {};
-  var tcid;
+  var tci;
   var tcb;
-  for (tcid in booksMap) {
-    if (Object.prototype.hasOwnProperty.call(booksMap, tcid)) {
-      tcb = booksMap[tcid];
-      if (!tcb) continue;
-      if (typeof tcb.author === 'string' && tcb.author.length > 0) {
-        authorCounts[tcb.author] = (authorCounts[tcb.author] || 0) + 1;
-      }
+  for (tci = 0; tci < authorSrc.length; tci = tci + 1) {
+    tcb = authorSrc[tci];
+    if (!tcb) continue;
+    if (typeof tcb.author === 'string' && tcb.author.length > 0) {
+      authorCounts[tcb.author] = (authorCounts[tcb.author] || 0) + 1;
     }
   }
 
@@ -5848,6 +5859,16 @@ function openShelfEditor() {
       }
     }
 
+    // CX-2 (data-dup): if this book is already on the shelf (shared identity key),
+    // do NOT mint a duplicate. Fold: close the editor and open the copy the reader
+    // already has, so the intent resolves without a second record.
+    var dupExistingId = findShelfBookByIdentity(user.uid, titleTrimmed, authorTrimmed);
+    if (dupExistingId) {
+      renderShelf();
+      location.hash = '#book/' + dupExistingId;
+      return;
+    }
+
     var now = Date.now();
     var id  = genBookId();
 
@@ -6183,6 +6204,26 @@ function processBulkLines(raw) {
   var lines = raw.split('\n');
   var entries = [];
   var seenIsbns = {};
+  // CX-2 (data-dup): seed the dedup sets from the EXISTING shelf so a bulk paste
+  // never re-adds a book already on the shelf (prior-add dedup, not just within-
+  // paste). ISBN-form lines dedup on normalized ISBN; title-form lines dedup on
+  // the shared identity key (title+author -- the same key merge uses).
+  var seenTitleKey = {};
+  (function () {
+    var ex = (state.userBooks && state.userBooks[user.uid] && state.userBooks[user.uid].bookIds)
+      ? state.userBooks[user.uid].bookIds : [];
+    var xi, xb, xisbn;
+    for (xi = 0; xi < ex.length; xi++) {
+      xb = state.books[ex[xi]];
+      if (!xb) { continue; }
+      if (xb.isbn) {
+        xisbn = ('' + xb.isbn).replace(/[\s-]/g, '').toUpperCase();
+        if (xisbn) { seenIsbns[xisbn] = true; }
+      }
+      var xkey = bookIdentityKey(xb.title, xb.author);
+      if (xkey !== 'ta:|') { seenTitleKey[xkey] = true; }   // empty identity is not a dup signal
+    }
+  })();
   var i;
   for (i = 0; i < lines.length; i++) {
     var line = lines[i].replace(/^\s+|\s+$/g, '');
@@ -6198,6 +6239,17 @@ function processBulkLines(raw) {
       seenIsbns[normalized] = true;
       entries.push({ kind: 'isbn', value: normalized });
     } else {
+      // CX-2: dedup title-form lines on the shared identity key -- against the
+      // seeded shelf keys AND earlier lines in this same paste (title lines
+      // previously had NO dedup at all). Author is unknown at paste time, so
+      // this catches exact-title repeats + empty-author shelf copies; a title
+      // line matching an already-authored shelf book is still caught later by
+      // Tidy-library's post-resolution merge.
+      var tkey = bookIdentityKey(line, '');
+      if (tkey !== 'ta:|') {
+        if (seenTitleKey[tkey]) { continue; }
+        seenTitleKey[tkey] = true;
+      }
       entries.push({ kind: 'title', value: line });
     }
   }
@@ -7174,9 +7226,37 @@ function deleteBook(uid, id) {
 // Phase 6 -- existing-library cleanup (mockup E). Mechanism + UI.
 // =====================================================================
 
+// CX-2 (data-dup): the canonical duplicate-identity key -- normalized
+// title+author (the ISBN branch was removed so a title-only copy and an
+// ISBN-bearing copy of the same work still collide). ONE source, shared by
+// scanLibraryForCleanup's grouping AND the add-guards below, so "duplicate"
+// never means two different things.
+function bookIdentityKey(title, author) {
+  return 'ta:' + resolverNormalize(title || '') + '|' + resolverNormalize(author || '');
+}
+
+// Returns an existing shelf book id for this user whose identity key matches the
+// candidate title/author, or null. Scans the user's deduped bookIds index (the
+// real shelf), so the add-guard tests against what the shelf actually holds.
+function findShelfBookByIdentity(uid, title, author) {
+  var key = bookIdentityKey(title, author);
+  // An empty identity (blank title AND author -- e.g. an ISBN-only add whose
+  // title has not resolved yet) is NOT a duplicate signal. Never fold on it,
+  // or every ISBN-only add would collapse onto a stuck empty-title record.
+  if (key === 'ta:|') { return null; }
+  var ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var i, b;
+  for (i = 0; i < ids.length; i++) {
+    b = state.books[ids[i]];
+    if (b && bookIdentityKey(b.title, b.author) === key) { return ids[i]; }
+  }
+  return null;
+}
+
 // Scan one user's shelf for (a) duplicate/near-duplicate records and (b) books
-// with no cover. Duplicate key = normalized ISBN when present, else normalized
-// title+author. Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
+// with no cover. Duplicate key = the shared bookIdentityKey (normalized
+// title+author). Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
 function scanLibraryForCleanup(uid) {
   var out = { duplicates: [], missingCovers: [], wrongCovers: [], total: 0 };
   var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
@@ -7193,16 +7273,23 @@ function scanLibraryForCleanup(uid) {
     // the count, so it matches the blank cards on the shelf, not just nulls.
     if (!b.coverUrl || ('' + b.coverUrl).replace(/^\s+|\s+$/g, '') === '') { out.missingCovers.push(id); }
     else if (isCoverBroken(id)) { out.wrongCovers.push(id); }
-    // Group by normalized title+author so a title-only copy and an ISBN-bearing
-    // copy of the same book still collide (the prior ISBN-vs-title key split
-    // missed that). Different editions of one work also surface for review.
-    key = 'ta:' + resolverNormalize(b.title) + '|' + resolverNormalize(b.author);
+    // Group by the shared identity key (normalized title+author) so a title-only
+    // copy and an ISBN-bearing copy of the same book still collide. Same key the
+    // add-guard uses -- one notion of "duplicate".
+    key = bookIdentityKey(b.title, b.author);
     if (!groups[key]) { groups[key] = []; }
     groups[key].push(id);
   }
   var gk;
   for (gk in groups) {
-    if (groups.hasOwnProperty(gk) && groups[gk].length > 1) { out.duplicates.push(groups[gk].slice()); }
+    if (!groups.hasOwnProperty(gk)) { continue; }
+    // R-x: blank-identity books ('ta:|' -- e.g. distinct ISBN-only adds whose
+    // titles never resolved, or titles that normalize to empty) are NOT
+    // duplicates of each other; they just share an empty key. Never cluster them
+    // for the destructive merge (it would delete a distinct book's identity).
+    // Same "empty identity is not a dup signal" invariant the add-guards enforce.
+    if (gk === 'ta:|') { continue; }
+    if (groups[gk].length > 1) { out.duplicates.push(groups[gk].slice()); }
   }
   return out;
 }
@@ -7215,6 +7302,13 @@ function scanLibraryForCleanup(uid) {
 function mergeBookDuplicates(uid, keepId, dropIds) {
   var keep = state.books[keepId];
   if (!keep || !dropIds || dropIds.length === 0) { return; }
+  // Data-loss invariant: the survivor is NEVER a drop. A corrupted bookIds index
+  // (keepId duplicated into a dup group) would otherwise delete AND tombstone the
+  // survivor from Firestore below. Filter it out of the drop list up front.
+  var safeDrops = [], sdi;
+  for (sdi = 0; sdi < dropIds.length; sdi++) { if (dropIds[sdi] !== keepId) { safeDrops.push(dropIds[sdi]); } }
+  dropIds = safeDrops;
+  if (dropIds.length === 0) { return; }
   var dropSet = {}, di, d;
   for (di = 0; di < dropIds.length; di++) { dropSet[dropIds[di]] = true; }
 
@@ -7268,14 +7362,92 @@ function mergeBookDuplicates(uid, keepId, dropIds) {
     }
   }
 
+  // CX-1 parity: the collections deleteBook scrubs (views.js:7088) that merge was
+  // MISSING -- REPOINT drop ids onto the survivor (preserve the user's writing;
+  // merge is a re-point, not a destroy), then tombstone the dropped ids below.
+
+  // sub-theory book-evidence: REPOINT {kind:'book', refId:drop} -> keepId IN
+  // PLACE. Each evidence entry carries its own quote + annotation (distinct
+  // passages), so we NEVER dedup/collapse two entries that resolve to keepId --
+  // that would silently destroy a quote. deleteBook removes this evidence (the
+  // book is gone); merge keeps every entry, re-pointed at the survivor.
+  var subsTouched = false;
+  var sm = state.subTheories || {}, sk;
+  for (sk in sm) {
+    if (!sm.hasOwnProperty(sk) || !sm[sk] || !sm[sk].evidence) { continue; }
+    var ev = sm[sk].evidence, ei, evi;
+    for (ei = 0; ei < ev.length; ei++) {
+      evi = ev[ei];
+      if (evi && evi.kind === 'book' && dropSet[evi.refId]) { evi.refId = keepId; subsTouched = true; }
+    }
+  }
+
+  // theme membership: repoint drop -> keep, deduped.
+  var themesTouched = false;
+  var tm = state.userThemes || {}, tk;
+  for (tk in tm) {
+    if (!tm.hasOwnProperty(tk) || !tm[tk] || !tm[tk].bookIds) { continue; }
+    var tbb = tm[tk].bookIds, ntb = [], seenT = {}, tj, tid, chgT = false;
+    for (tj = 0; tj < tbb.length; tj++) {
+      tid = tbb[tj];
+      if (dropSet[tid]) { tid = keepId; chgT = true; }
+      if (!seenT[tid]) { seenT[tid] = true; ntb.push(tid); }
+      else { chgT = true; }
+    }
+    if (chgT) { tm[tk].bookIds = ntb; themesTouched = true; }
+  }
+
+  // book artifacts: repoint each drop's artifact onto keep (principle 3: one
+  // artifact per user per book). If keep has none, move drop's over; if both
+  // exist, keep stays canonical and drop's writing is appended under a merge
+  // marker -- never silently destroyed. Then delete the orphaned drop key.
+  var artifactTouched = false;
+  if (state.bookArtifacts && typeof artifactKey === 'function') {
+    var keepAK = artifactKey(uid, keepId);
+    for (di = 0; di < dropIds.length; di++) {
+      var dropAK = artifactKey(uid, dropIds[di]);
+      var dropArt = state.bookArtifacts[dropAK];
+      if (!dropArt) { continue; }
+      var keepArt = state.bookArtifacts[keepAK];
+      if (!keepArt) {
+        dropArt.bookId = keepId;
+        state.bookArtifacts[keepAK] = dropArt;
+      } else {
+        var dTitle = (typeof dropArt.title === 'string') ? dropArt.title : '';
+        var dBody = (typeof dropArt.body === 'string') ? dropArt.body : '';
+        var addition = '';
+        if (dTitle.replace(/^\s+|\s+$/g, '') !== '') { addition = addition + dTitle + '\n'; }
+        if (dBody.replace(/^\s+|\s+$/g, '') !== '') { addition = addition + dBody; }
+        if (addition !== '') {
+          if (typeof keepArt.body !== 'string') { keepArt.body = ''; }
+          keepArt.body = keepArt.body + '\n\n— merged from a duplicate copy —\n' + addition;
+        }
+        if (typeof ensureArtifactFields === 'function') { ensureArtifactFields(keepArt); }
+      }
+      delete state.bookArtifacts[dropAK];
+      artifactTouched = true;
+    }
+  }
+
   var ub = state.userBooks[uid].bookIds, newUb = [], ui;
   for (ui = 0; ui < ub.length; ui++) { if (!dropSet[ub[ui]]) { newUb.push(ub[ui]); } }
   state.userBooks[uid].bookIds = newUb;
   for (di = 0; di < dropIds.length; di++) { delete state.books[dropIds[di]]; }
+  // CX-1 parity: tombstone the dropped ids exactly as deleteBook does -- stop
+  // guarding them as pending ADDs, and mark them pending-DELETE so a stale/racing
+  // remote read cannot RESURRECT a merged-away duplicate via mergeRemoteBookDoc's
+  // remote-wins path. NEVER tombstone keepId: it is the surviving add.
+  if (typeof clearPendingBookSync === 'function') { clearPendingBookSync(uid, dropIds); }
+  if (typeof markBookDeletePending === 'function') {
+    for (di = 0; di < dropIds.length; di++) { markBookDeletePending(uid, dropIds[di]); }
+  }
   markBookPending(uid, keepId);
   markBooksDirty();
   if (typeof markArcsDirty === 'function') { markArcsDirty(); }
   if (typeof markNotebookDirty === 'function') { markNotebookDirty(); }
+  if (subsTouched && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  if (themesTouched && typeof markThemesDirty === 'function') { markThemesDirty(); }
+  if (artifactTouched && typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
   saveState();
 }
 
