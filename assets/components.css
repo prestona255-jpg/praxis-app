@@ -810,171 +810,6 @@
 }
 /* ===== END SHARED TYPE ===== */
 
-
-/* ===== HOME PAGE -- Batch 4A =====
-   Landing surface reconciled from the mockup's Home section: a centered
-   hero with a --grad gradient-clip accent, and a static honey-radial
-   preview frame (presentational only -- no marks, no canvas, no data).
-   The CTA buttons reuse the established gradient-primary / outline-
-   secondary variants under .home-cta-* (the app has no generic .btn
-   class, and the book-detail button classes carry grid-column baggage).
-   Tokens only; no hardcoded color; no blur (4B's spotlight owns the
-   second blur surface). */
-.home-page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0 32px;
-}
-
-.home-hero {
-  text-align: center;
-  padding: 70px 0 30px;
-}
-
-/* Mockup-fidelity Stage 1: hero is Cormorant serif per design/praxis-desktop-mockup.html
-   .hero-d (Cormorant Garamond 600 / 70px / -.015em). Cormorant loads only 400-600
-   (index.html font link), so weight is 600 -- 700 would synthesize fake-bold. */
-.home-hero-title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 70px;
-  letter-spacing: -0.015em;
-  line-height: 1;
-  color: var(--ink);
-}
-
-.home-hero-accent {
-  background: var(--grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.home-hero-sub {
-  max-width: 540px;
-  margin: 20px auto 26px;
-  font-family: var(--font-body);
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--ink-2);
-}
-
-.home-cta {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-.home-cta-primary,
-.home-cta-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 18px;
-  font-family: var(--font-body);
-  font-size: 13.5px;
-  border-radius: 10px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.home-cta-primary {
-  font-weight: 600;
-  background: var(--grad);
-  color: var(--text-on-dark);
-  border: 1px solid transparent;
-}
-
-.home-cta-primary:hover {
-  filter: brightness(1.06);
-}
-
-.home-cta-secondary {
-  font-weight: 400;
-  background: var(--glass-2);
-  color: var(--ink);
-  border: 1px solid var(--line-2);
-}
-
-.home-cta-secondary:hover {
-  border-color: var(--ink-3);
-  color: var(--ink);
-}
-
-/* Static preview frame -- honey radial built from the wheat tokens
-   (--surface -> --bg-2 -> --bg); this wires the previously-unused
-   --bg-2. OPAQUE; no blur. */
-.home-preview {
-  max-width: 940px;
-  margin: 18px auto 0;
-  padding: 28px 32px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 30px 70px -42px rgba(58,40,16,.55);
-  background: radial-gradient(120% 130% at 50% 0%,
-    var(--surface), var(--bg-2) 58%, var(--bg));
-}
-
-.home-preview-line {
-  margin: 8px 0 0 0;
-  font-family: var(--font-serif);
-  font-size: 19px;
-  color: var(--ink);
-}
-
-/* FINALE: live mini-constellation embed in the Home preview panel. The svg
-   keeps its 600x500 aspect at panel width; the whole panel links to the seed
-   arc, so a quiet pointer affordance reads as tappable. Tokens only. */
-.home-preview-embed {
-  display: block;
-  margin-top: 12px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  cursor: pointer;
-  transition: filter var(--motion-base) var(--ease);
-}
-
-.home-preview-embed:hover {
-  filter: brightness(1.03);
-}
-
-.home-preview-embed svg {
-  display: block;
-  width: 100%;
-  margin: 0 auto;
-  height: auto;
-}
-
-/* 9a: embed-only suppressions. The Yumi node + the book-square layer are a
-   workspace affordance; the home embed is a still preview, so hide both HERE
-   (the data-st-books fade is scoped to .arc-detail-web-view, so it does not
-   reach the embed -- a direct display:none is the clean embed-scoped hide).
-   Drift is already inert on the embed (its animation CSS is .arc-detail-web-
-   view-scoped), so no rule is needed for that. */
-.home-preview-embed [data-st-yumi],
-.home-preview-embed .st-layer-books {
-  display: none;
-}
-
-
-/* ----- Umber layout port (surface 4): mock home frame -----
-   design/praxis-umber-mockup.html #s-home. Home is a DARK surface; tokens flip
-   (--ink->text-d, --ink-3->muted). Appended -> wins over the live home rules.
-   The live CTA hash-nav (<a href=#books/#arcs>) + the renderSubTheoryConstellation
-   preview embed are unchanged; CTAs adopt the .btn primitives. */
-.home-hero { max-width:880px; margin:0 auto; text-align:center; padding:6vh var(--sp-5) 3vh; }
-.home-eyebrow { margin-bottom:18px; }
-.home-title { font-family:var(--font-serif); font-weight:500; font-size:clamp(40px,8vw,82px); line-height:1.02; letter-spacing:-.015em; color:var(--ink); margin:0; }
-.home-title .accent { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.home-sub { font-family:var(--font-serif); font-style:italic; font-size:clamp(18px,2.4vw,23px); line-height:1.5; color:var(--ink-3); max-width:60ch; margin:22px auto 0; }
-.home-cta { display:flex; gap:14px; justify-content:center; margin-top:32px; flex-wrap:wrap; }
-.home-preview { max-width:1000px; margin:54px auto 0; padding:0 var(--sp-5); }
-.home-preview-cap { display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:14px; }
-.home-preview-cap .dot { width:7px; height:7px; border-radius:var(--radius-pill); background:var(--marginalia-color); flex:0 0 auto; }
-.home-preview .cstl-host { display:block; }
-.home-preview .cstl-host svg { width:100%; height:auto; display:block; }
-
 /* ===== SPOTLIGHT -- global search (Cmd/Ctrl+K) -- Batch 4B =====
    The 2nd sanctioned blur surface (alongside .app-nav): a backdrop scrim
    plus a centered near-opaque glass panel, reconciled from the mockup's
@@ -5684,19 +5519,6 @@
   }
 
   /* ===== Stage 2 (full-app redesign) mobile splits ===== */
-  /* J: Home actions stack full-width; hero scales down to fit the phone. */
-  .home-cta {
-    flex-direction: column;
-  }
-  .home-cta-primary,
-  .home-cta-secondary {
-    justify-content: center;
-  }
-  .home-hero-title {
-    font-size: 52px;
-    letter-spacing: -0.01em;
-  }
-
   /* F: Arcs grids collapse to 1-up (desktop base is 3-up). */
   .arcs-yours,
   .arcs-examples {
@@ -8663,8 +8485,8 @@
    SHARED PRIMITIVES (canon §4-D) -- added June 2026, full-app redesign
    Stage 1. ADDITIVE shared classes for LATER stages to adopt where a
    stage's markup is already being touched -- NOT applied per-screen now.
-   Do NOT retrofit the existing per-surface classes (home-cta-*,
-   shelf-new-book, book-detail-*) onto these. The mono eyebrow (.eyebrow)
+   Do NOT retrofit the existing per-surface classes (shelf-new-book,
+   book-detail-*) onto these. The mono eyebrow (.eyebrow)
    and the Yumi FAB (.yumi-bloom) already exist and are NOT redefined.
    Tokens only -- no raw hex. No width-specific rules: the comfortable
    48px touch target and token sizing hold at both breakpoints, so each
@@ -11798,7 +11620,8 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-welcome{ margin:0 auto 22px; }
 .home-page.lum-amber-deep .home-welcome-title{ font-family:var(--lum-serif); font-weight:500; font-size:clamp(28px,4vw,34px); line-height:1.06; color:var(--lum-ink); margin:0 0 14px; }
 .home-page.lum-amber-deep .home-alt{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-.home-page.lum-amber-deep .home-altnote{ font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-4); }
+/* D4c (H5): color lifted --lum-ink-4 -> --lum-ink-3 so the alternator note clears AA (size unchanged per the locked decision). */
+.home-page.lum-amber-deep .home-altnote{ font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-3); }
 .home-page.lum-amber-deep .seg{ display:inline-flex; border:1px solid var(--lum-glass-bd); border-radius:var(--lum-r-pill); padding:3px; background:rgba(255,255,255,.06); }
 .home-page.lum-amber-deep .seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; color:rgba(255,244,224,.72); background:none; border:none; border-radius:var(--lum-r-pill); padding:7px 16px; cursor:pointer; transition:color .18s, background .18s; }
 .home-page.lum-amber-deep .seg-opt:hover{ color:var(--lum-ink); }
@@ -11812,7 +11635,8 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-wholefield{ padding:18px 18px 6px; margin:0 auto; }
 .home-page.lum-amber-deep .home-wf{ position:relative; width:100%; aspect-ratio:100 / 42; }
 .home-page.lum-amber-deep .home-wf svg, .home-page.lum-amber-deep .home-arc-ff svg{ position:absolute; inset:0; width:100%; height:100%; }
-.home-page.lum-amber-deep .home-wfcap{ text-align:center; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--lum-ink-4); margin:12px 0 14px; }
+/* D4b (H3): the caption explaining the whole-field interaction was the lowest-contrast copy on the page (9.5px --lum-ink-4). Bumped to 11px (matching sibling .home-fieldstat) + --lum-ink-3. */
+.home-page.lum-amber-deep .home-wfcap{ text-align:center; font-family:var(--lum-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--lum-ink-3); margin:12px 0 14px; }
 .home-page.lum-amber-deep .home-fieldstat{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.06em; color:var(--lum-ink-3); margin:12px auto 0; }
 .home-page.lum-amber-deep .home-sectlabel{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 auto 12px; }
 .home-page.lum-amber-deep .home-arc{ display:flex; gap:20px; align-items:stretch; padding:18px 20px; margin:0 auto 12px; }
@@ -11835,10 +11659,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-gl-link{ font-family:var(--lum-sans); font-size:11px; letter-spacing:0; text-transform:none; color:var(--lum-ink-3); text-decoration:none; border-bottom:1px dotted var(--lum-ink-4); transition:color .18s; }
 .home-page.lum-amber-deep .home-gl-link:hover{ color:var(--lum-ink-2); }
 .home-page.lum-amber-deep .home-spines{ display:flex; gap:10px; flex-wrap:wrap; }
-.home-page.lum-amber-deep .home-mspine{ position:relative; display:block; width:52px; height:78px; padding:8px 6px; border-radius:2px 4px 4px 2px; cursor:pointer; text-decoration:none; background:var(--lum-cloth); box-shadow:0 8px 16px -8px rgba(0,0,0,.7), inset 1px 0 0 rgba(255,255,255,.06); transition:transform .18s; }
+/* D2 (closes H1): the still-reading spine adopts the SAME cover treatment as the
+   Shelf (.shelf-book-cover-area / -placeholder) at the existing 52x78 (2:3) frame
+   — a real self-healing <img> via buildSelfHealingCover, else a cloth placeholder
+   face (title + "cover pending"). The old text-only bar + left edge-highlight
+   (.home-mspine-edge) is RETIRED — a face-on cover has no spine edge. */
+.home-page.lum-amber-deep .home-mspine{ position:relative; display:block; width:52px; height:78px; border-radius:3px 6px 6px 3px; overflow:hidden; cursor:pointer; text-decoration:none; background:rgba(24,16,6,.5); border:1px solid var(--lum-glass-bd-2); box-shadow:0 8px 16px -8px rgba(0,0,0,.7), inset 1px 0 0 rgba(255,255,255,.06); transition:transform .18s; }
 .home-page.lum-amber-deep .home-mspine:hover{ transform:translateY(-3px); }
-.home-page.lum-amber-deep .home-mspine-edge{ position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2px 0 0 2px; background:linear-gradient(180deg, color-mix(in srgb, var(--lum-gold-l) 40%, transparent), color-mix(in srgb, var(--lum-gold-d) 30%, transparent)); }
-.home-page.lum-amber-deep .home-mspine-title{ font-family:var(--lum-serif); font-weight:600; font-size:10px; line-height:1.08; color:var(--lum-ink); }
+.home-page.lum-amber-deep .home-mspine-cover-img{ display:block; width:100%; height:100%; object-fit:cover; }
+.home-page.lum-amber-deep .home-mspine-cover{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; width:100%; height:100%; padding:7px 5px; text-align:center; background:linear-gradient(155deg, var(--lum-cloth), rgba(24,16,6,.94)); }
+/* D4a (closes H2): line-clamp so a long title truncates with an ellipsis instead
+   of overflowing the box. Font family/weight/size/color UNCHANGED — only the clamp. */
+.home-page.lum-amber-deep .home-mspine-title{ font-family:var(--lum-serif); font-weight:600; font-size:10px; line-height:1.08; color:var(--lum-ink); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+.home-page.lum-amber-deep .home-mspine-pending{ font-family:var(--lum-mono); font-size:6.5px; letter-spacing:.06em; text-transform:lowercase; color:var(--lum-ink-3); }
 .home-page.lum-amber-deep .home-reading-status{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.06em; color:var(--lum-ink-3); margin:10px 0 0; }
 @media (max-width:759px){
   .home-page.lum-amber-deep .home-arc{ flex-direction:column; gap:14px; }
@@ -11846,6 +11679,122 @@ body.wc-focus .app-nav { opacity:.26; }
   .home-page.lum-amber-deep .home-glimpse{ flex-basis:100%; }
 }
 /* ===== end HOME (renderHome on .lum-amber-deep) ===== */
+
+/* ============================================================================
+   R3 · HOME — UNIVERSAL v1.2 LIGHT SKIN. Home ships the Universal light-ground
+   skin (Preston's felt pass on docs/studio/mockups/home.html — the LIGHT side).
+   Ported byte-faithful from that mockup's .skin-universal block, re-scoped from
+   the mockup's <body> class to the live page-context class .home-page.lum-amber-
+   deep — EXACTLY the R2 Shelf mechanism (.shelf.lum-amber-deep, in the "R2 ·
+   UNIVERSAL v1.2 SKIN" block below): a scoped
+   token re-point + a restrained set of §8 depth recipes that paint a LIGHT surface
+   over the dark body ground, WITHOUT flipping the route out of umberGroundDark (so
+   nav chrome + every other dark route stay byte-identical). PURELY ADDITIVE over
+   the base .home-page.lum-amber-deep block above — every property is color /
+   background / gradient / box-shadow / border-color ONLY. Every hex traces to the
+   established Universal v1.2 light set -- the Shelf R2 .shelf.lum-amber-deep token
+   values plus the mockup's felt-passed sub-panel + rescue literals -- no
+   new color is invented. Recipes: 6 atmospheric ground · 4 one lamplight (welcome) ·
+   3 ink-to-gold (welcome title) · 5 gilded button (Continue / signed-out Sign in) ·
+   2 luminous field marks (SVG-driven by the locked renderer — no CSS override) +
+   literal rescues for base rules that hardcode dark / near-white values.
+   ============================================================================ */
+
+/* 1 · token re-points — same --lum-* the base consumes, swapped to Universal
+   light values (the Shelf R2 .shelf.lum-amber-deep token set) */
+.home-page.lum-amber-deep{
+  --paper:#f4efe4;
+  --ink:#241710;
+  --gold:#a8761a;        /* GOLD ROLE 1 · interactive / fill            */
+  --gold-deep:#855410;   /* GOLD ROLE   · deep gold for small TEXT (AA) */
+  --gold-hi:#d9a441;     /* GOLD ROLE 2 · gilding — edge + glow ONLY    */
+  --lum-star:#ffce4a;    /* GOLD ROLE 3 · luminous — true glow ONLY     */
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+  --lum-base:#fffdf8;       /* raised panel surface */
+  --lum-glass:#efe7d6;      /* quiet parchment card/chip fill (was translucent gradient) */
+  --lum-glass-bd:#e3d8c1;   /* warm opaque hairline */
+  --lum-glass-bd-2:#e3d8c1; /* 2nd hairline tier collapses to the one light line */
+  --lum-cloth:#e3d8c1;      /* cover-placeholder base (bg also rescued below) */
+  --lum-ink:#241710;        /* ~13:1 on card */
+  --lum-ink-2:#645940;      /* ~6:1 on ground */
+  --lum-ink-3:#645940;      /* AA collapse: #978b6d fails <18px, text tier holds at ink-2 */
+  --lum-ink-4:#978b6d;      /* freed #978b6d -> dim placeholder + hairline only */
+  --lum-gold:#a8761a;       /* every FILL site -> interactive gold; text+glow peeled below */
+  --lum-gold-ink:#3d2807;   /* dark ink on gold fills */
+  /* The locked sub-theory constellation renderer (arc-constellation.js, out of
+     scope) draws its TEXT + inert chrome from the GLOBAL --ink-family and --sunk
+     tokens, NOT --lum-*. Home keeps body[data-ground="dark"] (so the nav stays
+     consistent with the other dark routes), so those globals would otherwise
+     resolve to their pale dark-ground values (--muted #c2a87f, --sunk #6b4a23)
+     and fail on this LIGHT field -- the always-drawn "Yumi" node label, the
+     empty-arc hint, and inert book squares. Re-point them to the light ink ramp
+     so the renderer reads dark-on-light INSIDE home only (nav + other routes
+     unaffected). The luminous marks + threads use field hues / --thread-color /
+     --marginalia-color, so they are untouched. */
+  --ink-2:#645940;   /* renderer text: Yumi label / question / empty hint (~6:1 on the light field) */
+  --ink-3:#645940;
+  --ink-4:#978b6d;   /* renderer inert chrome: book-square + node strokes */
+  --sunk:#e3d4b0;    /* renderer book-square fill -> the bright --sunk value */
+}
+
+/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, HOME-SCOPED (paints over
+   the dark body::before, exactly like the Shelf R2 .shelf.lum-amber-deep ground) */
+.home-page.lum-amber-deep{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(70% 55% at 14% 2%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(62% 52% at 89% 12%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 72% 104%,rgba(232,176,104,.32) 0%, rgba(232,176,104,0) 60%),
+    radial-gradient(58% 50% at 26% 96%, rgba(217,164,65,.20) 0%, rgba(217,164,65,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed;
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+
+/* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash behind the welcome/
+   greeting region (Home's single most meaning-bearing area) */
+.home-page.lum-amber-deep .home-welcome{ position:relative; }
+.home-page.lum-amber-deep .home-welcome::before{ content:''; position:absolute; inset:-16% -8%; z-index:0; pointer-events:none;
+  background:radial-gradient(ellipse at 30% 40%, rgba(242,194,90,.24) 0%, transparent 70%); }
+.home-page.lum-amber-deep .home-welcome > *{ position:relative; z-index:1; }
+
+/* 4 · RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
+.home-page.lum-amber-deep .home-welcome-title{
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+
+/* 5 · RECIPE 5 · gilded button — the primary actions (Continue, signed-out Sign in) */
+.home-page.lum-amber-deep .home-arcbtn-primary,
+.home-page.lum-amber-deep .btn-primary{
+  color:#3d2807; border-color:var(--gold-deep);
+  background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+}
+.home-page.lum-amber-deep .home-arcbtn-primary:hover,
+.home-page.lum-amber-deep .btn-primary:hover{
+  color:#3d2807;
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); transform:none;
+}
+
+/* 6 · GOLD ROLE-SPLIT · segmented control + small gold-adjacent text stay legible */
+.home-page.lum-amber-deep .seg-opt{ color:var(--lum-ink-2); }
+.home-page.lum-amber-deep .seg-opt.is-on{ background:linear-gradient(180deg,#f2c25a,#e0a838); color:#3d2807; }
+.home-page.lum-amber-deep .home-yumi-text{ color:#256b80; }  /* pale cyan -> AA deep teal; cyan DOT kept */
+
+/* 7 · RECIPE 6 (plane 2) · sub-panels need their own light fill once the outer
+   card goes solid parchment (the base color-mix radials read near-invisible on light) */
+.home-page.lum-amber-deep .home-arcfield{ background:linear-gradient(180deg,#f4e6c4,#eedcb2); }
+.home-page.lum-amber-deep .home-wholefield .home-wf{ background:linear-gradient(180deg,#f4e6c4,#eedcb2); border-radius:12px; }
+
+/* 8 · LITERAL RESCUES · base rules hardcoding dark / near-white values (color/bg only) */
+.home-page.lum-amber-deep .home-mspine{ background:#efe7d6; }
+.home-page.lum-amber-deep .home-mspine-cover{ background:linear-gradient(155deg,#efe7d6,#e3d8c1); }
+.home-page.lum-amber-deep .home-arcbtn{ background:#efe7d6; color:var(--lum-ink-2); }
+.home-page.lum-amber-deep .home-arcbtn:hover{ color:var(--lum-ink); border-color:var(--gold-hi); }
+/* ===== end R3 · HOME UNIVERSAL v1.2 LIGHT SKIN ===== */
 
 /* =============================================================================
    WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-ember). Additive +

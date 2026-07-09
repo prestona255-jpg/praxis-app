@@ -1421,19 +1421,29 @@ function homeReadingBooks() {
   return out;
 }
 
-// A still-reading spine -> the shelf.
+// A still-reading spine -> the shelf. D2: adopts the Shelf's cover treatment --
+// a real self-healing cover via buildSelfHealingCover (candidate-walk -> "cover
+// pending" placeholder on error/none), so a coverless book can never show a
+// broken image. The old text-only bar + left edge highlight (.home-mspine-edge)
+// is retired -- a face-on cover has no spine edge.
 function homeReadingSpine(book) {
   var s = document.createElement('a');
   s.className = 'home-mspine';
   s.href = '#books';
-  var edge = document.createElement('span');
-  edge.className = 'home-mspine-edge';
-  edge.setAttribute('aria-hidden', 'true');
-  s.appendChild(edge);
-  var t = document.createElement('span');
-  t.className = 'home-mspine-title';
-  t.textContent = book.title || 'Untitled';
-  s.appendChild(t);
+  if (book && book.title) { s.title = book.title; }
+  s.appendChild(buildSelfHealingCover(book, 'home-mspine-cover-img', function() {
+    var cover = document.createElement('div');
+    cover.className = 'home-mspine-cover';
+    var t = document.createElement('span');
+    t.className = 'home-mspine-title';
+    t.textContent = book.title || 'Untitled';
+    cover.appendChild(t);
+    var pend = document.createElement('span');
+    pend.className = 'home-mspine-pending';
+    pend.textContent = 'cover pending';
+    cover.appendChild(pend);
+    return cover;
+  }));
   return s;
 }
 
@@ -1493,7 +1503,7 @@ function renderHome() {
   alt.appendChild(seg);
   var altNote = document.createElement('span');
   altNote.className = 'home-altnote';
-  altNote.textContent = 'Home alternates between these on its own each visit — flip it yourself anytime.';
+  altNote.textContent = 'Pick a view — it stays put until you flip it.';
   alt.appendChild(altNote);
   welcome.appendChild(alt);
   wrap.appendChild(welcome);
@@ -1505,6 +1515,12 @@ function renderHome() {
   vField.appendChild(homeYumiLine(haveArcs
     ? 'The whole shape of your thinking right now — no single path. Take it in, or step into any light.'
     : 'You haven’t begun an arc yet — this is what your field becomes as you read.'));
+  // D3 (closes H4): the field variant gets a section label naming its purpose
+  // (mirrors the left variant's "Where your thinking stands"; the field had none).
+  var fieldSect = document.createElement('p');
+  fieldSect.className = 'home-sectlabel';
+  fieldSect.textContent = 'How your arcs connect';
+  vField.appendChild(fieldSect);
   var wholefield = document.createElement('div');
   wholefield.className = 'home-wholefield lum-glass';
   var wf = document.createElement('div');
@@ -1593,11 +1609,12 @@ function renderHome() {
 
   host.appendChild(wrap);
 
-  // Alternator: per-visit default via a pure-local key, flipped each load; a tab tap
-  // overrides this view without disturbing the auto-alternation.
-  var homeVariant = (typeof ls === 'function') ? ls('praxis_home_variant', 'field') : 'field';
-  if (homeVariant !== 'left') { homeVariant = 'field'; }
-  if (typeof sv === 'function') { sv('praxis_home_variant', (homeVariant === 'field') ? 'left' : 'field'); }
+  // D3: the alternator no longer auto-flips per visit. The default view is
+  // mechanical -- "Where you left off" when there IS progress (own arcs), else
+  // the whole field -- read off haveArcs so it can never drift from what
+  // rendered. A tab tap switches the view for the session; nothing persists
+  // (the old per-visit-flip key praxis_home_variant is retired).
+  var homeVariant = haveArcs ? 'left' : 'field';
   segField.addEventListener('click', function () { homeShowVariant(wrap, 'field'); });
   segLeft.addEventListener('click', function () { homeShowVariant(wrap, 'left'); });
   homeShowVariant(wrap, homeVariant);
