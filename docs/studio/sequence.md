@@ -39,6 +39,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
   surface) and pulled **R4 Notebook** (heat 18, now the heaviest open surface) up
   into Now beside the data-loss launch cluster; Shelf-categories feature round stays
   in Next. Autonomous completion + cadence re-order; nothing retired, no `PROPOSED:`.
+- **2026-07-09** — R3 Home CLOSED (felt pass in full, v3.187 `c3e869d`; signed out
+  AND signed in). Moved R3 Home → Shipped. Re-set **Now**: **R4 Notebook** (heat 18,
+  the heaviest open surface) is now the lead next-surface round, beside the
+  **data-loss launch cluster** (STEP 4/5) — Now tightened 3→2 as a surface closed.
+  Shelf-categories stays in Next; arc-detail stays in Then. Named debt from R3
+  (constellation-opacity AA on the light field, Preston-accepted; the unscoped
+  signed-out `.empty-state`) recorded in `home.md` and carried to the Then
+  craft/backport pass — not a Now move. Autonomous completion + cadence re-order;
+  nothing retired, no Preston decision contradicted — so no `PROPOSED:` flag.
 
 ## Shipped
 
@@ -73,23 +82,26 @@ flagged at the top of the Builder's sequence page for his call — never applied
   + delete persistence). Merge parity + tombstone, dedup-on-add guard, orphan-safe
   author rail; `deleteBook` byte-locked reference. Data-loss tier, own commit.
   (Shelf round 2 — both Shelf rounds now closed)
+- [x] **R3 — Home: Universal v1.2 light skin + covers + alternator/craft** (v3.187,
+  `c3e869d`; felt pass PASSED IN FULL 2026-07-09 — signed out AND signed in). Second
+  surface round: the Universal light skin (Shelf-exact scoped override, home stays in
+  `umberGroundDark`), still-reading covers (H1), mechanical alternator + field label
+  (H4), craft contrast lifts (H2/H3/H5), the dead-landing-CSS sweep; the signed-out
+  OG1–OG4 + IA4 cluster verified-closed live. Named debt (Preston-accepted):
+  constellation-opacity AA on the light field + the unscoped signed-out `.empty-state`
+  → a future craft pass. (launch-spine STEP 2)
 
 ## Now
 
-- [ ] **R3 — Home: next surface round** — prove Universal on Home (the R2 cadence's
-  next surface), folding in the honest **signed-out / first-run** launch step
-  (OG1–OG4 + IA4: real sign-in CTA, onboarding that lands in the writing loop rather
-  than Home). scan → forks → mockup → felt pass → staged build → close.
-  (launch-spine STEP 2)
-  touches: [home, onboarding]
+- [ ] **R4 — Notebook: surface round** — the next surface round and the heaviest
+  open surface gap-heat (18 open gaps) now that the Shelf and Home are closed.
+  scan → forks → mockup → felt pass → build → close.
+  touches: [notebook]
 - [ ] **Data-loss launch cluster** — **F-DL4** shared-tab account-switch race (reset
   the eight `*Loaded`/`*WritePending` latches in `clearUserState()`, `state.js`) +
   the **F-DL1 / F-DL3** live smokes that never ran (procedure proven on F-DL2,
   15/15). The remaining launch-spine data-loss work. (launch-spine STEP 4 + 5)
   touches: [account]
-- [ ] **R4 — Notebook: surface round** — the heaviest surface gap-heat now that the
-  Shelf is closed (18 open gaps). scan → forks → mockup → felt pass → build → close.
-  touches: [notebook]
 
 ## Next
 
