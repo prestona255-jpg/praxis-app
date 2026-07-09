@@ -1,0 +1,1205 @@
+<!doctype html>
+<!-- ============================================================================
+     PRAXIS STUDIO — NOTEBOOK MOCKUP  (docs/studio/mockups/notebook.html)
+     R4 Notebook round, STAGE 1 build. This IS the live Notebook (renderNotebook,
+     views.js:1754 + buildNotebookBookBand 1639 + buildNotebookLeftLeaf 2027 +
+     buildNotebookWriteline 2596 + buildNotebookRightLeaf 2103 + renderNotebookEntry
+     13943), the dark-glass CSS scoped under the .notebook.lum-amber-deep selector
+     (components.css 10945-11095) lifted verbatim in structure and re-inlined with
+     resolved token literals (lumen-amber.css) so the file is self-contained.
+     NOTHING here is a redesign — the current Notebook is kept pixel-faithful. The
+     ONLY additions are Preston's locked fork calls, each tagged with an EVOLVED
+     comment naming its decision id, so the diff-vs-live stays legible.
+
+     SKIN POLES: Universal v1.2 LIGHT is the DEFAULT pole (body starts with class
+     "skin-universal"); the live dark-glass reading room is the ALTERNATE pole (the
+     faithfully-lifted base rules). The skin toggle (top-right) flips them; removing
+     .skin-universal restores the dark reading room byte-identical. NO dot-grid and
+     NO cream-paper/seam skeuomorph in EITHER pole (live .leaf{background:none} kills
+     the legacy grid; re-adding it would be an ADDITION). The one bound-book
+     signature that carries across both = the spread's border-radius + warm
+     drop-shadow.
+
+     COMPOSER SEAM (#skin-fix): live emits .nb-ce but the dark composer rule targets
+     the never-emitted .nb-capfield, so the composer falls to a lone legacy cream
+     card (the NB1/NB2 AA failure). Here the composer receives its intended skin
+     treatment in BOTH poles — the seam is shown closed.
+
+     STAND-INs (build-time, no live data): CSS-drawn cloth covers replace the real
+     buildSelfHealingCover <img> (a standalone file has no images); per-note cover
+     chip tints vary per book to show the multi-book case (no arc/book color field
+     drives them live — cover art does). Flagged in the ## Mockup evaluation of
+     notebook.md.
+     ============================================================================ -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Praxis Studio — Notebook (evolved mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---- resolved token literals (lumen-amber.css :root + theme.css registers) ---- */
+:root{
+  /* base + ink ramp — lumen-amber.css:27-32 (dark Lumen set, unchanged) */
+  --lum-base:#231708; --lum-ink:#fdf8ec; --lum-ink-2:#e8dcc4; --lum-ink-3:#b6a888; --lum-ink-4:#867a5e;
+  /* glass — lumen-amber.css:35-39 */
+  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.04) 100%);
+  --lum-glass-bd:rgba(255,236,200,.28); --lum-glass-bd-2:rgba(255,236,200,.16);
+  --lum-glass-blur:16px;
+  /* accents — lumen-amber.css:42-49 */
+  --lum-gold:#ffce4a; --lum-gold-l:#ffe79a; --lum-gold-d:#cf9c2a; --lum-gold-ink:#241a02;
+  --lum-cyan:#7fd0f0; --lum-cloth:#5a4632; --lum-rose:#e6928c;
+  /* type — lumen-amber.css:52-54 */
+  --lum-serif:"Cormorant Garamond", Georgia, serif;
+  --lum-sans:"DM Sans", system-ui, sans-serif;
+  --lum-mono:"DM Mono", ui-monospace, monospace;
+  --lum-r-pill:999px; --lum-r-card:16px;
+  --motion-base:.2s; --ease:cubic-bezier(.22,.61,.36,1);
+
+  /* register through-line colors (theme.css:172-174) — the per-note left SPINE.
+     marginalia=teal, question=river indigo, journal=violet. Distinct from the
+     tag-PILL colors (-m gold / -q cyan / -j muted) below. */
+  --marginalia-color:#4aa89c;
+  --question-color:#3a5a8a;
+  --journal-color:#7d6db0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+/* ===== page ground — DARK pole (the live .lum-amber-deep reading room,
+   lumen-amber.css:83-88). Default body carries .skin-universal (light), so this
+   is the ALTERNATE the toggle flips to. ===== */
+body{
+  background-color:var(--lum-base); color:var(--lum-ink);
+  font-family:var(--lum-sans); line-height:1.55; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(255,190,80,.42) 0%, rgba(255,190,80,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(216,130,60,.34) 0%, rgba(216,130,60,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(230,150,64,.42) 0%, rgba(230,150,64,0) 60%),
+    radial-gradient(120% 120% at 50% 44%, #33240f 0%, #241a0a 50%, #181006 100%);
+  background-attachment:fixed;
+}
+
+/* ===== MOCKUP CONTROL — skin + state toggles. Chrome for comparing skins and
+   walking states, NOT part of the Notebook design. Fixed, hardcoded literals so
+   neither reads as app UI. ===== */
+.skin-toggle,.state-toggle{ position:fixed; top:12px; z-index:200; display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap;
+  padding:5px 6px; border-radius:999px; background:rgba(18,12,5,.86); border:1px solid rgba(255,236,200,.26);
+  box-shadow:0 10px 26px -12px rgba(0,0,0,.72); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); max-width:70vw; }
+.skin-toggle{ right:12px; }
+.state-toggle{ left:12px; }
+.skin-toggle-label,.state-toggle-label{ font-family:'DM Mono',ui-monospace,monospace; font-size:8.5px; letter-spacing:.18em; text-transform:uppercase; color:#a89a78; padding:0 5px; }
+.skin-toggle-btn,.state-toggle-btn{ font-family:'DM Mono',ui-monospace,monospace; font-size:10.5px; letter-spacing:.03em; color:#cbb488; background:transparent; border:none; border-radius:999px; padding:5px 11px; cursor:pointer; white-space:nowrap; }
+.skin-toggle-btn:hover,.state-toggle-btn:hover{ color:#ffe79a; }
+.skin-toggle-btn.is-on,.state-toggle-btn.is-on{ color:#241a02; background:linear-gradient(180deg,#ffe79a,#ffce4a); font-weight:500; }
+@media (max-width:759px){
+  .skin-toggle,.state-toggle{ position:fixed; top:auto; bottom:8px; }
+  .skin-toggle{ right:8px; } .state-toggle{ left:8px; max-width:60vw; }
+}
+
+/* ===== container — .notebook.lum-amber-deep (components.css:10953-10954).
+   Self-contained: one selector carries the rules (no competing stylesheet). ===== */
+.notebook{ display:block; width:100%; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
+.notebook > *{ box-sizing:border-box; max-width:900px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+
+/* head — components.css:10957-10962 (font shorthands expanded to valid longhand) */
+.notebook-head{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+.notebook-title-block{ margin-right:auto; }
+.notebook-head .eyebrow{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 6px; }
+.notebook-title{ font-family:var(--lum-serif); font-weight:500; font-size:30px; line-height:1.06; color:var(--lum-ink); margin:0; }
+.notebook-intro{ font-family:var(--lum-sans); font-size:14px; line-height:1.55; color:var(--lum-ink-2); margin:8px 0 0; max-width:680px; }
+.nb-consent-row{ display:flex; justify-content:flex-end; margin:0 auto 14px; }
+
+/* tabs — components.css:10969-10973 */
+.nb-tabs{ display:flex; gap:7px; flex-wrap:wrap; margin:0 auto 14px; }
+.nb-tab{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:7px 14px; cursor:pointer; transition:border-color .2s,background .2s; display:inline-flex; align-items:center; gap:7px; }
+.nb-tab:hover{ border-color:rgba(255,206,74,.45); }
+.nb-tab.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; font-weight:600; }
+.nb-tab .c{ font-family:var(--lum-mono); font-size:10px; opacity:.8; }
+
+/* master switch — legacy .nb-switch/.nb-toggle re-skinned to dark glass here
+   (live rides legacy teal tokens; given its own treatment for pole coherence) */
+.nb-switch{ display:inline-flex; align-items:center; gap:10px; font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-2); }
+.nb-toggle{ position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--lum-glass-bd-2); background:rgba(255,255,255,.06); cursor:pointer; transition:background .2s,border-color .2s; }
+.nb-toggle::after{ content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:var(--lum-ink-3); transition:transform .2s,background .2s; }
+.nb-toggle[aria-pressed="true"]{ background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; }
+.nb-toggle[aria-pressed="true"]::after{ transform:translateX(17px); background:var(--lum-gold-ink); }
+
+/* ===== spread + leaves — the bound-book chrome (components.css:10976, 10999).
+   BOUND SIGNATURE (both poles): border-radius + warm drop-shadow on .notebook-spread.
+   .leaf{background:none} kills the legacy cream + dot-grid — NO grid in either pole. ===== */
+.notebook-spread{ display:block; border-radius:18px; overflow:hidden; border:1px solid var(--lum-glass-bd); background:var(--lum-glass); box-shadow:0 34px 72px -34px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,236,200,.16); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); padding:0; }
+.notebook-leaves{ display:flex; }
+.leaf{ flex:1; min-width:0; padding:24px 26px; background:none; }
+.leaf-left{ border-right:1px solid rgba(255,236,200,.12); }
+.leaf .eyebrow, .nb-leaftag{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); margin:14px 0 14px; display:block; }
+.leaf .eyebrow:first-child, .nb-leaftag:first-child{ margin-top:0; }
+
+/* ============================================================================
+   EVOLVED: #3a book-header-universal-light — the cover-forward book band
+   (buildNotebookBookBand, views.js:1639) EVOLVED into the Universal-light pole.
+   Structure lifted verbatim (92x138 desktop / 74x110 mobile cover, Cormorant
+   title, DM-Mono AUTHOR . STATUS, computed stat line, consent column). Renders
+   ONLY on <book> tabs (null on Inbox/Journal). NOT the dead 34x48 .bc cover
+   (display:none live). The band's light realization is the new thing; the dark
+   pole below is the faithful lift.
+   ============================================================================ */
+.nb-bookband-wrap{ }
+.nb-bookband{ display:flex; align-items:center; gap:22px; padding:22px 26px; background:linear-gradient(180deg,rgba(255,250,240,.08),rgba(255,250,240,.03)); border-bottom:1px solid rgba(255,236,200,.12); }
+.nb-bb-cover{ position:relative; flex:none; width:92px; height:138px; border-radius:3px 6px 6px 3px; overflow:hidden; box-shadow:0 14px 30px -12px rgba(0,0,0,.7),0 0 30px -2px rgba(255,206,74,.45),inset 1px 0 0 rgba(255,255,255,.08); display:flex; flex-direction:column; }
+.nb-bb-cover-cloth{ padding:14px 12px 12px 15px; background:linear-gradient(135deg,var(--lum-cloth) 0%,rgba(36,26,2,.92) 100%); }
+.nb-bb-cover-title{ font-family:var(--lum-serif); font-weight:600; font-style:italic; font-size:15px; line-height:1.08; color:var(--lum-ink); }
+.nb-bb-cover-author{ margin-top:auto; font-family:var(--lum-sans); font-size:9.5px; color:var(--lum-ink-2); }
+.nb-bb-spine{ position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px 0 0 3px; background:linear-gradient(180deg,rgba(255,206,74,.5),rgba(207,156,42,.35)); }
+.nb-bb-rmark{ position:absolute; top:7px; right:7px; width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 38% 32%,var(--lum-gold-l) 0%,var(--lum-gold) 45%,var(--lum-gold-d) 100%); box-shadow:0 0 12px rgba(255,206,74,.7); }
+.nb-bb-meta{ flex:1; min-width:0; }
+/* NAME tier (Cormorant italic) — see FORK 2 hierarchy note. */
+.nb-bb-title{ font-family:var(--lum-serif); font-weight:600; font-style:italic; font-size:26px; line-height:1.04; color:var(--lum-ink); }
+.nb-bb-author{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--lum-ink-3); margin-top:8px; }
+.nb-bb-stat{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); margin-top:10px; }
+.nb-bb-banklabel{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-gold-d); margin-top:11px; }
+.nb-bb-consent{ flex:none; align-self:flex-start; display:flex; flex-direction:column; align-items:flex-end; gap:9px; }
+.nb-bb-whatsees{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); border:none; border-bottom:1px dotted var(--lum-ink-4); background:none; cursor:pointer; padding:0 0 1px; }
+.nb-bb-whatsees:hover{ color:var(--lum-ink-2); }
+.nb-bb-seespanel{ display:none; margin:0 26px 4px; padding:12px 16px 14px; border-radius:11px; background:rgba(127,208,240,.07); border:1px solid rgba(127,208,240,.22); font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-cyan); }
+.nb-bb-seespanel.on{ display:block; }
+.nb-bb-seespanel b{ color:var(--lum-ink); font-weight:600; font-style:normal; }
+
+/* ===== entry card + tag pills + vis — components.css:11013-11036 ===== */
+.notebook-entry{ position:relative; background:rgba(255,255,255,.045); border:1px solid var(--lum-glass-bd-2); border-left:3px solid var(--reg,var(--lum-glass-bd-2)); border-radius:11px; padding:13px 15px; margin-bottom:13px; transition:border-color .2s,box-shadow .2s; }
+.notebook-entry:hover{ border-color:rgba(255,206,74,.4); box-shadow:0 6px 16px -10px rgba(0,0,0,.6); }
+.notebook-entry-gathered{ border-color:rgba(255,206,74,.6); background:rgba(255,206,74,.1); box-shadow:0 0 0 1px rgba(255,206,74,.28); }
+.notebook-entry-head{ display:flex; align-items:center; flex-wrap:wrap; }
+.notebook-entry-tag{ font-family:var(--lum-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:var(--lum-r-pill); display:inline-block; }
+.notebook-entry-tag-m{ color:var(--lum-gold-l); background:rgba(255,206,74,.16); }
+.notebook-entry-tag-q{ color:var(--lum-cyan); background:rgba(127,208,240,.13); }
+.notebook-entry-tag-j{ color:var(--lum-ink-2); background:rgba(182,168,136,.13); }
+.notebook-entry-ts{ font-family:var(--lum-mono); font-size:9.5px; color:var(--lum-ink-4); margin-left:8px; }
+.notebook-entry-vis{ font-family:var(--lum-mono); font-size:9.5px; color:var(--lum-ink-4); margin-left:8px; display:inline-flex; align-items:center; gap:5px; }
+.notebook-entry-vis-dot{ width:6px; height:6px; border-radius:50%; background:var(--lum-ink-4); }
+.notebook-entry-vis-on .notebook-entry-vis-dot{ background:var(--lum-cyan); box-shadow:0 0 6px rgba(127,208,240,.7); }
+/* BODY tier (Cormorant italic 17px) — SHIPPED live, lifted as-is. */
+.notebook-entry-body{ font-family:var(--lum-serif); font-style:italic; font-size:17px; line-height:1.4; color:var(--lum-ink); margin-top:8px; }
+.notebook-entry-shots{ display:flex; flex-wrap:wrap; gap:9px; margin-top:10px; }
+.notebook-entry-acts{ display:flex; gap:14px; margin-top:11px; flex-wrap:wrap; opacity:1; }
+.notebook-entry-acts a{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:var(--lum-ink-3); text-decoration:none; cursor:pointer; }
+.notebook-entry-acts a:hover{ color:var(--lum-gold-l); }
+.notebook-entry-acts a.notebook-entry-gather{ color:var(--lum-gold-l); }
+.notebook-entry-acts a.notebook-entry-drawout{ color:var(--lum-cyan); }
+.notebook-entry-acts a.notebook-entry-delete:hover{ color:var(--lum-rose); }
+.notebook-entry-lock{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-ink-4); }
+
+/* ============================================================================
+   EVOLVED: #2 body-hierarchy-refinement (FORK 2) — a crisp 3-tier hierarchy so
+   the eye tells NOTE from NAME from LABEL. Body stays Cormorant-italic 17px
+   (confirmed live, NOT swapped to DM Sans, NOT the north-star's upright body).
+   The refinement: comfortable size/line-height, real Universal-light contrast
+   (handled in the light pole below), and a NAME tier that is Cormorant-italic
+   like the body but differs by weight/size/color so a book/sub-theory/arc name
+   never reads as prose.
+      LABEL tier = DM-Mono, uppercase, letter-spaced (eyebrows, tags, ts, vis).
+      BODY  tier = Cormorant italic 17px/1.4, weight 400, --lum-ink.
+      NAME  tier = Cormorant italic, weight 600, brighter/gold-leaning, sized apart.
+   ============================================================================ */
+.nb-name-tier{ font-family:var(--lum-serif); font-style:italic; font-weight:600; color:var(--lum-ink); }
+
+/* ============================================================================
+   EVOLVED: #3b per-note-cover-chip (FORK 3b) — a real small cover thumbnail chip
+   per note, on Inbox + Journal ONLY (where the book varies note-to-note),
+   replacing the marginalia-only "from {title}" text line and EXTENDED to all
+   three registers. Suppressed on <book> tabs (the band states the book there).
+   Genuinely NEW — every instance is #3b-tagged. Cover art is the live driver;
+   here CSS-drawn cloth tints vary per book as a build-time stand-in.
+   ============================================================================ */
+.nb-entry-bookchip{ display:inline-flex; align-items:center; gap:9px; margin-top:9px; padding:4px 11px 4px 5px; border-radius:var(--lum-r-pill); background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); }
+.nb-chip-cover{ flex:none; width:22px; height:32px; border-radius:2px 3px 3px 2px; overflow:hidden; box-shadow:0 4px 8px -4px rgba(0,0,0,.7), inset 1px 0 0 rgba(255,255,255,.08); display:flex; align-items:flex-end; padding:3px; background:linear-gradient(135deg,var(--chip-cloth,var(--lum-cloth)) 0%,rgba(24,16,6,.92) 100%); }
+.nb-chip-cover-t{ font-family:var(--lum-serif); font-weight:600; font-size:5.5px; line-height:1.05; color:rgba(255,248,236,.86); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+/* NAME tier — the book name, Cormorant italic 600, distinct from body prose. */
+.nb-chip-title{ font-family:var(--lum-serif); font-style:italic; font-weight:600; font-size:14px; line-height:1.1; color:var(--lum-ink-2); }
+
+/* ============================================================================
+   EVOLVED: #skin-fix composer-seam-closed — the composer (.nb-composer/.nb-ce/
+   .seg) receives its INTENDED dark-glass treatment. Live styles the never-emitted
+   .nb-capfield, so .nb-ce falls to a lone legacy cream card with dark-brown
+   controls (NB1/NB2 AA failure). Closing the class-name seam IS the resolution;
+   shown fixed in BOTH poles (light pole rescue further down).
+   ============================================================================ */
+.nb-composer{ background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:14px 16px; transition:border-color .2s, box-shadow .2s; }
+.nb-composer:focus-within{ border-color:rgba(255,206,74,.5); box-shadow:0 0 0 3px rgba(255,206,74,.12); }
+.nb-ce{ font-family:var(--lum-serif); font-size:17px; line-height:1.4; color:var(--lum-ink); background:transparent; border:none; outline:none; width:100%; resize:none; display:block; min-height:1.4em; }
+.nb-ce::placeholder{ color:var(--lum-ink-4); font-style:italic; }
+.nb-shots{ display:flex; flex-wrap:wrap; gap:9px; margin-top:11px; }
+.crow{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:12px; }
+.crow .spacer{ flex:1; }
+.chip{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:7px 13px; background:transparent; cursor:pointer; }
+.chip:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); background:rgba(255,236,200,.06); }
+.seg{ display:inline-flex; padding:3px; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); background:rgba(255,236,200,.06); }
+.seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; color:rgba(255,244,224,.66); background:none; border:none; border-radius:var(--lum-r-pill); padding:6px 15px; cursor:pointer; }
+.seg-opt:hover{ color:var(--lum-ink); }
+.seg-opt.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); font-weight:600; }
+.btn-primary{ font-family:var(--lum-sans); font-weight:600; font-size:13px; color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border:none; border-radius:var(--lum-r-pill); padding:10px 20px; cursor:pointer; }
+.btn-primary:hover{ filter:brightness(1.04); }
+
+/* EVOLVED: #composing composing-recede — the intended focus/recede treatment.
+   Live .notebook-composing CSS targets stale selectors and is visually inert; this
+   DEPICTS the recede: header + tabs + right leaf dim, left leaf loses its seam and
+   the composer comes forward with a gold focus ring. Shown as its own state. */
+.is-composing .notebook-head,
+.is-composing .nb-tabs{ opacity:.4; transition:opacity .25s; }
+.is-composing .leaf-right{ opacity:.32; }
+.is-composing .leaf-left{ border-right-color:transparent; }
+.is-composing .nb-composer{ border-color:rgba(255,206,74,.5); box-shadow:0 0 0 3px rgba(255,206,74,.14); }
+.skin-universal .is-composing .nb-composer{ border-color:var(--gold-hi); box-shadow:inset 0 1px 0 rgba(255,250,235,.9), 0 0 0 3px rgba(217,164,65,.2); }
+
+/* ============================================================================
+   EVOLVED: #1 unified-composer-labeled-modes (FORK 1) — the run-in 11.5px prose
+   modes (.nb-capmodes, "or paste / import · dictate · talk it through with Yumi")
+   become one coherent row of REAL labeled chip affordances. Modes EXACTLY:
+   paste / import / dictate / photo. "talk it through with Yumi" is DROPPED for R4
+   (eval-gated, its own future round). Honest labeling: photo STAGES INLINE (no
+   hand-off glyph); paste/import/dictate HAND OFF to the external capture overlay
+   (carry a ↗ cue + the hint line). Presentation only — the mockup does not split
+   the shared ImportCapture.open() handler into per-affordance behavior.
+   ============================================================================ */
+.nb-modes{ margin-top:13px; }
+.nb-modes-label{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-4); margin-bottom:8px; display:block; }
+.nb-modes-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.nb-mode{ display:inline-flex; align-items:center; gap:7px; font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); background:rgba(255,255,255,.045); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:7px 13px; cursor:pointer; transition:color .2s,border-color .2s,background .2s; }
+.nb-mode:hover{ color:var(--lum-ink); border-color:rgba(255,206,74,.45); background:rgba(255,236,200,.06); }
+.nb-mode .ic{ font-size:13px; line-height:1; }
+.nb-mode .handoff{ font-family:var(--lum-mono); font-size:11px; color:var(--lum-ink-4); }
+.nb-mode.is-inline{ border-style:solid; }
+.nb-modes-hint{ font-family:var(--lum-serif); font-style:italic; font-size:12.5px; color:var(--lum-ink-3); margin-top:9px; }
+
+/* ===== working page (right leaf) — components.css:11039-11074 ===== */
+.nb-glab{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 12px; }
+.nb-gathered-list{ display:flex; flex-direction:column; gap:8px; margin:0 0 14px; min-height:30px; }
+.nb-gnote{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-left:3px solid var(--lum-gold); border-radius:8px; padding:9px 12px; font-family:var(--lum-serif); font-style:italic; font-size:15px; line-height:1.35; color:var(--lum-ink-2); }
+.nb-gx{ flex:none; color:var(--lum-ink-4); background:none; border:none; cursor:pointer; font-size:14px; line-height:1; padding:0; }
+.nb-gx:hover{ color:var(--lum-rose); }
+.nb-gempty{ font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-ink-4); padding:8px 0; }
+.nb-nameblock{ margin-top:8px; }
+.nb-yname-tag{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); margin-bottom:7px; }
+.nb-working-name{ font-family:var(--lum-serif); font-style:italic; font-weight:600; font-size:20px; color:var(--lum-ink); border:none; border-bottom:1px solid var(--lum-glass-bd-2); padding:4px 0; outline:none; min-height:1.4em; }
+.nb-working-name:empty::before{ content:attr(data-ph); color:var(--lum-ink-4); font-weight:400; }
+.nb-working-name:focus{ border-bottom-color:var(--lum-gold); }
+.nb-gather{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.nb-gather .lab{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); }
+.nb-gather .spacer{ flex:1; }
+.nb-complicate{ margin-top:14px; padding-top:12px; border-top:1px solid var(--lum-glass-bd-2); font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-cyan); display:flex; gap:10px; }
+.nb-ybubble{ flex:none; width:22px; height:22px; border-radius:50%; background:radial-gradient(circle at 38% 32%,#fff,var(--lum-cyan) 46%,#2f8fb4 100%); box-shadow:0 0 9px rgba(127,208,240,.55); display:flex; align-items:center; justify-content:center; font-family:var(--lum-mono); font-size:10px; font-style:normal; color:#0b3040; }
+.nb-ctag{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(127,208,240,.6); font-style:normal; margin-bottom:5px; }
+.nb-ctext{ color:var(--lum-cyan); }
+.nb-working-acts{ margin-top:14px; }
+.nb-working-clear{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:var(--lum-ink-4); text-decoration:none; cursor:pointer; }
+.nb-working-clear:hover{ color:var(--lum-ink-2); }
+
+/* empty per-tab bodies — components.css:11050 */
+.notebook-empty-body{ font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-ink-4); }
+
+/* ===== inline staged shot (photo) — buildNotebookShot, components.css shots ===== */
+.notebook-shot{ position:relative; width:132px; margin:0; }
+.notebook-shot-media{ position:relative; border-radius:8px; overflow:hidden; border:1px solid var(--lum-glass-bd-2); aspect-ratio:4/3; background:rgba(255,255,255,.05); }
+.notebook-shot-media-ph{ display:flex; align-items:center; justify-content:center; background:linear-gradient(150deg,rgba(90,70,50,.55),rgba(24,16,6,.85)); }
+.notebook-shot-ph-label{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--lum-ink-3); }
+.notebook-shot-remove{ position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%; border:none; background:rgba(18,12,5,.8); color:var(--lum-ink-2); font-size:13px; line-height:1; cursor:pointer; }
+.notebook-shot-cap-input{ margin-top:6px; width:100%; font-family:var(--lum-serif); font-style:italic; font-size:12.5px; color:var(--lum-ink-2); background:transparent; border:none; border-bottom:1px dotted var(--lum-glass-bd-2); outline:none; padding:2px 0; }
+.notebook-shot-cap-input::placeholder{ color:var(--lum-ink-4); }
+
+/* ============================================================================
+   EVOLVED: #paste paste-receipt-state — paste/import resolves to a review-by-
+   exception RECEIPT: a clean inline summary of what was imported, auto-sorted by
+   register, with a primary "file all" and a quiet "review each". Depicts the
+   intended inline outcome (live hands off to an overlay; this is the returned
+   summary the notebook would show).
+   ============================================================================ */
+.nb-receipt{ background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:16px 18px; }
+.nb-receipt-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.nb-receipt-eyebrow{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-gold-d); }
+.nb-receipt-sum{ font-family:var(--lum-serif); font-style:italic; font-size:16px; color:var(--lum-ink); }
+.nb-receipt-list{ list-style:none; display:flex; flex-direction:column; gap:9px; margin:0 0 15px; }
+.nb-receipt-item{ display:flex; align-items:flex-start; gap:11px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid var(--lum-glass-bd-2); border-left:3px solid var(--reg,var(--lum-glass-bd-2)); }
+.nb-receipt-item .rtag{ font-family:var(--lum-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:var(--lum-r-pill); flex:none; }
+.nb-receipt-item .rtext{ font-family:var(--lum-serif); font-style:italic; font-size:14.5px; line-height:1.35; color:var(--lum-ink-2); min-width:0; }
+.nb-receipt-item.is-flag{ border-left-color:var(--lum-rose); }
+.nb-receipt-item .rflag{ display:block; margin-top:4px; font-family:var(--lum-mono); font-size:9px; letter-spacing:.06em; color:var(--lum-rose); font-style:normal; }
+.nb-receipt-acts{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.nb-receipt-acts .quiet{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-ink-3); background:none; border:none; cursor:pointer; }
+.nb-receipt-acts .quiet:hover{ color:var(--lum-ink); }
+
+/* ============================================================================
+   EVOLVED: #dictate dictation-state — the listening/transcribing state the
+   notebook shows while dictating (live hands off to the same overlay; depicted
+   here as the intended inline capture).
+   ============================================================================ */
+.nb-dictation{ background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:20px 18px; }
+.nb-dict-head{ display:flex; align-items:center; gap:13px; margin-bottom:15px; }
+.nb-dict-orb{ flex:none; width:26px; height:26px; border-radius:50%; background:radial-gradient(circle at 38% 32%,#fff,var(--lum-cyan) 46%,#2f8fb4 100%); box-shadow:0 0 0 0 rgba(127,208,240,.5); animation:nbpulse 1.6s ease-out infinite; }
+@keyframes nbpulse{ 0%{ box-shadow:0 0 0 0 rgba(127,208,240,.45);} 70%{ box-shadow:0 0 0 14px rgba(127,208,240,0);} 100%{ box-shadow:0 0 0 0 rgba(127,208,240,0);} }
+.nb-dict-status{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--lum-cyan); }
+.nb-dict-sub{ font-family:var(--lum-sans); font-size:11px; color:var(--lum-ink-4); margin-top:3px; }
+.nb-dict-transcript{ font-family:var(--lum-serif); font-style:italic; font-size:16px; line-height:1.45; color:var(--lum-ink); margin-bottom:16px; }
+.nb-dict-transcript .live{ color:var(--lum-ink-3); }
+.nb-dict-transcript .caret{ display:inline-block; width:2px; height:1em; background:var(--lum-cyan); vertical-align:text-bottom; margin-left:2px; animation:nbcaret 1s step-end infinite; }
+@keyframes nbcaret{ 50%{ opacity:0; } }
+.nb-dict-acts{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.nb-dict-stop{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:8px 16px; cursor:pointer; }
+
+/* ============================================================================
+   EVOLVED: #empty new-empty-state — a calm first-run / no-notes leaf that TEACHES
+   the surface (NOT chrome-heavy). Live currently renders the same dark ground
+   with a bare per-tab line ("Nothing in your inbox…"); this gives it an
+   intentional, quiet welcome.
+   ============================================================================ */
+.nb-empty{ text-align:center; padding:34px 20px 10px; }
+.nb-empty-mark{ width:34px; height:34px; margin:0 auto 16px; border-radius:50%; background:radial-gradient(circle at 38% 30%,var(--lum-gold-l) 0%,var(--lum-gold) 45%,var(--lum-gold-d) 100%); box-shadow:0 0 16px rgba(255,206,74,.5); }
+.nb-empty-title{ font-family:var(--lum-serif); font-style:italic; font-size:22px; color:var(--lum-ink); margin-bottom:10px; }
+.nb-empty-body{ font-family:var(--lum-sans); font-size:13.5px; line-height:1.6; color:var(--lum-ink-3); max-width:400px; margin:0 auto 20px; }
+.nb-empty-steps{ display:flex; flex-direction:column; gap:10px; max-width:360px; margin:0 auto; text-align:left; }
+.nb-empty-step{ display:flex; align-items:flex-start; gap:11px; }
+.nb-empty-step .n{ flex:none; width:20px; height:20px; border-radius:50%; border:1px solid var(--lum-glass-bd-2); font-family:var(--lum-mono); font-size:10px; color:var(--lum-ink-3); display:flex; align-items:center; justify-content:center; }
+.nb-empty-step .t{ font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-ink-2); }
+
+/* ===== signed-out / empty-state door (baseline, not evolved) ===== */
+.empty-state{ text-align:center; padding:60px 20px; }
+.empty-state h2{ font-family:var(--lum-serif); font-weight:500; font-size:26px; color:var(--lum-ink); margin:0 0 12px; }
+.empty-state p{ font-family:var(--lum-sans); font-size:13.5px; line-height:1.6; color:var(--lum-ink-3); max-width:420px; margin:0 auto 20px; }
+
+/* ===== 759 mobile reflow — components.css:11077-11094 ===== */
+@media (max-width:759px){
+  .notebook > *{ padding-left:16px; padding-right:16px; }
+  .notebook-leaves{ flex-direction:column; }
+  .leaf-left{ border-right:none; border-bottom:1px solid rgba(255,236,200,.12); }
+  .nb-bookband{ flex-wrap:wrap; gap:16px; }
+  .nb-bb-cover{ width:74px; height:110px; }
+  .nb-bb-consent{ flex-basis:100%; align-items:flex-start; }
+  .nb-tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:5px; }
+  .nb-tab{ flex:none; }
+  .nb-tab, .nb-bb-whatsees, .notebook-entry-acts a, .nb-toggle, .btn-primary, .chip, .nb-mode, .seg-opt{ min-height:44px; }
+  .nb-toggle{ min-height:0; }
+  .seg-opt, .nb-mode, .chip, .btn-primary{ display:inline-flex; align-items:center; }
+}
+
+/* ============================================================================
+   EVOLVED: #skin-light universal-light-pole — Universal v1.2 LIGHT-GROUND skin,
+   the DEFAULT pole (body starts with .skin-universal). PURELY ADDITIVE: re-points
+   the --lum-* vars the base rules already consume + a restrained set of §8 depth
+   recipes (docs/studio/universal-depth.css) + literal rescues for baked-in dark
+   fills. Edits NO existing rule — remove the .skin-universal wrapper and the dark reading room
+   returns byte-identical. Token literals + re-point pattern lifted verbatim from
+   docs/studio/mockups/{shelf,home}.html. Gold ROLE-SPLIT is AA-load-bearing:
+   #a8761a interactive/fill · #855410 deep gold for small TEXT · #d9a441 gilding
+   edge/glow · #ffce4a luminous glow only. Bound signature (radius + warm shadow)
+   is KEPT on light; NO dot-grid, NO cream/seam skeuomorph is introduced.
+   ============================================================================ */
+.skin-universal{
+  --paper:#f4efe4;
+  --ink:#241710;
+  --gold:#a8761a;        /* ROLE 1 · interactive / fill */
+  --gold-deep:#855410;   /* ROLE   · deep gold for small TEXT (AA) */
+  --gold-hi:#d9a441;     /* ROLE 2 · gilding — edge + glow only */
+  --lum-star:#ffce4a;    /* ROLE 3 · luminous — true glow only */
+  --field-1:#f2c25a;
+  /* surfaces — solid on light (translucent glass is a dark-ground device) */
+  --lum-base:#fffdf8;
+  --lum-glass:#efe7d6;
+  --lum-glass-bd:#e3d8c1;
+  --lum-glass-bd-2:#e3d8c1;
+  --lum-cloth:#c9b7a0;
+  /* ink ramp — tertiary held at ink-2 for WCAG AA (canon tertiary fails <18px) */
+  --lum-ink:#241710;
+  --lum-ink-2:#645940;
+  --lum-ink-3:#645940;
+  --lum-ink-4:#978b6d;
+  --lum-gold:#a8761a;
+  --lum-gold-l:#d9a441;
+  --lum-gold-d:#855410;
+  --lum-gold-ink:#3d2807;
+  /* registers deepened so the spine + pill text hold AA on paper */
+  --marginalia-color:#2f7d73;
+  --question-color:#2f4a75;
+  --journal-color:#5f4f96;
+  --lum-cyan:#256b80;
+  --lum-rose:#b8563f;
+  /* §8 depth-recipe + literal-rescue values, promoted to tokens so every light-pole
+     RULE references var() and carries ZERO raw hex. Values are the verbatim §8
+     recipe stops (universal-depth.css) / sibling rescues — named, not re-derived. */
+  --u-ground-2:#eee4cd;    /* recipe-6 ground floor stop */
+  --u-sheet-1:#fffdf6;     /* plane-3 sheet top / note fill / spread top */
+  --u-sheet-2:#fdf8ea;     /* plane-3 sheet bottom */
+  --u-spread-2:#fbf4e5;    /* spread bottom / receipt-item fill */
+  --u-chip:#f4ecdb;        /* tab / chip / mode fill */
+  --u-panel-1:#f6ead0;     /* plane-2 band panel top */
+  --u-panel-2:#efe1c2;     /* plane-2 band panel bottom */
+  --u-gathered:#fbefcf;    /* gathered-note fill */
+  --u-toggle-off:#e7ddc9;  /* switch off-track */
+  --u-seg-2:#e0a838;       /* flat warm-gold pill bottom stop */
+  --u-cloth-2:#6f5a3c;     /* cover-cloth dark stop */
+  --u-shot-1:#d8c9b0;      /* photo placeholder top */
+  --u-shot-2:#b09a7c;      /* photo placeholder bottom */
+  --u-teal-deep:#1f5a6b;   /* deep teal small TEXT (AA) — seespanel/complicate/dict */
+  --u-teal-mid:#4a9fb8;    /* teal orb/bubble mid stop */
+  --u-orb-hi:#fff4d6;      /* luminous orb highlight */
+  --u-white:#fff;          /* pure-white gradient start */
+}
+/* RECIPE 6 · atmospheric weathered LIGHT ground (keeps the dark wash geometry) */
+body.skin-universal{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,var(--paper),var(--u-ground-2));
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+/* the bound-book spread — SOLID sheet on light, radius + WARM shadow kept
+   (the one bound signature that carries). Glass blur is a dark device -> dropped. */
+.skin-universal .notebook-spread{
+  background:linear-gradient(180deg,var(--u-sheet-1),var(--u-spread-2));
+  border:1px solid var(--lum-glass-bd);
+  box-shadow:0 30px 60px -30px rgba(120,75,15,.34), inset 0 1px 0 rgba(255,250,235,.9);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+.skin-universal .leaf-left{ border-right-color:var(--lum-glass-bd-2); }
+/* RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
+.skin-universal .notebook-title{
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+/* tabs — light */
+.skin-universal .nb-tab{ background:var(--u-chip); color:var(--lum-ink-2); }
+.skin-universal .nb-tab.is-on{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); color:var(--lum-gold-ink); }
+/* master switch — light */
+.skin-universal .nb-toggle{ background:var(--u-toggle-off); }
+.skin-universal .nb-toggle[aria-pressed="true"]{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); }
+/* #3a light — the book band on paper (a raised sub-panel, RECIPE 6 plane 2) */
+.skin-universal .nb-bookband{ background:linear-gradient(180deg,var(--u-panel-1),var(--u-panel-2)); border-bottom-color:var(--lum-glass-bd-2); }
+.skin-universal .nb-bb-cover{ box-shadow:0 12px 26px -12px rgba(120,75,15,.4),0 0 22px -4px rgba(217,164,65,.5),inset 1px 0 0 rgba(255,255,255,.4); }
+.skin-universal .nb-bb-cover-cloth{ background:linear-gradient(135deg,var(--lum-cloth) 0%,var(--u-cloth-2) 100%); }
+.skin-universal .nb-bb-cover-title{ color:var(--u-sheet-1); }
+.skin-universal .nb-bb-cover-author{ color:rgba(255,250,235,.85); }
+.skin-universal .nb-bb-banklabel{ color:var(--gold-deep); }
+.skin-universal .nb-bb-seespanel{ background:rgba(37,107,128,.08); border-color:rgba(37,107,128,.3); color:var(--u-teal-deep); }
+.skin-universal .nb-bb-seespanel b{ color:var(--lum-ink); }
+/* composer seam — light pole (RECIPE 6 plane 3 sheet: inner top light) */
+.skin-universal .nb-composer{ background:linear-gradient(180deg,var(--u-sheet-1),var(--u-sheet-2)); border:1px solid var(--lum-glass-bd-2); box-shadow:inset 0 1px 0 rgba(255,250,235,.9); }
+.skin-universal .nb-composer:focus-within{ border-color:var(--gold-hi); box-shadow:inset 0 1px 0 rgba(255,250,235,.9), 0 0 0 3px rgba(217,164,65,.18); }
+.skin-universal .nb-ce{ color:var(--lum-ink); }
+.skin-universal .nb-ce::placeholder{ color:var(--lum-ink-4); }
+/* note cards + entry chrome — light */
+.skin-universal .notebook-entry{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); box-shadow:0 6px 16px -12px rgba(120,75,15,.24); }
+.skin-universal .notebook-entry-gathered{ border-color:var(--gold-hi); background:var(--u-gathered); box-shadow:0 0 0 1px rgba(217,164,65,.4); }
+.skin-universal .notebook-entry-tag-m{ color:var(--gold-deep); background:rgba(168,118,26,.12); }
+.skin-universal .notebook-entry-tag-q{ color:var(--question-color); background:rgba(47,74,117,.1); }
+.skin-universal .notebook-entry-tag-j{ color:var(--lum-ink-2); background:rgba(95,79,150,.12); }
+.skin-universal .notebook-entry-ts,
+.skin-universal .notebook-entry-vis{ color:var(--lum-ink-4); }
+.skin-universal .notebook-entry-vis-on .notebook-entry-vis-dot{ background:var(--lum-cyan); box-shadow:none; }
+.skin-universal .notebook-entry-acts a{ color:var(--lum-ink-2); }
+.skin-universal .notebook-entry-acts a.notebook-entry-gather,
+.skin-universal .notebook-entry-acts a:hover{ color:var(--gold-deep); }
+.skin-universal .notebook-entry-acts a.notebook-entry-drawout{ color:var(--lum-cyan); }
+/* #3b cover chip — light */
+.skin-universal .nb-entry-bookchip{ background:var(--u-chip); border-color:var(--lum-glass-bd-2); }
+.skin-universal .nb-chip-title{ color:var(--lum-ink-2); }
+/* #1 mode chips — light */
+.skin-universal .nb-mode{ background:var(--u-chip); border-color:var(--lum-glass-bd-2); color:var(--lum-ink-2); }
+.skin-universal .nb-mode:hover{ color:var(--lum-ink); border-color:var(--gold-hi); }
+.skin-universal .nb-modes-hint{ color:var(--lum-ink-3); }
+/* chips / seg / primary — light (RECIPE 5 gilded primary; flat warm-gold seg) */
+.skin-universal .chip{ background:var(--u-chip); color:var(--lum-ink-2); border-color:var(--lum-glass-bd-2); }
+.skin-universal .seg-opt{ color:var(--lum-ink-2); }
+.skin-universal .seg-opt.is-on{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); color:var(--lum-gold-ink); }
+.skin-universal .btn-primary{ color:var(--lum-gold-ink); border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+.skin-universal .btn-primary:hover{ filter:none; box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+/* working page — light */
+.skin-universal .nb-gnote{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); border-left-color:var(--gold); color:var(--lum-ink-2); }
+.skin-universal .nb-working-name{ border-bottom-color:var(--lum-glass-bd-2); }
+.skin-universal .nb-working-name:focus{ border-bottom-color:var(--gold-hi); }
+.skin-universal .nb-complicate{ border-top-color:var(--lum-glass-bd-2); color:var(--u-teal-deep); }
+.skin-universal .nb-ctext{ color:var(--u-teal-deep); }
+.skin-universal .nb-ybubble{ background:radial-gradient(circle at 38% 32%,var(--u-white),var(--u-teal-mid) 46%,var(--lum-cyan) 100%); color:var(--u-white); }
+/* receipt / dictation / photo — light */
+.skin-universal .nb-receipt,
+.skin-universal .nb-dictation{ background:linear-gradient(180deg,var(--u-sheet-1),var(--u-sheet-2)); border-color:var(--lum-glass-bd-2); box-shadow:inset 0 1px 0 rgba(255,250,235,.9); }
+.skin-universal .nb-receipt-eyebrow{ color:var(--gold-deep); }
+.skin-universal .nb-receipt-item{ background:var(--u-spread-2); border-color:var(--lum-glass-bd-2); }
+.skin-universal .nb-receipt-item .rtag.notebook-entry-tag-m{ color:var(--gold-deep); }
+.skin-universal .nb-dict-status,
+.skin-universal .nb-dict-transcript .live{ color:var(--u-teal-deep); }
+.skin-universal .nb-dict-orb{ background:radial-gradient(circle at 38% 32%,var(--u-white),var(--u-teal-mid) 46%,var(--lum-cyan) 100%); }
+.skin-universal .nb-dict-transcript .caret{ background:var(--lum-cyan); }
+.skin-universal .notebook-shot-media-ph{ background:linear-gradient(150deg,var(--u-shot-1),var(--u-shot-2)); }
+.skin-universal .notebook-shot-media{ background:var(--u-chip); border-color:var(--lum-glass-bd-2); }
+/* empty state — light */
+.skin-universal .nb-empty-mark{ background:radial-gradient(circle at 38% 30%,var(--u-orb-hi) 0%,var(--lum-star) 45%,var(--gold) 100%); box-shadow:0 0 16px rgba(217,164,65,.5); }
+/* ============================================================================ */
+</style>
+</head>
+<body class="skin-universal">
+
+<!-- MOCKUP CONTROL (not part of the Notebook design): flip the skin. Universal
+     v1.2 light is the DEFAULT pole; the live dark reading room is the alternate. -->
+<div class="skin-toggle" role="group" aria-label="Mockup skin — Universal v1.2 light or the dark reading room">
+  <span class="skin-toggle-label">skin</span>
+  <button type="button" class="skin-toggle-btn is-on" data-skin="universal">Universal v1.2</button>
+  <button type="button" class="skin-toggle-btn" data-skin="dark">Reading room</button>
+</div>
+
+<!-- MOCKUP CONTROL (not part of the Notebook design): walk the 8 states -->
+<div class="state-toggle" role="group" aria-label="Mockup notebook state">
+  <span class="state-toggle-label">state</span>
+  <button type="button" class="state-toggle-btn is-on" data-state="resting">1 Resting</button>
+  <button type="button" class="state-toggle-btn" data-state="composing">2 Composing</button>
+  <button type="button" class="state-toggle-btn" data-state="paste">3 Paste</button>
+  <button type="button" class="state-toggle-btn" data-state="dictate">4 Dictate</button>
+  <button type="button" class="state-toggle-btn" data-state="photo">5 Photo</button>
+  <button type="button" class="state-toggle-btn" data-state="atrest">6 At-rest</button>
+  <button type="button" class="state-toggle-btn" data-state="working">7 Working</button>
+  <button type="button" class="state-toggle-btn" data-state="empty">8 Empty</button>
+</div>
+
+
+<!-- ============================================================================
+     STATE 1 — RESTING (a <book> tab: "Teaching to Transgress"). The band renders
+     (FORK 3a); per-note cover chips are SUPPRESSED (the band states the book).
+     Composer at rest with the unified labeled modes row (FORK 1). Right leaf =
+     empty working page.
+     ============================================================================ -->
+<section class="notebook" id="nb-resting">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+      <p class="notebook-intro">Each book keeps its own notebook, and the book itself crowns it — cover, your reading, what it&rsquo;s grown into. Below, two leaves: catch notes on the left, gather a few on the right and a sub-theory forms. Yumi reads along quietly, only ever from what you wrote, asking rather than explaining.</p>
+    </div>
+  </header>
+
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+    <button type="button" class="nb-tab is-on">Teaching to Transgress <span class="c">4</span></button>
+    <button type="button" class="nb-tab">The Body Keeps the Score <span class="c">2</span></button>
+  </div>
+
+  <div class="notebook-spread">
+    <!-- EVOLVED: #3a book-header-universal-light — cover-forward band, book tabs only -->
+    <div class="nb-bookband-wrap">
+      <div class="nb-bookband">
+        <div class="nb-bb-cover nb-bb-cover-cloth">
+          <div class="nb-bb-cover-title">Teaching to Transgress</div>
+          <div class="nb-bb-cover-author">bell hooks</div>
+          <span class="nb-bb-spine" aria-hidden="true"></span>
+          <span class="nb-bb-rmark" aria-hidden="true"></span>
+        </div>
+        <div class="nb-bb-meta">
+          <div class="nb-bb-title">Teaching to Transgress</div>
+          <div class="nb-bb-author">bell hooks &middot; Reading</div>
+          <div class="nb-bb-stat">Reading &middot; 4 notes &middot; became 1 sub-theory</div>
+          <div class="nb-bb-banklabel">Your notebook for this book</div>
+        </div>
+        <div class="nb-bb-consent">
+          <div class="nb-switch">
+            <span>Yumi reads along</span>
+            <button type="button" class="nb-toggle" aria-pressed="true" aria-label="Yumi reads along: on"></button>
+          </div>
+          <button type="button" class="nb-bb-whatsees" data-sees>What Yumi sees</button>
+        </div>
+      </div>
+      <div class="nb-bb-seespanel">Yumi reads your <b>marginalia</b> and your <b>questions</b> — the notes you take with this book. She never reads your <b>journal</b>, and never the book&rsquo;s own text. A mirror held at an angle to your own thinking, nothing more.</div>
+    </div>
+
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+
+        <div class="nb-composer">
+          <textarea class="nb-ce" rows="1" placeholder="Write a note&hellip;"></textarea>
+          <div class="crow">
+            <div class="seg" role="group" aria-label="Register">
+              <button type="button" class="seg-opt is-on">Marginalia</button>
+              <button type="button" class="seg-opt">Question</button>
+              <button type="button" class="seg-opt">Journal</button>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" class="btn-primary">Capture</button>
+          </div>
+
+          <!-- EVOLVED: #1 unified-composer-labeled-modes -->
+          <div class="nb-modes">
+            <span class="nb-modes-label">or bring one in</span>
+            <div class="nb-modes-row">
+              <button type="button" class="nb-mode" data-mode="paste"><span class="ic" aria-hidden="true">&#9776;</span>Paste<span class="handoff" aria-hidden="true">&#8599;</span></button>
+              <button type="button" class="nb-mode" data-mode="import"><span class="ic" aria-hidden="true">&#8681;</span>Import<span class="handoff" aria-hidden="true">&#8599;</span></button>
+              <button type="button" class="nb-mode" data-mode="dictate"><span class="ic" aria-hidden="true">&#127908;</span>Dictate<span class="handoff" aria-hidden="true">&#8599;</span></button>
+              <button type="button" class="nb-mode is-inline" data-mode="photo"><span class="ic" aria-hidden="true">&#128247;</span>Photo</button>
+              <button type="button" class="nb-mode is-inline" data-mode="library"><span class="ic" aria-hidden="true">&#128444;</span>Add image</button>
+            </div>
+            <p class="nb-modes-hint">Photo &amp; Add image stage right here on the page. Paste, import, and dictate open the capture window (&#8599;) and come back with a note.</p>
+          </div>
+        </div>
+
+        <article class="notebook-entry" style="--reg:var(--marginalia-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+            <time class="notebook-entry-ts">2h ago</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">hooks insists the classroom is a location of possibility — the teacher&rsquo;s own vulnerability is not a lapse of authority but the very ground the risk is shared on.</div>
+          <div class="notebook-entry-acts">
+            <a class="notebook-entry-add-to-arc notebook-entry-gather">Gather</a>
+            <a class="notebook-entry-add-to-arc notebook-entry-drawout">ask Yumi</a>
+            <a class="notebook-entry-add-to-arc">Add to arc</a>
+            <a class="notebook-entry-send-to-subtheory">Send to sub-theory</a>
+            <a class="notebook-entry-delete">Delete</a>
+          </div>
+        </article>
+
+        <article class="notebook-entry" style="--reg:var(--question-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-q">Question</span>
+            <time class="notebook-entry-ts">yesterday</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">If engaged pedagogy asks the teacher to be well, what happens on the days the teacher is not?</div>
+          <div class="notebook-entry-acts">
+            <a class="notebook-entry-add-to-arc notebook-entry-gather">Gather</a>
+            <a class="notebook-entry-add-to-arc notebook-entry-drawout">ask Yumi</a>
+            <a class="notebook-entry-add-to-arc">Add to arc</a>
+            <a class="notebook-entry-send-to-subtheory">Send to sub-theory</a>
+            <a class="notebook-entry-delete">Delete</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list">
+          <p class="nb-gempty">Select notes on the left to gather them here&hellip;</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 2 — COMPOSING (#composing). Depicts the intended focus/recede: header,
+     tabs and the right leaf recede; the composer comes forward with a focus ring
+     and the left leaf expands. (Live .notebook-composing CSS is dead against the
+     current markup; this DEPICTS the intended recede as a showable state.)
+     ============================================================================ -->
+<section class="notebook is-composing" id="nb-composing" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+    <button type="button" class="nb-tab is-on">Teaching to Transgress <span class="c">4</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <div class="nb-composer">
+          <!-- EVOLVED: #composing composing-recede — composer forward, chrome dim -->
+          <textarea class="nb-ce" rows="3">The undepositable — hooks keeps returning to what cannot be banked: a student&rsquo;s presence, the risk of real speech. What I want to hold onto is that the classroom&rsquo;s value is not stored but</textarea>
+          <div class="crow">
+            <div class="seg" role="group" aria-label="Register">
+              <button type="button" class="seg-opt is-on">Marginalia</button>
+              <button type="button" class="seg-opt">Question</button>
+              <button type="button" class="seg-opt">Journal</button>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" class="btn-primary">Capture</button>
+          </div>
+        </div>
+      </div>
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 3 — PASTE / IMPORT RECEIPT (#paste). Review-by-exception: a clean inline
+     summary of what was imported, auto-sorted by register, one flagged item held
+     back for a look. Primary "File all"; quiet "Review each".
+     ============================================================================ -->
+<section class="notebook" id="nb-paste" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+    <button type="button" class="nb-tab">Teaching to Transgress <span class="c">4</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <!-- EVOLVED: #paste paste-receipt-state -->
+        <div class="nb-receipt">
+          <div class="nb-receipt-head">
+            <span class="nb-receipt-eyebrow">Imported from paste</span>
+            <span class="nb-receipt-sum">5 passages &middot; sorted for you</span>
+          </div>
+          <ul class="nb-receipt-list">
+            <li class="nb-receipt-item" style="--reg:var(--marginalia-color)">
+              <span class="rtag notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+              <span class="rtext">&ldquo;To educate as the practice of freedom is a way of teaching that anyone can learn.&rdquo;</span>
+            </li>
+            <li class="nb-receipt-item" style="--reg:var(--marginalia-color)">
+              <span class="rtag notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+              <span class="rtext">The engaged teacher does not merely transfer knowledge but participates in the growth of students.</span>
+            </li>
+            <li class="nb-receipt-item" style="--reg:var(--question-color)">
+              <span class="rtag notebook-entry-tag notebook-entry-tag-q">Question</span>
+              <span class="rtext">Is &ldquo;wholeness&rdquo; a precondition of good teaching, or its slow result?</span>
+            </li>
+            <li class="nb-receipt-item is-flag" style="--reg:var(--marginalia-color)">
+              <span class="rtag notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+              <span class="rtext">excitement in higher education was viewed as potentially disruptive of the atmosphere of seriousness&hellip;
+                <span class="rflag">No book matched &mdash; assign one before filing</span></span>
+            </li>
+            <li class="nb-receipt-item" style="--reg:var(--journal-color)">
+              <span class="rtag notebook-entry-tag notebook-entry-tag-j">Journal</span>
+              <span class="rtext">Reading this on the train, I felt caught out — this is exactly the seriousness I hide behind.</span>
+            </li>
+          </ul>
+          <div class="nb-receipt-acts">
+            <button type="button" class="btn-primary">File all 5</button>
+            <button type="button" class="quiet">Review each</button>
+            <button type="button" class="quiet">Discard</button>
+          </div>
+        </div>
+      </div>
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 4 — DICTATION (#dictate). Listening / transcribing: a pulsing mic orb,
+     a live transcript with a settled clause + an in-progress clause + caret, Stop.
+     ============================================================================ -->
+<section class="notebook" id="nb-dictate" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+    <button type="button" class="nb-tab">Teaching to Transgress <span class="c">4</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <!-- EVOLVED: #dictate dictation-state -->
+        <div class="nb-dictation">
+          <div class="nb-dict-head">
+            <span class="nb-dict-orb" aria-hidden="true"></span>
+            <div>
+              <div class="nb-dict-status">Listening</div>
+              <div class="nb-dict-sub">Marginalia &middot; Teaching to Transgress</div>
+            </div>
+          </div>
+          <div class="nb-dict-transcript">The point hooks keeps making is that authority earned through vulnerability holds differently than authority claimed<span class="live"> — I want to test that against my own</span><span class="caret" aria-hidden="true"></span></div>
+          <div class="nb-dict-acts">
+            <button type="button" class="btn-primary">Stop &amp; keep</button>
+            <button type="button" class="nb-dict-stop">Discard</button>
+          </div>
+        </div>
+      </div>
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 5 — PHOTO staged (built live; the mode chip is #1). The composer holds
+     a staged shot figure (CSS-drawn placeholder + caption + remove), writing
+     continues below it.
+     ============================================================================ -->
+<section class="notebook" id="nb-photo" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Teaching to Transgress <span class="c">4</span></button>
+    <button type="button" class="nb-tab">Inbox <span class="c">3</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <div class="nb-composer">
+          <textarea class="nb-ce" rows="2">The margin she actually wrote in — photographing it before I lose the pencil.</textarea>
+          <div class="nb-shots">
+            <figure class="notebook-shot">
+              <div class="notebook-shot-media notebook-shot-media-ph"><span class="notebook-shot-ph-label">Photo</span>
+                <button type="button" class="notebook-shot-remove" aria-label="Remove photo">&times;</button>
+              </div>
+              <input type="text" class="notebook-shot-cap-input" placeholder="Caption (optional)&hellip;" value="p. 14, her underline">
+            </figure>
+          </div>
+          <div class="crow">
+            <div class="seg" role="group" aria-label="Register">
+              <button type="button" class="seg-opt is-on">Marginalia</button>
+              <button type="button" class="seg-opt">Question</button>
+              <button type="button" class="seg-opt">Journal</button>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" class="btn-primary">Capture</button>
+          </div>
+        </div>
+      </div>
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 6 — AT-REST NOTES (Inbox tab: multi-book). No band (Inbox). All THREE
+     registers shown, EACH carrying a per-note cover chip (FORK 3b) because the
+     book varies note-to-note.
+     ============================================================================ -->
+<section class="notebook" id="nb-atrest" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+    <button type="button" class="nb-tab">Teaching to Transgress <span class="c">4</span></button>
+    <button type="button" class="nb-tab">Pedagogy of the Oppressed <span class="c">3</span></button>
+  </div>
+  <div class="notebook-spread">
+    <!-- Inbox has no band; the master switch rides its own consent row -->
+    <div class="nb-consent-row">
+      <div class="nb-switch">
+        <span>Yumi reads along</span>
+        <button type="button" class="nb-toggle" aria-pressed="true" aria-label="Yumi reads along: on"></button>
+      </div>
+    </div>
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+
+        <article class="notebook-entry" style="--reg:var(--marginalia-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+            <time class="notebook-entry-ts">2h ago</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">The classroom as a location of possibility — she means it spatially, a room you can be different inside of.</div>
+          <!-- EVOLVED: #3b per-note-cover-chip -->
+          <div class="nb-entry-bookchip">
+            <span class="nb-chip-cover" style="--chip-cloth:#7a5c8a"><span class="nb-chip-cover-t">Teaching to Transgress</span></span>
+            <span class="nb-chip-title">Teaching to Transgress</span>
+          </div>
+          <div class="notebook-entry-acts">
+            <a class="notebook-entry-add-to-arc notebook-entry-gather">Gather</a>
+            <a class="notebook-entry-add-to-arc notebook-entry-drawout">ask Yumi</a>
+            <a class="notebook-entry-add-to-arc">Add to arc</a>
+            <a class="notebook-entry-file-to-book">File to book</a>
+            <a class="notebook-entry-delete">Delete</a>
+          </div>
+        </article>
+
+        <article class="notebook-entry" style="--reg:var(--question-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-q">Question</span>
+            <time class="notebook-entry-ts">5h ago</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">If the oppressed internalize the oppressor, what does an authentically dialogical unlearning actually look like day to day?</div>
+          <!-- EVOLVED: #3b per-note-cover-chip -->
+          <div class="nb-entry-bookchip">
+            <span class="nb-chip-cover" style="--chip-cloth:#8a5c3a"><span class="nb-chip-cover-t">Pedagogy of the Oppressed</span></span>
+            <span class="nb-chip-title">Pedagogy of the Oppressed</span>
+          </div>
+          <div class="notebook-entry-acts">
+            <a class="notebook-entry-add-to-arc notebook-entry-gather">Gather</a>
+            <a class="notebook-entry-add-to-arc notebook-entry-drawout">ask Yumi</a>
+            <a class="notebook-entry-add-to-arc">Add to arc</a>
+            <a class="notebook-entry-file-to-book">File to book</a>
+            <a class="notebook-entry-delete">Delete</a>
+          </div>
+        </article>
+
+        <article class="notebook-entry" style="--reg:var(--journal-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-j">Journal</span>
+            <time class="notebook-entry-ts">yesterday</time>
+            <span class="notebook-entry-vis notebook-entry-vis-off"><span class="notebook-entry-vis-dot"></span>Private</span>
+          </div>
+          <div class="notebook-entry-body">I keep circling back to whether my own teaching quietly reproduces the banking model I say I reject.</div>
+          <!-- EVOLVED: #3b per-note-cover-chip -->
+          <div class="nb-entry-bookchip">
+            <span class="nb-chip-cover" style="--chip-cloth:#8a5c3a"><span class="nb-chip-cover-t">Pedagogy of the Oppressed</span></span>
+            <span class="nb-chip-title">Pedagogy of the Oppressed</span>
+          </div>
+          <div class="notebook-entry-acts">
+            <span class="notebook-entry-lock">&#128274; private</span>
+            <a class="notebook-entry-send-to-subtheory">Send to sub-theory</a>
+            <a class="notebook-entry-delete">Delete</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 7 — GATHERED -> WORKING PAGE (State-5). Notes gathered on the left are
+     picked; the right leaf wakes: gathered list -> name field ("yours to set")
+     -> arc picker -> Create, with the RESTING Yumi complicate slot below (static,
+     honest — never a generated question, never a brain call).
+     ============================================================================ -->
+<section class="notebook" id="nb-working" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Teaching to Transgress <span class="c">4</span></button>
+    <button type="button" class="nb-tab">Inbox <span class="c">3</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">2</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <article class="notebook-entry notebook-entry-gathered" style="--reg:var(--marginalia-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+            <time class="notebook-entry-ts">2h ago</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">The teacher&rsquo;s vulnerability is the ground the risk is shared on.</div>
+          <div class="notebook-entry-acts"><a class="notebook-entry-add-to-arc notebook-entry-gather">Gathered &#10003;</a><a class="notebook-entry-add-to-arc">Add to arc</a><a class="notebook-entry-delete">Delete</a></div>
+        </article>
+        <article class="notebook-entry notebook-entry-gathered" style="--reg:var(--marginalia-color)">
+          <div class="notebook-entry-head">
+            <span class="notebook-entry-tag notebook-entry-tag-m">Marginalia</span>
+            <time class="notebook-entry-ts">1d ago</time>
+            <span class="notebook-entry-vis notebook-entry-vis-on"><span class="notebook-entry-vis-dot"></span>Visible to Yumi</span>
+          </div>
+          <div class="notebook-entry-body">To teach as the practice of freedom is a way of teaching anyone can learn.</div>
+          <div class="notebook-entry-acts"><a class="notebook-entry-add-to-arc notebook-entry-gather">Gathered &#10003;</a><a class="notebook-entry-add-to-arc">Add to arc</a><a class="notebook-entry-delete">Delete</a></div>
+        </article>
+      </div>
+
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list">
+          <div class="nb-gnote"><span>The teacher&rsquo;s vulnerability is the ground the risk is shared on.</span><button type="button" class="nb-gx" aria-label="Remove from gathered">&times;</button></div>
+          <div class="nb-gnote"><span>To teach as the practice of freedom is a way of teaching anyone can learn.</span><button type="button" class="nb-gx" aria-label="Remove from gathered">&times;</button></div>
+        </div>
+
+        <div class="nb-nameblock">
+          <div class="nb-yname-tag">Name this sub-theory &middot; yours to set</div>
+          <div class="nb-working-name" contenteditable="true" role="textbox" aria-label="Sub-theory name" data-ph="Name it&hellip;">Vulnerability as pedagogy</div>
+        </div>
+
+        <div class="nb-gather">
+          <span class="lab">2 gathered &middot;</span>
+          <span class="lab">Into arc: Education &amp; Power</span>
+          <button type="button" class="chip">Change</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn-primary">Create sub-theory &rarr;</button>
+        </div>
+
+        <div class="nb-complicate">
+          <span class="nb-ybubble" aria-hidden="true">Y</span>
+          <div>
+            <div class="nb-ctag">Yumi &middot; complicates — a question, never a verdict</div>
+            <div class="nb-ctext">Once Yumi&rsquo;s reading along, she&rsquo;ll open a question here — never a verdict.</div>
+          </div>
+        </div>
+
+        <div class="nb-working-acts"><a class="nb-working-clear">Clear</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================================
+     STATE 8 — EMPTY (#empty). A calm first-run / no-notes leaf that teaches the
+     surface. Inbox tab, zero notes; the working page waits.
+     ============================================================================ -->
+<section class="notebook" id="nb-empty" style="display:none">
+  <header class="notebook-head">
+    <div class="notebook-title-block">
+      <p class="eyebrow">Structurally private</p>
+      <h1 class="notebook-title">Notebook</h1>
+      <p class="notebook-intro">Each book keeps its own notebook, and the book itself crowns it — cover, your reading, what it&rsquo;s grown into. Below, two leaves: catch notes on the left, gather a few on the right and a sub-theory forms.</p>
+    </div>
+  </header>
+  <div class="nb-tabs">
+    <button type="button" class="nb-tab is-on">Inbox <span class="c">0</span></button>
+    <button type="button" class="nb-tab">Journal <span class="c">0</span></button>
+  </div>
+  <div class="notebook-spread">
+    <div class="notebook-leaves">
+      <div class="leaf leaf-left">
+        <p class="nb-leaftag">Catch a note</p>
+        <!-- EVOLVED: #empty new-empty-state -->
+        <div class="nb-empty">
+          <div class="nb-empty-mark" aria-hidden="true"></div>
+          <div class="nb-empty-title">Nothing in your inbox yet</div>
+          <p class="nb-empty-body">Quick captures land here, awaiting a home. Write a line, paste a passage, or dictate a thought — then gather a few on the right and a sub-theory begins to form.</p>
+          <div class="nb-empty-steps">
+            <div class="nb-empty-step"><span class="n">1</span><span class="t">Catch a note — a margin, a question, a journal line.</span></div>
+            <div class="nb-empty-step"><span class="n">2</span><span class="t">File it to the book it belongs with.</span></div>
+            <div class="nb-empty-step"><span class="n">3</span><span class="t">Gather a few and name what they add up to.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="leaf leaf-right">
+        <h3 class="nb-leaftag">The working page &middot; where a sub-theory forms</h3>
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list"><p class="nb-gempty">Select notes on the left to gather them here&hellip;</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<script>
+/* Standalone mockup interactivity. STRICT ES3 per the mockup-file rule (Praxis
+   convention): var/function only, string concat, no const/let/arrow/class/template.
+   This governs THIS FILE ONLY. */
+(function(){
+
+  /* --- MOCKUP CONTROL: skin swap (Universal v1.2 light DEFAULT <-> reading room) --- */
+  var skinBtns = document.querySelectorAll('.skin-toggle-btn');
+  Array.prototype.forEach.call(skinBtns, function(btn){
+    btn.addEventListener('click', function(){
+      var universal = btn.getAttribute('data-skin') === 'universal';
+      document.body.classList.toggle('skin-universal', universal);
+      Array.prototype.forEach.call(skinBtns, function(b){ b.classList.toggle('is-on', b === btn); });
+    });
+  });
+
+  /* --- MOCKUP CONTROL: state walker (8 states) --- */
+  var stateBtns = document.querySelectorAll('.state-toggle-btn');
+  var order = ['resting','composing','paste','dictate','photo','atrest','working','empty'];
+  function idFor(k){ return document.getElementById('nb-' + k); }
+  Array.prototype.forEach.call(stateBtns, function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-state');
+      var i, sec;
+      for (i = 0; i < order.length; i++) {
+        sec = idFor(order[i]);
+        if (sec) { sec.style.display = (order[i] === target) ? 'block' : 'none'; }
+      }
+      Array.prototype.forEach.call(stateBtns, function(b){ b.classList.toggle('is-on', b === btn); });
+    });
+  });
+
+  /* --- "What Yumi sees" band toggle (live: toggles .nb-bb-seespanel.on) --- */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sees]'), function(btn){
+    btn.addEventListener('click', function(){
+      var wrap = btn.closest('.nb-bookband-wrap');
+      if (!wrap) { return; }
+      var panel = wrap.querySelector('.nb-bb-seespanel');
+      if (panel) { panel.classList.toggle('on'); }
+    });
+  });
+
+  /* --- master switch toggle (visual only; no persistence in a mockup) --- */
+  Array.prototype.forEach.call(document.querySelectorAll('.nb-toggle'), function(t){
+    t.addEventListener('click', function(){
+      var on = t.getAttribute('aria-pressed') === 'true';
+      t.setAttribute('aria-pressed', on ? 'false' : 'true');
+      t.setAttribute('aria-label', 'Yumi reads along: ' + (on ? 'off' : 'on'));
+    });
+  });
+
+  /* --- register seg (visual only) --- */
+  Array.prototype.forEach.call(document.querySelectorAll('.seg'), function(seg){
+    var opts = seg.querySelectorAll('.seg-opt');
+    Array.prototype.forEach.call(opts, function(opt){
+      opt.addEventListener('click', function(){
+        Array.prototype.forEach.call(opts, function(o){ o.classList.toggle('is-on', o === opt); });
+      });
+    });
+  });
+
+  /* --- unified mode chips: honest hand-off vs inline staging (mockup no-op) --- */
+  Array.prototype.forEach.call(document.querySelectorAll('.nb-mode'), function(m){
+    m.addEventListener('click', function(){
+      var mode = m.getAttribute('data-mode');
+      if (mode === 'photo' || mode === 'library') {
+        alert('Mockup: this stages a photo inline on the page (buildNotebookShot).');
+      } else {
+        alert('Mockup: "' + mode + '" opens the capture window (ImportCapture.open()) and returns a note.');
+      }
+    });
+  });
+
+  /* --- gather remove / clear / receipt / dictation acts: mockup no-ops --- */
+  Array.prototype.forEach.call(document.querySelectorAll('.nb-gx, .nb-working-clear, .notebook-shot-remove'), function(el){
+    el.addEventListener('click', function(e){ e.preventDefault(); });
+  });
+
+})();
+</script>
+</body>
+</html>
