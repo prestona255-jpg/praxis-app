@@ -5,7 +5,7 @@ render_fn: renderShelf (views.js:3730)
 mockup: docs/studio/mockups/shelf.html
 ground: dark
 in_nav: yes
-state: built
+state: closed
 rounds: 1
 ---
 
@@ -181,7 +181,14 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
-### R2 — Universal skin + 8 features (BUILT, working tree, v3.185, awaiting felt pass)
+### R2 CLOSED — felt pass PASSED IN FULL (2026-07-09, deployed v3.185, commit 372775a)
+
+Preston's felt pass passed in full on the live deploy: visual pass, the Move-to-arc
+**Firestore round-trip confirmed persisting after reload**, and the thread-tap arc
+reveal confirmed fine on mobile (reveal stays thread-tap). Residual a11y follow-up
+`task_e4cb7af7` remains low-priority, decoupled from any fork. Round closed.
+
+### R2 — Universal skin + 8 features (v3.185, felt-passed)
 
 The live Shelf ships the Universal v1.2 light-ground skin + all 8 locked decisions,
 built computed-style-identical to `docs/studio/mockups/shelf.html` (Universal state).

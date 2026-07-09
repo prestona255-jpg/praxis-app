@@ -22,6 +22,17 @@ flagged at the top of the Builder's sequence page for his call — never applied
   adopted; Builder v2 (depth re-skin + sidebar rail + overview-first + progress bar +
   surface cards). Legacy audit/gap findings imported into the surface ledgers. No
   launch-spine change; no item retired.
+- **2026-07-09** — R2 Shelf CLOSED (felt pass in full, v3.185 `372775a`). Recorded
+  completion of Studio install + R1 + R2 into Shipped (reality, not retirement — R2's
+  live felt pass validated the Universal lock R1 delivered). Re-set **Now** to the 3
+  truest next moves: (1) the Shelf **data-correctness round** — CX-1/CX-2 promoted
+  from the R2 cross-check as the top-severity open work, sanctioned to run "after the
+  skin" per the reconciliation addendum; (2) **R3 Home** as the next surface,
+  folding in signed-out/first-run (launch STEP 2); (3) the **data-loss launch
+  cluster** (F-DL4 + F-DL1/3 smokes, STEP 4/5). Notebook (heat 18) + the deferred
+  Shelf-categories feature round → Next; arc-detail (heat 14) → Then. Autonomous
+  re-order (promote-severe-gaps + continue-cadence); no launch-spine item retired, no
+  Preston decision contradicted — so no `PROPOSED:` flag.
 
 ## Shipped
 
@@ -41,39 +52,61 @@ flagged at the top of the Builder's sequence page for his call — never applied
 - [x] **R0 recon** — token inventory + surface census (commit `75bb7d3`).
 - [x] **Universal token sheet confirmed** — v1.1 (paper-and-night fusion, warmth
   revision, ten-hue field spectrum).
+- [x] **Studio install** — the `docs/studio` scaffold + `studio-scan` agent + the
+  generated Builder. No app files touched.
+- [x] **R1 — canon + galaxy mockups re-skinned to Universal** — the two
+  `design/*.html` adopt the Universal semantic set + the §4 scoped night; Universal
+  locked (validated by R2's live felt pass). (Track-B PHASE A + B)
+- [x] **R2 — Shelf: Universal v1.2 skin + 8 features** (v3.185, `372775a`; felt pass
+  PASSED IN FULL 2026-07-09 — visual + Move-to-arc Firestore round-trip + thread-tap
+  reveal). First surface round; also codified the studio **mockup stage**
+  (`studio-mockup` agent, five-beat loop, shaped/built orbs + surface mockup link).
+  (launch-spine — first surface round)
 
 ## Now
 
-- [ ] **R1 — re-skin the canon + galaxy mockup to Universal → felt pass.** The two
-  `design/*.html` files adopt the Universal semantic set; the galaxy mockup gets
-  the §4 scoped night. Track-B's "Profile / Galaxy north star" and "iterate until
-  it feels finished" live here (Track-B PHASE A + PHASE B). Closes ONLY on
-  Preston's felt pass.
+- [ ] **Shelf data-correctness round** — the two parked HIGH data-state bugs the R2
+  cross-check surfaced (the Shelf's top severity, ahead of anything visual): **CX-1
+  DATA-MERGE** (Tidy-library `mergeBookDuplicates` omits 4 of the 8 reference-scrub
+  steps `deleteBook` performs and never tombstones dropped ids → orphaned refs +
+  confirmed resurrection via `mergeRemoteBookDoc`'s remote-wins path) and **CX-2
+  DATA-DUP** (no dedup-on-add guard on single/bulk add), plus the orphan-unsafe
+  Author rail. Own commit, data-loss tier (FIX-PROTOCOL). Runs now: the skin round is
+  done, and Preston's "before or after the skin" call resolves to after.
+  touches: [books]
+- [ ] **R3 — Home: next surface round** — prove Universal on Home (the R2 cadence's
+  next surface), folding in the honest **signed-out / first-run** launch step
+  (OG1–OG4 + IA4: real sign-in CTA, onboarding that lands in the writing loop rather
+  than Home). scan → forks → mockup → felt pass → staged build → close.
+  (launch-spine STEP 2)
+  touches: [home, onboarding]
+- [ ] **Data-loss launch cluster** — **F-DL4** shared-tab account-switch race (reset
+  the eight `*Loaded`/`*WritePending` latches in `clearUserState()`, `state.js`) +
+  the **F-DL1 / F-DL3** live smokes that never ran (procedure proven on F-DL2,
+  15/15). The remaining launch-spine data-loss work. (launch-spine STEP 4 + 5)
+  touches: [account]
 
 ## Next
 
-- [ ] **Studio install** — the `docs/studio` scaffold + the `studio-scan` agent +
-  this Builder (this run). No app files touched.
-- [ ] **R2 — first surface round** (Shelf or Home). Prove Universal on one live
-  surface; that surface's gap audit writes the next round's brief.
-  touches: [books, home]
+- [ ] **R4 — Notebook: surface round** — highest surface gap-heat after the Shelf
+  (18 open gaps). scan → forks → mockup → felt pass → build → close.
+  touches: [notebook]
+- [ ] **Shelf categories feature round** — the deferred data/product arc off the
+  "Shelf / categories" ledger cluster (rawCategories capture on every write path,
+  duplicate-add guard, batch progress, manual override + book-detail picker, lineage
+  extension, re-classify scoping). NOT a visual round.
+  touches: [books]
 
 ## Then
 
 Per-surface rounds, one surface at a time, each: **scan → forks → mockup
 reconstruction → felt pass → staged build → close.** A round closes ONLY on
 Preston's felt pass. Carried from the launch spine and the evolution track and
-folded into the rounds — nothing dropped:
+folded into the rounds — nothing dropped. (The launch-spine data-loss + signed-out
+steps 2/4/5 were promoted into **Now** on 2026-07-09 — see the Re-plan log.)
 
-- [ ] **Signed-out / first-run** — OG1–OG4 + IA4: honest signed-out state, a real
-  sign-in CTA, onboarding that lands in the writing loop rather than Home. Pairs
-  with First-run Path A. (launch-spine STEP 2)
-  touches: [home, onboarding]
-- [ ] **Shared-tab account-switch race** — F-DL4: reset the eight `*Loaded` and
-  `*WritePending` latches in `clearUserState()`. Touches `state.js`.
-  (launch-spine STEP 4)
-- [ ] **F-DL1 + F-DL3 live smokes** — the two shipped data-loss fixes whose live
-  smoke never ran; procedure proven on F-DL2, 15/15. (launch-spine STEP 5)
+- [ ] **Arc interior round (arc-detail)** — the third-heaviest surface (14 open
+  gaps) after Notebook; queue behind R4. touches: [arc-detail]
 - [ ] **Backport the aesthetic uplift into the live app** — once the Universal
   mockups lock, one batch craft/polish pass flows back app-wide. (Track-B PHASE C
   + post-launch #6 craft pass + post-launch #7 backport)
