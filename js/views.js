@@ -3748,7 +3748,7 @@ function renderShelf() {
   // supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
   // .shelf.lum-amber-deep block in components.css layers lumen glass/gold/cyan
   // over the theme-token base (same additive pattern as the Notebook).
-  wrap.className = 'shelf lum-amber-deep';
+  wrap.className = 'shelf lum-amber-deep' + (shelfSelecting ? ' is-selecting' : '');
 
   // W11 S8 Lane 1 (L3): your shelf is personal -- hard-gate signed-out (mirror
   // #notebook: in-place prompt, no redirect). Replaces the prior soft-CTA
@@ -3881,6 +3881,71 @@ function renderShelf() {
   });
   seg.appendChild(segList);
   toolbar.appendChild(seg);
+
+  // 3c (R2): Sort control (decision 4). Quiet dropdown -- date-added default +
+  // reading status. Grouping is NOT duplicated here (it stays on the sidebar
+  // Lenses|Categories seg). Applies via the shelfSort branch in books.sort above.
+  var sortWrap = document.createElement('div');
+  sortWrap.className = 'shelf-sort';
+  var sortBtn = document.createElement('button');
+  sortBtn.type = 'button';
+  sortBtn.className = 'shelf-sort-btn';
+  sortBtn.id = 'shelf-sort-btn';
+  sortBtn.appendChild(document.createTextNode('Sort: '));
+  var sortLabel = document.createElement('span');
+  sortLabel.textContent = (shelfSort === 'status') ? 'Reading status' : 'Date added';
+  sortBtn.appendChild(sortLabel);
+  var sortCaret = document.createElement('span');
+  sortCaret.className = 'caret';
+  sortCaret.textContent = '▼';
+  sortBtn.appendChild(sortCaret);
+  var sortMenu = document.createElement('div');
+  sortMenu.className = 'shelf-sort-menu';
+  sortBtn.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    if (sortMenu.className.indexOf('is-open') > -1) {
+      sortMenu.className = 'shelf-sort-menu';
+    } else {
+      sortMenu.className = 'shelf-sort-menu is-open';
+      var closeOnce = function () {
+        sortMenu.className = 'shelf-sort-menu';
+        document.removeEventListener('click', closeOnce);
+      };
+      document.addEventListener('click', closeOnce);
+    }
+  });
+  var SORT_OPTS = [ { key: 'added', label: 'Date added' }, { key: 'status', label: 'Reading status' } ];
+  var soi;
+  for (soi = 0; soi < SORT_OPTS.length; soi = soi + 1) {
+    (function (opt) {
+      var ob = document.createElement('button');
+      ob.type = 'button';
+      ob.className = (shelfSort === opt.key) ? 'is-on' : '';
+      ob.setAttribute('data-sort', opt.key);
+      ob.textContent = opt.label;
+      ob.addEventListener('click', function () {
+        shelfSort = opt.key;
+        renderShelf();
+      });
+      sortMenu.appendChild(ob);
+    })(SORT_OPTS[soi]);
+  }
+  sortWrap.appendChild(sortBtn);
+  sortWrap.appendChild(sortMenu);
+  toolbar.appendChild(sortWrap);
+
+  // 3b (R2): Select toggle (decision 2). Arms bulk Select mode; its ONLY action
+  // is Move to arc (the action bar below). A quiet chip; is-armed when on.
+  var selectBtn = document.createElement('button');
+  selectBtn.type = 'button';
+  selectBtn.className = 'btn chip shelf-select-toggle' + (shelfSelecting ? ' is-armed' : '');
+  selectBtn.textContent = shelfSelecting ? 'Done' : 'Select';
+  selectBtn.addEventListener('click', function () {
+    shelfSelecting = !shelfSelecting;
+    if (!shelfSelecting) { shelfPicked = {}; }
+    renderShelf();
+  });
+  toolbar.appendChild(selectBtn);
 
   // Filters toggle (mock .shelf-filters-btn). Desktop-hidden by CSS (the
   // sidebar is always visible there); on mobile it opens the filter drawer.
@@ -4677,6 +4742,16 @@ function renderShelf() {
     }
   }
   books.sort(function(a, b) {
+    // 3c: reading-status sort when selected (reading -> will-read -> read);
+    // date-added desc is the default AND the tiebreak within a status band.
+    if (shelfSort === 'status') {
+      var rank = { reading: 0, 'will-read': 1, read: 2 };
+      var ra = rank[normalizeStatus(a.status)];
+      var rb = rank[normalizeStatus(b.status)];
+      if (ra === undefined) { ra = 3; }
+      if (rb === undefined) { rb = 3; }
+      if (ra !== rb) { return ra - rb; }
+    }
     return (b.addedAt || 0) - (a.addedAt || 0);
   });
 
@@ -4792,6 +4867,30 @@ function renderShelf() {
     }
   })();
 
+  // 3a (R2): book -> arcs map (decision 1 -- arc thread-tie, intersectional).
+  // A book is in an arc when arc.bookIds carries { id: book.id } (state.js:1776).
+  // Owner-filtered; one pass over state.arcs. Passed to the card helpers so the
+  // spine thread is colored by the primary arc and the reveal lists them all.
+  var shelfArcsByBook = {};
+  (function () {
+    var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    var auid = au ? au.uid : null;
+    var arcsMap = state.arcs || {};
+    var akk, arc2, abi, mid;
+    for (akk in arcsMap) {
+      if (!Object.prototype.hasOwnProperty.call(arcsMap, akk)) { continue; }
+      arc2 = arcsMap[akk];
+      if (!arc2 || !arc2.bookIds) { continue; }
+      if (auid && arc2.userId && arc2.userId !== auid) { continue; }
+      for (abi = 0; abi < arc2.bookIds.length; abi = abi + 1) {
+        mid = arc2.bookIds[abi] && arc2.bookIds[abi].id;
+        if (!mid) { continue; }
+        if (!shelfArcsByBook[mid]) { shelfArcsByBook[mid] = []; }
+        shelfArcsByBook[mid].push(arc2);
+      }
+    }
+  })();
+
   if (books.length === 0) {
     // 3.10a Stage 4: empty state. Structure supports both copy
     // variants (zero-books and zero-filter-results); 3.10a wired
@@ -4858,7 +4957,7 @@ function renderShelf() {
       rows.className = 'shelf-rows';
       var ri;
       for (ri = 0; ri < books.length; ri++) {
-        rows.appendChild(renderShelfBookRow(books[ri], !!shelfAlight[books[ri].id]));
+        rows.appendChild(renderShelfBookRow(books[ri], !!shelfAlight[books[ri].id], shelfArcsByBook[books[ri].id] || []));
       }
       main.appendChild(rows);
     } else {
@@ -4867,7 +4966,7 @@ function renderShelf() {
       list.id = 'shelf-grid';
       var i;
       for (i = 0; i < books.length; i++) {
-        list.appendChild(renderShelfBook(books[i], !!shelfAlight[books[i].id]));
+        list.appendChild(renderShelfBook(books[i], !!shelfAlight[books[i].id], shelfArcsByBook[books[i].id] || []));
       }
       main.appendChild(list);
     }
@@ -4891,6 +4990,38 @@ function renderShelf() {
   layout.appendChild(main);
   wrap.appendChild(layout);
 
+  // 3b (R2): the arc-picker host (shelfMoveToArc mounts buildArcPickerPanel here)
+  // + the fixed Move-to-arc action bar -- the ONLY bulk action. The bar slides up
+  // (CSS) when Select mode has >=1 pick; count restored from shelfPicked.
+  var shelfArcPickerHost = document.createElement('div');
+  shelfArcPickerHost.id = 'shelf-arc-picker-host';
+  wrap.appendChild(shelfArcPickerHost);
+
+  var selectBar = document.createElement('div');
+  selectBar.id = 'shelf-selectbar';
+  selectBar.className = 'shelf-selectbar' + (shelfPickedCount() > 0 ? ' has-pick' : '');
+  var sbCount = document.createElement('span');
+  sbCount.className = 'count';
+  var sbCountB = document.createElement('b');
+  sbCountB.id = 'shelf-pick-count';
+  sbCountB.textContent = '' + shelfPickedCount();
+  sbCount.appendChild(sbCountB);
+  sbCount.appendChild(document.createTextNode(' selected'));
+  selectBar.appendChild(sbCount);
+  var sbMove = document.createElement('button');
+  sbMove.type = 'button';
+  sbMove.className = 'move';
+  sbMove.textContent = 'Move to an arc…';
+  sbMove.addEventListener('click', shelfMoveToArc);
+  selectBar.appendChild(sbMove);
+  var sbCancel = document.createElement('button');
+  sbCancel.type = 'button';
+  sbCancel.className = 'cancel';
+  sbCancel.textContent = 'Cancel';
+  sbCancel.addEventListener('click', function () { shelfSelecting = false; shelfPicked = {}; renderShelf(); });
+  selectBar.appendChild(sbCancel);
+  wrap.appendChild(selectBar);
+
   host.appendChild(wrap);
 
   // Stage 4d: the render above rebuilt the search input; when the
@@ -4909,11 +5040,26 @@ function renderShelf() {
   }
 }
 
+// 3a (R2): deterministic per-arc hue from the Universal field spectrum
+// (--field-1..10, defined app-wide by universal-depth.css). No per-arc color
+// exists in the data model, so the color is derived from a stable id-hash --
+// the same "stable key -> hue" pattern PraxisMarks uses. Returns a token
+// reference so the value tracks the spectrum, never a hardcoded literal.
+function arcFieldHue(arcId) {
+  var s = '' + (arcId || '');
+  var h = 0;
+  var i;
+  for (i = 0; i < s.length; i = i + 1) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return 'var(--field-' + (Math.abs(h) % 10 + 1) + ')';
+}
+
 // Single shelf row. Anchor element so the browser's hashchange path
 // handles navigation -- no addEventListener needed.
-function renderShelfBook(book, isAlight) {
+function renderShelfBook(book, isAlight, arcs) {
   var card = document.createElement('a');
-  card.className = 'shelf-book' + (isAlight ? ' is-alight' : '');
+  card.className = 'shelf-book' + (isAlight ? ' is-alight' : '') + (shelfPicked[book.id] ? ' is-picked' : '');
   card.href = '#book/' + book.id;
 
   // 3.5b: cover thumbnail or placeholder block. The truthy check
@@ -4980,7 +5126,30 @@ function renderShelfBook(book, isAlight) {
     tick.setAttribute('aria-hidden', 'true');
     tick.style.setProperty('--tick', 'var(--register-' + glyphTradition + ')');
     coverArea.appendChild(tick);
+    // 3a: has-tick moves the arc thread just inside the register tick (which
+    // stays at left:0). A book without a tick lets the thread hug the edge.
+    card.className = card.className + ' has-tick';
   }
+
+  // 3a (R2): arc thread-tie (decision 1/8). Colored by the primary arc; the
+  // register tick above is UNTOUCHED. Tapping the thread reveals ALL arcs (the
+  // card still navigates from anywhere else) -- the reveal trigger narrows from
+  // the mockup's whole-card tap to the thread, because the live card is a
+  // navigation link and "book open" is load-bearing.
+  if (arcs && arcs.length > 0) {
+    var arcThread = document.createElement('span');
+    arcThread.className = 'shelf-book-arcthread';
+    arcThread.setAttribute('aria-hidden', 'true');
+    arcThread.style.setProperty('--arc', arcFieldHue(arcs[0].id));
+    coverArea.appendChild(arcThread);
+  }
+
+  // 3b (R2): per-card select checkbox overlay (shown only in Select mode via the
+  // .shelf.is-selecting gate). Picked state mirrors shelfPicked.
+  var checkEl = document.createElement('span');
+  checkEl.className = 'shelf-book-check';
+  checkEl.setAttribute('aria-hidden', 'true');
+  coverArea.appendChild(checkEl);
 
   var titleEl = document.createElement('h2');
   titleEl.className = 'shelf-book-title';
@@ -5009,6 +5178,46 @@ function renderShelfBook(book, isAlight) {
   meta.appendChild(statusEl);
 
   card.appendChild(meta);
+
+  // 3a (R2): the tap-reveal panel -- every arc this book belongs to
+  // (intersectional). Hidden until the thread is tapped (.arcs-open). The first
+  // arc is the primary (matches the thread color). The card handler
+  // preventDefaults clicks inside the panel so tapping a chip inspects, not navigates.
+  if (arcs && arcs.length > 0) {
+    var arcsBox = document.createElement('div');
+    arcsBox.className = 'shelf-book-arcs';
+    var aci;
+    for (aci = 0; aci < arcs.length; aci = aci + 1) {
+      var arcChip = document.createElement('span');
+      arcChip.className = 'arc-chip' + (aci === 0 ? ' is-primary' : '');
+      arcChip.style.setProperty('--arc', arcFieldHue(arcs[aci].id));
+      arcChip.textContent = arcs[aci].title || 'Untitled arc';
+      arcsBox.appendChild(arcChip);
+    }
+    card.appendChild(arcsBox);
+  }
+
+  // 3a/3b (R2): one card-level click handler routes by zone.
+  //  - Select mode: any click picks/unpicks the card (never navigates).
+  //  - Otherwise: a click on the arc thread reveals ALL arcs; a click inside the
+  //    reveal panel inspects (no nav); anywhere else navigates (the anchor href).
+  card.addEventListener('click', function (ev) {
+    if (shelfSelecting) {
+      ev.preventDefault();
+      shelfTogglePick(card, book.id);
+      return;
+    }
+    var cls = (ev.target && ev.target.className) ? ('' + ev.target.className) : '';
+    if (cls.indexOf('shelf-book-arcthread') > -1) {
+      ev.preventDefault();
+      shelfToggleReveal(card);
+      return;
+    }
+    if (cls.indexOf('arc-chip') > -1 || cls.indexOf('shelf-book-arcs') > -1) {
+      ev.preventDefault();
+    }
+  });
+
   return card;
 }
 
@@ -5019,10 +5228,22 @@ function renderShelfBook(book, isAlight) {
 // CARRIED from renderShelfBook using the SAME data-driven mechanism + the
 // existing .shelf-book-tick class (no new tick CSS authored); omitted for
 // unassigned / tokenless traditions, same guard as the covers card.
-function renderShelfBookRow(book, isAlight) {
+function renderShelfBookRow(book, isAlight, arcs) {
   var row = document.createElement('a');
-  row.className = 'shelf-book-row' + (isAlight ? ' is-alight' : '');
+  row.className = 'shelf-book-row' + (isAlight ? ' is-alight' : '') + (shelfPicked[book.id] ? ' is-picked' : '');
   row.href = '#book/' + book.id;
+
+  // 3a (R2): arc thread-tie on the row's left spine, primary-arc color. Sits at
+  // left:0 (or just inside the register tick when one is present -- has-tick).
+  // No reveal panel in the compact row (the covers card carries it); the thread
+  // is the at-a-glance tie. Appended first so it anchors the spine.
+  if (arcs && arcs.length > 0) {
+    var rowArc = document.createElement('span');
+    rowArc.className = 'shelf-book-arcthread';
+    rowArc.setAttribute('aria-hidden', 'true');
+    rowArc.style.setProperty('--arc', arcFieldHue(arcs[0].id));
+    row.appendChild(rowArc);
+  }
 
   // S-D2 (Wave 1): the list row has no cover thumbnail, so an alight book gets a
   // small leading gold root-mark (BUILT-DIVERGES: the mockup puts it on the mini
@@ -5043,6 +5264,7 @@ function renderShelfBookRow(book, isAlight) {
     tick.setAttribute('aria-hidden', 'true');
     tick.style.setProperty('--tick', 'var(--register-' + rowTradition + ')');
     row.appendChild(tick);
+    row.className = row.className + ' has-tick';
   }
 
   var titleEl = document.createElement('span');
@@ -5065,6 +5287,14 @@ function renderShelfBookRow(book, isAlight) {
     statusEl.textContent = rowStatusCanon;
     row.appendChild(statusEl);
   }
+
+  // 3b (R2): in Select mode a row picks/unpicks instead of navigating.
+  row.addEventListener('click', function (ev) {
+    if (shelfSelecting) {
+      ev.preventDefault();
+      shelfTogglePick(row, book.id);
+    }
+  });
 
   return row;
 }
@@ -5250,6 +5480,11 @@ var shelfSearchRefocus = false;
 // existing overlay panel (shelf-sidebar-mobile-open).
 var shelfRailOpen = false;
 
+// 3c (R2): sort order (decision 4). 'added' = date-added desc (default);
+// 'status' = reading -> will-read -> read, date-added as the tiebreak. Grouping
+// stays on the sidebar Lenses|Categories seg -- this control never touches it.
+var shelfSort = 'added';
+
 // 3.10b-i: module-scope reference to the document-level Escape
 // listener bound when the mobile filter panel is open. Tracked here
 // (not inside renderShelf's closure) so a re-render can purge a
@@ -5258,6 +5493,86 @@ var shelfRailOpen = false;
 // renderShelf rotates this slot: open() removes any prior + adds a
 // fresh one, dismiss() removes and clears it.
 var shelfSidebarEscapeHandler = null;
+
+// 3b (R2): bulk Select mode -- its ONLY action is Move to arc (no archive, no
+// bulk delete). shelfSelecting gates card clicks (pick instead of navigate);
+// shelfPicked is the picked book-id set. Both reset on exit / after a move.
+var shelfSelecting = false;
+var shelfPicked = {};
+
+function shelfToggleReveal(card) {
+  if (card.className.indexOf('arcs-open') > -1) {
+    card.className = card.className.replace(' arcs-open', '');
+  } else {
+    card.className = card.className + ' arcs-open';
+  }
+}
+
+function shelfPickedCount() {
+  var n = 0;
+  var k;
+  for (k in shelfPicked) {
+    if (Object.prototype.hasOwnProperty.call(shelfPicked, k)) { n = n + 1; }
+  }
+  return n;
+}
+
+function shelfUpdateSelectbar() {
+  var bar = document.getElementById('shelf-selectbar');
+  if (!bar) { return; }
+  var n = shelfPickedCount();
+  var countEl = document.getElementById('shelf-pick-count');
+  if (countEl) { countEl.textContent = '' + n; }
+  if (n > 0) {
+    if (bar.className.indexOf('has-pick') < 0) { bar.className = bar.className + ' has-pick'; }
+  } else {
+    bar.className = bar.className.replace(' has-pick', '');
+  }
+}
+
+function shelfTogglePick(card, bookId) {
+  if (shelfPicked[bookId]) {
+    delete shelfPicked[bookId];
+    card.className = card.className.replace(' is-picked', '');
+  } else {
+    shelfPicked[bookId] = true;
+    card.className = card.className + ' is-picked';
+  }
+  shelfUpdateSelectbar();
+}
+
+// Move to arc: reuse the shared arc picker; on pick, add every picked book to
+// the chosen arc via the proven addBookToArc + saveState path (state.js:1813) --
+// the SAME write the book-detail "Add to an arc" uses. No data-logic change.
+function shelfMoveToArc() {
+  var host = document.getElementById('shelf-arc-picker-host');
+  var user = getCurrentUser();
+  if (!host || !user || shelfPickedCount() === 0) { return; }
+  var picking = shelfPickedCount();
+  host.innerHTML = '';
+  host.appendChild(buildArcPickerPanel({
+    user: user,
+    label: 'Move ' + picking + (picking === 1 ? ' book' : ' books') + ' to an arc',
+    onPick: function (arcId) {
+      var bk;
+      for (bk in shelfPicked) {
+        if (!Object.prototype.hasOwnProperty.call(shelfPicked, bk)) { continue; }
+        addBookToArc(arcId, bk);
+      }
+      saveState();
+      shelfSelecting = false;
+      shelfPicked = {};
+      renderShelf();
+    },
+    onDone: function () {
+      var h = document.getElementById('shelf-arc-picker-host');
+      if (h) { h.innerHTML = ''; }
+    }
+  }));
+  if (typeof host.scrollIntoView === 'function') {
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
 
 // 9.2: module-scope Escape handler slot for the sub-theory evidence
 // rail's mobile bottom sheet, mirroring shelfSidebarEscapeHandler.

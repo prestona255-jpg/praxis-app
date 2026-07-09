@@ -45,10 +45,13 @@ fm() { grep -m1 "^$2:" "$1" | sed "s/^$2:[[:space:]]*//; s/^\"//; s/\"$//"; }
 gapcount() { c=$(grep -c '^- \[source: ' "$STUDIO/$1.md" 2>/dev/null); [ -z "$c" ] && c=0; echo "$c"; }
 has_brief() { awk '/^## Next/{f=1;next} /^## /{f=0} f&&NF{print}' "$STUDIO/$1.md" 2>/dev/null | grep -q '[^[:space:]]' && echo 1 || echo 0; }
 # state -> luminous-orb modifier classes (bright=closed, soft=in a round, unlit=untouched)
+# distinct hue per stage: scanned=periwinkle, shaped=honey (mockup in hand),
+# building=coral, closed=amber-lit. honey keeps "shaped" clear of closed's amber.
 orbcls() { case "$1" in
   closed) echo "u-orb--lit u-orb--amber";;
+  built) echo "u-orb--lit u-orb--honey";;
   building) echo "u-orb--soft u-orb--coral";;
-  shaped) echo "u-orb--soft u-orb--amber";;
+  shaped) echo "u-orb--soft u-orb--honey";;
   scanned) echo "u-orb--soft u-orb--periwinkle";;
   *) echo "u-orb--unlit";; esac; }
 # slug -> human name
@@ -454,6 +457,8 @@ main{margin-left:236px;}
 .mock-list{display:grid;gap:8px;}
 .mock-link{font-family:var(--mono);font-size:12px;color:var(--gold-deep);text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px;}
 .mock-link:hover{border-color:var(--gold-hi);}
+.surf-mock{margin:2px 0 16px;}
+.surf-mock .mock-link{display:inline-block;}
 
 @media (max-width:640px){
   body{font-size:15px;}
@@ -603,7 +608,7 @@ printf '</div></section>\n'
 for s in $SURFACES $LAYERS; do
   f="$STUDIO/$s.md"
   rt=$(fm "$f" route); gr=$(fm "$f" ground); rfn=$(fm "$f" render_fn)
-  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s")
+  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s"); mk=$(fm "$f" mockup)
   [ -z "$rt" ] && rt='&mdash;'; [ -z "$rfn" ] && rfn='&mdash;'; [ -z "$gr" ] && gr='&mdash;'; [ -z "$nv" ] && nv='&mdash;'
   printf '<section class="page surface" id="s-%s">' "$s"
   printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn"
@@ -614,6 +619,13 @@ for s in $SURFACES $LAYERS; do
     printf '<div class="connected"><span class="cl">connected</span>'
     printf '%s\n' "$conn" | while IFS= read -r ct; do [ -z "$ct" ] && continue; printf '<a href="#page-plan">%s</a>' "$(fmt "$ct")"; done
     printf '</div>'
+  fi
+  # MOCKUP link: rendered iff the surface frontmatter carries a `mockup:` line.
+  # Stored repo-relative (docs/studio/mockups/<s>.html); the Builder lives at
+  # docs/studio/builder.html, so the href is the mockup path minus docs/studio/.
+  if [ -n "$mk" ]; then
+    mkhref=$(printf '%s' "$mk" | sed 's#^docs/studio/##; s/ /%20/g')
+    printf '<div class="surf-mock"><a class="mock-link" href="%s" target="_blank" rel="noopener">&#10022; view mockup &middot; %s</a></div>' "$mkhref" "$(fmt "$mk")"
   fi
   printf '<div class="md md-surface" data-md="%s.md"></div>' "$s"
   printf '</section>\n'

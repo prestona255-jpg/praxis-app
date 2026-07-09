@@ -11400,6 +11400,191 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end WAVE 1 · THE SHELF ===== */
 
 /* ============================================================================
+   R2 · UNIVERSAL v1.2 SKIN — the Shelf ships the Universal light-ground skin.
+   Ported byte-faithful from docs/studio/mockups/shelf.html (.skin-universal),
+   the design panel's felt-passed output, re-scoped from the mockup's body class
+   to the live page-context class .shelf.lum-amber-deep so computed output matches
+   the mockup by construction. PURELY ADDITIVE over the base shelf block above:
+   it re-points the --lum-* vars the base consumes + a restrained set of §8 recipe
+   / gold-role rules. Every property is color / background / gradient / box-shadow /
+   border-color ONLY. The amber register tick (.shelf-book-tick / --tick) is NOT
+   touched (locked #3). Scoped to the shelf: other .lum-amber-deep surfaces (Book,
+   Notebook) keep their dark ground until their own rounds.
+   Recipes: 6 atmospheric ground · 4 one lamplight (head) · 3 ink-to-gold (title) ·
+   5 gilded button (Add) · 2 luminous marks (alight + reading). Cut as decoration:
+   1 hairline · 7 thread · 8 (arc field hues already carry it; per-card glow CUT).
+   ============================================================================ */
+
+/* 1 · token re-points — same --lum-* the base consumes, swapped to Universal
+   light values (§1-§3), + host-contract/decorative tokens the recipes read */
+.shelf.lum-amber-deep{
+  --paper:#f4efe4;
+  --ink:#241710;
+  --gold:#a8761a;        /* GOLD ROLE 1 · interactive / fill            */
+  --gold-deep:#855410;   /* GOLD ROLE   · deep gold for small TEXT (AA) */
+  --gold-hi:#d9a441;     /* GOLD ROLE 2 · gilding — edge + glow ONLY    */
+  --lum-star:#ffce4a;    /* GOLD ROLE 3 · luminous — true glow ONLY     */
+  /* the ten-hue field spectrum, defined LOCALLY so the arc thread-tie
+     (arcFieldHue -> var(--field-N)) renders even if universal-depth.css fails to
+     serve/precache (red-team #3). Same values as universal-depth.css. */
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+  --lum-base:#fffdf8;       /* §3 surface — raised panels: sort menu, select bar, mobile drawer */
+  --lum-glass:#efe7d6;      /* §2 surface-2 — quiet parchment button/chip fill */
+  --lum-glass-bd:#e3d8c1;   /* §3 --line — warm opaque hairline */
+  --lum-glass-bd-2:#e3d8c1; /* 2nd hairline tier collapses to the one light --line */
+  --lum-cloth:#e3d8c1;      /* cover-placeholder base (bg also overridden below) */
+  --lum-ink:#241710;        /* §3 --ink   (~13:1 on card) */
+  --lum-ink-2:#645940;      /* §3 --ink-2 (~6:1 on ground) */
+  --lum-ink-3:#645940;      /* AA collapse: #978b6d fails <18px, text tier holds at --ink-2 */
+  --lum-ink-4:#978b6d;      /* freed #978b6d -> dim placeholder + will-read ring only */
+  --lum-gold:#a8761a;       /* every FILL site -> interactive gold; text+glow peeled below */
+  --lum-gold-ink:#3d2807;   /* dark ink on gold fills */
+  --status-reading:var(--lum-star);  /* reading = active STATE -> stays luminous */
+}
+
+/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, SHELF-SCOPED (not body).
+   Keeps the dark-skin wash geometry; pitched UNDER the v3 ceiling for AA.
+   background-image (not shorthand) + fixed so it reads like the mockup's body. */
+.shelf.lum-amber-deep{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed;
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+
+/* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash on the identity head */
+.shelf.lum-amber-deep .shelf-head{
+  background:radial-gradient(120% 180% at 22% 60%, rgba(242,194,90,.22) 0%, rgba(242,194,90,0) 70%);
+}
+
+/* 4 · RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
+.shelf.lum-amber-deep .shelf-title{
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+
+/* 5 · RECIPE 5 · gilded button — the SINGLE glowing primary action */
+.shelf.lum-amber-deep .btn-primary{
+  color:#3d2807; border-color:var(--gold-deep);
+  background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+}
+.shelf.lum-amber-deep .btn-primary:hover{
+  color:#3d2807; filter:none;
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72);
+}
+
+/* 6 · RECIPE 2 · keep presence/state marks LUMINOUS after the gold re-point */
+.shelf.lum-amber-deep .shelf-book-rmark,
+.shelf.lum-amber-deep .shelf-book-row-rmark,
+.shelf.lum-amber-deep .shelf-rootednote-mark{
+  background:radial-gradient(circle at 38% 32%, #fff4d6 0%, var(--lum-star) 45%, var(--gold) 100%);
+}
+.shelf.lum-amber-deep .shelf-book-rmark{ box-shadow:0 0 8px var(--lum-star); }
+.shelf.lum-amber-deep .shelf-book-row-rmark{ box-shadow:0 0 7px var(--lum-star); }
+.shelf.lum-amber-deep .shelf-rootednote-mark{ box-shadow:0 0 10px rgba(255,206,74,.6); }
+
+/* 7 · GOLD ROLE-SPLIT · small gold TEXT -> deep gold for WCAG AA */
+.shelf.lum-amber-deep .shelf-book-status,
+.shelf.lum-amber-deep .shelf-side h3,
+.shelf.lum-amber-deep .shelf-filter-label,
+.shelf.lum-amber-deep .shelf-lens-ask,
+.shelf.lum-amber-deep .shelf-sort-menu button.is-on,
+.shelf.lum-amber-deep .shelf-selectbar .count b{
+  color:var(--gold-deep);
+}
+.shelf.lum-amber-deep .shelf-select-toggle.is-armed{ color:var(--gold-deep); border-color:var(--gold); }
+
+/* 8 · GOLD ROLE-SPLIT · FILLS -> AA-safe warm-gold pills (flat, no glow) */
+.shelf.lum-amber-deep .seg-opt.is-on{ background:linear-gradient(180deg,#f2c25a,#e0a838); color:#3d2807; }
+.shelf.lum-amber-deep .shelf-selectbar .move{ background:linear-gradient(180deg,#f2c25a,#d9a441); color:#3d2807; }
+
+/* 9 · RESTRAINT · arc thread + chip = SOLID field hue, NO per-card glow (law 1/5) */
+.shelf.lum-amber-deep .shelf-book-arcthread{ box-shadow:none; }
+.shelf.lum-amber-deep .arc-chip::before{ box-shadow:none; }
+
+/* 10 · LITERAL RESCUES · base rules hardcoding dark/near-white values (color/bg only) */
+.shelf.lum-amber-deep .shelf-book-cover-area{ background:#efe7d6; }
+.shelf.lum-amber-deep .shelf-book-cover-placeholder{ background:linear-gradient(155deg,#efe7d6,#e3d8c1); }
+.shelf.lum-amber-deep .seg-opt{ color:var(--lum-ink-2); }            /* inactive label was near-white */
+.shelf.lum-amber-deep .shelf-yumiline p{ color:#256b80; }            /* pale cyan -> AA deep teal; cyan DOT kept */
+.shelf.lum-amber-deep .shelf-filter:hover,
+.shelf.lum-amber-deep .shelf-filter.is-on{ background:#efe7d6; }
+/* B2 residual · .n filter counts: drop the .7 opacity so #645940 counts clear AA */
+.shelf.lum-amber-deep .shelf-filter .n{ opacity:1; }
+/* ===== end R2 · UNIVERSAL v1.2 SKIN ===== */
+
+/* ============================================================================
+   R2 · SHELF FEATURES — the 8 locked decisions, ported from the mockup
+   (docs/studio/mockups/shelf.html). Structural CSS, scoped to .shelf.lum-amber-
+   deep; colors already handled by the Universal skin block above. Markup +
+   behavior in renderShelf / renderShelfBook / renderShelfBookRow.
+   ============================================================================ */
+
+/* 3a · ARC THREAD-TIE (decision 1/8) — thin colored bar down the LEFT SPINE,
+   colored by the primary arc; tap the bar to reveal ALL arcs (intersectional).
+   Sits just inside the register tick (which stays at left:0); a book with no
+   tick hugs the edge. No glow (Universal restraint law 1/5). */
+.shelf.lum-amber-deep .shelf-book-arcthread{ position:absolute; left:3px; top:0; bottom:0; width:4px; border-radius:0 3px 3px 0; background:var(--arc); cursor:pointer; }
+.shelf.lum-amber-deep .shelf-book:not(.has-tick) .shelf-book-arcthread{ left:0; }
+.shelf.lum-amber-deep .shelf-book-arcs{ display:none; flex-wrap:wrap; gap:5px; margin-top:9px; }
+.shelf.lum-amber-deep .shelf-book.arcs-open .shelf-book-arcs{ display:flex; }
+.shelf.lum-amber-deep .arc-chip{ display:inline-flex; align-items:center; gap:6px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.02em; color:var(--lum-ink-2); background:rgba(255,236,200,.05); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:3px 9px; }
+.shelf.lum-amber-deep .arc-chip::before{ content:''; width:7px; height:7px; border-radius:50%; background:var(--arc); flex:none; }
+.shelf.lum-amber-deep .arc-chip.is-primary{ border-color:var(--arc); color:var(--lum-ink); }
+.shelf.lum-amber-deep .shelf-book-row{ position:relative; padding-left:12px; }
+.shelf.lum-amber-deep .shelf-book-row .shelf-book-arcthread{ left:0; width:3px; border-radius:0; }
+.shelf.lum-amber-deep .shelf-book-row.has-tick .shelf-book-arcthread{ left:3px; }
+
+/* 3b · SELECT mode -> Move to arc (decision 2). The ONLY bulk action; no
+   archive, no bulk delete. Per-card checkbox overlay (covers) + a row highlight
+   (list) + a fixed action bar that slides up when >=1 book is picked. Colors of
+   the .move pill / count b / armed toggle come from the Universal skin block. */
+.shelf.lum-amber-deep .shelf-book-check{ display:none; position:absolute; top:7px; left:7px; z-index:3; width:22px; height:22px; border-radius:50%; border:2px solid var(--lum-glass-bd); background:rgba(24,16,6,.7); }
+.shelf.lum-amber-deep.is-selecting .shelf-book-check{ display:block; }
+.shelf.lum-amber-deep.is-selecting .shelf-book{ cursor:copy; }
+.shelf.lum-amber-deep .shelf-book.is-picked .shelf-book-check{ background:var(--lum-gold); border-color:var(--lum-gold); }
+.shelf.lum-amber-deep .shelf-book.is-picked .shelf-book-check::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--lum-gold-ink); font-size:13px; font-weight:700; }
+.shelf.lum-amber-deep .shelf-book.is-picked .shelf-book-cover-area{ outline:2px solid var(--lum-gold); outline-offset:2px; }
+.shelf.lum-amber-deep .shelf-book-row.is-picked{ background:rgba(168,118,26,.12); }
+.shelf.lum-amber-deep .shelf-selectbar{ position:fixed; left:0; right:0; bottom:0; z-index:60; transform:translateY(110%); transition:transform var(--motion-base,.2s) var(--ease,ease); display:flex; align-items:center; gap:14px; justify-content:center; flex-wrap:wrap; padding:14px 22px; background:var(--lum-base); border-top:1px solid var(--lum-glass-bd); box-shadow:0 -16px 40px -20px rgba(0,0,0,.8); }
+.shelf.lum-amber-deep.is-selecting .shelf-selectbar.has-pick{ transform:none; }
+.shelf.lum-amber-deep .shelf-selectbar .count{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.04em; color:var(--lum-ink-2); }
+.shelf.lum-amber-deep .shelf-selectbar .count b{ font-weight:500; }
+.shelf.lum-amber-deep .shelf-selectbar .move{ font-family:var(--lum-sans); font-size:13px; font-weight:600; border:none; border-radius:var(--lum-r-pill,999px); padding:9px 18px; cursor:pointer; }
+.shelf.lum-amber-deep .shelf-selectbar .cancel{ font-family:var(--lum-sans); font-size:13px; color:var(--lum-ink-3); background:transparent; border:none; cursor:pointer; }
+.shelf.lum-amber-deep .shelf-selectbar .cancel:hover{ color:var(--lum-ink); }
+
+/* 3c · SORT control (decision 4). date-added (default) + reading status. Grouping
+   stays on the sidebar Lenses|Categories seg (NOT duplicated here). Quiet toolbar
+   dropdown; is-on option colored gold-deep by the skin block. */
+.shelf.lum-amber-deep .shelf-sort{ position:relative; }
+.shelf.lum-amber-deep .shelf-sort-btn{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-ink-3); background:rgba(255,236,200,.06); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:8px 13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+.shelf.lum-amber-deep .shelf-sort-btn:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.shelf.lum-amber-deep .shelf-sort-btn .caret{ font-size:9px; opacity:.7; }
+.shelf.lum-amber-deep .shelf-sort-menu{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:40; min-width:170px; padding:5px; border-radius:12px; background:var(--lum-base); border:1px solid var(--lum-glass-bd); box-shadow:0 18px 40px -18px rgba(0,0,0,.75); }
+.shelf.lum-amber-deep .shelf-sort-menu.is-open{ display:block; }
+.shelf.lum-amber-deep .shelf-sort-menu button{ display:block; width:100%; text-align:left; font-family:var(--lum-sans); font-size:13px; color:var(--lum-ink-2); background:transparent; border:none; border-radius:8px; padding:9px 12px; cursor:pointer; }
+.shelf.lum-amber-deep .shelf-sort-menu button:hover{ background:rgba(255,236,200,.08); color:var(--lum-ink); }
+
+/* 3d · STATUS DOTS (decision 7). A round dot per read-state alongside the mono
+   label, overriding the base flat 5px gold SQUARE (components.css:2495 / CX-4 --
+   which paints all three states identically). reading = luminous gold, read =
+   flat green, want = hollow ring. The mono label is KEPT (skin colors it). */
+.shelf.lum-amber-deep{ --status-read:#7bbf7b; --status-will:transparent; }
+.shelf.lum-amber-deep .shelf-book-status::before{ width:7px; height:7px; border-radius:50%; background:var(--lum-gold); }
+.shelf.lum-amber-deep .shelf-book-status-reading::before{ background:var(--status-reading); box-shadow:0 0 7px rgba(255,206,74,.6); }
+.shelf.lum-amber-deep .shelf-book-status-read::before{ background:var(--status-read); box-shadow:none; }
+.shelf.lum-amber-deep .shelf-book-status-will-read::before{ background:var(--status-will); border:1.5px solid var(--lum-ink-4); width:8px; height:8px; box-shadow:none; }
+/* ===== end R2 · SHELF FEATURES ===== */
+
+/* ============================================================================
    WAVE 1 · THE LIVING FIELD  (renderArcDetail on .lum-amber)
    Convert the arc interior (S1) to Amber/Lumen per design/praxis-field-amber.html.
    Faces = Field / Read / Page (List retired, F-D1). The constellation RENDERER

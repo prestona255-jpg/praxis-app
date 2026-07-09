@@ -1,0 +1,852 @@
+<!doctype html>
+<!-- ============================================================================
+     PRAXIS STUDIO — SHELF MOCKUP  (docs/studio/mockups/shelf.html)
+     R2 first-surface round. This IS the live Shelf (renderShelf, views.js:3730 +
+     renderShelfBook 4914 + renderShelfBookRow 5022), the base .shelf-* structural
+     CSS (components.css ~2320-2500 + 2111) and the Amber skin block
+     (.shelf.lum-amber-deep, components.css 11283-11399), lifted verbatim in
+     structure and re-inlined with resolved token literals (lumen-amber.css) so
+     the file is self-contained. NOTHING here is a redesign — the current Shelf is
+     LOVED and kept pixel-faithful. The ONLY additions are the 8 locked decisions,
+     each tagged  <!-- EVOLVED: #n ... -->  so the diff-vs-live stays legible.
+
+     Arc thread colors (Decision 1/8) use the Universal field spectrum
+     (universal-depth.css --field-1..10) as a BUILD-TIME stand-in — see the
+     "## Mockup evaluation" note in books.md: no per-arc color exists live yet.
+     ============================================================================ -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Praxis Studio — Shelf (evolved mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---- resolved token literals (lumen-amber.css :root + universal-depth.css) ---- */
+:root{
+  /* base + ink ramp — lumen-amber.css:27-32 */
+  --lum-base:#231708; --lum-ink:#fdf8ec; --lum-ink-2:#e8dcc4; --lum-ink-3:#b6a888; --lum-ink-4:#867a5e;
+  /* glass — lumen-amber.css:35-39 */
+  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.04) 100%);
+  --lum-glass-bd:rgba(255,236,200,.28); --lum-glass-bd-2:rgba(255,236,200,.16);
+  /* accents — lumen-amber.css:42-49 */
+  --lum-gold:#ffce4a; --lum-gold-l:#ffe79a; --lum-gold-d:#cf9c2a; --lum-gold-ink:#241a02;
+  --lum-cyan:#7fd0f0; --lum-cloth:#5a4632;
+  /* type — lumen-amber.css:52-54 */
+  --lum-serif:"Cormorant Garamond", Georgia, serif;
+  --lum-sans:"DM Sans", system-ui, sans-serif;
+  --lum-mono:"DM Mono", ui-monospace, monospace;
+  --lum-r-pill:999px; --lum-r-card:16px;
+  --motion-base:.2s; --ease:cubic-bezier(.22,.61,.36,1);
+
+  /* EVOLVED palette: per-arc thread hues = Universal field spectrum
+     (universal-depth.css:42-43). BUILD-TIME STAND-IN — no arc.color exists live. */
+  --arc-education:#e07a52;    /* field-2 coral   */
+  --arc-liberation:#a9b98c;   /* field-5 sage    */
+  --arc-self:#8590d8;         /* field-7 periwinkle */
+  --arc-craft:#f2c25a;        /* field-1 amber   */
+  --arc-grief:#d98f8a;        /* field-3 rose    */
+  /* EVOLVED status-dot colors (Decision 7) */
+  --status-reading:var(--lum-gold);   /* reading = gold  */
+  --status-read:#7bbf7b;              /* read = green    */
+  --status-will:transparent;          /* want = hollow ring */
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+/* page ground = lumen-amber.css .lum-amber-deep (:83-88), applied to <body> */
+body{
+  background-color:var(--lum-base); color:var(--lum-ink);
+  font-family:var(--lum-sans); line-height:1.55; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(255,190,80,.42) 0%, rgba(255,190,80,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(216,130,60,.34) 0%, rgba(216,130,60,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(230,150,64,.42) 0%, rgba(230,150,64,0) 60%),
+    radial-gradient(120% 120% at 50% 44%, #33240f 0%, #241a0a 50%, #181006 100%);
+  background-attachment:fixed;
+}
+
+/* ===== MOCKUP CONTROL — the skin toggle. This is chrome for comparing skins,
+   NOT part of the shelf design. Floats above everything; identical on both skins
+   so it never reads as shelf UI. ===== */
+.skin-toggle{ position:fixed; top:12px; right:12px; z-index:200; display:inline-flex; align-items:center; gap:5px;
+  padding:5px 6px; border-radius:999px; background:rgba(18,12,5,.86); border:1px solid rgba(255,236,200,.26);
+  box-shadow:0 10px 26px -12px rgba(0,0,0,.72); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.skin-toggle-label{ font-family:'DM Mono',ui-monospace,monospace; font-size:8.5px; letter-spacing:.18em; text-transform:uppercase; color:#a89a78; padding:0 5px; }
+.skin-toggle-btn{ font-family:'DM Mono',ui-monospace,monospace; font-size:10.5px; letter-spacing:.03em; color:#cbb488; background:transparent; border:none; border-radius:999px; padding:5px 11px; cursor:pointer; white-space:nowrap; }
+.skin-toggle-btn:hover{ color:#ffe79a; }
+.skin-toggle-btn.is-on{ color:#241a02; background:linear-gradient(180deg,#ffe79a,#ffce4a); font-weight:500; }
+
+/* ===== container (.shelf.lum-amber-deep, components.css:11287-11288) ===== */
+.shelf{ display:block; width:100%; min-height:100vh; padding:30px 0 90px; color:var(--lum-ink); }
+.shelf > *{ max-width:1080px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+
+/* head — components.css:11291-11293 */
+.shelf-head{ display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin:0 auto 6px; }
+.shelf-title{ font-family:var(--lum-serif); font-weight:500; font-size:clamp(30px,4vw,40px); line-height:1; color:var(--lum-ink); margin:0; }
+.shelf-count{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.06em; color:var(--lum-ink-3); padding-bottom:4px; }
+
+/* S-D1 reading line — components.css:11295-11297 + lum-yumi (lumen-amber.css:232-238) */
+.shelf-yumiline{ display:flex; align-items:flex-start; gap:9px; margin:14px auto 20px; }
+.shelf-yumiline .dot{ flex:none; width:11px; height:11px; border-radius:50%; margin-top:5px;
+  background:radial-gradient(circle at 38% 32%, #fff, var(--lum-cyan) 46%, #2f8fb4 100%); box-shadow:0 0 9px rgba(127,208,240,.7); }
+.shelf-yumiline p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:16px; color:#c4eafa; }
+
+/* toolbar — components.css:11300-11316 */
+.shelf-toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 auto 22px; }
+.shelf-toolbar .spacer{ flex:1; }
+.btn{ font-family:var(--lum-sans); font-size:13px; font-weight:500; border-radius:var(--lum-r-pill); padding:9px 16px; border:1px solid var(--lum-glass-bd); background:var(--lum-glass); color:var(--lum-ink-2); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); cursor:pointer; }
+.btn:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.btn-primary{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; font-weight:600; box-shadow:0 8px 20px -10px rgba(255,206,74,.7); }
+.btn-primary:hover{ color:var(--lum-gold-ink); filter:brightness(1.04); }
+.chip{ font-family:var(--lum-sans); font-size:12.5px; font-weight:400; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:7px 13px; background:transparent; cursor:pointer; }
+.chip:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); background:rgba(255,236,200,.06); }
+.seg{ display:inline-flex; padding:3px; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); background:rgba(255,236,200,.06); }
+.seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; color:rgba(255,244,224,.66); background:none; border:none; border-radius:var(--lum-r-pill); padding:6px 15px; cursor:pointer; }
+.seg-opt:hover{ color:var(--lum-ink); }
+.seg-opt.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); font-weight:600; }
+.nav-search{ flex:0 1 220px; display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:var(--lum-r-pill); background:rgba(255,236,200,.06); border:1px solid var(--lum-glass-bd-2); color:var(--lum-ink-3); font-size:13px; }
+.nav-search:hover{ border-color:var(--lum-glass-bd); }
+.nav-search input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--lum-ink); font-family:var(--lum-sans); font-size:13px; }
+.nav-search input::placeholder{ color:var(--lum-ink-4); }
+
+/* EVOLVED #4: sort control — a quiet toolbar dropdown. Grouping stays on the
+   sidebar Lenses|Categories seg (NOT duplicated here). */
+.shelf-sort{ position:relative; }
+.shelf-sort-btn{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-ink-3); background:rgba(255,236,200,.06); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:8px 13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+.shelf-sort-btn:hover{ color:var(--lum-ink); border-color:var(--lum-glass-bd); }
+.shelf-sort-btn .caret{ font-size:9px; opacity:.7; }
+.shelf-sort-menu{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:40; min-width:170px; padding:5px; border-radius:12px; background:var(--lum-base); border:1px solid var(--lum-glass-bd); box-shadow:0 18px 40px -18px rgba(0,0,0,.75); }
+.shelf-sort-menu.is-open{ display:block; }
+.shelf-sort-menu button{ display:block; width:100%; text-align:left; font-family:var(--lum-sans); font-size:13px; color:var(--lum-ink-2); background:transparent; border:none; border-radius:8px; padding:9px 12px; cursor:pointer; }
+.shelf-sort-menu button:hover{ background:rgba(255,236,200,.08); color:var(--lum-ink); }
+.shelf-sort-menu button.is-on{ color:var(--lum-gold); }
+
+/* EVOLVED #2: Select toggle — a quiet toolbar chip that arms bulk select mode. */
+.shelf-select-toggle.is-armed{ color:var(--lum-gold); border-color:var(--lum-gold-d); }
+
+/* layout + sidebar — components.css:11318-11333 */
+.shelf-layout{ display:grid; grid-template-columns:204px 1fr; gap:38px; align-items:start; }
+.shelf-side{ position:sticky; top:18px; }
+.shelf-side .seg{ margin:0 0 11px; }
+.shelf-side h3, .shelf-filter-label{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-gold); margin:0 0 10px; }
+.shelf-filter-group{ margin-bottom:26px; }
+.shelf-filter-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.shelf-filter{ display:flex; align-items:center; justify-content:space-between; gap:9px; padding:8px 12px; border-radius:8px; color:var(--lum-ink-3); font-size:13px; cursor:pointer; border:1px solid transparent; }
+.shelf-filter:hover{ background:rgba(255,236,200,.06); color:var(--lum-ink); }
+.shelf-filter.is-on{ background:rgba(255,236,200,.06); color:var(--lum-ink); border-color:var(--lum-glass-bd-2); }
+.shelf-filter .n{ font-family:var(--lum-mono); font-size:11px; opacity:.7; }
+.shelf-lens-ask{ display:block; width:100%; margin-top:8px; text-align:left; font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-gold); background:transparent; border:1px dashed var(--lum-glass-bd-2); border-radius:8px; padding:8px 12px; cursor:pointer; }
+.shelf-lens-ask:hover{ color:var(--lum-ink); border-color:var(--lum-gold); }
+
+/* main + grids — components.css:11336-11338 */
+.shelf-main{ min-width:0; }
+.shelf-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:26px 18px; }
+.shelf-rows{ display:none; flex-direction:column; }         /* toggled by the Covers|List seg */
+
+/* ===== BOOK CARD — base structure (components.css:2320-2500) merged with the
+        Amber skin (components.css:11341-11353). KEPT per Decision 6. ===== */
+.shelf-book{ position:relative; display:flex; flex-direction:column; color:var(--lum-ink); text-decoration:none; cursor:pointer; transition:transform var(--motion-base) var(--ease), box-shadow var(--motion-base) var(--ease); }
+.shelf-book:hover{ transform:translateY(-3px); }
+.shelf-book-cover-area{ position:relative; width:100%; aspect-ratio:2/3; margin-bottom:16px; overflow:hidden;
+  background:rgba(24,16,6,.5); border:1px solid var(--lum-glass-bd-2); border-radius:3px 6px 6px 3px;
+  box-shadow:0 12px 24px -12px rgba(0,0,0,.72), inset 1px 0 0 rgba(255,255,255,.07); }
+.shelf-book:hover .shelf-book-cover-area{ box-shadow:0 20px 32px -14px rgba(0,0,0,.78), inset 1px 0 0 rgba(255,255,255,.09); }
+.shelf-book.is-alight .shelf-book-cover-area{ box-shadow:0 12px 26px -10px rgba(0,0,0,.7), 0 0 22px -3px rgba(255,206,74,.42), inset 1px 0 0 rgba(255,255,255,.07); }
+.shelf-book.is-alight:hover .shelf-book-cover-area{ box-shadow:0 20px 34px -12px rgba(0,0,0,.78), 0 0 30px -2px rgba(255,206,74,.55), inset 1px 0 0 rgba(255,255,255,.09); }
+/* faux cover = the live cover-pending placeholder look (components.css:2405-2432 +
+   Amber cloth 11346). Live renders a real <img> via buildSelfHealingCover; a
+   standalone file has no images, so every card uses the cloth placeholder. */
+.shelf-book-cover-placeholder{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:16px 12px; text-align:center; width:100%; height:100%;
+  background:linear-gradient(155deg, var(--lum-cloth), rgba(24,16,6,.94)); }
+.shelf-book-cover-pending-title{ font-family:var(--lum-serif); font-style:italic; font-size:16px; line-height:1.16; color:var(--lum-ink-2); }
+.shelf-book-cover-pending{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.08em; text-transform:lowercase; color:var(--lum-ink-3); }
+
+/* register tick — base components.css:2438-2445. KEPT EXACTLY per Decision 3
+   (left-edge 3px bar, colored by tradition via --tick = var(--register-*)). */
+.shelf-book-tick{ position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--tick); }
+
+/* alight gold root-mark — components.css:11349 */
+.shelf-book-rmark{ position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 45%, var(--lum-gold-d) 100%); box-shadow:0 0 8px var(--lum-gold); }
+
+/* title / author — components.css:2447-2471 + Amber 11350-11351 */
+.shelf-book-title{ margin:0; font-family:var(--lum-serif); font-weight:600; font-size:15px; line-height:1.12; color:var(--lum-ink);
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.shelf-book-author{ margin:6px 0 0; font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3);
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; }
+.shelf-book-meta{ margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+/* status label — base components.css:2481-2493 + Amber 11352 (mono uppercase gold) */
+.shelf-book-status{ display:inline-flex; align-items:center; gap:6px; font-family:var(--lum-mono); font-size:9.5px; line-height:1.2; letter-spacing:.08em; text-transform:uppercase; color:var(--lum-gold); }
+
+/* EVOLVED #7: state-COLORED reading-status dot. Live is a flat 5x5 var(--gold)
+   SQUARE with ZERO state encoding (components.css:2495-2500 / Amber 11353 — all
+   three states paint identically; cross-check CX-4). Here the ::before becomes a
+   round dot colored per state; the mono text label is KEPT alongside it. */
+.shelf-book-status::before{ content:''; width:7px; height:7px; border-radius:50%; flex:none; background:var(--lum-gold); }
+.shelf-book-status-reading::before{ background:var(--status-reading); box-shadow:0 0 7px rgba(255,206,74,.6); }   /* reading = gold */
+.shelf-book-status-read::before{ background:var(--status-read); }                                                  /* read = green */
+.shelf-book-status-will-read::before{ background:var(--status-will); border:1.5px solid var(--lum-ink-4); width:8px; height:8px; }  /* want = hollow ring */
+
+/* EVOLVED #1 + #8: ARC THREAD-TIE — a thin colored bar down the LEFT SPINE,
+   colored by the book's PRIMARY arc. Sits just inside the register tick so both
+   coexist (register tick KEPT at left:0 per Decision 3; see Fork A in the eval).
+   A book with no tradition shows only the arc thread at the spine. */
+.shelf-book-arcthread{ position:absolute; left:3px; top:0; bottom:0; width:4px; border-radius:0 3px 3px 0; background:var(--arc); box-shadow:0 0 10px -2px var(--arc); }
+.shelf-book:not(.has-tick) .shelf-book-arcthread{ left:0; }   /* no register tick -> hug the edge */
+
+/* EVOLVED #1: tap-to-reveal ALL arcs (books are intersectional). Hidden at rest;
+   .arcs-open (set on card tap) reveals the chip stack. */
+.shelf-book-arcs{ display:none; flex-wrap:wrap; gap:5px; margin-top:9px; }
+.shelf-book.arcs-open .shelf-book-arcs{ display:flex; }
+.arc-chip{ display:inline-flex; align-items:center; gap:6px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.02em; color:var(--lum-ink-2); background:rgba(255,236,200,.05); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill); padding:3px 9px; }
+.arc-chip::before{ content:''; width:7px; height:7px; border-radius:50%; background:var(--arc); box-shadow:0 0 6px -1px var(--arc); flex:none; }
+.arc-chip.is-primary{ border-color:var(--arc); color:var(--lum-ink); }
+
+/* EVOLVED #2: per-card select checkbox overlay, shown only in Select mode. */
+.shelf-book-check{ display:none; position:absolute; top:7px; left:7px; z-index:3; width:22px; height:22px; border-radius:50%; border:2px solid var(--lum-glass-bd); background:rgba(24,16,6,.7); }
+.shelf.is-selecting .shelf-book-check{ display:block; }
+.shelf.is-selecting .shelf-book{ cursor:copy; }
+.shelf-book.is-picked .shelf-book-check{ background:var(--lum-gold); border-color:var(--lum-gold); }
+.shelf-book.is-picked .shelf-book-check::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--lum-gold-ink); font-size:13px; font-weight:700; }
+.shelf-book.is-picked .shelf-book-cover-area{ outline:2px solid var(--lum-gold); outline-offset:2px; }
+
+/* list rows — components.css:11356-11361 + base 1373 */
+.shelf-book-row{ position:relative; display:flex; align-items:center; gap:15px; padding:11px 4px 11px 12px; border-bottom:1px solid var(--lum-glass-bd-2); color:var(--lum-ink); text-decoration:none; }
+.shelf-book-row:hover{ background:rgba(255,236,200,.06); }
+.shelf-book-row-title{ font-family:var(--lum-serif); font-weight:600; font-size:16px; color:var(--lum-ink); }
+.shelf-book-row-author{ font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); }
+.shelf-book-row .shelf-book-status{ margin-left:auto; }
+.shelf-book-row-rmark{ position:static; flex:none; width:7px; height:7px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 45%, var(--lum-gold-d) 100%); box-shadow:0 0 7px var(--lum-gold); }
+/* EVOLVED #1/#8 (list form): the arc thread rides the row's left edge too. */
+.shelf-book-row .shelf-book-arcthread{ left:0; width:3px; border-radius:0; }
+
+/* alight legend — components.css:11368-11370 */
+.shelf-rootednote{ margin:26px 0 0; font-family:var(--lum-sans); font-size:12px; color:var(--lum-ink-3); display:flex; align-items:center; gap:9px; }
+.shelf-rootednote-mark{ flex:none; width:13px; height:13px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--lum-gold-l) 0%, var(--lum-gold) 45%, var(--lum-gold-d) 100%); box-shadow:0 0 10px rgba(255,206,74,.6); }
+.shelf-rootednote b{ color:var(--lum-ink-2); font-weight:600; }
+
+/* EVOLVED #2: Move-to-arc action bar — the ONLY bulk action (no archive, no
+   bulk delete). Slides up when Select mode has >=1 book picked. */
+.shelf-selectbar{ position:fixed; left:0; right:0; bottom:0; z-index:60; transform:translateY(110%); transition:transform var(--motion-base) var(--ease);
+  display:flex; align-items:center; gap:14px; justify-content:center; flex-wrap:wrap;
+  padding:14px 22px; background:var(--lum-base); border-top:1px solid var(--lum-glass-bd); box-shadow:0 -16px 40px -20px rgba(0,0,0,.8); }
+.shelf.is-selecting .shelf-selectbar.has-pick{ transform:none; }
+.shelf-selectbar .count{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.04em; color:var(--lum-ink-2); }
+.shelf-selectbar .count b{ color:var(--lum-gold); font-weight:500; }
+.shelf-selectbar .move{ font-family:var(--lum-sans); font-size:13px; font-weight:600; color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border:none; border-radius:var(--lum-r-pill); padding:9px 18px; cursor:pointer; }
+.shelf-selectbar .cancel{ font-family:var(--lum-sans); font-size:13px; color:var(--lum-ink-3); background:transparent; border:none; cursor:pointer; }
+.shelf-selectbar .cancel:hover{ color:var(--lum-ink); }
+
+/* desktop: Filters toggle hidden (sidebar always shown) — components.css:11373-11375 */
+.shelf-filters-btn{ display:none; }
+
+/* ===== 759 reflow (components.css:11377-11399) — single column; sidebar -> drawer ===== */
+.shelf-sidebar-backdrop{ display:none; position:fixed; inset:0; z-index:130; background:rgba(15,9,4,.6); }
+.shelf-sidebar-backdrop.is-open{ display:block; }
+.shelf-sidebar-close{ display:none; }
+@media (max-width:759px){
+  .shelf > *{ padding-left:16px; padding-right:16px; }
+  .shelf-layout{ grid-template-columns:1fr; }
+  .shelf-grid{ grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
+  .shelf-filters-btn{ display:inline-flex; }
+  .shelf-side{ position:fixed; top:0; bottom:0; left:0; width:264px; z-index:131;
+    background:var(--lum-base); border-right:1px solid var(--lum-glass-bd-2);
+    padding:24px 20px; overflow-y:auto; transform:translateX(-110%); transition:transform var(--motion-base) var(--ease); }
+  .shelf-side.is-open{ transform:none; }
+  .shelf-sidebar-close{ display:block; position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--lum-ink-3); font-size:22px; line-height:1; cursor:pointer; }
+  .btn,.chip,.seg-opt{ min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .shelf-filter{ min-height:44px; }
+  .shelf-selectbar{ padding:12px 16px; }
+}
+
+/* ============================================================================
+   .skin-universal — Universal v1.2 LIGHT-GROUND alternate skin for the Shelf.
+   Synthesized by the studio design panel (3 lenses → judge) against the
+   Universal token sheet §1-§3 + the §8 depth recipes (universal-depth.css).
+   Added to <body> by the skin toggle. PURELY ADDITIVE: it re-points the --lum-*
+   vars the base CSS already consumes + a restrained set of §8 recipe / gold-role
+   rules. It edits NO existing rule — remove the class and the CURRENT dark Amber
+   skin returns byte-identical. Every property is color / background / gradient /
+   box-shadow / border-color ONLY — never a layout property. The amber register
+   tick (.shelf-book-tick / --tick) is deliberately NOT touched (locked #3).
+   Recipes applied: 6 atmospheric ground · 4 one lamplight (head) · 3 ink-to-gold
+   (title) · 5 gilded button (Add a book) · 2 luminous marks (alight + reading).
+   Rejected as decoration: 1 gilded hairline · 7 constellation thread · 8 (already
+   carried by the arc field hues — and the per-card arc glow is CUT).
+   ============================================================================ */
+
+/* 1 · token re-points — the same --lum-* vars the base consumes, swapped to
+   Universal light values (§1-§3), + host-contract/decorative tokens the recipes read */
+.skin-universal{
+  /* host-contract + decorative depth tokens (read by the recipe rules) */
+  --paper:#f4efe4;
+  --ink:#241710;
+  --gold:#a8761a;        /* GOLD ROLE 1 · interactive / fill            */
+  --gold-deep:#855410;   /* GOLD ROLE   · deep gold for small TEXT (AA) */
+  --gold-hi:#d9a441;     /* GOLD ROLE 2 · gilding — edge + glow ONLY    */
+  --lum-star:#ffce4a;    /* GOLD ROLE 3 · luminous — true glow ONLY     */
+  --field-1:#f2c25a;
+  /* surfaces — solid on light (translucent glass is a dark-ground device) */
+  --lum-base:#fffdf8;       /* §3 surface — raised panels: sort menu, select bar, mobile drawer */
+  --lum-glass:#efe7d6;      /* §2 surface-2 — quiet parchment button/chip fill */
+  --lum-glass-bd:#e3d8c1;   /* §3 --line — warm opaque hairline */
+  --lum-glass-bd-2:#e3d8c1; /* 2nd hairline tier collapses to the one light --line */
+  --lum-cloth:#e3d8c1;      /* cover-placeholder base (bg also overridden below) */
+  /* ink ramp — tertiary held at ink-2 for WCAG AA (canon #978b6d = ~2.9:1 on paper) */
+  --lum-ink:#241710;        /* §3 --ink   (~13:1 on card) */
+  --lum-ink-2:#645940;      /* §3 --ink-2 (~6:1 on ground) */
+  --lum-ink-3:#645940;      /* AA collapse: #978b6d fails <18px, text tier holds at --ink-2 */
+  --lum-ink-4:#978b6d;      /* freed #978b6d -> dim placeholder + will-read ring only (non-body-text) */
+  /* gold — shared var becomes interactive fill; small text + glow peeled off below */
+  --lum-gold:#a8761a;       /* every FILL site (picked check + selection outline) -> interactive gold */
+  --lum-gold-ink:#3d2807;   /* dark ink on gold fills */
+  --status-reading:var(--lum-star);  /* reading = active STATE -> stays luminous */
+}
+
+/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground (page identity). Keeps the
+   dark-skin wash geometry (16%/88%/64%); pitched UNDER the v3 ceiling for AA.
+   background-image (not shorthand) so background-attachment:fixed survives. */
+body.skin-universal,
+.skin-universal body{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+
+/* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash on the identity head.
+   Background only (no position change); lightens toward cream so the dark
+   title/meta above it stay well over AA. */
+.skin-universal .shelf-head{
+  background:radial-gradient(120% 180% at 22% 60%, rgba(242,194,90,.22) 0%, rgba(242,194,90,0) 70%);
+}
+
+/* 4 · RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
+.skin-universal .shelf-title{
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+
+/* 5 · RECIPE 5 · gilded button — the SINGLE glowing primary action */
+.skin-universal .btn-primary{
+  color:#3d2807; border-color:var(--gold-deep);
+  background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+}
+.skin-universal .btn-primary:hover{
+  color:#3d2807; filter:none;
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72);
+}
+
+/* 6 · RECIPE 2 · keep presence/state marks LUMINOUS after the gold re-point
+   (interactive gold would go dull). Presence = alight root-marks; state = reading dot. */
+.skin-universal .shelf-book-rmark,
+.skin-universal .shelf-book-row-rmark,
+.skin-universal .shelf-rootednote-mark{
+  background:radial-gradient(circle at 38% 32%, #fff4d6 0%, var(--lum-star) 45%, var(--gold) 100%);
+}
+.skin-universal .shelf-book-rmark{ box-shadow:0 0 8px var(--lum-star); }
+.skin-universal .shelf-book-row-rmark{ box-shadow:0 0 7px var(--lum-star); }
+.skin-universal .shelf-rootednote-mark{ box-shadow:0 0 10px rgba(255,206,74,.6); }
+
+/* 7 · GOLD ROLE-SPLIT · small gold TEXT -> deep gold for WCAG AA
+   (never interactive #a8761a as text, never luminous #ffce4a as text) */
+.skin-universal .shelf-book-status,
+.skin-universal .shelf-side h3,
+.skin-universal .shelf-filter-label,
+.skin-universal .shelf-lens-ask,
+.skin-universal .shelf-sort-menu button.is-on,
+.skin-universal .shelf-selectbar .count b{
+  color:var(--gold-deep);
+}
+.skin-universal .shelf-select-toggle.is-armed{ color:var(--gold-deep); border-color:var(--gold); }
+
+/* 8 · GOLD ROLE-SPLIT · FILLS -> AA-safe warm-gold pills (flat, no glow, so the
+   gilded button stays the one standout) */
+.skin-universal .seg-opt.is-on{ background:linear-gradient(180deg,#f2c25a,#e0a838); color:#3d2807; }
+.skin-universal .shelf-selectbar .move{ background:linear-gradient(180deg,#f2c25a,#d9a441); color:#3d2807; }
+
+/* 9 · RESTRAINT · arc thread + chip = SOLID field hue, NO per-card glow (law 1/5:
+   nothing decorative glows, list rows don't glow by default — the bar carries the meaning) */
+.skin-universal .shelf-book-arcthread{ box-shadow:none; }
+.skin-universal .arc-chip::before{ box-shadow:none; }
+
+/* 10 · LITERAL RESCUES · base rules that hardcode dark/near-white values the token
+   swap cannot reach, each retargeted to a light value (color/bg only) */
+.skin-universal .shelf-book-cover-area{ background:#efe7d6; }
+.skin-universal .shelf-book-cover-placeholder{ background:linear-gradient(155deg,#efe7d6,#e3d8c1); }
+.skin-universal .seg-opt{ color:var(--lum-ink-2); }                 /* inactive label was near-white */
+.skin-universal .shelf-yumiline p{ color:#256b80; }                  /* pale cyan #c4eafa -> AA deep teal; cyan DOT kept */
+.skin-universal .shelf-filter:hover,
+.skin-universal .shelf-filter.is-on{ background:#efe7d6; }
+/* ============================================================================ */
+</style>
+</head>
+<body>
+
+<!-- MOCKUP CONTROL (not part of the shelf design): flip the skin, one DOM two skins -->
+<div class="skin-toggle" role="group" aria-label="Mockup skin — Current or Universal v1.2">
+  <span class="skin-toggle-label">skin</span>
+  <button type="button" class="skin-toggle-btn is-on" data-skin="current">Current</button>
+  <button type="button" class="skin-toggle-btn" data-skin="universal">Universal v1.2</button>
+</div>
+
+<section class="shelf" id="shelf">
+
+  <!-- head: real "Your shelf" + the mono count line (renderShelf 3766-3817) -->
+  <div class="shelf-head">
+    <h1 class="shelf-title">Your shelf</h1>
+    <span class="shelf-count">8 books · 3 reading · 3 finished</span>
+  </div>
+
+  <!-- S-D1 deterministic reading line in Yumi's cyan voice (renderShelf 3821-3834) -->
+  <div class="shelf-yumiline">
+    <span class="dot" aria-hidden="true"></span>
+    <p>Your shelf leans toward Liberation — three books thinking through freedom and its cost.</p>
+  </div>
+
+  <!-- toolbar (renderShelf 3836-3998, canon 4-E declutter) -->
+  <div class="shelf-toolbar">
+    <!-- Decision 5 EXISTS: persistent Add-book primary (kept exactly) -->
+    <button type="button" class="btn btn-primary">＋ Add a book</button>
+
+    <!-- Covers | List segmented (renderShelf 3857-3883) -->
+    <div class="seg" role="tablist" aria-label="Shelf view">
+      <button type="button" class="seg-opt is-on" data-view="covers">Covers</button>
+      <button type="button" class="seg-opt" data-view="list">List</button>
+    </div>
+
+    <!-- EVOLVED #4: sort control (date-added default + reading status). Grouping is
+         NOT duplicated here — it lives on the sidebar Lenses|Categories seg. -->
+    <div class="shelf-sort">
+      <button type="button" class="shelf-sort-btn" id="sortBtn">Sort: <span id="sortLabel">Date added</span> <span class="caret">▼</span></button>
+      <div class="shelf-sort-menu" id="sortMenu">
+        <button type="button" class="is-on" data-sort="added">Date added</button>
+        <button type="button" data-sort="status">Reading status</button>
+      </div>
+    </div>
+
+    <!-- EVOLVED #2: Select mode toggle. Its only bulk action is Move to arc. -->
+    <button type="button" class="btn chip shelf-select-toggle" id="selectToggle">Select</button>
+
+    <!-- Filters toggle (mobile only; desktop sidebar is always shown) -->
+    <button type="button" class="btn chip shelf-filters-btn" id="filtersBtn">Filters</button>
+
+    <span class="spacer"></span>
+
+    <!-- secondary actions -> quiet chips (renderShelf 3910-3977) -->
+    <button type="button" class="chip">Scan shelf</button>
+    <button type="button" class="chip">Scan barcode</button>
+    <button type="button" class="chip">Bulk add</button>
+    <button type="button" class="chip">Resolve covers</button>
+    <button type="button" class="chip">Tidy library</button>
+
+    <!-- in-page search (renderShelf 3980-3996) -->
+    <div class="nav-search">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" placeholder="Filter shelf…" aria-label="Filter shelf">
+    </div>
+  </div>
+
+  <!-- two-column layout (renderShelf 4151 + components.css:11318) -->
+  <div class="shelf-layout">
+
+    <!-- sidebar (append order: Reading status -> Lenses|Categories seg -> Lenses -> Author) -->
+    <aside class="shelf-side" id="side">
+      <button type="button" class="shelf-sidebar-close" id="sideClose" aria-label="Close filters">×</button>
+
+      <!-- Reading status rail (renderShelf 4285-4346) -->
+      <div class="shelf-filter-group">
+        <h3 class="shelf-filter-label">Reading status</h3>
+        <ul class="shelf-filter-list">
+          <li class="shelf-filter is-on">All <span class="n">8</span></li>
+          <li class="shelf-filter">Reading <span class="n">3</span></li>
+          <li class="shelf-filter">Finished <span class="n">3</span></li>
+          <li class="shelf-filter">Unread <span class="n">2</span></li>
+        </ul>
+      </div>
+
+      <!-- grouping seg (Decision 4 EXISTS — grouping stays here, not the toolbar) -->
+      <div class="seg" role="tablist" aria-label="Group by">
+        <button type="button" class="seg-opt is-on">Lenses</button>
+        <button type="button" class="seg-opt">Categories</button>
+      </div>
+
+      <!-- Lenses rail (renderShelf 4197-4283) -->
+      <div class="shelf-filter-group">
+        <h3 class="shelf-filter-label">Lenses</h3>
+        <ul class="shelf-filter-list">
+          <li class="shelf-filter">Sociology <span class="n">3</span></li>
+          <li class="shelf-filter">Memoir <span class="n">3</span></li>
+          <li class="shelf-filter">Fiction <span class="n">1</span></li>
+          <li class="shelf-filter">History <span class="n">1</span></li>
+        </ul>
+        <button type="button" class="shelf-lens-ask">Ask Yumi for more lenses</button>
+      </div>
+
+      <!-- Author rail (renderShelf 4548-4603) -->
+      <div class="shelf-filter-group">
+        <h3 class="shelf-filter-label">Author</h3>
+        <ul class="shelf-filter-list">
+          <li class="shelf-filter">Anne Lamott <span class="n">1</span></li>
+          <li class="shelf-filter">Bell / Freire <span class="n">1</span></li>
+          <li class="shelf-filter">Toni Morrison <span class="n">1</span></li>
+          <li class="shelf-filter">Tara Westover <span class="n">1</span></li>
+        </ul>
+      </div>
+    </aside>
+    <div class="shelf-sidebar-backdrop" id="backdrop"></div>
+
+    <div class="shelf-main">
+
+      <!-- ===== COVERS GRID (renderShelf 4864-4872 -> renderShelfBook 4914) ===== -->
+      <div class="shelf-grid" id="grid">
+
+        <!-- 1 · Educated — reading — arcs: Education&Power (primary) + The Self — alight — tradition: memoir -->
+        <a class="shelf-book is-alight has-tick" href="#book/educated"
+           data-status="reading" data-added="8">
+          <div class="shelf-book-cover-area">
+            <!-- EVOLVED #1/#8: arc thread (primary arc = Education & Power) -->
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-education)" aria-hidden="true"></span>
+            <!-- register tick KEPT (Decision 3): tradition = memoir -->
+            <span class="shelf-book-tick" style="--tick:#8a9bb0" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">Educated</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-rmark" aria-hidden="true"></span>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">Educated</h2>
+          <p class="shelf-book-author">Tara Westover</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-reading">reading</span>
+          </div>
+          <!-- EVOLVED #1: tap reveals ALL arcs (intersectional) -->
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-education)">Education &amp; Power</span>
+            <span class="arc-chip" style="--arc:var(--arc-self)">The Self</span>
+          </div>
+        </a>
+
+        <!-- 2 · Pedagogy of the Oppressed — read — arcs: Education&Power (primary) + Liberation — alight — theory -->
+        <a class="shelf-book is-alight has-tick" href="#book/pedagogy"
+           data-status="read" data-added="7">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-education)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#6b4f2a" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">Pedagogy of the Oppressed</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-rmark" aria-hidden="true"></span>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">Pedagogy of the Oppressed</h2>
+          <p class="shelf-book-author">Paulo Freire</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-read">read</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-education)">Education &amp; Power</span>
+            <span class="arc-chip" style="--arc:var(--arc-liberation)">Liberation</span>
+          </div>
+        </a>
+
+        <!-- 3 · The Body Keeps the Score — reading — arc: The Self (primary) — empirical -->
+        <a class="shelf-book has-tick" href="#book/body"
+           data-status="reading" data-added="6">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-self)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#b08a4a" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">The Body Keeps the Score</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">The Body Keeps the Score</h2>
+          <p class="shelf-book-author">Bessel van der Kolk</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-reading">reading</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-self)">The Self</span>
+          </div>
+        </a>
+
+        <!-- 4 · Beloved — read — arcs: Grief&Memory (primary) + Liberation — alight — novel -->
+        <a class="shelf-book is-alight has-tick" href="#book/beloved"
+           data-status="read" data-added="5">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-grief)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#c9a85a" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">Beloved</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-rmark" aria-hidden="true"></span>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">Beloved</h2>
+          <p class="shelf-book-author">Toni Morrison</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-read">read</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-grief)">Grief &amp; Memory</span>
+            <span class="arc-chip" style="--arc:var(--arc-liberation)">Liberation</span>
+          </div>
+        </a>
+
+        <!-- 5 · Bird by Bird — will-read — arc: Craft of Writing (primary) — practice -->
+        <a class="shelf-book has-tick" href="#book/birdbybird"
+           data-status="will-read" data-added="4">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-craft)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#8a7d62" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">Bird by Bird</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">Bird by Bird</h2>
+          <p class="shelf-book-author">Anne Lamott</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-will-read">will-read</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-craft)">Craft of Writing</span>
+          </div>
+        </a>
+
+        <!-- 6 · The Souls of Black Folk — reading — arcs: Liberation (primary) + Education&Power — theory -->
+        <a class="shelf-book has-tick" href="#book/souls"
+           data-status="reading" data-added="3">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-liberation)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#6b4f2a" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">The Souls of Black Folk</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">The Souls of Black Folk</h2>
+          <p class="shelf-book-author">W. E. B. Du Bois</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-reading">reading</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-liberation)">Liberation</span>
+            <span class="arc-chip" style="--arc:var(--arc-education)">Education &amp; Power</span>
+          </div>
+        </a>
+
+        <!-- 7 · On Writing — read — arc: Craft of Writing (primary) — memoir (no register token seeded) -->
+        <a class="shelf-book" href="#book/onwriting"
+           data-status="read" data-added="2">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-craft)" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">On Writing</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">On Writing</h2>
+          <p class="shelf-book-author">Stephen King</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-read">read</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-craft)">Craft of Writing</span>
+          </div>
+        </a>
+
+        <!-- 8 · Just Mercy — will-read — arc: Liberation (primary) — history -->
+        <a class="shelf-book has-tick" href="#book/justmercy"
+           data-status="will-read" data-added="1">
+          <div class="shelf-book-cover-area">
+            <span class="shelf-book-arcthread" style="--arc:var(--arc-liberation)" aria-hidden="true"></span>
+            <span class="shelf-book-tick" style="--tick:#a8894a" aria-hidden="true"></span>
+            <div class="shelf-book-cover-placeholder">
+              <span class="shelf-book-cover-pending-title">Just Mercy</span>
+              <span class="shelf-book-cover-pending">cover pending</span>
+            </div>
+            <span class="shelf-book-check" aria-hidden="true"></span>
+          </div>
+          <h2 class="shelf-book-title">Just Mercy</h2>
+          <p class="shelf-book-author">Bryan Stevenson</p>
+          <div class="shelf-book-meta">
+            <span class="shelf-book-status shelf-book-status-will-read">will-read</span>
+          </div>
+          <div class="shelf-book-arcs">
+            <span class="arc-chip is-primary" style="--arc:var(--arc-liberation)">Liberation</span>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- ===== LIST ROWS (renderShelf 4856-4863 -> renderShelfBookRow 5022). Hidden
+           until the Covers|List seg flips; mirrors the live view switch. ===== -->
+      <div class="shelf-rows" id="rows">
+        <a class="shelf-book-row" href="#book/educated">
+          <span class="shelf-book-arcthread" style="--arc:var(--arc-education)" aria-hidden="true"></span>
+          <span class="shelf-book-row-rmark" aria-hidden="true"></span>
+          <span class="shelf-book-row-title">Educated</span>
+          <span class="shelf-book-row-author">Tara Westover</span>
+          <span class="shelf-book-status shelf-book-status-reading">reading</span>
+        </a>
+        <a class="shelf-book-row" href="#book/pedagogy">
+          <span class="shelf-book-arcthread" style="--arc:var(--arc-education)" aria-hidden="true"></span>
+          <span class="shelf-book-row-rmark" aria-hidden="true"></span>
+          <span class="shelf-book-row-title">Pedagogy of the Oppressed</span>
+          <span class="shelf-book-row-author">Paulo Freire</span>
+          <span class="shelf-book-status shelf-book-status-read">read</span>
+        </a>
+        <a class="shelf-book-row" href="#book/body">
+          <span class="shelf-book-arcthread" style="--arc:var(--arc-self)" aria-hidden="true"></span>
+          <span class="shelf-book-row-title">The Body Keeps the Score</span>
+          <span class="shelf-book-row-author">Bessel van der Kolk</span>
+          <span class="shelf-book-status shelf-book-status-reading">reading</span>
+        </a>
+        <a class="shelf-book-row" href="#book/beloved">
+          <span class="shelf-book-arcthread" style="--arc:var(--arc-grief)" aria-hidden="true"></span>
+          <span class="shelf-book-row-rmark" aria-hidden="true"></span>
+          <span class="shelf-book-row-title">Beloved</span>
+          <span class="shelf-book-row-author">Toni Morrison</span>
+          <span class="shelf-book-status shelf-book-status-read">read</span>
+        </a>
+        <a class="shelf-book-row" href="#book/justmercy">
+          <span class="shelf-book-arcthread" style="--arc:var(--arc-liberation)" aria-hidden="true"></span>
+          <span class="shelf-book-row-title">Just Mercy</span>
+          <span class="shelf-book-row-author">Bryan Stevenson</span>
+          <span class="shelf-book-status shelf-book-status-will-read">will-read</span>
+        </a>
+      </div>
+
+      <!-- alight legend (renderShelf 4875-4888) -->
+      <p class="shelf-rootednote">
+        <span class="shelf-rootednote-mark" aria-hidden="true"></span>
+        <b>Alight</b> = this book has grown into your thinking — marginalia, or a sub-theory built from it. The rest are read or waiting.
+      </p>
+    </div>
+  </div>
+
+  <!-- EVOLVED #2: Move-to-arc bar — the single bulk action -->
+  <div class="shelf-selectbar" id="selectbar">
+    <span class="count"><b id="pickCount">0</b> selected</span>
+    <button type="button" class="move" id="moveBtn">Move to an arc…</button>
+    <button type="button" class="cancel" id="cancelSelect">Cancel</button>
+  </div>
+
+</section>
+
+<script>
+/* Standalone mockup interactivity. This is a design artifact under docs/ — NOT
+   served app code — so modern JS is fine here (the ES3 client rule governs js/). */
+(function(){
+  var shelf = document.getElementById('shelf');
+
+  /* --- MOCKUP CONTROL: skin swap (Current default ⇄ Universal v1.2). Toggles
+     .skin-universal on <body>; one DOM, two skins — only tokens/recipes differ. --- */
+  var skinBtns = document.querySelectorAll('.skin-toggle-btn');
+  Array.prototype.forEach.call(skinBtns, function(btn){
+    btn.addEventListener('click', function(){
+      var universal = btn.getAttribute('data-skin') === 'universal';
+      document.body.classList.toggle('skin-universal', universal);
+      Array.prototype.forEach.call(skinBtns, function(b){ b.classList.toggle('is-on', b === btn); });
+    });
+  });
+
+  /* --- Covers | List view switch --- */
+  var grid = document.getElementById('grid');
+  var rows = document.getElementById('rows');
+  Array.prototype.forEach.call(document.querySelectorAll('.shelf-toolbar .seg-opt'), function(opt){
+    opt.addEventListener('click', function(){
+      var v = opt.getAttribute('data-view'); if(!v) return;
+      Array.prototype.forEach.call(document.querySelectorAll('.shelf-toolbar .seg-opt'), function(o){ o.classList.remove('is-on'); });
+      opt.classList.add('is-on');
+      grid.style.display = (v === 'covers') ? 'grid' : 'none';
+      rows.style.display = (v === 'list') ? 'flex' : 'none';
+    });
+  });
+
+  /* --- EVOLVED #4: sort menu (visual-only reorder by the data-* keys) --- */
+  var sortBtn = document.getElementById('sortBtn'), sortMenu = document.getElementById('sortMenu'), sortLabel = document.getElementById('sortLabel');
+  sortBtn.addEventListener('click', function(e){ e.stopPropagation(); sortMenu.classList.toggle('is-open'); });
+  document.addEventListener('click', function(){ sortMenu.classList.remove('is-open'); });
+  Array.prototype.forEach.call(sortMenu.querySelectorAll('button'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(sortMenu.querySelectorAll('button'), function(x){ x.classList.remove('is-on'); });
+      b.classList.add('is-on'); sortLabel.textContent = b.textContent;
+      var key = b.getAttribute('data-sort');
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.shelf-book'));
+      var rank = { reading:0, 'will-read':1, read:2 };
+      cards.sort(function(a,b2){
+        if(key === 'status'){ return rank[a.getAttribute('data-status')] - rank[b2.getAttribute('data-status')]; }
+        return (+b2.getAttribute('data-added')) - (+a.getAttribute('data-added'));  /* date added desc */
+      });
+      cards.forEach(function(c){ grid.appendChild(c); });
+    });
+  });
+
+  /* --- EVOLVED #1: tap a card -> reveal ALL its arcs (unless in Select mode) --- */
+  Array.prototype.forEach.call(grid.querySelectorAll('.shelf-book'), function(card){
+    card.addEventListener('click', function(e){
+      if(shelf.classList.contains('is-selecting')){ e.preventDefault(); toggle(card); return; }
+      e.preventDefault();                         /* mockup: don't navigate */
+      card.classList.toggle('arcs-open');
+    });
+  });
+
+  /* --- EVOLVED #2: Select mode + Move-to-arc bar --- */
+  var selectToggle = document.getElementById('selectToggle');
+  var selectbar = document.getElementById('selectbar');
+  var pickCount = document.getElementById('pickCount');
+  function refresh(){
+    var n = grid.querySelectorAll('.shelf-book.is-picked').length;
+    pickCount.textContent = n;
+    selectbar.classList.toggle('has-pick', n > 0);
+  }
+  function toggle(card){ card.classList.toggle('is-picked'); refresh(); }
+  selectToggle.addEventListener('click', function(){
+    var on = shelf.classList.toggle('is-selecting');
+    selectToggle.classList.toggle('is-armed', on);
+    if(!on){ clearPicks(); }
+  });
+  function clearPicks(){
+    Array.prototype.forEach.call(grid.querySelectorAll('.shelf-book.is-picked'), function(c){ c.classList.remove('is-picked'); });
+    refresh();
+  }
+  document.getElementById('cancelSelect').addEventListener('click', function(){
+    shelf.classList.remove('is-selecting'); selectToggle.classList.remove('is-armed'); clearPicks();
+  });
+  document.getElementById('moveBtn').addEventListener('click', function(){
+    var n = grid.querySelectorAll('.shelf-book.is-picked').length;
+    alert('Move ' + n + ' book' + (n===1?'':'s') + ' to an arc — the picker would open here. (Move to arc is the only bulk action.)');
+  });
+
+  /* --- mobile filter drawer (mirrors live openShelfFilterPanel) --- */
+  var side = document.getElementById('side'), backdrop = document.getElementById('backdrop');
+  function openDrawer(){ side.classList.add('is-open'); backdrop.classList.add('is-open'); }
+  function closeDrawer(){ side.classList.remove('is-open'); backdrop.classList.remove('is-open'); }
+  document.getElementById('filtersBtn').addEventListener('click', openDrawer);
+  document.getElementById('sideClose').addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+})();
+</script>
+</body>
+</html>

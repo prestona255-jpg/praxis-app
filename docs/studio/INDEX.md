@@ -3,16 +3,28 @@
 The studio is how Praxis gets built now: a repeatable loop, one surface at a
 time, until the whole app has been walked.
 
-## The loop — scan → shape → build → close
+## The loop — scan → shape-A → shape-B → build → close
 
-- **scan** — the `studio-scan` agent audits ONE surface through seven fixed
-  lenses and drafts a round brief into that surface's file.
-- **shape** — the forks the scan raises are resolved with Preston; the surface's
-  mockup is reconstructed against the Universal token sheet.
+Five beats, one surface at a time. The first round on a surface opens with a
+dedicated **scan**; from the second round on, the scan folds into **shape-B**'s
+evaluate step (the mockup-wright re-reads the live surface as it rebuilds), so the
+steady-state loop is the four that follow it.
+
+- **scan** — the `studio-scan` agent audits ONE surface through seven fixed lenses
+  and drafts a round brief (ranked gaps + pre-written forks) into that surface's
+  file. First-round instrument; later rounds inherit the ledger and re-verify
+  inside shape-B instead.
+- **shape-A · forks** — the forks the scan raised are resolved with Preston in
+  chat. The locked answers become the round's decision list.
+- **shape-B · mockup** — the `studio-mockup` agent evaluates the live surface
+  against the locked decisions and rebuilds the surface's mockup —
+  `docs/studio/mockups/<slug>.html` — additive-only, app code read-only, the
+  evaluation appended to the surface ledger and `mockup:` + `state: shaped` set
+  in its frontmatter.
 - **build** — a staged Claude Code build under FIX-PROTOCOL discipline,
-  self-verified gates, one commit.
-- **close** — a round closes ONLY on Preston's felt pass. The surface markdown
-  and `sequence.md` are updated and `tools/studio-build` is re-run.
+  self-verified gates, one commit — realizing the shaped mockup in the live app.
+- **close** — a round closes ONLY on Preston's felt pass. The surface markdown and
+  `sequence.md` are updated and `tools/studio-build` is re-run.
 
 ## Two instruments, one home
 
