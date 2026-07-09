@@ -1644,6 +1644,7 @@ function buildNotebookBookBand(activeKey, book, tabs, masterSwitchNode) {
   band.className = 'nb-bookband';
 
   var cover = document.createElement('div');
+  cover.className = 'nb-bb-cover';
   // mockup .spine (gilt edge) + .rmark (reading-status dot) crown the cover.
   var spine = document.createElement('span');
   spine.className = 'nb-bb-spine';
@@ -1651,23 +1652,23 @@ function buildNotebookBookBand(activeKey, book, tabs, masterSwitchNode) {
   var rmark = document.createElement('span');
   rmark.className = 'nb-bb-rmark';
   rmark.setAttribute('aria-hidden', 'true');
-  if (book.coverUrl) {
-    cover.className = 'nb-bb-cover';
-    var img = document.createElement('img');
-    img.className = 'nb-bb-cover-img';
-    img.src = book.coverUrl; img.alt = '';
-    cover.appendChild(img);
-  } else {
+  // R4: ONE cover path -- the shared self-healing helper (candidate-walk +
+  // broken-registry, same as Shelf/Home/Book) with a cloth title/author fallback.
+  // Replaces the raw <img> so the band and the per-note chip share one cover path
+  // (PRECEDENT: never a second cover path).
+  cover.appendChild(buildSelfHealingCover(book, 'nb-bb-cover-img', function() {
     cover.className = 'nb-bb-cover nb-bb-cover-cloth';
+    var frag = document.createDocumentFragment();
     var cct = document.createElement('div');
     cct.className = 'nb-bb-cover-title';
     cct.textContent = book.title || '';
-    cover.appendChild(cct);
+    frag.appendChild(cct);
     var cca = document.createElement('div');
     cca.className = 'nb-bb-cover-author';
     cca.textContent = book.author || '';
-    cover.appendChild(cca);
-  }
+    frag.appendChild(cca);
+    return frag;
+  }));
   cover.appendChild(spine);
   cover.appendChild(rmark);
   band.appendChild(cover);
@@ -1772,8 +1773,8 @@ function renderNotebook() {
 
   // Intro (mock .intro): eyebrow + title + the descriptive paragraph. The master
   // "Yumi reads along" consent moves into the book band (or a slim consent row on
-  // Inbox/Journal); capture/import lives in the left-leaf capmodes -- so the intro
-  // reads clean per the mockup (no header chrome).
+  // Inbox/Journal); capture/import lives in the composer's unified .nb-modes row --
+  // so the intro reads clean per the mockup (no header chrome).
   var header = document.createElement('header');
   header.className = 'notebook-head';
 
@@ -1839,8 +1840,8 @@ function renderNotebook() {
   // so the toggle is never lost. ONE instance -- setProfile/covenant wiring intact.
   var masterSwitch = buildNotebookMasterSwitch(user);
 
-  // The bound-leaf spread. Left leaf = "Catch a note" (composer + capmodes + note
-  // bank); right leaf = the working page (gathered + forming), per the mockup.
+  // The bound-leaf spread. Left leaf = "Catch a note" (composer w/ unified .nb-modes
+  // row + note bank); right leaf = the working page (gathered + forming), per the mockup.
   var spread = document.createElement('div');
   spread.className = 'notebook-spread';
   // Wave 3: the real book band crowns the spread when a book tab is active.
@@ -2021,9 +2022,10 @@ function appendNotebookTab(row, tab, activeKey) {
   row.appendChild(el);
 }
 
-// Left leaf (mockup "Catch a note"): the capture composer + capmodes, then the
-// tab's entries (createdAt-desc) via renderNotebookEntry. Book identity now lives
-// in the band above; the tab row sits above the spread (both moved out of here).
+// Left leaf (mockup "Catch a note"): the capture composer (which now carries the
+// unified .nb-modes import row), then the tab's entries (createdAt-desc) via
+// renderNotebookEntry. Book identity now lives in the band above; the tab row sits
+// above the spread (both moved out of here).
 function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   var leaf = document.createElement('div');
   leaf.className = 'leaf leaf-left';
@@ -2038,59 +2040,33 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   // all preserved.
   leaf.appendChild(buildNotebookWriteline(activeKey));
 
-  // capmodes (mockup .capmodes): paste/import, dictate, and "talk it through with
-  // Yumi" all open the unified capture overlay (ImportCapture houses paste + upload
-  // + the Talk-to-Yumi dictation). Guarded so the leaf renders without the module.
-  if (window.ImportCapture && typeof window.ImportCapture.open === 'function') {
-    var capmodes = document.createElement('div');
-    capmodes.className = 'nb-capmodes';
-    capmodes.appendChild(document.createTextNode('or '));
-    var cmPaste = document.createElement('button');
-    cmPaste.type = 'button';
-    cmPaste.textContent = 'paste / import';
-    cmPaste.addEventListener('click', function() { window.ImportCapture.open(); });
-    capmodes.appendChild(cmPaste);
-    var cmSep1 = document.createElement('span');
-    cmSep1.className = 'sep';
-    cmSep1.textContent = ' · ';
-    capmodes.appendChild(cmSep1);
-    var cmDictate = document.createElement('button');
-    cmDictate.type = 'button';
-    cmDictate.textContent = 'dictate';
-    cmDictate.addEventListener('click', function() { window.ImportCapture.open(); });
-    capmodes.appendChild(cmDictate);
-    var cmSep2 = document.createElement('span');
-    cmSep2.className = 'sep';
-    cmSep2.textContent = ' · ';
-    capmodes.appendChild(cmSep2);
-    var cmTalk = document.createElement('button');
-    cmTalk.type = 'button';
-    cmTalk.className = 'talk';
-    cmTalk.textContent = 'talk it through with Yumi';
-    cmTalk.addEventListener('click', function() { window.ImportCapture.open(); });
-    capmodes.appendChild(cmTalk);
-    leaf.appendChild(capmodes);
-  }
+  // R4 (#1 unified composer): the paste/import/dictate affordances that used to
+  // live here as run-in prose (.nb-capmodes) now render as labeled chips INSIDE the
+  // composer's .nb-modes row (buildNotebookWriteline), beside photo/add-image. The
+  // "talk it through with Yumi" mode is dropped for R4. ImportCapture is untouched.
 
+  // R4 (#3b): the per-note book chip shows only where the book varies note-to-note
+  // (Inbox + Journal). On a <book> tab the band states the book, so it is suppressed.
+  var showChip = (activeKey === 'inbox' || activeKey === 'journal');
   var shown = 0;
   var i;
   for (i = 0; i < entries.length; i = i + 1) {
     if (notebookEntryMatchesTab(entries[i], activeKey)) {
-      leaf.appendChild(renderNotebookEntry(entries[i], true));
+      leaf.appendChild(renderNotebookEntry(entries[i], true, showChip));
       shown = shown + 1;
     }
   }
   if (shown === 0) {
-    var empty = document.createElement('p');
-    empty.className = 'notebook-empty-body';
     if (activeKey === 'inbox') {
-      empty.textContent = 'Nothing in your inbox. Quick captures land here, awaiting a home.';
-    } else if (activeKey === 'journal') {
-      empty.textContent = 'No journal entries yet.';
+      leaf.appendChild(buildNotebookInboxEmpty());
     } else {
-      empty.textContent = 'No notes on this book yet.';
+      var empty = document.createElement('p');
+      empty.className = 'notebook-empty-body';
+      empty.textContent = (activeKey === 'journal')
+        ? 'No journal entries yet.'
+        : 'No notes on this book yet.';
+      leaf.appendChild(empty);
     }
-    leaf.appendChild(empty);
   }
   return leaf;
 }
@@ -2715,20 +2691,12 @@ function buildNotebookWriteline(activeKey) {
     libraryInput.value = '';
   });
 
-  // Mock .crow: the photo chips (both live capture paths kept), the register
-  // segmented control (.seg, built above), a spacer, and the Capture button.
+  // Mock .crow: the register segmented control (.seg, built above), a spacer, and
+  // the Capture button. R4 (#1 unified composer): the photo chips moved OUT of the
+  // crow into the labeled .nb-modes row below, alongside paste/import/dictate --
+  // one coherent "bring one in" affordance.
   var crow = document.createElement('div');
   crow.className = 'crow';
-  var photoBtn = document.createElement('button');
-  photoBtn.type = 'button';
-  photoBtn.className = 'chip';
-  photoBtn.textContent = '📷 Photo';
-  photoBtn.addEventListener('click', function() { cameraInput.click(); });
-  var imageBtn = document.createElement('button');
-  imageBtn.type = 'button';
-  imageBtn.className = 'chip';
-  imageBtn.textContent = 'Add image';
-  imageBtn.addEventListener('click', function() { libraryInput.click(); });
   var crowSpacer = document.createElement('span');
   crowSpacer.className = 'spacer';
   var captureBtn = document.createElement('button');
@@ -2736,11 +2704,41 @@ function buildNotebookWriteline(activeKey) {
   captureBtn.className = 'btn btn-primary';
   captureBtn.textContent = 'Capture';
   captureBtn.addEventListener('click', function() { commit(); });
-  crow.appendChild(photoBtn);
-  crow.appendChild(imageBtn);
   crow.appendChild(chips);
   crow.appendChild(crowSpacer);
   crow.appendChild(captureBtn);
+
+  // R4 (#1 unified composer): one labeled "bring one in" row (.nb-modes) carrying
+  // every import affordance. photo + add-image STAGE INLINE (cameraInput /
+  // libraryInput .click() -- handlers byte-identical to the old .crow chips);
+  // paste / import / dictate HAND OFF to the shared capture overlay
+  // (window.ImportCapture.open() -- handler byte-identical to the old .nb-capmodes)
+  // and carry a hand-off cue. The old "talk it through with Yumi" mode is DROPPED
+  // for R4 (eval-gated; its own future round). ImportCapture.open is guarded, so
+  // the paste/import/dictate trio only appears when the module is present.
+  var modes = document.createElement('div');
+  modes.className = 'nb-modes';
+  var modesLabel = document.createElement('span');
+  modesLabel.className = 'nb-modes-label';
+  modesLabel.textContent = 'or bring one in';
+  modes.appendChild(modesLabel);
+  var modesRow = document.createElement('div');
+  modesRow.className = 'nb-modes-row';
+  var hasImport = window.ImportCapture && typeof window.ImportCapture.open === 'function';
+  if (hasImport) {
+    modesRow.appendChild(buildNotebookModeChip('paste', '☰', 'Paste', true, function() { window.ImportCapture.open(); }));
+    modesRow.appendChild(buildNotebookModeChip('import', '⭳', 'Import', true, function() { window.ImportCapture.open(); }));
+    modesRow.appendChild(buildNotebookModeChip('dictate', '🎤', 'Dictate', true, function() { window.ImportCapture.open(); }));
+  }
+  modesRow.appendChild(buildNotebookModeChip('photo', '📷', 'Photo', false, function() { cameraInput.click(); }));
+  modesRow.appendChild(buildNotebookModeChip('library', '🖼', 'Add image', false, function() { libraryInput.click(); }));
+  modes.appendChild(modesRow);
+  var modesHint = document.createElement('p');
+  modesHint.className = 'nb-modes-hint';
+  modesHint.textContent = hasImport
+    ? 'Photo & Add image stage right here on the page. Paste, import, and dictate open the capture window (↗) and come back with a note.'
+    : 'Photo & Add image stage right here on the page.';
+  modes.appendChild(modesHint);
 
   function commit() {
     var body = (input.value || '').replace(/^\s+|\s+$/g, '');
@@ -2797,12 +2795,13 @@ function buildNotebookWriteline(activeKey) {
     }, 120);
   });
 
-  // Mock .nb-composer order: the writing measure (.ce), staged shots, then the
-  // .crow (photo chips + register seg + Capture). Hidden file inputs trail so
-  // .click() reaches them (they must be in the DOM).
+  // .nb-composer order: the writing measure (.ce), staged shots, the .crow
+  // (register seg + Capture), then the unified .nb-modes "bring one in" row. Hidden
+  // file inputs trail so .click() reaches them (they must be in the DOM).
   line.appendChild(input);
   line.appendChild(shotsHost);
   line.appendChild(crow);
+  line.appendChild(modes);
   line.appendChild(cameraInput);
   line.appendChild(libraryInput);
   return line;
@@ -2819,6 +2818,76 @@ function appendWritelineChip(chips, def, chipEls, onPick) {
   c.addEventListener('click', function() { onPick(def.r); });
   chipEls[def.r] = c;
   chips.appendChild(c);
+}
+
+// R4 (#1 unified composer): one labeled affordance chip in the composer's
+// .nb-modes row. handoff=true appends the hand-off cue (paste/import/dictate open
+// the shared capture overlay); handoff=false is an inline stager (photo/add-image,
+// .is-inline). onClick is passed pre-bound so the wired handler is byte-identical
+// to the affordance it replaces.
+function buildNotebookModeChip(mode, icon, label, handoff, onClick) {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'nb-mode' + (handoff ? '' : ' is-inline');
+  b.setAttribute('data-mode', mode);
+  var ic = document.createElement('span');
+  ic.className = 'ic';
+  ic.setAttribute('aria-hidden', 'true');
+  ic.textContent = icon;
+  b.appendChild(ic);
+  b.appendChild(document.createTextNode(label));
+  if (handoff) {
+    var ho = document.createElement('span');
+    ho.className = 'handoff';
+    ho.setAttribute('aria-hidden', 'true');
+    ho.textContent = '↗';
+    b.appendChild(ho);
+  }
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+// R4 (#empty): the calm first-run / no-notes Inbox leaf that teaches the surface
+// (mockup #empty state). A mark, a title, a short body, and three quiet steps.
+// Journal + book tabs keep their one-line quiet empties (below).
+function buildNotebookInboxEmpty() {
+  var wrap = document.createElement('div');
+  wrap.className = 'nb-empty';
+  var mark = document.createElement('div');
+  mark.className = 'nb-empty-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(mark);
+  var title = document.createElement('div');
+  title.className = 'nb-empty-title';
+  title.textContent = 'Nothing in your inbox yet';
+  wrap.appendChild(title);
+  var body = document.createElement('p');
+  body.className = 'nb-empty-body';
+  body.textContent = 'Quick captures land here, awaiting a home. Write a line, paste a passage, or dictate a thought — then gather a few on the right and a sub-theory begins to form.';
+  wrap.appendChild(body);
+  var steps = document.createElement('div');
+  steps.className = 'nb-empty-steps';
+  var stepText = [
+    'Catch a note — a margin, a question, a journal line.',
+    'File it to the book it belongs with.',
+    'Gather a few and name what they add up to.'
+  ];
+  var si;
+  for (si = 0; si < stepText.length; si = si + 1) {
+    var step = document.createElement('div');
+    step.className = 'nb-empty-step';
+    var n = document.createElement('span');
+    n.className = 'n';
+    n.textContent = String(si + 1);
+    step.appendChild(n);
+    var t = document.createElement('span');
+    t.className = 't';
+    t.textContent = stepText[si];
+    step.appendChild(t);
+    steps.appendChild(step);
+  }
+  wrap.appendChild(steps);
+  return wrap;
 }
 
 // N2: create an entry from the writeline. register = chip; isPrivate = by-kind
@@ -13940,7 +14009,7 @@ function openBookSendToSubTheory(bookId) {
   }
 }
 
-function renderNotebookEntry(entry, gatherable) {
+function renderNotebookEntry(entry, gatherable, showBookChip) {
   // Left register spine via ::before reads --reg: marginalia = teal
   // (--marginalia-color), question = --question-color (blue), journal =
   // --journal-color. N1: the per-entry privacy toggle is removed (see the
@@ -13991,17 +14060,6 @@ function renderNotebookEntry(entry, gatherable) {
 
   card.appendChild(eh);
 
-  // Marginalia source line. Fail soft if the book is unknown.
-  if (isMarg) {
-    var src = document.createElement('div');
-    src.className = 'notebook-entry-src';
-    var bookId = (entry.bookIds && entry.bookIds[0]) || null;
-    var book = (bookId && state.books && state.books[bookId]) || null;
-    var bookTitle = (book && book.title) || '(unknown book)';
-    src.textContent = 'from ' + bookTitle;
-    card.appendChild(src);
-  }
-
   var bodyEl = document.createElement('div');
   bodyEl.className = 'notebook-entry-body';
   // Writing-Core 2c: MARGINALIA cards render entry.body via the SAME renderer the
@@ -14026,6 +14084,34 @@ function renderNotebookEntry(entry, gatherable) {
       shots.appendChild(buildNotebookShot(entry.images[si]));
     }
     card.appendChild(shots);
+  }
+
+  // R4 (#3b per-note cover chip): on Inbox + Journal (showBookChip) the book varies
+  // note-to-note, so a small self-healing cover chip states it -- all three
+  // registers, presentation-only (reads entry.bookIds, writes nothing). Suppressed
+  // on <book> tabs, where the band already states the book. Replaces the old
+  // marginalia-only "from {title}" text line. Bookless notes carry no chip.
+  if (showBookChip) {
+    var chipBookId = (entry.bookIds && entry.bookIds[0]) || null;
+    var chipBook = (chipBookId && state.books && state.books[chipBookId]) || null;
+    if (chipBook) {
+      var chip = document.createElement('div');
+      chip.className = 'nb-entry-bookchip';
+      var chipCover = document.createElement('span');
+      chipCover.className = 'nb-chip-cover';
+      chipCover.appendChild(buildSelfHealingCover(chipBook, 'nb-chip-cover-img', function() {
+        var ct = document.createElement('span');
+        ct.className = 'nb-chip-cover-t';
+        ct.textContent = chipBook.title || '';
+        return ct;
+      }));
+      chip.appendChild(chipCover);
+      var chipTitle = document.createElement('span');
+      chipTitle.className = 'nb-chip-title';
+      chipTitle.textContent = chipBook.title || '(untitled)';
+      chip.appendChild(chipTitle);
+      card.appendChild(chip);
+    }
   }
 
   // Actions row. Add to arc (openEntryArcPicker, inline lazy mount), send to

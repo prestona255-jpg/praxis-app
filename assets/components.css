@@ -4375,24 +4375,28 @@
 }
 
 /* N2 upgrade: resting -> composing focus treatment. A .notebook-composing class
-   on the section.notebook wrap recedes the in-view chrome and (desktop) expands
-   the writing leaf. SCOPED to the notebook view -- the global app nav is
-   intentionally untouched (design-canon A: nav stays solid). */
-.notebook-header,
-.notebook-tabs,
-.notebook-secthead {
+   on the section.notebook wrap (setNotebookComposing, views.js:2580) recedes the
+   in-view chrome so the writing surface comes forward. R4 repair: the original
+   selectors (.notebook-header/.notebook-tabs/.notebook-secthead + a grid-collapse
+   on .notebook-spread) never matched the live markup (.notebook-head / .nb-tabs;
+   the spread is display:block, not grid) so the recede was visually inert -- these
+   are repointed to the live classes: head + tabs + right leaf dim, left-leaf seam
+   dissolves, the composer comes forward via its own :focus-within ring. SCOPED to
+   the notebook view -- the global app nav is untouched (design-canon A: solid). */
+.notebook .notebook-head,
+.notebook .nb-tabs,
+.notebook .leaf-right {
   transition: opacity var(--motion-base) var(--ease);
 }
-.notebook.notebook-composing .notebook-header,
-.notebook.notebook-composing .notebook-tabs,
-.notebook.notebook-composing .notebook-secthead {
+.notebook.notebook-composing .notebook-head,
+.notebook.notebook-composing .nb-tabs {
   opacity: 0.4;
 }
-@media (min-width: 760px) {
-  .notebook.notebook-composing .notebook-spread {
-    grid-template-columns: 1fr 0fr;
-    gap: 0;
-  }
+.notebook.notebook-composing .leaf-right {
+  opacity: 0.32;
+}
+.notebook.notebook-composing .leaf-left {
+  border-right-color: transparent;
 }
 
 /* N2b photo capture: the quiet capture bar under the composer, staged previews,
@@ -11058,14 +11062,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook.lum-amber-deep .nb-name-canvas-host .wc-wrap{ background:none; border:none; padding:0; }
 .notebook.lum-amber-deep .nb-name-canvas-host .wc-input{ font-family:var(--lum-serif); font-weight:600; font-size:20px; color:var(--lum-ink); min-height:1.4em; outline:none; }
 
-/* Wave 3 fidelity: left-leaf capmodes (mockup .capmodes) + right-leaf gathered
-   list with per-card × remove (mockup .glab/.gathered-list/.gnote/.gempty). */
-.notebook.lum-amber-deep .nb-capmodes{ margin-top:11px; font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); }
-.notebook.lum-amber-deep .nb-capmodes button{ font-family:inherit; font-size:11.5px; color:var(--lum-ink-3); background:none; border:none; cursor:pointer; padding:0; transition:color .2s; }
-.notebook.lum-amber-deep .nb-capmodes button:hover{ color:var(--lum-ink-2); }
-.notebook.lum-amber-deep .nb-capmodes .sep{ color:var(--lum-ink-4); }
-.notebook.lum-amber-deep .nb-capmodes button.talk{ color:var(--lum-cyan); font-weight:500; }
-.notebook.lum-amber-deep .nb-capmodes button.talk:hover{ color:var(--lum-cyan); opacity:.85; }
+/* Wave 3 fidelity: right-leaf gathered list with per-card × remove (mockup
+   .glab/.gathered-list/.gnote/.gempty). (R4: the left-leaf .nb-capmodes prose was
+   replaced by the composer's unified .nb-modes chip row -- its rules are retired.) */
 .notebook.lum-amber-deep .nb-glab{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 12px; }
 .notebook.lum-amber-deep .nb-gathered-list{ display:flex; flex-direction:column; gap:8px; margin:0 0 14px; min-height:30px; }
 .notebook.lum-amber-deep .nb-gnote{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; background:rgba(255,255,255,.05); border:1px solid var(--lum-glass-bd-2); border-left:3px solid var(--lum-gold); border-radius:8px; padding:9px 12px; font-family:var(--lum-serif); font-size:15px; color:var(--lum-ink-2); line-height:1.35; }
@@ -11090,6 +11089,9 @@ body.wc-focus .app-nav { opacity:.26; }
   .notebook.lum-amber-deep .notebook-entry-gather,
   .notebook.lum-amber-deep .notebook-entry-acts a,
   .notebook.lum-amber-deep .nb-toggle,
+  .notebook.lum-amber-deep .nb-mode,
+  .notebook.lum-amber-deep .chip,
+  .notebook.lum-amber-deep .seg-opt,
   .notebook.lum-amber-deep .btn-primary{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE NOTEBOOK ===== */
@@ -11795,6 +11797,223 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-arcbtn{ background:#efe7d6; color:var(--lum-ink-2); }
 .home-page.lum-amber-deep .home-arcbtn:hover{ color:var(--lum-ink); border-color:var(--gold-hi); }
 /* ===== end R3 · HOME UNIVERSAL v1.2 LIGHT SKIN ===== */
+
+/* =============================================================================
+   R4 · NOTEBOOK — UNIVERSAL v1.2 LIGHT SKIN. The Notebook ships the Universal
+   light-ground skin (Preston's felt pass on docs/studio/mockups/notebook.html —
+   the LIGHT pole; the mockup's dark "reading room" pole was comparison chrome,
+   retired). Ported byte-faithful from that mockup's .skin-universal block,
+   re-scoped from the mockup's <body> class to the live page-context class
+   .notebook.lum-amber-deep — EXACTLY the R2 Shelf / R3 Home mechanism: a scoped
+   token re-point + a restrained set of §8 depth recipes + literal rescues that
+   paint a LIGHT surface over the dark body ground, WITHOUT flipping the route out
+   of umberGroundDark (nav + every other dark route stay byte-identical). PURELY
+   ADDITIVE over the base .notebook.lum-amber-deep block above — every property is
+   color / background / gradient / box-shadow / border-color, plus composer-seam
+   structure. Every hex traces to the Universal v1.2 light set (the Shelf R2 / Home
+   R3 token values + the mockup's felt-passed sub-panel / rescue literals, promoted
+   to --u-* tokens so RULE bodies carry ZERO raw hex). Also CLOSES the composer
+   class-name seam (NB1/NB2): live emits .nb-ce/.nb-composer but the dark block
+   styled the never-emitted .nb-capfield, so the composer fell to the legacy cream
+   .notebook .nb-composer rule (~9576). The .nb-composer / .nb-ce / .seg /
+   .btn-primary rules below give the composer its intended light treatment, beating
+   the legacy rule on specificity + source order.
+   Recipes: 6 atmospheric ground · 3 ink-to-gold (title) · 5 gilded button
+   (Capture / Create) · literal rescues for base rules that hardcode dark values.
+   ============================================================================= */
+
+/* 1 · token re-points — same --lum-* the base consumes, swapped to Universal
+   light values (the Shelf R2 / Home R3 set) + --u-* recipe/rescue tokens so every
+   rule body below references var() and carries no raw hex. */
+.notebook.lum-amber-deep{
+  --paper:#f4efe4;
+  --ink:#241710;
+  --gold:#a8761a;        /* GOLD ROLE 1 · interactive / fill            */
+  --gold-deep:#855410;   /* GOLD ROLE   · deep gold for small TEXT (AA) */
+  --gold-hi:#d9a441;     /* GOLD ROLE 2 · gilding — edge + glow ONLY    */
+  --lum-star:#ffce4a;    /* GOLD ROLE 3 · luminous — true glow ONLY     */
+  --field-1:#f2c25a;
+  /* surfaces — solid on light (translucent glass is a dark-ground device) */
+  --lum-base:#fffdf8;
+  --lum-glass:#efe7d6;
+  --lum-glass-bd:#e3d8c1;
+  --lum-glass-bd-2:#e3d8c1;
+  --lum-cloth:#c9b7a0;
+  /* ink ramp — tertiary held at ink-2 for WCAG AA (canon tertiary fails <18px) */
+  --lum-ink:#241710;
+  --lum-ink-2:#645940;
+  --lum-ink-3:#645940;
+  --lum-ink-4:#978b6d;
+  --lum-gold:#a8761a;
+  --lum-gold-l:#d9a441;
+  --lum-gold-d:#855410;
+  --lum-gold-ink:#3d2807;
+  /* registers deepened so the spine + pill text hold AA on paper */
+  --marginalia-color:#2f7d73;
+  --question-color:#2f4a75;
+  --journal-color:#5f4f96;
+  --lum-cyan:#256b80;
+  --lum-rose:#b8563f;
+  /* §8 depth-recipe + literal-rescue values as tokens (verbatim §8 recipe stops /
+     sibling rescues — the mockup's felt-passed .skin-universal set) */
+  --u-ground-2:#eee4cd;
+  --u-sheet-1:#fffdf6;
+  --u-sheet-2:#fdf8ea;
+  --u-spread-2:#fbf4e5;
+  --u-chip:#f4ecdb;
+  --u-panel-1:#f6ead0;
+  --u-panel-2:#efe1c2;
+  --u-gathered:#fbefcf;
+  --u-toggle-off:#e7ddc9;
+  --u-seg-2:#e0a838;
+  --u-cloth-2:#6f5a3c;
+  --u-shot-1:#d8c9b0;
+  --u-shot-2:#b09a7c;
+  --u-teal-deep:#1f5a6b;
+  --u-teal-mid:#4a9fb8;
+  --u-orb-hi:#fff4d6;
+  --u-white:#fff;
+}
+
+/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, NOTEBOOK-SCOPED (paints over
+   the dark body ground, exactly like Shelf R2 / Home R3) */
+.notebook.lum-amber-deep{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,var(--paper),var(--u-ground-2));
+  background-attachment:fixed;
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+
+/* the bound-book spread — SOLID sheet on light, radius + WARM shadow kept (the one
+   bound signature that carries); glass blur is a dark device -> dropped. */
+.notebook.lum-amber-deep .notebook-spread{
+  background:linear-gradient(180deg,var(--u-sheet-1),var(--u-spread-2));
+  border:1px solid var(--lum-glass-bd);
+  box-shadow:0 30px 60px -30px rgba(120,75,15,.34), inset 0 1px 0 rgba(255,250,235,.9);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+.notebook.lum-amber-deep .leaf-left{ border-right-color:var(--lum-glass-bd-2); }
+
+/* 3 · RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
+.notebook.lum-amber-deep .notebook-title{
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+
+/* tabs + master switch — light */
+.notebook.lum-amber-deep .nb-tab{ background:var(--u-chip); color:var(--lum-ink-2); }
+.notebook.lum-amber-deep .nb-tab.is-on{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); color:var(--lum-gold-ink); }
+.notebook.lum-amber-deep .nb-toggle{ background:var(--u-toggle-off); }
+.notebook.lum-amber-deep .nb-toggle[aria-pressed="true"]{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); }
+
+/* #3a light — the book band on paper (a raised sub-panel, RECIPE 6 plane 2) */
+.notebook.lum-amber-deep .nb-bookband{ background:linear-gradient(180deg,var(--u-panel-1),var(--u-panel-2)); border-bottom-color:var(--lum-glass-bd-2); }
+.notebook.lum-amber-deep .nb-bb-cover{ box-shadow:0 12px 26px -12px rgba(120,75,15,.4), 0 0 22px -4px rgba(217,164,65,.5), inset 1px 0 0 rgba(255,255,255,.4); }
+.notebook.lum-amber-deep .nb-bb-cover-cloth{ background:linear-gradient(135deg,var(--lum-cloth) 0%,var(--u-cloth-2) 100%); }
+.notebook.lum-amber-deep .nb-bb-cover-title{ color:var(--u-sheet-1); }
+.notebook.lum-amber-deep .nb-bb-cover-author{ color:rgba(255,250,235,.85); }
+.notebook.lum-amber-deep .nb-bb-banklabel{ color:var(--gold-deep); }
+.notebook.lum-amber-deep .nb-bb-seespanel{ background:rgba(37,107,128,.08); border-color:rgba(37,107,128,.3); color:var(--u-teal-deep); }
+.notebook.lum-amber-deep .nb-bb-seespanel b{ color:var(--lum-ink); }
+/* band hierarchy (#3a / FORK 2): title = NAME tier (Cormorant italic); author = a
+   DM-Mono meta label. Overrides the dark block's serif-25px / serif-italic author. */
+.notebook.lum-amber-deep .nb-bb-title{ font-style:italic; font-size:26px; }
+.notebook.lum-amber-deep .nb-bb-author{ font-family:var(--lum-mono); font-style:normal; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--lum-ink-3); margin-top:8px; }
+
+/* 7 · composer SEAM CLOSE (structure + light). Live emits .nb-ce/.nb-composer;
+   the dark block styled .nb-capfield (never emitted) so the composer fell to the
+   legacy cream .notebook .nb-composer (~9576). These rules (0,3,0 / 0,4,0) beat it
+   and give the composer its intended light sheet. */
+.notebook.lum-amber-deep .nb-composer{
+  background:linear-gradient(180deg,var(--u-sheet-1),var(--u-sheet-2));
+  border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:14px 16px;
+  box-shadow:inset 0 1px 0 rgba(255,250,235,.9);
+  transition:border-color .2s, box-shadow .2s;
+}
+.notebook.lum-amber-deep .nb-composer:focus-within{ border-color:var(--gold-hi); box-shadow:inset 0 1px 0 rgba(255,250,235,.9), 0 0 0 3px rgba(217,164,65,.18); }
+.notebook.lum-amber-deep .nb-composer .nb-ce{ font-family:var(--lum-serif); font-size:17px; line-height:1.4; color:var(--lum-ink); background:transparent; border:none; outline:none; width:100%; resize:none; display:block; min-height:1.4em; }
+.notebook.lum-amber-deep .nb-composer .nb-ce::placeholder{ color:var(--lum-ink-4); font-style:italic; }
+.notebook.lum-amber-deep .nb-composer .nb-shots{ display:flex; flex-wrap:wrap; gap:9px; margin-top:11px; }
+.notebook.lum-amber-deep .nb-composer .crow{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:12px; }
+.notebook.lum-amber-deep .nb-composer .crow .spacer{ flex:1; }
+/* register segmented control — light (beats legacy .notebook .seg-opt.is-on 9586) */
+.notebook.lum-amber-deep .seg{ display:inline-flex; padding:3px; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); background:rgba(255,236,200,.06); }
+.notebook.lum-amber-deep .seg-opt{ font-family:var(--lum-sans); font-size:12.5px; font-weight:500; color:var(--lum-ink-2); background:none; border:none; border-radius:var(--lum-r-pill,999px); padding:6px 15px; cursor:pointer; }
+.notebook.lum-amber-deep .seg-opt:hover{ color:var(--lum-ink); }
+.notebook.lum-amber-deep .seg-opt.is-on{ background:linear-gradient(180deg,var(--field-1),var(--u-seg-2)); color:var(--lum-gold-ink); font-weight:600; }
+/* quiet chip primitive (composer photo chips + right-leaf "Change") — light */
+.notebook.lum-amber-deep .chip{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 13px; background:var(--u-chip); cursor:pointer; }
+.notebook.lum-amber-deep .chip:hover{ color:var(--lum-ink); border-color:var(--gold-hi); }
+/* gilded primary — Capture / Create (RECIPE 5). Beats the dark .btn-primary (11050). */
+.notebook.lum-amber-deep .btn-primary,
+.notebook.lum-amber-deep .createbtn{ color:var(--lum-gold-ink); border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+.notebook.lum-amber-deep .btn-primary:hover,
+.notebook.lum-amber-deep .createbtn:hover{ color:var(--lum-gold-ink); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+
+/* #1 unified composer — the labeled "bring one in" modes row (paste/import/dictate
+   hand-off + photo/add-image inline). Replaces the run-in .nb-capmodes prose. */
+.notebook.lum-amber-deep .nb-modes{ margin-top:13px; }
+.notebook.lum-amber-deep .nb-modes-label{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-4); margin-bottom:8px; display:block; }
+.notebook.lum-amber-deep .nb-modes-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.notebook.lum-amber-deep .nb-mode{ display:inline-flex; align-items:center; gap:7px; font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); background:var(--u-chip); border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 13px; cursor:pointer; transition:color .2s, border-color .2s, background .2s; }
+.notebook.lum-amber-deep .nb-mode:hover{ color:var(--lum-ink); border-color:var(--gold-hi); background:rgba(255,236,200,.06); }
+.notebook.lum-amber-deep .nb-mode .ic{ font-size:13px; line-height:1; }
+.notebook.lum-amber-deep .nb-mode .handoff{ font-family:var(--lum-mono); font-size:11px; color:var(--lum-ink-4); }
+.notebook.lum-amber-deep .nb-modes-hint{ font-family:var(--lum-serif); font-style:italic; font-size:12.5px; color:var(--lum-ink-3); margin-top:9px; }
+
+/* 8 · note cards + entry chrome — light (rescue the dark rgba fills / glows) */
+.notebook.lum-amber-deep .notebook-entry{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); box-shadow:0 6px 16px -12px rgba(120,75,15,.24); }
+.notebook.lum-amber-deep .notebook-entry-gathered{ border-color:var(--gold-hi); background:var(--u-gathered); box-shadow:0 0 0 1px rgba(217,164,65,.4); }
+.notebook.lum-amber-deep .notebook-entry-tag-m{ color:var(--gold-deep); background:rgba(168,118,26,.12); }
+.notebook.lum-amber-deep .notebook-entry-tag-q{ color:var(--question-color); background:rgba(47,74,117,.1); }
+.notebook.lum-amber-deep .notebook-entry-tag-j{ color:var(--lum-ink-2); background:rgba(95,79,150,.12); }
+.notebook.lum-amber-deep .notebook-entry-acts a.notebook-entry-gather,
+.notebook.lum-amber-deep .notebook-entry-acts a:hover{ color:var(--gold-deep); }
+/* working-page gathered note — light */
+.notebook.lum-amber-deep .nb-gnote{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); border-left-color:var(--gold); color:var(--lum-ink-2); }
+
+/* #3b per-note cover chip — a small self-healing cover thumb stating the book on
+   Inbox/Journal entries (suppressed on <book> tabs). buildSelfHealingCover renders
+   the real cover into .nb-chip-cover-img, or falls back to the cloth .nb-chip-cover-t. */
+.notebook.lum-amber-deep .nb-entry-bookchip{ display:inline-flex; align-items:center; gap:9px; margin-top:9px; padding:4px 11px 4px 5px; border-radius:var(--lum-r-pill,999px); background:var(--u-chip); border:1px solid var(--lum-glass-bd-2); }
+.notebook.lum-amber-deep .nb-chip-cover{ position:relative; flex:none; width:22px; height:32px; border-radius:2px 3px 3px 2px; overflow:hidden; box-shadow:0 4px 8px -4px rgba(0,0,0,.7), inset 1px 0 0 rgba(255,255,255,.08); display:flex; align-items:flex-end; padding:3px; background:linear-gradient(135deg,var(--lum-cloth) 0%,rgba(24,16,6,.92) 100%); }
+.notebook.lum-amber-deep .nb-chip-cover-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.notebook.lum-amber-deep .nb-chip-cover-t{ font-family:var(--lum-serif); font-weight:600; font-size:5.5px; line-height:1.05; color:var(--u-sheet-1); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+.notebook.lum-amber-deep .nb-chip-title{ font-family:var(--lum-serif); font-style:italic; font-weight:600; font-size:14px; line-height:1.1; color:var(--lum-ink-2); }
+
+/* Stage 4 · hierarchy + Yumi resting slot + empty states =================== */
+/* NAME tier: the forming sub-theory name is Cormorant italic (like the band title
+   + chip title); the gathered-note excerpt is Cormorant italic body. */
+.notebook.lum-amber-deep .nb-name-canvas-host .wc-input{ font-style:italic; }
+.notebook.lum-amber-deep .nb-gnote{ font-style:italic; }
+/* Yumi RESTING complicate slot — coherent deep-teal on light (cyan=Yumi seam, AA).
+   Fully specified so the legacy cream .notebook .nb-complicate does not bleed. */
+.notebook.lum-amber-deep .nb-complicate{ display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding:12px 0 0; background:none; border:none; border-top:1px solid var(--lum-glass-bd-2); border-radius:0; font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--u-teal-deep); }
+.notebook.lum-amber-deep .nb-ctag{ color:var(--u-teal-deep); }
+.notebook.lum-amber-deep .nb-ctext{ color:var(--u-teal-deep); }
+.notebook.lum-amber-deep .nb-ybubble{ background:radial-gradient(circle at 38% 32%, var(--u-white), var(--u-teal-mid) 46%, var(--lum-cyan) 100%); color:var(--u-white); }
+/* empty-state welcome (#empty) — a calm teaching leaf on the empty Inbox. */
+.notebook.lum-amber-deep .nb-empty{ text-align:center; padding:34px 20px 10px; }
+.notebook.lum-amber-deep .nb-empty-mark{ width:34px; height:34px; margin:0 auto 16px; border-radius:50%; background:radial-gradient(circle at 38% 30%, var(--u-orb-hi) 0%, var(--lum-star) 45%, var(--gold) 100%); box-shadow:0 0 16px rgba(217,164,65,.5); }
+.notebook.lum-amber-deep .nb-empty-title{ font-family:var(--lum-serif); font-style:italic; font-size:22px; color:var(--lum-ink); margin-bottom:10px; }
+.notebook.lum-amber-deep .nb-empty-body{ font-family:var(--lum-sans); font-size:13.5px; line-height:1.6; color:var(--lum-ink-3); max-width:400px; margin:0 auto 20px; }
+.notebook.lum-amber-deep .nb-empty-steps{ display:flex; flex-direction:column; gap:10px; max-width:360px; margin:0 auto; text-align:left; }
+.notebook.lum-amber-deep .nb-empty-step{ display:flex; align-items:flex-start; gap:11px; }
+.notebook.lum-amber-deep .nb-empty-step .n{ flex:none; width:20px; height:20px; border-radius:50%; border:1px solid var(--lum-glass-bd-2); font-family:var(--lum-mono); font-size:10px; color:var(--lum-ink-3); display:flex; align-items:center; justify-content:center; }
+.notebook.lum-amber-deep .nb-empty-step .t{ font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-ink-2); }
+/* signed-out door (buildNotebookSignedOut .empty-state): the body <p> is governed by
+   the pre-existing `.notebook .empty-state p{ color:var(--ink-2) }` (~9621); --ink-2 is
+   NOT re-pointed under this light skin, so it keeps its dark-ground value = low contrast
+   on paper (~2:1). This rescue (0,3,1, later source) beats it to the light ink ramp so
+   the logged-out prompt is legible. (The global/unscoped .empty-state stays the
+   R3-flagged craft-pass debt -- this touches only .notebook.lum-amber-deep.) */
+.notebook.lum-amber-deep .empty-state p{ color:var(--lum-ink-3); }
+/* ===== end R4 · NOTEBOOK UNIVERSAL v1.2 LIGHT SKIN ===== */
 
 /* =============================================================================
    WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-ember). Additive +
