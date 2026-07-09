@@ -33,6 +33,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
   Shelf-categories feature round → Next; arc-detail (heat 14) → Then. Autonomous
   re-order (promote-severe-gaps + continue-cadence); no launch-spine item retired, no
   Preston decision contradicted — so no `PROPOSED:` flag.
+- **2026-07-09** — Shelf data-correctness round CLOSED (live pass in full, v3.186
+  `e12f705`; Firestore resurrection test held). Moved it to Shipped → both Shelf
+  rounds now closed. Promoted **R3 Home** to the top of Now (the recommended next
+  surface) and pulled **R4 Notebook** (heat 18, now the heaviest open surface) up
+  into Now beside the data-loss launch cluster; Shelf-categories feature round stays
+  in Next. Autonomous completion + cadence re-order; nothing retired, no `PROPOSED:`.
 
 ## Shipped
 
@@ -62,18 +68,14 @@ flagged at the top of the Builder's sequence page for his call — never applied
   reveal). First surface round; also codified the studio **mockup stage**
   (`studio-mockup` agent, five-beat loop, shaped/built orbs + surface mockup link).
   (launch-spine — first surface round)
+- [x] **Shelf data-correctness round — CX-1 / CX-2 / CX-3** (v3.186, `e12f705`; live
+  pass in full 2026-07-09 — the Firestore **resurrection test** held, plus dedup-on-add
+  + delete persistence). Merge parity + tombstone, dedup-on-add guard, orphan-safe
+  author rail; `deleteBook` byte-locked reference. Data-loss tier, own commit.
+  (Shelf round 2 — both Shelf rounds now closed)
 
 ## Now
 
-- [ ] **Shelf data-correctness round** — the two parked HIGH data-state bugs the R2
-  cross-check surfaced (the Shelf's top severity, ahead of anything visual): **CX-1
-  DATA-MERGE** (Tidy-library `mergeBookDuplicates` omits 4 of the 8 reference-scrub
-  steps `deleteBook` performs and never tombstones dropped ids → orphaned refs +
-  confirmed resurrection via `mergeRemoteBookDoc`'s remote-wins path) and **CX-2
-  DATA-DUP** (no dedup-on-add guard on single/bulk add), plus the orphan-unsafe
-  Author rail. Own commit, data-loss tier (FIX-PROTOCOL). Runs now: the skin round is
-  done, and Preston's "before or after the skin" call resolves to after.
-  touches: [books]
 - [ ] **R3 — Home: next surface round** — prove Universal on Home (the R2 cadence's
   next surface), folding in the honest **signed-out / first-run** launch step
   (OG1–OG4 + IA4: real sign-in CTA, onboarding that lands in the writing loop rather
@@ -85,12 +87,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
   the **F-DL1 / F-DL3** live smokes that never ran (procedure proven on F-DL2,
   15/15). The remaining launch-spine data-loss work. (launch-spine STEP 4 + 5)
   touches: [account]
+- [ ] **R4 — Notebook: surface round** — the heaviest surface gap-heat now that the
+  Shelf is closed (18 open gaps). scan → forks → mockup → felt pass → build → close.
+  touches: [notebook]
 
 ## Next
 
-- [ ] **R4 — Notebook: surface round** — highest surface gap-heat after the Shelf
-  (18 open gaps). scan → forks → mockup → felt pass → build → close.
-  touches: [notebook]
 - [ ] **Shelf categories feature round** — the deferred data/product arc off the
   "Shelf / categories" ledger cluster (rawCategories capture on every write path,
   duplicate-add guard, batch progress, manual override + book-detail picker, lineage

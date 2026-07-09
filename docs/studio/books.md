@@ -5,7 +5,7 @@ render_fn: renderShelf (views.js:3730)
 mockup: docs/studio/mockups/shelf.html
 ground: dark
 in_nav: yes
-state: built
+state: closed
 rounds: 2
 ---
 
@@ -181,7 +181,17 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
-### Shelf data-correctness round (BUILT, working tree, v3.186, 2026-07-09)
+### Shelf data-correctness round CLOSED — live pass in full (2026-07-09, deployed v3.186, commit e12f705)
+
+Preston's signed-in live pass on the deployed app passed in full: the **Firestore
+resurrection test** (Tidy-library-merge a real duplicate pair → full reload +
+Firestore sync → the dropped copy STAYED GONE — the tombstone holds against
+`mergeRemoteBookDoc`'s remote-wins path), plus dedup-on-add and delete
+persistence. Both R2 (visual) and this data round are now closed on the Shelf.
+Remaining Shelf work is the deferred categories feature round (Next) and the
+low-priority a11y follow-up `task_e4cb7af7`.
+
+### Shelf data-correctness round (BUILT, v3.186, 2026-07-09)
 
 The three HIGH data-state bugs the R2 cross-check parked, fixed as their own commit
 (data-loss tier, own commit, deleteBook byte-locked as the coverage reference).
