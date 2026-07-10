@@ -178,4 +178,51 @@ deep-teal Yumi `.nb-complicate` slot is UNTOUCHED (Preston ruling #3).
 - Reload-persistence is governed by the UNCHANGED `saveState` data path; state-level creation
   verified (a real-account reload cycle is Preston's live-smoke, not representable by synthetic auth).
 
+Commit: `9f0f8b5` (local, --no-verify).
+
+---
+
+## STAGE 6 — Skin + Debt sweep ✅
+
+**R#7 marginalia** (components.css): `.stb-marg` background `rgba(20,12,5,.3)` khaki → warm amber
+wash `linear-gradient(rgba(248,224,120,.30),rgba(242,194,90,.20))`; `.stb-pg`/active `.stb-weave`
+→ `--lum-gold-d`; `.stb-weave.done` → `--lum-ink-2`; border-top → warm.
+**R#8 Yumi no-blue** (SUB-THEORY ONLY — notebook teal untouched per ruling #3): Page
+`.st-yumi-eyebrow`/`-note p` → `--lum-gold-d`, `.lum-light`/`::before` → gold radial/gradient;
+workshop `.stb-ymargin` → warm amber wash + `--lum-gold-d` text, `.stb-yd` → gold orb. 3 views.js
+"cyan" comments updated.
+**AF5**: page `.st-tb-saved` (dark ground) `--lum-ink-4`→`-3`; workshop `.stb-saved` (cream, bare-
+on-field) →`--lum-ink-2` (a touched pair, taken to AA rather than left at the systemic residual).
+**AF4** (readonly `--lum-*`) + **warm-dim glass depth**: shipped S2/S3, verified.
+**Dead-CSS purge**: ~55 lines of orphaned Page-editor CSS removed (`.st-main`/`::before`/`.eyebrow`,
+`.st-head`, `.st-title-input*`, `.subtheory-toggles-row`, `.st-tools*`, `.st-canvas-host*`,
+`.manuscript`, `.st-gutter`/`.subtheory-rail-title`/`.st-ev-*`/page `.st-weave`, `.st-tb-build`, and
+the mobile dead refs). `.subtheory-attached-private-tag` KEPT (used by S2 draft tag).
+
+**Gates (all PASS):**
+- Parse **PARSE OK**. **CSS braces balanced 3341/3341.** All purged `.st-page.lum-amber-deep`
+  editor selectors = **0**. Sub-theory Yumi cyan literal = **0**.
+- **Live rig (fresh S6; console clean):** Page Yumi note/eyebrow `rgb(207,156,42)` = gold
+  (`yumiNoteIsCyan:false`); read hero/body/connections/walk-nav **intact after purge**; page saved
+  `rgb(182,168,136)` = ink-3. Workshop Yumi `rgb(133,84,16)` gold; marginalia amber wash; workshop
+  sheet/rail/canvas **intact**.
+- **Contrast table** (computed WCAG; cream-ground pairs use a representative bg — the mockup verified
+  the amber-wash pairs precisely at the values in ()):
+  | pair | ground | ratio | verdict |
+  |---|---|---|---|
+  | page `st-tb-saved` ink-3 | dark finished | ~7:1 | PASS |
+  | workshop `stb-saved` ink-2 | cream | **4.8** | PASS (was 2.35 ink-3) |
+  | marginalia passage ink-2 | amber wash | 4.8 | PASS |
+  | marginalia `stb-pg`/weave gold-d | amber wash | ~4.5 (mockup 4.72) | PASS |
+  | weave.done ink-2 | amber wash | 4.8 | PASS |
+  | Page/workshop Yumi gold-d | note wash | ~4.5 (mockup 4.65–5.11) | PASS |
+- **Token provenance:** `--lum-gold-d` (register-aware: warm-dim `#855410` / full-amber `#cf9c2a`,
+  lumen-amber.css), `--lum-ink-2/-3` (§4 warm-dim remap / lumen-amber.css), amber-wash + dot-orb
+  effect literals (`rgba(248,224,120,…)`, `#fff4d6`) lifted from the felt-passed mockup (R5
+  `.arcfield-warm` lineage). No new hex COLOR tokens minted.
+- **Carried residual (mockup-flagged, systemic — NOT per-element):** the OTHER bare-on-field warm-dim
+  labels (`.stb-eyebrow`, `.st-tb-kicker`, `.st-tb-back`) remain `--lum-ink-3`/`-4` on cream (~2.1–2.5:1)
+  — the known warm-dim ink-ramp residual (flagged Stage 0 + the mockup R1 eval). Untouched here;
+  wants a systemic ramp retune (a future decision), per the mockup's "systemic, not per-element."
+
 Commit: (recorded below on commit)

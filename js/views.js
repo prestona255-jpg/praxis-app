@@ -10105,8 +10105,8 @@ function renderSubTheoryPage(id) {
 
   // Yumi's margin — connective notes from REAL signals (the sub's marked passages
   // + the reader-model summary), never a summary of the user's prose. Dismissable.
-  // Gated by the master yumiReadsAlong consent. (R#8/Stage 6 recolors the CSS from
-  // cyan to the canon gold/amber presence — markup unchanged.)
+  // Gated by the master yumiReadsAlong consent. (R#8/S6 recolored the Yumi CSS to
+  // the canon gold/amber presence — no blue; markup unchanged.)
   var stYumi = document.createElement('aside');
   stYumi.className = 'st-yumi';
   var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
@@ -10233,7 +10233,7 @@ function renderSubTheoryPage(id) {
 // the FULL-BLEED .lum-amber-deep ground: MAIN = the forming sub-theory's hero
 // mark (ADDED via PraxisMarks -- the spec predates marks) + editable Cormorant
 // title + the SAME shared createWritingCanvas (bound to bodyPublic, like the
-// Page) with woven cite chips, Yumi's cyan margin, and the connections foot;
+// Page) with woven cite chips, Yumi's gold/amber margin, and the connections foot;
 // RIGHT RAIL = "Pull from your reading" -- the reader's real books, each
 // expandable to its real marginalia, each note weave-able (insertAtCaret cite +
 // addEvidence kind 'entry' so it becomes real evidence). "Open the page" commits
@@ -10446,7 +10446,7 @@ function renderSubTheoryBuild(id) {
     }
   }
 
-  // Yumi cyan margin -- one connective note from REAL signals only (reader-model
+  // Yumi's gold/amber margin (R#8, no blue) -- one connective note from REAL signals only (reader-model
   // summary, else a connective prompt), dismissable, gated by yumiReadsAlong.
   var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   var stProf = (stUser && typeof getProfile === 'function') ? getProfile(stUser.uid) : null;

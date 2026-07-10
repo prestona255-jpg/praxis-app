@@ -10729,44 +10729,22 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-page.lum-amber-deep .st-hero-mark{ display:inline-flex; flex:0 0 auto; }
 .st-page.lum-amber-deep .st-tb-kicker{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.2em; color:var(--lum-ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .st-page.lum-amber-deep .st-tb-right{ display:flex; align-items:center; gap:15px; flex:0 0 auto; }
-.st-page.lum-amber-deep .st-tb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-4); display:inline-flex; align-items:center; gap:7px; }
+.st-page.lum-amber-deep .st-tb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-3); display:inline-flex; align-items:center; gap:7px; } /* R6 S6 AF5: ink-4 (~3.4:1) -> ink-3 */
 .st-page.lum-amber-deep .st-tb-dot{ width:5px; height:5px; border-radius:50%; background:var(--lum-gold-d); box-shadow:0 0 7px rgba(255,206,74,.5); }
 .st-page.lum-amber-deep .st-pill-publish{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-gold-l); background:rgba(255,206,74,.07); border:1px solid rgba(255,206,74,.22); border-radius:var(--lum-r-pill,999px); padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:9px; transition:background .18s, border-color .18s, color .18s; }
 .st-page.lum-amber-deep .st-pill-publish:hover{ background:rgba(255,206,74,.12); border-color:rgba(255,206,74,.34); }
 .st-page.lum-amber-deep .st-pub-flag{ width:7px; height:7px; border-radius:1.5px; background:var(--lum-gold); box-shadow:0 0 8px rgba(255,206,74,.6); }
 .st-page.lum-amber-deep .st-pill-publish.done{ color:var(--lum-ink-2); border-color:var(--lum-glass-bd-2); background:rgba(255,255,255,.05); }
 .st-page.lum-amber-deep .st-pill-publish.done .st-pub-flag{ background:var(--lum-cyan); box-shadow:0 0 8px rgba(127,208,240,.5); }
-/* Wave 3 (access fix): the Page -> Build entry link, mirroring Build's .stb-openpage (quiet mono). */
-.st-page.lum-amber-deep .st-tb-build{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-ink-2); text-decoration:none; white-space:nowrap; }
-.st-page.lum-amber-deep .st-tb-build:hover{ color:var(--lum-gold-l); }
+/* R6 S6 debt sweep: the orphaned Page-editor rules (the old build link, the glass
+   sheet box, title input, ••• tools panel, canvas host, evidence rail) are purged —
+   the read Page has no editor. Only read-view rules remain below. */
 
 /* --- R6 S2: the Page is READ — a 2-col grid (read hero + connections · Yumi
    margin); the evidence-attach rail column is gone with the editor. --- */
 .st-page.lum-amber-deep .st-grid{ display:grid; grid-template-columns:minmax(0,1fr) 240px; gap:34px; align-items:start; }
-.st-page.lum-amber-deep .st-main{ position:relative; background:var(--lum-glass-raised); border:1px solid var(--lum-glass-bd); border-radius:22px; padding:38px 40px 30px; overflow:hidden; -webkit-backdrop-filter:blur(var(--lum-glass-blur)); backdrop-filter:blur(var(--lum-glass-blur)); box-shadow:inset 0 1px 0 rgba(255,236,200,.2), 0 32px 64px -30px rgba(0,0,0,.7), 0 10px 26px -18px rgba(0,0,0,.55); }
-/* light brightens as you write -- the glow opacity tracks --lit (stBumpLight) */
-.st-page.lum-amber-deep .st-main::before{ content:''; position:absolute; left:0; right:0; top:0; height:170px; pointer-events:none; background:radial-gradient(130% 170px at 50% -46px, rgba(255,206,74,calc(.17 * var(--lit,1))), rgba(255,206,74,0) 72%); }
-.st-page.lum-amber-deep .st-main > *{ position:relative; }
-.st-page.lum-amber-deep .st-main .eyebrow{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 18px; }
-.st-page.lum-amber-deep .st-head{ display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-.st-page.lum-amber-deep .st-title-input{ flex:1 1 auto; font-family:var(--lum-serif); font-weight:600; font-size:38px; line-height:1.1; letter-spacing:-.012em; color:var(--lum-ink); background:none; border:none; border-bottom:1px solid transparent; padding:2px 0; outline:none; }
-.st-page.lum-amber-deep .st-title-input::placeholder{ color:var(--lum-ink-4); }
-.st-page.lum-amber-deep .st-title-input:focus{ border-bottom-color:rgba(255,206,74,.4); }
 .st-page.lum-amber-deep .st-maturity{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); display:flex; align-items:center; gap:8px; margin:0 0 18px; }
 .st-page.lum-amber-deep .st-maturity .glow{ width:7px; height:7px; border-radius:50%; background:var(--lum-gold); box-shadow:0 0 8px rgba(255,206,74,.55); }
-.st-page.lum-amber-deep .subtheory-toggles-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 16px; }
-/* Wave 3 ruling 1: the kept write-path controls tuck into a panel opened by the
-   discreet ••• Options disclosure in the sheet head -- an ALWAYS-visible trigger,
-   click-toggled, IDENTICAL desktop + mobile (no hover dependency; touch-safe). The
-   panel is display:none until .is-open (an inline expander -- no overflow/blur). */
-.st-page.lum-amber-deep .st-tools-toggle{ flex:0 0 auto; margin-left:auto; font-family:var(--lum-mono); font-size:15px; line-height:1; letter-spacing:.06em; color:var(--lum-ink-4); background:none; border:1px solid transparent; border-radius:var(--lum-r-pill,999px); padding:3px 9px 6px; cursor:pointer; transition:color .18s, border-color .18s, background .18s; }
-.st-page.lum-amber-deep .st-tools-toggle:hover{ color:var(--lum-ink-2); border-color:var(--lum-glass-bd-2); }
-.st-page.lum-amber-deep .st-tools-toggle.is-on{ color:var(--lum-gold-l); border-color:rgba(255,206,74,.34); background:rgba(255,206,74,.07); }
-.st-page.lum-amber-deep .st-tools{ display:none; }
-.st-page.lum-amber-deep .st-tools.is-open{ display:flex; }
-.st-page.lum-amber-deep .st-tools .st-maturity,
-.st-page.lum-amber-deep .st-tools .st-delete,
-.st-page.lum-amber-deep .st-tools .st-tb-build{ margin:0; }
 /* sub-line under the title (mock .t-meta): real "STARTED FROM <n> MARKED PASSAGES · <n> BOOKS". */
 .st-page.lum-amber-deep .t-meta{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 22px; }
 /* ruling 3: the topbar mark is the mark-edit trigger now (cursor + quiet focus ring). */
@@ -10776,38 +10754,7 @@ body.wc-focus .app-nav { opacity:.26; }
    footer (.st-connections) as SIBLINGS; the footer's own margin-top spaces it below. */
 .st-page.lum-amber-deep .st-center{ min-width:0; }
 
-/* --- the canvas as Cormorant prose (writing-canvas.js wc-* markup, restyled) --- */
-.st-page.lum-amber-deep .st-canvas-host .wc-wrap{ background:none; border:none; padding:0; }
-/* Wave 3 sheet fix: the legacy .st-page .manuscript (0,2,0) paints the writing box CREAM
-   (background:var(--page-2) -- a bright-only token never re-pointed under [data-ground=dark]).
-   This wrapper-scoped override (0,3,0, and later in source order than line ~10046) dissolves
-   the box so the prose sits directly on the dark .st-main glass, per the mockup. */
-.st-page.lum-amber-deep .manuscript{ background:none; border:none; box-shadow:none; border-radius:0; padding:0; }
-.st-page.lum-amber-deep .st-canvas-host .wc-input{ font-family:var(--lum-serif); font-size:20px; line-height:1.78; color:var(--lum-ink-2); min-height:240px; outline:none; }
-.st-page.lum-amber-deep .st-canvas-host .wc-input p{ margin:0 0 16px; }
-.st-page.lum-amber-deep .st-canvas-host .wc-input:empty:before,
-.st-page.lum-amber-deep .st-canvas-host .wc-input[data-ph]:empty:before{ color:var(--lum-ink-4); }
 
-/* --- evidence weave rail (left) --- */
-.st-page.lum-amber-deep .st-gutter{ background:none; border:none; padding:0; }
-.st-page.lum-amber-deep .subtheory-rail-title{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--lum-ink-3); margin:4px 0 14px; font-weight:400; }
-.st-page.lum-amber-deep .st-ev-card{ background:var(--lum-glass); border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:13px 14px 12px; margin-bottom:13px; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:opacity .3s, border-color .2s; }
-.st-page.lum-amber-deep .st-ev-card:hover{ border-color:var(--lum-glass-bd); }
-.st-page.lum-amber-deep .st-ev-top{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
-.st-page.lum-amber-deep .st-ev-cover{ width:26px; height:34px; border-radius:3px; flex:0 0 auto; overflow:hidden; display:grid; place-items:center; box-shadow:0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.3); }
-.st-page.lum-amber-deep .st-ev-cover-img{ width:100%; height:100%; object-fit:cover; display:block; }
-.st-page.lum-amber-deep .st-ev-cover-cloth{ background:linear-gradient(150deg, var(--lum-cloth), rgba(36,26,2,.9)); font-family:var(--lum-serif); font-weight:600; font-size:15px; color:var(--lum-ink); }
-.st-page.lum-amber-deep .st-ev-meta{ min-width:0; }
-.st-page.lum-amber-deep .st-ev-book{ font-family:var(--lum-serif); font-size:15px; font-weight:600; color:var(--lum-ink); line-height:1.15; }
-.st-page.lum-amber-deep .st-ev-author{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--lum-ink-4); margin-top:2px; }
-.st-page.lum-amber-deep .st-ev-quote{ font-family:var(--lum-serif); font-style:italic; font-size:15px; line-height:1.42; color:var(--lum-ink-2); margin:0 0 11px; }
-.st-page.lum-amber-deep .st-ev-annotation{ font-family:var(--lum-sans); font-size:12px; line-height:1.5; color:var(--lum-ink-3); margin:0 0 11px; }
-.st-page.lum-amber-deep .st-weave{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.04em; color:var(--lum-gold-l); background:none; border:none; padding:0; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
-.st-page.lum-amber-deep .st-weave::before{ content:''; width:13px; height:1px; background:var(--lum-gold-d); display:inline-block; }
-.st-page.lum-amber-deep .st-weave:hover{ color:var(--lum-gold); }
-.st-page.lum-amber-deep .st-ev-card.woven{ opacity:.42; }
-.st-page.lum-amber-deep .st-ev-card.woven .st-weave{ color:var(--lum-ink-4); pointer-events:none; }
-.st-page.lum-amber-deep .st-ev-card.woven .st-weave::before{ background:var(--lum-ink-4); }
 .st-page.lum-amber-deep .subtheory-attached-private-tag{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.03em; color:var(--lum-ink-4); display:block; margin:0 0 8px; }
 
 /* --- connections foot (center, below the sheet) --- */
@@ -10823,11 +10770,14 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* --- Yumi's cyan margin (right) --- */
 .st-page.lum-amber-deep .st-yumi{ padding-top:8px; }
-.st-page.lum-amber-deep .st-yumi-eyebrow{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.22em; color:rgba(127,208,240,.62); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-.st-page.lum-amber-deep .st-yumi .lum-light{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--lum-cyan); box-shadow:0 0 9px 1px rgba(127,208,240,.6); }
+/* R6 S6 (R#8): Yumi's Page margin goes CANON — no blue. Her presence takes the
+   gold/amber register (var(--lum-gold-d) is register-aware: dark-on-cream in the
+   warm-dim draft, light-on-dark in the finished room — ONE rule, both grounds). */
+.st-page.lum-amber-deep .st-yumi-eyebrow{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.22em; color:var(--lum-gold-d); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.st-page.lum-amber-deep .st-yumi .lum-light{ display:inline-block; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold-l) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 9px 1px rgba(217,164,65,.55); }
 .st-page.lum-amber-deep .st-yumi-note{ position:relative; padding-left:15px; margin-bottom:24px; }
-.st-page.lum-amber-deep .st-yumi-note::before{ content:''; position:absolute; left:0; top:3px; bottom:3px; width:2px; border-radius:2px; background:linear-gradient(var(--lum-cyan), rgba(127,208,240,0)); opacity:.65; }
-.st-page.lum-amber-deep .st-yumi-note p{ font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:15.5px; line-height:1.6; color:var(--lum-cyan); margin:0; }
+.st-page.lum-amber-deep .st-yumi-note::before{ content:''; position:absolute; left:0; top:3px; bottom:3px; width:2px; border-radius:2px; background:linear-gradient(var(--lum-gold-l), rgba(217,164,65,0)); opacity:.7; }
+.st-page.lum-amber-deep .st-yumi-note p{ font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:15.5px; line-height:1.6; color:var(--lum-gold-d); margin:0; }
 .st-page.lum-amber-deep .st-yumi-note em{ font-style:normal; color:var(--lum-ink); }
 .st-page.lum-amber-deep .st-yumi-dismiss{ position:absolute; top:0; right:0; font-size:14px; line-height:1; color:var(--lum-ink-4); background:none; border:none; cursor:pointer; padding:2px 4px; opacity:0; transition:opacity .15s; }
 .st-page.lum-amber-deep .st-yumi-note:hover .st-yumi-dismiss{ opacity:1; }
@@ -10840,18 +10790,10 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-page.lum-amber-deep > .st-grid{ padding-left:0; padding-right:0; }
   .st-page.lum-amber-deep .st-topbar{ flex-wrap:wrap; gap:12px; }
   .st-page.lum-amber-deep .st-grid{ grid-template-columns:1fr; gap:20px; }
-  .st-page.lum-amber-deep .st-main{ padding:26px 20px 24px; order:1; }
-  /* override the LEGACY ≤720 bottom-sheet rule (.st-page .st-gutter{display:none})
-     -- the amber reflow stacks the evidence rail inline instead of hiding it. */
-  .st-page.lum-amber-deep .st-gutter{ order:2; display:block; position:static; transform:none; width:auto; }
-  .st-page.lum-amber-deep .subtheory-rail-toggle{ display:none; }
-  .st-page.lum-amber-deep .st-yumi{ order:3; }
-  .st-page.lum-amber-deep .st-title-input{ font-size:30px; }
-  .st-page.lum-amber-deep .st-canvas-host .wc-input{ font-size:18px; }
+  .st-page.lum-amber-deep .st-yumi{ order:2; }
   .st-page.lum-amber-deep .st-pill-publish,
   .st-page.lum-amber-deep .st-conn-add,
-  .st-page.lum-amber-deep .st-conn-row,
-  .st-page.lum-amber-deep .st-weave{ min-height:44px; display:inline-flex; align-items:center; }
+  .st-page.lum-amber-deep .st-conn-row{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE PAGE ===== */
 
@@ -11067,7 +11009,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-into{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); margin-top:5px; }
 .st-build.lum-amber-deep .stb-into em{ font-style:italic; font-family:var(--lum-serif); font-size:14px; color:var(--lum-ink-2); }
 .st-build.lum-amber-deep .stb-acts{ flex:none; display:flex; align-items:center; gap:10px; }
-.st-build.lum-amber-deep .stb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-4); display:inline-flex; align-items:center; gap:7px; }
+.st-build.lum-amber-deep .stb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-2); display:inline-flex; align-items:center; gap:7px; } /* R6 S6 AF5: bare-on-cream — ink-4 (~1.9:1) -> ink-2 (4.8:1); the PAGE st-tb-saved (dark ground) stays ink-3 */
 .st-build.lum-amber-deep .stb-saved::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--lum-gold-d); box-shadow:0 0 7px rgba(255,206,74,.5); }
 .st-build.lum-amber-deep .stb-pubpill{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-gold-l); background:rgba(255,206,74,.07); border:1px solid rgba(255,206,74,.22); border-radius:var(--lum-r-pill,999px); padding:8px 16px; cursor:pointer; transition:background .2s, border-color .2s, color .2s; }
 .st-build.lum-amber-deep .stb-pubpill:hover{ color:var(--lum-gold); border-color:rgba(255,206,74,.34); background:rgba(255,206,74,.12); }
@@ -11085,9 +11027,11 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-canvas-host .wc-input:empty:before{ color:var(--lum-ink-4); }
 
 /* Yumi cyan margin (inside the sheet) */
-.st-build.lum-amber-deep .stb-ymargin{ position:relative; margin:18px 0 0; padding:14px 16px; border-radius:12px; background:rgba(127,208,240,.06); border:1px solid rgba(127,208,240,.20); display:flex; align-items:flex-start; gap:10px; }
-.st-build.lum-amber-deep .stb-yd{ flex:none; width:11px; height:11px; border-radius:50%; margin-top:5px; background:radial-gradient(circle at 38% 32%, rgba(255,255,255,.9) 0%, var(--lum-cyan) 52%, var(--lum-cyan) 100%); box-shadow:0 0 9px rgba(127,208,240,.7); }
-.st-build.lum-amber-deep .stb-ymargin p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:16px; color:var(--lum-cyan); line-height:1.5; }
+/* R6 S6 (R#8): Yumi's workshop margin goes CANON — no blue. Gold/amber presence on
+   the warm-dim cream ground (dark gold text, AA-safe). */
+.st-build.lum-amber-deep .stb-ymargin{ position:relative; margin:18px 0 0; padding:14px 16px; border-radius:12px; background:linear-gradient(160deg, rgba(255,253,246,.5) 0%, rgba(242,194,90,.12) 100%); border:1px solid rgba(217,164,65,.28); display:flex; align-items:flex-start; gap:10px; }
+.st-build.lum-amber-deep .stb-yd{ flex:none; width:11px; height:11px; border-radius:50%; margin-top:5px; background:radial-gradient(circle at 38% 32%, #fff4d6 0%, var(--lum-gold-l) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 9px rgba(217,164,65,.6); }
+.st-build.lum-amber-deep .stb-ymargin p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:16px; color:var(--lum-gold-d); line-height:1.5; }
 .st-build.lum-amber-deep .stb-ymargin p em{ color:var(--lum-ink); font-style:normal; }
 .st-build.lum-amber-deep .stb-yx{ flex:none; color:var(--lum-ink-4); cursor:pointer; font-size:14px; margin-left:6px; }
 .st-build.lum-amber-deep .stb-yx:hover{ color:var(--lum-ink-2); }
@@ -11121,12 +11065,16 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-book.open .stb-bchev{ transform:rotate(90deg); }
 .st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
 .st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
-.st-build.lum-amber-deep .stb-marg{ padding:11px 16px 12px; border-top:1px dashed rgba(255,236,200,.1); background:rgba(20,12,5,.3); }
-.st-build.lum-amber-deep .stb-pg{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.08em; color:var(--lum-ink-4); margin-bottom:5px; }
+/* R6 S6 (R#7): the marginalia block re-palettes off the dark khaki/olive overlay
+   (rgba(20,12,5,.3), read against the warm-dim cream card) to a warm amber-family
+   wash; ink-tier text AA-safe (gold-d eyebrow, ink-2 passage, gold-d active weave,
+   ink-2 done weave). */
+.st-build.lum-amber-deep .stb-marg{ padding:11px 16px 12px; border-top:1px dashed rgba(133,84,16,.14); background:linear-gradient(160deg, rgba(248,224,120,.30) 0%, rgba(242,194,90,.20) 100%); }
+.st-build.lum-amber-deep .stb-pg{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.08em; color:var(--lum-gold-d); margin-bottom:5px; }
 .st-build.lum-amber-deep .stb-passage{ font-family:var(--lum-serif); font-size:15px; color:var(--lum-ink-2); line-height:1.4; font-style:italic; }
-.st-build.lum-amber-deep .stb-weave{ margin-top:9px; font-family:var(--lum-mono); font-size:11.5px; color:var(--lum-gold-l); background:rgba(255,206,74,.08); border:1px solid rgba(255,206,74,.28); border-radius:var(--lum-r-pill,999px); padding:5px 12px; cursor:pointer; transition:border-color .2s, box-shadow .2s; display:inline-flex; align-items:center; gap:6px; }
-.st-build.lum-amber-deep .stb-weave:hover{ border-color:rgba(255,206,74,.55); box-shadow:0 0 13px -4px rgba(255,206,74,.5); }
-.st-build.lum-amber-deep .stb-weave.done{ color:var(--lum-ink-4); border-color:rgba(182,168,136,.3); background:none; cursor:default; box-shadow:none; }
+.st-build.lum-amber-deep .stb-weave{ margin-top:9px; font-family:var(--lum-mono); font-size:11.5px; color:var(--lum-gold-d); background:rgba(242,194,90,.14); border:1px solid rgba(217,164,65,.4); border-radius:var(--lum-r-pill,999px); padding:5px 12px; cursor:pointer; transition:border-color .2s, box-shadow .2s; display:inline-flex; align-items:center; gap:6px; }
+.st-build.lum-amber-deep .stb-weave:hover{ border-color:rgba(217,164,65,.7); box-shadow:0 0 13px -4px rgba(217,164,65,.5); }
+.st-build.lum-amber-deep .stb-weave.done{ color:var(--lum-ink-2); border-color:rgba(151,139,109,.3); background:none; cursor:default; box-shadow:none; }
 
 /* mobile: stack the two columns */
 @media (max-width:759px){
