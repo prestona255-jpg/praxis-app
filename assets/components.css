@@ -1686,47 +1686,10 @@
    published or consequence field (DEFERRED, a data-model task). Washes via
    color-mix off --lum-*; no raw hex. Look ref: design Wave 7 arcs-amber.html.
    ============================================================================ */
-.arcs.lum-amber {
-  max-width: none; margin: 0; padding: 56px var(--sp-5) 80px;
-  min-height: 100vh; background: var(--lum-bg);
-  --ink: var(--lum-ink); --ink-2: var(--lum-ink-2); --ink-3: var(--lum-ink-3); --ink-4: var(--lum-ink-4);
-  --gold: var(--lum-gold); --gold-light: var(--lum-gold-l);
-  --surface: color-mix(in srgb, var(--lum-ink) 5%, transparent);
-  --surface-2: color-mix(in srgb, var(--lum-ink) 7%, transparent);
-  --border: var(--lum-glass-bd-2); --line-2: var(--lum-glass-bd);
-}
-.arcs.lum-amber > * { max-width: 1080px; margin-left: auto; margin-right: auto; }
-.arcs.lum-amber .eyebrow { font-family: var(--lum-mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--lum-ink-3); }
-.arcs.lum-amber .arcs-title { font-family: var(--lum-serif); color: var(--lum-ink); }
-.arcs.lum-amber .arcs-teach { font-family: var(--lum-serif); font-style: italic; color: var(--lum-ink-2); }
-.arcs.lum-amber .arcs-section-h h2 { font-family: var(--lum-serif); color: var(--lum-ink); }
-/* control bar (mock .bar): segmented sort + count */
-.arcs.lum-amber .arcs-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 0 auto 18px; }
-.arcs.lum-amber .arcs-seg { display: inline-flex; border: 1px solid var(--lum-glass-bd); border-radius: var(--lum-r-pill); padding: 3px; background: color-mix(in srgb, var(--lum-base) 30%, transparent); }
-.arcs.lum-amber .arcs-seg-btn { font-family: var(--lum-sans); font-size: 12px; color: var(--lum-ink-3); background: none; border: none; border-radius: var(--lum-r-pill); padding: 6px 13px; cursor: pointer; transition: color var(--motion-base) var(--ease); }
-.arcs.lum-amber .arcs-seg-btn:hover { color: var(--lum-ink); }
-.arcs.lum-amber .arcs-seg-btn.is-on { color: var(--lum-gold-ink); background: linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold)); font-weight: 600; }
-.arcs.lum-amber .arcs-count { font-family: var(--lum-mono); font-size: 11px; letter-spacing: .1em; color: var(--lum-ink-3); }
-/* glass arc card */
-.arcs.lum-amber .arc-card { padding: 0; background: var(--lum-glass); border: 1px solid var(--lum-glass-bd-2); border-radius: var(--lum-r-card); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--lum-ink) 16%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.arcs.lum-amber .arc-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--lum-gold-l) 40%, transparent); box-shadow: 0 20px 44px -26px rgba(0,0,0,.7); }
-.arcs.lum-amber .arc-card-title { font-family: var(--lum-serif); color: var(--lum-ink); }
-.arcs.lum-amber .arc-card-desc { color: var(--lum-ink-3); }
-.arcs.lum-amber .arc-card-meta { font-family: var(--lum-sans); font-size: 11.5px; letter-spacing: 0; text-transform: none; color: var(--lum-ink-3); border-top: 1px solid var(--lum-glass-bd-2); }
-/* mini-constellation band (mock .const): real PraxisMarks lights + faint threads */
-.arcs.lum-amber .arc-card-thumb { position: relative; height: 128px; margin: 0; overflow: hidden; border: none; border-bottom: 1px solid var(--lum-glass-bd-2); border-radius: 0; background: radial-gradient(ellipse 90% 80% at 50% 42%, color-mix(in srgb, var(--lum-base) 86%, var(--lum-ink-3)) 0%, var(--lum-base) 64%); }
-.arcs.lum-amber .arc-const-threads { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.arcs.lum-amber .arc-const-threads path { fill: none; stroke: color-mix(in srgb, var(--lum-gold-l) 45%, transparent); stroke-width: .8; }
-.arcs.lum-amber .arc-light { position: absolute; transform: translate(-50%, -50%); line-height: 0; }
-.arcs.lum-amber .arc-const-empty::after { content: ""; position: absolute; left: 50%; top: 50%; width: 11px; height: 11px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, var(--lum-gold-l), transparent 70%); opacity: .5; }
-/* begin tile (mock .arc.begin) */
-.arcs.lum-amber .arc-card-start { background: transparent; border: 1px dashed color-mix(in srgb, var(--lum-ink-3) 42%, transparent); color: var(--lum-ink-3); }
-.arcs.lum-amber .arc-card-start:hover { color: var(--lum-gold); border-color: color-mix(in srgb, var(--lum-gold-l) 50%, transparent); }
-.arcs.lum-amber .arc-card-start-icon { color: var(--lum-gold-l); }
-.arcs.lum-amber .arc-card-start-label { font-family: var(--lum-serif); font-style: italic; color: var(--lum-ink-2); }
-/* grid: auto-fill (mock); 1-up on phone (Canon §4-F) */
-.arcs.lum-amber .arcs-grid { grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 16px; }
-@media (max-width:759px){ .arcs.lum-amber .arcs-grid { grid-template-columns: 1fr; } }
+/* R5 S6 (dead-code cut): the Wave 7 .arcs.lum-amber dark arcs-list skin (glass +
+   backdrop-blur) was deadened in S2 — the root is now .arcs.lum-amber-deep (the
+   Universal light skin below END-ARCS). Grep-verified zero JS callers ('arcs lum-amber'
+   non-deep = comment-only; live emits 'arcs lum-amber-deep'). Removed. */
 
 /* ============================================================================
    R5 · Surface C — Arcs LIST reskinned to Universal v1.2 LIGHT. Option-B: the
@@ -11704,6 +11667,18 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.arcfield-warm .arcfield-pub-status{ color:var(--lum-ink-2); }
 .arcfield.arcfield-warm .arcfield-pub-status b{ color:var(--lum-gold-d); font-weight:600; }
 .arcfield.arcfield-warm .arcfield-pub-hint{ color:var(--lum-ink-3); font-family:var(--lum-serif); font-style:italic; font-size:11px; }
+
+/* ============================================================================
+   R5 S6 · D11 mark-picker trigger in the author Read row + D6 keyboard focus rings
+   (chrome only — the frozen renderer's SVG output is styled, never edited).
+   ============================================================================ */
+.read-list .read-change-mark{ font-family:var(--lum-mono); font-size:10px; color:var(--lum-ink-3); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:2px; padding:0; }
+.read-list .read-change-mark:hover{ color:var(--lum-gold-d); }
+.read-list .read-change-mark:focus-visible,
+.read-list .read-title a:focus-visible{ outline:2px solid var(--lum-gold); outline-offset:2px; border-radius:3px; }
+/* keyboard focus ring on constellation marks: the frozen renderer emits data-st-sub-id;
+   latent until those nodes carry tabindex (renderer-owned) — CSS only, no renderer edit. */
+.arcfield.lum-amber .arc-detail-web-view [data-st-sub-id]:focus-visible{ outline:2px solid var(--lum-gold); outline-offset:2px; }
 
 /* =============================================================================
    W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;

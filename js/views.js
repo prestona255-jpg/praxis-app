@@ -9050,12 +9050,27 @@ function renderBookDetail(bookId) {
 // to a constellation mark. Save writes 0-based markShape/markColor (R52) or
 // DELETES them for Auto, then saveState + re-renders the current view in place.
 // Canonical names (sheet, ruling 49); shapes for the detail line.
-var ST_MARK_NAMES = ['the beacon', 'the wellspring', 'the compass', 'the keystone',
-  'the river', 'the lantern', 'the facet', 'the bloom', 'the summit', 'the chamber',
-  'the seed', 'the kite', 'the harbor', 'the spark', 'the dune', 'the gate'];
+// R5 S6: the committed 16-name mark language (docs/studio/mockups/arcs.html ST_MARKS,
+// by shape index 0-15). 7 canon (beacon/wellspring/lantern/facet/bloom/summit/seed) +
+// 9 committed (spark/keystone/vessel/grove/ember/horizon/lodestar/cairn/harbor).
+var ST_MARK_NAMES = ['the beacon', 'the wellspring', 'the spark', 'the keystone',
+  'the vessel', 'the lantern', 'the facet', 'the bloom', 'the summit', 'the grove',
+  'the seed', 'the ember', 'the horizon', 'the lodestar', 'the cairn', 'the harbor'];
 var ST_MARK_SHAPES = ['hexagon', 'teardrop', 'four-point star', 'pentagon',
   'lens (vesica)', 'arch', 'rhombus', 'rosette', 'triangle', 'octagon', 'egg',
   'kite', 'semicircle', 'six-point star', 'mound', 'squircle'];
+
+// R5 S6 (D6): the canonical name of a sub-theory's RESOLVED mark (stored index else
+// the deterministic hash of its id) -- for the constellation tooltip. Display-only.
+function _stMarkNameFor(sub) {
+  if (typeof ST_MARK_NAMES === 'undefined') { return ''; }
+  var sh = (sub && typeof sub.markShape === 'number' && sub.markShape >= 0 && sub.markShape <= 15) ? sub.markShape : null;
+  if (sh === null) {
+    var hx = (typeof window.stHashIndices === 'function' && sub && sub.id) ? window.stHashIndices(sub.id) : { shapeIdx: 0 };
+    sh = hx.shapeIdx;
+  }
+  return ST_MARK_NAMES[sh] || '';
+}
 
 function _stPickerMarkSvg(subId, shapeIdx, colorIdx, pal, neutral) {
   if (typeof window.stRenderMarkMarkup !== 'function') { return ''; }
@@ -11865,6 +11880,9 @@ function _stConstellationAttachInteractions(svgEl, arc) {
     var lines = [];
     if (!sub) { return lines; }
     lines.push({ cls: 'arc-tooltip-title', text: sub.header || 'Untitled sub-theory' });
+    // R5 S6 (D6): name the mark (chrome only; the frozen renderer's SVG is untouched).
+    var _mnm = _stMarkNameFor(sub);
+    if (_mnm) { lines.push({ cls: 'arc-tooltip-meta', text: _mnm }); }
     lines.push({ cls: 'arc-tooltip-affordance', text: 'Open sub-theory' });
     return lines;
   }
@@ -13258,7 +13276,7 @@ function _arcFieldReadFace(arc) {
       isDraft:     !!(rec && rec.status === 'draft')
     });
   }
-  wrap.appendChild(_arcReadSpine(rows, { edges: edgePairs }));
+  wrap.appendChild(_arcReadSpine(rows, { edges: edgePairs, allowMarkEdit: true }));
 
   // Arc-level closing section (deterministic summary — no model call).
   var closing = document.createElement('div');
@@ -13350,10 +13368,27 @@ function _arcReadSpine(rows, opts) {
       body.appendChild(fl);
     }
 
-    if (typeof r.connCount === 'number') {
+    if (typeof r.connCount === 'number' || (opts.allowMarkEdit && r.id)) {
       var meta = document.createElement('div');
       meta.className = 'read-meta';
-      meta.textContent = r.connCount + (r.connCount === 1 ? ' thread' : ' threads');
+      if (typeof r.connCount === 'number') {
+        meta.appendChild(document.createTextNode(r.connCount + (r.connCount === 1 ? ' thread' : ' threads')));
+      }
+      // R5 S6 (D11): surface the existing mark picker (openSymbolPicker) from the
+      // author Read row — writes the sub's markShape/markColor (or Auto = hash).
+      if (opts.allowMarkEdit && r.id) {
+        if (typeof r.connCount === 'number') { meta.appendChild(document.createTextNode(' · ')); }
+        var chg = document.createElement('button');
+        chg.type = 'button';
+        chg.className = 'read-change-mark';
+        chg.textContent = 'Change mark ▾';
+        (function (sid) {
+          chg.addEventListener('click', function () {
+            if (typeof openSymbolPicker === 'function') { openSymbolPicker(sid); }
+          });
+        })(r.id);
+        meta.appendChild(chg);
+      }
       body.appendChild(meta);
     }
 
