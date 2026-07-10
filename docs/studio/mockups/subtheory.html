@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis Studio — R6 Sub-theory (deep) Shape Mockup</title>
+<!--
+  PRAXIS STUDIO — R6 SUB-THEORY (DEEP) MOCKUP
+  Surface slug: subtheory. Covers a scoped multi-route set, per the R5 Arcs
+  precedent, as FOUR scoped panels in this one file:
+    (a) #subtheory/<id>/build  — the workshop (two-column shell + FOCUS MODE)
+    (b) #subtheory/<id>        — DRAFT (author working view, warm-dim)
+    (c) #subtheory/<id>        — FINISHED (the full-amber immersive room)
+    (d) the Notebook right leaf's birth flow
+
+  Read-only design artifact — no app code was touched to build this file. See
+  the appended "## Mockup evaluation" in docs/studio/subtheory-build.md for
+  the full decision table, data-source findings, and forks. docs/studio/
+  subtheory-page.md and docs/studio/notebook.md are REFERENCED, never edited.
+
+  MECHANISM: the live route/ground map (umberGroundDark) is untouched; this
+  file lifts the REAL markup + CSS (verbatim class names, verbatim token
+  VALUES resolved from theme.css / lumen-amber.css) for panels a/b/c
+  (renderSubTheoryBuild views.js:11128, renderSubTheoryPage views.js:9751,
+  renderSubTheoryReadOnly views.js:9569) and panel d (buildNotebookRightLeaf
+  views.js:2078, notebook Universal-light skin components.css:11980-12154,
+  shipped R4 v3.188), then layers ONLY the nine locked decisions on top.
+  Every genuinely-new element carries <!-- EVOLVED: #n --> naming its
+  decision; nothing unmapped.
+
+  Tokens cited from:
+    - assets/lumen-amber.css:29-58 (the --lum-* Lumen set, verbatim, the
+      FULL-AMBER register used unmodified for panel c and as the base of a/b)
+    - assets/theme.css:24-35,341-361 (--ground/--surface-d/--text-d/--muted,
+      the [data-ground="dark"] resolution of --ink/-2/-3/-4 on this route)
+    - assets/theme.css:190-225 (--subtheory-1..16 / -edge, verbatim)
+    - docs/studio/praxis-universal-token-sheet.md §2-§3 (v1.1 --ink-2/-ink-3,
+      --gold-hi/--gold-deep) + docs/studio/universal-depth.css recipes 1/7
+      (gilded hairline, constellation thread — the room-threshold marker)
+    - docs/studio/mockups/arcs.html:130-149,247-251,432-451 (the R5-ratified
+      WARM-DIM room recipe .arcfield.arcfield-warm + the amber room-threshold
+      cue) — reused BYTE-FOR-BYTE for decision #8's warm-dim workshop/draft,
+      so the sub-theory's working register matches the arc interior it lives
+      inside, per CLAUDE.md §7 THE GROUND SPECTRUM.
+    - assets/components.css:11980-12154 (Notebook Universal-light skin,
+      shipped R4 v3.188) for panel d.
+    - js/arc-constellation.js:801-818 (_ST_MARK_TABLE) — 5 of the 16 frozen
+      marks copied verbatim (paths untouched) into the MARKS array below,
+      same provenance note as docs/studio/mockups/arcs.html's ST_MARKS.
+
+  Sample content: Preston's real seeded "A Pedagogy of Desire" arc
+  (js/state.js ~2893-3384, userId '__praxis_seed__') — its 5 real books, 4
+  real published sub-theories (cited for Connections), and a 5th INVENTED
+  forming sub-theory ("Wanting as a Curriculum", in the same voice) built to
+  exercise every evolved state: draft → finished, a private journal note
+  woven as evidence then excluded on Finish, and real citation superscripts.
+
+  ----------------------------------------------------------------------------
+  REVISION 1 (this pass) — Preston's felt-pass on R0 was "skeleton PASS, skin
+  FAIL." Ten locked revisions, in place, tagged <!-- REVISED: R#n --> (R0's
+  own <!-- EVOLVED: #n --> tags are UNTOUCHED where the element survives):
+    R#1 KILL the Write|Preview toggle in the Workshop — the canvas shows
+        always; "Open the page →" is now the SOLE door to rendered prose.
+    R#2 "Finish" lives ONLY in the Workshop — removed from the Page-Draft
+        topbar (finishB gone; finishA/finishC untouched).
+    R#3 Page-Draft strips autosave chrome ("saved · N mins ago") — a read
+        surface doesn't report autosave; maturity/provenance stay.
+    R#4 Page-Draft's edit door quiets: filled gold block → outlined
+        confident-but-quiet gold pill, still >=44px.
+    R#5 THE PULL SYSTEM — book+text search/filter, a visible WOVEN/UNWOVEN
+        state per passage (with a quiet "woven into ¶N" caption), and the
+        insert-at-cursor "weave in" affordance — deterministic only, no
+        Yumi generation.
+    R#6 WALK-NAV in the Finished room — real prev/next siblings from
+        Preston's seeded arc (js/state.js:3339-3367), the arc name as the
+        spine. No constellation shape-click (that is R11's).
+    R#7 Marginalia rail re-palette — khaki/olive dark overlay -> warm
+        amber-family wash, ink-tier text >=4.5:1 (verified, see the eval).
+    R#8 Yumi's margin voice goes canon: no blue anywhere. Gold/amber
+        presence register — the SAME one her live Bloom already wears
+        (assets/components.css:11-37 .yumi-bloom-orb, var(--gold) glow;
+        this was drift introduced by R0, not prior live canon).
+    R#9 The workshop's warm-dim deepens — real atmospheric depth (Universal
+        depth v1.2 recipe 6) so the field reads as a dim study and the
+        canvas/sheet reads lit, dark ink kept throughout.
+    R#10 Workshop title-input: ellipsis + title attr, never a hard clip.
+  Contrast, token provenance, and one pre-existing (not-this-round) AA gap
+  are recorded in docs/studio/subtheory-build.md's appended "## Mockup
+  revision 1" section.
+  ----------------------------------------------------------------------------
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   0 · RESET + FONT STACKS (live theme.css:9-11, byte-identical stacks)
+   ============================================================================ */
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{ margin:0; }
+a{ color:inherit; }
+button{ font:inherit; }
+
+:root{
+  --font-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ===== the plain --ink family AS RESOLVED on this route's dark ground
+     (assets/theme.css:341-344 [data-ground="dark"], primitives :34-35) —
+     this is what .subtheory-readonly-* actually consumes live (AF4). ===== */
+  --ink:#f0e3c8;    /* var(--text-d), theme.css:34 */
+  --ink-2:#c2a87f;  /* var(--muted), theme.css:35 — ink-2/3/4 COLLAPSE to one value live */
+  --ink-3:#c2a87f;
+  --ink-4:#c2a87f;
+  --gold:#d2a23e;   /* dark-ground legibility gold, theme.css:358 */
+  --border:rgba(210,162,62,.18);
+  --danger:#c2603a;
+
+  /* ===== the --lum-* Lumen set — VERBATIM, assets/lumen-amber.css:29-58.
+     This is the FULL-AMBER register: panel (c) uses it unmodified; panels
+     (a)/(b) override a subset under .stb-warm-dim (decision #8, below). ===== */
+  --lum-ink:#fdf8ec;
+  --lum-ink-2:#e8dcc4;
+  --lum-ink-3:#b6a888;
+  --lum-ink-4:#867a5e;
+  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.04) 100%);
+  --lum-glass-raised:linear-gradient(157deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.06) 100%);
+  --lum-glass-bd:rgba(255,236,200,.28);
+  --lum-glass-bd-2:rgba(255,236,200,.16);
+  --lum-glass-blur:16px;
+  --lum-gold:#ffce4a;
+  --lum-gold-l:#ffe79a;
+  --lum-gold-d:#cf9c2a;
+  --lum-gold-ink:#241a02;
+  --lum-cyan:#7fd0f0;   /* Yumi — always, ground-independent */
+  --lum-cloth:#5a4632;
+  --lum-serif:"Cormorant Garamond", Georgia, serif;
+  --lum-sans:"DM Sans", system-ui, sans-serif;
+  --lum-mono:"DM Mono", ui-monospace, monospace;
+  --lum-r-pill:999px;
+
+  /* the sixteen frozen sub-theory mark hues + edges (5 used here) —
+     assets/theme.css:190-225, verbatim. */
+  --subtheory-2:#8FB8E8;  --subtheory-2-edge:#5580C2;
+  --subtheory-5:#7CC6DA;  --subtheory-5-edge:#3D93AC;
+  --subtheory-6:#F0D468;  --subtheory-6-edge:#C4A22E;
+  --subtheory-8:#F2A8C6;  --subtheory-8-edge:#CC6E9A;
+  --subtheory-9:#A8CD8E;  --subtheory-9-edge:#6FA052;
+
+  /* Universal v1.2 gilding roles (praxis-universal-token-sheet.md §2-§3),
+     used ONLY by the decision-#8 warm-dim remap + the decision-#6 threshold
+     marker below — never a live-surface base token. */
+  --u-gold-hi:#d9a441;
+  --u-gold-deep:#855410;
+  --u-thread:#c2a463;
+}
+
+/* ============================================================================
+   1 · MOCKUP-ONLY REVIEW CHROME — never part of the live surface (same
+   pattern as the R4/R5 mockups: toolbar + scene switcher, untagged since it
+   is tooling, not a surface addition).
+   ============================================================================ */
+body{ font-family:var(--font-body); background:#171009; color:#e8dcc4; }
+.mock-toolbar{ position:sticky; top:0; z-index:60; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  padding:12px 24px; background:rgba(23,16,9,.96); color:#f3e8ce; font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.04em; border-bottom:1px solid rgba(255,236,200,.16); }
+.mock-toolbar b{ color:#ffce4a; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.mock-group{ display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.mock-btn{ font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; color:#f3e8ce; background:rgba(255,236,200,.08);
+  border:1px solid rgba(255,236,200,.22); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.mock-btn:hover{ border-color:#ffce4a; color:#ffce4a; }
+.mock-btn.is-on{ background:linear-gradient(180deg,#ffe79a,#ffce4a); color:#241a02; border-color:transparent; font-weight:600; }
+.mock-legend{ flex-basis:100%; font-size:10px; color:#b6a888; line-height:1.6; }
+.mock-legend b{ color:#e8dcc4; }
+.mock-scene{ display:none; }
+.mock-scene.is-active{ display:block; }
+
+/* ============================================================================
+   2 · WORKSHOP — #subtheory/<id>/build (renderSubTheoryBuild, views.js:11128)
+   lifted verbatim (.st-build.lum-amber-deep + .stb-*), assets/components.css
+   ~10862-10967.
+   ============================================================================ */
+.st-build.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:30px 0 70px; color:var(--lum-ink); }
+.st-build.lum-amber-deep > .stb-intro,
+.st-build.lum-amber-deep > .stb-build{ max-width:940px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+.st-build.lum-amber-deep .stb-intro{ margin-bottom:18px; }
+.st-build.lum-amber-deep .stb-eyebrow{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 10px; }
+.st-build.lum-amber-deep .stb-h1{ font-family:var(--lum-serif); font-weight:500; font-size:32px; line-height:1.08; color:var(--lum-ink); margin:0; }
+.st-build.lum-amber-deep .stb-h1 em{ font-style:italic; color:var(--lum-gold-l); }
+.st-build.lum-amber-deep .stb-build{ display:flex; gap:20px; align-items:flex-start; }
+.st-build.lum-amber-deep .stb-main{ flex:1; min-width:0; transition:max-width .25s ease; }
+.st-build.lum-amber-deep .stb-rail{ flex:none; width:288px; transition:opacity .2s ease; }
+.st-build.lum-amber-deep .stb-head{ display:flex; align-items:center; gap:14px; margin:0 0 14px; }
+.st-build.lum-amber-deep .stb-hero-mark{ flex:none; display:inline-flex; }
+.st-build.lum-amber-deep .stb-hero-mark-edit{ cursor:pointer; border-radius:50%; }
+.st-build.lum-amber-deep .stb-hero-mark-edit:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
+.st-build.lum-amber-deep .stb-title-wrap{ flex:1; min-width:0; }
+.st-build.lum-amber-deep .stb-title-input{ width:100%; font-family:var(--lum-serif); font-weight:600; font-size:30px; line-height:1.06; color:var(--lum-ink); background:none; border:none; border-bottom:1px solid transparent; outline:none; padding-bottom:2px; text-overflow:ellipsis; overflow:hidden; } /* REVISED: R#10 — a hard clip ("Wantin") is now an ellipsis; the title attribute (markup) is the native tooltip fallback */
+.st-build.lum-amber-deep .stb-title-input::placeholder{ color:var(--lum-ink-4); }
+.st-build.lum-amber-deep .stb-title-input:focus{ border-bottom-color:rgba(255,206,74,.5); }
+.st-build.lum-amber-deep .stb-into{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); margin-top:5px; }
+.st-build.lum-amber-deep .stb-into em{ font-style:italic; font-family:var(--lum-serif); font-size:14px; color:var(--lum-ink-2); }
+.st-build.lum-amber-deep .stb-acts{ flex:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.st-build.lum-amber-deep .stb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-3); display:inline-flex; align-items:center; gap:7px; } /* EVOLVED: #9 AF5 — ink-4→ink-3, see §9 below */
+.st-build.lum-amber-deep .stb-saved::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--lum-gold-d); box-shadow:0 0 7px rgba(255,206,74,.5); }
+.st-build.lum-amber-deep .stb-pubpill{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-gold-l); background:rgba(255,206,74,.07); border:1px solid rgba(255,206,74,.22); border-radius:var(--lum-r-pill,999px); padding:8px 16px; cursor:pointer; transition:background .2s, border-color .2s, color .2s; }
+.st-build.lum-amber-deep .stb-pubpill:hover{ color:var(--lum-gold); border-color:rgba(255,206,74,.34); background:rgba(255,206,74,.12); }
+.st-build.lum-amber-deep .stb-pubpill.on{ color:var(--lum-ink-2); background:rgba(255,255,255,.05); border-color:var(--lum-glass-bd-2); }
+/* REVISED: R#1 — the Write|Preview toggle is KILLED (see the removed block
+   this replaces, below); "Open the page →" is now the SOLE path to rendered
+   prose, so it is restyled as a confident-but-quiet threshold-register door
+   — the SAME outlined-gold idiom as R#4's Draft edit-door-outline (they are
+   now mirrored crossings, Workshop<->Page). Contrast verified 5.31:1, see
+   the eval. */
+.st-build.lum-amber-deep .stb-openpage{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--lum-gold-d); text-decoration:none; background:linear-gradient(160deg, rgba(255,253,246,.62) 0%, rgba(255,248,230,.42) 100%); border:1px solid rgba(133,84,16,.32); border-radius:var(--lum-r-pill,999px); padding:9px 18px; white-space:nowrap; display:inline-flex; align-items:center; }
+.st-build.lum-amber-deep .stb-openpage:hover{ background:linear-gradient(160deg, rgba(255,253,246,.8) 0%, rgba(255,248,230,.55) 100%); border-color:rgba(133,84,16,.5); color:var(--lum-gold-ink); }
+.st-build.lum-amber-deep .stb-sheet{ position:relative; border-radius:18px; padding:32px 36px 26px; background:var(--lum-glass-raised); border:1px solid var(--lum-glass-bd); box-shadow:inset 0 1px 0 rgba(255,236,200,.20), 0 30px 60px -34px rgba(0,0,0,.7), 0 10px 26px -18px rgba(0,0,0,.5); -webkit-backdrop-filter:blur(var(--lum-glass-blur)); backdrop-filter:blur(var(--lum-glass-blur)); overflow:hidden; }
+.st-build.lum-amber-deep .stb-sheet::before{ content:""; position:absolute; left:0; right:0; top:0; height:150px; pointer-events:none; background:radial-gradient(130% 150px at 50% -44px, rgba(255,206,74,.15), rgba(255,206,74,0) 72%); }
+.st-build.lum-amber-deep .stb-sheet > *{ position:relative; }
+.st-build.lum-amber-deep .stb-canvas-host .wc-wrap{ background:none; border:none; padding:0; max-width:none; }
+.st-build.lum-amber-deep .stb-canvas-host .wc-input{ font-family:var(--lum-serif); font-size:20px; line-height:1.7; color:var(--lum-ink-2); min-height:200px; outline:none; }
+.st-build.lum-amber-deep .stb-canvas-host .wc-input p{ margin:0 0 16px; }
+.st-build.lum-amber-deep .stb-canvas-host .wc-bar{ display:flex; justify-content:flex-end; margin-bottom:6px; }
+.st-build.lum-amber-deep .stb-canvas-host .wc-saved{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--lum-ink-4); opacity:.85; }
+/* REVISED: R#8 — Yumi's margin voice goes canon: NO blue. Her presence
+   takes the SAME gold/amber register her live Bloom already wears (verified
+   live: assets/components.css:11-37 .yumi-bloom-orb's glow is var(--gold),
+   "a warm SVG heart on the warm surface: NO dark vessel" — the cyan here was
+   drift R0 introduced, not prior live canon). Italic stays; link-blue dies.
+   Dot recolored per Universal depth v1.2 recipe 2 (amber orb),
+   docs/studio/universal-depth.css:57-71. Contrast verified 4.65-5.11:1 at
+   worst-case gradient stops, see the eval. */
+.st-build.lum-amber-deep .stb-ymargin{ position:relative; margin:18px 0 0; padding:14px 16px; border-radius:12px; background:linear-gradient(160deg, rgba(255,253,246,.5) 0%, rgba(242,194,90,.12) 100%); border:1px solid rgba(217,164,65,.28); display:flex; align-items:flex-start; gap:10px; }
+.st-build.lum-amber-deep .stb-yd{ flex:none; width:11px; height:11px; border-radius:50%; margin-top:5px; background:radial-gradient(circle at 38% 32%, #fff4d6 0%, var(--u-gold-hi) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 9px rgba(217,164,65,.6); }
+.st-build.lum-amber-deep .stb-ymargin p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:16px; color:var(--lum-gold-d); line-height:1.5; }
+.st-build.lum-amber-deep .stb-ymargin p em{ color:var(--lum-ink); font-style:normal; }
+.st-build.lum-amber-deep .stb-yx{ flex:none; color:var(--lum-ink-4); cursor:pointer; font-size:14px; margin-left:6px; }
+.st-build.lum-amber-deep .stb-conn{ margin:18px 0 0; padding:16px 18px; border-radius:14px; background:var(--lum-glass); border:1px solid var(--lum-glass-bd-2); }
+.st-build.lum-amber-deep .stb-conn-head{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 12px; }
+.st-build.lum-amber-deep .stb-crow{ display:flex; align-items:center; gap:12px; padding:7px 0; font-family:var(--lum-serif); font-size:18px; color:var(--lum-ink); text-decoration:none; }
+.st-build.lum-amber-deep .stb-crow-glyph{ flex:none; display:inline-flex; }
+.st-build.lum-amber-deep .stb-crow:hover .stb-crow-title{ color:var(--lum-gold-l); }
+.st-build.lum-amber-deep .stb-conn-add{ margin-top:10px; font-family:var(--lum-mono); font-size:11.5px; color:var(--lum-ink-3); background:none; border:none; cursor:pointer; padding:6px 0 0; }
+.st-build.lum-amber-deep .stb-source{ border:1px solid var(--lum-glass-bd-2); border-radius:16px; background:var(--lum-glass); overflow:hidden; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 22px 46px -30px rgba(133,84,16,.35); } /* REVISED: R#9 — visible ground-to-panel separation against the deepened field */
+.st-build.lum-amber-deep .stb-srchead{ padding:15px 18px; border-bottom:1px solid var(--lum-glass-bd-2); }
+.st-build.lum-amber-deep .stb-src-title{ font-family:var(--lum-serif); font-weight:600; font-size:18px; color:var(--lum-ink); }
+.st-build.lum-amber-deep .stb-src-sub{ font-family:var(--lum-sans); font-size:11px; color:var(--lum-ink-3); margin-top:3px; }
+.st-build.lum-amber-deep .stb-book{ border-bottom:1px solid rgba(255,236,200,.08); }
+.st-build.lum-amber-deep .stb-brow{ display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; transition:background .2s; }
+.st-build.lum-amber-deep .stb-brow:hover{ background:rgba(255,236,200,.04); }
+.st-build.lum-amber-deep .stb-bcover{ flex:none; width:30px; height:42px; border-radius:2px 4px 4px 2px; overflow:hidden; box-shadow:0 4px 10px -4px rgba(0,0,0,.7), inset 1px 0 0 rgba(255,255,255,.08); }
+.st-build.lum-amber-deep .stb-bcover-cloth{ background:linear-gradient(135deg, var(--lum-cloth) 0%, rgba(36,26,2,.92) 100%); display:flex; align-items:center; justify-content:center; font-family:var(--lum-serif); font-weight:600; font-size:13px; color:var(--lum-ink); }
+.st-build.lum-amber-deep .stb-binfo{ flex:1; min-width:0; }
+.st-build.lum-amber-deep .stb-bt{ font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--lum-ink); line-height:1.2; }
+.st-build.lum-amber-deep .stb-bc{ font-family:var(--lum-sans); font-size:10.5px; color:var(--lum-ink-3); margin-top:2px; }
+.st-build.lum-amber-deep .stb-bchev{ flex:none; color:var(--lum-ink-4); font-size:11px; transition:transform .25s; }
+.st-build.lum-amber-deep .stb-book.open .stb-bchev{ transform:rotate(90deg); }
+.st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
+.st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
+/* REVISED: R#7 — the marginalia block re-palettes off a dark
+   rgba(20,12,5,.3) overlay (read khaki/olive against the light warm-dim
+   card behind it) to a warm amber-family wash (Universal field-8 pale-gold,
+   docs/studio/universal-depth.css:43); ink-tier text verified >=4.5:1 at the
+   gradient's worst (most field-bleeding) stop — see the eval's contrast
+   table. */
+.st-build.lum-amber-deep .stb-marg{ padding:11px 16px 12px; border-top:1px dashed rgba(133,84,16,.14); background:linear-gradient(160deg, rgba(248,224,120,.30) 0%, rgba(242,194,90,.20) 100%); }
+.st-build.lum-amber-deep .stb-pg{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.08em; color:var(--lum-gold-d); margin-bottom:5px; } /* REVISED: R#7 — --lum-ink-4 failed AA here (2.47:1); --lum-gold-d verified 4.72:1 */
+.st-build.lum-amber-deep .stb-passage{ font-family:var(--lum-serif); font-size:15px; color:var(--lum-ink-2); line-height:1.4; font-style:italic; }
+/* REVISED: R#5(b)/(c) + R#7 — the weave pill IS the visible woven/unwoven
+   state AND the insert-at-cursor affordance. A luminous-orb dot (Universal
+   depth v1.2 recipe 2, docs/studio/universal-depth.css:53-69 — lit=woven,
+   unlit=unwoven) plus AA-safe ink-tier text: gold-d for the active "+ weave
+   in" CTA, ink-2 for the quieter "woven in" done state (the OLD --lum-ink-4/
+   --lum-gold-l were decorative-only per the Universal restraint law "gilding
+   is edge+glow, never a fill" and both failed AA against this new ground). */
+.st-build.lum-amber-deep .stb-weave{ margin-top:9px; font-family:var(--lum-mono); font-size:11.5px; color:var(--lum-gold-d); background:rgba(242,194,90,.14); border:1px solid rgba(217,164,65,.4); border-radius:var(--lum-r-pill,999px); padding:5px 12px 5px 10px; cursor:pointer; transition:border-color .2s, box-shadow .2s; display:inline-flex; align-items:center; gap:6px; }
+.st-build.lum-amber-deep .stb-weave:hover{ border-color:rgba(217,164,65,.7); }
+.st-build.lum-amber-deep .stb-weave.done{ color:var(--lum-ink-2); border-color:rgba(151,139,109,.3); background:none; cursor:default; box-shadow:none; }
+.st-build.lum-amber-deep .stb-weave-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; flex:none; background:rgba(151,139,109,.4); }
+.st-build.lum-amber-deep .stb-weave-dot.is-lit{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 6px 1px rgba(217,164,65,.55); }
+.st-build.lum-amber-deep .stb-woven-where{ display:block; margin-top:6px; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.04em; color:var(--lum-ink-2); }
+/* REVISED: R#5(a) — the pull system's search/filter, scoped to the author's
+   marginalia: a book select AND free text, both narrow the list below.
+   Deterministic vanilla JS (filterPull(), below) — no Yumi generation. */
+.st-build.lum-amber-deep .stb-pull-filter{ display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--lum-glass-bd-2); }
+.st-build.lum-amber-deep .stb-pull-book-sel,
+.st-build.lum-amber-deep .stb-pull-search{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-2); background:rgba(255,253,246,.55); border:1px solid var(--lum-glass-bd-2); border-radius:8px; padding:6px 9px; min-width:0; }
+.st-build.lum-amber-deep .stb-pull-book-sel{ flex:0 0 42%; }
+.st-build.lum-amber-deep .stb-pull-search{ flex:1; }
+.st-build.lum-amber-deep .stb-pull-empty{ padding:18px 16px; font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-2); text-align:center; }
+
+/* --- EVOLVED: #7 (F5 room shape) — FOCUS MODE collapses the rail to pure
+   prose. The two-column anatomy (canvas + evidence rail) is craft-passed and
+   UNCHANGED; this is an additive modifier class, not a recast. --- */
+.st-build.lum-amber-deep.is-focus .stb-rail{ display:none; }
+.st-build.lum-amber-deep.is-focus .stb-ymargin,
+.st-build.lum-amber-deep.is-focus .stb-conn{ display:none; }
+.st-build.lum-amber-deep.is-focus .stb-build{ justify-content:center; }
+.st-build.lum-amber-deep.is-focus .stb-main{ max-width:680px; }
+.stb-focus-toggle{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-ink-2); background:none; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 15px; cursor:pointer; } /* EVOLVED: #7 */
+.stb-focus-toggle:hover{ color:var(--lum-gold-l); border-color:rgba(255,206,74,.34); }
+.stb-focus-toggle.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--u-gold-hi),var(--lum-gold)); border-color:transparent; }
+
+@media (max-width:759px){
+  .st-build.lum-amber-deep > .stb-intro,
+  .st-build.lum-amber-deep > .stb-build{ padding-left:16px; padding-right:16px; }
+  .st-build.lum-amber-deep .stb-build{ flex-direction:column; }
+  .st-build.lum-amber-deep .stb-rail{ width:100%; }
+  .st-build.lum-amber-deep .stb-sheet{ padding:24px 20px 20px; }
+  .st-build.lum-amber-deep .stb-head{ flex-direction:column; align-items:flex-start; gap:10px; }
+  .st-build.lum-amber-deep .stb-title-wrap{ width:100%; }
+  .st-build.lum-amber-deep .stb-acts{ flex-wrap:wrap; }
+  .st-build.lum-amber-deep .stb-title-input{ font-size:26px; }
+  .st-build.lum-amber-deep .stb-canvas-host .wc-input{ font-size:18px; }
+  .st-build.lum-amber-deep .stb-pubpill,
+  .st-build.lum-amber-deep .stb-openpage,
+  .st-build.lum-amber-deep .stb-weave,
+  .st-build.lum-amber-deep .stb-conn-add,
+  .st-build.lum-amber-deep .stb-crow,
+  .stb-focus-toggle{ min-height:44px; display:inline-flex; align-items:center; }
+}
+
+/* ============================================================================
+   3 · THE PAGE — #subtheory/<id> (renderSubTheoryPage, views.js:9751) DRAFT +
+   FINISHED. Lifted verbatim topbar (.st-page.lum-amber-deep .st-topbar/.st-
+   tb-*/.st-pill-publish), assets/components.css ~10714-10853. EVOLVED: #4
+   (F2 page=read) — the editable .st-main/.manuscript/canvas region is
+   DROPPED; the topbar now wraps renderSubTheoryReadOnly's body directly
+   (closes AF2's bareness — the read-only render never had this hero/
+   breadcrumb chrome standalone), and the evidence-attach rail (.st-gutter,
+   which fed the now-removed canvas) is a mechanical casualty of the same
+   move, not a separate decision. Yumi's margin + the connections foot are
+   UNCHANGED, still real, still siblings.
+   ============================================================================ */
+.st-page.lum-amber-deep{ display:block; box-sizing:border-box; width:100%; max-width:none; min-height:100vh; margin:0; padding:26px 0 70px; color:var(--lum-ink); }
+.st-page.lum-amber-deep > .st-topbar,
+.st-page.lum-amber-deep > .st-room-threshold,
+.st-page.lum-amber-deep > .st-grid,
+.st-page.lum-amber-deep > .st-walknav{ max-width:1180px; margin-left:auto; margin-right:auto; padding-left:30px; padding-right:30px; }
+.st-page.lum-amber-deep .st-topbar{ display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:24px; flex-wrap:wrap; }
+.st-page.lum-amber-deep .st-tb-left{ display:flex; align-items:center; gap:13px; min-width:0; }
+.st-page.lum-amber-deep .st-tb-back{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.04em; color:var(--lum-ink-4); text-decoration:none; white-space:nowrap; }
+.st-page.lum-amber-deep .st-tb-back:hover{ color:var(--lum-ink-3); }
+.st-page.lum-amber-deep .st-hero-mark{ display:inline-flex; flex:0 0 auto; }
+.st-page.lum-amber-deep .st-tb-kicker{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.2em; color:var(--lum-ink-3); white-space:nowrap; }
+.st-page.lum-amber-deep .st-tb-right{ display:flex; align-items:center; gap:15px; flex:0 0 auto; flex-wrap:wrap; }
+.st-page.lum-amber-deep .st-tb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-3); display:inline-flex; align-items:center; gap:7px; } /* EVOLVED: #9 AF5 */
+.st-page.lum-amber-deep .st-tb-dot{ width:5px; height:5px; border-radius:50%; background:var(--lum-gold-d); box-shadow:0 0 7px rgba(255,206,74,.5); }
+.st-page.lum-amber-deep .st-pill-publish{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-gold-l); background:rgba(255,206,74,.07); border:1px solid rgba(255,206,74,.22); border-radius:var(--lum-r-pill,999px); padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:9px; }
+.st-page.lum-amber-deep .st-pill-publish:hover{ background:rgba(255,206,74,.12); }
+.st-page.lum-amber-deep .st-pub-flag{ width:7px; height:7px; border-radius:1.5px; background:var(--lum-gold); box-shadow:0 0 8px rgba(255,206,74,.6); }
+.st-page.lum-amber-deep .st-pill-publish.done{ color:var(--lum-ink-2); border-color:var(--lum-glass-bd-2); background:rgba(255,255,255,.05); }
+.st-page.lum-amber-deep .st-pill-publish.done .st-pub-flag{ background:var(--lum-cyan); box-shadow:0 0 8px rgba(127,208,240,.5); }
+/* EVOLVED: #4 — the Edit door, the SOLE way in now that the Page has no canvas. Made prominent (was a quiet mono link, .st-tb-build) since it now carries the whole write affordance. */
+.st-page.lum-amber-deep .st-edit-door{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--lum-gold-ink); text-decoration:none; background:linear-gradient(180deg,var(--u-gold-hi),var(--lum-gold)); border-radius:var(--lum-r-pill,999px); padding:9px 18px; white-space:nowrap; }
+.st-page.lum-amber-deep .st-edit-door:hover{ opacity:.9; }
+.st-page.lum-amber-deep .st-edit-door-quiet{ background:none; color:var(--lum-ink-2); border:1px solid var(--lum-glass-bd-2); }
+/* REVISED: R#4 — Draft's edit door quiets from the filled gold block above
+   to a confident-but-quiet OUTLINED gold register (still gold, still the
+   ONLY way in — just not shouting); >=44px hit target preserved via the
+   shared .st-edit-door base class already listed in the mobile media query
+   below. Own light wash so contrast holds regardless of gradient position
+   on the R#9-deepened field (verified 5.31:1, see the eval). Reuses the
+   SAME outlined-gold idiom as R#1's Workshop "Open the page →" door (.stb-
+   openpage) and echoes the arc interior's own quiet action
+   (.arcfield-pub-btn, docs/studio/mockups/arcs.html:274-277). */
+.st-page.lum-amber-deep .st-edit-door-outline{ background:linear-gradient(160deg, rgba(255,253,246,.62) 0%, rgba(255,248,230,.42) 100%); color:var(--lum-gold-d); border:1px solid rgba(133,84,16,.32); }
+.st-page.lum-amber-deep .st-edit-door-outline:hover{ background:linear-gradient(160deg, rgba(255,253,246,.8) 0%, rgba(255,248,230,.55) 100%); border-color:rgba(133,84,16,.5); }
+/* EVOLVED: #4 — the grid drops the rail column (mechanical consequence of the
+   canvas removal); center + Yumi margin only, was 230px/1fr/190px 3-col. */
+.st-page.lum-amber-deep .st-grid{ display:grid; grid-template-columns:minmax(0,1fr) 240px; gap:34px; align-items:start; }
+.st-page.lum-amber-deep .st-center{ min-width:0; }
+.st-page.lum-amber-deep .st-read-hero{ position:relative; background:var(--lum-glass-raised); border:1px solid var(--lum-glass-bd); border-radius:22px; padding:38px 40px 34px; overflow:hidden; -webkit-backdrop-filter:blur(var(--lum-glass-blur)); backdrop-filter:blur(var(--lum-glass-blur)); box-shadow:inset 0 1px 0 rgba(255,236,200,.2), 0 32px 64px -30px rgba(0,0,0,.7), 0 10px 26px -18px rgba(0,0,0,.55); }
+.st-page.lum-amber-deep .st-read-hero::before{ content:''; position:absolute; left:0; right:0; top:0; height:170px; pointer-events:none; background:radial-gradient(130% 170px at 50% -46px, rgba(255,206,74,.15), rgba(255,206,74,0) 72%); }
+.st-page.lum-amber-deep .st-read-hero > *{ position:relative; }
+.st-page.lum-amber-deep .t-meta{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:0 0 20px; }
+.st-page.lum-amber-deep .st-maturity{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--lum-ink-3); display:flex; align-items:center; gap:8px; margin:0 0 18px; }
+.st-page.lum-amber-deep .st-maturity .glow{ width:7px; height:7px; border-radius:50%; background:var(--lum-gold); box-shadow:0 0 8px rgba(255,206,74,.55); }
+.st-page.lum-amber-deep .st-connections{ margin-top:26px; background:var(--lum-glass); border:1px solid var(--lum-glass-bd-2); border-radius:18px; padding:18px 22px 16px; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+.st-page.lum-amber-deep .st-conn-head{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.18em; color:var(--lum-ink-3); margin-bottom:10px; }
+.st-page.lum-amber-deep .st-conn-row{ display:flex; align-items:center; gap:12px; padding:7px 0; text-decoration:none; }
+.st-page.lum-amber-deep .st-conn-glyph{ display:inline-flex; flex:0 0 auto; }
+.st-page.lum-amber-deep .st-conn-title{ font-family:var(--lum-serif); font-size:18px; color:var(--lum-ink); }
+.st-page.lum-amber-deep .st-conn-row:hover .st-conn-title{ color:var(--lum-gold-l); }
+.st-page.lum-amber-deep .st-yumi{ padding-top:8px; }
+/* REVISED: R#8 — Yumi loses blue everywhere: eyebrow, presence dot, and
+   note text all move to the gold/amber register her live Bloom already
+   wears (assets/components.css:11-37 .yumi-bloom-orb, var(--gold) glow —
+   the cyan here was drift R0 introduced, not prior live canon). --lum-gold-d
+   is register-aware by design: it resolves dark-on-light in the warm-dim
+   Draft (855410, verified 4.65-5.11:1 against the R#9-deepened field's own
+   note-card wash) and light-on-dark in the full-amber Finished room
+   (cf9c2a, verified 7.57:1 against the body ground) with ONE rule. */
+.st-page.lum-amber-deep .st-yumi-eyebrow{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.22em; color:var(--lum-gold-d); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.st-page.lum-amber-deep .st-yumi .lum-light{ display:inline-block; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--u-gold-hi) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 9px 1px rgba(217,164,65,.55); }
+.st-page.lum-amber-deep .st-yumi-note{ position:relative; padding-left:15px; margin-bottom:24px; }
+.st-page.lum-amber-deep .st-yumi-note::before{ content:''; position:absolute; left:0; top:3px; bottom:3px; width:2px; border-radius:2px; background:linear-gradient(var(--u-gold-hi), rgba(217,164,65,0)); opacity:.7; }
+.st-page.lum-amber-deep .st-yumi-note p{ font-family:var(--lum-serif); font-style:italic; font-weight:500; font-size:15.5px; line-height:1.6; color:var(--lum-gold-d); margin:0; }
+.st-page.lum-amber-deep .st-yumi-note em{ font-style:normal; color:var(--lum-ink); }
+
+/* REVISED: R#6 — WALK-NAV in the Finished room: prev/next between sibling
+   sub-theories of the SAME arc, quiet threshold-register footer, the arc
+   name as the spine. Real siblings from Preston's seeded "A Pedagogy of
+   Desire" arc (js/state.js:3339-3367): prev = Sub-theory 1 "Desire as
+   Political Refusal" (podS1), next = Sub-theory 3 "Eros in the Classroom"
+   (podS2 — already this mockup's Connections link) — "Wanting as a
+   Curriculum" sits at position 2, bridging S1's refusal and S2's eros per
+   its own prose. Styled with the SAME thin-gilded-thread idiom as
+   .st-room-threshold above (Universal depth v1.2 recipe 7, docs/studio/
+   universal-depth.css:125-133). Does NOT model the constellation
+   shape-click mount — text links only, that mount is a separate decision
+   out of this round's scope. */
+.st-page.lum-amber-deep .st-walknav{ display:flex; align-items:center; justify-content:space-between; gap:20px; margin-top:34px; padding-top:22px; border-top:1px solid var(--lum-glass-bd-2); }
+.st-page.lum-amber-deep .st-walknav-side{ display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--lum-ink-3); flex:1; min-width:0; }
+.st-page.lum-amber-deep .st-walknav-next{ justify-content:flex-end; text-align:right; }
+.st-page.lum-amber-deep .st-walknav-arrow{ font-size:18px; color:var(--lum-ink-3); flex:none; }
+.st-page.lum-amber-deep .st-walknav-label{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; line-height:1.6; }
+.st-page.lum-amber-deep .st-walknav-label em{ display:block; font-family:var(--lum-serif); font-style:italic; font-size:16px; text-transform:none; letter-spacing:0; color:var(--lum-ink-2); margin-top:2px; }
+.st-page.lum-amber-deep .st-walknav-side:hover .st-walknav-label em{ color:var(--lum-gold-l); }
+.st-page.lum-amber-deep .st-walknav-spine{ display:flex; align-items:center; gap:10px; flex:none; }
+.st-page.lum-amber-deep .st-walknav-thread{ width:36px; height:1px; background:linear-gradient(90deg, transparent, var(--u-thread) 60%, transparent); }
+.st-page.lum-amber-deep .st-walknav-arcname{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); white-space:nowrap; }
+
+@media (max-width:759px){
+  .st-page.lum-amber-deep{ padding:18px 16px 60px; }
+  .st-page.lum-amber-deep > .st-topbar,
+  .st-page.lum-amber-deep > .st-room-threshold,
+  .st-page.lum-amber-deep > .st-grid,
+  .st-page.lum-amber-deep > .st-walknav{ padding-left:0; padding-right:0; }
+  .st-page.lum-amber-deep .st-grid{ grid-template-columns:1fr; gap:20px; }
+  .st-page.lum-amber-deep .st-read-hero{ padding:26px 20px 24px; order:1; }
+  .st-page.lum-amber-deep .st-yumi{ order:2; }
+  .st-page.lum-amber-deep .st-pill-publish,
+  .st-page.lum-amber-deep .st-edit-door,
+  .st-page.lum-amber-deep .st-conn-add,
+  .st-page.lum-amber-deep .st-conn-row{ min-height:44px; display:inline-flex; align-items:center; }
+  /* REVISED: R#6 — walk-nav stacks on mobile, >=44px tap targets */
+  .st-page.lum-amber-deep .st-walknav{ flex-direction:column; align-items:stretch; gap:16px; margin-top:28px; padding-top:20px; }
+  .st-page.lum-amber-deep .st-walknav-next{ text-align:left; justify-content:flex-start; }
+  .st-page.lum-amber-deep .st-walknav-side{ min-height:44px; }
+  .st-page.lum-amber-deep .st-walknav-spine{ justify-content:center; }
+}
+
+/* --- read-only body (renderSubTheoryReadOnly, views.js:9569), lifted
+   VERBATIM base (assets/components.css:6295-6358) — currently styled with
+   the raw --ink/--ink-2/--ink-3 tokens, NOT --lum-*, which is exactly AF4
+   (legible only by ground luck). Kept below unmodified so the drift is
+   visible in this file's diff-vs-live; the fix sits in §9. --- */
+.subtheory-readonly-header{ font-family:var(--font-serif); font-size:38px; font-weight:500; line-height:1.1; margin:0 0 14px 0; }
+.subtheory-readonly-body{ font-family:var(--font-serif); font-size:19px; line-height:1.7; white-space:pre-wrap; word-wrap:break-word; }
+.subtheory-cite-num{ font-size:.7em; vertical-align:super; line-height:0; margin-left:1px; }
+.subtheory-readonly-evidence{ margin:28px 0 0 0; padding-left:22px; font-family:var(--font-body); font-size:14px; }
+.subtheory-readonly-evidence-item{ margin-bottom:14px; }
+.subtheory-readonly-quote{ margin:4px 0 0 0; padding-left:12px; border-left:2px solid var(--border); font-style:italic; }
+.subtheory-readonly-annotation{ margin-top:4px; }
+.subtheory-readonly-seealso{ margin-top:28px; font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+.subtheory-cite{ font-style:italic; border-bottom:1px dotted var(--gold); cursor:default; }
+.subtheory-attached-private-tag{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.03em; color:var(--lum-ink-4); display:block; margin:6px 0 0; }
+
+/* ============================================================================
+   4 · EVOLVED: #6 (F4 threshold) — DRAFT reads WARM-DIM; FINISHED is the
+   full-amber immersive room. .st-page.lum-amber-deep is the FULL-AMBER base
+   above, unmodified. Draft gets an ADDITIVE .stb-warm-dim modifier (shared
+   with the Workshop, §2/#8) that re-points the --lum-* custom properties to
+   the R5-ratified warm-dim recipe — dark ink KEPT (§7 "never inverts
+   polarity"). Same technique docs/studio/mockups/arcs.html used for
+   .arcfield.arcfield-warm (lines 247-251), reused so the sub-theory's working
+   register matches the arc interior it lives inside.
+   ============================================================================ */
+/* REVISED: R#9 — deepened from R0's flat two-stop gradient (byte-identical
+   to .arcfield.arcfield-warm, which stays UNCHANGED at the arc-interior
+   level — this deepening is local to the sub-theory working register only)
+   into a real atmospheric ground: Universal depth v1.2 recipe 6
+   (docs/studio/universal-depth.css:109-117), retuned warmer/deeper for a
+   working register — 2 radial warm washes over a darkened base + an inset
+   vignette, so the field reads as a dimmer study, not flat cream. The
+   sheet/rail glass is boosted toward near-opaque white (was raised .68/.42,
+   glass .55/.30) so the LIT canvas pops clearly off the now-dimmer field —
+   visible ground-to-panel separation, dark ink kept throughout (CLAUDE.md
+   §7: warm-dim never inverts polarity). Contrast re-verified against the
+   darker field end at every text pair this deepening touches (R#4/#7/#8) —
+   see the eval; one PRE-EXISTING (not this round's) ink-3-on-bare-field gap
+   is flagged there, not silently fixed. */
+.stb-warm-dim{
+  background:
+    radial-gradient(62% 48% at 18% 12%, rgba(255,224,150,.30) 0%, transparent 62%),
+    radial-gradient(56% 52% at 86% 18%, rgba(199,148,51,.24) 0%, transparent 66%),
+    linear-gradient(168deg,#efe1c1 0%,#e2cb98 100%);
+  box-shadow:inset 0 0 90px rgba(133,84,16,.18);
+  border:1px solid #ddc794; border-radius:26px; margin:10px auto 40px; max-width:1220px;
+  --lum-ink:#241710;        /* dark ink kept — theme.css:60 --ink primitive */
+  --lum-ink-2:#645940;      /* Universal v1.1, praxis-universal-token-sheet.md §2 */
+  --lum-ink-3:#978b6d;      /* Universal v1.1, §3 */
+  --lum-ink-4:#b3a480;      /* BUILD-TIME interpolation — no live 4th light ink tier; named stand-in */
+  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.66) 0%, rgba(255,246,222,.50) 100%);
+  --lum-glass-raised:linear-gradient(157deg, rgba(255,255,255,.82) 0%, rgba(255,248,230,.66) 100%);
+  --lum-glass-bd:#ddc794;   /* arcs.html .arcfield-warm border, verbatim */
+  --lum-glass-bd-2:#e9d9b4; /* arcs.html .arcfield-warm --card-2, verbatim */
+  --lum-gold:#c79433;       /* arcs.html .arcfield-warm --gold-hi, verbatim */
+  --lum-gold-l:#d9a441;     /* Universal --gold-hi */
+  --lum-gold-d:#855410;     /* Universal --gold-deep */
+  --lum-gold-ink:#3d2807;
+}
+/* REVISED: R#9 — the Draft Page's Yumi column becomes its own small lit
+   note-card in the warm-dim register only ("a lit desk in a dim study");
+   the Finished (full-amber) register is untouched — it already holds AA
+   bare against the dark body ground. */
+.stb-warm-dim .st-yumi{ padding:16px 18px; border-radius:14px; background:linear-gradient(160deg, rgba(255,253,246,.62) 0%, rgba(255,246,222,.42) 100%); box-shadow:0 16px 34px -26px rgba(133,84,16,.3); }
+.stb-warm-dim .st-connections{ box-shadow:0 20px 42px -28px rgba(133,84,16,.32); }
+.stb-warm-dim.st-build.lum-amber-deep,
+.stb-warm-dim.st-page.lum-amber-deep{ padding-top:26px; }
+
+/* --- EVOLVED: #6 — the amber-room threshold marker ("you've entered"),
+   Universal depth v1.2 recipe 7 (constellation thread), the SAME cue
+   docs/studio/mockups/arcs.html uses for its visitor room (.room-threshold,
+   lines 447-451) — reused verbatim for "Finishing earns the room." --- */
+.st-room-threshold{ display:flex; align-items:center; gap:12px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--lum-ink-3); margin:0 auto 22px; }
+.st-room-threshold::before{ content:''; width:28px; height:1px; background:linear-gradient(90deg, transparent, var(--u-thread)); flex:none; }
+.st-room-threshold::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--u-thread), rgba(255,236,200,.14) 45%, transparent); }
+
+/* --- EVOLVED: #9 — AF4 fix. The read-only body now consumes --lum-ink
+   coherently (was the raw --ink family, "legible only by ground luck" —
+   drift confirmed live: no .st-page.lum-amber-deep .subtheory-readonly-*
+   override exists at all, components.css grep is empty). This ONE rule
+   works in BOTH registers because --lum-ink itself is what §4 remaps. --- */
+.st-page.lum-amber-deep .subtheory-readonly-header,
+.st-page.lum-amber-deep .subtheory-readonly-body{ color:var(--lum-ink); font-family:var(--lum-serif); }
+.st-page.lum-amber-deep .subtheory-readonly-evidence{ color:var(--lum-ink-2); }
+.st-page.lum-amber-deep .subtheory-readonly-cite-line{ color:var(--lum-ink); }
+.st-page.lum-amber-deep .subtheory-readonly-quote{ color:var(--lum-ink-3); border-left-color:var(--lum-glass-bd); }
+.st-page.lum-amber-deep .subtheory-readonly-annotation{ color:var(--lum-ink-3); }
+.st-page.lum-amber-deep .subtheory-readonly-seealso{ color:var(--lum-ink-3); }
+.st-page.lum-amber-deep .subtheory-cite-num{ color:var(--lum-gold); }
+.st-page.lum-amber-deep .subtheory-cite{ border-bottom-color:var(--lum-gold); color:var(--lum-ink); }
+
+/* ============================================================================
+   5 · NOTEBOOK — right-leaf birth flow (buildNotebookRightLeaf, views.js:
+   2078). Lifted verbatim from the R4-shipped Universal-light skin
+   (assets/components.css:11980-12154, 11062-11093), scoped to the classes
+   this function actually emits.
+   ============================================================================ */
+.notebook.lum-amber-deep{
+  background-color:#f4efe4; max-width:1080px; margin:20px auto; border-radius:22px; padding:0;
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+}
+.notebook.lum-amber-deep .notebook-spread{ display:grid; grid-template-columns:1fr 1fr; gap:0; background:linear-gradient(180deg,#fffdf6,#fbf4e5); border:1px solid #e3d8c1; border-radius:22px; overflow:hidden; box-shadow:0 30px 60px -30px rgba(120,75,15,.34); }
+.notebook.lum-amber-deep .leaf{ padding:26px 28px 30px; }
+.notebook.lum-amber-deep .leaf-left{ border-right:1px solid #e3d8c1; }
+.notebook.lum-amber-deep .leaf .eyebrow,
+.notebook.lum-amber-deep .nb-leaftag{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:#645940; margin:0 0 14px; }
+.notebook.lum-amber-deep .notebook-entry{ position:relative; background:#fffdf6; border:1px solid #e3d8c1; border-radius:11px; padding:13px 15px; margin-bottom:13px; }
+.notebook.lum-amber-deep .notebook-entry-tag{ font-family:var(--lum-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:999px; display:inline-block; }
+.notebook.lum-amber-deep .notebook-entry-tag-m{ color:#855410; background:rgba(168,118,26,.12); }
+.notebook.lum-amber-deep .notebook-entry-tag-j{ color:#5f4f96; background:rgba(95,79,150,.12); }
+.notebook.lum-amber-deep .notebook-entry-lock{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:#978b6d; margin-left:8px; }
+.notebook.lum-amber-deep .notebook-entry-body{ font-family:var(--lum-serif); font-size:16px; font-style:italic; line-height:1.4; color:#241710; margin-top:8px; }
+.notebook.lum-amber-deep .notebook-entry-acts{ display:flex; gap:14px; margin-top:11px; }
+.notebook.lum-amber-deep .notebook-entry-acts a{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:#855410; text-decoration:none; cursor:pointer; }
+.notebook.lum-amber-deep .nb-glab{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:#645940; margin:0 0 12px; }
+.notebook.lum-amber-deep .nb-gathered-list{ display:flex; flex-direction:column; gap:8px; margin:0 0 14px; min-height:30px; }
+.notebook.lum-amber-deep .nb-gnote{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; background:#fffdf6; border:1px solid #e3d8c1; border-left:3px solid #a8761a; border-radius:8px; padding:9px 12px; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:#4d3b2a; line-height:1.35; }
+.notebook.lum-amber-deep .nb-gx{ flex:none; color:#978b6d; background:none; border:none; cursor:pointer; font-size:14px; line-height:1; padding:0; }
+.notebook.lum-amber-deep .nb-gempty{ font-family:var(--lum-serif); font-style:italic; font-size:14px; color:#978b6d; padding:8px 0; }
+.notebook.lum-amber-deep .nb-nameblock{ margin-top:14px; }
+.notebook.lum-amber-deep .nb-yname-tag{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:#645940; margin-bottom:7px; }
+.notebook.lum-amber-deep .nb-working-name{ font-family:var(--lum-serif); font-weight:600; font-size:20px; color:#241710; background:rgba(255,255,255,.5); border:1px solid #e3d8c1; border-radius:11px; padding:11px 14px; outline:none; width:100%; }
+/* EVOLVED: #1 — reinforcing hint: the notebook keeps gather->name->mint and
+   LOSES any prose-writing affordance; the name field is a NAME, not a draft. */
+.nb-name-hint{ font-family:var(--lum-sans); font-size:11px; font-style:italic; color:#978b6d; margin-top:7px; }
+.notebook.lum-amber-deep .nb-gather{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; padding:12px 14px; border:1px dashed #ddc794; border-radius:10px; }
+.notebook.lum-amber-deep .nb-gather .lab{ font-family:var(--lum-sans); font-size:12px; color:#645940; }
+.notebook.lum-amber-deep .chip{ font-family:var(--lum-sans); font-size:12.5px; color:#4d3b2a; border:1px solid #e3d8c1; border-radius:999px; padding:7px 13px; background:#f4ecdb; cursor:pointer; }
+.notebook.lum-amber-deep .btn-primary{ font-family:var(--lum-sans); font-size:13px; font-weight:600; color:#3d2807; background:linear-gradient(180deg,#f2c25a,#a8761a); border:none; border-radius:999px; padding:10px 20px; cursor:pointer; }
+/* REVISED: R#8 — Yumi's notebook voice loses its teal (#1f5a6b/#4a9fb8/
+   #256b80) for the same gold/amber presence register, reusing this file's
+   OWN already-established amber literals (.notebook-entry-tag-m /
+   .btn-primary, #855410 / #f2c25a) rather than inventing new ones.
+   Contrast verified: text 6.30:1, bubble "Y" 6.42:1 — see the eval. */
+.notebook.lum-amber-deep .nb-complicate{ display:flex; gap:10px; align-items:flex-start; margin-top:16px; padding:12px 0 0; border-top:1px solid #e3d8c1; font-family:var(--lum-serif); font-style:italic; font-size:14px; color:#855410; }
+.notebook.lum-amber-deep .nb-ybubble{ flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; background:radial-gradient(circle at 38% 32%, #fff, #f2c25a 46%, #855410 100%); color:#fff; font-family:var(--lum-mono); font-size:11px; }
+.notebook.lum-amber-deep .nb-ctag{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#855410; margin-bottom:3px; }
+.notebook.lum-amber-deep .nb-working-acts{ margin-top:12px; }
+.notebook.lum-amber-deep .nb-working-clear{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:#978b6d; text-decoration:none; }
+
+/* --- EVOLVED: #2 (F6 hand-off) — on mint, the author STAYS in the notebook.
+   A quiet newborn card replaces the gather form; "Continue in the workshop"
+   is a door, not an auto-navigation (was live: location.hash=... at
+   views.js:2382). --- */
+.nb-newborn-card{ display:none; margin-top:4px; padding:20px 22px; border-radius:16px; background:linear-gradient(180deg,#fffdf6,#fdf3de); border:1px solid #ddc794; box-shadow:0 18px 40px -24px rgba(120,75,15,.4); }
+.nb-newborn-card.is-shown{ display:block; }
+.nb-newborn-top{ display:flex; align-items:center; gap:12px; }
+.nb-newborn-mark{ flex:none; display:inline-flex; }
+.nb-newborn-title{ font-family:var(--lum-serif); font-weight:600; font-size:22px; color:#241710; }
+.nb-newborn-eyebrow{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:#a8761a; margin-top:2px; }
+.nb-newborn-snippet{ font-family:var(--lum-serif); font-style:italic; font-size:15px; color:#645940; line-height:1.5; margin:14px 0 18px; }
+.nb-newborn-door{ display:inline-flex; align-items:center; gap:8px; font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; text-transform:uppercase; color:#3d2807; background:linear-gradient(180deg,#f2c25a,#a8761a); border-radius:999px; padding:10px 20px; text-decoration:none; cursor:pointer; border:none; }
+.nb-newborn-stay{ font-family:var(--lum-sans); font-size:11.5px; font-style:italic; color:#978b6d; margin-top:12px; }
+
+@media (max-width:759px){
+  .notebook.lum-amber-deep{ margin:12px 16px; }
+  .notebook.lum-amber-deep .notebook-spread{ grid-template-columns:1fr; }
+  .notebook.lum-amber-deep .leaf-left{ border-right:none; border-bottom:1px solid #e3d8c1; }
+}
+
+/* ============================================================================
+   6 · mark glyphs (js/arc-constellation.js _ST_MARK_TABLE, verbatim paths)
+   ============================================================================ */
+.st-hero-mark svg, .st-conn-glyph svg, .nb-newborn-mark svg, .stb-hero-mark svg, .stb-crow-glyph svg{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="mock-toolbar">
+  <span><b>R6 Sub-theory (deep)</b> shape mockup</span>
+  <span class="mock-group">
+    <span style="opacity:.6">panel:</span>
+    <button type="button" class="mock-btn is-on" data-scene-btn="a" onclick="setScene('a')">(a) Workshop — Build</button>
+    <button type="button" class="mock-btn" data-scene-btn="b" onclick="setScene('b')">(b) Page — Draft</button>
+    <button type="button" class="mock-btn" data-scene-btn="c" onclick="setScene('c')">(c) Page — Finished</button>
+    <button type="button" class="mock-btn" data-scene-btn="d" onclick="setScene('d')">(d) Notebook — birth flow</button>
+  </span>
+  <span class="mock-legend"><b>R0 decision key</b> #1 notebook loses prose, keeps gather→name→mint · #2 stay in notebook on mint, newborn card + workshop door · #3 workshop absorbs the citation engine (inline, not a toggle — see R#1) · #4 Page = read + single Edit door (canvas dropped) · #5 "Finish"/"Finished" replaces Set-as-milestone/Publish·private everywhere · #6 draft=warm-dim, finished=full-amber room · #7 Focus Mode collapses the rail · #8 workshop sits warm-dim, not full amber · #9 AF4 token-coherence + AF5 contrast fixes.<br><b>R1 revision key</b> (this pass — Preston's felt-pass on R0: "skeleton PASS, skin FAIL") — #1 KILL Write|Preview, canvas always shows, "Open the page →" is the sole door · #2 Finish lives ONLY in the Workshop · #3 Page-Draft strips autosave chrome · #4 Draft's edit door quiets to an outlined gold pill · #5 THE PULL SYSTEM: book+text search/filter, visible WOVEN/UNWOVEN state, insert-at-cursor weave — deterministic only · #6 WALK-NAV in the Finished room, real siblings, arc name as spine · #7 marginalia rail re-palettes off khaki/olive to warm amber-family, ink-tier text >=4.5:1 · #8 Yumi's margin voice: no blue, gold/amber presence (matches her live Bloom) · #9 the workshop's warm-dim deepens — real atmospheric depth, lit canvas on a dimmer field · #10 workshop title: ellipsis, never a hard clip. BUILD-TIME stand-ins carried from R0: <b>--lum-ink-4 warm-dim</b> and the <b>warm-dim glass gradients</b> (both now deepened further by R1 #9 — see the eval for both rounds' provenance).</span>
+</div>
+
+<!-- ============================================================================
+     PANEL (a) — THE WORKSHOP, #subtheory/<id>/build
+     ============================================================================ -->
+<section class="mock-scene is-active" data-scene="a">
+<!-- EVOLVED: #8 (ground correction) — the workshop sits at the WARM-DIM
+     working register, not the live's full-amber .lum-amber-deep. Amber is
+     the finished READ's room only (decision #6). Additive modifier class;
+     the base .st-build.lum-amber-deep structural rules are UNCHANGED. -->
+<div class="st-build lum-amber-deep stb-warm-dim">
+  <div class="stb-intro">
+    <p class="stb-eyebrow">A Pedagogy of Desire · build a sub-theory</p>
+    <h1 class="stb-h1">Build a sub-theory <em>from your reading.</em></h1>
+  </div>
+  <div class="stb-build">
+    <div class="stb-main">
+      <div class="stb-head">
+        <span class="stb-hero-mark stb-hero-mark-edit" id="markWorkshop" tabindex="0" role="button" aria-label="Change this sub-theory's mark"></span>
+        <div class="stb-title-wrap">
+          <!-- REVISED: R#10 — text-overflow:ellipsis (CSS) + a title attribute
+               so the full sample text is always recoverable; a hard clip
+               ("Wantin") is no longer possible without a visible ellipsis
+               and a native-tooltip fallback. -->
+          <input type="text" class="stb-title-input" value="Wanting as a Curriculum" title="Wanting as a Curriculum">
+          <div class="stb-into">a forming sub-theory in <em>A Pedagogy of Desire</em></div>
+        </div>
+        <div class="stb-acts">
+          <span class="stb-saved">saved · 4 mins ago</span>
+          <!-- EVOLVED: #5 (F3 vocab) — "Finish" replaces "Publish · private"; same class/control, relabeled. -->
+          <button type="button" class="stb-pubpill" id="finishA" onclick="toggleFinish(this)">Finish</button>
+          <!-- EVOLVED: #7 — Focus Mode toggle -->
+          <button type="button" class="stb-focus-toggle" id="focusBtn" onclick="toggleFocus()">Focus</button>
+          <!-- REVISED: R#1 — now the SOLE path to rendered prose (the
+               in-workshop Write|Preview toggle below is KILLED); restyled as
+               a quiet threshold-register door, same idiom as R#4's Draft
+               edit-door-outline. -->
+          <a class="stb-openpage" href="javascript:void(0)" onclick="setScene('b')">Open the page →</a>
+        </div>
+      </div>
+      <div class="stb-sheet">
+        <!-- REVISED: R#1 — the tabbed write/preview switcher and its
+             rendered-prose pane (round-0's EVOLVED #3 original form) are
+             REMOVED entirely — markup, ids, JS handler, and CSS all gone
+             (see the eval's dead-code grep). The Page IS the preview now;
+             the workshop shows the writing canvas ALWAYS, one register, no
+             toggle. The absorbed citations engine (decision #3) STAYS —
+             the inline .subtheory-cite spans below are it, live in the
+             canvas, not gated behind a mode switch. -->
+        <div class="stb-canvas-host" id="canvasHostA">
+          <div class="wc-bar"><span class="wc-saved">Saved</span></div>
+          <div class="wc-wrap"><div class="wc-input" contenteditable="true" spellcheck="false">
+            <p>If Sub-theory 1 argues that desire is a refusal and Sub-theory 2 that eros belongs in the room, this one asks a smaller, more practical question: can wanting itself be taught? <span class="subtheory-cite">Pedagogy of the Oppressed</span> is exact about the failure mode — the banking model deposits facts into a student assumed to want nothing except to be filled. Its quiet violence is not that it under-informs; it under-desires.</p>
+            <p><span class="subtheory-cite">Yearning: Race, Gender, and Cultural Politics</span> names the alternative directly: a classroom that treats a student's actual longing — not the school's approved version of ambition — as the beginning of the lesson, not a distraction from it. A note from <span class="subtheory-cite">Hidden Potential</span> says it plainer than either of them: scaffolding is not talent, it is what lets talent survive long enough to become skill. hooks's homeplace is the reason a student would trust the scaffold enough to climb it.</p>
+            <p>I learned this first, not from a book, but from <span class="subtheory-cite">that first year at Miami Northwestern</span> — a student whose stated goal, "get a job, any job," was not a small ambition but a well-rehearsed refusal to want more where wanting more had only ever cost her. Teaching her had almost nothing to do with content and everything to do with rebuilding, one small provable success at a time, her right to want something specific.</p>
+          </div></div>
+        </div>
+        <div class="stb-ymargin">
+          <span class="stb-yd"></span>
+          <p>Pull a marked passage in from the right, and I'll watch for where your books start <em>pressing on each other.</em></p>
+          <span class="stb-yx">×</span>
+        </div>
+        <div class="stb-conn">
+          <p class="stb-conn-head">CONNECTIONS</p>
+          <a class="stb-crow" href="javascript:void(0)"><span class="stb-crow-glyph" id="markConnA"></span><span class="stb-crow-title">Eros in the Classroom</span></a>
+          <button type="button" class="stb-conn-add">＋ draw a connection</button>
+        </div>
+      </div>
+    </div>
+    <div class="stb-rail">
+      <div class="stb-source">
+        <div class="stb-srchead">
+          <div class="stb-src-title">Pull from your reading</div>
+          <div class="stb-src-sub">your marginalia — search, filter by book, weave any in</div>
+        </div>
+        <!-- REVISED: R#5(a) — THE PULL SYSTEM's search/filter, scoped to the
+             author's marginalia: book AND free text, both narrow the list
+             below. Deterministic vanilla JS (filterPull(), below) — no Yumi
+             generation; she rides this later, eval-gated. -->
+        <div class="stb-pull-filter">
+          <select class="stb-pull-book-sel" id="pullBookSel" onchange="filterPull()" aria-label="Filter by book">
+            <option value="">All books</option>
+            <option value="Hidden Potential">Hidden Potential</option>
+            <option value="Their Eyes Were Watching God">Their Eyes Were Watching God</option>
+            <option value="Pedagogy of the Oppressed">Pedagogy of the Oppressed</option>
+          </select>
+          <input type="text" class="stb-pull-search" id="pullSearchInput" placeholder="Search your marginalia…" oninput="filterPull()" aria-label="Search marginalia text">
+        </div>
+        <div class="stb-pull-empty" id="pullEmptyMsg" style="display:none;">No marginalia matches.</div>
+
+        <div class="stb-book open" data-book-title="Hidden Potential">
+          <div class="stb-brow" onclick="this.parentNode.className=this.parentNode.className.indexOf('open')!==-1?'stb-book':'stb-book open'">
+            <span class="stb-bcover stb-bcover-cloth">HP</span>
+            <div class="stb-binfo"><div class="stb-bt">Hidden Potential</div><div class="stb-bc">1 note · 1 already woven</div></div>
+            <span class="stb-bchev">▶</span>
+          </div>
+          <div class="stb-marg-wrap">
+            <div class="stb-marg">
+              <div class="stb-pg">marginalia</div>
+              <div class="stb-passage">Scaffolding is not talent — it is what lets talent survive long enough to become skill.</div>
+              <!-- REVISED: R#5(b) — the visible WOVEN state: a lit orb dot
+                   (unlit/lit per Universal depth v1.2 recipe 2) plus a quiet
+                   caption showing WHERE it was woven. -->
+              <button type="button" class="stb-weave done" title="Already woven into your draft"><span class="stb-weave-dot is-lit"></span><span class="stb-weave-label">woven in</span></button>
+              <span class="stb-woven-where">woven into paragraph 2</span>
+            </div>
+          </div>
+        </div>
+        <div class="stb-book" data-book-title="Their Eyes Were Watching God">
+          <div class="stb-brow" onclick="this.parentNode.className=this.parentNode.className.indexOf('open')!==-1?'stb-book':'stb-book open'">
+            <span class="stb-bcover stb-bcover-cloth">TE</span>
+            <div class="stb-binfo"><div class="stb-bt">Their Eyes Were Watching God</div><div class="stb-bc">1 note</div></div>
+            <span class="stb-bchev">▶</span>
+          </div>
+          <div class="stb-marg-wrap">
+            <div class="stb-marg">
+              <div class="stb-pg">marginalia</div>
+              <div class="stb-passage">The pear tree: Janie's first awakening to desire is bodily — desire as knowledge before it is language.</div>
+              <!-- REVISED: R#5(b)/(c) — visible UNWOVEN state (unlit dot);
+                   the button itself IS the insert-at-cursor affordance. -->
+              <button type="button" class="stb-weave" title="Insert at your cursor in the workshop canvas" onclick="weaveIn(this,'a new closing paragraph')"><span class="stb-weave-dot"></span><span class="stb-weave-label">+ weave in</span></button>
+            </div>
+          </div>
+        </div>
+        <!-- REVISED: R#5 — a third book with a second, mixed-state passage
+             per book, so the search/filter has real multi-book, multi-state
+             content to exercise (the intersectional/multi case). -->
+        <div class="stb-book" data-book-title="Pedagogy of the Oppressed">
+          <div class="stb-brow" onclick="this.parentNode.className=this.parentNode.className.indexOf('open')!==-1?'stb-book':'stb-book open'">
+            <span class="stb-bcover stb-bcover-cloth">PO</span>
+            <div class="stb-binfo"><div class="stb-bt">Pedagogy of the Oppressed</div><div class="stb-bc">2 notes · 1 already woven</div></div>
+            <span class="stb-bchev">▶</span>
+          </div>
+          <div class="stb-marg-wrap">
+            <div class="stb-marg">
+              <div class="stb-pg">marginalia</div>
+              <div class="stb-passage">The banking concept: the teacher deposits, the student receives — and calls the vessel filled "educated."</div>
+              <button type="button" class="stb-weave done" title="Already woven into your draft"><span class="stb-weave-dot is-lit"></span><span class="stb-weave-label">woven in</span></button>
+              <span class="stb-woven-where">woven into paragraph 1</span>
+            </div>
+            <div class="stb-marg">
+              <div class="stb-pg">marginalia</div>
+              <div class="stb-passage">Trust is contradicted when one's words are not matched by one's actions — a mere transfer of information cannot be called dialogue.</div>
+              <button type="button" class="stb-weave" title="Insert at your cursor in the workshop canvas" onclick="weaveIn(this,'paragraph 2')"><span class="stb-weave-dot"></span><span class="stb-weave-label">+ weave in</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (b) — THE PAGE, #subtheory/<id>, DRAFT
+     ============================================================================ -->
+<section class="mock-scene" data-scene="b">
+<!-- EVOLVED: #4 — the topbar + a NEW .st-read-hero wrap the real read-only
+     render (renderSubTheoryReadOnly), closing AF2's bareness: the read-only
+     body never had this hero/breadcrumb chrome when standalone. -->
+<!-- EVOLVED: #8 — DRAFT register: warm-dim (author working view), dark
+     ink kept, continuous with the arc interior it lives inside (decision #6
+     assigns warm-dim to the draft register; decision #8 is the ground
+     correction that makes warm-dim, not full amber, the working default). -->
+<div class="st-page lum-amber-deep stb-warm-dim">
+  <header class="st-topbar">
+    <div class="st-tb-left">
+      <a class="st-tb-back" href="javascript:void(0)">‹ Field</a>
+      <span class="st-hero-mark st-hero-mark-edit" id="markPageB"></span>
+      <span class="st-tb-kicker">A SUB-THEORY · STILL FORMING</span>
+    </div>
+    <div class="st-tb-right">
+      <!-- REVISED: R#3 — the "saved · N mins ago" autosave chrome is REMOVED
+           from the Draft Page (was: <span class="st-tb-saved">…</span>). A
+           read surface doesn't report autosave; maturity + provenance below
+           stay, they're reader-facing. -->
+      <!-- REVISED: R#2 — "Finish" is REMOVED from the Page entirely (was:
+           <button id="finishB" class="st-pill-publish">…</button>); it now
+           lives ONLY in the Workshop (finishA). One act, one room, one
+           control. finishC in the Finished room is untouched (that's
+           Finished/reopen, not this decision's target). -->
+      <!-- REVISED: R#4 — the edit door quiets: filled gold block ->
+           outlined confident-but-quiet gold pill (still the ONLY way in,
+           still >=44px). -->
+      <a class="st-edit-door st-edit-door-outline" href="javascript:void(0)" onclick="setScene('a')">Edit in the workshop →</a>
+    </div>
+  </header>
+  <div class="st-grid">
+    <div class="st-center">
+      <div class="st-read-hero">
+        <p class="t-meta">STARTED FROM 4 MARKED PASSAGES · 3 BOOKS</p>
+        <div class="st-maturity"><span class="glow"></span> Maturity · developing</div>
+        <div class="subtheory-readonly subtheory-readonly-draft">
+          <h2 class="subtheory-readonly-header">Wanting as a Curriculum</h2>
+          <div class="subtheory-readonly-body">If Sub-theory 1 argues that desire is a refusal and Sub-theory 2 that eros belongs in the room, this one asks a smaller, more practical question: can wanting itself be taught? <span class="subtheory-cite">Pedagogy of the Oppressed</span> is exact about the failure mode — the banking model deposits facts into a student assumed to want nothing except to be filled. Its quiet violence is not that it under-informs; it under-desires.
+
+<span class="subtheory-cite">Yearning: Race, Gender, and Cultural Politics</span> names the alternative directly: a classroom that treats a student's actual longing — not the school's approved version of ambition — as the beginning of the lesson, not a distraction from it. A note from <span class="subtheory-cite">Hidden Potential</span> says it plainer than either of them: scaffolding is not talent, it is what lets talent survive long enough to become skill. hooks's homeplace is the reason a student would trust the scaffold enough to climb it.
+
+I learned this first, not from a book, but from <span class="subtheory-cite" title="private — excluded when published">that first year at Miami Northwestern</span> — a student whose stated goal, "get a job, any job," was not a small ambition but a well-rehearsed refusal to want more where wanting more had only ever cost her. Teaching her had almost nothing to do with content and everything to do with rebuilding, one small provable success at a time, her right to want something specific.</div>
+          <ol class="subtheory-readonly-evidence">
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">Paulo Freire, Pedagogy of the Oppressed</div></li>
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">bell hooks, Yearning: Race, Gender, and Cultural Politics</div></li>
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">Hidden Potential — Adam Grant</div><blockquote class="subtheory-readonly-quote">Scaffolding is not talent — it is what lets talent survive long enough to become skill.</blockquote></li>
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">that first year at Miami Northwestern</div><span class="subtheory-attached-private-tag">private — excluded when published</span></li>
+          </ol>
+        </div>
+      </div>
+      <footer class="st-connections">
+        <div class="st-conn-head">CONNECTIONS</div>
+        <a class="st-conn-row" href="javascript:void(0)"><span class="st-conn-glyph" id="markConnB"></span><span class="st-conn-title">Eros in the Classroom</span></a>
+      </footer>
+    </div>
+    <aside class="st-yumi">
+      <div class="st-yumi-eyebrow"><span class="lum-light"></span>YUMI</div>
+      <div class="st-yumi-note"><p>You marked this same nerve in <em>Hidden Potential</em> — the two of you are circling one question.</p></div>
+    </aside>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (c) — THE PAGE, #subtheory/<id>, FINISHED (full amber)
+     ============================================================================ -->
+<section class="mock-scene" data-scene="c">
+<!-- EVOLVED: #6 — FINISHED is the full-amber immersive room, for author and
+     visitor alike; no .stb-warm-dim modifier here — this IS the live
+     .st-page.lum-amber-deep skin, unmodified, now correctly gated to
+     Finished-only per decision #8's ground correction. -->
+<div class="st-page lum-amber-deep">
+  <p class="st-room-threshold">entering the finished room</p>
+  <header class="st-topbar">
+    <div class="st-tb-left">
+      <a class="st-tb-back" href="javascript:void(0)">‹ Field</a>
+      <span class="st-hero-mark st-hero-mark-edit" id="markPageC"></span>
+      <!-- EVOLVED: #6 — kicker copy reflects the finished state -->
+      <span class="st-tb-kicker">A SUB-THEORY · FINISHED</span>
+    </div>
+    <div class="st-tb-right">
+      <span class="st-tb-saved"><span class="st-tb-dot"></span>finished · 2 mins ago</span>
+      <!-- EVOLVED: #5 -->
+      <button type="button" class="st-pill-publish done" id="finishC" onclick="toggleFinish(this)"><span class="st-pub-flag"></span>Finished</button>
+      <!-- EVOLVED: #4 — quieter here; finishing recedes the edit door, never removes it -->
+      <a class="st-edit-door st-edit-door-quiet" href="javascript:void(0)" onclick="setScene('a')">Edit in the workshop →</a>
+    </div>
+  </header>
+  <div class="st-grid">
+    <div class="st-center">
+      <div class="st-read-hero">
+        <p class="t-meta">STARTED FROM 4 MARKED PASSAGES · 3 BOOKS</p>
+        <div class="st-maturity"><span class="glow"></span> Maturity · established</div>
+        <div class="subtheory-readonly subtheory-readonly-published">
+          <h2 class="subtheory-readonly-header">Wanting as a Curriculum</h2>
+          <div class="subtheory-readonly-body">If Sub-theory 1 argues that desire is a refusal and Sub-theory 2 that eros belongs in the room, this one asks a smaller, more practical question: can wanting itself be taught? <span class="subtheory-cite">Pedagogy of the Oppressed</span><sup class="subtheory-cite-num">1</sup> is exact about the failure mode — the banking model deposits facts into a student assumed to want nothing except to be filled. Its quiet violence is not that it under-informs; it under-desires.
+
+<span class="subtheory-cite">Yearning: Race, Gender, and Cultural Politics</span><sup class="subtheory-cite-num">2</sup> names the alternative directly: a classroom that treats a student's actual longing — not the school's approved version of ambition — as the beginning of the lesson, not a distraction from it. A note from <span class="subtheory-cite">Hidden Potential</span><sup class="subtheory-cite-num">3</sup> says it plainer than either of them: scaffolding is not talent, it is what lets talent survive long enough to become skill. hooks's homeplace is the reason a student would trust the scaffold enough to climb it.
+
+I learned this first, not from a book, but from <em>that first year at Miami Northwestern</em> — a student whose stated goal, "get a job, any job," was not a small ambition but a well-rehearsed refusal to want more where wanting more had only ever cost her. Teaching her had almost nothing to do with content and everything to do with rebuilding, one small provable success at a time, her right to want something specific.</div>
+          <!-- the private-evidence phrase above reverts to a PLAIN <em> (no dotted
+               underline, no superscript) — exactly views.js:9598-9601's rule: a
+               published phrase naming a private entry no longer resolves.
+               EVOLVED: #6 exercises the private-evidence filter case in the
+               finished room. -->
+          <ol class="subtheory-readonly-evidence">
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">Paulo Freire, Pedagogy of the Oppressed</div></li>
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">bell hooks, Yearning: Race, Gender, and Cultural Politics</div></li>
+            <li class="subtheory-readonly-evidence-item"><div class="subtheory-readonly-cite-line">Hidden Potential — Adam Grant</div><blockquote class="subtheory-readonly-quote">Scaffolding is not talent — it is what lets talent survive long enough to become skill.</blockquote></li>
+          </ol>
+          <!-- the private "Miami Northwestern" evidence item is GONE from this
+               list too (evidencePrivate() filter) — only 3 sources remain,
+               down from the draft's 4. -->
+        </div>
+      </div>
+      <footer class="st-connections">
+        <div class="st-conn-head">CONNECTIONS</div>
+        <a class="st-conn-row" href="javascript:void(0)"><span class="st-conn-glyph" id="markConnC"></span><span class="st-conn-title">Eros in the Classroom</span></a>
+      </footer>
+    </div>
+    <aside class="st-yumi">
+      <div class="st-yumi-eyebrow"><span class="lum-light"></span>YUMI</div>
+      <div class="st-yumi-note"><p>You marked this same nerve in <em>Hidden Potential</em> — the two of you are circling one question.</p></div>
+    </aside>
+  </div>
+  <!-- REVISED: R#6 — WALK-NAV, Finished room only. Real siblings from
+       Preston's seeded "A Pedagogy of Desire" arc (js/state.js:3339-3367):
+       prev = Sub-theory 1 "Desire as Political Refusal" (podS1, shortened to
+       "The Refusal" per the locked decision's own sample copy), next =
+       Sub-theory 3 "Eros in the Classroom" (podS2 — already this mockup's
+       Connections link). "Wanting as a Curriculum" sits at position 2,
+       bridging S1's refusal and S2's eros per its own opening line above.
+       The arc's name is the spine. Text links only — no constellation
+       shape-click mount (that is a separate, later decision). -->
+  <nav class="st-walknav" aria-label="Sibling sub-theories in this arc">
+    <a class="st-walknav-side st-walknav-prev" href="javascript:void(0)">
+      <span class="st-walknav-arrow">‹</span>
+      <span class="st-walknav-label">Sub-theory 1 <em>The Refusal</em></span>
+    </a>
+    <div class="st-walknav-spine">
+      <span class="st-walknav-thread"></span>
+      <span class="st-walknav-arcname">A Pedagogy of Desire</span>
+      <span class="st-walknav-thread"></span>
+    </div>
+    <a class="st-walknav-side st-walknav-next" href="javascript:void(0)">
+      <span class="st-walknav-label">Sub-theory 3 <em>Eros in the Classroom</em></span>
+      <span class="st-walknav-arrow">›</span>
+    </a>
+  </nav>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (d) — THE NOTEBOOK, right-leaf birth flow
+     ============================================================================ -->
+<section class="mock-scene" data-scene="d">
+<div class="notebook lum-amber-deep">
+  <div class="notebook-spread">
+    <div class="leaf leaf-left">
+      <h3 class="eyebrow">Hidden Potential · Inbox</h3>
+      <div class="notebook-entry">
+        <span class="notebook-entry-tag notebook-entry-tag-m">marginalia</span>
+        <div class="notebook-entry-body">Scaffolding is not talent — it is what lets talent survive long enough to become skill.</div>
+        <div class="notebook-entry-acts"><a>gathered ✓</a></div>
+      </div>
+      <div class="notebook-entry">
+        <span class="notebook-entry-tag notebook-entry-tag-j">journal</span><span class="notebook-entry-lock">🔒 private</span>
+        <div class="notebook-entry-body">That first year at Miami Northwestern, a student's "get a job, any job" was not a small ambition — it was a well-rehearsed refusal to want more where wanting more had only ever cost her.</div>
+        <div class="notebook-entry-acts"><a>gathered ✓</a></div>
+      </div>
+    </div>
+    <div class="leaf leaf-right">
+      <h3 class="nb-leaftag">The working page · where a sub-theory forms</h3>
+
+      <div id="gatherFormD">
+        <p class="nb-glab">Gathered</p>
+        <div class="nb-gathered-list" id="gatheredListD">
+          <div class="nb-gnote"><span>Scaffolding is not talent — it is what lets talent survive long enough to become skill.</span><button type="button" class="nb-gx" onclick="this.parentNode.remove()">×</button></div>
+          <div class="nb-gnote"><span>That first year at Miami Northwestern, a student's "get a job, any job" was not a small ambition…</span><button type="button" class="nb-gx" onclick="this.parentNode.remove()">×</button></div>
+        </div>
+
+        <!-- EVOLVED: #1 (F1 redundancy) — gather → NAME → mint kept; no prose
+             affordance. The name field is a single-line canvas-backed input
+             (createWritingCanvas, surfaceId 'notebook-forming-name', UNCHANGED
+             live) — never a body textarea. -->
+        <div class="nb-nameblock">
+          <div class="nb-yname-tag">Name this sub-theory · yours to set</div>
+          <input type="text" class="nb-working-name" id="nameFieldD" value="Wanting as a Curriculum">
+          <p class="nb-name-hint">Name it — the writing happens in the workshop.</p>
+        </div>
+
+        <div class="nb-gather">
+          <span class="lab">2 gathered ·</span>
+          <span class="lab">Into arc: A Pedagogy of Desire</span>
+          <button type="button" class="chip">Change</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn-primary" id="createBtnD" onclick="doCreate()">Create sub-theory →</button>
+        </div>
+
+        <div class="nb-complicate">
+          <span class="nb-ybubble">Y</span>
+          <div>
+            <div class="nb-ctag">Yumi · complicates — a question, never a verdict</div>
+            <div class="nb-ctext">Once Yumi's reading along, she'll open a question here — never a verdict.</div>
+          </div>
+        </div>
+
+        <div class="nb-working-acts"><a class="nb-working-clear" href="javascript:void(0)">Clear</a></div>
+      </div>
+
+      <!-- EVOLVED: #2 (F6 hand-off) — the newborn card. On mint, the author
+           STAYS in the notebook; NO auto-navigation (was location.hash =
+           'subtheory/' + st.id, views.js:2382). -->
+      <div class="nb-newborn-card" id="newbornCardD">
+        <div class="nb-newborn-top">
+          <span class="nb-newborn-mark" id="markNewbornD"></span>
+          <div>
+            <div class="nb-newborn-title">Wanting as a Curriculum</div>
+            <div class="nb-newborn-eyebrow">born just now · draft</div>
+          </div>
+        </div>
+        <p class="nb-newborn-snippet">A forming sub-theory in A Pedagogy of Desire, started from 2 marked passages.</p>
+        <button type="button" class="nb-newborn-door" onclick="setScene('a')">Continue in the workshop →</button>
+        <p class="nb-newborn-stay">You're staying right here — nothing else on this page changes.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<script>
+// ============================================================================
+// MARKS — 5 of the 16 frozen marks, paths copied VERBATIM from
+// js/arc-constellation.js:801-818 (_ST_MARK_TABLE), same provenance note as
+// docs/studio/mockups/arcs.html's ST_MARKS array. ES3 style (var/function),
+// matching the app's own convention, so this block parses under
+// tools/parse-check.
+// ============================================================================
+var MARKS = {
+  wellspring: { body:'M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z', inner:['M-19,14 A19,19 0 0,1 19,14','M-12,22 A12,12 0 0,1 12,22','M-5.5,29 A5.5,5.5 0 0,1 5.5,29'] },
+  bloom:      { body:'M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z', inner:['M0,-8 A8,8 0 1,0 0.01,-8 Z','M-15,-15 L-26,-26','M15,-15 L26,-26','M-15,15 L-26,26','M15,15 L26,26'] },
+  lantern:    { body:'M-32,40 L-32,-6 A32,32 0 0,1 32,-6 L32,40 Z', inner:['M-18,-6 A18,18 0 0,1 18,-6','M-16,4 L-16,32','M0,2 L0,32','M16,4 L16,32'] },
+  grove:      { body:'M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z', inner:['M10,-24 L24,-10 L24,10 L10,24 L-10,24 L-24,10 L-24,-10 L-10,-24 Z','M0,-4 A4,4 0 1,0 0.01,-4 Z'] },
+  spark:      { body:'M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z', inner:['M0,-30 L0,30','M-30,0 L30,0','M0,-9 A9,9 0 1,0 0.01,-9 Z'] }
+};
+function markSVG(name, hue, size) {
+  var m = MARKS[name];
+  var fill = 'var(--subtheory-' + hue + ')';
+  var edge = 'var(--subtheory-' + hue + '-edge)';
+  var out = '<svg viewBox="-50 -50 100 100" width="' + size + '" height="' + size + '" aria-hidden="true">';
+  out = out + '<path d="' + m.body + '" fill="' + fill + '" stroke="' + edge + '" stroke-width="2"></path>';
+  var i;
+  for (i = 0; i < m.inner.length; i = i + 1) {
+    out = out + '<path d="' + m.inner[i] + '" fill="none" stroke="' + edge + '" stroke-width="1.6" opacity="0.62"></path>';
+  }
+  out = out + '</svg>';
+  return out;
+}
+function paintMark(id, name, hue, size) {
+  var el = document.getElementById(id);
+  if (el) { el.innerHTML = markSVG(name, hue, size); }
+}
+paintMark('markWorkshop', 'spark', 6, 32);
+paintMark('markPageB', 'spark', 6, 30);
+paintMark('markPageC', 'spark', 6, 30);
+paintMark('markNewbornD', 'spark', 6, 30);
+paintMark('markConnA', 'bloom', 8, 18);
+paintMark('markConnB', 'bloom', 8, 22);
+paintMark('markConnC', 'bloom', 8, 22);
+
+// ============================================================================
+// scene switching (mirrors the R4/R5 mock-scene pattern)
+// ============================================================================
+function setScene(s) {
+  var scenes = document.querySelectorAll('.mock-scene');
+  var i;
+  for (i = 0; i < scenes.length; i = i + 1) {
+    scenes[i].className = 'mock-scene' + (scenes[i].getAttribute('data-scene') === s ? ' is-active' : '');
+  }
+  var btns = document.querySelectorAll('[data-scene-btn]');
+  for (i = 0; i < btns.length; i = i + 1) {
+    btns[i].className = 'mock-btn' + (btns[i].getAttribute('data-scene-btn') === s ? ' is-on' : '');
+  }
+  window.scrollTo(0, 0);
+}
+
+// EVOLVED: #7 — Focus Mode
+function toggleFocus() {
+  var wrap = document.querySelector('[data-scene="a"] .st-build.lum-amber-deep');
+  var btn = document.getElementById('focusBtn');
+  var on = wrap.className.indexOf('is-focus') !== -1;
+  wrap.className = on ? wrap.className.replace(' is-focus', '') : wrap.className + ' is-focus';
+  btn.className = on ? 'stb-focus-toggle' : 'stb-focus-toggle is-on';
+  btn.textContent = on ? 'Focus' : 'Exit focus';
+}
+
+// REVISED: R#1 — the write/preview toggle's JS handler is REMOVED entirely
+// (see the eval's dead-code grep). The workshop canvas has no mode to
+// switch; "Open the page →" (setScene('b')) is the sole path to rendered
+// prose now.
+
+// REVISED: R#5(b)/(c) — THE PULL SYSTEM: insert-at-cursor. Deterministic
+// only (no Yumi generation): flips a passage's button to the WOVEN state
+// (lit dot + relabel) and appends a quiet "woven into <whereLabel>" caption.
+function weaveIn(btn, whereLabel) {
+  btn.className = 'stb-weave done';
+  btn.title = 'Already woven into your draft';
+  btn.onclick = null;
+  var dot = btn.querySelector('.stb-weave-dot');
+  if (dot) { dot.className = 'stb-weave-dot is-lit'; }
+  var label = btn.querySelector('.stb-weave-label');
+  if (label) { label.textContent = 'woven in'; }
+  var where = document.createElement('span');
+  where.className = 'stb-woven-where';
+  where.textContent = 'woven into ' + whereLabel;
+  btn.parentNode.insertBefore(where, btn.nextSibling);
+}
+
+// REVISED: R#5(a) — THE PULL SYSTEM's search/filter, scoped to the author's
+// marginalia: book AND free text both narrow the list. Deterministic vanilla
+// JS; no Yumi generation.
+function filterPull() {
+  var bookSel = document.getElementById('pullBookSel').value.toLowerCase();
+  var q = document.getElementById('pullSearchInput').value.toLowerCase();
+  var books = document.querySelectorAll('.stb-book');
+  var shown = 0;
+  var i;
+  for (i = 0; i < books.length; i = i + 1) {
+    var book = books[i];
+    var title = (book.getAttribute('data-book-title') || '').toLowerCase();
+    var bookMatch = (bookSel === '' || title === bookSel);
+    var textMatch = (q === '' || title.indexOf(q) !== -1);
+    if (!textMatch) {
+      var passages = book.querySelectorAll('.stb-passage');
+      var j;
+      for (j = 0; j < passages.length; j = j + 1) {
+        if (passages[j].textContent.toLowerCase().indexOf(q) !== -1) { textMatch = true; }
+      }
+    }
+    var visible = bookMatch && textMatch;
+    book.style.display = visible ? '' : 'none';
+    if (visible) { shown = shown + 1; }
+  }
+  document.getElementById('pullEmptyMsg').style.display = (shown === 0) ? 'block' : 'none';
+}
+
+// EVOLVED: #5 — the unified Finish/Finished pill (same control, one word,
+// both directions — reopenable)
+function toggleFinish(btn) {
+  var on = btn.className.indexOf('done') !== -1 || btn.className.indexOf(' on') !== -1;
+  if (btn.className.indexOf('st-pill-publish') !== -1) {
+    btn.className = on ? 'st-pill-publish' : 'st-pill-publish done';
+  } else {
+    btn.className = on ? 'stb-pubpill' : 'stb-pubpill on';
+  }
+  var label = btn.querySelector ? null : null;
+  var textNode = btn.lastChild;
+  if (textNode && textNode.nodeType === 3) {
+    textNode.nodeValue = on ? 'Finish' : 'Finished';
+  } else {
+    btn.textContent = on ? 'Finish' : 'Finished';
+  }
+}
+
+// EVOLVED: #2 — Create reveals the newborn card; the author stays put (no
+// hash navigation, unlike live's location.hash = 'subtheory/' + st.id)
+function doCreate() {
+  document.getElementById('gatherFormD').style.display = 'none';
+  var card = document.getElementById('newbornCardD');
+  card.className = 'nb-newborn-card is-shown';
+}
+</script>
+</body>
+</html>

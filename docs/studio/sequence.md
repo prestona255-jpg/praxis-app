@@ -84,6 +84,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
   (dead CSS, warm `--ink-3`/`--lum-ink-3` AA, arc-voice box, latent constellation focus-ring) folds
   into the S-C sweep. Preston-directed close + cadence re-order; nothing retired, no Preston decision
   contradicted — no `PROPOSED:` flag. Builder regenerated.
+- **2026-07-10** — R6 Sub-theory CLOSED (felt pass **FULL PASS**, v3.190 `4c8f73e`, deployed + live-
+  verified). Both sub-theory surfaces (`#subtheory/<id>` read + `#subtheory/<id>/build` workshop) rebuilt
+  and closed — the notebook births / the workshop writes / the Page reads. Felt-pass rulings: warm-dim
+  CONTAINED working panel = DECIDED (not debt); cyan pill-flag dot KEPT; warm-dim ink-ramp = carried named
+  debt. R6 Sub-theory → Shipped. **PROMOTED R7 Book Detail ahead of the S-A sweep (Preston's call,
+  2026-07-10)** — Now re-set to **R7 Book Detail**; S-A follows R7. Preston-directed re-order (not
+  autonomous) — recorded here, not flagged `PROPOSED:`. Named R6 debt (R6-OWN ownership → R9; R6-INK
+  warm-dim ink-ramp → systemic) recorded in `subtheory-page.md`; sub-theory surfaces marked mobile-eligible.
+  Builder regenerated.
 
 ## Shipped
 
@@ -144,15 +153,21 @@ flagged at the top of the Builder's sequence page for his call — never applied
   §9 red-team clean. Named debt → S-C (dead CSS, warm `--ink-3` AA, arc-voice box) + the arc-field
   mobile touch model (its own named slot below). Records: `docs/checkpoints/r5-*.md`,
   `docs/studio/arcs.md` + `arc-detail.md`. touches: [arcs, arc-detail]
+- [x] **R6 — Sub-theory: Page=read + workshop=sole-editor + pull-system + notebook-births + skin (DEEP)**
+  (v3.190, `4c8f73e`; felt pass **FULL PASS 2026-07-10** — deployed + live-verified). Covers BOTH
+  `#subtheory/<id>` (the read/author-view Page) and `#subtheory/<id>/build` (the workshop). 7 commits
+  `78174f5 → 4c8f73e`: S1 vocab · S2 Page=read `4a2b3cf` · S3 workshop=sole-editor `066e056` · S4
+  pull-system `d6f9bca` · S5 notebook-births `9f0f8b5` · S6 skin+debt `08f61ac` · S7 red-team+cache
+  `4c8f73e`. Resolved the notebook-vs-arcs build redundancy (ONE editor); `writing-canvas.js` UNTOUCHED;
+  fix-red-team CLEAN + praxis-reviewer CLEARED. Records: `docs/checkpoints/r6-subtheory.md`,
+  `subtheory-build.md` + `subtheory-page.md`. touches: [subtheory-build, subtheory-page]
 
 ## Now
 
-- [ ] **R6 — Sub-theory (DEEP)** — the build surface + the immersive published read; resolves the
-  notebook-vs-arcs build redundancy. Inherits from R5: the **single-register** model (one body — the
-  Public|Intellectual toggle is gone) and the **full-amber reading-room** end of the ground spectrum
-  (the immersive published read is a full-viewport threshold room). Full five beats: recon →
-  click-forks → mockup → felt pass → build → close.
-  touches: [subtheory-build, subtheory-page]
+- [ ] **R7 — Book Detail (DEEP)** — the `#book/<id>` surface (`renderBookDetail`): hierarchy,
+  scannability, the buried details. **Promoted ahead of the S-A sweep — Preston's call, 2026-07-10.**
+  Full five beats: recon → click-forks → mockup → felt pass → build → close.
+  touches: [book-detail]
 
 ## Next
 
@@ -164,8 +179,6 @@ flagged at the top of the Builder's sequence page for his call — never applied
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
   residual gaps across three light surfaces; skips the mockup beat.
   touches: [about, search, yumi-sees]
-- [ ] **R7 — Book Detail (DEEP)** — hierarchy, scannability, the buried details.
-  touches: [book-detail]
 - [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
   collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
   guardrail:** after signing in on any device, let the app settle before editing; pull this

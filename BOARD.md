@@ -30,8 +30,8 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
 | 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** | ✗ sync |
 | — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1929→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1939)** | — |
-| 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ v10482 | ✅ css11276 | ✅ v10468/10671/10803 | ✅ hard v10498 (W11-S8-L1) | ✗ sync |
-| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ v9063 | ✅ css11161 | ✅ v9048/10069+ | ✅ hard v9067 (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
+| 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ warm-dim workshop · sole editor (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1; R6-verified) | ✗ sync |
+| 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ read/author-view · warm-dim draft / full-amber room + walk-nav (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
 | 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) · **seed arc opens read-only (sentinel, pre-W12)** | ✗ sync |
 | 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
 | 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
@@ -147,3 +147,13 @@ provenance header (→ `0ee5fad`), the redirect row's L4 anchor (`state.js:1914`
 in-cell `v####` anchors are deliberately NOT rewritten — they re-drift as the file
 grows (per the maintenance rule above); the full refreshed per-surface anchor set
 lives in the recon doc.*
+
+*Board revision 3 — R6 Sub-theory CLOSED (v3.190, `4c8f73e`, felt-passed 2026-07-10). Flipped the Amber
+cell of rows 8 (`#subtheory/<id>/build`) + 9 (`#subtheory/<id>`) to the R6 transformation: the Page is now
+the read/author-view (its editor removed — warm-dim draft / full-amber immersive room + walk-nav) and the
+workshop is the sole warm-dim editor. Logged-out hard-gates on both rows PRESERVED + R6-verified; empty
+states preserved. The prior in-cell `v####`/`css####` anchors on these rows were DROPPED — R6 removed
+~1000 lines from `renderSubTheoryPage` and grew the notebook region, so those numbers drifted hard; re-grep
+by function name (`renderSubTheoryPage` ~9838, `renderSubTheoryBuild` ~10242, of 2026-07-10) before relying.
+Named debt carried: R6-OWN (ownership → R9 owner-vs-visitor) + R6-INK (warm-dim ink-ramp, systemic retune).
+Records: `docs/studio/subtheory-build.md` + `subtheory-page.md` (both `state: closed`).*
