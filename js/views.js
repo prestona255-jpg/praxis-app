@@ -9809,8 +9809,8 @@ function renderSubTheoryPage(id) {
 
   // Wave 3 (The Page): topbar -- back to the arc, the sub-theory's own hero
   // idea-mark (real markShape/markColor via the shared PraxisMarks bridge,
-  // per-instance url(#mgN) gradient), a saved cue, and the quiet private-
-  // milestone publish pill. The pill flips the EXISTING status/publishedAt
+  // per-instance url(#mgN) gradient), a saved cue, and the quiet Finish
+  // pill. The pill flips the EXISTING status/publishedAt
   // fields (draft<->published); no broadcast, no schema change.
   var stArcTop = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
   var stTopbar = document.createElement('header');
@@ -9868,7 +9868,7 @@ function renderSubTheoryPage(id) {
     var flag = document.createElement('span');
     flag.className = 'st-pub-flag';
     stPub.appendChild(flag);
-    stPub.appendChild(document.createTextNode(stPubDone() ? 'Milestone set' : 'Set as milestone'));
+    stPub.appendChild(document.createTextNode(stPubDone() ? 'Finished' : 'Finish'));
   }
   paintStPub();
   stPub.addEventListener('click', function() {
@@ -11224,7 +11224,7 @@ function renderSubTheoryBuild(id) {
   function pubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
   function paintPub() {
     pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '');
-    pub.textContent = pubDone() ? 'Published · private' : 'Publish';
+    pub.textContent = pubDone() ? 'Finished' : 'Finish';
   }
   paintPub();
   pub.addEventListener('click', function() {
