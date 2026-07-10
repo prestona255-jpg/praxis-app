@@ -1987,6 +1987,18 @@ function updateSubTheory(id, fields) {
   return subTheory;
 }
 
+// F-MA1 (R5): the shared '__praxis_seed__' worked example is a READ-ONLY
+// exhibit -- no real signed-in user owns it, so its sub-theories must never be
+// dragged, linked, or unlinked into a persisted mutation (a signed-out or
+// non-owner viewer could otherwise corrupt the shared seed). A record is
+// seed-locked when it carries the sentinel userId AND the current user is not
+// that sentinel (always true for real users and for signed-out viewers).
+function _subSeedLocked(sub) {
+  if (!sub || sub.userId !== '__praxis_seed__') { return false; }
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  return !(u && u.uid === '__praxis_seed__');
+}
+
 // 9.6c.2: position writer for the workspace drag layer. Writes the
 // existing 9.6a x/y fields and self-persists, mirroring createSubTheory/
 // deleteSubTheory. Deliberately separate from updateSubTheory, which owns
@@ -1999,6 +2011,7 @@ function updateSubTheory(id, fields) {
 function setSubTheoryPosition(id, x, y) {
   var subTheory = state.subTheories[id];
   if (!subTheory) return null;
+  if (_subSeedLocked(subTheory)) { return subTheory; } // F-MA1: seed field is read-only
   subTheory.x = (typeof x === 'number' && isFinite(x)) ? x : null;
   subTheory.y = (typeof y === 'number' && isFinite(y)) ? y : null;
   subTheory.updatedAt = Date.now();
@@ -2140,6 +2153,7 @@ function linkSubTheories(aId, bId) {
   var a = state.subTheories[aId];
   var b = state.subTheories[bId];
   if (!a || !b) return false;
+  if (_subSeedLocked(a) || _subSeedLocked(b)) return false; // F-MA1: seed field is read-only
   if (!Array.isArray(a.linkedSubTheories)) a.linkedSubTheories = [];
   if (!Array.isArray(b.linkedSubTheories)) b.linkedSubTheories = [];
   var changed = false;
@@ -2165,6 +2179,7 @@ function unlinkSubTheories(aId, bId) {
   var a = state.subTheories[aId];
   var b = state.subTheories[bId];
   if (!a || !b) return false;
+  if (_subSeedLocked(a) || _subSeedLocked(b)) return false; // F-MA1: seed field is read-only
   var changed = false;
   if (Array.isArray(a.linkedSubTheories)) {
     var ia = a.linkedSubTheories.indexOf(bId);

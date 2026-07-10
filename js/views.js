@@ -3289,7 +3289,9 @@ function openArcEditor() {
       var arc = createArc(titleVal, bodyVal, user.uid);
       if (!arc) return;
       saveState();
-      renderRoute();
+      // R5 FIX: land on the newly created arc's field (was renderRoute, which
+      // re-rendered the source page). A different hash -> the router opens it.
+      location.hash = 'arc/' + arc.id;
     },
     onCancel: function() {
       renderRoute();
@@ -3310,12 +3312,10 @@ function openArcEditor() {
 // 'notebook-arc-editor-host', so this page renders that div NESTED
 // inside the spec-named #arcs-create-host wrapper -- the wrapper is
 // the Arcs-page CSS scope; the inner div is the openArcEditor mount
-// point. On save / cancel openArcEditor calls renderNotebook(), so
-// the user lands on the Notebook surface after creating from here.
-// (Stage 2 question for Preston: is that the intended post-create
-// landing, or should the CTA path return to the Arcs page or the new
-// arc's detail page? Implementation today preserves openArcEditor
-// strictly.)
+// point. R5 FIX: on save openArcEditor now navigates to the newly
+// created arc's field (location.hash = 'arc/<id>'); on cancel it
+// re-renders the current route. (The prior note that it landed on the
+// Notebook was already stale -- the code called renderRoute.)
 // Canon §4-G: per-arc computed counts (display-only; no data-model change).
 // books = arc.bookIds; sub-theories = sub-theories whose arcId matches;
 // marginalia = attached entries (arc.entryIds) whose register is marginalia.
@@ -3324,15 +3324,8 @@ function _arcCardCounts(arcId, arcRec) {
   if (arcRec && arcRec.bookIds && arcRec.bookIds.length) {
     c.books = arcRec.bookIds.length;
   }
-  var k;
-  if (state.subTheories) {
-    for (k in state.subTheories) {
-      if (Object.prototype.hasOwnProperty.call(state.subTheories, k) &&
-          state.subTheories[k] && state.subTheories[k].arcId === arcId) {
-        c.subTheories = c.subTheories + 1;
-      }
-    }
-  }
+  // R5 FIX: one shared, index-backed count path (O(1) inside renderArcsPage).
+  c.subTheories = _arcSubCount(arcId);
   if (arcRec && arcRec.entryIds && arcRec.entryIds.length &&
       state.notebookEntries) {
     var i;
@@ -3362,11 +3355,42 @@ function _arcCardCounts(arcId, arcRec) {
 // OMITTED, not fabricated (logged as a data-model task).
 // ============================================================================
 
+// R5 FIX: an arcId -> [subs] index built ONCE per renderArcsPage so the per-card
+// helpers (_arcSubsOf / _arcCardCounts / maturity / sort) stop re-scanning ALL of
+// state.subTheories for every card. Non-null ONLY during a renderArcsPage pass;
+// every other caller (renderArcDetail, account stats) takes the full-scan path.
+var _arcSubsIndex = null;
+
+function _buildArcSubsIndex() {
+  var idx = {};
+  var k;
+  if (state.subTheories) {
+    for (k in state.subTheories) {
+      if (Object.prototype.hasOwnProperty.call(state.subTheories, k)) {
+        var s = state.subTheories[k];
+        if (s && s.arcId) {
+          if (!idx[s.arcId]) { idx[s.arcId] = []; }
+          idx[s.arcId].push(s);
+        }
+      }
+    }
+  }
+  var a;
+  for (a in idx) {
+    if (Object.prototype.hasOwnProperty.call(idx, a)) {
+      idx[a].sort(function (x, y) { return (x.createdAt || 0) - (y.createdAt || 0); });
+    }
+  }
+  return idx;
+}
+
 // Sub-theory records of an arc, oldest-first.
 function _arcSubsOf(arcId) {
+  if (!arcId) { return []; }
+  if (_arcSubsIndex) { return _arcSubsIndex[arcId] || []; }
   var out = [];
   var k;
-  if (!arcId || !state.subTheories) { return out; }
+  if (!state.subTheories) { return out; }
   for (k in state.subTheories) {
     if (Object.prototype.hasOwnProperty.call(state.subTheories, k) &&
         state.subTheories[k] && state.subTheories[k].arcId === arcId) {
@@ -3376,6 +3400,10 @@ function _arcSubsOf(arcId) {
   out.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
   return out;
 }
+
+// R5 FIX: the ONE shared sub-theory count for an arc (index-backed inside
+// renderArcsPage). Replaces the ad-hoc per-helper re-scans.
+function _arcSubCount(arcId) { return _arcSubsOf(arcId).length; }
 
 // Arc-level maturity in [0,1]: mean of the real per-sub _stComputeMaturity (the
 // same derivation the constellation + sub-theory detail use). Empty arc -> 0.
@@ -3545,6 +3573,10 @@ function renderArcsPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
+
+  // R5 FIX: build the arcId->subs index once for this whole render (O(1) per-card
+  // counts/maturity/sort); cleared before return so no other route reads it stale.
+  _arcSubsIndex = _buildArcSubsIndex();
 
   var wrap = document.createElement('section');
   // Wave 7 · Surface C: .lum-amber atmosphere supplies the amber "your thinking"
@@ -3778,6 +3810,7 @@ function renderArcsPage() {
       'These are examples — arcs anyone can learn from. Sign in to start your own: set books side by side and draw the threads between them.'));
   }
 
+  _arcSubsIndex = null; // R5 FIX: release the per-render index
   host.appendChild(wrap);
 }
 
@@ -12488,6 +12521,15 @@ function requestArcVoice(arcId, hostEl, triggerEl) {
   line.textContent = '…';
   hostEl.appendChild(line);
   if (triggerEl) { triggerEl.disabled = true; }
+  // A non-PASS result and a REJECTION (gate threw / network failed / grade
+  // errored) share one inline fallback: never leave the "…" placeholder hung or
+  // the trigger disabled. arcVoiceFail shows the quiet line and re-enables.
+  function arcVoiceFail() {
+    line.textContent = ARC_VOICE_FALLBACK;
+    line.style.fontStyle = 'italic';
+    line.style.opacity = '0.85';
+    if (triggerEl) { triggerEl.disabled = false; }
+  }
   YumiBrain.considerArcVoice(arcId).then(function (r) {
     if (r && r.ok && typeof r.text === 'string' && r.text.replace(/^\s+|\s+$/g, '') !== '') {
       line.textContent = r.text;
@@ -12496,13 +12538,11 @@ function requestArcVoice(arcId, hostEl, triggerEl) {
       if (r.web && typeof buildGroundingChips === 'function') {
         hostEl.insertBefore(buildGroundingChips({ web: r.web, theme: r.theme }), line);
       }
+      if (triggerEl) { triggerEl.disabled = false; }
     } else {
-      line.textContent = ARC_VOICE_FALLBACK;
-      line.style.fontStyle = 'italic';
-      line.style.opacity = '0.85';
+      arcVoiceFail();
     }
-    if (triggerEl) { triggerEl.disabled = false; }
-  });
+  }, arcVoiceFail);
 }
 
 // Stage C: the quiet "Ask Yumi what she sees here" affordance + its inline
@@ -12942,7 +12982,7 @@ function renderArcDetail(arcId) {
 
       var resetBtn = document.createElement('button');
       resetBtn.type = 'button';
-      resetBtn.className = 'arc-detail-toggle-btn';
+      resetBtn.className = 'arc-detail-toggle-btn arc-reset-btn';
       resetBtn.setAttribute('data-st-control', 'reset');
       resetBtn.textContent = 'Reset placements';
       // Stage 9.6c.2 + Wave 8 (Lane A, item 3): Reset clears EVERY placement in
@@ -13046,6 +13086,16 @@ function renderArcDetail(arcId) {
       });
 
       stControlBarBottom.appendChild(layersWrap);
+
+      // D5 (R5): a self-evident helper caption for the field controls. flex-basis
+      // 100% wraps it onto its own line beneath the buttons; the .arc-reset-btn
+      // danger styling + this caption's color land in S2 chrome (per mockup).
+      var tidyHelp = document.createElement('p');
+      tidyHelp.className = 'arcfield-tidy-help';
+      tidyHelp.textContent = 'Tidy composes an open arrangement for this session only — '
+        + 'Restore brings back what you saved. Reset placements permanently clears '
+        + 'every saved position; it cannot be undone.';
+      stControlBarBottom.appendChild(tidyHelp);
 
       // The top "+ Sub-theory" bar is dropped here — the mock puts that
       // affordance in the rail (built below); the bottom Connect/Reset/Layers
