@@ -1628,6 +1628,10 @@ var notebookActiveTab = 'inbox';
 var notebookGathered = {};
 var notebookGatherArc = null;
 var notebookGatherName = '';
+// R6 S5 (decision #2): the just-minted sub-theory, held so the working leaf can show
+// a "born just now" card + a "Continue in the workshop →" door and the author STAYS in
+// the notebook (no auto-navigation). Render-layer only; nulled on a fresh gather.
+var notebookNewborn = null;
 
 // Wave 3 (the Notebook): the BOOK BAND that crowns a book's notebook -- real
 // cover (coverUrl, cloth fallback) + title/author + reading status + real note
@@ -2080,11 +2084,20 @@ function buildNotebookRightLeaf(user, activeKey) {
   leaf.className = 'leaf leaf-right';
 
   var ids = notebookGatheredIds();
+  // R6 S5: a fresh gather supersedes the last birth card.
+  if (ids.length > 0) { notebookNewborn = null; }
 
   var tag = document.createElement('h3');
   tag.className = 'nb-leaftag';
   tag.textContent = 'The working page · where a sub-theory forms';
   leaf.appendChild(tag);
+
+  // R6 S5 (decision #2): after a mint the author STAYS here — a quiet newborn card
+  // with a "Continue in the workshop →" door REPLACES the gather form; no auto-nav.
+  if (notebookNewborn) {
+    leaf.appendChild(buildNotebookNewbornCard(notebookNewborn));
+    return leaf;
+  }
 
   // Gathered (mockup .glab + .gathered-list): the gathered notes, each with a ×
   // remove (toggleGather), or the empty placeholder when nothing is gathered.
@@ -2144,6 +2157,11 @@ function buildNotebookRightLeaf(user, activeKey) {
   var nameHost = document.createElement('div');
   nameHost.className = 'nb-working-name nb-name-canvas-host';
   nameBlock.appendChild(nameHost);
+  // R6 S5 (decision #1): the leaf NAMES; the prose lives in the workshop.
+  var nameHint = document.createElement('p');
+  nameHint.className = 'nb-name-hint';
+  nameHint.textContent = 'Name it — the writing happens in the workshop.';
+  nameBlock.appendChild(nameHint);
   leaf.appendChild(nameBlock);
   var nameCanvas = createWritingCanvas(nameHost, {
     surfaceId:    'notebook-forming-name',
@@ -2264,6 +2282,51 @@ function buildNotebookRightLeaf(user, activeKey) {
   return leaf;
 }
 
+// R6 S5 (decision #2): the "born just now" card — the newborn sub-theory as a quiet
+// card in the working leaf, with a "Continue in the workshop →" door. The author stays
+// in the notebook; the door is the ONLY navigation, on click.
+function buildNotebookNewbornCard(nb) {
+  var card = document.createElement('div');
+  card.className = 'nb-newborn-card is-shown';
+  var top = document.createElement('div');
+  top.className = 'nb-newborn-top';
+  var mark = document.createElement('span');
+  mark.className = 'nb-newborn-mark';
+  var rec = state.subTheories && state.subTheories[nb.id];
+  mark.innerHTML = rec ? bookSubMarkHTML(rec, 30) : '';
+  top.appendChild(mark);
+  var titleWrap = document.createElement('div');
+  var title = document.createElement('div');
+  title.className = 'nb-newborn-title';
+  title.textContent = nb.header || 'Untitled sub-theory';
+  titleWrap.appendChild(title);
+  var eyebrow = document.createElement('div');
+  eyebrow.className = 'nb-newborn-eyebrow';
+  eyebrow.textContent = 'born just now · draft';
+  titleWrap.appendChild(eyebrow);
+  top.appendChild(titleWrap);
+  card.appendChild(top);
+  var snippet = document.createElement('p');
+  snippet.className = 'nb-newborn-snippet';
+  snippet.textContent = 'A forming sub-theory in ' + (nb.arcTitle || 'your arc') + ', started from '
+    + nb.count + ' marked passage' + (nb.count === 1 ? '' : 's') + '.';
+  card.appendChild(snippet);
+  var door = document.createElement('button');
+  door.type = 'button';
+  door.className = 'nb-newborn-door';
+  door.textContent = 'Continue in the workshop →';
+  door.addEventListener('click', function() {
+    notebookNewborn = null;
+    location.hash = '#subtheory/' + nb.id + '/build';
+  });
+  card.appendChild(door);
+  var stay = document.createElement('p');
+  stay.className = 'nb-newborn-stay';
+  stay.textContent = 'You’re staying right here — nothing else on this page changes.';
+  card.appendChild(stay);
+  return card;
+}
+
 // ===== N3 gather helpers =====
 
 function notebookRegisterLabel(reg) {
@@ -2376,10 +2439,20 @@ function notebookCreateSubTheory() {
     var quote = (e && typeof e.body === 'string') ? e.body : '';
     addEvidenceToSubTheory(st.id, { kind: 'entry', refId: ids[i], quote: quote });
   }
+  var mintedArc = state.arcs[arcId];
   notebookGathered = {};
   notebookGatherArc = null;
   notebookGatherName = '';
-  location.hash = 'subtheory/' + st.id;
+  // R6 S5 (decision #2): the author STAYS in the notebook — surface the newborn as a
+  // quiet card + a "Continue in the workshop →" door (NO auto-navigation, was
+  // location.hash = 'subtheory/' + st.id). The mint data path above is unchanged.
+  notebookNewborn = {
+    id: st.id,
+    header: (name || st.header || 'Untitled sub-theory'),
+    arcTitle: (mintedArc && mintedArc.title) ? mintedArc.title : '',
+    count: ids.length
+  };
+  renderNotebook();
 }
 
 // N2: master consent switch -- interactive. Reflects profile.yumiReadsAlong

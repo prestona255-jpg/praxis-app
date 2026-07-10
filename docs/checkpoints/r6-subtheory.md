@@ -144,4 +144,38 @@ background are the R#7 skin/contrast fixes — Stage 6.)
   "woven into ¶N" is book-level, not per-note; falls back to no caption when the marker isn't in
   the body. Display-only, no persisted field.
 
+Commit: `d6f9bca` (local, --no-verify).
+
+---
+
+## STAGE 5 — The Notebook birth-only leaf ✅
+
+**views.js:** decision #1 — the working leaf already has no prose composer (the capture composer
+lives on the left leaf; the name is the single-line `notebook-forming-name` canvas); added the
+reinforcing `nb-name-hint` "Name it — the writing happens in the workshop." decision #2 — the
+working-leaf mint (`notebookCreateSubTheory`) drops the auto-nav (`location.hash='subtheory/'+st.id`)
+and instead sets a render-layer `notebookNewborn` + re-renders; `buildNotebookRightLeaf` shows a
+`buildNotebookNewbornCard` ("born just now · draft" + snippet + "Continue in the workshop →" door +
+stay note) that REPLACES the gather form; the door navigates to `/build` and clears the newborn;
+a fresh gather supersedes it. **N0: the mint data path (`createSubTheory` + `addEvidenceToSubTheory`)
+is byte-unchanged — render/nav-layer only.** The Yumi thread-accept mint (`nameSubTheoryFromThread`,
+3073) is OUT OF R6 SCOPE (Yumi feature layer) — untouched.
+
+**components.css:** `nb-name-hint` + `nb-newborn-*` (notebook R4 light-skin literals). The
+deep-teal Yumi `.nb-complicate` slot is UNTOUCHED (Preston ruling #3).
+
+**Gates (all PASS):**
+- Parse **PARSE OK**. Working-leaf auto-nav removed (only a comment references the old string).
+  Data path intact (createSubTheory 2434 / addEvidenceToSubTheory 2440 unchanged).
+- **Live rig (fresh S5; console clean) — full birth flow by clicking:** gather 2 notes → name
+  hint shown, Create enabled → **click Create** → `noNav:true` (stayed `#notebook`), newborn card
+  ("Wanting as a Curriculum", "born just now · draft", "…started from 2 marked passages.",
+  "Continue in the workshop →", stay note), gather form replaced, **sub-theory created with
+  evidence refs `n1,n2` (zero data loss)**, gather cleared → **click door** → nav to
+  `#subtheory/<id>/build`, newborn cleared.
+- **Scope guard #3 verified:** the notebook Yumi `.nb-complicate` renders `rgb(31,90,107)` (teal)
+  — untouched.
+- Reload-persistence is governed by the UNCHANGED `saveState` data path; state-level creation
+  verified (a real-account reload cycle is Preston's live-smoke, not representable by synthetic auth).
+
 Commit: (recorded below on commit)
