@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis Studio — R5 Arcs Shape-B Mockup (#arcs + #arc/&lt;id&gt;)</title>
+<!--
+  PRAXIS STUDIO — R5 ARCS SHAPE-B MOCKUP
+  Surface slug: arcs (covers BOTH #arcs list AND #arc/<id> interior, per this
+  round's locked scope note). Read-only design artifact — no app code was
+  touched to build this file. See the appended "## Mockup evaluation" in
+  docs/studio/arcs.md for the full decision table, data-source findings,
+  and forks. docs/studio/arc-detail.md is REFERENCED (never edited) for the
+  interior's own gap ledger (AF6, §3c, field a11y, the Read-face redesign).
+
+  MECHANISM (Option-B, same as R2 Shelf / R3 Home / R4 Notebook): the route
+  map (umberGroundDark) is untouched live; this file models a SCOPED class
+  re-point of the same --lum-*-style custom-property NAMES the live surface
+  consumes, from dark Lumen values to Universal v1.2 LIGHT values. The one
+  exception is the Field face's constellation "room" — the amber-field
+  variant — which is the ONLY place raw warm-umber literals appear, per the
+  round decision ("light chrome around it, the amber-field skin variant
+  applies HERE, the room").
+
+  Tokens cited from:
+    - docs/studio/praxis-universal-token-sheet.md (Universal v1.2, §1-§3, §8)
+    - docs/studio/universal-depth.css (Universal depth v1.2, the §8 recipes)
+    - docs/studio/recon/r0-recon.md (live resolved token values, Stage 1)
+    - assets/theme.css:190-225 (--subtheory-1..16 / -edge, verbatim values)
+    - js/arc-constellation.js:801-818 (_ST_MARK_TABLE, 16 marks, copied
+      byte-identical into the ST_MARKS array in the <script> block below —
+      see the comment at that array for the anchor + verbatim note)
+
+  Every genuinely-new element carries an HTML "decision-tag" comment
+  naming its decision (D0-D11, keyed in the legend panel near the bottom of
+  the mockup toolbar and restated in the appended evaluation table).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   0 · RESET + FONT STACKS (live theme.css:9-11, byte-identical stacks)
+   ============================================================================ */
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{ margin:0; }
+a{ color:inherit; }
+button{ font:inherit; }
+
+:root{
+  --font-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ===== Universal v1.2 — praxis-universal-token-sheet.md §1-§3 (LIGHT ground,
+     the new default chrome for both surfaces in this file, EXCEPT the Field
+     "room" which keeps the amber-field variant below). ===== */
+  --paper:#f4efe4;        /* page ground, canon value, sheet §2 */
+  --card:#fffdf8;         /* --surface, "the identity move" near-white card, §2 */
+  --card-2:#efe7d6;       /* --surface-2, secondary card tier, §2 */
+  --ink:#241710;          /* --ink, Group A "keep live" (canon #241d10 imperceptible) */
+  --ink-2:#645940;        /* --ink-2, v1.1 warmth revision */
+  --ink-3:#978b6d;        /* --ink-3, v1.1 warmth revision (AA collapses <18px per R2 Shelf finding — see gate #7) */
+  --line:#e3d8c1;         /* --line, v1.1 warm opaque hairline (light ground) */
+  --gold:#a8761a;         /* GOLD ROLE 1 — interactive/fill, v1.1 */
+  --gold-deep:#855410;    /* GOLD ROLE — deep gold for small TEXT, AA */
+  --gold-hi:#d9a441;      /* GOLD ROLE 2 — gilding, edge + glow ONLY */
+  --star:#ffce4a;         /* GOLD ROLE 3 — luminous, live --lum-gold, stars/marks only */
+  --danger:#c2603a;       /* --danger, Group B "keep live" */
+  --thread:#c2a463;       /* --thread, universal-depth.css v1.2 recipe 7 */
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:22px; --radius-pill:999px;
+
+  /* the ten-hue field spectrum (universal-depth.css v1.2, §2 of the sheet) */
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+
+  /* the frozen sixteen sub-theory mark hues + edges — VERBATIM live values,
+     assets/theme.css:190-225. Fixed regardless of chrome skin (they are the
+     mark identity, not chrome). */
+  --subtheory-1:#6FC9BC;  --subtheory-1-edge:#37968A;
+  --subtheory-2:#8FB8E8;  --subtheory-2-edge:#5580C2;
+  --subtheory-3:#E8998D;  --subtheory-3-edge:#C4685B;
+  --subtheory-4:#E8B45C;  --subtheory-4-edge:#C08A28;
+  --subtheory-5:#7CC6DA;  --subtheory-5-edge:#3D93AC;
+  --subtheory-6:#F0D468;  --subtheory-6-edge:#C4A22E;
+  --subtheory-7:#9BA4E8;  --subtheory-7-edge:#5F6AC4;
+  --subtheory-8:#F2A8C6;  --subtheory-8-edge:#CC6E9A;
+  --subtheory-9:#A8CD8E;  --subtheory-9-edge:#6FA052;
+  --subtheory-10:#AC9DE2; --subtheory-10-edge:#7A66C2;
+  --subtheory-11:#C0A8E0; --subtheory-11-edge:#8E6EC0;
+  --subtheory-12:#C9D67E; --subtheory-12-edge:#94A33E;
+  --subtheory-13:#8FD4B8; --subtheory-13-edge:#4AA582;
+  --subtheory-14:#E89BB4; --subtheory-14-edge:#C25E84;
+  --subtheory-15:#DFC089; --subtheory-15-edge:#AE8C46;
+  --subtheory-16:#EFA89A; --subtheory-16-edge:#CC6E5C;
+}
+
+/* ===== D0 · mockup-only "compare" chrome skin. Flips the SAME token NAMES
+   (--card/--ink/--gold/etc) the components below consume from the Universal
+   LIGHT defaults to the live dark-Lumen chrome values, so Preston can A/B the
+   whole-page chrome against today's live look. NOT a design proposal on its
+   own — the proposal is light chrome + a permanently-dark Field room (below);
+   this toggle is a review aid. Values are the live --lum-* set (r0-recon
+   Namespace A) — NOT the protected warm-umber primitive family named and
+   reserved for the AMBER-FIELD VARIANT block just below (gate #4). ===== */
+body.skin-amber-chrome{
+  --paper:#231708;        /* --lum-base, live lumen-amber.css:28 */
+  --card:#2a1d0f;         /* approx --lum-base raised a step, mockup-only mix */
+  --card-2:#241a0c;
+  --ink:#fdf8ec;          /* --lum-ink */
+  --ink-2:#e8dcc4;        /* --lum-ink-2 */
+  --ink-3:#b6a888;        /* --lum-ink-3 */
+  --line:rgba(255,236,200,.16);   /* --lum-glass-bd-2 */
+  --gold:#ffce4a;         /* --lum-gold */
+  --gold-deep:#cf9c2a;    /* --lum-gold-d */
+  --gold-hi:#ffe79a;      /* --lum-gold-l, used here as the gilding accent */
+  --star:#ffce4a;
+}
+
+/* ============================================================================
+   1 · AMBER-FIELD VARIANT — the constellation "room" only. Raw warm-umber
+   literals are PERMITTED here ONLY (round decision, §3): the live warm-umber
+   dark primitives (theme.css:24-27 — --ground #2f1c0e, --surface-d #3e2814,
+   --surface-d2 #4a3119, --text-d #f0e3c8), reproduced verbatim. This block is
+   NOT touched by the D0 chrome toggle — the room stays dark regardless, per
+   "light chrome around it, the amber-field variant applies HERE."
+   ============================================================================ */
+.field-room{
+  --room-bg:#2f1c0e;      /* live --ground, theme.css:24 */
+  --room-surface:#3e2814; /* live --surface-d, theme.css:26 */
+  --room-surface-2:#4a3119; /* live --surface-d2, theme.css:27 */
+  --room-text:#f0e3c8;    /* live --text-d, theme.css:34 */
+  --room-ink-3:#b6a888;   /* live --lum-ink-3, dimmer room text */
+  --room-line:rgba(255,236,200,.16);
+  position:relative; border-radius:26px; overflow:hidden;
+  background-color:#2f1c0e;
+  /* AMENDED 2026-07-09: no hard panel edge — the cognac stage FEATHERS into the warm-dim
+     interior (a vignette deep cognac → warm-brown → parchment #e7d2a8 at the rim), the shared
+     gold glow carried across the seam. The interior deepens toward the stage; it is not a dark
+     block cut into a light page (Preston's soften-the-framing ruling). */
+  background-image:
+    radial-gradient(72% 60% at 44% 38%, rgba(255,206,74,.12) 0%, rgba(255,206,74,.03) 45%, rgba(255,206,74,0) 70%),
+    radial-gradient(132% 118% at 50% 46%, rgba(47,28,14,0) 60%, rgba(74,49,25,.55) 82%, rgba(231,210,168,.55) 100%);
+  box-shadow:inset 0 0 70px 26px rgba(231,210,168,.14), inset 0 0 100px rgba(255,206,74,.06);
+  border:none;
+  color:var(--room-text);
+  min-width:0;
+}
+.field-room svg{ display:block; width:100%; height:auto; }
+.field-room-empty-copy{ font-family:var(--font-serif); font-style:italic; font-size:13px; fill:var(--room-ink-3); }
+
+/* ============================================================================
+   2 · MOCKUP-ONLY REVIEW CHROME (D0) — never part of the live surface.
+   ============================================================================ */
+body{ font-family:var(--font-body); background:var(--paper); color:var(--ink);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed;
+  transition:background-color .2s, color .2s;
+}
+body.skin-amber-chrome{ background-image:none; background-color:#1c1209; }
+.mock-toolbar{ position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  padding:12px 24px; background:rgba(36,23,16,.92); color:#f3e8ce; font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.04em; border-bottom:1px solid rgba(255,236,200,.16); }
+.mock-toolbar b{ color:#ffce4a; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.mock-group{ display:inline-flex; gap:6px; align-items:center; }
+.mock-btn{ font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; color:#f3e8ce; background:rgba(255,236,200,.08);
+  border:1px solid rgba(255,236,200,.22); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.mock-btn:hover{ border-color:#ffce4a; color:#ffce4a; }
+.mock-btn.is-on{ background:linear-gradient(180deg,#ffe79a,#ffce4a); color:#241a02; border-color:transparent; font-weight:600; }
+.mock-legend{ margin-left:auto; font-size:10px; color:#b6a888; max-width:340px; line-height:1.5; }
+.mock-legend b{ color:#e8dcc4; }
+
+/* ============================================================================
+   3 · ARCS LIST (#arcs) — lifted structure, components.css:1650-1729 +
+   3544-3782 (renderArcsPage). Class names reused verbatim where the DOM is
+   unchanged; new classes only where a decision genuinely adds an element.
+   ============================================================================ */
+.arcs{ max-width:1080px; margin:0 auto; padding:40px 24px 24px; }
+.arcs-head{ margin-bottom:32px; max-width:680px; }
+.eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-3); margin:0 0 8px; }
+.arcs-title{ font-family:var(--font-serif); font-size:clamp(30px,5vw,46px); color:var(--ink); margin:0 0 10px;
+  background:linear-gradient(180deg,var(--ink) 42%, var(--gold) 118%); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent; } /* recipe 3 ink-to-gold, display-only >=18px */
+.arcs-teach{ font-family:var(--font-serif); font-style:italic; font-size:18px; color:var(--ink-2); line-height:1.5; margin:0; }
+.arcs-section-h{ display:flex; align-items:baseline; gap:12px; margin:40px 0 18px; }
+.arcs-section-h h2{ font-family:var(--font-serif); font-size:24px; color:var(--ink); margin:0; }
+.arcs-bar{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:0 0 18px; }
+.arcs-seg{ display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--card-2); }
+.arcs-seg-btn{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); background:none; border:none; border-radius:999px; padding:6px 13px; cursor:pointer; }
+.arcs-seg-btn:hover{ color:var(--ink); }
+.arcs-seg-btn.is-on{ color:#3d2807; background:linear-gradient(180deg,var(--field-1),var(--gold)); font-weight:600; }
+.arcs-count{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--ink-3); }
+
+/* --- D1: arc-card grid rebuild — auto-fit (not auto-fill) + equal-height
+   tiles, ONE unified .arc-card class shared by every tile type. Live today
+   already ships auto-fill (components.css:1728); this promotes it to
+   auto-fit (collapses ghost tracks when there are few cards) and adds
+   grid-auto-rows:1fr so short/tall cards render the same height — the
+   residual half of the ledger's "Rebuild requirement." --- */
+.arcs-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); grid-auto-rows:1fr; gap:16px; }
+.arc-card{ display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg);
+  overflow:hidden; text-decoration:none; transition:transform .2s, border-color .2s; color:var(--ink); min-height:0; }
+.arc-card:hover{ transform:translateY(-3px); border-color:var(--gold-hi); box-shadow:0 20px 44px -30px rgba(36,23,16,.35); }
+.arc-card-thumb{ position:relative; height:112px; overflow:hidden; border-bottom:1px solid var(--line);
+  background:radial-gradient(ellipse 90% 80% at 50% 42%, var(--card-2) 0%, var(--card) 64%); flex:none; }
+.arc-const-threads{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.arc-const-threads path{ fill:none; stroke:var(--thread); stroke-width:.9; opacity:.7; }
+.arc-light{ position:absolute; transform:translate(-50%,-50%); line-height:0; }
+.arc-const-empty::after{ content:''; position:absolute; left:50%; top:50%; width:11px; height:11px; border-radius:50%;
+  transform:translate(-50%,-50%); background:radial-gradient(circle, var(--gold-hi), transparent 70%); opacity:.5; }
+.arc-card-body{ padding:16px 18px; display:flex; flex-direction:column; gap:6px; flex:1; }
+.arc-card-title{ margin:0; font-family:var(--font-serif); font-size:20px; color:var(--ink); line-height:1.2; }
+.arc-card-meta{ margin:0; padding:12px 18px 14px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.03em;
+  color:var(--ink-2); border-top:1px solid var(--line); display:flex; flex-direction:column; gap:4px; }
+.arc-card-illustrated{ opacity:.78; cursor:default; }
+.arc-card-label{ display:inline-block; margin:10px 18px 0; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); }
+.arc-card-start{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:200px;
+  background:transparent; border:1px dashed var(--ink-3); border-radius:var(--radius-lg); color:var(--ink-3); cursor:pointer; }
+.arc-card-start:hover{ color:var(--gold); border-color:var(--gold); }
+.arc-card-start-label{ font-family:var(--font-serif); font-style:italic; font-size:13px; }
+
+/* --- D2: the "In the commons" chip + walked-by count — QUIET recessed card
+   meta, never primary UI (covenant: no engagement-metric prominence). Reuses
+   the existing .arc-card-meta line; adds a small muted pill, no gradient, no
+   glow (restraint law 1/5 + law "gilding is edge+glow, never a fill"). --- */
+.arc-chip-commons{ display:inline-flex; align-items:center; gap:5px; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); }
+.arc-chip-commons::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--gold-hi); flex:none; }
+.arc-card-stale-note{ color:var(--ink-3); font-style:italic; }
+
+@media (max-width:759px){ .arcs-grid{ grid-template-columns:1fr; } } /* mirrors live components.css:1729 + 5527-5530 */
+
+/* ============================================================================
+   4 · ARC INTERIOR (#arc/<id>) — lifted structure, components.css:9798-9830 +
+   11420-11521 (renderArcDetail + faces). Same class-reuse discipline as §3.
+   ============================================================================ */
+.arcfield{ max-width:1080px; margin:0 auto; padding:32px 24px 70px; }
+/* AMENDED 2026-07-09: the arc INTERIOR (scenes a/b/c) is a WARM-DIM room you enter from the
+   light app — toasted-parchment ground, dark ink KEPT (no inversion), surfaces/lines/accents
+   warmed. The head, faces seg, control-bar toolbar and Page-face frame all sit on this warm
+   ground. Scene D (visitor) is the separate full-amber room, not this. */
+.arcfield.arcfield-warm{
+  background:linear-gradient(168deg,#efe1c1 0%,#e7d2a8 100%);
+  border:1px solid #ddc794; border-radius:22px; margin:14px auto 46px; padding:34px 30px 56px;
+  --card:#f6ecd4; --card-2:#e9d9b4; --line:#d9c391; --gold-hi:#c79433;
+}
+.arcfield-head{ display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap; margin:0 0 8px; }
+.arcfield-head .t{ flex:1; min-width:240px; }
+.arcfield-q{ font-family:var(--font-serif); font-style:italic; font-weight:500; font-size:clamp(24px,3.4vw,34px); line-height:1.12; color:var(--ink); margin:0; }
+.arcfield-desc{ font-family:var(--font-serif); font-size:16px; color:var(--ink-2); margin:10px 0 0; max-width:600px; line-height:1.4; }
+.arcfield-sub{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); margin:8px 0 0; }
+.arcfield-delete{ background:transparent; border:none; color:var(--ink-3); font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.04em; text-transform:uppercase; cursor:pointer; align-self:flex-start; padding:6px 0; }
+.arcfield-delete:hover{ color:var(--danger); }
+.arcfield-headctl{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+
+.seg.arcfield-faces{ display:inline-flex; padding:3px; gap:2px; background:var(--card-2); border:1px solid var(--line); border-radius:999px; }
+.seg-opt{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:6px 14px;
+  border-radius:999px; border:none; background:transparent; color:var(--ink-3); cursor:pointer; }
+.seg-opt:hover{ color:var(--ink); }
+.seg-opt.is-on{ background:linear-gradient(180deg,var(--field-1),var(--gold)); color:#3d2807; font-weight:700; }
+
+/* --- D3: publish state line + quiet Publish/Unpublish affordance IN THE
+   HEAD (data source: arc.published / arc.freshness / walkedBy — these ARE
+   real live fields, see the evaluation's data-source note; the numeric
+   "N edits behind" on a frozen snapshot has NO live counterpart and is a
+   named BUILD-TIME stand-in). --- */
+.arcfield-pub{ display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:11px; }
+.arcfield-pub-btn{ background:transparent; border:1px solid var(--gold-hi); color:var(--gold-deep); border-radius:999px;
+  padding:6px 13px; cursor:pointer; font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; }
+.arcfield-pub-btn:hover{ background:var(--card-2); }
+.arcfield-pub-btn-quiet{ border-color:var(--line); color:var(--ink-3); }
+.arcfield-pub-status{ color:var(--ink-2); }
+.arcfield-pub-status b{ color:var(--gold-deep); font-weight:600; }
+.arcfield-pub-hint{ color:var(--ink-3); font-family:var(--font-body); font-size:11px; font-style:italic; }
+.arcfield-pub-example{ margin:6px 0 0; padding:8px 12px; border:1px dashed var(--line); border-radius:var(--radius-sm);
+  display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; font-family:var(--font-mono); font-size:10.5px; }
+.arcfield-pub-example-label{ color:var(--ink-3); font-style:italic; font-family:var(--font-body); }
+.arcfield-pub-example-copy{ color:var(--ink-2); }
+
+/* --- D4: AF6 resolution — ONE canonical +Sub-theory control-bar-style
+   button, living in the head (visible across all three faces). Supersedes:
+   (1) the header "+ Sub-theory" shown only on Read/Page in live, (2) the
+   dead unappended stControlBar instance in Field, (3) the Page-face
+   empty-state's own separate CTA. --- */
+.arcfield-addsub-canon{ background:var(--card); border:1px solid var(--gold-hi); color:var(--gold-deep); border-radius:999px;
+  padding:7px 15px; font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; cursor:pointer; white-space:nowrap; }
+.arcfield-addsub-canon:hover{ background:linear-gradient(180deg,var(--field-1),var(--gold-hi)); color:#3d2807; border-color:transparent; }
+
+.arcfield-stage{ display:grid; grid-template-columns:1fr 232px; gap:20px; align-items:start; margin-top:18px; }
+.arcfield-rail{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg); padding:16px; }
+.arcfield-rail h3, .arcfield-rail-notes-head{ font-family:var(--font-mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--gold-deep); margin:0 0 10px; }
+.arcfield-rail-notes-head{ margin-top:16px; }
+.arcfield-member{ display:flex; gap:10px; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); }
+.arcfield-member .mt{ font-family:var(--font-serif); font-size:14px; color:var(--ink); }
+.arcfield-member .ma{ font-family:var(--font-body); font-size:11px; color:var(--ink-3); }
+.arcfield-note{ display:flex; gap:8px; align-items:baseline; padding:7px 0; text-decoration:none; border-bottom:1px solid var(--line); }
+.arcfield-note-tag{ font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-deep); flex:none; }
+.arcfield-note-text{ font-family:var(--font-serif); font-size:13px; color:var(--ink-2); line-height:1.35; }
+.arcfield-note:hover .arcfield-note-text{ color:var(--ink); }
+.arcfield-add-sub{ width:100%; margin-top:12px; background:var(--card-2); border:1px solid var(--line); color:var(--ink-2);
+  border-radius:999px; padding:9px; font-family:var(--font-mono); font-size:11px; cursor:pointer; }
+.arcfield-rail-hint{ font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); margin-top:12px; line-height:1.5; }
+.arcfield-empty{ margin:18px 22px; padding:22px; text-align:center; background:rgba(255,236,200,.05); border:1px dashed var(--room-line);
+  border-radius:14px; color:var(--room-text); }
+.arcfield-empty h2{ font-family:var(--font-serif); font-size:19px; margin:8px 0 4px; }
+.arcfield-empty p{ font-family:var(--font-body); font-size:12.5px; color:var(--room-ink-3); max-width:320px; margin:0 auto; }
+
+/* --- control bar (Tidy/Restore, Connect, Reset, Layers) --- */
+.st-control-bar{ display:flex; gap:8px; flex-wrap:wrap; padding:10px 4px; align-items:center; }
+.st-control-bar-bottom{ border-top:1px solid rgba(255,236,200,.14); margin-top:2px; }
+.arc-detail-toggle-btn{ font-family:var(--font-body); font-size:12px; color:var(--room-text,#e8dcc4); border:1px solid rgba(255,236,200,.2);
+  border-radius:999px; padding:6px 14px; cursor:pointer; background:rgba(255,236,200,.06); }
+.arc-detail-toggle-btn:hover{ border-color:rgba(255,236,200,.4); color:#fff; }
+.arc-detail-toggle-btn.is-active{ color:#3d2807; background:linear-gradient(180deg,#ffe79a,#ffce4a); border-color:transparent; font-weight:600; }
+/* --- D5: Tidy/Restore/Reset legibility (§3c) — self-evident helper copy +
+   Reset visually marked destructive + an inline confirm affordance. --- */
+.arcfield-tidy-help{ flex-basis:100%; font-family:var(--font-mono); font-size:9.5px; color:var(--room-ink-3,#b6a888); line-height:1.5; margin:2px 0 0; }
+.arc-reset-btn{ color:#ffb08a; border-color:rgba(255,142,142,.4); }
+.arc-reset-btn:hover{ color:#ff8e8e; border-color:#ff8e8e; }
+.arc-reset-btn::before{ content:'⚠ '; }
+.arc-reset-confirm{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; color:#ffb08a;
+  background:rgba(255,142,142,.08); border:1px solid rgba(255,142,142,.35); border-radius:999px; padding:6px 12px; }
+.arc-reset-confirm button{ font-family:var(--font-mono); font-size:10.5px; border-radius:999px; padding:4px 10px; cursor:pointer; }
+.arc-reset-confirm .yes{ background:#ff8e8e; color:#241a02; border:none; font-weight:600; }
+.arc-reset-confirm .no{ background:transparent; border:1px solid rgba(255,236,200,.3); color:#e8dcc4; }
+.st-layers{ position:relative; }
+.st-layers-popover{ display:none; position:absolute; top:38px; right:0; background:#2c1f10; border:1px solid rgba(255,236,200,.2);
+  border-radius:12px; padding:8px; flex-direction:column; gap:4px; z-index:20; min-width:150px; }
+.st-layers-popover.is-open{ display:flex; }
+.st-layers-switch.is-active{ color:#3d2807; background:linear-gradient(180deg,#ffe79a,#ffce4a); border-color:transparent; }
+
+/* --- D6: hover/focus tooltip naming the mark + a visible keyboard focus
+   ring on marks. Tooltip anatomy mirrors live .arc-tooltip (components.css
+   ~5892-5930: title / meta / affordance); .arc-tooltip-mark is the new line
+   naming the mark + its gloss. --- */
+.fld-node{ cursor:pointer; }
+.fld-node:focus-visible, .fld-node:focus{ outline:2px solid var(--gold-hi); outline-offset:4px; }
+.arc-tooltip{ position:absolute; background:var(--room-surface); border:1px solid rgba(255,236,200,.22); box-shadow:0 14px 30px -14px rgba(0,0,0,.6);
+  padding:9px 13px; border-radius:8px; pointer-events:none; opacity:0; transition:opacity .15s ease-out; max-width:230px; z-index:50;
+  font-family:var(--font-body); font-size:12px; color:var(--room-text); }
+.arc-tooltip.is-visible{ opacity:1; }
+.arc-tooltip-title{ font-family:var(--font-serif); font-style:italic; font-size:14.5px; color:var(--room-text); margin-bottom:3px; }
+.arc-tooltip-mark{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:#ffce4a; margin-bottom:3px; }
+.arc-tooltip-meta{ font-size:11.5px; color:var(--room-ink-3); }
+.arc-tooltip-affordance{ font-size:11px; color:#ffce4a; margin-top:4px; }
+
+/* --- D7/D8/D9/D10: THE READ FACE — the centerpiece rebuild. One spine,
+   two lenses (author/visitor), capability-gated. --- */
+.arcfield-read{ margin-top:8px; padding:8px 4px 28px; }
+.arcfield-read-head{ display:flex; align-items:center; gap:9px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 4px; }
+.arcfield-read-head .dot{ width:7px; height:7px; border-radius:50%; background:var(--gold-hi); box-shadow:0 0 8px var(--gold-hi); flex:none; }
+.read-byline{ font-family:var(--font-body); font-size:13px; color:var(--ink-2); margin:0 0 22px; }
+.read-byline b{ color:var(--ink); }
+.read-list{ position:relative; }
+.read-gutter-svg{ position:absolute; left:0; top:0; width:56px; height:100%; overflow:visible; }
+.read-row{ position:relative; display:flex; gap:16px; align-items:flex-start; min-height:120px; padding:18px 0 18px 56px;
+  border-bottom:1px solid var(--line); }
+.read-row:last-child{ border-bottom:none; }
+.read-mark{ position:absolute; left:0; top:18px; width:46px; height:46px; display:flex; align-items:center; justify-content:center; }
+.read-body{ flex:1; min-width:0; }
+.read-row-top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:5px; }
+.read-title{ font-family:var(--font-serif); font-size:19px; color:var(--ink); margin:0; }
+.read-title a{ text-decoration:none; color:inherit; }
+.read-title a:hover{ color:var(--gold-deep); }
+/* D7 glow-language maturity (no bars): a lit dot + a word */
+.read-glow{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10px; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-3); }
+.read-glow-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.read-glow-dot.is-bright{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--star) 55%, var(--gold-deep) 100%); box-shadow:0 0 9px 2px rgba(255,206,74,.55); }
+.read-glow-dot.is-mature{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--field-1) 55%, var(--gold-deep) 100%); box-shadow:0 0 6px 1px rgba(242,194,90,.45); }
+.read-glow-dot.is-forming{ background:var(--line); box-shadow:none; opacity:.85; }
+.read-first-line{ font-family:var(--font-serif); font-size:15px; line-height:1.5; color:var(--ink-2); margin:0 0 4px; max-width:62ch; }
+.read-meta{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:var(--ink-3); }
+/* D9: draft-only private marker */
+.read-private{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); border:1px solid var(--line); border-radius:999px; padding:2px 8px; }
+.read-private::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--ink-3); }
+/* D11 mark-picker trigger */
+.read-change-mark{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); background:none; border:none; cursor:pointer;
+  text-decoration:underline; text-underline-offset:2px; padding:0; }
+.read-change-mark:hover{ color:var(--gold-deep); }
+/* D10: the fold — the migration OUTCOME of the register removal. ONE body,
+   Published/Private the only axis; former-register prose now folds under a
+   light divider rather than a separate tab. */
+.read-fold-toggle{ font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; color:var(--gold-deep); background:none;
+  border:none; cursor:pointer; padding:2px 0; margin-top:2px; }
+.read-fold-divider{ border:0; border-top:1px solid var(--line); margin:10px 0; width:70%; }
+.read-fold-body{ font-family:var(--font-serif); font-style:italic; font-size:14px; line-height:1.55; color:var(--ink-3); max-width:62ch; margin:0; }
+.read-fold-body.is-hidden{ display:none; }
+/* D7: arc-level closing section */
+.read-closing{ margin-top:26px; padding-top:16px; position:relative; }
+.read-closing::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%, var(--gold-hi) 15%, var(--field-1) 50%, var(--gold-hi) 85%, transparent 100%); }
+.read-closing p{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); margin:0; }
+
+/* --- GROUND SPECTRUM (Preston, 2026-07-09) · light list → warm-dim interior → deep-warm
+   field stage → full-amber visitor room. The three-way Read-ground toggle re-skins the
+   AUTHOR Read spine ONLY (scoped to .arcfield-read.rg-*; Field / Page / #arcs-list untouched).
+   The arc interior is now WARM-DIM (.arcfield.arcfield-warm), so WARM-DIM is the SHIPPING
+   default (set on load) and reads continuous with the interior; LIGHT is a bright comparison
+   panel; FULL AMBER is the immersive umber room on the spine. No inversion in the light/warm
+   blocks (ink stays dark). The visitor room (Scene D, .arcfield-room) is ALWAYS amber,
+   independent of this toggle. --- */
+.arcfield-read{ transition:background-color .25s, color .25s, border-color .25s; }
+/* LIGHT — a bright comparison panel inside the warm interior (Universal light token set) */
+.arcfield-read.rg-light{
+  background:#fffdf8; border:1px solid #e3d8c1; border-radius:16px; padding:22px 22px 26px; margin-top:8px;
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d; --line:#e3d8c1; --gold-hi:#d9a441; --gold-deep:#855410;
+}
+/* WARM-DIM (SHIPPING) — continuous with the warm-dim interior; inks stay DARK, no box */
+.arcfield-read.rg-warm{
+  background:transparent; border:none; padding:8px 2px 22px; margin-top:4px;
+}
+/* FULL AMBER — the immersive umber room on the author's own Read spine */
+.arcfield-read.rg-amber{
+  background:radial-gradient(78% 60% at 50% 0%, rgba(255,206,74,.10) 0%, rgba(255,206,74,0) 62%),linear-gradient(180deg,#2f1c0e 0%,#241408 100%);
+  border:1px solid rgba(255,236,200,.14); border-radius:18px; padding:26px 24px 30px; margin-top:8px;
+  color:#f0e3c8; box-shadow:inset 0 0 90px rgba(255,206,74,.05);
+  --ink:#f0e3c8; --ink-2:#e8dcc4; --ink-3:#b6a888; --line:rgba(255,236,200,.16);
+  --gold-deep:#ffce4a; --gold-hi:#ffe79a; --star:#ffce4a; --thread:#d9a441;
+}
+.arcfield-read.rg-amber .read-row{ border-color:rgba(255,236,200,.14); }
+
+/* --- GROUND LAW · the VISITOR published room (Scene D) — a full-width amber
+   threshold you ENTER. Always amber (gate: state d carries the amber-room class
+   regardless of the Read-ground toggle). Umber literals permitted: the visitor
+   amber-room block. --- */
+[data-scene="d"].mock-scene.is-active{
+  background:radial-gradient(120% 70% at 50% -6%, rgba(255,206,74,.12) 0%, rgba(255,206,74,0) 58%),linear-gradient(180deg,#2f1c0e 0%,#221307 100%);
+  padding:20px 0 60px; min-height:86vh; animation:roomEnter .55s ease-out;
+}
+@keyframes roomEnter{ from{ opacity:.4; } to{ opacity:1; } }
+.arcfield-room{
+  color:#f0e3c8;
+  --ink:#f0e3c8; --ink-2:#e8dcc4; --ink-3:#b6a888; --line:rgba(255,236,200,.16);
+  --gold-deep:#ffce4a; --gold-hi:#ffe79a; --star:#ffce4a; --thread:#d9a441;
+}
+.arcfield-room .read-row{ border-color:rgba(255,236,200,.14); }
+/* threshold cue — a quiet "you've entered" marker, teal (--subtheory-1) + gold hairline accents */
+.room-threshold{ display:flex; align-items:center; gap:12px; font-family:var(--font-mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:#b6a888; margin:26px 0 14px; }
+.room-threshold::before{ content:''; width:28px; height:1px; background:linear-gradient(90deg, transparent, var(--subtheory-1)); flex:none; }
+.room-threshold::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--subtheory-1), rgba(255,236,200,.14) 45%, transparent); }
+
+/* --- D11: mark picker popover --- */
+.mark-picker{ display:none; position:absolute; z-index:30; background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:14px; box-shadow:0 24px 50px -24px rgba(36,23,16,.4); width:300px; }
+.mark-picker.is-open{ display:block; }
+.mark-picker-head{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:0 0 10px; }
+.mark-picker-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+.mp-cell{ display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:1px solid transparent; border-radius:8px;
+  padding:6px 2px; cursor:pointer; }
+.mp-cell:hover{ border-color:var(--line); background:var(--card-2); }
+.mp-cell-name{ font-family:var(--font-mono); font-size:8px; letter-spacing:.02em; color:var(--ink-2); text-align:center; line-height:1.25; }
+.mp-cell-name em{ color:var(--ink-3); font-style:normal; }
+.mark-picker-hues{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+.mp-hue{ width:16px; height:16px; border-radius:50%; border:1px solid rgba(36,23,16,.18); }
+.mp-hash-default{ width:100%; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-2); background:none;
+  border:1px dashed var(--ink-3); border-radius:999px; padding:8px 10px; cursor:pointer; }
+.mp-hash-default:hover{ border-color:var(--gold-deep); color:var(--gold-deep); }
+
+/* --- Page face + not-found + signed-out CTA (lifted, unchanged content) --- */
+.arcfield-page{ margin-top:18px; padding:36px 30px; border-radius:18px; text-align:center; background:var(--card); border:1px solid var(--line); }
+.arcfield-page-mark{ width:56px; height:56px; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
+.arcfield-page-title{ font-family:var(--font-serif); font-weight:500; font-size:24px; color:var(--ink); margin:0 0 6px; }
+.arcfield-page-body{ font-family:var(--font-body); font-size:13px; color:var(--ink-3); max-width:380px; margin:0 auto 16px; line-height:1.55; }
+.arcfield-page-open{ display:inline-block; text-decoration:none; background:var(--gold); color:#3d2807; padding:9px 18px; border-radius:999px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; }
+.arcfield-page-hint{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
+
+.empty-state{ text-align:center; padding:60px 24px; }
+.em-mark{ margin:0 auto 14px; width:56px; height:56px; display:flex; align-items:center; justify-content:center; }
+.empty-state h2{ font-family:var(--font-serif); font-size:22px; color:var(--ink); margin:0 0 6px; }
+.empty-state p{ font-family:var(--font-body); font-size:14px; color:var(--ink-3); max-width:420px; margin:0 auto 16px; }
+.btn-primary{ display:inline-block; background:linear-gradient(180deg,var(--field-1) 0%, var(--gold-hi) 40%, var(--gold) 100%);
+  color:#3d2807; border:1px solid var(--gold-deep); border-radius:999px; padding:9px 18px; font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.03em; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+
+/* scene / state switching */
+.mock-scene{ display:none; }
+.mock-scene.is-active{ display:block; }
+[data-face-panel]{ display:none; }
+[data-face-panel].is-active{ display:block; }
+[data-states]{ display:none; }
+body[data-mock-state="a"] [data-states~="a"],
+body[data-mock-state="b"] [data-states~="b"],
+body[data-mock-state="c"] [data-states~="c"],
+body[data-mock-state="d"] [data-states~="d"]{ display:block; }
+.mock-section-title{ max-width:1080px; margin:36px auto 0; padding:0 24px; font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); border-top:2px dashed var(--line); padding-top:18px; }
+
+@media (max-width:759px){
+  .arcs-grid{ grid-template-columns:1fr; }
+  .mock-toolbar{ flex-direction:column; align-items:flex-start; }
+  .mock-legend{ margin-left:0; max-width:none; }
+  .arcfield-head{ flex-direction:column; align-items:stretch; }
+  .arcfield-headctl{ align-items:flex-start; }
+  .read-gutter-svg{ width:34px; }
+  .read-row{ padding-left:34px; gap:12px; }
+  .read-mark{ width:36px; height:36px; }
+  .mark-picker{ width:88vw; left:0 !important; right:auto !important; }
+  .mark-picker-grid{ grid-template-columns:repeat(3,1fr); }
+  /* .arcfield-stage is intentionally NOT collapsed here — this mirrors LIVE:
+     components.css has no <760px override for .arcfield.lum-amber
+     .arcfield-stage's 1fr/232px grid. Per docs/studio/arc-detail.md, a
+     mobile-usable Field is a Held-for-Phase-3, non-negotiable future item,
+     not something this round invents a fix for. Faithful reproduction of a
+     known live gap, logged in the evaluation as a finding, not a blocker. */
+}
+</style>
+</head>
+<body data-mock-state="a">
+
+<!-- EVOLVED: #D0 mockup review chrome (skin toggle + 4-state switcher) — proven pattern carried from the R2 Shelf / R3 Home / R4 Notebook mockups; tooling for Preston's felt-pass, not a live-surface addition. -->
+<div class="mock-toolbar">
+  <span><b>R5 Arcs</b> Shape-B mockup</span>
+  <span class="mock-group">
+    <span style="opacity:.6">skin:</span>
+    <button type="button" class="mock-btn is-on" id="skinLightBtn" onclick="setSkin(false)">Universal Light</button>
+    <button type="button" class="mock-btn" id="skinAmberBtn" onclick="setSkin(true)">Amber chrome (compare, live-today)</button>
+  </span>
+  <span class="mock-group">
+    <span style="opacity:.6">state:</span>
+    <button type="button" class="mock-btn is-on" data-state-btn="a" onclick="setMockState('a')">(a) signed-in author</button>
+    <button type="button" class="mock-btn" data-state-btn="b" onclick="setMockState('b')">(b) empty arc</button>
+    <button type="button" class="mock-btn" data-state-btn="c" onclick="setMockState('c')">(c) signed-out seed</button>
+    <button type="button" class="mock-btn" data-state-btn="d" onclick="setMockState('d')">(d) visitor published-lens</button>
+  </span>
+  <!-- EVOLVED: #D0 three-way Read-ground toggle (author Read face only): LIGHT default / WARM-DIM / FULL AMBER — the felt-pass instrument for the ground law (compare all three; feel the Field→Read tab-flip in each). Scopes to [data-face-panel="read"] .arcfield-read; the visitor room (state d) is always amber, independent of this toggle. -->
+  <span class="mock-group">
+    <span style="opacity:.6">read ground:</span>
+    <button type="button" class="mock-btn" data-rg-btn="light" onclick="setReadGround('light')">Light</button>
+    <button type="button" class="mock-btn is-on" data-rg-btn="warm" onclick="setReadGround('warm')">Warm-dim (shipping)</button>
+    <button type="button" class="mock-btn" data-rg-btn="amber" onclick="setReadGround('amber')">Full amber</button>
+  </span>
+  <span class="mock-legend"><b>Decision key</b> D0 chrome · D1 grid rebuild · D2 commons chip · D3 publish line · D4 AF6 add-sub · D5 tidy/reset legibility · D6 mark tooltip+focus · D7 Read spine · D8 visitor amber room · D9 private marker · D10 register fold · D11 mark picker. GROUND SPECTRUM (Preston 2026-07-09): light list → warm-dim arc interior (Read face ships WARM-DIM) → deep-warm cognac field stage, feathered into the warm interior → full-amber visitor room (d). The Field constellation stays dark as the one sanctioned exception.</span>
+</div>
+
+<!-- ============================================================================
+     SURFACE 1 — ARCS LIST (#arcs)
+     ============================================================================ -->
+<section class="arcs">
+  <div class="arcs-head">
+    <div class="eyebrow">Constellations</div>
+    <h1 class="arcs-title">Arcs</h1>
+    <p class="arcs-teach">An arc is a path you build through your reading — books from any tradition, set side by side, so they speak to each other.</p>
+  </div>
+
+  <div data-states="a b">
+    <div class="arcs-section-h"><h2>Your arcs</h2></div>
+    <div class="arcs-bar">
+      <div class="arcs-seg">
+        <button type="button" class="arcs-seg-btn is-on">Recent</button>
+        <button type="button" class="arcs-seg-btn">Name</button>
+        <button type="button" class="arcs-seg-btn">Maturity</button>
+      </div>
+      <span class="arcs-count">4 arcs</span>
+    </div>
+
+    <!-- EVOLVED: #D1 arcs-grid rebuild — auto-fit + equal-height tiles, one unified .arc-card class -->
+    <section class="arcs-grid">
+      <a class="arc-card arc-card-live" href="#arc/refusal" onclick="return openScene('a')">
+        <div class="arc-card-thumb arc-const" id="cardThumb1"></div>
+        <div class="arc-card-body">
+          <h3 class="arc-card-title">What does it mean to read as an act of refusal?</h3>
+        </div>
+        <p class="arc-card-meta">5 sub-theories · bright · touched today
+          <!-- EVOLVED: #D2 quiet "In the commons" chip + walked-by recessed meta -->
+          <span class="arc-chip-commons">In the commons · walked by 42</span>
+        </p>
+      </a>
+
+      <a class="arc-card arc-card-live" href="#arc/slow-archive" onclick="return openScene('a')">
+        <div class="arc-card-thumb arc-const" id="cardThumb2"></div>
+        <div class="arc-card-body">
+          <h3 class="arc-card-title">The Slow Archive</h3>
+        </div>
+        <p class="arc-card-meta">8 sub-theories · bright · touched 3 weeks ago
+          <!-- EVOLVED: #D2 quiet "In the commons" chip + walked-by recessed meta (frozen/stale example) -->
+          <span class="arc-chip-commons">In the commons · walked by 128</span>
+          <span class="arc-card-stale-note">snapshot 3 edits behind</span>
+        </p>
+      </a>
+
+      <a class="arc-card arc-card-live" href="#arc/marginal-method" onclick="return openScene('a')">
+        <div class="arc-card-thumb arc-const" id="cardThumb3"></div>
+        <div class="arc-card-body">
+          <h3 class="arc-card-title">Marginal Notes on Method</h3>
+        </div>
+        <p class="arc-card-meta">3 sub-theories · forming · touched today</p>
+      </a>
+
+      <a class="arc-card arc-card-live" href="#arc/new-question" onclick="return openScene('b')">
+        <div class="arc-card-thumb arc-const arc-const-empty"></div>
+        <div class="arc-card-body">
+          <h3 class="arc-card-title">A new question, unopened</h3>
+        </div>
+        <p class="arc-card-meta">0 sub-theories · seed · —</p>
+      </a>
+
+      <button type="button" class="arc-card arc-card-start">
+        <span aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg></span>
+        <span class="arc-card-start-label">Start another arc</span>
+      </button>
+    </section>
+  </div>
+
+  <div class="arcs-section-h"><h2>Arcs to learn from</h2><span class="eyebrow">examples</span></div>
+  <section class="arcs-grid">
+    <a class="arc-card arc-card-live" href="#arc/pedagogy-of-desire" onclick="return openScene('c')">
+      <div class="arc-card-thumb arc-const" id="cardThumb4"></div>
+      <div class="arc-card-body">
+        <h3 class="arc-card-title">A Pedagogy of Desire</h3>
+      </div>
+      <p class="arc-card-meta">3 sub-theories · mature · touched 3 months ago</p>
+    </a>
+    <div class="arc-card arc-card-illustrated">
+      <div class="arc-card-thumb arc-const arc-const-empty"></div>
+      <span class="arc-card-label">Illustrated example</span>
+      <div class="arc-card-body">
+        <h3 class="arc-card-title">A Pedagogy of Flow</h3>
+      </div>
+    </div>
+  </section>
+
+  <div class="empty-state" data-states="c d" style="margin-top:32px; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card);">
+    <div class="em-mark">🜂</div>
+    <h2>Build your own arc</h2>
+    <p>These are examples — arcs anyone can learn from. Sign in to start your own: set books side by side and draw the threads between them.</p>
+    <button type="button" class="btn-primary">Sign in</button>
+  </div>
+</section>
+
+<div class="mock-section-title">Surface 2 — Arc interior (#arc/&lt;id&gt;) — scene follows the state switcher above</div>
+
+<!-- ============================================================================
+     SURFACE 2 — ARC INTERIOR (#arc/<id>) — four scenes, one per state.
+     ============================================================================ -->
+
+<!-- SCENE A — signed-in author, populated arc -->
+<section class="mock-scene is-active" data-scene="a">
+  <section class="arcfield arcfield-warm">
+    <header class="arcfield-head">
+      <div class="t">
+        <div class="eyebrow">Arc</div>
+        <h1 class="arcfield-q">What does it mean to read as an act of refusal?</h1>
+        <p class="arcfield-desc">Books that treat reading itself as a site of resistance — attention as the first act of freedom.</p>
+        <div class="arcfield-sub">5 sub-theories · 3 books · tended 2 days ago</div>
+
+        <!-- EVOLVED: #D3 publish state line + quiet Publish/Unpublish affordance in the head (arc.published / arc.freshness / walkedBy are REAL live fields — js/integrations.js:2491 publishArc / views.js:17056 _opPublishControl; see the evaluation's data-source note) -->
+        <div class="arcfield-pub" id="pubControl" data-pub="unpub">
+          <button type="button" class="arcfield-pub-btn" onclick="togglePublish()">Publish to the commons</button>
+        </div>
+        <!-- EVOLVED: #D3 the stale-snapshot case, shown once as a labeled static example (BUILD-TIME stand-in: "N edits behind" has no live counter today — see evaluation for the wiring path) -->
+        <div class="arcfield-pub-example">
+          <span class="arcfield-pub-example-label">Example, a frozen snapshot:</span>
+          <span class="arcfield-pub-example-copy">In the commons · walked by 128 · snapshot 3 edits behind</span>
+        </div>
+      </div>
+      <div class="arcfield-headctl">
+        <button type="button" class="arcfield-delete">Delete arc</button>
+        <div class="seg arcfield-faces" role="tablist" aria-label="Arc face">
+          <button type="button" class="seg-opt is-on" data-face-btn="field" onclick="setFace('a','field')">Field</button>
+          <button type="button" class="seg-opt" data-face-btn="read" onclick="setFace('a','read')">Read</button>
+          <button type="button" class="seg-opt" data-face-btn="page" onclick="setFace('a','page')">Page</button>
+        </div>
+        <!-- EVOLVED: #D4 AF6 — the ONE canonical +Sub-theory affordance (control-bar style), replacing the header + Page-face duplicates -->
+        <button type="button" class="arcfield-addsub-canon">+ Sub-theory</button>
+      </div>
+    </header>
+
+    <!-- FIELD FACE -->
+    <div data-face-panel="field" class="is-active">
+      <div class="arcfield-stage">
+        <div class="field-room" id="fieldRoomA">
+          <svg viewBox="0 0 600 500" id="fieldSvgA"></svg>
+          <div class="arc-tooltip" id="tooltipA"><div class="arc-tooltip-title" id="ttTitleA"></div><div class="arc-tooltip-mark" id="ttMarkA"></div><div class="arc-tooltip-meta" id="ttMetaA"></div><div class="arc-tooltip-affordance">Click to open →</div></div>
+          <div class="st-control-bar st-control-bar-bottom">
+            <button type="button" class="arc-detail-toggle-btn" id="tidyBtnA" onclick="toggleTidy('A', this)">Tidy</button>
+            <button type="button" class="arc-detail-toggle-btn">Connect</button>
+            <span id="resetSlotA"><!-- EVOLVED: #D5 Reset visually marked destructive + inline confirm affordance --><button type="button" class="arc-detail-toggle-btn arc-reset-btn" onclick="armReset('A')">Reset placements</button></span>
+            <div class="st-layers">
+              <button type="button" class="arc-detail-toggle-btn" onclick="toggleLayers('A')">Layers</button>
+              <div class="st-layers-popover" id="layersPopA">
+                <button type="button" class="arc-detail-toggle-btn st-layers-switch is-active">Books</button>
+                <button type="button" class="arc-detail-toggle-btn st-layers-switch is-active">Marginalia</button>
+                <button type="button" class="arc-detail-toggle-btn st-layers-switch is-active">Faint links</button>
+              </div>
+            </div>
+            <!-- EVOLVED: #D5 self-evident Tidy/Restore/Reset helper copy -->
+            <p class="arcfield-tidy-help">Tidy composes an open arrangement for this session only — Restore brings back what you saved. Reset placements permanently clears every saved position; it cannot be undone.</p>
+          </div>
+        </div>
+        <aside class="arcfield-rail">
+          <h3>Books in this arc</h3>
+          <div class="arcfield-member"><div><div class="mt">Reading Lolita in Tehran</div><div class="ma">Azar Nafisi</div></div></div>
+          <div class="arcfield-member"><div><div class="mt">Bartleby, the Scrivener</div><div class="ma">Herman Melville</div></div></div>
+          <div class="arcfield-member"><div><div class="mt">How to Do Nothing</div><div class="ma">Jenny Odell</div></div></div>
+          <h3 class="arcfield-rail-notes-head">Notes in this arc</h3>
+          <a class="arcfield-note" href="#notebook"><span class="arcfield-note-tag">margin</span><span class="arcfield-note-text">"I would prefer not to" as a whole ethics, not a mood.</span></a>
+          <button type="button" class="btn-primary arcfield-add-sub">＋ Add a sub-theory</button>
+          <p class="arcfield-rail-hint">Drag a mark to arrange the field. Hover a sub-theory for its card; connect two to thread a resonance.</p>
+        </aside>
+      </div>
+    </div>
+
+    <!-- READ FACE -->
+    <div data-face-panel="read">
+      <!-- EVOLVED: #D7 Read face author-lens spine (mark+title+maturity glow+first-line+connections, threads rendered between joined rows, arc-level closing section) -->
+      <div class="arcfield-read">
+        <div class="arcfield-read-head"><span class="dot"></span> The arc, read top to bottom</div>
+        <div class="read-list" id="readListA">
+          <svg class="read-gutter-svg" id="readGutterA" viewBox="0 0 56 700" preserveAspectRatio="none"></svg>
+
+          <div class="read-row">
+            <div class="read-mark" id="readMark1"></div>
+            <div class="read-body">
+              <div class="read-row-top">
+                <h3 class="read-title"><a href="#subtheory/refusal-1">The Pedagogy of Refusal</a></h3>
+                <span class="read-glow"><span class="read-glow-dot is-bright"></span>bright</span>
+              </div>
+              <p class="read-first-line">Refusal is not withdrawal — it is the first shape attention takes when it decides what it will not do.</p>
+              <!-- EVOLVED: #D10 the register-removal migration OUTCOME — one body, folded former-register prose under a light divider -->
+              <button type="button" class="read-fold-toggle" onclick="toggleFold(this)">Hide additional reading ▴</button>
+              <hr class="read-fold-divider">
+              <p class="read-fold-body">Read against Foucault's disciplinary apparatus and Scott's "weapons of the weak," refusal here is reframed not as passivity but as a counter-discipline — a patterned withholding that produces its own kind of knowledge.</p>
+              <div class="read-meta">2 threads · <button type="button" class="read-change-mark" onclick="toggleMarkPicker()">Change mark ▾</button></div>
+            </div>
+          </div>
+
+          <div class="read-row">
+            <div class="read-mark" id="readMark2"></div>
+            <div class="read-body">
+              <div class="read-row-top">
+                <h3 class="read-title"><a href="#subtheory/refusal-2">Desire as Method</a></h3>
+                <span class="read-glow"><span class="read-glow-dot is-forming"></span>forming</span>
+                <!-- EVOLVED: #D9 draft-only quiet "private" marker (Published/Private is the only visibility axis) -->
+                <span class="read-private">private</span>
+              </div>
+              <p class="read-first-line">Desire, read as a method, asks what a text wants from us before it asks what we want from it.</p>
+              <div class="read-meta">1 thread</div>
+            </div>
+          </div>
+
+          <div class="read-row">
+            <div class="read-mark" id="readMark3"></div>
+            <div class="read-body">
+              <div class="read-row-top">
+                <h3 class="read-title"><a href="#subtheory/refusal-3">The Architecture of Attention</a></h3>
+                <span class="read-glow"><span class="read-glow-dot is-mature"></span>mature</span>
+              </div>
+              <p class="read-first-line">Attention has an architecture: load-bearing walls, hallways that turn without warning, rooms we're not shown at first.</p>
+              <div class="read-meta">2 threads</div>
+            </div>
+          </div>
+
+          <div class="read-row">
+            <div class="read-mark" id="readMark4"></div>
+            <div class="read-body">
+              <div class="read-row-top">
+                <h3 class="read-title"><a href="#subtheory/refusal-4">On Being Unfinished</a></h3>
+                <span class="read-glow"><span class="read-glow-dot is-forming"></span>forming</span>
+                <span class="read-private">private</span>
+              </div>
+              <p class="read-first-line">Some ideas are honest only while they stay unfinished — the moment they close, they stop being true.</p>
+              <div class="read-meta">1 thread</div>
+            </div>
+          </div>
+
+          <div class="read-row">
+            <div class="read-mark" id="readMark5"></div>
+            <div class="read-body">
+              <div class="read-row-top">
+                <h3 class="read-title"><a href="#subtheory/refusal-5">A Grammar of Care</a></h3>
+                <span class="read-glow"><span class="read-glow-dot is-bright"></span>bright</span>
+              </div>
+              <p class="read-first-line">Care is a grammar — a set of rules for how one mind holds another without crushing it.</p>
+              <div class="read-meta">no threads</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="read-closing"><p>5 sub-theories · 3 threads · tended 2 days ago</p></div>
+
+        <!-- EVOLVED: #D11 mark picker popover (4x4 real silhouettes, 16 names, hue swatches, hash-default marked) -->
+        <div class="mark-picker" id="markPicker">
+          <p class="mark-picker-head">Choose a mark</p>
+          <div class="mark-picker-grid" id="markPickerGrid"></div>
+          <div class="mark-picker-hues" id="markPickerHues"></div>
+          <button type="button" class="mp-hash-default">Let Praxis choose — hash default (stHashIndices)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE FACE -->
+    <div data-face-panel="page">
+      <div class="arcfield-page">
+        <div class="arcfield-page-mark" id="pageMarkA"></div>
+        <h2 class="arcfield-page-title">Write "The Pedagogy of Refusal"</h2>
+        <p class="arcfield-page-body">This is where a light becomes prose — the lifted sheet, your marginalia woven in as evidence. The writing surface lives on its own page.</p>
+        <a class="arcfield-page-open" href="#subtheory/refusal-1/build">Open the page →</a>
+        <!-- EVOLVED: #D4 AF6 — Page-face's own duplicate "+ Add a sub-theory" CTA removed; the canonical head control (above) is the one entry point -->
+        <p class="arcfield-page-hint">Add another sub-theory from the control above.</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- SCENE B — empty arc (no sub-theories) -->
+<section class="mock-scene" data-scene="b">
+  <section class="arcfield arcfield-warm">
+    <header class="arcfield-head">
+      <div class="t">
+        <div class="eyebrow">Arc</div>
+        <h1 class="arcfield-q">A new question, unopened</h1>
+        <div class="arcfield-sub">0 sub-theories · 0 books · tended just now</div>
+        <!-- EVOLVED: #D3 publish affordance, quiet/disabled hint variant for an empty arc -->
+        <div class="arcfield-pub" data-pub="unpub">
+          <button type="button" class="arcfield-pub-btn arcfield-pub-btn-quiet" disabled>Publish to the commons</button>
+          <span class="arcfield-pub-hint">Publish once you've begun.</span>
+        </div>
+      </div>
+      <div class="arcfield-headctl">
+        <button type="button" class="arcfield-delete">Delete arc</button>
+        <div class="seg arcfield-faces" role="tablist" aria-label="Arc face">
+          <button type="button" class="seg-opt is-on" data-face-btn="field" onclick="setFace('b','field')">Field</button>
+          <button type="button" class="seg-opt" data-face-btn="read" onclick="setFace('b','read')">Read</button>
+          <button type="button" class="seg-opt" data-face-btn="page" onclick="setFace('b','page')">Page</button>
+        </div>
+        <!-- EVOLVED: #D4 AF6 canonical +Sub-theory, present even on an empty arc -->
+        <button type="button" class="arcfield-addsub-canon">+ Sub-theory</button>
+      </div>
+    </header>
+
+    <div data-face-panel="field" class="is-active">
+      <div class="arcfield-stage">
+        <div class="field-room">
+          <svg viewBox="0 0 600 500"><text x="300" y="264" text-anchor="middle" class="field-room-empty-copy">Begin a sub-theory to map this question.</text></svg>
+          <div class="empty-state arcfield-empty">
+            <h2>This arc is open</h2>
+            <p>No sub-theories yet — gather a few notes in your notebook and one will take its place in this field.</p>
+          </div>
+        </div>
+        <aside class="arcfield-rail">
+          <h3>Books in this arc</h3>
+          <p class="arcfield-sub">No books in this arc yet.</p>
+          <button type="button" class="btn-primary arcfield-add-sub">＋ Add a sub-theory</button>
+          <p class="arcfield-rail-hint">Drag a mark to arrange the field. Hover a sub-theory for its card; connect two to thread a resonance.</p>
+        </aside>
+      </div>
+    </div>
+    <div data-face-panel="read">
+      <div class="arcfield-read">
+        <div class="arcfield-read-head"><span class="dot"></span> The arc, read top to bottom</div>
+        <p class="read-first-line" style="font-style:italic;">No sub-theories in this arc yet. Add one from the Field to begin.</p>
+      </div>
+    </div>
+    <div data-face-panel="page">
+      <div class="arcfield-page">
+        <div class="arcfield-page-mark">🜁</div>
+        <h2 class="arcfield-page-title">Write the first sub-theory</h2>
+        <p class="arcfield-page-body">This is where a light becomes prose — the lifted sheet, your marginalia woven in as evidence. The writing surface lives on its own page.</p>
+        <p class="arcfield-page-hint">Add a sub-theory from the control above.</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- SCENE C — signed-out seed visitor ("A Pedagogy of Desire") -->
+<section class="mock-scene" data-scene="c">
+  <section class="arcfield arcfield-warm">
+    <header class="arcfield-head">
+      <div class="t">
+        <div class="eyebrow">Arc</div>
+        <h1 class="arcfield-q">A Pedagogy of Desire</h1>
+        <p class="arcfield-desc">An arc anyone can walk through — building desire as a serious philosophical object across theory, memoir, and practice.</p>
+        <div class="arcfield-sub">3 sub-theories · 2 books · tended 3 months ago</div>
+      </div>
+      <div class="arcfield-headctl">
+        <div class="seg arcfield-faces" role="tablist" aria-label="Arc face">
+          <button type="button" class="seg-opt is-on" data-face-btn="field" onclick="setFace('c','field')">Field</button>
+          <button type="button" class="seg-opt" data-face-btn="read" onclick="setFace('c','read')">Read</button>
+          <button type="button" class="seg-opt" data-face-btn="page" onclick="setFace('c','page')">Page</button>
+        </div>
+      </div>
+    </header>
+
+    <div data-face-panel="field" class="is-active">
+      <div class="arcfield-stage">
+        <div class="field-room"><svg viewBox="0 0 600 500" id="fieldSvgC"></svg></div>
+        <aside class="arcfield-rail">
+          <h3>Books in this arc</h3>
+          <div class="arcfield-member"><div><div class="mt">The Argonauts</div><div class="ma">Maggie Nelson</div></div></div>
+          <div class="arcfield-member"><div><div class="mt">All About Love</div><div class="ma">bell hooks</div></div></div>
+          <p class="arcfield-rail-hint">Drag a mark to arrange the field. Hover a sub-theory for its card; connect two to thread a resonance.</p>
+        </aside>
+      </div>
+    </div>
+    <div data-face-panel="read">
+      <div class="arcfield-read">
+        <div class="arcfield-read-head"><span class="dot"></span> The arc, read top to bottom</div>
+        <div class="read-list" id="readListC">
+          <svg class="read-gutter-svg" id="readGutterC" viewBox="0 0 56 400" preserveAspectRatio="none"></svg>
+          <div class="read-row" style="min-height:120px;">
+            <div class="read-mark" id="readMarkC1"></div>
+            <div class="read-body">
+              <div class="read-row-top"><h3 class="read-title">Desire Before Judgment</h3><span class="read-glow"><span class="read-glow-dot is-bright"></span>bright</span></div>
+              <p class="read-first-line">To want something, honestly, before deciding whether the wanting is allowed — that is the discipline.</p>
+              <div class="read-meta">1 thread</div>
+            </div>
+          </div>
+          <div class="read-row" style="min-height:120px;">
+            <div class="read-mark" id="readMarkC2"></div>
+            <div class="read-body">
+              <div class="read-row-top"><h3 class="read-title">The Ethics of Wanting</h3><span class="read-glow"><span class="read-glow-dot is-mature"></span>mature</span></div>
+              <p class="read-first-line">Every desire implies a claim about who else is allowed to want the same thing.</p>
+              <div class="read-meta">2 threads</div>
+            </div>
+          </div>
+          <div class="read-row" style="min-height:120px;">
+            <div class="read-mark" id="readMarkC3"></div>
+            <div class="read-body">
+              <div class="read-row-top"><h3 class="read-title">Practicing Desire</h3><span class="read-glow"><span class="read-glow-dot is-mature"></span>mature</span></div>
+              <p class="read-first-line">Desire, like any discipline, gets better with practice — and worse with only theory.</p>
+              <div class="read-meta">1 thread</div>
+            </div>
+          </div>
+        </div>
+        <div class="read-closing"><p>3 sub-theories · 2 threads · tended 3 months ago</p></div>
+      </div>
+    </div>
+    <div data-face-panel="page">
+      <div class="arcfield-page">
+        <div class="arcfield-page-mark" id="pageMarkC"></div>
+        <h2 class="arcfield-page-title">Write "Desire Before Judgment"</h2>
+        <p class="arcfield-page-body">This is where a light becomes prose — the lifted sheet, your marginalia woven in as evidence. The writing surface lives on its own page.</p>
+        <a class="arcfield-page-open" href="#subtheory/desire-1/build">Open the page →</a>
+      </div>
+    </div>
+
+    <div class="empty-state" style="margin-top:26px; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card);">
+      <div class="em-mark">🜂</div>
+      <h2>Build your own arc</h2>
+      <p>This is a worked example anyone can explore. Sign in to build your own — set your books side by side and draw the threads between them.</p>
+      <button type="button" class="btn-primary">Sign in</button>
+    </div>
+  </section>
+</section>
+
+<!-- SCENE D — visitor published-lens (Read face only) -->
+<section class="mock-scene" data-scene="d">
+  <!-- EVOLVED: #D8 the visitor published lens is a FULL AMBER ROOM (ground law): full-width warm-dark cognac ground on [data-scene="d"], light-on-dark room text via .arcfield-room, marks keep identical hues. Always amber, independent of the Read-ground toggle. -->
+  <section class="arcfield arcfield-room">
+    <!-- EVOLVED: #D8 threshold cue — a quiet "you've entered" marker (teal + gold hairline) so the room reads as somewhere entered, not a re-themed panel -->
+    <div class="room-threshold">You've entered a published reading room</div>
+    <header class="arcfield-head">
+      <div class="t">
+        <div class="eyebrow">Arc · published</div>
+        <h1 class="arcfield-q">What does it mean to read as an act of refusal?</h1>
+        <!-- EVOLVED: #D8 visitor published lens header — byline + walked-by, no faces-seg (Read face only), no edit affordances -->
+        <p class="read-byline">By <b>Marisol Vega</b> · walked by 210</p>
+        <p class="arcfield-pub-hint">You're viewing the shared lens — the reader's private drafts stay theirs.</p>
+      </div>
+    </header>
+
+    <!-- EVOLVED: #D8 the SAME Read-face spine as Scene A, filtered to published-only rows (capability-gated, not a separate design) -->
+    <div class="arcfield-read">
+      <div class="arcfield-read-head"><span class="dot"></span> The arc, read top to bottom</div>
+      <div class="read-list" id="readListD">
+        <svg class="read-gutter-svg" id="readGutterD" viewBox="0 0 56 400" preserveAspectRatio="none"></svg>
+        <div class="read-row" style="min-height:120px;">
+          <div class="read-mark" id="readMarkD1"></div>
+          <div class="read-body">
+            <div class="read-row-top"><h3 class="read-title">The Pedagogy of Refusal</h3><span class="read-glow"><span class="read-glow-dot is-bright"></span>bright</span></div>
+            <p class="read-first-line">Refusal is not withdrawal — it is the first shape attention takes when it decides what it will not do.</p>
+            <div class="read-meta">1 thread</div>
+          </div>
+        </div>
+        <div class="read-row" style="min-height:120px;">
+          <div class="read-mark" id="readMarkD2"></div>
+          <div class="read-body">
+            <div class="read-row-top"><h3 class="read-title">The Architecture of Attention</h3><span class="read-glow"><span class="read-glow-dot is-mature"></span>mature</span></div>
+            <p class="read-first-line">Attention has an architecture: load-bearing walls, hallways that turn without warning, rooms we're not shown at first.</p>
+            <div class="read-meta">1 thread</div>
+          </div>
+        </div>
+        <div class="read-row" style="min-height:120px;">
+          <div class="read-mark" id="readMarkD3"></div>
+          <div class="read-body">
+            <div class="read-row-top"><h3 class="read-title">A Grammar of Care</h3><span class="read-glow"><span class="read-glow-dot is-bright"></span>bright</span></div>
+            <p class="read-first-line">Care is a grammar — a set of rules for how one mind holds another without crushing it.</p>
+            <div class="read-meta">no threads</div>
+          </div>
+        </div>
+      </div>
+      <div class="read-closing"><p>3 sub-theories shared · 1 thread · walked by 210</p></div>
+    </div>
+  </section>
+</section>
+
+<script>
+// ============================================================================
+// ST_MARKS — the sixteen frozen marks, copied VERBATIM (body + inner paths)
+// from js/arc-constellation.js:801-818 (_ST_MARK_TABLE). Do not reformat a
+// single coordinate. name/isDraft carry the round's 7 canon + 9 drafted
+// vocabulary (locked list in the round brief). idx is 0-based, matching the
+// live array's shapeIdx order (01 hexagon .. 16 squircle).
+// ============================================================================
+var ST_MARKS = [
+  { n:'01 hexagon',    name:'beacon',    draft:false, body:'M0,-44 L38,-22 L38,22 L0,44 L-38,22 L-38,-22 Z', inner:['M0,-29 L25,-14.5 L25,14.5 L0,29 L-25,14.5 L-25,-14.5 Z','M0,-14 L12,-7 L12,7 L0,14 L-12,7 L-12,-7 Z'] },
+  { n:'02 teardrop',   name:'wellspring',draft:false, body:'M0,-48 C20,-22 30,-6 30,12 A30,30 0 1,1 -30,12 C-30,-6 -20,-22 0,-48 Z', inner:['M-19,14 A19,19 0 0,1 19,14','M-12,22 A12,12 0 0,1 12,22','M-5.5,29 A5.5,5.5 0 0,1 5.5,29'] },
+  { n:'03 4-pt star',  name:'spark',     draft:true,  body:'M0,-50 C7,-16 16,-7 50,0 C16,7 7,16 0,50 C-7,16 -16,7 -50,0 C-16,-7 -7,-16 0,-50 Z', inner:['M0,-30 L0,30','M-30,0 L30,0','M0,-9 A9,9 0 1,0 0.01,-9 Z'] },
+  { n:'04 pentagon',   name:'keystone',  draft:true,  body:'M0,-46 L44,-12 L27,42 L-27,42 L-44,-12 Z', inner:['M0,-40 L-24,26','M0,-40 L0,30','M0,-40 L24,26'] },
+  { n:'05 vesica',     name:'vessel',    draft:true,  body:'M0,-46 C26,-30 26,30 0,46 C-26,30 -26,-30 0,-46 Z', inner:['M-11,-32 C-3,-12 -19,12 -11,32','M0,-36 C8,-14 -8,14 0,36','M11,-32 C19,-12 3,12 11,32'] },
+  { n:'06 arch',       name:'lantern',   draft:false, body:'M-32,40 L-32,-6 A32,32 0 0,1 32,-6 L32,40 Z', inner:['M-18,-6 A18,18 0 0,1 18,-6','M-16,4 L-16,32','M0,2 L0,32','M16,4 L16,32'] },
+  { n:'07 rhombus',    name:'facet',     draft:false, body:'M0,-46 L34,0 L0,46 L-34,0 Z', inner:['M0,-46 L0,46','M-17,-23 L17,23','M17,-23 L-17,23'] },
+  { n:'08 rosette',    name:'bloom',     draft:false, body:'M0,-44 C22,-44 22,-22 8,-8 C22,-22 44,-22 44,0 C44,22 22,22 8,8 C22,22 22,44 0,44 C-22,44 -22,22 -8,8 C-22,22 -44,22 -44,0 C-44,-22 -22,-22 -8,-8 C-22,-22 -22,-44 0,-44 Z', inner:['M0,-8 A8,8 0 1,0 0.01,-8 Z','M-15,-15 L-26,-26','M15,-15 L26,-26','M-15,15 L-26,26','M15,15 L26,26'] },
+  { n:'09 triangle',   name:'summit',    draft:false, body:'M0,-44 L40,36 L-40,36 Z', inner:['M-13,-12 L13,-12','M-22,4 L22,4','M-31,20 L31,20'] },
+  { n:'10 octagon',    name:'grove',     draft:true,  body:'M18,-44 L44,-18 L44,18 L18,44 L-18,44 L-44,18 L-44,-18 L-18,-44 Z', inner:['M10,-24 L24,-10 L24,10 L10,24 L-10,24 L-24,10 L-24,-10 L-10,-24 Z','M0,-4 A4,4 0 1,0 0.01,-4 Z'] },
+  { n:'11 egg',        name:'seed',      draft:false, body:'M0,-44 C26,-44 36,-16 36,4 A36,36 0 1,1 -36,4 C-36,-16 -26,-44 0,-44 Z', inner:['M0,4 m0,-2 a2,2 0 1,1 -2,2 a5,5 0 1,1 5,-5 a9,9 0 1,1 -9,9 a14,14 0 1,1 14,-14 a20,20 0 1,1 -20,20'] },
+  { n:'12 kite',       name:'ember',     draft:true,  body:'M0,-48 L28,-8 L0,44 L-28,-8 Z', inner:['M0,-48 L0,44','M-20,-8 L20,-8','M-12,12 L12,12'] },
+  { n:'13 semicircle', name:'horizon',   draft:true,  body:'M-44,26 A44,44 0 0,1 44,26 Z', inner:['M-30,26 A30,30 0 0,1 30,26','M-17,26 A17,17 0 0,1 17,26','M-44,26 L44,26'] },
+  { n:'14 6-pt star',  name:'lodestar',  draft:true,  body:'M0,-46 L8,-16 L36,-26 L16,-2 L40,14 L11,11 L13,40 L0,17 L-13,40 L-11,11 L-40,14 L-16,-2 L-36,-26 L-8,-16 Z', inner:['M0,-8 L0,8','M-8,0 L8,0','M-6,-6 L6,6','M6,-6 L-6,6'] },
+  { n:'15 mound',      name:'cairn',     draft:true,  body:'M-46,32 C-30,-26 -8,-40 6,-38 C30,-34 44,-6 46,32 Z', inner:['M-34,12 C-12,2 14,4 36,14','M-26,24 C-6,16 10,18 30,24'] },
+  { n:'16 squircle',   name:'harbor',    draft:true,  body:'M-18,-36 L18,-36 Q36,-36 36,-18 L36,18 Q36,36 18,36 L-18,36 Q-36,36 -36,18 L-36,-18 Q-36,-36 -18,-36 Z', inner:['M-12,-28 L-12,28','M12,-28 L12,28','M-28,-12 L28,-12','M-28,12 L28,12'] }
+];
+var ST_HUES = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+
+function markInnerSVG(idx, fillVar, edgeVar) {
+  var m = ST_MARKS[idx];
+  var out = '<path d="' + m.body + '" fill="' + fillVar + '" stroke="' + edgeVar + '" stroke-width="2"></path>';
+  var i;
+  for (i = 0; i < m.inner.length; i = i + 1) {
+    out = out + '<path d="' + m.inner[i] + '" fill="none" stroke="' + edgeVar + '" stroke-width="1.6" opacity="0.62"></path>';
+  }
+  return out;
+}
+function markStandalone(idx, size, hue) {
+  var fill = 'var(--subtheory-' + hue + ')';
+  var edge = 'var(--subtheory-' + hue + '-edge)';
+  return '<svg viewBox="-50 -50 100 100" width="' + size + '" height="' + size + '" aria-hidden="true">' + markInnerSVG(idx, fill, edge) + '</svg>';
+}
+
+// ---- arc-card constellation thumbs (small, decorative — arcs list) ----
+function paintCardThumb(id, hues) {
+  var el = document.getElementById(id);
+  if (!el) { return; }
+  var svg = '<svg viewBox="0 0 100 60" style="width:100%;height:100%;">';
+  var i, x;
+  for (i = 0; i < hues.length; i = i + 1) {
+    x = 14 + i * (72 / Math.max(1, hues.length - 1));
+    svg = svg + '<g transform="translate(' + x + ',' + (22 + (i % 2 === 0 ? -4 : 6)) + ') scale(.16)">' + markInnerSVG(hues[i][0], 'var(--subtheory-' + hues[i][1] + ')', 'var(--subtheory-' + hues[i][1] + '-edge)') + '</g>';
+  }
+  svg = svg + '</svg>';
+  el.innerHTML = svg;
+}
+paintCardThumb('cardThumb1', [[7,4],[1,2],[6,7],[10,9],[8,14]]);
+paintCardThumb('cardThumb2', [[0,1],[9,6],[13,15]]);
+paintCardThumb('cardThumb3', [[2,3]]);
+paintCardThumb('cardThumb4', [[1,2],[6,7],[8,14]]);
+
+// ---- Field face constellation (Scene A: nodes 1-5, hub n1) ----
+var FIELD_A = [
+  { id:'n1', title:'The Pedagogy of Refusal', mark:7, hue:4, x:300, y:150, mat:'bloom — the idea in full flourish' },
+  { id:'n2', title:'Desire as Method', mark:1, hue:2, x:150, y:270, mat:'wellspring — the rootmost idea' },
+  { id:'n3', title:'The Architecture of Attention', mark:6, hue:7, x:440, y:130, mat:'facet — one angle on a whole' },
+  { id:'n4', title:'On Being Unfinished', mark:10, hue:9, x:520, y:300, mat:'seed — nascent, not yet unfolded' },
+  { id:'n5', title:'A Grammar of Care', mark:8, hue:14, x:170, y:400, mat:'summit — the culminating claim' }
+];
+var EDGES_A = [['n1','n2'],['n1','n3'],['n3','n4']];
+
+function buildFieldSVG(svgId, nodes, edges, tooltipPrefix) {
+  var svg = document.getElementById(svgId);
+  if (!svg) { return; }
+  var byId = {}; var i;
+  for (i = 0; i < nodes.length; i = i + 1) { byId[nodes[i].id] = nodes[i]; }
+  var out = '<defs></defs>';
+  for (i = 0; i < edges.length; i = i + 1) {
+    var a = byId[edges[i][0]], b = byId[edges[i][1]];
+    var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 24;
+    out = out + '<path d="M ' + a.x + ' ' + a.y + ' Q ' + mx + ' ' + my + ' ' + b.x + ' ' + b.y + '" fill="none" stroke="var(--thread)" stroke-width="1.4" opacity=".65"></path>';
+  }
+  for (i = 0; i < nodes.length; i = i + 1) {
+    var nd = nodes[i];
+    var fill = 'var(--subtheory-' + nd.hue + ')';
+    var edge = 'var(--subtheory-' + nd.hue + '-edge)';
+    out = out + '<g class="fld-node" tabindex="0" data-node="' + nd.id + '" transform="translate(' + nd.x + ',' + nd.y + ')">'
+      + '<circle r="30" fill="var(--subtheory-' + nd.hue + ')" opacity=".22"></circle>'
+      + '<g transform="scale(0.8)">' + markInnerSVG(nd.mark, fill, edge) + '</g>'
+      + '</g>';
+  }
+  svg.innerHTML = out;
+  // EVOLVED: #D6 hover/focus tooltip naming the mark + visible focus ring (CSS :focus-visible on .fld-node)
+  var groups = svg.querySelectorAll('.fld-node');
+  var tooltip = document.getElementById(tooltipPrefix);
+  for (i = 0; i < groups.length; i = i + 1) {
+    (function(g) {
+      var nd = byId[g.getAttribute('data-node')];
+      var show = function() {
+        if (!tooltip) { return; }
+        document.getElementById('ttTitleA').textContent = nd.title;
+        document.getElementById('ttMarkA').textContent = ST_MARKS[nd.mark].name + ' — ' + nd.mat.split(' — ')[1];
+        document.getElementById('ttMetaA').textContent = nd.title;
+        var pt = svg.createSVGPoint(); pt.x = nd.x; pt.y = nd.y;
+        var ctm = svg.getScreenCTM();
+        var svgRect = svg.getBoundingClientRect();
+        var px = (nd.x / 600) * svgRect.width;
+        var py = (nd.y / 500) * svgRect.height;
+        tooltip.style.left = px + 24 + 'px';
+        tooltip.style.top = py - 10 + 'px';
+        tooltip.className = 'arc-tooltip is-visible';
+      };
+      var hide = function() { if (tooltip) { tooltip.className = 'arc-tooltip'; } };
+      g.addEventListener('mouseenter', show);
+      g.addEventListener('mouseleave', hide);
+      g.addEventListener('focus', show);
+      g.addEventListener('blur', hide);
+    })(groups[i]);
+  }
+}
+buildFieldSVG('fieldSvgA', FIELD_A, EDGES_A, 'tooltipA');
+buildFieldSVG('fieldSvgC', [
+  { id:'sd1', title:'Desire Before Judgment', mark:1, hue:5 },
+  { id:'sd2', title:'The Ethics of Wanting', mark:3, hue:11 },
+  { id:'sd3', title:'Practicing Desire', mark:14, hue:15 }
+].map(function(n, i) { n.x = 160 + i * 160; n.y = 220 + (i % 2 === 0 ? -30 : 40); return n; }), [['sd1','sd2'],['sd2','sd3']], null);
+
+// ---- Read-face gutter spine (D7 threads-between-rows, incl. the n1-n3 skip/intersectional case) ----
+function buildReadGutter(svgId, rowCenters, edgesIdx) {
+  var svg = document.getElementById(svgId);
+  if (!svg) { return; }
+  var out = '';
+  var i;
+  for (i = 0; i < edgesIdx.length; i = i + 1) {
+    var a = rowCenters[edgesIdx[i][0]], b = rowCenters[edgesIdx[i][1]];
+    var skip = Math.abs(edgesIdx[i][0] - edgesIdx[i][1]) > 1;
+    var gx = skip ? 8 : 28;
+    out = out + '<path d="M 28 ' + a + ' Q ' + gx + ' ' + ((a + b) / 2) + ' 28 ' + b + '" fill="none" stroke="var(--thread)" stroke-width="1.6" opacity="' + (skip ? '.85' : '.6') + '"></path>';
+  }
+  for (i = 0; i < rowCenters.length; i = i + 1) {
+    out = out + '<circle cx="28" cy="' + rowCenters[i] + '" r="4" fill="var(--gold-hi)"></circle>';
+  }
+  svg.innerHTML = out;
+}
+buildReadGutter('readGutterA', [60,200,340,480,620], [[0,1],[0,2],[2,3]]);
+buildReadGutter('readGutterC', [60,200,340], [[0,1],[1,2]]);
+buildReadGutter('readGutterD', [60,200,340], [[0,1]]);
+
+// ---- paint the fixed mark placements in each row / page stub ----
+document.getElementById('readMark1').innerHTML = markStandalone(7, 46, 4);
+document.getElementById('readMark2').innerHTML = markStandalone(1, 46, 2);
+document.getElementById('readMark3').innerHTML = markStandalone(6, 46, 7);
+document.getElementById('readMark4').innerHTML = markStandalone(10, 46, 9);
+document.getElementById('readMark5').innerHTML = markStandalone(8, 46, 14);
+document.getElementById('readMarkC1').innerHTML = markStandalone(1, 46, 5);
+document.getElementById('readMarkC2').innerHTML = markStandalone(3, 46, 11);
+document.getElementById('readMarkC3').innerHTML = markStandalone(14, 46, 15);
+document.getElementById('readMarkD1').innerHTML = markStandalone(7, 46, 4);
+document.getElementById('readMarkD2').innerHTML = markStandalone(6, 46, 7);
+document.getElementById('readMarkD3').innerHTML = markStandalone(8, 46, 14);
+document.getElementById('pageMarkA').innerHTML = markStandalone(7, 56, 4);
+document.getElementById('pageMarkC').innerHTML = markStandalone(1, 56, 5);
+
+// EVOLVED: #D11 mark picker grid — all 16 real silhouettes + names (canon plain, draft marked)
+(function buildMarkPicker() {
+  var grid = document.getElementById('markPickerGrid');
+  var hues = document.getElementById('markPickerHues');
+  if (!grid) { return; }
+  var i, out = '';
+  for (i = 0; i < ST_MARKS.length; i = i + 1) {
+    var m = ST_MARKS[i];
+    var hue = (i % 16) + 1;
+    out = out + '<button type="button" class="mp-cell" title="' + m.n + '">'
+      + markStandalone(i, 34, hue)
+      + '<span class="mp-cell-name">' + m.name + (m.draft ? ' <em>(draft)</em>' : '') + '</span></button>';
+  }
+  grid.innerHTML = out;
+  var hout = '';
+  for (i = 1; i <= 16; i = i + 1) {
+    hout = hout + '<span class="mp-hue" style="background:var(--subtheory-' + i + ')" title="--subtheory-' + i + '"></span>';
+  }
+  hues.innerHTML = hout;
+})();
+
+// ============================================================================
+// mockup interaction — skin toggle, state switcher, face tabs, tidy/reset,
+// layers popover, mark picker, publish toggle, fold toggle.
+// ============================================================================
+function setSkin(amber) {
+  document.body.className = amber ? 'skin-amber-chrome' : '';
+  document.getElementById('skinLightBtn').className = 'mock-btn' + (amber ? '' : ' is-on');
+  document.getElementById('skinAmberBtn').className = 'mock-btn' + (amber ? ' is-on' : '');
+  document.body.setAttribute('data-mock-state', document.body.getAttribute('data-mock-state') || 'a');
+}
+// EVOLVED: #D0 three-way Read-ground toggle — re-skins the AUTHOR Read face ONLY
+// ([data-face-panel="read"] .arcfield-read, i.e. scenes a/b/c). Scene D's visitor
+// room (.arcfield-room, outside any face panel) is untouched — always amber.
+function setReadGround(mode) {
+  var reads = document.querySelectorAll('[data-face-panel="read"] .arcfield-read');
+  var i;
+  for (i = 0; i < reads.length; i = i + 1) {
+    reads[i].className = 'arcfield-read' + (mode === 'amber' ? ' rg-amber' : (mode === 'light' ? ' rg-light' : ' rg-warm'));
+  }
+  var btns = document.querySelectorAll('[data-rg-btn]');
+  for (i = 0; i < btns.length; i = i + 1) {
+    btns[i].className = 'mock-btn' + (btns[i].getAttribute('data-rg-btn') === mode ? ' is-on' : '');
+  }
+}
+function setMockState(s) {
+  document.body.setAttribute('data-mock-state', s);
+  var btns = document.querySelectorAll('[data-state-btn]');
+  var i;
+  for (i = 0; i < btns.length; i = i + 1) {
+    btns[i].className = 'mock-btn' + (btns[i].getAttribute('data-state-btn') === s ? ' is-on' : '');
+  }
+  var scenes = document.querySelectorAll('.mock-scene');
+  for (i = 0; i < scenes.length; i = i + 1) {
+    scenes[i].className = 'mock-scene' + (scenes[i].getAttribute('data-scene') === s ? ' is-active' : '');
+  }
+  window.scrollTo({ top: document.querySelector('.mock-section-title').offsetTop - 8, behavior: 'smooth' });
+}
+function openScene(s) { setMockState(s); return false; }
+function setFace(scene, face) {
+  var root = document.querySelector('.mock-scene[data-scene="' + scene + '"]');
+  if (!root) { return; }
+  var btns = root.querySelectorAll('[data-face-btn]');
+  var i;
+  for (i = 0; i < btns.length; i = i + 1) {
+    btns[i].className = 'seg-opt' + (btns[i].getAttribute('data-face-btn') === face ? ' is-on' : '');
+  }
+  var panels = root.querySelectorAll('[data-face-panel]');
+  for (i = 0; i < panels.length; i = i + 1) {
+    panels[i].className = 'is-active' === (panels[i].getAttribute('data-face-panel') === face ? 'is-active' : '') ? 'is-active' : (panels[i].getAttribute('data-face-panel') === face ? 'is-active' : '');
+  }
+}
+function toggleTidy(scene, btn) {
+  var on = btn.textContent === 'Tidy';
+  btn.textContent = on ? 'Restore' : 'Tidy';
+  btn.className = 'arc-detail-toggle-btn' + (on ? ' is-active' : '');
+}
+function armReset(scene) {
+  var slot = document.getElementById('resetSlot' + scene);
+  slot.innerHTML = '<span class="arc-reset-confirm">Reset every placement in this arc? This can\'t be undone. '
+    + '<button type="button" class="no" onclick="cancelReset(\'' + scene + '\')">Cancel</button>'
+    + '<button type="button" class="yes" onclick="cancelReset(\'' + scene + '\')">Yes, reset</button></span>';
+}
+function cancelReset(scene) {
+  var slot = document.getElementById('resetSlot' + scene);
+  slot.innerHTML = '<button type="button" class="arc-detail-toggle-btn arc-reset-btn" onclick="armReset(\'' + scene + '\')">Reset placements</button>';
+}
+function toggleLayers(scene) {
+  var pop = document.getElementById('layersPop' + scene);
+  if (pop) { pop.className = 'st-layers-popover' + (pop.className.indexOf('is-open') === -1 ? ' is-open' : ''); }
+}
+function toggleMarkPicker() {
+  var p = document.getElementById('markPicker');
+  p.className = 'mark-picker' + (p.className.indexOf('is-open') === -1 ? ' is-open' : '');
+}
+function togglePublish() {
+  var el = document.getElementById('pubControl');
+  if (el.getAttribute('data-pub') === 'unpub') {
+    el.setAttribute('data-pub', 'pub');
+    el.innerHTML = '<span class="arcfield-pub-status">In the commons · walked by <b>0</b></span>'
+      + '<button type="button" class="arcfield-pub-btn arcfield-pub-btn-quiet" onclick="togglePublish()">Unpublish</button>';
+  } else {
+    el.setAttribute('data-pub', 'unpub');
+    el.innerHTML = '<button type="button" class="arcfield-pub-btn" onclick="togglePublish()">Publish to the commons</button>';
+  }
+}
+function toggleFold(btn) {
+  var body = btn.parentElement.querySelector('.read-fold-body');
+  var divider = btn.parentElement.querySelector('.read-fold-divider');
+  var hidden = body.className.indexOf('is-hidden') !== -1;
+  body.className = 'read-fold-body' + (hidden ? '' : ' is-hidden');
+  divider.style.display = hidden ? '' : 'none';
+  btn.textContent = hidden ? 'Hide additional reading ▴' : 'Show additional reading ▾';
+}
+// AMENDED 2026-07-09: WARM-DIM is the shipping default for the author Read face — set on load.
+setReadGround('warm');
+</script>
+</body>
+</html>
