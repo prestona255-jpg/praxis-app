@@ -1,15 +1,28 @@
 # The build sequence
 
-Two tracks in parallel. Track A is the machine — build in Claude Code, on main,
-in order. Track B is the look — worked together with Preston, on no clock. Every
-decision below is already made; nothing here is pending a call.
+This is the **master sequence** — the locked, continuous program that replaces the
+old round-by-round ad-hoc re-planning. Praxis is built one surface round at a time,
+one round per chat/session, on `main`, on no clock (the July 15 launch date is retired
+— see Standing rules). The order below is **canonical, not concrete**: it is re-planned
+WITHIN the program at each round close-out (promote what proved severe, demote or retire
+what closed or lost relevance), and every reordering records a dated rationale in the
+Re-plan log. A change to the launch spine, an outright retirement, or a contradiction of
+a Preston decision is written `PROPOSED:` and flagged for his call — never applied silently.
 
-The fix-protocol runs the code changes inside Claude Code — no copy-paste
-ping-pong. One prompt dispatches the agents (`repo-mapper` recon → `fix-red-team`
-adversarial review → `fix-implementer` patch) and chains them end-to-end.
-Code-changing work keeps PASS/FAIL gates + revert-on-fail; the loop writes
-checkpoints to disk and reports the commit hash. None of this needs the Build 3/4
-CI automation — that stays parked.
+**Two round types.** A **DEEP round** runs the full five beats — recon → click-forks with
+Preston → mockup reconstruction → staged build → close. A **SWEEP round** takes 2–3 light
+surfaces together and skips only the mockup beat — recon → click-forks → build → close.
+Either way a round closes fully: Preston's felt pass → surface ledger → this sequence →
+BOARD → `tools/studio-build` Builder regen (currency is automatic, not optional).
+Dependencies are declared per round; on any conflict, live source wins. Every Claude Code
+build prompt carries the read-discipline: grep → ranged view (no whole-file reads of
+anything large) and a capped agent fan-out.
+
+The fix-protocol runs the code changes inside Claude Code — no copy-paste ping-pong. One
+prompt dispatches the agents (`repo-mapper` recon → `fix-red-team` adversarial review →
+`fix-implementer` patch) and chains them end-to-end. Code-changing work keeps PASS/FAIL
+gates + revert-on-fail; the loop writes checkpoints to disk and reports the commit hash.
+None of this needs the Build 3/4 CI automation — that stays parked.
 
 ## Re-plan log
 
@@ -48,6 +61,18 @@ flagged at the top of the Builder's sequence page for his call — never applied
   signed-out `.empty-state`) recorded in `home.md` and carried to the Then
   craft/backport pass — not a Now move. Autonomous completion + cadence re-order;
   nothing retired, no Preston decision contradicted — so no `PROPOSED:` flag.
+- **2026-07-09** — R4 Notebook CLOSED (felt pass in full, v3.188 `8cec854`, deployed)
+  and the **master sequence landed** (Preston's directive, this close-out). R4 Notebook
+  → Shipped. The round-by-round ad-hoc plan is replaced by the locked continuous program
+  in the header above: **R5 Arcs** is the on-deck round (Now); **R6 Sub-theory**, the
+  **S-A** sweep, **R7 Book Detail**, and the **FX-1 data-loss fix round** form the near
+  program (Next); **R8 Values → R9 Profile/Galaxy → S-B → R10 Connections → R11
+  Social-discovery → S-C + debt → the feature layers** form the tail (Then). The
+  **data-loss cluster moves out of Now** into its named FX-1 slot (Preston's call, item 6)
+  with an interim guardrail (settle-before-edit after sign-in; pull FORWARD if
+  second-device use starts). This is Preston-directed, not an autonomous agent re-plan —
+  recorded here, not flagged `PROPOSED:`. Notebook residuals R1/R3/R4/R5 recorded in
+  `notebook.md`, carried (the `.empty-state` + AA debt fold into S-C). Builder regenerated.
 
 ## Shipped
 
@@ -90,61 +115,76 @@ flagged at the top of the Builder's sequence page for his call — never applied
   OG1–OG4 + IA4 cluster verified-closed live. Named debt (Preston-accepted):
   constellation-opacity AA on the light field + the unscoped signed-out `.empty-state`
   → a future craft pass. (launch-spine STEP 2)
+- [x] **R4 — Notebook: Universal v1.2 light skin + unified composer + per-note chips**
+  (v3.188, `8cec854`; felt pass PASSED IN FULL 2026-07-09 — deployed). Third surface
+  round: the Universal light skin (scoped `.notebook.lum-amber-deep` re-point, route stays
+  in `umberGroundDark`), the composer seam closed (NB1/NB2), the unified labeled `.nb-modes`
+  composer with talk-to-Yumi dropped (NB3/WL1), per-note cover chips (decision 3b), the new
+  rich empty states, and the deep-teal Yumi resting slot. Named debt carried (R1
+  vis-indicator, R3 shared cover registry, R4 global `.empty-state`, R5 Yumi teal).
+  `docs/checkpoints/r4-notebook.md` is the record. touches: [notebook]
 
 ## Now
 
-- [ ] **R4 — Notebook: surface round** — the next surface round and the heaviest
-  open surface gap-heat (18 open gaps) now that the Shelf and Home are closed.
-  scan → forks → mockup → felt pass → build → close.
-  touches: [notebook]
-- [ ] **Data-loss launch cluster** — **F-DL4** shared-tab account-switch race (reset
-  the eight `*Loaded`/`*WritePending` latches in `clearUserState()`, `state.js`) +
-  the **F-DL1 / F-DL3** live smokes that never ran (procedure proven on F-DL2,
-  15/15). The remaining launch-spine data-loss work. (launch-spine STEP 4 + 5)
-  touches: [account]
+- [ ] **R5 — Arcs (DEEP)** — the on-deck surface round and the heaviest open surface now
+  that Shelf, Home, and Notebook are closed: list-first entry (arc entry currently opens a
+  specific arc), arc-detail's 14 ledger gaps, a real design for the arc read page, and
+  **Published/Private replacing Public/Intellectual**. Full five beats: recon → click-forks
+  → mockup → felt pass → build → close.
+  touches: [arcs, arc-detail]
 
 ## Next
 
-- [ ] **Shelf categories feature round** — the deferred data/product arc off the
-  "Shelf / categories" ledger cluster (rawCategories capture on every write path,
-  duplicate-add guard, batch progress, manual override + book-detail picker, lineage
-  extension, re-classify scoping). NOT a visual round.
-  touches: [books]
+- [ ] **R6 — Sub-theory (DEEP)** — the build surface + the immersive published read;
+  resolves the notebook-vs-arcs build redundancy.
+  touches: [subtheory-build, subtheory-page]
+- [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
+  residual gaps across three light surfaces; skips the mockup beat.
+  touches: [about, search, yumi-sees]
+- [ ] **R7 — Book Detail (DEEP)** — hierarchy, scannability, the buried details.
+  touches: [book-detail]
+- [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
+  collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
+  guardrail:** after signing in on any device, let the app settle before editing; pull this
+  round FORWARD if second-device use starts.
+  touches: [account]
 
 ## Then
 
-Per-surface rounds, one surface at a time, each: **scan → forks → mockup
-reconstruction → felt pass → staged build → close.** A round closes ONLY on
-Preston's felt pass. Carried from the launch spine and the evolution track and
-folded into the rounds — nothing dropped. (The launch-spine data-loss + signed-out
-steps 2/4/5 were promoted into **Now** on 2026-07-09 — see the Re-plan log.)
+Per-surface rounds and the fix/feature spine, in program order; each surface round:
+**scan → forks → mockup reconstruction → felt pass → staged build → close** (SWEEP rounds
+skip the mockup beat). A round closes ONLY on Preston's felt pass. Carried from the launch
+spine and the evolution track and folded into the program — nothing dropped.
 
-- [ ] **Arc interior round (arc-detail)** — the third-heaviest surface (14 open
-  gaps) after Notebook; queue behind R4. touches: [arc-detail]
-- [ ] **Backport the aesthetic uplift into the live app** — once the Universal
-  mockups lock, one batch craft/polish pass flows back app-wide. (Track-B PHASE C
-  + post-launch #6 craft pass + post-launch #7 backport)
-- [ ] **Goodreads migration** — First-run Path B; the import infra is real work.
-  (post-launch #1)
-  touches: [import-capture]
-- [ ] **Public commons + moderation** — public routes, signed-out rendering, a
-  moderation surface; the consented door on the same covenant surface as VC1.
-  (post-launch #2)
-  touches: [commons]
-- [ ] **Galaxy encoding** — real engagement + read-progress wiring behind the
-  visual. (post-launch #3)
-- [ ] **Values–arcs wiring** — profile values shape how arcs form and what
-  connections get suggested; a data-model change, done right not rushed.
-  (post-launch #4)
-  touches: [profile, arcs]
-- [ ] **Register redesign + consented door** — registers named for what they are,
-  visibility on the publish pill; journal → public evidence only via an explicit,
-  loud, visibly-re-marked step. Never silent. (post-launch #5)
+- [ ] **R8 — Values (DEEP, NEW BUILD)** — the flagship login value-presets + the values
+  data layer. Unblocks Profile counts + Connections.
+  touches: [onboarding, profile]
+- [ ] **R9 — Profile / Galaxy (DEEP, DEPENDS R8)** — the galaxy-only shelf view, toggles +
+  counts, luminosity = engagement / size = #books, and the broken profile-link affordances
+  fixed.
+  touches: [profile]
+- [ ] **S-B — Sweep: Import-Capture overlay · Yumi/lens panel · Account residuals (SWEEP)**.
+  touches: [import-capture, yumi-panel, account]
+- [ ] **R10 — Connections (DEEP EXPLORATION, DEPENDS R8 + R5)** — values × ideas × books ×
+  arcs; the unsolved arc-to-arc visualization gets real design exploration.
+  touches: [arcs, arc-detail]
+- [ ] **R11 — Social-discovery (DEEP)** — commons / reader / walk promoted to their own
+  top-level sub-page; includes the deliberate Lane-2 commons-open security decision.
+  touches: [commons, reader, walk]
+- [ ] **S-C — Sweep + Debt (SWEEP)** — onboarding/intros · signed-out & global empty states
+  (clears the carried R3/R4 debt) · AA opacity (`--lum-ink-4` on light) · dead selectors ·
+  the parked tasks (task_3c933f62 universal-depth spreads, task_e4cb7af7 reveal a11y, R-b) ·
+  the P2 audit findings.
+  touches: [onboarding, cross-cutting]
+- [ ] **Feature layers** — interleave as prerequisites clear: Yumi generative (eval-gated;
+  PREREQ = Preston authors her prompts + rubric) → Yumi-intelligence wake-up · Goodreads
+  import · export/backup + Settings · admin/moderation · ambient sounds · beta-tester loop.
+  touches: [yumi-panel, import-capture, account]
 
 ## Discovered — profile ledger
 
 The seven-item spine the profile / galaxy work surfaced. These are MISSING, not
-broken — the studio loop's other instrument:
+broken — the studio loop's other instrument (R8 Values + R9 Profile/Galaxy address them):
 
 - [ ] **Owner-vs-visitor view — CORE.** The profile renders one way for its owner,
   another for a visitor.
@@ -162,6 +202,14 @@ broken — the studio loop's other instrument:
   one continuous build.
 - **Two tracks.** Track A is the machine (Claude Code, on main, staged fixes);
   Track B is the look (mockups, felt passes). Worked together, never in isolation.
+- **Round types.** A DEEP round runs the full five beats (recon → click-forks → mockup
+  → build → close); a SWEEP round takes 2–3 light surfaces and skips only the mockup
+  beat. Every round closes fully — felt pass → ledger → sequence → BOARD → Builder regen.
+- **Read-discipline.** Every Claude Code prompt greps → ranged views (no whole-file
+  reads of anything large) and caps its agent fan-out.
+- **Live source wins.** Dependencies are declared per round; on any conflict between a
+  committed doc and the code, the live source is the truth and the doc is corrected in
+  the same commit.
 - **Flexible launch date.** No hard clock; the old "days to July 15" counter is
   retired with the tracker.
 - **Test-account rule.** All write/behavior verification runs on a fresh throwaway
