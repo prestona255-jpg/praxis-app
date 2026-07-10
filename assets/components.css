@@ -10938,12 +10938,18 @@ body.wc-focus .app-nav { opacity:.26; }
   --lum-gold-d:#855410;     /* Universal --gold-deep */
   --lum-gold-ink:#3d2807;
 }
-.st-page.lum-amber-deep.stb-warm-dim{
+.st-page.lum-amber-deep.stb-warm-dim,
+.st-build.lum-amber-deep.stb-warm-dim{
   background:
     radial-gradient(62% 48% at 18% 12%, rgba(255,224,150,.30) 0%, transparent 62%),
     radial-gradient(56% 52% at 86% 18%, rgba(199,148,51,.24) 0%, transparent 66%),
     linear-gradient(168deg,#efe1c1 0%,#e2cb98 100%);
   box-shadow:inset 0 0 90px rgba(133,84,16,.18);
+  /* R6 S3 — the warm-dim working register is a CONTAINED rounded panel (the
+     mockup's felt-passed .stb-warm-dim values), floating on the route's dark
+     ground. Finishing OPENS it into the full-bleed amber room (the finished
+     .st-page carries no .stb-warm-dim). Shared by the draft Page + the workshop. */
+  border:1px solid #ddc794; border-radius:26px; margin:10px auto 40px; max-width:1220px;
 }
 .st-page.lum-amber-deep.stb-warm-dim .st-read-hero{ box-shadow:0 26px 52px -30px rgba(133,84,16,.4), inset 0 1px 0 rgba(255,255,255,.5); }
 .st-page.lum-amber-deep.stb-warm-dim .st-connections{ box-shadow:0 20px 42px -28px rgba(133,84,16,.32); }
@@ -10961,6 +10967,36 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-page.lum-amber-deep .st-walknav-spine{ justify-content:center; }
 }
 /* ===== end R6 S2 · THE PAGE BECOMES THE READ ===== */
+
+/* =====================================================================
+   R6 S3 · THE WORKSHOP (sole editor) — warm-dim depth + Focus Mode + the
+   re-homed Delete (decisions #7 / #8). The workshop's editor anatomy
+   (canvas + evidence rail + weave) is craft-passed, not recast.
+   ===================================================================== */
+/* the workshop sheet + rail pop as LIT surfaces off the dimmer warm field */
+.st-build.lum-amber-deep.stb-warm-dim .stb-sheet{ box-shadow:0 26px 52px -30px rgba(133,84,16,.4), inset 0 1px 0 rgba(255,255,255,.5); }
+.st-build.lum-amber-deep.stb-warm-dim .stb-source{ box-shadow:0 22px 46px -30px rgba(133,84,16,.35); }
+
+/* EVOLVED #7: FOCUS MODE — collapse the rail + Yumi margin + connections to
+   pure prose. The two-column anatomy is untouched; this is a modifier only. */
+.st-build.lum-amber-deep.is-focus .stb-rail{ display:none; }
+.st-build.lum-amber-deep.is-focus .stb-ymargin,
+.st-build.lum-amber-deep.is-focus .stb-conn{ display:none; }
+.st-build.lum-amber-deep.is-focus .stb-build{ justify-content:center; }
+.st-build.lum-amber-deep.is-focus .stb-main{ max-width:680px; }
+.st-build.lum-amber-deep .stb-focus-toggle{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; color:var(--lum-ink-2); background:none; border:1px solid var(--lum-glass-bd-2); border-radius:var(--lum-r-pill,999px); padding:7px 15px; cursor:pointer; transition:color .18s, border-color .18s, background .18s; }
+.st-build.lum-amber-deep .stb-focus-toggle:hover{ color:var(--lum-gold-l); border-color:rgba(255,206,74,.34); }
+.st-build.lum-amber-deep .stb-focus-toggle.is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); border-color:transparent; }
+
+/* R6 S3: the re-homed Delete — a discreet danger link at the foot of the
+   workshop (Delete left the Page in S2; feature-preservation). */
+.st-build.lum-amber-deep .stb-delete{ display:block; margin:22px auto 0; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-4); background:none; border:none; cursor:pointer; padding:6px 10px; }
+.st-build.lum-amber-deep .stb-delete:hover{ color:var(--danger); }
+
+@media (max-width:759px){
+  .st-build.lum-amber-deep .stb-focus-toggle{ min-height:44px; display:inline-flex; align-items:center; }
+}
+/* ===== end R6 S3 · THE WORKSHOP ===== */
 
 /* =====================================================================
    WAVE 3 · SUB-THEORY BUILD  (renderSubTheoryBuild on .lum-amber-deep)

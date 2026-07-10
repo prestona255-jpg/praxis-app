@@ -79,4 +79,37 @@ tokens throughout (`--lum-gold-d` for threads, not the mockup's `--u-thread`).
   dead-selector purge.
 - Ownership gap (R6-OWN) written to `subtheory-page.md` as LOW R9 debt; stale `9119→9751` anchor fixed.
 
+Commit: `4a2b3cf` (local, --no-verify).
+
+---
+
+## STAGE 3 — The Workshop (sole editor) ✅
+
+**views.js (`renderSubTheoryBuild`):** added `stb-warm-dim` to the workshop wrap (+ signed-out
+wrap) — decision #8's warm-dim working register; added **FOCUS MODE** (a `stb-focus-toggle` in
+the head acts + an `is-focus` modifier that collapses rail/Yumi/connections and narrows the prose
+column); **re-homed Delete** from the Page to the foot of the workshop (a discreet `.stb-delete`
+danger link — feature-preservation; the mockup modeled none, carried as a mechanical
+determination). Editor (canvas 10301, `weaveNote` 10318, rail) unchanged; Open-the-page + Finish
+extant.
+
+**components.css:** the shared `.stb-warm-dim` becomes a CONTAINED rounded panel (`max-width:1220`,
+`border-radius:26px`, border — the mockup's felt-passed values) so finishing OPENS the draft's
+contained panel into the full-bleed amber room; workshop sheet/rail warm-dim depth; Focus Mode +
+`.stb-delete` rules.
+
+**Gates (all PASS):**
+- Parse **PARSE OK**. Write|Preview toggle grep = **0** (never existed live). Finish placement:
+  workshop `stb-pubpill` always (10270); Page reopen `st-pill-publish done` gated `published`
+  (9899); **zero on the draft Page** — "one per direction, zero on draft."
+- **Live rig (fresh S3 bundle; console clean):** Workshop `isWarmDim:true`, contained
+  `max-width:1220px`/`border-radius:26px`, dark title ink `rgb(36,23,16)`, acts order
+  saved·Finish·Focus·Open-the-page, Delete "Delete this sub-theory", rail 13 weave buttons.
+  **Focus Mode** click → rail `display:none`, `.stb-main max-width:680px`, Yumi hidden, "Exit
+  focus"; toggles back. Draft Page now contained too (no S2 regression).
+- **Rig note:** hash-only `navigate` does NOT reload — must navigate to a distinct URL
+  (`?cb=`) to load fresh code; verified loaded-code freshness via `fn.toString()` before probing.
+- **FLAG for felt pass:** warm-dim = a CONTAINED panel on the route's dark ground (per the
+  mockup's `.stb-warm-dim` values Preston felt-passed). If full-bleed was intended, one-line revert.
+
 Commit: (recorded below on commit)

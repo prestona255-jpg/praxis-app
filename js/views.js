@@ -10175,7 +10175,7 @@ function renderSubTheoryBuild(id) {
   var stbUser = getCurrentUser();
   if (!stbUser || !stbUser.uid) {
     var stbWrap = document.createElement('section');
-    stbWrap.className = 'st-build lum-amber-deep';
+    stbWrap.className = 'st-build lum-amber-deep stb-warm-dim';
     stbWrap.appendChild(buildSignedOutPrompt('This workshop is private', 'Sign in to compose and publish your sub-theories — authorship needs a name.'));
     host.appendChild(stbWrap);
     return;
@@ -10195,7 +10195,10 @@ function renderSubTheoryBuild(id) {
   var arc = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
 
   var wrap = document.createElement('section');
-  wrap.className = 'st-build lum-amber-deep';
+  // decision #8 (ground correction): the workshop sits at the WARM-DIM working
+  // register (a lit desk in a dim study), NOT full amber — amber is the finished
+  // read's room only. .stb-warm-dim is the shared additive modifier (see the Page).
+  wrap.className = 'st-build lum-amber-deep stb-warm-dim';
 
   var intro = document.createElement('div');
   intro.className = 'stb-intro';
@@ -10277,6 +10280,22 @@ function renderSubTheoryBuild(id) {
     saveState(); paintPub();
   });
   acts.appendChild(pub);
+  // EVOLVED #7 (F5 room shape): FOCUS MODE — collapse the evidence rail + Yumi
+  // margin + connections to pure prose. Additive modifier (.is-focus on wrap); the
+  // two-column anatomy is craft-passed, not recast.
+  var focusBtn = document.createElement('button');
+  focusBtn.type = 'button';
+  focusBtn.className = 'stb-focus-toggle';
+  focusBtn.textContent = 'Focus';
+  focusBtn.setAttribute('aria-pressed', 'false');
+  focusBtn.addEventListener('click', function() {
+    var on = wrap.className.indexOf('is-focus') !== -1;
+    wrap.className = on ? wrap.className.replace(' is-focus', '') : (wrap.className + ' is-focus');
+    focusBtn.className = on ? 'stb-focus-toggle' : 'stb-focus-toggle is-on';
+    focusBtn.textContent = on ? 'Focus' : 'Exit focus';
+    focusBtn.setAttribute('aria-pressed', on ? 'false' : 'true');
+  });
+  acts.appendChild(focusBtn);
   var openPage = document.createElement('a');
   openPage.className = 'stb-openpage';
   openPage.href = '#subtheory/' + id;
@@ -10399,6 +10418,20 @@ function renderSubTheoryBuild(id) {
   sheet.appendChild(conn);
 
   main.appendChild(sheet);
+  // R6 S3: Delete relocates here from the Page (a read surface shouldn't carry a
+  // destructive edit action — decision #4). Discreet danger link at the foot of the
+  // workshop; on confirm, route to the parent arc (can't stay on a deleted page).
+  // The mockup did not model Delete; carried as feature-preservation.
+  var stbDelete = document.createElement('button');
+  stbDelete.type = 'button';
+  stbDelete.className = 'stb-delete';
+  stbDelete.textContent = 'Delete this sub-theory';
+  stbDelete.addEventListener('click', function() {
+    confirmDeleteSubTheory(id, function() {
+      location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
+    });
+  });
+  main.appendChild(stbDelete);
   buildRow.appendChild(main);
 
   // ===== RIGHT RAIL: pull from your reading =====
