@@ -410,6 +410,13 @@ function ensureBookFields(book) {
   // classifier). '' / [] defaults, never undefined; idempotent like the above.
   if (typeof book.category !== 'string')      { book.category = '';      changed = true; }
   if (!(book.rawCategories instanceof Array)) { book.rawCategories = []; changed = true; }
+  // R7 (book detail): categoryOverride = a manual category the reader pinned (one
+  // of SHELF_CATEGORIES / CATEGORY_UNCATEGORIZED, or '' when unset). It wins over
+  // classifyBookLocal's cached/keyword resolution and survives Re-classify. movedMe
+  // = the reader's "this moved me" mark. '' / false defaults, never undefined;
+  // idempotent like the above.
+  if (typeof book.categoryOverride !== 'string') { book.categoryOverride = ''; changed = true; }
+  if (typeof book.movedMe !== 'boolean')         { book.movedMe = false;       changed = true; }
   return changed;
 }
 
@@ -599,12 +606,17 @@ function rawCategoryToShelf(raw) {
 // CATEGORY_UNCATEGORIZED -- so the caller/UI never sees null.
 function classifyBookLocal(book) {
   if (!book || typeof book !== 'object') { return null; }
-  // (1) cached label from a prior classification (incl. a cached Uncategorized,
+  // (1) manual reader override wins (R7) -- a pinned categoryOverride survives
+  //     Re-classify and never re-hits the LLM.
+  if (typeof book.categoryOverride === 'string' && isValidCategoryLabel(book.categoryOverride)) {
+    return book.categoryOverride;
+  }
+  // (2) cached label from a prior classification (incl. a cached Uncategorized,
   //     so already-classified books never re-hit the LLM)
   if (typeof book.category === 'string' && isValidCategoryLabel(book.category)) {
     return book.category;
   }
-  // (2) keyword map over the raw BISAC strings, first match wins
+  // (3) keyword map over the raw BISAC strings, first match wins
   if (book.rawCategories instanceof Array) {
     var i, hit;
     for (i = 0; i < book.rawCategories.length; i = i + 1) {
@@ -612,7 +624,7 @@ function classifyBookLocal(book) {
       if (hit) { return hit; }
     }
   }
-  // (3) unresolved locally -> needs the LLM
+  // (4) unresolved locally -> needs the LLM
   return null;
 }
 
@@ -3383,6 +3395,16 @@ function migrate(stored) {
       pod.contentSeededAt = podNow;
     }
     stored.SCHEMA_VERSION = '1.27.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.27.0') {
+    // R7 (book detail): additive per-book fields categoryOverride ('') + movedMe
+    // (false) backfilled onto every existing book via the ensureBookFieldsAll
+    // chokepoint. ADDITIVE ONLY; idempotent (ensureBookFields only stamps missing
+    // fields). Anchor literal (1.9.3) stays pinned; the chain does the work.
+    if (stored.books) {
+      ensureBookFieldsAll(stored.books);
+    }
+    stored.SCHEMA_VERSION = '1.28.0';
   }
   return stored;
 }

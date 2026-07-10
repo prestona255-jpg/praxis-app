@@ -4807,8 +4807,9 @@ function renderShelf() {
           if (!Object.prototype.hasOwnProperty.call(state.books, rbid)) { continue; }
           rb = state.books[rbid];
           if (!rb) { continue; }
-          // BUILD 2 hook — preserve a manual override here once it exists:
-          //   if (rb.categoryOverride) { continue; }
+          // R7: preserve a manual category override — a pinned categoryOverride
+          // is never cleared by Re-classify (it also wins in classifyBookLocal).
+          if (rb.categoryOverride) { continue; }
           if (rb.category !== '') {
             rb.category = '';
             rcDirty = true;
