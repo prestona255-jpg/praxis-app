@@ -493,17 +493,13 @@ function renderRoute() {
   // notebook clear both. yumi-brain reads both slots ([yumi-brain.js
   // currentArc lens]) so a stale value in either is a stale-context
   // bug. The symmetric-clear pattern below is the prevention.
-  // Wave 4 (S7): Book View -- the marks-and-lineage descent reached from
-  // Book Detail's "Open your marks & lineage ->". Sub-route of #book; MUST
-  // precede the #book/<id> detail block below, which would otherwise
-  // swallow it (parts[1] truthy -> renderBookDetail + return). Mirrors the
-  // arc/<id>/new-subtheory ordering note above.
+  // R7: the marks page (#book/<id>/marks) is RETIRED -- its material (marginalia
+  // cards + grew rows) folded into book detail. Redirect to the canonical
+  // #book/<id>; this block MUST still precede the #book/<id> detail block below
+  // (which would otherwise swallow it). The redirect re-enters the router at
+  // #book/<id> -> renderBookDetail.
   if (parts[0] === 'book' && parts[1] && parts[2] === 'marks') {
-    state.currentBookId = parts[1];
-    state.currentArcId  = null;
-    state.currentSubTheoryId = null;
-    saveState();
-    renderBookView(parts[1]);
+    location.hash = 'book/' + parts[1];
     return;
   }
   if (parts[0] === 'book' && parts[1]) {
@@ -8414,148 +8410,13 @@ function buildBookArcChips(bookId) {
   return row;
 }
 
-// Wave 4 (S7): Book View -- the marks-and-lineage descent. Book header
-// (cover root-alight, status, lens tags, the Yumi "this is a root" line),
-// "What you marked" (real notes; passage/location left neutral), and
-// "What it grew into" (the rooted sub-theories as real marks -> their
-// Page). Reached from Book Detail's "Open your marks & lineage ->".
+// R7: the Book View / marks page (#book/<id>/marks) is RETIRED -- its material
+// (marginalia cards + grew rows) now LEADS book detail (renderBookDetail). This
+// function is kept as a thin redirect for its export / any direct caller; the old
+// bk-sec render path is gone, and the router redirects the /marks hash to the
+// canonical #book/<id>.
 function renderBookView(bookId) {
-  var host = document.getElementById(APP_EL_ID);
-  if (!host) { return; }
-  host.innerHTML = '';
-  // W11 S8 Lane 1 (L3): marks + lineage are private notebook content -- hard-gate
-  // signed-out (mirror #notebook: in-place prompt, no redirect).
-  var bvUser = getCurrentUser();
-  if (!bvUser || !bvUser.uid) {
-    var bvSurf = bookAmberSurface();
-    bvSurf.shell.appendChild(buildSignedOutPrompt('Your marks are private', 'Sign in to see your marginalia and what this book grew into — your notes are yours alone.'));
-    host.appendChild(bvSurf.root);
-    return;
-  }
-  var surf = bookAmberSurface();
-  host.appendChild(surf.root);
-
-  var book = (state.books && state.books[bookId]) || null;
-  if (!book) {
-    var nf = document.createElement('p');
-    nf.className = 'bk-empty';
-    nf.textContent = 'Book not found.';
-    surf.shell.appendChild(nf);
-    var nfLink = document.createElement('a');
-    nfLink.className = 'bk-backlink';
-    nfLink.href = '#books';
-    nfLink.textContent = 'Back to your shelf';
-    surf.shell.appendChild(nfLink);
-    return;
-  }
-
-  var rooted = rootedSubTheories(bookId);
-  var margs = marginaliaForBook(bookId);
-  var alight = rooted.length > 0;
-
-  var back = document.createElement('a');
-  back.className = 'bk-backlink';
-  back.href = '#book/' + bookId;
-  back.textContent = '← Back to the book';
-  surf.shell.appendChild(back);
-
-  // ---- book header ----
-  var head = document.createElement('div');
-  head.className = 'bk-bookhead lum-glass';
-  head.appendChild(bookAmberCover(book, alight));
-  var meta = document.createElement('div');
-  meta.className = 'bk-bookmeta';
-  var bt = document.createElement('div');
-  bt.className = 'bk-bt';
-  bt.textContent = book.title || '';
-  meta.appendChild(bt);
-  if (book.author) {
-    var ba = document.createElement('div');
-    ba.className = 'bk-ba';
-    ba.textContent = book.author;
-    meta.appendChild(ba);
-  }
-  var brow = document.createElement('div');
-  brow.className = 'bk-brow';
-  var pill = document.createElement('span');
-  pill.className = 'bk-statuspill';
-  pill.textContent = statusText(book.status);
-  brow.appendChild(pill);
-  var htags = bookLensTags(book);
-  if (htags) { brow.appendChild(htags); }
-  meta.appendChild(brow);
-  if (rooted.length > 0) {
-    var rootText = (rooted.length === 1)
-      ? 'This one is a root — a thread in your thinking starts here.'
-      : ('This one is a root. ' + rooted.length + ' threads in your thinking start here — '
-          + 'you don’t just keep it, you build from it.');
-    meta.appendChild(bookYumiLine(rootText));
-  }
-  head.appendChild(meta);
-  surf.shell.appendChild(head);
-
-  // ---- What you marked ----
-  var sec1 = document.createElement('div');
-  sec1.className = 'bk-sec';
-  var s1h = document.createElement('h2');
-  s1h.className = 'bk-sechead';
-  s1h.textContent = 'What you marked';
-  sec1.appendChild(s1h);
-  var s1sub = document.createElement('p');
-  s1sub.className = 'bk-secsub';
-  s1sub.textContent = 'Your notes from this book — what you wrote in the margins.';
-  sec1.appendChild(s1sub);
-  if (margs.length > 0) {
-    var mi;
-    for (mi = 0; mi < margs.length; mi++) {
-      sec1.appendChild(buildMargCard(margs[mi]));
-    }
-  } else {
-    var e1 = document.createElement('p');
-    e1.className = 'bk-empty-note';
-    e1.textContent = 'No marginalia yet — your notes from this book will appear here.';
-    sec1.appendChild(e1);
-  }
-  surf.shell.appendChild(sec1);
-
-  // ---- What it grew into ----
-  var sec2 = document.createElement('div');
-  sec2.className = 'bk-sec';
-  var s2h = document.createElement('h2');
-  s2h.className = 'bk-sechead';
-  s2h.textContent = 'What it grew into';
-  sec2.appendChild(s2h);
-  var s2sub = document.createElement('p');
-  s2sub.className = 'bk-secsub';
-  s2sub.textContent = 'The sub-theories rooted in this book — open one to step into its arc.';
-  sec2.appendChild(s2sub);
-  if (rooted.length > 0) {
-    var list = document.createElement('div');
-    list.className = 'bk-grewlist';
-    var ri;
-    for (ri = 0; ri < rooted.length; ri++) {
-      list.appendChild(buildGrewRow(rooted[ri]));
-    }
-    sec2.appendChild(list);
-    var note = document.createElement('div');
-    note.className = 'bk-grewnote';
-    var rmark2 = document.createElement('span');
-    rmark2.className = 'bk-rmark2';
-    rmark2.setAttribute('aria-hidden', 'true');
-    note.appendChild(rmark2);
-    var noteText = (rooted.length === 1)
-      ? 'This is why the book is alight on your shelf — one line runs from it into your own field.'
-      : ('This is why the book is alight on your shelf — ' + rooted.length
-          + ' lines run from it into your own field.');
-    note.appendChild(document.createTextNode(noteText));
-    sec2.appendChild(note);
-  } else {
-    var e2 = document.createElement('p');
-    e2.className = 'bk-empty-note';
-    e2.textContent = 'Nothing has grown from this book yet. Marks you make here can become sub-theories in your arcs.';
-    sec2.appendChild(e2);
-  }
-  surf.shell.appendChild(sec2);
+  location.hash = 'book/' + bookId;
 }
 
 // Wave 4: "+ Add to a lens" inline panel open-state (module-level, like
