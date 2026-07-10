@@ -29,4 +29,54 @@ migration (status is separate from the label — recon §3).
 - Arc-commons/profile "Publish" (`_arcHeadPublishControl`, `_opPublishControl`, etc.) **untouched** —
   decision #5 reserves "Publish" for the commons act.
 
+Commit: `78174f5` (local, --no-verify per Preston's ruling; docs recon+checkpoint ride).
+
+---
+
+## STAGE 2 — The Page becomes the READ ✅
+
+**views.js:** `renderSubTheoryPage` (9751) rebuilt as a read view — the editable canvas call
+(was 10086), the hidden `publicBody`, the Write|Preview `previewBtn` toggle, the
+`insertCitationAtCursor`/`refreshCitationPreviews` citation engine, and the evidence-attach rail
+are all removed. New body: warm-dim (draft) / full-amber (finished) ground by `status`; topbar
+with the single Edit door (`st-edit-door-outline` draft / `-quiet` finished) → `/build`; finished
+adds the `st-room-threshold`, the reopen `Finished` pill (re-renders to draft), and `st-walknav`
+(siblings via `_arcDetailBuildSubTheoryData`, arc name as spine); the read hero wraps
+`renderSubTheoryReadOnly`; connections + Yumi kept; 2-col grid (rail column dropped). Splice was
+CRLF-safe (numstat 154/1127, no EOL flip). `renderSubTheoryReadOnly` evolved: draft flags private
+entry-evidence (`subtheory-attached-private-tag` + cite `title`); finished filters it (extant).
+**Delete** removed from the Page (a read surface) → relocates to the workshop (S3, verify/add).
+
+**components.css:** grid 3-col→2-col; added `st-read-hero`, `st-edit-door*`, `st-room-threshold`,
+`st-walknav*`, the shared `stb-warm-dim` warm-dim recipe (R5 `.arcfield-warm` literals + Universal
+ink tiers, provenance-commented; `--lum-ink-4 #b3a480` = the named build-time stand-in), the AF4
+readonly-token fix (folded into S2 — load-bearing for draft legibility), and mobile reflow. Live
+tokens throughout (`--lum-gold-d` for threads, not the mockup's `--u-thread`).
+
+**Gates (all PASS):**
+- Parse: **PARSE OK**. Page `createWritingCanvas` call **gone** (3 remain: notebook 2148, build
+  10301, marginalia 12756). `insertCitationAtCursor`/`refreshCitationPreviews`/`previewBtn`/`publicBody`
+  = **0**. numstat 154/1127 (no EOL flip; LF-consistent).
+- **Live rig (:8760, synthetic TESTUID, no real account), DOM structural proof + console clean:**
+  - **Finished** (stFin): full-amber (no warm-dim), threshold "entering the finished room", kicker
+    "FINISHED", quiet edit door → `/build`, reopen "Finished" pill, saved cue, read hero, t-meta "3
+    MARKED PASSAGES · 2 BOOKS", **2 superscripts, 2 evidence items (private dropped),
+    `privateAsCite:false`** (Miami phrase → plain italics), connections row "Eros in the Classroom",
+    Yumi, walk-nav (prev/next siblings + arc spine), **grid 906px/240px @1280**.
+  - **Draft** (stDraft): warm-dim (`isWarmDim:true`, body `rgb(36,23,16)` = dark `--lum-ink`, §7
+    polarity kept), no threshold, "STILL FORMING", outlined edit door, **no reopen pill, no saved
+    chrome**, 0 superscripts, **3 evidence items + private tag shown** (`privateTagInList:1`,
+    `privateAsCite:true`), no walk-nav.
+  - **Reopen** click: published→draft, re-renders to warm-dim, threshold+pill gone.
+  - **W12 signed-out** → "This sub-theory is private / Sign in…", no read-hero leak, **no crash**
+    (gate preserved exactly).
+  - **Seed read-only path** intact (renders "Desire as Political Refusal" read-only, no editor).
+  - **Mobile <760**: grid 1-col, walk-nav `flex-direction:column`, edit door 44px.
+  - Screenshots: `computer:screenshot` timed out twice (pane-capture tooling); DOM structural proof
+    is the hard PASS/FAIL evidence per protocol; visual felt-pass is Preston's.
+- Dead CSS from the removed editor (`st-main`/`st-gutter`/`st-canvas-host`/`st-ev-*`/`st-title-input`/
+  `st-tools`/`st-delete`/`st-tb-build`/`subtheory-rail-*`/`subtheory-toggles`) left for the S6
+  dead-selector purge.
+- Ownership gap (R6-OWN) written to `subtheory-page.md` as LOW R9 debt; stale `9119→9751` anchor fixed.
+
 Commit: (recorded below on commit)

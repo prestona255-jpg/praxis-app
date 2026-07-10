@@ -9671,6 +9671,12 @@ function renderSubTheoryReadOnly(subTheory, mode) {
       var span = document.createElement('span');
       span.className = 'subtheory-cite';
       span.textContent = s.text;
+      // R6 S2: in the draft author-view, flag a cite that resolves to PRIVATE
+      // evidence -- it stops resolving (reverts to plain italics) once published.
+      if (!published) {
+        var ceEl = findById(visible, eid);
+        if (ceEl && evidencePrivate(ceEl)) { span.title = 'private — excluded when published'; }
+      }
       bodyEl.appendChild(span);
       if (published) {
         var sup = document.createElement('sup');
@@ -9711,6 +9717,14 @@ function renderSubTheoryReadOnly(subTheory, mode) {
       cl.className = 'subtheory-readonly-cite-line';
       cl.textContent = citeLine(el);
       li.appendChild(cl);
+      // R6 S2: mark private entry-evidence in the draft author-view (the finished
+      // room filters it out entirely -- evidencePrivate, above).
+      if (!published && evidencePrivate(el)) {
+        var pvt = document.createElement('span');
+        pvt.className = 'subtheory-attached-private-tag';
+        pvt.textContent = 'private — excluded when published';
+        li.appendChild(pvt);
+      }
       if (el.quote) {
         var q = document.createElement('blockquote');
         q.className = 'subtheory-readonly-quote';
@@ -9804,15 +9818,34 @@ function renderSubTheoryPage(id) {
     return;
   }
 
-  var wrap = document.createElement('section');
-  wrap.className = 'st-page lum-amber-deep';
+  // R6 S2 (decision #4 — Page = read): the Page is the READ/author-view surface.
+  // The editable canvas, the citation-preview/autocomplete engine, and the
+  // evidence-attach rail are GONE (the workshop is the sole editor). This body
+  // wraps renderSubTheoryReadOnly in a hero + breadcrumb, and gates the ground
+  // and the walk-nav on status (decision #6): DRAFT reads warm-dim; FINISHED is
+  // the full-amber immersive room.
+  var published = (subTheory.status === 'published');
 
-  // Wave 3 (The Page): topbar -- back to the arc, the sub-theory's own hero
-  // idea-mark (real markShape/markColor via the shared PraxisMarks bridge,
-  // per-instance url(#mgN) gradient), a saved cue, and the quiet Finish
-  // pill. The pill flips the EXISTING status/publishedAt
-  // fields (draft<->published); no broadcast, no schema change.
-  var stArcTop = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
+  var wrap = document.createElement('section');
+  // decision #8 ground correction: draft sits at the WARM-DIM working register
+  // (dark ink kept — §7 never inverts); finished is the unmodified full-amber
+  // .st-page.lum-amber-deep. .stb-warm-dim is the additive modifier (shared with
+  // the workshop) that re-points --lum-* to the warm-dim recipe.
+  wrap.className = 'st-page lum-amber-deep' + (published ? '' : ' stb-warm-dim');
+
+  // decision #6: "Finishing earns the room." The amber-room threshold marker
+  // announces the crossing — finished only.
+  if (published) {
+    var stThreshold = document.createElement('p');
+    stThreshold.className = 'st-room-threshold';
+    stThreshold.textContent = 'entering the finished room';
+    wrap.appendChild(stThreshold);
+  }
+
+  // Topbar: back to the arc, the sub-theory's own hero idea-mark (the picker
+  // trigger, keyboard-accessible — openSymbolPicker unchanged), a state kicker,
+  // and — finished only — a saved cue + the reopen pill. The single Edit door is
+  // the ONLY way into the workshop (decision #4).
   var stTopbar = document.createElement('header');
   stTopbar.className = 'st-topbar';
   var stTbLeft = document.createElement('div');
@@ -9825,9 +9858,6 @@ function renderSubTheoryPage(id) {
   var stHeroMark = document.createElement('span');
   stHeroMark.className = 'st-hero-mark st-hero-mark-edit';
   stHeroMark.innerHTML = bookSubMarkHTML(subTheory, 30);
-  // Wave 3 ruling 3: mark-editing relocates to the TOPBAR mark (the separate
-  // sheet-head mark-chip is removed). The topbar mark IS the picker trigger,
-  // keyboard-accessible; openSymbolPicker is unchanged -- feature preserved.
   stHeroMark.setAttribute('role', 'button');
   stHeroMark.setAttribute('tabindex', '0');
   stHeroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
@@ -9839,114 +9869,64 @@ function renderSubTheoryPage(id) {
   stTbLeft.appendChild(stHeroMark);
   var stKicker = document.createElement('div');
   stKicker.className = 'st-tb-kicker';
-  stKicker.textContent = 'A SUB-THEORY · STILL FORMING';
+  stKicker.textContent = published ? 'A SUB-THEORY · FINISHED' : 'A SUB-THEORY · STILL FORMING';
   stTbLeft.appendChild(stKicker);
   stTopbar.appendChild(stTbLeft);
+
   var stTbRight = document.createElement('div');
   stTbRight.className = 'st-tb-right';
-  var stSaved = document.createElement('span');
-  stSaved.className = 'st-tb-saved';
-  var stSavedDot = document.createElement('span');
-  stSavedDot.className = 'st-tb-dot';
-  stSaved.appendChild(stSavedDot);
-  // Wave 3: "saved · <when>" from the REAL updatedAt (relative), per the mockup.
-  var stWhen = 'just now';
-  if (subTheory.updatedAt) {
-    var stAgo = Date.now() - subTheory.updatedAt;
-    if (stAgo >= 86400000) { var stWd = Math.round(stAgo / 86400000); stWhen = stWd + (stWd === 1 ? ' day ago' : ' days ago'); }
-    else if (stAgo >= 3600000) { var stWh = Math.round(stAgo / 3600000); stWhen = stWh + (stWh === 1 ? ' hr ago' : ' hrs ago'); }
-    else if (stAgo >= 60000) { var stWm = Math.round(stAgo / 60000); stWhen = stWm + (stWm === 1 ? ' min ago' : ' mins ago'); }
+  // R#2/R#5: Finish lives in the WORKSHOP; the Page carries only the reopen pill,
+  // and only when FINISHED. R#3: the draft Page shows no saved chrome (a read
+  // surface doesn't report autosave).
+  if (published) {
+    var stSaved = document.createElement('span');
+    stSaved.className = 'st-tb-saved';
+    var stSavedDot = document.createElement('span');
+    stSavedDot.className = 'st-tb-dot';
+    stSaved.appendChild(stSavedDot);
+    var stWhen = 'just now';
+    if (subTheory.updatedAt) {
+      var stAgo = Date.now() - subTheory.updatedAt;
+      if (stAgo >= 86400000) { var stWd = Math.round(stAgo / 86400000); stWhen = stWd + (stWd === 1 ? ' day ago' : ' days ago'); }
+      else if (stAgo >= 3600000) { var stWh = Math.round(stAgo / 3600000); stWhen = stWh + (stWh === 1 ? ' hr ago' : ' hrs ago'); }
+      else if (stAgo >= 60000) { var stWm = Math.round(stAgo / 60000); stWhen = stWm + (stWm === 1 ? ' min ago' : ' mins ago'); }
+    }
+    stSaved.appendChild(document.createTextNode('finished · ' + stWhen));
+    stTbRight.appendChild(stSaved);
+
+    var stReopen = document.createElement('button');
+    stReopen.type = 'button';
+    stReopen.className = 'st-pill-publish done';
+    var stReopenFlag = document.createElement('span');
+    stReopenFlag.className = 'st-pub-flag';
+    stReopen.appendChild(stReopenFlag);
+    stReopen.appendChild(document.createTextNode('Finished'));
+    // Reopen: Finished -> draft (one word, both directions — decision #5). Re-render
+    // so the room reverts to the warm-dim draft view.
+    stReopen.addEventListener('click', function() {
+      var r = state.subTheories[id];
+      if (!r) { return; }
+      r.status = 'draft'; r.publishedAt = null; r.updatedAt = Date.now();
+      if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+      saveState();
+      renderSubTheoryPage(id);
+    });
+    stTbRight.appendChild(stReopen);
   }
-  stSaved.appendChild(document.createTextNode('saved · ' + stWhen));
-  stTbRight.appendChild(stSaved);
-  var stPub = document.createElement('button');
-  stPub.type = 'button';
-  function stPubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
-  function paintStPub() {
-    stPub.className = 'st-pill-publish' + (stPubDone() ? ' done' : '');
-    stPub.innerHTML = '';
-    var flag = document.createElement('span');
-    flag.className = 'st-pub-flag';
-    stPub.appendChild(flag);
-    stPub.appendChild(document.createTextNode(stPubDone() ? 'Finished' : 'Finish'));
-  }
-  paintStPub();
-  stPub.addEventListener('click', function() {
-    var r = state.subTheories[id];
-    if (!r) { return; }
-    if (stPubDone()) { r.status = 'draft'; r.publishedAt = null; }
-    else { r.status = 'published'; r.publishedAt = Date.now(); }
-    r.updatedAt = Date.now();
-    if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
-    saveState();
-    paintStPub();
-  });
-  stTbRight.appendChild(stPub);
-  // Wave 3 (access fix): the Page -> Build entry. renderSubTheoryBuild
-  // (#subtheory/<id>/build) was reachable ONLY via the one-shot new-subtheory
-  // mint redirect (renderRoute ~505), so it orphaned for every EXISTING
-  // sub-theory. This quiet mono link is the reciprocal of Build's "Open the
-  // page →" -- it makes the pull-from-your-reading compose surface reachable
-  // again from the formed Page. Plain <a href>: refresh-stable, no handler.
-  var stBuildLink = document.createElement('a');
-  stBuildLink.className = 'st-tb-build';
-  stBuildLink.href = '#subtheory/' + id + '/build';
-  stBuildLink.textContent = 'Continue building →';
-  // stBuildLink ("Continue building") is KEPT but tucked into the .st-tools
-  // toolbar below (not the topbar) so the top reads clean per the mockup.
+  // decision #4: the single Edit door — the SOLE way into the workshop. R#4: quiet
+  // outlined gold on the draft (invites, doesn't shout); recedes further (quiet)
+  // once finished.
+  var stEditDoor = document.createElement('a');
+  stEditDoor.className = 'st-edit-door ' + (published ? 'st-edit-door-quiet' : 'st-edit-door-outline');
+  stEditDoor.href = '#subtheory/' + id + '/build';
+  stEditDoor.textContent = 'Edit in the workshop →';
+  stTbRight.appendChild(stEditDoor);
   stTopbar.appendChild(stTbRight);
   wrap.appendChild(stTopbar);
 
-  var main = document.createElement('div');
-  main.className = 'st-main';
-
-  // Wave 3 ruling 2: the in-sheet eyebrow "<arc> · sub-theory" is DROPPED -- it
-  // duplicated the topbar kicker (the mockup shows the arc only in the topbar).
-  var stArc = (subTheory.arcId && state.arcs) ? state.arcs[subTheory.arcId] : null;
-
-  // Head (mock .st-head): just the editable title + the discreet ••• Options
-  // disclosure. Wave 3 ruling 3: the separate sheet-head mark-chip is removed --
-  // mark-editing moved to the clickable topbar mark (stHeroMark) above.
-  var stHead = document.createElement('div');
-  stHead.className = 'st-head';
-
-  // Fix (v3.81): a reachable Delete on the writing page (the sub's own surface).
-  // Subordinate danger chip beside the Mark chip; on confirm, route to the
-  // parent arc (R69 -- can't stay on a deleted page).
-  var stDeleteBtn = document.createElement('button');
-  stDeleteBtn.type = 'button';
-  stDeleteBtn.className = 'st-delete';
-  stDeleteBtn.textContent = 'Delete';
-  stDeleteBtn.addEventListener('click', function() {
-    confirmDeleteSubTheory(id, function() {
-      location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
-    });
-  });
-
-  var headerInput = document.createElement('input');
-  headerInput.type = 'text';
-  headerInput.className = 'st-title-input';
-  headerInput.setAttribute('placeholder', 'Untitled sub-theory');
-  headerInput.value = subTheory.header || '';
-  headerInput.addEventListener('blur', function() {
-    updateSubTheory(id, { header: headerInput.value });
-  });
-  stHead.appendChild(headerInput);
-  // Wave 3 ruling 1: a discreet, ALWAYS-visible ••• Options disclosure in the head
-  // opens the tucked write-path controls on CLICK (identical desktop + mobile,
-  // discoverable, touch-safe -- replaces the hover-reveal). Wired at .st-tools below.
-  var stToolsToggle = document.createElement('button');
-  stToolsToggle.type = 'button';
-  stToolsToggle.className = 'st-tools-toggle';
-  stToolsToggle.setAttribute('aria-label', 'Options');
-  stToolsToggle.setAttribute('aria-expanded', 'false');
-  stToolsToggle.textContent = '•••';
-  stHead.appendChild(stToolsToggle);
-  main.appendChild(stHead);
-
-  // Maturity (KEPT): the live computed signal as a band label + glow. NOT appended
-  // to main here -- it tucks into the .st-tools hover/focus toolbar below so the
-  // sheet header reads clean per the mockup.
+  // Maturity (KEPT): the live computed signal as a band label + glow, now a
+  // visible reader-facing line in the read hero (was tucked in the old editor
+  // tools).
   var stMatVal = _stComputeMaturity(subTheory);
   var stMatBand = stMatVal < 0.34 ? 'nascent' : (stMatVal < 0.67 ? 'developing' : 'established');
   var stMaturity = document.createElement('div');
@@ -9957,9 +9937,8 @@ function renderSubTheoryPage(id) {
   stMaturity.appendChild(stGlow);
   stMaturity.appendChild(document.createTextNode(' Maturity · ' + stMatBand));
 
-  // Sub-line (mock .t-meta): "STARTED FROM <n> MARKED PASSAGES · <n> BOOKS" from
-  // REAL evidence -- marked passages = attached evidence count; books = distinct
-  // sources (kind book refId; kind entry's bookIds[]; kind external title).
+  // .t-meta: "STARTED FROM <n> MARKED PASSAGES · <n> BOOKS" from REAL evidence —
+  // marked passages = attached evidence count; books = distinct sources.
   var stEvArr = (subTheory.evidence && subTheory.evidence.length) ? subTheory.evidence : [];
   var stPassageN = stEvArr.length;
   var stSrcSeen = {}, stBookN = 0, stEi, stEvIt, stEnt, stBi, stKey;
@@ -9986,622 +9965,18 @@ function renderSubTheoryPage(id) {
   stTMeta.className = 't-meta';
   stTMeta.textContent = 'STARTED FROM ' + stPassageN + ' MARKED PASSAGE' + (stPassageN === 1 ? '' : 'S')
     + ' · ' + stBookN + ' BOOK' + (stBookN === 1 ? '' : 'S');
-  main.appendChild(stTMeta);
 
-  // R5 S4 register collapse: the Public|Intellectual toggle + the dual-body model
-  // are gone. ONE body now (bodyPublic); the former bodyIntellectual is folded into
-  // it once by the ensureSubTheoryFields migration (never deleted, dormant). The
-  // single hidden textarea below is the citation engine's model (the canvas mirrors
-  // getValue() into it), exactly as before -- only the second register is removed.
-  var publicBody = document.createElement('textarea');
-  publicBody.className = 'notebook-editor-body subtheory-register-body';
-  publicBody.setAttribute('placeholder', 'Write the public register…');
-  publicBody.value = subTheory.bodyPublic || '';
-  publicBody.addEventListener('blur', function() {
-    updateSubTheory(id, { bodyPublic: publicBody.value });
-  });
+  // decision #4: the read hero — t-meta + maturity + the read-only render
+  // (renderSubTheoryReadOnly, published-aware: numbered superscripts + the
+  // private-evidence filter in the finished room).
+  var stReadHero = document.createElement('div');
+  stReadHero.className = 'st-read-hero';
+  stReadHero.appendChild(stTMeta);
+  stReadHero.appendChild(stMaturity);
+  stReadHero.appendChild(renderSubTheoryReadOnly(subTheory, published ? 'published' : 'draft'));
 
-  // 10.5.2: Cite-from-the-rail. Track which register body last held focus
-  // so the rail's Cite action can insert *Title* at that caret; a surface
-  // never focused falls back to appending at the end of the visible
-  // register. The insert writes the textarea value directly and focuses
-  // the target -- the blur-save contract is untouched (the eventual blur
-  // persists the new text) -- then repaints the citation previews so the
-  // dot appears without waiting for the debounce.
-  var lastFocusedBody = null;
-  publicBody.addEventListener('focus', function() { lastFocusedBody = publicBody; });
-  function insertCitationAtCursor(text) {
-    // Wave 3: weave the citation into the visible canvas at the caret
-    // (handle.insertAtCaret -- no core change), then mirror the canvas markdown
-    // into the hidden bodyPublic textarea so the citation engine + the persisted
-    // body stay consistent. (R5 S4: single body -- no register switch.)
-    if (canvas) {
-      canvas.insertAtCaret(text);
-      publicBody.value = canvas.getValue();
-      updateSubTheory(id, { bodyPublic: publicBody.value });
-    }
-    refreshCitationPreviews();
-  }
-
-  var draftPreview = false;
-
-  // 10.5.6: the per-register Write | Preview toggle (a sibling pill). Write shows
-  // the canvas; Preview shows the live citation preview in the editor slot. Distinct
-  // from the Published toggle below, which renders the whole sub-theory read-only.
-  var wpToggle = document.createElement('div');
-  wpToggle.className = 'seg subtheory-wp-toggle';
-  var writeTab = document.createElement('button');
-  writeTab.type = 'button';
-  writeTab.className = 'seg-opt';
-  writeTab.textContent = 'Write';
-  var previewTab = document.createElement('button');
-  previewTab.type = 'button';
-  previewTab.className = 'seg-opt';
-  previewTab.textContent = 'Preview';
-  wpToggle.appendChild(writeTab);
-  wpToggle.appendChild(previewTab);
-
-  // R5 S4: single body (bodyPublic). The canvas shows in Write; the public citation
-  // preview shows in Preview. The register axis is gone (no publicTab/intelTab/
-  // showRegister) -- this now toggles only Write vs Preview.
-  function applyEditorView() {
-    publicBody.style.display = 'none';
-    if (typeof canvasHost !== 'undefined' && canvasHost) {
-      canvasHost.style.display = draftPreview ? 'none' : '';
-    }
-    if (publicPreview) { publicPreview.style.display = draftPreview ? '' : 'none'; }
-    writeTab.className = 'seg-opt' + (!draftPreview ? ' is-on' : '');
-    previewTab.className = 'seg-opt' + (draftPreview ? ' is-on' : '');
-  }
-  function setDraftPreview(on) {
-    draftPreview = on;
-    applyEditorView();
-  }
-  writeTab.addEventListener('click', function() { setDraftPreview(false); });
-  previewTab.addEventListener('click', function() { setDraftPreview(true); });
-
-  var manuscript = document.createElement('div');
-  manuscript.className = 'manuscript';
-  manuscript.appendChild(publicBody);
-
-  // Wave 3 (The Page): adopt the shared WritingCanvas as the visible Cormorant
-  // body editor -- EXACTLY like openMarginaliaEditor (mount + opts.onSave),
-  // writing-canvas.js UNMODIFIED. The two register textareas above stay in the
-  // DOM as the citation engine's model (refreshCitationPreviews / maybeAutocomplete
-  // read their .value) but are hidden; the canvas mirrors getValue() into the
-  // active register's textarea and persists via updateSubTheory. bodyPublic is
-  // the PRIMARY editable body; the Public|Intellectual toggle re-points the canvas.
-  var canvas = null;
-  publicBody.style.display = 'none';
-  var canvasHost = document.createElement('div');
-  canvasHost.className = 'st-canvas-host';
-  manuscript.appendChild(canvasHost);
-  // light brightens as you write: a PASSIVE input listener on the mounted
-  // contenteditable element (no core change), driving --lit on the sheet.
-  function stBumpLight() {
-    var n = (canvas ? canvas.getValue().length : 0) + (headerInput.value || '').length;
-    var lit = 0.55 + Math.min(1.05, n / 1100);
-    main.style.setProperty('--lit', lit.toFixed(3));
-  }
-  canvas = createWritingCanvas(canvasHost, {
-    surfaceId:    'subtheory-page',
-    placeholder:  'Begin the prose…',
-    initialValue: subTheory.bodyPublic || '',
-    flags:        { focusMode: false },
-    onSave: function(markdown, report) {
-      var md = (typeof markdown === 'string') ? markdown : '';
-      publicBody.value = md;
-      updateSubTheory(id, { bodyPublic: md });
-      refreshCitationPreviews();
-      if (report && report.setLocal) { report.setLocal(true); }
-    }
-  });
-  var stWcInput = canvasHost.querySelector ? canvasHost.querySelector('.wc-input') : null;
-  if (stWcInput) { stWcInput.addEventListener('input', stBumpLight); }
-  stBumpLight();
-
-  // ===== 10.2 citation preview (Option A), slice 2: panes + parser + dots =====
-  // A read-only pane under each register mirrors that register's prose with
-  // *asterisk* italics resolved against attached evidence (parseCitations):
-  // matched book/external titles get a .subtheory-cite underline-dot span;
-  // unmatched italics render as plain <em>. Only book/external titles (and a
-  // titled entry) contribute match titles -- untitled marginalia/journal do
-  // not (honors "only book titles" linking). Panes sync on input (debounced)
-  // and on evidence change (via refreshAttached). The hover card is slice 2b.
-  var publicPreview = document.createElement('div');
-  publicPreview.className = 'subtheory-cite-preview';
-  manuscript.appendChild(publicPreview);
-
-  // 10.4 SLICE 2: Preview toggle -- swap the editor for the PUBLISHED read-only
-  // render ("what readers see": private evidence excluded, superscript cites)
-  // and back. 10.5.6 upgrades this to the polished Write|Preview tabs.
-  var previewHost = document.createElement('div');
-  previewHost.className = 'subtheory-preview-host';
-  previewHost.style.display = 'none';
-  manuscript.appendChild(previewHost);
-
-  var previewBtn = document.createElement('button');
-  previewBtn.type = 'button';
-  previewBtn.className = 'subtheory-preview-toggle';
-  previewBtn.textContent = 'Published';
-  var previewing = false;
-  function setPreview(on) {
-    previewing = on;
-    headerInput.style.display = on ? 'none' : '';
-    wpToggle.style.display = on ? 'none' : '';
-    if (on) {
-      publicBody.style.display = 'none';
-      if (typeof canvasHost !== 'undefined' && canvasHost) { canvasHost.style.display = 'none'; }
-      publicPreview.style.display = 'none';
-      previewHost.innerHTML = '';
-      previewHost.appendChild(
-        renderSubTheoryReadOnly(state.subTheories[id], 'published'));
-      previewHost.style.display = '';
-      previewBtn.textContent = 'Edit';
-    } else {
-      previewHost.style.display = 'none';
-      applyEditorView();
-      previewBtn.textContent = 'Published';
-    }
-  }
-  previewBtn.addEventListener('click', function() { setPreview(!previewing); });
-
-  // 10.5.6: register pill + Write|Preview toggle + Published toggle on one row.
-  // Wave 3 structural: the kept write-path controls (PUBLIC|INTELLECTUAL,
-  // WRITE|PREVIEW, PUBLISHED, MATURITY, DELETE, Continue building) tuck into ONE
-  // hover/focus toolbar so the sheet header reads clean per the mockup -- every
-  // control stays wired. .st-tools fades in on .st-main hover/focus (CSS) and
-  // stays visible (recessed) on mobile where there is no hover.
-  var togglesRow = document.createElement('div');
-  togglesRow.className = 'subtheory-toggles-row st-tools';
-  togglesRow.appendChild(wpToggle);
-  togglesRow.appendChild(previewBtn);
-  togglesRow.appendChild(stMaturity);
-  togglesRow.appendChild(stDeleteBtn);
-  togglesRow.appendChild(stBuildLink);
-  // Ruling 1: the ••• head disclosure opens/closes this panel on click (.st-tools is
-  // display:none until .is-open). Identical desktop + mobile -- no hover dependency.
-  stToolsToggle.addEventListener('click', function() {
-    var stToolsOpen = togglesRow.classList.toggle('is-open');
-    stToolsToggle.setAttribute('aria-expanded', stToolsOpen ? 'true' : 'false');
-    stToolsToggle.className = 'st-tools-toggle' + (stToolsOpen ? ' is-on' : '');
-  });
-  main.appendChild(togglesRow);
-  main.appendChild(manuscript);
-
-  // Bare match-title per evidence item: book.title / external title / a
-  // titled entry; untitled entries return '' (skipped by the matcher).
-  function citationMatchTitle(el) {
-    if (el.kind === 'book') {
-      var bk = state.books && state.books[el.refId];
-      return (bk && bk.title) ? bk.title : '';
-    }
-    if (el.kind === 'entry') {
-      var en = state.notebookEntries && state.notebookEntries[el.refId];
-      return (en && en.title) ? en.title : '';
-    }
-    var ext = el.external || {};
-    return ext.title || '';
-  }
-
-  // Live evidence -> the matcher's title list [{id,title}]. Read fresh each
-  // call so attach/detach/rename reflect immediately.
-  function buildCitationTitles() {
-    var rec = state.subTheories[id];
-    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
-    var titles = [];
-    var k;
-    for (k = 0; k < ev.length; k = k + 1) {
-      var el = ev[k];
-      if (!el || !el.id) { continue; }
-      var mt = citationMatchTitle(el);
-      if (mt) { titles.push({ id: el.id, title: mt }); }
-    }
-    return titles;
-  }
-
-  // 10.2 slice 2b: per-id info (display label + quote) for the hover card.
-  function buildCitationInfo() {
-    var rec = state.subTheories[id];
-    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
-    var info = {};
-    var k;
-    for (k = 0; k < ev.length; k = k + 1) {
-      var el = ev[k];
-      if (!el || !el.id) { continue; }
-      info[el.id] = {
-        label: evidenceLabel(el),
-        quote: (typeof el.quote === 'string') ? el.quote : ''
-      };
-    }
-    return info;
-  }
-
-  // Slice 2b: shared hover card -- the house .arc-tooltip, one element on
-  // <body>, positioned in page coords to the hovered span (pointer-events:none).
-  var citeTip = null;
-  var citeTapTimer = null;
-  // Shared positioner: place a body-mounted element just below a span, in
-  // page coords, clamped to viewport width. Used by the 2b hover card AND
-  // the slice-3 chooser (one positioning implementation, not two).
-  function positionToSpan(el, spanEl) {
-    var sr = spanEl.getBoundingClientRect();
-    var px = window.pageXOffset || 0;
-    var py = window.pageYOffset || 0;
-    var left = sr.left + px;
-    var maxLeft = px + document.documentElement.clientWidth - el.offsetWidth - 8;
-    if (left > maxLeft) { left = maxLeft; }
-    if (left < px + 8) { left = px + 8; }
-    el.style.left = left + 'px';
-    el.style.top = (sr.bottom + py + 6) + 'px';
-  }
-  function showCiteTip(spanEl, lines) {
-    if (!citeTip) {
-      citeTip = document.createElement('div');
-      citeTip.className = 'arc-tooltip';
-      document.body.appendChild(citeTip);
-    }
-    citeTip.textContent = '';
-    var li;
-    for (li = 0; li < lines.length; li = li + 1) {
-      if (!lines[li] || !lines[li].text) { continue; }
-      var ln = document.createElement('div');
-      ln.className = lines[li].cls;
-      ln.textContent = lines[li].text;
-      citeTip.appendChild(ln);
-    }
-    citeTip.classList.add('arc-tooltip--visible');
-    positionToSpan(citeTip, spanEl);
-  }
-  function hideCiteTip() {
-    if (citeTip) { citeTip.classList.remove('arc-tooltip--visible'); }
-  }
-  function citeLines(infoItem) {
-    var lines = [{ cls: 'arc-tooltip-title', text: infoItem.label }];
-    if (infoItem.quote) {
-      lines.push({ cls: 'arc-tooltip-meta', text: '“' + infoItem.quote + '”' });
-    }
-    return lines;
-  }
-  function bindCiteHover(span, infoItem) {
-    if (!infoItem) { return; }
-    span.addEventListener('mouseenter', function() {
-      showCiteTip(span, citeLines(infoItem));
-    });
-    span.addEventListener('mouseleave', hideCiteTip);
-    // 10.5.5: touch has no hover -- a tap shows the same card, auto-dismissed
-    // after a few seconds (tapping another citation just repositions it). The
-    // long-press chooser on ambiguous spans is unaffected.
-    span.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      showCiteTip(span, citeLines(infoItem));
-      if (citeTapTimer) { clearTimeout(citeTapTimer); }
-      citeTapTimer = setTimeout(hideCiteTip, 3200);
-    });
-  }
-
-  // ===== 10.2 slice 3 + 10.5.7: disambiguation chooser (persisted pins) =====
-  // An ambiguous citation (>1 candidate) can be pinned to one source via
-  // right-click (desktop) or long-press (touch). The pin is keyed by the
-  // lowercased phrase. 10.5.7: citePins references the sub-theory record's
-  // persisted citationPins map, so a choice survives reload and routes the
-  // read-only render. Membership uses the shared top-level citeIdIn.
-  var citePinsRec = state.subTheories[id];
-  if (citePinsRec && (!citePinsRec.citationPins ||
-      typeof citePinsRec.citationPins !== 'object')) {
-    citePinsRec.citationPins = {};
-  }
-  var citePins = citePinsRec ? citePinsRec.citationPins : {};
-  var citeChooser = null;
-  function closeCiteChooser() {
-    if (citeChooser && citeChooser.parentNode) {
-      citeChooser.parentNode.removeChild(citeChooser);
-    }
-    citeChooser = null;
-    document.removeEventListener('click', onCiteChooserOutside);
-    document.removeEventListener('keydown', onCiteChooserKey);
-  }
-  function onCiteChooserOutside(ev) {
-    if (citeChooser && !citeChooser.contains(ev.target)) { closeCiteChooser(); }
-  }
-  function onCiteChooserKey(ev) {
-    if (ev.keyCode === 27) { closeCiteChooser(); }
-  }
-  function appendCiteChooserRow(panel, cid, phraseLower, info) {
-    var row = document.createElement('a');
-    row.href = '#';
-    row.className = 'arc-picker-row subtheory-picker-row';
-    row.textContent = (info && info[cid]) ? info[cid].label : 'Source';
-    row.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      // 10.5.7: citePins references the record's citationPins; persist the
-      // choice so it survives reload and routes the read-only render.
-      citePins[phraseLower] = cid;
-      if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
-      saveState();
-      closeCiteChooser();
-      refreshCitationPreviews();
-    });
-    panel.appendChild(row);
-  }
-  function openCiteChooser(spanEl, phraseLower, ids, info) {
-    closeCiteChooser();
-    var panel = document.createElement('div');
-    panel.className = 'arc-picker-panel subtheory-cite-chooser';
-    var label = document.createElement('div');
-    label.className = 'arc-picker-label';
-    label.textContent = 'Which source?';
-    panel.appendChild(label);
-    var ci;
-    for (ci = 0; ci < ids.length; ci = ci + 1) {
-      appendCiteChooserRow(panel, ids[ci], phraseLower, info);
-    }
-    document.body.appendChild(panel);
-    citeChooser = panel;
-    panel.style.position = 'absolute';
-    panel.style.zIndex = '60';
-    positionToSpan(panel, spanEl);
-    setTimeout(function() {
-      document.addEventListener('click', onCiteChooserOutside);
-    }, 0);
-    document.addEventListener('keydown', onCiteChooserKey);
-  }
-  function bindCiteChooser(span, phraseLower, ids, info) {
-    span.addEventListener('contextmenu', function(ev) {
-      ev.preventDefault();
-      openCiteChooser(span, phraseLower, ids, info);
-    });
-    var lpTimer = null;
-    span.addEventListener('touchstart', function() {
-      lpTimer = setTimeout(function() {
-        openCiteChooser(span, phraseLower, ids, info);
-      }, 500);
-    });
-    function cancelLongPress() {
-      if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-    }
-    span.addEventListener('touchend', cancelLongPress);
-    span.addEventListener('touchmove', cancelLongPress);
-  }
-
-  // ===== 10.5.3: citation autocomplete =====
-  // Typing '*' in a register body opens a small picker of attached evidence
-  // titles; choosing one writes plain '<Title>*' at the caret, completing the
-  // '*Title*' the writer just started. Plain text only -- no rendering change,
-  // blur-save contract untouched. Mounts/dismisses like the chooser and
-  // positions via the shared positionToSpan, anchored to the active textarea.
-  var citeAutocomplete = null;
-  function closeAutocomplete() {
-    if (citeAutocomplete && citeAutocomplete.parentNode) {
-      citeAutocomplete.parentNode.removeChild(citeAutocomplete);
-    }
-    citeAutocomplete = null;
-    document.removeEventListener('click', onAutocompleteOutside);
-    document.removeEventListener('keydown', onAutocompleteKey);
-  }
-  function onAutocompleteOutside(ev) {
-    if (citeAutocomplete && !citeAutocomplete.contains(ev.target)) { closeAutocomplete(); }
-  }
-  function onAutocompleteKey(ev) {
-    if (ev.keyCode === 27) { closeAutocomplete(); }
-  }
-  function appendAutocompleteRow(panel, title) {
-    var row = document.createElement('a');
-    row.href = '#';
-    row.className = 'arc-picker-row subtheory-picker-row';
-    row.textContent = title;
-    row.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      closeAutocomplete();
-      insertCitationAtCursor(title + '*');
-    });
-    panel.appendChild(row);
-  }
-  function openAutocomplete(body) {
-    closeAutocomplete();
-    var titles = buildCitationTitles();
-    var seen = {};
-    var panel = document.createElement('div');
-    panel.className = 'arc-picker-panel subtheory-cite-autocomplete';
-    var label = document.createElement('div');
-    label.className = 'arc-picker-label';
-    label.textContent = 'Cite a source';
-    panel.appendChild(label);
-    var ti, n = 0;
-    for (ti = 0; ti < titles.length; ti = ti + 1) {
-      var t = titles[ti].title;
-      var key = t.toLowerCase();
-      if (seen[key]) { continue; }
-      seen[key] = true;
-      appendAutocompleteRow(panel, t);
-      n = n + 1;
-    }
-    if (n === 0) { return; }
-    document.body.appendChild(panel);
-    citeAutocomplete = panel;
-    panel.style.position = 'absolute';
-    panel.style.zIndex = '60';
-    positionToSpan(panel, body);
-    setTimeout(function() {
-      document.addEventListener('click', onAutocompleteOutside);
-    }, 0);
-    document.addEventListener('keydown', onAutocompleteKey);
-  }
-  function maybeAutocomplete(body) {
-    var caret = (typeof body.selectionStart === 'number')
-      ? body.selectionStart : body.value.length;
-    if (caret > 0 && body.value.charAt(caret - 1) === '*') {
-      openAutocomplete(body);
-    } else if (citeAutocomplete) {
-      closeAutocomplete();
-    }
-  }
-
-  // Paint one pane from parsed segments. textContent/createElement only --
-  // never innerHTML with body text. A citation span resolves to one source
-  // (ids[0], or a session pin among candidates); >1 unpinned candidate stays
-  // .subtheory-cite-ambiguous and carries the slice-3 right-click/long-press
-  // chooser. Plain italics render as <em>.
-  function renderCitationPreview(paneEl, bodyText, titles, info) {
-    paneEl.textContent = '';
-    var segs = parseCitations(bodyText, titles);
-    var hasCitation = false;
-    var si;
-    for (si = 0; si < segs.length; si = si + 1) {
-      var s = segs[si];
-      if (s.ids && s.ids.length) {
-        hasCitation = true;
-        var span = document.createElement('span');
-        var effId = s.ids[0];
-        var ambiguous = s.ids.length > 1;
-        if (ambiguous) {
-          var pinned = citePins[s.text.toLowerCase()];
-          if (pinned && citeIdIn(s.ids, pinned)) {
-            effId = pinned;
-            ambiguous = false;
-          }
-        }
-        span.className = 'subtheory-cite' +
-          (ambiguous ? ' subtheory-cite-ambiguous' : '');
-        span.textContent = s.text;
-        if (info) { bindCiteHover(span, info[effId]); }
-        if (ambiguous) {
-          bindCiteChooser(span, s.text.toLowerCase(), s.ids, info);
-        }
-        paneEl.appendChild(span);
-      } else if (s.italic) {
-        var em = document.createElement('em');
-        em.textContent = s.text;
-        paneEl.appendChild(em);
-      } else {
-        paneEl.appendChild(document.createTextNode(s.text));
-      }
-    }
-    // 10.5.4: coach line — teach the asterisk convention while the pane
-    // carries no resolved citation; it disappears the moment one exists.
-    if (!hasCitation) {
-      var coach = document.createElement('p');
-      coach.className = 'subtheory-cite-coach';
-      coach.textContent = 'Wrap a source title in *asterisks* to cite it.';
-      paneEl.appendChild(coach);
-    }
-  }
-
-  function refreshCitationPreviews() {
-    var titles = buildCitationTitles();
-    var info = buildCitationInfo();
-    renderCitationPreview(publicPreview, publicBody.value, titles, info);
-  }
-
-  var citeDebounce = null;
-  function onCiteBodyInput() {
-    if (citeDebounce) { clearTimeout(citeDebounce); }
-    citeDebounce = setTimeout(refreshCitationPreviews, 200);
-  }
-  publicBody.addEventListener('input', onCiteBodyInput);
-  publicBody.addEventListener('input', function() { maybeAutocomplete(publicBody); });
-  refreshCitationPreviews();
-
-  // R5 S4: single body — no register to default-select; set the initial view.
-  applyEditorView();
-
-  // ===== Evidence rail (Checkpoint C) =====
-  var rail = document.createElement('aside');
-  rail.className = 'st-gutter';
-  rail.id = 'subtheory-rail';
-
-  // Backdrop sibling for the mobile bottom sheet. Default-hidden by CSS;
-  // toggled in lockstep with the rail's open class.
-  var backdrop = document.createElement('div');
-  backdrop.className = 'subtheory-rail-backdrop';
-
-  // Mobile open/close, mirroring the shelf filter-panel pattern: the
-  // rail is the desktop second column; at <=720px it hides and reopens
-  // as a fixed bottom sheet toggled by the Evidence button, with a
-  // backdrop and an Escape / close-x / backdrop-click dismiss. The
-  // Escape handler is parked at module scope so this render can purge a
-  // stale one bound by a previous render.
-  if (subTheoryRailEscapeHandler) {
-    document.removeEventListener('keydown', subTheoryRailEscapeHandler);
-    subTheoryRailEscapeHandler = null;
-  }
-  function openRail() {
-    rail.classList.add('subtheory-rail-mobile-open');
-    backdrop.classList.add('subtheory-rail-backdrop-open');
-    if (subTheoryRailEscapeHandler) {
-      document.removeEventListener('keydown', subTheoryRailEscapeHandler);
-    }
-    subTheoryRailEscapeHandler = function(ev) {
-      if (ev.key === 'Escape' || ev.key === 'Esc') {
-        dismissRail();
-      }
-    };
-    document.addEventListener('keydown', subTheoryRailEscapeHandler);
-  }
-  function dismissRail() {
-    rail.classList.remove('subtheory-rail-mobile-open');
-    backdrop.classList.remove('subtheory-rail-backdrop-open');
-    if (subTheoryRailEscapeHandler) {
-      document.removeEventListener('keydown', subTheoryRailEscapeHandler);
-      subTheoryRailEscapeHandler = null;
-    }
-  }
-  backdrop.addEventListener('click', dismissRail);
-
-  var railToggle = document.createElement('button');
-  railToggle.type = 'button';
-  railToggle.className = 'subtheory-rail-toggle';
-  railToggle.textContent = 'Evidence';
-  railToggle.addEventListener('click', openRail);
-
-  // Close-x first in source order so panel-open tab focus lands on the
-  // dismiss path. Mobile-only via CSS.
-  var railClose = document.createElement('button');
-  railClose.type = 'button';
-  railClose.className = 'subtheory-rail-close';
-  railClose.setAttribute('aria-label', 'Close evidence');
-  railClose.textContent = '×';
-  railClose.addEventListener('click', dismissRail);
-  rail.appendChild(railClose);
-
-  var railTitle = document.createElement('h2');
-  railTitle.className = 'subtheory-rail-title';
-  railTitle.textContent = 'FROM YOUR READING';
-  rail.appendChild(railTitle);
-
-  var arc = state.arcs && state.arcs[subTheory.arcId];
-
-  // Resolve a display label for one attached evidence element. Book and
-  // entry labels are read live off state (so a renamed book updates on
-  // next render); external reads the stored {title, author} pair.
-  function evidenceLabel(el) {
-    if (el.kind === 'book') {
-      var bk = state.books && state.books[el.refId];
-      if (bk) {
-        return bk.author ? (bk.title + ' — ' + bk.author) : bk.title;
-      }
-      return 'Book';
-    }
-    if (el.kind === 'entry') {
-      var en = state.notebookEntries && state.notebookEntries[el.refId];
-      if (en) {
-        if (en.title) { return en.title; }
-        if (en.body) {
-          return en.body.length > 60
-            ? en.body.substring(0, 57) + '...' : en.body;
-        }
-      }
-      return 'Note';
-    }
-    var ext = el.external || {};
-    if (ext.title && ext.author) { return ext.title + ' — ' + ext.author; }
-    if (ext.title) { return ext.title; }
-    return 'External source';
-  }
-
-  // Wave 3 (The Page): resolve an evidence element's SOURCE BOOK (real record)
-  // so the rail card can show a real cover. A 'book' evidence points at the
-  // book directly; an 'entry' (marginalia) resolves its first tagged book.
+  // stEvidenceSourceBook: KEPT (the Yumi margin reads it) — was defined inside
+  // the removed editor region.
   function stEvidenceSourceBook(el) {
     if (el.kind === 'book') { return (state.books && state.books[el.refId]) || null; }
     if (el.kind === 'entry') {
@@ -10612,390 +9987,9 @@ function renderSubTheoryPage(id) {
     }
     return null;
   }
-  function stEvidenceTitle(el) {
-    var bk = stEvidenceSourceBook(el);
-    if (bk && bk.title) { return bk.title; }
-    if (el.kind === 'external' && el.external && el.external.title) { return el.external.title; }
-    if (el.kind === 'entry') {
-      var en = state.notebookEntries && state.notebookEntries[el.refId];
-      if (en && en.title) { return en.title; }
-      return 'Marked passage';
-    }
-    return 'Source';
-  }
-  function stEvidenceAuthor(el) {
-    var bk = stEvidenceSourceBook(el);
-    if (bk && bk.author) { return bk.author; }
-    if (el.kind === 'external' && el.external && el.external.author) { return el.external.author; }
-    return '';
-  }
-  function stEvidenceCover(el) {
-    var bk = stEvidenceSourceBook(el);
-    var cover = document.createElement('span');
-    if (bk && bk.coverUrl) {
-      cover.className = 'st-ev-cover';
-      var img = document.createElement('img');
-      img.className = 'st-ev-cover-img';
-      img.src = bk.coverUrl;
-      img.alt = '';
-      cover.appendChild(img);
-    } else {
-      // cloth fallback with the title's initial -- NOT a mark.
-      cover.className = 'st-ev-cover st-ev-cover-cloth';
-      var t = stEvidenceTitle(el);
-      cover.textContent = (t && t.length) ? t.charAt(0).toUpperCase() : '·';
-    }
-    return cover;
-  }
 
-  function buildAttachedRow(el) {
-    var row = document.createElement('div');
-    row.className = 'st-ev-card';
-    // top: real source-book cover (coverUrl, cloth fallback) + title + author.
-    var top = document.createElement('div');
-    top.className = 'st-ev-top';
-    top.appendChild(stEvidenceCover(el));
-    var meta = document.createElement('div');
-    meta.className = 'st-ev-meta';
-    var bookEl = document.createElement('div');
-    bookEl.className = 'st-ev-book';
-    bookEl.textContent = stEvidenceTitle(el);
-    meta.appendChild(bookEl);
-    var authEl = document.createElement('div');
-    authEl.className = 'st-ev-author';
-    authEl.textContent = stEvidenceAuthor(el);
-    meta.appendChild(authEl);
-    top.appendChild(meta);
-    row.appendChild(top);
-    // 10.4: private/missing journal entry is excluded when published -- tag it
-    // in the editing rail so the owner sees it at manage time.
-    if (el.kind === 'entry') {
-      var ren = state.notebookEntries && state.notebookEntries[el.refId];
-      if (!ren || ren.isPrivate === true) {
-        var ptag = document.createElement('span');
-        ptag.className = 'subtheory-attached-private-tag';
-        ptag.textContent = 'private — excluded when published';
-        row.appendChild(ptag);
-      }
-    }
-    if (el.quote) {
-      var q = document.createElement('p');
-      q.className = 'st-ev-quote';
-      q.textContent = '“' + el.quote + '”';
-      row.appendChild(q);
-    }
-    if (el.annotation) {
-      var a = document.createElement('p');
-      a.className = 'st-ev-annotation';
-      a.textContent = el.annotation;
-      row.appendChild(a);
-    }
-    // weave in -> insertAtCaret a cite chip into the canvas + dim THIS card.
-    // Only when the element has a citable title (untitled marginalia returns
-    // '' -> nothing to italicize). Reuses the citation write-path verbatim.
-    var citeTitle = citationMatchTitle(el);
-    if (citeTitle) {
-      var weaveBtn = document.createElement('button');
-      weaveBtn.type = 'button';
-      weaveBtn.className = 'st-weave';
-      weaveBtn.textContent = 'weave in';
-      weaveBtn.addEventListener('click', function() {
-        if (row.className.indexOf('woven') !== -1) { return; }
-        insertCitationAtCursor(' *' + citeTitle + '* ');
-        row.className = 'st-ev-card woven';
-        weaveBtn.textContent = 'woven in';
-      });
-      row.appendChild(weaveBtn);
-    }
-    return row;
-  }
-
-  // Attached-evidence list owns its own container so attaching an item
-  // repopulates only this list -- a full renderSubTheoryPage re-render
-  // would drop un-blurred prose-column text. refreshAttached re-reads
-  // the live evidence[] each call.
-  var attachedSection = document.createElement('div');
-  attachedSection.className = 'subtheory-rail-section';
-  // Wave 3 fidelity (look-check): the redundant "Attached" sub-header is dropped --
-  // the rail title "FROM YOUR READING" already labels this section, and the mockup
-  // shows no sub-header above the book cards.
-  var attachedList = document.createElement('div');
-  attachedList.className = 'subtheory-attached-list';
-  attachedSection.appendChild(attachedList);
-
-  function refreshAttached() {
-    attachedList.innerHTML = '';
-    // 10.2: evidence changed -> re-resolve citations in both preview panes.
-    refreshCitationPreviews();
-    var rec = state.subTheories[id];
-    var ev = (rec && Array.isArray(rec.evidence)) ? rec.evidence : [];
-    if (ev.length === 0) {
-      var none = document.createElement('p');
-      none.className = 'subtheory-attached-empty';
-      none.textContent = 'No evidence attached yet.';
-      attachedList.appendChild(none);
-      return;
-    }
-    var ei;
-    for (ei = 0; ei < ev.length; ei++) {
-      attachedList.appendChild(buildAttachedRow(ev[ei]));
-    }
-  }
-
-  // Inline attach editor (mirrors openEditor's structure): optional
-  // quote + annotation, Attach / Cancel. onSave receives the two raw
-  // string values; both are optional per addEvidence.
-  function buildInlineEvidenceEditor(onSave, onCancel) {
-    var editor = document.createElement('div');
-    editor.className = 'notebook-editor subtheory-attach-editor';
-    var quoteInput = document.createElement('textarea');
-    quoteInput.className = 'notebook-editor-body';
-    quoteInput.setAttribute('placeholder', 'Quote (optional)');
-    quoteInput.rows = 2;
-    var annInput = document.createElement('textarea');
-    annInput.className = 'notebook-editor-body';
-    annInput.setAttribute('placeholder', 'Annotation (optional)');
-    annInput.rows = 2;
-    var actions = document.createElement('div');
-    actions.className = 'notebook-editor-actions';
-    var saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'notebook-editor-save';
-    saveBtn.textContent = 'Attach';
-    var cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'notebook-editor-cancel';
-    cancelBtn.textContent = 'Cancel';
-    saveBtn.addEventListener('click', function() {
-      onSave(quoteInput.value, annInput.value);
-    });
-    cancelBtn.addEventListener('click', function() {
-      onCancel();
-    });
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
-    editor.appendChild(quoteInput);
-    editor.appendChild(annInput);
-    editor.appendChild(actions);
-    return editor;
-  }
-
-  // One source row (a book or a visible notebook entry). The attach
-  // button toggles an inline editor; saving routes through addEvidence
-  // with this row's kind + refId, then refreshes the attached list. The
-  // kind/refId close over buildSourceRow's params -- fresh per call, so
-  // no var-loop closure trap.
-  function buildSourceRow(kind, refId, labelText) {
-    var row = document.createElement('div');
-    row.className = 'subtheory-source-row';
-    var head = document.createElement('div');
-    head.className = 'subtheory-source-head';
-    var label = document.createElement('span');
-    label.className = 'subtheory-source-label';
-    label.textContent = labelText;
-    head.appendChild(label);
-    var attachBtn = document.createElement('button');
-    attachBtn.type = 'button';
-    attachBtn.className = 'subtheory-source-attach';
-    attachBtn.textContent = 'Attach as evidence';
-    head.appendChild(attachBtn);
-    row.appendChild(head);
-    var editorHost = document.createElement('div');
-    editorHost.className = 'subtheory-source-editor-host';
-    row.appendChild(editorHost);
-    attachBtn.addEventListener('click', function() {
-      if (editorHost.firstChild) {
-        editorHost.innerHTML = '';
-        return;
-      }
-      editorHost.appendChild(buildInlineEvidenceEditor(
-        function(quote, annotation) {
-          addEvidence(id, { kind: kind, refId: refId,
-            quote: quote, annotation: annotation });
-          editorHost.innerHTML = '';
-          refreshAttached();
-        },
-        function() {
-          editorHost.innerHTML = '';
-        }));
-    });
-    return row;
-  }
-
-  // Source list: books from arc.bookIds + visible entries from
-  // arc.entryIds. Private entries are skipped (principle #5 -- private
-  // writing never becomes citable substrate). Scrollable via CSS.
-  var sourceSection = document.createElement('div');
-  sourceSection.className = 'subtheory-rail-section';
-  var sourceLabel = document.createElement('h3');
-  sourceLabel.className = 'book-detail-tradition-label';
-  sourceLabel.textContent = 'From this arc';
-  sourceSection.appendChild(sourceLabel);
-  var sourceList = document.createElement('div');
-  sourceList.className = 'subtheory-source-list';
-  sourceSection.appendChild(sourceList);
-
-  var bookMembers = (arc && Array.isArray(arc.bookIds)) ? arc.bookIds : [];
-  var bmi;
-  for (bmi = 0; bmi < bookMembers.length; bmi++) {
-    var bm = bookMembers[bmi];
-    var bk = state.books && state.books[bm.id];
-    if (!bk) { continue; }
-    var bkLabel = bk.author ? (bk.title + ' — ' + bk.author) : bk.title;
-    sourceList.appendChild(buildSourceRow('book', bm.id, bkLabel));
-  }
-
-  var entryMembers = (arc && Array.isArray(arc.entryIds)) ? arc.entryIds : [];
-  var eli;
-  for (eli = 0; eli < entryMembers.length; eli++) {
-    var elm = entryMembers[eli];
-    var en = state.notebookEntries && state.notebookEntries[elm.id];
-    if (!en) { continue; }
-    if (en.isPrivate === true) { continue; }
-    var enLabel;
-    if (en.title) {
-      enLabel = en.title;
-    } else if (en.body) {
-      enLabel = en.body.length > 60
-        ? en.body.substring(0, 57) + '...' : en.body;
-    } else {
-      enLabel = 'Note';
-    }
-    sourceList.appendChild(buildSourceRow('entry', elm.id, enLabel));
-  }
-
-  if (!sourceList.firstChild) {
-    var emptySrc = document.createElement('p');
-    emptySrc.className = 'subtheory-source-empty';
-    emptySrc.textContent = 'No books or notes in this arc yet.';
-    sourceList.appendChild(emptySrc);
-  }
-
-  // External-source affordance: a toggle revealing a {title, author,
-  // quote, annotation} form. Saving routes through addEvidence with
-  // kind 'external'.
-  var externalSection = document.createElement('div');
-  externalSection.className = 'subtheory-rail-section';
-  var externalToggle = document.createElement('button');
-  externalToggle.type = 'button';
-  externalToggle.className = 'notebook-editor-cancel subtheory-external-toggle';
-  externalToggle.textContent = 'Add external source';
-  externalSection.appendChild(externalToggle);
-  var externalHost = document.createElement('div');
-  externalHost.className = 'subtheory-external-host';
-  externalSection.appendChild(externalHost);
-
-  function buildExternalForm() {
-    var editor = document.createElement('div');
-    editor.className = 'notebook-editor subtheory-external-form';
-    var titleInput = document.createElement('input');
-    titleInput.type = 'text';
-    titleInput.className = 'notebook-editor-title-input';
-    titleInput.setAttribute('placeholder', 'Title');
-    var authorInput = document.createElement('input');
-    authorInput.type = 'text';
-    authorInput.className = 'notebook-editor-title-input';
-    authorInput.setAttribute('placeholder', 'Author');
-    var quoteInput = document.createElement('textarea');
-    quoteInput.className = 'notebook-editor-body';
-    quoteInput.setAttribute('placeholder', 'Quote (optional)');
-    quoteInput.rows = 2;
-    var annInput = document.createElement('textarea');
-    annInput.className = 'notebook-editor-body';
-    annInput.setAttribute('placeholder', 'Annotation (optional)');
-    annInput.rows = 2;
-    var actions = document.createElement('div');
-    actions.className = 'notebook-editor-actions';
-    var saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'notebook-editor-save';
-    saveBtn.textContent = 'Attach';
-    // 10.3: title is required. Mirror the house required-field pattern (the
-    // createX inline editor): Attach stays disabled until the title trims
-    // non-empty, re-evaluated on input, with a defensive guard on save.
-    function externalTitleOk() {
-      return titleInput.value.replace(/^\s+|\s+$/g, '').length > 0;
-    }
-    function refreshExternalSave() {
-      saveBtn.disabled = !externalTitleOk();
-    }
-    titleInput.addEventListener('input', refreshExternalSave);
-    refreshExternalSave();
-    var cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'notebook-editor-cancel';
-    cancelBtn.textContent = 'Cancel';
-    saveBtn.addEventListener('click', function() {
-      if (!externalTitleOk()) { return; }
-      addEvidence(id, { kind: 'external',
-        external: { title: titleInput.value, author: authorInput.value },
-        quote: quoteInput.value, annotation: annInput.value });
-      externalHost.innerHTML = '';
-      refreshAttached();
-    });
-    cancelBtn.addEventListener('click', function() {
-      externalHost.innerHTML = '';
-    });
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
-    editor.appendChild(titleInput);
-    editor.appendChild(authorInput);
-    editor.appendChild(quoteInput);
-    editor.appendChild(annInput);
-    editor.appendChild(actions);
-    return editor;
-  }
-
-  externalToggle.addEventListener('click', function() {
-    if (externalHost.firstChild) {
-      externalHost.innerHTML = '';
-      return;
-    }
-    externalHost.appendChild(buildExternalForm());
-  });
-
-  // S6.3: default rail = attached list + a full-width disclosure button;
-  // the picker collapses behind it. Disclosure is a LOCAL classList flip
-  // on pickerWrap -- NO renderSubTheoryPage re-render, so un-blurred prose
-  // survives (the same contract refreshAttached protects). Attaching does
-  // NOT close the picker (multi-attach); refreshAttached repaints the
-  // attached list. 10.5.1: label is "+ Attach evidence" (books are not the
-  // only evidence), single literal via attachLabel; the external-source
-  // section mounts FIRST so it reads at the same disclosure level as the
-  // book list instead of buried beneath every from-this-arc row.
-  var pickerWrap = document.createElement('div');
-  pickerWrap.className = 'subtheory-picker-wrap';
-  pickerWrap.appendChild(externalSection);
-  pickerWrap.appendChild(sourceSection);
-
-  var attachLabel = '+ Attach evidence';
-  var attachBtn = document.createElement('button');
-  attachBtn.type = 'button';
-  attachBtn.className = 'subtheory-attach-book';
-  attachBtn.textContent = attachLabel;
-  attachBtn.addEventListener('click', function() {
-    if (pickerWrap.classList.contains('open')) {
-      pickerWrap.classList.remove('open');
-      attachBtn.textContent = attachLabel;
-    } else {
-      pickerWrap.classList.add('open');
-      attachBtn.textContent = 'Done';
-    }
-  });
-
-  rail.appendChild(attachedSection);
-  rail.appendChild(attachBtn);
-  rail.appendChild(pickerWrap);
-  refreshAttached();
-
-  // Mobile-only Evidence toggle sits at the top of the prose column.
-  main.insertBefore(railToggle, main.firstChild);
-
-  // Wave 3 (The Page): connections foot -- one row per real linkedSubTheories
-  // id: the partner's PraxisMarks glyph + its title. NO relation label (the data
-  // carries none; the mockup's relation words are placeholder). "+ draw a
-  // connection" routes to the parent arc constellation, where the existing
-  // linkSubTheories Connect flow lives (preserve, never rebuild).
+  // Connections foot — one row per real linkedSubTheories id. "+ draw a
+  // connection" routes to the parent arc constellation (existing flow, preserved).
   var stConn = document.createElement('footer');
   stConn.className = 'st-connections';
   var stConnHead = document.createElement('div');
@@ -11035,13 +10029,11 @@ function renderSubTheoryPage(id) {
     location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : 'arcs';
   });
   stConn.appendChild(stConnAdd);
-  // stConn (connections footer) is appended to the .st-center SIBLING below the
-  // sheet at the grid assembly (Wave 3 ruling 4) -- NOT inside .st-main.
 
-  // Wave 3 (The Page): Yumi's cyan margin -- connective notes drawn ONLY from
-  // real signals (the sub's marked passages + the reader-model summary), never a
-  // summary of the user's own prose. Each note is dismissable. Gated by the
-  // master yumiReadsAlong consent. Yumi is ALWAYS cyan (--lum-cyan), never a mark.
+  // Yumi's margin — connective notes from REAL signals (the sub's marked passages
+  // + the reader-model summary), never a summary of the user's prose. Dismissable.
+  // Gated by the master yumiReadsAlong consent. (R#8/Stage 6 recolors the CSS from
+  // cyan to the canon gold/amber presence — markup unchanged.)
   var stYumi = document.createElement('aside');
   stYumi.className = 'st-yumi';
   var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
@@ -11094,22 +10086,71 @@ function renderSubTheoryPage(id) {
     }
   }
 
-  // Wave 3 (The Page): the 3-column reading-room grid -- evidence rail (left) ·
-  // the lifted sheet + connections (center) · Yumi's cyan margin (right).
-  // Wave 3 ruling 4: connections become a SIBLING FOOTER below the sheet (mockup),
-  // not inside .st-main. The center grid column is .st-center = the sheet (.st-main)
-  // + the connections footer (stConn) as siblings.
+  // The reading-room grid — read hero + connections (center) · Yumi's margin
+  // (right). The evidence-attach rail column is GONE with the editor: a 2-column
+  // read grid, not the old 3-column compose grid.
   var stCenter = document.createElement('div');
   stCenter.className = 'st-center';
-  stCenter.appendChild(main);
+  stCenter.appendChild(stReadHero);
   stCenter.appendChild(stConn);
   var stGrid = document.createElement('div');
   stGrid.className = 'st-grid';
-  stGrid.appendChild(rail);
   stGrid.appendChild(stCenter);
   stGrid.appendChild(stYumi);
   wrap.appendChild(stGrid);
-  wrap.appendChild(backdrop);
+
+  // R#6: WALK-NAV — prev/next between sibling sub-theories of the SAME arc
+  // (finished room only), the arc's name as the spine. Consumes the arc's
+  // existing oldest-first order (_arcDetailBuildSubTheoryData); text links only,
+  // no constellation shape-click mount (that's R11).
+  function stWalkSide(rec, dir, posN) {
+    var side = document.createElement('a');
+    side.className = 'st-walknav-side st-walknav-' + dir;
+    if (!rec) { side.className = side.className + ' st-walknav-empty'; return side; }
+    side.href = '#subtheory/' + rec.id;
+    var arrow = document.createElement('span');
+    arrow.className = 'st-walknav-arrow';
+    arrow.textContent = (dir === 'prev') ? '‹' : '›';
+    var label = document.createElement('span');
+    label.className = 'st-walknav-label';
+    label.appendChild(document.createTextNode('Sub-theory ' + posN + ' '));
+    var lem = document.createElement('em');
+    lem.textContent = rec.header || 'Untitled sub-theory';
+    label.appendChild(lem);
+    if (dir === 'prev') { side.appendChild(arrow); side.appendChild(label); }
+    else { side.appendChild(label); side.appendChild(arrow); }
+    return side;
+  }
+  if (published && subTheory.arcId && state.arcs && state.arcs[subTheory.arcId]
+      && typeof _arcDetailBuildSubTheoryData === 'function') {
+    var stArcRec = state.arcs[subTheory.arcId];
+    var stSibData = _arcDetailBuildSubTheoryData(stArcRec);
+    var stSibs = (stSibData && stSibData.subTheories) ? stSibData.subTheories : [];
+    var stMyIdx = -1, wni;
+    for (wni = 0; wni < stSibs.length; wni++) {
+      if (stSibs[wni] && stSibs[wni].id === id) { stMyIdx = wni; break; }
+    }
+    if (stMyIdx !== -1 && stSibs.length > 1) {
+      var stPrev = (stMyIdx > 0) ? stSibs[stMyIdx - 1] : null;
+      var stNext = (stMyIdx < stSibs.length - 1) ? stSibs[stMyIdx + 1] : null;
+      var stWalk = document.createElement('nav');
+      stWalk.className = 'st-walknav';
+      stWalk.setAttribute('aria-label', 'Sibling sub-theories in this arc');
+      stWalk.appendChild(stWalkSide(stPrev, 'prev', stMyIdx));
+      var stSpine = document.createElement('div');
+      stSpine.className = 'st-walknav-spine';
+      var stTh1 = document.createElement('span'); stTh1.className = 'st-walknav-thread'; stSpine.appendChild(stTh1);
+      var stArcName = document.createElement('span');
+      stArcName.className = 'st-walknav-arcname';
+      stArcName.textContent = stArcRec.title || 'this arc';
+      stSpine.appendChild(stArcName);
+      var stTh2 = document.createElement('span'); stTh2.className = 'st-walknav-thread'; stSpine.appendChild(stTh2);
+      stWalk.appendChild(stSpine);
+      stWalk.appendChild(stWalkSide(stNext, 'next', stMyIdx + 2));
+      wrap.appendChild(stWalk);
+    }
+  }
+
   host.appendChild(wrap);
 }
 
