@@ -3579,9 +3579,11 @@ function renderArcsPage() {
   _arcSubsIndex = _buildArcSubsIndex();
 
   var wrap = document.createElement('section');
-  // Wave 7 · Surface C: .lum-amber atmosphere supplies the amber "your thinking"
-  // ground (lumen-amber.css); the existing .arcs layout rules are reskinned below.
-  wrap.className = 'arcs lum-amber';
+  // R5 · Surface C: Universal v1.2 LIGHT skin via Option-B — the route stays in
+  // umberGroundDark (body data-ground=dark), and the scoped .arcs.lum-amber-deep
+  // block (components.css) re-points the globals the .arcs rules consume to the
+  // shared Shelf/Home light set. (Was 'arcs lum-amber' — the dark Wave 7 skin.)
+  wrap.className = 'arcs lum-amber-deep';
 
   // Umber port (surface 3): the mock .arcs-head -- eyebrow + title + teaching.
   // The header "+ Create an arc" button is dropped; create is reached via the
@@ -12747,7 +12749,10 @@ function renderArcDetail(arcId) {
   // Wave 1: convert the arc interior to the Amber/Lumen "your thinking" room
   // (.lum-amber, lumen-amber.css:15). Faces = Field / Read / Page (List retired,
   // F-D1). The .arcfield.lum-amber block layers lumen over the theme-token base.
-  wrap.className = 'arcfield lum-amber';
+  // R5 S2: + arcfield-warm converts the interior chrome to a WARM-DIM room
+  // (toasted parchment, dark ink kept — no inversion); the field stage stays deep
+  // cognac (dark-exception) and the visitor room (renderInteract) is separate.
+  wrap.className = 'arcfield lum-amber arcfield-warm';
 
   // Head (mock .arcfield-head): .t block (eyebrow + the question + a computed
   // sub-meta line) on the left, the List/Web .seg on the right. arc.title IS
@@ -12802,25 +12807,10 @@ function renderArcDetail(arcId) {
 
   header.appendChild(headT);
 
-  // 9.2 Checkpoint E: launch a new sub-theory under this arc. Gated on a
-  // signed-in user exactly like the notebook "+ New entry" / "+ New arc"
-  // affordances. onClick routes to the new-subtheory hash; renderRoute
-  // mints the draft and redirects to #subtheory/<id>. Reuses the
-  // notebook create-button class -- no new CSS this stage.
-  //
-  // Stage 9.6c.1: suppressed in web view -- the constellation control bar
-  // below carries its own + Sub-theory button, so showing this header one
-  // too would duplicate the affordance. List view keeps it.
-  if (user && arcFace !== 'field') {
-    var newSubTheoryBtn = document.createElement('button');
-    newSubTheoryBtn.type = 'button';
-    newSubTheoryBtn.className = 'notebook-new-arc arc-detail-addsub';
-    newSubTheoryBtn.textContent = '+ Sub-theory';
-    newSubTheoryBtn.addEventListener('click', function() {
-      location.hash = 'arc/' + arcId + '/new-subtheory';
-    });
-    header.appendChild(newSubTheoryBtn);
-  }
+  // R5 D4 (AF6): the header-only "+ Sub-theory" button is retired here — a single
+  // canonical control (.arcfield-addsub-canon) now lives in the head control column
+  // (.arcfield-headctl, built with the faces seg below) and is visible across ALL
+  // faces, not only Read/Page as this suppressed-in-Field button was.
 
   // 3.9-b: delete button opens the in-DOM confirm panel mounted in
   // #arc-detail-confirm-host. arcId captured in the click closure.
@@ -12852,11 +12842,13 @@ function renderArcDetail(arcId) {
     header.appendChild(deleteBtn);
   }
 
-  // List / Web view toggle (mock .seg, in the head). Active gets .is-on; click
-  // persists via setArcViewMode + re-enters renderArcDetail (idempotent — the
-  // top clears host.innerHTML).
-  // Wave 1 (F-D1): Field / Read / Page faces (List retired). New persisted face
-  // pref (praxis_arc_face) -- getArcViewMode stays list/web-locked and untouched.
+  // Head control column (mock .arcfield-headctl): the Field/Read/Page faces seg +
+  // the ONE canonical +Sub-theory control, stacked at the head's right edge.
+  // Wave 1 (F-D1): faces = Field / Read / Page (List retired); persisted face pref
+  // praxis_arc_face -- getArcViewMode stays list/web-locked and untouched.
+  var headctl = document.createElement('div');
+  headctl.className = 'arcfield-headctl';
+
   var toolbar = document.createElement('div');
   toolbar.className = 'seg arcfield-faces';
   toolbar.setAttribute('role', 'tablist');
@@ -12878,8 +12870,23 @@ function renderArcDetail(arcId) {
       toolbar.appendChild(faceBtn);
     })(ARC_FACES[afi][0], ARC_FACES[afi][1]);
   }
+  headctl.appendChild(toolbar);
 
-  header.appendChild(toolbar);
+  // R5 D4 (AF6): the ONE canonical + Sub-theory control (signed-in only), visible on
+  // every face. Supersedes the retired header button, the dead unappended stControlBar
+  // instance in Field, and the Page-face empty-state's own separate CTA.
+  if (user) {
+    var addSubCanon = document.createElement('button');
+    addSubCanon.type = 'button';
+    addSubCanon.className = 'arcfield-addsub-canon';
+    addSubCanon.textContent = '+ Sub-theory';
+    addSubCanon.addEventListener('click', function() {
+      location.hash = 'arc/' + arcId + '/new-subtheory';
+    });
+    headctl.appendChild(addSubCanon);
+  }
+
+  header.appendChild(headctl);
   wrap.appendChild(header);
 
   // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
@@ -12926,30 +12933,13 @@ function renderArcDetail(arcId) {
       unavailable.textContent = 'Constellation renderer unavailable.';
       webContainer.appendChild(unavailable);
     } else {
-      // Stage 9.6c.1: the constellation control bar -- one chrome row
-      // above the SVG. + Sub-theory navigates to the new-subtheory route
-      // (it replaces the header button, which is suppressed in web view
-      // above). Reset (9.6c.2) and Connect (9.6c.4) are now both wired via
-      // their data-st-control hooks: Reset clears placements below, Connect
-      // is handed to attachSubTheoryDrag, which toggles the resonance-edge
-      // arming layer. The marginalia toggle is folded in from 9.6b
-      // unchanged: reads the persisted flag via ls() (default ON, strict
-      // boolean), flips through sv(), and re-enters renderArcDetail in
-      // place (idempotent -- host.innerHTML is cleared at the top, so the
-      // rebuild re-reads the fresh value). That flag feeds the renderer's
-      // showMarginalia option below.
-      var stControlBar = document.createElement('div');
-      stControlBar.className = 'st-control-bar';
-
-      var addSubBtn = document.createElement('button');
-      addSubBtn.type = 'button';
-      addSubBtn.className = 'arc-detail-toggle-btn arc-detail-addsub';
-      addSubBtn.setAttribute('data-st-control', 'add');
-      addSubBtn.textContent = '+ Sub-theory';
-      addSubBtn.addEventListener('click', function() {
-        location.hash = 'arc/' + arcId + '/new-subtheory';
-      });
-      stControlBar.appendChild(addSubBtn);
+      // The constellation control bar. R5 D4 (AF6): the dead, never-appended top
+      // stControlBar "+ Sub-theory" instance is REMOVED — the head canonical control
+      // (.arcfield-addsub-canon) is the single add path. Reset (9.6c.2) and Connect
+      // (9.6c.4) are wired via their data-st-control hooks (Reset clears placements
+      // below; Connect is handed to attachSubTheoryDrag). The marginalia toggle folds
+      // in from 9.6b unchanged (ls/sv, default ON, re-enters renderArcDetail); that
+      // flag feeds the renderer's showMarginalia option below.
 
       // Stage 4 (mockup-fidelity): Connect / Reset / Layers move to a bottom
       // control bar AFTER the constellation (mockup line 202, bottom-right).
@@ -13097,10 +13087,8 @@ function renderArcDetail(arcId) {
         + 'every saved position; it cannot be undone.';
       stControlBarBottom.appendChild(tidyHelp);
 
-      // The top "+ Sub-theory" bar is dropped here — the mock puts that
-      // affordance in the rail (built below); the bottom Connect/Reset/Layers
-      // bar IS the mock's .cstl-controls and stays. (stControlBar/addSubBtn
-      // remain built but unappended — harmless; rail owns add-sub now.)
+      // R5 D4: the top "+ Sub-theory" bar is gone (the head canon owns the add path);
+      // the bottom Connect/Reset/Layers bar IS the mock's .cstl-controls and stays.
 
       var SVG_NS = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(SVG_NS, 'svg');
@@ -13331,16 +13319,8 @@ function _arcFieldPageFace(arc, arcId, user) {
     p0.className = 'arcfield-page-body';
     p0.textContent = bodyText;
     wrap.appendChild(p0);
-    if (user) {
-      var add0 = document.createElement('button');
-      add0.type = 'button';
-      add0.className = 'btn btn-primary arcfield-page-open';
-      add0.textContent = '＋ Add a sub-theory';
-      add0.addEventListener('click', function() {
-        location.hash = 'arc/' + arcId + '/new-subtheory';
-      });
-      wrap.appendChild(add0);
-    }
+    // R5 D4: the Page-face empty-state's own "+ Add" CTA is retired — the head
+    // canonical control (.arcfield-addsub-canon, always visible) is the single add path.
     return wrap;
   }
   var focal = subs[0];

@@ -1728,6 +1728,63 @@
 .arcs.lum-amber .arcs-grid { grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 16px; }
 @media (max-width:759px){ .arcs.lum-amber .arcs-grid { grid-template-columns: 1fr; } }
 
+/* ============================================================================
+   R5 · Surface C — Arcs LIST reskinned to Universal v1.2 LIGHT. Option-B: the
+   route stays in umberGroundDark; this scoped .lum-amber-deep block re-points the
+   globals the base .arcs rules consume to the shared Shelf/Home light set, paints
+   the weathered-light ground, and rebuilds the grid (D1: auto-FIT + grid-auto-rows
+   equal-height tiles). Cards go solid parchment (the .arcs.lum-amber glass +
+   backdrop-blur skin above is now INERT — swept in S6). Marks are the fixed
+   --subtheory jewel hues on a light band; cards carry no renderer text, so no
+   renderer-global (--ink/--sunk) re-point is needed here (unlike the interior field).
+   Re-point values verbatim from the R3 home skin (components.css:11707-11741).
+   ============================================================================ */
+.arcs.lum-amber-deep{
+  max-width:none; margin:0; padding:56px var(--sp-5) 80px; min-height:100vh;
+  --ink:#241710; --ink-2:#645940; --ink-3:#645940; --ink-4:#978b6d;
+  --surface:#fffdf8; --surface-2:#efe7d6; --border:#e3d8c1; --line-2:#e3d8c1;
+  --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441; --gold-light:#d9a441;
+  --thread:#c2a463;
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+  background-color:#f4efe4;
+  background-image:
+    radial-gradient(70% 55% at 14% 2%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(62% 52% at 89% 12%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 72% 104%,rgba(232,176,104,.32) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed;
+}
+.arcs.lum-amber-deep > *{ max-width:1080px; margin-left:auto; margin-right:auto; }
+.arcs.lum-amber-deep .eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-3); }
+.arcs.lum-amber-deep .arcs-title{ font-family:var(--font-serif); color:var(--ink); }
+.arcs.lum-amber-deep .arcs-teach{ font-family:var(--font-serif); font-style:italic; color:var(--ink-2); }
+.arcs.lum-amber-deep .arcs-section-h h2{ font-family:var(--font-serif); color:var(--ink); }
+/* control bar (mock .bar): segmented sort + count */
+.arcs.lum-amber-deep .arcs-bar{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:0 auto 18px; }
+.arcs.lum-amber-deep .arcs-seg{ display:inline-flex; border:1px solid var(--border); border-radius:var(--radius-pill); padding:3px; background:var(--surface-2); }
+.arcs.lum-amber-deep .arcs-seg-btn{ font-family:var(--font-body); font-size:12px; color:var(--ink-3); background:none; border:none; border-radius:var(--radius-pill); padding:6px 13px; cursor:pointer; }
+.arcs.lum-amber-deep .arcs-seg-btn:hover{ color:var(--ink); }
+.arcs.lum-amber-deep .arcs-seg-btn.is-on{ color:#3d2807; background:linear-gradient(180deg,var(--field-1),var(--gold)); font-weight:600; }
+.arcs.lum-amber-deep .arcs-count{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--ink-3); }
+/* D1: auto-fit grid + equal-height tiles */
+.arcs.lum-amber-deep .arcs-grid{ grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); grid-auto-rows:1fr; gap:16px; }
+/* solid parchment card (base .arcs .arc-card fill/border render light via the re-point) */
+.arcs.lum-amber-deep .arc-card:hover{ transform:translateY(-3px); border-color:var(--gold-hi); box-shadow:0 20px 44px -30px rgba(36,23,16,.35); }
+.arcs.lum-amber-deep .arc-card-meta{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.03em; color:var(--ink-2); border-top:1px solid var(--border); }
+/* mini-constellation band — subtle light gradient; jewel-hue marks + muted threads */
+.arcs.lum-amber-deep .arc-card-thumb{ height:112px; margin:0; border:none; border-bottom:1px solid var(--border); border-radius:0; background:radial-gradient(ellipse 90% 80% at 50% 42%, var(--surface-2) 0%, var(--surface) 64%); }
+.arcs.lum-amber-deep .arc-const-threads{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.arcs.lum-amber-deep .arc-const-threads path{ fill:none; stroke:var(--thread); stroke-width:.9; opacity:.7; }
+.arcs.lum-amber-deep .arc-light{ position:absolute; transform:translate(-50%,-50%); line-height:0; }
+.arcs.lum-amber-deep .arc-const-empty::after{ content:""; position:absolute; left:50%; top:50%; width:11px; height:11px; border-radius:50%; transform:translate(-50%,-50%); background:radial-gradient(circle, var(--gold-hi), transparent 70%); opacity:.5; }
+/* begin tile */
+.arcs.lum-amber-deep .arc-card-start{ background:transparent; border:1px dashed var(--ink-3); color:var(--ink-3); }
+.arcs.lum-amber-deep .arc-card-start:hover{ color:var(--gold); border-color:var(--gold); }
+.arcs.lum-amber-deep .arc-card-start-icon{ color:var(--gold); }
+.arcs.lum-amber-deep .arc-card-start-label{ font-family:var(--font-serif); font-style:italic; color:var(--ink-2); }
+@media (max-width:759px){ .arcs.lum-amber-deep .arcs-grid{ grid-template-columns:1fr; } }
+
 /* ===== END ARCS PAGE ===== */
 
 
@@ -11531,6 +11588,68 @@ body.wc-focus .app-nav { opacity:.26; }
   .arcfield.lum-amber .arc-detail-delete{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 1 · THE LIVING FIELD ===== */
+
+/* ============================================================================
+   R5 S2 · Arc INTERIOR — WARM-DIM room (Option-B; source-order beats .arcfield.lum-amber
+   at equal specificity). The interior (scenes a/b/c) is a toasted-parchment room you
+   enter from the light app: the chrome (head, faces seg, rail, Read/Page frames)
+   re-points --lum-* to warm-parchment surfaces with the ink KEPT DARK — no polarity
+   inversion. The FIELD STAGE (.arc-detail-web-view) is the sanctioned DARK exception —
+   deep cognac with a SOFTENED feathered vignette (cognac -> warm-brown -> parchment at the
+   rim) so the interior deepens toward the stage rather than a dark block cut into a light
+   page. The stage, its control bar, and the locked renderer keep the INHERITED dark
+   --lum-* (the re-point is scoped to the chrome containers, which the stage is NOT a
+   descendant of), so they stay light-on-dark and readable. Umber literals live ONLY in the
+   field-stage override (the one sanctioned block). Values mirror the R3 home light set with
+   the surface tier shifted to warm parchment.
+   ============================================================================ */
+/* the room: warm-dim full-bleed ground (paints over the dark body::before) */
+.arcfield.arcfield-warm{
+  background-color:#e9dcbc;
+  background-image:
+    radial-gradient(68% 54% at 16% 3%,  rgba(240,214,158,.55) 0%, rgba(240,214,158,0) 60%),
+    radial-gradient(60% 50% at 88% 12%, rgba(224,190,128,.42) 0%, rgba(224,190,128,0) 62%),
+    radial-gradient(80% 60% at 74% 104%,rgba(214,168,102,.30) 0%, rgba(214,168,102,0) 60%),
+    linear-gradient(160deg,#efe1c1,#e7d2a8);
+  background-attachment:fixed;
+}
+/* chrome re-point — warm-parchment surfaces, DARK ink kept. Scoped to the chrome
+   containers ONLY; the field stage is a sibling and never inherits these. */
+.arcfield.arcfield-warm .arcfield-head,
+.arcfield.arcfield-warm .arcfield-rail,
+.arcfield.arcfield-warm .arcfield-read,
+.arcfield.arcfield-warm .arcfield-page{
+  --lum-base:#f6ecd4; --lum-glass:#f6ecd4; --lum-cloth:#e3d8c1;
+  --lum-glass-bd:#d9c391; --lum-glass-bd-2:#d9c391;
+  --lum-ink:#241710; --lum-ink-2:#645940; --lum-ink-3:#645940; --lum-ink-4:#978b6d;
+  --lum-gold:#a8761a; --lum-gold-l:#c79433; --lum-gold-d:#855410; --lum-gold-ink:#3d2807;
+}
+/* literal rescues — head/faces rules hardcode light-alpha the re-point can't reach */
+.arcfield.arcfield-warm .seg{ background:#e9d9b4; border-color:#d9c391; }
+.arcfield.arcfield-warm .seg-opt{ color:var(--lum-ink-2); }
+.arcfield.arcfield-warm .seg-opt:hover{ color:var(--lum-ink); }
+/* FIELD STAGE — deep cognac + softened feathered vignette (verbatim from the felt-passed
+   mockup .field-room). The ONLY umber-literal block. NOT re-pointed (dark renderer kept). */
+.arcfield.arcfield-warm .arc-detail-web-view{
+  background-color:#2f1c0e;
+  background-image:
+    radial-gradient(72% 60% at 44% 38%, rgba(255,206,74,.12) 0%, rgba(255,206,74,.03) 45%, rgba(255,206,74,0) 70%),
+    radial-gradient(132% 118% at 50% 46%, rgba(47,28,14,0) 60%, rgba(74,49,25,.55) 82%, rgba(231,210,168,.55) 100%);
+  box-shadow:inset 0 0 70px 26px rgba(231,210,168,.14), inset 0 0 100px rgba(255,206,74,.06);
+  border:none;
+}
+/* D5 field-control legibility (S1 built the DOM; styling lands here). Both sit INSIDE the
+   dark stage -> keep the inherited dark --lum-* -> dim-light caption + danger-red Reset. */
+.arcfield.arcfield-warm .arcfield-tidy-help{ flex-basis:100%; font-family:var(--lum-mono); font-size:9.5px; color:var(--lum-ink-3); line-height:1.5; margin:2px 0 0; }
+.arcfield.arcfield-warm .arc-reset-btn{ color:#ffb08a; border-color:rgba(255,142,142,.4); }
+.arcfield.arcfield-warm .arc-reset-btn:hover{ color:#ff8e8e; border-color:#ff8e8e; }
+.arcfield.arcfield-warm .arc-reset-btn::before{ content:'⚠ '; }
+/* D4 · AF6 — ONE canonical +Sub-theory control living in the head, visible across all
+   faces (rides the head warm re-point: gold-deep on parchment, gild on hover). */
+.arcfield.arcfield-warm .arcfield-headctl{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.arcfield.arcfield-warm .arcfield-addsub-canon{ background:var(--lum-base); border:1px solid var(--lum-gold-l); color:var(--lum-gold-d); border-radius:var(--lum-r-pill,999px); padding:7px 15px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.03em; cursor:pointer; white-space:nowrap; }
+.arcfield.arcfield-warm .arcfield-addsub-canon:hover{ background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); color:#3d2807; border-color:transparent; }
+@media (max-width:759px){ .arcfield.arcfield-warm .arcfield-headctl{ align-items:flex-start; } }
 
 /* =============================================================================
    W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;
