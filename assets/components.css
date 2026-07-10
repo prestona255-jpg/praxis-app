@@ -11651,6 +11651,43 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.arcfield-warm .arcfield-addsub-canon:hover{ background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold)); color:#3d2807; border-color:transparent; }
 @media (max-width:759px){ .arcfield.arcfield-warm .arcfield-headctl{ align-items:flex-start; } }
 
+/* ============================================================================
+   R5 S3 · the shared Read SPINE (author _arcFieldReadFace + visitor renderInteract
+   #walk). Scoped under .read-list so it cannot bleed; consumes --lum-* so it adapts
+   to whichever ground it sits in — author warm-dim (.arcfield.arcfield-warm
+   .arcfield-read) OR visitor amber (.itx-root lum-amber-ember). Glow-dot highlight +
+   glow shadows are the mockup's mark-glow literals (like the gilding literals). The
+   threshold cue uses --subtheory-1 (a mark hue), NOT Yumi cyan (covenant).
+   ============================================================================ */
+.read-list{ position:relative; }
+.read-list .read-gutter-svg{ position:absolute; left:0; top:0; width:56px; height:100%; overflow:visible; }
+.read-list .read-row{ position:relative; display:flex; gap:16px; align-items:flex-start; min-height:120px; padding:18px 0 18px 56px; border-bottom:1px solid var(--lum-glass-bd-2); }
+.read-list .read-row:last-child{ border-bottom:none; }
+.read-list .read-mark{ position:absolute; left:0; top:18px; width:46px; height:46px; display:flex; align-items:center; justify-content:center; }
+.read-list .read-mark svg{ width:100%; height:100%; }
+.read-list .read-body{ flex:1; min-width:0; }
+.read-list .read-row-top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:5px; }
+.read-list .read-title{ font-family:var(--lum-serif); font-size:19px; color:var(--lum-ink); margin:0; }
+.read-list .read-title a{ text-decoration:none; color:inherit; }
+.read-list .read-title a:hover{ color:var(--lum-gold-d); }
+.read-list .read-glow{ display:inline-flex; align-items:center; gap:5px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--lum-ink-3); }
+.read-list .read-glow-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.read-list .read-glow-dot.is-bright{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 9px 2px rgba(255,206,74,.55); }
+.read-list .read-glow-dot.is-mature{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold-l) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 6px 1px rgba(242,194,90,.45); }
+.read-list .read-glow-dot.is-forming{ background:var(--lum-glass-bd); box-shadow:none; opacity:.85; }
+.read-list .read-first-line{ font-family:var(--lum-serif); font-size:15px; line-height:1.5; color:var(--lum-ink-2); margin:0 0 4px; max-width:62ch; }
+.read-list .read-meta{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:var(--lum-ink-3); }
+.read-list .read-private{ display:inline-flex; align-items:center; gap:5px; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--lum-ink-3); border:1px solid var(--lum-glass-bd-2); border-radius:999px; padding:2px 8px; }
+.read-list .read-private::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--lum-ink-3); }
+/* arc-level closing (author lens) */
+.arcfield-read .read-closing{ margin-top:26px; padding-top:16px; position:relative; }
+.arcfield-read .read-closing::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent 0%, var(--lum-gold-l) 15%, var(--lum-gold) 50%, var(--lum-gold-l) 85%, transparent 100%); }
+.arcfield-read .read-closing p{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-3); margin:0; }
+/* visitor threshold cue (amber room) */
+.itx-root .room-threshold{ display:flex; align-items:center; gap:12px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--lum-ink-3); margin:6px 0 18px; }
+.itx-root .room-threshold::before{ content:''; width:28px; height:1px; background:linear-gradient(90deg, transparent, var(--subtheory-1)); flex:none; }
+.itx-root .room-threshold::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--subtheory-1), var(--lum-glass-bd-2) 45%, transparent); }
+
 /* =============================================================================
    W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;
    serif-italic search bar w/ amber focus ring, kind chips w/ live counts, results

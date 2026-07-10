@@ -13210,21 +13210,10 @@ function renderArcDetail(arcId) {
 function _arcFieldReadFace(arc) {
   var wrap = document.createElement('div');
   wrap.className = 'arcfield-read';
-  var head = document.createElement('div');
-  head.className = 'arcfield-read-head';
-  var hdot = document.createElement('span');
-  hdot.className = 'dot';
-  hdot.setAttribute('aria-hidden', 'true');
-  head.appendChild(hdot);
-  head.appendChild(document.createTextNode('The threads in your field'));
-  wrap.appendChild(head);
 
   var data = _arcDetailBuildSubTheoryData(arc);
   var subs = (data && data.subTheories) ? data.subTheories : [];
   var edges = (data && data.edges) ? data.edges : [];
-  var byId = {};
-  var i;
-  for (i = 0; i < subs.length; i = i + 1) { byId[subs[i].id] = subs[i]; }
 
   if (subs.length === 0) {
     var noneP = document.createElement('p');
@@ -13234,67 +13223,197 @@ function _arcFieldReadFace(arc) {
     return wrap;
   }
 
-  // (a) the threads: each a real linkedSubTheories A <-> B pair.
-  var threadsWrap = document.createElement('div');
-  threadsWrap.className = 'arcfield-read-threads';
-  if (edges.length === 0) {
-    var noThreads = document.createElement('p');
-    noThreads.className = 'arcfield-read-empty';
-    noThreads.textContent = 'No threads yet. Connect two ideas in the Field to thread a resonance.';
-    threadsWrap.appendChild(noThreads);
-  } else {
-    var e, a, b, row;
-    for (e = 0; e < edges.length; e = e + 1) {
-      a = byId[edges[e].aId];
-      b = byId[edges[e].bId];
-      if (!a || !b) { continue; }
-      row = document.createElement('div');
-      row.className = 'arcfield-thread-row';
-      var an = document.createElement('span');
-      an.className = 'nm';
-      an.textContent = a.header || 'Untitled';
-      var lk = document.createElement('span');
-      lk.className = 'arcfield-thread-link';
-      lk.setAttribute('aria-hidden', 'true');
-      lk.textContent = '⟷';
-      var bn = document.createElement('span');
-      bn.className = 'nm';
-      bn.textContent = b.header || 'Untitled';
-      row.appendChild(an);
-      row.appendChild(lk);
-      row.appendChild(bn);
-      threadsWrap.appendChild(row);
-    }
-  }
-  wrap.appendChild(threadsWrap);
-
-  // (b) each sub-theory + its real connection count (deterministic degree).
+  // Index + real connection degree from the Field's exact edge set.
+  var idxOf = {};
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) { idxOf[subs[i].id] = i; }
   var degree = {};
-  var ej;
-  for (ej = 0; ej < edges.length; ej = ej + 1) {
-    degree[edges[ej].aId] = (degree[edges[ej].aId] || 0) + 1;
-    degree[edges[ej].bId] = (degree[edges[ej].bId] || 0) + 1;
+  var edgePairs = [];
+  var e;
+  for (e = 0; e < edges.length; e = e + 1) {
+    var aId = edges[e].aId, bId = edges[e].bId;
+    degree[aId] = (degree[aId] || 0) + 1;
+    degree[bId] = (degree[bId] || 0) + 1;
+    if (idxOf[aId] != null && idxOf[bId] != null) { edgePairs.push([idxOf[aId], idxOf[bId]]); }
   }
-  var listWrap = document.createElement('div');
-  listWrap.className = 'arcfield-read-subs';
-  var s, srow, sn, sc, d;
-  for (s = 0; s < subs.length; s = s + 1) {
-    d = degree[subs[s].id] || 0;
-    srow = document.createElement('a');
-    srow.className = 'arcfield-read-sub';
-    srow.href = '#subtheory/' + subs[s].id;
-    sn = document.createElement('span');
-    sn.className = 'arcfield-read-sub-name';
-    sn.textContent = subs[s].header || 'Untitled sub-theory';
-    sc = document.createElement('span');
-    sc.className = 'arcfield-read-sub-meta';
-    sc.textContent = (d === 0) ? 'no threads' : (d + (d === 1 ? ' thread' : ' threads'));
-    srow.appendChild(sn);
-    srow.appendChild(sc);
-    listWrap.appendChild(srow);
+
+  // Author-lens rows: real mark, maturity (glow), first line, connection count,
+  // and a private marker on draft rows (Published/Private the only visibility axis).
+  var rows = [];
+  for (i = 0; i < subs.length; i = i + 1) {
+    var sub = subs[i];
+    var rec = (state.subTheories && state.subTheories[sub.id]) ? state.subTheories[sub.id] : sub;
+    var mat = (typeof _stComputeMaturity === 'function') ? _stComputeMaturity(rec) : 0;
+    rows.push({
+      id:          sub.id,
+      title:       sub.header || (rec && rec.header) || 'Untitled sub-theory',
+      firstLine:   _arcReadFirstLine(rec),
+      markSub:     rec,
+      maturityKey: _arcReadMaturityKey(mat),
+      maturityWord: _matWordFromScore(mat),
+      connCount:   degree[sub.id] || 0,
+      isDraft:     !!(rec && rec.status === 'draft')
+    });
   }
-  wrap.appendChild(listWrap);
+  wrap.appendChild(_arcReadSpine(rows, { edges: edgePairs }));
+
+  // Arc-level closing section (deterministic summary — no model call).
+  var closing = document.createElement('div');
+  closing.className = 'read-closing';
+  var cp = document.createElement('p');
+  cp.textContent = subs.length + (subs.length === 1 ? ' sub-theory' : ' sub-theories') + ' · '
+    + edges.length + (edges.length === 1 ? ' thread' : ' threads') + ' in this field';
+  closing.appendChild(cp);
+  wrap.appendChild(closing);
   return wrap;
+}
+
+// R5 S3: the SHARED, deterministic Read spine — one renderer, two lenses (the
+// author _arcFieldReadFace above, and the visitor renderInteract #walk below).
+// rows = [{ id?, title, firstLine, markSub? (a sub record for bookSubMarkHTML) |
+// markId? (a hash id), maturityKey?/'bright'|'mature'|'forming', maturityWord?,
+// connCount? (number), isDraft? }]. opts = { edges? [[i,j]] -> a gutter thread,
+// onRow?(rowEl,i,row) }. Renders WHAT IS PRESENT: the visitor payload carries only
+// {header,body}, so its rows have no maturity/edges/private markers. NO model call.
+function _arcReadSpine(rows, opts) {
+  opts = opts || {};
+  var list = document.createElement('div');
+  list.className = 'read-list';
+
+  var edges = (opts.edges instanceof Array) ? opts.edges : [];
+  if (edges.length && rows.length) {
+    var GNS = 'http://www.w3.org/2000/svg';
+    var gsvg = document.createElementNS(GNS, 'svg');
+    gsvg.setAttribute('class', 'read-gutter-svg');
+    gsvg.setAttribute('viewBox', '0 0 56 ' + (rows.length * 140));
+    gsvg.setAttribute('preserveAspectRatio', 'none');
+    gsvg.setAttribute('aria-hidden', 'true');
+    _buildReadGutterInto(gsvg, rows.length, edges);
+    list.appendChild(gsvg);
+  }
+
+  var i;
+  for (i = 0; i < rows.length; i = i + 1) {
+    var r = rows[i];
+    var row = document.createElement('div');
+    row.className = 'read-row';
+
+    var mk = document.createElement('div');
+    mk.className = 'read-mark';
+    mk.setAttribute('aria-hidden', 'true');
+    if (typeof bookSubMarkHTML === 'function') {
+      mk.innerHTML = bookSubMarkHTML(r.markSub ? r.markSub : { id: r.markId }, 40);
+    }
+    row.appendChild(mk);
+
+    var body = document.createElement('div');
+    body.className = 'read-body';
+
+    var top = document.createElement('div');
+    top.className = 'read-row-top';
+    var h = document.createElement('h3');
+    h.className = 'read-title';
+    if (r.id) {
+      var link = document.createElement('a');
+      link.href = '#subtheory/' + r.id;
+      link.textContent = r.title || 'Untitled sub-theory';
+      h.appendChild(link);
+    } else {
+      h.textContent = r.title || 'Untitled sub-theory';
+    }
+    top.appendChild(h);
+    if (r.maturityKey) {
+      var glow = document.createElement('span');
+      glow.className = 'read-glow';
+      var gd = document.createElement('span');
+      gd.className = 'read-glow-dot is-' + r.maturityKey;
+      gd.setAttribute('aria-hidden', 'true');
+      glow.appendChild(gd);
+      glow.appendChild(document.createTextNode(r.maturityWord || r.maturityKey));
+      top.appendChild(glow);
+    }
+    if (r.isDraft) {
+      var priv = document.createElement('span');
+      priv.className = 'read-private';
+      priv.textContent = 'private';
+      top.appendChild(priv);
+    }
+    body.appendChild(top);
+
+    if (r.firstLine) {
+      var fl = document.createElement('p');
+      fl.className = 'read-first-line';
+      fl.textContent = r.firstLine;
+      body.appendChild(fl);
+    }
+
+    if (typeof r.connCount === 'number') {
+      var meta = document.createElement('div');
+      meta.className = 'read-meta';
+      meta.textContent = r.connCount + (r.connCount === 1 ? ' thread' : ' threads');
+      body.appendChild(meta);
+    }
+
+    row.appendChild(body);
+    if (typeof opts.onRow === 'function') { opts.onRow(row, i, r); }
+    list.appendChild(row);
+  }
+  return list;
+}
+
+// Ported from the felt-passed mockup buildReadGutter: draw a thread curve in the
+// left gutter between the rows an edge joins (a wider bow for a skip edge), plus a
+// node dot per row. Index-proportional centers with preserveAspectRatio=none so the
+// SVG stretches to the list; a deterministic approximation, matching the mockup.
+function _buildReadGutterInto(svg, rowCount, edgesIdx) {
+  var centers = [];
+  var i;
+  for (i = 0; i < rowCount; i = i + 1) { centers.push(60 + i * 140); }
+  var out = '';
+  for (i = 0; i < edgesIdx.length; i = i + 1) {
+    var ai = edgesIdx[i][0], bi = edgesIdx[i][1];
+    if (centers[ai] == null || centers[bi] == null) { continue; }
+    var a = centers[ai], b = centers[bi];
+    var skip = Math.abs(ai - bi) > 1;
+    var gx = skip ? 8 : 28;
+    out = out + '<path d="M 28 ' + a + ' Q ' + gx + ' ' + ((a + b) / 2) + ' 28 ' + b
+      + '" fill="none" stroke="var(--lum-gold-l)" stroke-width="1.6" opacity="' + (skip ? '.85' : '.6') + '"></path>';
+  }
+  for (i = 0; i < centers.length; i = i + 1) {
+    out = out + '<circle cx="28" cy="' + centers[i] + '" r="4" fill="var(--lum-gold)"></circle>';
+  }
+  svg.innerHTML = out;
+}
+
+// First display line of a sub-theory body (bodyPublic for a local record, or the
+// projected body field for a visitor payload row). One sentence-ish, capped; display only.
+function _arcReadFirstLine(rec) {
+  var body = (rec && typeof rec.bodyPublic === 'string' && rec.bodyPublic) ? rec.bodyPublic
+    : ((rec && typeof rec.body === 'string') ? rec.body : '');
+  body = body.replace(/^\s+/, '');
+  if (!body) { return ''; }
+  var cut = body.length;
+  var dot = body.indexOf('. ');
+  if (dot > 20 && dot < 160) { cut = dot + 1; }
+  if (cut > 180) { cut = 180; }
+  var out = body.slice(0, cut).replace(/\s+$/, '');
+  if (cut < body.length && out.charAt(out.length - 1) !== '.') { out = out + '…'; }
+  return out;
+}
+
+// Maturity glow key (the mockup defines 3 lit states); the 5 maturity WORDS collapse
+// onto them: seed/forming -> forming, warming/mature -> mature, bright -> bright.
+function _arcReadMaturityKey(m) {
+  if (m < 0.4) { return 'forming'; }
+  if (m < 0.7) { return 'mature'; }
+  return 'bright';
+}
+// Per-sub maturity word from a [0,1] score (mirrors _arcMaturityWord's ramp).
+function _matWordFromScore(m) {
+  if (m < 0.2) { return 'forming'; }
+  if (m < 0.4) { return 'warming'; }
+  if (m < 0.7) { return 'mature'; }
+  return 'bright';
 }
 
 // Wave 1: the PAGE face -- a real STUB. Shows the focal (first) sub-theory's
@@ -17518,38 +17637,38 @@ function renderInteract(arcId) {
     var subs = (data.subTheories instanceof Array) ? data.subTheories : [];
     var threadHosts = {};
 
+    // R5 S3: a threshold cue marks the entry into the published reading room.
+    var threshold = document.createElement('p');
+    threshold.className = 'room-threshold';
+    threshold.textContent = "You've entered a published reading room";
+    wrap.appendChild(threshold);
+
+    // R5 S3: the visitor read spine — the SAME _arcReadSpine renderer as the author
+    // Read face. The published payload carries only {header,body}, so rows are title +
+    // first-line + mark (no maturity/edges/private). The W6.5 build-on social layer is
+    // PRESERVED: onRow attaches each row's .itx-thread host and sets threadHosts[''+i]
+    // (keyed by the sub index == the composer's targetAnchor), so placeContrib and the
+    // composer anchor exactly as before. Mark id stays the arcId:index hash (S5 wires
+    // the real mark identity into the publish payload).
     var subsWrap = document.createElement('div');
     subsWrap.className = 'itx-subs';
-    var si;
-    for (si = 0; si < subs.length; si = si + 1) {
-      (function (idx, sub) {
-        if (!sub) { return; }
-        var block = document.createElement('article');
-        block.className = 'itx-sub';
-        var mk = document.createElement('span');
-        mk.className = 'itx-sub-mark';
-        if (typeof bookSubMarkHTML === 'function') { mk.innerHTML = bookSubMarkHTML({ id: arcId + ':' + idx }, 24); }
-        block.appendChild(mk);
-        var stBody = document.createElement('div');
-        stBody.className = 'itx-sub-body-wrap';
-        var sh = document.createElement('h3');
-        sh.className = 'itx-sub-head';
-        sh.textContent = sub.header ? sub.header : 'Untitled sub-theory';
-        stBody.appendChild(sh);
-        if (sub.body) {
-          var sbp = document.createElement('p');
-          sbp.className = 'itx-sub-body';
-          sbp.textContent = sub.body;
-          stBody.appendChild(sbp);
-        }
-        var thread = document.createElement('div');
-        thread.className = 'itx-thread';
-        threadHosts['' + idx] = thread;
-        stBody.appendChild(thread);
-        block.appendChild(stBody);
-        subsWrap.appendChild(block);
-      })(si, subs[si]);
+    var vrows = [];
+    var vsi;
+    for (vsi = 0; vsi < subs.length; vsi = vsi + 1) {
+      var vsub = subs[vsi] || {};
+      vrows.push({
+        markId:    arcId + ':' + vsi,
+        title:     vsub.header ? vsub.header : 'Untitled sub-theory',
+        firstLine: _arcReadFirstLine(vsub)
+      });
     }
+    subsWrap.appendChild(_arcReadSpine(vrows, { onRow: function (rowEl, i) {
+      var thread = document.createElement('div');
+      thread.className = 'itx-thread';
+      threadHosts['' + i] = thread;
+      var bodyEl = rowEl.querySelector('.read-body');
+      (bodyEl || rowEl).appendChild(thread);
+    } }));
     wrap.appendChild(subsWrap);
 
     var arcThreadWrap = document.createElement('div');
