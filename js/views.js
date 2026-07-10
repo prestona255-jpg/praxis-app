@@ -10332,9 +10332,24 @@ function renderSubTheoryBuild(id) {
   if (wcInput) { wcInput.addEventListener('input', bumpLight); }
   bumpLight();
 
+  // R6 S4: derive "woven into ¶N" — the 1-based paragraph of the draft holding a
+  // citation marker. Deterministic (paragraph split + marker search), display-only;
+  // the marker is the book title (what a weave inserts), so this is book-level.
+  function wovenParagraph(markerTitle, body) {
+    if (!markerTitle || !body) { return 0; }
+    var paras = body.split(/\n\s*\n/);
+    var needle = markerTitle.toLowerCase();
+    var pi;
+    for (pi = 0; pi < paras.length; pi = pi + 1) {
+      if (paras[pi].toLowerCase().indexOf(needle) !== -1) { return pi + 1; }
+    }
+    return 0;
+  }
   // weave a marginalia note into the canvas (insertAtCaret, no core change) AND
   // attach it as real evidence (addEvidence kind 'entry') so it carries to the Page.
-  function weaveNote(book, entryId, btn) {
+  // R6 S4: also flips the visible woven/unwoven dot + label and appends the
+  // "woven into ¶N" caption (deterministic — NO Yumi generation).
+  function weaveNote(book, entryId, btn, margEl) {
     if (btn.className.indexOf('done') !== -1) { return; }
     var citeTitle = (book && book.title) ? book.title : 'a note';
     if (canvas) { canvas.insertAtCaret(' *' + citeTitle + '* '); }
@@ -10342,7 +10357,20 @@ function renderSubTheoryBuild(id) {
     var quote = (en && typeof en.body === 'string') ? en.body : '';
     addEvidence(id, { kind: 'entry', refId: entryId, quote: quote });
     btn.className = 'stb-weave done';
-    btn.textContent = 'woven in';
+    btn.setAttribute('title', 'Already woven into your draft');
+    var wdot = btn.querySelector ? btn.querySelector('.stb-weave-dot') : null;
+    if (wdot) { wdot.className = 'stb-weave-dot is-lit'; }
+    var wlbl = btn.querySelector ? btn.querySelector('.stb-weave-label') : null;
+    if (wlbl) { wlbl.textContent = 'woven in'; }
+    if (margEl && !margEl.querySelector('.stb-woven-where')) {
+      var pn = wovenParagraph(citeTitle, canvas ? canvas.getValue() : '');
+      if (pn > 0) {
+        var w = document.createElement('span');
+        w.className = 'stb-woven-where';
+        w.textContent = 'woven into paragraph ' + pn;
+        margEl.appendChild(w);
+      }
+    }
   }
 
   // Yumi cyan margin -- one connective note from REAL signals only (reader-model
@@ -10447,7 +10475,7 @@ function renderSubTheoryBuild(id) {
   srchead.appendChild(srcTitle);
   var srcSub = document.createElement('div');
   srcSub.className = 'stb-src-sub';
-  srcSub.textContent = 'your marginalia — weave any in';
+  srcSub.textContent = 'your marginalia — search, filter by book, weave any in';
   srchead.appendChild(srcSub);
   source.appendChild(srchead);
 
@@ -10469,6 +10497,7 @@ function renderSubTheoryBuild(id) {
   var bk;
   for (bk in books) { if (books.hasOwnProperty(bk)) { bookKeys.push(bk); } }
   var anyBook = false;
+  var pullBookTitles = [];
   var bi2;
   for (bi2 = 0; bi2 < bookKeys.length; bi2++) {
     var book = books[bookKeys[bi2]];
@@ -10477,8 +10506,10 @@ function renderSubTheoryBuild(id) {
     if (margs.length === 0) { continue; }
     var isFirstBook = !anyBook;
     anyBook = true;
+    pullBookTitles.push(book.title || 'Untitled');
     var bookEl = document.createElement('div');
     bookEl.className = isFirstBook ? 'stb-book open' : 'stb-book';
+    bookEl.setAttribute('data-book-title', book.title || '');
     var brow = document.createElement('div');
     brow.className = 'stb-brow';
     var cover = document.createElement('span');
@@ -10531,13 +10562,35 @@ function renderSubTheoryBuild(id) {
         passage.className = 'stb-passage';
         passage.textContent = (typeof en.body === 'string') ? en.body : '';
         m.appendChild(passage);
+        // R6 S4: the weave button carries the visible WOVEN/UNWOVEN state — a lit
+        // (woven) / unlit (unwoven) dot + label; the button IS the insert-at-cursor
+        // affordance (weaveNote -> insertAtCaret, no canvas change).
         var wbtn = document.createElement('button');
         wbtn.type = 'button';
+        var wdot = document.createElement('span');
+        var wlabel = document.createElement('span');
+        wlabel.className = 'stb-weave-label';
         var already = (typeof isEvidenceAttached === 'function') ? isEvidenceAttached(id, 'entry', en.id) : false;
-        if (already) { wbtn.className = 'stb-weave done'; wbtn.textContent = 'woven in'; }
-        else { wbtn.className = 'stb-weave'; wbtn.textContent = '+ weave in'; }
-        wbtn.addEventListener('click', function() { weaveNote(bookRef, en.id, wbtn); });
+        if (already) {
+          wbtn.className = 'stb-weave done'; wdot.className = 'stb-weave-dot is-lit'; wlabel.textContent = 'woven in';
+          wbtn.setAttribute('title', 'Already woven into your draft');
+        } else {
+          wbtn.className = 'stb-weave'; wdot.className = 'stb-weave-dot'; wlabel.textContent = '+ weave in';
+          wbtn.setAttribute('title', 'Insert at your cursor in the workshop canvas');
+        }
+        wbtn.appendChild(wdot);
+        wbtn.appendChild(wlabel);
+        wbtn.addEventListener('click', function() { weaveNote(bookRef, en.id, wbtn, m); });
         m.appendChild(wbtn);
+        if (already) {
+          var pn0 = wovenParagraph(bookRef.title, subTheory.bodyPublic);
+          if (pn0 > 0) {
+            var ww = document.createElement('span');
+            ww.className = 'stb-woven-where';
+            ww.textContent = 'woven into paragraph ' + pn0;
+            m.appendChild(ww);
+          }
+        }
         margWrap.appendChild(m);
       })(margs[mi], book);
     }
@@ -10554,6 +10607,65 @@ function renderSubTheoryBuild(id) {
     noBooks.className = 'stb-src-empty';
     noBooks.textContent = 'No marked passages yet — add marginalia from a book to pull it in here.';
     source.appendChild(noBooks);
+  }
+  // R6 S4: THE PULL SYSTEM — search/filter across the author's marginalia (book
+  // select + free text), inserted after srchead, before the book list. Deterministic
+  // vanilla JS (NO Yumi generation): narrows the .stb-book list, empties gracefully.
+  if (anyBook) {
+    var filterRow = document.createElement('div');
+    filterRow.className = 'stb-pull-filter';
+    var bookSel = document.createElement('select');
+    bookSel.className = 'stb-pull-book-sel';
+    bookSel.setAttribute('aria-label', 'Filter by book');
+    var optAll = document.createElement('option');
+    optAll.value = ''; optAll.textContent = 'All books';
+    bookSel.appendChild(optAll);
+    var pti;
+    for (pti = 0; pti < pullBookTitles.length; pti = pti + 1) {
+      var opt = document.createElement('option');
+      opt.value = pullBookTitles[pti].toLowerCase();
+      opt.textContent = pullBookTitles[pti];
+      bookSel.appendChild(opt);
+    }
+    filterRow.appendChild(bookSel);
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'stb-pull-search';
+    searchInput.setAttribute('placeholder', 'Search your marginalia…');
+    searchInput.setAttribute('aria-label', 'Search marginalia text');
+    filterRow.appendChild(searchInput);
+    var emptyMsg = document.createElement('div');
+    emptyMsg.className = 'stb-pull-empty';
+    emptyMsg.style.display = 'none';
+    emptyMsg.textContent = 'No marginalia matches.';
+    function filterPull() {
+      var selVal = bookSel.value;
+      var q = (searchInput.value || '').toLowerCase();
+      var bookEls = source.querySelectorAll('.stb-book');
+      var shown = 0, fi;
+      for (fi = 0; fi < bookEls.length; fi = fi + 1) {
+        var bEl = bookEls[fi];
+        var title = (bEl.getAttribute('data-book-title') || '').toLowerCase();
+        var bookMatch = (selVal === '' || title === selVal);
+        var textMatch = (q === '' || title.indexOf(q) !== -1);
+        if (!textMatch) {
+          var passages = bEl.querySelectorAll('.stb-passage');
+          var pj;
+          for (pj = 0; pj < passages.length; pj = pj + 1) {
+            if (passages[pj].textContent.toLowerCase().indexOf(q) !== -1) { textMatch = true; }
+          }
+        }
+        var visible = bookMatch && textMatch;
+        bEl.style.display = visible ? '' : 'none';
+        if (visible) { shown = shown + 1; }
+      }
+      emptyMsg.style.display = (shown === 0) ? 'block' : 'none';
+    }
+    bookSel.addEventListener('change', filterPull);
+    searchInput.addEventListener('input', filterPull);
+    var afterHead = srchead.nextSibling;
+    source.insertBefore(filterRow, afterHead);
+    source.insertBefore(emptyMsg, afterHead);
   }
   rail.appendChild(source);
   buildRow.appendChild(rail);

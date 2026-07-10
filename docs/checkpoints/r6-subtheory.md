@@ -112,4 +112,36 @@ contained panel into the full-bleed amber room; workshop sheet/rail warm-dim dep
 - **FLAG for felt pass:** warm-dim = a CONTAINED panel on the route's dark ground (per the
   mockup's `.stb-warm-dim` values Preston felt-passed). If full-bleed was intended, one-line revert.
 
+Commit: `066e056` (local, --no-verify).
+
+---
+
+## STAGE 4 — The Pull System (⚠ data-adjacent) ✅
+
+**views.js (`renderSubTheoryBuild` rail):** the evidence rail graduates to a working organ —
+(a) a `.stb-pull-filter` (book `<select>` populated from the reader's real marginalia-bearing
+books + a free-text `<input>`), with a deterministic `filterPull()` closure that narrows the
+`.stb-book` list by book OR passage-text and shows a `.stb-pull-empty` on no match; (b) every
+weave carries a visible WOVEN/UNWOVEN **dot** (`.stb-weave-dot.is-lit` / unlit, from
+`isEvidenceAttached`) + label, riding the extant `.stb-weave` inline-flex; (c) a
+`wovenParagraph()` helper derives the "woven into ¶N" caption (paragraph split + book-title
+marker search). `weaveNote` gains the marg element + flips dot/label + appends the caption.
+**`writing-canvas.js` UNTOUCHED** (`insertAtCaret` reused verbatim). No Yumi generation.
+
+**components.css:** `.stb-pull-filter` / `-book-sel` / `-search` / `-empty`, the luminous
+`.stb-weave-dot(.is-lit)`, and `.stb-woven-where`. (Weave *colors* + the khaki `.stb-marg`
+background are the R#7 skin/contrast fixes — Stage 6.)
+
+**Gates (all PASS):**
+- Parse **PARSE OK**. **`git status/diff js/writing-canvas.js` empty** — the shared canvas is
+  untouched (the data-adjacent gate). No generative calls in the new code.
+- **Live rig (fresh S4; console clean):** filter row present, select populated, **1 lit dot +
+  13 unlit**, caption "woven into paragraph 1" (derivation correct). Interactions: text search
+  "banking" → only Pedagogy (passage match); no-match → `.stb-pull-empty` shown, 0 visible; book
+  filter isolates the chosen title; **weave-in click → dot lit + "woven in" + "woven into
+  paragraph 1"** (litDots 1→2).
+- **Imprecision noted:** the woven marker is the BOOK title (what a weave inserts), so
+  "woven into ¶N" is book-level, not per-note; falls back to no caption when the marker isn't in
+  the body. Display-only, no persisted field.
+
 Commit: (recorded below on commit)

@@ -10999,6 +10999,25 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end R6 S3 · THE WORKSHOP ===== */
 
 /* =====================================================================
+   R6 S4 · THE PULL SYSTEM — the evidence rail graduates from a passive
+   list to a working organ: search/filter across the author's marginalia,
+   a visible woven/unwoven dot state, and the "woven into ¶N" caption
+   (decision R#5). Deterministic machinery only — no Yumi generation.
+   ===================================================================== */
+.st-build.lum-amber-deep .stb-pull-filter{ display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--lum-glass-bd-2); }
+.st-build.lum-amber-deep .stb-pull-book-sel,
+.st-build.lum-amber-deep .stb-pull-search{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-2); background:rgba(255,253,246,.55); border:1px solid var(--lum-glass-bd-2); border-radius:8px; padding:6px 9px; min-width:0; }
+.st-build.lum-amber-deep .stb-pull-book-sel{ flex:0 0 42%; }
+.st-build.lum-amber-deep .stb-pull-search{ flex:1; }
+.st-build.lum-amber-deep .stb-pull-empty{ padding:18px 16px; font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-2); text-align:center; }
+/* the visible woven/unwoven state — a luminous-orb dot (lit=woven, unlit=unwoven);
+   the dot + label ride the extant .stb-weave inline-flex layout. */
+.st-build.lum-amber-deep .stb-weave-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; flex:none; background:rgba(151,139,109,.4); }
+.st-build.lum-amber-deep .stb-weave-dot.is-lit{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold) 55%, var(--lum-gold-d) 100%); box-shadow:0 0 6px 1px rgba(217,164,65,.55); }
+.st-build.lum-amber-deep .stb-woven-where{ display:block; margin-top:6px; font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.04em; color:var(--lum-ink-2); }
+/* ===== end R6 S4 · THE PULL SYSTEM ===== */
+
+/* =====================================================================
    WAVE 3 · SUB-THEORY BUILD  (renderSubTheoryBuild on .lum-amber-deep)
    The create/compose surface: a two-column shell (MAIN composing sheet +
    RIGHT RAIL "pull from your reading"). Full-bleed deep-amber ground (like
