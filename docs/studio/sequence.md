@@ -73,6 +73,17 @@ flagged at the top of the Builder's sequence page for his call — never applied
   second-device use starts). This is Preston-directed, not an autonomous agent re-plan —
   recorded here, not flagged `PROPOSED:`. Notebook residuals R1/R3/R4/R5 recorded in
   `notebook.md`, carried (the `.empty-state` + AA debt fold into S-C). Builder regenerated.
+- **2026-07-10** — R5 Arcs CLOSED (felt pass in full, v3.189 `27b4878`, deployed) and the **GROUND
+  SPECTRUM canonized** (CLAUDE.md §7 — light list → warm-dim interior → deep-warm field stage →
+  full-amber visitor room; the field-stage carve-out is PART OF the spectrum, resolving the mockup's
+  `PROPOSED:` note). R5 Arcs → Shipped (both `#arcs` + `#arc/<id>`). Re-set **Now** to **R6
+  Sub-theory** (the lead next-surface round; inherits R5's single-register model + the full-amber
+  reading-room end of the spectrum). Added a NAMED SLOT to Next — the **arc-field mobile touch
+  model** (held from R5, non-negotiable, a visible line not a residual). The **OVERNIGHT/INTAKE
+  Stage 1a scope is now UNBLOCKED** (Preston's timing rule: it opens after R5 closes). Named R5 debt
+  (dead CSS, warm `--ink-3`/`--lum-ink-3` AA, arc-voice box, latent constellation focus-ring) folds
+  into the S-C sweep. Preston-directed close + cadence re-order; nothing retired, no Preston decision
+  contradicted — no `PROPOSED:` flag. Builder regenerated.
 
 ## Shipped
 
@@ -123,21 +134,33 @@ flagged at the top of the Builder's sequence page for his call — never applied
   rich empty states, and the deep-teal Yumi resting slot. Named debt carried (R1
   vis-indicator, R3 shared cover registry, R4 global `.empty-state`, R5 Yumi teal).
   `docs/checkpoints/r4-notebook.md` is the record. touches: [notebook]
+- [x] **R5 — Arcs: grounds + read spine + register collapse + publication (DEEP)** (v3.189,
+  `27b4878`; felt pass PASSED IN FULL 2026-07-10 — deployed). Fourth surface round, covering BOTH
+  `#arcs` (list) and `#arc/<id>` (interior). Seven commits (`f4be5c2 → 27b4878`, mockup `f4be5c2`):
+  S1 fix slate `1da97e3` · S2 grounds+D4 `a4ad4d2` · S3 read spine `f6563bc` · S4 register collapse +
+  idempotent migration `12e5f96` · S5 publication + walk mark-identity `317fa0e` · S6 mark language
+  `8a17a0c` · cache `27b4878`. Canonized the **GROUND SPECTRUM** (CLAUDE.md §7); **Published/Private
+  replaced Public/Intellectual** (single body + idempotent `bodyIntellectual→bodyPublic` migration);
+  §9 red-team clean. Named debt → S-C (dead CSS, warm `--ink-3` AA, arc-voice box) + the arc-field
+  mobile touch model (its own named slot below). Records: `docs/checkpoints/r5-*.md`,
+  `docs/studio/arcs.md` + `arc-detail.md`. touches: [arcs, arc-detail]
 
 ## Now
 
-- [ ] **R5 — Arcs (DEEP)** — the on-deck surface round and the heaviest open surface now
-  that Shelf, Home, and Notebook are closed: list-first entry (arc entry currently opens a
-  specific arc), arc-detail's 14 ledger gaps, a real design for the arc read page, and
-  **Published/Private replacing Public/Intellectual**. Full five beats: recon → click-forks
-  → mockup → felt pass → build → close.
-  touches: [arcs, arc-detail]
+- [ ] **R6 — Sub-theory (DEEP)** — the build surface + the immersive published read; resolves the
+  notebook-vs-arcs build redundancy. Inherits from R5: the **single-register** model (one body — the
+  Public|Intellectual toggle is gone) and the **full-amber reading-room** end of the ground spectrum
+  (the immersive published read is a full-viewport threshold room). Full five beats: recon →
+  click-forks → mockup → felt pass → build → close.
+  touches: [subtheory-build, subtheory-page]
 
 ## Next
 
-- [ ] **R6 — Sub-theory (DEEP)** — the build surface + the immersive published read;
-  resolves the notebook-vs-arcs build redundancy.
-  touches: [subtheory-build, subtheory-page]
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the
+  constellation field must become mobile-usable (the drag/connect touch model on the protected
+  renderer). Attach where it best fits — alongside the S-B mobile passes or as a dedicated arc-field
+  pass; it is a VISIBLE line here, NOT a residual. (arc-detail.md "Held-Phase-3" mobile mandate.)
+  touches: [arc-detail]
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
   residual gaps across three light surfaces; skips the mockup beat.
   touches: [about, search, yumi-sees]

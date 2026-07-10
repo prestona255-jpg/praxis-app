@@ -24,7 +24,7 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 |---|---------|-------|-------------|-------------|------------|------------|
 | 1 | `#home` renderHome | ✅ Universal-light v1450 · css11705 (R3, v3.187) | ✅ css11829 | ✅ v1464/1499/1546 | ✗ no gate (same as zero-data) | ✗ sync |
 | 2 | `#notebook` + catch-all, renderNotebook | ✅ Universal-light v1755 · css11828 (R4, v3.188) | ✅ css11426 | ✅ v1999/2039 | ✅ hard v1709 | ✗ sync |
-| 3 | `#arcs` renderArcsPage | ✅ v3399 | ✅ css1894 | ✗ by-design v3454 | ◐ omission v3441 | ✗ sync |
+| 3 | `#arcs` renderArcsPage | ✅ Universal-light+spectrum (R5, v3.189) | ✅ css1894 | ✗ by-design v3454 | ◐ omission v3441 | ✗ sync |
 | 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ hard v3700 (W11-S8-L1; soft-CTA retired) | ✗ sync |
 | 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
 | 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |

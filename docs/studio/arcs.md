@@ -1,11 +1,12 @@
 ---
 surface: arcs
 route: "#arcs"
-render_fn: renderArcsPage (views.js:3458)
+render_fn: renderArcsPage (views.js:3581)
 ground: dark
 in_nav: yes
-state: untouched
-rounds: 0
+state: closed
+rounds: 1
+mockup: docs/studio/mockups/arcs.html
 ---
 
 ## State
@@ -18,11 +19,73 @@ rounds: 0
 
 - [source: fable-audit-combined.md 2026-07-07] [status: unverified] [sev: upgrade] Upgrade (VC4) — Intersectional arcs through values (the unsolved "Connections"): `profile.values` exists but is never wired into any arc; there is no arc-to-arc or arc×values surface, so calling arcs "intersectional" (P-6) overstates what renders. Prototype how a declared value threads onto the galaxy as a legible cross-arc link before claiming intersectionality (charter §3d). Gap, large · also OQ3.
 - [source: fable-audit-combined.md 2026-07-07] [status: unverified] [sev: open-question] OQ3 — "Intersectional" arcs (P-6 / VC4): Is the values × arc-to-arc connections dimension in launch scope, or is the "intersectional" claim softened in copy until it's built? (The connections visualization is the unsolved design problem the maker is stuck on.)
-- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: unverified] [sev: FIX] Arcs list (#arcs) FIX now — the card-counts computation as an O(1) map (currently re-derived); navigate to the newly created arc; a shared share-count helper.
-- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: unverified] [sev: Rebuild-requirement] Arcs list (#arcs) Rebuild requirement — auto-fit grid, equal tiles, and a unified card class.
-- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: unverified] [sev: Hygiene] Arcs list (#arcs) Hygiene → sweep — dead arcs CSS, an orphaned row renderer, stray cover-thumbnail rules.
+- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: CLOSED v3.189 1da97e3] [sev: FIX] Arcs list (#arcs) FIX now — the card-counts computation as an O(1) map (currently re-derived); navigate to the newly created arc; a shared share-count helper. [fix: R5 S1 — module `_arcSubsIndex` built ONCE per renderArcsPage (`_buildArcSubsIndex`) and read by `_arcSubsOf` (O(1) per-card, replacing the per-card full scans); the shared `_arcSubCount` helper is the single count path (`_arcCardCounts` delegates to it); `openArcEditor` onSave now navigates to the new arc (`location.hash = 'arc/' + arc.id`). js/views.js.]
+- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: CLOSED v3.189 a4ad4d2] [sev: Rebuild-requirement] Arcs list (#arcs) Rebuild requirement — auto-fit grid, equal tiles, and a unified card class. [fix: R5 S2 D1 — `.arcs.lum-amber-deep .arcs-grid` = `repeat(auto-fit,minmax(240px,1fr))` + `grid-auto-rows:1fr` equal-height tiles + the unified solid `.arc-card` (the prior glass + backdrop-blur skin dropped), under the Universal-light Option-B skin (route map untouched). assets/components.css.]
+- [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: PARTIAL v3.189 8a17a0c] [sev: Hygiene] Arcs list (#arcs) Hygiene → sweep — dead arcs CSS, an orphaned row renderer, stray cover-thumbnail rules. [fix: R5 S6 — the dead `.arcs.lum-amber` arcs-list dark-skin block REMOVED (grep-proven zero JS callers: 'arcs lum-amber' non-deep = comment-only). Residual dead classes LISTED with grep-proof, DEFERRED to the S-C sweep (scattered/interleaved with live rules → a bulk deletion at the tail was avoided): `.st-register-toggle` (S4), the S3-replaced `.arcfield-read-head/-threads/.arcfield-thread-row/.arcfield-read-subs/.arcfield-read-sub*`, and `.itx-sub`/`.itx-sub-*`.]
 
 ## Round history
+
+### R5 CLOSED — felt pass PASSED IN FULL (2026-07-10, deployed v3.189, commit 27b4878)
+
+Preston's felt pass passed in full on the live deploy: all the grounds (light arcs list ·
+warm-dim arc interior · cognac field stage), the register-collapse fold, the publish→walk
+mark round-trip, and the mark picker all read true. R5 covered BOTH `#arcs` (list) and
+`#arc/<id>` (interior) per the round's locked scope. Route STAYS in `umberGroundDark`; the
+skins are scoped Option-B overrides (the R2/R3/R4 mechanism — no map-flip). Round closed.
+
+Build = 7 commits `f4be5c2 → 27b4878` (mockup `f4be5c2`, 86,010 B). Six stage gates, all PASS
+(records: `docs/checkpoints/r5-*.md`; §9 red-team clean):
+
+- **S1 fix slate** (`1da97e3`) — arc-voice `.then` rejection handling; **F-MA1** seed-mutation
+  guard (`_subSeedLocked` on setSubTheoryPosition/link/unlink, verified safe vs the delete-cascade);
+  arcs O(1) `_arcSubsIndex` + shared `_arcSubCount`; navigate-to-new-arc; D5 self-evident
+  Tidy/Restore/Reset helper + `.arc-reset-btn`.
+- **S2 grounds + D4** (`a4ad4d2`) — arcs list → Universal light (`.arcs.lum-amber-deep`, D1
+  auto-fit equal-height grid, solid cards); arc interior → warm-dim (chrome re-point scoped so
+  the field stage keeps its dark renderer); field stage → deep cognac + softened feathered
+  vignette; **D4/AF6** = ONE canonical `.arcfield-addsub-canon` in the head (3 sites consolidated).
+- **S3 read spine** (`f6563bc`) — shared deterministic `_arcReadSpine` (one renderer, two lenses);
+  author `_arcFieldReadFace` rebuilt (mark · title · maturity glow · first line · connections ·
+  gutter threads · `.read-private` on drafts · closing); visitor `renderInteract` uses the SAME
+  spine + a threshold cue, **W6.5 social layer PRESERVED** (per-sub `.itx-thread` anchoring intact).
+- **S4 register collapse** (`12e5f96`, DATA-ADJACENT) — the Public|Intellectual toggle + dual-body
+  model removed (single body = `bodyPublic`); the **idempotent, flag-guarded migration** folds a
+  former `bodyIntellectual` into `bodyPublic` under a `---` divider in `ensureSubTheoryFields` (runs
+  on both the localStorage load AND the Firestore merge), NEVER deleting the dormant field;
+  idempotency proven on 4 fixtures; maturity + search repointed off the duplicate.
+- **S5 publication + mark identity** (`317fa0e`, payload data-adjacent) — `buildPublishedArcDoc`
+  carries each sub's resolved markShape/markColor so the walk shows the SAME marks as the author
+  (walk mark-identity bug FIXED); D3 quiet head publish/unpublish + staleness (`arc.publishedAtLocal`);
+  D2 quiet "in the commons" card chip. Covenant: no walk-count badge on head/cards.
+- **S6 mark language** (`8a17a0c`) — the committed 16-name set (spark/vessel/grove/ember/horizon/
+  lodestar/cairn/harbor replace compass/river/chamber/kite/dune/gate); the EXISTING `openSymbolPicker`
+  surfaced via a `.read-change-mark` Read-row trigger; D6 mark names in the tooltip + focus rings on
+  the Read controls; the dead `.arcs.lum-amber` block cut.
+
+**Forks decided (Preston):** D4/AF6 → folded into S2 (one head canon); `#walk` → PRESERVE W6.5
+(spine as the read display, build-on anchoring kept).
+
+**Rulings recorded:** the **GROUND SPECTRUM** is canonized (CLAUDE.md §7) — light list → warm-dim
+interior → deep-warm field stage → full-amber visitor room; the **field-stage carve-out is PART OF
+the spectrum, not an exception** (the mockup's `PROPOSED:` note resolves to this); the mockup's 3-way
+Read-ground toggle was a felt instrument only — **warm-dim shipped fixed** as the Read default.
+
+**New findings recorded this round:**
+- **Walk mark-identity bug** — the walk hashed a synthetic `arcId:index` instead of the sub's real
+  mark. FIXED (`317fa0e`); **old published snapshots show hash marks until republished** — a
+  one-time user-action item (republish corrects them).
+- Stale comment `views.js:3513` ("no published flag") — the `arc.published`/`freshness`/`walkedBy`
+  fields are REAL; comment is drift (logged, not chased — line drifts).
+- Stale comment (the removed register toggle) — updated in S4.
+- Sibling seed-render mark construct `~views.js:16970` (`{id: seedKey + ':' + i}`) — a DIFFERENT
+  seed-render fn, OUTSIDE R5's `renderInteract` scope. Logged (same class of hash-mark, not fixed here).
+- Dead-CSS list (`.st-register-toggle`, the S3-replaced `.arcfield-read-*`/`.itx-sub*`) → **S-C sweep**.
+- Warm-interior arc-voice inline box on GLOBAL dark tokens (minor; re-pointing globals would break the
+  dark-stage renderer) → felt-pass-accepted, S-C.
+- **`--ink-3`/`--lum-ink-3` tertiary meta ≈2.3:1 on warm parchment = ACCEPTED carried AA debt**
+  (Preston's felt pass; held near its light-ground baseline) → **S-C sweep owns it**.
+- Latent constellation focus-ring (frozen renderer emits `data-st-sub-id` but no tabindex — CSS only);
+  the REAL keyboard focus rings shipped on the Read-face controls.
 
 ## Next
 

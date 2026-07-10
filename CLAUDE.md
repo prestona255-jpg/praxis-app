@@ -330,6 +330,27 @@ For this build only, this canon overrides these design-spec points:
   shipped earlier — they are **verify-only**, not build. Fix #1's card *styling* to §4-G
   is the one residual, folded into the Arcs stage.
 
+### 7. THE GROUND SPECTRUM (canonized at the R5 Arcs close, 2026-07-10)
+
+The light-to-amber ground law — ratified by Preston's felt pass on the R5 Arcs build
+(mockup `f4be5c2`; shipped `27b4878`, v3.189). It supersedes any earlier "amber never as a
+panel in a light page" phrasing: the field-stage carve-out is now understood as PART OF the
+spectrum, not an exception to it.
+
+**You WORK in the light; you ENTER finished thinking in the amber.**
+
+- **Light** = working surfaces (Shelf, Home, Notebook, the Arcs list).
+- The **arc interior warms** — warm-dim chrome (head, faces seg, control-bar, rail) + the
+  warm-dim Read face. Dark ink is kept: **warm-dim never inverts polarity.**
+- The **field is the deep-warm constellation stage**, feathered into the interior (cognac →
+  warm-brown → parchment at the rim) — **never a hard dark panel in a light page.**
+- **Full amber** = full-viewport reading rooms at true thresholds ONLY (the visitor's
+  published lens; R6's immersive published read inherits this).
+
+The order: **light list → warm-dim arc interior → deep-warm field stage → full-amber visitor
+room.** (R5 also retired the mockup's 3-way Read-ground toggle — a felt instrument only;
+warm-dim shipped fixed as the Read default. The mockup's `PROPOSED:` note resolves to this law.)
+
 ## Live Forensic Smoke Test — MANDATORY before any "done" or ship
 
 **Why this exists.** Data-layer checks ("I called the function and it returned" / "I wrote the doc and
