@@ -2466,9 +2466,22 @@ function buildPublishedArcDoc(uid, arcId, opts) {
   var subs = [];
   var i;
   for (i = 0; i < list.length; i = i + 1) {
+    // R5 S5: carry each sub-theory's RESOLVED mark identity (markShape/markColor,
+    // 0-15) so the walk shows the SAME marks the author sees — not the old
+    // arcId:index hash. Resolution mirrors bookSubMarkHTML: the stored indices if
+    // valid, else the deterministic hash of the real sub id (window.stHashIndices).
+    var _msh = (typeof list[i].markShape === 'number' && list[i].markShape >= 0 && list[i].markShape <= 15) ? list[i].markShape : null;
+    var _mco = (typeof list[i].markColor === 'number' && list[i].markColor >= 0 && list[i].markColor <= 15) ? list[i].markColor : null;
+    if ((_msh === null || _mco === null) && typeof window !== 'undefined' && typeof window.stHashIndices === 'function' && list[i].id) {
+      var _hx = window.stHashIndices(list[i].id);
+      if (_msh === null) { _msh = _hx.shapeIdx; }
+      if (_mco === null) { _mco = _hx.colorIdx; }
+    }
     subs.push({
-      header: list[i].header || '',
-      body:   (typeof list[i].bodyPublic === 'string') ? list[i].bodyPublic : ''
+      header:    list[i].header || '',
+      body:      (typeof list[i].bodyPublic === 'string') ? list[i].bodyPublic : '',
+      markShape: (typeof _msh === 'number') ? _msh : 0,
+      markColor: (typeof _mco === 'number') ? _mco : 0
     });
   }
   return {
@@ -2539,6 +2552,9 @@ function publishArc(arcId, opts, callback) {
         arc.published   = true;
         arc.freshness   = freshness;
         arc.publishTags = tags;
+        // R5 S5: cache the publish time locally (client clock) so the arc head can
+        // compute snapshot staleness (edited-since-published) without a Firestore read.
+        arc.publishedAtLocal = Date.now();
         if (typeof markArcsDirty === 'function') { markArcsDirty(); }
         if (typeof saveState === 'function') { saveState(); }
         finish({ status: 'ok' });

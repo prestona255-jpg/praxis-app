@@ -3458,7 +3458,17 @@ function _arcCardMeta2El(arcId, rec) {
   parts.push(_arcMaturityWord(arcId));
   var touched = _arcTouchedWord(arcId, rec);
   if (touched) { parts.push(touched); }
-  meta.textContent = parts.join(' · ');
+  var line = document.createElement('span');
+  line.textContent = parts.join(' · ');
+  meta.appendChild(line);
+  // R5 S5 (D2): a quiet "in the commons" chip on published arc cards (real field).
+  // Covenant: quiet recessed meta, never a walk-count badge.
+  if (rec && rec.published === true) {
+    var chip = document.createElement('span');
+    chip.className = 'arc-chip-commons';
+    chip.textContent = 'in the commons';
+    meta.appendChild(chip);
+  }
   return meta;
 }
 
@@ -12592,6 +12602,74 @@ function buildArcFieldRail(arc, arcId, user) {
   return rail;
 }
 
+// R5 S5 (D3): the quiet publish/unpublish affordance + state line in the arc head.
+// Owner-only. Wired to the REAL local fields (arc.published/freshness/publishedAtLocal)
+// via the existing publishArc/unpublishArc (integrations.js), re-entering
+// renderArcDetail on success. Quiet per the covenant — the walkedBy COUNT is NOT
+// badged here (it lives on the commons/profile surfaces); this line just marks state.
+function _arcHeadPublishControl(arcId, arc) {
+  var box = document.createElement('div');
+  box.className = 'arcfield-pub';
+  if (arc.published === true) {
+    var status = document.createElement('span');
+    status.className = 'arcfield-pub-status';
+    status.innerHTML = 'In the commons · <b>' + ((arc.freshness === 'live') ? 'live' : 'frozen') + '</b>';
+    box.appendChild(status);
+    if (_arcPublishStale(arcId, arc)) {
+      var stale = document.createElement('span');
+      stale.className = 'arcfield-pub-hint';
+      stale.textContent = 'edited since published — republish to update';
+      box.appendChild(stale);
+    }
+    var unpub = document.createElement('button');
+    unpub.type = 'button';
+    unpub.className = 'arcfield-pub-btn arcfield-pub-btn-quiet';
+    unpub.textContent = 'Unpublish';
+    unpub.addEventListener('click', function () {
+      unpub.disabled = true;
+      unpub.textContent = 'Unpublishing…';
+      unpublishArc(arcId, function () { renderArcDetail(arcId); });
+    });
+    box.appendChild(unpub);
+  } else {
+    var nSubs = _arcSubCount(arcId);
+    var pubBtn = document.createElement('button');
+    pubBtn.type = 'button';
+    pubBtn.className = 'arcfield-pub-btn' + (nSubs === 0 ? ' arcfield-pub-btn-quiet' : '');
+    pubBtn.textContent = 'Publish to the commons';
+    box.appendChild(pubBtn);
+    if (nSubs === 0) {
+      pubBtn.disabled = true;
+      var hint = document.createElement('span');
+      hint.className = 'arcfield-pub-hint';
+      hint.textContent = "Publish once you've begun.";
+      box.appendChild(hint);
+    } else {
+      pubBtn.addEventListener('click', function () {
+        pubBtn.disabled = true;
+        pubBtn.textContent = 'Publishing…';
+        publishArc(arcId, { freshness: 'frozen' }, function () { renderArcDetail(arcId); });
+      });
+    }
+  }
+  return box;
+}
+
+// R5 S5: is the published snapshot stale? True when the newest arc/sub activity is
+// after the local publish time (publishedAtLocal, set by publishArc). Old arcs
+// published before this field existed read not-stale until their next republish.
+function _arcPublishStale(arcId, arc) {
+  if (!arc || arc.published !== true || !arc.publishedAtLocal) { return false; }
+  var newest = (typeof arc.updatedAt === 'number') ? arc.updatedAt : 0;
+  var subs = _arcSubsOf(arcId);
+  var i;
+  for (i = 0; i < subs.length; i = i + 1) {
+    var u = (typeof subs[i].updatedAt === 'number') ? subs[i].updatedAt : 0;
+    if (u > newest) { newest = u; }
+  }
+  return newest > arc.publishedAtLocal;
+}
+
 function renderArcDetail(arcId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -12726,6 +12804,11 @@ function renderArcDetail(arcId) {
   headT.appendChild(subMeta);
 
   header.appendChild(headT);
+
+  // R5 S5 (D3): quiet publish/unpublish affordance + state line, owner-only (real arcs).
+  if (user && arc.userId === user.uid) {
+    header.appendChild(_arcHeadPublishControl(arcId, arc));
+  }
 
   // R5 D4 (AF6): the header-only "+ Sub-theory" button is retired here — a single
   // canonical control (.arcfield-addsub-canon) now lives in the head control column
@@ -17576,7 +17659,12 @@ function renderInteract(arcId) {
     var vsi;
     for (vsi = 0; vsi < subs.length; vsi = vsi + 1) {
       var vsub = subs[vsi] || {};
+      // R5 S5: use the real mark identity from the publish payload (markShape/
+      // markColor). OLD snapshots (no mark fields) fall back to the arcId:index hash
+      // gracefully — republishing the arc corrects them to the author's real marks.
+      var vHasMark = (typeof vsub.markShape === 'number' && typeof vsub.markColor === 'number');
       vrows.push({
+        markSub:   vHasMark ? { markShape: vsub.markShape, markColor: vsub.markColor } : null,
         markId:    arcId + ':' + vsi,
         title:     vsub.header ? vsub.header : 'Untitled sub-theory',
         firstLine: _arcReadFirstLine(vsub)

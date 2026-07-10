@@ -11688,6 +11688,23 @@ body.wc-focus .app-nav { opacity:.26; }
 .itx-root .room-threshold::before{ content:''; width:28px; height:1px; background:linear-gradient(90deg, transparent, var(--subtheory-1)); flex:none; }
 .itx-root .room-threshold::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--subtheory-1), var(--lum-glass-bd-2) 45%, transparent); }
 
+/* ============================================================================
+   R5 S5 · publication legibility. D2: a quiet "in the commons" chip on published
+   arc-list cards (light). D3: the quiet publish/unpublish control + state line in
+   the (warm) arc head. Covenant: quiet recessed meta, never a walk-count badge.
+   ============================================================================ */
+.arcs.lum-amber-deep .arc-card-meta{ display:flex; flex-direction:column; gap:4px; }
+.arcs.lum-amber-deep .arc-chip-commons{ display:inline-flex; align-items:center; gap:5px; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); }
+.arcs.lum-amber-deep .arc-chip-commons::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--gold-hi); flex:none; }
+.arcfield.arcfield-warm .arcfield-pub{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--lum-mono); font-size:11px; margin:10px 0 0; }
+.arcfield.arcfield-warm .arcfield-pub-btn{ background:transparent; border:1px solid var(--lum-gold-l); color:var(--lum-gold-d); border-radius:var(--lum-r-pill,999px); padding:6px 13px; cursor:pointer; font-family:var(--lum-mono); font-size:11px; letter-spacing:.03em; }
+.arcfield.arcfield-warm .arcfield-pub-btn:hover{ background:#f6ecd4; }
+.arcfield.arcfield-warm .arcfield-pub-btn-quiet{ border-color:var(--lum-glass-bd-2); color:var(--lum-ink-3); }
+.arcfield.arcfield-warm .arcfield-pub-btn[disabled]{ cursor:default; opacity:.6; }
+.arcfield.arcfield-warm .arcfield-pub-status{ color:var(--lum-ink-2); }
+.arcfield.arcfield-warm .arcfield-pub-status b{ color:var(--lum-gold-d); font-weight:600; }
+.arcfield.arcfield-warm .arcfield-pub-hint{ color:var(--lum-ink-3); font-family:var(--lum-serif); font-style:italic; font-size:11px; }
+
 /* =============================================================================
    W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;
    serif-italic search bar w/ amber focus ring, kind chips w/ live counts, results
