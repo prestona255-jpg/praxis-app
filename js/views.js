@@ -8713,6 +8713,48 @@ function buildBookEditPanel(bookId, book, user) {
   tradRow.appendChild(tradSelect);
   panel.appendChild(tradRow);
 
+  // R7 (F6): category override -- pins one of the 17 SHELF_CATEGORIES / Uncategorized,
+  // or '' (Auto) to let classifyBookLocal resolve. Writes book.categoryOverride; a set
+  // override IS the displayed category (Auto clears the cache so it re-resolves).
+  var catRow = document.createElement('div');
+  catRow.className = 'bk-edit-row';
+  var catLabel = document.createElement('label');
+  catLabel.className = 'bk-edit-label';
+  catLabel.textContent = 'Category';
+  var catSelect = document.createElement('select');
+  catSelect.className = 'bk-edit-select';
+  var curOverride = (typeof book.categoryOverride === 'string') ? book.categoryOverride : '';
+  var autoOpt = document.createElement('option');
+  autoOpt.value = '';
+  autoOpt.textContent = 'Auto (Praxis decides)';
+  if (curOverride === '') { autoOpt.selected = true; }
+  catSelect.appendChild(autoOpt);
+  var baseCats = (typeof SHELF_CATEGORIES !== 'undefined') ? SHELF_CATEGORIES : [];
+  var uncatLabel = (typeof CATEGORY_UNCATEGORIZED !== 'undefined') ? CATEGORY_UNCATEGORIZED : 'Uncategorized';
+  var catOpts = baseCats.concat([uncatLabel]);
+  var cci;
+  for (cci = 0; cci < catOpts.length; cci++) {
+    var copt = document.createElement('option');
+    copt.value = catOpts[cci];
+    copt.textContent = catOpts[cci];
+    if (catOpts[cci] === curOverride) { copt.selected = true; }
+    catSelect.appendChild(copt);
+  }
+  catSelect.onchange = function(ev) {
+    if (!state.books[bookId]) { return; }
+    var val = ev.target.value;
+    var b = state.books[bookId];
+    b.categoryOverride = val;
+    b.category = (val === '') ? '' : val;
+    ensureBookFields(b);
+    markBooksDirty();
+    saveState();
+    renderBookDetail(bookId);
+  };
+  catRow.appendChild(catLabel);
+  catRow.appendChild(catSelect);
+  panel.appendChild(catRow);
+
   var removeBtn = document.createElement('button');
   removeBtn.type = 'button';
   removeBtn.className = 'bk-edit-remove';
@@ -8837,14 +8879,19 @@ function renderBookDetail(bookId) {
       renderBookDetail(bookId);
     }));
 
-    // F5: "This moved me" -- reflects stored book.movedMe. (S4 wires persistence
-    // on click; here the initial state is read from the record.)
+    // F5: "This moved me" -- reflects stored book.movedMe and PERSISTS on click
+    // (markBooksDirty + saveState), so it survives reload / cloud sync.
     var movedBtn = document.createElement('button');
     movedBtn.type = 'button';
     movedBtn.className = 'bk-moved' + (book.movedMe ? ' on' : '');
     movedBtn.textContent = book.movedMe ? '♥ Moved you' : '♡ This moved me';
     movedBtn.addEventListener('click', function() {
-      var on = movedBtn.classList.toggle('on');
+      if (!state.books[bookId]) { return; }
+      var on = !state.books[bookId].movedMe;
+      state.books[bookId].movedMe = on;
+      markBooksDirty();
+      saveState();
+      movedBtn.classList.toggle('on', on);
       movedBtn.textContent = on ? '♥ Moved you' : '♡ This moved me';
     });
     controls.appendChild(movedBtn);
