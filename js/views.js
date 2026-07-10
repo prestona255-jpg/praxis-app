@@ -499,7 +499,9 @@ function renderRoute() {
   // (which would otherwise swallow it). The redirect re-enters the router at
   // #book/<id> -> renderBookDetail.
   if (parts[0] === 'book' && parts[1] && parts[2] === 'marks') {
-    location.hash = 'book/' + parts[1];
+    // R7: location.replace (not hash-assign) so a stale /marks URL already in a
+    // user's history is not a back-button trap (mirrors the new-subtheory route).
+    location.replace('#book/' + parts[1]);
     return;
   }
   if (parts[0] === 'book' && parts[1]) {
@@ -4538,7 +4540,7 @@ function renderShelf() {
   if (lensOrder.length === 0 && userThemeList.length === 0) {
     var lensEmpty = document.createElement('li');
     lensEmpty.className = 'shelf-filter is-toggle';
-    lensEmpty.textContent = 'No lenses yet — add one from a book';
+    lensEmpty.textContent = 'No lenses yet — ask Yumi to suggest some';
     lensListEl.appendChild(lensEmpty);
   }
   lensSection.appendChild(lensListEl);
@@ -8416,7 +8418,9 @@ function buildBookArcChips(bookId) {
 // bk-sec render path is gone, and the router redirects the /marks hash to the
 // canonical #book/<id>.
 function renderBookView(bookId) {
-  location.hash = 'book/' + bookId;
+  // R7: location.replace (not hash-assign) -- no history push, so the retired
+  // /marks route is not a back-button trap for its export / any direct caller.
+  location.replace('#book/' + bookId);
 }
 
 // Wave 4: "+ Add to a lens" inline panel open-state (module-level, like
@@ -8447,35 +8451,8 @@ function bkReadingRow(k, v, isRead) {
   return row;
 }
 
-// One "In your thinking" glance item: the sub-theory's real PraxisMark
-// (cd 18) + its title + the arc it lives in (+ a draft badge). Click ->
-// the sub-theory's Page.
-function buildGlanceItem(sub) {
-  var item = document.createElement('div');
-  item.className = 'bk-gitem';
-  item.appendChild(bookSubMarkNode(sub, 18));
-  var gt = document.createElement('span');
-  gt.className = 'bk-gt';
-  gt.textContent = sub.header || 'Untitled sub-theory';
-  item.appendChild(gt);
-  var gin = document.createElement('span');
-  gin.className = 'bk-gin';
-  var arcName = subTheoryArcName(sub);
-  if (sub.status === 'draft') {
-    if (arcName) { gin.appendChild(document.createTextNode(arcName + ' ')); }
-    var draft = document.createElement('span');
-    draft.className = 'bk-draft';
-    draft.textContent = 'draft';
-    gin.appendChild(draft);
-  } else {
-    gin.textContent = arcName || '';
-  }
-  item.appendChild(gin);
-  item.addEventListener('click', function() {
-    location.hash = 'subtheory/' + sub.id;
-  });
-  return item;
-}
+// R7: buildGlanceItem removed -- the "In your thinking" glance was replaced by the
+// full folded lineage (grew rows) leading renderBookDetail's main column.
 
 // Interactive rating stars (book.rating, click toggles). Stays VISIBLE in
 // "Your reading" per the Stage 0 decision.
@@ -8833,7 +8810,7 @@ function renderBookDetail(bookId) {
   var back = document.createElement('a');
   back.className = 'bk-backlink';
   back.href = '#books';
-  back.textContent = '← Back to your shelf';
+  back.textContent = user ? '← Back to your shelf' : '← Back to the shelf';
   surf.shell.appendChild(back);
 
   // ---- HERO ----
