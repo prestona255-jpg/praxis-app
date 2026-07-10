@@ -8259,6 +8259,16 @@ function buildMargCard(marg) {
   card.appendChild(annot);
   var meta = document.createElement('div');
   meta.className = 'bk-margmeta';
+  var became = marginaliaBecame(marg.id);
+  // R7 FIX (woven-state dot): a filled field-hue dot when this mark was woven into
+  // a sub-theory, a hollow ring when it has not been (R6 pull-system vocabulary).
+  var metaL = document.createElement('span');
+  metaL.className = 'bk-margmeta-l';
+  var stateDot = document.createElement('span');
+  stateDot.className = 'bk-marg-dot ' + (became ? 'woven' : 'unwoven');
+  stateDot.setAttribute('aria-hidden', 'true');
+  if (became) { stateDot.style.setProperty('--dot', bookSubMarkFill(became)); }
+  metaL.appendChild(stateDot);
   var loc = document.createElement('span');
   loc.className = 'bk-loc';
   var when = '';
@@ -8266,8 +8276,8 @@ function buildMargCard(marg) {
     try { when = new Date(marg.createdAt).toLocaleDateString(); } catch (eW) { when = ''; }
   }
   loc.textContent = when ? ('marked · ' + when) : 'marked';
-  meta.appendChild(loc);
-  var became = marginaliaBecame(marg.id);
+  metaL.appendChild(loc);
+  meta.appendChild(metaL);
   if (became) {
     var link = document.createElement('button');
     link.type = 'button';
@@ -8280,6 +8290,11 @@ function buildMargCard(marg) {
     link.appendChild(document.createTextNode('became “' + (became.header || 'a sub-theory') + '” →'));
     link.addEventListener('click', function() { location.hash = 'subtheory/' + became.id; });
     meta.appendChild(link);
+  } else {
+    var uw = document.createElement('span');
+    uw.className = 'bk-unwoven-note';
+    uw.textContent = 'not yet woven';
+    meta.appendChild(uw);
   }
   card.appendChild(meta);
   return card;
@@ -8325,6 +8340,77 @@ function buildGrewRow(sub) {
   open.textContent = 'Open →';
   row.appendChild(open);
   row.addEventListener('click', function() { location.hash = 'subtheory/' + sub.id; });
+  return row;
+}
+
+// R7 (book detail): the arcs holding a book (arc.bookIds carries {id, addedAt}
+// since 3.8; legacy string ids tolerated), owner-filtered, title-sorted. Display-
+// only aggregation -- no data-model change.
+function arcsHoldingBook(bookId) {
+  var out = [];
+  var map = state.arcs || {};
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = user ? user.uid : null;
+  var k;
+  for (k in map) {
+    if (!Object.prototype.hasOwnProperty.call(map, k)) { continue; }
+    var arc = map[k];
+    if (!arc) { continue; }
+    if (uid && arc.userId && arc.userId !== uid) { continue; }
+    if (!(arc.bookIds instanceof Array)) { continue; }
+    var i, hit = false;
+    for (i = 0; i < arc.bookIds.length; i++) {
+      var ref = arc.bookIds[i];
+      var rid = (ref && typeof ref === 'object') ? ref.id : ref;
+      if (rid === bookId) { hit = true; break; }
+    }
+    if (hit) {
+      if (!arc.id) { arc.id = k; }
+      out.push(arc);
+    }
+  }
+  out.sort(function(a, b) {
+    return ('' + (a.title || a.name || '')).localeCompare('' + (b.title || b.name || ''));
+  });
+  return out;
+}
+
+// R7: a deterministic 0-9 field-spectrum index from an arc id (FNV-1a), so an
+// arc's chip hue is stable-from-id (Shelf R2 precedent). Maps to --bk-field-1..10.
+function bookArcHueIndex(arcId) {
+  var s = '' + (arcId || '');
+  var h = 2166136261;
+  var i;
+  for (i = 0; i < s.length; i++) {
+    h = h ^ s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h % 10;
+}
+
+// R7 (F4): the hero arc-chip row -- one link per arc holding the book, its dot
+// tinted by the field-spectrum hue derived from the arc id. Returns null when the
+// book is in no arc.
+function buildBookArcChips(bookId) {
+  var arcs = arcsHoldingBook(bookId);
+  if (arcs.length === 0) { return null; }
+  var row = document.createElement('div');
+  row.className = 'bk-arcchips';
+  var lab = document.createElement('span');
+  lab.className = 'bk-arcchips-label';
+  lab.textContent = 'In arcs';
+  row.appendChild(lab);
+  var ci;
+  for (ci = 0; ci < arcs.length; ci++) {
+    (function(arc) {
+      var chip = document.createElement('a');
+      chip.className = 'bk-arcchip';
+      chip.href = '#arc/' + arc.id;
+      chip.style.setProperty('--arc', 'var(--bk-field-' + (bookArcHueIndex(arc.id) + 1) + ')');
+      chip.textContent = '' + (arc.title || arc.name || 'Untitled arc');
+      row.appendChild(chip);
+    })(arcs[ci]);
+  }
   return row;
 }
 
@@ -8836,8 +8922,16 @@ function renderBookDetail(bookId) {
 
   var user = getCurrentUser();
   var rooted = rootedSubTheories(bookId);
-  var margCount = marginaliaForBook(bookId).length;
+  var margs = marginaliaForBook(bookId);
+  var margCount = margs.length;
   var alight = rooted.length > 0;
+
+  // ---- back link ----
+  var back = document.createElement('a');
+  back.className = 'bk-backlink';
+  back.href = '#books';
+  back.textContent = '← Back to your shelf';
+  surf.shell.appendChild(back);
 
   // ---- HERO ----
   var hero = document.createElement('div');
@@ -8862,6 +8956,10 @@ function renderBookDetail(bookId) {
   var tags = bookLensTags(book);
   if (tags) { hinfo.appendChild(tags); }
 
+  // F4: arc chips -- every arc holding the book (arcs.bookIds), field-hue by id-hash.
+  var arcChips = buildBookArcChips(bookId);
+  if (arcChips) { hinfo.appendChild(arcChips); }
+
   if (user) {
     var controls = document.createElement('div');
     controls.className = 'bk-controls';
@@ -8878,21 +8976,12 @@ function renderBookDetail(bookId) {
       renderBookDetail(bookId);
     }));
 
-    var addLensBtn = document.createElement('button');
-    addLensBtn.type = 'button';
-    addLensBtn.className = 'bk-ghostbtn';
-    addLensBtn.textContent = '+ Add to a lens';
-    addLensBtn.addEventListener('click', function() {
-      _bdLensOpen = !_bdLensOpen;
-      renderBookDetail(bookId);
-    });
-    controls.appendChild(addLensBtn);
-
-    // "This moved me" -- LOCAL visual toggle only (no persisted field).
+    // F5: "This moved me" -- reflects stored book.movedMe. (S4 wires persistence
+    // on click; here the initial state is read from the record.)
     var movedBtn = document.createElement('button');
     movedBtn.type = 'button';
-    movedBtn.className = 'bk-moved';
-    movedBtn.textContent = '♡ This moved me';
+    movedBtn.className = 'bk-moved' + (book.movedMe ? ' on' : '');
+    movedBtn.textContent = book.movedMe ? '♥ Moved you' : '♡ This moved me';
     movedBtn.addEventListener('click', function() {
       var on = movedBtn.classList.toggle('on');
       movedBtn.textContent = on ? '♥ Moved you' : '♡ This moved me';
@@ -8900,19 +8989,40 @@ function renderBookDetail(bookId) {
     controls.appendChild(movedBtn);
 
     hinfo.appendChild(controls);
-    if (_bdLensOpen) { hinfo.appendChild(buildBookLensPanel(bookId, user)); }
+  }
+
+  // hero whisper line (root declaration / worked-example invitation).
+  if (rooted.length > 0) {
+    if (user) {
+      var rootText = (rooted.length === 1)
+        ? 'This one is a root — a thread in your thinking starts here.'
+        : ('This one is a root. ' + rooted.length + ' threads in your thinking start here — '
+            + 'you don’t just keep it, you build from it.');
+      hinfo.appendChild(bookYumiLine(rootText));
+    } else {
+      hinfo.appendChild(bookYumiLine('A worked example — someone read this with a pen, and '
+        + (rooted.length === 1 ? 'a thread' : (rooted.length + ' threads'))
+        + ' grew from it. Sign in to start your own.'));
+    }
   }
 
   hero.appendChild(hinfo);
   surf.shell.appendChild(hero);
 
-  // ---- front actions (or sign-in prompt) ----
+  // ---- the ONE ranked action row (F3) / sign-in (signed out) ----
   if (user) {
     var actions = document.createElement('div');
     actions.className = 'bk-actions';
+    // SUB-CALL (accepted): PRIMARY = Add marginalia (the generative act).
+    var addMargBtn = document.createElement('button');
+    addMargBtn.type = 'button';
+    addMargBtn.className = 'bk-actionbtn bk-actionbtn-primary';
+    addMargBtn.textContent = '✎ Add marginalia';
+    addMargBtn.addEventListener('click', function() { openMarginaliaEditor(bookId); });
+    actions.appendChild(addMargBtn);
     var addArcBtn = document.createElement('button');
     addArcBtn.type = 'button';
-    addArcBtn.className = 'bk-actionbtn bk-actionbtn-primary';
+    addArcBtn.className = 'bk-actionbtn';
     addArcBtn.textContent = 'Add to an arc';
     addArcBtn.addEventListener('click', function() { openBookArcPicker(bookId); });
     actions.appendChild(addArcBtn);
@@ -8922,20 +9032,22 @@ function renderBookDetail(bookId) {
     sendSubBtn.textContent = 'Send to sub-theory';
     sendSubBtn.addEventListener('click', function() { openBookSendToSubTheory(bookId); });
     actions.appendChild(sendSubBtn);
-    var addMargBtn = document.createElement('button');
-    addMargBtn.type = 'button';
-    addMargBtn.className = 'bk-actionbtn';
-    addMargBtn.textContent = 'Add marginalia';
-    addMargBtn.addEventListener('click', function() { openMarginaliaEditor(bookId); });
-    actions.appendChild(addMargBtn);
     surf.shell.appendChild(actions);
   } else {
+    // Signed out (panel d): the sign-in prompt replaces the action row; public
+    // seed marginalia still surfaces in the lineage below (W12 seed rule).
+    var signinRow = document.createElement('div');
+    signinRow.className = 'bk-signinrow lum-glass';
+    var sp = document.createElement('p');
+    sp.textContent = 'Your marks are private. Sign in to mark this book and see what it grows into.';
+    signinRow.appendChild(sp);
     var signin = document.createElement('button');
     signin.type = 'button';
     signin.className = 'bk-signin';
     signin.textContent = 'Sign in to write';
     signin.addEventListener('click', function() { signInWithGoogle(); });
-    surf.shell.appendChild(signin);
+    signinRow.appendChild(signin);
+    surf.shell.appendChild(signinRow);
   }
 
   // editor / picker hosts (openMarginaliaEditor / openBookArcPicker /
@@ -8950,7 +9062,7 @@ function renderBookDetail(bookId) {
   subPickerHost.id = 'book-detail-subtheory-picker-host';
   surf.shell.appendChild(subPickerHost);
 
-  // ---- COLS: main + aside ----
+  // ---- COLS: main = LINEAGE (leads) + aside = About / The book / Your reading ----
   var cols = document.createElement('div');
   cols.className = 'bk-cols';
   var main = document.createElement('div');
@@ -8958,7 +9070,114 @@ function renderBookDetail(bookId) {
   var aside = document.createElement('div');
   aside.className = 'bk-aside';
 
-  // About
+  // MAIN: In your thinking -- the folded marks-and-lineage material (F2/F3 leads).
+  var lin = document.createElement('div');
+  lin.className = 'bk-sec bk-block lum-glass';
+  var linHead = document.createElement('h2');
+  linHead.className = 'bk-sechead';
+  linHead.textContent = user ? 'In your thinking' : 'In this reading';
+  lin.appendChild(linHead);
+
+  var tcount = document.createElement('p');
+  tcount.className = 'bk-tcount';
+  if (rooted.length > 0) {
+    var nphrase = rooted.length + (rooted.length === 1 ? ' sub-theory' : ' sub-theories');
+    var cline = nphrase + ' grew from this book';
+    if (margCount > 0) {
+      cline += ', across ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages');
+    }
+    tcount.textContent = cline + '.';
+  } else if (margCount > 0) {
+    tcount.textContent = 'You have ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages')
+      + ' here — nothing has grown into a sub-theory yet.';
+  } else if (user) {
+    tcount.textContent = 'Nothing has grown from this book yet — this is where it will start.';
+  } else {
+    tcount.textContent = 'Nothing public has grown from this book yet.';
+  }
+  lin.appendChild(tcount);
+
+  // -- What you marked -- (marginalia cards; preview 3 + "Show all N", F2) --
+  var mkHead = document.createElement('div');
+  mkHead.className = 'bk-subhead';
+  mkHead.textContent = user ? 'What you marked' : 'What was marked';
+  lin.appendChild(mkHead);
+  if (margs.length > 0) {
+    var PREVIEW = 3;
+    var hidden = [];
+    var mi;
+    for (mi = 0; mi < margs.length; mi++) {
+      var mcard = buildMargCard(margs[mi]);
+      if (mi >= PREVIEW) { mcard.className += ' is-folded'; hidden.push(mcard); }
+      lin.appendChild(mcard);
+    }
+    if (hidden.length > 0) {
+      var showAll = document.createElement('button');
+      showAll.type = 'button';
+      showAll.className = 'bk-showall';
+      showAll.textContent = 'Show all ' + margs.length + ' marked passages';
+      showAll.addEventListener('click', function() {
+        var hi;
+        for (hi = 0; hi < hidden.length; hi++) {
+          hidden[hi].className = hidden[hi].className.replace(/\s*is-folded/, '');
+        }
+        if (showAll.parentNode) { showAll.parentNode.removeChild(showAll); }
+      });
+      lin.appendChild(showAll);
+    }
+  } else {
+    var me1 = document.createElement('p');
+    me1.className = 'bk-empty-note';
+    me1.textContent = user
+      ? 'No marginalia yet. Your first mark from this book will appear here — and if it grows, you’ll see the thread it starts.'
+      : 'No public marginalia on this book yet.';
+    lin.appendChild(me1);
+  }
+
+  // -- What it grew into -- (grew rows) --
+  var giHead = document.createElement('div');
+  giHead.className = 'bk-subhead';
+  giHead.textContent = 'What it grew into';
+  lin.appendChild(giHead);
+  if (rooted.length > 0) {
+    var glist = document.createElement('div');
+    glist.className = 'bk-grewlist';
+    var ri;
+    for (ri = 0; ri < rooted.length; ri++) {
+      glist.appendChild(buildGrewRow(rooted[ri]));
+    }
+    lin.appendChild(glist);
+    var gnote = document.createElement('div');
+    gnote.className = 'bk-grewnote';
+    var rmark2 = document.createElement('span');
+    rmark2.className = 'bk-rmark2';
+    rmark2.setAttribute('aria-hidden', 'true');
+    gnote.appendChild(rmark2);
+    var gnoteText = (rooted.length === 1)
+      ? 'This is why the book is alight on your shelf — one line runs from it into your own field.'
+      : ('This is why the book is alight on your shelf — ' + rooted.length
+          + ' lines run from it into your own field.');
+    gnote.appendChild(document.createTextNode(gnoteText));
+    lin.appendChild(gnote);
+  } else {
+    var me2 = document.createElement('p');
+    me2.className = 'bk-empty-note';
+    me2.textContent = user
+      ? 'Marks you make here can become sub-theories in your arcs. Nothing has been woven yet.'
+      : 'Nothing public has grown from this book yet.';
+    lin.appendChild(me2);
+  }
+
+  if (user && rooted.length > 0) {
+    lin.appendChild(bookYumiLine('Threads of yours begin in this book. When one '
+      + 'stalls, the way back into it usually starts here.'));
+  }
+  main.appendChild(lin);
+
+  // artifact card -- the reader's standing reflection, kept in the lineage spine.
+  if (user) { main.appendChild(buildBookArtifactCard(bookId, book, user)); }
+
+  // ---- ASIDE: What it's about (recedes here per F3) ----
   if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
     var aboutBlock = document.createElement('div');
     aboutBlock.className = 'bk-block lum-glass';
@@ -8967,54 +9186,8 @@ function renderBookDetail(bookId) {
     syn.className = 'bk-synopsis';
     syn.textContent = book.description;
     aboutBlock.appendChild(syn);
-    main.appendChild(aboutBlock);
+    aside.appendChild(aboutBlock);
   }
-
-  // In your thinking (glance)
-  var thinkBlock = document.createElement('div');
-  thinkBlock.className = 'bk-block lum-glass bk-thinking';
-  thinkBlock.appendChild(bkBlabel('In your thinking'));
-  var tcount = document.createElement('p');
-  tcount.className = 'bk-tcount';
-  if (rooted.length > 0) {
-    var nphrase = rooted.length + (rooted.length === 1 ? ' sub-theory' : ' sub-theories');
-    var line = nphrase + ' grew from this book';
-    if (margCount > 0) {
-      line += ', across ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages');
-    }
-    tcount.textContent = line + '.';
-    thinkBlock.appendChild(tcount);
-    var glance = document.createElement('div');
-    glance.className = 'bk-glance';
-    var gi;
-    for (gi = 0; gi < rooted.length; gi++) {
-      glance.appendChild(buildGlanceItem(rooted[gi]));
-    }
-    thinkBlock.appendChild(glance);
-  } else {
-    tcount.className = 'bk-tcount bk-tcount-empty';
-    tcount.textContent = (margCount > 0)
-      ? ('You have ' + margCount + (margCount === 1 ? ' marked passage' : ' marked passages')
-          + ' here — nothing has grown into a sub-theory yet.')
-      : 'Nothing has grown from this book yet.';
-    thinkBlock.appendChild(tcount);
-  }
-  var marksBtn = document.createElement('button');
-  marksBtn.type = 'button';
-  marksBtn.className = 'bk-marksbtn';
-  marksBtn.textContent = 'Open your marks & lineage →';
-  marksBtn.addEventListener('click', function() {
-    location.hash = 'book/' + bookId + '/marks';
-  });
-  thinkBlock.appendChild(marksBtn);
-  if (rooted.length > 0) {
-    thinkBlock.appendChild(bookYumiLine('Threads of yours begin in this book. When one '
-      + 'stalls, the way back into it usually starts here.'));
-  }
-  main.appendChild(thinkBlock);
-
-  // Artifact card (kept reachable)
-  if (user) { main.appendChild(buildBookArtifactCard(bookId, book, user)); }
 
   // ---- ASIDE: The book (factual metadata) ----
   var metaBlock = document.createElement('div');
@@ -9044,18 +9217,18 @@ function renderBookDetail(bookId) {
   metaBlock.appendChild(dl);
   aside.appendChild(metaBlock);
 
-  // ---- ASIDE: Your reading ----
-  var readBlock = document.createElement('div');
-  readBlock.className = 'bk-block lum-glass bk-reading';
-  readBlock.appendChild(bkBlabel('Your reading'));
-  readBlock.appendChild(bkReadingRow('Status', statusText(book.status), normalizeStatus(book.status) === 'read'));
-  var finStr = '';
-  if (book.dateRead) { finStr = '' + book.dateRead; }
-  else if (typeof book.finishedAt === 'number') {
-    try { finStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eF) { finStr = ''; }
-  }
-  if (finStr) { readBlock.appendChild(bkReadingRow('Finished', finStr, false)); }
+  // ---- ASIDE: Your reading (signed-in only) ----
   if (user) {
+    var readBlock = document.createElement('div');
+    readBlock.className = 'bk-block lum-glass bk-reading';
+    readBlock.appendChild(bkBlabel('Your reading'));
+    readBlock.appendChild(bkReadingRow('Status', statusText(book.status), normalizeStatus(book.status) === 'read'));
+    var finStr = '';
+    if (book.dateRead) { finStr = '' + book.dateRead; }
+    else if (typeof book.finishedAt === 'number') {
+      try { finStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eF) { finStr = ''; }
+    }
+    if (finStr) { readBlock.appendChild(bkReadingRow('Finished', finStr, false)); }
     var ratingRow = document.createElement('div');
     ratingRow.className = 'bk-rrow';
     var rk = document.createElement('span');
@@ -9064,15 +9237,15 @@ function renderBookDetail(bookId) {
     ratingRow.appendChild(rk);
     ratingRow.appendChild(buildBookRatingStars(bookId, book));
     readBlock.appendChild(ratingRow);
+    readBlock.appendChild(bkReadingRow('Passages marked', '' + margCount, false));
+    aside.appendChild(readBlock);
   }
-  readBlock.appendChild(bkReadingRow('Passages marked', '' + margCount, false));
-  aside.appendChild(readBlock);
 
   cols.appendChild(main);
   cols.appendChild(aside);
   surf.shell.appendChild(cols);
 
-  // ---- Edit / more disclosure (surplus controls) ----
+  // ---- Edit / more disclosure (signed-in) ----
   if (user) {
     var editToggle = document.createElement('button');
     editToggle.type = 'button';
