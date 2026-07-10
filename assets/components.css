@@ -10707,6 +10707,181 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end WAVE 4 · Stage 3 ===== */
 
 /* =====================================================================
+   R7 (S5) — BOOK DETAIL: the Universal v1.2 LIGHT re-ground. A SCOPED
+   override (Shelf R2 / Home R3 precedent): re-points --lum-* WITHIN
+   .bk-surface + adds --bk-* depth vars + literal-rescues the dark-ground
+   .bk-* rules to light + the new-element rules (arc chips, woven dots,
+   subhead, show-all, sign-in row, gilded primary) + the BD2 mobile 4-I
+   reorder. Ports docs/studio/mockups/book-detail.html (25c7987) faithfully.
+   Edits NO base rule and NO --lum-* DEFINITION; .bk-surface is unique to
+   the book pair so nothing bleeds. The Artifact view (#artifact) is a
+   different surface (bookAmberSurface is book-pair only) and is untouched.
+   ===================================================================== */
+
+/* 1 · scoped token re-point (light Universal) + --bk-* depth vars + the light
+   atmospheric ground (recipe 6) replacing .lum-amber-deep's dark radial. */
+.bk-surface.lum-amber-deep{
+  --lum-ink:#241710; --lum-ink-2:#645940; --lum-ink-3:#645940; --lum-ink-4:#7c7052;
+  --lum-base:#fffdf8; --lum-cloth:#e3d8c1; --lum-rose:#c2603a;
+  --lum-gold:#a8761a; --lum-gold-l:#d9a441; --lum-gold-d:#855410; --lum-gold-ink:#3d2807;
+  --lum-glass:linear-gradient(180deg,#fffdf8,#fdf8ea);
+  --lum-glass-bd:#e3d8c1; --lum-glass-bd-2:#e3d8c1;
+  --bk-line:#e3d8c1; --bk-surface-2:#efe7d6; --bk-gold-deep:#855410; --bk-gold-hi:#d9a441;
+  --bk-star:#ffce4a; --bk-cyan-text:#256b80;
+  --bk-field-1:#f2c25a; --bk-field-2:#e07a52; --bk-field-3:#d98f8a; --bk-field-4:#f5bace; --bk-field-5:#a9b98c;
+  --bk-field-6:#98d4b0; --bk-field-7:#8590d8; --bk-field-8:#f8e078; --bk-field-9:#e8b068; --bk-field-10:#b8896c;
+  background-color:#f4efe4;
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed;
+}
+
+/* 2 · card plane -- lum-glass becomes a solid lit LIGHT sheet (no blur). */
+.bk-surface .lum-glass{
+  border:1px solid var(--bk-line);
+  box-shadow:0 6px 22px -12px rgba(120,75,15,.28), inset 0 1px 0 rgba(255,250,235,.9);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+
+/* 3 · cover -- light cloth; luminous presence kept (alight glow + root-mark). */
+.bk-surface .bk-cover{ background:linear-gradient(135deg,#e3d8c1 0%,#d3c4a6 100%);
+  box-shadow:0 14px 30px -14px rgba(120,75,15,.4), inset 1px 0 0 rgba(255,255,255,.5); }
+.bk-surface .bk-cover-alight{ box-shadow:0 14px 30px -14px rgba(120,75,15,.4), 0 0 24px -4px rgba(255,206,74,.55), inset 1px 0 0 rgba(255,255,255,.5); }
+.bk-surface .bk-cover-spine{ background:linear-gradient(180deg,var(--bk-gold-hi),var(--lum-gold)); }
+.bk-surface .bk-cover-rmark{ background:radial-gradient(circle at 38% 32%, #fff6da 0%, var(--bk-star) 45%, var(--lum-gold) 100%); box-shadow:0 0 13px rgba(255,206,74,.7); }
+.bk-surface .bk-cover-ct{ color:#3a2c17; text-shadow:none; }
+.bk-surface .bk-cover-ca{ color:#6b5b3c; }
+
+/* 4 · lens/category tags. */
+.bk-surface .bk-ltag{ color:var(--lum-ink-2); border-color:var(--bk-line); }
+.bk-surface .bk-ltag-dot{ background:radial-gradient(circle at 38% 32%, var(--bk-gold-hi) 0%, var(--lum-gold) 60%, var(--bk-gold-deep) 100%); box-shadow:none; }
+.bk-surface .bk-ltag-cat .bk-ltag-dot{ background:rgba(150,120,70,.6); }
+
+/* 5 · Yumi line -- cyan dot kept, text deep-teal (AA). */
+.bk-surface .lum-yumi p{ color:var(--bk-cyan-text); }
+
+/* 6 · read-status control. */
+.bk-surface .rstatus{ border-color:var(--bk-line); background:var(--bk-surface-2); }
+.bk-surface .rs-opt{ color:var(--lum-ink-2); }
+.bk-surface .rs-opt.on{ color:var(--lum-gold-ink); background:linear-gradient(180deg,#f2c25a,#e0a838); }
+
+/* 7 · hero lamplight (recipe 4 -- one wash per region). */
+.bk-surface .bk-hero{ position:relative; overflow:hidden; }
+.bk-surface .bk-hero::before{ content:''; position:absolute; inset:-30% -10% auto -10%; height:150%; pointer-events:none;
+  background:radial-gradient(ellipse at 20% 30%, rgba(242,194,90,.20) 0%, rgba(242,194,90,0) 68%); }
+.bk-surface .bk-hero > *{ position:relative; }
+
+/* 8 · moved-me. */
+.bk-surface .bk-moved{ color:var(--lum-ink-2); border:1px solid var(--bk-line); background:none; }
+.bk-surface .bk-moved:hover{ border-color:rgba(194,96,58,.4); }
+.bk-surface .bk-moved.on{ color:var(--lum-rose); border-color:rgba(194,96,58,.5); background:rgba(194,96,58,.08); }
+
+/* 9 · EVOLVED F4 -- hero arc chips (field-spectrum hue by id-hash, set inline). */
+.bk-surface .bk-arcchips{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.bk-surface .bk-arcchips-label{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-2); margin-right:2px; }
+.bk-surface .bk-arcchip{ display:inline-flex; align-items:center; gap:7px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.02em; color:var(--lum-ink-2); background:var(--bk-surface-2); border:1px solid var(--bk-line); border-radius:var(--lum-r-pill); padding:5px 12px; text-decoration:none; cursor:pointer; }
+.bk-surface .bk-arcchip::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--arc); flex:none; }
+.bk-surface .bk-arcchip:hover{ border-color:var(--arc); color:var(--lum-ink); }
+
+/* 10 · action row -- quiet secondaries + the gilded primary (recipe 5). */
+.bk-surface .bk-actionbtn{ color:var(--lum-ink-2); background:var(--bk-surface-2); border:1px solid var(--bk-line); }
+.bk-surface .bk-actionbtn:hover{ color:var(--lum-ink); border-color:var(--bk-gold-hi); }
+.bk-surface .bk-actionbtn-primary{ color:var(--lum-gold-ink); border:1px solid var(--bk-gold-deep);
+  background:linear-gradient(180deg,#f2c25a 0%, var(--bk-gold-hi) 40%, var(--lum-gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+.bk-surface .bk-actionbtn-primary:hover{ color:var(--lum-gold-ink); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+
+/* 11 · EVOLVED F3 -- signed-out sign-in row. */
+.bk-surface .bk-signinrow{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 26px; padding:16px 20px; }
+.bk-surface .bk-signinrow p{ font-family:var(--lum-serif); font-style:italic; font-size:16px; color:var(--lum-ink-2); margin:0; flex:1; min-width:200px; }
+.bk-surface .bk-signin{ color:var(--lum-gold-ink); border:1px solid var(--bk-gold-deep); background:linear-gradient(180deg,#f2c25a 0%, var(--bk-gold-hi) 40%, var(--lum-gold) 100%); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+
+/* 12 · eyebrows + section heads. */
+.bk-surface .bk-blabel{ color:var(--bk-gold-deep); }
+.bk-surface .bk-subhead{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--bk-gold-deep); margin:22px 0 12px; }
+.bk-surface .bk-secsub{ color:var(--lum-ink-2); }
+.bk-surface .bk-tcount{ color:var(--lum-ink-2); }
+.bk-surface .bk-empty-note{ color:var(--lum-ink-2); }
+.bk-surface .bk-synopsis{ color:var(--lum-ink-2); }
+
+/* 13 · marginalia cards + EVOLVED FIX woven/unwoven dots. */
+.bk-surface .bk-marg{ border-left:2px solid var(--bk-gold-hi); }
+.bk-surface .bk-pen{ color:var(--bk-gold-deep); }
+.bk-surface .bk-atext{ color:var(--lum-ink-2); }
+.bk-surface .bk-margmeta{ border-top:1px solid var(--bk-line); }
+.bk-surface .bk-margmeta-l{ display:inline-flex; align-items:center; gap:9px; }
+.bk-surface .bk-loc{ color:var(--lum-ink-2); }
+.bk-surface .bk-marg-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+.bk-surface .bk-marg-dot.woven{ background:var(--dot,var(--lum-gold)); box-shadow:0 0 6px -1px var(--dot,var(--lum-gold)); }
+.bk-surface .bk-marg-dot.unwoven{ background:transparent; border:1.5px solid #b0a284; }
+.bk-surface .bk-unwoven-note{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-ink-2); opacity:.8; }
+.bk-surface .bk-becamelink{ color:var(--lum-ink-2); border:1px solid var(--bk-line); background:none; }
+.bk-surface .bk-becamelink:hover{ border-color:var(--bk-gold-hi); color:var(--lum-ink); }
+
+/* 14 · EVOLVED F2 -- show-all disclosure. */
+.bk-surface .bk-marg.is-folded{ display:none; }
+.bk-surface .bk-showall{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--bk-gold-deep); background:none; border:1px dashed var(--bk-line); border-radius:var(--lum-r-pill); padding:8px 14px; cursor:pointer; margin:2px 0 6px; }
+.bk-surface .bk-showall:hover{ color:var(--lum-gold); border-color:var(--bk-gold-hi); }
+
+/* 15 · grew rows. */
+.bk-surface .bk-grew:hover{ border-color:var(--bk-gold-hi); }
+.bk-surface .bk-grew-t{ color:var(--lum-ink); }
+.bk-surface .bk-grew-in{ color:var(--lum-ink-2); }
+.bk-surface .bk-grew-in b{ color:var(--lum-ink); }
+.bk-surface .bk-draft{ color:var(--lum-ink-2); border-color:var(--bk-line); }
+.bk-surface .bk-gopen{ color:var(--lum-ink-2); border:1px solid var(--bk-line); background:none; }
+.bk-surface .bk-grew:hover .bk-gopen{ color:var(--lum-ink); border-color:var(--bk-gold-hi); }
+.bk-surface .bk-grewnote{ color:var(--lum-ink-2); }
+.bk-surface .bk-rmark2{ background:radial-gradient(circle at 38% 32%, #fff6da 0%, var(--bk-star) 45%, var(--lum-gold) 100%); box-shadow:0 0 10px rgba(255,206,74,.55); }
+
+/* 16 · aside metadata + reading. */
+.bk-surface .bk-meta dt{ color:var(--lum-ink-2); }
+.bk-surface .bk-meta dd{ color:var(--lum-ink); }
+.bk-surface .bk-rrow{ border-top:1px solid var(--bk-line); }
+.bk-surface .bk-rk{ color:var(--lum-ink-2); }
+.bk-surface .bk-rv{ color:var(--lum-ink); }
+.bk-surface .bk-rv-read{ color:var(--bk-gold-deep); }
+.bk-surface .bk-star{ color:rgba(150,120,70,.45); }
+.bk-surface .bk-star.on{ color:var(--lum-gold); }
+.bk-surface .bk-artifact-body{ color:var(--lum-ink-2); }
+.bk-surface .bk-artifact-open, .bk-surface .bk-artifact-write{ color:var(--bk-gold-deep); }
+.bk-surface .bk-artifact-open:hover, .bk-surface .bk-artifact-write:hover{ color:var(--lum-gold); }
+
+/* 17 · edit panel. */
+.bk-surface .bk-edit-toggle{ color:var(--lum-ink-2); border:1px solid var(--bk-line); background:none; }
+.bk-surface .bk-edit-toggle:hover{ color:var(--lum-ink); border-color:var(--bk-gold-hi); }
+.bk-surface .bk-edit-label{ color:var(--lum-ink-2); }
+.bk-surface .bk-edit-input, .bk-surface .bk-edit-select{ color:var(--lum-ink); background:var(--lum-base); border:1px solid var(--bk-line); }
+.bk-surface .bk-edit-btn{ color:var(--lum-ink-2); background:var(--bk-surface-2); border:1px solid var(--bk-line); }
+.bk-surface .bk-edit-btn:hover{ color:var(--lum-ink); border-color:var(--bk-gold-hi); }
+.bk-surface .bk-edit-remove{ color:var(--lum-rose); border:1px solid rgba(194,96,58,.4); background:none; }
+.bk-surface .bk-edit-remove:hover{ border-color:var(--lum-rose); }
+.bk-surface .bk-remove-msg{ color:var(--lum-ink-2); }
+.bk-surface .bk-remove-cancel{ color:var(--lum-ink-2); background:var(--bk-surface-2); border:1px solid var(--bk-line); }
+.bk-surface .bk-remove-confirm-btn{ color:#fff; background:var(--lum-rose); }
+
+/* 18 · links. */
+.bk-surface .bk-find, .bk-surface .bk-backlink{ color:var(--bk-gold-deep); }
+.bk-surface .bk-find:hover, .bk-surface .bk-backlink:hover{ color:var(--lum-gold); }
+
+/* 19 · BD2 mobile canon 4-I reorder (real breakpoint 759): action row into thumb
+   reach (primary spans, order:-1), cols collapse with `order` holding lineage(main)
+   before the aside. BD3 desktop two-column is the base rule, untouched. */
+@media (max-width:759px){
+  .bk-surface .bk-actions{ flex-direction:column; align-items:stretch; }
+  .bk-surface .bk-actionbtn{ text-align:center; }
+  .bk-surface .bk-actionbtn-primary{ order:-1; padding:13px 17px; }
+  .bk-surface .bk-cols{ flex-direction:column; }
+  .bk-surface .bk-main{ order:1; }
+  .bk-surface .bk-aside{ order:2; width:100%; }
+  .bk-surface .bk-arcchips{ justify-content:center; }
+}
+/* ===== end R7 · S5 book-detail light re-ground ===== */
+
+/* =====================================================================
    WAVE 3 · THE PAGE  (renderSubTheoryPage on .lum-amber-deep)
    3-column reading room: evidence weave rail · lifted glass sheet +
    connections · Yumi's cyan margin. Tokens only (lum and font vars); the
