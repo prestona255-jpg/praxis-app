@@ -1,0 +1,891 @@
+<!doctype html>
+<!-- Praxis Studio: Book Detail evolved mockup (R7). Source: renderBookDetail
+     folded with renderBookView (js/views.js), re-grounded to the Universal v1.2
+     LIGHT working surface. The full decision key and the flagged sub-call live in
+     the on-page banner below, visible for the felt pass. Evolved elements are
+     tagged in place; nothing unmapped. Self-contained (Google Fonts only). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Praxis Studio — Book Detail (evolved mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   Universal v1.2 LIGHT tokens — resolved literals (praxis-universal-token-sheet
+   §1-§3 + universal-depth.css §8). Wired by NAME downstream; NO legacy Lumen
+   tokens and no dark amber-deep ground appear anywhere in this file (F1).
+   ============================================================================ */
+:root{
+  /* page + surfaces (§2-§3) — solid on light; translucent glass is a dark device */
+  --paper:#f4efe4;        /* page ground */
+  --surface:#fffdf8;      /* near-white card fill — the identity move */
+  --surface-2:#efe7d6;    /* secondary card / quiet fill */
+  /* ink ramp (§3) — ink-2 is the AA body floor on paper; ink-3 is NON-body only */
+  --ink:#241710;          /* primary ink        (~17:1 on card) */
+  --ink-2:#645940;        /* secondary / body   (~6.8:1 on card, ~6:1 on ground) */
+  --ink-3:#978b6d;        /* tertiary — decorative / hollow-dot only (~3.3:1, sub-AA) */
+  --line:#e3d8c1;         /* warm opaque hairline */
+  /* the three gold roles (§1 golds) */
+  --gold:#a8761a;         /* ROLE 1 · interactive / fill */
+  --gold-deep:#855410;    /* ROLE   · deep gold for small TEXT (AA ~6.3:1) */
+  --gold-hi:#d9a441;      /* ROLE 2 · gilding — edge + glow ONLY, never a fill */
+  --gold-ink:#3d2807;     /* dark ink on gold fills */
+  --star:#ffce4a;         /* ROLE 3 · luminous — true glow ONLY (universal-depth luminous gold) */
+  --thread:#c2a463;       /* constellation thread */
+  --danger:#c2603a;       /* warm-red accent (moved-me / remove) */
+  --cyan:#7fd0f0;         /* Yumi presence dot (kept) */
+  --cyan-text:#256b80;    /* Yumi voice text on light (AA deep teal ~5.9:1) */
+  --cloth:#e3d8c1;        /* cover placeholder base */
+  /* ten-hue field spectrum (universal-depth.css:42-43) — per-arc + per-mark hue */
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+  /* type (three stacks) + radii */
+  --serif:"Cormorant Garamond", Georgia, serif;
+  --sans:"DM Sans", system-ui, sans-serif;
+  --mono:"DM Mono", ui-monospace, monospace;
+  --r-pill:999px; --r-card:16px;
+  --motion:.2s; --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+/* ============================================================================
+   1 · MOCKUP-ONLY REVIEW CHROME — never part of the live surface (same pattern
+   as the R5/R6 mockups: sticky toolbar + panel switcher + decision legend).
+   ============================================================================ */
+body{ font-family:var(--sans); background:#171009; color:#e8dcc4; }
+.mock-toolbar{ position:sticky; top:0; z-index:200; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  padding:12px 22px; background:rgba(23,16,9,.97); color:#f3e8ce; font-family:var(--mono); font-size:11px;
+  letter-spacing:.04em; border-bottom:1px solid rgba(255,236,200,.16); }
+.mock-toolbar b{ color:var(--star); font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-right:4px; }
+.mock-group{ display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.mock-btn{ font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:#f3e8ce; background:rgba(255,236,200,.08);
+  border:1px solid rgba(255,236,200,.22); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.mock-btn:hover{ border-color:var(--star); color:var(--star); }
+.mock-btn.is-on{ background:linear-gradient(180deg,#ffe79a,#ffce4a); color:#241a02; border-color:transparent; font-weight:600; }
+.mock-legend{ flex-basis:100%; font-size:10px; color:#b6a888; line-height:1.65; }
+.mock-legend summary{ cursor:pointer; color:#ffce4a; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+.mock-legend[open] summary{ margin-bottom:7px; }
+.mock-legend b{ color:#e8dcc4; }
+.mock-legend .flag{ color:#ffce4a; }
+.mock-scene{ display:none; }
+.mock-scene.is-active{ display:block; }
+/* the page ground the scenes sit on — Universal atmospheric LIGHT ground (recipe 6) */
+.mock-stage{ background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10); }
+/* phone frame for the mobile panel (Panel 2) — the real reflow always applies inside it */
+.mock-phone{ width:390px; max-width:100%; margin:26px auto; border-radius:30px; overflow:hidden;
+  border:10px solid #2a1f11; box-shadow:0 30px 70px -24px rgba(0,0,0,.7); }
+.mock-phone .mock-stage{ min-height:auto; }
+.mock-note{ max-width:840px; margin:0 auto; padding:16px 24px 0; font-family:var(--mono); font-size:11px; color:#8f8266; letter-spacing:.03em; }
+
+/* ============================================================================
+   2 · SHARED BOOK SURFACE — the .bk-* foundation (components.css 10494-10538),
+   structure lifted verbatim, colors re-pointed to Universal LIGHT tokens (F1).
+   ============================================================================ */
+.bk-surface{ width:100%; min-height:100vh; padding:34px 20px 80px; color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; }
+.bk-shell{ max-width:860px; margin:0 auto; }
+.bk-backlink{ display:inline-block; margin:0 0 18px; font-family:var(--sans); font-size:12.5px; color:var(--gold-deep); text-decoration:none; }
+.bk-backlink:hover{ color:var(--gold); }
+
+/* card plane — the live .lum-glass, re-grounded to a solid lit LIGHT sheet
+   (universal-depth §8 u-sheet plane). Class name carries the real vocabulary. */
+.lum-glass{ background:linear-gradient(180deg,#fffdf8,#fdf8ea); border:1px solid var(--line); border-radius:var(--r-card);
+  box-shadow:0 6px 22px -12px rgba(120,75,15,.28), inset 0 1px 0 rgba(255,250,235,.9); }
+
+/* shared cover (components.css 10503-10515) — light cloth; alight = luminous
+   root-mark + glow (presence is meaning-bearing, so it may glow). */
+.bk-cover{ position:relative; flex:none; width:var(--bk-cw,138px); height:var(--bk-ch,208px); border-radius:3px 7px 7px 3px;
+  background:linear-gradient(135deg, var(--cloth) 0%, #d3c4a6 100%);
+  box-shadow:0 14px 30px -14px rgba(120,75,15,.4), inset 1px 0 0 rgba(255,255,255,.5); }
+.bk-cover-alight{ box-shadow:0 14px 30px -14px rgba(120,75,15,.4), 0 0 24px -4px rgba(255,206,74,.55), inset 1px 0 0 rgba(255,255,255,.5); }
+.bk-cover-spine{ position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px 0 0 3px; background:linear-gradient(180deg, var(--gold-hi), var(--gold)); z-index:2; }
+.bk-cover-rmark{ position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%; z-index:3;
+  background:radial-gradient(circle at 38% 32%, #fff6da 0%, var(--star) 45%, var(--gold) 100%);
+  box-shadow:0 0 13px rgba(255,206,74,.7); }
+.bk-cover-cloth{ position:absolute; inset:0; padding:18px 15px 15px 20px; display:flex; flex-direction:column; border-radius:inherit; z-index:1; }
+.bk-cover-ct{ font-family:var(--serif); font-weight:600; font-size:20px; line-height:1.1; color:#3a2c17; }
+.bk-cover-ca{ margin-top:auto; font-family:var(--sans); font-size:11px; color:#6b5b3c; }
+
+/* lens/category tag row (components.css 10518-10521) */
+.bk-tags{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.bk-ltag{ font-family:var(--sans); font-size:12px; color:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:4px 11px 4px 9px; display:inline-flex; align-items:center; gap:7px; }
+.bk-ltag-dot{ width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 38% 32%, var(--gold-hi) 0%, var(--gold) 60%, var(--gold-deep) 100%); }
+.bk-ltag-cat .bk-ltag-dot{ background:rgba(150,120,70,.6); border-radius:2px; }
+
+/* sub-theory mark slot */
+.bk-mark{ display:inline-flex; align-items:center; justify-content:center; }
+.bk-mark svg{ display:block; }
+
+/* Yumi whisper line (.lum-yumi, lumen primitive) — cyan DOT kept, text deep-teal for AA */
+.lum-yumi{ display:flex; align-items:flex-start; gap:9px; }
+.lum-yumi .dot{ flex:none; width:11px; height:11px; border-radius:50%; margin-top:5px;
+  background:radial-gradient(circle at 38% 32%, #fff, var(--cyan) 46%, #2f8fb4 100%); box-shadow:0 0 9px rgba(127,208,240,.55); }
+.lum-yumi p{ margin:0; font-family:var(--serif); font-style:italic; font-size:16px; color:var(--cyan-text); }
+
+/* read-status control (.rstatus/.rs-opt, components.css 10529-10531) — light re-point */
+.bk-surface .rstatus{ display:inline-flex; border:1px solid var(--line); border-radius:var(--r-pill); padding:3px; background:var(--surface-2); }
+.bk-surface .rs-opt{ font-family:var(--sans); font-size:12.5px; color:var(--ink-2); background:none; border:none; border-radius:var(--r-pill); padding:7px 15px; cursor:pointer; }
+.bk-surface .rs-opt.on{ color:var(--gold-ink); background:linear-gradient(180deg,#f2c25a,#e0a838); font-weight:600; }
+
+/* ============================================================================
+   3 · HERO (components.css 10547-10557).  F4 arc chips + F5 moved-me live here.
+   ============================================================================ */
+.bk-hero{ position:relative; overflow:hidden; padding:28px 30px; margin:0 0 22px; display:flex; gap:28px; align-items:flex-start; }
+/* one lamplight per region (recipe 4) — the identity wash under the hero */
+.bk-hero::before{ content:''; position:absolute; inset:-30% -10% auto -10%; height:150%; pointer-events:none;
+  background:radial-gradient(ellipse at 20% 30%, rgba(242,194,90,.20) 0%, rgba(242,194,90,0) 68%); }
+.bk-hero > *{ position:relative; }
+.bk-hinfo{ flex:1; min-width:0; padding-top:2px; }
+.bk-bt{ font-family:var(--serif); font-weight:600; font-size:31px; color:var(--ink); line-height:1.05; }
+.bk-ba{ font-family:var(--serif); font-style:italic; font-size:18px; color:var(--ink-2); margin-top:3px; }
+.bk-hinfo .bk-tags{ margin-top:14px; }
+.bk-controls{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:18px; }
+.bk-moved{ font-family:var(--sans); font-size:12.5px; color:var(--ink-2); background:none; border:1px solid var(--line); border-radius:var(--r-pill); padding:8px 13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+.bk-moved:hover{ border-color:rgba(194,96,58,.4); }
+.bk-moved.on{ color:var(--danger); border-color:rgba(194,96,58,.5); background:rgba(194,96,58,.08); }
+
+/* EVOLVED: F4 — arc chips: every arc holding the book (arcs.bookIds). Field-spectrum
+   hue by arc id-hash (Shelf R2 precedent; --arc set inline, commented per chip). */
+.bk-arcchips{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.bk-arcchips-label{ font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); margin-right:2px; }
+.bk-arcchip{ display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; letter-spacing:.02em; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:5px 12px; text-decoration:none; cursor:pointer; }
+.bk-arcchip::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--arc); flex:none; }
+.bk-arcchip:hover{ border-color:var(--arc); color:var(--ink); }
+
+/* ============================================================================
+   4 · THE ONE RANKED ACTION ROW (F3) — components.css 10572-10577, restyled.
+   EVOLVED: SUB-CALL — primary is "✎ Add marginalia" (gilded), not Add-to-arc.
+   ============================================================================ */
+.bk-actions{ display:flex; gap:11px; flex-wrap:wrap; align-items:center; margin:0 0 26px; }
+.bk-actionbtn{ font-family:var(--sans); font-size:13px; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:10px 17px; cursor:pointer; }
+.bk-actionbtn:hover{ color:var(--ink); border-color:var(--gold-hi); }
+/* gilded button (universal-depth §8 recipe 5) — the single generative primary */
+.bk-actionbtn-primary{ color:var(--gold-ink); border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,#f2c25a 0%, var(--gold-hi) 40%, var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); font-weight:600; }
+.bk-actionbtn-primary:hover{ color:var(--gold-ink); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+.bk-signinrow{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 26px; padding:16px 20px; }
+.bk-signinrow p{ font-family:var(--serif); font-style:italic; font-size:16px; color:var(--ink-2); margin:0; flex:1; min-width:200px; }
+.bk-signin{ font-family:var(--sans); font-size:13px; color:var(--gold-ink); border:1px solid var(--gold-deep); border-radius:var(--r-pill); padding:10px 18px; cursor:pointer; font-weight:600;
+  background:linear-gradient(180deg,#f2c25a 0%, var(--gold-hi) 40%, var(--gold) 100%); box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+
+/* ============================================================================
+   5 · COLS — main = LINEAGE (leads), aside = About + The book + Your reading (F3).
+   ============================================================================ */
+.bk-cols{ display:flex; gap:26px; align-items:flex-start; }
+.bk-main{ flex:1; min-width:0; }
+.bk-aside{ flex:none; width:264px; }
+.bk-block{ padding:20px 22px; margin:0 0 16px; }
+.bk-blabel{ font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-deep); margin:0 0 12px; }
+.bk-synopsis{ font-family:var(--serif); font-size:18px; line-height:1.55; color:var(--ink-2); margin:0; }
+
+/* --- LINEAGE section (F2/F3): folds renderBookView's two sections into detail. --- */
+.bk-sec{ margin:0 0 22px; }
+.bk-sechead{ font-family:var(--serif); font-weight:600; font-size:24px; color:var(--ink); margin:0 0 4px; }
+.bk-secsub{ font-family:var(--sans); font-size:13px; color:var(--ink-2); margin:0 0 16px; }
+.bk-tcount{ font-family:var(--serif); font-style:italic; font-size:17px; color:var(--ink-2); margin:0 0 18px; }
+.bk-subhead{ font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); margin:22px 0 12px; }
+.bk-empty-note{ font-family:var(--serif); font-style:italic; font-size:16px; color:var(--ink-2); margin:0; }
+
+/* marginalia cards (components.css 10677-10685) — gold left-accent = the "marked"
+   signature; passage-quote slot intentionally absent (never faked). */
+.bk-marg{ padding:16px 20px; margin:0 0 12px; border-left:2px solid var(--gold-hi); }
+.bk-annot{ display:flex; gap:10px; align-items:flex-start; }
+.bk-pen{ flex:none; color:var(--gold-deep); font-size:14px; margin-top:2px; }
+.bk-atext{ font-family:var(--sans); font-size:14.5px; color:var(--ink-2); line-height:1.5; }
+.bk-margmeta{ margin-top:13px; padding-top:11px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:9px; }
+.bk-margmeta-l{ display:inline-flex; align-items:center; gap:9px; }
+.bk-loc{ font-family:var(--mono); font-size:10px; letter-spacing:.05em; color:var(--ink-2); }
+/* EVOLVED: FIX — woven-state dot (R6 pull-system vocab). woven = filled field-hue
+   dot (of the sub-theory it became) + became-link · unwoven = hollow ring. */
+.bk-marg-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+.bk-marg-dot.woven{ background:var(--dot); box-shadow:0 0 6px -1px var(--dot); }
+.bk-marg-dot.unwoven{ background:transparent; border:1.5px solid var(--ink-3); }
+.bk-unwoven-note{ font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--ink-2); opacity:.75; }
+.bk-becamelink{ font-family:var(--sans); font-size:12px; color:var(--ink-2); cursor:pointer; display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:var(--r-pill); padding:5px 12px; background:none; }
+.bk-becamelink:hover{ border-color:var(--gold-hi); color:var(--ink); }
+.bk-gl{ width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px -1px currentColor; flex:none; }
+
+/* EVOLVED: F2 — "Show all N" disclosure for long marginalia lists (preview ~3). */
+.bk-marg.is-folded{ display:none; }
+.bk-showall{ font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--gold-deep); background:none; border:1px dashed var(--line); border-radius:var(--r-pill); padding:8px 14px; cursor:pointer; margin:2px 0 6px; }
+.bk-showall:hover{ color:var(--gold); border-color:var(--gold-hi); }
+
+/* grew rows (components.css 10688-10698) — real PraxisMark shape + title + arc. */
+.bk-grew{ padding:15px 18px; margin:0 0 11px; display:flex; align-items:center; gap:16px; cursor:pointer; }
+.bk-grew:hover{ border-color:var(--gold-hi); }
+.bk-gli{ flex:none; }
+.bk-gbody{ flex:1; min-width:0; }
+.bk-grew-t{ font-family:var(--serif); font-weight:600; font-size:19px; color:var(--ink); line-height:1.15; }
+.bk-grew-in{ font-family:var(--sans); font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+.bk-grew-in b{ color:var(--ink); font-weight:600; }
+.bk-draft{ font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:1px 6px; }
+.bk-gopen{ flex:none; font-family:var(--sans); font-size:12.5px; color:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:7px 14px; background:none; cursor:pointer; }
+.bk-grew:hover .bk-gopen{ color:var(--ink); border-color:var(--gold-hi); }
+.bk-grewnote{ font-family:var(--sans); font-size:12px; color:var(--ink-2); margin:14px 0 0; display:flex; align-items:center; gap:9px; }
+.bk-rmark2{ flex:none; width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 32%, #fff6da 0%, var(--star) 45%, var(--gold) 100%); box-shadow:0 0 10px rgba(255,206,74,.55); }
+
+/* --- artifact card (components.css 10616-10618) — stays in the main lineage spine. --- */
+.bk-artifact-body{ font-family:var(--serif); font-style:italic; font-size:16px; line-height:1.5; color:var(--ink-2); margin:0; }
+.bk-artifact-open, .bk-artifact-write{ display:inline-block; margin-top:13px; font-family:var(--sans); font-size:12.5px; color:var(--gold-deep); background:none; border:none; padding:0; cursor:pointer; text-decoration:none; }
+.bk-artifact-open:hover, .bk-artifact-write:hover{ color:var(--gold); }
+
+/* --- ASIDE blocks: metadata + reading (components.css 10601-10613) --- */
+.bk-meta dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:9px 16px; }
+.bk-meta dt{ font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); white-space:nowrap; }
+.bk-meta dd{ margin:0; font-family:var(--sans); font-size:13px; color:var(--ink); text-align:right; }
+.bk-rrow{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid var(--line); font-family:var(--sans); font-size:13px; }
+.bk-reading .bk-rrow:first-of-type{ border-top:none; }
+.bk-rk{ color:var(--ink-2); }
+.bk-rv{ color:var(--ink); font-weight:500; }
+.bk-rv-read{ color:var(--gold-deep); }
+.bk-rate-stars{ display:inline-flex; gap:2px; }
+.bk-star{ background:none; border:none; padding:0 1px; cursor:pointer; font-size:15px; line-height:1; color:rgba(150,120,70,.4); }
+.bk-star.on{ color:var(--gold); }
+
+/* ============================================================================
+   6 · EDIT / MORE (components.css 10620-10641). EVOLVED: F6 adds the category select.
+   ============================================================================ */
+.bk-edit-toggle{ font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); background:none; border:1px solid var(--line); border-radius:var(--r-pill); padding:7px 14px; cursor:pointer; margin:6px 0 0; }
+.bk-edit-toggle:hover{ color:var(--ink); border-color:var(--gold-hi); }
+.bk-edit-panel{ margin:14px 0 0; padding:18px 20px; }
+.bk-edit-row{ display:flex; align-items:center; gap:11px; margin:0 0 12px; }
+.bk-edit-label{ font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); min-width:74px; }
+.bk-edit-input, .bk-edit-select{ flex:1; min-width:0; font-family:var(--sans); font-size:13px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 11px; }
+.bk-edit-btn{ font-family:var(--sans); font-size:12.5px; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-pill); padding:8px 14px; cursor:pointer; }
+.bk-edit-btn:hover{ color:var(--ink); border-color:var(--gold-hi); }
+.bk-edit-remove{ font-family:var(--sans); font-size:12.5px; color:var(--danger); background:none; border:1px solid rgba(194,96,58,.4); border-radius:var(--r-pill); padding:8px 14px; cursor:pointer; margin-top:4px; }
+.bk-edit-remove:hover{ border-color:var(--danger); }
+.bk-find{ display:inline-block; margin-top:16px; font-family:var(--sans); font-size:12.5px; color:var(--gold-deep); text-decoration:none; }
+.bk-find:hover{ color:var(--gold); }
+
+/* ============================================================================
+   7 · MOBILE — the ACTUAL breakpoint is 759 (components.css 10644-10651). The
+   canon 4-I reorder (BD2) uses CSS `order`, not just column stacking. Applied
+   BOTH inside .mock-phone (so Panel 2 always shows it) AND at the real @media.
+   ============================================================================ */
+.mock-phone .bk-surface, .bk-surface.is-mobile{ padding:22px 14px 60px; }
+.mock-phone .bk-hero, .bk-surface.is-mobile .bk-hero{ flex-direction:column; align-items:center; text-align:center; padding:22px 18px; }
+.mock-phone .bk-hinfo, .bk-surface.is-mobile .bk-hinfo{ width:100%; }
+.mock-phone .bk-hinfo .bk-tags, .mock-phone .bk-controls, .mock-phone .bk-arcchips,
+.bk-surface.is-mobile .bk-hinfo .bk-tags, .bk-surface.is-mobile .bk-controls, .bk-surface.is-mobile .bk-arcchips{ justify-content:center; }
+/* EVOLVED: F3/BD2 — action row is full-width in thumb reach; primary spans the row. */
+.mock-phone .bk-actions, .bk-surface.is-mobile .bk-actions{ flex-direction:column; align-items:stretch; }
+.mock-phone .bk-actionbtn, .bk-surface.is-mobile .bk-actionbtn{ text-align:center; }
+.mock-phone .bk-actionbtn-primary, .bk-surface.is-mobile .bk-actionbtn-primary{ order:-1; padding:13px 17px; }
+/* EVOLVED: BD2 — cols collapse AND `order` holds lineage(main) before the aside. */
+.mock-phone .bk-cols, .bk-surface.is-mobile .bk-cols{ flex-direction:column; }
+.mock-phone .bk-main, .bk-surface.is-mobile .bk-main{ order:1; }
+.mock-phone .bk-aside, .bk-surface.is-mobile .bk-aside{ order:2; width:100%; }
+.mock-phone .bk-bt, .bk-surface.is-mobile .bk-bt{ font-size:26px; }
+@media (max-width:759px){
+  .bk-surface{ padding:22px 14px 60px; }
+  .bk-hero{ flex-direction:column; align-items:center; text-align:center; padding:22px 18px; }
+  .bk-hinfo{ width:100%; }
+  .bk-hinfo .bk-tags, .bk-controls, .bk-arcchips{ justify-content:center; }
+  .bk-actions{ flex-direction:column; align-items:stretch; }
+  .bk-actionbtn{ text-align:center; }
+  .bk-actionbtn-primary{ order:-1; padding:13px 17px; }
+  .bk-cols{ flex-direction:column; }
+  .bk-main{ order:1; } .bk-aside{ order:2; width:100%; }
+  .bk-bt{ font-size:26px; }
+  .mock-phone{ border:none; border-radius:0; margin:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="mock-toolbar">
+  <span><b>R7 Book Detail</b> shape mockup</span>
+  <span class="mock-group">
+    <span style="opacity:.6">panel:</span>
+    <button type="button" class="mock-btn is-on" data-scene-btn="a" onclick="setScene('a')">(a) Desktop — rich lineage</button>
+    <button type="button" class="mock-btn" data-scene-btn="b" onclick="setScene('b')">(b) Mobile ≤759</button>
+    <button type="button" class="mock-btn" data-scene-btn="c" onclick="setScene('c')">(c) Empty lineage</button>
+    <button type="button" class="mock-btn" data-scene-btn="d" onclick="setScene('d')">(d) Signed out — seed</button>
+  </span>
+  <details class="mock-legend" open><summary>Decision key ▾</summary><b>F1</b> LIGHT working ground (§7: you work in the light; no dark amber-deep ground) · <b>F2</b> ONE page — marks fold in (marginalia + grew-into inline), preview 3 + "Show all N", the "Open your marks & lineage →" door retired · <b>F3</b> LINEAGE LEADS — marginalia + grew-into first; About / The book / Your reading recede to the aside; ONE ranked action row · <b>F4</b> ARC CHIPS in the hero (arcs.bookIds, field-spectrum hue by id-hash) · <b>F5</b> "This moved me" persists (settled state) · <b>F6</b> CATEGORY select in the Edit panel (shown open in a) · <b>FIX</b> woven-state dots (filled + became-link · hollow = unwoven).<br><span class="flag"><b>◆ SUB-CALL (felt-pass me):</b> action ranking — this mockup PROPOSES PRIMARY = "✎ Add marginalia" (the generative act), secondary = Add-to-arc + Send-to-sub-theory. Live makes Add-to-arc primary (views.js:8914). Keep the swap?</span> · BUILD-TIME stand-ins: per-arc hue = field spectrum by id-hash (no arc.color live); sub-theory marks = inline SVG for PraxisMarks.render.</details>
+</div>
+
+<!-- ============================================================================
+     PANEL (a) — DESKTOP RICH.  Pedagogy of the Oppressed (Freire): 4 marginalia
+     (2 woven / 2 unwoven), 2 sub-theories grown in "A Pedagogy of Desire", member
+     of 1 arc, status Read, rating set, moved-me on. Edit panel shown OPEN (F6).
+     ============================================================================ -->
+<section class="mock-scene is-active" data-scene="a">
+<div class="mock-stage">
+<div class="bk-surface">
+  <div class="bk-shell">
+    <a class="bk-backlink" href="#books" onclick="return false">← Back to your shelf</a>
+
+    <!-- HERO -->
+    <div class="bk-hero lum-glass">
+      <div class="bk-cover bk-cover-alight">
+        <span class="bk-cover-spine" aria-hidden="true"></span>
+        <span class="bk-cover-rmark" aria-hidden="true"></span>
+        <div class="bk-cover-cloth">
+          <div class="bk-cover-ct">Pedagogy of the Oppressed</div>
+          <div class="bk-cover-ca">Paulo Freire</div>
+        </div>
+      </div>
+      <div class="bk-hinfo">
+        <div class="bk-bt">Pedagogy of the Oppressed</div>
+        <div class="bk-ba">Paulo Freire</div>
+        <div class="bk-tags">
+          <span class="bk-ltag"><span class="bk-ltag-dot" aria-hidden="true"></span>Critical theory</span>
+          <span class="bk-ltag"><span class="bk-ltag-dot" aria-hidden="true"></span>Critical</span>
+          <span class="bk-ltag bk-ltag-cat"><span class="bk-ltag-dot" aria-hidden="true"></span>Education</span>
+        </div>
+        <!-- EVOLVED: F4 — arc chips for every arc holding the book (arcs.bookIds).
+             arc-hue = field-2 coral, deterministic by arc id-hash (stand-in). -->
+        <div class="bk-arcchips">
+          <span class="bk-arcchips-label">In arcs</span>
+          <a class="bk-arcchip" href="#arc/pedagogy-of-desire" onclick="return false" style="--arc:var(--field-2)">A Pedagogy of Desire</a>
+        </div>
+        <div class="bk-controls">
+          <div class="rstatus" role="group" aria-label="Reading status">
+            <button type="button" class="rs-opt">Unread</button>
+            <button type="button" class="rs-opt">Reading</button>
+            <button type="button" class="rs-opt on">Read</button>
+          </div>
+          <!-- EVOLVED: F5 — "This moved me" persists; shown as a settled ON state. -->
+          <button type="button" class="bk-moved on">♥ Moved you</button>
+        </div>
+        <div class="lum-yumi" style="margin-top:16px">
+          <span class="dot" aria-hidden="true"></span>
+          <p>This one is a root. Two threads in your thinking start here — you don’t just keep it, you build from it.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVOLVED: SUB-CALL — the ONE ranked action row; primary = Add marginalia -->
+    <div class="bk-actions">
+      <button type="button" class="bk-actionbtn bk-actionbtn-primary">✎ Add marginalia</button>
+      <button type="button" class="bk-actionbtn">Add to an arc</button>
+      <button type="button" class="bk-actionbtn">Send to sub-theory</button>
+    </div>
+
+    <!-- COLS: main = LINEAGE (F3 leads), aside = About + book + reading -->
+    <div class="bk-cols">
+      <div class="bk-main">
+
+        <!-- EVOLVED: F2/F3 — the marks page's material, folded in and leading. -->
+        <div class="bk-sec bk-block lum-glass">
+          <h2 class="bk-sechead">In your thinking</h2>
+          <p class="bk-tcount">Two sub-theories grew from this book, across four marked passages.</p>
+
+          <!-- What you marked -->
+          <div class="bk-subhead">What you marked</div>
+
+          <!-- woven #1 -->
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“The oppressed, having internalized the image of the oppressor and adopted his guidelines, are fearful of freedom.” — this is the whole hinge.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l">
+                <!-- EVOLVED: FIX — woven: filled dot in the became sub-theory's mark hue -->
+                <span class="bk-marg-dot woven" style="--dot:var(--field-2)" aria-hidden="true"></span>
+                <span class="bk-loc">marked · 12 Mar 2026</span>
+              </span>
+              <button type="button" class="bk-becamelink"><span class="bk-gl" style="color:var(--field-2)" aria-hidden="true"></span>became “Wanting more than survival” →</button>
+            </div>
+          </div>
+
+          <!-- woven #2 -->
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“No one teaches another, nor is anyone self-taught. People teach each other, mediated by the world.” Kept coming back to this in the seminar.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l">
+                <span class="bk-marg-dot woven" style="--dot:var(--field-9)" aria-hidden="true"></span>
+                <span class="bk-loc">marked · 14 Mar 2026</span>
+              </span>
+              <button type="button" class="bk-becamelink"><span class="bk-gl" style="color:var(--field-9)" aria-hidden="true"></span>became “The teacher who learns” →</button>
+            </div>
+          </div>
+
+          <!-- unwoven #3 -->
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">Banking education treats students as depositories — Freire’s indictment lands harder now, with the LMS and the dashboard.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l">
+                <!-- EVOLVED: FIX — unwoven: hollow ring, no became-link -->
+                <span class="bk-marg-dot unwoven" aria-hidden="true"></span>
+                <span class="bk-loc">marked · 18 Mar 2026</span>
+              </span>
+              <span class="bk-unwoven-note">not yet woven</span>
+            </div>
+          </div>
+
+          <!-- unwoven #4 — folded until "Show all" (F2) -->
+          <div class="bk-marg is-folded" data-fold="marg-a">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“Reading the word and reading the world” — the phrase I keep returning to when I try to say what literacy is for.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l">
+                <span class="bk-marg-dot unwoven" aria-hidden="true"></span>
+                <span class="bk-loc">marked · 21 Mar 2026</span>
+              </span>
+              <span class="bk-unwoven-note">not yet woven</span>
+            </div>
+          </div>
+          <!-- EVOLVED: F2 — disclosure for the long list (preview 3, reveal the rest). -->
+          <button type="button" class="bk-showall" data-showall="marg-a">Show all 4 marked passages</button>
+
+          <!-- What it grew into -->
+          <div class="bk-subhead">What it grew into</div>
+
+          <!-- grew #1 — EVOLVED: F2 real PraxisMark shape (inline SVG stand-in, field-2 coral, "the beacon") -->
+          <div class="bk-grew lum-glass">
+            <span class="bk-gli"><span class="bk-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22"><defs><radialGradient id="mkA" cx="38%" cy="32%"><stop offset="0%" stop-color="#fff" stop-opacity=".92"/><stop offset="55%" stop-color="#e07a52"/><stop offset="100%" stop-color="#8f3f22"/></radialGradient></defs><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="url(#mkA)"/></svg>
+            </span></span>
+            <div class="bk-gbody">
+              <div class="bk-grew-t">Wanting more than survival</div>
+              <div class="bk-grew-in">in <b>A Pedagogy of Desire</b></div>
+            </div>
+            <button type="button" class="bk-gopen">Open →</button>
+          </div>
+
+          <!-- grew #2 — inline SVG stand-in, field-9 honey, "the wellspring" teardrop, draft -->
+          <div class="bk-grew lum-glass">
+            <span class="bk-gli"><span class="bk-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22"><defs><radialGradient id="mkB" cx="38%" cy="32%"><stop offset="0%" stop-color="#fff" stop-opacity=".92"/><stop offset="55%" stop-color="#e8b068"/><stop offset="100%" stop-color="#8a5f28"/></radialGradient></defs><path d="M12 2 C17 9 20 13 20 16 a8 8 0 0 1 -16 0 C4 13 7 9 12 2 Z" fill="url(#mkB)"/></svg>
+            </span></span>
+            <div class="bk-gbody">
+              <div class="bk-grew-t">The teacher who learns</div>
+              <div class="bk-grew-in">in <b>A Pedagogy of Desire</b> <span class="bk-draft">draft</span></div>
+            </div>
+            <button type="button" class="bk-gopen">Open →</button>
+          </div>
+
+          <div class="bk-grewnote"><span class="bk-rmark2" aria-hidden="true"></span>This is why the book is alight on your shelf — two lines run from it into your own field.</div>
+
+          <div class="lum-yumi" style="margin-top:18px">
+            <span class="dot" aria-hidden="true"></span>
+            <p>Threads of yours begin in this book. When one stalls, the way back into it usually starts here.</p>
+          </div>
+        </div>
+
+        <!-- artifact card — stays in the lineage spine (the reader's standing reflection) -->
+        <div class="bk-block lum-glass bk-artifact">
+          <p class="bk-blabel">Your book artifact</p>
+          <p class="bk-artifact-body">Freire is the hinge of the whole arc — every sub-theory about desire and pedagogy routes back through the banking-model critique. I keep this one close.</p>
+          <a class="bk-artifact-open" href="#artifact/pedagogy" onclick="return false">Open artifact →</a>
+        </div>
+      </div>
+
+      <!-- ASIDE — About + The book + Your reading recede here (F3) -->
+      <div class="bk-aside">
+        <div class="bk-block lum-glass">
+          <p class="bk-blabel">What it’s about</p>
+          <p class="bk-synopsis">Freire’s critique of “banking” education and his case for a liberatory, dialogic pedagogy in which teacher and student learn together.</p>
+        </div>
+        <div class="bk-block lum-glass bk-meta">
+          <p class="bk-blabel">The book</p>
+          <dl>
+            <dt>First published</dt><dd>1968</dd>
+            <dt>Pages</dt><dd>183</dd>
+            <dt>Publisher</dt><dd>Herder &amp; Herder</dd>
+            <dt>ISBN</dt><dd>9780826412768</dd>
+            <dt>Subjects</dt><dd>Critical · Education</dd>
+          </dl>
+        </div>
+        <div class="bk-block lum-glass bk-reading">
+          <p class="bk-blabel">Your reading</p>
+          <div class="bk-rrow"><span class="bk-rk">Status</span><span class="bk-rv bk-rv-read">Read</span></div>
+          <div class="bk-rrow"><span class="bk-rk">Finished</span><span class="bk-rv">Mar 2026</span></div>
+          <div class="bk-rrow"><span class="bk-rk">Rating</span>
+            <span class="bk-rate-stars" role="group" aria-label="Your rating">
+              <button type="button" class="bk-star on">★</button><button type="button" class="bk-star on">★</button><button type="button" class="bk-star on">★</button><button type="button" class="bk-star on">★</button><button type="button" class="bk-star">★</button>
+            </span>
+          </div>
+          <div class="bk-rrow"><span class="bk-rk">Passages marked</span><span class="bk-rv">4</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit / more — shown OPEN so the F6 category select is visible -->
+    <button type="button" class="bk-edit-toggle" aria-expanded="true">Close edit</button>
+    <div class="bk-edit-panel lum-glass">
+      <p class="bk-blabel">Edit details</p>
+      <div class="bk-edit-row"><button type="button" class="bk-edit-btn">↺ Fix this book</button></div>
+      <div class="bk-edit-row"><label class="bk-edit-label">ISBN</label><input class="bk-edit-input" type="text" value="9780826412768"></div>
+      <div class="bk-edit-row"><label class="bk-edit-label">Tradition</label>
+        <select class="bk-edit-select"><option>Unassigned</option><option selected>Critical</option><option>Analytic</option><option>Continental</option><option>Empirical</option></select>
+      </div>
+      <!-- EVOLVED: F6 — category select (17-category taxonomy + Uncategorized). -->
+      <div class="bk-edit-row"><label class="bk-edit-label">Category</label>
+        <select class="bk-edit-select">
+          <option>Uncategorized</option>
+          <option selected>Education</option>
+          <option>Philosophy</option><option>Psychology</option><option>Sociology</option>
+          <option>History</option><option>Politics</option><option>Economics</option>
+          <option>Science</option><option>Technology</option><option>Religion</option>
+          <option>Art &amp; Design</option><option>Literature</option><option>Memoir</option>
+          <option>Fiction</option><option>Poetry</option><option>Health</option><option>Society</option>
+        </select>
+      </div>
+      <button type="button" class="bk-edit-remove">Remove from shelf</button>
+    </div>
+
+    <a class="bk-find" href="#" onclick="return false">Find this book</a>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (b) — MOBILE ≤759.  Same book, canon 4-I reorder via CSS `order`
+     (BD2): cover + title lead → action row in thumb reach → lineage before the
+     aside content. Rendered in a 390px phone frame so the reflow always shows.
+     ============================================================================ -->
+<section class="mock-scene" data-scene="b">
+<p class="mock-note">Panel (b): the same book at 390px — BD2 answered. The reorder uses CSS <code>order</code>, not just column stacking; the build wires it into components.css.</p>
+<div class="mock-phone">
+<div class="mock-stage">
+<div class="bk-surface is-mobile">
+  <div class="bk-shell">
+    <a class="bk-backlink" href="#books" onclick="return false">← Back to your shelf</a>
+
+    <div class="bk-hero lum-glass">
+      <div class="bk-cover bk-cover-alight">
+        <span class="bk-cover-spine" aria-hidden="true"></span>
+        <span class="bk-cover-rmark" aria-hidden="true"></span>
+        <div class="bk-cover-cloth"><div class="bk-cover-ct">Pedagogy of the Oppressed</div><div class="bk-cover-ca">Paulo Freire</div></div>
+      </div>
+      <div class="bk-hinfo">
+        <div class="bk-bt">Pedagogy of the Oppressed</div>
+        <div class="bk-ba">Paulo Freire</div>
+        <div class="bk-tags">
+          <span class="bk-ltag"><span class="bk-ltag-dot" aria-hidden="true"></span>Critical theory</span>
+          <span class="bk-ltag bk-ltag-cat"><span class="bk-ltag-dot" aria-hidden="true"></span>Education</span>
+        </div>
+        <div class="bk-arcchips">
+          <span class="bk-arcchips-label">In arcs</span>
+          <a class="bk-arcchip" href="#arc/pedagogy-of-desire" onclick="return false" style="--arc:var(--field-2)">A Pedagogy of Desire</a>
+        </div>
+        <div class="bk-controls">
+          <div class="rstatus" role="group" aria-label="Reading status">
+            <button type="button" class="rs-opt">Unread</button>
+            <button type="button" class="rs-opt">Reading</button>
+            <button type="button" class="rs-opt on">Read</button>
+          </div>
+          <button type="button" class="bk-moved on">♥ Moved you</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVOLVED: F3/BD2 — action row pulled into thumb reach; primary spans full-width -->
+    <div class="bk-actions">
+      <button type="button" class="bk-actionbtn bk-actionbtn-primary">✎ Add marginalia</button>
+      <button type="button" class="bk-actionbtn">Add to an arc</button>
+      <button type="button" class="bk-actionbtn">Send to sub-theory</button>
+    </div>
+
+    <div class="bk-cols">
+      <div class="bk-main">
+        <div class="bk-sec bk-block lum-glass">
+          <h2 class="bk-sechead">In your thinking</h2>
+          <p class="bk-tcount">Two sub-theories grew from this book, across four marked passages.</p>
+          <div class="bk-subhead">What you marked</div>
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“…are fearful of freedom.” — this is the whole hinge.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l"><span class="bk-marg-dot woven" style="--dot:var(--field-2)" aria-hidden="true"></span><span class="bk-loc">marked · 12 Mar</span></span>
+              <button type="button" class="bk-becamelink"><span class="bk-gl" style="color:var(--field-2)" aria-hidden="true"></span>became “Wanting more…” →</button>
+            </div>
+          </div>
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">Banking education treats students as depositories — lands harder now.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l"><span class="bk-marg-dot unwoven" aria-hidden="true"></span><span class="bk-loc">marked · 18 Mar</span></span>
+              <span class="bk-unwoven-note">not yet woven</span>
+            </div>
+          </div>
+          <button type="button" class="bk-showall" data-showall="marg-b">Show all 4 marked passages</button>
+          <div class="bk-subhead">What it grew into</div>
+          <div class="bk-grew lum-glass">
+            <span class="bk-gli"><span class="bk-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22"><defs><radialGradient id="mkC" cx="38%" cy="32%"><stop offset="0%" stop-color="#fff" stop-opacity=".92"/><stop offset="55%" stop-color="#e07a52"/><stop offset="100%" stop-color="#8f3f22"/></radialGradient></defs><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="url(#mkC)"/></svg>
+            </span></span>
+            <div class="bk-gbody"><div class="bk-grew-t">Wanting more than survival</div><div class="bk-grew-in">in <b>A Pedagogy of Desire</b></div></div>
+            <button type="button" class="bk-gopen">Open →</button>
+          </div>
+        </div>
+        <div class="bk-block lum-glass bk-artifact">
+          <p class="bk-blabel">Your book artifact</p>
+          <p class="bk-artifact-body">Freire is the hinge of the whole arc — I keep this one close.</p>
+          <a class="bk-artifact-open" href="#artifact/pedagogy" onclick="return false">Open artifact →</a>
+        </div>
+      </div>
+      <div class="bk-aside">
+        <div class="bk-block lum-glass">
+          <p class="bk-blabel">What it’s about</p>
+          <p class="bk-synopsis">Freire’s critique of “banking” education and his case for a liberatory, dialogic pedagogy.</p>
+        </div>
+        <div class="bk-block lum-glass bk-meta">
+          <p class="bk-blabel">The book</p>
+          <dl><dt>First published</dt><dd>1968</dd><dt>Pages</dt><dd>183</dd><dt>ISBN</dt><dd>9780826412768</dd></dl>
+        </div>
+        <div class="bk-block lum-glass bk-reading">
+          <p class="bk-blabel">Your reading</p>
+          <div class="bk-rrow"><span class="bk-rk">Status</span><span class="bk-rv bk-rv-read">Read</span></div>
+          <div class="bk-rrow"><span class="bk-rk">Passages marked</span><span class="bk-rv">4</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (c) — EMPTY LINEAGE.  Empire of AI (Karen Hao), newly added: no
+     marginalia, nothing grown, no arcs. The INVITATION state, not a void.
+     ============================================================================ -->
+<section class="mock-scene" data-scene="c">
+<div class="mock-stage">
+<div class="bk-surface">
+  <div class="bk-shell">
+    <a class="bk-backlink" href="#books" onclick="return false">← Back to your shelf</a>
+
+    <div class="bk-hero lum-glass">
+      <div class="bk-cover">
+        <span class="bk-cover-spine" aria-hidden="true"></span>
+        <div class="bk-cover-cloth"><div class="bk-cover-ct">Empire of AI</div><div class="bk-cover-ca">Karen Hao</div></div>
+      </div>
+      <div class="bk-hinfo">
+        <div class="bk-bt">Empire of AI</div>
+        <div class="bk-ba">Karen Hao</div>
+        <div class="bk-tags">
+          <span class="bk-ltag"><span class="bk-ltag-dot" aria-hidden="true"></span>Technology</span>
+          <span class="bk-ltag bk-ltag-cat"><span class="bk-ltag-dot" aria-hidden="true"></span>Society</span>
+        </div>
+        <!-- EVOLVED: F4 — no arcs yet, so no chips (the invitation is the action row). -->
+        <div class="bk-controls">
+          <div class="rstatus" role="group" aria-label="Reading status">
+            <button type="button" class="rs-opt">Unread</button>
+            <button type="button" class="rs-opt on">Reading</button>
+            <button type="button" class="rs-opt">Read</button>
+          </div>
+          <button type="button" class="bk-moved">♡ This moved me</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bk-actions">
+      <button type="button" class="bk-actionbtn bk-actionbtn-primary">✎ Add marginalia</button>
+      <button type="button" class="bk-actionbtn">Add to an arc</button>
+      <button type="button" class="bk-actionbtn">Send to sub-theory</button>
+    </div>
+
+    <div class="bk-cols">
+      <div class="bk-main">
+        <div class="bk-sec bk-block lum-glass">
+          <h2 class="bk-sechead">In your thinking</h2>
+          <!-- EVOLVED: F2/F3 — the empty lineage as an INVITATION, not a void. -->
+          <p class="bk-tcount">Nothing has grown from this book yet — this is where it will start.</p>
+          <div class="bk-subhead">What you marked</div>
+          <p class="bk-empty-note">No marginalia yet. Your first mark from this book will appear here — and if it grows, you’ll see the thread it starts.</p>
+          <div class="bk-subhead">What it grew into</div>
+          <p class="bk-empty-note">Marks you make here can become sub-theories in your arcs. Nothing has been woven yet.</p>
+          <div class="lum-yumi" style="margin-top:18px">
+            <span class="dot" aria-hidden="true"></span>
+            <p>A new book on the shelf. Read with a pen — the first line you mark is where an arc can begin.</p>
+          </div>
+        </div>
+        <div class="bk-block lum-glass bk-artifact">
+          <p class="bk-blabel">Your book artifact</p>
+          <p class="bk-artifact-body">A standing place for what this book is doing in your thinking — written once, yours, and visible to Yumi only when you choose.</p>
+          <button type="button" class="bk-artifact-write">Write your artifact →</button>
+        </div>
+      </div>
+      <div class="bk-aside">
+        <div class="bk-block lum-glass">
+          <p class="bk-blabel">What it’s about</p>
+          <p class="bk-synopsis">A reported history of OpenAI and the concentration of power, capital, and labor behind the modern AI industry.</p>
+        </div>
+        <div class="bk-block lum-glass bk-meta">
+          <p class="bk-blabel">The book</p>
+          <dl><dt>First published</dt><dd>2025</dd><dt>Pages</dt><dd>482</dd><dt>Publisher</dt><dd>Penguin Press</dd><dt>Subjects</dt><dd>Technology · Society</dd></dl>
+        </div>
+        <div class="bk-block lum-glass bk-reading">
+          <p class="bk-blabel">Your reading</p>
+          <div class="bk-rrow"><span class="bk-rk">Status</span><span class="bk-rv">Reading</span></div>
+          <div class="bk-rrow"><span class="bk-rk">Rating</span>
+            <span class="bk-rate-stars" role="group" aria-label="Your rating">
+              <button type="button" class="bk-star">★</button><button type="button" class="bk-star">★</button><button type="button" class="bk-star">★</button><button type="button" class="bk-star">★</button><button type="button" class="bk-star">★</button>
+            </span>
+          </div>
+          <div class="bk-rrow"><span class="bk-rk">Passages marked</span><span class="bk-rv">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="bk-edit-toggle" aria-expanded="false">Edit / more</button>
+    <a class="bk-find" href="#" onclick="return false">Find this book</a>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================================
+     PANEL (d) — SIGNED OUT — SEED.  The Pedagogy worked-example seed book:
+     PUBLIC (seed) marginalia surfaces per the W12 seed rule; private controls
+     (Your reading, artifact, edit, moved-me) are absent; a sign-in prompt sits
+     where the actions row would be.
+     ============================================================================ -->
+<section class="mock-scene" data-scene="d">
+<div class="mock-stage">
+<div class="bk-surface">
+  <div class="bk-shell">
+    <a class="bk-backlink" href="#books" onclick="return false">← Back to the shelf</a>
+
+    <div class="bk-hero lum-glass">
+      <div class="bk-cover bk-cover-alight">
+        <span class="bk-cover-spine" aria-hidden="true"></span>
+        <span class="bk-cover-rmark" aria-hidden="true"></span>
+        <div class="bk-cover-cloth"><div class="bk-cover-ct">Pedagogy of the Oppressed</div><div class="bk-cover-ca">Paulo Freire</div></div>
+      </div>
+      <div class="bk-hinfo">
+        <div class="bk-bt">Pedagogy of the Oppressed</div>
+        <div class="bk-ba">Paulo Freire</div>
+        <div class="bk-tags">
+          <span class="bk-ltag"><span class="bk-ltag-dot" aria-hidden="true"></span>Critical theory</span>
+          <span class="bk-ltag bk-ltag-cat"><span class="bk-ltag-dot" aria-hidden="true"></span>Education</span>
+        </div>
+        <div class="lum-yumi" style="margin-top:16px">
+          <span class="dot" aria-hidden="true"></span>
+          <p>A worked example — someone read this with a pen, and two threads grew from it. Sign in to start your own.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVOLVED: F3 — signed out: sign-in prompt replaces the action row (no private writes). -->
+    <div class="bk-signinrow lum-glass">
+      <p>Your marks are private. Sign in to mark this book and see what it grows into.</p>
+      <button type="button" class="bk-signin">Sign in to write</button>
+    </div>
+
+    <div class="bk-cols">
+      <div class="bk-main">
+        <div class="bk-sec bk-block lum-glass">
+          <h2 class="bk-sechead">In this reading</h2>
+          <p class="bk-tcount">Two sub-theories grew from this book, across two public passages.</p>
+
+          <!-- EVOLVED: F2 — public seed marginalia surface signed-out (W12 seed rule);
+               read-only (no woven controls to toggle), became-links intact. -->
+          <div class="bk-subhead">What was marked</div>
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“The oppressed, having internalized the image of the oppressor… are fearful of freedom.” — the hinge of the whole reading.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l"><span class="bk-marg-dot woven" style="--dot:var(--field-2)" aria-hidden="true"></span><span class="bk-loc">public · worked example</span></span>
+              <button type="button" class="bk-becamelink"><span class="bk-gl" style="color:var(--field-2)" aria-hidden="true"></span>became “Wanting more than survival” →</button>
+            </div>
+          </div>
+          <div class="bk-marg">
+            <div class="bk-annot"><span class="bk-pen" aria-hidden="true">✎</span><span class="bk-atext">“People teach each other, mediated by the world.” The teacher is not the depositor; both are learners.</span></div>
+            <div class="bk-margmeta">
+              <span class="bk-margmeta-l"><span class="bk-marg-dot woven" style="--dot:var(--field-9)" aria-hidden="true"></span><span class="bk-loc">public · worked example</span></span>
+              <button type="button" class="bk-becamelink"><span class="bk-gl" style="color:var(--field-9)" aria-hidden="true"></span>became “The teacher who learns” →</button>
+            </div>
+          </div>
+
+          <div class="bk-subhead">What it grew into</div>
+          <div class="bk-grew lum-glass">
+            <span class="bk-gli"><span class="bk-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22"><defs><radialGradient id="mkD" cx="38%" cy="32%"><stop offset="0%" stop-color="#fff" stop-opacity=".92"/><stop offset="55%" stop-color="#e07a52"/><stop offset="100%" stop-color="#8f3f22"/></radialGradient></defs><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="url(#mkD)"/></svg>
+            </span></span>
+            <div class="bk-gbody"><div class="bk-grew-t">Wanting more than survival</div><div class="bk-grew-in">in <b>A Pedagogy of Desire</b></div></div>
+            <button type="button" class="bk-gopen">Open →</button>
+          </div>
+          <div class="bk-grew lum-glass">
+            <span class="bk-gli"><span class="bk-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22"><defs><radialGradient id="mkE" cx="38%" cy="32%"><stop offset="0%" stop-color="#fff" stop-opacity=".92"/><stop offset="55%" stop-color="#e8b068"/><stop offset="100%" stop-color="#8a5f28"/></radialGradient></defs><path d="M12 2 C17 9 20 13 20 16 a8 8 0 0 1 -16 0 C4 13 7 9 12 2 Z" fill="url(#mkE)"/></svg>
+            </span></span>
+            <div class="bk-gbody"><div class="bk-grew-t">The teacher who learns</div><div class="bk-grew-in">in <b>A Pedagogy of Desire</b></div></div>
+            <button type="button" class="bk-gopen">Open →</button>
+          </div>
+        </div>
+      </div>
+      <!-- ASIDE — only the PUBLIC facts (About + The book); no Your reading / artifact / edit. -->
+      <div class="bk-aside">
+        <div class="bk-block lum-glass">
+          <p class="bk-blabel">What it’s about</p>
+          <p class="bk-synopsis">Freire’s critique of “banking” education and his case for a liberatory, dialogic pedagogy in which teacher and student learn together.</p>
+        </div>
+        <div class="bk-block lum-glass bk-meta">
+          <p class="bk-blabel">The book</p>
+          <dl><dt>First published</dt><dd>1968</dd><dt>Pages</dt><dd>183</dd><dt>Publisher</dt><dd>Herder &amp; Herder</dd><dt>Subjects</dt><dd>Critical · Education</dd></dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<script>
+/* Standalone mockup interactivity. This is a design artifact under docs/ — NOT
+   served app code — so modern JS is fine here (the ES3 rule governs js/). */
+function setScene(id){
+  var scenes = document.querySelectorAll('.mock-scene');
+  Array.prototype.forEach.call(scenes, function(s){ s.classList.toggle('is-active', s.getAttribute('data-scene') === id); });
+  Array.prototype.forEach.call(document.querySelectorAll('.mock-btn'), function(b){ b.classList.toggle('is-on', b.getAttribute('data-scene-btn') === id); });
+  window.scrollTo(0, 0);
+}
+(function(){
+  /* F2 — "Show all N" disclosure: reveal folded marginalia in the same group. */
+  Array.prototype.forEach.call(document.querySelectorAll('.bk-showall'), function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-showall');
+      Array.prototype.forEach.call(document.querySelectorAll('.bk-marg[data-fold="' + key + '"]'), function(m){ m.classList.remove('is-folded'); });
+      btn.style.display = 'none';
+    });
+  });
+  /* F5 — moved-me toggle (settled state; starts ON in Panel a/b). */
+  Array.prototype.forEach.call(document.querySelectorAll('.bk-moved'), function(btn){
+    btn.addEventListener('click', function(){
+      var on = btn.classList.toggle('on');
+      btn.textContent = on ? '♥ Moved you' : '♡ This moved me';
+    });
+  });
+  /* read-status control — visual toggle within its group. */
+  Array.prototype.forEach.call(document.querySelectorAll('.rstatus'), function(group){
+    Array.prototype.forEach.call(group.querySelectorAll('.rs-opt'), function(opt){
+      opt.addEventListener('click', function(){
+        Array.prototype.forEach.call(group.querySelectorAll('.rs-opt'), function(o){ o.classList.remove('on'); });
+        opt.classList.add('on');
+      });
+    });
+  });
+  /* rating stars — visual set within its group. */
+  Array.prototype.forEach.call(document.querySelectorAll('.bk-rate-stars'), function(group){
+    var stars = group.querySelectorAll('.bk-star');
+    Array.prototype.forEach.call(stars, function(star, i){
+      star.addEventListener('click', function(){
+        Array.prototype.forEach.call(stars, function(s, j){ s.classList.toggle('on', j <= i); });
+      });
+    });
+  });
+  /* Edit / more toggle — Panel c opens its (empty) panel for parity. */
+  Array.prototype.forEach.call(document.querySelectorAll('.bk-edit-toggle'), function(btn){
+    btn.addEventListener('click', function(){
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      btn.textContent = open ? 'Edit / more' : 'Close edit';
+    });
+  });
+})();
+</script>
+</body>
+</html>
