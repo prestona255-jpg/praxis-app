@@ -825,14 +825,13 @@ function _searchBuildIndex() {
       var clr = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
         ? sub.markColor : hash.colorIdx;
       var body1 = (typeof sub.bodyPublic === 'string') ? sub.bodyPublic : '';
-      var body2 = (typeof sub.bodyIntellectual === 'string') ? sub.bodyIntellectual : '';
       items.push({
         kind: 'sub',
         title: hdr || 'Untitled sub-theory',
         sub: parentTitle ? ('in ' + parentTitle) : '',
         snip: '',
         crumb: 'Sub-theory · ' + _searchSubMaturityWord(matV),
-        hay: (hdr + ' ' + body1 + ' ' + body2 + ' ' + parentTitle).toLowerCase(),
+        hay: (hdr + ' ' + body1 + ' ' + parentTitle).toLowerCase(),
         route: '#subtheory/' + k,
         subId: k, shape: shp, color: clr
       });
@@ -9964,35 +9963,17 @@ function renderSubTheoryPage(id) {
     + ' · ' + stBookN + ' BOOK' + (stBookN === 1 ? '' : 'S');
   main.appendChild(stTMeta);
 
-  // Batch 3B: segmented PUBLIC | INTELLECTUAL register toggle. One
-  // register's textarea is visible at a time; Public is the default on
-  // load. Both bodies stay in the DOM bound to their fields with the
-  // blur->updateSubTheory save -- the tabs only swap visibility, so this
-  // is view-state only (nothing persisted about which register shows).
-  // Replaces the prior additive model (always-on Public + a button that
-  // revealed Intellectual); the Intellectual tab now reveals its textarea
-  // on demand even when empty.
-  var regToggle = document.createElement('div');
-  regToggle.className = 'st-register-toggle';
-  var regSeg = document.createElement('div');
-  regSeg.className = 'seg';
-  regSeg.setAttribute('role', 'tablist');
-  regSeg.setAttribute('aria-label', 'Register');
-
+  // R5 S4 register collapse: the Public|Intellectual toggle + the dual-body model
+  // are gone. ONE body now (bodyPublic); the former bodyIntellectual is folded into
+  // it once by the ensureSubTheoryFields migration (never deleted, dormant). The
+  // single hidden textarea below is the citation engine's model (the canvas mirrors
+  // getValue() into it), exactly as before -- only the second register is removed.
   var publicBody = document.createElement('textarea');
   publicBody.className = 'notebook-editor-body subtheory-register-body';
   publicBody.setAttribute('placeholder', 'Write the public register…');
   publicBody.value = subTheory.bodyPublic || '';
   publicBody.addEventListener('blur', function() {
     updateSubTheory(id, { bodyPublic: publicBody.value });
-  });
-
-  var intelBody = document.createElement('textarea');
-  intelBody.className = 'notebook-editor-body subtheory-register-body';
-  intelBody.setAttribute('placeholder', 'Write the intellectual register…');
-  intelBody.value = subTheory.bodyIntellectual || '';
-  intelBody.addEventListener('blur', function() {
-    updateSubTheory(id, { bodyIntellectual: intelBody.value });
   });
 
   // 10.5.2: Cite-from-the-rail. Track which register body last held focus
@@ -10004,44 +9985,24 @@ function renderSubTheoryPage(id) {
   // dot appears without waiting for the debounce.
   var lastFocusedBody = null;
   publicBody.addEventListener('focus', function() { lastFocusedBody = publicBody; });
-  intelBody.addEventListener('focus', function() { lastFocusedBody = intelBody; });
   function insertCitationAtCursor(text) {
     // Wave 3: weave the citation into the visible canvas at the caret
     // (handle.insertAtCaret -- no core change), then mirror the canvas markdown
-    // into the active register's hidden textarea so the citation engine + the
-    // persisted body stay consistent. (The old textarea-caret path is retired
-    // with the textareas now hidden; lastFocusedBody stays declared, unused.)
+    // into the hidden bodyPublic textarea so the citation engine + the persisted
+    // body stay consistent. (R5 S4: single body -- no register switch.)
     if (canvas) {
       canvas.insertAtCaret(text);
-      var ta = activeRegisterPublic ? publicBody : intelBody;
-      ta.value = canvas.getValue();
-      var patch = {};
-      patch[activeRegisterPublic ? 'bodyPublic' : 'bodyIntellectual'] = ta.value;
-      updateSubTheory(id, patch);
+      publicBody.value = canvas.getValue();
+      updateSubTheory(id, { bodyPublic: publicBody.value });
     }
     refreshCitationPreviews();
   }
 
-  var publicTab = document.createElement('button');
-  publicTab.type = 'button';
-  publicTab.className = 'seg-opt';
-  publicTab.setAttribute('data-reg', 'public');
-  publicTab.textContent = 'Public';
-
-  var intelTab = document.createElement('button');
-  intelTab.type = 'button';
-  intelTab.className = 'seg-opt';
-  intelTab.setAttribute('data-reg', 'intellectual');
-  intelTab.textContent = 'Intellectual';
-
-  var activeRegisterPublic = true;
   var draftPreview = false;
 
-  // 10.5.6: per-register Write | Preview toggle, a sibling pill to the right of
-  // the register toggle. Write shows the textarea; Preview shows THAT register's
-  // live citation preview in the editor slot (the always-stacked pane is gone).
-  // Distinct from the Published toggle below, which renders the whole sub-theory
-  // read-only ("what readers see").
+  // 10.5.6: the per-register Write | Preview toggle (a sibling pill). Write shows
+  // the canvas; Preview shows the live citation preview in the editor slot. Distinct
+  // from the Published toggle below, which renders the whole sub-theory read-only.
   var wpToggle = document.createElement('div');
   wpToggle.className = 'seg subtheory-wp-toggle';
   var writeTab = document.createElement('button');
@@ -10055,56 +10016,28 @@ function renderSubTheoryPage(id) {
   wpToggle.appendChild(writeTab);
   wpToggle.appendChild(previewTab);
 
-  // Single source of truth for the editor's visible surface, given the active
-  // register and the Write/Preview state. Textareas show only in Write; the
-  // matching preview pane shows only in Preview; tab actives reflect both axes.
+  // R5 S4: single body (bodyPublic). The canvas shows in Write; the public citation
+  // preview shows in Preview. The register axis is gone (no publicTab/intelTab/
+  // showRegister) -- this now toggles only Write vs Preview.
   function applyEditorView() {
-    var pub = activeRegisterPublic;
-    // Wave 3: the canvas is the editor; the register textareas stay hidden
-    // (citation-engine model only). canvasHost shows in Write, hides in Preview.
     publicBody.style.display = 'none';
-    intelBody.style.display = 'none';
     if (typeof canvasHost !== 'undefined' && canvasHost) {
       canvasHost.style.display = draftPreview ? 'none' : '';
     }
-    if (publicPreview) { publicPreview.style.display = (draftPreview && pub) ? '' : 'none'; }
-    if (intelPreview) { intelPreview.style.display = (draftPreview && !pub) ? '' : 'none'; }
-    publicTab.className = 'seg-opt' + (pub ? ' is-on' : '');
-    intelTab.className = 'seg-opt' + (pub ? '' : ' is-on');
+    if (publicPreview) { publicPreview.style.display = draftPreview ? '' : 'none'; }
     writeTab.className = 'seg-opt' + (!draftPreview ? ' is-on' : '');
     previewTab.className = 'seg-opt' + (draftPreview ? ' is-on' : '');
-  }
-  function showRegister(showPublic) {
-    // Wave 3: re-point the single canvas at the chosen register. Flush the
-    // canvas into the CURRENT register's textarea first (so an un-blurred edit
-    // is not lost), then load the other register's stored text.
-    if (canvas) {
-      var curTa = activeRegisterPublic ? publicBody : intelBody;
-      curTa.value = canvas.getValue();
-    }
-    activeRegisterPublic = showPublic;
-    if (canvas) {
-      canvas.setValue((showPublic ? publicBody : intelBody).value);
-    }
-    applyEditorView();
   }
   function setDraftPreview(on) {
     draftPreview = on;
     applyEditorView();
   }
-  publicTab.addEventListener('click', function() { showRegister(true); });
-  intelTab.addEventListener('click', function() { showRegister(false); });
   writeTab.addEventListener('click', function() { setDraftPreview(false); });
   previewTab.addEventListener('click', function() { setDraftPreview(true); });
-
-  regSeg.appendChild(publicTab);
-  regSeg.appendChild(intelTab);
-  regToggle.appendChild(regSeg);
 
   var manuscript = document.createElement('div');
   manuscript.className = 'manuscript';
   manuscript.appendChild(publicBody);
-  manuscript.appendChild(intelBody);
 
   // Wave 3 (The Page): adopt the shared WritingCanvas as the visible Cormorant
   // body editor -- EXACTLY like openMarginaliaEditor (mount + opts.onSave),
@@ -10115,7 +10048,6 @@ function renderSubTheoryPage(id) {
   // the PRIMARY editable body; the Public|Intellectual toggle re-points the canvas.
   var canvas = null;
   publicBody.style.display = 'none';
-  intelBody.style.display = 'none';
   var canvasHost = document.createElement('div');
   canvasHost.className = 'st-canvas-host';
   manuscript.appendChild(canvasHost);
@@ -10133,11 +10065,8 @@ function renderSubTheoryPage(id) {
     flags:        { focusMode: false },
     onSave: function(markdown, report) {
       var md = (typeof markdown === 'string') ? markdown : '';
-      var ta = activeRegisterPublic ? publicBody : intelBody;
-      ta.value = md;
-      var patch = {};
-      patch[activeRegisterPublic ? 'bodyPublic' : 'bodyIntellectual'] = md;
-      updateSubTheory(id, patch);
+      publicBody.value = md;
+      updateSubTheory(id, { bodyPublic: md });
       refreshCitationPreviews();
       if (report && report.setLocal) { report.setLocal(true); }
     }
@@ -10156,10 +10085,7 @@ function renderSubTheoryPage(id) {
   // and on evidence change (via refreshAttached). The hover card is slice 2b.
   var publicPreview = document.createElement('div');
   publicPreview.className = 'subtheory-cite-preview';
-  var intelPreview = document.createElement('div');
-  intelPreview.className = 'subtheory-cite-preview';
   manuscript.appendChild(publicPreview);
-  manuscript.appendChild(intelPreview);
 
   // 10.4 SLICE 2: Preview toggle -- swap the editor for the PUBLISHED read-only
   // render ("what readers see": private evidence excluded, superscript cites)
@@ -10177,14 +10103,11 @@ function renderSubTheoryPage(id) {
   function setPreview(on) {
     previewing = on;
     headerInput.style.display = on ? 'none' : '';
-    regToggle.style.display = on ? 'none' : '';
     wpToggle.style.display = on ? 'none' : '';
     if (on) {
       publicBody.style.display = 'none';
-      intelBody.style.display = 'none';
       if (typeof canvasHost !== 'undefined' && canvasHost) { canvasHost.style.display = 'none'; }
       publicPreview.style.display = 'none';
-      intelPreview.style.display = 'none';
       previewHost.innerHTML = '';
       previewHost.appendChild(
         renderSubTheoryReadOnly(state.subTheories[id], 'published'));
@@ -10206,7 +10129,6 @@ function renderSubTheoryPage(id) {
   // stays visible (recessed) on mobile where there is no hover.
   var togglesRow = document.createElement('div');
   togglesRow.className = 'subtheory-toggles-row st-tools';
-  togglesRow.appendChild(regToggle);
   togglesRow.appendChild(wpToggle);
   togglesRow.appendChild(previewBtn);
   togglesRow.appendChild(stMaturity);
@@ -10544,7 +10466,6 @@ function renderSubTheoryPage(id) {
     var titles = buildCitationTitles();
     var info = buildCitationInfo();
     renderCitationPreview(publicPreview, publicBody.value, titles, info);
-    renderCitationPreview(intelPreview, intelBody.value, titles, info);
   }
 
   var citeDebounce = null;
@@ -10553,13 +10474,11 @@ function renderSubTheoryPage(id) {
     citeDebounce = setTimeout(refreshCitationPreviews, 200);
   }
   publicBody.addEventListener('input', onCiteBodyInput);
-  intelBody.addEventListener('input', onCiteBodyInput);
   publicBody.addEventListener('input', function() { maybeAutocomplete(publicBody); });
-  intelBody.addEventListener('input', function() { maybeAutocomplete(intelBody); });
   refreshCitationPreviews();
 
-  // Public default on load.
-  showRegister(true);
+  // R5 S4: single body — no register to default-select; set the initial view.
+  applyEditorView();
 
   // ===== Evidence rail (Checkpoint C) =====
   var rail = document.createElement('aside');
@@ -11780,11 +11699,12 @@ function _arcDetailBuildSubTheoryData(arc) {
 // this is the single isolated derivation point, swap it here later.
 function _stComputeMaturity(sub) {
   var pub = (sub && typeof sub.bodyPublic === 'string') ? sub.bodyPublic.length : 0;
-  var intel = (sub && typeof sub.bodyIntellectual === 'string') ? sub.bodyIntellectual.length : 0;
+  // R5 S4: the former bodyIntellectual is folded into bodyPublic by the migration;
+  // maturity reads the SINGLE body only (adding the dormant duplicate would double-count).
   var evCount = (sub && Array.isArray(sub.evidence)) ? sub.evidence.length : 0;
   var EVIDENCE_WEIGHT = 80; // chars-equivalent per gathered evidence item
   var CAP = 1500;           // raw signal at which maturity saturates
-  var raw = pub + intel + EVIDENCE_WEIGHT * evCount;
+  var raw = pub + EVIDENCE_WEIGHT * evCount;
   var m = raw / CAP;
   if (m < 0) { m = 0; }
   if (m > 1) { m = 1; }

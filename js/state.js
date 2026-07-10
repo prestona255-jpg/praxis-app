@@ -677,6 +677,24 @@ function ensureSubTheoryFields(st) {
     st.y = null;
     changed = true;
   }
+  // R5 S4 register collapse (migration): fold a non-empty bodyIntellectual into the
+  // single body (bodyPublic), ONCE, under a light divider. bodyIntellectual is NEVER
+  // deleted (kept dormant). The per-record flag _regMergedV1 makes this idempotent AND
+  // merge-safe -- this chokepoint runs on BOTH the localStorage load (migrate) and the
+  // Firestore merge (integrations.js). bodyPublic/bodyIntellectual are guaranteed
+  // strings by the backfill above.
+  if (st._regMergedV1 !== true) {
+    var _intel = st.bodyIntellectual;
+    if (_intel.replace(/^\s+|\s+$/g, '') !== '') {
+      if (st.bodyPublic.replace(/^\s+|\s+$/g, '') === '') {
+        st.bodyPublic = _intel;
+      } else {
+        st.bodyPublic = st.bodyPublic + '\n\n---\n\n' + _intel;
+      }
+    }
+    st._regMergedV1 = true;
+    changed = true;
+  }
   return changed;
 }
 
