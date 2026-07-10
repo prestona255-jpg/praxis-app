@@ -10582,7 +10582,7 @@ function renderSubTheoryBuild(id) {
     pullBookTitles.push(book.title || 'Untitled');
     var bookEl = document.createElement('div');
     bookEl.className = isFirstBook ? 'stb-book open' : 'stb-book';
-    bookEl.setAttribute('data-book-title', book.title || '');
+    bookEl.setAttribute('data-book-title', book.title || 'Untitled');
     var brow = document.createElement('div');
     brow.className = 'stb-brow';
     var cover = document.createElement('span');

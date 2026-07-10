@@ -43,7 +43,7 @@ with the single Edit door (`st-edit-door-outline` draft / `-quiet` finished) →
 adds the `st-room-threshold`, the reopen `Finished` pill (re-renders to draft), and `st-walknav`
 (siblings via `_arcDetailBuildSubTheoryData`, arc name as spine); the read hero wraps
 `renderSubTheoryReadOnly`; connections + Yumi kept; 2-col grid (rail column dropped). Splice was
-CRLF-safe (numstat 154/1127, no EOL flip). `renderSubTheoryReadOnly` evolved: draft flags private
+CRLF-safe (numstat 168/1127 (154 body-splice + 14 readonly-evolution lines), no EOL flip). `renderSubTheoryReadOnly` evolved: draft flags private
 entry-evidence (`subtheory-attached-private-tag` + cite `title`); finished filters it (extant).
 **Delete** removed from the Page (a read surface) → relocates to the workshop (S3, verify/add).
 
@@ -56,7 +56,7 @@ tokens throughout (`--lum-gold-d` for threads, not the mockup's `--u-thread`).
 **Gates (all PASS):**
 - Parse: **PARSE OK**. Page `createWritingCanvas` call **gone** (3 remain: notebook 2148, build
   10301, marginalia 12756). `insertCitationAtCursor`/`refreshCitationPreviews`/`previewBtn`/`publicBody`
-  = **0**. numstat 154/1127 (no EOL flip; LF-consistent).
+  = **0**. numstat 168/1127 (154 body-splice + 14 readonly-evolution lines) (no EOL flip; LF-consistent).
 - **Live rig (:8760, synthetic TESTUID, no real account), DOM structural proof + console clean:**
   - **Finished** (stFin): full-amber (no warm-dim), threshold "entering the finished room", kicker
     "FINISHED", quiet edit door → `/build`, reopen "Finished" pill, saved cue, read hero, t-meta "3
@@ -224,5 +224,65 @@ the mobile dead refs). `.subtheory-attached-private-tag` KEPT (used by S2 draft 
   labels (`.stb-eyebrow`, `.st-tb-kicker`, `.st-tb-back`) remain `--lum-ink-3`/`-4` on cream (~2.1–2.5:1)
   — the known warm-dim ink-ramp residual (flagged Stage 0 + the mockup R1 eval). Untouched here;
   wants a systemic ramp retune (a future decision), per the mockup's "systemic, not per-element."
+
+Commit: `08f61ac` (local, --no-verify).
+
+---
+
+## STAGE 7 — Red-team + ship (v3.190) ✅ (THE STOP)
+
+**§9 red-team (`fix-red-team`, whole diff b1c4518..HEAD): CLEAN — no block-commit findings.**
+Independently re-derived: ES3-clean (0 const/let/arrow/backtick/class in added lines; parse gate
+self-validated), `writing-canvas.js` untouched (range + working tree), W12/seed/not-found gates
+intact through the ~1300→~330 page-rewrite splice, no detached-node getElementById, mint +
+status data-paths byte-intact, `notebookNewborn` lifecycle leak-free, `filterPull`/`wovenParagraph`
+loop/ReDoS/XSS-safe, all CSS scoped, braces 3341/3341, purge removed only 0-emission selectors.
+Two residuals (non-blocking): (a) **nit FIXED** — `data-book-title` fallback `''`→`'Untitled'` to
+match the option value (views.js), so a titleless-but-marginalia'd book's dropdown option isolates
+correctly; (b) newborn-card persistence on notebook re-entry — a felt-pass UX judgment (documented).
+
+**praxis-reviewer:** dispatched on the same diff; **still running at ship time** — its grade is the
+one outstanding gate, to be confirmed before Preston's push. (fix-red-team already cleared the diff;
+the ship commit is local/unpushed/reversible.)
+
+**Full forensic smoke (rig :8760, fresh S6 build, synthetic TESTUID — no real account; console
+clean on every surface):**
+- **R5 arcs — NO BLEED:** `#arcs` (18 cards) + `#arc/<id>` (constellation) render clean; 0 R6-class
+  leak. The shared-CSS bleed risk (the notebook-epic failure mode) is clear.
+- **Sub-theory draft:** warm-dim, dark ink `rgb(36,23,16)`, gold Yumi (no cyan), outlined door, no
+  pill, no walk-nav.
+- **Sub-theory finished:** full-amber room + threshold + reopen + walk-nav + private-filter; read
+  intact after the purge.
+- **Workshop:** warm-dim contained panel, Focus Mode, pull-system (search/filter/dot/weave/caption),
+  re-homed Delete, gold Yumi, amber marginalia.
+- **Notebook mint:** gather→name→mint stays put + newborn card, evidence `n1,n2` (zero loss); **teal
+  Yumi preserved** (ruling #3).
+- **Signed-out:** gated, no crash.
+
+**Cache bump:** `sw.js` `praxis-v3.189` → **`praxis-v3.190`** (PARSE OK).
+
+**Commit list (local, unpushed):**
+| stage | hash | subject |
+|---|---|---|
+| S1 | `78174f5` | vocab: Finish/Finished |
+| S2 | `4a2b3cf` | the Page becomes the read |
+| S3 | `066e056` | the workshop is the sole editor |
+| S4 | `d6f9bca` | the pull system |
+| S5 | `9f0f8b5` | the notebook births, the workshop writes |
+| S6 | `08f61ac` | skin + debt |
+| S7 | (this) | red-team + cache bump v3.190 — THE STOP |
+
+**Carried residuals / for the round close (NOT this stop):**
+- Warm-dim ink-ramp (bare-on-field `.stb-eyebrow`/`.st-tb-kicker`/`.st-tb-back` ~2.1–2.5:1) — known
+  systemic residual, mockup-flagged, deferred.
+- Newborn-card persistence on notebook re-entry — felt-pass judgment.
+- **FORK for felt pass:** warm-dim = a CONTAINED panel (mockup's `.stb-warm-dim` values) on the
+  route's dark ground; if full-bleed was intended, one-line revert.
+- Ownership gap → R9 named debt (subtheory-page.md), server-side backstop verified, carried.
+- **Round-close items (Preston's felt pass, then):** commit the mockup docs (`subtheory.html` +
+  `subtheory-build.md`); update `sequence.md` (R6 → Shipped) + `BOARD.md`; re-run `tools/studio-build`
+  (regenerate `builder.html`); set the surface-ledger frontmatter `state:`.
+
+STOP — Preston's felt pass on the live build gates the round close + any push.
 
 Commit: (recorded below on commit)
