@@ -5,7 +5,7 @@
    PART A ships:
      - INTROS : the single-source 12-entry array (per-page panels + About in
                 Part B read from THIS symbol; nothing else duplicates it).
-     - the first-run guided journey (7 steps) as a BODY-LEVEL .lum-amber overlay
+     - the first-run guided journey (8 steps) as a BODY-LEVEL .lum-amber overlay
        (body-level so the real writes' renderShelf/renderNotebook rebuilds of
        #app never destroy the running journey).
 
@@ -76,7 +76,7 @@ var Intros = (function () {
   ];
 
   /* ==========================================================================
-     JOURNEY — 7 steps. Apple composition: one idea per screen, one primary,
+     JOURNEY — 8 steps. Apple composition: one idea per screen, one primary,
      one quiet secondary, staggered reveals, a back chevron, step dots.
      ========================================================================== */
   // R8 (values): the approved starter presets, offered at the 'values' beat.
@@ -98,6 +98,20 @@ var Intros = (function () {
 
   function resetPicked() {
     picked = { book: null, why: null, stance: null, register: 'm', note: null, memory: 'off', bookId: null, values: [] };
+    // R8 (red-team FINDING 1 fix): SEED the values accumulator from the reader's
+    // ALREADY-declared profile.values — a COPY, so editing picked never mutates the
+    // profile directly. Without this, a retake renders every prior stone UNSELECTED
+    // and the first toggle's doValues() REPLACE would silently wipe them (a durable,
+    // cloud-synced loss). Seeding makes the beat ADDITIVE — it edits the full set,
+    // matching the Account values card + retrofit union idiom (which never wipe).
+    var _rpUid = currentUid();
+    if (_rpUid && typeof getProfile === 'function') {
+      var _rpP = getProfile(_rpUid);
+      if (_rpP && _rpP.values instanceof Array) {
+        var _rpi;
+        for (_rpi = 0; _rpi < _rpP.values.length; _rpi++) { picked.values.push('' + _rpP.values[_rpi]); }
+      }
+    }
   }
 
   /* ---- helpers into the real app (all globals; called only at runtime) ---- */

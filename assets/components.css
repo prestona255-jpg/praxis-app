@@ -13327,55 +13327,67 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* ============================================================================
    R8 · VALUE-MARK REGISTER (.vr-*) — the quiet per-object value affordance,
-   shared across book detail / sub-theory / arc. Tokens resolve per enclosing
-   scope. Value hue = --gold-hi (gilding: orbs/glyphs); value TEXT = --gold-deep
-   (AA). Universal depth v1.2 recipe 2 (luminous orb) + 7 (lineage thread).
+   shared across book detail / sub-theory / arc. Uses a SELF-CONTAINED --vr-* token
+   palette (opaque light card + dark ink) declared on .vr-card — the same idiom
+   .bk-surface uses with --bk-*. Base --ink AND --lum-ink both resolve to the
+   dark-ground LIGHT text on the arc scope (which never re-points them for its
+   chrome region), so either would be invisible on a light card (reviewer HOLD,
+   1.18:1). A self-contained opaque light card + dark ink makes AA DETERMINISTIC
+   (~15:1) on every mount surface, independent of scope-token quirks. All hex is
+   confined to the token declaration; rules wire only tokens.
    ============================================================================ */
-.vr-card{ margin:14px 0; padding:18px 20px; border:1px solid var(--line-page); border-radius:14px;
-  background:var(--page-2); box-shadow:0 6px 22px -14px rgba(120,75,15,.22), inset 0 1px 0 rgba(255,252,243,.6); }
+.vr-card{
+  --vr-ink:#241710; --vr-ink-2:#645940; --vr-ink-3:#7c7052;   /* dark ink tiers (AA on --vr-card) */
+  --vr-card:#fcf6e8; --vr-field:#fffdf8;                       /* opaque light card + near-white field */
+  --vr-line:rgba(36,23,16,.16);                               /* --line-page */
+  --vr-gold:#a8761a; --vr-gold-d:#855410; --vr-gold-hi:#d9a441; --vr-gold-ink:#3d2807; --vr-orb-hi:#fff4d6;
+  --vr-rose:#b8563f;                                          /* R7 AA-safe rose */
+  margin:14px 0; padding:18px 20px; border:1px solid var(--vr-line); border-radius:14px;
+  background:var(--vr-card); color:var(--vr-ink); box-shadow:0 6px 22px -14px rgba(120,75,15,.22), inset 0 1px 0 rgba(255,252,243,.7); }
 .vr-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.vr-h{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }
-.vr-sub{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
+.vr-h{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--vr-ink-2); }
+.vr-sub{ font-family:var(--font-mono); font-size:10px; color:var(--vr-ink-3); }
 .vr-marks{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
-.vr-mark{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-2);
-  border:1px solid var(--line-page); background:rgba(217,164,65,.06); border-radius:999px; padding:4px 8px 4px 10px; }
-.vr-mark.is-editing{ border-color:var(--gold-hi); }
-.vr-mark-name{ font:inherit; color:var(--ink); font-weight:500; background:none; border:0; padding:0; cursor:pointer; }
-.vr-mark-name:hover{ color:var(--gold-deep); }
-.vr-mark-x{ font-family:var(--font-mono); font-size:14px; line-height:1; color:var(--ink-3); background:none; border:0; cursor:pointer; padding:0 2px; }
-.vr-mark-x:hover{ color:var(--danger); }
+.vr-mark{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--vr-ink-2);
+  border:1px solid var(--vr-line); background:rgba(217,164,65,.08); border-radius:999px; padding:4px 8px 4px 10px; }
+.vr-mark.is-editing{ border-color:var(--vr-gold-hi); }
+.vr-mark-name{ font:inherit; color:var(--vr-ink); font-weight:500; background:none; border:0; padding:0; cursor:pointer; }
+.vr-mark-name:hover{ color:var(--vr-gold-d); }
+.vr-mark-x{ font-family:var(--font-mono); font-size:14px; line-height:1; color:var(--vr-ink-3); background:none; border:0; cursor:pointer; padding:0 2px; }
+.vr-mark-x:hover{ color:var(--vr-rose); }
 .vr-add{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; letter-spacing:.03em;
-  color:var(--gold-deep); background:transparent; border:1px dashed var(--gold-hi); border-radius:999px; padding:5px 12px; cursor:pointer; }
-.vr-add:hover{ background:rgba(217,164,65,.08); }
-/* luminous value orb (Universal depth recipe 2; value hue = gilding gold) */
+  color:var(--vr-gold-d); background:transparent; border:1px dashed var(--vr-gold-hi); border-radius:999px; padding:5px 12px; cursor:pointer; }
+.vr-add:hover{ background:rgba(217,164,65,.1); }
+/* luminous value orb (Universal depth recipe 2; value hue = gilding gold). Hex
+   fallbacks so it also renders standalone in the retrofit offer-cards (no .vr-card). */
 .vr-orb{ display:inline-block; width:9px; height:9px; border-radius:50%; flex:none;
-  background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--gold-hi) 55%, var(--gold-deep) 100%);
+  background:radial-gradient(circle at 35% 30%, var(--vr-orb-hi,#fff4d6) 0%, var(--vr-gold-hi,#d9a441) 55%, var(--vr-gold-d,#855410) 100%);
   box-shadow:0 0 8px 1px rgba(217,164,65,.5); }
 .vr-orb-soft{ box-shadow:0 0 5px 0 rgba(217,164,65,.4); opacity:.9; }
 /* lineage line — a value carried, its "why" strung on a thread */
 .vr-line{ display:flex; align-items:flex-start; gap:10px; margin-top:9px; }
-.vr-rail{ width:1px; align-self:stretch; margin:3px 0 2px; background:linear-gradient(180deg,var(--thread),transparent); flex:none; }
-.vr-why{ font-family:var(--font-serif); font-style:italic; font-size:15px; line-height:1.45; color:var(--ink-2); }
-.vr-why b{ font-style:normal; font-weight:600; color:var(--gold-deep); }
+.vr-rail{ width:1px; align-self:stretch; margin:3px 0 2px; background:linear-gradient(180deg,var(--vr-gold-d),transparent); flex:none; }
+.vr-why{ font-family:var(--font-serif); font-style:italic; font-size:15px; line-height:1.45; color:var(--vr-ink-2); }
+.vr-why b{ font-style:normal; font-weight:600; color:var(--vr-gold-d); }
 /* inline lineage editor */
 .vr-edit{ margin-top:10px; }
-.vr-edit-in{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ink); background:var(--surface);
-  border:1px solid var(--line-page); border-radius:10px; padding:10px 12px; resize:vertical; min-height:52px; box-sizing:border-box; }
+.vr-edit-in{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--vr-ink); background:var(--vr-field);
+  border:1px solid var(--vr-line); border-radius:10px; padding:10px 12px; resize:vertical; min-height:52px; box-sizing:border-box; }
 .vr-edit-row{ display:flex; gap:8px; margin-top:8px; }
 .vr-edit-save,.vr-edit-cancel{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; border-radius:999px; padding:6px 14px; cursor:pointer; }
-.vr-edit-save{ color:#3d2807; border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
-.vr-edit-cancel{ color:var(--ink-2); border:1px solid var(--line-page); background:transparent; }
+.vr-edit-save{ color:var(--vr-gold-ink); border:1px solid var(--vr-gold-d); background:linear-gradient(180deg,var(--vr-gold-hi),var(--vr-gold)); }
+.vr-edit-cancel{ color:var(--vr-ink-2); border:1px solid var(--vr-line); background:transparent; }
 /* the value picker */
-.vr-pick{ margin-top:14px; border-top:1px dashed var(--line-page); padding-top:14px; }
-.vr-pick-lab{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); margin-bottom:10px; }
-.vr-pick-empty{ font-family:var(--font-body); font-size:12.5px; color:var(--ink-2); line-height:1.5; }
-.vr-whyin{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ink); background:var(--surface);
-  border:1px solid var(--line-page); border-radius:10px; padding:10px 12px; margin-bottom:10px; box-sizing:border-box; }
-.vr-whyin::placeholder{ color:var(--ink-3); font-style:italic; }
+.vr-pick{ margin-top:14px; border-top:1px dashed var(--vr-line); padding-top:14px; }
+.vr-pick-lab{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--vr-ink-2); margin-bottom:10px; }
+.vr-pick-empty{ font-family:var(--font-body); font-size:12.5px; color:var(--vr-ink-2); line-height:1.5; }
+.vr-whyin{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--vr-ink); background:var(--vr-field);
+  border:1px solid var(--vr-line); border-radius:10px; padding:10px 12px; margin-bottom:10px; box-sizing:border-box; }
+.vr-whyin::placeholder{ color:var(--vr-ink-3); font-style:italic; }
 .vr-pick-grid{ display:flex; flex-wrap:wrap; gap:8px; }
-.vr-opt{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-2);
-  border:1px solid var(--line-page); background:var(--surface); border-radius:999px; padding:5px 12px 5px 10px; cursor:pointer; }
-.vr-opt:hover{ border-color:var(--gold-hi); color:var(--ink); }
+.vr-opt{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--vr-ink-2);
+  border:1px solid var(--vr-line); background:var(--vr-field); border-radius:999px; padding:5px 12px 5px 10px; cursor:pointer; }
+.vr-opt:hover{ border-color:var(--vr-gold-hi); color:var(--vr-ink); }
 /* mobile-canon (P1–P9): 44px hit areas · 16px inputs (no iOS zoom) · no h-scroll */
 @media (max-width:759px){
   .vr-card{ padding:16px 14px; }
