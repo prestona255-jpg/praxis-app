@@ -11267,6 +11267,42 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 /* ===== end WAVE 3 · SUB-THEORY BUILD ===== */
 
+/* =============================================================================
+   MW-3 · SUB-THEORY MOBILE PASS (docs/studio/praxis-mobile-canon.md). Two faces:
+   the workshop (.st-build, warm-dim) and the read Page (.st-page: warm-dim draft +
+   full-amber finished room). Sizing/reflow only -- no tokens/hex/JS; every rule
+   inside @media (max-width:759px), so desktop is byte-unchanged. Verified at live
+   390 (getBoundingClientRect + scrollWidth), both faces.
+
+   P8 (the substantive fix): the FINISHED room's author topbar-right stacked
+   saved(148) + Finished pill(110) + "Edit in the workshop ->"(208, white-space:
+   nowrap) = ~496px in a nowrap group with base flex:0 0 auto -> a 130px h-scroll at
+   390. Constrain it to the (already-wrapped) topbar line so its children wrap. (The
+   DRAFT topbar is clean already -- R#3/R#2 stripped saved+pill from it.)
+   P7: the pull-filter select + search were 11.5px (Safari focus-zoom) -> 16px.
+   P3: the pull-filter inputs (~30, both P7+P3), .stb-delete (26), both mark-edit
+   glyphs (30/32), the workshop Yumi dismiss x (8x19), and .st-tb-back (16, the read's
+   EXIT affordance) were sub-44 -> 44px hit area. Covered already (verified, no change):
+   pubpill/openpage/weave/conn-add/crow/
+   focus-toggle (Build) + pill-publish/conn-add/conn-row/edit-door/walknav-side (Page);
+   Build P7 title 26px + canvas 18px. P1/P2/P4/P5/P6/P9 n/a.
+   ============================================================================= */
+@media (max-width:759px){
+  /* THE PAGE (renderSubTheoryPage) */
+  .st-page.lum-amber-deep .st-tb-right{ flex-wrap:wrap; width:100%; }
+  .st-page.lum-amber-deep .st-tb-back{ min-height:44px; display:inline-flex; align-items:center; }
+  .st-page.lum-amber-deep .st-hero-mark-edit{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  /* THE WORKSHOP (renderSubTheoryBuild) */
+  .st-build.lum-amber-deep .stb-pull-book-sel,
+  .st-build.lum-amber-deep .stb-pull-search{ font-size:16px; }
+  .st-build.lum-amber-deep .stb-pull-book-sel,
+  .st-build.lum-amber-deep .stb-pull-search,
+  .st-build.lum-amber-deep .stb-delete{ min-height:44px; }
+  .st-build.lum-amber-deep .stb-hero-mark-edit,
+  .st-build.lum-amber-deep .stb-yx{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+}
+/* ===== end MW-3 · SUB-THEORY MOBILE PASS ===== */
+
 /* =====================================================================
    WAVE 3 · THE NOTEBOOK  (renderNotebook on .lum-amber-deep)
    The book's own pages: tabs, then the lifted spread crowned by the book
