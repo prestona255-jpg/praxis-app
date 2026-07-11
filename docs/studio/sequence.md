@@ -122,6 +122,21 @@ flagged at the top of the Builder's sequence page for his call — never applied
   (S-A · then the Then stretch). Pure program advance on completed work — nothing retired, no Preston
   decision touched — no `PROPOSED:` flag. Round-CLOSE remains Preston's; Builder regenerated. Report:
   `docs/studio/reports/mw2-2026-07-11.md`.
+- **2026-07-11** — MW-3 Sub-theory + Book Detail mobile pass SHIPPED-LOCAL (`99f7fb0` sub-theory +
+  `5dd7cee` book detail; NOT pushed). **THE MOBILE WAVE IS COMPLETE** — MW-1/MW-2/MW-3, 8 surface
+  chips all `mobile: native`. MW-3 was the heaviest of the three: unlike MW-2's already-clean
+  surfaces, both MW-3 halves carried a real P8 h-scroll to fix — the Sub-theory FINISHED room's
+  author topbar (~130px overflow) and Book Detail's missing `box-sizing:border-box` (the one surface
+  omitting it) + the read-status segment overflow. Both build gates cleared (praxis-reviewer PASS ×2;
+  the Book Detail reviewer HOLD on the rating-star tap targets was fixed 44×44 and re-confirmed;
+  fix-red-team N/A — CSS-only). MW-3 → Shipped; **Now advanced to S-A** (About · Search · what-Yumi-
+  sees), promoted from Next per the locked order. One desktop residual carried (MW3-BKBOX — the base
+  `.bk-surface` content-box also h-scrolls at desktop; out of the mobile wave's scope, its own felt-
+  gate). Promoted the held **ARC-FIELD MOBILE TOUCH MODEL** one tier (Then→Next) — with the eight
+  page-surfaces now mobile-native, the constellation's drag/connect touch model is the truest
+  remaining mobile line. Pure program advance on completed work — nothing retired, no Preston decision
+  touched — no `PROPOSED:` flag. Round-CLOSE (felt pass) remains Preston's; Builder regenerated.
+  Report: `docs/studio/reports/mw3-2026-07-11.md`.
 
 ## Shipped
 
@@ -213,19 +228,29 @@ flagged at the top of the Builder's sequence page for his call — never applied
   n/a. All three surface chips (notebook, arcs, arc-detail) → `mobile: native`. Both praxis-reviewer
   verdicts CLEARED (one cosmetic `.btn` display residual resolved). Report:
   `docs/studio/reports/mw2-2026-07-11.md`. touches: [notebook, arcs, arc-detail]
+- [x] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** (SHIPPED-LOCAL 2026-07-11, `99f7fb0`
+  sub-theory + `5dd7cee` book detail; NOT pushed — awaiting Preston's push + felt pass). Third and
+  LAST of the three mobile-wave passes — **the mobile wave is complete, 8 surface chips native.** The
+  heaviest of the three: both halves fixed a real P8 h-scroll. Sub-theory (workshop + read Page) → P8
+  the FINISHED room's ~130px author-topbar overflow (`.st-tb-right{flex-wrap:wrap;width:100%}`); P7 the
+  pull-filter inputs 11.5→16px; P3 delete/mark-glyphs/Yumi-x/tb-back → 44. Book Detail → P8
+  `box-sizing:border-box` (the one surface missing it) + read-status segment wrap; P7 edit fields
+  13→16px; P3 the small controls + 44×44 rating stars. All three chips → `mobile: native`. Both
+  praxis-reviewer verdicts CLEARED (Book Detail HOLD on the rating stars → fixed 44×44 → re-confirmed).
+  Desktop residual MW3-BKBOX carried. Report: `docs/studio/reports/mw3-2026-07-11.md`.
+  touches: [subtheory-build, subtheory-page, book-detail]
 
 ## Now
 
-- [ ] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** — sweep Sub-theory + Book Detail to the
-  mobile canon (`praxis-mobile-canon.md`, P1–P9); Book Detail shipped the BD2 4-I `order` reorder in R7,
-  MW-3 completes the full mobile pass; skips the mockup beat. Third and last of the three mobile-wave
-  passes (MW-1 Shelf+Home + MW-2 Notebook+Arcs shipped-local 2026-07-10/11, all four chips → native).
-  touches: [subtheory-build, subtheory-page, book-detail]
-
-## Next
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
   residual gaps across three light surfaces; skips the mockup beat.
   touches: [about, search, yumi-sees]
+
+## Next
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the constellation
+  field must become mobile-usable (the drag/connect touch model on the protected renderer). With the
+  eight page-surfaces now mobile-native (MW-1/2/3), this is the truest remaining mobile line. Promoted
+  Then→Next at the MW-3 close (2026-07-11). touches: [arc-detail]
 
 ## Then
 
@@ -234,11 +259,6 @@ Per-surface rounds and the fix/feature spine, in program order; each surface rou
 skip the mockup beat). A round closes ONLY on Preston's felt pass. Carried from the launch
 spine and the evolution track and folded into the program — nothing dropped.
 
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the
-  constellation field must become mobile-usable (the drag/connect touch model on the protected
-  renderer). Attach where it best fits — alongside the S-B mobile passes or as a dedicated arc-field
-  pass; it is a VISIBLE line here, NOT a residual. (arc-detail.md "Held-Phase-3" mobile mandate.)
-  touches: [arc-detail]
 - [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
   collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
   guardrail:** after signing in on any device, let the app settle before editing; pull this

@@ -1,11 +1,12 @@
 ---
 surface: subtheory-build
 route: "#subtheory/<id>/build"
-render_fn: renderSubTheoryBuild (anchor by name — grep '^function renderSubTheoryBuild'; views.js ~10242 as-of-2026-07-10)
+render_fn: renderSubTheoryBuild (anchor by name — grep '^function renderSubTheoryBuild'; views.js ~10449 as-of-2026-07-11)
 ground: dark
 in_nav: no
 state: closed
 rounds: 1
+mobile: native
 ---
 
 ## State
@@ -183,6 +184,15 @@ Computed via the standard WCAG 2.x relative-luminance formula (script run throug
 
 - **R6 Sub-theory (DEEP) — SHIPPED v3.190, CLOSED 2026-07-10.** 7 commits `78174f5 → 4c8f73e`, pushed `origin/main`, live-verified. Five beats: recon → click-forks → mockup (`subtheory.html` rev1; felt-passed "skeleton PASS, skin FAIL" → revised) → staged build (S1 vocab `78174f5` · S2 Page=read `4a2b3cf` · S3 workshop=sole-editor `066e056` · S4 pull-system `d6f9bca` · S5 notebook-births `9f0f8b5` · S6 skin+debt `08f61ac` · S7 red-team+cache `4c8f73e`) → felt pass (**FULL PASS 2026-07-10**: contained warm-dim panel confirmed-as-decided; newborn-card persistence passed; cyan pill-flag dot kept). fix-red-team CLEAN + praxis-reviewer CLEARED. Records: `docs/checkpoints/r6-subtheory.md` (+ `-recon.md`). touches: [subtheory-build, subtheory-page].
 
+- **MW-3 Sub-theory mobile pass — SHIPPED-LOCAL v3.194 (2026-07-11), `mobile: native`.** The
+  workshop half. Commit `99f7fb0` (with the Page, one commit) — CSS-only, one @media(max-width:759px)
+  block. **P7:** `.stb-pull-book-sel`/`.stb-pull-search` 11.5px → 16px. **P3:** `.stb-delete` (26→44),
+  `.stb-hero-mark-edit` (32→44×44), `.stb-yx` Yumi dismiss (8×19→44×44), pull inputs (→44/57);
+  covered already (verified, no change): pubpill/openpage/weave/conn-add/crow/focus-toggle; title
+  26px + canvas 18px (P7). **P8:** workshop scrollWidth 390, 0 offenders. Live-390 rig + praxis-reviewer
+  PASS (6/6, one non-blocking pull-input note closed). Record: `docs/studio/reports/mw3-2026-07-11.md`.
+
 ## Next
 
-- **ELIGIBLE for its mobile pass** per the standing rhythm — the sub-theory surfaces (workshop + Page, verified at 390 + 1280 in R6) join the S-B mobile passes / a dedicated mobile pass when scheduled. Do NOT run it as part of this close.
+- **Mobile pass DONE (MW-3).** Both sub-theory faces are `mobile: native`. Nothing outstanding on
+  the mobile axis; future work is content/feature, not responsive.

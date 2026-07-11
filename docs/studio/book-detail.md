@@ -1,11 +1,12 @@
 ---
 surface: book-detail
 route: "#book/<id>"
-render_fn: renderBookDetail (views.js:8781)
+render_fn: renderBookDetail (views.js:8929)
 ground: light
 in_nav: no
 state: closed
 rounds: 1
+mobile: native
 ---
 
 ## State
@@ -13,9 +14,9 @@ rounds: 1
 `#book/<id>` → `renderBookDetail` (views.js:8781); **light** working ground (§7 ground
 spectrum — you work in the light, superseding the pre-§7 "dark" note); ONE page, lineage-leads.
 The `#book/<id>/marks` route is retired — it redirects to `#book/<id>` (router views.js:504;
-`renderBookView` views.js:8420 is a thin redirect). Sub of books. mobile pass = MW-3 (R7 shipped
-the BD2 4-I `order` reorder; the full mobile-canon P1–P9 pass is MW-3's job — no `mobile:` chip
-claimed).
+`renderBookView` views.js:8568 is a thin redirect). Sub of books. **mobile pass = MW-3 DONE**
+(v3.194, 2026-07-11, `mobile: native`) — R7 shipped the BD2 4-I `order` reorder; MW-3 completed the
+full mobile-canon P1–P9 sweep.
 
 ## Decisions
 
@@ -53,6 +54,11 @@ R7 SHIPPED v3.191 (`bff5d82`; Preston deployed felt pass = PASS 2026-07-10). Spe
 - **R7-F6AUTO** — F6's category select adds an "Auto (Praxis decides)" option + moves Uncategorized to the end (mechanical necessity to un-pin an override); the mockup showed neither. Open fidelity divergence.
 - **R7-INK4** — the scoped `--lum-ink-4:#7c7052` deviates from the canonical `#978b6d` (kept — better AA on light); undocumented divergence.
 - **R7-LENS** — `buildBookLensPanel` + `_bdLensOpen` retained inert (the accepted LENS decision; one-move restore if Preston reverses).
+- **MW3-BKBOX (desktop, from MW-3)** — the base `.bk-surface` rule (components.css:10505) lacks
+  `box-sizing:border-box` (the ONE surface that omits it; no global reset), so book detail also
+  h-scrolls ~40px at **desktop** (scrollWidth 1297 vs 1265). MW-3 fixed **mobile** (≤759 border-box);
+  the desktop fix edits the base rule (a desktop layout change) and wants its own felt-gated pass.
+  Pre-existing since R7, not introduced by MW-3.
 
 ## Round history
 
@@ -63,7 +69,20 @@ R7 SHIPPED v3.191 (`bff5d82`; Preston deployed felt pass = PASS 2026-07-10). Spe
   (praxis-reviewer PASS, fix-red-team NO-BLOCK); Live Forensic Smoke Test PASS. Records:
   `docs/checkpoints/r7-book-detail-recon.md`, `docs/studio/mockups/book-detail.html`.
 
+## Round history (mobile)
+
+- **MW-3 — Book Detail mobile pass — SHIPPED-LOCAL v3.194 (2026-07-11), `mobile: native`.** Commit
+  `5dd7cee` — CSS-only, one @media(max-width:759px) block. **P8 (substantive, 410→390):** (a)
+  `box-sizing:border-box` on `.bk-surface` at ≤759 (the base rule was content-box — the only surface
+  missing it; siblings all set border-box, no global reset) fixes the `width:100%`+28px-padding
+  overflow; (b) the read-status control's 3 nowrap segments (~372px) wrap to 3 equal shrinkable
+  segments (the app's own `.rrow-right` idiom). **P7:** edit-panel category select + text inputs
+  13→16px. **P3:** backlink/find/moved/arcchip/edit-toggle/edit-btn/edit-remove/secondary-action/edit
+  fields → 44px; the 5 rating stars `.bk-star` → a genuine 44×44 hit box (glyph stays 15px). BD2's
+  primary `order:-1` (P2) untouched. Live-390 rig; praxis-reviewer HOLD on `.bk-star` → fixed 44×44 →
+  re-confirmed PASS. Desktop residual MW3-BKBOX carried. Record: `docs/studio/reports/mw3-2026-07-11.md`.
+
 ## Next
 
-- **MW-3 — Book Detail mobile pass** — the full mobile-canon P1–P9 sweep (part of the mobile wave).
-  R7 shipped the BD2 4-I `order` reorder; the comprehensive mobile pass lands with MW-3.
+- **Mobile pass DONE (MW-3), `mobile: native`.** Nothing outstanding on the mobile axis. The only
+  carried item is the desktop residual **MW3-BKBOX** (own felt-gated pass, out of the mobile wave).

@@ -1,11 +1,12 @@
 ---
 surface: subtheory-page
 route: "#subtheory/<id>"
-render_fn: renderSubTheoryPage (anchor by name — grep '^function renderSubTheoryPage'; views.js ~9838 as-of-2026-07-10)
+render_fn: renderSubTheoryPage (anchor by name — grep '^function renderSubTheoryPage'; views.js ~10045 as-of-2026-07-11)
 ground: dark
 in_nav: no
 state: closed
 rounds: 1
+mobile: native
 ---
 
 ## State
@@ -34,6 +35,18 @@ rounds: 1
 
 - **R6 Sub-theory (DEEP) — SHIPPED v3.190, CLOSED 2026-07-10** (the Page half; covered with `subtheory-build` — see that ledger's Round history for the full beat/commit record, `78174f5 → 4c8f73e`, felt-passed FULL PASS 2026-07-10). This surface: `renderSubTheoryPage` rebuilt as the read/author-view (editor removed, S2 `4a2b3cf`). Ledger: AF1/AF2/AF4/AF5/WL3 CLOSED · AF3/OQ1 superseded · ownership → R9 named debt (`R6-OWN`) · warm-dim ink-ramp → named debt (`R6-INK`).
 
+- **MW-3 Sub-theory mobile pass — SHIPPED-LOCAL v3.194 (2026-07-11), `mobile: native`.** The read
+  Page half (warm-dim draft + full-amber finished room). Commit `99f7fb0` (with the workshop, one
+  commit) — CSS-only. **P8 (the substantive fix):** the FINISHED room's author topbar-right stacked
+  saved + Finished pill + "Edit in the workshop →" (nowrap, base `flex:0 0 auto`) = ~496px → a ~130px
+  h-scroll at 390 (scrollWidth 492). `.st-tb-right{ flex-wrap:wrap; width:100% }` constrains it to the
+  wrapped topbar line so its children wrap → **scrollWidth 390, 0 offenders** (the DRAFT topbar was
+  already clean — R#3/R#2 stripped saved+pill). **P3:** `.st-tb-back` (16→44, the read's EXIT),
+  `.st-hero-mark-edit` (30→44×44); covered already: pill-publish/conn-add/conn-row/edit-door/
+  walknav-side. Read-only Page → P7 n/a. Live-390 rig + praxis-reviewer PASS. Record:
+  `docs/studio/reports/mw3-2026-07-11.md`.
+
 ## Next
 
-- **ELIGIBLE for its mobile pass** per the standing rhythm (verified at 390 + 1280 in R6). Joins the S-B mobile passes / a dedicated pass when scheduled — NOT run in this close.
+- **Mobile pass DONE (MW-3).** Both sub-theory faces are `mobile: native`. Nothing outstanding on
+  the mobile axis.
