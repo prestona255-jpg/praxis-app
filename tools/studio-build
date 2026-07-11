@@ -146,12 +146,13 @@ awk '/^## /{insec=($0 ~ /^## Runs([ ]|$)/)?1:0; next} insec&&/^- /{print}' "$OVN
 OV_CURROUND=$(fm "$OVN" current-round 2>/dev/null); OV_CURRNUM=$(printf '%s' "$OV_CURROUND" | tr -cd '0-9'); [ -z "$OV_CURRNUM" ] && OV_CURRNUM=0
 OVQ=$(awk -F"$US" '$7=="queued"' "$TMP/overnight" | grep -c .); OVP=$(awk -F"$US" '$7=="proposed"' "$TMP/overnight" | grep -c .); OVTOT=$(grep -c . "$TMP/overnight")
 # per-surface caches in one pass -> pure-shell lookups (no exec per query)
-GAPS=""; BRIEFS=""; STATES=""; ROUNDS=""; CLOSED=0; TOTALGAPS=0
+GAPS=""; BRIEFS=""; STATES=""; ROUNDS=""; CLOSED=0; TOTALGAPS=0; MOBNATIVE=0
 for s in $SURFACES $LAYERS; do
   g=$(gapcount "$s"); GAPS="$GAPS $s:$g"; TOTALGAPS=$((TOTALGAPS+g))
   BRIEFS="$BRIEFS $s:$(has_brief "$s")"
   x=$(fm "$STUDIO/$s.md" state); [ -z "$x" ] && x=untouched; STATES="$STATES $s:$x"; [ "$x" = "closed" ] && CLOSED=$((CLOSED+1))
   y=$(fm "$STUDIO/$s.md" rounds); [ -z "$y" ] && y=0; ROUNDS="$ROUNDS $s:$y"
+  [ "$(fm "$STUDIO/$s.md" mobile)" = "native" ] && MOBNATIVE=$((MOBNATIVE+1))
 done
 qgap(){ t=" $GAPS "; t="${t##* $1:}"; printf '%s' "${t%% *}"; }
 qbrief(){ t=" $BRIEFS "; t="${t##* $1:}"; printf '%s' "${t%% *}"; }
@@ -620,6 +621,75 @@ main{margin-left:236px;}
 .ov-report summary::-webkit-details-marker{display:none;}
 .ovr-pre{margin-top:10px;max-height:420px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:11.5px;line-height:1.5;color:var(--ink-2);white-space:pre-wrap;word-break:break-word;}
 .ovr-none{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);font-style:italic;}
+
+/* ============================================================
+   1b — PRESENTATION LAYER (additive): the coherent chip language,
+   the progress read, plain-language leads + disclosure folds.
+   ADDS classes; never renames a data-carrying class. Uses only
+   existing tokens. Applied to Overview first (the sample), then
+   propagated in Stage 2.
+   ============================================================ */
+
+/* -- plain-language leads (a warm sentence above the data) -- */
+.ov-lead{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--ink-2);margin:4px 0 20px;max-width:60ch;}
+.ov-lead b,.ov-lead strong{color:var(--ink);font-weight:600;}
+.sec-lead{font-size:14.5px;color:var(--ink-2);line-height:1.56;margin:26px 0 12px;max-width:72ch;}
+.sec-lead b,.sec-lead strong{color:var(--ink);font-weight:600;}
+.sec-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin:26px 0 8px;}
+
+/* -- the progress read: computed stat cards -- */
+.stat-read{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:2px 0 12px;}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px 17px;box-shadow:inset 0 1px 0 rgba(255,250,235,.7);}
+.stat-num{font-family:var(--serif);font-weight:600;font-size:35px;line-height:1;color:var(--ink);}
+.stat-num .of{font-size:20px;color:var(--ink-3);font-weight:400;}
+.stat-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold-deep);margin-top:9px;}
+.stat-sub{font-size:12.5px;color:var(--ink-3);margin-top:6px;line-height:1.42;}
+.stat-bar{height:6px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin-top:11px;}
+.stat-fill{height:100%;min-width:3px;background:linear-gradient(90deg,var(--gold-hi),var(--field-1),var(--gold-hi));box-shadow:0 0 8px rgba(217,164,65,.5);border-radius:999px;}
+
+/* -- disclosure: fold technical detail behind a tap (44px target) -- */
+.disclose{margin:11px 0 8px;border:1px solid var(--line);border-radius:11px;background:var(--surface);overflow:hidden;}
+.disclose>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;min-height:44px;padding:0 15px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);}
+.disclose>summary::-webkit-details-marker{display:none;}
+.disclose>summary::after{content:'\203A';margin-left:auto;font-size:16px;color:var(--ink-3);transition:transform .18s;}
+.disclose[open]>summary::after{transform:rotate(90deg);}
+.disclose[open]>summary{border-bottom:1px solid var(--line);}
+.disclose-body{padding:11px 15px 15px;font-size:13.5px;color:var(--ink-2);line-height:1.58;}
+.disclose-body b,.disclose-body strong{color:var(--ink);font-weight:600;}
+.disclose-body code{font-family:var(--mono);font-size:.86em;color:var(--gold-deep);background:rgba(133,84,16,.07);padding:1px 5px;border-radius:5px;}
+
+/* -- the coherent chip language: one pill form, one status-hue scale.
+   Existing chips (.badge-mobile, .ov-badge…) keep their names and are
+   aligned to this family in Stage 2; NEW chips use .pchip directly. -- */
+.pchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;line-height:1;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap;text-decoration:none;}
+.pchip .pchip-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3);flex:none;}
+.pchip .u-orb{width:9px;height:9px;flex:none;}
+a.pchip:hover{border-color:var(--gold-hi);color:var(--gold-deep);}
+.pchip.is-closed{color:var(--gold-deep);border-color:rgba(168,118,26,.42);}
+.pchip.is-closed .pchip-dot{background:var(--gold);box-shadow:0 0 6px rgba(217,164,65,.6);}
+.pchip.is-now{color:var(--gold-deep);border-color:rgba(217,164,65,.5);background:radial-gradient(ellipse,rgba(242,194,90,.16),transparent 80%);}
+.pchip.is-now .pchip-dot{background:var(--gold-hi);box-shadow:0 0 7px rgba(217,164,65,.7);}
+.pchip.is-queued{color:var(--gold-deep);border-color:rgba(168,118,26,.34);}
+.pchip.is-queued .pchip-dot{background:var(--gold);}
+.pchip.is-proposed{color:var(--ink-3);}
+.pchip.is-proposed .pchip-dot{background:var(--ink-3);}
+.pchip.is-stale{color:var(--ember);border-color:rgba(194,73,42,.5);}
+.pchip.is-stale .pchip-dot{background:var(--ember);}
+.pchip.is-native{color:var(--gold-deep);border-color:rgba(168,118,26,.45);}
+.pchip.is-native .pchip-dot{background:var(--gold-deep);}
+.pchip.is-reflowed{color:#5b6bb0;border-color:rgba(120,140,210,.4);}
+.pchip.is-reflowed .pchip-dot{background:#5b6bb0;}
+.pchip.is-desktop-only{color:var(--ink-3);}
+.pchip.is-desktop-only .pchip-dot{background:var(--line);}
+.pchip.is-untouched{color:var(--ink-3);}
+.pchip.is-untouched .pchip-dot{background:var(--line);}
+.ov-key{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 6px;}
+
+/* -- phone: single column, honest tap targets (practice the canon) -- */
+@media (max-width:700px){
+  .stat-read{grid-template-columns:1fr;}
+  .ov-lead{font-size:18px;}
+}
 </style>
 HTML
 
@@ -653,10 +723,17 @@ printf '<main>\n'
 # ===== OVERVIEW (default landing) =====
 printf '<section class="page" id="page-overview">'
 printf '<h1 class="page-h u-inkgold">Where the build stands</h1>'
-printf '<p class="status-line"><b>%s</b> surfaces &middot; <b>%s</b> closed &middot; <b>%s</b> known gaps &middot; %s</p>' "$TOTAL" "$CLOSED" "$TOTALGAPS" "$LAUNCHLINE"
-printf '<div class="progress"><div class="pbar"><div class="pfill" style="width:%s%%"></div></div><div class="plab"><b>%s</b> of %s surfaces closed</div></div>' "$PCT" "$CLOSED" "$TOTAL"
+# plain-English lead (generator-written; every number is computed, no new claim)
+printf '<p class="ov-lead">Praxis is built one surface at a time &mdash; <b>%s</b> of its <b>%s</b> surfaces are finished, the rest in a round or waiting their turn. %s.</p>' "$CLOSED" "$TOTAL" "$LAUNCHLINE"
+# THE PROGRESS READ — three computed reads (closed / mobile-native / open gaps)
+mpct=0; [ "$TOTAL" -gt 0 ] && mpct=$((MOBNATIVE*100/TOTAL))
+printf '<div class="stat-read">'
+printf '<div class="stat-card"><div class="stat-num">%s<span class="of"> / %s</span></div><div class="stat-lbl">surfaces closed</div><div class="stat-bar"><div class="stat-fill" style="width:%s%%"></div></div></div>' "$CLOSED" "$TOTAL" "$PCT"
+printf '<div class="stat-card"><div class="stat-num">%s<span class="of"> / %s</span></div><div class="stat-lbl">mobile-native</div><div class="stat-bar"><div class="stat-fill" style="width:%s%%"></div></div></div>' "$MOBNATIVE" "$TOTAL" "$mpct"
+printf '<div class="stat-card"><div class="stat-num">%s</div><div class="stat-lbl">open gaps</div><div class="stat-sub">known work across every surface</div></div>' "$TOTALGAPS"
+printf '</div>'
 # NOW card
-printf '<div class="now-card u-lamplight"><div class="now-eyebrow">NOW &mdash; the three next moves</div>'
+printf '<div class="now-card u-lamplight"><div class="now-eyebrow">NOW &mdash; the moves at the front of the build</div>'
 i=0
 cat "$TMP/now" | while IFS="$US" read -r title touches body; do
   [ -z "$body" ] && continue
@@ -666,8 +743,11 @@ cat "$TMP/now" | while IFS="$US" read -r title touches body; do
   [ "$i" -ge 3 ] && break
 done
 printf '</div>'
-# heat grid
-printf '<div class="heat-head">THE SURFACES &mdash; brighter orb = further along &middot; number = open gaps</div>'
+# heat grid — plain lead + coherent chip key + folded detail
+printf '<p class="sec-eyebrow">The surfaces</p>'
+printf '<p class="sec-lead">Every surface in the app, warmest first &mdash; the <b>brighter the light</b>, the closer to finished. The number on each is how many known gaps remain; tap one to open its build ledger.</p>'
+printf '<div class="ov-key"><span class="pchip is-closed"><span class="u-orb u-orb--lit u-orb--amber"></span>closed</span><span class="pchip is-now"><span class="u-orb u-orb--soft u-orb--amber"></span>in a round</span><span class="pchip is-untouched"><span class="u-orb u-orb--unlit"></span>untouched</span></div>'
+printf '<details class="disclose"><summary>How to read the lights</summary><div class="disclose-body">A <b>bright amber</b> orb is a <b>closed</b> surface; a <b>soft</b> orb is one in an active <b>round</b>; an <b>unlit</b> orb is <b>untouched</b>. The &#10022; star marks a surface whose round brief is ready to run. Round stages carry distinct hues &mdash; periwinkle scanned, honey shaped, coral building, amber closed.</div></details>'
 heat_group "ARRIVE" "arrive" $G_ARRIVE
 heat_group "READ" "read" $G_READ
 heat_group "WRITE" "write" $G_WRITE
@@ -675,8 +755,7 @@ heat_group "SHARE" "share" $G_SHARE
 heat_group "YUMI" "yumi" $G_YUMI
 heat_group "FIND" "find" $G_FIND
 heat_group "SYSTEM" "system" $G_SYSTEM
-# legend
-printf '<div class="legend"><span><span class="u-orb u-orb--lit u-orb--amber"></span>closed</span><span><span class="u-orb u-orb--soft u-orb--amber"></span>in a round</span><span><span class="u-orb u-orb--unlit"></span>untouched</span></div>'
+# (the status key now renders as coherent chips above the grid — see .ov-key)
 # recently
 printf '<div class="recently"><h3>Recently</h3>'
 head -3 "$TMP/replan" | while IFS="$US" read -r kind body; do
