@@ -18,6 +18,7 @@ REPO=$(cd "$SDIR/.." && pwd)
 STUDIO="$REPO/docs/studio"
 DEPTH="$STUDIO/universal-depth.css"
 SEQ="$STUDIO/sequence.md"
+MCANON="$STUDIO/praxis-mobile-canon.md"
 OUT="$STUDIO/builder.html"
 US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g. no touches) are preserved by read
 
@@ -314,6 +315,35 @@ ov_render_report() {
   printf '</pre></details>'
 }
 
+# --- mobile-canon section renderer ---
+# Renders praxis-mobile-canon.md as a condensed pattern list: each P#
+# collapsed behind <details> (the Builder's collapse idiom); summary =
+# id+name + one-line Applies, detail = Rule + Checks. Parsed at build time.
+build_mobile_canon() {
+  if [ ! -f "$MCANON" ]; then printf '<p class="status-line">mobile canon doc missing at generation time</p>'; return; fi
+  printf '<p class="status-line">The mobile interaction language &mdash; <b>nine patterns</b>, breakpoint <b>759</b>. Each surface earns its chip through ledger evidence, never by editing the Builder.</p>'
+  printf '<div class="mc-legend"><span class="mc-key mob-desktop-only">desktop-only</span><span class="mc-key mob-reflowed">reflowed</span><span class="mc-key mob-native">native</span></div>'
+  printf '<div class="mcanon-list">'
+  awk '
+    function esc(s){ gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); return s }
+    function flush(){ if(cur!=""){ body=body "<p>" esc(cur) "</p>"; cur="" } }
+    function emit(){ if(have){ flush();
+        printf "<details class=\"mcanon-pat\"><summary><span class=\"mc-id\">%s</span><span class=\"mc-applies\">%s</span></summary><div class=\"mc-detail\">%s</div></details>\n", esc(head), esc(applies), body }
+        have=0; head=""; applies=""; cur=""; body=""; ap=0 }
+    /^## P[0-9]/{ emit(); have=1; head=$0; sub(/^## /,"",head); next }
+    /^## /{ emit(); next }
+    have==0{ next }
+    /^-{3,}[[:space:]]*$/{ flush(); next }
+    /^Applies:/{ flush(); ap=1; a=$0; sub(/^Applies:[[:space:]]*/,"",a); applies=a; next }
+    ap==1 && /^[[:space:]]*$/{ ap=0; next }
+    ap==1{ applies=applies " " $0; next }
+    /^[[:space:]]*$/{ flush(); next }
+    { if(cur==""){cur=$0}else{cur=cur " " $0} }
+    END{ emit() }
+  ' "$MCANON"
+  printf '</div>'
+}
+
 {
 # ---- head + base tokens + Builder layout CSS ----
 cat <<'HTML'
@@ -499,6 +529,27 @@ main{margin-left:236px;}
 .sev-medium{background:#d9a441;}
 .sev-low{background:#a9b98c;}
 
+/* mobile canon section + per-surface mobile chip */
+.badge-mobile{text-transform:lowercase;letter-spacing:.05em;}
+.badge-mobile.mob-desktop-only{color:var(--ink-3);}
+.badge-mobile.mob-reflowed{color:#5b6bb0;border-color:rgba(120,140,210,.4);}
+.badge-mobile.mob-native{color:var(--gold-deep);border-color:rgba(168,118,26,.45);}
+.badge-mobile.mob-unknown{color:var(--ember);border-color:var(--ember);}
+.mc-legend{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 18px;}
+.mc-key{font-family:var(--mono);font-size:10px;letter-spacing:.04em;border:1px solid var(--line);border-radius:999px;padding:3px 11px;color:var(--ink-2);}
+.mc-key.mob-desktop-only{color:var(--ink-3);}
+.mc-key.mob-reflowed{color:#5b6bb0;}
+.mc-key.mob-native{color:var(--gold-deep);}
+.mcanon-list{display:grid;gap:9px;margin-top:6px;}
+.mcanon-pat{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.mcanon-pat summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:11px;padding:13px 17px;}
+.mcanon-pat summary::-webkit-details-marker{display:none;}
+.mcanon-pat[open] summary{border-bottom:1px solid var(--line);}
+.mc-id{font-family:var(--serif);font-size:18px;color:var(--ink);flex:none;}
+.mc-applies{font-size:13px;color:var(--ink-2);line-height:1.42;flex:1;min-width:190px;}
+.mc-detail{padding:8px 17px 15px;}
+.mc-detail p{margin:9px 0;font-size:13.5px;color:var(--ink-2);line-height:1.55;}
+
 /* markdown render (surface ledgers) */
 .md h2,.md-h2{font-family:var(--serif);font-weight:500;font-size:23px;margin:0 0 8px;}
 .md h3,.md-h3{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);margin:20px 0 6px;}
@@ -587,6 +638,7 @@ printf '<a class="brail-link brail-dest" href="#page-overview">Overview</a>'
 printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
 printf '<a class="brail-link brail-dest" href="#page-overnight">Overnight</a>'
+printf '<a class="brail-link brail-dest" href="#page-mobile-canon">Mobile canon</a>'
 brail_group "ARRIVE" "arrive" $G_ARRIVE
 brail_group "READ" "read" $G_READ
 brail_group "WRITE" "write" $G_WRITE
@@ -743,14 +795,25 @@ ov_render_report
 printf '</div>'
 printf '</section>\n'
 
+# ===== MOBILE CANON (new top-level section — after Overnight, before the surface "Program"; insertion point flippable) =====
+printf '<section class="page" id="page-mobile-canon"><h1 class="page-h u-inkgold">Mobile canon</h1>'
+build_mobile_canon
+printf '</section>\n'
+
 # ===== surface pages (22 + cross-cutting) =====
 for s in $SURFACES $LAYERS; do
   f="$STUDIO/$s.md"
   rt=$(fm "$f" route); gr=$(fm "$f" ground); rfn=$(fm "$f" render_fn)
-  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s"); mk=$(fm "$f" mockup)
+  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s"); mk=$(fm "$f" mockup); mo=$(fm "$f" mobile)
   [ -z "$rt" ] && rt='&mdash;'; [ -z "$rfn" ] && rfn='&mdash;'; [ -z "$gr" ] && gr='&mdash;'; [ -z "$nv" ] && nv='&mdash;'
+  # mobile chip: ledger `mobile:` field -> desktop-only|reflowed|native; absent -> desktop-only; unknown -> warn prefix, never dropped
+  [ -z "$mo" ] && mo='desktop-only'
+  case "$mo" in
+    desktop-only|reflowed|native) mocls="mob-$mo"; modisp="$mo";;
+    *) mocls="mob-unknown"; modisp="&#9888; $mo";;
+  esac
   printf '<section class="page surface" id="s-%s">' "$s"
-  printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn"
+  printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span><span class="badge badge-mobile %s">%s</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn" "$mocls" "$modisp"
   printf '<div class="facts"><span><b>route</b> <code>%s</code></span><span><b>render</b> <code>%s</code></span><span><b>ground</b> %s</span><span><b>in nav</b> %s</span></div>' "$rt" "$rfn" "$gr" "$nv"
   # CONNECTED strip: plan items (Now/Next/Then) whose touches include this surface
   conn=$(awk -F"$US" -v me="$s" '$1==me{print $2}' "$TMP/conn")
