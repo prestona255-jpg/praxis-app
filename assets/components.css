@@ -12238,6 +12238,13 @@ body.wc-focus .app-nav { opacity:.26; }
   .home-page.lum-amber-deep .home-arc{ flex-direction:column; gap:14px; }
   .home-page.lum-amber-deep .home-arcfield{ width:100%; }
   .home-page.lum-amber-deep .home-glimpse{ flex-basis:100%; }
+
+  /* MW-1 P3: 44px effective tap targets on Home's interactive controls at <=759
+     (the field/left segmented, the arc-card buttons, the "Your shelf" link were
+     ~31-34px). Sizing only -- no tokens, no color, desktop untouched. */
+  .home-page.lum-amber-deep .seg-opt{ min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .home-page.lum-amber-deep .home-arcbtn{ min-height:44px; }
+  .home-page.lum-amber-deep .home-gl-link{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end HOME (renderHome on .lum-amber-deep) ===== */
 
@@ -12318,6 +12325,13 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-welcome{ position:relative; }
 .home-page.lum-amber-deep .home-welcome::before{ content:''; position:absolute; inset:-16% -8%; z-index:0; pointer-events:none;
   background:radial-gradient(ellipse at 30% 40%, rgba(242,194,90,.24) 0%, transparent 70%); }
+/* MW-1 P8: the welcome lamplight spilled ~8% (~30px) past the viewport edge at
+   mobile widths -> a standing horizontal scroll (scrollWidth 413 at 390). Constrain
+   its horizontal inset to 0 at <=759 (the vertical -16% wash is kept, so the felt
+   glow stays). Placed AFTER the base ::before rule so source order wins. */
+@media (max-width:759px){
+  .home-page.lum-amber-deep .home-welcome::before{ left:0; right:0; }
+}
 .home-page.lum-amber-deep .home-welcome > *{ position:relative; z-index:1; }
 
 /* 4 · RECIPE 3 · ink-to-gold on the ONE >=18px display title (display-only) */
