@@ -8920,6 +8920,221 @@ function buildBookEditPanel(bookId, book, user) {
   return panel;
 }
 
+// =====================================================================
+// R8 (values) -- the VALUE-MARK REGISTER. A quiet per-object affordance
+// (book detail, sub-theory page, arc detail) letting the reader mark which
+// of their DECLARED values (profile.values -- Model A shared vocabulary) an
+// object carries, each with an optional lineage ("why"). Marks live on the
+// object's own valueMarks array and persist through that object's EXISTING
+// guarded sync (markBooksDirty / markSubTheoriesDirty / markArcsDirty +
+// saveState) -- NO new collection. Sits BESIDE movedMe (that mark untouched).
+// Returns a DOM node, or null when there is no signed-in user (the caller
+// must also gate on ownership / non-seed for sub-theory + arc).
+// =====================================================================
+function _valueMarkDirty(kind) {
+  if (kind === 'book') { if (typeof markBooksDirty === 'function') { markBooksDirty(); } }
+  else if (kind === 'subtheory') { if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); } }
+  else if (kind === 'arc') { if (typeof markArcsDirty === 'function') { markArcsDirty(); } }
+}
+function _valueMarkRecord(kind, objId) {
+  if (kind === 'book') { return (state.books) ? state.books[objId] : null; }
+  if (kind === 'subtheory') { return (state.subTheories) ? state.subTheories[objId] : null; }
+  if (kind === 'arc') { return (state.arcs) ? state.arcs[objId] : null; }
+  return null;
+}
+function buildValueMarkRegister(kind, objId) {
+  var user = getCurrentUser();
+  if (!user || !user.uid) { return null; }
+  var card = document.createElement('div');
+  card.className = 'vr-card';
+  var pickOpen = false;
+  var editIdx = -1;
+
+  function persist() { _valueMarkDirty(kind); saveState(); }
+  function trim(s) { return ('' + s).replace(/^\s+|\s+$/g, ''); }
+
+  function render() {
+    card.innerHTML = '';
+    var rec = _valueMarkRecord(kind, objId);
+    if (!rec) { return; }
+    if (!(rec.valueMarks instanceof Array)) { rec.valueMarks = []; }
+    var marks = rec.valueMarks;
+    var profile = (typeof getProfile === 'function') ? (getProfile(user.uid) || {}) : {};
+    var vocab = (profile.values instanceof Array) ? profile.values : [];
+    var i;
+
+    var head = document.createElement('div');
+    head.className = 'vr-head';
+    var h = document.createElement('span');
+    h.className = 'vr-h';
+    h.textContent = 'Values this carries';
+    head.appendChild(h);
+    var sub = document.createElement('span');
+    sub.className = 'vr-sub';
+    sub.textContent = marks.length ? 'from your values' : '';
+    head.appendChild(sub);
+    card.appendChild(head);
+
+    var row = document.createElement('div');
+    row.className = 'vr-marks';
+    for (i = 0; i < marks.length; i++) {
+      (function(idx) {
+        var m = marks[idx];
+        var chip = document.createElement('span');
+        chip.className = 'vr-mark' + (editIdx === idx ? ' is-editing' : '');
+        var orb = document.createElement('span');
+        orb.className = 'vr-orb';
+        chip.appendChild(orb);
+        var nm = document.createElement('button');
+        nm.type = 'button';
+        nm.className = 'vr-mark-name';
+        nm.textContent = m.value;
+        nm.setAttribute('aria-label', 'edit lineage for ' + m.value);
+        nm.addEventListener('click', function() {
+          editIdx = (editIdx === idx) ? -1 : idx;
+          pickOpen = false;
+          render();
+        });
+        chip.appendChild(nm);
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'vr-mark-x';
+        x.setAttribute('aria-label', 'remove value ' + m.value);
+        x.textContent = '×';
+        x.addEventListener('click', function() {
+          marks.splice(idx, 1);
+          if (editIdx === idx) { editIdx = -1; }
+          persist();
+          render();
+        });
+        chip.appendChild(x);
+        row.appendChild(chip);
+      })(i);
+    }
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'vr-add';
+    addBtn.textContent = '+ mark a value';
+    addBtn.addEventListener('click', function() {
+      pickOpen = !pickOpen;
+      editIdx = -1;
+      render();
+    });
+    row.appendChild(addBtn);
+    card.appendChild(row);
+
+    for (i = 0; i < marks.length; i++) {
+      (function(idx) {
+        var m = marks[idx];
+        if (editIdx === idx) {
+          var ed = document.createElement('div');
+          ed.className = 'vr-edit';
+          var ta = document.createElement('textarea');
+          ta.className = 'vr-edit-in';
+          ta.value = m.why || '';
+          ta.setAttribute('placeholder', 'why does ' + m.value + ' live here? (a line of lineage — where it came to you)');
+          ed.appendChild(ta);
+          var erow = document.createElement('div');
+          erow.className = 'vr-edit-row';
+          var save = document.createElement('button');
+          save.type = 'button';
+          save.className = 'vr-edit-save';
+          save.textContent = 'Save';
+          save.addEventListener('click', function() {
+            m.why = trim(ta.value);
+            editIdx = -1;
+            persist();
+            render();
+          });
+          var cancel = document.createElement('button');
+          cancel.type = 'button';
+          cancel.className = 'vr-edit-cancel';
+          cancel.textContent = 'Cancel';
+          cancel.addEventListener('click', function() {
+            editIdx = -1;
+            render();
+          });
+          erow.appendChild(save);
+          erow.appendChild(cancel);
+          ed.appendChild(erow);
+          card.appendChild(ed);
+        } else if (trim(m.why) !== '') {
+          var line = document.createElement('div');
+          line.className = 'vr-line';
+          var rail = document.createElement('span');
+          rail.className = 'vr-rail';
+          line.appendChild(rail);
+          var why = document.createElement('div');
+          why.className = 'vr-why';
+          var b = document.createElement('b');
+          b.textContent = m.value + ' — ';
+          why.appendChild(b);
+          why.appendChild(document.createTextNode(m.why));
+          line.appendChild(why);
+          card.appendChild(line);
+        }
+      })(i);
+    }
+
+    if (pickOpen) {
+      var pick = document.createElement('div');
+      pick.className = 'vr-pick';
+      var lab = document.createElement('div');
+      lab.className = 'vr-pick-lab';
+      lab.textContent = 'Mark a value';
+      pick.appendChild(lab);
+      if (vocab.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'vr-pick-empty';
+        empty.textContent = 'You haven’t set any values yet. Add them in Account → Values, then mark what your reading carries.';
+        pick.appendChild(empty);
+      } else {
+        var whyIn = document.createElement('input');
+        whyIn.type = 'text';
+        whyIn.className = 'vr-whyin';
+        whyIn.setAttribute('placeholder', 'why does it carry this? (optional — a line of lineage)');
+        pick.appendChild(whyIn);
+        var grid = document.createElement('div');
+        grid.className = 'vr-pick-grid';
+        var marked = {};
+        var k;
+        for (k = 0; k < marks.length; k++) { marked[marks[k].value] = true; }
+        var any = false;
+        for (k = 0; k < vocab.length; k++) {
+          (function(val) {
+            if (marked[val]) { return; }
+            any = true;
+            var opt = document.createElement('button');
+            opt.type = 'button';
+            opt.className = 'vr-opt';
+            var oorb = document.createElement('span');
+            oorb.className = 'vr-orb vr-orb-soft';
+            opt.appendChild(oorb);
+            opt.appendChild(document.createTextNode(val));
+            opt.addEventListener('click', function() {
+              marks.push({ value: val, why: trim(whyIn.value) });
+              pickOpen = false;
+              persist();
+              render();
+            });
+            grid.appendChild(opt);
+          })(vocab[k]);
+        }
+        pick.appendChild(grid);
+        if (!any) {
+          var allmk = document.createElement('div');
+          allmk.className = 'vr-pick-empty';
+          allmk.textContent = 'Every one of your values is already marked here.';
+          pick.appendChild(allmk);
+        }
+      }
+      card.appendChild(pick);
+    }
+  }
+  render();
+  return card;
+}
+
 // Wave 4 (S7b): Book Detail -- the canonical front of a book, redesigned to
 // the Amber spec. Hero (cover/title/author/tags/status/+lens/moved), front
 // actions, About, "In your thinking" glance -> Book View, metadata aside,
@@ -9041,6 +9256,14 @@ function renderBookDetail(bookId) {
 
   hero.appendChild(hinfo);
   surf.shell.appendChild(hero);
+
+  // R8 (values): the value-mark register -- what your reading carries, from
+  // your declared values, each with an optional lineage. Beside movedMe; the
+  // book is the reader's own shelf record, so it is signed-in-gated only.
+  if (user) {
+    var vreg = buildValueMarkRegister('book', bookId);
+    if (vreg) { surf.shell.appendChild(vreg); }
+  }
 
   // ---- the ONE ranked action row (F3) / sign-in (signed out) ----
   if (user) {

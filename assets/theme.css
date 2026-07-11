@@ -38,6 +38,12 @@
   --thread:        #c2a463;
   --gold-soft:     #e7c46a;
   --gold-ink:      #855410;
+  /* R8 (values): the two canonical Universal gilding golds, promoted from the
+     per-surface scoped blocks to global so the value-mark register (which renders
+     across book / sub-theory / arc scopes) can wire them everywhere. Additive; the
+     scoped blocks that also define them (identical values) still win locally. */
+  --gold-hi:       #d9a441;   /* gilding highlight -- orbs / glyphs / edges ONLY */
+  --gold-deep:     #855410;   /* deep gold for small TEXT (AA) -- == --gold-ink   */
   --register-marginalia: var(--teal);
   --register-journal:    #7d6db0;
   --register-question:   #3a5a8a;

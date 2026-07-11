@@ -13310,3 +13310,66 @@ body.wc-focus .app-nav { opacity:.26; }
   .intro-summon{ left:12px; bottom:calc(84px + env(safe-area-inset-bottom)); }
 }
 /* ===== end W9 · INTRO JOURNEY (Part A) ===== */
+
+/* ============================================================================
+   R8 · VALUE-MARK REGISTER (.vr-*) — the quiet per-object value affordance,
+   shared across book detail / sub-theory / arc. Tokens resolve per enclosing
+   scope. Value hue = --gold-hi (gilding: orbs/glyphs); value TEXT = --gold-deep
+   (AA). Universal depth v1.2 recipe 2 (luminous orb) + 7 (lineage thread).
+   ============================================================================ */
+.vr-card{ margin:14px 0; padding:18px 20px; border:1px solid var(--line-page); border-radius:14px;
+  background:var(--page-2); box-shadow:0 6px 22px -14px rgba(120,75,15,.22), inset 0 1px 0 rgba(255,252,243,.6); }
+.vr-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.vr-h{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }
+.vr-sub{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
+.vr-marks{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.vr-mark{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-2);
+  border:1px solid var(--line-page); background:rgba(217,164,65,.06); border-radius:999px; padding:4px 8px 4px 10px; }
+.vr-mark.is-editing{ border-color:var(--gold-hi); }
+.vr-mark-name{ font:inherit; color:var(--ink); font-weight:500; background:none; border:0; padding:0; cursor:pointer; }
+.vr-mark-name:hover{ color:var(--gold-deep); }
+.vr-mark-x{ font-family:var(--font-mono); font-size:14px; line-height:1; color:var(--ink-3); background:none; border:0; cursor:pointer; padding:0 2px; }
+.vr-mark-x:hover{ color:var(--danger); }
+.vr-add{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; letter-spacing:.03em;
+  color:var(--gold-deep); background:transparent; border:1px dashed var(--gold-hi); border-radius:999px; padding:5px 12px; cursor:pointer; }
+.vr-add:hover{ background:rgba(217,164,65,.08); }
+/* luminous value orb (Universal depth recipe 2; value hue = gilding gold) */
+.vr-orb{ display:inline-block; width:9px; height:9px; border-radius:50%; flex:none;
+  background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--gold-hi) 55%, var(--gold-deep) 100%);
+  box-shadow:0 0 8px 1px rgba(217,164,65,.5); }
+.vr-orb-soft{ box-shadow:0 0 5px 0 rgba(217,164,65,.4); opacity:.9; }
+/* lineage line — a value carried, its "why" strung on a thread */
+.vr-line{ display:flex; align-items:flex-start; gap:10px; margin-top:9px; }
+.vr-rail{ width:1px; align-self:stretch; margin:3px 0 2px; background:linear-gradient(180deg,var(--thread),transparent); flex:none; }
+.vr-why{ font-family:var(--font-serif); font-style:italic; font-size:15px; line-height:1.45; color:var(--ink-2); }
+.vr-why b{ font-style:normal; font-weight:600; color:var(--gold-deep); }
+/* inline lineage editor */
+.vr-edit{ margin-top:10px; }
+.vr-edit-in{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line-page); border-radius:10px; padding:10px 12px; resize:vertical; min-height:52px; box-sizing:border-box; }
+.vr-edit-row{ display:flex; gap:8px; margin-top:8px; }
+.vr-edit-save,.vr-edit-cancel{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; border-radius:999px; padding:6px 14px; cursor:pointer; }
+.vr-edit-save{ color:#3d2807; border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
+.vr-edit-cancel{ color:var(--ink-2); border:1px solid var(--line-page); background:transparent; }
+/* the value picker */
+.vr-pick{ margin-top:14px; border-top:1px dashed var(--line-page); padding-top:14px; }
+.vr-pick-lab{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); margin-bottom:10px; }
+.vr-pick-empty{ font-family:var(--font-body); font-size:12.5px; color:var(--ink-2); line-height:1.5; }
+.vr-whyin{ width:100%; font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line-page); border-radius:10px; padding:10px 12px; margin-bottom:10px; box-sizing:border-box; }
+.vr-whyin::placeholder{ color:var(--ink-3); font-style:italic; }
+.vr-pick-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+.vr-opt{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-2);
+  border:1px solid var(--line-page); background:var(--surface); border-radius:999px; padding:5px 12px 5px 10px; cursor:pointer; }
+.vr-opt:hover{ border-color:var(--gold-hi); color:var(--ink); }
+/* mobile-canon (P1–P9): 44px hit areas · 16px inputs (no iOS zoom) · no h-scroll */
+@media (max-width:759px){
+  .vr-card{ padding:16px 14px; }
+  .vr-mark{ min-height:44px; padding:5px 8px 5px 12px; }
+  .vr-mark-name{ display:inline-flex; align-items:center; min-height:44px; }
+  .vr-mark-x{ display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding:0; }
+  .vr-add{ min-height:44px; padding:10px 16px; }
+  .vr-opt{ min-height:44px; padding:9px 14px 9px 12px; }
+  .vr-edit-save,.vr-edit-cancel{ min-height:44px; padding:11px 18px; }
+  .vr-edit-in,.vr-whyin{ font-size:16px; }
+}
