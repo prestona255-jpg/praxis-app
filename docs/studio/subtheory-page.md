@@ -33,6 +33,12 @@ mobile: native
 
 ## Round history
 
+- **R8 — value-mark register — SHIPPED v3.195 (`37ea1f0`), 2026-07-11.** The read Page gained the owner-only
+  **value-mark register** footer (`buildValueMarkRegister('subtheory', …)`, `.vr-*`) — a reader gesture, NOT a
+  prose edit (the workshop stays the sole editor, R6 #4). Persists on `state.subTheories[id].valueMarks` via
+  `markSubTheoriesDirty`+`saveState`. Owner-gated (seed + signed-out early-return above). Live smoke: Care
+  mark survived the Firestore round-trip.
+
 - **R6 Sub-theory (DEEP) — SHIPPED v3.190, CLOSED 2026-07-10** (the Page half; covered with `subtheory-build` — see that ledger's Round history for the full beat/commit record, `78174f5 → 4c8f73e`, felt-passed FULL PASS 2026-07-10). This surface: `renderSubTheoryPage` rebuilt as the read/author-view (editor removed, S2 `4a2b3cf`). Ledger: AF1/AF2/AF4/AF5/WL3 CLOSED · AF3/OQ1 superseded · ownership → R9 named debt (`R6-OWN`) · warm-dim ink-ramp → named debt (`R6-INK`).
 
 - **MW-3 Sub-theory mobile pass — SHIPPED-LOCAL v3.194 (2026-07-11), `mobile: native`.** The read

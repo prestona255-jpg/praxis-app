@@ -62,6 +62,14 @@ R7 SHIPPED v3.191 (`bff5d82`; Preston deployed felt pass = PASS 2026-07-10). Spe
 
 ## Round history
 
+- **R8 — value-mark register (the values thread) — SHIPPED v3.195 (`37ea1f0`), 2026-07-11.** `renderBookDetail`
+  gained the quiet **value-mark register** (`buildValueMarkRegister('book', …)`, `.vr-*`) after the hero,
+  BESIDE the shipped `movedMe` (untouched): "Values this carries" — mark from the reader's declared
+  `profile.values` (Model A), each mark `{value, why}` with an optional lineage line + inline editor. Persists
+  on `state.books[id].valueMarks` via `markBooksDirty`+`saveState` (rides the userBooks doc; NO new
+  collection). Self-contained `--vr-*` palette (opaque light card + dark ink) → deterministic AA (praxis-
+  reviewer HOLD fixed). Live smoke: Liberation + lineage survived the Firestore sign-out/in round-trip.
+
 - **R7 — DEEP — CLOSED 2026-07-10** (SHIPPED v3.191, `bff5d82`; Preston deployed felt pass = PASS).
   8 commits `25c7987` (mockup) → `bff5d82` (S6 cache): S1 fields+migration `ec474b4` · S2 the page
   `f2e5e0a` · S3 marks retire `be2f61f` · S4 category+moved-me `9874831` · S5 light re-ground + BD2

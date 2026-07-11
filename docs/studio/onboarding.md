@@ -23,4 +23,14 @@ Overlay (js/intros.js): `window.Intros`; first-run journey + 12 per-page intro p
 
 ## Round history
 
+- **R8 — Values preset moment — SHIPPED v3.195 (`37ea1f0`), 2026-07-11.** The first-run journey (js/intros.js
+  `JOURNEY`) gained a new **`values` beat** ("What do you read toward?") — 4th of now **8 beats**, after
+  `stance`. Offers the 10 approved starter presets (Liberation · Power, named · Dignity · Solidarity · Care ·
+  Doubt · Praxis · Inheritance · Hope · Craft) + a name-your-own input; each toggle persists to
+  `profile.values` via the `accountValuesPersist` idiom (`setProfile{values}` + `saveProfileToFirestore`).
+  `resetPicked` SEEDS the accumulator from existing `profile.values` (red-team FINDING 1 fix — a retake no
+  longer wipes prior declarations; the beat is additive). Dark journey ground (`.ij-vchip`, gilding-gold
+  on-state). Closes the onboarding half of VC5 (retrofit = the Account half). Live smoke: real chip clicks →
+  persisted; retake with 4 declared → seeded-selected → +1 kept all, no wipe.
+
 ## Next

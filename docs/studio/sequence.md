@@ -137,6 +137,20 @@ flagged at the top of the Builder's sequence page for his call — never applied
   remaining mobile line. Pure program advance on completed work — nothing retired, no Preston decision
   touched — no `PROPOSED:` flag. Round-CLOSE (felt pass) remains Preston's; Builder regenerated.
   Report: `docs/studio/reports/mw3-2026-07-11.md`.
+- **2026-07-11** — R8 Values CLOSED (DEEP, SHIPPED v3.195 `37ea1f0`; the round's live 5-step smoke on
+  `prestonpraxistest` PASSED IN FULL — incl. the load-bearing Firestore round-trip; Preston's deployed felt
+  pass pending). R8 → Shipped. **Re-plan (Preston-directed, pre-aligned July 11):** **R9 Profile/Galaxy lands
+  as Now** with a LOCKED shape — **R9a = the MERGED single Profile** (Account collapses to a settings + "Your
+  data" section; `#account` redirects; instrument DNA carried), organized by **OWNER-vs-VISITOR**: the owner
+  opens on the INSTRUMENT (evidence-weighted value-load, a Now strip, gaps-as-questions; the galaxy one tap
+  away); the visitor opens on the PORTRAIT (galaxy leading — stars = sub-theories, planets = fields; a values
+  statement; published work). Galaxy = **tap-first + sparse-honest**; **value-load is EVIDENCE-WEIGHTED** per
+  the R8 evidence rule, never raw tallies. **R9b (Next)** = arc cards, a lineage row, destination cross-links.
+  **Precondition (in the R9 entry):** Preston runs the Yumi value-retrofit on his REAL library before the R9
+  felt pass, so the galaxy has fuel. **S-A** (About·Search·yumi-sees), bumped from Now when R8 jumped ahead,
+  returns to Next beside the arc-field mobile touch model; **FX-1 stays parked** (re-raise trigger unchanged).
+  Preston-directed close + pre-agreed re-plan (record, don't redesign) — recorded, not flagged `PROPOSED:`.
+  Records: `docs/checkpoints/r8-values*.md`, `r8-redteam.md`, `r8-reviewer.md`. Builder regenerated.
 
 ## Shipped
 
@@ -239,14 +253,39 @@ flagged at the top of the Builder's sequence page for his call — never applied
   praxis-reviewer verdicts CLEARED (Book Detail HOLD on the rating stars → fixed 44×44 → re-confirmed).
   Desktop residual MW3-BKBOX carried. Report: `docs/studio/reports/mw3-2026-07-11.md`.
   touches: [subtheory-build, subtheory-page, book-detail]
+- [x] **R8 — Values: the values THREAD (DEEP, NEW BUILD)** (v3.195, `37ea1f0`; live 5-step smoke on
+  `prestonpraxistest` PASSED IN FULL 2026-07-11 — Preston's deployed felt pass pending). The flagship values
+  layer, built as a THREAD not a pane. 9 commits `f6c3a5a` (mockup) → `37ea1f0` (cache): S1 data layer
+  (`valueMarks` ×3 + migration 1.28.0→1.29.0) `0b09bb3` · S2 register+book `7c5ea9b` · S3 sub-theory+arc
+  `482bf7f` · S4 Yumi retrofit `34c1e97` · S5 shelf filter `205fda2` · S6 preset beat `fad3e57` · gate-fixes
+  `0706657` · cache `37ea1f0`. **Model A** (marks reference the declared `profile.values` vocabulary; a mark =
+  `{value, why}` — tag + lineage; **per-object fields, NO new synced collection** — FX-1 untouched). Four
+  pieces: the onboarding **preset moment** (10 approved presets → `profile.values`) · quiet **value-marks** on
+  book/sub-theory/arc (beside `movedMe`) · the **Yumi eval-gated retrofit** (metadata-only; accept adds a
+  stone, never auto-marks) · one **shelf filter row**. Both gates bit: fix-red-team caught a retake value-wipe
+  (FINDING 1 — fixed + live-verified); praxis-reviewer caught a `.vr-*` contrast failure (fixed to a self-
+  contained `--vr-*` palette, 15:1 live). Live smoke passed all 5 incl. **Firestore round-trip ×3 object
+  types**. R9/R10 consume the per-object `valueMarks[]` shape. Records: `docs/checkpoints/r8-values*.md`.
+  touches: [onboarding, account, book-detail, subtheory-page, arc-detail, books]
 
 ## Now
 
-- [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
-  residual gaps across three light surfaces; skips the mockup beat.
-  touches: [about, search, yumi-sees]
+- [ ] **R9 — Profile / Galaxy · R9a the MERGED Profile (DEEP, DEPENDS R8)** — the single Profile: Account
+  collapses into a settings + "Your data" section, `#account` redirects, the instrument DNA carried.
+  Organized by **OWNER-vs-VISITOR**: the OWNER opens on the INSTRUMENT (evidence-weighted value-load, a Now
+  strip, gaps-as-questions; the galaxy one tap away); the VISITOR opens on the PORTRAIT (galaxy leading —
+  stars = sub-theories, planets = fields; a values statement; published work). Galaxy = **tap-first +
+  sparse-honest**; **value-load is EVIDENCE-WEIGHTED** per the R8 evidence rule, never raw tallies. R9
+  consumes R8's per-object `valueMarks[]` + `profile.values`. **Precondition:** Preston runs the Yumi value-
+  retrofit on his REAL library BEFORE the R9 felt pass, so the galaxy has fuel. (Shape locked with Preston
+  2026-07-11 — record, don't redesign.) touches: [profile, account]
 
 ## Next
+- [ ] **R9b — Profile arc layer (DEPENDS R9a)** — arc cards, a lineage row, destination cross-links on the
+  merged Profile. Follows R9a. touches: [profile]
+- [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment + residual gaps across
+  three light surfaces; skips the mockup beat. (Bumped from Now when R8 jumped ahead 2026-07-11; returns
+  here.) touches: [about, search, yumi-sees]
 - [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the constellation
   field must become mobile-usable (the drag/connect touch model on the protected renderer). With the
   eight page-surfaces now mobile-native (MW-1/2/3), this is the truest remaining mobile line. Promoted
@@ -264,13 +303,6 @@ spine and the evolution track and folded into the program — nothing dropped.
   guardrail:** after signing in on any device, let the app settle before editing; pull this
   round FORWARD if second-device use starts.
   touches: [account]
-- [ ] **R8 — Values (DEEP, NEW BUILD)** — the flagship login value-presets + the values
-  data layer. Unblocks Profile counts + Connections.
-  touches: [onboarding, profile]
-- [ ] **R9 — Profile / Galaxy (DEEP, DEPENDS R8)** — the galaxy-only shelf view, toggles +
-  counts, luminosity = engagement / size = #books, and the broken profile-link affordances
-  fixed.
-  touches: [profile]
 - [ ] **S-B — Sweep: Import-Capture overlay · Yumi/lens panel · Account residuals (SWEEP)**.
   touches: [import-capture, yumi-panel, account]
 - [ ] **R10 — Connections (DEEP EXPLORATION, DEPENDS R8 + R5)** — values × ideas × books ×

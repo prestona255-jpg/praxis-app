@@ -182,6 +182,14 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
+### R8 value filter — SHIPPED v3.195 (2026-07-11, commit chain `f6c3a5a→37ea1f0`)
+
+R8 added ONE **Values row-group** to the existing shelf Filters rail (`.shelf-side`, no new toggle/sidebar):
+distinct value-marks across the deduped shelf set (`authorSrc`, counted once/book, count-desc), reusing the
+shared `.shelf-filter` idiom + `onShelfFilterRowClick`. `shelfFilter.value` key + apply predicate + gate +
+`filterActive` OR-chain. Rendered only when the shelf carries value-marks. Distinct from Lenses/Categories/
+Author (§3 boundary). Live smoke: `Liberation 1` → filter 3→1, count==data.
+
 ### MW-1 mobile pass — SHIPPED-LOCAL (2026-07-10, commit a405730; chip → mobile: native)
 
 First half of the MW-1 mobile wave. The Shelf now conforms to `praxis-mobile-canon.md`

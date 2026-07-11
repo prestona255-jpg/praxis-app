@@ -25,4 +25,13 @@ rounds: 0
 
 ## Round history
 
+- **R8 — Values (retrofit + values section) — SHIPPED v3.195 (`37ea1f0`), 2026-07-11.** The values section
+  ("What you're reading toward") gained the **Yumi value-RETROFIT**: a button-triggered, metadata-only,
+  eval-gated suggestion panel (offer-cards accept/rename/reject) that adds a DECLARED value (a `profile.values`
+  stone) — NEVER auto-marks an object. Ember scope (`.account-retro-*`, `--lum-*`). The copy-contract on the
+  values note was corrected ("…Yumi may notice values your shelf carries, but never fills them in for you").
+  Partially closes VC5 (the flagship values-preset moment — the onboarding beat is the other half). Live
+  smoke: real proxy returned grounded suggestions ("Power Named", "Relational Ground"); accept added a stone,
+  `noAutoMark` verified. touches: renderAccountPage.
+
 ## Next

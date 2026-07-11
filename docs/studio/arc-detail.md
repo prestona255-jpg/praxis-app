@@ -35,6 +35,14 @@ mobile: native
 
 ## Round history
 
+### R8 value-mark register — SHIPPED v3.195 (`37ea1f0`, 2026-07-11)
+
+`renderArcDetail` gained the owner-only **value-mark register** card under the head
+(`buildValueMarkRegister('arc', …)`, `.vr-*`, same gate as the publish control — excludes seed arcs).
+Persists on `state.arcs[id].valueMarks` via `markArcsDirty`+`saveState` (rides the userArcs doc; no new
+collection). Self-contained `--vr-*` palette so it reads AA on the warm-dim arc chrome (where `--lum-ink`
+is cream — the praxis-reviewer HOLD). Live smoke: Doubt mark survived the Firestore round-trip.
+
 ### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit 900aa4f; chip → mobile: native)
 
 Arc-detail (the living field) half of the MW-2 mobile wave. **Chip: `mobile: native`** —

@@ -59,7 +59,7 @@ sync-render with none (W11-S8-L1: #profile social-fetch now graceful).
 | Pickers ×8 (arc/sub/gather/file-to-book/mark…) | v12960/13077/13003/13437/2284/2945/8377 | ? unverified as a set |
 | Confirms ×6 (deletes/reset/unlink/review) | v12596/12699/8608/8678/14102/6654 | ? unverified as a set |
 | Reader-portrait offer | v17432 | ? |
-| **Intro journey** (first-run, 7 steps) | intros.js `startJourney`; body-level overlay; fired by yumi-ui `maybeStartOnboarding` (scripted chat greeting replaced) | ✅ `.lum-amber` |
+| **Intro journey** (first-run, 8 steps — R8 added a `values` beat) | intros.js `startJourney`; body-level overlay; fired by yumi-ui `maybeStartOnboarding` (scripted chat greeting replaced) | ✅ `.lum-amber` |
 | **Intro per-page panels ×12** | intros.js `maybeShowPanel`; ls/sv seen-flags; 8 auto-show surfaces (home·shelf·notebook·field·search·commons·account·sees) | ✅ dual-ground |
 | **Intro ⓘ re-summon + About Orientation** | intros.js `updateSummon`; `buildAboutOrientation` single-sources INTROS into renderAbout | ✅ |
 
@@ -157,3 +157,14 @@ states preserved. The prior in-cell `v####`/`css####` anchors on these rows were
 by function name (`renderSubTheoryPage` ~9838, `renderSubTheoryBuild` ~10242, of 2026-07-10) before relying.
 Named debt carried: R6-OWN (ownership → R9 owner-vs-visitor) + R6-INK (warm-dim ink-ramp, systemic retune).
 Records: `docs/studio/subtheory-build.md` + `subtheory-page.md` (both `state: closed`).*
+
+*Board revision 4 — R8 Values SHIPPED (v3.195, `37ea1f0`, 2026-07-11; live 5-step smoke passed in full incl. the
+Firestore round-trip, deployed felt pass pending). R8 is FEATURE-ADDITIVE — it flips NO coverage cell
+(Amber/Mobile/Empty/Logged-out/Load-Error all hold); it threads a new value layer through existing surfaces.
+Recorded elsewhere: the Intro journey is now **8 steps** (§2, a new `values` beat after `stance`);
+book-detail/sub-theory-page/arc-detail gained an owner-gated value-mark register (`.vr-*`, self-contained
+`--vr-*` palette, AA on every ground); `#account`'s values section gained the Yumi eval-gated retrofit; `#books`
+gained one Values filter row-group. All new UI is mobile-canon-native (Mobile 18/18 holds). Data layer: additive
+per-object `valueMarks[]` (migration `1.28.0→1.29.0`) — NO new synced collection (FX-1 untouched). SCHEMA_VERSION
+chain now lands at `1.29.0`. Records: `docs/checkpoints/r8-values*.md`; surface ledgers: onboarding · account ·
+book-detail · subtheory-page · arc-detail · books.*
