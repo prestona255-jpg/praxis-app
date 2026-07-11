@@ -10877,6 +10877,46 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 /* ===== end R7 · S5 book-detail light re-ground ===== */
 
+/* =============================================================================
+   MW-3 · BOOK DETAIL MOBILE PASS (docs/studio/praxis-mobile-canon.md). Light ground
+   (.bk-surface). Sizing/reflow only -- no tokens/hex/JS; every rule inside @media
+   (max-width:759px), so desktop is byte-unchanged. Verified at live 390.
+
+   P8 (the substantive fix): TWO overflows compounded to a 20px h-scroll (scrollWidth
+   410 at 390). (a) .bk-surface omits box-sizing (every sibling surface -- .st-page/
+   .st-build/.notebook/.shelf -- sets border-box; there is NO global reset), so
+   width:100% + 28px padding = a content-box overflow. Restore border-box at <=759.
+   The base rule (~10505), hence DESKTOP, is untouched -- the same content-box overflow
+   exists at desktop (scrollWidth 1297 vs 1265) and is a PRE-EXISTING out-of-scope
+   residual (a desktop change needs its own felt-gate; see the MW-3 report). (b) the
+   read-status control's three white-space:nowrap segments ("Currently reading"/"Have
+   read"/"Will read" = ~372px) overflow the row -> wrap to 3 equal shrinkable segments
+   (the app's own .rrow-right idiom, 9211-9212). Together: scrollWidth 390, 0 offenders.
+   P7: the edit-panel category select + text inputs were 13px -> 16px (Safari zoom).
+   P3: the small controls (backlink/find 19, arcchip 28, edit-toggle 29, moved 35,
+   edit/remove btns 34, secondary action ~37, show-all/became/grew-open, edit fields)
+   -> 44px effective hit area. Covered already (BD2/R7): the action row collapses to a
+   column with the gilded primary at order:-1 (P2, 10870-10872). The 5 rating-star
+   buttons (.bk-star -- real rating writes, views.js) get a genuine 44x44 hit area (the
+   glyph stays 15px; the box is expanded per the canon's hit-area rule, NOT exempted) --
+   the row fits the full-width aside (228px, no overflow). P1/P4/P5/P6/P9 n/a. */
+@media (max-width:759px){
+  .bk-surface{ box-sizing:border-box; }
+  .bk-surface .rstatus{ display:flex; width:100%; }
+  .bk-surface .rs-opt{ flex:1 1 0; min-width:0; text-align:center; white-space:normal; min-height:44px; }
+  .bk-surface .bk-edit-input, .bk-surface .bk-edit-select{ font-size:16px; }
+  .bk-surface .bk-moved, .bk-surface .bk-actionbtn, .bk-surface .bk-arcchip,
+  .bk-surface .bk-edit-toggle, .bk-surface .bk-edit-btn, .bk-surface .bk-edit-remove,
+  .bk-surface .bk-edit-input, .bk-surface .bk-edit-select,
+  .bk-surface .bk-remove-cancel, .bk-surface .bk-remove-confirm-btn, .bk-surface .bk-showall,
+  .bk-surface .bk-becamelink, .bk-surface .bk-gopen, .bk-surface .bk-backlink,
+  .bk-surface .bk-find{ min-height:44px; }
+  .bk-surface .bk-backlink, .bk-surface .bk-find{ display:inline-flex; align-items:center; }
+  /* the 5-up rating: a genuine 44x44 hit box per star (glyph stays 15px, centered) */
+  .bk-surface .bk-star{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+}
+/* ===== end MW-3 · BOOK DETAIL MOBILE PASS ===== */
+
 /* =====================================================================
    WAVE 3 · THE PAGE  (renderSubTheoryPage on .lum-amber-deep)
    3-column reading room: evidence weave rail · lifted glass sheet +
