@@ -10654,6 +10654,16 @@ function renderSubTheoryPage(id) {
     }
   }
 
+  // R8 (values): the value-mark register — a quiet footer on the read Page.
+  // This path is the real, owner-authored sub-theory (seed + signed-out early-
+  // returned above), so it is owner-only by construction. A reader gesture, not
+  // a prose edit — it persists via the sub-theory's own guarded sync, NOT the
+  // workshop (renderSubTheoryBuild stays the sole prose editor, R6 decision #4).
+  if (stpUser && stpUser.uid) {
+    var stVreg = buildValueMarkRegister('subtheory', id);
+    if (stVreg) { wrap.appendChild(stVreg); }
+  }
+
   host.appendChild(wrap);
 }
 
@@ -12598,6 +12608,15 @@ function renderArcDetail(arcId) {
 
   header.appendChild(headctl);
   wrap.appendChild(header);
+
+  // R8 (values): the value-mark register for the arc — a quiet card under the
+  // head, owner-only (the same gate as the publish control above; excludes seed
+  // arcs, whose userId is the sentinel, and signed-out visitors). Renders across
+  // all faces; persists via the arc's own guarded sync.
+  if (user && user.uid && arc.userId === user.uid) {
+    var arcVreg = buildValueMarkRegister('arc', arcId);
+    if (arcVreg) { wrap.appendChild(arcVreg); }
+  }
 
   // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
   var confirmHost = document.createElement('div');
