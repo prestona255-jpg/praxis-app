@@ -7,6 +7,7 @@ ground: dark
 in_nav: yes
 state: closed
 rounds: 1
+mobile: native
 ---
 
 ## State
@@ -31,6 +32,32 @@ rounds: 1
 - [source: mockup-agent 2026-07-09] [status: NAMED DEBT — future round] [sev: LOW] Signed-out `.empty-state` has no scoped CSS (no `.home-page .empty-state` rule) — the door's crest/h2/p fall to bare UA-default (left-aligned, no italic serif, no reading measure), unlike Shelf/Notebook. Pre-existing; surfaced by the mockup agent while rendering faithfully. R3 gilds the Sign-in CTA but leaves the surrounding prompt unscoped. Future round: add a scoped `.home-page .empty-state` rule.
 
 ## Round history
+
+### MW-1 mobile pass — SHIPPED-LOCAL (2026-07-10, commit e5ab754; chip → mobile: native)
+
+Second half of the MW-1 mobile wave. Home conforms to `praxis-mobile-canon.md` at ≤759.
+**Chip ruling: `mobile: native`** — the applicable patterns verified on both layers; evidence in
+`docs/studio/reports/mw1-2026-07-10.md`.
+
+- **P3 — applied:** Home's tappables were sub-44px (`.seg-opt` ~31, `.home-arcbtn` ~34,
+  `.home-gl-link` tiny). Added `min-height:44px` (+ inline-flex) at ≤759. Live @390: seg-opt **h44**,
+  gl-link **h45** (`.home-arcbtn` structurally a hard floor — no colliding override, base already
+  `inline-flex`; not live-sampled because the layout seed didn't render a left-off card — a
+  follow-up at the felt pass). Desktop @1265: seg-opt `min-height:auto` (mobile-only).
+- **P8 — applied (fixed a PRE-EXISTING overflow):** at 390 Home carried a standing ~23px h-scroll
+  (scrollWidth 413) from the `.home-welcome::before` lamplight (`inset:-16% -8%`) spilling ~8% past
+  the viewport. Constrained its horizontal inset to 0 at ≤759 (vertical `-16%` wash kept — felt
+  glow preserved), placed AFTER the base `::before` rule so source order wins. Live @390:
+  **scrollWidth 390 = clientWidth, welcome overflow 0**. (My P3 `inline-flex` was NOT the cause —
+  reverting it left 413.)
+- **P6 — already satisfied** (existing): the field/left variant toggle is a display-switch on
+  persistent panes (`homeShowVariant`, views.js:1354 → `.home-variant-hidden{display:none}`), not a
+  re-render — meets P6 "panes hide, not destroyed."
+- **P1/P2/P4/P5/P7/P9 — n/a** (no management cluster; no single primary-verb button; no new bottom
+  chrome; the greeting is not an orientation title; no inputs; no new motion). Sizing/inset only —
+  0 tokens, 0 hex, no JS; every rule `@media (max-width:759px)` so desktop is byte-unchanged.
+- Gate: praxis-reviewer CLEARED (cascade placement + inline-display trap independently retraced).
+  **Felt pass remains Preston's.**
 
 ### R3 CLOSED — felt pass PASSED IN FULL (2026-07-09, deployed v3.187, commit c3e869d)
 

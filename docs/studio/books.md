@@ -7,6 +7,7 @@ ground: dark
 in_nav: yes
 state: closed
 rounds: 2
+mobile: native
 ---
 
 ## State
@@ -180,6 +181,36 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 - [source: cross-check 2026-07-08] [status: open] [performance][high] RE-GRADE — the "no pagination/virtualization" finding already on this ledger is elevated to HIGH: renderShelf is the sole update path for the entire surface, confirmed called from 40 sites in views.js (grep count); every call tears down the page (`host.innerHTML=''`, views.js:3733) and re-runs ~9 separate O(n) passes over the book set (collect, sort, filter's 7-predicate pass, lens/status/author/category tallies) plus a full walk of state.notebookEntries AND state.subTheories for the "alight" computation (views.js:4759-4789) — on every filter click, toggle, and debounced keystroke, not just on load.
 
 ## Round history
+
+### MW-1 mobile pass — SHIPPED-LOCAL (2026-07-10, commit a405730; chip → mobile: native)
+
+First half of the MW-1 mobile wave. The Shelf now conforms to `praxis-mobile-canon.md`
+P1–P9 at ≤759. **Chip ruling: `mobile: native`** — every applicable pattern verified on
+both layers (static relational + live 390 CDP), evidence in `docs/studio/reports/mw1-2026-07-10.md`.
+
+- **P1 (ON-2 REFERENCE IMPLEMENTATION):** one "Manage" control at every viewport. Visible
+  toolbar = Add-a-book + Sort + Filters + filter field; the 7 secondary controls (Covers|List,
+  Select, Scan shelf, Scan barcode, Bulk add, Resolve covers, Tidy library) relocate into a
+  Manage container — **bottom sheet ≤759 / anchored popover ≥760, one JS path**
+  (`openManageSheet`/`closeManageSheet`, views.js ~4109-4141). Controls move WITH their live
+  handlers (no re-wire). Live @390: sheet `position:fixed`, top 388/bottom 840, 54vh, scrim
+  backdrop, body scroll-lock, focus-in (`shelf-manage-close`) + return (`shelf-manage-btn`),
+  Escape + backdrop-tap dismiss; @1265 popover `position:absolute` anchored. Scroll-lock +
+  listeners also released in `renderRoute` (views.js:359) so OS back-nav can't strand a surface.
+- **P2** bottom-left Add FAB (opposite the Yumi bloom, hidden in Select mode); **P3** 44px
+  (sheet close 44×44 + inherited `.btn/.chip/.seg-opt` floor); **P4** `env(safe-area-inset-bottom)`
+  ×2; **P5** sticky-title compaction (scroll listener → `.is-stuck`); **P7** 16px filter input +
+  `inputmode=search`; **P8** zero h-scroll @390 (fixed an 8px sticky-head overflow in verify);
+  **P9** motion = {opacity, sheet slide, title font-size} + reduced-motion zero. **P6** n/a.
+- Tokens: `--page-2`/`--line-page(-2)`/`--scrim`/`--ink`/`--gold-deep`/`--font-mono`/`--radius-lg`
+  (Shelf is light-ground via R2 re-points, so semantic `--surface`/`--border` were NOT used); 0
+  `--lum-*`, 0 blur, 0 new hex. Gates: praxis-reviewer CLEARED + fix-red-team (1 blocker — the
+  back-nav scroll-lock leak — fixed & re-verified).
+- **Residuals (low sev):** no Tab focus-trap on the mobile sheet (has focus-in + Escape + scrim);
+  modal-over-sheet (Scan/Bulk/etc. open behind the sheet, not auto-closed to avoid an
+  overflow-unlock race); the slide/fade animation couldn't be observed *settling* in the headless
+  rig (verified via settled-cascade + reduced-motion static) and screenshots timed out — the
+  live-DOM structural proof is the hard evidence. **Felt pass at 390/768/1280 remains Preston's.**
 
 ### Shelf data-correctness round CLOSED — live pass in full (2026-07-09, deployed v3.186, commit e12f705)
 

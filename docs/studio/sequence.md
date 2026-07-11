@@ -102,6 +102,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
   reworded. Book Detail shipped the BD2 4-I `order` reorder in R7; its full mobile-canon pass is MW-3
   (no `mobile:` chip claimed on the ledger). Preston-directed cadence (the mobile wave is the next
   stretch); nothing retired, no Preston decision contradicted — no `PROPOSED:` flag. Builder regenerated.
+- **2026-07-10** — MW-1 Shelf + Home mobile pass SHIPPED-LOCAL (`a405730` shelf + `e5ab754` home; NOT
+  pushed). Both surfaces passed both build gates (praxis-reviewer CLEARED ×2; fix-red-team found +
+  fixed one blocker — the back-nav scroll-lock leak). MW-1 → Shipped; **Now advanced to MW-2**
+  (Notebook + Arcs), promoted from Next per the locked mobile-wave order. Shelf + Home ledger chips
+  ruled `mobile: native` on both-layer evidence. ON-2 (overnight) closed — absorbed by MW-1 as the P1
+  reference implementation. Downstream order unchanged (MW-3 · S-A · then the Then stretch). Pure
+  program advance on completed work — nothing retired, no Preston decision touched — no `PROPOSED:`
+  flag. Round-CLOSE (felt pass + push) remains Preston's; Builder regenerated. Report:
+  `docs/studio/reports/mw1-2026-07-10.md`.
 
 ## Shipped
 
@@ -179,19 +188,22 @@ flagged at the top of the Builder's sequence page for his call — never applied
   PASS, fix-red-team NO-BLOCK); Live Forensic Smoke Test PASS. The BD2 4-I `order` reorder shipped; the
   full mobile-canon pass is MW-3. Records: `docs/checkpoints/r7-book-detail-recon.md`,
   `docs/studio/book-detail.md`. touches: [book-detail]
+- [x] **MW-1 — Shelf + Home mobile pass (SWEEP)** (SHIPPED-LOCAL 2026-07-10, `a405730` shelf +
+  `e5ab754` home; NOT pushed — awaiting Preston's push + felt pass). First of the three mobile-wave
+  passes. Shelf → P1 Manage sheet/popover (ON-2 reference impl, one JS path) + P2–P9; Home → P3 44px
+  targets + P8 lamplight-overflow fix (P6 pre-satisfied, rest n/a). Both surface chips → `mobile:
+  native`. Both praxis-reviewer verdicts CLEARED; fix-red-team found + fixed one blocker (back-nav
+  scroll-lock leak). Report: `docs/studio/reports/mw1-2026-07-10.md`. touches: [shelf, home]
 
 ## Now
 
-- [ ] **MW-1 — Shelf + Home mobile pass (SWEEP)** — the mobile wave opens: sweep Shelf + Home to
-  the mobile canon (`praxis-mobile-canon.md`, P1–P9). First of the three mobile-wave passes; skips
-  the mockup beat.
-  touches: [shelf, home]
+- [ ] **MW-2 — Notebook + Arcs mobile pass (SWEEP)** — sweep Notebook + Arcs to the mobile canon
+  (`praxis-mobile-canon.md`, P1–P9); skips the mockup beat. Second of the three mobile-wave passes
+  (MW-1 Shelf + Home shipped-local 2026-07-10, `a405730`/`e5ab754`, both chips → native).
+  touches: [notebook, arcs, arc-detail]
 
 ## Next
 
-- [ ] **MW-2 — Notebook + Arcs mobile pass (SWEEP)** — sweep Notebook + Arcs to the mobile canon
-  (P1–P9); skips the mockup beat.
-  touches: [notebook, arcs, arc-detail]
 - [ ] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** — sweep Sub-theory + Book Detail to the
   mobile canon (P1–P9); Book Detail shipped the BD2 4-I `order` reorder in R7, MW-3 completes the full
   mobile pass; skips the mockup beat.

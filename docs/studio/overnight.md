@@ -114,14 +114,14 @@ tonight's slate.
   surface: books
   bucket: overnight
   files: CSS + views.js
-  anchors: TBD (renderShelf toolbar)
+  anchors: renderShelf Manage scaffolding + openManageSheet/closeManageSheet (views.js ~4067-4141), the 7 manageBody.appendChild relocations, renderRoute scroll-lock/listener cleanup (views.js:359); .shelf-manage* CSS + mobile sheet / P2 FAB / P5 sticky (components.css "MW-1 · SHELF MOBILE PASS" block).
   verify: at 390 / 768 / 1280 — Add a book, Sort, Filters, and the filter field stay visible; Covers/List, Select, Scan shelf, Scan barcode, Bulk add, Resolve covers, Tidy library collapse behind ONE "Manage" control; mobile = bottom sheet (slides up, tap-outside + close affordance), desktop = anchored popover; one shared code path, Universal tokens; conforms to docs/studio/praxis-mobile-canon.md (thumb-zone, 44px targets, safe-area insets, motion restraint). Mechanical: grep renderShelf for the shared Manage handler; byte-delta within the run's band. felt pass at all three widths.
   revert: single-commit revert of the renderShelf toolbar restructure.
   felt-pass-required: true
-  status: queued
-  note: Mobile Canon P1 REFERENCE IMPLEMENTATION — the run session conforms it to docs/studio/praxis-mobile-canon.md.
-  evidence: —
-  report: —
+  status: closed
+  note: ABSORBED BY MW-1 — shipped as the P1 REFERENCE IMPLEMENTATION in the Shelf mobile pass (commit a405730, 2026-07-10), not overnight. One "Manage" control at every viewport; the 7 secondary controls relocate with handlers intact; mobile bottom sheet + desktop popover, one JS path. Both gates green (praxis-reviewer CLEARED + fix-red-team block fixed). felt pass at 390/768/1280 still Preston's (round-close gate).
+  evidence: docs/studio/reports/mw1-2026-07-10.md (Stage A) — live 390 DOM readouts (sheet fixed/bottom/54vh, scroll-lock, focus-in/return, backdrop-tap, 44px targets, h-scroll 0); desktop 1265 popover anchored.
+  report: commit a405730 (mw1: shelf mobile pass — canon P1-P9)
   proposed-in: R7
 
 - id: ON-4
