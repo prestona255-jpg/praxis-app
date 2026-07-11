@@ -7,6 +7,7 @@ in_nav: no
 state: closed
 rounds: 1
 mockup: docs/studio/mockups/arcs.html
+mobile: native
 ---
 
 ## State
@@ -33,6 +34,22 @@ mockup: docs/studio/mockups/arcs.html
 - [source: fable-audit-charter.md §4 2026-07-06] [status: CLOSED v3.189 1da97e3] [sev: P1/P2-friction] §3c — "Tidy" and other buttons whose function isn't self-evident. [fix: R5 S1 D5 — the `.arcfield-tidy-help` caption ("Tidy composes an open arrangement for this session only — Restore brings back what you saved. Reset placements permanently clears every saved position; it cannot be undone.") + `.arc-reset-btn` danger styling + the ⚠ affordance; the destructive Reset stays behind the in-DOM confirm (openArcResetConfirm). js/views.js + assets/components.css.]
 
 ## Round history
+
+### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit 900aa4f; chip → mobile: native)
+
+Arc-detail (the living field) half of the MW-2 mobile wave. **Chip: `mobile: native`** —
+`docs/studio/reports/mw2-2026-07-11.md`.
+- **P3 (the change):** several interior controls were sub-44px → 44px at ≤759:
+  `.arcfield-pub-btn` (27), `.arcfield-addsub-canon` (29), `.arc-voice-ask` (29), the
+  add-sub/page `.btn` primaries (39/40), the read-face sub-theory links `.read-list .read-title a`
+  (23), `.read-change-mark` (13); + a specificity match on `.arcfield-page-open` so the Page CTA
+  flex-recenters. Live @390: all 44-64px, 0 sub-44 remain across all faces; @1265 unchanged.
+- **P8 PASS already (no change):** all 3 faces (Field/Read/Page) @390 — scrollWidth 390,
+  0 offenders, with a real **26-node constellation** rendered (renderer untouched — locked).
+- **P6 SATISFIED:** the Field/Read/Page faces seg switches faces (exercised all 3, 44px).
+- **P5 n/a** (orientation anchor is the faces seg, not a sticky title — a sticky faces-seg is a
+  possible follow-up). **P1/P2/P4/P7/P9 n/a.** CSS-only (+18/−0), desktop byte-unchanged.
+  praxis-reviewer CLEARED (one cosmetic `.btn` display-collision residual RESOLVED).
 
 ### R5 CLOSED — felt pass PASSED IN FULL (2026-07-10, deployed v3.189, commit 27b4878)
 

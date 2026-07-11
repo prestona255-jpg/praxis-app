@@ -111,6 +111,17 @@ flagged at the top of the Builder's sequence page for his call — never applied
   program advance on completed work — nothing retired, no Preston decision touched — no `PROPOSED:`
   flag. Round-CLOSE (felt pass + push) remains Preston's; Builder regenerated. Report:
   `docs/studio/reports/mw1-2026-07-10.md`.
+- **2026-07-11** — MW-1 PUSHED + live (`0f661f3`, sw.js v3.192, Preston). MW-2 Notebook + Arcs
+  mobile pass SHIPPED-LOCAL (`bd5c4c5` notebook + `900aa4f` arcs; NOT pushed). Both surfaces passed
+  both build gates (praxis-reviewer CLEARED ×2; fix-red-team N/A — CSS-only, no JS/state; one cosmetic
+  `.btn` display residual the Arcs reviewer named was resolved in-stage). MW-2 → Shipped; **Now advanced
+  to MW-3** (Sub-theory + Book Detail — the last mobile-wave pass), promoted from Next per the locked
+  order. notebook + arcs + arc-detail ledger chips ruled `mobile: native` on both-layer evidence. Both
+  surfaces were already largely mobile-clean (Notebook: only P7 input floors; Arcs: only arc-detail P3
+  hit areas) — no structural work needed, unlike MW-1's Manage sheet. Downstream order unchanged
+  (S-A · then the Then stretch). Pure program advance on completed work — nothing retired, no Preston
+  decision touched — no `PROPOSED:` flag. Round-CLOSE remains Preston's; Builder regenerated. Report:
+  `docs/studio/reports/mw2-2026-07-11.md`.
 
 ## Shipped
 
@@ -193,21 +204,25 @@ flagged at the top of the Builder's sequence page for his call — never applied
   passes. Shelf → P1 Manage sheet/popover (ON-2 reference impl, one JS path) + P2–P9; Home → P3 44px
   targets + P8 lamplight-overflow fix (P6 pre-satisfied, rest n/a). Both surface chips → `mobile:
   native`. Both praxis-reviewer verdicts CLEARED; fix-red-team found + fixed one blocker (back-nav
-  scroll-lock leak). Report: `docs/studio/reports/mw1-2026-07-10.md`. touches: [shelf, home]
+  scroll-lock leak). **PUSHED + live v3.192** (Preston, 2026-07-11); felt pass pending. Report:
+  `docs/studio/reports/mw1-2026-07-10.md`. touches: [shelf, home]
+- [x] **MW-2 — Notebook + Arcs mobile pass (SWEEP)** (SHIPPED-LOCAL 2026-07-11, `bd5c4c5` notebook +
+  `900aa4f` arcs; NOT pushed — awaiting Preston's push + felt pass). Second of the three mobile-wave
+  passes. Notebook → P7 (3 inline-editor/caption inputs to 16px); P3/P6/P8 verified already, rest n/a.
+  Arcs → P3 (arc-detail interior controls to 44px hit areas); P6/P8 + the list verified already, rest
+  n/a. All three surface chips (notebook, arcs, arc-detail) → `mobile: native`. Both praxis-reviewer
+  verdicts CLEARED (one cosmetic `.btn` display residual resolved). Report:
+  `docs/studio/reports/mw2-2026-07-11.md`. touches: [notebook, arcs, arc-detail]
 
 ## Now
 
-- [ ] **MW-2 — Notebook + Arcs mobile pass (SWEEP)** — sweep Notebook + Arcs to the mobile canon
-  (`praxis-mobile-canon.md`, P1–P9); skips the mockup beat. Second of the three mobile-wave passes
-  (MW-1 Shelf + Home shipped-local 2026-07-10, `a405730`/`e5ab754`, both chips → native).
-  touches: [notebook, arcs, arc-detail]
+- [ ] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** — sweep Sub-theory + Book Detail to the
+  mobile canon (`praxis-mobile-canon.md`, P1–P9); Book Detail shipped the BD2 4-I `order` reorder in R7,
+  MW-3 completes the full mobile pass; skips the mockup beat. Third and last of the three mobile-wave
+  passes (MW-1 Shelf+Home + MW-2 Notebook+Arcs shipped-local 2026-07-10/11, all four chips → native).
+  touches: [subtheory-build, subtheory-page, book-detail]
 
 ## Next
-
-- [ ] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** — sweep Sub-theory + Book Detail to the
-  mobile canon (P1–P9); Book Detail shipped the BD2 4-I `order` reorder in R7, MW-3 completes the full
-  mobile pass; skips the mockup beat.
-  touches: [subtheory-build, subtheory-page, book-detail]
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
   residual gaps across three light surfaces; skips the mockup beat.
   touches: [about, search, yumi-sees]

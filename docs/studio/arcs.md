@@ -7,6 +7,7 @@ in_nav: yes
 state: closed
 rounds: 1
 mockup: docs/studio/mockups/arcs.html
+mobile: native
 ---
 
 ## State
@@ -24,6 +25,17 @@ mockup: docs/studio/mockups/arcs.html
 - [source: praxis-2.0-phase2-ledger.md 2026-06-27] [status: PARTIAL v3.189 8a17a0c] [sev: Hygiene] Arcs list (#arcs) Hygiene → sweep — dead arcs CSS, an orphaned row renderer, stray cover-thumbnail rules. [fix: R5 S6 — the dead `.arcs.lum-amber` arcs-list dark-skin block REMOVED (grep-proven zero JS callers: 'arcs lum-amber' non-deep = comment-only). Residual dead classes LISTED with grep-proof, DEFERRED to the S-C sweep (scattered/interleaved with live rules → a bulk deletion at the tail was avoided): `.st-register-toggle` (S4), the S3-replaced `.arcfield-read-head/-threads/.arcfield-thread-row/.arcfield-read-subs/.arcfield-read-sub*`, and `.itx-sub`/`.itx-sub-*`.]
 
 ## Round history
+
+### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit 900aa4f; chip → mobile: native)
+
+Arcs LIST half of the MW-2 mobile wave (arc-detail interior tracked in `arc-detail.md`).
+**Chip: `mobile: native`** — `docs/studio/reports/mw2-2026-07-11.md`.
+- **P8 PASS already (no change):** list @390 scrollWidth 390, grid 1-col
+  (`.arcs.lum-amber-deep .arcs-grid{1fr}`), cards 293–300px (whole card = tap target, ≫44px).
+- **P3 PASS already:** the arc cards are the tap targets (huge). **P5 n/a** (short list, no
+  sticky-title need). **P1/P2/P4/P6/P7/P9 n/a** for the list.
+- No list change was needed; the substantive P3 work lands in the arc interior — see
+  `arc-detail.md`. CSS-only (arc-detail), desktop byte-unchanged. praxis-reviewer CLEARED.
 
 ### R5 CLOSED — felt pass PASSED IN FULL (2026-07-10, deployed v3.189, commit 27b4878)
 

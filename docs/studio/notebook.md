@@ -7,6 +7,7 @@ ground: dark
 in_nav: yes
 state: closed
 rounds: 1
+mobile: native
 ---
 
 ## State
@@ -68,6 +69,21 @@ rounds: 1
 **Deferred bookkeeping (per Preston — the BUILD is a fresh session):** the frontmatter `state: shaped` + `mockup:` pointer, the `sequence.md` re-plan (R4 shape → build), and the `tools/studio-build` Builder regen are left for the BUILD session's open, so the surface markdown, `sequence.md`, and the Builder move together (no interim currency drift).
 
 ## Round history
+
+### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit bd5c4c5; chip → mobile: native)
+
+Notebook half of the MW-2 mobile wave. **Chip: `mobile: native`** — applicable canon
+patterns verified on both layers (`docs/studio/reports/mw2-2026-07-11.md`).
+- **P7 (the change):** the inline-editor title/body + photo caption were 14/14/14.5px
+  (< the 16px iOS focus-zoom floor) → 16px at ≤759 (`components.css` @media block after
+  `.notebook-shot-cap-input`). Writeline `.nb-ce` already 16-17px. Live: 16px@390,
+  14/14/14.5px@1265. Prose fields → no inputmode; no page-load autofocus; in-flow composer
+  handles the keyboard natively.
+- **P8 PASS already:** scrollWidth 390, 0 offenders across inbox/book-band/editor-open;
+  `.notebook-leaves{flex-direction:column}` stacks the leaves. **P3 PASS already:** tabs 49,
+  register chips 44, capture 44. **P6 SATISFIED:** the leaves STACK (both panes persist, no
+  re-render); the canon's "Capture|Working toggle" precedent is unbuilt — stack ⊃ P6's guarantee.
+- **P1/P2/P4/P5/P9 n/a.** CSS-only (+11/−0), desktop byte-unchanged. praxis-reviewer CLEARED.
 
 ### R4 CLOSED — felt pass PASSED IN FULL (2026-07-09, deployed v3.188, commit 8cec854)
 
