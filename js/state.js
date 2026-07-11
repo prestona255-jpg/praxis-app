@@ -417,6 +417,12 @@ function ensureBookFields(book) {
   // idempotent like the above.
   if (typeof book.categoryOverride !== 'string') { book.categoryOverride = ''; changed = true; }
   if (typeof book.movedMe !== 'boolean')         { book.movedMe = false;       changed = true; }
+  // R8 (values): valueMarks = the reader's per-book value-marks, each
+  // { value:<a profile.values slug string>, why:<optional lineage string> }
+  // (Model A shared vocabulary). [] default, never undefined; idempotent.
+  // Array-only guard, matching evidence/attachedMarginalia; element shape is
+  // enforced at write, not here. Sits BESIDE movedMe (that mark is untouched).
+  if (!(book.valueMarks instanceof Array))       { book.valueMarks = [];       changed = true; }
   return changed;
 }
 
@@ -662,6 +668,12 @@ function ensureSubTheoryFields(st) {
     st.linkedSubTheories = [];
     changed = true;
   }
+  // R8 (values): per-sub-theory value-marks (Model A shared vocabulary).
+  // See ensureBookFields for the { value, why } element shape.
+  if (!Array.isArray(st.valueMarks)) {
+    st.valueMarks = [];
+    changed = true;
+  }
   // 10.5.7: citationPins maps a lowercased citation phrase -> the chosen
   // evidence id, persisting the author's disambiguation so a pinned
   // ambiguous citation survives reload and routes the read-only render.
@@ -755,6 +767,12 @@ function ensureArcFields(arc) {
   }
   if (!Array.isArray(arc.entryIds)) {
     arc.entryIds = [];
+    changed = true;
+  }
+  // R8 (values): per-arc value-marks (Model A shared vocabulary).
+  // See ensureBookFields for the { value, why } element shape.
+  if (!Array.isArray(arc.valueMarks)) {
+    arc.valueMarks = [];
     changed = true;
   }
   return changed;
@@ -1832,6 +1850,7 @@ function createArc(title, description, userId) {
     description: trimmedDesc,
     bookIds:     [],
     entryIds:    [],
+    valueMarks:  [],
     createdAt:   now,
     updatedAt:   now
   };
@@ -1985,6 +2004,7 @@ function createSubTheory(arcId, fields) {
     evidence:           [],
     attachedMarginalia: [],
     linkedSubTheories:  [],
+    valueMarks:         [],
     citationPins:       {},
     status:             'draft',
     format:             '',
@@ -3405,6 +3425,18 @@ function migrate(stored) {
       ensureBookFieldsAll(stored.books);
     }
     stored.SCHEMA_VERSION = '1.28.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.28.0') {
+    // R8 (values): additive per-object valueMarks:[] backfilled onto every
+    // existing book / arc / sub-theory via the ensure*FieldsAll chokepoints. Those
+    // same chokepoints run on the integrations.js Firestore merge (books :787,
+    // arcs :221, subTheories :278), so the field is merge-safe too. ADDITIVE ONLY;
+    // idempotent (ensure*Fields only stamps a missing/mistyped field). Anchor
+    // literal (1.9.3) stays pinned; the chain does the work.
+    if (stored.books)       { ensureBookFieldsAll(stored.books); }
+    if (stored.arcs)        { ensureArcFieldsAll(stored.arcs); }
+    if (stored.subTheories) { ensureSubTheoryFieldsAll(stored.subTheories); }
+    stored.SCHEMA_VERSION = '1.29.0';
   }
   return stored;
 }
