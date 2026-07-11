@@ -18136,6 +18136,14 @@ function renderAccountPage() {
     for (ti = 0; ti < meta.books.length; ti = ti + 1) { titles.push(meta.books[ti].title); }
     window.YumiBrain.generateValueRetrofit(meta).then(function (raw) {
       retroBtn.disabled = false;
+      // R8-RF1: distinguish an unreadable/truncated reply (honest error) from a
+      // parsed-but-empty one (honest "found nothing"). A truncated reply used to
+      // fall through to the empty state and read as "Yumi found nothing."
+      if (typeof window.YumiBrain.valueRetrofitUnreadable === 'function' &&
+          window.YumiBrain.valueRetrofitUnreadable(raw)) {
+        retroSetStatus('error', 'Yumi couldn’t quite read what she found — give it another try in a moment.');
+        return;
+      }
       var vals = window.YumiBrain.evalValueResponse(raw, titles) || [];
       retroRenderOffers(vals);
     }, function () {

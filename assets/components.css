@@ -13421,7 +13421,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .account.lum-amber-ember .account-retro-top{ display:flex; align-items:center; gap:10px; }
 .account.lum-amber-ember .account-retro-name{ font-family:var(--lum-serif); font-weight:600; font-size:21px; color:var(--lum-ink); }
 .account.lum-amber-ember .account-retro-why{ font-family:var(--lum-serif); font-style:italic; font-size:15px; line-height:1.5; color:var(--lum-ink-2); margin:8px 0 9px; }
-.account.lum-amber-ember .account-retro-books{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.03em; color:var(--lum-gold); }
+.account.lum-amber-ember .account-retro-books{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.03em; color:var(--lum-gold); overflow-wrap:anywhere; }
 .account.lum-amber-ember .account-retro-acts{ display:flex; gap:9px; margin-top:14px; flex-wrap:wrap; }
 .account.lum-amber-ember .account-retro-add,
 .account.lum-amber-ember .account-retro-rename,

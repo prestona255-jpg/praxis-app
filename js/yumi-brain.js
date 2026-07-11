@@ -1073,10 +1073,10 @@ var VALUE_GEN_SYSTEM =
   + 'ARRANGED (a lens). A value is the weight things CARRY -- "Liberation," '
   + '"Dignity," "Inheritance," "Care," "Doubt" -- a word for what a reader is '
   + 'reading TOWARD.\n\n'
-  + 'You are given a reader\'s library as METADATA ONLY: a list of books (title, '
-  + 'author, and the reader\'s own genre tag), plus the values they have ALREADY '
-  + 'declared. You are NOT given their private notes or marginalia, and you never '
-  + 'ask for them.\n\n'
+  + 'You are given a reader\'s library as METADATA ONLY: a NUMBERED list of books '
+  + '(each line begins with a 1-based number, then title, author, and the reader\'s '
+  + 'own genre tag), plus the values they have ALREADY declared. You are NOT given '
+  + 'their private notes or marginalia, and you never ask for them.\n\n'
   + 'Your task: read across the whole library, notice the commitments the reader '
   + 'keeps returning to, and propose 3-5 VALUES their shelf seems to carry -- named '
   + 'in the language of ideas and conviction, not the language of bookstores. Do '
@@ -1084,16 +1084,47 @@ var VALUE_GEN_SYSTEM =
   + 'For each value give: name (one or two words, evocative and precise, in the '
   + 'spirit of critical pedagogy and moral seriousness); why (one or two sentences, '
   + 'spoken to the reader -- "your shelf keeps returning to..." -- naming what you '
-  + 'see WITHOUT summarizing any single book); books (the titles from their library '
-  + 'that carry this value; only titles actually present).\n\n'
+  + 'see WITHOUT summarizing any single book); books (an ARRAY OF INTEGERS -- the '
+  + '1-based index NUMBERS from the numbered list of the books that most carry this '
+  + 'value; cite 2 to 6; use ONLY numbers that appear in the list; never a title '
+  + 'string, never a number outside the list).\n\n'
   + 'Rules: work only from titles, authors, genre tags -- never summarize, review, '
   + 'or describe a book\'s contents. Propose, never impose. Invent nothing; every '
-  + 'book named is already on their shelf. Don\'t diagnose, flatter, or over-claim '
-  + 'about the reader. A value gathers at least two books; if the library is too '
-  + 'small or scattered to name honest values, propose fewer. Warmth over '
+  + 'index cited is a book already on their shelf. Don\'t diagnose, flatter, or '
+  + 'over-claim about the reader. A value gathers at least two books; if the library '
+  + 'is too small or scattered to name honest values, propose fewer. Warmth over '
   + 'cleverness.\n\n'
   + 'Return ONLY a JSON array, nothing around it:\n'
-  + '[{"name":"...","why":"...","books":["title","title"]}]';
+  + '[{"name":"...","why":"...","books":[3,17]}]';
+
+// R8-RF1: defensive cap on the numbered list sent to the model. Index-grounding
+// (see evalValueResponse) keeps the model's OUTPUT tiny -- a cited index is ~5
+// tokens vs ~15 for a full title -- so a ~130-book library already fits inside
+// max_tokens without truncating (the R8-RF1 failure). This cap is headroom for
+// pathologically large libraries, not the fix; at typical sizes it never binds.
+// When it DOES bind, books the reader has ENGAGED (movedMe / valueMarks -- the
+// evidence the values rule wants) are kept first.
+var VALUE_RETROFIT_MAX = 240;
+
+// Stable-partition annotated-first, then cap to max. Annotation is read from
+// state.books via the title->id map; the annotation FLAGS never leave the client
+// (only title/author/genre serialize -- the metadata-only covenant is intact).
+// Returns books unchanged when at/under the cap.
+function prioritizeValueBooks(books, titleToId, max) {
+  if (!(books instanceof Array) || books.length <= max) { return books; }
+  var annotated = [], plain = [], i, id, rec;
+  for (i = 0; i < books.length; i++) {
+    id = titleToId ? titleToId[normalizeLensTitle(books[i].title)] : null;
+    rec = (id && state.books) ? state.books[id] : null;
+    if (rec && (rec.movedMe === true ||
+        (rec.valueMarks instanceof Array && rec.valueMarks.length > 0))) {
+      annotated.push(books[i]);
+    } else {
+      plain.push(books[i]);
+    }
+  }
+  return annotated.concat(plain).slice(0, max);
+}
 
 // Reuse the metadata-only library gather; swap "lenses they have" for "values
 // they have declared" so Yumi does not re-propose an existing stone. titleToId
@@ -1106,17 +1137,20 @@ function gatherValueMetadata() {
     var p = getProfile(u.uid);
     if (p && p.values instanceof Array) { existingValues = p.values; }
   }
-  return { books: meta.books, titleToId: meta.titleToId, existingValues: existingValues };
+  var books = prioritizeValueBooks(meta.books, meta.titleToId, VALUE_RETROFIT_MAX);
+  return { books: books, titleToId: meta.titleToId, existingValues: existingValues };
 }
 
-// Serialize ONLY title/author/genre + already-declared value names. Provably
-// metadata-only (mirrors buildLensGenUserMessage).
+// Serialize ONLY title/author/genre + already-declared value names, as a 1-based
+// NUMBERED list (R8-RF1: the model cites books by these index numbers, not by
+// re-transcribed titles -- evalValueResponse maps the numbers back). Provably
+// metadata-only (mirrors buildLensGenUserMessage + buildClassifyPrompt).
 function buildValueGenUserMessage(meta) {
-  var s = 'Here is the reader\'s library (metadata only):\n\n';
+  var s = 'Here is the reader\'s library (metadata only), numbered:\n\n';
   var i;
   for (i = 0; i < meta.books.length; i++) {
     var b = meta.books[i];
-    s = s + '- "' + b.title + '"'
+    s = s + (i + 1) + '. "' + b.title + '"'
       + (b.author ? ' by ' + b.author : '')
       + (b.genre ? ' [' + b.genre + ']' : '') + '\n';
   }
@@ -1124,7 +1158,8 @@ function buildValueGenUserMessage(meta) {
     s = s + '\nValues they have ALREADY declared (do not re-propose these): '
       + meta.existingValues.join(', ') + '\n';
   }
-  s = s + '\nPropose 3-5 values as specified. Return ONLY the JSON array.';
+  s = s + '\nPropose 3-5 values as specified. Cite books by their index numbers. '
+    + 'Return ONLY the JSON array.';
   return s;
 }
 
@@ -1167,12 +1202,83 @@ function generateValueRetrofit(meta) {
   });
 }
 
-// Values reuse the lens structural/grounding validator verbatim: a value
-// proposal is the same {name, why, books} shape with the same >=2-grounded,
-// cap-5, junk-blocklist rules. ONE validator, not a divergent copy. Fail-safe
-// to [] (the caller shows a graceful empty state); never throws.
+// EDITABLE: how many grounding titles a value card SHOWS. The model may cite
+// many books per value; the card stays legible (and mobile-safe) by naming the
+// first few. The >=2-grounded rule is checked BEFORE this display cap.
+var VALUE_GROUND_SHOW = 6;
+
+// R8-RF1: tolerant parse of the retrofit response into a JSON array, or null.
+// null means the response could not be read at all (truncation / garble) -- the
+// caller distinguishes that (an honest ERROR state) from a parsed-but-empty
+// result (an honest "found nothing yet" state). Direct parse, then the
+// brace-substring fallback (mirrors parseLooseJSON / evalLensResponse).
+function parseValueRetrofitArray(rawText) {
+  var parsed = null;
+  if (typeof rawText === 'string') {
+    try { parsed = JSON.parse(rawText); }
+    catch (e) {
+      var st = rawText.indexOf('['), en = rawText.lastIndexOf(']');
+      if (st !== -1 && en !== -1 && en > st) {
+        try { parsed = JSON.parse(rawText.substring(st, en + 1)); }
+        catch (e2) { parsed = null; }
+      }
+    }
+  }
+  if (!parsed || Object.prototype.toString.call(parsed) !== '[object Array]') { return null; }
+  return parsed;
+}
+
+// R8-RF1: did the response fail to yield ANY parseable value array? (truncation
+// or garble). Lets the caller render the honest ERROR state instead of silently
+// showing "found nothing" -- the original R8-RF1 symptom.
+function valueRetrofitUnreadable(rawText) {
+  return parseValueRetrofitArray(rawText) === null;
+}
+
+// R8-RF1: values ground by 1-based INDEX into the numbered library list (mirrors
+// classifyBooksViaLLM's {index} idiom). Index-grounding removes BOTH failure
+// modes from the shipped title-string version: the output-token TRUNCATION at
+// library scale (an index is ~5 tokens vs ~15 for a title, so 3-5 values fit
+// inside max_tokens) AND the exact-title transcription DRIFT that dropped a book
+// from the >=2 rule. libraryTitles[k] is the (k+1)-th book of the SAME numbered
+// list the model saw (built from meta.books in order). Per value: keep distinct
+// in-bounds indices -> canonical titles; >=2 or drop; then cap the shown list to
+// VALUE_GROUND_SHOW; junk-name blocklist reused; cap 5 values. Numeric strings
+// ("3") tolerated. Fail-safe to []; never throws.
 function evalValueResponse(rawText, libraryTitles) {
-  return evalLensResponse(rawText, libraryTitles);
+  var titles = (libraryTitles instanceof Array) ? libraryTitles : [];
+  var parsed = parseValueRetrofitArray(rawText);
+  if (!parsed) { return []; }
+  var out = [];
+  var i;
+  for (i = 0; i < parsed.length; i++) {
+    var v = parsed[i];
+    if (!v || typeof v.name !== 'string' || typeof v.why !== 'string' ||
+        Object.prototype.toString.call(v.books) !== '[object Array]') {
+      continue;
+    }
+    var name = v.name.replace(/^\s+|\s+$/g, '');
+    if (name === '') { continue; }
+    if (isBlockedLensName(name)) { continue; }
+    var kept = [];
+    var seen = {};
+    var j;
+    for (j = 0; j < v.books.length; j++) {
+      var n = v.books[j];
+      if (typeof n === 'string' && /^\s*[0-9]+\s*$/.test(n)) { n = parseInt(n, 10); }
+      if (typeof n !== 'number' || !isFinite(n)) { continue; }
+      var idx = Math.floor(n) - 1;
+      if (idx < 0 || idx >= titles.length) { continue; }
+      if (Object.prototype.hasOwnProperty.call(seen, idx)) { continue; }
+      seen[idx] = true;
+      kept.push(titles[idx]);
+    }
+    if (kept.length < 2) { continue; }
+    if (kept.length > VALUE_GROUND_SHOW) { kept = kept.slice(0, VALUE_GROUND_SHOW); }
+    out.push({ name: name, why: v.why.replace(/^\s+|\s+$/g, ''), books: kept });
+    if (out.length >= 5) { break; }
+  }
+  return out;
 }
 
 // Stage-A regression harness. Runs the rubric's pass/fail pairs (Part 3)
@@ -2900,6 +3006,7 @@ window.YumiBrain = {
   gatherValueMetadata:   gatherValueMetadata,
   generateValueRetrofit: generateValueRetrofit,
   evalValueResponse:     evalValueResponse,
+  valueRetrofitUnreadable: valueRetrofitUnreadable,
   gradeUtterance:     gradeUtterance,
   runGateHarness:     runYumiGateHarness,
   considerMove:       considerMove,
