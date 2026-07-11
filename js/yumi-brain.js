@@ -1055,6 +1055,126 @@ function evalLensResponse(rawText, libraryTitles) {
   return out;
 }
 
+// =====================================================================
+// R8 (values) -- the Yumi value RETROFIT. Mirrors the lens machinery
+// verbatim (metadata-only gather -> one-shot claude-proxy -> client
+// structural/grounding eval -> human accept). Yumi notices VALUES the
+// reader's existing library seems to carry; the reader accepts, renames,
+// or waves them away. NEVER auto-applied: accepting adds a declared value
+// (a profile.values stone), it does not mark any object. Covenant intact:
+// title/author/genre only, never the inside of a book or a private note.
+// =====================================================================
+var VALUE_GEN_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You are grounded in '
+  + 'critical pedagogy -- Freire, hooks, Lorde -- and in the idea that a reader\'s '
+  + 'VALUES are inherited and traced: the commitments a person reads toward, the '
+  + 'weight an idea carries, the lineage of thought they stand inside.\n\n'
+  + 'A VALUE is not what a book is ABOUT (its subject) and not how a shelf is '
+  + 'ARRANGED (a lens). A value is the weight things CARRY -- "Liberation," '
+  + '"Dignity," "Inheritance," "Care," "Doubt" -- a word for what a reader is '
+  + 'reading TOWARD.\n\n'
+  + 'You are given a reader\'s library as METADATA ONLY: a list of books (title, '
+  + 'author, and the reader\'s own genre tag), plus the values they have ALREADY '
+  + 'declared. You are NOT given their private notes or marginalia, and you never '
+  + 'ask for them.\n\n'
+  + 'Your task: read across the whole library, notice the commitments the reader '
+  + 'keeps returning to, and propose 3-5 VALUES their shelf seems to carry -- named '
+  + 'in the language of ideas and conviction, not the language of bookstores. Do '
+  + 'NOT re-propose a value they have already declared.\n\n'
+  + 'For each value give: name (one or two words, evocative and precise, in the '
+  + 'spirit of critical pedagogy and moral seriousness); why (one or two sentences, '
+  + 'spoken to the reader -- "your shelf keeps returning to..." -- naming what you '
+  + 'see WITHOUT summarizing any single book); books (the titles from their library '
+  + 'that carry this value; only titles actually present).\n\n'
+  + 'Rules: work only from titles, authors, genre tags -- never summarize, review, '
+  + 'or describe a book\'s contents. Propose, never impose. Invent nothing; every '
+  + 'book named is already on their shelf. Don\'t diagnose, flatter, or over-claim '
+  + 'about the reader. A value gathers at least two books; if the library is too '
+  + 'small or scattered to name honest values, propose fewer. Warmth over '
+  + 'cleverness.\n\n'
+  + 'Return ONLY a JSON array, nothing around it:\n'
+  + '[{"name":"...","why":"...","books":["title","title"]}]';
+
+// Reuse the metadata-only library gather; swap "lenses they have" for "values
+// they have declared" so Yumi does not re-propose an existing stone. titleToId
+// is carried for the caller and NEVER serialized (same covenant as lenses).
+function gatherValueMetadata() {
+  var meta = gatherLensLibraryMetadata();
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var existingValues = [];
+  if (u && u.uid && typeof getProfile === 'function') {
+    var p = getProfile(u.uid);
+    if (p && p.values instanceof Array) { existingValues = p.values; }
+  }
+  return { books: meta.books, titleToId: meta.titleToId, existingValues: existingValues };
+}
+
+// Serialize ONLY title/author/genre + already-declared value names. Provably
+// metadata-only (mirrors buildLensGenUserMessage).
+function buildValueGenUserMessage(meta) {
+  var s = 'Here is the reader\'s library (metadata only):\n\n';
+  var i;
+  for (i = 0; i < meta.books.length; i++) {
+    var b = meta.books[i];
+    s = s + '- "' + b.title + '"'
+      + (b.author ? ' by ' + b.author : '')
+      + (b.genre ? ' [' + b.genre + ']' : '') + '\n';
+  }
+  if (meta.existingValues && meta.existingValues.length) {
+    s = s + '\nValues they have ALREADY declared (do not re-propose these): '
+      + meta.existingValues.join(', ') + '\n';
+  }
+  s = s + '\nPropose 3-5 values as specified. Return ONLY the JSON array.';
+  return s;
+}
+
+// ONE-SHOT value retrofit generation. Returns a Promise of raw model text; the
+// caller runs evalValueResponse before showing anything. Reuses the claude-proxy
+// path verbatim; does NOT append to the chat transcript.
+function generateValueRetrofit(meta) {
+  var payload = {
+    model:      'claude-sonnet-4-6',
+    max_tokens: 1024,
+    system:     VALUE_GEN_SYSTEM,
+    messages: [
+      { role: 'user', content: buildValueGenUserMessage(meta) }
+    ]
+  };
+  return fetch('/.netlify/functions/claude-proxy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+    body:    JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.text().then(function (body) {
+        throw new Error('proxy ' + res.status + ': ' + body);
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    var blocks = data && data.content;
+    var text = '';
+    var i;
+    if (blocks && blocks.length) {
+      for (i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        if (block && block.type === 'text' && typeof block.text === 'string') {
+          text = text + block.text;
+        }
+      }
+    }
+    return text;
+  });
+}
+
+// Values reuse the lens structural/grounding validator verbatim: a value
+// proposal is the same {name, why, books} shape with the same >=2-grounded,
+// cap-5, junk-blocklist rules. ONE validator, not a divergent copy. Fail-safe
+// to [] (the caller shows a graceful empty state); never throws.
+function evalValueResponse(rawText, libraryTitles) {
+  return evalLensResponse(rawText, libraryTitles);
+}
+
 // Stage-A regression harness. Runs the rubric's pass/fail pairs (Part 3)
 // plus the Part-2 gold moves through gradeUtterance and reports, so the
 // gate can be proven 100% on the live deploy. Read-only: it grades, it
@@ -2777,6 +2897,9 @@ window.YumiBrain = {
   gatherLensMetadata: gatherLensLibraryMetadata,
   generateLenses:     generateLenses,
   evalLensResponse:   evalLensResponse,
+  gatherValueMetadata:   gatherValueMetadata,
+  generateValueRetrofit: generateValueRetrofit,
+  evalValueResponse:     evalValueResponse,
   gradeUtterance:     gradeUtterance,
   runGateHarness:     runYumiGateHarness,
   considerMove:       considerMove,

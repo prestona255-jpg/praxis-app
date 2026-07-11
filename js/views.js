@@ -17918,8 +17918,151 @@ function renderAccountPage() {
 
   var valuesNote = document.createElement('div');
   valuesNote.className = 'account-values-note';
-  valuesNote.textContent = 'You place these. Yumi never fills them in.';
+  valuesNote.textContent = 'You place these — you always accept, rename, or wave away. Yumi may notice values your shelf carries, but never fills them in for you.';
   valuesCard.appendChild(valuesNote);
+
+  // R8 (values): the Yumi value RETROFIT. Button-triggered (not auto-run — a
+  // whole-library pass shouldn't bill the proxy on every Account open). Yumi
+  // notices values the shelf seems to carry; the reader accepts (adds a declared
+  // stone), renames, or waves away. NEVER auto-applies a mark. Eval-gated
+  // (evalValueResponse structural/grounding validation); covenant preserved.
+  var retroWrap = document.createElement('div');
+  retroWrap.className = 'account-retro';
+  var retroBtn = document.createElement('button');
+  retroBtn.type = 'button';
+  retroBtn.className = 'account-retro-btn';
+  retroBtn.textContent = 'Ask Yumi to notice values in your library';
+  var retroBody = document.createElement('div');
+  retroBody.className = 'account-retro-body';
+  retroWrap.appendChild(retroBtn);
+  retroWrap.appendChild(retroBody);
+  valuesCard.appendChild(retroWrap);
+
+  var retroSetStatus = function (kind, msg) {
+    retroBody.innerHTML = '';
+    var s = document.createElement('div');
+    s.className = 'account-retro-' + kind;
+    s.textContent = msg;
+    retroBody.appendChild(s);
+  };
+  var retroRenderOffers = function (vals) {
+    retroBody.innerHTML = '';
+    var cov = document.createElement('div');
+    cov.className = 'account-retro-cov';
+    cov.textContent = 'From your titles, authors, and genres only — never from inside your books or your private notes. Nothing is added until you accept it.';
+    retroBody.appendChild(cov);
+    if (!vals.length) {
+      var none = document.createElement('div');
+      none.className = 'account-retro-empty';
+      none.textContent = 'Yumi didn’t find clear new values to name yet — your shelf may be small, or you may have already named what it carries.';
+      retroBody.appendChild(none);
+      return;
+    }
+    var i;
+    for (i = 0; i < vals.length; i = i + 1) {
+      (function (v) {
+        var card = document.createElement('div');
+        card.className = 'account-retro-card';
+        var top = document.createElement('div');
+        top.className = 'account-retro-top';
+        var orb = document.createElement('span');
+        orb.className = 'vr-orb';
+        top.appendChild(orb);
+        var nm = document.createElement('span');
+        nm.className = 'account-retro-name';
+        nm.textContent = v.name;
+        top.appendChild(nm);
+        card.appendChild(top);
+        var why = document.createElement('div');
+        why.className = 'account-retro-why';
+        why.textContent = v.why;
+        card.appendChild(why);
+        if (v.books && v.books.length) {
+          var bk = document.createElement('div');
+          bk.className = 'account-retro-books';
+          bk.textContent = 'grounded in · ' + v.books.join(' · ');
+          card.appendChild(bk);
+        }
+        var acts = document.createElement('div');
+        acts.className = 'account-retro-acts';
+        var add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'account-retro-add';
+        add.textContent = 'Add this value';
+        add.addEventListener('click', function () {
+          // NEVER auto-applies a mark: accepting adds a DECLARED value (a stone).
+          var already = accountValuesCollect();
+          var exists = false, z;
+          for (z = 0; z < already.length; z = z + 1) {
+            if (('' + already[z]).toLowerCase() === v.name.toLowerCase()) { exists = true; }
+          }
+          if (!exists) { accountValuesMakeRow(v.name); accountValuesPersist(); }
+          if (card.parentNode) { card.parentNode.removeChild(card); }
+        });
+        var ren = document.createElement('button');
+        ren.type = 'button';
+        ren.className = 'account-retro-rename';
+        ren.textContent = 'Rename';
+        ren.addEventListener('click', function () {
+          var inp = document.createElement('input');
+          inp.className = 'account-retro-renin';
+          inp.value = v.name;
+          nm.parentNode.replaceChild(inp, nm);
+          inp.focus();
+          if (inp.select) { inp.select(); }
+          var renDone = false;
+          function commitRen() {
+            if (renDone) { return; }
+            renDone = true;
+            var nv = inp.value.replace(/^\s+|\s+$/g, '') || v.name;
+            v.name = nv;
+            var fresh = document.createElement('span');
+            fresh.className = 'account-retro-name';
+            fresh.textContent = nv;
+            if (inp.parentNode) { inp.parentNode.replaceChild(fresh, inp); }
+            nm = fresh;
+          }
+          inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { commitRen(); } });
+          inp.addEventListener('blur', commitRen);
+        });
+        var no = document.createElement('button');
+        no.type = 'button';
+        no.className = 'account-retro-no';
+        no.textContent = 'Not this';
+        no.addEventListener('click', function () { if (card.parentNode) { card.parentNode.removeChild(card); } });
+        acts.appendChild(add);
+        acts.appendChild(ren);
+        acts.appendChild(no);
+        card.appendChild(acts);
+        retroBody.appendChild(card);
+      })(vals[i]);
+    }
+  };
+  var retroRun = function () {
+    if (!window.YumiBrain || typeof window.YumiBrain.generateValueRetrofit !== 'function' ||
+        typeof window.YumiBrain.gatherValueMetadata !== 'function') {
+      retroSetStatus('error', 'Yumi can’t reach your shelf right now.');
+      return;
+    }
+    var meta = window.YumiBrain.gatherValueMetadata();
+    if (!meta || !meta.books || meta.books.length < 2) {
+      retroSetStatus('empty', 'Yumi needs a few books to notice a pattern — add some to your shelf first.');
+      return;
+    }
+    retroBtn.disabled = true;
+    retroSetStatus('loading', 'Yumi is reading across your shelf…');
+    var titles = [], ti;
+    for (ti = 0; ti < meta.books.length; ti = ti + 1) { titles.push(meta.books[ti].title); }
+    window.YumiBrain.generateValueRetrofit(meta).then(function (raw) {
+      retroBtn.disabled = false;
+      var vals = window.YumiBrain.evalValueResponse(raw, titles) || [];
+      retroRenderOffers(vals);
+    }, function () {
+      retroBtn.disabled = false;
+      retroSetStatus('error', 'Yumi couldn’t look just now — try again in a moment.');
+    });
+  };
+  retroBtn.addEventListener('click', retroRun);
 
   valuesSec.appendChild(valuesCard);
   wrap.appendChild(valuesSec);

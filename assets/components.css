@@ -13373,3 +13373,42 @@ body.wc-focus .app-nav { opacity:.26; }
   .vr-edit-save,.vr-edit-cancel{ min-height:44px; padding:11px 18px; }
   .vr-edit-in,.vr-whyin{ font-size:16px; }
 }
+
+/* ============================================================================
+   R8 · YUMI VALUE RETROFIT — Account (ember ground). Offer-cards; accepting
+   adds a DECLARED value (a stone), never a mark. Scoped to .account.lum-amber-
+   ember so nothing bleeds; --lum-* palette to match the values section above.
+   ============================================================================ */
+.account.lum-amber-ember .account-retro{ margin-top:18px; }
+.account.lum-amber-ember .account-retro-btn{ display:inline-flex; align-items:center; gap:8px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em;
+  color:var(--lum-gold); background:transparent; border:1px dashed var(--lum-gold); border-radius:var(--lum-r-pill); padding:9px 16px; cursor:pointer; transition:background .15s; }
+.account.lum-amber-ember .account-retro-btn:hover{ background:color-mix(in srgb, var(--lum-gold) 12%, transparent); }
+.account.lum-amber-ember .account-retro-btn:disabled{ opacity:.55; cursor:default; }
+.account.lum-amber-ember .account-retro-body{ margin-top:13px; }
+.account.lum-amber-ember .account-retro-cov{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.02em; color:var(--lum-ink-4); line-height:1.6; margin-bottom:13px; }
+.account.lum-amber-ember .account-retro-loading,
+.account.lum-amber-ember .account-retro-empty,
+.account.lum-amber-ember .account-retro-error{ font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--lum-ink-3); line-height:1.5; padding:6px 0; }
+.account.lum-amber-ember .account-retro-error{ color:var(--lum-coral); }
+.account.lum-amber-ember .account-retro-card{ border:1px solid var(--lum-glass-bd-2); border-radius:14px;
+  background:color-mix(in srgb, var(--lum-ink) 5%, transparent); padding:16px 17px; margin-bottom:12px; }
+.account.lum-amber-ember .account-retro-top{ display:flex; align-items:center; gap:10px; }
+.account.lum-amber-ember .account-retro-name{ font-family:var(--lum-serif); font-weight:600; font-size:21px; color:var(--lum-ink); }
+.account.lum-amber-ember .account-retro-why{ font-family:var(--lum-serif); font-style:italic; font-size:15px; line-height:1.5; color:var(--lum-ink-2); margin:8px 0 9px; }
+.account.lum-amber-ember .account-retro-books{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.03em; color:var(--lum-gold); }
+.account.lum-amber-ember .account-retro-acts{ display:flex; gap:9px; margin-top:14px; flex-wrap:wrap; }
+.account.lum-amber-ember .account-retro-add,
+.account.lum-amber-ember .account-retro-rename,
+.account.lum-amber-ember .account-retro-no{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+  border-radius:var(--lum-r-pill); padding:7px 14px; cursor:pointer; border:1px solid var(--lum-glass-bd-2); background:transparent; color:var(--lum-ink-3); transition:color .15s, border-color .15s; }
+.account.lum-amber-ember .account-retro-add{ color:var(--lum-gold-ink, #3d2807); border-color:transparent; background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold)); }
+.account.lum-amber-ember .account-retro-rename:hover,
+.account.lum-amber-ember .account-retro-no:hover{ color:var(--lum-ink); border-color:var(--lum-gold); }
+.account.lum-amber-ember .account-retro-renin{ font-family:var(--lum-serif); font-size:20px; color:var(--lum-ink); background:color-mix(in srgb, var(--lum-ink) 6%, transparent); border:1px solid var(--lum-gold); border-radius:8px; padding:2px 10px; outline:none; }
+@media (max-width:759px){
+  .account.lum-amber-ember .account-retro-btn{ min-height:44px; }
+  .account.lum-amber-ember .account-retro-add,
+  .account.lum-amber-ember .account-retro-rename,
+  .account.lum-amber-ember .account-retro-no{ min-height:44px; padding:11px 16px; }
+  .account.lum-amber-ember .account-retro-renin{ font-size:16px; }
+}
