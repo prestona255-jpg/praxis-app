@@ -13224,6 +13224,20 @@ body.wc-focus .app-nav { opacity:.26; }
 .intro-journey .ij-typein input{ flex:1; background:rgba(255,255,255,.06); border:1px solid var(--lum-glass-bd-2); border-radius:12px; padding:10px 15px; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--lum-ink); outline:none; min-width:0; }
 .intro-journey .ij-typein input::placeholder{ color:var(--lum-ink-4); }
 .intro-journey .ij-typein button{ background:rgba(255,255,255,.08); border:1px solid var(--lum-glass-bd); color:var(--lum-gold); border-radius:12px; padding:10px 16px; font-size:13px; font-weight:500; cursor:pointer; font-family:var(--lum-sans); }
+/* R8 (values): the preset-moment value chips — selectable; on-state = gilding
+   gold (the reader's own declaration; NOT cyan, which is Yumi-only). Inherits the
+   journey's dark ground per the felt pass. */
+.intro-journey .ij-vchips{ display:flex; flex-wrap:wrap; gap:9px; max-width:470px; margin:26px auto 4px; }
+.intro-journey .ij-vchip{ display:inline-flex; align-items:center; gap:8px; font-family:var(--lum-sans); font-size:13.5px; color:var(--lum-ink-2); background:rgba(255,255,255,.06); border:1px solid var(--lum-glass-bd-2); border-radius:999px; padding:8px 15px; cursor:pointer; transition:border-color .2s,color .2s,background .2s; }
+.intro-journey .ij-vchip::before{ content:''; width:8px; height:8px; border-radius:50%; flex:none; background:var(--lum-glass-bd-2); transition:background .2s,box-shadow .2s; }
+.intro-journey .ij-vchip:hover{ border-color:var(--lum-gold); color:var(--lum-ink); }
+.intro-journey .ij-vchip.is-on{ color:var(--lum-ink); border-color:var(--lum-gold); background:color-mix(in srgb, var(--lum-gold) 14%, transparent); }
+.intro-journey .ij-vchip.is-on::before{ background:radial-gradient(circle at 35% 30%, #fff4d6 0%, var(--lum-gold-l, #d9a441) 55%, var(--lum-gold-d, #855410) 100%); box-shadow:0 0 9px rgba(217,164,65,.55); }
+.intro-journey .ij-vown{ max-width:470px; margin-left:auto; margin-right:auto; }
+@media (max-width:759px){
+  .intro-journey .ij-vchip{ min-height:44px; }
+  .intro-journey .ij-vown input{ font-size:16px; }
+}
 
 /* action area — dots · one primary · one quiet link */
 .intro-journey .ij-actionbar{ position:fixed; left:0; right:0; bottom:0; z-index:2; padding:14px 24px calc(20px + env(safe-area-inset-bottom)); background:linear-gradient(transparent,rgba(35,23,8,.94) 46%); display:flex; flex-direction:column; align-items:center; gap:13px; }

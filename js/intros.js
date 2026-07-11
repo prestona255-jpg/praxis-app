@@ -79,8 +79,17 @@ var Intros = (function () {
      JOURNEY — 7 steps. Apple composition: one idea per screen, one primary,
      one quiet secondary, staggered reveals, a back chevron, step dots.
      ========================================================================== */
+  // R8 (values): the approved starter presets, offered at the 'values' beat.
+  // Grounded in critical pedagogy + a value-lineage frame; the reader keeps,
+  // renames, or waves them away, and can name their own. These seed the vocabulary
+  // that value-marks (book / sub-theory / arc) later draw from (Model A).
+  var VALUE_PRESETS = [
+    'Liberation', 'Power, named', 'Dignity', 'Solidarity', 'Care',
+    'Doubt', 'Praxis', 'Inheritance', 'Hope', 'Craft'
+  ];
+
   var JOURNEY = [
-    { kind: 'welcome' }, { kind: 'covenant' }, { kind: 'stance' },
+    { kind: 'welcome' }, { kind: 'covenant' }, { kind: 'stance' }, { kind: 'values' },
     { kind: 'act-shelf' }, { kind: 'act-margin' }, { kind: 'act-sees' },
     { kind: 'release' }
   ];
@@ -88,7 +97,7 @@ var Intros = (function () {
   var picked, step, rootEl, stageEl, dotsEl, nextEl, skipEl, backEl, keyHandler;
 
   function resetPicked() {
-    picked = { book: null, why: null, stance: null, register: 'm', note: null, memory: 'off', bookId: null };
+    picked = { book: null, why: null, stance: null, register: 'm', note: null, memory: 'off', bookId: null, values: [] };
   }
 
   /* ---- helpers into the real app (all globals; called only at runtime) ---- */
@@ -159,6 +168,52 @@ var Intros = (function () {
       '<button type="button" class="ij-stance' + (picked.stance === 'company' ? ' is-picked' : '') + '" data-v="company"><span class="ij-ring"></span><span><b>Keep me company</b>Notice with me. Think alongside, not against.</span></button>' +
       '<button type="button" class="ij-stance' + (picked.stance === 'quiet' ? ' is-picked' : '') + '" data-v="quiet"><span class="ij-ring"></span><span><b>Stay out unless asked</b>I’ll summon you when I want you.</span></button>' +
       '</div>';
+  }
+  /* R8 (values) — the preset moment. A journey BEAT (not a screen): the reader
+     picks from the approved starter values, or names their own; each toggle
+     persists to profile.values via doValues (the accountValuesPersist idiom),
+     seeding the vocabulary the value-marks later draw from. Ground inherits the
+     journey (dark umber), per the felt pass. */
+  function _valuePicked(v) {
+    var i;
+    for (i = 0; i < picked.values.length; i++) { if (picked.values[i] === v) { return true; } }
+    return false;
+  }
+  function _valueIsPreset(v) {
+    var i;
+    for (i = 0; i < VALUE_PRESETS.length; i++) { if (VALUE_PRESETS[i] === v) { return true; } }
+    return false;
+  }
+  function _valueToggle(v) {
+    var i;
+    for (i = 0; i < picked.values.length; i++) {
+      if (picked.values[i] === v) { picked.values.splice(i, 1); return; }
+    }
+    picked.values.push(v);
+  }
+  function buildValues() {
+    var h = '<h1 class="ij-h1 ij-a ij-a1">What do you read <em>toward</em>?</h1>';
+    h += '<p class="ij-lede ij-a ij-a2">Not what a book is about — what it’s <i>for</i> in you. Your values: the weight your reading carries. Pick the ones that feel true; change them anytime.</p>';
+    h += '<div class="ij-vchips ij-a ij-a3">';
+    var i;
+    for (i = 0; i < VALUE_PRESETS.length; i++) {
+      h += '<button type="button" class="ij-vchip' + (_valuePicked(VALUE_PRESETS[i]) ? ' is-on' : '') + '" data-v="' + esc(VALUE_PRESETS[i]) + '">' + esc(VALUE_PRESETS[i]) + '</button>';
+    }
+    for (i = 0; i < picked.values.length; i++) {
+      if (!_valueIsPreset(picked.values[i])) {
+        h += '<button type="button" class="ij-vchip is-on" data-v="' + esc(picked.values[i]) + '">' + esc(picked.values[i]) + '</button>';
+      }
+    }
+    h += '</div>';
+    h += '<div class="ij-typein ij-vown ij-a ij-a4"><input id="ij-valin" type="text" placeholder="…or name your own"><button type="button" id="ij-valgo">Add</button></div>';
+    return h;
+  }
+  function dockValues() {
+    var n = picked.values.length;
+    var w = (n === 0)
+      ? 'Values are the weight your reading carries — not what a book is about, but what it’s for in you. There’s no wrong shelf of values, only yours.'
+      : (n === 1 ? 'One is enough to begin — you can always add more.' : 'Some readers pick two; some pick eight. This is yours to shape.');
+    return { words: w, sub: 'You place these — Yumi never fills them in. Later she may notice more, but only you accept them.', chips: [] };
   }
   function buildActShelf() {
     var h = '<div class="ij-actkick ij-a ij-a1">Act one · your shelf</div><h1 class="ij-acttitle ij-a ij-a1">Bring your first book.</h1>';
@@ -276,6 +331,17 @@ var Intros = (function () {
       saveProfileToFirestore(uid, getProfile(uid), function () {});
     }
   }
+  /* Values — write profile.values (the accountValuesPersist idiom). Declared,
+     never inferred; persisted per toggle (like the memory chip) so a back-out
+     never loses the pick. The vocabulary the value-marks later draw from. */
+  function doValues(arr) {
+    var uid = currentUid();
+    if (!uid) { return; }
+    if (typeof setProfile === 'function') { setProfile(uid, { values: arr }); }
+    if (typeof saveProfileToFirestore === 'function' && typeof getProfile === 'function') {
+      saveProfileToFirestore(uid, getProfile(uid), function () {});
+    }
+  }
   function markSeenAndClose() {
     var uid = currentUid();
     if (uid && typeof setProfile === 'function') {
@@ -294,13 +360,15 @@ var Intros = (function () {
     if (b.kind === 'welcome') { h = buildWelcome(); }
     else if (b.kind === 'covenant') { h = buildCovenant(); }
     else if (b.kind === 'stance') { h = buildStance(); }
+    else if (b.kind === 'values') { h = buildValues(); }
     else if (b.kind === 'act-shelf') { h = buildActShelf(); }
     else if (b.kind === 'act-margin') { h = buildActMargin(); }
     else if (b.kind === 'act-sees') { h = buildActSees(); }
     else if (b.kind === 'release') { h = buildRelease(); }
 
     var d = null;
-    if (b.kind === 'act-shelf') { d = dockActShelf(); }
+    if (b.kind === 'values') { d = dockValues(); }
+    else if (b.kind === 'act-shelf') { d = dockActShelf(); }
     else if (b.kind === 'act-margin') { d = dockActMargin(); }
     else if (b.kind === 'act-sees') { d = dockActSees(); }
     if (d) {
@@ -332,6 +400,7 @@ var Intros = (function () {
     skipEl.textContent = '';
     if (b.kind === 'welcome') { nextEl.textContent = 'Continue'; skipEl.textContent = 'I’ll explore on my own'; }
     else if (b.kind === 'stance') { nextEl.textContent = picked.stance ? 'Continue' : 'Decide later'; }
+    else if (b.kind === 'values') { nextEl.textContent = picked.values.length ? 'Continue' : 'Skip for now'; }
     else if (b.kind === 'act-shelf') { nextEl.textContent = picked.book ? 'Continue' : 'Skip this act'; }
     else if (b.kind === 'act-margin') { nextEl.textContent = picked.note ? 'Continue' : 'Skip this act'; }
     else if (b.kind === 'release') { nextEl.textContent = 'Enter Praxis'; nextEl.className = 'ij-primary is-enter'; skipEl.textContent = 'Retake the walk'; }
@@ -344,6 +413,17 @@ var Intros = (function () {
     var st = stageEl.querySelectorAll('.ij-stance');
     for (i = 0; i < st.length; i++) {
       st[i].onclick = function () { picked.stance = this.getAttribute('data-v'); renderStep(); };
+    }
+    var vch = stageEl.querySelectorAll('.ij-vchip');
+    for (i = 0; i < vch.length; i++) {
+      vch[i].onclick = function () { _valueToggle(this.getAttribute('data-v')); doValues(picked.values); renderStep(); };
+    }
+    var vgo = stageEl.querySelector('#ij-valgo');
+    if (vgo) {
+      vgo.onclick = function () {
+        var el = stageEl.querySelector('#ij-valin'), v = el ? el.value.replace(/^\s+|\s+$/g, '') : '';
+        if (v !== '' && !_valuePicked(v)) { picked.values.push(v); doValues(picked.values); renderStep(); }
+      };
     }
     var dc = stageEl.querySelectorAll('.ij-dchip');
     for (i = 0; i < dc.length; i++) {
