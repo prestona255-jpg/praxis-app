@@ -11718,6 +11718,128 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end R2 · SHELF FEATURES ===== */
 
 /* ============================================================================
+   MW-1 · SHELF MOBILE PASS  (praxis-mobile-canon P1-P9). ADDITIVE; new selectors
+   only (.shelf-manage*, .shelf-add-primary behaviour). Universal v1.2 tokens
+   only -- the Shelf is a LIGHT-ground surface via its R2 re-points, so semantic
+   --surface/--border/--color-surface resolve DARK here and are NOT used; the
+   sheet chrome wires the non-lum LIGHT primitives instead: fill --page-2, hair-
+   line --line-page(-2), backdrop --scrim (theme.css:57, the purpose-built modal
+   veil), text --ink/--gold-deep, --font-mono, --radius-lg. NO --lum-* introduced.
+   Desktop popover (base rule) + mobile bottom sheet (759 block) share ONE JS code
+   path (renderShelf: openManageSheet/closeManageSheet). Solid chrome, no blur
+   (rail A). Motion = opacity fade + sheet translate only (P9).
+   ============================================================================ */
+
+/* P1 · Manage wrapper anchors the desktop popover */
+.shelf.lum-amber-deep .shelf-manage{ position:relative; display:inline-flex; }
+
+/* P1 · both closed-states hidden (shared) */
+.shelf.lum-amber-deep .shelf-manage-backdrop{ display:none; }
+.shelf.lum-amber-deep .shelf-manage-sheet{ display:none; box-sizing:border-box; }
+
+/* P1 · DESKTOP popover -- scoped to >=760 ONLY, so its higher-specificity
+   .is-open rules can never leak into (and outrank) the mobile bottom sheet
+   below. (Media queries add no specificity; source order + specificity decide,
+   so an un-scoped .is-open .sheet at 0,5,0 would beat the mobile rule at 0,3,0.) */
+@media (min-width:760px){
+  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-backdrop{
+    display:block; position:fixed; inset:0; z-index:10020; background:transparent;
+  }
+  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-sheet{
+    display:block; position:absolute; top:calc(100% + 8px); right:0; z-index:10021;
+    width:288px; max-width:calc(100vw - 32px);
+    max-height:calc(100vh - 120px); overflow-y:auto;
+    background:var(--page-2); border:1px solid var(--line-page-2);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow-page);
+    padding:14px 14px 16px;
+  }
+}
+
+/* P1 · sheet interior (shared desktop + mobile) */
+.shelf.lum-amber-deep .shelf-manage-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px;
+}
+.shelf.lum-amber-deep .shelf-manage-title{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--gold-deep);
+}
+.shelf.lum-amber-deep .shelf-manage-close{
+  flex:none; width:44px; height:44px; margin:-8px -8px -8px 0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:transparent; border:none; color:var(--ink);
+  font-size:24px; line-height:1; cursor:pointer;
+}
+.shelf.lum-amber-deep .shelf-manage-close:hover{ color:var(--gold-deep); }
+.shelf.lum-amber-deep .shelf-manage-body{ display:flex; flex-direction:column; gap:9px; }
+.shelf.lum-amber-deep .shelf-manage-body > .seg{ display:flex; }
+.shelf.lum-amber-deep .shelf-manage-body > .seg .seg-opt{ flex:1; }
+.shelf.lum-amber-deep .shelf-manage-body > .chip,
+.shelf.lum-amber-deep .shelf-manage-body > .btn{ width:100%; justify-content:flex-start; }
+
+@media (max-width:759px){
+  /* P1 · Manage becomes a bottom SHEET (slides up over a scrim backdrop) */
+  .shelf.lum-amber-deep .shelf-manage-backdrop{
+    display:block; position:fixed; inset:0; z-index:10020; background:var(--scrim);
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-backdrop{ opacity:1; pointer-events:auto; }
+  .shelf.lum-amber-deep .shelf-manage-sheet{
+    display:block; position:fixed; left:0; right:0; bottom:0; top:auto; z-index:10021;
+    width:auto; max-width:none; max-height:82vh; overflow-y:auto;
+    background:var(--page-2); border:none; border-top:1px solid var(--line-page-2);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    padding:16px 18px calc(20px + env(safe-area-inset-bottom));   /* P4 safe-area */
+    box-shadow:0 -14px 40px -18px var(--scrim);
+    transform:translateY(100%); transition:transform .26s ease;
+  }
+  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-sheet{ transform:none; }
+  .shelf.lum-amber-deep .shelf-manage-body{ gap:10px; }
+  .shelf.lum-amber-deep .shelf-manage-body > .seg{ width:100%; }
+
+  /* P2 · thumb-zone -- Add a book relocates to a bottom-LEFT FAB (the Yumi orb is
+     bottom-right); safe-area padded (P4). Hidden in Select mode (the fixed
+     .shelf-selectbar owns the bottom third then). */
+  .shelf.lum-amber-deep .shelf-add-primary{
+    position:fixed; left:var(--sp-5);
+    bottom:calc(var(--sp-5) + env(safe-area-inset-bottom)); z-index:90;
+    box-shadow:0 8px 22px -8px var(--scrim);
+  }
+  .shelf.lum-amber-deep.is-selecting .shelf-add-primary{ display:none; }
+
+  /* P5 · large-title collapse -- the head sticks; a threshold-guarded ES3 scroll
+     listener adds .is-stuck to compact the title (font-size + padding steps only,
+     no transform). CSS-first: position:sticky is the backbone. */
+  /* The head is already a full-width (100%) border-box child (the .shelf > *
+     16px padding is INSIDE its box), so background occludes edge-to-edge with
+     NO negative margins -- those caused an 8px right overflow (P8). */
+  /* Head padding/shadow flip instantly (P5/P9 limit animated props to the
+     title's font-size step + opacity + the sheet slide -- nothing else). */
+  .shelf.lum-amber-deep .shelf-head{
+    position:sticky; top:0; z-index:40; padding:10px 16px 8px; background:var(--paper);
+  }
+  .shelf.lum-amber-deep .shelf-head .shelf-title{ transition:font-size .2s ease; }
+  .shelf.lum-amber-deep .shelf-head.is-stuck{
+    padding-top:6px; padding-bottom:6px;
+    border-bottom:1px solid var(--line-page); box-shadow:0 6px 16px -12px var(--scrim);
+  }
+  .shelf.lum-amber-deep .shelf-head.is-stuck .shelf-title{ font-size:22px; }
+
+  /* P7 · input discipline -- the filter field is 16px (kills iOS focus-zoom) */
+  .shelf.lum-amber-deep .nav-search input,
+  .shelf.lum-amber-deep .shelf-search-input{ font-size:16px; }
+}
+
+/* P9 · motion restraint -- reduced-motion zeroes the sheet slide, backdrop fade,
+   and the sticky-head/title steps. Open/close still resolve, instantly. */
+@media (prefers-reduced-motion: reduce){
+  .shelf.lum-amber-deep .shelf-manage-sheet,
+  .shelf.lum-amber-deep .shelf-manage-backdrop,
+  .shelf.lum-amber-deep .shelf-head,
+  .shelf.lum-amber-deep .shelf-head .shelf-title{ transition:none; }
+}
+/* ===== end MW-1 · SHELF MOBILE PASS ===== */
+
+/* ============================================================================
    WAVE 1 · THE LIVING FIELD  (renderArcDetail on .lum-amber)
    Convert the arc interior (S1) to Amber/Lumen per design/praxis-field-amber.html.
    Faces = Field / Read / Page (List retired, F-D1). The constellation RENDERER

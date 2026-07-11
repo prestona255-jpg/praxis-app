@@ -356,6 +356,23 @@ function renderRoute() {
     navOpen.classList.remove('app-nav-mobile-open');
   }
 
+  // MW-1 (P1/P8): release the Shelf Manage-sheet's page scroll-lock and purge its
+  // listeners on EVERY route change. Opening the mobile sheet locks body scroll +
+  // binds a keydown/scroll listener; leaving #books via OS back / any external
+  // hash change does NOT call renderShelf, so without this a back-nav out of an
+  // open sheet would strand the next surface with overflow:hidden (and leak the
+  // listeners). Global cleanup belongs in the router, next to the nav-close above;
+  // when the route IS #books, renderShelf re-binds immediately after this.
+  document.body.style.overflow = '';
+  if (shelfManageEscapeHandler) {
+    document.removeEventListener('keydown', shelfManageEscapeHandler);
+    shelfManageEscapeHandler = null;
+  }
+  if (shelfHeadScrollHandler) {
+    window.removeEventListener('scroll', shelfHeadScrollHandler);
+    shelfHeadScrollHandler = null;
+  }
+
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
 
@@ -3944,6 +3961,22 @@ function renderShelf() {
     shelfSidebarEscapeHandler = null;
   }
 
+  // MW-1 (P1): purge any stale Manage-sheet Escape handler and release a page
+  // scroll-lock left behind if the sheet was open when a control inside it
+  // re-rendered the shelf (e.g. Covers/List, Select). The fresh render rebuilds
+  // the sheet closed; this is the twin of the filter-drawer cleanup above.
+  if (shelfManageEscapeHandler) {
+    document.removeEventListener('keydown', shelfManageEscapeHandler);
+    shelfManageEscapeHandler = null;
+  }
+  document.body.style.overflow = '';
+  // MW-1 (P5): purge the stale sticky-title scroll listener; it closed over the
+  // now-detached old head. Rebound below after the fresh head is built.
+  if (shelfHeadScrollHandler) {
+    window.removeEventListener('scroll', shelfHeadScrollHandler);
+    shelfHeadScrollHandler = null;
+  }
+
   var wrap = document.createElement('section');
   // Wave 1: convert the Shelf to the Amber/Lumen system. The atmosphere class
   // supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
@@ -4019,6 +4052,17 @@ function renderShelf() {
 
   wrap.appendChild(head);
 
+  // MW-1 (P5): sticky-title compaction. A threshold-guarded window scroll listener
+  // toggles .is-stuck on the head (CSS at <=759 steps font-size + padding; a no-op
+  // at >=760 where no .is-stuck rule exists). Purged + rebound each render (above).
+  shelfHeadScrollHandler = function () {
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    if (y > 6) { head.classList.add('is-stuck'); }
+    else { head.classList.remove('is-stuck'); }
+  };
+  window.addEventListener('scroll', shelfHeadScrollHandler);
+  shelfHeadScrollHandler();   // set the initial state for an already-scrolled re-render
+
   // S-D1 (Wave 1): a deterministic, count-based reading line in Yumi's cyan
   // voice -- NOT generative (no model call, no interpretive "leans toward").
   // Text is filled from the real top lens once the lens tally is computed
@@ -4044,11 +4088,103 @@ function renderShelf() {
 
   var user = getCurrentUser();
 
+  // MW-1 P1 (ON-2 REFERENCE IMPLEMENTATION): one "Manage" control at every
+  // viewport. The always-visible toolbar keeps Add-a-book + Sort + Filters +
+  // the filter field; the seven secondary controls (Covers|List, Select, Scan
+  // shelf, Scan barcode, Bulk add, Resolve covers, Tidy library) move into this
+  // Manage container -- a bottom SHEET at <=759, an anchored POPOVER >=760, ONE
+  // code path (CSS differentiates by width). Those controls are appended into
+  // manageBody AS THEY ARE CREATED below, so their live handlers ride with the
+  // elements untouched (the W3 relocate-without-rewire lesson). Universal tokens
+  // only; solid chrome, no blur (canon rail A). Focus moves in on open and
+  // returns to the trigger on close; the page scroll locks while the sheet is
+  // open on mobile.
+  var manageWrap = document.createElement('div');
+  manageWrap.className = 'shelf-manage';
+
+  var manageBtn = document.createElement('button');
+  manageBtn.type = 'button';
+  manageBtn.className = 'btn btn-quiet shelf-manage-btn';
+  manageBtn.setAttribute('aria-haspopup', 'true');
+  manageBtn.setAttribute('aria-expanded', 'false');
+  manageBtn.textContent = 'Manage';
+
+  var manageBackdrop = document.createElement('div');
+  manageBackdrop.className = 'shelf-manage-backdrop';
+
+  var manageSheet = document.createElement('div');
+  manageSheet.className = 'shelf-manage-sheet';
+  manageSheet.setAttribute('role', 'dialog');
+  manageSheet.setAttribute('aria-modal', 'false');
+  manageSheet.setAttribute('aria-label', 'Manage shelf');
+
+  var manageHead = document.createElement('div');
+  manageHead.className = 'shelf-manage-head';
+  var manageTitle = document.createElement('span');
+  manageTitle.className = 'shelf-manage-title';
+  manageTitle.textContent = 'Manage shelf';
+  manageHead.appendChild(manageTitle);
+  var manageClose = document.createElement('button');
+  manageClose.type = 'button';
+  manageClose.className = 'shelf-manage-close';
+  manageClose.setAttribute('aria-label', 'Close');
+  manageClose.textContent = '×';
+  manageHead.appendChild(manageClose);
+  manageSheet.appendChild(manageHead);
+
+  var manageBody = document.createElement('div');
+  manageBody.className = 'shelf-manage-body';
+  manageSheet.appendChild(manageBody);
+
+  manageWrap.appendChild(manageBtn);
+  manageWrap.appendChild(manageBackdrop);
+  manageWrap.appendChild(manageSheet);
+
+  function openManageSheet() {
+    manageWrap.classList.add('is-open');
+    manageBtn.setAttribute('aria-expanded', 'true');
+    // Lock the page scroll only for the mobile bottom sheet (the desktop
+    // popover leaves the page scrollable, as popovers do). The mobile sheet is
+    // effectively modal (scrim + scroll-lock + focus-in) so aria-modal tracks it.
+    if (window.matchMedia('(max-width: 759px)').matches) {
+      document.body.style.overflow = 'hidden';
+      manageSheet.setAttribute('aria-modal', 'true');
+    } else {
+      manageSheet.setAttribute('aria-modal', 'false');
+    }
+    if (shelfManageEscapeHandler) {
+      document.removeEventListener('keydown', shelfManageEscapeHandler);
+    }
+    shelfManageEscapeHandler = function (ev) {
+      if (ev.key === 'Escape' || ev.key === 'Esc') { closeManageSheet(); }
+    };
+    document.addEventListener('keydown', shelfManageEscapeHandler);
+    manageClose.focus();
+  }
+  function closeManageSheet() {
+    manageWrap.classList.remove('is-open');
+    manageBtn.setAttribute('aria-expanded', 'false');
+    manageSheet.setAttribute('aria-modal', 'false');
+    document.body.style.overflow = '';
+    if (shelfManageEscapeHandler) {
+      document.removeEventListener('keydown', shelfManageEscapeHandler);
+      shelfManageEscapeHandler = null;
+    }
+    manageBtn.focus();
+  }
+  manageBtn.addEventListener('click', function () {
+    if (manageWrap.classList.contains('is-open')) { closeManageSheet(); }
+    else { openManageSheet(); }
+  });
+  manageBackdrop.addEventListener('click', closeManageSheet);
+  manageClose.addEventListener('click', closeManageSheet);
+
   // Primary: signed-in "Add a book" (opens the inline editor). Signed-out never
   // reaches here -- the top-of-function hard-gate returns first (W11 S8 Lane 1).
+  // .shelf-add-primary marks it for the P2 mobile thumb-zone relocation (CSS).
   var newBtn = document.createElement('button');
   newBtn.type = 'button';
-  newBtn.className = 'btn btn-primary';
+  newBtn.className = 'btn btn-primary shelf-add-primary';
   newBtn.textContent = '＋ Add a book';
   newBtn.addEventListener('click', function() {
     openShelfEditor();
@@ -4081,7 +4217,7 @@ function renderShelf() {
     renderShelf();
   });
   seg.appendChild(segList);
-  toolbar.appendChild(seg);
+  manageBody.appendChild(seg);   // MW-1 P1: Covers|List lives in the Manage sheet
 
   // 3c (R2): Sort control (decision 4). Quiet dropdown -- date-added default +
   // reading status. Grouping is NOT duplicated here (it stays on the sidebar
@@ -4146,7 +4282,7 @@ function renderShelf() {
     if (!shelfSelecting) { shelfPicked = {}; }
     renderShelf();
   });
-  toolbar.appendChild(selectBtn);
+  manageBody.appendChild(selectBtn);   // MW-1 P1: Select lives in the Manage sheet
 
   // Filters toggle (mock .shelf-filters-btn). Desktop-hidden by CSS (the
   // sidebar is always visible there); on mobile it opens the filter drawer.
@@ -4168,6 +4304,11 @@ function renderShelf() {
     }
   });
   toolbar.appendChild(filterBtn);
+
+  // MW-1 P1: the Manage trigger + its sheet/popover sit right after Filters,
+  // visible at every viewport. The seven secondary controls were appended into
+  // manageSheet's body above/below at their creation sites.
+  toolbar.appendChild(manageWrap);
 
   var toolbarSpacer = document.createElement('span');
   toolbarSpacer.className = 'spacer';
@@ -4193,8 +4334,8 @@ function renderShelf() {
     scanInput.addEventListener('change', function() {
       handleShelfScanFile(scanInput, scanBtn);
     });
-    toolbar.appendChild(scanBtn);
-    toolbar.appendChild(scanInput);
+    manageBody.appendChild(scanBtn);    // MW-1 P1: Scan shelf -> Manage sheet
+    manageBody.appendChild(scanInput);
 
     // Phase 3: barcode / ISBN entry point (BarcodeDetector + ISBN fallback).
     var barcodeBtn = document.createElement('button');
@@ -4204,7 +4345,7 @@ function renderShelf() {
     barcodeBtn.addEventListener('click', function() {
       openBarcodeScanner();
     });
-    toolbar.appendChild(barcodeBtn);
+    manageBody.appendChild(barcodeBtn);   // MW-1 P1: Scan barcode -> Manage sheet
 
     var bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
@@ -4213,7 +4354,7 @@ function renderShelf() {
     bulkBtn.addEventListener('click', function() {
       openBulkAddEditor();
     });
-    toolbar.appendChild(bulkBtn);
+    manageBody.appendChild(bulkBtn);   // MW-1 P1: Bulk add -> Manage sheet
 
     // 3.10d: resolve missing covers (title-imported books). Running-state label
     // + disabled read from coverResolveState (lives outside the DOM).
@@ -4230,7 +4371,7 @@ function renderShelf() {
     resolveBtn.addEventListener('click', function() {
       startCoverBackfill();
     });
-    toolbar.appendChild(resolveBtn);
+    manageBody.appendChild(resolveBtn);   // MW-1 P1: Resolve covers -> Manage sheet
 
     // Phase 6: one-time library cleanup (de-dupe + missing covers).
     var tidyBtn = document.createElement('button');
@@ -4240,7 +4381,7 @@ function renderShelf() {
     tidyBtn.addEventListener('click', function() {
       openLibraryCleanup();
     });
-    toolbar.appendChild(tidyBtn);
+    manageBody.appendChild(tidyBtn);   // MW-1 P1: Tidy library -> Manage sheet
   }
 
   // Search (mock .nav-search): a LIVE grid filter (title OR author substring).
@@ -4254,6 +4395,7 @@ function renderShelf() {
   searchInput.id = 'shelf-search-input';
   searchInput.className = 'shelf-search-input';
   searchInput.type = 'search';
+  searchInput.setAttribute('inputmode', 'search');   // MW-1 P7: non-prose field hint
   searchInput.setAttribute('placeholder', 'Filter shelf…');
   searchInput.setAttribute('aria-label', 'Filter shelf');
   searchInput.value = shelfSearchRaw;
@@ -5706,6 +5848,12 @@ var shelfSort = 'added';
 // renderShelf rotates this slot: open() removes any prior + adds a
 // fresh one, dismiss() removes and clears it.
 var shelfSidebarEscapeHandler = null;
+// MW-1 (P1): the Manage-sheet Escape handler, parked at module scope so a
+// re-render can purge a stale one (twin of shelfSidebarEscapeHandler above).
+var shelfManageEscapeHandler = null;
+// MW-1 (P5): the sticky-title compaction scroll listener, parked at module scope
+// so a re-render (which rebuilds the head) purges the stale one before rebinding.
+var shelfHeadScrollHandler = null;
 
 // 3b (R2): bulk Select mode -- its ONLY action is Move to arc (no archive, no
 // bulk delete). shelfSelecting gates card clicks (pick instead of navigate);
