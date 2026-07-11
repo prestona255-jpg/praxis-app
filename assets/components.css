@@ -4540,6 +4540,17 @@
   caret-color: var(--ink);
 }
 .notebook-shot-cap-input::placeholder { color: var(--ink-4); opacity: 0.85; }
+
+/* MW-2 P7 (Notebook input discipline): the inline-editor title/body and the photo
+   caption were 14/14/14.5px — under Safari's 16px focus-zoom threshold. Bump to
+   16px at <=759 only (desktop keeps its compact sizing). The writeline .nb-ce is
+   already 16-17px; these three shared classes also back the arcs create flow. Sizing
+   only — no tokens/hex; source order beats the base rules above. */
+@media (max-width:759px){
+  .notebook-editor-title-input,
+  .notebook-editor-body,
+  .notebook-shot-cap-input{ font-size:16px; }
+}
 .notebook-entry-shots {
   display: flex;
   flex-direction: column;
