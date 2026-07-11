@@ -4969,6 +4969,75 @@ function renderShelf() {
   // S3: the former separate GENRE rail is merged into the single Lenses rail
   // above (baseline lenses are derived from the distinct book.genre values).
 
+  // R8 (values): the Values rail — ONE new row-group in the EXISTING sidebar
+  // (no new toggle, no new sidebar block). Distinct value-marks across the
+  // DEDUPED shelf set (authorSrc, same source as the author/lens counts, so a
+  // duplicate/orphan record never inflates a count), each counted once per book.
+  // Rows reuse the shared .shelf-filter idiom + handlers; 'value' auto-joins the
+  // exclusive single-select via toggleShelfFilter's generic key loop. Rendered
+  // only when the shelf actually carries value-marks.
+  var valueSeen = {};
+  var valueList = [];
+  var valueCounts = {};
+  var vci, vcb, vmj, vmk, vmval, vSeenThisBook;
+  for (vci = 0; vci < authorSrc.length; vci = vci + 1) {
+    vcb = authorSrc[vci];
+    if (!vcb || !(vcb.valueMarks instanceof Array)) { continue; }
+    vSeenThisBook = {};
+    for (vmj = 0; vmj < vcb.valueMarks.length; vmj = vmj + 1) {
+      vmk = vcb.valueMarks[vmj];
+      vmval = (vmk && typeof vmk.value === 'string') ? vmk.value : '';
+      if (vmval === '' || Object.prototype.hasOwnProperty.call(vSeenThisBook, vmval)) { continue; }
+      vSeenThisBook[vmval] = true;
+      if (!Object.prototype.hasOwnProperty.call(valueSeen, vmval)) {
+        valueSeen[vmval] = true;
+        valueList.push(vmval);
+      }
+      valueCounts[vmval] = (valueCounts[vmval] || 0) + 1;
+    }
+  }
+  valueList.sort(function (a, b) {
+    var ca = valueCounts[a] || 0;
+    var cb = valueCounts[b] || 0;
+    if (cb !== ca) { return cb - ca; }
+    var la = a.toLowerCase();
+    var lb = b.toLowerCase();
+    if (la < lb) { return -1; }
+    if (la > lb) { return 1; }
+    return 0;
+  });
+  if (valueList.length > 0) {
+    var valueSection = document.createElement('div');
+    valueSection.className = 'shelf-filter-group';
+    var valueLabel = document.createElement('h3');
+    valueLabel.className = 'shelf-filter-label';
+    valueLabel.textContent = 'Values';
+    valueSection.appendChild(valueLabel);
+    var valueListEl = document.createElement('ul');
+    valueListEl.className = 'shelf-filter-list shelf-filter-list-value';
+    var vli, valueRow, valueRowCount;
+    for (vli = 0; vli < valueList.length; vli = vli + 1) {
+      valueRow = document.createElement('li');
+      valueRow.className = shelfFilter.value === valueList[vli]
+        ? 'shelf-filter is-on'
+        : 'shelf-filter';
+      valueRow.setAttribute('role', 'button');
+      valueRow.setAttribute('tabindex', '0');
+      valueRow.setAttribute('data-filter-section', 'value');
+      valueRow.setAttribute('data-filter-value', valueList[vli]);
+      valueRow.textContent = valueList[vli];
+      valueRowCount = document.createElement('span');
+      valueRowCount.className = 'n';
+      valueRowCount.textContent = '' + (valueCounts[valueList[vli]] || 0);
+      valueRow.appendChild(valueRowCount);
+      valueRow.addEventListener('click', onShelfFilterRowClick);
+      valueRow.addEventListener('keydown', onShelfFilterRowKeydown);
+      valueListEl.appendChild(valueRow);
+    }
+    valueSection.appendChild(valueListEl);
+    sidebar.appendChild(valueSection);
+  }
+
   // Author section -- dedup'd alphabetical list from state.books.
   var authorSection = document.createElement('div');
   authorSection.className = 'shelf-filter-group';
@@ -5129,6 +5198,8 @@ function renderShelf() {
   var traditionOk;
   var categoryOk;
   var searchOk;
+  var valueOk;
+  var vfj;
   // Stage 7 (manual themes): precompute the selected user-theme's membership
   // set (book ids) once, so the per-book themeOk test is an O(1) lookup. Null
   // when no theme filter is active or the selected theme no longer exists.
@@ -5168,12 +5239,21 @@ function renderShelf() {
     // picked. classifyBookLocal is O(1) for already-classified books (cache hit).
     categoryOk = shelfFilter.category === null ||
       (classifyBookLocal(fb) === shelfFilter.category);
+    // R8 (values): value rail — the book carries the selected value (a mark on
+    // its valueMarks whose .value === the slug). Membership lives on the book
+    // record (like movedMe); harmless no-op until a value row is picked.
+    valueOk = shelfFilter.value === null;
+    if (!valueOk && (fb.valueMarks instanceof Array)) {
+      for (vfj = 0; vfj < fb.valueMarks.length; vfj++) {
+        if (fb.valueMarks[vfj] && fb.valueMarks[vfj].value === shelfFilter.value) { valueOk = true; break; }
+      }
+    }
     // Stage 4d: live search -- case-insensitive substring over title
     // OR author, AND-composed with the rail filters.
     searchOk = shelfSearchQuery === '' ||
       ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
        (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
-    if (authorOk && genreOk && themeOk && statusOk && traditionOk && categoryOk && searchOk) {
+    if (authorOk && genreOk && themeOk && statusOk && traditionOk && categoryOk && valueOk && searchOk) {
       filtered.push(fb);
     }
   }
@@ -5271,6 +5351,7 @@ function renderShelf() {
       shelfFilter.status !== null ||
       shelfFilter.tradition !== null ||
       shelfFilter.category !== null ||
+      shelfFilter.value !== null ||
       shelfSearchQuery !== '';
     var empty = document.createElement('div');
     empty.className = 'empty-state';
@@ -5809,7 +5890,7 @@ var coverResolveState = { running: false, completed: 0, total: 0 };
 // Author values come from state.books so they match the same way.
 // Stage 4c: sections are EXCLUSIVE single-select -- setting a value
 // in one section clears the other (see toggleShelfFilter).
-var shelfFilter = { author: null, genre: null, theme: null, status: null, tradition: null, category: null };
+var shelfFilter = { author: null, genre: null, theme: null, status: null, tradition: null, category: null, value: null };
 
 // Stage 2C (shelf categories): true while a lazy LLM classification pass is in
 // flight, so a re-render does not fire a second pass. Memory-only, same lifetime
