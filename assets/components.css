@@ -12102,6 +12102,24 @@ body.wc-focus .app-nav { opacity:.26; }
    latent until those nodes carry tabindex (renderer-owned) — CSS only, no renderer edit. */
 .arcfield.lum-amber .arc-detail-web-view [data-st-sub-id]:focus-visible{ outline:2px solid var(--lum-gold); outline-offset:2px; }
 
+/* MW-2 P3 (Arcs / arc-detail): several arc-interior controls were sub-44px at
+   mobile (pub-btn 27, addsub-canon 29, arc-voice-ask 29, add-sub/page .btn primaries
+   39/40, read-sub rows 23, change-mark 13). Give each a 44px effective hit area at
+   <=759. Sizing only -- no tokens/hex; min-height is a fresh property here (no base
+   rule sets it), so no cascade battle. Desktop untouched. */
+@media (max-width:759px){
+  .arcfield.arcfield-warm .arcfield-pub-btn,
+  .arcfield.arcfield-warm .arcfield-addsub-canon,
+  .arcfield .arc-voice-ask,
+  .arcfield .btn{ min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .read-list .read-title a{ min-height:44px; display:inline-flex; align-items:center; }
+  .read-list .read-change-mark{ min-height:44px; display:inline-flex; align-items:center; }
+  /* the Page-face CTA carries a pre-existing .arcfield-page-open{display:inline-block}
+     at 0,3,0 that wins `display` over the 0,2,0 .arcfield .btn rule above; match its
+     specificity (later source) so it flex-recenters in the 44px box too. */
+  .arcfield.arcfield-warm .arcfield-page-open{ display:inline-flex; align-items:center; justify-content:center; }
+}
+
 /* =============================================================================
    W8 LANE B · GLOBAL SEARCH  (renderSearch on .lum-amber)  — dark luminous ground;
    serif-italic search bar w/ amber focus ring, kind chips w/ live counts, results
