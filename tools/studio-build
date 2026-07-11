@@ -322,7 +322,7 @@ ov_render_report() {
 # id+name + one-line Applies, detail = Rule + Checks. Parsed at build time.
 build_mobile_canon() {
   if [ ! -f "$MCANON" ]; then printf '<p class="status-line">mobile canon doc missing at generation time</p>'; return; fi
-  printf '<p class="status-line">The mobile interaction language &mdash; <b>nine patterns</b>, breakpoint <b>759</b>. Each surface earns its chip through ledger evidence, never by editing the Builder.</p>'
+  printf '<p class="ov-lead">The mobile interaction language &mdash; <b>nine patterns</b>, breakpoint <b>759</b>. Each surface earns its chip through ledger evidence, never by editing the Builder.</p>'
   printf '<div class="mc-legend"><span class="mc-key mob-desktop-only">desktop-only</span><span class="mc-key mob-reflowed">reflowed</span><span class="mc-key mob-native">native</span></div>'
   printf '<div class="mcanon-list">'
   awk '
@@ -690,6 +690,42 @@ a.pchip:hover{border-color:var(--gold-hi);color:var(--gold-deep);}
   .stat-read{grid-template-columns:1fr;}
   .ov-lead{font-size:18px;}
 }
+
+/* ============================================================
+   1b STAGE 2 — PROPAGATION: the sticky top nav, per-section
+   plain-language leads, surface-page plain lead + folded facts,
+   and aligning the existing chip classes to the coherent .pchip
+   family (restyle only; no data-carrying class is renamed).
+   ============================================================ */
+
+/* -- sticky top nav: the doc-level nav (the sidebar stays the surface directory) -- */
+.studio-topnav{position:sticky;top:0;z-index:16;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(217,164,65,.4);padding:7px 30px;margin:0 0 4px;}
+.stn-inner{max-width:940px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
+.stn-brand{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin-right:12px;white-space:nowrap;text-decoration:none;}
+a.stn-brand:hover{color:var(--gold);text-decoration:underline;text-underline-offset:3px;}
+.topnav-link{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;min-height:44px;padding:0 12px;border-radius:8px;display:inline-flex;align-items:center;border-bottom:2px solid transparent;}
+.topnav-link:hover{background:var(--surface-2);color:var(--gold-deep);}
+.topnav-link.active{color:var(--gold-deep);border-bottom-color:var(--gold-hi);}
+.topnav-link.tn-now{color:var(--gold-deep);}
+.topnav-link.tn-now:hover{border-bottom-color:var(--gold-hi);}
+
+/* -- surface page: a plain-English lead above the folded build facts -- */
+.surf-lead{font-family:var(--serif);font-size:18.5px;line-height:1.5;color:var(--ink-2);margin:13px 0 4px;max-width:66ch;}
+.surf-lead b{color:var(--ink);font-weight:600;}
+.facts-fold{margin:8px 0 14px;}
+.facts-fold .facts{margin:0;}
+
+/* -- align the OVERNIGHT status chips to the coherent status-hue scale (restyle) -- */
+.ov-queued .ov-badge{color:var(--gold-deep);border-color:rgba(168,118,26,.4);}
+.ov-proposed .ov-badge{color:var(--ink-3);}
+.ov-awaiting-felt-pass .ov-badge{color:var(--ember);border-color:rgba(194,73,42,.45);}
+.ov-closed .ov-badge{color:var(--gold-deep);border-color:rgba(168,118,26,.32);}
+
+/* -- phone: nav wraps, single-column reads, honest 44px targets -- */
+@media (max-width:700px){
+  .studio-topnav{padding:7px 14px;}
+  .topnav-link{padding:0 10px;letter-spacing:.06em;}
+}
 </style>
 HTML
 
@@ -720,6 +756,19 @@ printf '</nav>\n'
 
 printf '<main>\n'
 
+# ---- sticky top nav (doc-level; the .brail sidebar stays the surface directory) ----
+# Overview/Now/Surfaces land on the Overview dashboard (Now + Surfaces are in-page
+# anchors, resolved by showPage); Program/Overnight/Mobile-canon are their own pages.
+printf '<div class="studio-topnav"><div class="stn-inner">'
+printf '<a class="stn-brand" href="#page-index">the studio</a>'
+printf '<a class="topnav-link" href="#page-overview">Overview</a>'
+printf '<a class="topnav-link tn-now" href="#now">Now</a>'
+printf '<a class="topnav-link" href="#page-overnight">Overnight</a>'
+printf '<a class="topnav-link" href="#page-mobile-canon">Mobile canon</a>'
+printf '<a class="topnav-link" href="#page-plan">Program</a>'
+printf '<a class="topnav-link" href="#surfaces">Surfaces</a>'
+printf '</div></div>\n'
+
 # ===== OVERVIEW (default landing) =====
 printf '<section class="page" id="page-overview">'
 printf '<h1 class="page-h u-inkgold">Where the build stands</h1>'
@@ -733,7 +782,7 @@ printf '<div class="stat-card"><div class="stat-num">%s<span class="of"> / %s</s
 printf '<div class="stat-card"><div class="stat-num">%s</div><div class="stat-lbl">open gaps</div><div class="stat-sub">known work across every surface</div></div>' "$TOTALGAPS"
 printf '</div>'
 # NOW card
-printf '<div class="now-card u-lamplight"><div class="now-eyebrow">NOW &mdash; the moves at the front of the build</div>'
+printf '<div class="now-card u-lamplight" id="now"><div class="now-eyebrow">NOW &mdash; the moves at the front of the build</div>'
 i=0
 cat "$TMP/now" | while IFS="$US" read -r title touches body; do
   [ -z "$body" ] && continue
@@ -744,7 +793,7 @@ cat "$TMP/now" | while IFS="$US" read -r title touches body; do
 done
 printf '</div>'
 # heat grid — plain lead + coherent chip key + folded detail
-printf '<p class="sec-eyebrow">The surfaces</p>'
+printf '<p class="sec-eyebrow" id="surfaces">The surfaces</p>'
 printf '<p class="sec-lead">Every surface in the app, warmest first &mdash; the <b>brighter the light</b>, the closer to finished. The number on each is how many known gaps remain; tap one to open its build ledger.</p>'
 printf '<div class="ov-key"><span class="pchip is-closed"><span class="u-orb u-orb--lit u-orb--amber"></span>closed</span><span class="pchip is-now"><span class="u-orb u-orb--soft u-orb--amber"></span>in a round</span><span class="pchip is-untouched"><span class="u-orb u-orb--unlit"></span>untouched</span></div>'
 printf '<details class="disclose"><summary>How to read the lights</summary><div class="disclose-body">A <b>bright amber</b> orb is a <b>closed</b> surface; a <b>soft</b> orb is one in an active <b>round</b>; an <b>unlit</b> orb is <b>untouched</b>. The &#10022; star marks a surface whose round brief is ready to run. Round stages carry distinct hues &mdash; periwinkle scanned, honey shaped, coral building, amber closed.</div></details>'
@@ -770,6 +819,7 @@ printf '</div></section>\n'
 
 # ===== PLAN =====
 printf '<section class="page" id="page-plan"><h1 class="page-h u-inkgold">The plan</h1>'
+printf '<p class="ov-lead">The whole build as one continuous thread &mdash; what has already <b>shipped</b>, the moves at the front of the work <b>now</b>, and where the program heads next. The gold thread is the plan; the bright line is the current move&rsquo;s reach.</p>'
 # PROPOSED cards first (template lives here; renders iff a PROPOSED: entry exists)
 cat "$TMP/replan" | while IFS="$US" read -r kind body; do
   [ "$kind" = "PROPOSED" ] || continue
@@ -834,7 +884,7 @@ printf '</div></section>\n'
 
 # ===== OVERNIGHT =====
 printf '<section class="page" id="page-overnight"><h1 class="page-h u-inkgold">The overnight queue</h1>'
-printf '<p class="status-line">Small, single-surface, revert-safe fixes &mdash; <b>committed, never pushed</b>. Preston does the morning felt pass and pushes what survives. <b>%s</b> queued &middot; <b>%s</b> proposed &middot; <b>%s</b> total.</p>' "$OVQ" "$OVP" "$OVTOT"
+printf '<p class="ov-lead">Small, single-surface, revert-safe fixes &mdash; <b>committed, never pushed</b>. Preston does the morning felt pass and pushes what survives. <b>%s</b> queued &middot; <b>%s</b> proposed &middot; <b>%s</b> total.</p>' "$OVQ" "$OVP" "$OVTOT"
 # TONIGHT'S SLATE — queued items, capped at 3
 printf '<div class="slate u-lamplight"><div class="slate-label">Tonight&rsquo;s slate &mdash; up to 3, each its own commit</div><div class="slate-row">'
 sc=0
@@ -891,9 +941,19 @@ for s in $SURFACES $LAYERS; do
     desktop-only|reflowed|native) mocls="mob-$mo"; modisp="$mo";;
     *) mocls="mob-unknown"; modisp="&#9888; $mo";;
   esac
+  # plain-English state phrase for the surface lead (computed from the ledger state)
+  case "$st" in
+    closed) sdesc="a <b>closed</b> surface";;
+    built) sdesc="<b>built</b>, awaiting its felt pass";;
+    building) sdesc="in an <b>active build</b>";;
+    shaped) sdesc="<b>shaped</b> &mdash; a mockup is in hand";;
+    scanned) sdesc="<b>scanned</b> &mdash; its gaps are catalogued";;
+    *) sdesc="<b>not yet</b> through a studio round";;
+  esac
   printf '<section class="page surface" id="s-%s">' "$s"
   printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span><span class="badge badge-mobile %s">%s</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn" "$mocls" "$modisp"
-  printf '<div class="facts"><span><b>route</b> <code>%s</code></span><span><b>render</b> <code>%s</code></span><span><b>ground</b> %s</span><span><b>in nav</b> %s</span></div>' "$rt" "$rfn" "$gr" "$nv"
+  printf '<p class="surf-lead"><b>%s</b> is %s. The build facts fold below &mdash; then the plan items that route through it and its open-gap ledger.</p>' "$(hname "$s")" "$sdesc"
+  printf '<details class="disclose facts-fold"><summary>Build facts &mdash; route, render, ground, nav</summary><div class="disclose-body"><div class="facts"><span><b>route</b> <code>%s</code></span><span><b>render</b> <code>%s</code></span><span><b>ground</b> %s</span><span><b>in nav</b> %s</span></div></div></details>' "$rt" "$rfn" "$gr" "$nv"
   # CONNECTED strip: plan items (Now/Next/Then) whose touches include this surface
   conn=$(awk -F"$US" -v me="$s" '$1==me{print $2}' "$TMP/conn")
   if [ -n "$conn" ]; then
@@ -913,7 +973,7 @@ for s in $SURFACES $LAYERS; do
 done
 
 # ===== mockups =====
-printf '<section class="page" id="page-mockups"><h1 class="page-h u-inkgold">Mockups</h1><p class="status-line">Layout / style references &mdash; linked, never embedded.</p><div class="mock-list">'
+printf '<section class="page" id="page-mockups"><h1 class="page-h u-inkgold">Mockups</h1><p class="ov-lead">Layout and style references for each surface &mdash; the shaped target a build realizes. Linked, never embedded.</p><div class="mock-list">'
 for m in "$REPO"/design/*.html; do [ -e "$m" ] || continue; b=$(basename "$m"); enc=$(printf '%s' "$b" | sed 's/ /%20/g')
   printf '<a class="mock-link" href="../../design/%s" target="_blank" rel="noopener">%s</a>' "$enc" "$b"; done
 printf '</div></section>\n'
@@ -995,13 +1055,22 @@ cat <<'HTML'
 
   function addcls(c,x){ return (' '+c+' ').indexOf(' '+x+' ')>-1?c:(c?c+' '+x:x); }
   function rmcls(c,x){ return (' '+c+' ').replace(' '+x+' ',' ').replace(/^\s+|\s+$/g,''); }
-  function showPage(){ var h=location.hash||'#page-overview',id=h.replace(/^#/,'');
+  function showPage(){ var h=location.hash||'#page-overview',id=h.replace(/^#/,''),rawid=id,anchor=null;
+    // in-page anchor support (e.g. #now, #surfaces from the top nav): if the hash points
+    // at a non-.page element, resolve to its containing .page and remember it to scroll to.
+    // Page hashes are unaffected — the block is a no-op for any element carrying class "page".
+    try{ var el=document.getElementById(id);
+      if(el&&(' '+el.className+' ').indexOf(' page ')<0){
+        var p=el.parentNode; while(p&&p.nodeType===1){ if((' '+(p.className||'')+' ').indexOf(' page ')>-1){ id=p.id; anchor=el; break; } p=p.parentNode; } }
+    }catch(e){ anchor=null; }
     var pages=document.querySelectorAll('.page'),i,found=false;
     for(i=0;i<pages.length;i++){ if(pages[i].id===id){ pages[i].className=addcls(pages[i].className,'active'); found=true; } else { pages[i].className=rmcls(pages[i].className,'active'); } }
     if(!found){ var ov=document.getElementById('page-overview'); if(ov){ ov.className=addcls(ov.className,'active'); } id='page-overview'; }
     var links=document.querySelectorAll('.brail-link'),href;
     for(i=0;i<links.length;i++){ href=links[i].getAttribute('href')||''; if(href==='#'+id){ links[i].className=addcls(links[i].className,'active'); } else { links[i].className=rmcls(links[i].className,'active'); } }
-    window.scrollTo(0,0); }
+    var tns=document.querySelectorAll('.topnav-link'),thref;
+    for(i=0;i<tns.length;i++){ thref=tns[i].getAttribute('href')||''; if(thref==='#'+rawid){ tns[i].className=addcls(tns[i].className,'active'); } else { tns[i].className=rmcls(tns[i].className,'active'); } }
+    if(anchor&&anchor.scrollIntoView){ try{ anchor.scrollIntoView(); }catch(e){ window.scrollTo(0,0); } } else { window.scrollTo(0,0); } }
 
   function boot(){ var is=collectIslands(); paint(is); cardify(); sevDots(); wireTicks(); showPage(); window.onhashchange=showPage; }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',boot); } else { boot(); }
