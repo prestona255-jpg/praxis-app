@@ -431,6 +431,11 @@ How Praxis gets built now: a repeatable loop, one surface at a time, tracked in
 - THE BUILDER IS A GENERATED VIEW — `docs/studio/builder.html`, emitted by
   `tools/studio-build` (run `sh tools/studio-build`). Never hand-edit it; edit the
   markdown and regenerate.
+- THE OVERNIGHT QUEUE — `docs/studio/overnight.md` is the source of truth for small,
+  single-surface, revert-safe fixes that run unattended overnight (committed, never
+  pushed; Preston pushes after the morning felt pass); it carries the three-bucket
+  intake rubric (OVERNIGHT / ROUND GAP / PROGRAM) and the item schema. The Builder's
+  Overnight panel is its generated view.
 
 Two standing rules — they join the existing session rituals:
 - SESSION-START — before any studio, build, or roadmap work, read

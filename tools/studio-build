@@ -108,6 +108,28 @@ insec==0{ next }
 END{ emit() }
 ' "$SEQ"
 }
+# parse the ## Queue section of overnight.md -> one US record per item:
+#   id US title US plain US surface US files US felt US status US proposed-in
+# (schema section B is prose, DEL-1 lives under ## Confirmed non-overnight; neither is captured)
+parse_overnight() {
+awk '
+function emit(){ if(id!=""){ gsub(/[\t\037]/," ",title); gsub(/[\t\037]/," ",plain); gsub(/[\t\037]/," ",surface); gsub(/[\t\037]/," ",files);
+    printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", id,title,plain,surface,files,felt,status,proposed;
+    id="";title="";plain="";surface="";files="";felt="";status="";proposed="" } }
+BEGIN{insec=0;id="";title="";plain="";surface="";files="";felt="";status="";proposed=""}
+/^## /{ emit(); insec=($0 ~ /^## Queue([ ]|$)/)?1:0; next }
+insec==0{ next }
+/^- id:[ ]/{ emit(); id=$0; sub(/^- id:[ ]*/,"",id); next }
+/^[ ]+title:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+title:[ ]*/,"",v); title=v } next }
+/^[ ]+plain:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+plain:[ ]*/,"",v); plain=v } next }
+/^[ ]+surface:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+surface:[ ]*/,"",v); surface=v } next }
+/^[ ]+files:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+files:[ ]*/,"",v); files=v } next }
+/^[ ]+felt-pass-required:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+felt-pass-required:[ ]*/,"",v); felt=v } next }
+/^[ ]+status:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+status:[ ]*/,"",v); status=v } next }
+/^[ ]+proposed-in:[ ]/{ if(id!=""){ v=$0; sub(/^[ ]+proposed-in:[ ]*/,"",v); proposed=v } next }
+END{ emit() }
+' "$OVN"
+}
 collect_touches() { awk -F"$US" '{print $2}' "$TMP/$1" | tr ',' '\n' | sed 's/[][ ]//g' | grep -v '^$' | sort -u; }
 
 # --- precompute ONCE (Windows subprocess spawns are costly; do the awk/grep work here) ---
@@ -116,6 +138,12 @@ trap 'rm -rf "$TMP"' EXIT INT TERM
 parse_items Now > "$TMP/now"; parse_items Next > "$TMP/next"; parse_items Then > "$TMP/then"
 parse_items Shipped > "$TMP/shipped"; parse_items Discovered > "$TMP/disc"
 parse_bullets "Re-plan log" > "$TMP/replan"; parse_bullets "Standing rules" > "$TMP/standing"; parse_bullets "Open calls" > "$TMP/opencalls"
+# overnight queue precompute (new source doc; inert if absent)
+OVN="$STUDIO/overnight.md"
+if [ -f "$OVN" ]; then parse_overnight > "$TMP/overnight"; else : > "$TMP/overnight"; fi
+awk '/^## /{insec=($0 ~ /^## Runs([ ]|$)/)?1:0; next} insec&&/^- /{print}' "$OVN" 2>/dev/null | tail -5 > "$TMP/ovruns"
+OV_CURROUND=$(fm "$OVN" current-round 2>/dev/null); OV_CURRNUM=$(printf '%s' "$OV_CURROUND" | tr -cd '0-9'); [ -z "$OV_CURRNUM" ] && OV_CURRNUM=0
+OVQ=$(awk -F"$US" '$7=="queued"' "$TMP/overnight" | grep -c .); OVP=$(awk -F"$US" '$7=="proposed"' "$TMP/overnight" | grep -c .); OVTOT=$(grep -c . "$TMP/overnight")
 # per-surface caches in one pass -> pure-shell lookups (no exec per query)
 GAPS=""; BRIEFS=""; STATES=""; ROUNDS=""; CLOSED=0; TOTALGAPS=0
 for s in $SURFACES $LAYERS; do
@@ -253,6 +281,37 @@ EOF
     printf '<a class="heat-tile u-gild-hairline" href="#s-%s"><span class="u-orb %s"></span><span class="heat-name">%s%s</span><span class="heat-meta">%s GAPS &middot; %s ROUNDS</span></a>' "$s" "$(orbcls "$st")" "$(hname "$s")" "$bf" "$g" "$rn"
   done
   printf '</div></section>'
+}
+
+# --- overnight panel renderers ---
+# one item card from 8 positional US fields
+ov_render_item() {
+  oid="$1"; otitle="$2"; oplain="$3"; osurface="$4"; ofiles="$5"; ofelt="$6"; ostatus="$7"; oprop="$8"
+  printf '<div class="ov-item ov-%s"><div class="ov-item-head"><span class="ov-id">%s</span><span class="ov-title">%s</span><span class="ov-badge">%s</span>' "$ostatus" "$oid" "$(fmt "$otitle")" "$ostatus"
+  if [ "$ostatus" = "proposed" ]; then
+    pn=$(printf '%s' "$oprop" | tr -cd '0-9'); [ -z "$pn" ] && pn="$OV_CURRNUM"
+    [ "$((OV_CURRNUM - pn))" -ge 2 ] && printf '<span class="ov-stale">stale</span>'
+  fi
+  [ "$ofelt" = "true" ] && printf '<span class="ov-felt">&#9728; felt pass</span>'
+  printf '</div><div class="ov-plain">%s</div><div class="ov-files"><b>files</b> %s &middot; <b>surface</b> %s</div></div>' "$(fmt "$oplain")" "$(fmt "$ofiles")" "$(fmt "$osurface")"
+}
+# a status group: label + count + its item cards (or an empty line)
+ov_render_group() {
+  n=$(awk -F"$US" -v k="$2" '$7==k' "$TMP/overnight" | grep -c .)
+  printf '<div class="ov-gh"><span>%s</span><span class="ov-gcount">%s</span></div>' "$1" "$n"
+  if [ "$n" -eq 0 ]; then printf '<div class="ov-empty">&mdash; none &mdash;</div>'; return; fi
+  while IFS="$US" read -r a b c d e f g h; do
+    [ "$g" = "$2" ] || continue
+    ov_render_item "$a" "$b" "$c" "$d" "$e" "$f" "$g" "$h"
+  done < "$TMP/overnight"
+}
+# inline the newest report from docs/studio/reports/ (HTML-escaped verbatim, collapsible)
+ov_render_report() {
+  rf=$(ls -t "$STUDIO/reports"/*.md 2>/dev/null | head -1)
+  if [ -z "$rf" ] || [ ! -f "$rf" ]; then printf '<div class="ovr-none">no report in docs/studio/reports/ yet</div>'; return; fi
+  printf '<details class="ov-report"><summary>latest report &middot; <code>%s</code></summary><pre class="ovr-pre">' "$(basename "$rf")"
+  sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' "$rf"
+  printf '</pre></details>'
 }
 
 {
@@ -473,6 +532,43 @@ main{margin-left:236px;}
   .page-h{font-size:27px;}
   .heat-row{grid-template-columns:1fr;}
 }
+
+/* OVERNIGHT panel */
+.slate{margin:0 0 22px;padding:18px 22px;border-radius:16px;background:linear-gradient(180deg,#fffdf6,#fdf8ea);box-shadow:inset 0 1px 0 rgba(255,250,235,.9),0 6px 24px rgba(120,75,15,.14);}
+.slate-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px;}
+.slate-row{display:flex;flex-wrap:wrap;gap:10px;}
+.slate-chip{display:inline-flex;align-items:center;gap:9px;font-family:var(--serif);font-size:17px;color:var(--ink);background:var(--surface);border:1px solid rgba(217,164,65,.4);border-radius:12px;padding:9px 15px;}
+.slate-over{font-family:var(--mono);font-size:10.5px;color:var(--ember);margin-top:10px;}
+.ov-id{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--gold-deep);}
+.ov-groups{margin-top:8px;}
+.ov-gh{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin:22px 0 9px;}
+.ov-gh .ov-gcount{color:var(--ink-3);}
+.ov-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 17px;margin:0 0 10px;border-left:3px solid var(--line);}
+.ov-item.ov-proposed{border-left-color:var(--ink-3);}
+.ov-item.ov-queued{border-left-color:var(--gold);}
+.ov-item.ov-awaiting-felt-pass{border-left-color:var(--ember);}
+.ov-item.ov-closed{opacity:.7;border-left-color:#a9b98c;}
+.ov-item-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.ov-title{font-family:var(--serif);font-size:18px;color:var(--ink);flex:1;min-width:0;}
+.ov-badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);}
+.ov-stale{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--ember);color:#fffdf8;}
+.ov-felt{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--gold-deep);}
+.ov-plain{font-size:14px;color:var(--ink-2);line-height:1.5;margin:7px 0 6px;}
+.ov-files{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);}
+.ov-files b{color:var(--gold-deep);font-weight:400;letter-spacing:.05em;text-transform:uppercase;font-size:9.5px;}
+.ov-empty{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);font-style:italic;margin:0 0 10px;}
+.ov-nonover{margin-top:26px;border-top:1px solid var(--line);padding-top:16px;}
+.ov-nonover .noh{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;}
+.ov-nonover .noitem{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:6px 0;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.ov-nonover .noitem b{color:var(--ink);}
+.ov-runs{margin-top:26px;}
+.ov-runs h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:10px;}
+.ov-run{font-family:var(--mono);font-size:12px;color:var(--ink-2);line-height:1.5;margin:5px 0;}
+.ov-reportslot{margin-top:20px;}
+.ov-report summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--gold-deep);}
+.ov-report summary::-webkit-details-marker{display:none;}
+.ovr-pre{margin-top:10px;max-height:420px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:11.5px;line-height:1.5;color:var(--ink-2);white-space:pre-wrap;word-break:break-word;}
+.ovr-none{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);font-style:italic;}
 </style>
 HTML
 
@@ -490,6 +586,7 @@ printf '<div class="brail-brand">the studio</div>'
 printf '<a class="brail-link brail-dest" href="#page-overview">Overview</a>'
 printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
+printf '<a class="brail-link brail-dest" href="#page-overnight">Overnight</a>'
 brail_group "ARRIVE" "arrive" $G_ARRIVE
 brail_group "READ" "read" $G_READ
 brail_group "WRITE" "write" $G_WRITE
@@ -603,6 +700,48 @@ cat "$TMP/replan" | while IFS="$US" read -r kind body; do
   printf '<div class="rl">%s</div>' "$(fmt "$body")"
 done
 printf '</div></section>\n'
+
+# ===== OVERNIGHT =====
+printf '<section class="page" id="page-overnight"><h1 class="page-h u-inkgold">The overnight queue</h1>'
+printf '<p class="status-line">Small, single-surface, revert-safe fixes &mdash; <b>committed, never pushed</b>. Preston does the morning felt pass and pushes what survives. <b>%s</b> queued &middot; <b>%s</b> proposed &middot; <b>%s</b> total.</p>' "$OVQ" "$OVP" "$OVTOT"
+# TONIGHT'S SLATE — queued items, capped at 3
+printf '<div class="slate u-lamplight"><div class="slate-label">Tonight&rsquo;s slate &mdash; up to 3, each its own commit</div><div class="slate-row">'
+sc=0
+while IFS="$US" read -r a b c d e f g h; do
+  [ "$g" = "queued" ] || continue; sc=$((sc+1)); [ "$sc" -gt 3 ] && continue
+  printf '<div class="slate-chip"><span class="ov-id">%s</span>%s</div>' "$a" "$(fmt "$b")"
+done < "$TMP/overnight"
+[ "$sc" -eq 0 ] && printf '<div class="ov-empty">&mdash; slate empty &mdash;</div>'
+printf '</div>'
+[ "$sc" -gt 3 ] && printf '<div class="slate-over">note: %s queued &gt; 3 &mdash; only the first 3 run tonight</div>' "$sc"
+printf '</div>'
+# grouped by status: Proposed / Queued / Awaiting felt pass / Closed
+printf '<div class="ov-groups">'
+ov_render_group "Proposed" "proposed"
+ov_render_group "Queued" "queued"
+ov_render_group "Awaiting felt pass" "awaiting-felt-pass"
+ov_render_group "Closed" "closed"
+printf '</div>'
+# confirmed non-overnight (from ## Confirmed non-overnight)
+printf '<div class="ov-nonover"><div class="noh">Confirmed non-overnight</div>'
+awk '/^## /{insec=($0 ~ /^## Confirmed non-overnight/)?1:0; next} insec&&/^- id:[ ]/{id=$0; sub(/^- id:[ ]*/,"",id); next} insec&&/^[ ]+title:[ ]/{t=$0; sub(/^[ ]+title:[ ]*/,"",t); gsub(/[\t\037]/," ",t); printf "%s\037%s\n", id, t; id=""}' "$OVN" 2>/dev/null | while IFS="$US" read -r nid ntitle; do
+  [ -z "$nid" ] && continue
+  printf '<div class="noitem"><b>%s</b> &mdash; %s <span class="ov-badge">dedicated build</span></div>' "$nid" "$(fmt "$ntitle")"
+done
+printf '</div>'
+# run history — last 5 from the Runs log
+printf '<div class="ov-runs"><h3>Runs &mdash; last 5</h3>'
+if [ -s "$TMP/ovruns" ]; then
+  while IFS= read -r rl; do [ -z "$rl" ] && continue; rl2=$(printf '%s' "$rl" | sed 's/^-[ ]*//'); printf '<div class="ov-run">%s</div>' "$(fmt "$rl2")"; done < "$TMP/ovruns"
+else
+  printf '<div class="ov-empty">&mdash; no runs yet &mdash;</div>'
+fi
+printf '</div>'
+# latest report slot
+printf '<div class="ov-reportslot">'
+ov_render_report
+printf '</div>'
+printf '</section>\n'
 
 # ===== surface pages (22 + cross-cutting) =====
 for s in $SURFACES $LAYERS; do
