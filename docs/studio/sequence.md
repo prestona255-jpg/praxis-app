@@ -93,6 +93,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
   autonomous) — recorded here, not flagged `PROPOSED:`. Named R6 debt (R6-OWN ownership → R9; R6-INK
   warm-dim ink-ramp → systemic) recorded in `subtheory-page.md`; sub-theory surfaces marked mobile-eligible.
   Builder regenerated.
+- **2026-07-10** — R7 Book Detail CLOSED (SHIPPED v3.191 `bff5d82`, Preston's deployed felt pass =
+  PASS). R7 Book Detail → Shipped. The **MOBILE WAVE lands as the program's next stretch** (the
+  studio-side mobile canon `praxis-mobile-canon.md` + Builder chips + the overnight queue landed on
+  main via `1ac1536` / `a246e4a`): **Now = MW-1** (Shelf + Home mobile pass, canon P1–P9); **Next =
+  MW-2** (Notebook + Arcs) · **MW-3** (Sub-theory + Book Detail) · then **S-A**. Everything downstream
+  (the arc-field touch model, FX-1, R8 Values, R9 Profile…) shifts intact — nothing else reordered or
+  reworded. Book Detail shipped the BD2 4-I `order` reorder in R7; its full mobile-canon pass is MW-3
+  (no `mobile:` chip claimed on the ledger). Preston-directed cadence (the mobile wave is the next
+  stretch); nothing retired, no Preston decision contradicted — no `PROPOSED:` flag. Builder regenerated.
 
 ## Shipped
 
@@ -161,29 +170,35 @@ flagged at the top of the Builder's sequence page for his call — never applied
   `4c8f73e`. Resolved the notebook-vs-arcs build redundancy (ONE editor); `writing-canvas.js` UNTOUCHED;
   fix-red-team CLEAN + praxis-reviewer CLEARED. Records: `docs/checkpoints/r6-subtheory.md`,
   `subtheory-build.md` + `subtheory-page.md`. touches: [subtheory-build, subtheory-page]
+- [x] **R7 — Book Detail: light ground + lineage-leads one page + arc chips + category/moved-me +
+  marks route retired (DEEP)** (v3.191, `bff5d82`; felt pass PASSED — deployed 2026-07-10). Seventh
+  surface round. 8 commits `25c7987` (mockup) → `bff5d82` (S6 cache): F1 light ground · F2 marks folded
+  in (route redirects via `location.replace`) · F3 lineage leads · F4 arc chips (field-hue by id-hash) ·
+  F5 `movedMe` persisted field · F6 category picker + `categoryOverride`; LENS "+ Add to a lens" drop
+  ACCEPTED (inert `buildBookLensPanel`, one-move restore). Both gate reviewers cleared (praxis-reviewer
+  PASS, fix-red-team NO-BLOCK); Live Forensic Smoke Test PASS. The BD2 4-I `order` reorder shipped; the
+  full mobile-canon pass is MW-3. Records: `docs/checkpoints/r7-book-detail-recon.md`,
+  `docs/studio/book-detail.md`. touches: [book-detail]
 
 ## Now
 
-- [ ] **R7 — Book Detail (DEEP)** — the `#book/<id>` surface (`renderBookDetail`): hierarchy,
-  scannability, the buried details. **Promoted ahead of the S-A sweep — Preston's call, 2026-07-10.**
-  Full five beats: recon → click-forks → mockup → felt pass → build → close.
-  touches: [book-detail]
+- [ ] **MW-1 — Shelf + Home mobile pass (SWEEP)** — the mobile wave opens: sweep Shelf + Home to
+  the mobile canon (`praxis-mobile-canon.md`, P1–P9). First of the three mobile-wave passes; skips
+  the mockup beat.
+  touches: [shelf, home]
 
 ## Next
 
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the
-  constellation field must become mobile-usable (the drag/connect touch model on the protected
-  renderer). Attach where it best fits — alongside the S-B mobile passes or as a dedicated arc-field
-  pass; it is a VISIBLE line here, NOT a residual. (arc-detail.md "Held-Phase-3" mobile mandate.)
-  touches: [arc-detail]
+- [ ] **MW-2 — Notebook + Arcs mobile pass (SWEEP)** — sweep Notebook + Arcs to the mobile canon
+  (P1–P9); skips the mockup beat.
+  touches: [notebook, arcs, arc-detail]
+- [ ] **MW-3 — Sub-theory + Book Detail mobile pass (SWEEP)** — sweep Sub-theory + Book Detail to the
+  mobile canon (P1–P9); Book Detail shipped the BD2 4-I `order` reorder in R7, MW-3 completes the full
+  mobile pass; skips the mockup beat.
+  touches: [subtheory-build, subtheory-page, book-detail]
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment +
   residual gaps across three light surfaces; skips the mockup beat.
   touches: [about, search, yumi-sees]
-- [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
-  collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
-  guardrail:** after signing in on any device, let the app settle before editing; pull this
-  round FORWARD if second-device use starts.
-  touches: [account]
 
 ## Then
 
@@ -192,6 +207,16 @@ Per-surface rounds and the fix/feature spine, in program order; each surface rou
 skip the mockup beat). A round closes ONLY on Preston's felt pass. Carried from the launch
 spine and the evolution track and folded into the program — nothing dropped.
 
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the
+  constellation field must become mobile-usable (the drag/connect touch model on the protected
+  renderer). Attach where it best fits — alongside the S-B mobile passes or as a dedicated arc-field
+  pass; it is a VISIBLE line here, NOT a residual. (arc-detail.md "Held-Phase-3" mobile mandate.)
+  touches: [arc-detail]
+- [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
+  collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
+  guardrail:** after signing in on any device, let the app settle before editing; pull this
+  round FORWARD if second-device use starts.
+  touches: [account]
 - [ ] **R8 — Values (DEEP, NEW BUILD)** — the flagship login value-presets + the values
   data layer. Unblocks Profile counts + Connections.
   touches: [onboarding, profile]

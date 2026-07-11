@@ -27,7 +27,7 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 3 | `#arcs` renderArcsPage | ✅ Universal-light+spectrum (R5, v3.189) | ✅ css1894 | ✗ by-design v3454 | ◐ omission v3441 | ✗ sync |
 | 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ hard v3700 (W11-S8-L1; soft-CTA retired) | ✗ sync |
 | 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
-| 6 | `#book/<id>` renderBookDetail | ✅ v8052 | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
+| 6 | `#book/<id>` renderBookDetail | ✅ Universal-light v8781 · css10708 (R7, v3.191) | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
 | 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** | ✗ sync |
 | — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1929→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1939)** | — |
 | 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ warm-dim workshop · sole editor (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1; R6-verified) | ✗ sync |
