@@ -842,10 +842,11 @@ var LENS_GEN_SYSTEM =
   + 'critical pedagogy -- Freire, hooks, Lorde -- and you hold that a reader '
   + 'naming their own intellectual world is itself an act of freedom. You are '
   + 'not a recommender engine, and you do not sort books into market genres.\n\n'
-  + 'You are given a reader\'s library as METADATA ONLY: a list of books '
-  + '(title, author, and the reader\'s own genre tag), plus any lenses they '
-  + 'have already made. You are NOT given their private notes or marginalia, '
-  + 'and you never ask for them.\n\n'
+  + 'You are given a reader\'s library as METADATA ONLY: a NUMBERED list of '
+  + 'books (each line begins with a 1-based number, then title, author, and the '
+  + 'reader\'s own genre tag), plus any lenses they have already made and any '
+  + 'VALUES they have declared. You are NOT given their private notes or '
+  + 'marginalia, and you never ask for them.\n\n'
   + 'Your task: read across the whole library, notice the throughlines the '
   + 'reader keeps returning to, and propose 3-5 LENSES -- ways of seeing their '
   + 'shelf that are personal to them and named in the language of ideas, not '
@@ -855,17 +856,23 @@ var LENS_GEN_SYSTEM =
   + 'For each lens give: name (a few words, evocative and precise, in the '
   + 'spirit of critical pedagogy); why (one or two sentences, spoken to the '
   + 'reader -- "you keep circling..." -- naming what you see WITHOUT '
-  + 'summarizing any single book); books (the titles from their library this '
-  + 'lens gathers; only titles actually present).\n\n'
+  + 'summarizing any single book); books (an ARRAY OF INTEGERS -- the 1-based '
+  + 'index NUMBERS from the numbered list of the books this lens gathers; cite '
+  + '2 to 6; use ONLY numbers that appear in the list; never a title string, '
+  + 'never a number outside the list).\n\n'
+  + 'A lens is an ANGLE on the shelf -- a way of SEEING it -- never a VALUE. A '
+  + 'value is a commitment the reader HOLDS (what they read toward); those are a '
+  + 'different instrument. Never propose a lens that duplicates or lightly '
+  + 'rephrases a value they have declared.\n\n'
   + 'Rules: work only from titles, authors, genre tags -- never summarize, '
   + 'review, or describe a book\'s contents. Propose, never impose -- these are '
   + 'offerings the reader keeps, renames, or waves away. Invent nothing; every '
-  + 'book named is already on their shelf. Don\'t diagnose, flatter, or '
+  + 'index cited is a book already on their shelf. Don\'t diagnose, flatter, or '
   + 'over-claim about the reader. A lens gathers at least two books; if the '
   + 'library is too small or scattered to name honest lenses, propose fewer '
   + 'rather than forcing them. Warmth over cleverness.\n\n'
   + 'Return ONLY a JSON array, nothing around it:\n'
-  + '[{"name":"...","why":"...","books":["title","title"]}]';
+  + '[{"name":"...","why":"...","books":[3,17]}]';
 
 // Gather the deduped library as METADATA ONLY (title/author/genre per book)
 // plus the names of lenses the reader already has (distinct present genres +
@@ -904,34 +911,62 @@ function gatherLensLibraryMetadata() {
     var g = books[i].genre;
     if (g && !Object.prototype.hasOwnProperty.call(genreSeen, g)) { genreSeen[g] = true; lensNames.push(g); }
   }
+  // themeLensNames = the reader's DECLARED lenses only (userThemes). lensNames
+  // (genres + themes) drives the PROMPT; themeLensNames is the eval collision set
+  // so a value is never hard-dropped for merely sharing a word with a market
+  // GENRE tag -- only for duplicating a lens the reader actually made.
+  var themeLensNames = [];
   if (u && u.uid && state.userThemes) {
     var tk;
     for (tk in state.userThemes) {
       if (Object.prototype.hasOwnProperty.call(state.userThemes, tk) &&
           state.userThemes[tk] && state.userThemes[tk].userId === u.uid) {
         lensNames.push(state.userThemes[tk].name);
+        themeLensNames.push(state.userThemes[tk].name);
       }
     }
   }
-  return { books: books, lensNames: lensNames, titleToId: titleToId };
+  // VL-1: the reader's declared VALUES (the sibling generator's output) so the
+  // lens prompt + eval can refuse to duplicate them. Read but NEVER serialized
+  // into the book payload (metadata-only covenant). Computed from the FULL
+  // library, before the defensive cap below trims the numbered book list.
+  var valueNames = [];
+  if (u && u.uid && typeof getProfile === 'function') {
+    var vp = getProfile(u.uid);
+    if (vp && vp.values instanceof Array) { valueNames = vp.values; }
+  }
+  // LENS-1: defensive annotated-first cap, mirroring the value retrofit. Index-
+  // grounding keeps output tiny so this never binds at typical sizes; when it
+  // does, engaged books (movedMe / valueMarks) are kept first. Capped HERE so
+  // both lens callers number the same trimmed meta.books the eval indexes into.
+  books = prioritizeValueBooks(books, titleToId, VALUE_RETROFIT_MAX);
+  return { books: books, lensNames: lensNames, themeLensNames: themeLensNames, valueNames: valueNames, titleToId: titleToId };
 }
 
 // Serialize ONLY title/author/genre + existing lens names into the user
 // message. titleToId and any other state are never touched here, so the
 // outgoing payload is provably metadata-only.
 function buildLensGenUserMessage(meta) {
-  var s = 'Here is the reader\'s library (metadata only):\n\n';
+  var s = 'Here is the reader\'s library (metadata only), numbered:\n\n';
   var i;
   for (i = 0; i < meta.books.length; i++) {
     var b = meta.books[i];
-    s = s + '- "' + b.title + '"'
+    s = s + (i + 1) + '. "' + b.title + '"'
       + (b.author ? ' by ' + b.author : '')
       + (b.genre ? ' [' + b.genre + ']' : '') + '\n';
   }
   if (meta.lensNames && meta.lensNames.length) {
     s = s + '\nLenses they already have: ' + meta.lensNames.join(', ') + '\n';
   }
-  s = s + '\nPropose 3-5 lenses as specified. Return ONLY the JSON array.';
+  // VL-1: the reader's declared VALUES are commitments, not lenses -- name new
+  // ANGLES, never echo or lightly rephrase one of these.
+  if (meta.valueNames && meta.valueNames.length) {
+    s = s + '\nValues they have declared (these are COMMITMENTS, NOT lenses -- do '
+      + 'NOT propose a lens that duplicates or rephrases any of these): '
+      + meta.valueNames.join(', ') + '\n';
+  }
+  s = s + '\nPropose 3-5 lenses as specified. Cite books by their index numbers. '
+    + 'Return ONLY the JSON array.';
   return s;
 }
 
@@ -970,6 +1005,13 @@ function generateLenses(meta) {
         }
       }
     }
+    // LENS-1: reject an unreadable/truncated reply so BOTH lens callers (incl.
+    // the uneditable yumi-ui rail) route it to their existing ERROR state --
+    // silence is impossible. A parseable-but-empty reply resolves normally and
+    // shows the honest "no lenses yet" empty state.
+    if (parseValueRetrofitArray(text) === null) {
+      throw new Error('lens response unreadable (truncated or non-JSON)');
+    }
     return text;
   });
 }
@@ -995,38 +1037,58 @@ function isBlockedLensName(name) {
   return false;
 }
 
-// Client-side eval (v1): structural + grounding validation before any lens
-// reaches the user. Tolerant parse (handles a JSON array wrapped in prose),
-// then per-lens: GROUNDED (every book must exist in the library; >=2 real,
-// distinct books or the lens is dropped), STRUCTURE (name + why + books;
-// malformed dropped; cap 5), FIT GUARD (drop bare generic-genre names).
-// Returns surviving lenses with canonical library titles, or [] (the caller
-// shows a graceful empty state). Never throws.
-function evalLensResponse(rawText, libraryTitles) {
-  var titleSet = {};
-  var i;
-  if (libraryTitles) {
-    for (i = 0; i < libraryTitles.length; i++) {
-      titleSet[normalizeLensTitle(libraryTitles[i])] = libraryTitles[i];
-    }
+// VL-1: does a suggestion's name collide with a name from the SIBLING generator
+// (values vs lenses)? Case-insensitive exact match, or one normalized name is a
+// substring of the other (short conviction/angle names). Guards fragments < 3
+// chars. The prompt persuades against convergence; this eval enforces it.
+function nameCollidesWith(name, otherNames) {
+  if (!(otherNames instanceof Array) || !otherNames.length) { return false; }
+  var a = normalizeLensTitle(name);
+  if (a === '' || a.length < 3) { return false; }
+  var i, b, shorter, longer, re;
+  for (i = 0; i < otherNames.length; i++) {
+    b = normalizeLensTitle(otherNames[i]);
+    if (b === '' || b.length < 3) { continue; }
+    if (a === b) { return true; }
+    // WHOLE-WORD containment either direction -- the shorter name must appear as
+    // a word-bounded token in the longer ("Power" in "Power's Legibility"), NOT
+    // an incidental infix ("war" inside "toward", "care" inside "scared").
+    shorter = (a.length <= b.length) ? a : b;
+    longer  = (a.length <= b.length) ? b : a;
+    re = new RegExp('\\b' + shorter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+    if (re.test(longer)) { return true; }
   }
-  var parsed = null;
-  if (typeof rawText === 'string') {
-    try {
-      parsed = JSON.parse(rawText);
-    } catch (e) {
-      var start = rawText.indexOf('[');
-      var end = rawText.lastIndexOf(']');
-      if (start !== -1 && end !== -1 && end > start) {
-        try { parsed = JSON.parse(rawText.substring(start, end + 1)); }
-        catch (e2) { parsed = null; }
-      }
-    }
+  return false;
+}
+
+// VL-1: the reader's declared VALUES, for the lens eval's collision backstop
+// when the caller cannot pass them (the uneditable yumi-ui lens rail). Reads
+// profile.values; never serialized. Mirrors gatherValueMetadata's read.
+function readActiveValueNames() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (u && u.uid && typeof getProfile === 'function') {
+    var p = getProfile(u.uid);
+    if (p && p.values instanceof Array) { return p.values; }
   }
-  if (!parsed || Object.prototype.toString.call(parsed) !== '[object Array]') {
-    return [];
-  }
+  return [];
+}
+
+// LENS-1 + VL-1: lenses ground by 1-based INDEX into the numbered library list
+// (the RF1 idiom -- kills the output-token TRUNCATION and title DRIFT the shipped
+// title-string version suffered at scale). libraryTitles[k] is the (k+1)-th book
+// of the SAME numbered list the model saw. Per lens: distinct in-bounds indices
+// -> canonical titles; >=2 or drop; junk-name blocklist; VL-1 sibling-collision
+// drop (a lens whose name matches/contains a declared VALUE is dropped + logged);
+// cap 5. NO display cap on the books array -- the adopt path assigns all of them. valueNames
+// optional -> falls back to readActiveValueNames() for callers that cannot pass it.
+// Fail-safe []; never throws.
+function evalLensResponse(rawText, libraryTitles, valueNames) {
+  var titles = (libraryTitles instanceof Array) ? libraryTitles : [];
+  var others = (valueNames instanceof Array) ? valueNames : readActiveValueNames();
+  var parsed = parseValueRetrofitArray(rawText);
+  if (!parsed) { return []; }
   var out = [];
+  var i;
   for (i = 0; i < parsed.length; i++) {
     var lens = parsed[i];
     if (!lens || typeof lens.name !== 'string' || typeof lens.why !== 'string' ||
@@ -1036,19 +1098,31 @@ function evalLensResponse(rawText, libraryTitles) {
     var name = lens.name.replace(/^\s+|\s+$/g, '');
     if (name === '') { continue; }
     if (isBlockedLensName(name)) { continue; }
+    if (nameCollidesWith(name, others)) {
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('[VL-1] dropped lens "' + name + '" -- collides with a declared value');
+      }
+      continue;
+    }
     var kept = [];
     var seen = {};
     var j;
     for (j = 0; j < lens.books.length; j++) {
-      var norm = normalizeLensTitle(lens.books[j]);
-      if (norm !== '' &&
-          Object.prototype.hasOwnProperty.call(titleSet, norm) &&
-          !Object.prototype.hasOwnProperty.call(seen, norm)) {
-        seen[norm] = true;
-        kept.push(titleSet[norm]);
-      }
+      var n = lens.books[j];
+      if (typeof n === 'string' && /^\s*[0-9]+\s*$/.test(n)) { n = parseInt(n, 10); }
+      if (typeof n !== 'number' || !isFinite(n)) { continue; }
+      var idx = Math.floor(n) - 1;
+      if (idx < 0 || idx >= titles.length) { continue; }
+      if (Object.prototype.hasOwnProperty.call(seen, idx)) { continue; }
+      seen[idx] = true;
+      kept.push(titles[idx]);
     }
     if (kept.length < 2) { continue; }
+    // LENS-1: NO display cap here -- the lens ADOPT path (yumi-ui lensSuggestAdopt)
+    // assigns EVERY book in the returned array to the new theme, so capping would
+    // silently link fewer books than the lens gathered (a shipped-feature regression).
+    // Values cap safely (accept adds a profile stone, never uses the books). The
+    // "cite 2 to 6" prompt keeps this list short in practice.
     out.push({ name: name, why: lens.why.replace(/^\s+|\s+$/g, ''), books: kept });
     if (out.length >= 5) { break; }
   }
@@ -1073,6 +1147,9 @@ var VALUE_GEN_SYSTEM =
   + 'ARRANGED (a lens). A value is the weight things CARRY -- "Liberation," '
   + '"Dignity," "Inheritance," "Care," "Doubt" -- a word for what a reader is '
   + 'reading TOWARD.\n\n'
+  + 'A value is a COMMITMENT the reader holds, never a LENS (a way of arranging or '
+  + 'seeing the shelf) -- those are a different instrument. Never propose a value '
+  + 'that duplicates or lightly rephrases a lens they already use.\n\n'
   + 'You are given a reader\'s library as METADATA ONLY: a NUMBERED list of books '
   + '(each line begins with a 1-based number, then title, author, and the reader\'s '
   + 'own genre tag), plus the values they have ALREADY declared. You are NOT given '
@@ -1138,7 +1215,13 @@ function gatherValueMetadata() {
     if (p && p.values instanceof Array) { existingValues = p.values; }
   }
   var books = prioritizeValueBooks(meta.books, meta.titleToId, VALUE_RETROFIT_MAX);
-  return { books: books, titleToId: meta.titleToId, existingValues: existingValues };
+  // VL-1: carry the reader's existing LENS names (the sibling generator) so the
+  // value prompt + eval can refuse to duplicate them. lensNames (genres + themes)
+  // steers the PROMPT; themeLensNames (declared lenses only) is the eval collision
+  // set -- so a value is never hard-dropped for sharing a word with a genre tag.
+  var lensNames = (meta.lensNames instanceof Array) ? meta.lensNames : [];
+  var themeLensNames = (meta.themeLensNames instanceof Array) ? meta.themeLensNames : [];
+  return { books: books, titleToId: meta.titleToId, existingValues: existingValues, lensNames: lensNames, themeLensNames: themeLensNames };
 }
 
 // Serialize ONLY title/author/genre + already-declared value names, as a 1-based
@@ -1157,6 +1240,13 @@ function buildValueGenUserMessage(meta) {
   if (meta.existingValues && meta.existingValues.length) {
     s = s + '\nValues they have ALREADY declared (do not re-propose these): '
       + meta.existingValues.join(', ') + '\n';
+  }
+  // VL-1: the reader's existing LENSES are angles on the shelf, not values --
+  // name new COMMITMENTS, never echo or lightly rephrase one of these.
+  if (meta.lensNames && meta.lensNames.length) {
+    s = s + '\nLenses they already use (these are ANGLES on the shelf, NOT values '
+      + '-- do NOT propose a value that duplicates or rephrases any of these): '
+      + meta.lensNames.join(', ') + '\n';
   }
   s = s + '\nPropose 3-5 values as specified. Cite books by their index numbers. '
     + 'Return ONLY the JSON array.';
@@ -1245,8 +1335,9 @@ function valueRetrofitUnreadable(rawText) {
 // in-bounds indices -> canonical titles; >=2 or drop; then cap the shown list to
 // VALUE_GROUND_SHOW; junk-name blocklist reused; cap 5 values. Numeric strings
 // ("3") tolerated. Fail-safe to []; never throws.
-function evalValueResponse(rawText, libraryTitles) {
+function evalValueResponse(rawText, libraryTitles, lensNames) {
   var titles = (libraryTitles instanceof Array) ? libraryTitles : [];
+  var others = (lensNames instanceof Array) ? lensNames : [];
   var parsed = parseValueRetrofitArray(rawText);
   if (!parsed) { return []; }
   var out = [];
@@ -1260,6 +1351,14 @@ function evalValueResponse(rawText, libraryTitles) {
     var name = v.name.replace(/^\s+|\s+$/g, '');
     if (name === '') { continue; }
     if (isBlockedLensName(name)) { continue; }
+    // VL-1: drop a value whose name collides with an existing LENS (the prompt
+    // persuades; the eval enforces the values-vs-lenses register).
+    if (nameCollidesWith(name, others)) {
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('[VL-1] dropped value "' + name + '" -- collides with a lens');
+      }
+      continue;
+    }
     var kept = [];
     var seen = {};
     var j;

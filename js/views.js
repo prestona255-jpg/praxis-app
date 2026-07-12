@@ -18144,7 +18144,7 @@ function renderAccountPage() {
         retroSetStatus('error', 'Yumi couldn’t quite read what she found — give it another try in a moment.');
         return;
       }
-      var vals = window.YumiBrain.evalValueResponse(raw, titles) || [];
+      var vals = window.YumiBrain.evalValueResponse(raw, titles, (meta && meta.themeLensNames) || []) || [];
       retroRenderOffers(vals);
     }, function () {
       retroBtn.disabled = false;
@@ -18461,7 +18461,7 @@ function renderAccountPage() {
       var mbooks = (meta && meta.books instanceof Array) ? meta.books : [];
       for (i = 0; i < mbooks.length; i = i + 1) { titles.push(mbooks[i].title); }
       window.YumiBrain.generateLenses(meta).then(function (raw) {
-        portraitLensSuggest.proposals = window.YumiBrain.evalLensResponse(raw, titles) || [];
+        portraitLensSuggest.proposals = window.YumiBrain.evalLensResponse(raw, titles, (meta && meta.valueNames) || []) || [];
         portraitLensSuggest.status = 'done';
         renderPortraitDialog('lenses');
       }, function () {
