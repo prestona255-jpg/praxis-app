@@ -19,6 +19,7 @@ STUDIO="$REPO/docs/studio"
 DEPTH="$STUDIO/universal-depth.css"
 SEQ="$STUDIO/sequence.md"
 MCANON="$STUDIO/praxis-mobile-canon.md"
+DCANON="$STUDIO/praxis-desktop-canon.md"
 OUT="$STUDIO/builder.html"
 US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g. no touches) are preserved by read
 
@@ -345,6 +346,36 @@ build_mobile_canon() {
   printf '</div>'
 }
 
+# --- desktop-canon section renderer ---
+# Renders praxis-desktop-canon.md as a condensed pattern list: each D#
+# collapsed behind <details> (the Builder's collapse idiom); summary =
+# id+name, detail = the rule + Check + Reference/Baseline paragraphs.
+# Parsed at build time. Mirrors build_mobile_canon; the intro prose and
+# the non-D governance sections (Application/Chip/Rails law) live in the
+# canonical .md and are not folded here, exactly as the mobile renderer
+# folds only its P# patterns.
+build_desktop_canon() {
+  if [ ! -f "$DCANON" ]; then printf '<p class="status-line">desktop canon doc missing at generation time</p>'; return; fi
+  printf '<p class="ov-lead">The desktop composition language &mdash; <b>six patterns</b>, tier <b>1200</b>. Each surface earns its chip through ledger evidence, never by editing the Builder.</p>'
+  printf '<div class="dc-legend"><span class="dc-key desk-stretched">stretched</span><span class="dc-key desk-composed">composed</span><span class="dc-key desk-native">native</span></div>'
+  printf '<div class="dcanon-list">'
+  awk '
+    function esc(s){ gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); return s }
+    function flush(){ if(cur!=""){ body=body "<p>" esc(cur) "</p>"; cur="" } }
+    function emit(){ if(have){ flush();
+        printf "<details class=\"dcanon-pat\"><summary><span class=\"dc-id\">%s</span></summary><div class=\"dc-detail\">%s</div></details>\n", esc(head), body }
+        have=0; head=""; cur=""; body="" }
+    /^## D[0-9]/{ emit(); have=1; head=$0; sub(/^## /,"",head); next }
+    /^## /{ emit(); next }
+    have==0{ next }
+    /^-{3,}[[:space:]]*$/{ flush(); next }
+    /^[[:space:]]*$/{ flush(); next }
+    { if(cur==""){cur=$0}else{cur=cur " " $0} }
+    END{ emit() }
+  ' "$DCANON"
+  printf '</div>'
+}
+
 {
 # ---- head + base tokens + Builder layout CSS ----
 cat <<'HTML'
@@ -550,6 +581,26 @@ main{margin-left:236px;}
 .mc-applies{font-size:13px;color:var(--ink-2);line-height:1.42;flex:1;min-width:190px;}
 .mc-detail{padding:8px 17px 15px;}
 .mc-detail p{margin:9px 0;font-size:13.5px;color:var(--ink-2);line-height:1.55;}
+
+/* desktop canon section + per-surface desktop chip */
+.badge-desktop{text-transform:lowercase;letter-spacing:.05em;}
+.badge-desktop.desk-stretched{color:var(--ink-3);}
+.badge-desktop.desk-composed{color:#5b6bb0;border-color:rgba(120,140,210,.4);}
+.badge-desktop.desk-native{color:var(--gold-deep);border-color:rgba(168,118,26,.45);}
+.badge-desktop.desk-unknown{color:var(--ember);border-color:var(--ember);}
+.dc-legend{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 18px;}
+.dc-key{font-family:var(--mono);font-size:10px;letter-spacing:.04em;border:1px solid var(--line);border-radius:999px;padding:3px 11px;color:var(--ink-2);}
+.dc-key.desk-stretched{color:var(--ink-3);}
+.dc-key.desk-composed{color:#5b6bb0;}
+.dc-key.desk-native{color:var(--gold-deep);}
+.dcanon-list{display:grid;gap:9px;margin-top:6px;}
+.dcanon-pat{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.dcanon-pat summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:11px;padding:13px 17px;}
+.dcanon-pat summary::-webkit-details-marker{display:none;}
+.dcanon-pat[open] summary{border-bottom:1px solid var(--line);}
+.dc-id{font-family:var(--serif);font-size:18px;color:var(--ink);flex:none;}
+.dc-detail{padding:8px 17px 15px;}
+.dc-detail p{margin:9px 0;font-size:13.5px;color:var(--ink-2);line-height:1.55;}
 
 /* markdown render (surface ledgers) */
 .md h2,.md-h2{font-family:var(--serif);font-weight:500;font-size:23px;margin:0 0 8px;}
@@ -758,13 +809,14 @@ printf '<main>\n'
 
 # ---- sticky top nav (doc-level; the .brail sidebar stays the surface directory) ----
 # Overview/Now/Surfaces land on the Overview dashboard (Now + Surfaces are in-page
-# anchors, resolved by showPage); Program/Overnight/Mobile-canon are their own pages.
+# anchors, resolved by showPage); Program/Overnight/Mobile-canon/Desktop-canon are their own pages.
 printf '<div class="studio-topnav"><div class="stn-inner">'
 printf '<a class="stn-brand" href="#page-index">the studio</a>'
 printf '<a class="topnav-link" href="#page-overview">Overview</a>'
 printf '<a class="topnav-link tn-now" href="#now">Now</a>'
 printf '<a class="topnav-link" href="#page-overnight">Overnight</a>'
 printf '<a class="topnav-link" href="#page-mobile-canon">Mobile canon</a>'
+printf '<a class="topnav-link" href="#page-desktop-canon">Desktop canon</a>'
 printf '<a class="topnav-link" href="#page-plan">Program</a>'
 printf '<a class="topnav-link" href="#surfaces">Surfaces</a>'
 printf '</div></div>\n'
@@ -929,17 +981,28 @@ printf '<section class="page" id="page-mobile-canon"><h1 class="page-h u-inkgold
 build_mobile_canon
 printf '</section>\n'
 
+# ===== DESKTOP CANON (new top-level section — immediately after Mobile canon; parallel presentation) =====
+printf '<section class="page" id="page-desktop-canon"><h1 class="page-h u-inkgold">Desktop canon</h1>'
+build_desktop_canon
+printf '</section>\n'
+
 # ===== surface pages (22 + cross-cutting) =====
 for s in $SURFACES $LAYERS; do
   f="$STUDIO/$s.md"
   rt=$(fm "$f" route); gr=$(fm "$f" ground); rfn=$(fm "$f" render_fn)
-  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s"); mk=$(fm "$f" mockup); mo=$(fm "$f" mobile)
+  nv=$(fm "$f" in_nav); st=$(qstate "$s"); rn=$(qrounds "$s"); mk=$(fm "$f" mockup); mo=$(fm "$f" mobile); dk=$(fm "$f" desktop)
   [ -z "$rt" ] && rt='&mdash;'; [ -z "$rfn" ] && rfn='&mdash;'; [ -z "$gr" ] && gr='&mdash;'; [ -z "$nv" ] && nv='&mdash;'
   # mobile chip: ledger `mobile:` field -> desktop-only|reflowed|native; absent -> desktop-only; unknown -> warn prefix, never dropped
   [ -z "$mo" ] && mo='desktop-only'
   case "$mo" in
     desktop-only|reflowed|native) mocls="mob-$mo"; modisp="$mo";;
     *) mocls="mob-unknown"; modisp="&#9888; $mo";;
+  esac
+  # desktop chip: ledger `desktop:` field -> stretched|composed|native; absent -> stretched (D0 evidence); unknown -> warn prefix, never dropped
+  [ -z "$dk" ] && dk='stretched'
+  case "$dk" in
+    stretched|composed|native) dkcls="desk-$dk"; dkdisp="$dk";;
+    *) dkcls="desk-unknown"; dkdisp="&#9888; $dk";;
   esac
   # plain-English state phrase for the surface lead (computed from the ledger state)
   case "$st" in
@@ -951,7 +1014,7 @@ for s in $SURFACES $LAYERS; do
     *) sdesc="<b>not yet</b> through a studio round";;
   esac
   printf '<section class="page surface" id="s-%s">' "$s"
-  printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span><span class="badge badge-mobile %s">%s</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn" "$mocls" "$modisp"
+  printf '<div class="surf-head"><h1 class="page-h u-inkgold">%s</h1><span class="surf-slug">%s</span><span class="badge"><span class="u-orb %s"></span>%s &middot; %s rounds</span><span class="badge badge-mobile %s">%s</span><span class="badge badge-desktop %s">%s</span></div>' "$(hname "$s")" "$s" "$(orbcls "$st")" "$st" "$rn" "$mocls" "$modisp" "$dkcls" "$dkdisp"
   printf '<p class="surf-lead"><b>%s</b> is %s. The build facts fold below &mdash; then the plan items that route through it and its open-gap ledger.</p>' "$(hname "$s")" "$sdesc"
   printf '<details class="disclose facts-fold"><summary>Build facts &mdash; route, render, ground, nav</summary><div class="disclose-body"><div class="facts"><span><b>route</b> <code>%s</code></span><span><b>render</b> <code>%s</code></span><span><b>ground</b> %s</span><span><b>in nav</b> %s</span></div></div></details>' "$rt" "$rfn" "$gr" "$nv"
   # CONNECTED strip: plan items (Now/Next/Then) whose touches include this surface
