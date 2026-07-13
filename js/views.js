@@ -17193,7 +17193,8 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
     sx = cxp + Math.cos(ang) * dist; sy = cyp + Math.sin(ang) * dist;
     sx = Math.max(pad * 0.6, Math.min(w - pad * 0.6, sx));
     sy = Math.max(20, Math.min(h - 24, sy));
-    stars.push({ t: (st.header || 'Untitled sub-theory'), x: sx, y: sy, px: cxp, py: cyp, pub: isPub, id: st.id });
+    var _arc = (st.arcId && state.arcs && state.arcs[st.arcId]) ? state.arcs[st.arcId] : null;
+    stars.push({ t: (st.header || 'Untitled sub-theory'), x: sx, y: sy, px: cxp, py: cyp, pub: isPub, id: st.id, arcId: st.arcId || '', arcTitle: (_arc && typeof _arc.title === 'string') ? _arc.title : '' });
   }
   // constellation lines: hub-radiate from the dominant category (drawn on tap)
   if (cats.length >= 2) {
@@ -17252,6 +17253,25 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
       var _qx = _mx + (scx - _mx) * 0.5, _qy = _my + (scy - _my) * 0.5;
       body += '<path class="pf-vline" data-vline="' + _portraitEsc(vload[i].name) + '" d="M' + pts[kk].x.toFixed(1) + ' ' + pts[kk].y.toFixed(1) + ' Q' + _qx.toFixed(1) + ' ' + _qy.toFixed(1) + ' ' + pts[kk + 1].x.toFixed(1) + ' ' + pts[kk + 1].y.toFixed(1) + '"></path>';
     }
+  }
+  // R9b Lane G S7: PUBLISHED-ARC CONSTELLATIONS -- persistent quiet lines over an arc's PUBLISHED stars,
+  // lensing toward the sigil center (like value lines but fainter/quieter), + a small arc-name label that
+  // routes to the arc page. Visitor-visible (published only). Faint vs the bright value-lighting layer.
+  var byArc = {}, ai, s3, arcId2;
+  for (ai = 0; ai < stars.length; ai = ai + 1) {
+    s3 = stars[ai]; if (!s3.arcId || !s3.pub || !s3.arcTitle) { continue; }
+    if (!byArc[s3.arcId]) { byArc[s3.arcId] = { title: s3.arcTitle, pts: [] }; }
+    byArc[s3.arcId].pts.push(s3);
+  }
+  for (arcId2 in byArc) {
+    if (!byArc.hasOwnProperty(arcId2)) { continue; }
+    var ap = byArc[arcId2].pts, an; if (ap.length < 2) { continue; }
+    for (an = 0; an + 1 < ap.length; an = an + 1) {
+      var amx = (ap[an].x + ap[an + 1].x) / 2, amy = (ap[an].y + ap[an + 1].y) / 2;
+      var aqx = amx + (scx - amx) * 0.5, aqy = amy + (scy - amy) * 0.5;
+      body += '<path class="pf-aline" d="M' + ap[an].x.toFixed(1) + ' ' + ap[an].y.toFixed(1) + ' Q' + aqx.toFixed(1) + ' ' + aqy.toFixed(1) + ' ' + ap[an + 1].x.toFixed(1) + ' ' + ap[an + 1].y.toFixed(1) + '"></path>';
+    }
+    body += '<text class="pf-alabel" data-arc-id="' + _portraitEsc(arcId2) + '" x="' + (ap[0].x + 9).toFixed(1) + '" y="' + (ap[0].y - 13).toFixed(1) + '" tabindex="0" role="link" aria-label="Arc: ' + _portraitEsc(byArc[arcId2].title) + '">' + _portraitEsc(byArc[arcId2].title) + '</text>';
   }
   // stars on top (protagonists). data-sub = id (routes to #subtheory/<id>).
   var s2;
@@ -17788,7 +17808,11 @@ function _pfWire(wrap, uid, vis) {
     var sub = cl(t, '[data-sub]');
     if (sub) { var sid = sub.getAttribute('data-sub'); if (sid) { location.hash = '#subtheory/' + sid; } return; }
     var lens = cl(t, '[data-lens]');
-    if (lens) { _pfShelfTo('theme', lens.getAttribute('data-lens')); return; }
+    if (lens) {
+      // R9b Lane G S7: Numbers lens card -> lens-scoped PANEL (was the v3.199 interim shelf link).
+      var _lid = lens.getAttribute('data-lens'), _lth = (state.userThemes && state.userThemes[_lid]) ? state.userThemes[_lid] : null;
+      _pfOpenPanel(wrap, uid, _lth ? _lth.name : '', true, vis, lens); return;
+    }
     var planet = cl(t, '[data-planet]');
     if (planet) {
       // R9b Lane G S6: planet -> PANEL (was the v3.199 interim filtered-shelf link). Lens mode -> lens-scoped.
@@ -17797,13 +17821,18 @@ function _pfWire(wrap, uid, vis) {
     }
     var go = cl(t, '[data-go]');
     if (go) { var dest = go.getAttribute('data-go'); if (dest) { location.hash = dest; } return; }
+    // R9b Lane G S7 interaction map: arc label -> arc page; sigil core -> the thesis.
+    var alab = cl(t, '[data-arc-id]');
+    if (alab) { var _aid = alab.getAttribute('data-arc-id'); if (_aid) { location.hash = '#arc/' + _aid; } return; }
+    var core = cl(t, '.pf-sg-core');
+    if (core) { var _th = wrap.querySelector('.pf-thesis'); if (_th && _th.scrollIntoView) { _th.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
     var sky = cl(t, '.pf-sky');
     if (sky) { sky.classList.toggle('show-lines'); return; }
   }
   wrap.addEventListener('click', handle);
   wrap.addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest &&
-        e.target.closest('[data-star],[data-planet],[data-lens],[data-value],[data-act],[data-go],[data-axis],[data-sub]')) {
+        e.target.closest('[data-star],[data-planet],[data-lens],[data-value],[data-act],[data-go],[data-axis],[data-sub],[data-arc-id],.pf-sg-core')) {
       e.preventDefault(); handle(e);
     }
   });

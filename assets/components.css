@@ -9456,7 +9456,8 @@
 .account-readermodel .rm-toggle-sub { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.03em; color:var(--ink-3); margin-top:4px; }
 .account-readermodel .rm-toggle { flex:0 0 auto; position:relative; width:52px; height:30px; border-radius:var(--radius-pill); background:var(--sunk); border:1px solid var(--line-2); cursor:pointer; padding:0; transition:background var(--motion-base) var(--ease); }
 .account-readermodel .rm-knob { position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:var(--radius-pill); background:var(--text-on-dark); box-shadow:var(--shadow-1); transition:left var(--motion-base) var(--ease); }
-.account-readermodel .rm-toggle.rm-toggle-on { background:var(--marginalia-color); border-color:var(--marginalia-color); }
+/* R9b Lane G S7: reader-model toggle teal -> GOLD system (the DNA toggle joins the profile's gold). */
+.account-readermodel .rm-toggle.rm-toggle-on { background:linear-gradient(135deg,var(--gold-hi),var(--gold)); border-color:var(--gold); }
 .account-readermodel .rm-toggle.rm-toggle-on .rm-knob { left:27px; }
 
 .account-readermodel .rm-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; margin:18px 0 6px; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
@@ -13538,6 +13539,12 @@ body.wc-focus .app-nav { opacity:.26; }
 /* R9b Lane G S3: the sigil-galaxy core is tappable (-> thesis; wired in S7). */
 .pf-sg-core{ cursor:pointer; }
 .pf-sg-core:focus-visible{ outline:2px solid var(--star-gold); outline-offset:2px; }
+/* R9b Lane G S7: published-arc constellations -- persistent quiet lensing lines + a small arc label (-> arc
+   page). Faint vs the brighter value-lighting layer (.pf-vline .34/.78). */
+.pf-aline{ fill:none; stroke:var(--gold-hi); stroke-width:1; opacity:.2; stroke-dasharray:1 5; stroke-linecap:round; }
+.pf-alabel{ font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; fill:var(--gold-hi); opacity:.62; text-transform:uppercase; cursor:pointer; }
+.pf-alabel:hover{ opacity:.92; }
+.pf-alabel:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
 /* R9b Lane G S4: CSS-only motion (zero per-frame JS). Differential sigil rotation (4 speeds) + core breath +
    planet drift (±~1% viewport) + star orbit (>=120s) + speck twinkle. Freezes under prefers-reduced-motion. */
 @keyframes pf-spin{ to{ transform:rotate(360deg); } }
