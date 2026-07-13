@@ -1,16 +1,23 @@
 ---
 surface: account
 route: "#account"
-render_fn: renderAccountPage (views.js:17109)
-ground: dark
-in_nav: yes
-state: untouched
-rounds: 0
+render_fn: redirect → renderProfilePage (was renderAccountPage, retired defined-but-unrouted)
+ground: n/a (redirects)
+in_nav: no (nav avatar → #profile)
+state: MERGED → #profile (R9a, v3.198)
+rounds: 0 (merged, not rounded on its own)
 ---
 
 ## State
 
-`#account` → `renderAccountPage` (views.js:17109); dark ground; in top-nav (account). Account hub.
+**MERGED into the single Profile at `#profile` (R9a, v3.198 `e25ac6f`).** `#account` →
+`location.replace('#profile')` (the R7 /marks precedent — refresh-stable, no history push); old links +
+bookmarks land on the merged Profile. The nav avatar was repointed `#account`→`#profile`. `renderAccountPage`
+(and `renderOwnProfile`) are **retired defined-but-unrouted** (~2060 L combined — S-B deletion debt). All the
+account DNA carried into `renderProfilePage`: settings + identity + sign-out + "Your data" covenant, the Yumi
+value-offer retrofit (AM19 dock), and the reader-model consent + threads/journey/returns (owner-only, via the
+parameterized `buildReaderModelSection`). Arc publish was NOT lost — it lives on the arc-detail page. See
+`docs/studio/profile.md` for the live surface.
 
 ## Decisions
 
@@ -33,5 +40,12 @@ rounds: 0
   Partially closes VC5 (the flagship values-preset moment — the onboarding beat is the other half). Live
   smoke: real proxy returned grounded suggestions ("Power Named", "Relational Ground"); accept added a stone,
   `noAutoMark` verified. touches: renderAccountPage.
+- **R9a — MERGED into #profile — SHIPPED v3.198 (`e25ac6f`) + patch v3.199 (`6e96d5b`), 2026-07-12.** The
+  Account page ceased to exist as a surface: `#account` redirects to the merged Profile, `renderAccountPage`
+  retired defined-but-unrouted. The merge resolves several account gaps by construction — PA1 (the
+  "accidental" cross-links are gone with the account chrome), the REWORK duplicate reader-model consent
+  toggle (the merged Profile mounts ONE `buildReaderModelSection`), and it completes VC5's other half via the
+  re-homed values-offer dock + the R9a values section. Remaining account gaps (Export, the FIX try/catch
+  umbrella, mobile-galaxy rebuild) migrate to the Profile's ledger / S-B. touches: [profile, account].
 
 ## Next

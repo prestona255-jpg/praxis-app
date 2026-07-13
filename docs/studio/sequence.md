@@ -151,6 +151,36 @@ flagged at the top of the Builder's sequence page for his call — never applied
   returns to Next beside the arc-field mobile touch model; **FX-1 stays parked** (re-raise trigger unchanged).
   Preston-directed close + pre-agreed re-plan (record, don't redesign) — recorded, not flagged `PROPOSED:`.
   Records: `docs/checkpoints/r8-values*.md`, `r8-redteam.md`, `r8-reviewer.md`. Builder regenerated.
+- **2026-07-12** — **R9a Profile / Galaxy CLOSED** (deployed felt pass = STRONG PASS; shipped v3.198
+  `e25ac6f` + patch v3.199 `6e96d5b`; live smoke on `prestonpraxistest` PASSED IN FULL). Moved R9 → Shipped.
+  **Re-plan:** **R9b promoted to Now** as two lanes one round (Lane P page ships first, then Lane G galaxy —
+  its own five-beat, fully display-only); **DW-1..3 Desktop Wave pinned to Now** (R9a delivered the project's
+  first ≥1200 tier); ARC-FIELD-MOBILE stays Now; **S-A sweep + the overnight batch re-slotted to Next**;
+  **R10's lens item rewritten** — retire-lenses PRE-ANSWERED = KEEP (Preston re-opened AM45 + the sky-lens
+  deferral, investing in lenses), R10 = confirm+consolidate the three consumers only. Autonomous
+  within-Now/Next re-order on the felt pass; the R10 lens-direction change is a **Preston decision** (recorded,
+  not `PROPOSED:`).
+  **DELIBERATE REVERSALS (round ledger, one line each):** (1) **Numbers pulled forward** into R9a — AM11
+  reversing the Q7-B defer; (2) **lens axis restored** — AM44; (3) **"arcs" replaced "passages"** as the 3rd
+  stat (no distinct passages store in the data); (4) **Published re-homed** to the full-width closing band —
+  AM41 superseding AM16 × AM27; (5) **the thesis rendered UNCARDED** — AM29, the one named AM10 containment
+  exception; (6) **AM45 lenses gold-only + the R10 sky-lens deferral RE-OPENED** by name (now R9b Lane G).
+  **LESSONS:** **PROOF-SCOPE** — a verification assertion must restate the FULL mandate, never a subset it
+  can pass (the shipped AM47/AM38 proof measured text-vs-text + overflow only; a star sat on a label live at
+  ultrawide). **FIXTURE-SHAPE** — the DNA-carry data-shape bugs shipped because the 42-book verification
+  fixture never carried live-shaped threads/journey/returns data; every carried builder needs a
+  live-shaped fixture. (Both also in `docs/checkpoints/r9a-build.md`.)
+  **NAMED DEBT:** ~2060 L defined-but-unrouted old renderers (S-B deletion task) · tokenize the shared
+  light-skin literals app-wide (S-B; 3 surfaces share them) · teal reader-model toggle re-skin (Lane G) ·
+  curated published ordering (future data session) · the duplicate-lens DATA records surfaced by P3
+  (display-deduped only — future data-hygiene, DEL-1 adjacent).
+  **FX-1 — DECIDED (Preston, 2026-07-12):** converted from soft park to a **HARD DEPENDENCY** — a named
+  prerequisite of **R11 / first-beta-tester** (no outside account is EVER invited before FX-1 ships), and it
+  **jumps immediately on any data-loss scare**. R9b proceeds now. (The R9 close was the named re-raise
+  trigger; the guard held — R9a shipped ZERO new synced collections — but the parked status is retired: FX-1
+  is now a gate, not a maybe.)
+  **BUILDER-1c gate:** no Builder-1c commit present at this close → **NAMED FALLBACK** recorded — one extra
+  Builder regen after 1c lands (this close's regen does not wait).
 
 ## Shipped
 
@@ -267,29 +297,51 @@ flagged at the top of the Builder's sequence page for his call — never applied
   contained `--vr-*` palette, 15:1 live). Live smoke passed all 5 incl. **Firestore round-trip ×3 object
   types**. R9/R10 consume the per-object `valueMarks[]` shape. Records: `docs/checkpoints/r8-values*.md`.
   touches: [onboarding, account, book-detail, subtheory-page, arc-detail, books]
+- [x] **R9 — Profile / Galaxy · R9a the MERGED Profile (DEEP)** — SHIPPED v3.198 (`e25ac6f`) + patch v3.199
+  (`6e96d5b`); **deployed felt pass = STRONG PASS (2026-07-12)**; live smoke on `prestonpraxistest` PASSED IN
+  FULL (statement Firestore round-trip · retrofit accept · visitor fencing · 8-fix spot-check desktop+390).
+  Account + Profile merged into ONE Profile at `#profile`; `#account` redirects (`location.replace`, the R7
+  precedent); the old `renderOwnProfile`/`renderAccountPage` retired **defined-but-unrouted** (~2060 L, S-B
+  debt). A galaxy hero (stars = sub-theories, planets = categories sized by books, faint field = books read),
+  a tappable values strip, an **uncarded thesis** (the AM8 `profile.statement` — the ONE persisted addition,
+  migration 1.29.0→1.30.0 + the Firestore twin), then the card system: Values (evidence-weighted load + the
+  Yumi value-offer retrofit re-home) · By the numbers (books · marginalia · **arcs** · sub-theories ·
+  published; category grid + owner-only lens toggle) · Open questions · Now · reader-model DNA carry
+  (returns/journey/consent+threads) · Published 3-up closing band · quiet Settings. Owner-vs-visitor = a
+  CONTENT fence; the project's **FIRST ≥1200 composition tier** (D1–D6 proven live). Both gates cleared
+  (fix-red-team + praxis-reviewer); a v3.199 patch cleared 8 deployed defects (DNA data-shapes, widened
+  collision proof, lens dedup, shelf-filter links, header/chevron/excerpt/thesis-omit). Records:
+  `docs/checkpoints/r9a-*.md` + `r9b-handoff.md`. touches: [profile, account]
 
 ## Now
 
-- [ ] **R9 — Profile / Galaxy · R9a the MERGED Profile (DEEP, DEPENDS R8)** — the single Profile: Account
-  collapses into a settings + "Your data" section, `#account` redirects, the instrument DNA carried.
-  Organized by **OWNER-vs-VISITOR**: the OWNER opens on the INSTRUMENT (evidence-weighted value-load, a Now
-  strip, gaps-as-questions; the galaxy one tap away); the VISITOR opens on the PORTRAIT (galaxy leading —
-  stars = sub-theories, planets = fields; a values statement; published work). Galaxy = **tap-first +
-  sparse-honest**; **value-load is EVIDENCE-WEIGHTED** per the R8 evidence rule, never raw tallies. R9
-  consumes R8's per-object `valueMarks[]` + `profile.values`. **Precondition:** Preston runs the Yumi value-
-  retrofit on his REAL library BEFORE the R9 felt pass, so the galaxy has fuel. (Shape locked with Preston
-  2026-07-11 — record, don't redesign.) touches: [profile, account]
+- [ ] **R9b — Profile arc layer + galaxy depth (TWO LANES, ONE ROUND, FULLY DISPLAY-ONLY; DEPENDS R9a)** —
+  the merged Profile's next round, in two lanes. **Lane P (the page) ships FIRST:** arc cards (visitor sees
+  arcs with ≥1 published sub, published subs only listed; owner sees all with draft counts; question-LED
+  cards — Published stays piece-led) · a lineage row DERIVED from R8 mark-lineage (deduped, most-cited
+  first; sparse-honest) · Now richness (progress + latest-published cross-link + whisper) · cross-links ·
+  a profile intro beat via the W9 system · sparse states (owner/visitor voice variants) · a PUBLISHED
+  QUALITY PACK (omit-when-unknown category — never print "Uncategorized"; sparse/untitled variants; excerpt
+  = first clean prose sentence, quote blocks skipped; grid 2-up at n=2, centered at n=1) · the DNA RE-SLOT
+  (threads/journey/returns stay in the portrait flow after Now; the reader-model CONSENT panel moves
+  Settings-adjacent; Published regains the closing band before Settings). **Lane G (the galaxy) opens AFTER
+  Lane P ships, its OWN full five-beat with mockup:** central identity orb · CSS-only motion layer · presence
+  pass · sky LENS-MODE (categories⇄lenses, owner-only) · published-arc constellations · the selection-scoped
+  panel (P1 inheritance) · teal→gold DNA re-skin. **Any persisted need = HALT fork.** Self-contained handoff:
+  `docs/checkpoints/r9b-handoff.md`. touches: [profile]
+- [ ] **DW-1..3 — Desktop Wave (NAMED SLOT, pinned after R9a)** — the responsive desktop restyle across the
+  page-surfaces, now that R9a shipped the project's FIRST ≥1200 composition tier (the D1–D6 canon proven
+  live). Folds around S-A. touches: [home, shelf, arcs, notebook, profile, book-detail]
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the constellation
+  field must become mobile-usable (the drag/connect touch model on the protected renderer). The truest
+  remaining mobile line. touches: [arc-detail]
 
 ## Next
-- [ ] **R9b — Profile arc layer (DEPENDS R9a)** — arc cards, a lineage row, destination cross-links on the
-  merged Profile. Follows R9a. touches: [profile]
 - [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment + residual gaps across
-  three light surfaces; skips the mockup beat. (Bumped from Now when R8 jumped ahead 2026-07-11; returns
-  here.) touches: [about, search, yumi-sees]
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the constellation
-  field must become mobile-usable (the drag/connect touch model on the protected renderer). With the
-  eight page-surfaces now mobile-native (MW-1/2/3), this is the truest remaining mobile line. Promoted
-  Then→Next at the MW-3 close (2026-07-11). touches: [arc-detail]
+  three light surfaces; skips the mockup beat. Folds around the DW Desktop Wave. touches: [about, search, yumi-sees]
+- [ ] **Overnight batch (`docs/studio/overnight.md`)** — small, single-surface, revert-safe fixes run
+  unattended; NOW ELIGIBLE (fires after the R9a close; committed, never pushed — Preston pushes after the
+  morning felt pass). Builder's Overnight panel is its generated view. touches: [various]
 
 ## Then
 
@@ -298,18 +350,23 @@ Per-surface rounds and the fix/feature spine, in program order; each surface rou
 skip the mockup beat). A round closes ONLY on Preston's felt pass. Carried from the launch
 spine and the evolution track and folded into the program — nothing dropped.
 
-- [ ] **FX-1 — Data-loss (FIX round)** — F-DL1 sync guards on all 5 unguarded
-  collections, F-DL2 flush, F-PX1 proxy cap. A named slot per Preston's call. **Interim
-  guardrail:** after signing in on any device, let the app settle before editing; pull this
-  round FORWARD if second-device use starts.
+- [ ] **FX-1 — Data-loss (FIX round) — HARD DEPENDENCY (Preston, 2026-07-12)** — F-DL1 sync guards
+  on all 5 unguarded collections, F-DL2 flush, F-PX1 proxy cap. **No longer a soft park: FX-1 is a named
+  PREREQUISITE of R11 / first-beta-tester — no outside account is ever invited before FX-1 ships — and it
+  JUMPS IMMEDIATELY on any data-loss scare.** **Interim guardrail (until it ships):** after signing in on any
+  device, let the app settle before editing.
   touches: [account]
 - [ ] **S-B — Sweep: Import-Capture overlay · Yumi/lens panel · Account residuals (SWEEP)**.
   touches: [import-capture, yumi-panel, account]
 - [ ] **R10 — Connections (DEEP EXPLORATION, DEPENDS R8 + R5)** — values × ideas × books ×
   arcs; the unsolved arc-to-arc visualization gets real design exploration.
-  touches: [arcs, arc-detail]
-- [ ] **R11 — Social-discovery (DEEP)** — commons / reader / walk promoted to their own
-  top-level sub-page; includes the deliberate Lane-2 commons-open security decision.
+  **LENS QUESTION PRE-ANSWERED = KEEP** (Preston re-opened AM45 gold-only + the sky-lens deferral and is
+  investing in lenses — R9b Lane G adds sky lens-mode). R10's lens work = **CONFIRM + CONSOLIDATE only**
+  across the three consumers (shelf Lenses grouping · Yumi `generateLenses` · the Profile Numbers lens
+  surface) — NOT a retire-debate. touches: [arcs, arc-detail]
+- [ ] **R11 — Social-discovery (DEEP; DEPENDS FX-1 — HARD)** — commons / reader / walk promoted to their
+  own top-level sub-page; includes the deliberate Lane-2 commons-open security decision. **BLOCKED on FX-1:**
+  no outside account is invited (no first beta tester) until the data-loss fix round ships.
   touches: [commons, reader, walk]
 - [ ] **S-C — Sweep + Debt (SWEEP)** — onboarding/intros · signed-out & global empty states
   (clears the carried R3/R4 debt) · AA opacity (`--lum-ink-4` on light) · dead selectors ·

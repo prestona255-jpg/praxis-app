@@ -33,10 +33,10 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ warm-dim workshop · sole editor (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1; R6-verified) | ✗ sync |
 | 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ read/author-view · warm-dim draft / full-amber room + walk-nav (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
 | 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) · **seed arc opens read-only (sentinel, pre-W12)** | ✗ sync |
-| 11 | `#account` renderAccountPage | ✅ ember v16933 | ✅ css5792/10362/11887 | ✅ v17683/17826 | ✅ hard v16942 | ✗ sync |
+| 11 | `#account` → **redirect `#profile`** (R9a v3.198; renderAccountPage retired defined-but-unrouted — S-B deletion debt) | — merged into #14 | — | — | — | — |
 | 12 | `#about` renderAbout | ✅ v18142 | ✅ css9655 | — static | ✗ static | — static |
 | 13 | `#yumi-sees` renderWhatYumiSeesPage | ✅ v373 key + scoped repin (W10-B) | ✅ css @759 | ✅ per-section v13827–13925 | ✗ | ✗ sync |
-| 14 | `#profile` renderOwnProfile | ✅ ember v15827 | ✅ css12078 | ✅ v16042 | ✅ hard v15832 | ✅ graceful social-fetch error v16116 (W11-S8-L1) |
+| 14 | `#profile` **renderProfilePage (MERGED, R9a v3.198+patch v3.199)** | ✅ light-below / dark-warm galaxy hero (§7); `.pf-*` scoped · **+ DESKTOP ≥1200 = project's FIRST composition tier (D1–D6 live)** | ✅ P1–P9 @ true 390 (v3.199); widened collision proof 390/1280/1920 | ✅ sparse-honest invitations every section + visitor fence (`.pf-owner-only`/`.is-visitor`) | ✅ hard sign-in prompt, no crash | ✅ profile Firestore load; statement round-trip live-verified |
 | 15 | `#commons` renderCommons | ✅ ember v16421 | ✅ css12217 | ✅ v16472 | ✅ hard v16416 | ✅ v16459/16465 |
 | 16 | `#reader/<uid>` renderOtherProfile | ✅ ember v16508 | ✅ css12217 | ✅ v16592 | ✅ hard v16501 | ✅ v16517/16530 |
 | 17 | `#walk/<arcId>` renderInteract | ✅ ember v16625 | ✅ css12217 | ✅ v16634/16641/16805 | ✅ hard v16620 | ✅ v16626/16759 |

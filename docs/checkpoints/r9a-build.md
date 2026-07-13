@@ -100,6 +100,15 @@ FULL mandate, never a convenient subset. The green check is only as honest as th
 (Joins the VISUAL-GATE + AM17→AM38 lineage: computed/measured proof is necessary, never sufficient
 when the assertion itself is narrower than the requirement.)
 
+### ⚠ NAMED LESSON (P1) — FIXTURE-SHAPE
+The DNA-carry data-shape bugs (returns "undefined — undefined marks"; journey empty descriptions) SHIPPED to
+v3.198 because the 42-book verification fixture NEVER carried live-shaped threads/journey/returns data — I
+assumed `{title,author,n}`/`{text,label}` from a partial grep instead of reading the real return shapes
+(`{ph,ct}` / `{ts,when,said}`). **LESSON: any builder that reads a live data shape must be verified against a
+fixture carrying that exact shape; a green render on a shape-incomplete fixture proves nothing about the
+fields the builder actually reads.** (Sibling of the FORENSIC-SMOKE lesson: function-level green ≠ live-shaped
+green.)
+
 ### PATCH SET (diagnosis → fix)
 - **P1 — DNA-carry data-shape family (ONE root cause):** my carried builders read shapes the
   42-book fixture never covered. REAL shapes (read from source): `_portraitReturnsData` → `{ph:<html>, ct:<str>}`
