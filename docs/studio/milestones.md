@@ -45,5 +45,7 @@ counts down only once a real HARD target exists.
 - 2026-07-09 | HARD | Master sequence landed | the locked continuous program replaced ad-hoc round-by-round re-planning (R4 close-out)
 - 2026-07-11 | HARD | Mobile wave complete | MW-1 / MW-2 / MW-3 shipped — 8 surface chips ruled mobile-native
 - 2026-07-12 | HARD | R9a Profile / Galaxy shipped | merged Profile at #profile + the project's first >=1200 desktop composition tier (v3.198)
+- 2026-07-13 | HARD | R9b Profile / Galaxy shipped | the galaxy (sigil / motion / panel / constellations) + the felt-pass patch P1–P9; deployed re-pass FULL PASS (v3.202)
 - 2026-07-15 | RETIRED | Original launch target | struck — replaced by a flexible launch on no hard clock
+- — | TARGET | Beta-readiness gate | FX-1 (data-loss) · Goodreads import · export/backup + Settings · admin interim · commons #reader fencing — the gate before any outside beta tester (R11 is hard-blocked on it)
 - — | TARGET | Launch | flexible — no hard date; days-remaining renders "—" until a real HARD target is set

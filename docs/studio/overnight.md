@@ -172,6 +172,22 @@ tonight's slate.
   report: —
   proposed-in: R7
 
+- id: ON-7
+  title: Book Detail desktop h-scroll (.bk-surface box-sizing)
+  plain: On desktop (>=1200) the Book Detail base .bk-surface content-box overflows ~32px, producing a horizontal scrollbar.
+  surface: book-detail
+  bucket: overnight
+  files: CSS
+  anchors: TBD by the run session (.bk-surface / the book-detail base surface rule — MW3-BKBOX)
+  verify: at 1280/1440/1920, #book/<id> has no horizontal scroll (documentElement.scrollWidth == clientWidth); mechanical grep of the box-sizing/width fix; felt pass at desktop.
+  revert: single-commit revert of the .bk-surface box-sizing CSS.
+  felt-pass-required: true
+  status: proposed
+  note: NOT runnable — awaiting bucket confirmation in chat. RE-SEEDED at the R9b close: the R9b P8 verify measured a 32px h-scroll on Book Detail at 1280/1440/1920 and PROVED it pre-existing (MW3-BKBOX) — the whole R9b felt-pass patch's CSS is profile-scoped (.pf-*/.sec-*/.account-readermodel only, zero .bk- selectors). DW-adjacent — may ride DW-1/2/3 instead of overnight.
+  evidence: R9b P8 sweep (docs/checkpoints/r9b-laneg.md) — Book Detail 32/32/32 @ 1280/1440/1920; patch CSS = profile-scoped only.
+  report: —
+  proposed-in: R9b
+
 ---
 
 ## Confirmed non-overnight

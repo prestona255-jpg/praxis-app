@@ -51,3 +51,13 @@ This file is the source of truth; the Builder's Lab page is a generated view.
   stage: scheduled
   date: 2026-07-12
   note: A user-triggered export of artifacts, lenses, and the reader-model (user-filtered, one source of truth) with a Settings home. Named HIGH-PRIORITY in the Account / reader-portrait ledger; storage (setProfile) already exists to receive it. The most-defined of the three — a real program-tail slot.
+
+- title: Sigil session
+  stage: shaping
+  date: 2026-07-13
+  note: A dedicated design session for the profile galaxy's identity SIGIL — the derived-per-dominant-tradition mark (hex / compass / spark) plus a possible manual picker. R9b Lane G shipped the DERIVED default (no picker); the picker + the mark's full design are named as a future session. Receiving surface exists (_pfSigilCore / _pfSigilGalaxy in the sky).
+
+- title: Curated published order
+  stage: spark
+  date: 2026-07-13
+  note: A curator's ordering for the profile's Published band + the commons — a chosen sequence, not newest-first. Named as a future DATA session (needs a stored order); the display is ready to consume it. Carried debt from R9a / R9b.

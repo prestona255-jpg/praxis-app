@@ -181,6 +181,24 @@ flagged at the top of the Builder's sequence page for his call — never applied
   is now a gate, not a maybe.)
   **BUILDER-1c gate:** no Builder-1c commit present at this close → **NAMED FALLBACK** recorded — one extra
   Builder regen after 1c lands (this close's regen does not wait).
+- **2026-07-13** — **R9b Profile / Galaxy CLOSED** (Lane P v3.200 + Lane G v3.201 + the felt-pass patch v3.202
+  `e73e994`; **deployed re-pass = FULL PASS**). R9b → Shipped. **Re-plan (Preston-directed, this close-out) —
+  the locked NEW MASTER SEQUENCE:** DW-1/2/3 (folded around S-A) → **SCAN round** (new) → **R-SHELF** (new deep
+  round) → S-B sweep + dead-code deletion → R10 Connections (lens = KEEP, pre-answered) → **ONBOARDING** round
+  (W9) → **BETA-READINESS gate** (FX-1 · Goodreads import · export/backup + Settings · admin interim · commons
+  `#reader` fencing debt) → R11 Social-discovery → S-C + debt → feature layers. **Rationale per reorder (one
+  line each):** *SCAN promoted* — the studio audit instrument re-enters the steady state before the next deep
+  round now that the mobile/desktop/profile spine is built; *R-SHELF added (new deep round)* — the Shelf is the
+  most-used surface and predates the R5–R9 Universal maturity, so it earns a full re-round; *S-B paired with the
+  ~2060-L dead-renderer deletion* (R9a debt now has cause to run); *ONBOARDING promoted to its own round* — the
+  W9 intro system needs a dedicated pass before beta (was folded in feature layers); *BETA-READINESS named as a
+  GATE* collecting FX-1 (the hard R11 prereq, unchanged) + the launch-blockers so R11 can't invite an outside
+  account until it clears; *R11 stays gated on FX-1* (no re-raise). Autonomous re-order WITHIN the program on the
+  felt pass + Preston's close direction; nothing retired, no Preston decision contradicted — **no `PROPOSED:`
+  flag.** ARC-FIELD-MOBILE carried (still a named Now slot). **DECISIONS recorded:** *P1 curated category→wheel
+  hue map* (Preston chose proposal A — separates the two grey-blues: slate=Technology & Society, steel=Religion &
+  Spirituality) · the *v3.201 wheel amendment* (diverse muted full-spectrum) · *R10 lens = KEEP* (pre-answered).
+  Builder regenerated.
 
 ## Shipped
 
@@ -312,36 +330,39 @@ flagged at the top of the Builder's sequence page for his call — never applied
   (fix-red-team + praxis-reviewer); a v3.199 patch cleared 8 deployed defects (DNA data-shapes, widened
   collision proof, lens dedup, shelf-filter links, header/chevron/excerpt/thesis-omit). Records:
   `docs/checkpoints/r9a-*.md` + `r9b-handoff.md`. touches: [profile, account]
+- [x] **R9b — Profile arc layer + galaxy depth (TWO LANES + felt-pass patch, display-only)** — SHIPPED:
+  Lane P v3.200 · Lane G v3.201 · **felt-pass patch v3.202 (`e73e994`; deployed re-pass = FULL PASS 2026-07-13).**
+  Lane P (the page): question-led arcs · public lineage band · Now richness · a published quality pack ·
+  the DNA re-slot · the faint-default value web. Lane G (the galaxy): sigil-galaxy center + value-line lensing ·
+  CSS-only motion + presence + sparse rule · a diverse muted hue wheel + owner sky lens-mode · the in-galaxy
+  selection panel · published-arc constellations + interaction map · teal→gold. Felt-pass patch (P1–P9): P1
+  curated category→wheel hue map (the two grey-blue planets separated) · P2 dominant label off the sigil axis ·
+  P3 sparse balanced spread · P4 one hue system app-wide + catcard wrap · P5 never "Untitled" + contained n=1 ·
+  P6 lineage adjacent (desktop) · P7 desktop density · P9 reader-model teal→gold · P8 h-scroll verify (Book
+  Detail ON-7 re-seeded). Both gate agents cleared (praxis-reviewer ×2 CLEAR; fix-red-team BLOCK→FIXED). Records:
+  `docs/checkpoints/r9b-laneg*.md`, `r9b-laneP*.md`, `docs/studio/profile.md`. touches: [profile]
 
 ## Now
 
-- [ ] **R9b — Profile arc layer + galaxy depth (TWO LANES, ONE ROUND, FULLY DISPLAY-ONLY; DEPENDS R9a)** —
-  the merged Profile's next round, in two lanes. **Lane P (the page) ships FIRST:** arc cards (visitor sees
-  arcs with ≥1 published sub, published subs only listed; owner sees all with draft counts; question-LED
-  cards — Published stays piece-led) · a lineage row DERIVED from R8 mark-lineage (deduped, most-cited
-  first; sparse-honest) · Now richness (progress + latest-published cross-link + whisper) · cross-links ·
-  a profile intro beat via the W9 system · sparse states (owner/visitor voice variants) · a PUBLISHED
-  QUALITY PACK (omit-when-unknown category — never print "Uncategorized"; sparse/untitled variants; excerpt
-  = first clean prose sentence, quote blocks skipped; grid 2-up at n=2, centered at n=1) · the DNA RE-SLOT
-  (threads/journey/returns stay in the portrait flow after Now; the reader-model CONSENT panel moves
-  Settings-adjacent; Published regains the closing band before Settings). **Lane G (the galaxy) opens AFTER
-  Lane P ships, its OWN full five-beat with mockup:** central identity orb · CSS-only motion layer · presence
-  pass · sky LENS-MODE (categories⇄lenses, owner-only) · published-arc constellations · the selection-scoped
-  panel (P1 inheritance) · teal→gold DNA re-skin. **Any persisted need = HALT fork.** Self-contained handoff:
-  `docs/checkpoints/r9b-handoff.md`. touches: [profile]
-- [ ] **DW-1..3 — Desktop Wave (NAMED SLOT, pinned after R9a)** — the responsive desktop restyle across the
-  page-surfaces, now that R9a shipped the project's FIRST ≥1200 composition tier (the D1–D6 canon proven
-  live). Folds around S-A. touches: [home, shelf, arcs, notebook, profile, book-detail]
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT)** — held from R5, non-negotiable: the constellation
-  field must become mobile-usable (the drag/connect touch model on the protected renderer). The truest
-  remaining mobile line. touches: [arc-detail]
+- [ ] **DW-1..3 — Desktop Wave (NAMED SLOT; folds S-A in)** — the responsive desktop restyle across the
+  page-surfaces, now that R9a shipped the project's FIRST ≥1200 composition tier and R9b proved the desktop
+  composition rider live. Folds the **S-A sweep** (About · Search · what-Yumi-sees) in. Re-seed target:
+  **ON-7** (Book Detail `.bk-surface` desktop h-scroll — pre-existing, confirmed profile-scoped-clean by the
+  R9b P8 verify) rides here or overnight. touches: [home, shelf, arcs, notebook, profile, book-detail, about, search, yumi-sees]
+- [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
+  scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
+  field's drag/connect touch model on the protected renderer. The truest remaining mobile line. touches: [arc-detail]
 
 ## Next
-- [ ] **S-A — Sweep: About · Search · "what Yumi sees" (SWEEP)** — token alignment + residual gaps across
-  three light surfaces; skips the mockup beat. Folds around the DW Desktop Wave. touches: [about, search, yumi-sees]
+- [ ] **R-SHELF — Shelf deep re-round (DEEP)** — the most-used surface predates the R5–R9 Universal maturity;
+  a full five-beat re-round (scan → forks → mockup → build → close). touches: [books]
+- [ ] **S-B — Sweep + dead-code deletion (SWEEP)** — Import-Capture overlay · Yumi/lens panel · Account
+  residuals + delete the ~2060-L defined-but-unrouted old profile renderers (R9a debt) + tokenize the shared
+  light-skin literals app-wide (3 surfaces). touches: [import-capture, yumi-panel, account, profile]
 - [ ] **Overnight batch (`docs/studio/overnight.md`)** — small, single-surface, revert-safe fixes run
-  unattended; NOW ELIGIBLE (fires after the R9a close; committed, never pushed — Preston pushes after the
-  morning felt pass). Builder's Overnight panel is its generated view. touches: [various]
+  unattended; committed, never pushed — Preston pushes after the morning felt pass. Builder's Overnight panel
+  is its generated view. touches: [various]
 
 ## Then
 
@@ -350,33 +371,36 @@ Per-surface rounds and the fix/feature spine, in program order; each surface rou
 skip the mockup beat). A round closes ONLY on Preston's felt pass. Carried from the launch
 spine and the evolution track and folded into the program — nothing dropped.
 
-- [ ] **FX-1 — Data-loss (FIX round) — HARD DEPENDENCY (Preston, 2026-07-12)** — F-DL1 sync guards
-  on all 5 unguarded collections, F-DL2 flush, F-PX1 proxy cap. **No longer a soft park: FX-1 is a named
-  PREREQUISITE of R11 / first-beta-tester — no outside account is ever invited before FX-1 ships — and it
-  JUMPS IMMEDIATELY on any data-loss scare.** **Interim guardrail (until it ships):** after signing in on any
-  device, let the app settle before editing.
-  touches: [account]
-- [ ] **S-B — Sweep: Import-Capture overlay · Yumi/lens panel · Account residuals (SWEEP)**.
-  touches: [import-capture, yumi-panel, account]
 - [ ] **R10 — Connections (DEEP EXPLORATION, DEPENDS R8 + R5)** — values × ideas × books ×
   arcs; the unsolved arc-to-arc visualization gets real design exploration.
   **LENS QUESTION PRE-ANSWERED = KEEP** (Preston re-opened AM45 gold-only + the sky-lens deferral and is
-  investing in lenses — R9b Lane G adds sky lens-mode). R10's lens work = **CONFIRM + CONSOLIDATE only**
+  investing in lenses — R9b Lane G added sky lens-mode). R10's lens work = **CONFIRM + CONSOLIDATE only**
   across the three consumers (shelf Lenses grouping · Yumi `generateLenses` · the Profile Numbers lens
   surface) — NOT a retire-debate. touches: [arcs, arc-detail]
-- [ ] **R11 — Social-discovery (DEEP; DEPENDS FX-1 — HARD)** — commons / reader / walk promoted to their
-  own top-level sub-page; includes the deliberate Lane-2 commons-open security decision. **BLOCKED on FX-1:**
-  no outside account is invited (no first beta tester) until the data-loss fix round ships.
-  touches: [commons, reader, walk]
+- [ ] **ONBOARDING round (W9, DEEP)** — a dedicated pass on the intro / onboarding system before beta (was
+  folded in the feature-layers tail; promoted to its own round at the R9b close). touches: [onboarding]
+- [ ] **BETA-READINESS gate** — the collected launch-blockers before any outside beta tester is invited;
+  **R11 is hard-blocked until this gate clears:**
+  - **FX-1 — Data-loss (FIX round) — HARD DEPENDENCY (Preston, 2026-07-12)** — F-DL1 sync guards on all 5
+    unguarded collections, F-DL2 flush, F-PX1 proxy cap. **A named PREREQUISITE of R11 / first-beta-tester — no
+    outside account is ever invited before FX-1 ships — and it JUMPS IMMEDIATELY on any data-loss scare.**
+    Interim guardrail (until it ships): after signing in on any device, let the app settle before editing.
+    (RULED — no re-raise.)
+  - **Goodreads import** · **export/backup + Settings** · **admin/moderation interim** · the **commons `#reader`
+    draft-sub-body fencing debt** (`integrations.js:2456` — a commons-published arc projects the `bodyPublic` of
+    DRAFT-status subs; carried from Lane P).
+  touches: [account, import-capture, commons]
+- [ ] **R11 — Social-discovery (DEEP; DEPENDS BETA-READINESS / FX-1 — HARD)** — commons / reader / walk
+  promoted to their own top-level sub-page; includes the deliberate Lane-2 commons-open security decision.
+  **BLOCKED** until the BETA-READINESS gate clears (no first beta tester before then). touches: [commons, reader, walk]
 - [ ] **S-C — Sweep + Debt (SWEEP)** — onboarding/intros · signed-out & global empty states
   (clears the carried R3/R4 debt) · AA opacity (`--lum-ink-4` on light) · dead selectors ·
   the parked tasks (task_3c933f62 universal-depth spreads, task_e4cb7af7 reveal a11y, R-b) ·
   the P2 audit findings.
   touches: [onboarding, cross-cutting]
 - [ ] **Feature layers** — interleave as prerequisites clear: Yumi generative (eval-gated;
-  PREREQ = Preston authors her prompts + rubric) → Yumi-intelligence wake-up · Goodreads
-  import · export/backup + Settings · admin/moderation · ambient sounds · beta-tester loop.
-  touches: [yumi-panel, import-capture, account]
+  PREREQ = Preston authors her prompts + rubric) → Yumi-intelligence wake-up · ambient sounds ·
+  beta-tester loop. touches: [yumi-panel, import-capture]
 
 ## Discovered — profile ledger
 
