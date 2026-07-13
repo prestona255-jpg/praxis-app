@@ -105,3 +105,76 @@ Collision **0** on both fixtures at **16 dense drift/orbit phases** (all labels 
 gold-hierarchy · **reduced-motion freeze effective** (`!important`, cascade-proven) · P3 (star 52px; panel-x 44px) ·
 D1/D3 · focus trap (+ re-open cleanup) · forensic (no bleed, console clean) · **reviewer + red-team blockers all
 fixed** (`941eb06`). Commit list: `cf69f5d`…`941eb06` (11 commits) → final commit bumps sw.js v3.201.
+
+---
+
+## R9b FELT-PASS PATCH — round report (target v3.202)
+
+Preston's deployed felt pass on v3.201 was a CONDITIONAL pass with nine items (P1–P9). This patch runs
+them display-only, one commit per item, diagnose-first (mechanism recorded in `r9b-laneg.md` before each
+fix). **Foundations byte-locked; `state.js`/`integrations.js`/`firestore.rules` UNTOUCHED (verified empty
+diff) — display-only holds.**
+
+### Commit list (local, NOT pushed until Preston's words)
+| commit | item | code delta (LF) |
+|---|---|---|
+| `ac411ce` | **P2** dominant label off the sigil axis | views.js +28/−3 |
+| `8a8e479` | **P3** sparse balanced spread + dominant robustness | views.js +36/−16 |
+| `f932e51` | **P4** one hue system (Published+Arcs→wheel) + catcard wrap | views.js +5/−3 · css +5/−1 |
+| `f0273b3` | **P5** never print "Untitled" + contained n=1 | views.js +12/−4 · css +1/−1 |
+| `3d427c5` | **P6** lineage tag adjacent at desktop | css +4/−0 |
+| `0032cd2` | **P7** desktop density on thin DNA cards | css +9/−0 |
+| `71100d5` | **P9** reader-model accents teal→gold | css +4/−4 |
+| `22fe3c0` | **red-team fix** dominant off-axis at every width (adaptive font) + Arcs Uncat neutral | views.js +22/−19 |
+| `78b7e3f` | **P1** curated category→wheel hue map (Preston's ruling A) | views.js +23/−5 |
+| `<final>` | cache bump v3.202 + this report + records | sw.js +1/−1 |
+Total code (origin/main..HEAD): **views.js +92/−16 · components.css +23/−6** (+ sw.js version string). No EOL flips (surgical numstat each).
+
+### Item outcomes
+- **P1 — RULING IMPLEMENTED (`78b7e3f`, Preston chose A).** A curated `_PF_HUE_MAP` of the 17 real categories →
+  wheel (string hash as the fallback for unknown/future categories): the 10 common categories on distinct slots,
+  warmest→most-read (amber=LitFic, terracotta=Theory, rose=History, plum=Memoir), **slate=Tech-only /
+  steel=Religion-only** — the "two grey-blue planets" now distinct. Coherence holds (sky=Numbers=Published per
+  category, P4 preserved); determinism ×2; AA all 10 deeps 5.11–9.15 both grounds; **praxis-reviewer CLEARED**
+  (re-derived all 3 constraints + re-ran the old hash to confirm the collision was real). Proposal B (sparse
+  saturation floor) SKIPPED — the map fixes the collision (distinct hues); B would alter a felt-passed opacity.
+  FLAG for the re-pass: slate + steel stay blue-family-adjacent (a Tech+Religion user sees two distinct blues),
+  reassignable in one map line.
+- **P2** dominant label placed beside/below the sigil axis (never captions the mark); resting-box
+  collision 0 + orbit-graze delta 0 vs baseline; 390/1280/1920.
+- **P3** sparse sky fills both halves (FS fill 0.18→0.66), collision 0 at rest + 12 orbit phases both
+  fixtures; reduced-motion frozen by effect; hardens P2 for long names on narrow skies.
+- **P4** Published+Arcs on the wheel → one hue app-wide (Tech&Society slate everywhere); AA all deeps
+  5.11–9.15 on light; catcard dot aligned on wrap.
+- **P5** literal "Untitled" gone (excerpt/arc-lead/quiet descriptor); n=1 contained + left-anchored.
+- **P6** lineage tag adjacent (16px, was 819px) at ≥1200; mobile base rule intact.
+- **P7** thin DNA cards hug content at ≥1200; rich cards + mobile untouched; journey/statement no-harm pass.
+- **P8** the 8px body-margin ruling HOLDS (0 h-scroll on #profile owner+visitor at 1280/1440/1920);
+  forensic clean (no `.pf-*` bleed on Shelf/Arcs/Home, console clean). Book Detail 32px = pre-existing
+  ON-7/MW3-BKBOX defect (patch CSS provably profile-scoped) → re-seed at close-out.
+- **P9** interactive accents → gold (AA 6.31 text / 8.19–4.62 button); `.rm-panel-title` kept teal (Yumi-voice).
+
+### Gates
+- **praxis-reviewer:** **CLEAR TO COMMIT** — independently re-derived all 11 checks: ES3 (PARSE OK; `class=`
+  only in HTML-attr strings), display-only (sw.js/state.js/integrations.js/firestore.rules/yumi-brain.js =
+  0 diff lines; no Firestore writes), foundations md5-locked (`9879ddb8…`/`772886c0…`), no hardcoded hex,
+  all selectors profile-scoped, numstat exact + `git diff --check` exit 0 (no EOL flip), P6/P7 inside the
+  `@media (min-width:1200px)` block, correctness hand-traced (P2/P3 dominant math, P4 hue, P5 arc-lead),
+  **AA recomputed to the same values** (P9 6.31/8.19/4.62; P4 5.11–9.15), `.rm-panel-title` teal kept
+  (Yumi covenant), `--no-verify` structurally necessary. Note: button text 4.62 clears the 4.5 floor
+  tightly (12.5px bold); the final commit must stage both docs with the sw.js bump.
+- **fix-red-team:** **BLOCK → FIXED** (`22fe3c0`). Finding 1 (BLOCK): the P2/P3 "clears the axis at every
+  width" proof overclaimed — a 21+ char dominant ("Social & Political Thought" 26, "Religion & Spirituality"
+  23) is wider than either side of the sigil on a 460 mobile sky and clamped straddling the axis (near-
+  caption). FIX: dominant placed beside the sigil at a font sized to fit the roomier side (cap 19px, floor
+  11px, inline font-size) → clears by construction at every width. Re-verified live 390/1280 on the exact
+  failing fixtures (11.7–15.3px mobile / 19px desktop, collision 0 rest + 8 orbit phases, reduced-motion
+  frozen by effect). Nit #3 fixed (Arcs Uncategorized → neutral). Finding 2 (force-place) = accepted
+  residual (dominant must always be labeled). Finding 4 (sw.js) = the bump below. Other clean re-derivations:
+  P4 AA recomputed, reduced-motion reset covers every animated node, P5 no "Untitled", P6/P7 scope, ES3/data-safe.
+- **sw.js bump:** v3.201 → v3.202 in the FINAL commit (hook ARMED, no bypass), verified live+1 at ship.
+
+### Residuals (carried)
+Arc-label tap ~15px (documented) · transient star-sweep graze (RT#3, unchanged from baseline) · the P1
+hue-collision (report+proposal, Preston's call) · P5 n=1 left-aligned measure (felt flag) · P7 density
+magnitude (felt flag) · Book Detail ON-7 h-scroll (re-seed) · commons #reader draft-body debt (integrations.js:2456, R11/FX-1).
