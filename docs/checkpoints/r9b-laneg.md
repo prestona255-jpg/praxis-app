@@ -225,3 +225,41 @@ panel-host in `_pfBuildPage`; `_pfWire` planet→PANEL (was interim shelf-link) 
 - P1 focus-trap shipped correct in the panel (self-contained trap; the Manage-sheet ref impl not touched —
   flagged: a shared-trap refactor is out of scope here).
 
+## STAGE 7 — arc constellations + interaction map + teal→gold · `df83598` (own commit)
+views.js +2388 / components.css +694. Arc constellations (`_profileBuildSky` collects each arc's PUBLISHED
+stars → quiet lensing lines `.pf-aline` + arc label → arc page); interaction map (star→#subtheory KEPT,
+planet→panel [S6], Numbers category card→panel [S6 shared data-planet], Numbers LENS card→lens panel [id→name],
+arc label→#arc, core→thesis before the sky show-lines handler, chip→light KEPT); teal→gold `.rm-toggle.rm-toggle-on`
+(other `.account-readermodel` teal accents LEFT teal per cyan=Yumi-only — felt-pass flag). Verified live
+(127.0.0.1:8763): 1 arc line+label, arc→#arc0, core→thesis (sky not toggled), Numbers card→panel, rm-toggle=gold;
+console clean; PARSE OK.
+
+## COLLISION-GATE FIX · `f1153ee` (own commit, views.js +1767)
+The widened text-vs-OBJECT proof (labels vs planets/stars/sigil at DRIFT EXTREMES, both fixtures) caught real
+overlaps (R9a PROOF-SCOPE lesson in action). Fix: stars orbit WITHIN the field (clear of the label zone); label
+obstacles = planet-core·0.5 + drift + star boxes + sigil BRIGHT-MARK (R·0.56, covers the breath peak — labels may
+sit over the faint disk, the felt-passed look, never a bright object); arc labels routed through the SAME
+`_pfPlaceLabels` resolver (drop-not-overlap). DECISION: dominant stays at center (felt-passed composition);
+retained by the smaller obstacles.
+
+## HARD GATES — all PASS (live, 127.0.0.1 twin origins; SW-clear-reload before every verify)
+| gate | result |
+|---|---|
+| **Widened collision proof** (text vs planet-cores + stars + sigil-mark, 6 drift phases) | **0** on FR@1280 (6 labels incl. dominant) · FR@390 (5, mobile topN) · FS@390 · FS@1280; FR@1920 shares 1280 desktop viewBox geometry — **PASS** |
+| AA per hue on night + determinism | 6 rendered hues 6.65–8.03:1 (all ≥4.5); slug→hue map byte-identical ×2 — PASS |
+| gold-hierarchy | planet fills ≤0.10 vs lit gold line 0.56 (S5) — PASS |
+| reduced-motion | `@media(prefers-reduced-motion)` sets `animation:none` on all 5 sky anim classes (CSSOM-verified; true rendered freeze needs CDP `setEmulatedMedia`, not in this rig) — PASS |
+| P3 44px on moving stars | `.shit` = 52px effective — PASS |
+| D1/D3 @1920 | no h-scroll; body occupancy 76.5% — PASS |
+| focus trap | Tab wraps · Escape closes · focus returns to trigger (S6) — PASS |
+| forensic smoke | Shelf/Arcs/Home render with **0 `.pf-*` elements** (no bleed); no global CSS selector added; console clean, both fixtures — PASS |
+| foundations md5 | lumen-amber `9879ddb8…` · marks `772886c0…` unchanged — PASS |
+| reviewer + red-team | both ran on the full diff; **all blockers FIXED** in `941eb06` (RT: reduced-motion `!important` [cascade-proven] · focus-trap re-open cleanup · orbit-graze documented residual · lens-by-name nit; Reviewer: 3 hex→tokens · panel-x 44×44 · trailing-blank EOF) — see r9b-laneg-report.md |
+
+**RIG LEARNING (record):** the app re-registers the SW on every load and serves stale precached assets → a
+**SW-unregister + caches.clear + reload** is mandatory before each live verify; `_profileBuildSky` existing
+(`fresh:true`) is NOT proof of freshness. The `127.0.0.1:<port>` origin is a fresh twin of `localhost:<port>`
+(prefix added to the gitignored static-server.ps1).
+
+**NEXT:** reviewer + red-team verdicts → FINAL commit bumps `sw.js` v3.200→**v3.201** (hook ARMED) + writes
+`r9b-laneg-report.md` → HALT at the commit gate (Path B).
