@@ -17248,33 +17248,36 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark (R*0.46) + breath-peak margin. (RESIDUAL, per red-team #3: a sub-2px transient star-sweep can brush a non-central label's TOP between orbit samples; keeping all labels is the better trade than an orbit-ring obstacle that drops the dominant's label.)
   labObs.push({ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR });
   var occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
-  // P2: the dominant field is centered on the sigil, so a label directly below its center
-  // CAPTIONS the identity mark (it read as "Education"). Place the dominant label BELOW the
-  // field but pushed OFF the sigil's vertical axis toward the emptier side -- as far as the
-  // pad allows, enough to clear the axis on wide skies and stay maximally off-centre + below
-  // the mark on narrow ones (a long name can't fit BESIDE the sigil on a 460-wide mobile sky).
-  // Vertically nudged to clear stars + planet cores + the sigil bright mark. Labels the FIELD,
-  // never captions the mark. Box added to labObs+occ so other labels + the invite avoid it.
+  // P2: the dominant field is centered on the sigil, so a label on its vertical axis CAPTIONS the
+  // identity mark. Place the dominant label BESIDE the sigil (start/end anchored, WHOLE box on one
+  // side of the axis) at a font SIZED TO FIT the roomier side -- so it clears the axis at EVERY
+  // width, incl. a 26-char dominant ("Social & Political Thought") on a 460-wide mobile sky where a
+  // 19px label cannot fit beside (cap 19px = the design size, floor 11px = a legibility floor; the
+  // inline font-size beats the .pf-plabel.dom CSS, no !important). Nudged to clear stars/cores/mark.
   if (cats.length) {
-    var _dNm = cats[0].name, _dFs = 19, _dTW = _dNm.length * _dFs * 0.5, _dz, _dr0 = prad(cats[0].books);
+    var _dNm = cats[0].name, _dz;
     var _dSide = 0; for (_dz = 1; _dz < cats.length; _dz = _dz + 1) { _dSide = _dSide + (pos[_dz].x >= scx ? 1 : -1); }
-    var _dPrefR = (_dSide <= 0);   // emptier horizontal side (preferred)
-    function _dAxFor(r) { return Math.max(pad + _dTW / 2, Math.min(w - pad - _dTW / 2, scx + (r ? 1 : -1) * (_dTW / 2 + _sigR + 14))); }
-    function _dClears(ax) { return (ax - _dTW / 2 >= scx) || (ax + _dTW / 2 <= scx); }   // whole box one side of the sigil axis
-    var _dR = _dPrefR;   // fall to the side that CAN clear the axis if the emptier side can't (long name on a narrow sky)
-    if (!_dClears(_dAxFor(_dPrefR)) && _dClears(_dAxFor(!_dPrefR))) { _dR = !_dPrefR; }
-    var _dAX = _dAxFor(_dR), _dX0 = _dAX - _dTW / 2, _dX1 = _dAX + _dTW / 2, _dY, _dY0, _dY1, _dt = 0;
+    var _roomR = (w - pad) - (scx + _sigR + 12), _roomL = (scx - _sigR - 12) - pad;
+    var _fsR = Math.min(19, ((_roomR - 4) * 2) / _dNm.length), _fsL = Math.min(19, ((_roomL - 4) * 2) / _dNm.length);
+    var _dRight = (Math.abs(_fsR - _fsL) < 1.5) ? (_dSide <= 0) : (_fsR >= _fsL);   // similar font -> emptier side (dodge satellites); else the more legible side
+    var _dFs = _dRight ? _fsR : _fsL; if (_dFs > 19) { _dFs = 19; } if (_dFs < 11) { _dFs = 11; }
+    var _dTW = _dNm.length * _dFs * 0.5;   // <= room-4 by construction (unless floored) -> box fits beside -> clears the axis
+    var _dAnch = _dRight ? 'start' : 'end', _dAX = _dRight ? (scx + _sigR + 12) : (scx - _sigR - 12);
+    var _dX0 = _dRight ? _dAX : (_dAX - _dTW), _dX1 = _dRight ? (_dAX + _dTW) : _dAX, _dsh;
+    if (_dX1 > w - pad) { _dsh = _dX1 - (w - pad); _dAX = _dAX - _dsh; _dX0 = _dX0 - _dsh; _dX1 = _dX1 - _dsh; }
+    if (_dX0 < pad) { _dsh = pad - _dX0; _dAX = _dAX + _dsh; _dX0 = _dX0 + _dsh; _dX1 = _dX1 + _dsh; }
+    var _dY, _dY0, _dY1, _dt = 0;
     function _dHit(y0, y1) {
-      var z, orc2, m = 3;   // small margin: absorbs the model-vs-rendered box mismatch so the nudge over-clears
+      var z, orc2, m = 3;   // margin absorbs the model-vs-rendered box mismatch so the nudge over-clears
       for (z = 0; z < stars.length; z = z + 1) { if (_dX0 < stars[z].x + 9 && _dX1 > stars[z].x - 9 && y0 < stars[z].y + 9 && y1 > stars[z].y - 9) { return true; } }
       for (z = 0; z < cats.length; z = z + 1) { orc2 = prad(cats[z].books) * 0.5 + _drift; if (_dX0 < pos[z].x + orc2 && _dX1 > pos[z].x - orc2 && y0 < pos[z].y + orc2 && y1 > pos[z].y - orc2) { return true; } }
       if (_dX0 < scx + _sigR + m && _dX1 > scx - _sigR - m && y0 < scy + _sigR + m && y1 > scy - _sigR - m) { return true; }
       return false;
     }
-    var _dBaseY = pos[0].y + _dr0 + 18;
+    var _dBaseY = scy + _dFs * 0.3;   // beside the sigil at ~mid-height
     _dY = _dBaseY; _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2;
-    while (_dHit(_dY0, _dY1) && _dt < 14) { _dt = _dt + 1; _dY = _dBaseY + (_dt % 2 ? 1 : -1) * 15 * Math.ceil(_dt / 2); _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2; }
-    body += '<text class="pf-plabel pf-skytext dom" x="' + _dAX.toFixed(1) + '" y="' + _dY.toFixed(1) + '" text-anchor="middle">' + _portraitEsc(_dNm) + '</text>';
+    while (_dHit(_dY0, _dY1) && _dt < 14) { _dt = _dt + 1; _dY = _dBaseY + (_dt % 2 ? 1 : -1) * 14 * Math.ceil(_dt / 2); _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2; }
+    body += '<text class="pf-plabel pf-skytext dom" style="font-size:' + _dFs.toFixed(1) + 'px" x="' + _dAX.toFixed(1) + '" y="' + _dY.toFixed(1) + '" text-anchor="' + _dAnch + '">' + _portraitEsc(_dNm) + '</text>';
     var _dBox = { x0: _dX0, x1: _dX1, y0: _dY0, y1: _dY1 };
     occ.push(_dBox); labObs.push(_dBox);
   }
@@ -17533,7 +17536,7 @@ function _pfArcsSection(uid, vis) {
     var listSubs = vis ? pub : asubs, q = (typeof arc.title === 'string' && arc.title) ? arc.title : '(untitled arc)';
     body += '<div class="pf-arc"><div class="pf-arc-q">' + _portraitEsc(q) + '</div><div class="pf-sublinks">';
     for (k = 0; k < listSubs.length; k = k + 1) {
-      var sst = listSubs[k], isd = (sst.status !== 'published'), deep = _pfFieldHueDeep(_pfSubCategory(sst));   // P4: wheel hue (one system) -- was _pfCatHue/--field-*
+      var sst = listSubs[k], isd = (sst.status !== 'published'), _scat = _pfSubCategory(sst), deep = (_scat && _scat !== CATEGORY_UNCATEGORIZED) ? _pfFieldHueDeep(_scat) : 'var(--ink-3)';   // P4: wheel hue (one system); Uncategorized -> neutral, matching Published
       body += '<span class="pf-sublink' + (isd ? ' draft' : '') + '" data-sub="' + _portraitEsc(sst.id) + '" tabindex="0" role="link" style="--field-deep:' + deep + '"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(sst.header || 'Untitled sub-theory') + (isd ? ' · draft' : '') + '</span>';
     }
     body += '</div>';

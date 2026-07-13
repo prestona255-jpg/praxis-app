@@ -434,3 +434,51 @@ Yumi-voice/identity element (cyan=Yumi-only). Wont-column accents already neutra
 - **AA (light, the only ground the section renders on):** gold-deep col-header/check **6.31**; button text
   on the gradient **8.19** (gold-hi end) / **4.62** (gold end) -- all >=4.5 PASS.
 - `.account-readermodel`-scoped -> no bleed; no sky touch.
+
+### P8 — VERIFY (no code change; one pre-existing out-of-scope defect found).
+Live sweep (localhost:8780, full-patch build, FR live-shape fixture) at **1280 / 1440 / 1920**:
+| surface | h-scroll | `.pf-*` bleed |
+|---|---|---|
+| Home | 0 / 0 / 0 | 0 |
+| Shelf | 0 / 0 / 0 | 0 |
+| Arcs | 0 / 0 / 0 | 0 |
+| Profile (owner) | 0 / 0 / 0 | 228 (its own) |
+| Profile (visitor) | 0 (1920) | — |
+| **Book Detail** | **32 / 32 / 32** | 0 |
+- The **8px `<body>` margin ruling HOLDS**: no h-scroll on #profile at any width (owner + visitor). DW-flag
+  disposition on the 8px margin UNCHANGED (kept).
+- **Book Detail 32px h-scroll = the pre-existing ON-7 / MW3-BKBOX `.bk-surface` box-sizing defect**, NOT a
+  regression: the whole patch's CSS is provably profile-scoped (`git diff origin/main..HEAD` selectors =
+  `.pf-*` / `.sec-*` / `.account-readermodel .rm-*` only; ZERO `.bk-`/shelf/home/arc-card). -> re-seed into
+  the DW/overnight ledger at close-out (per the prompt).
+- **Live Forensic Smoke:** Shelf/Arcs/Home render (no error), **0 `.pf-*` bleed**, **console clean** (no
+  errors) across all renders + both profile modes. Shared-CSS change did not bleed.
+
+### RED-TEAM FIX (pre-bump) — P2/P3 dominant off-axis guarantee now holds at EVERY width + name.
+fix-red-team returned **BLOCK (Finding 1)**: the P2/P3 "clears the sigil axis at every width" proof
+OVERCLAIMED — every tested fixture used a <=20-char dominant. A **21+ char dominant category** ("Social &
+Political Thought" 26, "Religion & Spirituality" 23) is 247/218 viewBox units wide, wider than either side
+of the sigil on a 460-wide mobile sky, so the label clamped STRADDLING the axis (a near-caption) — the
+exact bug P2 targeted. The PROOF-SCOPE lesson, correctly caught.
+
+**FIX (own commit, fix-forward — NOT an amend):** the dominant label is placed BESIDE the sigil at a font
+SIZED TO FIT the roomier side (`_fsR`/`_fsL = min(19, (room-4)*2/len)`, cap 19px = design size, floor 11px),
+set via an inline `style="font-size:Npx"` that beats the `.pf-plabel.dom` CSS (no !important). The box thus
+fits beside on the chosen side BY CONSTRUCTION -> whole box on one side -> clears the axis universally.
+Also fixed red-team nit #3: Arcs Uncategorized subs now render `--ink-3` neutral (matching Published) --
+"one hue system" consistency.
+
+**CORRECTED PROOF (localhost:8781, the previously-untested long-name dominants):**
+| fixture (dominant) | width | font | clears axis | resting | orbit-graze |
+|---|---|---|---|---|---|
+| FL1 Social & Political Thought (26) | 390 | 11.7px | YES (31px gap) | 0 | — |
+| FL1 | 1280 | 19px | YES | 0 | 0 (8 phases) |
+| FL2 Religion & Spirituality (23) | 390 | 13.3px | YES | 0 | — |
+| FL2 | 1280 | 19px | YES | 0 | 0 |
+| FS Technology & Society (20) | 390 | 15.3px | YES | 0 | — |
+| FRICH Literary Fiction (16) | 1280 | 19px (unshrunk) | YES | 0 | — |
+Short names keep 19px; only names too wide to fit beside shrink. **Reduced-motion re-proven by effect**
+(cascade injection: all sky `animationName`=none, planet frozen at phase 30s -- no new animated element).
+red-team Finding 2 (dominant force-places on nudge-exhaust) = ACCEPTED residual: the dominant MUST always
+be labeled (can't drop like `_pfPlaceLabels`); the beside+fit placement makes an object-overlap a latent-
+only risk (no fixture constructs it). Finding 4 (sw.js) = the final commit bumps it.
