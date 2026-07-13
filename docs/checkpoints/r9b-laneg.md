@@ -75,3 +75,43 @@ FINAL commit only). Slices commit `--no-verify` (no sw.js). Live evidence = D0 r
 | foundations md5 | lumen-amber.css + marks.js unchanged — PASS |
 
 Pre-existing drift not introduced here: none observed on #profile.
+
+---
+
+## STAGE 2 — LANE-G MOCKUP · built (own commit) → HALT for felt pass
+
+**File:** `design/profile-galaxy-laneG.html` (self-running, Universal v1.2 tokens; night ground is the
+galaxy's home). Location per the prompt ("one mockup file in design/"). Verified live via the static
+server (frame census + interaction + console) — screenshots hang, so DOM/computed evidence stands.
+
+### Coverage (all Stage-2 requirements present + live-verified)
+| # | feature | evidence |
+|---|---|---|
+| 1 | **Sigil-galaxy core** (Mechanic C) | M63 disk: **180 golden-angle (137.5°) seeds** in 4 differential-rotation rings (`sg-r1..r4`, 64–150s), tilt `scaleY(.54) rotate(-16°)`, bulge + ripple bands + 5 arm-tufts; **mark core** (`.sg-core`, `role=button`→thesis) carries the **breath** (6.5s pulse, the only living treatment); 3 silhouette candidates toggle (hex/compass/spark) |
+| 2 | **Reduced-motion freeze** | Motion toggle → `[data-frozen=1]` → `animationPlayState:paused` on planets/stars/rings/core/specks (verified paused↔running); `@media(prefers-reduced-motion)` also freezes |
+| 3 | **Lensing** | value + arc lines are quad-beziers whose control point pulls toward center (`lensPath`) |
+| 4 | **Motion** | planet drift (34–41s, ±~1-2%), star orbit groups (≥120s, 44px `.shit` halos), speck twinkle — **zero per-frame JS** |
+| 5 | **Presence** | radius floor/ceiling (16–34 desktop), spread scales w/ viewport, hero `60vh` @≥1200 |
+| 6 | **Sparse-sky rule** | Density→Sparse → **3 planets**, tightened spread, centered, invite shown |
+| 7 | **Unique hues + AA** | warm wheel `--hue-1..10`, deterministic `slugHue()` hash, shared cat+lens; **all 10 pass AA *text* on night (5.62–9.29:1)** — table printed with ratios |
+| 8 | **Sky lens-mode** | owner-only Categories⇄Lenses → planets switch to 3 lenses (first label "Power"); visitor forced to categories |
+| 9 | **Arc constellations** | `.pf-aline` faint (`.2`) → bright (`.6`) under value-lighting + `.pf-alabel`; both states shown |
+| 10 | **In-galaxy panel** | side panel @≥1200 (`position:absolute`, top-anchored) / bottom sheet @390; scoped counts **books·marginalia·sub-theories** (sparse `[2,1,0]` — never "passages"); **marginalia-rhythm sparkline** (12 monthly buckets, honestly labeled); most-annotated + return-to-author (no fabricated revisits); star links; shelf link; **visitor fenced** + **zero-published third-person sparse** (`.pf-psparse`); strip+counts stay visible |
+| 11 | **Teal→gold re-skin** | `.rm-toggle` before/after demo (teal on-state → gold gradient) |
+| 12 | **Intro + whisper** | owner-only intro card (top-right gutter, suppressed on mobile) + whisper (bottom-left) — placed clear of planets/labels |
+
+Plus: interaction-map table (7 rows), the hue table, and the 5 felt-pass decisions listed in-page.
+
+### Bug found + fixed during live-verify (recorded)
+- FS (sparse) lacked a `panel`/`spark` → `buildPanel` threw → sparse frame kept stale FR content (6 planets).
+  Fixed: added `FS.panel` (History, 0 subs — demonstrates owner-thin + visitor zero-published third-person)
+  + `FS.spark`; guarded the panel's returns rows + stars section for empty data. Re-verified: sparse=3 planets,
+  panel counts `[2,1,0]`, visitor→third-person sparse. First chip no longer pre-`on` (matches app faint-default).
+- Console clean across every toggle (owner/visitor · cat/lens · full/sparse · live/frozen · all 3 silhouettes).
+
+### The 5 felt-pass decisions this mockup asks for
+1. core silhouette (hex / compass / spark) · 2. default hue (wheel slot 1 = amber) · 3. motion feel
+(drift 34–41s, rings 64–150s, orbits ≥120s, breath 6.5s) · 4. sparse-variant approval · 5. frozen state approval.
+
+**HALT — awaiting Preston's felt pass + the 5 decisions. Decision authority ends at this commit.**
+
