@@ -17504,6 +17504,138 @@ function _pfSettingsSection(uid) {
   return h + '</div>';
 }
 
+// R9b Lane G S6 -- the in-galaxy selection PANEL. A tapped field (category, or lens in owner lens-mode)
+// opens a panel scoped to it: books · marginalia · sub-theories (NEVER "passages"), a marginalia-rhythm
+// sparkline (notes/month, trailing 12 -- honestly labelled; NO reading/revisit store exists), most-annotated
+// + return-to-author (the only honest 'returns' signals), the field's sub-theory stars as links, and a shelf
+// link. Visitor: published subs only, no marginalia/returns/sparkline (fenced); zero published -> a
+// third-person sparse note. Display-only, zero mutation.
+function _pfSubTouchesScope(st, scopeIds) {
+  if (!st || !(st.evidence instanceof Array)) { return false; }
+  var i, ev;
+  for (i = 0; i < st.evidence.length; i = i + 1) { ev = st.evidence[i]; if (ev && ev.kind === 'book' && ev.refId && scopeIds[ev.refId]) { return true; } }
+  return false;
+}
+function _pfPanelData(uid, name, isLens, vis) {
+  var owned = _pfOwnedBookIds(uid), i, bid, book;
+  var scopeIds = {}, scopeCount = 0, lensTheme = null, lensId = '', tid;
+  if (isLens) {
+    for (tid in state.userThemes) {
+      if (!state.userThemes.hasOwnProperty(tid)) { continue; }
+      if (state.userThemes[tid] && state.userThemes[tid].userId === uid && state.userThemes[tid].name === name) { lensTheme = state.userThemes[tid]; lensId = tid; break; }
+    }
+    var lb = (lensTheme && lensTheme.bookIds instanceof Array) ? lensTheme.bookIds : [];
+    for (i = 0; i < lb.length; i = i + 1) { if (!scopeIds[lb[i]]) { scopeIds[lb[i]] = 1; scopeCount = scopeCount + 1; } }
+  } else {
+    for (i = 0; i < owned.length; i = i + 1) {
+      bid = owned[i]; book = state.books ? state.books[bid] : null; if (!book) { continue; }
+      if (_pfBookCat(book) === name) { scopeIds[bid] = 1; scopeCount = scopeCount + 1; }
+    }
+  }
+  var marg = 0, notesPerBook = {}, eid, entry, j, eb, touched, now = Date.now();
+  var buckets = []; for (i = 0; i < 12; i = i + 1) { buckets.push(0); }
+  function monthIdx(ts) {
+    if (typeof ts !== 'number' || ts <= 0) { return -1; }
+    var d = new Date(ts), dn = new Date(now), mi = (dn.getFullYear() - d.getFullYear()) * 12 + (dn.getMonth() - d.getMonth());
+    return (mi >= 0 && mi < 12) ? (11 - mi) : -1;
+  }
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    entry = state.notebookEntries[eid];
+    if (!entry || entry.userId !== uid || entry.register !== 'marginalia') { continue; }
+    eb = (entry.bookIds instanceof Array) ? entry.bookIds : [];
+    touched = false;
+    for (j = 0; j < eb.length; j = j + 1) { if (scopeIds[eb[j]]) { touched = true; notesPerBook[eb[j]] = (notesPerBook[eb[j]] || 0) + 1; } }
+    if (touched) { marg = marg + 1; var mi2 = monthIdx((typeof entry.createdAt === 'number') ? entry.createdAt : 0); if (mi2 >= 0) { buckets[mi2] = buckets[mi2] + 1; } }
+  }
+  var subs = _pfOwnedSubs(uid), scopeSubs = [], st, inScope;
+  for (i = 0; i < subs.length; i = i + 1) {
+    st = subs[i]; if (vis && st.status !== 'published') { continue; }
+    inScope = isLens ? _pfSubTouchesScope(st, scopeIds) : (_pfSubCategory(st) === name);
+    if (inScope) { scopeSubs.push({ t: (st.header || 'Untitled sub-theory'), id: st.id, pub: (st.status === 'published') }); }
+  }
+  var dense = null, denseN = 0, b, byAuthor = {}, au, bk2, topAuthor = null, topAN = 0, a2;
+  for (b in notesPerBook) {
+    if (!notesPerBook.hasOwnProperty(b)) { continue; }
+    if (notesPerBook[b] > denseN) { denseN = notesPerBook[b]; dense = state.books ? state.books[b] : null; }
+    bk2 = state.books ? state.books[b] : null; au = bk2 ? ('' + (bk2.author || '')).replace(/^\s+|\s+$/g, '') : '';
+    if (au) { byAuthor[au] = (byAuthor[au] || 0) + 1; }
+  }
+  for (a2 in byAuthor) { if (byAuthor.hasOwnProperty(a2) && byAuthor[a2] > topAN) { topAN = byAuthor[a2]; topAuthor = a2; } }
+  return { scope: name, isLens: isLens, lensId: lensId, books: scopeCount, marg: marg, subCount: scopeSubs.length,
+    spark: buckets, subs: scopeSubs,
+    dense: (dense && denseN >= 2) ? { title: dense.title || 'Untitled', n: denseN } : null,
+    author: (topAuthor && topAN >= 2) ? { name: topAuthor, n: topAN } : null };
+}
+function _pfSparkline(arr, hue) {
+  var w = 280, hgt = 46, n = arr.length, gap = 3, bw = (w - (n - 1) * gap) / n, max = 1, i;
+  for (i = 0; i < n; i = i + 1) { if (arr[i] > max) { max = arr[i]; } }
+  var s = '<svg class="pf-spark" viewBox="0 0 ' + w + ' ' + hgt + '" preserveAspectRatio="none" role="img" aria-label="Marginalia per month, last 12 months" style="--rail:' + hue + '"><line class="ax" x1="0" y1="' + (hgt - 1) + '" x2="' + w + '" y2="' + (hgt - 1) + '"></line>';
+  for (i = 0; i < n; i = i + 1) { var bh = arr[i] === 0 ? 1.5 : (4 + (hgt - 9) * (arr[i] / max)), x = i * (bw + gap); s += '<rect x="' + x.toFixed(1) + '" y="' + (hgt - 1 - bh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" opacity="' + (arr[i] === 0 ? '0.25' : '0.9') + '"></rect>'; }
+  return s + '</svg><div class="pf-spark-lab"><span>12 mo ago</span><span>now</span></div>';
+}
+function _pfBuildPanel(uid, name, isLens, vis) {
+  var d = _pfPanelData(uid, name, isLens, vis), hue = _pfFieldHue(name), hueD = _pfFieldHueDeep(name), i;
+  var h = '<div class="pf-panel" role="dialog" aria-modal="true" aria-label="' + _portraitEsc(name) + ' field" style="--rail:' + hue + ';--railtext:' + hueD + '">';
+  h += '<div class="pf-panel-grip"></div>';
+  h += '<div class="pf-panel-hd" style="background:linear-gradient(150deg,' + hueD + ',var(--br-deep))"><button class="pf-panel-x" data-act="close-panel" type="button" aria-label="Close">&times;</button><div class="pk">' + (isLens ? 'Lens' : 'Field') + '</div><div class="pt"><span class="pdot" style="background:' + hue + '"></span>' + _portraitEsc(name) + '</div></div>';
+  h += '<div class="pf-panel-bd">';
+  if (vis && d.subCount === 0) {
+    return h + '<div class="pf-psparse">They haven’t published in ' + _portraitEsc(name) + ' yet. When they do, it will stand here.</div></div></div>';
+  }
+  h += '<div class="pf-pcounts"><div class="pf-pcount"><div class="n">' + d.books + '</div><div class="l">book' + (d.books === 1 ? '' : 's') + '</div></div>';
+  if (!vis) { h += '<div class="pf-pcount"><div class="n">' + d.marg + '</div><div class="l">marginalia</div></div>'; }
+  h += '<div class="pf-pcount"><div class="n">' + d.subCount + '</div><div class="l">sub-theor' + (d.subCount === 1 ? 'y' : 'ies') + '</div></div></div>';
+  if (!vis) {
+    h += '<div class="pf-peyebrow">Marginalia rhythm <span class="cap">notes per month · last 12</span></div>' + _pfSparkline(d.spark, hue);
+    if (d.dense || d.author) {
+      h += '<div class="pf-peyebrow">What you keep returning to</div>';
+      if (d.dense) { h += '<div class="pf-pret"><span><b>' + _portraitEsc(d.dense.title) + '</b> — your densest margins</span><span class="ct">' + d.dense.n + ' notes</span></div>'; }
+      if (d.author) { h += '<div class="pf-pret"><span>you return to <em>' + _portraitEsc(d.author.name) + '</em></span><span class="ct">across ' + d.author.n + ' books</span></div>'; }
+    }
+  }
+  if (d.subs.length) {
+    h += '<div class="pf-peyebrow">Sub-theories here</div><div class="pf-pstars">';
+    for (i = 0; i < d.subs.length; i = i + 1) { h += '<span class="pf-pstar' + (d.subs[i].pub ? '' : ' draft') + '" data-sub="' + _portraitEsc(d.subs[i].id) + '" tabindex="0" role="link"><span class="sd"></span>' + _portraitEsc(d.subs[i].t) + (d.subs[i].pub ? '' : ' · draft') + '</span>'; }
+    h += '</div>';
+  }
+  h += '<div class="pf-pshelf" data-act="panel-shelf" data-kind="' + (isLens ? 'theme' : 'category') + '" data-value="' + _portraitEsc(isLens ? d.lensId : name) + '" tabindex="0" role="link">view these books on the shelf &rarr;</div>';
+  return h + '</div></div>';
+}
+function _pfOpenPanel(wrap, uid, name, isLens, vis, trigger) {
+  var host = wrap.querySelector('.pf-panel-host'); if (!host) { return; }
+  host.innerHTML = '<div class="pf-panel-scrim" data-act="close-panel"></div>' + _pfBuildPanel(uid, name, isLens, vis);
+  host.setAttribute('aria-hidden', 'false');
+  host.classList.add('open');
+  wrap._pfPanelTrigger = trigger || null;
+  var panel = host.querySelector('.pf-panel'), xbtn = host.querySelector('.pf-panel-x');
+  if (xbtn && xbtn.focus) { xbtn.focus(); }
+  // P1 FOCUS TRAP: Tab cycles within the panel; Escape closes; focus returns to the trigger on close.
+  host._pfTrap = function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); _pfClosePanel(wrap); return; }
+    if (e.key !== 'Tab' || !panel) { return; }
+    var f = panel.querySelectorAll('button, [tabindex="0"], a[href]');
+    if (!f.length) { return; }
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); if (last.focus) { last.focus(); } }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); if (first.focus) { first.focus(); } }
+  };
+  host.addEventListener('keydown', host._pfTrap);
+  // mobile: keep the value strip + counts visible above the bottom sheet.
+  if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+    var dock = wrap.querySelector('.pf-hero-dock'); if (dock && dock.scrollIntoView) { dock.scrollIntoView({ block: 'start' }); }
+  }
+}
+function _pfClosePanel(wrap) {
+  var host = wrap.querySelector('.pf-panel-host'); if (!host) { return; }
+  host.classList.remove('open');
+  host.setAttribute('aria-hidden', 'true');
+  if (host._pfTrap) { host.removeEventListener('keydown', host._pfTrap); host._pfTrap = null; }
+  var trig = wrap._pfPanelTrigger;
+  if (trig && trig.focus) { trig.focus(); }
+  setTimeout(function () { if (host && !host.classList.contains('open')) { host.innerHTML = ''; } }, 360);
+}
+
 function _pfBuildPage(uid, vis, mob) {
   var p = getProfile(uid), user = getCurrentUser();
   var displayName = p.displayNameOverride ? p.displayNameOverride : (user && user.displayName ? user.displayName : (user && user.email ? user.email : 'You'));
@@ -17554,7 +17686,8 @@ function _pfBuildPage(uid, vis, mob) {
     h += '<div class="pf-sec sec-consent pf-owner-only pf-yumi-mount" id="pf-yumi-mount"></div>';
   }
   h += '<div class="pf-sec sec-settings pf-owner-only pf-settings">' + _pfSettingsSection(uid) + '</div>';
-  return h + '</div>';
+  // R9b Lane G S6: the selection-panel host (fixed overlay; filled on a planet/Numbers-card tap).
+  return h + '</div><div class="pf-panel-host" aria-hidden="true"></div>';
 }
 
 function _pfLightValue(wrap, name) {
@@ -17647,6 +17780,8 @@ function _pfWire(wrap, uid, vis) {
       if (act === 'edit-thesis') { var ta = wrap.querySelector('textarea[data-field="statement"]'); if (ta) { if (ta.scrollIntoView) { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); } ta.focus(); } return; }
       if (act === 'retro-run') { _pfRunRetrofit(wrap, uid); return; }
       if (act === 'signin') { if (typeof signInWithGoogle === 'function') { signInWithGoogle(); } return; }
+      if (act === 'close-panel') { _pfClosePanel(wrap); return; }
+      if (act === 'panel-shelf') { _pfShelfTo(a.getAttribute('data-kind'), a.getAttribute('data-value')); return; }
     }
     var chip = cl(t, '[data-value]');
     if (chip) { var nm = chip.getAttribute('data-value'); if (chip.classList.contains('on')) { _pfClearValue(wrap); } else { _pfLightValue(wrap, nm); } return; }
@@ -17655,7 +17790,11 @@ function _pfWire(wrap, uid, vis) {
     var lens = cl(t, '[data-lens]');
     if (lens) { _pfShelfTo('theme', lens.getAttribute('data-lens')); return; }
     var planet = cl(t, '[data-planet]');
-    if (planet) { _pfShelfTo('category', planet.getAttribute('data-planet')); return; }
+    if (planet) {
+      // R9b Lane G S6: planet -> PANEL (was the v3.199 interim filtered-shelf link). Lens mode -> lens-scoped.
+      var _axb = wrap.querySelector('.pf-seg button.on'), _isLens = !!(_axb && _axb.getAttribute('data-axis') === 'lenses');
+      _pfOpenPanel(wrap, uid, planet.getAttribute('data-planet'), _isLens && !vis, vis, planet); return;
+    }
     var go = cl(t, '[data-go]');
     if (go) { var dest = go.getAttribute('data-go'); if (dest) { location.hash = dest; } return; }
     var sky = cl(t, '.pf-sky');

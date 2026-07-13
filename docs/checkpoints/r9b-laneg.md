@@ -196,3 +196,32 @@ usable ports burned; 8760 OS-reserved). Prompt authorizes exactly this ("S6/S7 t
 **HALT — S1-S5 committed local (5 commits), sky evolution complete + verified. Awaiting go for the S6/S7
 follow-on (a fresh session is cleanest — the port budget resets and the panel gets focused attention).**
 
+---
+
+## SIZE VALVE OVERRULED (Preston, 2026-07-13) — CONTINUE in-session with S6+S7+gates+bump.
+
+Ample token budget; port-budget workaround provided. Decision authority EXTENDED through the final commit gate.
+
+### DECISION RECORD — rig port workaround (mine, evidence-based)
+- Q: fresh-asset origins exhausted (Browser pane caches assets per-origin; localhost:8761/62/63/8753/54 all burned).
+- Chose: added `$listener.Prefixes.Add("http://127.0.0.1:$Port/")` to `.claude/static-server.ps1` so **127.0.0.1
+  is a SEPARATE origin twin** of each localhost port → 5 fresh origins recovered. Evidence: `127.0.0.1:8754`
+  loads fresh S6 assets (`_pfBuildPanel` present) while `localhost:8754` served stale S5. **`static-server.ps1`
+  is GITIGNORED** ("not a deliverable") → zero tracked-tree impact, nothing to stage. Revert: drop the one line.
+  (Preston's alt "extend the port list" not needed.) RIG NOTE: the server binds `localhost` explicitly, so the
+  127.0.0.1 twin requires this prefix; a bare 127.0.0.1 request 400s without it.
+
+## STAGE 6 — the in-galaxy PANEL · `<pending>` (own commit)
+Rails: views.js (+10360, 141/2) + components.css (+4824, 44/0) = ~15KB (within floor band; size valve NOT
+tripped). `_pfPanelData`/`_pfSubTouchesScope`/`_pfSparkline`/`_pfBuildPanel`/`_pfOpenPanel`/`_pfClosePanel`;
+panel-host in `_pfBuildPage`; `_pfWire` planet→PANEL (was interim shelf-link) + close-panel + panel-shelf.
+- Verified live (127.0.0.1:8754, FR + sparse/visitor fixtures): **desktop side panel @≥1200** (top-anchored),
+  **mobile bottom sheet** (grip + scrim); scoped counts **books · marginalia · sub-theories** (`40·10·2`;
+  **noPassages:true**); **12-bar marginalia-rhythm sparkline**; most-annotated + return-to-author (no fabricated
+  revisits); star links + shelf link; **FOCUS TRAP correct** (Tab wraps, Escape closes, focus returns to
+  trigger); **strip + counts visible above the sheet @390** (scrollIntoView the dock on open); **visitor
+  fenced** (2 counts, no marginalia/sparkline, published stars only) + **zero-published third-person sparse**;
+  **lens-scoped** panel (Power: 3·1·2). Console clean. PARSE OK. Foundations md5 unchanged.
+- P1 focus-trap shipped correct in the panel (self-contained trap; the Manage-sheet ref impl not touched —
+  flagged: a shared-trap refactor is out of scope here).
+
