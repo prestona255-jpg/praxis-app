@@ -372,3 +372,18 @@ sigil on a 460-wide mobile sky, so the old beside-only clamp pulled it back onto
 - **Reduced-motion frozen BY EFFECT** (cascade-injection test): with the reset active every sky anim
   `animationName === none` (allNone true), anims 51->7, planet cx 851 unchanged at phase 30s (frozen).
 - No h-scroll 390/1280/1920.
+
+### P4 — FIX SHIPPED (own commit). views.js +5/−3 · components.css +5/−1.
+Repointed Published (`_pfPublishedSection`) + Arcs (`_pfArcsSection`) from `_pfCatHue`/`--field-*` to the
+per-slug WHEEL (`_pfFieldHue`/`_pfFieldHueDeep`/`--pf-hue-*`) so a category reads the SAME hue everywhere
+(sky + Numbers already used the wheel). `.pf-catcard .cn` align-items center->flex-start + `.pf-dot`
+margin-top:3px so a wrapped long name keeps its dot on the first line. **Live proof (localhost:8776, FR):**
+- **Coherence:** Tech&Society = sky `#8496bb` / Numbers-deep `#3c4d78` / **Published-pcat `#3c4d78`** (was
+  amber `#7a5410`); History = sky sage / Numbers+Published `#46603a`; Literary Fiction = amber everywhere.
+  Same category -> one wheel hue across sky · Numbers · Published · Arcs.
+- **AA:** all 10 wheel deep-variants PASS on the light card grounds (5.11-9.15:1, cscript-computed on
+  `#efe7d6`/`#fffdf8`); no remediation needed (the rendered deeps match the AA-passing values).
+- **Catcard wrap:** at 118px "Technology & Society" wraps 2 lines, dot-vs-first-line **-1px** (was +11px
+  mis-centred), align-items flex-start. Fixed.
+- P4 does NOT touch the sky renderer (planets already on the wheel) -> no collision/reduced-motion re-proof.
+  CSS is `.pf-catcard`-scoped -> no cross-surface bleed.

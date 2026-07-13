@@ -17483,8 +17483,10 @@ function _pfPublishedSection(uid, vis) {
   // excerpt -> graceful (no .pe line).
   h += '<div class="pf-pubgrid" data-n="' + n + '">';
   for (i = 0; i < n; i = i + 1) {
-    var p = shown[i], known = (p.cat && p.cat !== CATEGORY_UNCATEGORIZED), hue = known ? _pfCatHue(p.cat) : -1;
-    var rail = known ? ('var(--field-' + (hue + 1) + ')') : 'var(--line)', deep = known ? ('var(--field-' + (hue + 1) + '-deep)') : 'var(--ink-3)';
+    // P4: hue is ONE system app-wide -- Published uses the SAME per-slug wheel (_pfFieldHue) as the
+    // sky planets + Numbers, so a category reads the same colour everywhere (was _pfCatHue/--field-*).
+    var p = shown[i], known = (p.cat && p.cat !== CATEGORY_UNCATEGORIZED);
+    var rail = known ? _pfFieldHue(p.cat) : 'var(--line)', deep = known ? _pfFieldHueDeep(p.cat) : 'var(--ink-3)';
     var untitled = !p.t;
     h += '<div class="pf-pub' + (untitled ? ' untitled' : '') + '" data-sub="' + _portraitEsc(p.id) + '" tabindex="0" role="link" style="--rail:' + rail + ';--railtext:' + deep + '">';
     if (untitled) { h += '<div class="pt">' + _portraitEsc(p.ex || 'Untitled') + '</div>'; }
@@ -17523,7 +17525,7 @@ function _pfArcsSection(uid, vis) {
     var listSubs = vis ? pub : asubs, q = (typeof arc.title === 'string' && arc.title) ? arc.title : '(untitled arc)';
     body += '<div class="pf-arc"><div class="pf-arc-q">' + _portraitEsc(q) + '</div><div class="pf-sublinks">';
     for (k = 0; k < listSubs.length; k = k + 1) {
-      var sst = listSubs[k], isd = (sst.status !== 'published'), hue = _pfCatHue(_pfSubCategory(sst)), deep = 'var(--field-' + (hue + 1) + '-deep)';
+      var sst = listSubs[k], isd = (sst.status !== 'published'), deep = _pfFieldHueDeep(_pfSubCategory(sst));   // P4: wheel hue (one system) -- was _pfCatHue/--field-*
       body += '<span class="pf-sublink' + (isd ? ' draft' : '') + '" data-sub="' + _portraitEsc(sst.id) + '" tabindex="0" role="link" style="--field-deep:' + deep + '"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(sst.header || 'Untitled sub-theory') + (isd ? ' · draft' : '') + '</span>';
     }
     body += '</div>';
