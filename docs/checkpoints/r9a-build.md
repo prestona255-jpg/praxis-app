@@ -85,6 +85,49 @@ Verdict HOLD on 3 blockers; everything else independently verified clean (ES3, f
 
 **STATUS: BUILD COMPLETE + VERIFIED. Both gates satisfied. Cache = v3.198. HALT at the commit gate (FIX-PROTOCOL §5 Path B) — awaiting Preston's exact words to commit + push.**
 
+**SHIPPED v3.198 `e25ac6f` (pushed; origin synced). Deployed felt pass = STRONG PASS + 8 live defects → PATCH v3.199 (below).**
+
+---
+
+## POST-DEPLOY PATCH — v3.198 → v3.199 (Path B; deployed felt pass STRONG PASS + 8 defects)
+
+### ⚠ NAMED LESSON (P2) — PROOF-SCOPE NARROWING
+The shipped AM47/AM38 collision proof asserted **text-vs-TEXT pairs + overflow ONLY**. The
+mandate was **"no sky text intersects sky OBJECTS"** (stars + planets too). A star sat ON the
+"Psychology & Mind" label on the deployed sky at ultrawide — invisible to a proof that quietly
+narrowed the claim to a subset it could pass. **LESSON: a verification assertion must restate the
+FULL mandate, never a convenient subset. The green check is only as honest as the claim it makes.**
+(Joins the VISUAL-GATE + AM17→AM38 lineage: computed/measured proof is necessary, never sufficient
+when the assertion itself is narrower than the requirement.)
+
+### PATCH SET (diagnosis → fix)
+- **P1 — DNA-carry data-shape family (ONE root cause):** my carried builders read shapes the
+  42-book fixture never covered. REAL shapes (read from source): `_portraitReturnsData` → `{ph:<html>, ct:<str>}`
+  (I read `{title,author,n}` → "undefined — undefined marks"); `_portraitJourneyData` → `{ts, when, said:<html>}`
+  (I read `{text,label}` → empty descriptions). **Reader-model threads VERIFIED CLEAN** — `buildThreadItem`
+  reads `thread.label` (schema state.js:1473) with a `(untitled theme)` fallback. Fix returns+journey to the real fields; re-verify on an ENRICHED fixture (author/addedAt/createdAt/multi-note/dup-lens/threads).
+- **P2 — collision engine WIDENED:** `_pfPlaceLabels` must avoid stars AND planets, not just placed labels. Proof set = text-vs-text + text-vs-star + text-vs-planet + overflow, at 390/1280/1920, all printed.
+- **P3 — duplicate lens cards:** DIAGNOSIS = data-side duplicate `userThemes` records (aggregation iterates each once). Fix = defensive dedup-by-name in `_profileLensStats` (display-only, NO stored mutation) + report the data finding.
+- **P4 — strip chevron** gates to ACTUAL overflow (CSS: hide `.pf-strip-more` unless `.overflow`).
+- **P5 — published excerpts** strip leading markdown markers (`> `/`#`/`-`/`*`) in `_pfExcerpt`.
+- **P6a — Numbers header** unify to one layout across toggle states. **P6b — `.rm-toggle` teal = SHIPPED account precedent** (`.account-readermodel .rm-toggle-on{background:var(--marginalia-color)}` components.css:9452) → **LEAVE IT** (Lane G owns DNA re-skin).
+- **P7 — interim wiring (approved):** category cards + planets → `shelfFilter.category` + `#books`; lens cards → `shelfFilter.theme` + `#books` (both filters exist — 5244/5211; no invented route).
+- **P8 — visitor + empty statement:** OMIT the thesis section entirely for a visitor when statement is empty (owner keeps the write-this placeholder + edit affordance).
+
+### PATCH VERIFICATION (enriched fixture — real shapes the 42-book fixture missed: author/addedAt/createdAt, multi-note books, DUP lenses 2×Theory+3×History, markdown-prefixed bodies, reader-model threads) · ALL PASS
+- **P1 returns FIXED:** "Education 1 — your densest margins · 12 notes", "you return to *William James* · across 6 books" (was "undefined — undefined marks"). **journey FIXED:** "May 2026 — You opened with *Education 1* by bell hooks", "You named your first lens — *Theory*" (was empty). **threads VERIFIED CLEAN** (buildThreadItem `.label`).
+- **P2 WIDENED PROOF @ 390 / 1280 / 1920 — ALL PASS:** text-vs-text=0, **text-vs-star=0, text-vs-planet-core=0**, overflow=0 (rects sampled: 6–8 texts, 3 stars, 7 planet cores). Object def stated: star cores + planet visible cores (engine avoids star±10 + planet prad×0.5). *(P2 lesson applied: assertion restates the full "no text on objects" mandate.)*
+- **P3 FIXED:** 6 dup records → 3 cards (Theory/History/Desire canon); **console.warn fires** the data finding; **stored userThemes NOT mutated** (display-only dedup).
+- **P4 FIXED:** 1 chip → `.pf-strip-more` `display:none` (no overflow); 4 chips @390 → chevron shows.
+- **P5 FIXED:** "Some silences are taught." / "The sentence that will not resolve…" (leading `> ` / `#` stripped).
+- **P6a FIXED:** Numbers header stable across toggle states (caption/toggle top+right identical: 835/835/1201 both). **P6b:** teal = shipped precedent → LEFT.
+- **P7 WIRED:** category card "Education" → `shelfFilter.category='Education'` + `#books`; lens 'ln2' → `shelfFilter.theme='ln2'` + `#books` (cross-axes reset; existing routes only).
+- **P8 FIXED:** visitor+empty → thesis OMITTED; owner+empty → placeholder + edit present.
+- **Forensic smoke:** Shelf/Arcs/Notebook render, no `.pf-` bleed. **AA untouched** (deep ramp unchanged; `.pf-returns-ct` reuses the shipped `--ink-3` secondary-meta pattern).
+- **Gates:** parse-check views.js PASS · braces 3733/3733 · zero `--lum-*` in new code · patch deltas views.js 71/15, components.css 9/2, sw.js 1/1 (additive, no EOL flip) · dirty = {views.js, components.css, sw.js, r9a-build.md} (state.js/integrations.js correctly untouched — display-only patch). Cache **v3.198→v3.199**.
+
+**STATUS: PATCH COMPLETE + VERIFIED (Preston's specified suite). Cache v3.199. HALT at the commit gate (Path B) — awaiting exact words to commit + push.**
+
 ---
 
 ## STEP 1 — line-level touch-site recon (before any edit)

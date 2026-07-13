@@ -16663,6 +16663,9 @@ function _pfSubCategory(st) {
 function _pfExcerpt(body) {
   var s = (typeof body === 'string') ? body : '';
   s = s.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  // P5: strip leading markdown markers (blockquote "> ", heading #, list -/*/+) so a
+  // quoted or structured body never surfaces raw syntax in the published-card excerpt.
+  s = s.replace(/^([>#*+\-]\s*)+/, '').replace(/^\s+/, '');
   var cut = s.indexOf('. ');
   if (cut > 20 && cut < 120) { return s.slice(0, cut + 1); }
   if (s.length > 120) { return s.slice(0, 118) + '…'; }
@@ -16742,7 +16745,7 @@ function _profileCategoryStats(uid) {
 // store. Sorted by books desc. Returns { lenses:[{name,books,marg}], total }.
 function _profileLensStats(uid) {
   var total = _pfOwnedBookIds(uid).length;
-  var lenses = [], tid, theme, tBookIds, member, j, eid, entry, hit, marg;
+  var raw = [], tid, theme, tBookIds, member, j, eid, entry, hit, marg;
   for (tid in state.userThemes) {
     if (!state.userThemes.hasOwnProperty(tid)) { continue; }
     theme = state.userThemes[tid];
@@ -16760,7 +16763,24 @@ function _profileLensStats(uid) {
       for (j = 0; j < entry.bookIds.length; j = j + 1) { if (member[entry.bookIds[j]]) { hit = true; break; } }
       if (hit) { marg = marg + 1; }
     }
-    lenses.push({ name: (typeof theme.name === 'string' && theme.name) ? theme.name : 'Untitled lens', books: tBookIds.length, marg: marg });
+    raw.push({ id: tid, name: (typeof theme.name === 'string' && theme.name) ? theme.name : 'Untitled lens', books: tBookIds.length, marg: marg });
+  }
+  // P3: DEFENSIVE dedup by name (display-only -- DO NOT mutate stored userThemes).
+  // Duplicate userThemes records that share a name render as duplicate cards; keep
+  // one card per name (the richer book count wins) and REPORT the data finding.
+  var seen = {}, lenses = [], k, key, dups = 0;
+  for (k = 0; k < raw.length; k = k + 1) {
+    key = raw[k].name.toLowerCase();
+    if (typeof seen[key] === 'number') {
+      dups = dups + 1;
+      if (raw[k].books > lenses[seen[key]].books) { lenses[seen[key]] = raw[k]; }
+      continue;
+    }
+    seen[key] = lenses.length;
+    lenses.push(raw[k]);
+  }
+  if (dups > 0 && typeof console !== 'undefined' && console.warn) {
+    console.warn('[R9a Profile] ' + dups + ' duplicate lens record(s) in state.userThemes (same name) — deduped for display only; stored lenses NOT mutated.');
   }
   lenses.sort(function (a, b) { return b.books - a.books; });
   return { lenses: lenses, total: total };
@@ -16947,11 +16967,12 @@ function _pfPlanetLayout(cats, w, h, mob) {
   return pos;
 }
 
-// Collision-aware label placement (ported 1:1 from the mockup placeLabels): each
-// label starts below its planet and nudges up/down until it clears every placed
-// label (and stays in bounds), or is dropped. Returns [{x,y,anchor,idx,box}].
-function _pfPlaceLabels(items, w, h, pad) {
-  var placed = [], out = [];
+// Collision-aware label placement: each label starts below its planet and nudges
+// up/down until it clears every placed label AND every OBSTACLE (stars + planet
+// cores -- P2: sky text must not intersect sky OBJECTS, not just other text), or
+// is dropped. `obstacles` = [{x0,y0,x1,y1}]. Returns [{x,y,anchor,idx,box}].
+function _pfPlaceLabels(items, w, h, pad, obstacles) {
+  var placed = [], out = [], obs = obstacles || [];
   function bx(px, py, r, name, fs) {
     var y = py + r + 16, tw = name.length * fs * 0.5,
         anchor = px < w * 0.30 ? 'start' : (px > w * 0.70 ? 'end' : 'middle'),
@@ -16968,6 +16989,10 @@ function _pfPlaceLabels(items, w, h, pad) {
     for (i = 0; i < placed.length; i = i + 1) {
       p = placed[i];
       if (b.x0 < p.x1 + 4 && b.x1 > p.x0 - 4 && b.y0 < p.y1 + 3 && b.y1 > p.y0 - 3) { return true; }
+    }
+    for (i = 0; i < obs.length; i = i + 1) {
+      p = obs[i];
+      if (b.x0 < p.x1 + 2 && b.x1 > p.x0 - 2 && b.y0 < p.y1 + 2 && b.y1 > p.y0 - 2) { return true; }
     }
     return false;
   }
@@ -17081,7 +17106,13 @@ function _profileBuildSky(uid, pub, mob) {
     labItems.push({ px: pos[i].x, py: pos[i].y, r: prad(cats[i].books), name: cats[i].name, fs: (i === 0 ? 19 : 16), idx: i });
   }
   labItems.sort(function (a, b) { return b.r - a.r; });
-  var lp = _pfPlaceLabels(labItems, w, h, pad), occ = [], L;
+  // P2: obstacles the labels must avoid -- every star (bright protagonist point) +
+  // every planet CORE (dense center = prad*0.5; the translucent outer haze is fine
+  // to cross). "No sky text intersects sky OBJECTS," not just other text.
+  var labObs = [], op, orc;
+  for (op = 0; op < stars.length; op = op + 1) { labObs.push({ x0: stars[op].x - 10, x1: stars[op].x + 10, y0: stars[op].y - 10, y1: stars[op].y + 10 }); }
+  for (op = 0; op < cats.length; op = op + 1) { orc = prad(cats[op].books) * 0.5; labObs.push({ x0: pos[op].x - orc, x1: pos[op].x + orc, y0: pos[op].y - orc, y1: pos[op].y + orc }); }
+  var lp = _pfPlaceLabels(labItems, w, h, pad, labObs), occ = [], L;
   for (i = 0; i < lp.length; i = i + 1) {
     L = lp[i];
     body += '<text class="pf-plabel pf-skytext' + (L.idx === 0 ? ' dom' : '') + '" x="' + L.x.toFixed(1) + '" y="' + L.y.toFixed(1) + '" text-anchor="' + L.anchor + '">' + _portraitEsc(cats[L.idx].name) + '</text>';
@@ -17198,7 +17229,7 @@ function _pfNumbersSection(uid, vis) {
     h += '<div class="pf-catgrid pf-owner-only" data-grid="lenses" style="display:none">';
     for (i = 0; i < lenses.length; i = i + 1) {
       var l = lenses[i], lpct = ltotal ? Math.round(l.books / ltotal * 100) : 0;
-      h += '<div class="pf-catcard" style="--rail:var(--gold-deep);--railtext:var(--gold-deep);--barfill:var(--gold)"><div class="cn"><span class="pf-dot" style="background:var(--gold-deep)"></span>' + _portraitEsc(l.name) + '</div><div class="cm">' + l.books + ' book' + (l.books === 1 ? '' : 's') + ' · ' + l.marg + ' marginalia</div><div class="pf-bar"><i style="width:' + lpct + '%"></i></div></div>';
+      h += '<div class="pf-catcard" data-lens="' + _portraitEsc(l.id) + '" tabindex="0" role="link" style="--rail:var(--gold-deep);--railtext:var(--gold-deep);--barfill:var(--gold)"><div class="cn"><span class="pf-dot" style="background:var(--gold-deep)"></span>' + _portraitEsc(l.name) + '</div><div class="cm">' + l.books + ' book' + (l.books === 1 ? '' : 's') + ' · ' + l.marg + ' marginalia</div><div class="pf-bar"><i style="width:' + lpct + '%"></i></div></div>';
     }
     if (lenses.length === 0) { h += '<div class="pf-invite-line">Group books into a lens and it will gather here.</div>'; }
     h += '</div>';
@@ -17277,7 +17308,15 @@ function _pfBuildPage(uid, vis, mob) {
   h += '</div><span class="pf-strip-more">›</span></div>';
   h += '<div class="pf-counts"><span class="cx" data-go="#books" tabindex="0" role="link"><b>' + ov.books + '</b> book' + (ov.books === 1 ? '' : 's') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.subTheories + '</b> sub-theor' + (ov.subTheories === 1 ? 'y' : 'ies') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.published + '</b> published</span></div>';
   h += '<div class="pf-taphint">Tap a value to light its constellation · a star for its sub-theory · a field for its books</div></div></div>';
-  h += '<div class="pf-below"><div class="pf-thesis"><p>' + (statement ? _portraitEsc(statement) : (vis ? '' : '<span style="color:var(--ink-3)">Write the through-line of your reading — the tension you keep returning to.</span>')) + '</p>' + (vis ? '' : '<span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span>') + '</div>';
+  h += '<div class="pf-below">';
+  // P8: the thesis. Statement present -> shown to everyone. Empty + owner -> the
+  // write-this placeholder + edit. Empty + VISITOR -> OMIT the section entirely
+  // (never render an invitation on the owner's behalf to a stranger).
+  if (statement) {
+    h += '<div class="pf-thesis"><p>' + _portraitEsc(statement) + '</p>' + (vis ? '' : '<span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span>') + '</div>';
+  } else if (!vis) {
+    h += '<div class="pf-thesis"><p><span style="color:var(--ink-3)">Write the through-line of your reading — the tension you keep returning to.</span></p><span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span></div>';
+  }
   h += '<div class="pf-grid">';
   h += '<div class="pf-sec sec-values">' + _pfValuesSection(uid, vis) + '</div>';
   h += '<div class="pf-sec sec-numbers">' + _pfNumbersSection(uid, vis) + '</div>';
@@ -17342,6 +17381,18 @@ function _pfSaveSettings(wrap, uid) {
   renderProfilePage();
 }
 
+// P7: route to the shelf pre-filtered (a clean single-filter view). Both filters
+// already exist -- shelfFilter.category (17-label) + shelfFilter.theme (lens id);
+// no invented route. Resets the cross-cutting axes so the shelf shows just this one.
+function _pfShelfTo(kind, value) {
+  if (typeof shelfFilter === 'object' && shelfFilter && value) {
+    shelfFilter.category = null; shelfFilter.theme = null; shelfFilter.genre = null;
+    shelfFilter.value = null; shelfFilter.author = null; shelfFilter.tradition = null; shelfFilter.status = null;
+    shelfFilter[kind] = value;
+  }
+  location.hash = '#books';
+}
+
 function _pfWire(wrap, uid, vis) {
   function cl(t, s) { return (t && t.closest) ? t.closest(s) : null; }
   function handle(e) {
@@ -17368,8 +17419,10 @@ function _pfWire(wrap, uid, vis) {
     if (chip) { var nm = chip.getAttribute('data-value'); if (chip.classList.contains('on')) { _pfClearValue(wrap); } else { _pfLightValue(wrap, nm); } return; }
     var sub = cl(t, '[data-sub]');
     if (sub) { var sid = sub.getAttribute('data-sub'); if (sid) { location.hash = '#subtheory/' + sid; } return; }
+    var lens = cl(t, '[data-lens]');
+    if (lens) { _pfShelfTo('theme', lens.getAttribute('data-lens')); return; }
     var planet = cl(t, '[data-planet]');
-    if (planet) { location.hash = '#books'; return; }
+    if (planet) { _pfShelfTo('category', planet.getAttribute('data-planet')); return; }
     var go = cl(t, '[data-go]');
     if (go) { var dest = go.getAttribute('data-go'); if (dest) { location.hash = dest; } return; }
     var sky = cl(t, '.pf-sky');
@@ -17378,7 +17431,7 @@ function _pfWire(wrap, uid, vis) {
   wrap.addEventListener('click', handle);
   wrap.addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest &&
-        e.target.closest('[data-star],[data-planet],[data-value],[data-act],[data-go],[data-axis],[data-sub]')) {
+        e.target.closest('[data-star],[data-planet],[data-lens],[data-value],[data-act],[data-go],[data-axis],[data-sub]')) {
       e.preventDefault(); handle(e);
     }
   });
@@ -17458,8 +17511,10 @@ function _pfReturnsSection(uid) {
   var data = (typeof _portraitReturnsData === 'function') ? _portraitReturnsData(uid) : [];
   var h = '<div class="pf-eyebrow">What your margins keep returning to <span class="whisper">only you can see this</span></div><div class="pf-card pf-returns-card">', i;
   if (!data.length) { return h + '<div class="pf-invite-line">What your margins return to will gather here as you mark up your reading.</div></div>'; }
+  // _portraitReturnsData rows are { ph:<html phrase>, ct:<count string> } -- ph is
+  // already _portraitEsc-safe HTML (may carry <em>), so it is inserted raw; ct is escaped.
   for (i = 0; i < data.length; i = i + 1) {
-    h += '<div class="pf-returns-row"><b>' + _portraitEsc(data[i].title) + '</b>' + (data[i].author ? ' · ' + _portraitEsc(data[i].author) : '') + ' — ' + data[i].n + ' mark' + (data[i].n === 1 ? '' : 's') + '</div>';
+    h += '<div class="pf-returns-row">' + (data[i].ph || '') + ' <span class="pf-returns-ct">' + _portraitEsc(data[i].ct || '') + '</span></div>';
   }
   return h + '</div>';
 }
@@ -17470,10 +17525,11 @@ function _pfJourneySection(uid) {
   var data = (typeof _portraitJourneyData === 'function') ? _portraitJourneyData(uid) : [];
   var h = '<div class="pf-eyebrow">How your reading has moved <span class="whisper">only you can see this</span></div><div class="pf-card pf-journey-card">', i, m;
   if (!data.length) { return h + '<div class="pf-invite-line">The shape of how your reading has moved will gather here as you read.</div></div>'; }
+  // _portraitJourneyData rows are { ts, when, said:<html> } -- `said` is the milestone
+  // sentence (already _portraitEsc-safe, may carry <em>), inserted raw; `when` escaped.
   for (i = 0; i < data.length; i = i + 1) {
     m = data[i];
-    var text = m.text ? m.text : (m.label ? m.label : '');
-    h += '<div class="pf-journey-row"><b>' + _portraitEsc(m.when || '') + '</b> — ' + _portraitEsc(text) + '</div>';
+    h += '<div class="pf-journey-row"><b>' + _portraitEsc(m.when || '') + '</b> — ' + (m.said || '') + '</div>';
   }
   return h + '</div>';
 }
