@@ -113,5 +113,86 @@ Plus: interaction-map table (7 rows), the hue table, and the 5 felt-pass decisio
 1. core silhouette (hex / compass / spark) · 2. default hue (wheel slot 1 = amber) · 3. motion feel
 (drift 34–41s, rings 64–150s, orbits ≥120s, breath 6.5s) · 4. sparse-variant approval · 5. frozen state approval.
 
-**HALT — awaiting Preston's felt pass + the 5 decisions. Decision authority ends at this commit.**
+**FELT PASS = PASS + hue amendment (2026-07-13).** Decisions: (1) core = DERIVED default rule (no manual pick;
+sigil session owns the picker); (2) hue = **AMENDED to a diverse muted full-spectrum wheel**; (3) motion / (4)
+sparse / (5) frozen = approved as mocked. All 6 S1 records ACCEPTED (incl. D3). Decision authority EXTENDED
+through the final commit gate.
+
+---
+
+## STAGES 3-5 — SKY EVOLUTION · built + verified + committed (own commits)
+
+Live evidence per slice on fresh rig origins (8763/8753/8754; the Browser pane caches assets per-origin, so a
+new port = fresh assets). Screenshots hang -> DOM/computed-style is the evidence.
+
+### S3 — sigil-galaxy center + value-line lensing · `2d0f561` (views.js +6898 / components.css +314)
+- Derived-silhouette rule (decision 1): `_pfDominantTradition` -> `_PF_SIL` map: **hex**{theory,wisdom,empirical}
+  · **compass**{history,place,practice} · **spark**{memoir,novel,poetry}; default **hex**. No picker.
+- `_pfSigilGalaxy`/`_pfSigilCore`/`_pfSigilDefs`: M63 disk at the sky center (`_pfPlanetLayout` focal), over
+  planets / under labels+stars. 180 golden-angle (137.5°) seeds in 4 ring bands, tilt `scaleY(.54) rot(-16)`,
+  bulge + ripple bands + arm-tufts, mark core (tabbable -> thesis wired S7).
+- Value lines `<line>` -> lensing `<path>` (quad bezier bowed toward center); `.pf-vline{fill:none}` load-bearing.
+- Verified: hex core polygon renders, 180 seeds, vline=path fill:none (0 black-fill), no h-scroll, console clean.
+
+### S4 — CSS-only motion + presence + sparse · `99751fe` (views.js +631 / components.css +1668)
+- Motion (zero per-frame JS, freezes under `prefers-reduced-motion`): differential sigil rotation (4 ring
+  speeds 64-150s), core **breath** 6.5s, planet drift d0/d1/d2 (34-41s, ±~1% viewport), star **orbit** about
+  its parent planet (>=120s staggered, `transform-origin` at planet center), speck twinkle.
+- Presence: `prad` floor+ceiling raised; hero `.pf-sky-host` 60vh (clamp 420-600); **P3 hit target r 15->22
+  = 52px effective**. Sparse: `_pfPlanetLayout` tightens rx*.62/ry*.66 when n<=4.
+- Verified: all 5 anims applied; 52px star target; hero 540px; sparse xSpread 187 (vs full ~300+); clean.
+
+### S5 — diverse muted hue wheel (AMENDMENT) + sky lens-mode · `c41a235` (views.js +1402 / theme.css +1248)
+- Hue wheel: `--pf-hue-1..10 + -d` (amber/terracotta/rose/plum/slate/teal/sage/olive/clay/steel), deterministic
+  per slug (`_pfFieldHueIdx` hash), shared category+lens. **AA text on night 5.49-8.03:1 (all >=4.5); gold
+  hierarchy holds (fill <=0.10 vs lit gold line 0.56).** Repointed planet fills / catcard rail / value sublink
+  dots / gap-cat spans to `_pfFieldHue`/`_pfFieldHueDeep` (`--field-*` kept for other surfaces).
+- Sky lens-mode (owner): `_profileBuildSky(uid,pub,mob,lensMode)` builds lens planets (stars round-robin);
+  `_pfWire` rebuilds the sky on the Numbers [Categories|Lenses] toggle. Visitor stays categories.
+- Verified: planet=`--pf-hue-1` amber, catcard/dot/gap use the wheel, [Lenses]->3 lens planets (Power->teal),
+  round-trips; 4 distinct hues across 6 cats (pure per-slug hash — collisions allowed by the "per-slug" law);
+  no h-scroll; console clean.
+
+---
+
+## SIZE VALVE INVOKED (2026-07-13) — split after S5; S6+S7+gates+bump = follow-on
+
+**Why:** S6 (panel) is the size-valve-flagged slice; S7 (arc constellations + interaction rewiring +
+teal->gold) is heavy; the 8 HARD GATES + reviewer + red-team + the bump all remain. That scope will not fit
+cleanly with per-slice rig verification in this session, and the fresh-origin port budget is exhausted (all 5
+usable ports burned; 8760 OS-reserved). Prompt authorizes exactly this ("S6/S7 to a follow-on session").
+
+**Committed this session (5 local, NOT pushed):** `cf69f5d` S1 rider · `9f1b83b` S2 mockup · `2d0f561` S3 ·
+`99751fe` S4 · `c41a235` S5. Foundations md5 unchanged throughout; zero sw.js touches; interim contract intact
+(planets/Numbers cards keep v3.199 filtered-shelf nav until S7 rewires them + the round ships).
+
+### FOLLOW-ON HANDOFF (next session picks up here)
+- **S6 — the in-galaxy PANEL:** bottom sheet <=1199 / anchored side panel >=1200; deep-hue header; scoped
+  counts **books · marginalia · sub-theories** (RULED — never "passages"); **marginalia-rhythm sparkline**
+  (`notebookEntries.createdAt`, 12 monthly buckets, labeled truthfully — no reading/revisit store exists);
+  most-annotated (`_portraitReturnsData`) + return-to-author (no fabricated revisits); sub-theory star links;
+  "view on shelf ->". Visitor fenced (published stars only, no lenses/marginalia) + zero-published third-person
+  sparse. Strip+counts stay visible with the panel open at 390. **Ship the P1 sheet FOCUS-TRAP** (fix the ref
+  impl if <=20 lines). Parity spec = the mockup's `buildPanel`. SIZE-VALVE watch — may itself split.
+- **S7 — arc constellations + interaction map + toggle re-skin:** persistent quiet arc lines over an arc's
+  published stars (lensing curves toward center like value lines) + small arc label, faint<->bright, collision-
+  covered, visitor-visible; INTERACTION MAP: orb/core -> thesis (scroll to `.pf-thesis`), star -> `#subtheory/<id>`
+  (KEPT), planet -> PANEL, **Numbers card -> PANEL** (upgrades the v3.199 shelf link), arc label -> arc page,
+  value chip -> lights. Teal reader-model `.rm-toggle` on-state teal -> the gold system.
+- **HARD GATES before the bump** (all on both FIXTURE-R + FIXTURE-S): widened COLLISION proof (planets, stars,
+  labels, chips, value lines, ARC lines+labels, curved lensing paths, sigil bounds, intro panel, whisper) at
+  DRIFT EXTREMES / 390-1280-1920, sampled rects printed; AA per hue + mapping table byte-identical x2; AM39
+  single-render/no-per-frame-JS; **reduced-motion freeze via matchMedia override (CDP `Emulation.setEmulatedMedia`
+  — NOT emulatable via the Browser pane's resize; needs CDP or a manual media check)**; P3 44px on moving stars;
+  D1/D3 re-run; focus trap; Live Forensic Smoke (no `.pf-` bleed on Shelf/Arcs/Home, console clean, both
+  fixtures); reviewer + red-team on the full diff.
+- **LAST:** bump `sw.js` v3.200 -> **v3.201** in the FINAL commit (hook ARMED, no bypass). Write
+  `docs/checkpoints/r9b-laneg-report.md` with the round findings + the D1 proof-scope lesson. HALT at the commit
+  gate (FIX-PROTOCOL Path B). Preston's words push -> live v3.201 x2 + `prestonpraxistest` smoke + deployed felt
+  pass -> R9b CLOSE-OUT (sequence.md re-plan + BOARD + surfaces/milestones/Lab riders + `tools/studio-build`).
+- **RIG:** stub `getCurrentUser` + seed `state` (FR 130/3/4/16 incl. `book.tradition` for the sigil; FS 3/5/1);
+  `renderProfilePage()` direct; use a NOT-YET-LOADED port for fresh assets (per-origin cache); screenshots hang.
+
+**HALT — S1-S5 committed local (5 commits), sky evolution complete + verified. Awaiting go for the S6/S7
+follow-on (a fresh session is cleanest — the port budget resets and the panel gets focused attention).**
 
