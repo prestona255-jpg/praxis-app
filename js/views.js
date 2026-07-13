@@ -17067,6 +17067,83 @@ function _pfPlaceInvite(text, fs, occ, w, h, pad) {
   return boxAt(w / 2, h - 14);
 }
 
+// R9b Lane G (S3) -- the SIGIL-GALAXY at the sky's center: an M63 flocculent disk
+// (golden-angle seed field, tilt, bulge, wave/ripple bands) with THE MARK as its
+// core. The mark silhouette is DERIVED (no picker in v1): the reader's dominant
+// tradition maps deterministically to hexagon / compass / spark. The core carries
+// the BREATH (the only living treatment -- animation lands in S4). Value + arc lines
+// LENS toward this center (S3 curves the value lines; S7 the arc lines).
+var _PF_SIL = { theory: 'hex', wisdom: 'hex', empirical: 'hex',
+                history: 'compass', place: 'compass', practice: 'compass',
+                memoir: 'spark', novel: 'spark', poetry: 'spark' };
+function _pfDominantTradition(uid) {
+  var bookIds = _pfOwnedBookIds(uid), tally = {}, i, bk, tr, best = '', bestN = 0, t;
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    bk = state.books ? state.books[bookIds[i]] : null; if (!bk) { continue; }
+    tr = bk.traditionOverride || bk.tradition;
+    if (!tr || tr === 'unassigned') { continue; }
+    tally[tr] = (tally[tr] || 0) + 1;
+  }
+  for (t in tally) { if (tally.hasOwnProperty(t) && tally[t] > bestN) { bestN = tally[t]; best = t; } }
+  return best;
+}
+function _pfSilhouette(uid) {
+  var tr = _pfDominantTradition(uid);
+  return (tr && _PF_SIL[tr]) ? _PF_SIL[tr] : 'hex';   // default hexagon (no/unknown dominant tradition)
+}
+// the mark at the core (breathing group; silhouette in {hex,compass,spark}).
+function _pfSigilCore(cx, cy, r, sil) {
+  var g = '<g class="pf-sg-core" tabindex="0" role="button" aria-label="Your thesis"><circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * 1.5).toFixed(1) + '" fill="url(#pfSgCore)"></circle>';
+  var k, a, pts, q = '';
+  if (sil === 'compass') {
+    pts = [[0, -r], [r * 0.28, -r * 0.28], [r, 0], [r * 0.28, r * 0.28], [0, r], [-r * 0.28, r * 0.28], [-r, 0], [-r * 0.28, -r * 0.28]];
+    for (k = 0; k < pts.length; k = k + 1) { q += (cx + pts[k][0]).toFixed(1) + ',' + (cy + pts[k][1]).toFixed(1) + ' '; }
+    g += '<polygon points="' + q + '" fill="url(#pfSgMk)" stroke="var(--star-gold)" stroke-width="0.8"></polygon>';
+  } else if (sil === 'spark') {
+    var t1 = '', t2 = '';
+    for (k = 0; k < 3; k = k + 1) { a = (Math.PI / 180) * (120 * k - 90); t1 += (cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1) + ' '; }
+    for (k = 0; k < 3; k = k + 1) { a = (Math.PI / 180) * (120 * k + 90); t2 += (cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1) + ' '; }
+    g += '<polygon points="' + t1 + '" fill="url(#pfSgMk)" stroke="var(--star-gold)" stroke-width="0.7"></polygon><polygon points="' + t2 + '" fill="url(#pfSgMk)" stroke="var(--star-gold)" stroke-width="0.7" opacity="0.9"></polygon>';
+  } else {
+    for (k = 0; k < 6; k = k + 1) { a = (Math.PI / 180) * (60 * k - 90); q += (cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1) + ' '; }
+    g += '<polygon points="' + q + '" fill="url(#pfSgMk)" stroke="var(--star-gold)" stroke-width="0.8"></polygon>';
+  }
+  return g + '</g>';
+}
+// the full disk. R = star-cluster scale (mock parity). 4 ring groups by radius band
+// (differential-rotation classes; the spin is CSS added in S4). Deterministic seeds.
+function _pfSigilGalaxy(cx, cy, R, sil) {
+  var i, GA = 137.507 * Math.PI / 180, seeds = 180, rings = ['', '', '', ''];
+  var s = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (R * 0.9).toFixed(1) + '" fill="url(#pfSgBulge)"></circle>';
+  for (i = 1; i <= 4; i = i + 1) { var rr = R * (0.35 + i * 0.16); s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + rr.toFixed(1) + '" fill="none" stroke="var(--gold-hi)" stroke-width="0.5" opacity="' + (0.1 + (i % 2) * 0.05).toFixed(2) + '"></circle>'; }
+  for (i = 0; i < seeds; i = i + 1) {
+    var rad = R * Math.sqrt(i / seeds), ang = i * GA, x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad, edge = rad / R;
+    var band = Math.min(3, Math.floor(edge * 4));
+    rings[band] += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (0.5 + edge * 1.1).toFixed(2) + '" fill="' + ((i % 7 === 0) ? 'var(--star-gold)' : 'var(--gold-hi)') + '" opacity="' + (0.12 + edge * 0.6).toFixed(2) + '"></circle>';
+  }
+  var tufts = '';
+  for (i = 0; i < 5; i = i + 1) {
+    var a0 = i * (2 * Math.PI / 5), r0 = R * 0.42, r1 = R * 0.94;
+    var x0 = cx + Math.cos(a0) * r0, y0 = cy + Math.sin(a0) * r0, x1 = cx + Math.cos(a0 + 0.6) * r1, y1 = cy + Math.sin(a0 + 0.6) * r1, xm = cx + Math.cos(a0 + 0.25) * r1 * 0.9, ym = cy + Math.sin(a0 + 0.25) * r1 * 0.9;
+    tufts += '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' Q' + xm.toFixed(1) + ' ' + ym.toFixed(1) + ' ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" fill="none" stroke="var(--gold-hi)" stroke-width="0.8" opacity="0.28" stroke-linecap="round"></path>';
+  }
+  var disk = '<g class="pf-sg-rings">'
+    + '<g class="pf-sg-r1">' + rings[3] + tufts + '</g>'
+    + '<g class="pf-sg-r4">' + rings[2] + '</g>'
+    + '<g class="pf-sg-r2">' + rings[1] + '</g>'
+    + '<g class="pf-sg-r3">' + rings[0] + '</g></g>';
+  var tilt = '<g transform="translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ') scale(1,0.54) translate(' + (-cx).toFixed(1) + ' ' + (-cy).toFixed(1) + ')">' + s + disk + '</g>';
+  return '<g class="pf-sg" transform="rotate(-16 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')">' + tilt + _pfSigilCore(cx, cy, R * 0.46, sil) + '</g>';
+}
+// defs the sigil needs (injected once into the sky).
+function _pfSigilDefs() {
+  return '<defs>'
+    + '<radialGradient id="pfSgBulge"><stop offset="0" stop-color="#fff2cf" stop-opacity="0.5"></stop><stop offset="55%" stop-color="var(--gold-hi)" stop-opacity="0.16"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
+    + '<radialGradient id="pfSgCore"><stop offset="0" stop-color="#fff6da" stop-opacity="0.9"></stop><stop offset="60%" stop-color="var(--gold-hi)" stop-opacity="0.28"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
+    + '<linearGradient id="pfSgMk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--star-gold)"></stop><stop offset="1" stop-color="var(--gold-deep)"></stop></linearGradient>'
+    + '</defs>';
+}
+
 // Build the full sky SVG string for a uid. pub = published-only (visitor /
 // preview); mob = mobile viewport. All figures read live state; category hues
 // are tokens (var(--field-N)); the sky seeds stably.
@@ -17081,7 +17158,8 @@ function _profileBuildSky(uid, pub, mob) {
   for (i = 0; i < cats.length; i = i + 1) { if (cats[i].books > maxBooks) { maxBooks = cats[i].books; } }
   function prad(books) { return (mob ? 20 : 26) * (0.42 + 0.58 * (books / maxBooks)); }
   var head = '<svg class="pf-sky" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Your reading as a galaxy: soft fields are categories sized by books; faint stars are books read; bright gold glints are your sub-theories.">';
-  var body = '<rect class="pf-skybg" x="0" y="0" width="' + w + '" height="' + h + '" fill="transparent"></rect>';
+  var scx = w * (mob ? 0.46 : 0.47), scy = h * (mob ? 0.44 : 0.5);   // sky center (== _pfPlanetLayout focal)
+  var body = _pfSigilDefs() + '<rect class="pf-skybg" x="0" y="0" width="' + w + '" height="' + h + '" fill="transparent"></rect>';
   // faint book star-field (seeded stable; density tracks library size)
   var bookN = _pfOwnedBookIds(uid).length;
   var specks = Math.max(20, Math.min(mob ? 95 : 130, bookN + 12));
@@ -17123,6 +17201,8 @@ function _profileBuildSky(uid, pub, mob) {
       + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r * 0.64).toFixed(1) + '" fill="' + col + '" opacity="0.20"></circle>'
       + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r * 0.32).toFixed(1) + '" fill="' + col + '" opacity="0.22"></circle></g>';
   }
+  // R9b Lane G S3: the sigil-galaxy at center (over the planets, under labels/stars). Derived silhouette.
+  body += _pfSigilGalaxy(scx, scy, mob ? 46 : 58, _pfSilhouette(uid));
   // labels (top-N by books) via the collision resolver
   var topN = mob ? Math.min(5, cats.length) : cats.length, labItems = [];
   for (i = 0; i < topN; i = i + 1) {
@@ -17157,7 +17237,10 @@ function _profileBuildSky(uid, pub, mob) {
     var vsubs = vload[i].subs, pts = [], kk;
     for (j = 0; j < vsubs.length; j = j + 1) { if (sp2[vsubs[j].id]) { pts.push(sp2[vsubs[j].id]); } }
     for (kk = 0; kk + 1 < pts.length; kk = kk + 1) {
-      body += '<line class="pf-vline" data-vline="' + _portraitEsc(vload[i].name) + '" x1="' + pts[kk].x.toFixed(1) + '" y1="' + pts[kk].y.toFixed(1) + '" x2="' + pts[kk + 1].x.toFixed(1) + '" y2="' + pts[kk + 1].y.toFixed(1) + '"></line>';
+      // S3 LENSING: bow the value line toward the sigil-galaxy center (control point pulled halfway to it).
+      var _mx = (pts[kk].x + pts[kk + 1].x) / 2, _my = (pts[kk].y + pts[kk + 1].y) / 2;
+      var _qx = _mx + (scx - _mx) * 0.5, _qy = _my + (scy - _my) * 0.5;
+      body += '<path class="pf-vline" data-vline="' + _portraitEsc(vload[i].name) + '" d="M' + pts[kk].x.toFixed(1) + ' ' + pts[kk].y.toFixed(1) + ' Q' + _qx.toFixed(1) + ' ' + _qy.toFixed(1) + ' ' + pts[kk + 1].x.toFixed(1) + ' ' + pts[kk + 1].y.toFixed(1) + '"></path>';
     }
   }
   // stars on top (protagonists). data-sub = id (routes to #subtheory/<id>).

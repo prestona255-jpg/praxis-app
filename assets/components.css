@@ -13533,8 +13533,11 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-sky.show-lines .pf-conline{ opacity:.4; }
 /* R9b Lane P: the value web is FAINT-BY-DEFAULT (was opacity:0/hidden-until-tap) so cross-category value
    lines read at BOTH widths without a tap; tap brightens the tapped value. (Felt-passed 2026-07-13.) */
-.pf-vline{ stroke:var(--star-gold); stroke-width:1.5; opacity:.34; transition:opacity .4s; }
+.pf-vline{ fill:none; stroke:var(--star-gold); stroke-width:1.5; opacity:.34; transition:opacity .4s; }  /* R9b Lane G S3: now a lensing PATH (fill:none is load-bearing) */
 .pf-sky .pf-vline.on{ opacity:.78; }
+/* R9b Lane G S3: the sigil-galaxy core is tappable (-> thesis; wired in S7). Motion (rings + breath) lands in S4. */
+.pf-sg-core{ cursor:pointer; }
+.pf-sg-core:focus-visible{ outline:2px solid var(--star-gold); outline-offset:2px; }
 .pf-invite{ font-family:var(--font-serif); font-style:italic; fill:var(--gold-hi); opacity:.74; font-size:14px; }
 @media (prefers-reduced-motion:reduce){ .pf-conline,.pf-vline{ transition:none; } }
 /* BELOW */
