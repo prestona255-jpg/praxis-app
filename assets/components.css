@@ -5283,10 +5283,17 @@
     top: 56px;
     left: 0;
     right: 0;
+    /* ON-1: cover the full viewport below the 56px bar. Was a content-
+       height dropdown (position:absolute, no height) so the shelf showed
+       + scrolled beneath the open menu. Fill to the viewport foot and let
+       a long menu scroll internally; the body scroll-lock rides in the JS
+       toggle (initNavMobileToggle). */
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 0;
-    padding: 16px;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;
     background: var(--color-surface);
-    border-bottom: 1px solid var(--border);
     z-index: 100;
   }
 

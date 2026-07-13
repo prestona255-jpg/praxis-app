@@ -334,8 +334,15 @@ function initNavMobileToggle() {
   ham.addEventListener('click', function() {
     if (navEl.classList.contains('app-nav-mobile-open')) {
       navEl.classList.remove('app-nav-mobile-open');
+      // ON-1: release the page scroll-lock when the menu closes via re-tap.
+      // (A route change also closes the menu and clears overflow in
+      // renderRoute, so every close path releases the lock.)
+      document.body.style.overflow = '';
     } else {
       navEl.classList.add('app-nav-mobile-open');
+      // ON-1: lock page scroll so the shelf cannot scroll behind the
+      // full-viewport menu overlay.
+      document.body.style.overflow = 'hidden';
     }
   });
 }
