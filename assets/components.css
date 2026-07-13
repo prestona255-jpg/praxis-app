@@ -13507,8 +13507,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-strip{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; scrollbar-width:none; }
 .pf-strip::-webkit-scrollbar{ display:none; }
 .pf-strip-wrap.overflow::after{ content:''; position:absolute; top:0; right:0; bottom:10px; width:44px; pointer-events:none; background:linear-gradient(90deg,transparent,var(--br-deep) 88%); }
-.pf-strip-more{ display:none; }  /* P4/AM48: chevron only when chips actually overflow */
-.pf-strip-wrap.overflow .pf-strip-more{ display:block; position:absolute; right:2px; top:50%; transform:translateY(-60%); font-family:var(--font-mono); font-size:13px; color:var(--gold-hi); pointer-events:none; }
+/* R9b Lane G S1: the '›' chevron (.pf-strip-more) is retired -- it read as a stray glyph above the
+   counts on mobile (overflow path); the .pf-strip-wrap.overflow::after edge-fade (above) is the sole
+   overflow cue now. The span is also dropped from _pfBuildPage. */
 .pf-vchip{ flex:none; font-family:var(--font-body); font-size:12.5px; padding:0 15px; min-height:44px; border-radius:999px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:7px; color:var(--text-on-dark); background:rgba(240,227,200,.07); border:1px solid rgba(217,164,65,.5); }
 .pf-vchip .vorb{ width:8px; height:8px; border-radius:50%; background:var(--gold-hi); opacity:.85; }
 .pf-vchip.on{ color:#3a2408; background:linear-gradient(135deg,var(--gold-hi),var(--gold)); border-color:transparent; font-weight:500; }
@@ -13645,13 +13646,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-grid{ display:block; }
 /* >=1200 composition (AM3/AM27/AM41 — desktop canon; converted from the mockup @container) */
 @media (min-width:1200px){
-  .pf-below{ max-width:1280px; margin:0 auto; }
+  /* R9b Lane G S1 desktop composition rider: the portrait STAGE widens 1280 -> 1400 (content), and the
+     hero-dock (value strip + counts + taphint) centers to the SAME 1400 column so it composes with the
+     body instead of pinning to the full-bleed hero's left edge (the 274px @1920 misalignment). Both are
+     content-box with equal 34px side padding, so their CONTENT edges align in both the centered (>=1468)
+     and parent-filled regimes. The sky SVG stays full-bleed (it is not touched here). */
+  .pf-below{ max-width:1400px; margin:0 auto; }
   .pf-hero-head{ padding:24px 34px; }
   .pf-name{ font-size:29px; } .pf-tag{ font-size:17px; } .pf-avatar{ width:52px; height:52px; font-size:25px; }
-  .pf-sky-host{ height:398px; } .pf-hero-dock{ padding:0 30px 16px; }
+  .pf-sky-host{ height:398px; } .pf-hero-dock{ padding:0 34px 16px; max-width:1400px; margin:0 auto; }
   .pf-below{ padding:0 34px; } .pf-thesis{ padding:34px 6px 26px; } .pf-thesis p{ font-size:24px; max-width:72ch; }
-  /* AM27+AM41: main=voice (values,questions,now) · rail=NUMBERS ONLY. Published re-homed below. */
-  .pf-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:26px 30px; align-items:start; grid-template-areas:"values numbers" "arcs numbers" "questions numbers" "now numbers"; }
+  /* AM27+AM41 + R9b S1: Values | Numbers stay a two-up pair (row 1); arcs/questions/now now span the FULL
+     stage width (were rail-confined). AM51 DOM order is untouched -- only the grid placement changes. */
+  .pf-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:26px 30px; align-items:start; grid-template-areas:"values numbers" "arcs arcs" "questions questions" "now now"; }
   .pf-root .sec-values{ grid-area:values; } .pf-root .sec-numbers{ grid-area:numbers; align-self:start; } .pf-root .sec-arcs{ grid-area:arcs; } .pf-root .sec-questions{ grid-area:questions; } .pf-root .sec-now{ grid-area:now; }
   .pf-sec{ margin-bottom:0; } .pf-grid{ row-gap:26px; }
   .pf-root .sec-returns, .pf-root .sec-journey, .pf-root .sec-threads, .pf-root .sec-lineage, .pf-root .sec-published, .pf-root .sec-consent{ margin-top:26px; }
@@ -13659,7 +13666,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-pubgrid[data-n="2"]{ grid-template-columns:repeat(2,1fr); }                          /* R9b: 2-up at n=2 */
   .pf-pubgrid[data-n="1"]{ grid-template-columns:minmax(0,440px); justify-content:center; } /* R9b: centered at n=1 */
   .pf-set-fields{ grid-template-columns:1fr 1fr; gap:8px 22px; } .pf-settings{ margin-top:26px; }
-  .pf-root.is-visitor .pf-grid{ grid-template-areas:"values numbers" "arcs numbers"; }
+  .pf-root.is-visitor .pf-grid{ grid-template-areas:"values numbers" "arcs arcs"; }
 }
 /* R9a Slice 5b — value-retrofit dock (AM19) + reader-model carry chrome */
 .pf-offer-dock{ margin-bottom:16px; }
@@ -13677,6 +13684,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-returns-row b,.pf-journey-row b{ font-weight:600; color:var(--ink); }
 .pf-returns-ct{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
 .pf-returns-row em,.pf-journey-row em{ font-style:italic; color:var(--ink); }
+/* R9b Lane G S1: journey month-label dedup -- a same-month continuation beat hugs its month header
+   (no separating border, tightened top, small indent) so the bold month prints once per group. */
+.pf-journey-cont{ border-top:none; padding-top:0; padding-left:16px; }
 /* R9b Lane P — knowledge arcs (question-led), lineage band, threads reflection, Now cross-link, published quality pack */
 .pf-arc{ padding:16px 0; border-top:1px solid var(--line); }
 .pf-arc:first-of-type{ border-top:none; }

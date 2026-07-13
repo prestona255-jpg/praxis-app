@@ -17424,7 +17424,7 @@ function _pfBuildPage(uid, vis, mob) {
   h += '<div class="pf-hero-dock"><div class="pf-strip-wrap"><div class="pf-strip">';
   var vload = _profileValueLoad(uid).values;
   for (i = 0; i < vload.length; i = i + 1) { h += '<span class="pf-vchip" data-value="' + _portraitEsc(vload[i].name) + '" tabindex="0" role="button"><span class="vorb"></span>' + _portraitEsc(vload[i].name) + '</span>'; }
-  h += '</div><span class="pf-strip-more">›</span></div>';
+  h += '</div></div>';   // R9b Lane G S1: '›' chevron dropped -- edge-fade (.pf-strip-wrap.overflow::after) is the scroll cue
   h += '<div class="pf-counts"><span class="cx" data-go="#books" tabindex="0" role="link"><b>' + ov.books + '</b> book' + (ov.books === 1 ? '' : 's') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.subTheories + '</b> sub-theor' + (ov.subTheories === 1 ? 'y' : 'ies') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.published + '</b> published</span></div>';
   h += '<div class="pf-taphint">Tap a value to light its constellation · a star for its sub-theory · a field for its books</div></div></div>';
   h += '<div class="pf-below">';
@@ -17661,9 +17661,18 @@ function _pfJourneySection(uid) {
   if (!data.length) { return h + '<div class="pf-invite-line">The shape of how your reading has moved will gather here as you read.</div></div>'; }
   // _portraitJourneyData rows are { ts, when, said:<html> } -- `said` is the milestone
   // sentence (already _portraitEsc-safe, may carry <em>), inserted raw; `when` escaped.
+  // R9b Lane G S1: dedup the month label -- two milestones in the same month print the bold
+  // "Month YYYY" ONCE; same-month continuation beats render as grouped rows (.pf-journey-cont).
+  var lastWhen = '';
   for (i = 0; i < data.length; i = i + 1) {
     m = data[i];
-    h += '<div class="pf-journey-row"><b>' + _portraitEsc(m.when || '') + '</b> — ' + (m.said || '') + '</div>';
+    var mw = m.when || '';
+    if (mw && mw !== lastWhen) {
+      h += '<div class="pf-journey-row"><b>' + _portraitEsc(mw) + '</b> — ' + (m.said || '') + '</div>';
+    } else {
+      h += '<div class="pf-journey-row pf-journey-cont">' + (m.said || '') + '</div>';
+    }
+    lastWhen = mw;
   }
   return h + '</div>';
 }
