@@ -411,3 +411,14 @@ UNTOUCHED per the desktop-first breakpoint discipline (mobile reads fine on its 
 - **@390:** justify **space-between** (base rule intact), lineage max-width **none** (override scoped to
   >=1200), no h-scroll -- mobile undisturbed.
 - No JS change; no sky touch; `.sec-lineage`-scoped -> no bleed.
+
+### P7 — FIX SHIPPED (own commit). components.css +9/−0 (CSS-only, desktop-scoped). FELT flag.
+`@media (min-width:1200px)` only: thin DNA/reflection cards (`sec-threads/returns/now/journey` -> 15px 22px;
+`sec-lineage` -> 16px 22px) hug their content so thin data reads intentional. Rich cards (Values, Numbers,
+Published, reader-model) LEFT at 20px 22px. Mobile untouched. **Live proof (localhost:8779):**
+- **@1280 density:** threads 72->68px, returns 78->68, now 100->90, journey 109->99 (padding 15px 22px);
+  Values (rich) unchanged 20px 22px / 153px. Modest hug.
+- **@390:** thin cards keep base 20px 22px, no h-scroll -- mobile undisturbed.
+- **No-harm gates (re-run):** empty journey -> invite line + 0 rows; visitor + empty statement -> thesis
+  OMITTED, no h-scroll. Both intact.
+- FELT flag: the magnitude of the hug is Preston's re-pass call; conservative here.
