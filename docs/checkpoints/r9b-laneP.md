@@ -71,6 +71,29 @@ manage). Felt pass confirms.
   (uncategorized arc sublink dot, empty-arc meta string, bare-`-` excerpt) = felt-pass territory.
 - **Lane-G handoff written:** `docs/studio/r9b-laneg-handoff.md` (in the commit set; live finding + commons debt
   carried verbatim; confirm-pass STILL OWED; Lane-G locks verbatim; "passages" ruling task; interim contract).
-- **HALT at commit gate** — awaiting Preston's exact words. Commit set (path-explicit): `js/views.js`
-  `assets/components.css` `js/intros.js` `sw.js` + docs (`r9b-laneg-handoff.md`, `r9b-laneP-recon.md`,
-  `r9b-laneP.md`, `mockups/profile-laneP.html`).
+- **SHIPPED + PUSHED + LIVE-VERIFIED.** Commit `d6fe440` (8 files, 973+/32−, em-dash intact) → pushed
+  `419267c..d6fe440`, `HEAD == origin/main`; live sw.js = **praxis-v3.200 ×2** cache-busted.
+
+## LIVE SMOKE (deployed v3.200, render rig: live CSS+JS, stubbed owner + live-shape fixture; console CLEAN)
+- **AM51 DOM order — PASS** (live-rendered tree, exact): values → numbers → arcs → questions → now →
+  returns → journey → threads → lineage → published → consent → settings.
+- **FAINT-DEFAULT named gate (rider #1) — PASS.** `.pf-vline` count = 2 (Liberation, Doubt); **rest opacity
+  0.34** (stroke `#ffce4a`/`--star-gold`, 1.5px) at **390 AND 1280**; **tap-to-brighten**: lit value → **0.78**,
+  other value stays 0.34, `_pfClearValue` → back to 0.34. Desktop grid = 2 columns (arcs in the voice column).
+- **AM52 fencing — PASS** (owner vs visitor element-check). Visitor PRESENT: values, numbers, arcs(2, fenced),
+  lineage, published, visitor-badge. Visitor ABSENT (not in DOM): returns, journey, threads, consent, intro
+  panel, offer dock, lens toggle, edit affordance, preview link. Visitor HIDDEN (display:none): questions, now,
+  settings. **0 draft sublinks · 0 draft counts** (arcMeta "1 published"/"2 published") **· 0 whispers visible**;
+  the all-draft arc3 dropped (visitor arcs = arc1+arc2 only).
+- **P9 (visitor + empty statement omit) — PASS** (visitor thesis count 0; owner shows placeholder). **P8
+  (empty-row guards) — PASS** (empty returns + empty threads → invitation line, no broken row; journey renders
+  rows on data).
+- **Quality pack — PASS.** Positive: s1 cat "Education" + dot, s3 untitled → **excerpt-led** ("The sentence…",
+  quote-block `> …` skipped) + cat "History" + dot. Negative: s4 no-category → **dot+label omitted**, no-excerpt
+  → graceful; **never prints "Uncategorized"**.
+- **Cross-links — PASS** (Now→`data-sub=s1`; lineage tag→`data-value=Liberation`; arc sublink field hue).
+- **Console:** no errors. **Screenshot:** tooling timed out (renderer hang) — live-DOM structural proof stands
+  as the hard evidence per PROTOCOL §4.
+- **Residuals (round-close, Lane G's session):** the round close-out (sequence/BOARD/Builder regen) + the cosmetic
+  nits (uncategorized arc-sublink dot; empty-arc meta string) — felt-pass territory; the deployed felt pass is
+  Preston's.
