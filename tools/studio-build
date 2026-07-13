@@ -92,7 +92,9 @@ insec==0{ next }
 /^- \[[ xX]\]/{ emit(); line=$0; sub(/^- \[[ xX]\][ ]+/,"",line); title=line;
   if(match(line,/\*\*[^*]+\*\*/)){ title=substr(line,RSTART+2,RLENGTH-4) } body=line; have=1; next }
 /^[ ]+touches:/{ if(have){ t=$0; sub(/^[ ]+touches:[ ]*\[?/,"",t); sub(/\].*/,"",t); touches=t } next }
-/^[ ]+[^ ]/{ if(have){ c=$0; sub(/^[ ]+/,"",c); body=body " " c } next }
+/^[ ]+[^ ]/{ if(have){ c=$0; sub(/^[ ]+/,"",c);
+  if(touches=="" && match(c,/touches:[ ]*\[[^]]*\]/)){ tt=substr(c,RSTART,RLENGTH); sub(/^touches:[ ]*\[/,"",tt); sub(/\]$/,"",tt); touches=tt }
+  body=body " " c } next }
 /^[[:space:]]*$/{ emit(); next }
 END{ emit() }
 ' "$SEQ"
@@ -132,6 +134,60 @@ insec==0{ next }
 END{ emit() }
 ' "$OVN"
 }
+# --- 1c: soft-fail parsers for the new hand-edited sources (lab / milestones / risks).
+# HARD LAW: a malformed line is SKIPPED with a warning appended to $WARN (surfaced in the
+# regen report) and NEVER aborts the regen or drops a whole section. Each emits US records.
+# parse ## Ideas of lab.md -> "title US stage US date US note" per idea
+parse_lab() {
+awk -v warnfile="$WARN" '
+function emit(){ if(have){ gsub(/[\t\037]/," ",title); gsub(/[\t\037]/," ",note);
+    printf "%s\037%s\037%s\037%s\n", title, stage, date, note; have=0; title="";stage="";date="";note="" } }
+BEGIN{insec=0;have=0}
+/^## /{ emit(); insec=($0 ~ /^## Ideas([ ]|$)/)?1:0; next }
+insec==0{ next }
+/^[[:space:]]*$/{ emit(); next }
+/^- title:[[:space:]]/{ emit(); v=$0; sub(/^- title:[[:space:]]*/,"",v); title=v; have=1; next }
+/^- /{ printf "lab.md:%d skipped unrecognized bullet (expected \"- title:\"): %s\n", NR, $0 >> warnfile; next }
+/^[[:space:]]+stage:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+stage:[[:space:]]*/,"",v); stage=v } next }
+/^[[:space:]]+date:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+date:[[:space:]]*/,"",v); date=v } next }
+/^[[:space:]]+note:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+note:[[:space:]]*/,"",v); note=v } next }
+/^[[:space:]]+[^[:space:]]/{ printf "lab.md:%d skipped unrecognized field: %s\n", NR, $0 >> warnfile; next }
+END{ emit() }
+' "$LAB"
+}
+# parse ## Milestones of milestones.md -> "date US kind US label US note" per pipe line
+parse_milestones() {
+awk -v warnfile="$WARN" '
+BEGIN{insec=0}
+/^## /{ insec=($0 ~ /^## Milestones([ ]|$)/)?1:0; next }
+insec==0{ next }
+/^[[:space:]]*$/{ next }
+/^- /{ line=$0; sub(/^- /,"",line); n=split(line,f,"|");
+  if(n!=4){ printf "milestones.md:%d skipped (need 4 pipe fields, got %d): %s\n", NR, n, $0 >> warnfile; next }
+  for(k=1;k<=4;k++){ gsub(/^[[:space:]]+/,"",f[k]); gsub(/[[:space:]]+$/,"",f[k]); gsub(/[\t\037]/," ",f[k]) }
+  printf "%s\037%s\037%s\037%s\n", f[1],f[2],f[3],f[4]; next }
+{ printf "milestones.md:%d skipped non-milestone line: %s\n", NR, $0 >> warnfile }
+' "$MILE"
+}
+# parse ## Risks of risks.md -> "id US title US status US trigger US note" per block
+parse_risks() {
+awk -v warnfile="$WARN" '
+function emit(){ if(have){ gsub(/[\t\037]/," ",title); gsub(/[\t\037]/," ",trigger); gsub(/[\t\037]/," ",note);
+    printf "%s\037%s\037%s\037%s\037%s\n", id, title, status, trigger, note; have=0; id="";title="";status="";trigger="";note="" } }
+BEGIN{insec=0;have=0}
+/^## /{ emit(); insec=($0 ~ /^## Risks([ ]|$)/)?1:0; next }
+insec==0{ next }
+/^[[:space:]]*$/{ emit(); next }
+/^- id:[[:space:]]/{ emit(); v=$0; sub(/^- id:[[:space:]]*/,"",v); id=v; have=1; next }
+/^- /{ printf "risks.md:%d skipped unrecognized bullet (expected \"- id:\"): %s\n", NR, $0 >> warnfile; next }
+/^[[:space:]]+title:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+title:[[:space:]]*/,"",v); title=v } next }
+/^[[:space:]]+status:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+status:[[:space:]]*/,"",v); status=v } next }
+/^[[:space:]]+trigger:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+trigger:[[:space:]]*/,"",v); trigger=v } next }
+/^[[:space:]]+note:[[:space:]]/{ if(have){ v=$0; sub(/^[[:space:]]+note:[[:space:]]*/,"",v); note=v } next }
+/^[[:space:]]+[^[:space:]]/{ printf "risks.md:%d skipped unrecognized field: %s\n", NR, $0 >> warnfile; next }
+END{ emit() }
+' "$RISK"
+}
 collect_touches() { awk -F"$US" '{print $2}' "$TMP/$1" | tr ',' '\n' | sed 's/[][ ]//g' | grep -v '^$' | sort -u; }
 
 # --- precompute ONCE (Windows subprocess spawns are costly; do the awk/grep work here) ---
@@ -146,6 +202,16 @@ if [ -f "$OVN" ]; then parse_overnight > "$TMP/overnight"; else : > "$TMP/overni
 awk '/^## /{insec=($0 ~ /^## Runs([ ]|$)/)?1:0; next} insec&&/^- /{print}' "$OVN" 2>/dev/null | tail -5 > "$TMP/ovruns"
 OV_CURROUND=$(fm "$OVN" current-round 2>/dev/null); OV_CURRNUM=$(printf '%s' "$OV_CURROUND" | tr -cd '0-9'); [ -z "$OV_CURRNUM" ] && OV_CURRNUM=0
 OVQ=$(awk -F"$US" '$7=="queued"' "$TMP/overnight" | grep -c .); OVP=$(awk -F"$US" '$7=="proposed"' "$TMP/overnight" | grep -c .); OVTOT=$(grep -c . "$TMP/overnight")
+# 1c sources precompute (lab / milestones / risks) — soft-fail; warns collected, never fatal.
+# $WARN must exist before the parsers run (they append to it via -v warnfile).
+LAB="$STUDIO/lab.md"; MILE="$STUDIO/milestones.md"; RISK="$STUDIO/risks.md"; WARN="$TMP/warnings"; : > "$WARN"
+if [ -f "$LAB" ];  then parse_lab        > "$TMP/lab";        else : > "$TMP/lab"; fi
+if [ -f "$MILE" ]; then parse_milestones > "$TMP/milestones"; else : > "$TMP/milestones"; fi
+if [ -f "$RISK" ]; then parse_risks      > "$TMP/risks";      else : > "$TMP/risks"; fi
+LABN=$(grep -c . "$TMP/lab" 2>/dev/null); [ -z "$LABN" ] && LABN=0
+MILEN=$(grep -c . "$TMP/milestones" 2>/dev/null); [ -z "$MILEN" ] && MILEN=0
+RISKN=$(grep -c . "$TMP/risks" 2>/dev/null); [ -z "$RISKN" ] && RISKN=0
+WARNCOUNT=$(grep -c . "$WARN" 2>/dev/null); [ -z "$WARNCOUNT" ] && WARNCOUNT=0
 # per-surface caches in one pass -> pure-shell lookups (no exec per query)
 GAPS=""; BRIEFS=""; STATES=""; ROUNDS=""; CLOSED=0; TOTALGAPS=0; MOBNATIVE=0
 for s in $SURFACES $LAYERS; do
@@ -376,6 +442,97 @@ build_desktop_canon() {
   printf '</div>'
 }
 
+# --- 1c render helpers (milestones strip / risk register / lab groups / decisions / glossary) ---
+# milestones strip — days-remaining filled by client JS via data-mdate/data-mkind; static "&mdash;" degrades cleanly
+render_milestones() {
+  [ -s "$TMP/milestones" ] || return
+  printf '<div class="milestones">'
+  while IFS="$US" read -r dt kd lb nt; do
+    [ -n "$lb" ] || continue
+    kl=$(printf '%s' "$kd" | tr 'A-Z' 'a-z'); mcls="ms-target"
+    case "$kl" in hard) mcls="ms-hard";; retired) mcls="ms-retired";; esac
+    dd="$dt"; [ "$dt" = "—" ] && dd="&mdash;"
+    printf '<div class="ms %s" data-mdate="%s" data-mkind="%s"><span class="ms-date">%s</span><span class="ms-kind">%s</span><div class="ms-label">%s</div><div class="ms-note">%s</div><span class="ms-days">&mdash;</span></div>' "$mcls" "$dt" "$kl" "$dd" "$(fmt "$kd")" "$(fmt "$lb")" "$(fmt "$nt")"
+  done < "$TMP/milestones"
+  printf '</div>'
+}
+# risk register — parked/standing risks + re-raise triggers (distinct from the overnight queue)
+render_risks() {
+  [ -s "$TMP/risks" ] || return
+  printf '<p class="sec-eyebrow" id="risks">Risk register</p>'
+  printf '<p class="sec-lead">Standing risks and parked work, each with the <b>trigger that re-raises it</b> &mdash; distinct from the overnight queue: these wait for a named condition, they do not run.</p>'
+  while IFS="$US" read -r id ti st tg nt; do
+    [ -n "$id" ] || continue
+    sl=$(printf '%s' "$st" | tr 'A-Z' 'a-z' | tr -cd 'a-z-'); rc="risk-parked"
+    case "$sl" in hard-dependency) rc="risk-hard-dependency";; carried) rc="risk-carried";; parked) rc="risk-parked";; *) sl="parked"; rc="risk-parked";; esac
+    printf '<div class="risk %s"><div class="risk-head"><span class="risk-id">%s</span><span class="risk-title">%s</span><span class="pchip is-%s"><span class="pchip-dot"></span>%s</span></div><div class="risk-trigger"><b>re-raises on</b> &middot; %s</div><div class="risk-note">%s</div></div>' "$rc" "$id" "$(fmt "$ti")" "$sl" "$(fmt "$st")" "$(fmt "$tg")" "$(fmt "$nt")"
+  done < "$TMP/risks"
+}
+# lab: render one stage group (label, stage-key) from $TMP/lab
+labgroup() {
+  n=$(awk -F"$US" -v k="$2" '$2==k' "$TMP/lab" | grep -c .); [ "$n" -gt 0 ] || return
+  printf '<div class="lab-glabel"><span class="pchip is-%s"><span class="pchip-dot"></span>%s</span><span class="lab-gname">%s <span class="lab-gcount">&middot; %s</span></span><span class="lab-gdesc">%s</span></div>' "$2" "$2" "$1" "$n" "$3"
+  printf '<div class="lab-grid">'
+  while IFS="$US" read -r t stg dt nt; do
+    [ "$stg" = "$2" ] || continue
+    printf '<div class="lab-card"><div class="lab-title">%s</div><div class="lab-note">%s</div><div class="lab-date">logged %s</div></div>' "$(fmt "$t")" "$(fmt "$nt")" "$(fmt "$dt")"
+  done < "$TMP/lab"
+  printf '</div>'
+}
+# truncate a decision to its first sentence (hard cap 160), strip md markers, ellipsis if shortened.
+# Sentence boundary is found on the RAW text (a bold label's ".**" is not a false ". " boundary).
+dectrunc() {
+  printf '%s' "$1" | awk '{
+    s=$0; n=length(s); out=s; cut=0;
+    for(i=1;i<=n-1;i++){ if(substr(s,i,2)==". "){ out=substr(s,1,i); cut=1; break } }
+    if(length(out)>160){ out=substr(s,1,160); cut=1;
+      while(length(out)>1 && substr(out,length(out),1)!=" "){ out=substr(out,1,length(out)-1) } }
+    gsub(/[*`]/,"",out);
+    if(cut){ sub(/[ .]+$/,"",out); out=out "…" }
+    printf "%s", out
+  }'
+}
+# decisions index — aggregate each surface's ## Decisions block; date = latest round date in the file
+render_decisions() {
+  printf '<section class="page" id="page-decisions"><h1 class="page-h u-inkgold">Decisions index</h1>'
+  printf '<p class="ov-lead">Every locked decision across the surfaces, gathered in one place. Each points back to its surface&rsquo;s ledger &mdash; the ledgers are the record, this only points at them.</p>'
+  for s in $SURFACES $LAYERS; do
+    body=$(awk '
+      /^## Decisions/{f=1;next} /^## /{f=0}
+      f&&/^- /{ if(cur!=""){print cur}; line=$0; sub(/^- /,"",line); cur=line; next }
+      f&&/^[[:space:]]+[^[:space:]]/{ if(cur!=""){ c=$0; sub(/^[[:space:]]+/,"",c); cur=cur " " c } next }
+      f&&/^[[:space:]]*$/{ if(cur!=""){print cur; cur=""} next }
+      END{ if(cur!=""){print cur} }' "$STUDIO/$s.md")
+    [ -n "$body" ] || continue
+    sdate=$(grep -oE '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' "$STUDIO/$s.md" | sort | tail -1); [ -n "$sdate" ] || sdate='&mdash;'
+    printf '<div class="dec-shead"><span>%s</span><span class="dec-sdate">as of %s</span><a class="dec-jump" href="#s-%s">open ledger &rsaquo;</a></div>' "$(hname "$s")" "$sdate" "$s"
+    printf '%s\n' "$body" | while IFS= read -r d; do [ -n "$d" ] || continue; printf '<div class="dec-row">%s</div>' "$(fmt "$(dectrunc "$d")")"; done
+  done
+  printf '</section>\n'
+}
+# glossary — plain-language studio vocabulary (generator-authored)
+gl() { printf '<div><div class="gloss-term">%s</div><div class="gloss-def">%s</div></div>' "$1" "$2"; }
+render_glossary() {
+  printf '<section class="page" id="page-glossary"><h1 class="page-h u-inkgold">Glossary</h1>'
+  printf '<p class="ov-lead">Plain-language definitions for the studio&rsquo;s working vocabulary &mdash; so the Builder reads clearly to anyone, not only the session that wrote it.</p>'
+  printf '<div class="gloss">'
+  gl "Felt pass" "Preston&rsquo;s eyes-on judgement on the live, deployed surface. A round closes ONLY on a felt pass &mdash; green gates and computed styles are necessary but never sufficient."
+  gl "The five beats" "A DEEP round&rsquo;s shape: scan &rarr; shape-A (forks) &rarr; shape-B (mockup) &rarr; build &rarr; close. A SWEEP round skips the mockup beat."
+  gl "Deep vs sweep" "A DEEP round rebuilds ONE surface through all five beats; a SWEEP round takes two or three light surfaces together and skips the mockup beat."
+  gl "Overnight" "Small, single-surface, revert-safe fixes that run unattended &mdash; committed but never pushed. Preston does a morning felt pass and pushes what survives."
+  gl "Canon chips" "The mobile and desktop badges on each surface (desktop-only / reflowed / native; stretched / composed / native). A surface earns its chip through ledger evidence, never by editing the Builder."
+  gl "Gap" "A known piece of MISSING work on a surface, catalogued in its Gap ledger. The number on each surface tile is its open-gap count."
+  gl "Named debt" "A residual acknowledged and carried on purpose &mdash; recorded in a ledger with the sweep or round that will clear it, rather than fixed in place."
+  gl "The reach map" "The dark diagram on the Plan page: the gold thread is the plan, the bright line is the current move&rsquo;s reach, the orbs are the surfaces it touches."
+  gl "The thread" "The Plan page&rsquo;s vertical spine &mdash; the whole build as one continuous line, from what shipped through Now / Next / Then to launch."
+  gl "Lab stages" "spark (a raw notion) &rarr; shaping (a receiving surface exists) &rarr; scheduled (a real slot on the program tail). How an idea ripens in the Lab."
+  gl "Milestone kinds" "HARD (a fixed real date), TARGET (an aim, may carry no date), RETIRED (a dropped date, struck). Praxis runs on no hard clock, so the launch is a dateless TARGET."
+  gl "Risk status" "parked (sleeps until its trigger fires), hard-dependency (a prerequisite that gates other work), carried (a residual waiting for its sweep)."
+  gl "Your ticks" "The personal checkboxes on the Plan items &mdash; yours, saved in your browser only, never part of the record, and they survive a Builder regen."
+  gl "The ground spectrum" "Praxis&rsquo;s light-to-amber law: you WORK in the light and ENTER finished thinking in the amber (light lists &rarr; warm-dim interiors &rarr; deep-warm field &rarr; full-amber reading rooms)."
+  printf '</div></section>\n'
+}
+
 {
 # ---- head + base tokens + Builder layout CSS ----
 cat <<'HTML'
@@ -431,7 +588,8 @@ body{color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.62;
 /* main */
 main{margin-left:236px;}
 .bstamp{position:sticky;top:0;z-index:15;display:flex;flex-wrap:wrap;gap:7px;align-items:center;
-  background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(217,164,65,.4);padding:9px 30px;}
+  background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(217,164,65,.4);padding:9px 30px;
+  margin-left:236px;}
 .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;}
 .chip code{color:var(--ink);}
 .chip.fresh{color:var(--gold-deep);border-color:rgba(168,118,26,.4);}
@@ -630,10 +788,11 @@ main{margin-left:236px;}
   .brail-link.active{border-left:0;border-bottom-color:var(--gold-hi);}
   .brail-slug{white-space:nowrap;}
   main{margin-left:0;}
-  .bstamp{padding:9px 14px;}
+  .bstamp{padding:9px 14px;margin-left:0;}
   .page{padding:22px 14px 90px;}
   .page-h{font-size:27px;}
   .heat-row{grid-template-columns:1fr;}
+  .lab-grid{grid-template-columns:1fr;}
 }
 
 /* OVERNIGHT panel */
@@ -777,6 +936,82 @@ a.stn-brand:hover{color:var(--gold);text-decoration:underline;text-underline-off
   .studio-topnav{padding:7px 14px;}
   .topnav-link{padding:0 10px;letter-spacing:.06em;}
 }
+
+/* ============================================================
+   1c — EXPANSION: The Lab, Milestones strip, Vitals, Risk
+   register, Decisions index, Glossary, Quick links. Additive;
+   reuses the .pchip family + existing tokens (no data class renamed).
+   ============================================================ */
+/* pchip modifiers — lab stages + risk statuses (extend the coherent family) */
+.pchip.is-spark{color:var(--ink-3);}
+.pchip.is-spark .pchip-dot{background:var(--ink-3);}
+.pchip.is-shaping{color:#5b6bb0;border-color:rgba(120,140,210,.4);}
+.pchip.is-shaping .pchip-dot{background:#5b6bb0;}
+.pchip.is-scheduled{color:var(--gold-deep);border-color:rgba(168,118,26,.42);}
+.pchip.is-scheduled .pchip-dot{background:var(--gold);box-shadow:0 0 6px rgba(217,164,65,.6);}
+.pchip.is-hard-dependency{color:var(--ember);border-color:rgba(194,73,42,.5);}
+.pchip.is-hard-dependency .pchip-dot{background:var(--ember);}
+.pchip.is-parked{color:var(--ink-3);}
+.pchip.is-parked .pchip-dot{background:var(--ink-3);}
+.pchip.is-carried{color:var(--gold-deep);border-color:rgba(168,118,26,.34);}
+.pchip.is-carried .pchip-dot{background:var(--gold);}
+/* The Lab — idea cards grouped by stage */
+.lab-glabel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--serif);font-size:20px;color:var(--ink);margin:24px 0 11px;}
+.lab-gname{font-family:var(--serif);}
+.lab-gcount{font-family:var(--mono);font-size:13px;color:var(--gold-deep);}
+.lab-gdesc{font-family:var(--sans);font-size:12.5px;color:var(--ink-3);}
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-bottom:6px;}
+.lab-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 18px 16px;box-shadow:inset 0 1px 0 rgba(255,250,235,.7);}
+.lab-title{font-family:var(--serif);font-size:19px;color:var(--ink);line-height:1.14;margin-bottom:8px;}
+.lab-note{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:4px 0 10px;}
+.lab-date{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink-3);}
+/* Milestones strip (top of the Plan page) */
+.milestones{display:flex;flex-wrap:wrap;gap:11px;margin:4px 0 26px;}
+.ms{flex:1 1 158px;min-width:158px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:13px;padding:12px 15px 13px;}
+.ms.ms-hard{border-top-color:var(--gold);}
+.ms.ms-target{border-top-color:var(--ink-3);border-top-style:dashed;}
+.ms.ms-retired{opacity:.62;}
+.ms-date{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--gold-deep);}
+.ms.ms-retired .ms-date{text-decoration:line-through;color:var(--ink-3);}
+.ms-kind{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-left:6px;}
+.ms-label{font-family:var(--serif);font-size:17px;color:var(--ink);margin:5px 0 3px;line-height:1.16;}
+.ms-note{font-size:12px;color:var(--ink-3);line-height:1.44;}
+.ms-days{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--gold-deep);margin-top:8px;}
+/* Vitals (Overview glance) */
+.vitals{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:2px 0 6px;}
+.vital{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 14px;}
+.vital-k{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);}
+.vital-v{font-family:var(--mono);font-size:12.5px;color:var(--ink);margin-top:5px;word-break:break-word;}
+.vital-v.ok{color:var(--gold-deep);}
+.vital-v.drift{color:var(--ember);}
+/* Risk register (Plan page) */
+.risk{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:13px 17px;margin:0 0 10px;}
+.risk-hard-dependency{border-left-color:var(--ember);}
+.risk-parked{border-left-color:var(--ink-3);}
+.risk-carried{border-left-color:var(--gold);}
+.risk-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.risk-id{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--gold-deep);}
+.risk-title{font-family:var(--serif);font-size:18px;color:var(--ink);flex:1;min-width:0;}
+.risk-trigger{font-size:13px;color:var(--ink-2);line-height:1.5;margin:8px 0 5px;}
+.risk-trigger b{color:var(--ink);font-weight:600;}
+.risk-note{font-size:12.5px;color:var(--ink-3);line-height:1.46;}
+/* Decisions index */
+.dec-shead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);margin:20px 0 8px;}
+.dec-sdate{color:var(--ink-3);letter-spacing:.03em;}
+.dec-jump{font-family:var(--mono);font-size:10px;color:var(--gold-deep);text-decoration:none;border-bottom:1px solid var(--line);letter-spacing:.02em;}
+.dec-jump:hover{border-bottom-color:var(--gold-hi);}
+.dec-row{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin:6px 0;padding-left:16px;position:relative;}
+.dec-row::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--gold-hi);}
+.dec-row strong{color:var(--ink);font-weight:600;}
+/* Glossary */
+.gloss{display:grid;gap:13px;margin-top:8px;}
+.gloss-term{font-family:var(--serif);font-size:19px;color:var(--ink);}
+.gloss-def{font-size:13.5px;color:var(--ink-2);line-height:1.56;margin-top:3px;max-width:74ch;}
+/* Quick links (Overview) */
+.qlinks{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 8px;}
+.qlink{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px;text-decoration:none;}
+.qlink:hover{border-color:var(--gold-hi);color:var(--gold-deep);}
+.qlink .qk{color:var(--gold-deep);letter-spacing:.05em;}
 </style>
 HTML
 
@@ -796,6 +1031,9 @@ printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
 printf '<a class="brail-link brail-dest" href="#page-overnight">Overnight</a>'
 printf '<a class="brail-link brail-dest" href="#page-mobile-canon">Mobile canon</a>'
+printf '<a class="brail-link brail-dest" href="#page-lab">The Lab</a>'
+printf '<a class="brail-link brail-dest" href="#page-decisions">Decisions</a>'
+printf '<a class="brail-link brail-dest" href="#page-glossary">Glossary</a>'
 brail_group "ARRIVE" "arrive" $G_ARRIVE
 brail_group "READ" "read" $G_READ
 brail_group "WRITE" "write" $G_WRITE
@@ -832,6 +1070,27 @@ printf '<div class="stat-read">'
 printf '<div class="stat-card"><div class="stat-num">%s<span class="of"> / %s</span></div><div class="stat-lbl">surfaces closed</div><div class="stat-bar"><div class="stat-fill" style="width:%s%%"></div></div></div>' "$CLOSED" "$TOTAL" "$PCT"
 printf '<div class="stat-card"><div class="stat-num">%s<span class="of"> / %s</span></div><div class="stat-lbl">mobile-native</div><div class="stat-bar"><div class="stat-fill" style="width:%s%%"></div></div></div>' "$MOBNATIVE" "$TOTAL" "$mpct"
 printf '<div class="stat-card"><div class="stat-num">%s</div><div class="stat-lbl">open gaps</div><div class="stat-sub">known work across every surface</div></div>' "$TOTALGAPS"
+printf '</div>'
+# QUICK LINKS + VITALS (Overview glance) — all build-time computed
+printf '<p class="sec-eyebrow">Quick links</p><div class="qlinks">'
+printf '<a class="qlink" href="https://praxis-reading.netlify.app" target="_blank" rel="noopener"><span class="qk">live</span> praxis-reading.netlify.app</a>'
+printf '<a class="qlink" href="./sequence.md" target="_blank" rel="noopener"><span class="qk">plan</span> sequence.md</a>'
+printf '<a class="qlink" href="./praxis-universal-token-sheet.md" target="_blank" rel="noopener"><span class="qk">canon</span> Universal tokens</a>'
+printf '<a class="qlink" href="./praxis-mobile-canon.md" target="_blank" rel="noopener"><span class="qk">canon</span> Mobile</a>'
+printf '<a class="qlink" href="./praxis-desktop-canon.md" target="_blank" rel="noopener"><span class="qk">canon</span> Desktop</a>'
+printf '<span class="qlink"><span class="qk">test acct</span> prestonpraxistest@gmail.com</span>'
+printf '</div>'
+VER=$(printf '%s' "$CACHE" | sed 's/^praxis-//')
+SCHEMA=$(grep -m1 -oE "SCHEMA_VERSION:[[:space:]]*'[^']*'" "$REPO/js/state.js" 2>/dev/null | sed "s/.*'\(.*\)'/\1/"); [ -n "$SCHEMA" ] || SCHEMA='?'
+FMD5=$(md5sum "$REPO/assets/lumen-amber.css" 2>/dev/null | cut -c1-8); MMD5=$(md5sum "$REPO/assets/marks.js" 2>/dev/null | cut -c1-8)
+FCLS="drift"; FTXT="drift"; { [ "$FMD5" = "9879ddb8" ] && [ "$MMD5" = "772886c0" ]; } && { FCLS="ok"; FTXT="locked"; }
+printf '<p class="sec-eyebrow">Vitals</p><div class="vitals">'
+printf '<div class="vital"><div class="vital-k">version</div><div class="vital-v">%s</div></div>' "$VER"
+printf '<div class="vital"><div class="vital-k">schema</div><div class="vital-v">%s</div></div>' "$SCHEMA"
+printf '<div class="vital"><div class="vital-k">cache name</div><div class="vital-v">%s</div></div>' "$CACHE"
+printf '<div class="vital"><div class="vital-k">HEAD</div><div class="vital-v">%s</div></div>' "$HEAD"
+printf '<div class="vital"><div class="vital-k">foundations</div><div class="vital-v %s">%s</div></div>' "$FCLS" "$FTXT"
+printf '<div class="vital"><div class="vital-k">generated</div><div class="vital-v">%s</div></div>' "$NOW"
 printf '</div>'
 # NOW card
 printf '<div class="now-card u-lamplight" id="now"><div class="now-eyebrow">NOW &mdash; the moves at the front of the build</div>'
@@ -872,6 +1131,8 @@ printf '</div></section>\n'
 # ===== PLAN =====
 printf '<section class="page" id="page-plan"><h1 class="page-h u-inkgold">The plan</h1>'
 printf '<p class="ov-lead">The whole build as one continuous thread &mdash; what has already <b>shipped</b>, the moves at the front of the work <b>now</b>, and where the program heads next. The gold thread is the plan; the bright line is the current move&rsquo;s reach.</p>'
+# MILESTONES strip — the program's dated landmarks (days-remaining filled live by the client JS)
+render_milestones
 # PROPOSED cards first (template lives here; renders iff a PROPOSED: entry exists)
 cat "$TMP/replan" | while IFS="$US" read -r kind body; do
   [ "$kind" = "PROPOSED" ] || continue
@@ -910,6 +1171,8 @@ printf '</div>'
 printf '<div class="reachmap"><div class="rm-title">The reach map</div>'
 build_reachmap
 printf '</div>'
+# RISK REGISTER — parked/standing risks + their re-raise triggers (distinct from the overnight queue)
+render_risks
 # aux sections (quiet reference)
 printf '<details class="aux"><summary>Discovered &mdash; profile ledger</summary>'
 cat "$TMP/disc" | while IFS="$US" read -r title touches body; do
@@ -985,6 +1248,20 @@ printf '</section>\n'
 printf '<section class="page" id="page-desktop-canon"><h1 class="page-h u-inkgold">Desktop canon</h1>'
 build_desktop_canon
 printf '</section>\n'
+
+# ===== THE LAB (new studio page — ideas not yet a round) =====
+printf '<section class="page" id="page-lab"><h1 class="page-h u-inkgold">The Lab</h1>'
+printf '<p class="ov-lead">Ideas that are not yet a round &mdash; <b>sparks</b>, half-shapes, and named-but-unscheduled work. The studio loop maps what is MISSING as rounds; the Lab holds what is still just an idea. An idea graduates the moment it earns a place in the sequence.</p>'
+labgroup "Sparks" spark "raw notions, no shape yet"
+labgroup "Shaping" shaping "a receiving surface exists, the shape is emerging"
+labgroup "Scheduled" scheduled "a real slot on the program tail"
+printf '</section>\n'
+
+# ===== DECISIONS INDEX (new studio page — aggregation of per-surface Decisions blocks) =====
+render_decisions
+
+# ===== GLOSSARY (new studio page — plain-language vocabulary) =====
+render_glossary
 
 # ===== surface pages (22 + cross-cutting) =====
 for s in $SURFACES $LAYERS; do
@@ -1116,6 +1393,21 @@ cat <<'HTML'
     for(i=0;i<boxes.length;i++){ (function(box){ var k='studio_ptick_'+box.getAttribute('data-key');
       box.checked=ls(k,false); box.onchange=function(){ sv(k,box.checked); }; })(boxes[i]); } }
 
+  // days-remaining: computed live from the milestone dates on open (degrade = static "&mdash;")
+  function wireMilestoneDays(){ var els=document.querySelectorAll('.ms'),i;
+    var today=new Date(); var t0=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());
+    for(i=0;i<els.length;i++){ var el=els[i]; var out=el.getElementsByClassName('ms-days')[0]; if(!out){ continue; }
+      var d=el.getAttribute('data-mdate')||''; var k=el.getAttribute('data-mkind')||'';
+      if(k==='retired'){ out.innerHTML='retired'; continue; }
+      var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m){ out.innerHTML='&mdash;'; continue; }
+      var t1=Date.UTC(parseInt(m[1],10),parseInt(m[2],10)-1,parseInt(m[3],10));
+      var days=Math.round((t1-t0)/86400000);
+      if(days>1){ out.innerHTML='in '+days+' days'; }
+      else if(days===1){ out.innerHTML='tomorrow'; }
+      else if(days===0){ out.innerHTML='today'; }
+      else if(days===-1){ out.innerHTML='yesterday'; }
+      else { out.innerHTML=(-days)+' days ago'; } } }
+
   function addcls(c,x){ return (' '+c+' ').indexOf(' '+x+' ')>-1?c:(c?c+' '+x:x); }
   function rmcls(c,x){ return (' '+c+' ').replace(' '+x+' ',' ').replace(/^\s+|\s+$/g,''); }
   function showPage(){ var h=location.hash||'#page-overview',id=h.replace(/^#/,''),rawid=id,anchor=null;
@@ -1135,7 +1427,7 @@ cat <<'HTML'
     for(i=0;i<tns.length;i++){ thref=tns[i].getAttribute('href')||''; if(thref==='#'+rawid){ tns[i].className=addcls(tns[i].className,'active'); } else { tns[i].className=rmcls(tns[i].className,'active'); } }
     if(anchor&&anchor.scrollIntoView){ try{ anchor.scrollIntoView(); }catch(e){ window.scrollTo(0,0); } } else { window.scrollTo(0,0); } }
 
-  function boot(){ var is=collectIslands(); paint(is); cardify(); sevDots(); wireTicks(); showPage(); window.onhashchange=showPage; }
+  function boot(){ var is=collectIslands(); paint(is); cardify(); sevDots(); wireTicks(); wireMilestoneDays(); showPage(); window.onhashchange=showPage; }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',boot); } else { boot(); }
 })();
 </script>
@@ -1144,4 +1436,8 @@ cat <<'HTML'
 HTML
 } > "$OUT"
 
-echo "studio-build: wrote $OUT  (HEAD $HEAD, $CACHE, $NOW; closed $CLOSED/$TOTAL, gaps $TOTALGAPS, ship $SHIPCOUNT, map $MAPCOUNT)"
+echo "studio-build: wrote $OUT  (HEAD $HEAD, $CACHE, $NOW; closed $CLOSED/$TOTAL, gaps $TOTALGAPS, ship $SHIPCOUNT, map $MAPCOUNT; lab $LABN, milestones $MILEN, risks $RISKN; warnings $WARNCOUNT)"
+if [ "$WARNCOUNT" -gt 0 ]; then
+  echo "studio-build: PARSER WARNINGS ($WARNCOUNT) — malformed lines skipped, regen completed:"
+  sed 's/^/  ! /' "$WARN"
+fi
