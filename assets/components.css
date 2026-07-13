@@ -13535,9 +13535,33 @@ body.wc-focus .app-nav { opacity:.26; }
    lines read at BOTH widths without a tap; tap brightens the tapped value. (Felt-passed 2026-07-13.) */
 .pf-vline{ fill:none; stroke:var(--star-gold); stroke-width:1.5; opacity:.34; transition:opacity .4s; }  /* R9b Lane G S3: now a lensing PATH (fill:none is load-bearing) */
 .pf-sky .pf-vline.on{ opacity:.78; }
-/* R9b Lane G S3: the sigil-galaxy core is tappable (-> thesis; wired in S7). Motion (rings + breath) lands in S4. */
+/* R9b Lane G S3: the sigil-galaxy core is tappable (-> thesis; wired in S7). */
 .pf-sg-core{ cursor:pointer; }
 .pf-sg-core:focus-visible{ outline:2px solid var(--star-gold); outline-offset:2px; }
+/* R9b Lane G S4: CSS-only motion (zero per-frame JS). Differential sigil rotation (4 speeds) + core breath +
+   planet drift (±~1% viewport) + star orbit (>=120s) + speck twinkle. Freezes under prefers-reduced-motion. */
+@keyframes pf-spin{ to{ transform:rotate(360deg); } }
+@keyframes pf-spinr{ to{ transform:rotate(-360deg); } }
+@keyframes pf-breath{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+@keyframes pf-drA{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(10px,-8px); } }
+@keyframes pf-drB{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-9px,7px); } }
+@keyframes pf-drC{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(7px,9px); } }
+@keyframes pf-orbit{ to{ transform:rotate(360deg); } }
+@keyframes pf-tw{ 0%,100%{ opacity:.10; } 50%{ opacity:.28; } }
+.pf-sg-rings g{ transform-box:fill-box; transform-origin:center; }
+.pf-sg-r1{ animation:pf-spin 150s linear infinite; }
+.pf-sg-r2{ animation:pf-spin 96s linear infinite; }
+.pf-sg-r3{ animation:pf-spin 64s linear infinite; }
+.pf-sg-r4{ animation:pf-spinr 120s linear infinite; }
+.pf-sg-core{ transform-box:fill-box; transform-origin:center; animation:pf-breath 6.5s ease-in-out infinite; }
+.pf-planet{ transform-box:view-box; }
+.pf-planet.d0{ animation:pf-drA 34s ease-in-out infinite; }
+.pf-planet.d1{ animation:pf-drB 41s ease-in-out infinite; }
+.pf-planet.d2{ animation:pf-drC 38s ease-in-out infinite; }
+.pf-spk[data-anim]{ animation:pf-tw 5s ease-in-out infinite; }
+@media (prefers-reduced-motion:reduce){
+  .pf-sg-r1,.pf-sg-r2,.pf-sg-r3,.pf-sg-r4,.pf-sg-core,.pf-planet,.pf-star,.pf-spk{ animation:none; }
+}
 .pf-invite{ font-family:var(--font-serif); font-style:italic; fill:var(--gold-hi); opacity:.74; font-size:14px; }
 @media (prefers-reduced-motion:reduce){ .pf-conline,.pf-vline{ transition:none; } }
 /* BELOW */
@@ -13657,7 +13681,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-below{ max-width:1400px; margin:0 auto; }
   .pf-hero-head{ padding:24px 34px; }
   .pf-name{ font-size:29px; } .pf-tag{ font-size:17px; } .pf-avatar{ width:52px; height:52px; font-size:25px; }
-  .pf-sky-host{ height:398px; } .pf-hero-dock{ padding:0 34px 16px; max-width:1400px; margin:0 auto; }
+  .pf-sky-host{ height:60vh; min-height:420px; max-height:600px; } .pf-hero-dock{ padding:0 34px 16px; max-width:1400px; margin:0 auto; }   /* S4 presence: hero ~60vh */
   .pf-below{ padding:0 34px; } .pf-thesis{ padding:34px 6px 26px; } .pf-thesis p{ font-size:24px; max-width:72ch; }
   /* AM27+AM41 + R9b S1: Values | Numbers stay a two-up pair (row 1); arcs/questions/now now span the FULL
      stage width (were rail-confined). AM51 DOM order is untouched -- only the grid placement changes. */

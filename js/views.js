@@ -16980,6 +16980,7 @@ function _pfPlanetLayout(cats, w, h, mob) {
   var n = cats.length, i, pos = [];
   var cx = w * (mob ? 0.46 : 0.47), cy = h * (mob ? 0.44 : 0.5);
   var rx = w * (mob ? 0.33 : 0.40), ry = h * (mob ? 0.33 : 0.40);
+  if (n <= 4) { rx = rx * 0.62; ry = ry * 0.66; }   // R9b Lane G S4 sparse-sky: <=4 planets -> tightened centered cluster
   for (i = 0; i < n; i = i + 1) {
     if (i === 0) { pos.push({ x: cx, y: cy }); continue; }
     var rank = (n > 1) ? (i / (n - 1)) : 0;
@@ -17156,7 +17157,7 @@ function _profileBuildSky(uid, pub, mob) {
   for (i = 0; i < cats.length; i = i + 1) { catIdx[cats[i].name] = i; }
   var maxBooks = 1;
   for (i = 0; i < cats.length; i = i + 1) { if (cats[i].books > maxBooks) { maxBooks = cats[i].books; } }
-  function prad(books) { return (mob ? 20 : 26) * (0.42 + 0.58 * (books / maxBooks)); }
+  function prad(books) { return (mob ? 12 : 16) + (mob ? 12 : 18) * (books / maxBooks); }   // R9b Lane G S4 presence: raised radius floor+ceiling
   var head = '<svg class="pf-sky" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Your reading as a galaxy: soft fields are categories sized by books; faint stars are books read; bright gold glints are your sub-theories.">';
   var scx = w * (mob ? 0.46 : 0.47), scy = h * (mob ? 0.44 : 0.5);   // sky center (== _pfPlanetLayout focal)
   var body = _pfSigilDefs() + '<rect class="pf-skybg" x="0" y="0" width="' + w + '" height="' + h + '" fill="transparent"></rect>';
@@ -17165,7 +17166,7 @@ function _profileBuildSky(uid, pub, mob) {
   var specks = Math.max(20, Math.min(mob ? 95 : 130, bookN + 12));
   for (i = 0; i < specks; i = i + 1) {
     var sbx = pad * 0.5 + rnd() * (w - pad), sby = 8 + rnd() * (h - 16), sbz = rnd();
-    body += '<circle class="pf-spk" cx="' + sbx.toFixed(1) + '" cy="' + sby.toFixed(1) + '" r="' + (0.5 + sbz).toFixed(2) + '" fill="' + (sbz > 0.7 ? 'var(--text-on-dark)' : 'var(--gold)') + '" opacity="' + (0.05 + sbz * 0.14).toFixed(2) + '"></circle>';
+    body += '<circle class="pf-spk"' + (sbz > 0.6 ? ' data-anim style="animation-delay:-' + (sbz * 5).toFixed(1) + 's"' : '') + ' cx="' + sbx.toFixed(1) + '" cy="' + sby.toFixed(1) + '" r="' + (0.5 + sbz).toFixed(2) + '" fill="' + (sbz > 0.7 ? 'var(--text-on-dark)' : 'var(--gold)') + '" opacity="' + (0.05 + sbz * 0.14).toFixed(2) + '"></circle>';   // S4 twinkle
   }
   // stars = owned sub-theories (visitor: published only), placed near their
   // category planet (or near center when Uncategorized). Consume rnd BEFORE the
@@ -17179,11 +17180,11 @@ function _profileBuildSky(uid, pub, mob) {
     ci = (typeof catIdx[scat] === 'number') ? catIdx[scat] : -1;
     if (ci >= 0) { cxp = pos[ci].x; cyp = pos[ci].y; pr = prad(cats[ci].books); }
     else { cxp = w * 0.5; cyp = h * 0.5; pr = mob ? 24 : 30; }
-    ang = rnd() * 6.2832; dist = pr * (0.5 + rnd() * 0.5);
+    ang = rnd() * 6.2832; dist = pr + (mob ? 10 : 14) + rnd() * (mob ? 8 : 12);   // S4: orbit radius just outside the planet
     sx = cxp + Math.cos(ang) * dist; sy = cyp + Math.sin(ang) * dist;
     sx = Math.max(pad * 0.6, Math.min(w - pad * 0.6, sx));
     sy = Math.max(20, Math.min(h - 24, sy));
-    stars.push({ t: (st.header || 'Untitled sub-theory'), x: sx, y: sy, pub: isPub, id: st.id });
+    stars.push({ t: (st.header || 'Untitled sub-theory'), x: sx, y: sy, px: cxp, py: cyp, pub: isPub, id: st.id });
   }
   // constellation lines: hub-radiate from the dominant category (drawn on tap)
   if (cats.length >= 2) {
@@ -17195,7 +17196,7 @@ function _profileBuildSky(uid, pub, mob) {
   // planets = categories (soft tinted fields, sized by books)
   for (i = 0; i < cats.length; i = i + 1) {
     var c = cats[i], r = prad(c.books), col = 'var(--field-' + (c.hue + 1) + ')', px = pos[i].x, py = pos[i].y;
-    body += '<g class="pf-planet" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="button" aria-label="' + _portraitEsc(c.name) + ', ' + c.books + ' book' + (c.books === 1 ? '' : 's') + '">'
+    body += '<g class="pf-planet d' + (i % 3) + '" style="animation-delay:-' + (i * 4) + 's" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="button" aria-label="' + _portraitEsc(c.name) + ', ' + c.books + ' book' + (c.books === 1 ? '' : 's') + '">'
       + '<circle class="phit" cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r + (mob ? 18 : 14)).toFixed(1) + '" fill="' + col + '" opacity="0"></circle>'
       + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + col + '" opacity="0.15"></circle>'
       + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r * 0.64).toFixed(1) + '" fill="' + col + '" opacity="0.20"></circle>'
@@ -17247,8 +17248,8 @@ function _profileBuildSky(uid, pub, mob) {
   var s2;
   for (i = 0; i < stars.length; i = i + 1) {
     s2 = stars[i];
-    body += '<g class="pf-star" data-star="' + _portraitEsc(s2.t) + '" data-sub="' + _portraitEsc(s2.id) + '" tabindex="0" role="button" aria-label="Sub-theory: ' + _portraitEsc(s2.t) + (s2.pub ? '' : ' (only you can see this)') + '">'
-      + '<circle class="shit" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 27 : 15) + '" fill="transparent"></circle>'
+    body += '<g class="pf-star" style="transform-box:view-box;transform-origin:' + s2.px.toFixed(1) + 'px ' + s2.py.toFixed(1) + 'px;animation:pf-orbit ' + (120 + i * 22) + 's linear infinite;animation-delay:-' + (i * 9) + 's" data-star="' + _portraitEsc(s2.t) + '" data-sub="' + _portraitEsc(s2.id) + '" tabindex="0" role="button" aria-label="Sub-theory: ' + _portraitEsc(s2.t) + (s2.pub ? '' : ' (only you can see this)') + '">'
+      + '<circle class="shit" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 27 : 22) + '" fill="transparent"></circle>'
       + '<circle class="glow" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 12 : 15) + '" fill="var(--gold-hi)" opacity="0.16"></circle>'
       + (s2.pub ? '' : '<circle cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 8 : 10) + '" fill="none" stroke="var(--gold-hi)" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.6"></circle>')
       + '<circle class="core" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 4.4 : 5) + '" fill="var(--star-gold)"></circle></g>';
