@@ -58,9 +58,9 @@ var Intros = (function () {
     { id: 'lenses', ground: 'dark', title: 'Lenses',
       body: 'A lens regroups your whole shelf around an idea — care, power, method — so the same books answer a different question.',
       eg: 'Under the lens “love as practice,” bell hooks moves to the center.' },
-    { id: 'account', ground: 'dark', title: 'A portrait, not a scoreboard',
-      body: 'Your account is an instrument: where your reading has been, what it keeps reaching for. It measures nothing and ranks no one.',
-      eg: '(Copy provisional — finalized against the shipped portrait.)' },
+    { id: 'profile', ground: 'dark', title: 'A portrait, not a scoreboard',
+      body: 'This is your reading made visible — the fields you return to, the values your marking keeps tracing, the questions still open. It measures nothing and ranks no one.',
+      eg: 'The galaxy above is every sub-theory you’ve written; the lines are the values that connect them.' },
     { id: 'about', ground: 'bright', title: 'The long version',
       body: 'What Praxis is, what it refuses to become, and this orientation — every room’s introduction, re-readable forever.',
       eg: 'You are reading its example right now.' },
@@ -555,7 +555,7 @@ var Intros = (function () {
   // hash head -> INTRO id, for the surfaces that own a dedicated route. The
   // orphans (yumi/memory/lenses) have no surface, and About is the host itself;
   // all four live in About Orientation (all 12) and are re-readable there.
-  var ROUTE_INTRO = { '': 'notebook', 'notebook': 'notebook', 'home': 'home', 'books': 'shelf', 'arc': 'field', 'search': 'search', 'commons': 'commons', 'account': 'account', 'yumi-sees': 'sees' };
+  var ROUTE_INTRO = { '': 'notebook', 'notebook': 'notebook', 'home': 'home', 'books': 'shelf', 'arc': 'field', 'search': 'search', 'commons': 'commons', 'profile': 'profile', 'yumi-sees': 'sees' };
 
   function introForHash(hash) {
     var h = ('' + (hash || '')).replace(/^#/, '');

@@ -16661,15 +16661,31 @@ function _pfSubCategory(st) {
 // One-line excerpt from a sub-theory body (collapse whitespace, first sentence-
 // ish, cap ~120 chars). Display-only.
 function _pfExcerpt(body) {
-  var s = (typeof body === 'string') ? body : '';
-  s = s.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-  // P5: strip leading markdown markers (blockquote "> ", heading #, list -/*/+) so a
-  // quoted or structured body never surfaces raw syntax in the published-card excerpt.
-  s = s.replace(/^([>#*+\-]\s*)+/, '').replace(/^\s+/, '');
-  var cut = s.indexOf('. ');
-  if (cut > 20 && cut < 120) { return s.slice(0, cut + 1); }
-  if (s.length > 120) { return s.slice(0, 118) + '…'; }
-  return s;
+  var raw = (typeof body === 'string') ? body : '';
+  if (!raw) { return ''; }
+  // R9b: first CLEAN PROSE sentence -- skip whole quote blocks ("> "), headings ("# "),
+  // and blank lines line-by-line (not just the leading marker); strip a leading list
+  // marker on the first prose line; clamp at a WORD BOUNDARY (~120). Empty/all-quote -> ''.
+  var lines = raw.split(/\r?\n/), i, ln, prose = '';
+  for (i = 0; i < lines.length; i = i + 1) {
+    ln = lines[i].replace(/^\s+|\s+$/g, '');
+    if (!ln) { continue; }
+    if (ln.charAt(0) === '>') { continue; }
+    if (/^#{1,6}\s/.test(ln)) { continue; }
+    ln = ln.replace(/^[-*+]\s+/, '');
+    if (!ln) { continue; }
+    prose = ln; break;
+  }
+  if (!prose) { return ''; }
+  prose = prose.replace(/\s+/g, ' ');
+  var cut = prose.indexOf('. ');
+  if (cut > 20 && cut < 120) { return prose.slice(0, cut + 1); }
+  if (prose.length > 120) {
+    var clip = prose.slice(0, 120), sp = clip.lastIndexOf(' ');
+    if (sp > 60) { clip = clip.slice(0, sp); }
+    return clip + '…';
+  }
+  return prose;
 }
 
 // "Mon YYYY" from a ms timestamp (published date). Empty for a null/absent ts.
@@ -16879,7 +16895,7 @@ function _profilePublished(uid) {
     if (st.status !== 'published') { continue; }
     arc = (st.arcId && state.arcs && state.arcs[st.arcId]) ? state.arcs[st.arcId] : null;
     pub.push({
-      t: st.header || 'Untitled sub-theory',
+      t: (st.header || ''),   // R9b quality pack: empty when headerless -> the card renders excerpt-led
       ex: _pfExcerpt(st.bodyPublic),
       cat: _pfSubCategory(st),
       arc: (arc && typeof arc.title === 'string' && arc.title) ? arc.title : '',
@@ -17264,19 +17280,115 @@ function _pfNowSection(uid) {
   var line = _pfNowLine(uid), h = '<div class="pf-eyebrow">Now <span class="whisper">only you can see this</span></div><div class="pf-card">';
   if (line) { h += '<div class="pf-now">' + line + '</div>'; }
   else { h += '<div class="pf-invite-line">What you’re reading now will surface here.</div>'; }
+  // R9b Now richness: a cross-link to the latest published sub-theory (_profilePublished is newest-first).
+  var pub = _profilePublished(uid);
+  if (pub.length) {
+    var lp = pub[0], when = lp.date ? (' in ' + lp.date) : '';
+    h += '<div class="pf-now-link" data-sub="' + _portraitEsc(lp.id) + '" tabindex="0" role="link">Your latest went public' + when + ' — <b>' + _portraitEsc(lp.t || 'a sub-theory') + '</b> &rarr;</div>';
+  }
   return h + '</div>';
 }
 
 function _pfPublishedSection(uid, vis) {
-  var list = _profilePublished(uid), shown = list.slice(0, 6), h = '<div class="pf-eyebrow">Published work</div><div class="pf-card">', i;
-  if (shown.length === 0) { return h + '<div class="pf-invite-line">' + (vis ? 'What they publish will stand here.' : 'What you publish will stand here.') + '</div></div>'; }
-  h += '<div class="pf-pubgrid">';
-  for (i = 0; i < shown.length; i = i + 1) {
-    var p = shown[i], hue = _pfCatHue(p.cat), bright = 'var(--field-' + (hue + 1) + ')', deep = 'var(--field-' + (hue + 1) + '-deep)';
-    h += '<div class="pf-pub" data-sub="' + _portraitEsc(p.id) + '" tabindex="0" role="link" style="--rail:' + bright + ';--railtext:' + deep + '"><div class="pt">' + _portraitEsc(p.t) + '</div>' + (p.ex ? '<div class="pe">' + _portraitEsc(p.ex) + '</div>' : '') + (p.arc ? '<div class="pl">from the arc ' + _portraitEsc(p.arc) + '</div>' : '') + '<div class="pm"><span class="pcat"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(p.cat) + '</span><span class="pdate">' + _portraitEsc(p.date) + '</span></div></div>';
+  var list = _profilePublished(uid), shown = list.slice(0, 6), n = shown.length, h = '<div class="pf-eyebrow">Published work</div><div class="pf-card">', i;
+  if (n === 0) { return h + '<div class="pf-invite-line">' + (vis ? 'What they publish will stand here.' : 'What you publish will stand here.') + '</div></div>'; }
+  // R9b QUALITY PACK: data-n drives the 2-up/centered grid; omit-when-unknown category
+  // (never print "Uncategorized" -- drop the dot+label); untitled -> excerpt-led; no clean
+  // excerpt -> graceful (no .pe line).
+  h += '<div class="pf-pubgrid" data-n="' + n + '">';
+  for (i = 0; i < n; i = i + 1) {
+    var p = shown[i], known = (p.cat && p.cat !== CATEGORY_UNCATEGORIZED), hue = known ? _pfCatHue(p.cat) : -1;
+    var rail = known ? ('var(--field-' + (hue + 1) + ')') : 'var(--line)', deep = known ? ('var(--field-' + (hue + 1) + '-deep)') : 'var(--ink-3)';
+    var untitled = !p.t;
+    h += '<div class="pf-pub' + (untitled ? ' untitled' : '') + '" data-sub="' + _portraitEsc(p.id) + '" tabindex="0" role="link" style="--rail:' + rail + ';--railtext:' + deep + '">';
+    if (untitled) { h += '<div class="pt">' + _portraitEsc(p.ex || 'Untitled') + '</div>'; }
+    else { h += '<div class="pt">' + _portraitEsc(p.t) + '</div>' + (p.ex ? '<div class="pe">' + _portraitEsc(p.ex) + '</div>' : ''); }
+    if (p.arc) { h += '<div class="pl">from the arc ' + _portraitEsc(p.arc) + '</div>'; }
+    h += '<div class="pm">' + (known ? ('<span class="pcat"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(p.cat) + '</span>') : '<span class="pcat"></span>') + '<span class="pdate">' + _portraitEsc(p.date) + '</span></div></div>';
   }
   h += '</div>' + (list.length > 6 ? '<span class="pf-pub-more" data-go="#arcs" tabindex="0" role="link">all published work &rarr;</span>' : '') + '</div>';
   return h;
+}
+
+// R9b — Knowledge arcs (question-led, arc-anchored, visitor-fenced to >=1 published sub).
+function _pfArcsSection(uid, vis) {
+  var subs = _pfOwnedSubs(uid), byArc = {}, i, st, aid, arc;
+  for (i = 0; i < subs.length; i = i + 1) {
+    st = subs[i];
+    if (!st || typeof st.arcId !== 'string' || !st.arcId) { continue; }
+    if (!byArc[st.arcId]) { byArc[st.arcId] = []; }
+    byArc[st.arcId].push(st);
+  }
+  var owned = [];
+  for (aid in state.arcs) {
+    if (!state.arcs.hasOwnProperty(aid)) { continue; }
+    arc = state.arcs[aid];
+    if (arc && arc.userId === uid) { owned.push(arc); }
+  }
+  owned.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  var h = '<div class="pf-eyebrow">Knowledge arcs' + (vis ? '' : ' <span class="cap">the questions you’re working</span>') + '</div><div class="pf-card">', j, k, rows = 0, body = '';
+  for (j = 0; j < owned.length; j = j + 1) {
+    arc = owned[j];
+    var asubs = byArc[arc.id] || [], pub = [], draft = [];
+    for (k = 0; k < asubs.length; k = k + 1) {
+      if (asubs[k].status === 'published') { pub.push(asubs[k]); } else { draft.push(asubs[k]); }
+    }
+    if (vis && pub.length === 0) { continue; }   // fence: visitor sees arcs with >=1 published sub
+    var listSubs = vis ? pub : asubs, q = (typeof arc.title === 'string' && arc.title) ? arc.title : '(untitled arc)';
+    body += '<div class="pf-arc"><div class="pf-arc-q">' + _portraitEsc(q) + '</div><div class="pf-sublinks">';
+    for (k = 0; k < listSubs.length; k = k + 1) {
+      var sst = listSubs[k], isd = (sst.status !== 'published'), hue = _pfCatHue(_pfSubCategory(sst)), deep = 'var(--field-' + (hue + 1) + '-deep)';
+      body += '<span class="pf-sublink' + (isd ? ' draft' : '') + '" data-sub="' + _portraitEsc(sst.id) + '" tabindex="0" role="link" style="--field-deep:' + deep + '"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(sst.header || 'Untitled sub-theory') + (isd ? ' · draft' : '') + '</span>';
+    }
+    body += '</div>';
+    var meta = vis ? (pub.length + ' published') : (pub.length > 0 ? (pub.length + ' published' + (draft.length ? (' · ' + draft.length + ' in draft') : '')) : (draft.length + ' in draft · none published yet'));
+    body += '<div class="pf-arc-meta"><span class="pf-arc-open" data-go="#arc/' + _portraitEsc(arc.id) + '" tabindex="0" role="link">open the arc &rarr;</span><span class="pf-arc-count">' + meta + '</span></div></div>';
+    rows = rows + 1;
+  }
+  if (rows === 0) { return h + '<div class="pf-invite-line">' + (vis ? 'Their published arcs will stand here.' : 'Your arcs gather here as you connect sub-theories into a question.') + '</div></div>'; }
+  return h + body + '</div>';
+}
+
+// R9b — Lineage band. valueMark `why` lines from the declared-value load, deduped
+// (normalized), grouped by value, values ordered by evidence-load. PUBLIC (AM50). "Most-
+// cited first" is inert on real data (felt-passed to load-order + dedupe). Sparse: owner
+// invitation / visitor OMIT (returns '').
+function _pfLineageSection(uid, vis) {
+  var load = _profileValueLoad(uid).values.slice(0);
+  load.sort(function (a, b) { return a.w - b.w; });
+  var rows = [], seen = {}, i, j, key;
+  for (i = 0; i < load.length; i = i + 1) {
+    var whys = (load[i].whys instanceof Array) ? load[i].whys : [];
+    for (j = 0; j < whys.length; j = j + 1) {
+      if (typeof whys[j] !== 'string' || !whys[j]) { continue; }
+      key = whys[j].toLowerCase().replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+      if (!key || seen[key]) { continue; }
+      seen[key] = 1;
+      rows.push({ line: whys[j], value: load[i].name });
+    }
+  }
+  if (rows.length === 0) {
+    if (vis) { return ''; }
+    return '<div class="pf-eyebrow">Lineage <span class="cap">the lines your marking keeps tracing</span></div><div class="pf-card"><div class="pf-invite-line">The lines your marking traces gather here as you mark why a book carries a value.</div></div>';
+  }
+  var h = '<div class="pf-eyebrow">Lineage <span class="cap">the lines your marking keeps tracing</span></div><div class="pf-card"><div class="pf-lineage">';
+  for (i = 0; i < rows.length; i = i + 1) {
+    h += '<div class="pf-lin-row"><span class="pf-why">' + _portraitEsc(rows[i].line) + '</span><span class="pf-lin-tag" data-value="' + _portraitEsc(rows[i].value) + '" tabindex="0" role="button">' + _portraitEsc(rows[i].value) + '</span></div>';
+  }
+  return h + '</div></div>';
+}
+
+// R9b DNA re-slot — display-only reflection of the reader-model threads (managed in the
+// reader-model instrument, moved Settings-adjacent). Owner-only. Sparse-honest.
+function _pfThreadsSection(uid) {
+  var model = (typeof getReaderModel === 'function') ? getReaderModel(uid) : null;
+  var threads = (model && model.threads instanceof Array) ? model.threads : [];
+  var h = '<div class="pf-eyebrow">Threads Yumi is holding <span class="whisper">only you can see this</span></div><div class="pf-card">', i, n = 0;
+  for (i = 0; i < threads.length; i = i + 1) {
+    if (threads[i] && threads[i].label) { h += '<div class="pf-thread-row">' + _portraitEsc(threads[i].label) + '</div>'; n = n + 1; }
+  }
+  if (n === 0) { h += '<div class="pf-invite-line">The threads Yumi notices in your reading will gather here, once you let her keep a reader’s model.</div>'; }
+  return h + '</div>';
 }
 
 function _pfSettingsSection(uid) {
@@ -17317,21 +17429,30 @@ function _pfBuildPage(uid, vis, mob) {
   } else if (!vis) {
     h += '<div class="pf-thesis"><p><span style="color:var(--ink-3)">Write the through-line of your reading — the tension you keep returning to.</span></p><span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span></div>';
   }
+  // AM51 DOM order: Statement -> Values -> Numbers -> ARCS -> Questions -> Now (in the grid);
+  // then DNA (returns/journey/threads) -> LINEAGE -> Published -> Consent -> Settings full-width.
   h += '<div class="pf-grid">';
   h += '<div class="pf-sec sec-values">' + _pfValuesSection(uid, vis) + '</div>';
   h += '<div class="pf-sec sec-numbers">' + _pfNumbersSection(uid, vis) + '</div>';
+  h += '<div class="pf-sec sec-arcs">' + _pfArcsSection(uid, vis) + '</div>';
   h += '<div class="pf-sec sec-questions pf-owner-only">' + _pfQuestionsSection(uid) + '</div>';
   h += '<div class="pf-sec sec-now pf-owner-only">' + _pfNowSection(uid) + '</div>';
   h += '</div>';
-  // DNA carry (owner-only, Preston-approved "keep"): what the margins return to,
-  // how the reading has moved, and the reader-model section (mounted post-innerHTML
-  // as a live DOM node). Final placement is a felt-pass call.
+  // DNA carry (owner-only): what the margins return to, how the reading has moved, and the
+  // threads Yumi is holding -- stay in the portrait flow AFTER Now (R9b DNA re-slot).
   if (!vis) {
     h += '<div class="pf-sec sec-returns pf-owner-only">' + _pfReturnsSection(uid) + '</div>';
     h += '<div class="pf-sec sec-journey pf-owner-only">' + _pfJourneySection(uid) + '</div>';
-    h += '<div class="pf-sec sec-yumi pf-owner-only pf-yumi-mount" id="pf-yumi-mount"></div>';
+    h += '<div class="pf-sec sec-threads pf-owner-only">' + _pfThreadsSection(uid) + '</div>';
   }
+  var _lin = _pfLineageSection(uid, vis);   // PUBLIC; visitor-empty -> '' (omitted)
+  if (_lin) { h += '<div class="pf-sec sec-lineage">' + _lin + '</div>'; }
   h += '<div class="pf-sec sec-published">' + _pfPublishedSection(uid, vis) + '</div>';
+  // R9b DNA re-slot: the reader-model CONSENT instrument moves Settings-adjacent (mounted
+  // post-innerHTML into #pf-yumi-mount by renderProfilePage; carries the consent opt-in).
+  if (!vis) {
+    h += '<div class="pf-sec sec-consent pf-owner-only pf-yumi-mount" id="pf-yumi-mount"></div>';
+  }
   h += '<div class="pf-sec sec-settings pf-owner-only pf-settings">' + _pfSettingsSection(uid) + '</div>';
   return h + '</div>';
 }
@@ -17401,7 +17522,13 @@ function _pfWire(wrap, uid, vis) {
     var a = cl(t, '[data-act]');
     if (a) {
       var act = a.getAttribute('data-act');
-      if (act === 'preview') { _pfPreview = true; renderProfilePage(); return; }
+      if (act === 'preview') {
+        _pfPreview = true;
+        // R9b: the profile INTRO beat is owner-only -> drop the W9 panel/summon in preview too.
+        var _ip = document.querySelector('.intro-panel-wrap'); if (_ip && _ip.parentNode) { _ip.parentNode.removeChild(_ip); }
+        var _is = document.querySelector('.intro-summon'); if (_is && _is.parentNode) { _is.parentNode.removeChild(_is); }
+        renderProfilePage(); return;
+      }
       if (act === 'exit-preview') { _pfPreview = false; renderProfilePage(); return; }
       if (act === 'toggle-reads') {
         var np = (getProfile(uid).yumiReadsAlong === false);

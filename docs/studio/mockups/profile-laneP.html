@@ -1,0 +1,422 @@
+<!-- Praxis Studio — R9b LANE P (Profile page). Evolves the R9a v5 contract (profile.html) ADDITIVELY.
+     NEW this lane: (1) ARCS section — question-LED cards, visitor-fenced to arcs with >=1 published sub,
+     owner sees all with draft counts; (2) LINEAGE band — deduped value-mark why-lines, grouped by value,
+     ordered by load, PUBLIC; (3) DNA RE-SLOT — returns/journey/threads stay after Now, the reader-model
+     CONSENT panel moves Settings-adjacent, Published is the closing band before Settings; (4) Now richness
+     — progress + latest-published cross-link + owner-only whisper; (5) Published QUALITY PACK — omit-when-
+     unknown category (no "Uncategorized"), excerpt-led when untitled, graceful no-excerpt interior, 2-up at
+     n=2 / centered at n=1; (6) profile INTRO beat (W9), owner-only, suppressed in preview; (7) cross-links.
+     AM51 DOM order: Statement -> Values -> Numbers -> ARCS -> Questions -> Now -> [DNA] -> LINEAGE ->
+     Published -> Consent -> Settings. Warm ground; Universal tokens + --field-*-deep. QUESTIONS stay
+     OWNER-ONLY field-tensions (Preston's Option A: the arc cards carry the question-fencing). -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis Studio — R9b Lane P Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4efe4; --surface:#fffdf8; --surface-2:#efe7d6;
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d;
+  --line:#e3d8c1; --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441; --lum-gold:#ffce4a; --ember:#c2603a;
+  --radius:16px; --night-line:#3a2c15;
+  --field-1:#f2c25a;--field-2:#e07a52;--field-3:#d98f8a;--field-4:#f5bace;--field-5:#a9b98c;--field-6:#98d4b0;--field-7:#8590d8;--field-8:#f8e078;--field-9:#e8b068;--field-10:#b8896c;
+  --field-1-deep:#7a5410;--field-2-deep:#9c3f1e;--field-3-deep:#97423c;--field-4-deep:#a53a62;--field-5-deep:#4d6333;--field-6-deep:#2b6f4f;--field-7-deep:#3a4590;--field-8-deep:#726010;--field-9-deep:#7f5514;--field-10-deep:#68412c;
+  --br-deep:#1c1209; --sunk-d:#241406; --scrim:rgba(15,9,4,.6); --text-on-dark:#f0e3c8;
+  --fs:'Cormorant Garamond',Georgia,serif; --fb:'DM Sans',system-ui,sans-serif; --fm:'DM Mono',monospace;
+  --shadow-1:0 1px 2px rgba(74,50,18,.05),0 6px 16px rgba(74,50,18,.06);
+  --shadow-2:0 1px 3px rgba(74,50,18,.07),0 12px 30px rgba(74,50,18,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{background:#cdbfa4;color:var(--ink);font-family:var(--fb);font-size:15.5px;line-height:1.6;padding:32px 18px 80px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mono{font-family:var(--fm);font-variant-numeric:tabular-nums lining-nums}
+.si{max-width:980px;margin:0 auto 22px;color:#2a2016}.si h1{font-family:var(--fs);font-weight:600;font-size:24px;color:#1c140b}
+.si p{font-size:13px;color:#4a3c28;margin-top:5px;max-width:82ch}.si b{color:#1c140b}
+.si .leg{font-family:var(--fm);font-size:11px;color:#5a4a30;margin-top:9px;line-height:1.7}
+.fb{max-width:1360px;margin:0 auto 38px}
+.fs2{font-family:var(--fm);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#5a4a30;margin:0 0 9px 2px}.fs2 b{color:#1c140b}.fs2 .vis{color:var(--ember)}
+.render-frame{position:relative;container-type:inline-size;container-name:pf;background:var(--paper);border:1px solid #b3a488;border-radius:20px;overflow:hidden;box-shadow:0 16px 44px rgba(30,20,8,.20)}
+.frame-mobile{width:390px}.frame-desktop{width:1280px}
+
+/* HERO */
+.pf-hero{position:relative;color:var(--text-on-dark);background:radial-gradient(120% 130% at 50% 6%, color-mix(in srgb,var(--br-deep) 78%,var(--sunk-d)) 0%, var(--br-deep) 56%, color-mix(in srgb,var(--br-deep) 64%, #3a2a14) 100%)}
+.pf-hero-head{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:18px 22px}
+.pf-idrow{display:flex;gap:12px;align-items:center}
+.pf-avatar{position:relative;width:46px;height:46px;flex:none;border-radius:50%;background:linear-gradient(140deg,var(--gold-hi),var(--gold-deep));display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-weight:600;font-size:22px;color:#2a1a06}
+.pf-avatar::before{content:'';position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--gold-hi);transform:translate(4px,4px);opacity:.75}
+.pf-name{font-family:var(--fs);font-weight:600;font-size:24px;color:#fff4dc;line-height:1.05}
+.pf-tag{font-family:var(--fs);font-style:italic;font-size:14.5px;color:var(--gold-hi);opacity:.9}
+.pf-byline{font-family:var(--fm);font-size:10px;letter-spacing:.04em;color:var(--text-on-dark);opacity:.62;margin-top:2px}
+.pf-preview-link{font-family:var(--fm);font-size:10.5px;letter-spacing:.05em;color:var(--text-on-dark);opacity:.75;border:1px solid rgba(217,164,65,.45);border-radius:999px;padding:0 14px;white-space:nowrap;cursor:pointer;background:rgba(0,0,0,.16);min-height:44px;display:inline-flex;align-items:center}
+.pf-preview-link:hover{opacity:1;border-color:var(--gold-hi)}
+.pf-vis-badge{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#3a2408;background:var(--gold-hi);border-radius:999px;padding:6px 11px;align-self:center}
+.pf-sky-host{position:relative}.pf-sky{display:block;width:100%;height:100%}
+.pf-hero::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(217,164,65,.6),transparent)}
+.pf-hero-dock{position:relative;z-index:3;padding:0 16px 14px}
+.pf-strip-wrap{position:relative}
+.pf-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}.pf-strip::-webkit-scrollbar{display:none}
+.pf-strip-wrap.overflow::after{content:'';position:absolute;top:0;right:0;bottom:10px;width:44px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--br-deep) 88%)}
+.pf-strip-wrap.overflow .pf-strip-more{position:absolute;right:2px;top:50%;transform:translateY(-60%);font-family:var(--fm);font-size:13px;color:var(--gold-hi);pointer-events:none}
+.pf-vchip{flex:none;font-family:var(--fb);font-size:12.5px;padding:0 15px;min-height:44px;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;color:var(--text-on-dark);background:rgba(240,227,200,.07);border:1px solid rgba(217,164,65,.5)}
+.pf-vchip .vorb{width:8px;height:8px;border-radius:50%;background:var(--gold-hi);opacity:.85}
+.pf-vchip.on{color:#3a2408;background:linear-gradient(135deg,var(--gold-hi),var(--gold));border-color:transparent;font-weight:500}.pf-vchip.on .vorb{background:#fff2cf}.pf-vchip.dim{opacity:.5}
+.pf-vchip:focus-visible{outline:2px solid var(--lum-gold);outline-offset:2px}
+.pf-counts{font-family:var(--fm);font-size:12.5px;color:var(--text-on-dark);padding:2px 4px 0;font-variant-numeric:tabular-nums lining-nums}
+.pf-counts b{color:var(--lum-gold);font-weight:500}.pf-counts .cx{cursor:pointer;border-bottom:1px dotted rgba(240,227,200,.4)}.pf-counts .cx:hover{color:var(--lum-gold)}
+.pf-taphint{font-family:var(--fm);font-size:9.5px;color:var(--text-on-dark);opacity:.5;padding:7px 4px 0}
+/* profile INTRO beat (W9, owner-only, suppressed in preview) */
+.pf-intro-demo{position:absolute;top:62px;right:14px;left:14px;z-index:9;margin-left:auto;max-width:352px;pointer-events:auto}
+.intro-panel.is-dark{position:relative;background:linear-gradient(160deg,#241708,#170e05);border:1px solid rgba(217,164,65,.32);border-radius:14px;padding:15px 17px;color:var(--text-on-dark);box-shadow:0 18px 46px rgba(0,0,0,.42)}
+.intro-x{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--text-on-dark);opacity:.55;font-size:18px;cursor:pointer;line-height:1}.intro-x:hover{opacity:1}
+.intro-top{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.intro-name{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-hi)}
+.intro-badge{font-family:var(--fm);font-size:9px;letter-spacing:.05em;color:var(--text-on-dark);opacity:.5}
+.intro-title{font-family:var(--fs);font-weight:600;font-size:20px;color:#fff4dc;margin-bottom:5px}
+.intro-body{font-family:var(--fb);font-size:12.5px;line-height:1.5;color:var(--text-on-dark);opacity:.9}
+.intro-eg{font-family:var(--fs);font-style:italic;font-size:13.5px;color:var(--gold-hi);opacity:.92;margin-top:8px}
+.intro-foot{font-family:var(--fm);font-size:9px;color:var(--text-on-dark);opacity:.45;margin-top:9px}
+/* sky */
+.pf-star,.pf-planet{cursor:pointer}.pf-star:hover .core,.pf-star:focus-visible .core{r:6.4}.pf-star.lit .core{r:6.6}.pf-star.faded{opacity:.26}
+.pf-planet:hover .phit,.pf-planet:focus-visible .phit{opacity:.15}
+.pf-plabel{font-family:var(--fs);fill:var(--text-on-dark);opacity:.84;font-size:16px}.pf-plabel.dom{font-size:19px;opacity:.96;font-weight:600}
+.pf-conline{stroke:var(--gold-hi);stroke-width:1;opacity:0;transition:opacity .5s}.pf-sky.show-lines .pf-conline{opacity:.4}
+/* R9b felt-pass fix: the value web is FAINT-BY-DEFAULT (was opacity:0 / hidden-until-tap) so cross-category
+   value lines read at BOTH widths without a tap; tap still brightens the tapped value. Opacity tunes at felt pass. */
+.pf-vline{stroke:var(--lum-gold);stroke-width:1.5;opacity:.34;transition:opacity .4s}.pf-sky .pf-vline.on{opacity:.78}
+.pf-invite{font-family:var(--fs);font-style:italic;fill:var(--gold-hi);opacity:.74;font-size:14px}
+@media (prefers-reduced-motion:reduce){.pf-conline,.pf-vline{transition:none}}
+/* BELOW */
+.pf-below{padding:0 18px}
+.pf-thesis{position:relative;padding:26px 6px 22px;max-width:70ch}.pf-thesis p{font-family:var(--fs);font-size:22px;line-height:1.5;color:var(--ink)}.pf-thesis em{color:var(--gold-deep)}
+.pf-edit{position:absolute;top:24px;right:2px;font-family:var(--fm);font-size:10px;color:var(--ink-3);cursor:pointer;border-bottom:1px solid var(--line)}.pf-edit:hover{color:var(--gold-deep)}
+.pf-eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin:0 0 9px 4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pf-eyebrow .cap{color:var(--ink-3);text-transform:none;letter-spacing:.01em;font-size:10.5px;font-weight:400}
+.pf-eyebrow .whisper{color:var(--ink-3);text-transform:none;letter-spacing:.02em;font-size:10px;display:inline-flex;align-items:center;gap:5px}
+.pf-eyebrow .whisper::before{content:'';width:12px;height:0;border-top:1.4px dashed var(--ink-3)}
+.pf-sec{margin-bottom:22px}
+.pf-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-1);padding:20px 22px}
+/* values */
+.pf-offer{background:var(--surface-2);border-radius:12px;box-shadow:var(--shadow-1);padding:13px 15px;margin-bottom:18px;position:relative;overflow:hidden}
+.pf-offer::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold-hi)}
+.pf-offer .lab{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.pf-offer .obody{font-family:var(--fs);font-size:16px;color:var(--ink-2);line-height:1.4}.pf-offer .says{margin-top:7px;font-size:12.5px;color:var(--ink-3)}.pf-offer .says .prop{font-family:var(--fs);font-weight:600;font-size:17px;color:var(--ink);margin-left:5px}
+.pf-acts{margin-top:9px;display:flex;gap:7px;flex-wrap:wrap}
+.pf-chip{font-family:var(--fb);font-size:12px;padding:0 14px;min-height:44px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink-2);display:inline-flex;align-items:center}.pf-chip.yes{background:linear-gradient(135deg,var(--gold-hi),var(--gold));color:#3a2408;border-color:transparent;font-weight:500}
+.pf-vcard{display:flex;gap:14px;padding:16px 0;border-top:1px solid var(--line)}.pf-vcard:first-of-type{border-top:none}
+.pf-orb{flex:none;margin-top:5px}.pf-vmain{min-width:0}
+.pf-vname{font-family:var(--fs);font-weight:600;line-height:1.05}.pf-vcard.w1 .pf-vname{font-size:29px;color:var(--ink)}.pf-vcard.w2 .pf-vname{font-size:25px;color:#3a2a18}.pf-vcard.w3 .pf-vname{font-size:22px;color:var(--ink-2)}.pf-vcard.w4 .pf-vname{font-size:19px;color:var(--ink-3)}
+.pf-why{font-family:var(--fs);font-style:italic;font-size:16.5px;line-height:1.45;color:#4a3d29;max-width:60ch;margin-top:6px}.pf-why::before{content:'\201C'}.pf-why::after{content:'\201D'}
+.pf-drawn{font-family:var(--fb);font-size:12.5px;color:var(--ink-3);margin-top:9px}
+.pf-sublinks{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.pf-sublink{font-family:var(--fb);font-size:13px;color:var(--field-deep,var(--gold-deep));border-bottom:1px solid currentColor;cursor:pointer;display:inline-flex;align-items:center;gap:6px;opacity:.95}.pf-sublink::after{content:'\2192';opacity:.55;margin-left:2px}.pf-sublink.draft{color:var(--ink-3)}
+.pf-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.pf-orphan{font-size:12.5px;color:var(--ink-3);font-style:italic;margin-top:15px;padding-left:11px;border-left:2px solid var(--line)}
+/* ARCS (NEW) — question-LED cards */
+.pf-arc{padding:16px 0;border-top:1px solid var(--line)}.pf-arc:first-of-type{border-top:none}
+.pf-arc-q{font-family:var(--fs);font-weight:600;font-size:19.5px;line-height:1.25;color:var(--ink);max-width:60ch}
+.pf-arc .pf-sublinks{margin-top:10px}
+.pf-arc-meta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:11px}
+.pf-arc-open{font-family:var(--fb);font-size:12.5px;color:var(--gold-deep);cursor:pointer;border-bottom:1px solid rgba(133,84,16,.3)}.pf-arc-open:hover{color:var(--gold)}
+.pf-arc-count{font-family:var(--fm);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+/* numbers + lens toggle */
+.pf-numhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pf-seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px}
+.pf-seg button{font-family:var(--fb);font-size:11.5px;padding:0 13px;min-height:32px;border:none;background:transparent;color:var(--ink-3);border-radius:999px;cursor:pointer}
+.pf-seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1);font-weight:500}
+.pf-seg button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.pf-statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:12px}
+.pf-stat{text-align:center;cursor:pointer}.pf-stat .n{font-family:var(--fm);font-weight:500;font-size:26px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums lining-nums}.pf-stat .l{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}.pf-stat:hover .n{color:var(--gold-deep)}
+.pf-catgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:16px}
+.pf-catcard{background:var(--surface-2);border-radius:11px;padding:11px 12px 12px 14px;position:relative;overflow:hidden}
+.pf-catcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rail)}
+.pf-catcard .cn{font-family:var(--fb);font-weight:600;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px}
+.pf-catcard .cm{font-family:var(--fm);font-size:10.5px;color:var(--railtext);margin-top:3px;font-variant-numeric:tabular-nums lining-nums}
+.pf-bar{height:5px;border-radius:3px;background:rgba(100,89,64,.14);margin-top:8px;overflow:hidden}.pf-bar i{display:block;height:100%;background:var(--barfill);border-radius:3px}
+.pf-numcov{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+.pf-invite-line{font-family:var(--fs);font-style:italic;font-size:14px;color:var(--gold-deep);opacity:.85;margin-top:10px}
+/* questions/now */
+.pf-gap{padding:12px 0;border-top:1px solid var(--line)}.pf-gap:first-of-type{border-top:none}
+.pf-gap-q{font-family:var(--fs);font-size:18px;line-height:1.4;color:var(--ink);max-width:58ch}.pf-gap-q .cat{font-weight:600;color:var(--field-deep);border-bottom:1px solid var(--field-deep)}.pf-gap-a{font-family:var(--fb);font-size:13px;color:var(--ink-3);margin-top:4px}
+.pf-now{font-family:var(--fs);font-size:17px;font-style:italic;color:var(--ink-2);max-width:60ch}.pf-now b{font-style:normal;font-weight:600;color:var(--ink)}
+.pf-now-link{font-family:var(--fb);font-size:13px;color:var(--gold-deep);margin-top:11px;cursor:pointer;display:inline-block}.pf-now-link b{font-weight:600}.pf-now-link:hover{color:var(--gold)}
+/* DNA carry — returns / journey / threads (owner-only) */
+.pf-dna-row{padding:10px 0;border-top:1px solid var(--line);font-family:var(--fs);font-size:16px;color:var(--ink-2);display:flex;justify-content:space-between;gap:12px;align-items:baseline;line-height:1.4}
+.pf-dna-row:first-child{border-top:none}
+.pf-dna-row em{color:var(--gold-deep);font-style:italic}
+.pf-dna-row b{font-style:normal;font-weight:600;color:var(--ink)}
+.pf-dna-ct{font-family:var(--fm);font-size:10px;color:var(--ink-3);white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
+/* LINEAGE band (NEW) — deduped why-lines, grouped by value, ordered by load, PUBLIC */
+.pf-lineage{display:flex;flex-direction:column}
+.pf-lin-row{padding:12px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}.pf-lin-row:first-child{border-top:none}
+.pf-lin-row .pf-why{margin-top:0;max-width:62ch}
+.pf-lin-tag{font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);cursor:pointer;white-space:nowrap;border-bottom:1px dotted rgba(133,84,16,.4)}.pf-lin-tag:hover{color:var(--gold)}
+/* AM41-42 published full-width band, equal-height + quality pack */
+.pf-pubgrid{display:grid;grid-template-columns:1fr;gap:12px}
+.pf-pub{background:var(--surface-2);border-radius:12px;padding:15px 16px 15px 17px;cursor:pointer;position:relative;overflow:hidden;box-shadow:var(--shadow-1);display:flex;flex-direction:column;min-height:100%}
+.pf-pub::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rail)}.pf-pub:hover{box-shadow:var(--shadow-2)}
+.pf-pub .pt{font-family:var(--fs);font-weight:600;font-size:19px;color:var(--ink);line-height:1.15}
+.pf-pub.untitled .pt{font-style:italic;font-weight:500;font-size:17.5px;color:var(--ink-2);line-height:1.3}  /* excerpt-led when untitled */
+.pf-pub .pe{font-family:var(--fs);font-style:italic;font-size:14.5px;color:var(--ink-2);margin-top:5px;line-height:1.4}
+.pf-pub .pl{font-family:var(--fm);font-size:10px;color:var(--ink-3);margin-top:7px}
+.pf-pub .pm{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:auto;padding-top:11px}
+.pf-pub .pcat{font-family:var(--fm);font-size:10.5px;color:var(--railtext);display:inline-flex;align-items:center;gap:5px}
+.pf-pub .pdate{font-family:var(--fm);font-size:10px;color:var(--ink-3);white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
+.pf-pub-more{margin-top:14px;font-family:var(--fb);font-size:13px;color:var(--gold-deep);cursor:pointer;border-bottom:1px solid rgba(133,84,16,.35);display:inline-block}
+/* consent (reader-model) — moved Settings-adjacent, owner-only */
+.pf-consent-body{font-family:var(--fs);font-size:16px;color:var(--ink-2);line-height:1.45;max-width:62ch}
+/* settings */
+.pf-settings .pf-eyebrow{color:var(--ink-3)}
+.pf-set-fields{display:grid;grid-template-columns:1fr;gap:8px}
+.pf-field{display:flex;align-items:flex-start;gap:10px}.pf-field label{font-family:var(--fb);font-size:11.5px;color:var(--ink-3);width:120px;flex:none;padding-top:6px}
+.pf-field input,.pf-field textarea{flex:1;font-family:var(--fb);font-size:12.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px}.pf-field textarea{min-height:46px;resize:vertical;font-family:var(--fs);font-size:14px}
+.pf-set-row{display:flex;gap:10px;margin-top:12px}
+.pf-btn{font-family:var(--fb);font-size:12px;padding:0 16px;min-height:44px;border-radius:8px;cursor:pointer;border:1px solid var(--line);display:inline-flex;align-items:center}.pf-btn.save{background:linear-gradient(135deg,var(--gold-hi),var(--gold));color:#3a2408;border-color:transparent}.pf-btn.ghost{background:transparent;color:var(--ink-3)}
+.pf-toggle{display:inline-flex;align-items:center;gap:8px;font-family:var(--fb);font-size:11.5px;color:var(--ink-3);margin-top:12px;cursor:pointer}.pf-toggle .tk{width:30px;height:17px;border-radius:999px;background:var(--gold);position:relative}.pf-toggle .tk::after{content:'';position:absolute;top:2px;right:2px;width:13px;height:13px;border-radius:50%;background:#fff}
+.pf-toggle.off .tk{background:var(--line)}.pf-toggle.off .tk::after{right:auto;left:2px}
+.pf-covenant{margin-top:14px;font-size:11.5px;color:var(--ink-3)}.pf-covenant a{color:var(--gold-deep);text-decoration:none;border-bottom:1px solid rgba(133,84,16,.3)}
+.render-frame.is-visitor .pf-owner-only{display:none!important}
+.pf-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#1c140b;color:var(--text-on-dark);font-family:var(--fm);font-size:12.5px;padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.35)}.pf-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* mobile base */
+.pf-sky-host{height:478px}.pf-grid{display:block}
+/* >=1200 composition */
+@container pf (min-width:1200px){
+  .pf-hero-head{padding:24px 34px}.pf-name{font-size:29px}.pf-tag{font-size:17px}.pf-avatar{width:52px;height:52px;font-size:25px}
+  .pf-sky-host{height:398px}.pf-hero-dock{padding:0 30px 16px}
+  .pf-below{padding:0 34px}.pf-thesis{padding:34px 6px 26px}.pf-thesis p{font-size:24px;max-width:72ch}
+  .pf-intro-demo{right:30px;left:auto;top:80px;max-width:360px}
+  /* AM27+AM41+AM51: main=voice (values,ARCS,questions,now) · rail=NUMBERS ONLY. DNA/lineage/published/consent/settings full-width below. */
+  .pf-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:26px 30px;align-items:start;grid-template-areas:"values numbers" "arcs numbers" "questions numbers" "now numbers"}
+  .sec-values{grid-area:values}.sec-numbers{grid-area:numbers}.sec-arcs{grid-area:arcs}.sec-questions{grid-area:questions}.sec-now{grid-area:now}
+  .sec-numbers{align-self:start}
+  .pf-sec{margin-bottom:0}.pf-grid{row-gap:26px}
+  .sec-returns,.sec-journey,.sec-threads,.sec-lineage,.sec-published,.sec-consent{margin-top:26px}
+  .pf-pubgrid{grid-template-columns:repeat(3,1fr)}                                   /* AM41 3-up */
+  .pf-pubgrid[data-n="2"]{grid-template-columns:repeat(2,1fr)}                        /* 2-up at n=2 */
+  .pf-pubgrid[data-n="1"]{grid-template-columns:minmax(0,440px);justify-content:center}/* centered at n=1 */
+  .pf-set-fields{grid-template-columns:1fr 1fr;gap:8px 22px}.pf-settings{margin-top:26px}
+  .is-visitor .pf-grid{grid-template-areas:"values numbers" "arcs numbers"}
+}
+</style>
+<div class="si"><h1>R9b · Lane P — Profile page (evolves R9a v5, additive)</h1>
+<p>Four artifacts below (owner + visitor, 390 + 1280). <b>NEW this lane, in AM51 order:</b> a
+question-LED <b>Knowledge arcs</b> section (visitor sees only arcs with ≥1 published sub, published subs
+only; owner sees all with draft counts); a public <b>Lineage</b> band (deduped value-mark why-lines,
+grouped by value, ordered by load); the <b>DNA re-slot</b> (returns/journey/threads stay after Now, the
+reader-model <b>consent</b> panel moves Settings-adjacent, Published is the closing band before Settings);
+<b>Now</b> richness (progress + latest-published cross-link + owner whisper); the Published <b>quality
+pack</b> (never "Uncategorized"; excerpt-led when untitled; graceful no-excerpt interior; 2-up at n=2,
+centered at n=1); the owner-only profile <b>intro</b> beat. Questions stay owner-only field-tensions
+(Preston's Option A — the arc cards carry the question-fencing).</p>
+<div class="leg">SPARSE-HONEST (baked, not all shown): no visible arcs → invitation (owner) / third-person
+(visitor); no why-lines → Lineage invitation (owner) / omitted (visitor); no published → invitation. ·
+LINEAGE "most-cited first" is inert on real data (why-lines rarely repeat) → grouped by value, ordered by
+evidence-load — the one place the literal lock can't hold; yours at the felt pass. · Cross-links proposed:
+Now→latest-published · arc→arc page · published→sub-theory · lineage tag→lit constellation · counts/planets→shelf/arcs (interim).</div></div>
+<div class="fb"><div class="fs2">Owner · Mobile <b>390</b></div><div class="render-frame frame-mobile" id="ownM"></div></div>
+<div class="fb"><div class="fs2">Owner · Desktop <b>≥1200</b> (at 1280)</div><div class="render-frame frame-desktop" id="ownD"></div></div>
+<div class="fb"><div class="fs2"><span class="vis">Visitor</span> · Mobile <b>390</b></div><div class="render-frame frame-mobile" id="visM"></div></div>
+<div class="fb"><div class="fs2"><span class="vis">Visitor</span> · Desktop <b>≥1200</b> (at 1280)</div><div class="render-frame frame-desktop" id="visD"></div></div>
+<div class="pf-toast" id="pfToast"></div>
+<script>
+(function(){
+  "use strict";
+  var FIELD=['#f2c25a','#e07a52','#d98f8a','#f5bace','#a9b98c','#98d4b0','#8590d8','#f8e078','#e8b068','#b8896c'];
+  function deep(h){return 'var(--field-'+(h+1)+'-deep)';}
+  var CATS=[{n:'Critical Pedagogy',books:46,marg:71,hue:0},{n:'Political Philosophy',books:24,marg:38,hue:6},{n:'Philosophy of Mind',books:16,marg:22,hue:5},{n:'Social Theory',books:15,marg:19,hue:1},{n:'Memoir',books:11,marg:28,hue:9},{n:'Poetics & Literature',books:9,marg:14,hue:3},{n:'History',books:8,marg:9,hue:4}];
+  var TOTB=0;for(var z=0;z<CATS.length;z++)TOTB+=CATS[z].books;
+  var CIDX={};for(z=0;z<CATS.length;z++)CIDX[CATS[z].n]=z;
+  var LENSES=[{n:'Books that changed how I teach',books:14,marg:41},{n:'The desire canon',books:9,marg:22},{n:'Re-reads',books:6,marg:18}];
+  var POS_D=[[498,232],[772,152],[300,138],[236,326],[726,340],[864,270],[138,232]];
+  var POS_M=[[200,285],[168,452],[150,92],[322,175],[334,398],[372,292],[92,378]];
+  var SUBS=[{t:'Refusal as a form of literacy',cat:0,pub:1},{t:'What doubt protects',cat:2,pub:1},{t:'The cost of naming a wound',cat:4,pub:1},{t:'The classroom as a commons',cat:0},{t:'Teaching as a refusal to simplify',cat:0},{t:'What the archive keeps quiet',cat:3},{t:'Dignity under constraint',cat:1},{t:'The sentence that holds two',cat:5},{t:'What connects them, for me',cat:1},{t:'A cluster still unnamed',cat:2},{t:'The commons under pressure',cat:3}];
+  var VALUES=[
+    {n:'Liberation',w:1,whys:['the shelf remembers how quietly permission gets withheld','how a refusal reads as a form of knowing'],subs:[{t:'Refusal as a form of literacy',cat:0,pub:1},{t:'The cost of naming a wound',cat:4,pub:1}]},
+    {n:'Praxis',w:2,whys:['what a classroom becomes when no one is extracting from it'],subs:[{t:'The classroom as a commons',cat:0},{t:'Teaching as a refusal to simplify',cat:0,draft:1}]},
+    {n:'Doubt',w:3,whys:['the sentence that holds two things it cannot resolve'],subs:[{t:'What doubt protects',cat:2,pub:1},{t:'A cluster still unnamed',cat:2,draft:1}]},
+    {n:'Dignity',w:4,whys:['what the body does when the room won’t grant it space'],subs:[{t:'Dignity under constraint',cat:1,draft:1}]}
+  ];
+  // ARCS (NEW). subs carry pub/draft; visitor fencing = arcs with >=1 pub sub, published subs only.
+  var ARCS=[
+    {q:'What makes a classroom a place of liberation, not extraction?',subs:[{t:'Refusal as a form of literacy',cat:0,pub:1},{t:'The cost of naming a wound',cat:4,pub:1},{t:'The classroom as a commons',cat:0,draft:1},{t:'Teaching as a refusal to simplify',cat:0,draft:1}]},
+    {q:'When is doubt a discipline rather than a failure to decide?',subs:[{t:'What doubt protects',cat:2,pub:1},{t:'A cluster still unnamed',cat:2,draft:1}]},
+    {q:'What does a commons cost the people who keep it?',subs:[{t:'What the archive keeps quiet',cat:3,draft:1},{t:'The commons under pressure',cat:3,draft:1}]}
+  ];
+  var STATS=[['129','books','Shelf'],['214','marginalia','Notebook'],['11','arcs','Arcs'],['11','sub-theories','Arcs'],['3','published','Published']];
+  var GAPS=[{q:'You read deep in <span class="cat" style="--field-deep:'+deep(0)+'">Critical Pedagogy</span> and in <span class="cat" style="--field-deep:'+deep(6)+'">Political Philosophy</span> — but they rarely share a margin.',a:'What connects them, for you?'},{q:'Your shelf runs deep in <span class="cat" style="--field-deep:'+deep(0)+'">Critical Pedagogy</span> and thin in <span class="cat" style="--field-deep:'+deep(3)+'">Poetics &amp; Literature</span>.',a:'Is that the season you’re in — or the shape of how you read?'},{q:'A cluster is gathering in <span class="cat" style="--field-deep:'+deep(5)+'">Philosophy of Mind</span> you haven’t named yet.',a:'Want to look at what’s pulling together?'}];
+  // PUB — quality-pack cases: [0] normal · [1] UNTITLED -> excerpt-led · [2] no excerpt + UNCATEGORIZED -> omit dot/label
+  var PUB=[
+    {t:'Refusal as a form of literacy',ex:'Some silences are taught; naming them is the first literacy a classroom owes its students.',cat:'Critical Pedagogy',arc:'What makes a classroom a place of liberation, not extraction?',date:'Jun 2026'},
+    {t:'',ex:'The sentence that won’t resolve is the one still doing work.',cat:'Philosophy of Mind',arc:'When is doubt a discipline rather than a failure to decide?',date:'May 2026'},
+    {t:'The cost of naming a wound',ex:'',cat:'',arc:'What makes a classroom a place of liberation, not extraction?',date:'Apr 2026'}
+  ];
+  function esc(s){return(''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function lcg(seed){var s=seed;return function(){s=(s*1664525+1013904223)&0x7fffffff;return s/0x7fffffff;};}
+  function prad(b,m){return (m?6:9)+b*(m?0.66:0.9);}
+
+  function placeLabels(items,w,h,pad){var placed=[],out=[];
+    function bx(px,py,r,name,fs){var y=py+r+16,tw=name.length*fs*0.5,anchor=px<w*0.30?'start':(px>w*0.70?'end':'middle'),x=px,x0,x1;
+      if(anchor==='start'){x0=x;x1=x+tw;}else if(anchor==='end'){x0=x-tw;x1=x;}else{x0=x-tw/2;x1=x+tw/2;}
+      if(x0<pad){x1+=pad-x0;x+=pad-x0;x0=pad;}if(x1>w-pad){var d=x1-(w-pad);x0-=d;x1-=d;x-=d;}
+      return {x:x,x0:x0,x1:x1,y:y,y0:y-fs*0.85,y1:y+fs*0.2,anchor:anchor};}
+    function hit(b){for(var i=0;i<placed.length;i++){var p=placed[i];if(b.x0<p.x1+4&&b.x1>p.x0-4&&b.y0<p.y1+3&&b.y1>p.y0-3)return true;}return false;}
+    for(var k=0;k<items.length;k++){var it=items[k],b=bx(it.px,it.py,it.r,it.name,it.fs),base=b.y,t=0,ok=!hit(b);
+      while(!ok&&t<12){t++;var ny=base+(t%2?1:-1)*14*Math.ceil(t/2);b.y=ny;b.y0=ny-it.fs*0.85;b.y1=ny+it.fs*0.2;ok=!hit(b)&&b.y1<h-6&&b.y0>4;}
+      if(ok&&!hit(b)&&b.y1<h-6&&b.y0>4){placed.push(b);out.push({x:b.x,y:b.y,anchor:b.anchor,idx:it.idx,box:b});}}
+    return out;}
+  function placeInvite(text,fs,occ,w,h,pad){var tw=text.length*fs*0.5;
+    var q=[0,0,0,0];for(var i=0;i<occ.length;i++){var b=occ[i],cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;q[(cx<w/2?0:1)+(cy<h/2?0:2)]++;}
+    var qo=[0,1,2,3].sort(function(a,b){return q[a]-q[b];});
+    function boxAt(cx,cy){var x0=cx-tw/2,x1=cx+tw/2;if(x0<pad){x1+=pad-x0;cx+=pad-x0;x0=pad;}if(x1>w-pad){var d=x1-(w-pad);x0-=d;x1-=d;cx-=d;}return {x:cx,x0:x0,x1:x0+tw,y:cy,y0:cy-fs*0.8,y1:cy+fs*0.25};}
+    function clear(bx){if(bx.x0<pad-0.1||bx.x1>w-pad+0.1||bx.y0<4||bx.y1>h-4)return false;for(var i=0;i<occ.length;i++){var b=occ[i];if(bx.x0<b.x1+5&&bx.x1>b.x0-5&&bx.y0<b.y1+4&&bx.y1>b.y0-4)return false;}return true;}
+    for(var qi=0;qi<4;qi++){var Q=qo[qi],cx=(Q%2===0)?w*0.30:w*0.70,yl=(Q<2)?[h*0.12,h*0.20,h*0.28,h*0.36]:[h*0.64,h*0.72,h*0.80,h*0.88];
+      for(var yi=0;yi<yl.length;yi++){var bx2=boxAt(cx,yl[yi]);if(clear(bx2))return bx2;}}
+    for(var y=h-10;y>10;y-=6){var bx3=boxAt(w/2,y);if(clear(bx3))return bx3;}
+    return boxAt(w/2,h-14);}
+
+  function buildSky(pub,mob){
+    var rnd=lcg(20260712),i,c,s,w=mob?460:1000,h=mob?560:460,pad=mob?54:30,POS=mob?POS_M:POS_D;
+    var head='<svg class="pf-sky" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Your reading as a galaxy: soft fields are categories sized by books; faint stars are books read; bright gold glints are your sub-theories.">';
+    var body='<rect class="pf-skybg" x="0" y="0" width="'+w+'" height="'+h+'" fill="transparent"></rect>';
+    for(i=0;i<(mob?95:130);i++){var bx=pad*0.5+rnd()*(w-pad),by=8+rnd()*(h-16),bz=rnd();body+='<circle class="pf-spk" cx="'+bx.toFixed(1)+'" cy="'+by.toFixed(1)+'" r="'+(0.5+bz).toFixed(2)+'" fill="'+(bz>0.7?'var(--text-on-dark)':'var(--gold)')+'" opacity="'+(0.05+bz*0.14).toFixed(2)+'"></circle>';}
+    var stars=[];for(i=0;i<SUBS.length;i++){s=SUBS[i];var pr=prad(CATS[s.cat].books,mob),ang=rnd()*6.2832,dist=pr*(0.5+rnd()*0.5),sx=POS[s.cat][0]+Math.cos(ang)*dist,sy=POS[s.cat][1]+Math.sin(ang)*dist;sx=Math.max(pad*0.6,Math.min(w-pad*0.6,sx));sy=Math.max(20,Math.min(h-24,sy));if(pub&&!s.pub)continue;stars.push({t:s.t,x:sx,y:sy,pub:s.pub});}
+    var hub=POS[0];for(i=1;i<CATS.length;i++)body+='<line class="pf-conline" x1="'+hub[0]+'" y1="'+hub[1]+'" x2="'+POS[i][0]+'" y2="'+POS[i][1]+'"></line>';
+    for(i=0;i<CATS.length;i++){c=CATS[i];var r=prad(c.books,mob),col=FIELD[c.hue],px=POS[i][0],py=POS[i][1];
+      body+='<g class="pf-planet" data-planet="'+esc(c.n)+'" tabindex="0" role="button" aria-label="'+esc(c.n)+', '+c.books+' books"><circle class="phit" cx="'+px+'" cy="'+py+'" r="'+(r+(mob?18:14))+'" fill="'+col+'" opacity="0"></circle><circle cx="'+px+'" cy="'+py+'" r="'+r+'" fill="'+col+'" opacity="0.15"></circle><circle cx="'+px+'" cy="'+py+'" r="'+(r*0.64)+'" fill="'+col+'" opacity="0.20"></circle><circle cx="'+px+'" cy="'+py+'" r="'+(r*0.32)+'" fill="'+col+'" opacity="0.22"></circle></g>';}
+    var order=CATS.map(function(c,ix){return ix;}).sort(function(a,b){return CATS[b].books-CATS[a].books;}),labelSet={},topN=mob?5:CATS.length;for(i=0;i<topN;i++)labelSet[order[i]]=1;
+    var labItems=[];for(i=0;i<CATS.length;i++)if(labelSet[i])labItems.push({px:POS[i][0],py:POS[i][1],r:prad(CATS[i].books,mob),name:CATS[i].n,fs:(i===0?19:16),idx:i});
+    labItems.sort(function(a,b){return b.r-a.r;});
+    var lp=placeLabels(labItems,w,h,pad),occ=[];
+    for(i=0;i<lp.length;i++){var L=lp[i];body+='<text class="pf-plabel pf-skytext'+(L.idx===0?' dom':'')+'" x="'+L.x.toFixed(1)+'" y="'+L.y.toFixed(1)+'" text-anchor="'+L.anchor+'">'+esc(CATS[L.idx].n)+'</text>';occ.push(L.box);}
+    for(i=0;i<stars.length;i++)occ.push({x0:stars[i].x-9,x1:stars[i].x+9,y0:stars[i].y-9,y1:stars[i].y+9});
+    var inv=placeInvite('still thin here — worth returning to?',13,occ,w,h,pad);
+    body+='<text class="pf-invite pf-skytext" x="'+inv.x.toFixed(1)+'" y="'+inv.y.toFixed(1)+'" text-anchor="middle">still thin here — worth returning to?</text>';
+    var sp2={};for(i=0;i<stars.length;i++)sp2[stars[i].t]=[stars[i].x,stars[i].y];
+    for(i=0;i<VALUES.length;i++){var vs=VALUES[i].subs,pts=[];for(var j=0;j<vs.length;j++)if(sp2[vs[j].t])pts.push(sp2[vs[j].t]);for(var kk=0;kk+1<pts.length;kk++)body+='<line class="pf-vline" data-vline="'+esc(VALUES[i].n)+'" x1="'+pts[kk][0].toFixed(1)+'" y1="'+pts[kk][1].toFixed(1)+'" x2="'+pts[kk+1][0].toFixed(1)+'" y2="'+pts[kk+1][1].toFixed(1)+'"></line>';}
+    for(i=0;i<stars.length;i++){var st=stars[i];body+='<g class="pf-star" data-star="'+esc(st.t)+'" tabindex="0" role="button" aria-label="Sub-theory: '+esc(st.t)+(st.pub?'':' (only you can see this)')+'"><circle class="shit" cx="'+st.x.toFixed(1)+'" cy="'+st.y.toFixed(1)+'" r="'+(mob?27:15)+'" fill="transparent"></circle><circle class="glow" cx="'+st.x.toFixed(1)+'" cy="'+st.y.toFixed(1)+'" r="'+(mob?12:15)+'" fill="var(--gold-hi)" opacity="0.16"></circle>'+(st.pub?'':'<circle cx="'+st.x.toFixed(1)+'" cy="'+st.y.toFixed(1)+'" r="'+(mob?8:10)+'" fill="none" stroke="var(--gold-hi)" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.6"></circle>')+'<circle class="core" cx="'+st.x.toFixed(1)+'" cy="'+st.y.toFixed(1)+'" r="'+(mob?4.4:5)+'" fill="var(--lum-gold)"></circle><circle cx="'+(st.x-1.3).toFixed(1)+'" cy="'+(st.y-1.3).toFixed(1)+'" r="1.7" fill="#fff8e6"></circle></g>';}
+    return head+body+'</svg>';
+  }
+
+  function orbSvg(w){var d=[0,26,21,17,13][w],fill=[0,.95,.7,.45,.2][w],ring=w>=4,r=d/2,g='<svg class="pf-orb" width="'+d+'" height="'+d+'" viewBox="0 0 '+d+' '+d+'" aria-hidden="true"><circle cx="'+r+'" cy="'+r+'" r="'+(r-1)+'" fill="var(--gold)" opacity="'+fill+'"'+(ring?' stroke="var(--gold)" stroke-width="1.4"':'')+'></circle>';if(!ring)g+='<circle cx="'+(r*0.72)+'" cy="'+(r*0.72)+'" r="'+(r*0.28)+'" fill="var(--lum-gold)" opacity="0.9"></circle>';return g+'</svg>';}
+  function voiced(own,vis,v){return v?vis:own;}
+
+  function introPanel(){return '<div class="pf-intro-demo pf-owner-only"><div class="intro-panel is-dark"><button class="intro-x" data-act="dismiss-intro" aria-label="Dismiss">&times;</button><div class="intro-top"><span class="intro-name">profile</span><span class="intro-badge">first visit · only you</span></div><div class="intro-title">A portrait, not a scoreboard</div><div class="intro-body">This is your reading made visible — the fields you return to, the values your marking keeps tracing, the questions still open. It measures nothing and ranks no one.</div><div class="intro-eg">The galaxy above is every sub-theory you’ve written; the lines are the values that connect them.</div><div class="intro-foot">lives permanently in About → Orientation · shown once</div></div></div>';}
+
+  function valueCard(v,vis){var subs=vis?v.subs.filter(function(s){return s.pub;}):v.subs,drawn=vis?subs.length:v.subs.length;
+    var h='<div class="pf-vcard w'+v.w+'">'+orbSvg(v.w)+'<div class="pf-vmain"><div class="pf-vname">'+esc(v.n)+'</div>';
+    for(var i=0;i<v.whys.length;i++)h+='<div class="pf-why">'+esc(v.whys[i])+'</div>';
+    if(subs.length){h+='<div class="pf-drawn">Drawn on by '+drawn+' sub-theor'+(drawn===1?'y':'ies')+'</div><div class="pf-sublinks">';
+      for(i=0;i<subs.length;i++){var hue=CATS[subs[i].cat].hue;h+='<span class="pf-sublink'+(subs[i].draft?' draft':'')+'" data-star="'+esc(subs[i].t)+'" style="--field-deep:'+deep(hue)+'"><span class="pf-dot" style="background:'+deep(hue)+'"></span>'+esc(subs[i].t)+(subs[i].draft?' · draft':'')+'</span>';}h+='</div>';}
+    return h+'</div></div>';}
+  function valuesSection(vis){var h='<div class="pf-eyebrow">Values <span class="cap">evidence, not tallies</span></div><div class="pf-card">';
+    h+='<div class="pf-offer pf-owner-only" id="pfOffer"><div class="lab">Yumi noticed a value forming</div><div class="obody">Across six books this season, your marginalia keeps circling how a sentence is built, not just what it argues.</div><div class="says">Yumi would name it<span class="prop">Craft</span></div><div class="pf-acts"><span class="pf-chip yes" data-act="accept-offer" tabindex="0">that’s it</span><span class="pf-chip" tabindex="0">rename ✎</span><span class="pf-chip" tabindex="0">not this</span></div></div>';
+    for(var i=0;i<VALUES.length;i++)h+=valueCard(VALUES[i],vis);
+    h+='<div class="pf-orphan pf-owner-only">One mark still points to <b>solidarity</b> — a value you retired. It stays with the book until you fold it into a value above, or let it go.</div></div>';return h;}
+  function numbersSection(vis){
+    var h='<div class="pf-eyebrow">By the numbers</div><div class="pf-card"><div class="pf-numhead"><span class="pf-eyebrow" style="margin:0"><span class="cap" data-numcap>bars show share of your library</span></span>'
+      +(vis?'':'<span class="pf-seg" role="tablist"><button class="on" data-axis="categories" role="tab" aria-selected="true">Categories</button><button data-axis="lenses" role="tab" aria-selected="false">Lenses</button></span>')+'</div>';
+    h+='<div class="pf-statrow">';for(var i=0;i<STATS.length;i++)h+='<div class="pf-stat" data-go="'+STATS[i][2]+'"><div class="n">'+STATS[i][0]+'</div><div class="l">'+STATS[i][1]+'</div></div>';h+='</div>';
+    h+='<div class="pf-catgrid" data-grid="categories">';
+    for(i=0;i<CATS.length;i++){var c=CATS[i];h+='<div class="pf-catcard" data-planet="'+esc(c.n)+'" style="--rail:'+FIELD[c.hue]+';--railtext:'+deep(c.hue)+';--barfill:'+FIELD[c.hue]+'"><div class="cn"><span class="pf-dot" style="background:'+deep(c.hue)+'"></span>'+esc(c.n)+'</div><div class="cm">'+c.books+' books · '+c.marg+' marginalia</div><div class="pf-bar"><i style="width:'+Math.round(c.books/TOTB*100)+'%"></i></div></div>';}
+    h+='</div>';
+    if(!vis){h+='<div class="pf-catgrid pf-owner-only" data-grid="lenses" style="display:none">';
+      for(i=0;i<LENSES.length;i++){var l=LENSES[i];h+='<div class="pf-catcard" style="--rail:var(--gold-deep);--railtext:var(--gold-deep);--barfill:var(--gold)"><div class="cn"><span class="pf-dot" style="background:var(--gold-deep)"></span>'+esc(l.n)+'</div><div class="cm">'+l.books+' books · '+l.marg+' marginalia</div><div class="pf-bar"><i style="width:'+Math.round(l.books/TOTB*100)+'%"></i></div></div>';}
+      h+='</div>';}
+    h+='<div class="pf-numcov">These describe '+voiced('your','their',vis)+' reading. '+(vis?'Their':'Your')+' value load is never numbered or ranked — that stays evidence, not a score.</div>';
+    h+='<div class="pf-invite-line">'+voiced('Your numbers gather here as you read.','Their numbers gather here as they read.',vis)+'</div></div>';return h;}
+  // ARCS (NEW). Question leads. Visitor: arcs with >=1 pub sub, published subs only. Owner: all + draft counts.
+  function arcsSection(vis){
+    var visible=[],i;
+    for(i=0;i<ARCS.length;i++){var a=ARCS[i],pub=[],draft=[],j;for(j=0;j<a.subs.length;j++){if(a.subs[j].pub)pub.push(a.subs[j]);else draft.push(a.subs[j]);}if(vis&&pub.length===0)continue;visible.push({a:a,pub:pub,draft:draft});}
+    var h='<div class="pf-eyebrow">Knowledge arcs'+(vis?'':' <span class="cap">the questions you’re working</span>')+'</div><div class="pf-card">';
+    if(!visible.length){return h+'<div class="pf-invite-line">'+voiced('Your arcs gather here as you connect sub-theories into a question.','Their published arcs will stand here.',vis)+'</div></div>';}
+    for(i=0;i<visible.length;i++){var v=visible[i],subs=vis?v.pub:v.a.subs,pn=v.pub.length,dn=v.draft.length;
+      h+='<div class="pf-arc" data-arc="'+esc(v.a.q)+'"><div class="pf-arc-q">'+esc(v.a.q)+'</div><div class="pf-sublinks">';
+      for(var j=0;j<subs.length;j++){var hue=CATS[subs[j].cat].hue;h+='<span class="pf-sublink'+(subs[j].draft?' draft':'')+'" data-star="'+esc(subs[j].t)+'" style="--field-deep:'+deep(hue)+'"><span class="pf-dot" style="background:'+deep(hue)+'"></span>'+esc(subs[j].t)+(subs[j].draft?' · draft':'')+'</span>';}
+      h+='</div>';
+      var meta=vis?(pn+' published'):(pn>0?(pn+' published'+(dn?' · '+dn+' in draft':'')):(dn+' in draft · none published yet'));
+      h+='<div class="pf-arc-meta"><span class="pf-arc-open" data-go="Arc: '+esc(v.a.q)+'">open the arc &rarr;</span><span class="pf-arc-count">'+meta+'</span></div></div>';}
+    return h+'</div>';}
+  function questionsSection(){var h='<div class="pf-eyebrow">Open questions <span class="whisper">only you can see this</span></div><div class="pf-card">';for(var i=0;i<GAPS.length;i++)h+='<div class="pf-gap"><div class="pf-gap-q">'+GAPS[i].q+'</div><div class="pf-gap-a">'+GAPS[i].a+'</div></div>';return h+'</div>';}
+  function nowSection(){return '<div class="pf-eyebrow">Now <span class="whisper">only you can see this</span></div><div class="pf-card">'
+    +'<div class="pf-now">Three marginalia landed in <b>Pedagogy of the Oppressed</b> two nights ago — still mid-read.</div>'
+    +'<div class="pf-now-link" data-go="Published: Refusal as a form of literacy">Your latest went public in June — <b>Refusal as a form of literacy</b> &rarr;</div></div>';}
+  function returnsSection(){return '<div class="pf-eyebrow">What your margins keep returning to <span class="whisper">only you can see this</span></div><div class="pf-card"><div class="pf-dna-row"><span><em>power</em>, named without apology</span><span class="pf-dna-ct">9 marks</span></div><div class="pf-dna-row"><span>the verb <em>refuse</em>, across four books</span><span class="pf-dna-ct">6 marks</span></div></div>';}
+  function journeySection(){return '<div class="pf-eyebrow">How your reading has moved <span class="whisper">only you can see this</span></div><div class="pf-card"><div class="pf-dna-row"><span><b>This spring</b> — the shelf tilted from theory toward the memoir of practice.</span></div><div class="pf-dna-row"><span><b>Last winter</b> — Critical Pedagogy became the gravity well the rest orbits.</span></div></div>';}
+  function threadsSection(){return '<div class="pf-eyebrow">Threads Yumi is holding <span class="whisper">only you can see this</span></div><div class="pf-card"><div class="pf-dna-row"><span>You keep circling whether refusal is a method or a mood.</span></div><div class="pf-dna-row"><span>Two books disagree about what dignity costs — you haven’t reconciled them.</span></div></div>';}
+  // LINEAGE (NEW) — deduped why-lines, grouped by value, ordered by load (w asc). PUBLIC. Empty -> owner invite / visitor omit.
+  function lineageSection(vis){
+    var order=VALUES.slice(0).sort(function(a,b){return a.w-b.w;}),rows=[],seen={},i,j;
+    for(i=0;i<order.length;i++){for(j=0;j<order[i].whys.length;j++){var key=order[i].whys[j].toLowerCase().replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');if(seen[key])continue;seen[key]=1;rows.push({line:order[i].whys[j],value:order[i].n});}}
+    var h='<div class="pf-eyebrow">Lineage <span class="cap">the lines your marking keeps tracing</span></div><div class="pf-card">';
+    if(!rows.length){if(vis)return '';return h+'<div class="pf-invite-line">The lines your marking traces gather here as you mark why a book carries a value.</div></div>';}
+    h+='<div class="pf-lineage">';
+    for(i=0;i<rows.length;i++)h+='<div class="pf-lin-row"><span class="pf-why">'+esc(rows[i].line)+'</span><span class="pf-lin-tag" data-value="'+esc(rows[i].value)+'">'+esc(rows[i].value)+'</span></div>';
+    return h+'</div></div>';}
+  function publishedSection(vis){var list=PUB.slice(0,6),n=list.length,i;
+    var h='<div class="pf-eyebrow">Published work</div><div class="pf-card">';
+    if(!n){return h+'<div class="pf-invite-line">'+voiced('What you publish will stand here.','What they publish will stand here.',vis)+'</div></div>';}
+    h+='<div class="pf-pubgrid" data-n="'+n+'">';
+    for(i=0;i<n;i++){var p=list[i],known=(p.cat&&CIDX.hasOwnProperty(p.cat)),hue=known?CATS[CIDX[p.cat]].hue:-1;
+      var rail=known?FIELD[hue]:'var(--line)',untitled=!p.t;
+      h+='<div class="pf-pub'+(untitled?' untitled':'')+'" data-star="'+esc(p.t||p.ex)+'" style="--rail:'+rail+';--railtext:'+(known?deep(hue):'var(--ink-3)')+'">';
+      if(untitled){h+='<div class="pt">'+esc(p.ex)+'</div>';}
+      else{h+='<div class="pt">'+esc(p.t)+'</div>'+(p.ex?'<div class="pe">'+esc(p.ex)+'</div>':'');}
+      if(p.arc)h+='<div class="pl">from the arc “'+esc(p.arc)+'”</div>';
+      h+='<div class="pm">'+(known?'<span class="pcat"><span class="pf-dot" style="background:'+deep(hue)+'"></span>'+esc(p.cat)+'</span>':'<span class="pcat"></span>')+'<span class="pdate">'+p.date+'</span></div></div>';}
+    return h+'</div>'+(PUB.length>6?'<span class="pf-pub-more" data-go="Arcs">all published work &rarr;</span>':'')+'</div>';}
+  function consentSection(){return '<div class="pf-eyebrow">Yumi’s memory of you <span class="whisper">only you can see this</span></div><div class="pf-card"><div class="pf-consent-body">If you allow it, Yumi keeps a reader’s model — the questions you circle, the thinkers you return to — so her questions grow with you. Off by default. Yours to end.</div><div class="pf-toggle off"><span class="tk"></span> Keep a reader’s model</div><div class="pf-covenant" style="margin-top:12px">Nothing is kept without this switch. &nbsp;<a href="#" onclick="return false">View what Yumi sees &rarr;</a></div></div>';}
+  function settingsSection(){return '<div class="pf-eyebrow">Settings</div><div class="pf-card"><div class="pf-set-fields"><div class="pf-field"><label>Display name</label><input value="Preston Allen"></div><div class="pf-field"><label>Pen name</label><input value="Preston A."></div><div class="pf-field"><label>Reading life</label><input value="Building a pedagogy of desire."></div><div class="pf-field"><label>Values statement</label><textarea>I read for the places where liberation and doubt have to share a margin — and I keep what survives the pressure.</textarea></div></div><div class="pf-toggle"><span class="tk"></span> Yumi reads along</div><div class="pf-set-row"><button class="pf-btn save">Save</button><button class="pf-btn ghost">Sign out</button></div><div class="pf-covenant">Everything here is yours. Yumi offers; you decide what it means.</div></div>';}
+
+  function buildPage(mob,vis){
+    var h='<div class="pf-hero">'+(vis?'':introPanel())+'<div class="pf-hero-head"><div class="pf-idrow"><div class="pf-avatar">P</div><div><div class="pf-name">Preston Allen</div><div class="pf-tag">Building a pedagogy of desire.</div><div class="pf-byline">Publishing as Preston A.</div></div></div>'
+      +(vis?'<span class="pf-vis-badge">visitor view</span>':'<span class="pf-preview-link pf-owner-only" data-act="preview" tabindex="0">preview as visitor &rarr;</span>')+'</div>';
+    h+='<div class="pf-sky-host">'+buildSky(vis,mob)+'</div>';
+    h+='<div class="pf-hero-dock"><div class="pf-strip-wrap"><div class="pf-strip">';
+    for(var i=0;i<VALUES.length;i++)h+='<span class="pf-vchip" data-value="'+esc(VALUES[i].n)+'" tabindex="0" role="button"><span class="vorb"></span>'+esc(VALUES[i].n)+'</span>';
+    h+='</div><span class="pf-strip-more">›</span></div>';
+    h+='<div class="pf-counts"><span class="cx" data-go="Shelf"><b>129</b> books</span> &middot; <span class="cx" data-go="Arcs"><b>11</b> sub-theories</span> &middot; <span class="cx" data-go="Published"><b>3</b> published</span></div><div class="pf-taphint">Tap a value to light its constellation · a star for its sub-theory · a field for its books</div></div></div>';
+    h+='<div class="pf-below"><div class="pf-thesis"><p>I read for the places where <em>liberation</em> and <em>doubt</em> have to share a margin — and I keep what survives the pressure.</p>'+(vis?'':'<span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span>')+'</div>';
+    // AM51 DOM order: Statement -> Values -> Numbers -> ARCS -> Questions -> Now -> [DNA] -> LINEAGE -> Published -> Consent -> Settings
+    h+='<div class="pf-grid">';
+    h+='<div class="pf-sec sec-values">'+valuesSection(vis)+'</div>';
+    h+='<div class="pf-sec sec-numbers">'+numbersSection(vis)+'</div>';
+    h+='<div class="pf-sec sec-arcs">'+arcsSection(vis)+'</div>';
+    h+='<div class="pf-sec sec-questions pf-owner-only">'+questionsSection()+'</div>';
+    h+='<div class="pf-sec sec-now pf-owner-only">'+nowSection()+'</div>';
+    h+='</div>';
+    if(!vis){
+      h+='<div class="pf-sec sec-returns pf-owner-only">'+returnsSection()+'</div>';
+      h+='<div class="pf-sec sec-journey pf-owner-only">'+journeySection()+'</div>';
+      h+='<div class="pf-sec sec-threads pf-owner-only">'+threadsSection()+'</div>';
+    }
+    var lin=lineageSection(vis);if(lin)h+='<div class="pf-sec sec-lineage">'+lin+'</div>';
+    h+='<div class="pf-sec sec-published">'+publishedSection(vis)+'</div>';
+    if(!vis)h+='<div class="pf-sec sec-consent pf-owner-only">'+consentSection()+'</div>';
+    h+='<div class="pf-sec sec-settings pf-owner-only pf-settings">'+settingsSection()+'</div>';
+    h+='</div>';
+    return h;
+  }
+  function toast(m){var t=document.getElementById('pfToast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},1900);}
+  function lightValue(frame,name){var sky=frame.querySelector('.pf-sky');if(!sky)return;var subs=null,i;for(i=0;i<VALUES.length;i++)if(VALUES[i].n===name)subs=VALUES[i].subs;var set={};if(subs)for(i=0;i<subs.length;i++)set[subs[i].t]=1;var st=sky.querySelectorAll('.pf-star');for(i=0;i<st.length;i++){var t=st[i].getAttribute('data-star');if(set[t]){st[i].classList.add('lit');st[i].classList.remove('faded');}else{st[i].classList.add('faded');st[i].classList.remove('lit');}}var vl=sky.querySelectorAll('.pf-vline');for(i=0;i<vl.length;i++)vl[i].classList.toggle('on',vl[i].getAttribute('data-vline')===name);var ch=frame.querySelectorAll('.pf-vchip');for(i=0;i<ch.length;i++){var on=ch[i].getAttribute('data-value')===name;ch[i].classList.toggle('on',on);ch[i].classList.toggle('dim',!on);}}
+  function clearValue(frame){var sky=frame.querySelector('.pf-sky');if(sky){var st=sky.querySelectorAll('.pf-star');for(var i=0;i<st.length;i++)st[i].classList.remove('lit','faded');var vl=sky.querySelectorAll('.pf-vline');for(i=0;i<vl.length;i++)vl[i].classList.remove('on');}var ch=frame.querySelectorAll('.pf-vchip');for(i=0;i<ch.length;i++)ch[i].classList.remove('on','dim');}
+  function reSky(frame,pub){var host=frame.querySelector('.pf-sky-host');if(host)host.innerHTML=buildSky(pub,frame.getAttribute('data-mob')==='1');}
+  function setAxis(frame,axis){var cg=frame.querySelectorAll('[data-grid]');for(var i=0;i<cg.length;i++)cg[i].style.display=(cg[i].getAttribute('data-grid')===axis)?'grid':'none';var bt=frame.querySelectorAll('.pf-seg button');for(i=0;i<bt.length;i++){var on=bt[i].getAttribute('data-axis')===axis;bt[i].classList.toggle('on',on);bt[i].setAttribute('aria-selected',on?'true':'false');}var cap=frame.querySelector('[data-numcap]');if(cap)cap.textContent=(axis==='lenses')?'a book can hold several lenses — shares overlap':'bars show share of your library';}
+  function act(frame,e){function cl(s){return e.target.closest?e.target.closest(s):null;}
+    var dm=cl('[data-act="dismiss-intro"]');if(dm){var pn=frame.querySelector('.pf-intro-demo');if(pn&&pn.parentNode)pn.parentNode.removeChild(pn);return;}
+    var star=cl('[data-star]'),planet=cl('[data-planet]'),chip=cl('[data-value]'),go=cl('[data-go]'),a=cl('[data-act]'),seg=cl('[data-axis]'),arc=cl('[data-arc]');
+    if(seg){setAxis(frame,seg.getAttribute('data-axis'));return;}
+    if(a){var v=a.getAttribute('data-act');if(v==='preview'){frame.classList.add('is-visitor');frame.innerHTML=buildPage(frame.getAttribute('data-mob')==='1',true);detectStrip(frame);toast('previewing as a visitor — arcs fence to ≥1 published sub · owner-only sections drop');return;}if(v==='accept-offer'){var off=frame.querySelector('#pfOffer');if(off)off.outerHTML=valueCard({n:'Craft',w:3,whys:['how a sentence is built, not only what it argues'],subs:[]},false);toast('“Craft” added — it graduates into a value card');return;}if(v==='edit-thesis'){toast('edit your statement (opens the settings field)');return;}}
+    if(chip){var name=chip.getAttribute('data-value');if(chip.classList.contains('on'))clearValue(frame);else lightValue(frame,name);return;}
+    if(star){toast('→ opening sub-theory: '+star.getAttribute('data-star')+'  (#subtheory/…)');return;}
+    if(go){toast('→ '+go.getAttribute('data-go'));return;}
+    if(planet){toast('→ Shelf, filtered to '+planet.getAttribute('data-planet')+'  (#books · interim contract)');return;}
+    if(arc){toast('→ opening arc: '+arc.getAttribute('data-arc')+'  (#arc/…)');return;}
+    var sky=cl('.pf-sky');if(sky)sky.classList.toggle('show-lines');}
+  function detectStrip(frame){var sw=frame.querySelector('.pf-strip-wrap'),sc=frame.querySelector('.pf-strip');if(sw&&sc&&sc.scrollWidth>sc.clientWidth+2)sw.classList.add('overflow');else if(sw)sw.classList.remove('overflow');}
+  function wire(frame){frame.addEventListener('click',function(e){act(frame,e);});frame.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('[data-star],[data-planet],[data-value],[data-act],[data-go],[data-axis],[data-arc]')){e.preventDefault();act(frame,e);}});
+    detectStrip(frame);}
+  function mount(id,mob,vis){var f=document.getElementById(id);f.setAttribute('data-mob',mob?'1':'0');if(vis)f.classList.add('is-visitor');f.innerHTML=buildPage(mob,vis);wire(f);}
+  mount('ownM',true,false);mount('ownD',false,false);mount('visM',true,true);mount('visD',false,true);
+})();
+</script>

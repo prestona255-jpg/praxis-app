@@ -13523,8 +13523,10 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-plabel.dom{ font-size:19px; opacity:.96; font-weight:600; }
 .pf-conline{ stroke:var(--gold-hi); stroke-width:1; opacity:0; transition:opacity .5s; }
 .pf-sky.show-lines .pf-conline{ opacity:.4; }
-.pf-vline{ stroke:var(--star-gold); stroke-width:1.3; opacity:0; transition:opacity .4s; }
-.pf-sky .pf-vline.on{ opacity:.66; }
+/* R9b Lane P: the value web is FAINT-BY-DEFAULT (was opacity:0/hidden-until-tap) so cross-category value
+   lines read at BOTH widths without a tap; tap brightens the tapped value. (Felt-passed 2026-07-13.) */
+.pf-vline{ stroke:var(--star-gold); stroke-width:1.5; opacity:.34; transition:opacity .4s; }
+.pf-sky .pf-vline.on{ opacity:.78; }
 .pf-invite{ font-family:var(--font-serif); font-style:italic; fill:var(--gold-hi); opacity:.74; font-size:14px; }
 @media (prefers-reduced-motion:reduce){ .pf-conline,.pf-vline{ transition:none; } }
 /* BELOW */
@@ -13642,12 +13644,15 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-sky-host{ height:398px; } .pf-hero-dock{ padding:0 30px 16px; }
   .pf-below{ padding:0 34px; } .pf-thesis{ padding:34px 6px 26px; } .pf-thesis p{ font-size:24px; max-width:72ch; }
   /* AM27+AM41: main=voice (values,questions,now) · rail=NUMBERS ONLY. Published re-homed below. */
-  .pf-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:26px 30px; align-items:start; grid-template-areas:"values numbers" "questions numbers" "now numbers"; }
-  .pf-root .sec-values{ grid-area:values; } .pf-root .sec-numbers{ grid-area:numbers; align-self:start; } .pf-root .sec-questions{ grid-area:questions; } .pf-root .sec-now{ grid-area:now; }
+  .pf-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:26px 30px; align-items:start; grid-template-areas:"values numbers" "arcs numbers" "questions numbers" "now numbers"; }
+  .pf-root .sec-values{ grid-area:values; } .pf-root .sec-numbers{ grid-area:numbers; align-self:start; } .pf-root .sec-arcs{ grid-area:arcs; } .pf-root .sec-questions{ grid-area:questions; } .pf-root .sec-now{ grid-area:now; }
   .pf-sec{ margin-bottom:0; } .pf-grid{ row-gap:26px; }
-  .pf-root .sec-published{ margin-top:26px; } .pf-pubgrid{ grid-template-columns:repeat(3,1fr); }
+  .pf-root .sec-returns, .pf-root .sec-journey, .pf-root .sec-threads, .pf-root .sec-lineage, .pf-root .sec-published, .pf-root .sec-consent{ margin-top:26px; }
+  .pf-pubgrid{ grid-template-columns:repeat(3,1fr); }
+  .pf-pubgrid[data-n="2"]{ grid-template-columns:repeat(2,1fr); }                          /* R9b: 2-up at n=2 */
+  .pf-pubgrid[data-n="1"]{ grid-template-columns:minmax(0,440px); justify-content:center; } /* R9b: centered at n=1 */
   .pf-set-fields{ grid-template-columns:1fr 1fr; gap:8px 22px; } .pf-settings{ margin-top:26px; }
-  .pf-root.is-visitor .pf-grid{ grid-template-areas:"values numbers"; }
+  .pf-root.is-visitor .pf-grid{ grid-template-areas:"values numbers" "arcs numbers"; }
 }
 /* R9a Slice 5b — value-retrofit dock (AM19) + reader-model carry chrome */
 .pf-offer-dock{ margin-bottom:16px; }
@@ -13665,6 +13670,27 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-returns-row b,.pf-journey-row b{ font-weight:600; color:var(--ink); }
 .pf-returns-ct{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
 .pf-returns-row em,.pf-journey-row em{ font-style:italic; color:var(--ink); }
+/* R9b Lane P — knowledge arcs (question-led), lineage band, threads reflection, Now cross-link, published quality pack */
+.pf-arc{ padding:16px 0; border-top:1px solid var(--line); }
+.pf-arc:first-of-type{ border-top:none; }
+.pf-arc-q{ font-family:var(--font-serif); font-weight:600; font-size:19.5px; line-height:1.25; color:var(--ink); max-width:60ch; }
+.pf-arc .pf-sublinks{ margin-top:10px; }
+.pf-arc-meta{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:11px; }
+.pf-arc-open{ font-family:var(--font-body); font-size:12.5px; color:var(--gold-deep); cursor:pointer; border-bottom:1px solid rgba(133,84,16,.3); }
+.pf-arc-open:hover{ color:var(--gold); }
+.pf-arc-count{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums lining-nums; white-space:nowrap; }
+.pf-lineage{ display:flex; flex-direction:column; }
+.pf-lin-row{ padding:12px 0; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; }
+.pf-lin-row:first-child{ border-top:none; }
+.pf-lin-row .pf-why{ margin-top:0; max-width:62ch; }
+.pf-lin-tag{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-deep); cursor:pointer; white-space:nowrap; border-bottom:1px dotted rgba(133,84,16,.4); }
+.pf-lin-tag:hover{ color:var(--gold); }
+.pf-thread-row{ font-family:var(--font-serif); font-size:15px; color:var(--ink-2); padding:7px 0; border-top:1px solid var(--line); }
+.pf-thread-row:first-child{ border-top:none; }
+.pf-now-link{ font-family:var(--font-body); font-size:13px; color:var(--gold-deep); margin-top:11px; cursor:pointer; display:inline-block; }
+.pf-now-link b{ font-weight:600; }
+.pf-now-link:hover{ color:var(--gold); }
+.pf-pub.untitled .pt{ font-style:italic; font-weight:500; font-size:17.5px; color:var(--ink-2); line-height:1.3; }
 /* P7 (mobile canon): form controls >= 16px so iOS never zoom-jumps on focus.
    Mobile-only override (desktop keeps the quiet 12.5/14px register). */
 @media (max-width:759px){
