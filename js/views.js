@@ -17189,7 +17189,7 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
     ci = lensMode ? (cats.length ? (stars.length % cats.length) : -1) : ((typeof catIdx[scat] === 'number') ? catIdx[scat] : -1);
     if (ci >= 0) { cxp = pos[ci].x; cyp = pos[ci].y; pr = prad(cats[ci].books); }
     else { cxp = w * 0.5; cyp = h * 0.5; pr = mob ? 24 : 30; }
-    ang = rnd() * 6.2832; dist = pr + (mob ? 10 : 14) + rnd() * (mob ? 8 : 12);   // S4: orbit radius just outside the planet
+    ang = rnd() * 6.2832; dist = pr * (0.5 + rnd() * 0.4);   // S4/S7 collision-clean: orbit WITHIN the field (keeps moving stars clear of the label zone just outside the planet)
     sx = cxp + Math.cos(ang) * dist; sy = cyp + Math.sin(ang) * dist;
     sx = Math.max(pad * 0.6, Math.min(w - pad * 0.6, sx));
     sy = Math.max(20, Math.min(h - 24, sy));
@@ -17223,10 +17223,17 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   // P2: obstacles the labels must avoid -- every star (bright protagonist point) +
   // every planet CORE (dense center = prad*0.5; the translucent outer haze is fine
   // to cross). "No sky text intersects sky OBJECTS," not just other text.
+  // R9b Lane G S7 COLLISION FIX (PROOF-SCOPE): labels clear each planet's FIELD + drift, plus each star's
+  // resting box, plus the sigil's BRIGHT-MARK region. Stars now orbit WITHIN the field (above), so labels just
+  // outside the field stay clear of the moving stars at every drift/orbit phase; labels may sit in the sigil's
+  // faint outer disk (the felt-passed look) but never on the bright mark.
   var labObs = [], op, orc;
-  for (op = 0; op < stars.length; op = op + 1) { labObs.push({ x0: stars[op].x - 10, x1: stars[op].x + 10, y0: stars[op].y - 10, y1: stars[op].y + 10 }); }
-  for (op = 0; op < cats.length; op = op + 1) { orc = prad(cats[op].books) * 0.5; labObs.push({ x0: pos[op].x - orc, x1: pos[op].x + orc, y0: pos[op].y - orc, y1: pos[op].y + orc }); }
-  var lp = _pfPlaceLabels(labItems, w, h, pad, labObs), occ = [], L;
+  var _drift = mob ? 8 : 11;
+  for (op = 0; op < stars.length; op = op + 1) { labObs.push({ x0: stars[op].x - 9, x1: stars[op].x + 9, y0: stars[op].y - 9, y1: stars[op].y + 9 }); }
+  for (op = 0; op < cats.length; op = op + 1) { orc = prad(cats[op].books) * 0.5 + _drift; labObs.push({ x0: pos[op].x - orc, x1: pos[op].x + orc, y0: pos[op].y - orc, y1: pos[op].y + orc }); }
+  var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark's radius (R*0.46) scaled up for the breath peak (1.06x) + margin
+  labObs.push({ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR });
+  var lp = _pfPlaceLabels(labItems, w, h, pad, labObs), occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
   for (i = 0; i < lp.length; i = i + 1) {
     L = lp[i];
     body += '<text class="pf-plabel pf-skytext' + (L.idx === 0 ? ' dom' : '') + '" x="' + L.x.toFixed(1) + '" y="' + L.y.toFixed(1) + '" text-anchor="' + L.anchor + '">' + _portraitEsc(cats[L.idx].name) + '</text>';
@@ -17263,6 +17270,7 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
     if (!byArc[s3.arcId]) { byArc[s3.arcId] = { title: s3.arcTitle, pts: [] }; }
     byArc[s3.arcId].pts.push(s3);
   }
+  var arcLabItems = [], arcMeta = [];
   for (arcId2 in byArc) {
     if (!byArc.hasOwnProperty(arcId2)) { continue; }
     var ap = byArc[arcId2].pts, an; if (ap.length < 2) { continue; }
@@ -17271,7 +17279,20 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
       var aqx = amx + (scx - amx) * 0.5, aqy = amy + (scy - amy) * 0.5;
       body += '<path class="pf-aline" d="M' + ap[an].x.toFixed(1) + ' ' + ap[an].y.toFixed(1) + ' Q' + aqx.toFixed(1) + ' ' + aqy.toFixed(1) + ' ' + ap[an + 1].x.toFixed(1) + ' ' + ap[an + 1].y.toFixed(1) + '"></path>';
     }
-    body += '<text class="pf-alabel" data-arc-id="' + _portraitEsc(arcId2) + '" x="' + (ap[0].x + 9).toFixed(1) + '" y="' + (ap[0].y - 13).toFixed(1) + '" tabindex="0" role="link" aria-label="Arc: ' + _portraitEsc(byArc[arcId2].title) + '">' + _portraitEsc(byArc[arcId2].title) + '</text>';
+    // anchor the label at the OUTERMOST published star (emptier space); the collision resolver places it below.
+    var far = ap[0], fd = -1, ff, dd;
+    for (ff = 0; ff < ap.length; ff = ff + 1) { dd = (ap[ff].x - scx) * (ap[ff].x - scx) + (ap[ff].y - scy) * (ap[ff].y - scy); if (dd > fd) { fd = dd; far = ap[ff]; } }
+    arcLabItems.push({ px: far.x, py: far.y, r: 6, name: byArc[arcId2].title, fs: 10, idx: arcLabItems.length });
+    arcMeta.push({ arcId: arcId2, title: byArc[arcId2].title });
+  }
+  // Arc labels run through the SAME collision resolver as category labels -> they AVOID planets, stars, the
+  // sigil mark, AND the placed category labels (occ), and DROP rather than overlap (the PROOF-SCOPE discipline).
+  if (arcLabItems.length) {
+    var _alp = _pfPlaceLabels(arcLabItems, w, h, pad, labObs.concat(occ)), _av, _am;
+    for (_av = 0; _av < _alp.length; _av = _av + 1) {
+      _am = arcMeta[_alp[_av].idx];
+      body += '<text class="pf-alabel" data-arc-id="' + _portraitEsc(_am.arcId) + '" x="' + _alp[_av].x.toFixed(1) + '" y="' + _alp[_av].y.toFixed(1) + '" text-anchor="' + _alp[_av].anchor + '" tabindex="0" role="link" aria-label="Arc: ' + _portraitEsc(_am.title) + '">' + _portraitEsc(_am.title) + '</text>';
+    }
   }
   // stars on top (protagonists). data-sub = id (routes to #subtheory/<id>).
   var s2;
