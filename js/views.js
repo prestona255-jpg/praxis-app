@@ -17487,11 +17487,19 @@ function _pfPublishedSection(uid, vis) {
     // sky planets + Numbers, so a category reads the same colour everywhere (was _pfCatHue/--field-*).
     var p = shown[i], known = (p.cat && p.cat !== CATEGORY_UNCATEGORIZED);
     var rail = known ? _pfFieldHue(p.cat) : 'var(--line)', deep = known ? _pfFieldHueDeep(p.cat) : 'var(--ink-3)';
-    var untitled = !p.t;
+    var untitled = !p.t, arcLead = false;
     h += '<div class="pf-pub' + (untitled ? ' untitled' : '') + '" data-sub="' + _portraitEsc(p.id) + '" tabindex="0" role="link" style="--rail:' + rail + ';--railtext:' + deep + '">';
-    if (untitled) { h += '<div class="pt">' + _portraitEsc(p.ex || 'Untitled') + '</div>'; }
-    else { h += '<div class="pt">' + _portraitEsc(p.t) + '</div>' + (p.ex ? '<div class="pe">' + _portraitEsc(p.ex) + '</div>' : ''); }
-    if (p.arc) { h += '<div class="pl">from the arc ' + _portraitEsc(p.arc) + '</div>'; }
+    // P5: NEVER print the literal "Untitled". Untitled -> excerpt-led; no excerpt -> the arc
+    // question stands as a quiet lead (arc-derived; then skip the .pl echo below); no arc
+    // either -> a quiet descriptor, never a fabricated title.
+    if (untitled) {
+      if (p.ex) { h += '<div class="pt">' + _portraitEsc(p.ex) + '</div>'; }
+      else if (p.arc) { h += '<div class="pt">' + _portraitEsc(p.arc) + '</div>'; arcLead = true; }
+      else { h += '<div class="pt">A published note</div>'; }
+    } else {
+      h += '<div class="pt">' + _portraitEsc(p.t) + '</div>' + (p.ex ? '<div class="pe">' + _portraitEsc(p.ex) + '</div>' : '');
+    }
+    if (p.arc && !arcLead) { h += '<div class="pl">from the arc ' + _portraitEsc(p.arc) + '</div>'; }
     h += '<div class="pm">' + (known ? ('<span class="pcat"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(p.cat) + '</span>') : '<span class="pcat"></span>') + '<span class="pdate">' + _portraitEsc(p.date) + '</span></div></div>';
   }
   h += '</div>' + (list.length > 6 ? '<span class="pf-pub-more" data-go="#arcs" tabindex="0" role="link">all published work &rarr;</span>' : '') + '</div>';

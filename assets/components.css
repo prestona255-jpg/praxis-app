@@ -13748,7 +13748,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-root .sec-returns, .pf-root .sec-journey, .pf-root .sec-threads, .pf-root .sec-lineage, .pf-root .sec-published, .pf-root .sec-consent{ margin-top:26px; }
   .pf-pubgrid{ grid-template-columns:repeat(3,1fr); }
   .pf-pubgrid[data-n="2"]{ grid-template-columns:repeat(2,1fr); }                          /* R9b: 2-up at n=2 */
-  .pf-pubgrid[data-n="1"]{ grid-template-columns:minmax(0,440px); justify-content:center; } /* R9b: centered at n=1 */
+  .pf-pubgrid[data-n="1"]{ grid-template-columns:minmax(0,600px); justify-content:start; } /* P5: contained + left-aligned (was a 440px card floating centred in the 1400 stage) */
   .pf-set-fields{ grid-template-columns:1fr 1fr; gap:8px 22px; } .pf-settings{ margin-top:26px; }
   .pf-root.is-visitor .pf-grid{ grid-template-areas:"values numbers" "arcs arcs"; }
 }

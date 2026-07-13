@@ -387,3 +387,16 @@ margin-top:3px so a wrapped long name keeps its dot on the first line. **Live pr
   mis-centred), align-items flex-start. Fixed.
 - P4 does NOT touch the sky renderer (planets already on the wheel) -> no collision/reduced-motion re-proof.
   CSS is `.pf-catcard`-scoped -> no cross-surface bleed.
+
+### P5 — FIX SHIPPED (own commit). views.js +12/−4 · components.css +1/−1.
+`_pfPublishedSection`: the literal "Untitled" fallback is REMOVED. Untitled -> excerpt-led; no excerpt ->
+the arc question stands as the quiet lead (arc-derived; `.pl` echo suppressed); no arc -> "A published
+note" (a quiet descriptor, never a fabricated title). n=1 grid `minmax(0,440px)/center` -> `minmax(0,600px)/
+start` (contained + left-anchored, not a centred island). **Live proof (localhost:8777):**
+- untitled+no-excerpt+arc -> `.pt` = "What can doubt hold?" (arc question), no `.pl` echo.
+- untitled+excerpt -> `.pt` = excerpt; `.pl` "from the arc …" shows below (arc not the lead).
+- untitled+no-arc -> `.pt` = "A published note".
+- **`>Untitled<` absent from the rendered page** (was the shipped bug).
+- n=1: justify `start`, card 600px, left-anchored (22px from the section edge); n=2 unchanged (2-up).
+- FELT flag: the left-aligned n=1 (void on the right only) is the "contained, not floating" fix -- Preston's
+  re-pass judges the measure. No sky touch -> no collision/motion re-proof; CSS `.pf-pubgrid`-scoped.
