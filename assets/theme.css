@@ -323,6 +323,15 @@
   --dots:          radial-gradient(circle, color-mix(in srgb, var(--ink-4) 26%, transparent) 1.3px, transparent 1.5px);
   /* Faded brick-red margin rule down the left leaf (notebook ruling). */
   --margin-rule:   color-mix(in srgb, var(--danger) 30%, transparent);
+
+  /* --- R9a (AM26): --field-*-deep companion ramp. The bright --field-1..10
+     (universal-depth.css) are for sky/orbs/bar-fills; these deep companions are
+     the text/rail/dot/border tone on LIGHT surfaces (the --gold/--gold-deep
+     precedent). AA-verified per hue vs --surface-2 (#efe7d6, the worst-case light
+     surface deep text sits on): ratios 4.89-7.17:1, all >= AA 4.5. Same slug-order
+     index as the bright ramp so category N shares hue N across both ramps. */
+  --field-1-deep:#7a5410; --field-2-deep:#9c3f1e; --field-3-deep:#97423c; --field-4-deep:#a53a62; --field-5-deep:#4d6333;
+  --field-6-deep:#2b6f4f; --field-7-deep:#3a4590; --field-8-deep:#726010; --field-9-deep:#7f5514; --field-10-deep:#68412c;
 }
 
 /* =====================================================================

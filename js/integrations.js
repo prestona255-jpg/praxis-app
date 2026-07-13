@@ -545,7 +545,12 @@ firebase.auth().onAuthStateChanged(function (u) {
           // .set() write list (the Firestore-merge gotcha: a sign-in doc bypasses
           // migrate(), so read AND write must both carry it or a second device
           // silently wipes it). Default [] when absent on the remote doc.
-          values:              (rd.values instanceof Array) ? rd.values : []
+          values:              (rd.values instanceof Array) ? rd.values : [],
+          // R9a (AM8): the values-statement prose. Symmetric with the .set() write
+          // list (the Firestore-merge gotcha: a sign-in doc bypasses migrate(), so
+          // read AND write must both carry it or a second device silently wipes it).
+          // Default '' when absent on the remote doc.
+          statement:           (typeof rd.statement === 'string') ? rd.statement : ''
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -971,6 +976,9 @@ function saveProfileToFirestore(uid, profile, callback) {
         // .set() -> must be listed or it would be wiped on every Account-page
         // save. Default [] when absent.
         values:              (profile && profile.values instanceof Array) ? profile.values : [],
+        // R9a (AM8): persist the values-statement prose. Full-doc .set() -> must be
+        // listed or it would be wiped on every Profile save. Default '' when absent.
+        statement:           (profile && typeof profile.statement === 'string') ? profile.statement : '',
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {

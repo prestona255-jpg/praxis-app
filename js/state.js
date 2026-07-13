@@ -1244,7 +1244,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -1269,7 +1269,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -1313,6 +1313,14 @@ function ensureUser(uid) {
       !(state.users[uid].profile.values instanceof Array)) {
     state.users[uid].profile.values = [];
   }
+  // R9a (AM8): the values-statement prose (2-3 sentences, his voice), default ''.
+  // Additive guard so a profile seeded before R9a gains the slot. Lives in
+  // profile{} so it mirrors via /userProfiles next to values; editable in the
+  // merged Profile's Settings, and the uncarded thesis reads it.
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.statement !== 'string') {
+    state.users[uid].profile.statement = '';
+  }
   // yumi-intelligence Stage I: the reader-model store (named threads + a prose
   // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
   // guards backfill the default shape + each sub-field for a record seeded
@@ -1351,7 +1359,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [] };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -1414,6 +1422,15 @@ function setProfile(uid, fields) {
       if (vs) { vv.push(vs); }
     }
     p.values = vv;
+  }
+  // R9a (AM8): the values-statement prose. String-coerced + trimmed + capped at
+  // 600 chars (generous for 2-3 sentences). Only an explicit value writes; absent
+  // -> the default-on-read '' stands. DECLARED by the reader (Settings), never
+  // inferred.
+  if (fields && typeof fields.statement !== 'undefined') {
+    var stTrim = ('' + fields.statement).trim();
+    if (stTrim.length > 600) { stTrim = stTrim.slice(0, 600); }
+    p.statement = stTrim;
   }
   saveState();
 }
@@ -3437,6 +3454,27 @@ function migrate(stored) {
     if (stored.arcs)        { ensureArcFieldsAll(stored.arcs); }
     if (stored.subTheories) { ensureSubTheoryFieldsAll(stored.subTheories); }
     stored.SCHEMA_VERSION = '1.29.0';
+  }
+  if (stored.SCHEMA_VERSION === '1.29.0') {
+    // R9a (AM8): additive profile.statement:'' backfilled onto every existing user
+    // profile. Profile has no ensure*FieldsAll chokepoint (it flows through
+    // ensureUser / getProfile / setProfile), so this backfill iterates
+    // stored.users directly. The Firestore-merge twin is carried by integrations.js
+    // (the load-merge setProfile default + the write .set() list), so a doc synced
+    // from a legacy client that bypasses migrate() is stamped too. ADDITIVE ONLY;
+    // idempotent (stamps only a missing/mistyped field). Anchor literal (1.9.3)
+    // stays pinned; the chain does the work.
+    if (stored.users) {
+      var pfUid;
+      for (pfUid in stored.users) {
+        if (Object.prototype.hasOwnProperty.call(stored.users, pfUid) &&
+            stored.users[pfUid] && stored.users[pfUid].profile &&
+            typeof stored.users[pfUid].profile.statement !== 'string') {
+          stored.users[pfUid].profile.statement = '';
+        }
+      }
+    }
+    stored.SCHEMA_VERSION = '1.30.0';
   }
   return stored;
 }

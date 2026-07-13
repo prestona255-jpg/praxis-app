@@ -630,11 +630,12 @@ function renderRoute() {
   // Placed BEFORE the notebook fallthrough so #account is caught here, not
   // swallowed by the catch-all below.
   if (parts[0] === 'account') {
-    state.currentBookId = null;
-    state.currentArcId  = null;
-    state.currentSubTheoryId = null;
-    saveState();
-    renderAccountPage();
+    // R9a (A1): #account is merged into the single Profile at #profile. Redirect
+    // (refresh-stable, no history push -- the R7 /marks precedent, views.js:521) so
+    // old links + bookmarks land on #profile; the #profile arm does the pointer
+    // clear + render. renderAccountPage is retired (defined-but-unrouted; see
+    // r9a-build.md "unrouted legacy renderers" debt).
+    location.replace('#profile');
     return;
   }
   // About page (#about): a static orientation surface. Symmetric pointer clear
@@ -683,7 +684,10 @@ function renderRoute() {
     state.currentArcId  = null;
     state.currentSubTheoryId = null;
     saveState();
-    renderOwnProfile();
+    // R9a (A1): the merged Profile. Fresh route entry is always owner mode --
+    // "preview as visitor" is a within-page toggle, never a persisted state.
+    _pfPreview = false;
+    renderProfilePage();
     return;
   }
   // W6.5 social surfaces. Symmetric pointer clear like the branches above;
@@ -15323,7 +15327,7 @@ function _accountToggleEditForm(formEl, btnEl) {
 // renderAccountPage(), mirroring buildNotebookMasterSwitch -> renderNotebook().
 // Every new class is rm-* under .account-readermodel -> zero global CSS bleed.
 // =====================================================================
-function buildReaderModelSection(uid) {
+function buildReaderModelSection(uid, rerenderFn) {
   var profile = getProfile(uid);
   var model = getReaderModel(uid);
   var optedIn = profile.yumiReaderModel === true;
@@ -15333,8 +15337,12 @@ function buildReaderModelSection(uid) {
   var voiceOn = profile.voiceOn === true;          // Alive Yumi: TTS opt-in
   var handsFree = profile.talkMode === 'hands-free';
 
+  // R9a: re-render target is parameterized so the SAME section works on the
+  // merged Profile (rerenderFn = renderProfilePage) and the legacy Account page
+  // (default renderAccountPage). Carried handlers must re-render the LIVE surface.
   function rerender() {
-    if (typeof renderAccountPage === 'function') { renderAccountPage(); }
+    if (typeof rerenderFn === 'function') { rerenderFn(); }
+    else if (typeof renderAccountPage === 'function') { renderAccountPage(); }
   }
   function mirror() {
     if (typeof saveReaderModelToFirestore === 'function') {
@@ -15827,7 +15835,8 @@ function buildReaderModelSection(uid) {
   // updates live in place. The cooldown makes repeated renders a no-op.
   if (active && window.YumiBrain && YumiBrain.considerProfileRefresh) {
     YumiBrain.considerProfileRefresh(function() {
-      if (typeof renderAccountPage === 'function') { renderAccountPage(); }
+      if (typeof rerenderFn === 'function') { rerenderFn(); }
+      else if (typeof renderAccountPage === 'function') { renderAccountPage(); }
     });
   }
   return card;
@@ -16566,6 +16575,942 @@ function _portraitJourneyData(uid) {
 // Social counters (walk-with / consequence / followers) render a literal em
 // dash: NO cross-user data model exists (Stage-0 recon 2026-07-02). Reading
 // other readers, the commons, and cross-person writes are deferred this wave.
+// =====================================================================
+// R9a — Profile / Galaxy (merged #profile). Display-only aggregation over
+// EXISTING data (valueMarks, profile.values, book.category, subTheories,
+// notebookEntries, userThemes). NO data-model change beyond the AM8
+// profile.statement field (state.js). Every helper builds once per render with
+// zero mutation (the _portraitEmblem / _buildArcSubsIndex idiom). ES3 only:
+// var/function, for-loops, string concat, two-arg .then. Reuses _portraitEsc
+// (15852) for escaping.
+// =====================================================================
+
+// AM22 category->hue: slug-order index into the 17-label SHELF_CATEGORIES; hues
+// repeat past 10 (index % 10). Deterministic + stable -- the same category is
+// the same hue on every render and surface. Unknown / Uncategorized -> hue 9
+// (--field-10), a stable neutral.
+function _pfCatHue(cat) {
+  var i;
+  if (typeof SHELF_CATEGORIES !== 'undefined' && SHELF_CATEGORIES instanceof Array) {
+    for (i = 0; i < SHELF_CATEGORIES.length; i = i + 1) {
+      if (SHELF_CATEGORIES[i] === cat) { return i % 10; }
+    }
+  }
+  return 9;
+}
+
+// Resolve a book's display category: reader override -> cached label ->
+// Uncategorized. Mirrors classifyBookLocal's precedence WITHOUT the LLM path
+// (display-only; never mutates, never returns null).
+function _pfBookCat(book) {
+  if (!book) { return CATEGORY_UNCATEGORIZED; }
+  if (typeof book.categoryOverride === 'string' && isValidCategoryLabel(book.categoryOverride)) {
+    return book.categoryOverride;
+  }
+  if (typeof book.category === 'string' && isValidCategoryLabel(book.category)) {
+    return book.category;
+  }
+  return CATEGORY_UNCATEGORIZED;
+}
+
+// Owned book ids for a uid (empty when signed out / never seeded).
+function _pfOwnedBookIds(uid) {
+  return (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds instanceof Array)
+    ? state.userBooks[uid].bookIds : [];
+}
+
+// Owned sub-theory RECORDS: userId===uid OR the parent arc is owned by uid
+// (userId is backfilled from the arc on merge; the arc-owner check is the
+// belt-and-suspenders half so a not-yet-backfilled sub is not dropped).
+function _pfOwnedSubs(uid) {
+  var out = [], sid, st;
+  for (sid in state.subTheories) {
+    if (!state.subTheories.hasOwnProperty(sid)) { continue; }
+    st = state.subTheories[sid];
+    if (!st) { continue; }
+    if (st.userId === uid ||
+        (st.arcId && state.arcs && state.arcs[st.arcId] && state.arcs[st.arcId].userId === uid)) {
+      out.push(st);
+    }
+  }
+  return out;
+}
+
+// Star->field (A3): a sub-theory carries no category; derive the dominant
+// category among its evidence BOOKS ({kind:'book', refId:<bookId>}). No
+// evidence-book category -> Uncategorized (sparse-honest). Display-only.
+function _pfSubCategory(st) {
+  var tally = {}, i, ev, book, cat, best = '', bestN = 0;
+  if (st && st.evidence instanceof Array) {
+    for (i = 0; i < st.evidence.length; i = i + 1) {
+      ev = st.evidence[i];
+      if (!ev || ev.kind !== 'book' || !ev.refId) { continue; }
+      book = state.books ? state.books[ev.refId] : null;
+      if (!book) { continue; }
+      cat = _pfBookCat(book);
+      if (cat === CATEGORY_UNCATEGORIZED) { continue; }
+      tally[cat] = (tally[cat] || 0) + 1;
+    }
+  }
+  for (cat in tally) {
+    if (tally.hasOwnProperty(cat) && tally[cat] > bestN) { bestN = tally[cat]; best = cat; }
+  }
+  return best || CATEGORY_UNCATEGORIZED;
+}
+
+// One-line excerpt from a sub-theory body (collapse whitespace, first sentence-
+// ish, cap ~120 chars). Display-only.
+function _pfExcerpt(body) {
+  var s = (typeof body === 'string') ? body : '';
+  s = s.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  var cut = s.indexOf('. ');
+  if (cut > 20 && cut < 120) { return s.slice(0, cut + 1); }
+  if (s.length > 120) { return s.slice(0, 118) + '…'; }
+  return s;
+}
+
+// "Mon YYYY" from a ms timestamp (published date). Empty for a null/absent ts.
+function _pfDate(ts) {
+  if (typeof ts !== 'number' || !ts) { return ''; }
+  var d = new Date(ts);
+  var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return M[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+// Rich per-category axis for the owned library: books, marginalia (entries
+// touching the category), most-recent marginalia time, and category-pair bonds
+// (shared marginalia entries -- the "rarely share a margin" signal). Uncategorized
+// books count toward the total (bar denominator = share of library) but are NOT
+// a field. Build-once, zero mutation. Mirrors _portraitAxisData's category branch.
+function _profileCategoryAxis(uid) {
+  var bookIds = _pfOwnedBookIds(uid), i, bid, book, cat;
+  var idx = {}, cats = [], total = 0, bookCat = {};
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    bid = bookIds[i];
+    book = state.books ? state.books[bid] : null;
+    if (!book) { continue; }
+    total = total + 1;
+    cat = _pfBookCat(book);
+    bookCat[bid] = cat;
+    if (cat === CATEGORY_UNCATEGORIZED) { continue; }
+    if (typeof idx[cat] !== 'number') {
+      idx[cat] = cats.length;
+      cats.push({ name: cat, hue: _pfCatHue(cat), books: 0, marg: 0, recent: 0 });
+    }
+    cats[idx[cat]].books = cats[idx[cat]].books + 1;
+  }
+  var bonds = {}, eid, entry, j, touched, a, b, ci, ts, lo, hi, key;
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    entry = state.notebookEntries[eid];
+    if (!entry || entry.userId !== uid || entry.register !== 'marginalia') { continue; }
+    if (!(entry.bookIds instanceof Array)) { continue; }
+    touched = [];
+    for (j = 0; j < entry.bookIds.length; j = j + 1) {
+      cat = bookCat[entry.bookIds[j]];
+      if (typeof cat === 'undefined' || cat === CATEGORY_UNCATEGORIZED || typeof idx[cat] !== 'number') { continue; }
+      if (touched.indexOf(idx[cat]) === -1) { touched.push(idx[cat]); }
+    }
+    ts = (typeof entry.createdAt === 'number') ? entry.createdAt : 0;
+    for (j = 0; j < touched.length; j = j + 1) {
+      ci = touched[j];
+      cats[ci].marg = cats[ci].marg + 1;
+      if (ts > cats[ci].recent) { cats[ci].recent = ts; }
+    }
+    for (a = 0; a < touched.length; a = a + 1) {
+      for (b = a + 1; b < touched.length; b = b + 1) {
+        lo = Math.min(touched[a], touched[b]); hi = Math.max(touched[a], touched[b]);
+        key = lo + '-' + hi;
+        bonds[key] = (bonds[key] || 0) + 1;
+      }
+    }
+  }
+  return { cats: cats, bonds: bonds, total: total };
+}
+
+// Per-category tallies for the Numbers grid + the sky planets: sorted by books
+// desc (planets sized by books read). { cats:[{name,hue,books,marg}], total }.
+function _profileCategoryStats(uid) {
+  var axis = _profileCategoryAxis(uid), cats = axis.cats.slice(0);
+  cats.sort(function (a, b) { return b.books - a.books; });
+  return { cats: cats, total: axis.total };
+}
+
+// Per-lens tallies (AM44 addendum): the EXISTING shelf lens collection
+// (state.userThemes where userId===uid). books = theme.bookIds.length;
+// marginalia = owned marginalia entries whose bookIds intersect the lens. NO new
+// store. Sorted by books desc. Returns { lenses:[{name,books,marg}], total }.
+function _profileLensStats(uid) {
+  var total = _pfOwnedBookIds(uid).length;
+  var lenses = [], tid, theme, tBookIds, member, j, eid, entry, hit, marg;
+  for (tid in state.userThemes) {
+    if (!state.userThemes.hasOwnProperty(tid)) { continue; }
+    theme = state.userThemes[tid];
+    if (!theme || theme.userId !== uid) { continue; }
+    tBookIds = (theme.bookIds instanceof Array) ? theme.bookIds : [];
+    member = {};
+    for (j = 0; j < tBookIds.length; j = j + 1) { member[tBookIds[j]] = 1; }
+    marg = 0;
+    for (eid in state.notebookEntries) {
+      if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+      entry = state.notebookEntries[eid];
+      if (!entry || entry.userId !== uid || entry.register !== 'marginalia') { continue; }
+      if (!(entry.bookIds instanceof Array)) { continue; }
+      hit = false;
+      for (j = 0; j < entry.bookIds.length; j = j + 1) { if (member[entry.bookIds[j]]) { hit = true; break; } }
+      if (hit) { marg = marg + 1; }
+    }
+    lenses.push({ name: (typeof theme.name === 'string' && theme.name) ? theme.name : 'Untitled lens', books: tBookIds.length, marg: marg });
+  }
+  lenses.sort(function (a, b) { return b.books - a.books; });
+  return { lenses: lenses, total: total };
+}
+
+// _profileValueLoad(uid): the EVIDENCE-WEIGHTED value load (A4 -- never a printed
+// count). For each DECLARED value (profile.values, in declared order): the
+// why-lines from valueMarks across owned books+subs+arcs, the sub-theories that
+// draw on it, and a load TIER w1-w4 derived from evidence weight (drives name
+// scale + orb only). Orphaned marks (value not in profile.values) are collected
+// for the retired-value note. Build-once, zero mutation.
+function _profileValueLoad(uid) {
+  var profile = getProfile(uid);
+  var declared = (profile.values instanceof Array) ? profile.values : [];
+  var declaredSet = {}, i;
+  for (i = 0; i < declared.length; i = i + 1) { declaredSet[declared[i]] = 1; }
+  var whys = {}, orphans = {};
+  function collectMarks(marks) {
+    if (!(marks instanceof Array)) { return; }
+    var k, m, val, why;
+    for (k = 0; k < marks.length; k = k + 1) {
+      m = marks[k];
+      if (!m || typeof m.value !== 'string' || !m.value) { continue; }
+      val = m.value; why = (typeof m.why === 'string') ? m.why : '';
+      if (declaredSet[val]) {
+        if (!whys[val]) { whys[val] = []; }
+        if (why) { whys[val].push(why); }
+      } else {
+        orphans[val] = (orphans[val] || 0) + 1;
+      }
+    }
+  }
+  var bookIds = _pfOwnedBookIds(uid), book;
+  for (i = 0; i < bookIds.length; i = i + 1) { book = state.books ? state.books[bookIds[i]] : null; if (book) { collectMarks(book.valueMarks); } }
+  var subs = _pfOwnedSubs(uid);
+  for (i = 0; i < subs.length; i = i + 1) { collectMarks(subs[i].valueMarks); }
+  var aid;
+  for (aid in state.arcs) {
+    if (!state.arcs.hasOwnProperty(aid)) { continue; }
+    if (state.arcs[aid] && state.arcs[aid].userId === uid) { collectMarks(state.arcs[aid].valueMarks); }
+  }
+  var drawing = {};
+  for (i = 0; i < subs.length; i = i + 1) {
+    var st = subs[i], marks = (st.valueMarks instanceof Array) ? st.valueMarks : [], seen = {}, k, val;
+    for (k = 0; k < marks.length; k = k + 1) {
+      if (!marks[k] || typeof marks[k].value !== 'string') { continue; }
+      val = marks[k].value;
+      if (!declaredSet[val] || seen[val]) { continue; }
+      seen[val] = 1;
+      if (!drawing[val]) { drawing[val] = []; }
+      drawing[val].push({ t: st.header || 'Untitled sub-theory', cat: _pfSubCategory(st), pub: (st.status === 'published'), draft: (st.status !== 'published'), id: st.id });
+    }
+  }
+  var out = [], vWhys, vSubs, score, w;
+  for (i = 0; i < declared.length; i = i + 1) {
+    vWhys = whys[declared[i]] || []; vSubs = drawing[declared[i]] || [];
+    // evidence-weighted: why-lines + drawing sub-theories (subs weigh a touch
+    // more). Bucketed into 4 tiers; degrades gracefully for a sparse library.
+    score = vWhys.length + vSubs.length * 1.5;
+    w = (score >= 4) ? 1 : ((score >= 2) ? 2 : ((score >= 1) ? 3 : 4));
+    out.push({ name: declared[i], w: w, whys: vWhys, subs: vSubs });
+  }
+  var orphList = [], ok;
+  for (ok in orphans) { if (orphans.hasOwnProperty(ok)) { orphList.push({ value: ok, count: orphans[ok] }); } }
+  return { values: out, orphans: orphList };
+}
+
+// Overview counts for the Numbers stat row + the hero counts caption. All
+// display-only. journalQuestion/arcs are candidate signals for the 5th stat
+// (the mockup's "passages" has no distinct real store -- resolved with Preston).
+function _profileOverview(uid) {
+  var books = _pfOwnedBookIds(uid).length;
+  var subs = _pfOwnedSubs(uid), subCount = subs.length, published = 0, i;
+  for (i = 0; i < subs.length; i = i + 1) { if (subs[i].status === 'published') { published = published + 1; } }
+  var marginalia = 0, journalQuestion = 0, eid, entry;
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    entry = state.notebookEntries[eid];
+    if (!entry || entry.userId !== uid) { continue; }
+    if (entry.register === 'marginalia') { marginalia = marginalia + 1; }
+    else { journalQuestion = journalQuestion + 1; }
+  }
+  var arcs = 0, aid;
+  for (aid in state.arcs) { if (state.arcs.hasOwnProperty(aid) && state.arcs[aid] && state.arcs[aid].userId === uid) { arcs = arcs + 1; } }
+  return { books: books, marginalia: marginalia, subTheories: subCount, published: published, arcs: arcs, journalQuestion: journalQuestion };
+}
+
+// Published work band (AM42/43): owned sub-theories with status 'published',
+// newest first. lineage = parent arc title (graceful omit -- never "the arc
+// undefined"). category derived; excerpt from bodyPublic; date from publishedAt.
+// Returns the full list; the caller caps at 6 + "all published work ->".
+function _profilePublished(uid) {
+  var subs = _pfOwnedSubs(uid), pub = [], i, st, arc;
+  for (i = 0; i < subs.length; i = i + 1) {
+    st = subs[i];
+    if (st.status !== 'published') { continue; }
+    arc = (st.arcId && state.arcs && state.arcs[st.arcId]) ? state.arcs[st.arcId] : null;
+    pub.push({
+      t: st.header || 'Untitled sub-theory',
+      ex: _pfExcerpt(st.bodyPublic),
+      cat: _pfSubCategory(st),
+      arc: (arc && typeof arc.title === 'string' && arc.title) ? arc.title : '',
+      date: _pfDate(st.publishedAt),
+      at: (typeof st.publishedAt === 'number') ? st.publishedAt : 0,
+      id: st.id
+    });
+  }
+  pub.sort(function (a, b) { return b.at - a.at; });
+  return pub;
+}
+
+// Gaps-as-questions (owner-only): the three tensions -- GAP (top-half pair that
+// rarely shares a margin), THIN (deepest vs thinnest by books), RISING (most-
+// recent marginalia). Question phrasing verbatim from _portraitFieldTensions;
+// category terms carry their AM22 deep hue. Returns [{ q:<html>, a:<string> }].
+function _profileGaps(uid) {
+  var axis = _profileCategoryAxis(uid), cats = axis.cats, n = cats.length, i, j, out = [];
+  function bondW(a, b) { var lo = Math.min(a, b), hi = Math.max(a, b); return axis.bonds[lo + '-' + hi] || 0; }
+  function catSpan(ci) {
+    return '<span class="cat" style="--field-deep:var(--field-' + (cats[ci].hue + 1) + '-deep)">' + _portraitEsc(cats[ci].name) + '</span>';
+  }
+  if (n >= 2) {
+    var order = [];
+    for (i = 0; i < n; i = i + 1) { order.push(i); }
+    order.sort(function (a, b) { return cats[b].books - cats[a].books; });
+    var topHalf = order.slice(0, Math.max(2, Math.ceil(n / 2)));
+    var bestA = -1, bestB = -1, bestW = Infinity, w;
+    for (i = 0; i < topHalf.length; i = i + 1) {
+      for (j = i + 1; j < topHalf.length; j = j + 1) {
+        w = bondW(topHalf[i], topHalf[j]);
+        if (w < bestW) { bestW = w; bestA = topHalf[i]; bestB = topHalf[j]; }
+      }
+    }
+    if (bestA >= 0 && bestB >= 0) {
+      out.push({ q: 'You read deep in ' + catSpan(bestA) + ' and in ' + catSpan(bestB) + ' — but they rarely share a margin.', a: 'What connects them, for you?' });
+    }
+    var dMax = 0, dMin = 0;
+    for (i = 1; i < n; i = i + 1) {
+      if (cats[i].books > cats[dMax].books) { dMax = i; }
+      if (cats[i].books < cats[dMin].books) { dMin = i; }
+    }
+    if (dMax !== dMin) {
+      out.push({ q: 'Your shelf runs deep in ' + catSpan(dMax) + ' and thin in ' + catSpan(dMin) + '.', a: 'Is that the season you’re in — or the shape of how you read?' });
+    }
+  }
+  var rIdx = -1, rTs = 0;
+  for (i = 0; i < n; i = i + 1) { if (cats[i].recent > rTs) { rTs = cats[i].recent; rIdx = i; } }
+  if (rIdx >= 0) {
+    out.push({ q: 'A cluster is gathering in ' + catSpan(rIdx) + ' you haven’t named yet.', a: 'Want to look at what’s pulling together?' });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------
+// R9a galaxy renderer (re-authored PORTRAIT galaxy -- NOT the locked
+// arc-constellation renderer, which stays off-limits). Stars = sub-theories
+// (protagonists, gold), planets = categories sized by books read, faint field =
+// books read. Tokens-only fills (var(--field-N)); a seeded LCG keeps the sky
+// STABLE across re-renders (no reshuffle); one SVG render, no per-frame JS
+// (AM39). The label + invitation collision engine is ported 1:1 from the v5
+// mockup (docs/studio/mockups/profile.html). ES3 only.
+// ---------------------------------------------------------------------
+
+function _pfLcg(seed) {
+  var s = seed;
+  return function () { s = (s * 1664525 + 1013904223) & 0x7fffffff; return s / 0x7fffffff; };
+}
+
+// Deterministic planet layout: the dominant category (most books, cats[0]) sits
+// at a focal point; the rest distribute on a rank-ordered ellipse. Soft
+// translucent fields may lightly overlap (AM5 "soft tinted fields"); the
+// collision engine handles the TEXT. Aspect-aware via w/h.
+function _pfPlanetLayout(cats, w, h, mob) {
+  var n = cats.length, i, pos = [];
+  var cx = w * (mob ? 0.46 : 0.47), cy = h * (mob ? 0.44 : 0.5);
+  var rx = w * (mob ? 0.33 : 0.40), ry = h * (mob ? 0.33 : 0.40);
+  for (i = 0; i < n; i = i + 1) {
+    if (i === 0) { pos.push({ x: cx, y: cy }); continue; }
+    var rank = (n > 1) ? (i / (n - 1)) : 0;
+    var ang = (i / n) * Math.PI * 2 + (mob ? 1.1 : 0.6);
+    var rr = 0.5 + rank * 0.5;
+    pos.push({ x: cx + rx * rr * Math.cos(ang), y: cy + ry * rr * Math.sin(ang) });
+  }
+  return pos;
+}
+
+// Collision-aware label placement (ported 1:1 from the mockup placeLabels): each
+// label starts below its planet and nudges up/down until it clears every placed
+// label (and stays in bounds), or is dropped. Returns [{x,y,anchor,idx,box}].
+function _pfPlaceLabels(items, w, h, pad) {
+  var placed = [], out = [];
+  function bx(px, py, r, name, fs) {
+    var y = py + r + 16, tw = name.length * fs * 0.5,
+        anchor = px < w * 0.30 ? 'start' : (px > w * 0.70 ? 'end' : 'middle'),
+        x = px, x0, x1, d;
+    if (anchor === 'start') { x0 = x; x1 = x + tw; }
+    else if (anchor === 'end') { x0 = x - tw; x1 = x; }
+    else { x0 = x - tw / 2; x1 = x + tw / 2; }
+    if (x0 < pad) { x1 += pad - x0; x += pad - x0; x0 = pad; }
+    if (x1 > w - pad) { d = x1 - (w - pad); x0 -= d; x1 -= d; x -= d; }
+    return { x: x, x0: x0, x1: x1, y: y, y0: y - fs * 0.85, y1: y + fs * 0.2, anchor: anchor };
+  }
+  function hit(b) {
+    var i, p;
+    for (i = 0; i < placed.length; i = i + 1) {
+      p = placed[i];
+      if (b.x0 < p.x1 + 4 && b.x1 > p.x0 - 4 && b.y0 < p.y1 + 3 && b.y1 > p.y0 - 3) { return true; }
+    }
+    return false;
+  }
+  var k;
+  for (k = 0; k < items.length; k = k + 1) {
+    var it = items[k], b = bx(it.px, it.py, it.r, it.name, it.fs), base = b.y, t = 0, ok = !hit(b), ny;
+    while (!ok && t < 12) {
+      t = t + 1;
+      ny = base + (t % 2 ? 1 : -1) * 14 * Math.ceil(t / 2);
+      b.y = ny; b.y0 = ny - it.fs * 0.85; b.y1 = ny + it.fs * 0.2;
+      ok = !hit(b) && b.y1 < h - 6 && b.y0 > 4;
+    }
+    if (ok && !hit(b) && b.y1 < h - 6 && b.y0 > 4) { placed.push(b); out.push({ x: b.x, y: b.y, anchor: b.anchor, idx: it.idx, box: b }); }
+  }
+  return out;
+}
+
+// The invitation docks in the EMPTIEST quadrant, clear of labels AND stars
+// (ported 1:1 from the mockup placeInvite). AM47.
+function _pfPlaceInvite(text, fs, occ, w, h, pad) {
+  var tw = text.length * fs * 0.5, q = [0, 0, 0, 0], i, qi2;
+  for (i = 0; i < occ.length; i = i + 1) {
+    var b = occ[i], cxq = (b.x0 + b.x1) / 2, cyq = (b.y0 + b.y1) / 2;
+    qi2 = (cxq < w / 2 ? 0 : 1) + (cyq < h / 2 ? 0 : 2);
+    q[qi2] = q[qi2] + 1;
+  }
+  var qo = [0, 1, 2, 3];
+  qo.sort(function (a, b) { return q[a] - q[b]; });
+  function boxAt(cx, cy) {
+    var x0 = cx - tw / 2, x1 = cx + tw / 2, d;
+    if (x0 < pad) { x1 += pad - x0; cx += pad - x0; x0 = pad; }
+    if (x1 > w - pad) { d = x1 - (w - pad); x0 -= d; x1 -= d; cx -= d; }
+    return { x: cx, x0: x0, x1: x0 + tw, y: cy, y0: cy - fs * 0.8, y1: cy + fs * 0.25 };
+  }
+  function clear(bxx) {
+    if (bxx.x0 < pad - 0.1 || bxx.x1 > w - pad + 0.1 || bxx.y0 < 4 || bxx.y1 > h - 4) { return false; }
+    var i2, b2;
+    for (i2 = 0; i2 < occ.length; i2 = i2 + 1) { b2 = occ[i2]; if (bxx.x0 < b2.x1 + 5 && bxx.x1 > b2.x0 - 5 && bxx.y0 < b2.y1 + 4 && bxx.y1 > b2.y0 - 4) { return false; } }
+    return true;
+  }
+  var qi, Q, cx2, yl, yi, bx2;
+  for (qi = 0; qi < 4; qi = qi + 1) {
+    Q = qo[qi]; cx2 = (Q % 2 === 0) ? w * 0.30 : w * 0.70;
+    yl = (Q < 2) ? [h * 0.12, h * 0.20, h * 0.28, h * 0.36] : [h * 0.64, h * 0.72, h * 0.80, h * 0.88];
+    for (yi = 0; yi < yl.length; yi = yi + 1) { bx2 = boxAt(cx2, yl[yi]); if (clear(bx2)) { return bx2; } }
+  }
+  var y, bx3;
+  for (y = h - 10; y > 10; y = y - 6) { bx3 = boxAt(w / 2, y); if (clear(bx3)) { return bx3; } }
+  return boxAt(w / 2, h - 14);
+}
+
+// Build the full sky SVG string for a uid. pub = published-only (visitor /
+// preview); mob = mobile viewport. All figures read live state; category hues
+// are tokens (var(--field-N)); the sky seeds stably.
+function _profileBuildSky(uid, pub, mob) {
+  var cats = _profileCategoryStats(uid).cats;   // sorted by books desc; cats[0] = dominant
+  var w = mob ? 460 : 1000, h = mob ? 560 : 460, pad = mob ? 54 : 30;
+  var rnd = _pfLcg(20260712), i, j;
+  var pos = _pfPlanetLayout(cats, w, h, mob);
+  var catIdx = {};
+  for (i = 0; i < cats.length; i = i + 1) { catIdx[cats[i].name] = i; }
+  var maxBooks = 1;
+  for (i = 0; i < cats.length; i = i + 1) { if (cats[i].books > maxBooks) { maxBooks = cats[i].books; } }
+  function prad(books) { return (mob ? 20 : 26) * (0.42 + 0.58 * (books / maxBooks)); }
+  var head = '<svg class="pf-sky" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Your reading as a galaxy: soft fields are categories sized by books; faint stars are books read; bright gold glints are your sub-theories.">';
+  var body = '<rect class="pf-skybg" x="0" y="0" width="' + w + '" height="' + h + '" fill="transparent"></rect>';
+  // faint book star-field (seeded stable; density tracks library size)
+  var bookN = _pfOwnedBookIds(uid).length;
+  var specks = Math.max(20, Math.min(mob ? 95 : 130, bookN + 12));
+  for (i = 0; i < specks; i = i + 1) {
+    var sbx = pad * 0.5 + rnd() * (w - pad), sby = 8 + rnd() * (h - 16), sbz = rnd();
+    body += '<circle class="pf-spk" cx="' + sbx.toFixed(1) + '" cy="' + sby.toFixed(1) + '" r="' + (0.5 + sbz).toFixed(2) + '" fill="' + (sbz > 0.7 ? 'var(--text-on-dark)' : 'var(--gold)') + '" opacity="' + (0.05 + sbz * 0.14).toFixed(2) + '"></circle>';
+  }
+  // stars = owned sub-theories (visitor: published only), placed near their
+  // category planet (or near center when Uncategorized). Consume rnd BEFORE the
+  // invitation so it can avoid them.
+  var subs = _pfOwnedSubs(uid), stars = [], st, ci, cxp, cyp, pr, ang, dist, sx, sy, isPub, scat;
+  for (i = 0; i < subs.length; i = i + 1) {
+    st = subs[i];
+    isPub = (st.status === 'published');
+    if (pub && !isPub) { continue; }
+    scat = _pfSubCategory(st);
+    ci = (typeof catIdx[scat] === 'number') ? catIdx[scat] : -1;
+    if (ci >= 0) { cxp = pos[ci].x; cyp = pos[ci].y; pr = prad(cats[ci].books); }
+    else { cxp = w * 0.5; cyp = h * 0.5; pr = mob ? 24 : 30; }
+    ang = rnd() * 6.2832; dist = pr * (0.5 + rnd() * 0.5);
+    sx = cxp + Math.cos(ang) * dist; sy = cyp + Math.sin(ang) * dist;
+    sx = Math.max(pad * 0.6, Math.min(w - pad * 0.6, sx));
+    sy = Math.max(20, Math.min(h - 24, sy));
+    stars.push({ t: (st.header || 'Untitled sub-theory'), x: sx, y: sy, pub: isPub, id: st.id });
+  }
+  // constellation lines: hub-radiate from the dominant category (drawn on tap)
+  if (cats.length >= 2) {
+    var hub = pos[0];
+    for (i = 1; i < cats.length; i = i + 1) {
+      body += '<line class="pf-conline" x1="' + hub.x.toFixed(1) + '" y1="' + hub.y.toFixed(1) + '" x2="' + pos[i].x.toFixed(1) + '" y2="' + pos[i].y.toFixed(1) + '"></line>';
+    }
+  }
+  // planets = categories (soft tinted fields, sized by books)
+  for (i = 0; i < cats.length; i = i + 1) {
+    var c = cats[i], r = prad(c.books), col = 'var(--field-' + (c.hue + 1) + ')', px = pos[i].x, py = pos[i].y;
+    body += '<g class="pf-planet" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="button" aria-label="' + _portraitEsc(c.name) + ', ' + c.books + ' book' + (c.books === 1 ? '' : 's') + '">'
+      + '<circle class="phit" cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r + (mob ? 18 : 14)).toFixed(1) + '" fill="' + col + '" opacity="0"></circle>'
+      + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + col + '" opacity="0.15"></circle>'
+      + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r * 0.64).toFixed(1) + '" fill="' + col + '" opacity="0.20"></circle>'
+      + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r * 0.32).toFixed(1) + '" fill="' + col + '" opacity="0.22"></circle></g>';
+  }
+  // labels (top-N by books) via the collision resolver
+  var topN = mob ? Math.min(5, cats.length) : cats.length, labItems = [];
+  for (i = 0; i < topN; i = i + 1) {
+    labItems.push({ px: pos[i].x, py: pos[i].y, r: prad(cats[i].books), name: cats[i].name, fs: (i === 0 ? 19 : 16), idx: i });
+  }
+  labItems.sort(function (a, b) { return b.r - a.r; });
+  var lp = _pfPlaceLabels(labItems, w, h, pad), occ = [], L;
+  for (i = 0; i < lp.length; i = i + 1) {
+    L = lp[i];
+    body += '<text class="pf-plabel pf-skytext' + (L.idx === 0 ? ' dom' : '') + '" x="' + L.x.toFixed(1) + '" y="' + L.y.toFixed(1) + '" text-anchor="' + L.anchor + '">' + _portraitEsc(cats[L.idx].name) + '</text>';
+    occ.push(L.box);
+  }
+  for (i = 0; i < stars.length; i = i + 1) { occ.push({ x0: stars[i].x - 9, x1: stars[i].x + 9, y0: stars[i].y - 9, y1: stars[i].y + 9 }); }
+  // invitation in the emptiest quadrant (AM47) -- rendered only on a thin signal
+  var minB = Infinity;
+  for (i = 0; i < cats.length; i = i + 1) { if (cats[i].books < minB) { minB = cats[i].books; } }
+  if (cats.length === 0 || cats.length < 3 || minB <= 3 || bookN < 25) {
+    var invText = (cats.length === 0) ? 'your reading gathers here as you read' : 'still thin here — worth returning to?';
+    var inv = _pfPlaceInvite(invText, 13, occ, w, h, pad);
+    body += '<text class="pf-invite pf-skytext" x="' + inv.x.toFixed(1) + '" y="' + inv.y.toFixed(1) + '" text-anchor="middle">' + _portraitEsc(invText) + '</text>';
+  }
+  // value lines (connect a value's drawing subs' stars; drawn on tap-to-light)
+  var vload = _profileValueLoad(uid).values, sp2 = {};
+  for (i = 0; i < stars.length; i = i + 1) { sp2[stars[i].id] = stars[i]; }
+  for (i = 0; i < vload.length; i = i + 1) {
+    var vsubs = vload[i].subs, pts = [], kk;
+    for (j = 0; j < vsubs.length; j = j + 1) { if (sp2[vsubs[j].id]) { pts.push(sp2[vsubs[j].id]); } }
+    for (kk = 0; kk + 1 < pts.length; kk = kk + 1) {
+      body += '<line class="pf-vline" data-vline="' + _portraitEsc(vload[i].name) + '" x1="' + pts[kk].x.toFixed(1) + '" y1="' + pts[kk].y.toFixed(1) + '" x2="' + pts[kk + 1].x.toFixed(1) + '" y2="' + pts[kk + 1].y.toFixed(1) + '"></line>';
+    }
+  }
+  // stars on top (protagonists). data-sub = id (routes to #subtheory/<id>).
+  var s2;
+  for (i = 0; i < stars.length; i = i + 1) {
+    s2 = stars[i];
+    body += '<g class="pf-star" data-star="' + _portraitEsc(s2.t) + '" data-sub="' + _portraitEsc(s2.id) + '" tabindex="0" role="button" aria-label="Sub-theory: ' + _portraitEsc(s2.t) + (s2.pub ? '' : ' (only you can see this)') + '">'
+      + '<circle class="shit" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 27 : 15) + '" fill="transparent"></circle>'
+      + '<circle class="glow" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 12 : 15) + '" fill="var(--gold-hi)" opacity="0.16"></circle>'
+      + (s2.pub ? '' : '<circle cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 8 : 10) + '" fill="none" stroke="var(--gold-hi)" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.6"></circle>')
+      + '<circle class="core" cx="' + s2.x.toFixed(1) + '" cy="' + s2.y.toFixed(1) + '" r="' + (mob ? 4.4 : 5) + '" fill="var(--star-gold)"></circle></g>';
+  }
+  return head + body + '</svg>';
+}
+
+// ---------------------------------------------------------------------
+// R9a page composition + interactivity. renderProfilePage builds the v5-mockup
+// sections wired to REAL data + REAL navigation. Owner vs visitor is a CONTENT
+// rule (vis flag drives data; .pf-owner-only + .is-visitor CSS fences sections).
+// Reader-model DNA (offer dock / threads / journey / returns / fuller Yumi prefs)
+// carries in a follow-up sub-slice; this is the core mockup surface. ES3.
+// ---------------------------------------------------------------------
+
+var _pfPreview = false;   // owner previewing as a visitor (within-session flag)
+
+// value-load orb (w1 strong -> w4 emerging): size + fill depth + ring (AM14).
+function _pfOrbSvg(w) {
+  var dArr = [0, 26, 21, 17, 13], fArr = [0, 0.95, 0.7, 0.45, 0.2];
+  var d = dArr[w], fill = fArr[w], ring = (w >= 4), r = d / 2;
+  var g = '<svg class="pf-orb" width="' + d + '" height="' + d + '" viewBox="0 0 ' + d + ' ' + d + '" aria-hidden="true"><circle cx="' + r + '" cy="' + r + '" r="' + (r - 1) + '" fill="var(--gold)" opacity="' + fill + '"' + (ring ? ' stroke="var(--gold)" stroke-width="1.4"' : '') + '></circle>';
+  if (!ring) { g += '<circle cx="' + (r * 0.72) + '" cy="' + (r * 0.72) + '" r="' + (r * 0.28) + '" fill="var(--star-gold)" opacity="0.9"></circle>'; }
+  return g + '</svg>';
+}
+
+// one value card: orb + name (scale by w) + why-lines + drawing sub-links.
+// Visitor: published sub-links only; a stone with zero published subs still
+// stands on its why-lines (AM50).
+function _pfValueCard(v, vis) {
+  var subs = [], i;
+  if (vis) { for (i = 0; i < v.subs.length; i = i + 1) { if (v.subs[i].pub) { subs.push(v.subs[i]); } } }
+  else { subs = v.subs; }
+  var drawn = subs.length;
+  var h = '<div class="pf-vcard w' + v.w + '">' + _pfOrbSvg(v.w) + '<div class="pf-vmain"><div class="pf-vname">' + _portraitEsc(v.name) + '</div>';
+  for (i = 0; i < v.whys.length; i = i + 1) { h += '<div class="pf-why">' + _portraitEsc(v.whys[i]) + '</div>'; }
+  if (subs.length) {
+    h += '<div class="pf-drawn">Drawn on by ' + drawn + ' sub-theor' + (drawn === 1 ? 'y' : 'ies') + '</div><div class="pf-sublinks">';
+    for (i = 0; i < subs.length; i = i + 1) {
+      var hue = _pfCatHue(subs[i].cat), deep = 'var(--field-' + (hue + 1) + '-deep)';
+      h += '<span class="pf-sublink' + (subs[i].draft ? ' draft' : '') + '" data-sub="' + _portraitEsc(subs[i].id) + '" tabindex="0" role="link" style="--field-deep:' + deep + '"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(subs[i].t) + (subs[i].draft ? ' · draft' : '') + '</span>';
+    }
+    h += '</div>';
+  }
+  return h + '</div></div>';
+}
+
+function _pfValuesSection(uid, vis) {
+  var load = _profileValueLoad(uid), h = '<div class="pf-eyebrow">Values <span class="cap">evidence, not tallies</span></div><div class="pf-card">', i;
+  // AM19 Yumi value-offer dock (owner-only): the R8 retrofit, re-homed. The
+  // trigger + offer cards render into [data-retro-body]; accept adds a DECLARED
+  // value and re-renders the Profile (never auto-marks). See _pfRunRetrofit.
+  if (!vis) {
+    h += '<div class="pf-offer-dock pf-owner-only"><button class="pf-btn ghost" data-act="retro-run" type="button">Ask Yumi to notice values in your library</button><div class="pf-retro-body" data-retro-body></div></div>';
+  }
+  if (load.values.length === 0) {
+    h += '<div class="pf-invite-line">' + (vis ? 'The values they place will stand here.' : 'Place a value and it will stand here, with the marks that carry it.') + '</div>';
+  } else {
+    for (i = 0; i < load.values.length; i = i + 1) { h += _pfValueCard(load.values[i], vis); }
+  }
+  if (!vis && load.orphans.length) {
+    var o = load.orphans[0];
+    h += '<div class="pf-orphan pf-owner-only">One mark still points to <b>' + _portraitEsc(o.value) + '</b> — a value you retired. It stays with the book until you fold it into a value above, or let it go.</div>';
+  }
+  return h + '</div>';
+}
+
+function _pfNumbersSection(uid, vis) {
+  var ov = _profileOverview(uid), cs = _profileCategoryStats(uid), cats = cs.cats, total = cs.total, i;
+  var stats = [[ov.books, 'books', '#books'], [ov.marginalia, 'marginalia', '#notebook'], [ov.arcs, 'arcs', '#arcs'], [ov.subTheories, 'sub-theories', '#arcs'], [ov.published, 'published', '#arcs']];
+  var h = '<div class="pf-eyebrow">By the numbers</div><div class="pf-card"><div class="pf-numhead"><span class="pf-eyebrow" style="margin:0"><span class="cap" data-numcap>bars show share of your library</span></span>';
+  if (!vis) { h += '<span class="pf-seg" role="tablist"><button class="on" data-axis="categories" role="tab" aria-selected="true">Categories</button><button data-axis="lenses" role="tab" aria-selected="false">Lenses</button></span>'; }
+  h += '</div><div class="pf-statrow">';
+  for (i = 0; i < stats.length; i = i + 1) { h += '<div class="pf-stat" data-go="' + stats[i][2] + '" tabindex="0" role="link"><div class="n">' + stats[i][0] + '</div><div class="l">' + stats[i][1] + '</div></div>'; }
+  h += '</div><div class="pf-catgrid" data-grid="categories">';
+  for (i = 0; i < cats.length; i = i + 1) {
+    var c = cats[i], deep = 'var(--field-' + (c.hue + 1) + '-deep)', bright = 'var(--field-' + (c.hue + 1) + ')', pct = total ? Math.round(c.books / total * 100) : 0;
+    h += '<div class="pf-catcard" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="link" style="--rail:' + bright + ';--railtext:' + deep + ';--barfill:' + bright + '"><div class="cn"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(c.name) + '</div><div class="cm">' + c.books + ' book' + (c.books === 1 ? '' : 's') + ' · ' + c.marg + ' marginalia</div><div class="pf-bar"><i style="width:' + pct + '%"></i></div></div>';
+  }
+  if (cats.length === 0) { h += '<div class="pf-invite-line">' + (vis ? 'Their categories gather here as they read.' : 'Your categories gather here as you read.') + '</div>'; }
+  h += '</div>';
+  if (!vis) {
+    var ls = _profileLensStats(uid), lenses = ls.lenses, ltotal = ls.total;
+    h += '<div class="pf-catgrid pf-owner-only" data-grid="lenses" style="display:none">';
+    for (i = 0; i < lenses.length; i = i + 1) {
+      var l = lenses[i], lpct = ltotal ? Math.round(l.books / ltotal * 100) : 0;
+      h += '<div class="pf-catcard" style="--rail:var(--gold-deep);--railtext:var(--gold-deep);--barfill:var(--gold)"><div class="cn"><span class="pf-dot" style="background:var(--gold-deep)"></span>' + _portraitEsc(l.name) + '</div><div class="cm">' + l.books + ' book' + (l.books === 1 ? '' : 's') + ' · ' + l.marg + ' marginalia</div><div class="pf-bar"><i style="width:' + lpct + '%"></i></div></div>';
+    }
+    if (lenses.length === 0) { h += '<div class="pf-invite-line">Group books into a lens and it will gather here.</div>'; }
+    h += '</div>';
+  }
+  h += '<div class="pf-numcov">These describe ' + (vis ? 'their' : 'your') + ' reading. ' + (vis ? 'Their' : 'Your') + ' value load is never numbered or ranked — that stays evidence, not a score.</div>';
+  return h + '</div>';
+}
+
+function _pfQuestionsSection(uid) {
+  var gaps = _profileGaps(uid), h = '<div class="pf-eyebrow">Open questions <span class="whisper">only you can see this</span></div><div class="pf-card">', i;
+  if (gaps.length === 0) { h += '<div class="pf-invite-line">Questions gather here as your reading finds its tensions.</div>'; }
+  else { for (i = 0; i < gaps.length; i = i + 1) { h += '<div class="pf-gap"><div class="pf-gap-q">' + gaps[i].q + '</div><div class="pf-gap-a">' + _portraitEsc(gaps[i].a) + '</div></div>'; } }
+  return h + '</div>';
+}
+
+function _pfNowLine(uid) {
+  var latest = null, eid, e;
+  for (eid in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(eid)) { continue; }
+    e = state.notebookEntries[eid];
+    if (!e || e.userId !== uid) { continue; }
+    if (!latest || (e.createdAt || 0) > (latest.createdAt || 0)) { latest = e; }
+  }
+  if (!latest) { return ''; }
+  var title = '';
+  if (latest.bookIds instanceof Array && latest.bookIds.length && state.books && state.books[latest.bookIds[0]]) { title = state.books[latest.bookIds[0]].title || ''; }
+  if (title) { return 'Your reading is live in <b>' + _portraitEsc(title) + '</b> right now.'; }
+  return 'You’ve been writing in your notebook lately.';
+}
+
+function _pfNowSection(uid) {
+  var line = _pfNowLine(uid), h = '<div class="pf-eyebrow">Now <span class="whisper">only you can see this</span></div><div class="pf-card">';
+  if (line) { h += '<div class="pf-now">' + line + '</div>'; }
+  else { h += '<div class="pf-invite-line">What you’re reading now will surface here.</div>'; }
+  return h + '</div>';
+}
+
+function _pfPublishedSection(uid, vis) {
+  var list = _profilePublished(uid), shown = list.slice(0, 6), h = '<div class="pf-eyebrow">Published work</div><div class="pf-card">', i;
+  if (shown.length === 0) { return h + '<div class="pf-invite-line">' + (vis ? 'What they publish will stand here.' : 'What you publish will stand here.') + '</div></div>'; }
+  h += '<div class="pf-pubgrid">';
+  for (i = 0; i < shown.length; i = i + 1) {
+    var p = shown[i], hue = _pfCatHue(p.cat), bright = 'var(--field-' + (hue + 1) + ')', deep = 'var(--field-' + (hue + 1) + '-deep)';
+    h += '<div class="pf-pub" data-sub="' + _portraitEsc(p.id) + '" tabindex="0" role="link" style="--rail:' + bright + ';--railtext:' + deep + '"><div class="pt">' + _portraitEsc(p.t) + '</div>' + (p.ex ? '<div class="pe">' + _portraitEsc(p.ex) + '</div>' : '') + (p.arc ? '<div class="pl">from the arc ' + _portraitEsc(p.arc) + '</div>' : '') + '<div class="pm"><span class="pcat"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(p.cat) + '</span><span class="pdate">' + _portraitEsc(p.date) + '</span></div></div>';
+  }
+  h += '</div>' + (list.length > 6 ? '<span class="pf-pub-more" data-go="#arcs" tabindex="0" role="link">all published work &rarr;</span>' : '') + '</div>';
+  return h;
+}
+
+function _pfSettingsSection(uid) {
+  var p = getProfile(uid), readsAlong = (p.yumiReadsAlong !== false);
+  var h = '<div class="pf-eyebrow">Settings</div><div class="pf-card"><div class="pf-set-fields">'
+    + '<div class="pf-field"><label>Display name</label><input data-field="displayNameOverride" value="' + _portraitEsc(p.displayNameOverride || '') + '"></div>'
+    + '<div class="pf-field"><label>Pen name</label><input data-field="penName" value="' + _portraitEsc(p.penName || '') + '"></div>'
+    + '<div class="pf-field"><label>Reading life</label><input data-field="tagline" value="' + _portraitEsc(p.tagline || '') + '"></div>'
+    + '<div class="pf-field"><label>Values statement</label><textarea data-field="statement">' + _portraitEsc(p.statement || '') + '</textarea></div></div>'
+    + '<div class="pf-toggle' + (readsAlong ? '' : ' off') + '" data-act="toggle-reads" tabindex="0" role="switch" aria-checked="' + (readsAlong ? 'true' : 'false') + '"><span class="tk"></span> Yumi reads along</div>'
+    + '<div class="pf-set-row"><button class="pf-btn save" data-act="save-settings">Save</button><button class="pf-btn ghost" data-act="signout">Sign out</button></div>'
+    + '<div class="pf-covenant">Everything here is yours. Yumi offers; you decide what it means. &nbsp;<a data-go="#yumi-sees" tabindex="0" role="link">View what Yumi sees &rarr;</a></div>';
+  return h + '</div>';
+}
+
+function _pfBuildPage(uid, vis, mob) {
+  var p = getProfile(uid), user = getCurrentUser();
+  var displayName = p.displayNameOverride ? p.displayNameOverride : (user && user.displayName ? user.displayName : (user && user.email ? user.email : 'You'));
+  var initial = displayName ? displayName.charAt(0).toUpperCase() : 'P';
+  var tagline = p.tagline || '', penName = p.penName || '', statement = p.statement || '', ov = _profileOverview(uid), i;
+  var h = '<div class="pf-hero"><div class="pf-hero-head"><div class="pf-idrow"><div class="pf-avatar">' + _portraitEsc(initial) + '</div><div><div class="pf-name">' + _portraitEsc(displayName) + '</div>'
+    + (tagline ? '<div class="pf-tag">' + _portraitEsc(tagline) + '</div>' : '')
+    + (penName ? '<div class="pf-byline">Publishing as ' + _portraitEsc(penName) + '</div>' : '') + '</div></div>'
+    + (vis ? '<span class="pf-vis-badge" data-act="exit-preview" tabindex="0" role="button">visitor view</span>' : '<span class="pf-preview-link pf-owner-only" data-act="preview" tabindex="0" role="button">preview as visitor &rarr;</span>') + '</div>';
+  h += '<div class="pf-sky-host">' + _profileBuildSky(uid, vis, mob) + '</div>';
+  h += '<div class="pf-hero-dock"><div class="pf-strip-wrap"><div class="pf-strip">';
+  var vload = _profileValueLoad(uid).values;
+  for (i = 0; i < vload.length; i = i + 1) { h += '<span class="pf-vchip" data-value="' + _portraitEsc(vload[i].name) + '" tabindex="0" role="button"><span class="vorb"></span>' + _portraitEsc(vload[i].name) + '</span>'; }
+  h += '</div><span class="pf-strip-more">›</span></div>';
+  h += '<div class="pf-counts"><span class="cx" data-go="#books" tabindex="0" role="link"><b>' + ov.books + '</b> book' + (ov.books === 1 ? '' : 's') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.subTheories + '</b> sub-theor' + (ov.subTheories === 1 ? 'y' : 'ies') + '</span> &middot; <span class="cx" data-go="#arcs" tabindex="0" role="link"><b>' + ov.published + '</b> published</span></div>';
+  h += '<div class="pf-taphint">Tap a value to light its constellation · a star for its sub-theory · a field for its books</div></div></div>';
+  h += '<div class="pf-below"><div class="pf-thesis"><p>' + (statement ? _portraitEsc(statement) : (vis ? '' : '<span style="color:var(--ink-3)">Write the through-line of your reading — the tension you keep returning to.</span>')) + '</p>' + (vis ? '' : '<span class="pf-edit pf-owner-only" data-act="edit-thesis">edit</span>') + '</div>';
+  h += '<div class="pf-grid">';
+  h += '<div class="pf-sec sec-values">' + _pfValuesSection(uid, vis) + '</div>';
+  h += '<div class="pf-sec sec-numbers">' + _pfNumbersSection(uid, vis) + '</div>';
+  h += '<div class="pf-sec sec-questions pf-owner-only">' + _pfQuestionsSection(uid) + '</div>';
+  h += '<div class="pf-sec sec-now pf-owner-only">' + _pfNowSection(uid) + '</div>';
+  h += '</div>';
+  // DNA carry (owner-only, Preston-approved "keep"): what the margins return to,
+  // how the reading has moved, and the reader-model section (mounted post-innerHTML
+  // as a live DOM node). Final placement is a felt-pass call.
+  if (!vis) {
+    h += '<div class="pf-sec sec-returns pf-owner-only">' + _pfReturnsSection(uid) + '</div>';
+    h += '<div class="pf-sec sec-journey pf-owner-only">' + _pfJourneySection(uid) + '</div>';
+    h += '<div class="pf-sec sec-yumi pf-owner-only pf-yumi-mount" id="pf-yumi-mount"></div>';
+  }
+  h += '<div class="pf-sec sec-published">' + _pfPublishedSection(uid, vis) + '</div>';
+  h += '<div class="pf-sec sec-settings pf-owner-only pf-settings">' + _pfSettingsSection(uid) + '</div>';
+  return h + '</div>';
+}
+
+function _pfLightValue(wrap, name) {
+  var sky = wrap.querySelector('.pf-sky'); if (!sky) { return; }
+  var user = getCurrentUser(); if (!user || !user.uid) { return; }
+  var load = _profileValueLoad(user.uid).values, subIds = {}, i, j, vs;
+  for (i = 0; i < load.length; i = i + 1) { if (load[i].name === name) { vs = load[i].subs; for (j = 0; j < vs.length; j = j + 1) { subIds[vs[j].id] = 1; } } }
+  var st = sky.querySelectorAll('.pf-star');
+  for (i = 0; i < st.length; i = i + 1) {
+    if (subIds[st[i].getAttribute('data-sub')]) { st[i].classList.add('lit'); st[i].classList.remove('faded'); }
+    else { st[i].classList.add('faded'); st[i].classList.remove('lit'); }
+  }
+  var vl = sky.querySelectorAll('.pf-vline');
+  for (i = 0; i < vl.length; i = i + 1) { vl[i].classList.toggle('on', vl[i].getAttribute('data-vline') === name); }
+  var ch = wrap.querySelectorAll('.pf-vchip');
+  for (i = 0; i < ch.length; i = i + 1) { var on = ch[i].getAttribute('data-value') === name; ch[i].classList.toggle('on', on); ch[i].classList.toggle('dim', !on); }
+}
+
+function _pfClearValue(wrap) {
+  var sky = wrap.querySelector('.pf-sky'), i;
+  if (sky) {
+    var st = sky.querySelectorAll('.pf-star');
+    for (i = 0; i < st.length; i = i + 1) { st[i].classList.remove('lit'); st[i].classList.remove('faded'); }
+    var vl = sky.querySelectorAll('.pf-vline');
+    for (i = 0; i < vl.length; i = i + 1) { vl[i].classList.remove('on'); }
+  }
+  var ch = wrap.querySelectorAll('.pf-vchip');
+  for (i = 0; i < ch.length; i = i + 1) { ch[i].classList.remove('on'); ch[i].classList.remove('dim'); }
+}
+
+function _pfSetAxis(wrap, axis) {
+  var cg = wrap.querySelectorAll('[data-grid]'), i;
+  for (i = 0; i < cg.length; i = i + 1) { cg[i].style.display = (cg[i].getAttribute('data-grid') === axis) ? 'grid' : 'none'; }
+  var bt = wrap.querySelectorAll('.pf-seg button');
+  for (i = 0; i < bt.length; i = i + 1) { var on = bt[i].getAttribute('data-axis') === axis; bt[i].classList.toggle('on', on); bt[i].setAttribute('aria-selected', on ? 'true' : 'false'); }
+  var cap = wrap.querySelector('[data-numcap]');
+  if (cap) { cap.textContent = (axis === 'lenses') ? 'a book can hold several lenses — shares overlap' : 'bars show share of your library'; }
+}
+
+function _pfSaveSettings(wrap, uid) {
+  var fields = {}, inputs = wrap.querySelectorAll('[data-field]'), i, el;
+  for (i = 0; i < inputs.length; i = i + 1) { el = inputs[i]; fields[el.getAttribute('data-field')] = el.value; }
+  setProfile(uid, fields);
+  if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(uid, getProfile(uid), function () {}); }
+  renderProfilePage();
+}
+
+function _pfWire(wrap, uid, vis) {
+  function cl(t, s) { return (t && t.closest) ? t.closest(s) : null; }
+  function handle(e) {
+    var t = e.target, seg = cl(t, '[data-axis]');
+    if (seg) { _pfSetAxis(wrap, seg.getAttribute('data-axis')); return; }
+    var a = cl(t, '[data-act]');
+    if (a) {
+      var act = a.getAttribute('data-act');
+      if (act === 'preview') { _pfPreview = true; renderProfilePage(); return; }
+      if (act === 'exit-preview') { _pfPreview = false; renderProfilePage(); return; }
+      if (act === 'toggle-reads') {
+        var np = (getProfile(uid).yumiReadsAlong === false);
+        setProfile(uid, { yumiReadsAlong: np });
+        if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(uid, getProfile(uid), function () {}); }
+        a.classList.toggle('off', !np); a.setAttribute('aria-checked', np ? 'true' : 'false'); return;
+      }
+      if (act === 'save-settings') { _pfSaveSettings(wrap, uid); return; }
+      if (act === 'signout') { if (typeof signOut === 'function') { signOut(); } return; }
+      if (act === 'edit-thesis') { var ta = wrap.querySelector('textarea[data-field="statement"]'); if (ta) { if (ta.scrollIntoView) { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); } ta.focus(); } return; }
+      if (act === 'retro-run') { _pfRunRetrofit(wrap, uid); return; }
+      if (act === 'signin') { if (typeof signInWithGoogle === 'function') { signInWithGoogle(); } return; }
+    }
+    var chip = cl(t, '[data-value]');
+    if (chip) { var nm = chip.getAttribute('data-value'); if (chip.classList.contains('on')) { _pfClearValue(wrap); } else { _pfLightValue(wrap, nm); } return; }
+    var sub = cl(t, '[data-sub]');
+    if (sub) { var sid = sub.getAttribute('data-sub'); if (sid) { location.hash = '#subtheory/' + sid; } return; }
+    var planet = cl(t, '[data-planet]');
+    if (planet) { location.hash = '#books'; return; }
+    var go = cl(t, '[data-go]');
+    if (go) { var dest = go.getAttribute('data-go'); if (dest) { location.hash = dest; } return; }
+    var sky = cl(t, '.pf-sky');
+    if (sky) { sky.classList.toggle('show-lines'); return; }
+  }
+  wrap.addEventListener('click', handle);
+  wrap.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest &&
+        e.target.closest('[data-star],[data-planet],[data-value],[data-act],[data-go],[data-axis],[data-sub]')) {
+      e.preventDefault(); handle(e);
+    }
+  });
+  var sw = wrap.querySelector('.pf-strip-wrap'), sc = wrap.querySelector('.pf-strip');
+  if (sw && sc && sc.scrollWidth > sc.clientWidth + 2) { sw.classList.add('overflow'); }
+}
+
+// AM19 retrofit run (profile-scoped): reuses YumiBrain's notice/eval (the R8
+// engine) but ACCEPT declares a value on the PROFILE and re-renders
+// renderProfilePage (Condition-1: carried handlers re-render the LIVE surface).
+function _pfRunRetrofit(wrap, uid) {
+  var body = wrap.querySelector('[data-retro-body]'); if (!body) { return; }
+  var btn = wrap.querySelector('[data-act="retro-run"]');
+  function status(kind, msg) { body.innerHTML = ''; var s = document.createElement('div'); s.className = 'pf-retro-' + kind; s.textContent = msg; body.appendChild(s); }
+  if (!window.YumiBrain || typeof window.YumiBrain.generateValueRetrofit !== 'function' || typeof window.YumiBrain.gatherValueMetadata !== 'function') { status('error', 'Yumi can’t reach your shelf right now.'); return; }
+  var meta = window.YumiBrain.gatherValueMetadata();
+  if (!meta || !meta.books || meta.books.length < 2) { status('empty', 'Yumi needs a few books to notice a pattern — add some to your shelf first.'); return; }
+  if (btn) { btn.disabled = true; }
+  status('loading', 'Yumi is reading across your shelf…');
+  var titles = [], ti; for (ti = 0; ti < meta.books.length; ti = ti + 1) { titles.push(meta.books[ti].title); }
+  window.YumiBrain.generateValueRetrofit(meta).then(function (raw) {
+    if (btn) { btn.disabled = false; }
+    if (typeof window.YumiBrain.valueRetrofitUnreadable === 'function' && window.YumiBrain.valueRetrofitUnreadable(raw)) { status('error', 'Yumi couldn’t quite read what she found — give it another try in a moment.'); return; }
+    var vals = window.YumiBrain.evalValueResponse(raw, titles, (meta && meta.themeLensNames) || []) || [];
+    _pfRenderOffers(uid, body, vals);
+  }, function () { if (btn) { btn.disabled = false; } status('error', 'Yumi couldn’t look just now — try again in a moment.'); });
+}
+
+function _pfRenderOffers(uid, body, vals) {
+  body.innerHTML = '';
+  var cov = document.createElement('div'); cov.className = 'pf-retro-cov';
+  cov.textContent = 'From your titles, authors, and genres only — never from inside your books or your private notes. Nothing is added until you accept it.';
+  body.appendChild(cov);
+  if (!vals.length) { var none = document.createElement('div'); none.className = 'pf-retro-none'; none.textContent = 'Yumi didn’t find clear new values to name yet — your shelf may be small, or you may have already named what it carries.'; body.appendChild(none); return; }
+  function addValue(name) {
+    // Trim BEFORE the dedup compare (a whitespace-bearing candidate must not evade
+    // the case-insensitive dedup and duplicate after setProfile trims on write).
+    var nm = ('' + name).replace(/^\s+|\s+$/g, '');
+    var p = getProfile(uid), cur = (p.values instanceof Array) ? p.values.slice(0) : [], i, ex = false;
+    for (i = 0; i < cur.length; i = i + 1) { if (('' + cur[i]).toLowerCase() === nm.toLowerCase()) { ex = true; } }
+    if (nm && !ex) {
+      cur.push(nm);
+      setProfile(uid, { values: cur });
+      if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(uid, getProfile(uid), function () {}); }
+    }
+    renderProfilePage();
+  }
+  var i;
+  for (i = 0; i < vals.length; i = i + 1) {
+    (function (v) {
+      var card = document.createElement('div'); card.className = 'pf-offer';
+      var lab = document.createElement('div'); lab.className = 'lab'; lab.textContent = 'Yumi noticed a value forming'; card.appendChild(lab);
+      var ob = document.createElement('div'); ob.className = 'obody'; ob.textContent = v.why ? v.why : ('Across your shelf, a thread keeps pointing to ' + v.name + '.'); card.appendChild(ob);
+      var says = document.createElement('div'); says.className = 'says'; says.appendChild(document.createTextNode('Yumi would name it'));
+      var prop = document.createElement('span'); prop.className = 'prop'; prop.textContent = v.name; says.appendChild(prop); card.appendChild(says);
+      var acts = document.createElement('div'); acts.className = 'pf-acts';
+      var yes = document.createElement('span'); yes.className = 'pf-chip yes'; yes.setAttribute('tabindex', '0'); yes.setAttribute('role', 'button'); yes.textContent = 'that’s it';
+      yes.addEventListener('click', function () { addValue(prop.textContent); });
+      var ren = document.createElement('span'); ren.className = 'pf-chip'; ren.setAttribute('tabindex', '0'); ren.setAttribute('role', 'button'); ren.textContent = 'rename ✎';
+      ren.addEventListener('click', function () {
+        var inp = document.createElement('input'); inp.className = 'pf-retro-renin'; inp.value = prop.textContent;
+        says.innerHTML = ''; says.appendChild(inp); inp.focus();
+        inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var nm = inp.value.replace(/^\s+|\s+$/g, ''); if (nm) { addValue(nm); } } });
+      });
+      var no = document.createElement('span'); no.className = 'pf-chip'; no.setAttribute('tabindex', '0'); no.setAttribute('role', 'button'); no.textContent = 'not this';
+      no.addEventListener('click', function () { if (card.parentNode) { card.parentNode.removeChild(card); } });
+      acts.appendChild(yes); acts.appendChild(ren); acts.appendChild(no); card.appendChild(acts);
+      body.appendChild(card);
+    })(vals[i]);
+  }
+}
+
+// "What your margins keep returning to" (display-only carry of portrait-returns).
+// AM20 / no-regression: a thin section keeps an honest invitation line, never
+// vanishes (the retired portrait-returns rendered a message on zero data too).
+function _pfReturnsSection(uid) {
+  var data = (typeof _portraitReturnsData === 'function') ? _portraitReturnsData(uid) : [];
+  var h = '<div class="pf-eyebrow">What your margins keep returning to <span class="whisper">only you can see this</span></div><div class="pf-card pf-returns-card">', i;
+  if (!data.length) { return h + '<div class="pf-invite-line">What your margins return to will gather here as you mark up your reading.</div></div>'; }
+  for (i = 0; i < data.length; i = i + 1) {
+    h += '<div class="pf-returns-row"><b>' + _portraitEsc(data[i].title) + '</b>' + (data[i].author ? ' · ' + _portraitEsc(data[i].author) : '') + ' — ' + data[i].n + ' mark' + (data[i].n === 1 ? '' : 's') + '</div>';
+  }
+  return h + '</div>';
+}
+
+// "How your reading has moved" (display-only carry of portrait-journey). AM20:
+// honest invitation line on zero data (never vanishes).
+function _pfJourneySection(uid) {
+  var data = (typeof _portraitJourneyData === 'function') ? _portraitJourneyData(uid) : [];
+  var h = '<div class="pf-eyebrow">How your reading has moved <span class="whisper">only you can see this</span></div><div class="pf-card pf-journey-card">', i, m;
+  if (!data.length) { return h + '<div class="pf-invite-line">The shape of how your reading has moved will gather here as you read.</div></div>'; }
+  for (i = 0; i < data.length; i = i + 1) {
+    m = data[i];
+    var text = m.text ? m.text : (m.label ? m.label : '');
+    h += '<div class="pf-journey-row"><b>' + _portraitEsc(m.when || '') + '</b> — ' + _portraitEsc(text) + '</div>';
+  }
+  return h + '</div>';
+}
+
+// The merged Profile at #profile (A1). Owner-only surface; owners can preview
+// as a visitor (the real visitor route stays #reader/<uid> -> renderOtherProfile).
+function renderProfilePage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var wrap = document.createElement('section');
+  wrap.className = 'pf-root';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    wrap.innerHTML = '<div class="pf-below" style="padding-top:80px"><div class="pf-thesis"><p>Your profile</p></div><div class="pf-card" style="max-width:520px"><div class="pf-now">Sign in to see your reading as a galaxy.</div><div class="pf-set-row"><button class="pf-btn save" data-act="signin">Sign in</button></div></div></div>';
+    host.appendChild(wrap);
+    wrap.addEventListener('click', function (e) { var b = (e.target && e.target.closest) ? e.target.closest('[data-act="signin"]') : null; if (b && typeof signInWithGoogle === 'function') { signInWithGoogle(); } });
+    return;
+  }
+  var uid = user.uid, vis = _pfPreview;
+  var mob = (typeof window !== 'undefined' && window.innerWidth) ? (window.innerWidth < 1200) : false;
+  if (vis) { wrap.className = 'pf-root is-visitor'; }
+  wrap.setAttribute('data-mob', mob ? '1' : '0');
+  wrap.innerHTML = _pfBuildPage(uid, vis, mob);
+  host.appendChild(wrap);
+  // DNA carry: mount the reader-model section as a live DOM node (owner-only). Its
+  // re-render target is renderProfilePage (Condition-1 -- carried handlers re-render
+  // the LIVE surface, never the retired Account page).
+  if (!vis) {
+    var yumiMount = wrap.querySelector('#pf-yumi-mount');
+    if (yumiMount && typeof buildReaderModelSection === 'function') {
+      try { yumiMount.appendChild(buildReaderModelSection(uid, renderProfilePage)); } catch (e) { }
+    }
+  }
+  _pfWire(wrap, uid, vis);
+}
+
 function renderOwnProfile() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
