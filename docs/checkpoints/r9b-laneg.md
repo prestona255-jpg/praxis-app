@@ -263,3 +263,94 @@ retained by the smaller obstacles.
 
 **NEXT:** reviewer + red-team verdicts → FINAL commit bumps `sw.js` v3.200→**v3.201** (hook ARMED) + writes
 `r9b-laneg-report.md` → HALT at the commit gate (Path B).
+
+---
+
+## R9b FELT-PASS PATCH (target v3.202) — DIAGNOSES (live-confirmed, before fixes)
+
+Rig: static-server localhost:8772 (127.0.0.1 twin fallback), `getCurrentUser` stub +
+in-memory FIXTURE-R (41 books / 8 cats / 16 subs / 4 arcs) · FIXTURE-S (7 books / 3 cats,
+TWO on slate) · FP1 (untitled n=1) · FP1b (titled n=1). LIGHT ground confirmed
+(`.pf-card` bg #fffdf8, `.pf-catcard` #efe7d6, `--gold-deep` #855410). Mechanism per item:
+
+- **P1 — planet hues (REPORT + PROPOSAL, likely no code fix).** Deterministic per-slug hash
+  is WORKING: `_pfFieldHueIdx` maps names → wheel slots correctly. But the REAL 17-category
+  namespace reaches only **7 of 10 slots** (terracotta/clay/steel-blue unreachable) and
+  **collides pairs onto one slot**: Technology & Society + Religion & Spirituality BOTH →
+  slot 5 slate-blue `#8496bb` (the "two grey-blue planets"); Literary Fiction + Theory both →
+  amber. Working-as-approved but reads washed (muted grey-blue ×2 + low fill opacity at sparse).
+- **P2 — sigil captioned (own commit).** `_pfPlanetLayout` puts dominant `pos[0]=(cx,cy)`
+  EXACTLY at the sigil center `(scx,scy)` (both `w*.47,h*.5`) → dominant label centers under
+  the sigil (live: domCx 597 == coreCx 597, dxCenter 0). The identity mark reads as the
+  dominant category. Fix: offset/exclude the dominant label from the sigil; collision 0 re-proven.
+- **P3 — sparse huddle (own commit).** S4's `n<=4` rule only TIGHTENED rx*.62/ry*.66; the
+  fixed angle formula `(i/n)*2π+.6` + left-of-center focal cluster 3 planets in x=391..614 of a
+  1249px sky (live) → right half dead, invite floats at cx=867 in the void. Fix: balanced spread
+  scaled to count + intentional invite/whisper placement.
+- **P4 — hue coherence + catcard wrap (own commit).** TWO hue systems: sky+Numbers+gaps+value-
+  sublinks use `_pfFieldHue*`/`--pf-hue-*` (wheel); **Published + Arcs use `_pfCatHue`/`--field-*`**
+  → same category two colors (Tech&Society = slate in sky, amber `--field-1` in Published; History
+  = sage vs blue). Fix: repoint Published+Arcs to the wheel. AA: all 10 wheel deeps PASS on light
+  (5.11–9.15) — no remediation. Catcard `.cn{align-items:center}`: long name wraps → dot mis-
+  centers **+11px** (live @118px). Fix: align dot to first line.
+- **P5 — published untitled + n=1 (own commit).** `_pfPublishedSection` fallback `(p.ex||'Untitled')`
+  prints literal **"Untitled"** when untitled+no-excerpt (live confirmed; arc line "from the arc …"
+  IS available). Fix: untitled→excerpt-led; untitled+no-excerpt→arc-derived quiet lead, never
+  "Untitled". n=1: 440px card, **405px void each side** in a 1249px stage. Fix: contained width.
+- **P6 — lineage desktop (own commit).** `.pf-lin-row{justify-content:space-between}` across the
+  full 1400 stage → why-line ends x=320, value tag orphaned at x=1139 (**819px gap**, live).
+  Fix: readable measure, tag adjacent; sparse-honest preserved. Verify ≥1200.
+- **P7 — desktop density ≥1200 (own commit).** Thin DNA cards keep full 20px 22px padding at
+  ≥1200 (live: Threads 72px one-liner, Returns 78px 1-row, Now 100px). Fix: conservative tighten
+  of thin-section padding/min-height at ≥1200 only; mobile untouched; re-run P8/P9 (statement/
+  journey) regression as no-harm. FELT — flagged for Preston's re-pass.
+- **P8 — desktop h-scroll (VERIFY).** #profile FR @1280 over=0, body margin 8px (live). Verify
+  1440/1920 + Shelf/Arcs/Home/Book Detail; fix only failures; keep DW-flag on the 8px margin.
+- **P9 — reader-model accents (own commit).** Teal `--marginalia-color` on `.rm-col-will .rm-col-h`
+  (live #2e8a93), `.rm-li-will::before` ✓, `.rm-panel-title`, `.rm-save`, `.rm-add-btn`; toggle
+  already gold (S7). Fix: interactive accents → gold (`--gold-deep` text 5.22–6.31 PASS; gold-grad
+  fill + dark text buttons); teal stays only on genuine Yumi-voice. AA both grounds.
+
+**Order:** P1 report → P2, P3 (sky, sequential; collision harness + reduced-motion by-effect) →
+P4, P5, P6, P7, P9 (below-fold) → P8 verify → sw.js v3.202 bump → reviewer + red-team → HALT.
+
+### P1 — RESOLUTION: working-as-approved, reads washed → REPORT + PROPOSAL (no code fix this patch)
+
+**Verdict: NOT a broken hue path.** Live proof (FIXTURE-R + deterministic cscript over the real
+17-category `SHELF_CATEGORIES`): `_pfFieldHueIdx` maps each name to the correct wheel slot; planet
+fills resolve to the exact wheel token (Tech&Society + Religion → `--pf-hue-5` #8496bb slate; LitFic +
+Theory → `--pf-hue-1` amber). The wheel IS the approved diverse muted full-spectrum (Preston's
+amendment) and the per-slug law forbids set-dependent collision-avoidance. So the two grey-blue planets
+are the approved system behaving exactly as specified.
+
+**Why it reads washed (two mutually-reinforcing causes):**
+1. **Namespace collision + dead slots.** The 17 real category names hash into only **7 of 10 slots**
+   (terracotta/clay/steel-blue never reached) and **collide pairs** onto one slot — Technology & Society
+   AND Religion & Spirituality both land on slot 5 (slate-blue). Two *different* categories → one
+   *identical* grey-blue → indistinguishable, and slate is the most desaturated hue on the wheel.
+2. **Low fill opacity at sparse size.** Planet fills are 0.15 / 0.20 / 0.22; a muted slate at that
+   opacity on a small sparse planet reads as grey wash.
+
+**Tuning proposal (for Preston's re-pass to choose — each is deterministic, per-slug, law-compliant):**
+- **(A) Curated category→slot map (recommended, real fix).** Replace the blind string hash with a fixed
+  17-entry lookup that assigns each real category a distinct, legible wheel slot (no pair-collisions; no
+  double grey-blue; spread across all 10 hues). Still deterministic per slug, NOT set-dependent — so it
+  honors the law while killing the collision. This is a **design/data decision** (a fixed palette map),
+  so it surfaces here for Preston's call rather than being carried silently.
+- **(B) Sparse saturation/opacity floor (lighter, complementary).** At low planet counts lift the fill
+  opacities (e.g. 0.15/0.20/0.22 → ~0.22/0.28/0.32) so even a muted hue reads as intentional color.
+  Does NOT resolve the two-identical-slate collision on its own, but reduces the "washed" feel.
+- Recommendation: **(A)** as the durable fix, optionally with **(B)**. Both deferred to Preston's re-pass
+  (his standing instruction: report + propose, do not force). **No P1 code ships in this patch.**
+
+### P2 — FIX SHIPPED (own commit). views.js +28/−3 (LF measured below).
+`_profileBuildSky`: the dominant (idx 0) is REMOVED from the resolver loop (now `i=1`) and placed
+EXPLICITLY beside the sigil — start/end anchored so the WHOLE box sits on the emptier horizontal side of
+the sigil axis, vertically nudged to clear stars + planet cores; its box added to `labObs`+`occ` so other
+labels avoid it. **Live proof (127.0.0.1:8773, FR, 390/1280/1920):** dominant "Literary Fiction"
+`wholeBoxOneSide:true side:right` at every width (was `dxCenter:0` captioning); **resting-box collision
+0** (11 labels vs 23 bright obstacles) at every width; bright-mark (sigil polygon) clearance 0. Orbit-
+phase harness = **7 star-core grazes IDENTICAL to the shipped baseline** (proven by running the same
+harness on `git checkout`ed HEAD views.js → same 7: Poetry/Tech/Science at the same phases) — the
+documented RT#3 residual, **collision delta = 0**, no NEW overlap introduced. animCount 63, anims MOVE.
+No h-scroll 390/1280/1920.

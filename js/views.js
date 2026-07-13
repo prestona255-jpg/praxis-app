@@ -17216,8 +17216,8 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   body += _pfSigilGalaxy(scx, scy, mob ? 46 : 58, _pfSilhouette(uid));
   // labels (top-N by books) via the collision resolver
   var topN = mob ? Math.min(5, cats.length) : cats.length, labItems = [];
-  for (i = 0; i < topN; i = i + 1) {
-    labItems.push({ px: pos[i].x, py: pos[i].y, r: prad(cats[i].books), name: cats[i].name, fs: (i === 0 ? 19 : 16), idx: i });
+  for (i = 1; i < topN; i = i + 1) {   // P2: idx 0 (dominant) is placed explicitly BESIDE the sigil below; the resolver handles the rest
+    labItems.push({ px: pos[i].x, py: pos[i].y, r: prad(cats[i].books), name: cats[i].name, fs: 16, idx: i });
   }
   labItems.sort(function (a, b) { return b.r - a.r; });
   // P2: obstacles the labels must avoid -- every star (bright protagonist point) +
@@ -17233,7 +17233,32 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   for (op = 0; op < cats.length; op = op + 1) { orc = prad(cats[op].books) * 0.5 + _drift; labObs.push({ x0: pos[op].x - orc, x1: pos[op].x + orc, y0: pos[op].y - orc, y1: pos[op].y + orc }); }
   var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark (R*0.46) + breath-peak margin. (RESIDUAL, per red-team #3: a sub-2px transient star-sweep can brush a non-central label's TOP between orbit samples; keeping all labels is the better trade than an orbit-ring obstacle that drops the dominant's label.)
   labObs.push({ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR });
-  var lp = _pfPlaceLabels(labItems, w, h, pad, labObs), occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
+  var occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
+  // P2: the dominant field is centered on the sigil, so a label directly below its
+  // center CAPTIONS the identity mark (it read as "Education"). Place the dominant label
+  // BESIDE the sigil -- start/end anchored so the WHOLE box sits on one side of the sigil
+  // axis -- on the emptier horizontal side, nudged vertically to clear stars/planet cores.
+  // It labels the FIELD, never the mark; the sigil stays uncaptioned. Added to labObs+occ.
+  if (cats.length) {
+    var _dNm = cats[0].name, _dFs = 19, _dTW = _dNm.length * _dFs * 0.5, _dz;
+    var _dSide = 0; for (_dz = 1; _dz < cats.length; _dz = _dz + 1) { _dSide = _dSide + (pos[_dz].x >= scx ? 1 : -1); }
+    var _dRight = (_dSide <= 0), _dAnch = _dRight ? 'start' : 'end', _dAX = _dRight ? (scx + _sigR + 12) : (scx - _sigR - 12);
+    var _dX0 = _dRight ? _dAX : (_dAX - _dTW), _dX1 = _dRight ? (_dAX + _dTW) : _dAX, _dsh;
+    if (_dX1 > w - pad) { _dsh = _dX1 - (w - pad); _dAX = _dAX - _dsh; _dX0 = _dX0 - _dsh; _dX1 = _dX1 - _dsh; }
+    if (_dX0 < pad) { _dsh = pad - _dX0; _dAX = _dAX + _dsh; _dX0 = _dX0 + _dsh; _dX1 = _dX1 + _dsh; }
+    function _dHit(y0, y1) {
+      var z, orc2;
+      for (z = 0; z < stars.length; z = z + 1) { if (_dX0 < stars[z].x + 9 && _dX1 > stars[z].x - 9 && y0 < stars[z].y + 9 && y1 > stars[z].y - 9) { return true; } }
+      for (z = 1; z < cats.length; z = z + 1) { orc2 = prad(cats[z].books) * 0.5 + _drift; if (_dX0 < pos[z].x + orc2 && _dX1 > pos[z].x - orc2 && y0 < pos[z].y + orc2 && y1 > pos[z].y - orc2) { return true; } }
+      return false;
+    }
+    var _dY = scy + _dFs * 0.32, _dt = 0, _dY0 = _dY - _dFs * 0.85, _dY1 = _dY + _dFs * 0.2;
+    while (_dHit(_dY0, _dY1) && _dt < 12) { _dt = _dt + 1; _dY = scy + _dFs * 0.32 + (_dt % 2 ? 1 : -1) * 14 * Math.ceil(_dt / 2); _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2; }
+    body += '<text class="pf-plabel pf-skytext dom" x="' + _dAX.toFixed(1) + '" y="' + _dY.toFixed(1) + '" text-anchor="' + _dAnch + '">' + _portraitEsc(_dNm) + '</text>';
+    var _dBox = { x0: _dX0, x1: _dX1, y0: _dY0, y1: _dY1 };
+    occ.push(_dBox); labObs.push(_dBox);
+  }
+  var lp = _pfPlaceLabels(labItems, w, h, pad, labObs);
   for (i = 0; i < lp.length; i = i + 1) {
     L = lp[i];
     body += '<text class="pf-plabel pf-skytext' + (L.idx === 0 ? ' dom' : '') + '" x="' + L.x.toFixed(1) + '" y="' + L.y.toFixed(1) + '" text-anchor="' + L.anchor + '">' + _portraitEsc(cats[L.idx].name) + '</text>';
