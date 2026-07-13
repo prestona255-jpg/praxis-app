@@ -354,3 +354,21 @@ phase harness = **7 star-core grazes IDENTICAL to the shipped baseline** (proven
 harness on `git checkout`ed HEAD views.js → same 7: Poetry/Tech/Science at the same phases) — the
 documented RT#3 residual, **collision delta = 0**, no NEW overlap introduced. animCount 63, anims MOVE.
 No h-scroll 390/1280/1920.
+
+### P3 — FIX SHIPPED (own commit). views.js delta below.
+`_pfPlanetLayout` n<=4 branch REWRITTEN: dominant stays at the sigil center; satellites spread on a
+BALANCED phased ring (`srx 0.36w / sry 0.30h` desktop) filling BOTH halves. Rich path (n>4) byte-
+identical (untouched). Also HARDENED the P2 dominant placement (the sparse fixtures exposed a mobile
+regression): the dominant label now goes BELOW the field pushed off the sigil axis toward the side that
+CAN clear it (`_dAxFor`/`_dClears`) — a long dominant name ("Technology & Society") can't fit beside the
+sigil on a 460-wide mobile sky, so the old beside-only clamp pulled it back onto the mark. **Live proof
+(localhost:8775, fresh origin):**
+- **Sparse spread FIXED:** FS fillRatio **0.66** @1280 (planetSpread 829 of 1249; was ~223px huddle);
+  FS4 balanced cross, FS2 center+right pair.
+- **Collision 0** at REST and across **12 orbit/drift phases** on BOTH fixtures at 390/1280/1920
+  (FS orbitGrazes 0, FR orbitGrazes 0 on the 4-sub fixture; the dense-16-sub RT#3 residual is unchanged
+  from baseline per the P2 proof). anims MOVE (27 FS / 51 FR).
+- **Dominant clears the sigil axis** at 390/1280/1920 on FS/FS2/FS4/FR (restingHits 0 all).
+- **Reduced-motion frozen BY EFFECT** (cascade-injection test): with the reset active every sky anim
+  `animationName === none` (allNone true), anims 51->7, planet cx 851 unchanged at phase 30s (frozen).
+- No h-scroll 390/1280/1920.

@@ -16987,7 +16987,21 @@ function _pfPlanetLayout(cats, w, h, mob) {
   var n = cats.length, i, pos = [];
   var cx = w * (mob ? 0.46 : 0.47), cy = h * (mob ? 0.44 : 0.5);
   var rx = w * (mob ? 0.33 : 0.40), ry = h * (mob ? 0.33 : 0.40);
-  if (n <= 4) { rx = rx * 0.62; ry = ry * 0.66; }   // R9b Lane G S4 sparse-sky: <=4 planets -> tightened centered cluster
+  if (n <= 4) {
+    // R9b P3 sparse-sky: the dominant stays at the sigil center; the satellites spread on a
+    // BALANCED ring that fills BOTH halves of the sky. (S4 only TIGHTENED the radii, which left
+    // 3-planet skies huddled mid-left with a dead right half + a floating invite -- diagnosed
+    // live at x-spread 391..614 of a 1249px sky. Phase the satellites so they straddle the axis.)
+    var satN = (n > 1) ? (n - 1) : 1;
+    var srx = w * (mob ? 0.30 : 0.36), sry = h * (mob ? 0.26 : 0.30);
+    for (i = 0; i < n; i = i + 1) {
+      if (i === 0) { pos.push({ x: cx, y: cy }); continue; }
+      var a2 = (satN === 1) ? (mob ? 1.05 : 0.65)
+             : (-Math.PI / 2 + (i - 1) * (2 * Math.PI / satN) + (satN === 2 ? (Math.PI / 2 + 0.15) : 0));
+      pos.push({ x: cx + srx * Math.cos(a2), y: cy + sry * Math.sin(a2) });
+    }
+    return pos;
+  }
   for (i = 0; i < n; i = i + 1) {
     if (i === 0) { pos.push({ x: cx, y: cy }); continue; }
     var rank = (n > 1) ? (i / (n - 1)) : 0;
@@ -17234,27 +17248,33 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark (R*0.46) + breath-peak margin. (RESIDUAL, per red-team #3: a sub-2px transient star-sweep can brush a non-central label's TOP between orbit samples; keeping all labels is the better trade than an orbit-ring obstacle that drops the dominant's label.)
   labObs.push({ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR });
   var occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
-  // P2: the dominant field is centered on the sigil, so a label directly below its
-  // center CAPTIONS the identity mark (it read as "Education"). Place the dominant label
-  // BESIDE the sigil -- start/end anchored so the WHOLE box sits on one side of the sigil
-  // axis -- on the emptier horizontal side, nudged vertically to clear stars/planet cores.
-  // It labels the FIELD, never the mark; the sigil stays uncaptioned. Added to labObs+occ.
+  // P2: the dominant field is centered on the sigil, so a label directly below its center
+  // CAPTIONS the identity mark (it read as "Education"). Place the dominant label BELOW the
+  // field but pushed OFF the sigil's vertical axis toward the emptier side -- as far as the
+  // pad allows, enough to clear the axis on wide skies and stay maximally off-centre + below
+  // the mark on narrow ones (a long name can't fit BESIDE the sigil on a 460-wide mobile sky).
+  // Vertically nudged to clear stars + planet cores + the sigil bright mark. Labels the FIELD,
+  // never captions the mark. Box added to labObs+occ so other labels + the invite avoid it.
   if (cats.length) {
-    var _dNm = cats[0].name, _dFs = 19, _dTW = _dNm.length * _dFs * 0.5, _dz;
+    var _dNm = cats[0].name, _dFs = 19, _dTW = _dNm.length * _dFs * 0.5, _dz, _dr0 = prad(cats[0].books);
     var _dSide = 0; for (_dz = 1; _dz < cats.length; _dz = _dz + 1) { _dSide = _dSide + (pos[_dz].x >= scx ? 1 : -1); }
-    var _dRight = (_dSide <= 0), _dAnch = _dRight ? 'start' : 'end', _dAX = _dRight ? (scx + _sigR + 12) : (scx - _sigR - 12);
-    var _dX0 = _dRight ? _dAX : (_dAX - _dTW), _dX1 = _dRight ? (_dAX + _dTW) : _dAX, _dsh;
-    if (_dX1 > w - pad) { _dsh = _dX1 - (w - pad); _dAX = _dAX - _dsh; _dX0 = _dX0 - _dsh; _dX1 = _dX1 - _dsh; }
-    if (_dX0 < pad) { _dsh = pad - _dX0; _dAX = _dAX + _dsh; _dX0 = _dX0 + _dsh; _dX1 = _dX1 + _dsh; }
+    var _dPrefR = (_dSide <= 0);   // emptier horizontal side (preferred)
+    function _dAxFor(r) { return Math.max(pad + _dTW / 2, Math.min(w - pad - _dTW / 2, scx + (r ? 1 : -1) * (_dTW / 2 + _sigR + 14))); }
+    function _dClears(ax) { return (ax - _dTW / 2 >= scx) || (ax + _dTW / 2 <= scx); }   // whole box one side of the sigil axis
+    var _dR = _dPrefR;   // fall to the side that CAN clear the axis if the emptier side can't (long name on a narrow sky)
+    if (!_dClears(_dAxFor(_dPrefR)) && _dClears(_dAxFor(!_dPrefR))) { _dR = !_dPrefR; }
+    var _dAX = _dAxFor(_dR), _dX0 = _dAX - _dTW / 2, _dX1 = _dAX + _dTW / 2, _dY, _dY0, _dY1, _dt = 0;
     function _dHit(y0, y1) {
-      var z, orc2;
+      var z, orc2, m = 3;   // small margin: absorbs the model-vs-rendered box mismatch so the nudge over-clears
       for (z = 0; z < stars.length; z = z + 1) { if (_dX0 < stars[z].x + 9 && _dX1 > stars[z].x - 9 && y0 < stars[z].y + 9 && y1 > stars[z].y - 9) { return true; } }
-      for (z = 1; z < cats.length; z = z + 1) { orc2 = prad(cats[z].books) * 0.5 + _drift; if (_dX0 < pos[z].x + orc2 && _dX1 > pos[z].x - orc2 && y0 < pos[z].y + orc2 && y1 > pos[z].y - orc2) { return true; } }
+      for (z = 0; z < cats.length; z = z + 1) { orc2 = prad(cats[z].books) * 0.5 + _drift; if (_dX0 < pos[z].x + orc2 && _dX1 > pos[z].x - orc2 && y0 < pos[z].y + orc2 && y1 > pos[z].y - orc2) { return true; } }
+      if (_dX0 < scx + _sigR + m && _dX1 > scx - _sigR - m && y0 < scy + _sigR + m && y1 > scy - _sigR - m) { return true; }
       return false;
     }
-    var _dY = scy + _dFs * 0.32, _dt = 0, _dY0 = _dY - _dFs * 0.85, _dY1 = _dY + _dFs * 0.2;
-    while (_dHit(_dY0, _dY1) && _dt < 12) { _dt = _dt + 1; _dY = scy + _dFs * 0.32 + (_dt % 2 ? 1 : -1) * 14 * Math.ceil(_dt / 2); _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2; }
-    body += '<text class="pf-plabel pf-skytext dom" x="' + _dAX.toFixed(1) + '" y="' + _dY.toFixed(1) + '" text-anchor="' + _dAnch + '">' + _portraitEsc(_dNm) + '</text>';
+    var _dBaseY = pos[0].y + _dr0 + 18;
+    _dY = _dBaseY; _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2;
+    while (_dHit(_dY0, _dY1) && _dt < 14) { _dt = _dt + 1; _dY = _dBaseY + (_dt % 2 ? 1 : -1) * 15 * Math.ceil(_dt / 2); _dY0 = _dY - _dFs * 0.85; _dY1 = _dY + _dFs * 0.2; }
+    body += '<text class="pf-plabel pf-skytext dom" x="' + _dAX.toFixed(1) + '" y="' + _dY.toFixed(1) + '" text-anchor="middle">' + _portraitEsc(_dNm) + '</text>';
     var _dBox = { x0: _dX0, x1: _dX1, y0: _dY0, y1: _dY1 };
     occ.push(_dBox); labObs.push(_dBox);
   }
