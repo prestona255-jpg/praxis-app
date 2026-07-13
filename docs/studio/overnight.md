@@ -84,7 +84,8 @@ One line per overnight run, appended by the run session. Format:
 
 <!-- FORMAT: - YYYY-MM-DD · items: ON-a, ON-b, ON-c · ON-a PASS · ON-b FAIL · ON-c PASS · report: docs/studio/reports/<file>.md -->
 
-_(no runs yet)_
+- 2026-07-13 · items: ON-1, ON-4 · ON-1 PASS · ON-4 PASS · report: docs/checkpoints/overnight-on1-on4-2026-07-13.md
+  (committed `--no-verify`, no sw.js / no cache bump per the batch law; both `awaiting-felt-pass` — Preston's morning felt pass + push close them)
 
 ---
 
@@ -103,9 +104,9 @@ tonight's slate.
   verify: at 390px, open the hamburger — overlay covers the full viewport with no Shelf buttons visible beneath, page scroll is locked; mechanical grep of the overlay rule (full-height / fixed cover + body scroll-lock); felt pass at 390.
   revert: single-commit revert of the overlay + scroll-lock CSS (and the views.js overlay hook, if touched).
   felt-pass-required: true
-  status: queued
-  evidence: —
-  report: —
+  status: awaiting-felt-pass
+  evidence: reproduced live 390 (menu 350px/812vh, 398px shelf exposed beneath, no scroll-lock) -> fixed (open .app-nav-list height:calc(100vh-56px)+overflow-y:auto; body scroll-lock in initNavMobileToggle) -> verified live (788px, covers to viewport bottom, body locked). css +436 / js +410; border-bottom 12->11; overflow-sites 4->6; PARSE OK.
+  report: docs/checkpoints/overnight-on1-on4-2026-07-13.md (commit 0c7fbd4, --no-verify, no sw.js)
   proposed-in: R7
 
 - id: ON-2
@@ -132,11 +133,11 @@ tonight's slate.
   files: CSS
   anchors: TBD (header search / spotlight input)
   verify: at all widths the placeholder reads whole (no mid-word truncation) and the ⌘K chip no longer crowds the field; mechanical — computed field width admits the full placeholder, no ellipsis clip; grep the sizing fix. Ties to the ledger's existing "placeholder truncation" gap — the run that closes this stamps that gap with a [fix:] anchor.
-  revert: single-commit revert of the search-bar sizing CSS.
+  revert: single-commit revert of the search-bar placeholder string.
   felt-pass-required: true
-  status: queued
-  evidence: —
-  report: —
+  status: awaiting-felt-pass
+  evidence: reproduced live (placeholder 178.6px vs 137px input box -> clips ~42px, constant at 768/1280; field cannot widen — nav already -28.6px slack + 8px h-scroll at 768). Fix = shorten copy (Preston Q2 ruling): "Search books, authors, ideas…" -> "Search your shelf…" (110.6px, +26.4px margin). Verified reads-whole live 768. Shortlist + before/after in the report; final string is Preston's felt-pass swap.
+  report: docs/checkpoints/overnight-on1-on4-2026-07-13.md (commit a8a851a, --no-verify, index.html)
   proposed-in: R7
 
 - id: ON-5
