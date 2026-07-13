@@ -9464,12 +9464,12 @@
 .account-readermodel .rm-col { padding:14px 16px 16px; }
 .account-readermodel .rm-col + .rm-col { border-left:1px solid var(--border); }
 .account-readermodel .rm-col-h { font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:11px; }
-.account-readermodel .rm-col-will .rm-col-h { color:var(--marginalia-color); }
+.account-readermodel .rm-col-will .rm-col-h { color:var(--gold-deep); } /* P9: interactive accent -> gold (was teal); AA 6.31 on light */
 .account-readermodel .rm-col-wont .rm-col-h { color:var(--ink-3); }
 .account-readermodel .rm-li { font-family:var(--font-body); font-size:13.5px; line-height:1.4; color:var(--ink-2); padding-left:18px; position:relative; margin-bottom:8px; }
 .account-readermodel .rm-li:last-child { margin-bottom:0; }
 .account-readermodel .rm-li::before { position:absolute; left:0; top:0; font-size:13px; }
-.account-readermodel .rm-li-will::before { content:"\2713"; color:var(--marginalia-color); }
+.account-readermodel .rm-li-will::before { content:"\2713"; color:var(--gold-deep); } /* P9: checkmark -> gold */
 .account-readermodel .rm-li-wont::before { content:"\2014"; color:var(--ink-4); }
 .account-readermodel .rm-req-note { font-family:var(--font-mono); font-size:10px; letter-spacing:0.02em; color:var(--ink-3); line-height:1.5; margin:12px 0 0; }
 
@@ -9491,14 +9491,14 @@
 .account-readermodel .rm-edit-wrap { flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
 .account-readermodel .rm-edit-input, .account-readermodel .rm-arc-input { font-family:var(--font-body); font-size:14px; color:var(--ink); line-height:1.5; background:var(--surface); border:1px solid var(--river-l); border-radius:var(--radius-sm); padding:8px 10px; resize:vertical; min-height:54px; outline:none; width:100%; box-sizing:border-box; }
 .account-readermodel .rm-edit-actions, .account-readermodel .rm-arc-actions { display:flex; gap:8px; align-items:center; margin-top:8px; }
-.account-readermodel .rm-save { font-family:var(--font-body); font-size:12.5px; font-weight:700; color:var(--on-teal); background:var(--marginalia-color); border:1px solid var(--marginalia-color); border-radius:var(--radius-pill); padding:6px 16px; cursor:pointer; }
+.account-readermodel .rm-save { font-family:var(--font-body); font-size:12.5px; font-weight:700; color:var(--br-deep); background:linear-gradient(135deg,var(--gold-hi),var(--gold)); border:1px solid var(--gold); border-radius:var(--radius-pill); padding:6px 16px; cursor:pointer; } /* P9: gold system (was teal) */
 .account-readermodel .rm-save:hover { filter:brightness(1.05); }
 .account-readermodel .rm-cancel { font-family:var(--font-body); font-size:12.5px; color:var(--ink-3); background:none; border:none; cursor:pointer; padding:6px 6px; }
 .account-readermodel .rm-cancel:hover { color:var(--ink); }
 .account-readermodel .rm-add-row { display:flex; gap:8px; align-items:center; margin-top:10px; }
 .account-readermodel .rm-add-input { flex:1 1 auto; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; outline:none; box-sizing:border-box; }
 .account-readermodel .rm-add-input:focus { border-color:var(--river-l); }
-.account-readermodel .rm-add-btn { flex:0 0 auto; font-family:var(--font-body); font-size:12.5px; font-weight:700; color:var(--on-teal); background:var(--marginalia-color); border:1px solid var(--marginalia-color); border-radius:var(--radius-pill); padding:8px 16px; cursor:pointer; }
+.account-readermodel .rm-add-btn { flex:0 0 auto; font-family:var(--font-body); font-size:12.5px; font-weight:700; color:var(--br-deep); background:linear-gradient(135deg,var(--gold-hi),var(--gold)); border:1px solid var(--gold); border-radius:var(--radius-pill); padding:8px 16px; cursor:pointer; } /* P9: gold system (was teal) */
 .account-readermodel .rm-add-btn:hover { filter:brightness(1.05); }
 .account-readermodel .rm-arc-text { font-family:var(--font-body); font-size:14px; color:var(--ink); line-height:1.55; margin:0; }
 .account-readermodel .rm-prov-note { font-family:var(--font-mono); font-size:10px; letter-spacing:0.03em; color:var(--ink-3); margin:8px 0 0; }

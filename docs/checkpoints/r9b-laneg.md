@@ -422,3 +422,15 @@ Published, reader-model) LEFT at 20px 22px. Mobile untouched. **Live proof (loca
 - **No-harm gates (re-run):** empty journey -> invite line + 0 rows; visitor + empty statement -> thesis
   OMITTED, no h-scroll. Both intact.
 - FELT flag: the magnitude of the hug is Preston's re-pass call; conservative here.
+
+### P9 — FIX SHIPPED (own commit). components.css +4/−4 (CSS-only).
+Reader-model INTERACTIVE accents teal->gold: `.rm-col-will .rm-col-h` + `.rm-li-will::before` -> `--gold-deep`;
+`.rm-save` + `.rm-add-btn` -> `linear-gradient(135deg,var(--gold-hi),var(--gold))` fill + `--br-deep` text
+(matching the S7 `.rm-toggle-on`). `.rm-panel-title` ("What Yumi remembers about you") STAYS teal as the
+Yumi-voice/identity element (cyan=Yumi-only). Wont-column accents already neutral. **Live proof
+(localhost:8780, owner + reader-model opted-in):**
+- col-header rgb(133,84,16)=`#855410` gold-deep (was teal `#2e8a93`); checkmark same; panel-title
+  rgb(46,138,147) teal (kept); add/save = gold gradient (`#d9a441`->`#a8761a`) + `--br-deep` text.
+- **AA (light, the only ground the section renders on):** gold-deep col-header/check **6.31**; button text
+  on the gradient **8.19** (gold-hi end) / **4.62** (gold end) -- all >=4.5 PASS.
+- `.account-readermodel`-scoped -> no bleed; no sky touch.
