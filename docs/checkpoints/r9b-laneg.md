@@ -400,3 +400,14 @@ start` (contained + left-anchored, not a centred island). **Live proof (localhos
 - n=1: justify `start`, card 600px, left-anchored (22px from the section edge); n=2 unchanged (2-up).
 - FELT flag: the left-aligned n=1 (void on the right only) is the "contained, not floating" fix -- Preston's
   re-pass judges the measure. No sky touch -> no collision/motion re-proof; CSS `.pf-pubgrid`-scoped.
+
+### P6 — FIX SHIPPED (own commit). components.css +4/−0 (CSS-only, desktop-scoped).
+Added inside `@media (min-width:1200px)`: `.sec-lineage .pf-lineage{ max-width:78ch }` +
+`.sec-lineage .pf-lin-row{ justify-content:flex-start }`. The base `.pf-lin-row` (space-between) is
+UNTOUCHED per the desktop-first breakpoint discipline (mobile reads fine on its narrow row). **Live proof
+(localhost:8778):**
+- **@1280:** justify flex-start, lineage max-width 853px (78ch), value tag **16px** after each why (was an
+  819px orphan at the far edge). Ragged-but-adjacent "quote — VALUE" attribution.
+- **@390:** justify **space-between** (base rule intact), lineage max-width **none** (override scoped to
+  >=1200), no h-scroll -- mobile undisturbed.
+- No JS change; no sky touch; `.sec-lineage`-scoped -> no bleed.

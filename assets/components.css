@@ -13746,6 +13746,10 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-root .sec-values{ grid-area:values; } .pf-root .sec-numbers{ grid-area:numbers; align-self:start; } .pf-root .sec-arcs{ grid-area:arcs; } .pf-root .sec-questions{ grid-area:questions; } .pf-root .sec-now{ grid-area:now; }
   .pf-sec{ margin-bottom:0; } .pf-grid{ row-gap:26px; }
   .pf-root .sec-returns, .pf-root .sec-journey, .pf-root .sec-threads, .pf-root .sec-lineage, .pf-root .sec-published, .pf-root .sec-consent{ margin-top:26px; }
+  /* P6: at >=1200 the lineage row's space-between threw the value tag ~819px to the far edge of the
+     1400 stage. Cap the rows to a readable measure and set the tag ADJACENT to its why-line. */
+  .pf-root .sec-lineage .pf-lineage{ max-width:78ch; }
+  .pf-root .sec-lineage .pf-lin-row{ justify-content:flex-start; }
   .pf-pubgrid{ grid-template-columns:repeat(3,1fr); }
   .pf-pubgrid[data-n="2"]{ grid-template-columns:repeat(2,1fr); }                          /* R9b: 2-up at n=2 */
   .pf-pubgrid[data-n="1"]{ grid-template-columns:minmax(0,600px); justify-content:start; } /* P5: contained + left-aligned (was a 440px card floating centred in the 1400 stage) */
