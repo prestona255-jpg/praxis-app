@@ -16605,6 +16605,13 @@ function _pfCatHue(cat) {
   }
   return 9;
 }
+// R9b Lane G (S5): the profile-galaxy planet hue is DETERMINISTIC PER SLUG (a stable string hash), so a
+// field keeps its hue across sessions AND across the category<->lens mode switch (mode-scoped naturally --
+// a category name and a lens name hash independently). Diverse muted full-spectrum wheel = --pf-hue-1..10
+// (theme.css). Distinct from _pfCatHue's index map, which stays wired to --field-* for other surfaces.
+function _pfFieldHueIdx(name) { var h = 0, i, s = '' + (name || ''); for (i = 0; i < s.length; i = i + 1) { h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff; } return h % 10; }
+function _pfFieldHue(name) { return 'var(--pf-hue-' + (_pfFieldHueIdx(name) + 1) + ')'; }
+function _pfFieldHueDeep(name) { return 'var(--pf-hue-' + (_pfFieldHueIdx(name) + 1) + 'd)'; }
 
 // Resolve a book's display category: reader override -> cached label ->
 // Uncategorized. Mirrors classifyBookLocal's precedence WITHOUT the LLM path
@@ -16923,7 +16930,7 @@ function _profileGaps(uid) {
   var axis = _profileCategoryAxis(uid), cats = axis.cats, n = cats.length, i, j, out = [];
   function bondW(a, b) { var lo = Math.min(a, b), hi = Math.max(a, b); return axis.bonds[lo + '-' + hi] || 0; }
   function catSpan(ci) {
-    return '<span class="cat" style="--field-deep:var(--field-' + (cats[ci].hue + 1) + '-deep)">' + _portraitEsc(cats[ci].name) + '</span>';
+    return '<span class="cat" style="--field-deep:' + _pfFieldHueDeep(cats[ci].name) + '">' + _portraitEsc(cats[ci].name) + '</span>';
   }
   if (n >= 2) {
     var order = [];
@@ -17148,8 +17155,9 @@ function _pfSigilDefs() {
 // Build the full sky SVG string for a uid. pub = published-only (visitor /
 // preview); mob = mobile viewport. All figures read live state; category hues
 // are tokens (var(--field-N)); the sky seeds stably.
-function _profileBuildSky(uid, pub, mob) {
-  var cats = _profileCategoryStats(uid).cats;   // sorted by books desc; cats[0] = dominant
+function _profileBuildSky(uid, pub, mob, lensMode) {
+  // R9b Lane G S5 sky lens-mode (owner-only): planets are LENSES when lensMode, else CATEGORIES.
+  var cats = (lensMode && !pub) ? _profileLensStats(uid).lenses : _profileCategoryStats(uid).cats;   // sorted by books desc; [0] = dominant
   var w = mob ? 460 : 1000, h = mob ? 560 : 460, pad = mob ? 54 : 30;
   var rnd = _pfLcg(20260712), i, j;
   var pos = _pfPlanetLayout(cats, w, h, mob);
@@ -17177,7 +17185,8 @@ function _profileBuildSky(uid, pub, mob) {
     isPub = (st.status === 'published');
     if (pub && !isPub) { continue; }
     scat = _pfSubCategory(st);
-    ci = (typeof catIdx[scat] === 'number') ? catIdx[scat] : -1;
+    // lens mode: subs carry a category, not a lens -> distribute stars round-robin across the lens planets.
+    ci = lensMode ? (cats.length ? (stars.length % cats.length) : -1) : ((typeof catIdx[scat] === 'number') ? catIdx[scat] : -1);
     if (ci >= 0) { cxp = pos[ci].x; cyp = pos[ci].y; pr = prad(cats[ci].books); }
     else { cxp = w * 0.5; cyp = h * 0.5; pr = mob ? 24 : 30; }
     ang = rnd() * 6.2832; dist = pr + (mob ? 10 : 14) + rnd() * (mob ? 8 : 12);   // S4: orbit radius just outside the planet
@@ -17195,7 +17204,7 @@ function _profileBuildSky(uid, pub, mob) {
   }
   // planets = categories (soft tinted fields, sized by books)
   for (i = 0; i < cats.length; i = i + 1) {
-    var c = cats[i], r = prad(c.books), col = 'var(--field-' + (c.hue + 1) + ')', px = pos[i].x, py = pos[i].y;
+    var c = cats[i], r = prad(c.books), col = _pfFieldHue(c.name), px = pos[i].x, py = pos[i].y;
     body += '<g class="pf-planet d' + (i % 3) + '" style="animation-delay:-' + (i * 4) + 's" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="button" aria-label="' + _portraitEsc(c.name) + ', ' + c.books + ' book' + (c.books === 1 ? '' : 's') + '">'
       + '<circle class="phit" cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (r + (mob ? 18 : 14)).toFixed(1) + '" fill="' + col + '" opacity="0"></circle>'
       + '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + col + '" opacity="0.15"></circle>'
@@ -17289,7 +17298,7 @@ function _pfValueCard(v, vis) {
   if (subs.length) {
     h += '<div class="pf-drawn">Drawn on by ' + drawn + ' sub-theor' + (drawn === 1 ? 'y' : 'ies') + '</div><div class="pf-sublinks">';
     for (i = 0; i < subs.length; i = i + 1) {
-      var hue = _pfCatHue(subs[i].cat), deep = 'var(--field-' + (hue + 1) + '-deep)';
+      var deep = _pfFieldHueDeep(subs[i].cat);
       h += '<span class="pf-sublink' + (subs[i].draft ? ' draft' : '') + '" data-sub="' + _portraitEsc(subs[i].id) + '" tabindex="0" role="link" style="--field-deep:' + deep + '"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(subs[i].t) + (subs[i].draft ? ' · draft' : '') + '</span>';
     }
     h += '</div>';
@@ -17326,7 +17335,7 @@ function _pfNumbersSection(uid, vis) {
   for (i = 0; i < stats.length; i = i + 1) { h += '<div class="pf-stat" data-go="' + stats[i][2] + '" tabindex="0" role="link"><div class="n">' + stats[i][0] + '</div><div class="l">' + stats[i][1] + '</div></div>'; }
   h += '</div><div class="pf-catgrid" data-grid="categories">';
   for (i = 0; i < cats.length; i = i + 1) {
-    var c = cats[i], deep = 'var(--field-' + (c.hue + 1) + '-deep)', bright = 'var(--field-' + (c.hue + 1) + ')', pct = total ? Math.round(c.books / total * 100) : 0;
+    var c = cats[i], deep = _pfFieldHueDeep(c.name), bright = _pfFieldHue(c.name), pct = total ? Math.round(c.books / total * 100) : 0;
     h += '<div class="pf-catcard" data-planet="' + _portraitEsc(c.name) + '" tabindex="0" role="link" style="--rail:' + bright + ';--railtext:' + deep + ';--barfill:' + bright + '"><div class="cn"><span class="pf-dot" style="background:' + deep + '"></span>' + _portraitEsc(c.name) + '</div><div class="cm">' + c.books + ' book' + (c.books === 1 ? '' : 's') + ' · ' + c.marg + ' marginalia</div><div class="pf-bar"><i style="width:' + pct + '%"></i></div></div>';
   }
   if (cats.length === 0) { h += '<div class="pf-invite-line">' + (vis ? 'Their categories gather here as they read.' : 'Your categories gather here as you read.') + '</div>'; }
@@ -17609,7 +17618,13 @@ function _pfWire(wrap, uid, vis) {
   function cl(t, s) { return (t && t.closest) ? t.closest(s) : null; }
   function handle(e) {
     var t = e.target, seg = cl(t, '[data-axis]');
-    if (seg) { _pfSetAxis(wrap, seg.getAttribute('data-axis')); return; }
+    if (seg) {
+      var _ax = seg.getAttribute('data-axis');
+      _pfSetAxis(wrap, _ax);
+      // R9b Lane G S5: the SKY follows the Numbers axis (owner only) -- rebuild planets as lenses/categories.
+      if (!vis) { var _skh = wrap.querySelector('.pf-sky-host'); if (_skh) { _skh.innerHTML = _profileBuildSky(uid, vis, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth < 1200 : false), _ax === 'lenses'); } }
+      return;
+    }
     var a = cl(t, '[data-act]');
     if (a) {
       var act = a.getAttribute('data-act');

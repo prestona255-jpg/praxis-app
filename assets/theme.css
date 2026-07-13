@@ -332,6 +332,23 @@
      index as the bright ramp so category N shares hue N across both ramps. */
   --field-1-deep:#7a5410; --field-2-deep:#9c3f1e; --field-3-deep:#97423c; --field-4-deep:#a53a62; --field-5-deep:#4d6333;
   --field-6-deep:#2b6f4f; --field-7-deep:#3a4590; --field-8-deep:#726010; --field-9-deep:#7f5514; --field-10-deep:#68412c;
+
+  /* --- R9b Lane G (S5): the PROFILE-GALAXY planet hue wheel. A DIVERSE muted full-spectrum wheel
+     (warm + slate/steel blue + dusty teal + plum + sage + olive), deterministic per slug, shared across
+     the category and lens modes. Muted saturation throughout so the gold value-lines/stars/specks keep
+     hierarchy over any planet fill. AA-verified as TEXT on the night ground (#1c1209): 5.49-8.03:1, all
+     >= AA 4.5 (min = plum). Gold-hierarchy checked: a lit gold line (0.56) out-luminates every planet fill
+     (<=0.10). The -d deep companions are the panel-header / catcard-rail / sublink-dot tone on light. */
+  --pf-hue-1:#d3a35a;  --pf-hue-1d:#7a5a1e;  /* amber      */
+  --pf-hue-2:#cf8560;  --pf-hue-2d:#83421f;  /* terracotta */
+  --pf-hue-3:#cc8a94;  --pf-hue-3d:#8a4650;  /* rose       */
+  --pf-hue-4:#a880a0;  --pf-hue-4d:#63385e;  /* plum       */
+  --pf-hue-5:#8496bb;  --pf-hue-5d:#3c4d78;  /* slate blue */
+  --pf-hue-6:#5fa89e;  --pf-hue-6d:#2c6a60;  /* dusty teal */
+  --pf-hue-7:#90ac7e;  --pf-hue-7d:#46603a;  /* sage       */
+  --pf-hue-8:#a9a45e;  --pf-hue-8d:#5f5b1e;  /* olive      */
+  --pf-hue-9:#c08f6e;  --pf-hue-9d:#6e4a2c;  /* clay       */
+  --pf-hue-10:#7fa4c2; --pf-hue-10d:#3e5a78; /* steel blue */
 }
 
 /* =====================================================================
