@@ -482,3 +482,25 @@ Short names keep 19px; only names too wide to fit beside shrink. **Reduced-motio
 red-team Finding 2 (dominant force-places on nudge-exhaust) = ACCEPTED residual: the dominant MUST always
 be labeled (can't drop like `_pfPlaceLabels`); the beside+fit placement makes an object-overlap a latent-
 only risk (no fixture constructs it). Finding 4 (sw.js) = the final commit bumps it.
+
+### P1 — RULING IMPLEMENTED (Preston chose proposal A). views.js (curated map). Own commit BEFORE the bump.
+`_pfFieldHueIdx` now consults `_PF_HUE_MAP` (17 real SHELF_CATEGORIES -> wheel slot, 0-based) with the string
+hash as the fallback for unknown/future categories. Hand-assigned per Preston's 3 constraints (all deterministically
+verified):
+- (1) the 10 COMMON categories each get a DISTINCT slot (LitFic·Theory·History·Memoir·Tech·Psychology·Science·
+  Race·Social&Political·Religion); the 7 less-common double onto WARM slots (never slate/steel), each paired with
+  one common.
+- (2) warmest/strongest -> most-read: amber=Literary Fiction · terracotta=Theory & Philosophy · rose=History ·
+  plum=Memoir & Biography lead.
+- (3) slate(5) = Technology & Society ONLY · steel(10) = Religion & Spirituality ONLY -> the "two grey-blue
+  planets" are now DISTINCT (slate vs steel), collision gone.
+Set-independent fixed lookup -> honors the per-slug law. **Live proof (localhost:8782, 1280):**
+- **Coherence (P4 holds):** Tech = slate sky `#8496bb` / Numbers+Published deep `#3c4d78`; Religion = steel sky
+  `#7fa4c2` / deep `#3e5a78` (moved off slate); History = rose everywhere. Same category, one hue, all surfaces.
+- **techVsReligionDistinct = true**; **sparse (Tech+Religion+History) = slate+steel+rose** (3 distinct).
+- **Determinism x2:** run1 == run2 (identical hues on re-render).
+- **AA (all 10 mapped deeps as text, both light grounds):** min surface 6.19 / surface-2 5.11 -- all >=4.5 PASS.
+- **Proposal B (sparse saturation floor) SKIPPED (my call, Preston delegated):** the map resolves the collision
+  (distinct hues); B would further alter a felt-passed opacity. FLAG for the re-pass: slate+steel stay blue-family-
+  adjacent (a Tech+Religion user sees two distinct blues) -- reassignable in one map line if the re-pass wants more
+  separation. Parse OK; no geometry touched (red-team not required per Preston); reviewer dispatched on this diff.

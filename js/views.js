@@ -16605,11 +16605,29 @@ function _pfCatHue(cat) {
   }
   return 9;
 }
-// R9b Lane G (S5): the profile-galaxy planet hue is DETERMINISTIC PER SLUG (a stable string hash), so a
-// field keeps its hue across sessions AND across the category<->lens mode switch (mode-scoped naturally --
-// a category name and a lens name hash independently). Diverse muted full-spectrum wheel = --pf-hue-1..10
-// (theme.css). Distinct from _pfCatHue's index map, which stays wired to --field-* for other surfaces.
-function _pfFieldHueIdx(name) { var h = 0, i, s = '' + (name || ''); for (i = 0; i < s.length; i = i + 1) { h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff; } return h % 10; }
+// R9b Lane G (S5 + P1 felt-pass): the profile-galaxy planet hue is DETERMINISTIC PER SLUG so a field keeps
+// its hue across sessions AND across the category<->lens mode switch (a category name and a lens name resolve
+// independently). Diverse muted full-spectrum wheel = --pf-hue-1..10 (theme.css). P1: the raw string hash
+// collided REAL categories onto one slot (Technology & Society + Religion & Spirituality both hashed to slot 5
+// slate-blue -> the "two grey-blue planets"). Replaced with a CURATED map of the 17 SHELF_CATEGORIES onto the
+// wheel, hand-assigned so (1) the 10 common categories each get a DISTINCT slot, (2) the most-read get the
+// warmest/strongest hues (amber/terracotta/rose/plum lead), (3) slate(5)/steel(10) hold at most ONE category
+// each (Tech = slate, Religion = steel -> now DISTINCT). The 7 less-common categories double onto warm slots
+// (never onto slate/steel), each paired with exactly one common. The map is a FIXED lookup (not set-dependent
+// collision-avoidance), so it still honors the per-slug law. Unknown/future categories fall back to the hash.
+// Values are 0-based (slot = idx + 1). Distinct from _pfCatHue's index map (still --field-* for other surfaces).
+var _PF_HUE_MAP = {
+  'Literary Fiction': 0, 'Theory & Philosophy': 1, 'History': 2, 'Memoir & Biography': 3,
+  'Technology & Society': 4, 'Psychology & Mind': 5, 'Science & Nature': 6, 'Race & Identity': 7,
+  'Social & Political Thought': 8, 'Religion & Spirituality': 9,
+  'Essays & Criticism': 1, 'Poetry': 2, 'Health & Living': 3, 'Arts & Culture': 5,
+  'Education': 6, 'Genre Fiction': 7, 'Business & Economics': 8
+};
+function _pfFieldHueIdx(name) {
+  var s = '' + (name || '');
+  if (typeof _PF_HUE_MAP[s] === 'number') { return _PF_HUE_MAP[s]; }
+  var h = 0, i; for (i = 0; i < s.length; i = i + 1) { h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff; } return h % 10;
+}
 function _pfFieldHue(name) { return 'var(--pf-hue-' + (_pfFieldHueIdx(name) + 1) + ')'; }
 function _pfFieldHueDeep(name) { return 'var(--pf-hue-' + (_pfFieldHueIdx(name) + 1) + 'd)'; }
 
