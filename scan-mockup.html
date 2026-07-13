@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis — Scan surface (fidelity mockup)</title>
+<!--
+  scan-mockup.html — SCAN DE-RISK LANE fidelity spec (the artifact the future
+  Scan round builds to). Static / simulated: no endpoint calls, no real camera.
+  A CSS-drawn bookshelf stands in for the live viewfinder; the scan results are
+  hardcoded representative samples (a mockup legitimately uses sample data —
+  the BUILD pulls from live state, not from here).
+
+  Skin: Universal v1.2 tokens + fonts, wired to the SAME values the shipped
+  studio mockups use (docs/studio/mockups/*.html) — Cormorant Garamond display,
+  DM Sans body, DM Mono meta; light/warm surfaces; the three gold roles; cyan
+  reserved for Yumi (the covenant). Canon-native touch targets (>=44px controls).
+  Not app code, never wired into the app.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe4; --surface:#fffdf8; --surface-2:#efe7d6;
+    --ink:#241710; --ink-2:#645940; --ink-3:#978b6d;
+    --line:#e3d8c1;
+    --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441; --gold-ink:#3d2807; --star:#ffce4a;
+    --thread:#c2a463; --danger:#c2603a;
+    --cyan:#7fd0f0; --cyan-text:#256b80; --cloth:#e3d8c1;
+    --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+    --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+    --serif:"Cormorant Garamond", Georgia, serif;
+    --sans:"DM Sans", system-ui, sans-serif;
+    --mono:"DM Mono", ui-monospace, monospace;
+    --r-pill:999px; --r-card:16px;
+    --motion:.22s; --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans);
+         display: flex; flex-direction: column; align-items: center; padding: 30px 16px 60px; min-height: 100vh; }
+  .caption { max-width: 380px; text-align: center; }
+  .caption .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-deep); }
+  .caption h1 { font-family: var(--serif); font-weight: 600; font-size: 30px; margin: 4px 0 6px; }
+  .caption p { color: var(--ink-2); font-size: 13.5px; margin: 0 0 22px; }
+
+  /* device frame — scan is a mobile-first capture surface (390 canon width) */
+  .phone { width: 390px; max-width: 100%; height: 720px; border-radius: 30px; overflow: hidden;
+           position: relative; box-shadow: 0 24px 60px rgba(36,23,16,.28); border: 1px solid var(--line); }
+
+  /* full-bleed viewfinder — CSS bookshelf placeholder for the live feed */
+  .viewfinder { position: absolute; inset: 0; background: #201a14; overflow: hidden; }
+  .shelf { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 5px; padding: 90px 14px 150px;
+           filter: brightness(.66) saturate(.85); }
+  .spine { flex: 1 1 auto; border-radius: 2px 2px 0 0; box-shadow: inset 0 0 8px rgba(0,0,0,.35); position: relative; }
+  .spine::after { content: ""; position: absolute; left: 12%; right: 12%; top: 14%; height: 20%;
+                  background: rgba(255,255,255,.14); border-radius: 1px; }
+  .scrim { position: absolute; inset: 0; background:
+           radial-gradient(120% 80% at 50% 42%, transparent 40%, rgba(20,16,12,.55) 100%); }
+
+  /* top segmented control */
+  .topbar { position: absolute; top: 0; left: 0; right: 0; padding: 16px 14px 10px; display: flex; justify-content: center; z-index: 4; }
+  .seg { display: inline-flex; background: rgba(20,16,12,.5); border: 1px solid rgba(255,255,255,.18);
+         border-radius: var(--r-pill); padding: 3px; backdrop-filter: none; }
+  .seg button { min-height: 38px; padding: 0 16px; border: 0; background: transparent; color: rgba(243,238,225,.82);
+                font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+                border-radius: var(--r-pill); cursor: pointer; }
+  .seg button.on { background: var(--surface); color: var(--gold-ink); font-weight: 500; }
+
+  /* corner-bracket reticle */
+  .reticle { position: absolute; top: 44%; left: 50%; transform: translate(-50%,-50%);
+             width: 220px; height: 220px; z-index: 3; }
+  .reticle span { position: absolute; width: 34px; height: 34px; border: 3px solid var(--gold-hi);
+                  box-shadow: 0 0 14px rgba(217,164,65,.5); }
+  .reticle .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+  .reticle .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+  .reticle .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
+  .reticle .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+  .barcode-guide { position: absolute; top: 50%; left: 14%; right: 14%; height: 2px; background: var(--danger);
+                   box-shadow: 0 0 12px var(--danger); display: none; }
+  .phone[data-mode="barcode"] .barcode-guide { display: block; }
+  .phone[data-mode="barcode"] .reticle { height: 130px; }
+
+  /* hint line */
+  .hint { position: absolute; top: calc(44% + 128px); left: 0; right: 0; text-align: center; z-index: 3;
+          font-family: var(--mono); font-size: 12px; color: rgba(243,238,225,.9); letter-spacing: .03em; }
+
+  /* shutter */
+  .shutter-row { position: absolute; left: 0; right: 0; bottom: 84px; display: flex; justify-content: center; z-index: 4; }
+  .shutter { width: 66px; height: 66px; border-radius: 50%; background: var(--surface); border: 4px solid rgba(255,255,255,.55);
+             cursor: pointer; box-shadow: 0 0 0 2px rgba(20,16,12,.35); }
+  .shutter:active { transform: scale(.95); }
+
+  /* bottom nav strip — Scan active */
+  .bottomnav { position: absolute; left: 0; right: 0; bottom: 0; height: 66px; display: flex; z-index: 4;
+               background: var(--surface); border-top: 1px solid var(--line); }
+  .bottomnav a { flex: 1; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                 gap: 3px; text-decoration: none; color: var(--ink-3); font-family: var(--mono); font-size: 9.5px;
+                 letter-spacing: .08em; text-transform: uppercase; }
+  .bottomnav a .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .bottomnav a.on { color: var(--gold-deep); }
+  .bottomnav a.on .dot { width: 8px; height: 8px; background: var(--gold); box-shadow: 0 0 8px var(--gold-hi); }
+
+  /* result sheet — slides UP over the still-live viewfinder (the money interaction) */
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface);
+           border-radius: 20px 20px 0 0; border-top: 1px solid var(--line); box-shadow: 0 -18px 44px rgba(20,16,12,.32);
+           transform: translateY(102%); transition: transform var(--motion) var(--ease); padding: 8px 18px 22px; }
+  .sheet.open { transform: translateY(0); }
+  .grab { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 6px auto 12px; }
+  .eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-deep); }
+
+  /* photo / barcode single result */
+  .result-row { display: flex; gap: 14px; align-items: flex-start; }
+  .cover { width: 58px; height: 84px; flex: 0 0 58px; border-radius: 4px; background: var(--cloth);
+           box-shadow: inset -6px 0 10px rgba(0,0,0,.12); position: relative; overflow: hidden; }
+  .cover::before { content: ""; position: absolute; left: 8%; right: 8%; top: 12%; height: 30%; background: rgba(36,23,16,.14); border-radius: 2px; }
+  .r-title { font-family: var(--serif); font-size: 24px; font-weight: 600; line-height: 1.1; margin-top: 2px; }
+  .r-author { color: var(--ink-2); font-size: 14px; margin-top: 2px; }
+  .r-yumi { color: var(--cyan-text); font-size: 12.5px; margin-top: 10px; display: flex; align-items: center; gap: 7px; }
+  .r-yumi .yd { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); flex: 0 0 7px; }
+
+  /* shelf batch result — review by exception */
+  .sheet-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .review-note { color: var(--ink-2); font-size: 12px; }
+  .batch-list { margin: 12px 0 4px; max-height: 250px; overflow-y: auto; }
+  .batch-item { display: flex; gap: 11px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .batch-item:last-child { border-bottom: 0; }
+  .check { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6px; border: 2px solid var(--line);
+           display: flex; align-items: center; justify-content: center; color: var(--surface); font-size: 13px; }
+  .batch-item.sel .check { background: var(--gold); border-color: var(--gold); }
+  .batch-item.flag .check { border-color: var(--danger); border-style: dashed; }
+  .cover.sm { width: 34px; height: 50px; flex: 0 0 34px; }
+  .bi-main { flex: 1 1 auto; min-width: 0; }
+  .bi-title { font-family: var(--serif); font-size: 17px; font-weight: 600; line-height: 1.05; }
+  .bi-author { color: var(--ink-2); font-size: 12px; }
+  .chip { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em;
+          padding: 2px 8px; border-radius: var(--r-pill); white-space: nowrap; }
+  .chip.high { background: rgba(169,185,140,.28); color: #4c5a2f; }
+  .chip.medium { background: rgba(232,176,104,.30); color: var(--gold-deep); }
+  .chip.low { background: rgba(194,96,58,.18); color: var(--danger); }
+
+  .sheet-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .add { flex: 1; min-height: 50px; border: 0; border-radius: var(--r-pill); background: var(--gold); color: var(--gold-ink);
+         font-family: var(--sans); font-weight: 600; font-size: 15px; cursor: pointer; box-shadow: 0 0 18px rgba(217,164,65,.4); }
+  .ghost { min-height: 50px; padding: 0 18px; border: 1px solid var(--line); border-radius: var(--r-pill);
+           background: transparent; color: var(--ink-2); font-family: var(--sans); font-size: 14px; cursor: pointer; }
+
+  /* toast — the rapid-scan "Added" confirmation */
+  .toast { position: absolute; left: 50%; bottom: 96px; transform: translate(-50%, 14px); z-index: 7;
+           background: var(--ink); color: var(--surface); font-family: var(--mono); font-size: 12px;
+           padding: 9px 16px; border-radius: var(--r-pill); opacity: 0; transition: opacity var(--motion), transform var(--motion); pointer-events: none; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .specnote { max-width: 390px; margin-top: 22px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); line-height: 1.7; }
+  .specnote b { color: var(--ink-2); }
+</style>
+</head>
+<body>
+  <div class="caption">
+    <div class="eyebrow">Scan de-risk · fidelity spec</div>
+    <h1>The Scan surface</h1>
+    <p>Barcode · Photo · Shelf. Tap the shutter — the result rises over the live viewfinder, one tap Adds, and the reticle is ready again. Universal v1.2 skin; simulated.</p>
+  </div>
+
+  <div class="phone" id="phone" data-mode="photo">
+    <div class="viewfinder">
+      <div class="shelf" id="shelf"></div>
+      <div class="scrim"></div>
+
+      <div class="topbar">
+        <div class="seg" id="seg">
+          <button data-mode="barcode">Barcode</button>
+          <button data-mode="photo" class="on">Photo</button>
+          <button data-mode="shelf">Shelf</button>
+        </div>
+      </div>
+
+      <div class="reticle">
+        <span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span>
+        <div class="barcode-guide"></div>
+      </div>
+      <div class="hint" id="hint">Frame a book cover</div>
+
+      <div class="shutter-row"><button class="shutter" id="shutter" aria-label="Scan"></button></div>
+
+      <nav class="bottomnav">
+        <a href="#"><span class="dot"></span>Home</a>
+        <a href="#"><span class="dot"></span>Shelf</a>
+        <a href="#" class="on"><span class="dot"></span>Scan</a>
+        <a href="#"><span class="dot"></span>Arcs</a>
+        <a href="#"><span class="dot"></span>You</a>
+      </nav>
+
+      <div class="toast" id="toast">Added to shelf</div>
+
+      <!-- single result (photo / barcode) -->
+      <div class="sheet" id="sheetSingle">
+        <div class="grab"></div>
+        <div class="eyebrow" id="singleEyebrow">Scanned · high confidence</div>
+        <div class="result-row" style="margin-top:8px">
+          <div class="cover" style="background:var(--field-9)"></div>
+          <div>
+            <div class="r-title">On Photography</div>
+            <div class="r-author">Susan Sontag</div>
+            <div class="r-yumi"><span class="yd"></span>Yumi — sits near your thread on attention</div>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="ghost" data-close>Not this</button>
+          <button class="add" data-add="1">Add to shelf</button>
+        </div>
+      </div>
+
+      <!-- batch result (shelf) -->
+      <div class="sheet" id="sheetBatch">
+        <div class="grab"></div>
+        <div class="sheet-head">
+          <div class="eyebrow">Shelf scan · 6 found</div>
+          <div class="review-note">Review by exception</div>
+        </div>
+        <div class="batch-list" id="batchList"></div>
+        <div class="sheet-actions">
+          <button class="ghost" data-close>Cancel</button>
+          <button class="add" data-add="5">Add 5 books</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="specnote">
+    <b>Spec notes.</b> Modes swap the reticle + hint (barcode = slim guide line).
+    Money interaction: shutter → sheet slides up <b>over</b> the live viewfinder;
+    Add dismisses it and re-arms instantly (rapid-scan). Shelf mode returns a batch,
+    high-confidence pre-selected, low-confidence flagged for review. Controls &ge;44px;
+    Yumi line uses the reserved cyan; all colour is Universal v1.2 tokens.
+  </div>
+
+<script>
+"use strict";
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var phone = el("phone"), hint = el("hint"), seg = el("seg");
+  var sheetSingle = el("sheetSingle"), sheetBatch = el("sheetBatch");
+  var toast = el("toast");
+
+  var HINTS = { barcode: "Point camera at a barcode", photo: "Frame a book cover", shelf: "Pan slowly across the shelf" };
+
+  // build the CSS bookshelf placeholder (varied field-hue spines)
+  (function buildShelf() {
+    var shelf = el("shelf");
+    var hues = ["--field-1","--field-2","--field-3","--field-4","--field-5","--field-6","--field-7","--field-8","--field-9","--field-10","--field-3","--field-6"];
+    var html = "";
+    for (var i = 0; i < hues.length; i++) {
+      var h = 60 + ((i * 37) % 34);           // 60-94% height, deterministic (no RNG)
+      var w = 16 + ((i * 13) % 16);           // spine width variety
+      html += '<div class="spine" style="height:' + h + '%;flex-basis:' + w + 'px;background:var(' + hues[i] + ')"></div>';
+    }
+    shelf.innerHTML = html;
+  })();
+
+  // batch sample (mockup sample data — the build pulls from live state)
+  var BATCH = [
+    { title: "The Order of Things", author: "Michel Foucault", conf: "high", hue: "--field-7" },
+    { title: "Ways of Seeing", author: "John Berger", conf: "high", hue: "--field-5" },
+    { title: "Camera Lucida", author: "Roland Barthes", conf: "high", hue: "--field-2" },
+    { title: "The Poetics of Space", author: "Gaston Bachelard", conf: "medium", hue: "--field-4" },
+    { title: "Regarding the Pain…", author: "Susan Sontag", conf: "high", hue: "--field-9" },
+    { title: "(blurred spine)", author: "unreadable", conf: "low", hue: "--field-10" }
+  ];
+  (function buildBatch() {
+    var list = el("batchList"), html = "";
+    for (var i = 0; i < BATCH.length; i++) {
+      var b = BATCH[i];
+      var sel = b.conf === "low" ? "flag" : "sel";
+      var mark = b.conf === "low" ? "!" : "✓";
+      html += '<div class="batch-item ' + sel + '">' +
+        '<div class="check">' + mark + '</div>' +
+        '<div class="cover sm" style="background:var(' + b.hue + ')"></div>' +
+        '<div class="bi-main"><div class="bi-title">' + b.title + '</div><div class="bi-author">' + b.author + '</div></div>' +
+        '<span class="chip ' + b.conf + '">' + b.conf + '</span>' +
+      '</div>';
+    }
+    list.innerHTML = html;
+  })();
+
+  function setMode(mode) {
+    phone.setAttribute("data-mode", mode);
+    hint.textContent = HINTS[mode] || "";
+    var btns = seg.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) { btns[i].classList.toggle("on", btns[i].getAttribute("data-mode") === mode); }
+    closeSheets();
+  }
+  seg.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("button[data-mode]") : null;
+    if (btn) { setMode(btn.getAttribute("data-mode")); }
+  });
+
+  function closeSheets() { sheetSingle.classList.remove("open"); sheetBatch.classList.remove("open"); }
+
+  el("shutter").addEventListener("click", function () {
+    var mode = phone.getAttribute("data-mode");
+    closeSheets();
+    if (mode === "shelf") {
+      sheetBatch.classList.add("open");
+    } else {
+      el("singleEyebrow").textContent = mode === "barcode" ? "Scanned · barcode match" : "Scanned · high confidence";
+      sheetSingle.classList.add("open");
+    }
+  });
+
+  // Add / dismiss — rapid-scan: sheet drops, toast blips, reticle already live
+  function wireSheet(sheet) {
+    sheet.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t.getAttribute("data-close") !== null && t.hasAttribute("data-close")) { closeSheets(); return; }
+      if (t.getAttribute("data-add") !== null && t.hasAttribute("data-add")) {
+        closeSheets();
+        toast.textContent = t.getAttribute("data-add") === "1" ? "Added to shelf" : "Added " + t.getAttribute("data-add") + " books";
+        toast.classList.add("show");
+        window.setTimeout(function () { toast.classList.remove("show"); }, 1400);
+      }
+    });
+  }
+  wireSheet(sheetSingle);
+  wireSheet(sheetBatch);
+})();
+</script>
+</body>
+</html>
