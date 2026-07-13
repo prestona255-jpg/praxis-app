@@ -17146,8 +17146,8 @@ function _pfSigilGalaxy(cx, cy, R, sil) {
 // defs the sigil needs (injected once into the sky).
 function _pfSigilDefs() {
   return '<defs>'
-    + '<radialGradient id="pfSgBulge"><stop offset="0" stop-color="#fff2cf" stop-opacity="0.5"></stop><stop offset="55%" stop-color="var(--gold-hi)" stop-opacity="0.16"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
-    + '<radialGradient id="pfSgCore"><stop offset="0" stop-color="#fff6da" stop-opacity="0.9"></stop><stop offset="60%" stop-color="var(--gold-hi)" stop-opacity="0.28"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
+    + '<radialGradient id="pfSgBulge"><stop offset="0" stop-color="var(--text-on-dark)" stop-opacity="0.5"></stop><stop offset="55%" stop-color="var(--gold-hi)" stop-opacity="0.16"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
+    + '<radialGradient id="pfSgCore"><stop offset="0" stop-color="var(--text-on-dark)" stop-opacity="0.9"></stop><stop offset="60%" stop-color="var(--gold-hi)" stop-opacity="0.28"></stop><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"></stop></radialGradient>'
     + '<linearGradient id="pfSgMk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--star-gold)"></stop><stop offset="1" stop-color="var(--gold-deep)"></stop></linearGradient>'
     + '</defs>';
 }
@@ -17231,7 +17231,7 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   var _drift = mob ? 8 : 11;
   for (op = 0; op < stars.length; op = op + 1) { labObs.push({ x0: stars[op].x - 9, x1: stars[op].x + 9, y0: stars[op].y - 9, y1: stars[op].y + 9 }); }
   for (op = 0; op < cats.length; op = op + 1) { orc = prad(cats[op].books) * 0.5 + _drift; labObs.push({ x0: pos[op].x - orc, x1: pos[op].x + orc, y0: pos[op].y - orc, y1: pos[op].y + orc }); }
-  var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark's radius (R*0.46) scaled up for the breath peak (1.06x) + margin
+  var _sigR = (mob ? 46 : 58) * 0.56;   // the bright mark (R*0.46) + breath-peak margin. (RESIDUAL, per red-team #3: a sub-2px transient star-sweep can brush a non-central label's TOP between orbit samples; keeping all labels is the better trade than an orbit-ring obstacle that drops the dominant's label.)
   labObs.push({ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR });
   var lp = _pfPlaceLabels(labItems, w, h, pad, labObs), occ = [{ x0: scx - _sigR, x1: scx + _sigR, y0: scy - _sigR, y1: scy + _sigR }], L;
   for (i = 0; i < lp.length; i = i + 1) {
@@ -17645,6 +17645,9 @@ function _pfBuildPanel(uid, name, isLens, vis) {
 }
 function _pfOpenPanel(wrap, uid, name, isLens, vis, trigger) {
   var host = wrap.querySelector('.pf-panel-host'); if (!host) { return; }
+  // re-open guard (desktop side panel has no scrim, so the sky stays clickable): detach any prior trap first,
+  // so a second planet tap without a close never orphans a keydown listener.
+  if (host._pfTrap) { host.removeEventListener('keydown', host._pfTrap); host._pfTrap = null; }
   host.innerHTML = '<div class="pf-panel-scrim" data-act="close-panel"></div>' + _pfBuildPanel(uid, name, isLens, vis);
   host.setAttribute('aria-hidden', 'false');
   host.classList.add('open');
