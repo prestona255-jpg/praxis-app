@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis — Shelf-Vision De-risk Harness</title>
+<!--
+  scan-derisk.html — SCAN DE-RISK LANE instrument (disposable tooling, NOT app code).
+
+  Purpose: answer "can a vision model reliably identify books from a real shelf
+  photo?" against the DEPLOYED endpoint. Preston serves this from the live origin
+  (praxis-reading.netlify.app) after he pushes -- then drops in 3-5 real shelf
+  photos and reads the accuracy/latency numbers that feed the Scan round brief.
+
+  It is NOT wired into the app, never linked from index.html, never precached by
+  the service worker. Plain modern JS on purpose (it never ships in the client
+  bundle, so the ES3 client conventions do not apply). It calls two EXISTING,
+  x-praxis-key-gated Netlify functions on the same origin:
+    - POST /.netlify/functions/shelf-vision       (the new de-risk endpoint)
+    - POST /.netlify/functions/google-books-proxy  {q}  (per-book match check)
+
+  Honest states mirror the endpoint's contract: found-nothing (200 {books:[]}) is
+  rendered DISTINCTLY from call-failed (non-2xx {error}) -- silence never wears
+  the empty state's clothes.
+
+  The x-praxis-key value below is the PUBLIC client soft-gate key already shipped
+  in the app bundle (js/integrations.js) and served to every browser -- embedding
+  it here is no new disclosure. Edit the field if the key ever rotates.
+-->
+<style>
+  :root {
+    --bg: #14100c; --panel: #1e1811; --panel-2: #261e15; --line: #3a2f22;
+    --ink: #f3ead9; --ink-2: #c9bda6; --ink-3: #93876f;
+    --gold: #d9a441; --green: #6fae5f; --amber: #d9a441; --red: #d1685a;
+    --mono: 'DM Mono','SF Mono',Menlo,Consolas,monospace;
+    --sans: 'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif: 'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: 34px; margin: 0 0 4px; }
+  .sub { color: var(--ink-3); font-family: var(--mono); font-size: 12px; letter-spacing: .04em; margin-bottom: 24px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+  label { display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .13em; color: var(--ink-3); margin-bottom: 6px; }
+  input[type=text] { width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 9px 11px; font-family: var(--mono); font-size: 13px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 260px; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 30px; text-align: center; color: var(--ink-3); cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop.hot { border-color: var(--gold); background: var(--panel-2); color: var(--ink-2); }
+  .drop strong { color: var(--ink); }
+  #preview { max-width: 100%; max-height: 260px; border-radius: 8px; margin-top: 14px; display: none; }
+  .meta { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button { background: transparent; border: 0; color: var(--ink-2); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; padding: 8px 16px; cursor: pointer; }
+  .seg button.on { background: var(--gold); color: #201400; font-weight: 600; }
+  .go { background: var(--gold); color: #201400; border: 0; border-radius: 999px; padding: 12px 26px; font-family: var(--sans); font-weight: 600; font-size: 15px; cursor: pointer; }
+  .go:disabled { opacity: .4; cursor: not-allowed; }
+  .runs { margin-top: 8px; }
+  .run { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 18px; overflow: hidden; }
+  .run-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 16px; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+  .run-head .model { font-family: var(--mono); font-size: 13px; color: var(--gold); font-weight: 600; }
+  .stat { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+  .stat b { color: var(--ink); }
+  .banner { padding: 10px 16px; font-family: var(--mono); font-size: 12.5px; }
+  .banner.ok { background: rgba(111,174,95,.14); color: var(--green); border-bottom: 1px solid var(--line); }
+  .banner.empty { background: rgba(217,164,65,.14); color: var(--amber); border-bottom: 1px solid var(--line); }
+  .banner.error { background: rgba(209,104,90,.16); color: var(--red); border-bottom: 1px solid var(--line); }
+  .book { display: flex; gap: 12px; align-items: flex-start; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+  .book:last-child { border-bottom: 0; }
+  .thumb { width: 42px; height: 62px; flex: 0 0 42px; border-radius: 3px; background: var(--panel-2); object-fit: cover; }
+  .thumb.none { display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 18px; }
+  .bk-main { flex: 1 1 auto; min-width: 0; }
+  .bk-title { font-family: var(--serif); font-size: 19px; font-weight: 600; }
+  .bk-author { color: var(--ink-2); font-size: 13px; }
+  .bk-spine { color: var(--ink-3); font-family: var(--mono); font-size: 11px; margin-top: 3px; word-break: break-word; }
+  .badge { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge.high { background: rgba(111,174,95,.18); color: var(--green); }
+  .badge.medium { background: rgba(217,164,65,.18); color: var(--amber); }
+  .badge.low { background: rgba(209,104,90,.16); color: var(--red); }
+  .match { font-family: var(--mono); font-size: 11px; margin-top: 4px; }
+  .match.yes { color: var(--green); }
+  .match.no { color: var(--ink-3); }
+  .raw-toggle { font-family: var(--mono); font-size: 11px; color: var(--ink-3); cursor: pointer; text-decoration: underline; background: none; border: 0; padding: 8px 16px; }
+  pre.raw { display: none; margin: 0; padding: 12px 16px; background: #0d0a07; color: var(--ink-2); font-family: var(--mono); font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .hint { color: var(--ink-3); font-size: 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Shelf-Vision De-risk Harness</h1>
+  <div class="sub">disposable instrument · hits the DEPLOYED /.netlify/functions/shelf-vision · not app code</div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="key">x-praxis-key (public client gate key)</label>
+        <input id="key" type="text" spellcheck="false" value="25a123effd6138469e8ca7a1103528338b94fc6c6466c8c34f283da9779bcdd5">
+      </div>
+      <div>
+        <label for="base">endpoint base (blank = same origin)</label>
+        <input id="base" type="text" spellcheck="false" placeholder="https://praxis-reading.netlify.app" value="">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>shelf photo</label>
+    <div id="drop" class="drop"><strong>Drop a shelf photo here</strong><br>or click to choose (JPEG / PNG / WebP)</div>
+    <input id="file" type="file" accept="image/jpeg,image/png,image/webp" style="display:none">
+    <img id="preview" alt="preview">
+    <div id="fileMeta" class="meta"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:flex-end">
+      <div style="flex:1 1 auto">
+        <label>model</label>
+        <div class="seg" id="seg">
+          <button data-model="claude-sonnet-4-6" class="on">sonnet-4-6</button>
+          <button data-model="claude-opus-4-8">opus-4-8</button>
+          <button data-model="both">both</button>
+        </div>
+      </div>
+      <div style="flex:0 0 auto">
+        <button id="go" class="go" disabled>Analyze</button>
+      </div>
+    </div>
+    <div class="hint">"both" runs the SAME photo through each model in turn so you can compare detected vs matched, latency, and confidence side by side.</div>
+  </div>
+
+  <div id="runs" class="runs"></div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  var state = { dataURL: null, base64: null, mediaType: null, model: "claude-sonnet-4-6" };
+
+  var el = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  };
+
+  // --- file intake -----------------------------------------------------------
+  var drop = el("drop"), fileInput = el("file"), preview = el("preview"), fileMeta = el("fileMeta");
+
+  drop.addEventListener("click", function () { fileInput.click(); });
+  drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("hot"); });
+  drop.addEventListener("dragleave", function () { drop.classList.remove("hot"); });
+  drop.addEventListener("drop", function (e) {
+    e.preventDefault(); drop.classList.remove("hot");
+    if (e.dataTransfer.files && e.dataTransfer.files.length) { loadFile(e.dataTransfer.files[0]); }
+  });
+  fileInput.addEventListener("change", function (e) {
+    if (e.target.files && e.target.files.length) { loadFile(e.target.files[0]); }
+  });
+
+  function loadFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      state.dataURL = reader.result;
+      var comma = state.dataURL.indexOf(",");
+      state.base64 = comma > -1 ? state.dataURL.substring(comma + 1) : state.dataURL;
+      state.mediaType = file.type || "";
+      preview.src = state.dataURL;
+      preview.style.display = "block";
+      var kb = Math.round(file.size / 1024);
+      var typeWarn = /^image\/(jpeg|png|webp)$/.test(state.mediaType)
+        ? "" : "  ⚠ unsupported mediaType (endpoint accepts jpeg/png/webp)";
+      fileMeta.textContent = file.name + "  ·  " + kb + " KB  ·  " + (state.mediaType || "unknown") + typeWarn;
+      el("go").disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // --- model selector --------------------------------------------------------
+  var seg = el("seg");
+  seg.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("button[data-model]") : null;
+    if (!btn) { return; }
+    var buttons = seg.querySelectorAll("button");
+    for (var i = 0; i < buttons.length; i++) { buttons[i].classList.remove("on"); }
+    btn.classList.add("on");
+    state.model = btn.getAttribute("data-model");
+  });
+
+  // --- run -------------------------------------------------------------------
+  el("go").addEventListener("click", function () {
+    if (!state.base64) { return; }
+    var models = state.model === "both" ? ["claude-sonnet-4-6", "claude-opus-4-8"] : [state.model];
+    el("runs").innerHTML = "";
+    // sequential so "both" is a clean A/B and we don't hammer the proxy
+    var chain = Promise.resolve();
+    models.forEach(function (m) { chain = chain.then(function () { return runModel(m); }); });
+  });
+
+  function baseUrl() { return (el("base").value || "").replace(/\/+$/, ""); }
+  function apiKey() { return el("key").value || ""; }
+
+  function runModel(model) {
+    var panel = document.createElement("div");
+    panel.className = "run";
+    panel.innerHTML =
+      '<div class="run-head"><span class="model">' + esc(model) + '</span>' +
+      '<span class="stat" data-role="stat">requesting…</span></div>' +
+      '<div data-role="body"></div>';
+    el("runs").appendChild(panel);
+    var statEl = panel.querySelector('[data-role="stat"]');
+    var bodyEl = panel.querySelector('[data-role="body"]');
+
+    var t0 = performance.now();
+    return fetch(baseUrl() + "/.netlify/functions/shelf-vision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-praxis-key": apiKey() },
+      body: JSON.stringify({ image: state.base64, mediaType: state.mediaType, model: model })
+    }).then(function (resp) {
+      var ms = Math.round(performance.now() - t0);
+      return resp.text().then(function (txt) {
+        var data = null;
+        try { data = JSON.parse(txt); } catch (e) { data = null; }
+        renderRun({ status: resp.status, ms: ms, data: data, raw: txt, model: model, statEl: statEl, bodyEl: bodyEl });
+      });
+    }).catch(function (err) {
+      var ms = Math.round(performance.now() - t0);
+      statEl.innerHTML = '<b>' + ms + ' ms</b>';
+      bodyEl.innerHTML = '<div class="banner error">NETWORK ERROR — call never completed: ' + esc(err && err.message ? err.message : err) + '</div>';
+    });
+  }
+
+  function renderRun(r) {
+    // Honest states, rendered distinctly:
+    //   error  = non-2xx OR no parseable body           (call FAILED)
+    //   empty  = 200 with books:[]                       (endpoint OK, nothing legible)
+    //   ok     = 200 with books:[...>0]                  (endpoint OK, books found)
+    var books = (r.data && Object.prototype.toString.call(r.data.books) === "[object Array]") ? r.data.books : null;
+    var isError = r.status !== 200 || books === null;
+    var isEmpty = !isError && books.length === 0;
+
+    r.statEl.innerHTML =
+      '<span class="stat">HTTP <b>' + r.status + '</b></span>' +
+      '<span class="stat">latency <b>' + r.ms + ' ms</b></span>' +
+      '<span class="stat">detected <b>' + (books ? books.length : 0) + '</b></span>' +
+      '<span class="stat" data-role="matched">matched <b>–</b></span>';
+
+    var html = "";
+    if (isError) {
+      var code = r.data && r.data.error ? r.data.error : "(unparseable body)";
+      var sr = r.data && r.data.stop_reason ? "  ·  stop_reason: " + esc(r.data.stop_reason) : "";
+      html += '<div class="banner error">CALL FAILED — HTTP ' + r.status + '  ·  error: ' + esc(code) + sr + '</div>';
+    } else if (isEmpty) {
+      html += '<div class="banner empty">ENDPOINT OK — 0 legible books (honest empty state, NOT a failure)</div>';
+    } else {
+      html += '<div class="banner ok">ENDPOINT OK — ' + books.length + ' book(s) transcribed</div>';
+      for (var i = 0; i < books.length; i++) { html += bookRow(books[i], i); }
+    }
+    html += '<button class="raw-toggle">show raw JSON</button><pre class="raw">' + esc(r.raw) + '</pre>';
+    r.bodyEl.innerHTML = html;
+
+    var toggle = r.bodyEl.querySelector(".raw-toggle");
+    var pre = r.bodyEl.querySelector("pre.raw");
+    toggle.addEventListener("click", function () {
+      var shown = pre.style.display === "block";
+      pre.style.display = shown ? "none" : "block";
+      toggle.textContent = shown ? "show raw JSON" : "hide raw JSON";
+    });
+
+    if (books && books.length) { matchAll(books, r); }
+  }
+
+  function bookRow(bk, i) {
+    var conf = (bk.confidence === "high" || bk.confidence === "medium" || bk.confidence === "low") ? bk.confidence : "low";
+    return '<div class="book" data-idx="' + i + '">' +
+      '<div class="thumb none" data-role="thumb">?</div>' +
+      '<div class="bk-main">' +
+        '<div class="bk-title">' + esc(bk.title || "(untitled)") + '</div>' +
+        (bk.author ? '<div class="bk-author">' + esc(bk.author) + '</div>' : '') +
+        (bk.spineText ? '<div class="bk-spine">spine: ' + esc(bk.spineText) + '</div>' : '') +
+        '<div class="match no" data-role="match">Google Books: checking…</div>' +
+      '</div>' +
+      '<span class="badge ' + conf + '">' + conf + '</span>' +
+    '</div>';
+  }
+
+  // --- Google Books match check (via the EXISTING google-books-proxy) ---------
+  function matchAll(books, r) {
+    var matched = 0, done = 0;
+    var rows = r.bodyEl.querySelectorAll(".book");
+    var finish = function () {
+      var m = r.statEl.querySelector('[data-role="matched"]');
+      if (m) { m.innerHTML = 'matched <b>' + matched + '</b> / ' + books.length; }
+    };
+    if (!books.length) { finish(); return; }
+    books.forEach(function (bk, i) {
+      var q = "intitle:" + (bk.title || "");
+      if (bk.author) { q += " inauthor:" + bk.author; }
+      fetch(baseUrl() + "/.netlify/functions/google-books-proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-praxis-key": apiKey() },
+        body: JSON.stringify({ q: q })
+      }).then(function (resp) { return resp.json(); }).then(function (gb) {
+        var hit = gb && gb.totalItems > 0 && gb.items && gb.items.length ? gb.items[0].volumeInfo : null;
+        var row = rows[i];
+        if (row) {
+          var matchEl = row.querySelector('[data-role="match"]');
+          var thumbEl = row.querySelector('[data-role="thumb"]');
+          if (hit) {
+            matched++;
+            var who = hit.authors && hit.authors.length ? hit.authors.join(", ") : "unknown author";
+            matchEl.className = "match yes";
+            matchEl.innerHTML = "✓ Google Books: " + esc(hit.title || "") + " — " + esc(who);
+            var thumb = hit.imageLinks && hit.imageLinks.thumbnail ? hit.imageLinks.thumbnail : null;
+            if (thumb && thumbEl) {
+              var img = document.createElement("img");
+              img.className = "thumb"; img.src = thumb.replace(/^http:/, "https:"); img.alt = "";
+              thumbEl.parentNode.replaceChild(img, thumbEl);
+            }
+          } else {
+            matchEl.className = "match no";
+            matchEl.innerHTML = "✗ Google Books: no match";
+          }
+        }
+      }).catch(function () {
+        var row = rows[i];
+        if (row) { var m2 = row.querySelector('[data-role="match"]'); if (m2) { m2.innerHTML = "✗ Google Books: lookup error"; } }
+      }).then(function () { done++; if (done === books.length) { finish(); } });
+    });
+  }
+})();
+</script>
+</body>
+</html>
