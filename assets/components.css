@@ -12608,6 +12608,9 @@ body.wc-focus .app-nav { opacity:.26; }
     margin-left:auto; margin-right:auto;
     padding-left:24px; padding-right:24px;
     align-items:start;
+    /* pack rows to the top: the page's min-height:100vh would otherwise stretch the
+       auto rows (default align-content) and inflate the short welcome row by ~188px. */
+    align-content:start;
   }
   .home-page.lum-amber-deep > *{ max-width:none; margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
   .home-page.lum-amber-deep .home-welcome{ grid-column:1 / -1; grid-row:1; }
