@@ -11028,6 +11028,46 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end MW-3 · BOOK DETAIL MOBILE PASS ===== */
 
 /* =====================================================================
+   DW-3 · BOOK DETAIL — DESKTOP COMPOSITION (>=1200 tier).
+   Desktop canon D1: the .bk-shell block stack is a fixed 840 column (44%
+   occ @1920). The content (hero cover|title + the tall .bk-cols thinking/
+   artifact) naturally wants a reading width; the short meta bands (value
+   card + actions + utilities) leave dead width. Compose to a two-region
+   grid (canon §4-I two-column intent): the book itself (hero + .bk-cols,
+   held at their natural reading width) LEFT, a meta/actions rail (value
+   card + actions + edit/find) RIGHT inhabiting the freed width. Recompose
+   EXISTING elements only (CSS grid placement — no DOM/content change).
+   grid-auto-rows:min-content keeps the rail items clustered at the top of
+   col 2 while .bk-cols runs tall in col 1. Additive; the whole block is
+   inside the media query so <=1199 is byte-inert. ON-7 (.bk-surface's
+   pre-existing 40px desktop h-scroll, box-sizing fixed only <=759) is
+   UNTOUCHED and carried — this grid changes .bk-shell, never .bk-surface.
+   ===================================================================== */
+@media (min-width:1200px){
+  .bk-surface .bk-shell{ display:grid; grid-template-columns:minmax(0,1fr) 340px; grid-auto-rows:min-content; column-gap:44px; align-items:start; max-width:1200px; }
+  .bk-surface .bk-shell > *{ grid-column:1; }   /* default any child to the content column — a surprise non-empty child never disrupts the rail */
+  .bk-surface .bk-shell > .bk-backlink{ grid-column:1 / -1; grid-row:1; }
+  .bk-surface .bk-shell > .bk-hero{ grid-column:1; grid-row:2; }
+  .bk-surface .bk-shell > .vr-card{ grid-column:2; grid-row:2; margin:0; }
+  .bk-surface .bk-shell > .bk-cols{ grid-column:1; grid-row:3 / span 5; }
+  .bk-surface .bk-shell > .bk-actions{ grid-column:2; grid-row:3; flex-direction:column; align-items:stretch; margin:0; }
+  .bk-surface .bk-shell > .bk-edit-toggle{ grid-column:2; grid-row:4; justify-self:start; margin-top:14px; }
+  .bk-surface .bk-shell > .bk-find{ grid-column:2; grid-row:5; justify-self:start; }
+  .bk-surface .bk-shell > div:empty{ display:none; }
+  /* D6 — desktop-tier focus-visible rings on the primary book-detail
+     controls (codebase focus-ring literal, reused verbatim from :11073). */
+  .bk-surface .bk-backlink:focus-visible,
+  .bk-surface .bk-actionbtn:focus-visible,
+  .bk-surface .rs-opt:focus-visible,
+  .bk-surface .bk-moved:focus-visible,
+  .bk-surface .vr-add:focus-visible,
+  .bk-surface .bk-arcchip:focus-visible,
+  .bk-surface .bk-edit-toggle:focus-visible,
+  .bk-surface .bk-find:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+}
+/* ===== end DW-3 · BOOK DETAIL DESKTOP COMPOSITION ===== */
+
+/* =====================================================================
    WAVE 3 · THE PAGE  (renderSubTheoryPage on .lum-amber-deep)
    3-column reading room: evidence weave rail · lifted glass sheet +
    connections · Yumi's cyan margin. Tokens only (lum and font vars); the
