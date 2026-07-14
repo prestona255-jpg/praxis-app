@@ -8,6 +8,7 @@ state: closed
 rounds: 1
 mockup: docs/studio/mockups/arcs.html
 mobile: native
+desktop: composed
 ---
 
 ## State
@@ -98,6 +99,14 @@ Read-ground toggle was a felt instrument only — **warm-dim shipped fixed** as 
   (Preston's felt pass; held near its light-ground baseline) → **S-C sweep owns it**.
 - Latent constellation focus-ring (frozen renderer emits `data-st-sub-id` but no tabindex — CSS only);
   the REAL keyboard focus rings shipped on the Read-face controls.
+
+## Round record — DW-1 (2026-07-14)
+
+commits: b1058f1 (1, the Arcs slice; DW-1 batch 68f46a9..cache-bump)
+gates: PASS — D1 occupancy 71.4% @1920 (col 1360; 95.4/94.9% @1440/1280); D2 `.arcs-teach` 66ch (was 137ch — the named target fixed); D3 hScroll 0; grid widens 4→5 columns; head/grid left-aligned. 760–1199 (1024) unchanged (teach uncapped 119.8ch — cap confirmed ≥1200-scoped); ≤759 (390) unchanged; signed-out empty-state clean, no crash, console clean.
+defects-found: 0 in-scope.
+lessons: A stale SW/HTTP layer can survive unregister + cache-clear on a localhost origin — restart the static server on a fresh port per edit to guarantee the browser loads the new files.
+evidence: docs/checkpoints/dw-1.md (Stage 2) · docs/checkpoints/dw-1-recon.md. Chip stretched → composed.
 
 ## Next
 

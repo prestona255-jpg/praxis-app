@@ -344,11 +344,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-- [ ] **DW-1..3 — Desktop Wave (NAMED SLOT; folds S-A in)** — the responsive desktop restyle across the
-  page-surfaces, now that R9a shipped the project's FIRST ≥1200 composition tier and R9b proved the desktop
-  composition rider live. Folds the **S-A sweep** (About · Search · what-Yumi-sees) in. Re-seed target:
-  **ON-7** (Book Detail `.bk-surface` desktop h-scroll — pre-existing, confirmed profile-scoped-clean by the
-  R9b P8 verify) rides here or overnight. touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees]
+- [ ] **DW — Desktop Wave (FULL SWEEP, batches ~DW-1..5)** — the responsive ≥1200 composition tier across the
+  page-surfaces. **Exit criterion: 0 of the Builder's desktop chips at "stretched."** R9a shipped the project's
+  first ≥1200 tier, R9b proved the composition rider live, **Profile is already native**. One commit per batch;
+  About + Arcs first (D0's two worst). **Exempt — round-owned, their chips flip with their round, NOT the sweep:**
+  Shelf → **R-SHELF** · Scan → **SCAN** · Connections → **R10** · Onboarding → its round · commons + reader → **R11**.
+  **Walk IS swept.** The **S-A content sweep** (About · Search · what-Yumi-sees) folds in but owns copy/content,
+  not composition. Re-seed target **ON-7** (Book Detail `.bk-surface` desktop h-scroll, pre-existing) rides a
+  batch or overnight. **DW-1 SHIPPED-LOCAL — About + Arcs → composed, + a scoped ≥760 body-margin reset.**
+  touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk]
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
   scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]
 - [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
@@ -379,16 +383,21 @@ spine and the evolution track and folded into the program — nothing dropped.
   surface) — NOT a retire-debate. touches: [arcs, arc-detail]
 - [ ] **ONBOARDING round (W9, DEEP)** — a dedicated pass on the intro / onboarding system before beta (was
   folded in the feature-layers tail; promoted to its own round at the R9b close). touches: [onboarding]
-- [ ] **BETA-READINESS gate** — the collected launch-blockers before any outside beta tester is invited;
-  **R11 is hard-blocked until this gate clears:**
-  - **FX-1 — Data-loss (FIX round) — HARD DEPENDENCY (Preston, 2026-07-12)** — F-DL1 sync guards on all 5
-    unguarded collections, F-DL2 flush, F-PX1 proxy cap. **A named PREREQUISITE of R11 / first-beta-tester — no
-    outside account is ever invited before FX-1 ships — and it JUMPS IMMEDIATELY on any data-loss scare.**
-    Interim guardrail (until it ships): after signing in on any device, let the app settle before editing.
-    (RULED — no re-raise.)
-  - **Goodreads import** · **export/backup + Settings** · **admin/moderation interim** · the **commons `#reader`
-    draft-sub-body fencing debt** (`integrations.js:2456` — a commons-published arc projects the `bodyPublic` of
-    DRAFT-status subs; carried from Lane P).
+- [ ] **BETA-READINESS gate** — the collected launch-blockers, **in order**, before any outside beta tester is
+  invited; **R11 is hard-blocked until this gate clears:**
+  1. **FX-1 — data-loss sync guards FIRST (HARD DEPENDENCY, Preston 2026-07-12)** — F-DL1 sync guards on all 5
+     unguarded collections + F-DL2 flush (F-PX1 proxy cap already shipped, v3.203). No outside account is EVER
+     invited before FX-1; it **jumps immediately on any data-loss scare**. Interim guardrail: after signing in
+     on any device, let the app settle before editing. (RULED — no re-raise.)
+  2. **Stage-2 JWT auth (two-phase)** — the proxy auth-gating hardening (per F-PX1 0c, Yumi + google-books are
+     reachable signed-out today; this is the beta-gate auth item).
+  3. **Goodreads import — minimal CSV** (title / author / ISBN / shelf). The rich shelves → lenses mapping is a
+     **post-gate round**, not a blocker.
+  4. **Export / backup + a minimal Settings surface.**
+  5. **commons `#reader` fencing** — the draft-sub-body debt (`integrations.js:2456`: a commons-published arc
+     projects the `bodyPublic` of DRAFT-status subs; carried from Lane P).
+  6. **Admin runbook doc** — the interim moderation / operations runbook.
+  7. **Unlisted-URL + open-auth access** — the access model for the first invited testers.
   touches: [account, import-capture, commons]
 - [ ] **R11 — Social-discovery (DEEP; DEPENDS BETA-READINESS / FX-1 — HARD)** — commons / reader / walk
   promoted to their own top-level sub-page; includes the deliberate Lane-2 commons-open security decision.
