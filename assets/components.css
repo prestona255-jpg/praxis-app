@@ -11049,17 +11049,20 @@ body.wc-focus .app-nav { opacity:.26; }
   .bk-surface .bk-shell > .bk-backlink{ grid-column:1 / -1; grid-row:1; }
   .bk-surface .bk-shell > .bk-hero{ grid-column:1; grid-row:2; }
   .bk-surface .bk-shell > .vr-card{ grid-column:2; grid-row:2; margin:0; }
-  /* the on-demand editor/picker mount hosts (marginalia editor · arc picker ·
-     send-to-sub picker) span full width in row 3, so an opened panel appears as
-     a prominent band right below the hero — NOT auto-placed to the page bottom
-     (they are display:none when idle via the :empty rule, so row 3 collapses). */
-  .bk-surface .bk-shell > #book-detail-editor-host,
-  .bk-surface .bk-shell > #book-detail-arc-picker-host,
-  .bk-surface .bk-shell > #book-detail-subtheory-picker-host{ grid-column:1 / -1; grid-row:3; }
-  .bk-surface .bk-shell > .bk-cols{ grid-column:1; grid-row:4 / span 5; }
-  .bk-surface .bk-shell > .bk-actions{ grid-column:2; grid-row:4; flex-direction:column; align-items:stretch; margin:0; }
-  .bk-surface .bk-shell > .bk-edit-toggle{ grid-column:2; grid-row:5; justify-self:start; margin-top:14px; }
-  .bk-surface .bk-shell > .bk-find{ grid-column:2; grid-row:6; justify-self:start; }
+  /* Every on-demand `.bk-shell` panel (marginalia editor · arc picker · send-to-sub
+     picker · the Edit/more panel) gets its OWN full-width row (3–6) so an opened
+     panel appears as a prominent band right below the hero — NOT auto-placed to the
+     page bottom, and never overlapping another (the editor+picker can co-exist).
+     Each row collapses to 0 when its panel is idle (hosts :empty-hidden; the edit
+     panel is absent when closed), so the closed layout is unchanged. */
+  .bk-surface .bk-shell > #book-detail-editor-host{ grid-column:1 / -1; grid-row:3; }
+  .bk-surface .bk-shell > #book-detail-arc-picker-host{ grid-column:1 / -1; grid-row:4; }
+  .bk-surface .bk-shell > #book-detail-subtheory-picker-host{ grid-column:1 / -1; grid-row:5; }
+  .bk-surface .bk-shell > .bk-edit-panel{ grid-column:1 / -1; grid-row:6; }
+  .bk-surface .bk-shell > .bk-cols{ grid-column:1; grid-row:7 / span 5; }
+  .bk-surface .bk-shell > .bk-actions{ grid-column:2; grid-row:7; flex-direction:column; align-items:stretch; margin:0; }
+  .bk-surface .bk-shell > .bk-edit-toggle{ grid-column:2; grid-row:8; justify-self:start; margin-top:14px; }
+  .bk-surface .bk-shell > .bk-find{ grid-column:2; grid-row:9; justify-self:start; }
   .bk-surface .bk-shell > div:empty{ display:none; }
   /* D6 — desktop-tier focus-visible rings on the primary book-detail
      controls (codebase focus-ring literal, reused verbatim from :11073). */
