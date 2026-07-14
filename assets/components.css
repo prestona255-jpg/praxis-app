@@ -581,6 +581,18 @@
 /* ===== END YUMI PANEL ===== */
 
 
+/* =====================================================================
+   DW-1 (Stage 3) -- scoped UA body-margin reset. theme.css body{} never
+   resets the 8px UA margin; at >=760 (the desktop horizontal-nav band)
+   those 16px push the nav links past the viewport, producing the 768
+   h-scroll. Reset at >=760 ONLY, so <=759 (the mobile hamburger bar) stays
+   byte-unchanged. Centered/auto layouts (every page column, the nav pill)
+   re-center, so nothing visibly moves; the surfaces just regain 16px of
+   usable width. A residual ~7px nav-content overflow at 768 is a separate
+   nav-fit item (DW-NAV768), out of this batch's About+Arcs scope.
+   ===================================================================== */
+@media (min-width: 760px) { body { margin: 0; } }
+
 /* ===== TOP NAV -- Stage 3.10a Stage 1 =====
    Persistent bar at the top of every route. Two items (Books,
    Notebook) plus a left-aligned Praxis wordmark. Active route is
