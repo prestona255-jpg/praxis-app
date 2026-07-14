@@ -354,6 +354,10 @@ flagged at the top of the Builder's sequence page for his call — never applied
   batch or overnight. **DW-1 SHIPPED-LOCAL — About + Arcs → composed, + a scoped ≥760 body-margin reset.**
   **DW-2 SHIPPED-LOCAL — Home + Notebook → composed** (H-A two-region + Still-Reading rail · N-A
   widened spread ~1360; both chips `composed`, native awaits the deployed felt pass).
+  **DW-3 SHIPPED-LOCAL — Book-detail + Sub-theory-build → composed** (self-selected: the two worst
+  *reproducible* stretched surfaces — book-detail content|rail grid + subtheory-build contained-panel
+  widen; walk/search worse on paper but async/empty in the rig → named for their owning rounds. ON-7
+  carried unchanged. Both chips `composed`, native awaits the deployed felt pass).
   touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk]
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
   scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]

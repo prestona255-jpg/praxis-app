@@ -7,6 +7,7 @@ in_nav: no
 state: closed
 rounds: 1
 mobile: native
+desktop: composed
 ---
 
 ## State
@@ -191,6 +192,14 @@ Computed via the standard WCAG 2.x relative-luminance formula (script run throug
   covered already (verified, no change): pubpill/openpage/weave/conn-add/crow/focus-toggle; title
   26px + canvas 18px (P7). **P8:** workshop scrollWidth 390, 0 offenders. Live-390 rig + praxis-reviewer
   PASS (6/6, one non-blocking pull-input note closed). Record: `docs/studio/reports/mw3-2026-07-11.md`.
+
+## Round record — DW-3 (2026-07-14)
+
+commits: 939eb73 (1, the Sub-theory-build slice; DW-3 batch 939eb73..cache-bump)
+gates: PASS — D1 occ 49.3%→67.2% @1920 (96.1/89.8% @1280/1440), composed WITHIN the R6 contained-panel metaphor (the Notebook-widen precedent): the warm-dim panel 1220→1400 + content 940→1280, the existing two-region breathing — the writing column `.stb-main` held at a reading measure (flex:0 0 720px, 67.8ch) and the R6-S4 pull/evidence rail inhabiting the freed width (flex:1 1 0, ~540). D2 writing prose 67.8ch (≤72). D3 hScroll 0 @1280/1440/1920. D4 27/27 cursor:pointer. D5 rail body 15px unchanged. D6 focus-visible rings (pubpill/focus-toggle/openpage/weave/brow/conn-add/crow/delete). Focus mode (`.is-focus`, higher specificity) UNTOUCHED — its narrow centered column is the deliberate reading form. ≤1199 provably inert — matchMedia(min-width:1200)=false, `.stb-warm-dim` computed max-width 1220 (base) + `.stb-main` flex-basis 0% (base) @1024, `.stb-build` flex-direction column @390, hScroll 0 + node-count 162 match baseline.
+defects-found: 0 shipped. Self-caught + fixed mid-build: `.stb-rail{flex:1 1 auto}` let the rail's wide intrinsic content balloon to 864px and squeeze `.stb-main` to 396px (writing collapsed to 34ch) → `.stb-main{flex:0 0 720px}` + `.stb-rail{flex:1 1 0;min-width:0}`.
+lessons: A reading-measure sidebar composition needs the MAIN column FIXED (flex:0 0 <measure>) and the rail `flex:1 1 0; min-width:0` — `flex:1 1 auto` on the rail makes its intrinsic content its basis and it balloons, collapsing the main. Compose-within a round-owned metaphor by widening its governor + letting existing regions breathe (never restructure); a higher-specificity modifier like `.is-focus` survives a lower-specificity ≥1200 rule automatically.
+evidence: docs/checkpoints/dw-3.md (Stage 1) · dw-3-recon.md. Chip stretched → composed (D1–D6 on live evidence; native awaits the deployed felt pass).
 
 ## Next
 

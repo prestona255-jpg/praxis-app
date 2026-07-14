@@ -7,6 +7,7 @@ in_nav: no
 state: closed
 rounds: 1
 mobile: native
+desktop: composed
 ---
 
 ## State
@@ -89,6 +90,14 @@ R7 SHIPPED v3.191 (`bff5d82`; Preston deployed felt pass = PASS 2026-07-10). Spe
   fields → 44px; the 5 rating stars `.bk-star` → a genuine 44×44 hit box (glyph stays 15px). BD2's
   primary `order:-1` (P2) untouched. Live-390 rig; praxis-reviewer HOLD on `.bk-star` → fixed 44×44 →
   re-confirmed PASS. Desktop residual MW3-BKBOX carried. Record: `docs/studio/reports/mw3-2026-07-11.md`.
+
+## Round record — DW-3 (2026-07-14)
+
+commits: 03ecb9d..70a26ab (3, the Book-detail slice + 2 fix-slices; DW-3 batch 939eb73..cache-bump)
+gates: PASS — D1 occ 44.1%→63% @1920 (94.9/84.2% @1280/1440), a two-region content|rail grid at ≥1200 (canon §4-I intent): the book (hero + `.bk-cols`, held at its natural ~816 reading width) in col 1, a meta/actions rail (value-card + actions-stacked + edit/find, 340px) in col 2; rail items clustered beside the tall content via `grid-auto-rows:min-content` (verified — no spread, `vrOverflow:0`). D2 widest `.bk-main` prose 70.9ch (≤72; `.bk-main` width unchanged so no cap needed). D3 hScroll = ON-7's pre-existing 40 at every composed width — carried, NOT worsened (the grid changes `.bk-shell`, never `.bk-surface`), 0 @390. D4 22/22 cursor:pointer. D5 body 16px unchanged. D6 focus-visible rings (backlink/actionbtn/rs-opt/moved/vr-add/arcchip/edit/find). ≤1199 provably inert — matchMedia(min-width:1200)=false, `.bk-shell` computed block/840 @1024 + block/none @390, hScroll (40/0) + node-count (117) match baseline. Signed-out both surfaces render no-crash/no-overlap @1920 (book-detail signinrow→col1, `bk-find` alone in the rail; console clean).
+defects-found: 2, both self-caught (live smoke + fix-red-team R1) and fixed before ship — (1) `8ce5a16` the primary-CTA on-demand pickers (marginalia editor / arc / send-to-sub) auto-placed to the PAGE BOTTOM (y2031) when opened at ≥1200, far from their trigger — the idle-only live table missed it; (2) `70a26ab` the Edit/more panel (a 4th on-demand child) had the same gap + could co-exist with an open picker. Fix: each on-demand panel gets its OWN full-width collapsible row (r3–r6), `.bk-cols`→r7; opened panels appear as a band below the hero, stack without overlap.
+lessons: An idle-only occupancy table is NOT sufficient for a surface with on-demand mount hosts — you MUST open each panel (primary CTAs first) and re-measure at every composed width; a grid's `> *{grid-column:1}` default drops an opened panel to the page bottom (auto-row after a tall spanning column). Give EACH on-demand panel an explicit collapsible full-width row so it appears prominently AND can never overlap a sibling. A block-stack whose content wants a reading width but must fill ≥1145 (D1@1920) composes as content|rail, NOT a widen (a widen leaves the meta bands sparse); `grid-auto-rows:min-content` keeps a multi-item rail clustered beside a tall spanning content column.
+evidence: docs/checkpoints/dw-3.md (Stage 2 + fix-slices) · dw-3-recon.md · praxis-reviewer + fix-red-team verdicts. Chip stretched → composed (D1–D6 on live evidence; ON-7 carried; native awaits the deployed felt pass).
 
 ## Next
 
