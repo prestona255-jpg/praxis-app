@@ -11040,10 +11040,13 @@ body.wc-focus .app-nav { opacity:.26; }
    grid-auto-rows:min-content keeps the rail items clustered at the top of
    col 2 while .bk-cols runs tall in col 1. Additive; the whole block is
    inside the media query so <=1199 is byte-inert. ON-7 (.bk-surface's
-   pre-existing 40px desktop h-scroll, box-sizing fixed only <=759) is
-   UNTOUCHED and carried — this grid changes .bk-shell, never .bk-surface.
+   pre-existing 40px desktop h-scroll — box-sizing fixed only <=759) is
+   RESOLVED at >=1200 here (Preston's DW-3 ruling): the box-sizing fix is
+   scoped to THIS block, so the 760-1199 band keeps the defect untouched
+   (its own owner) while D3 now passes honestly at 1280/1440/1920.
    ===================================================================== */
 @media (min-width:1200px){
+  .bk-surface{ box-sizing:border-box; }   /* ON-7 fix, >=1200 ONLY — width:100% + padding no longer overflows the viewport; the 760-1199 band is left untouched */
   .bk-surface .bk-shell{ display:grid; grid-template-columns:minmax(0,1fr) 340px; grid-auto-rows:min-content; column-gap:44px; align-items:start; max-width:1200px; }
   .bk-surface .bk-shell > *{ grid-column:1; }   /* default any child to the content column — a surprise non-empty child never disrupts the rail */
   .bk-surface .bk-shell > .bk-backlink{ grid-column:1 / -1; grid-row:1; }
