@@ -205,3 +205,42 @@ Home `home-page.lum-amber-deep` · Shelf `shelf.lum-amber-deep` · Notebook
 blocks corrected (synchronous, lazy self-removal described accurately) · components.css
 DW-NAV768 comment nailed to 8px · CRLF restored. PARSE OK re-run. No re-verification
 needed — comment-only diff, rendering byte-path identical.
+
+---
+
+## STAGE 5a — the four red-team probes (run post-bump, SW-cleared, honest)
+
+1. **2560 ultrawide:** no breakage — hScroll 0 both surfaces, spine sticky, teach capped,
+   columns centered. **Honest sag:** occupancy About **47.5%** / Arcs **53.4%** — the fixed
+   caps (1208/1360) decay past 1920. The canon's D1 check is DEFINED at 1920 (where both
+   pass); a ≥1440-or-2560 sub-tier was not in this batch's scope. Documented, not absorbed —
+   candidates for a later DW batch if Preston's ultrawide felt pass wants more.
+2. **1199→1200 boundary:** clean switch. 1199 = base (About block/640/spine-none; Arcs
+   1080/teach uncapped); 1200 = composed (About grid/1160/spine flex, box 1185 =
+   available-bound, no overflow; Arcs col 1137 available-bound, teach 520px). hScroll 0
+   on both sides of the line.
+3. **Sparse account:** 1 owned arc → 2 cells (card + Start tile) at **672px each** — the
+   pre-existing R5 auto-fit stretch, just wider at 1360 (live today: ~532px at 1080).
+   Structurally sound (equal, no overflow); width is a felt-pass cosmetic call. **0 owned
+   arcs:** "Your arcs" + Start tile still render — INTENDED per the views.js:3750 comment
+   ("even with zero arcs so the Start tile has a home"); the older comment at ~3733
+   ("rendered only when ≥1 arc") is pre-existing comment drift — flagged, not chased.
+4. **Empty About sections (Intros absent):** `window.Intros=null` → NO crash; the
+   Orientation section renders as an empty frame; the spine still renders 6 links;
+   click-to-empty-section works; hScroll 0; normal render restores cleanly.
+
+## Final commit list (nothing pushed; ahead-6 of origin/main at bump time)
+
+| commit | subject | stat |
+|---|---|---|
+| 68f46a9 | Stage 1 — About composition tier | views.js +63/−6 · components.css +75 |
+| b1058f1 | Stage 2 — Arcs composition tier | components.css +14 |
+| d873acf | Stage 3 — scoped body-margin reset | components.css +12 |
+| ad4f6f3 | gate fixes — comment truth + EOL restore | views.js +8/−5 · components.css +4/−3 |
+| 72c4984 | Stage 4 — chips + Round records + sequence + regen (docs) | 7 files +441/−31 |
+| b63245b | cache bump v3.204 (hook-armed) | sw.js 1/1 |
+| (+ this docs-only probe-evidence commit — the 10e0a27 precedent) | | |
+
+Builder stamp note: builder.html stamps generation-time HEAD `d873acf` (pre-close, the
+inherent chicken-egg — same convention as 1d's `a6decb3` stamp). Content is final;
+determinism ×2 proven.
