@@ -98,3 +98,21 @@ POST-PUSH only — the static server does not run Netlify functions (0f). Exact 
   2. vision-proxy: image >7.5M chars → 413. elevenlabs: text >5000 → 413. google-books: q >300 → 413.
   3. legit-shape probe each caller still 200 (Yumi round-trip, a real scan, a real search).
   4. 1f on the deployed site signed-out: FAB send → prompt + ZERO claude-proxy (network capture).
+
+## Live probe RESULTS (post-push, deployed CACHE_VERSION v3.203 confirmed; signed-out, no account written; prestona255 untouched)
+Probes hit the deployed functions with the in-page x-praxis-key.
+| Probe | Sent | Result | Verdict |
+|---|---|---|---|
+| claude-proxy model pin | `model: claude-opus-4-8` | **400** `{code:"model_not_allowed","model not allowed"}` | PASS — rejected before Anthropic |
+| claude-proxy body cap | 1,150,087-byte body (>1 MiB) | **413** `{code:"payload_too_large","payload too large"}` | PASS — rejected before parse |
+| claude-proxy clamp | `max_tokens: 10,000,000` | **200**, `stop_reason:end_turn`, out_tokens 4, model echo claude-sonnet-4-6 | PASS — the 200 proves the clamp (unclamped, Anthropic 400s on 10M > model cap; clamped→4096 succeeded) |
+| claude-proxy legit | `sonnet, max_tokens:24` | **200** → text "pong" | PASS — real calls unchanged |
+| elevenlabs cap | text 6,000 chars | **413** `{code:"payload_too_large","text too large"}` | PASS |
+| google-books cap | q 400 chars | **413** `{code:"payload_too_large","query too large"}` | PASS |
+| **1f signed-out Yumi** (fresh tab, clean network log) | FAB → type → Send, signed-out | network log = **0 requests to claude-proxy** (only anon google-books backfill); panel renders "Yumi is private / Sign in to think with Yumi…"; console clean | PASS — network-capture proof |
+
+### Probe caveats (honest; neither a regression)
+1. **google-books legit 200 unobtainable at probe time** — Google Books API returned its OWN upstream 503 (`"Service temporarily unavailable", domain:"global"`), which the proxy correctly relays (pre-existing behavior; the only change was the q-length 413, which PASSED). Re-confirm a 200 when Google recovers.
+2. **vision-proxy image 413 — RULING (Preston, session close): DECLINED, cap STAYS AS-IS (7.5M b64 chars).** A >7.5M-char body (~7.5 MB) exceeds Netlify's ~6 MB synchronous-request platform limit, which 413s FIRST — so the platform is the effective gate and the function-level image cap (mirroring shipped shelf-vision) is documented **defense-in-depth above it**. A one-line lowering below ~5.8M + a cache bump is not worth the churn. No change.
+
+**F-PX1 Stage 1: shipped, live, verified.** Deferred: Stage 2 auth-gating (beta-gate item, 0c); global daily volume ceiling (0d follow-up — @netlify/blobs or Firebase-SA+rules).
