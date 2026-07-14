@@ -1418,6 +1418,15 @@ function homeLeftOffCard(arc) {
   top.appendChild(mm);
   body.appendChild(top);
 
+  // DW-2 (>=1200 only; hidden <=1199 via CSS): surface the arc's EXISTING
+  // description to fill the recomposed wide card. Felt-pass-ruled additive line.
+  if (arc.description) {
+    var dd = document.createElement('p');
+    dd.className = 'home-arcdesc';
+    dd.textContent = arc.description;
+    body.appendChild(dd);
+  }
+
   var act = document.createElement('div');
   act.className = 'home-arcact';
   var cont = document.createElement('a');
@@ -1554,7 +1563,7 @@ function renderHome() {
   var wfcap = document.createElement('div');
   wfcap.className = 'home-wfcap';
   wfcap.textContent = haveArcs
-    ? 'Tap any light to step into that thread'
+    ? 'Choose any light to step into that thread'
     : 'An example field — begin an arc to grow your own';
   wholefield.appendChild(wfcap);
   vField.appendChild(wholefield);
@@ -1596,6 +1605,19 @@ function renderHome() {
   for (li = 0; li < leftSorted.length; li = li + 1) {
     vLeft.appendChild(homeLeftOffCard(leftSorted[li]));
   }
+  // DW-2 (>=1200 only; hidden <=1199 via CSS): a "start a new arc" affordance to
+  // the existing arc-creation flow (#arcs). Felt-pass-ruled additive tile.
+  var startTile = document.createElement('a');
+  startTile.className = 'home-arc-start';
+  startTile.href = '#arcs';
+  var stPlus = document.createElement('span');
+  stPlus.className = 'home-arc-start-plus';
+  stPlus.textContent = '+';
+  startTile.appendChild(stPlus);
+  var stLabel = document.createElement('span');
+  stLabel.textContent = 'Start a new arc — set two books side by side';
+  startTile.appendChild(stLabel);
+  vLeft.appendChild(startTile);
   wrap.appendChild(vLeft);
 
   // Glimpse: still reading (walk-with omitted). SPINE_CAP bounds the sample; count is true.

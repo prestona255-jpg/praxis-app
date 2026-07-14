@@ -12587,6 +12587,72 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end R3 · HOME UNIVERSAL v1.2 LIGHT SKIN ===== */
 
 /* =============================================================================
+   DW-2 · HOME — >=1200 DESKTOP COMPOSITION (fork H-A: two-region + rail).
+   Additive over the base .home-page rules; <=1199 renders byte-identical (the two
+   felt-pass-ruled additive elements below render at all widths but are display:none
+   under the tier, so they never disturb 390/1024). Tokens only. The page becomes a
+   grid — welcome spans, the active variant is the work region (col 1), Still-Reading
+   becomes a companion rail (col 2). The resume card is recomposed to fill the wide
+   work region (enlarged thumb · body row · Continue anchored right), killing the
+   ~40% right-hollow; the field canvas runs at real scale.
+   ============================================================================= */
+.home-page.lum-amber-deep .home-arcdesc{ display:none; }
+.home-page.lum-amber-deep .home-arc-start{ display:none; }
+@media (min-width:1200px){
+  /* two-region grid */
+  .home-page.lum-amber-deep{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 320px;
+    column-gap:28px;
+    max-width:1560px;
+    margin-left:auto; margin-right:auto;
+    padding-left:24px; padding-right:24px;
+    align-items:start;
+  }
+  .home-page.lum-amber-deep > *{ max-width:none; margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
+  .home-page.lum-amber-deep .home-welcome{ grid-column:1 / -1; grid-row:1; }
+  .home-page.lum-amber-deep .home-variant{ grid-column:1; grid-row:2; min-width:0; width:100%; }
+  .home-page.lum-amber-deep .home-glimpses{ grid-column:2; grid-row:2; display:block; margin:0; align-self:stretch; }
+  /* DW-HOME-LAMP: constrain the welcome lamplight's -8% horizontal bleed at the
+     widened tier (mirrors the <=759 fix at :12547) so the grid never re-introduces
+     the ~79px h-scroll the narrow gutter would otherwise expose. */
+  .home-page.lum-amber-deep .home-welcome::before{ left:0; right:0; }
+  /* Still-Reading rail (was flex:0 1 440px, left-islanded). box-sizing:border-box so
+     width:100% includes the card padding — content-box would overflow the 320 track. */
+  .home-page.lum-amber-deep .home-glimpse{ box-sizing:border-box; width:100%; position:sticky; top:74px; }
+  /* resume card recompose: enlarged thumb · body row · Continue anchored right */
+  .home-page.lum-amber-deep .home-arc{ align-items:center; gap:28px; }
+  .home-page.lum-amber-deep .home-arcfield{ width:248px; }
+  .home-page.lum-amber-deep .home-arcbody{ display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:28px; align-items:center; }
+  .home-page.lum-amber-deep .home-arctop{ grid-column:1; grid-row:1; flex-direction:column; align-items:flex-start; gap:5px; }
+  .home-page.lum-amber-deep .home-arcdesc{
+    display:block; grid-column:1; grid-row:2; margin:9px 0 0;
+    font-family:var(--lum-serif); font-style:italic; font-size:17px; line-height:1.42; color:var(--lum-ink-2);
+  }
+  .home-page.lum-amber-deep .home-arcact{ grid-column:2; grid-row:1 / span 2; margin-top:0; padding-top:0; align-self:center; }
+  /* >=1200-only "start a new arc" affordance (to the existing #arcs create flow) */
+  .home-page.lum-amber-deep .home-arc-start{
+    display:flex; align-items:center; gap:16px; margin:12px 0 0; padding:18px 26px;
+    border:1px dashed var(--lum-glass-bd); border-radius:var(--lum-r-card); text-decoration:none;
+    color:var(--lum-ink-3); font-family:var(--lum-mono); font-size:12px; letter-spacing:.04em;
+    transition:border-color .18s, color .18s;
+  }
+  .home-page.lum-amber-deep .home-arc-start:hover{ border-color:var(--gold-hi); color:var(--lum-ink-2); }
+  .home-page.lum-amber-deep .home-arc-start-plus{ font-size:24px; line-height:1; color:var(--gold); }
+  /* field canvas at real scale in the wide work region */
+  .home-page.lum-amber-deep .home-wf{ aspect-ratio:100 / 40; }
+  /* D2: cap the field Yumi lead (a 534px single line = 76.2ch; cap the TEXT element
+     in its own Cormorant ch so it wraps to a comfortable measure — the flex parent
+     cap did nothing since the line is narrower than the container). */
+  .home-page.lum-amber-deep .home-yumi-text{ max-width:64ch; }
+  /* D6: keyboard focus rings on the desktop tier (tokens only) */
+  .home-page.lum-amber-deep .seg-opt:focus-visible,
+  .home-page.lum-amber-deep .home-arcbtn:focus-visible,
+  .home-page.lum-amber-deep .home-arc-start:focus-visible,
+  .home-page.lum-amber-deep .home-gl-link:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:8px; }
+}
+
+/* =============================================================================
    R4 · NOTEBOOK — UNIVERSAL v1.2 LIGHT SKIN. The Notebook ships the Universal
    light-ground skin (Preston's felt pass on docs/studio/mockups/notebook.html —
    the LIGHT pole; the mockup's dark "reading room" pole was comparison chrome,

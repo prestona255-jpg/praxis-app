@@ -905,7 +905,7 @@ function refreshYumiPanelForAuthChange(force) {
 // Copy is in Yumi's voice and inside the covenant -- it never implies she
 // reads private notes or summarizes a book. PLACEHOLDERS -- Preston finalizes.
 var YUMI_BLOOM_LINES = {
-  home:      'tap to see what I\'m noticing',
+  home:      'see what I\'m noticing',
   books:     'tap to find lenses in your library',
   book:      'tap to sit with this book together',
   artifact:  'tap to sit with this book together',
