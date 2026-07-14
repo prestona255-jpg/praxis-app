@@ -11454,6 +11454,38 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end MW-3 · SUB-THEORY MOBILE PASS ===== */
 
 /* =====================================================================
+   DW-3 · SUB-THEORY BUILD — DESKTOP COMPOSITION (>=1200 tier).
+   Desktop canon D1: the workshop's fixed 940 content column decays to 49%
+   occ at 1920. Compose WITHIN the R6 metaphor (the Notebook-widen precedent,
+   NOT a restructure): widen the contained warm-dim panel + content so the
+   EXISTING two-region breathes — the writing column (.stb-main) held at a
+   reading measure (D2), the R6-S4 pull/evidence rail (.stb-source) inhabits
+   the freed width as a genuine second functional region. Mirrors the READ
+   Page's own 1180+rail composition. Additive; every rule inside the media
+   block, so <=1199 (incl. the 760-1199 band + <=759 mobile) is byte-inert.
+   Focus mode (.is-focus, higher specificity) is untouched (its narrow
+   centered column is the deliberate reading form — D1 governed-column form).
+   ===================================================================== */
+@media (min-width:1200px){
+  .st-build.lum-amber-deep.stb-warm-dim{ max-width:1400px; }
+  .st-build.lum-amber-deep > .stb-intro,
+  .st-build.lum-amber-deep > .stb-build{ max-width:1280px; }
+  .st-build.lum-amber-deep .stb-main{ flex:0 0 720px; min-width:0; }
+  .st-build.lum-amber-deep .stb-rail{ flex:1 1 0; width:auto; min-width:0; }
+  /* D6 — desktop-tier focus-visible rings on the workshop's interactive
+     elements (the codebase focus-ring literal, reused verbatim from :11325). */
+  .st-build.lum-amber-deep .stb-pubpill:focus-visible,
+  .st-build.lum-amber-deep .stb-focus-toggle:focus-visible,
+  .st-build.lum-amber-deep .stb-openpage:focus-visible,
+  .st-build.lum-amber-deep .stb-weave:focus-visible,
+  .st-build.lum-amber-deep .stb-brow:focus-visible,
+  .st-build.lum-amber-deep .stb-conn-add:focus-visible,
+  .st-build.lum-amber-deep .stb-crow:focus-visible,
+  .st-build.lum-amber-deep .stb-delete:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+}
+/* ===== end DW-3 · SUB-THEORY BUILD DESKTOP COMPOSITION ===== */
+
+/* =====================================================================
    WAVE 3 · THE NOTEBOOK  (renderNotebook on .lum-amber-deep)
    The book's own pages: tabs, then the lifted spread crowned by the book
    band (cover + reading + covenant), and two leaves (catch left, form
