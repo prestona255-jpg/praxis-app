@@ -12600,7 +12600,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-page.lum-amber-deep .home-arc-start{ display:none; }
 @media (min-width:1200px){
   /* two-region grid */
-  .home-page.lum-amber-deep{
+  .home-page.lum-amber-deep.home-composed{
     display:grid;
     grid-template-columns:minmax(0,1fr) 320px;
     column-gap:28px;
@@ -12612,7 +12612,7 @@ body.wc-focus .app-nav { opacity:.26; }
        auto rows (default align-content) and inflate the short welcome row by ~188px. */
     align-content:start;
   }
-  .home-page.lum-amber-deep > *{ max-width:none; margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
+  .home-page.lum-amber-deep.home-composed > *{ max-width:none; margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
   .home-page.lum-amber-deep .home-welcome{ grid-column:1 / -1; grid-row:1; }
   .home-page.lum-amber-deep .home-variant{ grid-column:1; grid-row:2; min-width:0; width:100%; }
   .home-page.lum-amber-deep .home-glimpses{ grid-column:2; grid-row:2; display:block; margin:0; align-self:stretch; }

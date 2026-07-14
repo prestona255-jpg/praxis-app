@@ -1503,6 +1503,12 @@ function renderHome() {
     return;
   }
 
+  // DW-2 (>=1200): mark the SIGNED-IN home as composed so the two-region grid scopes
+  // to it. The signed-out prompt above (a single .empty-state child) never gets the
+  // class, so it keeps the base single centered column instead of landing in grid
+  // column 1 beside a dead 320px rail. (fix-red-team DW-2 finding 1.)
+  wrap.className = 'home-page lum-amber-deep home-composed';
+
   var ownArcs = homeOwnArcs();
   var haveArcs = ownArcs.length > 0;
 
