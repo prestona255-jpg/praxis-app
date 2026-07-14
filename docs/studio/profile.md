@@ -6,6 +6,7 @@ ground: dark-hero / light-below (§7 ground spectrum)
 in_nav: yes (nav avatar → #profile; #account redirects)
 state: shipped — MERGED Profile (Account collapsed in)
 rounds: 2
+desktop: native
 ---
 
 ## State

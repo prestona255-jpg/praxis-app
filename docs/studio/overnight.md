@@ -173,18 +173,18 @@ tonight's slate.
   proposed-in: R7
 
 - id: ON-7
-  title: Book Detail desktop h-scroll (.bk-surface box-sizing)
-  plain: On desktop (>=1200) the Book Detail base .bk-surface content-box overflows ~32px, producing a horizontal scrollbar.
+  title: Book Detail h-scroll (.bk-surface box-sizing) — 760-1199 BAND ONLY (>=1200 fixed in DW-3)
+  plain: In the 760-1199 band ONLY, the Book Detail base .bk-surface content-box overflows ~40px, producing a horizontal scrollbar. The >=1200 tier is RESOLVED (DW-3 424545c — box-sizing:border-box scoped to the book-detail >=1200 block; Preston's DW-3 ruling), and <=759 was always border-box (MW-3). This residual is the 760-1199 band's own owner.
   surface: book-detail
   bucket: overnight
   files: CSS
-  anchors: TBD by the run session (.bk-surface / the book-detail base surface rule — MW3-BKBOX)
-  verify: at 1280/1440/1920, #book/<id> has no horizontal scroll (documentElement.scrollWidth == clientWidth); mechanical grep of the box-sizing/width fix; felt pass at desktop.
-  revert: single-commit revert of the .bk-surface box-sizing CSS.
+  anchors: .bk-surface base rule (components.css:10615, content-box) — MW3-BKBOX; the >=1200 fix is at the DW-3 book-detail block (components.css:~11049).
+  verify: at ~1024 (760-1199 band), #book/<id> STILL has the ~40px h-scroll (baseline — this task fixes it); at 1280/1440/1920 already fixed (scrollWidth == clientWidth, DW-3). A 760-1199 box-sizing fix must NOT disturb the >=1200 or <=759 rules.
+  revert: single-commit revert of the 760-1199 box-sizing CSS.
   felt-pass-required: true
-  status: proposed
-  note: NOT runnable — awaiting bucket confirmation in chat. RE-SEEDED at the R9b close: the R9b P8 verify measured a 32px h-scroll on Book Detail at 1280/1440/1920 and PROVED it pre-existing (MW3-BKBOX) — the whole R9b felt-pass patch's CSS is profile-scoped (.pf-*/.sec-*/.account-readermodel only, zero .bk- selectors). DW-adjacent — may ride DW-1/2/3 instead of overnight.
-  evidence: R9b P8 sweep (docs/checkpoints/r9b-laneg.md) — Book Detail 32/32/32 @ 1280/1440/1920; patch CSS = profile-scoped only.
+  status: proposed (scope narrowed to 760-1199 at the DW-3 close)
+  note: RE-SCOPED at DW-3 (Preston's ruling): the >=1200 half of ON-7 shipped in DW-3 (424545c, box-sizing:border-box in the book-detail >=1200 block, verified hScroll 0 @ 1280/1440/1920). What remains is the 760-1199 band only — its own overnight/round item. The DW-3 guard proved the fix is band-scoped: 1024 hScroll STILL 40 (base content-box), matchMedia false.
+  evidence: R9b P8 sweep (docs/checkpoints/r9b-laneg.md) — Book Detail 32/32/32 @ 1280/1440/1920 (pre-existing); DW-3 close (docs/checkpoints/dw-3.md) — >=1200 fixed, 1024 band untouched.
   report: —
   proposed-in: R9b
 

@@ -356,9 +356,22 @@ flagged at the top of the Builder's sequence page for his call — never applied
   widened spread ~1360; both chips `composed`, native awaits the deployed felt pass).
   **DW-3 SHIPPED-LOCAL — Book-detail + Sub-theory-build → composed** (self-selected: the two worst
   *reproducible* stretched surfaces — book-detail content|rail grid + subtheory-build contained-panel
-  widen; walk/search worse on paper but async/empty in the rig → named for their owning rounds. ON-7
-  carried unchanged. Both chips `composed`, native awaits the deployed felt pass).
-  touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk]
+  widen). **Preston's DW-3 supervision riders (2026-07-14):** (a) **ON-7 released to this batch, ≥1200
+  ONLY** — `.bk-surface{box-sizing:border-box}` in the book-detail ≥1200 block (D3 now passes honestly);
+  the **760-1199 band residual is re-scoped in `overnight.md`** (its own owner). (b) **Chip-truth riders
+  (docs):** `profile → native` (drift fix — sequence said native, frontmatter lacked it); **subtheory-page
+  spot-checked reproduce-first — D1/D3/D4/D6 PASS but D2 FAILS** (`.subtheory-readonly-body` 86.4ch,
+  uncapped) → NOT flipped to composed (Preston's condition was "if they pass"); the D2 cap is a named gap
+  (`subtheory-page.md` DW-STP2). Chip census changes by **THREE** this run (book-detail, subtheory-build,
+  profile), not four. rr-row +2 (Round Records only for the two built). (c) **walk + search excluded =
+  RIG-GAP named tasks** (below), so the sweep's exit criterion tracks them. Both built chips `composed`,
+  native awaits the deployed felt pass.
+  **DW rig-gap named tasks (tracked, not stranded — needed before the sweep's "0 stretched" exit):**
+  **DW-WALK-FIX** = walk (`renderInteract`) needs a *published-arc fixture* (renders only "Opening the arc…"
+  async in the no-network rig); **DW-SEARCH-FIX** = search (`renderSearch`) needs a *query-injection
+  harness* (only the empty-query state is reproducible; results state can't be populated). Until these land,
+  walk + search cannot be composed+gated; they remain `stretched` and BLOCK the sweep exit knowingly.
+  touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk, subtheory-page, subtheory-build]
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
   scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]
 - [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
