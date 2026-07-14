@@ -1,3 +1,10 @@
+// F-PX1 Stage 1a (Preston ruling #1): hard query-length cap. `q` is a book
+// search (title/author/isbn) -- a few dozen chars in legitimate use, incl. the
+// signed-out startup cover-backfill (app.js). 300 gives headroom while blocking
+// an oversized query. Google Books is low-cost, but the endpoint is reachable
+// signed-out, so it gets the same 413 idiom as the billable proxies.
+var MAX_Q_CHARS = 300;
+
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -54,6 +61,16 @@ exports.handler = async function(event) {
           'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({ error: 'missing q' })
+      };
+    }
+    if (body.q.length > MAX_Q_CHARS) {
+      return {
+        statusCode: 413,
+        headers: {
+          'Content-Type':                'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({ error: 'query too large', code: 'payload_too_large' })
       };
     }
 

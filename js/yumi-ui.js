@@ -166,6 +166,29 @@ function renderYumiEmptyState() {
   yumiBodyEl.appendChild(wrap);
 }
 
+// F-PX1 Stage 1f: the signed-out sign-in prompt for the Yumi panel body. Reuses
+// the shared buildSignedOutPrompt idiom (views.js) that the Shelf / Notebook /
+// Search already render in-place. typeof-guarded because views.js loads AFTER
+// yumi-ui.js -- the call only fires at interaction time, when it is defined.
+function renderYumiSignedOut() {
+  if (!yumiBodyEl) { return; }
+  yumiBodyEl.innerHTML = '';
+  if (typeof buildSignedOutPrompt === 'function') {
+    yumiBodyEl.appendChild(buildSignedOutPrompt(
+      'Yumi is private',
+      'Sign in to think with Yumi — she reads along with your books, your notes, and the arcs you build.'
+    ));
+  } else {
+    var wrap = document.createElement('div');
+    wrap.className = 'yumi-empty';
+    var line = document.createElement('div');
+    line.className = 'yumi-greeting';
+    line.textContent = 'Sign in to think with Yumi.';
+    wrap.appendChild(line);
+    yumiBodyEl.appendChild(wrap);
+  }
+}
+
 function renderUserMessage(text) {
   if (!yumiBodyEl) { return; }
   // Wave 7 A5: a quiet mono "You" eyebrow above the right-aligned bubble (mock .msg.you .who).
@@ -1185,6 +1208,22 @@ function buildYumiPanel() {
       if (yumiInputEl) { yumiInputEl.value = ''; }
       onbUser(trimmed);
       advanceOnboarding(trimmed);
+      return;
+    }
+
+    // F-PX1 Stage 1f: gate the signed-out FAB send path. Onboarding (the seed-arc
+    // visitor script) is handled above and never reaches the proxy, so it stays
+    // untouched. Free-form chat, though, would fire classifyUtterance +
+    // sendMessage onto the billable claude-proxy with no signed-in user -- so a
+    // signed-out send makes ZERO network call: it renders the in-place sign-in
+    // prompt (the buildSignedOutPrompt idiom, like the Shelf/Notebook) and
+    // returns. The FAB chrome is untouched; only the send is gated. TTS is
+    // already uid-gated (isVoiceOn). Every send path (click, Enter, voice) funnels
+    // through this handler, so this one check covers them all.
+    var _yumiUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!_yumiUser) {
+      if (yumiInputEl) { yumiInputEl.value = ''; }
+      renderYumiSignedOut();
       return;
     }
 

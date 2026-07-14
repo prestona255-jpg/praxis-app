@@ -1,3 +1,11 @@
+// F-PX1 Stage 1a: soft inbound guard (base64 chars). Mirrors shelf-vision.js:
+// ~7.5M b64 chars is ~5.6 MB of binary; Netlify caps a synchronous request near
+// 6 MB. The client downscales before sending (views.js handleShelfScanFile), so
+// a legitimate scan lands far below this; reject larger to avoid a doomed
+// upstream call on the billable key. (model + max_tokens are already pinned
+// server-side below, so image size is the only client-driven cost dimension.)
+var MAX_IMAGE_B64_CHARS = 7500000;
+
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -74,6 +82,16 @@ exports.handler = async function(event) {
           'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({ error: 'image (bare base64 string) is required' })
+      };
+    }
+    if (image.length > MAX_IMAGE_B64_CHARS) {
+      return {
+        statusCode: 413,
+        headers: {
+          'Content-Type':                'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({ error: 'image too large', code: 'payload_too_large' })
       };
     }
 

@@ -15,6 +15,11 @@ var ELEVENLABS_VOICE_ID = 'Gvx1qZk9R4BUiBfsNPBU';
 var ELEVENLABS_MODEL_ID = 'eleven_flash_v2_5';
 // output_format is an ElevenLabs query parameter; mp3 is the default family.
 var ELEVENLABS_OUTPUT_FORMAT = 'mp3_44100_128';
+// F-PX1 Stage 1a: hard text-length cap. The only client-driven cost dimension
+// here is `text`. Yumi's spoken lines are short (generated with max_tokens <=
+// 1024, ~4k chars max); 5000 gives headroom while blocking a bulk-TTS abuse
+// payload on the billable ElevenLabs key.
+var MAX_TTS_CHARS = 5000;
 
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') {
@@ -72,6 +77,16 @@ exports.handler = async function(event) {
           'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({ error: 'missing text' })
+      };
+    }
+    if (text.length > MAX_TTS_CHARS) {
+      return {
+        statusCode: 413,
+        headers: {
+          'Content-Type':                'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({ error: 'text too large', code: 'payload_too_large' })
       };
     }
 
