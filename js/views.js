@@ -20570,6 +20570,20 @@ function renderAbout() {
 
   var html = '';
 
+  // DW-1 (Fork A): desktop composition spine -- a sticky section index that
+  // occupies the left margin at >=1200 (display:none below the tier, so the
+  // mobile/mid renders stay byte-unchanged). Buttons, not #-anchors, so the
+  // hash router is never triggered. Labels mirror each section's eyebrow.
+  html += '<nav class="about-spine" aria-label="Sections of this page">';
+  html +=   '<div class="about-spine-eyebrow">On this page</div>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s0">What Praxis is</button>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s1">Critical pedagogy</button>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s2">The covenant</button>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s3">What it refuses</button>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s4">The lexicon</button>';
+  html +=   '<button type="button" class="about-spine-link" data-target="ab-s5">Orientation</button>';
+  html += '</nav>';
+
   // ===================== HERO =====================
   html += '<header class="hero">';
   html +=   '<div class="appmark about-reveal about-reveal-1">';
@@ -20588,7 +20602,7 @@ function renderAbout() {
   html += '</header>';
 
   // ===================== WHAT PRAXIS IS =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s0">';
   html +=   '<div class="sk">What Praxis is</div>';
   html +=   '<h2>Knowledge made <em>with</em> you.</h2>';
   html +=   '<p>Most reading apps file what you read. Praxis is built for what reading does to you &mdash; the note that argues back, the thread between two books that only you can see, the conviction that hardens into theory. Here your marginalia are not exhaust; they are the raw material of your own thought, gathered, connected, and eventually walked by others.</p>';
@@ -20689,7 +20703,7 @@ function renderAbout() {
   html += '</section>';
 
   // ===================== CRITICAL PEDAGOGY =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s1">';
   html +=   '<div class="sk">Critical pedagogy</div>';
   html +=   '<h2>You are not an empty <em>account</em>.</h2>';
   // Neutrality epigraph -- live doctrinal words (views.js legacy 18197), byte-identical.
@@ -20742,7 +20756,7 @@ function renderAbout() {
   html += '</section>';
 
   // ===================== THE COVENANT =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s2">';
   html +=   '<div class="sk">The covenant</div>';
   html +=   '<h2>Nothing <em>hidden</em>.</h2>';
   html +=   '<div class="featrows">';
@@ -20756,7 +20770,7 @@ function renderAbout() {
   html += '</section>';
 
   // ===================== WHAT IT REFUSES =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s3">';
   html +=   '<div class="sk">What it refuses to become</div>';
   html +=   '<h2>No counts that <em>flatter</em>.</h2>';
   html +=   '<div class="refuse">';
@@ -20807,7 +20821,7 @@ function renderAbout() {
   html += '</section>';
 
   // ===================== THE LEXICON =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s4">';
   html +=   '<div class="sk">The lexicon</div>';
   html +=   '<h2>The words this place <em>uses</em>.</h2>';
   html +=   '<dl class="lex">';
@@ -20830,7 +20844,7 @@ function renderAbout() {
   html += '</section>';
 
   // ===================== ORIENTATION (existing single-sourced card, bright frame) =====================
-  html += '<section class="sect">';
+  html += '<section class="sect" id="ab-s5">';
   html +=   '<div class="sk">Orientation</div>';
   // W9: single-sourced from Intros.INTROS (the same array the per-page panels
   // render from) + the retakeable walk. buildAboutOrientation carries its own
@@ -20893,6 +20907,49 @@ function renderAbout() {
   }
 
   host.appendChild(page);
+
+  // DW-1 (Fork A): wire the composition spine. Click = smooth-scroll to the
+  // section; a rAF-throttled scroll handler tracks the active section (see
+  // below). Inert below >=1200 (the spine is display:none there).
+  var spineLinks = page.querySelectorAll('.about-spine-link');
+  function aboutSpineActivate(id) {
+    var k;
+    for (k = 0; k < spineLinks.length; k++) {
+      if (spineLinks[k].getAttribute('data-target') === id) { spineLinks[k].classList.add('is-on'); }
+      else { spineLinks[k].classList.remove('is-on'); }
+    }
+  }
+  var spi;
+  for (spi = 0; spi < spineLinks.length; spi++) {
+    (function (btn) {
+      btn.onclick = function () {
+        var t = document.getElementById(btn.getAttribute('data-target'));
+        if (t && typeof t.scrollIntoView === 'function') { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      };
+    })(spineLinks[spi]);
+  }
+  // Active-section tracking via a rAF-throttled scroll handler (matching the
+  // shelf-head pattern at views.js:4074). It self-removes once About is
+  // unmounted, so it never leaks across routes. Inert-looking below >=1200
+  // (the is-on classes it toggles only render on the visible spine).
+  if (window.__aboutSpineScroll) { window.removeEventListener('scroll', window.__aboutSpineScroll); window.__aboutSpineScroll = null; }
+  var spineSecs = page.querySelectorAll('.sect[id]');
+  window.__aboutSpineScroll = function () {
+    if (!document.getElementById('ab-s0')) {
+      window.removeEventListener('scroll', window.__aboutSpineScroll);
+      window.__aboutSpineScroll = null;
+      return;
+    }
+    var line = window.innerHeight * 0.35;
+    var best = spineSecs.length ? spineSecs[0].id : null;
+    var si;
+    for (si = 0; si < spineSecs.length; si++) {
+      if (spineSecs[si].getBoundingClientRect().top - line <= 0) { best = spineSecs[si].id; }
+    }
+    if (best) { aboutSpineActivate(best); }
+  };
+  window.addEventListener('scroll', window.__aboutSpineScroll);
+  window.__aboutSpineScroll();
 }
 
 // Station tapper for the evolution + pipeline models: sets .on on the tapped

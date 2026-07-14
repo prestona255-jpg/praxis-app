@@ -9371,6 +9371,7 @@
 .about .mtoggle .pillbox { display:flex; gap:4px; background:var(--lum-glass); border:1px solid var(--glass-border); border-radius:var(--radius-pill); padding:4px; }
 .about .mtog { font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; padding:8px 18px; border-radius:var(--radius-pill); border:none; background:none; color:var(--ink-3); cursor:pointer; transition:all .25s; }
 .about .mtog.on { background:var(--page); color:var(--br-deep); }
+.about .mtog:focus-visible { outline:2px solid var(--gold); outline-offset:2px; } /* DW-1 D6: tokenized focus ring (rect-invisible until keyboard focus) */
 .about .pipe .stn, .about .evo .stn { cursor:pointer; }
 .about .pipe .stn circle { fill:var(--text-on-dark); stroke:var(--br-deep); stroke-opacity:.45; stroke-width:1.2; transition:fill .25s, stroke .25s; }
 .about .pipe .stn.on circle { fill:var(--gold); stroke:var(--gold); stroke-opacity:1; }
@@ -9438,6 +9439,80 @@
   .about { padding:44px 18px 70px 18px; }
   .about .lex { grid-template-columns:1fr; }
   .about .orientation { padding:24px 18px 18px; }
+}
+
+/* =====================================================================
+   DW-1 (Fork A) -- ABOUT desktop composition tier (>=1200 only; ADDITIVE).
+   Below 1200 About is byte-unchanged (the single 640px reading column). At
+   the composition tier the page becomes a sticky section spine in the left
+   margin + a centered reading column whose prose keeps its 56ch measure,
+   while the FIGURES (models, lexicon, covenant rows, refusals) break out to
+   use the width. D1 occupancy >=60% at 1920 comes from the composed frame
+   (~1160 + 48 padding = ~1208) plus the wide figure grids; D2 keeps every
+   prose block <=72ch. Tokens only -- no hardcoded hex, no --lum-* additions.
+   ===================================================================== */
+.about-spine { display:none; } /* base: hidden below the composition tier */
+
+@media (min-width: 1200px) {
+  .about {
+    max-width:1160px;
+    display:grid;
+    grid-template-columns:184px minmax(0, 1fr);
+    column-gap:48px;
+    align-items:start;
+  }
+  /* spine spans all content rows (span 50 = implicit-row-safe) so its sticky
+     area is the full column height; content lives in column 2. */
+  .about > .about-spine {
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    grid-column:1;
+    grid-row:1 / span 50;
+    position:sticky;
+    top:96px;
+    align-self:start;
+  }
+  .about > *:not(.about-spine) { grid-column:2; min-width:0; }
+
+  .about-spine-eyebrow {
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 12px 12px;
+  }
+  .about-spine-link {
+    display:block;
+    width:100%;
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+    background:none;
+    border:none;
+    border-left:2px solid transparent;
+    padding:8px 12px;
+    cursor:pointer;
+    transition:color .2s, border-color .2s;
+  }
+  .about-spine-link:hover { color:var(--ink-2); }
+  .about-spine-link.is-on { color:var(--gold); border-left-color:var(--gold); }
+  .about-spine-link:focus-visible { outline:2px solid var(--gold); outline-offset:2px; border-radius:4px; }
+
+  .about .sect[id] { scroll-margin-top:96px; }
+
+  /* prose keeps its 56ch measure but centers within the wide column (D2) */
+  .about .sect > p { margin-left:auto; margin-right:auto; }
+  .about .pull { max-width:62ch; }
+
+  /* figures use the width: lexicon 3-up, covenant 3-across, refusals 2x2 */
+  .about .lex { grid-template-columns:1fr 1fr 1fr; }
+  .about .featrows { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+  .about .refuse { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 }
 
 /* =====================================================================
