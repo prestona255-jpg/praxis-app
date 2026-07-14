@@ -1748,6 +1748,20 @@
 .arcs.lum-amber-deep .arc-card-start-label{ font-family:var(--font-serif); font-style:italic; color:var(--ink-2); }
 @media (max-width:759px){ .arcs.lum-amber-deep .arcs-grid{ grid-template-columns:1fr; } }
 
+/* =====================================================================
+   DW-1 (Fork A) -- ARCS list desktop composition tier (>=1200 only; ADDITIVE).
+   Below 1200 the list is byte-unchanged (the 1080 centered column). At the
+   composition tier the content column widens so the existing auto-fit card
+   grid (minmax(240px,1fr), line 1734) uses the width -- D1 occupancy >=60% at
+   1920 -- while the teaching paragraph is capped to a reading measure, fixing
+   the 137ch D2 line. The head's eyebrow/title are short and self-cap; only the
+   teach needs the measure cap. Tokens only -- no hex, no --lum-*.
+   ===================================================================== */
+@media (min-width: 1200px) {
+  .arcs.lum-amber-deep > * { max-width:1360px; }
+  .arcs.lum-amber-deep .arcs-teach { max-width:66ch; }
+}
+
 /* ===== END ARCS PAGE ===== */
 
 
