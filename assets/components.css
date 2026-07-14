@@ -12870,6 +12870,28 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end R4 · NOTEBOOK UNIVERSAL v1.2 LIGHT SKIN ===== */
 
 /* =============================================================================
+   DW-2 · NOTEBOOK — >=1200 DESKTOP COMPOSITION (fork N-A: widen the spread ~1360).
+   Additive over the base .notebook rules; <=1199 renders byte-identical. Tokens only.
+   The two-leaf spread metaphor is PRESERVED (leaves stay flex:1, gutter = the
+   .leaf-left border) — only the governor widens (900 -> 1360), so each leaf grows to
+   ~650px and the narrow-leaf interior pile resolves on its own: the capture .crow goes
+   inline (Capture beside the register pills), the 5 bring-in chips sit on one row, and
+   the 6-action note row is one line. Note-body prose is ch-capped so the wider leaf
+   keeps its reading measure.
+   ============================================================================= */
+@media (min-width:1200px){
+  .notebook.lum-amber-deep > *{ max-width:1360px; }
+  /* the wider leaf keeps its measure (Cormorant note body runs ~74ch at a 650px leaf) */
+  .notebook.lum-amber-deep .notebook-entry-body{ max-width:70ch; }
+  /* D6: keyboard focus rings on the desktop tier (tokens only) */
+  .notebook.lum-amber-deep .nb-tab:focus-visible,
+  .notebook.lum-amber-deep .seg-opt:focus-visible,
+  .notebook.lum-amber-deep .nb-mode:focus-visible,
+  .notebook.lum-amber-deep .btn-primary:focus-visible,
+  .notebook.lum-amber-deep .notebook-entry-acts a:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; border-radius:8px; }
+}
+
+/* =============================================================================
    WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-ember). Additive +
    scoped: the ~311 account/portrait rules are 100% token-based, so remapping the
    base tokens to --lum-* here reskins every section (no load-bearing rule rewritten)
