@@ -26,6 +26,10 @@ US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g.
 # 22 surfaces (18 routed + 4 overlay); cross-cutting is a layer, not a surface.
 SURFACES="home books book-detail book-marks artifact arcs arc-detail subtheory-page subtheory-build notebook account about profile commons reader walk search yumi-sees yumi-panel onboarding import-capture spotlight"
 LAYERS="cross-cutting"
+# 1d: round-doc stubs — rounds with a doc but no history yet. NOT surfaces (kept OUT of
+# $SURFACES so TOTAL/PCT/heat/rollups/gapcount are undisturbed); rendered only as
+# round-doc entries in the Round-records page.
+ROUNDSTUBS="scan r-shelf r-arc"
 
 # journey-ordered groups (fixed order everywhere: sidebar, overview, hue legend)
 G_ARRIVE="home onboarding about"
@@ -533,6 +537,125 @@ render_glossary() {
   printf '</div></section>\n'
 }
 
+# --- 1d: Round-records index (per-surface round history + cross-round lessons) ---
+# concise round id: drop the status/date tail after the first em-dash or open paren,
+# then cap at a WORD boundary (byte-safe: backing off to a space never splits an em-dash)
+rr_id(){ printf '%s' "$1" | sed 's/ — .*//; s/ (.*//' | awk '{ if(length($0)<=46){print;next} out=substr($0,1,46); while(length(out)>1 && substr(out,length(out),1)!=" "){out=substr(out,1,length(out)-1)} sub(/[ ]+$/,"",out); print out }'; }
+# chip label: strip md markers, then truncate to <=N chars at a word boundary (byte-safe;
+# never splits an em-dash or leaves a dangling code-span backtick), ellipsis if cut.
+chip_trunc(){ printf '%s' "$1" | awk -v n="$2" '{ gsub(/[*`]/,"",$0); s=$0; if(length(s)<=n){printf "%s",s; next} out=substr(s,1,n); while(length(out)>1 && substr(out,length(out),1)!=" "){out=substr(out,1,length(out)-1)} sub(/[ ]+$/,"",out); printf "%s…", out }'; }
+# emit a surface's round entries, newest-first (file order): tag US id US date US fulltext.
+# Parses BOTH the free-form `## Round history*` (tag=ledger) AND the `## Round record`
+# schema (tag=record; 0 today). In a history section: `### ` headers are the entries
+# where any exist, else top-level `- **` bullets (sub-detail bullets are folded into body).
+round_entries(){
+  f="$STUDIO/$1.md"; [ -f "$f" ] || return
+  h3=$(awk '/^## Round history/{s=1;next} /^## /{s=0} s&&/^### /{c++} END{print c+0}' "$f")
+  md=bullet; [ "$h3" -gt 0 ] && md=h3
+  awk -v mode="$md" '
+    function emit(){ if(cur!=""){ gsub(/[\t\037]/," ",cur); gsub(/[\t\037]/," ",idt);
+        d=""; if(match(cur,/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)){ d=substr(cur,RSTART,10) }
+        printf "%s\037%s\037%s\037%s\n", tag, idt, d, cur; cur=""; idt="" } }
+    /^## Round record/{ emit(); ins=2; tag="record"; idt=$0;
+        sub(/^## Round record[[:space:]]*/,"",idt); sub(/^[^0-9A-Za-z]+/,"",idt); cur=idt; next }
+    /^## Round history/{ emit(); ins=1; next }
+    /^## /{ emit(); ins=0; next }
+    ins==0{ next }
+    ins==1 && mode=="h3" && /^### /{ emit(); tag="ledger"; idt=$0; sub(/^### /,"",idt); cur=idt; next }
+    ins==1 && mode=="bullet" && /^- \*\*/{ emit(); tag="ledger"; line=$0; sub(/^- /,"",line); idt=line;
+        if(match(line,/\*\*[^*]+\*\*/)){ idt=substr(line,RSTART+2,RLENGTH-4) } cur=line; next }
+    { if(cur!=""){ b=$0; sub(/^[[:space:]]+/,"",b); if(b!=""){ cur=cur" "b } } }
+    END{ emit() }
+  ' "$f"
+}
+render_round_records(){
+  printf '<section class="page" id="page-round-records"><h1 class="page-h u-inkgold">Round records</h1>'
+  printf '<p class="ov-lead">What every round taught, gathered in one place &mdash; the <b>lessons</b> across the whole build, then each surface&rsquo;s rounds newest-first. The surface ledgers are the record; this reads across them.</p>'
+  # cross-round LESSONS strip: per-surface Round-record `lessons:` (0 today) + CLAUDE.md seams; deduped, newest-first, cap 30
+  { for s in $SURFACES $LAYERS; do
+      awk '/^## Round record/{r=1;next} /^## /{r=0} r&&/^lessons:/{v=$0;sub(/^lessons:[[:space:]]*/,"",v); if(v!="")print v}' "$STUDIO/$s.md" 2>/dev/null
+    done
+    awk '/^## Lessons/{f=1;next} /^## /{f=0}
+         f&&/^- [A-Z]/{ if(cur!="")print cur; cur=$0; sub(/^- /,"",cur); next }
+         f&&/^  +[^ ]/{ if(cur!=""){ c=$0; sub(/^[[:space:]]+/,"",c); cur=cur" "c } next }
+         f&&/^[[:space:]]*$/{ if(cur!=""){print cur; cur=""} next }
+         END{ if(cur!="")print cur }' "$REPO/CLAUDE.md" 2>/dev/null
+  } | awk '!seen[$0]++' | grep . > "$TMP/rrlessons"
+  ln=$(grep -c . "$TMP/rrlessons" 2>/dev/null); [ -z "$ln" ] && ln=0
+  printf '<p class="sec-eyebrow">Lessons &mdash; across every round</p>'
+  printf '<p class="sec-lead">Deduped across every surface ledger and the standing seams in <code>CLAUDE.md</code> &mdash; the whole set fills in as the round-record schema does.</p>'
+  printf '<div class="rr-lessons">'
+  head -30 "$TMP/rrlessons" | while IFS= read -r L; do [ -z "$L" ] && continue; printf '<div class="rr-lesson">%s</div>' "$(fmt "$(dectrunc "$L")")"; done
+  printf '</div>'
+  [ "$ln" -gt 30 ] && printf '<p class="rr-more">&plus; %s more not shown</p>' "$((ln-30))"
+  # rounds by surface — one card per doc with round history; each row = id + date + tag + lead + ledger link
+  printf '<p class="sec-eyebrow">Rounds by surface</p>'
+  printf '<p class="sec-lead"><b>ledger</b> = free-form Round history &middot; <b>record</b> = the machine-readable Round-record schema. Newest-first; tap a row to open the surface ledger.</p>'
+  for s in $SURFACES $LAYERS; do
+    round_entries "$s" > "$TMP/rr.$s"
+    c=$(grep -c . "$TMP/rr.$s" 2>/dev/null); [ -z "$c" ] && c=0
+    [ "$c" -gt 0 ] || { rm -f "$TMP/rr.$s"; continue; }
+    printf '<details class="rr-card" data-pcol="rr-%s"><summary><span class="rr-surf">%s</span><span class="rr-count">%s rounds</span></summary><div class="rr-body">' "$s" "$(hname "$s")" "$c"
+    while IFS="$US" read -r tag idt dt full; do
+      [ -n "$idt" ] || continue
+      dd="$dt"; [ -z "$dd" ] && dd='&mdash;'
+      printf '<div class="rr-row"><div class="rr-line"><span class="rr-id">%s</span><span class="rr-date">%s</span><span class="rr-tag rr-%s">%s</span><a class="rr-open" href="#s-%s">open ledger &rsaquo;</a></div><div class="rr-lead">%s</div></div>' "$(fmt "$(rr_id "$idt")")" "$dd" "$tag" "$tag" "$s" "$(fmt "$(dectrunc "$full")")"
+    done < "$TMP/rr.$s"
+    printf '</div></details>'
+    rm -f "$TMP/rr.$s"
+  done
+  # queued & future rounds — the 3 round-doc stubs (not surfaces); ledger link opens the raw doc
+  printf '<p class="sec-eyebrow">Queued &amp; future rounds</p>'
+  printf '<p class="sec-lead">Rounds with a doc but no history yet &mdash; their ledgers fill as they run.</p>'
+  printf '<div class="rr-stubs">'
+  for st in $ROUNDSTUBS; do
+    sf="$STUDIO/$st.md"; [ -f "$sf" ] || continue
+    ti=$(fm "$sf" title); [ -z "$ti" ] && ti="$st"
+    sta=$(fm "$sf" status); [ -z "$sta" ] && sta='future round'
+    scp=$(fm "$sf" scope)
+    printf '<div class="rr-stub"><div class="rr-stub-head"><span class="rr-stub-title">%s</span><span class="pchip is-queued"><span class="pchip-dot"></span>%s</span></div><div class="rr-stub-scope">%s</div><a class="rr-open" href="./%s.md" target="_blank" rel="noopener">open ledger &rsaquo;</a></div>' "$(fmt "$ti")" "$(fmt "$sta")" "$(fmt "$scp")" "$st"
+  done
+  printf '</div>'
+  printf '</section>\n'
+}
+# --- 1d Stage 3: NOW banner (3a) + program map (3b) ---
+render_now_banner(){
+  lead=$(head -1 "$TMP/now" | awk -F"$US" '{print $1}')
+  nextt=$(sed -n '2p' "$TMP/now" | awk -F"$US" '{print $1}')
+  [ -n "$nextt" ] || nextt=$(head -1 "$TMP/next" | awk -F"$US" '{print $1}')
+  mslab=$(awk -F"$US" 'tolower($2)=="target"{print $3; exit}' "$TMP/milestones")
+  msdate=$(awk -F"$US" 'tolower($2)=="target"{print $1; exit}' "$TMP/milestones")
+  printf '<div class="now-banner u-lamplight">'
+  if [ -z "$lead" ]; then
+    printf '<div class="nb-eyebrow">NOW</div><div class="nb-lead">sequence.md Now not parsed</div>'
+  else
+    printf '<div class="nb-eyebrow">NOW &mdash; at the front of the build</div>'
+    printf '<div class="nb-lead">%s</div>' "$(fmt "$lead")"
+    [ -n "$nextt" ] && printf '<div class="nb-next"><span class="nb-k">next</span>%s</div>' "$(fmt "$nextt")"
+    if [ -n "$mslab" ]; then
+      md2="$msdate"; { [ -z "$md2" ] || [ "$md2" = "—" ]; } && md2='no date set'
+      printf '<div class="nb-ms" data-mdate="%s" data-mkind="target"><span class="nb-k">milestone</span>%s <span class="nb-msd">&middot; %s</span></div>' "$msdate" "$(fmt "$mslab")" "$md2"
+    fi
+  fi
+  printf '</div>'
+}
+render_program_map(){
+  sn=$(grep -c . "$TMP/shipped" 2>/dev/null); [ -z "$sn" ] && sn=0
+  printf '<div class="progmap"><div class="pm-title">The program &mdash; done &rarr; now &rarr; next</div><div class="pm-rail">'
+  printf '<div class="pm-stage pm-done"><div class="pm-h">shipped</div><div class="pm-chips"><span class="pm-chip pm-shipped">%s shipped</span></div></div>' "$sn"
+  printf '<div class="pm-stage pm-now"><div class="pm-h">now</div><div class="pm-chips">'
+  awk -F"$US" '{print $1}' "$TMP/now" | while IFS= read -r t; do [ -z "$t" ] && continue; printf '<span class="pm-chip pm-c-now">%s</span>' "$(fmt "$(chip_trunc "$t" 40)")"; done
+  printf '</div></div>'
+  printf '<div class="pm-stage pm-next"><div class="pm-h">next</div><div class="pm-chips">'
+  awk -F"$US" '{print $1}' "$TMP/next" | while IFS= read -r t; do [ -z "$t" ] && continue; printf '<span class="pm-chip pm-c-next">%s</span>' "$(fmt "$(chip_trunc "$t" 40)")"; done
+  printf '</div></div>'
+  printf '<div class="pm-stage pm-then"><div class="pm-h">then</div><div class="pm-chips">'
+  awk -F"$US" '{print $1}' "$TMP/then" | while IFS= read -r t; do [ -z "$t" ] && continue; printf '<span class="pm-chip pm-c-then">%s</span>' "$(fmt "$(chip_trunc "$t" 34)")"; done
+  printf '</div></div>'
+  printf '<div class="pm-stage pm-launch"><div class="pm-h">launch</div><div class="pm-chips"><span class="pm-chip pm-c-launch">every tile lit</span></div></div>'
+  printf '</div></div>'
+}
+
 {
 # ---- head + base tokens + Builder layout CSS ----
 cat <<'HTML'
@@ -1012,6 +1135,66 @@ a.stn-brand:hover{color:var(--gold);text-decoration:underline;text-underline-off
 .qlink{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px;text-decoration:none;}
 .qlink:hover{border-color:var(--gold-hi);color:var(--gold-deep);}
 .qlink .qk{color:var(--gold-deep);letter-spacing:.05em;}
+
+/* ============================================================
+   1d — Round-records index, program map, NOW banner, sidebar
+   filter. Additive; reuses tokens + the .pchip family. No data
+   class renamed; collapse/filter state lives in localStorage.
+   ============================================================ */
+/* NOW banner (atop Overview) */
+.now-banner{margin:2px 0 16px;padding:16px 20px;border-radius:14px;background:linear-gradient(180deg,#fffdf6,#fdf8ea);box-shadow:inset 0 1px 0 rgba(255,250,235,.9),0 6px 22px rgba(120,75,15,.13);}
+.nb-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:7px;}
+.nb-lead{font-family:var(--serif);font-size:22px;line-height:1.24;color:var(--ink);}
+.nb-next,.nb-ms{font-size:13px;color:var(--ink-2);margin-top:7px;line-height:1.42;}
+.nb-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-right:8px;}
+.nb-msd{color:var(--ink-3);}
+/* program map rail */
+.progmap{margin:4px 0 22px;padding:15px 18px;border-radius:14px;background:var(--surface);border:1px solid var(--line);}
+.pm-title{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px;}
+.pm-rail{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;}
+.pm-stage{flex:1 1 150px;min-width:128px;}
+.pm-h{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px;}
+.pm-now .pm-h{color:var(--gold-deep);}
+.pm-chips{display:flex;flex-direction:column;gap:5px;}
+.pm-chip{font-family:var(--sans);font-size:12px;line-height:1.32;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 9px;}
+.pm-c-now{color:var(--ink);border-color:rgba(217,164,65,.5);background:radial-gradient(ellipse,rgba(242,194,90,.16),transparent 82%);font-weight:500;}
+.pm-c-next{color:var(--ink-2);border-color:rgba(168,118,26,.28);}
+.pm-c-then{color:var(--ink-3);}
+.pm-c-launch{color:var(--gold-deep);border-style:dashed;}
+.pm-shipped{color:var(--gold-deep);border-color:rgba(168,118,26,.4);}
+/* Round records — lessons strip + per-surface cards + stubs */
+.rr-lessons{display:grid;gap:7px;margin:2px 0 6px;}
+.rr-lesson{font-size:13.5px;color:var(--ink-2);line-height:1.5;padding-left:16px;position:relative;}
+.rr-lesson::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--gold-hi);}
+.rr-lesson strong{color:var(--ink);font-weight:600;}
+.rr-more{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:6px;}
+.rr-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 9px;}
+.rr-card>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:11px;padding:12px 16px;}
+.rr-card>summary::-webkit-details-marker{display:none;}
+.rr-card[open]>summary{border-bottom:1px solid var(--line);}
+.rr-surf{font-family:var(--serif);font-size:18px;color:var(--ink);flex:1;min-width:0;}
+.rr-count{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--gold-deep);}
+.rr-body{padding:6px 16px 13px;}
+.rr-row{padding:9px 0;border-top:1px solid var(--line);}
+.rr-row:first-child{border-top:0;}
+.rr-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.rr-id{font-family:var(--serif);font-size:15.5px;color:var(--ink);font-weight:600;}
+.rr-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.rr-tag{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid var(--line);}
+.rr-ledger{color:var(--ink-3);}
+.rr-record{color:var(--gold-deep);border-color:rgba(168,118,26,.4);}
+.rr-open{font-family:var(--mono);font-size:10px;color:var(--gold-deep);text-decoration:none;border-bottom:1px solid var(--line);margin-left:auto;}
+.rr-open:hover{border-bottom-color:var(--gold-hi);}
+.rr-lead{font-size:13px;color:var(--ink-2);line-height:1.5;margin-top:4px;}
+.rr-stubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px;}
+.rr-stub{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:13px 16px;}
+.rr-stub-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px;}
+.rr-stub-title{font-family:var(--serif);font-size:17px;color:var(--ink);flex:1;min-width:0;}
+.rr-stub-scope{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-bottom:8px;}
+/* sidebar quick-jump filter */
+.brail-filter{width:calc(100% - 8px);margin:6px 4px 8px;padding:7px 10px;font-family:var(--sans);font-size:12.5px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;}
+.brail-filter:focus{outline:none;border-color:var(--gold-hi);}
+.brail-filter::placeholder{color:var(--ink-3);}
 </style>
 HTML
 
@@ -1026,6 +1209,7 @@ printf '<header class="bstamp"><span class="chip"><code>%s</code></span><span cl
 # ---- sidebar ----
 printf '<nav class="brail">'
 printf '<div class="brail-brand">the studio</div>'
+printf '<input id="brail-filter" class="brail-filter" type="text" placeholder="filter surfaces&hellip;" aria-label="Filter surfaces">'
 printf '<a class="brail-link brail-dest" href="#page-overview">Overview</a>'
 printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
@@ -1033,6 +1217,7 @@ printf '<a class="brail-link brail-dest" href="#page-overnight">Overnight</a>'
 printf '<a class="brail-link brail-dest" href="#page-mobile-canon">Mobile canon</a>'
 printf '<a class="brail-link brail-dest" href="#page-lab">The Lab</a>'
 printf '<a class="brail-link brail-dest" href="#page-decisions">Decisions</a>'
+printf '<a class="brail-link brail-dest" href="#page-round-records">Round records</a>'
 printf '<a class="brail-link brail-dest" href="#page-glossary">Glossary</a>'
 brail_group "ARRIVE" "arrive" $G_ARRIVE
 brail_group "READ" "read" $G_READ
@@ -1064,6 +1249,9 @@ printf '<section class="page" id="page-overview">'
 printf '<h1 class="page-h u-inkgold">Where the build stands</h1>'
 # plain-English lead (generator-written; every number is computed, no new claim)
 printf '<p class="ov-lead">Praxis is built one surface at a time &mdash; <b>%s</b> of its <b>%s</b> surfaces are finished, the rest in a round or waiting their turn. %s.</p>' "$CLOSED" "$TOTAL" "$LAUNCHLINE"
+# 1d — NOW banner (3a) + program map (3b) atop the Overview
+render_now_banner
+render_program_map
 # THE PROGRESS READ — three computed reads (closed / mobile-native / open gaps)
 mpct=0; [ "$TOTAL" -gt 0 ] && mpct=$((MOBNATIVE*100/TOTAL))
 printf '<div class="stat-read">'
@@ -1263,6 +1451,9 @@ render_decisions
 # ===== GLOSSARY (new studio page — plain-language vocabulary) =====
 render_glossary
 
+# ===== ROUND RECORDS (new studio page — per-surface round history + cross-round lessons) =====
+render_round_records
+
 # ===== surface pages (22 + cross-cutting) =====
 for s in $SURFACES $LAYERS; do
   f="$STUDIO/$s.md"
@@ -1427,7 +1618,26 @@ cat <<'HTML'
     for(i=0;i<tns.length;i++){ thref=tns[i].getAttribute('href')||''; if(thref==='#'+rawid){ tns[i].className=addcls(tns[i].className,'active'); } else { tns[i].className=rmcls(tns[i].className,'active'); } }
     if(anchor&&anchor.scrollIntoView){ try{ anchor.scrollIntoView(); }catch(e){ window.scrollTo(0,0); } } else { window.scrollTo(0,0); } }
 
-  function boot(){ var is=collectIslands(); paint(is); cardify(); sevDots(); wireTicks(); wireMilestoneDays(); showPage(); window.onhashchange=showPage; }
+  // 1d: sidebar quick-jump filter — hide surface links whose text doesn't match (runtime-only)
+  function filterBrail(){ var inp=document.getElementById('brail-filter'); if(!inp){ return; }
+    inp.oninput=function(){ var q=(inp.value||'').toLowerCase(); var links=document.querySelectorAll('.brail-surf'),i;
+      for(i=0;i<links.length;i++){ var el=links[i]; var tx=(el.textContent||'').toLowerCase();
+        el.style.display=(q===''||tx.indexOf(q)>-1)?'':'none'; } }; }
+  // 1d: progressive-disclosure collapse memory — persist <details data-pcol> open state (never in markup)
+  function wirePcol(){ var els=document.querySelectorAll('[data-pcol]'),i;
+    for(i=0;i<els.length;i++){ (function(el){ var k='studio_pcol_'+el.getAttribute('data-pcol');
+      el.open=ls(k,el.hasAttribute('open'));
+      el.addEventListener('toggle',function(){ sv(k,el.open); }); })(els[i]); } }
+  // 1d: NOW-banner milestone countdown — filled live from a real date; static "no date set" degrades
+  function wireNowMs(){ var el=document.getElementsByClassName('nb-ms')[0]; if(!el){ return; }
+    var out=el.getElementsByClassName('nb-msd')[0]; if(!out){ return; }
+    var d=el.getAttribute('data-mdate')||''; var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m){ return; }
+    var today=new Date(); var t0=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());
+    var t1=Date.UTC(parseInt(m[1],10),parseInt(m[2],10)-1,parseInt(m[3],10));
+    var days=Math.round((t1-t0)/86400000);
+    out.innerHTML=days>1?('&middot; in '+days+' days'):(days===1?'&middot; tomorrow':(days===0?'&middot; today':'&middot; '+(-days)+' days ago')); }
+
+  function boot(){ var is=collectIslands(); paint(is); cardify(); sevDots(); wireTicks(); wireMilestoneDays(); filterBrail(); wirePcol(); wireNowMs(); showPage(); window.onhashchange=showPage; }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',boot); } else { boot(); }
 })();
 </script>

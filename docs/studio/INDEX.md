@@ -26,6 +26,22 @@ steady-state loop is the four that follow it.
 - **close** — a round closes ONLY on Preston's felt pass. The surface markdown and
   `sequence.md` are updated and `tools/studio-build` is re-run.
 
+**Required close-out output — the Round record.** At close the round appends a
+`## Round record — <round-id> (<date>)` block to the OWNING per-surface doc (the
+surface the round rebuilt; a sweep writes one per surface it touched). It is the
+machine-readable twin of the free-form Round history — the Builder's Round-Records
+index parses it, so the keys below are load-bearing and read verbatim by the
+generator (`tools/studio-build`):
+
+- `commits:` — `<first>..<last> (<n>)`
+- `gates:` — one-line pass/fail summary
+- `defects-found:` — a count, then one line each (≤120 chars)
+- `lessons:` — one line each (≤160 chars)
+- `evidence:` — checkpoint doc path(s) or commit refs
+
+The free-form `## Round history` prose stays; the Round record is additive and
+never rewrites a past close.
+
 ## Two instruments, one home
 
 The defect audit maps what's BROKEN; the studio loop maps what's MISSING. Both

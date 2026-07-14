@@ -61,3 +61,8 @@ This file is the source of truth; the Builder's Lab page is a generated view.
   stage: spark
   date: 2026-07-13
   note: A curator's ordering for the profile's Published band + the commons — a chosen sequence, not newest-first. Named as a future DATA session (needs a stored order); the display is ready to consume it. Carried debt from R9a / R9b.
+
+- title: R-ARC — knowledge-arc theorizing system
+  stage: shaping
+  date: 2026-07-13
+  note: The full journey — capture → marginalia → sub-theory → arc → theorize → publish — as one intelligent, structurally sound loop. Its own deep round, to slot at the next re-plan; a receiving round-doc (r-arc.md) now exists, so the shape is emerging.

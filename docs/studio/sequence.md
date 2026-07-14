@@ -348,7 +348,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
   page-surfaces, now that R9a shipped the project's FIRST ≥1200 composition tier and R9b proved the desktop
   composition rider live. Folds the **S-A sweep** (About · Search · what-Yumi-sees) in. Re-seed target:
   **ON-7** (Book Detail `.bk-surface` desktop h-scroll — pre-existing, confirmed profile-scoped-clean by the
-  R9b P8 verify) rides here or overnight. touches: [home, shelf, arcs, notebook, profile, book-detail, about, search, yumi-sees]
+  R9b P8 verify) rides here or overnight. touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees]
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
   scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]
 - [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
