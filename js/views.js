@@ -20909,7 +20909,7 @@ function renderAbout() {
   host.appendChild(page);
 
   // DW-1 (Fork A): wire the composition spine. Click = smooth-scroll to the
-  // section; a rAF-throttled scroll handler tracks the active section (see
+  // section; a synchronous scroll handler tracks the active section (see
   // below). Inert below >=1200 (the spine is display:none there).
   var spineLinks = page.querySelectorAll('.about-spine-link');
   function aboutSpineActivate(id) {
@@ -20928,10 +20928,13 @@ function renderAbout() {
       };
     })(spineLinks[spi]);
   }
-  // Active-section tracking via a rAF-throttled scroll handler (matching the
-  // shelf-head pattern at views.js:4074). It self-removes once About is
-  // unmounted, so it never leaks across routes. Inert-looking below >=1200
-  // (the is-on classes it toggles only render on the visible spine).
+  // Active-section tracking via a synchronous scroll handler (the rAF-free
+  // shelf-head idiom at views.js:4074 -- but where the shelf handler is also
+  // purged by renderRoute() on every route change, this one instead LAZILY
+  // self-removes on its first scroll after About unmounts: the guard below
+  // early-returns + unbinds before touching any detached node). No leak, no
+  // crash. Inert-looking below >=1200 (the is-on classes it toggles only
+  // render on the visible spine).
   if (window.__aboutSpineScroll) { window.removeEventListener('scroll', window.__aboutSpineScroll); window.__aboutSpineScroll = null; }
   var spineSecs = page.querySelectorAll('.sect[id]');
   window.__aboutSpineScroll = function () {

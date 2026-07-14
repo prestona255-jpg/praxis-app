@@ -587,9 +587,10 @@
    those 16px push the nav links past the viewport, producing the 768
    h-scroll. Reset at >=760 ONLY, so <=759 (the mobile hamburger bar) stays
    byte-unchanged. Centered/auto layouts (every page column, the nav pill)
-   re-center, so nothing visibly moves; the surfaces just regain 16px of
-   usable width. A residual ~7px nav-content overflow at 768 is a separate
-   nav-fit item (DW-NAV768), out of this batch's About+Arcs scope.
+   re-center (the nav pill sits 8px higher); the surfaces regain 16px of
+   usable width. A residual 8px page h-scroll at 768 (the nav list overruns
+   its pill) is a separate nav-fit item (DW-NAV768), out of this batch's
+   About+Arcs scope.
    ===================================================================== */
 @media (min-width: 760px) { body { margin: 0; } }
 
