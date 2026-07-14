@@ -8,6 +8,7 @@ in_nav: yes
 state: closed
 rounds: 1
 mobile: native
+desktop: composed
 ---
 
 ## State
@@ -102,6 +103,14 @@ Reviews: fix-red-team clean; praxis-reviewer FAIL (locked renderer's Yumi label 
 on light) → fixed via the scoped `--ink-*` re-point → re-review CLEARED. Scope:
 `js/views.js` + `assets/components.css` + `sw.js` v3.186→v3.187 ONLY; foundations
 byte-locked; parse OK.
+
+## Round record — DW-2 (2026-07-14)
+
+commits: ded8792 (1, the Home slice; DW-2 batch ded8792..cache-bump)
+gates: PASS — D1 occupancy 79.4% @1920 (96.2/96.6% @1280/1440), BOTH toggle states; intra-card right-hollow 40.7%→1.8% (Continue anchored right in a widened work region + enlarged thumb); Still-Reading islanded 478px → 320px right rail. D2 field Yumi lead 76.2ch→60.6ch, left lead 53.7ch (≤72 all widths). D3 hScroll 0 @1280/1440/1920 (self-caught + fixed a 13px 1440 h-scroll — `.home-glimpse` content-box → border-box). D4 10/10 cursor:pointer. D5 body 16px unchanged. D6 focus-visible gold rings (seg/arcbtn/arc-start/gl-link). ≤759 (390) + 760–1199 (1024) sampled-rect identical (stash-proven; the two additive elements are display:none <1200 — their nodes + the tap-swap copy change DOM text at all widths but never geometry). Signed-out ≥1200 restored to the base 1080 centered column (grid scoped to `.home-composed`, signed-in only).
+defects-found: 0 in-scope. Self-caught + fixed mid-build: the field variant collapsed to intrinsic width (aspect-ratio wf blocks grid default-stretch) → `width:100%`; the field-lead cap had to target the TEXT element (flex parent cap was a no-op); the 13px 1440 glimpse h-scroll (content-box → border-box); and — caught on the SETTLED SCREENSHOT, not the computed gates — a ~188px dead band from `min-height:100vh` × grid `align-content:stretch` inflating the welcome row → `align-content:start`. Out-of-scope carried: DW-HOME-LAMP — the welcome `::before` −8%/−80px lamplight bleed → 80px h-scroll in the 760–1199 band (pre-existing v3.204; ≥1200 fixed here, the <1200 band stays its own task).
+lessons: VISUAL GATE holds — every D-gate was green while a 188px dead band sat in plain sight; only the eye caught it (a full-height grid with a short first row needs `align-content:start`). A grid item with an aspect-ratio descendant does NOT default-stretch — set `width:100%`. The 0c 1024 h-scroll baseline (71px) was a port-8767 stale-SW read (pre-DW-1 CSS, body-margin 8); the true v3.204 1024 baseline is 80px — re-measure the baseline on a fresh port, never trust a first-port snapshot.
+evidence: docs/checkpoints/dw-2.md (Stage 1) · dw-2-recon.md · mockup docs/studio/mockups/dw2-home-desktop.html (felt-passed 2026-07-14). Chip stretched → composed (D1–D6 on evidence; native awaits the deployed felt pass).
 
 ## Next
 

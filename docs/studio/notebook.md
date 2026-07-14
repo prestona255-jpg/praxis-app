@@ -8,6 +8,7 @@ in_nav: yes
 state: closed
 rounds: 1
 mobile: native
+desktop: composed
 ---
 
 ## State
@@ -158,5 +159,13 @@ Yumi) / FIX / REWORK / Hygiene / Held ledger items — none in this round's scop
 
 Reviews: fix-red-team CLEARED (no block-commit). Scope: `js/views.js` +
 `assets/components.css` + `sw.js` v3.187→v3.188 ONLY; foundations byte-locked; parse OK.
+
+## Round record — DW-2 (2026-07-14)
+
+commits: 0f2e065 (1, the Notebook slice; DW-2 batch ded8792..cache-bump)
+gates: PASS — D1 occupancy 71.4% @1920 (100/95.4% @1280/1440), BOTH states (inbox + book). Spread widened 900→1360; two leaves 50/50 (680/679), flush gutter (`.leaf-left` border), flex-row — the spread metaphor is preserved (rects prove it at every width); right-leaf empty state intact. Interior pile RESOLVED by the widen alone (zero interior rules): capture `.crow` 1 row (Capture inline beside the pills), 5 bring-in chips 1 row (was 3+2), note action row 1 line (inbox 6 + book 5, was 2). D2 note body 70ch (capped; ~74 uncapped at 650px), intro 69.1ch (its 680px cap holds). D3 hScroll 0 @1280/1440/1920. D4 35/35 cursor:pointer. D5 body 16px unchanged. D6 focus-visible rings. ≤759 (390, leaves stack) + 760–1199 (1024, spread stays 900) byte-identical (the diff is 100% inside `@media(min-width:1200)`, zero JS).
+defects-found: 0.
+lessons: The capture pile, the 3+2 chip wrap, and the 2-line action row were ALL leaf-width-driven — widening the spread governor resolved every one, no interior rules. A 0-height flex spacer's rect centers at the row midpoint — exclude <2px-height nodes when counting visual rows.
+evidence: docs/checkpoints/dw-2.md (Stage 2) · dw-2-recon.md. Chip stretched → composed (D1–D6 on evidence; native awaits the deployed felt pass).
 
 ## Next
