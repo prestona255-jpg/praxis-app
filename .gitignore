@@ -34,6 +34,11 @@ firebase-debug.log
 
 # Claude Code session scratch (parse-check harnesses, isolated
 # worktrees, per-project settings). Never belongs on origin, EXCEPT
-# .claude/agents/ (shared recon + reviewer agents, tracked deliberately).
+# .claude/agents/ (shared recon + reviewer agents, tracked deliberately)
+# and .claude/rig/ (the Desktop-Wave measurement rig — server + seed/auth
+# stub + measurement harness. Tracked from DW-4 under the rig-efficiency
+# law: a session LOADS the rig, it does not rebuild it. The hard-won facts
+# live in its comments; rebuilding them costs a gate every time.)
 .claude/*
 !.claude/agents/
+!.claude/rig/
