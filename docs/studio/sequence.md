@@ -520,8 +520,13 @@ flagged at the top of the Builder's sequence page for his call — never applied
   IS that re-plan. It enters as the single Now item: the DW sweep that occupied this slot is
   complete and shipped, and R-ARC is the next deep round rather than another sweep.
   Adjacent threads it must reckon with: the arc interior (arc-detail) · sub-theory writing
-  (subtheory-build) · the R10 dependency · Yumi generative. Round doc: `docs/studio/r-arc.md`
-  (thin by design — the scoping chat populates it; **no round brief exists yet**, see Pending inputs).
+  (subtheory-build) · the R10 dependency · Yumi generative. Round doc: `docs/studio/r-arc.md`.
+  **Round brief LANDED (`28ae86a`, 2026-07-15): `docs/studio/r-arc-brief.md` (v4) is the round's
+  constitution** — SHAPE-A's six forks + the pedagogy/epistemology layer + the critique's amendments
+  + the seed-lifecycle amendment, all decided; the handoff (`docs/studio/r-arc-handoff.md`) is its
+  brief-holder. Scope = S1 (the Door) + S2 (the Seedling) + S3 (the Room), deep; S4/S5 = named
+  follow-ons. **IN ROUND 2026-07-15:** gate PASSED (4/4) and Stage 0 recon complete
+  (`docs/checkpoints/r-arc-recon.md`) — seven forks raised for Preston ahead of SHAPE-B.
   touches: [arcs, arc-detail, subtheory-build, subtheory-page, notebook]
 
 ## Next

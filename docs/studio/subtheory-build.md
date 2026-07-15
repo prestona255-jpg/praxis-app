@@ -49,7 +49,15 @@ desktop: composed
 
 ### Current-surface structure (what the mockup evolves)
 
-- **Workshop** (`#subtheory/<id>/build`) — `.st-build.lum-amber-deep` full-bleed, two-column: `.stb-main` (hero mark + editable title + saved/publish/open-page acts + `.stb-sheet` holding the shared `createWritingCanvas` bound to `bodyPublic`, a cyan Yumi margin, a connections foot) + `.stb-rail` ("Pull from your reading" — real books, expandable to real marginalia, each weave-able via `insertAtCaret` + `addEvidence`). No citation engine, no Write/Preview toggle — Build never had one.
+> **Currency note (R-ARC recon, 2026-07-15 — Preston's F6 ruling).** The workshop's Yumi margin is
+> **gold/amber, not cyan** — R#8 converted all four margin sites to `--lum-gold-d` (see the R#8 row in
+> Decisions below, and its live verification note), and the live code carries an explicit "no blue"
+> comment. The census line below said "cyan" for four days after its own file recorded the conversion —
+> corrected here. `--lum-cyan` remains Yumi-reserved *elsewhere* (the Bloom/chat seam); it is simply not
+> what the workshop margin wears. Anyone designing against "restyle the cyan margin" is working from a
+> stale model.
+
+- **Workshop** (`#subtheory/<id>/build`) — `.st-build.lum-amber-deep` full-bleed, two-column: `.stb-main` (hero mark + editable title + saved/publish/open-page acts + `.stb-sheet` holding the shared `createWritingCanvas` bound to `bodyPublic`, a **gold/amber** Yumi margin (`.stb-ymargin`), a connections foot) + `.stb-rail` ("Pull from your reading" — real books, expandable to real marginalia, each weave-able via `insertAtCaret` + `addEvidence`). No citation engine, no Write/Preview toggle — Build never had one.
 - **The Page** (`#subtheory/<id>`) — `.st-page.lum-amber-deep`, a `.st-topbar` (back/hero-mark/kicker/saved/publish-pill/quiet "Continue building →") over a 3-column `.st-grid` (230px evidence-attach rail | the editable `.st-main`/`.manuscript` sheet (same canvas, `subtheory-page` surfaceId, the citation preview + Write/Preview + Published toggle) | 190px Yumi margin), with `.st-connections` as a sibling footer below the sheet.
 - **Read-only render** (`renderSubTheoryReadOnly`, shared by the seed-view path AND the Page's own "Published" preview toggle) — a bare `<h2>` + `<div>` body (citations resolve to `.subtheory-cite` spans, superscript-numbered only when `mode==='published'`) + an `<ol>` evidence list + a see-also block. Styled with the raw `--ink`/`--ink-2`/`--ink-3` family (base `components.css:6295-6358`), NOT `--lum-*` — no scoped `.st-page.lum-amber-deep .subtheory-readonly-*` override exists at all (grep-confirmed empty) — this is AF4.
 - **Notebook right leaf** (`buildNotebookRightLeaf`) — gathered list (each note, a × remove) → a name field (already a single-line `createWritingCanvas`, `surfaceId:'notebook-forming-name'` — never a body textarea) → a gather bar (arc picker + Create) → a reserved/quiet Yumi-complicate slot → Clear. `notebookCreateSubTheory` (views.js:2382) ends with `location.hash = 'subtheory/' + st.id` — the auto-navigation decision #2 removes.
