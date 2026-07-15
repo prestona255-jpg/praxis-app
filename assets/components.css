@@ -11400,6 +11400,47 @@ body.wc-focus .app-nav { opacity:.26; }
    ===================================================================== */
 @media (min-width:1200px){
   .st-page.lum-amber-deep .st-grid .subtheory-readonly-body{ max-width:72ch; }
+  /* DW-4 · DW-STP2-SEED (ruled rider) — the seed / signed-out read gets its own
+     MINIMAL reading composition. DW-STP2 left it out for a good reason (capping
+     the prose ALONE strands a narrow column at x=0 under a still-full-bleed
+     header — the comment above), so this gives it the missing centring machinery
+     FIRST and the measure second. Measured before: 132.6ch @1280, 149.3ch @1440,
+     ~199.7ch @1920, running x=0 edge to edge.
+
+     WHY THE CHILDREN AND NEVER `.st-page` ITSELF: `.st-page.lum-amber-deep`
+     PAINTS THE GROUND (its own radial-gradient, :11185) and is width:100% /
+     max-width:none / min-height:100vh. Narrowing it to centre it would shrink the
+     deep-warm amber ground to a 747px strip and gut CLAUDE.md §7. So the column
+     is given to its direct children; the ground stays full-bleed.
+
+     WHY `>` AND NOT A CLASS: the discriminator is DEPTH, not class. On the seed
+     path `.subtheory-readonly` is a DIRECT child of `.st-page`; on the composed
+     path it is four levels down (> .st-grid > .st-center > .st-read-hero >) and
+     can never be a direct child. The two selectors are mutually exclusive BY
+     CONSTRUCTION, not by cascade luck. Class alone cannot tell them apart — the
+     seed root (views.js:10418) and the composed-PUBLISHED root (:10457) are both
+     exactly 'st-page lum-amber-deep' (.stb-warm-dim marks composed-DRAFT only).
+     The signed-out-prompt root (:10406) holds .empty-state, never
+     .subtheory-readonly, so it is inert here.
+
+     747 = 687 (72ch of this element's own 20px serif) + 2×30 padding, mirroring
+     the :11190 column's own 30px gutters. The back link is inline-block with a
+     calc'd margin rather than a block with auto margins, so its CLICK TARGET
+     stays its text (54px) instead of becoming a 747px strip that navigates away
+     on a stray click — while its text still lands on the column's left edge. */
+  .st-page.lum-amber-deep > .subtheory-readonly{
+    box-sizing:border-box;
+    max-width:747px;
+    margin-left:auto;
+    margin-right:auto;
+    padding-left:30px;
+    padding-right:30px;
+  }
+  .st-page.lum-amber-deep > .st-tb-back{
+    display:inline-block;
+    margin-left:calc((100% - 747px) / 2 + 30px);
+  }
+  .st-page.lum-amber-deep > .subtheory-readonly > .subtheory-readonly-body{ max-width:72ch; }
   /* D6 — desktop-tier focus rings on this surface's controls. DW-1/2/3 BUILT
      these for every surface they composed (27 rules across 1e0dc18..f15fb2a;
      book-detail :11072-11079, sub-theory build :11538+). subtheory-page was
