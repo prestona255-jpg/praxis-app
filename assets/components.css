@@ -3004,8 +3004,16 @@
     grid-template-rows:auto 1fr;
     column-gap:80px;
   }
-  /* left region -- orientation: the display title, then the way back out. */
-  .artifact-view.artifact-read .artifact-title{ grid-column:1; grid-row:1; margin:0; }
+  /* left region -- orientation: the display title, then the way back out.
+     overflow-wrap: this composition NARROWS the title's column 720 -> 470, which
+     opens a window (~26-38 chars in this face) where an unbroken token fits the
+     old column but not this one — and `.artifact-title` declares no wrap, so the
+     ink would paint straight over the essay. It is invisible to D3 (the box stays
+     470, so scrollWidth never moves and `overflowers` reads 0) and to the seed
+     data. Own the window this stage opened; the ≤1199 base keeps its behaviour
+     untouched (the un-composed 720px column's long-token h-scroll is a separate,
+     pre-existing gap — DW-ARTIFACT-WRAP). */
+  .artifact-view.artifact-read .artifact-title{ grid-column:1; grid-row:1; margin:0; overflow-wrap:anywhere; }
   .artifact-view.artifact-read .artifact-substrate-link{ grid-column:1; grid-row:2; align-self:start; margin-top:30px; }
   /* right region -- the essay. 72ch is the D2 cap read against .artifact-body's
      OWN font (18px serif), not the container's: the cap belongs on the text
@@ -3462,8 +3470,24 @@
   }
   /* the title spans both regions -- it names the whole page, not the ledger. */
   .yumi-sees-page .transparency-header{ grid-column:1 / -1; }
-  /* right region -- the framing: what this page is, and the privacy promise. */
-  .yumi-sees-page .transparency-framing{ grid-column:2; grid-row:2; margin:0; }
+  /* right region -- the framing: what this page is, and the privacy promise.
+     SPANS ALL SEVEN SECTION ROWS -- load-bearing, not decoration. `grid-row:2`
+     alone pins the rail into the SAME implicit track auto-placement gives the
+     FIRST section; the track then sizes to max(section-1, rail) and
+     `align-items:start` leaves the difference as a HOLE before section 2.
+     Measured live at the first cut: section gaps [270,16,16,16,16,16] at 1920 —
+     a 270px void the narrow layout does not have, in the page's ONLY state
+     (the router nulls the pointers, so section 1 is permanently the ~52px
+     "no book is open" box). That is D5 verbatim: "a composed layout must not
+     read sparser than the narrow one." Spanning the rail across the section
+     rows lets each row size to its own section again.
+     `span 7` and NOT `2 / -1`: with no `grid-template-rows` there is no
+     explicit row line -1 to resolve against, and the span would invert. 7 is
+     the builder's fixed section count (buildTransparencyContent emits exactly
+     seven, in fixed order, views.js:14612-14721) — not a data-dependent guess.
+     If a future round adds an eighth, the rail simply stops spanning it and
+     the section sits below: it degrades, it cannot re-open the hole. */
+  .yumi-sees-page .transparency-framing{ grid-column:2; grid-row:2 / span 7; margin:0; }
   /* main region -- the ledger. Explicit column keeps auto-flow off the rail. */
   .yumi-sees-page .transparency-section{ grid-column:1; }
   /* D2 -- caps on the TEXT elements, so each reads against its OWN font

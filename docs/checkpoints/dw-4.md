@@ -225,6 +225,106 @@ DW-STP2 block so the rule-block count is unchanged. **CARRIED:** the 760-1199 ba
 
 ---
 
+## THE GATES FOUND A REAL DEFECT — red-team BLOCK, fixed, and the lesson is the gate itself
+
+**`fix-red-team` → BLOCK (upheld, reproduced, fixed). `praxis-reviewer` → HOLD (doc truth only;
+every engineering gate CLEAR).** Both are recorded here in full because the block is the most
+useful thing this batch produced.
+
+### BLOCK — the framing rail punched a 270px hole in the ledger. Every ≥1200 width. The page's ONLY state.
+
+The first cut wrote `.yumi-sees-page .transparency-framing{ grid-column:2; grid-row:2; }`.
+`grid-row:2` pins the 380px rail into the **same implicit row track** auto-placement hands the
+**first** ledger section. The track sizes to `max(section-1 52px, rail 306px)`, and
+`align-items:start` leaves the difference as a void before section 2.
+
+**Reproduced live before acting on the report** (`rig.hollow`, 1920, real app, real data):
+
+| | section gaps | panel height | verdict |
+|---|---|---|---|
+| narrow (base, ≤1199) | `[16,16,16,16,16,16]` | **1155** | the thing to beat |
+| composed — FIRST CUT | **`[270,`**`16,16,16,16,16]` | **1297** | **142px TALLER than narrow → D5 FAIL** |
+| composed — FIXED | `[16,16,16,16,16,16]` | **1043** | **112px SHORTER at ~1.8× the width → D5 PASS** |
+
+**This was not a degenerate corner — it was the page's only state.** The router (`views.js:676-683`)
+nulls the pointers before render, so section 1 is *permanently* the ~52px "no book is open" box.
+The hole was there for every visitor, every width, signed in or out.
+
+**Fix:** `grid-row:2 / span 7` — the rail spans the section rows instead of inflating the first, so
+each row sizes to its own section again. **`span 7`, deliberately not `2 / -1`:** with no
+`grid-template-rows` there is no explicit row line `-1` to resolve against and the span would
+invert. 7 is the builder's structurally fixed section count (`views.js:14612-14721`), not a
+data-dependent guess; an eighth section would simply sit below the rail's span — it degrades, it
+cannot re-open the hole.
+
+**Why my gate could not see it, which is the real finding.** Every metric I recorded —
+occupancy, ch, `sideBySide`, hScroll, overflowers — is **horizontal**. A vertical void is invisible
+to all of them. Worse: **my own Stage-0 recon predicted this exact risk** (`dw-4-recon.md` §5: "A
+composition here must not give permanently-empty boxes equal weight (D5: 'a composed layout must
+not read sparser than the narrow one')") and the gate I then built had no instrument for it. And
+I wrote off D5 as "vacuous" on the grounds that the surface owns no interactive elements — that is
+**D4's** rationale; D5's second clause is a claim about density and was never tested. DW-2 tracked
+`intra-card hollow 40.7%→1.8%` as a first-class D1 sub-metric (`home.md:110`); DW-4 dropped it.
+**Remedy shipped, not just noted:** `rig.hollow()` is now in the committed rig — it returns the
+per-gap series, flags any gap >3× the median, and its header says why it exists. D1 has a vertical
+half; measure it.
+
+### Also fixed — an overprint this composition introduced (red-team finding 2)
+
+Narrowing the title column 720→470 opened a window (~26-38 chars in this face) where an unbroken
+token fits the old column but not the new one — and `.artifact-title` declares no wrap, so the ink
+painted **straight over the essay**. Invisible to D3: the box stays 470, so `scrollWidth` never
+moves and `overflowers` reads 0. Verified and fixed with `overflow-wrap:anywhere` **inside the
+≥1200 block** (so ≤1199 is untouched — confirmed `overflow-wrap:normal` at 390/1024):
+
+| token | before | after |
+|---|---|---|
+| 29 chars | title `scrollW 641` vs box 470 → **overprints the essay** (body x=686) | `scrollW 470`, no overprint |
+| 107 chars | h-scroll **194** | h-scroll **0** |
+| real 48-char title | fine | fine |
+
+**I own this one**: my stage opened the window, so my stage closes it. The *base* column's
+long-token h-scroll (418px at 720, worse than my 194) is **pre-existing and untouched** —
+named `DW-ARTIFACT-WRAP` below. Measured both to tell them apart rather than claiming the win.
+
+### Reviewer HOLD — doc truth, resolved
+
+Both items were real and are addressed: (1) `dw-4.md` said the rig was "committed this batch" while
+it was still gitignored at `1123772` — true of the batch, false at that commit; the rig landed at
+**`46701a3`** with the `!.claude/rig/` negation and is now named by hash wherever claimed.
+(2) The Builder regen was outstanding — it is the **last act before the bump** by the regen law, and
+runs after these verdicts are folded, which is exactly now. The reviewer's non-blocking residual
+(working-tree-only CRLF→LF on 6 files) is confirmed immaterial: it re-materialises as CRLF on a
+fresh checkout and every committed blob is CR=0 — CLAUDE.md's own documented caveat.
+
+**Every other gate came back CLEAR and independently reproduced**, including the two claims I most
+wanted attacked: the `>` child-combinator mutual-exclusivity (exhaustive — no branch makes
+`.subtheory-readonly` or `.st-tb-back` a direct child on the composed path) and the
+`calc((100% − 747px)/2 + 30px)` margin (alignment delta **0.0** at 1280/1920/2560; cannot go
+negative because `.st-page` is `width:100%` with zero horizontal padding).
+
+## WHERE TO LOOK AT THE FELT PASS — the two taste questions the gates cannot answer
+
+Both chips are under-claimed `composed` on purpose. The gates prove geometry; they cannot prove
+this is *right*. Two specific places to point your eyes, stated plainly rather than buried:
+
+1. **The artifact's left margin is deliberately quiet, and D5 is arguable.** At 1920 the title
+   block runs y=189→327 and the link sits at y=357, while the essay runs y=189→770 — so roughly
+   390px of the 470px margin is empty below the link. That is the classic editorial spread (and
+   the reason the margin is 470: it is what makes D1 clear 60% honestly at 1920). But D5 says "a
+   composed layout must not read sparser than the narrow one", and the old 720px stack had no dead
+   margin at all. **I judged the spread better than a governed column and took it — that judgement
+   is the thing to overrule if it reads thin.** The fallback is on the record: D1's own exemption
+   clause ("a ledger-recorded exemption naming why a governed single column is the right form"),
+   which DW-3 already used for the workshop's Focus Mode. Say the word and artifact becomes a
+   governed 72ch reading column with the exemption recorded instead.
+2. **Whether the artifact's title belongs away from its essay at all.** Splitting a finished
+   room's display title into a margin is a real change to a reading room's form. It uses only
+   existing elements and no copy changed, but it is the batch's most opinionated move.
+
+yumi-sees is the safer of the two: the framing rail is explanatory chrome moving out of the
+ledger's way, and the ledger keeps its own reading order.
+
 ## CENSUS — proven, not asserted
 
 | metric | origin/main `082b29c` | now | delta |
@@ -284,6 +384,26 @@ close via **gap-ledger close records** (`cross-cutting.md`, `subtheory-page.md`)
 - **Overlay + dead-route chips** (yumi-panel · import-capture · spotlight · book-marks · account) can
   never be "composed": they need a **ledger-recorded D1 exemption decision**. This is why DW's "0
   stretched" exit criterion **cannot be met by composition alone** — a program-level call for Preston.
+- **ULTRAWIDE SAG (2560/3840) — carried, matching both predecessors.** DW-2 and DW-3 each ran an
+  explicit 2560 probe and named this; DW-4's first draft did not, and the red-team was right to call
+  it. Measured: **structural hold, hScroll 0, no metaphor break, measures held (72ch / 51ch), rails
+  and columns intact** at 2560 AND 3840 — but both surfaces' fixed caps decay past 1920: yumi-sees
+  panel stays 1208 → **47.5% @2560 · ~31.5% @3840**; artifact stays 1168 → **45.6% @2560 · ~32% @3840**.
+  D1 checks at 1920, so this is an inherited residual of the whole wave's fixed-cap approach, not a
+  DW-4 gate failure. The seed sub-theory column also holds at 2560 (747 centred, 72ch, ground
+  full-bleed, aligned).
+- **`DW-ARTIFACT-WRAP`** — `.artifact-title` declares no `overflow-wrap` in its BASE rule, so an
+  unbroken token h-scrolls the un-composed column (measured **418px** at 720 vs my composed tier's
+  **194→0**). DW-4 fixed only the window its own ≥1200 composition opened; the base defect predates
+  it and lives at ≤1199, where the ≥1200-only hard rail forbids reaching. Overnight-eligible
+  (one declaration, single surface, revert-safe).
+- **`.claude/rig/` is served on the deploy — flagged for Preston.** There is no `netlify.toml`, so
+  the publish root is the repo root and `.claude/rig/seed.js` becomes a public path. It is **inert**
+  (nothing references or loads it; it cannot self-execute, and its only effect is writing a fake
+  `praxis_user` into the *loader's own* localStorage), and `.claude/agents/*.md` already sets the
+  tracked-under-`.claude` precedent — but seed.js is the **first executable JS** tracked there, and
+  it is auth-shaped. Not a vulnerability; a judgement call. If you'd rather it never ship, the fix
+  is a `netlify.toml` publish dir or moving the rig to `tools/rig/` — say which and it moves.
 - `DW-RING-TOKEN` (rider-1 split) · `DW-STP2-SEED` 760-1199 band residual (105.7ch @1024).
 - Frontmatter line refs corrected as ride-alongs: `artifact.md` 10939→**11310**, `yumi-sees.md`
   14128→**14733**, and both surfaces' `umberGroundDark` ref 373→**397**.

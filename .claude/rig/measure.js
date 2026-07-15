@@ -165,6 +165,49 @@
     return best || { note: 'no prose leaf >= ' + minChars + ' chars' };
   };
 
+  // ── rig.hollow(sel) — VERTICAL geometry. D1 has a second half. ─────────────
+  // WHY THIS EXISTS: DW-4's first cut shipped a 270px HOLE in the yumi-sees
+  // ledger and every gate passed. Occupancy, ch, sideBySide, hScroll are ALL
+  // horizontal — none of them can see a vertical void. The red-team caught it;
+  // the gate could not. DW-2 tracked "intra-card hollow 40.7% -> 1.8%" as a
+  // first-class D1 sub-metric (home.md:110) and DW-4 dropped it. Do not drop it.
+  //
+  // The failure mode it catches: a grid item pinned with `grid-row:N` shares an
+  // implicit track with a sibling; the track sizes to the TALLER one and
+  // `align-items:start` leaves the difference as a gap. Uniform gaps = healthy;
+  // ONE outlier = a hole.
+  //
+  //   rig.hollow('.yumi-sees-page .transparency-section')
+  //   -> {gaps:[270,16,16,16,16,16], maxGap:270, medianGap:16, suspect:true}
+  //
+  // D5 says "a composed layout must not read sparser than the narrow one" —
+  // that is a VERTICAL claim. Measure it, and compare totalHeight against the
+  // pre-composition height before claiming D5.
+  rig.hollow = function (sel) {
+    var els = document.querySelectorAll(sel), rows = [], gaps = [], i, r, prev = null;
+    for (i = 0; i < els.length; i++) {
+      if (!vis(els[i])) { continue; }
+      r = els[i].getBoundingClientRect();
+      rows.push({ i: rows.length, y: Math.round(r.y), h: Math.round(r.height), bottom: Math.round(r.bottom) });
+      if (prev !== null) { gaps.push(Math.round(r.y - prev)); }
+      prev = r.bottom;
+    }
+    if (!gaps.length) { return { n: rows.length, rows: rows, note: 'need >= 2 visible elements' }; }
+    var sorted = gaps.slice().sort(function (a, b) { return a - b; });
+    var median = sorted[Math.floor(sorted.length / 2)];
+    var max = Math.max.apply(null, gaps);
+    return {
+      n: rows.length, rows: rows, gaps: gaps,
+      maxGap: max, medianGap: median,
+      totalHeight: rows.length ? rows[rows.length - 1].bottom - rows[0].y : 0,
+      // a gap 3x the median (and >40px) is a hole, not rhythm
+      suspect: (max > 40 && max > median * 3),
+      verdict: (max > 40 && max > median * 3)
+        ? 'HOLE: maxGap ' + max + 'px vs median ' + median + 'px — a track is sized by a sibling, not by its own content'
+        : 'uniform rhythm (max ' + max + ' / median ' + median + ')'
+    };
+  };
+
   // D3 — horizontal document scroll
   rig.hscroll = function () {
     var se = document.scrollingElement || document.documentElement;
