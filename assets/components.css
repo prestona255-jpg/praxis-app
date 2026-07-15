@@ -3422,6 +3422,59 @@
   .yumi-sees-page { padding: 28px 18px 60px; }
 }
 
+/* =====================================================================
+   DW-4 · WHAT YUMI SEES -- DESKTOP COMPOSITION (>=1200 tier). ADDITIVE.
+
+   Baseline (measured, reproduce-first): a fixed 1080px centered column with
+   NO min-width rule of any kind, and -- the real defect -- not one ch cap on
+   any of its six prose selectors. .transparency-panel (:3136) declares no
+   max-width at all, so every measure it has is inherited. At 1920 that read
+   56.7% occupancy with the framing prose at 138.3ch: the WORST measure in the
+   wave, past D0's own reference violation (Arcs, 137ch).
+
+   The composition: the ledger and its explanation stop being one stack. The 7
+   sections -- what Yumi actually holds -- become the main column at a real
+   measure; the framing (what this page IS, and the privacy promise) becomes a
+   right margin apparatus that stays beside the ledger instead of being scrolled
+   past. Both are EXISTING elements re-placed; the builder's DOM is untouched.
+   It mirrors the sub-theory Page's own main+margin room (.st-grid, :11118) --
+   a sibling reading surface, not an invented form.
+
+   SCOPED TO .yumi-sees-page THROUGHOUT -- load-bearing, not a style choice.
+   ONE builder (buildTransparencyContent, views.js:14562) feeds THREE mounts:
+   this page, the Notebook inline panel (#notebook-transparency-host,
+   views.js:14535), and the Yumi slide-over overlay (.yumi-panel-sight-view,
+   yumi-ui.js:1128). Only this page wraps in .yumi-sees-page. A bare
+   .transparency-* rule here would restructure both overlays -- so every
+   selector below carries the page scope, exactly as the W10 Lane B block above
+   (:3397) already requires of this surface.
+
+   Column math (derived, not picked): 720 main + 60 gap + 380 rail + 48 panel
+   padding = 1208. The main column lands ~720 so the 72ch body (689px at 14px
+   DM Sans) nearly fills it; the 380px rail puts the framing at ~51ch. */
+@media (min-width:1200px){
+  .yumi-sees-page{ max-width:1208px; }
+  .yumi-sees-page .transparency-panel{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 380px;
+    column-gap:60px;
+    align-items:start;
+  }
+  /* the title spans both regions -- it names the whole page, not the ledger. */
+  .yumi-sees-page .transparency-header{ grid-column:1 / -1; }
+  /* right region -- the framing: what this page is, and the privacy promise. */
+  .yumi-sees-page .transparency-framing{ grid-column:2; grid-row:2; margin:0; }
+  /* main region -- the ledger. Explicit column keeps auto-flow off the rail. */
+  .yumi-sees-page .transparency-section{ grid-column:1; }
+  /* D2 -- caps on the TEXT elements, so each reads against its OWN font
+     (17px serif framing vs 14px body ledger), not the container's. */
+  .yumi-sees-page .transparency-framing p{ max-width:72ch; }
+  .yumi-sees-page .transparency-section-body{ max-width:72ch; }
+  .yumi-sees-page .transparency-entry-body,
+  .yumi-sees-page .transparency-artifact-body,
+  .yumi-sees-page .transparency-turn-body{ max-width:72ch; }
+}
+
 /* ===== END TRANSPARENCY VIEW ===== */
 
 
