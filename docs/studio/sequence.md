@@ -31,6 +31,25 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-14 (DW-4)** — batch shipped-local (artifact + yumi-sees → `composed`). No reordering:
+  DW-4 executed the next batch of an item already in **Now**. Three findings recorded, none applied
+  as a silent re-plan:
+  (a) **Rider scope widened on evidence, within the rider's own explicit scope.** DW-RING-RADIUS was
+  ruled as "remove the `border-radius:6px` declaration from EVERY DW focus-ring block (DW-1/2/3 +
+  STP2)". The ledger's premise that the literal is "reused verbatim across every DW D6 block" is
+  **false** — there are three literals (DW-1 **4px**, DW-3/STP2 **6px**, DW-2 **8px**), so the "6px"
+  wording named only 3 of 6 blocks while the rider's SCOPE named all four batches. Executed the
+  stated intent ("it is not part of a ring" — value-independent) across all six; the literal
+  reading would have left **7 of 19 deformations** live under a different number. Not a spine change:
+  the rider's own scope, honoured.
+  (b) **`PROPOSED:` — the DW sweep's "0 stretched" exit criterion is unreachable as written.** 5 of
+  the 13 remaining chips can never be composed (2 dead routes: `book-marks`, `account`; 3 overlays:
+  `yumi-panel`, `import-capture`, `spotlight`). They need a one-time **ledger-recorded D1 exemption**
+  — the canon's own clause — not a build. DW-4 did **not** take that ruling; it is program-level and
+  belongs to Preston. Until it is made, the sweep cannot report "done" honestly.
+  (c) **`DW-BOARD-BACKFILL` named** — BOARD.md records only DW-1; DW-2/DW-3/DW-STP2 never updated
+  their rows despite the file's binding maintenance rule. DW-4 added its own two and left the other
+  five to the batches that measured them (pre-existing-drift rail).
 - **2026-07-08** — installed → depth law (Universal §8 / `universal-depth.css` v1.2)
   adopted; Builder v2 (depth re-skin + sidebar rail + overview-first + progress bar +
   surface cards). Legacy audit/gap findings imported into the surface ledgers. No
@@ -402,6 +421,28 @@ flagged at the top of the Builder's sequence page for his call — never applied
   profile), not four. rr-row +2 (Round Records only for the two built). (c) **walk + search excluded =
   RIG-GAP named tasks** (below), so the sweep's exit criterion tracks them. Both built chips `composed`,
   native awaits the deployed felt pass.
+  **DW-4 SHIPPED-LOCAL — artifact + what-Yumi-sees → composed** (v3.208; `6554e9a..de6c13b`, 4 build
+  commits + docs). Self-selected reproduce-first: artifact **37.5% occ @1920** (the worst D1 of the whole
+  wave, below DW-3's book-detail at 42.9%) → editorial spread, **60.8%**, essay **83.9ch → 72.0ch**;
+  yumi-sees framing prose **138.3ch** (the worst D2 of the wave — past D0's own reference violation, Arcs
+  at 137ch) → ledger column + framing rail, **51ch**, occ 56.7% → **63.4%**. Chips +2, rr-rows +2 (6→8),
+  both `composed` (native awaits the deployed felt pass). **Both ruled riders CLOSED:** DW-RING-RADIUS
+  (all six DW blocks — see the re-plan note below) and DW-STP2-SEED (seed read given a centred 747px
+  column, 72ch; ground kept full-bleed; composed path provably unreached).
+  **THE BATCH WAS 2, AND THAT IS THE COMPLETE REMAINDER** — after the exempt, rig-gapped, dead-route and
+  overlay sets, artifact + yumi-sees were the only live, non-exempt, unshipped page surfaces left at
+  `stretched`. **arc-detail is EXEMPT** — the exempt set's "Connections" resolves to **R10**
+  (`:387`), whose own entry declares `touches: [arcs, arc-detail]`.
+  **⚠ THE SWEEP'S "0 STRETCHED" EXIT CRITERION CANNOT BE MET BY COMPOSITION ALONE — a call for Preston.**
+  13 chips still read `stretched`, and **5 of them can never be composed**: `book-marks` and `account` are
+  **DEAD ROUTES** (R7 retired `#book/<id>/marks` → `location.replace`, `views.js:520-528`; `#account`
+  merged → `#profile`, `:645` — neither renders anything to compose), and `yumi-panel`,
+  `import-capture`, `spotlight` are **overlays, not page-surfaces** (`route: "overlay"`), whose right form
+  IS a contained dialog. Each needs a **ledger-recorded D1 exemption** (the canon's own clause) rather than
+  a build. The remaining 8 are the exempt round-owned set (books · onboarding · commons · reader ·
+  arc-detail) + the rig-gapped pair (walk · search) + `scan`. **So the honest exit is: DW-WALK-FIX +
+  DW-SEARCH-FIX built, the round-owned chips flipped by their rounds, and a one-time exemption ruling for
+  the 5 uncomposable.** DW-4 did not take that ruling unilaterally — it is program-level.
   **DW rig-gap named tasks (tracked, not stranded — needed before the sweep's "0 stretched" exit):**
   **DW-WALK-FIX** = walk (`renderInteract`) needs a *published-arc fixture* (renders only "Opening the arc…"
   async in the no-network rig); **DW-SEARCH-FIX** = search (`renderSearch`) needs a *query-injection

@@ -28,19 +28,31 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 4 | `#books` renderShelf | ✅ v3675 | ✅ css11554 | ✅ v4720 | ✅ hard v3700 (W11-S8-L1; soft-CTA retired) | ✗ sync |
 | 5 | `#book/<id>/marks` renderBookView | ✅ v7581 | ✅ css10860 | ✅ v7585/7659/7698 | ✅ hard v7591 (W11-S8-L1) | ✗ sync |
 | 6 | `#book/<id>` renderBookDetail | ✅ Universal-light v8781 · css10708 (R7, v3.191) | ✅ css10860 | ✅ v8056 | ✅ soft `.bk-signin` v8164 | ✗ sync |
-| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** | ✗ sync |
+| 7 | `#artifact/<id>` renderArtifact | ✅ v373 key (W10-B) · **DESKTOP ≥1200 composed (DW-4: editorial spread — title/pointer margin + 72ch essay; D1 37.5%→60.8%, D2 83.9→72.0ch, D1–D6 live)** | ✅ css @759 | ✅ v10825/10848 | ✅ CTA v10879 (W11-S8-L1; was silent ✗) · **seed artifact opens read-only (W12-S10)** · **DW-4: the seed bypass lands on the FULL read, so the composed layout is signed-out reachable — gated signed-out** | ✗ sync |
 | — | `#arc/<id>/new-subtheory` (redirect) | — | — | ? state:1929→#arcs | ✅ **L4 gate (W10-B): signed-out → null → #arcs (state.js:1939)** | — |
 | 8 | `#subtheory/<id>/build` renderSubTheoryBuild | ✅ warm-dim workshop · sole editor (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1; R6-verified) | ✗ sync |
 | 9 | `#subtheory/<id>` renderSubTheoryPage | ✅ read/author-view · warm-dim draft / full-amber room + walk-nav (R6, v3.190) | ✅ css @759 (R6-verified) | ✅ signed-out/not-found | ✅ hard (W11-S8-L1) · **seed sub-theory READ opens read-only (W12-S10)** | ✗ sync |
 | 10 | `#arc/<id>` renderArcDetail (the Field) | ✅ v11983 | ✅ css11686 | ✅ arcfield-empty v12377 (W11-S8-L1; was guard-only) | ✅ owner-gate v11953 + sign-in CTA (W11-S8-L1; gate unchanged) · **seed arc opens read-only (sentinel, pre-W12)** | ✗ sync |
 | 11 | `#account` → **redirect `#profile`** (R9a v3.198; renderAccountPage retired defined-but-unrouted — S-B deletion debt) | — merged into #14 | — | — | — | — |
 | 12 | `#about` renderAbout | ✅ v18142 · **DESKTOP ≥1200 composed (DW-1: spine + reading column + wide figures, D1–D6 live)** | ✅ css9655 | — static | ✗ static | — static |
-| 13 | `#yumi-sees` renderWhatYumiSeesPage | ✅ v373 key + scoped repin (W10-B) | ✅ css @759 | ✅ per-section v13827–13925 | ✗ | ✗ sync |
+| 13 | `#yumi-sees` renderWhatYumiSeesPage | ✅ v373 key + scoped repin (W10-B) · **DESKTOP ≥1200 composed (DW-4: ledger column + framing rail; D1 56.7%→63.4%, D2 138.3→51ch, D1–D6 live; all 3 builder mounts verified — both overlays unchanged)** | ✅ css @759 | ✅ per-section v13827–13925 · **DW-4: 3 of 7 sections are STRUCTURALLY always-empty here — the router (v676-683) nulls the book/arc/sub-theory pointers before render (named gap, not fixed)** | ✗ | ✗ sync |
 | 14 | `#profile` **renderProfilePage (MERGED, R9a → R9b v3.202)** | ✅ light-below / dark-warm galaxy hero (§7); `.pf-*` scoped · **+ DESKTOP ≥1200 = project's FIRST composition tier (D1–D6 live)** · **R9b galaxy v3.201 (sigil/motion/panel/constellations) + felt-pass patch v3.202 (curated hue map · dominant off-axis · one hue system · reader-model→gold)** | ✅ P1–P9 @ true 390 (v3.199); widened collision proof 390/1280/1920 + R9b sparse-spread/dominant re-proven | ✅ sparse-honest invitations every section + visitor fence (`.pf-owner-only`/`.is-visitor`) | ✅ hard sign-in prompt, no crash | ✅ profile Firestore load; statement round-trip live-verified |
 | 15 | `#commons` renderCommons | ✅ ember v16421 | ✅ css12217 | ✅ v16472 | ✅ hard v16416 | ✅ v16459/16465 |
 | 16 | `#reader/<uid>` renderOtherProfile | ✅ ember v16508 | ✅ css12217 | ✅ v16592 | ✅ hard v16501 | ✅ v16517/16530 |
 | 17 | `#walk/<arcId>` renderInteract | ✅ ember v16625 | ✅ css12217 | ✅ v16634/16641/16805 | ✅ hard v16620 | ✅ v16626/16759 |
 | 18 | `#search` renderSearch (W8) | ✅ v1025 | ✅ css11768 | ✅ v963 | ✅ hard v1005 (W11-S8-L1; soft-CTA retired) | — sync by design (no fetch) |
+
+> **NAMED DRIFT — this board under-reports the Desktop Wave (DW-4, 2026-07-14).** Only **DW-1**
+> (arcs · about) and profile's first tier were ever recorded here; **DW-2** (home · notebook,
+> v3.205), **DW-3** (book-detail · sub-theory build, v3.206) and **DW-STP2** (sub-theory page,
+> v3.207) all shipped `composed` chips and never updated their rows, despite the binding
+> maintenance rule at the top of this file. DW-4 added its own two rows (7 · 13) and, per the
+> standing "pre-existing drift outside your batch is a named task, never a silent fix" rail,
+> **did not backfill the other five** — the evidence for those cells belongs to the batches that
+> measured them. Backfilling rows 1 · 2 · 6 · 8 · 9 from `docs/checkpoints/dw-2.md` / `dw-3.md` /
+> `dw-stp2.md` is a tracked task (**DW-BOARD-BACKFILL**). Until it runs, read the per-surface
+> `desktop:` frontmatter in `docs/studio/` (9 composed · 1 native) as the true desktop census,
+> not this column.
 
 **Tallies:** Amber 18/18 (W10-B closed artifact + yumi-sees) · Mobile 18/18
 · Empty 16✅ 1✗ 1— (W11-S8-L1 added #arc/<id>) · Logged-out (W11-S8-L1,
