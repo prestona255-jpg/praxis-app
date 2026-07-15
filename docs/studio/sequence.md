@@ -199,6 +199,42 @@ flagged at the top of the Builder's sequence page for his call — never applied
   hue map* (Preston chose proposal A — separates the two grey-blues: slate=Technology & Society, steel=Religion &
   Spirituality) · the *v3.201 wheel amendment* (diverse muted full-spectrum) · *R10 lens = KEEP* (pre-answered).
   Builder regenerated.
+- **2026-07-14 (DW-STP2)** — the `subtheory-page` **D2** gap that DW-3 named and deferred
+  (`be050e5`) closed **standalone** (Preston ruled: standalone, own bump → v3.207): a `≤72ch` cap on
+  the read prose at `≥1200`, **plus the surface's missing D6 focus rings** (see the correction
+  below). `subtheory-page` → **`desktop: composed`**, so the DW chip census moves **+1** beyond
+  DW-3's three (book-detail, subtheory-build, profile) → **four surfaces flipped across DW-3 +
+  DW-STP2**. The rig reproduced DW-3's `825px / 86.4ch` **exactly** before the fix; after,
+  **D1–D6 all hold at 1280 / 1440 / 1920** (D2 72.0ch, D6 11/11) with **D1 occupancy unchanged** —
+  the cap cost nothing. Walk + search remain the tracked rig-gap blockers on the sweep's "0
+  stretched" exit; the 760-1199 ON-7 band still sits with its overnight owner. Autonomous — a named
+  gap closed on its own evidence; nothing retired, no launch-spine change, no Preston decision
+  contradicted — **no `PROPOSED:` flag**.
+- **2026-07-14 — DW-STP2's two pre-commit catches (recorded because the reasoning, not the code, was
+  the defect).** Both gates fired and both were right; the build shipped neither of its first two
+  answers.
+  **(1) `fix-red-team` BLOCK — CSS bleed onto a signed-out path.** The cap's first cut was an
+  unscoped descendant selector, `.st-page.lum-amber-deep .subtheory-readonly-body`. But
+  `renderSubTheoryReadOnly` mounts on **two** paths, and the build had *measured the second one's
+  before-state and then declared it out of scope while its own rule mutated it*. Live at 1280 the
+  unscoped rule stranded a **687px column at x=0 beneath a still-full-bleed 1264.7px header** on the
+  **signed-out** worked example. Fixed by scoping the cap to `.st-grid` (the *cause* of the 825px
+  column). Same class as DW-2's signed-out ≥1200 BLOCK — **twice now, a DW cap has leaked onto a
+  signed-out branch; the signed-out render is not an edge case in this program, it is a second
+  render path and belongs in every DW gate set.** The branch itself is filed as **DW-STP2-SEED**.
+  **(2) `praxis-reviewer` HOLD — a false-consistency argument.** The build first filed the surface's
+  D6 gap (1/11 controls ringed; the PRIMARY `.st-pill-publish` bare) as `PROPOSED: — not fixed`,
+  reasoning that DW-3 scored D6 by *sampled presence* and that book-detail + subtheory-build carried
+  `composed` on that same loose rubric, so tightening it would retroactively unseat ratified chips.
+  **The reviewer checked the premise and it was false.** DW-3 did not score loosely — it **BUILT**
+  the rings: **27 `:focus-visible` rules across `1e0dc18..f15fb2a`** (book-detail `:11072-11079` in
+  `03ecb9d`, sub-theory build `:11538+` in `939eb73`). subtheory-page received a docs-only
+  spot-check and zero CSS. Consistency therefore demanded **adding** the rings; skipping them would
+  have shipped `composed` on a weaker standard than the very surfaces cited as precedent — the Chip
+  law's "by assertion" wearing a consistency argument as cover. Rings added (DW-3 literal verbatim)
+  → **D6 11/11**. **No rubric change was needed and none was made; the `PROPOSED:` item is
+  withdrawn, not carried.** Lesson for the sweep: *"consistent with the siblings" is a claim about
+  the siblings — go read what they actually shipped before leaning on it.*
 
 ## Shipped
 

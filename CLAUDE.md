@@ -79,6 +79,7 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
 ## Verification — non-negotiable
 - Open every task with Stage 0 recon: read the files, confirm anchors, report stats, then STOP for go-ahead.
 - Byte deltas are measured before AND after — never back-derived. Report grep counts. (Git stores text blobs as LF though the working tree is CRLF, so the autocrlf warning is cosmetic; prove "no EOL flip" with a small diff stat, not the warning.)
+  - CAVEAT — the diffstat test is NECESSARY BUT NOT SUFFICIENT, and was over-trusted until DW-STP2 (2026-07-14). With `core.autocrlf=true` the clean filter normalizes CRLF→LF **before every comparison git makes** (diff, numstat, staging), so a pure EOL flip of otherwise-unchanged lines is **structurally invisible** to it — a small diffstat reads small either way. It proves the CONTENT change is surgical; it cannot prove EOL held. For the EOL question use `git ls-files --eol` (compare `i/` vs `w/`), or a scratch-clone checkout. And note the practical floor: when every blob is already LF (`git show HEAD:<f> | tr -cd '\r' | wc -c` == 0 — true across this repo), a working-tree flip is **immaterial to what commits**, because the blob is LF regardless and any fresh checkout re-materializes CRLF regardless.
 - Never commit or push until Preston sends the exact words "commit and push." Then prove it: commit hash, the subject (`git log -1 --format=%s`, em-dash intact), and `HEAD == origin/main`.
 - "I did X" is never proof on its own — show the diff/grep/count.
 

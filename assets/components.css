@@ -11285,6 +11285,47 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end R6 S2 · THE PAGE BECOMES THE READ ===== */
 
 /* =====================================================================
+   DW-STP2 · SUB-THEORY PAGE — DESKTOP READING MEASURE (D2) + D6 RINGS
+   renderSubTheoryReadOnly mounts on TWO paths under `.st-page.lum-amber-deep`:
+   the COMPOSED read (→ .st-grid → .st-center → .st-read-hero), whose 2-col grid
+   (max-width:1180 + a 240px rail) fixes the prose column at 825px — it flowed at
+   86.4ch, past the canon's 60–72ch band; and the SEED / worked-example read
+   (signed-out reachable via the __praxis_seed__ sentinel), which has NO .st-grid
+   and is full-bleed.
+   THE CAP IS .st-grid-SCOPED DELIBERATELY: an unscoped descendant selector also
+   caps the seed path, stranding a 687px column at x=0 beneath a still-full-bleed
+   header — an undesigned composition nobody measured (red-team BLOCK; same class
+   as DW-2's signed-out ≥1200 block, fixed there by scoping to .home-composed).
+   No grid = no 825px column = nothing to cap. Cap the prose, not the layout: D1
+   composition is untouched, only the measure returns to the band. ch resolves
+   against this element's own 20px serif, so the cap tracks the type.
+   ADDITIVE, >=1200 ONLY — <=1199 (incl. the 760-1199 band + <=759 mobile) is
+   byte-inert.
+   ===================================================================== */
+@media (min-width:1200px){
+  .st-page.lum-amber-deep .st-grid .subtheory-readonly-body{ max-width:72ch; }
+  /* D6 — desktop-tier focus rings on this surface's controls. DW-1/2/3 BUILT
+     these for every surface they composed (27 rules across 1e0dc18..f15fb2a;
+     book-detail :11072-11079, sub-theory build :11538+). subtheory-page was
+     spot-checked in DOCS only and never got them: 1 of 11 controls was covered
+     (.st-hero-mark-ed), the PRIMARY .st-pill-publish among the uncovered — so
+     the chip could not honestly read `composed` on a weaker standard than its
+     siblings (Chip law: ledger evidence, never assertion). Ring literal reused
+     verbatim from the DW-3 book-detail block (:11079). NOT .st-grid-scoped, on
+     purpose: an outline is additive on any mount path and can strand no layout,
+     unlike the cap above — the seed reader gets a ring too. --- */
+  .st-page.lum-amber-deep .st-tb-back:focus-visible,
+  .st-page.lum-amber-deep .st-pill-publish:focus-visible,
+  .st-page.lum-amber-deep .st-edit-door:focus-visible,
+  .st-page.lum-amber-deep .st-conn-row:focus-visible,
+  .st-page.lum-amber-deep .st-conn-add:focus-visible,
+  .st-page.lum-amber-deep .st-yumi-dismiss:focus-visible,
+  .st-page.lum-amber-deep .st-walknav-side:focus-visible,
+  .st-page.lum-amber-deep .vr-add:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+}
+/* ===== end DW-STP2 · SUB-THEORY PAGE READING MEASURE ===== */
+
+/* =====================================================================
    R6 S3 · THE WORKSHOP (sole editor) — warm-dim depth + Focus Mode + the
    re-homed Delete (decisions #7 / #8). The workshop's editor anatomy
    (canvas + evidence rail + weave) is craft-passed, not recast.
