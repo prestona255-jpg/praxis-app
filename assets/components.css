@@ -10791,6 +10791,14 @@ body.wc-focus .app-nav { opacity:.26; }
 .bk-ba{ font-family:var(--lum-serif); font-style:italic; font-size:18px; color:var(--lum-ink-2); margin-top:3px; }
 .bk-hinfo .bk-tags{ margin-top:14px; }
 .bk-controls{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:18px; }
+/* DW-POLISH (the fold): the hero's meta line carries the reader's relationship
+   to the book -- status control + rating + finish date + moved-me. `.bk-rate`
+   and `.bk-finished` hold the unique payload folded out of the retired
+   `.bk-reading` aside card. ADDITIVE: `.bk-controls` above is untouched, and
+   the fold is a DOM change so these apply at every width. The >=1200 tier adds
+   the separator rule + the moved-me push (see the DW-POLISH block). */
+.bk-rate{ display:inline-flex; align-items:center; gap:8px; }
+.bk-finished{ display:inline-flex; align-items:baseline; gap:7px; }
 .bk-ghostbtn{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-2); background:rgba(28,18,9,.5); border:1px solid rgba(182,168,136,.3); border-radius:var(--lum-r-pill); padding:8px 14px; cursor:pointer; }
 .bk-ghostbtn:hover{ color:var(--lum-ink); border-color:rgba(255,231,154,.5); }
 .bk-moved{ font-family:var(--lum-sans); font-size:12.5px; color:var(--lum-ink-3); background:none; border:1px solid rgba(182,168,136,.22); border-radius:var(--lum-r-pill); padding:8px 13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
@@ -11148,22 +11156,59 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end MW-3 · BOOK DETAIL MOBILE PASS ===== */
 
 /* =====================================================================
-   DW-3 · BOOK DETAIL — DESKTOP COMPOSITION (>=1200 tier).
-   Desktop canon D1: the .bk-shell block stack is a fixed 840 column (44%
-   occ @1920). The content (hero cover|title + the tall .bk-cols thinking/
-   artifact) naturally wants a reading width; the short meta bands (value
-   card + actions + utilities) leave dead width. Compose to a two-region
-   grid (canon §4-I two-column intent): the book itself (hero + .bk-cols,
-   held at their natural reading width) LEFT, a meta/actions rail (value
-   card + actions + edit/find) RIGHT inhabiting the freed width. Recompose
-   EXISTING elements only (CSS grid placement — no DOM/content change).
-   grid-auto-rows:min-content keeps the rail items clustered at the top of
-   col 2 while .bk-cols runs tall in col 1. Additive; the whole block is
-   inside the media query so <=1199 is byte-inert. ON-7 (.bk-surface's
-   pre-existing 40px desktop h-scroll — box-sizing fixed only <=759) is
-   RESOLVED at >=1200 here (Preston's DW-3 ruling): the box-sizing fix is
-   scoped to THIS block, so the 760-1199 band keeps the defect untouched
-   (its own owner) while D3 now passes honestly at 1280/1440/1920.
+   DW-POLISH · BOOK DETAIL — THE DESIGN PASS (>=1200 tier).
+   Supersedes DW-3's composition block (this surface's own >=1200 tier).
+
+   WHY DW-3 was not enough — measured, not asserted. DW-3 passed every
+   D-gate (D1 63.0% >=60 · D2 70.8ch <=72 · D3 0 · D5 16px) and the page
+   still read as three stacks, because every one of those gates is
+   HORIZONTAL and the defects were vertical and structural:
+     · `.bk-hero` (grid-row:2) and `.vr-card` (grid-column:2; grid-row:2)
+       shared a track. The track sized to the hero (266px); align-items:
+       start left the 93px value card floating above a 195px VOID.
+       `grid-auto-rows:min-content` could never help — min-content of row 2
+       IS the hero. The hole is worst in the DEFAULT case: `valueMarks`
+       starts empty on every book (empty 93px -> 195px hole; 2 marks 191px
+       -> 96px hole). rig.hollow: "HOLE: maxGap 195 vs median 14".
+       DW-3's round record claimed the rail "verified — no spread,
+       vrOverflow:0"; that measured OVERFLOW, not the GAP (record corrected).
+     · `.bk-cols` was a flex row nested INSIDE grid col 1, so `.bk-main` and
+       `.bk-aside` never sat on the shell's tracks — three stacks sharing a
+       page, not a grid. The thinking (the soul of the page) was capped at
+       542px / 28.5% @1920 with the ISBN block beside it as a 250px PEER.
+
+   THE FIX: one grid; the rail becomes ONE object.
+     backlink 1/-1 · hero col 1 · THE RAIL col 2 spanning rows 2..7 ·
+     on-demand panels rows 3-6 · main col 1 row 7.
+   Two independent columns of differing height in one grid re-create the hole
+   unless a column is a single grid item (a spanning item distributes its
+   height across every auto track it spans, inflating its neighbours' tracks —
+   that was DW-3's implicit rows 10-11 at 399.453px each). The rail is now a
+   real wrapper with its own flex rhythm, and the 195px hole is gone for every
+   realistic shape.
+
+   ⚠ HONEST LIMIT — DWP-RAIL-INVERT (measured; the red-team caught the
+   over-claim, do NOT restate "cannot exist at any data shape"): col 1 is NOT
+   yet one object (hero + panels + main are separate rows), and the rail spans
+   them. A spanning item contributes to the intrinsic sizing of the tracks it
+   spans, so the mode INVERTS rather than dying: if the rail out-grows the whole
+   col-1 stack its excess inflates rows 2-7 and a void opens under the hero.
+   Reproduced: 10 value-marks-with-lineage + no marginalia/roots/description ->
+   rail 1033px, col-1 1033px, a 220px hero->main void, idle picker rows blown
+   from 0 to 49.5px each. `rig.hollow` CANNOT flag it (one gap => max == median).
+   Trigger needs ~9+ value marks on an otherwise-empty book. The cure is col 1
+   becoming one object too, which costs the mobile order — Preston's call.
+
+   D2 under a widened column: width buys STRUCTURE, never line length
+   (Preston's ruling). Every prose element keeps <=72ch and the marginalia
+   card spends its width on meta-beside-text. A 2-up card grid was
+   prototyped and REJECTED by measurement (30.9ch, under the 60-72ch band).
+
+   ON-7 (.bk-surface's pre-existing 40px desktop h-scroll — box-sizing fixed
+   only <=759) stays RESOLVED at >=1200 here (Preston's DW-3 ruling): the
+   box-sizing fix is scoped to THIS block, so the 760-1199 band keeps the
+   defect untouched (its own owner) while D3 passes honestly at 1280/1440/1920.
+   The whole block is inside the media query; <=1199 layout is untouched.
    ===================================================================== */
 @media (min-width:1200px){
   .bk-surface{ box-sizing:border-box; }   /* ON-7 fix, >=1200 ONLY — width:100% + padding no longer overflows the viewport; the 760-1199 band is left untouched */
@@ -11171,22 +11216,77 @@ body.wc-focus .app-nav { opacity:.26; }
   .bk-surface .bk-shell > *{ grid-column:1; }   /* default any child to the content column — a surprise non-empty child never disrupts the rail */
   .bk-surface .bk-shell > .bk-backlink{ grid-column:1 / -1; grid-row:1; }
   .bk-surface .bk-shell > .bk-hero{ grid-column:1; grid-row:2; }
-  .bk-surface .bk-shell > .vr-card{ grid-column:2; grid-row:2; margin:0; }
+  /* THE RAIL — one object, hero-top to page-bottom, its own uniform rhythm.
+     NB (measured, not theorised): `grid-row:2 / -1` is WRONG here. `-1` names
+     the last line of the EXPLICIT grid; this grid declares no
+     grid-template-rows, so -1 resolves to line 1, the range inverts, and the
+     rail renders in ROW 1 — ABOVE the hero. Span to an explicit line. */
+  .bk-surface .bk-shell > .bk-rail{ grid-column:2; grid-row:2 / 8; align-self:start; display:flex; flex-direction:column; gap:16px; }
+  /* NO `width:100%` here. This surface has NO global border-box reset (the
+     MW3-BKBOX/ON-7 quirk: `.bk-surface` is the one surface that omits it), so
+     `.vr-card` is content-box and `width:100%` made it 340 + 40 padding + 2
+     border = 382 -> an 8.7px document h-scroll AT 1280 ONLY (invisible at 1920,
+     where the centred shell still had room; and invisible in the mockup, which
+     carries `*{box-sizing:border-box}`). The flex column's default
+     align-items:stretch sizes them correctly whatever their box-sizing. */
+  .bk-surface .bk-rail > *{ margin:0; }
+  .bk-surface .bk-rail > .bk-edit-toggle{ align-self:start; }
+  .bk-surface .bk-rail > .bk-find{ align-self:start; margin:0; }
+  .bk-surface .bk-rail .bk-actions{ flex-direction:column; align-items:stretch; }
   /* Every on-demand `.bk-shell` panel (marginalia editor · arc picker · send-to-sub
-     picker · the Edit/more panel) gets its OWN full-width row (3–6) so an opened
-     panel appears as a prominent band right below the hero — NOT auto-placed to the
+     picker · the Edit/more panel) keeps its OWN row (3–6) so an opened panel
+     appears as a prominent band right below the hero — NOT auto-placed to the
      page bottom, and never overlapping another (the editor+picker can co-exist).
+     CHANGED from DW-3's `1 / -1`: the rail now occupies col 2 across rows 2-7,
+     so a full-width panel would collide with it. They take the CONTENT column.
      Each row collapses to 0 when its panel is idle (hosts :empty-hidden; the edit
      panel is absent when closed), so the closed layout is unchanged. */
-  .bk-surface .bk-shell > #book-detail-editor-host{ grid-column:1 / -1; grid-row:3; }
-  .bk-surface .bk-shell > #book-detail-arc-picker-host{ grid-column:1 / -1; grid-row:4; }
-  .bk-surface .bk-shell > #book-detail-subtheory-picker-host{ grid-column:1 / -1; grid-row:5; }
-  .bk-surface .bk-shell > .bk-edit-panel{ grid-column:1 / -1; grid-row:6; }
-  .bk-surface .bk-shell > .bk-cols{ grid-column:1; grid-row:7 / span 5; }
-  .bk-surface .bk-shell > .bk-actions{ grid-column:2; grid-row:7; flex-direction:column; align-items:stretch; margin:0; }
-  .bk-surface .bk-shell > .bk-edit-toggle{ grid-column:2; grid-row:8; justify-self:start; margin-top:14px; }
-  .bk-surface .bk-shell > .bk-find{ grid-column:2; grid-row:9; justify-self:start; }
+  .bk-surface .bk-shell > #book-detail-editor-host{ grid-column:1; grid-row:3; }
+  .bk-surface .bk-shell > #book-detail-arc-picker-host{ grid-column:1; grid-row:4; }
+  .bk-surface .bk-shell > #book-detail-subtheory-picker-host{ grid-column:1; grid-row:5; }
+  .bk-surface .bk-shell > .bk-edit-panel{ grid-column:1; grid-row:6; }
+  .bk-surface .bk-shell > .bk-main{ grid-column:1; grid-row:7; }
   .bk-surface .bk-shell > div:empty{ display:none; }
+
+  /* --- the hero's meta line (the fold) --- */
+  .bk-surface .bk-meta-line{ padding-top:16px; border-top:1px solid var(--bk-line); }
+  .bk-surface .bk-meta-line .bk-moved{ margin-left:auto; }
+
+  /* --- WIDTH BUYS STRUCTURE: the annotation keeps its measure; the meta that
+         sat UNDER it moves BESIDE it. --- */
+  .bk-surface .bk-marg{ display:grid; grid-template-columns:minmax(0,1fr) 188px; column-gap:28px; align-items:start; }
+  /* The meta must SHED the stacked layout it just left: base `.bk-margmeta`
+     (:10918) carries margin-top:13px + padding-top:11px + a border-top, and
+     :11048 re-pins that border for the light ground. Those draw a rule ABOVE a
+     column that now sits BESIDE the text -- residue, not rhythm. Reset them. */
+  .bk-surface .bk-margmeta{ flex-direction:column; align-items:flex-start; gap:9px;
+                            margin-top:0; padding-top:2px; border-top:none; }
+
+  /* --- D2: every prose element in the widened column keeps <=72ch. The list is
+         by MEASUREMENT, not by guess: `.bk-artifact-body` is the one that stays
+         at 109.9ch if you cap only the obvious ones, and `.bk-synopsis` only
+         renders on books that carry a description (invisible on the seed). --- */
+  .bk-surface .bk-tcount,
+  .bk-surface .bk-empty-note,
+  .bk-surface .bk-artifact-body,
+  .bk-surface .bk-synopsis,
+  .bk-surface .bk-grewnote{ max-width:72ch; }
+  /* The hero/lineage Yumi whisper: a 6th prose element, and the ONLY D2 failure
+     the signed-in stub could not see -- `rootedSubTheories` is owner-filtered,
+     so the stub renders no whisper at all, while SIGNED-OUT (seed-owned roots
+     surface, W12 S10) renders it at 85.1ch. Pre-existing, not introduced here
+     (the hero was already 816 wide), but D2 is measured live and must pass on
+     every path. SCOPED to `.bk-surface`: `.lum-yumi` is shared chrome across
+     surfaces and an unscoped cap would bleed. */
+  .bk-surface .lum-yumi p{ max-width:72ch; }
+
+  /* --- HIERARCHY: reference matter demoted to footer-weight — a quiet
+         rule-topped row at the foot of the column, no longer a peer CARD
+         beside the thinking. --- */
+  .bk-surface .bk-meta{ border:none; background:none; box-shadow:none; border-radius:0; padding:14px 0 0; border-top:1px solid var(--bk-line); display:flex; align-items:baseline; gap:0 22px; flex-wrap:wrap; }
+  .bk-surface .bk-meta .bk-blabel{ margin:0; }
+  .bk-surface .bk-meta dl{ display:flex; align-items:baseline; flex-wrap:wrap; gap:0 8px; grid-template-columns:none; }
+  .bk-surface .bk-meta dd{ text-align:left; margin:0 14px 0 0; font-size:12px; }
   /* D6 — desktop-tier focus-visible rings on the primary book-detail
      controls (codebase focus-ring literal, reused verbatim from :11073). */
   .bk-surface .bk-backlink:focus-visible,
@@ -11196,9 +11296,18 @@ body.wc-focus .app-nav { opacity:.26; }
   .bk-surface .vr-add:focus-visible,
   .bk-surface .bk-arcchip:focus-visible,
   .bk-surface .bk-edit-toggle:focus-visible,
+  .bk-surface .bk-star:focus-visible,
   .bk-surface .bk-find:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
+  /* `.bk-star` joins the D6 list because THE FOLD moved the rating out of the
+     retired `.bk-reading` aside card and into the hero's meta line -- this pass
+     made it prominent, so this pass owns its ring. Verified with the real
+     Tab-armed instrument (rig.ringProbe), not a CSSOM match test.
+     NO border-radius here: the ring must not deform the element it rings
+     (DW-RING-RADIUS). Other UA-default-outline elements on this surface
+     (.vr-mark-name/.vr-mark-x/.bk-becamelink/.bk-artifact-open) are visible but
+     not tokens-only -- pre-existing, not introduced here: residual DWP-D6-UA. */
 }
-/* ===== end DW-3 · BOOK DETAIL DESKTOP COMPOSITION ===== */
+/* ===== end DW-POLISH · BOOK DETAIL DESKTOP DESIGN PASS (was DW-3's block) ===== */
 
 /* =====================================================================
    WAVE 3 · THE PAGE  (renderSubTheoryPage on .lum-amber-deep)

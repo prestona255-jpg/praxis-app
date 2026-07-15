@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DW-POLISH · Book Detail desktop composition — mockup</title>
+<!--
+  DW-POLISH Stage 0.5 MOCKUP — BOOK DETAIL, the ≥1200 design pass.
+  Preston's felt-pass spec for the Stage-1 build.
+
+  PROVENANCE
+  - Composition = "prototype B", prototyped live against the running app and
+    MEASURED before it was drawn (docs/checkpoints/dwp-book-detail-recon.md §6),
+    then re-measured AS DRAWN in this file at 1280/1440/1920.
+  - HONEST SCORECARD (this file, measured @1920 — no flattering numbers):
+      rail gaps      195/14/14 (HOLE, suspect:true) -> 16/16/16 (uniform, suspect:false)
+      "In your thinking"  542px / 28.5% -> 816px / 42.8%   (57.3% @1440)
+      edges           hero.left==main.left==backlink.left; rail.right==backlink.right
+      D1 occupancy    63.0% -> 63.0%  <-- UNCHANGED, and that is the point:
+                      D1 was NEVER the failing gate. The 1200 shell cap is
+                      untouched. This pass buys the HOLE and the HIERARCHY,
+                      not occupancy. (An earlier prototype read 64.2%; that
+                      number came from a run whose rail was mis-placed into
+                      row 1 — discarded, not quoted.)
+      D2 72.0ch · D3 h-scroll 0 · D4 23/23 pointer · D5 16px — all PASS.
+  - Rulings folded in (Preston, 2026-07-15):
+      R1  the FELT-DIAGNOSIS SPEC governs. No phantom section is cited: the
+          desktop canon has no §4-I, and CLAUDE.md:298's §4-I desktop clause
+          ("cover + action stack left; title + artifact right") describes an
+          arrangement never built -> marked stale in the docs commit.
+      R2  FOLD .bk-reading. Its Rating (its only unique payload) joins the
+          hero's meta line; the two rows that restate live controls inches
+          away (Status, Passages marked) are DROPPED. <- Preston's veto point.
+      R3  Width buys STRUCTURE, never line length. All FOUR prose elements
+          capped ≤72ch (.bk-tcount, .bk-empty-note, .bk-atext,
+          .bk-artifact-body). Width spent on meta-beside-text + breathing
+          room. The 2-up marginalia grid stays DEAD (measured 30.9ch).
+
+  TOKENS / SKIN
+  Values below are the LIVE COMPUTED appearance of the running R7 light-ground
+  surface, sampled element-by-element from the app (not copied from a token
+  sheet): .bk-surface re-grounds to light via scoped --lum-* re-pins, so token
+  NAMES alone would misrepresent it. Inlined here so the standalone file renders
+  faithfully. The Stage-1 build wires tokens, never these literals.
+
+  CONTENT
+  100% seed reality — book "Their Eyes Were Watching God" (Zora Neale Hurston,
+  ISBN 9780061120060), its 3 real marginalia, its real artifact body, and 2
+  valueMarks. Every string is the live app's own copy. NOTHING is invented:
+  no new data, no rewritten copy — this is arrangement only.
+
+  This is a design contract, not shipped code — not ES3-bound.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  /* live-sampled from the running surface (see PROVENANCE) */
+  --paper:#f4efe4; --paper-2:#eee4cd;
+  --ink:#241710; --ink-2:#645940;
+  --gold:#d9a441; --gold-deep:#855410; --star:#ffce4a;
+  --hair:#e3d8c1; --panel:#fcf6e8;
+  --btn-ink:#3d2807;
+  --btn-grad:linear-gradient(#f2c25a 0%, #d9a441 40%, #a8761a 100%);
+  --woven:#6fc9bc; --unwoven:rgba(150,120,70,.45);
+  --serif:"Cormorant Garamond", Georgia, serif;
+  --sans:"DM Sans", system-ui, sans-serif;
+  --mono:"DM Mono", ui-monospace, monospace;
+  --card-shadow:0 6px 22px -12px rgba(120,75,15,.28), inset 0 1px 0 0 rgba(255,250,235,.9);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; }
+body{
+  font-family:var(--sans); color:var(--ink); line-height:1.55; font-size:16px;
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
+    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
+    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
+    linear-gradient(155deg,#f4efe4,#eee4cd);
+  background-attachment:fixed; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- mockup chrome (NOT part of the spec) ---------- */
+.mk-bar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:9px 22px; background:#241710; color:#f4efe4; font-family:var(--mono); font-size:11px; letter-spacing:.08em; }
+.mk-bar b{ color:var(--star); font-weight:500; letter-spacing:.14em; }
+.mk-bar .w{ margin-left:auto; opacity:.85; }
+.mk-legend{ max-width:1200px; margin:16px auto 0; padding:0 20px; font-family:var(--mono); font-size:11px;
+  color:var(--ink-2); letter-spacing:.02em; line-height:1.85; }
+.mk-legend .k{ display:inline-block; width:10px; height:10px; border-radius:3px; vertical-align:-1px; margin-right:5px; }
+.mk-legend .k.n{ background:#4f9d69; } .mk-legend .k.f{ background:#c2603f; } .mk-legend .k.c{ background:#7a6bc4; }
+.mk-tag{ position:absolute; top:-9px; right:12px; font-family:var(--mono); font-size:9px; letter-spacing:.1em;
+  text-transform:uppercase; padding:2px 7px; border-radius:999px; color:#fff; z-index:2; }
+.mk-tag.n{ background:#4f9d69; } .mk-tag.f{ background:#c2603f; } .mk-tag.c{ background:#7a6bc4; }
+.mk-rel{ position:relative; }
+
+/* ---------- faux nav (context only) ---------- */
+.nav{ max-width:1200px; margin:18px auto 0; padding:0 20px; display:flex; align-items:center; gap:22px; }
+.nav .wm{ font-family:var(--serif); font-weight:600; font-size:22px; }
+.nav .lk{ font-family:var(--mono); font-size:12px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-2); }
+
+/* =====================================================================
+   THE SPEC BEGINS HERE — .bk-surface / .bk-shell
+   ===================================================================== */
+.bk-surface{ box-sizing:border-box; padding:34px 20px 80px; }
+
+/* --- the ONE composition: a 2-track grid; every stack sits on ITS tracks --- */
+.bk-shell{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 340px;
+  grid-auto-rows:min-content;
+  column-gap:44px;
+  align-items:start;
+  max-width:1200px;
+  margin:0 auto;
+}
+.bk-shell > *{ grid-column:1; }
+.bk-backlink{ grid-column:1 / -1; grid-row:1; }
+.bk-hero    { grid-column:1;     grid-row:2; }
+/* THE FIX: the rail is ONE object spanning hero-top -> page-bottom, so no
+   sibling can size its track. The 195px hole cannot exist by construction.
+   NB (measured, not theorised): `grid-row:2 / -1` is WRONG here — `-1` names
+   the last line of the EXPLICIT grid, and this grid has no grid-template-rows,
+   so -1 resolves to line 1, the range inverts, and the rail lands in ROW 1
+   (rendering ABOVE the hero: rail y192 vs hero y636). Span to an explicit line
+   instead: rows 2..7 = the hero row, the four on-demand rows, and main. */
+.bk-rail    { grid-column:2;     grid-row:2 / 8; align-self:start; }
+/* on-demand panel rows 3-6 are PRESERVED from DW-3 (load-bearing) */
+.bk-main    { grid-column:1;     grid-row:7; }
+
+.bk-backlink{ color:var(--gold-deep); font-family:var(--sans); font-size:12.5px; text-decoration:none; }
+.bk-backlink:hover{ text-decoration:underline; }
+
+/* ---------------- HERO ---------------- */
+.bk-hero{
+  display:flex; gap:28px; align-items:flex-start;
+  border:1px solid var(--hair); border-radius:16px; padding:28px 30px;
+  box-shadow:var(--card-shadow); margin-top:14px;
+}
+.bk-cover{ position:relative; flex:none; }
+.bk-cover-img{ width:138px; height:208px; object-fit:cover; border-radius:3px 7px 7px 3px; display:block; }
+.bk-cover-spine{ position:absolute; left:0; top:0; width:5px; height:208px; border-radius:3px 0 0 3px;
+  background:linear-gradient(90deg, rgba(36,23,16,.30), rgba(36,23,16,0)); }
+.bk-hinfo{ flex:1; min-width:0; }
+.bk-bt{ font-family:var(--serif); font-size:31px; font-weight:600; color:var(--ink); line-height:1.05; }
+.bk-ba{ font-family:var(--serif); font-size:18px; font-style:italic; color:var(--ink-2); margin-top:6px; }
+.bk-tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.bk-ltag{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--hair); border-radius:999px;
+  padding:4px 11px 4px 9px; font-size:12px; color:var(--ink-2); }
+.bk-ltag-dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); }
+
+/* --- THE FOLD (R2): the hero's meta line. Status control + Rating + moved-me:
+       the reader's whole relationship to the book, in ONE line, in the hero.
+       `.bk-reading`'s Status + Passages-marked rows are GONE — they restated
+       the control 6px away and the count in "In your thinking". --- */
+.bk-meta-line{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-top:18px;
+  padding-top:16px; border-top:1px solid var(--hair); }
+.rstatus{ display:inline-flex; background:rgba(36,23,16,.05); border-radius:999px; padding:3px; }
+.rs-opt{ border:0; background:none; border-radius:999px; padding:7px 15px; font-family:var(--sans);
+  font-size:12.5px; color:var(--btn-ink); cursor:pointer; }
+.rs-opt.on{ font-weight:600; background:var(--paper); box-shadow:0 1px 3px rgba(120,75,15,.18); }
+.bk-rate{ display:inline-flex; align-items:center; gap:8px; }
+.bk-rk{ font-family:var(--mono); font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-2); }
+.bk-rate-stars{ display:inline-flex; gap:1px; }
+.bk-star{ background:none; border:0; padding:0 1px; font-size:15px; color:var(--unwoven); cursor:pointer; line-height:1; }
+.bk-star.on{ color:var(--gold); }
+.bk-moved{ margin-left:auto; border:1px solid var(--hair); background:none; border-radius:999px;
+  padding:7px 14px; font-family:var(--sans); font-size:12.5px; color:var(--ink-2); cursor:pointer; }
+
+/* ---------------- THE RAIL (one object, uniform rhythm) ---------------- */
+.bk-rail{ display:flex; flex-direction:column; gap:16px; margin-top:14px; }
+.bk-rail > *{ margin:0; width:100%; }
+.vr-card{ background:var(--panel); border:1px solid rgba(36,23,16,.16); border-radius:14px; padding:18px 20px; }
+.vr-head{ display:flex; align-items:baseline; gap:10px; }
+.vr-h{ font-family:var(--mono); font-size:11px; letter-spacing:1.54px; text-transform:uppercase; color:var(--ink-2); }
+.vr-sub{ font-family:var(--mono); font-size:10px; color:var(--ink-2); opacity:.7; }
+.vr-marks{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.vr-mark{ display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(36,23,16,.16);
+  border-radius:999px; padding:5px 10px; }
+.vr-orb{ width:9px; height:9px; border-radius:50%; background:var(--gold); }
+.vr-mark-name{ border:0; background:none; padding:0; font-family:var(--sans); font-size:12.5px; color:var(--ink); cursor:pointer; }
+.vr-mark-x{ border:0; background:none; padding:0; color:var(--ink-2); cursor:pointer; font-size:12px; }
+.vr-add{ border:1px dashed var(--gold); background:none; border-radius:999px; padding:5px 12px;
+  font-family:var(--mono); font-size:11px; color:var(--gold-deep); cursor:pointer; }
+.vr-line{ display:flex; gap:9px; margin-top:10px; }
+.vr-rail{ width:1px; background:var(--hair); flex:none; }
+.vr-why{ font-family:var(--sans); font-size:12px; color:var(--ink-2); line-height:1.5; }
+.vr-why b{ color:var(--ink); font-weight:600; }
+
+.bk-actions{ display:flex; flex-direction:column; align-items:stretch; gap:9px; }
+.bk-actionbtn{ background-image:var(--btn-grad); color:var(--btn-ink); border:1px solid var(--gold-deep);
+  border-radius:999px; padding:9px 16px; font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; }
+.bk-actionbtn-secondary{ background-image:none; background:none; color:var(--ink-2); border:1px solid var(--hair); font-weight:500; }
+.bk-edit-toggle{ align-self:start; border:1px solid var(--hair); background:none; border-radius:999px;
+  padding:6px 13px; font-family:var(--sans); font-size:12.5px; color:var(--ink-2); cursor:pointer; }
+.bk-find{ align-self:start; color:var(--gold-deep); font-family:var(--sans); font-size:12.5px; text-decoration:none; }
+.bk-find:hover{ text-decoration:underline; }
+
+/* ---------------- MAIN (the soul gets prime position + width) ---------------- */
+.bk-main{ display:flex; flex-direction:column; gap:26px; margin-top:14px; }
+.bk-block{ border:1px solid var(--hair); border-radius:16px; padding:20px 22px; }
+.bk-sechead{ font-family:var(--serif); font-size:23px; font-weight:500; color:var(--ink); margin:0; }
+/* R3 — CAP 1 of 4 */
+.bk-tcount{ font-family:var(--serif); font-size:16px; font-style:italic; color:var(--ink-2);
+  margin:6px 0 0; max-width:72ch; }
+.bk-subhead{ font-family:var(--mono); font-size:10px; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--gold-deep); margin-top:22px; }
+
+/* --- R3: WIDTH BUYS STRUCTURE. The card is 770px; the annotation keeps its
+       measure (≤72ch) and the meta that used to sit UNDER it now sits BESIDE
+       it. The width is spent on structure + breathing room, never on longer
+       lines. (The 2-up card grid is DEAD: measured 30.9ch.) --- */
+.bk-marg{ display:grid; grid-template-columns:minmax(0,1fr) 188px; column-gap:28px; align-items:start;
+  border-left:2px solid var(--gold); border-radius:0 16px 16px 0; padding:18px 22px; margin-top:12px;
+  background:rgba(255,253,248,.5); }
+.bk-annot{ min-width:0; }
+.bk-pen{ color:var(--gold-deep); font-family:var(--sans); font-size:14px; margin-right:7px; }
+/* R3 — CAP 2 of 4 */
+.bk-atext{ font-family:var(--sans); font-size:14.5px; color:var(--ink-2); line-height:1.5;
+  max-width:72ch; display:inline; }
+.bk-margmeta{ display:flex; flex-direction:column; align-items:flex-start; gap:9px; padding-top:2px; }
+.bk-margmeta-l{ display:inline-flex; align-items:center; gap:7px; }
+.bk-marg-dot{ width:9px; height:9px; border-radius:50%; background:var(--woven); flex:none; }
+.bk-marg-dot.unwoven{ background:var(--unwoven); }
+.bk-loc{ font-family:var(--mono); font-size:10px; letter-spacing:.5px; color:var(--ink-2); }
+.bk-becamelink{ border:1px solid var(--hair); background:none; border-radius:999px; padding:5px 10px;
+  font-family:var(--sans); font-size:12px; color:var(--ink-2); cursor:pointer; text-align:left; line-height:1.35; }
+.bk-unwoven-note{ font-family:var(--sans); font-size:12px; color:var(--ink-2); opacity:.75; font-style:italic; }
+/* R3 — CAP 3 of 4 */
+.bk-empty-note{ font-family:var(--sans); font-size:13px; color:var(--ink-2); margin:10px 0 0; max-width:72ch; }
+
+.bk-blabel{ font-family:var(--mono); font-size:10px; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--gold-deep); margin:0; }
+/* R3 — CAP 4 of 4 — the one that stays at 109.9ch if you cap only the obvious three */
+.bk-artifact-body{ font-family:var(--serif); font-size:16px; color:var(--ink-2); line-height:1.5;
+  margin:10px 0 0; max-width:72ch; white-space:pre-line; }
+.bk-artifact-open{ display:inline-block; margin-top:12px; color:var(--gold-deep);
+  font-family:var(--sans); font-size:12.5px; text-decoration:none; }
+
+/* --- HIERARCHY RIGHTED: ISBN/subjects is reference matter. Demoted to
+       footer-weight at the foot of the column — no longer a peer CARD beside
+       the thinking. (spec 4 permits "rail, collapsed, or footer-weight".) --- */
+.bk-meta-footer{ display:flex; align-items:baseline; gap:22px; flex-wrap:wrap;
+  border-top:1px solid var(--hair); padding-top:14px; margin-top:2px; }
+.bk-meta-footer .bk-blabel{ opacity:.75; }
+.bk-mf-item{ font-family:var(--mono); font-size:11px; color:var(--ink-2); }
+.bk-mf-item b{ color:var(--ink); font-weight:500; }
+
+/* ---------------- ≤1199 — shape changes, strength does not ----------------
+   NOT the spec: mobile is MW-3's, already shipped and `mobile: native`. This
+   block only keeps the standalone file honest below 1200 so the composition
+   can be judged without a false break. The Stage-1 build does not touch ≤759.
+   The rstatus shrink below reproduces MW-3's shipped P8 fix (3 nowrap segments
+   ~372px -> 3 equal shrinkable segments); without it this file h-scrolls 35px
+   at 390 and would misrepresent live. */
+@media (max-width:1199px){
+  .bk-shell{ display:block; max-width:840px; }
+  .bk-rail{ margin-top:16px; }
+  .bk-marg{ grid-template-columns:minmax(0,1fr); row-gap:12px; }
+  .bk-margmeta{ flex-direction:row; align-items:center; gap:12px; flex-wrap:wrap; }
+  .bk-moved{ margin-left:0; }
+}
+@media (max-width:759px){
+  .bk-hero{ flex-direction:column; align-items:flex-start; }   /* the app's own ≤759 hero stack */
+  .bk-meta-line{ flex-direction:column; align-items:stretch; gap:14px; }
+  .rstatus{ display:flex; width:100%; }
+  .rs-opt{ flex:1 1 0; min-width:0; padding:9px 6px; text-align:center; }
+  .bk-moved{ align-self:flex-start; margin-left:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="mk-bar">
+  <b>DW-POLISH · BOOK DETAIL</b>
+  <span>Stage 0.5 mockup — the composition, for the felt pass</span>
+  <span class="w">prototype B + rulings R2 (fold) &amp; R3 (caps) · seed content · resize to 1440 / 1920</span>
+</div>
+
+<div class="mk-legend">
+  <span class="k n"></span><b>NEW/MOVED</b> — the restructure &nbsp;·&nbsp;
+  <span class="k f"></span><b>FOLDED (R2)</b> — Rating joins the hero; Status + Passages-marked dropped &nbsp;·&nbsp;
+  <span class="k c"></span><b>CAPPED (R3)</b> — prose ≤72ch; width buys structure<br>
+  Measured in THIS file @1920: rail gaps <b>195/14/14 (HOLE)</b> → <b>16/16/16 uniform</b> ·
+  “In your thinking” <b>542px/28.5%</b> → <b>816px/42.8%</b> · edges <b>align</b> ·
+  D2 <b>72.0ch</b> · D3 h-scroll <b>0</b> · D1 <b>63.0% → 63.0% (unchanged — D1 was never the failing gate;
+  this pass buys the hole and the hierarchy, not occupancy)</b>.
+</div>
+
+<div class="nav">
+  <span class="wm">Praxis</span>
+  <span class="lk">Home</span><span class="lk">Shelf</span><span class="lk">Arcs</span><span class="lk">Notebook</span>
+</div>
+
+<section class="bk-surface">
+  <div class="bk-shell">
+
+    <a class="bk-backlink" href="#">← Back to your shelf</a>
+
+    <!-- ============ HERO ============ -->
+    <div class="bk-hero mk-rel">
+      <div class="bk-cover">
+        <img class="bk-cover-img" alt="Their Eyes Were Watching God"
+             src="https://covers.openlibrary.org/b/id/8460488-L.jpg">
+        <span class="bk-cover-spine" aria-hidden="true"></span>
+      </div>
+      <div class="bk-hinfo">
+        <div class="bk-bt">Their Eyes Were Watching God</div>
+        <div class="bk-ba">Zora Neale Hurston</div>
+        <div class="bk-tags">
+          <span class="bk-ltag"><span class="bk-ltag-dot"></span>Novel</span>
+        </div>
+
+        <!-- THE FOLD (R2) -->
+        <div class="bk-meta-line mk-rel">
+          <span class="mk-tag f">folded · R2</span>
+          <div class="rstatus">
+            <button class="rs-opt on">Currently reading</button>
+            <button class="rs-opt">Have read</button>
+            <button class="rs-opt">Will read</button>
+          </div>
+          <div class="bk-rate">
+            <span class="bk-rk">Rating</span>
+            <span class="bk-rate-stars">
+              <button class="bk-star">★</button><button class="bk-star">★</button><button class="bk-star">★</button><button class="bk-star">★</button><button class="bk-star">★</button>
+            </span>
+          </div>
+          <button class="bk-moved">♡ This moved me</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ THE RAIL — one object, uniform rhythm ============ -->
+    <div class="bk-rail mk-rel">
+      <span class="mk-tag n">rail · one object</span>
+
+      <div class="vr-card">
+        <div class="vr-head">
+          <span class="vr-h">Values this carries</span>
+          <span class="vr-sub">from your values</span>
+        </div>
+        <div class="vr-marks">
+          <span class="vr-mark"><span class="vr-orb"></span><button class="vr-mark-name">Liberation</button><button class="vr-mark-x">×</button></span>
+          <span class="vr-mark"><span class="vr-orb"></span><button class="vr-mark-name">Eros</button><button class="vr-mark-x">×</button></span>
+          <button class="vr-add">+ mark a value</button>
+        </div>
+        <div class="vr-line"><span class="vr-rail"></span><div class="vr-why"><b>Liberation — </b>Janie refuses the self she was handed.</div></div>
+        <div class="vr-line"><span class="vr-rail"></span><div class="vr-why"><b>Eros — </b>Desire as knowledge before language.</div></div>
+      </div>
+
+      <div class="bk-actions">
+        <button class="bk-actionbtn">✎ Add marginalia</button>
+        <button class="bk-actionbtn bk-actionbtn-secondary">Add to an arc</button>
+        <button class="bk-actionbtn bk-actionbtn-secondary">Send to sub-theory</button>
+      </div>
+
+      <button class="bk-edit-toggle">Edit / more</button>
+      <a class="bk-find" href="#">Find this book</a>
+    </div>
+
+    <!-- ============ MAIN — the soul, at prime position and width ============ -->
+    <div class="bk-main">
+
+      <div class="bk-block mk-rel">
+        <span class="mk-tag n">816px · 42.8% (was 542px · 28.5%)</span>
+        <h2 class="bk-sechead">In your thinking</h2>
+        <p class="bk-tcount">You have 3 marked passages here — nothing has grown into a sub-theory yet.</p>
+
+        <div class="bk-subhead">What you marked</div>
+
+        <div class="bk-marg mk-rel">
+          <span class="mk-tag c">meta beside text · R3</span>
+          <div class="bk-annot">
+            <span class="bk-pen">✎</span><span class="bk-atext">The pear tree: Janie's first awakening to desire is bodily — imagined through the bee and the blossom — desire as knowledge before it is language. This is Lorde's erotic in a single image (see Sub-theory 2).</span>
+          </div>
+          <div class="bk-margmeta">
+            <span class="bk-margmeta-l"><span class="bk-marg-dot"></span><span class="bk-loc">marked · 7/15/2026</span></span>
+            <button class="bk-becamelink">became “Eros in the Classroom” →</button>
+          </div>
+        </div>
+
+        <div class="bk-marg">
+          <div class="bk-annot">
+            <span class="bk-pen">✎</span><span class="bk-atext">The horizon: the far edge Janie refuses to stop reaching for is the central question in one figure — the possibility she will not let anyone shrink. The novel opens on it, too: “Ships at a distance have every man's wish on board.” Desire as the ship that may or may not come in, held onto regardless.</span>
+          </div>
+          <div class="bk-margmeta">
+            <span class="bk-margmeta-l"><span class="bk-marg-dot unwoven"></span><span class="bk-loc">marked · 7/15/2026</span></span>
+            <span class="bk-unwoven-note">not yet woven</span>
+          </div>
+        </div>
+
+        <div class="bk-marg">
+          <div class="bk-annot">
+            <span class="bk-pen">✎</span><span class="bk-atext">Janie becomes herself through the marriages, the hurricane, the loss of Tea Cake, the trial — not despite the pain but through it. This is Sub-theory 3 rendered in fiction, which is why the novel anchors the arc.</span>
+          </div>
+          <div class="bk-margmeta">
+            <span class="bk-margmeta-l"><span class="bk-marg-dot"></span><span class="bk-loc">marked · 7/15/2026</span></span>
+            <button class="bk-becamelink">became “Pain and Struggle on the Path of Liberation” →</button>
+          </div>
+        </div>
+
+        <div class="bk-subhead">What it grew into</div>
+        <p class="bk-empty-note">Marks you make here can become sub-theories in your arcs. Nothing has been woven yet.</p>
+      </div>
+
+      <div class="bk-block mk-rel">
+        <span class="mk-tag c">body ≤72ch · R3</span>
+        <p class="bk-blabel">Your book artifact</p>
+        <p class="bk-artifact-body">Janie Crawford spends the whole novel wanting something the people around her keep telling her is not for her — a love that meets her as an equal, a voice that is her own, a life measured against the far edge of what is possible rather than the near fence of what is allowed. The novel knows from its first line that this is what it is about: “Ships at a distance have every man's wish on board.” Janie's ship is the self she can already feel under the pear tree before she has the words for it. She reaches it, but never cleanly, and never without cost — three marriages, a hurricane, and the loss of the one love that answered her teach her what it costs to keep wanting what she wants.
+
+What makes the novel the heart of this arc is that Janie does not become herself despite the pain. She becomes herself through it. The losses are not detours from her becoming; they are its ground. By the end, when she draws the horizon in like a great fish-net, she has not been given a self. She has built one, out of desire that refused to shrink to the size she was handed.</p>
+        <a class="bk-artifact-open" href="#">Open artifact →</a>
+      </div>
+
+      <!-- HIERARCHY: reference matter, demoted to footer-weight -->
+      <div class="bk-meta-footer mk-rel">
+        <span class="mk-tag n">demoted · was a peer card</span>
+        <p class="bk-blabel">The book</p>
+        <span class="bk-mf-item">ISBN <b>9780061120060</b></span>
+        <span class="bk-mf-item">Subjects <b>Novel</b></span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

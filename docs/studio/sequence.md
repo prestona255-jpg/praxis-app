@@ -31,6 +31,27 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-15 (DW-POLISH · Book Detail)** — the POLISH TIER opened and its premise proved on the
+  first surface. No reordering of the spine: this executed Preston's felt-diagnosis work order on a
+  surface already in the program. Findings recorded, none applied as a silent re-plan:
+  (a) **The program lesson is now evidence, not a hunch:** *composed ≠ designed — widen-within
+  ceilings on content-rich detail pages; the polish tier exists for them.* DW-3 passed **every**
+  D-gate (D1 63.0% ≥60 · D2 70.8ch ≤72 · D3 0 · D4 22/22 · D5 16px) and the page still read as
+  three stacks — because every D-gate is HORIZONTAL and the defects were vertical and structural
+  (a 195px hole; the thinking capped at 28.5% with the ISBN beside it as a peer). **`rig.hollow`
+  is the only gate that saw it.** Consider whether the canon should carry a vertical gate
+  (a "D7 — vertical rhythm") rather than relying on a rig helper — that is a canon change and is
+  **Preston's call**, so it is written here, not applied.
+  (b) **`PROPOSED:` — the DW sweep's chip vocabulary has no rung for this.** Chip law is
+  `stretched → composed → native`, and DW-3 earned `composed` honestly on the gates. DW-POLISH did
+  not raise the chip (under-claim law: `native` awaits the deployed felt pass), but the sweep now
+  has surfaces that are *gate-passing and undesigned* with no way to say so on the board. If the
+  polish tier runs on more surfaces, the vocabulary needs a rung or the chip needs re-defining.
+  Program-level; **not taken here**.
+  (c) **`DW-BOARD-BACKFILL` still open** — DW-POLISH updated Book Detail's own BOARD row (its own
+  measurement); DW-2/DW-STP2's rows remain unbackfilled by the batches that measured them.
+  (d) **CLAUDE.md §4-I's desktop clause marked STALE** (Preston's ruling) — it described an
+  arrangement never built, and the desktop canon has no §4-I at all. Mobile clause stands.
 - **2026-07-14 (DW-4)** — batch shipped-local (artifact + yumi-sees → `composed`). No reordering:
   DW-4 executed the next batch of an item already in **Now**. Three findings recorded, none applied
   as a silent re-plan:

@@ -297,10 +297,19 @@ blocks step *down* for narrower widths. A base-rule edit therefore hits **both**
   NOT touch the mark renderer / drift / "the question" label.
 - **I — Book-detail mobile reorder.** At ≤759: cover → title → author → meta → primary
   `Add to an arc` → secondary pair `[Send to sub-theory | Add marginalia]` → quiet
-  `Mark as finished` → artifact card, via DOM/CSS `order`. Desktop stays two-column
-  (cover + action stack left; title + artifact right). "Add to an arc" is the standalone
+  `Mark as finished` → artifact card, via DOM/CSS `order`. ~~Desktop stays two-column
+  (cover + action stack left; title + artifact right).~~ "Add to an arc" is the standalone
   primary; the paired secondaries are Send-to-sub-theory + Add-marginalia. (Fix #2's
   picker `scrollIntoView` is already shipped — verify, don't rebuild.)
+  - **STALE — the desktop clause only (2026-07-15, DW-POLISH, Preston's ruling).** The
+    struck sentence describes an arrangement that was **never built**: live, the actions
+    are in the rail and the artifact sits under the thinking in the content column. It
+    also never governed: R7 shipped `.bk-cols` two-column, DW-3 re-read §4-I as
+    "content|rail two-column intent" (components.css), and DW-POLISH built the felt-passed
+    mockup. **The mobile clause above stands** (BD2/MW-3 shipped it; `mobile: native`).
+    Note the desktop canon (`docs/studio/praxis-desktop-canon.md`) has **no §4-I at all** —
+    it is D1–D6 + application/chip law. Cite the felt-diagnosis spec and the surface's
+    mockup, never a §4-I desktop pattern.
 - **J — Home CTA + width.** Home actions stack on mobile (≤759, flex-column),
   side-by-side on desktop. Standardize centered-content `max-width` to 1080 only where a
   stage already touches that surface; don't churn untouched widths.

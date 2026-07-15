@@ -9324,8 +9324,15 @@ function renderBookDetail(bookId) {
   if (arcChips) { hinfo.appendChild(arcChips); }
 
   if (user) {
+    // DW-POLISH (the fold): this is the hero's META LINE -- the reader's whole
+    // relationship to the book on ONE line: the status control, the rating,
+    // the finish date, moved-me. It absorbs the unique payload of the old
+    // `.bk-reading` aside card, which is gone: its Status row restated this
+    // very control 6px away and its "Passages marked" row restated
+    // `.bk-tcount` in "In your thinking". Arrangement of existing content --
+    // no new data, no new copy.
     var controls = document.createElement('div');
-    controls.className = 'bk-controls';
+    controls.className = 'bk-controls bk-meta-line';
     controls.appendChild(makeReadStatusControl(normalizeStatus(book.status), function(v) {
       if (!state.books[bookId]) { return; }
       state.books[bookId].status = v;
@@ -9354,6 +9361,39 @@ function renderBookDetail(bookId) {
       movedBtn.classList.toggle('on', on);
       movedBtn.textContent = on ? '♥ Moved you' : '♡ This moved me';
     });
+    // FOLD 1/2 -- the rating. `.bk-reading`'s only truly unique payload; it
+    // belongs beside the status control, not in a card 700px away.
+    var rate = document.createElement('div');
+    rate.className = 'bk-rate';
+    var rateK = document.createElement('span');
+    rateK.className = 'bk-rk';
+    rateK.textContent = 'Rating';
+    rate.appendChild(rateK);
+    rate.appendChild(buildBookRatingStars(bookId, book));
+    controls.appendChild(rate);
+
+    // FOLD 2/2 -- the finish date. Also unique payload (it restates nothing),
+    // so by the same rule that dropped Status/Passages-marked it SURVIVES the
+    // fold. Renders only when the book carries a date, exactly as before.
+    var heroFin = '';
+    if (book.dateRead) { heroFin = '' + book.dateRead; }
+    else if (typeof book.finishedAt === 'number') {
+      try { heroFin = new Date(book.finishedAt).toLocaleDateString(); } catch (eHF) { heroFin = ''; }
+    }
+    if (heroFin) {
+      var finWrap = document.createElement('div');
+      finWrap.className = 'bk-finished';
+      var finK = document.createElement('span');
+      finK.className = 'bk-rk';
+      finK.textContent = 'Finished';
+      var finV = document.createElement('span');
+      finV.className = 'bk-rv';
+      finV.textContent = heroFin;
+      finWrap.appendChild(finK);
+      finWrap.appendChild(finV);
+      controls.appendChild(finWrap);
+    }
+
     controls.appendChild(movedBtn);
 
     hinfo.appendChild(controls);
@@ -9377,12 +9417,37 @@ function renderBookDetail(bookId) {
   hero.appendChild(hinfo);
   surf.shell.appendChild(hero);
 
+  // ---- THE RAIL (DW-POLISH) ----
+  // ONE object, not four floating islands pinned to four different grid rows.
+  // At >=1200 it spans from the hero's top to the page bottom in col 2, so no
+  // sibling can size its track -- the 195px hole DW-3 left (`.vr-card` sharing
+  // row 2 with the tall `.bk-hero`, then align-items:start) is gone for every
+  // realistic shape. Its internal rhythm is its own flex gap.
+  //
+  // HONEST LIMIT (measured, red-team caught it -- do NOT restate the old claim
+  // that the hole "cannot exist at any data shape"; that was false): the rail
+  // is a SPANNING grid item, and a spanning item still contributes to the
+  // intrinsic sizing of every track it spans. So the failure mode INVERTS
+  // rather than disappearing -- if the rail ever grows TALLER than the whole
+  // col-1 stack, its excess inflates rows 2-7 and a void opens under the hero.
+  // Reproduced at 10 value-marks-with-lineage on a book with no marginalia, no
+  // roots and no description: rail 1033px vs col-1 1033px -> a 220px hero->main
+  // void, with the idle picker rows blown from 0 to 49.5px each. Residual
+  // DWP-RAIL-INVERT. The real cure is col 1 becoming ONE object too, which
+  // costs the mobile order -- Preston's call, not carried silently.
+  // Emitted BEFORE `.bk-main`: grid placement makes DOM order irrelevant at
+  // >=1200, and at <=1199 this keeps values + actions ABOVE the thinking,
+  // which is where they are today.
+  var rail = document.createElement('div');
+  rail.className = 'bk-rail';
+  surf.shell.appendChild(rail);
+
   // R8 (values): the value-mark register -- what your reading carries, from
   // your declared values, each with an optional lineage. Beside movedMe; the
   // book is the reader's own shelf record, so it is signed-in-gated only.
   if (user) {
     var vreg = buildValueMarkRegister('book', bookId);
-    if (vreg) { surf.shell.appendChild(vreg); }
+    if (vreg) { rail.appendChild(vreg); }
   }
 
   // ---- the ONE ranked action row (F3) / sign-in (signed out) ----
@@ -9408,7 +9473,7 @@ function renderBookDetail(bookId) {
     sendSubBtn.textContent = 'Send to sub-theory';
     sendSubBtn.addEventListener('click', function() { openBookSendToSubTheory(bookId); });
     actions.appendChild(sendSubBtn);
-    surf.shell.appendChild(actions);
+    rail.appendChild(actions);
   } else {
     // Signed out (panel d): the sign-in prompt replaces the action row; public
     // seed marginalia still surfaces in the lineage below (W12 seed rule).
@@ -9423,7 +9488,7 @@ function renderBookDetail(bookId) {
     signin.textContent = 'Sign in to write';
     signin.addEventListener('click', function() { signInWithGoogle(); });
     signinRow.appendChild(signin);
-    surf.shell.appendChild(signinRow);
+    rail.appendChild(signinRow);
   }
 
   // editor / picker hosts (openMarginaliaEditor / openBookArcPicker /
@@ -9438,13 +9503,18 @@ function renderBookDetail(bookId) {
   subPickerHost.id = 'book-detail-subtheory-picker-host';
   surf.shell.appendChild(subPickerHost);
 
-  // ---- COLS: main = LINEAGE (leads) + aside = About / The book / Your reading ----
-  var cols = document.createElement('div');
-  cols.className = 'bk-cols';
+  // ---- MAIN: the book's life in your thinking, at prime position and width ----
+  // DW-POLISH: `.bk-cols` (a flex row nested INSIDE grid col 1) and `.bk-aside`
+  // are GONE. They are why the page read as three stacks sharing a page but not
+  // a grid: main and aside sat inside col 1, so their edges could never relate
+  // to the rail's tracks, and the thinking was capped at 542px (28.5% @1920)
+  // with the ISBN block beside it as a PEER. `.bk-main` is now a direct shell
+  // child on the shell's own tracks (816px, 42.8%). The aside's reference
+  // matter (What it's about / The book) recedes to the FOOT of this column
+  // (spec 4: "rail, collapsed, or footer-weight"); "Your reading" folded into
+  // the hero's meta line.
   var main = document.createElement('div');
   main.className = 'bk-main';
-  var aside = document.createElement('div');
-  aside.className = 'bk-aside';
 
   // MAIN: In your thinking -- the folded marks-and-lineage material (F2/F3 leads).
   var lin = document.createElement('div');
@@ -9553,7 +9623,7 @@ function renderBookDetail(bookId) {
   // artifact card -- the reader's standing reflection, kept in the lineage spine.
   if (user) { main.appendChild(buildBookArtifactCard(bookId, book, user)); }
 
-  // ---- ASIDE: What it's about (recedes here per F3) ----
+  // ---- FOOTER-WEIGHT: What it's about (recedes here per F3) ----
   if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
     var aboutBlock = document.createElement('div');
     aboutBlock.className = 'bk-block lum-glass';
@@ -9562,10 +9632,10 @@ function renderBookDetail(bookId) {
     syn.className = 'bk-synopsis';
     syn.textContent = book.description;
     aboutBlock.appendChild(syn);
-    aside.appendChild(aboutBlock);
+    main.appendChild(aboutBlock);
   }
 
-  // ---- ASIDE: The book (factual metadata) ----
+  // ---- FOOTER-WEIGHT: The book (factual metadata -- reference matter) ----
   var metaBlock = document.createElement('div');
   metaBlock.className = 'bk-block lum-glass bk-meta';
   metaBlock.appendChild(bkBlabel('The book'));
@@ -9591,35 +9661,17 @@ function renderBookDetail(bookId) {
   if (book.category && ('' + book.category).replace(/^\s+|\s+$/g, '') !== '') { subjects.push(book.category); }
   if (subjects.length > 0) { addMetaRow('Subjects', subjects.join(' · ')); }
   metaBlock.appendChild(dl);
-  aside.appendChild(metaBlock);
+  main.appendChild(metaBlock);
 
-  // ---- ASIDE: Your reading (signed-in only) ----
-  if (user) {
-    var readBlock = document.createElement('div');
-    readBlock.className = 'bk-block lum-glass bk-reading';
-    readBlock.appendChild(bkBlabel('Your reading'));
-    readBlock.appendChild(bkReadingRow('Status', statusText(book.status), normalizeStatus(book.status) === 'read'));
-    var finStr = '';
-    if (book.dateRead) { finStr = '' + book.dateRead; }
-    else if (typeof book.finishedAt === 'number') {
-      try { finStr = new Date(book.finishedAt).toLocaleDateString(); } catch (eF) { finStr = ''; }
-    }
-    if (finStr) { readBlock.appendChild(bkReadingRow('Finished', finStr, false)); }
-    var ratingRow = document.createElement('div');
-    ratingRow.className = 'bk-rrow';
-    var rk = document.createElement('span');
-    rk.className = 'bk-rk';
-    rk.textContent = 'Rating';
-    ratingRow.appendChild(rk);
-    ratingRow.appendChild(buildBookRatingStars(bookId, book));
-    readBlock.appendChild(ratingRow);
-    readBlock.appendChild(bkReadingRow('Passages marked', '' + margCount, false));
-    aside.appendChild(readBlock);
-  }
+  // ---- "Your reading" -- FOLDED AWAY (DW-POLISH) ----
+  // The card is gone, not hidden. Its four rows resolved as:
+  //   Status           -> DROPPED (restated the read-status control in the hero)
+  //   Passages marked  -> DROPPED (restated `.bk-tcount` in "In your thinking")
+  //   Rating           -> MOVED to the hero's meta line (unique payload)
+  //   Finished         -> MOVED to the hero's meta line (unique payload)
+  // Nothing the reader could see or do was removed; two restatements were.
 
-  cols.appendChild(main);
-  cols.appendChild(aside);
-  surf.shell.appendChild(cols);
+  surf.shell.appendChild(main);
 
   // ---- Edit / more disclosure (signed-in) ----
   if (user) {
@@ -9632,11 +9684,23 @@ function renderBookDetail(bookId) {
       _bookDetailEditOpen = !_bookDetailEditOpen;
       renderBookDetail(bookId);
     });
-    surf.shell.appendChild(editToggle);
-    if (_bookDetailEditOpen) { surf.shell.appendChild(buildBookEditPanel(bookId, book, user)); }
+    // The TOGGLE joins the rail (it is rail chrome). The PANEL stays a direct
+    // shell child so it keeps DW-3's own row 6 -- an opened panel must remain a
+    // prominent band that can never overlap a sibling.
+    //
+    // ...but it is INSERTED BEFORE the picker hosts, NOT appended at the end.
+    // At >=1200 this is irrelevant (grid placement ignores DOM order). At <=1199
+    // `.bk-shell` is display:block, so DOM order IS visual order -- appending it
+    // last put the panel ~1500-2500px BELOW its own toggle, under the whole
+    // thinking block: the toggle flipped to "Close edit" and nothing visible
+    // happened. Inserting here keeps toggle and panel adjacent at every width.
+    rail.appendChild(editToggle);
+    if (_bookDetailEditOpen) {
+      surf.shell.insertBefore(buildBookEditPanel(bookId, book, user), editorHost);
+    }
   }
 
-  // Find this book
+  // Find this book -- rail chrome (signed-out too; needs only an ISBN).
   var findUrl = buildBookshopUrl(book.isbn);
   if (findUrl) {
     var findLink = document.createElement('a');
@@ -9645,7 +9709,7 @@ function renderBookDetail(bookId) {
     findLink.target = '_blank';
     findLink.rel = 'noopener noreferrer';
     findLink.textContent = 'Find this book';
-    surf.shell.appendChild(findLink);
+    rail.appendChild(findLink);
   }
 }
 
