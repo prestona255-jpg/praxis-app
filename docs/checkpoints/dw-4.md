@@ -410,5 +410,23 @@ close via **gap-ledger close records** (`cross-cutting.md`, `subtheory-page.md`)
 
 ---
 
-*Expected push state: HEAD == origin/main + 7 commits, live sw.js ×2 == repo at the bumped version.
-NOTHING pushed — awaiting Preston's exact words. Felt pass decides `native`.*
+## THE COMMIT CHAIN — 9, all local
+
+| # | commit | what |
+|---|---|---|
+| 1 | `6554e9a` | Stage 1 — artifact editorial spread |
+| 2 | `d555114` | Stage 2 — yumi-sees ledger + framing rail |
+| 3 | `f6b710f` | Rider 1 — DW-RING-RADIUS (all six DW blocks) |
+| 4 | `de6c13b` | Rider 2 — DW-STP2-SEED (centred seed read) |
+| 5 | `1123772` | docs — chips · Round records · BOARD rows · sequence re-plan |
+| 6 | `46701a3` | rig — `.claude/rig/` tracked (+ the `!.claude/rig/` negation) |
+| 7 | `3311160` | **fix cycle — red-team BLOCK upheld** (the 270px hole + the overprint) |
+| 8 | `13425d3` | Round records — fold in the BLOCK and the overprint |
+| 9 | `0b49c19` | **ship — Builder regen + cache bump v3.208** (hook-armed) |
+
+Expected push state: `HEAD == origin/main + 9`, then live sw.js ×2 == repo at **v3.208**.
+`git status` clean (tracked); em-dash intact in every subject; untouchables (`state.js`,
+`integrations.js`, `index.html`, `firestore.rules`, `netlify/**`) all UNTOUCHED; `sw.js` touched
+only by the final commit, exactly one line.
+
+*NOTHING pushed — awaiting Preston's exact words. The felt pass decides `native`.*
