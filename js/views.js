@@ -8513,14 +8513,11 @@ function buildMargCard(marg) {
   card.className = 'bk-marg lum-glass';
   var annot = document.createElement('div');
   annot.className = 'bk-annot';
-  var pen = document.createElement('span');
-  pen.className = 'bk-pen';
-  pen.setAttribute('aria-hidden', 'true');
-  pen.textContent = '✎';
+  // DWF-1: the decorative glyph is GONE -- never wired, but it promised editing.
+  // A real wired one returns with MARG-EDIT (see docs/studio/book-detail.md).
   var atext = document.createElement('span');
   atext.className = 'bk-atext';
   atext.textContent = marg.body || '';
-  annot.appendChild(pen);
   annot.appendChild(atext);
   card.appendChild(annot);
   var meta = document.createElement('div');

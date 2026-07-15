@@ -10912,8 +10912,9 @@ body.wc-focus .app-nav { opacity:.26; }
 /* what you marked -- marginalia cards (gold left-accent = the "marked"
    signature; the passage-quote slot is intentionally absent, never faked) */
 .bk-marg{ padding:18px 22px; margin:0 0 13px; border-left:2px solid rgba(255,231,154,.45); }
+/* DWF-1 dropped the decorative glyph rule; gap is inert at one item and is
+   where MARG-EDIT's real pencil returns. */
 .bk-annot{ display:flex; gap:10px; align-items:flex-start; }
-.bk-pen{ flex:none; color:var(--lum-gold); font-size:14px; margin-top:2px; }
 .bk-atext{ font-family:var(--lum-sans); font-size:14.5px; color:var(--lum-ink-2); line-height:1.5; }
 .bk-margmeta{ margin-top:13px; padding-top:11px; border-top:1px solid rgba(182,168,136,.14); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 .bk-loc{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.05em; color:var(--lum-ink-4); }
@@ -11043,7 +11044,6 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* 13 · marginalia cards + EVOLVED FIX woven/unwoven dots. */
 .bk-surface .bk-marg{ border-left:2px solid var(--bk-gold-hi); }
-.bk-surface .bk-pen{ color:var(--bk-gold-deep); }
 .bk-surface .bk-atext{ color:var(--lum-ink-2); }
 .bk-surface .bk-margmeta{ border-top:1px solid var(--bk-line); }
 .bk-surface .bk-margmeta-l{ display:inline-flex; align-items:center; gap:9px; }
