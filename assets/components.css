@@ -9622,7 +9622,9 @@
   }
   .about-spine-link:hover { color:var(--ink-2); }
   .about-spine-link.is-on { color:var(--gold); border-left-color:var(--gold); }
-  .about-spine-link:focus-visible { outline:2px solid var(--gold); outline-offset:2px; border-radius:4px; }
+  /* DW-RING-RADIUS: no border-radius here -- the ring must never dictate the
+     element's shape; outline already follows the element's own radius. */
+  .about-spine-link:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
 
   .about .sect[id] { scroll-margin-top:96px; }
 
@@ -11170,7 +11172,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .bk-surface .vr-add:focus-visible,
   .bk-surface .bk-arcchip:focus-visible,
   .bk-surface .bk-edit-toggle:focus-visible,
-  .bk-surface .bk-find:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+  .bk-surface .bk-find:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 }
 /* ===== end DW-3 · BOOK DETAIL DESKTOP COMPOSITION ===== */
 
@@ -11415,7 +11417,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-page.lum-amber-deep .st-conn-add:focus-visible,
   .st-page.lum-amber-deep .st-yumi-dismiss:focus-visible,
   .st-page.lum-amber-deep .st-walknav-side:focus-visible,
-  .st-page.lum-amber-deep .vr-add:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+  .st-page.lum-amber-deep .vr-add:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 }
 /* ===== end DW-STP2 · SUB-THEORY PAGE READING MEASURE ===== */
 
@@ -11669,7 +11671,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-build.lum-amber-deep .stb-brow:focus-visible,
   .st-build.lum-amber-deep .stb-conn-add:focus-visible,
   .st-build.lum-amber-deep .stb-crow:focus-visible,
-  .st-build.lum-amber-deep .stb-delete:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; border-radius:6px; }
+  .st-build.lum-amber-deep .stb-delete:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 }
 /* ===== end DW-3 · SUB-THEORY BUILD DESKTOP COMPOSITION ===== */
 
@@ -12872,7 +12874,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .home-page.lum-amber-deep .seg-opt:focus-visible,
   .home-page.lum-amber-deep .home-arcbtn:focus-visible,
   .home-page.lum-amber-deep .home-arc-start:focus-visible,
-  .home-page.lum-amber-deep .home-gl-link:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:8px; }
+  .home-page.lum-amber-deep .home-gl-link:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
 }
 
 /* =============================================================================
@@ -13111,7 +13113,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .notebook.lum-amber-deep .seg-opt:focus-visible,
   .notebook.lum-amber-deep .nb-mode:focus-visible,
   .notebook.lum-amber-deep .btn-primary:focus-visible,
-  .notebook.lum-amber-deep .notebook-entry-acts a:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; border-radius:8px; }
+  .notebook.lum-amber-deep .notebook-entry-acts a:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
 }
 
 /* =============================================================================
