@@ -108,6 +108,7 @@ lessons: composed ≠ designed — widen-within ceilings on content-rich detail 
 lessons: A DOM move splits a control from its panel: ≥1200 grid placement hid an orphaned Edit panel that was DEAD at every width below 1200. Open every on-demand panel AT MOBILE too.
 lessons: "cannot exist by construction, at any data shape" is a claim one fixture can never earn — the rail fix INVERTED the void mode rather than killing it (DWP-RAIL-INVERT).
 lessons: rig.hollow cannot flag a SINGLE gap (max==median ⇒ suspect:false). It sees rhythm breaks between ≥3 items, not one void between two.
+lessons: The decorative ✎ read as an EDIT CONTROL to the app's own author — a false affordance fails a felt pass even though it was never a regression (never wired, one commit, Wave 4). Affordance is a promise; a pen beside a note promises editing however it is styled.
 lessons: Every D-gate is horizontal; `rig.hollow` is the only instrument that sees a void. A surface can pass all six and be undesigned.
 lessons: A mockup's `*{box-sizing:border-box}` HIDES bugs the real app shows — this surface has no global reset. Never trust a mockup as a layout proof.
 lessons: Measure the SIGNED-OUT path for D2, not just crash/overlap: owner-filtered data means signed-in can render strictly LESS prose than signed-out.
@@ -116,6 +117,30 @@ evidence: docs/checkpoints/dwp-book-detail-recon.md (Stage 0 + baseline + propos
 
 ## Next
 
+- **MARG-EDIT — re-open existing marginalia for editing, from Book Detail. Bucket: PROGRAM**
+  (slot assigned at the wave close-out re-plan). Named DWF-1, 2026-07-15, on Preston's ruling.
+  ⚠ **This row was FIRST WRITTEN FALSE and corrected by `fix-red-team` before commit.** The
+  original claimed "no edit-existing path anywhere in the repo… a reader can never correct or
+  remove it" — that was asserted from a narrow grep (`editMarginalia|editEntry|…`), not proven.
+  Two of its four scope items **already exist**:
+  - **DELETE EXISTS** — `renderNotebookEntry` (views.js:14097, marginalia-aware via `isMarg`:14103)
+    appends Delete → `confirm delete` → `deleteEntry(capturedId)` (state.js:1974) **unconditionally**
+    (views.js:14304-14348; only gather/drawOut are register-gated). Route: **Notebook → the
+    marginalia card → Delete**. It even re-renders Book Detail if that is the open route.
+  - **AN UPDATE PATH EXISTS** — `openMarginaliaEditor`'s `onSave` else-branch sets
+    `entry.body = body; entry.updatedAt = now` + persists (views.js:13643-13650). So it is
+    create-**then-update-within-the-open-session**, not "create-only".
+  **THE REAL GAP, narrowed:** (1) **no re-entry with prefill** — `entryId` is a closure var reset to
+  `null` on every open, so once the editor closes a note can never be re-opened to correct;
+  (2) **no edit/delete affordance on Book Detail's marg cards** — delete lives only on the Notebook
+  surface. Scope is therefore `entryId` param + prefill + surfacing the affordance here — **cheaper
+  than first written, and NOT "build an update path + build delete"**.
+  **TIER FLAGGED FOR PRESTON:** PROGRAM was ruled on the false "APP-WIDE gap" framing. The corrected
+  scope may not warrant a dedicated supervised session. Left at PROGRAM — a re-tier is his call, not
+  a silent downgrade.
+  **Why it surfaced now:** the decorative ✎ was the only thing on the page that looked like the
+  missing capability. DWF-1 removed the glyph (it promised what this surface does not deliver); a
+  real, wired pencil returns here when MARG-EDIT ships — `.bk-annot` keeps its `gap:10px` as its seat.
 - **Mobile pass DONE (MW-3), `mobile: native`.** Nothing outstanding on the mobile axis. The only
   carried item is the desktop residual **MW3-BKBOX** (own felt-gated pass, out of the mobile wave).
 - **`desktop: composed` HELD, not raised** (under-claim law): every D-gate passes on live evidence

@@ -77,6 +77,16 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
 - Every JS change after a CACHE_VERSION bump needs its own bump, or the service worker serves a stale bundle. An already-open tab keeps the old SW until the user accepts the "new version ready — Reload" banner.
 
 ## Verification — non-negotiable
+- INTERACTIVE-CONTROL SWEEP: any build that restructures a surface's DOM must
+  fire every interactive control on that surface live and table the evidence
+  before its review gates — observing the control's OWN state (text/disabled/
+  aria) as well as global DOM/route/state. "Delta list exhaustive" claims do not
+  substitute. (Created DWF-1, 2026-07-15, after DW-POLISH shipped TWO dead
+  controls past an "exhaustive" delta list: the Edit panel orphaned ≤1199, then
+  the marginalia ✎. Own-state is load-bearing in BOTH directions — a global-only
+  probe scored the wired "Fix this book" as dead (its effect is `disabled=true` +
+  "Looking up…" on itself), and `.bk-showall` never changes its own text, only
+  its `inDom`. Probe both, or the gate manufactures phantoms and misses real ones.)
 - Open every task with Stage 0 recon: read the files, confirm anchors, report stats, then STOP for go-ahead.
 - Byte deltas are measured before AND after — never back-derived. Report grep counts. (Git stores text blobs as LF though the working tree is CRLF, so the autocrlf warning is cosmetic; prove "no EOL flip" with a small diff stat, not the warning.)
   - CAVEAT — the diffstat test is NECESSARY BUT NOT SUFFICIENT, and was over-trusted until DW-STP2 (2026-07-14). With `core.autocrlf=true` the clean filter normalizes CRLF→LF **before every comparison git makes** (diff, numstat, staging), so a pure EOL flip of otherwise-unchanged lines is **structurally invisible** to it — a small diffstat reads small either way. It proves the CONTENT change is surgical; it cannot prove EOL held. For the EOL question use `git ls-files --eol` (compare `i/` vs `w/`), or a scratch-clone checkout. And note the practical floor: when every blob is already LF (`git show HEAD:<f> | tr -cd '\r' | wc -c` == 0 — true across this repo), a working-tree flip is **immaterial to what commits**, because the blob is LF regardless and any fresh checkout re-materializes CRLF regardless.
