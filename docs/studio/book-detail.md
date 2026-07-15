@@ -7,7 +7,7 @@ in_nav: no
 state: closed
 rounds: 1
 mobile: native
-desktop: composed
+desktop: native
 ---
 
 ## State
@@ -117,8 +117,14 @@ evidence: docs/checkpoints/dwp-book-detail-recon.md (Stage 0 + baseline + propos
 
 ## Next
 
-- **MARG-EDIT — re-open existing marginalia for editing, from Book Detail. Bucket: PROGRAM**
-  (slot assigned at the wave close-out re-plan). Named DWF-1, 2026-07-15, on Preston's ruling.
+- **MARG-EDIT — re-open existing marginalia for editing, from Book Detail. Bucket: ROUND GAP —
+  Book Detail** (~~PROGRAM~~ — **re-tiered 2026-07-15 at the DW wave close, Preston's ruling**).
+  The downgrade is a direct consequence of the correction below: PROGRAM was ruled on the false
+  "APP-WIDE gap" framing, and once delete and same-session update were shown to already exist via
+  Notebook, the true scope — prefill re-entry into `openMarginaliaEditor` + a wired card affordance
+  — is round-sized, not a dedicated supervised session. **The flag line I wrote stands as the
+  honest record**: I raised the tier question rather than downgrade silently, and this is the answer.
+  Named DWF-1, 2026-07-15, on Preston's ruling.
   ⚠ **This row was FIRST WRITTEN FALSE and corrected by `fix-red-team` before commit.** The
   original claimed "no edit-existing path anywhere in the repo… a reader can never correct or
   remove it" — that was asserted from a narrow grep (`editMarginalia|editEntry|…`), not proven.
@@ -143,9 +149,13 @@ evidence: docs/checkpoints/dwp-book-detail-recon.md (Stage 0 + baseline + propos
   real, wired pencil returns here when MARG-EDIT ships — `.bk-annot` keeps its `gap:10px` as its seat.
 - **Mobile pass DONE (MW-3), `mobile: native`.** Nothing outstanding on the mobile axis. The only
   carried item is the desktop residual **MW3-BKBOX** (own felt-gated pass, out of the mobile wave).
-- **`desktop: composed` HELD, not raised** (under-claim law): every D-gate passes on live evidence
-  and the 195px hole is dead for every realistic shape, but `native` awaits Preston's **deployed**
-  felt pass — and **DWP-RAIL-INVERT is an open fork**, which is itself a reason not to claim native.
+- **`desktop: native` — GRANTED 2026-07-15** by Preston on the **deployed felt pass of v3.210**
+  (`d3a96df`), after DWF-1 resolved the marginalia ✎ that the v3.209 pass caught. The chip was
+  **held at `composed` through both builds** under the under-claim law and raised only by his word,
+  never by assertion. **Book Detail is the first surface in the program to reach `native` through
+  the polish tier** — the tier's whole premise (composed ≠ designed) earned on its first surface.
+  DWP-RAIL-INVERT stays open beneath it (ruled OPTION A: ship as built, residual named and measured)
+  — a known, accepted edge, not an unknown.
 - **DWP-RAIL-INVERT — RULED: OPTION A (Preston, 2026-07-15, "11 files, option A — push").**
   Ship as built; the residual is named, measured and carried. **This is a known, accepted void
   mode, not an unknown.** The rail is a SPANNING grid item and col 1 is **not** one object, so the

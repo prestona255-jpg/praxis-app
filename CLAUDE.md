@@ -87,6 +87,23 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   probe scored the wired "Fix this book" as dead (its effect is `disabled=true` +
   "Looking up…" on itself), and `.bk-showall` never changes its own text, only
   its `inDom`. Probe both, or the gate manufactures phantoms and misses real ones.)
+- NEVER `--amend` while agent subprocesses are or were live in the repo. Pathspec
+  checkout (`git checkout <sha> -- <path>`) writes the LIVE INDEX even under
+  `--work-tree`, and `--amend` commits the INDEX, not your diff. Reviewers measure
+  via `git show <sha>:<path>` or a scratch clone ONLY. (DWF-1, 2026-07-15: a
+  read-only `praxis-reviewer` used a pathspec checkout to measure CRLF sizes, which
+  reset the live index to base for two files; the next `--amend` committed that index
+  and silently REVERTED a shipped fix while its own commit message said "docs-only".
+  The reviewer then HELD on a regression its own tooling caused. Parse, grep and byte
+  deltas all passed — they read the working tree. Only `git diff <base>..HEAD --stat`
+  saw it. Verify the tree after ANY amend; prefer a new commit.)
+- CLAIMING ABSENCE REQUIRES PROOF: "X doesn't exist" must cite the exhaustive search
+  that would have found it (`git log -S`, full-corpus grep with ESCAPED patterns),
+  not a narrow grep. Bitten twice: v3.209's "the hole cannot exist by construction,
+  at any data shape" (the void mode merely INVERTED — reproduced at 220px), and
+  DWF-1's MARG-EDIT framing ("no edit-existing path anywhere" — delete and
+  same-session update both existed). An unescaped `.` in a grep is a wildcard, which
+  is how `pen.textContent` matched `open.textContent` and manufactured a phantom.
 - Open every task with Stage 0 recon: read the files, confirm anchors, report stats, then STOP for go-ahead.
 - Byte deltas are measured before AND after — never back-derived. Report grep counts. (Git stores text blobs as LF though the working tree is CRLF, so the autocrlf warning is cosmetic; prove "no EOL flip" with a small diff stat, not the warning.)
   - CAVEAT — the diffstat test is NECESSARY BUT NOT SUFFICIENT, and was over-trusted until DW-STP2 (2026-07-14). With `core.autocrlf=true` the clean filter normalizes CRLF→LF **before every comparison git makes** (diff, numstat, staging), so a pure EOL flip of otherwise-unchanged lines is **structurally invisible** to it — a small diffstat reads small either way. It proves the CONTENT change is surgical; it cannot prove EOL held. For the EOL question use `git ls-files --eol` (compare `i/` vs `w/`), or a scratch-clone checkout. And note the practical floor: when every blob is already LF (`git show HEAD:<f> | tr -cd '\r' | wc -c` == 0 — true across this repo), a working-tree flip is **immaterial to what commits**, because the blob is LF regardless and any fresh checkout re-materializes CRLF regardless.

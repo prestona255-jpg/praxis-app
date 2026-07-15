@@ -31,6 +31,21 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-15 (DW WAVE CLOSE)** — **trigger: the Desktop Wave closed** (DW-POLISH v3.209 `2e25c23`
+  + DWF-1 v3.210 `d3a96df`, both pushed, live and felt-passed). Four spine writes, each on a
+  Preston ruling, none autonomous:
+  (a) **DW → Shipped**, closed on the **"0 stretched" exemption ruling** (granted at DW-4; wording
+  lands here per his instruction) rather than on a literal zero — the 5 uncomposable chips
+  (`book-marks`/`account` dead routes; `yumi-panel`/`import-capture`/`spotlight` overlays) take a
+  one-time ledger-recorded D1 exemption under the canon's own clause. **DW-WALK-FIX / DW-SEARCH-FIX
+  remain open and still block a literal zero — the wave closes on the ruling, knowingly.**
+  (b) **Now = R-ARC, single item** — Preston's ruling of **2026-07-14**. Corroborated by the slot
+  `r-arc.md` was written to await ("slot at the next re-plan"); this close is that re-plan.
+  (c) **SCAN and R-SHELF each slide back one slot**; SCAN still precedes R-SHELF, whose brief it
+  exists to draft. **ARC-FIELD** moved Now→Next (Now is R-ARC alone) and flagged as an R-ARC-adjacent
+  fold candidate — named, **not merged**: that would be a spine call, and it is Preston's.
+  (d) **Book Detail chip → `native`** — granted 2026-07-15 on the deployed v3.210 felt pass. The
+  first surface in the program to earn `native` through the polish tier.
 - **2026-07-15 (DW-POLISH · Book Detail)** — the POLISH TIER opened and its premise proved on the
   first surface. No reordering of the spine: this executed Preston's felt-diagnosis work order on a
   surface already in the program. Findings recorded, none applied as a silent re-plan:
@@ -278,6 +293,84 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **DW — Desktop Wave (FULL SWEEP, batches DW-1..4 + DW-STP2 + DW-POLISH + DWF-1)** — the responsive ≥1200 composition tier across the
+  page-surfaces. **Exit criterion: 0 of the Builder's desktop chips at "stretched."** R9a shipped the project's
+  first ≥1200 tier, R9b proved the composition rider live, **Profile is already native**. One commit per batch;
+  About + Arcs first (D0's two worst). **Exempt — round-owned, their chips flip with their round, NOT the sweep:**
+  Shelf → **R-SHELF** · Scan → **SCAN** · Connections → **R10** · Onboarding → its round · commons + reader → **R11**.
+  **Walk IS swept.** The **S-A content sweep** (About · Search · what-Yumi-sees) folds in but owns copy/content,
+  not composition. Re-seed target **ON-7** (Book Detail `.bk-surface` desktop h-scroll, pre-existing) rides a
+  batch or overnight. **DW-1 SHIPPED-LOCAL — About + Arcs → composed, + a scoped ≥760 body-margin reset.**
+  **DW-2 SHIPPED-LOCAL — Home + Notebook → composed** (H-A two-region + Still-Reading rail · N-A
+  widened spread ~1360; both chips `composed`, native awaits the deployed felt pass).
+  **DW-3 SHIPPED-LOCAL — Book-detail + Sub-theory-build → composed** (self-selected: the two worst
+  *reproducible* stretched surfaces — book-detail content|rail grid + subtheory-build contained-panel
+  widen). **Preston's DW-3 supervision riders (2026-07-14):** (a) **ON-7 released to this batch, ≥1200
+  ONLY** — `.bk-surface{box-sizing:border-box}` in the book-detail ≥1200 block (D3 now passes honestly);
+  the **760-1199 band residual is re-scoped in `overnight.md`** (its own owner). (b) **Chip-truth riders
+  (docs):** `profile → native` (drift fix — sequence said native, frontmatter lacked it); **subtheory-page
+  spot-checked reproduce-first — D1/D3/D4/D6 PASS but D2 FAILS** (`.subtheory-readonly-body` 86.4ch,
+  uncapped) → NOT flipped to composed (Preston's condition was "if they pass"); the D2 cap is a named gap
+  (`subtheory-page.md` DW-STP2). Chip census changes by **THREE** this run (book-detail, subtheory-build,
+  profile), not four. rr-row +2 (Round Records only for the two built). (c) **walk + search excluded =
+  RIG-GAP named tasks** (below), so the sweep's exit criterion tracks them. Both built chips `composed`,
+  native awaits the deployed felt pass.
+  **DW-4 SHIPPED-LOCAL — artifact + what-Yumi-sees → composed** (v3.208; `6554e9a..de6c13b`, 4 build
+  commits + docs). Self-selected reproduce-first: artifact **37.5% occ @1920** (the worst D1 of the whole
+  wave, below DW-3's book-detail at 42.9%) → editorial spread, **60.8%**, essay **83.9ch → 72.0ch**;
+  yumi-sees framing prose **138.3ch** (the worst D2 of the wave — past D0's own reference violation, Arcs
+  at 137ch) → ledger column + framing rail, **51ch**, occ 56.7% → **63.4%**. Chips +2, rr-rows +2 (6→8),
+  both `composed` (native awaits the deployed felt pass). **Both ruled riders CLOSED:** DW-RING-RADIUS
+  (all six DW blocks — see the re-plan note below) and DW-STP2-SEED (seed read given a centred 747px
+  column, 72ch; ground kept full-bleed; composed path provably unreached).
+  **THE BATCH WAS 2, AND THAT IS THE COMPLETE REMAINDER** — after the exempt, rig-gapped, dead-route and
+  overlay sets, artifact + yumi-sees were the only live, non-exempt, unshipped page surfaces left at
+  `stretched`. **arc-detail is EXEMPT** — the exempt set's "Connections" resolves to **R10**
+  (`:387`), whose own entry declares `touches: [arcs, arc-detail]`.
+  **⚠ THE SWEEP'S "0 STRETCHED" EXIT CRITERION CANNOT BE MET BY COMPOSITION ALONE — a call for Preston.**
+  13 chips still read `stretched`, and **5 of them can never be composed**: `book-marks` and `account` are
+  **DEAD ROUTES** (R7 retired `#book/<id>/marks` → `location.replace`, `views.js:520-528`; `#account`
+  merged → `#profile`, `:645` — neither renders anything to compose), and `yumi-panel`,
+  `import-capture`, `spotlight` are **overlays, not page-surfaces** (`route: "overlay"`), whose right form
+  IS a contained dialog. Each needs a **ledger-recorded D1 exemption** (the canon's own clause) rather than
+  a build. The remaining 8 are the exempt round-owned set (books · onboarding · commons · reader ·
+  arc-detail) + the rig-gapped pair (walk · search) + `scan`. **So the honest exit is: DW-WALK-FIX +
+  DW-SEARCH-FIX built, the round-owned chips flipped by their rounds, and a one-time exemption ruling for
+  the 5 uncomposable.** DW-4 did not take that ruling unilaterally — it is program-level.
+  **DW rig-gap named tasks (tracked, not stranded — needed before the sweep's "0 stretched" exit):**
+  **DW-WALK-FIX** = walk (`renderInteract`) needs a *published-arc fixture* (renders only "Opening the arc…"
+  async in the no-network rig); **DW-SEARCH-FIX** = search (`renderSearch`) needs a *query-injection
+  harness* (only the empty-query state is reproducible; results state can't be populated). Until these land,
+  walk + search cannot be composed+gated; they remain `stretched` and BLOCK the sweep exit knowingly.
+  **DW-POLISH SHIPPED + LIVE — Book Detail, the POLISH TIER's first surface** (v3.209, `2e25c23`).
+  The tier's premise proved: DW-3 passed **every** D-gate and the page still read as three stacks,
+  because every D-gate is horizontal and the defects were vertical + structural. `rig.hollow` rail
+  **195/14/14 (HOLE) → 16/16/16 uniform** on DEFAULT data; "In your thinking" **542px/28.5% →
+  816px/42.8%**; edges align (measured). **D1 UNCHANGED at 63.0% — it was never the failing gate.**
+  Residual **DWP-RAIL-INVERT ruled OPTION A** (ship as built; the void mode inverts rather than dying
+  — reproduced at 9+ value-marks on an empty book; cure is a col-1 wrapper, deferred).
+  **DWF-1 SHIPPED + LIVE — the marginalia pencil resolved as decoration** (v3.210, `d3a96df`).
+  Preston's felt pass read the per-card ✎ as an edit control; diagnosis proved it was **never wired**
+  and that the restructure did not break it. Glyph removed; **MARG-EDIT** named (see `book-detail.md`).
+  Created the standing **INTERACTIVE-CONTROL SWEEP** gate (CLAUDE.md).
+  **⚖ THE "0 STRETCHED" EXIT CRITERION — RULED (Preston, granted at DW-4; wording lands here).**
+  The criterion **cannot be met by composition alone**, and is hereby closed by a **one-time
+  ledger-recorded D1 exemption** for the five chips that can never be composed (source: the DW-4
+  record, `docs/checkpoints/dw-4.md:385-386`; the canon's own clause, `praxis-desktop-canon.md`
+  D1: *"or the surface carries a ledger-recorded exemption naming why a governed single column is
+  the right form for it"*):
+  | chip | why it can never be composed |
+  |---|---|
+  | `book-marks` | **DEAD ROUTE** — R7 retired `#book/<id>/marks` → `location.replace` (`views.js:520-528`); renders nothing to compose |
+  | `account` | **DEAD ROUTE** — merged → `#profile` (`views.js:645`); renders nothing to compose |
+  | `yumi-panel` | **OVERLAY**, not a page-surface (`route: "overlay"`) — its right form IS a contained dialog |
+  | `import-capture` | **OVERLAY** — as above |
+  | `spotlight` | **OVERLAY** — as above |
+  **The honest exit, therefore:** the exemption above + the round-owned chips flipping with their
+  rounds + **DW-WALK-FIX / DW-SEARCH-FIX** (the rig-gapped pair below, still open and still
+  knowingly blocking a literal "0 stretched"). The wave closes on this ruling, not on those two.
+  touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk, subtheory-page, subtheory-build]
+
 - [x] **Fable audit committed** — the five `pass3-*.md` ledgers +
   `docs/audit/fable-audit-combined.md`. Docs-only; done first to prove the
   pipeline was alive. (launch-spine STEP 0)
@@ -420,64 +513,28 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-- [ ] **DW — Desktop Wave (FULL SWEEP, batches ~DW-1..5)** — the responsive ≥1200 composition tier across the
-  page-surfaces. **Exit criterion: 0 of the Builder's desktop chips at "stretched."** R9a shipped the project's
-  first ≥1200 tier, R9b proved the composition rider live, **Profile is already native**. One commit per batch;
-  About + Arcs first (D0's two worst). **Exempt — round-owned, their chips flip with their round, NOT the sweep:**
-  Shelf → **R-SHELF** · Scan → **SCAN** · Connections → **R10** · Onboarding → its round · commons + reader → **R11**.
-  **Walk IS swept.** The **S-A content sweep** (About · Search · what-Yumi-sees) folds in but owns copy/content,
-  not composition. Re-seed target **ON-7** (Book Detail `.bk-surface` desktop h-scroll, pre-existing) rides a
-  batch or overnight. **DW-1 SHIPPED-LOCAL — About + Arcs → composed, + a scoped ≥760 body-margin reset.**
-  **DW-2 SHIPPED-LOCAL — Home + Notebook → composed** (H-A two-region + Still-Reading rail · N-A
-  widened spread ~1360; both chips `composed`, native awaits the deployed felt pass).
-  **DW-3 SHIPPED-LOCAL — Book-detail + Sub-theory-build → composed** (self-selected: the two worst
-  *reproducible* stretched surfaces — book-detail content|rail grid + subtheory-build contained-panel
-  widen). **Preston's DW-3 supervision riders (2026-07-14):** (a) **ON-7 released to this batch, ≥1200
-  ONLY** — `.bk-surface{box-sizing:border-box}` in the book-detail ≥1200 block (D3 now passes honestly);
-  the **760-1199 band residual is re-scoped in `overnight.md`** (its own owner). (b) **Chip-truth riders
-  (docs):** `profile → native` (drift fix — sequence said native, frontmatter lacked it); **subtheory-page
-  spot-checked reproduce-first — D1/D3/D4/D6 PASS but D2 FAILS** (`.subtheory-readonly-body` 86.4ch,
-  uncapped) → NOT flipped to composed (Preston's condition was "if they pass"); the D2 cap is a named gap
-  (`subtheory-page.md` DW-STP2). Chip census changes by **THREE** this run (book-detail, subtheory-build,
-  profile), not four. rr-row +2 (Round Records only for the two built). (c) **walk + search excluded =
-  RIG-GAP named tasks** (below), so the sweep's exit criterion tracks them. Both built chips `composed`,
-  native awaits the deployed felt pass.
-  **DW-4 SHIPPED-LOCAL — artifact + what-Yumi-sees → composed** (v3.208; `6554e9a..de6c13b`, 4 build
-  commits + docs). Self-selected reproduce-first: artifact **37.5% occ @1920** (the worst D1 of the whole
-  wave, below DW-3's book-detail at 42.9%) → editorial spread, **60.8%**, essay **83.9ch → 72.0ch**;
-  yumi-sees framing prose **138.3ch** (the worst D2 of the wave — past D0's own reference violation, Arcs
-  at 137ch) → ledger column + framing rail, **51ch**, occ 56.7% → **63.4%**. Chips +2, rr-rows +2 (6→8),
-  both `composed` (native awaits the deployed felt pass). **Both ruled riders CLOSED:** DW-RING-RADIUS
-  (all six DW blocks — see the re-plan note below) and DW-STP2-SEED (seed read given a centred 747px
-  column, 72ch; ground kept full-bleed; composed path provably unreached).
-  **THE BATCH WAS 2, AND THAT IS THE COMPLETE REMAINDER** — after the exempt, rig-gapped, dead-route and
-  overlay sets, artifact + yumi-sees were the only live, non-exempt, unshipped page surfaces left at
-  `stretched`. **arc-detail is EXEMPT** — the exempt set's "Connections" resolves to **R10**
-  (`:387`), whose own entry declares `touches: [arcs, arc-detail]`.
-  **⚠ THE SWEEP'S "0 STRETCHED" EXIT CRITERION CANNOT BE MET BY COMPOSITION ALONE — a call for Preston.**
-  13 chips still read `stretched`, and **5 of them can never be composed**: `book-marks` and `account` are
-  **DEAD ROUTES** (R7 retired `#book/<id>/marks` → `location.replace`, `views.js:520-528`; `#account`
-  merged → `#profile`, `:645` — neither renders anything to compose), and `yumi-panel`,
-  `import-capture`, `spotlight` are **overlays, not page-surfaces** (`route: "overlay"`), whose right form
-  IS a contained dialog. Each needs a **ledger-recorded D1 exemption** (the canon's own clause) rather than
-  a build. The remaining 8 are the exempt round-owned set (books · onboarding · commons · reader ·
-  arc-detail) + the rig-gapped pair (walk · search) + `scan`. **So the honest exit is: DW-WALK-FIX +
-  DW-SEARCH-FIX built, the round-owned chips flipped by their rounds, and a one-time exemption ruling for
-  the 5 uncomposable.** DW-4 did not take that ruling unilaterally — it is program-level.
-  **DW rig-gap named tasks (tracked, not stranded — needed before the sweep's "0 stretched" exit):**
-  **DW-WALK-FIX** = walk (`renderInteract`) needs a *published-arc fixture* (renders only "Opening the arc…"
-  async in the no-network rig); **DW-SEARCH-FIX** = search (`renderSearch`) needs a *query-injection
-  harness* (only the empty-query state is reproducible; results state can't be populated). Until these land,
-  walk + search cannot be composed+gated; they remain `stretched` and BLOCK the sweep exit knowingly.
-  touches: [home, books, arcs, notebook, profile, book-detail, about, search, yumi-sees, walk, subtheory-page, subtheory-build]
-- [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
-  scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild. touches: [books]
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
-  field's drag/connect touch model on the protected renderer. The truest remaining mobile line. touches: [arc-detail]
+- [ ] **R-ARC — the knowledge-arc theorizing system (DEEP round)** — the full journey (capture →
+  marginalia → sub-theory → arc → theorize → publish) as one intelligent, structurally sound loop.
+  **PROMOTED TO NOW 2026-07-15 at the DW wave close — Preston's ruling of 2026-07-14.** The slot
+  `r-arc.md` was written to await ("its own deep round; **slot at the next re-plan**") — this close
+  IS that re-plan. It enters as the single Now item: the DW sweep that occupied this slot is
+  complete and shipped, and R-ARC is the next deep round rather than another sweep.
+  Adjacent threads it must reckon with: the arc interior (arc-detail) · sub-theory writing
+  (subtheory-build) · the R10 dependency · Yumi generative. Round doc: `docs/studio/r-arc.md`
+  (thin by design — the scoping chat populates it; **no round brief exists yet**, see Pending inputs).
+  touches: [arcs, arc-detail, subtheory-build, subtheory-page, notebook]
 
 ## Next
+- [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
+  scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild.
+  **Slid back one slot at the 2026-07-15 DW close** (was Now). touches: [books]
 - [ ] **R-SHELF — Shelf deep re-round (DEEP)** — the most-used surface predates the R5–R9 Universal maturity;
-  a full five-beat re-round (scan → forks → mockup → build → close). touches: [books]
+  a full five-beat re-round (scan → forks → mockup → build → close). **Slid back one slot at the
+  2026-07-15 DW close** (SCAN, its own precondition, now precedes it here). touches: [books]
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
+  field's drag/connect touch model on the protected renderer. The truest remaining mobile line. Moved out of
+  Now at the 2026-07-15 DW close (Now is R-ARC alone); **adjacent to R-ARC** (both touch `arc-detail`) — a
+  candidate to fold into that round rather than run standalone, Preston's call. touches: [arc-detail]
 - [ ] **S-B — Sweep + dead-code deletion (SWEEP)** — Import-Capture overlay · Yumi/lens panel · Account
   residuals + delete the ~2060-L defined-but-unrouted old profile renderers (R9a debt) + tokenize the shared
   light-skin literals app-wide (3 surfaces). touches: [import-capture, yumi-panel, account, profile]
@@ -542,6 +599,18 @@ broken — the studio loop's other instrument (R8 Values + R9 Profile/Galaxy add
 - [ ] **Edit mode.** In-place editing of the profile's identity and values.
 - [ ] **Social / discovery hooks.** Follow, build-on, walk — the commons hooks.
 - [ ] **Longer about.** Room for a fuller prose self-description.
+
+## Pending inputs
+
+Things the program is waiting on from Preston. Non-blocking by default — an item here
+never stops a round; it names what a future round should fold in when it arrives.
+(Distinct from **Open calls**, which are decisions already made.)
+
+- **Preston's About/Arcs felt notes — uncollected.** Scoped into DW-POLISH as Stages 3+
+  ("Book Detail only for now — no About/Arcs notes this session; they'll arrive as a later
+  slice") and never supplied. **Fold into a future polish slice; non-blocking.** The polish
+  tier's method is proven on Book Detail (v3.209/v3.210), so the notes can be executed as a
+  slice whenever they land.
 
 ## Standing rules
 
