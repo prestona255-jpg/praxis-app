@@ -11371,6 +11371,15 @@ function renderArtifact(bookId) {
     return;
   }
 
+  // DW-4: the READ modifier. '.artifact-view' is the root of ALL FIVE paths
+  // (className is set at the top of this function, BEFORE the !book guard), so a
+  // desktop composition scoped to it alone would also restructure not-found,
+  // signed-out and empty -- the leak DW-2 (Home) and DW-STP2 (seed) each shipped.
+  // Adding the modifier HERE, on the only path that builds title+body+link, makes
+  // the >=1200 grid structurally unreachable from the other four. Mirrors DW-2's
+  // own fix (the '.home-composed' hook, :1510).
+  wrap.className = wrap.className + ' artifact-read';
+
   var titleEl = document.createElement('h1');
   titleEl.className = 'artifact-title';
   titleEl.textContent = artifact.title || '';

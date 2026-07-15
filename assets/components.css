@@ -2972,6 +2972,47 @@
   .artifact-empty { margin: 64px 0 24px 0; }
 }
 
+/* =====================================================================
+   DW-4 · ARTIFACT -- DESKTOP COMPOSITION (>=1200 tier). ADDITIVE.
+
+   Baseline (measured, reproduce-first): a fixed 720px centered column at
+   EVERY width >=760 -- there was no min-width rule of any kind on this
+   surface, so the base rules above were also the desktop layout. At 1920
+   that read 37.5% occupancy (the worst D1 in the wave, under DW-3's
+   book-detail at 42.9%) with the essay running 83.9ch -- 12ch past the D2
+   cap. Two failures, one cause: the column never had a measure, only a width.
+
+   The composition: the finished room becomes an editorial spread -- the
+   display title + its substrate pointer form a left orientation margin, the
+   essay holds a book measure in the right column. Both regions are EXISTING
+   elements re-placed; no new data, no copy change. It mirrors the sub-theory
+   Page's own main+margin reading room (.st-grid, :11118) rather than
+   inventing a form, and the full-amber ground (umberGroundDark artifact:1,
+   views.js:397; CLAUDE.md 7) is untouched -- measure is width, not color.
+
+   SCOPED TO .artifact-read, NOT .artifact-view: the root class is set before
+   the !book guard (views.js:11316), so it also roots not-found / signed-out /
+   empty. The signed-out artifact IS reachable (a seed __praxis_seed__ artifact
+   bypasses the auth gate at :11346 and lands on this same full render), so an
+   unscoped grid here would re-ship the DW-2 / DW-STP2 leak on a signed-out
+   page. The modifier is set only where title+body+link are built (:11374). */
+@media (min-width:1200px){
+  .artifact-view.artifact-read{
+    max-width:1168px;
+    display:grid;
+    grid-template-columns:470px minmax(0,1fr);
+    grid-template-rows:auto 1fr;
+    column-gap:80px;
+  }
+  /* left region -- orientation: the display title, then the way back out. */
+  .artifact-view.artifact-read .artifact-title{ grid-column:1; grid-row:1; margin:0; }
+  .artifact-view.artifact-read .artifact-substrate-link{ grid-column:1; grid-row:2; align-self:start; margin-top:30px; }
+  /* right region -- the essay. 72ch is the D2 cap read against .artifact-body's
+     OWN font (18px serif), not the container's: the cap belongs on the text
+     element (the DW-2 field-lead gotcha), so it survives a type change. */
+  .artifact-view.artifact-read .artifact-body{ grid-column:2; grid-row:1 / span 2; max-width:72ch; margin:0; }
+}
+
 /* ===== END ARTIFACT VIEW ===== */
 
 
