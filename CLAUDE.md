@@ -60,6 +60,33 @@ Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure sta
 ## How we work
 Two tools: a Claude chat is the design partner and brief author; you (Claude Code) are the executor. Engineering mode — lead with the conclusion, work in staged briefs with PASS/FAIL checkpoints, never bundle unrelated changes into one commit.
 
+## MODEL LAW — session model named in every prompt header
+
+Every build prompt states the model its session runs on. Two axes govern:
+the SESSION model (the main loop) and the AGENT model (subagent frontmatter).
+They are set independently — a Sonnet agent under an Opus session is normal,
+not a contradiction.
+
+**Session model** — named in the prompt header, every time:
+- **SONNET sessions:** pre-flights, docs commits, close-outs, push sequences,
+  overnight batches, Builder regens, verification passes.
+- **OPUS sessions:** deep-round build slices, mockup shaping, Yumi
+  grammar/eval work.
+
+**Agent model** — set in `.claude/agents/<name>.md` frontmatter:
+- **Gate agents = `sonnet`:** `praxis-reviewer`, `praxis-recon`, and kin
+  (`studio-scan`, `repo-mapper`). Measurement and verification do not need
+  the deeper model; the evidence standard is the same either way.
+- **`fix-red-team` = `inherit`** — a deliberate choice, not an oversight.
+  It stays on the session model until a Sonnet red-team demonstrably catches
+  a real blocker. **Revisit at the R-ARC close.**
+- **`fix-implementer` = `inherit`** — it is invoke-only on `catastrophic`
+  fixes (dual-build), which is deep build work; it follows the session.
+- **`studio-mockup` = `sonnet`** — Preston's ruling (2026-07-15). The agent
+  builds against a locked decisions list, and has shipped felt-passing
+  mockups on sonnet since R5. "Mockups are OPUS" above governs the *shaping*
+  session with Preston, not this agent.
+
 ## Conventions — hard rules
 - `var` and `function` only. No `const`, `let`, arrow functions, `class`, or template literals.
 - String concatenation, not template strings. Callback-style `.then()` chains.

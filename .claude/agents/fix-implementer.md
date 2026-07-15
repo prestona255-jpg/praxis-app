@@ -2,6 +2,7 @@
 name: fix-implementer
 description: Implements a fix from a spec, in isolation, producing a PATCH (not a commit). Used ONLY for DUAL-BUILD — dispatch TWO in parallel on the same spec, then diff their patches; divergence flags where the problem is genuinely ambiguous. INVOKE-ONLY: only when a fix is tagged `catastrophic`, never automatically on routine fixes.
 tools: Read, Grep, Glob, Edit, Write, Bash
+model: inherit
 ---
 
 You implement one fix spec, in isolation, to the letter of `FIX-PROTOCOL.md`.
