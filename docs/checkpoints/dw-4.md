@@ -404,6 +404,10 @@ close via **gap-ledger close records** (`cross-cutting.md`, `subtheory-page.md`)
   tracked-under-`.claude` precedent — but seed.js is the **first executable JS** tracked there, and
   it is auth-shaped. Not a vulnerability; a judgement call. If you'd rather it never ship, the fix
   is a `netlify.toml` publish dir or moving the rig to `tools/rig/` — say which and it moves.
+  **RULED withdrawn (Preston, 2026-07-15): premise falsified by live probe** — Netlify does not
+  publish dot-directories (`/.claude/rig/seed.js` 404 live, `/tools/` 200); the move would have
+  **EXPOSED** seed.js. The rig stays at `.claude/rig`, intentionally unpublished. Guard note:
+  `.claude/rig/README.md`.
 - `DW-RING-TOKEN` (rider-1 split) · `DW-STP2-SEED` 760-1199 band residual (105.7ch @1024).
 - Frontmatter line refs corrected as ride-alongs: `artifact.md` 10939→**11310**, `yumi-sees.md`
   14128→**14733**, and both surfaces' `umberGroundDark` ref 373→**397**.
