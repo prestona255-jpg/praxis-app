@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R-SHELF · mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@400;500&family=DM+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441;
+    --ink:#2b2214; --ink-2:#645940; --ink-3:#978b6d;
+    --line:#e3d8c1; --page:#f8f1df; --page-2:#fcf6e8;
+    --shelf-edge:#d8c9a8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--page); color:var(--ink);
+    font-family:"DM Sans",sans-serif; font-size:15px; line-height:1.5;
+    padding:28px 20px 90px;
+  }
+  .wrap{max-width:1040px;margin:0 auto}
+
+  /* ---------- wheat horizon (the field on the edge of the library) ---------- */
+  .fieldband{
+    position:relative;height:150px;overflow:hidden;border-radius:0 0 10px 10px;
+    margin:-28px -20px 30px;
+    background:
+      radial-gradient(60% 90% at 72% 100%, rgba(217,164,65,.30) 0%, rgba(217,164,65,0) 62%),
+      linear-gradient(to bottom,#fbf4e0 0%,#f7ecce 58%,#efe0b8 100%);
+  }
+  .fieldband::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:14px;
+    background:linear-gradient(to bottom, rgba(122,95,44,0), rgba(122,95,44,.20));
+  }
+  .stalk{
+    position:absolute;bottom:0;width:2px;border-radius:2px 2px 0 0;
+    background:linear-gradient(to top,#a98d4e,#c9a95e);
+    transform-origin:50% 100%;
+    animation:sway 5s ease-in-out infinite alternate;
+  }
+  .stalk::after{
+    content:"";position:absolute;top:-13px;left:-2px;width:6px;height:15px;
+    border-radius:50% 50% 45% 45%;
+    background:radial-gradient(ellipse at 50% 30%, #e3bd6b, #c39a4a);
+  }
+  .stalk.back{opacity:.4;filter:saturate(.8)}
+  @keyframes sway{
+    from{transform:rotate(-2.6deg)}
+    to{transform:rotate(3.2deg)}
+  }
+  body.nohz .fieldband{display:none}
+  @media (max-width:759px){ .fieldband{height:118px;margin:-22px -14px 24px} }
+
+  /* ---------- ground treatments (exploration switch, not shipping UI) ---------- */
+  .ground{display:flex;gap:8px;margin-top:16px;align-items:center;flex-wrap:wrap}
+  .gbtn{
+    border:1px solid var(--line);background:transparent;border-radius:8px;
+    padding:6px 12px;min-height:34px;cursor:pointer;
+    font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-2);
+  }
+  .gbtn.on{background:var(--ink);color:var(--page-2);border-color:var(--ink)}
+  .gbtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* A. BOOKCASE — shelf cavities with a real board, drawn from the token world */
+  body.g-case{background:linear-gradient(to bottom,#f6eeda,#f2e8ce)}
+  .g-case .shelfrow{
+    background:linear-gradient(to bottom,#f2e6c8,#ecdfbc);
+    border-bottom:0;border-radius:3px;
+    padding:14px 12px 18px;
+    box-shadow:inset 0 16px 24px -16px rgba(90,70,30,.38),
+               inset 14px 0 16px -14px rgba(90,70,30,.30),
+               inset -14px 0 16px -14px rgba(90,70,30,.30);
+  }
+  .g-case .shelfrow::after{
+    left:-4px;right:-4px;bottom:-11px;height:11px;
+    background:linear-gradient(to bottom,#d3bf93,#b7a071);
+    border-radius:0 0 4px 4px;
+    box-shadow:0 7px 12px -4px rgba(74,58,26,.4);
+  }
+  .g-case .cover, .g-case .spine{box-shadow:0 3px 5px rgba(43,34,20,.34), inset 3px 0 0 rgba(0,0,0,.18)}
+
+  /* B. STUDY WALL — lamplight wash, faint grain, floating boards */
+  body.g-study{
+    background:
+      radial-gradient(120% 60% at 50% -10%, #fdf8e9 0%, rgba(253,248,233,0) 60%),
+      repeating-linear-gradient(0deg, rgba(90,70,30,.018) 0 2px, rgba(0,0,0,0) 2px 4px),
+      linear-gradient(to bottom,#f6efdc,#eee3c7);
+  }
+  .g-study .shelfrow{border-bottom:0;padding-bottom:16px}
+  .g-study .shelfrow::after{
+    left:-2px;right:-2px;bottom:-9px;height:9px;
+    background:linear-gradient(to bottom,#e2d3ab,#c9b586);
+    border-radius:2px;
+    box-shadow:0 14px 18px -8px rgba(74,58,26,.35);
+  }
+
+  /* NOW band keeps its quiet card in every ground */
+  .g-case .now .shelfrow, .g-study .now .shelfrow{
+    background:transparent;box-shadow:none;border-radius:0;
+    border-bottom:2px solid var(--shelf-edge);padding:6px 6px 14px;
+  }
+  .g-case .now .shelfrow::after, .g-study .now .shelfrow::after{
+    left:2px;right:2px;bottom:-8px;height:8px;border-radius:0;
+    background:linear-gradient(to bottom, rgba(74,58,26,.10), rgba(74,58,26,0));
+    box-shadow:none;
+  }
+  .g-case .now .cover, .g-study .now .cover{box-shadow:0 2px 3px rgba(43,34,20,.28), inset 3px 0 0 rgba(0,0,0,.18)}
+
+  /* ---------- header ---------- */
+  .hd-top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  h1{
+    font-family:"Cormorant Garamond",serif;font-weight:600;
+    font-size:44px;letter-spacing:.01em;line-height:1;
+  }
+  .meta{font-family:"DM Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap}
+  .search{
+    flex:1 1 220px;min-width:180px;height:44px;
+    background:var(--page-2);border:1px solid var(--line);border-radius:10px;
+    padding:0 14px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--ink);
+    outline:none;
+  }
+  .search::placeholder{color:var(--ink-3)}
+  .search:focus-visible{border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,118,26,.14)}
+  .mode{
+    display:flex;background:var(--page-2);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;height:44px;
+  }
+  .mode button{
+    border:0;background:transparent;padding:0 18px;cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:14px;color:var(--ink-2);
+    min-width:104px;
+  }
+  .mode button.on{
+    background:var(--ink);color:var(--page-2);
+  }
+  .mode button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+
+  .values{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .values .vlabel{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-3);
+    text-transform:uppercase;letter-spacing:.12em;margin-right:2px}
+  .chip{
+    border:1px solid var(--line);background:transparent;border-radius:999px;
+    padding:7px 14px;min-height:36px;cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:13px;color:var(--ink-2);
+  }
+  .chip.on{
+    border-color:var(--gold);color:var(--gold-deep);
+    background:var(--page-2);
+    box-shadow:0 0 0 3px rgba(217,164,65,.14);
+  }
+  .chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-3);
+    margin-top:12px;font-style:italic}
+
+  /* ---------- bands ---------- */
+  #library{margin-top:34px;transition:opacity .22s ease, transform .22s ease}
+  #library.fading{opacity:0;transform:translateY(6px)}
+  .band{margin-bottom:42px}
+  .band-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+  .band-hd h2{
+    font-family:"Cormorant Garamond",serif;font-weight:600;font-size:23px;
+    letter-spacing:.005em;cursor:pointer;
+  }
+  .band-hd h2:hover{color:var(--gold-deep)}
+  .band-hd .count{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-3)}
+
+  .shelfrow{
+    display:flex;align-items:flex-end;gap:18px;
+    padding:6px 6px 14px;margin-bottom:4px;
+    border-bottom:2px solid var(--shelf-edge);
+    position:relative;
+  }
+  .shelfrow::after{ /* the shadow the shelf casts */
+    content:"";position:absolute;left:2px;right:2px;bottom:-8px;height:8px;
+    background:linear-gradient(to bottom, rgba(74,58,26,.10), rgba(74,58,26,0));
+    pointer-events:none;
+  }
+  .shelfrow.scroll{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+
+  /* ---------- covers ---------- */
+  .slot{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center}
+  .cover{
+    width:92px;height:138px;border-radius:3px 6px 6px 3px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:10px 9px;position:relative;
+    color:#f5ecd8;
+    box-shadow:0 2px 3px rgba(43,34,20,.28), inset 3px 0 0 rgba(0,0,0,.18);
+    transition:transform .18s ease, opacity .25s ease, filter .25s ease, box-shadow .25s ease;
+  }
+  .cover .t{
+    font-family:"Cormorant Garamond",serif;font-weight:600;font-size:13.5px;
+    line-height:1.15;letter-spacing:.005em;
+  }
+  .cover .a{font-family:"DM Mono",monospace;font-size:8.5px;opacity:.75;line-height:1.3}
+  .cover:hover{transform:translateY(-4px)}
+  .cover:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  /* quiet meaning marks: annotation under-glow */
+  .g1 .cover{box-shadow:0 2px 3px rgba(43,34,20,.28), inset 3px 0 0 rgba(0,0,0,.18), 0 8px 16px -6px rgba(168,118,26,.30)}
+  .g2 .cover{box-shadow:0 2px 3px rgba(43,34,20,.28), inset 3px 0 0 rgba(0,0,0,.18), 0 9px 20px -5px rgba(168,118,26,.45)}
+  .g3 .cover{box-shadow:0 2px 3px rgba(43,34,20,.28), inset 3px 0 0 rgba(0,0,0,.18), 0 10px 24px -4px rgba(217,164,65,.55)}
+
+  /* value ember */
+  .ember{
+    position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #f0c66a, var(--gold-hi) 60%, var(--gold-deep));
+    box-shadow:0 0 6px rgba(217,164,65,.7);
+  }
+
+  /* spine (cover-less book) */
+  .spine{
+    width:32px;height:138px;border-radius:2px 4px 4px 2px;cursor:pointer;
+    background:linear-gradient(to right, #6e5a38, #8a744c 30%, #6e5a38);
+    box-shadow:0 2px 3px rgba(43,34,20,.28);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .18s ease, opacity .25s ease, filter .25s ease;
+  }
+  .spine span{
+    writing-mode:vertical-rl;font-family:"Cormorant Garamond",serif;
+    font-size:12px;font-weight:600;color:#f5ecd8;letter-spacing:.04em;
+    max-height:120px;overflow:hidden;white-space:nowrap;
+  }
+  .spine:hover{transform:translateY(-4px)}
+
+  /* illumination grammar */
+  .lit .cover, .lit .spine{
+    transform:translateY(-5px);
+    box-shadow:0 2px 3px rgba(43,34,20,.28), 0 0 0 2px var(--gold-hi), 0 12px 26px -6px rgba(217,164,65,.6);
+  }
+  .dim .cover, .dim .spine{opacity:.3;filter:saturate(.35)}
+  .dim .qline, .dim .also{opacity:.3}
+
+  /* NOW band */
+  .now{
+    background:var(--page-2);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 12px;margin-bottom:46px;
+  }
+  .now .band-hd h2{font-style:italic}
+  .now .band-hd .count{color:var(--gold-deep)}
+  .now .cover{width:104px;height:156px}
+  .now .shelfrow{border-bottom-color:var(--shelf-edge)}
+  .qline{
+    font-family:"DM Mono",monospace;font-style:italic;font-size:9.5px;
+    color:var(--gold-deep);max-width:120px;margin-top:9px;line-height:1.45;
+    text-align:center;
+  }
+  .stillmark{font-family:"DM Mono",monospace;font-size:9px;color:var(--ink-3);margin-top:9px}
+
+  /* see-all tile */
+  .seeall{
+    width:92px;height:138px;border-radius:6px;flex:0 0 auto;cursor:pointer;
+    border:1.5px dashed var(--line);background:transparent;
+    font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-2);
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:8px;line-height:1.5;
+  }
+  .seeall:hover{border-color:var(--gold);color:var(--gold-deep)}
+
+  /* also-under (lens mode duplicate marker) */
+  .also{font-family:"DM Mono",monospace;font-size:8.5px;color:var(--ink-3);margin-top:8px;
+    max-width:110px;text-align:center;line-height:1.4}
+
+  /* unshelved pile */
+  .pile-band .band-hd h2{color:var(--ink-2)}
+  .pile{display:flex;align-items:flex-end;padding:10px 6px 0;min-height:150px}
+  .pile .slot{margin-right:-46px}
+  .pile .slot:nth-child(1) .cover{transform:rotate(-5deg)}
+  .pile .slot:nth-child(2) .cover{transform:rotate(3deg) translateY(4px)}
+  .pile .slot:nth-child(3) .cover{transform:rotate(-2deg) translateY(-2px)}
+  .pile-note{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-3);
+    font-style:italic;margin:14px 0 0 6px}
+
+  @media (max-width:759px){
+    body{padding:22px 14px 70px}
+    h1{font-size:36px}
+    .cover{width:78px;height:118px;padding:8px 7px}
+    .cover .t{font-size:12px}
+    .now .cover{width:88px;height:132px}
+    .spine{height:118px}
+    .seeall{width:78px;height:118px}
+    .shelfrow{gap:12px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body class="g-case">
+<div class="wrap">
+
+  <div class="fieldband" id="fieldband" aria-hidden="true"></div>
+
+  <header>
+    <div class="hd-top">
+      <h1>Shelf</h1>
+      <span class="meta">129 books · one library, two ways to shelve it</span>
+    </div>
+    <div class="controls">
+      <input class="search" id="q" type="text" placeholder="Search your shelf…" aria-label="Search your shelf">
+      <div class="mode" role="group" aria-label="Shelving mode">
+        <button id="mCat" class="on">Categories</button>
+        <button id="mLens">Lenses</button>
+      </div>
+    </div>
+    <div class="values" id="values">
+      <span class="vlabel">Values</span>
+    </div>
+    <div class="ground" id="ground" role="group" aria-label="Ground treatment (exploration)">
+      <span class="vlabel">Ground · exploring</span>
+      <button class="gbtn on" data-g="g-case">Bookcase</button>
+      <button class="gbtn" data-g="g-study">Study wall</button>
+      <button class="gbtn" data-g="g-paper">Paper</button>
+      <button class="gbtn on" id="hz">Wheat horizon</button>
+    </div>
+    <div class="hint">tap a value to light the shelf · flip the mode to re-shelve · switch the ground to feel it</div>
+  </header>
+
+  <main id="library" aria-live="polite"></main>
+
+</div>
+
+<script>
+  var HUES = {
+    teal:"#2f5d5a", oxblood:"#7a3b2e", indigo:"#3a4668", moss:"#5a6339",
+    umber:"#6b4a2f", slate:"#4a5560", plum:"#5d3a52", rust:"#8a4a24",
+    forest:"#38543f", coal:"#3b352c"
+  };
+
+  /* g = annotation glow 0-3 · v = value marks · lens = angles (multi) */
+  var BOOKS = [
+    {t:"Pedagogy of the Oppressed", a:"Paulo Freire", cat:"Theory & Philosophy", hue:"oxblood", g:3, v:["Liberation","Praxis"], lens:["Liberation & schooling"]},
+    {t:"Theory and Resistance in Education", a:"Henry Giroux", cat:"Theory & Philosophy", hue:"indigo", g:3, v:["Power named"], lens:["Liberation & schooling","The machine & the classroom"]},
+    {t:"Life in Schools", a:"Peter McLaren", cat:"Theory & Philosophy", hue:"slate", g:1, v:[], lens:["Liberation & schooling"]},
+    {t:"Education for Liberation", a:"Noah De Lissovoy", cat:"Theory & Philosophy", hue:"forest", g:2, v:["Liberation"], lens:["Liberation & schooling"]},
+    {t:"Beyond Learning", a:"Gert Biesta", cat:"Theory & Philosophy", hue:"coal", g:1, v:["Doubt"], lens:["Liberation & schooling"]},
+    {t:"All About Love", a:"bell hooks", cat:"Theory & Philosophy", hue:"plum", g:2, v:["Care"], lens:["Love as grounded practice"], now:"still"},
+
+    {t:"Teaching to Transgress", a:"bell hooks", cat:"Education", hue:"rust", g:3, v:["Liberation"], lens:["Liberation & schooling","Love as grounded practice"]},
+    {t:"Culturally Responsive Teaching & the Brain", a:"Zaretta Hammond", cat:"Education", hue:"teal", g:2, v:[], lens:["Liberation & schooling"]},
+    {t:"Cultivating Genius", a:"Gholdy Muhammad", cat:"Education", hue:"moss", g:2, v:["Dignity"], lens:["Liberation & schooling"], now:"still"},
+    {t:"We Want to Do More Than Survive", a:"Bettina Love", cat:"Education", hue:"oxblood", g:2, v:["Liberation","Hope"], lens:["Liberation & schooling"]},
+    {t:"Leverage Leadership", a:"Paul Bambrick-Santoyo", cat:"Education", hue:"slate", g:0, v:[], lens:[]},
+
+    {t:"The Fire Next Time", a:"James Baldwin", cat:"Race & Identity", hue:"coal", g:3, v:["Dignity"], lens:["Witness & testimony"]},
+    {t:"Between the World and Me", a:"Ta-Nehisi Coates", cat:"Race & Identity", hue:"indigo", g:1, v:[], lens:["Witness & testimony"]},
+    {t:"Freedom Dreams", a:"Robin D.G. Kelley", cat:"Race & Identity", hue:"plum", g:2, v:["Hope"], lens:["Witness & testimony"]},
+
+    {t:"Educated", a:"Tara Westover", cat:"Memoir & Biography", hue:"umber", g:1, v:[], lens:["Witness & testimony"]},
+    {t:"I Know Why the Caged Bird Sings", a:"Maya Angelou", cat:"Memoir & Biography", hue:"teal", g:2, v:["Dignity"], lens:["Witness & testimony","Love as grounded practice"]},
+    {t:"Long Walk to Freedom", a:"Nelson Mandela", cat:"Memoir & Biography", hue:"forest", g:1, v:["Hope"], lens:["Witness & testimony"]},
+    {t:"The Shape of Sound", a:"Fiona Murphy", cat:"Memoir & Biography", hue:"moss", g:0, v:[], lens:["Witness & testimony"], spine:true},
+
+    {t:"Empire of AI", a:"Karen Hao", cat:"Technology & Society", hue:"coal", g:3, v:["Power named","Doubt"], lens:["The machine & the classroom"], now:"q", q:"carrying: does AI transmit hegemony, or extend hidden potential?"},
+    {t:"Algorithms of Oppression", a:"Safiya Noble", cat:"Technology & Society", hue:"rust", g:2, v:["Power named"], lens:["The machine & the classroom"]},
+    {t:"Race After Technology", a:"Ruha Benjamin", cat:"Technology & Society", hue:"indigo", g:1, v:[], lens:["The machine & the classroom","Witness & testimony"]},
+
+    {t:"The Power of Now", a:"Eckhart Tolle", cat:"Psychology & Mind", hue:"moss", g:0, v:[], lens:[]},
+    {t:"Mating in Captivity", a:"Esther Perel", cat:"Psychology & Mind", hue:"plum", g:1, v:["Care"], lens:["Love as grounded practice"]},
+    {t:"The Love Prescription", a:"John & Julie Gottman", cat:"Psychology & Mind", hue:"teal", g:0, v:["Care"], lens:["Love as grounded practice"]}
+  ];
+
+  var UNSHELVED = [
+    {t:"The Value of Others", a:"Orion Taraban", hue:"slate"},
+    {t:"Notes on Grief", a:"Chimamanda Ngozi Adichie", hue:"umber"},
+    {t:"The Undercommons", a:"Moten & Harney", hue:"coal"}
+  ];
+
+  var CATS = ["Theory & Philosophy","Education","Race & Identity","Memoir & Biography","Technology & Society","Psychology & Mind"];
+  var LENSES = ["Liberation & schooling","Witness & testimony","The machine & the classroom","Love as grounded practice"];
+  var VALUES = ["Liberation","Care","Power named","Dignity","Hope","Doubt"];
+
+  var state = { mode:"cat", value:null, q:"" };
+
+  function isMobile(){ return window.matchMedia("(max-width:759px)").matches; }
+
+  function matches(b){
+    if (state.value && (!b.v || b.v.indexOf(state.value) < 0)) return false;
+    if (state.q){
+      var hay = (b.t + " " + b.a).toLowerCase();
+      if (hay.indexOf(state.q) < 0) return false;
+    }
+    return true;
+  }
+  function filterOn(){ return !!(state.value || state.q); }
+
+  function coverEl(b, opts){
+    opts = opts || {};
+    var slot = document.createElement("div");
+    slot.className = "slot" + (b.g ? " g" + b.g : "");
+    if (filterOn()) slot.className += matches(b) ? " lit" : " dim";
+
+    var el;
+    if (b.spine){
+      el = document.createElement("div");
+      el.className = "spine"; el.tabIndex = 0;
+      var s = document.createElement("span"); s.textContent = b.t;
+      el.appendChild(s);
+    } else {
+      el = document.createElement("div");
+      el.className = "cover"; el.tabIndex = 0;
+      el.style.background = "linear-gradient(160deg," + HUES[b.hue] + " 0%," + shade(HUES[b.hue]) + " 100%)";
+      var t = document.createElement("div"); t.className = "t"; t.textContent = b.t;
+      var a = document.createElement("div"); a.className = "a"; a.textContent = b.a;
+      el.appendChild(t); el.appendChild(a);
+      if (b.v && b.v.length){
+        var e = document.createElement("div"); e.className = "ember";
+        e.title = "values: " + b.v.join(", ");
+        el.appendChild(e);
+      }
+    }
+    slot.appendChild(el);
+
+    if (opts.nowQ && b.q){
+      var q = document.createElement("div"); q.className = "qline"; q.textContent = b.q;
+      slot.appendChild(q);
+    } else if (opts.still){
+      var m = document.createElement("div"); m.className = "stillmark"; m.textContent = "still reading";
+      slot.appendChild(m);
+    } else if (opts.also){
+      var al = document.createElement("div"); al.className = "also"; al.textContent = "also under " + opts.also;
+      slot.appendChild(al);
+    }
+    return slot;
+  }
+
+  function shade(hex){
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.max(0,(n>>16)-24), g = Math.max(0,((n>>8)&255)-24), bl = Math.max(0,(n&255)-24);
+    return "rgb(" + r + "," + g + "," + bl + ")";
+  }
+
+  function shelfRows(books, opts){
+    opts = opts || {};
+    var frag = document.createDocumentFragment();
+    var mob = isMobile();
+    var perRow = mob ? 4 : 999;
+    var maxRows = mob ? 2 : 1;
+    var shown = books.slice(0, mob ? perRow * maxRows : books.length);
+    var rest = books.length - shown.length;
+
+    var rows = [];
+    for (var i = 0; i < shown.length; i += perRow) rows.push(shown.slice(i, i + perRow));
+    if (!rows.length) rows.push([]);
+
+    for (var r = 0; r < rows.length; r++){
+      var row = document.createElement("div");
+      row.className = "shelfrow" + (!mob ? " scroll" : "");
+      for (var j = 0; j < rows[r].length; j++){
+        var b = rows[r][j];
+        var also = null;
+        if (opts.lensName && b.lens && b.lens.length > 1){
+          for (var k = 0; k < b.lens.length; k++){
+            if (b.lens[k] !== opts.lensName){ also = b.lens[k]; break; }
+          }
+        }
+        row.appendChild(coverEl(b, { also: also }));
+      }
+      if (rest > 0 && r === rows.length - 1){
+        var sa = document.createElement("button");
+        sa.className = "seeall";
+        sa.textContent = "See all " + books.length;
+        row.appendChild(document.createElement("div")).appendChild(sa);
+        row.lastChild.className = "slot";
+      }
+      frag.appendChild(row);
+    }
+    return frag;
+  }
+
+  function band(title, count, cls){
+    var sec = document.createElement("section");
+    sec.className = "band" + (cls ? " " + cls : "");
+    var hd = document.createElement("div"); hd.className = "band-hd";
+    var h = document.createElement("h2"); h.textContent = title;
+    var c = document.createElement("span"); c.className = "count"; c.textContent = count;
+    hd.appendChild(h); hd.appendChild(c);
+    sec.appendChild(hd);
+    return sec;
+  }
+
+  function render(){
+    var lib = document.getElementById("library");
+    lib.innerHTML = "";
+
+    /* NOW band */
+    var nowBooks = [];
+    for (var i = 0; i < BOOKS.length; i++) if (BOOKS[i].now) nowBooks.push(BOOKS[i]);
+    var nb = band("Now", "what you're carrying", "now");
+    var nrow = document.createElement("div"); nrow.className = "shelfrow";
+    for (var n = 0; n < nowBooks.length; n++){
+      var b = nowBooks[n];
+      nrow.appendChild(coverEl(b, b.now === "q" ? { nowQ:true } : { still:true }));
+    }
+    nb.appendChild(nrow);
+    lib.appendChild(nb);
+
+    /* library bands per mode */
+    if (state.mode === "cat"){
+      for (var c = 0; c < CATS.length; c++){
+        var list = [];
+        for (var x = 0; x < BOOKS.length; x++) if (BOOKS[x].cat === CATS[c]) list.push(BOOKS[x]);
+        if (!list.length) continue;
+        var sec = band(CATS[c], list.length + (list.length === 1 ? " book" : " books"));
+        sec.appendChild(shelfRows(list));
+        lib.appendChild(sec);
+      }
+    } else {
+      for (var L = 0; L < LENSES.length; L++){
+        var ll = [];
+        for (var y = 0; y < BOOKS.length; y++)
+          if (BOOKS[y].lens && BOOKS[y].lens.indexOf(LENSES[L]) >= 0) ll.push(BOOKS[y]);
+        if (!ll.length) continue;
+        var lsec = band(LENSES[L], ll.length + " books · a way of seeing");
+        lsec.appendChild(shelfRows(ll, { lensName: LENSES[L] }));
+        lib.appendChild(lsec);
+      }
+    }
+
+    /* unshelved pile */
+    var pb = band("Unshelved", UNSHELVED.length + " waiting", "pile-band");
+    var pile = document.createElement("div"); pile.className = "pile";
+    for (var u = 0; u < UNSHELVED.length; u++) pile.appendChild(coverEl(UNSHELVED[u]));
+    pb.appendChild(pile);
+    var note = document.createElement("div"); note.className = "pile-note";
+    note.textContent = "no shelf yet — classify to give them a home";
+    pb.appendChild(note);
+    lib.appendChild(pb);
+  }
+
+  function reshelve(mode){
+    if (state.mode === mode) return;
+    state.mode = mode;
+    document.getElementById("mCat").className = mode === "cat" ? "on" : "";
+    document.getElementById("mLens").className = mode === "lens" ? "on" : "";
+    var lib = document.getElementById("library");
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced){ render(); return; }
+    lib.className = "fading";
+    setTimeout(function(){ render(); lib.className = ""; }, 220);
+  }
+
+  /* wire controls */
+  document.getElementById("mCat").onclick = function(){ reshelve("cat"); };
+  document.getElementById("mLens").onclick = function(){ reshelve("lens"); };
+  document.getElementById("q").oninput = function(){
+    state.q = this.value.toLowerCase(); render();
+  };
+
+  var vwrap = document.getElementById("values");
+  for (var vI = 0; vI < VALUES.length; vI++){
+    (function(v){
+      var ch = document.createElement("button");
+      ch.className = "chip"; ch.textContent = v;
+      ch.onclick = function(){
+        state.value = (state.value === v) ? null : v;
+        var chips = vwrap.getElementsByClassName("chip");
+        for (var z = 0; z < chips.length; z++)
+          chips[z].className = "chip" + (chips[z].textContent === state.value ? " on" : "");
+        render();
+      };
+      vwrap.appendChild(ch);
+    })(VALUES[vI]);
+  }
+
+  var hzOff = false;
+  var groundCls = "g-case";
+  function applyBody(){ document.body.className = groundCls + (hzOff ? " nohz" : ""); }
+  var gWrap = document.getElementById("ground");
+  var gBtns = gWrap.getElementsByClassName("gbtn");
+  for (var gI = 0; gI < gBtns.length; gI++){
+    (function(btn){
+      if (btn.id === "hz"){
+        btn.onclick = function(){
+          hzOff = !hzOff;
+          btn.className = "gbtn" + (hzOff ? "" : " on");
+          applyBody();
+        };
+        return;
+      }
+      btn.onclick = function(){
+        groundCls = btn.getAttribute("data-g");
+        for (var gz = 0; gz < gBtns.length; gz++){
+          if (gBtns[gz].id === "hz") continue;
+          gBtns[gz].className = "gbtn" + (gBtns[gz] === btn ? " on" : "");
+        }
+        applyBody();
+      };
+    })(gBtns[gI]);
+  }
+
+  function buildField(){
+    var band = document.getElementById("fieldband");
+    if (!band) return;
+    band.innerHTML = "";
+    var w = band.clientWidth || 1000;
+    var layers = [
+      { n: Math.round(w / 22), hMin: 30, hMax: 48, back: true },
+      { n: Math.round(w / 15), hMin: 48, hMax: 82, back: false }
+    ];
+    for (var li = 0; li < layers.length; li++){
+      var L = layers[li];
+      for (var s = 0; s < L.n; s++){
+        var st = document.createElement("div");
+        st.className = "stalk" + (L.back ? " back" : "");
+        st.style.left = (Math.random() * 100).toFixed(2) + "%";
+        st.style.height = Math.round(L.hMin + Math.random() * (L.hMax - L.hMin)) + "px";
+        st.style.animationDuration = (4 + Math.random() * 3).toFixed(2) + "s";
+        st.style.animationDelay = (-Math.random() * 6).toFixed(2) + "s";
+        band.appendChild(st);
+      }
+    }
+  }
+
+  var rT;
+  window.onresize = function(){
+    clearTimeout(rT);
+    rT = setTimeout(function(){ render(); buildField(); }, 150);
+  };
+
+  render();
+  buildField();
+</script>
+</body>
+</html>
