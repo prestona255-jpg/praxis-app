@@ -234,8 +234,16 @@ not deepened**.
   any ancestor of an absolutely-positioned child that can overflow it (the iOS nav bug), at every width.
 - **Breakpoints are DESKTOP-FIRST**: base rules ARE desktop; `@media (max-width:759px)` steps down. 760
   is the divide. Verify at **390** and **~1280**.
-- **Mockup is self-running standalone HTML**, no external fetches, no libraries.
+- **Mockup follows the HOUSE PATTERN for fonts — link them, exactly as every shipped mockup does**
+  (`subtheory.html`, `arcs.html`, `notebook.html` each carry 2 `fonts.googleapis` links and **zero**
+  base64). Degrade to the stack's fallbacks offline. **Never inline base64 font binaries.**
+  *(CORRECTED 2026-07-15 after SHAPE-B round 1: this file previously said "no external fetches" AND
+  "fonts degrade gracefully" — contradictory, and stricter than the house. An agent resolved the
+  contradiction by inlining 194KB of base64, taking the file to 321KB against a ~91KB house norm.
+  My spec error, not the agent's.)*
+- **No libraries. No CDN scripts. Self-running from `file://` by double-click.**
 - **Fixture content is the real eruption, verbatim** — never lorem, never sample arc names.
+- **House scale is ~90KB.** Thin fails; bloated fails.
 
 ---
 
@@ -247,6 +255,46 @@ not deepened**.
    renders three masses inside it so the question is answerable by looking.
 3. **The compose control's home** (D1) — nav slot vs fixed mobile control, judged in place.
 4. **D10's third match-state** — how "a thinker I've read but never shelved" reads on the sheet.
+
+---
+
+## 7b. ⚠ SHAPE-B ROUND 1 FAILED — the five fixes round 2 MUST satisfy
+
+Round 1 (`wf_15286d6c-935`) produced `docs/studio/mockups/r-arc-loop.html` and **failed its own gates**:
+five BLOCKs across four independent verify lenses. Its synthesis agent reported *"Everything verifies."*
+It did not. **Distrust self-reports — verify the file.** Two of three candidates died to transient API
+errors, so the panel collapsed to **n=1**; the survivor won by survivorship, scoring **27/40**
+(demo-legibility **5/10**, canon 6/10, decisions 7/10 — only writing-feel, 9/10, was strong).
+
+**These five are gates, not suggestions. A candidate that fails any one of them is discarded.**
+
+1. **THE SIGNAL MUST BE VISIBLE.** Round 1 clipped D14's raised-hand margin dots invisible behind an
+   `overflow:hidden` ancestor — Yumi could not signal at any desktop width. The flagship feature of the
+   speaking model rendered as nothing. **Prove the dots are visible at 1280 by measuring them, not by
+   asserting them.**
+2. **NO PRE-BAKED INTERACTIONS — EVER.** Round 1's D17 weave was static HTML posing as a demonstrated
+   action: the prose already cited the source, so it *looked* woven. This is the **DWF-1 failure** —
+   a control that looks wired and never was. Every claimed behavior must run from a real listener.
+   **Cite the handler, or don't claim the behavior.** Same for D13's mint: round 1's basin never
+   pre-loaded into the workshop rail.
+3. **FIXTURE ISOLATION IS A VERIFIED REQUIREMENT, NOT A CLAIM.** Round 1's own header promised "every
+   render function reads FROM this object; Preston's real text swaps in at ONE SITE" — and it was
+   **false**. Prove it: change one string in `FIXTURE` and show every beat re-render from it.
+4. **THE PLACEHOLDER ERUPTION MUST OBEY D10.** Round 1's placeholder said *"empire of ai just sitting
+   there on the shelf **unread**"* — inside the Track-A demo that D10 defines as **all sources read**.
+   The fixture argued against its own ruling and blurred the Track A/B split. Messy prose, yes —
+   **self-contradicting prose, no.**
+5. **TOKENS BY NAME — COUNTED.** Round 1 carried **82** raw hex literals outside `:root` (independently
+   confirmed). Report the count; it must be **zero** outside `:root` and the declared review chrome.
+
+**Plus (MAJOR, round 1):** neither emotional payoff landed on screen — birth sat below dense panels with
+no `scrollIntoView`, and `enterRoom()` never hid the workshop nor scrolled to the amber room. **A beat
+that fires off-screen has not landed.** And the ground spectrum conflated the *graduation* and
+*threshold* beats, which §5 lists as distinct.
+
+**What round 1 got genuinely right (keep it):** it is truly typeable end-to-end — real caret, real
+`execCommand` insert, and **D4 verified across an actual `window.location.reload()`**. Its `writingFeel`
+9/10 is the one result worth inheriting. It survives as round 2's **fourth contender**.
 
 ---
 
