@@ -775,6 +775,21 @@ function ensureArcFields(arc) {
     arc.valueMarks = [];
     changed = true;
   }
+  // R-ARC S3 (the ember): lifecycle status -- every arc is born an EMBER and
+  // graduates by the reader's act (F4: additive field, graduation = a status
+  // flip, never a migration). A SEPARATE axis from arc.published (commons
+  // visibility) and from the derived maturity word. Coerces any stray value to
+  // 'ember', so it can never carry an unknown state across a load.
+  if (arc.status !== 'ember' && arc.status !== 'graduated') {
+    arc.status = 'ember';
+    changed = true;
+  }
+  // R-ARC S3: lineage -- the notebook entry this ember was born from (the door,
+  // Slice 4, sets it; null for arcs made the old way). Additive, both-path.
+  if (arc.originEntryId !== null && typeof arc.originEntryId !== 'string') {
+    arc.originEntryId = null;
+    changed = true;
+  }
   return changed;
 }
 
@@ -1854,25 +1869,59 @@ function wipeActiveUserLocal() {
 // even when the back-reference cleanup is partial. No saveState() --
 // caller owns persistence, matching the rest of this data layer.
 
-function createArc(title, description, userId) {
+// originEntryId is the OPTIONAL lineage pointer (the notebook entry this arc was
+// born from). Old 3-arg callers pass undefined -> null. The blank-title guard is
+// UNCHANGED here: unnamed-ember CREATION is the door's job (Slice 4); this path
+// still requires a name. Renaming to blank later is updateArc's business.
+function createArc(title, description, userId, originEntryId) {
   var trimmedTitle = (typeof title === 'string') ? title.trim() : '';
   if (trimmedTitle === '') return null;
   var trimmedDesc = (typeof description === 'string') ? description.trim() : '';
   var now = Date.now();
   var id = genArcId();
   var arc = {
-    id:          id,
-    userId:      userId,
-    title:       trimmedTitle,
-    description: trimmedDesc,
-    bookIds:     [],
-    entryIds:    [],
-    valueMarks:  [],
-    createdAt:   now,
-    updatedAt:   now
+    id:           id,
+    userId:       userId,
+    title:        trimmedTitle,
+    description:  trimmedDesc,
+    bookIds:      [],
+    entryIds:     [],
+    valueMarks:   [],
+    status:       'ember',
+    originEntryId: (typeof originEntryId === 'string') ? originEntryId : null,
+    createdAt:    now,
+    updatedAt:    now
   };
   state.arcs[id] = arc;
   markArcsDirty();
+  return arc;
+}
+
+// R-ARC S3: the rename path F-A ships (also a REQ#6 reverse-gear act). Mirrors
+// updateSubTheory exactly. UNLIKE createArc it ALLOWS a blank title -- an ember
+// may be unnamed, so clearing the name is a legal rename, not a rejected one.
+function updateArc(id, fields) {
+  var arc = state.arcs[id];
+  if (!arc) return null;
+  var src = fields || {};
+  if (typeof src.title === 'string') arc.title = src.title;
+  if (typeof src.description === 'string') arc.description = src.description;
+  arc.updatedAt = Date.now();
+  markArcsDirty();
+  saveState();
+  return arc;
+}
+
+// R-ARC S3: graduation -- the reader's act, a one-way status flip (earned-then-
+// declared). No migration, no data move; the ember becomes a full arc. Reversal
+// (un-graduate) is deliberately NOT built here -- flag it if the felt pass wants it.
+function graduateArc(id) {
+  var arc = state.arcs[id];
+  if (!arc) return null;
+  arc.status = 'graduated';
+  arc.updatedAt = Date.now();
+  markArcsDirty();
+  saveState();
   return arc;
 }
 

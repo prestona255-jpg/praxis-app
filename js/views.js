@@ -3723,10 +3723,14 @@ function _arcAggregateMaturity(arcId) {
   return sum / subs.length;
 }
 
-// Maturity ramp word (mock .ameta): seed -> forming -> warming -> mature -> bright,
-// derived from the real aggregate. Empty arc reads 'seed'.
+// Maturity ramp word (mock .ameta): nascent -> forming -> warming -> mature ->
+// bright, derived from the real aggregate. Empty arc reads 'nascent' (was 'seed').
 function _arcMaturityWord(arcId) {
-  if (!_arcSubsOf(arcId).length) { return 'seed'; }
+  // R-ARC S3: the zero-sub-theory word was 'seed' -- forbidden as a user-facing
+  // noun (F1). 'nascent' keeps this CONTENT-maturity spectrum primary (Preston's
+  // ruling) without printing the banned word; the EMBER lifecycle lives in a
+  // separate chip by the graduate button, not here.
+  if (!_arcSubsOf(arcId).length) { return 'nascent'; }
   var m = _arcAggregateMaturity(arcId);
   if (m < 0.2) { return 'forming'; }
   if (m < 0.4) { return 'warming'; }
@@ -12757,6 +12761,78 @@ function _arcPublishStale(arcId, arc) {
   return newest > arc.publishedAtLocal;
 }
 
+// R-ARC S3: the ember lifecycle strip in the arc head (owner-only). A quiet
+// status chip + Graduate (one-way, only while an ember) + Rename. Graduation
+// reversal is deliberately not built here (flagged for Slice 5 reverse-gear).
+function _arcHeadLifecycleControl(arcId, arc) {
+  var wrap = document.createElement('div');
+  wrap.className = 'arcfield-lifecycle';
+  var graduated = (arc.status === 'graduated');
+
+  var chip = document.createElement('span');
+  chip.className = 'arcfield-status-chip arcfield-status-' + (graduated ? 'graduated' : 'ember');
+  chip.textContent = graduated ? 'graduated' : 'ember';
+  wrap.appendChild(chip);
+
+  if (!graduated) {
+    var grad = document.createElement('button');
+    grad.type = 'button';
+    grad.className = 'arcfield-life-btn arcfield-graduate-btn';
+    grad.textContent = 'Graduate';
+    grad.addEventListener('click', function() {
+      graduateArc(arcId);
+      renderRoute();
+    });
+    wrap.appendChild(grad);
+  }
+
+  var ren = document.createElement('button');
+  ren.type = 'button';
+  ren.className = 'arcfield-life-btn arcfield-rename-btn';
+  ren.textContent = 'Rename';
+  ren.addEventListener('click', function() {
+    _arcInlineRename(arcId);
+  });
+  wrap.appendChild(ren);
+
+  return wrap;
+}
+
+// R-ARC S3: inline rename of the arc's question (F-A + REQ#6). Swaps the .arcfield-q
+// heading for an input; blur/Enter commits via updateArc, Escape aborts. updateArc
+// allows a blank title, so clearing the name is a legal "unname" (the ember becomes
+// unnamed) -- consistent with F-A.
+function _arcInlineRename(arcId) {
+  var arc = state.arcs[arcId];
+  if (!arc) { return; }
+  var titleEl = document.querySelector('.arcfield-q');
+  if (!titleEl || !titleEl.parentNode) { return; }
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'arcfield-q arcfield-q-rename';
+  input.value = arc.title || '';
+  input.setAttribute('placeholder', 'Name this arc');
+  input.setAttribute('aria-label', 'Rename this arc');
+  var done = false;
+  function commit() {
+    if (done) { return; }
+    done = true;
+    updateArc(arcId, { title: input.value.replace(/^\s+|\s+$/g, '') });
+    renderRoute();
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', function(ev) {
+    // Enter commits DIRECTLY, not via input.blur() -- a programmatic blur() does
+    // not reliably fire the blur listener, and commit()'s `done` guard makes the
+    // subsequent real blur (from renderRoute tearing the input down) idempotent.
+    if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+    else if (ev.key === 'Escape') { done = true; renderRoute(); }
+  });
+  titleEl.parentNode.replaceChild(input, titleEl);
+  input.focus();
+  input.select();
+}
+
 function renderArcDetail(arcId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -12855,7 +12931,16 @@ function renderArcDetail(arcId) {
 
   var title = document.createElement('h1');
   title.className = 'arcfield-q';
-  title.textContent = arc.title || '';
+  // R-ARC S3 (F-A): an ember may be unnamed (rename can clear the title). A blank
+  // title renders a muted "Unnamed" so the heading is never an empty box; the ember
+  // chip beside Graduate carries the lifecycle, so this reads "ember · Unnamed".
+  if (arc.title) {
+    title.textContent = arc.title;
+  } else {
+    // Unnamed is a stage, not a deficiency; the ember chip carries the lifecycle.
+    title.textContent = 'Unnamed';
+    title.className = 'arcfield-q arcfield-q-unnamed';
+  }
   headT.appendChild(title);
 
   if (arc.description) {
@@ -12895,6 +12980,14 @@ function renderArcDetail(arcId) {
   // R5 S5 (D3): quiet publish/unpublish affordance + state line, owner-only (real arcs).
   if (user && arc.userId === user.uid) {
     header.appendChild(_arcHeadPublishControl(arcId, arc));
+  }
+
+  // R-ARC S3 (the ember): owner-only lifecycle strip -- a quiet status chip
+  // (ember/graduated) beside Graduate + Rename. Preston's ruling: the ember reads
+  // as a SMALL CHIP near the graduate button, not in the title. Seed arcs are never
+  // user-owned, so the same owner gate excludes them.
+  if (user && arc.userId === user.uid) {
+    header.appendChild(_arcHeadLifecycleControl(arcId, arc));
   }
 
   // R5 D4 (AF6): the header-only "+ Sub-theory" button is retired here — a single

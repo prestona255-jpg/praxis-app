@@ -139,9 +139,17 @@ touched** (the store rides the global `ls`/`sv`; the owner gates, not the keying
 present; type → F5 → present; gather → reload → cards present). Data-layer checks do **not** count.
 **Model:** **OPUS** — durability tier; F-DL family discipline; silent-loss adjacent.
 
-### Slice 3 — THE EMBER *(S2 data model; REQ#6 rename)*
-**Additive fields only** (T3): arc `status` (**ember** ↔ graduated) · basin structure (origin phrase,
-fragments, mass, split/merge) · lineage (birth-capture link) · mote identity.
+### Slice 3 — THE EMBER *(S2 data model; REQ#6 rename)* — **SHIPPED-LOCAL, awaiting felt pass**
+> **RULED + BUILT 2026-07-16 (Preston).** Scope narrowed: **the basin split into its OWN slice** (Slice
+> 3B below) — Slice 3 = `arc.status` + lineage + rename path + graduation + the `'seed'`→`'nascent'`
+> display. **Naming ruling:** the F1/EMBER ban scopes to the arc-LIFECYCLE vocabulary only; the 16 glyph
+> names (`ST_MARK_NAMES` — "the seed"/"the ember" as *named marks*, R5 S6) are a separate ratified
+> register and STAND. **Ember display = quiet secondary** (maturity word primary; ember a small chip by
+> the graduate button). **Graduation one-way** (reversal → Slice 5). **RE-BANDED at measured size:
+> views.js ≤2,294 B logic + ≤1,827 B CSS — any further growth = fresh halt.** Record:
+> `docs/checkpoints/r-arc-s3.md`.
+**Additive fields only** (T3): arc `status` (**ember** ↔ graduated) · lineage (birth-capture link:
+`originEntryId`). *(Basin structure + mote identity → **Slice 3B**.)*
 **⚠ Two verified asymmetries this slice must resolve:**
 - **`createArc` hard-blocks a blank title** (`if (trimmedTitle === '') return null;`) — a titleless ember
   is not free. Either origin-phrase-as-title, or a new creation path. **FORK F-A below.**
@@ -152,8 +160,16 @@ fragments, mass, split/merge) · lineage (birth-capture link) · mote identity.
 - **`_arcMaturityWord`'s `'seed'` must retire** (see header).
 **Tripwires:** **T1** (arc field ONLY — no third sub-theory status) · **T3** (both paths) · **T4** ·
 don't create a third lifecycle vocabulary beside the existing `arc.published` boolean.
-**Scope:** `js/state.js` **+1.2…+3.0 KB** · `js/views.js` **+0.5…+1.5 KB**.
+**Scope (as built):** `js/state.js` +2,238 B · `js/views.js` ≤2,294 B logic · `components.css` ≤1,827 B.
 **Model:** **OPUS** — schema seam + the coercion tripwire.
+
+### Slice 3B — THE BASIN *(split from Slice 3, Preston 2026-07-16)* — **NOT STARTED**
+The unnamed-sub-theory pre-form: the **basin** (origin phrase · fragments · mass · split/merge) + **mote**
+identity, per decisions §3/D7 (F1: mote/basin, never `seeds`). The largest, least-settled piece — its own
+slice so Slice 3's schema landed clean first. Additive-only; **never a `state.seeds` key** (T4).
+Also folds in the deferred **F2 brightness field-rendering** (the "ember/mote renders small via the
+existing luminosity channel" hook — `buildHomeFieldData` floor, protected renderer untouched).
+**Model:** **OPUS** — new structure + the field's brightness treatment.
 
 ### Slice 4 — ONE DOOR, NOT TWO *(REQ#4, REQ#7b)*
 **The census is exhaustive — all three fold or the round ships a second door (T9):**
@@ -167,6 +183,21 @@ Three different landings, two different arc-resolution behaviors. The loop repla
 **Scope:** `js/views.js` **+3…+7 KB** (net; some deletion) · `js/yumi-ui.js` **±0.5 KB**.
 **Gates:** the sweep, exhaustively; grep proves **exactly one** live creation path; no route orphaned.
 **Model:** **OPUS** — UX restructure across three surfaces.
+
+⚠ **BOUND FINDING — the arc picker's ground (Wave A felt pass, Preston 2026-07-16).** Choosing an arc in
+the notebook gather bar opens a **dark-brown box on the light notebook page** and sits **awkwardly inline**
+rather than as a proper picker. **Root cause (recon):** the notebook wrap is `.notebook lum-amber-deep`
+(views.js:1932); `lum-amber-deep` re-points `--surface-2` → the **dark** `--surface-d2` (theme.css:372),
+and the shared `buildArcPickerPanel` reads raw `--surface-2`/`--ink-4`, so it renders dark inside the
+light surface the R4 skin never re-lit for generic tokens. **Disposition (Preston's, confirmed by recon):**
+the notebook-gather invocation (`openGatherArcPicker` → `buildArcPickerPanel`) **is flow (b)** and dies
+with this slice — **but** `buildArcPickerPanel` is a **shared component (5 call sites)** and the door still
+needs arc association (sub-theories live in embers/Slice 3), so **a picker survives into the new door**.
+**THEREFORE THIS SLICE SHIPS THE DOOR'S ARC PICKER GROUND-CORRECT** — light-surface tokens, a proper
+popover (not an inline dark box). ⚠ **Also suspected app-wide:** the same shared panel reads dark tokens
+under any `lum-amber-deep` ancestor, so shelf move-to-arc / book-detail pickers may show the identical
+defect on their light grounds — **audit all 5 call sites at Slice 4 recon**; a shared-component fix likely
+serves them all. Preston saw only the notebook instance.
 
 ### Slice 5 — REVERSE GEAR *(REQ#6)*
 **Exists:** ungather (`toggleGather`, non-destructive) · link/unlink · sub-theory rename.

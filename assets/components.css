@@ -12561,7 +12561,8 @@ body.wc-focus .app-nav { opacity:.26; }
   .arcfield.lum-amber .seg-opt,
   .arcfield.lum-amber .arc-detail-toggle-btn,
   .arcfield.lum-amber .arc-detail-addsub,
-  .arcfield.lum-amber .arc-detail-delete{ min-height:44px; display:inline-flex; align-items:center; }
+  .arcfield.lum-amber .arc-detail-delete,
+  .arcfield.lum-amber .arcfield-life-btn{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 1 · THE LIVING FIELD ===== */
 
@@ -12679,6 +12680,20 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.arcfield-warm .arcfield-pub-btn[disabled]{ cursor:default; opacity:.6; }
 .arcfield.arcfield-warm .arcfield-pub-status{ color:var(--lum-ink-2); }
 .arcfield.arcfield-warm .arcfield-pub-status b{ color:var(--lum-gold-d); font-weight:600; }
+/* R-ARC S3 -- the ember lifecycle strip (owner-only, warm-dim interior only, so no
+   base/light variant needed: the arc detail root is always .arcfield-warm). The
+   status chip is the quiet ember/graduated marker (Preston's ruling); the buttons
+   mirror .arcfield-pub-btn's warm chrome. Tokens by name only -- --lum-* + the
+   sheet's established warm literal for hover (matches .arcfield-pub-btn:hover). */
+.arcfield.arcfield-warm .arcfield-lifecycle{ display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap; }
+.arcfield.arcfield-warm .arcfield-status-chip{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:var(--lum-r-pill,999px); border:1px solid var(--lum-glass-bd-2); }
+.arcfield.arcfield-warm .arcfield-status-ember{ color:var(--lum-gold-d); border-color:var(--lum-gold-l); }
+.arcfield.arcfield-warm .arcfield-status-graduated{ color:var(--lum-ink-2); }
+.arcfield.arcfield-warm .arcfield-life-btn{ background:transparent; border:1px solid var(--lum-gold-l); color:var(--lum-gold-d); border-radius:var(--lum-r-pill,999px); padding:6px 13px; cursor:pointer; font-family:var(--lum-mono); font-size:11px; letter-spacing:.03em; }
+.arcfield.arcfield-warm .arcfield-life-btn:hover{ background:#f6ecd4; }
+.arcfield.arcfield-warm .arcfield-rename-btn{ border-color:var(--lum-glass-bd-2); color:var(--lum-ink-3); }
+.arcfield.arcfield-warm .arcfield-q-rename{ width:100%; box-sizing:border-box; background:transparent; border:none; border-bottom:1px solid var(--lum-gold-l); color:var(--lum-ink); font-family:var(--font-serif); font-size:inherit; font-weight:inherit; padding:2px 0; outline:none; }
+.arcfield.arcfield-warm .arcfield-q-unnamed{ color:var(--lum-ink-3); font-style:italic; }
 .arcfield.arcfield-warm .arcfield-pub-hint{ color:var(--lum-ink-3); font-family:var(--lum-serif); font-style:italic; font-size:11px; }
 
 /* ============================================================================
