@@ -10935,18 +10935,8 @@ function renderSubTheoryPage(id) {
   stReadHero.appendChild(stMaturity);
   stReadHero.appendChild(renderSubTheoryReadOnly(subTheory, published ? 'published' : 'draft'));
 
-  // stEvidenceSourceBook: KEPT (the Yumi margin reads it) — was defined inside
-  // the removed editor region.
-  function stEvidenceSourceBook(el) {
-    if (el.kind === 'book') { return (state.books && state.books[el.refId]) || null; }
-    if (el.kind === 'entry') {
-      var en = state.notebookEntries && state.notebookEntries[el.refId];
-      if (en && Array.isArray(en.bookIds) && en.bookIds.length) {
-        return (state.books && state.books[en.bookIds[0]]) || null;
-      }
-    }
-    return null;
-  }
+  // R-ARC F4: stEvidenceSourceBook removed with the st-yumi margin -- it had no
+  // other caller (the margin's evidence-note loop was its sole use).
 
   // Connections foot — one row per real linkedSubTheories id. "+ draw a
   // connection" routes to the parent arc constellation (existing flow, preserved).
@@ -10990,65 +10980,14 @@ function renderSubTheoryPage(id) {
   });
   stConn.appendChild(stConnAdd);
 
-  // Yumi's margin — connective notes from REAL signals (the sub's marked passages
-  // + the reader-model summary), never a summary of the user's prose. Dismissable.
-  // Gated by the master yumiReadsAlong consent. (R#8/S6 recolored the Yumi CSS to
-  // the canon gold/amber presence — no blue; markup unchanged.)
-  var stYumi = document.createElement('aside');
-  stYumi.className = 'st-yumi';
-  var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-  var stProf = (stUser && typeof getProfile === 'function') ? getProfile(stUser.uid) : null;
-  var stReadsAlong = !(stProf && stProf.yumiReadsAlong === false);
-  function stAddYumiNote(pre, emText, post) {
-    var note = document.createElement('div');
-    note.className = 'st-yumi-note';
-    var p = document.createElement('p');
-    if (pre) { p.appendChild(document.createTextNode(pre)); }
-    if (emText) { var em = document.createElement('em'); em.textContent = emText; p.appendChild(em); }
-    if (post) { p.appendChild(document.createTextNode(post)); }
-    note.appendChild(p);
-    var dz = document.createElement('button');
-    dz.type = 'button';
-    dz.className = 'st-yumi-dismiss';
-    dz.setAttribute('aria-label', 'Dismiss');
-    dz.textContent = '×';
-    dz.addEventListener('click', function() { if (note.parentNode) { note.parentNode.removeChild(note); } });
-    note.appendChild(dz);
-    stYumi.appendChild(note);
-  }
-  if (stReadsAlong) {
-    var stYumiEye = document.createElement('div');
-    stYumiEye.className = 'st-yumi-eyebrow';
-    var stYumiDot = document.createElement('span');
-    stYumiDot.className = 'lum-light';
-    stYumiEye.appendChild(stYumiDot);
-    stYumiEye.appendChild(document.createTextNode('YUMI'));
-    stYumi.appendChild(stYumiEye);
-    var stEv = Array.isArray(subTheory.evidence) ? subTheory.evidence : [];
-    var syi, stYumiNotes = 0;
-    for (syi = 0; syi < stEv.length && stYumiNotes < 2; syi++) {
-      var sbk = stEvidenceSourceBook(stEv[syi]);
-      if (sbk && sbk.title) {
-        stAddYumiNote('You marked this same nerve in ', sbk.title, ' — the two of you are circling one question.');
-        stYumiNotes++;
-      }
-    }
-    var stRMConsent = !!(stProf && stProf.yumiReaderModel === true);
-    if (stRMConsent && stUser && typeof getReaderModel === 'function') {
-      var stRM = getReaderModel(stUser.uid);
-      if (stRM && stRM.profile && stRM.profile.summary) {
-        stAddYumiNote('From how you read: ', stRM.profile.summary, '');
-        stYumiNotes++;
-      }
-    }
-    if (stYumiNotes === 0) {
-      stAddYumiNote('As you weave your marked passages in, I’ll notice where they press on each other.', '', '');
-    }
-  }
+  // R-ARC F4: the "st-yumi" reader-model margin is REMOVED (D16). The covenant --
+  // Yumi never speaks unbidden -- admits no exception even for grounded speech; that
+  // noticing returns via the raised-hand margin seat in Wave C. The whole aside goes
+  // (incl. its evidence-derived notes), so stAddYumiNote + stEvidenceSourceBook +
+  // the stUser/stProf/stReadsAlong reads that fed it are gone with it.
 
-  // The reading-room grid — read hero + connections (center) · Yumi's margin
-  // (right). The evidence-attach rail column is GONE with the editor: a 2-column
-  // read grid, not the old 3-column compose grid.
+  // The reading room -- read hero + connections, single column (the Yumi margin's
+  // right track is removed; .st-grid collapses to 1-up so no blank gutter remains).
   var stCenter = document.createElement('div');
   stCenter.className = 'st-center';
   stCenter.appendChild(stReadHero);
@@ -11056,7 +10995,6 @@ function renderSubTheoryPage(id) {
   var stGrid = document.createElement('div');
   stGrid.className = 'st-grid';
   stGrid.appendChild(stCenter);
-  stGrid.appendChild(stYumi);
   wrap.appendChild(stGrid);
 
   // R#6: WALK-NAV — prev/next between sibling sub-theories of the SAME arc
@@ -11215,7 +11153,7 @@ function renderSubTheoryBuild(id) {
   var titleInput = document.createElement('input');
   titleInput.type = 'text';
   titleInput.className = 'stb-title-input';
-  titleInput.setAttribute('placeholder', 'Name the forming sub-theory');
+  titleInput.setAttribute('placeholder', 'Name it…');
   titleInput.value = subTheory.header || '';
   titleInput.addEventListener('blur', function() { updateSubTheory(id, { header: titleInput.value }); });
   titleWrap.appendChild(titleInput);
@@ -11261,12 +11199,22 @@ function renderSubTheoryBuild(id) {
   var pub = document.createElement('button');
   pub.type = 'button';
   function pubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
+  // R-ARC F4 (N2): Finish is DORMANT pre-mint (Preston's FF-10 ruling) -- you cannot
+  // finish what isn't named yet. Disabled per the Slice 1 law, with a quiet reason
+  // tied to the naming invitation. Naming stays never-asked-never-forbidden; finishing
+  // just requires a name. Re-evaluated on the next render (as the mote/invite are).
+  function pubIsBasin() { return _stIsBasin(state.subTheories[id]); }
   function paintPub() {
-    pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '');
+    var basin = pubIsBasin();
+    pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '') + (basin ? ' is-dormant' : '');
     pub.textContent = pubDone() ? 'Finished' : 'Finish';
+    pub.disabled = basin;
+    if (basin) { pub.setAttribute('title', 'Name it to finish'); }
+    else { pub.removeAttribute('title'); }
   }
   paintPub();
   pub.addEventListener('click', function() {
+    if (pubIsBasin()) { return; }
     var r = state.subTheories[id]; if (!r) return;
     if (pubDone()) { r.status = 'draft'; r.publishedAt = null; }
     else { r.status = 'published'; r.publishedAt = Date.now(); }
@@ -11368,37 +11316,10 @@ function renderSubTheoryBuild(id) {
     }
   }
 
-  // Yumi's gold/amber margin (R#8, no blue) -- one connective note from REAL signals only (reader-model
-  // summary, else a connective prompt), dismissable, gated by yumiReadsAlong.
-  var stUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-  var stProf = (stUser && typeof getProfile === 'function') ? getProfile(stUser.uid) : null;
-  var readsAlong = !(stProf && stProf.yumiReadsAlong === false);
-  if (readsAlong) {
-    var ym = document.createElement('div');
-    ym.className = 'stb-ymargin';
-    var yd = document.createElement('span');
-    yd.className = 'stb-yd';
-    ym.appendChild(yd);
-    var yp = document.createElement('p');
-    var ymPre = 'Pull a marked passage in from the right, and I’ll watch for where your books start ';
-    var ymEm = 'pressing on each other.';
-    var rmConsent = !!(stProf && stProf.yumiReaderModel === true);
-    if (rmConsent && stUser && typeof getReaderModel === 'function') {
-      var rm = getReaderModel(stUser.uid);
-      if (rm && rm.profile && rm.profile.summary) { ymPre = 'From how you read: '; ymEm = rm.profile.summary; }
-    }
-    yp.appendChild(document.createTextNode(ymPre));
-    var ymEmN = document.createElement('em');
-    ymEmN.textContent = ymEm;
-    yp.appendChild(ymEmN);
-    ym.appendChild(yp);
-    var yx = document.createElement('span');
-    yx.className = 'stb-yx';
-    yx.textContent = '×';
-    yx.addEventListener('click', function() { if (ym.parentNode) { ym.parentNode.removeChild(ym); } });
-    ym.appendChild(yx);
-    sheet.appendChild(ym);
-  }
+  // R-ARC F4: the workshop's "stb-ymargin" reader-model note is REMOVED (D16) --
+  // same covenant as the Page margin (Yumi never speaks unbidden). The raised-hand
+  // margin seat returns in Wave C, gated. Its stUser/stProf/readsAlong reads went
+  // with it.
 
   // connections foot (glyph + title, NO relation label)
   var conn = document.createElement('div');
