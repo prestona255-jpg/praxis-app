@@ -6463,6 +6463,15 @@
   color: var(--ink);
   margin: 0 0 20px 0;
 }
+/* R-ARC S3B-POLISH (FF-5): a basin's provisional identity on the Page -- the quoted
+   origin phrase drops the display-serif header treatment (italic, normal, smaller,
+   muted), so an unnamed basin never reads as a named/finished title. */
+.subtheory-readonly-header.subtheory-readonly-header-basin {
+  font-size: 19px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink-2);
+}
 .subtheory-readonly-body {
   font-family: var(--font-serif);
   font-size: 18px;
@@ -11664,6 +11673,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook.lum-amber-deep .nb-newborn-top{ display:flex; align-items:center; gap:12px; }
 .notebook.lum-amber-deep .nb-newborn-mark{ flex:none; display:inline-flex; }
 .notebook.lum-amber-deep .nb-newborn-title{ font-family:var(--lum-serif); font-weight:600; font-size:22px; color:#241710; }
+/* R-ARC S3B-POLISH (FF-5): a basin's provisional identity -- quoted origin phrase,
+   NOT title treatment (italic, normal weight, smaller), so it never reads as named. */
+.notebook.lum-amber-deep .nb-newborn-title.nb-newborn-basin{ font-weight:400; font-style:italic; font-size:16px; }
 .notebook.lum-amber-deep .nb-newborn-eyebrow{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:#a8761a; margin-top:2px; }
 .notebook.lum-amber-deep .nb-newborn-snippet{ font-family:var(--lum-serif); font-style:italic; font-size:15px; color:#645940; line-height:1.5; margin:14px 0 18px; }
 .notebook.lum-amber-deep .nb-newborn-door{ display:inline-flex; align-items:center; gap:8px; font-family:var(--lum-mono); font-size:12px; letter-spacing:.03em; text-transform:uppercase; color:#3d2807; background:linear-gradient(180deg,#f2c25a,#a8761a); border-radius:999px; padding:10px 20px; text-decoration:none; cursor:pointer; border:none; }
@@ -11697,7 +11709,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-hero-mark-edit{ cursor:pointer; border-radius:50%; }
 .st-build.lum-amber-deep .stb-hero-mark-edit:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 .st-build.lum-amber-deep .stb-title-wrap{ flex:1; min-width:0; }
-.st-build.lum-amber-deep .stb-title-input{ width:100%; font-family:var(--lum-serif); font-weight:600; font-size:30px; line-height:1.06; color:var(--lum-ink); background:none; border:none; border-bottom:1px solid transparent; outline:none; padding-bottom:2px; }
+.st-build.lum-amber-deep .stb-title-input{ width:100%; font-family:var(--lum-serif); font-weight:600; font-size:30px; line-height:1.06; color:var(--lum-ink); background:none; border:none; border-bottom:1px solid transparent; outline:none; padding-bottom:2px; overflow:hidden; text-overflow:ellipsis; }
 .st-build.lum-amber-deep .stb-title-input::placeholder{ color:var(--lum-ink-4); }
 .st-build.lum-amber-deep .stb-title-input:focus{ border-bottom-color:rgba(255,206,74,.5); }
 .st-build.lum-amber-deep .stb-into{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); margin-top:5px; }

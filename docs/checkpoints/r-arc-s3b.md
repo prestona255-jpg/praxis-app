@@ -1,9 +1,10 @@
 # R-ARC SLICE 3B — "THE BASIN" (identity + naming) — BUILD
 
-**Status: BUILT · code CLEAN (both gates: data-safe, XSS/T5/parse/ES3/bytes all PASS) · ⛔ HELD ON A
-SCOPE DECISION — "form follows naming in chrome" is a ~11-site sweep, bigger than the 3 surfaces ruled or
-the 5 built; the remaining reference/list surfaces + the frozen field await Preston's scope ruling. NOT
-committed. NOT pushed.** Base **`c681d35`** / v3.214 → v3.215. Recon: `r-arc-s3b-recon.md`.
+**Status: SHIPPED — committed `02b517e`, pushed, live-verified v3.215 (2026-07-16). The scope decision
+was RULED (Preston): ship the 5 chrome surfaces; the remaining reference/list surfaces + the frozen field
+→ named follow-ons 3B-MOTE / 3B-SM (see `docs/r-arc-plan.md`).** Base **`c681d35`** / v3.214 → v3.215.
+Recon: `r-arc-s3b-recon.md`. *(Felt pass PASSED the basin core; surrounding findings routed via
+`r-arc-ff-routing.md` → the 3B-POLISH rider + F4 slice + Slice 4 expansion + Wave C.)*
 
 ## ⚠ THE GATE-CAUGHT EXTENSION (both agents, 2026-07-16)
 

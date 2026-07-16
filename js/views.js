@@ -789,7 +789,10 @@ function _searchHighlight(text, q) {
 
 // Real sub-theory maturity word (the shipped sub-theory-detail band, views.js
 // ~8702) -- the mockup's "rooted/gathering/new" has no backing.
-function _searchSubMaturityWord(v) {
+// FF-7: the ONE canonical sub-theory maturity ramp (was _searchSubMaturityWord;
+// the Page duplicated it inline and the Arc-Read face used a DIFFERENT ramp on the
+// same score). Page + #search + Arc-Read all call this now.
+function _stMaturityWord(v) {
   var m = (typeof v === 'number' && isFinite(v)) ? v : 0;
   if (m < 0.34) { return 'nascent'; }
   if (m < 0.67) { return 'developing'; }
@@ -862,7 +865,7 @@ function _searchBuildIndex() {
         title: hdr || 'Untitled sub-theory',
         sub: parentTitle ? ('in ' + parentTitle) : '',
         snip: '',
-        crumb: 'Sub-theory · ' + _searchSubMaturityWord(matV),
+        crumb: 'Sub-theory · ' + _stMaturityWord(matV),
         hay: (hdr + ' ' + body1 + ' ' + parentTitle).toLowerCase(),
         route: '#subtheory/' + k,
         subId: k, shape: shp, color: clr
@@ -2477,9 +2480,12 @@ function buildNotebookNewbornCard(nb) {
   // real record FIRST -- nb.header is pre-baked with an 'Untitled…' fallback by
   // notebookCreateSubTheory, so it would mask the phrase if tested first.
   if (rec && _stIsBasin(rec)) {
-    var nbPhrase = _stOriginPhrase(rec).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-    if (nbPhrase.length > 60) { nbPhrase = nbPhrase.substring(0, 60) + '…'; }
-    title.textContent = nbPhrase || 'Unnamed basin';
+    // FF-5: provisional identity -- a basin's origin phrase reads as a QUOTED,
+    // secondary phrase (the .nb-newborn-basin modifier), never title treatment,
+    // so an unnamed basin never looks named.
+    var nbPhrase = _stTruncPhrase(_stOriginPhrase(rec), 60);
+    title.className = 'nb-newborn-title nb-newborn-basin';
+    title.textContent = nbPhrase ? ('“' + nbPhrase + '”') : 'Unnamed basin';
   } else {
     title.textContent = nb.header || 'Untitled sub-theory';
   }
@@ -8530,6 +8536,19 @@ function _stOriginPhrase(sub) {
   return '';
 }
 
+// R-ARC S3B-POLISH (FF-9b): collapse to one line + truncate at a WORD boundary
+// (was raw .substring, which cut mid-word at 5 sites). Falls back to a hard cut
+// only if the last space is too near the start.
+function _stTruncPhrase(s, n) {
+  if (typeof s !== 'string') { return ''; }
+  s = s.split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  if (s.length <= n) { return s; }
+  var cut = s.substring(0, n);
+  var sp = cut.lastIndexOf(' ');
+  if (sp > n * 0.6) { cut = cut.substring(0, sp); }
+  return cut + '…';
+}
+
 // A mark's fill colour (the lighter palette stop), for a small tinted
 // glint (e.g. the "became ->" dot). Mirrors bookSubMarkHTML's index
 // derivation so the glint matches the mark.
@@ -10497,9 +10516,11 @@ function renderSubTheoryReadOnly(subTheory, mode) {
   // subs (incl. every signed-out-reachable published/seed sub) are not basins, so
   // this branch never changes their title.
   if (_stIsBasin(subTheory)) {
-    var roPhrase = _stOriginPhrase(subTheory).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-    if (roPhrase.length > 60) { roPhrase = roPhrase.substring(0, 60) + '…'; }
-    head.textContent = roPhrase || 'Unnamed basin';
+    // FF-5: provisional identity -- quoted, secondary (the -basin modifier drops the
+    // display-serif header treatment), so an unnamed basin never reads as named.
+    var roPhrase = _stTruncPhrase(_stOriginPhrase(subTheory), 60);
+    head.className = 'subtheory-readonly-header subtheory-readonly-header-basin';
+    head.textContent = roPhrase ? ('“' + roPhrase + '”') : 'Unnamed basin';
   } else {
     head.textContent = subTheory.header || 'Untitled sub-theory';
   }
@@ -10641,10 +10662,18 @@ function renderSubTheoryReadOnly(subTheory, mode) {
       var el = ordered[bi];
       var li = document.createElement('li');
       li.className = 'subtheory-readonly-evidence-item';
-      var cl = document.createElement('div');
-      cl.className = 'subtheory-readonly-cite-line';
-      cl.textContent = citeLine(el);
-      li.appendChild(cl);
+      // FF-9c: a title-less ENTRY note's citeLine falls back to its body, which the
+      // quote below already renders in full -- the same text twice. Suppress the
+      // duplicate label when a quote will carry it; titled entries + book/external
+      // evidence keep their distinct "Author, Title" line.
+      var _clEn = (el.kind === 'entry') ? (state.notebookEntries && state.notebookEntries[el.refId]) : null;
+      var _clDup = (el.kind === 'entry' && el.quote && (!_clEn || !_clEn.title));
+      if (!_clDup) {
+        var cl = document.createElement('div');
+        cl.className = 'subtheory-readonly-cite-line';
+        cl.textContent = citeLine(el);
+        li.appendChild(cl);
+      }
       // R6 S2: mark private entry-evidence in the draft author-view (the finished
       // room filters it out entirely -- evidencePrivate, above).
       if (!published && evidencePrivate(el)) {
@@ -10857,7 +10886,9 @@ function renderSubTheoryPage(id) {
   // visible reader-facing line in the read hero (was tucked in the old editor
   // tools).
   var stMatVal = _stComputeMaturity(subTheory);
-  var stMatBand = stMatVal < 0.34 ? 'nascent' : (stMatVal < 0.67 ? 'developing' : 'established');
+  // FF-7: ONE sub-theory maturity ramp (nascent/developing/established) across
+  // Page + #search + the Arc-Read face -- was 3 sources, one disagreeing.
+  var stMatBand = _stMaturityWord(stMatVal);
   var stMaturity = document.createElement('div');
   stMaturity.className = 'st-maturity';
   var stGlow = document.createElement('span');
@@ -11213,8 +11244,7 @@ function renderSubTheoryBuild(id) {
     if (phrase) {
       var origin = document.createElement('p');
       origin.className = 'stb-origin-phrase';
-      var oShort = phrase.split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-      if (oShort.length > 90) { oShort = oShort.substring(0, 90) + '…'; }
+      var oShort = _stTruncPhrase(phrase, 90);
       origin.textContent = '“' + oShort + '”';
       basinNote.appendChild(origin);
     }
@@ -13541,7 +13571,7 @@ function _arcFieldReadFace(arc) {
       firstLine:   _arcReadFirstLine(rec),
       markSub:     rec,
       maturityKey: _arcReadMaturityKey(mat),
-      maturityWord: _matWordFromScore(mat),
+      maturityWord: _stMaturityWord(mat),
       connCount:   degree[sub.id] || 0,
       isDraft:     !!(rec && rec.status === 'draft')
     });
@@ -13717,12 +13747,8 @@ function _arcReadMaturityKey(m) {
   return 'bright';
 }
 // Per-sub maturity word from a [0,1] score (mirrors _arcMaturityWord's ramp).
-function _matWordFromScore(m) {
-  if (m < 0.2) { return 'forming'; }
-  if (m < 0.4) { return 'warming'; }
-  if (m < 0.7) { return 'mature'; }
-  return 'bright';
-}
+// _matWordFromScore (the 4-word arc ramp) removed at FF-7 -- it was called ONLY by
+// the Arc-Read face, mislabeling per-sub scores with the arc ramp; now _stMaturityWord.
 
 // Wave 1: the PAGE face -- a real STUB. Shows the focal (first) sub-theory's
 // mark + title and hands off to the EXISTING writing route (#subtheory/<id>/
@@ -14372,17 +14398,13 @@ function subTheoryRowLabel(st) {
     body = st.bodyIntellectual;
   }
   if (body.length) {
-    var firstLine = body.split('\n')[0].replace(/\s+/g, ' ').trim();
-    if (firstLine.length > 40) {
-      firstLine = firstLine.substring(0, 40) + '…';
-    }
+    var firstLine = _stTruncPhrase(body, 40);
     if (firstLine.length) { return firstLine; }
   }
   // R-ARC S3B: a basin carries its origin phrase, not a title -- show that here
   // (the picker's "formless" identity) before the last-resort placeholder.
   if (typeof _stOriginPhrase === 'function') {
-    var op = _stOriginPhrase(st).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-    if (op.length > 40) { op = op.substring(0, 40) + '…'; }
+    var op = _stTruncPhrase(_stOriginPhrase(st), 40);
     if (op.length) { return op; }
   }
   return '(unnamed basin)';
