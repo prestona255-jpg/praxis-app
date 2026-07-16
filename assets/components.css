@@ -9758,6 +9758,15 @@
 .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
 .btn-quiet { background:var(--wash); color:var(--ink-2); border:1px solid var(--border); font-size:13px; padding:8px 14px; }
 .btn-quiet:hover { color:var(--ink); border-color:var(--line-2); }
+/* pointer-events:none is load-bearing, not belt-and-braces. The Notebook re-asserts
+   cursor:pointer at (0,3,0) -- .notebook.lum-amber-deep .btn-primary/.createbtn --
+   which outranks .btn[disabled] (0,2,0), so cursor:default below loses on the very
+   surface the only disabled .btn lives on. What actually works is removing the
+   element from hit-testing: the cursor then resolves from the PARENT. Deleting
+   pointer-events:none restores the dead-button-looks-alive bug.
+   cursor:default is family idiom (.otp-follow/.itx-send/.op-pub-confirm); given
+   pointer-events:none it decides nothing. */
+.btn[disabled] { opacity:.55; cursor:default; pointer-events:none; }
 .chip {
   font-family:var(--font-mono); font-size:11.5px; letter-spacing:.04em;
   display:inline-flex; align-items:center; gap:6px;

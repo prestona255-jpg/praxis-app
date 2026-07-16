@@ -565,6 +565,12 @@ function renderRoute() {
       // keeps the create-hash out of history so Back never re-mints a draft.
       location.replace('#subtheory/' + draft.id + '/build');
     } else {
+      // createSubTheory returns null on two causes and guards the ARC BEFORE auth,
+      // so an absent arc is the cause even when signed out. Test in that same order:
+      // branching on auth would tell a signed-out caller with a dead arc to sign in,
+      // which would not fix it.
+      var nsArcOk = !!(typeof parts[1] === 'string' && state.arcs && state.arcs[parts[1]]);
+      showToast(nsArcOk ? 'Sign in to start a sub-theory.' : 'That arc is no longer available.');
       location.replace('#arcs');
     }
     return;
