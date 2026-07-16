@@ -145,7 +145,9 @@ present; type → F5 → present; gather → reload → cards present). Data-lay
 > display. **Naming ruling:** the F1/EMBER ban scopes to the arc-LIFECYCLE vocabulary only; the 16 glyph
 > names (`ST_MARK_NAMES` — "the seed"/"the ember" as *named marks*, R5 S6) are a separate ratified
 > register and STAND. **Ember display = quiet secondary** (maturity word primary; ember a small chip by
-> the graduate button). **Graduation one-way** (reversal → Slice 5). **RE-BANDED at measured size:
+> the graduate button). **Graduation reversible** — the felt pass (2026-07-16) promoted un-graduate from
+> a Slice-5 candidate to a REQUIREMENT; shipped as **Slice 3R** (`docs/checkpoints/r-arc-s3r.md`).
+> **RE-BANDED at measured size:
 > views.js ≤2,294 B logic + ≤1,827 B CSS — any further growth = fresh halt.** Record:
 > `docs/checkpoints/r-arc-s3.md`.
 **Additive fields only** (T3): arc `status` (**ember** ↔ graduated) · lineage (birth-capture link:
@@ -200,9 +202,10 @@ defect on their light grounds — **audit all 5 call sites at Slice 4 recon**; a
 serves them all. Preston saw only the notebook instance.
 
 ### Slice 5 — REVERSE GEAR *(REQ#6)*
-**Exists:** ungather (`toggleGather`, non-destructive) · link/unlink · sub-theory rename.
-**Missing:** ember rename (Slice 3) · **dissolve a basin back to motes** (new) · undo affordances on the
-loop's forward acts.
+**Exists:** ungather (`toggleGather`, non-destructive) · link/unlink · sub-theory rename · **ember rename
+(Slice 3)** · **un-graduate (Slice 3R — shipped early, felt-pass-promoted)**.
+**Missing:** **dissolve a basin back to motes** (new, needs Slice 3B) · undo affordances on the loop's
+remaining forward acts.
 **⚠ FORK F-B:** delete is **terminal** today for arc *and* sub-theory, and the copy says verbatim
 **"This can't be undone."** Preston: "nothing unrecoverable." These contradict.
 **Scope:** `js/views.js` **+2…+5 KB** · `js/state.js` **+0.5…+1.5 KB** (more if F-B → recoverable delete).

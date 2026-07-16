@@ -12761,9 +12761,9 @@ function _arcPublishStale(arcId, arc) {
   return newest > arc.publishedAtLocal;
 }
 
-// R-ARC S3: the ember lifecycle strip in the arc head (owner-only). A quiet
-// status chip + Graduate (one-way, only while an ember) + Rename. Graduation
-// reversal is deliberately not built here (flagged for Slice 5 reverse-gear).
+// R-ARC S3: the ember lifecycle strip in the arc head (owner-only). A quiet status
+// chip + Graduate (only while an ember) / Return-to-ember (only while graduated,
+// S3R) + Rename. Graduation is reversible (S3R -- Preston's felt pass).
 function _arcHeadLifecycleControl(arcId, arc) {
   var wrap = document.createElement('div');
   wrap.className = 'arcfield-lifecycle';
@@ -12784,6 +12784,18 @@ function _arcHeadLifecycleControl(arcId, arc) {
       renderRoute();
     });
     wrap.appendChild(grad);
+  } else {
+    // R-ARC S3R: graduation's reverse gear (Preston, felt pass). Quiet, like Rename
+    // -- a correction, not a forward act.
+    var ungrad = document.createElement('button');
+    ungrad.type = 'button';
+    ungrad.className = 'arcfield-life-btn arcfield-ungraduate-btn';
+    ungrad.textContent = 'Return to ember';
+    ungrad.addEventListener('click', function() {
+      ungraduateArc(arcId);
+      renderRoute();
+    });
+    wrap.appendChild(ungrad);
   }
 
   var ren = document.createElement('button');

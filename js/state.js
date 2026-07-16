@@ -1912,13 +1912,27 @@ function updateArc(id, fields) {
   return arc;
 }
 
-// R-ARC S3: graduation -- the reader's act, a one-way status flip (earned-then-
-// declared). No migration, no data move; the ember becomes a full arc. Reversal
-// (un-graduate) is deliberately NOT built here -- flag it if the felt pass wants it.
+// R-ARC S3: graduation -- the reader's act, a status flip (earned-then-declared).
+// No migration, no data move; the ember becomes a full arc. Reversible via
+// ungraduateArc below (S3R -- Preston's felt pass promoted un-graduate to a
+// requirement: no dead ends).
 function graduateArc(id) {
   var arc = state.arcs[id];
   if (!arc) return null;
   arc.status = 'graduated';
+  arc.updatedAt = Date.now();
+  markArcsDirty();
+  saveState();
+  return arc;
+}
+
+// R-ARC S3R: un-graduate -- graduation's reverse gear. Promoted from a Slice-5
+// candidate to a REQUIREMENT (Preston, felt pass 2026-07-16: graduated an arc,
+// wanted it back, couldn't -- a dead end REQ#6 forbids). Mirror of graduateArc.
+function ungraduateArc(id) {
+  var arc = state.arcs[id];
+  if (!arc) return null;
+  arc.status = 'ember';
   arc.updatedAt = Date.now();
   markArcsDirty();
   saveState();
