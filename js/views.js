@@ -1693,6 +1693,114 @@ var notebookGatherName = '';
 // the notebook (no auto-navigation). Render-layer only; nulled on a fresh gather.
 var notebookNewborn = null;
 
+// ── R-ARC S2: local-first session persistence (REQ#3, the hard gate) ─────────
+// Gathered cards and drafts survive beat-switch, navigate-away, and RELOAD. The
+// four vars above are render-layer only, so before this a refresh silently threw
+// away the gather set, the typed name, and the only door to a just-minted draft.
+//
+// Device-local and pre-commit by design: these are working states, not records.
+// Nothing here touches Firestore -- captureNote/createSubTheory remain the only
+// writers of real data, so a stale session can never forge one.
+// The uid the in-memory gather set was hydrated for -- the owner both stores gate on.
+var notebookSessionUid = null;
+
+// THE TAB IS IN THE KEY, and that is load-bearing. One key per uid would make the
+// tab-scope a read-only filter: every composer writes the same key, and an empty
+// body writes sv(key,null), so merely visiting a second tab and backgrounding the
+// page would ERASE the draft waiting in the first. Uid is a parameter, never
+// re-read here -- see nbDraftFlush.
+function nbDraftKey(uid, activeKey) {
+  if (!uid || typeof activeKey !== 'string') { return null; }
+  return 'praxis_nb_draft_' + uid + '_' + activeKey;
+}
+
+function nbDraftSave(uid, body, register, activeKey) {
+  var k = nbDraftKey(uid, activeKey);
+  if (!k) { return; }
+  var t = (typeof body === 'string') ? body.replace(/^\s+|\s+$/g, '') : '';
+  if (t === '') { sv(k, null); return; }
+  sv(k, { body: body, register: register });
+}
+
+function nbDraftLoad(uid, activeKey) {
+  var k = nbDraftKey(uid, activeKey);
+  if (!k) { return null; }
+  var d = ls(k, null);
+  if (!d || typeof d.body !== 'string' || d.body === '') { return null; }
+  return d;
+}
+
+function nbDraftClear(uid, activeKey) {
+  var k = nbDraftKey(uid, activeKey);
+  if (k) { sv(k, null); }
+}
+
+// The live composer's flush, held module-side so the page-level hooks below are
+// installed ONCE. buildNotebookWriteline runs on every render, so per-composer
+// document listeners would accumulate one pair per render -- a leak, and every
+// stale pair would flush a detached textarea.
+var nbDraftFlushFn = null;
+var nbDraftHooksInstalled = false;
+
+function nbInstallDraftHooks() {
+  if (nbDraftHooksInstalled) { return; }
+  nbDraftHooksInstalled = true;
+  // Mobile backgrounding is the real loss case, not tab-close: iOS may never fire
+  // beforeunload (which is why the repo has none), but it does fire these.
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && nbDraftFlushFn) { nbDraftFlushFn(); }
+  });
+  window.addEventListener('pagehide', function() {
+    if (nbDraftFlushFn) { nbDraftFlushFn(); }
+  });
+}
+
+// Same law as the draft store: the gather set belongs to the uid nbGatherRestore
+// hydrated it for, and only that account may write it. Auth changes with NO reload
+// and does not always repaint, so these call sites fire from a stale DOM under a
+// new praxis_user -- and the name canvas reaches this on a 700ms debounce, with no
+// click at all. Writing under whoever is signed in NOW would put A's gathered ids,
+// typed name and newborn into B's key, and B's notebook would hydrate with A's work.
+function nbGatherSave() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!u || !u.uid || u.uid !== notebookSessionUid) { return; }
+  sv('praxis_nb_gather_' + notebookSessionUid, {
+    gathered: notebookGathered,
+    arcId:    notebookGatherArc,
+    name:     notebookGatherName,
+    newborn:  notebookNewborn
+  });
+}
+
+// Restores ONCE per uid: re-running on every render would fight live edits, and
+// latching on the uid (not a bare flag) means an account switch re-restores rather
+// than carrying the previous account's set forward in memory. It is nbGatherSave's
+// owner gate, NOT this latch, that keeps A's work out of B's key.
+// Stale refs need no pruning here -- notebookGatheredIds() already drops ids whose
+// entry is gone, and canCreate() already re-checks state.arcs[aid].
+function nbGatherRestore(uid) {
+  if (notebookSessionUid === uid) { return; }
+  notebookSessionUid = uid;
+  notebookGathered = {};
+  notebookGatherArc = null;
+  notebookGatherName = '';
+  notebookNewborn = null;
+  if (!uid) { return; }
+  var k = 'praxis_nb_gather_' + uid;
+  var s = ls(k, null);
+  if (!s) { return; }
+  if (s.gathered && typeof s.gathered === 'object') { notebookGathered = s.gathered; }
+  if (typeof s.arcId === 'string') { notebookGatherArc = s.arcId; }
+  if (typeof s.name === 'string') { notebookGatherName = s.name; }
+  if (s.newborn && typeof s.newborn === 'object' && typeof s.newborn.id === 'string') {
+    notebookNewborn = s.newborn;
+    // COPY IS A CONTRACT: the card's eyebrow says "born just now". Across a reload
+    // that is false, so a restored newborn is marked and the eyebrow tells the
+    // truth instead. The door it carries is the point; the flourish is not.
+    notebookNewborn.restored = true;
+  }
+}
+
 // Wave 3 (the Notebook): the BOOK BAND that crowns a book's notebook -- real
 // cover (coverUrl, cloth fallback) + title/author + reading status + real note
 // count + computed "became sub-theories" + the inline "What Yumi sees" covenant
@@ -1833,6 +1941,9 @@ function renderNotebook() {
     host.appendChild(wrap);
     return;
   }
+
+  // R-ARC S2: rehydrate the gather set before anything reads it. Once per uid.
+  nbGatherRestore(user.uid);
 
   // Intro (mock .intro): eyebrow + title + the descriptive paragraph. The master
   // "Yumi reads along" consent moves into the book band (or a slim consent row on
@@ -2145,7 +2256,8 @@ function buildNotebookRightLeaf(user, activeKey) {
 
   var ids = notebookGatheredIds();
   // R6 S5: a fresh gather supersedes the last birth card.
-  if (ids.length > 0) { notebookNewborn = null; }
+  // S2: persist only on a real change -- this runs on every render.
+  if (ids.length > 0 && notebookNewborn) { notebookNewborn = null; nbGatherSave(); }
 
   var tag = document.createElement('h3');
   tag.className = 'nb-leaftag';
@@ -2230,6 +2342,7 @@ function buildNotebookRightLeaf(user, activeKey) {
     flags:        { focusMode: false },
     onSave: function(markdown, report) {
       notebookGatherName = (typeof markdown === 'string') ? markdown.replace(/^\s+|\s+$/g, '') : '';
+      nbGatherSave();
       if (createBtn) { createBtn.disabled = !canCreate(); }
       if (report && report.setLocal) { report.setLocal(true); }
     }
@@ -2334,6 +2447,7 @@ function buildNotebookRightLeaf(user, activeKey) {
     notebookGathered = {};
     notebookGatherArc = null;
     notebookGatherName = '';
+    nbGatherSave();
     renderNotebook();
   });
   acts.appendChild(clearLink);
@@ -2362,7 +2476,9 @@ function buildNotebookNewbornCard(nb) {
   titleWrap.appendChild(title);
   var eyebrow = document.createElement('div');
   eyebrow.className = 'nb-newborn-eyebrow';
-  eyebrow.textContent = 'born just now · draft';
+  // S2: "born just now" is only true in the session that bore it. A card restored
+  // across a reload keeps its door and drops the flourish rather than lie.
+  eyebrow.textContent = nb.restored ? 'draft' : 'born just now · draft';
   titleWrap.appendChild(eyebrow);
   top.appendChild(titleWrap);
   card.appendChild(top);
@@ -2377,6 +2493,7 @@ function buildNotebookNewbornCard(nb) {
   door.textContent = 'Continue in the workshop →';
   door.addEventListener('click', function() {
     notebookNewborn = null;
+    nbGatherSave();
     location.hash = '#subtheory/' + nb.id + '/build';
   });
   card.appendChild(door);
@@ -2423,6 +2540,7 @@ function toggleGather(entryId) {
   if (ent && ent.register === 'journal') { return; }
   if (notebookGathered[entryId] === true) { delete notebookGathered[entryId]; }
   else { notebookGathered[entryId] = true; }
+  nbGatherSave();
   renderNotebook();
 }
 
@@ -2473,6 +2591,7 @@ function openGatherArcPicker(mountEl) {
     label: 'Choose an arc for this sub-theory',
     onPick: function(arcId) {
       notebookGatherArc = arcId;
+      nbGatherSave();
       renderNotebook();
     },
     onDone: function() {}
@@ -2512,6 +2631,7 @@ function notebookCreateSubTheory() {
     arcTitle: (mintedArc && mintedArc.title) ? mintedArc.title : '',
     count: ids.length
   };
+  nbGatherSave();
   renderNotebook();
 }
 
@@ -2721,6 +2841,44 @@ function buildNotebookWriteline(activeKey) {
   // Default register by context: Journal tab -> journal, else marginalia.
   var selected = (activeKey === 'journal') ? 'journal' : 'marginalia';
 
+  // ── R-ARC S2: the draft waits where it was written (REQ#3) ────────────────
+  // The composer belongs to the account that opened it. Auth can change with NO
+  // reload (integrations.js: clearUserState -> sv('praxis_user', B) -> loadState),
+  // and this closure outlives its own composer, so the owner is captured ONCE here
+  // and every write is gated on it. Re-reading the uid at write time would let a
+  // pagehide after an account switch write A's text into B's key -- which B could
+  // then commit as their own words.
+  var nbOwner = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var nbOwnerUid = (nbOwner && nbOwner.uid) ? nbOwner.uid : null;
+  var nbDraft = nbOwnerUid ? nbDraftLoad(nbOwnerUid, activeKey) : null;
+  if (nbDraft) {
+    input.value = nbDraft.body;
+    if (nbDraft.register === 'marginalia' || nbDraft.register === 'question' ||
+        nbDraft.register === 'journal') {
+      selected = nbDraft.register;
+    }
+    // autogrow reads scrollHeight, which is 0 until the composer is in the DOM.
+    setTimeout(autogrowWriteline, 0);
+  }
+  var nbDraftTimer = null;
+  function nbDraftFlush() {
+    if (nbDraftTimer) { clearTimeout(nbDraftTimer); nbDraftTimer = null; }
+    // The owner must still be the signed-in account, or this composer has nothing
+    // to say: a stale flush from a torn-down composer must never write, and must
+    // never write under someone else's uid.
+    var now = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!nbOwnerUid || !now || now.uid !== nbOwnerUid) { return; }
+    nbDraftSave(nbOwnerUid, input.value, selected, activeKey);
+  }
+  function nbDraftSchedule() {
+    if (nbDraftTimer) { clearTimeout(nbDraftTimer); }
+    nbDraftTimer = setTimeout(nbDraftFlush, 300);
+  }
+  input.addEventListener('input', nbDraftSchedule);
+  input.addEventListener('blur', nbDraftFlush);
+  nbDraftFlushFn = nbDraftFlush;
+  nbInstallDraftHooks();
+
   var chips = document.createElement('div');
   chips.className = 'seg';
   var defs = [
@@ -2742,6 +2900,7 @@ function buildNotebookWriteline(activeKey) {
   for (d = 0; d < defs.length; d = d + 1) {
     appendWritelineChip(chips, defs[d], chipEls, function(reg) {
       selected = reg; paint(); input.focus();
+      nbDraftFlush();   // the register is part of the draft
     });
   }
   paint();
@@ -2875,7 +3034,19 @@ function buildNotebookWriteline(activeKey) {
   function commit() {
     var body = (input.value || '').replace(/^\s+|\s+$/g, '');
     if (!body && stagedImages.length === 0) { return; }
+    // S2 durability law: consuming the draft CLEARS it, and captureNote no-ops on a
+    // signed-out caller -- so clearing without a live user would destroy the text and
+    // write nothing. Confirm the write can land FIRST, and clear ONLY on the branch
+    // about to call captureNote (the image path clears inside finalize, so an
+    // IndexedDB abort that never reaches captureNote leaves the draft intact).
+    var cUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!cUser || !cUser.uid) { return; }
+    // Cancel the pending debounce so a stale timer cannot re-save this text against
+    // the detached textarea after commit (the ghost-draft race).
+    if (nbDraftTimer) { clearTimeout(nbDraftTimer); nbDraftTimer = null; }
+    nbDraftFlushFn = null;
     if (stagedImages.length === 0) {
+      nbDraftClear(nbOwnerUid, activeKey);
       captureNote(selected, body, activeKey, []);
       return;
     }
@@ -2893,6 +3064,9 @@ function buildNotebookWriteline(activeKey) {
       for (s = 0; s < stagedImages.length; s = s + 1) {
         if (stagedImages[s].url) { URL.revokeObjectURL(stagedImages[s].url); }
       }
+      // Clear the draft only now, when captureNote is certain to run -- a hung or
+      // aborted put never reaches here, so the text survives.
+      nbDraftClear(nbOwnerUid, activeKey);
       captureNote(selected, body, activeKey, clean);
     }
     var i;

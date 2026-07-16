@@ -130,7 +130,11 @@ are **bare module-level vars, never persisted** — a reload zeroes the gather s
 "Continue in the workshop →" door. **Mobile backgrounding makes this the higher-risk case in practice.**
 **Build:** an `ls`-backed, per-uid draft+gather store (via the `ls`/`sv` wrappers only), restored on mount.
 Survives: beat-switch · navigate-away · reload.
-**Scope:** `js/views.js` **+1.5…+3.5 KB** · `js/state.js` **+0.4…+1.2 KB** · `sw.js` +1 line.
+**Scope:** `js/views.js` **net logic ≤4,000 B** (RE-BANDED 2026-07-16 from +1.5…+3.5 KB — Preston's
+ruling: the +296 B overage was the proven cost of three BLOCK-COMMIT silent-data-loss fixes + the
+elevated residual #2, not scope drift; anything beyond 4,000 B = a fresh halt) · `js/state.js` **NOT
+touched** (the store rides the global `ls`/`sv`; the owner gates, not the keying, keep accounts apart) ·
+`sw.js` +1 line.
 **Gates:** the three survival cases proven **live, by driving the UI** (type → navigate → back → text
 present; type → F5 → present; gather → reload → cards present). Data-layer checks do **not** count.
 **Model:** **OPUS** — durability tier; F-DL family discipline; silent-loss adjacent.

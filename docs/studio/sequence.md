@@ -568,6 +568,13 @@ spine and the evolution track and folded into the program — nothing dropped.
      unguarded collections + F-DL2 flush (F-PX1 proxy cap already shipped, v3.203). No outside account is EVER
      invited before FX-1; it **jumps immediately on any data-loss scare**. Interim guardrail: after signing in
      on any device, let the app settle before editing. (RULED — no re-raise.)
+  1b. **CAPTURE-OWNER — HARD REVIEW at this gate (Preston 2026-07-16, R-ARC S2 carry).** `captureNote`
+     (`views.js`) reads `getCurrentUser()` fresh; the **multi-image** commit path calls it inside `finalize()`
+     after the async IndexedDB puts, so an account switch (no reload) landing in that window misattributes
+     A's note+photos to B. **Pre-existing (base `98738b0`), NOT an S2 regression** — S2's own draft/gather
+     stores are owner-gated and proven. Proper fix = a **scoped `captureNote` owner-uid follow-on** (shared
+     function, out of S2 scope). Same family + same posture as FX-1: **no outside account is invited while this
+     stands unreviewed.** Record: `docs/checkpoints/r-arc-s2.md` residual #10.
   2. **Stage-2 JWT auth (two-phase)** — the proxy auth-gating hardening (per F-PX1 0c, Yumi + google-books are
      reachable signed-out today; this is the beta-gate auth item).
   3. **Goodreads import — minimal CSV** (title / author / ISBN / shelf). The rich shelves → lenses mapping is a
