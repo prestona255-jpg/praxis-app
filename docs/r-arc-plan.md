@@ -165,13 +165,33 @@ don't create a third lifecycle vocabulary beside the existing `arc.published` bo
 **Scope (as built):** `js/state.js` +2,238 B · `js/views.js` ≤2,294 B logic · `components.css` ≤1,827 B.
 **Model:** **OPUS** — schema seam + the coercion tripwire.
 
-### Slice 3B — THE BASIN *(split from Slice 3, Preston 2026-07-16)* — **NOT STARTED**
-The unnamed-sub-theory pre-form: the **basin** (origin phrase · fragments · mass · split/merge) + **mote**
-identity, per decisions §3/D7 (F1: mote/basin, never `seeds`). The largest, least-settled piece — its own
-slice so Slice 3's schema landed clean first. Additive-only; **never a `state.seeds` key** (T4).
-Also folds in the deferred **F2 brightness field-rendering** (the "ember/mote renders small via the
-existing luminosity channel" hook — `buildHomeFieldData` floor, protected renderer untouched).
-**Model:** **OPUS** — new structure + the field's brightness treatment.
+### Slice 3B — THE BASIN (identity + naming) — **SHIPPED-LOCAL, awaiting felt pass**
+> **RULED + BUILT 2026-07-16.** Recon reshaped it: most of the basin was already wired (a basin = a
+> blank-header sub-theory; accretion, mass, the mint via `updateSubTheory` all shipped). Preston ruled the
+> two forks: **(3B-1)** DEFER the frozen FIELD mote → **Slice 3B-MOTE**; take the views.js chrome partial
+> NOW. **(3B-2)** split + merge BOTH DEFERRED → **Slice 3B-SM**, after the felt pass.
+Ships: `originEntryId` on sub-theory (additive, both-path, mirrors S3's arc field) · `_stIsBasin` /
+`_stMoteHTML` (brightness = mass, fixed size) / `_stMarkOrMote` / `_stOriginPhrase` · the naming-threshold
+invitation (§4b; the mint is the existing title-blur `updateSubTheory`) · the formless mote + origin
+phrase across **5 views.js chrome surfaces** (workshop · picker · newborn · Read Page · account row).
+**Scope (as built):** state +699 B · views ~2,919 B net logic · css 481 B net logic · sw +0. Record:
+`docs/checkpoints/r-arc-s3b.md`. **Model:** **OPUS**.
+
+### Slice 3B-SM — BASIN SPLIT + MERGE *(deferred from 3B, Preston 2026-07-16)* — **NOT STARTED, after felt pass**
+§4b life-2 "basins can split and merge." **Merge** has a real template (`mergeBookDuplicates`: repoint
+`evidence[]`, `bodyPublic` policy, tombstone + `unlinkSubTheories`). **Split** has ZERO precedent — needs
+a spike. Runs only after Preston felt-tests the basin. **Model:** **OPUS** — the round's least-precedented
+mechanic.
+
+### Slice 3B-MOTE — FORMLESS MOTE EVERYWHERE *(deferred from 3B, Preston 2026-07-16)* — **NAMED SLICE, NOT STARTED**
+The comprehensive "form follows naming" pass — the ~6 remaining views.js reference/list chrome sites that
+still render a basin SHAPED (`_arcCardConstellation` = the Arcs-list cards, both connections footers, the
+own-profile arc thumb, book-detail `buildGrewRow`, the arc Read-tab author list, +2 "Untitled" text
+dialogs) **PLUS** the frozen FIELD. **Riders (Preston 2026-07-16):** (1) inherits the frozen-field ruling
+UNCHANGED — `arc-constellation.js` gets **ONE explicitly authorized edit + hard red-team, nothing else in
+that file**; (2) the **arc-card constellation treatment (mote vs shapes) is decided INSIDE 3B-MOTE**, not
+assumed (it is a constellation-style thumbnail — chrome-vs-field-like is itself a call). Lands the mote
+consistently in ONE pass rather than piecemeal. **Model:** **OPUS** — design + the one frozen edit.
 
 ### Slice 4 — ONE DOOR, NOT TWO *(REQ#4, REQ#7b)*
 **The census is exhaustive — all three fold or the round ships a second door (T9):**

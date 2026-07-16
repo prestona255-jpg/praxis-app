@@ -2467,12 +2467,22 @@ function buildNotebookNewbornCard(nb) {
   var mark = document.createElement('span');
   mark.className = 'nb-newborn-mark';
   var rec = state.subTheories && state.subTheories[nb.id];
-  mark.innerHTML = rec ? bookSubMarkHTML(rec, 30) : '';
+  // R-ARC S3B: a just-minted basin (unnamed) shows the formless mote.
+  mark.innerHTML = rec ? _stMarkOrMote(rec, 30) : '';
   top.appendChild(mark);
   var titleWrap = document.createElement('div');
   var title = document.createElement('div');
   title.className = 'nb-newborn-title';
-  title.textContent = nb.header || 'Untitled sub-theory';
+  // R-ARC S3B: a basin (unnamed) shows its origin phrase, not "Untitled". Check the
+  // real record FIRST -- nb.header is pre-baked with an 'Untitled…' fallback by
+  // notebookCreateSubTheory, so it would mask the phrase if tested first.
+  if (rec && _stIsBasin(rec)) {
+    var nbPhrase = _stOriginPhrase(rec).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    if (nbPhrase.length > 60) { nbPhrase = nbPhrase.substring(0, 60) + '…'; }
+    title.textContent = nbPhrase || 'Unnamed basin';
+  } else {
+    title.textContent = nb.header || 'Untitled sub-theory';
+  }
   titleWrap.appendChild(title);
   var eyebrow = document.createElement('div');
   eyebrow.className = 'nb-newborn-eyebrow';
@@ -2610,7 +2620,8 @@ function notebookCreateSubTheory() {
   // FIX B: name optional (empty header = a draft, named in the editor); arc
   // must exist.
   if (!ids.length || !arcId || !state.arcs[arcId]) { return; }
-  var st = createSubTheory(arcId, { header: name });
+  // R-ARC S3B: the basin's origin phrase = the first gathered note it was born from.
+  var st = createSubTheory(arcId, { header: name, originEntryId: ids[0] });
   if (!st) { return; }
   var i;
   for (i = 0; i < ids.length; i = i + 1) {
@@ -8479,6 +8490,46 @@ function bookSubMarkHTML(sub, cd) {
   return PraxisMarks.render(shapeId, co, cd || 22);
 }
 
+// R-ARC S3B (the basin): FORM FOLLOWS NAMING. An unnamed draft sub-theory is a
+// BASIN -- a formless mote, not a shaped mark. Named/published -> the shaped mark.
+function _stIsBasin(sub) {
+  if (!sub) { return false; }
+  if (sub.status === 'published') { return false; }
+  var h = (typeof sub.header === 'string') ? sub.header.replace(/\s+/g, '') : '';
+  return h === '';
+}
+
+// The formless mote: a soft glow whose only visual property is BRIGHTNESS = mass
+// (F2), mirroring the field's [0.32,0.62] luminosity clamp. Fixed size -- NO size
+// variance. All values computed; no user text reaches innerHTML.
+function _stMoteHTML(sub, cd) {
+  var m = (typeof _stComputeMaturity === 'function') ? _stComputeMaturity(sub) : 0;
+  var op = (0.32 + m * 0.30).toFixed(2);
+  var d = cd || 22;
+  return '<span class="st-mote" style="width:' + d + 'px;height:' + d + 'px;opacity:' + op + '"></span>';
+}
+
+// The dispatch the chrome mark sites call: mote for a basin, shaped mark otherwise.
+function _stMarkOrMote(sub, cd) {
+  return _stIsBasin(sub) ? _stMoteHTML(sub, cd) : bookSubMarkHTML(sub, cd);
+}
+
+// The basin's origin phrase (life 1): the body of the note it was born from, else
+// its first evidence quote. Display-only; the source note is the single truth.
+function _stOriginPhrase(sub) {
+  if (!sub) { return ''; }
+  var oe = sub.originEntryId;
+  if (typeof oe === 'string' && state.notebookEntries && state.notebookEntries[oe] &&
+      typeof state.notebookEntries[oe].body === 'string' && state.notebookEntries[oe].body.length) {
+    return state.notebookEntries[oe].body;
+  }
+  if (Array.isArray(sub.evidence) && sub.evidence.length && sub.evidence[0] &&
+      typeof sub.evidence[0].quote === 'string' && sub.evidence[0].quote.length) {
+    return sub.evidence[0].quote;
+  }
+  return '';
+}
+
 // A mark's fill colour (the lighter palette stop), for a small tinted
 // glint (e.g. the "became ->" dot). Mirrors bookSubMarkHTML's index
 // derivation so the glint matches the mark.
@@ -10442,7 +10493,16 @@ function renderSubTheoryReadOnly(subTheory, mode) {
 
   var head = document.createElement('h2');
   head.className = 'subtheory-readonly-header';
-  head.textContent = subTheory.header || 'Untitled sub-theory';
+  // R-ARC S3B: a basin shows its origin phrase, not "Untitled". Named/published
+  // subs (incl. every signed-out-reachable published/seed sub) are not basins, so
+  // this branch never changes their title.
+  if (_stIsBasin(subTheory)) {
+    var roPhrase = _stOriginPhrase(subTheory).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    if (roPhrase.length > 60) { roPhrase = roPhrase.substring(0, 60) + '…'; }
+    head.textContent = roPhrase || 'Unnamed basin';
+  } else {
+    head.textContent = subTheory.header || 'Untitled sub-theory';
+  }
   root.appendChild(head);
 
   var evidence = Array.isArray(subTheory.evidence) ? subTheory.evidence : [];
@@ -10725,7 +10785,8 @@ function renderSubTheoryPage(id) {
   stTbLeft.appendChild(stBack);
   var stHeroMark = document.createElement('span');
   stHeroMark.className = 'st-hero-mark st-hero-mark-edit';
-  stHeroMark.innerHTML = bookSubMarkHTML(subTheory, 30);
+  // R-ARC S3B: a basin (unnamed) shows the formless mote here too (views.js chrome).
+  stHeroMark.innerHTML = _stMarkOrMote(subTheory, 30);
   stHeroMark.setAttribute('role', 'button');
   stHeroMark.setAttribute('tabindex', '0');
   stHeroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
@@ -11104,7 +11165,8 @@ function renderSubTheoryBuild(id) {
   sthead.className = 'stb-head';
   var heroMark = document.createElement('span');
   heroMark.className = 'stb-hero-mark stb-hero-mark-edit';
-  heroMark.innerHTML = bookSubMarkHTML(subTheory, 32);
+  // R-ARC S3B: a basin (unnamed) shows the formless mote; naming mints the shape.
+  heroMark.innerHTML = _stMarkOrMote(subTheory, 32);
   // Wave 3 fidelity: the header mark IS the symbol-picker trigger (mirrors the
   // Page) -- keyboard-accessible; openSymbolPicker is unchanged (feature parity).
   heroMark.setAttribute('role', 'button');
@@ -11133,6 +11195,31 @@ function renderSubTheoryBuild(id) {
   intoEm.textContent = (arc && arc.title ? arc.title : 'this arc');
   into.appendChild(intoEm);
   titleWrap.appendChild(into);
+
+  // R-ARC S3B (the basin): while unnamed, the sub-theory is a BASIN -- show its
+  // origin phrase as its identity (life 1), and at real mass INVITE the name (life
+  // 3, the naming threshold; the mint itself is the title blur above -> life 4).
+  // Naming is never asked below mass, never forbidden -- the input is always there.
+  if (_stIsBasin(subTheory)) {
+    var basinNote = document.createElement('div');
+    basinNote.className = 'stb-basin-note';
+    if (_stComputeMaturity(subTheory) >= 0.15) {
+      var invite = document.createElement('p');
+      invite.className = 'stb-name-invite';
+      invite.textContent = 'This gathering keeps circling something — what would you call it?';
+      basinNote.appendChild(invite);
+    }
+    var phrase = _stOriginPhrase(subTheory);
+    if (phrase) {
+      var origin = document.createElement('p');
+      origin.className = 'stb-origin-phrase';
+      var oShort = phrase.split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+      if (oShort.length > 90) { oShort = oShort.substring(0, 90) + '…'; }
+      origin.textContent = '“' + oShort + '”';
+      basinNote.appendChild(origin);
+    }
+    if (basinNote.childNodes.length) { titleWrap.appendChild(basinNote); }
+  }
   sthead.appendChild(titleWrap);
 
   var acts = document.createElement('div');
@@ -14291,7 +14378,14 @@ function subTheoryRowLabel(st) {
     }
     if (firstLine.length) { return firstLine; }
   }
-  return '(untitled sub-theory)';
+  // R-ARC S3B: a basin carries its origin phrase, not a title -- show that here
+  // (the picker's "formless" identity) before the last-resort placeholder.
+  if (typeof _stOriginPhrase === 'function') {
+    var op = _stOriginPhrase(st).split('\n')[0].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    if (op.length > 40) { op = op.substring(0, 40) + '…'; }
+    if (op.length) { return op; }
+  }
+  return '(unnamed basin)';
 }
 
 // One picker row, closure-scoped per sub-theory (a var-in-for-loop would
@@ -15460,7 +15554,8 @@ function _accountSubTheoryRow(sub) {
     ? sub.markColor : hash.colorIdx;
   var glyph = document.createElement('span');
   glyph.className = 'account-row-mark';
-  glyph.innerHTML = _stPickerMarkSvg(sub.id, shape, color, pal, false);
+  // R-ARC S3B: a basin's row glyph is the formless mote, matching its label.
+  glyph.innerHTML = _stIsBasin(sub) ? _stMoteHTML(sub, 22) : _stPickerMarkSvg(sub.id, shape, color, pal, false);
   row.appendChild(glyph);
   var txt = document.createElement('span');
   txt.className = 'account-row-text';

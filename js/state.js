@@ -719,6 +719,13 @@ function ensureSubTheoryFields(st) {
     st._regMergedV1 = true;
     changed = true;
   }
+  // R-ARC S3B (the basin): lineage -- the notebook entry this basin was born from
+  // (its origin phrase, life 1). Additive, both-path (this fn runs on migrate AND
+  // the Firestore merge). Mirrors the arc's originEntryId from S3.
+  if (st.originEntryId !== null && typeof st.originEntryId !== 'string') {
+    st.originEntryId = null;
+    changed = true;
+  }
   return changed;
 }
 
@@ -2087,6 +2094,10 @@ function createSubTheory(arcId, fields) {
     valueMarks:         [],
     citationPins:       {},
     status:             'draft',
+    // R-ARC S3B (the basin): lineage -- the notebook entry this basin/sub-theory
+    // was born from (its origin phrase, life 1). Mirrors the arc field (S3);
+    // Slice 4's door sets it, the notebook mint sets it to the first gathered note.
+    originEntryId:      (typeof src.originEntryId === 'string') ? src.originEntryId : null,
     format:             '',
     publishedAt:        null,
     x:                  null,

@@ -11702,6 +11702,14 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-title-input:focus{ border-bottom-color:rgba(255,206,74,.5); }
 .st-build.lum-amber-deep .stb-into{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-3); margin-top:5px; }
 .st-build.lum-amber-deep .stb-into em{ font-style:italic; font-family:var(--lum-serif); font-size:14px; color:var(--lum-ink-2); }
+/* R-ARC S3B -- the formless MOTE (an unnamed basin's mark): a soft gold glow, no
+   shape, brightness = mass (opacity set inline by _stMoteHTML). Generic (used on
+   the light newborn card AND the warm workshop hero); --gold reads on both. */
+.st-mote{ display:inline-block; border-radius:50%; background:radial-gradient(circle, var(--gold) 0%, transparent 70%); }
+/* the basin's identity + naming-threshold prompt in the workshop (warm-dim) */
+.st-build.lum-amber-deep .stb-basin-note{ margin-top:8px; }
+.st-build.lum-amber-deep .stb-name-invite{ margin:0 0 4px 0; font-family:var(--lum-serif); font-style:italic; font-size:14px; color:var(--lum-gold-l); }
+.st-build.lum-amber-deep .stb-origin-phrase{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-3); }
 .st-build.lum-amber-deep .stb-acts{ flex:none; display:flex; align-items:center; gap:10px; }
 .st-build.lum-amber-deep .stb-saved{ font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-2); display:inline-flex; align-items:center; gap:7px; } /* R6 S6 AF5: bare-on-cream — ink-4 (~1.9:1) -> ink-2 (4.8:1); the PAGE st-tb-saved (dark ground) stays ink-3 */
 .st-build.lum-amber-deep .stb-saved::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--lum-gold-d); box-shadow:0 0 7px rgba(255,206,74,.5); }
