@@ -213,12 +213,14 @@ rather than as a proper picker. **Root cause (recon):** the notebook wrap is `.n
 and the shared `buildArcPickerPanel` reads raw `--surface-2`/`--ink-4`, so it renders dark inside the
 light surface the R4 skin never re-lit for generic tokens. **Disposition (Preston's, confirmed by recon):**
 the notebook-gather invocation (`openGatherArcPicker` → `buildArcPickerPanel`) **is flow (b)** and dies
-with this slice — **but** `buildArcPickerPanel` is a **shared component (5 call sites)** and the door still
+with this slice — **but** `buildArcPickerPanel` is a **shared component (4 call sites** — the plan's earlier
+"5" was off by one; Slice-4 recon `docs/checkpoints/r-arc-s4-recon.md` §3 + repo-mapper prove **4**: grep
+`buildArcPickerPanel(` = 1 def + 4 invocations, no 5th**)** and the door still
 needs arc association (sub-theories live in embers/Slice 3), so **a picker survives into the new door**.
 **THEREFORE THIS SLICE SHIPS THE DOOR'S ARC PICKER GROUND-CORRECT** — light-surface tokens, a proper
 popover (not an inline dark box). ⚠ **Also suspected app-wide:** the same shared panel reads dark tokens
 under any `lum-amber-deep` ancestor, so shelf move-to-arc / book-detail pickers may show the identical
-defect on their light grounds — **audit all 5 call sites at Slice 4 recon**; a shared-component fix likely
+defect on their light grounds — **audit all 4 call sites at Slice 4 recon**; a shared-component fix likely
 serves them all. Preston saw only the notebook instance.
 
 ### Slice 5 — REVERSE GEAR *(REQ#6)*

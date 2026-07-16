@@ -389,11 +389,14 @@ function mountNameProposal(proposal) {
     var finalName = (field.value || '').replace(/^\s+|\s+$/g, '');
     if (finalName === '') { finalName = proposal.name || ''; }
     if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
-    var st = (typeof nameSubTheoryFromThread === 'function')
-      ? nameSubTheoryFromThread(finalName, proposal.memberIds, proposal.thread, proposal.oneLineRead) : null;
-    renderYumiMessage(st
-      ? ('Done — I\'ve started a sub-theory, "' + finalName + '", from those notes.')
-      : 'I could not start that sub-theory just now.');
+    // R-ARC S4 (fork S4-6 FOLD): the proposal folds INTO the one door. Pre-gather the
+    // notes + offer the name in the notebook gather bar; the READER picks the arc and
+    // creates. Yumi proposes, the reader acts (the name is an offer, never sticky).
+    var ok = (typeof notebookGatherFromThread === 'function')
+      ? notebookGatherFromThread(proposal.memberIds, finalName) : false;
+    renderYumiMessage(ok
+      ? ('I\'ve gathered those notes in your notebook — pick an arc and create the sub-theory when you\'re ready.')
+      : 'I could not gather those notes just now.');
   });
   reject.addEventListener('click', function () {
     if (wrap.parentNode) { wrap.parentNode.removeChild(wrap); }

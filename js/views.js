@@ -548,33 +548,11 @@ function renderRoute() {
     renderArtifact(parts[1]);
     return;
   }
-  // 9.2: sub-theory creation. The hash 'arc/<arcId>/new-subtheory'
-  // mints a fresh draft under the arc and redirects to its stable
-  // detail route. Must come BEFORE the 'arc && parts[1]' block below:
-  // 'arc/<id>/new-subtheory' has parts[1] truthy, so the arc-detail
-  // block would otherwise swallow it. location.replace (not assign)
-  // keeps the create-hash out of history so a Back press does not
-  // re-mint a second empty draft, and a refresh on the resulting
-  // #subtheory/<id> is stable. A bad/absent arc yields null from
-  // createSubTheory -> fall back to the Arcs page.
-  if (parts[0] === 'arc' && parts[2] === 'new-subtheory') {
-    var draft = createSubTheory(parts[1], {});
-    if (draft) {
-      // Wave 3: mint at this seam (unchanged), then RENDER the Build surface at
-      // a refresh-stable URL (instead of bouncing to the Page). location.replace
-      // keeps the create-hash out of history so Back never re-mints a draft.
-      location.replace('#subtheory/' + draft.id + '/build');
-    } else {
-      // createSubTheory returns null on two causes and guards the ARC BEFORE auth,
-      // so an absent arc is the cause even when signed out. Test in that same order:
-      // branching on auth would tell a signed-out caller with a dead arc to sign in,
-      // which would not fix it.
-      var nsArcOk = !!(typeof parts[1] === 'string' && state.arcs && state.arcs[parts[1]]);
-      showToast(nsArcOk ? 'Sign in to start a sub-theory.' : 'That arc is no longer available.');
-      location.replace('#arcs');
-    }
-    return;
-  }
+  // R-ARC S4 (One Door): the '#arc/<id>/new-subtheory' mint-and-redirect route is
+  // RETIRED — it was a parallel creation path (a second door). Arc-detail's "+ Sub-theory"
+  // controls now funnel into the ONE door (notebookCreateSubTheory with a pre-selected
+  // arc, the sole createSubTheory call site). The '#subtheory/<id>/build' route below
+  // (the build surface for a minted draft) is unchanged.
   // 9.2: sub-theory detail / writing surface. Setting currentSubTheoryId
   // drives yumi-brain's currentSubTheory lens; currentArcId is set to
   // the parent arc so the arc lens stays coherent (the sub-theory lives
@@ -2617,23 +2595,39 @@ function openGatherArcPicker(mountEl) {
 // N3: gather -> sub-theory. REUSES createSubTheory + addEvidenceToSubTheory
 // (the same path "Send to sub-theory" uses, kind 'entry', quote = body). On
 // success, clears the gather and routes to the new sub-theory page.
-function notebookCreateSubTheory() {
+function notebookCreateSubTheory(opts) {
+  // R-ARC S4 (One Door): the SOLE createSubTheory call site. Two entry contexts funnel
+  // here (S4-4). NOTEBOOK gather (opts absent): create from the gathered notes + the
+  // chosen arc, land on the newborn card, stay in the notebook. ARC-DETAIL "+ Sub-theory"
+  // (opts.arcId set): a pre-selected arc, no gathered notes -> an empty draft that lands
+  // in the workshop (preserves the retired route's end-state). One create path, one
+  // arc-resolution (a real arc, never auto-minted), one landing per context.
+  opts = opts || {};
   var user = getCurrentUser();
   if (!user) { return; }
-  var ids = notebookGatheredIds();
-  var name = (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
-  var arcId = notebookGatherArc || notebookSharedArc(ids);
-  // FIX B: name optional (empty header = a draft, named in the editor); arc
-  // must exist.
-  if (!ids.length || !arcId || !state.arcs[arcId]) { return; }
-  // R-ARC S3B: the basin's origin phrase = the first gathered note it was born from.
-  var st = createSubTheory(arcId, { header: name, originEntryId: ids[0] });
+  var fromArc = (typeof opts.arcId === 'string' && opts.arcId !== '');
+  var ids = fromArc ? [] : notebookGatheredIds();
+  var name = fromArc ? '' : (notebookGatherName || '').replace(/^\s+|\s+$/g, '');
+  var arcId = fromArc ? opts.arcId : (notebookGatherArc || notebookSharedArc(ids));
+  // The arc must EXIST. The notebook entry additionally requires gathered notes; the
+  // arc-detail entry mints an empty draft (name optional, given in the editor).
+  if (!arcId || !state.arcs[arcId]) { return; }
+  if (!fromArc && !ids.length) { return; }
+  // R-ARC S3B: the basin's origin phrase = the first gathered note (arc-detail: none -> formless).
+  var st = createSubTheory(arcId, fromArc ? {} : { header: name, originEntryId: ids[0] });
   if (!st) { return; }
   var i;
   for (i = 0; i < ids.length; i = i + 1) {
     var e = state.notebookEntries[ids[i]];
     var quote = (e && typeof e.body === 'string') ? e.body : '';
     addEvidenceToSubTheory(st.id, { kind: 'entry', refId: ids[i], quote: quote });
+  }
+  if (fromArc) {
+    // Arc-detail: mint + open the workshop. location.replace keeps the transient create
+    // action out of history (Back never re-mints) — exactly as the retired route did.
+    saveState();
+    location.replace('#subtheory/' + st.id + '/build');
+    return;
   }
   var mintedArc = state.arcs[arcId];
   notebookGathered = {};
@@ -3300,53 +3294,49 @@ function integrateReflection(entryId, replyText) {
   return true;
 }
 
-// Stage B-3: NAME-accept. Create a sub-theory from a noticed thread, REUSING
-// the existing create path verbatim (createSubTheory + addEvidenceToSubTheory).
-// Attaches to the arc shared by the member notes, or creates one if none
-// (never asks the reader). Marks the thread named (idempotency) and re-renders.
-// Inert until called (Accept only); returns the sub-theory, or null.
-function nameSubTheoryFromThread(finalName, memberIds, threadLabel, oneLineRead) {
+// R-ARC S4 (fork S4-6 FOLD): Yumi's NAME proposal, on Accept, folds INTO the one door.
+// It pre-gathers the noticed notes and OFFERS the proposed name in the notebook gather
+// bar, then routes to #notebook — the READER picks the arc and creates. Covenant: Yumi
+// proposes, the reader acts. The offered name is editable/clearable and NEVER sticky —
+// cleared, creation proceeds as an unnamed basin (never-asked-never-forbidden). No
+// auto-mint, no silent create, and — by ruling — NO reader-model "named thread" write
+// (that signal returns via the Wave-C raised-hand seat, not invisible threading into the
+// door). Marks the thread 'named' for idempotency ONLY (so Yumi does not re-propose it).
+// Returns true on a successful hand-off, else false. Inert until called (Accept only).
+function notebookGatherFromThread(memberIds, proposedName) {
   var user = getCurrentUser();
-  if (!user) { return null; }
-  var name = (typeof finalName === 'string') ? finalName.replace(/^\s+|\s+$/g, '') : '';
-  if (name === '' || !memberIds || memberIds.length < 3) { return null; }
-  var arcId = notebookSharedArc(memberIds);
-  if (!arcId) {
-    var label = (typeof threadLabel === 'string' && threadLabel.replace(/^\s+|\s+$/g, '') !== '')
-      ? threadLabel : name;
-    var arc = createArc(label, '', user.uid);
-    if (!arc) { return null; }
-    arcId = arc.id;
-  }
-  // Seed the sub-theory's public body with Yumi's proposed one-line read (the
-  // s5 "read" the reader accepted) -- an editable draft, not imposed.
-  var read = (typeof oneLineRead === 'string') ? oneLineRead.replace(/^\s+|\s+$/g, '') : '';
-  var st = createSubTheory(arcId, { header: name, bodyPublic: read });
-  if (!st) { return null; }
+  if (!user || !user.uid) { return false; }
+  if (!memberIds || !memberIds.length) { return false; }
+  var gathered = {};
+  var any = false;
   var i;
   for (i = 0; i < memberIds.length; i = i + 1) {
-    var e = state.notebookEntries[memberIds[i]];
-    var quote = (e && typeof e.body === 'string') ? e.body : '';
-    addEvidenceToSubTheory(st.id, { kind: 'entry', refId: memberIds[i], quote: quote });
+    var id = memberIds[i];
+    if (id && state.notebookEntries && state.notebookEntries[id]) { gathered[id] = true; any = true; }
   }
+  if (!any) { return false; }
+  notebookGathered = gathered;
+  notebookGatherArc = null;  // the reader chooses the arc in the door
+  notebookGatherName = (typeof proposedName === 'string') ? proposedName.replace(/^\s+|\s+$/g, '') : '';
+  // Idempotency ONLY (no reader-model write, per the S4-6 ruling): mark the thread so
+  // Yumi does not re-propose it.
   if (window.YumiBrain && YumiBrain.recordThreadNamed) { YumiBrain.recordThreadNamed(memberIds); }
-  // yumi-intelligence Stage II: auto-write the confirmed thread into the reader-
-  // model -- status 'named', the NOTICE member ids, the derived arcId, and the
-  // produced subTheoryId. Gated on BOTH consents; idempotent (state.js); mirrored
-  // to /userReaderModel. With consent off, NO write fires (un-personalized).
-  var rmProf = (typeof getProfile === 'function') ? getProfile(user.uid) : null;
-  if (rmProf && rmProf.yumiReadsAlong !== false && rmProf.yumiReaderModel === true &&
-      typeof addReaderThreadFromName === 'function') {
-    addReaderThreadFromName(user.uid, {
-      label: name, oneLine: read, memberNoteIds: memberIds, arcId: arcId, subTheoryId: st.id
-    });
-    if (typeof saveReaderModelToFirestore === 'function') {
-      saveReaderModelToFirestore(user.uid, getReaderModel(user.uid), function () {});
-    }
+  // Latch the notebook session to THIS uid BEFORE persisting. The fold usually runs
+  // before the Notebook has rendered this session, so notebookSessionUid is still null;
+  // without the latch, nbGatherSave's owner gate no-ops AND the Notebook's first
+  // nbGatherRestore RESETS the in-memory gather + reloads an unwritten key — silently
+  // dropping the whole hand-off (WS-A red-team BLOCK). Latching to the CURRENT uid keeps
+  // the owner gate honest (we write this user's key) while making that restore a no-op.
+  notebookSessionUid = user.uid;
+  nbGatherSave();
+  // Route to the one door. A same-hash set is a no-op in this SPA, so force the render
+  // when already on the notebook; otherwise the hash change routes via renderRoute.
+  if (location.hash === '#notebook' || location.hash === '' || location.hash === '#') {
+    renderNotebook();
+  } else {
+    location.hash = 'notebook';
   }
-  saveState();
-  if (typeof renderRoute === 'function') { renderRoute(); }
-  return st;
+  return true;
 }
 
 // N2: file an Inbox entry to a book -- set filed true + add the bookId (deduped).
@@ -12720,7 +12710,9 @@ function buildArcFieldRail(arc, arcId, user) {
     addSub.className = 'btn btn-primary arcfield-add-sub';
     addSub.textContent = '＋ Add a sub-theory';
     addSub.addEventListener('click', function() {
-      location.hash = 'arc/' + arcId + '/new-subtheory';
+      // R-ARC S4 (One Door): funnel into the one door with this arc pre-selected (S4-4),
+      // instead of the retired '#arc/<id>/new-subtheory' redirect.
+      notebookCreateSubTheory({ arcId: arcId });
     });
     rail.appendChild(addSub);
   }
@@ -13114,7 +13106,9 @@ function renderArcDetail(arcId) {
     addSubCanon.className = 'arcfield-addsub-canon';
     addSubCanon.textContent = '+ Sub-theory';
     addSubCanon.addEventListener('click', function() {
-      location.hash = 'arc/' + arcId + '/new-subtheory';
+      // R-ARC S4 (One Door): funnel into the one door with this arc pre-selected (S4-4),
+      // instead of the retired '#arc/<id>/new-subtheory' redirect.
+      notebookCreateSubTheory({ arcId: arcId });
     });
     headctl.appendChild(addSubCanon);
   }
@@ -14528,6 +14522,12 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
   // never a per-entry flip. The read-only visibility indicator above remains.
   var acts = document.createElement('div');
   acts.className = 'notebook-entry-acts';
+  // FF-8 (S4-3): the note's actions collapse to one primary (Gather) + a quiet overflow.
+  // Gather + ask-Yumi stay on the row; Add-to-arc / File-to-book / Send-to-sub-theory move
+  // into the overflow (revealed by the ⋯ toggle), and Delete lives there too, separated
+  // below a rule — destructive never rides the primary row.
+  var overflow = document.createElement('div');
+  overflow.className = 'notebook-entry-overflow';
 
   // N3: gather toggle -- only on the notebook spread (gatherable). Adds/removes
   // this entry from the gathered set that forms a sub-theory on the right leaf.
@@ -14580,7 +14580,7 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
     }
     openEntryArcPicker(capturedId, mount);
   });
-  acts.appendChild(addToArcLink);
+  overflow.appendChild(addToArcLink);
 
   // N2: File to book -- only for an Inbox item (filed === false). Sets
   // filed = true + the bookId, routing it from Inbox into that book's bank.
@@ -14599,7 +14599,7 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
       }
       openFileToBookPicker(capturedId, fmount);
     });
-    acts.appendChild(fileLink);
+    overflow.appendChild(fileLink);
   }
 
   // 10.1: Send to sub-theory — attaches this entry as evidence (kind
@@ -14621,7 +14621,7 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
     }
     openEntrySendToSubTheory(capturedId, subMount);
   });
-  acts.appendChild(sendToSubLink);
+  overflow.appendChild(sendToSubLink);
 
   var deleteLink = document.createElement('a');
   deleteLink.href = '#';
@@ -14667,11 +14667,30 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
     }
   });
 
-  acts.appendChild(deleteLink);
-  acts.appendChild(confirmLink);
-  acts.appendChild(cancelLink);
+  // FF-8: Delete in the overflow, separated below a rule — off the row, deliberate.
+  var ofSep = document.createElement('span');
+  ofSep.className = 'nb-of-sep';
+  overflow.appendChild(ofSep);
+  overflow.appendChild(deleteLink);
+  overflow.appendChild(confirmLink);
+  overflow.appendChild(cancelLink);
+
+  // The ⋯ overflow toggle rides the primary row and reveals the overflow block.
+  var moreBtn = document.createElement('button');
+  moreBtn.type = 'button';
+  moreBtn.className = 'notebook-entry-more';
+  moreBtn.setAttribute('aria-label', 'More actions');
+  moreBtn.setAttribute('aria-expanded', 'false');
+  moreBtn.textContent = '⋯';
+  moreBtn.addEventListener('click', function() {
+    var open = overflow.className.indexOf('is-open') > -1;
+    overflow.className = open ? 'notebook-entry-overflow' : 'notebook-entry-overflow is-open';
+    moreBtn.setAttribute('aria-expanded', open ? 'false' : 'true');
+  });
+  acts.appendChild(moreBtn);
 
   card.appendChild(acts);
+  card.appendChild(overflow);
   return card;
 }
 

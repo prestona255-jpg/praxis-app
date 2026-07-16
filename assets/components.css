@@ -4266,6 +4266,33 @@
   margin-top: 12px;
 }
 
+/* FF-8 (S4-3): the note action row collapses to one primary (Gather) + a quiet overflow.
+   The ⋯ toggle reveals Add-to-arc / File-to-book / Send-to-sub-theory + a separated Delete;
+   destructive never rides the primary row. The live notebook is lum-amber-deep (light-skin
+   block further down owns the look); these base rules keep the toggle sane in any ground and
+   guarantee the overflow is hidden until opened. */
+.notebook-entry-more {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.notebook-entry-overflow { display: none; }
+.notebook-entry-overflow.is-open {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+}
+.notebook-entry-overflow .nb-of-sep {
+  align-self: stretch;
+  height: 1px;
+  background: var(--border);
+  margin: 1px 0;
+}
+
 /* ===== N1: the spread (Alt 1) -- structural layout. Full style pass is N5;
    these rules use existing tokens only and establish the two-leaf grid, the
    tab row, and the display-only master switch. ===== */
@@ -5192,6 +5219,14 @@
   color: var(--ink);
   text-decoration-color: var(--ink-2);
 }
+
+/* WS-C (S4-5, the BOUND FINDING): the picker reads generic --surface-2/--ink*/--gold-* tokens;
+   body[data-ground="dark"] (theme.css:362) repoints them DARK — a dark box on the light working page.
+   Every .arc-picker-panel mounts inside a .lum-amber-deep light surface. NARROW fix: re-point the
+   picker's tokens to the surface's light --lum-* set + a legible row-hover (base hover collapses to
+   --gold-soft on --gold-soft). Scoped to the picker; it never mounts on genuinely-dark chrome. */
+.lum-amber-deep .arc-picker-panel{ --surface-2:var(--page-2); --ink:var(--lum-ink); --ink-2:var(--lum-ink-2); --ink-3:var(--lum-ink-3); --ink-4:var(--lum-glass-bd-2); --border:var(--lum-glass-bd-2); }
+.lum-amber-deep .arc-picker-row:hover{ background:color-mix(in srgb, var(--lum-gold-l) 20%, transparent); color:var(--lum-ink); }
 
 /* ----- Send-to-sub-theory picker (10.1 polish) -----
    The panel also carries .arc-picker-panel, so it inherits the arc
@@ -12004,6 +12039,8 @@ body.wc-focus .app-nav { opacity:.26; }
   .notebook.lum-amber-deep .nb-mode,
   .notebook.lum-amber-deep .chip,
   .notebook.lum-amber-deep .seg-opt,
+  .notebook.lum-amber-deep .notebook-entry-overflow a,
+  .notebook.lum-amber-deep .notebook-entry-more,
   .notebook.lum-amber-deep .btn-primary{ min-height:44px; display:inline-flex; align-items:center; }
 }
 /* ===== end WAVE 3 · THE NOTEBOOK ===== */
@@ -13253,6 +13290,25 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook.lum-amber-deep .notebook-entry-tag-j{ color:var(--lum-ink-2); background:rgba(95,79,150,.12); }
 .notebook.lum-amber-deep .notebook-entry-acts a.notebook-entry-gather,
 .notebook.lum-amber-deep .notebook-entry-acts a:hover{ color:var(--gold-deep); }
+/* FF-8 light skin: the collapsed action row on the live (lum-amber-deep) notebook —
+   the ⋯ toggle on the row, the overflow menu, and the separated destructive Delete. */
+.notebook.lum-amber-deep .notebook-entry-more{ font-family:var(--lum-mono); font-size:13px; line-height:1; letter-spacing:.04em; color:var(--lum-ink-4); }
+.notebook.lum-amber-deep .notebook-entry-more:hover{ color:var(--gold-deep); }
+.notebook.lum-amber-deep .notebook-entry-overflow.is-open{ padding-top:11px; border-top:1px solid var(--lum-glass-bd-2); }
+.notebook.lum-amber-deep .notebook-entry-overflow a{ font-family:var(--lum-mono); font-size:10.5px; letter-spacing:.04em; color:var(--lum-ink-3); text-decoration:none; cursor:pointer; }
+.notebook.lum-amber-deep .notebook-entry-overflow a:hover{ color:var(--gold-deep); }
+.notebook.lum-amber-deep .notebook-entry-overflow .nb-of-sep{ background:var(--lum-glass-bd-2); }
+.notebook.lum-amber-deep .notebook-entry-overflow .notebook-entry-delete{ color:var(--danger); }
+.notebook.lum-amber-deep .notebook-entry-overflow .notebook-entry-delete:hover{ color:var(--danger); text-decoration:underline; text-underline-offset:3px; }
+.notebook.lum-amber-deep .notebook-entry-overflow .notebook-entry-delete-confirm{ color:var(--danger); font-weight:600; }
+.notebook.lum-amber-deep .notebook-entry-overflow .notebook-entry-delete-cancel{ color:var(--lum-ink-4); }
+/* D6: the ⋯ toggle + the overflow controls (incl. the relocated Delete) keep keyboard focus
+   rings — the old .notebook-entry-acts a:focus-visible no longer reaches them once moved. The
+   primary-row links (Gather / ask-Yumi) are folded in here too so ALL note-action controls
+   ring at every width (their prior ring was ≥1200-only — the WS-B red-team's asymmetry nit). */
+.notebook.lum-amber-deep .notebook-entry-acts a:focus-visible,
+.notebook.lum-amber-deep .notebook-entry-more:focus-visible,
+.notebook.lum-amber-deep .notebook-entry-overflow a:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
 /* working-page gathered note — light */
 .notebook.lum-amber-deep .nb-gnote{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); border-left-color:var(--gold); color:var(--lum-ink-2); }
 
