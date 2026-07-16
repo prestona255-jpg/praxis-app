@@ -183,7 +183,8 @@ felt mandate (FF-3). See `docs/r-arc-plan.md` Slices 6–9 + 12.
 ---
 
 ## 7. VISUAL GATES OWED (Preston's eyes on deploy)
-- **F4** (this session's pending gate): the single-column reading room (no right gutter) + the dormant
-  Finish pill on an unnamed basin.
+- ~~**F4** (this session's pending gate): the single-column reading room (no right gutter) + the dormant
+  Finish pill on an unnamed basin.~~ **CLEARED — F4 deployed visual gate PASSED (Preston, 2026-07-16, no
+  findings).** Recorded in `docs/checkpoints/r-arc-f4.md` residual #1.
 - Carried: S3 (ember chip / graduate / rename / "Unnamed"), S3R ("Return to ember"), S3B (the mote glow +
   naming invitation), 3B-POLISH (provisional phrase + placeholder + the Arc-Read dot/label pairing).

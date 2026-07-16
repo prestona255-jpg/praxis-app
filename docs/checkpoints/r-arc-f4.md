@@ -63,8 +63,9 @@ on the next render (as the mote/invite are) — naming a basin re-enables Finish
 | 8 | **N2** named sub: Finish **enabled**, no reason tooltip | ✅ |
 
 ## Residuals
-1. **VISUAL GATE owed** — the Page reading room without its right margin (single-column composition), and
-   the dormant Finish pill, Preston's eyes.
+1. **VISUAL GATE — PASSED (Preston, deployed v3.217, 2026-07-16, NO findings).** The Page reading room
+   without its right margin (single-column composition) and the dormant Finish pill both cleared his eyes.
+   Carry-item cleared in the Wave B handoff §7.
 2. **N2 re-enable timing (low):** naming a basin in the workshop re-enables Finish on the **next render**
    (consistent with the mote/invite, which also update on re-render, not on the title blur). If Preston
    wants live re-enable, that's a follow-on requiring the workshop to re-render on naming.
