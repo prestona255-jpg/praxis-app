@@ -188,6 +188,21 @@ tonight's slate.
   report: —
   proposed-in: R9b
 
+- id: ON-8
+  title: Bloom hint collides with marginalia text (INT-9)
+  plain: The Yumi Bloom's "tap to think this through with me" hint overlaps note text bottom-right — present in all three of Preston's post-S7 felt screenshots, surface-independent, so it's the hint's own positioning.
+  surface: yumi-panel (the Bloom hint chrome; overlays every surface)
+  bucket: overnight
+  files: CSS (+ views.js only if the hint's mount needs a class)
+  anchors: TBD (the Bloom hint element + its position rules; z-ledger — Bloom 9999)
+  verify: at 390 + 1280, the hint's bounding rect intersects NO notebook card text (geometry check on seeded cards); hint still appears and still opens Yumi (own-state sweep).
+  revert: single-commit revert of the positioning CSS.
+  felt-pass-required: true
+  status: queued
+  evidence: —
+  report: —
+  proposed-in: R-ARC Wave C (post-S7 felt checkpoint, Preston 2026-07-17 — ruled overnight-eligible standalone; NOT a ROOM-2 rider, band discipline holds)
+
 ---
 
 ## Confirmed non-overnight

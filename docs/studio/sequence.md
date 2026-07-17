@@ -552,8 +552,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
   PUSHED+LIVE v3.224 (`c33f22c`) · S7 (Room lighting) BUILT v3.225, pushed under RUN MODE v2
   (charter: Preston 2026-07-17 — standing push on fully-green + self-run deployed smoke +
   push ledger; ROOM-2/Slice-8 data-writes still halt; FELT CHECKPOINTS after S7 · ROOM-3 ·
-  close). **AT THE POST-S7 FELT CHECKPOINT — no new slice until Preston's verdict.** Remap
-  remainder: ROOM-2 (absorbs 10) → ROOM-3 (absorbs 12 + riders) → 8 → 9.** Per-surface
+  close). **POST-S7 FELT
+  CHECKPOINT = FUNCTIONAL PASS** (intake INT-5..8 → ROOM-3 · INT-9 → ON-8 overnight ·
+  Arc-Field → post-wave ledger). **ROOM-2 (note door + Slice 10, DATA-WRITE) BUILT v3.226 —
+  COMMITTED LOCAL, HALTED for Preston's explicit push word (the v2 exception).** Remainder:
+  ROOM-3 (absorbs 12 + riders + INT-5..8 + EMPTY-STATE mandate) → 8 → 9.** Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]
 

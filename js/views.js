@@ -580,6 +580,17 @@ function renderRoute() {
     renderSubTheoryPage(parts[1]);
     return;
   }
+  // ROOM-2 (INT-2): the note as a PLACE. Clears the lens pointers like every
+  // sibling route -- entering a note is leaving any book/arc/sub-theory
+  // (red-team H2: the sole non-clearing branch was a stale-lens leak).
+  if (parts[0] === 'note' && parts[1]) {
+    state.currentBookId = null;
+    state.currentArcId = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderNoteSurface(parts[1]);
+    return;
+  }
   if (parts[0] === 'arc' && parts[1]) {
     // 3.9: arc detail. Setting currentArcId keeps yumi-brain's
     // currentArc context lens accurate; clearing currentBookId is the
@@ -906,7 +917,7 @@ function _searchBuildIndex() {
         snip: nbody,
         crumb: (typeof notebookRegisterLabel === 'function') ? notebookRegisterLabel(en.register) : 'Note',
         hay: (nbody + ' ' + srcTitle).toLowerCase(),
-        route: '#notebook'
+        route: '#note/' + en.id   // ROOM-2 (absorbs Slice 10): the deep link
       });
     }
   }
@@ -11929,8 +11940,23 @@ function renderSubTheoryBuild(id) {
       layout: subTheory.evidenceLayout || {},
       onMove: function (evId, x, y) {
         if (typeof setEvidenceLayout === 'function') { setEvidenceLayout(id, evId, x, y); }
+      },
+      // ROOM-2: tap keeps ROOM-1's lift; the lifted ENTRY card gains its
+      // destination-named door, injected once (DWF-1: real door, real place).
+      onTap: function (evId, cardEl) {
+        if (cardEl.className.indexOf('rf-lifted') !== -1) { cardEl.className = 'rf-card'; return; }
+        cardEl.className = 'rf-card rf-lifted';
+        var fEv = null, fej;
+        for (fej = 0; fej < gEv.length; fej = fej + 1) { if (gEv[fej] && gEv[fej].id === evId) { fEv = gEv[fej]; break; } }
+        if (fEv && fEv.kind === 'entry' && state.notebookEntries && state.notebookEntries[fEv.refId]
+            && !cardEl.querySelector('.rf-door')) {
+          var fDoor = document.createElement('a');
+          fDoor.className = 'rf-door';
+          fDoor.href = '#note/' + fEv.refId;
+          fDoor.textContent = 'Open the note →';
+          cardEl.appendChild(fDoor);
+        }
       }
-      /* onTap omitted: the module's default lift/unlift — the note DOOR is ROOM-2's */
     });
     rail.appendChild(fieldPane);
   }
@@ -14802,6 +14828,192 @@ function _recogIndex() {
   }
   return _recogIdxMemo;
 }
+// ROOM-2 (INT-2): the NOTE SURFACE -- a note as a place. Owner-gated view +
+// DURABLE register-aware editing (closes MARG-EDIT; D5) + provenance
+// (mirror-read of the FF-12 data). Woven quote snapshots never retro-edit.
+function renderNoteSurface(entryId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    host.appendChild(buildSignedOutPrompt('This note is private', 'Sign in to read and edit your notes.'));
+    return;
+  }
+  var en = state.notebookEntries ? state.notebookEntries[entryId] : null;
+  var wrap = document.createElement('section');
+  wrap.className = 'note-surface lum-amber-deep';
+  if (!en || en.userId !== user.uid) {
+    var nf = document.createElement('p');
+    nf.className = 'note-not-found';
+    nf.textContent = 'This note isn’t here — it may have been deleted.';
+    wrap.appendChild(nf);
+    var nfBack = document.createElement('a');
+    nfBack.className = 'note-back';
+    nfBack.href = '#notebook';
+    nfBack.textContent = '← Back to the notebook';
+    wrap.appendChild(nfBack);
+    host.appendChild(wrap);
+    return;
+  }
+  var isMarg = (en.register === 'marginalia');
+
+  var back = document.createElement('a');
+  back.className = 'note-back';
+  back.href = '#notebook';
+  back.textContent = '← Back to the notebook';
+  wrap.appendChild(back);
+
+  var eyebrow = document.createElement('p');
+  eyebrow.className = 'note-eyebrow';
+  var regLabel = (typeof notebookRegisterLabel === 'function') ? notebookRegisterLabel(en.register) : (en.register || 'note');
+  var ts = new Date(en.createdAt || 0);
+  eyebrow.textContent = regLabel + ' · ' + ts.toLocaleDateString();
+  wrap.appendChild(eyebrow);
+
+  // ---- the body: view mode + durable edit mode ----------------------------
+  var bodyHost = document.createElement('div');
+  bodyHost.className = 'note-body-host';
+  wrap.appendChild(bodyHost);
+  var editing = false;
+  function renderView() {
+    bodyHost.innerHTML = '';
+    var view = document.createElement('div');
+    view.className = isMarg ? 'note-body notebook-entry-body-md' : 'note-body note-body-plain';
+    if (isMarg && typeof wcRenderMarkdown === 'function') {
+      wcRenderMarkdown(view, en.body || '');
+      _recogLightEl(view);   // S6c parity: static render, lit
+    } else {
+      view.textContent = en.body || '';
+    }
+    bodyHost.appendChild(view);
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'note-edit-btn';
+    editBtn.textContent = 'Edit this note';
+    editBtn.addEventListener('click', function () { editing = true; renderEdit(); });
+    bodyHost.appendChild(editBtn);
+  }
+  function renderEdit() {
+    bodyHost.innerHTML = '';
+    var done = function (saved) { editing = false; en = state.notebookEntries[entryId]; renderView(); };
+    if (isMarg) {
+      // marginalia edits through the shared canvas (markdown-native)
+      var cHost = document.createElement('div');
+      cHost.className = 'note-edit-canvas';
+      bodyHost.appendChild(cHost);
+      var noteCanvas = createWritingCanvas(cHost, {
+        surfaceId: 'note-edit',
+        initialValue: en.body || '',
+        flags: { focusMode: false },
+        onSave: function (md, report) {
+          updateNotebookEntryBody(entryId, (typeof md === 'string') ? md : '');
+          if (report && report.setLocal) { report.setLocal(true); }
+        }
+      });
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'note-edit-done';
+      closeBtn.textContent = 'Done editing';
+      closeBtn.addEventListener('click', function () {
+        updateNotebookEntryBody(entryId, noteCanvas.getValue());
+        noteCanvas.destroy();
+        done(true);
+      });
+      bodyHost.appendChild(closeBtn);
+    } else {
+      // journal/question edit PLAIN (newlines never rewritten) -- SAME
+      // persistence model as the canvas path (red-team B1): debounced
+      // autosave + blur flush bound the loss window to <700ms. No Cancel:
+      // a discard promise cannot coexist with autosave (canvas precedent).
+      var ta = document.createElement('textarea');
+      ta.className = 'note-edit-plain';
+      ta.value = en.body || '';
+      var taTimer = null;
+      function taSave() {
+        if (taTimer) { clearTimeout(taTimer); taTimer = null; }
+        updateNotebookEntryBody(entryId, ta.value);
+      }
+      ta.addEventListener('input', function () {
+        if (taTimer) { clearTimeout(taTimer); }
+        taTimer = setTimeout(taSave, 700);
+      });
+      ta.addEventListener('blur', taSave);
+      bodyHost.appendChild(ta);
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'note-edit-done';
+      saveBtn.textContent = 'Done editing';
+      saveBtn.addEventListener('click', function () {
+        taSave();
+        done(true);
+      });
+      bodyHost.appendChild(saveBtn);
+    }
+  }
+  renderView();
+
+  // ---- provenance: where this note lives (mirror-read; INT-2c) ------------
+  var prov = document.createElement('div');
+  prov.className = 'note-prov';
+  var provHead = document.createElement('p');
+  provHead.className = 'note-prov-head';
+  provHead.textContent = 'WHERE THIS NOTE LIVES';
+  prov.appendChild(provHead);
+  function provRow(label, doorText, doorHref) {
+    var row = document.createElement('div');
+    row.className = 'note-prov-row';
+    var lab = document.createElement('span');
+    lab.className = 'note-prov-label';
+    lab.textContent = label;
+    row.appendChild(lab);
+    if (doorHref) {
+      var door = document.createElement('a');
+      door.className = 'note-prov-door';
+      door.href = doorHref;
+      door.textContent = doorText;
+      row.appendChild(door);
+    }
+    prov.appendChild(row);
+    return row;
+  }
+  var provAny = false;
+  var pbId = (Array.isArray(en.bookIds) && en.bookIds.length) ? en.bookIds[0] : null;
+  if (pbId && state.books && state.books[pbId]) {
+    provRow('Filed to ' + (state.books[pbId].title || 'Untitled'), 'Open the book →', '#book/' + pbId);
+    provAny = true;
+  } else {
+    provRow('Unfiled — not filed to a book', null, null);
+  }
+  var pai;
+  var pArcs = Array.isArray(en.arcIds) ? en.arcIds : [];
+  for (pai = 0; pai < pArcs.length; pai = pai + 1) {
+    if (state.arcs && state.arcs[pArcs[pai]]) {
+      provRow('In the arc ' + (state.arcs[pArcs[pai]].title || 'Untitled'), 'Open the arc →', '#arc/' + pArcs[pai]);
+      provAny = true;
+    }
+  }
+  var psk, pSub, pei;
+  for (psk in state.subTheories) {
+    if (!state.subTheories.hasOwnProperty(psk)) { continue; }
+    pSub = state.subTheories[psk];
+    if (!pSub || pSub.userId !== user.uid || !Array.isArray(pSub.evidence)) { continue; }
+    for (pei = 0; pei < pSub.evidence.length; pei = pei + 1) {
+      if (pSub.evidence[pei] && pSub.evidence[pei].kind === 'entry' && pSub.evidence[pei].refId === entryId) {
+        provRow('Woven into ' + (pSub.header === '' ? 'an unnamed basin' : pSub.header),
+          'Open the page →', '#subtheory/' + psk);
+        provAny = true;
+        break;
+      }
+    }
+  }
+  if (!provAny) {
+    // the unfiled row already states the filing axis; nothing else to claim
+  }
+  wrap.appendChild(prov);
+  host.appendChild(wrap);
+}
+
 // S7: LIVE lighting for the workshop canvas. Spike laws hold: F-C display-
 // only; F1 caret carry every pass; F2 strictly-inside; F3 pause cadence.
 // Wrap phase reuses _recogLightEl. Skips non-collapsed selection + IME
@@ -15002,6 +15214,13 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
   } else {
     bodyEl.textContent = entry.body || '';
   }
+  // ROOM-2 (INT-2a): the card BODY opens the note's own surface. A drag-
+  // selection is not a tap (selection-empty guard); no new FF-8 row action.
+  bodyEl.addEventListener('click', function () {
+    var bs = window.getSelection();
+    if (bs && String(bs).length > 0) { return; }
+    location.hash = '#note/' + entry.id;
+  });
   card.appendChild(bodyEl);
 
   // N2b: inline captured photos (refs only on the entry; blob from IndexedDB,

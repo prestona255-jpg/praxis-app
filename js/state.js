@@ -2427,6 +2427,19 @@ function addEvidence(subTheoryId, fields) {
   return element;
 }
 
+// ROOM-2 (D5): durable note-body edit -- closes MARG-EDIT. Body only;
+// woven evidence[].quote snapshots are NEVER retro-edited (ruled).
+function updateNotebookEntryBody(entryId, body) {
+  var en = state.notebookEntries[entryId];
+  if (!en || typeof body !== 'string') { return false; }
+  if (en.body === body) { return true; }  // no touch-writes (red-team N3)
+  en.body = body;
+  en.updatedAt = Date.now();
+  markNotebookDirty();
+  saveState();
+  return true;
+}
+
 // ROOM-1: persist one field-card position (normalized, clamped; drag-end
 // discrete -> direct save). T11: arrangement data, never Yumi's.
 function setEvidenceLayout(subTheoryId, evId, x, y) {

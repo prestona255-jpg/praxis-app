@@ -165,15 +165,16 @@ function spotlightSearch(query) {
       var en = enMap[enk];
       if (!en) { continue; }
       if (arcNoteItems.length >= SPOTLIGHT_GROUP_CAP) { break; }
-      if (spotlightMatch(en.title, q) || spotlightMatch(en.body, q)) {
-        var enLabel = en.title || en.body || 'Note';
+      // ROOM-2/Slice-10: deep-link; dead en.title match retired
+      if (spotlightMatch(en.body, q)) {
+        var enLabel = en.body || 'Note';
         if (enLabel.length > 60) {
           enLabel = enLabel.substring(0, 57) + '...';
         }
         arcNoteItems.push({
           label: enLabel,
           type:  (en.register === 'marginalia') ? 'marginalia' : 'note',
-          route: '#notebook'
+          route: '#note/' + en.id
         });
       }
     }
