@@ -11812,6 +11812,12 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-book.open .stb-bchev{ transform:rotate(90deg); }
 .st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
 .st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
+/* R-ARC RAIL: FF-12 gathered panel + UNFILED-REACH (F1) + FF-2 doors */
+.st-build.lum-amber-deep .stb-gathered{ margin-bottom:14px; }
+.st-build.lum-amber-deep .stb-gath-list .stb-marg{ border-top:1px dashed rgba(133,84,16,.14); }
+.st-build.lum-amber-deep .stb-gath-door{ display:inline-block; margin-top:6px; font-family:var(--lum-mono); font-size:10px; letter-spacing:.06em; color:var(--lum-gold-d); text-decoration:none; border-bottom:1px solid transparent; }
+.st-build.lum-amber-deep .stb-gath-door:hover{ border-bottom-color:var(--lum-gold-d); }
+.st-build.lum-amber-deep .stb-bt-unfiled{ font-style:italic; color:var(--lum-ink-3); }
 /* R6 S6 (R#7): the marginalia block re-palettes off the dark khaki/olive overlay
    (rgba(20,12,5,.3), read against the warm-dim cream card) to a warm amber-family
    wash; ink-tier text AA-safe (gold-d eyebrow, ink-2 passage, gold-d active weave,

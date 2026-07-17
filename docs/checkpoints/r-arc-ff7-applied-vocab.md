@@ -49,6 +49,10 @@ retires everywhere; "gathering" is the one pre-mint word.)
 | "Open the page →" ⚠ (Arc-detail Page-face stub) | **"Open the workshop →"** | `#subtheory/<id>/build` — **fixes the same-words-opposite-direction collision** |
 
 Result: exactly two door labels app-wide, each meaning exactly one destination.
+*(AMENDED at the Wave C rail slice, 2026-07-17: a THIRD label — "Open the
+book →" → `#book/<id>` — landed on the FF-12 gathered-evidence cards. It
+follows this section's LAW exactly (destination-named, one label ↔ one
+destination); only the enumerated count above is superseded. The law stands.)*
 
 ## C. Yumi corner tag (anchor 4 — one app-wide) — ⚠ **SUPERSEDED BY F4; NO-OP** (Preston, 2026-07-17)
 

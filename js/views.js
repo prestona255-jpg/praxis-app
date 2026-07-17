@@ -10968,7 +10968,7 @@ function renderSubTheoryPage(id) {
   // marked passages = attached evidence count; books = distinct sources.
   var stEvArr = (subTheory.evidence && subTheory.evidence.length) ? subTheory.evidence : [];
   var stPassageN = stEvArr.length;
-  var stSrcSeen = {}, stBookN = 0, stEi, stEvIt, stEnt, stBi, stKey;
+  var stSrcSeen = {}, stBookN = 0, stUnfN = 0, stEi, stEvIt, stEnt, stBi, stKey;
   for (stEi = 0; stEi < stEvArr.length; stEi = stEi + 1) {
     stEvIt = stEvArr[stEi];
     if (!stEvIt) { continue; }
@@ -10982,6 +10982,9 @@ function renderSubTheoryPage(id) {
           stKey = 'b:' + stEnt.bookIds[stBi];
           if (!stSrcSeen[stKey]) { stSrcSeen[stKey] = 1; stBookN = stBookN + 1; }
         }
+        // UNFILED-REACH F2: live bookless entry = UNFILED, counted never
+        // dropped; missing entries stay uncounted (unknown != unfiled).
+        if (stEnt.bookIds.length === 0) { stUnfN = stUnfN + 1; }
       }
     } else if (stEvIt.kind === 'external' && stEvIt.external && stEvIt.external.title) {
       stKey = 'x:' + stEvIt.external.title;
@@ -10990,8 +10993,10 @@ function renderSubTheoryPage(id) {
   }
   var stTMeta = document.createElement('div');
   stTMeta.className = 't-meta';
-  stTMeta.textContent = 'STARTED FROM ' + stPassageN + ' MARKED PASSAGE' + (stPassageN === 1 ? '' : 'S')
+  var stMetaText = 'STARTED FROM ' + stPassageN + ' MARKED PASSAGE' + (stPassageN === 1 ? '' : 'S')
     + ' · ' + stBookN + ' BOOK' + (stBookN === 1 ? '' : 'S');
+  if (stUnfN > 0) { stMetaText = stMetaText + ' · ' + stUnfN + ' UNFILED'; }
+  stTMeta.textContent = stMetaText;
 
   // decision #4: the read hero — t-meta + maturity + the read-only render
   // (renderSubTheoryReadOnly, published-aware: numbered superscripts + the
@@ -11621,6 +11626,97 @@ function renderSubTheoryBuild(id) {
     })(bookEl));
     source.appendChild(bookEl);
   }
+  // R-ARC RAIL (UNFILED-REACH F1): the GLOBAL Unfiled group -- every
+  // register:'marginalia' capture with bookIds:[] -- browsable, searchable,
+  // weavable like any book group. The .stb-book shape keeps filterPull + the
+  // book select working UNCHANGED (the pool fix, not a search fix). F3:
+  // weaving attaches evidence only (addEvidence never writes entry.bookIds);
+  // F4: no Inbox sibling anywhere.
+  var unfiled = [];
+  var uEntries = state.notebookEntries || {};
+  var uek, uen;
+  for (uek in uEntries) {
+    if (!uEntries.hasOwnProperty(uek)) { continue; }
+    uen = uEntries[uek];
+    if (uen && uen.register === 'marginalia' && (!Array.isArray(uen.bookIds) || uen.bookIds.length === 0)) {
+      unfiled.push(uen);
+    }
+  }
+  if (unfiled.length > 0) {
+    var uHadBooks = anyBook;
+    anyBook = true;
+    pullBookTitles.push('Unfiled');
+    var uEl = document.createElement('div');
+    uEl.className = uHadBooks ? 'stb-book' : 'stb-book open';
+    uEl.setAttribute('data-book-title', 'Unfiled');
+    var ubrow = document.createElement('div');
+    ubrow.className = 'stb-brow';
+    var ucover = document.createElement('span');
+    ucover.className = 'stb-bcover stb-bcover-cloth';
+    ubrow.appendChild(ucover);
+    var ubinfo = document.createElement('div');
+    ubinfo.className = 'stb-binfo';
+    var ubt = document.createElement('div');
+    ubt.className = 'stb-bt stb-bt-unfiled';
+    ubt.textContent = 'Unfiled';
+    ubinfo.appendChild(ubt);
+    var ubc = document.createElement('div');
+    ubc.className = 'stb-bc';
+    var uWoven = 0, uwi;
+    for (uwi = 0; uwi < unfiled.length; uwi++) {
+      if (typeof isEvidenceAttached === 'function' && isEvidenceAttached(id, 'entry', unfiled[uwi].id)) { uWoven++; }
+    }
+    var ubcText = unfiled.length + (unfiled.length === 1 ? ' note' : ' notes') + ' · not filed to a book';
+    if (uWoven > 0) { ubcText += ' · ' + uWoven + ' already woven'; }
+    ubc.textContent = ubcText;
+    ubinfo.appendChild(ubc);
+    ubrow.appendChild(ubinfo);
+    var uchev = document.createElement('span');
+    uchev.className = 'stb-bchev';
+    uchev.innerHTML = '&#9656;';
+    ubrow.appendChild(uchev);
+    uEl.appendChild(ubrow);
+    var uWrap = document.createElement('div');
+    uWrap.className = 'stb-marg-wrap';
+    var umi;
+    for (umi = 0; umi < unfiled.length; umi++) {
+      (function(en) {
+        var m = document.createElement('div');
+        m.className = 'stb-marg';
+        var pg = document.createElement('div');
+        pg.className = 'stb-pg';
+        pg.textContent = (en.register || 'marginalia') + ' · unfiled';
+        m.appendChild(pg);
+        var passage = document.createElement('div');
+        passage.className = 'stb-passage';
+        passage.textContent = (typeof en.body === 'string') ? en.body : '';
+        m.appendChild(passage);
+        var wbtn = document.createElement('button');
+        wbtn.type = 'button';
+        var wdot = document.createElement('span');
+        var wlabel = document.createElement('span');
+        wlabel.className = 'stb-weave-label';
+        var already = (typeof isEvidenceAttached === 'function') ? isEvidenceAttached(id, 'entry', en.id) : false;
+        if (already) {
+          wbtn.className = 'stb-weave done'; wdot.className = 'stb-weave-dot is-lit'; wlabel.textContent = 'woven in';
+          wbtn.setAttribute('title', 'Already woven into your draft');
+        } else {
+          wbtn.className = 'stb-weave'; wdot.className = 'stb-weave-dot'; wlabel.textContent = '+ weave in';
+          wbtn.setAttribute('title', 'Insert at your cursor in the workshop canvas');
+        }
+        wbtn.appendChild(wdot);
+        wbtn.appendChild(wlabel);
+        wbtn.addEventListener('click', function() { weaveNote(null, en.id, wbtn, m); });
+        m.appendChild(wbtn);
+        uWrap.appendChild(m);
+      })(unfiled[umi]);
+    }
+    uEl.appendChild(uWrap);
+    ubrow.addEventListener('click', function() {
+      uEl.className = (uEl.className.indexOf('open') !== -1) ? 'stb-book' : 'stb-book open';
+    });
+    source.appendChild(uEl);
+  }
   if (!anyBook) {
     var noBooks = document.createElement('div');
     noBooks.className = 'stb-src-empty';
@@ -11686,6 +11782,87 @@ function renderSubTheoryBuild(id) {
     source.insertBefore(filterRow, afterHead);
     source.insertBefore(emptyMsg, afterHead);
   }
+  // R-ARC RAIL (FF-12): THIS piece's gathered evidence beside the canvas --
+  // the writer never weaves from memory again. Read-side only (subTheory
+  // .evidence rendered; zero writes). Cards reuse the .stb-marg shape in an
+  // always-visible list (no collapse). FF-2 rides: destination-named doors
+  // (FF-7 law) on cards with a live filed source; unfiled/external cards
+  // carry NO door (DWF-1: no dead controls).
+  var gathered = document.createElement('div');
+  gathered.className = 'stb-source stb-gathered';
+  var ghead = document.createElement('div');
+  ghead.className = 'stb-srchead';
+  var gTitle = document.createElement('div');
+  gTitle.className = 'stb-src-title';
+  gTitle.textContent = 'Gathered for this piece';
+  ghead.appendChild(gTitle);
+  var gSub = document.createElement('div');
+  gSub.className = 'stb-src-sub';
+  var gEv = (subTheory.evidence && subTheory.evidence.length) ? subTheory.evidence : [];
+  gSub.textContent = gEv.length
+    ? (gEv.length + (gEv.length === 1 ? ' passage' : ' passages') + ' — what this piece stands on')
+    : 'nothing gathered yet';
+  ghead.appendChild(gSub);
+  gathered.appendChild(ghead);
+  if (!gEv.length) {
+    var gEmpty = document.createElement('div');
+    gEmpty.className = 'stb-src-empty';
+    gEmpty.textContent = 'Weave notes in from your reading below — they gather here.';
+    gathered.appendChild(gEmpty);
+  }
+  var gWrap = document.createElement('div');
+  gWrap.className = 'stb-gath-list';
+  var gvi;
+  for (gvi = 0; gvi < gEv.length; gvi = gvi + 1) {
+    (function(ev) {
+      if (!ev) { return; }
+      var m = document.createElement('div');
+      m.className = 'stb-marg stb-gath-card';
+      var pg = document.createElement('div');
+      pg.className = 'stb-pg';
+      var passage = document.createElement('div');
+      passage.className = 'stb-passage';
+      var doorId = null;
+      if (ev.kind === 'entry') {
+        var gEn = state.notebookEntries ? state.notebookEntries[ev.refId] : null;
+        passage.textContent = (gEn && typeof gEn.body === 'string') ? gEn.body : (ev.quote || '');
+        if (!gEn) {
+          pg.textContent = 'note · original removed';   // quote snapshot survives
+        } else {
+          var gBid = (Array.isArray(gEn.bookIds) && gEn.bookIds.length) ? gEn.bookIds[0] : null;
+          if (gBid && state.books && state.books[gBid]) {
+            pg.textContent = (gEn.register || 'marginalia') + ' · ' + (state.books[gBid].title || 'Untitled');
+            doorId = gBid;
+          } else {
+            pg.textContent = (gEn.register || 'marginalia') + ' · unfiled';
+          }
+        }
+      } else if (ev.kind === 'book') {
+        var gBk = state.books ? state.books[ev.refId] : null;
+        pg.textContent = 'book';
+        passage.textContent = gBk ? (gBk.title || 'Untitled') : (ev.quote || 'a book');
+        if (gBk) { doorId = ev.refId; }
+      } else if (ev.kind === 'external') {
+        pg.textContent = 'external';
+        passage.textContent = (ev.external && ev.external.title)
+          ? ev.external.title + (ev.external.author ? ' — ' + ev.external.author : '')
+          : (ev.quote || '');
+      } else { return; }
+      m.appendChild(pg);
+      m.appendChild(passage);
+      if (doorId) {
+        var gDoor = document.createElement('a');
+        gDoor.className = 'stb-gath-door';
+        gDoor.href = '#book/' + doorId;
+        gDoor.textContent = 'Open the book →';
+        m.appendChild(gDoor);
+      }
+      gWrap.appendChild(m);
+    })(gEv[gvi]);
+  }
+  gathered.appendChild(gWrap);
+  rail.appendChild(gathered);
+
   rail.appendChild(source);
   buildRow.appendChild(rail);
 
