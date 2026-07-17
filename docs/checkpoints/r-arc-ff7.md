@@ -95,8 +95,8 @@ real signal); the number was my estimate's error, not the diff's.
 **RULED — ACCEPT (Preston, 2026-07-17).** +393 code floor in-band; +851 comment clears by classification per
 FIX-PROTOCOL §3 + the 3B-POLISH precedent. **PROCESS RIDER (for all future slices):** a declared band henceforth
 carries **TWO figures — a CODE band (hard ceiling) + a COMMENT allowance (soft; clears by line classification).**
-A ceiling then means what it says, and this judgment call stops recurring. *(Canonical codification into
-FIX-PROTOCOL §3 / CLAUDE.md band-discipline is a follow-on config commit — NOT bundled into this rider.)*
+A ceiling then means what it says, and this judgment call stops recurring. *(Canonical codification landed in
+**FIX-PROTOCOL §3** as its own config commit, per Preston's flag — not bundled into this rider.)*
 
 ---
 

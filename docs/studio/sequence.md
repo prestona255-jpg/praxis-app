@@ -43,7 +43,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
   ruling, 2026-07-17); (c) **§C Yumi corner-tag** vocabulary deferred to **Wave C's** raised-hand seat (F4
   removed its live targets — a NO-OP for FF-7). (d) **PROCESS RIDER (Preston 2026-07-17):** declared byte
   bands now carry TWO figures — a CODE band (hard) + a COMMENT allowance (soft, clears by classification);
-  canonical FIX-PROTOCOL §3 codification is a pending follow-on config commit.
+  canonical codification landed in FIX-PROTOCOL §3 (its own follow-on config commit).
 - **2026-07-15 (DW WAVE CLOSE)** — **trigger: the Desktop Wave closed** (DW-POLISH v3.209 `2e25c23`
   + DWF-1 v3.210 `d3a96df`, both pushed, live and felt-passed). Four spine writes, each on a
   Preston ruling, none autonomous:

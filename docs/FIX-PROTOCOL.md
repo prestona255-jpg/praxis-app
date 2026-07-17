@@ -129,6 +129,16 @@ bypasses the hook in an emergency.
   Where a delta is exactly predictable (a version string of equal length → +0 B),
   state it, and treat a nonzero result as a red flag (EOL flip). Watch the
   CRLF-vs-LF confound on Windows working trees; report the LF-normalized delta.
+- **A declared band carries TWO figures** (Preston, 2026-07-17, FF-7 close): a
+  **CODE band (hard ceiling)** + a **COMMENT allowance (soft)**. At self-verify,
+  classify the diff (comment-line vs code-line bytes) and test each figure against
+  its own band: a **CODE-band breach HALTS**; a **COMMENT-allowance overage clears
+  by line classification** (trim provenance for headroom — S4/S5/3B-POLISH
+  precedent) — and **neither is EVER silently widened**. This is why the ~2×-low
+  estimate above does not, by itself, block a diff whose *code* floor is respected
+  and whose overage is provably comment. Do NOT trim load-bearing provenance merely
+  to hit a total number — the number is a floor, not a target. Rationale + the case
+  that set this: `docs/checkpoints/r-arc-ff7.md` §4.
 
 ---
 
