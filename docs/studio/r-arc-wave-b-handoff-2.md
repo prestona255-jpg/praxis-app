@@ -104,10 +104,17 @@ via the **raised-hand margin seat** (F4's covenant deferral). See `docs/r-arc-pl
 - **CLAIMING ABSENCE REQUIRES PROOF** — escaped grep (`git log -S`, full-corpus); an unescaped `.` is a
   wildcard.
 - **NEVER `--amend` while agents were live** unless the tree is verified clean; verify the tree AFTER any amend.
-- **MODEL LAW:** gate agents (`praxis-reviewer`, `praxis-recon`, `studio-scan`, `repo-mapper`,
-  `studio-mockup`) = **sonnet** (frontmatter, honored by the Agent tool). `fix-red-team` / `fix-implementer`
-  = **inherit**. Deep build slices / mockup shaping / Yumi grammar = **OPUS** session. ⚠ Inside `Workflow`,
-  omitting `model` inherits the SESSION model, not frontmatter — pass it explicitly there.
+- **MODEL LAW v2 (ratified 2026-07-16; CLAUDE.md is canon): SONNET CHECKS · OPUS EXECUTES · FABLE DESIGNS.**
+  Gate agents (`fix-red-team`, `praxis-reviewer`, `repo-mapper`, `praxis-recon`, kin `studio-scan`,
+  `studio-mockup`) = **Sonnet, frontmatter-pinned** (⚠ inside a `Workflow`, pin explicitly — omitting `model`
+  inherits the session). **Already-ruled work runs OPUS 4.8 at default effort; deep rounds carrying
+  substantial UNRULED judgment run FABLE 5 at DEFAULT (high) effort — never ultracode/max on Fable.** THE
+  TEST: how much unruled judgment does the session exercise? Switches happen only at session boundaries via
+  handoff; every handoff states its model.
+  **→ THIS SUCCESSION: the Slice 5 successor runs OPUS 4.8** — Reverse Gear is already-ruled (F-B ruled,
+  plan-banded). **→ WAVE C runs FABLE 5 at DEFAULT effort** — substantial unruled judgment (the caret spike,
+  Room lighting, the raised-hand seat). (Live-file follow-on: `fix-red-team.md` frontmatter is still
+  `inherit`; v2 pins it Sonnet — align in a separate config commit.)
 - **FF-7 ANCHORS (ruled; apply when the vocab build fires):** pre-mint state word = **GATHERING** (never
   "forming"); identity = origin phrase in provisional styling, fallback **"Unnamed basin"**; doors
   **destination-named, one verb** ("Open the workshop →" / "Open the page →", each only toward its
