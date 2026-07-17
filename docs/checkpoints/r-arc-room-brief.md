@@ -180,3 +180,32 @@ the covenant tripwire needs its grep gate wired into every Room slice's checklis
 
 **Deliverable status: brief complete, awaiting Preston's ruling. No Room code
 exists; nothing builds until the word.**
+
+---
+
+## RULINGS (Preston, 2026-07-17) — ALL EIGHT DECIDED; REMAP APPROVED
+
+- **D1 = REC** — field beside the prose canvas, one surface. **D2 = REC** —
+  M1-lite mobile; **the rail's list = permanent accessibility floor, never
+  removed.** **D4 = REC** — in-Room capture via the same `captureNote` door.
+  **D5 = REC** — full durable note editing (closes MARG-EDIT); woven quote
+  snapshots not retro-edited. **D6 = REC** — free x/y, never interpreted.
+  **D7 = REC** — ROOM-2 absorbs Slice 10, one design.
+- **D3 — PRESTON RULED: CREATE LANDS IN THE ROOM.** A knowing reversal of
+  S4's felt-passed stay-put flow, by his word. RIDER: honest landing — one
+  gesture returns to where you created from; no stranding.
+- **D8 — RULED: Finish dormant until named, REAFFIRMED as EXISTING LAW.**
+  **Reconciliation (this brief's "still unruled" claim was WRONG):** the gate
+  is SHIPPED and doubly guarded — `pub.disabled = basin` + "Name it to
+  finish" title (views.js:11287-11291) + the click-guard `if (pubIsBasin())
+  return;` (:11295). My claim repeated the routing report's Part-4 framing
+  without re-verifying live code — the claiming-absence law, violated and
+  caught by Preston's record. **The genuinely open remainder is NAMED:
+  FINISH-CHOREO** — §4b's finish choreography (privacy sweep → threshold
+  question) is unbuilt; the click flips status instantly (:11297-11298).
+  A named item, not a re-build of the shipped gate.
+- **COVENANT TRIPWIRE RATIFIED as standing law (T11):** `evidenceLayout`
+  never enters `assembleContextData` — arrangement is thinking, not data.
+  Added to the plan's tripwire roster; in force from ROOM-1 forward.
+- **SLICE REMAP APPROVED:** ROOM-1 → 7 → ROOM-2 → ROOM-3 → 8 → 9;
+  density-classed bands per-recon per the standing pricing lesson.

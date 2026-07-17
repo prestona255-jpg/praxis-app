@@ -11812,6 +11812,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-book.open .stb-bchev{ transform:rotate(90deg); }
 .st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
 .st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
+/* R-ARC ROOM-1: the FIELD — spatial evidence canvas + the D3 return chip */
+.st-build.lum-amber-deep .stb-field-pane{ margin-bottom:14px; }
+.st-build.lum-amber-deep .rf-pane{ height:340px; overflow:auto; -webkit-overflow-scrolling:touch; border-top:1px dashed rgba(133,84,16,.14); }
+.st-build.lum-amber-deep .rf-canvas{ position:relative; width:1200px; height:900px; background:linear-gradient(160deg, rgba(248,224,120,.10) 0%, rgba(242,194,90,.06) 100%); }
+.st-build.lum-amber-deep .rf-card{ position:absolute; width:240px; padding:9px 12px 10px; border:1px solid rgba(133,84,16,.22); border-radius:10px; background:linear-gradient(160deg, rgba(248,224,120,.34) 0%, rgba(242,194,90,.24) 100%); cursor:grab; box-shadow:0 10px 22px -16px rgba(133,84,16,.4); }
+.st-build.lum-amber-deep .rf-card .rf-kind{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.08em; color:var(--lum-gold-d); margin-bottom:4px; }
+.st-build.lum-amber-deep .rf-card .rf-body{ font-family:var(--lum-serif); font-size:13px; font-style:italic; color:var(--lum-ink-2); line-height:1.35; max-height:3.9em; overflow:hidden; }
+.st-build.lum-amber-deep .rf-card.rf-lifted{ z-index:3; }
+.st-build.lum-amber-deep .rf-card.rf-lifted .rf-body{ max-height:none; }
+.st-build.lum-amber-deep .rf-card.rf-dragging{ z-index:4; cursor:grabbing; box-shadow:0 16px 30px -14px rgba(133,84,16,.55); }
+.st-build.lum-amber-deep .stb-return-chip{ display:inline-block; margin:0 0 10px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-gold-d); text-decoration:none; border-bottom:1px solid transparent; }
+.st-build.lum-amber-deep .stb-return-chip:hover{ border-bottom-color:var(--lum-gold-d); }
+
 /* R-ARC RAIL: FF-12 gathered panel + UNFILED-REACH (F1) + FF-2 doors */
 .st-build.lum-amber-deep .stb-gathered{ margin-bottom:14px; }
 .st-build.lum-amber-deep .stb-gath-list .stb-marg{ border-top:1px dashed rgba(133,84,16,.14); }

@@ -681,6 +681,12 @@ function ensureSubTheoryFields(st) {
     st.citationPins = {};
     changed = true;
   }
+  // ROOM-1: evidenceLayout = evidence id -> {x,y} normalized 0..1 (the Room
+  // field). T11: never enters Yumi context, never interpreted.
+  if (!st.evidenceLayout || typeof st.evidenceLayout !== 'object') {
+    st.evidenceLayout = {};
+    changed = true;
+  }
   if (st.status !== 'draft' && st.status !== 'published') {
     st.status = 'draft';
     changed = true;
@@ -2419,6 +2425,23 @@ function addEvidence(subTheoryId, fields) {
   markSubTheoriesDirty();
   saveState();
   return element;
+}
+
+// ROOM-1: persist one field-card position (normalized, clamped; drag-end
+// discrete -> direct save). T11: arrangement data, never Yumi's.
+function setEvidenceLayout(subTheoryId, evId, x, y) {
+  var st = state.subTheories[subTheoryId];
+  if (!st || typeof evId !== 'string' || evId === '') { return false; }
+  if (typeof x !== 'number' || typeof y !== 'number') { return false; }
+  if (x !== x || y !== y) { return false; }  // NaN passes typeof 'number'
+  if (!st.evidenceLayout || typeof st.evidenceLayout !== 'object') { st.evidenceLayout = {}; }
+  if (x < 0) { x = 0; } if (x > 1) { x = 1; }
+  if (y < 0) { y = 0; } if (y > 1) { y = 1; }
+  st.evidenceLayout[evId] = { x: x, y: y };
+  st.updatedAt = Date.now();
+  markSubTheoriesDirty();
+  saveState();
+  return true;
 }
 
 // 10.1 read helper. True if the sub-theory already carries an evidence

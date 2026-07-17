@@ -547,9 +547,10 @@ flagged at the top of the Builder's sequence page for his call — never applied
   spike PASS ratified · S6b PUSHED+LIVE v3.221 (`5f2bce0`) · S6c PUSHED+LIVE v3.222
   (`6c5423a`) · **RAIL PUSHED+LIVE v3.223 (`4890eb3`;
   band breach → Preston re-band at measured, DOM-builder pricing lesson standing). THE ROOM
-  CHARTER landed (INT-2/3/4): next deliverable = Preston's ruling on the ROOM BRIEF
-  (`r-arc-room-brief.md`) — proposed remap ROOM-1 → 7 → ROOM-2 (absorbs Slice 10) → ROOM-3
-  (absorbs Slice 12 + riders) → 8 → 9; no Room build before the ruling.** Per-surface
+  CHARTER RULED — all 8 decisions + T11 ratified + D3 knowing S4 reversal + D8 reaffirmed,
+  FINISH-CHOREO named (`r-arc-room-brief.md` appendix, PUSHED `ee01554`). ROOM-1 (the field)
+  BUILT v3.224 — LOCAL, awaiting push word; next build = Slice 7 (Room lighting) per the
+  ruled remap (ROOM-1 → 7 → ROOM-2 absorbs 10 → ROOM-3 absorbs 12 + riders → 8 → 9).** Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]
 

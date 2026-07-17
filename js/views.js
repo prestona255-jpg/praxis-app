@@ -1673,6 +1673,8 @@ var notebookGatherName = '';
 // a newborn card + an "Open the workshop →" door and the author STAYS in
 // the notebook (no auto-navigation). Render-layer only; nulled on a fresh gather.
 var notebookNewborn = null;
+// ROOM-1 D3 rider: create->Room landing flag; consumed once for the return chip.
+var stbFromCreateId = null;
 
 // ── R-ARC S2: local-first session persistence (REQ#3, the hard gate) ─────────
 // Gathered cards and drafts survive beat-switch, navigate-away, and RELOAD. The
@@ -2640,9 +2642,9 @@ function notebookCreateSubTheory(opts) {
   notebookGathered = {};
   notebookGatherArc = null;
   notebookGatherName = '';
-  // R6 S5 (decision #2): the author STAYS in the notebook — surface the newborn as a
-  // quiet card + an "Open the workshop →" door (NO auto-navigation, was
-  // location.hash = 'subtheory/' + st.id). The mint data path above is unchanged.
+  // ROOM-1 D3 (Preston 2026-07-17): CREATE LANDS IN THE ROOM — knowing reversal
+  // of the R6-S5/S4 stay-put flow. Newborn persists as the notebook RECEIPT;
+  // the workshop shows the one-gesture return chip. Mint path unchanged.
   notebookNewborn = {
     id: st.id,
     header: (name || st.header || 'Untitled sub-theory'),
@@ -2650,7 +2652,8 @@ function notebookCreateSubTheory(opts) {
     count: ids.length
   };
   nbGatherSave();
-  renderNotebook();
+  stbFromCreateId = st.id;
+  location.hash = '#subtheory/' + st.id + '/build';
 }
 
 // N2: master consent switch -- interactive. Reflects profile.yumiReadsAlong
@@ -11147,6 +11150,9 @@ function renderSubTheoryPage(id) {
 // on to #subtheory/<id>. Reuses bookSubMarkHTML / addEvidence / updateSubTheory;
 // writing-canvas.js UNCHANGED.
 function renderSubTheoryBuild(id) {
+  // D3: consume the landing flag in ALL paths -- no stale chip, ever.
+  var stbArrivedFromCreate = (stbFromCreateId === id);
+  stbFromCreateId = null;
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
@@ -11179,6 +11185,15 @@ function renderSubTheoryBuild(id) {
   // register (a lit desk in a dim study), NOT full amber — amber is the finished
   // read's room only. .stb-warm-dim is the shared additive modifier (see the Page).
   wrap.className = 'st-build lum-amber-deep stb-warm-dim';
+
+  // ROOM-1 D3 rider: honest landing -- one gesture back; one-shot.
+  if (stbArrivedFromCreate) {
+    var stbReturn = document.createElement('a');
+    stbReturn.className = 'stb-return-chip';
+    stbReturn.href = '#notebook';
+    stbReturn.textContent = '← Back to the notebook';
+    wrap.appendChild(stbReturn);
+  }
 
   var intro = document.createElement('div');
   intro.className = 'stb-intro';
@@ -11861,6 +11876,62 @@ function renderSubTheoryBuild(id) {
     })(gEv[gvi]);
   }
   gathered.appendChild(gWrap);
+
+  // ROOM-1: THE FIELD — evidence as a spatial canvas (D1; the rail list
+  // stays, D2 floor). Positions = evidenceLayout (T3). T11 holds.
+  if (gEv.length && typeof createRoomField === 'function') {
+    var fieldPane = document.createElement('div');
+    fieldPane.className = 'stb-source stb-field-pane';
+    var fHead = document.createElement('div');
+    fHead.className = 'stb-srchead';
+    var fTitle = document.createElement('div');
+    fTitle.className = 'stb-src-title';
+    fTitle.textContent = 'The field';
+    fHead.appendChild(fTitle);
+    var fSub = document.createElement('div');
+    fSub.className = 'stb-src-sub';
+    fSub.textContent = 'arrange freely — position is never interpreted';
+    fHead.appendChild(fSub);
+    fieldPane.appendChild(fHead);
+    var fCards = [];
+    var fi2;
+    for (fi2 = 0; fi2 < gEv.length; fi2 = fi2 + 1) {
+      (function (ev) {
+        if (!ev || !ev.id) { return; }
+        var kindLine = '', body = '';
+        if (ev.kind === 'entry') {
+          var fEn = state.notebookEntries ? state.notebookEntries[ev.refId] : null;
+          body = (fEn && typeof fEn.body === 'string') ? fEn.body : (ev.quote || '');
+          if (!fEn) { kindLine = 'note · original removed'; }
+          else {
+            var fBid = (Array.isArray(fEn.bookIds) && fEn.bookIds.length) ? fEn.bookIds[0] : null;
+            kindLine = (fEn.register || 'marginalia') + ' · ' +
+              ((fBid && state.books && state.books[fBid]) ? (state.books[fBid].title || 'Untitled') : 'unfiled');
+          }
+        } else if (ev.kind === 'book') {
+          var fBk = state.books ? state.books[ev.refId] : null;
+          kindLine = 'book';
+          body = fBk ? (fBk.title || 'Untitled') : (ev.quote || 'a book');
+        } else if (ev.kind === 'external') {
+          kindLine = 'external';
+          body = (ev.external && ev.external.title)
+            ? ev.external.title + (ev.external.author ? ' — ' + ev.external.author : '')
+            : (ev.quote || '');
+        } else { return; }
+        fCards.push({ id: ev.id, kindLine: kindLine, body: body });
+      })(gEv[fi2]);
+    }
+    createRoomField(fieldPane, {
+      cards: fCards,
+      layout: subTheory.evidenceLayout || {},
+      onMove: function (evId, x, y) {
+        if (typeof setEvidenceLayout === 'function') { setEvidenceLayout(id, evId, x, y); }
+      }
+      /* onTap omitted: the module's default lift/unlift — the note DOOR is ROOM-2's */
+    });
+    rail.appendChild(fieldPane);
+  }
+
   rail.appendChild(gathered);
 
   rail.appendChild(source);
