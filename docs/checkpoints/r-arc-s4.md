@@ -263,3 +263,18 @@ Two disclosed **non-blocking** residuals (both recorded here):
 
 **Commit:** `feat(r-arc S4): one door — three creation paths collapse, FF-8 row, arc-picker relit`.
 Local commit only. **NOTHING PUSHES without Preston's exact words.**
+
+---
+
+## SLICE 4 — SHIPPED + FELT-PASSED
+**Pushed `379dead..62eeca8`** (`HEAD == origin/main == ls-remote` all `62eeca8`); live `sw.js` = **v3.218**
+(two cache-busted reads). Deployed WS-C verify: Netlify serves the fresh `components.css` WITH the WS-C rule
+(`age:0`); its actual rule renders the picker LIGHT on notebook/shelf/book-detail (`rgb(252,246,232)` bg,
+`rgb(36,23,16)` ink). (The Browser-pane's own SW displayed a stale stylesheet — a documented pane artifact,
+bypassed via `fetch`; real users unaffected — see the handoff's rig-discipline lesson.)
+
+**FELT PASS = PASS (Preston, deployed).** Picker light, FF-8 row + overflow correct, one door working.
+**FF-8 overflow form: inline-reveal STANDS.** **WATCH (open):** a real Yumi noticing→fold cycle must be
+observed during normal use before Wave C (NOTICE didn't surface organically — insufficient thread material,
+not a defect); **R6 ruling deferred to that same moment.** Both carried in the succession handoff
+(`docs/studio/r-arc-wave-b-handoff-2.md`) §2/§6.
