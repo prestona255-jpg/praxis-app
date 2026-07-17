@@ -73,12 +73,15 @@ notebook) remains the **deferred backlog carried to the round CLOSE**.
 - **Preston's felt pass on S5 (dissolve, v3.219) + FF-7 (vocab, v3.220)** → then the round CLOSE
   (surface-census re-measure across the five touched surfaces + BOARD + Builder regen).
 - **Wave C IN PROGRESS (Fable 5, opened 2026-07-17)** — S6a spike ratified · S6b PUSHED+LIVE
-  v3.221 · S6c PUSHED+LIVE v3.222 (deployed felt pass = the VISUAL GATE, findings ride as
-  intake) · **RAIL built (v3.223, LOCAL, awaiting push word); next build = Slice 7 (Room
-  lighting)** per the approved slotting (rail → 7 → 8 → 9 → 12). Wave C still absorbs FF-1 +
-  the workshop felt mandate (FF-3) + the Yumi raised-hand margin seat; FF-11 conditional rider
-  on Slice 12; **WAVE-C-INT-1 ("Na…") vehicle CONFIRMED = Slice 12** (disclosed rider inside
-  its band).
+  v3.221 · S6c PUSHED+LIVE v3.222 · RAIL PUSHED+LIVE v3.223 (`4890eb3`; deployed felt passes
+  = the VISUAL GATE, findings ride as intake). **THE ROOM CHARTER LANDED (Preston + design
+  partner, 2026-07-17): INT-2 note door · INT-3 Room-as-canvas (spatial field, positions
+  never interpreted) · INT-4 station audit. Next deliverable = Preston's ruling on THE ROOM
+  BRIEF (`docs/checkpoints/r-arc-room-brief.md`) — proposed remap: ROOM-1 field → 7 lighting
+  → ROOM-2 note door (absorbs Slice 10) → ROOM-3 composition (absorbs Slice 12 + riders
+  INT-1/FF-11/FF-1) → 8 → 9. No Room build before the ruling.** Wave C still carries FF-3's
+  felt mandate + the Yumi raised-hand seat (Slice 9); C5/FF-10 finish-gate ruling re-surfaced
+  by the audit, still open.
 - **Carried named items** (do not lose): FORMING-REACH residual (4 non-lifecycle maturity ramps incl.
   the frozen `arc-constellation.js:1433`, routed into 3B-MOTE's authorized single frozen edit) · §C Yumi
   corner tag wording (deferred to Wave C's raised-hand seat) · the Arc-Read dot/label residual **CLOSED**

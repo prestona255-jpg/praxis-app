@@ -545,12 +545,13 @@ flagged at the top of the Builder's sequence page for his call — never applied
   2026-07-17 — felt verdict v3.220 ALL FOUR PASS** (the hard push gate cleared; intake
   WAVE-C-INT-1 "Na…" logged → proposed vehicle Slice 12). **Wave C in progress (Fable 5):** S6a
   spike PASS ratified · S6b PUSHED+LIVE v3.221 (`5f2bce0`) · S6c PUSHED+LIVE v3.222
-  (`6c5423a`) · **RAIL slice BUILT v3.223 (FF-12 + UNFILED-REACH F1–F4 + FF-2; local,
-  awaiting push word; band breach → Preston re-band at measured, DOM-builder pricing lesson
-  standing)**. Next: Slice 7 (Room lighting) → 8 → 9 → 12 (+FF-1; FF-11 conditional;
-  WAVE-C-INT-1 vehicle = Slice 12 confirmed). Per-surface studio-census re-measure = deferred
-  backlog carried to the CLOSE. touches: [arcs, arc-detail, subtheory-build, subtheory-page,
-  notebook]
+  (`6c5423a`) · **RAIL PUSHED+LIVE v3.223 (`4890eb3`;
+  band breach → Preston re-band at measured, DOM-builder pricing lesson standing). THE ROOM
+  CHARTER landed (INT-2/3/4): next deliverable = Preston's ruling on the ROOM BRIEF
+  (`r-arc-room-brief.md`) — proposed remap ROOM-1 → 7 → ROOM-2 (absorbs Slice 10) → ROOM-3
+  (absorbs Slice 12 + riders) → 8 → 9; no Room build before the ruling.** Per-surface
+  studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
+  arc-detail, subtheory-build, subtheory-page, notebook]
 
 ## Next
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
