@@ -71,6 +71,14 @@ desktop: composed
 
 ## Round history
 
+- **R-ARC (DEEP round) — IN CLOSE-OUT PREP (2026-07-17), felt pass PENDING.** This surface took: local-first
+  notebook **persistence** (S2 `ba4888c`); the **one-door** creation collapse + FF-8 row + arc-picker relit
+  (S4 `62eeca8`); **dissolve** returning a basin's notes to the notebook (S5 `4a8f425`, felt pending); and the
+  **FF-7 vocab rider** (`8a20bf8`, v3.220) — the newborn card now branches basin → `gathering[· just now]` /
+  named → `draft[· just now]` on both eyebrow and snippet, its door reads **"Open the workshop →"**, and the
+  S2 restored/fresh "· just now" truthfulness is preserved. Full per-surface census re-measure carried to the
+  round CLOSE. Authoritative ledger + SHAs: `docs/studio/r-arc.md` Round history; checkpoints
+  `docs/checkpoints/r-arc-*.md`.
 ### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit bd5c4c5; chip → mobile: native)
 
 Notebook half of the MW-2 mobile wave. **Chip: `mobile: native`** — applicable canon

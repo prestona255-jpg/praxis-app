@@ -191,6 +191,14 @@ Computed via the standard WCAG 2.x relative-luminance formula (script run throug
 
 ## Round history
 
+- **R-ARC (DEEP round) — IN CLOSE-OUT PREP (2026-07-17), felt pass PENDING.** This surface
+  (`renderSubTheoryBuild`, the workshop) took: the **basin note / naming invite** (S3B `02b517e`); the
+  **one-door** collapse (S4 `62eeca8`); the **dissolve** foot for an empty basin (S5 `4a8f425`, felt pending);
+  and the **FF-7 vocab rider** (`8a20bf8`, v3.220) — the subtitle is now a 3-way lifecycle (`a gathering /
+  draft / finished sub-theory in …`; the finished branch is load-bearing because the Page's Open door reaches
+  the workshop at every status), and its own action-row **"Open the page →"** door is confirmed unchanged
+  (routes to the Page). Full per-surface census re-measure carried to the round CLOSE. Authoritative ledger +
+  SHAs: `docs/studio/r-arc.md` Round history; checkpoints `docs/checkpoints/r-arc-*.md`.
 - **R6 Sub-theory (DEEP) — SHIPPED v3.190, CLOSED 2026-07-10.** 7 commits `78174f5 → 4c8f73e`, pushed `origin/main`, live-verified. Five beats: recon → click-forks → mockup (`subtheory.html` rev1; felt-passed "skeleton PASS, skin FAIL" → revised) → staged build (S1 vocab `78174f5` · S2 Page=read `4a2b3cf` · S3 workshop=sole-editor `066e056` · S4 pull-system `d6f9bca` · S5 notebook-births `9f0f8b5` · S6 skin+debt `08f61ac` · S7 red-team+cache `4c8f73e`) → felt pass (**FULL PASS 2026-07-10**: contained warm-dim panel confirmed-as-decided; newborn-card persistence passed; cyan pill-flag dot kept). fix-red-team CLEAN + praxis-reviewer CLEARED. Records: `docs/checkpoints/r6-subtheory.md` (+ `-recon.md`). touches: [subtheory-build, subtheory-page].
 
 - **MW-3 Sub-theory mobile pass — SHIPPED-LOCAL v3.194 (2026-07-11), `mobile: native`.** The

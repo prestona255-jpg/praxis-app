@@ -31,6 +31,19 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-17 (R-ARC FF-7 close-out prep)** — **trigger: the FF-7 vocabulary rider shipped+live**
+  (`8a20bf8`, v3.220), the last build slice of R-ARC Wave B. **No spine change** — R-ARC stays the single
+  `## Now` item (it does not close until Preston's felt pass on S5's dissolve + FF-7). Refresh only, within
+  Now: the round doc `r-arc.md` brought current with the full S1→FF-7 slice ledger; the Now item's status
+  line updated. **Carried, not applied:** (a) the per-surface studio-census re-measure across the five
+  touched surfaces is the **deferred backlog** (it needs the felt pass — recorded as a Round-history pointer
+  on each surface, not fabricated now); (b) **FORMING-REACH** — FF-7's recon found **four** maturity ramps,
+  not three; the three non-lifecycle ramps + the FROZEN `arc-constellation.js:1433` ramp are held as a named
+  residual, the frozen-file member routed into **3B-MOTE's** authorized single frozen edit (Preston's routing
+  ruling, 2026-07-17); (c) **§C Yumi corner-tag** vocabulary deferred to **Wave C's** raised-hand seat (F4
+  removed its live targets — a NO-OP for FF-7). (d) **PROCESS RIDER (Preston 2026-07-17):** declared byte
+  bands now carry TWO figures — a CODE band (hard) + a COMMENT allowance (soft, clears by classification);
+  canonical FIX-PROTOCOL §3 codification is a pending follow-on config commit.
 - **2026-07-15 (DW WAVE CLOSE)** — **trigger: the Desktop Wave closed** (DW-POLISH v3.209 `2e25c23`
   + DWF-1 v3.210 `d3a96df`, both pushed, live and felt-passed). Four spine writes, each on a
   Preston ruling, none autonomous:
@@ -525,9 +538,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
   constitution** — SHAPE-A's six forks + the pedagogy/epistemology layer + the critique's amendments
   + the seed-lifecycle amendment, all decided; the handoff (`docs/studio/r-arc-handoff.md`) is its
   brief-holder. Scope = S1 (the Door) + S2 (the Seedling) + S3 (the Room), deep; S4/S5 = named
-  follow-ons. **IN ROUND 2026-07-15:** gate PASSED (4/4) and Stage 0 recon complete
-  (`docs/checkpoints/r-arc-recon.md`) — seven forks raised for Preston ahead of SHAPE-B.
-  touches: [arcs, arc-detail, subtheory-build, subtheory-page, notebook]
+  follow-ons. **IN ROUND — all build slices SHIPPED+LIVE (2026-07-17):** S1→S5 + the F4 covenant
+  removal + the **FF-7 vocabulary rider** are live (v3.211→**v3.220**; ledger in `docs/studio/r-arc.md`
+  Round history). **S1–S4 felt-passed; CLOSE awaits Preston's felt pass on S5 (dissolve, v3.219) +
+  FF-7 (vocab, v3.220).** Wave C (caret-safety spike → Room-lighting → UNFILED-REACH/FF-12/…) is PARKED
+  for a **FABLE 5** session post-Saturday-reset. Per-surface studio-census re-measure = deferred backlog
+  carried to the CLOSE. touches: [arcs, arc-detail, subtheory-build, subtheory-page, notebook]
 
 ## Next
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens

@@ -71,6 +71,13 @@ Evidence: `docs/checkpoints/dw-4.md`, `docs/checkpoints/dw-4-recon.md` §7.
 
 ## Round history
 
+- **R-ARC (DEEP round) — IN CLOSE-OUT PREP (2026-07-17), felt pass PENDING.** This surface
+  (`renderSubTheoryPage`) took: the **basin identity** on the read-only title (S3B `02b517e`) + display
+  fixes (S3B-POLISH `bb70889`); and the **FF-7 vocab rider** (`8a20bf8`, v3.220) — the topbar kicker is now
+  a 3-way lifecycle (`· GATHERING` basin / `· DRAFT` named / `· FINISHED`), the Edit door reads **"Open the
+  workshop →"**, and the maturity word/dot pairing is consistent (residual CLOSED). Full per-surface census
+  re-measure is carried to the round CLOSE. Authoritative slice ledger + all SHAs: `docs/studio/r-arc.md`
+  Round history; per-slice checkpoints `docs/checkpoints/r-arc-*.md`.
 - **DW-STP2 — desktop reading measure (D2) — SHIPPED-LOCAL v3.207, 2026-07-14 → `desktop: composed`.**
   The standalone close of the gap DW-3 named and deferred (`be050e5`). CSS-only, ONE rule in a new
   `@media(min-width:1200px)` block (`components.css:11287-11309`) — additive, `≤1199` untouched:

@@ -35,6 +35,16 @@ mobile: native
 
 ## Round history
 
+- **R-ARC (DEEP round) — IN CLOSE-OUT PREP (2026-07-17), felt pass PENDING.** This surface (the arc interior /
+  Arc-Read face + Page-face stub) took, in the **FF-7 vocab rider** (`8a20bf8`, v3.220): the Arc-detail
+  **Page-face stub door** relabelled **"Open the workshop →"** (fixing the D2 same-words-opposite-direction
+  collision — it routes `/build`); and the **Arc-Read dot/label residual CLOSED** — `_arcReadMaturityKey`
+  thresholds moved `.4/.7 → .34/.67` to match the word ramp, so the glow dot's colour and the printed maturity
+  word can no longer disagree (proven across 14 scores). **FORMING-REACH note:** the FROZEN
+  `arc-constellation.js:1433` `maturityRead` ramp (a FOURTH ramp, `.25/.5/.75`) is held as a residual and
+  routed into **3B-MOTE's** authorized single frozen-file edit. Full per-surface census re-measure carried to
+  the round CLOSE. Authoritative ledger + SHAs: `docs/studio/r-arc.md` Round history; checkpoints
+  `docs/checkpoints/r-arc-*.md`.
 ### R8 value-mark register — SHIPPED v3.195 (`37ea1f0`, 2026-07-11)
 
 `renderArcDetail` gained the owner-only **value-mark register** card under the head

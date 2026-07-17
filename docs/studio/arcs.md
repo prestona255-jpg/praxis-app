@@ -27,6 +27,13 @@ desktop: composed
 
 ## Round history
 
+- **R-ARC (DEEP round) — IN CLOSE-OUT PREP (2026-07-17), felt pass PENDING.** This surface's arc-lifecycle
+  domain took: the **ember** — arc lifecycle + rename + graduation (S3 `36dc570`) and its reverse gear,
+  **un-graduate** (S3R `c681d35`). **FF-7 note:** the arc-aggregate maturity ramp `_arcMaturityWord`
+  (`forming/warming/mature/bright`) was **held OUT** of the FF-7 rider as part of the **FORMING-REACH**
+  residual — it reads a different (aggregate) score than the per-sub ramp FF-7 unified, so a word swap there
+  needs its own ruling. Full per-surface census re-measure carried to the round CLOSE. Authoritative ledger +
+  SHAs: `docs/studio/r-arc.md` Round history; checkpoints `docs/checkpoints/r-arc-*.md`.
 ### MW-2 mobile pass — SHIPPED-LOCAL (2026-07-11, commit 900aa4f; chip → mobile: native)
 
 Arcs LIST half of the MW-2 mobile wave (arc-detail interior tracked in `arc-detail.md`).
