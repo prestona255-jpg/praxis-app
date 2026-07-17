@@ -541,12 +541,14 @@ flagged at the top of the Builder's sequence page for his call — never applied
   follow-ons. **IN ROUND — all build slices SHIPPED+LIVE (2026-07-17):** S1→S5 + the F4 covenant
   removal + the **FF-7 vocabulary rider** are live (v3.211→**v3.220**; ledger in `docs/studio/r-arc.md`
   Round history). **S1–S4 felt-passed; CLOSE awaits Preston's felt pass on S5 (dissolve, v3.219) +
-  FF-7 (vocab, v3.220).** **Wave C OPENED 2026-07-17 (Fable 5):
-  S6a caret-safety spike PASS RATIFIED** (docs-only; `r-arc-s6a-spike.md`); approved slotting 6b →
-  6c → rail slice (FF-12 + UNFILED-REACH + FF-2) → 7 → 8 → 9 → 12 (+FF-1; FF-11 conditional).
-  **No Wave C code push until the v3.220 felt verdict lands (hard gate).** Per-surface studio-census
-  re-measure = deferred backlog carried to the CLOSE. touches: [arcs, arc-detail, subtheory-build,
-  subtheory-page, notebook]
+  FF-7 (vocab, v3.220).** **WAVE B FORMALLY CLOSED
+  2026-07-17 — felt verdict v3.220 ALL FOUR PASS** (the hard push gate cleared; intake
+  WAVE-C-INT-1 "Na…" logged → proposed vehicle Slice 12). **Wave C in progress (Fable 5):** S6a
+  spike PASS ratified (`r-arc-s6a-spike.md`) · S6b deterministic recognition PUSHED+LIVE v3.221
+  (`5f2bce0`) · S6c read-only lighting BUILT v3.222 (notebook marginalia only; local, awaiting
+  push word). Approved slotting: rail slice (FF-12 + UNFILED-REACH + FF-2) → 7 → 8 → 9 → 12
+  (+FF-1; FF-11 conditional). Per-surface studio-census re-measure = deferred backlog carried to
+  the CLOSE. touches: [arcs, arc-detail, subtheory-build, subtheory-page, notebook]
 
 ## Next
 - [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens

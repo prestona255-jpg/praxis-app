@@ -14527,6 +14527,68 @@ function openBookSendToSubTheory(bookId) {
   }
 }
 
+// ---- R-ARC S6c: deterministic recognition lighting (display layer) ----
+// F-C law: decoration is display-only; spans are stateless + expendable
+// (any re-render legally wipes them); entry.body stays the sole source of
+// truth. Spike-proven technique (r-arc-s6a-spike.md): guarded splitText +
+// span wrap, applied in reverse. Static cards only -- no caret here.
+// NON-interactive by design (DWF-1: no link affordance until a link exists).
+var _recogIdxMemo = null;
+var _recogIdxKey = '';
+function _recogIndex() {
+  if (!window.PraxisRecognition) { return null; }
+  var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var uid = (user && user.uid) ? user.uid : '';
+  var n = (uid && state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds.length : 0;
+  // Memo keyed uid:count -- rebuilt on sign-in/out and add/delete. A title
+  // RENAME at unchanged count stays stale until the next rebuild (named
+  // residual, display-only).
+  var key = uid + ':' + n;
+  if (!_recogIdxMemo || key !== _recogIdxKey) {
+    _recogIdxMemo = window.PraxisRecognition.buildIndex();
+    _recogIdxKey = key;
+  }
+  return _recogIdxMemo;
+}
+function _recogLightEl(el) {
+  var idx = _recogIndex();
+  if (!idx || !idx.terms.length || !el) { return; }
+  var nodes = [], starts = [], lens = [], full = '';
+  (function walk(n) {
+    if (n.nodeType === 3) {
+      nodes.push(n); starts.push(full.length);
+      lens.push((n.nodeValue || '').length);
+      full = full + (n.nodeValue || '');
+      return;
+    }
+    if (n.nodeType !== 1) { return; }
+    var i;
+    for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); }
+  })(el);
+  if (full === '') { return; }
+  var ms = window.PraxisRecognition.scan(idx, full);
+  var m, i, s, e, ns, ne, from, to, t, span;
+  for (m = ms.length - 1; m >= 0; m = m - 1) {   // reverse keeps earlier offsets valid
+    s = ms[m].start; e = ms[m].end;
+    for (i = nodes.length - 1; i >= 0; i = i - 1) {
+      ns = starts[i]; ne = ns + lens[i];
+      if (ne <= s) { break; }                    // all remaining nodes precede the match
+      if (ns >= e) { continue; }                 // node is after the match
+      from = (s > ns) ? (s - ns) : 0;            // per-node intersection, original coords
+      to = (e < ne) ? (e - ns) : lens[i];
+      if (to <= from) { continue; }
+      t = nodes[i];
+      if (from > 0) { t = t.splitText(from); to = to - from; }
+      if (to < (t.nodeValue || '').length) { t.splitText(to); }
+      span = document.createElement('span');
+      span.className = 'rec-lit rec-lit-' + ms[m].kind;
+      t.parentNode.insertBefore(span, t);
+      span.appendChild(t);
+    }
+  }
+}
+
 function renderNotebookEntry(entry, gatherable, showBookChip) {
   // Left register spine via ::before reads --reg: marginalia = teal
   // (--marginalia-color), question = --question-color (blue), journal =
@@ -14587,6 +14649,7 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
   if (isMarg && typeof wcRenderMarkdown === 'function') {
     bodyEl.className = 'notebook-entry-body notebook-entry-body-md';
     wcRenderMarkdown(bodyEl, entry.body || '');
+    _recogLightEl(bodyEl);  // S6c: light AFTER the render (display layer only)
   } else {
     bodyEl.textContent = entry.body || '';
   }

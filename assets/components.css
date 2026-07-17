@@ -10780,6 +10780,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook-entry-body-md ul.wc-chk li.wc-on::after { opacity:1; }
 .notebook-entry-body-md ul.wc-chk li.wc-on .wc-lbl { color:var(--meta); text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--meta) 55%, transparent); }
 
+/* R-ARC S6c: recognition lighting -- quiet marking, deliberately NON-interactive (no cursor, no hover; DWF-1). */
+.notebook-entry-body-md .rec-lit { border-bottom:1px dotted var(--gold); }
+
 /* =====================================================================
    WAVE 4 (Phase 5) -- BOOK PAIR (Amber). Shared foundation for Book
    Detail (#book/<id>) and Book View (#book/<id>/marks). Both render in
