@@ -50,22 +50,34 @@ retires everywhere; "gathering" is the one pre-mint word.)
 
 Result: exactly two door labels app-wide, each meaning exactly one destination.
 
-## C. Yumi corner tag (anchor 4 — one app-wide)
+## C. Yumi corner tag (anchor 4 — one app-wide) — ⚠ **SUPERSEDED BY F4; NO-OP** (Preston, 2026-07-17)
 
-| Current | → Canonical | Surface |
+> **STALE AS TABLED — this section shipped NO code in the FF-7 rider.** The rows below were mapped from
+> `r-arc-ff-routing.md` Part 2, enumerated **before Slice F4**. **F4 (`3fefc93`, v3.217) removed both blocks
+> wholesale** (D16, the covenant: Yumi never monologues unbidden). At the rider's recon, `"From how you read"`
+> = **0** in `js/`, `assets/`, `index.html` (exhaustive grep, exit 1; corroborated by `git log -S`), and **no
+> Yumi tag renders on either surface** — so there is no string to unify. Applying §C literally would have
+> **re-added the speech F4 deliberately deleted.**
+> **RULED (Preston, 2026-07-17): §C = NO-OP. Nothing re-added; the covenant stands.** Anchor 4's wording
+> survives as **forward vocabulary** for Wave C's **raised-hand margin seat** (F4's covenant deferral), which
+> is where Yumi's noticing returns. This is the DOC = POINTER, LIVE FILE = SOURCE lesson: the table is the
+> pointer, the code was the source.
+
+| Current (as tabled, pre-F4 — **no longer exists**) | → Canonical | Surface |
 |---|---|---|
-| "From how you read: " (Page: "YUMI" eyebrow + up to 2 dismissible notes) | **"I'm here when you want to talk it through."** | Page — unified |
-| "From how you read: " (Workshop: no eyebrow, one note, summary overwrites prompt) | **"I'm here when you want to talk it through."** | Workshop — unified |
-
-One tag, one wording, both surfaces. (The per-surface chrome differences — eyebrow, note count — are behavior,
-not vocabulary; the FF-7 ruling governs the *words*, and the F4 blocks / Wave C raised-hand seat govern the
-chrome.)
+| ~~"From how you read: " (Page: "YUMI" eyebrow + up to 2 dismissible notes)~~ | **"I'm here when you want to talk it through."** — *deferred to Wave C's raised-hand seat* | ~~Page~~ — removed by F4 |
+| ~~"From how you read: " (Workshop: no eyebrow, one note, summary overwrites prompt)~~ | **"I'm here when you want to talk it through."** — *deferred to Wave C's raised-hand seat* | ~~Workshop~~ — removed by F4 |
 
 ---
 
 ## D. Two named collisions — resolution (fold into this ruling)
 
-- **D1 — maturity ramp disagreement.** Page + #search use **nascent / developing / established** (.34/.67);
+- **D1 — maturity ramp disagreement.** ⚠ **PARTLY SHIPPED BEFORE THE RIDER:** the **WORD** half was already
+  unified by **`bb70889` (S3B-POLISH)** — `_searchSubMaturityWord` → **`_stMaturityWord`**, with Page
+  (`views.js:10958`, was `10947` pre-rider), #search (`846`) and the Arc-Read word (`13585`) all calling it. The rider therefore
+  shipped only the **remaining** half: the **dot-colour thresholds** `.4/.7 → .34/.67` in
+  `_arcReadMaturityKey` (`views.js:13775-6`). Text below is the pre-rider statement, kept for the record.
+  Page + #search use **nascent / developing / established** (.34/.67);
   the Arc Read face uses **forming / warming / mature / bright** (.2/.4/.7) on the SAME score. Anchor 1 bans
   "forming," so the Arc-Read ramp cannot stand. **Recommend: unify to nascent / developing / established
   everywhere** (retires "forming," collapses the ramp disagreement). ⚠ NOTE this is a WORD unification; the
@@ -87,3 +99,34 @@ not this rider. Estimated rider: small (~string swaps + the basin/named kicker b
 "gathering · just now"); (2) D1 — unify the maturity ramp to nascent/developing/established AND repoint the
 dot-color thresholds to .34/.67 (closes the Arc-Read dot/label residual); (3) two-label destination-named
 door convention. **The FF-7 vocab rider is cleared to build.**
+
+---
+
+## ⚠ §E WAS INCOMPLETE — the rider's ACTUAL surface (recon finding, ruled 2026-07-17)
+
+§E above enumerated **one** rendered lifecycle "forming" (the Page kicker), but anchor 1 retires the word
+**everywhere**. The recon's exhaustive sweep (22 hits in shipped code, 7 rendered; `state.js:589
+'performing arts'` excluded as a substring false positive) found **two more**, both **unconditional**:
+
+| Site | Surface | Was | Now (RULED: FORK 2 = **A**, branch both) |
+|---|---|---|---|
+| `views.js:2481` | Notebook newborn snippet | `'A forming sub-theory in '` | basin → `'A gathering sub-theory in '` · named → `'A draft sub-theory in '` |
+| `views.js:11218` | **Workshop** subtitle | `'a forming sub-theory in '` | basin → `gathering` · named → `draft` · **published → `'a finished sub-theory in '`** |
+
+Shipping §E alone would have left the Page reading `· GATHERING` while the Notebook card and the Workshop
+subtitle below it still said "forming" — COPY IS A CONTRACT.
+**The Workshop's third branch is a carried determination** (not separately ruled): a published sub-theory
+**does** reach that subtitle (the Page's Open door renders at every status), so a bare basin/named split would
+have called a finished sub-theory a draft. It applies the ruled lifecycle's own third state (finished →
+FINISHED), mirroring the Page kicker. Preston's veto point is the felt pass.
+
+**NAMED NEWBORN (RULED):** a named newborn is reachable (typed name, or Yumi's S4 NAME-proposal Accept), and
+the eyebrow keyed only on `nb.restored`. It now branches: basin → `'gathering · just now'` / `'gathering'`;
+named → **`'draft · just now'`** / `'draft'` — the S2 restored/new truthfulness preserved.
+
+**FORMING-REACH (RULED: residual, NOT this rider).** Four rendered non-lifecycle "forming"s stay untouched:
+`views.js:3742` `_arcMaturityWord` (**arc-AGGREGATE** ramp — a different score; self-consistent with
+`HOME_GROWING_MAX`) · `views.js:18523` (values) · `views.js:20406` (lenses) · and **`arc-constellation.js:1433`
+`maturityRead`** — a **FOURTH** ramp (`Nascent/Forming/Developing/Mature`, .25/.5/.75). **ROUTING (Preston):
+the frozen-file member rides 3B-MOTE's already-authorised single frozen edit — decided inside 3B-MOTE, not
+here.** (So: there are **four** maturity ramps in the app, not the three D1 assumed.)

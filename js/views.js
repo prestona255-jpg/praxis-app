@@ -1670,7 +1670,7 @@ var notebookGathered = {};
 var notebookGatherArc = null;
 var notebookGatherName = '';
 // R6 S5 (decision #2): the just-minted sub-theory, held so the working leaf can show
-// a "born just now" card + a "Continue in the workshop →" door and the author STAYS in
+// a newborn card + an "Open the workshop →" door and the author STAYS in
 // the notebook (no auto-navigation). Render-layer only; nulled on a fresh gather.
 var notebookNewborn = null;
 
@@ -1775,9 +1775,9 @@ function nbGatherRestore(uid) {
   if (typeof s.name === 'string') { notebookGatherName = s.name; }
   if (s.newborn && typeof s.newborn === 'object' && typeof s.newborn.id === 'string') {
     notebookNewborn = s.newborn;
-    // COPY IS A CONTRACT: the card's eyebrow says "born just now". Across a reload
-    // that is false, so a restored newborn is marked and the eyebrow tells the
-    // truth instead. The door it carries is the point; the flourish is not.
+    // COPY IS A CONTRACT: the card's eyebrow carries a "· just now" flourish. Across
+    // a reload that is false, so a restored newborn is marked and the eyebrow tells
+    // the truth instead. The door it carries is the point; the flourish is not.
     notebookNewborn.restored = true;
   }
 }
@@ -2246,7 +2246,7 @@ function buildNotebookRightLeaf(user, activeKey) {
   leaf.appendChild(tag);
 
   // R6 S5 (decision #2): after a mint the author STAYS here — a quiet newborn card
-  // with a "Continue in the workshop →" door REPLACES the gather form; no auto-nav.
+  // with an "Open the workshop →" door REPLACES the gather form; no auto-nav.
   if (notebookNewborn) {
     leaf.appendChild(buildNotebookNewbornCard(notebookNewborn));
     return leaf;
@@ -2437,8 +2437,8 @@ function buildNotebookRightLeaf(user, activeKey) {
   return leaf;
 }
 
-// R6 S5 (decision #2): the "born just now" card — the newborn sub-theory as a quiet
-// card in the working leaf, with a "Continue in the workshop →" door. The author stays
+// R6 S5 (decision #2): the newborn card — the newborn sub-theory as a quiet
+// card in the working leaf, with an "Open the workshop →" door. The author stays
 // in the notebook; the door is the ONLY navigation, on click.
 function buildNotebookNewbornCard(nb) {
   var card = document.createElement('div');
@@ -2451,13 +2451,15 @@ function buildNotebookNewbornCard(nb) {
   // R-ARC S3B: a just-minted basin (unnamed) shows the formless mote.
   mark.innerHTML = rec ? _stMarkOrMote(rec, 30) : '';
   top.appendChild(mark);
+  // FF-7: naming decides this card's lifecycle word (title + eyebrow + snippet).
+  var nbIsBasin = !!(rec && _stIsBasin(rec));
   var titleWrap = document.createElement('div');
   var title = document.createElement('div');
   title.className = 'nb-newborn-title';
   // R-ARC S3B: a basin (unnamed) shows its origin phrase, not "Untitled". Check the
   // real record FIRST -- nb.header is pre-baked with an 'Untitled…' fallback by
   // notebookCreateSubTheory, so it would mask the phrase if tested first.
-  if (rec && _stIsBasin(rec)) {
+  if (nbIsBasin) {
     // FF-5: provisional identity -- a basin's origin phrase reads as a QUOTED,
     // secondary phrase (the .nb-newborn-basin modifier), never title treatment,
     // so an unnamed basin never looks named.
@@ -2470,21 +2472,26 @@ function buildNotebookNewbornCard(nb) {
   titleWrap.appendChild(title);
   var eyebrow = document.createElement('div');
   eyebrow.className = 'nb-newborn-eyebrow';
-  // S2: "born just now" is only true in the session that bore it. A card restored
-  // across a reload keeps its door and drops the flourish rather than lie.
-  eyebrow.textContent = nb.restored ? 'draft' : 'born just now · draft';
+  // S2: the "just now" flourish is only true in the session that bore it. A card
+  // restored across a reload drops the flourish rather than lie.
+  // FF-7: basin -> GATHERING, named draft -> DRAFT. "Forming" is retired.
+  eyebrow.textContent = nbIsBasin
+    ? (nb.restored ? 'gathering' : 'gathering · just now')
+    : (nb.restored ? 'draft' : 'draft · just now');
   titleWrap.appendChild(eyebrow);
   top.appendChild(titleWrap);
   card.appendChild(top);
   var snippet = document.createElement('p');
   snippet.className = 'nb-newborn-snippet';
-  snippet.textContent = 'A forming sub-theory in ' + (nb.arcTitle || 'your arc') + ', started from '
+  // FF-7: as the eyebrow. No finished branch -- a newborn is never published.
+  snippet.textContent = (nbIsBasin ? 'A gathering sub-theory in ' : 'A draft sub-theory in ')
+    + (nb.arcTitle || 'your arc') + ', started from '
     + nb.count + ' marked passage' + (nb.count === 1 ? '' : 's') + '.';
   card.appendChild(snippet);
   var door = document.createElement('button');
   door.type = 'button';
   door.className = 'nb-newborn-door';
-  door.textContent = 'Continue in the workshop →';
+  door.textContent = 'Open the workshop →';
   door.addEventListener('click', function() {
     notebookNewborn = null;
     nbGatherSave();
@@ -2634,7 +2641,7 @@ function notebookCreateSubTheory(opts) {
   notebookGatherArc = null;
   notebookGatherName = '';
   // R6 S5 (decision #2): the author STAYS in the notebook — surface the newborn as a
-  // quiet card + a "Continue in the workshop →" door (NO auto-navigation, was
+  // quiet card + an "Open the workshop →" door (NO auto-navigation, was
   // location.hash = 'subtheory/' + st.id). The mint data path above is unchanged.
   notebookNewborn = {
     id: st.id,
@@ -10883,7 +10890,11 @@ function renderSubTheoryPage(id) {
   stTbLeft.appendChild(stHeroMark);
   var stKicker = document.createElement('div');
   stKicker.className = 'st-tb-kicker';
-  stKicker.textContent = published ? 'A SUB-THEORY · FINISHED' : 'A SUB-THEORY · STILL FORMING';
+  // FF-7: basin -> GATHERING, named draft -> DRAFT, finished -> FINISHED.
+  // "Still forming" is retired.
+  stKicker.textContent = published
+    ? 'A SUB-THEORY · FINISHED'
+    : (_stIsBasin(subTheory) ? 'A SUB-THEORY · GATHERING' : 'A SUB-THEORY · DRAFT');
   stTbLeft.appendChild(stKicker);
   stTopbar.appendChild(stTbLeft);
 
@@ -10933,7 +10944,7 @@ function renderSubTheoryPage(id) {
   var stEditDoor = document.createElement('a');
   stEditDoor.className = 'st-edit-door ' + (published ? 'st-edit-door-quiet' : 'st-edit-door-outline');
   stEditDoor.href = '#subtheory/' + id + '/build';
-  stEditDoor.textContent = 'Edit in the workshop →';
+  stEditDoor.textContent = 'Open the workshop →';
   stTbRight.appendChild(stEditDoor);
   stTopbar.appendChild(stTbRight);
   wrap.appendChild(stTopbar);
@@ -11215,7 +11226,13 @@ function renderSubTheoryBuild(id) {
   titleWrap.appendChild(titleInput);
   var into = document.createElement('div');
   into.className = 'stb-into';
-  into.appendChild(document.createTextNode('a forming sub-theory in '));
+  // FF-7: as the Page kicker. The finished branch is load-bearing -- the Page's
+  // Open door renders at every status, so a published sub-theory reaches this
+  // subtitle and a bare basin/named split would call it a draft.
+  var intoWord = 'a draft sub-theory in ';
+  if (_stIsBasin(subTheory)) { intoWord = 'a gathering sub-theory in '; }
+  else if (subTheory.status === 'published') { intoWord = 'a finished sub-theory in '; }
+  into.appendChild(document.createTextNode(intoWord));
   var intoEm = document.createElement('em');
   intoEm.textContent = (arc && arc.title ? arc.title : 'this arc');
   into.appendChild(intoEm);
@@ -13750,11 +13767,13 @@ function _arcReadFirstLine(rec) {
   return out;
 }
 
-// Maturity glow key (the mockup defines 3 lit states); the 5 maturity WORDS collapse
-// onto them: seed/forming -> forming, warming/mature -> mature, bright -> bright.
+// The glow dot's COLOUR key (3 lit states); the word comes from _stMaturityWord.
+// FF-7: thresholds match that ramp (.34/.67, was .4/.7) -- both are read off the
+// same score, so dot and label can no longer disagree (they did in [.34,.4) and
+// [.67,.7)). Keys stay forming/mature/bright: CSS suffixes, never user-facing.
 function _arcReadMaturityKey(m) {
-  if (m < 0.4) { return 'forming'; }
-  if (m < 0.7) { return 'mature'; }
+  if (m < 0.34) { return 'forming'; }
+  if (m < 0.67) { return 'mature'; }
   return 'bright';
 }
 // Per-sub maturity word from a [0,1] score (mirrors _arcMaturityWord's ramp).
@@ -13806,7 +13825,9 @@ function _arcFieldPageFace(arc, arcId, user) {
   var open = document.createElement('a');
   open.className = 'btn btn-primary arcfield-page-open';
   open.href = '#subtheory/' + focal.id + '/build';
-  open.textContent = 'Open the page →';
+  // FF-7 (D2): doors are destination-named and this one routes to /build. It read
+  // "Open the page →" -- the Workshop's own door's words, opposite direction.
+  open.textContent = 'Open the workshop →';
   wrap.appendChild(open);
   return wrap;
 }
