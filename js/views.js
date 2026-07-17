@@ -10303,6 +10303,72 @@ function confirmDeleteSubTheory(id, afterDelete) {
 // Exposed so the constellation hover card (arc-constellation.js) can open it.
 window.confirmDeleteSubTheory = confirmDeleteSubTheory;
 
+// R-ARC S5 (REVERSE GEAR, REQ#6): a reassuring confirm for dissolving a BASIN back to
+// loose motes. Sibling of confirmDeleteSubTheory -- same .st-confirm chrome -- but the
+// copy is reverse-gear, NOT terminal: a basin's gathered notes are evidence REFERENCES
+// that stay in the notebook, so dissolving removes only the basin record. No "can't be
+// undone" (the motes remain; you can re-gather them). The action button is a neutral
+// primary (.st-confirm-btn-primary), not danger-red, so dissolve never reads like the
+// terminal delete. On confirm, dissolveBasin(id) (which guards prose-empty + delegates
+// the record removal + cascade + persist), then afterDissolve. esc + backdrop = cancel.
+function confirmDissolveBasin(id, afterDissolve) {
+  var rec = state.subTheories && state.subTheories[id];
+  if (!rec) { return; }
+  var opener = document.activeElement;
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'st-confirm-backdrop';
+  backdrop.addEventListener('click', close);
+
+  var panel = document.createElement('div');
+  panel.className = 'st-confirm';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-label', 'Dissolve basin');
+  panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  var copy = document.createElement('p');
+  copy.className = 'st-confirm-copy';
+  copy.textContent = 'Dissolve this basin? The notes you gathered stay in your '
+    + 'notebook — only the basin is cleared.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'st-confirm-actions';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'st-confirm-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', close);
+  var dissolveBtn = document.createElement('button');
+  dissolveBtn.type = 'button';
+  dissolveBtn.className = 'st-confirm-btn st-confirm-btn-primary';
+  dissolveBtn.textContent = 'Dissolve';
+  dissolveBtn.addEventListener('click', function() {
+    var ok = dissolveBasin(id);
+    close();
+    if (ok && typeof afterDissolve === 'function') { afterDissolve(); }
+  });
+  actions.appendChild(cancelBtn);
+  actions.appendChild(dissolveBtn);
+  panel.appendChild(actions);
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    if (backdrop.parentNode) { backdrop.parentNode.removeChild(backdrop); }
+    if (panel.parentNode) { panel.parentNode.removeChild(panel); }
+    if (opener && opener.focus) { try { opener.focus(); } catch (e) {} }
+  }
+  function onKey(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); close(); }
+  }
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(panel);
+  document.addEventListener('keydown', onKey);
+  if (panel.focus) { try { panel.setAttribute('tabindex', '-1'); panel.focus(); } catch (e) {} }
+}
+
 // Stage R #4: a deliberate-act confirm for removing a resonance link between
 // two sub-theories. Sibling of confirmDeleteSubTheory -- same .st-confirm
 // chrome, callable from the transient Web-view hover card. Lists this
@@ -11352,20 +11418,50 @@ function renderSubTheoryBuild(id) {
   sheet.appendChild(conn);
 
   main.appendChild(sheet);
-  // R6 S3: Delete relocates here from the Page (a read surface shouldn't carry a
-  // destructive edit action — decision #4). Discreet danger link at the foot of the
-  // workshop; on confirm, route to the parent arc (can't stay on a deleted page).
-  // The mockup did not model Delete; carried as feature-preservation.
-  var stbDelete = document.createElement('button');
-  stbDelete.type = 'button';
-  stbDelete.className = 'stb-delete';
-  stbDelete.textContent = 'Delete this sub-theory';
-  stbDelete.addEventListener('click', function() {
-    confirmDeleteSubTheory(id, function() {
-      location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
+  // R6 S3: the foot removal control relocates here from the Page (a read surface
+  // shouldn't carry a destructive edit action — decision #4). On confirm, route to the
+  // parent arc (can't stay on a removed page). R-ARC S5 (REVERSE GEAR): the control now
+  // follows the OBJECT'S NATURE. A prose-empty BASIN (unnamed, no authored prose) gets
+  // the quiet, reverse-gear "Dissolve this basin" — its gathered notes are evidence
+  // references that stay in the notebook, so removing it loses nothing ("can't be undone"
+  // would be false here). A named sub-theory, or a blank-header draft that DOES carry
+  // prose, keeps the terminal "Delete this sub-theory" (unchanged). The dissolve
+  // control's visibility mirrors dissolveBasin's own guards exactly, so it is never a
+  // dead control; if prose is typed after this render (no re-render), a click safely
+  // no-ops (dissolveBasin re-checks and refuses) — no prose is ever lost.
+  var footRec = state.subTheories[id];
+  var footPubEmpty = !(footRec && typeof footRec.bodyPublic === 'string'
+    && footRec.bodyPublic.replace(/\s+/g, '') !== '');
+  var footIntelEmpty = !(footRec && typeof footRec.bodyIntellectual === 'string'
+    && footRec.bodyIntellectual.replace(/\s+/g, '') !== '');
+  // Red-team BLOCK (S5): valueMarks[].why is authored + record-only, so a value-marked
+  // basin is past "just motes" -- it must keep terminal delete, never dissolve. Mirrors
+  // dissolveBasin's guard so the control stays symmetric (never dead, never destructive).
+  var footNoValueMarks = !(footRec && footRec.valueMarks && footRec.valueMarks.length);
+  var footIsDissolvableBasin = _stIsBasin(footRec) && footPubEmpty && footIntelEmpty && footNoValueMarks;
+  function footRouteToArc() {
+    location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : '#arcs';
+  }
+  if (footIsDissolvableBasin) {
+    var stbDissolve = document.createElement('button');
+    stbDissolve.type = 'button';
+    stbDissolve.className = 'stb-dissolve';
+    stbDissolve.textContent = 'Dissolve this basin';
+    stbDissolve.setAttribute('title', 'Return its gathered notes to your notebook');
+    stbDissolve.addEventListener('click', function() {
+      confirmDissolveBasin(id, footRouteToArc);
     });
-  });
-  main.appendChild(stbDelete);
+    main.appendChild(stbDissolve);
+  } else {
+    var stbDelete = document.createElement('button');
+    stbDelete.type = 'button';
+    stbDelete.className = 'stb-delete';
+    stbDelete.textContent = 'Delete this sub-theory';
+    stbDelete.addEventListener('click', function() {
+      confirmDeleteSubTheory(id, footRouteToArc);
+    });
+    main.appendChild(stbDelete);
+  }
   buildRow.appendChild(main);
 
   // ===== RIGHT RAIL: pull from your reading =====

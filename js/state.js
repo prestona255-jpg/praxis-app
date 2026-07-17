@@ -2184,6 +2184,28 @@ function deleteSubTheory(id) {
   return true;
 }
 
+// R-ARC S5 (REVERSE GEAR, REQ#6): dissolve a basin back to loose motes. A basin is an
+// UNNAMED draft sub-theory whose contents are evidence REFERENCES to notebook entries;
+// forming it never touches those notes, so they stay independently in the notebook.
+// Dissolving removes ONLY the basin record -- motes already loose; nothing lost. Reverse
+// gear of forming, NOT a delete: permitted only on a basin with NO author-authored
+// content -- no prose (bodyPublic/bodyIntellectual) AND no valueMarks (their .why is
+// author-typed and stored only on this record) -- so the covenant ("nothing
+// unrecoverable", F-B) holds; anything authored keeps the terminal deleteSubTheory.
+// Guards read record fields (no _stIsBasin dependency).
+function dissolveBasin(id) {
+  var sub = state.subTheories && state.subTheories[id];
+  if (!sub) { return false; }
+  var header = (typeof sub.header === 'string') ? sub.header.replace(/\s+/g, '') : '';
+  if (header !== '' || sub.status === 'published') { return false; }
+  var pub = (typeof sub.bodyPublic === 'string') ? sub.bodyPublic.replace(/\s+/g, '') : '';
+  var intel = (typeof sub.bodyIntellectual === 'string') ? sub.bodyIntellectual.replace(/\s+/g, '') : '';
+  if (pub !== '' || intel !== '') { return false; }
+  // Red-team BLOCK (S5): valueMarks[].why is author-typed, stored only on this record.
+  if (Array.isArray(sub.valueMarks) && sub.valueMarks.length !== 0) { return false; }
+  return deleteSubTheory(id);
+}
+
 // Stage 7 (manual themes): id generator for the user-theme overlay, shaped
 // like genArcId / genSubTheoryId; the 'theme_' prefix avoids cross-collection
 // id collisions.

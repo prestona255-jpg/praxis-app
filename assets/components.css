@@ -8631,6 +8631,16 @@
   filter: brightness(1.08);
   border-color: var(--danger);
 }
+/* R-ARC S5 (REVERSE GEAR): dissolve modal action — neutral GOLD primary (not danger-red). */
+.st-confirm-btn-primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--br-deep);
+}
+.st-confirm-btn-primary:hover {
+  filter: brightness(1.06);
+  border-color: var(--gold);
+}
 /* Stage R #4: per-connection unlink list inside the .st-confirm modal. */
 .st-confirm-unlink-list {
   display: flex;
@@ -11655,8 +11665,11 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* R6 S3: the re-homed Delete — a discreet danger link at the foot of the
    workshop (Delete left the Page in S2; feature-preservation). */
-.st-build.lum-amber-deep .stb-delete{ display:block; margin:22px auto 0; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-4); background:none; border:none; cursor:pointer; padding:6px 10px; }
+/* R-ARC S5 (REVERSE GEAR): .stb-dissolve = .stb-delete's quiet form, NEUTRAL hover (not --danger). */
+.st-build.lum-amber-deep .stb-delete,
+.st-build.lum-amber-deep .stb-dissolve{ display:block; margin:22px auto 0; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-ink-4); background:none; border:none; cursor:pointer; padding:6px 10px; }
 .st-build.lum-amber-deep .stb-delete:hover{ color:var(--danger); }
+.st-build.lum-amber-deep .stb-dissolve:hover{ color:var(--lum-ink); }
 
 @media (max-width:759px){
   .st-build.lum-amber-deep .stb-focus-toggle{ min-height:44px; display:inline-flex; align-items:center; }
@@ -11857,7 +11870,8 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-build.lum-amber-deep .stb-pull-search{ font-size:16px; }
   .st-build.lum-amber-deep .stb-pull-book-sel,
   .st-build.lum-amber-deep .stb-pull-search,
-  .st-build.lum-amber-deep .stb-delete{ min-height:44px; }
+  .st-build.lum-amber-deep .stb-delete,
+  .st-build.lum-amber-deep .stb-dissolve{ min-height:44px; }
   .st-build.lum-amber-deep .stb-hero-mark-edit{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
 }
 /* ===== end MW-3 · SUB-THEORY MOBILE PASS ===== */
@@ -11890,7 +11904,8 @@ body.wc-focus .app-nav { opacity:.26; }
   .st-build.lum-amber-deep .stb-brow:focus-visible,
   .st-build.lum-amber-deep .stb-conn-add:focus-visible,
   .st-build.lum-amber-deep .stb-crow:focus-visible,
-  .st-build.lum-amber-deep .stb-delete:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
+  .st-build.lum-amber-deep .stb-delete:focus-visible,
+  .st-build.lum-amber-deep .stb-dissolve:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 }
 /* ===== end DW-3 · SUB-THEORY BUILD DESKTOP COMPOSITION ===== */
 
