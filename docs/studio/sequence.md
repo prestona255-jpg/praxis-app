@@ -549,8 +549,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
   band breach → Preston re-band at measured, DOM-builder pricing lesson standing). THE ROOM
   CHARTER RULED — all 8 decisions + T11 ratified + D3 knowing S4 reversal + D8 reaffirmed,
   FINISH-CHOREO named (`r-arc-room-brief.md` appendix, PUSHED `ee01554`). ROOM-1 (the field)
-  BUILT v3.224 — LOCAL, awaiting push word; next build = Slice 7 (Room lighting) per the
-  ruled remap (ROOM-1 → 7 → ROOM-2 absorbs 10 → ROOM-3 absorbs 12 + riders → 8 → 9).** Per-surface
+  PUSHED+LIVE v3.224 (`c33f22c`) · S7 (Room lighting) BUILT v3.225, pushed under RUN MODE v2
+  (charter: Preston 2026-07-17 — standing push on fully-green + self-run deployed smoke +
+  push ledger; ROOM-2/Slice-8 data-writes still halt; FELT CHECKPOINTS after S7 · ROOM-3 ·
+  close). **AT THE POST-S7 FELT CHECKPOINT — no new slice until Preston's verdict.** Remap
+  remainder: ROOM-2 (absorbs 10) → ROOM-3 (absorbs 12 + riders) → 8 → 9.** Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]
 

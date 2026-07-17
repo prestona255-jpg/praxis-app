@@ -11812,6 +11812,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-book.open .stb-bchev{ transform:rotate(90deg); }
 .st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
 .st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
+/* R-ARC S7: recognition lighting in the LIVE canvas — quiet, non-interactive (DWF-1), no motion by design */
+.st-build.lum-amber-deep .wc-input .rec-lit { border-bottom:1px dotted var(--lum-gold-d); }
+
 /* R-ARC ROOM-1: the FIELD — spatial evidence canvas + the D3 return chip */
 .st-build.lum-amber-deep .stb-field-pane{ margin-bottom:14px; }
 .st-build.lum-amber-deep .rf-pane{ height:340px; overflow:auto; -webkit-overflow-scrolling:touch; border-top:1px dashed rgba(133,84,16,.14); }

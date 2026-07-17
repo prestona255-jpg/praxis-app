@@ -11367,6 +11367,9 @@ function renderSubTheoryBuild(id) {
   var wcInput = canvasHost.querySelector ? canvasHost.querySelector('.wc-input') : null;
   if (wcInput) { wcInput.addEventListener('input', bumpLight); }
   bumpLight();
+  // S7: light the prose (pause cadence; spike laws; rebuilds re-light via
+  // the canvas's own selection-change signal).
+  if (wcInput) { _recogLightLive(wcInput, canvas); }
 
   // R6 S4: derive "woven into ¶N" — the 1-based paragraph of the draft holding a
   // citation marker. Deterministic (paragraph split + marker search), display-only;
@@ -14799,6 +14802,104 @@ function _recogIndex() {
   }
   return _recogIdxMemo;
 }
+// S7: LIVE lighting for the workshop canvas. Spike laws hold: F-C display-
+// only; F1 caret carry every pass; F2 strictly-inside; F3 pause cadence.
+// Wrap phase reuses _recogLightEl. Skips non-collapsed selection + IME
+// composition (spike R2 untested classes) -- retried next tick.
+function _recogLightLive(ed, canvas) {
+  var timer = null, composing = false, lastKey = '', lastN = -1;
+  function absOf(node, offset) {
+    var count = 0, done = false;
+    (function walk(n) {
+      if (done) { return; }
+      if (n === node) {
+        if (n.nodeType === 3) { count = count + offset; }
+        else { var k; for (k = 0; k < offset && k < n.childNodes.length; k = k + 1) { count = count + (n.childNodes[k].textContent || '').length; } }
+        done = true; return;
+      }
+      if (n.nodeType === 3) { count = count + (n.nodeValue || '').length; return; }
+      var c; for (c = 0; c < n.childNodes.length; c = c + 1) { walk(n.childNodes[c]); if (done) { return; } }
+    })(ed);
+    return count;
+  }
+  function posIn(target) {  // strictly-inside: resolve target+1, step back (F2)
+    var acc = 0, res = null;
+    (function walk(n) {
+      if (res) { return; }
+      if (n.nodeType === 3) {
+        var L = (n.nodeValue || '').length;
+        if (acc + L >= target + 1) { res = { node: n, offset: target + 1 - acc }; return; }
+        acc = acc + L; return;
+      }
+      if (n.nodeType !== 1) { return; }
+      var i; for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); if (res) { return; } }
+    })(ed);
+    if (res && res.offset > 0) { res.offset = res.offset - 1; }
+    if (!res) {
+      // end-of-doc: clamp to the last text node's end (F1; red-team B1)
+      var lastTn = null;
+      (function wl(n) {
+        if (n.nodeType === 3) { lastTn = n; return; }
+        var i; for (i = n.childNodes.length - 1; i >= 0; i = i - 1) { wl(n.childNodes[i]); if (lastTn) { return; } }
+      })(ed);
+      if (lastTn) { res = { node: lastTn, offset: (lastTn.nodeValue || '').length }; }
+    }
+    return res;
+  }
+  function saveSel() {
+    var s = window.getSelection();
+    if (!s || !s.rangeCount) { return { had: false }; }
+    var r = s.getRangeAt(0);
+    if (!ed.contains(r.startContainer)) { return { had: false }; }
+    return { had: true, start: absOf(r.startContainer, r.startOffset) };
+  }
+  function restoreSel(saved) {
+    if (!saved || !saved.had) { return; }
+    var p = posIn(saved.start);
+    if (!p) { return; }
+    var r = document.createRange();
+    r.setStart(p.node, p.offset); r.collapse(true);
+    var s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+  }
+  function unlight() {
+    var spans = ed.querySelectorAll('.rec-lit');
+    var i, sp;
+    for (i = spans.length - 1; i >= 0; i = i - 1) {
+      sp = spans[i];
+      while (sp.firstChild) { sp.parentNode.insertBefore(sp.firstChild, sp); }
+      sp.parentNode.removeChild(sp);
+    }
+    ed.normalize();
+  }
+  function pass() {
+    if (composing) { return; }
+    var idx = _recogIndex();
+    if (!idx || !idx.terms.length) { return; }
+    var s0 = window.getSelection();
+    if (s0 && s0.rangeCount && ed.contains(s0.getRangeAt(0).startContainer) && !s0.getRangeAt(0).collapsed) { schedule(); return; }
+    var key = _recogIdxKey + '|' + (ed.textContent || '');
+    // skip only when the DOM matches the memo -- else undo-races-debounce
+    // goes dark forever (B2)
+    if (key === lastKey && (lastN === 0 || ed.querySelector('.rec-lit'))) { return; }
+    var saved = saveSel();
+    unlight();
+    _recogLightEl(ed);           // the proven S6c decorator does the wrapping
+    restoreSel(saved);
+    lastKey = _recogIdxKey + '|' + (ed.textContent || '');
+    lastN = ed.querySelectorAll('.rec-lit').length;
+  }
+  function schedule() { if (timer) { clearTimeout(timer); } timer = setTimeout(pass, 600); }
+  ed.addEventListener('compositionstart', function () { composing = true; });
+  ed.addEventListener('compositionend', function () { composing = false; schedule(); });
+  ed.addEventListener('input', schedule);
+  if (canvas && typeof canvas.onSelectionChange === 'function') {
+    canvas.onSelectionChange(function () { schedule(); });
+  }
+  pass();
+  return { pass: pass, schedule: schedule };
+}
+
 function _recogLightEl(el) {
   var idx = _recogIndex();
   if (!idx || !idx.terms.length || !el) { return; }
