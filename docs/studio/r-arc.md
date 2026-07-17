@@ -63,6 +63,7 @@ notebook) remains the **deferred backlog carried to the round CLOSE**.
   - **S5** `4a8f425` · v3.219 — reverse gear: dissolve a basin back to loose motes — **felt pass PENDING**
   - **FF-7** `8a20bf8` · v3.220 — vocab rider: GATHERING/DRAFT/FINISHED lifecycle, destination-named doors, unified maturity **dot** ramp (.34/.67, closes the Arc-Read dot/label residual) — **felt pass PENDING**
   - **S6a** (Wave C, docs-only) — caret-safety spike **PASS RATIFIED 2026-07-17**: per-text-node splitText+span wrap, abs-offset caret carry, serializer transparency; getValue value-identical in every case; undo stack unpolluted; spans expendable by design. Harness `.claude/rig/spike-caret.html` rides the first Wave C code commit. Record: `r-arc-s6a-spike.md` + `-recon.md`
+  - **S6b** (Wave C) · v3.221 — deterministic recognition: `js/recognition.js` (own-library index + prose scanner, raw-offset map, longest-wins, term floor 4; **SHIPS DARK — zero consumers until 6c**); supervised Sonnet build, session-caught Unicode offset-desync patch; red-team 2 HOLD (both documented as R6/R7) · reviewer CLEARED; **LOCAL ONLY — push held by the v3.220 felt-verdict gate**. Record: `r-arc-s6b.md`
 
 ## Next
 

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>R-ARC S6a caret-safety spike</title>
+<style>
+  /* Harness chrome only — evidence is JS-read, not visual (pane screenshots dead). */
+  body { font: 14px/1.5 Georgia, serif; margin: 24px; max-width: 760px; }
+  .wc-input { border: 1px solid #b8a888; min-height: 200px; padding: 12px; outline: none; }
+  .wc-bar { display: none; } /* the canvas top bar is irrelevant to the spike */
+  .wc-lite { background: rgba(200,150,40,.25); border-bottom: 1px dotted #a08030; }
+  #out { white-space: pre-wrap; font: 12px/1.4 Consolas, monospace; background: #f6f2e8; padding: 12px; }
+</style>
+</head>
+<body>
+<h1>R-ARC S6a — caret-safety spike harness (throwaway)</h1>
+<div id="mount"></div>
+<pre id="out">booting…</pre>
+
+<script src="/js/writing-canvas.js"></script>
+<script>
+/* Spike harness — ES5 (var/function only, mirroring what Room code must use).
+   Loads the UNMODIFIED writing-canvas.js. All decoration logic lives HERE:
+   the app file is never touched (spike = evidence-gathering only). */
+var spike = {};
+window.spike = spike;
+
+spike.inputCount = 0;   // real 'input' events observed on the editor
+spike.saveCount = 0;    // opts.onSave invocations
+spike.renderCalls = 0;  // wcRenderMarkdown invocations (reviewer finding: direct
+                        // call-count instrument for the "never calls it" claim).
+                        // The canvas resolves the global BY NAME at call time, so
+                        // wrapping BEFORE createWritingCanvas intercepts every call.
+var __origRender = wcRenderMarkdown;
+wcRenderMarkdown = function (targetEl, md) {
+  spike.renderCalls = spike.renderCalls + 1;
+  return __origRender(targetEl, md);
+};
+
+var FIXTURE = [
+  '# The enclosed garden',
+  '',
+  'The enclosed garden sits at the heart of the argument. Traditions form an enclosure, and the enclosed space is generative rather than restrictive.',
+  '',
+  '- enclosed commons',
+  '- the **enclosed garden** of tradition',
+  '',
+  '> Every tradition is an enclosed conversation.',
+  '',
+  'Ordinary words continue here with *emphasis* and **strength**.'
+].join('\n');
+
+var canvas = createWritingCanvas(document.getElementById('mount'), {
+  surfaceId: 'spike',
+  initialValue: FIXTURE,
+  onSave: function (v, report) { spike.saveCount = spike.saveCount + 1; report.setLocal(true); }
+});
+spike.canvas = canvas;
+var ed = document.querySelector('.wc-input');
+spike.ed = ed;
+ed.addEventListener('input', function () { spike.inputCount = spike.inputCount + 1; });
+
+/* ---------- independent text/offset walkers (harness-side, not canvas's) ---- */
+function fullText() {
+  var out = '';
+  (function walk(n) {
+    if (n.nodeType === 3) { out = out + (n.nodeValue || ''); return; }
+    if (n.nodeType !== 1) { return; }
+    var i; for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); }
+  })(ed);
+  return out;
+}
+function absOffsetOf(node, offset) {
+  var count = 0, done = false;
+  function walk(n) {
+    if (done) { return; }
+    if (n === node) {
+      if (n.nodeType === 3) { count = count + offset; }
+      else { var k; for (k = 0; k < offset && k < n.childNodes.length; k = k + 1) { count = count + textLenOf(n.childNodes[k]); } }
+      done = true; return;
+    }
+    if (n.nodeType === 3) { count = count + (n.nodeValue || '').length; return; }
+    var c; for (c = 0; c < n.childNodes.length; c = c + 1) { walk(n.childNodes[c]); if (done) { return; } }
+  }
+  walk(ed);
+  return count;
+}
+function textLenOf(node) {
+  if (node.nodeType === 3) { return (node.nodeValue || '').length; }
+  var len = 0, i;
+  for (i = 0; i < node.childNodes.length; i = i + 1) { len = len + textLenOf(node.childNodes[i]); }
+  return len;
+}
+function posFromAbs(target) {
+  var acc = 0, res = null;
+  (function walk(n) {
+    if (res) { return; }
+    if (n.nodeType === 3) {
+      var L = (n.nodeValue || '').length;
+      if (acc + L >= target) { res = { node: n, offset: target - acc }; return; }
+      acc = acc + L; return;
+    }
+    if (n.nodeType !== 1) { return; }
+    var i; for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); if (res) { return; } }
+  })(ed);
+  return res; /* null = target beyond end */
+}
+function saveSel() {
+  var s = window.getSelection();
+  if (!s || !s.rangeCount) { return { had: false }; }
+  var r = s.getRangeAt(0);
+  if (!ed.contains(r.startContainer)) { return { had: false }; }
+  return { had: true, start: absOffsetOf(r.startContainer, r.startOffset), end: absOffsetOf(r.endContainer, r.endOffset) };
+}
+function restoreSel(saved) {
+  if (!saved || !saved.had) { return; }
+  var a = posFromAbs(saved.start);
+  var b = posFromAbs(saved.end);
+  if (!a) { return; }
+  if (!b) { b = a; }
+  var r = document.createRange();
+  r.setStart(a.node, a.offset);
+  r.setEnd(b.node, b.offset);
+  var s = window.getSelection();
+  s.removeAllRanges(); s.addRange(r);
+}
+spike.setCaretAbs = function (n) {
+  canvas.focus();
+  restoreSel({ had: true, start: n, end: n });
+  return canvas.getSelection();
+};
+spike.findAbs = function (sub, k) { /* abs index of the k-th (1-based) occurrence */
+  var t = fullText().toLowerCase(); var low = sub.toLowerCase();
+  var idx = -1, from = 0, i;
+  for (i = 0; i < k; i = i + 1) {
+    idx = t.indexOf(low, from);
+    if (idx === -1) { return -1; }
+    from = idx + low.length;
+  }
+  return idx;
+};
+spike.fullText = fullText;
+
+/* ---------- the decorator under test ------------------------------------- */
+function collectTextNodes() {
+  var out = [];
+  (function walk(n) {
+    if (n.nodeType === 3) { out.push(n); return; }
+    if (n.nodeType !== 1) { return; }
+    if (n.className && String(n.className).indexOf('wc-lite') !== -1) { return; } /* never nest */
+    var i; for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); }
+  })(ed);
+  return out;
+}
+function wrapOne(m) {
+  var t = m.node, s = m.start, e = m.end;
+  if (s > 0) { t = t.splitText(s); e = e - s; }
+  if (e < (t.nodeValue || '').length) { t.splitText(e); }
+  var span = document.createElement('span');
+  span.className = 'wc-lite';
+  t.parentNode.insertBefore(span, t);
+  span.appendChild(t); /* the caret-clobbering move — restoreSel is the antidote */
+}
+spike.decorate = function (needle) {
+  var saved = saveSel();
+  var nodes = collectTextNodes();
+  var matches = [];
+  var low = needle.toLowerCase();
+  var i, tn, hay, idx, from;
+  for (i = 0; i < nodes.length; i = i + 1) {
+    tn = nodes[i]; hay = (tn.nodeValue || '').toLowerCase(); from = 0;
+    while ((idx = hay.indexOf(low, from)) !== -1) {
+      matches.push({ node: tn, start: idx, end: idx + low.length });
+      from = idx + low.length;
+    }
+  }
+  for (i = matches.length - 1; i >= 0; i = i - 1) { wrapOne(matches[i]); } /* reverse: keep earlier offsets valid */
+  restoreSel(saved);
+  return matches.length;
+};
+spike.undecorate = function () {
+  var saved = saveSel();
+  var spans = ed.querySelectorAll('.wc-lite');
+  var i, sp;
+  for (i = spans.length - 1; i >= 0; i = i - 1) {
+    sp = spans[i];
+    while (sp.firstChild) { sp.parentNode.insertBefore(sp.firstChild, sp); }
+    sp.parentNode.removeChild(sp);
+  }
+  ed.normalize(); /* DOM normalize — merges adjacent text nodes (its own caret hazard, also covered by restore) */
+  restoreSel(saved);
+  return spans.length;
+};
+spike.spanCount = function () { return ed.querySelectorAll('.wc-lite').length; };
+
+/* ---------- byte-compare helper ------------------------------------------ */
+function cmp(a, b) {
+  if (a === b) { return { same: true, len: a.length }; }
+  var n = Math.min(a.length, b.length), i = 0;
+  while (i < n && a.charAt(i) === b.charAt(i)) { i = i + 1; }
+  return { same: false, lenA: a.length, lenB: b.length, firstDiff: i,
+           ctxA: a.substr(Math.max(0, i - 20), 40), ctxB: b.substr(Math.max(0, i - 20), 40) };
+}
+spike.cmp = cmp;
+
+/* ---------- PHASE A — synchronous battery (auto-run) ---------------------- */
+function runPhaseA() {
+  var R = { phase: 'A' };
+  var v0 = canvas.getValue();
+  R.A0_baseline = { fixtureRoundTrip: (v0 === FIXTURE), len: v0.length };
+
+  /* A1 caret mid-word BEFORE decoration: 2nd 'enclosed', 'encl|osed' */
+  var target = spike.findAbs('enclosed', 2) + 4;
+  spike.setCaretAbs(target);
+  var selBefore = canvas.getSelection();
+  R.A1_caretSet = { abs: target, sel: { start: selBefore.start, end: selBefore.end } };
+
+  /* A2 decorate — counters must not move */
+  var ic0 = spike.inputCount, sc0 = spike.saveCount, rc0 = spike.renderCalls;
+  var wraps = spike.decorate('enclosed');
+  var ic1 = spike.inputCount, sc1 = spike.saveCount, rc1 = spike.renderCalls;
+  R.A2_decorate = { wraps: wraps, spanCount: spike.spanCount() };
+
+  /* A3 serializer transparency */
+  var v1 = canvas.getValue();
+  R.A3_byteIdentical = cmp(v0, v1);
+
+  /* A5 caret survived (canvas's own getSelection = the app-facing truth) */
+  var selAfter = canvas.getSelection();
+  var inSpan = false;
+  var s = window.getSelection();
+  if (s && s.rangeCount) {
+    var c = s.getRangeAt(0).startContainer;
+    var p = (c.nodeType === 3) ? c.parentNode : c;
+    while (p && p !== ed) { if (p.className && String(p.className).indexOf('wc-lite') !== -1) { inSpan = true; break; } p = p.parentNode; }
+  }
+  R.A5_caretSurvived = { before: { start: selBefore.start, end: selBefore.end },
+                         after: { start: selAfter.start, end: selAfter.end },
+                         identical: (selBefore.start === selAfter.start && selBefore.end === selAfter.end),
+                         caretInsideSpan: inSpan };
+
+  /* A6 pipeline silence during decoration (renderCalls = the DIRECT instrument
+     for mandate (d): wcRenderMarkdown never called by decoration) */
+  R.A6_pipelineSilence = { inputEventsDuring: ic1 - ic0, savesDuring: sc1 - sc0,
+                           renderCallsDuring: rc1 - rc0, renderCallsAtBoot: rc0 };
+
+  /* A7 typed continuation lands mid-word (programmatic; real keys are Phase B) */
+  canvas.insertAtCaret('X');
+  var v2 = canvas.getValue();
+  R.A7_typedContinuation = {
+    hasEnclXosed: (v2.indexOf('The enclXosed garden sits') !== -1),
+    removingXRestoresV1: (v2.replace('enclXosed', 'enclosed') === v1),
+    spansStillPresent: spike.spanCount()
+  };
+
+  /* A9 undecorate round-trip (with the X edit present) */
+  spike.setCaretAbs(spike.findAbs('enclXosed', 1) + 5); /* caret back mid-word inside a span */
+  var selU0 = canvas.getSelection();
+  spike.undecorate();
+  var v3 = canvas.getValue();
+  var selU1 = canvas.getSelection();
+  R.A9_undecorate = { byteIdentical: cmp(v2, v3), spanCount: spike.spanCount(),
+                      caretHeld: (selU0.start === selU1.start && selU0.end === selU1.end),
+                      sel: { before: selU0.start, after: selU1.start } };
+
+  /* A10 edges: absent needle · block-start match · whole-node match */
+  var vE0 = canvas.getValue();
+  var w0 = spike.decorate('zzz-absent-needle');
+  var w1 = spike.decorate('Ordinary');   /* offset 0 of its block's first text node */
+  var w2 = spike.decorate('emphasis');   /* the em's ENTIRE text node (no splits) */
+  var vE1 = canvas.getValue();
+  spike.undecorate();
+  var vE2 = canvas.getValue();
+  R.A10_edges = { absentWraps: w0, blockStartWraps: w1, wholeNodeWraps: w2,
+                  decoratedIdentical: cmp(vE0, vE1), undecoratedIdentical: cmp(vE0, vE2) };
+
+  R.countersTotal = { inputEvents: spike.inputCount, saves: spike.saveCount };
+  return R;
+}
+
+/* ---------- PHASE A2 — native-undo probe (step-driven, mutates history) ---- */
+spike.nativeUndoProbe = function () {
+  var R = {};
+  var vP0 = canvas.getValue();
+  spike.setCaretAbs(fullText().length); /* end of doc */
+  document.execCommand('insertText', false, 'QQ');
+  R.afterInsert = { hasQQ: (canvas.getValue().indexOf('QQ') !== -1) };
+  spike.decorate('enclosed');
+  var vP1 = canvas.getValue();
+  var ok = false, err = '';
+  try { ok = document.execCommand('undo'); } catch (e) { err = String(e); }
+  var vP2 = canvas.getValue();
+  R.undoExec = { returned: ok, err: err };
+  R.afterUndo = { valueChanged: (vP2 !== vP1), stillHasQQ: (vP2.indexOf('QQ') !== -1),
+                  spanCount: spike.spanCount(), cmpToPreProbe: cmp(vP0, vP2) };
+  /* clean up to a known state (setValue resets the snapshot stack — deliberate) */
+  spike.undecorate();
+  canvas.setValue(vP0);
+  R.cleaned = { restored: (canvas.getValue() === vP0) };
+  return R;
+};
+
+/* ---------- PHASE B — step drivers (COMMITTED so the evidence is auditable;
+   red-team finding 1: driving code must live in the rig, not in operator
+   improvisation). Each step returns the JSON recorded in the report. The only
+   operator-side act is REAL keystroke delivery (the pane's type action);
+   every assertion and every synthetic-event dispatch is this code. ---------- */
+window.__B = {};
+
+/* strictly-inside abs-offset placement (F2 boundary law: resolve target+1,
+   step back one — so a block-START offset lands in THAT block, not the
+   previous node's end) */
+spike.setCaretAbsInside = function (target) {
+  canvas.focus();
+  var acc = 0, res = null;
+  (function walk(n) {
+    if (res) { return; }
+    if (n.nodeType === 3) {
+      var L = (n.nodeValue || '').length;
+      if (acc + L >= target + 1) { res = { node: n, offset: target + 1 - acc }; return; }
+      acc = acc + L; return;
+    }
+    if (n.nodeType !== 1) { return; }
+    var i; for (i = 0; i < n.childNodes.length; i = i + 1) { walk(n.childNodes[i]); if (res) { return; } }
+  })(ed);
+  if (!res) { return null; }
+  var r = document.createRange();
+  r.setStart(res.node, res.offset - 1); r.collapse(true);
+  var s = window.getSelection();
+  s.removeAllRanges(); s.addRange(r);
+  return canvas.getSelection();
+};
+/* enumerate live spans with context — identifies WHICH span dies in a probe */
+spike.enumSpans = function () {
+  var spans = ed.querySelectorAll('.wc-lite');
+  var out = [], i, sp, blockTag, p;
+  for (i = 0; i < spans.length; i = i + 1) {
+    sp = spans[i]; p = sp; blockTag = '';
+    while (p && p !== ed) { blockTag = p.tagName ? p.tagName.toLowerCase() : blockTag; p = p.parentNode; }
+    out.push({ i: i, text: sp.textContent, block: blockTag,
+               prev: (sp.previousSibling && sp.previousSibling.nodeValue ? sp.previousSibling.nodeValue.slice(-12) : ''),
+               next: (sp.nextSibling && sp.nextSibling.nodeValue ? sp.nextSibling.nodeValue.slice(0, 12) : '') });
+  }
+  return out;
+};
+function synthKey(key, keyCode, shift) {
+  var ev = new KeyboardEvent('keydown', { key: key, keyCode: keyCode, ctrlKey: true,
+                                          shiftKey: !!shift, bubbles: true, cancelable: true });
+  ed.dispatchEvent(ev);
+  return ev.defaultPrevented; /* true = the app's onKeyDown consumed it */
+}
+spike.b0 = function (occ) { /* decorate + caret mid-word in the occ-th match */
+  var w = spike.decorate('enclosed');
+  var abs = spike.findAbs('enclosed', occ) + 4;
+  var sel = spike.setCaretAbs(abs);
+  window.__B.b0 = { wraps: w, spanCount: spike.spanCount(), caretAbs: abs,
+                    sel: { start: sel.start, end: sel.end }, v: canvas.getValue() };
+  return { wraps: w, abs: abs, sel: window.__B.b0.sel, spanCount: spike.spanCount(),
+           ctx: fullText().substr(abs - 15, 30) };
+};
+spike.b1Check = function (typedWord) { /* after the operator types REAL keys mid-word */
+  var v = canvas.getValue(); var sel = canvas.getSelection();
+  window.__B.b1 = { v: v };
+  return { hasTypedWord: (v.indexOf(typedWord) !== -1),
+           removingTypedRestoresB0: (v.replace(typedWord, 'enclosed') === window.__B.b0.v),
+           spanCount: spike.spanCount(), inputEvents: spike.inputCount,
+           sel: { start: sel.start, end: sel.end },
+           expectSel: window.__B.b0.caretAbs + (typedWord.length - 'enclosed'.length) };
+};
+spike.b2Undo = function () { /* the app's REAL onKeyDown -> doUndo path */
+  var consumed = synthKey('z', 90, false);
+  var v = canvas.getValue(); var sel = canvas.getSelection();
+  window.__B.b2 = { v: v };
+  return { handlerConsumed: consumed, undoRestoredB0: (v === window.__B.b0.v),
+           spanCountAfterUndo: spike.spanCount(), len: v.length,
+           caretAfter: { start: sel.start, end: sel.end }, docLen: fullText().length };
+};
+spike.b3Redo = function () {
+  var consumed = synthKey('y', 89, false);
+  var v = canvas.getValue();
+  window.__B.b3 = { v: v };
+  return { handlerConsumed: consumed, redoRestoredTypedState: (v === window.__B.b1.v),
+           spansAfterRedo: spike.spanCount() };
+};
+spike.b4Redecorate = function () {
+  var vPre = canvas.getValue();
+  var w = spike.decorate('enclosed');
+  return { wraps: w, valueUnchangedByRedecorate: (canvas.getValue() === vPre),
+           spanCount: spike.spanCount() };
+};
+spike.b5BlockRebuild = function (blockPrefix) { /* liveBlock/applyBlock inside a decorated block */
+  var vPre = canvas.getValue(); var spansPre = spike.spanCount();
+  var start = spike.findAbs(blockPrefix, 1);
+  var sel = spike.setCaretAbsInside(start);
+  canvas.insertAtCaret('- ');
+  var vPost = canvas.getValue();
+  return { caretAt: sel ? sel.start : -1, expected: start,
+           spansBefore: spansPre, spansAfter: spike.spanCount(),
+           blockConverted: (vPost.indexOf('- ' + blockPrefix) !== -1),
+           textPreserved: (vPost.replace('- ' + blockPrefix, blockPrefix) === vPre) };
+};
+
+/* ---------- PHASE C — native-mutation probes (red-team HOLD 2 + HOLD 3) ---- */
+/* C1: native undo/redo with the edit INSIDE a decorated span (probe 1's edit
+   was far from every span and still killed one — this varies proximity and
+   adds redo sequencing, and enumSpans identifies WHICH spans die). */
+spike.nativeUndoProbe2 = function (occ) {
+  var R = {};
+  var vP0 = canvas.getValue();
+  spike.decorate('enclosed');
+  var edge = spike.findAbs('enclosed', occ) + 8; /* abs of the span's END */
+  spike.setCaretAbs(edge); /* >= walker: lands INSIDE the span's text node, at its end */
+  document.execCommand('insertText', false, 'QQ');
+  R.afterInsert = { hasQQ: (canvas.getValue().indexOf('QQ') !== -1),
+                    spans: spike.enumSpans().length };
+  R.spansBefore = spike.enumSpans();
+  var vP1 = canvas.getValue();
+  var okU = false, errU = '';
+  try { okU = document.execCommand('undo'); } catch (e) { errU = String(e); }
+  var vP2 = canvas.getValue();
+  R.afterUndo = { execReturned: okU, err: errU, valueChanged: (vP2 !== vP1),
+                  stillHasQQ: (vP2.indexOf('QQ') !== -1),
+                  cmpToPreProbe: cmp(vP0, vP2), spansAfter: spike.enumSpans() };
+  var okR = false, errR = '';
+  try { okR = document.execCommand('redo'); } catch (e) { errR = String(e); }
+  var vP3 = canvas.getValue();
+  R.afterRedo = { execReturned: okR, err: errR, hasQQBack: (vP3.indexOf('QQ') !== -1),
+                  cmpToPostInsert: cmp(vP1, vP3), spanCount: spike.spanCount() };
+  spike.undecorate();
+  if (vP3.indexOf('QQ') !== -1) { canvas.setValue(vP0); } /* normalize end state */
+  R.cleaned = { restored: (canvas.getValue() === vP0) };
+  return R;
+};
+/* C2: cut via execCommand (context-menu-class native mutation) across a span
+   boundary. Clipboard may be denied in the pane -> recorded honestly. */
+spike.cutProbe = function (occ) {
+  var R = {};
+  var vP0 = canvas.getValue();
+  spike.decorate('enclosed');
+  var a = spike.findAbs('enclosed', occ) + 4; /* mid-span */
+  var b = a + 8;                              /* past the span into plain text */
+  var pa = posFromAbs(a + 1), pb = posFromAbs(b);
+  var r = document.createRange();
+  r.setStart(pa.node, pa.offset - 1); r.setEnd(pb.node, pb.offset);
+  var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  canvas.focus();
+  var expected = fullText().substring(0, a) + fullText().substring(b);
+  var ok = false, err = '';
+  try { ok = document.execCommand('cut'); } catch (e) { err = String(e); }
+  var vP1 = canvas.getValue();
+  R.cut = { execReturned: ok, err: err, mutated: (vP1 !== canvas.getValue() ? true : (vP1 !== vP0 + '' ? (vP1 !== vP0) : false)) };
+  R.cut.mutated = (vP1 !== vP0);
+  if (R.cut.mutated) {
+    R.textCorrect = (fullText() === expected); /* removal exact, no side damage */
+    R.spanState = spike.spanCount();
+    document.execCommand('undo'); /* try to restore */
+  }
+  spike.undecorate();
+  R.restored = (canvas.getValue() === vP0);
+  if (!R.restored) { canvas.setValue(vP0); R.restoredViaSetValue = (canvas.getValue() === vP0); }
+  return R;
+};
+
+/* ---------- boot ----------------------------------------------------------- */
+var out = document.getElementById('out');
+var A;
+try { A = runPhaseA(); } catch (e) { A = { fatal: String(e && e.stack ? e.stack : e) }; }
+window.__A = A;
+out.firstChild.nodeValue = JSON.stringify(A, null, 2);
+</script>
+</body>
+</html>
