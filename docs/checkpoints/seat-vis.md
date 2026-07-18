@@ -79,3 +79,19 @@ proven still (T0==T+1.5s) and declares no animation.
 - #2 NOTE (interpolation "gentle" claim) → reconciled above with the frozen-frame evidence; not a block.
 - Confirmed clean: --gold-hi resolves via :root (yumi-ui.js:1369 appends .yumi-bloom to <body>, outside every
   surface scope), no invented hue, scope untouched beyond the raised block + its shared header comment.
+
+## Stage 2 — SHIPPED + LIVE-VERIFIED
+- Commit **`2c286b5`** — `fix(r-arc seat): SEAT-VIS — the raised hand gilds visibly (two-layer gold-hi halo)`
+  (em-dash intact). 4 files: components.css · sw.js · builder.html (volatile stamps only) · this checkpoint.
+  Pushed `8f45221..2c286b5 main -> main`; HEAD == origin/main == 2c286b5. Pre-commit hook passed.
+- Deployed bundle (praxis-reading.netlify.app), **×2 cache-busted**: sw.js = **praxis-v3.230** (both fetches);
+  components.css carries both halo layers (30px/55% + 44px/45%).
+- **LIVE DRIVE (deployed origin, d0tester stub, hand cooldown cleared):** the seat's own JS raised the FAB on
+  boot (`fab_raised_by_seat: true`; `praxis_yumi_hand = {raised:true, raises:1, done:false}`) — a REAL raise, not a toggle.
+  - LIVE_RAISED filter = `drop-shadow(#d9a441/0.55, 0 0 30px) drop-shadow(#d9a441/0.45, 0 0 44px)` (exact dial)
+  - LIVE_REST filter = `drop-shadow(#d2a23e/0.38, 0 3px 12px)` → distinguishable
+  - LIVE_RAISED orb `animation: none`; inner groups spin/breathe/glow/twinkle intact → raise adds ZERO motion
+  - LIVE static: settled filter byte-identical T0 == T+1.5s on the deployed orb (STATIC LAW held)
+  - Live console: no errors.
+- RESIDUAL: none functional. The felt confirmation (does the halo now read as a raised hand at arm's length)
+  remains Preston's eyes-on call — the whole reason this micro-patch exists.
