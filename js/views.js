@@ -11206,20 +11206,49 @@ function renderSubTheoryBuild(id) {
     wrap.appendChild(stbReturn);
   }
 
-  var intro = document.createElement('div');
-  intro.className = 'stb-intro';
-  var introEye = document.createElement('p');
-  introEye.className = 'stb-eyebrow';
-  introEye.textContent = (arc && arc.title ? arc.title : 'Arc') + ' · build a sub-theory';
-  intro.appendChild(introEye);
-  var introH = document.createElement('h1');
-  introH.className = 'stb-h1';
-  introH.appendChild(document.createTextNode('Build a sub-theory '));
-  var introEm = document.createElement('em');
-  introEm.textContent = 'from your reading.';
-  introH.appendChild(introEm);
-  intro.appendChild(introH);
-  wrap.appendChild(intro);
+  // RD-4: header collapses to ONE mono kicker (arc · BUILD A SUB-THEORY ·
+  // state). RD-4a: door mirror + Finish sit in the container's top-right corner
+  // (OUTSIDE .stb-rail/.stb-conn so Focus never swallows the door).
+  var topbar = document.createElement('div');
+  topbar.className = 'stb-topbar';
+  var kicker = document.createElement('p');
+  kicker.className = 'stb-kicker';
+  var kState = _stIsBasin(subTheory) ? 'GATHERING' : (subTheory.status === 'published' ? 'FINISHED' : 'DRAFT');
+  kicker.textContent = (arc && arc.title ? arc.title : 'Arc') + ' · BUILD A SUB-THEORY · ' + kState;
+  topbar.appendChild(kicker);
+  var corner = document.createElement('div');
+  corner.className = 'stb-corner';
+  // Finish is DORMANT pre-mint (FF-10 gate, Slice 1 disabled-law); re-evaluated each render.
+  var pub = document.createElement('button');
+  pub.type = 'button';
+  function pubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
+  function pubIsBasin() { return _stIsBasin(state.subTheories[id]); }
+  function paintPub() {
+    var basin = pubIsBasin();
+    pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '') + (basin ? ' is-dormant' : '');
+    pub.textContent = pubDone() ? 'Finished' : 'Finish';
+    pub.disabled = basin;
+    if (basin) { pub.setAttribute('title', 'Name it to finish'); }
+    else { pub.removeAttribute('title'); }
+  }
+  paintPub();
+  pub.addEventListener('click', function() {
+    if (pubIsBasin()) { return; }
+    var r = state.subTheories[id]; if (!r) return;
+    if (pubDone()) { r.status = 'draft'; r.publishedAt = null; }
+    else { r.status = 'published'; r.publishedAt = Date.now(); }
+    r.updatedAt = Date.now();
+    if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
+    saveState(); paintPub();
+  });
+  corner.appendChild(pub);
+  var openPage = document.createElement('a');
+  openPage.className = 'stb-openpage';
+  openPage.href = '#subtheory/' + id;
+  openPage.textContent = 'Open the page →';
+  corner.appendChild(openPage);
+  topbar.appendChild(corner);
+  wrap.appendChild(topbar);
 
   var buildRow = document.createElement('div');
   buildRow.className = 'stb-build';
@@ -11255,19 +11284,7 @@ function renderSubTheoryBuild(id) {
   titleInput.value = subTheory.header || '';
   titleInput.addEventListener('blur', function() { updateSubTheory(id, { header: titleInput.value }); });
   titleWrap.appendChild(titleInput);
-  var into = document.createElement('div');
-  into.className = 'stb-into';
-  // FF-7: as the Page kicker. The finished branch is load-bearing -- the Page's
-  // Open door renders at every status, so a published sub-theory reaches this
-  // subtitle and a bare basin/named split would call it a draft.
-  var intoWord = 'a draft sub-theory in ';
-  if (_stIsBasin(subTheory)) { intoWord = 'a gathering sub-theory in '; }
-  else if (subTheory.status === 'published') { intoWord = 'a finished sub-theory in '; }
-  into.appendChild(document.createTextNode(intoWord));
-  var intoEm = document.createElement('em');
-  intoEm.textContent = (arc && arc.title ? arc.title : 'this arc');
-  into.appendChild(intoEm);
-  titleWrap.appendChild(into);
+  // RD-4: arc + state ride the kicker now; the redundant court "into" line is dropped.
 
   // R-ARC S3B (the basin): while unnamed, the sub-theory is a BASIN -- show its
   // origin phrase as its identity (life 1), and at real mass INVITE the name (life
@@ -11300,33 +11317,6 @@ function renderSubTheoryBuild(id) {
   saved.className = 'stb-saved';
   saved.textContent = 'saved';
   acts.appendChild(saved);
-  var pub = document.createElement('button');
-  pub.type = 'button';
-  function pubDone() { var r = state.subTheories[id]; return !!(r && r.status === 'published'); }
-  // R-ARC F4 (N2): Finish is DORMANT pre-mint (Preston's FF-10 ruling) -- you cannot
-  // finish what isn't named yet. Disabled per the Slice 1 law, with a quiet reason
-  // tied to the naming invitation. Naming stays never-asked-never-forbidden; finishing
-  // just requires a name. Re-evaluated on the next render (as the mote/invite are).
-  function pubIsBasin() { return _stIsBasin(state.subTheories[id]); }
-  function paintPub() {
-    var basin = pubIsBasin();
-    pub.className = 'stb-pubpill' + (pubDone() ? ' on' : '') + (basin ? ' is-dormant' : '');
-    pub.textContent = pubDone() ? 'Finished' : 'Finish';
-    pub.disabled = basin;
-    if (basin) { pub.setAttribute('title', 'Name it to finish'); }
-    else { pub.removeAttribute('title'); }
-  }
-  paintPub();
-  pub.addEventListener('click', function() {
-    if (pubIsBasin()) { return; }
-    var r = state.subTheories[id]; if (!r) return;
-    if (pubDone()) { r.status = 'draft'; r.publishedAt = null; }
-    else { r.status = 'published'; r.publishedAt = Date.now(); }
-    r.updatedAt = Date.now();
-    if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
-    saveState(); paintPub();
-  });
-  acts.appendChild(pub);
   // EVOLVED #7 (F5 room shape): FOCUS MODE — collapse the evidence rail + Yumi
   // margin + connections to pure prose. Additive modifier (.is-focus on wrap); the
   // two-column anatomy is craft-passed, not recast.
@@ -11343,11 +11333,6 @@ function renderSubTheoryBuild(id) {
     focusBtn.setAttribute('aria-pressed', on ? 'false' : 'true');
   });
   acts.appendChild(focusBtn);
-  var openPage = document.createElement('a');
-  openPage.className = 'stb-openpage';
-  openPage.href = '#subtheory/' + id;
-  openPage.textContent = 'Open the page →';
-  acts.appendChild(openPage);
   sthead.appendChild(acts);
   main.appendChild(sthead);
 
@@ -11380,7 +11365,8 @@ function renderSubTheoryBuild(id) {
   bumpLight();
   // S7: light the prose (pause cadence; spike laws; rebuilds re-light via
   // the canvas's own selection-change signal).
-  if (wcInput) { _recogLightLive(wcInput, canvas); }
+  // RS4: double-attach guard -- a re-render-in-place reusing this editor never double-lights.
+  if (wcInput && !wcInput.getAttribute('data-recoglit')) { wcInput.setAttribute('data-recoglit', '1'); _recogLightLive(wcInput, canvas); }
 
   // R6 S4: derive "woven into ¶N" — the 1-based paragraph of the draft holding a
   // citation marker. Deterministic (paragraph split + marker search), display-only;
@@ -11811,91 +11797,18 @@ function renderSubTheoryBuild(id) {
     source.insertBefore(filterRow, afterHead);
     source.insertBefore(emptyMsg, afterHead);
   }
-  // R-ARC RAIL (FF-12): THIS piece's gathered evidence beside the canvas --
-  // the writer never weaves from memory again. Read-side only (subTheory
-  // .evidence rendered; zero writes). Cards reuse the .stb-marg shape in an
-  // always-visible list (no collapse). FF-2 rides: destination-named doors
-  // (FF-7 law) on cards with a live filed source; unfiled/external cards
-  // carry NO door (DWF-1: no dead controls).
-  var gathered = document.createElement('div');
-  gathered.className = 'stb-source stb-gathered';
-  var ghead = document.createElement('div');
-  ghead.className = 'stb-srchead';
-  var gTitle = document.createElement('div');
-  gTitle.className = 'stb-src-title';
-  gTitle.textContent = 'Gathered for this piece';
-  ghead.appendChild(gTitle);
-  var gSub = document.createElement('div');
-  gSub.className = 'stb-src-sub';
+  // RD-5/INT-8: the "Gathered for this piece" panel DISSOLVES -- the field is the
+  // sole evidence surface; its count folds into the field header, its book door
+  // relocates onto the field card by kind (F2). gEv stays the field's source.
   var gEv = (subTheory.evidence && subTheory.evidence.length) ? subTheory.evidence : [];
-  gSub.textContent = gEv.length
-    ? (gEv.length + (gEv.length === 1 ? ' passage' : ' passages') + ' — what this piece stands on')
-    : 'nothing gathered yet';
-  ghead.appendChild(gSub);
-  gathered.appendChild(ghead);
-  if (!gEv.length) {
-    var gEmpty = document.createElement('div');
-    gEmpty.className = 'stb-src-empty';
-    gEmpty.textContent = 'Weave notes in from your reading below — they gather here.';
-    gathered.appendChild(gEmpty);
-  }
-  var gWrap = document.createElement('div');
-  gWrap.className = 'stb-gath-list';
-  var gvi;
-  for (gvi = 0; gvi < gEv.length; gvi = gvi + 1) {
-    (function(ev) {
-      if (!ev) { return; }
-      var m = document.createElement('div');
-      m.className = 'stb-marg stb-gath-card';
-      var pg = document.createElement('div');
-      pg.className = 'stb-pg';
-      var passage = document.createElement('div');
-      passage.className = 'stb-passage';
-      var doorId = null;
-      if (ev.kind === 'entry') {
-        var gEn = state.notebookEntries ? state.notebookEntries[ev.refId] : null;
-        passage.textContent = (gEn && typeof gEn.body === 'string') ? gEn.body : (ev.quote || '');
-        if (!gEn) {
-          pg.textContent = 'note · original removed';   // quote snapshot survives
-        } else {
-          var gBid = (Array.isArray(gEn.bookIds) && gEn.bookIds.length) ? gEn.bookIds[0] : null;
-          if (gBid && state.books && state.books[gBid]) {
-            pg.textContent = (gEn.register || 'marginalia') + ' · ' + (state.books[gBid].title || 'Untitled');
-            doorId = gBid;
-          } else {
-            pg.textContent = (gEn.register || 'marginalia') + ' · unfiled';
-          }
-        }
-      } else if (ev.kind === 'book') {
-        var gBk = state.books ? state.books[ev.refId] : null;
-        pg.textContent = 'book';
-        passage.textContent = gBk ? (gBk.title || 'Untitled') : (ev.quote || 'a book');
-        if (gBk) { doorId = ev.refId; }
-      } else if (ev.kind === 'external') {
-        pg.textContent = 'external';
-        passage.textContent = (ev.external && ev.external.title)
-          ? ev.external.title + (ev.external.author ? ' — ' + ev.external.author : '')
-          : (ev.quote || '');
-      } else { return; }
-      m.appendChild(pg);
-      m.appendChild(passage);
-      if (doorId) {
-        var gDoor = document.createElement('a');
-        gDoor.className = 'stb-gath-door';
-        gDoor.href = '#book/' + doorId;
-        gDoor.textContent = 'Open the book →';
-        m.appendChild(gDoor);
-      }
-      gWrap.appendChild(m);
-    })(gEv[gvi]);
-  }
-  gathered.appendChild(gWrap);
 
-  // ROOM-1: THE FIELD — evidence as a spatial canvas (D1; the rail list
-  // stays, D2 floor). Positions = evidenceLayout (T3). T11 holds.
-  if (gEv.length && typeof createRoomField === 'function') {
+  // RD-5/RD-3: THE FIELD always renders (empty line in room-field.js); sole
+  // evidence surface, positions = evidenceLayout (T3/T11), D2 rail-list floor
+  // stays. D4 capture-door seat reserved in the header below (comment only -- a
+  // visible inert control would be a dead control, DWF-1; wired in D4's build).
+  if (typeof createRoomField === 'function') {
     var fieldPane = document.createElement('div');
-    fieldPane.className = 'stb-source stb-field-pane';
+    fieldPane.className = 'stb-field-pane';
     var fHead = document.createElement('div');
     fHead.className = 'stb-srchead';
     var fTitle = document.createElement('div');
@@ -11904,7 +11817,9 @@ function renderSubTheoryBuild(id) {
     fHead.appendChild(fTitle);
     var fSub = document.createElement('div');
     fSub.className = 'stb-src-sub';
-    fSub.textContent = 'arrange freely — position is never interpreted';
+    fSub.textContent = gEv.length
+      ? (gEv.length + (gEv.length === 1 ? ' passage' : ' passages') + ' — what this piece stands on · arrange freely, never interpreted')
+      : 'arrange freely — position is never interpreted';
     fHead.appendChild(fSub);
     fieldPane.appendChild(fHead);
     var fCards = [];
@@ -11912,12 +11827,13 @@ function renderSubTheoryBuild(id) {
     for (fi2 = 0; fi2 < gEv.length; fi2 = fi2 + 1) {
       (function (ev) {
         if (!ev || !ev.id) { return; }
-        var kindLine = '', body = '';
+        var kindLine = '', body = '', opens = false;  // opens = has a real door (F2/aria honesty)
         if (ev.kind === 'entry') {
           var fEn = state.notebookEntries ? state.notebookEntries[ev.refId] : null;
           body = (fEn && typeof fEn.body === 'string') ? fEn.body : (ev.quote || '');
           if (!fEn) { kindLine = 'note · original removed'; }
           else {
+            opens = true;
             var fBid = (Array.isArray(fEn.bookIds) && fEn.bookIds.length) ? fEn.bookIds[0] : null;
             kindLine = (fEn.register || 'marginalia') + ' · ' +
               ((fBid && state.books && state.books[fBid]) ? (state.books[fBid].title || 'Untitled') : 'unfiled');
@@ -11926,48 +11842,42 @@ function renderSubTheoryBuild(id) {
           var fBk = state.books ? state.books[ev.refId] : null;
           kindLine = 'book';
           body = fBk ? (fBk.title || 'Untitled') : (ev.quote || 'a book');
+          opens = !!fBk;
         } else if (ev.kind === 'external') {
           kindLine = 'external';
           body = (ev.external && ev.external.title)
             ? ev.external.title + (ev.external.author ? ' — ' + ev.external.author : '')
             : (ev.quote || '');
         } else { return; }
-        fCards.push({ id: ev.id, kindLine: kindLine, body: body });
+        fCards.push({ id: ev.id, kindLine: kindLine, body: body, opens: opens });
       })(gEv[fi2]);
     }
-    createRoomField(fieldPane, {
+    var rfield = createRoomField(fieldPane, {
       cards: fCards,
       layout: subTheory.evidenceLayout || {},
       onMove: function (evId, x, y) {
         if (typeof setEvidenceLayout === 'function') { setEvidenceLayout(id, evId, x, y); }
       },
-      // ROOM-2: tap keeps ROOM-1's lift; the lifted ENTRY card gains its
-      // destination-named door, injected once (DWF-1: real door, real place).
+      // RD-5/F2: click/tap = the card's door by kind -- entry -> ROOM-2 note,
+      // book -> the book direct, external -> honest lift (no door; DWF-1). One click.
       onTap: function (evId, cardEl) {
-        if (cardEl.className.indexOf('rf-lifted') !== -1) { cardEl.className = 'rf-card'; return; }
-        cardEl.className = 'rf-card rf-lifted';
         var fEv = null, fej;
         for (fej = 0; fej < gEv.length; fej = fej + 1) { if (gEv[fej] && gEv[fej].id === evId) { fEv = gEv[fej]; break; } }
-        if (fEv && fEv.kind === 'entry' && state.notebookEntries && state.notebookEntries[fEv.refId]
-            && !cardEl.querySelector('.rf-door')) {
-          var fDoor = document.createElement('a');
-          fDoor.className = 'rf-door';
-          fDoor.href = '#note/' + fEv.refId;
-          fDoor.textContent = 'Open the note →';
-          cardEl.appendChild(fDoor);
-        }
+        if (fEv && fEv.kind === 'entry' && state.notebookEntries && state.notebookEntries[fEv.refId]) { location.hash = 'note/' + fEv.refId; return; }
+        if (fEv && fEv.kind === 'book' && state.books && state.books[fEv.refId]) { location.hash = 'book/' + fEv.refId; return; }
+        cardEl.className = (cardEl.className.indexOf('rf-lifted') !== -1) ? 'rf-card' : 'rf-card rf-lifted';
       }
     });
     rail.appendChild(fieldPane);
   }
-
-  rail.appendChild(gathered);
 
   rail.appendChild(source);
   buildRow.appendChild(rail);
 
   wrap.appendChild(buildRow);
   host.appendChild(wrap);
+  // field measured 0 while detached -- re-place against the real width (RD-2).
+  if (rfield && rfield.relayout) { rfield.relayout(); }
 }
 
 function renderArtifact(bookId) {

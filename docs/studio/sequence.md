@@ -554,9 +554,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
   push ledger; ROOM-2/Slice-8 data-writes still halt; FELT CHECKPOINTS after S7 · ROOM-3 ·
   close). **POST-S7 FELT
   CHECKPOINT = FUNCTIONAL PASS** (intake INT-5..8 → ROOM-3 · INT-9 → ON-8 overnight ·
-  Arc-Field → post-wave ledger). **ROOM-2 (note door + Slice 10, DATA-WRITE) BUILT v3.226 —
-  COMMITTED LOCAL, HALTED for Preston's explicit push word (the v2 exception).** Remainder:
-  ROOM-3 (absorbs 12 + riders + INT-5..8 + EMPTY-STATE mandate) → 8 → 9.** Per-surface
+  Arc-Field → post-wave ledger). **ROOM-2 (note door + Slice 10, DATA-WRITE) PUSHED+LIVE v3.226
+  (Preston's explicit push word at its close).** **ROOM-3 (workshop composition — RD-2 lengthening
+  page · RD-3 settled/empty/clip · RD-4 quiet court + door-mirror + de-card · RD-5 Gathered panel
+  DISSOLVES into the field · §2a + RN1 + RS4; Opus execution) PUSHED+LIVE v3.227 — the mandatory
+  POST-ROOM-3 FELT CHECKPOINT is now the next gate; no Slice 8 until it clears.** Remainder after
+  the felt pass: 8 (dismissal store) → 9 (raised-hand seat, T2). Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]
 

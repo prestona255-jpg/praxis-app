@@ -2,7 +2,7 @@
 round: r-arc
 title: R-ARC — knowledge-arc theorizing system
 kind: round-doc
-status: in round (opened 2026-07-15) — WAVE B FORMALLY CLOSED 2026-07-17 (felt verdict v3.220 ALL FOUR PASS); Wave C in progress (Fable 5): S6a spike ratified · S6b live v3.221 · S6c built (lighting, notebook marginalia)
+status: in round (opened 2026-07-15) — WAVE B FORMALLY CLOSED 2026-07-17 (felt verdict v3.220 ALL FOUR PASS); Wave C in progress: S6a spike · S6b v3.221 · S6c v3.222 · RAIL v3.223 · ROOM-1 v3.224 · S7 v3.225 · ROOM-2 v3.226 · ROOM-3 v3.227 (all pushed+live; post-ROOM-3 felt checkpoint pending)
 scope: The full journey — capture → marginalia → sub-theory → arc → theorize → publish — as one intelligent, structurally sound loop. R-ARC cut = S1 (the Door) + S2 (the Seedling) + S3 (the Room), deep; S4 (the arc's own argument) + S5 (the return current) = named follow-on rounds.
 adjacent: arc interior (arc-detail) · sub-theory writing (subtheory-build) · R10 dependency · Yumi generative
 ---
@@ -72,21 +72,21 @@ notebook) remains the **deferred backlog carried to the round CLOSE**.
   - **POST-S7 FELT CHECKPOINT (Preston, 2026-07-17): FUNCTIONAL PASS** — all four checklist items under real hands (field drag+reload · lighting/caret incl. both red-team spots · C1 landing/return/receipt · rail groups). Intake: INT-5 scrollbars · INT-6 sparse field · INT-7 workshop column · INT-8 card grammar (all → ROOM-3) · **INT-9 Bloom-hint collision → ON-8 (overnight)** · RM6 ruled wrong-feeling (ROOM-3 evidence) · Arc-Field findings → POST-WAVE LEDGER · FINISH-CHOREO vehicle → post-ROOM-3 slotting.
   - **ROOM-2** (Wave C) · v3.226 — **THE NOTE DOOR (data-write slice)**: `#note/<id>` — the note as a PLACE (view + provenance mirror-read with FF-7 doors) + **DURABLE register-aware editing closes MARG-EDIT** (canvas for marginalia; plain+autosave for journal/question — newlines byte-exact) + card-body open (selection-guarded) + field-card lifted door + **absorbs Slice 10** (spotlight/#search deep-links, dead en.title match retired). **The quote-snapshot law proven live** (woven quotes byte-frozen through edits + reload). Red-team deep (data-loss tier): B1 unbounded plain-editor loss window → FIXED by design resolution (**autosave model; Cancel removed — a discard promise can't coexist with autosave**); H2 sole-branch lens leak → fixed (my "conservative" framing was backwards — owned); N3 touch-writes → setter guard. Reviewer CLEARED (LOCAL ONLY). **COMMITTED LOCAL — the data-write exception holds: NO push without Preston's explicit word.** Record: `r-arc-room2.md`
   - **S7** (Wave C) · v3.225 — **ROOM LIGHTING, LIVE**: `_recogLightLive` (pause-cadence 600ms; abs-offset caret carry EVERY pass; strictly-inside restore; non-collapsed-selection + IME guards; decoration-aware memo). Red-team 2 BLOCK — **the wave's sharpest catches** (end-of-doc restore mathematically dead · undo-races-debounce dark-forever) — both fixed as ruled safety code (re-band ≤3,900) + LAW-PROVEN live (clamp signature exact; the race driven to re-light). FEEL measured: 0.5ms live pass · 5.1ms at 4,600 chars/120 spans; no motion by design. F-C held at the persistence layer (autosave byte-clean through live spans). NUL-byte edit-payload incident caught by diffstat + repaired (standing gotcha). Reviewer CLEARED. **Pushed under Run Mode v2** (autonomous green path). Record: `r-arc-s7.md`
+  - **ROOM-3** (Wave C, Opus execution) · v3.227 — **WORKSHOP COMPOSITION** (the felt-brief's largely-subtractive recomposition — five pieces of furniture removed, none added). RD-2 the lengthening page (`room-field.js`: bounded width + growing height + NO inner scroll — the RM6 keyhole killed by construction; carved ground, not pane-in-panel) · RD-3 collision-avoiding row-major spawn + empty state ("Notes you gather will land here") + typographic clip-law · RD-4 one mono kicker + quiet court + RD-4a door-mirror corner (Finish + Open-the-page) + DE-CARDED sheet · RD-5 the "Gathered for this piece" panel DISSOLVES (INT-8) — the field is the sole evidence surface, its count folds into the header, one-click card door by kind (F2: entry→#note · book→#book · external→lift) · §2a P1 motion-free / P2 keyboard / P3 focus-coherent · RN1 dead `.note-edit-cancel` removed · RS4 `_recogLightLive` double-attach guard. **NO data-write** (positions re-interpreted at display only; `setEvidenceLayout` unchanged, state.js byte-identical). Gates: recon ×10 + recon-validation + red-team (2 BLOCK — `rfield` strict-mode crash & spawn x-clamp, both fixed; 3 residual dispositioned) → reviewer CLEARED on a frozen tree. Rig live-verify FULL PASS (console clean; F2/drag/empty-field/basin-court + Shelf/Arcs/Notebook smoke). **PUSHED + LIVE — mandatory POST-ROOM-3 FELT CHECKPOINT pending (Preston).** Record: `r-arc-room3.md` (+ `-recon.md`).
 
 ## Next
 
 - **Preston's felt pass on S5 (dissolve, v3.219) + FF-7 (vocab, v3.220)** → then the round CLOSE
   (surface-census re-measure across the five touched surfaces + BOARD + Builder regen).
-- **Wave C IN PROGRESS (Fable 5, opened 2026-07-17)** — S6a spike ratified · S6b PUSHED+LIVE
-  v3.221 · S6c PUSHED+LIVE v3.222 · RAIL PUSHED+LIVE v3.223 (`4890eb3`; deployed felt passes
-  = the VISUAL GATE, findings ride as intake). **THE ROOM CHARTER LANDED (Preston + design
-  partner, 2026-07-17): INT-2 note door · INT-3 Room-as-canvas (spatial field, positions
-  never interpreted) · INT-4 station audit. Next deliverable = Preston's ruling on THE ROOM
-  BRIEF (`docs/checkpoints/r-arc-room-brief.md`) — proposed remap: ROOM-1 field → 7 lighting
-  → ROOM-2 note door (absorbs Slice 10) → ROOM-3 composition (absorbs Slice 12 + riders
-  INT-1/FF-11/FF-1) → 8 → 9. No Room build before the ruling.** Wave C still carries FF-3's
-  felt mandate + the Yumi raised-hand seat (Slice 9); C5/FF-10 finish-gate ruling re-surfaced
-  by the audit, still open.
+- **Wave C IN PROGRESS (Fable 5 rounds; ROOM-3 = Opus execution, 2026-07-18)** — S6a spike ·
+  S6b v3.221 · S6c v3.222 · RAIL v3.223 · **ROOM-1 field v3.224 · S7 Room-lighting v3.225 ·
+  ROOM-2 note-door v3.226 · ROOM-3 workshop-composition v3.227 — ALL PUSHED + LIVE.** The Room
+  charter (INT-2/3/4) is ruled and built; the room-felt-brief (RD-1..RD-6) governed ROOM-3.
+  **THE NEXT GATE = the mandatory POST-ROOM-3 FELT CHECKPOINT** (Preston's eyes on v3.227 against
+  the §3 FELT CANON acceptance block — riskiest: RD-2a drag-boundary growth + whether the settled
+  sparse field reads COMPOSED, not merely uncrowded). **No Slice 8 (dismissal store) until that
+  felt pass;** then → 8 → 9 (raised-hand seat, T2, always halts). RD-1 arc-Field ground = its own
+  slice at next slotting; ON-8 Bloom-hint HELD; C5/FF-10 finish-gate reaffirmed (D8, shipped).
 - **Carried named items** (do not lose): FORMING-REACH residual (4 non-lifecycle maturity ramps incl.
   the frozen `arc-constellation.js:1433`, routed into 3B-MOTE's authorized single frozen edit) · §C Yumi
   corner tag wording (deferred to Wave C's raised-hand seat) · the Arc-Read dot/label residual **CLOSED**
