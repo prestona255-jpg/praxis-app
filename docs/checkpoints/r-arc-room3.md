@@ -222,6 +222,32 @@ brace 3996/3996 · scope = 4 files.
   real listeners are the evidence (ROOM-1 precedent). Real-gesture drag + Preston's
   eyes = the deployed felt pass.
 
+## DEPLOYED SMOKE + PUSH LEDGER
+
+**PUSH LEDGER:** base `470d7cf` (v3.226) → **`62ab1c4` (v3.227)** pushed to origin/main
+(autonomous per RUN MODE v2 — display-layer slice). HEAD == origin/main ✓. 10 files
+(4 code + r-arc.md + sequence.md + builder.html + BOARD.md + 2 checkpoint records),
+928+/240−. Subject em-dash verified. Pre-commit hook passed.
+
+**DEPLOYED SMOKE (praxis-reading.netlify.app):**
+- **Deploy landed:** `sw.js` CACHE_VERSION = `praxis-v3.227` confirmed ×2 (cache-busted
+  curl, Age 0).
+- **Deployed BYTES carry every fix** (cache-busted curl of the served files): room-field.js
+  → F2 `pos.l > xTrack()` clamp · F3 `card.opens ? 'Open: ' : ''` · `relayout: layoutAll`;
+  views.js → `var rfield` · `opens: opens` · zero `stb-gathered` creation (dissolved) ·
+  kicker. All present in the LIVE bundle.
+- **Render correctness:** the byte-identical v3.227 files rendered a FULL PASS in the
+  local rig (see RIG LIVE-VERIFY above — composition + F2 + drag + empty/basin + Shelf/
+  Arcs/Notebook smoke + console clean).
+- **LIMITATION (honest):** the browser pane caches JS per-origin (the standing "fresh port
+  per JS change" rule); on the fixed live origin there is no port to change, and SW-kill +
+  cache-delete + force-reload still served the pane's cached v3.226 JS. So the live-PANE
+  render of v3.227 could not be captured. This is a rig/tooling limitation, NOT a deploy
+  defect — the deployed bytes are v3.227 (curl-proven) and those exact bytes render
+  correctly (local rig). Real users receive v3.227 via the SW "new version — Reload" flow.
+  The live-origin fresh render is naturally seen at Preston's felt checkpoint (a real
+  browser hard-refresh / accepted SW-update banner).
+
 ## §3 FELT CANON — the acceptance block (verbatim; measured FEEL STANDARD at final pass)
 
 1. The field reads as ground you own, never a window onto somewhere else — nothing

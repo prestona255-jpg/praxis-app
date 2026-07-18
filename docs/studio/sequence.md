@@ -31,6 +31,17 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-18 (R-ARC ROOM-3 felt verdict — Preston-DIRECTED)** — **trigger: ROOM-3 FUNCTIONAL
+  PASS** (v3.227 `62ab1c4`). No spine change applied YET (Wave C continues: Slice 8 → 9 → close).
+  **DIRECTED, not PROPOSED (Preston's ruling this session):** a NEW pre-launch round **R-POLISH** is
+  created and will slot **TOP of Next at the close-out re-plan, AHEAD of SCAN/R-SHELF** (the control
+  canon must precede control-heavy rounds). Five lanes: **L1** XL-tier occupancy canon ≥~1600
+  (designed at 1920 + per-page passes; absorbs the 2560-sag / P-A) · **L2** control canon (ruled
+  control dialect + app-wide sweep; P-B) · **L3** RD-1 glyph slice WIDENED to arc-panel + Home
+  thumbnails + workshop glyph (P-C; RD-1's ground work rides here) · **L4** drag choreography
+  (lift/settle; P-E) · **L5** Yumi caption-family removal, all 3 strings (P-D — **absorbs ON-8**,
+  now retired as standalone). Opens Fable-design, builds Opus. Evidence: Preston's three 1920px
+  screenshots. FINISH-CHOREO + R-CAPTURE + RD-1(→L3) remain carried to the same close-out re-plan.
 - **2026-07-17 (R-ARC FF-7 close-out prep)** — **trigger: the FF-7 vocabulary rider shipped+live**
   (`8a20bf8`, v3.220), the last build slice of R-ARC Wave B. **No spine change** — R-ARC stays the single
   `## Now` item (it does not close until Preston's felt pass on S5's dissolve + FF-7). Refresh only, within
@@ -559,7 +570,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
   page · RD-3 settled/empty/clip · RD-4 quiet court + door-mirror + de-card · RD-5 Gathered panel
   DISSOLVES into the field · §2a + RN1 + RS4; Opus execution) PUSHED+LIVE v3.227 — the mandatory
   POST-ROOM-3 FELT CHECKPOINT is now the next gate; no Slice 8 until it clears.** Remainder after
-  the felt pass: 8 (dismissal store) → 9 (raised-hand seat, T2). Per-surface
+  the felt pass: 8 (dismissal store) → 9 (raised-hand seat, T2). **POST-ROOM-3 FELT CHECKPOINT =
+  FUNCTIONAL PASS (Preston, 2026-07-18); intake P-A..P-F → R-POLISH (new pre-launch round, slots
+  TOP of Next at the close-out re-plan, ahead of SCAN/R-SHELF); ON-8 absorbed into R-POLISH L5; RM6
+  width deferred to R-POLISH. NOW: Slice 8 (DATA-WRITE — LOCAL + HALT) → 9 → close-out re-plan.**
+  Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]
 

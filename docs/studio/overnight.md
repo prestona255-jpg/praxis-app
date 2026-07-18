@@ -191,15 +191,15 @@ tonight's slate.
 - id: ON-8
   title: Bloom hint collides with marginalia text (INT-9)
   plain: The Yumi Bloom's "tap to think this through with me" hint overlaps note text bottom-right — present in all three of Preston's post-S7 felt screenshots, surface-independent, so it's the hint's own positioning.
-  surface: yumi-panel (the Bloom hint chrome; overlays every surface)
-  bucket: overnight
-  files: CSS (+ views.js only if the hint's mount needs a class)
-  anchors: TBD (the Bloom hint element + its position rules; z-ledger — Bloom 9999)
-  verify: at 390 + 1280, the hint's bounding rect intersects NO notebook card text (geometry check on seeded cards); hint still appears and still opens Yumi (own-state sweep).
-  revert: single-commit revert of the positioning CSS.
+  surface: yumi-panel (the Bloom caption chrome; overlays every surface)
+  bucket: ROUND GAP — absorbed into R-POLISH L5
+  files: js/yumi-ui.js (the caption strings) + CSS
+  anchors: the caption is a FAMILY of 3 strings (workshop/Home/Notebook), js/yumi-ui.js:916-917 + the Home/Notebook mounts; z-ledger — Bloom 9999
+  verify: (deferred to R-POLISH L5) no bare Yumi caption renders on any of the 3 surfaces; the orb still opens Yumi (own-state).
+  revert: (R-POLISH L5's own revert)
   felt-pass-required: true
-  status: queued
-  evidence: —
+  status: RE-SCOPED 2026-07-18 (Preston, ROOM-3 felt verdict) — remove ALL THREE caption strings (P-D); absorbed into R-POLISH L5; NO longer a standalone overnight item (RD-6's disposition, widened).
+  evidence: Preston's post-S7 + post-ROOM-3 1920px screenshots
   report: —
   proposed-in: R-ARC Wave C (post-S7 felt checkpoint, Preston 2026-07-17 — ruled overnight-eligible standalone; NOT a ROOM-2 rider, band discipline holds)
 
