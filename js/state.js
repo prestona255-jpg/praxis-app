@@ -1557,6 +1557,29 @@ function deleteReaderThread(uid, threadId) {
   return removed;
 }
 
+// Dismissal tombstone (Slice 8 / REQ#1c, F-D REMEMBERED): "Set aside" flips a
+// thread to status 'dismissed' IN PLACE -- FORWARD-ONLY (no un-dismiss, F-B). The
+// record survives + syncs (replaceReaderModel coerces it on load; threads sync
+// wholesale) so the match is remembered per-match, and the read-filter hides it.
+// By-id (NOT overlap-keyed: a manual thread's memberNoteIds is empty). Idempotent;
+// available regardless of consent (reader controls own data). Persists via saveState.
+function dismissReaderThread(uid, threadId) {
+  if (!uid || !threadId) { return false; }
+  ensureUser(uid);
+  var threads = state.users[uid].readerModel.threads;
+  var i;
+  for (i = 0; i < threads.length; i = i + 1) {
+    if (threads[i] && threads[i].id === threadId && threads[i].status !== 'dismissed') {
+      threads[i].status = 'dismissed';
+      threads[i].updatedAt = Date.now();
+      state.users[uid].readerModel.updatedAt = threads[i].updatedAt;
+      saveState();
+      return true;
+    }
+  }
+  return false;
+}
+
 // Reading-profile prose setter (the "arc you're building" block). String-
 // coerced + trimmed; persists via saveState. An empty string clears it. This
 // is the ONLY writer of profile.summary in Stage I (the auto-refresh is II).

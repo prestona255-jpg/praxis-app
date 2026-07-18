@@ -573,7 +573,10 @@ flagged at the top of the Builder's sequence page for his call — never applied
   the felt pass: 8 (dismissal store) → 9 (raised-hand seat, T2). **POST-ROOM-3 FELT CHECKPOINT =
   FUNCTIONAL PASS (Preston, 2026-07-18); intake P-A..P-F → R-POLISH (new pre-launch round, slots
   TOP of Next at the close-out re-plan, ahead of SCAN/R-SHELF); ON-8 absorbed into R-POLISH L5; RM6
-  width deferred to R-POLISH. NOW: Slice 8 (DATA-WRITE — LOCAL + HALT) → 9 → close-out re-plan.**
+  width deferred to R-POLISH. Slice 8 (dismissal store, DATA-WRITE) BUILT + COMMITTED LOCAL v3.228
+  — HALT for Preston's push word (data-write exception); follow-ons DISMISS-UNIFY + RM-SPLAT logged.
+  NOW: Preston's Slice-8 push word → Slice 9 (raised-hand seat, T2; its recon reconciles the D14
+  raised-hand drift vs shipped ROOM-3) → close-out re-plan.**
   Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]

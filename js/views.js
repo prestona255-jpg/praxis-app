@@ -21272,9 +21272,10 @@ function renderAccountPage() {
     }
     threadsCard.innerHTML = html;
   }
-  // Delegated: consent toggle + per-thread keep/aside. "Set aside" removes the
-  // thread via the EXISTING deleteReaderThread accessor (real data; "won't raise
-  // this one again") + mirrors to Firestore. "This is me" is a non-persistent
+  // Delegated: consent toggle + per-thread keep/aside. "Set aside" TOMBSTONES the
+  // thread via dismissReaderThread (Slice 8: status='dismissed', forward-only,
+  // REMEMBERED per-match; the read-filter hides it) + mirrors to Firestore.
+  // "This is me" is a non-persistent
   // affirm (the thread already persists). NO writeback field is added (HALT rule);
   // proposed-values + value-tensions are OMITTED (BLOCKED-NO-DATA).
   threadsCard.addEventListener('click', function (e) {
@@ -21285,7 +21286,7 @@ function renderAccountPage() {
       while (row && row !== threadsCard && !(row.getAttribute && row.getAttribute('data-tid'))) { row = row.parentNode; }
       var tid = (row && row.getAttribute) ? row.getAttribute('data-tid') : null;
       if (tact === 'aside' && tid) {
-        if (typeof deleteReaderThread === 'function') { deleteReaderThread(uid, tid); }
+        if (typeof dismissReaderThread === 'function') { dismissReaderThread(uid, tid); }
         if (typeof saveReaderModelToFirestore === 'function') { saveReaderModelToFirestore(uid, getReaderModel(uid), function () {}); }
         renderPortraitThreads();
       } else if (tact === 'keep' && row) {
