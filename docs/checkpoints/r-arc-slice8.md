@@ -99,3 +99,18 @@ MANUAL delete (deleteReaderThread views.js:16519) correctly UNTOUCHED.
 ## Gates (sequence)
 self-verify ✓ → fix-red-team (DEEP, data-loss tier) → dispositions → praxis-reviewer FROZEN
 tree → LOCAL commit → **HARD HALT for Preston's push word.** (Rig battery done above.)
+
+## RULING OF RECORD + PUSH (Preston, 2026-07-18)
+- **PUSHED on Preston's explicit word:** `998bc46` → v3.228, HEAD == origin/main. Deployed
+  smoke: v3.228 live ×2 (cache-busted) + deployed bytes carry `dismissReaderThread` + the
+  views repoint.
+- **BY-ID DETERMINATION — ACCEPTED as the ruling of record:** the tombstone matches by thread
+  `.id`, not by member-overlap (overlap-keying would break manual empty-member threads). The
+  reading of "reuse addReaderThreadFromName near-verbatim" = the readerModel BY-ID mutation
+  pattern. Correct.
+- **RESIDUAL live-smoke (the one human-provisioned gate):** the real-Firestore cross-device
+  round-trip on **prestonpraxistest ONLY** (dismiss on A → syncs → suppressed on B / after
+  a cache-clear + fresh sign-in). Mechanics proven locally + code-verified; only the live
+  network round-trip needs the connected session.
+- **Follow-ons live:** DISMISS-UNIFY (ledger) · RM-SPLAT (LAUNCH-STATUS beta basket). Slice 9
+  handoff written (`docs/studio/r-arc-slice9-handoff.md`).

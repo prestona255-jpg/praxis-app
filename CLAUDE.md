@@ -510,6 +510,12 @@ Two standing rules — they join the existing session rituals:
 - CURRENCY — every round close and every studio-relevant build MUST update the
   surface markdown + `sequence.md` and re-run `tools/studio-build`. Automatic, not
   optional — the Builder drifts the moment the markdown moves without a regenerate.
+- BUILDER CADENCE (Preston 2026-07-18, permanent) — regen the Builder ONLY at PUSH
+  POINTS and session close, never on intermediate local-only commits (note "builder
+  deferred to push" in those). **For a data-write slice, the FINAL LOCAL commit that
+  awaits Preston's push word IS the push point — the Builder regen rides that commit**
+  (the HALT is for the push, not for the regen). "Never on local-only commits" scopes
+  to INTERMEDIATE commits only.
 
 A round closes ONLY on Preston's felt pass — computed styles and green gates are
 necessary, never sufficient (the VISUAL GATE lesson).
