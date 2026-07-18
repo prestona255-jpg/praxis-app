@@ -2407,6 +2407,52 @@ function considerNotice(uid, panelOpen) {
   });
 }
 
+// R-ARC Slice 9 — THE RAISED-HAND SEAT (lazy compose). handEligible is the
+// CHEAP raise signal: it mirrors considerNotice's LOCAL pre-gates (consent,
+// >=3 visible non-private notes, grader budget, scan cooldown) plus a
+// "fresh material" read (>=3 visible notes not yet in a noticed/dismissed
+// cluster) -- NO proxy call, NO gate spend. When it is true while the panel is
+// closed, the UI raises the hand; the real scan+gate+compose runs only on
+// OPEN, via considerHeldNotice -- so the composer budget is spent ONLY on
+// opened hands.
+function handEligible(uid) {
+  if (!uid) { return false; }
+  if (state.users[uid] && state.users[uid].profile &&
+      state.users[uid].profile.yumiReadsAlong === false) { return false; }
+  var entries = _visibleEntriesForScan();
+  if (entries.length < 3) { return false; }
+  if (!_drawOutBudgetOk()) { return false; }
+  if (!_scanCooldownOk()) { return false; }
+  var arr = _noticedLoad(uid);
+  var fresh = 0;
+  var i, j, seen;
+  for (i = 0; i < entries.length; i = i + 1) {
+    seen = false;
+    for (j = 0; j < arr.length; j = j + 1) {
+      if (_idsOverlap([entries[i].id], arr[j].members || []) >= 1) { seen = true; break; }
+    }
+    if (!seen) { fresh = fresh + 1; }
+  }
+  return fresh >= 3;
+}
+
+// The held move delivers ONLY on Bloom-open (FELT CANON #3): the seat's
+// sanctioned entry into the EXISTING notice orchestrator. Verbatim reuse of
+// considerNotice -- scan -> idempotency -> the FROZEN gradeUtterance gate ->
+// surface. Gate-fail or no-thread resolves { quiet } and the panel just opens
+// (graceful in-voice fallback). Never a new gate site; T2 eval-gate untouched.
+// CONSENT RECHECK: considerNotice's consent gate lived in considerMove (its
+// only prior caller); the seat is a NEW caller and the hand may have raised
+// before the reader turned "Yumi reads along" off -- so re-check here, before
+// any proxy read of the reader's notes. (considerNotice stays untouched.)
+function considerHeldNotice(uid) {
+  if (state.users[uid] && state.users[uid].profile &&
+      state.users[uid].profile.yumiReadsAlong === false) {
+    return Promise.resolve({ quiet: true, reason: 'consent' });
+  }
+  return considerNotice(uid, true);
+}
+
 // THE NAME ORCHESTRATOR. The reader's reply to a NOTICE -> a gated proposal,
 // or a dismissal. Always resolves. The Accept/Reject write is the UI's job
 // (recordThreadNamed / recordThreadDismissed + the existing create path).
@@ -3114,6 +3160,8 @@ window.YumiBrain = {
   pendingComplicate:  getPendingComplicate,
   clearPendingComplicate: clearPendingComplicate,
   considerNotice:     considerNotice,
+  handEligible:       handEligible,
+  considerHeldNotice: considerHeldNotice,
   considerName:       considerName,
   pendingNotice:      getPendingNotice,
   clearPendingNotice: clearPendingNotice,

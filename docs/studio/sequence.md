@@ -575,8 +575,9 @@ flagged at the top of the Builder's sequence page for his call — never applied
   TOP of Next at the close-out re-plan, ahead of SCAN/R-SHELF); ON-8 absorbed into R-POLISH L5; RM6
   width deferred to R-POLISH. Slice 8 (dismissal store, DATA-WRITE) PUSHED+LIVE v3.228 (`998bc46`,
   on Preston's explicit push word); succession handoff `f5b4c47`. follow-ons DISMISS-UNIFY + RM-SPLAT
-  logged. NOW: Slice 9 (raised-hand seat, T2) IN PROGRESS — its recon reconciles the D14 raised-hand
-  drift vs shipped ROOM-3 (3rd doc-drift instance of the wave) → close-out re-plan.**
+  logged. Slice 9 (raised-hand seat, T2, DATA-WRITE tripwire) BUILT + COMMITTED LOCAL v3.229 — HALT
+  for Preston's push word + felt look; D14 drift reconciled first (`a0a067d`, 3rd doc-drift instance).
+  NOW: Preston's Slice-9 push word + felt look → close-out re-plan.**
   Per-surface
   studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
   arc-detail, subtheory-build, subtheory-page, notebook]

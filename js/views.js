@@ -3290,6 +3290,10 @@ function maybeDrawOut(entryId) {
       renderYumiMessage(r.text, r);
     }
   });
+  // R-ARC S9 (the raised-hand seat): a note written while the Bloom is CLOSED
+  // may raise the hand -- cheap eligibility only (no proxy); the move composes
+  // lazily on open. No-op when the panel is open (considerMove handles that).
+  if (!panelOpen && window.YumiUI && YumiUI.maybeRaiseHand) { YumiUI.maybeRaiseHand(); }
   // yumi-intelligence Stage II: a visible note-write is also a cue to refresh
   // the reader-model profile -- "grows as you read." Fire-and-forget; self-gated
   // on consent + provenance + cooldown + its own budget (never the gate's).

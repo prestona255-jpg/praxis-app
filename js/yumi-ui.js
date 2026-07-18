@@ -1367,6 +1367,9 @@ function renderYumiPanel() {
   if (!yumiBloomEl) {
     yumiBloomEl = buildYumiBloom();
     document.body.appendChild(yumiBloomEl);
+    yumiSeatBoot();      // R-ARC S9: clear the per-session hand (boot-clear only;
+                         // the ripe-backlog raise runs post-loadState from app.js,
+                         // since this init fires BEFORE state is loaded).
   }
   if (!yumiPanelEl) {
     yumiPanelEl = buildYumiPanel();
@@ -1394,6 +1397,7 @@ function openYumiPanel() {
   if (yumiInputEl) {
     yumiInputEl.focus();
   }
+  deliverRaisedHand();   // R-ARC S9: Door 1 -- opening delivers the held move, then lowers
 }
 
 function closeYumiPanel() {
@@ -1468,6 +1472,107 @@ if (document.readyState === 'loading') {
   initYumiUI();
 }
 
+// =====================================================================
+// R-ARC Slice 9 — THE RAISED-HAND SEAT (display + ls-session).
+// A genuine noticing raises a HAND, never speech: the body FAB brightens
+// (setBloomRaised -> the static .yumi-bloom--raised class, SR-1) and stays
+// still. The hand is per-session state, ls-backed under YUMI_HAND_KEY and
+// CLEARED once at boot (yumiSeatBoot) -- so leaving/reloading lowers the hand
+// WITHOUT spending the noticing (SR-3 / YG-6); the thread re-raises next
+// session if still ripe. SINGLE SLOT (a boolean, never a queue). LAZY COMPOSE:
+// while closed the raise costs only handEligible (no proxy); the real
+// scan+gate+compose runs on OPEN via deliverRaisedHand. Opened = spent.
+// Per-session RAISE CAP = 3 (scan cooldown + grader budget throttle further).
+// The seat NEVER speaks unbidden and NEVER touches the T2 gate or the RD-6
+// hint chip (deferred to R-POLISH L5).
+// =====================================================================
+var YUMI_HAND_KEY  = 'praxis_yumi_hand';
+var YUMI_HAND_CAP  = 3;
+var yumiSeatBooted = false;
+
+function _handState() {
+  var h = ls(YUMI_HAND_KEY, null);
+  if (!h || typeof h !== 'object') { h = {}; }
+  if (typeof h.raised !== 'boolean') { h.raised = false; }
+  if (typeof h.raises !== 'number')  { h.raises = 0; }
+  if (typeof h.done !== 'boolean')   { h.done = false; }
+  return h;
+}
+function _saveHand(h) { sv(YUMI_HAND_KEY, h); }
+
+// "Session" = one app boot. Clear the hand ONCE per load, before any raise.
+// (done = the hand has already looked and found nothing this session -- see
+// deliverRaisedHand; it rests rather than re-raise at barren material, YG-12.)
+function yumiSeatBoot() {
+  if (yumiSeatBooted) { return; }
+  yumiSeatBooted = true;
+  _saveHand({ raised: false, raises: 0, done: false });
+  setBloomRaised(false);
+}
+
+// SR-1: the static brighten -- a class on the BODY FAB only, never
+// setBloomState (that drives the in-panel crest). Color only; adds no motion.
+function setBloomRaised(on) {
+  if (!yumiBloomEl) { return; }
+  if (on) { yumiBloomEl.classList.add('yumi-bloom--raised'); }
+  else { yumiBloomEl.classList.remove('yumi-bloom--raised'); }
+}
+
+// Raise the hand when Yumi holds a genuine noticing AND the panel is closed.
+// Cheap (handEligible = no proxy) and idempotent -- safe on every note-write
+// and on boot. Honors the single slot, the per-session cap, and consent.
+function maybeRaiseHand() {
+  if (!yumiBloomEl || isYumiPanelVisiblyOpen()) { return; }
+  if (onb && onb.active) { return; }   // no glow mid-onboarding
+  var h = _handState();
+  if (h.raised || h.done || h.raises >= YUMI_HAND_CAP) { return; }
+  if (!(window.YumiBrain && YumiBrain.handEligible)) { return; }
+  var uid = (typeof resolveActiveUid === 'function') ? resolveActiveUid() : null;
+  if (!uid || !YumiBrain.handEligible(uid)) { return; }
+  h.raised = true;
+  h.raises = h.raises + 1;
+  _saveHand(h);
+  setBloomRaised(true);
+}
+
+// Door 1 (FELT CANON #3): opening the Bloom delivers the held move -- and ONLY
+// here. Lazy compose runs NOW; the gated line renders into the panel; the hand
+// lowers. Opened = spent: the hand lowers whether or not a move surfaces (a
+// quiet result just opens the panel -- the graceful fallback). Skipped during
+// onboarding (the hand waits for a later open). Inline solicits never call
+// this, so the hand persists through a solicit. Fire-and-forget; never blocks.
+function deliverRaisedHand() {
+  if (onb && onb.active) { return; }
+  var h = _handState();
+  if (!h.raised) { return; }
+  h.raised = false;
+  _saveHand(h);
+  setBloomRaised(false);
+  if (!(window.YumiBrain && YumiBrain.considerHeldNotice)) { return; }
+  var uid = (typeof resolveActiveUid === 'function') ? resolveActiveUid() : null;
+  if (!uid) { return; }
+  YumiBrain.considerHeldNotice(uid).then(function (r) {
+    if (r && r.surface && typeof renderYumiMessage === 'function') {
+      renderYumiMessage(r.text, r);
+    } else {
+      // The hand looked and found nothing gate-worthy (no thread / gate-fail /
+      // consent-off): REST for the session -- do not re-raise at barren
+      // material (YG-12 anti-coercion; bounds speculative proxy spend to <=1
+      // open per session). A genuine thread returns next session, or live via
+      // the open-panel considerMove path. Cross-session re-try is intentional.
+      var hh = _handState();
+      hh.done = true;
+      _saveHand(hh);
+    }
+  });
+}
+
+// Rig/read helper: is the hand currently raised (the class is the truth)?
+function isHandRaised() {
+  return !!(yumiBloomEl && yumiBloomEl.classList &&
+            yumiBloomEl.classList.contains('yumi-bloom--raised'));
+}
+
 window.YumiUI = {
   render:               renderYumiPanel,
   open:                 openYumiPanel,
@@ -1475,6 +1580,8 @@ window.YumiUI = {
   toggle:               toggleYumiPanel,
   isOpen:               isYumiPanelOpen,
   visiblyOpen:          isYumiPanelVisiblyOpen,
+  maybeRaiseHand:       maybeRaiseHand,
+  handRaised:           isHandRaised,
   greetings:            YUMI_GREETINGS,
   // 6.2b: maybeStartOnboarding is the gated entry called by the auth
   // callbacks; startOnboarding is the ungated beginner (also the Phase C

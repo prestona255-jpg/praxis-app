@@ -108,6 +108,25 @@
   }
 }
 
+/* ===== R-ARC Slice 9 — THE RAISED HAND (additive; body FAB only) =====
+   The seat's ONLY visible change: when Yumi holds a genuine noticing the body
+   FAB brightens ONE static step — the rest gold lifts to --gold-hi and the
+   ground-glow strengthens. STATIC in the held state: no pulse, no badge, no
+   count, no words, no intensification over time, ever (YG-12 anti-coercion).
+   The base spin/breathe/glow (above) are untouched — the raise adds ZERO
+   motion. The one-time entry easing on the glow is SR-1's "one gentle
+   transition"; it settles to static and is disabled under reduced-motion. The
+   persistent hint line is RD-6's to retire (deferred, R-POLISH L5) — the seat
+   never touches it. */
+.yumi-bloom-orb { transition: filter 420ms var(--ease); }
+.yumi-bloom--raised { --gold: var(--gold-hi); }
+.yumi-bloom--raised .yumi-bloom-orb {
+  filter: drop-shadow(0 3px 15px color-mix(in srgb, var(--gold-hi) 60%, transparent));
+}
+@media (prefers-reduced-motion: reduce) {
+  .yumi-bloom-orb { transition: none; }
+}
+
 /* ===== Alive Yumi — in-chat Bloom + presence states (additive) ===== */
 /* The in-panel Bloom lives in the panel-head crest slot: static, crest-sized,
    no launcher line. Scoped under #panel-crest so the body FAB is untouched. */

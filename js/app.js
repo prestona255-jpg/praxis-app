@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
     location.hash = '#home';
   }
   window.views.renderRoute();
+  // R-ARC S9 (the raised-hand seat): evaluate the hand AFTER loadState -- a
+  // returning reader with a ripe backlog gets the hand on open. yumi-ui's own
+  // init runs before state is loaded, so the boot raise belongs here. Cheap +
+  // idempotent (no-op when panel open / already raised / capped / done).
+  if (window.YumiUI && YumiUI.maybeRaiseHand) { YumiUI.maybeRaiseHand(); }
   window.addEventListener('hashchange', function() {
     window.views.renderRoute();
   });
