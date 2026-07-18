@@ -262,16 +262,32 @@ all; the reader-model dismissal writes `ls('praxis_yumi_noticed')` — **local-d
 `citationPins` is shaped exactly right and ensured on **both** paths but has **zero writers**.
 **FORK F-D (tier):** REQ#1 says "remembered" (durable/synced); D14 says the raised hand is "sticky per
 session." Different tiers. Which for dismissals?
+**→ ANSWERED (Slice 8, ruled Preston 2026-07-18): DURABLE/SYNCED/FORWARD-ONLY.** Shipped as
+`dismissReaderThread` (state.js:1566 · v3.228 `998bc46`) — the readerModel `status:'dismissed'`
+tombstone, matched **by thread `.id`** (the by-id ruling of record). The "sticky per session" tier
+applies only to the raised HAND itself (per-session, re-raisable), NOT to dismissals. Do not reopen.
 **Scope:** `js/state.js` **+0.4…+1.0 KB** · `js/views.js` **+0.5…+1.5 KB**. T3 applies.
 **Model:** **DELEGABLE** once F-D is ruled.
 
-### Slice 9 — SEMANTIC NOTICING *(REQ#1d, REQ#2)*
-Yumi's half: a **9th `gradeUtterance` call site below the frozen gate**, firing **only at gather/ask**
-(REQ#2, conservative). Follows the existing shape exactly: N ordered pre-gates → one generate → grade →
-surface-or-silent. Own `*_SYSTEM`, own budget/cooldown key, one new `window.YumiBrain` export key.
-**T2 is the gate. Function-diff proof required.** Needs its own eval battery (brief Q3).
-**Scope:** `js/yumi-brain.js` **+3…+6 KB, ALL BELOW THE SEAM** · zero proxy change (verbatim relay).
-**Model:** **OPUS** — MODEL LAW names Yumi grammar/eval work as Opus explicitly.
+### Slice 9 — THE RAISED-HAND SEAT *(ruled name of record, Preston 2026-07-18)* — *(was "SEMANTIC NOTICING", REQ#1d/REQ#2)*
+**⚠ SLICE RE-SCOPED at the Wave-C constitution pass (SAME SLOT — Preston's ruling 2026-07-18).** The
+earlier "9th `gradeUtterance` call site firing at gather/ask" framing below is **SUPERSEDED**: the ruled
+Slice 9 is the raised-hand **SEAT** — a **display + ls-session-state** slice that renders an EXISTING
+noticing as the **Bloom orb brightening one static step to `--gold-hi`** (SR-1) and delivers the held
+move **lazily on Bloom-open** through the **EXISTING, FROZEN** gate. **NO new unbidden call site; the T2
+`gradeUtterance` gate is UNCHANGED (grep-zero proof at final pass).** Seat mechanics (ruled): SINGLE SLOT
+(newest-wins, no queue/count) · TWO DOORS (Bloom-open delivers the held move; inline solicits separate;
+hand persists through a solicit) · LAZY COMPOSE (compose + gate ONLY on open; in-voice fallback on
+gate-fail; budget spent only on opened hands) · PER-SESSION RAISE CAP · persistence = the SR-3 two-part
+law (noticing persists / hand does not / opened = spent / only explicit dismissal durable via Slice 8).
+If wiring the seat would force any unbidden contact or a new generative call site → **HALT** (non-goal).
+_Retained below for record — the pre-supersession framing:_
+> Yumi's half: a **9th `gradeUtterance` call site below the frozen gate**, firing **only at gather/ask**
+> (REQ#2, conservative). Follows the existing shape exactly: N ordered pre-gates → one generate → grade →
+> surface-or-silent. Own `*_SYSTEM`, own budget/cooldown key, one new `window.YumiBrain` export key.
+> **T2 is the gate. Function-diff proof required.** Needs its own eval battery (brief Q3).
+> **Scope:** `js/yumi-brain.js` **+3…+6 KB, ALL BELOW THE SEAM** · zero proxy change (verbatim relay).
+> **Model:** **OPUS** — MODEL LAW names Yumi grammar/eval work as Opus explicitly.
 
 ### Slice 10 — NOTE DEEP-LINK *(REQ#8)*
 Notes are already indexed in both systems. Build the **per-note deep link** (both currently route to a

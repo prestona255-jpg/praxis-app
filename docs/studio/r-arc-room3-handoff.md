@@ -31,7 +31,12 @@ door (data-write; pushed on Preston's explicit word at this close)**.
 
 The Room's COMPOSITION under the EMPTY-STATE MANDATE (every state designed —
 empty · single-card · loading · failed) + the raised-hand VISIBILITY proven by
-measurement (the D14 chrome only — the Yumi half is Slice 9's). **Intake it
+measurement (the D14 chrome only — the Yumi half is Slice 9's).
+⚠ **[DRIFT CORRECTED, Slice 9 D14 pass 2026-07-18:** shipped ROOM-3 (`62ab1c4`, v3.227) contained
+**NO** raised-hand visibility item — this projection silently narrowed and was never corrected (3rd
+doc-drift instance of the wave). The D14 chrome AND the Yumi seat now BOTH live in Slice 9 as the ruled
+**Bloom-orb SEAT** (SR-1, orb brightens one static step to `--gold-hi`); the desktop-margin-dots /
+mobile-presence-glyph chrome projected here is superseded.**] **Intake it
 must answer (all Preston-ratified):** INT-5 native scrollbars in the paper
 world · INT-6 sparse-field undesigned (huddle + void + clip) · INT-7 workshop
 left-column composition (ghost oversize · crowded control row · Yumi-line

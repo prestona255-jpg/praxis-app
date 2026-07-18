@@ -30,16 +30,25 @@ raised-hand) against live code + shipped ROOM-3, and CORRECT the handoff/decisio
 BEFORE writing Slice 9 code.** Record it as this wave's doc-drift lesson (3rd).
 
 ## 3. SLICE 9 — FULLY RULED (Preston, tappable, 2026-07-18) — this is EXECUTION, not design
-- **SR-1 THE RAISE = the Bloom orb BRIGHTENS.** The rest gold lifts to `--gold-hi` with a
-  slow breath when Yumi has a genuine noticing. **NO text, NO badge, NO new chrome.** The
-  RD-6 hover/focus chip carries the words; **tap opens what she sees.** **FEEL STANDARD
-  (binding):** the brightened state is distinguishable from rest in a screenshot diff, AND
-  ignorable at will.
+- **SR-1 THE RAISE = the Bloom orb BRIGHTENS — ONE gentle transition to `--gold-hi`, then
+  STATIC.** The rest gold steps once to `--gold-hi` when Yumi has a genuine noticing, then holds
+  perfectly still — **no breath, no pulse, no motion, no intensification over time, ever
+  (YG-12 anti-coercion).** **NO text, NO badge, NO new chrome.** The RD-6 hover/focus chip
+  carries the words; **opening the Bloom opens what she sees.** **FEEL STANDARD (binding):** the
+  brightened state is distinguishable from rest in a screenshot diff, AND ignorable at will —
+  nothing moves while the reader ignores it.
+  *(CORRECTED in the Slice-9 D14 pass, 2026-07-18: the original "slow breath" wording predated the
+  ratified constitution pass and is SUPERSEDED — static, one step, no motion. This is the ruling of
+  record.)*
 - **SR-2 §C TAG = "Yumi"** — name only, mono register. (Closes the long-carried §C corner-tag
   wording item.)
-- **SR-3 PERSISTENCE** = a raise persists until SEEN or DISMISSED; dismissals are REMEMBERED
-  per F-D, **riding Slice 8's shipped machinery** (`dismissReaderThread` / the readerModel
-  tombstone). Do NOT rebuild dismissal persistence — reuse Slice 8.
+- **SR-3 PERSISTENCE — TWO-PART LAW (CORRECTED, Slice-9 D14 pass, 2026-07-18):** the **NOTICING
+  persists; the HAND does not.** Leaving the surface/session lowers the hand **WITHOUT spending
+  the noticing** (dissolution ≠ dismissal, YG-6); the thread returns to raisable and may raise
+  again. **Opened = delivered = spent.** Only **explicit reader dismissal is durable**, riding
+  Slice 8's shipped F-D machinery (`dismissReaderThread` / the readerModel tombstone). Do NOT
+  rebuild dismissal persistence — reuse Slice 8. *(Supersedes the earlier "a raise persists until
+  SEEN or DISMISSED" phrasing, which conflated the durable dismissal with the per-session hand.)*
 - **COVENANT (T2 frozen):** brightening is a raised HAND, never SPEECH — no auto-opening, no
   captions, **`gradeUtterance` gating UNCHANGED, the T2 eval-gate frozen.** Grep-prove zero
   yumi-brain.js eval-gate changes at the FINAL-PASS.

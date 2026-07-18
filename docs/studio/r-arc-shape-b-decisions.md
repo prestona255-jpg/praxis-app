@@ -151,12 +151,24 @@ build prompt carries it; not a mockup surface.
 
 **D14 — The raised hand is absolute. Yumi never speaks unbidden, ever.** She signals; the notice
 unfolds **only on tap**; unread hands age quietly.
-- **Desktop:** true margin dots.
+⚠ **CHROME SUPERSEDED (Slice 9, ruled Preston 2026-07-18):** the raised-hand SEAT of record is the
+**Bloom orb brightening ONE static step to `--gold-hi`** (no breath/pulse/motion, YG-12) — **NO margin
+dots, NO presence glyph, NO count, NO badge, NO new chrome** (FELT CANON: "the corner holds only the
+orb — no badge, no count, no words"). The desktop-margin-dots / mobile-presence-glyph-with-count model
+below is the earlier SHAPE-B chrome, **retained for record but NOT built**. The RD-6 hover/focus chip
+carries the words; opening the Bloom delivers the held move (single slot, newest-wins, no queue).
+- **Desktop:** true margin dots. *(superseded — see above)*
 - **Mobile:** margin dots don't exist at 390px — **one fixed presence glyph with a count**; tap reveals
-  the notice and scrolls to its anchor.
-- **Non-color affordance required** (never color alone).
-- **Dismissal is sticky per session.** ⚠ Today it is **not**: both existing blocks have a real dismiss
-  listener that calls **no** `sv()` — the note returns on every render. The mockup models sticky.
+  the notice and scrolls to its anchor. *(superseded — orb-only, no count)*
+- **Non-color affordance required** (never color alone). *(carried: the RD-6 chip + open-to-see is the
+  non-color affordance; the brighten is not color-alone.)*
+- **Persistence — RECONCILED (Slice 9 D14 pass, 2026-07-18) to the two-part law, NOT "sticky per
+  session":** the earlier "no `sv()`" note is **stale** — `recordThreadDismissed` (yumi-brain.js:2233 →
+  `_noticedSet` → `sv('praxis_yumi_noticed', …)`, yumi-brain.js:2199) has persisted since v3.128, and
+  **Slice 8 (v3.228, `998bc46`) shipped the durable, forward-only `dismissReaderThread` tombstone**
+  (state.js:1566 · views.js:21289). Ruled law: the **noticing** persists (may re-raise); the **hand**
+  does not (leaving lowers it without spending the noticing — YG-6); **opened = spent**; only **explicit
+  reader dismissal** is durable, via Slice 8's F-D path (reused, never rebuilt).
 
 **D15 — The first move is seam-first, pre-lit on entry, opens on tap.** A tension between two of the
 reader's **own** passages, as a question. **Never-moves:** never summarizes the pile · never proposes
