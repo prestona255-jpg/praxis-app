@@ -2,7 +2,7 @@
 round: r-arc
 title: R-ARC — knowledge-arc theorizing system
 kind: round-doc
-status: in round (opened 2026-07-15) — WAVE B FORMALLY CLOSED 2026-07-17 (felt verdict v3.220 ALL FOUR PASS); Wave C in progress: S6a spike · S6b v3.221 · S6c v3.222 · RAIL v3.223 · ROOM-1 v3.224 · S7 v3.225 · ROOM-2 v3.226 · ROOM-3 v3.227 (pushed+live, felt PASS) · SLICE 8 v3.228 (dismissal store, PUSHED+LIVE 998bc46) · D14 drift reconcile (a0a067d) · SLICE 9 v3.229 (raised-hand seat, DATA-WRITE tripwire → COMMITTED LOCAL — HALT for Preston's push word; felt look pending)
+status: in round (opened 2026-07-15) — WAVE B FORMALLY CLOSED 2026-07-17 (felt verdict v3.220 ALL FOUR PASS); Wave C in progress: S6a spike · S6b v3.221 · S6c v3.222 · RAIL v3.223 · ROOM-1 v3.224 · S7 v3.225 · ROOM-2 v3.226 · ROOM-3 v3.227 (pushed+live, felt PASS) · SLICE 8 v3.228 (dismissal store, PUSHED+LIVE 998bc46) · D14 drift reconcile (a0a067d) · SLICE 9 v3.229 (raised-hand seat, PUSHED+LIVE 5df9d00; tripwire ruled READING A by Preston, conservative stop = correct protocol; deployed seat battery FULL PASS). BUILD COMPLETE — **formal close = Preston's felt look on the v3.229 seat**
 scope: The full journey — capture → marginalia → sub-theory → arc → theorize → publish — as one intelligent, structurally sound loop. R-ARC cut = S1 (the Door) + S2 (the Seedling) + S3 (the Room), deep; S4 (the arc's own argument) + S5 (the return current) = named follow-on rounds.
 adjacent: arc interior (arc-detail) · sub-theory writing (subtheory-build) · R10 dependency · Yumi generative
 ---

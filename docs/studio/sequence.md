@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-18 (R-ARC CLOSE-OUT — Preston-DIRECTED, enacted)** — **trigger: Wave C complete, Slice 9
+  the raised-hand seat PUSHED+LIVE v3.229 (`5df9d00`, deployed smoke FULL PASS).** Spine enacted: R-ARC
+  → build-complete/SHIPPED (formal close pends Preston's felt look on the v3.229 seat). **Now = R-POLISH**
+  (5 lanes, Fable opens/Opus builds), promoted ahead of SCAN/R-SHELF (control canon precedes control-heavy
+  rounds). Next canonical order set: R-POLISH → FINISH-CHOREO → R-SHELF → R-CAPTURE → SCAN → S-B → R10 →
+  ONBOARDING → BETA-READINESS gate → R11 → S-C → feature layers. ON-8 + RD-6 fold into R-POLISH L5;
+  DW-NAV768/HOME-LAMP/ON-7/2560-sag/page-scrollbar into L1; Book-Detail ✎ re-wire candidate in L2; RD-1
+  widened in L3. Slice-8 cross-device Firestore leg + RM-SPLAT + DISMISS-UNIFY logged to the BETA gate.
+  Directed by Preston, not proposed.
 - **2026-07-18 (R-ARC ROOM-3 felt verdict — Preston-DIRECTED)** — **trigger: ROOM-3 FUNCTIONAL
   PASS** (v3.227 `62ab1c4`). No spine change applied YET (Wave C continues: Slice 8 → 9 → close).
   **DIRECTED, not PROPOSED (Preston's ruling this session):** a NEW pre-launch round **R-POLISH** is
@@ -317,6 +326,16 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-ARC — knowledge-arc theorizing system (DEEP round, v3.211→v3.229)** — the capture → marginalia
+  → sub-theory → arc → theorize → publish loop, rebuilt as one intelligent structure. **Wave A/B:** S1→S5
+  + F4 covenant removal + FF-7 vocab rider (v3.211→v3.220), felt PASS. **Wave C:** S6a spike · S6b/S6c/RAIL ·
+  ROOM charter + ROOM-1/S7/ROOM-2/ROOM-3 (v3.221→v3.227, functional PASS) · **Slice 8 the dismissal store
+  (v3.228, `998bc46`)** · **Slice 9 the raised-hand seat (v3.229, `5df9d00`)** + the D14 drift reconcile
+  (`a0a067d`). **Push ledger (Slice 9 close):** `f5b4c47..5df9d00 main -> main`, v3.229 live (×2 cache-busted);
+  deployed seat battery FULL PASS + Slice-8 flip-not-delete verified live. Ledger: `docs/studio/r-arc.md`.
+  **FORMAL CLOSE = Preston's felt look on the v3.229 seat** (the one outstanding gate). Follow-ons to the BETA
+  gate: Slice-8 cross-device Firestore leg · RM-SPLAT · DISMISS-UNIFY. Deferred into R-POLISH: RD-6 (L5), RM6,
+  RD-1 (L3), FINISH-CHOREO (own slice).
 - [x] **DW — Desktop Wave (FULL SWEEP, batches DW-1..4 + DW-STP2 + DW-POLISH + DWF-1)** — the responsive ≥1200 composition tier across the
   page-surfaces. **Exit criterion: 0 of the Builder's desktop chips at "stretched."** R9a shipped the project's
   first ≥1200 tier, R9b proved the composition rider live, **Profile is already native**. One commit per batch;
@@ -537,68 +556,54 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-- [ ] **R-ARC — the knowledge-arc theorizing system (DEEP round)** — the full journey (capture →
-  marginalia → sub-theory → arc → theorize → publish) as one intelligent, structurally sound loop.
-  **PROMOTED TO NOW 2026-07-15 at the DW wave close — Preston's ruling of 2026-07-14.** The slot
-  `r-arc.md` was written to await ("its own deep round; **slot at the next re-plan**") — this close
-  IS that re-plan. It enters as the single Now item: the DW sweep that occupied this slot is
-  complete and shipped, and R-ARC is the next deep round rather than another sweep.
-  Adjacent threads it must reckon with: the arc interior (arc-detail) · sub-theory writing
-  (subtheory-build) · the R10 dependency · Yumi generative. Round doc: `docs/studio/r-arc.md`.
-  **Round brief LANDED (`28ae86a`, 2026-07-15): `docs/studio/r-arc-brief.md` (v4) is the round's
-  constitution** — SHAPE-A's six forks + the pedagogy/epistemology layer + the critique's amendments
-  + the seed-lifecycle amendment, all decided; the handoff (`docs/studio/r-arc-handoff.md`) is its
-  brief-holder. Scope = S1 (the Door) + S2 (the Seedling) + S3 (the Room), deep; S4/S5 = named
-  follow-ons. **IN ROUND — all build slices SHIPPED+LIVE (2026-07-17):** S1→S5 + the F4 covenant
-  removal + the **FF-7 vocabulary rider** are live (v3.211→**v3.220**; ledger in `docs/studio/r-arc.md`
-  Round history). **S1–S4 felt-passed; CLOSE awaits Preston's felt pass on S5 (dissolve, v3.219) +
-  FF-7 (vocab, v3.220).** **WAVE B FORMALLY CLOSED
-  2026-07-17 — felt verdict v3.220 ALL FOUR PASS** (the hard push gate cleared; intake
-  WAVE-C-INT-1 "Na…" logged → proposed vehicle Slice 12). **Wave C in progress (Fable 5):** S6a
-  spike PASS ratified · S6b PUSHED+LIVE v3.221 (`5f2bce0`) · S6c PUSHED+LIVE v3.222
-  (`6c5423a`) · **RAIL PUSHED+LIVE v3.223 (`4890eb3`;
-  band breach → Preston re-band at measured, DOM-builder pricing lesson standing). THE ROOM
-  CHARTER RULED — all 8 decisions + T11 ratified + D3 knowing S4 reversal + D8 reaffirmed,
-  FINISH-CHOREO named (`r-arc-room-brief.md` appendix, PUSHED `ee01554`). ROOM-1 (the field)
-  PUSHED+LIVE v3.224 (`c33f22c`) · S7 (Room lighting) BUILT v3.225, pushed under RUN MODE v2
-  (charter: Preston 2026-07-17 — standing push on fully-green + self-run deployed smoke +
-  push ledger; ROOM-2/Slice-8 data-writes still halt; FELT CHECKPOINTS after S7 · ROOM-3 ·
-  close). **POST-S7 FELT
-  CHECKPOINT = FUNCTIONAL PASS** (intake INT-5..8 → ROOM-3 · INT-9 → ON-8 overnight ·
-  Arc-Field → post-wave ledger). **ROOM-2 (note door + Slice 10, DATA-WRITE) PUSHED+LIVE v3.226
-  (Preston's explicit push word at its close).** **ROOM-3 (workshop composition — RD-2 lengthening
-  page · RD-3 settled/empty/clip · RD-4 quiet court + door-mirror + de-card · RD-5 Gathered panel
-  DISSOLVES into the field · §2a + RN1 + RS4; Opus execution) PUSHED+LIVE v3.227 — the mandatory
-  POST-ROOM-3 FELT CHECKPOINT is now the next gate; no Slice 8 until it clears.** Remainder after
-  the felt pass: 8 (dismissal store) → 9 (raised-hand seat, T2). **POST-ROOM-3 FELT CHECKPOINT =
-  FUNCTIONAL PASS (Preston, 2026-07-18); intake P-A..P-F → R-POLISH (new pre-launch round, slots
-  TOP of Next at the close-out re-plan, ahead of SCAN/R-SHELF); ON-8 absorbed into R-POLISH L5; RM6
-  width deferred to R-POLISH. Slice 8 (dismissal store, DATA-WRITE) PUSHED+LIVE v3.228 (`998bc46`,
-  on Preston's explicit push word); succession handoff `f5b4c47`. follow-ons DISMISS-UNIFY + RM-SPLAT
-  logged. Slice 9 (raised-hand seat, T2, DATA-WRITE tripwire) BUILT + COMMITTED LOCAL v3.229 — HALT
-  for Preston's push word + felt look; D14 drift reconciled first (`a0a067d`, 3rd doc-drift instance).
-  NOW: Preston's Slice-9 push word + felt look → close-out re-plan.**
-  Per-surface
-  studio-census re-measure = deferred backlog carried to the CLOSE. touches: [arcs,
-  arc-detail, subtheory-build, subtheory-page, notebook]
+- [ ] **R-POLISH — the pre-launch polish round (5 lanes; Fable opens, Opus builds)** — PROMOTED TO
+  NOW at the R-ARC close-out (2026-07-18). **Opens with a FABLE DESIGN SESSION whose charter comes
+  from Preston.** Slots ahead of SCAN/R-SHELF — the control canon must precede control-heavy rounds.
+  - **L1 — XL-tier composition canon ≥1600** (designed at 1920 + per-page passes) — absorbs the
+    carried composition residuals: DW-NAV768 · HOME-LAMP · ON-7 band · the 2560-sag · page-scrollbar.
+  - **L2 — CONTROL CANON** (rule + app-wide sweep) — one control dialect (was: native `<select>` in
+    Pull-from-reading, default inputs, mixed chip/button); **Book-Detail ✎ re-wire is a candidate here**.
+  - **L3 — RD-1 glyph slice, WIDENED** — the candy-glyph palette leak → the arc panel + Home
+    thumbnails + workshop glyph.
+  - **L4 — drag choreography** (lift/settle physical feel; the ROOM-3 under-developed-drag finding).
+  - **L5 — Yumi caption-family removal** (the 3 bare-caption strings; absorbs ON-8 **and RD-6**, the
+    seat's deferred persistent-hint-line retirement).
+  Round-close rider: run the studio-census re-measure (arcs · arc-detail · subtheory-build ·
+  subtheory-page · notebook) if cheap; else ledger it into L1's recon.
+  touches: [global-shell, home, book-detail, arc-detail, notebook, arcs]
+- [x] **R-ARC — the knowledge-arc theorizing system (DEEP round)** — **BUILD COMPLETE + SHIPPED+LIVE
+  (v3.211→v3.229).** Wave A/B (S1→S5 + F4 + FF-7, v3.211→v3.220, felt PASS) · Wave C (S6a→ROOM-3 +
+  Slice 8 dismissal store v3.228 + Slice 9 raised-hand seat v3.229). Full ledger + push ledger in
+  `docs/studio/r-arc.md` and the ## Shipped entry below. **FORMAL CLOSE CONDITION (Preston, verbatim):
+  Wave C and the R-ARC round close on Preston's felt confirmation of the seat — his one-note look on
+  v3.229.** Everything built; only that felt confirmation is outstanding.
 
 ## Next
-- [ ] **SCAN round (studio-scan)** — the studio audit instrument re-enters the steady state: a full seven-lens
-  scan of the next deep-round surface (R-SHELF's Shelf) to draft its round brief before the rebuild.
-  **Slid back one slot at the 2026-07-15 DW close** (was Now). touches: [books]
-- [ ] **R-SHELF — Shelf deep re-round (DEEP)** — the most-used surface predates the R5–R9 Universal maturity;
-  a full five-beat re-round (scan → forks → mockup → build → close). **Slid back one slot at the
-  2026-07-15 DW close** (SCAN, its own precondition, now precedes it here). touches: [books]
-- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — held from R5, non-negotiable: the constellation
-  field's drag/connect touch model on the protected renderer. The truest remaining mobile line. Moved out of
-  Now at the 2026-07-15 DW close (Now is R-ARC alone); **adjacent to R-ARC** (both touch `arc-detail`) — a
-  candidate to fold into that round rather than run standalone, Preston's call. touches: [arc-detail]
-- [ ] **S-B — Sweep + dead-code deletion (SWEEP)** — Import-Capture overlay · Yumi/lens panel · Account
-  residuals + delete the ~2060-L defined-but-unrouted old profile renderers (R9a debt) + tokenize the shared
-  light-skin literals app-wide (3 surfaces). touches: [import-capture, yumi-panel, account, profile]
+**Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate):**
+- [ ] **FINISH-CHOREO slice** — the ROOM-charter-named finish choreography (the mark-as-finished feel).
+- [ ] **R-SHELF — Shelf deep re-round (build)** — the most-used surface predates the R5–R9 Universal
+  maturity. touches: [books]
+- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry, a real
+  landing, sub-400ms. The capture door the whole loop opens on. touches: [import-capture, notebook]
+- [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
+  R-CAPTURE's door**. touches: [books]
+- [ ] **S-B — Sweep + dead-code deletion** — Import-Capture overlay · Yumi/lens panel · Account residuals +
+  delete the ~2060-L defined-but-unrouted old profile renderers (R9a debt) + tokenize shared light-skin
+  literals app-wide. touches: [import-capture, yumi-panel, account, profile]
+- [ ] **R10 — Connections** — the cross-arc/graph round (the R-ARC-named dependency).
+- [ ] **ONBOARDING round** — inherits the Bloom teaching beat (RD-6's retired hint text, handed off from
+  R-POLISH L5).
+- [ ] **BETA-READINESS gate** — NOT a round; the launch checklist: FX-1 · Goodreads import ·
+  export/backup/Settings · admin interim · commons fencing · **RM-SPLAT** · **DISMISS-UNIFY review** ·
+  CAPTURE-OWNER 1b · **the Slice-8 cross-device Firestore leg** (all in `docs/LAUNCH-STATUS.md`).
+- [ ] **R11 — Social / discovery round.**
+- [ ] **S-C + debt** — final sweep + carried debt.
+- [ ] **Feature layers** — Yumi generative wave 1 (**unbidden-speech conversion + the YG-15 amnesty**) ·
+  sounds (Yumi voice + ambient) · the beta loop.
+- [ ] **ARC-FIELD MOBILE TOUCH MODEL (NAMED SLOT, carried)** — the constellation field's drag/connect touch
+  model on the protected renderer; candidate to fold into R-ARC-adjacent work, Preston's call. touches: [arc-detail]
 - [ ] **Overnight batch (`docs/studio/overnight.md`)** — small, single-surface, revert-safe fixes run
-  unattended; committed, never pushed — Preston pushes after the morning felt pass. Builder's Overnight panel
-  is its generated view. touches: [various]
+  unattended; committed, never pushed — Preston pushes after the morning felt pass. touches: [various]
 
 ## Then
 
@@ -676,6 +681,11 @@ never stops a round; it names what a future round should fold in when it arrives
   slice") and never supplied. **Fold into a future polish slice; non-blocking.** The polish
   tier's method is proven on Book Detail (v3.209/v3.210), so the notes can be executed as a
   slice whenever they land.
+- **Verbatim July-14 eruption texts — uncollected.** The real dictation-at-eruption-length inputs
+  (Slice 11 / PWA diligence; "[keyboard clacking]" was captured live). Fold into R-CAPTURE's door
+  verification when supplied. Non-blocking.
+- **WebKit hands-on — pending.** Real-device Safari/iOS pass (the render engine differs from Blink);
+  fold into the BETA-readiness gate. Non-blocking.
 
 ## Standing rules
 
