@@ -144,6 +144,26 @@
         used by chrome in components.css, untouched by this batch.
         Each jewel carries a companion -edge (its deep tone) for the marks'
         inner-design strokes. -- */
+  /* AES-1 · THE ONE GLOW. Every mark glow is this token — never a per-hue halo.
+     SEMANTIC GOLD: gold means presence and attention, never decoration. The
+     glow's OPACITY still carries lum(maturity) (annotation density) exactly as
+     before, so the signal is unchanged; only its costume becomes lawful. The
+     jewel hue now lives in the glyph body alone. */
+  --mark-glow:     var(--gold-world);
+
+  /* AES-2 · the world margin. How much twilight shows around a lit sheet, so a
+     page reads as a sheet ON the world rather than as the world itself. */
+  --sheet-gap:     18px;
+
+  /* AES / B3 rider · --m1 ON PARCHMENT. #D9B24A measures 1.92:1 as a mark FILL
+     on the parchment field (#FDF9EE) — below the 3:1 non-text floor. The
+     ratified --m1 is NOT changed (it is correct on the dark world); instead the
+     two light-ground consumers scope this darker variant, the --teal-on-ground
+     precedent. Recon confirmed the blast radius is exactly the arc-interior
+     field and Home's mini-field — the mark picker and .itx-root render on DARK
+     and must keep the ratified value. */
+  --m1-on-ground:  #B08A25;
+
   --m1:            #D9B24A;  --m1-edge: #A67F1E;   /* gold       */
   --m2:            #C75434;  --m2-edge: #94371F;   /* terracotta */
   --m3:            #7C8B4F;  --m3-edge: #556032;   /* olive      */

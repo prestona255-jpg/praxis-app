@@ -1818,6 +1818,14 @@ function fetchGoogleBooks(isbn, callback) {
         if (coverUrl.indexOf('http://') === 0) {
           coverUrl = 'https://' + coverUrl.slice(7);
         }
+        // AES-5a · THE DOG-EAR. Google Books' thumbnail URLs ship `&edge=curl`,
+        // which bakes a page-fold into the IMAGE ITSELF -- that is the curl on
+        // the Goodreads-looking covers, and it is ours, not the asset's.
+        // googleBooksLargestCover() below already strips it; this read site (and
+        // its twin in the recommend path) took `imageLinks.thumbnail` raw and
+        // only normalised the protocol, so the curl survived here. Same strip,
+        // applied at the same place as the https fix.
+        coverUrl = coverUrl.replace('&edge=curl', '').replace('?edge=curl', '');
       }
       var publishYear = extractYear(v.publishedDate);
       finish({
@@ -1918,6 +1926,8 @@ function fetchBookByTitle(title, author, callback) {
         if (rCoverUrl.indexOf('http://') === 0) {
           rCoverUrl = 'https://' + rCoverUrl.slice(7);
         }
+        // AES-5a · THE DOG-EAR — the twin of the strip in fetchGoogleBooks above.
+        rCoverUrl = rCoverUrl.replace('&edge=curl', '').replace('?edge=curl', '');
       }
       var rPublishYear = extractYear(v.publishedDate);
       finish({

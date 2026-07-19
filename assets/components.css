@@ -12395,15 +12395,27 @@ body.wc-focus .app-nav { opacity:.26; }
 /* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, SHELF-SCOPED (not body).
    Keeps the dark-skin wash geometry; pitched UNDER the v3 ceiling for AA.
    background-image (not shorthand) + fixed so it reads like the mockup's body. */
+/* AES-2 · ONE WORLD, SHEETS ON IT — the Shelf becomes a lit sheet.
+   Recon finding: Shelf and Notebook were still running the PRE-HOME mechanism —
+   each painted its own opaque, full-bleed, background-attachment:fixed ground,
+   the exact technique B1-FIX retired for Home. They never got the conversion, so
+   crossing into them changed apps.
+   NOT `background:transparent` (Home's answer): Home flips its ink ramp to cream
+   and puts work on .lit-page cards. Shelf/Notebook keep DARK ink on light paper,
+   so transparency would put dark text straight onto the twilight world. The sheet
+   itself becomes the lit surface instead — the world shows in the MARGINS.
+   GROUND + WRAPPER ONLY, per the light-touch exemption: the ground recipe, the
+   frame, and the margin. Every internal layout rule, column, and card is
+   untouched — Shelf's composition stays R-SHELF's. */
 .shelf.lum-amber-deep{
-  background-color:var(--paper);
-  background-image:
-    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
-    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
-    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
-    linear-gradient(155deg,#f4efe4,#eee4cd);
-  background-attachment:fixed;
-  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+  background-color:var(--card-1);
+  background-image:linear-gradient(180deg, var(--card-1) 0%, var(--card-2) 100%);
+  background-attachment:scroll;   /* a sheet scrolls with the page; only the world is fixed */
+  width:auto;
+  margin:var(--sheet-gap);
+  min-height:calc(100vh - (var(--sheet-gap) * 2));
+  border-radius:var(--card-radius);
+  box-shadow:var(--card-shadow);
 }
 
 /* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash on the identity head */
@@ -12710,6 +12722,38 @@ body.wc-focus .app-nav { opacity:.26; }
 @media (min-width:1600px){
   .arcfield.lum-amber > *{ max-width:1560px; }
   .arcfield.lum-amber .arcfield-stage{ grid-template-columns:1fr 260px; }
+}
+
+/* ============================================================================
+   AES-1 · THE GLOWS RETIRE (R-POLISH B3) — Mechanism A, the Field's own halo.
+
+   arc-constellation.js:871/882 emit, per mark, a blurred
+   `<circle r="54" fill="var(--subtheory-N)" opacity="lum(maturity)">` behind the
+   glyph. The per-hue fill is the SEMANTIC GOLD violation: colour was decorating.
+
+   Retired by CSS on the renderer's OUTPUT — `fill` is a presentation attribute
+   and loses to any CSS rule, so the locked renderer stays byte-identical (the R1
+   precedent). Selected by `circle[r="54"]`, which is the halo and nothing else:
+   the dots layer's circles carry different radii, so this cannot over-reach.
+
+   THE SPLIT, per the ruling: only `fill` is touched. `opacity` still carries
+   lum(maturity) straight from the renderer, so ANNOTATION DENSITY still reads —
+   the signal is untouched, only its colour becomes lawful. Gold now means one
+   thing wherever it glows: this has been thought about.
+
+   Also scoped here: --m1's on-ground variant. These two surfaces are the only
+   `--subtheory-N` consumers that render on parchment; re-pointing --m1 for the
+   subtree fixes slots 1/6/11/16 through the collapse without touching the
+   ratified token or any dark-ground consumer. */
+.arcfield .arc-detail-web-view svg circle[r="54"],
+.home-arc-ff svg circle[r="54"],
+.home-wf svg circle[r="54"]{
+  fill:var(--mark-glow);
+}
+.arcfield .arc-detail-web-view,
+.home-arc-ff,
+.home-wf{
+  --m1:var(--m1-on-ground);
 }
 
 /* ============================================================================
@@ -13671,15 +13715,18 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, NOTEBOOK-SCOPED (paints over
    the dark body ground, exactly like Shelf R2 / Home R3) */
+/* AES-2 · ONE WORLD, SHEETS ON IT — the Notebook becomes a lit sheet.
+   The twin of the Shelf conversion above; same reasoning, same bounded scope
+   (ground recipe + frame + margin only, zero composition change). */
 .notebook.lum-amber-deep{
-  background-color:var(--paper);
-  background-image:
-    radial-gradient(72% 56% at 16% 4%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
-    radial-gradient(60% 52% at 88% 14%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
-    radial-gradient(82% 62% at 64% 104%,rgba(232,176,104,.30) 0%, rgba(232,176,104,0) 60%),
-    linear-gradient(155deg,var(--paper),var(--u-ground-2));
-  background-attachment:fixed;
-  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+  background-color:var(--card-1);
+  background-image:linear-gradient(180deg, var(--card-1) 0%, var(--card-2) 100%);
+  background-attachment:scroll;
+  width:auto;
+  margin:var(--sheet-gap);
+  min-height:calc(100vh - (var(--sheet-gap) * 2));
+  border-radius:var(--card-radius);
+  box-shadow:var(--card-shadow);
 }
 
 /* the bound-book spread — SOLID sheet on light, radius + WARM shadow kept (the one

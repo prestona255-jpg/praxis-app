@@ -2812,6 +2812,19 @@ function normalizeCoverUrlsToHttps(booksMap) {
         book.coverUrl = 'https://' + book.coverUrl.slice(7);
         changed = true;
       }
+      // AES-5a · THE DOG-EAR, healed for covers ALREADY STORED. The fetch-side
+      // strips (integrations.js) only protect covers saved from now on; books
+      // added before this ship keep `&edge=curl` baked into their saved URL, so
+      // the fold would persist for exactly the books that showed it. This is the
+      // same rewrite class this function already performs on the same field --
+      // an idempotent string normalisation of coverUrl, flushed by the same
+      // caller via the same `changed` flag. NOT a new write class: no new field,
+      // no new record, no new save path.
+      if (book && typeof book.coverUrl === 'string' &&
+          book.coverUrl.indexOf('edge=curl') !== -1) {
+        book.coverUrl = book.coverUrl.replace('&edge=curl', '').replace('?edge=curl', '');
+        changed = true;
+      }
     }
   }
   return changed;

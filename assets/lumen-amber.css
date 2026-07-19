@@ -174,7 +174,11 @@
 .lum-mark > .g{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:calc(var(--cd,52px) * 1.95); height:calc(var(--cd,52px) * 1.95);
-  border-radius:50%; background:radial-gradient(circle, var(--mk-glow) 0%, transparent 68%); opacity:.55;
+  /* AES-1 (R-POLISH B3): the per-hue halo retires. marks.js stamps a literal hex
+     into an inline --mk-glow; that read is DROPPED here so the glow is gold-only,
+     app-wide, without editing byte-locked marks.js. Ruled edit — byte-lock
+     re-recorded in the same commit. */
+  border-radius:50%; background:radial-gradient(circle, var(--mark-glow) 0%, transparent 68%); opacity:.55;
 }
 .lum-mark > svg{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
