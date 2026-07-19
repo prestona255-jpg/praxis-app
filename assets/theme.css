@@ -28,7 +28,7 @@
   --sunk-d:        #241406;
   --dark-2:        #2a1a0c;
   /* -- new Umber: bright page surfaces -- */
-  --page:          #f8f1e1;
+  --page:          #f4efe4;  /* R-POLISH S0: v1.1 canon paper (was #f8f1e1) */
   --page-2:        #fcf6e8;
   --meta:          #9a7e4e;
   --text-d:        #f0e3c8;
@@ -57,16 +57,23 @@
   --scrim:         rgba(15,9,4,.6);
 
   /* -- existing shared tokens, re-pointed to BRIGHT-page base values -- */
+  /* R-POLISH Slice 0: :root reconciled to the Universal v1.1 token sheet (§3).
+     Global defaults were pre-v1.1 while the scoped light skins already ran v1.1
+     (the drift the census flagged). Rendered surfaces mostly shadow these via
+     [data-ground="dark"] / scoped blocks, so this is near-zero visual delta;
+     it aligns the default so future unscoped light surfaces are born correct.
+     --gold-deep is ADDED (it was referenced but undefined at :root). */
   --ink:     #241710;
-  --ink-2:   #4d3b2a;
-  --ink-3:   var(--meta);
-  --ink-4:   var(--meta);
-  --gold:    var(--gold-ink);
+  --ink-2:   #645940;
+  --ink-3:   #978b6d;
+  --ink-4:   #978b6d;
+  --gold:    #a8761a;
+  --gold-deep: #855410;
   --bg:      var(--page);
-  --surface: var(--page-2);
+  --surface: #fffdf8;
   --border:  var(--line-page);
   --br-deep:      #1c1209;
-  --surface-2:    var(--page-2);
+  --surface-2:    #efe7d6;
   --gold-light:   var(--gold-ink);
   --gold-text:    var(--gold-ink);
   --river:        #3a5a8a;
@@ -384,6 +391,12 @@
   --gold:          #d2a23e;
   --gold-light:    var(--gold-soft);
   --gold-text:     var(--gold-soft);
+  /* R-POLISH S0 red-team fix: --gold-deep is now defined at :root (#855410, the
+     light-page AA gold). On the dark study it must NOT stay #855410 (dark-on-dark);
+     re-point it to the bright gold so unscoped dark-ground uses (e.g.
+     .account-readermodel .rm-col-will) stay legible. Scoped .lum-amber-deep skins
+     keep their own #855410 on their light paper via higher specificity. */
+  --gold-deep:     var(--gold-soft);
 }
 
 body {
