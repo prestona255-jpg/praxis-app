@@ -394,7 +394,20 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
+  // R-POLISH B1 · PG-1 (THE PAGE-GROUND LAW) -- 'home' LEAVES the dark set.
+  // "Paper by day, sky for beholding": Home is a WORKING surface, so it joins its
+  // siblings as full-bleed light paper and its warmth is re-expressed IN the page
+  // (the daylight gradient family on .home-page), not by a dark vignette behind a
+  // floating sheet. Dark is reserved for beholding surfaces.
+  //
+  // This flip re-resolves EVERY ground-sensitive token on the page at once, so it
+  // is sampled before/after at 390/1280/1920 (docs/checkpoints/r-polish-b1.md).
+  // It does NOT touch the nav: theme.css lists .app-nav (and .yumi-bloom,
+  // .yumi-panel, .spotlight-panel) as INDEPENDENT selectors on the dark remap, so
+  // that chrome self-darkens over any ground. The comment in components.css that
+  // said Home must stay dark "so the nav stays consistent" was reasoning from a
+  // premise that the token sheet does not require; it is corrected there.
+  var umberGroundDark = { books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -2849,6 +2862,42 @@ function setNotebookComposing(on) {
   }
 }
 
+// ── R-POLISH B1 · UX-3 (THE FORGIVENESS LAW) — SUBMIT DEBOUNCE ──────────────
+// "All submit actions debounce -- killing the double-fire class at the root."
+// The composer's commit() has TWO entry points (the Capture button's click and
+// the composer's Enter keydown), so a double-click, or an Enter that lands
+// beside a click, can run it twice and write two identical entries. The recon
+// flagged exactly that shape: two identical marginalia moments apart.
+//
+// Both guards are MODULE-scoped on purpose. captureNote() re-renders the whole
+// spread, which rebuilds the composer and throws away its closure -- a guard
+// held inside buildNotebookWriteline would be reset by the very render it is
+// meant to survive.
+//   nbLastCommitAt : time gate for the SYNCHRONOUS (text-only) path.
+//   nbCommitBusy   : in-flight gate for the ASYNC (staged-photo) path, where an
+//                    IndexedDB put can outlive the time gate. Released on BOTH
+//                    the success and the error branch, so a failed put can never
+//                    wedge the composer shut (a lock you cannot release is a
+//                    worse bug than the double-write it prevents).
+// This ADDS a guard; it never deletes or rewrites an existing entry.
+var nbLastCommitAt = 0;
+var nbCommitBusy = false;
+var NB_COMMIT_DEBOUNCE_MS = 700;
+// Generation token for the in-flight gate (red-team finding 2). The backstop
+// timeout below must only ever release the commit that ARMED it: commit #1 can
+// finish legitimately at T+2s, commit #2 can start at T+3s with its own uploads
+// still in flight, and #1's stale T+15s timer would then unlatch #2's gate --
+// reopening the exact double-write race UX-3 exists to close, for the very
+// window it is meant to protect. Each commit takes the next token; a backstop
+// fires only if the token it captured is still the current one.
+var nbCommitGen = 0;
+
+// B1 · MO-1 SAVE PULSE — "every capture/save visibly answers the hand." Holds the
+// id of the note just committed; renderNotebookEntry consumes it exactly once (it
+// nulls the var as it applies the class), so the pulse fires on the commit render
+// and never again on an unrelated re-render. Render-layer only, never persisted.
+var nbJustSavedId = null;
+
 // N2: inline capture (the writeline). A composer + register chips (the mic is
 // DEFERRED to N2b; camera arrives in N2b photo capture). The selected register
 // is closure-local so a chip click never loses typed text. Enter (no shift)
@@ -3066,6 +3115,12 @@ function buildNotebookWriteline(activeKey) {
   function commit() {
     var body = (input.value || '').replace(/^\s+|\s+$/g, '');
     if (!body && stagedImages.length === 0) { return; }
+    // UX-3 debounce (see the module vars above). Placed AFTER the empty check so
+    // an empty Enter never arms the gate, and BEFORE any state mutation so a
+    // suppressed second fire touches nothing at all.
+    var nbNow = Date.now();
+    if (nbCommitBusy || (nbNow - nbLastCommitAt) < NB_COMMIT_DEBOUNCE_MS) { return; }
+    nbLastCommitAt = nbNow;
     // S2 durability law: consuming the draft CLEARS it, and captureNote no-ops on a
     // signed-out caller -- so clearing without a live user would destroy the text and
     // write nothing. Confirm the write can land FIRST, and clear ONLY on the branch
@@ -3099,8 +3154,25 @@ function buildNotebookWriteline(activeKey) {
       // Clear the draft only now, when captureNote is certain to run -- a hung or
       // aborted put never reaches here, so the text survives.
       nbDraftClear(nbOwnerUid, activeKey);
+      nbCommitBusy = false;          // released BEFORE the re-render swaps this composer out
       captureNote(selected, body, activeKey, clean);
     }
+    // UX-3: hold the in-flight gate across the async puts. Both the success and
+    // the error callback decrement `remaining` and funnel into finalize(), so the
+    // normal release is covered on either branch. The timeout is the backstop for
+    // the one case neither covers -- an IndexedDB put that never calls back at
+    // all: without it the gate would latch and the composer would be permanently
+    // unable to save, which is a worse failure than the double-write it guards.
+    nbCommitBusy = true;
+    nbCommitGen = nbCommitGen + 1;
+    (function(myGen) {
+      window.setTimeout(function() {
+        // Only unlatch if THIS commit still owns the gate. If a later commit has
+        // since armed it (nbCommitGen moved on), that commit's own backstop is
+        // the one entitled to release it -- never this stale one.
+        if (nbCommitGen === myGen) { nbCommitBusy = false; }
+      }, 15000);
+    })(nbCommitGen);
     var i;
     for (i = 0; i < stagedImages.length; i = i + 1) {
       (function(si, idx) {
@@ -3263,6 +3335,7 @@ function captureNote(register, body, activeKey, images) {
   };
   markNotebookDirty();
   saveState();
+  nbJustSavedId = id;          // B1/MO-1: the render below answers the hand
   if (register === 'journal') { notebookActiveTab = 'journal'; }
   else if (filed) { notebookActiveTab = bookIds[0]; }
   else { notebookActiveTab = 'inbox'; }
@@ -15078,6 +15151,13 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
 
   var card = document.createElement('article');
   card.className = 'notebook-entry' + (gathered ? ' notebook-entry-gathered' : '');
+  // B1/MO-1 (SAVE PULSE): the entry carries its id so the just-committed note can
+  // be found after the re-render and answered visibly. Display-only attribute.
+  card.setAttribute('data-entry-id', capturedId);
+  if (nbJustSavedId && capturedId === nbJustSavedId) {
+    card.className = card.className + ' mo-savepulse';
+    nbJustSavedId = null;   // one pulse per commit, never on a later re-render
+  }
   card.style.setProperty('--reg',
     isMarg ? 'var(--marginalia-color)'
            : (isQues ? 'var(--question-color)' : 'var(--journal-color)'));
@@ -18986,8 +19066,8 @@ function _pfWire(wrap, uid, vis) {
       if (act === 'preview') {
         _pfPreview = true;
         // R9b: the profile INTRO beat is owner-only -> drop the W9 panel/summon in preview too.
+        // B1/AMB-1: the .intro-summon removal that rode here is gone with the summon itself.
         var _ip = document.querySelector('.intro-panel-wrap'); if (_ip && _ip.parentNode) { _ip.parentNode.removeChild(_ip); }
-        var _is = document.querySelector('.intro-summon'); if (_is && _is.parentNode) { _is.parentNode.removeChild(_is); }
         renderProfilePage(); return;
       }
       if (act === 'exit-preview') { _pfPreview = false; renderProfilePage(); return; }

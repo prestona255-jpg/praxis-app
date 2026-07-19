@@ -15,7 +15,11 @@ CC-1 targets: custom listbox ≥760 / styled-native <760. **Exit target: 5 → 1
 ### 2 · Default/unstyled text inputs + textareas — **inputs 43 · textareas 10** (53 total)
 - `<input>`: `createElement('input')` = **38** + HTML-string (classed) = **5** (profile ×3 `pf-field`,
   intros ×2 `ij-typein`). Of the 38 DOM inputs, a chunk are `type=file` (camera/scan/library/cover
-  upload) and the nav search (`spotlight.js:306`, `views.js:4649`) — the true *text* inputs (title,
+  upload) and the search inputs (`spotlight.js:306` = the ⌘K OVERLAY; `views.js:4649` =
+  `#shelf-search-input`, the Shelf grid filter). **CORRECTED 2026-07-19 (B1/N1):** neither of
+  those is the NAV search — the nav bar's own input is static markup at `index.html:30`
+  (`.app-nav-search-input`). B1 converted index.html:30 and left the other two alone
+  (the Shelf one is an exempt surface) — the true *text* inputs (title,
   author, gather-name, chat, genre-free, portrait) are the CC-2 carve targets. Most `createElement`
   inputs receive **no shared control class** → the "unstyled/default" fracture.
 - `<textarea>`: `createElement('textarea')` = **8** (views.js 2863/3503/6708/9418/14843/16541/16874/20231)

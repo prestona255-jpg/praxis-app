@@ -14,6 +14,11 @@
 <script src="/assets/marks.js" defer></script>
 <link rel="stylesheet" href="/assets/theme.css">
 <link rel="stylesheet" href="/assets/components.css">
+<!-- R-POLISH foundation kit (SYS-1 space scale + TY-1 ramp + C-patterns control
+     canon + MO-1 motion + people components). Loads AFTER components.css so the
+     kit's own classes settle last; every kit selector is a net-new .k-*/.ty-*/.mo-*
+     name, so it contests nothing that already ships. Promoted into the app by B1. -->
+<link rel="stylesheet" href="/assets/praxis-kit.css">
 <!-- Universal depth v1.2 — the §8 Light & Depth foundation (CX-5 slice, R2). Loads
      the decorative depth tokens (--gold-hi, --field-1..10, --thread) + the .u-*
      recipe classes app-wide; the canonical single source, inlined by
@@ -27,7 +32,15 @@
 <nav class="app-nav">
   <a href="#home" class="app-nav-wordmark">praxis</a>
   <div class="app-nav-search">
-    <input type="search" class="app-nav-search-input" placeholder="Search your shelf&hellip;" aria-label="Search" autocomplete="off">
+    <!-- B1: placeholder + aria-label corrected to the control's TRUE scope
+         (UX-2): the Slice-0 recon established that ⌘K searches sub-theories,
+         books, authors, arcs AND notebook entries — not "your shelf". COPY IS A
+         CONTRACT: it now names what it actually does.
+         The CC-2 carved grammar is applied to the WELL (.app-nav-search) in
+         components.css, NOT as .k-field on this input: .k-field carries
+         min-height:44px for touch, which would burst the 38px nav bar. The well
+         is the control here; the input is its text surface. -->
+    <input type="search" class="app-nav-search-input" placeholder="Search books, arcs, notes&hellip;" aria-label="Search books, arcs, sub-theories and notes" autocomplete="off">
     <span class="app-nav-search-kbd" aria-hidden="true">&#8984;K</span>
   </div>
   <ul class="app-nav-list">

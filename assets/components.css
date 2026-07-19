@@ -9,17 +9,21 @@
 /* ===== YUMI PANEL — Stage 2.3 ===== */
 
 /* Bloom -- Yumi's global presence (replaces the old 'Y' FAB). A warm
-   SVG heart on the warm surface: NO dark vessel. The orb stacks above a
-   per-route contextual line (set in yumi-ui.js). */
+   SVG heart on the warm surface: NO dark vessel.
+   R-POLISH B1 · AMB-1 (THE CORNER LAW): the flower is ONE of the two ruled
+   fixed elements (bottom-right; the "+" create door owns bottom-left), and it
+   carries ONE ruled size and ONE ruled glow at every width and on every route.
+   The per-route caption that used to stack beneath the orb is RETIRED (L5), so
+   the button is now the orb alone -- hence the column flex + gap collapse to a
+   single centred item. Its accessible name is the button's own aria-label. */
 .yumi-bloom {
   position: fixed;
   bottom: var(--sp-5);
   right: var(--sp-5);
   z-index: 9999;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--sp-1);
+  align-items: center;
+  justify-content: center;
   margin: 0;
   padding: 0;
   border: none;
@@ -29,11 +33,15 @@
   cursor: pointer;
 }
 
+/* AMB-1 · THE ONE RULED SIZE + THE ONE RULED GLOW. 56px orb, one drop-shadow
+   recipe -- identical on every route and at every width (the <=759 block no
+   longer varies the flower now that the caption it hid is gone). --gold is
+   ground-aware (theme.css re-points it under .yumi-bloom), so the glow reads on
+   the dark study AND on the light paper Home without a second recipe. */
 .yumi-bloom-orb {
   display: block;
   width: 56px;
   height: 56px;
-  /* A soft warm glow grounds Bloom on the surface without a container. */
   filter: drop-shadow(0 3px 12px color-mix(in srgb, var(--gold) 38%, transparent));
 }
 
@@ -44,19 +52,7 @@
   overflow: visible;
 }
 
-.yumi-bloom-line {
-  max-width: 184px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
-  text-align: right;
-  color: var(--ink-3);
-}
-
-.yumi-bloom:hover .yumi-bloom-line {
-  color: var(--ink);
-}
+/* L5: .yumi-bloom-line and its :hover are RETIRED with the caption family. */
 
 .yumi-bloom:focus {
   outline: none;
@@ -5462,11 +5458,11 @@
     display: block;
   }
 
-  /* Stage 4: the Yumi bloom is a fixed FAB. On mobile its sprawling hint line
-     overlaps page content, so show the orb only; a bottom scroll-gutter lets
-     the last content clear the orb (and the home indicator). Desktop keeps the
-     per-route hint line untouched. The orb still renders on every surface. */
-  .yumi-bloom-line { display: none; }
+  /* Stage 4: the Yumi bloom is a fixed FAB, so a bottom scroll-gutter lets the
+     last content clear the orb (and the home indicator).
+     B1/L5: the `.yumi-bloom-line{display:none}` that used to hide the sprawling
+     hint line here is retired -- there is no caption at any width now, which is
+     what makes AMB-1's "ONE ruled size" true rather than width-conditional. */
   #app { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 
   /* Phase 3.1: the glass search is desktop chrome; hide it on the
@@ -13048,23 +13044,49 @@ body.wc-focus .app-nav { opacity:.26; }
   --lum-gold-ink:#3d2807;   /* dark ink on gold fills */
   /* The locked sub-theory constellation renderer (arc-constellation.js, out of
      scope) draws its TEXT + inert chrome from the GLOBAL --ink-family and --sunk
-     tokens, NOT --lum-*. Home keeps body[data-ground="dark"] (so the nav stays
-     consistent with the other dark routes), so those globals would otherwise
-     resolve to their pale dark-ground values (--muted #c2a87f, --sunk #6b4a23)
-     and fail on this LIGHT field -- the always-drawn "Yumi" node label, the
-     empty-arc hint, and inert book squares. Re-point them to the light ink ramp
-     so the renderer reads dark-on-light INSIDE home only (nav + other routes
-     unaffected). The luminous marks + threads use field hues / --thread-color /
-     --marginalia-color, so they are untouched. */
+     tokens, NOT --lum-*.
+     R-POLISH B1 · PG-1: Home is NO LONGER data-ground="dark" (views.js dropped
+     'home' from umberGroundDark), so these are no longer a correction for the
+     dark remap -- they ARE Home's light ink ramp, and they are KEPT deliberately.
+     The old rationale here ("Home keeps data-ground=dark so the nav stays
+     consistent") was reasoning from a premise theme.css does not require: the
+     dark remap lists .app-nav / .yumi-bloom / .yumi-panel / .spotlight-panel as
+     INDEPENDENT selectors, so that chrome self-darkens over any ground.
+     Why KEEP them rather than fall through to :root — the Slice-0 contrast gate
+     measured :root's --ink-3 (#978b6d) at 2.94:1 on --paper, a WCAG AA FAIL.
+     #645940 is the AA-safe collapse (~6:1). Deleting these as "now redundant"
+     would be a contrast REGRESSION, not a cleanup. */
   --ink-2:#645940;   /* renderer text: Yumi label / question / empty hint (~6:1 on the light field) */
   --ink-3:#645940;
   --ink-4:#978b6d;   /* renderer inert chrome: book-square + node strokes */
   --sunk:#e3d4b0;    /* renderer book-square fill -> the bright --sunk value */
 }
 
-/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, HOME-SCOPED (paints over
-   the dark body::before, exactly like the Shelf R2 .shelf.lum-amber-deep ground) */
+/* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, HOME-SCOPED.
+   R-POLISH B1 · PG-1 + XL-1 -- THE PAPER IS THE PAGE, NOT A SHEET.
+   Measured before this change (rig, 1920x1080): .home-page was x=173 w=1560,
+   because DW-2 caps it at max-width:1560px from 1200up. The paper therefore
+   STOPPED at 1560 and the dark body ground showed through as 173px gutters on
+   each side -- P-G's "light sheet on a dark frame", and an 8px twin seam at 390.
+   The element's own background can never fix that: it is bounded by the very box
+   that creates the frame, and painting the same gradient on both the element and
+   the viewport would seam anyway (a 1560-wide gradient and a 1920-wide one do not
+   line up).
+   So the ground moves to a VIEWPORT-FIXED layer and the element goes transparent.
+   One continuous paper world at every width, with the composition box free to
+   stay 1560 for measure. This is the same technique as the global body::before
+   ground (and the .home-welcome::before lamplight below), scoped to Home. */
 .home-page.lum-amber-deep{
+  background-color:transparent;
+  background-image:none;
+  box-shadow:none;
+}
+.home-page.lum-amber-deep::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-1;              /* root stacking context, painted after body::before */
+  pointer-events:none;
   background-color:var(--paper);
   background-image:
     radial-gradient(70% 55% at 14% 2%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
@@ -13072,8 +13094,7 @@ body.wc-focus .app-nav { opacity:.26; }
     radial-gradient(82% 62% at 72% 104%,rgba(232,176,104,.32) 0%, rgba(232,176,104,0) 60%),
     radial-gradient(58% 50% at 26% 96%, rgba(217,164,65,.20) 0%, rgba(217,164,65,0) 60%),
     linear-gradient(155deg,#f4efe4,#eee4cd);
-  background-attachment:fixed;
-  box-shadow:inset 0 0 60px rgba(133,84,16,.10);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.10);   /* the vignette now hugs the VIEWPORT, not the sheet edge */
 }
 
 /* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash behind the welcome/
@@ -14067,9 +14088,10 @@ body.wc-focus .app-nav { opacity:.26; }
 .intro-panel.is-dark .intro-new{ color:var(--lum-gold-l); border-color:rgba(255,206,74,.35); }
 .intro-tag{ font-family:var(--lum-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; opacity:.7; }
 
-/* re-summon: quiet fixed control, appears only after a surface's intro was seen */
-.intro-summon{ position:fixed; left:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:9990; width:36px; height:36px; border-radius:50%; display:none; align-items:center; justify-content:center; background:var(--lum-base); border:1px solid var(--lum-glass-bd-2); color:var(--lum-gold); font-family:var(--lum-serif); font-style:italic; font-size:18px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.4); transition:border-color .25s,color .25s; }
-.intro-summon:hover{ border-color:var(--lum-gold-d); color:var(--lum-gold-l); }
+/* R-POLISH B1 · AMB-1 -- the .intro-summon re-summon control is RETIRED (its
+   rules, its :hover, and its <=759 reposition below). Only the "+" create door
+   and the Yumi flower may float. Its content lives in About's "Re-enter a page"
+   section, built from the same INTROS source (js/intros.js PART B). */
 
 /* About Orientation additions (bright About ground; theme + lum font tokens) */
 /* W10: re-scoped from the retired .about-panel switcher to .about -- these
@@ -14082,7 +14104,6 @@ body.wc-focus .app-nav { opacity:.26; }
 @media (max-width:759px){
   .intro-panel-wrap{ padding:0 12px calc(14px + env(safe-area-inset-bottom)); }
   .intro-panel{ max-width:none; }
-  .intro-summon{ left:12px; bottom:calc(84px + env(safe-area-inset-bottom)); }
 }
 /* ===== end W9 · INTRO JOURNEY (Part A) ===== */
 
@@ -14565,3 +14586,373 @@ body.wc-focus .app-nav { opacity:.26; }
   .pf-root .pf-field textarea{ font-size:16px; }
 }
 /* END R9a Profile / Galaxy */
+
+/* =====================================================================
+   R-POLISH B1 — HOME (PG-1 · XL-1 · TY-1 · MO-1 · CC-2/CC-4)
+   Appended last on purpose: every rule here is a deliberate override of an
+   earlier equal-specificity Home rule, so source order carries it without
+   inflating selectors. Desktop-first discipline (canon §3) is respected —
+   anything that must differ below 760 carries its own max-width query, and
+   nothing here edits a shared base rule that both widths want differently.
+   ===================================================================== */
+
+/* --- TY-1 · THE 12px ABSOLUTE FLOOR ---------------------------------------
+   Measured before: SEVEN Home classes rendered below the floor at every width
+   (.home-reading-status 9px · .home-sectlabel/.home-arcmeta/.home-gl 10px ·
+   .home-wfcap/.home-fieldstat/.home-gl-link 11px). TY-1: "the ramp carries a
+   12px absolute floor; nothing in the app renders smaller."
+   Section headers additionally move UP the ramp out of the single mono-caps
+   whisper: .home-sectlabel and .home-gl are real headings now (DM Sans, ink-2),
+   while true meta (counts, status) stays mono at the floor. */
+.home-page.lum-amber-deep .home-sectlabel,
+.home-page.lum-amber-deep .home-gl{
+  font-family:var(--font-body);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-transform:none;
+  color:var(--ink-2);
+}
+.home-page.lum-amber-deep .home-wfcap,
+.home-page.lum-amber-deep .home-fieldstat,
+.home-page.lum-amber-deep .home-arcmeta,
+.home-page.lum-amber-deep .home-reading-status{
+  font-size:12px;
+  color:var(--ink-2);
+}
+/* .home-gl-link is a link inside a heading row: it keeps the body face, sits at
+   the floor, and gets a 24px pointer target (ruled minimum for link-row actions).
+   Measured before: 18px tall. */
+.home-page.lum-amber-deep .home-gl-link{
+  font-size:12px;
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+  color:var(--gold-deep);          /* light-ground gold for small text (AA) */
+  border-bottom-color:var(--gold);
+}
+
+/* --- CC-4 · gold as small text on light = --gold-deep ---------------------
+   The ground-check-first rail: on Home's light paper, small gold text resolves
+   to --gold-deep (#855410, 5.95:1) rather than --gold (#a8761a, 3.92:1 — a fail
+   below 18px per the Slice-0 contrast gate). Display-size gold is unaffected. */
+.home-page.lum-amber-deep .home-arcbtn:not(.home-arcbtn-primary){
+  color:var(--gold-deep);
+}
+
+/* --- CC-4 · focus-visible = 2px gold ring, --gold-deep on this light ground */
+.home-page.lum-amber-deep a:focus-visible,
+.home-page.lum-amber-deep button:focus-visible{
+  outline:2px solid var(--gold-deep);
+  outline-offset:2px;
+}
+
+/* --- MO-1 · THE APP ANSWERS YOUR HAND ------------------------------------
+   Two durations, two easings, the named moments that apply on this surface:
+   hover lift, press, and the panel/route reveal. Home had zero motion before
+   this except the seg's colour fade. Reduced-motion kills all of it at the foot
+   of this block. */
+.home-page.lum-amber-deep .home-arc,
+.home-page.lum-amber-deep .home-glimpse,
+.home-page.lum-amber-deep .home-arc-start{
+  transition:transform var(--dur-fast) var(--ease-standard),
+             box-shadow var(--dur-fast) var(--ease-standard),
+             border-color var(--dur-fast) var(--ease-standard);
+}
+.home-page.lum-amber-deep .home-arc:hover,
+.home-page.lum-amber-deep .home-glimpse:hover,
+.home-page.lum-amber-deep .home-arc-start:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 26px -14px rgba(133,84,16,.45);
+}
+.home-page.lum-amber-deep .home-arc:active,
+.home-page.lum-amber-deep .home-arcbtn:active,
+.home-page.lum-amber-deep .home-arc-start:active,
+.home-page.lum-amber-deep .seg-opt:active{
+  transform:translateY(1px) scale(.99);
+  transition:transform 90ms var(--ease-standard);
+}
+.home-page.lum-amber-deep .home-arcbtn{
+  transition:color var(--dur-fast) var(--ease-standard),
+             border-color var(--dur-fast) var(--ease-standard),
+             box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+/* --- XL-1 · THE DESK WIDENS (tier >=1600, designed at 1920) ---------------
+   The composition box stays measure-bound; what widens is the working column
+   and the rail, so the page composes rather than stretches. The 173px side
+   margins are now PAGE MARGIN on continuous paper, not a frame around a sheet
+   (the fixed ground above is what makes that true). */
+@media (min-width:1600px){
+  .home-page.lum-amber-deep.home-composed{
+    max-width:1680px;
+    grid-template-columns:minmax(0,1fr) 360px;
+    column-gap:var(--space-xl,32px);
+  }
+  .home-page.lum-amber-deep .home-glimpse{ flex:1 1 auto; }
+}
+
+/* --- PG-1 · the 390 seam, and why there is no rule for it here ------------
+   Measured before: an 8px dark gutter each side at 390. Traced to the UA
+   default `body{margin:8px}`, which this app never resets at phone widths —
+   NOT to Home's own padding (that was already `30px 0 80px`, i.e. 0 on the
+   sides), so a padding override here would have been dead CSS.
+   The viewport-fixed paper ground above already paints that 8px band, so the
+   seam is gone at 390 without touching a shared chrome rule that every other
+   surface also stands on. The body-margin reset itself is logged as a residual
+   for the app-wide chrome pass rather than reached for from Home's batch. */
+
+/* --- MO-1 · reduced-motion kills every moment above, globally -------------- */
+@media (prefers-reduced-motion:reduce){
+  .home-page.lum-amber-deep .home-arc,
+  .home-page.lum-amber-deep .home-glimpse,
+  .home-page.lum-amber-deep .home-arc-start,
+  .home-page.lum-amber-deep .home-arcbtn{
+    transition:none!important;
+  }
+  .home-page.lum-amber-deep .home-arc:hover,
+  .home-page.lum-amber-deep .home-glimpse:hover,
+  .home-page.lum-amber-deep .home-arc-start:hover,
+  .home-page.lum-amber-deep .home-arc:active,
+  .home-page.lum-amber-deep .home-arcbtn:active,
+  .home-page.lum-amber-deep .home-arc-start:active,
+  .home-page.lum-amber-deep .seg-opt:active{
+    transform:none!important;
+  }
+}
+
+/* --- UX-2 · the nav active state, made unmistakable ----------------------
+   Canon §4-B rules a 2px gold underline with its space reserved so toggling
+   never shifts layout. The live rule only changed the link's COLOUR to --ink,
+   which on the dark nav is a whisper away from the resting --ink-3. The
+   underline is added here (desktop) with a transparent twin on every link so
+   the row never reflows. */
+@media (min-width:760px){
+  .app-nav-link:not(.app-nav-profile){
+    border-bottom:2px solid transparent;   /* reserved space, always */
+    border-radius:0;
+  }
+  .app-nav-link.app-nav-link-active:not(.app-nav-profile),
+  .app-nav-link.app-nav-link-active:not(.app-nav-profile):hover{
+    border-bottom-color:var(--gold);
+    color:var(--ink);
+    font-weight:600;
+  }
+}
+
+/* --- CC-2 · the nav search well, carved ----------------------------------
+   The control converts at the WELL, not the input: .k-field carries a 44px
+   touch min-height that would burst the 38px nav bar. Same carved grammar —
+   a ground-layer recess with one inset shadow — expressed at the right element. */
+.app-nav-search{
+  background:var(--sunk);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+  transition:border-color var(--dur-fast) var(--ease-standard),
+             box-shadow var(--dur-fast) var(--ease-standard);
+}
+.app-nav-search:focus-within{
+  border-color:var(--gold);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28), 0 0 0 3px rgba(210,162,62,.22);
+}
+/* END R-POLISH B1 — HOME */
+
+/* =====================================================================
+   R-POLISH B1 — NOTEBOOK (NBK-1 · XL-1 · TY-1 · MO-1 · UX-3)
+   ===================================================================== */
+
+/* --- NBK-1 · THE LEAF KEEPS GROWING (reconciled, NOT overridden) ----------
+   The brief's original NBK-1 premise -- "the note stream scrolls WITHIN the
+   leaf" -- was checked against the code at Slice 0 and found to CONTRADICT a
+   deliberate ruling carried by three independent artifacts: the source mockups
+   (design/notebook.html), the ship checkpoint (notebook-hybrid.md: min-height
+   430, no scroll), and DW-2's stress test, which rendered 200 notes straight
+   down the page and measured only render time. A bounded, scrolling leaf would
+   be a NEW design decision, not a polish fix.
+   So the growth is HONOURED and COMPOSED instead: the spread is a 2-track grid,
+   so both leaves already share one height and the frame grows with the longer
+   stream. What was uncomposed is the OTHER leaf -- a long left stream left the
+   right leaf as a tall blank column. That is an empty state, and SYS-1 says
+   every empty state teaches or invites, so it is composed below rather than
+   left to stretch. Nothing here bounds or scrolls the stream. */
+.notebook.lum-amber-deep .leaf-right > *{
+  position:sticky;
+  top:var(--space-lg,24px);        /* the right leaf's content stays with the reader
+                                      as the left stream grows past a screen */
+}
+.notebook.lum-amber-deep .leaf-right:empty::after,
+.notebook.lum-amber-deep .nb-rightempty{
+  display:block;
+  font-family:var(--font-serif);
+  font-size:15px;
+  line-height:1.6;
+  color:var(--lum-ink-3);
+  max-width:34ch;
+}
+
+/* --- XL-1 · BOTH LEAVES WIDEN AT THE >=1600 TIER --------------------------
+   DW-2 already widened the governor 900 -> 1360 at >=1200. The XL tier carries
+   it to 1680 (the same tier width Home composes on), so each leaf grows rather
+   than the spread stranding in the middle of a wide desk. The reading measure
+   stays bounded by the 70ch cap on the note body, so lines never run long. */
+@media (min-width:1600px){
+  .notebook.lum-amber-deep > *{ max-width:1680px; }
+  .notebook.lum-amber-deep .leaf{ padding:30px 34px; }
+}
+
+/* --- TY-1 · THE 12px ABSOLUTE FLOOR, NOTEBOOK ----------------------------
+   Measured before: TWENTY classes in the Notebook amber skin rendered below the
+   floor (9px .nb-yname-tag/.nb-ctag/.nb-modes-label · 9.5px entry timestamp,
+   visibility, leaftag, banklabel, cover-author, newborn-eyebrow, glab ·
+   10px .nb-tab count, entry lock · 10.5px the entry ACTION LINKS (Gather / Send
+   / Delete) · 11-11.5px the rest). Nothing in the app renders smaller than 12. */
+.notebook.lum-amber-deep .nb-yname-tag,
+.notebook.lum-amber-deep .nb-ctag,
+.notebook.lum-amber-deep .nb-modes-label,
+.notebook.lum-amber-deep .notebook-entry-ts,
+.notebook.lum-amber-deep .notebook-entry-vis,
+.notebook.lum-amber-deep .notebook-entry-src,
+.notebook.lum-amber-deep .nb-leaftag,
+.notebook.lum-amber-deep .nb-bb-banklabel,
+.notebook.lum-amber-deep .nb-bb-cover-author,
+.notebook.lum-amber-deep .nb-newborn-eyebrow,
+.notebook.lum-amber-deep .nb-glab,
+.notebook.lum-amber-deep .nb-tab .c,
+.notebook.lum-amber-deep .notebook-entry-lock,
+.notebook.lum-amber-deep .nb-name-hint,
+.notebook.lum-amber-deep .nb-newborn-stay,
+.notebook.lum-amber-deep .nb-bb-whatsees,
+.notebook.lum-amber-deep .nb-bookhead .ba,
+.notebook.lum-amber-deep .nb-bb-author,
+.notebook.lum-amber-deep .notebook-head .eyebrow,
+.notebook.lum-amber-deep .leaf .eyebrow{
+  font-size:12px;
+}
+
+/* --- TY-1 · THE READER'S-WORDS LAW ---------------------------------------
+   "User marginalia gets the finest setting in the app -- its own register,
+   distinct from system italic, and UPRIGHT at length." The system voice in this
+   surface is serif ITALIC (hints, empty bodies, newborn snippets), so the
+   reader's own words are set upright to hold a register the chrome cannot
+   occupy. Italics stay reserved for accents. */
+.notebook.lum-amber-deep .notebook-entry-body{
+  font-family:var(--font-serif);
+  font-size:17px;
+  line-height:1.5;
+  font-style:normal;               /* UPRIGHT — the reader's register */
+  color:var(--lum-ink);
+}
+.notebook.lum-amber-deep .notebook-entry-body em,
+.notebook.lum-amber-deep .notebook-entry-body i{
+  font-style:italic;               /* accents inside the reader's own text still read */
+}
+
+/* --- CC-4 · 24px pointer targets on the entry action links ----------------
+   Gather / Send to a sub-theory / Ask Yumi / Delete sit in a link row; the
+   ruled minimum for a link-row action is a 24px target. Measured before: the
+   row's anchors were 10.5px text with no target height. */
+.notebook.lum-amber-deep .notebook-entry-acts a,
+.notebook.lum-amber-deep .notebook-entry-acts button{
+  font-size:12px;
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+}
+
+/* --- MO-1 · the spread answers the hand ----------------------------------
+   The SAVE PULSE itself is the kit's .mo-savepulse, applied by
+   renderNotebookEntry to the note just committed. These are the hover/press
+   moments on the surrounding controls. */
+.notebook.lum-amber-deep .nb-tab,
+.notebook.lum-amber-deep .notebook-entry-acts a{
+  transition:color var(--dur-fast) var(--ease-standard),
+             background-color var(--dur-fast) var(--ease-standard),
+             border-color var(--dur-fast) var(--ease-standard);
+}
+.notebook.lum-amber-deep .nb-tab:active,
+.notebook.lum-amber-deep .nb-capture:active{
+  transform:translateY(1px) scale(.99);
+  transition:transform 90ms var(--ease-standard);
+}
+@media (prefers-reduced-motion:reduce){
+  .notebook.lum-amber-deep .nb-tab,
+  .notebook.lum-amber-deep .notebook-entry-acts a{ transition:none!important; }
+  .notebook.lum-amber-deep .nb-tab:active,
+  .notebook.lum-amber-deep .nb-capture:active{ transform:none!important; }
+}
+
+/* --- CC-2 · the capture composer, carved ---------------------------------
+   The composer textarea gets the carved recess (controls are cut INTO the
+   paper, content sits ON it). Applied here rather than by adding .k-field in
+   the renderer, because the composer is an auto-growing textarea whose height
+   is JS-managed -- .k-field's min-height would fight autogrowWriteline. Same
+   grammar, expressed where it does not contest the behaviour. */
+.notebook.lum-amber-deep .nb-composer .ce,
+.notebook.lum-amber-deep .notebook-writeline textarea{
+  background:var(--sunk);
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.14), inset 0 0 0 1px rgba(255,255,255,.35);
+  transition:box-shadow var(--dur-fast) var(--ease-standard),
+             border-color var(--dur-fast) var(--ease-standard);
+}
+.notebook.lum-amber-deep .nb-composer .ce:focus,
+.notebook.lum-amber-deep .notebook-writeline textarea:focus{
+  border-color:var(--gold);
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.16), 0 0 0 3px rgba(168,118,26,.22);
+  outline:none;
+}
+.notebook.lum-amber-deep .nb-tab:focus-visible,
+.notebook.lum-amber-deep .notebook-entry-acts a:focus-visible{
+  outline:2px solid var(--gold-deep);
+  outline-offset:2px;
+}
+/* END R-POLISH B1 — NOTEBOOK */
+
+/* --- TY-1 floor · THE MEASURED COMPLETION --------------------------------
+   The enumerated list above was written from a grep and was INCOMPLETE — the
+   live floor scan then found four more offenders, which is the whole reason
+   the scan is the gate and the list is not:
+     · .notebook-entry-overflow — a SECOND actions container beside
+       .notebook-entry-acts, carrying its own add-to-arc / delete /
+       delete-confirm / delete-cancel links at 10.5px. Targeting only
+       .notebook-entry-acts left every one of them below the floor.
+     · .notebook-entry-tag — the register chip, the smallest text in the app at 8.5px.
+     · .nb-mode .handoff and .nb-switch — 11px composer chrome.
+   Re-measured to zero after this block. */
+.notebook.lum-amber-deep .notebook-entry-overflow a,
+.notebook.lum-amber-deep .notebook-entry-overflow button{
+  font-size:12px;
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+}
+.notebook.lum-amber-deep .notebook-entry-tag{ font-size:12px; padding:2px 9px; }
+.notebook.lum-amber-deep .nb-mode .handoff,
+.notebook.lum-amber-deep .nb-switch{ font-size:12px; }
+
+/* --- TY-1 floor · HOME, THE MEASURED COMPLETION --------------------------
+   The Home list above was ALSO written from a grep and was ALSO incomplete —
+   the exhaustive own-text scan found three more, one of them the smallest text
+   in the app. Recording the ruling, not just the fix:
+     · .home-mspine-title 10px -> 12px. It is the fallback label inside a 62x92
+       cover PLACEHOLDER, so it is clamped to two lines to stay in the tile.
+     · .home-mspine-pending "cover pending" was 6.5px — unreadable at any
+       distance, i.e. decoration wearing the costume of text. Raising it to 12px
+       inside a 62px tile would crowd out the title it sits under, so the honest
+       reading of TY-1 ("nothing in the app renders smaller than 12") is that this
+       micro-label should not be TEXT at all: the empty placeholder already says
+       "no cover", and the book's full title is on the anchor's own title
+       attribute, so nothing is lost to a reader or to assistive tech.
+     · .app-nav-search-kbd (the ⌘K badge) 10px -> 12px.
+   FLAGGED for Preston's felt pass: the "cover pending" removal is the one
+   judgement call in this batch that removes something a reader could see. */
+.home-page.lum-amber-deep .home-mspine-title{
+  font-size:12px;
+  line-height:1.15;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.home-page.lum-amber-deep .home-mspine-pending{ display:none; }
+.app-nav-search-kbd{ font-size:12px; }

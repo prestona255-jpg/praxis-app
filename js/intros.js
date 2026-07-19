@@ -503,7 +503,6 @@ var Intros = (function () {
   function startJourney() {
     if (rootEl) { return; }   // already open
     removePanel();            // the journey takes over from any per-page panel
-    if (summonEl) { summonEl.style.display = 'none'; }
     resetPicked();
     step = 0;
     rootEl = document.createElement('div');
@@ -566,7 +565,7 @@ var Intros = (function () {
   function panelSeen(id) { return (typeof ls === 'function') ? (ls(seenKey(id), false) === true) : false; }
   function markPanelSeen(id) { if (typeof sv === 'function') { sv(seenKey(id), true); } }
 
-  var panelEl = null, summonEl = null;
+  var panelEl = null;
 
   function removePanel() { if (panelEl && panelEl.parentNode) { panelEl.parentNode.removeChild(panelEl); } panelEl = null; }
 
@@ -594,7 +593,7 @@ var Intros = (function () {
     panelEl.innerHTML = buildPanelInner(p);
     document.body.appendChild(panelEl);
     var x = panelEl.querySelector('.intro-panel-x');
-    if (x) { x.onclick = function () { markPanelSeen(id); removePanel(); updateSummon(id); }; }
+    if (x) { x.onclick = function () { markPanelSeen(id); removePanel(); }; }
   }
 
   function maybeShowPanel(id) {
@@ -604,30 +603,20 @@ var Intros = (function () {
     showPanel(id);
   }
 
-  // re-summon: a quiet fixed control that appears only AFTER a surface's intro
-  // has been dismissed; re-opens it regardless of the seen-flag.
-  function updateSummon(id) {
-    if (!summonEl) {
-      summonEl = document.createElement('button');
-      summonEl.type = 'button';
-      summonEl.className = 'intro-summon';
-      summonEl.setAttribute('aria-label', 'About this page');
-      summonEl.innerHTML = '<span aria-hidden="true">i</span>';
-      document.body.appendChild(summonEl);
-    }
-    if (id && INTRO_BY_ID[id] && panelSeen(id) && !panelEl && !rootEl) {
-      summonEl.style.display = 'flex';
-      summonEl.onclick = function () { showPanel(id); };
-    } else {
-      summonEl.style.display = 'none';
-    }
-  }
+  // R-POLISH B1 · AMB-1 (THE CORNER LAW) -- the floating re-summon is RETIRED.
+  // Only two fixed elements may float: the "+" create door (bottom-left) and the
+  // Yumi flower (bottom-right). The .intro-summon was a third, and it is gone
+  // (its button, its onclick, and its components.css rules).
+  //
+  // NO ORIENTATION CONTENT IS LOST, and none is rebuilt: PART B below
+  // (buildAboutOrientation) already renders About's "Re-enter a page" section
+  // from THIS SAME `INTROS` array -- one source, every panel re-openable there,
+  // plus the retakeable first walk. The summon was a second door to a room that
+  // already has one.
 
   function panelForHash() {
     removePanel();               // clear the previous surface's panel on nav
-    var id = introForHash(location.hash);
-    maybeShowPanel(id);
-    updateSummon(id);
+    maybeShowPanel(introForHash(location.hash));
   }
 
   function initPanels() {

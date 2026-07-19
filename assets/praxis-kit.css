@@ -1,0 +1,168 @@
+/* ============================================================================
+   PRAXIS FOUNDATION KIT — R-POLISH Slice 0 (SYS-1 + C-PATTERNS + TY-1 + MO-1 + people)
+   Built to docs/studio/r-polish-brief.md §2 laws. ES-agnostic (CSS only).
+
+   R-POLISH B1 PROMOTED THIS FILE INTO THE APP. Source of truth for the kit is now
+   THIS file (assets/praxis-kit.css), linked from index.html after components.css
+   and precached in sw.js APP_SHELL. docs/studio/kit/praxis-kit.css remains as the
+   Slice-0 rig artifact that kit.html demos against — edit HERE, not there.
+
+   Why promoted rather than copied per batch: SYS-1 exists precisely so
+   "per-batch passes [don't] re-invent paddings and drift regrows". Copying kit
+   rules into components.css once per batch IS that failure mode. B2–B4 adopt by
+   CLASS ONLY (.k-* / .ty-* / .mo-*) — all net-new names, so no cascade contest
+   with the load-bearing per-surface rules.
+
+   ONE DELIBERATE CHANGE vs the Slice-0 artifact (B1/N3): `.k-breadcrumb .state`
+   and `.k-pending` were 11px, which violates TY-1's own 12px ABSOLUTE floor
+   ("nothing in the app renders smaller"). Corrected to 12px at promotion — the
+   law outranks the artifact. Logged in docs/checkpoints/r-polish-b1.md.
+   ============================================================================ */
+
+/* ---- SYS-1 · THE --space SCALE (the metric layer XL-1 composes on) ---------- */
+:root{
+  --space-3xs:2px; --space-2xs:4px; --space-xs:8px; --space-sm:12px;
+  --space-md:16px; --space-lg:24px; --space-xl:32px; --space-2xl:48px; --space-3xl:64px;
+  /* per-tier grid: columns + reading measure per composition tier (XL-1) */
+  --grid-cols:4; --measure:66ch; --gutter:var(--space-lg);
+  /* ---- TY-1 · THE TYPE RAMP (5 roles; Cormorant floored >=24px; DM Mono = true meta) */
+  --fs-display:clamp(30px,4.2vw,46px); --lh-display:1.04; --ff-display:var(--font-serif,'Cormorant Garamond',serif);
+  --fs-title:26px;   --lh-title:1.12;  --ff-title:var(--font-serif,'Cormorant Garamond',serif);  /* >=24 floor */
+  --fs-heading:18px; --lh-heading:1.3; --ff-heading:var(--font-body,'DM Sans',sans-serif);
+  --fs-body:15px;    --lh-body:1.55;   --ff-body:var(--font-body,'DM Sans',sans-serif);
+  --fs-meta:12px;    --lh-meta:1.3;    --ff-meta:var(--font-mono,'DM Mono',monospace);   /* 12px ABSOLUTE floor */
+  --fs-reader:17px;  --lh-reader:1.5;  --ff-reader:var(--font-serif,'Cormorant Garamond',serif); /* the reader's words */
+  /* ---- MO-1 · MOTION CANON (two durations, two easings, six named moments) ---- */
+  --dur-fast:150ms; --dur-gentle:300ms;
+  --ease-standard:cubic-bezier(.22,1,.36,1); --ease-emphasis:cubic-bezier(.34,1.2,.5,1);
+}
+@media (min-width:760px){ :root{ --grid-cols:8; --measure:70ch; } }
+@media (min-width:1600px){ :root{ --grid-cols:12; --measure:72ch; } }  /* XL-1 tier */
+
+/* ---- TY-1 ramp classes -------------------------------------------------------- */
+.ty-display{ font-family:var(--ff-display); font-weight:600; font-size:var(--fs-display); line-height:var(--lh-display); letter-spacing:-.01em; }
+.ty-title{   font-family:var(--ff-title);   font-weight:600; font-size:var(--fs-title);   line-height:var(--lh-title); }
+.ty-title--sm{ font-family:var(--ff-heading); font-weight:600; font-size:20px; line-height:1.2; } /* below the 24px serif floor → DM Sans medium */
+.ty-heading{ font-family:var(--ff-heading); font-weight:600; font-size:var(--fs-heading); line-height:var(--lh-heading); }
+.ty-body{    font-family:var(--ff-body);    font-weight:400; font-size:var(--fs-body);    line-height:var(--lh-body); }
+.ty-meta{    font-family:var(--ff-meta);    font-weight:500; font-size:var(--fs-meta);    line-height:var(--lh-meta); text-transform:uppercase; letter-spacing:.12em; color:var(--gold-deep,#855410); }
+/* THE READER'S-WORDS LAW: finest setting, own register, UPRIGHT at length (italics reserved for accents) */
+.ty-reader{  font-family:var(--ff-reader);  font-weight:500; font-size:var(--fs-reader);  line-height:var(--lh-reader); font-style:normal; color:var(--ink,#241710); }
+
+/* ---- MO-1 named moments (all reduced-motion-guarded at the file foot) --------- */
+.mo-hover{ transition:transform var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard); }
+.mo-hover:hover{ transform:translateY(-2px); }
+.mo-press:active{ transform:translateY(1px) scale(.99); transition:transform 90ms var(--ease-standard); }
+.mo-reveal{ animation:mo-reveal var(--dur-gentle) var(--ease-standard) both; }
+@keyframes mo-reveal{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+.mo-crossfade{ animation:mo-cross var(--dur-gentle) var(--ease-standard) both; }
+@keyframes mo-cross{ from{opacity:0;} to{opacity:1;} }
+/* SAVE PULSE — every capture/save visibly answers the hand */
+.mo-savepulse{ animation:mo-save 520ms var(--ease-standard); }
+@keyframes mo-save{ 0%{box-shadow:0 0 0 0 rgba(133,84,16,.0);} 30%{box-shadow:0 0 0 6px rgba(216,164,65,.28);} 100%{box-shadow:0 0 0 0 rgba(133,84,16,0);} }
+
+/* ============================================================================
+   C-PATTERNS · THE CONTROL CANON (CC-1..4). Carved-into-paper grammar (CC-2).
+   ============================================================================ */
+/* CC-2 · the carved field ground — controls are recessed INTO the paper */
+.k-field{
+  font-family:var(--ff-body); font-size:15px; color:var(--ink,#241710);
+  background:var(--sunk,#efe7d6); border:1px solid var(--border,#e3d8c1); border-radius:10px;
+  padding:10px 12px; width:100%; min-height:44px;   /* CC-1 P3 44px touch */
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.14), inset 0 0 0 1px rgba(255,255,255,.35);
+  transition:box-shadow var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+  -webkit-appearance:none; appearance:none;
+}
+.k-field::placeholder{ color:var(--ink-3,#978b6d); }
+@media (min-width:760px){ .k-input,.k-select,.k-textarea{ font-size:15px; } }
+@media (max-width:759px){ .k-input,.k-select,.k-textarea{ font-size:16px; } } /* CC-1 P7 no-zoom */
+.k-textarea{ min-height:96px; resize:vertical; line-height:1.5; }
+/* CC-1 · custom LISTBOX (>=760, the house dialect); native styled <760 (rig shows both) */
+.k-listbox{ position:relative; }
+.k-listbox-btn{ text-align:left; display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; }
+.k-listbox-btn::after{ content:''; width:8px; height:8px; border-right:1.5px solid var(--ink-3,#978b6d); border-bottom:1.5px solid var(--ink-3,#978b6d); transform:rotate(45deg); margin-top:-3px; }
+.k-listbox-pop{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--surface,#fffdf8); border:1px solid var(--border,#e3d8c1); border-radius:10px; box-shadow:0 10px 30px rgba(80,50,15,.20); padding:4px; z-index:20; display:none; }
+.k-listbox[data-open="true"] .k-listbox-pop{ display:block; }
+.k-listbox-opt{ padding:9px 10px; border-radius:7px; cursor:pointer; font-size:15px; }
+.k-listbox-opt:hover,.k-listbox-opt[aria-selected="true"]{ background:var(--wash,rgba(133,84,16,.08)); }
+
+/* CC-3 · role law — chips = state/filter/selection & toggle; buttons = verbs & fire */
+.k-chip{ display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:5px 12px; border-radius:999px;
+  font-family:var(--ff-body); font-size:13px; font-weight:600; color:var(--ink-2,#645940);
+  background:var(--wash,rgba(133,84,16,.06)); border:1px solid var(--border,#e3d8c1); cursor:pointer; }
+.k-chip[aria-pressed="true"],.k-chip.is-on{ color:var(--gold-deep,#855410); background:color-mix(in srgb,var(--gold,#a8761a) 16%, transparent); border-color:var(--gold,#a8761a); }
+/* CC-3 · ONE segmented style (retires the six live variants) */
+.k-seg{ display:inline-flex; padding:3px; gap:2px; background:var(--sunk,#efe7d6); border:1px solid var(--border,#e3d8c1); border-radius:999px; box-shadow:inset 0 1px 2px rgba(80,50,15,.12); }
+.k-seg-opt{ appearance:none; border:0; background:transparent; font-family:var(--ff-body); font-size:13px; font-weight:600; color:var(--ink-2,#645940); padding:6px 16px; border-radius:999px; cursor:pointer; min-height:36px; }
+.k-seg-opt[aria-selected="true"]{ color:var(--br-deep,#1c1209); background:var(--surface,#fffdf8); box-shadow:0 1px 3px rgba(80,50,15,.18); }
+/* CC-3 · buttons — ONE primary-gold per view (restraint) */
+.k-btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px 20px; border-radius:12px;
+  font-family:var(--ff-body); font-size:14px; font-weight:700; cursor:pointer; border:1px solid transparent; }
+.k-btn--primary{ color:#3d2807; background:linear-gradient(180deg,#f2c25a 0%, var(--gold-hi,#d9a441) 40%, var(--gold,#a8761a) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6); }
+.k-btn--secondary{ color:var(--gold-deep,#855410); background:var(--surface,#fffdf8); border-color:var(--gold,#a8761a); }
+.k-btn--quiet{ color:var(--ink-2,#645940); background:transparent; border-color:var(--border,#e3d8c1); }
+/* toggle switch */
+.k-toggle{ position:relative; width:44px; height:26px; border-radius:999px; background:var(--sunk,#efe7d6); border:1px solid var(--border,#e3d8c1); cursor:pointer; box-shadow:inset 0 1px 2px rgba(80,50,15,.14); }
+.k-toggle::after{ content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--surface,#fffdf8); box-shadow:0 1px 3px rgba(80,50,15,.3); transition:transform var(--dur-fast) var(--ease-standard); }
+.k-toggle[aria-checked="true"]{ background:var(--gold,#a8761a); border-color:var(--gold,#a8761a); }
+.k-toggle[aria-checked="true"]::after{ transform:translateX(18px); }
+/* dashed affordance — the "+ mark a value" family */
+.k-dashed{ display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:8px 16px; border-radius:12px;
+  font-family:var(--ff-body); font-size:13px; font-weight:600; color:var(--gold-deep,#855410);
+  background:transparent; border:1.5px dashed var(--gold,#a8761a); cursor:pointer; }
+/* CC-4 · DESTRUCTIVE = quiet, cornered, confirm-gated */
+.k-destructive{ font-family:var(--ff-meta); font-size:12px; letter-spacing:.06em; color:var(--danger,#c2603a);
+  background:transparent; border:1px solid transparent; padding:6px 10px; border-radius:8px; cursor:pointer; opacity:.85; }
+.k-destructive:hover{ background:color-mix(in srgb,var(--danger,#c2603a) 10%, transparent); }
+
+/* ============================================================================
+   CC-4 · THE STATES LAW (applies to every control above)
+   ============================================================================ */
+.k-field:focus-visible,.k-chip:focus-visible,.k-seg-opt:focus-visible,.k-btn:focus-visible,
+.k-toggle:focus-visible,.k-dashed:focus-visible,.k-listbox-btn:focus-visible,.k-destructive:focus-visible,.k-term:focus-visible{
+  outline:2px solid var(--gold-deep,#855410); outline-offset:2px;   /* light ground: --gold-deep */
+}
+[data-ground="dark"] .k-field:focus-visible,[data-ground="dark"] .k-chip:focus-visible,[data-ground="dark"] .k-seg-opt:focus-visible,
+[data-ground="dark"] .k-btn:focus-visible,[data-ground="dark"] .k-toggle:focus-visible,[data-ground="dark"] .k-dashed:focus-visible,
+[data-ground="dark"] .k-listbox-btn:focus-visible,[data-ground="dark"] .k-destructive:focus-visible{
+  outline-color:var(--gold,#d2a23e);   /* dark ground: brighter --gold */
+}
+.k-field:hover,.k-chip:hover,.k-seg-opt:hover,.k-listbox-opt:hover{ background:var(--surface-2,#efe7d6); } /* hover = ground shifts one step */
+.k-field:focus{ border-color:var(--gold,#a8761a); box-shadow:inset 0 1px 2px rgba(80,50,15,.16), 0 0 0 3px color-mix(in srgb,var(--gold,#a8761a) 22%, transparent); outline:none; }
+.k-btn:disabled,.k-field:disabled,.k-chip:disabled,[aria-disabled="true"]{ opacity:.4; pointer-events:none; }  /* disabled = 40% ink, no pointer */
+.k-field.is-error,.k-field[aria-invalid="true"]{ border-color:var(--danger,#c2603a); box-shadow:inset 0 1px 2px rgba(80,50,15,.14), 0 0 0 3px color-mix(in srgb,var(--danger,#c2603a) 20%, transparent); } /* ONE error treatment */
+.k-error-msg{ font-family:var(--ff-meta); font-size:12px; color:var(--danger,#c2603a); margin-top:6px; }
+
+/* ============================================================================
+   PEOPLE COMPONENTS (UX-1 lexicon · UX-2 wayfinding · UX-3 forgiveness)
+   ============================================================================ */
+/* UX-1 · lexicon-in-place — a term of art becomes a quiet affordance */
+.k-term{ border-bottom:1px dotted var(--gold,#a8761a); cursor:help; }
+.k-term-pop{ position:absolute; max-width:260px; background:var(--surface,#fffdf8); border:1px solid var(--border,#e3d8c1); border-radius:10px; box-shadow:0 10px 30px rgba(80,50,15,.2); padding:10px 12px; font-family:var(--ff-body); font-size:13px; line-height:1.45; color:var(--ink,#241710); z-index:40; }
+.k-term-pop a{ color:var(--gold-deep,#855410); }
+/* UX-2 · wayfinding breadcrumb (Arc › Sub-theory · state) */
+.k-breadcrumb{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-family:var(--ff-body); font-size:14px; color:var(--ink-2,#645940); }
+.k-breadcrumb a{ color:var(--gold-deep,#855410); text-decoration:none; }
+.k-breadcrumb .sep{ color:var(--ink-3,#978b6d); }
+.k-breadcrumb .state{ font-family:var(--ff-meta); font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3,#978b6d); }  /* B1/N3: 11 -> 12, TY-1 absolute floor */
+/* UX-3 · undo toast (soft-delete, ~7s) */
+.k-toast{ display:inline-flex; align-items:center; gap:14px; background:var(--br-deep,#1c1209); color:var(--text-on-dark,#fdfaf3); padding:12px 16px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); font-family:var(--ff-body); font-size:14px; }
+.k-toast button{ color:var(--gold-hi,#d9a441); background:none; border:0; font-weight:700; cursor:pointer; font-family:inherit; font-size:14px; }
+/* UX-3 · pending / failed-write indicator (data trust, online or off) */
+.k-pending{ display:inline-flex; align-items:center; gap:6px; font-family:var(--ff-meta); font-size:12px; color:var(--ink-3,#978b6d); }  /* B1/N3: 11 -> 12, TY-1 absolute floor */
+.k-pending::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--ink-3,#978b6d); }
+.k-pending.is-syncing::before{ background:var(--gold,#a8761a); animation:mo-pulse 1.2s var(--ease-standard) infinite; }
+.k-pending.is-saved::before{ background:#3a6b30; }
+.k-pending.is-failed{ color:var(--danger,#c2603a); } .k-pending.is-failed::before{ background:var(--danger,#c2603a); }
+@keyframes mo-pulse{ 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+/* ============================================================================
+   REDUCED-MOTION — MO-1 kills ALL motion globally (one rule, whole kit)
+   ============================================================================ */
+@media (prefers-reduced-motion:reduce){
+  .mo-hover,.mo-press,.mo-reveal,.mo-crossfade,.mo-savepulse,.k-field,.k-toggle::after,.k-pending.is-syncing::before{
+    transition:none!important; animation:none!important;
+  }
+  .mo-hover:hover,.mo-press:active{ transform:none!important; }
+}

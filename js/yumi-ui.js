@@ -26,7 +26,6 @@ var YUMI_BODY_ID   = 'yumi-panel-body';
 var yumiPanelEl    = null;
 var yumiBloomEl    = null;
 var yumiPanelBloomEl = null;
-var yumiBloomLineEl = null;
 var yumiInputEl    = null;
 var yumiBodyEl     = null;
 var yumiSendBtnEl  = null;
@@ -889,6 +888,27 @@ function maybeStartOnboarding(uid) {
 // Beat A is not stomped. Either way the panel resets to idle (empty-state
 // when open, cleared when closed).
 function refreshYumiPanelForAuthChange(force) {
+  // R-POLISH B1 · CO-1 SAFETY (red-team finding 1) -- THE IDENTITY RESET.
+  // CO-1 retired openLensPanel's per-open reset so a re-open re-renders stored
+  // proposals instead of re-billing. That reset was ALSO, accidentally, the only
+  // thing scrubbing lens state between two users sharing one tab: the state is
+  // module-scoped here (not in `state`), so clearUserState()'s "14.2 account
+  // switch" wipe -- which exists precisely so A's data cannot leak into B's
+  // session -- never reached it. Without this, user B could open the panel and
+  // see proposals generated from user A's library, and adopting one would write
+  // a theme named from A's books into B's account.
+  //
+  // So the reset moves from per-OPEN to per-IDENTITY-CHANGE: the stored-once law
+  // holds for a session, and the cache dies the moment the user does. This runs
+  // on BOTH directions -- sign-in (integrations.js:124) and sign-out
+  // (integrations.js:626, force) -- and sits ABOVE both early returns below, so
+  // an onboarding-active session or a never-yet-built panel cannot skip it.
+  lensSuggestStatus = 'idle';
+  lensSuggestLenses = [];
+  if (typeof closeLensPanel === 'function' && lensPanelEl &&
+      lensPanelEl.classList.contains('lens-panel-open')) {
+    closeLensPanel();   // never leave a panel of the previous user's proposals on screen
+  }
   if (force) {
     onb.active = false;
     onb.beat = '';
@@ -904,37 +924,15 @@ function refreshYumiPanelForAuthChange(force) {
   }
 }
 
-// S2: the contextual line under Bloom, keyed off parts[0] of the hash.
-// Copy is in Yumi's voice and inside the covenant -- it never implies she
-// reads private notes or summarizes a book. PLACEHOLDERS -- Preston finalizes.
-var YUMI_BLOOM_LINES = {
-  home:      'see what I\'m noticing',
-  books:     'tap to find lenses in your library',
-  book:      'tap to sit with this book together',
-  artifact:  'tap to sit with this book together',
-  arcs:      'tap to trace threads between your arcs',
-  arc:       'tap to think this through with me',
-  subtheory: 'tap to think this through with me',
-  notebook:  'I\'m here when you want to talk it through'
-};
-var YUMI_BLOOM_LINE_DEFAULT = 'tap to talk';
-
-function yumiBloomLineFor(route) {
-  if (route && Object.prototype.hasOwnProperty.call(YUMI_BLOOM_LINES, route)) {
-    return YUMI_BLOOM_LINES[route];
-  }
-  return YUMI_BLOOM_LINE_DEFAULT;
-}
-
-// Read parts[0] of the hash (the route family, e.g. 'book' for #book/<id>)
-// and paint the matching line. Account / yumi-sees / empty / unknown fall
-// through to the safe default.
-function updateYumiBloomLine() {
-  if (!yumiBloomLineEl) { return; }
-  var rest = location.hash.replace(/^#/, '');
-  var route = rest.split('/')[0];
-  yumiBloomLineEl.textContent = yumiBloomLineFor(route);
-}
+// R-POLISH B1 · L5 + AMB-1 -- THE CAPTION FAMILY IS RETIRED. The seven
+// per-route Bloom lines (YUMI_BLOOM_LINES over 8 route keys), their default,
+// the route reader (yumiBloomLineFor) and the hashchange painter
+// (updateYumiBloomLine) are all gone, with the module-scoped yumiBloomLineEl
+// handle and the .yumi-bloom-line markup + CSS. Under the corner law the
+// flower carries ONE ruled size and glow and NOTHING captions her -- the orb
+// IS the affordance. No accessible name is lost: the FAB's own
+// aria-label="Talk to Yumi" (set in buildYumiBloom below) was always the
+// assistive-tech name; the visible line was decoration on top of it.
 
 // Build a Bloom. Default = the global FAB launcher (body-level, z-9999). When
 // inPanel is true, build the stateful in-chat presence that lives in the panel
@@ -1010,12 +1008,9 @@ function buildYumiBloom(inPanel) {
     '<circle class="yumi-bloom-ember yumi-bloom-ember-a" cx="49" cy="17" r="1.7" fill="var(--gold-light)"/>' +
     '<circle class="yumi-bloom-ember yumi-bloom-ember-b" cx="15" cy="47" r="1.4" fill="var(--gold-light)"/>' +
     '</svg>';
-  btn.innerHTML =
-    '<span class="yumi-bloom-orb" aria-hidden="true">' + svg + '</span>' +
-    (inPanel ? '' : '<span class="yumi-bloom-line">tap to talk</span>');
+  // L5: the orb alone -- the caption span that rode beside it is retired.
+  btn.innerHTML = '<span class="yumi-bloom-orb" aria-hidden="true">' + svg + '</span>';
   if (!inPanel) {
-    yumiBloomLineEl = btn.querySelector('.yumi-bloom-line');
-    updateYumiBloomLine();
     btn.addEventListener('click', function() {
       toggleYumiPanel();
     });
@@ -1462,8 +1457,7 @@ function initYumiUI() {
   // 6.2c: close the panel when navigating into an arc, so an open Yumi carried
   // in from a prior page never parks over the constellation.
   window.addEventListener('hashchange', suppressYumiOnArc);
-  // S2: keep Bloom's contextual line in sync with the active route.
-  window.addEventListener('hashchange', updateYumiBloomLine);
+  // L5: the per-route caption painter that rode this event is retired.
 }
 
 if (document.readyState === 'loading') {
@@ -2075,9 +2069,16 @@ function openLensPanel() {
     document.body.appendChild(lensPanelEl);
   }
   lensPanelLastFocus = document.activeElement;
-  // S3: each open re-asks Yumi for fresh proposals.
-  lensSuggestStatus = 'idle';
-  lensSuggestLenses = [];
+  // R-POLISH B1 · CO-1 (THE STORED-ONCE LAW) -- the open-time reset to 'idle'
+  // is RETIRED. It made every re-open silently re-bill a fresh generateLenses()
+  // call against claude-proxy AND discard proposals the reader had not finished
+  // reviewing. The status now persists across opens, so renderLensPanelBody's
+  // `if (status === 'idle') startLensSuggest()` fires exactly ONCE per session:
+  //   done  -> the stored proposals re-render, no network call
+  //   error -> the error branch renders WITH buildLensSuggestRetry()
+  //   done+empty -> the empty branch renders WITH buildLensSuggestRetry()
+  // Re-asking stays available, but it is now an explicit, user-paid act -- the
+  // same cache + explicit-refresh shape as shelf classification's "Re-classify".
   renderLensPanelBody();
   lensPanelEl.classList.add('lens-panel-open');
   document.addEventListener('keydown', onLensPanelKeydown);
