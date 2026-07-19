@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>R-POLISH Slice 0 · L3 legibility proof (rig)</title>
+<style>
+/* RIG PAGE — proof only, not app source. Parchment field + gold-channel glyphs on light. */
+:root{
+  --paper:#f4efe4; --card:#fffdf8;
+  --gold-deep:#855410; --ink:#241710; --br-deep:#1c1209;
+  --bk-field-1:#f2c25a;--bk-field-2:#e07a52;--bk-field-3:#d98f8a;--bk-field-4:#f5bace;--bk-field-5:#a9b98c;
+  --bk-field-6:#98d4b0;--bk-field-7:#8590d8;--bk-field-8:#f8e078;--bk-field-9:#e8b068;--bk-field-10:#b8896c;
+  --thread:#c2a463;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(60% 46% at 22% 16%, rgba(248,228,176,.5), transparent 60%),
+    radial-gradient(55% 50% at 82% 30%, rgba(232,200,135,.4), transparent 66%),
+    linear-gradient(155deg,#f2e2bd,#dfc38a);
+  box-shadow:inset 0 0 60px rgba(133,84,16,.12); padding:24px; min-height:100vh;}
+h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:30px;margin:0 0 4px;}
+.sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);}
+.wrap{max-width:1180px;margin:0 auto;}
+.row{display:flex;gap:24px;flex-wrap:wrap;margin-top:20px;align-items:flex-start;}
+.panel{background:linear-gradient(180deg,#f4e6c4,#eedcb2);border-radius:16px;box-shadow:0 6px 24px rgba(120,75,15,.18);padding:18px;flex:1 1 340px;}
+.panel h2{font-family:'Cormorant Garamond',serif;font-size:20px;margin:0 0 10px;}
+/* THE FIELD — a bounded parchment desk at real arc density */
+#field{position:relative;flex:2 1 640px;height:460px;border-radius:16px;overflow:hidden;
+  background:radial-gradient(120% 90% at 30% 20%,#f7efd9,#ecdcb4 70%,#e2cea0);
+  box-shadow:inset 0 0 50px rgba(133,84,16,.14), 0 6px 24px rgba(120,75,15,.16);}
+.mk{position:absolute;transform:translate(-50%,-50%);}
+/* GOLD-CHANNEL treatment: dark-gold silhouette stroke = the legible channel; hue = a low-opacity accent fill */
+.mk svg{display:block;overflow:visible;}
+.mk svg path,.mk svg circle,.mk svg polygon,.mk svg rect,.mk svg line{
+  stroke:var(--gold-deep)!important;stroke-width:1.6px!important;paint-order:stroke fill;}
+.mk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;
+  font-family:'DM Mono',monospace;font-size:8.5px;color:var(--gold-deep);opacity:.72;margin-top:1px;}
+.legend{font-family:'DM Mono',monospace;font-size:12px;line-height:1.7;}
+.tbl{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:11px;}
+.tbl th,.tbl td{text-align:left;padding:3px 8px;border-bottom:1px solid rgba(133,84,16,.2);}
+.pass{color:#3a6b30;font-weight:700;} .fail{color:#a23a2a;font-weight:700;}
+.note{font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.5;color:#4d3b2a;margin-top:8px;}
+</style></head>
+<body><div class="wrap">
+  <div class="sub">R-POLISH Slice 0 · Stage 2</div>
+  <h1>L3 — the parchment field, gold-channel glyphs on light</h1>
+  <div class="row">
+    <div id="field" aria-label="arc field at real density"></div>
+    <div class="panel">
+      <h2>The mechanism</h2>
+      <div class="note"><b>Candy fills fail 16/16</b> on parchment (1.28–2.11:1). <b>Deep hues alone fail 7/16.</b>
+      A <b>unifying gold-channel stroke</b> carries legibility (<b>--gold-deep 5.6:1</b>), the field hue is a low-opacity accent,
+      and the <b>shape</b> carries identity (never colour alone). That is what the field above renders.</div>
+      <table class="tbl"><tr><th>channel</th><th>on parchment</th><th></th></tr>
+      <tr><td>candy fill (avg)</td><td>1.6:1</td><td class="fail">FAIL ×16</td></tr>
+      <tr><td>deep hue (7 warm)</td><td>2.1–2.9:1</td><td class="fail">FAIL ×7</td></tr>
+      <tr><td>gold-channel stroke #855410</td><td>5.60:1</td><td class="pass">PASS</td></tr>
+      <tr><td>ink outline #1c1209</td><td>16.07:1</td><td class="pass">PASS</td></tr></table>
+    </div>
+  </div>
+  <div class="row"><div class="panel" style="flex:1 1 100%;">
+    <h2>Shape channel — identity survives without colour (NEVER COLOR ALONE)</h2>
+    <div id="shapes" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;"></div>
+  </div></div>
+</div>
+<script src="/assets/marks.js"></script>
+<script>
+// RIG JS — var/function only (kept ES3-clean though this is not app source).
+var FIELDW = 640, FIELDH = 460, N = 36; // real arc density: ~36 marks in a bounded desk
+var hues = ['--bk-field-1','--bk-field-2','--bk-field-3','--bk-field-4','--bk-field-5','--bk-field-6','--bk-field-7','--bk-field-8','--bk-field-9','--bk-field-10'];
+// deterministic scatter (no Math.random — stable proof)
+function lcg(seed){ var s = seed; return function(){ s = (s*1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+var rnd = lcg(1729);
+function goldChannel(el, hue){
+  // low-opacity hue accent behind the gold-stroked silhouette
+  var svgs = el.getElementsByTagName('svg');
+  if(svgs[0]){ svgs[0].style.filter = 'drop-shadow(0 1px 1px rgba(133,84,16,.25))'; }
+  var fills = el.querySelectorAll('path,circle,polygon,rect');
+  var i; for(i=0;i<fills.length;i++){ fills[i].setAttribute('fill-opacity','0.34'); }
+}
+var field = document.getElementById('field');
+var placed = [];
+function farEnough(x,y){ var i; for(i=0;i<placed.length;i++){ var dx=placed[i][0]-x, dy=placed[i][1]-y; if(dx*dx+dy*dy < 62*62){ return false; } } return true; }
+var count=0, tries=0;
+while(count<N && tries<4000){
+  tries++;
+  var x = 40 + rnd()*(FIELDW-80), y = 34 + rnd()*(FIELDH-68);
+  if(!farEnough(x,y)){ continue; }
+  placed.push([x,y]);
+  var shape = (count%16)+1; var ss = shape<10?('0'+shape):(''+shape);
+  var d = document.createElement('div'); d.className='mk'; d.style.left=x+'px'; d.style.top=y+'px';
+  var size = 30 + Math.floor(rnd()*10);
+  d.innerHTML = (window.PraxisMarks ? PraxisMarks.render(ss, count%16, size) : '<svg width="'+size+'" height="'+size+'"><circle cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+(size/2-3)+'" fill="var(--bk-field-'+((count%10)+1)+')"/></svg>');
+  goldChannel(d, hues[count%10]);
+  field.appendChild(d);
+  count++;
+}
+document.title = 'L3 proof — ' + count + ' marks placed';
+// shape channel row: 16 shapes, SAME neutral treatment, to show silhouettes are distinct without hue
+var srow = document.getElementById('shapes');
+var k; for(k=1;k<=16;k++){ var sk=k<10?('0'+k):(''+k);
+  var c=document.createElement('div'); c.className='mk'; c.style.position='relative'; c.style.transform='none';
+  c.innerHTML=(window.PraxisMarks?PraxisMarks.render(sk,3,34):''); // color 3 = gold family, uniform
+  goldChannel(c,'--bk-field-9'); srow.appendChild(c);
+}
+window.__L3 = { placed: count, density: count+'/'+N };
+</script>
+</body></html>

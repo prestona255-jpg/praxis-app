@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Praxis Foundation Kit — R-POLISH Slice 0 (rig demo)</title>
+<link rel="stylesheet" href="/docs/studio/kit/praxis-kit.css">
+<style>
+/* RIG token block — light (v1.1) + dark-ground, so CC-4 shows on BOTH grounds. */
+:root{
+  --font-serif:'Cormorant Garamond',Georgia,serif; --font-body:'DM Sans',system-ui,sans-serif; --font-mono:'DM Mono',monospace;
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d; --gold:#a8761a; --gold-deep:#855410; --gold-hi:#d9a441;
+  --surface:#fffdf8; --surface-2:#efe7d6; --sunk:#efe7d6; --border:#e3d8c1; --wash:rgba(133,84,16,.07);
+  --br-deep:#1c1209; --danger:#c2603a; --text-on-dark:#fdfaf3; --paper:#f4efe4;
+}
+[data-ground="dark"]{ --ink:#f0e3c8; --ink-2:#c2a87f; --ink-3:#c2a87f; --gold:#d2a23e; --gold-deep:#e7c46a;
+  --surface:#3e2814; --surface-2:#4a3119; --sunk:#241406; --border:rgba(210,162,62,.22); --wash:rgba(210,162,62,.08); }
+*{box-sizing:border-box;} body{margin:0;font-family:var(--font-body);color:var(--ink);background:var(--paper);}
+.ground{padding:26px;} .ground.dark{background:linear-gradient(155deg,#402812,#281609);}
+.wrap{max-width:1180px;margin:0 auto;}
+h1{font-family:var(--font-serif);font-weight:600;font-size:34px;margin:0 0 2px;}
+.sub{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin:18px 0;box-shadow:0 6px 22px rgba(120,75,15,.08);}
+.card h2{font-family:var(--font-serif);font-size:22px;margin:0 0 4px;} .card .k-meta{margin-bottom:14px;}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;}
+.demo-lbl{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-3);margin-bottom:5px;display:block;}
+.rowflex{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.tbl{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px;margin-top:6px;}
+.tbl th,.tbl td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--border);color:var(--ink-2);}
+.pass{color:#3a6b30;font-weight:700;}
+</style></head>
+<body>
+<div class="ground light"><div class="wrap">
+  <div class="sub">R-POLISH Slice 0 · Stage 3 · the foundation kit (light ground)</div>
+  <h1>Praxis Foundation Kit</h1>
+  <p class="ty-body" style="max-width:70ch;">SYS-1 metric layer · TY-1 type ramp · C-patterns control canon (carved-into-paper) · CC-4 states · MO-1 motion · the three people laws. Every control demoed with its states; the dark-ground copy below proves the focus ring on both grounds.</p>
+
+  <div class="card"><h2>TY-1 · the type ramp</h2><div class="k-meta ty-meta">display · title · heading · body · meta · reader's-words</div>
+    <div class="ty-display">Display — the desk widens</div>
+    <div class="ty-title">Title — Cormorant, floored ≥24px</div>
+    <div class="ty-title--sm">Title small — below the serif floor → DM Sans medium</div>
+    <div class="ty-heading">Heading — DM Sans 600</div>
+    <div class="ty-body">Body — DM Sans, the reading measure. The quick brown fox jumps over the lazy dog.</div>
+    <div class="ty-meta">Meta — DM Mono, 12px floor, uppercase</div>
+    <div class="ty-reader">The reader's own words — the finest setting in the app, its own register, upright at length so it outranks the chrome.</div>
+  </div>
+
+  <div class="card"><h2>C-patterns · the control canon (carved)</h2>
+    <div class="grid">
+      <div><span class="demo-lbl">listbox (CC-1 ≥760)</span>
+        <div class="k-listbox" data-open="false" id="lb1"><button type="button" class="k-field k-listbox-btn">Theory &amp; Philosophy</button>
+          <div class="k-listbox-pop"><div class="k-listbox-opt" aria-selected="true">Theory &amp; Philosophy</div><div class="k-listbox-opt">History</div><div class="k-listbox-opt">Memoir</div></div></div></div>
+      <div><span class="demo-lbl">native select (&lt;760 styled)</span><select class="k-field k-select"><option>Covers</option><option>List</option></select></div>
+      <div><span class="demo-lbl">text input</span><input class="k-field k-input" placeholder="Book title…"></div>
+      <div><span class="demo-lbl">search input</span><input class="k-field k-input" type="search" placeholder="Search…"></div>
+      <div style="grid-column:1/-1;"><span class="demo-lbl">textarea (carved, grows)</span><textarea class="k-field k-textarea" placeholder="one honest sentence…"></textarea></div>
+    </div>
+    <div class="rowflex" style="margin-top:14px;">
+      <button class="k-chip mo-hover mo-press" aria-pressed="true">Lenses</button>
+      <button class="k-chip mo-hover mo-press" aria-pressed="false">Categories</button>
+      <div class="k-seg" role="tablist"><button class="k-seg-opt mo-press" aria-selected="true">Covers</button><button class="k-seg-opt mo-press" aria-selected="false">List</button></div>
+      <div class="k-toggle mo-press" role="switch" aria-checked="true" tabindex="0"></div>
+    </div>
+    <div class="rowflex" style="margin-top:14px;">
+      <button class="k-btn k-btn--primary mo-hover mo-press">＋ Add a book</button>
+      <button class="k-btn k-btn--secondary mo-hover mo-press">Send to sub-theory</button>
+      <button class="k-btn k-btn--quiet mo-hover mo-press">Scan shelf</button>
+      <button class="k-dashed mo-hover">＋ mark a value</button>
+      <button class="k-destructive">Delete this sub-theory</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>CC-4 · the states law (each control, every state)</h2>
+    <div class="grid">
+      <div><span class="demo-lbl">focus-visible (Tab to it) — 2px gold ring</span><input class="k-field k-input" id="focusdemo" value="Tab here"></div>
+      <div><span class="demo-lbl">hover — ground shifts one step</span><button class="k-chip" aria-pressed="false">hover me</button></div>
+      <div><span class="demo-lbl">disabled — 40% ink, no pointer</span><button class="k-btn k-btn--secondary" disabled>Disabled</button></div>
+      <div><span class="demo-lbl">error — ONE treatment</span><input class="k-field k-input is-error" value="invalid"><div class="k-error-msg">That title is already on your shelf.</div></div>
+    </div>
+    <table class="tbl" id="statesTbl"><tr><th>control</th><th>focus ring (computed outline)</th><th>disabled opacity</th></tr></table>
+  </div>
+
+  <div class="card"><h2>MO-1 · motion canon + reduced-motion</h2>
+    <div class="rowflex"><button class="k-btn k-btn--secondary mo-hover mo-press">hover-lift + press</button>
+      <span class="k-chip mo-reveal">panel reveal</span>
+      <button class="k-btn k-btn--quiet" id="savebtn">trigger save-pulse</button></div>
+    <table class="tbl" id="motionTbl"><tr><th>token</th><th>value</th></tr></table>
+    <div class="ty-meta" style="margin-top:8px;">reduced-motion proof: computed transition/animation with <code>prefers-reduced-motion:reduce</code> emulated → below.</div>
+    <table class="tbl" id="rmTbl"><tr><th>element</th><th>transition</th><th>animation</th><th>verdict</th></tr></table>
+  </div>
+
+  <div class="card"><h2>People — UX-1 lexicon · UX-2 wayfinding · UX-3 forgiveness</h2>
+    <p class="ty-body">A <span class="k-term" tabindex="0">sub-theory</span> lives inside an <span class="k-term" tabindex="0">arc</span>. <span class="ty-meta" style="text-transform:none;letter-spacing:0;">(UX-1: dotted term → plain meaning + About link)</span></p>
+    <nav class="k-breadcrumb"><a href="#">Desire &amp; Becoming</a><span class="sep">›</span><a href="#">The comfort trap</a><span class="state">nascent</span></nav>
+    <div class="rowflex" style="margin-top:14px;"><span class="k-toast">Sub-theory deleted. <button>Undo</button></span>
+      <span class="k-pending is-syncing">saving…</span><span class="k-pending is-saved">saved</span><span class="k-pending is-failed">offline — will retry</span></div>
+  </div>
+</div></div>
+
+<div class="ground dark" data-ground="dark"><div class="wrap">
+  <div class="sub">the same kit on the DARK ground (CC-4 focus ring proof: --gold, not --gold-deep)</div>
+  <div class="card"><h2 class="ty-title" style="color:var(--ink);">Dark ground</h2>
+    <div class="rowflex"><input class="k-field k-input" id="darkfocus" value="Tab here (dark)"><button class="k-btn k-btn--primary mo-hover">Primary</button>
+      <button class="k-chip" aria-pressed="true">Selected</button><div class="k-seg"><button class="k-seg-opt" aria-selected="true">A</button><button class="k-seg-opt" aria-selected="false">B</button></div></div>
+  </div>
+</div></div>
+
+<script>
+// RIG JS — var/function, no template literals (ES3-clean though not app source).
+// listbox open/close
+var lb=document.getElementById('lb1');
+lb.querySelector('.k-listbox-btn').addEventListener('click',function(){ lb.setAttribute('data-open', lb.getAttribute('data-open')==='true'?'false':'true'); });
+// toggle + segmented interactivity
+document.querySelectorAll('.k-toggle').forEach(function(t){ t.addEventListener('click',function(){ t.setAttribute('aria-checked', t.getAttribute('aria-checked')==='true'?'false':'true'); }); });
+document.querySelectorAll('.k-seg').forEach(function(seg){ seg.querySelectorAll('.k-seg-opt').forEach(function(o){ o.addEventListener('click',function(){ seg.querySelectorAll('.k-seg-opt').forEach(function(x){x.setAttribute('aria-selected','false');}); o.setAttribute('aria-selected','true'); }); }); });
+// save-pulse
+document.getElementById('savebtn').addEventListener('click',function(){ var b=this; b.classList.remove('mo-savepulse'); void b.offsetWidth; b.classList.add('mo-savepulse'); });
+// ---- evidence tables (read computed values live) ----
+function css(el,p){ return getComputedStyle(el)[p]; }
+function fill(id,rows){ var t=document.getElementById(id); var i; for(i=0;i<rows.length;i++){ var tr=document.createElement('tr'); var j; for(j=0;j<rows[i].length;j++){ var td=document.createElement('td'); td.innerHTML=rows[i][j]; tr.appendChild(td);} t.appendChild(tr);} }
+// motion tokens
+var rootcs=getComputedStyle(document.documentElement);
+fill('motionTbl',[['--dur-fast',rootcs.getPropertyValue('--dur-fast').trim()],['--dur-gentle',rootcs.getPropertyValue('--dur-gentle').trim()],['--ease-standard',rootcs.getPropertyValue('--ease-standard').trim()]]);
+window.__KIT={ ready:true };
+</script>
+</body></html>

@@ -571,6 +571,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
   Round-close rider: run the studio-census re-measure (arcs · arc-detail · subtheory-build ·
   subtheory-page · notebook) if cheap; else ledger it into L1's recon.
   touches: [global-shell, home, book-detail, arc-detail, notebook, arcs]
+  - ruled brief (in-repo): docs/studio/r-polish-brief.md (v1.4) · charter: docs/studio/r-polish-charter.md
 - [x] **R-ARC — the knowledge-arc theorizing system (DEEP round)** — **BUILD COMPLETE + SHIPPED+LIVE
   (v3.211→v3.229).** Wave A/B (S1→S5 + F4 + FF-7, v3.211→v3.220, felt PASS) · Wave C (S6a→ROOM-3 +
   Slice 8 dismissal store v3.228 + Slice 9 raised-hand seat v3.229). Full ledger + push ledger in
@@ -585,6 +586,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
   maturity. touches: [books]
 - [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry, a real
   landing, sub-400ms. The capture door the whole loop opens on. touches: [import-capture, notebook]
+  - ruled brief (in-repo): docs/studio/r-capture-brief.md
 - [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
   R-CAPTURE's door**. touches: [books]
 - [ ] **S-B — Sweep + dead-code deletion** — Import-Capture overlay · Yumi/lens panel · Account residuals +
