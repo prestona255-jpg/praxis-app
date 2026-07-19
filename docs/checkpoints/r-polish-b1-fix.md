@@ -465,3 +465,97 @@ Builder NOT regenerated — the round close owns the single regen; per the BUILD
 rule this ships at the push point only if it is a round close, which it is not.
 
 Live-smoke results and the felt pass per `docs/studio/felt-script.md` append below.
+
+---
+
+## LIVE-SMOKE GATE — v3.232 @ `685e215` — ALL PASS
+
+Deployed to `praxis-reading.netlify.app`. `HEAD == origin/main == 685e215`.
+
+### S1 · Version took (the stale-SW check)
+
+| Check | Result |
+|---|---|
+| `/sw.js` cache-busted fetch #1 | **`praxis-v3.232`** |
+| `/sw.js` cache-busted fetch #2 | **`praxis-v3.232`** (agree) |
+| `manifest.json` background / theme | **`#191F33` / `#191F33`** |
+| `<meta name=theme-color>` | **`#191F33`** |
+
+### S2 · The shipped bytes are actually live (fetched from the deploy, not asserted)
+
+All 12 probes TRUE against the deployed assets: `--hour-arc` · `--nav-solid` ·
+`body::after` grain · `--teal-on-ground` · `--cloth-ox-1` · `.lit-page` · `.app-nav`
+`position:sticky` · `.yumi-bloom-orb` `width:42px` ·
+`-webkit-text-fill-color:var(--gold-ember)` · `umberGroundDark = { home: 1` ·
+`home-kicker` · `lit-spine`.
+
+### S3 · Ground + nav + flower @ 1920 (signed-out)
+
+| Probe | Value |
+|---|---|
+| `data-ground` on `#home` | **`dark`** — Home is in the world |
+| `body` ink | `rgb(240,235,223)` = `#F0EBDF` |
+| nav bg / position / z | `rgb(23,27,43)` / **`sticky`** / `30` |
+| nav `backdrop-filter` | **`none`** — canon §4-A held |
+| nav top @0 -> @600 | `14` -> **`0`**, `stickyHeld: true` |
+| flower | **42px**, glow `rgb(199,154,58)`/.32 |
+| visible fixed elements | **1 — `.yumi-bloom` only** |
+| horizontal scroll | none |
+
+### S4 · The thread + Home treatments @ 1920 (signed-in)
+
+| Probe | Value |
+|---|---|
+| kicker | `"Sunday · July 19 · the study is lit"` — real date |
+| hero accent | `"reader."` · italic · **`-webkit-text-fill-color: rgb(223,183,89)`** |
+| `.lit-page` | radius `15px`, **3** shadow layers |
+| thread gutter / node alignment | `34px` / **`nodeDx [0,0,0,0]`** |
+| cloth spine | `lit-spine-ox`, 3px, opacity `.85` |
+| ember dot | present on `"touched today"` |
+
+The hero accent is the red-team's finding 2 **confirmed fixed on the deploy** — the fill is
+gold, not the inherited `transparent` that computed style had reported as a PASS.
+
+### S5 · Marginalia case, on the deploy
+
+| Probe | Value |
+|---|---|
+| rendered | `The Hour Refined — a Mixed Case Sentence, exactly as I typed it.` |
+| `text-transform` / `font-style` | **`none`** / **`normal`** |
+| font / size | Cormorant Garamond · 17px |
+| reader content uppercased | **0** |
+| chrome uppercased | 11 (labels/tags only — the known R6) |
+
+Notebook: `data-ground: dark`, nav sticky held.
+
+### S6 · Scroll-perf
+
+**rAF is paused in this headless pane** (documented rig limitation — it fires neither IO nor
+rAF), so an FPS measure is NOT available here and none is claimed. Substituted an honest
+proxy: 120 forced scroll+layout+style cycles, grain enabled vs disabled.
+
+| Run | ms |
+|---|---|
+| with grain | 16.0 |
+| grain disabled | 17.6 |
+| with grain (repeat) | 14.0 |
+
+Grain delta **−1.6 ms / 120 cycles**, i.e. *smaller than run-to-run variance*. No measurable
+cost; **the grain lever stays at .015**. True stutter remains a felt-pass judgement.
+
+### S7 · Fresh-visitor pass
+
+All praxis localStorage keys removed, service worker unregistered, caches deleted, reloaded
+cold: ground `dark`, ink `#F0EBDF`, nav `#171B2B` sticky, flower 42px, signed-out surface
+renders, no horizontal scroll. **Console: clean (zero errors)** — on the signed-out, the
+signed-in, and the fresh-visitor passes.
+
+The auth stub used for S4/S5 is localStorage-only and cannot mint a Firebase token, so
+Firestore writes fail closed — no production data was written. All stub keys were removed
+afterwards; `remaining: []`.
+
+### VERDICT
+
+**Live-smoke: ALL PASS.** Held for Preston's felt pass per `docs/studio/felt-script.md`
+(the 1920 monitor, the phone, and the installed PWA window — the PWA is worth one launch
+this ship, since `theme-color` and `background_color` both moved).
