@@ -341,6 +341,14 @@ function buildSpotlight() {
 
 function openSpotlight(triggerEl) {
   if (!spotlightPanelEl) { buildSpotlight(); }
+  // HD-1 (R-POLISH B2): the header comes when called. If reveal-on-intent has
+  // tucked the nav away mid-page, ⌘K glides it back so the search affordance and
+  // its ⌘K badge are visible while the overlay is open -- "reveals + focuses
+  // search from anywhere". The FOCUS half already worked and is unchanged: it
+  // lands in this overlay's own input, NOT the nav's static .app-nav-search-input,
+  // which is inert by design (clicking it routes to #search). Guarded so
+  // spotlight.js keeps working if views.js has not initialised yet.
+  if (typeof window.praxisRevealNav === 'function') { window.praxisRevealNav(); }
   spotlightTriggerEl = triggerEl || null;
   spotlightPanelEl.classList.add('spotlight-open');
   spotlightBackdropEl.classList.add('spotlight-backdrop-open');

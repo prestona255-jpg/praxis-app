@@ -128,6 +128,33 @@
         var dragging = false, held = false, holdTimer = null;
         var startX = 0, startY = 0, origL = 0, origT = 0, moved = 0, grewTo = 0;
 
+        // DR-1 (L4) THE ORIGIN GHOST. The drag law asks for "the origin slot dims".
+        // This surface is FREE PLACEMENT -- there are no slots -- but the origin is
+        // still well defined: it is where the card was picked up from. So the slot
+        // becomes a faint outline left behind at the pickup point, which reads as
+        // "this came from here" and disappears on release. (The law's companion
+        // clause, "valid targets brighten on approach", was STRUCK by Preston at
+        // the B2 Stage-0 ruling: with free placement there is no target to brighten,
+        // so implementing it would have been decoration pretending to be feedback.)
+        var originGhost = null;
+        var settleGen = 0;   // see the settle block in end(): rapid re-drag guard
+        function showOrigin() {
+          if (originGhost || !canvas) { return; }
+          originGhost = document.createElement('div');
+          originGhost.className = 'rf-origin';
+          originGhost.style.left = String(origL) + 'px';
+          originGhost.style.top = String(origT) + 'px';
+          originGhost.style.width = String(el.offsetWidth) + 'px';
+          originGhost.style.height = String(el.offsetHeight) + 'px';
+          canvas.appendChild(originGhost);
+        }
+        function hideOrigin() {
+          if (originGhost && originGhost.parentNode) {
+            originGhost.parentNode.removeChild(originGhost);
+          }
+          originGhost = null;
+        }
+
         function pointOf(e) {
           if (e.touches && e.touches.length) { return { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
           return { x: e.clientX, y: e.clientY };
@@ -140,10 +167,15 @@
           moved = 0; grewTo = parseInt(canvas.style.height, 10) || MIN_H;
           if (isTouch) {
             held = false;
-            holdTimer = setTimeout(function () { held = true; dragging = true; el.className = 'rf-card rf-dragging'; }, HOLD_MS);
+            holdTimer = setTimeout(function () {
+              held = true; dragging = true;
+              el.className = 'rf-card rf-dragging';
+              showOrigin();   // DR-1: the ghost appears only once the hold engages
+            }, HOLD_MS);
           } else {
             dragging = true;
             el.className = el.className.indexOf('rf-lifted') !== -1 ? 'rf-card rf-lifted rf-dragging' : 'rf-card rf-dragging';
+            showOrigin();
           }
         }
         function move(e, isTouch) {
@@ -175,7 +207,26 @@
           var wasDrag = dragging && moved > TAP_PX;
           dragging = false; held = false;
           el.className = el.className.replace(/ ?rf-dragging/, '');
+          hideOrigin();
           if (wasDrag) {
+            // DR-1 SETTLE: a brief overshoot as the card lands. The class carries
+            // --ease-emphasis (which overshoots past 1 before settling); it is
+            // removed once the transition has run so the card returns to its
+            // resting transition profile. Reduced-motion neutralises this in CSS,
+            // not here, so the class may be applied unconditionally.
+            //
+            // settleGen guards the RAPID RE-DRAG race (red-team): pick up and drop
+            // the same card twice inside 340ms and drag #1's stale timeout would
+            // otherwise fire during drag #2's settle and strip the class mid-flight,
+            // cutting the second overshoot short. Each drop takes a generation; a
+            // timeout only clears the class if it is still the newest one.
+            settleGen = settleGen + 1;
+            var myGen = settleGen;
+            el.className = el.className + ' rf-settle';
+            setTimeout(function () {
+              if (myGen !== settleGen) { return; }
+              el.className = el.className.replace(/ ?rf-settle/, '');
+            }, 340);
             var nx = (parseInt(el.style.left, 10) || 0) / xTrack();
             var ny = (parseInt(el.style.top, 10) || 0) / Y_TRACK;
             if (typeof opts.onMove === 'function') { opts.onMove(card.id, clamp01(nx), clamp01(ny)); }
@@ -213,6 +264,7 @@
           if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
           dragging = false; held = false;
           el.className = el.className.replace(/ ?rf-dragging/, '');
+          hideOrigin();   // DR-1: the ghost must not survive a system cancel
         }
 
         el.addEventListener('mousedown', onMouseDown);

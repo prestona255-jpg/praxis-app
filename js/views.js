@@ -347,6 +347,50 @@ function initNavMobileToggle() {
   });
 }
 
+// HD-1 · REVEAL ON INTENT (R-POLISH B2, app-chrome rider).
+// The header scrolls away with the page; ANY upward scroll intent glides it back.
+// Seated normally at the top of a page. Bound exactly once per session, same
+// guarded idiom as initNavMobileToggle -- the nav is static index.html markup and
+// is never re-created per route, so re-binding on every renderRoute would stack
+// duplicate listeners.
+//
+// WHY DESKTOP-ONLY: the tuck is a `transform` on .app-nav, and the canon's §2
+// guardrail forbids transform/filter on any ancestor of an absolutely-positioned
+// child that can overflow it (the iOS composite bug). Below 760 the nav parents
+// exactly such a child -- the full-viewport mobile menu -- so the CSS scopes the
+// transform to >=760. That also satisfies the brief's "<760 behaviour unchanged":
+// mobile nav stays in-flow (position:relative) and never tucks. The JS is
+// harmless there because the class it toggles has no effect under 760.
+//
+// No rAF: the two existing scroll handlers in this file are synchronous reads of
+// pageYOffset (views.js shelfHeadScrollHandler, __aboutSpineScroll) and the pane
+// does not fire rAF at all -- matching the house idiom keeps this measurable.
+var navRevealInitialized = false;
+
+function praxisRevealNav() {
+  var navEl = document.querySelector('.app-nav');
+  if (navEl) { navEl.classList.remove('nav-tucked'); }
+}
+
+function initNavReveal() {
+  var navEl = document.querySelector('.app-nav');
+  if (!navEl) return;
+  var lastY = window.pageYOffset || 0;
+  var SEAT_Y = 24;   // within this of the top, the header is always seated
+  var INTENT = 6;    // px of travel before a direction counts as intent
+  window.addEventListener('scroll', function () {
+    var y = window.pageYOffset || 0;
+    if (y <= SEAT_Y) { navEl.classList.remove('nav-tucked'); lastY = y; return; }
+    var dy = y - lastY;
+    if (dy > INTENT) { navEl.classList.add('nav-tucked'); lastY = y; }
+    else if (dy < -INTENT) { navEl.classList.remove('nav-tucked'); lastY = y; }
+  });
+  // HD-1: the header must also come when CALLED, not only when scrolled to.
+  // spotlight.js invokes this on the ⌘K path so search is reachable from
+  // anywhere, including mid-page with the header tucked away.
+  window.praxisRevealNav = praxisRevealNav;
+}
+
 function renderRoute() {
   // 3.10a Stage 4: bind the hamburger toggle once on first call,
   // then close any open mobile nav panel on every route change.
@@ -358,6 +402,13 @@ function renderRoute() {
     initNavMobileToggle();
     navMobileToggleInitialized = true;
   }
+  // HD-1: bind the reveal-on-intent scroll listener once, same guard, same reason.
+  if (!navRevealInitialized) {
+    initNavReveal();
+    navRevealInitialized = true;
+  }
+  // HD-1: a route change is a new page -- the header seats itself at the top of it.
+  praxisRevealNav();
   var navOpen = document.querySelector('.app-nav');
   if (navOpen) {
     navOpen.classList.remove('app-nav-mobile-open');
@@ -3968,15 +4019,61 @@ function _arcCardConstellation(arcId) {
   var n = subs.length < 5 ? subs.length : 5;
   var pos = [];
   var i, j;
+
+  // GR-1 (R-POLISH B2) · THE LIVING MINIATURE — this thumbnail renders the arc's
+  // REAL arrangement.
+  //
+  // Recon found the gap: this card computed a synthetic position by hashing each
+  // sub-theory's id, and ignored the stored sub.x / sub.y that the user actually
+  // dragged -- even though that data exists, persists (state.js setSubTheoryPosition)
+  // and is read correctly by the field renderer and by Home's card. So two
+  // miniatures of the SAME arc disagreed about its shape. GR-1's felt test is
+  // "you recognize yours at a glance", which a hash can never satisfy.
+  //
+  // Stored coords are SVG USER SPACE from the field's viewBox, not percentages, so
+  // they are normalised against the bounding box of THIS arc's own placed marks and
+  // mapped into the thumb's 0-100 space. Normalising to the arc's own extent (not a
+  // fixed viewBox constant) keeps the mapping correct whatever dimensions the field
+  // was authored at, and preserves the RELATIVE arrangement -- which is the part a
+  // reader recognises.
+  //
+  // Fallbacks are deliberate: a sub with no placement keeps the old hash slot, and
+  // an arc with NO placed marks keeps the entire old layout, so never-arranged arcs
+  // look exactly as they do today rather than collapsing onto a point.
+  var placed = [];
+  for (i = 0; i < n; i = i + 1) {
+    if (typeof subs[i].x === 'number' && typeof subs[i].y === 'number') { placed.push(subs[i]); }
+  }
+  var minX = 0, maxX = 0, minY = 0, maxY = 0, spanX = 0, spanY = 0;
+  if (placed.length) {
+    minX = maxX = placed[0].x; minY = maxY = placed[0].y;
+    for (i = 1; i < placed.length; i = i + 1) {
+      if (placed[i].x < minX) { minX = placed[i].x; }
+      if (placed[i].x > maxX) { maxX = placed[i].x; }
+      if (placed[i].y < minY) { minY = placed[i].y; }
+      if (placed[i].y > maxY) { maxY = placed[i].y; }
+    }
+    spanX = maxX - minX; spanY = maxY - minY;
+  }
+
   for (i = 0; i < n; i = i + 1) {
     var id = subs[i].id || ('s' + i);
     var h = 0;
     for (j = 0; j < id.length; j = j + 1) { h = (h * 31 + id.charCodeAt(j)) >>> 0; }
     var fx = (h % 1000) / 1000;
     var fy = ((h >>> 10) % 1000) / 1000;
-    var x = 16 + (n === 1 ? 50 : (i * (68 / (n - 1)))) + (fx * 14 - 7);
-    var y = 32 + fy * 38;
+    var x, y;
+    if (placed.length && typeof subs[i].x === 'number' && typeof subs[i].y === 'number') {
+      // real placement -> the thumb's inset band (a single placed mark, or a
+      // perfectly flat row/column, centres on its axis rather than dividing by 0)
+      x = spanX > 0 ? (12 + ((subs[i].x - minX) / spanX) * 76) : 50;
+      y = spanY > 0 ? (20 + ((subs[i].y - minY) / spanY) * 60) : 50;
+    } else {
+      x = 16 + (n === 1 ? 50 : (i * (68 / (n - 1)))) + (fx * 14 - 7);
+      y = 32 + fy * 38;
+    }
     if (x < 8) { x = 8; } if (x > 92) { x = 92; }
+    if (y < 8) { y = 8; } if (y > 92) { y = 92; }
     var mat = (typeof _stComputeMaturity === 'function') ? _stComputeMaturity(subs[i]) : 0.5;
     pos.push({ x: x, y: y, cd: Math.round(15 + 13 * mat), mat: mat, sub: subs[i] });
   }
@@ -13038,19 +13135,23 @@ function requestArcVoice(arcId, hostEl, triggerEl) {
 // Stage C: the quiet "Ask Yumi what she sees here" affordance + its inline
 // host, returned as one box for renderArcDetail to mount under the view toggle.
 function buildArcVoiceAffordance(arcId) {
+  // B2 BUG RIDER — the orphaned chip. Recon's root cause: this affordance carried
+  // ALL of its styling as inline cssText and had NO container rule anywhere, so a
+  // lone pill sat at the far-left of a display:block page above a wide two-column
+  // field, reading as orphaned chrome. The inline styles move to real CSS classes
+  // (.arc-voice-box / .arc-voice-ask / .arc-voice-host in components.css) so the
+  // affordance can be given a container AND can follow the ground it sits on --
+  // inline styles could do neither. Behaviour, text and DOM position are unchanged;
+  // note it renders on ALL THREE faces (Field/Read/Page), not only Field, because
+  // the mount is gated on `user` above the arcFace branch.
   var box = document.createElement('div');
   box.className = 'arc-voice-box';
-  box.style.cssText = 'margin:10px 0 4px;';
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'arc-voice-ask';
   btn.textContent = 'Ask Yumi what she sees here';
-  btn.style.cssText = 'cursor:pointer; padding:6px 14px; font-family:var(--font-mono); '
-    + 'font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-text); '
-    + 'background:transparent; border:1px solid var(--line-2); border-radius:var(--radius-pill);';
   var hostEl = document.createElement('div');
   hostEl.className = 'arc-voice-host';
-  hostEl.style.cssText = 'margin-top:10px;';
   btn.addEventListener('click', function () { requestArcVoice(arcId, hostEl, btn); });
   box.appendChild(btn);
   box.appendChild(hostEl);

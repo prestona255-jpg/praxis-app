@@ -660,6 +660,31 @@
   z-index: 30;
 }
 
+/* ============================================================================
+   HD-1 · REVEAL ON INTENT. The header leaves while you read and comes back the
+   instant you reach for it (any upward scroll), or when ⌘K calls it.
+
+   DESKTOP-ONLY BY CONSTRUCTION. The tuck is a `transform`, and canon §2 forbids
+   transform on any ancestor of an absolutely-positioned child that can overflow
+   it -- the iOS composite bug. Below 760 the nav parents exactly that (the
+   full-viewport mobile menu), so the transform is scoped to >=760 and mobile
+   keeps its existing in-flow behaviour, unchanged, as the brief requires.
+
+   The translate clears the desktop pill's own 14px top margin as well as its
+   height, so the tuck leaves no sliver hanging at the viewport edge.
+
+   The transition LIST itself is not declared here: a later .app-nav rule
+   (~line 10818, the writing-canvas focus dim) owns the nav's transition at equal
+   specificity and would win anyway, so both properties are declared there. */
+@media (min-width:760px){
+  .app-nav.nav-tucked{
+    transform:translateY(calc(-100% - 20px));
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .app-nav{ transition:none; }
+}
+
 .app-nav-wordmark {
   flex: 0 0 auto;
   font-family: var(--font-serif);
@@ -10791,7 +10816,16 @@
 @media (prefers-reduced-motion:reduce) { .wc-saved.wc-saving .wc-sdot { animation:none; } }
 /* Focus mode: the nav recedes via OPACITY only -- it stays solid (no blur, no
    filter/transform), so the iOS fixed-child composite bug is never triggered. */
-.app-nav { transition:opacity var(--motion-base) var(--ease); }
+/* HD-1 (B2): this rule OWNS the nav's transition list. It sits later in the file
+   than the HD-1 block near .app-nav's base rule, at equal specificity, so it was
+   silently clobbering the transform transition (measured: computed transition read
+   `opacity .35s` only). Both properties are declared here rather than fought over
+   with specificity. Durations differ deliberately: opacity keeps --motion-base
+   (350ms), the pre-MO-1 token this focus-dim shipped with, so writing-canvas focus
+   behaviour is byte-identical; transform takes MO-1's --dur-gentle (300ms), which
+   is what HD-1 specifies. */
+.app-nav { transition:opacity var(--motion-base) var(--ease),
+                      transform var(--dur-gentle) var(--ease-standard); }
 body.wc-focus .app-nav { opacity:.26; }
 
 /* 2c: rendered MARGINALIA card body -- the same wcRenderMarkdown output as the
@@ -11887,7 +11921,49 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .rf-card .rf-body{ font-family:var(--lum-serif); font-size:13px; font-style:italic; color:var(--lum-ink-2); line-height:1.35; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
 .st-build.lum-amber-deep .rf-card.rf-lifted{ z-index:3; }
 .st-build.lum-amber-deep .rf-card.rf-lifted .rf-body{ display:block; -webkit-line-clamp:none; }
-.st-build.lum-amber-deep .rf-card.rf-dragging{ z-index:4; cursor:grabbing; box-shadow:0 16px 30px -14px rgba(133,84,16,.55); }
+/* ============================================================================
+   L4 / DR-1 · THE DRAG LAW — the workshop field.
+   Pick-up: scale 1.03 + the shadow deepens + the origin dims (the ghost).
+   Settle:  a slight overshoot as it lands (--ease-emphasis passes 1 then returns).
+   Reduced-motion: instant swap, no choreography.
+
+   TWO CLAUSES OF THE LAW DO NOT APPLY HERE, by Preston's B2 ruling:
+   - "valid targets brighten on approach" is STRUCK — this surface is FREE
+     PLACEMENT, there are no targets, and animating one would be decoration
+     posing as feedback.
+   - the law's third surface (the arc Field's marks) ships lift + dim only; its
+     onCommit re-renders the SVG and would destroy an overshoot mid-flight.
+
+   Only TRANSFORM and BOX-SHADOW transition. left/top are set imperatively by
+   room-field.js on every pointermove, so transitioning them would make the card
+   lag the cursor -- the classic "swimming card" bug. */
+.st-build.lum-amber-deep .rf-card{
+  transition:transform var(--dur-fast) var(--ease-standard),
+             box-shadow var(--dur-fast) var(--ease-standard);
+}
+.st-build.lum-amber-deep .rf-card.rf-dragging{
+  z-index:4; cursor:grabbing;
+  transform:scale(1.03);
+  box-shadow:0 16px 30px -14px rgba(133,84,16,.55);
+}
+/* the landing: transform eases back through the overshoot curve */
+.st-build.lum-amber-deep .rf-card.rf-settle{
+  transition:transform var(--dur-gentle) var(--ease-emphasis),
+             box-shadow var(--dur-gentle) var(--ease-standard);
+}
+/* THE ORIGIN GHOST — "the origin slot dims", read honestly onto a slotless
+   surface: a faint outline of the card, left where it was picked up from. */
+.st-build.lum-amber-deep .rf-origin{
+  position:absolute; box-sizing:border-box; pointer-events:none; z-index:1;
+  border:1px dashed rgba(133,84,16,.30);
+  border-radius:10px;
+  background:rgba(133,84,16,.05);
+}
+@media (prefers-reduced-motion:reduce){
+  .st-build.lum-amber-deep .rf-card,
+  .st-build.lum-amber-deep .rf-card.rf-settle{ transition:none; }
+  .st-build.lum-amber-deep .rf-card.rf-dragging{ transform:none; }
+}
 .st-build.lum-amber-deep .stb-return-chip{ display:inline-block; margin:0 0 10px; font-family:var(--lum-mono); font-size:11px; letter-spacing:.05em; color:var(--lum-gold-d); text-decoration:none; border-bottom:1px solid transparent; }
 .st-build.lum-amber-deep .stb-return-chip:hover{ border-bottom-color:var(--lum-gold-d); }
 
@@ -12611,6 +12687,96 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* stage: constellation host + rail */
 .arcfield.lum-amber .arcfield-stage{ display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; margin-top:14px; }
+
+/* ============================================================================
+   RM6 / XL-1 · THE DESK WIDENS — the arc Field spans its working region.
+
+   Recon finding this rule answers: the field's width was never designed. It
+   measured 788px (1080 shell - 48 padding - 220 rail - 24 gap) and held that
+   value from ~1128px viewport all the way through 2560, because NO
+   @media (min-width:...) rule referenced .arcfield anywhere in this file (all 18
+   min-width blocks scanned). The 788px was incidental, inherited from the shared
+   1080px page shell -- so this authors a net-new tier rather than adjusting a
+   designed number.
+
+   At the XL tier the shell opens to 1560 and the rail earns 260 (it carries the
+   Layers/legend chrome), leaving the field 1512 - 260 - 24 = 1228px.
+
+   OCCUPANCY, against XL-1's >=60% floor:
+     1920 -> 1560/1920 = 81.3%  PASS
+     2560 -> 1560/2560 = 60.9%  PASS (the cap deliberately does NOT keep growing:
+             XL-1 says pages COMPOSE wider, never stretch, so 2560 gets the same
+             desk with more room around it, still just clear of the floor.) */
+@media (min-width:1600px){
+  .arcfield.lum-amber > *{ max-width:1560px; }
+  .arcfield.lum-amber .arcfield-stage{ grid-template-columns:1fr 260px; }
+}
+
+/* ============================================================================
+   R1 · TY-1's 12px TYPE FLOOR IN THE CONSTELLATION — and a corrected diagnosis.
+
+   The brief carried this as "SVG Yumi label 11px — fix at the source (locked
+   renderer)". Measured, that premise is wrong in BOTH directions:
+
+     arc interior   viewBox 600x500 rendered at 1228px -> scale 2.047
+                    font-size="11" USER UNITS renders at ~22.5 REAL px  (PASSES)
+     Home thumbnail viewBox 600x360 rendered at  248px -> scale 0.413
+                    the same attribute renders at ~4.55 REAL px         (FAILS hard)
+
+   `font-size="11"` is a user-unit value inside a scaled viewBox, not pixels. So
+   editing 11 -> 12 at the source would have (a) left the real violation at
+   ~4.96px, still illegible, and (b) inflated the interior to ~24.5px, breaking
+   the one place that was already correct. The floor is about RENDERED pixels.
+
+   The honest fix is contextual, and needs NO renderer edit — which also keeps
+   the "styled, never edited" lock intact and the byte-lock untouched: a
+   miniature shows the ARRANGEMENT (GR-1's living miniature), and a 4.5px word is
+   noise, not information. Labels belong to the interior, where they render at
+   22.5px and are read. Presentation attributes lose to any CSS rule, so this
+   would have won even if a size override had been the right answer. */
+.home-arc-ff [data-st-yumi] text,
+.home-wf [data-st-yumi] text,
+.home-arc-ff [data-st-legend],
+.home-wf [data-st-legend]{ display:none; }
+
+/* ============================================================================
+   B2 BUG RIDER · THE ARC-VOICE AFFORDANCE ("Ask Yumi what she sees here").
+   Was inline-styled with zero container rule, so it read as an orphaned pill at
+   the far left of the page. It now gets a real container: a quiet carved row
+   that spans the content column and seats the chip inside it, so the affordance
+   belongs to the page instead of floating above it. Renders on all three faces.
+   NOTE: the chip's uppercase-on-a-sentence treatment is deliberately UNCHANGED
+   here -- that is residual R6 (TY-1's mono-caps sentence sweep), and fixing it
+   in a bug-rider would be scope creep into a different law's batch. */
+.arcfield .arc-voice-box{
+  display:flex; align-items:center; flex-wrap:wrap; gap:12px;
+  /* `auto` on the inline axis is LOAD-BEARING: .arcfield.lum-amber > * centres
+     every shell child with margin-left/right:auto, and a `margin:10px 0 4px`
+     shorthand here silently zeroed that -- measured x=0 against a shell starting
+     at 172, i.e. the exact "floating far-left" symptom this rider exists to fix,
+     re-created one layer up. Caught by measuring the box, not by reading it. */
+  margin:10px auto 4px; padding:10px 14px;
+  border:1px solid var(--lum-glass-bd, var(--line-2));
+  border-radius:var(--radius-md);
+  background:var(--lum-glass, transparent);
+}
+.arcfield .arc-voice-ask{
+  cursor:pointer; flex:none;
+  padding:6px 14px;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--lum-gold-d, var(--gold-text));
+  background:transparent;
+  border:1px solid var(--lum-glass-bd, var(--line-2));
+  border-radius:var(--radius-pill);
+  transition:border-color var(--dur-fast) var(--ease-standard),
+             color var(--dur-fast) var(--ease-standard);
+}
+.arcfield .arc-voice-ask:hover{ border-color:var(--lum-gold-d, var(--gold)); }
+.arcfield .arc-voice-host{ flex:1 1 100%; margin-top:0; }
+.arcfield .arc-voice-host:empty{ display:none; }
+@media (prefers-reduced-motion:reduce){
+  .arcfield .arc-voice-ask{ transition:none; }
+}
 /* W8 Lane A-VISUAL: dark luminous stage (mockup praxis-field-amber.html .stage).
    Warm-center glow = --lum-gold at low alpha (rgba matches the token's RGB) over
    the --lum-base dark; a subtle warm inset glow gives the panel depth. The SVG
@@ -12745,12 +12911,22 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.arcfield-warm .seg-opt:hover{ color:var(--lum-ink); }
 /* FIELD STAGE — deep cognac + softened feathered vignette (verbatim from the felt-passed
    mockup .field-room). The ONLY umber-literal block. NOT re-pointed (dark renderer kept). */
+/* RD-1 · THE PARCHMENT FIELD (R-POLISH B2). The field stage was the sanctioned
+   DARK exception -- deep cognac (#2f1c0e) with a feathered vignette to parchment
+   at the rim. RD-1 retires that exception: the field is ground you OWN, and you
+   work on paper. The L3 legibility proof passed in Slice 0 (gold-channel marks at
+   4.72:1, 36-mark density), so DUSK CARVE is not needed as a revert.
+
+   CARVED, not raised: the field is recessed INTO the page -- one inset shadow
+   plus a hairline -- which is CC-2's carved grammar applied to a surface rather
+   than a control. The old outward feather is gone with the dark it existed to
+   soften; there is no longer a polarity change at the rim to hide. */
 .arcfield.arcfield-warm .arc-detail-web-view{
-  background-color:#2f1c0e;
+  background-color:var(--card-1);
   background-image:
-    radial-gradient(72% 60% at 44% 38%, rgba(255,206,74,.12) 0%, rgba(255,206,74,.03) 45%, rgba(255,206,74,0) 70%),
-    radial-gradient(132% 118% at 50% 46%, rgba(47,28,14,0) 60%, rgba(74,49,25,.55) 82%, rgba(231,210,168,.55) 100%);
-  box-shadow:inset 0 0 70px 26px rgba(231,210,168,.14), inset 0 0 100px rgba(255,206,74,.06);
+    radial-gradient(72% 60% at 44% 38%, rgba(199,154,58,.10) 0%, rgba(199,154,58,.03) 45%, rgba(199,154,58,0) 70%),
+    linear-gradient(180deg, var(--card-1) 0%, var(--card-2) 100%);
+  box-shadow:inset 0 2px 10px rgba(38,32,25,.16), inset 0 0 0 1px rgba(38,32,25,.10);
   border:none;
 }
 /* D5 field-control legibility (S1 built the DOM; styling lands here). Both sit INSIDE the

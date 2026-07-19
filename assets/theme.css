@@ -21,9 +21,12 @@
      tokens; the [data-ground="dark"] block below re-points the ~15
      ground-sensitive shared tokens to the dark study set. New Umber-named
      tokens are ADDED here; existing token NAMES are kept and re-pointed,
-     never renamed or deleted. The frozen --subtheory-* mark palette and the
-     --tradition-* renderer feed are intentionally left at their values
-     (tradition retint is a separate, deferred task). */
+     never renamed or deleted. The --tradition-* renderer feed is intentionally
+     left at its values (tradition retint is a separate, deferred task).
+     UPDATED (B2, 2026-07-19): --subtheory-* is NO LONGER frozen at its 9b-ii
+     values. Preston unfroze it for the ruled RD-1 batch; it collapsed 16 -> the
+     five jewel tokens and was RE-FROZEN at five in the same commit. The mapping
+     and the re-freeze notice live at the --subtheory-* block below. */
 
   /* -- dark study surfaces -- RE-POINTED to THE HOUR, REFINED (v3.232).
         Umber's brown study (#2f1c0e family) becomes the twilight arc. Names are
@@ -130,13 +133,22 @@
   --window-bg:     #0D1424;
   --window-line:   rgba(199,154,58,.16);
 
-  /* -- JEWEL MARKS (canonical). Landed now so B2's GR-1 renderer consumes
-        tokens, never literals. These retire the --field-N pastel candy. -- */
-  --m1:            #D9B24A;
-  --m2:            #C75434;
-  --m3:            #7C8B4F;
-  --m4:            #3E8A83;
-  --m5:            #B07514;
+  /* -- JEWEL MARKS (canonical, WIRED + RE-FROZEN at B2).
+        CORRECTION (B2): the v3.232 note here said these "retire the --field-N
+        pastel candy". That named the WRONG target and is fixed rather than left
+        to mislead the next reader -- `js/arc-constellation.js` never reads
+        --field-N at all (zero grep hits; corroborated by r-polish-b1.md:654).
+        The renderer's real candy was --subtheory-1..16 / -edge, and THAT is what
+        these retire, via the deterministic collapse documented at the
+        --subtheory-* block below. --field-N remains a separate decorative token
+        used by chrome in components.css, untouched by this batch.
+        Each jewel carries a companion -edge (its deep tone) for the marks'
+        inner-design strokes. -- */
+  --m1:            #D9B24A;  --m1-edge: #A67F1E;   /* gold       */
+  --m2:            #C75434;  --m2-edge: #94371F;   /* terracotta */
+  --m3:            #7C8B4F;  --m3-edge: #556032;   /* olive      */
+  --m4:            #3E8A83;  --m4-edge: #266059;   /* teal       */
+  --m5:            #B07514;  --m5-edge: #7D5109;   /* ochre      */
 
   /* -- the cloth spines: the bound edge of a printed page (reference `.spine`).
         Tokens, not literals in components.css -- the same rule the jewel marks
@@ -290,46 +302,74 @@
   --tradition-place-halo: #98D4B0;
   --tradition-practice-halo: #B8896C;
 
-  /* 9b-ii: sub-theory identity palette -- the frozen sixteen colorful FILLS
-     (praxis-marks-16-spec.html), picked by id-hash so each sub-theory wears a
-     unique, stable color (or a per-sub markColor override). Renderer indexes
-     var(--subtheory-N), N = colorIdx + 1. */
-  --subtheory-1:  #6FC9BC; /* teal */
-  --subtheory-2:  #8FB8E8; /* sky */
-  --subtheory-3:  #E8998D; /* coral */
-  --subtheory-4:  #E8B45C; /* amber */
-  --subtheory-5:  #7CC6DA; /* aqua */
-  --subtheory-6:  #F0D468; /* gold */
-  --subtheory-7:  #9BA4E8; /* periwinkle */
-  --subtheory-8:  #F2A8C6; /* pink */
-  --subtheory-9:  #A8CD8E; /* green */
-  --subtheory-10: #AC9DE2; /* lilac */
-  --subtheory-11: #C0A8E0; /* lavender */
-  --subtheory-12: #C9D67E; /* chartreuse */
-  --subtheory-13: #8FD4B8; /* mint */
-  --subtheory-14: #E89BB4; /* rose */
-  --subtheory-15: #DFC089; /* sand */
-  --subtheory-16: #EFA89A; /* peach */
+  /* ===================================================================
+     RD-1 · THE JEWEL COLLAPSE (R-POLISH B2, 2026-07-19).
+     RE-FROZEN AT FIVE. The sixteen colorful pastels are RETIRED; the mark
+     palette is now the five ratified jewel tokens. Preston UNFROZE the
+     sixteen for this ruled batch only -- a ruled L3 batch is the freeze's
+     sanctioned edit -- and the result is RE-FROZEN here at the new five.
+     Casual drift is forbidden again from this line forward: changing these
+     requires another ruled batch, not a passing tune.
 
-  /* 9b-ii: companion DEEP tones (frozen spec) -- the same-hue deep shade of
-     --subtheory-N, now used for each mark's inner-design strokes (full-fill
-     body grammar; no separate silhouette outline). */
-  --subtheory-1-edge:  #37968A;
-  --subtheory-2-edge:  #5580C2;
-  --subtheory-3-edge:  #C4685B;
-  --subtheory-4-edge:  #C08A28;
-  --subtheory-5-edge:  #3D93AC;
-  --subtheory-6-edge:  #C4A22E;
-  --subtheory-7-edge:  #5F6AC4;
-  --subtheory-8-edge:  #CC6E9A;
-  --subtheory-9-edge:  #6FA052;
-  --subtheory-10-edge: #7A66C2;
-  --subtheory-11-edge: #8E6EC0;
-  --subtheory-12-edge: #94A33E;
-  --subtheory-13-edge: #4AA582;
-  --subtheory-14-edge: #C25E84;
-  --subtheory-15-edge: #AE8C46;
-  --subtheory-16-edge: #CC6E5C;
+     WHY: the candy pastels were authored for a dark stage and fail on the
+     parchment field (P-C, the candy-palette leak). The jewels are the
+     gold-channel family the L3 legibility proof passed at 36-mark density.
+
+     THE MAPPING IS DETERMINISTIC AND STABLE -- N -> m((N-1) mod 5)+1:
+        1,6,11,16 -> m1 gold        2,7,12 -> m2 terracotta
+        3,8,13    -> m3 olive       4,9,14 -> m4 teal
+        5,10,15   -> m5 ochre
+     The renderer picks N by id-hash, so an existing sub-theory keeps its N
+     and therefore lands on ONE fixed jewel: identities stay stable across
+     the change, which is what the ruling required. Five jewels across
+     sixteen slots means hue no longer uniquely identifies a sub-theory --
+     by design: GLYPH SHAPE carries the remaining distinction (the 16-shape
+     _ST_MARK_TABLE is untouched, so every slot is still visually distinct).
+
+     SCOPE NOTE: this collapses the DEFAULT palette only. The two OPT-IN
+     alternates ([data-st-palette="muted"|"colorful"], below) are user-chosen
+     and deliberately left on their own values -- retiring a palette a user
+     explicitly selected is a different decision, not this batch's. Their
+     candy is therefore still reachable by choice, never by default.
+
+     Renderer indexes var(--subtheory-N), N = colorIdx + 1 (unchanged). */
+  --subtheory-1:  var(--m1);
+  --subtheory-2:  var(--m2);
+  --subtheory-3:  var(--m3);
+  --subtheory-4:  var(--m4);
+  --subtheory-5:  var(--m5);
+  --subtheory-6:  var(--m1);
+  --subtheory-7:  var(--m2);
+  --subtheory-8:  var(--m3);
+  --subtheory-9:  var(--m4);
+  --subtheory-10: var(--m5);
+  --subtheory-11: var(--m1);
+  --subtheory-12: var(--m2);
+  --subtheory-13: var(--m3);
+  --subtheory-14: var(--m4);
+  --subtheory-15: var(--m5);
+  --subtheory-16: var(--m1);
+
+  /* The companion DEEP tones drive each mark's INNER-DESIGN STROKES. Under the
+     collapse they follow their own jewel so a mark reads as one object rather
+     than a jewel body wearing a stranger's outline. Deep variants of the five,
+     re-frozen with them. */
+  --subtheory-1-edge:  var(--m1-edge);
+  --subtheory-2-edge:  var(--m2-edge);
+  --subtheory-3-edge:  var(--m3-edge);
+  --subtheory-4-edge:  var(--m4-edge);
+  --subtheory-5-edge:  var(--m5-edge);
+  --subtheory-6-edge:  var(--m1-edge);
+  --subtheory-7-edge:  var(--m2-edge);
+  --subtheory-8-edge:  var(--m3-edge);
+  --subtheory-9-edge:  var(--m4-edge);
+  --subtheory-10-edge: var(--m5-edge);
+  --subtheory-11-edge: var(--m1-edge);
+  --subtheory-12-edge: var(--m2-edge);
+  --subtheory-13-edge: var(--m3-edge);
+  --subtheory-14-edge: var(--m4-edge);
+  --subtheory-15-edge: var(--m5-edge);
+  --subtheory-16-edge: var(--m1-edge);
 
   /* =====================================================================
      Stage 5.1 -- Material system tokens (A1-A4).
@@ -630,21 +670,33 @@ body::after {
    even when the page root is muted -- the picker's color swatches set
    data-st-palette="colorful" on themselves so they always read colorful
    (ruling: swatches show identity hues regardless of the global palette). */
+/* RD-1 · THE JEWEL COLLAPSE ALSO LANDS HERE — and this block is the one that
+   actually matters. views.js:13777 reads
+   `ls('praxis_constellation_palette', 'colorful')`, so "colorful" is the SHIPPED
+   DEFAULT, not an opt-in: this selector shadows :root for every user who has not
+   explicitly chosen "muted". Collapsing only :root left the candy fully live --
+   measured, the field still painted #C9D67E chartreuse and #E89BB4 rose after
+   the :root edit. Same deterministic mapping, N -> m((N-1) mod 5)+1.
+   "muted" below is left alone: it IS a genuine opt-in alternate.
+   Rider: views.js:10349 pins the mark-PICKER swatches to this palette so they
+   "show identity hues regardless of the global palette". Under the collapse the
+   picker therefore shows 16 shapes in 5 jewels -- correct, since shape now
+   carries the distinction, but worth seeing at the felt pass. */
 [data-st-palette="colorful"] {
-  --subtheory-1:  #6FC9BC; --subtheory-1-edge:  #37968A;
-  --subtheory-2:  #8FB8E8; --subtheory-2-edge:  #5580C2;
-  --subtheory-3:  #E8998D; --subtheory-3-edge:  #C4685B;
-  --subtheory-4:  #E8B45C; --subtheory-4-edge:  #C08A28;
-  --subtheory-5:  #7CC6DA; --subtheory-5-edge:  #3D93AC;
-  --subtheory-6:  #F0D468; --subtheory-6-edge:  #C4A22E;
-  --subtheory-7:  #9BA4E8; --subtheory-7-edge:  #5F6AC4;
-  --subtheory-8:  #F2A8C6; --subtheory-8-edge:  #CC6E9A;
-  --subtheory-9:  #A8CD8E; --subtheory-9-edge:  #6FA052;
-  --subtheory-10: #AC9DE2; --subtheory-10-edge: #7A66C2;
-  --subtheory-11: #C0A8E0; --subtheory-11-edge: #8E6EC0;
-  --subtheory-12: #C9D67E; --subtheory-12-edge: #94A33E;
-  --subtheory-13: #8FD4B8; --subtheory-13-edge: #4AA582;
-  --subtheory-14: #E89BB4; --subtheory-14-edge: #C25E84;
-  --subtheory-15: #DFC089; --subtheory-15-edge: #AE8C46;
-  --subtheory-16: #EFA89A; --subtheory-16-edge: #CC6E5C;
+  --subtheory-1:  var(--m1); --subtheory-1-edge:  var(--m1-edge);
+  --subtheory-2:  var(--m2); --subtheory-2-edge:  var(--m2-edge);
+  --subtheory-3:  var(--m3); --subtheory-3-edge:  var(--m3-edge);
+  --subtheory-4:  var(--m4); --subtheory-4-edge:  var(--m4-edge);
+  --subtheory-5:  var(--m5); --subtheory-5-edge:  var(--m5-edge);
+  --subtheory-6:  var(--m1); --subtheory-6-edge:  var(--m1-edge);
+  --subtheory-7:  var(--m2); --subtheory-7-edge:  var(--m2-edge);
+  --subtheory-8:  var(--m3); --subtheory-8-edge:  var(--m3-edge);
+  --subtheory-9:  var(--m4); --subtheory-9-edge:  var(--m4-edge);
+  --subtheory-10: var(--m5); --subtheory-10-edge: var(--m5-edge);
+  --subtheory-11: var(--m1); --subtheory-11-edge: var(--m1-edge);
+  --subtheory-12: var(--m2); --subtheory-12-edge: var(--m2-edge);
+  --subtheory-13: var(--m3); --subtheory-13-edge: var(--m3-edge);
+  --subtheory-14: var(--m4); --subtheory-14-edge: var(--m4-edge);
+  --subtheory-15: var(--m5); --subtheory-15-edge: var(--m5-edge);
+  --subtheory-16: var(--m1); --subtheory-16-edge: var(--m1-edge);
 }
