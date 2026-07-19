@@ -10,10 +10,15 @@
   --surface:#fffdf8; --surface-2:#efe7d6; --sunk:#efe7d6; --border:#e3d8c1; --wash:rgba(133,84,16,.07);
   --br-deep:#1c1209; --danger:#c2603a; --text-on-dark:#fdfaf3; --paper:#f4efe4;
 }
-[data-ground="dark"]{ --ink:#f0e3c8; --ink-2:#c2a87f; --ink-3:#c2a87f; --gold:#d2a23e; --gold-deep:#e7c46a;
-  --surface:#3e2814; --surface-2:#4a3119; --sunk:#241406; --border:rgba(210,162,62,.22); --wash:rgba(210,162,62,.08); }
+/* B1-FIX (R4) · RE-POINTED to THE HOUR, REFINED. This rig block STUBS the token
+   set (the demo does not link theme.css), so it had frozen the RETIRED Umber
+   dark-study palette -- the kit would have gone on speccing B2-B4 in a world the
+   app no longer wears. Values mirror theme.css's dark remap under the Hour. */
+[data-ground="dark"]{ --ink:#F0EBDF; --ink-2:#B4AFA2; --ink-3:#8C897E; --gold:#C79A3A; --gold-deep:#DFB759;
+  --surface:#232838; --surface-2:#2B3042; --sunk:#2E3446; --border:rgba(240,235,223,.10); --wash:rgba(240,235,223,.06); }
 *{box-sizing:border-box;} body{margin:0;font-family:var(--font-body);color:var(--ink);background:var(--paper);}
-.ground{padding:26px;} .ground.dark{background:linear-gradient(155deg,#402812,#281609);}
+.ground{padding:26px;} /* B1-FIX (R4): the dark ground is the Hour's twilight arc, not Umber brown. */
+.ground.dark{background:linear-gradient(178deg,#191F33 0%,#1B1D2B 36%,#241C14 70%,#29200F 100%);}
 .wrap{max-width:1180px;margin:0 auto;}
 h1{font-family:var(--font-serif);font-weight:600;font-size:34px;margin:0 0 2px;}
 .sub{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);}

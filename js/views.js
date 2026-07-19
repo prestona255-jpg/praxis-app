@@ -394,20 +394,27 @@ function renderRoute() {
   // the Amber Book Detail / Book View surfaces (both have parts[0]==='book',
   // incl. #book/<id>/marks) -- the seam-proof backing for the full-bleed
   // .lum-amber-deep root, so no bright paper shows at the surface edges.
-  // R-POLISH B1 · PG-1 (THE PAGE-GROUND LAW) -- 'home' LEAVES the dark set.
-  // "Paper by day, sky for beholding": Home is a WORKING surface, so it joins its
-  // siblings as full-bleed light paper and its warmth is re-expressed IN the page
-  // (the daylight gradient family on .home-page), not by a dark vignette behind a
-  // floating sheet. Dark is reserved for beholding surfaces.
+  // R-POLISH B1-FIX · PG-1 v2 (THE HOUR, REFINED) -- 'home' REJOINS the dark set.
+  //
+  // B1 removed 'home' here under PG-1 v1.4 ("paper by day, sky for beholding"),
+  // making Home the only bright route in the app. PG-1 is amended to v2 by this
+  // ship: "One twilight world; printed pages are where you work; depth is
+  // meaning -- About and the galaxy are its deeper registers, every crossing
+  // gradual." Home is therefore not an exception to the world; it is the first
+  // room of it, and the WORK happens on vellum pages (.lit-page) laid on that
+  // world -- so Home keeps its printed working surfaces AND its sky.
+  //
+  // With 'home' restored, every route in the app resolves data-ground="dark":
+  // the world is genuinely one. B1's Home-scoped fixed ::before (the bright
+  // paper vignette, components.css) retires in the same commit -- the global
+  // body::before/::after ground pair is now the single ground mechanism.
   //
   // This flip re-resolves EVERY ground-sensitive token on the page at once, so it
-  // is sampled before/after at 390/1280/1920 (docs/checkpoints/r-polish-b1.md).
+  // is sampled before/after at 390/1280/1920 (docs/checkpoints/r-polish-b1-fix.md).
   // It does NOT touch the nav: theme.css lists .app-nav (and .yumi-bloom,
   // .yumi-panel, .spotlight-panel) as INDEPENDENT selectors on the dark remap, so
-  // that chrome self-darkens over any ground. The comment in components.css that
-  // said Home must stay dark "so the nav stays consistent" was reasoning from a
-  // premise that the token sheet does not require; it is corrected there.
-  var umberGroundDark = { books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
+  // that chrome keeps its own world fill over any ground.
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -1391,7 +1398,23 @@ function homeShowVariant(root, which) {
 // _arcDetailBuildSubTheoryData + the locked renderer), title, count · touched, Continue.
 function homeLeftOffCard(arc) {
   var card = document.createElement('div');
-  card.className = 'home-arc lum-glass';
+  // THE HOUR: the arc card becomes a LIT PAGE -- vellum, 15px radius, the
+  // Apple-tight shadow trio, and the on-card token ramp. .lit-page-lift adds the
+  // MO-1 hover lift, since this row IS interactive. The legacy .lum-glass class
+  // is KEPT alongside, not rewritten (canon §4-D: primitives are additive).
+  card.className = 'home-arc lum-glass lit-page lit-page-lift';
+
+  // THE HOUR: the cloth spine -- the bound edge of a printed page. The hue is
+  // chosen DETERMINISTICALLY from the arc id, not at random and not by index, so
+  // a given arc keeps the same spine across renders, re-orders and sessions
+  // (a shuffling spine would read as a bug). Three cloths, per the reference.
+  var spine = document.createElement('span');
+  var spineCloths = ['lit-spine-ox', 'lit-spine-olive', 'lit-spine-teal'];
+  var spineKey = String(arc && arc.id ? arc.id : '');
+  var spineSum = 0;
+  for (var si = 0; si < spineKey.length; si++) { spineSum += spineKey.charCodeAt(si); }
+  spine.className = 'lit-spine ' + spineCloths[spineSum % 3];
+  card.appendChild(spine);
 
   var field = document.createElement('div');
   field.className = 'home-arcfield';
@@ -1426,6 +1449,10 @@ function homeLeftOffCard(arc) {
   var touched = (typeof _arcTouchedWord === 'function') ? _arcTouchedWord(arc.id, arc) : '';
   if (touched) { metaText = metaText + ' · ' + touched; }
   mm.textContent = metaText;
+  // THE HOUR: an ember dot marks an arc touched TODAY -- presence and attention,
+  // per SEMANTIC GOLD. Display-only, derived from the same _arcTouchedWord value
+  // already being rendered: no new state, no data-model change, no extra read.
+  if (touched === 'touched today') { mm.className = 'home-arcmeta home-arcmeta-ember'; }
   top.appendChild(mm);
   body.appendChild(top);
 
@@ -1526,14 +1553,42 @@ function renderHome() {
   // welcome + alternator
   var welcome = document.createElement('div');
   welcome.className = 'home-welcome';
+  // R-POLISH B1-FIX · THE HOUR: the dated kicker. It renders the REAL current
+  // date -- the reference mockup's "Saturday · July 19" is sample text, never a
+  // string to copy (the canon's "pull all content from live state" rule). ES3:
+  // no toLocaleDateString options object, which is unreliable across the
+  // browsers this app supports; the two name tables are explicit and cheap.
+  var kicker = document.createElement('div');
+  kicker.className = 'home-kicker';
+  var kNow = new Date();
+  var kDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var kMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+  kicker.textContent = kDays[kNow.getDay()] + ' · ' + kMonths[kNow.getMonth()] +
+    ' ' + kNow.getDate() + ' · the study is lit';
+  welcome.appendChild(kicker);
+
   var wTitle = document.createElement('h2');
   wTitle.className = 'home-welcome-title';
   // OG1: honest greeting -- a brand-new account (no arcs AND an empty shelf) is
   // not "welcomed back." haveArcs is computed above; hasShelf here.
+  // THE HOUR: the greeting splits into a lead + an italic gold accent (the
+  // reference's `h1 em`). OG1's honest distinction is PRESERVED -- only the
+  // typography changes, not which greeting a given account sees.
   var hasShelf = !!(state.userBooks && state.userBooks[homeUser.uid] &&
     state.userBooks[homeUser.uid].bookIds && state.userBooks[homeUser.uid].bookIds.length > 0);
-  wTitle.textContent = (haveArcs || hasShelf) ? 'Welcome back.' : 'Welcome to Praxis.';
+  var wReturning = (haveArcs || hasShelf);
+  wTitle.appendChild(document.createTextNode(wReturning ? 'Welcome back, ' : 'Welcome to '));
+  var wAccent = document.createElement('em');
+  wAccent.className = 'home-welcome-accent';
+  wAccent.textContent = wReturning ? 'reader.' : 'Praxis.';
+  wTitle.appendChild(wAccent);
   welcome.appendChild(wTitle);
+
+  // THE HOUR: the gold hairline under the hero (reference `.herorule`).
+  var hRule = document.createElement('div');
+  hRule.className = 'home-herorule';
+  welcome.appendChild(hRule);
 
   var alt = document.createElement('div');
   alt.className = 'home-alt';
@@ -1573,7 +1628,9 @@ function renderHome() {
   fieldSect.textContent = 'How your arcs connect';
   vField.appendChild(fieldSect);
   var wholefield = document.createElement('div');
-  wholefield.className = 'home-wholefield lum-glass';
+  // THE HOUR: a lit page, but deliberately NOT lift-able -- it is a surface you
+  // read, not a row you click.
+  wholefield.className = 'home-wholefield lum-glass lit-page';
   var wf = document.createElement('div');
   wf.className = 'home-wf';
   wholefield.appendChild(wf);
@@ -1642,7 +1699,12 @@ function renderHome() {
   var glimpses = document.createElement('div');
   glimpses.className = 'home-glimpses';
   var glimpse = document.createElement('div');
-  glimpse.className = 'home-glimpse lum-glass';
+  // THE HOUR: the "Still reading" aside is a lit page (the reference's .acard).
+  glimpse.className = 'home-glimpse lum-glass lit-page';
+  // THE HOUR: the aside carries the teal cloth, per the reference's `.acard`.
+  var glSpine = document.createElement('span');
+  glSpine.className = 'lit-spine lit-spine-teal';
+  glimpse.appendChild(glSpine);
   var gl = document.createElement('div');
   gl.className = 'home-gl';
   var glLabel = document.createElement('span');

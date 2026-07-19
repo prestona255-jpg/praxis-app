@@ -33,16 +33,22 @@
   cursor: pointer;
 }
 
-/* AMB-1 · THE ONE RULED SIZE + THE ONE RULED GLOW. 56px orb, one drop-shadow
-   recipe -- identical on every route and at every width (the <=759 block no
-   longer varies the flower now that the caption it hid is gone). --gold is
-   ground-aware (theme.css re-points it under .yumi-bloom), so the glow reads on
-   the dark study AND on the light paper Home without a second recipe. */
+/* AMB-1 · THE ONE RULED SIZE + THE ONE RULED GLOW.
+   B1-FIX · THE HOUR (R2): re-ruled to the reference's flower -- 42px (was 56),
+   and the REDUCED glow (0 0 8px at 32%, was 0 3px 12px at 38%). The world is
+   now one twilight ground on every route, so the old two-ground hedge is gone:
+   --gold resolves to the world gold (#C79A3A) under .yumi-bloom via theme.css's
+   dark remap, which is exactly the reference's flower colour, so ONE recipe
+   holds at every width and on every route. The offset drops to 0 0 because a
+   lit corner ambience should sit AROUND the mark, not cast it downward.
+   Position is untouched: bottom-right at --sp-5, already AMB-1's ruled corner.
+   z-index stays 9999 per the ledger -- the reference's z:5 is mockup-local and
+   must NOT be copied into an app that stacks panels above the flower. */
 .yumi-bloom-orb {
   display: block;
-  width: 56px;
-  height: 56px;
-  filter: drop-shadow(0 3px 12px color-mix(in srgb, var(--gold) 38%, transparent));
+  width: 42px;
+  height: 42px;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 32%, transparent));
 }
 
 .yumi-bloom-orb svg {
@@ -631,11 +637,27 @@
   max-width: 1080px;
   padding: 11px 14px 11px 20px;
   /* Canon §4-A (June 2026): nav chrome is SOLID -- no backdrop-filter,
-     no blur -- at every width (the iOS overflow-composite bug). Opaque
-     --surface over the honey ground; in normal flow (not fixed/sticky)
-     so no page-content offset on any route. --line-2 hairline kept. */
-  background: var(--surface);
+     no blur -- at every width (the iOS overflow-composite bug, fixed at
+     v3.106). THE HOUR's reference mockup frosts the nav
+     (rgba(21,24,38,.60) + blur(22px)); that VALUE is adopted as a solid
+     composite (--nav-solid) and the BLUR is deliberately NOT, because the
+     canon guardrail outranks the mockup and the nav parents overflowing
+     absolutely-positioned children (the menu). Over the twilight ground the
+     two read nearly identically; only content scrolling under it differs.
+     Fork surfaced for Preston in docs/checkpoints/r-polish-b1-fix.md.
+
+     B1-FIX · NAV VISIBILITY: the nav was position:static, so it scrolled
+     entirely off-screen (measured: top -80px at scroll 600, height 80).
+     That -- not B1's fixed ::before -- was the regression. sticky/top:0
+     keeps it in flow (no page-content offset, unlike fixed), so the
+     original "not fixed/sticky" rationale is preserved while the nav stays
+     reachable. z-index 30: above page surfaces, far below the overlay tier
+     (intro summon 9990 / Bloom 9999 / modals 10021) per the z-ledger. */
+  background: var(--nav-solid);
   border-bottom: 1px solid var(--line-2);
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 .app-nav-wordmark {
@@ -13022,11 +13044,28 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* 1 · token re-points — same --lum-* the base consumes, swapped to Universal
    light values (the Shelf R2 .shelf.lum-amber-deep token set) */
+/* R-POLISH B1-FIX · THE HOUR, REFINED -- Home's root is now an ON-GROUND
+   context, not a light page.
+   Home rejoined data-ground="dark" (views.js umberGroundDark), so everything
+   that is NOT inside a card now sits directly on the twilight world and must
+   draw from the on-ground cream ramp. B1's light ink ramp here (--ink #241710 /
+   --ink-2 #645940 and the --lum-* twins) was correct for a bright page and is
+   dark-on-dark on the world -- measured: .home-altnote, .home-sectlabel,
+   .home-fieldstat, .home-welcome-title, .home-yumi-text all render dark text on
+   a transparent backdrop. That made this conversion a LEGIBILITY BLOCKER
+   shipping in the same commit as the ground flip, not a polish pass.
+   BOTH families flip, because Home draws from both: the global --ink-* (section
+   labels, field stats) and the skin's --lum-ink-* (title, altnote, arc body).
+   The CARD interiors are re-pointed BACK to the on-card ramp by .lit-page
+   below, so a token that is cream out here is card-ink inside a page.
+   The light FILL tokens (--lum-base/--lum-glass/--lum-cloth) are deliberately
+   KEPT light: they fill the vellum pages, which are still light. */
 .home-page.lum-amber-deep{
-  --paper:#f4efe4;
-  --ink:#241710;
-  --gold:#a8761a;        /* GOLD ROLE 1 · interactive / fill            */
-  --gold-deep:#855410;   /* GOLD ROLE   · deep gold for small TEXT (AA) */
+  --paper:transparent;
+  --ink:var(--on-ground);
+  --gold:var(--gold-world);   /* GOLD ROLE 1 · interactive / fill          */
+  --gold-deep:var(--gold-ember); /* on the world the DEEP gold would sink; the
+                                    ember is the on-dark AA-safe small-text gold */
   --gold-hi:#d9a441;     /* GOLD ROLE 2 · gilding — edge + glow ONLY    */
   --lum-star:#ffce4a;    /* GOLD ROLE 3 · luminous — true glow ONLY     */
   --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
@@ -13036,11 +13075,13 @@ body.wc-focus .app-nav { opacity:.26; }
   --lum-glass-bd:#e3d8c1;   /* warm opaque hairline */
   --lum-glass-bd-2:#e3d8c1; /* 2nd hairline tier collapses to the one light line */
   --lum-cloth:#e3d8c1;      /* cover-placeholder base (bg also rescued below) */
-  --lum-ink:#241710;        /* ~13:1 on card */
-  --lum-ink-2:#645940;      /* ~6:1 on ground */
-  --lum-ink-3:#645940;      /* AA collapse: #978b6d fails <18px, text tier holds at ink-2 */
-  --lum-ink-4:#978b6d;      /* freed #978b6d -> dim placeholder + hairline only */
-  --lum-gold:#a8761a;       /* every FILL site -> interactive gold; text+glow peeled below */
+  /* THE HOUR: the --lum-* ink twins follow the global ramp onto the world.
+     .lit-page re-points them back to the on-card ramp inside every vellum page. */
+  --lum-ink:var(--on-ground);
+  --lum-ink-2:var(--on-ground-2);
+  --lum-ink-3:var(--on-ground-2);
+  --lum-ink-4:var(--on-ground-3);
+  --lum-gold:var(--gold-world); /* every FILL site -> interactive gold; text+glow peeled below */
   --lum-gold-ink:#3d2807;   /* dark ink on gold fills */
   /* The locked sub-theory constellation renderer (arc-constellation.js, out of
      scope) draws its TEXT + inert chrome from the GLOBAL --ink-family and --sunk
@@ -13055,11 +13096,16 @@ body.wc-focus .app-nav { opacity:.26; }
      Why KEEP them rather than fall through to :root — the Slice-0 contrast gate
      measured :root's --ink-3 (#978b6d) at 2.94:1 on --paper, a WCAG AA FAIL.
      #645940 is the AA-safe collapse (~6:1). Deleting these as "now redundant"
-     would be a contrast REGRESSION, not a cleanup. */
-  --ink-2:#645940;   /* renderer text: Yumi label / question / empty hint (~6:1 on the light field) */
-  --ink-3:#645940;
-  --ink-4:#978b6d;   /* renderer inert chrome: book-square + node strokes */
-  --sunk:#e3d4b0;    /* renderer book-square fill -> the bright --sunk value */
+     would be a contrast REGRESSION, not a cleanup.
+     B1-FIX · THE HOUR: these now carry the ON-GROUND ramp for the same reason --
+     the renderer chrome they feed is only light-page-correct inside a card, and
+     .lit-page restores the light values there. The AA argument is unchanged in
+     kind, only inverted in ground; both ends are re-measured in the contrast
+     table in docs/checkpoints/r-polish-b1-fix.md. */
+  --ink-2:var(--on-ground-2);  /* renderer text: Yumi label / question / empty hint */
+  --ink-3:var(--on-ground-2);
+  --ink-4:var(--on-ground-3);  /* renderer inert chrome: book-square + node strokes */
+  --sunk:#2E3446;              /* renderer book-square fill -> the on-world sunk */
 }
 
 /* 2 · RECIPE 6 · atmospheric weathered LIGHT ground, HOME-SCOPED.
@@ -13081,20 +13127,168 @@ body.wc-focus .app-nav { opacity:.26; }
   background-image:none;
   box-shadow:none;
 }
-.home-page.lum-amber-deep::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  z-index:-1;              /* root stacking context, painted after body::before */
-  pointer-events:none;
-  background-color:var(--paper);
-  background-image:
-    radial-gradient(70% 55% at 14% 2%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
-    radial-gradient(62% 52% at 89% 12%, rgba(232,200,135,.42) 0%, rgba(232,200,135,0) 62%),
-    radial-gradient(82% 62% at 72% 104%,rgba(232,176,104,.32) 0%, rgba(232,176,104,0) 60%),
-    radial-gradient(58% 50% at 26% 96%, rgba(217,164,65,.20) 0%, rgba(217,164,65,0) 60%),
-    linear-gradient(155deg,#f4efe4,#eee4cd);
-  box-shadow:inset 0 0 60px rgba(133,84,16,.10);   /* the vignette now hugs the VIEWPORT, not the sheet edge */
+/* R-POLISH B1-FIX: B1's Home-scoped fixed bright-paper layer is RETIRED.
+   It painted a full-viewport light vignette that would now fight the twilight
+   world (and it was the brief's suspected cause of the nav bug -- falsified:
+   the nav was position:static and simply scrolled away; see §0.4a of the
+   checkpoint). The global body::before ground + body::after grain pair in
+   theme.css is now the app's SINGLE ground mechanism, on every route.
+   The .home-page.lum-amber-deep{background:transparent} rule above is KEPT --
+   it is what lets that one world show through Home unbroken at every width. */
+
+/* ============================================================================
+   THE LIT PAGE -- the ruled page-surface class (SYS-1 kit).
+   Spec: docs/studio/praxis-the-hour-refined.html (`.card` / `.acard`).
+
+   "Printed pages are where you work." A .lit-page is a sheet of vellum laid on
+   the twilight world: the vellum gradient, a 15px radius, and the Apple-tight
+   shadow trio (hairline + contact + modest ambient) that makes it sit ON the
+   world rather than float in it.
+
+   It is a TOKEN BOUNDARY as much as a fill: it re-points both ink families back
+   to the on-card ramp, so any subtree inside a page reads as print while the
+   same tokens read as cream out on the world. This is why applying it does NOT
+   require touching page interiors -- the interiors follow their tokens.
+
+   Additive per canon §4-D: a new primitive, adopted where a stage already
+   touches markup. It does not rewrite .home-arc / .home-glimpse / .lum-glass. */
+.lit-page{
+  position:relative;               /* the containing block for .lit-spine */
+  background-color:var(--card-1);
+  background-image:linear-gradient(180deg,var(--card-1) 0%,var(--card-2) 100%);
+  border-radius:var(--card-radius);
+  box-shadow:var(--card-shadow);
+  color:var(--card-ink);
+  /* the on-card ramp -- both families, so every consumer crosses back */
+  --ink:var(--card-ink);
+  --ink-2:var(--card-ink-2);
+  --ink-3:var(--card-meta);
+  --ink-4:var(--card-meta);
+  --lum-ink:var(--card-ink);
+  --lum-ink-2:var(--card-ink-2);
+  --lum-ink-3:var(--card-meta);
+  --lum-ink-4:var(--card-meta);
+  --paper:var(--card-1);
+  --sunk:#e3d4b0;                 /* renderer book-square fill, back to light */
+  /* gold on vellum must be the DEEP gold: the world gold fails AA on paper */
+  --gold:var(--gold-on-card);
+  --gold-deep:var(--gold-on-card);
+  --lum-gold:var(--gold-on-card);
+  --border:rgba(38,32,25,.14);
+}
+/* MO-1 hover lift -- opt-in, so non-interactive pages do not animate. */
+.lit-page-lift{ transition:transform .2s ease, box-shadow .2s ease; }
+.lit-page-lift:hover{ transform:translateY(-1px); box-shadow:var(--card-shadow-h); }
+@media (prefers-reduced-motion:reduce){
+  .lit-page-lift{ transition:none; }
+  .lit-page-lift:hover{ transform:none; }
+}
+/* THE CLOTH SPINE -- 3px at .85, the bound edge of a printed page. */
+.lit-spine{
+  position:absolute; left:0; top:14px; bottom:14px; width:3px;
+  border-radius:0 3px 3px 0; opacity:.85; pointer-events:none;
+}
+.lit-spine-ox{    background:linear-gradient(180deg,var(--cloth-ox-1),var(--cloth-ox-2)); }
+.lit-spine-olive{ background:linear-gradient(180deg,var(--cloth-olive-1),var(--cloth-olive-2)); }
+.lit-spine-teal{  background:linear-gradient(180deg,var(--cloth-teal-1),var(--cloth-teal-2)); }
+
+/* ============================================================================
+   HOME BECOMES THE HOUR (Stage 3). Verbatim treatments from the reference,
+   wired to real tokens and real content. Arc THUMBNAILS are untouched -- the
+   renderer converts once, in B2 (GR-1).
+   ============================================================================ */
+
+/* the dated kicker */
+.home-page.lum-amber-deep .home-kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.22em;
+  color:var(--on-ground-3); text-transform:uppercase; margin:0 0 14px;
+}
+/* the hero: cream, with the italic gold accent.
+   -webkit-text-fill-color is REQUIRED here, not decorative. The parent
+   .home-welcome-title is gradient-clipped (RECIPE 3: background-clip:text +
+   -webkit-text-fill-color:transparent), and text-fill-color INHERITS -- so the
+   accent's `color` alone is a dead declaration and the word paints TRANSPARENT.
+   getComputedStyle reports color:#DFB759 either way, which is why this passed a
+   computed-style contrast probe while being invisible on screen (the VISUAL
+   GATE lesson, caught by the red-team). Setting the fill explicitly is what
+   actually paints it. */
+.home-page.lum-amber-deep .home-welcome-accent{
+  font-style:italic; color:var(--gold-ember); font-weight:inherit;
+  -webkit-text-fill-color:var(--gold-ember);
+}
+/* the gold hairline under the hero */
+.home-page.lum-amber-deep .home-herorule{
+  width:64px; height:1px; margin:26px 0 22px;
+  background:linear-gradient(90deg,var(--gold-world),transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   THE GOLD THREAD -- engineered structurally, per the brief.
+   The reference positions its nodes with hardcoded pixel tops (top:176px,
+   top:360px), which desynchronise the moment a card's height changes. Here the
+   line is a container pseudo and EACH ROW OWNS ITS NODE via its own ::before,
+   centred with top:50%/translateY(-50%). There are therefore ZERO hardcoded
+   vertical offsets: the thread self-aligns at any card height, any width, any
+   number of rows. The single horizontal figure is derived from the two layout
+   variables below, so the node cannot drift off the line.
+   .home-variant is already the reference's `.thread` in structure --
+   resume -> label -> cards -> new-arc -- so this needs no DOM change. */
+/* SPECIFICITY NOTE (found by measuring, not by reading): the composed layout
+   resets `.home-page.lum-amber-deep.home-composed > *{padding-left:0}` inside
+   @media (min-width:1200px). That selector is (0,3,0) -- IDENTICAL specificity
+   to `.home-page.lum-amber-deep .home-variant` -- and it is later in source
+   order, so it silently won and the thread gutter computed to 0px while the
+   nodes still sat at -30px: the line and its nodes would have been 34px apart.
+   The composed selector is listed here explicitly at (0,4,0) so the gutter wins
+   for THIS element only; every other composed child keeps its 0 inset. */
+.home-page.lum-amber-deep .home-variant,
+.home-page.lum-amber-deep.home-composed > .home-variant{
+  --thread-x:8px;      /* line offset from the container's left edge */
+  --thread-w:1px;      /* line width -- half of it centres the nodes  */
+  --thread-pad:34px;   /* content inset that clears the line          */
+  --thread-r:4px;      /* node radius                                 */
+  position:relative;
+  padding-left:var(--thread-pad);
+}
+.home-page.lum-amber-deep .home-variant::before{
+  content:''; position:absolute; left:var(--thread-x); top:14px; bottom:26px;
+  width:var(--thread-w); pointer-events:none;
+  background:linear-gradient(180deg,
+    var(--gold-ember) 0%,
+    color-mix(in srgb, var(--gold-world) 50%, transparent) 30%,
+    color-mix(in srgb, var(--gold-world) 18%, transparent) 100%);
+}
+.home-page.lum-amber-deep .home-variant > .home-yumi,
+.home-page.lum-amber-deep .home-variant > .home-arc,
+.home-page.lum-amber-deep .home-variant > .home-wholefield,
+.home-page.lum-amber-deep .home-variant > .home-arc-start{ position:relative; }
+.home-page.lum-amber-deep .home-variant > .home-yumi::before,
+.home-page.lum-amber-deep .home-variant > .home-arc::before,
+.home-page.lum-amber-deep .home-variant > .home-wholefield::before,
+.home-page.lum-amber-deep .home-variant > .home-arc-start::before{
+  content:''; position:absolute;
+  /* centre the node on the LINE's centre, not its left edge -- hence + w/2 */
+  left:calc(var(--thread-x) + (var(--thread-w) / 2) - var(--thread-pad) - var(--thread-r));
+  top:50%; transform:translateY(-50%);
+  width:calc(var(--thread-r) * 2); height:calc(var(--thread-r) * 2);
+  border-radius:50%; background:var(--gold-world); pointer-events:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--gold-world) 14%, transparent);
+}
+/* the resume line is the live end of the thread -- it burns */
+.home-page.lum-amber-deep .home-variant > .home-yumi::before{
+  background:var(--gold-ember);
+  box-shadow:0 0 8px color-mix(in srgb, var(--gold-ember) 55%, transparent),
+             0 0 0 3px color-mix(in srgb, var(--gold-world) 16%, transparent);
+}
+
+/* the ember dot on an arc touched TODAY */
+.home-page.lum-amber-deep .home-arcmeta-ember{
+  display:inline-flex; align-items:center; gap:8px;
+}
+.home-page.lum-amber-deep .home-arcmeta-ember::before{
+  content:''; flex:none; width:7px; height:7px; border-radius:50%;
+  background:var(--gold-on-card);
+  box-shadow:0 0 7px color-mix(in srgb, var(--gold-on-card) 55%, transparent);
 }
 
 /* 3 · RECIPE 4 · the ONE lamplight — a subtle warm wash behind the welcome/
@@ -13134,7 +13328,12 @@ body.wc-focus .app-nav { opacity:.26; }
 /* 6 · GOLD ROLE-SPLIT · segmented control + small gold-adjacent text stay legible */
 .home-page.lum-amber-deep .seg-opt{ color:var(--lum-ink-2); }
 .home-page.lum-amber-deep .seg-opt.is-on{ background:linear-gradient(180deg,#f2c25a,#e0a838); color:#3d2807; }
-.home-page.lum-amber-deep .home-yumi-text{ color:#256b80; }  /* pale cyan -> AA deep teal; cyan DOT kept */
+/* B1-FIX · THE HOUR: Home's Yumi line now sits ON THE WORLD, not on paper, so
+   the light-page deep teal (#256b80, 2.72:1 on #191F33 -- measured FAIL) is
+   re-pointed to the on-ground teal (7.03:1 -- measured PASS). Same correction,
+   inverted ground. The cyan DOT is untouched. Shelf's twin at ~12383 keeps
+   #256b80 deliberately: that surface is still a light page. */
+.home-page.lum-amber-deep .home-yumi-text{ color:var(--teal-on-ground); }
 
 /* 7 · RECIPE 6 (plane 2) · sub-panels need their own light fill once the outer
    card goes solid parchment (the base color-mix radials read near-invisible on light) */

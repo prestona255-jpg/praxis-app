@@ -10,7 +10,9 @@ P-A occupancy collapse ≥~1600 · P-B control dialect fracture · P-C candy pal
 
 ## 2 · THE LAWS (all ruled July 18, tappable, at rec)
 
-**PG-1 · THE PAGE-GROUND LAW — "paper by day, sky for beholding."** Working/reading surfaces are full-bleed light paper: Home joins its siblings and loses the boxed-sheet-in-dark frame (its warmth survives IN the paper via the gradient family, not via a dark vignette). Dark is reserved for beholding surfaces only — the Profile galaxy and the About hero — and every dark→light crossing is a ruled soft seam (a dawn, not a cut; Profile's hard ~630px cut is the named offender). The arc Field converts to parchment per RD-1.
+**PG-1 v2 · THE PAGE-GROUND LAW (AMENDED 2026-07-19, B1-FIX + PALETTE V2 — "THE HOUR, REFINED").** **One twilight world; printed pages are where you work; depth is meaning — About and the galaxy are its deeper registers, every crossing gradual.**
+
+~~**PG-1 v1.4 · "paper by day, sky for beholding."** Working/reading surfaces are full-bleed light paper: Home joins its siblings and loses the boxed-sheet-in-dark frame (its warmth survives IN the paper via the gradient family, not via a dark vignette). Dark is reserved for beholding surfaces only — the Profile galaxy and the About hero — and every dark→light crossing is a ruled soft seam (a dawn, not a cut; Profile's hard ~630px cut is the named offender). The arc Field converts to parchment per RD-1.~~ **SUPERSEDED** by v2 above: v1.4's premise (light page as the working ground) inverted when the Hour was ratified — the world is the ground everywhere, and work happens on vellum pages laid on it. Home rejoined `umberGroundDark` in the same commit that converted its ink ramp. The RD-1 parchment Field clause survives unchanged under v2 as a deeper register.
 
 **C-PATTERNS · THE CONTROL CANON (CC-1…CC-4).**
 - **CC-1 selects:** custom listbox ≥760 (house dialect, keyboard + focus complete); styled native <760 — the native picker IS the premium touch feel. P3 (44px) / P7 (font-16) intact.

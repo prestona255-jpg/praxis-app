@@ -3,8 +3,8 @@
   "short_name": "Praxis",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#faf6ec",
-  "theme_color": "#faf6ec",
+  "background_color": "#191F33",
+  "theme_color": "#191F33",
   "icons": [
     {
       "src": "/assets/icon.svg",

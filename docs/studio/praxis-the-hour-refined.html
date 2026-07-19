@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praxis · THE HOUR, REFINED — the ratified world</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE HOUR, REFINED — Praxis's ratified world (July 19, 2026)
+   twilight's soul, Cupertino's tailoring · jewel marks canonical
+
+   WORLD TOKENS
+   ground: #191F33 → #1B1D2B → #241C14 → #29200F (twilight arc)
+   lamp: rgba(255,214,150,.08) top · horizon: rgba(255,175,100,.06)
+   on-ground: cream #F0EBDF · secondary #B4AFA2 · meta #8C897E
+   gold tint: #C79A3A · ember #DFB759 · hairline rgba(240,235,223,.10)
+   window (lapis): #0D1424 · window line rgba(199,154,58,.16)
+   card (vellum page): #FDF9EE → #F6EFDC · ink #262019 · ink2 #5C5340
+   card meta #8A7F5F · on-card gold #8F6A12
+   JEWEL MARKS: m1 #D9B24A · m2 #C75434 · m3 #7C8B4F · m4 #3E8A83 · m5 #B07514
+   TYPE: UI = SF system stack · display/content serif = Cormorant
+   Garamond · meta = DM Mono. Grain .015, no vignette. Shadows =
+   Apple-tight (hairline + contact + modest ambient). Spines 3px/.85.
+============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;-webkit-font-smoothing:antialiased;position:relative;
+  font-family:-apple-system,'SF Pro Text','Segoe UI','DM Sans',sans-serif;
+  color:#F0EBDF;background-color:#29200F;
+  background-image:
+    radial-gradient(1200px 640px at 50% -12%, rgba(255,214,150,.08), transparent 60%),
+    radial-gradient(1000px 460px at 50% 112%, rgba(255,175,100,.06), transparent 62%),
+    linear-gradient(178deg,#191F33 0%,#1B1D2B 36%,#241C14 70%,#29200F 100%);
+  background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.015;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.serif{font-family:'Cormorant Garamond',Georgia,serif}
+a{text-decoration:none;color:inherit}
+button{font:inherit;border:none;background:none;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid #C79A3A;outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* nav — frosted world chrome */
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:26px;padding:16px 52px;
+  background-color:rgba(21,24,38,.60);backdrop-filter:blur(22px);
+  border-bottom:1px solid rgba(240,235,223,.10)}
+.wordmark{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:25px;color:#F0EBDF;display:flex;align-items:center;gap:9px}
+.wm-fl{width:15px;height:15px}
+.search{flex:0 1 320px;min-width:0;display:flex;align-items:center;gap:10px;
+  background:rgba(0,0,0,.30);box-shadow:inset 0 1.5px 4px rgba(0,0,0,.5);
+  border:1px solid rgba(240,235,223,.10);border-radius:100px;padding:8px 16px;
+  color:#B4AFA2;font-size:13px;white-space:nowrap;overflow:hidden;transition:border-color .16s}
+.search:hover{border-color:rgba(199,154,58,.45)}
+.search .q{overflow:hidden;text-overflow:ellipsis}
+.search .kbd{margin-left:auto;flex:none;font-family:'DM Mono',monospace;font-size:10px;
+  border:1px solid rgba(240,235,223,.16);border-radius:5px;padding:2px 6px;color:#B4AFA2}
+.links{margin-left:auto;display:flex;gap:24px;flex:none}
+.links a{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.13em;color:#B4AFA2;padding:6px 0;position:relative;transition:color .16s}
+.links a:hover{color:#F0EBDF}
+.links a.on{color:#DFB759}
+.links a.on::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,#C79A3A,#8F6E24)}
+.avatar{flex:none;width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle at 30% 28%, #4E8A74, #2E5D4C 55%, #C79A3A 135%);
+  color:#171207;display:grid;place-items:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;
+  box-shadow:0 0 0 1.5px rgba(240,235,223,.14)}
+
+/* page */
+.main{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:64px 52px 150px}
+.kicker{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.22em;color:#8C897E;text-transform:uppercase;margin-bottom:14px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(44px,5.2vw,60px);line-height:1.02;letter-spacing:-.02em;color:#F0EBDF}
+h1 em{font-style:italic;color:#DFB759}
+.herorule{width:64px;height:1px;background:linear-gradient(90deg,#C79A3A,transparent);margin:26px 0 22px}
+.viewrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.seg{display:inline-flex;background:rgba(0,0,0,.32);box-shadow:inset 0 1.5px 4px rgba(0,0,0,.55);
+  border:1px solid rgba(240,235,223,.08);border-radius:100px;padding:3px;flex:none}
+.seg button{font-size:13px;font-weight:500;color:#B4AFA2;padding:7px 17px;border-radius:100px;transition:all .16s ease}
+.seg button.on{background:linear-gradient(180deg,#FDF9EE,#F3ECD8);color:#262019;font-weight:600;
+  box-shadow:0 1px 4px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.5) inset}
+.viewhint{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:#8C897E}
+
+/* the thread — refined */
+.thread{position:relative;margin-top:44px;padding-left:34px}
+.thread::before{content:"";position:absolute;left:8px;top:14px;bottom:26px;width:1px;
+  background:linear-gradient(180deg,#DFB759 0%,rgba(199,154,58,.5) 30%,rgba(199,154,58,.18) 100%)}
+.tnode{position:absolute;left:4.5px;width:8px;height:8px;border-radius:50%;background:#C79A3A;
+  box-shadow:0 0 0 3px rgba(199,154,58,.14)}
+.tnode.ember{background:#DFB759;box-shadow:0 0 8px rgba(223,183,89,.55),0 0 0 3px rgba(199,154,58,.16)}
+.resume{display:flex;align-items:baseline;gap:10px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:#DDD3B8;padding:4px 0 6px}
+.resume a{color:#DFB759;border-bottom:1px solid rgba(223,183,89,.4);transition:border-color .16s}
+.resume a:hover{border-color:#DFB759}
+.label{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.18em;color:#8C897E;text-transform:uppercase;margin:30px 0 18px}
+
+/* the vellum page — Apple-tight */
+.stack{display:grid;grid-template-columns:1fr 300px;gap:44px;align-items:start}
+.card{position:relative;background:linear-gradient(180deg,#FDF9EE 0%,#F6EFDC 100%);
+  border-radius:15px;color:#262019;padding:22px;display:flex;gap:24px;align-items:center;margin-bottom:22px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.28),0 10px 30px rgba(0,0,0,.26);
+  transition:transform .2s ease, box-shadow .2s ease}
+.card:hover{transform:translateY(-1px);
+  box-shadow:0 0 0 1px rgba(0,0,0,.2),0 2px 4px rgba(0,0,0,.3),0 14px 38px rgba(0,0,0,.3)}
+.spine{position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;opacity:.85}
+.spine.ox{background:linear-gradient(180deg,#8E4434,#6E3226)}
+.spine.olive{background:linear-gradient(180deg,#7A8A4E,#5E6C3B)}
+.spine.teal{background:linear-gradient(180deg,#357B75,#265A55)}
+
+/* the constellation window — lapis, jewel marks canonical */
+.window{flex:none;width:200px;aspect-ratio:168/106;border-radius:9px;overflow:hidden;
+  background:radial-gradient(120px 70px at 50% 30%, rgba(223,183,89,.08), transparent 70%), #0D1424;
+  box-shadow:inset 0 1px 5px rgba(0,0,0,.5),inset 0 0 0 1px rgba(199,154,58,.16)}
+.window svg{display:block;width:100%;height:100%}
+.cbody{flex:1;min-width:0}
+.ctitle{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:27px;color:#262019;line-height:1.12}
+.cmeta{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.05em;color:#8A7F5F;margin-top:8px}
+.cmeta .em{width:7px;height:7px;border-radius:50%;background:#C79A2E;box-shadow:0 0 7px rgba(199,154,46,.55);flex:none}
+.cnote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15.5px;color:#5C5340;margin-top:10px}
+.go{flex:none;font-size:13.5px;font-weight:600;color:#8F6A12;white-space:nowrap;padding:10px 2px;border-bottom:1.5px solid transparent;transition:border-color .16s}
+.go:hover{border-color:#8F6A12}
+.newarc{position:relative;display:flex;align-items:center;gap:13px;width:100%;
+  border:1.5px dashed rgba(240,235,223,.24);border-radius:15px;padding:19px 22px;
+  color:#B4AFA2;font-size:14px;transition:all .16s ease}
+.newarc:hover{border-color:#C79A3A;color:#F0EBDF;background:rgba(199,154,58,.06)}
+.newarc .plus{font-size:18px;color:#C79A3A;line-height:1}
+
+/* aside */
+.acard{position:relative;background:linear-gradient(180deg,#FDF9EE,#F6EFDC);border-radius:15px;color:#262019;padding:22px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.28),0 10px 30px rgba(0,0,0,.26)}
+.ahead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ahead .t{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:#8A7F5F;text-transform:uppercase}
+.ahead a{font-size:13px;font-weight:600;color:#8F6A12;white-space:nowrap}
+.book{display:flex;gap:16px;margin-top:18px;align-items:center}
+.cover{flex:none;width:62px;height:92px;background:#FFFEF8;border:1px solid rgba(38,32,25,.16);border-left:4px solid #7E3B2E;
+  border-radius:3px;box-shadow:0 5px 12px rgba(38,32,25,.24);display:flex;flex-direction:column;justify-content:center;padding:8px 7px}
+.cover .bt{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:9.5px;line-height:1.25;color:#262019}
+.cover .ba{font-family:'DM Mono',monospace;font-size:6.5px;color:#8A7F5F;margin-top:5px;letter-spacing:.05em}
+.bmeta .bm1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;color:#262019;line-height:1.2}
+.bmeta .bm2{font-family:'DM Mono',monospace;font-size:11.5px;color:#8A7F5F;margin-top:6px}
+
+.flower{position:fixed;right:36px;bottom:36px;width:42px;height:42px;z-index:5;
+  filter:drop-shadow(0 0 8px rgba(199,154,58,.32));transition:transform .2s ease}
+.flower:hover{transform:scale(1.08)}
+.tag{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;
+  font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#B4AFA2;
+  background:rgba(12,14,24,.7);backdrop-filter:blur(10px);border:1px solid rgba(240,235,223,.12);
+  border-radius:100px;padding:8px 18px}
+
+@media (max-width:1100px){.stack{grid-template-columns:1fr}.aside{order:-1}.acard{display:inline-block;min-width:340px}}
+@media (max-width:880px){.nav{padding:14px 24px;gap:16px}.search{flex-basis:170px}.links{gap:15px}.main{padding:44px 24px 150px}.card{flex-wrap:wrap}.window{width:170px}.tag{display:none}}
+@media (max-width:560px){.search{display:none}.links a:nth-child(2),.links a:nth-child(3){display:none}.thread{padding-left:24px}}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="wordmark">
+      <svg class="wm-fl" viewBox="0 0 40 40"><g><ellipse cx="20" cy="9" rx="3.4" ry="8" fill="#C79A3A"/><ellipse cx="20" cy="31" rx="3.4" ry="8" fill="#C79A3A"/><ellipse cx="9" cy="20" rx="8" ry="3.4" fill="#C79A3A"/><ellipse cx="31" cy="20" rx="8" ry="3.4" fill="#C79A3A"/><circle cx="20" cy="20" r="4" fill="#241C14"/></g></svg>
+      praxis
+    </span>
+    <div class="search" tabindex="0"><span class="q">Search books, arcs, notes…</span><span class="kbd">⌘K</span></div>
+    <div class="links">
+      <a class="on" href="#">HOME</a><a href="#">SHELF</a><a href="#">ARCS</a><a href="#">NOTEBOOK</a><a href="#">ABOUT</a>
+    </div>
+    <div class="avatar">P</div>
+  </nav>
+
+  <main class="main">
+    <div class="kicker">Saturday · July 19 · the study is lit</div>
+    <h1>Welcome back, <em>reader.</em></h1>
+    <div class="herorule"></div>
+    <div class="viewrow">
+      <div class="seg"><button>The whole field</button><button class="on">Where you left off</button></div>
+      <span class="viewhint">Pick a view — it stays put until you flip it.</span>
+    </div>
+
+    <div class="thread">
+      <span class="tnode ember" style="top:14px"></span>
+      <div class="resume">You last worked on <a href="#">Test Arc — 10.4 verify</a>, today — pick it back up?</div>
+
+      <div class="label">Where your thinking stands</div>
+
+      <div class="stack">
+        <div class="colmain">
+          <span class="tnode" style="top:176px"></span>
+          <div class="card">
+            <span class="spine ox"></span>
+            <div class="window">
+              <svg viewBox="0 0 168 106">
+                <line x1="36" y1="36" x2="76" y2="26" stroke="rgba(199,154,58,.16)" stroke-width="1"/>
+                <line x1="76" y1="26" x2="116" y2="42" stroke="rgba(199,154,58,.16)" stroke-width="1"/>
+                <line x1="46" y1="76" x2="92" y2="82" stroke="rgba(199,154,58,.16)" stroke-width="1" stroke-dasharray="3 3"/>
+                <line x1="116" y1="42" x2="130" y2="72" stroke="rgba(199,154,58,.16)" stroke-width="1"/>
+                <circle cx="36" cy="36" r="3.2" fill="#7C8B4F" opacity=".8"/>
+                <circle cx="76" cy="26" r="4.6" fill="#DFB759"/>
+                <circle cx="76" cy="26" r="8.5" fill="none" stroke="#C79A3A" stroke-opacity=".35" stroke-width="1"/>
+                <circle cx="116" cy="42" r="3.4" fill="#C75434" opacity=".85"/>
+                <circle cx="46" cy="76" r="2.8" fill="#3E8A83" opacity=".75"/>
+                <circle cx="92" cy="82" r="3" fill="#D9B24A" opacity=".7"/>
+                <circle cx="130" cy="72" r="2.6" fill="#B07514" opacity=".65"/>
+                <circle cx="146" cy="30" r="2" fill="#D9B24A" opacity=".45"/>
+              </svg>
+            </div>
+            <div class="cbody">
+              <div class="ctitle">Test Arc — 10.4 verify</div>
+              <div class="cmeta"><span class="em"></span>8 sub-theories · touched today</div>
+              <div class="cnote">fixtures for live checks</div>
+            </div>
+            <a class="go" href="#">Continue →</a>
+          </div>
+
+          <span class="tnode" style="top:360px"></span>
+          <div class="card">
+            <span class="spine olive"></span>
+            <div class="window">
+              <svg viewBox="0 0 168 106">
+                <line x1="44" y1="32" x2="86" y2="50" stroke="rgba(199,154,58,.16)" stroke-width="1"/>
+                <line x1="86" y1="50" x2="124" y2="32" stroke="rgba(199,154,58,.16)" stroke-width="1" stroke-dasharray="3 3"/>
+                <line x1="62" y1="80" x2="86" y2="50" stroke="rgba(199,154,58,.16)" stroke-width="1"/>
+                <circle cx="44" cy="32" r="3" fill="#7C8B4F" opacity=".8"/>
+                <circle cx="86" cy="50" r="4.4" fill="#DFB759"/>
+                <circle cx="86" cy="50" r="8" fill="none" stroke="#C79A3A" stroke-opacity=".35" stroke-width="1"/>
+                <circle cx="124" cy="32" r="3.2" fill="#C75434" opacity=".85"/>
+                <circle cx="62" cy="80" r="2.8" fill="#3E8A83" opacity=".75"/>
+                <circle cx="140" cy="70" r="2.2" fill="#B07514" opacity=".6"/>
+              </svg>
+            </div>
+            <div class="cbody">
+              <div class="ctitle">10.5 verify arc</div>
+              <div class="cmeta">6 sub-theories · touched 2 days ago</div>
+            </div>
+            <a class="go" href="#">Continue →</a>
+          </div>
+
+          <button class="newarc"><span class="plus">＋</span> Start a new arc — set two books side by side</button>
+        </div>
+
+        <aside class="aside">
+          <div class="acard">
+            <span class="spine teal"></span>
+            <div class="ahead"><span class="t">Still reading</span><a href="#">Your shelf →</a></div>
+            <div class="book">
+              <div class="cover"><div class="bt">PEDAGOGY OF THE OPPRESSED</div><div class="ba">PAULO FREIRE</div></div>
+              <div class="bmeta"><div class="bm1">Pedagogy of the Oppressed</div><div class="bm2">1 book open right now</div></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <svg class="flower" viewBox="0 0 40 40"><g><ellipse cx="20" cy="9" rx="3.4" ry="8" fill="#C79A3A"/><ellipse cx="20" cy="31" rx="3.4" ry="8" fill="#C79A3A"/><ellipse cx="9" cy="20" rx="8" ry="3.4" fill="#C79A3A"/><ellipse cx="31" cy="20" rx="8" ry="3.4" fill="#C79A3A"/><ellipse cx="12.5" cy="12.5" rx="3" ry="7" transform="rotate(-45 12.5 12.5)" fill="#C79A3A"/><ellipse cx="27.5" cy="27.5" rx="3" ry="7" transform="rotate(-45 27.5 27.5)" fill="#C79A3A"/><ellipse cx="27.5" cy="12.5" rx="3" ry="7" transform="rotate(45 27.5 12.5)" fill="#C79A3A"/><ellipse cx="12.5" cy="27.5" rx="3" ry="7" transform="rotate(45 12.5 27.5)" fill="#C79A3A"/><circle cx="20" cy="20" r="4" fill="#191F33"/></g></svg>
+
+  <div class="tag">THE HOUR, REFINED · RATIFIED JULY 19 · JEWEL MARKS CANONICAL</div>
+</body>
+</html>

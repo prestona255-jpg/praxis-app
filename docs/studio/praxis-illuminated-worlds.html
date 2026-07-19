@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en" data-w="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praxis · The Illuminated Study — two worlds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;font-family:'DM Sans',-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;position:relative}
+a{text-decoration:none;color:inherit}
+button{font:inherit;border:none;background:none;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ============ WORLD TOKENS ============ */
+html[data-w="1"] body{
+  /* LAPIS & GOLD — the illuminated manuscript */
+  --g1:#141C33; --g2:#101728; --g3:#0B1120; --g4:#080D18;
+  --lamp:rgba(255,206,132,.13);
+  --cream:#F3EAD2; --cream2:#C8C1A8; --meta:#938C71;
+  --gold:#D9B24A; --ember:#EAC96A; --line:rgba(243,234,210,.11);
+  --win:#0C1322; --winline:rgba(217,178,74,.16);
+  color:var(--cream);
+  background-color:var(--g4);
+  background-image:
+    radial-gradient(1300px 720px at 50% -12%, var(--lamp), transparent 60%),
+    linear-gradient(178deg, var(--g1) 0%, var(--g2) 40%, var(--g3) 72%, var(--g4) 100%);
+}
+html[data-w="2"] body{
+  /* LIBRARY GREEN — the banker's-lamp reading room */
+  --g1:#1B2E23; --g2:#152519; --g3:#101C13; --g4:#0B140D;
+  --lamp:rgba(255,199,112,.15);
+  --cream:#F1E9D2; --cream2:#C4BEA4; --meta:#8F8A6E;
+  --gold:#D2A23E; --ember:#E9C566; --line:rgba(241,233,210,.11);
+  --win:#0F1B12; --winline:rgba(210,162,62,.16);
+  color:var(--cream);
+  background-color:var(--g4);
+  background-image:
+    radial-gradient(1300px 720px at 50% -12%, var(--lamp), transparent 60%),
+    linear-gradient(178deg, var(--g1) 0%, var(--g2) 40%, var(--g3) 72%, var(--g4) 100%);
+}
+html[data-w="3"] body{
+  /* THE GILDED HOUR — a saffron world; windows open onto the night */
+  --g1:#8A6414; --g2:#6B4C0E; --g3:#513A08; --g4:#3E2C06;
+  --lamp:rgba(255,240,196,.20);
+  --cream:#FDF6E0; --cream2:#EDE1BC; --meta:#D6C48E;
+  --gold:#FFE3A0; --ember:#FFF0C2; --line:rgba(253,246,224,.18);
+  --win:#10182B; --winline:rgba(255,227,160,.24);
+  color:var(--cream);
+  background-color:var(--g4);
+  background-image:
+    radial-gradient(1300px 720px at 50% -12%, var(--lamp), transparent 60%),
+    linear-gradient(178deg, var(--g1) 0%, var(--g2) 40%, var(--g3) 72%, var(--g4) 100%);
+}
+html[data-w="4"] body{
+  /* THE HOUR BETWEEN — twilight: lapis above, ember at the horizon */
+  --g1:#141C33; --g2:#181A2A; --g3:#231A11; --g4:#2C1C0C;
+  --lamp:rgba(255,206,132,.14);
+  --cream:#F3EAD2; --cream2:#C8C0A6; --meta:#948C70;
+  --gold:#DFAE4F; --ember:#EFC96A; --line:rgba(243,234,210,.12);
+  --win:#0C1322; --winline:rgba(223,174,79,.18);
+  color:var(--cream);
+  background-color:var(--g4);
+  background-image:
+    radial-gradient(1300px 700px at 50% -12%, var(--lamp), transparent 60%),
+    radial-gradient(1100px 520px at 50% 112%, rgba(255,168,88,.10), transparent 62%),
+    linear-gradient(178deg, var(--g1) 0%, var(--g2) 34%, var(--g3) 68%, var(--g4) 100%);
+}
+html[data-w="5"] body{
+  /* THE CUPERTINO EDITION — what Apple would actually ship */
+  --g1:#F6F5F1; --g2:#F3F1EC; --g3:#F0EEE8; --g4:#EDEBE4;
+  --lamp:rgba(0,0,0,0);
+  --cream:#1D1C19; --cream2:#6E6A61; --meta:#8E897C;
+  --gold:#A67C1B; --ember:#8F6A12; --line:rgba(29,28,25,.10);
+  --win:#F1EFE8; --winline:rgba(29,28,25,.10);
+  color:var(--cream);
+  font-family:-apple-system,'SF Pro Text','Segoe UI','DM Sans',sans-serif;
+  background-image:linear-gradient(180deg,var(--g1),var(--g4));
+}
+html[data-w="5"] body::before{opacity:.015}
+html[data-w="5"] body::after{background:none}
+html[data-w="5"] .nav{background-color:rgba(250,249,245,.85);border-bottom:1px solid rgba(29,28,25,.08);box-shadow:none}
+html[data-w="5"] .search{background:rgba(29,28,25,.05);box-shadow:inset 0 1px 2px rgba(29,28,25,.05)}
+html[data-w="5"] .seg{background:rgba(29,28,25,.055);box-shadow:inset 0 1px 2px rgba(29,28,25,.06);border-color:transparent}
+html[data-w="5"] .seg button.on{background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.13)}
+html[data-w="5"] h1{text-shadow:none;font-weight:600;letter-spacing:-.022em}
+html[data-w="5"] .card,html[data-w="5"] .acard{background:#FFFFFF;
+  box-shadow:0 0 0 1px rgba(29,28,25,.05),0 1px 2px rgba(29,28,25,.06),0 8px 24px rgba(29,28,25,.07)}
+html[data-w="5"] .card:hover{transform:translateY(-1px);
+  box-shadow:0 0 0 1px rgba(29,28,25,.06),0 2px 4px rgba(29,28,25,.07),0 14px 34px rgba(29,28,25,.10)}
+html[data-w="5"] .window{box-shadow:inset 0 0 0 1px rgba(29,28,25,.09)}
+html[data-w="5"] .spine{display:none}
+html[data-w="5"] .thread::before{background:linear-gradient(180deg,rgba(29,28,25,.18),rgba(29,28,25,.05))}
+html[data-w="5"] .tnode{background:#C9C4B6;box-shadow:none}
+html[data-w="5"] .tnode.ember{background:var(--gold);box-shadow:none}
+html[data-w="5"] .flower{filter:none;opacity:.85}
+/* mark hues — GOLD state inherits the world's gold; JEWEL lights the windows like stained glass */
+body{--m1:var(--gold);--m2:var(--gold);--m3:var(--gold);--m4:var(--gold);--m5:var(--gold)}
+html[data-marks="jewel"] body{--m1:#D9B24A;--m2:#C75434;--m3:#7C8B4F;--m4:#3E8A83;--m5:#B07514}
+html[data-w="6"] body{
+  /* THE HOUR, REFINED — twilight's soul, Cupertino's tailoring */
+  --g1:#191F33; --g2:#1B1D2B; --g3:#241C14; --g4:#29200F;
+  --lamp:rgba(255,214,150,.08);
+  --cream:#F0EBDF; --cream2:#B4AFA2; --meta:#8C897E;
+  --gold:#C79A3A; --ember:#DFB759; --line:rgba(240,235,223,.10);
+  --win:#0D1424; --winline:rgba(199,154,58,.16);
+  color:var(--cream);
+  font-family:-apple-system,'SF Pro Text','Segoe UI','DM Sans',sans-serif;
+  background-color:var(--g4);
+  background-image:
+    radial-gradient(1200px 640px at 50% -12%, var(--lamp), transparent 60%),
+    radial-gradient(1000px 460px at 50% 112%, rgba(255,175,100,.06), transparent 62%),
+    linear-gradient(178deg, var(--g1) 0%, var(--g2) 36%, var(--g3) 70%, var(--g4) 100%);
+}
+html[data-w="6"] body::before{opacity:.015}
+html[data-w="6"] body::after{background:none}
+html[data-w="6"] .nav{background-color:rgba(21,24,38,.60);backdrop-filter:blur(22px);box-shadow:none}
+html[data-w="6"] h1{text-shadow:none;letter-spacing:-.02em}
+html[data-w="6"] .card,html[data-w="6"] .acard{
+  box-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.28),0 10px 30px rgba(0,0,0,.26)}
+html[data-w="6"] .card:hover{transform:translateY(-1px);
+  box-shadow:0 0 0 1px rgba(0,0,0,.2),0 2px 4px rgba(0,0,0,.3),0 14px 38px rgba(0,0,0,.3)}
+html[data-w="6"] .window{box-shadow:inset 0 1px 5px rgba(0,0,0,.5),inset 0 0 0 1px var(--winline)}
+html[data-w="6"] .spine{width:3px;opacity:.85}
+html[data-w="6"] .tnode.ember{box-shadow:0 0 8px color-mix(in srgb,var(--ember) 55%,transparent)}
+html[data-w="6"] .flower{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gold) 32%,transparent))}
+/* grain + vignette (static layers) */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(1700px 1050px at 50% 6%, transparent 55%, rgba(0,0,0,.42) 100%)}
+
+/* shared card material — vellum, lit */
+:root{
+  --page1:#FDF9EE; --page2:#F6EFDC; --ink:#262019; --ink2:#5C5340; --inkmeta:#8A7F5F;
+  --goldcard:#8F6A12;
+  --ox:#7E3B2E; --olive:#6E7D45; --teal:#2E6E6A; --ochre:#B07514;
+}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:26px;padding:16px 52px;
+  background:linear-gradient(180deg, rgba(10,14,26,.0), rgba(0,0,0,.0));
+  background-color:color-mix(in srgb, var(--g2) 88%, transparent);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(255,230,170,.04) inset}
+.wordmark{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:25px;color:var(--cream);display:flex;align-items:center;gap:9px}
+.wm-fl{width:15px;height:15px}
+.search{flex:0 1 320px;min-width:0;display:flex;align-items:center;gap:10px;
+  background:rgba(0,0,0,.30);box-shadow:inset 0 1.5px 4px rgba(0,0,0,.5);
+  border:1px solid var(--line);border-radius:100px;padding:8px 16px;
+  color:var(--cream2);font-size:13px;white-space:nowrap;overflow:hidden;transition:border-color .16s}
+.search:hover{border-color:color-mix(in srgb, var(--gold) 45%, transparent)}
+.search .q{overflow:hidden;text-overflow:ellipsis}
+.search .kbd{margin-left:auto;flex:none;font-family:'DM Mono',monospace;font-size:10px;
+  border:1px solid var(--line);border-radius:5px;padding:2px 6px;color:var(--cream2)}
+.links{margin-left:auto;display:flex;gap:24px;flex:none}
+.links a{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.13em;color:var(--cream2);padding:6px 0;position:relative;transition:color .16s}
+.links a:hover{color:var(--cream)}
+.links a.on{color:var(--ember)}
+.links a.on::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 55%, #7a5a18))}
+.avatar{flex:none;width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle at 30% 28%, #4E8A74, #2E5D4C 55%, var(--gold) 135%);
+  color:#10130C;display:grid;place-items:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;
+  box-shadow:0 0 0 1.5px var(--line)}
+
+/* ---------- page ---------- */
+.main{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:64px 52px 170px}
+.kicker{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.22em;color:var(--meta);text-transform:uppercase;margin-bottom:14px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(44px,5.2vw,62px);line-height:1.02;letter-spacing:-.012em;color:var(--cream);
+  text-shadow:0 2px 44px color-mix(in srgb, var(--ember) 22%, transparent)}
+h1 em{font-style:italic;color:var(--ember)}
+.herorule{width:64px;height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:26px 0 22px}
+.viewrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.seg{display:inline-flex;background:rgba(0,0,0,.32);box-shadow:inset 0 1.5px 4px rgba(0,0,0,.55);
+  border:1px solid var(--line);border-radius:100px;padding:3px;flex:none}
+.seg button{font-size:13px;font-weight:500;color:var(--cream2);padding:7px 17px;border-radius:100px;transition:all .16s ease}
+.seg button.on{background:linear-gradient(180deg,var(--page1),var(--page2));color:var(--ink);font-weight:600;
+  box-shadow:0 1px 5px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.55) inset}
+.viewhint{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:var(--meta)}
+
+/* ---------- the thread ---------- */
+.thread{position:relative;margin-top:44px;padding-left:34px}
+.thread::before{content:"";position:absolute;left:8px;top:14px;bottom:26px;width:1px;
+  background:linear-gradient(180deg, var(--ember) 0%, color-mix(in srgb,var(--gold) 55%,transparent) 30%, color-mix(in srgb,var(--gold) 20%,transparent) 100%)}
+.tnode{position:absolute;left:4.5px;width:8px;height:8px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 16%,transparent)}
+.tnode.ember{background:var(--ember);box-shadow:0 0 15px color-mix(in srgb,var(--ember) 78%,transparent),0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
+.resume{display:flex;align-items:baseline;gap:10px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:color-mix(in srgb,var(--cream) 82%, var(--gold));padding:4px 0 6px}
+.resume a{color:var(--ember);border-bottom:1px solid color-mix(in srgb,var(--ember) 42%,transparent);transition:border-color .16s}
+.resume a:hover{border-color:var(--ember)}
+.label{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.18em;color:var(--meta);text-transform:uppercase;margin:30px 0 18px}
+
+/* ---------- the vellum page, lit ---------- */
+.stack{display:grid;grid-template-columns:1fr 300px;gap:44px;align-items:start}
+.card{position:relative;background:linear-gradient(180deg,var(--page1) 0%,var(--page2) 100%);
+  border-radius:15px;color:var(--ink);padding:22px;display:flex;gap:24px;align-items:center;margin-bottom:22px;
+  box-shadow:0 1px 0 rgba(255,248,224,.9) inset, 0 -1px 0 rgba(120,90,20,.07) inset,
+    0 2px 5px rgba(0,0,0,.5), 0 26px 60px rgba(0,0,0,.5);
+  transition:transform .2s ease, box-shadow .2s ease}
+.card:hover{transform:translateY(-3px);
+  box-shadow:0 1px 0 rgba(255,248,224,.95) inset, 0 -1px 0 rgba(120,90,20,.07) inset,
+    0 3px 7px rgba(0,0,0,.52), 0 36px 76px rgba(0,0,0,.56)}
+/* cloth spine — the bindery accent, one per card */
+.card .spine{position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 3px 3px 0}
+.spine.ox{background:linear-gradient(180deg,#8E4434,#6E3226)}
+.spine.olive{background:linear-gradient(180deg,#7A8A4E,#5E6C3B)}
+
+/* THE CONSTELLATION WINDOW — the arc, in the world's own material */
+.window{flex:none;width:200px;aspect-ratio:168/106;border-radius:9px;background:
+  radial-gradient(120px 70px at 50% 30%, color-mix(in srgb,var(--ember) 9%,transparent), transparent 70%), var(--win);
+  box-shadow:inset 0 2px 9px rgba(0,0,0,.66), inset 0 0 0 1px var(--winline);
+  padding:0;overflow:hidden}
+.window svg{display:block;width:100%;height:100%}
+.cbody{flex:1;min-width:0}
+.ctitle{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:27px;color:var(--ink);line-height:1.12}
+.cmeta{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.05em;color:var(--inkmeta);margin-top:8px}
+.cmeta .em{width:7px;height:7px;border-radius:50%;background:#C79A2E;box-shadow:0 0 8px rgba(199,154,46,.6);flex:none}
+.cnote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15.5px;color:var(--ink2);margin-top:10px}
+.go{flex:none;font-size:13.5px;font-weight:600;color:var(--goldcard);white-space:nowrap;padding:10px 2px;border-bottom:1.5px solid transparent;transition:border-color .16s}
+.go:hover{border-color:var(--goldcard)}
+
+.newarc{position:relative;display:flex;align-items:center;gap:13px;width:100%;
+  border:1.5px dashed color-mix(in srgb,var(--cream) 26%,transparent);border-radius:15px;padding:19px 22px;
+  color:var(--cream2);font-size:14px;transition:all .16s ease}
+.newarc:hover{border-color:var(--gold);color:var(--cream);background:color-mix(in srgb,var(--gold) 7%,transparent)}
+.newarc .plus{font-size:18px;color:var(--gold);line-height:1}
+
+/* aside */
+.acard{position:relative;background:linear-gradient(180deg,var(--page1),var(--page2));border-radius:15px;color:var(--ink);padding:22px;
+  box-shadow:0 1px 0 rgba(255,248,224,.9) inset,0 2px 5px rgba(0,0,0,.5),0 26px 60px rgba(0,0,0,.5)}
+.acard .spine{position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,#357B75,#265A55)}
+.ahead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ahead .t{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.16em;color:var(--inkmeta);text-transform:uppercase}
+.ahead a{font-size:13px;font-weight:600;color:var(--goldcard);white-space:nowrap}
+.book{display:flex;gap:16px;margin-top:18px;align-items:center}
+.cover{flex:none;width:62px;height:92px;background:#FFFEF8;border:1px solid rgba(38,32,25,.16);border-left:4px solid var(--ox);
+  border-radius:3px;box-shadow:0 5px 12px rgba(38,32,25,.24);display:flex;flex-direction:column;justify-content:center;padding:8px 7px}
+.cover .bt{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:9.5px;line-height:1.25;color:var(--ink)}
+.cover .ba{font-family:'DM Mono',monospace;font-size:6.5px;color:var(--inkmeta);margin-top:5px;letter-spacing:.05em}
+.bmeta .bm1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;color:var(--ink);line-height:1.2}
+.bmeta .bm2{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--inkmeta);margin-top:6px}
+
+.flower{position:fixed;right:36px;bottom:36px;width:42px;height:42px;z-index:5;
+  filter:drop-shadow(0 0 13px color-mix(in srgb,var(--gold) 46%,transparent));transition:transform .2s ease}
+.flower:hover{transform:scale(1.08)}
+.flower .petal{fill:var(--gold)} .flower .heart{fill:var(--g3)}
+
+/* switcher */
+.switch{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:2px;
+  background:rgba(0,0,0,.62);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:100px;padding:5px;white-space:nowrap}
+.switch button{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--cream2);padding:9px 18px;border-radius:100px;transition:all .18s ease}
+.switch button:hover{color:var(--cream)}
+.switch button.on{background:var(--gold);color:#141008;font-weight:500}
+
+@media (max-width:1100px){.stack{grid-template-columns:1fr}.aside{order:-1}.acard{display:inline-block;min-width:340px}}
+@media (max-width:880px){.nav{padding:14px 24px;gap:16px}.search{flex-basis:170px}.links{gap:15px}.main{padding:44px 24px 160px}.card{flex-wrap:wrap}.window{width:170px}}
+@media (max-width:560px){.search{display:none}.links a:nth-child(2),.links a:nth-child(3){display:none}.thread{padding-left:24px}}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="wordmark">
+      <svg class="wm-fl" viewBox="0 0 40 40"><g class="flg"><ellipse cx="20" cy="9" rx="3.4" ry="8" fill="var(--gold)"/><ellipse cx="20" cy="31" rx="3.4" ry="8" fill="var(--gold)"/><ellipse cx="9" cy="20" rx="8" ry="3.4" fill="var(--gold)"/><ellipse cx="31" cy="20" rx="8" ry="3.4" fill="var(--gold)"/><circle cx="20" cy="20" r="4" fill="var(--g3)"/></g></svg>
+      praxis
+    </span>
+    <div class="search" tabindex="0"><span class="q">Search books, arcs, notes…</span><span class="kbd">⌘K</span></div>
+    <div class="links">
+      <a class="on" href="#">HOME</a><a href="#">SHELF</a><a href="#">ARCS</a><a href="#">NOTEBOOK</a><a href="#">ABOUT</a>
+    </div>
+    <div class="avatar">P</div>
+  </nav>
+
+  <main class="main">
+    <div class="kicker">Saturday · July 19 · the study is lit</div>
+    <h1>Welcome back, <em>reader.</em></h1>
+    <div class="herorule"></div>
+    <div class="viewrow">
+      <div class="seg"><button>The whole field</button><button class="on">Where you left off</button></div>
+      <span class="viewhint">Pick a view — it stays put until you flip it.</span>
+    </div>
+
+    <div class="thread">
+      <span class="tnode ember" style="top:14px"></span>
+      <div class="resume">You last worked on <a href="#">Test Arc — 10.4 verify</a>, today — pick it back up?</div>
+
+      <div class="label">Where your thinking stands</div>
+
+      <div class="stack">
+        <div class="colmain">
+          <span class="tnode" style="top:176px"></span>
+          <div class="card">
+            <span class="spine ox"></span>
+            <div class="window">
+              <svg viewBox="0 0 168 106">
+                <line x1="36" y1="36" x2="76" y2="26" stroke="var(--winline)" stroke-width="1"/>
+                <line x1="76" y1="26" x2="116" y2="42" stroke="var(--winline)" stroke-width="1"/>
+                <line x1="46" y1="76" x2="92" y2="82" stroke="var(--winline)" stroke-width="1" stroke-dasharray="3 3"/>
+                <line x1="116" y1="42" x2="130" y2="72" stroke="var(--winline)" stroke-width="1"/>
+                <circle cx="36" cy="36" r="3.2" fill="var(--m3)" opacity=".8"/>
+                <circle cx="76" cy="26" r="4.6" fill="var(--ember)"/>
+                <circle cx="76" cy="26" r="8.5" fill="none" stroke="var(--gold)" stroke-opacity=".35" stroke-width="1"/>
+                <circle cx="116" cy="42" r="3.4" fill="var(--m2)" opacity=".85"/>
+                <circle cx="46" cy="76" r="2.8" fill="var(--m4)" opacity=".75"/>
+                <circle cx="92" cy="82" r="3" fill="var(--m1)" opacity=".7"/>
+                <circle cx="130" cy="72" r="2.6" fill="var(--m5)" opacity=".65"/>
+                <circle cx="146" cy="30" r="2" fill="var(--m1)" opacity=".45"/>
+              </svg>
+            </div>
+            <div class="cbody">
+              <div class="ctitle">Test Arc — 10.4 verify</div>
+              <div class="cmeta"><span class="em"></span>8 sub-theories · touched today</div>
+              <div class="cnote">fixtures for live checks</div>
+            </div>
+            <a class="go" href="#">Continue →</a>
+          </div>
+
+          <span class="tnode" style="top:360px"></span>
+          <div class="card">
+            <span class="spine olive"></span>
+            <div class="window">
+              <svg viewBox="0 0 168 106">
+                <line x1="44" y1="32" x2="86" y2="50" stroke="var(--winline)" stroke-width="1"/>
+                <line x1="86" y1="50" x2="124" y2="32" stroke="var(--winline)" stroke-width="1" stroke-dasharray="3 3"/>
+                <line x1="62" y1="80" x2="86" y2="50" stroke="var(--winline)" stroke-width="1"/>
+                <circle cx="44" cy="32" r="3" fill="var(--m3)" opacity=".8"/>
+                <circle cx="86" cy="50" r="4.4" fill="var(--ember)"/>
+                <circle cx="86" cy="50" r="8" fill="none" stroke="var(--gold)" stroke-opacity=".35" stroke-width="1"/>
+                <circle cx="124" cy="32" r="3.2" fill="var(--m2)" opacity=".85"/>
+                <circle cx="62" cy="80" r="2.8" fill="var(--m4)" opacity=".75"/>
+                <circle cx="140" cy="70" r="2.2" fill="var(--m5)" opacity=".6"/>
+              </svg>
+            </div>
+            <div class="cbody">
+              <div class="ctitle">10.5 verify arc</div>
+              <div class="cmeta">6 sub-theories · touched 2 days ago</div>
+            </div>
+            <a class="go" href="#">Continue →</a>
+          </div>
+
+          <button class="newarc"><span class="plus">＋</span> Start a new arc — set two books side by side</button>
+        </div>
+
+        <aside class="aside">
+          <div class="acard">
+            <span class="spine"></span>
+            <div class="ahead"><span class="t">Still reading</span><a href="#">Your shelf →</a></div>
+            <div class="book">
+              <div class="cover"><div class="bt">PEDAGOGY OF THE OPPRESSED</div><div class="ba">PAULO FREIRE</div></div>
+              <div class="bmeta"><div class="bm1">Pedagogy of the Oppressed</div><div class="bm2">1 book open right now</div></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <svg class="flower" viewBox="0 0 40 40"><g><ellipse class="petal" cx="20" cy="9" rx="3.4" ry="8"/><ellipse class="petal" cx="20" cy="31" rx="3.4" ry="8"/><ellipse class="petal" cx="9" cy="20" rx="8" ry="3.4"/><ellipse class="petal" cx="31" cy="20" rx="8" ry="3.4"/><ellipse class="petal" cx="12.5" cy="12.5" rx="3" ry="7" transform="rotate(-45 12.5 12.5)"/><ellipse class="petal" cx="27.5" cy="27.5" rx="3" ry="7" transform="rotate(-45 27.5 27.5)"/><ellipse class="petal" cx="27.5" cy="12.5" rx="3" ry="7" transform="rotate(45 27.5 12.5)"/><ellipse class="petal" cx="12.5" cy="27.5" rx="3" ry="7" transform="rotate(45 12.5 27.5)"/><circle class="heart" cx="20" cy="20" r="4"/></g></svg>
+
+  <div class="switch">
+    <button class="on" data-w="1">I · LAPIS &amp; GOLD</button>
+    <button data-w="2">II · LIBRARY GREEN</button>
+    <button data-w="3">III · THE GILDED HOUR</button>
+    <button data-w="4">IV · THE HOUR BETWEEN</button>
+    <button data-w="5">V · CUPERTINO</button>
+    <button data-w="6">VI · THE HOUR, REFINED</button>
+    <button id="mk" data-mk="gold" style="border-left:1px solid var(--line);border-radius:0 100px 100px 0">✦ MARKS: GOLD</button>
+  </div>
+
+<script>
+(function(){
+  var btns=document.querySelectorAll('.switch button');
+  function set(w){document.documentElement.setAttribute('data-w',w);
+    for(var i=0;i<btns.length;i++){btns[i].className=btns[i].getAttribute('data-w')===w?'on':''}}
+  for(var i=0;i<btns.length;i++){btns[i].addEventListener('click',function(){set(this.getAttribute('data-w'))})}
+  document.addEventListener('keydown',function(e){if(e.key>='1'&&e.key<='6')set(e.key)});
+  var mk=document.getElementById('mk');
+  mk.addEventListener('click',function(){
+    var j=document.documentElement.getAttribute('data-marks')==='jewel';
+    document.documentElement.setAttribute('data-marks',j?'gold':'jewel');
+    mk.textContent=j?'✦ MARKS: GOLD':'✦ MARKS: JEWEL';
+  });
+})();
+</script>
+</body>
+</html>

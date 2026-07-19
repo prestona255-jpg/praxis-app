@@ -113,7 +113,7 @@
 [data-ground="dark"] .k-field:focus-visible,[data-ground="dark"] .k-chip:focus-visible,[data-ground="dark"] .k-seg-opt:focus-visible,
 [data-ground="dark"] .k-btn:focus-visible,[data-ground="dark"] .k-toggle:focus-visible,[data-ground="dark"] .k-dashed:focus-visible,
 [data-ground="dark"] .k-listbox-btn:focus-visible,[data-ground="dark"] .k-destructive:focus-visible{
-  outline-color:var(--gold,#d2a23e);   /* dark ground: brighter --gold */
+  outline-color:var(--gold,#C79A3A);   /* dark ground: the Hour's world gold (B1-FIX R4: was the retired #d2a23e) */
 }
 .k-field:hover,.k-chip:hover,.k-seg-opt:hover,.k-listbox-opt:hover{ background:var(--surface-2,#efe7d6); } /* hover = ground shifts one step */
 .k-field:focus{ border-color:var(--gold,#a8761a); box-shadow:inset 0 1px 2px rgba(80,50,15,.16), 0 0 0 3px color-mix(in srgb,var(--gold,#a8761a) 22%, transparent); outline:none; }

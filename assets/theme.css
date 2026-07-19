@@ -5,9 +5,14 @@
    ===================================================================== */
 
 :root {
-  /* Fonts */
+  /* Fonts
+     THE HOUR, REFINED (v3.232): the UI face leads with the SF system stack --
+     "twilight's soul, Cupertino's tailoring". DM Sans stays in the stack as the
+     non-Apple fallback, so no glyph coverage is lost. --font-serif (Cormorant
+     Garamond) keeps display/titles/the reader's words; --font-mono (DM Mono)
+     keeps TRUE meta only, per TY-1. Both are unchanged. */
   --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-body:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body:  -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'DM Sans', sans-serif;
   --font-mono:  'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* =====================================================================
@@ -20,33 +25,44 @@
      --tradition-* renderer feed are intentionally left at their values
      (tradition retint is a separate, deferred task). */
 
-  /* -- new Umber: dark study surfaces -- */
-  --ground:        #2f1c0e;
-  --ground-grad:   radial-gradient(120% 90% at 26% 12%, #402812 0%, #311d0e 42%, #281609 78%, #1f1107 100%);
-  --surface-d:     #3e2814;
-  --surface-d2:    #4a3119;
-  --sunk-d:        #241406;
-  --dark-2:        #2a1a0c;
+  /* -- dark study surfaces -- RE-POINTED to THE HOUR, REFINED (v3.232).
+        Umber's brown study (#2f1c0e family) becomes the twilight arc. Names are
+        kept, values re-pointed, so every existing consumer crosses over without
+        being edited. Panels are tuned to the MID-ARC so they read correctly at
+        any scroll position on the gradient (a single opaque value cannot match
+        both the #191F33 zenith and the #29200F horizon; mid-arc is the honest
+        compromise, and depth is carried by the shadow trio, not by panel hue). */
+  --ground:        #191F33;
+  --ground-grad:   var(--hour-lamp), var(--hour-horizon), var(--hour-arc);
+  --surface-d:     #232838;
+  --surface-d2:    #2B3042;
+  --sunk-d:        #12151F;
+  --dark-2:        #1B1F2D;
   /* -- new Umber: bright page surfaces -- */
   --page:          #f4efe4;  /* R-POLISH S0: v1.1 canon paper (was #f8f1e1) */
   --page-2:        #fcf6e8;
   --meta:          #9a7e4e;
-  --text-d:        #f0e3c8;
-  --muted:         #c2a87f;
+  /* THE HOUR: the on-dark text ramp is the cream ramp, not Umber's honey. */
+  --text-d:        var(--on-ground);
+  --muted:         var(--on-ground-2);
   /* -- new Umber: accents -- */
   --teal:          #2e8a93;
   --thread:        #c2a463;
-  --gold-soft:     #e7c46a;
+  --gold-soft:     var(--gold-ember);
   --gold-ink:      #855410;
   --register-marginalia: var(--teal);
   --register-journal:    #7d6db0;
   --register-question:   #3a5a8a;
   --grad-soft:     linear-gradient(92deg, #e7c46a, #3aa0a9);
   /* -- new Umber: glass / lines / shadows -- */
-  --glass-bar:     linear-gradient(180deg, rgba(64,40,20,.86), rgba(48,28,14,.74));
-  --glass-pill:    rgba(64,40,20,.74);
-  --glass-border:  rgba(210,162,62,.22);
-  --border-2:      rgba(210,162,62,.30);
+  /* THE HOUR: glass/lines re-pointed off Umber brown onto the twilight world.
+     Chrome fills stay SOLID-ENOUGH to satisfy the nav no-blur-bleed guardrail;
+     only the nav itself frosts (§2 of the canon), and it is not an ancestor of
+     any absolutely-positioned overflow child. */
+  --glass-bar:     linear-gradient(180deg, rgba(21,24,38,.88), rgba(16,19,30,.78));
+  --glass-pill:    rgba(21,24,38,.78);
+  --glass-border:  var(--hairline);
+  --border-2:      rgba(240,235,223,.16);
   --line-page:     rgba(36,23,16,.16);
   --line-page-2:   rgba(36,23,16,.30);
   --wash-page:     rgba(36,23,16,.05);
@@ -55,6 +71,90 @@
   /* Fixed dark scrim for modal/overlay backdrops -- NOT --ink-derived, so it
      stays a darkening veil no matter which ground --ink resolves to. */
   --scrim:         rgba(15,9,4,.6);
+
+  /* =====================================================================
+     THE HOUR, REFINED -- the ratified world (v3.232, July 19 2026).
+     Source of truth: docs/studio/praxis-the-hour-refined.html (its header
+     comment carries the full token spec). Design history, including the
+     six-world exploration that ratified this one:
+     docs/studio/praxis-illuminated-worlds.html.
+
+     PG-1 is amended to v2 by this ship: "One twilight world; printed pages
+     are where you work; depth is meaning." Umber's brown study becomes a
+     twilight arc; the working surfaces become vellum PAGES that sit ON that
+     world rather than replacing it. The Umber tokens above are KEPT and
+     re-pointed below (never renamed), so all 4,899 var() consumers in
+     components.css cross over without being touched individually.
+     ===================================================================== */
+
+  /* -- the ground: a twilight arc, night-blue falling to ember-brown -- */
+  --hour-1:        #191F33;   /* zenith, night blue        */
+  --hour-2:        #1B1D2B;   /* the turn                  */
+  --hour-3:        #241C14;   /* warming                   */
+  --hour-4:        #29200F;   /* horizon, ember brown      */
+  --hour-lamp:     radial-gradient(1200px 640px at 50% -12%, rgba(255,214,150,.08), transparent 60%);
+  --hour-horizon:  radial-gradient(1000px 460px at 50% 112%, rgba(255,175,100,.06), transparent 62%);
+  --hour-arc:      linear-gradient(178deg, var(--hour-1) 0%, var(--hour-2) 36%, var(--hour-3) 70%, var(--hour-4) 100%);
+
+  /* -- on-ground text ramp (text ON the world, not on a page) -- */
+  --on-ground:     #F0EBDF;   /* heads     */
+  --on-ground-2:   #B4AFA2;   /* secondary */
+  --on-ground-3:   #8C897E;   /* meta      */
+  --hairline:      rgba(240,235,223,.10);
+
+  /* -- gold: world / ember / on-card. SEMANTIC GOLD = presence + attention -- */
+  --gold-world:    #C79A3A;
+  --gold-ember:    #DFB759;
+  --gold-on-card:  #8F6A12;
+
+  /* -- the vellum page: a printed sheet laid on the world -- */
+  --card-1:        #FDF9EE;
+  --card-2:        #F6EFDC;
+  --card-ink:      #262019;
+  --card-ink-2:    #5C5340;
+  --card-meta:     #8A7F5F;
+  --card-radius:   15px;
+  /* Apple-tight shadow trio: hairline + contact + modest ambient. */
+  --card-shadow:   0 0 0 1px rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.28), 0 10px 30px rgba(0,0,0,.26);
+  --card-shadow-h: 0 0 0 1px rgba(0,0,0,.2), 0 2px 4px rgba(0,0,0,.3), 0 14px 38px rgba(0,0,0,.3);
+
+  /* -- Yumi's voice ON THE WORLD.
+        #256b80 (the "pale cyan -> AA deep teal" fix) was chosen for a LIGHT
+        page, where it passes. On the twilight world it measures 2.72:1 -- a
+        FAIL. This is the same correction, inverted for the dark ground:
+        measured 7.03:1 on #191F33. The cyan DOT is unchanged; only the text
+        moves, so Yumi keeps her hue and gains her legibility. -- */
+  --teal-on-ground: #5FB8C4;
+
+  /* -- the constellation window: lapis, for B2's living miniature -- */
+  --window-bg:     #0D1424;
+  --window-line:   rgba(199,154,58,.16);
+
+  /* -- JEWEL MARKS (canonical). Landed now so B2's GR-1 renderer consumes
+        tokens, never literals. These retire the --field-N pastel candy. -- */
+  --m1:            #D9B24A;
+  --m2:            #C75434;
+  --m3:            #7C8B4F;
+  --m4:            #3E8A83;
+  --m5:            #B07514;
+
+  /* -- the cloth spines: the bound edge of a printed page (reference `.spine`).
+        Tokens, not literals in components.css -- the same rule the jewel marks
+        follow. Three cloths, each a two-stop gradient pair. -- */
+  --cloth-ox-1:    #8E4434;  --cloth-ox-2:    #6E3226;
+  --cloth-olive-1: #7A8A4E;  --cloth-olive-2: #5E6C3B;
+  --cloth-teal-1:  #357B75;  --cloth-teal-2:  #265A55;
+
+  /* -- world chrome: the nav --
+     --nav-frost / --nav-blur are the REFERENCE's frosted values, kept as
+     tokens so the treatment is one edit away if Preston rules for the frost.
+     --nav-solid is what SHIPS: the composite of that frost over the twilight
+     zenith (.60 * #151826 over #191F33), so the look lands without the
+     backdrop-filter the canon guardrail forbids on nav chrome (iOS
+     overflow-composite bug, fixed v3.106 -- see the rule in components.css). */
+  --nav-frost:     rgba(21,24,38,.60);
+  --nav-blur:      22px;
+  --nav-solid:     #171B2B;
 
   /* -- existing shared tokens, re-pointed to BRIGHT-page base values -- */
   /* R-POLISH Slice 0: :root reconciled to the Universal v1.1 token sheet (§3).
@@ -380,15 +480,16 @@
   --color-surface: var(--dark-2);
   --bg:            var(--ground);
   --bg-2:          var(--surface-d2);
-  --border:        rgba(210,162,62,.18);
+  --border:        var(--hairline);
   --line-2:        var(--border-2);
-  --wash:          rgba(210,162,62,.08);
+  --wash:          rgba(240,235,223,.06);
   --glass:         var(--glass-pill);
-  --glass-2:       rgba(64,40,20,.86);
-  --sunk:          #6b4a23;
-  /* Gold goes BRIGHT on the dark study; the muted gold-ink base is for the
-     light page, where #d2a23e fails AA (2.08) and gold-ink passes (5.7). */
-  --gold:          #d2a23e;
+  --glass-2:       rgba(21,24,38,.88);
+  --sunk:          #2E3446;
+  /* Gold goes BRIGHT on the dark world; the muted gold-ink base is for the
+     light page, where the bright gold fails AA and gold-ink passes (5.7).
+     THE HOUR re-points this to the world gold (#C79A3A). */
+  --gold:          var(--gold-world);
   --gold-light:    var(--gold-soft);
   --gold-text:     var(--gold-soft);
   /* R-POLISH S0 red-team fix: --gold-deep is now defined at :root (#855410, the
@@ -468,11 +569,37 @@ body::before {
     var(--page);
 }
 
-/* Umber DARK study ground -- swaps the bright page for the radial ground-grad
-   whenever the active route set data-ground="dark" on <body>. Higher
-   specificity (attr + element + pseudo) than the base body::before. */
+/* THE HOUR, REFINED -- the world ground. Swaps the bright page for the twilight
+   arc whenever the active route set data-ground="dark" on <body>. Higher
+   specificity (attr + element + pseudo) than the base body::before.
+
+   GROUND MECHANISM (pre-ruled by the B1-FIX brief): this is a FIXED-POSITION
+   LAYER (the pseudo above is position:fixed), NOT background-attachment:fixed.
+   The reference mockup uses background-attachment:fixed on <body>; that is
+   BROKEN ON iOS (it collapses to scroll, tearing the gradient), so the mockup's
+   VALUES are adopted and its MECHANISM is not. --ground-grad resolves to
+   lamp radial + horizon radial + the twilight arc, painted over the --ground
+   fill; no vignette, per the canon. */
 body[data-ground="dark"]::before {
   background: var(--ground-grad), var(--ground);
+}
+
+/* THE HOUR, REFINED -- the grain. A STATIC layer (it neither animates nor
+   parallaxes), held at .015 so it is felt and not seen. Kept as its own
+   pseudo rather than another background layer on ::before so the ground
+   gradient and the texture can be tuned independently -- and so the
+   SCROLL-PERF lever is a single opacity value: if the layer + grain +
+   nav backdrop-blur trio ever stutters at 1920, THIS lightens first.
+   position:fixed + z-index:-1 puts it in the same root stacking step as the
+   ground, above it in paint order, still below <nav> and #app. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: .015;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* 9b-iii: MUTED constellation palette (frozen sheet). A global remap activated
