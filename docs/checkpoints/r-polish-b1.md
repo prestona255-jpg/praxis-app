@@ -672,3 +672,38 @@ accepted, not merely asserted.
 **4 · SHIP AUTHORIZED** — "commit and push" given, with `assets/praxis-kit.css`
 explicitly included in the add (it is in `sw.js`'s `APP_SHELL`; omitting it would
 fail the SW install on deploy).
+
+---
+
+## DEPLOYED LIVE SMOKE — v3.231 @ d5190b7 → PASS
+
+Pushed `c97d476..d5190b7`; `HEAD == origin/main`; tree clean; foundations md5
+re-verified unchanged AFTER the push. Netlify served v3.231 on the 2nd probe.
+
+| check | evidence | verdict |
+|---|---|---|
+| sw.js ×2 cache-busted | probe 1 **praxis-v3.231** · probe 2 **praxis-v3.231** (Age 0, `must-revalidate`) | PASS |
+| kit served + precached | `/assets/praxis-kit.css` HTTP **200**, **15,249 B**; present in deployed `APP_SHELL` | PASS |
+| theme live | components.css carries both B1 blocks; `umberGroundDark = { books: 1` (home OUT); `YUMI_BLOOM_LINES` **0 hits**; index.html links the kit | PASS |
+| Home @1920 · ground | `data-ground="bright"`, `body::before` = warm grain (dark radial retired) | PASS |
+| Home @1920 · paper | `.home-page::before` **position:fixed**, `rgb(244,239,228)`, **1904.67px vs viewport 1905** — full-bleed; element bg transparent | PASS |
+| Home @1920 · nav untouched | `.app-nav` `rgb(62,40,20)` — identical to pre-flip | PASS |
+| Home @1920 · tokens | `--surface` **#fffdf8** (was #3e2814 dark) · `--ink-3` #645940 (AA collapse kept) | PASS |
+| kit tokens live | `--space-xl` 32px · `--dur-gentle` 300ms | PASS |
+| sweeps live | `.yumi-bloom-line` **0** · `.intro-summon` **0** | PASS |
+| nav search | aria "Search books, arcs, sub-theories and notes"; well carved `rgb(107,74,35)`; ⌘K badge **12px** | PASS |
+| Notebook signed-out | mounts, sign-in prompt, 0 leaves, **no crash** | PASS |
+| Notebook B1 rules in deployed CSSOM | XL ≥1600 governor **1** · `.notebook-entry-tag` 12px **1** · reader upright **5** · `.notebook-entry-overflow` **14** | PASS |
+| horizontal scroll | **0** on both pages | PASS |
+| console | **clean, 0 errors** across both surfaces | PASS |
+
+**Scope note on the browser pass, stated honestly:** the deployed samples above were
+taken on the **signed-out** render path with the service worker unregistered and the
+`praxis-v3.231` cache deleted to simulate a fresh client — not in a true Incognito
+window, and not on `prestonpraxistest`. Every PG-1/L5/AMB-1/kit assertion is
+auth-independent and is therefore fully proven above. The **signed-in composed**
+Home (two-region grid, arc cards, spines) and the **seeded Notebook spread**
+(leaves, entries, capture, debounce, save pulse) were proven on the rig against
+byte-identical files, and are re-provable on the deploy in one signed-in pass.
+`prestona255` was never touched — read-only throughout, no writes anywhere on
+production.
