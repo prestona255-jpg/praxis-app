@@ -267,3 +267,34 @@ Parse: `views.js` · `room-field.js` · `spotlight.js` · `arc-constellation.js`
 - **Renderer unification (4 paths)** → S-B sweep.
 - Carried from B1-FIX and still open: R1 nav-not-sticky <760 · R3 nav-list 760–800 overflow ·
   R5 pre-existing light-page contrast debt · R6 mono-caps sentences.
+
+---
+
+## LIVE-SMOKE GATE — v3.233 @ `3485e8b` — ALL PASS
+
+| Check | Result |
+|---|---|
+| `sw.js` cache-busted ×2 | **`praxis-v3.233`** both, agree |
+| shipped rules present in DEPLOYED assets | **11/11** |
+| field renders parchment | `rgb(253,249,238)` — **PASS** |
+| mark fills are jewels | gold · ochre · terracotta — `allFillsAreJewels: true` |
+| RM6 at 1920 | shell 1560 · field **1228** |
+| Ask-Yumi chip aligned to shell | **true** |
+| thumbnail = real arrangement | **12/20 · 37/40 · 63/60 · 88/80** (the seeded diagonal, preserved) |
+| header reveal-on-intent | top seated → down tucked → **UP-intent seated** → top seated |
+| ⌘K reveal | **reveals** |
+| 390: nav unchanged | `position:relative`, `backdrop-filter:none`, **tuck inert** |
+| horizontal scroll (390) | none |
+| console (signed-out, signed-in, mobile) | **clean** |
+
+Auth stub is localStorage-only (cannot mint a Firebase token → writes fail closed); no
+production data written, all stub keys removed after (`0` remaining).
+
+**HELD for Preston's felt pass** — the arc-heavy walk: Home thumbnails → an arc's field →
+a sub-theory workshop drag → scroll test on every page.
+
+Two things to look at specifically:
+1. **The same arc's Field-face mark vs its Arcs-index card** — they will NOT match until the
+   renderer-unification debt lands (marks.js is byte-locked and hardcodes the 16 pastels).
+2. **`--m1` gold as a mark fill on parchment** (1.92:1; its edge carries the boundary at
+   3.52) — darkening it would change a ratified Hour token, so it is your call.
