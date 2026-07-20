@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.235';
+var CACHE_VERSION = 'praxis-v3.236';
 
 var APP_SHELL = [
   '/',
@@ -104,6 +104,23 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
+  // SCHEME GUARD (R-POLISH B4-FIX). The Cache API accepts http/https ONLY, so an
+  // extension-origin request (chrome-extension://, moz-extension://, and the
+  // Firefox/Safari equivalents) reaches cache.put below and throws
+  //   "Failed to execute 'put' on 'Cache': Request scheme 'chrome-extension'
+  //    is unsupported"
+  // which surfaces in the console as an unhandled rejection, because the
+  // caches.open() chain has no .catch().
+  // FILTERED AT THE REQUEST, NOT THE RESPONSE — that distinction is the whole
+  // fix. The existing guard below tests `response.type === 'basic'`, which does
+  // NOT exclude these; by the time it runs the request has already been fetched
+  // and is on its way to a put() that cannot succeed. Returning here means such
+  // requests never enter the handler at all: no wasted fetch, no doomed put, and
+  // the browser handles them exactly as it would with no service worker.
+  // Deliberately NOT a .catch() on the put — that silences the symptom and
+  // leaves the pointless fetch in place.
+  if (event.request.url.indexOf('http:') !== 0 &&
+      event.request.url.indexOf('https:') !== 0) return;
   // API + streaming requests (incl. Firestore Listen channels) pass through
   // untouched. respondWith() on a continuously re-opening stream pins the
   // active worker as busy, which blocks waiting-worker promotion -- the

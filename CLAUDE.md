@@ -34,6 +34,20 @@ syntax. Guard the seams:
   what a surface *looks like* is not done until settled screenshots
   render at 1280 + true 390 AND Preston's eyes pass it. (W8 Lane A
   "verified" by computed style, then needed a second commit for the skin.)
+- TIER VERIFICATION RUNS AGAINST PRESTON'S REAL CSS VIEWPORT, NOT PHYSICAL
+  RESOLUTION. **His is 1360 CSS px** (`window.innerWidth`; display scaling makes
+  it far narrower than the monitor's pixel count). A headless measurement at
+  1920/2560 does not prove the owner ever sees the thing — it proves a viewport
+  he does not have. Before verifying ANY tier or breakpoint work: confirm which
+  media queries actually match at 1360 (`window.matchMedia(...).matches` plus a
+  CSSOM sweep), and measure there FIRST; wider widths are corroboration, never
+  the proof. (R-POLISH B4, 2026-07-20: About XL and Arcs XL were built, gated
+  and shipped entirely on 1920/2560 evidence — both trigger at `min-width:1600`,
+  so **neither ever fired on Preston's machine.** Everything reported was true
+  and none of it was reachable. Caught only by his felt pass. Corollary proven in
+  the same fix: the XL caps could not simply be lowered — at 1360 they would
+  have overflowed the layout viewport by 263px (About) and 215px (Arcs), so the
+  band needed its own measure treatment, not a threshold nudge.)
 - MOCKUP FIRST: a signed-off mockup is committed to design/ BEFORE its
   build prompt runs — it is the spec. (W9/W10 build prompts blocked on
   mockups that lived only in chat.)

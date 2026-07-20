@@ -313,3 +313,85 @@ more than the code delivers. Gates re-run green after all six.
 5. On push: **report `manual_deploy` status — this is the deploy-watch second
    confirmation.** (The first, `0896017`, auto-built unaided: `manual_deploy:false`,
    `commit_ref` matching, published 10s after creation.)
+
+---
+
+## ⭐ DEPLOY-PIPELINE WATCH — CLOSED ON PAPER
+
+The item opened in B3 after a push produced **no deploy at all** (broken
+Netlify↔GitHub link, host key verification failure; relinked with a fresh deploy
+key). It closes only on push-triggered builds succeeding **unaided**. Both
+confirmations, from the deploy API, not from chat:
+
+| | first | second |
+|---|---|---|
+| commit | `0896017` (B3 smoke record) | **`c2c9d689…` (B4 ship)** |
+| `manual_deploy` | **false** | **false** |
+| `commit_ref` matches pushed commit | yes | yes |
+| `state` / `error_message` | `ready` / `null` | `ready` / `null` |
+| created → published | 10s | **8s** (`deploy_time: 7`) |
+
+**Two consecutive unaided auto-builds. THE WATCH ITEM IS CLOSED.**
+
+⚠ **`deploy_source` is NOT the signal.** It reads `"api"` on both of these AND on
+the broken B3 deploy that never fired — it appears to be how Netlify labels
+builds created from the GitHub webhook internally. The pair that actually
+distinguishes a real auto-build is **`manual_deploy:false` + a `commit_ref`
+matching the pushed SHA**. Anyone re-checking this later should read those two
+fields and ignore `deploy_source`.
+
+---
+
+## B4-FIX · THE BAND THE OWNER ACTUALLY USES (v3.236)
+
+Preston's felt pass found what no gate could: **his live viewport is 1360 CSS
+px**, `min-width:1600` never matches there, so **About XL and Arcs XL never fired
+on his machine.** Every figure B4 reported was true and none of it was reachable.
+The standing rail is now in CLAUDE.md.
+
+**Recon proved the tier, rather than assuming it:** at 1360, `matchMedia` reports
+`(min-width:1200px)` true, `(min-width:1600px)` **false**, and a CSSOM sweep found
+**zero XL rules applying**. There is no band between 1200 and 1600 — only those
+two desktop tiers exist.
+
+**Why the trigger was NOT lowered (ruling (a), disqualified by measurement):** at
+1360 the layout viewport is 1345, and the XL tier would render About at a 1608px
+border box and Arcs at 1560px — overflowing by **263px** and **215px**. Lowering
+it would have shipped horizontal scroll to the owner.
+
+**Why the floors were never the problem:** measured at 1360, About is **89.8%**
+and Arcs **96.4%** — *higher* than at 1920 (84.4%), because the caps nearly fill
+the screen. Headroom is 137px and 48px. There was no width left to give.
+
+**What was actually missing was the MEASURE** — and that is what shipped, per the
+ruling. Prose rendered at 453px inside a 928px column with **475px unused**.
+Widened to **72ch, the same value and the same two selectors XL delivers**, inside
+the **existing** `min-width:1200` query — no cap change, no new breakpoint, no
+column restructure. 1ch = 8.09px, so 72ch = 582px; the narrow edge (1200, column
+905px) was the binding case and was verified, not assumed.
+
+| width | tier | prose | occupancy | h-scroll |
+|---|---|---|---|---|
+| **1200** (narrow edge) | 1200 | **71.9ch / 582px** in a 905px column | 100.0% | none |
+| **1360** (Preston's) | 1200 | **71.9ch** (was 55.9ch) | 89.8% | none |
+| **1599** (wide edge) | 1200, XL confirmed off | **71.9ch** | 76.3% (Arcs 85.9%) | none |
+| 1100 (no-leak) | base | **56ch — unchanged** | — | none |
+| 390 (no-leak, B-M's) | base | 41.8ch — unchanged | — | none |
+
+**A dead declaration found while doing it:** `.about .hero .lede{max-width:420px}`
+is a BASE rule at (0,3,0); both this fix's `.about .lede` and **XL's own identical
+selector** are (0,2,0), so the base wins on specificity regardless of media query
+or source order. Measured: the lede is 420px at 1360 **and at 1920** — meaning
+**XL's `.lede` declaration has been inert since B4 shipped.** Kept (not dropped)
+so both tiers stay equivalent in intent, and documented in place. Fixing it would
+require an XL-tier edit, which this slice's non-goals forbid — **named for a
+future ruling.**
+
+**SW SCHEME GUARD.** `sw.js` threw
+`"Failed to execute 'put' on 'Cache': Request scheme 'chrome-extension' is
+unsupported"` on Preston's live console. The handler filtered on the RESPONSE
+(`response.type === 'basic'`), which does not exclude extension-origin requests,
+so they were fetched and then failed to cache in an un-`.catch()`ed promise.
+Fixed at the REQUEST, before the handler does any work — cause, not symptom, and
+explicitly not a `.catch()`, which would have hidden the error while leaving the
+pointless fetch. ES3-safe (`indexOf`, no `startsWith`/`URL`).

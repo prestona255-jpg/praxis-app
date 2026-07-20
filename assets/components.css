@@ -9868,7 +9868,43 @@
 
   .about .sect[id] { scroll-margin-top:96px; }
 
-  /* prose keeps its 56ch measure but centers within the wide column (D2) */
+  /* THE MEASURE, WIDENED FOR THE WHOLE ≥1200 BAND (R-POLISH B4-FIX).
+     This comment used to read "prose keeps its 56ch measure", and that WAS the
+     DW-1 design — but it left the ≥1200 band a second-class reader. Preston's
+     real viewport is 1360 CSS px, where `min-width:1600` never matches, so the
+     XL tier's ≤72ch measure was unreachable on the owner's own machine while
+     every verification ran at 1920/2560. The floors were never the problem here
+     (measured at 1360: About 89.8%, Arcs 96.4% — HIGHER than at 1920, because
+     the caps nearly fill the screen); the MEASURE was.
+
+     72ch, the same value XL delivers, and the same two selectors it targets —
+     so the reading treatment no longer depends on owning a wide monitor.
+     Measured at 1360: 1ch = 8.09px, so 72ch = 583px inside a 928px content
+     column. It fits across the whole band; the narrow edge (1200) is the
+     binding case and was verified, not assumed.
+
+     MEASURE-ONLY, deliberately: no cap change, no new breakpoint, no column
+     restructure. It rides the EXISTING ≥1200 query rather than inventing a
+     band, which is also why it cannot leak below 1200 — the base
+     `.about .sect p{max-width:56ch}` (:9683) is untouched, so ≤1199 and mobile
+     keep exactly what they had. Same specificity as that base rule (0,2,1);
+     source order is what carries it, as it already does for the centring below.
+
+     `.model-cap` and `.pull` are left alone — XL does not touch them either, and
+     a centred mono caption is not prose.
+
+     ⚠ `.about .lede` IS CURRENTLY INERT HERE — and it is inert in the XL block
+     too, which is how it was found. `.about .hero .lede{max-width:420px}` is a
+     BASE rule at (0,3,0); both this selector and XL's identical one are (0,2,0),
+     so the base wins on specificity no matter the media query or source order.
+     Measured: the lede is 420px at 1360 AND at 1920, i.e. XL never widened it
+     either. It is kept here rather than dropped so the two tiers stay
+     byte-equivalent in intent — if that base rule is ever re-scoped, both bands
+     widen together instead of silently diverging. Naming it because an
+     inert-looking-live declaration is exactly what this round keeps catching.
+     The prose measure below is the part that actually moves, and it does. */
+  .about .sect > p,
+  .about .lede { max-width:72ch; }
   .about .sect > p { margin-left:auto; margin-right:auto; }
   .about .pull { max-width:62ch; }
 
