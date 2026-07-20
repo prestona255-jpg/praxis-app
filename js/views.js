@@ -392,6 +392,12 @@ function initNavReveal() {
 }
 
 function renderRoute() {
+  // ME-1 (B4): the activation latch needs a mid-session heartbeat, not a boot
+  // check — the qualifying moment (first book + first marginalia) happens WHILE
+  // session 1 is running, and by the next boot the first-session window has
+  // closed. Guarded + memoised in measure.js, so this is a comparison in the
+  // common case. It derives from existing state and records nothing about it.
+  if (window.PraxisMeasure) { PraxisMeasure.checkActivation(); }
   // 3.10a Stage 4: bind the hamburger toggle once on first call,
   // then close any open mobile nav panel on every route change.
   // app.js's existing hashchange listener calls renderRoute on
@@ -4005,11 +4011,65 @@ function _arcCardMeta2El(arcId, rec) {
 // idea-lights via bookSubMarkHTML (the shared PraxisMarks bridge), positioned
 // deterministically from each sub's id, threaded with faint curves; each light's
 // size + glow scale with its real maturity. Empty arc -> a quiet dark band.
-function _arcCardConstellation(arcId) {
+// EXEMPLAR-WASH FIX (R-POLISH B4) · the "Illustrated example" card, illustrated.
+//
+// The bug, root-caused rather than assumed: the Arcs-index "Arcs to learn from"
+// flow card called _arcCardConstellation(null). _arcSubsOf(null) returns [] by its
+// first line, so the renderer hit its own !subs.length early-exit and returned a
+// bare .arc-const-empty — whose entire paint is one 11px CSS dot at .5 opacity.
+// marks.js was NEVER REACHED, so this was never a jewel-token problem and no
+// byte-locked file is involved. The card's own label says "Illustrated example"
+// while rendering nothing: copy promising what the surface does not deliver.
+//
+// The fix is caller-side data, per Preston's ruling. This is a FIXED, authored
+// arrangement — not random, not hashed, not user data — so the example card looks
+// the same on every machine and every visit. Every field the renderer actually
+// reads is supplied explicitly (verified by reading its body, not assumed):
+//   id                      -> thread key + the stHashIndices fallback
+//   x / y                   -> the GR-1 real-placement path (normalised, so any
+//                              consistent coordinate space works; 0-100 here)
+//   markShape / markColor    -> explicit, so the marks are CHOSEN, never hash-derived
+//   evidence[].length        -> _stComputeMaturity, which drives BOTH mark size
+//                              (cd 15-28) and opacity (0.5 + 0.5 * maturity)
+//   bodyPublic              -> the OTHER half of _stComputeMaturity's raw signal
+//                              (views.js:12441). Supplied as '' so the maturity
+//                              of each example comes from its evidence count
+//                              alone and stays exactly as authored.
+// Varying the evidence counts is deliberate: it makes the example show the
+// maturity ramp a real arc shows, instead of five identical dots.
+function _arcIllustratedSubs() {
+  // x/y trace a flowing left-to-right rise — this card is "A Pedagogy of Flow".
+  var SPEC = [
+    { id: 'ex-flow-1', x: 10, y: 70, shape: 0,  color: 3,  ev: 4  },
+    { id: 'ex-flow-2', x: 32, y: 46, shape: 3,  color: 6,  ev: 8  },
+    { id: 'ex-flow-3', x: 54, y: 58, shape: 7,  color: 9,  ev: 12 },
+    { id: 'ex-flow-4', x: 74, y: 30, shape: 11, color: 4,  ev: 15 },
+    { id: 'ex-flow-5', x: 92, y: 44, shape: 14, color: 7,  ev: 17 }
+  ];
+  var out = [];
+  var i, j, ev;
+  for (i = 0; i < SPEC.length; i = i + 1) {
+    ev = [];
+    for (j = 0; j < SPEC[i].ev; j = j + 1) { ev.push({}); }
+    out.push({
+      id:         SPEC[i].id,
+      x:          SPEC[i].x,
+      y:          SPEC[i].y,
+      markShape:  SPEC[i].shape,
+      markColor:  SPEC[i].color,
+      evidence:   ev,
+      bodyPublic: ''
+    });
+  }
+  return out;
+}
+// `subsOverride` is the ONLY new behaviour here: when absent (every real call
+// site) this function is byte-for-byte the same renderer it was.
+function _arcCardConstellation(arcId, subsOverride) {
   var thumb = document.createElement('div');
   thumb.className = 'arc-card-thumb arc-const';
   thumb.setAttribute('aria-hidden', 'true');
-  var subs = _arcSubsOf(arcId);
+  var subs = subsOverride || _arcSubsOf(arcId);
   var usable = (typeof bookSubMarkHTML === 'function' &&
                 typeof PraxisMarks !== 'undefined' && PraxisMarks && PraxisMarks.render);
   if (!subs.length || !usable) {
@@ -4364,7 +4424,9 @@ function renderArcsPage() {
   var flowCard = document.createElement('div');
   flowCard.className = 'arc-card arc-card-illustrated';
 
-  flowCard.appendChild(_arcCardConstellation(null));
+  // EXEMPLAR-WASH FIX (B4): was _arcCardConstellation(null), which rendered the
+  // empty-state dot and made "Illustrated example" a promise the card broke.
+  flowCard.appendChild(_arcCardConstellation(null, _arcIllustratedSubs()));
 
   var flowLabel = document.createElement('span');
   flowLabel.className = 'arc-card-label';
@@ -22021,7 +22083,13 @@ function renderAbout() {
 
   // Model 1 -- the evolution of reading (tappable stations; dim others on select)
   html +=   '<div class="model evo">';
-  html +=     '<svg viewBox="0 0 640 180" role="img" aria-label="The evolution of reading: the book, the margin, reflection, Praxis">';
+  // STN-A11Y (R-POLISH B4): role="group", NOT role="img". This SVG's stations are
+  // real controls (aboutWireStations binds them), and role="img" makes EVERY
+  // descendant presentational — under it, the role/tabindex/aria-pressed added in
+  // aboutBindStation would be announced to nobody. The six non-interactive model
+  // SVGs on this page keep role="img"; it is correct for them. Only the two
+  // station-bearing SVGs change.
+  html +=     '<svg viewBox="0 0 640 180" role="group" aria-label="The evolution of reading: the book, the margin, reflection, Praxis">';
   html +=       '<defs><marker id="aEvo" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="var(--br-deep)"/></marker></defs>';
   html +=       '<line x1="128" y1="120" x2="216" y2="104" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2" marker-end="url(#aEvo)"/>';
   html +=       '<line x1="282" y1="98" x2="372" y2="82" stroke="var(--br-deep)" stroke-opacity="0.45" stroke-width="1.2" marker-end="url(#aEvo)"/>';
@@ -22063,7 +22131,7 @@ function renderAbout() {
 
   // Model 2 -- the pipeline (tappable stations)
   html +=   '<div class="model pipe">';
-  html +=     '<svg viewBox="0 0 640 96" role="img" aria-label="The pipeline: read, mark, note, sub-theory, arc, commons">';
+  html +=     '<svg viewBox="0 0 640 96" role="group" aria-label="The pipeline: read, mark, note, sub-theory, arc, commons">';  /* STN-A11Y: interactive stations — see the .evo note above */
   html +=       '<line x1="60" y1="44" x2="580" y2="44" stroke="var(--br-deep)" stroke-opacity="0.3" stroke-width="1.2"/>';
   html +=       '<path d="M107 39 L116 44 L107 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
   html +=       '<path d="M211 39 L220 44 L211 49 Z" fill="var(--br-deep)" fill-opacity="0.4"/>';
@@ -22178,6 +22246,13 @@ function renderAbout() {
   html +=       '<div><div class="ft">Memory is yours to grant</div><div class="fd">Off until you turn it on. Readable, correctable, endable.</div></div></div>';
   html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h6v6H7a4 4 0 0 0 4 4"/><path d="M13 7h6v6h-4a4 4 0 0 0 4 4"/></svg></div>';
   html +=       '<div><div class="ft">Your words stay yours</div><div class="fd">Yumi quotes you; she never replaces you. An interlocutor, not an authority.</div></div></div>';
+  // ME-1 · THE MEASUREMENT COVENANT (R-POLISH B4). Sits beside the privacy
+  // covenant, as ruled. Every claim below is CHECKABLE in js/measure.js — that
+  // file is short on purpose, and it contains no code capable of sending
+  // anything, which is what makes "stays on this device" a fact and not a
+  // promise. Stroke icon, no emoji (B4 mobile clause).
+  html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7v10M10 7v10M14 7v10M18 7v10"/><path d="M4 16.5L20 8"/></svg></div>';
+  html +=       '<div><div class="ft">We count, we never watch</div><div class="fd">Praxis keeps a few plain totals &mdash; how often something was used, how often something broke &mdash; and nothing else. No profile of you, no record of the order you did things in, no third-party trackers, no session replay, ever. It all stays on this device: there is no code in Praxis that could send it anywhere.</div></div></div>';
   html +=   '</div>';
   html += '</section>';
 
@@ -22190,6 +22265,10 @@ function renderAbout() {
   html +=     '<div class="ref"><span class="no">no&middot;2</span><span class="rt"><b>No likes, no ranks.</b> Thought travels by consequence &mdash; walked, questioned, built on &mdash; never by applause.</span></div>';
   html +=     '<div class="ref"><span class="no">no&middot;3</span><span class="rt"><b>No harvesting.</b> Your reading is not a product. What the app knows, you can read; what it remembers, you granted.</span></div>';
   html +=     '<div class="ref"><span class="no">no&middot;4</span><span class="rt"><b>No ghostwriting.</b> Yumi asks more than she answers. The theory that leaves this place is yours.</span></div>';
+  // ME-1's RETENTION PHILOSOPHY, ruled and named. It belongs here rather than in
+  // the covenant rows above because this section's own heading is already "No
+  // counts that flatter" — this is the same refusal, stated for the return trip.
+  html +=     '<div class="ref"><span class="no">no&middot;5</span><span class="rt"><b>No streaks.</b> Nothing here is engineered to pull you back &mdash; no chains to keep, no badges, no nudges engineered against your attention. The reason to return is the reading itself; a quiet &ldquo;pick it back up?&rdquo; on Home is as far as this app will ever go.</span></div>';
   html +=   '</div>';
 
   // Model 5 -- applause <-> consequence toggle
@@ -22373,20 +22452,69 @@ function renderAbout() {
 function aboutWireStations(page, sel, capId, caps, dataAttr, dimModel) {
   var stns = page.querySelectorAll(sel);
   var i;
+  // STN-A11Y (R-POLISH B4): the caption is the ONLY thing a station click changes,
+  // so it must announce itself — otherwise a screen-reader user activates a control
+  // and nothing is reported. Polite, not assertive: this is a browsing aid, never
+  // an interruption. Set once per model, here rather than per-station.
+  var cap0 = page.querySelector('#' + capId);
+  if (cap0) {
+    cap0.setAttribute('aria-live', 'polite');
+    cap0.setAttribute('aria-atomic', 'true');
+  }
   for (i = 0; i < stns.length; i++) {
     aboutBindStation(page, stns[i], sel, capId, caps, dataAttr, dimModel);
   }
 }
+// STN-A11Y: the accessible name comes from the station's own <text> label ("THE
+// BOOK", "MARK", ...) — the same word a sighted user reads, so the two audiences
+// are told the same thing. Falls back to the caption's own bolded lead if a
+// station ever ships without a <text>.
+function aboutStationName(stn, caps, idx) {
+  var t = stn.querySelector('text');
+  var s = t ? (t.textContent || '') : '';
+  s = s.replace(/^\s+|\s+$/g, '');
+  if (s !== '') { return s; }
+  var c = (caps && caps[idx]) ? caps[idx] : '';
+  var m = c.match(/<b>([^<]+)<\/b>/);
+  if (m) { return m[1]; }
+  // idx comes from parseInt of a data attribute, so a future station shipped
+  // without one yields NaN — and "Station NaN" read aloud is worse than no name
+  // at all. Unreachable today (all 10 stations carry theirs); guarded because an
+  // accessible name is exactly the thing nobody notices is broken.
+  return (idx === idx) ? ('Station ' + (idx + 1)) : 'Station';
+}
 function aboutBindStation(page, stn, sel, capId, caps, dataAttr, dimModel) {
-  stn.addEventListener('click', function () {
+  var idx = parseInt(stn.getAttribute(dataAttr), 10);
+  // STN-A11Y: these were CLICK-ONLY <g> elements — no role, and critically no
+  // tabindex, so they were entirely unreachable by keyboard. aboutWireToggle
+  // (below) already maintained aria-pressed on its buttons; the stations simply
+  // never got the same treatment. They do now.
+  stn.setAttribute('role', 'button');
+  stn.setAttribute('tabindex', '0');
+  stn.setAttribute('aria-label', aboutStationName(stn, caps, idx));
+  stn.setAttribute('aria-pressed', stn.getAttribute('class') === 'stn on' ? 'true' : 'false');
+  function selectStation() {
     if (dimModel) { dimModel.setAttribute('class', 'model evo sel'); }
     var all = page.querySelectorAll(sel);
     var k;
-    for (k = 0; k < all.length; k++) { all[k].setAttribute('class', 'stn'); }
+    for (k = 0; k < all.length; k++) {
+      all[k].setAttribute('class', 'stn');
+      all[k].setAttribute('aria-pressed', 'false');
+    }
     stn.setAttribute('class', 'stn on');
+    stn.setAttribute('aria-pressed', 'true');
     var cap = page.querySelector('#' + capId);
-    var idx = parseInt(stn.getAttribute(dataAttr), 10);
     if (cap && caps[idx]) { cap.innerHTML = caps[idx]; }
+  }
+  stn.addEventListener('click', selectStation);
+  // Enter and Space both activate a role="button" per the ARIA practices; Space
+  // must preventDefault or the page scrolls under the user.
+  stn.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
+      if (e.preventDefault) { e.preventDefault(); }
+      selectStation();
+    }
   });
 }
 

@@ -63,6 +63,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script src="/js/state.js"></script>
+<!-- ME-1 (B4): loads directly after state.js because it uses ls()/sv().
+     NOT "armed before everything below" — install() runs from app.js's
+     DOMContentLoaded handler, which by spec fires AFTER every synchronous script
+     tag's top-level code has already executed. What is actually true, and what
+     the placement buys, is that the handler is armed before loadState(). A
+     top-level throw in any file below is NOT captured. -->
+<script src="/js/measure.js"></script>
 <script src="/js/recognition.js"></script>
 <script src="/js/room-field.js"></script>
 <script src="/js/tradition-forms-arc.js"></script>

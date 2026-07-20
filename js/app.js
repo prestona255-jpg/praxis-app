@@ -10,8 +10,19 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App init');
+  // ME-1 (B4): arm the measurement covenant BEFORE loadState, so a failure in
+  // load/migrate is counted rather than lost — that is the single most useful
+  // error this module can catch. install() only reads two ls() keys and sets a
+  // handler; it touches no state, so it is safe this early.
+  if (window.PraxisMeasure) { PraxisMeasure.install(); }
   loadState();
   saveState();
+  // NO checkActivation() call here: renderRoute() below calls it as its first
+  // act (views.js), so a call at this point is pure duplication. ACTIVATION is
+  // DERIVED, never tracked — it asks the library and the notebook what they
+  // already contain — and it lives on the render heartbeat rather than at boot
+  // because the qualifying moment (first book + first marginalia) happens
+  // mid-session, by which time a boot-only check has already run and lost.
   if (location.hash === '') {
     location.hash = '#home';
   }

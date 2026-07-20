@@ -560,7 +560,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
   NOW at the R-ARC close-out (2026-07-18). **Opens with a FABLE DESIGN SESSION whose charter comes
   from Preston.** Slots ahead of SCAN/R-SHELF — the control canon must precede control-heavy rounds.
   - **L1 — XL-tier composition canon ≥1600** (designed at 1920 + per-page passes) — absorbs the
-    carried composition residuals: DW-NAV768 · HOME-LAMP · ON-7 band · the 2560-sag · page-scrollbar.
+    carried composition residuals: ~~DW-NAV768~~ · HOME-LAMP · ON-7 band · the 2560-sag · page-scrollbar.
+    **OWNERSHIP CORRECTED (B4): DW-NAV768 was assigned to L1 here while the B4 GO assigned
+    the same defect to B4 as rider "R2" — one defect, two owners. It is CLOSED in B4**
+    (18px h-scroll at 768 → 0; `.app-nav-list` gap 32→20 in the 760-839 band only).
+    Record: `docs/checkpoints/r-polish-b4.md`.
   - **L2 — CONTROL CANON** (rule + app-wide sweep) — one control dialect (was: native `<select>` in
     Pull-from-reading, default inputs, mixed chip/button); **Book-Detail ✎ re-wire is a candidate here**.
   - **L3 — RD-1 glyph slice, WIDENED** — the candy-glyph palette leak → the arc panel + Home
@@ -568,9 +572,17 @@ flagged at the top of the Builder's sequence page for his call — never applied
   - **L4 — drag choreography** (lift/settle physical feel; the ROOM-3 under-developed-drag finding).
   - **L5 — Yumi caption-family removal** (the 3 bare-caption strings; absorbs ON-8 **and RD-6**, the
     seat's deferred persistent-hint-line retirement).
-  **BATCH PROGRESS (local, unpushed):** Slice 0 kit + proofs → **B1/B1-FIX** THE HOUR (v3.231/232)
-  → **B2** the arc cluster (v3.233) → **B3** AES enforcement, sessions 1+2 (**v3.234, LOCAL —
-  awaiting Preston's felt pass**). B3 carries AES-1/2/5a + the `--m1` rider (session 1) and AES-3
+  **BP-1v3 — THE BATCH PLAN (ratified at the B4 GO):**
+  **B1 → B2 → B3 → B4 → B-M → CLOSE.** B-M is a dedicated MOBILE batch and it owns the
+  app's EXISTING mobile debt: kit/canon application at 390 · safe-areas · emoji → stroke
+  icons · focus rings · cluster normalization · and the app-feel micro-riders
+  (tap-highlight, overscroll, user-select, manifest-icon verify). Each desktop batch
+  ships NO mobile debt of its own — B4 was the first held to that clause explicitly.
+  **BATCH PROGRESS:** Slice 0 kit + proofs → **B1/B1-FIX** THE HOUR (v3.231/232)
+  → **B2** the arc cluster (v3.233) → **B3** AES enforcement, sessions 1+2
+  (**v3.234 — PUSHED, DEPLOYED, deployed-smoke 22/22 PASS at `7ddd3c8`; only Preston's
+  felt pass is open**) → **B4** About + Arcs index + the light pages (BUILT, local).
+  B3 carries AES-1/2/5a + the `--m1` rider (session 1) and AES-3
   arc head → kit · AES-4 styled-native select · AES-5b plate-frame + carved edge · **the ✎ re-wire,
   which CLOSES the named MARG-EDIT round gap** · Book Detail XL (46.9% → 61.3% @2560) · the Profile
   dawn seam · `--m1-on-ground` → 3.811:1 (session 2). Record: `docs/checkpoints/r-polish-b3.md`.

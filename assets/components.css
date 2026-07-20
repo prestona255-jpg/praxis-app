@@ -620,6 +620,41 @@
    ===================================================================== */
 @media (min-width: 760px) { body { margin: 0; } }
 
+/* =====================================================================
+   R2 / DW-NAV768 · THE NAV FIT, CLOSED (R-POLISH B4)
+
+   The residual the block above names and defers. Reproduced and measured at
+   768 (viewport 753 after the scrollbar), not inferred:
+
+     available inside the pill : 753 - 20 padL - 14 padR   = 719px
+     actually needed           : 51 wordmark + 18 gap
+                               + 222 search  + 18 gap
+                               + 442 list                  = 751px
+
+   That surplus is the PRESSURE, not the symptom, and the two are not the same
+   number — the search box keeps yielding under it, so what finally escapes the
+   viewport is smaller than the 32px shortfall. The SYMPTOM, measured: the list's
+   last child (the avatar) lands at x=772 against a 753 viewport, and
+   `document.scrollWidth - clientWidth` reads **18px** of h-scroll.
+
+   WHY IT OVERFLOWS RATHER THAN COMPRESSING: `.app-nav-list` carries
+   flex-shrink:0, so it cannot yield; `.app-nav-search` (shrink:1) has already
+   given up everything it can. The slack has to come from inside the list, and
+   it is there: 5 gaps at 32px = 160px of the list's 442px is gap, against 282px
+   of actual links.
+
+   FIXED BY TIGHTENING THAT GAP IN THE TIGHT BAND ONLY. 32 -> 20 frees 60px,
+   which clears the 18px with real margin and keeps every link at full size — no
+   truncation, no hidden item, no font change. Bounded at 839 because the band is
+   measurably clear from ~785 up (751 + 34 padding), so the roomy desktop nav
+   above it is byte-unchanged, and <=759 (the hamburger bar) is never entered.
+
+   THE RULE ITSELF LIVES BELOW, immediately after `.app-nav-list`'s base
+   declaration (:775). Placed here first, it silently lost: a media query adds no
+   specificity, so the later base `gap:32px` simply won on source order and the
+   overflow was unchanged — measured, not assumed.
+   ===================================================================== */
+
 /* ===== TOP NAV -- Stage 3.10a Stage 1 =====
    Persistent bar at the top of every route. Two items (Books,
    Notebook) plus a left-aligned Praxis wordmark. Active route is
@@ -751,6 +786,12 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+/* R2 / DW-NAV768 (R-POLISH B4): the 18px nav overflow in the tight band. Full
+   arithmetic and reasoning at the block near :625. Sits AFTER the base rule
+   above — equal specificity, so source order is the whole mechanism. */
+@media (min-width: 760px) and (max-width: 839px) {
+  .app-nav-list { gap: 20px; }
 }
 
 .app-nav-link {
@@ -1840,6 +1881,41 @@
 @media (min-width: 1200px) {
   .arcs.lum-amber-deep > * { max-width:1360px; }
   .arcs.lum-amber-deep .arcs-teach { max-width:66ch; }
+}
+
+/* =====================================================================
+   XL-1 · THE ARCS INDEX AT THE WIDE DESK (R-POLISH B4)
+
+   Measured at HEAD: the >=1200 governor caps content at 1360px. The wrapper is
+   full-bleed, so the honest occupancy figure is the GOVERNED content, not the
+   wrapper's trivial 100%:
+
+     1920 -> 1360/1905 = 71.4%  PASS
+     2560 -> 1360/2545 = 53.4%  FAIL
+
+   Raised to 1560 — the same wide-desk width Book Detail (:11503) and the arc
+   Field (:12810) already use, so the app keeps ONE composition width.
+
+   THE LIST ARCHETYPE COMES FREE, and that is why nothing else changes here:
+   `.arcs-grid` is already `repeat(auto-fit, minmax(240px, 1fr))` (:1814), so a
+   wider governor IS more columns the moment there are cards to fill them —
+   XL-1's "list pages gain columns/density" with no grid rewrite and no new
+   breakpoint behaviour to regression-test. Verified against a seeded multi-arc
+   library, not inferred from the 2-card example row.
+   ===================================================================== */
+@media (min-width: 1600px) {
+  .arcs.lum-amber-deep > * { max-width:1560px; }
+  /* MEASURED, then fixed: "Arcs to learn from" holds exactly TWO cards, and
+     `auto-fit` stretches them to fill whatever it is given — 672px each at the
+     1360 governor, and 772px each once widened above. A 772x112 thumbnail plate
+     is a letterbox, and widening the desk without this cap would have made a
+     pre-existing stretch visibly worse. Bounding the track lets the two examples
+     sit at teaching size beside the ~247px real arc cards instead of ballooning.
+     Scoped to THIS tier: the 1200-1599 band is DW-1's and stays untouched. */
+  .arcs.lum-amber-deep #arcs-examples{
+    grid-template-columns:repeat(auto-fit, minmax(240px, 300px));
+    justify-content:start;
+  }
 }
 
 /* ===== END ARCS PAGE ===== */
@@ -9654,6 +9730,19 @@
 .about .evo.sel .stn { opacity:.4; }
 .about .evo.sel .stn.on { opacity:1; }
 .about .evo.sel .stn.on text { fill:var(--br-deep); fill-opacity:1; }
+/* STN-A11Y (R-POLISH B4) · THE FOCUS RING THE STATIONS NEVER NEEDED BEFORE.
+   These groups only had cursor:pointer, which was honest while they were
+   mouse-only. Giving them tabindex made them keyboard-reachable, and a reachable
+   control with no visible focus indicator is worse than an unreachable one — the
+   caret goes somewhere the eye cannot follow. Gold ring, the same one
+   `.about-spine-link` uses (:9788), so About has one focus language.
+   THE SECOND RULE IS THE LOAD-BEARING ONE: inside `.evo.sel` every unselected
+   station drops to opacity:.4, so a keyboard user tabbing through would be
+   chasing a ghost at 40%. Focus restores it to full — the station you are ON is
+   always legible, whichever way you arrived at it. */
+.about .evo .stn:focus-visible,
+.about .pipe .stn:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+.about .evo.sel .stn:focus-visible { opacity:1; }
 
 /* ----- colophon ----- */
 .about .colo { padding-top:40px; text-align:center; }
@@ -9783,10 +9872,60 @@
   .about .sect > p { margin-left:auto; margin-right:auto; }
   .about .pull { max-width:62ch; }
 
-  /* figures use the width: lexicon 3-up, covenant 3-across, refusals 2x2 */
+  /* figures use the width: lexicon 3-up, covenant 2x2, refusals 2-col + capstone */
   .about .lex { grid-template-columns:1fr 1fr 1fr; }
-  .about .featrows { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+  /* ME-1 (R-POLISH B4) added a FOURTH covenant row ("We count, we never watch").
+     At repeat(3,1fr) that leaves one orphan alone on a second line; 2x2 is the
+     honest shape for four. Changed WITH the content that changed the count —
+     adding the row and leaving this at 3 would have shipped the orphan. */
+  .about .featrows { display:grid; grid-template-columns:repeat(2, 1fr); gap:22px; }
   .about .refuse { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  /* ...and a FIFTH refusal (no·5, the retention philosophy) in a 2-column grid
+     would sit half-width in a row of its own. It spans instead, which reads as
+     the closing statement it is rather than as a leftover. */
+  .about .refuse .ref:last-child { grid-column:1 / -1; }
+}
+
+/* =====================================================================
+   XL-1 · ABOUT AT THE WIDE DESK (R-POLISH B4)
+
+   Measured at HEAD, not assumed: the DW-1 tier caps `.about` at 1160px, which
+   was sized when 1200 was the wide tier. Against XL-1's >=60% occupancy floor:
+
+     1920 -> 1208/1905 = 63.4%  PASS (barely, and unauthored — the cap simply
+                                 happened to land there)
+     2560 -> 1208/2545 = 47.5%  FAIL
+
+   Re-tuned to 1560 — the same cap the arc Field (:12810), Book Detail (:11503)
+   and Home (:15372) already use, so the app composes on ONE wide-desk width
+   rather than a per-page guess.
+
+   TWO NUMBERS, AND THEY ARE BOTH REAL — say which you mean.
+   `.about` is content-box with 24px padding each side, so a 1560 CAP renders as
+   a 1608 BORDER BOX. Occupancy is what the page actually occupies, i.e. the
+   rendered box, which is also how this page's BEFORE figure was stated (DW-1's
+   own "~1160 + 48 padding = ~1208", and the pre-B4 measurement 1208/1905 =
+   63.4%). Measured, at the rendered box:
+
+     1920 -> 1608/1905 = 84.4%   ·   2560 -> 1608/2545 = 63.2%   (both clear)
+
+   (Dividing the CAP instead gives 81.9% / 61.3% — the figures the Arcs index
+   reports, because its governed child has ZERO padding so there its cap and its
+   rendered box are the same 1560. Same width, two paddings, two honest numbers.)
+
+   WHAT THE WIDTH BUYS, per DW-1's own intent, which this tier extends rather
+   than overrides: the PROSE does not get longer. It was measured at 56ch here,
+   so it is allowed to grow to XL-1's 72ch ceiling and no further — "a wider
+   <=72ch measure", exactly the detail archetype. The extra width goes to the
+   FIGURES, which are diagrams rather than text and are the one thing on this
+   page that genuinely reads better large. The spine widens a little with it.
+   ===================================================================== */
+@media (min-width: 1600px) {
+  .about { max-width:1560px; grid-template-columns:220px minmax(0, 1fr); column-gap:56px; }
+  /* the measure grows toward the ceiling, then stops. Without this the prose
+     would run to ~77ch in the widened column — longer, not better. */
+  .about .sect > p,
+  .about .lede { max-width:72ch; }
 }
 
 /* =====================================================================
@@ -9931,7 +10070,24 @@
 .notebook .notebook-spread { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line-page-2); border:1px solid var(--line-page-2); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-page); }
 .notebook .leaf { background:var(--page-2); background-image:radial-gradient(circle, color-mix(in srgb, var(--meta) 22%, transparent) 1.2px, transparent 1.4px); background-size:22px 22px; padding:var(--sp-5); min-height:520px; }
 .notebook .leaf-left { border-right:1px solid var(--line-page); position:relative; }
-.notebook .leaf-left::before { content:""; position:absolute; top:0; bottom:0; left:46px; width:1px; background:color-mix(in srgb, var(--danger) 30%, transparent); }
+/* R-POLISH B4 · THE SPINE LINE STOPS CUTTING THE CAPTURE CARD.
+   Reported as a residual, unconfirmable by static reading (both candidates are
+   properly contained), CONFIRMED by measuring the rendered geometry: the leaf's
+   content starts at its padding, `--sp-5` = 34px, but this ruled margin was
+   hardcoded at left:46px — 12px PAST the content edge. So the rule ran THROUGH
+   every element on the left leaf, `.nb-composer` (the capture card) included;
+   they are all transparent, which is why nothing covered it and why it read as a
+   line slicing the card rather than as a margin.
+   A margin rule belongs in the gutter, with content to its right.
+   THE LEAF HAS THREE DIFFERENT LEFT PADDINGS depending on scope — 24px base
+   (`--sp-5`, theme.css:232), 26px in the amber skin (:12342), 34px at the amber
+   XL tier (:15608) — and the old 46px exceeded ALL THREE, which is why the rule
+   crossed content on every desktop width rather than only one. So the fix cannot
+   track "the" padding; it has to clear the SMALLEST. `calc(var(--sp-5) - 12px)`
+   = 12px does, leaving the content edge 12 / 14 / 22px to its right in the three
+   scopes. The line is 1px and decorative: no layout moves anywhere, and <=759
+   already hides it (:10134), so mobile is untouched. */
+.notebook .leaf-left::before { content:""; position:absolute; top:0; bottom:0; left:calc(var(--sp-5) - 12px); width:1px; background:color-mix(in srgb, var(--danger) 30%, transparent); }
 
 /* left leaf: book/section head */
 .notebook .nb-bookhead { display:flex; gap:12px; align-items:center; margin-bottom:var(--sp-4); padding-left:8px; }
