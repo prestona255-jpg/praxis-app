@@ -45,7 +45,11 @@ firebase.initializeApp(firebaseConfig);
 // deferred during the window. Books ALSO carries this outgoing latch
 // (F-DL2) BESIDE its pendingBookSync guard -- orthogonal: the latch gates
 // the OUTGOING .set, pendingBookSync guards the INCOMING 3-way merge, so
-// the two never touch. profile/readerModel are deferred to F-DL3.
+// the two never touch. profile/readerModel got the same OUTGOING latch in
+// F-DL3/F-DL4 (shipped, 9914dd9/cfd168f). FX-1 now adds the INCOMING guard
+// (pendingSync family, state.js) to arcs/subTheories/themes/artifacts — the R1
+// residual this block's own history named; notebook's incoming guard is the
+// named follow-up FX-1b (its creation sites span views.js/import-capture.js).
 // =====================================================================
 var arcsLoaded         = false;
 var notebookLoaded     = false;
@@ -193,18 +197,27 @@ firebase.auth().onAuthStateChanged(function (u) {
     loadArcsFromFirestore(u.uid, function (arcResult) {
       arcsLoaded = true;   // F-DL1: load settled -> open the outgoing-write latch.
       if (arcResult.status === 'found') {
+        // FX-1: the remote id set, computed BEFORE the clear-loop so the guard
+        // can distinguish "absent from remote because created locally and not
+        // yet synced" (KEEP) from "absent because deleted server-side" (DROP).
+        var remoteArcs = (arcResult.data && arcResult.data.arcs)
+          ? arcResult.data.arcs
+          : {};
+        var arcRemoteHas = {};
+        var rhaid;
+        for (rhaid in remoteArcs) {
+          if (Object.prototype.hasOwnProperty.call(remoteArcs, rhaid)) { arcRemoteHas[rhaid] = true; }
+        }
         var aid;
         if (state.arcs) {
           for (aid in state.arcs) {
             if (Object.prototype.hasOwnProperty.call(state.arcs, aid) &&
-                state.arcs[aid] && state.arcs[aid].userId === u.uid) {
+                state.arcs[aid] && state.arcs[aid].userId === u.uid &&
+                !arcRemoteHas[aid] && !isPendingSync('arcs', u.uid, aid)) {
               delete state.arcs[aid];
             }
           }
         }
-        var remoteArcs = (arcResult.data && arcResult.data.arcs)
-          ? arcResult.data.arcs
-          : {};
         var raid;
         for (raid in remoteArcs) {
           if (Object.prototype.hasOwnProperty.call(remoteArcs, raid)) {
@@ -245,20 +258,30 @@ firebase.auth().onAuthStateChanged(function (u) {
       loadSubTheoriesFromFirestore(u.uid, function (stResult) {
         subTheoriesLoaded = true;   // F-DL1: load settled -> open the latch.
         if (stResult.status === 'found') {
+          // FX-1: remote id set before the clear-loop (see the arcs guard).
+          // subTheories are the required pair to arcs — both guards ship in this
+          // same commit, so a sub-theory preserved here never points at an arc
+          // the (now also guarded) arcs merge wiped.
+          var remoteSubs = (stResult.data && stResult.data.subTheories)
+            ? stResult.data.subTheories
+            : {};
+          var stRemoteHas = {};
+          var rhsid;
+          for (rhsid in remoteSubs) {
+            if (Object.prototype.hasOwnProperty.call(remoteSubs, rhsid)) { stRemoteHas[rhsid] = true; }
+          }
           var sid;
           if (state.subTheories) {
             for (sid in state.subTheories) {
               if (Object.prototype.hasOwnProperty.call(state.subTheories, sid)) {
                 var lst = state.subTheories[sid];
-                if (lst && lst.userId === u.uid) {
+                if (lst && lst.userId === u.uid &&
+                    !stRemoteHas[sid] && !isPendingSync('subTheories', u.uid, sid)) {
                   delete state.subTheories[sid];
                 }
               }
             }
           }
-          var remoteSubs = (stResult.data && stResult.data.subTheories)
-            ? stResult.data.subTheories
-            : {};
           var rsid;
           for (rsid in remoteSubs) {
             if (Object.prototype.hasOwnProperty.call(remoteSubs, rsid)) {
@@ -300,19 +323,26 @@ firebase.auth().onAuthStateChanged(function (u) {
     loadThemesFromFirestore(u.uid, function (themeResult) {
       themesLoaded = true;   // F-DL1: load settled -> open the latch.
       if (themeResult.status === 'found') {
+        if (!state.userThemes) { state.userThemes = {}; }
+        // FX-1: remote id set before the clear-loop (see the arcs guard).
+        var remoteThemes = (themeResult.data && themeResult.data.userThemes)
+          ? themeResult.data.userThemes
+          : {};
+        var themeRemoteHas = {};
+        var rhtid;
+        for (rhtid in remoteThemes) {
+          if (Object.prototype.hasOwnProperty.call(remoteThemes, rhtid)) { themeRemoteHas[rhtid] = true; }
+        }
         var tid;
         if (state.userThemes) {
           for (tid in state.userThemes) {
             if (Object.prototype.hasOwnProperty.call(state.userThemes, tid) &&
-                state.userThemes[tid] && state.userThemes[tid].userId === u.uid) {
+                state.userThemes[tid] && state.userThemes[tid].userId === u.uid &&
+                !themeRemoteHas[tid] && !isPendingSync('themes', u.uid, tid)) {
               delete state.userThemes[tid];
             }
           }
         }
-        if (!state.userThemes) { state.userThemes = {}; }
-        var remoteThemes = (themeResult.data && themeResult.data.userThemes)
-          ? themeResult.data.userThemes
-          : {};
         var rtid;
         for (rtid in remoteThemes) {
           if (Object.prototype.hasOwnProperty.call(remoteThemes, rtid)) {
@@ -350,19 +380,28 @@ firebase.auth().onAuthStateChanged(function (u) {
     loadArtifactsFromFirestore(u.uid, function (artResult) {
       artifactsLoaded = true;   // F-DL1: load settled -> open the latch.
       if (artResult.status === 'found') {
+        if (!state.bookArtifacts) { state.bookArtifacts = {}; }
+        // FX-1: remote key set before the clear-loop. artifacts key by the
+        // composite artifactKey(uid,bookId); the pending set stores the same
+        // composite string, so the keep-predicate transplants unchanged.
+        var remoteArts = (artResult.data && artResult.data.bookArtifacts)
+          ? artResult.data.bookArtifacts
+          : {};
+        var artRemoteHas = {};
+        var rhaki;
+        for (rhaki in remoteArts) {
+          if (Object.prototype.hasOwnProperty.call(remoteArts, rhaki)) { artRemoteHas[rhaki] = true; }
+        }
         var aki;
         if (state.bookArtifacts) {
           for (aki in state.bookArtifacts) {
             if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, aki) &&
-                state.bookArtifacts[aki] && state.bookArtifacts[aki].userId === u.uid) {
+                state.bookArtifacts[aki] && state.bookArtifacts[aki].userId === u.uid &&
+                !artRemoteHas[aki] && !isPendingSync('artifacts', u.uid, aki)) {
               delete state.bookArtifacts[aki];
             }
           }
         }
-        if (!state.bookArtifacts) { state.bookArtifacts = {}; }
-        var remoteArts = (artResult.data && artResult.data.bookArtifacts)
-          ? artResult.data.bookArtifacts
-          : {};
         var raki;
         for (raki in remoteArts) {
           if (Object.prototype.hasOwnProperty.call(remoteArts, raki)) {

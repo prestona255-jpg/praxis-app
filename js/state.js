@@ -1034,6 +1034,75 @@ function clearPendingBookSync(uid, ids) {
 }
 
 // =====================================================================
+// FX-1 -- the incoming-wipe guard, generalised to the 4 clear-and-splat
+// collections books' guard did not cover: arcs, subTheories, themes, artifacts.
+//
+// SAME shape as pendingBookSync above, PARAMETERISED by a collection `kind`:
+// a per-uid localStorage set of locally-created record ids whose Firestore
+// write has not yet been confirmed. The REPLACE-splat in integrations.js
+// (onAuthStateChanged 'found' branch, per collection) clears this uid's known
+// records and re-splats the remote doc; a record created in the window between
+// sign-in and that load being wiped is exactly F-DL1's INCOMING half (the R1
+// residual f-dl1-fix.md named and deferred; the OUTGOING half shipped at
+// c70f0dc). This set lets each merge tell "created locally, sync not yet
+// confirmed" (KEEP) from "genuinely deleted server-side" (DROP).
+//
+// Why generic, not four copies: these 4 have NO secondary index array (books'
+// bookIds) and NO pending-DELETE set -- ownership is inline on each record --
+// so the guard is a keep-predicate only, identical bar the collection name.
+// books keeps its own dedicated functions (it carries the extra machinery this
+// family deliberately omits). Kinds used: 'arcs' | 'subTheories' | 'themes' |
+// 'artifacts'. Promise-free (cscript-parseable), ls/sv only, never in the
+// state blob (so the REPLACE over state.<X> cannot touch it).
+// =====================================================================
+function pendingSyncKey(kind, uid) {
+  return 'praxis_pending_' + kind + '_' + (uid || 'anon');
+}
+function getPendingSync(kind, uid) {
+  var arr = ls(pendingSyncKey(kind, uid), []);
+  if (!arr || typeof arr.length !== 'number') return [];
+  return arr;
+}
+function markPendingSync(kind, uid, id) {
+  if (!kind || !uid || !id) return;
+  var arr = getPendingSync(kind, uid);
+  var i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] === id) return; }
+  arr.push(id);
+  sv(pendingSyncKey(kind, uid), arr);
+}
+function isPendingSync(kind, uid, id) {
+  if (!kind || !uid || !id) return false;
+  var arr = getPendingSync(kind, uid);
+  var i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] === id) return true; }
+  return false;
+}
+// Clear exactly the ids in `ids` (the confirmed-save payload snapshot) from the
+// kind's pending set; ids marked AFTER the snapshot stay pending, so a later
+// create is still protected. Mirrors clearPendingBookSync.
+function clearPendingSync(kind, uid, ids) {
+  if (!kind || !uid || !ids || typeof ids.length !== 'number' || ids.length === 0) return;
+  var arr = getPendingSync(kind, uid);
+  if (arr.length === 0) return;
+  var remove = {};
+  var i;
+  for (i = 0; i < ids.length; i++) { remove[ids[i]] = true; }
+  var next = [];
+  for (i = 0; i < arr.length; i++) { if (!remove[arr[i]]) next.push(arr[i]); }
+  sv(pendingSyncKey(kind, uid), next);
+}
+// The saved-doc id list for the clear call: the keys of a buildUserXDoc map
+// (payload.arcs / .subTheories / .userThemes / .bookArtifacts) — mirrors the
+// role payload.bookIds plays for books, whose index is an array already.
+function mapIdList(obj) {
+  var out = [], k;
+  if (!obj) return out;
+  for (k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) { out.push(k); } }
+  return out;
+}
+
+// =====================================================================
 // Stage 6 -- pendingBookDeletes guard (symmetric to pendingBookSync).
 //
 // A per-user persisted set of locally-DELETED book ids whose Firestore
@@ -1177,6 +1246,7 @@ function ensureOneArtifact(userId, bookId, artifact) {
   var existing = state.bookArtifacts[key];
   if (existing) return existing;
   state.bookArtifacts[key] = artifact;
+  markPendingSync('artifacts', userId, key);   // FX-1: guard the new artifact (key = uid:bookId) until confirmed synced
   return artifact;
 }
 
@@ -1929,6 +1999,7 @@ function createArc(title, description, userId, originEntryId) {
     updatedAt:    now
   };
   state.arcs[id] = arc;
+  markPendingSync('arcs', userId, id);   // FX-1: protect from the sign-in REPLACE-merge until confirmed synced
   markArcsDirty();
   return arc;
 }
@@ -2135,6 +2206,7 @@ function createSubTheory(arcId, fields) {
     updatedAt:          now
   };
   state.subTheories[id] = subTheory;
+  markPendingSync('subTheories', creator.uid, id);   // FX-1: guard until confirmed synced (creator.uid non-null, checked above)
   markSubTheoriesDirty();
   saveState();
   return subTheory;
@@ -2265,6 +2337,7 @@ function createUserTheme(name) {
   };
   if (!state.userThemes) { state.userThemes = {}; }
   state.userThemes[id] = theme;
+  markPendingSync('themes', theme.userId, id);   // FX-1: guard until confirmed synced (no-op if userId null / signed out)
   markThemesDirty();
   saveState();
   return theme;
@@ -2664,6 +2737,9 @@ function saveState() {
       saveArcsToFirestore(arcUser.uid, arcPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveArcsToFirestore: ok');
+          // FX-1: this snapshot is durable -> clear exactly its ids from the
+          // pending-sync set (ids created AFTER the snapshot stay protected).
+          clearPendingSync('arcs', arcUser.uid, mapIdList(arcPayload.arcs));
         } else {
           console.warn(
             'saveArcsToFirestore: failed',
@@ -2721,6 +2797,7 @@ function saveState() {
       saveSubTheoriesToFirestore(stUser.uid, stPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveSubTheoriesToFirestore: ok');
+          clearPendingSync('subTheories', stUser.uid, mapIdList(stPayload.subTheories));   // FX-1
         } else {
           console.warn(
             'saveSubTheoriesToFirestore: failed',
@@ -2745,6 +2822,7 @@ function saveState() {
       saveThemesToFirestore(thUser.uid, thPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveThemesToFirestore: ok');
+          clearPendingSync('themes', thUser.uid, mapIdList(thPayload.userThemes));   // FX-1
         } else {
           console.warn(
             'saveThemesToFirestore: failed',
@@ -2769,6 +2847,7 @@ function saveState() {
       saveArtifactsToFirestore(artUser.uid, artPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveArtifactsToFirestore: ok');
+          clearPendingSync('artifacts', artUser.uid, mapIdList(artPayload.bookArtifacts));   // FX-1
         } else {
           console.warn(
             'saveArtifactsToFirestore: failed',
