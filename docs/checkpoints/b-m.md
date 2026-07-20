@@ -49,8 +49,8 @@ PWA. #2 and #3 are genuinely tab-visible and were verified live at 390.
 |---|---|---|---|
 | `f1e7cc2` | Shelf select-bar safe-area (P4) | Select-bar buttons clear the home indicator (PWA) | rule carries `padding:14px 22px calc(14px + env(...))`; env present |
 | `90b11a1` | overscroll contain | no rubber-band / scroll-chaining at the app edges | computed `overscroll-behavior-y:contain` on html |
-| `246ed45` | momentum backfill (3 panels) | inertial flick-scroll in the Shelf drawer / Manage sheet / Sub-theory rail | `-webkit-overflow-scrolling:touch` present on all 3 rules (iOS-only — inert in the rig) |
-| `345a954` | maskable app icon | full crest inside the home-screen icon shape, not clipped | crest ink radius **33.1** vs safe-zone 40 (17% margin, centered); full-bleed ground; manifest valid, 2 icons `[any, maskable]` |
+| `246ed45` (→`bd3d601`) | momentum backfill (**2 live panels**) | inertial flick-scroll in the Shelf drawer + Manage sheet | `-webkit-overflow-scrolling:touch` on the 2 live rules (iOS-only). **CORRECTED (red-team): the 3rd target `.st-gutter.subtheory-rail-mobile-open` is DEAD CSS — `st-gutter` has 0 className hits, retired by R6; that edit reverted in `bd3d601`.** |
+| `345a954` (→`5e67145`) | maskable app icon | full crest inside the home-screen icon shape, not clipped | crest true ink radius **34.0** (stroke-inclusive) vs safe-zone 40 (**~15% margin**, centered); full-bleed ground; manifest valid, 2 icons `[any, maskable]`. **CORRECTED (red-team): crest hexes were mis-set (invented `#f0d68a`) — now real (`#C79A3A`/`#a8741a`/`#c5912b`); an XML `--` comment bug that broke render was also fixed, in `5e67145`.** |
 
 All revert-safe. sw.js untouched — the single cache bump rides the v3.238 push.
 overscroll + momentum + select-bar are CSS; the maskable icon is manifest.json + a
@@ -62,15 +62,16 @@ new SVG (the ruled daytime bucket — install-affecting, gets a felt check).
 |---|---|---|
 | **Shelf** (Select mode bar) | installed PWA | Select-bar buttons clear above the home indicator |
 | **Any surface** (scroll edges) | private tab or PWA | no rubber-band / scroll-chaining at top/bottom |
-| **Shelf drawer / Manage sheet / Sub-theory rail** | **iOS Safari/PWA** | momentum flick-scroll, not stiff/stepped (iOS-only; not visible in Chrome) |
+| **Shelf filter drawer + Manage sheet** | **iOS Safari/PWA** | momentum flick-scroll, not stiff/stepped (iOS-only; not visible in Chrome) |
 | **Home screen icon** | **install the PWA** | the full Umebloom crest shows inside the icon shape, not clipped at the edge |
 
 ### Batch-2 residuals (surfaced, not silently changed — FORK-VERBATIM)
 
-- **Sub-theory mobile rail lacks a safe-area inset.** `.st-gutter.subtheory-rail-mobile-open`
-  is `position:fixed; bottom:0; padding:24px 16px` with no `env()` — a 3rd safe-area
-  candidate the recon listed only for momentum. Got momentum here; the safe-area gap is
-  flagged for Preston, NOT added (outside the ranked scope).
+- ~~Sub-theory mobile rail safe-area gap~~ — **RETRACTED (red-team):** this "residual"
+  named `.st-gutter.subtheory-rail-mobile-open`, which is DEAD CSS (R6 retired the
+  evidence-attach rail; `st-gutter` has 0 className hits). There is no such live surface,
+  so there is no safe-area gap to flag. The dead selector itself is pre-existing drift,
+  not B-M's to remove.
 - **manifest theme_color/background_color = #191F33 (dark navy)** — a pre-amber
   leftover; the maskable ground is warm, so splash (navy) and icon (warm) differ until
   the manifest theme is ruled. Not changed here.
