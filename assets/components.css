@@ -625,6 +625,16 @@
    About+Arcs scope.
    ===================================================================== */
 @media (min-width: 760px) { body { margin: 0; } }
+/* B-M: the mobile companion. DW-1 reset the UA margin at >=760 only; below 760
+   the 8px UA body margin survives, and where full-bleed OPAQUE chrome sits on it
+   (the mobile nav, background:var(--surface)) it reads as an ~8px ground-tone
+   hairline down both edges — the fill differs in shade from the ground token, so
+   it is not masked the way transparent-on-ground content is. Reset it here too;
+   ≤759 now matches ≥760. Kept as a separate mirror rule (not by dropping DW-1's
+   min-width) so each band's reset is self-documenting and independently
+   revertable. FELT DELTA (390, private tab): the hairline band beside the mobile
+   nav goes; the nav fill reads edge-to-edge. */
+@media (max-width: 759px) { body { margin: 0; } }
 
 /* =====================================================================
    R2 / DW-NAV768 · THE NAV FIT, CLOSED (R-POLISH B4)
