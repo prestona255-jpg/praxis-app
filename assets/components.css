@@ -645,6 +645,15 @@
    FELT DELTA (390, any tap): no grey/blue box flashes when tapping controls. */
 html { -webkit-tap-highlight-color: transparent; }
 
+/* B-M: contain the overscroll bounce. In standalone PWA (and mobile browsers),
+   scrolling past the top/bottom of the app rubber-bands the whole viewport and
+   chains the scroll to the surface behind — both read as "web page", not "app".
+   `contain` on the root stops the chaining and the glassy bounce while leaving
+   inner-panel scrolling untouched (contain, not none, so nothing that scrolls
+   stops scrolling). Y-axis only — the app never scrolls horizontally at the root.
+   FELT DELTA (390): no rubber-band / scroll-chaining at the top or bottom edge. */
+html { overscroll-behavior-y: contain; }
+
 /* =====================================================================
    R2 / DW-NAV768 · THE NAV FIT, CLOSED (R-POLISH B4)
 
