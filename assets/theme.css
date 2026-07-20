@@ -161,8 +161,20 @@
      two light-ground consumers scope this darker variant, the --teal-on-ground
      precedent. Recon confirmed the blast radius is exactly the arc-interior
      field and Home's mini-field — the mark picker and .itx-root render on DARK
-     and must keep the ratified value. */
-  --m1-on-ground:  #B08A25;
+     and must keep the ratified value.
+
+     B3 SESSION 2 — DARKENED ONE STEP. Session 1 shipped #B08A25 at 3.067:1: over
+     the 3:1 floor, but with no margin at all. #9D7A20 measures 3.81:1 — the same
+     hue, one step down, with room to spare.
+     AND ITS EDGE, which session 1 missed: --m1-edge feeds --subtheory-{1,6,11,16}-edge
+     (:377-392, :706-721), so it renders on these very surfaces. #A67F1E measures
+     3.517:1 on parchment — DARKER than the new fill, which would INVERT the carve
+     (an edge is a shadow, never a highlight). #725814 keeps the edge at 0.50x the
+     fill's luminance — the ratified #D9B24A/#A67F1E pair sits at 0.4965 and this
+     at 0.5005, i.e. the same ratio to three places, not literally identical — so
+     the carve reads on parchment the way it reads on the dark world. */
+  --m1-on-ground:      #9D7A20;
+  --m1-edge-on-ground: #725814;
 
   --m1:            #D9B24A;  --m1-edge: #A67F1E;   /* gold       */
   --m2:            #C75434;  --m2-edge: #94371F;   /* terracotta */

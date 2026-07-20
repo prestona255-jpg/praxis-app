@@ -91,8 +91,10 @@ either self-driven (§5) or a HALT (§5.5).
   cscript harness, and the harness must **self-validate** (fail a broken copy
   before it passes the real file). Neutralize reserved-word method names
   (`.catch`/`.delete`/`.finally`) for the parse only.
-- **Foundations are byte-locked:** `lumen-amber.css` (MD5 `9879ddb8…`) and
-  `marks.js` (MD5 `772886c0…`). Do NOT edit. Re-md5 and confirm at every halt.
+- **Foundations are byte-locked:** `lumen-amber.css` (MD5 `070679b0…`, 14,966 B) and
+  `marks.js` (MD5 `772886c0…`, 10,255 B). Do NOT edit. Re-md5 and confirm at every halt.
+  *(lumen-amber re-baselined from MD5 `9879ddb8…` at R-POLISH B3 — one ruled line, the
+  AES-1 `--mk-glow` retirement at `:177`. `marks.js` unchanged and still matches.)*
 - **Explicit-file staging always.** Never `git add -A`. Never stage
   `test-arc-constellation.html`.
 - **Bump CACHE_VERSION** (`sw.js`) on any shipped change; live-verify after push.

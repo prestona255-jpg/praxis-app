@@ -9009,13 +9009,15 @@ function subTheoryArcName(sub) {
 // "marked" signature, and loc shows only the real date (or bare
 // "marked"). The "became ->" link resolves when this note is computed to
 // have become a sub-theory (reverse lookup), tinted to that mark's fill.
-function buildMargCard(marg) {
+function buildMargCard(marg, bookId, user) {
   var card = document.createElement('div');
   card.className = 'bk-marg lum-glass';
   var annot = document.createElement('div');
   annot.className = 'bk-annot';
-  // DWF-1: the decorative glyph is GONE -- never wired, but it promised editing.
-  // A real wired one returns with MARG-EDIT (see docs/studio/book-detail.md).
+  // DWF-1: the decorative glyph was GONE -- never wired, but it promised editing.
+  // MARG-EDIT (R-POLISH B3): it is back, and it is wired -- the promise DWF-1
+  // removed rather than kept is now kept. See the pencil at the foot of this
+  // function; it opens this entry in the marginalia canvas, pre-filled.
   var atext = document.createElement('span');
   atext.className = 'bk-atext';
   atext.textContent = marg.body || '';
@@ -9041,6 +9043,24 @@ function buildMargCard(marg) {
   }
   loc.textContent = when ? ('marked · ' + when) : 'marked';
   metaL.appendChild(loc);
+  // MARG-EDIT (R-POLISH B3) · THE PENCIL, WIRED. Sits in the meta row beside the
+  // state dot and the date -- NOT in `.bk-annot`, which is the prose column and
+  // carries the <=72ch measure this surface protects.
+  // OWNER-ONLY: `user` is null on the signed-out book detail (W12 S10 renders
+  // seed-owned marks to visitors), so a reader never sees an edit affordance for
+  // marks that are not theirs. `openMarginaliaEditor` re-checks ownership anyway.
+  // ALWAYS RENDERED, not hover-revealed: a hover-only affordance is unreachable
+  // on touch, and this surface already ships a mobile tier.
+  if (user && bookId && marg.userId === user.uid) {
+    var pen = document.createElement('button');
+    pen.type = 'button';
+    pen.className = 'bk-margedit';
+    pen.textContent = '✎';
+    pen.setAttribute('aria-label', 'Edit this marginalia');
+    pen.title = 'Edit this marginalia';
+    pen.addEventListener('click', function() { openMarginaliaEditor(bookId, marg.id); });
+    metaL.appendChild(pen);
+  }
   meta.appendChild(metaL);
   if (became) {
     var link = document.createElement('button');
@@ -10051,7 +10071,7 @@ function renderBookDetail(bookId) {
     var hidden = [];
     var mi;
     for (mi = 0; mi < margs.length; mi++) {
-      var mcard = buildMargCard(margs[mi]);
+      var mcard = buildMargCard(margs[mi], bookId, user);
       if (mi >= PREVIEW) { mcard.className += ' is-folded'; hidden.push(mcard); }
       lin.appendChild(mcard);
     }
@@ -14459,24 +14479,54 @@ function openArcResetConfirm(arcId) {
 // below is the adopter's. A quiet "Done" replaces openEditor's Save/Cancel: the
 // writing is already saved (autosave), so Done just closes the inline editor and
 // re-renders book detail so the new marginalia shows in the list.
-function openMarginaliaEditor(bookId) {
+function openMarginaliaEditor(bookId, editEntryId) {
   var host = document.getElementById('book-detail-editor-host');
   if (!host) { return; }
   var emptyEl = document.querySelector('.book-detail-empty-body');
   if (emptyEl) { emptyEl.style.display = 'none'; }
 
+  // MARG-EDIT (R-POLISH B3) — the pencil, re-wired. An existing entry seeds BOTH
+  // the canvas text and `entryId`, and the second of those is the whole trick:
+  // onSave below ALREADY branches on entryId, so a non-null seed routes every
+  // save down the update path that has sat there unreachable since this function
+  // was written. No new write path, no new record, no schema change.
+  // OWNER-GATED AT THE SEED: an entry that is missing, or that belongs to
+  // someone else, falls through to a fresh compose rather than editing it --
+  // the gate lives here and not only on the pencil, so no caller can reach
+  // another user's entry by passing an id.
   var entryId = null;
+  var startBody = '';
+  if (editEntryId) {
+    var seedUser = getCurrentUser();
+    var seed = state.notebookEntries[editEntryId];
+    if (seed && seedUser && seed.userId === seedUser.uid) {
+      entryId  = editEntryId;
+      startBody = seed.body || '';
+    }
+  }
 
   var canvas = createWritingCanvas(host, {
     surfaceId:    'marginalia',
     placeholder:  'Write in the margin…',
-    initialValue: '',
+    initialValue: startBody,
     flags:        { focusMode: true },
     onSave: function(markdown, report) {
       var body = (typeof markdown === 'string') ? markdown.replace(/^\s+|\s+$/g, '') : '';
+      // SAFE to return bare: flushSave (writing-canvas.js) guards
+      // `trimEdge(v) === ''` BEFORE it calls cueSaving(), so an empty doc never
+      // reaches here with a cue left showing. Nothing to resolve.
       if (body === '') { return; }
       var user = getCurrentUser();
-      if (!user) { return; }
+      if (!user) {
+        // NOT safe to return bare — the same stuck-"Saving…" defect as the
+        // !entry branch below (B3 reviewer HOLD; the first fix missed this
+        // sibling). getCurrentUser() is a fresh localStorage read on EVERY call
+        // (integrations.js:660), not a cached value, so a sign-out or session
+        // expiry landing inside the autosave debounce reaches this line with the
+        // cue already on "Saving…" — and the edit would be dropped in silence.
+        if (report && report.setLocal) { report.setLocal(false); }
+        return;
+      }
       var now = Date.now();
       if (entryId === null) {
         var id = genEntryId();
@@ -14498,12 +14548,21 @@ function openMarginaliaEditor(bookId) {
         if (report && report.setLocal) { report.setLocal(saveState()); } else { saveState(); }
         maybeDrawOut(id);
       } else {
-        var entry = state.notebookEntries[entryId];
-        if (!entry) { return; }
-        entry.body = body;
-        entry.updatedAt = now;
-        markNotebookDirty();
-        if (report && report.setLocal) { report.setLocal(saveState()); } else { saveState(); }
+        // MARG-EDIT (B3) — THE UPDATE GOES THROUGH THE SANCTIONED ACCESSOR.
+        // `updateNotebookEntryBody` (state.js:2455) is the canonical body write,
+        // and it is what ROOM-2's note door (`#note/<id>`) already uses. Both
+        // doors onto the same record therefore converge on ONE write path
+        // instead of two that can drift — the studio charter's "never silently
+        // double-own it" applied to the write, not just the affordance.
+        // It also carries the NO-TOUCH-WRITE guard (`en.body === body` -> no
+        // updatedAt bump, no dirty flag) that ROOM-2's red-team added as N3.
+        // Hand-writing the fields here REINTRODUCED that defect: `lastSaved` is
+        // re-initialised on every re-open, so a blur with no edit reaches this
+        // branch and would have bumped `updatedAt` and dirtied sync for nothing.
+        // Its `false` return also covers the vanished-entry case (the stuck-cue
+        // BLOCK) — the guard is now the accessor's own contract, not a copy.
+        if (report && report.setLocal) { report.setLocal(updateNotebookEntryBody(entryId, body)); }
+        else { updateNotebookEntryBody(entryId, body); }
       }
     }
   });
@@ -14517,6 +14576,13 @@ function openMarginaliaEditor(bookId) {
     renderBookDetail(bookId);
   });
   host.appendChild(done);
+
+  // MARG-EDIT: the editor host is grid-row 3, i.e. ABOVE the marginalia list the
+  // pencil is clicked from, so an edit started from a card far down the page
+  // would otherwise open off-screen. Same `scrollIntoView` remedy already
+  // shipped for the arc picker (Fix #2). Fresh composes are reached from the
+  // action row right beside the host, so only the edit path needs it.
+  if (entryId !== null && host.scrollIntoView) { host.scrollIntoView({ block: 'start' }); }
 
   if (canvas) { canvas.focus(); }
 }

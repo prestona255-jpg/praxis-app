@@ -568,6 +568,16 @@ flagged at the top of the Builder's sequence page for his call — never applied
   - **L4 — drag choreography** (lift/settle physical feel; the ROOM-3 under-developed-drag finding).
   - **L5 — Yumi caption-family removal** (the 3 bare-caption strings; absorbs ON-8 **and RD-6**, the
     seat's deferred persistent-hint-line retirement).
+  **BATCH PROGRESS (local, unpushed):** Slice 0 kit + proofs → **B1/B1-FIX** THE HOUR (v3.231/232)
+  → **B2** the arc cluster (v3.233) → **B3** AES enforcement, sessions 1+2 (**v3.234, LOCAL —
+  awaiting Preston's felt pass**). B3 carries AES-1/2/5a + the `--m1` rider (session 1) and AES-3
+  arc head → kit · AES-4 styled-native select · AES-5b plate-frame + carved edge · **the ✎ re-wire,
+  which CLOSES the named MARG-EDIT round gap** · Book Detail XL (46.9% → 61.3% @2560) · the Profile
+  dawn seam · `--m1-on-ground` → 3.811:1 (session 2). Record: `docs/checkpoints/r-polish-b3.md`.
+  **L2 ↔ MARG-EDIT ownership, now ANSWERED** (the charter required this ruled, never silently
+  double-owned): the ✎ re-wire shipped **inside B3 as the Book-Detail round gap**, not absorbed into
+  L2's app-wide sweep — and its write routes through `updateNotebookEntryBody`, the same accessor
+  ROOM-2's `#note/<id>` door uses, so the two doors do not double-own the write either.
   Round-close rider: run the studio-census re-measure (arcs · arc-detail · subtheory-build ·
   subtheory-page · notebook) if cheap; else ledger it into L1's recon.
   touches: [global-shell, home, book-detail, arc-detail, notebook, arcs]

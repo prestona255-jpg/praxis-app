@@ -77,6 +77,29 @@
 @media (min-width:760px){ .k-input,.k-select,.k-textarea{ font-size:15px; } }
 @media (max-width:759px){ .k-input,.k-select,.k-textarea{ font-size:16px; } } /* CC-1 P7 no-zoom */
 .k-textarea{ min-height:96px; resize:vertical; line-height:1.5; }
+/* CC-1 · THE STYLED-NATIVE SELECT (AES-4, R-POLISH B3). `.k-select` was already
+   named in the two font-size rules above but had NO dress — the class was kit
+   API with nothing behind it. This is that dress.
+   NATIVE, deliberately: the platform control keeps keyboard, type-ahead, the
+   iOS wheel and its whole a11y contract, and loses only the OS skin.
+   THE CARET IS TWO GRADIENTS, not an SVG data URI, for one reason that decided
+   it: a data URI bakes a LITERAL HEX that no token can reach, and this repo
+   allows no new hardcoded hex. Gradients take `currentColor`, so the caret is
+   the control's own ink at every ground, light or dark, for free — and needs no
+   second asset. (This also retires the deferral at components.css:8920, which
+   declined appearance:none because "a custom caret would need new hex or a
+   third file": no hex, and praxis-kit.css IS that third file since B1.)
+   `.k-listbox` above remains NAMED KIT DEBT — presentation, zero behaviour. */
+.k-select{
+  -webkit-appearance:none; appearance:none;
+  padding-right:34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:calc(100% - 18px) calc(50% - 1px), calc(100% - 13px) calc(50% - 1px);
+  background-size:5px 5px, 5px 5px;
+  background-repeat:no-repeat;
+}
 /* CC-1 · custom LISTBOX (>=760, the house dialect); native styled <760 (rig shows both) */
 .k-listbox{ position:relative; }
 .k-listbox-btn{ text-align:left; display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; }

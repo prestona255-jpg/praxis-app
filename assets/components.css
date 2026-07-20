@@ -8918,7 +8918,13 @@
    dashed-baseline grammar never leaks onto it. The excluded utility/search
    inputs (nav search, spotlight, Yumi composer, shelf filter) are not listed
    here and stay as-is. Selects keep their native caret (no appearance:none --
-   a custom caret would need new hex or a third file). */
+   a custom caret would need new hex or a third file).
+   SUPERSEDED IN PART (AES-4, R-POLISH B3): both blockers named above are gone —
+   praxis-kit.css IS the third file (promoted in B1), and the caret is drawn with
+   gradients taking `currentColor`, so it costs NO new hex. `.k-select` now
+   carries that dress and `.stb-pull-book-sel` adopts it. The composition fields
+   listed in THIS block are unchanged; only the blanket "selects keep their
+   native caret" claim no longer holds app-wide. */
 
 .notebook-editor-title-input,
 .notebook-editor-body:not(.subtheory-register-body),
@@ -11193,6 +11199,20 @@ body.wc-focus .app-nav { opacity:.26; }
 .bk-surface .bk-marg-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
 .bk-surface .bk-marg-dot.woven{ background:var(--dot,var(--lum-gold)); box-shadow:0 0 6px -1px var(--dot,var(--lum-gold)); }
 .bk-surface .bk-marg-dot.unwoven{ background:transparent; border:1.5px solid #b0a284; }
+/* MARG-EDIT (R-POLISH B3) · the wired pencil. Quiet at rest so a column of marks
+   does not read as a column of buttons, full-strength on hover AND focus-visible
+   (keyboard reach is not a hover). 44x44 hit area via padding at <=759 lands in
+   the mobile block; here it is a text-weight affordance sitting in the meta row.
+   Glyph is the '✎' this surface already uses on its primary action (:9959) --
+   ICON LAW: one dialect per surface, not a second glyph family for one button. */
+.bk-surface .bk-margedit{
+  background:none; border:none; padding:0 2px; cursor:pointer; line-height:1;
+  font-size:12px; color:var(--lum-ink-4); opacity:.55;
+  transition:opacity var(--dur-fast,150ms) ease, color var(--dur-fast,150ms) ease;
+}
+.bk-surface .bk-margedit:hover,
+.bk-surface .bk-margedit:focus-visible{ opacity:1; color:var(--lum-gold-d); }
+.bk-surface .bk-margedit:focus-visible{ outline:2px solid rgba(255,206,74,.5); outline-offset:2px; }
 .bk-surface .bk-unwoven-note{ font-family:var(--lum-mono); font-size:10px; letter-spacing:.04em; color:var(--lum-ink-2); opacity:.8; }
 .bk-surface .bk-becamelink{ color:var(--lum-ink-2); border:1px solid var(--bk-line); background:none; }
 .bk-surface .bk-becamelink:hover{ border-color:var(--bk-gold-hi); color:var(--lum-ink); }
@@ -11294,6 +11314,9 @@ body.wc-focus .app-nav { opacity:.26; }
   .bk-surface .bk-backlink, .bk-surface .bk-find{ display:inline-flex; align-items:center; }
   /* the 5-up rating: a genuine 44x44 hit box per star (glyph stays 15px, centered) */
   .bk-surface .bk-star{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  /* MARG-EDIT's pencil is the same species as .bk-star — a glyph button that
+     writes — so it takes the same 44x44 box, glyph size unchanged. */
+  .bk-surface .bk-margedit{ min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
 }
 /* ===== end MW-3 · BOOK DETAIL MOBILE PASS ===== */
 
@@ -11450,6 +11473,45 @@ body.wc-focus .app-nav { opacity:.26; }
      not tokens-only -- pre-existing, not introduced here: residual DWP-D6-UA. */
 }
 /* ===== end DW-POLISH · BOOK DETAIL DESKTOP DESIGN PASS (was DW-3's block) ===== */
+
+/* =====================================================================
+   XL-1 · BOOK DETAIL AT THE WIDE DESK (R-POLISH B3)
+
+   The >=1200 block above hard-caps `.bk-shell` at 1200px, which was sized when
+   1200 WAS the wide tier. Measured against XL-1's >=60% occupancy floor:
+
+     1920 -> 1200/1920 = 62.5%  PASS, barely
+     2560 -> 1200/2560 = 46.9%  FAIL
+
+   Re-tuned to the DETAIL archetype, matching the house XL pattern exactly (the
+   arc Field's own >=1600 tier, :12722, and Home's, :15108):
+
+     1920 -> 1560/1920 = 81.3%  PASS
+     2560 -> 1560/2560 = 60.9%  PASS
+
+   The cap deliberately STOPS at 1560 — XL-1 says pages compose wider, never
+   stretch, so 2560 gets the same desk with more room around it, still clear of
+   the floor. Same reasoning, same figures, as the Field's ratified block.
+
+   WHAT WIDTH BUYS, per the detail archetype: not a longer line. Every prose
+   element on this surface is already capped at 72ch (:11407-11423) and those
+   caps are UNTOUCHED here, so the measure cannot run long at any width. What
+   widens is the RAIL — 340 -> 380 — which on this surface actually carries
+   content (the values card, the arc chips, the action stack), and the hero,
+   which gets room for the cover beside the title block.
+   ===================================================================== */
+@media (min-width:1600px){
+  .bk-surface .bk-shell{ max-width:1560px; grid-template-columns:minmax(0,1fr) 380px; }
+  /* D2 REGRESSION CAUGHT BY THE RIG, AND ITS FIX. `.bk-atext` — the marginalia
+     body inside each `.bk-marg` — is prose, but it is NOT in the >=1200 cap list
+     at :11407-11423, and correctly so: that list was built BY MEASUREMENT, and at
+     the old 816px content column (1200 - 340 rail - 44 gap) it sat at ~54ch,
+     comfortably inside. Widening the column to 1136px above pushed it to a
+     measured 83.4ch — over the floor, at 1920 AND 2560. The cap belongs to the
+     tier that caused it: below 1600 the column is unchanged and this rule would
+     be a no-op anyway. */
+  .bk-surface .bk-atext{ max-width:72ch; }
+}
 
 /* =====================================================================
    WAVE 3 · THE PAGE  (renderSubTheoryPage on .lum-amber-deep)
@@ -11764,6 +11826,32 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-pull-book-sel,
 .st-build.lum-amber-deep .stb-pull-search{ font-family:var(--lum-sans); font-size:11.5px; color:var(--lum-ink-2); background:rgba(255,253,246,.55); border:1px solid var(--lum-glass-bd-2); border-radius:8px; padding:6px 9px; min-width:0; }
 .st-build.lum-amber-deep .stb-pull-book-sel{ flex:0 0 42%; }
+/* AES-4 · THE STYLED-NATIVE SELECT, ALL WIDTHS (R-POLISH B3).
+   This select was the one control on the surface still rendering as an OS
+   widget — a grey system chrome sitting beside a carved search field.
+   The kit's `.k-select` (praxis-kit.css) is the reusable dress for FUTURE
+   adopters; this rule is an independent re-statement, NOT an adoption of it —
+   no element in the app carries `class="k-select"` today (`grep k-select js/`
+   is empty), and this one cannot simply take it: the grouped rule above sets
+   the `background` SHORTHAND at (0,3,0), which resets background-image and
+   outranks any 0,1,0 kit class. Same two-gradient caret technique, drawn in
+   `--lum-ink-3` because this element's own `color` is `--lum-ink-2` and the
+   kit's `currentColor` would render the caret too dark here. The remaining
+   four native selects (views.js:6712/9436/9467/20459) are NOT converted this
+   batch — named residual, and `.k-select` is what they adopt when they are.
+   Base rule, no media query — "all widths", as ruled. `appearance:none` removes
+   the SKIN only: the native picker (and the iOS wheel) still opens on tap. */
+.st-build.lum-amber-deep .stb-pull-book-sel{
+  -webkit-appearance:none; appearance:none;
+  padding-right:30px;
+  background-color:rgba(255,253,246,.55);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--lum-ink-3) 50%),
+    linear-gradient(135deg, var(--lum-ink-3) 50%, transparent 50%);
+  background-position:calc(100% - 16px) calc(50% - 1px), calc(100% - 11px) calc(50% - 1px);
+  background-size:5px 5px, 5px 5px;
+  background-repeat:no-repeat;
+}
 .st-build.lum-amber-deep .stb-pull-search{ flex:1; }
 .st-build.lum-amber-deep .stb-pull-empty{ padding:18px 16px; font-family:var(--lum-serif); font-style:italic; font-size:13px; color:var(--lum-ink-2); text-align:center; }
 /* the visible woven/unwoven state — a luminous-orb dot (lit=woven, unlit=unwoven);
@@ -12754,6 +12842,27 @@ body.wc-focus .app-nav { opacity:.26; }
 .home-arc-ff,
 .home-wf{
   --m1:var(--m1-on-ground);
+  /* B3 session 2: the edge travels WITH the fill. --m1-edge flows into
+     --subtheory-{1,6,11,16}-edge, so re-pointing the fill alone left the edge
+     LIGHTER than what it edges — a carve running backwards. */
+  --m1-edge:var(--m1-edge-on-ground);
+  /* ------------------------------------------------------------------
+     B3 SESSION 2 — THE RIDER WAS INERT, AND THIS IS WHY. Measured live: the
+     mark glyphs paint `fill="var(--subtheory-6)"` / `var(--subtheory-16)`, and
+     inside this very subtree those computed to #D9B24A — the RATIFIED value, at
+     1.92:1 — while `--m1` right here correctly read #9D7A20. Re-pointing --m1 in
+     a descendant CANNOT reach them: `--subtheory-6: var(--m1)` is DECLARED at
+     :root (theme.css:377-392, :706-721), so it substitutes ROOT's --m1 at
+     computed-value time and inherits down as an already-resolved colour. A
+     custom property resolves where it is DECLARED, not where it is USED.
+     Session 1 measured the lever (--m1) and reported 3.07:1; the pixels never
+     moved. The collapse twins must therefore be re-declared HERE, at the same
+     scope, which is what actually reaches the glyphs. --m1/--m1-edge above stay
+     for any direct reader. */
+  --subtheory-1:  var(--m1-on-ground);  --subtheory-1-edge:  var(--m1-edge-on-ground);
+  --subtheory-6:  var(--m1-on-ground);  --subtheory-6-edge:  var(--m1-edge-on-ground);
+  --subtheory-11: var(--m1-on-ground);  --subtheory-11-edge: var(--m1-edge-on-ground);
+  --subtheory-16: var(--m1-on-ground);  --subtheory-16-edge: var(--m1-edge-on-ground);
 }
 
 /* ============================================================================
@@ -13083,6 +13192,74 @@ body.wc-focus .app-nav { opacity:.26; }
      at 0,3,0 that wins `display` over the 0,2,0 .arcfield .btn rule above; match its
      specificity (later source) so it flex-recenters in the 44px box too. */
   .arcfield.arcfield-warm .arcfield-page-open{ display:inline-flex; align-items:center; justify-content:center; }
+}
+
+/* ---------------------------------------------------------------------
+   AES-3 · THE ARC HEAD LEARNS THE KIT (R-POLISH B3)
+
+   THE DIAGNOSIS, by inventory rather than by feel. Four control families in one
+   header, and THREE of them were wearing the same gold-outlined pill:
+     .arcfield-addsub-canon (:13045)  gold border, gold text  — the real primary
+     .arcfield-life-btn     (:13110)  gold border, gold text  — IDENTICAL to it
+     .arc-detail-delete     (:12752)  outlined pill           — a peer of both
+     .seg-opt.is-on         (:12750)  FILLED GOLD GRADIENT    — outranked them all
+   So the loudest thing in the head was a view toggle, "+ Sub-theory" and
+   "Rename" were indistinguishable, and the destructive act was a peer pill.
+   CC-3's role law says gold is the ONE primary and chips carry state; this head
+   had gold on four things and a hierarchy on none.
+
+   THE CONVERSION (kit grammar, adopted at the per-surface selectors because the
+   0,3,0 rules above outrank any 0,1,0 .k-* class — the kit is the SOURCE of the
+   grammar here, not the cascade winner):
+     1 the faces seg goes CARVED and gives gold up; selected = lifted paper
+     2 "+ Sub-theory" becomes the ONE filled-gold primary in the view
+     3 the lifecycle verbs go quiet — they are corrections, not the forward act
+     4 the status chip becomes state: a quiet neutral pill, no border competing
+     5 DELETE goes quiet AND cornered (order:99) — it keeps its confirm panel
+
+   PRESERVED, deliberately: `openArcDeleteConfirm` and its panel are UNTOUCHED —
+   this re-skins the trigger only, per the ruling. And NO rule here declares
+   `display` or `min-height` on these classes, because the <=759 blocks at
+   :12969-12973 and :13136-13139 set the 44px touch targets and this block is
+   LATER in source — declaring either would silently revert MW-2 P3's mobile hit
+   areas at equal specificity. Colour, fill, edge and order only. */
+/* 1 · the faces seg — carved, and gold retired from it */
+.arcfield.arcfield-warm .seg{
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.12);
+}
+.arcfield.arcfield-warm .seg-opt.is-on{
+  color:var(--lum-ink); background:var(--lum-base); font-weight:600;
+  box-shadow:0 1px 3px rgba(80,50,15,.18);
+}
+/* 2 · THE ONE PRIMARY — the only filled gold in the view */
+.arcfield.arcfield-warm .arcfield-addsub-canon{
+  background:linear-gradient(180deg,var(--lum-gold-l),var(--lum-gold));
+  border-color:transparent; color:var(--lum-gold-ink); font-weight:600;
+}
+.arcfield.arcfield-warm .arcfield-addsub-canon:hover{
+  background:linear-gradient(180deg,var(--lum-gold),var(--lum-gold-d));
+  color:var(--lum-base); border-color:transparent;
+}
+/* 3 · the lifecycle verbs go quiet (Graduate / Return to ember / Rename) */
+.arcfield.arcfield-warm .arcfield-life-btn{
+  background:transparent; border-color:rgba(38,32,25,.18); color:var(--lum-ink-2);
+}
+.arcfield.arcfield-warm .arcfield-life-btn:hover{
+  background:rgba(38,32,25,.05); border-color:rgba(38,32,25,.34); color:var(--lum-ink);
+}
+/* 4 · the status chip is STATE, not a control */
+.arcfield.arcfield-warm .arcfield-status-chip{
+  background:rgba(38,32,25,.05); border-color:rgba(38,32,25,.16); color:var(--lum-ink-2);
+}
+/* 5 · DELETE — quiet and cornered; the panel behind it is untouched */
+.arcfield.arcfield-warm .arc-detail-delete{
+  order:99; align-self:flex-end;
+  background:none; border:none; border-radius:0; padding:2px 0;
+  font-family:var(--lum-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--lum-ink-3);
+}
+.arcfield.arcfield-warm .arc-detail-delete:hover{
+  background:none; border-color:transparent; color:var(--lum-rose);
 }
 
 /* =============================================================================
@@ -13559,6 +13736,48 @@ body.wc-focus .app-nav { opacity:.26; }
    card goes solid parchment (the base color-mix radials read near-invisible on light) */
 .home-page.lum-amber-deep .home-arcfield{ background:linear-gradient(180deg,#f4e6c4,#eedcb2); }
 .home-page.lum-amber-deep .home-wholefield .home-wf{ background:linear-gradient(180deg,#f4e6c4,#eedcb2); border-radius:12px; }
+
+/* ---------------------------------------------------------------------
+   AES-5b · THE PLATE-FRAME + CARVED EDGE (R-POLISH B3)
+
+   The three constellation thumbnails were three different objects:
+     .home-wf        — plate: parchment fill + radius 12, no edge at all
+     .home-arcfield  — RAISED frame: radius 13 + a 1px outset border (:13232)
+     .arc-const      — no plate: a flat edge-to-edge band, radius 0, with a
+                       bottom rule standing in for a frame (:1819)
+   One family, three grammars. They converge here on the plate the `.home-wf`
+   precedent already set, with the CARVED edge — inset shadow + inset hairline —
+   which is the ratified grammar from CC-2 and the RD-1 field (:12998). A
+   miniature of a field that is itself carved should not be raised.
+
+   THE ONE TRAP, and how the hover survives it: `.home-arcfield`'s frame is a
+   real `border`, and :13234 animates its `border-color` on hover. Dropping the
+   border for a carve would have silently killed that affordance — a dead hover
+   of exactly the kind the smoke-test law was written for. The hover is REBUILT
+   below on the carve: the inset hairline goes gold instead of the border. Same
+   signal, new grammar, verified live (44px probe + computed box-shadow).
+   NOTE, precisely: the original :13234 rule is NOT removed — it is left in
+   place and INERT, since `border:none` below zeroes the border it animates.
+   Dead but harmless; removing it would edit a load-bearing rule this batch has
+   no mandate to touch. Logged so the next reader is not misled by it.
+
+   Placed AFTER :13232-13234 deliberately — equal specificity, so source order
+   is what carries the override. */
+.arcs.lum-amber-deep .arc-card-thumb.arc-const{
+  margin:11px 11px 0;
+  border-bottom:none;
+  border-radius:12px;
+  background:linear-gradient(180deg,#f4e6c4,#eedcb2);
+  box-shadow:inset 0 2px 10px rgba(38,32,25,.16), inset 0 0 0 1px rgba(38,32,25,.10);
+}
+.home-page.lum-amber-deep .home-arcfield,
+.home-page.lum-amber-deep .home-wholefield .home-wf{
+  border:none;
+  box-shadow:inset 0 2px 10px rgba(38,32,25,.16), inset 0 0 0 1px rgba(38,32,25,.10);
+}
+.home-page.lum-amber-deep .home-arc:hover .home-arcfield{
+  box-shadow:inset 0 2px 10px rgba(38,32,25,.16), inset 0 0 0 1px rgba(217,164,65,.55);
+}
 
 /* 8 · LITERAL RESCUES · base rules hardcoding dark / near-white values (color/bg only) */
 .home-page.lum-amber-deep .home-mspine{ background:#efe7d6; }
@@ -14697,7 +14916,52 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-vis-badge{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#3a2408; background:var(--gold-hi); border-radius:999px; padding:6px 11px; align-self:center; }
 .pf-sky-host{ position:relative; height:478px; }
 .pf-sky{ display:block; width:100%; height:100%; }
-.pf-hero::after{ content:''; position:absolute; left:20px; right:20px; bottom:0; height:1px; pointer-events:none; background:linear-gradient(90deg,transparent,rgba(217,164,65,.6),transparent); }  /* AM28 gilded seam */
+/* ---------------------------------------------------------------------
+   THE DAWN SEAM (R-POLISH B3) — the galaxy's night dissolving into the page.
+
+   BEFORE: `.pf-hero`'s radial is fully opaque with no light stop, so dark ->
+   light happened the instant its box ended and `.pf-root`'s ground showed
+   through — a HARD CUT. The AM28 hairline below is a 1px gold ornament; it
+   marked that cut, it never blended it.
+
+   WHY A BAND, NOT A FADE THROUGH THE BOTTOM: `.pf-hero-dock` is the hero's LAST
+   child (views.js:19114) — the hero's bottom IS the dock, and the dock's text is
+   `--text-on-dark`. Fading the hero's existing bottom would have put light text
+   on a lightening ground: the same coupling trap AES-2 hit on Shelf/Notebook.
+   So the hero grows a dawn band BELOW the dock and the ramp lives THERE. The
+   dock keeps its full night; nothing readable ever sits on the ramp.
+
+   The ramp is layered UNDER the dock (z-index 1 vs the dock's 3) and OVER the
+   sky (z-index auto), so it is the galaxy that dissolves — which is the point.
+   Literal stops: this block paints its own ground per the R5 precedent declared
+   at :14690, and the final stop must equal `.pf-root`'s #f4efe4 exactly or the
+   seam it removes reappears one step further down.
+
+   The hairline STAYS, on top of a real gradient rather than instead of one — at
+   the foot of a dawn it reads as the horizon it always wanted to be. That takes
+   an EXPLICIT z-index on `::after` (B3 red-team BLOCK): a positioned box with a
+   positive z-index paints in a LATER step than one at `z-index:auto`, so source
+   order does NOT save it — the ramp at z-index:1 would have painted clean over
+   the hairline, and at `bottom:0` the ramp is at its 100% stop, fully opaque.
+   The stack is therefore explicit and ordered: ramp 1 · hairline 2 · dock 3.
+
+   RAMP HEIGHT == PADDING (B3 red-team CONCERN): at 104px the ramp reached ~28px
+   past the dock's box and ~14px into its content, where `.pf-taphint` sits — so
+   "nothing readable ever sits on the ramp" was false as measured. Pinning the
+   ramp to exactly the 76px band makes it true: the ramp starts where the dock
+   ends. The stops are percentages and rescale themselves. */
+.pf-hero{ padding-bottom:76px; }
+.pf-hero::before{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:76px;
+  z-index:1; pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(28,18,9,0)      0%,
+    rgba(74,50,22,.45)   34%,
+    rgba(150,112,54,.72) 66%,
+    rgba(226,206,168,.94) 88%,
+    #f4efe4              100%);
+}
+.pf-hero::after{ content:''; position:absolute; left:20px; right:20px; bottom:0; height:1px; z-index:2; pointer-events:none; background:linear-gradient(90deg,transparent,rgba(217,164,65,.6),transparent); }  /* AM28 gilded seam — z-index:2 added by B3: above the dawn ramp (1), below the dock (3) */
 .pf-hero-dock{ position:relative; z-index:3; padding:0 16px 14px; }
 /* AM48 strip overflow: edge fade + scroll affordance */
 .pf-strip-wrap{ position:relative; }

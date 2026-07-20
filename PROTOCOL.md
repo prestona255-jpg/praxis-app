@@ -113,7 +113,7 @@ Note the boundary with §3: a *fidelity divergence* from the mockup is never a s
 
 Stop and wait for Preston before doing any of the following. No exceptions, no "it was obviously fine."
 
-1. **Byte-locked foundation files.** Any change to `lumen-amber.css` (locked at **14,681 B**) or `marks.js` (locked at **10,255 B**). If a wave appears to require touching these, HALT and say why.
+1. **Byte-locked foundation files.** Any change to `lumen-amber.css` (locked at **14,966 B**) or `marks.js` (locked at **10,255 B**). If a wave appears to require touching these, HALT and say why. *(lumen-amber re-baselined 14,681 → 14,966 B at R-POLISH B3: AES-1 dropped the `var(--mk-glow)` read at `:177` so mark glows resolve to one gold app-wide — a single ruled line, authorised by Preston at the B3 Stage-0 rulings, recorded here at the ship commit as ruled. `marks.js` itself was NOT touched.)*
 2. **Yumi covenant.** Anything touching the covenant path — `assembleContextData` lines **222–226**, Yumi's **cyan-only** color, the **never-summarizes** behavior. The covenant is a constraint, not a decision. Never bypass it, never "improve" it, never let another surface's change alter it.
 3. **The six load-bearing principles.** Any change that would violate: (1) Yumi never summarizes books; (2) Notebook is structurally private; (3) one Book Artifact per user per book; (4) stars de-emphasized, no follower counts as primary UI; (5) no asymmetric knowledge; (6) Knowledge Arcs are intersectional by design. (Canonical articulation + enforcement seams: `docs/PRINCIPLES.md`.)
 4. **Dependencies and syntax floor.** Any new dependency of any kind. Any ES5-or-later syntax entering client JS (§7 — the floor is ES3).

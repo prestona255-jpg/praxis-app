@@ -117,8 +117,24 @@ evidence: docs/checkpoints/dwp-book-detail-recon.md (Stage 0 + baseline + propos
 
 ## Next
 
-- **MARG-EDIT — re-open existing marginalia for editing, from Book Detail. Bucket: ROUND GAP —
-  Book Detail** (~~PROGRAM~~ — **re-tiered 2026-07-15 at the DW wave close, Preston's ruling**).
+- **MARG-EDIT — ✅ CLOSED, R-POLISH B3 (v3.234).** Built exactly to the narrowed scope this row
+  itself derived: `openMarginaliaEditor(bookId, editEntryId)` seeds `entryId` + `initialValue`
+  (the closure var that "reset to `null` on every open" is now seedable), and `buildMargCard`
+  gains the wired `.bk-margedit` pencil — **the glyph returns to the seat DWF-1 kept for it**,
+  wired this time. Owner-gated twice (render gate + a seed re-check in the editor, so no caller
+  reaches another user's entry by passing an id). The update goes through
+  **`updateNotebookEntryBody` (state.js:2455) — the SAME accessor ROOM-2's `#note/<id>` door
+  uses**, so the two doors onto a note body converge on one write path rather than double-owning
+  it (the charter's warning, applied to the write and not just the affordance); this also
+  inherits ROOM-2's N3 no-touch-write guard. Two silent-failure guards were fixed with it
+  (`!user`, and the vanished-entry case): `flushSave` cues "Saving…" *before* `onSave`, so a bare
+  return stranded the cue while discarding the edit — both now resolve to "Couldn't save".
+  Live evidence: 4 cards / exactly 1 pencil (0 when signed out) · opens pre-filled · 17→17
+  entries on save · only `body`+`updatedAt` change · no-edit blur does **not** bump `updatedAt` ·
+  44×44 at 390. Record: `docs/checkpoints/r-polish-b3.md`.
+  *Historical scoping below retained — it is what made the build cheap.*
+- **~~MARG-EDIT — re-open existing marginalia for editing, from Book Detail. Bucket: ROUND GAP —
+  Book Detail~~** (~~PROGRAM~~ — **re-tiered 2026-07-15 at the DW wave close, Preston's ruling**).
   The downgrade is a direct consequence of the correction below: PROGRAM was ruled on the false
   "APP-WIDE gap" framing, and once delete and same-session update were shown to already exist via
   Notebook, the true scope — prefill re-entry into `openMarginaliaEditor` + a wired card affordance
