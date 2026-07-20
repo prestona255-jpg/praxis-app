@@ -48,6 +48,25 @@ syntax. Guard the seams:
   the same fix: the XL caps could not simply be lowered — at 1360 they would
   have overflowed the layout viewport by 263px (About) and 215px (Arcs), so the
   band needed its own measure treatment, not a threshold nudge.)
+- FELT-DELTA CLAUSE (ratified 2026-07-20, in force from B-M): every VISUAL slice
+  states its **owner-visible before/after at Preston's viewports — 1360 desktop,
+  390 mobile — BEFORE build**, and closes only on his side-by-side confirmation.
+  A slice with **no statable owner-visible delta is not a visual slice**: reclassify
+  it as compliance / infrastructure and do NOT queue a felt pass for it (B4-FIX's
+  measure widening is the type case — it moved a metric, not a felt look, and was
+  closed as floor-compliance honestly). The felt pass judges the STATED delta and
+  nothing else; if you cannot name what he will see change, you have not scoped a
+  visual slice.
+- OWNER-VIEWPORT PRIMACY (ratified 2026-07-20): Preston's felt verdict **outranks
+  occupancy / measure / any computed metric.** Metrics are FLOORS a slice must
+  clear, never OUTCOMES it can claim. "89.8% occupancy, 71.9ch" is a passed floor,
+  not a shipped look. Never report a metric as if it were the felt result.
+- CAPTURE PROVENANCE (ratified 2026-07-20): every verification capture is taken
+  **fresh and dated.** Identical captures reused across builds are STALE EVIDENCE
+  and prove nothing — a screenshot or measurement must be re-taken against the
+  current bytes, at the stated viewport, with its date recorded. (The whole class
+  of gate finding this round was a *claim outliving its code*; a reused capture is
+  the same failure wearing a picture.)
 - MOCKUP FIRST: a signed-off mockup is committed to design/ BEFORE its
   build prompt runs — it is the spec. (W9/W10 build prompts blocked on
   mockups that lived only in chat.)

@@ -1,5 +1,13 @@
 # R-POLISH B4 — ABOUT + ARCS INDEX + THE LIGHT PAGES
 
+> **CLOSED 2026-07-20 (Preston's verdict on record).** B4 + B4-FIX shipped, all gates
+> green, **FELT-NEUTRAL at the owner viewport.** Stated honestly: the B4-FIX 582px /
+> 71.9ch measure is **floor-compliance work**, not a felt win — it clears XL-1's
+> measure floor on the band Preston actually reads in (1360), and the wrap pattern is
+> unchanged across three screens. Proven live on his machine; no further forensics on
+> the measure. This is the type case for the FELT-DELTA CLAUSE now in CLAUDE.md: a
+> metric moved, a look did not.
+
 Model: Opus 4.8, default effort (ultracode OFF) · gate agents Sonnet ·
 base HEAD `0896017` (v3.234) · Stage-0 recon: `docs/checkpoints/r-polish-b4-recon.md`
 
