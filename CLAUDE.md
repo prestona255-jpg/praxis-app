@@ -86,6 +86,13 @@ syntax. Guard the seams:
 - THE FORK RULE: architecture forks, scope additions, and design-comp
   changes surface at a HOLD for Preston's call; mechanical determinations
   are carried silently.
+- FORK-VERBATIM (ratified 2026-07-20, hard rule): any fork a RECON NAMES
+  reaches Preston verbatim in the fork report — never resolved in a code
+  comment, never silently absorbed by the build. (FX-1, 2026-07-20: the
+  recon §1 named the add-vs-add+delete guard fork; the build shipped
+  add-only and buried the decision in a comment; the red-team caught it as
+  a claims-outliving-code BLOCK. A recon-named fork on a data-loss-tier fix
+  is Preston's call, always.)
 
 ## Project
 Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
