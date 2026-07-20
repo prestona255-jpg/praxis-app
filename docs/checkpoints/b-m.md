@@ -5,9 +5,15 @@ Worktree `../praxis-bm` (branch `bm-lane`), base `ba60224`. Recon:
 Governing viewport: **390** (mobile batch). Every slice declares its 390 felt
 delta up front (FELT-DELTA CLAUSE).
 
-**STATUS: daytime batch 1 (the ranked top 3) BUILT + gated + committed on
-`bm-lane`. HOLDING at the push (v3.238) for Preston's phone felt pass. Remaining
-daytime items queued below.**
+**STATUS: batch 1 + batch 2 BUILT + gated (red-team + reviewer PASS) + committed on
+`bm-lane`. Ships as v3.238 after FX-1 (v3.237) lands and verifies.**
+
+**⚠ FELT PASS RETRACTION (Preston, 2026-07-20): any batch-1 felt result recorded
+before the push is INVALID — those phone screenshots were taken while live was
+still v3.236 (the OLD app, none of B-M deployed), so there was nothing new to feel.
+The binding felt pass is DEFERRED to after v3.238 is live-verified. No felt PASS is
+claimed here; the cards below are the instrument for that post-deploy pass, and any
+slice that fails it is reverted as its own per-slice follow-up commit.**
 
 ## Daytime batch 1 — the three ranked slices (each its own commit)
 
