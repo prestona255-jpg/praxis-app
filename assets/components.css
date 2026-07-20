@@ -18,7 +18,13 @@
    single centred item. Its accessible name is the button's own aria-label. */
 .yumi-bloom {
   position: fixed;
-  bottom: var(--sp-5);
+  /* B-M · P4 (safe-area insets): the orb is the ONE fixed corner element (AMB-1)
+     that skipped the pattern its own sibling +Add FAB already uses (:12912). A
+     static 24px offset sits INSIDE a notched iPhone's ~34px home-indicator
+     gesture band in standalone PWA mode; add the inset so the tap target clears
+     it. Additive padding, never a replacement — env() is 0 in a browser tab, so
+     desktop/tab render is byte-unchanged; the delta is standalone-PWA-only. */
+  bottom: calc(var(--sp-5) + env(safe-area-inset-bottom));
   right: var(--sp-5);
   z-index: 9999;
   display: flex;
