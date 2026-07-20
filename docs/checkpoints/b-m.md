@@ -27,12 +27,21 @@ Two-step per the ritual; the step that reveals each is load-bearing:
 
 | Surface | Ritual step | Delta to look for |
 |---|---|---|
-| **Global shell** — Bloom orb (#1) | **installed PWA** (a private tab cannot show it) | the orb sits clear ABOVE the home-indicator bar, not under/adjacent |
+| **Global shell** — Bloom orb (#1) | **installed PWA** (primary) **+ a plain Safari tab** | orb sits clear ABOVE the home-indicator bar in the PWA; in the tab, confirm it did NOT unexpectedly shift |
 | **Global shell** — nav edges (#2) | **private tab** first | no ground-tone hairline beside the mobile nav; fill reaches both edges |
 | **Any surface** — tap feel (#3) | **private tab**, tap any control | no grey/blue box flashes on tap |
 
-#1 is **PWA-only** — it does not exist in a browser tab (env()=0 there), so its
-pass MUST use the installed PWA. #2 and #3 are visible in a private tab.
+**⚠ #1 correction (B-M red-team, claims-outliving-code):** the earlier version of
+this card said #1 "does not exist in a browser tab (env()=0 there), so its pass
+MUST use the installed PWA." That **overclaimed**. What was actually verified is
+narrower: on the **Chromium/CDP rig**, `env(safe-area-inset-bottom)` resolves to 0,
+so the orb stays at 24px there — that proves **no rig/desktop regression**, and
+nothing about real WebKit. Whether a real **Safari tab** (not standalone) reserves
+the home-indicator band the way standalone does is a version/setting-dependent
+WebKit question this headless build **cannot settle**. So the CSS is correct and
+additive (verified), but the tab-vs-standalone felt distinction is **EXPECTED, NOT
+VERIFIED** — hence the card now asks for a glance at a plain tab too, not only the
+PWA. #2 and #3 are genuinely tab-visible and were verified live at 390.
 
 ## Remaining daytime items (ranked; queued after the felt pass on batch 1)
 
