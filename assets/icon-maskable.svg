@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Maskable app icon (B-M). The existing icon.svg fills the canvas edge-to-edge
+       (ring r46, petals to ~r43), so a platform circle/squircle mask would clip the
+       crest. This variant is full-bleed (opaque ground to every corner, so the mask
+       shows no transparency) with the Umebloom crest scaled to 0.72 about center —
+       ring -> r33, petals -> ~r31 — comfortably inside the maskable safe zone (the
+       inner 80% circle, radius 40). purpose:"maskable" in manifest.json; icon.svg
+       stays purpose:"any" for non-masked contexts. Hexes EQUAL the theme tokens
+       (per icon.svg): ground = a deep warm brown, crest = gold / gold-light. -->
+  <rect width="100" height="100" fill="#3a2410"/>
+  <g transform="translate(50 50) scale(0.72) translate(-50 -50)">
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#c5912b" stroke-width="2.4"/>
+    <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(0 50 50)"/>
+    <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(72 50 50)"/>
+    <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(144 50 50)"/>
+    <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(216 50 50)"/>
+    <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(288 50 50)"/>
+    <circle cx="50" cy="50" r="11" fill="#f0d68a"/>
+  </g>
+</svg>
