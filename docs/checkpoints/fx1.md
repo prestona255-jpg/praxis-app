@@ -3,8 +3,30 @@
 Lane B, worktree `../praxis-fx1` (branch `fx1-lane`), base `ba60224`.
 Stage-0 recon: `docs/checkpoints/fx1-recon.md`. Model: Opus 4.8, gate agents Sonnet.
 
-**STATUS: BUILT, gates green, headless race PROVEN. Committed local on `fx1-lane`.
-HOLDING at the push (v3.237) pending Preston's word + the live corroboration call.**
+**STATUS: the ADD-incoming-wipe guard is BUILT + PROVEN (headless 42/42, red-team
+mutation-tested), committed on `fx1-lane`. BLOCKED at the push by the FX-1 red-team
+on TWO claims-outliving-code findings — SURFACED to Preston, not self-resolved:**
+
+1. **DELETE-SYMMETRY FORK (recon-flagged, I failed to surface it).** The books
+   precedent this "generalises" is a TWO-part system — an add-guard AND a symmetric
+   delete-guard (`pendingBookDeletes`), which stops a locally-deleted-but-unsynced
+   record from being RESURRECTED by a stale remote splat. This build ships the ADD
+   half only. The delete-resurrection race (delete a record → reload before the
+   outgoing write confirms → the unconditional splat re-adds it) is untreated for all
+   4 collections. **The recon (§1) explicitly handed this fork forward; my fork report
+   to Preston did not carry it, and the code resolved it silently in a comment — the
+   exact "silently resolved a fork" failure.** Not a regression (the delete-race is
+   pre-existing; FX-1 is a strict improvement on adds), but a real symmetric data-loss
+   gap that must be Preston's scope call, not a comment. → **FX-1c** if deferred.
+2. **5th artifact write-site.** `mergeBookDuplicates` (views.js:8394) does
+   `state.bookArtifacts[keepAK] = dropArt` — a new local composite key with no
+   `markPendingSync`. The "4 chokepoints / complete" claim below was FALSE. It is a
+   views.js site (out of the 2-file scope, like notebook) → rides **FX-1b**.
+
+The ADD-guard mechanism itself PASSED every red-team item (keep-predicate, clear-on-
+save, mark-on-create, arcs↔subTheories pairing, F-DL2 orthogonality, backfill,
+byte/parse/frozen, and the sim proven non-vacuous by a mutation test). It is a
+proven strict improvement. What follows describes the ADD half accurately.
 
 ## The defect (the R1 residual, not the shipped "F-DL1")
 
@@ -31,6 +53,9 @@ byte-shaped after `pendingBookSync`. Per-uid + per-kind localStorage key
 (`praxis_pending_<kind>_<uid>`), ls/sv only, never in the state blob.
 - **mark on create** at the 4 chokepoints: `createArc` · `createSubTheory` ·
   `createUserTheme` · `ensureOneArtifact` (artifacts key = the composite `uid:bookId`).
+  NOT complete for artifacts: `mergeBookDuplicates` (views.js:8394) is a 5th write-site
+  that mints a new artifact key without marking pending — a views.js site, tabled with
+  FX-1b (see Residual). The earlier "4 chokepoints = complete" claim was wrong.
 - **clear on confirmed save** in the 4 `saveState` success callbacks (mirrors the
   books clear at `state.js:2638`): `clearPendingSync(kind, uid, mapIdList(payload.<X>))`
   — clears exactly the saved snapshot; ids created after stay protected.
@@ -99,9 +124,22 @@ offered as optional pre-push corroboration; numbered steps are in the session re
 
 Byte deltas (LF vs ba60224): `state.js` +4,308 · `integrations.js` +2,294.
 
-## Residual / follow-on
+## Residual / follow-on (named data-loss debt, per the red-team)
 
-- **FX-1b — notebook's incoming guard.** Named data-loss debt, sequenced after B-M's
-  views.js work lands (its 4 creation sites are in views.js/import-capture.js). Tabled,
-  not dropped.
-- Live throttled-Firebase corroboration on prestonpraxistest — pending Preston.
+- **FX-1c — the DELETE-symmetry guard.** The other half of the books precedent: a
+  `pendingDeleteSync` tombstone set so a locally-deleted-but-unsynced record is not
+  resurrected by a stale remote splat, for arcs/subTheories/themes/artifacts. Fully
+  in-scope (state.js delete fns + integrations.js splat) — does NOT have the views.js
+  coupling FX-1b has. **Preston's scope call: build now (option A) or defer (option B)
+  — see STATUS.**
+- **FX-1b — notebook's incoming ADD guard + the mergeBookDuplicates artifact site.**
+  Both are views.js-coupled add-sites (notebook's 4 creation sites + the artifact
+  repoint at views.js:8394), sequenced after B-M's views.js work lands. Tabled.
+- **Finding C — pending-set growth on delete-before-sync.** `deleteArc`/
+  `deleteSubTheory`/`deleteUserTheme` don't `clearPendingSync` (unlike `deleteBook`'s
+  `clearPendingBookSync`). Inert for correctness (a deleted id is gone from state, so
+  the clear-loop never revisits it) but the pending array grows unbounded for
+  created-then-deleted-before-first-sync records. One-line fix per delete fn; folds
+  naturally into FX-1c's delete-side work.
+- Live throttled-Firebase corroboration on prestonpraxistest — post-deploy, pending
+  Preston's sign-in (interactive/2FA — the one human-only step).
