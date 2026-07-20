@@ -10398,9 +10398,7 @@ html { overscroll-behavior-y: contain; }
   .st-page .st-gutter { display:none; }
   .st-page .st-gutter.subtheory-rail-mobile-open {
     display:block; position:fixed; left:0; right:0; bottom:0; max-height:70vh;
-    margin:0; padding:24px 16px; overflow-y:auto;
-    -webkit-overflow-scrolling:touch;   /* B-M: momentum scroll — iOS < 13 / WebViews */
-    background:var(--page-2);
+    margin:0; padding:24px 16px; overflow-y:auto; background:var(--page-2);
     border-top:1px solid var(--line-page); border-top-left-radius:var(--radius-md);
     border-top-right-radius:var(--radius-md); z-index:100;
   }
@@ -12834,9 +12832,12 @@ body.wc-focus .app-nav { opacity:.26; }
 /* B-M · P4: the Shelf Select-mode action bar sits flush at bottom:0 with no
    safe-area inset, so its move/cancel buttons meet the home-indicator band in
    standalone PWA. Add the inset to the bottom PADDING (not `bottom`): the fill
-   still reaches the true edge, the CONTROLS pad clear of the indicator. Additive
-   (env()=0 in a tab -> unchanged there). FELT DELTA (390, installed PWA): the
-   Select-bar buttons sit clear above the home indicator, not flush on it. */
+   still reaches the true edge, the CONTROLS pad clear of the indicator. Additive:
+   env() adds nothing where there is no inset. (Whether a real Safari TAB reserves
+   the band the way standalone does is a WebKit question this headless build cannot
+   settle — EXPECTED no tab change, not verified; same caveat as the Bloom orb.)
+   FELT DELTA (390, installed PWA): the Select-bar buttons sit clear above the home
+   indicator, not flush on it. */
 .shelf.lum-amber-deep .shelf-selectbar{ position:fixed; left:0; right:0; bottom:0; z-index:60; transform:translateY(110%); transition:transform var(--motion-base,.2s) var(--ease,ease); display:flex; align-items:center; gap:14px; justify-content:center; flex-wrap:wrap; padding:14px 22px calc(14px + env(safe-area-inset-bottom)); background:var(--lum-base); border-top:1px solid var(--lum-glass-bd); box-shadow:0 -16px 40px -20px rgba(0,0,0,.8); }
 .shelf.lum-amber-deep.is-selecting .shelf-selectbar.has-pick{ transform:none; }
 .shelf.lum-amber-deep .shelf-selectbar .count{ font-family:var(--lum-mono); font-size:12px; letter-spacing:.04em; color:var(--lum-ink-2); }
