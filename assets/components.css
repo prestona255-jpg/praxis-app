@@ -10325,6 +10325,7 @@ html { overscroll-behavior-y: contain; }
   .shelf .shelf-side {
     position:fixed; top:0; bottom:0; left:0; width:264px; z-index:131;
     background:var(--dark-2); padding:var(--sp-5); overflow-y:auto;
+    -webkit-overflow-scrolling:touch;   /* B-M: momentum scroll — iOS < 13 / WebViews */
     transform:translateX(-110%); transition:transform var(--motion-base) var(--ease);
     box-shadow:var(--shadow-page);
   }
@@ -10397,7 +10398,9 @@ html { overscroll-behavior-y: contain; }
   .st-page .st-gutter { display:none; }
   .st-page .st-gutter.subtheory-rail-mobile-open {
     display:block; position:fixed; left:0; right:0; bottom:0; max-height:70vh;
-    margin:0; padding:24px 16px; overflow-y:auto; background:var(--page-2);
+    margin:0; padding:24px 16px; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;   /* B-M: momentum scroll — iOS < 13 / WebViews */
+    background:var(--page-2);
     border-top:1px solid var(--line-page); border-top-left-radius:var(--radius-md);
     border-top-right-radius:var(--radius-md); z-index:100;
   }
@@ -12934,6 +12937,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .shelf.lum-amber-deep .shelf-manage-sheet{
     display:block; position:fixed; left:0; right:0; bottom:0; top:auto; z-index:10021;
     width:auto; max-width:none; max-height:82vh; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;   /* B-M: momentum scroll — iOS < 13 / WebViews */
     background:var(--page-2); border:none; border-top:1px solid var(--line-page-2);
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
     padding:16px 18px calc(20px + env(safe-area-inset-bottom));   /* P4 safe-area */
