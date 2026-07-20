@@ -43,18 +43,39 @@ additive (verified), but the tab-vs-standalone felt distinction is **EXPECTED, N
 VERIFIED** — hence the card now asks for a glance at a plain tab too, not only the
 PWA. #2 and #3 are genuinely tab-visible and were verified live at 390.
 
-## Remaining daytime items (ranked; queued after the felt pass on batch 1)
+## Daytime batch 2 — the remaining ranked items (BUILT + gated + committed)
 
-- **Shelf `.shelf-selectbar` safe-area** — same P4 fix shape as #1, lower severity
-  (Select mode is a less-visited state). CSS-only.
-- **`overscroll-behavior` reset** — rubber-band / scroll-chaining on the app shell.
-  CSS-only.
-- **`-webkit-overflow-scrolling:touch` backfill** — 3 inner-scroll panels miss it
-  (Shelf filter drawer + Shelf Manage sheet + Sub-theory rail). Splits into a
-  Shelf item + a Sub-theory item (single-surface rule).
-- **manifest.json / maskable icon** — DAYTIME bucket (ruled): install-affecting, gets
-  a felt check of the installed icon. Touches manifest.json (not CSS/views), so it
-  is deliberately outside the overnight allowlist.
+| Commit | Slice | 390 felt delta | Gate |
+|---|---|---|---|
+| `f1e7cc2` | Shelf select-bar safe-area (P4) | Select-bar buttons clear the home indicator (PWA) | rule carries `padding:14px 22px calc(14px + env(...))`; env present |
+| `90b11a1` | overscroll contain | no rubber-band / scroll-chaining at the app edges | computed `overscroll-behavior-y:contain` on html |
+| `246ed45` | momentum backfill (3 panels) | inertial flick-scroll in the Shelf drawer / Manage sheet / Sub-theory rail | `-webkit-overflow-scrolling:touch` present on all 3 rules (iOS-only — inert in the rig) |
+| `345a954` | maskable app icon | full crest inside the home-screen icon shape, not clipped | crest ink radius **33.1** vs safe-zone 40 (17% margin, centered); full-bleed ground; manifest valid, 2 icons `[any, maskable]` |
+
+All revert-safe. sw.js untouched — the single cache bump rides the v3.238 push.
+overscroll + momentum + select-bar are CSS; the maskable icon is manifest.json + a
+new SVG (the ruled daytime bucket — install-affecting, gets a felt check).
+
+### Batch-2 felt-pass card (add to your phone pass)
+
+| Surface | Step | Delta |
+|---|---|---|
+| **Shelf** (Select mode bar) | installed PWA | Select-bar buttons clear above the home indicator |
+| **Any surface** (scroll edges) | private tab or PWA | no rubber-band / scroll-chaining at top/bottom |
+| **Shelf drawer / Manage sheet / Sub-theory rail** | **iOS Safari/PWA** | momentum flick-scroll, not stiff/stepped (iOS-only; not visible in Chrome) |
+| **Home screen icon** | **install the PWA** | the full Umebloom crest shows inside the icon shape, not clipped at the edge |
+
+### Batch-2 residuals (surfaced, not silently changed — FORK-VERBATIM)
+
+- **Sub-theory mobile rail lacks a safe-area inset.** `.st-gutter.subtheory-rail-mobile-open`
+  is `position:fixed; bottom:0; padding:24px 16px` with no `env()` — a 3rd safe-area
+  candidate the recon listed only for momentum. Got momentum here; the safe-area gap is
+  flagged for Preston, NOT added (outside the ranked scope).
+- **manifest theme_color/background_color = #191F33 (dark navy)** — a pre-amber
+  leftover; the maskable ground is warm, so splash (navy) and icon (warm) differ until
+  the manifest theme is ruled. Not changed here.
+- **maskable icon not in sw.js APP_SHELL** — OS fetches it at install (works); a future
+  sw.js touch could precache it. sw.js is untouched this lane by design.
 
 ## Tabled by ruling (not built here)
 
