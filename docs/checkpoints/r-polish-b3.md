@@ -339,14 +339,68 @@ is necessary-but-not-sufficient here, per the DW-STP2 caveat — this is the dir
 
 ---
 
-## SHIP CHECKLIST (nothing below is done yet)
+## SHIPPED — pushed on Preston's word, v3.234 LIVE
 
-1. Preston's felt pass on the seven items.
-2. On his exact words: SHIP commit carries `sw.js` **v3.233 → v3.234** (read at commit
-   time, +1, never a hardcoded target) and the `lumen-amber.css` byte-lock **re-baselined
-   to 14,966 B** in CLAUDE.md / wherever the lock is carried.
-3. Regen the Builder — this IS the push point (BUILDER CADENCE).
-4. Push, wait for Netlify, hard-refresh, confirm v3.234 in DevTools, then run the deployed
-   live-smoke: one-world margins · single-hue gold halos with density opacities ·
-   normalized arc header · dressed select · healed covers on *Empire of AI* and
-   *All About Love* · dawn seam · pencil opens the editor · console clean · 390 + 1920.
+`7ddd3c8` (+ `124fe99`) pushed to `origin/main`; `HEAD == origin/main`, ahead-count 0.
+Live `sw.js` **v3.234** on two independently cache-busted probes. Served-byte proof, not
+just a version string: `components.css` **766,839 B** and `views.js` **1,028,183 B** —
+both matching the predicted worktree figures exactly — with every B3 marker present
+(`bk-margedit`, `THE DAWN SEAM`, `AES-3`, `arc-card-thumb.arc-const`, `m1-edge-on-ground`,
+`XL-1 · BOOK DETAIL`, `.k-select`, `9D7A20`).
+
+### DEPLOY INCIDENT — the push-triggered build never fired (root cause found + fixed)
+
+The first push produced **no deploy at all**. Netlify's API showed the published deploy
+still at `commit_ref 989e175`, `published_at` **before** the push, `deploy_source: "api"`.
+Confirmed it was not slow-build or edge-cache: `components.css` served **748,836 B** (the
+exact pre-B3 base size) with **zero** B3 markers, and the `main--` branch alias agreed.
+GitHub's `refs/heads/main` was already `7ddd3c8`, so the push was sound — the failure was
+downstream.
+
+**Root cause (Preston):** a broken Netlify↔GitHub link — **host key verification failure**.
+Repo relinked with a fresh deploy key; the deploy then published v3.234.
+
+**Why it matters beyond this ship:** CLAUDE.md's "Deploy = commit + push to `main`; Netlify
+auto-builds" silently did not hold, and the failure is INVISIBLE to a version probe alone —
+`sw.js` simply keeps answering the old version, which reads identically to "the build is
+still running". **The byte-size + marker check is what distinguished the two**, and it
+should be the standing first move when a deploy looks slow.
+
+**⚠ OPEN TAIL — DEPLOY-PIPELINE WATCH.** This ship was verified live only AFTER a manual
+relink. **The watch item CLOSES only when a FUTURE push-triggered build succeeds on its
+own, with no manual intervention.** Until then, treat "pushed" and "deployed" as separate
+claims and prove the second with served bytes.
+
+### Deployed smoke — every check on the live site, v3.234
+
+Signed in via the LOCAL-ONLY auth stub (`getCurrentUser()` reads `ls('praxis_user')`);
+`firebase.auth().currentUser` verified **`none`**, so no cloud write path was reachable and
+no real account was touched — all writes were localStorage on the seed workspace.
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 1 | v3.234 live, ×2 cache-busted | **PASS** | both probes `praxis-v3.234` |
+| 2 | served bytes are the built bytes | **PASS** | css 766,839 B · views.js 1,028,183 B · 6/6 markers |
+| 3 | arc head normalized, ONE filled gold | **PASS** | `filledGold = ["+ Sub-theory"]`, count **1** |
+| 4 | seg active = lifted paper, not gold | **PASS** | `rgb(246,236,212)`; `segActiveIsGold false`; trough carved |
+| 5 | DELETE quiet + cornered | **PASS** | `order:99`, border `0px`, transparent |
+| 6 | lifecycle verbs quiet · chip neutral | **PASS** | Graduate transparent/`rgba(38,32,25,.18)`; chip `rgba(38,32,25,.05)` |
+| 7 | halos single-hue gold | **PASS** | renderer still emits **4 DIFFERENT** hue tokens (`--subtheory-7/6/10/9`) → all compute `rgb(199,154,58)`. Locked renderer untouched; CSS wins on the presentation attribute |
+| 8 | density opacities intact | **PASS (channel), UNIFORM (data)** | opacity is renderer-set as an ATTRIBUTE and computes through — channel alive. All four read `0.62` because **`maturity` is unset on every seed sub**, so `_stLuminosity` returns one default. Not a regression; a property of the seed data. Varied-maturity data is the honest way to see the ramp |
+| 9 | `--m1` on-ground reaches the glyphs | **PASS** | `--subtheory-1` `#9D7A20`, `-16-edge` `#725814`; worst m1 glyph **3.811:1** on `rgb(253,249,238)` |
+| 10 | dressed select, all widths | **PASS** | `appearance:none`, gradient caret `5px 5px`, pad-right 30px — still `SELECT`, 6 options, aria-label, not disabled |
+| 11 | plate-frame thumbnails | **PASS** | 3 thumbs · `margin 11px 11px 0` · `radius 12px` · bottom rule `0px none` · carved inset shadow |
+| 12 | Book Detail occupancy @1920 | **PASS** | shell 1560 / vw 1905 = **81.9%**, grid `1136px 380px` |
+| 13 | Book Detail occupancy @2560 | **PASS** | 1560 / 2545 = **61.3%** (was 46.9% FAIL), no h-scroll |
+| 14 | `.bk-atext` ≤72ch at XL | **PASS** | widest **71.9ch** |
+| 15 | pencil opens the editor pre-filled | **PASS** | 4 cards / **exactly 1 pencil**; text matches stored body exactly; no entry created on open |
+| 16 | pencil is owner-gated | **PASS** | signed-out (`praxis_user` null) → **0 pencils** on the same 4 cards |
+| 17 | write goes through the accessor | **PASS** | blur with NO edit left `updatedAt` at its seeded **5000** — the no-touch-write guard is live on the deployed build |
+| 18 | dawn seam present + correctly stacked | **PASS** | ramp 76px == padding · **ramp 1 < hairline 2 < dock 3** · overlap into dock **0px** · light stop present |
+| 19 | healed covers | **PASS** | 3 stored coverUrls, **0** still carrying `edge=curl`, 3/3 https |
+| 20 | console clean | **PASS** | zero errors across all 7 surfaces driven |
+| 21 | 390 — no h-scroll anywhere | **PASS** | 390 scrollWidth on book-detail, arc, profile, arcs, shelf, notebook, home |
+| 22 | 390 — mobile touch targets | **PASS** | pencil **44×44**; 6 arc-head controls all ≥44px (MW-2 P3 intact); `.bk-shell max-width:none` |
+
+**22/22 PASS.** One qualified: #8's density channel is proven intact but shows uniform
+values on this data — stated as measured, not rounded up to a clean pass.
