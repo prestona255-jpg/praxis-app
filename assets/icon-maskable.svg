@@ -5,16 +5,24 @@
        shows no transparency) with the Umebloom crest scaled to 0.72 about center —
        ring -> r33, petals -> ~r31 — comfortably inside the maskable safe zone (the
        inner 80% circle, radius 40). purpose:"maskable" in manifest.json; icon.svg
-       stays purpose:"any" for non-masked contexts. Hexes EQUAL the theme tokens
-       (per icon.svg): ground = a deep warm brown, crest = gold / gold-light. -->
+       stays purpose:"any" for non-masked contexts.
+       COLOURS: petals #a8741a and core #c5912b are icon.svg's own crest hexes (gold,
+       gold-light). The RING is DELIBERATELY re-coloured from icon.svg's dark #4a2810
+       to the gold-world token #C79A3A (theme.css) — on this dark warm ground the
+       original dark ring would be near-invisible, so the outline is carried in gold.
+       NOT a 1:1 copy of icon.svg: a legibility adaptation for the dark ground. The
+       three CREST hexes are all real (two from icon.svg, one from theme.css); no
+       invented crest colour. The GROUND #3a2410 is the icon's own background — a
+       chosen deep-warm-brown, icon artwork, like icon.svg's own literal fills (SVG
+       icons render without app CSS, so the tokens-only rule does not bind them). -->
   <rect width="100" height="100" fill="#3a2410"/>
   <g transform="translate(50 50) scale(0.72) translate(-50 -50)">
-    <circle cx="50" cy="50" r="46" fill="none" stroke="#c5912b" stroke-width="2.4"/>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#C79A3A" stroke-width="2.4"/>
     <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(0 50 50)"/>
     <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(72 50 50)"/>
     <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(144 50 50)"/>
     <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(216 50 50)"/>
     <path d="M50,38 C40,34 36,18 43,10 Q47,7 50,12 Q53,7 57,10 C64,18 60,34 50,38 Z" fill="#a8741a" transform="rotate(288 50 50)"/>
-    <circle cx="50" cy="50" r="11" fill="#f0d68a"/>
+    <circle cx="50" cy="50" r="11" fill="#c5912b"/>
   </g>
 </svg>
