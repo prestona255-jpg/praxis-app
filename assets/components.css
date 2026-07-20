@@ -636,6 +636,15 @@
    nav goes; the nav fill reads edge-to-edge. */
 @media (max-width: 759px) { body { margin: 0; } }
 
+/* B-M: kill the default tap-highlight flash. Mobile Safari / Android WebView
+   paint a translucent grey/blue box over an element on every tap; Praxis gives
+   its own :active / hover feedback, so the default box is noise. Set on `html`
+   (the property inherits) so it covers every tappable element app-wide with one
+   rule. Unscoped is correct: the highlight only exists on touch, so this is inert
+   on desktop. Transparent, not a custom colour — no new token, no new hex.
+   FELT DELTA (390, any tap): no grey/blue box flashes when tapping controls. */
+html { -webkit-tap-highlight-color: transparent; }
+
 /* =====================================================================
    R2 / DW-NAV768 · THE NAV FIT, CLOSED (R-POLISH B4)
 
