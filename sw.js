@@ -7,7 +7,7 @@
 // let, arrow, class, or template literals anywhere.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.238';
+var CACHE_VERSION = 'praxis-v3.239';
 
 var APP_SHELL = [
   '/',
@@ -19,6 +19,7 @@ var APP_SHELL = [
   '/assets/lumen-amber.css',
   '/assets/marks.js',
   '/assets/icon.svg',
+  '/assets/icon-maskable.svg',
   '/assets/wheat-field.svg',
   '/js/state.js',
   '/js/measure.js',

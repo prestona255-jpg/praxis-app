@@ -7015,7 +7015,11 @@ html { overscroll-behavior-y: contain; }
     bottom: 0;
     max-height: 70vh;
     margin: 0;
-    padding: 24px 16px;
+    /* B-M-SA: the sheet is fixed to bottom:0, so its bottom padding must clear the
+       home-indicator band on a standalone PWA (viewport-fit=cover). env() is 0 in a
+       tab / on non-notched devices, so this is a no-op there. */
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
     overflow-y: auto;
     background: var(--color-surface);
     border-top: 1px solid var(--border);
