@@ -3,9 +3,17 @@
 Lane B, worktree `../praxis-fx1` (branch `fx1-lane`), base `ba60224`.
 Stage-0 recon: `docs/checkpoints/fx1-recon.md`. Model: Opus 4.8, gate agents Sonnet.
 
-**STATUS: the ADD-incoming-wipe guard is BUILT + PROVEN (headless 42/42, red-team
-mutation-tested), committed on `fx1-lane`. BLOCKED at the push by the FX-1 red-team
-on TWO claims-outliving-code findings — SURFACED to Preston, not self-resolved:**
+**STATUS: SHIPPED + LIVE — v3.237 (`e5318e4`), served-byte-verified, `manual_deploy:false`.**
+The ADD-incoming-wipe guard for arcs/subTheories/themes/artifacts; headless-proven
+(sim 42/42 on real bytes + the reviewer's independent 15/15 + a mutation test), reviewer
+CLEARED. **OV-1 (live throttled-Firebase race on `prestonpraxistest`) is OPEN-VERIFY, not
+a debt** — the headless proof is the mechanism evidence of record; the live run is
+corroboration Preston does when laptop + test account align (steps in `docs/launch-runway.md`).
+
+The red-team raised TWO claims-outliving-code findings; **Preston ruled B — ship the
+add-guard alone, the rest becomes named debt (FX-1c delete-symmetry, FX-1b notebook +
+5th artifact site).** Both are in the `docs/launch-runway.md` carried-debt ledger. The
+findings, recorded for the follow-ons:**
 
 1. **DELETE-SYMMETRY FORK (recon-flagged, I failed to surface it).** The books
    precedent this "generalises" is a TWO-part system — an add-guard AND a symmetric

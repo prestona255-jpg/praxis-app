@@ -20,6 +20,7 @@ DEPTH="$STUDIO/universal-depth.css"
 SEQ="$STUDIO/sequence.md"
 MCANON="$STUDIO/praxis-mobile-canon.md"
 DCANON="$STUDIO/praxis-desktop-canon.md"
+LRUN="$REPO/docs/launch-runway.md"
 OUT="$STUDIO/builder.html"
 US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g. no touches) are preserved by read
 
@@ -895,6 +896,11 @@ main{margin-left:236px;}
 .md hr{border:none;border-top:1px solid var(--line);margin:22px 0;}
 .md ul,.md ol{margin:8px 0 8px 4px;padding-left:20px;color:var(--ink-2);display:grid;gap:6px;}
 .md-tasks{list-style:none;padding-left:0;margin-left:0;}
+.md-tablewrap{overflow-x:auto;margin:14px 0;-webkit-overflow-scrolling:touch;}
+.md-table{border-collapse:collapse;width:100%;font-size:13px;}
+.md-table th,.md-table td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;color:var(--ink-2);line-height:1.5;}
+.md-table th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:rgba(133,84,16,.05);white-space:nowrap;}
+.md-table td strong{color:var(--ink);}
 
 /* mockups */
 .mock-list{display:grid;gap:8px;}
@@ -1212,6 +1218,7 @@ printf '<div class="brail-brand">the studio</div>'
 printf '<input id="brail-filter" class="brail-filter" type="text" placeholder="filter surfaces&hellip;" aria-label="Filter surfaces">'
 printf '<a class="brail-link brail-dest" href="#page-overview">Overview</a>'
 printf '<a class="brail-link brail-dest" href="#page-plan">Plan</a>'
+printf '<a class="brail-link brail-dest" href="#page-launch-runway">Launch runway</a>'
 printf '<a class="brail-link brail-dest" href="#page-mockups">Mockups</a>'
 printf '<a class="brail-link brail-dest" href="#page-overnight">Overnight</a>'
 printf '<a class="brail-link brail-dest" href="#page-mobile-canon">Mobile canon</a>'
@@ -1237,6 +1244,7 @@ printf '<div class="studio-topnav"><div class="stn-inner">'
 printf '<a class="stn-brand" href="#page-index">the studio</a>'
 printf '<a class="topnav-link" href="#page-overview">Overview</a>'
 printf '<a class="topnav-link tn-now" href="#now">Now</a>'
+printf '<a class="topnav-link" href="#page-launch-runway">Launch runway</a>'
 printf '<a class="topnav-link" href="#page-overnight">Overnight</a>'
 printf '<a class="topnav-link" href="#page-mobile-canon">Mobile canon</a>'
 printf '<a class="topnav-link" href="#page-desktop-canon">Desktop canon</a>'
@@ -1427,6 +1435,9 @@ ov_render_report
 printf '</div>'
 printf '</section>\n'
 
+# ===== LAUNCH RUNWAY (top-level program view — R-POLISH close → beta gate; a generated view of docs/launch-runway.md, rendered as a markdown island) =====
+printf '<section class="page" id="page-launch-runway"><div class="md" data-md="launch-runway.md"></div></section>\n'
+
 # ===== MOBILE CANON (new top-level section — after Overnight, before the surface "Program"; insertion point flippable) =====
 printf '<section class="page" id="page-mobile-canon"><h1 class="page-h u-inkgold">Mobile canon</h1>'
 build_mobile_canon
@@ -1516,6 +1527,7 @@ printf '</main>\n'
 
 # ---- markdown islands ----
 printf '<div class="md-islands" hidden aria-hidden="true">\n'
+printf '<script type="text/markdown" data-md="launch-runway.md">\n'; cat "$LRUN"; printf '\n</script>\n'
 printf '<script type="text/markdown" data-md="INDEX.md">\n'; cat "$STUDIO/INDEX.md"; printf '\n</script>\n'
 for s in $SURFACES $LAYERS; do
   printf '<script type="text/markdown" data-md="%s.md">\n' "$s"; cat "$STUDIO/$s.md"; printf '\n</script>\n'
@@ -1541,6 +1553,7 @@ cat <<'HTML'
     var lines=src.split('\n'),out='',i,listTag='',para=[];
     function closeList(){ if(listTag){ out+=(listTag==='ol'?'</ol>':'</ul>'); listTag=''; } }
     function flush(){ if(para.length){ out+='<p>'+inline(para.join(' '))+'</p>'; para=[]; } }
+    function tcells(row){ var r=row.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|'),c=[],k; for(k=0;k<r.length;k++){ c.push(inline(r[k].replace(/^\s+|\s+$/g,''))); } return c; }
     for(i=0;i<lines.length;i++){ var t=lines[i].replace(/\s+$/,'');
       if(t===''){ flush(); closeList(); continue; }
       var h=t.match(/^(#{1,3})\s+(.*)$/);
@@ -1550,6 +1563,12 @@ cat <<'HTML'
       if(b){ flush(); if(listTag!=='ul'){ closeList(); out+='<ul class="md-ul">'; listTag='ul'; } out+='<li>'+inline(b[1])+'</li>'; continue; }
       var o=t.match(/^\d+\.\s+(.*)$/);
       if(o){ flush(); if(listTag!=='ol'){ closeList(); out+='<ol class="md-ol">'; listTag='ol'; } out+='<li>'+inline(o[1])+'</li>'; continue; }
+      if(/^\|.*\|\s*$/.test(t) && i+1<lines.length && /^\|[\s:|-]+\|\s*$/.test(lines[i+1].replace(/\s+$/,''))){
+        flush(); closeList();
+        var hc=tcells(t),th='',hk; for(hk=0;hk<hc.length;hk++){ th+='<th>'+hc[hk]+'</th>'; }
+        var tb=''; i+=2;
+        for(;i<lines.length;i++){ var rr=lines[i].replace(/\s+$/,''); if(!/^\|.*\|\s*$/.test(rr)){ i--; break; } var rc=tcells(rr),rd='',rk; for(rk=0;rk<rc.length;rk++){ rd+='<td>'+rc[rk]+'</td>'; } tb+='<tr>'+rd+'</tr>'; }
+        out+='<div class="md-tablewrap"><table class="md-table"><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table></div>'; continue; }
       para.push(t.replace(/^\s+/,'')); }
     flush(); closeList(); return out; }
 

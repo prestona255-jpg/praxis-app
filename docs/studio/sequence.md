@@ -31,6 +31,16 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-20 (R-POLISH CLOSE-OUT — Preston-DIRECTED, enacted)** — **trigger: all BP-1v3 batches
+  shipped+live (B1→B4 v3.231→v3.236, B-M v3.238); FX-1 add-guard pulled forward + shipped v3.237;
+  tab-side felt PASS.** R-POLISH → Shipped. **Now** re-set to the 3 truest next moves —
+  **FINISH-CHOREO → R-SHELF → R-CAPTURE** (promoted from ## Next; spine unchanged beyond that:
+  → SCAN → S-B → R10 → ONBOARDING → BETA-READINESS → R11 → S-C → feature layers). **FX-1 marked
+  PULLED-FORWARD and PARTIAL** at the beta gate: add-guard live, **FX-1c (delete-symmetry) + FX-1b
+  (notebook + 5th artifact site) remain before the give**. New close-out artifact:
+  `docs/launch-runway.md` (the runway view + carried-debt ledger + OV-1/OV-2 open-verify), rendered
+  as the Builder's LAUNCH RUNWAY panel in this close's single regen. Three B-M residuals (R-a/R-b/R-c)
+  await Preston's ruling in that ledger before the close-out commit. Nothing dropped.
 - **2026-07-18 (R-ARC CLOSE-OUT — Preston-DIRECTED, enacted)** — **trigger: Wave C complete, Slice 9
   the raised-hand seat PUSHED+LIVE v3.229 (`5df9d00`, deployed smoke FULL PASS).** Spine enacted: R-ARC
   → build-complete/SHIPPED (formal close pends Preston's felt look on the v3.229 seat). **Now = R-POLISH**
@@ -326,6 +336,19 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-POLISH — the pre-launch polish round (v3.231→v3.238)** — the pre-launch craft
+  pass, run as BP-1v3 batches. **Slice-0** kit + proofs → **B1/B1-FIX** THE HOUR (v3.231/232)
+  → **B2** the arc cluster (v3.233) → **B3** AES enforcement (v3.234; AES-1/2/5a + `--m1` rider,
+  AES-3 arc-head→kit, AES-4 styled-native select, AES-5b plate-frame, the ✎ MARG-EDIT re-wire,
+  Book-Detail XL, Profile dawn seam) → **B4/B4-FIX** About + Arcs index + light pages (v3.235/236;
+  STN-A11Y, ME-1 measurement covenant, exemplar-card fix, XL composition, the 1360-viewport measure
+  fix + SW scheme guard) → **B-M** the mobile app-feel batch (v3.238; Bloom + Shelf-select-bar
+  safe-area, ≤759 body-margin, tap-highlight, overscroll-contain, momentum ×2, maskable icon).
+  **FX-1 add-guard pulled forward mid-round (v3.237)** — the incoming-wipe guard for
+  arcs/subTheories/themes/artifacts, headless-proven (42/42 + independent 15/15). 3 felt canon laws
+  + FORK-VERBATIM ratified into CLAUDE.md. Runway + carried-debt ledger: `docs/launch-runway.md`.
+  Tab-side felt PASS; OV-1/OV-2 OPEN-VERIFY. Records: `docs/checkpoints/r-polish-*.md`, `b-m.md`, `fx1.md`.
+
 - [x] **R-ARC — knowledge-arc theorizing system (DEEP round, v3.211→v3.229)** — the capture → marginalia
   → sub-theory → arc → theorize → publish loop, rebuilt as one intelligent structure. **Wave A/B:** S1→S5
   + F4 covenant removal + FF-7 vocab rider (v3.211→v3.220), felt PASS. **Wave C:** S6a spike · S6b/S6c/RAIL ·
@@ -556,9 +579,22 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-- [ ] **R-POLISH — the pre-launch polish round (5 lanes; Fable opens, Opus builds)** — PROMOTED TO
-  NOW at the R-ARC close-out (2026-07-18). **Opens with a FABLE DESIGN SESSION whose charter comes
-  from Preston.** Slots ahead of SCAN/R-SHELF — the control canon must precede control-heavy rounds.
+**The 3 truest next moves after the R-POLISH close (2026-07-20). The runway view of
+the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
+
+- [ ] **FINISH-CHOREO slice** — the ROOM-charter-named finish choreography (the
+  mark-as-finished feel). First up post-R-POLISH.
+- [ ] **R-SHELF — Shelf deep re-round (build)** — the most-used surface predates the
+  R5–R9 Universal maturity. `[books]`
+- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into
+  one entry, sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`).
+  `[import-capture, notebook]`
+
+- [x] **R-POLISH — the pre-launch polish round — CLOSED 2026-07-20** (batches B1→B4 +
+  B-M all shipped v3.231→v3.238; FX-1 add-guard pulled forward, v3.237). Detail in
+  ## Shipped below and `docs/launch-runway.md`. Tab-side felt PASS; OV-1 (live FX-1
+  race) + OV-2 (3 PWA-only felt checks) are OPEN-VERIFY, not debts. Original lane
+  detail retained here for the record:
   - **L1 — XL-tier composition canon ≥1600** (designed at 1920 + per-page passes) — absorbs the
     carried composition residuals: ~~DW-NAV768~~ · HOME-LAMP · ON-7 band · the 2560-sag · page-scrollbar.
     **OWNERSHIP CORRECTED (B4): DW-NAV768 was assigned to L1 here while the B4 GO assigned
@@ -602,13 +638,8 @@ flagged at the top of the Builder's sequence page for his call — never applied
   v3.229.** Everything built; only that felt confirmation is outstanding.
 
 ## Next
-**Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate):**
-- [ ] **FINISH-CHOREO slice** — the ROOM-charter-named finish choreography (the mark-as-finished feel).
-- [ ] **R-SHELF — Shelf deep re-round (build)** — the most-used surface predates the R5–R9 Universal
-  maturity. touches: [books]
-- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry, a real
-  landing, sub-400ms. The capture door the whole loop opens on. touches: [import-capture, notebook]
-  - ruled brief (in-repo): docs/studio/r-capture-brief.md
+**Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate).**
+*(FINISH-CHOREO · R-SHELF · R-CAPTURE promoted to ## Now at the R-POLISH close, 2026-07-20 — see above.)*
 - [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
   R-CAPTURE's door**. touches: [books]
 - [ ] **S-B — Sweep + dead-code deletion** — Import-Capture overlay · Yumi/lens panel · Account residuals +

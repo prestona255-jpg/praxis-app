@@ -8,12 +8,15 @@ delta up front (FELT-DELTA CLAUSE).
 **STATUS: batch 1 + batch 2 BUILT + gated (red-team + reviewer PASS) + committed on
 `bm-lane`. Ships as v3.238 after FX-1 (v3.237) lands and verifies.**
 
-**⚠ FELT PASS RETRACTION (Preston, 2026-07-20): any batch-1 felt result recorded
-before the push is INVALID — those phone screenshots were taken while live was
-still v3.236 (the OLD app, none of B-M deployed), so there was nothing new to feel.
-The binding felt pass is DEFERRED to after v3.238 is live-verified. No felt PASS is
-claimed here; the cards below are the instrument for that post-deploy pass, and any
-slice that fails it is reverted as its own per-slice follow-up commit.**
+**FELT STATUS (Preston, 2026-07-20, on the LIVE v3.238 app):**
+- **TAB-SIDE = PASS** — fresh live captures: edge-to-edge, Book Detail, Home, Profile
+  all clean, feels good. (The earlier pre-push screenshots were v3.236 = the old app,
+  invalid — retracted.)
+- **OV-2 = OPEN-VERIFY (not debt)** — the 3 PWA-only felt checks (Bloom orb safe-area,
+  Shelf select-bar safe-area, re-installed maskable icon crest) are standalone-PWA-only,
+  not headless-verifiable. Preston runs them soon; **revert-on-felt-fail stays LIVE for
+  those 3 slices until he does** (each reverts as its own per-slice follow-up).
+  Tracked in `docs/launch-runway.md` (OPEN-VERIFY table).
 
 ## Daytime batch 1 — the three ranked slices (each its own commit)
 
