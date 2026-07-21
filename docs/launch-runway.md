@@ -40,7 +40,7 @@ RUNWAY panel). No clock — the July-15 date is retired; order, not dates.
 | 2 | **Stage-2 JWT auth (two-phase)** | open; proxy auth-gating hardening. |
 | 3 | **Goodreads import — minimal CSV** | open (title/author/ISBN/shelf; rich mapping is post-gate). |
 | 4 | **Export / backup + minimal Settings** | open. |
-| 5 | **commons `#reader` fencing** | open; the draft-sub-body leak — `buildPublishedArcDoc` exposes draft sub-theory bodies because it has NO `status==='published'` filter (`integrations.js:2499-2516`; the prior `:2456` cite was STALE — that line is now TTS-cache code, corrected 2026-07-21 from the FINISH-CHOREO recon). **Owned by FINISH-CHOREO S1** — the filter is part of its ruled privacy sweep. **This row CLOSES as a VERIFIED side effect — it flips only when the filter provably ships and is red-teamed.** Not deleted preemptively, not double-built. |
+| 5 | **commons `#reader` fencing** | open; the draft-sub-body leak — `buildPublishedArcDoc` exposes draft sub-theory bodies because it has NO `status==='published'` filter (`integrations.js:2499-2516`; the prior `:2456` cite was STALE — that line is now TTS-cache code, corrected 2026-07-21 from the FINISH-CHOREO recon). **Owned by FINISH-CHOREO S1** — the filter is part of its ruled privacy sweep. **This row CLOSES as a VERIFIED side effect — it flips only when the filter provably ships and is red-teamed.** Not deleted preemptively, not double-built. The legacy frozen sanitize carries two named, privacy-safe residuals — see `finish-choreo-s1-recon.md`. |
 | 6 | **Admin runbook doc** | open. |
 | 7 | **Unlisted-URL + open-auth access model** | open. |
 

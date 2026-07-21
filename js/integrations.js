@@ -305,6 +305,20 @@ firebase.auth().onAuthStateChanged(function (u) {
             window.views.renderRoute();
           }
           console.log('loadSubTheoriesFromFirestore: merged remote sub-theory doc');
+          // FINISH-CHOREO S1 (B) — CO-GATED (red-team + Preston, 2026-07-21): the frozen-leak
+          // sanitize runs ONLY when BOTH loads are authoritative — arcs 'found' AND
+          // sub-theories 'found'. `arcResult` is the enclosing arcs-load result (this callback
+          // is nested inside it). state.subTheories (which the dual-uniqueness keep-predicate
+          // joins against) merged here; state.arcs (which SELECTS which arcs to sanitize)
+          // merged in the arcs branch. It must NEVER run when either load is 'absent'/'error':
+          // stale/incomplete local state + _sanitizeOneFrozenArc's OWN publishedArcs read
+          // succeeding on that same window could remove a legitimately-published entry or
+          // auto-unpublish the arc from a transient failure. A destructive op runs on
+          // DEFINITIVE data or not at all; it safely retries on the next clean load (ls
+          // idempotence marks nothing until a definitive outcome), which strands no one.
+          if (arcResult.status === 'found' && typeof sanitizeFrozenPublishedArcs === 'function') {
+            sanitizeFrozenPublishedArcs(u.uid);
+          }
         } else if (stResult.status === 'absent') {
           console.log('loadSubTheoriesFromFirestore: no remote sub-theory doc for uid, keeping cache');
           saveState();   // F-DL1: flush any write deferred during the load window.
@@ -2506,7 +2520,12 @@ function buildPublishedArcDoc(uid, arcId, opts) {
     for (k in state.subTheories) {
       if (Object.prototype.hasOwnProperty.call(state.subTheories, k)) {
         var st = state.subTheories[k];
+        // FINISH-CHOREO S1 (the status filter): the commons projection carries
+        // ONLY finished (status==='published') sub-theories. A named DRAFT's
+        // bodyPublic never travels. This is the future half of beta-gate #5;
+        // the frozen sanitize below closes the data-at-rest half for legacy docs.
         if (st && st.arcId === arcId &&
+            st.status === 'published' &&
             typeof st.header === 'string' &&
             st.header.replace(/^\s+|\s+$/g, '') !== '') {
           list.push(st);
@@ -2586,6 +2605,32 @@ function publishArc(arcId, opts, callback) {
   var doc = buildPublishedArcDoc(uid, arcId, { freshness: freshness, tags: tags, seed: false });
   if (!doc) {
     finish({ status: 'error', error: new Error('publishArc: projection build failed') });
+    return;
+  }
+  // FINISH-CHOREO S1 (D — block-empty-at-write): after the status filter, a
+  // projection can be empty (a republish once every sub was reopened to draft).
+  // NEVER write an empty public doc. If the arc was already published, this
+  // republish unpublishes it with a notice; a first publish simply refuses
+  // without writing (the ceremony's >=1-finished gate is the UX layer, this is
+  // the write-level invariant). arc.published is still the PRE-publish value here.
+  if (!doc.subTheories || doc.subTheories.length === 0) {
+    if (arc.published === true) {
+      _commonsQueueExit(arcId);
+      arc.published = false;
+      if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+      if (typeof saveState === 'function') { saveState(); }
+      try {
+        firebase.firestore().collection('publishedArcs').doc(arcId)
+          .delete().then(function () {}, function () {});
+        firebase.firestore().collection('publicProfiles').doc(uid).set({
+          publishedArcIds: firebase.firestore.FieldValue.arrayRemove(arcId),
+          updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(function () {});
+      } catch (eEmpty) {}
+      finish({ status: 'unpublished-empty' });
+    } else {
+      finish({ status: 'empty' });
+    }
     return;
   }
   var firstPublish = (arc.published !== true);
@@ -2714,6 +2759,25 @@ function republishLiveArcs(uid) {
           seed: false
         });
         if (!doc) { continue; }
+        // FINISH-CHOREO S1 (D): a live arc that now projects zero finished
+        // sub-theories must not be re-written as an empty public doc — unpublish
+        // it with a notice instead. No saveState here (this runs INSIDE saveState's
+        // flush; the flag persists on the next save, the projection delete is
+        // immediate). markArcsDirty re-arms the flag for that next save.
+        if (!doc.subTheories || doc.subTheories.length === 0) {
+          _commonsQueueExit(aid);
+          arc.published = false;
+          if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+          try {
+            firebase.firestore().collection('publishedArcs').doc(aid)
+              .delete().then(function () {}, function () {});
+            firebase.firestore().collection('publicProfiles').doc(uid).set({
+              publishedArcIds: firebase.firestore.FieldValue.arrayRemove(aid),
+              updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).catch(function () {});
+          } catch (eLive) {}
+          continue;
+        }
         doc.revisedAt = firebase.firestore.FieldValue.serverTimestamp();
         try {
           firebase.firestore()
@@ -2725,6 +2789,143 @@ function republishLiveArcs(uid) {
       }
     }
   }
+}
+
+// ── FINISH-CHOREO S1 helpers ────────────────────────────────────────────────
+// _trimH: trim a header string for the sanitize's header-join (null-safe).
+function _trimH(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
+
+// _commonsQueueExit: record a quiet, deduped, ls-backed per-arc notice that an
+// arc left the commons because nothing in it is finished. Drained + shown once
+// by views.js (drainCommonsExits -> showToast) on the next render, so it survives
+// the reload between a live-edit unpublish and the next paint.
+function _commonsQueueExit(arcId) {
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  var nm = (arc && typeof arc.title === 'string' && arc.title.replace(/^\s+|\s+$/g, '') !== '')
+    ? arc.title : 'An arc';
+  var q = ls('praxis_commons_exits', []);
+  if (!(q instanceof Array)) { q = []; }
+  var i;
+  for (i = 0; i < q.length; i = i + 1) { if (q[i] && q[i].arcId === arcId) { return; } }
+  q.push({ arcId: arcId, name: nm });
+  sv('praxis_commons_exits', q);
+}
+
+// sanitizeFrozenPublishedArcs (B — the frozen sanitize, ruled 2026-07-21). A
+// one-time-per-device legacy cleanup of the draft-body leak. For each of this
+// uid's published FROZEN arcs, read the STORED publishedArcs doc and surgically
+// remove any sub-theory entry that cannot be POSITIVELY verified as a currently-
+// published local sub-theory. Stored entries are anonymous ({header,body,mark*} —
+// no id, no status), so the join is by trimmed header under DUAL-SIDE UNIQUENESS:
+//   keep entry E iff (i) exactly ONE local sub S in this arc with
+//   trim(S.header)===trim(E.header); (ii) S.status==='published'; AND
+//   (iii) exactly ONE stored entry in the doc carries that trimmed header.
+// Anything else is removed (remove-on-doubt, both sides). KEPT entries retain
+// their FROZEN bytes verbatim (never rebuilt from current content — freshness is
+// a contract). Empty result -> unpublish + notice. Idempotence is CLIENT-SIDE
+// (praxis_sanitized_arcs via ls/sv, per device) because firestore.rules'
+// publishedArcKeys allow-list forbids a doc stamp; a re-run on another device
+// re-checks the already-clean doc and no-ops. Two named privacy-safe residuals
+// (a: renamed-after-freeze published subs dropped; b: the deleted-draft unique-
+// header edge) + one S2 open question (post-sanitize reopen) — see
+// finish-choreo-s1-recon.md. Live arcs need no sanitize (the filter + D handle them).
+function sanitizeFrozenPublishedArcs(uid) {
+  if (!uid || !state.arcs || typeof firebase === 'undefined' || !firebase.firestore) { return; }
+  var done = ls('praxis_sanitized_arcs', []);
+  if (!(done instanceof Array)) { done = []; }
+  var aid;
+  for (aid in state.arcs) {
+    if (!Object.prototype.hasOwnProperty.call(state.arcs, aid)) { continue; }
+    var arc = state.arcs[aid];
+    if (!arc || arc.userId !== uid || arc.published !== true || arc.freshness === 'live') { continue; }
+    var seen = false;
+    var di;
+    for (di = 0; di < done.length; di = di + 1) { if (done[di] === aid) { seen = true; break; } }
+    if (seen) { continue; }
+    _sanitizeOneFrozenArc(uid, aid);
+  }
+}
+
+function _sanitizeMarkDone(arcId) {
+  var done = ls('praxis_sanitized_arcs', []);
+  if (!(done instanceof Array)) { done = []; }
+  var i;
+  for (i = 0; i < done.length; i = i + 1) { if (done[i] === arcId) { return; } }
+  done.push(arcId);
+  sv('praxis_sanitized_arcs', done);
+}
+
+function _sanitizeOneFrozenArc(uid, arcId) {
+  var ref = firebase.firestore().collection('publishedArcs').doc(arcId);
+  ref.get().then(function (snap) {
+    if (!snap || !snap.exists) { _sanitizeMarkDone(arcId); return; }
+    var doc = snap.data() || {};
+    var stored = (doc.subTheories instanceof Array) ? doc.subTheories : [];
+    // (iii) stored-side trimmed-header counts.
+    var storedCount = {};
+    var si;
+    for (si = 0; si < stored.length; si = si + 1) {
+      var sh = _trimH(stored[si] && stored[si].header);
+      storedCount[sh] = (storedCount[sh] || 0) + 1;
+    }
+    // (i)+(ii) local subs of THIS arc, grouped by trimmed header.
+    var localByHeader = {};
+    var k;
+    for (k in state.subTheories) {
+      if (!Object.prototype.hasOwnProperty.call(state.subTheories, k)) { continue; }
+      var lsub = state.subTheories[k];
+      if (!lsub || lsub.arcId !== arcId) { continue; }
+      var lh = _trimH(lsub.header);
+      if (!localByHeader[lh]) { localByHeader[lh] = []; }
+      localByHeader[lh].push(lsub);
+    }
+    // Keep-predicate: dual-side uniqueness + published. Remove-on-doubt.
+    var kept = [];
+    var ei;
+    for (ei = 0; ei < stored.length; ei = ei + 1) {
+      var e = stored[ei];
+      var h = _trimH(e && e.header);
+      if (h === '') { continue; }                          // empty header -> remove
+      if (storedCount[h] !== 1) { continue; }              // (iii) stored-side ambiguity
+      var locals = localByHeader[h];
+      if (!locals || locals.length !== 1) { continue; }    // (i) local no-match / ambiguity
+      if (locals[0].status !== 'published') { continue; }  // (ii) not finished
+      kept.push(e);                                        // KEEP the frozen bytes verbatim
+    }
+    if (kept.length === stored.length) {
+      _sanitizeMarkDone(arcId);                            // nothing removed -> mark, no write
+      return;
+    }
+    if (kept.length === 0) {
+      _commonsQueueExit(arcId);                            // sanitize emptied it -> unpublish
+      var arcE = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+      if (arcE) {
+        arcE.published = false;
+        if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+        if (typeof saveState === 'function') { saveState(); }
+      }
+      ref.delete().then(function () {}, function () {});
+      try {
+        firebase.firestore().collection('publicProfiles').doc(uid).set({
+          publishedArcIds: firebase.firestore.FieldValue.arrayRemove(arcId),
+          updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(function () {});
+      } catch (e2) {}
+      _sanitizeMarkDone(arcId);
+      if (window.views && typeof window.views.drainCommonsExits === 'function') {
+        window.views.drainCommonsExits();
+      }
+      return;
+    }
+    // Partial removal: write back the FILTERED STORED array (rules-legal — only
+    // subTheories changes, still within publishedArcKeys; NO stamp field).
+    ref.set({ subTheories: kept }, { merge: true }).then(function () {
+      _sanitizeMarkDone(arcId);
+      if (window.views && typeof window.views.drainCommonsExits === 'function') {
+        window.views.drainCommonsExits();
+      }
+    }, function () { /* write failed: leave unmarked, retried on the next load */ });
+  }, function () { /* read failed: leave unmarked, retried on the next load */ });
 }
 
 // ── Console-only dev seeds (attached to window, NO UI). Every seeded doc

@@ -398,6 +398,10 @@ function renderRoute() {
   // closed. Guarded + memoised in measure.js, so this is a comparison in the
   // common case. It derives from existing state and records nothing about it.
   if (window.PraxisMeasure) { PraxisMeasure.checkActivation(); }
+  // FINISH-CHOREO S1: surface any queued commons-exit notice (an arc that left
+  // the commons because nothing in it was finished — from D block-empty or the
+  // frozen sanitize). Drains + toasts once; a no-op when the queue is empty.
+  drainCommonsExits();
   // 3.10a Stage 4: bind the hamburger toggle once on first call,
   // then close any open mobile nav panel on every route change.
   // app.js's existing hashchange listener calls renderRoute on
@@ -13369,31 +13373,22 @@ function _arcHeadPublishControl(arcId, arc) {
     unpub.className = 'arcfield-pub-btn arcfield-pub-btn-quiet';
     unpub.textContent = 'Unpublish';
     unpub.addEventListener('click', function () {
-      unpub.disabled = true;
-      unpub.textContent = 'Unpublishing…';
-      unpublishArc(arcId, function () { renderArcDetail(arcId); });
+      openUnpublishConfirm(arcId, function () { renderArcDetail(arcId); });
     });
     box.appendChild(unpub);
   } else {
-    var nSubs = _arcSubCount(arcId);
+    // FINISH-CHOREO S1: the one-click publish is replaced by the shared ceremony
+    // (identity -> freshness -> what-travels/stays -> confirm). The >=1-finished
+    // gate lives INSIDE the ceremony, so the button always opens it (the ceremony
+    // explains plainly when nothing is finished yet), replacing the old 0-subs disable.
     var pubBtn = document.createElement('button');
     pubBtn.type = 'button';
-    pubBtn.className = 'arcfield-pub-btn' + (nSubs === 0 ? ' arcfield-pub-btn-quiet' : '');
+    pubBtn.className = 'arcfield-pub-btn';
     pubBtn.textContent = 'Publish to the commons';
+    pubBtn.addEventListener('click', function () {
+      openPublishCeremony(arcId, function () { renderArcDetail(arcId); });
+    });
     box.appendChild(pubBtn);
-    if (nSubs === 0) {
-      pubBtn.disabled = true;
-      var hint = document.createElement('span');
-      hint.className = 'arcfield-pub-hint';
-      hint.textContent = "Publish once you've begun.";
-      box.appendChild(hint);
-    } else {
-      pubBtn.addEventListener('click', function () {
-        pubBtn.disabled = true;
-        pubBtn.textContent = 'Publishing…';
-        publishArc(arcId, { freshness: 'frozen' }, function () { renderArcDetail(arcId); });
-      });
-    }
   }
   return box;
 }
@@ -20014,9 +20009,10 @@ function _socialRenderIdentityChooser(hostEl, onChosen) {
 }
 
 // Own-profile per-arc publish control (2D). Reads the LOCAL published flags
-// (arc.published / freshness). Publish opens an inline panel: identity (pen vs
-// display, first-publish question) + freshness (frozen/live). Unpublish removes
-// the projection. Both re-render the own profile on success.
+// (arc.published / freshness). FINISH-CHOREO S1: Publish now opens the SHARED
+// publish ceremony (openPublishCeremony) — the former inline op-pub-panel is
+// retired; Unpublish opens the shared confirm (openUnpublishConfirm). Both
+// re-render the own profile on success.
 function _opPublishControl(arcId, rec) {
   var user = getCurrentUser();
   var uid = (user && user.uid) ? user.uid : '';
@@ -20033,20 +20029,126 @@ function _opPublishControl(arcId, rec) {
     unpub.className = 'op-pub-btn op-pub-unpub';
     unpub.textContent = 'Unpublish';
     unpub.addEventListener('click', function () {
-      unpub.disabled = true;
-      unpub.textContent = 'Unpublishing…';
-      unpublishArc(arcId, function () { renderOwnProfile(); });
+      openUnpublishConfirm(arcId, function () { renderOwnProfile(); });
     });
     wrap.appendChild(unpub);
     return wrap;
   }
 
+  // FINISH-CHOREO S1: the own-profile publish now opens the SHARED ceremony
+  // (identity -> freshness -> what-travels/stays -> confirm), the same one the
+  // arc-head Publish opens. The former inline op-pub-panel (its own hand-rolled
+  // identity+freshness segs) is retired — one ceremony, one identity resolution.
   var pubBtn = document.createElement('button');
   pubBtn.type = 'button';
   pubBtn.className = 'op-pub-btn';
   pubBtn.textContent = 'Publish';
+  pubBtn.addEventListener('click', function () {
+    openPublishCeremony(arcId, function () { renderOwnProfile(); });
+  });
+  wrap.appendChild(pubBtn);
+  return wrap;
+}
+
+// ── FINISH-CHOREO S1: the shared publish ceremony, its confirms, and the exit
+// notice. Two entries (arc-head + own-profile) call ONE ceremony; the >=1-finished
+// gate lives inside it; motion is fade+slide only (kit tokens, no scale), the P9
+// vocabulary. ─────────────────────────────────────────────────────────────────
+
+// Count this arc's FINISHED (status==='published') subs and its NAMED DRAFTS
+// (status!=='published', non-empty header). Basins (empty header) count as
+// neither. Drives the gate and the "What travels / What stays" summary.
+function _arcFinishedCounts(arcId) {
+  var subs = _arcSubsOf(arcId);
+  var fin = 0, drafts = 0, i;
+  for (i = 0; i < subs.length; i = i + 1) {
+    var s = subs[i];
+    // Match buildPublishedArcDoc's filter EXACTLY (red-team #4): a projected entry
+    // needs BOTH status==='published' AND a non-empty header. A finished-then-header-
+    // blanked sub is neither "travels" nor counted as finished — otherwise the gate
+    // would report "1 finished" and D would then block the empty write with a
+    // confusing "could not publish". Basins (empty header) count as neither.
+    var named = (s && typeof s.header === 'string' && s.header.replace(/^\s+|\s+$/g, '') !== '');
+    if (s && s.status === 'published' && named) { fin = fin + 1; }
+    else if (named) { drafts = drafts + 1; }
+  }
+  return { finished: fin, drafts: drafts };
+}
+
+// Drain the ls-backed commons-exit queue (integrations.js _commonsQueueExit) and
+// show ONE quiet toast — a per-arc line for the common single case, a count for
+// the rare multiple. Called once per renderRoute + right after a sanitize unpublish.
+function drainCommonsExits() {
+  var q = ls('praxis_commons_exits', []);
+  if (!(q instanceof Array) || q.length === 0) { return; }
+  sv('praxis_commons_exits', []);
+  var msg;
+  if (q.length === 1) {
+    msg = '‘' + q[0].name + '’ left the commons — nothing in it was finished yet. Publish again when something is.';
+  } else {
+    msg = q.length + ' arcs left the commons — nothing in them was finished yet. Publish again when something is.';
+  }
+  if (typeof showToast === 'function') { showToast(msg); }
+}
+
+// A shared fade+slide overlay (scrim + panel). Esc / backdrop closes. No scale
+// (P9). CSS owns the reduced-motion instant path. Returns { panel, open, close }.
+function _pubOverlay() {
+  var scrim = document.createElement('div');
+  scrim.className = 'pub-ceremony-scrim';
   var panel = document.createElement('div');
-  panel.className = 'op-pub-panel';
+  panel.className = 'pub-ceremony-panel';
+  scrim.appendChild(panel);
+  var keyHandler = null;
+  function close() {
+    scrim.classList.remove('is-open');
+    if (keyHandler) { document.removeEventListener('keydown', keyHandler); keyHandler = null; }
+    setTimeout(function () { if (scrim.parentNode) { scrim.parentNode.removeChild(scrim); } }, 260);
+  }
+  function open() {
+    document.body.appendChild(scrim);
+    keyHandler = function (ev) { if (ev.keyCode === 27) { close(); } };
+    document.addEventListener('keydown', keyHandler);
+    scrim.addEventListener('click', function (ev) { if (ev.target === scrim) { close(); } });
+    setTimeout(function () { scrim.classList.add('is-open'); }, 10);
+  }
+  return { scrim: scrim, panel: panel, open: open, close: close };
+}
+
+// The publish ceremony (D3): identity -> freshness -> what-travels/stays -> confirm.
+// At zero finished sub-theories it shows the gate copy and writes NOTHING.
+function openPublishCeremony(arcId, onDone) {
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  if (!arc) { return; }
+  var user = getCurrentUser();
+  var uid = (user && user.uid) ? user.uid : '';
+  var counts = _arcFinishedCounts(arcId);
+  var ov = _pubOverlay();
+  var panel = ov.panel;
+  var title = (typeof arc.title === 'string' && arc.title.replace(/^\s+|\s+$/g, '') !== '') ? arc.title : 'this arc';
+
+  var head = document.createElement('p');
+  head.className = 'pub-ceremony-title';
+  head.textContent = 'Publish ‘' + title + '’';
+  panel.appendChild(head);
+
+  if (counts.finished === 0) {
+    var gate = document.createElement('p');
+    gate.className = 'pub-ceremony-gate';
+    gate.textContent = 'Nothing is finished yet — finish a sub-theory first. Only finished sub-theories travel to the commons.';
+    panel.appendChild(gate);
+    var closeRow = document.createElement('div');
+    closeRow.className = 'pub-ceremony-actions';
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'pub-ceremony-cancel';
+    ok.textContent = 'Close';
+    ok.addEventListener('click', function () { ov.close(); });
+    closeRow.appendChild(ok);
+    panel.appendChild(closeRow);
+    ov.open();
+    return;
+  }
 
   var profile = getProfile(uid) || {};
   var pen = profile.penName ? profile.penName : '';
@@ -20054,16 +20156,16 @@ function _opPublishControl(arcId, rec) {
     : (user && user.displayName ? user.displayName : (user && user.email ? user.email : 'You'));
   var chosenIdentity = ls('praxis_publish_identity', '');
   if (chosenIdentity !== 'pen' && chosenIdentity !== 'display') { chosenIdentity = pen ? 'pen' : 'display'; }
-  var chosenFreshness = 'frozen';
+  var chosenFreshness = (arc.freshness === 'live') ? 'live' : 'frozen';
 
   var idRow = document.createElement('div');
-  idRow.className = 'op-pub-row';
+  idRow.className = 'pub-ceremony-row';
   var idLabel = document.createElement('span');
-  idLabel.className = 'op-pub-label';
+  idLabel.className = 'pub-ceremony-label';
   idLabel.textContent = 'Publish as';
   idRow.appendChild(idLabel);
   var idSeg = document.createElement('div');
-  idSeg.className = 'op-pub-seg';
+  idSeg.className = 'pub-ceremony-seg';
   var idOpts = [];
   if (pen) { idOpts.push(['pen', pen]); }
   idOpts.push(['display', disp]);
@@ -20073,12 +20175,12 @@ function _opPublishControl(arcId, rec) {
     (function (val, lab) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'op-pub-seg-btn' + (chosenIdentity === val ? ' is-on' : '');
+      b.className = 'pub-ceremony-seg-btn' + (chosenIdentity === val ? ' is-on' : '');
       b.textContent = lab;
       b.addEventListener('click', function () {
         chosenIdentity = val;
         var kk;
-        for (kk in idBtns) { if (idBtns.hasOwnProperty(kk)) { idBtns[kk].className = 'op-pub-seg-btn' + (kk === val ? ' is-on' : ''); } }
+        for (kk in idBtns) { if (idBtns.hasOwnProperty(kk)) { idBtns[kk].className = 'pub-ceremony-seg-btn' + (kk === val ? ' is-on' : ''); } }
       });
       idBtns[val] = b;
       idSeg.appendChild(b);
@@ -20088,13 +20190,13 @@ function _opPublishControl(arcId, rec) {
   panel.appendChild(idRow);
 
   var frRow = document.createElement('div');
-  frRow.className = 'op-pub-row';
+  frRow.className = 'pub-ceremony-row';
   var frLabel = document.createElement('span');
-  frLabel.className = 'op-pub-label';
+  frLabel.className = 'pub-ceremony-label';
   frLabel.textContent = 'Freshness';
   frRow.appendChild(frLabel);
   var frSeg = document.createElement('div');
-  frSeg.className = 'op-pub-seg';
+  frSeg.className = 'pub-ceremony-seg';
   var frOpts = [['frozen', 'Frozen'], ['live', 'Live']];
   var frBtns = {};
   var fo;
@@ -20102,12 +20204,12 @@ function _opPublishControl(arcId, rec) {
     (function (val, lab) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'op-pub-seg-btn' + (chosenFreshness === val ? ' is-on' : '');
+      b.className = 'pub-ceremony-seg-btn' + (chosenFreshness === val ? ' is-on' : '');
       b.textContent = lab;
       b.addEventListener('click', function () {
         chosenFreshness = val;
         var kk;
-        for (kk in frBtns) { if (frBtns.hasOwnProperty(kk)) { frBtns[kk].className = 'op-pub-seg-btn' + (kk === val ? ' is-on' : ''); } }
+        for (kk in frBtns) { if (frBtns.hasOwnProperty(kk)) { frBtns[kk].className = 'pub-ceremony-seg-btn' + (kk === val ? ' is-on' : ''); } }
       });
       frBtns[val] = b;
       frSeg.appendChild(b);
@@ -20117,31 +20219,91 @@ function _opPublishControl(arcId, rec) {
   panel.appendChild(frRow);
 
   var frHint = document.createElement('p');
-  frHint.className = 'op-pub-hint';
+  frHint.className = 'pub-ceremony-hint';
   frHint.textContent = 'Frozen refreshes only when you re-publish. Live keeps the public copy in step with your edits.';
   panel.appendChild(frHint);
 
-  var confirm = document.createElement('button');
-  confirm.type = 'button';
-  confirm.className = 'op-pub-confirm';
-  confirm.textContent = 'Publish to the commons';
+  var sweep = document.createElement('p');
+  sweep.className = 'pub-ceremony-sweep';
+  var sweepText = 'What travels: ' + counts.finished + ' finished sub-theor' + (counts.finished === 1 ? 'y' : 'ies');
+  if (counts.drafts > 0) {
+    sweepText = sweepText + ' · What stays: ' + counts.drafts + ' draft' + (counts.drafts === 1 ? '' : 's');
+  }
+  sweep.textContent = sweepText;
+  panel.appendChild(sweep);
+
+  var actions = document.createElement('div');
+  actions.className = 'pub-ceremony-actions';
+  var confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'pub-ceremony-confirm';
+  confirmBtn.textContent = 'Publish to the commons';
   var note = document.createElement('span');
-  note.className = 'op-pub-note';
-  confirm.addEventListener('click', function () {
-    confirm.disabled = true;
+  note.className = 'pub-ceremony-note';
+  confirmBtn.addEventListener('click', function () {
+    confirmBtn.disabled = true;
     note.textContent = 'Publishing…';
     publishArc(arcId, { freshness: chosenFreshness, identity: chosenIdentity }, function (r) {
-      if (r && r.status === 'ok') { renderOwnProfile(); }
-      else { confirm.disabled = false; note.textContent = 'Could not publish — try again.'; }
+      if (r && r.status === 'ok') {
+        ov.close();
+        if (typeof onDone === 'function') { onDone(); }
+      } else {
+        confirmBtn.disabled = false;
+        note.textContent = 'Could not publish — try again.';
+      }
     });
   });
-  panel.appendChild(confirm);
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'pub-ceremony-cancel';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function () { ov.close(); });
+  actions.appendChild(confirmBtn);
+  actions.appendChild(cancelBtn);
+  panel.appendChild(actions);
   panel.appendChild(note);
 
-  pubBtn.addEventListener('click', function () { panel.classList.toggle('is-open'); });
-  wrap.appendChild(pubBtn);
-  wrap.appendChild(panel);
-  return wrap;
+  ov.open();
+}
+
+// Unpublish confirm (D3): removing a live arc from the commons may never be
+// quieter than deleting a draft. Same overlay, lighter copy than the delete gate.
+function openUnpublishConfirm(arcId, onDone) {
+  var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
+  var nm = (arc && typeof arc.title === 'string' && arc.title.replace(/^\s+|\s+$/g, '') !== '') ? arc.title : 'this arc';
+  var ov = _pubOverlay();
+  var panel = ov.panel;
+  panel.className = 'pub-ceremony-panel pub-confirm-panel';
+
+  var copy = document.createElement('p');
+  copy.className = 'pub-confirm-copy';
+  copy.textContent = '‘' + nm + '’ will leave the commons. Anyone who linked to it will find it gone. You can publish it again anytime.';
+  panel.appendChild(copy);
+
+  var actions = document.createElement('div');
+  actions.className = 'pub-ceremony-actions';
+  var yes = document.createElement('button');
+  yes.type = 'button';
+  yes.className = 'pub-ceremony-confirm pub-confirm-yes';
+  yes.textContent = 'Unpublish';
+  yes.addEventListener('click', function () {
+    yes.disabled = true;
+    yes.textContent = 'Unpublishing…';
+    unpublishArc(arcId, function () {
+      ov.close();
+      if (typeof onDone === 'function') { onDone(); }
+    });
+  });
+  var no = document.createElement('button');
+  no.type = 'button';
+  no.className = 'pub-ceremony-cancel';
+  no.textContent = 'Keep it';
+  no.addEventListener('click', function () { ov.close(); });
+  actions.appendChild(yes);
+  actions.appendChild(no);
+  panel.appendChild(actions);
+
+  ov.open();
 }
 
 // 2A — DISCOVERY (#commons): a finite, shuffled field of the newest published
@@ -22546,6 +22708,7 @@ function aboutWireToggle(page, g) {
 
 window.views = {
   renderRoute:           renderRoute,
+  drainCommonsExits:     drainCommonsExits,
   renderAccountPage:     renderAccountPage,
   renderAbout:           renderAbout,
   renderNotebook:        renderNotebook,
