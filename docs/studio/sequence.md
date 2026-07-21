@@ -31,6 +31,35 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-21 (SEQUENCE RULING v2 — Preston-DIRECTED, enacted)** — corrected order: design-ready rounds
+  build first; THE ARC STANDARD designs in parallel and builds after R-SHELF. **PIPELINE LAW:** design phases
+  overlap (chat / briefs / isolated worktrees); build phases **SERIALIZE** — the shared `views.js` / `components.css`
+  build lane is **one lane, always**. **Order: FINISH-CHOREO S2 → R-SHELF build → ARC STANDARD build → R-CAPTURE**
+  (R-CAPTURE's shaping runs in chat during ARC's build); **S3** (motion dignity) rides where cheapest without
+  breaking the lane law. Downstream spine unchanged (→ SCAN → S-B → R10 → ONBOARDING → BETA-READINESS → R11 →
+  S-C → feature layers).
+  - **S2 = GO** (Preston, 2026-07-21): the S1 corroboration + felt checks landed (his reported verdicts; the OV
+    flips ruled), so the standing gate is satisfied. The build lane is S2's until it ships; R-SHELF's build takes
+    the lane on Preston's mockup felt-pass; ARC STANDARD's build queues behind R-SHELF.
+  - **R-SHELF v3** committed (`docs/studio/r-shelf-brief.md` = the July-17 v3 recovered from the owner's download;
+    supersedes the v2 at 3f5df8b; committed under its splice discipline — carry-forward blocks byte-identical to
+    v2, NEW/AMENDED authoritative, splice diff-gate PASS). The mockup worktree spawns **off the v3 commit hash**;
+    the July-14 CC prompt is superseded. Mockup built 390-first per v3 + Law 8 FELT CANON; Preston's felt read on
+    it gates the build.
+  - **LOOK batch DISSOLVED into THE ARC STANDARD.** Definitions (verbatim, Preston): **LOOK-1** — writing-surface
+    contrast (owner felt finding, July 21, 1360: on the sub-theory build page the writing column sits directly on
+    the page ground with no surface of its own — prose, ground, and adjacent panels read as one low-contrast
+    plane; the writing surface needs to be a place) → ABSORBED into ARC STANDARD. **LOOK-2** — universal-look
+    coherence (owner felt finding, July 21: surfaces across pages don't yet speak one material language; scope
+    defined evidence-first at its own Stage-0) → arc-side ABSORBED into ARC STANDARD; **app-wide remainder = its
+    own named row** (launch-runway). **THE ARC STANDARD** — deep round, builds after R-SHELF: full north-star
+    mockup of the arc interior + sub-theory writing surface at 1360 in THE HOUR world (mockup spec comes from chat
+    — do not self-design; do-not-merge branch; second-yes ratification; build-to-mockup, fidelity-gated),
+    absorbing LOOK-1, LOOK-2 arc-side, and the arc-Field ledger items (candy glyph palette, pill sprawl,
+    dark-panel seam, stray glyph). Its do-not-merge mockup branch is scaffolded now (empty, off the live arc
+    surfaces) and holds for Preston's spec.
+  - Preston-DIRECTED, not PROPOSED. Standing law unchanged (S2 data-write hold, FORK-VERBATIM, felt-delta,
+    owner-viewport). `## Now` order re-set accordingly.
 - **2026-07-20 (R-POLISH CLOSE-OUT — Preston-DIRECTED, enacted)** — **trigger: all BP-1v3 batches
   shipped+live (B1→B4 v3.231→v3.236, B-M v3.238); FX-1 add-guard pulled forward + shipped v3.237;
   tab-side felt PASS.** R-POLISH → Shipped. **Now** re-set to the 3 truest next moves —
