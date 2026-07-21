@@ -116,3 +116,27 @@ before Preston.
 | Function | — | toggles present, untested |
 
 Seed: 5/9 scorable. Session re-scores all six at 390, then runs passes.
+
+---
+
+# THE COMPLETENESS INVENTORY (⚠ TRIAL — ratify or drop at R-SHELF close)
+
+Purpose: the card checks ruled things; the loop scores finish. This
+inventory checks for HOLES — the unruled space where pieces go missing.
+Runs at mockup delivery, BEFORE the elevation loop. Every row must be
+answered; a blank row = the stage isn't done.
+
+Row states: SHOWN (evidence pointer) · N/A-OWNED (name the owning
+round) · MISSING (= FAIL — fix if ruled space allows, else HALT to
+chat).
+
+| # | Anatomy | What "shown" means |
+|---|---|---|
+| 1 | Ground | the full visual background/landscape present, not placeholder |
+| 2 | States | empty · sparse · full/at-scale · error (where applicable) each demonstrated |
+| 3 | Controls | every visible control functional in the mockup, or marked static-by-design |
+| 4 | Widths | 390 / 1280 / 1920 walked (deferred widths = N/A-OWNED, named) |
+| 5 | Motion | every ruled animation present + reduced-motion behavior verified |
+| 6 | Marks | all meaning marks/indicators legible on their actual ground |
+| 7 | Text | zero placeholder/filler text surviving; registers match canon |
+| 8 | Seams | entries/exits to adjacent surfaces shown or explicitly out-of-round |
