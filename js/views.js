@@ -5310,6 +5310,8 @@ function renderShelfDesk() {
   }
   if (nowBooks.length === 0) {
     if (countEl) { countEl.textContent = ''; }
+    // whole library empty -> the case carries the zero-books invitation; no double-empty.
+    if (shelfCtx.books.length === 0) { return; }
     var line = document.createElement('p');
     line.className = 'desk-empty-line';
     line.textContent = 'Nothing in hand right now.';
@@ -5570,6 +5572,29 @@ function renderShelfCase() {
   root.innerHTML = '';
   var mode = getShelfGrouping();
   var books = shelfCtx.books, i, b;
+
+  // Zero-books empty state (pin 11 / Law 4 sparse-honest): one quiet line + Add.
+  // A brand-new signed-in shelf has no bands and no pile, so without this the case
+  // would render blank (the reviewer-caught regression). The Add also lives in the
+  // header, but the invitation belongs where the library will be.
+  if (books.length === 0) {
+    var ez = document.createElement('div');
+    ez.className = 'shelf-empty-zero';
+    ez.id = 'shelf-empty';
+    var ezLine = document.createElement('p');
+    ezLine.className = 'shelf-empty-zero-line';
+    ezLine.textContent = 'Your shelf is open — add your first book: scan a spine, search a title, or paste a whole list.';
+    ez.appendChild(ezLine);
+    var ezAdd = document.createElement('button');
+    ezAdd.type = 'button';
+    ezAdd.className = 'btn btn-primary shelf-empty-zero-add';
+    ezAdd.textContent = '＋ Add a book';
+    ezAdd.addEventListener('click', function () { openShelfEditor(); });
+    ez.appendChild(ezAdd);
+    root.appendChild(ez);
+    root.className = 'case' + (mode === 'lenses' ? ' is-lens' : '');
+    return;
+  }
 
   // memoize order-by-life once per render (§11)
   shelfCtx.touch = {};

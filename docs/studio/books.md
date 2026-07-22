@@ -1,12 +1,12 @@
 ---
 surface: books
 route: "#books"
-render_fn: renderShelf (views.js:3730)
-mockup: docs/studio/mockups/shelf.html
+render_fn: renderShelf (views.js:4501)
+mockup: docs/studio/mockups/r-shelf.html
 ground: dark
 in_nav: yes
 state: closed
-rounds: 2
+rounds: 3
 mobile: native
 ---
 
@@ -181,6 +181,27 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 - [source: cross-check 2026-07-08] [status: open] [performance][high] RE-GRADE — the "no pagination/virtualization" finding already on this ledger is elevated to HIGH: renderShelf is the sole update path for the entire surface, confirmed called from 40 sites in views.js (grep count); every call tears down the page (`host.innerHTML=''`, views.js:3733) and re-runs ~9 separate O(n) passes over the book set (collect, sort, filter's 7-predicate pass, lens/status/author/category tallies) plus a full walk of state.notebookEntries AND state.subTheories for the "alight" computation (views.js:4759-4789) — on every filter click, toggle, and debounced keystroke, not just on load.
 
 ## Round history
+
+### R-SHELF THE BOOKCASE — BUILT + VERIFIED, committed-local (2026-07-22, v3.242; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` + S4 close). Awaiting push + Preston's dual felt read.
+
+The full re-composition to the felt-passed mockup (brief v4): the sidebar dissolves (F4) into a slim
+header (search + Categories⇄Lenses re-shelving toggle + carried Manage/Add/Select + value chips); a
+wheat horizon strip (F9) + the desk (NOW = still-reading, F2) sit above the case — carved cavities +
+gravity shelf-lines (feet on the line) + order-by-life arrangement (§11: marginalia→finishedAt→addedAt,
+derived-not-persisted) + THE WALL masonry (2/3/4 cols ≥760, no band splits); the mobile focused view +
+See-all (A1/§3.7); illumination (value chips + search LIGHT/DIM, Law-1 rider); the pile (categories) /
+Ask-Yumi row (lenses). `renderShelf` + `renderShelfBook` replaced (shelf-only); `renderShelfBookRow` +
+`arcFieldHue` KEPT (F7). Fork rulings D1 (glow tiers) · D2 (ember) · D4 (desk carrying-question-OR-NOTHING;
+authoring = named R-CAPTURE seam) · D5 (Covers|Compact, List retired) · F7 honored; pins honored (signed-out
+gate preserved; Sort retired; live lens copy; no dev chrome). Display-only — no schema/state/data-writes;
+byte-locks intact. Live-verified at scale (145-book fixture) @390/1000/1280/1360/1920. Records:
+`docs/checkpoints/r-shelf-build.md` (+ `-recon.md`, `-acceptance-close.md`).
+
+⚠ **STALE-ANCHOR NOTE:** this file's frontmatter + Decisions / Mockup-evaluation / Gap-ledger predate the
+build (last substantive touch `2f9ab31`, ~170 commits back — Stage-0 recon finding). `render_fn` corrected
+to `views.js:4501` in the frontmatter; the in-body `v####` anchors and the R2-era Gap ledger are NOT
+rewritten here (they re-drift as the file grows — current census is `docs/checkpoints/r-shelf-build-recon.md`).
+A full `books.md` refresh rides the round CLOSE (felt pass), not this build commit.
 
 ### R8 value filter — SHIPPED v3.195 (2026-07-11, commit chain `f6c3a5a→37ea1f0`)
 

@@ -31,6 +31,31 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-22 (R-SHELF BUILD — BUILT + VERIFIED, committed-local, awaiting push + felt pass)** —
+  the Shelf re-composition to the felt-passed mockup (brief v4) is built across 3 local commits
+  (`bcce692` S1 shell · `d49cdca` S2 case · `f818008` S3 focused/See-all) + the S4 close (this
+  commit, v3.242). The sidebar dissolves (F4) into a slim header (search + Categories⇄Lenses
+  re-shelving toggle + carried Manage/Add/Select + value chips); wheat horizon (F9) + desk
+  (NOW = still-reading, F2) above the case — carved cavities + gravity shelf-lines + order-by-life
+  (§11) + THE WALL masonry (2/3/4 cols); mobile focused view + See-all (A1/§3.7); illumination
+  (Law 1); pile / Ask-Yumi row. **Fork rulings honored** (D1 glow tiers · D2 ember · D4 desk
+  carrying-question-OR-NOTHING → carrying-question AUTHORING is a named **R-CAPTURE seam** · D5
+  Covers\|Compact, List retired · F7 renderShelfBookRow untouched). **Pins honored** (signed-out
+  hard gate preserved; Sort retired; live "Ask Yumi for more lenses" copy; no mockup dev chrome;
+  rollback tag `pre-rshelf`; sw.js bumped once at S4; Builder regen rides this commit; lazy covers +
+  pre-sized slots = 0 CLS + spine fallback). Display-only — no schema/state/data-writes; byte-locks
+  intact. praxis-reviewer gates this commit (red-team not required — no data writes). Live-verified
+  at scale on the rig (145-book fixture) @390/1000/1280/1360/1920: gravity 0px, aspect 2:3, wall
+  cols correct, 0 splits/overflow, order-by-life, illumination Law-1 rider, full interactive sweep.
+  Records: `docs/checkpoints/r-shelf-build.md` (+ `-recon.md`, `-acceptance-close.md`). **Signed-in
+  Firestore is untouched (display-only); the round CLOSES on Preston's dual felt read (390 phone +
+  desktop) on production** — the build lane then frees for THE ARC STANDARD build (next in the serial
+  order). **PROPOSED (Preston ratifies at close):** the elevation-loop + completeness-inventory trials
+  → RATIFY (both functioned as gates on the live build); + inventory ROW 9 (Behaviors) + STATES
+  real-conditions amendment + two lessons.md mechanical truths (tag-base-before-rewrite; media-into-
+  pre-sized-slots) — drafted in `docs/checkpoints/r-shelf-acceptance-close.md`. Not applied to
+  lessons.md/acceptance-card.md until Preston rules. Autonomous currency fix rides this entry: the
+  `## Now` FINISH-CHOREO bullet re-stated to S2-closed / S3-remains (matches the 07-22 close above).
 - **2026-07-21 (SEQUENCE RULING v2 — Preston-DIRECTED, enacted)** — corrected order: design-ready rounds
   build first; THE ARC STANDARD designs in parallel and builds after R-SHELF. **PIPELINE LAW:** design phases
   overlap (chat / briefs / isolated worktrees); build phases **SERIALIZE** — the shared `views.js` / `components.css`
@@ -623,10 +648,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
 **The 3 truest next moves after the R-POLISH close (2026-07-20). The runway view of
 the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [ ] **FINISH-CHOREO slice** — the ROOM-charter-named finish choreography (the
-  mark-as-finished feel). First up post-R-POLISH.
-- [ ] **R-SHELF — Shelf deep re-round (build)** — the most-used surface predates the
-  R5–R9 Universal maturity. `[books]`
+- [x] **FINISH-CHOREO S2 — THE THRESHOLD — CLOSED** (v3.241 `4621cd8`, live-smoke PASS 2026-07-22).
+  **S3** (motion dignity + measure) remains, riding where cheapest (not the lead).
+- [~] **R-SHELF — Shelf deep re-round — BUILT + VERIFIED, committed-local (v3.242), awaiting push +
+  Preston's dual felt read** (390 phone + desktop, on production). Closes on the felt pass; the build
+  lane then frees for THE ARC STANDARD build. `[books]`
 - [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into
   one entry, sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`).
   `[import-capture, notebook]`

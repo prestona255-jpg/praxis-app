@@ -60,10 +60,14 @@ runtime density). Pin 4: no mockup dev chrome shipped.
 - ES3: arrow/backtick/const/let declarations in new code = 0 (the one `=>` is a pre-existing
   comment @11565; 37 backticks are pre-existing strings/comments; parse-check would fail on real
   ES5 syntax — it passed).
-- diffstat vs `4a3c2e3`: 3 files only (theme +29, components +211, views 2258 changed / net −604L,
-  byte −63,557). 0 CR in new content (LF; git blob is LF). No other tracked file dirty.
+- diffstat vs `4a3c2e3` (COMMITTED S1 numbers — corrected after the reviewer caught a mis-stated
+  figure; the earlier "net −604L / −63,557B" was a mid-splice PowerShell working-tree reading taken
+  BEFORE the getShelfGrouping + module-var edits, not the committed blob delta): **js/views.js 707
+  insertions / 1551 deletions (net −844 lines); bytes 1,051,460 → 1,011,557 = −39,903** (LF blobs).
+  assets/components.css +211L; assets/theme.css +29L. 0 CR in new content (LF; git blob is LF). No
+  other tracked file dirty. (Authoritative round total is the S4 byte reconciliation below.)
 - byte band: not pre-stated numerically (S1 net-negative — sidebar dissolved, case stubbed; S2
-  restores the case and grows it). Measured, not back-derived.
+  restores the case and grows it). Measured from the commit, not back-derived.
 
 **LIVE VERIFY (rig :8793, prestonpraxistest-shaped stub d0tester, 5 seed books, cache-busted):**
 | gate | 390 | 1280 | 1360 | 1920 | state |
@@ -161,3 +165,62 @@ mobile-only). shelfFocused guards the resize re-render (don't rebuild the case u
 - Console: clean.
 
 S3 verified. Proceeding to S4 (close).
+
+### S4 — CLOSE — DONE (final local commit; NO PUSH — awaits Preston's push word + felt pass)
+
+**Close deliverables:**
+- Acceptance card (CLOSE): `docs/checkpoints/r-shelf-acceptance-close.md` — every brief v3 §3–§4 + v4
+  §11 law sentence VERBATIM, walked 390 + 1280/1920, all PASS (Law 8 governs); OWNER felt rows blank.
+- Behavior-preservation inventory (pin 9): 20 live behaviors, each PRESERVED (evidence) or
+  RETIRED-BY-RULING (D5 List·Compact / pin 2 Sort / F4 status·author·tradition rails). Nothing silent.
+- Completeness inventory: 8 rows × both surfaces, no MISSING; + proposed ROW 9 (Behaviors).
+- Trial verdicts + canon proposals a/b/c/d: drafted in the acceptance-close doc, PROPOSED for Preston.
+
+**INTERACTIVE-CONTROL SWEEP (CLAUDE.md gate — every control fired live, own-state + effect @1280):**
+search (dim/lit) · mode toggle (lens is-on + aria + case is-lens; re-shelves) · value chips (illum) ·
+Manage open/close (aria-expanded) · Covers|Compact density (case cover 68px / 96px) · Select
+(armed→"Done" + is-selecting + checks visible) · pick → selectbar has-pick + count · Add → editor host
+mounts · arc-thread reveal (arcs-open + chip title, injected arc) · Scan/Barcode/Bulk/Resolve/Tidy
+(present + wired) · band-label→focus + See-all→focus + back→restore (390). ALL PASS.
+
+**PIN 10 initial-render (145-book fixture):** 74.7ms @1280 · 83.5ms @1360 · 46.5ms @390 — imperceptible
+for a one-shot render; slots pre-sized 96×144 (0 CLS); 122/122 covers lazy; bad-URL → spine.
+
+**BYTE RECONCILIATION (base `pre-rshelf` blob → working tree):**
+- js/views.js −26,051 (sidebar/rail machinery dissolved → leaner bookcase) · assets/components.css
+  +39,216 (bookcase block) · assets/theme.css +2,608 (new tokens) · sw.js +0 (equal-length version).
+- FOUNDATIONS INTACT: lumen-amber.css 14,966 · marks.js 10,255 (both unchanged). views.js 0 CR (LF).
+- NON-GOAL confirm: js/state.js + js/integrations.js UNTOUCHED (not in the diff) — display-only, zero
+  schema/state/data-writes. Byte-locks unbroken.
+
+**Cache:** sw.js CACHE_VERSION praxis-v3.241 → **v3.242** (the one bump, §6/pin 6).
+**Builder:** `tools/studio-build` regenerated `docs/studio/builder.html` (rides this commit, pin 6).
+**Docs currency:** sequence.md (Re-plan log + ## Now bullets), BOARD.md (row 4), books.md (round
+history + frontmatter render_fn 3730→4501; stale-anchor note recorded honestly).
+**Gate:** praxis-reviewer (pin 7) — verdict recorded below; red-team not required (display-only).
+
+**RESIDUALS / FLAGS (felt-pass judges; none block the build):**
+- Claude-specced dials: uniform-cover variance 5.5%; wheat desktop strip 104px (96–120 midpoint);
+  masonry column-balance delta 738px @1920 (structural — life-order binds the fill).
+- Order-by-life live signal RESOLVED as built (marginalia/finishedAt/addedAt); desk carrying-question
+  AUTHORING = named R-CAPTURE seam (D4).
+- Rig SW-stickiness: JS freshness needed the neutral-page SW-kill dance (documented); not a ship issue.
+
+**REVIEWER GATE (pin 7) — HOLD → RESOLVED (fix-once, pin 5).** praxis-reviewer returned HOLD with 2
+blocking + 1 non-blocking finding; all addressed in this commit and re-verified live:
+- **BLOCK 1 — zero-books empty-state regression (Gate 9).** The new renderShelfCase rendered a BLANK
+  case for a 0-book library (the old rich empty state was dropped). FIXED per pin 11 / Law 4: a
+  zero-books branch in renderShelfCase renders one quiet line ("Your shelf is open — add your first
+  book…") + the Add primary; renderShelfDesk suppresses its "Nothing in hand" line when the whole
+  library is empty (no double-empty). Live-verified: empty state shown + Add mounts the editor; normal
+  path (17 bands) intact; console clean.
+- **BLOCK 2 — S1 checkpoint byte/line delta mis-stated (Gate 3/10).** The S1 "net −604L / −63,557B"
+  was a mid-splice PowerShell working-tree reading, not the committed blob delta. CORRECTED to the
+  committed numbers (707 ins / 1551 del / −39,903 B) in the S1 slice log above.
+- **NON-BLOCK — dead `.desk-demo-toggle` selector (pin 4).** Removed from the mobile 44px rule (it
+  referenced excluded mockup dev chrome; 0 live DOM matches).
+Re-verify after fixes: parse-check `PARSE OK`; zero-books + normal path + Add live; console clean.
+Red-team not required (display-only, no data writes).
+
+**THE ROUND CLOSES ON PRESTON'S DUAL FELT READ (390 phone + desktop) ON PRODUCTION.** No push until
+his exact push word.
