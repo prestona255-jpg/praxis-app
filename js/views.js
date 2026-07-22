@@ -11193,8 +11193,12 @@ function renderSubTheoryPage(id) {
   // announces the crossing — finished only.
   if (published) {
     var stThreshold = document.createElement('p');
-    stThreshold.className = 'st-room-threshold';
-    stThreshold.textContent = 'entering the finished room';
+    // FINISH-CHOREO S2: the standing threshold label becomes the reader's answering line when
+    // one exists -- it now stands at the sub-theory's threshold; falls back to the default copy.
+    var _rSt = state.subTheories[id];
+    var _answer = (_rSt && typeof _rSt.answeringLine === 'string') ? _rSt.answeringLine.replace(/^\s+|\s+$/g, '') : '';
+    stThreshold.className = 'st-room-threshold' + (_answer ? ' has-answer' : '');
+    stThreshold.textContent = _answer || 'entering the finished room';
     wrap.appendChild(stThreshold);
   }
 
@@ -11557,11 +11561,24 @@ function renderSubTheoryBuild(id) {
   pub.addEventListener('click', function() {
     if (pubIsBasin()) { return; }
     var r = state.subTheories[id]; if (!r) return;
-    if (pubDone()) { r.status = 'draft'; r.publishedAt = null; }
-    else { r.status = 'published'; r.publishedAt = Date.now(); }
-    r.updatedAt = Date.now();
-    if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
-    saveState(); paintPub();
+    if (pubDone()) {
+      // reopen -- instant, ceremony-free (D2: the ceremony marks the crossing IN only).
+      r.status = 'draft'; r.publishedAt = null;
+      r.updatedAt = Date.now();
+      if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
+      saveState(); paintPub();
+      return;
+    }
+    // crossing IN -- FINISH-CHOREO S2: the threshold ceremony. onFinish runs the crossing-IN
+    // write AT the Finish site (B1, full sibling sequence), then the pill settles to Finished.
+    openThresholdCeremony(id, function(answer) {
+      var rr = state.subTheories[id]; if (!rr) { return; }
+      rr.status = 'published'; rr.publishedAt = Date.now();
+      rr.answeringLine = answer;
+      rr.updatedAt = Date.now();
+      if (typeof markSubTheoriesDirty === 'function') markSubTheoriesDirty();
+      saveState(); paintPub();
+    });
   });
   corner.appendChild(pub);
   var openPage = document.createElement('a');
@@ -20093,11 +20110,14 @@ function drainCommonsExits() {
 
 // A shared fade+slide overlay (scrim + panel). Esc / backdrop closes. No scale
 // (P9). CSS owns the reduced-motion instant path. Returns { panel, open, close }.
-function _pubOverlay() {
+function _pubOverlay(variantClass) {
   var scrim = document.createElement('div');
   scrim.className = 'pub-ceremony-scrim';
   var panel = document.createElement('div');
-  panel.className = 'pub-ceremony-panel';
+  // FINISH-CHOREO S2 (A1, ruled): one optional variant-class arg reuses the proven
+  // scrim/Esc/backdrop/fade+slide engine with a different panel skin. No arg = the
+  // shipped 'pub-ceremony-panel' (publish ceremony + unpublish confirm, unchanged).
+  panel.className = variantClass || 'pub-ceremony-panel';
   scrim.appendChild(panel);
   var keyHandler = null;
   function close() {
@@ -20113,6 +20133,152 @@ function _pubOverlay() {
     setTimeout(function () { scrim.classList.add('is-open'); }, 10);
   }
   return { scrim: scrim, panel: panel, open: open, close: close };
+}
+
+// FINISH-CHOREO S2 (THE THRESHOLD, D2) --------------------------------------------------
+// The finishing crossing: ONE quiet full-screen overlay (the A1 variant of _pubOverlay).
+// (i) an optional privacy sweep -- a plain "stays yours / travels" list, shown only when
+// private evidence exists, no toggles. (ii) the arc's central question verbatim as the
+// headline, the answering line (optional; PUBLIC-FACING), and Finish / Not yet. Reopening
+// is instant elsewhere -- this marks the crossing IN only. On Finish, onFinish(answer) runs
+// the crossing-IN write at the Finish site (B1). Not-yet / Esc / backdrop close with NO
+// write. Controls are Finish + Not yet only (no invented "continue" step).
+
+// A plain evidence label, replicating renderSubTheoryReadOnly's citeLine (books: "Author,
+// Title"; entries: title or a 60-char body snippet or "Note"; external: "Title -- Author").
+function _thresholdEvidenceLabel(el) {
+  if (el && el.kind === 'book') {
+    var bk = state.books && state.books[el.refId];
+    if (bk) { return bk.author ? (bk.author + ', ' + bk.title) : (bk.title || 'Book'); }
+    return 'Book';
+  }
+  if (el && el.kind === 'entry') {
+    var en = state.notebookEntries && state.notebookEntries[el.refId];
+    if (en) {
+      if (en.title) { return en.title; }
+      if (en.body) { return en.body.length > 60 ? (en.body.substring(0, 57) + '...') : en.body; }
+    }
+    return 'Note';
+  }
+  var ext = (el && el.external) ? el.external : {};
+  if (ext.title && ext.author) { return ext.title + ' — ' + ext.author; }
+  if (ext.title) { return ext.title; }
+  return 'External source';
+}
+
+function _thresholdSweepColumn(label, items) {
+  var col = document.createElement('div');
+  col.className = 'threshold-sweep-col';
+  var h = document.createElement('p');
+  h.className = 'threshold-sweep-label';
+  h.textContent = label;
+  col.appendChild(h);
+  var ul = document.createElement('ul');
+  ul.className = 'threshold-sweep-list';
+  var i;
+  if (!items.length) {
+    var none = document.createElement('li');
+    none.className = 'threshold-sweep-item is-none';
+    none.textContent = 'nothing';
+    ul.appendChild(none);
+  } else {
+    for (i = 0; i < items.length; i = i + 1) {
+      var it = document.createElement('li');
+      it.className = 'threshold-sweep-item';
+      it.textContent = _thresholdEvidenceLabel(items[i]);
+      ul.appendChild(it);
+    }
+  }
+  col.appendChild(ul);
+  return col;
+}
+
+function openThresholdCeremony(subId, onFinish) {
+  var sub = state.subTheories && state.subTheories[subId];
+  if (!sub) { return; }
+  var arc = (sub.arcId && state.arcs) ? state.arcs[sub.arcId] : null;
+  // The arc's central question IS arc.title verbatim (no separate field); blank -> "Unnamed",
+  // matching renderArcDetail's head precedent -- never an empty heading.
+  var hasTitle = !!(arc && arc.title);
+  var question = hasTitle ? arc.title : 'Unnamed';
+
+  // Privacy sweep source = evidencePrivate() replicated verbatim (views.js:10932): a
+  // kind:'entry' evidence whose live entry is private or gone stays yours; books, external,
+  // and non-private entries travel. attachedMarginalia is a dead write -> evidence[] only.
+  function evPrivate(el) {
+    if (!el || el.kind !== 'entry') { return false; }
+    var en = state.notebookEntries && state.notebookEntries[el.refId];
+    return (!en) || en.isPrivate === true;
+  }
+  var evidence = Array.isArray(sub.evidence) ? sub.evidence : [];
+  var stays = [], travels = [], i;
+  for (i = 0; i < evidence.length; i = i + 1) {
+    if (evPrivate(evidence[i])) { stays.push(evidence[i]); } else { travels.push(evidence[i]); }
+  }
+
+  var ov = _pubOverlay('threshold-panel');
+  var panel = ov.panel;
+  var inner = document.createElement('div');
+  inner.className = 'threshold-inner';
+  panel.appendChild(inner);
+
+  // (i) THE PRIVACY SWEEP -- only when private evidence exists (D2). A plain list, no toggles.
+  if (stays.length > 0) {
+    var sweep = document.createElement('div');
+    sweep.className = 'threshold-sweep';
+    sweep.appendChild(_thresholdSweepColumn('What stays yours', stays));
+    sweep.appendChild(_thresholdSweepColumn('What travels', travels));
+    inner.appendChild(sweep);
+  }
+
+  // (ii) THE THRESHOLD -- the question verbatim, the ask, the answering line, the actions.
+  var qEl = document.createElement('h2');
+  qEl.className = 'threshold-question' + (hasTitle ? '' : ' threshold-question-unnamed');
+  qEl.textContent = question;
+  inner.appendChild(qEl);
+
+  var ask = document.createElement('p');
+  ask.className = 'threshold-ask';
+  ask.textContent = 'Before this enters the finished room — how does it answer?';
+  inner.appendChild(ask);
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'threshold-input';
+  input.setAttribute('aria-label', 'Your answering line');
+  input.setAttribute('placeholder', 'Your answer, in a line');
+  // Re-finish prefill (anti-data-loss): keep a prior public answer unless the reader edits it.
+  input.value = (typeof sub.answeringLine === 'string') ? sub.answeringLine : '';
+  inner.appendChild(input);
+
+  var note = document.createElement('p');
+  note.className = 'threshold-note';
+  note.textContent = 'This line travels with it.';
+  inner.appendChild(note);
+
+  var actions = document.createElement('div');
+  actions.className = 'threshold-actions';
+  var finish = document.createElement('button');
+  finish.type = 'button';
+  finish.className = 'threshold-finish';
+  finish.textContent = 'Finish';
+  var notYet = document.createElement('button');
+  notYet.type = 'button';
+  notYet.className = 'threshold-notyet';
+  notYet.textContent = 'Not yet';
+  actions.appendChild(finish);
+  actions.appendChild(notYet);
+  inner.appendChild(actions);
+
+  finish.addEventListener('click', function() {
+    var answer = input.value.replace(/^\s+|\s+$/g, '');
+    ov.close();
+    if (typeof onFinish === 'function') { onFinish(answer); }
+  });
+  notYet.addEventListener('click', function() { ov.close(); });
+
+  ov.open();
+  setTimeout(function() { try { input.focus(); } catch (e) {} }, 40);
 }
 
 // The publish ceremony (D3): identity -> freshness -> what-travels/stays -> confirm.

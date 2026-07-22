@@ -14766,6 +14766,90 @@ body.wc-focus .app-nav { opacity:.26; }
 @media (prefers-reduced-motion: reduce) {
   .pub-ceremony-scrim, .pub-ceremony-panel { transition: none; }
 }
+
+/* ── FINISH-CHOREO S2 · THE THRESHOLD. A1 (ruled): reuses the _pubOverlay scrim/Esc/
+   backdrop/fade+slide engine with a DISTINCT QUIET FULL-SCREEN skin -- not a scaled-up
+   publish card. Two moves only (P9): opacity fade on the shared scrim + translateY slide
+   on the panel; NO scale() on any viewport; reduced-motion collapses to instant. Kit
+   tokens; ground-adaptive (--surface/--ink) so it sits over a light OR dark route. ── */
+.threshold-panel {
+  align-self: stretch; flex: 1 1 auto; width: 100%; max-width: none;
+  box-sizing: border-box; border: 0; border-radius: 0; box-shadow: none;
+  background: var(--surface); color: var(--ink);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 40px 24px calc(40px + env(safe-area-inset-bottom));
+  transform: translateY(18px);
+  transition: transform var(--dur-gentle) var(--ease-emphasis);
+}
+.pub-ceremony-scrim.is-open .threshold-panel { transform: translateY(0); }
+.threshold-inner { width: 100%; max-width: 560px; margin: 0 auto; }
+.threshold-sweep {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  padding: 0 0 24px; margin: 0 0 10px; border-bottom: 1px solid var(--border);
+}
+.threshold-sweep-col { flex: 1 1 160px; min-width: 0; }
+.threshold-sweep-label {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px;
+}
+.threshold-sweep-list { list-style: none; margin: 0; padding: 0; }
+.threshold-sweep-item {
+  font-family: var(--font-body); font-size: 13px; color: var(--ink-2);
+  line-height: 1.45; padding: 2px 0; word-break: break-word;
+}
+.threshold-sweep-item.is-none { color: var(--ink-3); font-style: italic; }
+.threshold-question {
+  font-family: var(--font-serif); font-weight: 500; font-size: clamp(26px, 5vw, 40px);
+  line-height: 1.15; color: var(--ink); margin: 8px 0 0;
+}
+.threshold-question-unnamed { color: var(--ink-3); }
+.threshold-ask {
+  font-family: var(--font-body); font-size: 15px; color: var(--ink-2);
+  line-height: 1.5; margin: 16px 0 22px;
+}
+.threshold-input {
+  width: 100%; box-sizing: border-box; font-family: var(--font-serif); font-size: 18px;
+  color: var(--ink); background: transparent; border: none;
+  border-bottom: 1px solid var(--border); border-radius: 0; padding: 8px 2px; outline: none;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.threshold-input::placeholder { color: var(--ink-3); }
+.threshold-input:focus { border-bottom-color: var(--gold); }
+.threshold-note {
+  font-family: var(--font-body); font-size: 12px; color: var(--ink-3);
+  line-height: 1.45; margin: 8px 0 0;
+}
+.threshold-actions { display: flex; align-items: center; gap: 12px; margin: 30px 0 0; }
+.threshold-finish {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; /* P3 tap target */
+  font-family: var(--font-body); font-size: 14px; color: var(--text-on-dark);
+  background: var(--grad); border: none; border-radius: var(--radius-pill);
+  padding: 0 26px; cursor: pointer;
+}
+.threshold-notyet {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; /* P3 tap target */
+  font-family: var(--font-body); font-size: 14px; color: var(--ink-2);
+  background: transparent; border: none; padding: 0 12px; cursor: pointer;
+}
+.threshold-notyet:hover { color: var(--ink); }
+.threshold-finish:focus-visible, .threshold-notyet:focus-visible,
+.threshold-input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+@media (max-width: 759px) {
+  .threshold-panel { padding: 15vh 20px calc(28px + env(safe-area-inset-bottom)); justify-content: flex-start; }
+  .threshold-sweep { gap: 18px; }
+  .threshold-input { font-size: 16px; } /* iOS focus-zoom guard (P7) */
+}
+@media (prefers-reduced-motion: reduce) { .threshold-panel { transition: none; } }
+
+/* S2: the standing st-room-threshold label becomes the reader's answering line when set --
+   a quiet serif sentence that wraps, dropping the mono-uppercase eyebrow + gild rule-lines
+   (the reader's own line now stands at the threshold). */
+.st-page.lum-amber-deep .st-room-threshold.has-answer {
+  display: block; font-family: var(--lum-serif); font-style: italic; font-size: 16px;
+  letter-spacing: 0; text-transform: none; color: var(--lum-ink-2); line-height: 1.5;
+}
+.st-page.lum-amber-deep .st-room-threshold.has-answer::before,
+.st-page.lum-amber-deep .st-room-threshold.has-answer::after { content: none; display: none; }
 .op-pub-unpub:hover { border-color: rgba(255,142,142,.4); color: var(--lum-rose); }
 .op-pub-panel { display: none; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--lum-glass-bd-2); border-radius: 12px; background: rgba(20,12,5,.35); }
 .op-pub-panel.is-open { display: flex; }

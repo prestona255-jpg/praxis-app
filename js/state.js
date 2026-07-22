@@ -732,6 +732,19 @@ function ensureSubTheoryFields(st) {
     st.originEntryId = null;
     changed = true;
   }
+  // FINISH-CHOREO S2 (THE THRESHOLD): answeringLine = the reader's answer to the arc's
+  // central question, authored at the finishing crossing. PUBLIC-FACING by design -- it
+  // travels with the finished sub-theory into the commons projection. Additive string, no
+  // SCHEMA_VERSION bump (the evidenceLayout precedent above -- no version-gated backfill).
+  // Defaulted at record creation and on the Firestore-merge load (integrations.js:301,
+  // unconditional per snapshot -> signed-in records backfill + sync via buildUserSubTheoriesDoc).
+  // The settled localStorage-only migrate() chain does NOT re-run on existing local records,
+  // but every read is typeof-guarded (views.js:11199 / 20251) so an absent field reads safely,
+  // and the Finish-write mutates it directly -- so correctness never depends on the backfill.
+  if (typeof st.answeringLine !== 'string') {
+    st.answeringLine = '';
+    changed = true;
+  }
   return changed;
 }
 

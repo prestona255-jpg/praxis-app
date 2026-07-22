@@ -41,6 +41,13 @@ flagged at the top of the Builder's sequence page for his call — never applied
   - **S2 = GO** (Preston, 2026-07-21): the S1 corroboration + felt checks landed (his reported verdicts; the OV
     flips ruled), so the standing gate is satisfied. The build lane is S2's until it ships; R-SHELF's build takes
     the lane on Preston's mockup felt-pass; ARC STANDARD's build queues behind R-SHELF.
+  - **S2 = BUILT + VERIFIED, committed-local, awaiting push** (2026-07-21): THE THRESHOLD is in a local commit
+    (data-write HOLD — pushes on Preston's exact word). Built: the full-screen finishing ceremony (parameterized
+    `_pubOverlay` variant, ruling A1) + the public `answeringLine` field (write at the Finish site, ruling B1;
+    `updateSubTheory` untouched) + threshold-label replacement + the conditional privacy sweep. Rulings A1/B1
+    ruled cold, one at a time. Red-team CLEAR + reviewer PASS after gate fixes; live-rig verified at 390/1360;
+    signed-in Firestore round-trip UNVERIFIED (rig signed out — Preston's live-smoke steps in the checkpoint).
+    Record: `docs/checkpoints/finish-choreo-s2.md` (+ recon §7b/§7c RULED block). **S3** (dignity + measure) remains.
   - **R-SHELF v3** committed (`docs/studio/r-shelf-brief.md` = the July-17 v3 recovered from the owner's download;
     supersedes the v2 at 3f5df8b; committed under its splice discipline — carry-forward blocks byte-identical to
     v2, NEW/AMENDED authoritative, splice diff-gate PASS). The mockup worktree spawns **off the v3 commit hash**;
