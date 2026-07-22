@@ -113,8 +113,10 @@ rather than a dev toggle.
 - c. Inventory **STATES row amended**: judged on real conditions, never dev toggles.
 - d. lessons.md mechanical truth: **"Media loads into pre-sized slots — zero CLS; a failed asset renders its fallback, never a hole."** — specimen: R-SHELF covers (145 slots 96×144 pre-sized; bad-URL → spine).
 
-OWNER rows (felt-pass judgments) left blank — Preston's, on production. The round closes only on his
-dual felt read (390 phone + desktop).
+OWNER rows (felt-pass judgments): **felt pass #1 = FAIL** (skin/seams/data-reality → the S5 slice);
+**felt pass #2 = PASS** (2026-07-22, Preston's dual felt read, 390 phone + desktop, on production,
+v3.243 `c90e70a`). ROUND CLOSED. All trials + G1–G5 RATIFIED into lessons.md + acceptance-card.md at
+this close.
 
 ---
 

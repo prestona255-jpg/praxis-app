@@ -182,7 +182,7 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
-### R-SHELF THE BOOKCASE — BUILT + VERIFIED, committed-local (2026-07-22, v3.243; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4 close + **S5 felt-fail fix**). Awaiting push + Preston's felt pass #2.
+### R-SHELF THE BOOKCASE — CLOSED (felt pass #2 = PASS, 2026-07-22, v3.243 `c90e70a`; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4 `e63374d` · S5 `c90e70a`). Live on production. Canon ratified: elevation loop + completeness inventory (permanent) · ROW 9 · STATES amendments · G1–G5 (lessons L11–L15) · 2 mechanical truths.
 
 **S5 (felt pass #1 FAILED — skin/seams/data-reality):** verified against Preston's REAL library (law G1;
 129-book index, 109 reading, 13 userThemes). R1 desk 6-cap + "+N more reading →" door (the uncapped

@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-22 (R-SHELF ROUND CLOSED — Preston-DIRECTED, felt pass #2 = PASS)** — the Shelf
+  re-composition is CLOSED on Preston's dual felt read (390 phone + desktop) on production; v3.243
+  `c90e70a` live. R-SHELF → Shipped. **All drafted close proposals RATIFIED** (this close-out docs
+  commit applies them): ELEVATION LOOP + COMPLETENESS INVENTORY → PERMANENT (acceptance-card.md);
+  inventory ROW 9 (Behaviors) + STATES real-conditions & distribution-skew amendments; two lessons.md
+  mechanical truths (tag-base-before-rewrite · media-into-pre-sized-slots); and **G1–G5 as law (L11–L15
+  in lessons.md, each with the 2026-07-22 R-SHELF specimen):** real-data substrate · computed-style
+  parity gate · inventory DRESS column · build-stage elevation pass · distribution-skew states. `## Now`
+  re-set to the 3 truest next moves — **THE ARC STANDARD build** (the shared build lane frees) →
+  R-CAPTURE (inherits the D4 carrying-question authoring seam) → FINISH-CHOREO S3. Downstream spine
+  unchanged. Preston-directed close; nothing retired, no decision contradicted — no `PROPOSED:` flag.
+  Builder regenerated. Records: `docs/checkpoints/r-shelf-build.md` (S1→S5) + `-acceptance-close.md`.
 - **2026-07-22 (R-SHELF S5 — FELT-FAIL FIX, built + verified on real data, committed-local, v3.243)** —
   felt pass #1 FAILED (bones passed; skin / seams / data-reality failed — the uncapped desk rendered
   Preston's 109 reading books in one row). S5 fixes, all verified against his REAL library snapshot
@@ -417,6 +429,20 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-SHELF — the Shelf re-composition (DEEP round, S1→S5, v3.242→v3.243; felt pass #2 = PASS
+  2026-07-22)** — the sidebar dissolved (F4) into a slim header (search + Categories⇄Lenses re-shelving
+  toggle + carried Manage/Add/Select + value chips); wheat horizon (F9) + the desk (NOW = still-reading,
+  F2; S5 6-cap + "+N more reading →" door) above the bookcase — carved cavities + gravity shelf-lines +
+  order-by-life (§11, derived-not-persisted) + THE WALL masonry (2/3/4 cols); mobile focused view +
+  See-all (A1/§3.7); illumination Law-1; pile / Ask-Yumi row. **S5 felt-fail fix on Preston's REAL
+  library closed it** (law G1): desk cap, labels-navigate, also-under demoted, caption de-link + AA-safe
+  inks (an accidental `*/` had dropped the --ink re-point since S1), editor light dress, safe-area,
+  ground seams. Push ledger `4a3c2e3..c90e70a`: S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4
+  `e63374d` · S5 `c90e70a`; v3.243 live. Fork rulings D1/D2/D4/D5/F7; display-only (no schema/state/
+  writes); byte-locks intact. Ratified into canon at close: elevation loop + completeness inventory
+  (permanent) · inventory ROW 9 (Behaviors) · STATES real-conditions + skew · G1–G5 (lessons L11–L15) ·
+  two mechanical truths. Records: `docs/checkpoints/r-shelf-build.md` (+ `-recon`, `-acceptance-close`);
+  ledger `docs/studio/books.md`. touches: [books]
 - [x] **R-POLISH — the pre-launch polish round (v3.231→v3.238)** — the pre-launch craft
   pass, run as BP-1v3 batches. **Slice-0** kit + proofs → **B1/B1-FIX** THE HOUR (v3.231/232)
   → **B2** the arc cluster (v3.233) → **B3** AES enforcement (v3.234; AES-1/2/5a + `--m1` rider,
@@ -660,18 +686,20 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**The 3 truest next moves after the R-POLISH close (2026-07-20). The runway view of
+**The 3 truest next moves after the R-SHELF close (2026-07-22). The runway view of
 the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [x] **FINISH-CHOREO S2 — THE THRESHOLD — CLOSED** (v3.241 `4621cd8`, live-smoke PASS 2026-07-22).
-  **S3** (motion dignity + measure) remains, riding where cheapest (not the lead).
-- [~] **R-SHELF — Shelf deep re-round — felt pass #1 FAILED → S5 felt-fail fix BUILT + VERIFIED on real
-  data, committed-local (v3.243), awaiting push + Preston's felt pass #2** (390 phone + desktop, on
-  production). S5 fixed the desk overflow + skin/seams/AA on his real 129-book library. Closes on felt
-  pass #2; the build lane then frees for THE ARC STANDARD build. `[books]`
-- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into
-  one entry, sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`).
-  `[import-capture, notebook]`
+- [ ] **THE ARC STANDARD — deep round (build)** — the arc-interior + sub-theory writing-surface
+  north-star at 1360 in THE HOUR world; mockup spec comes from chat (do-not-merge branch,
+  second-yes ratification, build-to-mockup, fidelity-gated). Absorbs LOOK-1, LOOK-2-arc-side, and
+  the arc-Field ledger (candy glyph palette, pill sprawl, dark-panel seam, stray glyph). **The
+  build lane is now FREE — R-SHELF shipped (v3.243, felt pass #2 PASS).** `[arcs, arc-detail, subtheory-build]`
+- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry,
+  sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`); shaping runs in chat during
+  ARC's build. **Now also owns the carrying-question AUTHORING seam surfaced at R-SHELF (ruling D4:
+  the desk line is carrying-question-OR-NOTHING; authoring lives here).** `[import-capture, notebook]`
+- [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
+  single shared `views.js`/`components.css` build lane (PIPELINE LAW).
 
 - [x] **R-POLISH — the pre-launch polish round — CLOSED 2026-07-20** (batches B1→B4 +
   B-M all shipped v3.231→v3.238; FX-1 add-guard pulled forward, v3.237). Detail in

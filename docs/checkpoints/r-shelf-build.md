@@ -308,3 +308,16 @@ pass needed.
 
 Cache v3.242 → **v3.243**. Builder regen rides the final commit. praxis-reviewer gates the commit.
 NO PUSH — awaits Preston's push word + felt pass #2 on production.
+
+---
+
+## ROUND CLOSED — felt pass #2 = PASS (2026-07-22)
+
+Preston's dual felt read (390 phone + desktop) on production PASSED; v3.243 `c90e70a` is live (push
+ledger `e63374d..c90e70a`). **R-SHELF is DONE** (S1→S5). Snapshot deleted (privacy; never tracked).
+All drafted close proposals RATIFIED and applied in the close-out docs commit: the elevation loop +
+completeness inventory → PERMANENT (acceptance-card.md); inventory ROW 9 (Behaviors) + STATES
+real-conditions & distribution-skew; two lessons.md mechanical truths; and **G1–G5 as law (lessons
+L11–L15)**. sequence.md: R-SHELF → Shipped; `## Now` re-set (THE ARC STANDARD build → R-CAPTURE →
+FINISH-CHOREO S3). The carrying-question authoring seam (D4) is carried to R-CAPTURE. **The shared
+build lane now frees for THE ARC STANDARD build.** Rollback tag `pre-rshelf` @ `4a3c2e3` retained.

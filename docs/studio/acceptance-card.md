@@ -74,11 +74,15 @@ Flags carried out: —
 
 ---
 
-# THE ELEVATION LOOP (⚠ TRIAL — ratify or drop at R-SHELF close)
+# THE ELEVATION LOOP — RATIFIED PERMANENT (Preston, R-SHELF close 2026-07-22)
 
-Purpose: the card above checks rule-compliance. This loop pushes the
-mockup to get BETTER before the owner felt pass. Runs after the card,
-before Preston.
+Purpose: the card above checks rule-compliance. This loop pushes the work
+to get BETTER before the owner felt pass. Runs after the card, before Preston.
+
+**G4 rider (ratified, lessons L14):** the loop re-scores the LIVE BUILD on the
+owner's real snapshot — not only the mockup. R-SHELF scored 18/18 at the mockup
+stage yet failed felt pass #1 on real data; the build-stage re-score (Craft/Quiet
+< 3 → in-ruled-space improvement) is now mandatory before the owner felt pass.
 
 ## THE SCORE — six axes, 0–3 each, max 18
 
@@ -119,12 +123,13 @@ Seed: 5/9 scorable. Session re-scores all six at 390, then runs passes.
 
 ---
 
-# THE COMPLETENESS INVENTORY (⚠ TRIAL — ratify or drop at R-SHELF close)
+# THE COMPLETENESS INVENTORY — RATIFIED PERMANENT (Preston, R-SHELF close 2026-07-22)
 
 Purpose: the card checks ruled things; the loop scores finish. This
 inventory checks for HOLES — the unruled space where pieces go missing.
-Runs at mockup delivery, BEFORE the elevation loop. Every row must be
-answered; a blank row = the stage isn't done.
+Runs at mockup delivery, BEFORE the elevation loop, AND re-run on the owner's
+real snapshot at the build stage. Every row must be answered; a blank row = the
+stage isn't done.
 
 Row states: SHOWN (evidence pointer) · N/A-OWNED (name the owning
 round) · MISSING (= FAIL — fix if ruled space allows, else HALT to
@@ -133,10 +138,11 @@ chat).
 | # | Anatomy | What "shown" means |
 |---|---|---|
 | 1 | Ground | the full visual background/landscape present, not placeholder |
-| 2 | States | empty · sparse · full/at-scale · error (where applicable) each demonstrated |
+| 2 | States | empty · sparse · full/at-scale · error demonstrated on **REAL conditions** (never a dev toggle), PLUS distribution-skew cases — a dominant-status majority, dense cross-membership, long titles (ratified G5/L15, specimen: R-SHELF's 85%-reading + 13-lens library) |
 | 3 | Controls | every visible control functional in the mockup, or marked static-by-design |
 | 4 | Widths | 390 / 1280 / 1920 walked (deferred widths = N/A-OWNED, named) |
 | 5 | Motion | every ruled animation present + reduced-motion behavior verified |
 | 6 | Marks | all meaning marks/indicators legible on their actual ground |
 | 7 | Text | zero placeholder/filler text surviving; registers match canon |
 | 8 | Seams | entries/exits to adjacent surfaces shown or explicitly out-of-round |
+| 9 | **Behaviors** | every live interactive behavior PRESERVED (evidence) or RETIRED-BY-RULING (citation) + a DRESS verdict — canon-styled or flagged (ratified G3/L13/ROW-9, specimen: R-SHELF, 2026-07-22) |

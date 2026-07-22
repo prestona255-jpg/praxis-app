@@ -77,6 +77,51 @@ Rule: agents verify everything tabulable (rects, counts, parity) headless
 on prestonpraxistest first; the owner felt pass at the owner viewport is
 reserved and cannot be simulated. prestona255 = read-only, always.
 
+**L11 — THE FIXTURE IS A LIE (real-data substrate). [=G1]**
+Specimen: R-SHELF (2026-07-22) — a synthetic 130-book fixture verified count-
+scale and passed every gate; felt pass #1 FAILED on Preston's real 129-book /
+109-reading library — the uncapped desk rendered 109 covers in one row,
+invisible to the fixture.
+Rule: a felt-gated visual round verifies on the OWNER'S REAL snapshot, not only a
+synthetic fixture — the fixture verifies count-scale, the snapshot verifies
+DISTRIBUTION-scale. Load the snapshot rig-only, git-exclude it (`.git/info/
+exclude`, verified untracked), delete at close; NEVER quote/excerpt/paraphrase
+note contents — counts, ids, lengths only.
+
+**L12 — COMPUTED-STYLE PARITY; AA OVERRIDES. [=G2]**
+Specimen: R-SHELF S5 — an accidental `*/` inside a CSS comment (`--gold*/`,
+`--card-*/`) closed the block early and DROPPED the --ink re-point rule from the
+CSSOM since S1, leaving author text stuck on the dark-ground --muted; and the
+mockup's author color (#978b6d) failed WCAG AA at 10.5px. Both invisible until a
+computed-style diff on real (long) names.
+Rule: for a sampled element set, diff computed font-family / size / weight /
+color / text-decoration BUILD vs MOCKUP; any mismatch is a finding. AA (the
+ground-check floor) OVERRIDES an exact-color match — record it DEVIATION-BY-AA.
+And never write `--token-*/` in a CSS comment: the `*/` closes it and drops the
+next rule.
+
+**L13 — PRESERVED BEHAVIOR IS DRESSED, NOT LEFT. [=G3]**
+Specimen: R-SHELF's add/edit editor rode a legacy dark slab (--surface-2 flips
+dark on the light route) mid-page through felt pass #1.
+Rule: every preserved-behavior surface in a rebuild carries a DRESS verdict on
+the inventory — canon-styled (evidence) or explicitly flagged to the owner
+(naming the owning round). No silent legacy skins.
+
+**L14 — ELEVATE THE BUILD, NOT THE MOCKUP. [=G4]**
+Specimen: R-SHELF passed the mockup-stage elevation loop 18/18, then failed the
+felt pass on the LIVE build with real data.
+Rule: the elevation loop re-scores the LIVE build on the real snapshot (not just
+the mockup); Craft or Quiet < 3 triggers an in-ruled-space improvement before the
+owner felt pass.
+
+**L15 — STATES INCLUDE THE SKEW. [=G5]**
+Specimen: R-SHELF's states were verified on a balanced fixture; the real
+library's 85%-reading majority + 13-userTheme dense membership broke the desk and
+stressed the lens wall.
+Rule: the completeness-inventory STATES row is judged on REAL conditions and adds
+distribution-skew cases — a dominant-status majority, dense cross-membership, long
+titles.
+
 ---
 
 ## MECHANICAL TRUTHS (one-liners, still binding)
@@ -90,6 +135,10 @@ reserved and cannot be simulated. prestona255 = read-only, always.
   string concat only.
 - Scroll-lock / handler cleanup lives in renderRoute.
 - Form fields >=16px font (P7); tap targets >=44px (P3).
+- Major surface rewrites tag their base (`git tag pre-<round>`) BEFORE slice 1 —
+  one-command rollback (specimen: pre-umber, pre-rshelf).
+- Media loads into PRE-SIZED slots — zero CLS; a failed asset renders its
+  fallback, never a hole (specimen: R-SHELF covers, 96×144 slots, spine on 404).
 
 ---
 
