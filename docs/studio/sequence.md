@@ -48,6 +48,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
     ruled cold, one at a time. Red-team CLEAR + reviewer PASS after gate fixes; live-rig verified at 390/1360;
     signed-in Firestore round-trip UNVERIFIED (rig signed out — Preston's live-smoke steps in the checkpoint).
     Record: `docs/checkpoints/finish-choreo-s2.md` (+ recon §7b/§7c RULED block). **S3** (dignity + measure) remains.
+  - **S2 = CLOSED** (2026-07-22): `4621cd8` v3.241 PUSHED + LIVE, and **Preston's live-smoke PASSED** on
+    his real signed-in account (finished a draft sub → reload → the answer stands at the threshold;
+    signed-in Firestore round-trip confirmed). The finishing ceremony is done. **The build lane now
+    frees for the R-SHELF build** (next in the serial order); **S3** (dignity + measure) rides where
+    cheapest. Felt observation carried to the ARC STANDARD round → `docs/studio/arc-standard.md`.
   - **R-SHELF v3** committed (`docs/studio/r-shelf-brief.md` = the July-17 v3 recovered from the owner's download;
     supersedes the v2 at 3f5df8b; committed under its splice discipline — carry-forward blocks byte-identical to
     v2, NEW/AMENDED authoritative, splice diff-gate PASS). The mockup worktree spawns **off the v3 commit hash**;

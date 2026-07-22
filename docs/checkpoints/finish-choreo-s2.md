@@ -125,7 +125,16 @@ MECHANICAL: parse OK (state.js, views.js); content Δ (LF-norm) **state +929 / v
 - Full reload→render E2E of persistence is blocked by the rig's auth-clobber-on-boot (per-user
   state key); proven instead by write-to-disk + the real load-side chokepoint preserving it.
 
-## AUTH-GATED WRITES — signed-in persistence UNVERIFIED (rig is signed out)
+## LIVE-SMOKE — PASS (Preston, real signed-in account, 2026-07-22)
+
+**Signed-in Firestore round-trip CONFIRMED.** Preston finished a draft sub-theory on his real
+account: the ceremony opened, the arc's central question showed verbatim, he wrote his answer, and
+after **reload** the answer stands at the finished threshold. The public `answeringLine` write
+persists to `/userSubTheories/{uid}` and reads back through the Firestore merge. The AUTH-GATED
+residual below is RESOLVED — the data-write is verified end-to-end on real infrastructure. **S2 is
+fully closed.**
+
+## AUTH-GATED WRITES — signed-in persistence (was UNVERIFIED; RESOLVED by the live-smoke above)
 
 Per CLAUDE.md's AUTH-GATED WRITES rule: this ships a new **public-facing** persisted field, and
 all verification ran on the rig's **stubbed localStorage** (`praxis_state_d0tester`), never a
