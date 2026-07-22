@@ -298,9 +298,11 @@ function setShelfView(v) {
 // 'lenses'. The allow-list coerces any corrupt/hand-edited value back to the
 // safe default in both the getter and setter.
 function getShelfGrouping() {
-  var v = ls('praxis_shelf_grouping', 'lenses');
+  // R-SHELF: default 'categories' — the bookcase opens on populated bands (lens
+  // mode groups by userThemes, which are barren until the reader makes lenses).
+  var v = ls('praxis_shelf_grouping', 'categories');
   if (v !== 'lenses' && v !== 'categories') {
-    return 'lenses';
+    return 'categories';
   }
   return v;
 }
@@ -4498,179 +4500,175 @@ var SHELF_THEMES = [
 // no add-book affordance, no editor in this sub-stage -- those land
 // in later 3.5a sub-stages. Each row links to #book/<id> via an
 // anchor so click-through hits renderBookDetail through the router.
+// ============================================================================
+// R-SHELF (v3.242) · renderShelf — THE BOOKCASE + WHEAT HORIZON
+// The Shelf re-composition (brief v4 THE FELT DIAL + THE WALL / order-by-life).
+// The sidebar dissolves (F4); a slim header (search + Categories/Lenses mode +
+// carried Manage/Add/Select + value chips) rides above the DESK (still-reading,
+// F2/§3.4) and THE CASE (bookcase bands / the wall). Illumination (value chips +
+// search) LIGHTS matches and DIMS the rest — never removes (Law 1). Order-by-life
+// arranges the case (§11). Signed-out is a HARD GATE (preserved). Manage sheet,
+// Select->Move-to-arc, and the classify/lens/value data compute are CARRIED.
+// Case/desk are filled by renderShelfCase / renderShelfDesk (below).
+// ============================================================================
 function renderShelf() {
   var host = document.getElementById(APP_EL_ID);
-  if (!host) return;
+  if (!host) { return; }
   host.innerHTML = '';
 
-  // 3.10b-i: purge any stale Escape handler from a previous render.
-  // The fresh render replaces the sidebar; the old handler closed
-  // over the now-detached old sidebar/backdrop pair. Without this,
-  // an Escape press between an auto-close (filter-click re-render)
-  // and the next open would no-op on the detached old sidebar and
-  // leak a listener. The open/dismiss path below rebinds cleanly.
-  if (shelfSidebarEscapeHandler) {
-    document.removeEventListener('keydown', shelfSidebarEscapeHandler);
-    shelfSidebarEscapeHandler = null;
-  }
-
-  // MW-1 (P1): purge any stale Manage-sheet Escape handler and release a page
-  // scroll-lock left behind if the sheet was open when a control inside it
-  // re-rendered the shelf (e.g. Covers/List, Select). The fresh render rebuilds
-  // the sheet closed; this is the twin of the filter-drawer cleanup above.
-  if (shelfManageEscapeHandler) {
-    document.removeEventListener('keydown', shelfManageEscapeHandler);
-    shelfManageEscapeHandler = null;
-  }
+  // Purge stale handlers + release any scroll-lock (twins of the live cleanup;
+  // renderRoute also purges these on every route change).
+  if (shelfManageEscapeHandler) { document.removeEventListener('keydown', shelfManageEscapeHandler); shelfManageEscapeHandler = null; }
+  if (shelfSidebarEscapeHandler) { document.removeEventListener('keydown', shelfSidebarEscapeHandler); shelfSidebarEscapeHandler = null; }
+  if (shelfHeadScrollHandler) { window.removeEventListener('scroll', shelfHeadScrollHandler); shelfHeadScrollHandler = null; }
+  if (shelfWheatResizeHandler) { window.removeEventListener('resize', shelfWheatResizeHandler); shelfWheatResizeHandler = null; }
   document.body.style.overflow = '';
-  // MW-1 (P5): purge the stale sticky-title scroll listener; it closed over the
-  // now-detached old head. Rebound below after the fresh head is built.
-  if (shelfHeadScrollHandler) {
-    window.removeEventListener('scroll', shelfHeadScrollHandler);
-    shelfHeadScrollHandler = null;
-  }
 
   var wrap = document.createElement('section');
-  // Wave 1: convert the Shelf to the Amber/Lumen system. The atmosphere class
-  // supplies the deep-amber "reading room" ground (lumen-amber.css:16); the
-  // .shelf.lum-amber-deep block in components.css layers lumen glass/gold/cyan
-  // over the theme-token base (same additive pattern as the Notebook).
   wrap.className = 'shelf lum-amber-deep' + (shelfSelecting ? ' is-selecting' : '');
+  if (shelfDensity === 'compact') { wrap.style.setProperty('--cover-w', '68px'); }
 
-  // W11 S8 Lane 1 (L3): your shelf is personal -- hard-gate signed-out (mirror
-  // #notebook: in-place prompt, no redirect). Replaces the prior soft-CTA
-  // (the signed-out "Sign in to add books" toolbar/empty branches, now removed).
-  var shelfGateUser = getCurrentUser();
-  if (!shelfGateUser || !shelfGateUser.uid) {
+  // PIN 1 — signed-out HARD GATE, preserved exactly (mirror #notebook).
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
     wrap.appendChild(buildSignedOutPrompt('Your shelf is private', 'Sign in to build your shelf — scan a spine, search a title, or paste a whole list. Your library is yours.'));
     host.appendChild(wrap);
     return;
   }
 
-  // Head (mock .shelf-head): "Your shelf" + a mono count line. The count is
-  // display-only aggregation (books · reading · finished) filling the mock's
-  // "N books · R reading · F finished" format with real data.
-  var head = document.createElement('div');
-  head.className = 'shelf-head';
-
-  var title = document.createElement('h1');
-  title.className = 'shelf-title';
-  title.textContent = 'Your shelf';
-  head.appendChild(title);
-
-  // FIX D: the shelf renders the signed-in user's bookIds INDEX, not all of
-  // state.books. state.books can hold orphan/duplicate records (added but never
-  // indexed, or whose index entry was lost) that are NOT on the shelf -- reading
-  // state.books showed them as duplicates with divergent read-status. Signed out
-  // keeps the legacy state.books read (seed / cached demo). shelfBookIds is
-  // reused by the grid assembly below.
-  var shelfUserForList = getCurrentUser();
-  var shelfBookIds = (shelfUserForList && state.userBooks &&
-                      state.userBooks[shelfUserForList.uid] &&
-                      state.userBooks[shelfUserForList.uid].bookIds)
-    ? state.userBooks[shelfUserForList.uid].bookIds : null;
-  var sbcMap = state.books || {};
-  var shelfBookCount = 0;
-  var shelfReadingCount = 0;
-  var shelfFinishedCount = 0;
-  var sbcId;
-  var sbRec;
-  var sbSt;
+  // The deduped library (FIX D bookIds index). Illumination dims, never removes,
+  // so the render set is the WHOLE library — grouping/order happen in the case.
+  var booksMap = state.books || {};
+  var shelfBookIds = (state.userBooks && state.userBooks[user.uid] && state.userBooks[user.uid].bookIds)
+    ? state.userBooks[user.uid].bookIds : null;
+  var allBooks = [];
+  var i, k;
   if (shelfBookIds) {
-    for (sbcId = 0; sbcId < shelfBookIds.length; sbcId = sbcId + 1) {
-      sbRec = sbcMap[shelfBookIds[sbcId]];
-      if (sbRec) {
-        shelfBookCount++;
-        sbSt = normalizeStatus(sbRec.status);
-        if (sbSt === 'read') { shelfFinishedCount++; }
-        else if (sbSt === 'reading') { shelfReadingCount++; }
-      }
-    }
+    for (i = 0; i < shelfBookIds.length; i = i + 1) { if (booksMap[shelfBookIds[i]]) { allBooks.push(booksMap[shelfBookIds[i]]); } }
   } else {
-    for (sbcId in sbcMap) {
-      if (Object.prototype.hasOwnProperty.call(sbcMap, sbcId) && sbcMap[sbcId]) {
-        sbRec = sbcMap[sbcId];
-        shelfBookCount++;
-        sbSt = normalizeStatus(sbRec.status);
-        if (sbSt === 'read') { shelfFinishedCount++; }
-        else if (sbSt === 'reading') { shelfReadingCount++; }
-      }
-    }
+    for (k in booksMap) { if (Object.prototype.hasOwnProperty.call(booksMap, k) && booksMap[k]) { allBooks.push(booksMap[k]); } }
   }
-  var countEl = document.createElement('span');
-  countEl.className = 'shelf-count';
-  countEl.textContent = shelfBookCount + (shelfBookCount === 1 ? ' book' : ' books')
-    + ' · ' + shelfReadingCount + ' reading · ' + shelfFinishedCount + ' finished';
-  head.appendChild(countEl);
 
-  wrap.appendChild(head);
+  // Head counts (books · reading · finished) — display-only aggregation.
+  var cReading = 0, cFinished = 0, st;
+  for (i = 0; i < allBooks.length; i = i + 1) {
+    st = normalizeStatus(allBooks[i].status);
+    if (st === 'read') { cFinished = cFinished + 1; }
+    else if (st === 'reading') { cReading = cReading + 1; }
+  }
 
-  // MW-1 (P5): sticky-title compaction. A threshold-guarded window scroll listener
-  // toggles .is-stuck on the head (CSS at <=759 steps font-size + padding; a no-op
-  // at >=760 where no .is-stuck rule exists). Purged + rebound each render (above).
-  shelfHeadScrollHandler = function () {
-    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
-    if (y > 6) { head.classList.add('is-stuck'); }
-    else { head.classList.remove('is-stuck'); }
+  // Render context — one source the case/desk/illumination helpers read.
+  var valueList = [];
+  shelfCtx = {
+    books: allBooks,
+    alight: shelfComputeAlight(),
+    arcs: shelfComputeArcsByBook(),
+    valueCounts: shelfComputeValueCounts(allBooks, valueList),
+    valueList: valueList,
+    mode: getShelfGrouping()
   };
-  window.addEventListener('scroll', shelfHeadScrollHandler);
-  shelfHeadScrollHandler();   // set the initial state for an already-scrolled re-render
 
-  // S-D1 (Wave 1): a deterministic, count-based reading line in Yumi's cyan
-  // voice -- NOT generative (no model call, no interpretive "leans toward").
-  // Text is filled from the real top lens once the lens tally is computed
-  // below; hidden entirely when no lens has books (never fabricated).
-  var shelfLean = document.createElement('div');
-  shelfLean.className = 'lum-yumi shelf-yumiline';
-  shelfLean.style.display = 'none';
-  var shelfLeanDot = document.createElement('span');
-  shelfLeanDot.className = 'dot';
-  shelfLeanDot.setAttribute('aria-hidden', 'true');
-  var shelfLeanP = document.createElement('p');
-  shelfLean.appendChild(shelfLeanDot);
-  shelfLean.appendChild(shelfLeanP);
-  wrap.appendChild(shelfLean);
+  // ---- F9/§3.5 · the horizon strip (filled by buildShelfWheat after mount) ----
+  var strip = document.createElement('div');
+  strip.className = 'horizon-strip';
+  strip.id = 'shelf-horizon';
+  strip.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(strip);
 
-  // Toolbar (mock .shelf-toolbar, canon §4-E declutter): one primary "Add a
-  // book" + the Covers|List segmented + a quiet "Filters" toggle + spacer +
-  // quiet chips for the secondary actions + the search. All live handlers and
-  // both photo paths (camera scan + barcode) are preserved -- only the visual
-  // grouping changes (header child -> a single decluttered toolbar).
-  var toolbar = document.createElement('div');
-  toolbar.className = 'shelf-toolbar';
+  var inner = document.createElement('div');
+  inner.className = 'shelf-inner';
 
-  var user = getCurrentUser();
+  // ===== F4/§3.8 · the slim header =====
+  var header = document.createElement('header');
+  header.className = 'shelf-slim-header';
 
-  // MW-1 P1 (ON-2 REFERENCE IMPLEMENTATION): one "Manage" control at every
-  // viewport. The always-visible toolbar keeps Add-a-book + Sort + Filters +
-  // the filter field; the seven secondary controls (Covers|List, Select, Scan
-  // shelf, Scan barcode, Bulk add, Resolve covers, Tidy library) move into this
-  // Manage container -- a bottom SHEET at <=759, an anchored POPOVER >=760, ONE
-  // code path (CSS differentiates by width). Those controls are appended into
-  // manageBody AS THEY ARE CREATED below, so their live handlers ride with the
-  // elements untouched (the W3 relocate-without-rewire lesson). Universal tokens
-  // only; solid chrome, no blur (canon rail A). Focus moves in on open and
-  // returns to the trigger on close; the page scroll locks while the sheet is
-  // open on mobile.
+  var top = document.createElement('div');
+  top.className = 'shelf-slim-top';
+  var h1 = document.createElement('h1');
+  h1.textContent = 'Shelf';
+  top.appendChild(h1);
+  var countEl = document.createElement('span');
+  countEl.className = 'shelf-slim-count';
+  countEl.textContent = allBooks.length + (allBooks.length === 1 ? ' book' : ' books')
+    + ' · ' + cReading + ' reading · ' + cFinished + ' finished';
+  top.appendChild(countEl);
+  header.appendChild(top);
+
+  var controls = document.createElement('div');
+  controls.className = 'shelf-slim-controls';
+
+  // Search — illuminates (dims non-matching); never removes (Law 1). A light
+  // re-render of case+desk keeps the input mounted, so focus is never lost.
+  var searchLabel = document.createElement('label');
+  searchLabel.className = 'shelf-search';
+  var sGlyph = document.createElement('span');
+  sGlyph.className = 's-glyph';
+  sGlyph.setAttribute('aria-hidden', 'true');
+  sGlyph.textContent = '⌕';
+  searchLabel.appendChild(sGlyph);
+  var searchInput = document.createElement('input');
+  searchInput.id = 'shelf-search-input';
+  searchInput.type = 'search';
+  searchInput.setAttribute('inputmode', 'search');
+  searchInput.setAttribute('placeholder', 'Search your shelf…');
+  searchInput.setAttribute('aria-label', 'Search your shelf');
+  searchInput.value = shelfSearchRaw;
+  searchInput.addEventListener('input', function () {
+    shelfSearchRaw = this.value;
+    if (shelfSearchTimer) { clearTimeout(shelfSearchTimer); }
+    shelfSearchTimer = setTimeout(function () {
+      shelfSearchQuery = shelfSearchRaw.trim().toLowerCase();
+      applyShelfIllumination();
+    }, 200);
+  });
+  searchLabel.appendChild(searchInput);
+  controls.appendChild(searchLabel);
+
+  // F1 — Categories <-> Lenses mode toggle (a re-shelving act; the case regroups).
+  var modeSeg = document.createElement('div');
+  modeSeg.className = 'mode-seg';
+  modeSeg.setAttribute('role', 'tablist');
+  modeSeg.setAttribute('aria-label', 'Shelving mode');
+  var modes = [ { k: 'categories', l: 'Categories' }, { k: 'lenses', l: 'Lenses' } ];
+  var curMode = getShelfGrouping();
+  for (i = 0; i < modes.length; i = i + 1) {
+    (function (m) {
+      var mb = document.createElement('button');
+      mb.type = 'button';
+      mb.setAttribute('role', 'tab');
+      mb.className = (curMode === m.k) ? 'is-on' : '';
+      mb.setAttribute('aria-selected', curMode === m.k ? 'true' : 'false');
+      mb.textContent = m.l;
+      mb.addEventListener('click', function () {
+        if (getShelfGrouping() === m.k) { return; }
+        setShelfGrouping(m.k);
+        renderShelf();
+      });
+      modeSeg.appendChild(mb);
+    })(modes[i]);
+  }
+  controls.appendChild(modeSeg);
+
+  // ---- Manage sheet (CARRIED, NON-GOAL): Covers|Compact + Select + Scan/Bulk/
+  //      Resolve/Tidy tuck into one Manage control (MW-1 P1). One code path;
+  //      CSS differentiates the desktop popover vs the mobile bottom sheet. ----
+  var manageEntry = document.createElement('div');
+  manageEntry.className = 'shelf-manage-entry';
   var manageWrap = document.createElement('div');
   manageWrap.className = 'shelf-manage';
-
   var manageBtn = document.createElement('button');
   manageBtn.type = 'button';
   manageBtn.className = 'btn btn-quiet shelf-manage-btn';
   manageBtn.setAttribute('aria-haspopup', 'true');
   manageBtn.setAttribute('aria-expanded', 'false');
   manageBtn.textContent = 'Manage';
-
   var manageBackdrop = document.createElement('div');
   manageBackdrop.className = 'shelf-manage-backdrop';
-
   var manageSheet = document.createElement('div');
   manageSheet.className = 'shelf-manage-sheet';
   manageSheet.setAttribute('role', 'dialog');
   manageSheet.setAttribute('aria-modal', 'false');
   manageSheet.setAttribute('aria-label', 'Manage shelf');
-
   var manageHead = document.createElement('div');
   manageHead.className = 'shelf-manage-head';
   var manageTitle = document.createElement('span');
@@ -4684,33 +4682,25 @@ function renderShelf() {
   manageClose.textContent = '×';
   manageHead.appendChild(manageClose);
   manageSheet.appendChild(manageHead);
-
   var manageBody = document.createElement('div');
   manageBody.className = 'shelf-manage-body';
   manageSheet.appendChild(manageBody);
-
   manageWrap.appendChild(manageBtn);
   manageWrap.appendChild(manageBackdrop);
   manageWrap.appendChild(manageSheet);
+  manageEntry.appendChild(manageWrap);
 
   function openManageSheet() {
     manageWrap.classList.add('is-open');
     manageBtn.setAttribute('aria-expanded', 'true');
-    // Lock the page scroll only for the mobile bottom sheet (the desktop
-    // popover leaves the page scrollable, as popovers do). The mobile sheet is
-    // effectively modal (scrim + scroll-lock + focus-in) so aria-modal tracks it.
     if (window.matchMedia('(max-width: 759px)').matches) {
       document.body.style.overflow = 'hidden';
       manageSheet.setAttribute('aria-modal', 'true');
     } else {
       manageSheet.setAttribute('aria-modal', 'false');
     }
-    if (shelfManageEscapeHandler) {
-      document.removeEventListener('keydown', shelfManageEscapeHandler);
-    }
-    shelfManageEscapeHandler = function (ev) {
-      if (ev.key === 'Escape' || ev.key === 'Esc') { closeManageSheet(); }
-    };
+    if (shelfManageEscapeHandler) { document.removeEventListener('keydown', shelfManageEscapeHandler); }
+    shelfManageEscapeHandler = function (ev) { if (ev.key === 'Escape' || ev.key === 'Esc') { closeManageSheet(); } };
     document.addEventListener('keydown', shelfManageEscapeHandler);
     manageClose.focus();
   }
@@ -4719,113 +4709,35 @@ function renderShelf() {
     manageBtn.setAttribute('aria-expanded', 'false');
     manageSheet.setAttribute('aria-modal', 'false');
     document.body.style.overflow = '';
-    if (shelfManageEscapeHandler) {
-      document.removeEventListener('keydown', shelfManageEscapeHandler);
-      shelfManageEscapeHandler = null;
-    }
+    if (shelfManageEscapeHandler) { document.removeEventListener('keydown', shelfManageEscapeHandler); shelfManageEscapeHandler = null; }
     manageBtn.focus();
   }
   manageBtn.addEventListener('click', function () {
-    if (manageWrap.classList.contains('is-open')) { closeManageSheet(); }
-    else { openManageSheet(); }
+    if (manageWrap.classList.contains('is-open')) { closeManageSheet(); } else { openManageSheet(); }
   });
   manageBackdrop.addEventListener('click', closeManageSheet);
   manageClose.addEventListener('click', closeManageSheet);
 
-  // Primary: signed-in "Add a book" (opens the inline editor). Signed-out never
-  // reaches here -- the top-of-function hard-gate returns first (W11 S8 Lane 1).
-  // .shelf-add-primary marks it for the P2 mobile thumb-zone relocation (CSS).
-  var newBtn = document.createElement('button');
-  newBtn.type = 'button';
-  newBtn.className = 'btn btn-primary shelf-add-primary';
-  newBtn.textContent = '＋ Add a book';
-  newBtn.addEventListener('click', function() {
-    openShelfEditor();
-  });
-  toolbar.appendChild(newBtn);
-
-  // Covers | List segmented (mock .seg). LIVE handlers preserved.
-  var shelfViewMode = getShelfView();
-  var seg = document.createElement('div');
-  seg.className = 'seg';
-  seg.setAttribute('role', 'tablist');
-  seg.setAttribute('aria-label', 'Shelf view');
-  var segCovers = document.createElement('button');
-  segCovers.type = 'button';
-  segCovers.className = 'seg-opt' + (shelfViewMode === 'covers' ? ' is-on' : '');
-  segCovers.setAttribute('data-shelf-view', 'covers');
-  segCovers.textContent = 'Covers';
-  segCovers.addEventListener('click', function() {
-    setShelfView('covers');
-    renderShelf();
-  });
-  seg.appendChild(segCovers);
-  var segList = document.createElement('button');
-  segList.type = 'button';
-  segList.className = 'seg-opt' + (shelfViewMode === 'list' ? ' is-on' : '');
-  segList.setAttribute('data-shelf-view', 'list');
-  segList.textContent = 'List';
-  segList.addEventListener('click', function() {
-    setShelfView('list');
-    renderShelf();
-  });
-  seg.appendChild(segList);
-  manageBody.appendChild(seg);   // MW-1 P1: Covers|List lives in the Manage sheet
-
-  // 3c (R2): Sort control (decision 4). Quiet dropdown -- date-added default +
-  // reading status. Grouping is NOT duplicated here (it stays on the sidebar
-  // Lenses|Categories seg). Applies via the shelfSort branch in books.sort above.
-  var sortWrap = document.createElement('div');
-  sortWrap.className = 'shelf-sort';
-  var sortBtn = document.createElement('button');
-  sortBtn.type = 'button';
-  sortBtn.className = 'shelf-sort-btn';
-  sortBtn.id = 'shelf-sort-btn';
-  sortBtn.appendChild(document.createTextNode('Sort: '));
-  var sortLabel = document.createElement('span');
-  sortLabel.textContent = (shelfSort === 'status') ? 'Reading status' : 'Date added';
-  sortBtn.appendChild(sortLabel);
-  var sortCaret = document.createElement('span');
-  sortCaret.className = 'caret';
-  sortCaret.textContent = '▼';
-  sortBtn.appendChild(sortCaret);
-  var sortMenu = document.createElement('div');
-  sortMenu.className = 'shelf-sort-menu';
-  sortBtn.addEventListener('click', function (ev) {
-    ev.stopPropagation();
-    if (sortMenu.className.indexOf('is-open') > -1) {
-      sortMenu.className = 'shelf-sort-menu';
-    } else {
-      sortMenu.className = 'shelf-sort-menu is-open';
-      var closeOnce = function () {
-        sortMenu.className = 'shelf-sort-menu';
-        document.removeEventListener('click', closeOnce);
-      };
-      document.addEventListener('click', closeOnce);
-    }
-  });
-  var SORT_OPTS = [ { key: 'added', label: 'Date added' }, { key: 'status', label: 'Reading status' } ];
-  var soi;
-  for (soi = 0; soi < SORT_OPTS.length; soi = soi + 1) {
-    (function (opt) {
-      var ob = document.createElement('button');
-      ob.type = 'button';
-      ob.className = (shelfSort === opt.key) ? 'is-on' : '';
-      ob.setAttribute('data-sort', opt.key);
-      ob.textContent = opt.label;
-      ob.addEventListener('click', function () {
-        shelfSort = opt.key;
-        renderShelf();
-      });
-      sortMenu.appendChild(ob);
-    })(SORT_OPTS[soi]);
+  // D5 — Covers | Compact density (runtime, session-persistent via shelfDensity).
+  var densitySeg = document.createElement('div');
+  densitySeg.className = 'seg';
+  densitySeg.setAttribute('role', 'tablist');
+  densitySeg.setAttribute('aria-label', 'Cover density');
+  var dens = [ { k: 'covers', l: 'Covers' }, { k: 'compact', l: 'Compact' } ];
+  for (i = 0; i < dens.length; i = i + 1) {
+    (function (d) {
+      var db = document.createElement('button');
+      db.type = 'button';
+      db.className = 'seg-opt' + (shelfDensity === d.k ? ' is-on' : '');
+      db.setAttribute('data-density', d.k);
+      db.textContent = d.l;
+      db.addEventListener('click', function () { shelfDensity = d.k; renderShelf(); });
+      densitySeg.appendChild(db);
+    })(dens[i]);
   }
-  sortWrap.appendChild(sortBtn);
-  sortWrap.appendChild(sortMenu);
-  toolbar.appendChild(sortWrap);
+  manageBody.appendChild(densitySeg);
 
-  // 3b (R2): Select toggle (decision 2). Arms bulk Select mode; its ONLY action
-  // is Move to arc (the action bar below). A quiet chip; is-armed when on.
+  // Select -> Move to an arc (the only bulk action). Carried live behavior.
   var selectBtn = document.createElement('button');
   selectBtn.type = 'button';
   selectBtn.className = 'btn chip shelf-select-toggle' + (shelfSelecting ? ' is-armed' : '');
@@ -4835,1157 +4747,159 @@ function renderShelf() {
     if (!shelfSelecting) { shelfPicked = {}; }
     renderShelf();
   });
-  manageBody.appendChild(selectBtn);   // MW-1 P1: Select lives in the Manage sheet
+  manageBody.appendChild(selectBtn);
 
-  // Filters toggle (mock .shelf-filters-btn). Desktop-hidden by CSS (the
-  // sidebar is always visible there); on mobile it opens the filter drawer.
-  // The handler references sidebar / backdrop / the panel fns + shelfRailOpen,
-  // all assigned later in this render -- closures resolve at click time.
-  var filterBtn = document.createElement('button');
-  filterBtn.type = 'button';
-  filterBtn.id = 'shelf-filters-btn';
-  filterBtn.className = 'btn btn-quiet shelf-filters-btn';
-  filterBtn.textContent = 'Filters';
-  filterBtn.addEventListener('click', function() {
-    if (window.matchMedia('(min-width: 760px)').matches) {
-      shelfRailOpen = !shelfRailOpen;
-      renderShelf();
-    } else if (sidebar.classList.contains('shelf-sidebar-mobile-open')) {
-      dismissShelfFilterPanel();
-    } else {
-      openShelfFilterPanel();
+  // Secondary actions -> chips (carried; both photo paths preserved).
+  var scanBtn = document.createElement('button');
+  scanBtn.type = 'button';
+  scanBtn.className = 'chip shelf-scan-btn';
+  scanBtn.textContent = 'Scan shelf';
+  scanBtn.title = 'Photograph one shelf at a time, filling the frame';
+  var scanInput = document.createElement('input');
+  scanInput.type = 'file';
+  scanInput.accept = 'image/*';
+  scanInput.setAttribute('capture', 'environment');
+  scanInput.className = 'shelf-scan-input';
+  scanBtn.addEventListener('click', function () { scanInput.click(); });
+  scanInput.addEventListener('change', function () { handleShelfScanFile(scanInput, scanBtn); });
+  manageBody.appendChild(scanBtn);
+  manageBody.appendChild(scanInput);
+
+  var barcodeBtn = document.createElement('button');
+  barcodeBtn.type = 'button';
+  barcodeBtn.className = 'chip shelf-barcode-btn';
+  barcodeBtn.textContent = 'Scan barcode';
+  barcodeBtn.addEventListener('click', function () { openBarcodeScanner(); });
+  manageBody.appendChild(barcodeBtn);
+
+  var bulkBtn = document.createElement('button');
+  bulkBtn.type = 'button';
+  bulkBtn.className = 'chip shelf-new-book-bulk';
+  bulkBtn.textContent = 'Bulk add';
+  bulkBtn.addEventListener('click', function () { openBulkAddEditor(); });
+  manageBody.appendChild(bulkBtn);
+
+  var resolveBtn = document.createElement('button');
+  resolveBtn.type = 'button';
+  resolveBtn.className = 'chip shelf-resolve-covers-btn';
+  if (coverResolveState.running) {
+    resolveBtn.textContent = 'Resolving ' + coverResolveState.completed + ' of ' + coverResolveState.total;
+    resolveBtn.disabled = true;
+  } else {
+    resolveBtn.textContent = 'Resolve covers';
+  }
+  resolveBtn.addEventListener('click', function () { startCoverBackfill(); });
+  manageBody.appendChild(resolveBtn);
+
+  var tidyBtn = document.createElement('button');
+  tidyBtn.type = 'button';
+  tidyBtn.className = 'chip shelf-tidy-btn';
+  tidyBtn.textContent = 'Tidy library';
+  tidyBtn.addEventListener('click', function () { openLibraryCleanup(); });
+  manageBody.appendChild(tidyBtn);
+
+  controls.appendChild(manageEntry);
+
+  // Add a book (CARRIED primary; the P2 mobile FAB relocation rides .shelf-add-primary).
+  var addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'btn btn-primary shelf-add-primary';
+  addBtn.textContent = '＋ Add a book';
+  addBtn.addEventListener('click', function () { openShelfEditor(); });
+  controls.appendChild(addBtn);
+
+  header.appendChild(controls);
+
+  // F6 · value chips — illuminate matches, dim the rest. Counts == data (deduped
+  // once per book). Rendered only when the shelf carries value-marks.
+  if (valueList.length > 0) {
+    var chips = document.createElement('div');
+    chips.className = 'value-chips';
+    var vlabel = document.createElement('span');
+    vlabel.className = 'vlabel';
+    vlabel.textContent = 'Values';
+    chips.appendChild(vlabel);
+    for (i = 0; i < valueList.length; i = i + 1) {
+      (function (v) {
+        var ch = document.createElement('button');
+        ch.type = 'button';
+        ch.className = 'vchip' + (shelfFilter.value === v ? ' is-on' : '');
+        ch.setAttribute('data-value', v);
+        ch.appendChild(document.createTextNode(v));
+        var cnt = document.createElement('span');
+        cnt.className = 'vcount';
+        cnt.textContent = '' + (shelfCtx.valueCounts[v] || 0);
+        ch.appendChild(cnt);
+        ch.addEventListener('click', function () {
+          shelfFilter.value = (shelfFilter.value === v) ? null : v;
+          var all = chips.getElementsByClassName('vchip'), j;
+          for (j = 0; j < all.length; j = j + 1) {
+            all[j].className = 'vchip' + (all[j].getAttribute('data-value') === shelfFilter.value ? ' is-on' : '');
+          }
+          applyShelfIllumination();
+        });
+        chips.appendChild(ch);
+      })(valueList[i]);
     }
-  });
-  toolbar.appendChild(filterBtn);
-
-  // MW-1 P1: the Manage trigger + its sheet/popover sit right after Filters,
-  // visible at every viewport. The seven secondary controls were appended into
-  // manageSheet's body above/below at their creation sites.
-  toolbar.appendChild(manageWrap);
-
-  var toolbarSpacer = document.createElement('span');
-  toolbarSpacer.className = 'spacer';
-  toolbar.appendChild(toolbarSpacer);
-
-  // Secondary actions -> quiet chips (signed-in only). All live handlers + both
-  // photo capture paths (camera scan + barcode) preserved.
-  if (user) {
-    // 6.1b: shelf-photo scan (camera capture -> vision-proxy).
-    var scanBtn = document.createElement('button');
-    scanBtn.type = 'button';
-    scanBtn.className = 'chip shelf-scan-btn';
-    scanBtn.textContent = 'Scan shelf';
-    scanBtn.title = 'Photograph one shelf at a time, filling the frame';
-    var scanInput = document.createElement('input');
-    scanInput.type = 'file';
-    scanInput.accept = 'image/*';
-    scanInput.setAttribute('capture', 'environment');
-    scanInput.className = 'shelf-scan-input';
-    scanBtn.addEventListener('click', function() {
-      scanInput.click();
-    });
-    scanInput.addEventListener('change', function() {
-      handleShelfScanFile(scanInput, scanBtn);
-    });
-    manageBody.appendChild(scanBtn);    // MW-1 P1: Scan shelf -> Manage sheet
-    manageBody.appendChild(scanInput);
-
-    // Phase 3: barcode / ISBN entry point (BarcodeDetector + ISBN fallback).
-    var barcodeBtn = document.createElement('button');
-    barcodeBtn.type = 'button';
-    barcodeBtn.className = 'chip shelf-barcode-btn';
-    barcodeBtn.textContent = 'Scan barcode';
-    barcodeBtn.addEventListener('click', function() {
-      openBarcodeScanner();
-    });
-    manageBody.appendChild(barcodeBtn);   // MW-1 P1: Scan barcode -> Manage sheet
-
-    var bulkBtn = document.createElement('button');
-    bulkBtn.type = 'button';
-    bulkBtn.className = 'chip shelf-new-book-bulk';
-    bulkBtn.textContent = 'Bulk add';
-    bulkBtn.addEventListener('click', function() {
-      openBulkAddEditor();
-    });
-    manageBody.appendChild(bulkBtn);   // MW-1 P1: Bulk add -> Manage sheet
-
-    // 3.10d: resolve missing covers (title-imported books). Running-state label
-    // + disabled read from coverResolveState (lives outside the DOM).
-    var resolveBtn = document.createElement('button');
-    resolveBtn.type = 'button';
-    resolveBtn.className = 'chip shelf-resolve-covers-btn';
-    if (coverResolveState.running) {
-      resolveBtn.textContent = 'Resolving ' +
-        coverResolveState.completed + ' of ' + coverResolveState.total;
-      resolveBtn.disabled = true;
-    } else {
-      resolveBtn.textContent = 'Resolve covers';
-    }
-    resolveBtn.addEventListener('click', function() {
-      startCoverBackfill();
-    });
-    manageBody.appendChild(resolveBtn);   // MW-1 P1: Resolve covers -> Manage sheet
-
-    // Phase 6: one-time library cleanup (de-dupe + missing covers).
-    var tidyBtn = document.createElement('button');
-    tidyBtn.type = 'button';
-    tidyBtn.className = 'chip shelf-tidy-btn';
-    tidyBtn.textContent = 'Tidy library';
-    tidyBtn.addEventListener('click', function() {
-      openLibraryCleanup();
-    });
-    manageBody.appendChild(tidyBtn);   // MW-1 P1: Tidy library -> Manage sheet
+    header.appendChild(chips);
   }
 
-  // Search (mock .nav-search): a LIVE grid filter (title OR author substring).
-  var searchWell = document.createElement('div');
-  searchWell.className = 'nav-search shelf-search-well';
-  var searchGlyph = document.createElement('span');
-  searchGlyph.setAttribute('aria-hidden', 'true');
-  searchGlyph.textContent = '⌕';
-  searchWell.appendChild(searchGlyph);
-  var searchInput = document.createElement('input');
-  searchInput.id = 'shelf-search-input';
-  searchInput.className = 'shelf-search-input';
-  searchInput.type = 'search';
-  searchInput.setAttribute('inputmode', 'search');   // MW-1 P7: non-prose field hint
-  searchInput.setAttribute('placeholder', 'Filter shelf…');
-  searchInput.setAttribute('aria-label', 'Filter shelf');
-  searchInput.value = shelfSearchRaw;
-  searchInput.addEventListener('input', onShelfSearchInput);
-  searchWell.appendChild(searchInput);
-  toolbar.appendChild(searchWell);
+  // search/value empty line (shown by applyShelfIllumination when nothing matches)
+  var emptyLine = document.createElement('div');
+  emptyLine.className = 'search-empty-line';
+  emptyLine.id = 'shelf-search-empty';
+  emptyLine.textContent = 'no books match this search — try another title, author, or value';
+  header.appendChild(emptyLine);
 
-  wrap.appendChild(toolbar);
+  inner.appendChild(header);
 
-  // 6.1c: visible scan status line (empty/error messaging). Collapsed when
-  // empty (:empty in CSS). Filled/cleared by showScanStatus/clearScanStatus.
+  // ===== F2/§3.4 · the desk (NOW) — filled by renderShelfDesk =====
+  var desk = document.createElement('section');
+  desk.className = 'desk';
+  desk.id = 'shelf-desk';
+  var deskHead = document.createElement('div');
+  deskHead.className = 'desk-head';
+  var deskH2 = document.createElement('h2');
+  deskH2.textContent = 'Now';
+  deskHead.appendChild(deskH2);
+  var deskCount = document.createElement('span');
+  deskCount.className = 'count';
+  deskCount.id = 'shelf-desk-count';
+  deskHead.appendChild(deskCount);
+  desk.appendChild(deskHead);
+  var deskRow = document.createElement('div');
+  deskRow.className = 'desk-row';
+  deskRow.id = 'shelf-desk-row';
+  desk.appendChild(deskRow);
+  inner.appendChild(desk);
+
+  // ===== F1 · the case — filled by renderShelfCase =====
+  var caseEl = document.createElement('div');
+  caseEl.className = 'case' + (getShelfGrouping() === 'lenses' ? ' is-lens' : '');
+  caseEl.id = 'shelf-case';
+  inner.appendChild(caseEl);
+
+  // ===== F5/§3.7 · the focused full view (mobile; populated in S3) =====
+  var focused = document.createElement('div');
+  focused.className = 'focused-view';
+  focused.id = 'shelf-focused';
+  inner.appendChild(focused);
+
+  // editor host + scan status + arc-picker host (carried)
+  var editorHost = document.createElement('div');
+  editorHost.id = 'shelf-editor-host';
+  inner.appendChild(editorHost);
   var scanStatus = document.createElement('div');
   scanStatus.className = 'shelf-scan-status';
   scanStatus.id = 'shelf-scan-status';
-  wrap.appendChild(scanStatus);
+  inner.appendChild(scanStatus);
+  var arcPickerHost = document.createElement('div');
+  arcPickerHost.id = 'shelf-arc-picker-host';
+  inner.appendChild(arcPickerHost);
 
-  // Stage 2 (mockup-fidelity): the in-page shelf search (a LIVE GRID FILTER,
-  // title OR author substring) now lives inline in the header actions cluster
-  // above -- it is no longer a separate well below the header.
+  wrap.appendChild(inner);
 
-  // 3.10a Stage 2: two-column layout below the full-width header.
-  // .shelf-layout holds .shelf-sidebar (left, 220px, transparent --
-  // dissolves into the page, not a card) and .shelf-main (right,
-  // flex-fills). The editor host moves inside .shelf-main so it sits
-  // above the grid in the right column; getElementById lookups in
-  // openShelfEditor / processBulkLines are position-independent
-  // (Q1 grep 2026-05-16 confirmed zero dependencies on the previous
-  // direct-child-of-.shelf position).
-  //
-  // SIDEBAR IS INERT IN STAGE 2. The theme + author rows render but
-  // do nothing on click; filter behavior is 3.10b. No event listeners
-  // are attached anywhere in this block, no checkboxes wired to
-  // anything, no selected-state field on state.*.
-
-  var booksMap = state.books || {};
-
-  // CX-3 (orphan-safe author rail): count authors over the SAME deduped shelf set
-  // the grid renders (shelfBookIds), not raw state.books -- else an orphan/
-  // duplicate record inflates an author count that yields ZERO cards when clicked
-  // ("rendered count == stored count" violation, books.md:179). Mirrors the
-  // lenses / reading-status / category rails, which were reworked to the deduped
-  // set; the author rail was the one sibling that block missed.
-  var authorSrc = [];
-  var asI;
-  if (shelfBookIds) {
-    for (asI = 0; asI < shelfBookIds.length; asI = asI + 1) {
-      if (booksMap[shelfBookIds[asI]]) { authorSrc.push(booksMap[shelfBookIds[asI]]); }
-    }
-  } else {
-    for (asI in booksMap) {
-      if (Object.prototype.hasOwnProperty.call(booksMap, asI) && booksMap[asI]) { authorSrc.push(booksMap[asI]); }
-    }
-  }
-
-  // Author dedupe + alphabetic sort for the sidebar's "Filter by author" section.
-  var authorSeen = {};
-  var authors = [];
-  var abi;
-  var abk;
-  for (abi = 0; abi < authorSrc.length; abi = abi + 1) {
-    abk = authorSrc[abi];
-    if (abk && abk.author &&
-        !Object.prototype.hasOwnProperty.call(authorSeen, abk.author)) {
-      authorSeen[abk.author] = true;
-      authors.push(abk.author);
-    }
-  }
-  // Phase 3.1: per-value book-match tally for the author filter counts, over the
-  // SAME deduped set (CX-3). Rows with zero matches still show (count 0).
-  var authorCounts = {};
-  var tci;
-  var tcb;
-  for (tci = 0; tci < authorSrc.length; tci = tci + 1) {
-    tcb = authorSrc[tci];
-    if (!tcb) continue;
-    if (typeof tcb.author === 'string' && tcb.author.length > 0) {
-      authorCounts[tcb.author] = (authorCounts[tcb.author] || 0) + 1;
-    }
-  }
-
-  // Stage 4d: rank authors by book count (desc), case-insensitive
-  // alpha tiebreak, and collapse the rail to the top 12 unless the
-  // user expanded it (shelfAuthorRailExpanded). The toggle row at the
-  // bottom of the list flips the flag and re-renders.
-  authors.sort(function (a, b) {
-    var ca = authorCounts[a] || 0;
-    var cb = authorCounts[b] || 0;
-    if (cb !== ca) { return cb - ca; }
-    var la = a.toLowerCase();
-    var lb = b.toLowerCase();
-    if (la < lb) { return -1; }
-    if (la > lb) { return 1; }
-    return 0;
-  });
-  var totalAuthorCount = authors.length;
-  var visibleAuthors = shelfAuthorRailExpanded
-    ? authors
-    : authors.slice(0, 12);
-
-  // Lenses (S3): baseline lenses are the DISTINCT book.genre values actually
-  // present, counted off the DEDUPED membership source -- the signed-in user's
-  // bookIds index (shelfBookIds), or raw state.books when signed out. Reading
-  // the deduped set means orphan/duplicate records never inflate a lens count
-  // (retires the old genre-count-over-state.books inflation). lensOrder keeps
-  // first-seen genres, then is re-sorted by count (desc) for a stable render.
-  var lensCounts = {};
-  var lensOrder = [];
-  var lcArr = [];
-  var lcId;
-  var lcb;
-  if (shelfBookIds) {
-    for (lcId = 0; lcId < shelfBookIds.length; lcId = lcId + 1) {
-      lcArr.push(sbcMap[shelfBookIds[lcId]]);
-    }
-  } else {
-    for (lcId in sbcMap) {
-      if (Object.prototype.hasOwnProperty.call(sbcMap, lcId)) {
-        lcArr.push(sbcMap[lcId]);
-      }
-    }
-  }
-  var lcj;
-  for (lcj = 0; lcj < lcArr.length; lcj = lcj + 1) {
-    lcb = lcArr[lcj];
-    if (lcb && typeof lcb.genre === 'string' && lcb.genre.length > 0) {
-      if (!Object.prototype.hasOwnProperty.call(lensCounts, lcb.genre)) {
-        lensOrder.push(lcb.genre);
-      }
-      lensCounts[lcb.genre] = (lensCounts[lcb.genre] || 0) + 1;
-    }
-  }
-  lensOrder.sort(function (a, b) {
-    var ca = lensCounts[a] || 0;
-    var cb = lensCounts[b] || 0;
-    if (cb !== ca) { return cb - ca; }
-    var la = a.toLowerCase();
-    var lb = b.toLowerCase();
-    if (la < lb) { return -1; }
-    if (la > lb) { return 1; }
-    return 0;
-  });
-
-  // S-D1 (Wave 1): fill the reading line from the real top lens (deterministic,
-  // count-based). lensOrder is already sorted by count desc, so [0] is the
-  // most-shelved lens. Omit the line entirely when there is no lens.
-  if (lensOrder.length > 0) {
-    var shelfTopLens = lensOrder[0];
-    var shelfTopLensN = lensCounts[shelfTopLens] || 0;
-    shelfLeanP.textContent = 'Most-shelved lens: ' + shelfTopLens + ' · ' +
-      shelfTopLensN + (shelfTopLensN === 1 ? ' book' : ' books');
-    shelfLean.style.display = '';
-  }
-
-  // Status + Tradition rails (Umber port — mock #s-books groups 1+2). Distinct
-  // canonical statuses + traditions present in the SAME deduped shelf set
-  // (lcArr) the lenses are counted over, so counts are orphan-free. Values are
-  // the real canon: normalizeStatus(book.status) -> reading/read/will-read, and
-  // (book.traditionOverride || book.tradition) over the TRADITIONS set (the
-  // 'unassigned' sentinel + empties are skipped, like the empty-genre skip).
-  // No new filter idiom: the rows reuse .shelf-filter + the shared
-  // onShelfFilterRowClick/Keydown + the generic toggleShelfFilter (whose for-in
-  // exclusive-clear already covers the two new sections).
-  var statusCounts = { reading: 0, read: 0, 'will-read': 0 };
-  var srti;
-  var srtb;
-  for (srti = 0; srti < lcArr.length; srti = srti + 1) {
-    srtb = lcArr[srti];
-    if (!srtb) { continue; }
-    statusCounts[normalizeStatus(srtb.status)]++;
-  }
-
-  var layout = document.createElement('div');
-  // Mock: the sidebar is always visible on desktop (2-col grid) and a drawer on
-  // mobile (toggled by the Filters button). shelfRailOpen is retired on desktop.
-  layout.className = 'shelf-layout';
-
-  var sidebar = document.createElement('aside');
-  sidebar.className = 'shelf-side';
-
-  // 3.10b-i: backdrop — sibling of sidebar inside .shelf-layout
-  // (appended below after both are populated). Class .shelf-sidebar-
-  // backdrop; default-hidden by CSS, revealed by toggling .shelf-
-  // sidebar-backdrop-open in lockstep with .shelf-sidebar-mobile-open.
-  var backdrop = document.createElement('div');
-  backdrop.className = 'shelf-sidebar-backdrop';
-
-  // 3.10b-i: close affordance. First child of the sidebar so source-
-  // order tab focus lands on it when the panel opens — gives keyboard
-  // users an immediate dismiss path. Mobile-only via CSS display
-  // gate (the desktop sidebar has no panel chrome). The aria-label
-  // carries semantics for screen readers; the visible glyph is ×
-  // (U+00D7 multiplication sign).
-  var closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'shelf-sidebar-close';
-  closeBtn.setAttribute('aria-label', 'Close filters');
-  closeBtn.textContent = '×';
-  sidebar.appendChild(closeBtn);
-
-  // userThemes (manual lenses, S3): the user-created lenses, rendered in the
-  // unified Lenses rail below alongside the baseline (genre) lenses. Filter
-  // rows read shelfFilter.theme (a theme id); membership is
-  // state.userThemes[id].bookIds (off the book record) -- counts are orphan-free.
-  var utUser = getCurrentUser();
-  var userThemeList = [];
-  var uttk;
-  if (utUser && utUser.uid && state.userThemes) {
-    for (uttk in state.userThemes) {
-      if (Object.prototype.hasOwnProperty.call(state.userThemes, uttk) &&
-          state.userThemes[uttk] && state.userThemes[uttk].userId === utUser.uid) {
-        userThemeList.push(state.userThemes[uttk]);
-      }
-    }
-  }
-  userThemeList.sort(function(a, b) {
-    return (a.name || '').localeCompare(b.name || '');
-  });
-  // Lenses (S3): ONE rail unifying the data-driven baseline lenses (distinct
-  // book.genre values present, deduped counts) and the user's hand-made lenses
-  // (state.userThemes). Both render as identical .shelf-filter-row items and
-  // share the existing single-select toggle: a baseline row carries
-  // data-filter-section="genre", a manual row data-filter-section="theme", so
-  // the same handlers + match predicate apply with NO filter-machinery change.
-  var lensSection = document.createElement('div');
-  lensSection.className = 'shelf-filter-group shelf-filter-group-lenses';
-  var lensLabel = document.createElement('h3');
-  lensLabel.className = 'shelf-filter-label';
-  lensLabel.textContent = 'Lenses';
-  lensSection.appendChild(lensLabel);
-  var lensListEl = document.createElement('ul');
-  lensListEl.className = 'shelf-filter-list shelf-filter-list-lenses';
-
-  // (a) baseline lenses -- from book.genre, counts off the deduped set.
-  var lbi;
-  var lbRow;
-  var lbCount;
-  var lbName;
-  for (lbi = 0; lbi < lensOrder.length; lbi++) {
-    lbName = lensOrder[lbi];
-    lbRow = document.createElement('li');
-    lbRow.className = shelfFilter.genre === lbName
-      ? 'shelf-filter is-on'
-      : 'shelf-filter';
-    lbRow.setAttribute('role', 'button');
-    lbRow.setAttribute('tabindex', '0');
-    lbRow.setAttribute('data-filter-section', 'genre');
-    lbRow.setAttribute('data-filter-value', lbName);
-    lbRow.textContent = lbName;
-    lbCount = document.createElement('span');
-    lbCount.className = 'n';
-    lbCount.textContent = '' + (lensCounts[lbName] || 0);
-    lbRow.appendChild(lbCount);
-    lbRow.addEventListener('click', onShelfFilterRowClick);
-    lbRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    lensListEl.appendChild(lbRow);
-  }
-
-  // (b) hand-made lenses -- the SAME display object; membership lives in
-  // state.userThemes[id].bookIds, so the count is already orphan-free.
-  var lmi;
-  var lmRow;
-  var lmCount;
-  for (lmi = 0; lmi < userThemeList.length; lmi++) {
-    lmRow = document.createElement('li');
-    lmRow.className = shelfFilter.theme === userThemeList[lmi].id
-      ? 'shelf-filter is-on is-manual'
-      : 'shelf-filter is-manual';
-    lmRow.setAttribute('role', 'button');
-    lmRow.setAttribute('tabindex', '0');
-    lmRow.setAttribute('data-filter-section', 'theme');
-    lmRow.setAttribute('data-filter-value', userThemeList[lmi].id);
-    lmRow.textContent = userThemeList[lmi].name;
-    lmCount = document.createElement('span');
-    lmCount.className = 'n';
-    lmCount.textContent = '' + (Array.isArray(userThemeList[lmi].bookIds)
-      ? userThemeList[lmi].bookIds.length : 0);
-    lmRow.appendChild(lmCount);
-    lmRow.addEventListener('click', onShelfFilterRowClick);
-    lmRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    lensListEl.appendChild(lmRow);
-  }
-
-  // (c) empty hint only when there are no lenses of either kind.
-  if (lensOrder.length === 0 && userThemeList.length === 0) {
-    var lensEmpty = document.createElement('li');
-    lensEmpty.className = 'shelf-filter is-toggle';
-    lensEmpty.textContent = 'No lenses yet — ask Yumi to suggest some';
-    lensListEl.appendChild(lensEmpty);
-  }
-  lensSection.appendChild(lensListEl);
-
-  // (d) "Ask Yumi for more lenses" -- opens the lens panel (S4). Guarded so
-  // it is inert until S4 defines window.PraxisLensPanel; its AI suggestions
-  // are a feature-flagged stub (default off).
-  var lensAsk = document.createElement('button');
-  lensAsk.type = 'button';
-  lensAsk.className = 'shelf-lens-ask';
-  lensAsk.textContent = 'Ask Yumi for more lenses';
-  lensAsk.addEventListener('click', function () {
-    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') {
-      window.PraxisLensPanel.open();
-    }
-  });
-  lensSection.appendChild(lensAsk);
-
-  // Reading-status rail (mock group 1) — ABOVE Lenses. Canonical statuses in
-  // STATUS_VOCAB order, count > 0 only (mirrors the present-values rule of the
-  // genre/author rails). Compact labels match the shelf-head vocabulary
-  // (reading/finished); the row VALUES are the real canon. Reuses .shelf-filter
-  // + the shared row handlers; single-select via the generic toggleShelfFilter.
-  var STATUS_RAIL_LABEL = { reading: 'Reading', read: 'Finished', 'will-read': 'Unread' };
-  var statusSection = document.createElement('div');
-  statusSection.className = 'shelf-filter-group';
-  var statusLabel = document.createElement('h3');
-  statusLabel.className = 'shelf-filter-label';
-  statusLabel.textContent = 'Reading status';
-  statusSection.appendChild(statusLabel);
-  var statusListEl = document.createElement('ul');
-  statusListEl.className = 'shelf-filter-list shelf-filter-list-status';
-  var stvi;
-  var stvKey;
-  var stRow;
-  var stCountEl;
-  var statusRowCount = 0;
-  // S-D4 (Wave 1): an "All" row that clears the status filter. status === null
-  // IS the "all" predicate at the filter pass (statusOk below), so All just
-  // nulls it; is-on when no status is picked. Count = the whole shelf.
-  var stAllRow = document.createElement('li');
-  stAllRow.className = shelfFilter.status ? 'shelf-filter' : 'shelf-filter is-on';
-  stAllRow.setAttribute('role', 'button');
-  stAllRow.setAttribute('tabindex', '0');
-  stAllRow.setAttribute('data-filter-section', 'status');
-  stAllRow.setAttribute('data-filter-value', '');
-  stAllRow.textContent = 'All';
-  var stAllCount = document.createElement('span');
-  stAllCount.className = 'n';
-  stAllCount.textContent = '' + shelfBookCount;
-  stAllRow.appendChild(stAllCount);
-  stAllRow.addEventListener('click', function () { shelfFilter.status = null; renderShelf(); });
-  stAllRow.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
-      ev.preventDefault(); shelfFilter.status = null; renderShelf();
-    }
-  });
-  statusListEl.appendChild(stAllRow);
-  statusRowCount++;
-  for (stvi = 0; stvi < STATUS_VOCAB.length; stvi = stvi + 1) {
-    stvKey = STATUS_VOCAB[stvi];
-    // S-D4 (Wave 1): show all four status rows always (incl. zero-count).
-    statusRowCount++;
-    stRow = document.createElement('li');
-    stRow.className = shelfFilter.status === stvKey ? 'shelf-filter is-on' : 'shelf-filter';
-    stRow.setAttribute('role', 'button');
-    stRow.setAttribute('tabindex', '0');
-    stRow.setAttribute('data-filter-section', 'status');
-    stRow.setAttribute('data-filter-value', stvKey);
-    stRow.textContent = STATUS_RAIL_LABEL[stvKey] || stvKey;
-    stCountEl = document.createElement('span');
-    stCountEl.className = 'n';
-    stCountEl.textContent = '' + (statusCounts[stvKey] || 0);
-    stRow.appendChild(stCountEl);
-    stRow.addEventListener('click', onShelfFilterRowClick);
-    stRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    statusListEl.appendChild(stRow);
-  }
-  statusSection.appendChild(statusListEl);
-  if (statusRowCount > 0) { sidebar.appendChild(statusSection); }
-
-  // Stage 1 (shelf categories): sidebar grouping toggle [ Lenses | Categories ],
-  // modeled on the Covers|List seg. Reuses the .seg/.seg-opt/.is-on classes
-  // (inherits `.shelf .seg` -- no new CSS) plus role=tablist + per-opt
-  // role=tab/aria-selected. Default 'lenses' preserves the current behavior;
-  // picking an opt persists via setShelfGrouping then re-renders. Placed
-  // directly above the grouping section it controls (between the Reading-status
-  // rail and the Lenses/Categories section).
-  var shelfGrouping = getShelfGrouping();
-  var groupSeg = document.createElement('div');
-  groupSeg.className = 'seg';
-  groupSeg.setAttribute('role', 'tablist');
-  groupSeg.setAttribute('aria-label', 'Sidebar grouping');
-  var groupLenses = document.createElement('button');
-  groupLenses.type = 'button';
-  groupLenses.className = 'seg-opt' + (shelfGrouping === 'lenses' ? ' is-on' : '');
-  groupLenses.setAttribute('role', 'tab');
-  groupLenses.setAttribute('aria-selected', shelfGrouping === 'lenses' ? 'true' : 'false');
-  groupLenses.setAttribute('data-shelf-grouping', 'lenses');
-  groupLenses.textContent = 'Lenses';
-  groupLenses.addEventListener('click', function() {
-    setShelfGrouping('lenses');
-    renderShelf();
-  });
-  groupSeg.appendChild(groupLenses);
-  var groupCategories = document.createElement('button');
-  groupCategories.type = 'button';
-  groupCategories.className = 'seg-opt' + (shelfGrouping === 'categories' ? ' is-on' : '');
-  groupCategories.setAttribute('role', 'tab');
-  groupCategories.setAttribute('aria-selected', shelfGrouping === 'categories' ? 'true' : 'false');
-  groupCategories.setAttribute('data-shelf-grouping', 'categories');
-  groupCategories.textContent = 'Categories';
-  groupCategories.addEventListener('click', function() {
-    setShelfGrouping('categories');
-    renderShelf();
-  });
-  groupSeg.appendChild(groupCategories);
-  sidebar.appendChild(groupSeg);
-
-  // Stage 2C (shelf categories): grouping branch. 'lenses' appends the existing
-  // Lenses rail (built above, byte-for-byte unchanged). 'categories' classifies
-  // the deduped shelf set into the curated taxonomy and renders POPULATED
-  // categories in taxonomy order (Uncategorized last), reusing the .shelf-filter
-  // row idiom + shared handlers (same as the Reading-status rail). Classification
-  // is lazy + cached: classifyBookLocal resolves cached/seed/keyword rows
-  // synchronously; books it returns null for go to the Sonnet batch classifier
-  // ONCE (guarded by shelfCategorizing), the result cached on each record and
-  // persisted in a SINGLE batched write, then a re-render fills the rows in.
-  // Non-blocking: the rest of the shelf is already built and stays usable.
-  // Reading-status + Author stay in both modes.
-  if (shelfGrouping === 'lenses') {
-    sidebar.appendChild(lensSection);
-  } else {
-    var catCounts = {};
-    var catPending = [];
-    var cci, ccb, ccLabel;
-    for (cci = 0; cci < lcArr.length; cci = cci + 1) {
-      ccb = lcArr[cci];
-      if (!ccb) { continue; }
-      ccLabel = classifyBookLocal(ccb);
-      if (ccLabel === null) { catPending.push(ccb); continue; }
-      catCounts[ccLabel] = (catCounts[ccLabel] || 0) + 1;
-    }
-
-    // Lazy classify: fire once -- only when categories is the active grouping,
-    // only for the unresolved books, only when signed in (the result persists to
-    // the user's records), and never while a pass is already in flight.
-    if (catPending.length > 0 && !shelfCategorizing && getCurrentUser()) {
-      shelfCategorizing = true;
-      shelfClassifyGen = shelfClassifyGen + 1;
-      var ccGen = shelfClassifyGen;
-      // Watchdog: classifyBooksViaLLM has no timeout/abort, so a hung fetch (or an
-      // unexpected throw inside a .then handler) would never reach the callback
-      // below, leaving shelfCategorizing stuck true -- spinner frozen, Re-classify
-      // hidden -- until a reload. If the callback has not fired by the deadline,
-      // abandon this pass: bump the generation so a late callback no-ops, clear the
-      // flag, and re-render so the UI recovers (and can retry). The deadline scales
-      // with the batch count and errs LONG on purpose -- tripping a slow-but-working
-      // pass would churn, so the budget is generous; a genuine hang just takes a
-      // little to recover.
-      var ccDeadline = 20000 + Math.ceil(catPending.length / 20) * 20000;
-      var ccWatchdog = setTimeout(function () {
-        if (ccGen !== shelfClassifyGen) { return; }
-        shelfClassifyGen = shelfClassifyGen + 1;
-        shelfCategorizing = false;
-        if (location.hash === '#books' && getShelfGrouping() === 'categories') {
-          renderShelf();
-        }
-      }, ccDeadline);
-      classifyBooksViaLLM(catPending, function (resultMap) {
-        clearTimeout(ccWatchdog);
-        if (ccGen !== shelfClassifyGen) { return; }
-        var rk;
-        for (rk in resultMap) {
-          if (Object.prototype.hasOwnProperty.call(resultMap, rk) && state.books[rk]) {
-            state.books[rk].category = resultMap[rk];
-          }
-        }
-        markBooksDirty();
-        saveState();                 // ONE batched persist for the whole pass
-        shelfCategorizing = false;
-        // Re-render only if the user is still on the Categories grouping, so a
-        // background finish never yanks another view out from under them.
-        if (location.hash === '#books' && getShelfGrouping() === 'categories') {
-          renderShelf();
-        }
-      });
-    }
-
-    var catSection = document.createElement('div');
-    catSection.className = 'shelf-filter-group shelf-filter-group-categories';
-    var catLabel = document.createElement('h3');
-    catLabel.className = 'shelf-filter-label';
-    catLabel.textContent = 'Categories';
-    catSection.appendChild(catLabel);
-    var catListEl = document.createElement('ul');
-    catListEl.className = 'shelf-filter-list shelf-filter-list-categories';
-
-    // One populated row -- reuses the shared row idiom + handlers (data-filter-
-    // section="category" routes through toggleShelfFilter's exclusive-clear).
-    var catRowsRendered = 0;
-    var appendCatRow = function (label, count) {
-      var cr = document.createElement('li');
-      cr.className = shelfFilter.category === label ? 'shelf-filter is-on' : 'shelf-filter';
-      cr.setAttribute('role', 'button');
-      cr.setAttribute('tabindex', '0');
-      cr.setAttribute('data-filter-section', 'category');
-      cr.setAttribute('data-filter-value', label);
-      cr.textContent = label;
-      var cn = document.createElement('span');
-      cn.className = 'n';
-      cn.textContent = '' + count;
-      cr.appendChild(cn);
-      cr.addEventListener('click', onShelfFilterRowClick);
-      cr.addEventListener('keydown', onShelfFilterRowKeydown);
-      catListEl.appendChild(cr);
-      catRowsRendered = catRowsRendered + 1;
-    };
-
-    var cti, ctLabel;
-    for (cti = 0; cti < SHELF_CATEGORIES.length; cti = cti + 1) {
-      ctLabel = SHELF_CATEGORIES[cti];
-      if ((catCounts[ctLabel] || 0) > 0) { appendCatRow(ctLabel, catCounts[ctLabel]); }
-    }
-    // Uncategorized always last, only when populated.
-    if ((catCounts[CATEGORY_UNCATEGORIZED] || 0) > 0) {
-      appendCatRow(CATEGORY_UNCATEGORIZED, catCounts[CATEGORY_UNCATEGORIZED]);
-    }
-
-    // Non-blocking loading row while a pass is in flight; else an empty hint.
-    if (shelfCategorizing) {
-      var catLoading = document.createElement('li');
-      catLoading.className = 'shelf-filter is-toggle shelf-categories-loading';
-      catLoading.textContent = 'Classifying ' + catPending.length
-        + (catPending.length === 1 ? ' book…' : ' books…');
-      catListEl.appendChild(catLoading);
-    } else if (catRowsRendered === 0) {
-      var catEmpty = document.createElement('li');
-      catEmpty.className = 'shelf-filter is-toggle';
-      catEmpty.textContent = 'No categories yet';
-      catListEl.appendChild(catEmpty);
-    }
-
-    catSection.appendChild(catListEl);
-
-    // Re-classify control — clears every cached category so the lazy classifier
-    // re-runs over the whole shelf set, letting a classifier change (the
-    // seed-drop, and future improvements) land on the already-classified
-    // library. Signed-in only (it persists to the user's records) and hidden
-    // while a pass is in flight (the loading row above shows instead). Mirrors
-    // the Lenses rail's "Ask Yumi" button idiom.
-    if (getCurrentUser() && !shelfCategorizing) {
-      var catReclassify = document.createElement('button');
-      catReclassify.type = 'button';
-      catReclassify.className = 'shelf-lens-ask';
-      catReclassify.textContent = 'Re-classify';
-      catReclassify.addEventListener('click', function () {
-        if (shelfCategorizing) { return; }   // never stomp an in-flight pass
-        var rbid, rb;
-        var rcDirty = false;
-        for (rbid in state.books) {
-          if (!Object.prototype.hasOwnProperty.call(state.books, rbid)) { continue; }
-          rb = state.books[rbid];
-          if (!rb) { continue; }
-          // R7: preserve a manual category override — a pinned categoryOverride
-          // is never cleared by Re-classify (it also wins in classifyBookLocal).
-          if (rb.categoryOverride) { continue; }
-          if (rb.category !== '') {
-            rb.category = '';
-            rcDirty = true;
-          }
-        }
-        if (rcDirty) {
-          markBooksDirty();
-          saveState();           // ONE batched write for the whole clear
-        }
-        renderShelf();           // re-render -> lazy orchestration re-fires over the now-null books
-      });
-      catSection.appendChild(catReclassify);
-    }
-    sidebar.appendChild(catSection);
-  }
-
-  // S3: the former separate GENRE rail is merged into the single Lenses rail
-  // above (baseline lenses are derived from the distinct book.genre values).
-
-  // R8 (values): the Values rail — ONE new row-group in the EXISTING sidebar
-  // (no new toggle, no new sidebar block). Distinct value-marks across the
-  // DEDUPED shelf set (authorSrc, same source as the author/lens counts, so a
-  // duplicate/orphan record never inflates a count), each counted once per book.
-  // Rows reuse the shared .shelf-filter idiom + handlers; 'value' auto-joins the
-  // exclusive single-select via toggleShelfFilter's generic key loop. Rendered
-  // only when the shelf actually carries value-marks.
-  var valueSeen = {};
-  var valueList = [];
-  var valueCounts = {};
-  var vci, vcb, vmj, vmk, vmval, vSeenThisBook;
-  for (vci = 0; vci < authorSrc.length; vci = vci + 1) {
-    vcb = authorSrc[vci];
-    if (!vcb || !(vcb.valueMarks instanceof Array)) { continue; }
-    vSeenThisBook = {};
-    for (vmj = 0; vmj < vcb.valueMarks.length; vmj = vmj + 1) {
-      vmk = vcb.valueMarks[vmj];
-      vmval = (vmk && typeof vmk.value === 'string') ? vmk.value : '';
-      if (vmval === '' || Object.prototype.hasOwnProperty.call(vSeenThisBook, vmval)) { continue; }
-      vSeenThisBook[vmval] = true;
-      if (!Object.prototype.hasOwnProperty.call(valueSeen, vmval)) {
-        valueSeen[vmval] = true;
-        valueList.push(vmval);
-      }
-      valueCounts[vmval] = (valueCounts[vmval] || 0) + 1;
-    }
-  }
-  valueList.sort(function (a, b) {
-    var ca = valueCounts[a] || 0;
-    var cb = valueCounts[b] || 0;
-    if (cb !== ca) { return cb - ca; }
-    var la = a.toLowerCase();
-    var lb = b.toLowerCase();
-    if (la < lb) { return -1; }
-    if (la > lb) { return 1; }
-    return 0;
-  });
-  if (valueList.length > 0) {
-    var valueSection = document.createElement('div');
-    valueSection.className = 'shelf-filter-group';
-    var valueLabel = document.createElement('h3');
-    valueLabel.className = 'shelf-filter-label';
-    valueLabel.textContent = 'Values';
-    valueSection.appendChild(valueLabel);
-    var valueListEl = document.createElement('ul');
-    valueListEl.className = 'shelf-filter-list shelf-filter-list-value';
-    var vli, valueRow, valueRowCount;
-    for (vli = 0; vli < valueList.length; vli = vli + 1) {
-      valueRow = document.createElement('li');
-      valueRow.className = shelfFilter.value === valueList[vli]
-        ? 'shelf-filter is-on'
-        : 'shelf-filter';
-      valueRow.setAttribute('role', 'button');
-      valueRow.setAttribute('tabindex', '0');
-      valueRow.setAttribute('data-filter-section', 'value');
-      valueRow.setAttribute('data-filter-value', valueList[vli]);
-      valueRow.textContent = valueList[vli];
-      valueRowCount = document.createElement('span');
-      valueRowCount.className = 'n';
-      valueRowCount.textContent = '' + (valueCounts[valueList[vli]] || 0);
-      valueRow.appendChild(valueRowCount);
-      valueRow.addEventListener('click', onShelfFilterRowClick);
-      valueRow.addEventListener('keydown', onShelfFilterRowKeydown);
-      valueListEl.appendChild(valueRow);
-    }
-    valueSection.appendChild(valueListEl);
-    sidebar.appendChild(valueSection);
-  }
-
-  // Author section -- dedup'd alphabetical list from state.books.
-  var authorSection = document.createElement('div');
-  authorSection.className = 'shelf-filter-group';
-  var authorLabel = document.createElement('h3');
-  authorLabel.className = 'shelf-filter-label';
-  authorLabel.textContent = 'Author';
-  authorSection.appendChild(authorLabel);
-  var authorListEl = document.createElement('ul');
-  authorListEl.className = 'shelf-filter-list shelf-filter-list-author';
-  var ai;
-  var authorRow;
-  for (ai = 0; ai < visibleAuthors.length; ai++) {
-    authorRow = document.createElement('li');
-    // 3.10b Stage 3: role, tabindex, data-* for section + value,
-    // selected class on render, click + keydown handlers. The handler
-    // reads the 'author' section + value directly off the activated
-    // element's data-filter-section attribute.
-    authorRow.className = shelfFilter.author === visibleAuthors[ai]
-      ? 'shelf-filter is-on'
-      : 'shelf-filter';
-    authorRow.setAttribute('role', 'button');
-    authorRow.setAttribute('tabindex', '0');
-    authorRow.setAttribute('data-filter-section', 'author');
-    authorRow.setAttribute('data-filter-value', visibleAuthors[ai]);
-    authorRow.textContent = visibleAuthors[ai];
-    // Phase 3.1: per-value book-match count (display only). data-filter-
-    // value carries the clean author name; the count span is cosmetic.
-    var authorRowCount = document.createElement('span');
-    authorRowCount.className = 'n';
-    authorRowCount.textContent = '' + (authorCounts[visibleAuthors[ai]] || 0);
-    authorRow.appendChild(authorRowCount);
-    authorRow.addEventListener('click', onShelfFilterRowClick);
-    authorRow.addEventListener('keydown', onShelfFilterRowKeydown);
-    authorListEl.appendChild(authorRow);
-  }
-  // Stage 4d: expand/collapse toggle row, rendered only when the full
-  // list exceeds the collapsed cap. Quiet row -- no count, no gold
-  // bar, no data-filter attributes (it is not a filter).
-  if (totalAuthorCount > 12) {
-    var authorToggleRow = document.createElement('li');
-    authorToggleRow.className = 'shelf-filter is-toggle';
-    authorToggleRow.setAttribute('role', 'button');
-    authorToggleRow.setAttribute('tabindex', '0');
-    authorToggleRow.textContent = shelfAuthorRailExpanded
-      ? 'Show fewer'
-      : 'Show all (' + totalAuthorCount + ')';
-    authorToggleRow.addEventListener('click', onShelfAuthorToggleClick);
-    authorToggleRow.addEventListener('keydown', onShelfAuthorToggleKeydown);
-    authorListEl.appendChild(authorToggleRow);
-  }
-  authorSection.appendChild(authorListEl);
-  sidebar.appendChild(authorSection);
-
-  layout.appendChild(sidebar);
-  // 3.10b-i: backdrop appended as a sibling of the sidebar inside
-  // .shelf-layout. Order after the sidebar so the close-button focus
-  // ring (Stage 1 :focus-visible) renders cleanly above the backdrop
-  // dim. CSS z-index keeps the sidebar (100) above the backdrop (99).
-  layout.appendChild(backdrop);
-
-  // 3.10b-i: mobile filter panel open/close. Backdrop and sidebar
-  // always toggle together via add/remove of paired classes. dismiss
-  // is the single source of truth — wired to four triggers below:
-  // the close × button, a click on the backdrop, an Escape keydown
-  // at document scope, and the .shelf-filter-button when the panel
-  // is already open. The Escape handler is parked at module scope
-  // (shelfSidebarEscapeHandler) so a re-render can purge a stale
-  // one; see the cleanup at the top of renderShelf.
-  function openShelfFilterPanel() {
-    sidebar.classList.add('shelf-sidebar-mobile-open');
-    backdrop.classList.add('shelf-sidebar-backdrop-open');
-    if (shelfSidebarEscapeHandler) {
-      document.removeEventListener('keydown', shelfSidebarEscapeHandler);
-    }
-    shelfSidebarEscapeHandler = function(ev) {
-      if (ev.key === 'Escape' || ev.key === 'Esc') {
-        dismissShelfFilterPanel();
-      }
-    };
-    document.addEventListener('keydown', shelfSidebarEscapeHandler);
-  }
-
-  function dismissShelfFilterPanel() {
-    sidebar.classList.remove('shelf-sidebar-mobile-open');
-    backdrop.classList.remove('shelf-sidebar-backdrop-open');
-    if (shelfSidebarEscapeHandler) {
-      document.removeEventListener('keydown', shelfSidebarEscapeHandler);
-      shelfSidebarEscapeHandler = null;
-    }
-  }
-
-  closeBtn.addEventListener('click', dismissShelfFilterPanel);
-  backdrop.addEventListener('click', dismissShelfFilterPanel);
-
-  // Right column: editor host above the grid/empty.
-  var main = document.createElement('div');
-  main.className = 'shelf-main';
-
-  // (The Filters toggle moved into the toolbar above; its handler references
-  // sidebar / backdrop / the panel fns defined here, resolved at click time.)
-
-  // Editor host -- empty on every render; openShelfEditor mounts
-  // its block here on demand. Lives above the book list so the
-  // editor sits visually above existing rows.
-  var editorHost = document.createElement('div');
-  editorHost.id = 'shelf-editor-host';
-  main.appendChild(editorHost);
-
-  // Collect books for the grid. Read site is state.books, not
-  // state.userBooks -- see 3.5a brief: userBooks is write-but-not-
-  // read in 3.5a so book_test_1 (seeded into state.books in 3.3
-  // console testing but never into userBooks) stays visible.
-  // User-scoping the shelf is a future seam.
-  var books = [];
-  var bid;
-  if (shelfBookIds) {
-    // FIX D: signed in -> render the bookIds index (deduped, no orphans).
-    for (bid = 0; bid < shelfBookIds.length; bid = bid + 1) {
-      if (booksMap[shelfBookIds[bid]]) { books.push(booksMap[shelfBookIds[bid]]); }
-    }
-  } else {
-    for (bid in booksMap) {
-      if (Object.prototype.hasOwnProperty.call(booksMap, bid)) {
-        if (booksMap[bid]) books.push(booksMap[bid]);
-      }
-    }
-  }
-  books.sort(function(a, b) {
-    // 3c: reading-status sort when selected (reading -> will-read -> read);
-    // date-added desc is the default AND the tiebreak within a status band.
-    if (shelfSort === 'status') {
-      var rank = { reading: 0, 'will-read': 1, read: 2 };
-      var ra = rank[normalizeStatus(a.status)];
-      var rb = rank[normalizeStatus(b.status)];
-      if (ra === undefined) { ra = 3; }
-      if (rb === undefined) { rb = 3; }
-      if (ra !== rb) { return ra - rb; }
-    }
-    return (b.addedAt || 0) - (a.addedAt || 0);
-  });
-
-  // 3.10b Stage 3: filter pass. Sits AFTER the addedAt sort and
-  // BEFORE the empty-state branch -- the empty-state branch consumes
-  // the post-filter length, which is what drives the filter-empty
-  // copy switch below. STRICT === only: no toLowerCase, no indexOf,
-  // no normalization. An active filter excludes any book whose
-  // corresponding field is empty/missing or whose value is not ===
-  // the selection. A null filter for a section is a no-op for that
-  // section. AND across sections: a book passes only if both
-  // predicates pass.
-  var filtered = [];
-  var fi;
-  var fb;
-  var authorOk;
-  var genreOk;
-  var themeOk;
-  var statusOk;
-  var traditionOk;
-  var categoryOk;
-  var searchOk;
-  var valueOk;
-  var vfj;
-  // Stage 7 (manual themes): precompute the selected user-theme's membership
-  // set (book ids) once, so the per-book themeOk test is an O(1) lookup. Null
-  // when no theme filter is active or the selected theme no longer exists.
-  var selectedThemeBookIds = null;
-  if (shelfFilter.theme !== null && state.userThemes &&
-      state.userThemes[shelfFilter.theme]) {
-    selectedThemeBookIds = {};
-    var stbArr = state.userThemes[shelfFilter.theme].bookIds || [];
-    var stbI;
-    for (stbI = 0; stbI < stbArr.length; stbI++) {
-      selectedThemeBookIds[stbArr[stbI]] = true;
-    }
-  }
-  for (fi = 0; fi < books.length; fi++) {
-    fb = books[fi];
-    authorOk = shelfFilter.author === null ||
-      (typeof fb.author === 'string' && fb.author.length > 0 &&
-       fb.author === shelfFilter.author);
-    // Genre rail: strict equality against book.genre (the former 'theme' slot).
-    genreOk = shelfFilter.genre === null ||
-      (typeof fb.genre === 'string' && fb.genre.length > 0 &&
-       fb.genre === shelfFilter.genre);
-    // Theme rail: the user-created overlay -- book is a member of the selected
-    // theme (membership lives in state.userThemes, never on the book record).
-    themeOk = shelfFilter.theme === null ||
-      (selectedThemeBookIds !== null && selectedThemeBookIds[fb.id] === true);
-    // Status rail: canonical-status equality (normalizeStatus collapses the
-    // dual stored vocabularies the same way the head count + the 6-branch
-    // matrix do, so the row count and the filtered set always agree).
-    statusOk = shelfFilter.status === null ||
-      (normalizeStatus(fb.status) === shelfFilter.status);
-    // Tradition rail: strict equality on the resolved tradition (override wins).
-    traditionOk = shelfFilter.tradition === null ||
-      ((fb.traditionOverride || fb.tradition) === shelfFilter.tradition);
-    // Stage 2C: category rail -- equality on the resolved category. Mirrors the
-    // dormant traditionOk: a harmless always-true no-op until a category row is
-    // picked. classifyBookLocal is O(1) for already-classified books (cache hit).
-    categoryOk = shelfFilter.category === null ||
-      (classifyBookLocal(fb) === shelfFilter.category);
-    // R8 (values): value rail — the book carries the selected value (a mark on
-    // its valueMarks whose .value === the slug). Membership lives on the book
-    // record (like movedMe); harmless no-op until a value row is picked.
-    valueOk = shelfFilter.value === null;
-    if (!valueOk && (fb.valueMarks instanceof Array)) {
-      for (vfj = 0; vfj < fb.valueMarks.length; vfj++) {
-        if (fb.valueMarks[vfj] && fb.valueMarks[vfj].value === shelfFilter.value) { valueOk = true; break; }
-      }
-    }
-    // Stage 4d: live search -- case-insensitive substring over title
-    // OR author, AND-composed with the rail filters.
-    searchOk = shelfSearchQuery === '' ||
-      ((fb.title || '').toLowerCase().indexOf(shelfSearchQuery) !== -1 ||
-       (fb.author || '').toLowerCase().indexOf(shelfSearchQuery) !== -1);
-    if (authorOk && genreOk && themeOk && statusOk && traditionOk && categoryOk && valueOk && searchOk) {
-      filtered.push(fb);
-    }
-  }
-  books = filtered;
-
-  // S-D2 (Wave 1): computed display-only "alight" set -- a book has grown into
-  // the reader's thinking when it has >=1 marginalia entry OR >=1 sub-theory
-  // derived from it (evidence {kind:'book'} OR attached marginalia). Real
-  // stores only (state.notebookEntries register 'marginalia' + state.subTheories),
-  // owner-filtered; one pass, no data-model change. Same predicate as
-  // marginaliaForBook() + rootedSubTheories() (Book Detail), unioned.
-  var shelfAlight = {};
-  (function () {
-    var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    var auid = au ? au.uid : null;
-    var entries = state.notebookEntries || {};
-    var subs = state.subTheories || {};
-    var ek, e, ei, s2k, s2, si, ev, sj, ent;
-    for (ek in entries) {
-      if (!Object.prototype.hasOwnProperty.call(entries, ek)) { continue; }
-      e = entries[ek];
-      if (!e || e.register !== 'marginalia') { continue; }
-      if (auid && e.userId && e.userId !== auid) { continue; }
-      if (!e.bookIds) { continue; }
-      for (ei = 0; ei < e.bookIds.length; ei = ei + 1) { shelfAlight[e.bookIds[ei]] = true; }
-    }
-    for (s2k in subs) {
-      if (!Object.prototype.hasOwnProperty.call(subs, s2k)) { continue; }
-      s2 = subs[s2k];
-      if (!s2) { continue; }
-      if (auid && s2.userId && s2.userId !== auid) { continue; }
-      if (s2.evidence) {
-        for (si = 0; si < s2.evidence.length; si = si + 1) {
-          ev = s2.evidence[si];
-          if (ev && ev.kind === 'book' && ev.refId) { shelfAlight[ev.refId] = true; }
-        }
-      }
-      if (s2.attachedMarginalia) {
-        for (sj = 0; sj < s2.attachedMarginalia.length; sj = sj + 1) {
-          ent = entries[s2.attachedMarginalia[sj]];
-          if (ent && ent.bookIds) {
-            for (ei = 0; ei < ent.bookIds.length; ei = ei + 1) { shelfAlight[ent.bookIds[ei]] = true; }
-          }
-        }
-      }
-    }
-  })();
-
-  // 3a (R2): book -> arcs map (decision 1 -- arc thread-tie, intersectional).
-  // A book is in an arc when arc.bookIds carries { id: book.id } (state.js:1776).
-  // Owner-filtered; one pass over state.arcs. Passed to the card helpers so the
-  // spine thread is colored by the primary arc and the reveal lists them all.
-  var shelfArcsByBook = {};
-  (function () {
-    var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    var auid = au ? au.uid : null;
-    var arcsMap = state.arcs || {};
-    var akk, arc2, abi, mid;
-    for (akk in arcsMap) {
-      if (!Object.prototype.hasOwnProperty.call(arcsMap, akk)) { continue; }
-      arc2 = arcsMap[akk];
-      if (!arc2 || !arc2.bookIds) { continue; }
-      if (auid && arc2.userId && arc2.userId !== auid) { continue; }
-      for (abi = 0; abi < arc2.bookIds.length; abi = abi + 1) {
-        mid = arc2.bookIds[abi] && arc2.bookIds[abi].id;
-        if (!mid) { continue; }
-        if (!shelfArcsByBook[mid]) { shelfArcsByBook[mid] = []; }
-        shelfArcsByBook[mid].push(arc2);
-      }
-    }
-  })();
-
-  if (books.length === 0) {
-    // 3.10a Stage 4: empty state. Structure supports both copy
-    // variants (zero-books and zero-filter-results); 3.10a wired
-    // only zero-books, 3.10b adds the filter-empty switch below.
-    // The button is auth-conditional per Q1 resolution (2026-05-16):
-    // signed-in shows Add book primary, signed-out shows the sign-in
-    // prompt. Both reuse existing button classes (.shelf-new-book /
-    // .shelf-signin-prompt) and existing handlers (openShelfEditor
-    // / signInWithGoogle) -- zero new behavior, just reuse-wiring a
-    // second button instance to a pre-existing handler. The unused
-    // .shelf-empty-body class from earlier stages is discarded; no
-    // rule consumed it.
-    //
-    // 3.10b Stage 3: copy switch. If any filter is active, the
-    // empty list is the result of filtering rather than an unstocked
-    // shelf; the headline + subtitle change accordingly. The auth-
-    // conditional action button stays identical in BOTH branches per
-    // the brief -- signed-out users still get the sign-in prompt
-    // even when their filter yields zero.
-    var filterActive = shelfFilter.author !== null ||
-      shelfFilter.genre !== null ||
-      shelfFilter.theme !== null ||
-      shelfFilter.status !== null ||
-      shelfFilter.tradition !== null ||
-      shelfFilter.category !== null ||
-      shelfFilter.value !== null ||
-      shelfSearchQuery !== '';
-    var empty = document.createElement('div');
-    empty.className = 'empty-state';
-    empty.id = 'shelf-empty';
-    var emptyMark = document.createElement('div');
-    emptyMark.className = 'em-mark';
-    emptyMark.id = 'shelf-empty-mark';
-    if (typeof yumiGlyphNode === 'function') { emptyMark.appendChild(yumiGlyphNode(56)); }
-    empty.appendChild(emptyMark);
-    var emptyHeadline = document.createElement('h2');
-    emptyHeadline.textContent = filterActive
-      ? 'Nothing on the shelf matches.'
-      : 'Your shelf is open';
-    empty.appendChild(emptyHeadline);
-    var emptySubtitle = document.createElement('p');
-    emptySubtitle.textContent = filterActive
-      ? 'Clear your filters or add a new book.'
-      : 'Add your first book — scan a spine, search a title, or paste a whole list. Reading starts becoming thinking the moment it has somewhere to go.';
-    empty.appendChild(emptySubtitle);
-    // Signed-out never reaches here (top-of-function hard-gate, W11 S8 Lane 1),
-    // so the empty state always offers the signed-in "Add a book" primary.
-    var emptyAddBtn = document.createElement('button');
-    emptyAddBtn.type = 'button';
-    emptyAddBtn.className = 'btn btn-primary';
-    emptyAddBtn.textContent = '＋ Add a book';
-    emptyAddBtn.addEventListener('click', function() {
-      openShelfEditor();
-    });
-    empty.appendChild(emptyAddBtn);
-    main.appendChild(empty);
-  } else {
-    // Stage 3: branch on the persisted shelf view. Both consume the SAME
-    // post-sort/post-filter `books` array, so sort/filter/search work
-    // identically in either view. 'covers' = the existing grid via
-    // renderShelfBook (untouched); 'list' = compact rows via the new
-    // renderShelfBookRow.
-    if (getShelfView() === 'list') {
-      var rows = document.createElement('div');
-      rows.className = 'shelf-rows';
-      var ri;
-      for (ri = 0; ri < books.length; ri++) {
-        rows.appendChild(renderShelfBookRow(books[ri], !!shelfAlight[books[ri].id], shelfArcsByBook[books[ri].id] || []));
-      }
-      main.appendChild(rows);
-    } else {
-      var list = document.createElement('div');
-      list.className = 'shelf-grid';
-      list.id = 'shelf-grid';
-      var i;
-      for (i = 0; i < books.length; i++) {
-        list.appendChild(renderShelfBook(books[i], !!shelfAlight[books[i].id], shelfArcsByBook[books[i].id] || []));
-      }
-      main.appendChild(list);
-    }
-
-    // S-D2 (Wave 1): the alight legend -- static explanatory copy (not
-    // generative). Shown with the grid/rows (books present), never on empty.
-    var shelfRootedNote = document.createElement('p');
-    shelfRootedNote.className = 'shelf-rootednote';
-    var shelfRootedMark = document.createElement('span');
-    shelfRootedMark.className = 'shelf-rootednote-mark';
-    shelfRootedMark.setAttribute('aria-hidden', 'true');
-    var shelfRootedB = document.createElement('b');
-    shelfRootedB.textContent = 'Alight';
-    shelfRootedNote.appendChild(shelfRootedMark);
-    shelfRootedNote.appendChild(shelfRootedB);
-    shelfRootedNote.appendChild(document.createTextNode(
-      ' = this book has grown into your thinking — marginalia, or a sub-theory built from it. The rest are read or waiting.'));
-    main.appendChild(shelfRootedNote);
-  }
-
-  layout.appendChild(main);
-  wrap.appendChild(layout);
-
-  // 3b (R2): the arc-picker host (shelfMoveToArc mounts buildArcPickerPanel here)
-  // + the fixed Move-to-arc action bar -- the ONLY bulk action. The bar slides up
-  // (CSS) when Select mode has >=1 pick; count restored from shelfPicked.
-  var shelfArcPickerHost = document.createElement('div');
-  shelfArcPickerHost.id = 'shelf-arc-picker-host';
-  wrap.appendChild(shelfArcPickerHost);
-
+  // ===== Select -> Move-to-arc action bar (CARRIED) =====
   var selectBar = document.createElement('div');
   selectBar.id = 'shelf-selectbar';
   selectBar.className = 'shelf-selectbar' + (shelfPickedCount() > 0 ? ' has-pick' : '');
@@ -6013,20 +4927,22 @@ function renderShelf() {
 
   host.appendChild(wrap);
 
-  // Stage 4d: the render above rebuilt the search input; when the
-  // render was triggered by typing, restore focus + caret-to-end so
-  // the user keeps typing uninterrupted.
-  if (shelfSearchRefocus) {
-    shelfSearchRefocus = false;
-    var refocusInput = document.getElementById('shelf-search-input');
-    if (refocusInput) {
-      refocusInput.focus();
-      var caretEnd = refocusInput.value.length;
-      if (typeof refocusInput.setSelectionRange === 'function') {
-        refocusInput.setSelectionRange(caretEnd, caretEnd);
-      }
-    }
-  }
+  // Fill the desk + case, set illumination state, grow the wheat.
+  renderShelfDesk();
+  renderShelfCase();
+  shelfUpdateSearchEmpty();
+  buildShelfWheat();
+
+  // Rebuild wheat (and re-flow the wall's column count) on resize. Purged/rebound
+  // each render + on route change.
+  shelfWheatResizeHandler = function () {
+    if (shelfWheatResizeTimer) { clearTimeout(shelfWheatResizeTimer); }
+    shelfWheatResizeTimer = setTimeout(function () {
+      if (!shelfFocused) { renderShelfCase(); shelfUpdateSearchEmpty(); }
+      buildShelfWheat();
+    }, 150);
+  };
+  window.addEventListener('resize', shelfWheatResizeHandler);
 }
 
 // 3a (R2): deterministic per-arc hue from the Universal field spectrum
@@ -6044,170 +4960,398 @@ function arcFieldHue(arcId) {
   return 'var(--field-' + (Math.abs(h) % 10 + 1) + ')';
 }
 
-// Single shelf row. Anchor element so the browser's hashchange path
-// handles navigation -- no addEventListener needed.
-function renderShelfBook(book, isAlight, arcs) {
-  var card = document.createElement('a');
-  card.className = 'shelf-book' + (isAlight ? ' is-alight' : '') + (shelfPicked[book.id] ? ' is-picked' : '');
-  card.href = '#book/' + book.id;
+// ============================================================================
+// R-SHELF (v3.242) · the bookcase helpers. buildCoverNode is the single standing-
+// book renderer (covers card renderShelfBook, retired — this is shelf-only). The
+// case is filled by renderShelfCase (S2); the desk by renderShelfDesk. Order-by-
+// life, marks (glow g0-g3 = marginalia density; ember = value marks), and
+// illumination all read the shared shelfCtx. renderShelfBookRow is UNCHANGED
+// below (F7: signature stable for the dead _accountBuildCategoryPanel tree).
+// ============================================================================
 
-  // 3.5b: cover thumbnail or placeholder block. The truthy check
-  // correctly treats null, undefined, and '' as missing-cover.
-  // 3.10a Stage 3: both branches now mount inside a shared
-  // .shelf-book-cover-area wrapper so the fixed 200px cover-area
-  // height applies uniformly whether the card has an image or a
-  // placeholder. Wrapper is purely structural -- no behavior, no
-  // event listeners. Future surfaces (Stage 4 mobile 160px, overlay
-  // affordances) hang off this container.
-  var coverArea = document.createElement('div');
-  coverArea.className = 'shelf-book-cover-area';
-  // Stage 1: self-healing cover. A broken OR null coverUrl walks any
-  // coverCandidates, then falls to the graceful "cover pending" placeholder
-  // (title + label) -- never a broken <img> ("?") or an empty card. The
-  // placeholder label is a real <span> (not a CSS ::after) so the text is in
-  // the DOM for assistive tech; the async cover fetch may still resolve, so it
-  // reads as pending, not permanently absent.
-  coverArea.appendChild(buildSelfHealingCover(book, 'shelf-book-cover', function() {
-    var coverPlaceholder = document.createElement('div');
-    coverPlaceholder.className = 'shelf-book-cover-placeholder';
-    var pendingTitle = document.createElement('span');
-    pendingTitle.className = 'shelf-book-cover-pending-title';
-    pendingTitle.textContent = book.title || '';
-    coverPlaceholder.appendChild(pendingTitle);
-    var pendingLabel = document.createElement('span');
-    pendingLabel.className = 'shelf-book-cover-pending';
-    pendingLabel.textContent = 'cover pending';
-    coverPlaceholder.appendChild(pendingLabel);
-    return coverPlaceholder;
-  }));
+// stable string hash (cover seeded variance + any deterministic per-book jitter)
+function shelfHash(s) {
+  var h = 0, i, str = '' + (s || '');
+  for (i = 0; i < str.length; i = i + 1) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+  return h;
+}
 
-  // Tradition resolution for the spine tick below: traditionOverride
-  // wins if set (user choice from the edit-book modal, 5.6 sub-step
-  // 5), else the genre-derived tradition. Stage 4d removed the 5.6
-  // sub-step 4 corner glyph from shelf covers (mockup parity, D4);
-  // renderRegisterGlyph stays intact for other surfaces -- re-adding
-  // one call site here reverses this.
-  var glyphTradition = book.traditionOverride || book.tradition;
+// D1 · annotation-density tier from REAL marginalia count: 0->g0, 1-2->g1,
+// 3-5->g2, 6+->g3 (g0 = absence; no halo on unannotated covers, §3.3).
+function shelfGlowTier(book) {
+  var n = 0;
+  if (book && book.id && typeof marginaliaForBook === 'function') { n = marginaliaForBook(book.id).length; }
+  if (n <= 0) { return 0; }
+  if (n <= 2) { return 1; }
+  if (n <= 5) { return 2; }
+  return 3;
+}
 
-  card.appendChild(coverArea);
-
-  // S-D2 (Wave 1): the gold root-mark on an alight cover (mirrors
-  // bookAmberCover's .bk-cover-rmark). Computed display-only; the caller passes
-  // isAlight from the real marginalia + sub-theory linkage.
-  if (isAlight) {
-    var shelfRmark = document.createElement('span');
-    shelfRmark.className = 'shelf-book-rmark';
-    shelfRmark.setAttribute('aria-hidden', 'true');
-    coverArea.appendChild(shelfRmark);
+// distinct value slugs on a book (dedup within-book) — ember + chip match.
+function shelfBookValues(book) {
+  var out = [], seen = {}, i, m, v;
+  if (!book || !(book.valueMarks instanceof Array)) { return out; }
+  for (i = 0; i < book.valueMarks.length; i = i + 1) {
+    m = book.valueMarks[i];
+    v = (m && typeof m.value === 'string') ? m.value : '';
+    if (v === '' || Object.prototype.hasOwnProperty.call(seen, v)) { continue; }
+    seen[v] = true; out.push(v);
   }
+  return out;
+}
 
-  // Phase 3.1: register tick -- left-edge accent bar colored by the
-  // book's tradition. Data-driven token only: set --tick to
-  // var(--register-<tradition>); CSS paints background: var(--tick).
-  // 'unassigned' (and any tradition without a register token) gets NO
-  // tick, mirroring renderRegisterGlyph's empty-corner signal. Uses the
-  // same glyphTradition resolved above (traditionOverride || tradition).
-  if (glyphTradition && glyphTradition !== 'unassigned' &&
-      typeof REGISTER_SHAPE_PATHS[glyphTradition] === 'string' &&
-      REGISTER_SHAPE_PATHS[glyphTradition] !== '') {
-    var tick = document.createElement('span');
-    tick.className = 'shelf-book-tick';
-    tick.setAttribute('aria-hidden', 'true');
-    tick.style.setProperty('--tick', 'var(--register-' + glyphTradition + ')');
-    coverArea.appendChild(tick);
-    // 3a: has-tick moves the arc thread just inside the register tick (which
-    // stays at left:0). A book without a tick lets the thread hug the edge.
-    card.className = card.className + ' has-tick';
+function shelfFiltersActive() { return !!(shelfFilter.value || shelfSearchQuery); }
+
+// F6/Law-1 · does the book match the active value chip AND search? (illumination
+// only — never removal). shelfFilter.value carries the active chip; shelfSearch-
+// Query the search text.
+function shelfBookMatchesFilter(book) {
+  if (shelfFilter.value) {
+    var vals = shelfBookValues(book), ok = false, i;
+    for (i = 0; i < vals.length; i = i + 1) { if (vals[i] === shelfFilter.value) { ok = true; break; } }
+    if (!ok) { return false; }
   }
-
-  // 3a (R2): arc thread-tie (decision 1/8). Colored by the primary arc; the
-  // register tick above is UNTOUCHED. Tapping the thread reveals ALL arcs (the
-  // card still navigates from anywhere else) -- the reveal trigger narrows from
-  // the mockup's whole-card tap to the thread, because the live card is a
-  // navigation link and "book open" is load-bearing.
-  if (arcs && arcs.length > 0) {
-    var arcThread = document.createElement('span');
-    arcThread.className = 'shelf-book-arcthread';
-    arcThread.setAttribute('aria-hidden', 'true');
-    arcThread.style.setProperty('--arc', arcFieldHue(arcs[0].id));
-    coverArea.appendChild(arcThread);
+  if (shelfSearchQuery) {
+    var hay = ((book.title || '') + ' ' + (book.author || '')).toLowerCase();
+    if (hay.indexOf(shelfSearchQuery) < 0) { return false; }
   }
+  return true;
+}
 
-  // 3b (R2): per-card select checkbox overlay (shown only in Select mode via the
-  // .shelf.is-selecting gate). Picked state mirrors shelfPicked.
-  var checkEl = document.createElement('span');
-  checkEl.className = 'shelf-book-check';
-  checkEl.setAttribute('aria-hidden', 'true');
-  coverArea.appendChild(checkEl);
-
-  var titleEl = document.createElement('h2');
-  titleEl.className = 'shelf-book-title';
-  titleEl.textContent = book.title || '';
-  card.appendChild(titleEl);
-
-  if (book.author) {
-    var authorEl = document.createElement('p');
-    authorEl.className = 'shelf-book-author';
-    authorEl.textContent = book.author;
-    card.appendChild(authorEl);
+// A2 · in lens mode, the name of another lens (userTheme) this book also sits in.
+function shelfOtherLens(book, currentLensName) {
+  var u = getCurrentUser();
+  if (!u || !u.uid || !state.userThemes) { return null; }
+  var tk, t;
+  for (tk in state.userThemes) {
+    if (!Object.prototype.hasOwnProperty.call(state.userThemes, tk)) { continue; }
+    t = state.userThemes[tk];
+    if (!t || t.userId !== u.uid || t.name === currentLensName) { continue; }
+    if ((t.bookIds || []).indexOf(book.id) !== -1) { return t.name; }
   }
+  return null;
+}
 
-  var meta = document.createElement('div');
-  meta.className = 'shelf-book-meta';
+// cover-less -> a standing SPINE (weakness becomes charm; pin 10 fallback).
+function shelfBuildSpine(book) {
+  var spine = document.createElement('span');
+  spine.className = 'spine';
+  var sp = document.createElement('span');
+  sp.textContent = book.title || '';
+  spine.appendChild(sp);
+  return spine;
+}
 
-  // 3.10a Stage 3 + Phase 1: status-modifier class hook. statusCanon is the
-  // normalized canonical value (reading / read / will-read), reused for class
-  // and textContent so legacy {want,reading,finished} render uniformly.
-  var statusEl = document.createElement('span');
-  // Phase 1: normalize legacy {want,reading,finished} -> canonical
-  // {will-read,reading,read} for both the class hook and the pill text.
-  var statusCanon = normalizeStatus(book.status);
-  statusEl.className = 'shelf-book-status shelf-book-status-' + statusCanon;
-  statusEl.textContent = statusCanon;
-  meta.appendChild(statusEl);
-
-  card.appendChild(meta);
-
-  // 3a (R2): the tap-reveal panel -- every arc this book belongs to
-  // (intersectional). Hidden until the thread is tapped (.arcs-open). The first
-  // arc is the primary (matches the thread color). The card handler
-  // preventDefaults clicks inside the panel so tapping a chip inspects, not navigates.
-  if (arcs && arcs.length > 0) {
-    var arcsBox = document.createElement('div');
-    arcsBox.className = 'shelf-book-arcs';
-    var aci;
-    for (aci = 0; aci < arcs.length; aci = aci + 1) {
-      var arcChip = document.createElement('span');
-      arcChip.className = 'arc-chip' + (aci === 0 ? ' is-primary' : '');
-      arcChip.style.setProperty('--arc', arcFieldHue(arcs[aci].id));
-      arcChip.textContent = arcs[aci].title || 'Untitled arc';
-      arcsBox.appendChild(arcChip);
+// S-D2 · the computed "alight" set (>=1 marginalia OR >=1 derived sub-theory),
+// owner-filtered. Carried from the live renderShelf IIFE.
+function shelfComputeAlight() {
+  var out = {};
+  var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var auid = au ? au.uid : null;
+  var entries = state.notebookEntries || {};
+  var subs = state.subTheories || {};
+  var ek, e, ei, s2k, s2, si, ev, sj, ent;
+  for (ek in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, ek)) { continue; }
+    e = entries[ek];
+    if (!e || e.register !== 'marginalia') { continue; }
+    if (auid && e.userId && e.userId !== auid) { continue; }
+    if (!e.bookIds) { continue; }
+    for (ei = 0; ei < e.bookIds.length; ei = ei + 1) { out[e.bookIds[ei]] = true; }
+  }
+  for (s2k in subs) {
+    if (!Object.prototype.hasOwnProperty.call(subs, s2k)) { continue; }
+    s2 = subs[s2k];
+    if (!s2) { continue; }
+    if (auid && s2.userId && s2.userId !== auid) { continue; }
+    if (s2.evidence) {
+      for (si = 0; si < s2.evidence.length; si = si + 1) {
+        ev = s2.evidence[si];
+        if (ev && ev.kind === 'book' && ev.refId) { out[ev.refId] = true; }
+      }
     }
-    card.appendChild(arcsBox);
+    if (s2.attachedMarginalia) {
+      for (sj = 0; sj < s2.attachedMarginalia.length; sj = sj + 1) {
+        ent = entries[s2.attachedMarginalia[sj]];
+        if (ent && ent.bookIds) {
+          for (ei = 0; ei < ent.bookIds.length; ei = ei + 1) { out[ent.bookIds[ei]] = true; }
+        }
+      }
+    }
   }
+  return out;
+}
 
-  // 3a/3b (R2): one card-level click handler routes by zone.
-  //  - Select mode: any click picks/unpicks the card (never navigates).
-  //  - Otherwise: a click on the arc thread reveals ALL arcs; a click inside the
-  //    reveal panel inspects (no nav); anywhere else navigates (the anchor href).
-  card.addEventListener('click', function (ev) {
-    if (shelfSelecting) {
-      ev.preventDefault();
-      shelfTogglePick(card, book.id);
-      return;
+// book -> arcs map (intersectional; owner-filtered). Carried from live.
+function shelfComputeArcsByBook() {
+  var out = {};
+  var au = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var auid = au ? au.uid : null;
+  var arcsMap = state.arcs || {};
+  var akk, arc2, abi, mid;
+  for (akk in arcsMap) {
+    if (!Object.prototype.hasOwnProperty.call(arcsMap, akk)) { continue; }
+    arc2 = arcsMap[akk];
+    if (!arc2 || !arc2.bookIds) { continue; }
+    if (auid && arc2.userId && arc2.userId !== auid) { continue; }
+    for (abi = 0; abi < arc2.bookIds.length; abi = abi + 1) {
+      mid = arc2.bookIds[abi] && arc2.bookIds[abi].id;
+      if (!mid) { continue; }
+      if (!out[mid]) { out[mid] = []; }
+      out[mid].push(arc2);
     }
-    var cls = (ev.target && ev.target.className) ? ('' + ev.target.className) : '';
-    if (cls.indexOf('shelf-book-arcthread') > -1) {
-      ev.preventDefault();
-      shelfToggleReveal(card);
-      return;
+  }
+  return out;
+}
+
+// F6 · per-value shelf sizes (deduped once per book across the shelf set). Fills
+// outList (sorted by count desc, then alpha) and returns the count map. Carried.
+function shelfComputeValueCounts(books, outList) {
+  var counts = {}, seen = {}, i, b, j, v, seenThis;
+  for (i = 0; i < books.length; i = i + 1) {
+    b = books[i];
+    if (!b || !(b.valueMarks instanceof Array)) { continue; }
+    seenThis = {};
+    for (j = 0; j < b.valueMarks.length; j = j + 1) {
+      v = (b.valueMarks[j] && typeof b.valueMarks[j].value === 'string') ? b.valueMarks[j].value : '';
+      if (v === '' || Object.prototype.hasOwnProperty.call(seenThis, v)) { continue; }
+      seenThis[v] = true;
+      if (!Object.prototype.hasOwnProperty.call(seen, v)) { seen[v] = true; outList.push(v); }
+      counts[v] = (counts[v] || 0) + 1;
     }
-    if (cls.indexOf('arc-chip') > -1 || cls.indexOf('shelf-book-arcs') > -1) {
-      ev.preventDefault();
-    }
+  }
+  outList.sort(function (a, b2) {
+    var ca = counts[a] || 0, cb = counts[b2] || 0;
+    if (cb !== ca) { return cb - ca; }
+    var la = a.toLowerCase(), lb = b2.toLowerCase();
+    if (la < lb) { return -1; }
+    if (la > lb) { return 1; }
+    return 0;
   });
+  return counts;
+}
 
-  return card;
+// F9/§3.2 · the wheat generator — exactly two layers, tip-lean only, transform
+// ONLY. Stalk heights derive from the LIVE strip height so full stalks WITH heads
+// fit (head rises 12px above the stalk top; near layer capped at stripH-16 ->
+// heads land ~4px below the top at 64@390 / 104@>=760). Period >= 8s, ALWAYS.
+function buildShelfWheat() {
+  var band = document.getElementById('shelf-horizon');
+  if (!band) { return; }
+  band.innerHTML = '';
+  var w = band.clientWidth || 1000;
+  var h = band.clientHeight || 104;
+  var nearMax = Math.max(20, h - 16);
+  var nearMin = Math.round(nearMax * 0.60);
+  var farMax = Math.round(nearMax * 0.72);
+  var farMin = Math.round(nearMax * 0.40);
+  var layers = [
+    { cls: 'stalk--far', n: Math.max(6, Math.round(w / 26)), hMin: farMin, hMax: farMax },
+    { cls: 'stalk--near', n: Math.max(8, Math.round(w / 17)), hMin: nearMin, hMax: nearMax }
+  ];
+  var li, s, st, L;
+  for (li = 0; li < layers.length; li = li + 1) {
+    L = layers[li];
+    for (s = 0; s < L.n; s = s + 1) {
+      st = document.createElement('div');
+      st.className = 'stalk ' + L.cls;
+      st.style.left = (Math.random() * 100).toFixed(2) + '%';
+      st.style.height = Math.round(L.hMin + Math.random() * (L.hMax - L.hMin)) + 'px';
+      st.style.animationDuration = (8 + Math.random() * 5).toFixed(2) + 's';
+      st.style.animationDelay = (-Math.random() * 8).toFixed(2) + 's';
+      band.appendChild(st);
+    }
+  }
+}
+
+// F3/§3.3 · the single standing book. Cover (real <img>, lazy, in a fixed 2:3
+// slot -> zero CLS) or a SPINE fallback; glow g0-g3 (density); one coal ember
+// (value marks); register tick; arc thread + reveal; select check; dot-only
+// status (label only in the focused view). opts: { now, focused, lensName }.
+function buildCoverNode(book, opts) {
+  opts = opts || {};
+  var wrap = document.createElement('a');
+  wrap.className = 'cavity-cover' + (opts.now ? ' is-now' : '');
+  wrap.href = '#book/' + book.id;
+  if (shelfFiltersActive()) { wrap.className += shelfBookMatchesFilter(book) ? ' is-lit' : ' is-dim'; }
+  if (shelfPicked[book.id]) { wrap.className += ' is-picked'; }
+
+  var slot = document.createElement('span');
+  slot.className = 'book-slot';
+
+  var hasCover = !!(book.coverUrl || (book.coverCandidates && book.coverCandidates.length > 0));
+  if (!hasCover) {
+    slot.appendChild(shelfBuildSpine(book));
+  } else {
+    var area = document.createElement('span');
+    area.className = 'shelf-book-cover-area';
+    // UNIFORM COVERS · seeded uniform scale (aspect held 2:3; variance at the TOP
+    // edge only, feet on the line). Nominal cap 5.5% (0.945..1.000) < the <=6% floor.
+    var scale = 1 - (Math.abs(shelfHash(book.title + '|' + book.author + '|h')) % 56) / 1000;
+    area.style.height = 'calc(var(--cover-h) * ' + scale.toFixed(3) + ')';
+    area.style.width = 'calc(var(--cover-w) * ' + scale.toFixed(3) + ')';
+    var glow = shelfGlowTier(book);
+    if (glow > 0) { area.setAttribute('data-glow', '' + glow); }
+    // real cover (self-healing candidate walk); PIN 10: lazy + spine fallback.
+    var cover = buildSelfHealingCover(book, 'shelf-book-cover', function () { return shelfBuildSpine(book); });
+    if (cover && cover.tagName === 'IMG') { cover.setAttribute('loading', 'lazy'); cover.setAttribute('decoding', 'async'); }
+    area.appendChild(cover);
+    // register tick (carried)
+    var glyphTradition = book.traditionOverride || book.tradition;
+    if (glyphTradition && glyphTradition !== 'unassigned' &&
+        typeof REGISTER_SHAPE_PATHS[glyphTradition] === 'string' && REGISTER_SHAPE_PATHS[glyphTradition] !== '') {
+      var tick = document.createElement('span');
+      tick.className = 'shelf-book-tick';
+      tick.setAttribute('aria-hidden', 'true');
+      tick.style.setProperty('--tick', 'var(--register-' + glyphTradition + ')');
+      area.appendChild(tick);
+      wrap.className += ' has-tick';
+    }
+    // arc thread-tie (carried)
+    var arcs = (shelfCtx && shelfCtx.arcs && shelfCtx.arcs[book.id]) ? shelfCtx.arcs[book.id] : [];
+    if (arcs.length > 0) {
+      var thread = document.createElement('span');
+      thread.className = 'shelf-book-arcthread';
+      thread.setAttribute('aria-hidden', 'true');
+      thread.style.setProperty('--arc', arcFieldHue(arcs[0].id));
+      area.appendChild(thread);
+    }
+    // select-mode check overlay (carried)
+    var chk = document.createElement('span');
+    chk.className = 'shelf-book-check';
+    chk.setAttribute('aria-hidden', 'true');
+    area.appendChild(chk);
+    // D2 · the single coal ember (value marks): >=1 marked, >=2 heavy.
+    var vmCount = (book.valueMarks instanceof Array) ? book.valueMarks.length : 0;
+    if (vmCount > 0) {
+      var em = document.createElement('span');
+      em.className = 'ember ' + (vmCount >= 2 ? 'ember--heavy' : 'ember--marked');
+      area.appendChild(em);
+    }
+    slot.appendChild(area);
+  }
+  wrap.appendChild(slot);
+
+  // caption zone — fixed height; every passive element lives here (title/author/
+  // status/also-under), so caption length can never re-stagger a row.
+  var cap = document.createElement('span');
+  cap.className = 'cap';
+  var title = document.createElement('span');
+  title.className = 'shelf-book-title';
+  title.textContent = book.title || '';
+  cap.appendChild(title);
+  if (book.author) {
+    var author = document.createElement('span');
+    author.className = 'shelf-book-author';
+    author.textContent = book.author;
+    cap.appendChild(author);
+  }
+  var meta = document.createElement('span');
+  meta.className = 'shelf-book-meta';
+  var statusCanon = normalizeStatus(book.status);
+  var statusEl = document.createElement('span');
+  statusEl.className = 'shelf-book-status shelf-book-status-' + statusCanon;
+  // dot-only status; the word survives only in the focused full view.
+  if (opts.focused) { statusEl.textContent = statusCanon; }
+  meta.appendChild(statusEl);
+  cap.appendChild(meta);
+  // A2 · lens-mode "also under…"
+  if (opts.lensName) {
+    var otherLens = shelfOtherLens(book, opts.lensName);
+    if (otherLens) {
+      var also = document.createElement('span');
+      also.className = 'also-under';
+      also.textContent = 'also under ' + otherLens;
+      cap.appendChild(also);
+    }
+  }
+  wrap.appendChild(cap);
+
+  // arc reveal panel — display:none at rest (zero height, no gravity impact).
+  var arcs2 = (shelfCtx && shelfCtx.arcs && shelfCtx.arcs[book.id]) ? shelfCtx.arcs[book.id] : [];
+  if (hasCover && arcs2.length > 0) {
+    var arcsBox = document.createElement('span');
+    arcsBox.className = 'shelf-book-arcs';
+    var ai;
+    for (ai = 0; ai < arcs2.length; ai = ai + 1) {
+      var chip = document.createElement('span');
+      chip.className = 'arc-chip' + (ai === 0 ? ' is-primary' : '');
+      chip.style.setProperty('--arc', arcFieldHue(arcs2[ai].id));
+      chip.textContent = arcs2[ai].title || 'Untitled arc';
+      arcsBox.appendChild(chip);
+    }
+    wrap.appendChild(arcsBox);
+  }
+
+  // click routing: select-mode picks; arc-thread reveals; a chip inspects (no
+  // nav); anywhere else the anchor navigates to the book (href).
+  wrap.addEventListener('click', function (ev) {
+    if (shelfSelecting) { ev.preventDefault(); shelfTogglePick(wrap, book.id); return; }
+    var cls = (ev.target && ev.target.className) ? ('' + ev.target.className) : '';
+    if (cls.indexOf('shelf-book-arcthread') > -1) { ev.preventDefault(); shelfToggleReveal(wrap); return; }
+    if (cls.indexOf('arc-chip') > -1 || cls.indexOf('shelf-book-arcs') > -1) { ev.preventDefault(); }
+  });
+  return wrap;
+}
+
+// F2/§3.4 · the desk (NOW). Membership = still-reading books (status 'reading').
+// The carrying-question line is carrying-question-OR-NOTHING (D4) — no source is
+// authored yet (an R-CAPTURE seam), so it renders nothing here. Empty desk (no
+// still-reading) -> one --ink-3 line, no furniture (§3.4).
+function renderShelfDesk() {
+  var row = document.getElementById('shelf-desk-row');
+  if (!row || !shelfCtx) { return; }
+  row.innerHTML = '';
+  var countEl = document.getElementById('shelf-desk-count');
+  var nowBooks = [], i, b;
+  for (i = 0; i < shelfCtx.books.length; i = i + 1) {
+    b = shelfCtx.books[i];
+    if (normalizeStatus(b.status) === 'reading') { nowBooks.push(b); }
+  }
+  if (nowBooks.length === 0) {
+    if (countEl) { countEl.textContent = ''; }
+    var line = document.createElement('p');
+    line.className = 'desk-empty-line';
+    line.textContent = 'Nothing in hand right now.';
+    row.appendChild(line);
+    return;
+  }
+  if (countEl) { countEl.textContent = 'what you’re carrying'; }
+  for (i = 0; i < nowBooks.length; i = i + 1) {
+    row.appendChild(buildCoverNode(nowBooks[i], { now: true }));
+  }
+}
+
+// F1 · the case. STUB in S1 (empty container — shell verification). S2 replaces
+// this with the full bookcase: bands by mode + order-by-life + THE WALL masonry
+// (>=760) + the unshelved pile (categories) / the Ask-Yumi row (lenses).
+function renderShelfCase() {
+  var root = document.getElementById('shelf-case');
+  if (root) { root.innerHTML = ''; }
+}
+
+// F6/Law-1 · re-apply illumination after a chip/search change: re-render the case
+// + desk (covers rebuild lit/dimmed) and toggle the empty line. The header/search
+// input are untouched, so focus is never lost.
+function applyShelfIllumination() {
+  renderShelfCase();
+  renderShelfDesk();
+  shelfUpdateSearchEmpty();
+}
+
+function shelfUpdateSearchEmpty() {
+  var el = document.getElementById('shelf-search-empty');
+  if (!el) { return; }
+  var shown = false;
+  if (shelfFiltersActive()) {
+    var covers = document.querySelectorAll('.shelf.lum-amber-deep .cavity-cover');
+    var any = covers.length > 0, litAny = false, i;
+    for (i = 0; i < covers.length; i = i + 1) {
+      if (('' + covers[i].className).indexOf('is-lit') > -1) { litAny = true; break; }
+    }
+    shown = any && !litAny;
+  }
+  el.className = 'search-empty-line' + (shown ? ' is-shown' : '');
 }
 
 // Stage 3 (chrome-fidelity): compact List-view row. Whole-row anchor to
@@ -6494,6 +5638,18 @@ var shelfHeadScrollHandler = null;
 // shelfPicked is the picked book-id set. Both reset on exit / after a move.
 var shelfSelecting = false;
 var shelfPicked = {};
+
+// R-SHELF (v3.242): the bookcase render context + session dials. shelfCtx carries
+// the render inputs (books/alight/arcs/valueCounts/mode) so the case/desk/illum
+// helpers read one source. shelfDensity = Covers|Compact (runtime, mockup-faithful,
+// session-persistent, not localStorage). shelfFocused = the open focused-band key
+// (mobile, S3). shelfWheatResizeHandler/Timer purge+rebind each render (twins of
+// shelfHeadScrollHandler).
+var shelfCtx = null;
+var shelfDensity = 'covers';
+var shelfFocused = null;
+var shelfWheatResizeHandler = null;
+var shelfWheatResizeTimer = null;
 
 function shelfToggleReveal(card) {
   if (card.className.indexOf('arcs-open') > -1) {

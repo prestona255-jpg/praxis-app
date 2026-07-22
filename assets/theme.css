@@ -155,6 +155,35 @@
      page reads as a sheet ON the world rather than as the world itself. */
   --sheet-gap:     18px;
 
+  /* R-SHELF (v3.242) · the bookcase + wheat-horizon motif. New decorative
+     literals for the Shelf re-composition (brief v4 §3.1 CARVED board + §3.2
+     BREEZE wheat + F9 horizon); kept in the paper / honey-gold / --gold-hi
+     family, never a new hue system. Wired by name in components.css (Law 6:
+     no raw hex outside theme.css). Cavity fill reuses --surface-2 (no token). */
+  --shelf-cavity:  #efe7d6;   /* cavity interior + recessed controls — one step
+                                 darker than the sheet. Light-safe twin of
+                                 --surface-2 (which the shelf's dark route flips). */
+  --board-face:    #e3d8c1;   /* §3.1 board: two flat tones — face */
+  --board-under:   #b9a97e;   /* §3.1 board: underside strip */
+  --spine-cloth:   #4a3f4d;   /* cover-less book spine — deep cloth (charm) */
+  --gold-ink-on-gold:#3d2807; /* dark-brown ink on gold fills — the shelf's
+                                 established literal (12754/12785…), tokenized so
+                                 new R-SHELF rules carry no raw hex. */
+  --wheat-sky-1:   #fbf4e0;   /* horizon sky, top */
+  --wheat-sky-2:   #f5eccb;   /* horizon sky, mid */
+  --wheat-sky-3:   #ecdcac;   /* horizon sky, at the soil line */
+  --wheat-glow:    rgba(217,164,65,.28);   /* low-sun glow = --gold-hi @alpha */
+  --wheat-near-1:  #c9a95e;   /* near stalk, tip */
+  --wheat-near-2:  #a98d4e;   /* near stalk, base */
+  --wheat-ear-1:   #e3bd6b;   /* near ear */
+  --wheat-ear-2:   #c39a4a;
+  --wheat-far-1:   #a48a52;   /* far stalk (one tone dimmer than near) */
+  --wheat-far-2:   #8a7040;
+  --wheat-ear-far-1:#c2a05e;  /* far ear */
+  --wheat-ear-far-2:#a5813a;
+  --wheat-soil-1:  rgba(122,95,44,0);      /* soil gradient, top (transparent) */
+  --wheat-soil-2:  rgba(122,95,44,.22);    /* soil gradient, base */
+
   /* AES / B3 rider · --m1 ON PARCHMENT. #D9B24A measures 1.92:1 as a mark FILL
      on the parchment field (#FDF9EE) — below the 3:1 non-text floor. The
      ratified --m1 is NOT changed (it is correct on the dark world); instead the

@@ -12997,6 +12997,217 @@ body.wc-focus .app-nav { opacity:.26; }
 /* ===== end MW-1 · SHELF MOBILE PASS ===== */
 
 /* ============================================================================
+   R-SHELF (v3.242) · THE BOOKCASE + WHEAT HORIZON
+   The Shelf re-composition — brief v4 (THE FELT DIAL) + THE WALL / order-by-life.
+   ADDITIVE over the R2 skin + MW-1 block above (design-canon §2: add, don't
+   rewrite the load-bearing rules). Source-ordered AFTER them so the new bookcase
+   rules win where selectors overlap; the AES-2 sheet (:12729), Manage sheet
+   (:12890) and Select bar (:12845) are PRESERVED untouched (NON-GOALs).
+   Light-safe palette (L8): --ink/--gold*/--field-* are re-pointed light by the
+   :12688 block; --ink-2/-3/-4 are re-pointed below (the dark route flips them);
+   surfaces wire --card-*/--page-2/--shelf-cavity/--board-*/--wheat-* (never
+   --surface(-2)/--border, which flip dark). No --lum-* in new rules (Law 6).
+   Markup: renderShelf + buildCoverNode / renderShelfCase / renderShelfDesk /
+   buildShelfWheat / applyShelfIllumination (views.js).
+   ============================================================================ */
+
+/* L8 ground re-point — the two ink tiers the :12688 block did not cover +
+   the new sheet composition (strip flush to top; the 1080 clamp is replaced by
+   a full-bleed strip and a re-clamped .shelf-inner that widens to 1920). */
+.shelf.lum-amber-deep{ --ink-2:var(--card-ink-2); --ink-3:var(--card-meta); --ink-4:var(--card-meta); padding:0 0 104px; position:relative; }
+.shelf.lum-amber-deep > *{ max-width:none; margin:0; padding:0; }
+.shelf.lum-amber-deep > .shelf-inner{ max-width:1080px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
+@media (min-width:760px){ .shelf.lum-amber-deep > .shelf-inner{ max-width:1920px; } }
+
+/* ---- F9/§3.5 · THE HORIZON STRIP — slim, fixed, NEVER sticky (scrolls away) ---- */
+.shelf.lum-amber-deep .horizon-strip{
+  position:relative; height:104px; overflow:hidden;
+  border-radius:var(--card-radius) var(--card-radius) 0 0;
+  background:
+    radial-gradient(60% 90% at 72% 100%, var(--wheat-glow) 0%, transparent 62%),
+    linear-gradient(to bottom, var(--wheat-sky-1) 0%, var(--wheat-sky-2) 58%, var(--wheat-sky-3) 100%);
+}
+.shelf.lum-amber-deep .horizon-strip::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:12px; background:linear-gradient(to bottom, var(--wheat-soil-1), var(--wheat-soil-2)); }
+/* §3.2 BREEZE — two layers, tip-lean only, transform ONLY. Duration/delay set
+   inline per stalk by buildShelfWheat (>=8s); the CSS omits duration on purpose. */
+.shelf.lum-amber-deep .horizon-strip .stalk{ position:absolute; bottom:0; width:2px; border-radius:2px 2px 0 0; transform-origin:50% 100%; }
+.shelf.lum-amber-deep .horizon-strip .stalk::after{ content:''; position:absolute; top:-12px; left:-2px; width:6px; height:14px; border-radius:50% 50% 45% 45%; }
+.shelf.lum-amber-deep .horizon-strip .stalk--near{ background:linear-gradient(to top,var(--wheat-near-2),var(--wheat-near-1)); animation-name:shelfSwayNear; animation-timing-function:ease-in-out; animation-iteration-count:infinite; animation-direction:alternate; }
+.shelf.lum-amber-deep .horizon-strip .stalk--near::after{ background:radial-gradient(ellipse at 50% 30%, var(--wheat-ear-1), var(--wheat-ear-2)); }
+.shelf.lum-amber-deep .horizon-strip .stalk--far{ background:linear-gradient(to top,var(--wheat-far-2),var(--wheat-far-1)); animation-name:shelfSwayFar; animation-timing-function:ease-in-out; animation-iteration-count:infinite; animation-direction:alternate; }
+.shelf.lum-amber-deep .horizon-strip .stalk--far::after{ background:radial-gradient(ellipse at 50% 30%, var(--wheat-ear-far-1), var(--wheat-ear-far-2)); }
+@keyframes shelfSwayNear{ from{ transform:rotate(-1.7deg); } to{ transform:rotate(1.9deg); } }
+@keyframes shelfSwayFar{ from{ transform:rotate(-0.85deg); } to{ transform:rotate(0.95deg); } }
+
+/* ---- F4/§3.8 · THE SLIM HEADER — search + mode toggle; sidebar dissolved.
+   NOT sticky at any width (departs with the strip). Manage/Add/Select carried. -- */
+.shelf.lum-amber-deep .shelf-slim-header{ padding:18px 0 4px; }
+.shelf.lum-amber-deep .shelf-slim-top{ display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+.shelf.lum-amber-deep .shelf-slim-header h1{ font-family:var(--font-serif); font-weight:500; font-size:clamp(28px,4vw,38px); line-height:1; margin:0;
+  background:linear-gradient(180deg,var(--ink) 42%,var(--gold) 112%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+.shelf.lum-amber-deep .shelf-slim-count{ font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; color:var(--ink-3); padding-bottom:4px; }
+.shelf.lum-amber-deep .shelf-slim-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
+.shelf.lum-amber-deep .shelf-search{ flex:1 1 200px; min-width:170px; height:40px; display:inline-flex; align-items:center; gap:8px; padding:0 14px; border-radius:var(--radius-pill); background:var(--shelf-cavity); border:1px solid var(--line-page-2); }
+.shelf.lum-amber-deep .shelf-search input{ flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--ink); font-family:var(--font-body); font-size:14px; }
+.shelf.lum-amber-deep .shelf-search input::placeholder{ color:var(--ink-3); }
+.shelf.lum-amber-deep .shelf-search .s-glyph{ flex:none; opacity:.6; font-size:14px; color:var(--ink-3); }
+.shelf.lum-amber-deep .mode-seg{ display:inline-flex; padding:3px; border-radius:var(--radius-pill); background:var(--shelf-cavity); border:1px solid var(--line-page-2); }
+.shelf.lum-amber-deep .mode-seg button{ font-family:var(--font-body); font-size:13px; font-weight:500; color:var(--ink-2); background:none; border:none; border-radius:var(--radius-pill); padding:8px 16px; cursor:pointer; min-height:36px; }
+.shelf.lum-amber-deep .mode-seg button.is-on{ color:var(--gold-ink-on-gold); background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 60%,var(--gold) 100%); font-weight:600; }
+.shelf.lum-amber-deep .shelf-manage-entry{ margin-left:auto; }
+/* F6/Law-1 · value chips (illuminate matches / dim rest; dims COVER OPACITY only) */
+.shelf.lum-amber-deep .value-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center; }
+.shelf.lum-amber-deep .value-chips .vlabel{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-right:2px; }
+.shelf.lum-amber-deep .vchip{ font-family:var(--font-body); font-size:12.5px; color:var(--ink-2); background:transparent; border:1px solid var(--line-page-2); border-radius:var(--radius-pill); padding:6px 13px; min-height:32px; cursor:pointer; }
+.shelf.lum-amber-deep .vchip.is-on{ border-color:var(--gold); color:var(--gold-deep); background:var(--shelf-cavity); box-shadow:0 0 0 3px rgba(168,118,26,.14); }
+.shelf.lum-amber-deep .vcount{ font-family:var(--font-mono); margin-left:5px; }
+.shelf.lum-amber-deep .vchip:focus-visible, .shelf.lum-amber-deep .mode-seg button:focus-visible, .shelf.lum-amber-deep .shelf-search input:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+.shelf.lum-amber-deep .search-empty-line{ font-family:var(--font-mono); font-size:12px; font-style:italic; color:var(--ink-3); margin-top:14px; display:none; }
+.shelf.lum-amber-deep .search-empty-line.is-shown{ display:block; }
+
+/* ---- F2/§3.4 · THE DESK (NOW) — no card/border; page-tone ground. ---- */
+.shelf.lum-amber-deep .desk{ padding:20px 0 8px; --cap-h:var(--cap-h-now); }
+.shelf.lum-amber-deep .desk-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+.shelf.lum-amber-deep .desk-head h2{ font-family:var(--font-serif); font-style:italic; font-weight:600; font-size:21px; color:var(--ink); margin:0; }
+.shelf.lum-amber-deep .desk-head .count{ font-family:var(--font-mono); font-size:11px; color:var(--gold-deep); }
+.shelf.lum-amber-deep .desk-row{ display:flex; align-items:flex-end; gap:22px; flex-wrap:wrap; padding:2px 2px 0; }
+.shelf.lum-amber-deep .desk-empty-line{ font-family:var(--font-mono); font-size:13px; font-style:italic; color:var(--ink-3); padding:6px 2px 2px; }
+.shelf.lum-amber-deep .qline{ font-family:var(--font-mono); font-style:italic; font-size:10px; color:var(--gold-deep); max-width:130px; margin-top:9px; line-height:1.45; text-align:center; }
+
+/* ---- F1/F9/§3.1 · THE CASE — carved cavities; the case never moves. ---- */
+.shelf.lum-amber-deep{ --cover-w:96px; --cover-h:144px; --cover-w-now:114px; --cover-h-now:170px; --spine-w:28px; --cap-h:72px; --cap-h-lens:94px; --cap-h-now:110px; --row-gap:22px; --col-gap:16px; }
+.shelf.lum-amber-deep .case{ padding:8px 0 4px; transition:opacity .2s ease; }
+.shelf.lum-amber-deep .case.is-fading{ opacity:0; }
+.shelf.lum-amber-deep .case.is-lens{ --cap-h:var(--cap-h-lens); }
+.shelf.lum-amber-deep .focused-view{ --cap-h:var(--cap-h-lens); }
+/* THE WALL (>=760): side-by-side vertical column stacks; a band never splits. */
+.shelf.lum-amber-deep .wall{ display:block; }
+@media (min-width:760px){
+  .shelf.lum-amber-deep .wall{ display:flex; align-items:flex-start; gap:30px; }
+  .shelf.lum-amber-deep .wall-col{ flex:1 1 0; min-width:0; }
+  .shelf.lum-amber-deep .wall-col .cavity-band{ margin-bottom:30px; }
+}
+.shelf.lum-amber-deep .band-label{ font-family:var(--font-serif); font-weight:600; font-size:21px; color:var(--ink); padding:2px 0; text-align:left; }
+.shelf.lum-amber-deep .cavity-band{ margin-bottom:34px; }
+.shelf.lum-amber-deep .cavity-band-hd{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+.shelf.lum-amber-deep .cavity-band-hd button.label{ font-family:var(--font-serif); font-weight:600; font-size:21px; color:var(--ink); background:none; border:none; cursor:pointer; padding:2px 0; text-align:left; }
+.shelf.lum-amber-deep .cavity-band-hd button.label:hover{ color:var(--gold-deep); }
+.shelf.lum-amber-deep .cavity-band-hd .count{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); }
+.shelf.lum-amber-deep .cavity{ position:relative; background:var(--shelf-cavity); border-radius:3px; padding:14px 12px 16px; box-shadow:inset 0 15px 20px -15px rgba(36,23,16,.34); }
+.shelf.lum-amber-deep .cavity::after{ content:''; position:absolute; left:-2px; right:-2px; bottom:-9px; height:9px; background:var(--board-face); border-bottom:5px solid var(--board-under); border-radius:0 0 3px 3px; }
+/* GRAVITY — rows wrap, top-anchored equal-height columns -> feet on ONE line
+   per row; a repeating-gradient paints the drawn shelf line at each cover-foot. */
+.shelf.lum-amber-deep .cavity-shelfline{ display:flex; flex-wrap:wrap; align-items:flex-start; column-gap:var(--col-gap); row-gap:var(--row-gap); padding-bottom:2px;
+  background:repeating-linear-gradient(to bottom,
+    transparent 0, transparent calc(var(--cover-h) - 1px),
+    rgba(255,250,238,.55) calc(var(--cover-h) - 1px), rgba(255,250,238,.55) var(--cover-h),
+    var(--board-under) var(--cover-h), var(--board-under) calc(var(--cover-h) + 2px),
+    rgba(36,23,16,.12) calc(var(--cover-h) + 2px), rgba(36,23,16,.12) calc(var(--cover-h) + 5px),
+    transparent calc(var(--cover-h) + 5px), transparent calc(var(--cover-h) + var(--cap-h) + var(--row-gap))); }
+
+/* ---- the standing book (cover node). Container renamed .cavity-cover; the
+   sub-cover class names are CARRIED live (values re-expressed). ---- */
+.shelf.lum-amber-deep .cavity-cover{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:var(--cover-w); background:none; border:none; padding:0; cursor:pointer; text-align:center; }
+.shelf.lum-amber-deep .cavity-cover.is-now{ --cover-w:var(--cover-w-now); --cover-h:var(--cover-h-now); }
+.shelf.lum-amber-deep .book-slot{ position:relative; width:var(--cover-w); height:var(--cover-h); display:flex; align-items:flex-end; justify-content:center; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area{ position:relative; overflow:visible; background:var(--card-2); border:none; border-radius:3px 6px 6px 3px; box-shadow:0 3px 5px rgba(36,23,16,.30); transition:transform .18s ease, box-shadow .22s ease; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area .shelf-book-cover{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
+.shelf.lum-amber-deep .cavity-cover:hover .shelf-book-cover-area, .shelf.lum-amber-deep .cavity-cover:focus-visible .shelf-book-cover-area{ transform:translateY(-4px); }
+.shelf.lum-amber-deep .cavity-cover:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:4px; }
+.shelf.lum-amber-deep .cap{ width:var(--cover-w); height:var(--cap-h); overflow:hidden; display:flex; flex-direction:column; align-items:center; padding-top:8px; }
+/* F3/§3.3 · under-glow g0-g3; g0 = literal absence (no third shadow layer) */
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area[data-glow="1"]{ box-shadow:0 3px 5px rgba(36,23,16,.30), 0 7px 15px -9px rgba(168,118,26,.30); }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area[data-glow="2"]{ box-shadow:0 3px 5px rgba(36,23,16,.30), 0 8px 18px -7px rgba(168,118,26,.42); }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area[data-glow="3"]{ box-shadow:0 3px 5px rgba(36,23,16,.30), 0 10px 22px -5px rgba(217,164,65,.55); }
+/* F3/§3.3 · the single coal ember (value marks); one per cover, 2 rest steps */
+.shelf.lum-amber-deep .ember{ position:absolute; top:-4px; right:-4px; width:9px; height:9px; border-radius:50%; background:var(--gold); z-index:2; }
+.shelf.lum-amber-deep .ember--marked{ opacity:.55; }
+.shelf.lum-amber-deep .ember--heavy{ opacity:.78; box-shadow:0 0 4px rgba(168,118,26,.45); }
+.shelf.lum-amber-deep .cavity-cover.is-lit .ember{ background:var(--gold-hi); opacity:1; box-shadow:0 0 7px rgba(217,164,65,.65); }
+/* register tick + arc thread + select check (carried) */
+.shelf.lum-amber-deep .cavity-cover .shelf-book-tick{ position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--tick); z-index:1; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-arcthread{ position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 3px 3px 0; background:var(--arc); cursor:pointer; z-index:1; }
+.shelf.lum-amber-deep .cavity-cover.has-tick .shelf-book-arcthread{ left:3px; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-arcs{ display:none; flex-wrap:wrap; gap:5px; margin-top:8px; max-width:var(--cover-w); }
+.shelf.lum-amber-deep .cavity-cover.arcs-open .shelf-book-arcs{ display:flex; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-check{ display:none; position:absolute; top:6px; left:6px; z-index:3; width:20px; height:20px; border-radius:50%; border:2px solid rgba(255,255,255,.55); background:rgba(36,23,16,.35); }
+.shelf.lum-amber-deep.is-selecting .cavity-cover .shelf-book-check{ display:block; }
+.shelf.lum-amber-deep.is-selecting .cavity-cover{ cursor:copy; }
+.shelf.lum-amber-deep .cavity-cover.is-picked .shelf-book-check{ background:var(--gold); border-color:var(--gold); }
+.shelf.lum-amber-deep .cavity-cover.is-picked .shelf-book-check::after{ content:'\2713'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--gold-ink-on-gold); font-size:12px; font-weight:700; }
+.shelf.lum-amber-deep .cavity-cover.is-picked .shelf-book-cover-area{ outline:2px solid var(--gold); outline-offset:2px; }
+/* caption zone contents */
+.shelf.lum-amber-deep .cap .shelf-book-title{ font-family:var(--font-serif); font-weight:600; font-size:13px; color:var(--ink); text-align:center; line-height:1.2; max-width:var(--cover-w); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.shelf.lum-amber-deep .cap .shelf-book-author{ font-family:var(--font-body); font-size:10.5px; color:var(--ink-3); text-align:center; max-width:var(--cover-w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.shelf.lum-amber-deep .cap .shelf-book-meta{ display:flex; align-items:center; gap:5px; margin-top:3px; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-status{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-status::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--gold); box-shadow:none; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-status-read::before{ background:var(--ink-4); box-shadow:none; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-status-will-read::before{ background:transparent; border:1.5px solid var(--ink-4); width:7px; height:7px; box-shadow:none; }
+.shelf.lum-amber-deep .also-under{ font-family:var(--font-mono); font-size:8.5px; color:var(--ink-3); margin-top:6px; max-width:var(--cover-w); text-align:center; line-height:1.4; }
+/* cover-less -> SPINE (weakness becomes charm) */
+.shelf.lum-amber-deep .spine{ width:var(--spine-w); height:var(--cover-h); border-radius:2px 4px 4px 2px; display:flex; align-items:center; justify-content:center; background:var(--spine-cloth); box-shadow:0 3px 5px rgba(36,23,16,.30); }
+.shelf.lum-amber-deep .spine span{ writing-mode:vertical-rl; font-family:var(--font-serif); font-weight:600; font-size:11px; color:var(--text-on-dark); letter-spacing:.03em; max-height:120px; overflow:hidden; white-space:nowrap; }
+/* arc reveal chips (carried) */
+.shelf.lum-amber-deep .cavity-cover .arc-chip{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9px; color:var(--ink-2); background:var(--shelf-cavity); border:1px solid var(--line-page-2); border-radius:var(--radius-pill); padding:3px 8px; }
+.shelf.lum-amber-deep .cavity-cover .arc-chip::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--arc); flex:none; }
+.shelf.lum-amber-deep .cavity-cover .arc-chip.is-primary{ border-color:var(--arc); color:var(--ink); }
+
+/* F6/Law-1 illumination — cover OPACITY only; cavity ground untouched */
+.shelf.lum-amber-deep .cavity-cover.is-dim{ opacity:.32; }
+.shelf.lum-amber-deep .cavity-cover.is-lit .shelf-book-cover-area{ box-shadow:0 3px 5px rgba(36,23,16,.30), 0 0 0 2px var(--gold-hi), 0 10px 22px -6px rgba(217,164,65,.55); }
+
+/* A1 · mobile See-all tile (after the 2nd stacked shelf line) */
+.shelf.lum-amber-deep .seeall-tile{ width:var(--cover-w); height:var(--cover-h); border-radius:6px; border:1.5px dashed var(--line-page-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-2); display:flex; align-items:center; justify-content:center; text-align:center; padding:8px; line-height:1.5; cursor:pointer; }
+.shelf.lum-amber-deep .seeall-tile:hover{ border-color:var(--gold); color:var(--gold-deep); }
+
+/* the unshelved pile (Uncategorized) — outside the case, "in motion", last */
+.shelf.lum-amber-deep .pile-band .cavity-band-hd button.label{ color:var(--ink-2); }
+.shelf.lum-amber-deep .pile-row{ display:flex; align-items:flex-end; padding:12px 6px 0; min-height:calc(var(--cover-h) + var(--cap-h) + 10px); }
+.shelf.lum-amber-deep .pile-row .cavity-cover{ margin-right:-38px; }
+.shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(1) .shelf-book-cover-area{ transform:rotate(-5deg); }
+.shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(2) .shelf-book-cover-area{ transform:rotate(3deg) translateY(4px); }
+.shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(3) .shelf-book-cover-area{ transform:rotate(-2deg) translateY(-2px); }
+.shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(4) .shelf-book-cover-area{ transform:rotate(4deg) translateY(2px); }
+.shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(5) .shelf-book-cover-area{ transform:rotate(-3deg); }
+.shelf.lum-amber-deep .pile-note{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); font-style:italic; margin:14px 0 0 8px; }
+
+/* F7 · "Ask Yumi for more lenses" row (lens-mode; doubles as lens-empty state) */
+.shelf.lum-amber-deep .yumi-lens-row{ display:none; }
+.shelf.lum-amber-deep .yumi-lens-row.is-shown{ display:flex; align-items:center; gap:10px; padding:16px 4px; margin-top:6px; border-top:1px dashed var(--line-page-2); flex-wrap:wrap; }
+.shelf.lum-amber-deep .yumi-lens-row button{ font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--gold-deep); background:transparent; border:1px dashed var(--line-page-2); border-radius:var(--radius-sm); padding:9px 14px; cursor:pointer; }
+.shelf.lum-amber-deep .yumi-lens-row button:hover{ border-color:var(--gold); color:var(--ink); }
+.shelf.lum-amber-deep .yumi-lens-row .dot{ width:6px; height:6px; border-radius:50%; background:var(--teal-on-ground); flex:none; }
+.shelf.lum-amber-deep .yumi-lens-row p{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
+
+/* F5/§3.7 · the focused full view ("the case opens") — mobile-only */
+.shelf.lum-amber-deep .focused-view{ display:none; padding:8px 0 4px; }
+.shelf.lum-amber-deep .focused-view.is-shown{ display:block; }
+.shelf.lum-amber-deep .focused-back{ font-family:var(--font-mono); font-size:11.5px; letter-spacing:.04em; color:var(--gold-deep); background:none; border:none; cursor:pointer; padding:6px 0 16px; }
+.shelf.lum-amber-deep .focused-back:hover{ color:var(--ink); }
+
+/* ---- MOBILE (<=759) — real 760 divide; P3 44px targets; P8 no overflow ---- */
+@media (max-width:759px){
+  .shelf.lum-amber-deep > .shelf-inner{ padding-left:16px; padding-right:16px; }
+  .shelf.lum-amber-deep{ --cover-w:76px; --cover-h:114px; --spine-w:24px; --cover-w-now:92px; --cover-h-now:138px; --cap-h:60px; --cap-h-lens:80px; --cap-h-now:104px; --row-gap:18px; }
+  .shelf.lum-amber-deep .horizon-strip{ height:64px; }
+  .shelf.lum-amber-deep .shelf-slim-header h1{ font-size:32px; }
+  .shelf.lum-amber-deep .mode-seg button, .shelf.lum-amber-deep .vchip, .shelf.lum-amber-deep .desk-demo-toggle,
+  .shelf.lum-amber-deep .cavity-band-hd button.label, .shelf.lum-amber-deep .seeall-tile, .shelf.lum-amber-deep .yumi-lens-row button{ min-height:44px; }
+  .shelf.lum-amber-deep .shelf-search{ height:44px; }
+  .shelf.lum-amber-deep .shelf-search input{ font-size:16px; }
+  .shelf.lum-amber-deep .shelf-manage-entry{ width:100%; margin-left:0; }
+}
+
+/* reduced-motion — still field, no breath substitute (media query only, pin 4) */
+@media (prefers-reduced-motion:reduce){
+  .shelf.lum-amber-deep .horizon-strip .stalk{ animation:none !important; }
+  .shelf.lum-amber-deep .case{ transition:none; }
+  .shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area{ transition:none; }
+}
+/* ===== end R-SHELF · THE BOOKCASE + WHEAT HORIZON ===== */
+
+/* ============================================================================
    WAVE 1 · THE LIVING FIELD  (renderArcDetail on .lum-amber)
    Convert the arc interior (S1) to Amber/Lumen per design/praxis-field-amber.html.
    Faces = Field / Read / Page (List retired, F-D1). The constellation RENDERER
