@@ -1,4 +1,4 @@
-# R-SHELF — Round Brief v3 (THE FELT DIAL)
+# R-SHELF — Round Brief v4 (THE FELT DIAL)
 
 **Status:** v3 supersedes v2 (committed at 3f5df8b, `docs/studio/r-shelf-brief.md`).
 **Provenance:** v3 original of July 17, recovered from the owner's download July 21.
@@ -108,11 +108,11 @@ v3 adds:
 Carry v2's mandate list verbatim:
 
 - **The signature = the horizon over the case.** The page's one memorable thing is the pairing: life above (the swaying field), bones below (the shelves). Spend the boldness there; everything else stays quiet.
-- **Bookcase execution** — cavity: inset top + side shadows on a slightly deepened panel tone; board: ~10px, gradient face, underside cast shadow; all colors from the token/paper world. If it ever reads as "themed," pull back toward the paper ground — the iBooks-wood failure is the named anti-pattern.
-- **Wheat horizon execution** — two stalk layers (back dimmer/shorter), randomized heights/durations/delays, low-sun radial at the horizon, soil gradient at the base. Height ≈150px desktop / ≈118px at 390 (verify against NOW-band visibility, §8.7).
+- **Bookcase execution** — cavity: inset top + side shadows on a slightly deepened panel tone; board: ~10px, gradient face, underside cast shadow; all colors from the token/paper world. If it ever reads as "themed," pull back toward the paper ground — the iBooks-wood failure is the named anti-pattern. **[AMENDED v4, July 21 — §3.1 governs:** the board is TWO FLAT TONES (face + thin darker underside strip), NOT a "~10px gradient face"; §3.1 CARVED is the binding ruling. §5-vs-§3 → §3 governs (ratified).**]**
+- **Wheat horizon execution** — two stalk layers (back dimmer/shorter), randomized heights/durations/delays, low-sun radial at the horizon, soil gradient at the base. Height ≈150px desktop / ≈118px at 390 (verify against NOW-band visibility, §8.7). **[AMENDED v4, July 21 — §3.5 governs:** the strip is the SLIM band — 64px at 390, 104px desktop (the ratified midpoint of the 96–120 range), NOT "≈150px desktop / ≈118px at 390"; §3.5 is the binding ruling. Ratified.**]**
 - **Cover-less books render as SPINES** standing on the line (weakness becomes charm).
 - **Uncategorized renders as the UNSHELVED PILE** — rotated stack, OUTSIDE the case furniture, last on the page, with the classify invitation ("no shelf yet — classify to give them a home").
-- **NOW band treatment** — a quiet card (--page-2) in every ground: what you're carrying sits on the desk, not in the case. Slightly larger covers; the carrying-question in mono italic --gold-deep under its book; "still reading" micro-mark.
+- **NOW band treatment** — a quiet card (--page-2) in every ground: what you're carrying sits on the desk, not in the case. Slightly larger covers; the carrying-question in mono italic --gold-deep under its book; "still reading" micro-mark. **[AMENDED v4, July 21 — §3.4 governs:** the desk is CHROME-FREE — no card, no border (page-or-lighter ground); the "quiet card (--page-2)" wording is superseded by §3.4 THE DESK, and the desk baseline is undrawn. Ratified.**]**
 - **See-all tile** — dashed cover-sized tile ends an overflowing band (mobile, after 2 shelves).
 - **Fixture** — the round's mockup uses the REAL library (actual covers, the real 17-category census; the chat sketch used 6 categories and generated cover blocks).
 - **60-second standard** — arrive at the field, flip the toggle, tap a value, tap a label: legible with zero explanation.
@@ -202,4 +202,56 @@ append:
 *July 17 felt-dial session (Fable 5, per the July 15 plan change): four knobs ruled tappable (carved / breeze / single-coal / desk), Q7+Q8 closed, adversarial pass produced recon items 8–10. All four knob recs were taken at rec; the desk ruling generated the inside/outside unifying law. A second completeness pass surfaced and ruled §3.7 (focused view = case opens) and §3.8 (header scrolls away at 390, sticky = desktop question), both at rec, and hardened the brief with the splice diff-gate, the case-never-moves motion rider, the transform/opacity-only perf fence, and the dual-state desk fixture mandate. v3 = the dialed brief; mockup worktree spawns off its commit.*
 
 ---
-*End of brief v3. Supersedes v2 (3f5df8b). Mockup gate = this file's commit hash.*
+
+## 11. `[AMENDED — July 21]` — v4 (THE WALL + ORDER-BY-LIFE)
+
+**This amendment makes this document brief v4.** It records the July-21 rulings that post-date
+the v3 felt-dial — Preston's scope change (desktop composition + shelf ordering brought IN
+scope) and his dual felt-read close. Where these conflict with v3's desktop-deferral (§3.5 /
+§5 / §7), **this section supersedes for THIS build**; §3's law sentences otherwise stand.
+Verification is NOT restated here — see `docs/checkpoints/r-shelf-elevation-pass-2.md` (rect
+tables + the 8-row completeness inventory), `docs/checkpoints/r-shelf-mockup-close.md` (the
+felt-pass ruling), and `docs/studio/shelf-look.md` (the north-star prose picture).
+
+**Desktop is now IN scope** — this supersedes v3 §3.5's "desktop composition remains deferred"
+and §7's desktop-canon deferral, for this build.
+
+- **THE WALL (≥760).** Bands become side-by-side vertical column stacks — **2 columns at
+  760–1279, 3 at 1280–1919, 4 at ≥1920** — masonry-filled into the currently-shortest column in
+  **LIFE ORDER**; a band **never splits** across a column. Each band shows ALL its books in
+  wrapped shelf rows (Part-1 gravity per row). **No See-all tiles and no horizontal scroll at
+  ≥760** (See-all is mobile-only, A1). **Band labels are INERT at ≥760** (all books already
+  visible; the focused full view is mobile-only). The **wall content max-width is 1920,
+  centered**, the warm sheet-ground extending beyond it; the **desk and the wheat horizon span
+  the full content width ABOVE the wall** (the desk is never a column). **<760 is unchanged:**
+  single column, the A1 2-rows-then-See-all cap, mobile labels open the focused view.
+
+- **ORDER BY LIFE.** The shelf arranges by **attention**, not taxonomy: within a band, books
+  descend by lastTouched (most alive nearest the front of the shelf); bands descend by their
+  most-recent member — and that IS the canonical / masonry placement order. Applies in **BOTH
+  modes**. The **desk is exempt** (carrying is its own space, not a recency list). **Placement
+  only** — zero badges, timestamps, or labels.
+
+- **Dot-only status.** Per-cover reading status is a single dot (reading / will-read / finished),
+  never caption text on the shelf; the status word survives only in the focused full view.
+  (Shipped pass-1; ratified.)
+
+- **Desk line = carrying-question-or-nothing.** The desk carries a mono-italic carrying-question
+  under a book being questioned, and nothing under the others; the desk **baseline itself is
+  UNDRAWN** (chrome-free, §3.4) — there is no drawn desk board.
+
+**The five dials — RATIFIED at their defaults (Preston, July 21):**
+1. Cover variance — **5.5% nominal** seeded uniform scale (aspect held 2:3, expressed top-edge only).
+2. Desktop wheat strip — **104px** (the midpoint of the ruled 96–120 range).
+3. Masonry balance — **life-bound** (life order binds the fill; the residual column delta is structural, not bin-packed).
+4. Order-by-life touch signal — a **named build-time seam** (marks / status / opens / arc activity), decided at build time, not in the mockup.
+5. Desk baseline — **undrawn / chrome-free** (§3.4).
+
+**§5-vs-§3 → §3 governs (ratified).** The three §5 SHAPE-B mandate lines carry inline
+`[AMENDED v4]` deferrals to §3.1 (flat-tone board) / §3.5 (slim strip) / §3.4 (chrome-free desk).
+
+**Mockup stage CLOSED** on Preston's dual felt read (390 phone + desktop) = PASS, July 21. The
+build round is next and consumes the `rshelf-mockup` branch.
+
+---
+*End of brief v4. Supersedes v2 (3f5df8b) and v3 (36b7d45). Mockup gate = this file's commit hash.*
