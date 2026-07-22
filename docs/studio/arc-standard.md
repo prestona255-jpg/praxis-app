@@ -20,3 +20,4 @@ This file is not in `tools/studio-build`'s surface list, so it does not affect t
   - **Mark-picker hues visually repetitive** — the mark-picker's colors read as repetitive/samey;
     the hue set needs more differentiation.
   These are Preston's felt notes, logged for the round; not scoped, not ruled, no action taken now.
+Brief: arc-standard-brief.md (F1-F8 + G1-G6 + sweep, ruled July 22 — binding).
