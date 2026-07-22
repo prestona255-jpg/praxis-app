@@ -5322,12 +5322,251 @@ function renderShelfDesk() {
   }
 }
 
-// F1 · the case. STUB in S1 (empty container — shell verification). S2 replaces
-// this with the full bookcase: bands by mode + order-by-life + THE WALL masonry
-// (>=760) + the unshelved pile (categories) / the Ask-Yumi row (lenses).
+function isMobileShelf() { return window.matchMedia('(max-width:759px)').matches; }
+
+// order-by-life (§11) — lastTouched DERIVED at render, never persisted. Signal
+// priority: latest marginalia (createdAt/updatedAt) -> book.finishedAt ->
+// book.addedAt (~100% floor; truly signal-less sorts last). Memoized per render
+// on shelfCtx.touch (marginaliaForBook scans all entries — do it once, not per
+// sort comparison).
+function shelfLastTouched(book) {
+  var t = 0;
+  if (typeof book.addedAt === 'number' && book.addedAt > t) { t = book.addedAt; }
+  if (typeof book.finishedAt === 'number' && book.finishedAt > t) { t = book.finishedAt; }
+  if (book.id && typeof marginaliaForBook === 'function') {
+    var m = marginaliaForBook(book.id), i, u;
+    for (i = 0; i < m.length; i = i + 1) {
+      u = (typeof m[i].updatedAt === 'number') ? m[i].updatedAt
+        : ((typeof m[i].createdAt === 'number') ? m[i].createdAt : 0);
+      if (u > t) { t = u; }
+    }
+  }
+  return t;
+}
+function shelfTouchOf(book) {
+  if (shelfCtx && shelfCtx.touch && shelfCtx.touch[book.id] !== undefined) { return shelfCtx.touch[book.id]; }
+  return shelfLastTouched(book);
+}
+function shelfLifeSort(books) {
+  var arr = books.slice(0);
+  arr.sort(function (a, b) { return shelfTouchOf(b) - shelfTouchOf(a); });
+  return arr;
+}
+function shelfBandLifeKey(books) {
+  var m = 0, i, t;
+  for (i = 0; i < books.length; i = i + 1) { t = shelfTouchOf(books[i]); if (t > m) { m = t; } }
+  return m;
+}
+// THE WALL column count by width: 2 @760-1279 / 3 @1280-1919 / 4 @>=1920.
+function shelfWallColumns() {
+  var w = window.innerWidth;
+  if (w >= 1920) { return 4; }
+  if (w >= 1280) { return 3; }
+  return 2;
+}
+
+// band header — INERT label span at >=760 (all books visible; focused view is
+// mobile-only, wired in S3); a plain span in S2.
+function buildShelfBandHeader(container, label, count, groupKey, groupBooks, lensName) {
+  var hd = document.createElement('div');
+  hd.className = 'cavity-band-hd';
+  var labelEl = document.createElement('span');
+  labelEl.className = 'band-label';
+  labelEl.textContent = label;
+  var c = document.createElement('span');
+  c.className = 'count';
+  c.textContent = count + (count === 1 ? ' book' : ' books');
+  hd.appendChild(labelEl);
+  hd.appendChild(c);
+  container.appendChild(hd);
+}
+
+// one band's shelf rows. S2 renders ALL books (both widths); S3 adds the mobile
+// 2-row See-all cap.
+function buildShelfShelfline(books, opts) {
+  opts = opts || {};
+  var frag = document.createDocumentFragment(), i;
+  for (i = 0; i < books.length; i = i + 1) {
+    frag.appendChild(buildCoverNode(books[i], { lensName: opts.lensName }));
+  }
+  return frag;
+}
+
+function buildShelfBand(label, books, groupKey, lensName) {
+  var band = document.createElement('section');
+  band.className = 'cavity-band';
+  buildShelfBandHeader(band, label, books.length, groupKey, books, lensName);
+  var cavity = document.createElement('div');
+  cavity.className = 'cavity';
+  var line = document.createElement('div');
+  line.className = 'cavity-shelfline';
+  line.appendChild(buildShelfShelfline(books, { lensName: lensName }));
+  cavity.appendChild(line);
+  band.appendChild(cavity);
+  return band;
+}
+
+// lazy category classify (carried orchestration from the live renderShelf): fire
+// ONCE for unresolved books when categories is active + signed in; the callback
+// caches book.category, persists once, and re-renders. Watchdog recovers a hang.
+function shelfMaybeClassify(pending) {
+  if (!pending.length || shelfCategorizing || !getCurrentUser()) { return; }
+  shelfCategorizing = true;
+  shelfClassifyGen = shelfClassifyGen + 1;
+  var gen = shelfClassifyGen;
+  var deadline = 20000 + Math.ceil(pending.length / 20) * 20000;
+  var watchdog = setTimeout(function () {
+    if (gen !== shelfClassifyGen) { return; }
+    shelfClassifyGen = shelfClassifyGen + 1;
+    shelfCategorizing = false;
+    if (location.hash === '#books' && getShelfGrouping() === 'categories') { renderShelf(); }
+  }, deadline);
+  classifyBooksViaLLM(pending, function (resultMap) {
+    clearTimeout(watchdog);
+    if (gen !== shelfClassifyGen) { return; }
+    var rk;
+    for (rk in resultMap) {
+      if (Object.prototype.hasOwnProperty.call(resultMap, rk) && state.books[rk]) { state.books[rk].category = resultMap[rk]; }
+    }
+    markBooksDirty();
+    saveState();
+    shelfCategorizing = false;
+    if (location.hash === '#books' && getShelfGrouping() === 'categories') { renderShelf(); }
+  });
+}
+
+// the unshelved pile (Uncategorized) — outside the case, "in motion", last.
+function shelfBuildPile(books) {
+  var pile = document.createElement('section');
+  pile.className = 'cavity-band pile-band';
+  buildShelfBandHeader(pile, 'Unshelved', books.length, 'pile', null, null);
+  var prow = document.createElement('div');
+  prow.className = 'pile-row';
+  var i;
+  for (i = 0; i < books.length; i = i + 1) { prow.appendChild(buildCoverNode(books[i], {})); }
+  pile.appendChild(prow);
+  var note = document.createElement('p');
+  note.className = 'pile-note';
+  note.textContent = 'no shelf yet — classify to give them a home';
+  pile.appendChild(note);
+  return pile;
+}
+
+// F7 · the Ask-Yumi row (lens mode; doubles as the lens-empty state). Live copy.
+function shelfBuildLensRow(bandCount) {
+  var yrow = document.createElement('div');
+  yrow.className = 'yumi-lens-row is-shown';
+  var dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.setAttribute('aria-hidden', 'true');
+  var p = document.createElement('p');
+  p.textContent = bandCount > 0
+    ? 'not every book has an angle yet.'
+    : 'no lenses yet — Yumi can suggest some from what you’re reading.';
+  var ask = document.createElement('button');
+  ask.type = 'button';
+  ask.textContent = 'Ask Yumi for more lenses';
+  ask.addEventListener('click', function () {
+    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') { window.PraxisLensPanel.open(); }
+  });
+  yrow.appendChild(dot);
+  yrow.appendChild(p);
+  yrow.appendChild(ask);
+  return yrow;
+}
+
+// F1 · the case. Bands by the active mode (categories = book.category incl. the
+// lazy classifier; lenses = userThemes, multi-membership per A2), ordered by life,
+// laid out single-column at <760 / THE WALL masonry at >=760 (shortest-column
+// fill, a band never splits). Tails: the pile (categories) / the Ask-Yumi row.
 function renderShelfCase() {
   var root = document.getElementById('shelf-case');
-  if (root) { root.innerHTML = ''; }
+  if (!root || !shelfCtx) { return; }
+  root.innerHTML = '';
+  var mode = getShelfGrouping();
+  var books = shelfCtx.books, i, b;
+
+  // memoize order-by-life once per render (§11)
+  shelfCtx.touch = {};
+  for (i = 0; i < books.length; i = i + 1) { shelfCtx.touch[books[i].id] = shelfLastTouched(books[i]); }
+
+  var bands = [], pileBooks = [], pending = [];
+  if (mode === 'categories') {
+    var catMap = {}, cat, cti, cl, lst;
+    for (i = 0; i < books.length; i = i + 1) {
+      b = books[i];
+      cat = (typeof classifyBookLocal === 'function') ? classifyBookLocal(b) : (b.category || '');
+      if (cat === null) { pending.push(b); pileBooks.push(b); continue; }
+      if (cat === '' || cat === CATEGORY_UNCATEGORIZED) { pileBooks.push(b); continue; }
+      if (!catMap[cat]) { catMap[cat] = []; }
+      catMap[cat].push(b);
+    }
+    for (cti = 0; cti < SHELF_CATEGORIES.length; cti = cti + 1) {
+      cl = SHELF_CATEGORIES[cti];
+      if (catMap[cl] && catMap[cl].length) {
+        lst = shelfLifeSort(catMap[cl]);
+        bands.push({ label: cl, books: lst, groupKey: 'cat:' + cl, lensName: null, life: shelfBandLifeKey(lst) });
+      }
+    }
+    shelfMaybeClassify(pending);
+  } else {
+    var u = getCurrentUser();
+    var themes = [];
+    if (u && u.uid && state.userThemes) {
+      var tk;
+      for (tk in state.userThemes) {
+        if (!Object.prototype.hasOwnProperty.call(state.userThemes, tk)) { continue; }
+        if (state.userThemes[tk] && state.userThemes[tk].userId === u.uid) { themes.push(state.userThemes[tk]); }
+      }
+    }
+    themes.sort(function (a, c) { return (a.name || '').localeCompare(c.name || ''); });
+    var ti, th, member, bset, bi2, ids, lst2;
+    for (ti = 0; ti < themes.length; ti = ti + 1) {
+      th = themes[ti];
+      bset = {};
+      ids = th.bookIds || [];
+      for (bi2 = 0; bi2 < ids.length; bi2 = bi2 + 1) { bset[ids[bi2]] = true; }
+      member = [];
+      for (i = 0; i < books.length; i = i + 1) { if (bset[books[i].id]) { member.push(books[i]); } }
+      if (member.length) {
+        lst2 = shelfLifeSort(member);
+        bands.push({ label: th.name, books: lst2, groupKey: 'lens:' + th.id, lensName: th.name, life: shelfBandLifeKey(lst2) });
+      }
+    }
+  }
+
+  // ORDER BY LIFE — bands descending by most-recent member (= masonry fill order).
+  bands.sort(function (a, c) { return c.life - a.life; });
+
+  if (isMobileShelf()) {
+    for (i = 0; i < bands.length; i = i + 1) {
+      root.appendChild(buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName));
+    }
+  } else {
+    var ncols = shelfWallColumns();
+    var wall = document.createElement('div');
+    wall.className = 'wall';
+    var cols = [], c2, cd;
+    for (c2 = 0; c2 < ncols; c2 = c2 + 1) { cd = document.createElement('div'); cd.className = 'wall-col'; wall.appendChild(cd); cols.push(cd); }
+    root.appendChild(wall);
+    // masonry: each band (life order) into the currently-shortest column; a band
+    // never splits. offsetHeight forces a live measure per placement.
+    for (i = 0; i < bands.length; i = i + 1) {
+      var el = buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName);
+      var shortest = 0, sh = cols[0].offsetHeight, cc;
+      for (cc = 1; cc < cols.length; cc = cc + 1) { if (cols[cc].offsetHeight < sh) { sh = cols[cc].offsetHeight; shortest = cc; } }
+      cols[shortest].appendChild(el);
+    }
+  }
+
+  // full-width tails below the wall
+  if (mode === 'categories') {
+    if (pileBooks.length) { root.appendChild(shelfBuildPile(pileBooks)); }
+  } else {
+    root.appendChild(shelfBuildLensRow(bands.length));
+  }
+
+  root.className = 'case' + (mode === 'lenses' ? ' is-lens' : '');
 }
 
 // F6/Law-1 · re-apply illumination after a chip/search change: re-render the case

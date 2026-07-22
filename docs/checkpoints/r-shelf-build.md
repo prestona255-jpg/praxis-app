@@ -86,3 +86,55 @@ route is unchanged from live and `renderShelf()` renders correctly when driven �
 pattern (drive render per width; elevation-pass-2 precedent). Not a route regression.
 
 S1 verified. Proceeding to S2 (the case).
+
+### S2 — THE CASE — DONE (local commit, --no-verify)
+Files: `js/views.js` (renderShelfCase full + band/wall/life/pile/lens helpers, replacing the
+S1 stub), `assets/components.css` (pile-row flex-wrap P8 guard + cover-area margin reset).
+
+**JS:** `renderShelfCase` (bands by mode; categories = book.category via classifyBookLocal + the
+carried lazy-classify orchestration `shelfMaybeClassify`; lenses = userThemes, multi-membership A2;
+genre-baseline is NOT a grouping axis — A2 needs the multi-membership store) · `shelfLastTouched`/
+`shelfLifeSort`/`shelfBandLifeKey` (order-by-life §11, memoized on shelfCtx.touch) · `shelfWall-
+Columns` (2/3/4) · `buildShelfBand`/`buildShelfShelfline`/`buildShelfBandHeader` (labels inert
+spans in S2) · `shelfBuildPile` · `shelfBuildLensRow` (F7, live copy "Ask Yumi for more lenses",
+pin 3) · `isMobileShelf`. THE WALL masonry = shortest-column fill in life order, a band never splits.
+
+**Order-by-life mapping (pinned):** lastTouched = max(latest marginalia createdAt/updatedAt,
+finishedAt, addedAt). Verified: fx_1 (added 52d ago, 3 marginalia) + fx_2 (36d, 6 marginalia) both
+bump to today; Literary Fiction lead-3 = the 3 marginalia books; within-band descending; band order
+by most-recent member.
+
+**Two bugs caught + fixed in S2 verify (recorded — the reasoning was the defect):**
+1. **GRAVITY 16px stagger** — the carried `.shelf-book-cover-area` class inherits `margin-bottom:16px`
+   from the old card CSS; `flex-end` aligns the MARGIN box, so cover feet sat 16px above spine feet.
+   Fixed: `margin:0` on the new cover-area rule. Re-measured 0px. (Carried-class collision, L8-adjacent.)
+2. **pile h-overflow risk** — a large uncategorized set in a no-wrap pile-row would h-overflow (P8);
+   added `flex-wrap:wrap; row-gap:22px`.
+
+**MECHANICAL:** parse-check `PARSE OK` exit 0. ES3 (var/function only).
+
+**LIVE VERIFY (rig :8793, d0tester, 145-book at-scale fixture across the 17 real SHELF_CATEGORIES
++ 5 uncategorized + injected marginalia [g1/g2/g3] + 2 userThemes + 1 bad-URL cover; cache-busted
+via the neutral-page SW-kill dance + rig.bustCss):**
+| gate | 390 | 1000 | 1280 | 1360 | 1920 | state |
+|---|---|---|---|---|---|---|
+| wall columns | 1 (single) | 2 | 3 | 3 | 4 | PASS |
+| gravity worst intra-row foot spread | 0px | 0px | 0px | 0px | 0px | PASS (≤1) |
+| band splits across columns | — | 0 | 0 | 0 | 0 | PASS |
+| See-all tiles ≥760 | n/a | 0 | 0 | 0 | 0 | PASS |
+| h-overflow (scrollW≤innerW) | 390≤390 | 985≤1000 | 1265≤1280 | 1345≤1360 | 1905≤1920 | PASS |
+| h-scroll shelflines | — | — | — | — | 0 | PASS |
+- Aspect 2:3 on 123 real covers: worst dev **0.7%**, 0 over 6%. PASS.
+- Order-by-life: primary (marginalia) + finishedAt + addedAt floor; within-band descending; both modes. PASS.
+- Marks: 23 spines (cover-less + bad-URL 404 fallback), 60 embers (value marks D2), glow g1/g2/g3 = 1/1/1. PASS.
+- Illumination (Law-1 rider): value chip → 121 dim / 24 lit, opacity 0.32, **cavity ground
+  239,231,214 before==lit** (unchanged). PASS.
+- Lens mode: 2 userTheme bands + A2 "also under" ×2 (fx_1 in both) + yumi-row "Ask Yumi for more
+  lenses"; no pile in lens mode. PASS.
+- PIN 10: all 145 book-slots exactly 96×144 (zero CLS); 122/122 cover imgs `loading="lazy"`; bad-URL
+  cover → spine (never a hole). PASS.
+- masonry column-balance delta 738px @1920 (flagged, structural — life-order binds the fill; matches
+  the elevation-pass-2 638–795 band; felt-pass call).
+- Console: clean (0 errors).
+
+S2 verified. Proceeding to S3 (focused view + mobile See-all).

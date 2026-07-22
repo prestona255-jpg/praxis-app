@@ -13110,7 +13110,10 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .cavity-cover{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:var(--cover-w); background:none; border:none; padding:0; cursor:pointer; text-align:center; }
 .shelf.lum-amber-deep .cavity-cover.is-now{ --cover-w:var(--cover-w-now); --cover-h:var(--cover-h-now); }
 .shelf.lum-amber-deep .book-slot{ position:relative; width:var(--cover-w); height:var(--cover-h); display:flex; align-items:flex-end; justify-content:center; }
-.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area{ position:relative; overflow:visible; background:var(--card-2); border:none; border-radius:3px 6px 6px 3px; box-shadow:0 3px 5px rgba(36,23,16,.30); transition:transform .18s ease, box-shadow .22s ease; }
+.shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area{ position:relative; margin:0; box-sizing:border-box; overflow:visible; background:var(--card-2); border:none; border-radius:3px 6px 6px 3px; box-shadow:0 3px 5px rgba(36,23,16,.30); transition:transform .18s ease, box-shadow .22s ease; }
+/* GRAVITY: the carried .shelf-book-cover-area class inherits margin-bottom:16px
+   from the old card CSS; flex-end aligns the MARGIN box, lifting the foot off the
+   line. Reset it here so cover feet + spine feet share one baseline. */
 .shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area .shelf-book-cover{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
 .shelf.lum-amber-deep .cavity-cover:hover .shelf-book-cover-area, .shelf.lum-amber-deep .cavity-cover:focus-visible .shelf-book-cover-area{ transform:translateY(-4px); }
 .shelf.lum-amber-deep .cavity-cover:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:4px; }
@@ -13163,7 +13166,7 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* the unshelved pile (Uncategorized) — outside the case, "in motion", last */
 .shelf.lum-amber-deep .pile-band .cavity-band-hd button.label{ color:var(--ink-2); }
-.shelf.lum-amber-deep .pile-row{ display:flex; align-items:flex-end; padding:12px 6px 0; min-height:calc(var(--cover-h) + var(--cap-h) + 10px); }
+.shelf.lum-amber-deep .pile-row{ display:flex; flex-wrap:wrap; row-gap:22px; align-items:flex-end; padding:12px 6px 0; min-height:calc(var(--cover-h) + var(--cap-h) + 10px); }
 .shelf.lum-amber-deep .pile-row .cavity-cover{ margin-right:-38px; }
 .shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(1) .shelf-book-cover-area{ transform:rotate(-5deg); }
 .shelf.lum-amber-deep .pile-row .cavity-cover:nth-child(2) .shelf-book-cover-area{ transform:rotate(3deg) translateY(4px); }
