@@ -224,3 +224,87 @@ Red-team not required (display-only, no data writes).
 
 **THE ROUND CLOSES ON PRESTON'S DUAL FELT READ (390 phone + desktop) ON PRODUCTION.** No push until
 his exact push word.
+
+---
+
+## S5 — FELT-FAIL FIX SLICE — DONE (local, NO PUSH; v3.243)
+
+Felt pass #1 = FAIL (bones passed; skin/seams/data-reality failed). S5 fixes against Preston's REAL
+library (law G1 — the synthetic fixture verified count-scale, not distribution-scale).
+
+**REAL-DATA SUBSTRATE (G1):** snapshot loaded into the rig ONLY (`_snapshot.json`, `.git/info/exclude`d,
+verified untracked, deleted at close; his notes never read into context / never quoted — counts only).
+His distribution (numbers only): **134 books in store · 129 in the index · 109 reading · 19 finished ·
+1 will-read · 13 userThemes · 6 marginalia · 3 cover-less**. THE felt-fail root cause was here: with
+109 reading, the uncapped desk rendered **109 covers in one row** (the overflow/scrollbar disaster).
+
+**RULINGS (verified on the snapshot):**
+- **R1 DESK CAP** — desk shows the 6 most-recently-touched reading (order-by-life) + one quiet door
+  "+N more reading →" opening the full reading set in the focused view. Verified: **6 covers + "+103
+  more reading →"** (6+103=109, SUM-PROVEN); desk never scrolls (rowScrolls false) @390/1360/1920.
+- **R2 LABELS NAVIGATE** — band labels open the focused view on ALL widths (17 buttons @1360; the
+  desktop-inert ruling reversed). SELECT-SUPPRESS verified: in Select mode, 0 buttons / 17 inert spans.
+- **R3 ALSO-UNDER DEMOTED** — 0 `.also-under` in captions; renders only in the focused view.
+- **F4 CAPTION DE-LINK + G2 PARITY** — cover `<a>` `text-decoration:none` scoped to the shelf (no
+  global anchor edits; Notebook/Arcs/Home unbled from S1). G2 computed-style table BUILD vs MOCKUP:
+  band label (Cormorant 21px/600/--ink), title (13px/600/--ink), status (DM Mono 9px/gold-deep),
+  decoration `none` everywhere — all MATCH. **One deviation: caption author color.**
+- **F5 EDITOR DRESS (G3)** — the add/edit editor container used --surface-2/--border (flip DARK on
+  the route = the dark slab); dressed light scoped (`--card-2` bg, verified rgb(246,239,220)); JS
+  byte-preserved. See the DRESS column in the acceptance card.
+- **F6 SCROLLBARS** — 0 overflowing scrollables inside the shelf ≥760 (desk included) @1360/1920.
+- **F7 SAFE-AREA** — sheet top margin now `calc(--sheet-gap + env(safe-area-inset-top))` (0 on
+  non-notched → 18px in the pane; the notch clip can't be reproduced headless — mechanism in place).
+- **F8 GROUND SEAMS** — sheet light (--card-1); editor light; lens-row transparent-on-sheet. (His
+  library has no uncategorized books → no pile to seam-test; the fixture verified the pile-on-light.)
+
+**BUG CAUGHT BY G2 + AA (the reasoning was the defect, recorded):** the caption author/meta rendered
+`#B4AFA2` (the dark-ground `--muted`), not the intended light ink. Root cause — my R-SHELF header
+comment contained `--gold*/` and `--card-*/`; the `*/` **prematurely closed the block comment**, so my
+`--ink-2/-3/-4` re-point rule (13017) was misparsed and DROPPED from the CSSOM, leaving those tiers
+stuck on the inherited `--muted`. Present since S1; the fixture's short author names hid it; G2 on his
+long real names + the `.lit-page` precedent exposed it. FIXED: rephrased the comment (no accidental
+`*/`). THEN a second finding: the mockup's `--ink-3` (#978b6d ≈ 3.3:1) AND `--card-meta` (#8A7F5F ≈
+3.8:1) both FAIL WCAG AA at the 10.5px author size — the live R2 skin already collapsed `--lum-ink-3`
+to #645940 for this. Re-pointed `--ink-3 → --card-ink-2` (#5C5340, **7.22:1 AA-safe**). (Pre-existing
+same-pattern comment bug at components.css:5400 in another surface — NAMED, out of scope.)
+
+**FULL SUITE re-run on the snapshot (all PASS):** gravity 0px on his real covers @390/1360/1920;
+aspect 2:3 worst dev 0.7% (126 real covers), 0 over 6%; wall 1/2/3/4 cols; 0 band splits / See-all
+≥760 / h-overflow / scrollbars; order-by-life descending on his real timestamps; illumination Law-1
+(search: 122 lit/7 dim common, 0 lit/129 dim + empty line for none, **cavity ground unchanged**);
+0 value marks → chips correctly absent (sparse-honest; chip-sum gate trivially 0==0); 13 userThemes →
+13 lens bands; door → focused "Reading" (109); console clean throughout.
+
+**MECHANICAL:** parse-check `PARSE OK`. S5 deltas vs `e63374d` (CORRECTED after praxis-reviewer HOLD —
+the first figures repeated the S4 bar-width/combined-deletions confound; these are numstat ins/del +
+measured LF-normalized bytes): **js/views.js 31 ins / 14 del = +1,171 B** (base 1,026,644 → 1,027,815 LF;
+incl. the R2 stale-comment fix the reviewer flagged) · **assets/components.css 38 ins / 10 del = +2,734 B**
+(base 813,310 → 816,044 LF) · **sw.js 1/1 = +0 B** (equal-length version string). views.js 0 CR (LF);
+components.css worktree is CRLF (`git ls-files --eol` = i/lf w/crlf) → re-normalizes to the LF blob on
+commit (autocrlf, base blob 0-CR) — VERIFIED post-commit below, not assumed. Foundations intact
+(14966/10255); state.js/integrations.js/theme.css untouched.
+
+**STAGING PLAN (path-explicit, per the reviewer's gap finding):** exactly 9 files —
+`js/views.js` `assets/components.css` `sw.js` `BOARD.md` `docs/studio/sequence.md` `docs/studio/books.md`
+`docs/studio/builder.html` `docs/checkpoints/r-shelf-build.md` `docs/checkpoints/r-shelf-acceptance-close.md`.
+NOT staged: `_snapshot.json` (git-excluded, deleted at close) + the ~100 pre-existing untracked design/doc
+paths. `git show --stat` self-check before push confirms exactly these 9.
+
+**REVIEWER GATE (pin 7) — S5 HOLD → RESOLVED (fix-once).** praxis-reviewer traced every functional gate
+TRUE (R1–R3, F4, F5, the --ink-3 AA/comment-closer fix, HARD-RULE-1, ES3, NON-GOALs — no regression, no
+covenant touch, no data write). Two blocking items, both in the RECORD not the code: (1) byte deltas
+mis-stated → corrected above; (2) no explicit staging plan → added above. Non-blocking, fixed: the stale
+R2 leading comment (views.js buildShelfBandHeader) rewritten to match the shipped all-widths behavior.
+The reviewer disclosed its own read-only-mandate slip (a stash to test EOL; popped, file verified
+byte-identical — no loss).
+
+**G4 BUILD-STAGE ELEVATION (on the live build + snapshot):** Fidelity 3 · Craft 3 (gravity 0, aspect
+0.7%, AA-safe inks 7.22:1, 0 scrollbars, editor dressed) · Motion 3 · Quiet 3 (captions = title +
+author + dot only; also-under demoted; dot-only status) · Responsive 3 (1/2/3/4 cols, 0 overflow all
+widths) · Function 3 (desk door, R2 labels + select-suppress, focused view, full interactive sweep) =
+**18/18 floors cleared** (OWNER-VIEWPORT PRIMACY — felt pass #2 outranks). No axis < 3; no elevation
+pass needed.
+
+Cache v3.242 → **v3.243**. Builder regen rides the final commit. praxis-reviewer gates the commit.
+NO PUSH — awaits Preston's push word + felt pass #2 on production.

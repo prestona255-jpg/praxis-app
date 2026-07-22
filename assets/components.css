@@ -13003,18 +13003,25 @@ body.wc-focus .app-nav { opacity:.26; }
    rewrite the load-bearing rules). Source-ordered AFTER them so the new bookcase
    rules win where selectors overlap; the AES-2 sheet (:12729), Manage sheet
    (:12890) and Select bar (:12845) are PRESERVED untouched (NON-GOALs).
-   Light-safe palette (L8): --ink/--gold*/--field-* are re-pointed light by the
+   Light-safe palette (L8): --ink / --gold / --field-N are re-pointed light by the
    :12688 block; --ink-2/-3/-4 are re-pointed below (the dark route flips them);
-   surfaces wire --card-*/--page-2/--shelf-cavity/--board-*/--wheat-* (never
-   --surface(-2)/--border, which flip dark). No --lum-* in new rules (Law 6).
+   surfaces wire --card-N / --page-2 / --shelf-cavity / --board-N / --wheat-N (never
+   --surface(-2) / --border, which flip dark). No --lum-N in new rules (Law 6).
    Markup: renderShelf + buildCoverNode / renderShelfCase / renderShelfDesk /
    buildShelfWheat / applyShelfIllumination (views.js).
    ============================================================================ */
 
-/* L8 ground re-point — the two ink tiers the :12688 block did not cover +
-   the new sheet composition (strip flush to top; the 1080 clamp is replaced by
-   a full-bleed strip and a re-clamped .shelf-inner that widens to 1920). */
-.shelf.lum-amber-deep{ --ink-2:var(--card-ink-2); --ink-3:var(--card-meta); --ink-4:var(--card-meta); padding:0 0 104px; position:relative; }
+/* L8 ground re-point: --ink-2/-3/-4 (the two tiers the :12688 block did not cover;
+   the shelf's dark route flips them) to the light-page card family, + the sheet
+   composition (padding, full-bleed strip, position) + F7 (S5) safe-area-inset-top
+   on the sheet top (0 on non-notched; the notch let content render under the iOS
+   status bar). SINGLE-LINE (S5 fix: the S1 multi-line form dropped from the CSSOM,
+   leaving --ink-3 stuck on the dark-ground --muted; caught by the G2 parity gate). */
+.shelf.lum-amber-deep{ --ink-2:var(--card-ink-2); --ink-3:var(--card-ink-2); --ink-4:var(--card-meta); padding:0 0 104px; position:relative; margin-top:calc(var(--sheet-gap) + env(safe-area-inset-top)); }
+/* --ink-3 → --card-ink-2 (#5C5340 ~7.2:1 on the sheet), NOT --card-meta (#8A7F5F
+   ~3.8:1) which FAILS WCAG AA at the 10.5px author/meta size — the mockup's #978b6d
+   failed too; the live R2 skin already collapsed --lum-ink-3 to #645940 for this.
+   --ink-4 keeps --card-meta (dots/borders only — the 3:1 non-text floor). */
 .shelf.lum-amber-deep > *{ max-width:none; margin:0; padding:0; }
 .shelf.lum-amber-deep > .shelf-inner{ max-width:1080px; margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px; }
 @media (min-width:760px){ .shelf.lum-amber-deep > .shelf-inner{ max-width:1920px; } }
@@ -13073,12 +13080,17 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .desk-row{ display:flex; align-items:flex-end; gap:22px; flex-wrap:wrap; padding:2px 2px 0; }
 .shelf.lum-amber-deep .desk-empty-line{ font-family:var(--font-mono); font-size:13px; font-style:italic; color:var(--ink-3); padding:6px 2px 2px; }
 .shelf.lum-amber-deep .qline{ font-family:var(--font-mono); font-style:italic; font-size:10px; color:var(--gold-deep); max-width:130px; margin-top:9px; line-height:1.45; text-align:center; }
+/* R1 (S5): the desk's "+N more reading →" door — a quiet pill beside the covers,
+   opening the full reading set in the focused view. */
+.shelf.lum-amber-deep .desk-more{ align-self:center; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--gold-deep); background:transparent; border:1px dashed var(--line-page-2); border-radius:var(--radius-pill); padding:9px 15px; cursor:pointer; }
+.shelf.lum-amber-deep .desk-more:hover{ color:var(--ink); border-color:var(--gold); }
 
 /* ---- F1/F9/§3.1 · THE CASE — carved cavities; the case never moves. ---- */
 .shelf.lum-amber-deep{ --cover-w:96px; --cover-h:144px; --cover-w-now:114px; --cover-h-now:170px; --spine-w:28px; --cap-h:72px; --cap-h-lens:94px; --cap-h-now:110px; --row-gap:22px; --col-gap:16px; }
 .shelf.lum-amber-deep .case{ padding:8px 0 4px; transition:opacity .2s ease; }
 .shelf.lum-amber-deep .case.is-fading{ opacity:0; }
-.shelf.lum-amber-deep .case.is-lens{ --cap-h:var(--cap-h-lens); }
+/* R3 (S5): lens captions tighten to the base cap — "also under" left the caption
+   (it now renders only in the focused view, which keeps the taller cap). */
 .shelf.lum-amber-deep .focused-view{ --cap-h:var(--cap-h-lens); }
 /* THE WALL (>=760): side-by-side vertical column stacks; a band never splits. */
 .shelf.lum-amber-deep .wall{ display:block; }
@@ -13107,7 +13119,10 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* ---- the standing book (cover node). Container renamed .cavity-cover; the
    sub-cover class names are CARRIED live (values re-expressed). ---- */
-.shelf.lum-amber-deep .cavity-cover{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:var(--cover-w); background:none; border:none; padding:0; cursor:pointer; text-align:center; }
+.shelf.lum-amber-deep .cavity-cover{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:var(--cover-w); background:none; border:none; padding:0; cursor:pointer; text-align:center; text-decoration:none; }
+/* F4 (S5): the cover is an <a>; kill the browser-default underline that bled onto
+   captions. Scoped to the shelf — global anchor styling is untouched. */
+.shelf.lum-amber-deep .cavity-cover:hover, .shelf.lum-amber-deep .cavity-cover:focus{ text-decoration:none; }
 .shelf.lum-amber-deep .cavity-cover.is-now{ --cover-w:var(--cover-w-now); --cover-h:var(--cover-h-now); }
 .shelf.lum-amber-deep .book-slot{ position:relative; width:var(--cover-w); height:var(--cover-h); display:flex; align-items:flex-end; justify-content:center; }
 .shelf.lum-amber-deep .cavity-cover .shelf-book-cover-area{ position:relative; margin:0; box-sizing:border-box; overflow:visible; background:var(--card-2); border:none; border-radius:3px 6px 6px 3px; box-shadow:0 3px 5px rgba(36,23,16,.30); transition:transform .18s ease, box-shadow .22s ease; }
@@ -13179,6 +13194,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .shelf-empty-zero{ padding:48px 4px 24px; text-align:center; }
 .shelf.lum-amber-deep .shelf-empty-zero-line{ font-family:var(--font-serif); font-style:italic; font-size:18px; color:var(--ink-3); line-height:1.5; max-width:520px; margin:0 auto 20px; }
 
+/* F5 (S5): the add/edit-book editor container uses --surface-2/--border — both flip
+   DARK on the shelf's dark route (a legacy dark slab). Dress it to the light sheet +
+   kit dialect. Behavior byte-preserved (openShelfEditor JS untouched). */
+.shelf.lum-amber-deep .shelf-editor{ background:var(--card-2); border:1px solid var(--line-page-2); box-shadow:0 1px 2px rgba(36,23,16,.14), 0 10px 30px -18px rgba(36,23,16,.30); }
+.shelf.lum-amber-deep .shelf-editor-title-input,
+.shelf.lum-amber-deep .shelf-editor-author-input,
+.shelf.lum-amber-deep .shelf-editor-genre-input,
+.shelf.lum-amber-deep .shelf-editor-isbn-input{ color:var(--ink); border-bottom-color:var(--line-page-2); }
+.shelf.lum-amber-deep .shelf-editor-status,
+.shelf.lum-amber-deep .shelf-editor-status-option{ color:var(--ink-2); }
+.shelf.lum-amber-deep .shelf-editor-save{ background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%); color:var(--gold-ink-on-gold); border:1px solid var(--gold-deep); }
+.shelf.lum-amber-deep .shelf-editor-cancel{ background:transparent; color:var(--ink-3); border:1px solid var(--line-page-2); }
+
 /* F7 · "Ask Yumi for more lenses" row (lens-mode; doubles as lens-empty state) */
 .shelf.lum-amber-deep .yumi-lens-row{ display:none; }
 .shelf.lum-amber-deep .yumi-lens-row.is-shown{ display:flex; align-items:center; gap:10px; padding:16px 4px; margin-top:6px; border-top:1px dashed var(--line-page-2); flex-wrap:wrap; }
@@ -13199,7 +13227,7 @@ body.wc-focus .app-nav { opacity:.26; }
   .shelf.lum-amber-deep{ --cover-w:76px; --cover-h:114px; --spine-w:24px; --cover-w-now:92px; --cover-h-now:138px; --cap-h:60px; --cap-h-lens:80px; --cap-h-now:104px; --row-gap:18px; }
   .shelf.lum-amber-deep .horizon-strip{ height:64px; }
   .shelf.lum-amber-deep .shelf-slim-header h1{ font-size:32px; }
-  .shelf.lum-amber-deep .mode-seg button, .shelf.lum-amber-deep .vchip,
+  .shelf.lum-amber-deep .mode-seg button, .shelf.lum-amber-deep .vchip, .shelf.lum-amber-deep .desk-more,
   .shelf.lum-amber-deep .cavity-band-hd button.label, .shelf.lum-amber-deep .seeall-tile, .shelf.lum-amber-deep .yumi-lens-row button{ min-height:44px; }
   .shelf.lum-amber-deep .shelf-search{ height:44px; }
   .shelf.lum-amber-deep .shelf-search input{ font-size:16px; }

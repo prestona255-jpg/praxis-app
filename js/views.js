@@ -4928,8 +4928,8 @@ function renderShelf() {
   host.appendChild(wrap);
 
   // Fill the desk + case, set illumination state, grow the wheat.
-  renderShelfDesk();
-  renderShelfCase();
+  renderShelfCase();   // builds shelfCtx.touch (order-by-life memo) first…
+  renderShelfDesk();   // …which the desk's life-sort (R1) then reuses
   shelfUpdateSearchEmpty();
   buildShelfWheat();
 
@@ -4938,7 +4938,7 @@ function renderShelf() {
   shelfWheatResizeHandler = function () {
     if (shelfWheatResizeTimer) { clearTimeout(shelfWheatResizeTimer); }
     shelfWheatResizeTimer = setTimeout(function () {
-      if (!shelfFocused) { renderShelfCase(); shelfUpdateSearchEmpty(); }
+      if (!shelfFocused) { renderShelfCase(); renderShelfDesk(); shelfUpdateSearchEmpty(); }
       buildShelfWheat();
     }, 150);
   };
@@ -5255,8 +5255,9 @@ function buildCoverNode(book, opts) {
   if (opts.focused) { statusEl.textContent = statusCanon; }
   meta.appendChild(statusEl);
   cap.appendChild(meta);
-  // A2 · lens-mode "also under…"
-  if (opts.lensName) {
+  // A2 · lens-mode "also under…" — R3 (S5): DEMOTED out of captions; renders only
+  // in the focused view (captions everywhere = title + author + dot, nothing else).
+  if (opts.lensName && opts.focused) {
     var otherLens = shelfOtherLens(book, opts.lensName);
     if (otherLens) {
       var also = document.createElement('span');
@@ -5303,12 +5304,12 @@ function renderShelfDesk() {
   if (!row || !shelfCtx) { return; }
   row.innerHTML = '';
   var countEl = document.getElementById('shelf-desk-count');
-  var nowBooks = [], i, b;
+  var reading = [], i, b;
   for (i = 0; i < shelfCtx.books.length; i = i + 1) {
     b = shelfCtx.books[i];
-    if (normalizeStatus(b.status) === 'reading') { nowBooks.push(b); }
+    if (normalizeStatus(b.status) === 'reading') { reading.push(b); }
   }
-  if (nowBooks.length === 0) {
+  if (reading.length === 0) {
     if (countEl) { countEl.textContent = ''; }
     // whole library empty -> the case carries the zero-books invitation; no double-empty.
     if (shelfCtx.books.length === 0) { return; }
@@ -5318,9 +5319,23 @@ function renderShelfDesk() {
     row.appendChild(line);
     return;
   }
+  // R1 (S5): a real library has ~114 reading books — the uncapped desk overflowed
+  // one row. The desk now shows the ~6 most-recently-touched (order-by-life), never
+  // scrolls; the rest open behind one quiet door. N == reading - shown (sum-proven).
+  reading = shelfLifeSort(reading);
+  var cap = 6;
+  var shown = reading.length < cap ? reading.length : cap;
   if (countEl) { countEl.textContent = 'what you’re carrying'; }
-  for (i = 0; i < nowBooks.length; i = i + 1) {
-    row.appendChild(buildCoverNode(nowBooks[i], { now: true }));
+  for (i = 0; i < shown; i = i + 1) {
+    row.appendChild(buildCoverNode(reading[i], { now: true }));
+  }
+  if (reading.length > shown) {
+    var door = document.createElement('button');
+    door.type = 'button';
+    door.className = 'desk-more';
+    door.textContent = '+' + (reading.length - shown) + ' more reading →';
+    door.addEventListener('click', function () { openShelfFocusedBand('desk-reading', reading, 'Reading', null); });
+    row.appendChild(door);
   }
 }
 
@@ -5367,14 +5382,16 @@ function shelfWallColumns() {
   return 2;
 }
 
-// band header. At <760 the label is a BUTTON that opens the focused view ("the
-// case opens", §3.7); at >=760 it is an INERT span (all books already visible —
-// focused view is mobile-only). groupBooks omitted (pile) -> always inert.
+// band header. R2 (S5): the label opens the band's focused view on ALL widths
+// ("the case opens", §3.7) — EXCEPT during Select mode, where it goes inert so
+// selection gestures win. A band with no books (the pile) is always an inert span.
 function buildShelfBandHeader(container, label, count, groupKey, groupBooks, lensName) {
   var hd = document.createElement('div');
   hd.className = 'cavity-band-hd';
   var labelEl;
-  if (isMobileShelf() && groupBooks && groupBooks.length) {
+  // R2 (S5): band labels open the focused view on ALL widths (with a real library,
+  // wayfinding beats staticness). SUPPRESSED during Select mode (selection wins).
+  if (!shelfSelecting && groupBooks && groupBooks.length) {
     labelEl = document.createElement('button');
     labelEl.type = 'button';
     labelEl.className = 'label';

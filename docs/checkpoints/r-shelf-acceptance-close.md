@@ -115,3 +115,77 @@ rather than a dev toggle.
 
 OWNER rows (felt-pass judgments) left blank — Preston's, on production. The round closes only on his
 dual felt read (390 phone + desktop).
+
+---
+
+# R-SHELF acceptance — S5 (felt-fail fix) addendum
+Surface walked: **390 + 1360 (owner) + 1920** on Preston's REAL library snapshot (rig, in-memory,
+`_snapshot.json` excluded/untracked/deleted at close; note contents never read/quoted — counts only).
+Distribution: 129-book index · 109 reading · 19 finished · 13 userThemes · 6 marginalia · 3 cover-less.
+Base: `e63374d` (v3.242) → v3.243.   Date: 2026-07-22.   Model: Opus 4.8.
+
+## S5 ruling / fix rows (walked on the snapshot)
+| # | Ruling / fix (S5) | State | Evidence |
+|---|---|---|---|
+| R1 | desk = ~6 most-recently-touched reading (order-by-life) + one "+N more reading →" door; never scrolls | PASS | 6 covers + "+103 more reading →" (6+103=109 sum-proven); rowScrolls false @390/1360/1920; door → focused "Reading" (109) |
+| R2 | band-label tap opens the focused view on ALL widths; SUPPRESSED during Select | PASS | 17 label buttons @1360; Select mode → 0 buttons / 17 inert spans |
+| R3 | "also under X" leaves captions; renders in the focused view | PASS | 0 `.also-under` in the case; gated `opts.lensName && opts.focused` |
+| F4 | zero underlines on the shelf, any state; captions match mockup typography | PASS | cover `text-decoration:none` (scoped); G2 table below; no global anchor edit |
+| F5 | editor restyled to the light shell + kit (behavior byte-preserved) | PASS | `.shelf-editor` bg rgb(246,239,220)=--card-2 (was dark slab); openShelfEditor JS unchanged |
+| F6 | zero visible scrollbars inside the shelf ≥760, desk included | PASS | 0 overflowing scrollables @1360/1920; desk no-scroll |
+| F7 | safe-area-inset top respected (content off the iOS status bar) | PASS (mechanism) | sheet margin-top `calc(--sheet-gap + env(safe-area-inset-top))`; notch not reproducible headless (env=0 → 18px) |
+| F8 | light sheet covers the full content run (no mismatched-ground float) | PASS | sheet --card-1; editor light; lens-row transparent-on-sheet (his data has no pile) |
+| G1 | all verification on his real snapshot | PASS | the whole S5 suite ran on the 129-book snapshot |
+
+## G2 — computed-style parity (BUILD vs MOCKUP)
+| element | family | size | weight | color | decoration | verdict |
+|---|---|---|---|---|---|---|
+| band label | Cormorant Garamond | 21px | 600 | --ink #241710 | none | MATCH |
+| caption title | Cormorant Garamond | 13px | 600 | --ink #241710 | none | MATCH |
+| caption author | DM Sans (--font-body) | 10.5px | 400 | #5C5340 (7.22:1) | none | **DEVIATION-BY-AA** |
+| status | DM Mono | 9px | 400 | --gold-deep #855410 | none | MATCH |
+| desk-more door | DM Mono | 11.5px | 400 | --gold-deep | none | new (mono/gold-deep dialect) |
+
+DEVIATION-BY-AA: the mockup's author color (`--ink-3` #978b6d ≈ 3.3:1) and the interim --card-meta
+(#8A7F5F ≈ 3.8:1) both FAIL WCAG AA at 10.5px; the build uses --card-ink-2 (#5C5340 ≈ 7.22:1, matching
+the live R2 skin's own AA collapse of --lum-ink-3→#645940). AA (Law 6) outranks the snapshot. **Owner
+call:** accept the AA-safe darker author, or ratify a different AA-passing tone. Flagged, not decided.
+
+## BEHAVIOR-PRESERVATION INVENTORY — DRESS column (G3)
+| behavior | preserved? | DRESS verdict |
+|---|---|---|
+| Add / edit-book editor | PRESERVED | **CANON (S5/F5)** — light shell, --card-2 bg, kit inputs, gilded Save; JS byte-preserved |
+| Manage sheet (popover / bottom-sheet) | PRESERVED | CANON — MW-1/B-M block (light --page-2/--scrim), untouched |
+| Select bar (Move to an arc) | PRESERVED | CANON — R2 selectbar (light --page-2), untouched |
+| Value chips | TRANSFORMED (F6) | CANON — S1 light chips (absent here: 0 value marks) |
+| Search well | PRESERVED (illuminates) | CANON — S1 `.shelf-search` (--shelf-cavity, light) |
+| Scan shelf / barcode | PRESERVED | **FLAGGED** — chip in the Manage sheet (kit chip); the scan *surface* is R-SCAN's round |
+| Bulk add | PRESERVED | CANON — chip → openBulkAddEditor (editor now light dress) |
+| Resolve covers / Tidy library | PRESERVED | **FLAGGED** — chips wired; their result modals (openLibraryCleanup) are not shelf-dressed — own rounds |
+| Lens generation ("Ask Yumi for more lenses") | PRESERVED | CANON — F7 yumi-row (dashed kit door) + the panel is yumi-ui's own surface |
+
+Flagged rows are behaviors whose *own downstream surface* (scan flow, library-cleanup modal, lens
+panel) belongs to another round; the shelf entry points are canon-dressed.
+
+## TRIAL / CANON AMENDMENTS PROPOSED AT S5 (draft — Preston ratifies; specimen: R-SHELF S5, 2026-07-22)
+Join the S4-drafted proposals (elevation loop, completeness inventory + ROW 9, STATES real-conditions,
+2 lessons truths). NOT applied to lessons.md / acceptance-card.md until ruled.
+- **G1 — REAL-DATA SUBSTRATE LAW.** A felt-gated visual round verifies on the owner's real snapshot,
+  not only a synthetic fixture; the fixture verifies count-scale, the snapshot verifies distribution-
+  scale. Loaded rig-only, git-excluded, notes never quoted. *Specimen: the 109-reading desk overflow
+  invisible to the 130-book fixture.*
+- **G2 — COMPUTED-STYLE PARITY GATE.** For a sampled element set, diff computed font-family/size/
+  weight/color/text-decoration BUILD vs MOCKUP; any mismatch is a finding (AA may override a color —
+  record it DEVIATION-BY-AA). *Specimen: the dropped --ink-3 re-point + the sub-AA author color.*
+- **G3 — INVENTORY DRESS COLUMN.** Every preserved-behavior surface carries a DRESS verdict:
+  canon-styled (evidence) or flagged (naming the owning round). *Specimen: the dark editor slab.*
+- **G4 — BUILD-STAGE ELEVATION PASS.** The elevation loop re-scores the LIVE build (not just the
+  mockup) on the snapshot; Craft/Quiet < 3 triggers an in-ruled-space improvement. *Specimen: S5 18/18.*
+- **G5 — STATES ROW: DISTRIBUTION-SKEW CASES.** The completeness-inventory STATES row adds skew cases
+  (a dominant-status majority; dense cross-membership; long titles) judged on the real snapshot.
+  *Specimen: 85%-reading + 13-userTheme membership.*
+
+## CANON-HYGIENE FINDING (named, out of scope)
+`components.css:5400` — a pre-existing comment (`--surface-2/--ink*/--gold-*`) carries the same
+accidental-`*/` closer pattern that dropped my --ink rule; may be silently breaking a rule in that
+surface. NAMED for a future pass (not this slice's file scope).

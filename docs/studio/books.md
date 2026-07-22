@@ -182,7 +182,17 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
-### R-SHELF THE BOOKCASE — BUILT + VERIFIED, committed-local (2026-07-22, v3.242; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` + S4 close). Awaiting push + Preston's dual felt read.
+### R-SHELF THE BOOKCASE — BUILT + VERIFIED, committed-local (2026-07-22, v3.243; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4 close + **S5 felt-fail fix**). Awaiting push + Preston's felt pass #2.
+
+**S5 (felt pass #1 FAILED — skin/seams/data-reality):** verified against Preston's REAL library (law G1;
+129-book index, 109 reading, 13 userThemes). R1 desk 6-cap + "+N more reading →" door (the uncapped
+desk had rendered 109 covers in one row) · R2 band labels navigate all widths (Select-suppressed) · R3
+"also under" demoted to the focused view · F4 caption de-link (scoped) + G2 computed-style parity gate ·
+F5 editor light dress · F6 zero scrollbars · F7 safe-area · F8 ground seams. Latent AA/parse bug fixed
+(an accidental `*/` dropped the --ink re-point → author stuck on --muted; --ink-3 re-pointed AA-safe to
+--card-ink-2). 5 canon amendments drafted (G1–G5). Records: `docs/checkpoints/r-shelf-build.md` (S5) +
+`-acceptance-close.md` (S5 addendum).
+
 
 The full re-composition to the felt-passed mockup (brief v4): the sidebar dissolves (F4) into a slim
 header (search + Categories⇄Lenses re-shelving toggle + carried Manage/Add/Select + value chips); a

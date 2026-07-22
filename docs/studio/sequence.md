@@ -31,6 +31,21 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-22 (R-SHELF S5 — FELT-FAIL FIX, built + verified on real data, committed-local, v3.243)** —
+  felt pass #1 FAILED (bones passed; skin / seams / data-reality failed — the uncapped desk rendered
+  Preston's 109 reading books in one row). S5 fixes, all verified against his REAL library snapshot
+  (law G1 — loaded rig-only, git-excluded, notes never quoted): **R1** desk cap (6 most-alive reading +
+  "+N more reading →" door, sum-proven) · **R2** band labels navigate on all widths, suppressed in
+  Select · **R3** "also under" demoted to the focused view · **F4** caption de-link (scoped; + the G2
+  computed-style parity gate) · **F5** editor light dress (behavior byte-preserved) · **F6** zero
+  scrollbars ≥760 · **F7** safe-area-inset-top · **F8** ground seams. **A latent AA/parse bug the
+  fixture hid, caught by G2:** an accidental `*/` in a comment dropped the --ink re-point rule → author
+  text stuck on --muted; fixed, and --ink-3 re-pointed to the AA-safe --card-ink-2 (the mockup's #978b6d
+  failed WCAG AA at 10.5px). Full suite re-run on the snapshot: all PASS; 18/18 elevation floors.
+  praxis-reviewer gates the commit. Records: `docs/checkpoints/r-shelf-build.md` (S5 section) +
+  `-acceptance-close.md` (S5 addendum). **5 canon amendments DRAFTED for ratification** (G1 real-data
+  substrate · G2 computed-style parity · G3 inventory DRESS column · G4 build-stage elevation · G5
+  STATES distribution-skew), joining the S4 close proposals. **Awaits push + felt pass #2 on production.**
 - **2026-07-22 (R-SHELF BUILD — BUILT + VERIFIED, committed-local, awaiting push + felt pass)** —
   the Shelf re-composition to the felt-passed mockup (brief v4) is built across 3 local commits
   (`bcce692` S1 shell · `d49cdca` S2 case · `f818008` S3 focused/See-all) + the S4 close (this
@@ -650,9 +665,10 @@ the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY
 
 - [x] **FINISH-CHOREO S2 — THE THRESHOLD — CLOSED** (v3.241 `4621cd8`, live-smoke PASS 2026-07-22).
   **S3** (motion dignity + measure) remains, riding where cheapest (not the lead).
-- [~] **R-SHELF — Shelf deep re-round — BUILT + VERIFIED, committed-local (v3.242), awaiting push +
-  Preston's dual felt read** (390 phone + desktop, on production). Closes on the felt pass; the build
-  lane then frees for THE ARC STANDARD build. `[books]`
+- [~] **R-SHELF — Shelf deep re-round — felt pass #1 FAILED → S5 felt-fail fix BUILT + VERIFIED on real
+  data, committed-local (v3.243), awaiting push + Preston's felt pass #2** (390 phone + desktop, on
+  production). S5 fixed the desk overflow + skin/seams/AA on his real 129-book library. Closes on felt
+  pass #2; the build lane then frees for THE ARC STANDARD build. `[books]`
 - [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into
   one entry, sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`).
   `[import-capture, notebook]`
