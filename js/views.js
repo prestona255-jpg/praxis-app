@@ -5365,13 +5365,22 @@ function shelfWallColumns() {
   return 2;
 }
 
-// band header — INERT label span at >=760 (all books visible; focused view is
-// mobile-only, wired in S3); a plain span in S2.
+// band header. At <760 the label is a BUTTON that opens the focused view ("the
+// case opens", §3.7); at >=760 it is an INERT span (all books already visible —
+// focused view is mobile-only). groupBooks omitted (pile) -> always inert.
 function buildShelfBandHeader(container, label, count, groupKey, groupBooks, lensName) {
   var hd = document.createElement('div');
   hd.className = 'cavity-band-hd';
-  var labelEl = document.createElement('span');
-  labelEl.className = 'band-label';
+  var labelEl;
+  if (isMobileShelf() && groupBooks && groupBooks.length) {
+    labelEl = document.createElement('button');
+    labelEl.type = 'button';
+    labelEl.className = 'label';
+    labelEl.addEventListener('click', function () { openShelfFocusedBand(groupKey, groupBooks, label, lensName); });
+  } else {
+    labelEl = document.createElement('span');
+    labelEl.className = 'band-label';
+  }
   labelEl.textContent = label;
   var c = document.createElement('span');
   c.className = 'count';
@@ -5381,14 +5390,33 @@ function buildShelfBandHeader(container, label, count, groupKey, groupBooks, len
   container.appendChild(hd);
 }
 
-// one band's shelf rows. S2 renders ALL books (both widths); S3 adds the mobile
-// 2-row See-all cap.
+// one band's shelf rows. Desktop + focused view: ALL books (wrapped rows). Mobile
+// band: at most 2 shelf rows, then a See-all tile as the last cell of row 2 (A1).
 function buildShelfShelfline(books, opts) {
   opts = opts || {};
   var frag = document.createDocumentFragment(), i;
-  for (i = 0; i < books.length; i = i + 1) {
-    frag.appendChild(buildCoverNode(books[i], { lensName: opts.lensName }));
+  if (opts.focused || !isMobileShelf()) {
+    for (i = 0; i < books.length; i = i + 1) {
+      frag.appendChild(buildCoverNode(books[i], { lensName: opts.lensName, focused: opts.focused }));
+    }
+    return frag;
   }
+  // A1 mobile: perRow from the 390 cell width (--cover-w-m 76 + --col-gap 16), so
+  // the cap is EXACTLY 2 visual rows before the See-all tile.
+  var avail = window.innerWidth - 56;                 // shelf-inner pad(32) + cavity pad(24)
+  var perRow = Math.max(2, Math.floor((avail + 16) / (76 + 16)));
+  var maxCells = perRow * 2;
+  if (books.length <= maxCells) {
+    for (i = 0; i < books.length; i = i + 1) { frag.appendChild(buildCoverNode(books[i], { lensName: opts.lensName })); }
+    return frag;
+  }
+  for (i = 0; i < maxCells - 1; i = i + 1) { frag.appendChild(buildCoverNode(books[i], { lensName: opts.lensName })); }
+  var tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'seeall-tile';
+  tile.textContent = 'See all ' + books.length;
+  tile.addEventListener('click', function () { openShelfFocusedBand(opts.groupKey, opts.groupBooks, opts.groupLabel, opts.lensName); });
+  frag.appendChild(tile);
   return frag;
 }
 
@@ -5400,10 +5428,67 @@ function buildShelfBand(label, books, groupKey, lensName) {
   cavity.className = 'cavity';
   var line = document.createElement('div');
   line.className = 'cavity-shelfline';
-  line.appendChild(buildShelfShelfline(books, { lensName: lensName }));
+  line.appendChild(buildShelfShelfline(books, { lensName: lensName, groupKey: groupKey, groupBooks: books, groupLabel: label }));
   cavity.appendChild(line);
   band.appendChild(cavity);
   return band;
+}
+
+// F5/§3.7 · "the case opens" — the focused full view (mobile). Same carved
+// grammar, multi-row within one cavity; the strip, desk and header are ABSENT
+// (you have stepped inside the case). Built into #shelf-focused on demand.
+function openShelfFocusedBand(groupKey, groupBooks, label, lensName) {
+  var fv = document.getElementById('shelf-focused');
+  if (!fv || !groupBooks) { return; }
+  var strip = document.getElementById('shelf-horizon');
+  var desk = document.getElementById('shelf-desk');
+  var header = document.querySelector('.shelf.lum-amber-deep .shelf-slim-header');
+  var caseEl = document.getElementById('shelf-case');
+  if (strip) { strip.style.display = 'none'; }
+  if (desk) { desk.style.display = 'none'; }
+  if (header) { header.style.display = 'none'; }
+  if (caseEl) { caseEl.style.display = 'none'; }
+  fv.innerHTML = '';
+  var back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'focused-back';
+  back.textContent = '‹ back to the shelf';
+  back.addEventListener('click', closeShelfFocusedBand);
+  fv.appendChild(back);
+  var hd = document.createElement('div');
+  hd.className = 'cavity-band-hd';
+  var t = document.createElement('span');
+  t.className = 'band-label';
+  t.textContent = label;
+  var c = document.createElement('span');
+  c.className = 'count';
+  c.textContent = groupBooks.length + (groupBooks.length === 1 ? ' book' : ' books');
+  hd.appendChild(t);
+  hd.appendChild(c);
+  fv.appendChild(hd);
+  var cavity = document.createElement('div');
+  cavity.className = 'cavity';
+  var line = document.createElement('div');
+  line.className = 'cavity-shelfline';
+  line.appendChild(buildShelfShelfline(groupBooks, { focused: true, lensName: lensName }));
+  cavity.appendChild(line);
+  fv.appendChild(cavity);
+  fv.className = 'focused-view is-shown';
+  shelfFocused = groupKey;
+  window.scrollTo(0, 0);
+}
+function closeShelfFocusedBand() {
+  var strip = document.getElementById('shelf-horizon');
+  var desk = document.getElementById('shelf-desk');
+  var header = document.querySelector('.shelf.lum-amber-deep .shelf-slim-header');
+  var caseEl = document.getElementById('shelf-case');
+  if (strip) { strip.style.display = ''; }
+  if (desk) { desk.style.display = ''; }
+  if (header) { header.style.display = ''; }
+  if (caseEl) { caseEl.style.display = ''; }
+  var fv = document.getElementById('shelf-focused');
+  if (fv) { fv.className = 'focused-view'; fv.innerHTML = ''; }
+  shelfFocused = null;
 }
 
 // lazy category classify (carried orchestration from the live renderShelf): fire

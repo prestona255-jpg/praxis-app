@@ -138,3 +138,26 @@ via the neutral-page SW-kill dance + rig.bustCss):**
 - Console: clean (0 errors).
 
 S2 verified. Proceeding to S3 (focused view + mobile See-all).
+
+### S3 — FOCUSED VIEW + MOBILE SEE-ALL — DONE (local commit, --no-verify)
+Files: `js/views.js` (buildShelfShelfline mobile 2-row See-all cap; buildShelfBandHeader mobile
+label→button; buildShelfBand passes group info; +openShelfFocusedBand/closeShelfFocusedBand).
+
+**JS:** A1 mobile cap — at <760, a band with > (perRow×2) books renders (perRow×2 − 1) covers + a
+See-all tile (2 shelf rows). §3.7 "the case opens" — mobile band labels are BUTTONS; clicking a
+label OR a See-all tile opens `#shelf-focused` (built on demand: back button + title/count + one
+cavity with ALL band books, `focused:true` → status word shown); the strip, desk, header, and case
+are hidden (absent, §3.7). Back restores them. Desktop labels stay inert spans (focused view is
+mobile-only). shelfFocused guards the resize re-render (don't rebuild the case under an open focus).
+
+**MECHANICAL:** parse-check `PARSE OK` exit 0. ES3.
+
+**LIVE VERIFY (rig :8793, d0tester, 145-book fixture, fresh via neutral-page SW-kill):**
+- 390: **12 See-all tiles**, each capped at exactly **6 cells** (5 covers + tile = 2 rows of 3);
+  17 label buttons + 1 inert pile span; no h-overflow. PASS.
+- Focused view (label click): shown; strip/desk/header/case ALL hidden (§3.7); title "Arts & Culture",
+  all band covers, status word shown, back button present, no strip inside. Back → strip/case restored. PASS.
+- Focused view (See-all click, large band): "See all 7" → focused shows all 7, no nested See-all. PASS.
+- Console: clean.
+
+S3 verified. Proceeding to S4 (close).
