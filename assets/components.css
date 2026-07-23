@@ -16301,12 +16301,16 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* ---- THE SKY (F4 / law 3) — an atmospheric band, not a header. No rule
    beneath it: a rule would make it a header again, and the question would read
-   as a title over content rather than as sky over a field. --------------- */
+   as a title over content rather than as sky over a field.
+   F2 PRESENCE (S-FELT): the sky flows INTO the field as ONE sheet — no hard band
+   edge. The overlay is a gentle brightening at the sheet's head that dissolves
+   fully into the vellum well before the gate row, so sky, gate and field read as
+   one continuous surface rather than a bright band stacked on a page. --------- */
 .arcfield.af-world .af-sky{
-  padding:52px 46px 40px;
+  padding:52px 46px 34px;
   background:linear-gradient(180deg,
-    rgba(255,252,244,.95) 0%,
-    rgba(253,247,232,.55) 44%,
+    rgba(255,251,240,.66) 0%,
+    rgba(253,247,232,.28) 52%,
     rgba(246,239,220,0) 100%);
 }
 .arcfield.af-world .af-q{

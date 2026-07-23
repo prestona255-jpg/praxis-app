@@ -527,6 +527,13 @@ function _stIdentity(id) {
 
 var _ST_SILS   = ['beacon', 'facet', 'seed', 'frond', 'gate', 'spire', 'well', 'vessel', 'bloom'];
 var _ST_TREATS = ['solid', 'outline', 'hatched'];
+// F2 PRESENCE PASS (S-FELT, felt fix-forward 2026-07-23): the DERIVE re-weights
+// toward SOLID, matching the mockup's paint (its fixtures ran ~50% solid, with
+// outline and hatched as the minority accents). A uniform hash % 3 read as an
+// even third each, which felt busier and lighter than the mockup. This 4-slot
+// table biases the SAME salt-13 hash to 50% solid / 25% outline / 25% hatched.
+// Pure and stable-from-id; the composer (S4) still lets a user choose any.
+var _ST_TREAT_WEIGHTED = ['solid', 'solid', 'outline', 'hatched'];
 var _ST_PIGS   = ['madder', 'terracotta', 'ochre', 'olive', 'moss',
                   'verdigris', 'teal', 'lapis', 'iris', 'plum'];
 
@@ -593,7 +600,8 @@ function _stMarkIdentity(rec) {
       (rec.markTreatment === 'solid' || rec.markTreatment === 'outline' || rec.markTreatment === 'hatched')) {
     treat = rec.markTreatment;
   } else {
-    treat = _ST_TREATS[_stIdentityHash(id, 13) % _ST_TREATS.length];
+    // F2: weighted derive (50/25/25 solid/outline/hatched), not a flat third.
+    treat = _ST_TREAT_WEIGHTED[_stIdentityHash(id, 13) % _ST_TREAT_WEIGHTED.length];
   }
 
   // pigment — composed > chosen-legacy > derived
@@ -953,6 +961,48 @@ function _stLayout(mode, subs, width, height) {
   return _stRadialLayout(subs, width, height);
 }
 
+// F1 COMPOSED FIT (S-FELT, felt fix-forward 2026-07-23) — the ruled fix for the
+// 1360 void. Preston's S1 felt verdict: the foundation is right, the composition
+// fails because the marks sit in the upper band of a viewBox far taller than
+// their spread, stranding an empty lower third.
+//
+// This normalizes each arc's arrangement into ONE composed screen: it maps the
+// marks' bounding box onto a target region that fills the composed field, with
+// generous margins. Per-axis normalization — the SAME move the mockup makes with
+// xBand and its baseY scaling — so RELATIVE positions are preserved (who is left
+// of whom, the constellation's shape) and NOTHING is reordered or re-related.
+//
+// COVENANT: this is DISPLAY-ONLY. It mutates the render-pass position objects
+// (fresh per render), never the stored sub.x/sub.y. Drag still authors freely
+// (setSubTheoryPosition is the only writer, unchanged). After the first fit the
+// mapping is stable: a set already filling the target region maps to itself, so
+// an un-dragged arc renders identically every time, and dragging one mark
+// re-normalizes the set exactly as xBand does (Preston-accepted).
+//
+// Idempotence + the single-axis-degenerate cases (one mark, or all marks on a
+// line) are handled by centering that axis, so a lone mark sits mid-field and a
+// vertical/horizontal row keeps its run.
+function _stComposeFit(positions, width, targetH) {
+  var n = positions.length;
+  if (!n) { return; }
+  var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, i;
+  for (i = 0; i < n; i = i + 1) {
+    if (positions[i].x < minX) { minX = positions[i].x; }
+    if (positions[i].x > maxX) { maxX = positions[i].x; }
+    if (positions[i].y < minY) { minY = positions[i].y; }
+    if (positions[i].y > maxY) { maxY = positions[i].y; }
+  }
+  // target region: generous margins so a mark's label/coal never meets the edge.
+  var tL = width * 0.14, tR = width * 0.86;
+  var tT = targetH * 0.20, tB = targetH * 0.82;
+  var spanX = maxX - minX, spanY = maxY - minY;
+  var midX = (tL + tR) / 2, midY = (tT + tB) / 2;
+  for (i = 0; i < n; i = i + 1) {
+    positions[i].x = (spanX < 1) ? midX : (tL + ((positions[i].x - minX) / spanX) * (tR - tL));
+    positions[i].y = (spanY < 1) ? midY : (tT + ((positions[i].y - minY) / spanY) * (tB - tT));
+  }
+}
+
 // Question -- amber gravity glow + italic serif text at center. Sibling of
 // _arcRenderQuestion (not reused, so the sub-theory view stays self-
 // contained and independently tunable). data-st-question tags it for the
@@ -1243,15 +1293,20 @@ function _stRenderEdges(edges, posById, showFaint) {
     // faint relationships.
     if (e.faint) {
       if (showFaint === false) { continue; } // Faint links layer hidden
-      out = out + '<line class="st-layer-faint" data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" style="stroke:var(--lum-gold-d)" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
+      out = out + '<line class="st-layer-faint" vector-effect="non-scaling-stroke" data-st-edge-faint="1" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" style="stroke:var(--lum-gold-d)" stroke-width="1.3" stroke-dasharray="2 6" opacity="0.4" stroke-linecap="round"/>';
       continue;
     }
     // 9.6c.4: bare resonance links carry NO strength (linkedSubTheories stores
     // plain ids), so they take the SOLID branch -- fixed weight + opacity, tan.
     // The weighted formula is left intact for a future strength-bearing stage.
+    // F2 PRESENCE (S-FELT): thread weight per the mockup file -- a calm
+    // hairline (~1.3px, mid-opacity ~.55 through the gradient's own fade),
+    // and vector-effect:non-scaling-stroke so a thread is a constant CSS
+    // hairline at any viewBox height (the composed field's viewBox is far
+    // shorter than the old 600x500, which would otherwise fatten the line).
     var hasStrength = (typeof e.strength === 'number' && isFinite(e.strength) && e.strength > 0);
-    var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.6;
-    var op = hasStrength ? 0.5 : 0.85;
+    var w = hasStrength ? _arcClamp(0.6, e.strength * 0.4, 3) : 1.3;
+    var op = hasStrength ? 0.5 : 0.72;
     // 9b-i: resonance reads as a gradient thread (transparent -> gold .7 ->
     // transparent) along its own axis. userSpaceOnUse endpoints = the edge's
     // own pa/pb so the fade tracks the line. _stNextId() keeps the def id
@@ -1266,7 +1321,7 @@ function _stRenderEdges(edges, posById, showFaint) {
     out = out +   '<stop offset="50%" style="stop-color:var(--lum-gold-d)" stop-opacity="0.7"/>';
     out = out +   '<stop offset="100%" style="stop-color:var(--lum-gold-d)" stop-opacity="0"/>';
     out = out + '</linearGradient>';
-    out = out + '<line data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="url(#' + edgeGradId + ')" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
+    out = out + '<line vector-effect="non-scaling-stroke" data-st-edge-a="' + _arcEscapeXml(e.aId) + '" data-st-edge-b="' + _arcEscapeXml(e.bId) + '" x1="' + _arcR(pa.x) + '" y1="' + _arcR(pa.y) + '" x2="' + _arcR(pb.x) + '" y2="' + _arcR(pb.y) + '" stroke="url(#' + edgeGradId + ')" stroke-width="' + _arcR(w) + '" opacity="' + op + '" stroke-linecap="round"/>';
   }
   return out;
 }
@@ -1452,16 +1507,26 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   var showLabels = (options.showLabels === true);
   var showDots = (options.showDots === false) ? false : true;
   var uScale = (typeof options.uScale === 'number' && options.uScale > 0) ? options.uScale : 1;
+  // F1 COMPOSED FIT: when the caller asks (desktop arc field), the field height
+  // becomes fitHeight and the arrangement normalizes into one composed screen.
+  // Set BEFORE any width/height-dependent draw so the question glow, edges and
+  // yumi all compose to the new height; the viewBox is re-declared at the end.
+  var composeFit = (options.composeFit === true);
+  if (composeFit && typeof options.fitHeight === 'number' && options.fitHeight > 0) {
+    height = options.fitHeight;
+  }
   if (showQuestion) { svg = svg + _stRenderQuestion(arc.question || '', width, height); }
 
   if (!subTheories.length) {
     svg = svg + _stRenderEmpty(width, height);
+    if (composeFit) { parentSvgElement.setAttribute('viewBox', '0 0 ' + width + ' ' + height); }
     parentSvgElement.innerHTML = svg;
     return;
   }
 
   var layoutMode = 'radial'; // swappable seam (curved-sweep deferred)
   var positions = _stLayout(layoutMode, subTheories, width, height);
+  if (composeFit) { _stComposeFit(positions, width, height); }
   var posById = {};
   var i;
   for (i = 0; i < positions.length; i = i + 1) {
@@ -1490,6 +1555,11 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
     svg = svg + _stRenderLegend(arc, positions, width, height);
   }
 
+  // F1: re-declare the viewBox to the composed height, so the field renders as
+  // one screen at the mockup band instead of a tall box with a void. Positions
+  // were already normalized into it above; the drag layer reads getScreenCTM,
+  // so it tracks whatever viewBox is live.
+  if (composeFit) { parentSvgElement.setAttribute('viewBox', '0 0 ' + width + ' ' + height); }
   parentSvgElement.innerHTML = svg;
   // R56: layer visibility rides on root attributes; the CSS in components.css
   // fades the filter-free descendant groups (.st-layer-books / -dots / -faint).
@@ -1552,25 +1622,19 @@ function attachSubTheoryDrag(svg, opts) {
   var drag = null;     // active drag state, or null between presses
   var didDrag = false; // true after a real drag; gates the click swallow
 
-  // 9.6c.3 hover card: shares this function's per-render scope so it can read
-  // the drag flag above (suppress the card mid-drag) and re-binds on the
-  // fresh svg like the drag layer. arc (the data contract, passed by views.js)
-  // supplies header/maturity/marks per sub-theory id; container is the
-  // position:relative web-view wrapper the card overlays.
-  var arc = options.arc || null;
-  var container = svg.parentNode;
-  var isTouch = (typeof matchMedia === 'function')
-    && matchMedia('(hover: none) and (pointer: coarse)').matches;
-  var subById = {};
-  var sbI;
-  if (arc && arc.subTheories) {
-    for (sbI = 0; sbI < arc.subTheories.length; sbI = sbI + 1) {
-      subById[arc.subTheories[sbI].id] = arc.subTheories[sbI];
-    }
-  }
-  var card = null; // lazily-created hover card; one at a time per render
-  var cardHideTimer = null; // 9b-iii: delayed hide so the pointer can reach the
-                            // card's "Open" / "Change mark" links
+  // The data contract (header/maturity/marks per sub-theory id) rides on
+  // options.arc; the drag/connect logic below reads it directly. The hover
+  // card that used to index it here retired at F3.
+  // F3 KILL THE GHOST (S-FELT, 2026-07-23): the desktop-only hover context card
+  // (a dark slab of Open / Change mark / Unlink / Delete) is RETIRED. It was
+  // hover-only, so it had no touch equivalent — a control a phone could never
+  // reach is not a control. Its jobs re-seat, each with touch parity:
+  //   Open       -> tap the mark (the approach's door, S2). Tap already routes.
+  //   Change mark-> the mark composer (S4), reached from the opened sub-theory.
+  //   Unlink     -> the sub-theory's own opened surface (the workshop's
+  //                 CONNECTIONS rows gain an unlink control — views.js).
+  //   Delete     -> the workshop's foot (already there) / the arc's ⋯ overflow.
+  // Nothing hover-only survives anywhere on the field.
 
   function svgPoint(evt) {
     var ctm = svg.getScreenCTM();
@@ -1604,7 +1668,7 @@ function attachSubTheoryDrag(svg, opts) {
     if (!g || g.getAttribute('data-st-mark')) { return; } // shape groups only
     var id = g.getAttribute('data-st-sub-id');
     if (!id) { return; }
-    hideCard(); // a press may become a drag -- never leave a card up under it
+    // F3: the hover card is gone, so there is nothing to hide on press-start.
     var start = svgPoint(evt);
     if (!start) { return; }
     var origin = parseTranslate(g);
@@ -1680,196 +1744,6 @@ function attachSubTheoryDrag(svg, opts) {
     }
   }
 
-  // ---- 9.6c.3 hover card ----
-  // A press-band maturity word; luminosity-style read, no numbers.
-  function maturityRead(m) {
-    var v = (typeof m === 'number' && isFinite(m)) ? m : 0;
-    if (v < 0.25) { return 'Nascent'; }
-    if (v < 0.5) { return 'Forming'; }
-    if (v < 0.75) { return 'Developing'; }
-    return 'Mature';
-  }
-
-  // Count only state:'gathered' marks (incorporated is dormant today, but
-  // this stays correct when Stage 10 lights it up).
-  function gatheredCount(sub) {
-    var marks = (sub && sub.marks) ? sub.marks : [];
-    var n = 0, gi;
-    for (gi = 0; gi < marks.length; gi = gi + 1) {
-      if (marks[gi] && marks[gi].state === 'gathered') { n = n + 1; }
-    }
-    return n;
-  }
-
-  function ensureCard() {
-    if (card) { return card; }
-    if (!container) { return null; }
-    card = document.createElement('div');
-    card.className = 'st-hover-card';
-    // 9b-iii: keep the card up while the pointer is over it (so its links are
-    // clickable); leaving the card hides it.
-    card.addEventListener('mouseenter', function() {
-      if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
-    });
-    card.addEventListener('mouseleave', hideCard);
-    container.appendChild(card);
-    return card;
-  }
-
-  // textContent only -- header is user-entered (an XSS surface); never
-  // innerHTML with sub-theory data.
-  function fillCard(el, sub) {
-    el.textContent = '';
-    var title = document.createElement('div');
-    title.className = 'st-hover-card-title';
-    title.textContent = (sub.header && sub.header.length) ? sub.header : 'Untitled sub-theory';
-    el.appendChild(title);
-    var meta = document.createElement('div');
-    meta.className = 'st-hover-card-meta';
-    meta.textContent = maturityRead(sub.maturity) + '  ·  ' + gatheredCount(sub) + ' gathered';
-    el.appendChild(meta);
-    // 9b-iii (mock vignette B): an Open + Change-mark footer. Change-mark hands
-    // off to the views.js picker via a window hook (keeps the layering: this
-    // renderer never reaches into views.js directly).
-    var foot = document.createElement('div');
-    foot.className = 'st-hover-card-foot';
-    var openLink = document.createElement('button');
-    openLink.type = 'button';
-    openLink.className = 'st-hover-card-link';
-    openLink.textContent = 'Open';
-    openLink.addEventListener('click', function(ev) {
-      ev.stopPropagation();
-      if (sub.id) { location.hash = 'subtheory/' + sub.id; }
-    });
-    foot.appendChild(openLink);
-    var changeLink = document.createElement('button');
-    changeLink.type = 'button';
-    changeLink.className = 'st-hover-card-link';
-    changeLink.textContent = 'Change mark';
-    changeLink.addEventListener('click', function(ev) {
-      ev.stopPropagation();
-      if (sub.id && typeof window.openSymbolPicker === 'function') {
-        hideCard();
-        window.openSymbolPicker(sub.id);
-      }
-    });
-    foot.appendChild(changeLink);
-    // Stage R #4: an Unlink control, shown only when this sub-theory has at
-    // least one resonance link. Hands off to the views.js confirm (window hook
-    // keeps the layering); afterUnlink re-renders the current route in place so
-    // the dropped edge disappears. Mirrors the Delete hand-off directly below.
-    // The renderer's data contract carries resonance links at the arc level
-    // (arc.edges = reciprocal {aId,bId} pairs), not per sub-theory, so detect
-    // this sub's connections by scanning arc.edges -- stays inside the contract
-    // (no reach into global state).
-    var stHasLink = false;
-    var stEdges = (arc && Array.isArray(arc.edges)) ? arc.edges : [];
-    var stEi;
-    for (stEi = 0; stEi < stEdges.length; stEi = stEi + 1) {
-      if (stEdges[stEi] && (stEdges[stEi].aId === sub.id || stEdges[stEi].bId === sub.id)) {
-        stHasLink = true; break;
-      }
-    }
-    if (stHasLink) {
-      var unlinkLink = document.createElement('button');
-      unlinkLink.type = 'button';
-      unlinkLink.className = 'st-hover-card-link';
-      unlinkLink.textContent = 'Unlink';
-      unlinkLink.addEventListener('click', function(ev) {
-        ev.stopPropagation();
-        if (sub.id && typeof window.confirmUnlinkSubTheory === 'function') {
-          hideCard();
-          window.confirmUnlinkSubTheory(sub.id, function() {
-            if (window.views && typeof window.views.renderRoute === 'function') {
-              window.views.renderRoute();
-            }
-          });
-        }
-      });
-      foot.appendChild(unlinkLink);
-    }
-    // Fix (v3.81 / R67): a subordinate danger Delete link in the hover card --
-    // the only per-sub surface in the Web view. Hands off to the views.js
-    // confirm modal (window hook keeps the layering); afterDelete re-renders the
-    // current route in place (R69).
-    var delLink = document.createElement('button');
-    delLink.type = 'button';
-    delLink.className = 'st-hover-card-link st-hover-card-link-danger';
-    delLink.textContent = 'Delete';
-    delLink.addEventListener('click', function(ev) {
-      ev.stopPropagation();
-      if (sub.id && typeof window.confirmDeleteSubTheory === 'function') {
-        hideCard();
-        window.confirmDeleteSubTheory(sub.id, function() {
-          if (window.views && typeof window.views.renderRoute === 'function') {
-            window.views.renderRoute();
-          }
-        });
-      }
-    });
-    foot.appendChild(delLink);
-    el.appendChild(foot);
-  }
-
-  // Anchor above the mark, centered; flip below and clamp to the container
-  // so the card never clips off-screen.
-  function positionCard(el, markEl) {
-    if (!container) { return; }
-    var crect = container.getBoundingClientRect();
-    var mrect = markEl.getBoundingClientRect();
-    var cw = el.offsetWidth;
-    var ch = el.offsetHeight;
-    var x = (mrect.left - crect.left) + mrect.width / 2 - cw / 2;
-    var y = (mrect.top - crect.top) - ch - 10;
-    if (y < 0) { y = (mrect.bottom - crect.top) + 10; }
-    if (x < 0) { x = 0; }
-    if (x + cw > container.clientWidth) { x = container.clientWidth - cw; }
-    if (x < 0) { x = 0; }
-    if (y + ch > container.clientHeight) { y = container.clientHeight - ch; }
-    if (y < 0) { y = 0; }
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-  }
-
-  function showCard(sub, markEl) {
-    if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
-    var el = ensureCard();
-    if (!el) { return; }
-    fillCard(el, sub);
-    el.classList.add('st-hover-card--visible');
-    positionCard(el, markEl); // measure after fill + show
-  }
-
-  function hideCard() {
-    if (cardHideTimer) { clearTimeout(cardHideTimer); cardHideTimer = null; }
-    if (card) { card.classList.remove('st-hover-card--visible'); }
-  }
-
-  function onShapeEnter(evt) {
-    if (drag || _stConnectArmed) { return; } // never mid-drag or while arming
-    var g = evt.currentTarget;
-    var sub = subById[g.getAttribute('data-st-sub-id')];
-    if (!sub) { return; }
-    showCard(sub, g);
-  }
-
-  // 9b-iii: delay the hide so the pointer can travel onto the card (whose own
-  // mouseenter cancels the timer) to reach its links.
-  function onShapeLeave() {
-    if (cardHideTimer) { clearTimeout(cardHideTimer); }
-    cardHideTimer = setTimeout(hideCard, 140);
-  }
-
-  // Per-shape hover binding (mouseenter/leave don't bubble, so no
-  // delegation). Desktop only: touch has no hover and tap already navigates.
-  if (!isTouch) {
-    var shapeEls = svg.querySelectorAll('[data-st-sub-id]:not([data-st-mark])');
-    var hi;
-    for (hi = 0; hi < shapeEls.length; hi = hi + 1) {
-      shapeEls[hi].addEventListener('mouseenter', onShapeEnter);
-      shapeEls[hi].addEventListener('mouseleave', onShapeLeave);
-    }
-  }
 
   // ---- 9.6c.4 Connect mode ----
   // Selection highlight is runtime-only (a class on the shape <g>, styled with

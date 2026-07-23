@@ -11328,6 +11328,22 @@ function renderSubTheoryBuild(id) {
   connAdd.textContent = '＋ draw a connection';
   connAdd.addEventListener('click', function() { location.hash = subTheory.arcId ? ('arc/' + subTheory.arcId) : 'arcs'; });
   conn.appendChild(connAdd);
+  // F3 KILL THE GHOST (S-FELT): Unlink re-seats from the retired field hover
+  // card onto the sub-theory's OWN opened surface, with touch parity. Shown only
+  // when a link exists; confirmUnlinkSubTheory lets the user pick which partner
+  // to drop. A click safely no-ops if the last link was removed since render.
+  if (shown > 0) {
+    var connUnlink = document.createElement('button');
+    connUnlink.type = 'button';
+    connUnlink.className = 'stb-conn-add stb-conn-unlink';
+    connUnlink.textContent = '－ remove a connection';
+    connUnlink.addEventListener('click', function() {
+      if (typeof confirmUnlinkSubTheory === 'function') {
+        confirmUnlinkSubTheory(id, function() { renderSubTheoryBuild(id); });
+      }
+    });
+    conn.appendChild(connUnlink);
+  }
   sheet.appendChild(conn);
 
   main.appendChild(sheet);
@@ -13449,7 +13465,23 @@ function renderArcDetail(arcId) {
   var afSvg = webContainer.querySelector ? webContainer.querySelector('svg') : null;
   if (afSvg && typeof window.renderSubTheoryConstellation === 'function') {
     var afRect = afSvg.getBoundingClientRect();
-    var afU = (afRect && afRect.width > 0) ? (600 / afRect.width) : 1;
+    var afWidth = (afRect && afRect.width > 0) ? afRect.width : 1144;
+    var afU = 600 / afWidth;
+    // F1 COMPOSED FIT (S-FELT): at DESKTOP the arrangement normalizes into one
+    // composed screen at the mockup's field band (~470 CSS px tall, at any
+    // desktop width); the marks fill it and the void is gone. The viewBox width
+    // stays 600, so the composed height in viewBox units = 470 * 600 / rendered
+    // width -- clamped so a very wide or very narrow desktop still reads. MOBILE
+    // (<760) keeps its current good behavior (Preston's felt pass): the tall
+    // 600x500 viewBox + _afFitFieldHeight crop, untouched.
+    var afDesktop = (typeof matchMedia === 'function')
+      ? matchMedia('(min-width:760px)').matches : (window.innerWidth >= 760);
+    var afFitH = 0;
+    if (afDesktop) {
+      afFitH = Math.round(470 * 600 / afWidth);
+      if (afFitH < 200) { afFitH = 200; }
+      if (afFitH > 430) { afFitH = 430; }
+    }
     var arcData = _arcDetailBuildSubTheoryData(arc);
     // Wave 1 (F-D5): Tidy is an opt-in, session-only compose -- positions are
     // nulled for THIS RENDER so the renderer lays out its own composed
@@ -13475,16 +13507,15 @@ function renderArcDetail(arcId) {
       showLegend:     false,   // law 4: the field explains itself, sparse-honest
       showLabels:     true,    // F7: a resting mark carries its NAME
       showDots:       false,   // F4: the mark's size + coal already say the count
-      uScale:         afU
+      uScale:         afU,
+      markScale:      1.15,    // F2 PRESENCE: paint marks up to the mockup's weight
+      composeFit:     afDesktop,   // F1: one composed screen at desktop
+      fitHeight:      afFitH
     });
-    // RD-2 THE LENGTHENING PAGE: height grows to the lowest mark plus breathing
-    // room over a generous minimum -- never a fixed box with a void under it.
-    // The viewBox is 600x500 whatever the arrangement is, so at four marks in
-    // the upper two-thirds the field stranded ~300px of empty sheet under the
-    // lowest one. Re-declaring the viewBox HEIGHT crops that away and moves
-    // NOTHING: every mark's position is absolute in this coordinate space, and
-    // the drag layer maps through getScreenCTM, so it follows any viewBox.
-    _afFitFieldHeight(afSvg);
+    // MOBILE keeps the lengthening-page crop (desktop composed-fit set its own
+    // height above). RD-2: height grows to the lowest mark plus breathing room
+    // over a generous minimum -- never a fixed box with a void under it.
+    if (!afDesktop) { _afFitFieldHeight(afSvg); }
     _stConstellationAttachInteractions(afSvg, arcData);
     if (typeof window.attachSubTheoryDrag === 'function') {
       window.attachSubTheoryDrag(afSvg, {
