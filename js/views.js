@@ -3431,7 +3431,10 @@ function buildNotebookInboxEmpty() {
 //   marg/ques on book  -> filed true, bookIds = [activeKey] (that book's bank)
 //   marg/ques elsewhere-> filed false, no book (Inbox, awaiting triage)
 // Then "follow the note" to the tab it routed into, and re-render.
-function captureNote(register, body, activeKey, images) {
+// R-CAPTURE: noNav (optional, default falsy) suppresses the renderNotebook()
+// re-render so the global capture door — summonable over ANY route — never
+// hijacks #app. Existing 4-arg callers are unchanged (noNav === undefined).
+function captureNote(register, body, activeKey, images, noNav) {
   var user = getCurrentUser();
   if (!user) { return; }
   var now = Date.now();
@@ -3464,7 +3467,7 @@ function captureNote(register, body, activeKey, images) {
   if (register === 'journal') { notebookActiveTab = 'journal'; }
   else if (filed) { notebookActiveTab = bookIds[0]; }
   else { notebookActiveTab = 'inbox'; }
-  renderNotebook();
+  if (!noNav) { renderNotebook(); }
   maybeDrawOut(id);
 }
 
@@ -23130,7 +23133,431 @@ function aboutWireToggle(page, g) {
   });
 }
 
+// =====================================================================
+// R-CAPTURE — THE DOOR (the capture sheet). CD-1..6. Ported from the
+// felt-passed spec docs/studio/mockups/capture.html (SHAPE-B, PASS
+// 2026-07-23). ONE component, summonable over any route: the "+" create
+// corner (bottom-left, mirroring the flower), the nav Capture entry, and
+// ⌘N. Pre-rendered in the DOM at boot (CD-2: zero network before the
+// first keystroke). Commits via captureNote(...,noNav=true) so it never
+// hijacks #app; the draft rides the shipped per-tab per-uid gate on a
+// fixed 'capture' key (CA-2: one thought, re-targetable, ONE gate).
+// Voice mode is wired in Lane 2 (import-capture dictation fold-in).
+// =====================================================================
+var CAP_DRAFT_KEY = 'capture'; // the sheet's own nbDraft activeKey (not a notebook tab)
+var capMode = 'note';
+var capRegister = 'marginalia';
+var capTarget = null;
+var capCaught = [];        // {localId, id, register, body, target}
+var capLastFiled = null;
+var capToastTimer = null;
+var capDraftTimer = null;
+var capOwnerUid = null;
+var capMicTimer1 = null, capMicTimer2 = null;
+
+function capEl(id) { return document.getElementById(id); }
+function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
+function capPrefersReduced() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function capRegColor(r) {
+  if (r === 'question') { return 'var(--question-color)'; }
+  if (r === 'journal') { return 'var(--journal-color)'; }
+  return 'var(--marginalia-color)';
+}
+// CD-3 context-smart: on a #book/<id> route the door pre-associates that book.
+function capCurrentBookKey() {
+  var h = location.hash || '';
+  if (h.charAt(0) === '#') { h = h.slice(1); }
+  var parts = h.split('/');
+  if (parts[0] === 'book' && parts[1] && state.books && state.books[parts[1]]) { return parts[1]; }
+  return null;
+}
+// Targets = Inbox + the reader's books (reading-first, then title). Arc-as-target
+// is the Room seam (CA-3), not a captureNote destination — deliberately absent.
+function capBuildTargets() {
+  var out = [{ key: 'inbox', type: 'inbox', label: 'Inbox', sub: '', hue: 'var(--ink-4)' }];
+  var books = state.books || {};
+  var arr = [], k;
+  for (k in books) { if (books.hasOwnProperty(k)) { arr.push(books[k]); } }
+  arr.sort(function (a, b) {
+    var ar = (normalizeStatus(a.status) === 'reading') ? 0 : 1;
+    var br = (normalizeStatus(b.status) === 'reading') ? 0 : 1;
+    if (ar !== br) { return ar - br; }
+    var at = (a.title || '').toLowerCase(), bt = (b.title || '').toLowerCase();
+    return at < bt ? -1 : (at > bt ? 1 : 0);
+  });
+  var i;
+  for (i = 0; i < arr.length; i++) {
+    out.push({ key: arr[i].id, type: 'book', label: (arr[i].title || 'Untitled'), sub: (arr[i].author || ''), hue: 'var(--gold)' });
+  }
+  return out;
+}
+function capFindTarget(key) {
+  var t = capBuildTargets(), i;
+  for (i = 0; i < t.length; i++) { if (t[i].key === key) { return t[i]; } }
+  return t[0];
+}
+
+function capSetChip() {
+  var dot = capEl('capChipDot'), lbl = capEl('capChipLabel');
+  if (!dot || !lbl || !capTarget) { return; }
+  dot.style.background = capTarget.hue;
+  lbl.textContent = capTarget.label;
+}
+function capRenderChipPop() {
+  var pop = capEl('capChipPop');
+  if (!pop) { return; }
+  pop.innerHTML = '';
+  var targets = capBuildTargets(), i;
+  for (i = 0; i < targets.length; i++) {
+    (function (t) {
+      var opt = document.createElement('div');
+      opt.className = 'capdoor-chip-opt';
+      opt.setAttribute('role', 'option');
+      opt.setAttribute('aria-selected', t.key === capTarget.key ? 'true' : 'false');
+      var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = t.hue;
+      var lbl = document.createElement('span'); lbl.textContent = t.label;
+      opt.appendChild(dot); opt.appendChild(lbl);
+      if (t.sub && t.type === 'book') { var sub = document.createElement('span'); sub.className = 'sub'; sub.textContent = t.sub; opt.appendChild(sub); }
+      opt.addEventListener('click', function () {
+        capTarget = t; capSetChip();
+        capEl('capContext').classList.remove('is-open');
+        capEl('capChipBtn').setAttribute('aria-expanded', 'false');
+        capEl('capField').focus();
+      });
+      pop.appendChild(opt);
+    })(targets[i]);
+  }
+}
+
+function capSetRegister(r) {
+  capRegister = r;
+  var btns = document.querySelectorAll('.capdoor-seg button'), i;
+  for (i = 0; i < btns.length; i++) {
+    btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-r') === r ? 'true' : 'false');
+  }
+}
+function capAutogrow() {
+  var f = capEl('capField');
+  if (!f) { return; }
+  f.style.height = 'auto';
+  f.style.height = f.scrollHeight + 'px';
+}
+function capSetMode(mode) {
+  capMode = mode;
+  var sheet = capEl('capSheet');
+  var modes = document.querySelectorAll('.capdoor-mode'), i;
+  for (i = 0; i < modes.length; i++) {
+    modes[i].setAttribute('aria-pressed', modes[i].getAttribute('data-mode') === mode ? 'true' : 'false');
+  }
+  sheet.className = 'capdoor-sheet' + (sheet.classList.contains('is-open') ? ' is-open' : '')
+    + (mode === 'note' ? '' : ' cap-expanded') + ' cap-mode-' + mode;
+  // reset voice UI on every mode change (Lane-2 wires the real dictation)
+  var mic = capEl('capMic');
+  if (mic) { mic.classList.remove('is-listening'); }
+  sheet.classList.remove('cap-mic-active');
+  if (capEl('capListenState')) { capEl('capListenState').textContent = ''; }
+  if (capEl('capMicLabel')) { capEl('capMicLabel').textContent = 'Tap to talk'; }
+  var f = capEl('capField');
+  if (mode === 'note' || mode === 'voice' || mode === 'paste') {
+    f.placeholder = (mode === 'paste') ? 'Paste notes here — or type directly…' : 'Write a note…';
+    window.setTimeout(function () { f.focus(); }, 0);
+    capAutogrow();
+  }
+}
+
+// ---- draft (CA-2): the sheet's working text rides nbDraft on a fixed key ----
+function capLoadDraft() {
+  if (!capOwnerUid) { return; }
+  var d = nbDraftLoad(capOwnerUid, CAP_DRAFT_KEY);
+  if (d && typeof d.body === 'string') {
+    capEl('capField').value = d.body;
+    if (d.register) { capSetRegister(d.register); }
+  }
+}
+function capSaveDraftNow() {
+  if (!capOwnerUid) { return; }
+  nbDraftSave(capOwnerUid, capEl('capField').value, capRegister, CAP_DRAFT_KEY);
+}
+function capScheduleDraftSave() {
+  if (capDraftTimer) { window.clearTimeout(capDraftTimer); }
+  capDraftTimer = window.setTimeout(capSaveDraftNow, 300);
+}
+
+function capOpen(opts) {
+  opts = opts || {};
+  var u = getCurrentUser();
+  capOwnerUid = u ? u.uid : null;
+  var key = opts.targetKey || capCurrentBookKey() || 'inbox';
+  capTarget = capFindTarget(key);
+  capSetChip();
+  capSetMode(opts.mode || 'note');
+  capSetRegister('marginalia');
+  capLoadDraft();
+  capEl('capScrim').classList.add('is-open');
+  capEl('capSheet').classList.add('is-open');
+  var nav = document.querySelector('.cap-nav-entry');
+  if (nav) { nav.setAttribute('aria-current', 'true'); }
+  // CD-2: focus lands in ONE synchronous frame — no fetch, nothing between
+  // "open" and the caret in the field.
+  capEl('capField').focus();
+  capAutogrow();
+}
+function capClose() {
+  capSaveDraftNow(); // CA-2: an un-filed draft is never lost on close
+  capEl('capScrim').classList.remove('is-open');
+  capEl('capSheet').classList.remove('is-open');
+  var nav = document.querySelector('.cap-nav-entry');
+  if (nav) { nav.setAttribute('aria-current', 'false'); }
+}
+
+function capRenderCaught() {
+  var host = capEl('capCaught'), empty = capEl('capCaughtEmpty');
+  if (!host) { return; }
+  host.innerHTML = '';
+  if (empty) { empty.style.display = capCaught.length ? 'none' : 'block'; }
+  var i;
+  for (i = 0; i < capCaught.length && i < 6; i++) {
+    (function (item) {
+      var row = document.createElement('div');
+      row.className = 'capdoor-caught-item';
+      var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = capRegColor(item.register);
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.body;
+      var tg = document.createElement('span'); tg.className = 'target'; tg.textContent = item.target.label;
+      row.appendChild(dot); row.appendChild(txt); row.appendChild(tg);
+      host.appendChild(row);
+    })(capCaught[i]);
+  }
+}
+function capShowToast(msg, onUndo) {
+  var toast = capEl('capToast'), toastMsg = capEl('capToastMsg'), toastUndo = capEl('capToastUndo');
+  if (!toast) { return; }
+  toastMsg.textContent = msg;
+  toastUndo.style.display = onUndo ? '' : 'none';
+  toast.classList.add('is-show');
+  toastUndo.onclick = function () {
+    toast.classList.remove('is-show');
+    if (capToastTimer) { window.clearTimeout(capToastTimer); }
+    if (onUndo) { onUndo(); }
+  };
+  if (capToastTimer) { window.clearTimeout(capToastTimer); }
+  capToastTimer = window.setTimeout(function () { toast.classList.remove('is-show'); }, 6500);
+}
+
+// CD-5 — commit-and-stay. Files via captureNote (real write), clears the field,
+// pulses + toasts "filed to X · Undo", and leaves the sheet open.
+function capCommit() {
+  if (capMode === 'photo' || capMode === 'scan') { return; } // seats: nothing to file
+  var f = capEl('capField');
+  var body = capTrim(f.value);
+  if (!body) { return; } // mirrors captureNote's own empty guard
+  var u = getCurrentUser();
+  if (!u) { capShowToast('Sign in to keep your notes', null); return; }
+  var prevBody = f.value, prevRegister = capRegister, tgt = capTarget;
+  captureNote(capRegister, body, tgt.key, [], true); // noNav: never leave the route
+  nbDraftClear(u.uid, CAP_DRAFT_KEY);
+  var filedId = nbJustSavedId;
+  var localId = 'c' + (state.notebookEntries ? Object.keys(state.notebookEntries).length : 0) + '-' + body.length;
+  capCaught.unshift({ localId: localId, id: filedId, register: prevRegister, body: body, target: tgt });
+  capLastFiled = { localId: localId, id: filedId, prevBody: prevBody, prevRegister: prevRegister };
+  capRenderCaught();
+  f.value = '';
+  capAutogrow();
+  f.focus();
+  var wrap = f.parentNode; // .capdoor-field-wrap
+  if (wrap && !capPrefersReduced()) { wrap.classList.remove('mo-savepulse'); void wrap.offsetWidth; wrap.classList.add('mo-savepulse'); }
+  capShowToast('Filed to ' + tgt.label + ' · Undo', capUndo);
+}
+function capUndo() {
+  if (!capLastFiled) { return; }
+  var lf = capLastFiled;
+  if (lf.id && state.notebookEntries && state.notebookEntries[lf.id]) {
+    delete state.notebookEntries[lf.id];
+    markNotebookDirty();
+    saveState();
+  }
+  var kept = [], i;
+  for (i = 0; i < capCaught.length; i++) { if (capCaught[i].localId !== lf.localId) { kept.push(capCaught[i]); } }
+  capCaught = kept;
+  capRenderCaught();
+  var f = capEl('capField');
+  f.value = lf.prevBody;
+  capSetRegister(lf.prevRegister);
+  capAutogrow();
+  f.focus();
+  capSaveDraftNow();
+  capLastFiled = null;
+}
+
+// buildCaptureDoor — the pre-rendered DOM (CD-2). Mounted once at boot.
+function buildCaptureDoor() {
+  var svgPlus = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="var(--br-deep)" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  var svgMic = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0M12 19v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var svgHeart = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-4.35-9.5-8.5C1 9 2.5 5.5 6 5c2-.3 4 .9 6 3 2-2.1 4-3.3 6-3 3.5.5 5 4 3.5 7.5C19 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  var svgCam = '<svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13.5" r="3.4" stroke="currentColor" stroke-width="1.6"/></svg>';
+  var svgScan = '<svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6 8v8M9 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.6"/></svg>';
+  var html =
+    '<button class="cap-create-door" id="capCreateDoor" type="button" aria-label="Capture a thought" aria-haspopup="dialog">' +
+      '<span class="cap-create-glyph" aria-hidden="true">' + svgPlus + '</span></button>' +
+    '<div class="capdoor-scrim" id="capScrim"></div>' +
+    '<div class="capdoor-sheet" id="capSheet" role="dialog" aria-modal="true" aria-labelledby="capEyebrow">' +
+      '<div class="capdoor-handle" id="capHandle" aria-hidden="true"></div>' +
+      '<div class="capdoor-head"><div><div class="capdoor-eyebrow" id="capEyebrow">Catch a thought' +
+        '<span class="capdoor-eyebrow-sub">pre-rendered — zero network before your first keystroke</span></div></div>' +
+        '<button class="capdoor-close" id="capClose" type="button" aria-label="Close">×</button></div>' +
+      '<div class="capdoor-body">' +
+        '<div class="capdoor-modes" role="tablist" aria-label="capture mode">' +
+          '<button class="capdoor-mode" data-mode="note" aria-pressed="true" type="button"><span class="ic">✎</span>Note</button>' +
+          '<button class="capdoor-mode" data-mode="voice" aria-pressed="false" type="button"><span class="ic">🎙</span>Voice</button>' +
+          '<button class="capdoor-mode" data-mode="paste" aria-pressed="false" type="button"><span class="ic">⭳</span>Paste/Import</button>' +
+          '<button class="capdoor-mode is-seat" data-mode="photo" aria-pressed="false" type="button"><span class="ic">📷</span>Photo</button>' +
+          '<button class="capdoor-mode is-seat" data-mode="scan" aria-pressed="false" type="button"><span class="ic">▤</span>Scan a book</button>' +
+        '</div>' +
+        '<div class="capdoor-mic-hero">' +
+          '<button class="capdoor-mic" id="capMic" type="button" aria-label="Start dictating">' + svgMic + '</button>' +
+          '<div class="capdoor-listen-state" id="capListenState"></div>' +
+          '<div class="capdoor-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>' +
+          '<div class="capdoor-mic-label" id="capMicLabel">Tap to talk</div>' +
+          '<div class="capdoor-mic-hint">Yumi transcribes as you speak — review the words below before filing.</div>' +
+          '<div class="capdoor-loss-note">If this closes mid-recording, only the last few unsaved seconds are at risk — anything already transcribed is already saved.</div>' +
+        '</div>' +
+        '<div class="capdoor-uploadrow">' +
+          '<button class="capdoor-pill" id="capUploadBtn" type="button">Upload a file</button>' +
+          '<span class="capdoor-hint" style="align-self:center;">or paste straight into the field below</span>' +
+          '<input type="file" id="capFileInput" accept=".txt,.md,text/plain" style="display:none;"></div>' +
+        '<div class="capdoor-field-wrap"><textarea class="capdoor-field" id="capField" rows="1" placeholder="Write a note…"></textarea></div>' +
+        '<div class="capdoor-seg" role="group" aria-label="register">' +
+          '<button type="button" data-r="marginalia" aria-pressed="true">Marginalia</button>' +
+          '<button type="button" data-r="question" aria-pressed="false">Question</button>' +
+          '<button type="button" data-r="journal" aria-pressed="false">Journal</button></div>' +
+        '<div class="capdoor-context" id="capContext">' +
+          '<button class="capdoor-chip" id="capChipBtn" type="button" aria-haspopup="listbox" aria-expanded="false">' +
+            '<span class="dot" id="capChipDot"></span><span class="lbl" id="capChipLabel">Inbox</span><span class="chev">▾</span></button>' +
+          '<div class="capdoor-chip-pop" id="capChipPop" role="listbox" aria-label="file to"></div></div>' +
+        '<div class="capdoor-seat-card for-photo">' + svgCam + '<div class="lbl">Photo capture — the socket is here</div><div class="sub">camera + OCR arrive with SCAN</div></div>' +
+        '<div class="capdoor-seat-card for-scan">' + svgScan + '<div class="lbl">Scan a book — the socket is here</div><div class="sub">barcode capture arrives with SCAN</div></div>' +
+        '<div class="capdoor-caught" id="capCaught"></div>' +
+        '<div class="capdoor-caught-empty" id="capCaughtEmpty" style="display:none;">nothing caught yet this session</div>' +
+      '</div>' +
+      '<div class="capdoor-foot">' +
+        '<button class="capdoor-seat-btn" id="capTalkSeat" type="button" aria-label="Talk it through">' + svgHeart +
+          '<span class="capdoor-seat-tip" id="capTalkTip">arrives with the YG round</span></button>' +
+        '<span class="capdoor-hint"><kbd>⌘</kbd><kbd>Enter</kbd> files · <kbd>Enter</kbd> new line</span>' +
+        '<button class="capdoor-commit" id="capCommit" type="button">File it</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="capdoor-toast" id="capToast" role="status" aria-live="polite"><span id="capToastMsg"></span><button type="button" id="capToastUndo">Undo</button></div>';
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  while (tmp.firstChild) { document.body.appendChild(tmp.firstChild); }
+}
+
+var CAP_MOUNTED = false;
+function initCaptureDoor() {
+  if (CAP_MOUNTED) { return; }
+  if (!document.body) { return; }
+  CAP_MOUNTED = true;
+  buildCaptureDoor();
+  nbInstallDraftHooks(); // reuse the shipped visibilitychange/pagehide flush infra
+
+  var field = capEl('capField');
+  field.addEventListener('input', function () { capAutogrow(); capScheduleDraftSave(); });
+  field.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); capCommit(); }
+  });
+
+  // mode chips
+  var modes = document.querySelectorAll('.capdoor-mode'), i;
+  for (i = 0; i < modes.length; i++) {
+    (function (b) { b.addEventListener('click', function () { capSetMode(b.getAttribute('data-mode')); }); })(modes[i]);
+  }
+  // register chips
+  var segs = document.querySelectorAll('.capdoor-seg button');
+  for (i = 0; i < segs.length; i++) {
+    (function (b) { b.addEventListener('click', function () { capSetRegister(b.getAttribute('data-r')); capEl('capField').focus(); }); })(segs[i]);
+  }
+  // context chip
+  capEl('capChipBtn').addEventListener('click', function () {
+    var ctx = capEl('capContext');
+    var open = ctx.classList.toggle('is-open');
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { capRenderChipPop(); }
+  });
+  document.addEventListener('click', function (e) {
+    var ctx = capEl('capContext');
+    if (ctx && !ctx.contains(e.target)) { ctx.classList.remove('is-open'); capEl('capChipBtn').setAttribute('aria-expanded', 'false'); }
+  });
+
+  // summons
+  capEl('capCreateDoor').addEventListener('click', function () { capOpen({ mode: 'note' }); });
+  var navEntry = document.querySelector('.cap-nav-entry');
+  if (navEntry) { navEntry.addEventListener('click', function (e) { e.preventDefault(); capOpen({ mode: 'note' }); }); }
+
+  // close (CD-5: explicit only)
+  capEl('capClose').addEventListener('click', capClose);
+  // scrim click does NOT close — nudge the veil (CD-5, ruled)
+  capEl('capScrim').addEventListener('click', function () {
+    if (!capEl('capSheet').classList.contains('is-open')) { return; }
+    var sc = capEl('capScrim');
+    if (!capPrefersReduced()) { sc.classList.remove('is-nudge'); void sc.offsetWidth; sc.classList.add('is-nudge'); }
+  });
+  // commit
+  capEl('capCommit').addEventListener('click', capCommit);
+
+  // drag-to-dismiss (mobile handle)
+  var handle = capEl('capHandle'), dragStartY = null, dragDelta = 0, sheet = capEl('capSheet');
+  handle.addEventListener('pointerdown', function (e) { try { handle.setPointerCapture(e.pointerId); } catch (err) {} dragStartY = e.clientY; dragDelta = 0; sheet.style.transition = 'none'; });
+  handle.addEventListener('pointermove', function (e) {
+    if (dragStartY === null) { return; }
+    dragDelta = Math.max(0, e.clientY - dragStartY);
+    sheet.style.transform = 'translateY(' + dragDelta + 'px)';
+  });
+  function dragEnd() {
+    if (dragStartY === null) { return; }
+    sheet.style.transition = ''; sheet.style.transform = '';
+    if (dragDelta > 90) { capClose(); }
+    dragStartY = null; dragDelta = 0;
+  }
+  handle.addEventListener('pointerup', dragEnd);
+  handle.addEventListener('pointercancel', dragEnd);
+
+  // keyboard: Escape closes (explicit keypress, not automatic); ⌘N summons
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && capEl('capSheet').classList.contains('is-open')) { capClose(); return; }
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); capOpen({ mode: 'note' }); }
+  });
+
+  // paste/import: real file read, no network
+  capEl('capUploadBtn').addEventListener('click', function () { capEl('capFileInput').click(); });
+  capEl('capFileInput').addEventListener('change', function () {
+    var fl = this.files && this.files[0];
+    if (!fl) { return; }
+    var reader = new FileReader();
+    reader.onload = function () { field.value = String(reader.result || ''); capAutogrow(); capScheduleDraftSave(); field.focus(); };
+    reader.readAsText(fl);
+    this.value = '';
+  });
+
+  // CD-4 talk-it-through: inert seat, shows a tooltip, never opens chat
+  var talk = capEl('capTalkSeat');
+  talk.addEventListener('click', function () {
+    talk.classList.add('show-tip');
+    window.setTimeout(function () { talk.classList.remove('show-tip'); }, 1800);
+  });
+
+  // CA-2 flush: keep the sheet's own draft current when the tab hides
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && capEl('capSheet').classList.contains('is-open')) { capSaveDraftNow(); }
+  });
+  window.addEventListener('pagehide', function () { if (capEl('capSheet').classList.contains('is-open')) { capSaveDraftNow(); } });
+}
+// public summon — e.g. openCaptureDoor({ targetKey: bookId, mode: 'note' })
+function openCaptureDoor(opts) { if (!CAP_MOUNTED) { initCaptureDoor(); } capOpen(opts || {}); }
+
 window.views = {
+  initCaptureDoor:       initCaptureDoor,
+  openCaptureDoor:       openCaptureDoor,
   renderRoute:           renderRoute,
   drainCommonsExits:     drainCommonsExits,
   renderAccountPage:     renderAccountPage,

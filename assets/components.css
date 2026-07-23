@@ -16600,3 +16600,302 @@ body.wc-focus .app-nav { opacity:.26; }
 @media (max-width:759px){
   .mc-grid{ grid-template-columns:repeat(4, 1fr); }
 }
+
+/* =============================================================================
+   R-CAPTURE — THE DOOR (the capture sheet). Ported from the felt-passed spec
+   docs/studio/mockups/capture.html (SHAPE-B, PASS 2026-07-23). Ground = LIGHT
+   working surface over --scrim (ruled). Every color is a named token (Law 6);
+   .mo-savepulse + @keyframes mo-save are REUSED from praxis-kit.css (not
+   redefined). Desktop-first: base = the >=760 corner card; @media(max-width:759)
+   steps down to the bottom sheet (CLAUDE.md §3). z-ledger: scrim 10020 / sheet
+   10021 (app modal tier) / toast 10022.
+   ============================================================================= */
+
+/* CD-1 — the "+" create door (bottom-left), mirroring .yumi-bloom's ruled
+   size/position/z (components.css:19-58) in the opposite corner. Gilded family
+   (Universal Recipe 5) so the two corners read as one "presence" grammar. */
+.cap-create-door{
+  position:fixed; bottom:calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+  left:var(--sp-5); z-index:9999; width:42px; height:42px; border:none; background:transparent;
+  padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  -webkit-appearance:none; appearance:none;
+}
+.cap-create-glyph{
+  width:42px; height:42px; border-radius:50%;
+  background:linear-gradient(180deg, var(--field-1) 0%, var(--gold-hi) 42%, var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 0 8px color-mix(in srgb, var(--gold-hi) 40%, transparent);
+  display:flex; align-items:center; justify-content:center; transition:transform var(--dur-fast) var(--ease-standard);
+}
+.cap-create-door:hover .cap-create-glyph{ transform:translateY(-2px); }
+.cap-create-door:focus-visible .cap-create-glyph{ outline:2px solid var(--gold-hi); outline-offset:3px; }
+.cap-create-glyph svg{ width:18px; height:18px; }
+
+/* CD-1 — the nav entry. Gold underline = door-open (canon §4-B); the transparent
+   border reserves the space so toggling never shifts layout. */
+.app-nav-link.cap-nav-entry{ cursor:pointer; border-bottom:2px solid transparent; }
+.app-nav-link.cap-nav-entry[aria-current="true"]{ color:var(--dark-ink, var(--ink)); border-bottom-color:var(--gold); }
+
+/* CD-2/3/4/5/6 — the sheet */
+.capdoor-scrim{
+  position:fixed; inset:0; z-index:10020; background:var(--scrim);
+  opacity:0; pointer-events:none; transition:opacity var(--dur-gentle) var(--ease-standard);
+}
+.capdoor-scrim.is-open{ opacity:1; pointer-events:auto; }
+.capdoor-scrim.is-nudge{ animation:cap-nudge 260ms var(--ease-standard); }
+@keyframes cap-nudge{ 0%,100%{ background:var(--scrim); } 50%{ background:color-mix(in srgb, var(--scrim) 80%, black 20%); } }
+
+.capdoor-sheet{
+  position:fixed; z-index:10021; background:var(--surface); color:var(--ink);
+  border:1px solid var(--border); box-shadow:var(--shadow-2);
+  display:flex; flex-direction:column; overflow:hidden;
+  left:var(--sp-5); bottom:calc(var(--sp-5) + 42px + 14px);
+  width:420px; max-width:calc(100vw - 48px); border-radius:var(--radius-lg);
+  max-height:min(620px, calc(100vh - 140px));
+  transform-origin:bottom left; transform:scale(.94) translateY(10px); opacity:0; pointer-events:none;
+  transition:transform var(--dur-gentle) var(--ease-emphasis), opacity var(--dur-gentle) var(--ease-standard);
+}
+.capdoor-sheet.is-open{ transform:none; opacity:1; pointer-events:auto; }
+.capdoor-sheet.cap-expanded{ width:480px; max-height:min(700px, calc(100vh - 110px)); }
+
+@media (max-width:759px){
+  .capdoor-sheet{
+    left:0; right:0; bottom:0; top:auto; width:auto; max-width:none;
+    border:none; border-top:1px solid var(--border);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow:0 -14px 40px -18px var(--scrim);
+    max-height:56vh;
+    transform:translateY(100%); opacity:1; pointer-events:none;
+    transition:transform .26s var(--ease-standard);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .capdoor-sheet.is-open{ transform:translateY(0); pointer-events:auto; }
+  .capdoor-sheet.cap-expanded{ max-height:86vh; }
+}
+
+.capdoor-handle{ display:none; }
+@media (max-width:759px){
+  .capdoor-handle{
+    display:block; width:36px; height:4px; border-radius:999px; background:var(--border);
+    margin:10px auto 0; cursor:grab; touch-action:none;
+  }
+}
+
+.capdoor-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:14px 16px 0; flex:none; }
+.capdoor-eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); }
+.capdoor-eyebrow-sub{ display:block; font-family:var(--font-mono); font-size:10px; color:var(--ink-3); letter-spacing:.02em; text-transform:none; margin-top:2px; }
+.capdoor-close{
+  flex:none; width:32px; height:32px; border:none; background:transparent; color:var(--ink-3);
+  font-size:20px; line-height:1; cursor:pointer; border-radius:999px;
+}
+.capdoor-close:hover{ color:var(--ink); background:var(--wash); }
+.capdoor-close:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+.capdoor-body{ padding:10px 16px 4px; overflow-y:auto; flex:1 1 auto; }
+
+/* CD-6 — the mode set */
+.capdoor-modes{ display:flex; gap:6px; flex-wrap:wrap; padding:2px 0 12px; }
+.capdoor-mode{
+  display:inline-flex; align-items:center; gap:6px; font-family:var(--font-body); font-size:12.5px;
+  color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:999px; padding:7px 12px; cursor:pointer;
+  transition:color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-mode:hover{ color:var(--ink); border-color:var(--gold); }
+.capdoor-mode[aria-pressed="true"]{ color:var(--gold-deep); background:color-mix(in srgb, var(--gold) 16%, transparent); border-color:var(--gold); font-weight:600; }
+.capdoor-mode .ic{ font-size:13px; line-height:1; }
+.capdoor-mode.is-seat{ opacity:.82; }
+
+/* CD-2 — the hero field (one textarea, reused across note/voice/paste) */
+.capdoor-field-wrap{
+  background:var(--sunk); border:1px solid var(--border); border-radius:var(--radius-md);
+  padding:10px 12px; box-shadow:inset 0 1px 2px rgba(80,50,15,.14), inset 0 0 0 1px rgba(255,255,255,.35);
+  transition:box-shadow var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-field-wrap:focus-within{
+  border-color:var(--gold);
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.16), 0 0 0 3px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+.capdoor-field{
+  width:100%; border:none; background:transparent; outline:none; resize:none;
+  font-family:var(--font-serif); font-size:16px; line-height:1.5; color:var(--ink);
+  min-height:46px; display:block;
+}
+.capdoor-field::placeholder{ color:var(--ink-3); font-style:italic; }
+.cap-expanded .capdoor-field{ min-height:88px; font-size:17px; }
+
+/* register segmented control (light variant of the shipped .seg pattern) */
+.capdoor-seg{ display:inline-flex; padding:3px; gap:2px; background:var(--sunk); border:1px solid var(--border); border-radius:999px; margin-top:10px; }
+.capdoor-seg button{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+  padding:6px 12px; border-radius:999px; border:none; background:transparent; color:var(--ink-3); cursor:pointer;
+  transition:color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-seg button:hover{ color:var(--ink); }
+.capdoor-seg button[aria-pressed="true"]{ font-weight:700; }
+.capdoor-seg button[aria-pressed="true"][data-r="marginalia"]{ background:var(--marginalia-color); color:var(--br-deep); }
+.capdoor-seg button[aria-pressed="true"][data-r="question"]{ background:var(--question-color); color:var(--text-on-dark); }
+.capdoor-seg button[aria-pressed="true"][data-r="journal"]{ background:var(--journal-color); color:var(--text-on-dark); }
+
+/* CD-3 — the context chip (always present, always tappable) */
+.capdoor-context{ margin-top:12px; position:relative; }
+.capdoor-chip{
+  display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:13px;
+  color:var(--ink); background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:999px; padding:7px 12px 7px 9px; cursor:pointer; max-width:100%;
+}
+.capdoor-chip:hover{ border-color:var(--gold); }
+.capdoor-chip .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.capdoor-chip .lbl{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capdoor-chip .chev{ font-size:9px; color:var(--ink-3); }
+.capdoor-chip-pop{
+  position:absolute; left:0; top:calc(100% + 6px); min-width:230px; z-index:5;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-1); padding:5px; display:none; max-height:240px; overflow-y:auto;
+}
+.capdoor-context.is-open .capdoor-chip-pop{ display:block; }
+.capdoor-chip-opt{
+  display:flex; align-items:center; gap:8px; padding:8px 9px; border-radius:8px; cursor:pointer;
+  font-size:13px; color:var(--ink);
+}
+.capdoor-chip-opt:hover{ background:var(--wash); }
+.capdoor-chip-opt .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.capdoor-chip-opt .sub{ color:var(--ink-3); font-size:11.5px; margin-left:auto; }
+.capdoor-chip-opt[aria-selected="true"]{ font-weight:700; }
+
+/* CD-5 — the caught-this-session strip */
+.capdoor-caught{ margin-top:14px; display:flex; flex-direction:column; gap:6px; max-height:150px; overflow-y:auto; }
+.capdoor-caught-empty{ font-family:var(--font-mono); font-size:11.5px; font-style:italic; color:var(--ink-3); margin-top:14px; }
+.capdoor-caught-item{
+  display:flex; align-items:baseline; gap:8px; padding:7px 9px; border-radius:8px;
+  background:var(--surface-2); font-size:12.5px; color:var(--ink-2);
+}
+.capdoor-caught-item .dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+.capdoor-caught-item .txt{ flex:1; font-family:var(--font-serif); font-size:13.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capdoor-caught-item .target{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); flex:none; }
+
+/* CD-6 — voice hero (mode: voice) */
+.capdoor-mic-hero{ display:none; flex-direction:column; align-items:center; text-align:center; margin:6px 0 14px; }
+.cap-mode-voice .capdoor-mic-hero{ display:flex; }
+.capdoor-mic{
+  position:relative; width:72px; height:72px; border-radius:999px; border:none; cursor:pointer;
+  color:var(--text-on-dark); background:radial-gradient(circle at 32% 28%, var(--teal), var(--gold) 130%);
+  box-shadow:var(--shadow-2);
+}
+.capdoor-mic svg{ width:28px; height:28px; }
+.capdoor-mic::before,.capdoor-mic::after{
+  content:''; position:absolute; inset:-6px; border-radius:999px; border:2px solid var(--gold-hi); opacity:.35; pointer-events:none;
+}
+.capdoor-mic::after{ inset:-12px; opacity:.18; }
+.capdoor-mic.is-listening{ animation:cap-mic-pulse 1.3s ease-in-out infinite; }
+@keyframes cap-mic-pulse{ 0%,100%{ box-shadow:var(--shadow-2); } 50%{ box-shadow:var(--shadow-2), 0 0 0 9px rgba(216,164,65,.18); } }
+.capdoor-mic-label{ margin-top:12px; font-family:var(--font-serif); font-style:italic; font-size:16px; color:var(--ink); }
+.capdoor-mic-hint{ margin-top:3px; font-size:12px; color:var(--ink-3); max-width:32ch; }
+.capdoor-bars{ display:none; gap:5px; align-items:flex-end; height:32px; margin:10px 0 4px; }
+.cap-mic-active .capdoor-bars{ display:flex; }
+.capdoor-bars span{ width:5px; border-radius:4px; background:linear-gradient(var(--teal), var(--gold)); animation:cap-eq 1s ease-in-out infinite; }
+.capdoor-bars span:nth-child(1){ animation-delay:0s; } .capdoor-bars span:nth-child(2){ animation-delay:.12s; }
+.capdoor-bars span:nth-child(3){ animation-delay:.24s; } .capdoor-bars span:nth-child(4){ animation-delay:.36s; }
+.capdoor-bars span:nth-child(5){ animation-delay:.48s; }
+@keyframes cap-eq{ 0%,100%{ height:9px; } 50%{ height:32px; } }
+.capdoor-listen-state{ font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.14em; font-size:10.5px; color:var(--gold-deep); min-height:14px; }
+.capdoor-loss-note{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); text-align:center; max-width:36ch; margin:8px auto 0; line-height:1.5; }
+
+/* CD-6 — paste/import extras (mode: paste) */
+.capdoor-uploadrow{ display:none; gap:8px; margin:0 0 10px; flex-wrap:wrap; }
+.cap-mode-paste .capdoor-uploadrow{ display:flex; }
+.capdoor-pill{
+  font-family:var(--font-body); font-size:13px; color:var(--ink); cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--line-2); border-radius:999px; padding:8px 14px;
+}
+.capdoor-pill:hover{ border-color:var(--gold); }
+
+/* seats — photo / scan (present-but-labeled; camera not built — SCAN owns it, §7) */
+.capdoor-seat-card{ display:none; flex-direction:column; align-items:center; text-align:center; gap:8px; padding:30px 16px; border:1.5px dashed var(--border); border-radius:var(--radius-lg); color:var(--ink-3); margin-top:6px; }
+.cap-mode-photo .capdoor-seat-card.for-photo,
+.cap-mode-scan .capdoor-seat-card.for-scan{ display:flex; }
+.capdoor-seat-card .ico{ width:32px; height:32px; opacity:.55; }
+.capdoor-seat-card .lbl{ font-family:var(--font-body); font-size:13.5px; color:var(--ink-2); }
+.capdoor-seat-card .sub{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; color:var(--ink-3); }
+.cap-mode-photo .capdoor-seg, .cap-mode-photo .capdoor-context, .cap-mode-photo .capdoor-field-wrap,
+.cap-mode-scan  .capdoor-seg, .cap-mode-scan  .capdoor-context, .cap-mode-scan  .capdoor-field-wrap{ display:none; }
+
+/* footer — CD-4 talk-it-through seat (inert socket) + commit hint + commit */
+.capdoor-foot{ flex:none; display:flex; align-items:center; gap:8px; padding:12px 16px 14px; border-top:1px solid var(--border); margin-top:4px; }
+.capdoor-seat-btn{
+  flex:none; width:32px; height:32px; border-radius:999px; border:1px dashed var(--line-2);
+  background:transparent; color:var(--ink-3); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.capdoor-seat-btn:hover{ color:var(--teal); border-color:var(--teal); }
+.capdoor-seat-btn svg{ width:15px; height:15px; }
+.capdoor-seat-tip{
+  position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  background:var(--br-deep); color:var(--text-on-dark); font-family:var(--font-body); font-size:11.5px;
+  padding:7px 10px; border-radius:8px; white-space:nowrap; box-shadow:var(--shadow-1);
+  opacity:0; pointer-events:none; transition:opacity var(--dur-fast) var(--ease-standard);
+}
+.capdoor-seat-btn.show-tip .capdoor-seat-tip{ opacity:1; }
+.capdoor-hint{ flex:1 1 auto; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.capdoor-hint kbd{ font-family:var(--font-mono); font-size:9.5px; border:1px solid var(--line-2); border-radius:4px; padding:1px 5px; color:var(--ink-4); background:var(--surface-2); }
+.capdoor-commit{
+  flex:none; font-family:var(--font-body); font-size:13.5px; font-weight:700; color:var(--br-deep);
+  border:1px solid var(--gold-deep); border-radius:999px; padding:9px 18px; cursor:pointer;
+  background:linear-gradient(180deg, var(--field-1) 0%, var(--gold-hi) 40%, var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+}
+.capdoor-commit:hover{ box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+.capdoor-commit:disabled{ opacity:.45; cursor:default; box-shadow:none; }
+.capdoor-commit:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+/* the save-pulse receipt toast (mirrors the kit .k-toast) */
+.capdoor-toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(8px);
+  z-index:10022; display:inline-flex; align-items:center; gap:14px;
+  background:var(--br-deep); color:var(--text-on-dark); padding:12px 16px; border-radius:12px;
+  box-shadow:var(--shadow-2); font-family:var(--font-body); font-size:13.5px;
+  opacity:0; pointer-events:none; transition:opacity var(--dur-gentle) var(--ease-standard), transform var(--dur-gentle) var(--ease-standard);
+  max-width:calc(100vw - 32px);
+}
+.capdoor-toast.is-show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+.capdoor-toast button{ color:var(--gold-hi); background:none; border:0; font-weight:700; cursor:pointer; font-family:inherit; font-size:13.5px; flex:none; }
+@media (max-width:759px){ .capdoor-toast{ bottom:calc(64px + env(safe-area-inset-bottom, 0px)); } }
+
+@media (prefers-reduced-motion:reduce){
+  .capdoor-scrim, .capdoor-sheet, .capdoor-toast, .cap-create-glyph,
+  .capdoor-mic, .capdoor-bars span, .mo-savepulse{ transition:none!important; animation:none!important; }
+}
+
+/* CA-1 — the desk's carrying-question row (its OWN block above .desk-row; the
+   shipped .desk-head baseline flex stays a tight h2+count row). Inert until the
+   renderShelfDesk wiring lands. */
+.desk-question{ display:block; width:100%; margin:8px 0 16px; min-height:26px; }
+.desk-question-line{
+  display:inline-flex; align-items:center; gap:8px; max-width:100%;
+  background:none; border:none; padding:2px 0; cursor:text; text-align:left;
+  font-family:var(--font-mono); font-size:13px; font-style:italic; color:var(--ink-3);
+}
+.desk-question-line:hover, .desk-question-line:focus-visible{ color:var(--ink-2); outline:none; }
+.desk-question.is-authored .desk-question-line{
+  font-family:var(--font-serif); font-style:normal; font-weight:500; font-size:18px; color:var(--ink);
+}
+.desk-question-clear{
+  opacity:0; width:22px; height:22px; border-radius:999px; border:none; background:transparent;
+  color:var(--ink-3); cursor:pointer; font-size:13px; flex:none;
+  transition:opacity var(--dur-fast) var(--ease-standard);
+}
+.desk-question:hover .desk-question-clear, .desk-question-clear:focus-visible{ opacity:1; }
+.desk-question-clear:hover{ color:var(--danger); }
+.desk-question-input{
+  font-family:var(--font-serif); font-size:18px; color:var(--ink); background:transparent;
+  border:none; border-bottom:1px solid var(--gold); outline:none; width:100%; max-width:560px; padding:2px 0;
+}
+.desk-carry-confirm{
+  margin-top:10px; max-width:440px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--radius-md); font-size:13px; color:var(--ink-2); display:none; flex-direction:column; gap:9px;
+}
+.desk-carry-confirm.is-open{ display:flex; }
+.desk-carry-confirm .q{ font-family:var(--font-serif); color:var(--ink); }
+.desk-carry-confirm .row{ display:flex; gap:8px; }
+.desk-carry-confirm button{ font-family:var(--font-body); font-size:12.5px; font-weight:600; border-radius:999px; padding:7px 14px; cursor:pointer; border:1px solid transparent; }
+.desk-carry-confirm .replace{ background:var(--grad); color:var(--text-on-dark); }
+.desk-carry-confirm .cancel{ background:transparent; border-color:var(--border); color:var(--ink-2); }

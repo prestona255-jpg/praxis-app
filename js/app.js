@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
     location.hash = '#home';
   }
   window.views.renderRoute();
+  // R-CAPTURE: mount THE DOOR (the capture sheet) once, pre-rendered at boot so
+  // focus lands in one frame on summon (CD-2, the <400ms local-first law). Body-
+  // level + idempotent; persists across route re-renders like the Bloom corner.
+  if (window.views && window.views.initCaptureDoor) { window.views.initCaptureDoor(); }
   // R-ARC S9 (the raised-hand seat): evaluate the hand AFTER loadState -- a
   // returning reader with a ripe backlog gets the hand on open. yumi-ui's own
   // init runs before state is loaded, so the boot raise belongs here. Cheap +
