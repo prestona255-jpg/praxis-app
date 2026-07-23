@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Praxis — R-CAPTURE SHAPE-B — THE DOOR (capture sheet mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* =============================================================================
+   R-CAPTURE · SHAPE-B MOCKUP — THE DOOR (the capture sheet)
+   Do-not-merge design artifact. Standalone, self-contained, no app-code imports.
+
+   TOKEN SOURCE (values copied verbatim, cited by file:line at first use below):
+     assets/theme.css        — light-page primitives + the [data-ground="dark"]
+                                remap (theme.css:646-678), scoped here directly
+                                to .app-nav / .corner-btn (no data-ground mechanism
+                                in a static file).
+     assets/lumen-amber.css  — --marginalia-color/--journal-color/--question-color
+                                register family (theme.css:428-430, restated here).
+     assets/praxis-kit.css   — MO-1 motion canon (--dur-fast/--dur-gentle/--ease-*),
+                                .mo-savepulse + @keyframes mo-save (verbatim).
+     docs/studio/universal-depth.css v1.2 — --gold-hi + --field-1..10 (Recipe 5
+                                gilded-button used for the new "+" door + commit btn).
+   No new hardcoded hex outside this token block (Law 6 discipline, mirrored from
+   components.css's own rule) — every color below is a named custom property.
+   ============================================================================= */
+
+:root{
+  /* ---- fonts (theme.css:14-16) ---- */
+  --font-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'DM Sans', sans-serif;
+  --font-mono:'DM Mono','SF Mono',Menlo,Consolas,monospace;
+
+  /* ---- light-page primitives (theme.css:315-330, R-POLISH Slice-0 v1.1 reconciled) ---- */
+  --ink:#241710; --ink-2:#645940; --ink-3:#978b6d; --ink-4:#978b6d;
+  --gold:#a8761a; --gold-deep:#855410; --gold-light:#855410; --gold-text:#855410;
+  --page:#f4efe4; --page-2:#fcf6e8;
+  --surface:#fffdf8; --surface-2:#efe7d6;
+  --border:#e3d8c1; --line-2:rgba(36,23,16,.30); --br-deep:#1c1209;
+  --river:#3a5a8a; --text-on-dark:#fdfaf3;
+  --sunk:#e3d4b0; --wash:rgba(133,84,16,.06);
+  --grad:linear-gradient(92deg,#d2a23e,#2e8a93);
+  --danger:#c2603a;
+  --teal:#2e8a93;
+
+  /* ---- register family (theme.css:428-430) ---- */
+  --marginalia-color:var(--teal);
+  --journal-color:#7d6db0;
+  --question-color:var(--river);
+
+  /* ---- radii + spacing (theme.css:333-341, 556, 583, 593) ---- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:22px; --radius-pill:999px;
+
+  /* ---- shadow trio (theme.css:532-538) ---- */
+  --shadow-1:2px 3px 6px color-mix(in srgb, var(--br-deep) 8%, transparent), 4px 8px 18px color-mix(in srgb, var(--br-deep) 6%, transparent);
+  --shadow-2:3px 5px 12px color-mix(in srgb, var(--br-deep) 10%, transparent), 8px 16px 32px color-mix(in srgb, var(--br-deep) 8%, transparent);
+
+  /* ---- fixed dark veil, NOT --ink-derived (theme.css:74-76) — this is the
+     literal token the brief means by "the app's twilight route-ground as the
+     scrim" — every overlay in the live app (ImportCapture, the Shelf Manage
+     sheet) already scrims with exactly this, unconditional of page ground. ---- */
+  --scrim:rgba(15,9,4,.6);
+
+  /* ---- MO-1 motion canon (assets/praxis-kit.css:35-37) ---- */
+  --dur-fast:150ms; --dur-gentle:300ms;
+  --ease-standard:cubic-bezier(.22,1,.36,1); --ease-emphasis:cubic-bezier(.34,1.2,.5,1);
+
+  /* ---- Universal depth v1.2 (docs/studio/universal-depth.css:38-43) ----
+     gilding highlight + the ten-hue field spectrum. Used for: the new "+"
+     door (Recipe 5), the commit button (Recipe 5), and arc-context chip hues
+     (fieldHueForArc() below mirrors the LIVE arcFieldHue(), views.js:5058). */
+  --gold-hi:#d9a441;
+  --field-1:#f2c25a; --field-2:#e07a52; --field-3:#d98f8a; --field-4:#f5bace; --field-5:#a9b98c;
+  --field-6:#98d4b0; --field-7:#8590d8; --field-8:#f8e078; --field-9:#e8b068; --field-10:#b8896c;
+
+  /* ---- always-dark floating chrome (theme.css:646-678 [data-ground="dark"]
+     remap, restated as literal values here — the same set the real app forces
+     onto .app-nav / .yumi-bloom / .yumi-panel / .spotlight-panel). Applied
+     below to .app-nav and .corner-btn (Bloom + the new "+" door share this
+     scope, per AMB-1 / CD-1: "two ruled fixed elements", one grammar). ---- */
+  --dark-ink:#F0EBDF;      /* --text-d = --on-ground */
+  --dark-ink-2:#B4AFA2;    /* --muted = --on-ground-2 */
+  --dark-surface:#232838;  /* --surface-d */
+  --dark-border:rgba(240,235,223,.10); /* --hairline */
+  --dark-gold:#C79A3A;     /* --gold-world */
+  --dark-gold-hi:#DFB759;  /* --gold-soft = --gold-ember */
+  --nav-solid:#171B2B;     /* theme.css:306, the composite frost-over-twilight */
+
+  /* ---- mockup-only annotation ink (NOT a Praxis token; deliberately a hue
+     absent from the entire app palette, so it can never be mistaken for real
+     chrome). Used ONLY by .mocknote / .demo-* harness elements. ---- */
+  --note-ink:#1d4ed8; --note-bg:#eff6ff; --note-line:#bfdbfe;
+}
+
+*{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:var(--font-body); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+a{ color:inherit; }
+button{ font:inherit; }
+
+/* =============================================================================
+   MOCKUP-ONLY ANNOTATION CHROME — visually distinct from every app surface
+   below (blue is not a Praxis token; no in-app chrome ever uses it). Never
+   ships; exists to orient Preston's felt-pass, per the build brief's own rule
+   ("annotations must be visually distinct from the app UI").
+   ============================================================================= */
+.mocknote{
+  border:1px solid var(--note-line); background:var(--note-bg); color:var(--note-ink);
+  border-radius:10px; padding:10px 14px; font-family:var(--font-mono); font-size:12px;
+  line-height:1.55; max-width:920px;
+}
+.mocknote b{ text-transform:uppercase; letter-spacing:.08em; font-size:10.5px; }
+.mockbar{
+  position:sticky; top:0; z-index:20000; display:flex; flex-wrap:wrap; gap:8px;
+  align-items:center; background:var(--note-bg); border-bottom:1px solid var(--note-line);
+  padding:10px 14px;
+}
+.mockbar .tag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--note-ink); margin-right:6px;
+}
+.mockbtn{
+  font-family:var(--font-mono); font-size:11px; color:var(--note-ink); background:#fff;
+  border:1px solid var(--note-line); border-radius:999px; padding:6px 12px; cursor:pointer;
+}
+.mockbtn:hover{ background:var(--note-bg); }
+.mockbtn[aria-pressed="true"]{ background:var(--note-ink); color:#fff; }
+.mockstage{ padding:28px 0 120px; }
+.mocksection-label{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--note-ink); margin:0 0 8px;
+}
+
+/* =============================================================================
+   THE APP FRAME — minimal live context (NOT the surface under evaluation).
+   Nav lifted from components.css:701-920 (structure + tokens only, trimmed to
+   what's needed to orient the two corners). Page body stands in as a Book
+   Detail-lite backdrop (light ground — THE GROUND SPECTRUM, CLAUDE.md §7:
+   "you WORK in the light") so CD-3's "Book Detail pre-associates" has a real
+   page to pre-associate FROM.
+   ============================================================================= */
+.app-nav{
+  display:flex; align-items:center; justify-content:space-between; gap:18px;
+  max-width:1080px; margin:14px auto 0; padding:11px 14px 11px 20px;
+  background:var(--dark-surface); border:1px solid var(--dark-border);
+  border-radius:var(--radius-pill); position:sticky; top:14px; z-index:30;
+  color:var(--dark-ink);
+}
+.app-nav-wordmark{ font-family:var(--font-serif); font-size:21px; font-weight:600; color:var(--dark-gold); text-decoration:none; }
+.app-nav-list{ display:flex; align-items:center; gap:26px; margin:0; padding:0; list-style:none; }
+.app-nav-link{
+  padding:8px 12px; font-family:var(--font-body); font-size:13.5px; font-weight:500;
+  color:var(--dark-ink-2); text-decoration:none; border-radius:999px; border-bottom:2px solid transparent;
+}
+.app-nav-link:hover{ color:var(--dark-ink); }
+/* EVOLVED: CD-1 — the nav entry ("Plus a nav entry and ⌘N"). Gold underline =
+   active, per canon §4-B; reserves the border space so toggling never shifts
+   layout. */
+.app-nav-link.cap-nav-entry{ cursor:pointer; }
+.app-nav-link.cap-nav-entry[aria-current="true"]{ color:var(--dark-ink); border-bottom-color:var(--dark-gold); }
+.app-nav-avatar{
+  width:32px; height:32px; border-radius:999px; background:var(--grad);
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--text-on-dark); font-weight:700; font-size:13px;
+}
+@media (max-width:759px){
+  .app-nav{ margin:0; border-radius:0; top:0; }
+  .app-nav-list{ display:none; }
+}
+
+.app-body{ max-width:760px; margin:0 auto; padding:40px 20px 100px; }
+.bk-back{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); text-decoration:none; }
+.bk-frame{ display:flex; gap:26px; margin-top:18px; align-items:flex-start; }
+.bk-cover{
+  flex:none; width:128px; height:192px; border-radius:4px 8px 8px 4px;
+  background:linear-gradient(155deg,#3a4f3a 0%,#24331f 100%);
+  box-shadow:0 24px 50px -20px #000;
+  display:flex; align-items:flex-end; padding:14px; color:#e9e3d0;
+  font-family:var(--font-serif); font-style:italic; font-size:14px; line-height:1.2;
+}
+.bk-title{ font-family:var(--font-serif); font-weight:600; font-size:30px; color:var(--ink); margin:0 0 4px; }
+.bk-author{ font-family:var(--font-body); font-size:14.5px; color:var(--ink-3); margin:0 0 14px; }
+.bk-meta{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--gold-deep); text-transform:uppercase; margin:0 0 18px; }
+.bk-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.btn{ font-family:var(--font-body); font-size:14px; font-weight:600; border-radius:var(--radius-pill); padding:11px 20px; cursor:pointer; border:1px solid transparent; }
+.btn-primary{ color:var(--text-on-dark); background:var(--grad); box-shadow:var(--shadow-1); }
+.btn-quiet{ color:var(--ink-2); background:transparent; border-color:var(--border); }
+@media (max-width:759px){ .bk-frame{ gap:16px; } .bk-cover{ width:96px; height:144px; } .bk-title{ font-size:24px; } }
+
+/* =============================================================================
+   THE TWO RULED CORNERS — CD-1. Bloom (bottom-right) is SHIPPED (AMB-1,
+   components.css:11-58): 42px, position:fixed, bottom:calc(var(--sp-5) +
+   env(safe-area-inset-bottom)), z-index:9999, warm SVG orb, no dark vessel.
+   Reproduced structurally (simplified glyph — Bloom itself is not the surface
+   under evaluation). The "+" create door is CD-1's other ruled corner and is
+   NET-NEW: this file is its first build. Same size/position/z-tier/glow
+   grammar as Bloom, mirrored to the opposite corner.
+   ============================================================================= */
+.corner-btn{
+  position:fixed; bottom:calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+  z-index:9999; width:42px; height:42px; border:none; background:transparent;
+  padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  -webkit-appearance:none; appearance:none;
+}
+.corner-btn.bloom{ right:var(--sp-5); }
+.bloom-orb{
+  width:42px; height:42px; border-radius:50%;
+  background:radial-gradient(circle at 34% 30%, #fff4d6 0%, var(--dark-gold) 55%, #8a5a12 100%);
+  filter:drop-shadow(0 0 8px color-mix(in srgb, var(--dark-gold) 32%, transparent));
+}
+/* EVOLVED: CD-1 — the "+" create door. Bottom-left, mirrors Bloom's ruled
+   size/position/glow (components.css:19-58) but in the gilded family
+   (Universal Recipe 5, universal-depth.css:97-107) so the two corners read as
+   one grammar ("presence" gold) while staying visually distinct (petal vs.
+   plus). */
+.corner-btn.create-door{ left:var(--sp-5); }
+.create-door-glyph{
+  width:42px; height:42px; border-radius:50%;
+  background:linear-gradient(180deg, var(--field-1) 0%, var(--gold-hi) 40%, var(--dark-gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 0 8px color-mix(in srgb, var(--gold-hi) 40%, transparent);
+  display:flex; align-items:center; justify-content:center; transition:transform var(--dur-fast) var(--ease-standard);
+}
+.corner-btn.create-door:hover .create-door-glyph{ transform:translateY(-2px); }
+.corner-btn:focus-visible .create-door-glyph,
+.corner-btn.bloom:focus-visible .bloom-orb{ outline:2px solid var(--dark-gold-hi); outline-offset:3px; }
+.create-door-glyph svg{ width:18px; height:18px; }
+
+/* =============================================================================
+   THE CAPTURE SHEET — CD-2 / CD-3 / CD-4 / CD-5 / CD-6.
+   Pre-rendered in the DOM from load (never built on open — the <400ms local-
+   first law: focus lands in one synchronous frame, zero network work
+   pre-keystroke). Bottom sheet <=759, card >=760 — the app's real divide
+   (CLAUDE.md §3). GROUND: light working surface (paper tokens), summoned over
+   --scrim (see the :root note above) — see the OWNER felt-call annotation
+   beside the sheet in the DOM below.
+   ============================================================================= */
+.capdoor-scrim{
+  position:fixed; inset:0; z-index:10020; background:var(--scrim);
+  opacity:0; pointer-events:none; transition:opacity var(--dur-gentle) var(--ease-standard);
+}
+.capdoor-scrim.is-open{ opacity:1; pointer-events:auto; }
+.capdoor-scrim.is-nudge{ animation:cap-nudge 260ms var(--ease-standard); }
+@keyframes cap-nudge{ 0%,100%{ background:var(--scrim); } 50%{ background:color-mix(in srgb, var(--scrim) 80%, black 20%); } }
+
+.capdoor-sheet{
+  position:fixed; z-index:10021; background:var(--surface); color:var(--ink);
+  border:1px solid var(--border); box-shadow:var(--shadow-2);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+/* desktop (>=760): a card anchored at the "+" origin, growing from that corner */
+.capdoor-sheet{
+  left:var(--sp-5); bottom:calc(var(--sp-5) + 42px + 14px);
+  width:420px; max-width:calc(100vw - 48px); border-radius:var(--radius-lg);
+  max-height:min(620px, calc(100vh - 140px));
+  transform-origin:bottom left; transform:scale(.94) translateY(10px); opacity:0; pointer-events:none;
+  transition:transform var(--dur-gentle) var(--ease-emphasis), opacity var(--dur-gentle) var(--ease-standard);
+}
+.capdoor-sheet.is-open{ transform:none; opacity:1; pointer-events:auto; }
+/* EVOLVED: CD-2 — the EXPANDED sub-size (voice / paste-import / photo / scan).
+   note = QUICK TEXT (the base rule above); every other mode grows the same
+   card, never swaps components. */
+.capdoor-sheet.cap-expanded{ width:480px; max-height:min(700px, calc(100vh - 110px)); }
+
+@media (max-width:759px){
+  .capdoor-sheet{
+    left:0; right:0; bottom:0; top:auto; width:auto; max-width:none;
+    border:none; border-top:1px solid var(--border);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow:0 -14px 40px -18px var(--scrim);
+    max-height:56vh;
+    transform:translateY(100%); opacity:1; pointer-events:none;
+    transition:transform .26s var(--ease-standard);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .capdoor-sheet.is-open{ transform:translateY(0); pointer-events:auto; }
+  .capdoor-sheet.cap-expanded{ max-height:86vh; } /* mirrors the shipped .shelf-manage-sheet 82vh, components.css:12875 */
+}
+
+/* EVOLVED: CD-2 — the drag handle (mobile bottom-sheet grammar, mirrors the
+   shipped .shelf-manage-sheet pattern, components.css:12866-12883, restated
+   here since capture is a net-new component with its own class names). */
+.capdoor-handle{ display:none; }
+@media (max-width:759px){
+  .capdoor-handle{
+    display:block; width:36px; height:4px; border-radius:999px; background:var(--border);
+    margin:10px auto 0; cursor:grab; touch-action:none;
+  }
+}
+
+.capdoor-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:14px 16px 0; flex:none; }
+.capdoor-eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); }
+.capdoor-eyebrow-sub{ display:block; font-family:var(--font-mono); font-size:10px; color:var(--ink-3); letter-spacing:.02em; text-transform:none; margin-top:2px; }
+/* EVOLVED: CD-5 — the explicit close control (X). Drag-down is the mobile
+   sibling (the handle above); scrim click deliberately does NOT close (see
+   the JS + the annotation near the scrim). */
+.capdoor-close{
+  flex:none; width:32px; height:32px; border:none; background:transparent; color:var(--ink-3);
+  font-size:20px; line-height:1; cursor:pointer; border-radius:999px;
+}
+.capdoor-close:hover{ color:var(--ink); background:var(--wash); }
+.capdoor-close:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+.capdoor-body{ padding:10px 16px 4px; overflow-y:auto; flex:1 1 auto; }
+
+/* EVOLVED: CD-6 — the mode set (quiet chip row). note is the default/selected
+   state on open. */
+.capdoor-modes{ display:flex; gap:6px; flex-wrap:wrap; padding:2px 0 12px; }
+.capdoor-mode{
+  display:inline-flex; align-items:center; gap:6px; font-family:var(--font-body); font-size:12.5px;
+  color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:999px; padding:7px 12px; cursor:pointer;
+  transition:color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-mode:hover{ color:var(--ink); border-color:var(--gold); }
+.capdoor-mode[aria-pressed="true"]{ color:var(--gold-deep); background:color-mix(in srgb, var(--gold) 16%, transparent); border-color:var(--gold); font-weight:600; }
+.capdoor-mode .ic{ font-size:13px; line-height:1; }
+.capdoor-mode.is-seat{ opacity:.82; }
+
+/* the hero field — CD-2's "focus lands in one frame" element. ONE textarea,
+   reused across note / voice / paste (ONE DOOR, ONE COMPONENT) — mode only
+   changes what surrounds it, never the field itself. */
+.capdoor-field-wrap{
+  background:var(--sunk); border:1px solid var(--border); border-radius:var(--radius-md);
+  padding:10px 12px; box-shadow:inset 0 1px 2px rgba(80,50,15,.14), inset 0 0 0 1px rgba(255,255,255,.35);
+  transition:box-shadow var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-field-wrap:focus-within{
+  border-color:var(--gold);
+  box-shadow:inset 0 1px 2px rgba(80,50,15,.16), 0 0 0 3px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+.capdoor-field{
+  width:100%; border:none; background:transparent; outline:none; resize:none;
+  font-family:var(--font-serif); font-size:16px; line-height:1.5; color:var(--ink);
+  min-height:46px; display:block;
+}
+.capdoor-field::placeholder{ color:var(--ink-3); font-style:italic; }
+.cap-expanded .capdoor-field{ min-height:88px; font-size:17px; }
+
+/* register segmented control — mirrors the shipped .seg/.seg-opt pattern
+   (components.css:10144-10148), light variant, restated with capdoor-* names */
+.capdoor-seg{ display:inline-flex; padding:3px; gap:2px; background:var(--sunk); border:1px solid var(--border); border-radius:999px; margin-top:10px; }
+.capdoor-seg button{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+  padding:6px 12px; border-radius:999px; border:none; background:transparent; color:var(--ink-3); cursor:pointer;
+  transition:color var(--dur-fast) var(--ease-standard);
+}
+.capdoor-seg button:hover{ color:var(--ink); }
+.capdoor-seg button[aria-pressed="true"]{ font-weight:700; }
+.capdoor-seg button[aria-pressed="true"][data-r="marginalia"]{ background:var(--marginalia-color); color:#06241a; }
+.capdoor-seg button[aria-pressed="true"][data-r="question"]{ background:var(--question-color); color:var(--text-on-dark); }
+.capdoor-seg button[aria-pressed="true"][data-r="journal"]{ background:var(--journal-color); color:var(--text-on-dark); }
+
+/* EVOLVED: CD-3 — the context chip, always present, always tappable. */
+.capdoor-context{ margin-top:12px; position:relative; }
+.capdoor-chip{
+  display:inline-flex; align-items:center; gap:7px; font-family:var(--font-body); font-size:13px;
+  color:var(--ink); background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:999px; padding:7px 12px 7px 9px; cursor:pointer; max-width:100%;
+}
+.capdoor-chip:hover{ border-color:var(--gold); }
+.capdoor-chip .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.capdoor-chip .lbl{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capdoor-chip .chev{ font-size:9px; color:var(--ink-3); }
+.capdoor-chip-pop{
+  position:absolute; left:0; top:calc(100% + 6px); min-width:230px; z-index:5;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-1); padding:5px; display:none;
+}
+.capdoor-context.is-open .capdoor-chip-pop{ display:block; }
+.capdoor-chip-opt{
+  display:flex; align-items:center; gap:8px; padding:8px 9px; border-radius:8px; cursor:pointer;
+  font-size:13px; color:var(--ink);
+}
+.capdoor-chip-opt:hover{ background:var(--wash); }
+.capdoor-chip-opt .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.capdoor-chip-opt .sub{ color:var(--ink-3); font-size:11.5px; margin-left:auto; }
+.capdoor-chip-opt[aria-selected="true"]{ font-weight:700; }
+
+/* EVOLVED: CD-5 — the "caught this session" strip, proving commit-and-stay
+   really accumulates content rather than merely clearing the field. */
+.capdoor-caught{ margin-top:14px; display:flex; flex-direction:column; gap:6px; max-height:150px; overflow-y:auto; }
+.capdoor-caught-empty{ font-family:var(--font-mono); font-size:11.5px; font-style:italic; color:var(--ink-3); margin-top:14px; }
+.capdoor-caught-item{
+  display:flex; align-items:baseline; gap:8px; padding:7px 9px; border-radius:8px;
+  background:var(--surface-2); font-size:12.5px; color:var(--ink-2);
+}
+.capdoor-caught-item .dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+.capdoor-caught-item .txt{ flex:1; font-family:var(--font-serif); font-size:13.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capdoor-caught-item .target{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); flex:none; }
+
+/* voice hero — EVOLVED: CD-6 (voice mode) */
+.capdoor-mic-hero{ display:none; flex-direction:column; align-items:center; text-align:center; margin:6px 0 14px; }
+.cap-mode-voice .capdoor-mic-hero{ display:flex; }
+.capdoor-mic{
+  position:relative; width:72px; height:72px; border-radius:999px; border:none; cursor:pointer;
+  color:var(--text-on-dark); background:radial-gradient(circle at 32% 28%, var(--teal), var(--gold) 130%);
+  box-shadow:var(--shadow-2);
+}
+.capdoor-mic svg{ width:28px; height:28px; }
+.capdoor-mic::before,.capdoor-mic::after{
+  content:''; position:absolute; inset:-6px; border-radius:999px; border:2px solid var(--gold-hi); opacity:.35; pointer-events:none;
+}
+.capdoor-mic::after{ inset:-12px; opacity:.18; }
+.capdoor-mic.is-listening{ animation:cap-mic-pulse 1.3s ease-in-out infinite; }
+@keyframes cap-mic-pulse{ 0%,100%{ box-shadow:var(--shadow-2); } 50%{ box-shadow:var(--shadow-2), 0 0 0 9px rgba(216,164,65,.18); } }
+.capdoor-mic-label{ margin-top:12px; font-family:var(--font-serif); font-style:italic; font-size:16px; color:var(--ink); }
+.capdoor-mic-hint{ margin-top:3px; font-size:12px; color:var(--ink-3); max-width:32ch; }
+.capdoor-bars{ display:none; gap:5px; align-items:flex-end; height:32px; margin:10px 0 4px; }
+.cap-mic-active .capdoor-bars{ display:flex; }
+.capdoor-bars span{ width:5px; border-radius:4px; background:linear-gradient(var(--teal), var(--gold)); animation:cap-eq 1s ease-in-out infinite; }
+.capdoor-bars span:nth-child(1){ animation-delay:0s; } .capdoor-bars span:nth-child(2){ animation-delay:.12s; }
+.capdoor-bars span:nth-child(3){ animation-delay:.24s; } .capdoor-bars span:nth-child(4){ animation-delay:.36s; }
+.capdoor-bars span:nth-child(5){ animation-delay:.48s; }
+@keyframes cap-eq{ 0%,100%{ height:9px; } 50%{ height:32px; } }
+.capdoor-listen-state{ font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.14em; font-size:10.5px; color:var(--gold-deep); min-height:14px; }
+.capdoor-loss-note{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); text-align:center; max-width:36ch; margin:8px auto 0; line-height:1.5; }
+
+/* paste/import mode extras — EVOLVED: CD-6 (paste/import mode) */
+.capdoor-uploadrow{ display:none; gap:8px; margin:0 0 10px; flex-wrap:wrap; }
+.cap-mode-paste .capdoor-uploadrow{ display:flex; }
+.capdoor-pill{
+  font-family:var(--font-body); font-size:13px; color:var(--ink); cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--line-2); border-radius:999px; padding:8px 14px;
+}
+.capdoor-pill:hover{ border-color:var(--gold); }
+
+/* seats — photo / scan, present-but-labeled, camera not built (§7 non-goals) */
+.capdoor-seat-card{ display:none; flex-direction:column; align-items:center; text-align:center; gap:8px; padding:30px 16px; border:1.5px dashed var(--border); border-radius:var(--radius-lg); color:var(--ink-3); margin-top:6px; }
+.cap-mode-photo .capdoor-seat-card.for-photo,
+.cap-mode-scan .capdoor-seat-card.for-scan{ display:flex; }
+.capdoor-seat-card .ico{ width:32px; height:32px; opacity:.55; }
+.capdoor-seat-card .lbl{ font-family:var(--font-body); font-size:13.5px; color:var(--ink-2); }
+.capdoor-seat-card .sub{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; color:var(--ink-3); }
+
+/* the parts hidden entirely in seat modes (no register/context/commit — nothing to file) */
+.cap-mode-photo .capdoor-seg, .cap-mode-photo .capdoor-context, .cap-mode-photo .capdoor-field-wrap,
+.cap-mode-scan  .capdoor-seg, .cap-mode-scan  .capdoor-context, .cap-mode-scan  .capdoor-field-wrap{ display:none; }
+
+/* footer — talk-it-through seat (CD-4) + commit hint + commit button */
+.capdoor-foot{ flex:none; display:flex; align-items:center; gap:8px; padding:12px 16px 14px; border-top:1px solid var(--border); margin-top:4px; }
+/* EVOLVED: CD-4 — talk-it-through seat. Inert: raised-hand Yumi never speaks
+   unbidden; this affordance is a SOCKET only (the YG round wires the actual
+   conversation). Clicking shows a tooltip, never opens chat. */
+.capdoor-seat-btn{
+  flex:none; width:32px; height:32px; border-radius:999px; border:1px dashed var(--line-2);
+  background:transparent; color:var(--ink-3); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.capdoor-seat-btn:hover{ color:var(--teal); border-color:var(--teal); }
+.capdoor-seat-btn svg{ width:15px; height:15px; }
+.capdoor-seat-tip{
+  position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  background:var(--br-deep); color:var(--text-on-dark); font-family:var(--font-body); font-size:11.5px;
+  padding:7px 10px; border-radius:8px; white-space:nowrap; box-shadow:var(--shadow-1);
+  opacity:0; pointer-events:none; transition:opacity var(--dur-fast) var(--ease-standard);
+}
+.capdoor-seat-btn.show-tip .capdoor-seat-tip{ opacity:1; }
+.capdoor-hint{ flex:1 1 auto; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.capdoor-hint kbd{ font-family:var(--font-mono); font-size:9.5px; border:1px solid var(--line-2); border-radius:4px; padding:1px 5px; color:var(--ink-4); background:var(--surface-2); }
+/* EVOLVED: CD-5 — the commit control (Recipe 5 gilded button — the primary
+   verb-action of the whole door). */
+.capdoor-commit{
+  flex:none; font-family:var(--font-body); font-size:13.5px; font-weight:700; color:#3d2807;
+  border:1px solid var(--gold-deep); border-radius:999px; padding:9px 18px; cursor:pointer;
+  background:linear-gradient(180deg, var(--field-1) 0%, var(--gold-hi) 40%, var(--gold) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 6px 18px -8px rgba(217,164,65,.6);
+}
+.capdoor-commit:hover{ box-shadow:inset 0 1px 0 rgba(255,240,200,.7), 0 9px 22px -8px rgba(217,164,65,.72); }
+.capdoor-commit:disabled{ opacity:.45; cursor:default; box-shadow:none; }
+.capdoor-commit:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+/* MO-1 SAVE PULSE — verbatim from assets/praxis-kit.css:61-62 */
+.mo-savepulse{ animation:mo-save 520ms var(--ease-standard); }
+@keyframes mo-save{ 0%{ box-shadow:0 0 0 0 rgba(133,84,16,0); } 30%{ box-shadow:0 0 0 6px rgba(216,164,65,.28); } 100%{ box-shadow:0 0 0 0 rgba(133,84,16,0); } }
+
+/* the save-pulse receipt toast — mirrors the kit's .k-toast (praxis-kit.css:173) */
+.capdoor-toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(8px);
+  z-index:10022; display:inline-flex; align-items:center; gap:14px;
+  background:var(--br-deep); color:var(--text-on-dark); padding:12px 16px; border-radius:12px;
+  box-shadow:var(--shadow-2); font-family:var(--font-body); font-size:13.5px;
+  opacity:0; pointer-events:none; transition:opacity var(--dur-gentle) var(--ease-standard), transform var(--dur-gentle) var(--ease-standard);
+  max-width:calc(100vw - 32px);
+}
+.capdoor-toast.is-show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+.capdoor-toast button{ color:var(--gold-hi); background:none; border:0; font-weight:700; cursor:pointer; font-family:inherit; font-size:13.5px; flex:none; }
+@media (max-width:759px){ .capdoor-toast{ bottom:calc(64px + env(safe-area-inset-bottom, 0px)); } }
+
+/* =============================================================================
+   REDUCED MOTION — still-state, no slide. Mirrors the app's own convention
+   (components.css transitions:none blocks) exactly, PLUS a manual toggle
+   (html.force-reduced-motion) so this can be verified without changing OS
+   settings.
+   ============================================================================= */
+@media (prefers-reduced-motion:reduce){
+  .capdoor-scrim, .capdoor-sheet, .capdoor-toast, .create-door-glyph,
+  .capdoor-mic, .capdoor-bars span, .mo-savepulse{ transition:none!important; animation:none!important; }
+}
+html.force-reduced-motion .capdoor-scrim, html.force-reduced-motion .capdoor-sheet,
+html.force-reduced-motion .capdoor-toast, html.force-reduced-motion .create-door-glyph,
+html.force-reduced-motion .capdoor-mic, html.force-reduced-motion .capdoor-bars span,
+html.force-reduced-motion .mo-savepulse{ transition:none!important; animation:none!important; }
+
+/* =============================================================================
+   CA-1 · THE DESK — carrying-question authoring. Kept in its OWN, clearly
+   labeled section, deliberately separate from the capture sheet above (the
+   brief's own instruction: "a question never passes through the capture
+   door"). Real class names (.shelf/.desk/.cavity-cover/...) lifted verbatim
+   from components.css so the desk itself is pixel-faithful to the shipped
+   v3.243 R-SHELF build; only .desk-question is net-new.
+   ============================================================================= */
+.ca1-wrap{ max-width:1080px; margin:70px auto 0; padding:0 20px; }
+.shelf.lum-amber-deep{
+  --cover-w:96px; --cover-h:144px; --cover-w-now:114px; --cover-h-now:170px;
+  --spine-w:28px; --cap-h:72px; --cap-h-now:110px; --row-gap:22px; --col-gap:16px;
+  background:var(--page); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:22px 24px 28px;
+}
+.shelf.lum-amber-deep .desk{ padding:0 0 8px; }
+.shelf.lum-amber-deep .desk-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:2px; }
+.shelf.lum-amber-deep .desk-head h2{ font-family:var(--font-serif); font-style:italic; font-weight:600; font-size:21px; color:var(--ink); margin:0; }
+.shelf.lum-amber-deep .desk-head .count{ font-family:var(--font-mono); font-size:11px; color:var(--gold-deep); }
+/* EVOLVED: CA-1 — the carrying-question line. ITS OWN block-level row above
+   .desk-row, NOT folded into .desk-head's baseline flex (the recon's geometry
+   constraint: .desk-head is a tight h2+count row and must stay that). */
+.desk-question{ display:block; width:100%; margin:8px 0 16px; min-height:26px; }
+.desk-question-line{
+  display:inline-flex; align-items:center; gap:8px; max-width:100%;
+  background:none; border:none; padding:2px 0; cursor:text; text-align:left;
+  font-family:var(--font-mono); font-size:13px; font-style:italic; color:var(--ink-3);
+}
+.desk-question-line:hover, .desk-question-line:focus-visible{ color:var(--ink-2); outline:none; }
+.desk-question.is-authored .desk-question-line{
+  font-family:var(--font-serif); font-style:normal; font-weight:500; font-size:18px; color:var(--ink);
+} /* TY-1: the reader's own words are set UPRIGHT (praxis-kit.css:49-50), never italic */
+.desk-question-clear{
+  opacity:0; width:22px; height:22px; border-radius:999px; border:none; background:transparent;
+  color:var(--ink-3); cursor:pointer; font-size:13px; flex:none;
+  transition:opacity var(--dur-fast) var(--ease-standard);
+}
+.desk-question:hover .desk-question-clear, .desk-question-clear:focus-visible{ opacity:1; }
+.desk-question-clear:hover{ color:var(--danger); }
+.desk-question-input{
+  font-family:var(--font-serif); font-size:18px; color:var(--ink); background:transparent;
+  border:none; border-bottom:1px solid var(--gold); outline:none; width:100%; max-width:560px; padding:2px 0;
+}
+.desk-row{ display:flex; align-items:flex-end; gap:22px; flex-wrap:wrap; padding:2px 2px 0; }
+.desk-more{
+  align-self:center; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--gold-deep);
+  background:transparent; border:1px dashed var(--line-2); border-radius:999px; padding:9px 15px; cursor:pointer;
+}
+.desk-more:hover{ color:var(--ink); border-color:var(--gold); }
+.cavity-cover{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:var(--cover-w); background:none; border:none; padding:0; cursor:pointer; text-align:center; text-decoration:none; }
+.cavity-cover.is-now{ --cover-w:var(--cover-w-now); --cover-h:var(--cover-h-now); }
+.book-slot{ position:relative; width:var(--cover-w); height:var(--cover-h); display:flex; align-items:flex-end; justify-content:center; }
+.cavity-cover .shelf-book-cover-area{
+  position:relative; margin:0; box-sizing:border-box; width:100%; height:100%; overflow:visible;
+  border-radius:3px 6px 6px 3px; box-shadow:0 3px 5px rgba(36,23,16,.30);
+  transition:transform .18s ease, box-shadow .22s ease;
+}
+.cavity-cover:hover .shelf-book-cover-area, .cavity-cover:focus-visible .shelf-book-cover-area{ transform:translateY(-4px); }
+.cavity-cover:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:4px; }
+.cavity-cover .ember{ position:absolute; top:6px; right:6px; width:9px; height:9px; border-radius:50%; background:var(--gold-hi); box-shadow:0 0 7px rgba(217,164,65,.65); }
+.cavity-cover .arcthread{ position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 3px 3px 0; }
+.spine{ width:var(--spine-w); height:var(--cover-h); border-radius:2px 4px 4px 2px; display:flex; align-items:center; justify-content:center; background:#4a3f4d; box-shadow:0 3px 5px rgba(36,23,16,.30); }
+.spine span{ writing-mode:vertical-rl; font-family:var(--font-serif); font-weight:600; font-size:11px; color:var(--text-on-dark); letter-spacing:.03em; max-height:120px; overflow:hidden; white-space:nowrap; }
+.cap{ width:var(--cover-w); height:var(--cap-h); overflow:hidden; display:flex; flex-direction:column; align-items:center; padding-top:8px; }
+.cap .shelf-book-title{ font-family:var(--font-serif); font-weight:600; font-size:13px; color:var(--ink); text-align:center; line-height:1.2; max-width:var(--cover-w); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.cap .shelf-book-author{ font-family:var(--font-body); font-size:10.5px; color:var(--ink-3); text-align:center; max-width:var(--cover-w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* the bridge demo: a question-register note card w/ overflow menu */
+.ca1-bridge{ margin-top:34px; }
+.demo-note-card{
+  max-width:440px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-1); padding:16px 18px; position:relative;
+}
+.demo-note-tag{
+  display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10px;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--text-on-dark); background:var(--question-color);
+  border-radius:999px; padding:3px 9px 3px 7px; margin-bottom:8px;
+}
+.demo-note-tag .dot{ width:6px; height:6px; border-radius:50%; background:var(--text-on-dark); }
+.demo-note-body{ font-family:var(--font-serif); font-style:italic; font-size:17px; color:var(--ink); line-height:1.4; margin:0 0 8px; }
+.demo-note-meta{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
+.demo-note-menu-btn{ position:absolute; top:14px; right:12px; width:28px; height:28px; border:none; background:transparent; color:var(--ink-3); font-size:16px; cursor:pointer; border-radius:999px; }
+.demo-note-menu-btn:hover{ color:var(--ink); background:var(--wash); }
+.demo-note-menu{ position:absolute; top:46px; right:12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-1); padding:5px; display:none; z-index:4; min-width:190px; }
+.demo-note-card.menu-open .demo-note-menu{ display:block; }
+.demo-note-menu button{ display:block; width:100%; text-align:left; padding:8px 10px; border-radius:7px; border:none; background:transparent; font-size:13px; color:var(--ink-2); cursor:pointer; }
+.demo-note-menu button:hover{ background:var(--wash); color:var(--ink); }
+/* EVOLVED: CA-1 — the "Carry on the desk" forward-act menu item */
+.demo-note-menu button.carry-act{ color:var(--gold-deep); font-weight:600; }
+.desk-carry-confirm{
+  margin-top:10px; max-width:440px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--radius-md); font-size:13px; color:var(--ink-2); display:none; flex-direction:column; gap:9px;
+}
+.desk-carry-confirm.is-open{ display:flex; }
+.desk-carry-confirm .q{ font-family:var(--font-serif); color:var(--ink); }
+.desk-carry-confirm .row{ display:flex; gap:8px; }
+.desk-carry-confirm button{ font-family:var(--font-body); font-size:12.5px; font-weight:600; border-radius:999px; padding:7px 14px; cursor:pointer; border:1px solid transparent; }
+.desk-carry-confirm .replace{ background:var(--grad); color:var(--text-on-dark); }
+.desk-carry-confirm .cancel{ background:transparent; border-color:var(--border); color:var(--ink-2); }
+
+@media (max-width:759px){
+  .shelf.lum-amber-deep{ padding:16px 14px 20px; }
+  .desk-row{ gap:14px; }
+}
+
+footer.mockfoot{ max-width:1080px; margin:60px auto 40px; padding:0 20px; }
+</style>
+</head>
+<body>
+
+<!-- =========================================================================
+     MOCKUP HARNESS — annotation-only chrome (blue), never part of the app.
+     ========================================================================= -->
+<div class="mockbar">
+  <span class="tag">R-CAPTURE · SHAPE-B</span>
+  <button class="mockbtn" type="button" id="mb-open-book" aria-pressed="false">Open — book context</button>
+  <button class="mockbtn" type="button" id="mb-open-neutral" aria-pressed="false">Open — neutral (Inbox)</button>
+  <button class="mockbtn" type="button" id="mb-mode-voice">Mode → Voice</button>
+  <button class="mockbtn" type="button" id="mb-mode-paste">Mode → Paste/Import</button>
+  <button class="mockbtn" type="button" id="mb-mode-photo">Mode → Photo (seat)</button>
+  <button class="mockbtn" type="button" id="mb-mode-scan">Mode → Scan (seat)</button>
+  <button class="mockbtn" type="button" id="mb-reduced" aria-pressed="false">Reduced-motion preview</button>
+  <a class="mockbtn" href="#ca1" style="text-decoration:none; display:inline-block;">Jump ↓ CA-1 desk</a>
+</div>
+
+<div class="mocknote" style="margin:14px 20px;">
+  <b>Mockup note — ground default (OWNER felt call)</b><br>
+  The capture sheet is built LIGHT (paper tokens: --surface / --ink / --sunk), summoned over
+  --scrim — the app's own fixed twilight veil, already used by every overlay (ImportCapture,
+  the Shelf Manage sheet). This is CLAUDE.md §7's "you WORK in the light" read literally: capture
+  is the most working act there is. <b>Alternative</b> (Preston may prefer): a warm-dim panel
+  matching the two dark summoning corners themselves — not built as a second variant per brief
+  instruction; flagged here for the felt pass, not decided.
+</div>
+
+<!-- =========================================================================
+     THE APP FRAME — minimal live context (nav + a Book-Detail-lite backdrop),
+     NOT the surface under evaluation. Exists only so CD-1's two corners and
+     CD-3's "Book Detail pre-associates" have somewhere real to summon from.
+     ========================================================================= -->
+<nav class="app-nav" aria-label="app">
+  <a class="app-nav-wordmark" href="#">praxis</a>
+  <ul class="app-nav-list">
+    <li><a class="app-nav-link" href="#">Shelf</a></li>
+    <li><a class="app-nav-link" href="#">Arcs</a></li>
+    <li><a class="app-nav-link" href="#">Notebook</a></li>
+    <!-- EVOLVED: CD-1 — nav entry for the door -->
+    <li><a class="app-nav-link cap-nav-entry" href="#" id="navCaptureEntry" aria-current="false">Capture</a></li>
+  </ul>
+  <span class="app-nav-avatar">R</span>
+</nav>
+
+<div class="app-body">
+  <a class="bk-back" href="#">← Shelf</a>
+  <div class="bk-frame">
+    <div class="bk-cover">Undrowned</div>
+    <div>
+      <h1 class="bk-title">Undrowned</h1>
+      <p class="bk-author">Alexis Pauline Gumbs</p>
+      <p class="bk-meta">Reading · Started 14 days ago</p>
+      <div class="bk-actions">
+        <button class="btn btn-primary">Add to an arc</button>
+        <!-- this is the live Book-Detail summon point for the door (CD-3: "Book
+             Detail pre-associates") -->
+        <button class="btn btn-quiet" id="bkAddMarginalia">✎ Add marginalia</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- corners -->
+<button class="corner-btn create-door" id="createDoorBtn" type="button" aria-label="Capture a thought" aria-haspopup="dialog">
+  <span class="create-door-glyph" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="#3d2807" stroke-width="2.6" stroke-linecap="round"/></svg>
+  </span>
+</button>
+<button class="corner-btn bloom" type="button" aria-label="Talk to Yumi">
+  <span class="bloom-orb" aria-hidden="true"></span>
+</button>
+
+<!-- =========================================================================
+     THE CAPTURE SHEET — CD-2 / CD-3 / CD-4 / CD-5 / CD-6.
+     ========================================================================= -->
+<div class="capdoor-scrim" id="capScrim"></div>
+<div class="capdoor-sheet" id="capSheet" role="dialog" aria-modal="true" aria-labelledby="capEyebrow">
+  <div class="capdoor-handle" id="capHandle" aria-hidden="true"></div>
+  <div class="capdoor-head">
+    <div>
+      <div class="capdoor-eyebrow" id="capEyebrow">Catch a thought
+        <span class="capdoor-eyebrow-sub" id="capPerfNote">pre-rendered — zero network before your first keystroke</span>
+      </div>
+    </div>
+    <!-- EVOLVED: CD-5 — explicit close -->
+    <button class="capdoor-close" id="capClose" type="button" aria-label="Close">×</button>
+  </div>
+
+  <div class="capdoor-body">
+    <!-- EVOLVED: CD-6 — the mode set -->
+    <div class="capdoor-modes" role="tablist" aria-label="capture mode">
+      <button class="capdoor-mode" data-mode="note" aria-pressed="true" type="button"><span class="ic">✎</span>Note</button>
+      <button class="capdoor-mode" data-mode="voice" aria-pressed="false" type="button"><span class="ic">🎙</span>Voice</button>
+      <button class="capdoor-mode" data-mode="paste" aria-pressed="false" type="button"><span class="ic">⭳</span>Paste/Import</button>
+      <button class="capdoor-mode is-seat" data-mode="photo" aria-pressed="false" type="button"><span class="ic">📷</span>Photo</button>
+      <button class="capdoor-mode is-seat" data-mode="scan" aria-pressed="false" type="button"><span class="ic">▤</span>Scan a book</button>
+    </div>
+
+    <!-- voice hero (CD-6, voice mode only) -->
+    <div class="capdoor-mic-hero">
+      <button class="capdoor-mic" id="capMic" type="button" aria-label="Start dictating">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0M12 19v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="capdoor-listen-state" id="capListenState"></div>
+      <div class="capdoor-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="capdoor-mic-label" id="capMicLabel">Tap to talk</div>
+      <div class="capdoor-mic-hint">Yumi transcribes as you speak — review the words below before filing.</div>
+      <!-- CA-2 loss-window disclosure (supporting copy inside CD-6's voice mode) -->
+      <div class="capdoor-loss-note">If this closes mid-recording, only the last few unsaved seconds are at risk — anything already transcribed is already saved.</div>
+    </div>
+
+    <!-- paste/import extras (CD-6, paste mode only) -->
+    <div class="capdoor-uploadrow">
+      <button class="capdoor-pill" id="capUploadBtn" type="button">Upload a file</button>
+      <span class="capdoor-hint" style="align-self:center;">or paste straight into the field below</span>
+      <input type="file" id="capFileInput" accept=".txt,.md,text/plain" style="display:none;">
+    </div>
+
+    <!-- ONE shared field — note / voice transcript / pasted text all land here -->
+    <div class="capdoor-field-wrap">
+      <textarea class="capdoor-field" id="capField" rows="1" placeholder="Write a note…"></textarea>
+    </div>
+
+    <!-- register (note/voice/paste only) -->
+    <div class="capdoor-seg" role="group" aria-label="register">
+      <button type="button" data-r="marginalia" aria-pressed="true">Marginalia</button>
+      <button type="button" data-r="question" aria-pressed="false">Question</button>
+      <button type="button" data-r="journal" aria-pressed="false">Journal</button>
+    </div>
+
+    <!-- EVOLVED: CD-3 — the context chip -->
+    <div class="capdoor-context" id="capContext">
+      <button class="capdoor-chip" id="capChipBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="dot" id="capChipDot"></span>
+        <span class="lbl" id="capChipLabel">Inbox</span>
+        <span class="chev">▾</span>
+      </button>
+      <div class="capdoor-chip-pop" id="capChipPop" role="listbox" aria-label="file to"></div>
+    </div>
+
+    <!-- seats: photo / scan (present-but-labeled; camera not built here — SCAN owns it) -->
+    <div class="capdoor-seat-card for-photo">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13.5" r="3.4" stroke="currentColor" stroke-width="1.6"/></svg>
+      <div class="lbl">Photo capture — the socket is here</div>
+      <div class="sub">camera + OCR arrive with SCAN</div>
+    </div>
+    <div class="capdoor-seat-card for-scan">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6 8v8M9 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
+      <div class="lbl">Scan a book — the socket is here</div>
+      <div class="sub">barcode capture arrives with SCAN</div>
+    </div>
+
+    <!-- EVOLVED: CD-5 — caught-this-session strip -->
+    <div class="capdoor-caught" id="capCaught"></div>
+    <div class="capdoor-caught-empty" id="capCaughtEmpty" style="display:none;">nothing caught yet this session</div>
+  </div>
+
+  <div class="capdoor-foot">
+    <!-- EVOLVED: CD-4 — talk-it-through seat -->
+    <button class="capdoor-seat-btn" id="capTalkSeat" type="button" aria-label="Talk it through">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-4.35-9.5-8.5C1 9 2.5 5.5 6 5c2-.3 4 .9 6 3 2-2.1 4-3.3 6-3 3.5.5 5 4 3.5 7.5C19 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      <span class="capdoor-seat-tip" id="capTalkTip">arrives with the YG round</span>
+    </button>
+    <span class="capdoor-hint"><kbd>⌘</kbd><kbd>Enter</kbd> files · <kbd>Enter</kbd> new line</span>
+    <button class="capdoor-commit" id="capCommit" type="button">File it</button>
+  </div>
+</div>
+
+<div class="capdoor-toast" id="capToast" role="status" aria-live="polite">
+  <span id="capToastMsg"></span>
+  <button type="button" id="capToastUndo">Undo</button>
+</div>
+
+<!-- =========================================================================
+     CA-1 · THE DESK — carrying-question authoring. Separate from the sheet.
+     ========================================================================= -->
+<div class="ca1-wrap" id="ca1">
+  <p class="mocksection-label">CA-1 · THE DESK — carrying-question authoring (not part of the capture sheet)</p>
+  <div class="mocknote" style="margin-bottom:16px;">
+    A question never passes through the capture door and never joins the corpus. Storage = ONE
+    profile-level field (annotation only — no live data model is touched by this file). Below:
+    the shipped v3.243 desk (real classes, components.css:13007-13103), with the new question row
+    inserted as its own block above the cover strip.
+  </div>
+
+  <div class="shelf lum-amber-deep">
+    <div class="desk">
+      <div class="desk-head">
+        <h2>Now</h2>
+        <span class="count">what you're carrying</span>
+      </div>
+
+      <!-- EVOLVED: CA-1 — three states live in this one element -->
+      <div class="desk-question" id="deskQuestion">
+        <button class="desk-question-line" id="deskQLine" type="button"></button>
+        <input class="desk-question-input" id="deskQInput" type="text" style="display:none;" maxlength="140">
+        <button class="desk-question-clear" id="deskQClear" type="button" aria-label="Clear the carried question" style="display:none;">×</button>
+      </div>
+
+      <div class="desk-row">
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot">
+            <span class="shelf-book-cover-area" style="background:linear-gradient(155deg,#e8b068,#a65f10);">
+              <span class="ember" title="value-marked"></span>
+              <span class="arcthread" style="background:var(--field-9);" title="in an arc"></span>
+            </span>
+          </span>
+          <span class="cap"><span class="shelf-book-title">Undrowned</span><span class="shelf-book-author">Alexis Pauline Gumbs</span></span>
+        </a>
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot"><span class="spine"><span>Staying with the Trouble</span></span></span>
+          <span class="cap"><span class="shelf-book-title">Staying with the Trouble</span><span class="shelf-book-author">Donna Haraway</span></span>
+        </a>
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot">
+            <span class="shelf-book-cover-area" style="background:linear-gradient(155deg,#3f477e,#241c14);"></span>
+          </span>
+          <span class="cap"><span class="shelf-book-title">In the Wake</span><span class="shelf-book-author">Christina Sharpe</span></span>
+        </a>
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot">
+            <span class="shelf-book-cover-area" style="background:linear-gradient(155deg,#5f6d45,#2c3a1e);"></span>
+          </span>
+          <span class="cap"><span class="shelf-book-title">Braiding Sweetgrass</span><span class="shelf-book-author">Robin Wall Kimmerer</span></span>
+        </a>
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot">
+            <span class="shelf-book-cover-area" style="background:linear-gradient(155deg,#8a4650,#3f1c22);"></span>
+          </span>
+          <span class="cap"><span class="shelf-book-title">The Argonauts</span><span class="shelf-book-author">Maggie Nelson</span></span>
+        </a>
+        <a class="cavity-cover is-now" href="#" tabindex="0">
+          <span class="book-slot"><span class="spine" style="background:#357b75;"><span>Doughnut Economics</span></span></span>
+          <span class="cap"><span class="shelf-book-title">Doughnut Economics</span><span class="shelf-book-author">Kate Raworth</span></span>
+        </a>
+        <button class="desk-more" type="button">+2 more reading →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ca1-bridge">
+    <p class="mocksection-label">the bridge — "Carry on the desk" from a question-register note</p>
+    <div class="demo-note-card" id="bridgeCard">
+      <span class="demo-note-tag"><span class="dot"></span>Question</span>
+      <button class="demo-note-menu-btn" id="bridgeMenuBtn" type="button" aria-haspopup="menu" aria-expanded="false">⋯</button>
+      <div class="demo-note-menu" id="bridgeMenu" role="menu">
+        <button type="button" role="menuitem">Add to an arc</button>
+        <!-- EVOLVED: CA-1 — the forward-act bridge -->
+        <button type="button" role="menuitem" class="carry-act" id="bridgeCarryBtn">Carry on the desk</button>
+        <button type="button" role="menuitem">Delete</button>
+      </div>
+      <p class="demo-note-body">"Is dignity something a system can design for, or only fail to strip away?"</p>
+      <p class="demo-note-meta">Undrowned · filed 3 days ago</p>
+    </div>
+    <div class="desk-carry-confirm" id="carryConfirm">
+      <div>Replace the carried question?</div>
+      <div class="q" id="carryConfirmCurrent"></div>
+      <div class="row">
+        <button type="button" class="replace" id="carryReplaceBtn">Replace</button>
+        <button type="button" class="cancel" id="carryCancelBtn">Cancel</button>
+      </div>
+    </div>
+    <div class="mocknote" style="margin-top:14px; max-width:440px;">
+      Clearing the desk (×) is immediate — no confirm, no undo. Un-carrying is clearing, not
+      deleting (F-B). Replacing an ALREADY-carried question DOES confirm (above) — the one
+      asymmetry the brief rules on purpose.
+    </div>
+  </div>
+</div>
+
+<footer class="mockfoot mocknote">
+  Praxis · R-CAPTURE SHAPE-B mockup · docs/studio/mockups/capture.html · do-not-merge design artifact.
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------------------------------------------------------------------
+     shared helpers
+     --------------------------------------------------------------------- */
+  // mirrors the LIVE arcFieldHue(arcId) exactly (js/views.js:5058-5066) so the
+  // arc-context chip's hue is the real derivation, not an invented color.
+  function fieldHueForArc(arcId){
+    var s = '' + (arcId || ''), h = 0, i;
+    for (i = 0; i < s.length; i = i + 1) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    return 'var(--field-' + (Math.abs(h) % 10 + 1) + ')';
+  }
+
+  var TARGETS = [
+    { id:'inbox', type:'inbox', label:'Inbox', sub:'', hue:'var(--ink-4)' },
+    { id:'book-undrowned', type:'book', label:'Undrowned', sub:'Alexis Pauline Gumbs', hue:'var(--gold)' },
+    { id:'book-wake', type:'book', label:'In the Wake', sub:'Christina Sharpe', hue:'var(--gold)' },
+    { id:'arc-repair', type:'arc', label:'Repair, Not Rescue', sub:'arc', hue:fieldHueForArc('arc_repair_not_rescue') }
+  ];
+
+  var reduceMotion = false;
+  function prefersReduced(){
+    return reduceMotion || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  /* ---------------------------------------------------------------------
+     the capture sheet
+     --------------------------------------------------------------------- */
+  var scrim = document.getElementById('capScrim');
+  var sheet = document.getElementById('capSheet');
+  var field = document.getElementById('capField');
+  var caughtHost = document.getElementById('capCaught');
+  var caughtEmpty = document.getElementById('capCaughtEmpty');
+  var commitBtn = document.getElementById('capCommit');
+  var toast = document.getElementById('capToast');
+  var toastMsg = document.getElementById('capToastMsg');
+  var toastUndo = document.getElementById('capToastUndo');
+  var navEntry = document.getElementById('navCaptureEntry');
+
+  var capMode = 'note';
+  var capRegister = 'marginalia';
+  var capTarget = TARGETS[0];
+  var caught = []; // {id, register, body, target}
+  var lastFiled = null;
+  var toastTimer = null;
+
+  function regColor(r){
+    if (r === 'question') { return 'var(--question-color)'; }
+    if (r === 'journal') { return 'var(--journal-color)'; }
+    return 'var(--marginalia-color)';
+  }
+
+  function autogrow(){
+    field.style.height = 'auto';
+    field.style.height = field.scrollHeight + 'px';
+  }
+  field.addEventListener('input', autogrow);
+
+  function setChip(){
+    var dot = document.getElementById('capChipDot');
+    var lbl = document.getElementById('capChipLabel');
+    dot.style.background = capTarget.hue;
+    lbl.textContent = capTarget.type === 'book' ? capTarget.label
+      : (capTarget.type === 'arc' ? 'Arc · ' + capTarget.label : capTarget.label);
+  }
+  function renderChipPop(){
+    var pop = document.getElementById('capChipPop');
+    pop.innerHTML = '';
+    TARGETS.forEach(function(t){
+      var opt = document.createElement('div');
+      opt.className = 'capdoor-chip-opt';
+      opt.setAttribute('role', 'option');
+      opt.setAttribute('aria-selected', t.id === capTarget.id ? 'true' : 'false');
+      var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = t.hue;
+      var lbl = document.createElement('span');
+      lbl.textContent = t.type === 'arc' ? 'Arc · ' + t.label : t.label;
+      opt.appendChild(dot); opt.appendChild(lbl);
+      if (t.sub && t.type === 'book') { var sub = document.createElement('span'); sub.className = 'sub'; sub.textContent = t.sub; opt.appendChild(sub); }
+      opt.addEventListener('click', function(){
+        capTarget = t; setChip();
+        document.getElementById('capContext').classList.remove('is-open');
+        document.getElementById('capChipBtn').setAttribute('aria-expanded', 'false');
+      });
+      pop.appendChild(opt);
+    });
+  }
+  document.getElementById('capChipBtn').addEventListener('click', function(){
+    var ctx = document.getElementById('capContext');
+    var open = ctx.classList.toggle('is-open');
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { renderChipPop(); }
+  });
+  document.addEventListener('click', function(e){
+    var ctx = document.getElementById('capContext');
+    if (!ctx.contains(e.target)) { ctx.classList.remove('is-open'); document.getElementById('capChipBtn').setAttribute('aria-expanded', 'false'); }
+  });
+
+  function setRegister(r){
+    capRegister = r;
+    var btns = document.querySelectorAll('.capdoor-seg button');
+    btns.forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-r') === r ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('.capdoor-seg button').forEach(function(b){
+    b.addEventListener('click', function(){ setRegister(b.getAttribute('data-r')); field.focus(); });
+  });
+
+  function setMode(mode){
+    capMode = mode;
+    document.querySelectorAll('.capdoor-mode').forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-mode') === mode ? 'true' : 'false'); });
+    sheet.className = 'capdoor-sheet' + (sheet.classList.contains('is-open') ? ' is-open' : '')
+      + (mode === 'note' ? '' : ' cap-expanded')
+      + ' cap-mode-' + mode;
+    // reset voice UI when leaving/entering
+    var mic = document.getElementById('capMic');
+    mic.classList.remove('is-listening');
+    sheet.classList.remove('cap-mic-active');
+    document.getElementById('capListenState').textContent = '';
+    document.getElementById('capMicLabel').textContent = 'Tap to talk';
+    if (mode === 'note' || mode === 'voice' || mode === 'paste') {
+      field.placeholder = mode === 'paste' ? 'Paste notes here — or type directly…' : 'Write a note…';
+      window.setTimeout(function(){ field.focus(); }, 0); // still synchronous-this-frame; setTimeout(0) only defers past the class swap paint, no network/work involved
+      autogrow();
+    }
+  }
+  document.querySelectorAll('.capdoor-mode').forEach(function(b){
+    b.addEventListener('click', function(){ setMode(b.getAttribute('data-mode')); });
+  });
+
+  function openSheet(opts){
+    opts = opts || {};
+    capTarget = opts.target || TARGETS[0];
+    setChip();
+    setMode(opts.mode || 'note');
+    setRegister('marginalia');
+    scrim.classList.add('is-open');
+    sheet.classList.add('is-open');
+    navEntry.setAttribute('aria-current', 'true');
+    // CD-2: focus lands in ONE synchronous frame — no await, no fetch, nothing
+    // between "open" and "caret blinking in the field" (the <400ms law).
+    field.focus();
+    autogrow();
+  }
+  function closeSheet(){
+    scrim.classList.remove('is-open');
+    sheet.classList.remove('is-open');
+    navEntry.setAttribute('aria-current', 'false');
+    // NOTE (build-time wiring): live closes without clearing an un-filed draft
+    // (CA-2 — "no captured TEXT is ever lost"). The draft rides the shipped
+    // per-tab per-uid persistence gate (views.js nbDraftSave/nbDraftLoad, the
+    // R-ARC S2 machinery) — not reproduced here (no storage in a static file);
+    // this mockup honors the law by simply never clearing field.value on close.
+  }
+  document.getElementById('createDoorBtn').addEventListener('click', function(){ openSheet({ mode:'note', target: TARGETS[0] }); });
+  document.getElementById('bkAddMarginalia').addEventListener('click', function(){ openSheet({ mode:'note', target: TARGETS[1] }); });
+  navEntry.addEventListener('click', function(e){ e.preventDefault(); openSheet({ mode:'note', target: capTarget }); });
+  document.getElementById('capClose').addEventListener('click', closeSheet);
+
+  // EVOLVED: CD-5 — scrim click does NOT close (explicit close only). Nudge
+  // the veil instead, as a legible "that's not how you close this" cue.
+  // (Deliberate deviation from ImportCapture's own scrim-click-closes
+  // precedent, components.css:10883/js/import-capture.js:409 — CD-5 overrides
+  // it for the unified door.)
+  scrim.addEventListener('click', function(){
+    if (!sheet.classList.contains('is-open')) { return; }
+    if (!prefersReduced()) { scrim.classList.remove('is-nudge'); void scrim.offsetWidth; scrim.classList.add('is-nudge'); }
+  });
+
+  // drag-to-dismiss (mobile bottom sheet)
+  var handle = document.getElementById('capHandle');
+  var dragStartY = null, dragDelta = 0;
+  function dragStart(e){ dragStartY = (e.touches ? e.touches[0].clientY : e.clientY); dragDelta = 0; sheet.style.transition = 'none'; }
+  function dragMove(e){
+    if (dragStartY === null) { return; }
+    var y = (e.touches ? e.touches[0].clientY : e.clientY);
+    dragDelta = Math.max(0, y - dragStartY);
+    sheet.style.transform = 'translateY(' + dragDelta + 'px)';
+  }
+  function dragEnd(){
+    if (dragStartY === null) { return; }
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    if (dragDelta > 90) { closeSheet(); }
+    dragStartY = null; dragDelta = 0;
+  }
+  handle.addEventListener('pointerdown', function(e){ handle.setPointerCapture(e.pointerId); dragStart(e); });
+  handle.addEventListener('pointermove', dragMove);
+  handle.addEventListener('pointerup', dragEnd);
+  handle.addEventListener('pointercancel', dragEnd);
+
+  // keyboard: Escape closes (explicit keypress = still "explicit", not
+  // automatic); ⌘Enter/Ctrl+Enter commits; bare Enter = newline (default).
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeSheet(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
+      e.preventDefault(); // real browsers may still intercept Ctrl/Cmd+N at the OS/shell level — annotated in the report, not a functional guarantee of this static file
+      openSheet({ mode:'note', target: capTarget });
+    }
+  });
+  field.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit(); }
+    // bare Enter: no handler — default textarea behavior inserts a newline.
+  });
+
+  function renderCaught(){
+    caughtHost.innerHTML = '';
+    caughtEmpty.style.display = caught.length ? 'none' : 'block';
+    caught.slice(0, 6).forEach(function(item){
+      var row = document.createElement('div');
+      row.className = 'capdoor-caught-item';
+      row.id = 'caught-' + item.id;
+      var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = regColor(item.register);
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.body;
+      var target = document.createElement('span'); target.className = 'target';
+      target.textContent = item.target.type === 'arc' ? item.target.label : item.target.label;
+      row.appendChild(dot); row.appendChild(txt); row.appendChild(target);
+      caughtHost.appendChild(row);
+    });
+  }
+
+  function showToast(msg, onUndo){
+    toastMsg.textContent = msg;
+    toast.classList.add('is-show');
+    toastUndo.onclick = function(){
+      toast.classList.remove('is-show');
+      if (toastTimer) { window.clearTimeout(toastTimer); }
+      if (onUndo) { onUndo(); }
+    };
+    if (toastTimer) { window.clearTimeout(toastTimer); }
+    toastTimer = window.setTimeout(function(){ toast.classList.remove('is-show'); }, 6500);
+  }
+
+  // EVOLVED: CD-5 — commit-and-stay. Clears the field, files the note,
+  // pulses + toasts, and leaves the sheet open for the next thought.
+  function commit(){
+    if (capMode === 'photo' || capMode === 'scan') { return; } // seats have nothing to file
+    var body = (field.value || '').replace(/^\s+|\s+$/g, '');
+    if (!body) { return; } // mirrors captureNote()'s own empty guard, views.js:3442
+    var id = 'c' + Date.now();
+    var entry = { id: id, register: capRegister, body: body, target: capTarget };
+    caught.unshift(entry);
+    lastFiled = { entry: entry, prevFieldValue: field.value, prevRegister: capRegister };
+    renderCaught();
+    field.value = '';
+    autogrow();
+    field.focus(); // stays open, ready for the next thought — no re-summon needed
+    var wrap = field.closest('.capdoor-field-wrap');
+    if (!prefersReduced()) { wrap.classList.remove('mo-savepulse'); void wrap.offsetWidth; wrap.classList.add('mo-savepulse'); }
+    var targetLabel = entry.target.type === 'arc' ? entry.target.label : entry.target.label;
+    showToast('Filed to ' + targetLabel + ' · Undo', function(){
+      if (!lastFiled) { return; }
+      caught = caught.filter(function(c){ return c.id !== lastFiled.entry.id; });
+      renderCaught();
+      field.value = lastFiled.prevFieldValue;
+      setRegister(lastFiled.prevRegister);
+      autogrow();
+      field.focus();
+      lastFiled = null;
+    });
+  }
+  commitBtn.addEventListener('click', commit);
+
+  // voice mode (CD-6) — simulated dictation feeding the SAME shared field
+  var micTimer1 = null, micTimer2 = null;
+  var VOICE_SAMPLE = 'Nine days into no caffeine and my sentences are shorter — not worse, just less thickened with escape.';
+  document.getElementById('capMic').addEventListener('click', function(){
+    var mic = this;
+    if (mic.classList.contains('is-listening')) {
+      window.clearTimeout(micTimer1); window.clearTimeout(micTimer2);
+      mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active');
+      document.getElementById('capListenState').textContent = '';
+      document.getElementById('capMicLabel').textContent = 'Tap to talk';
+      return;
+    }
+    mic.classList.add('is-listening'); sheet.classList.add('cap-mic-active');
+    document.getElementById('capListenState').textContent = 'LISTENING…';
+    document.getElementById('capMicLabel').textContent = 'Listening…';
+    micTimer1 = window.setTimeout(function(){
+      document.getElementById('capListenState').textContent = 'TRANSCRIBING…';
+    }, 1400);
+    micTimer2 = window.setTimeout(function(){
+      mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active');
+      document.getElementById('capListenState').textContent = '';
+      document.getElementById('capMicLabel').textContent = 'Review below, or tap to talk again';
+      field.value = VOICE_SAMPLE;
+      autogrow();
+      field.focus();
+      field.setSelectionRange(field.value.length, field.value.length);
+    }, 3000);
+  });
+
+  // paste/import mode (CD-6) — real file read, no network
+  document.getElementById('capUploadBtn').addEventListener('click', function(){ document.getElementById('capFileInput').click(); });
+  document.getElementById('capFileInput').addEventListener('change', function(){
+    var f = this.files && this.files[0];
+    if (!f) { return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      field.value = String(reader.result || '');
+      autogrow();
+      field.focus();
+    };
+    reader.readAsText(f);
+    this.value = '';
+  });
+
+  /* ---------------------------------------------------------------------
+     CA-1 — the desk's carrying-question row
+     --------------------------------------------------------------------- */
+  var dq = document.getElementById('deskQuestion');
+  var dqLine = document.getElementById('deskQLine');
+  var dqInput = document.getElementById('deskQInput');
+  var dqClear = document.getElementById('deskQClear');
+  var carriedQuestion = ''; // '' = or-nothing
+
+  function renderDeskQuestion(){
+    if (carriedQuestion) {
+      dq.classList.add('is-authored');
+      dqLine.textContent = carriedQuestion;
+      dqClear.style.display = '';
+    } else {
+      dq.classList.remove('is-authored');
+      dqLine.textContent = 'Tap to carry a question.'; // the ONE bare line — no card, no icon, no modal
+      dqClear.style.display = 'none';
+    }
+    dqLine.style.display = '';
+    dqInput.style.display = 'none';
+  }
+  function beginEditDesk(){
+    dqInput.value = carriedQuestion;
+    dqLine.style.display = 'none';
+    dqInput.style.display = '';
+    dqInput.focus();
+    dqInput.setSelectionRange(dqInput.value.length, dqInput.value.length);
+  }
+  dqLine.addEventListener('click', beginEditDesk);
+  dqInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); dqInput.blur(); }
+    if (e.key === 'Escape') { dqInput.value = carriedQuestion; dqInput.blur(); }
+  });
+  dqInput.addEventListener('blur', function(){
+    carriedQuestion = (dqInput.value || '').replace(/^\s+|\s+$/g, '');
+    renderDeskQuestion();
+  });
+  // clearing is first-class + immediate — no confirm, no undo (un-carrying is
+  // clearing, not undeleting)
+  dqClear.addEventListener('click', function(e){
+    e.stopPropagation();
+    carriedQuestion = '';
+    renderDeskQuestion();
+  });
+  renderDeskQuestion();
+
+  /* the bridge: "Carry on the desk" from a question-register note, w/
+     replace-with-confirm if the desk already carries one */
+  var bridgeCard = document.getElementById('bridgeCard');
+  var bridgeMenuBtn = document.getElementById('bridgeMenuBtn');
+  var bridgeMenu = document.getElementById('bridgeMenu');
+  var confirmBox = document.getElementById('carryConfirm');
+  var BRIDGE_TEXT = 'Is dignity something a system can design for, or only fail to strip away?';
+
+  bridgeMenuBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    var open = bridgeCard.classList.toggle('menu-open');
+    bridgeMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function(e){
+    if (!bridgeCard.contains(e.target)) { bridgeCard.classList.remove('menu-open'); bridgeMenuBtn.setAttribute('aria-expanded', 'false'); }
+  });
+  function doCarry(){
+    carriedQuestion = BRIDGE_TEXT;
+    renderDeskQuestion();
+    confirmBox.classList.remove('is-open');
+    bridgeCard.classList.remove('menu-open');
+    document.getElementById('ca1').scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'center' });
+    if (!prefersReduced()) { dq.classList.remove('mo-savepulse'); void dq.offsetWidth; dq.classList.add('mo-savepulse'); }
+  }
+  document.getElementById('bridgeCarryBtn').addEventListener('click', function(){
+    bridgeCard.classList.remove('menu-open');
+    if (carriedQuestion) {
+      document.getElementById('carryConfirmCurrent').textContent = '"' + carriedQuestion + '"  →  "' + BRIDGE_TEXT + '"';
+      confirmBox.classList.add('is-open');
+    } else {
+      doCarry();
+    }
+  });
+  document.getElementById('carryReplaceBtn').addEventListener('click', doCarry);
+  document.getElementById('carryCancelBtn').addEventListener('click', function(){ confirmBox.classList.remove('is-open'); });
+
+  /* ---------------------------------------------------------------------
+     mockup harness wiring
+     --------------------------------------------------------------------- */
+  document.getElementById('mb-open-book').addEventListener('click', function(){ openSheet({ mode:'note', target: TARGETS[1] }); });
+  document.getElementById('mb-open-neutral').addEventListener('click', function(){ openSheet({ mode:'note', target: TARGETS[0] }); });
+  document.getElementById('mb-mode-voice').addEventListener('click', function(){ if (!sheet.classList.contains('is-open')) { openSheet({ mode:'voice', target: capTarget }); } else { setMode('voice'); } });
+  document.getElementById('mb-mode-paste').addEventListener('click', function(){ if (!sheet.classList.contains('is-open')) { openSheet({ mode:'paste', target: capTarget }); } else { setMode('paste'); } });
+  document.getElementById('mb-mode-photo').addEventListener('click', function(){ if (!sheet.classList.contains('is-open')) { openSheet({ mode:'photo', target: capTarget }); } else { setMode('photo'); } });
+  document.getElementById('mb-mode-scan').addEventListener('click', function(){ if (!sheet.classList.contains('is-open')) { openSheet({ mode:'scan', target: capTarget }); } else { setMode('scan'); } });
+  document.getElementById('mb-reduced').addEventListener('click', function(){
+    reduceMotion = !reduceMotion;
+    document.documentElement.classList.toggle('force-reduced-motion', reduceMotion);
+    this.setAttribute('aria-pressed', reduceMotion ? 'true' : 'false');
+  });
+
+  // CD-4 talk-it-through: inert seat, shows a tooltip, never opens chat
+  var talkSeat = document.getElementById('capTalkSeat');
+  talkSeat.addEventListener('click', function(){
+    talkSeat.classList.add('show-tip');
+    window.setTimeout(function(){ talkSeat.classList.remove('show-tip'); }, 1800);
+  });
+
+  /* ---------------------------------------------------------------------
+     initial state — pre-seed one caught item + open on load in book context,
+     so the primary state is legible without any interaction (still fully
+     interactive from there).
+     --------------------------------------------------------------------- */
+  caught = [{ id:'seed1', register:'marginalia', body:'"The wound is a place where light enters" — reread this after the funeral. It reads differently now.', target: TARGETS[1] }];
+  renderCaught();
+  openSheet({ mode:'note', target: TARGETS[1] });
+})();
+</script>
+</body>
+</html>

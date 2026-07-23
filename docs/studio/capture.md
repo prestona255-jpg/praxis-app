@@ -1,0 +1,195 @@
+---
+surface: capture
+route: "overlay (planned — global, not route-bound)"
+render_fn: "NOT YET BUILT — planned as ONE shared component (CD-6); today the door is FOUR bespoke UIs: buildNotebookWriteline (js/views.js:3030) + captureNote (js/views.js:3434) · createWritingCanvas (js/writing-canvas.js:114) · window.ImportCapture (js/import-capture.js:400) · buildActMargin (js/intros.js:263)"
+ground: "light working surface, summoned over --scrim (RULED by sight 2026-07-23: LIGHT as built)"
+in_nav: "no (planned — CD-1 nav entry + ⌘N)"
+state: shaped
+mockup: docs/studio/mockups/capture.html
+rounds: 0
+---
+
+## State
+
+R-CAPTURE / THE DOOR is a **net-new unified surface** — SHAPE-B mockup delivered
+2026-07-23, no build round has run yet (`rounds: 0`). The mission (r-capture-brief.md
+v2): every way a thought enters Praxis — type, dictate, paste, upload — becomes ONE
+fast, unlosable gesture instead of four bespoke UIs reinventing it. The locked
+decisions are CD-1..6 (ruled 2026-07-18) + CA-1..3 (ruled 2026-07-23, the R-SHELF-
+inherited carrying-question-authoring seam). This file did not exist before this
+mockup session — created now per explicit instruction, not an append-only violation
+(no prior ledger content to preserve).
+
+## Current-surface structure (the four source UIs this round unifies)
+
+**1 — Notebook writeline** (`buildNotebookWriteline`, js/views.js:3030-3239;
+`captureNote`, :3434-3469). Inline composer, NOT a sheet/modal — mounted at the top
+of the notebook's left leaf. Anatomy: auto-growing `<textarea class="nb-ce">`
+(placeholder "Write a note…") → `.seg`/`.seg-opt` register chips (marginalia ·
+question · journal, default marginalia unless the Journal tab is active) → `.crow`
+(chips + spacer + a `.btn.btn-primary` "Capture" button) → `.nb-modes` labeled
+"or bring one in" row (photo/library stage inline; paste/import/dictate hand off to
+`window.ImportCapture.open()`). Commit-and-stay IS live here: `captureNote()`
+re-renders the notebook and stays on the same tab (views.js:3467); the SAVE PULSE
+(`.mo-savepulse`, applied at views.js:15704-15706) is the real precedent CD-5 lifts.
+Fonts/tokens: `.notebook.lum-amber-deep` scope — `--lum-serif` field text 17px,
+`--lum-ink-4` italic placeholder, gilded `.btn-primary` (Recipe 5). Responsive: no
+sheet/card distinction — it's always inline, reflowing with the leaf.
+
+**2 — Book-Detail "Add marginalia"** (`createWritingCanvas`, js/writing-canvas.js:
+114-215). A `contenteditable` panel (`.wc-input`) mounted via `createWritingCanvas
+(mountEl, opts) → handle` — substrate-agnostic per the writing-core contract. This is
+the **tightest synchronous open→focus chain in the app** (the perf floor CD-2's
+<400ms law is measured against). No register chips, no mode row — single-purpose.
+
+**3 — ImportCapture overlay** (`window.ImportCapture`, js/import-capture.js:
+400-476 `open`/`renderEntry`). A **centered modal**, not corner-anchored:
+`.ic-overlay` (`position:fixed; inset:0; align-items:flex-start; padding:48px 18px`)
+→ `.ic-panel` (`max-width:520px`, centered). States: entry (mic hero or type-note
+hero + paste/upload pills) → processing (`.ic-orb` breathing spinner) → receipt
+(book-grouped, progressive disclosure) → exception queue. Dictation machinery:
+`recordAndTranscribe` (:1084) → `transcribeBlob` (:1030) → `processDictation`
+(:1263), gated on `canRecord()` (:1008). Scrim click DOES close (js/import-capture.js
+:409) — CD-5 deliberately overrides this for the unified door (see Forks).
+`.lum-amber-deep` reskins it dark (components.css:10883-10911) — the OLD amber
+overlay precedent CD-2's ground default deliberately does NOT reuse (see ground
+OWNER row).
+
+**4 — Onboarding act-margin** (`buildActMargin`, js/intros.js:263-277). A two-way
+register toggle (`.ij-reg.is-m` / `.is-j`) + a bare `<textarea id="ij-noteta">`, one
+"Keep this note" button. Writes through the SAME real `captureNote()` (`doNote`,
+intros.js:330-338) — confirms the round's "one door, wired to real primitives" is
+already the house style, just not yet unified in UI.
+
+**Fragmentation this round closes:** 4 different open triggers, 3 different visual
+containers (inline / contenteditable panel / centered modal), 2 different
+"talk it through" fates (dropped from ImportCapture per views.js:3213's comment; not
+replaced), and register/mode chips re-implemented with slightly different markup in
+each of 3 of the 4 places.
+
+## Decisions
+
+| # | Decision | State (exists / partial / new) | Live DOM anchor |
+|---|---|---|---|
+| CD-1 | Two ruled corners ("+" bottom-left, flower bottom-right) | **partial** | Flower EXISTS: `.yumi-bloom` (components.css:19-58, AMB-1, 42px fixed bottom-right, z:9999). "+" door is **NEW** — closest live analog is the Shelf's page-scoped mobile FAB `.shelf-add-primary` (components.css:12890-12894), which is NOT global and not gilded. |
+| CD-2 | Pre-rendered capture sheet, two sizes (quick text / expanded) | **partial** | No live corner-anchored sheet exists. Closest structural anchors: `.ic-overlay`/`.ic-panel` (centered modal, js/import-capture.js:400-412) and `createWritingCanvas` (synchronous focus chain, js/writing-canvas.js:114-140). Both are **NEW** as a unified two-size component. |
+| CD-3 | Context-smart, never-silent (visible one-tap chip) | **partial** | Context-smart FILING exists (`captureNote`'s `filed`/`bookIds` branch, views.js:3441-3447) but is **invisible today** — no chip anywhere shows or lets the user change the target. The chip UI is **NEW**. |
+| CD-4 | Talk-it-through = a seat only | **new** (with a dead precedent) | ImportCapture used to have a "talk it through with Yumi" mode; the R4 unified composer comment explicitly records it was **DROPPED** ("eval-gated; its own future round", views.js:3213). CD-4 reopens the seat, inert only. |
+| CD-5 | Commit-and-stay + the save pulse ("filed to X · Undo") | **exists** (in one of the four) | `captureNote()` clears via re-render and stays on-tab (views.js:3463-3469); `.mo-savepulse` fires on the just-saved card (views.js:15704-15706, class defined assets/praxis-kit.css:61-62). The "· Undo" receipt text does **not** exist live anywhere — **new**. |
+| CD-6 | One door, one component — the 5-mode set | **partial** | Every mode exists SEPARATELY: photo/library inline (views.js:3230-3231), paste/import/dictate hand off to ImportCapture (views.js:3226-3228), voice inside ImportCapture (:429-433). Photo/scan-as-a-SEAT does not exist (photo is fully wired live, not a placeholder) — this mockup deliberately treats photo as a seat **for this file only**, per the task's own instruction ("photo/OCR and scan modes are SEATS... per §7 non-goals"); the live app's photo capture is further along than that framing implies. Flagged as a scope note, not a fork (no collision — the instruction is explicit). |
+| REGISTER | marginalia / journal / question, 3-way | **exists** | `buildNotebookWriteline`'s `defs` array (views.js:3090-3094) + `captureNote(register, ...)` (views.js:3434). Colors: `--marginalia-color`/`--journal-color`/`--question-color` (theme.css:428-430). |
+| CA-1 | Carrying-question authoring on the desk, inline | **new** | The desk EXISTS (`renderShelfDesk`, views.js:5407-5445; `.desk-head`, views.js:4965-4974) with NO question row at all. The forward-act bridge ("Carry on the desk") has no live anchor anywhere — fully new, on both ends. |
+
+## Data-source findings (build-time stand-ins)
+
+- **No invented color was required.** Every hue the mockup uses resolves through a
+  real live mechanism: the register family is the live `--marginalia-color` /
+  `--journal-color` / `--question-color` triad (theme.css:428-430); the arc-context
+  chip's hue is computed with the SAME hash-to-field-spectrum function as the live
+  `arcFieldHue(arcId)` (js/views.js:5058-5066), reproduced verbatim in the mockup's
+  `fieldHueForArc()`. **No BUILD-TIME color stand-in is flagged** — this is a
+  genuine finding, not an omission.
+- **The paste/import "matcher" is simplified.** Live, a multi-passage paste segments
+  into several notes with book guesses via `segmentDoc()` + a review receipt
+  (js/import-capture.js `runImport`/`renderReceipt`, :499-546). The mockup files a
+  pasted blob as ONE raw note through the shared commit path instead of simulating
+  that segmentation UI. This is a **build-time behavioral simplification**, not a
+  data or color stand-in — RAW JOINS THE CORPUS holds either way, and the
+  segmentation review UI is Lane 2 build detail, not a locked decision this mockup
+  re-specifies. Live wiring path: `segmentDoc()` + `commitEntries()`,
+  js/import-capture.js.
+- **Voice transcription is simulated**, not calling any proxy (matches the <400ms /
+  offline-safe law — the mockup never touches a network). Live wiring path:
+  `recordAndTranscribe` → `transcribeBlob` → `processDictation`
+  (js/import-capture.js:1084/1030/1263).
+
+## Forks
+
+- **FORK — scrim-click-to-close.** ImportCapture's live overlay closes on a scrim
+  click (js/import-capture.js:409, `if (e.target === ov) { close(); }`). CD-5 rules
+  "close is explicit (X / drag-down), never automatic" for the unified door — a
+  direct behavioral collision with the surface it supersedes. **Resolution
+  implemented in the mockup:** scrim click does NOT close; it nudges the veil
+  (a brief darken-flash, reduced-motion-safe) as a legible "that's not how you close
+  this" cue instead. This is a genuine CD-5-vs-precedent collision, not a mechanical
+  call — **written here as the FORK row for Preston**, per FORK-VERBATIM. The
+  build round should re-confirm this resolution before wiring it over the live
+  ImportCapture behavior.
+  - **RULED (Preston, 2026-07-23, by sight): CD-5 explicit-close as built.** The
+    unified door does not close on scrim-click; the build wires this override over
+    ImportCapture's `if (e.target === ov) { close(); }` (import-capture.js:409).
+
+## OWNER felt-call rows — RULED BY PRESTON (2026-07-23, mockup felt pass = PASS)
+
+- **Ground — RULED: LIGHT as built.** The sheet is a LIGHT working surface (paper
+  tokens) over `--scrim`; the warm-dim alternative is retired. Build to light.
+- **Scrim-click — RULED: CD-5 explicit-close as built.** The unified door does NOT
+  close on scrim-click (nudge-the-veil), overriding ImportCapture's live behavior.
+  The Fork below is resolved to CD-5; the build wires the override.
+- **CD-2's two-size sheet — RULED: STANDS.** The two-size shape (bottom sheet ≤759 /
+  corner card ≥760) is accepted. **DEFERRED CHECK: the true 390 bottom-sheet felt
+  verdict is taken at the FINAL live pass on Preston's actual phone** — carried as a
+  stated check in the final felt script (not re-opened before then).
+- **"Carry on the desk" — RULED: STANDS as shown (NOT a second door).** The
+  forward-act bridge is accepted; desk-only-authoring fallback is not needed.
+
+## Completeness inventory (9 rows — docs/studio/acceptance-card.md:138-148)
+
+| # | Anatomy | Verdict |
+|---|---|---|
+| 1 | Ground | SHOWN — the app-frame's light Book-Detail-lite backdrop + the always-dark nav/corners + the light capture sheet over `--scrim`, all real token values, no placeholder gray boxes. Evidence: capture.html `.app-body`/`.app-nav`/`.capdoor-sheet` blocks. |
+| 2 | States | SHOWN — sheet closed/open, note/voice/paste/photo-seat/scan-seat modes, quick vs expanded sub-size, register×3, context chip×4 targets (inbox/2 books/1 arc), mic idle/listening/transcribing/filled, commit empty-guard (no-op on blank), toast shown/dismissed/undo, desk question empty/authored/editing, carry-bridge direct + replace-confirm. Distribution-skew: the desk shows 6 covers + a "+2 more reading →" door (8 reading books total) specifically to stress CA-1's coexistence risk. Evidence: capture.html JS state machine (`setMode`/`commit`/`renderDeskQuestion`). |
+| 3 | Controls | SHOWN — every visible control is wired: both corners, nav entry, ⌘N, mode chips, register segmented control, context chip + picker, mic, upload (real `FileReader`, no network), commit, Undo, X close, drag-handle-to-dismiss, desk question tap-to-edit + clear, bridge overflow menu + carry + replace/cancel. Two are deliberately INERT-by-design (talk-it-through seat, photo/scan seat cards) — static-by-design, not broken. |
+| 4 | Widths | SHOWN — real breakpoint (759/760, matching the app's own divide): bottom sheet ≤759, corner-anchored card ≥760. Walked by resizing the live file at 390 / 1280 / 1920 (no XL-tier logic needed — the component anchors, it doesn't reflow columns). |
+| 5 | Motion | SHOWN — scrim fade, sheet slide/scale-in, drag-to-dismiss, mic pulse + EQ bars, save-pulse (`.mo-savepulse`, verbatim keyframes), toast slide. Reduced-motion: both the real `@media (prefers-reduced-motion: reduce)` query AND a manual `html.force-reduced-motion` toggle (mockbar button) so it's verifiable without an OS setting change. |
+| 6 | Marks | SHOWN — register dots (marginalia teal / question indigo / journal violet) legible on the light sheet AND in the caught-list/desk contexts; the arc-context chip's field-spectrum dot; the ember + arc-thread marks on the desk's cover art (real live classes, real tokens). |
+| 7 | Text | SHOWN — zero lorem/filler. Real-register sample content: a marginalia line ("the wound is a place where light enters…"), a journal-toned voice sample, a question ("Is dignity something a system can design for…"), 6 distinct real book titles/authors on the desk not reused from any other mockup file in this repo. |
+| 8 | Seams | SHOWN — the CD-1 nav entry + ⌘N (into the door); the Book-Detail "✎ Add marginalia" button (a real seam INTO the door, pre-associating context); the CA-1 bridge (a seam OUT of a filed note, back into the desk); the photo/scan seats (explicit sockets for SCAN, not built here); the talk-it-through seat (explicit socket for YG, not built here). |
+| 9 | Behaviors | N/A-OWNED (net-new surface — there is no prior "capture" surface behavior set to preserve/retire; ROW 9 governs evolving an EXISTING surface's behaviors, which does not apply to a first build). The four SOURCE surfaces' relevant behaviors (commit-and-stay, register chips, dictation, scrim-click-close) are individually addressed above (Decisions table + the scrim-click FORK) rather than as a single Behaviors row. |
+
+## Elevation self-score (6 axes, 0-3 each, max 18 — docs/studio/acceptance-card.md:87-96)
+
+| Axis | Score | Evidence |
+|---|---|---|
+| Fidelity | 3 | All 7 locked decisions (CD-1,2,3,4,5,6,CA-1) + REGISTER are shown and interactive; the one collision (scrim-click) is resolved-and-flagged, not silently dropped. |
+| Craft | 3 | Every color/radius/shadow/spacing value is a named token lifted from theme.css/lumen-amber.css/praxis-kit.css/universal-depth.css (grep-provable, see Token wiring proof below); real class-name/CSS grammar reused verbatim where a live precedent exists (`.desk-head`, `.cavity-cover`, `.mo-savepulse`, the shelf-manage-sheet bottom-sheet pattern). |
+| Motion | 3 | MO-1 durations/easings throughout (`--dur-fast`/`--dur-gentle`/`--ease-standard`/`--ease-emphasis`); the save-pulse keyframes are byte-identical to `assets/praxis-kit.css:61-62`; reduced-motion verified via both the real media query and a manual toggle. |
+| Quiet | 3 | One primary gilded action per view (the commit button); seats are visually recessed (dashed, muted `--ink-3`) rather than competing; the mode row uses the existing quiet-chip dialect, not a new one; annotation chrome (blue) is categorically separated from app chrome so it never reads as UI noise. |
+| Responsive | 3 | Real 759/760 divide (not invented); bottom-sheet grammar mirrors the shipped `.shelf-manage-sheet` (safe-area, 82-86vh cap, translateY slide); corner-anchored card verified independent of viewport width ≥760 (1280 and 1920 render identically, as intended — a popover, not a layout). |
+| Function | 3 | Every claim above is a real DOM/JS effect, not a static screenshot: commit actually clears the field and appends to the caught list; Undo actually restores it; the desk question actually persists across edit/clear cycles within the session; the carry-bridge actually triggers the replace-confirm branch when a question is already carried. |
+
+**18/18.** Per the elevation-loop protocol this ships to Preston as-is (no axis below 3 to improve) — the felt pass is what actually judges it; a full mockup score is a passed floor, not a shipped look (OWNER-VIEWPORT PRIMACY, CLAUDE.md).
+
+## Gap ledger
+
+(none opened by this mockup session — the pre-existing `import-capture.md` ledger's
+three REWORK/FIX/ADD items stand, unresolved by a mockup; they are build-round work.)
+
+## Round history
+
+- **2026-07-23 — SHAPE-B mockup delivered.** `docs/studio/mockups/capture.html`
+  built against r-capture-brief.md v2 (CD-1..6 + CA-1..3), Universal token sheet +
+  `universal-depth.css` v1.2, and the four source UIs read as Stage-A material
+  (buildNotebookWriteline/captureNote, createWritingCanvas, ImportCapture,
+  buildActMargin). One fork surfaced (scrim-click-to-close vs CD-5), resolved in
+  the mockup and flagged verbatim for Preston. Four OWNER rows reserved (ground,
+  CD-2 two-size felt test, CA-1 tap-grammar felt test, carry-as-second-door
+  fallback). Self-score 18/18; completeness inventory 8 SHOWN + 1 N/A-OWNED, zero
+  MISSING.
+- **2026-07-23 — MOCKUP FELT PASS = PASS (Preston, by sight).** State flipped to
+  `shaped`; `mockup:` frontmatter line set. Rulings recorded (OWNER rows + Fork):
+  ground = LIGHT as built · scrim-click = CD-5 explicit-close as built · CD-2
+  two-size stands · "Carry on the desk" stands (not a second door). The true 390
+  bottom-sheet felt verdict is DEFERRED to the final live pass on Preston's actual
+  phone (carried as a stated check in the final felt script). Mockup + ledger +
+  acceptance card committed locally as the build spec; the continuous four-lane
+  build is authorized (self-run law — no mid-run halt, nothing pushed).
+
+## Next
+
+- Continuous build runs all four lanes per r-capture-brief.md §4 + the self-run law
+  (Lane 1 door+sheet+CA-1 → Lane 2 mode integrations → Lane 3 share_target STRETCH →
+  Lane 4 hardening close-out), building to a COMPLETE door with local commits and no
+  mid-run halt.
+- Final halt: gates clean (reviewer + red-team) + Preston's snapshot export +
+  the push word + the whole-door felt pass (with the 390-phone check in the script).
