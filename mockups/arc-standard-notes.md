@@ -354,7 +354,87 @@ Applied: at 390 a **resting** label clamps to two lines with an ellipsis
 (footprint ~48px → ~32px). The full name is never lost — it returns whole on
 approach, the lit state, which is where F-7 already puts the detail.
 
-**This is a truncation law and Preston has not ruled it.** It is visibly on in
-every 390 shot rather than silent, so it can be rejected on sight. The
-alternatives, if he rules against it: reveal names only on approach at 390, or
-accept denser arrangements as the user's problem to arrange around.
+**RULED (Preston, 2026-07-22): the 2-line label clamp at 390 STANDS**, approved
+on sight. The full name still returns whole on approach.
+
+---
+
+# STAGE 3 — one place, three distances
+
+## The rig
+
+**RULED (Preston, 2026-07-22): the rig stays at `mockups/rig/` for the round.
+Graduation to `.claude/rig/` is a CLOSE ruling — carried here.** If it
+graduates it needs its own path-scoped hook exemption, since check #3 blocks
+`.claude/**` html exactly as it blocked it during Stage 2.
+
+`frame-390.html` became **`frame.html`** and takes a `w` param: it is used at
+1360 as well as 390 now, for the reason in the next section.
+
+## Two capture traps, both caught by the audits themselves
+
+1. **An appended node does not reliably reach a `--screenshot` frame.** Both
+   in-page audits were provably in the DOM (`--dump-dom` found them) and
+   provably absent from the capture. Worse, the rig's own onload resize fires
+   `window.onresize → render()`, which rebuilds `sheet.innerHTML` and throws
+   the appended node away. **Evidence that exists only between two repaints is
+   not evidence.** Audits now REPLACE the sheet and latch `auditMode` so the
+   resize path cannot wipe them. The Stage 2 audit was converted too — its
+   append had only ever survived by luck, and stopped the moment the resize
+   path changed. Same numbers, now reproducible.
+2. **A timed audit races the capture.** The zoom audit originally waited out
+   the real 300ms flight with `setTimeout`. It now samples synchronously — and
+   that is the stronger claim anyway: what law 7 asserts is that a camera
+   transform *of any magnitude* cannot move a mark.
+
+## Self-score — laws 2, 7, 12, with measured evidence
+
+`shots/stage-3/stage-3-laws-audit-1360.png` and `stage-3-zoom-audit-1360.png`.
+
+| law | measured | |
+|---|---|---|
+| **2** · sheet luminance by distance | field **0.948** · clearing **0.966** · page **0.99** | PASS — brightness rises with depth, never falls |
+| **2** · world behind the sheet | `rgb(25, 31, 51)` at every distance | PASS — one twilight, no ground flip |
+| **7** · door opacity, resting → lit | **0 → 1** | PASS — tap 1 lights and reveals, tap 2 opens |
+| **7** · camera transform at flight end | `matrix(2.8, 0, 0, 2.8, 0, 0)` | PASS — the camera really moved |
+| **7** · authored + layout position, before vs camera-at-2.8× | **IDENTICAL** (4 marks) | PASS — the camera moves… |
+| **7** · authored + layout position, before vs released | **IDENTICAL** | PASS — …the arrangement never does |
+| **12** · canvas bounded | 1px border · 12px radius | PASS — a real surface, not a bare textarea |
+| **12** · canvas lifted | box-shadow present | PASS — Lifted Sheet treatment |
+| **12** · honest focus | focus ring painted | PASS — visible, not implied |
+
+Per-mark, unchanged throughout: `21% / 122px (233,122) · 57% / 66px (632,66) ·
+38% / 296px (421,296) · 78% / 221px (864,221)`.
+
+Motion vocabulary, as shipped and not invented: `transform+opacity ·
+var(--dur-gentle) 300ms · cubic-bezier(.22,1,.36,1)` — MO-1, `praxis-kit.css:36-37`.
+The crossfade fallback mirrors the shipped `.mo-crossfade` / `mo-cross`
+keyframes exactly. Under `prefers-reduced-motion: reduce`, `goDist()` skips the
+flight entirely and swaps instantly.
+
+### Two findings the self-score produced against itself
+
+- **It scored a working door a FAIL** (`0 → 0`). Reading opacity straight after
+  a class flip returns the *start* of the transition, not the target. Fixed by
+  suppressing the transition and forcing a reflow before reading — the same
+  family as the repo's `:focus`-not-readable trap.
+- **It scored law 2 on a blind metric.** All three distances measured 0.948
+  because only `background-image` changed while the probe read
+  `background-color`. Each distance now declares both, so the paint and the
+  measurement are the same fact. (The R-POLISH B3 lesson: measure the painted
+  fill, not where the token was declared.)
+
+## Defects caught by looking at the frames
+
+- The woven chip landed **mid-word** (`keeping i|ts own counsel`) — prose was
+  sliced at a raw character offset. The weave now lands at an authored word
+  boundary.
+- The gather frame **contradicted its own caption**: header read "Risen from
+  Zombie Politics" while the lifted cover was *Range*. `S1.evidence[3]` is the
+  Giroux book, which is `books[0]` in the soil.
+- A **nascent** mark answered a tap with nothing but a label-colour change (its
+  maturity coal is 0). The lit state now carries its own gold drop-shadow, on
+  top of whatever coal the mark already has.
+- **The clearing did not collapse at 390** — the `190px 1fr 190px` court left
+  the canvas ~90px wide, one word per line. It stacks now, canvas first,
+  because writing is what you came for.

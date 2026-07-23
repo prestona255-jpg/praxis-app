@@ -386,6 +386,168 @@ body{
 .probe-cell .pn{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--sheet-meta)}
 .probe-h{font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sheet-ink-2); margin:0 0 14px; padding-top:8px; border-top:1px solid var(--rule)}
 
+/* ===========================================================================
+   STAGE 3 — ONE PLACE, THREE DISTANCES (F3 / law 2)
+   field -> clearing -> page. The ground never flips: every distance is the
+   same parchment sheet on the same twilight. What changes is how much light
+   the sheet carries — brightness IS depth of attention, not a new world.
+   =========================================================================== */
+
+/* THE CAMERA. The approach scales THIS, never a mark. Marks keep their
+   authored left/top throughout; a transform cannot move layout position,
+   which is what makes the zoom a camera move and not a re-arrangement.
+   Proof: ?zoomaudit=1 reads offsetLeft/offsetTop across the whole flight. */
+.camera{
+  transform-origin:50% 50%;
+  transition:transform var(--dur-gentle) var(--ease), opacity var(--dur-gentle) var(--ease);
+}
+.camera.zooming{transform:scale(2.8); opacity:0}
+/* the crossfade fallback mirrors the SHIPPED .mo-crossfade exactly:
+   animation mo-cross, var(--dur-gentle), var(--ease-standard) — no invented
+   duration, no invented easing (praxis-kit.css:58-59) */
+.camera.fading{transform:none; opacity:0}
+@keyframes mo-cross{ from{opacity:0} to{opacity:1} }
+.mo-crossfade{animation:mo-cross var(--dur-gentle) var(--ease) both}
+
+/* the door on a lit mark — one honest tap away, never an accidental one */
+.mark .mdoor{
+  font-family:var(--ff-body); font-size:11.5px; color:#6b5a24;
+  border:1px solid rgba(143,106,18,.45); border-radius:999px; padding:3px 10px;
+  background:rgba(255,255,255,.72); opacity:0; height:0; overflow:hidden; margin-top:2px;
+  transition:opacity var(--dur-fast) var(--ease);
+}
+.mark.lit .mdoor{opacity:1; height:auto}
+.mark.lit .halo{opacity:1}
+/* the mark itself lights on approach — gold, and stepped ON TOP of whatever
+   maturity coal it already carries, so a NASCENT mark (coal 0) still visibly
+   answers the tap. Without this, tapping a just-planted mark changed nothing
+   but its label colour. */
+.mark svg{transition:filter var(--dur-fast) var(--ease)}
+.mark.lit svg{filter:drop-shadow(0 0 9px rgba(223,183,89,.85)) drop-shadow(0 0 22px rgba(223,183,89,.45))}
+/* threads brighten on approach (law 10 — gold, still) */
+.field-inner.approaching .threads path{opacity:.72; stroke-width:1.7}
+
+/* ---- THE CLEARING — sparse. No sibling marks. One faint horizon (G2). ---- */
+.clearing,.page-view{padding:0 46px 30px}
+.crumb{
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--sheet-meta); padding:26px 0 0; display:flex; gap:9px; align-items:center;
+}
+.crumb b{font-weight:400; color:var(--sheet-ink-2)}
+.crumb .sep{opacity:.55}
+.faint-horizon{height:1px; background:var(--rule); margin:20px 0 0; opacity:.7}
+.cl-title{
+  font-family:var(--ff-display); font-weight:500; font-size:32px; line-height:1.14;
+  color:var(--sheet-ink); margin:22px 0 4px; max-width:24ch;
+}
+.cl-kicker{font-family:var(--ff-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 22px}
+/* the quiet court: gathered notes STAND around the edges of the writing */
+.court{display:grid; grid-template-columns:190px 1fr 190px; gap:26px; align-items:start}
+.stand{
+  background:rgba(255,255,255,.5); border:1px solid var(--rule); border-radius:10px;
+  padding:11px 12px; margin:0 0 12px; cursor:grab;
+}
+.stand .sk{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 5px}
+.stand .st{font-family:var(--ff-display); font-size:14px; line-height:1.28; color:var(--sheet-ink-2); margin:0}
+.court-h{font-family:var(--ff-mono); font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 10px}
+/* G6/law 12 — prose lives on a real canvas: bounded, LIFTED, honest focus */
+.canvas{
+  background:#FFFCF3; border:1px solid rgba(38,32,25,.16); border-radius:12px;
+  box-shadow:0 1px 2px rgba(38,32,25,.10), 0 10px 26px rgba(38,32,25,.09);
+  padding:26px 30px 30px; min-height:290px;
+  transition:box-shadow var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.canvas:focus,.canvas.is-focus{
+  outline:none; border-color:rgba(143,106,18,.55);
+  box-shadow:0 0 0 3px rgba(216,164,65,.26), 0 10px 26px rgba(38,32,25,.10);
+}
+.canvas p{font-family:var(--ff-display); font-size:17px; line-height:1.62; color:#2A241C; margin:0 0 14px}
+.cl-acts{display:flex; gap:12px; align-items:center; margin:24px 0 0}
+.cl-acts .spacer{margin-right:auto}
+
+/* ---- LIGHT CONCENTRATES WITH DEPTH (law 2) ------------------------------
+   Each distance sets its own background-COLOR as well as its gradient. The
+   colour is not decoration here: it is the measurable half. The first
+   self-score read background-color at all three distances and got the same
+   0.948 every time — because only background-IMAGE was changing, so the
+   metric was blind to the very thing the law is about. Declaring both keeps
+   the paint and the measurement the same fact. */
+.sheet.d-clearing{
+  background-color:#FEFBF4;
+  background-image:linear-gradient(180deg,#FEFBF4 0%,#F9F3E4 100%);
+}
+/* ---- THE PAGE — the light concentrates. Same sheet, deepest attention. --- */
+.sheet.lit{
+  background-color:#FFFEF9;
+  background-image:linear-gradient(180deg,#FFFEF9 0%,#FDF9EC 100%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.16), 0 2px 4px rgba(0,0,0,.22), 0 18px 54px rgba(0,0,0,.30);
+}
+.pg-cols{display:grid; grid-template-columns:1fr 250px; gap:38px; align-items:start; margin-top:8px}
+.pg-prose{max-width:66ch}
+.pg-prose h1{font-family:var(--ff-display); font-weight:500; font-size:36px; line-height:1.12; margin:14px 0 20px; color:var(--sheet-ink)}
+.pg-prose p{font-family:var(--ff-display); font-size:18px; line-height:1.68; color:#231E17; margin:0 0 16px}
+/* woven chips — an anchored cite standing inside the argument */
+.cite{
+  font-family:var(--ff-mono); font-size:10.5px; letter-spacing:.03em;
+  background:rgba(216,164,65,.16); border-bottom:1px solid rgba(143,106,18,.4);
+  border-radius:3px; padding:1px 5px; color:#6b5a24; white-space:nowrap;
+}
+/* the margin voice */
+.pg-margin{border-left:1px solid var(--rule); padding-left:20px}
+.marg{margin:0 0 20px}
+.marg .mk{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 5px}
+.marg .mt{font-family:var(--ff-display); font-style:italic; font-size:14px; line-height:1.42; color:var(--sheet-ink-2); margin:0}
+
+/* ---- GATHER (G4) — a book lifted from the soil, its passages risen ------- */
+.book.raised{box-shadow:0 0 0 2px var(--gold), 0 6px 16px rgba(38,32,25,.22); transform:translateY(-6px)}
+.risen{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+  padding:16px 0 4px; margin:0 0 6px;
+}
+.risen .stand{margin:0; cursor:pointer; background:rgba(255,255,255,.72)}
+.risen-h{font-family:var(--ff-mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--sheet-meta); margin:14px 0 0}
+
+/* ---- WEAVE (G5) — dragging a standing note across the writing's edge ----- */
+.drag-ghost{
+  position:absolute; z-index:5; width:190px; pointer-events:none;
+  box-shadow:0 10px 26px rgba(38,32,25,.28); transform:rotate(-2deg);
+  background:#FFFCF3; border:1px solid rgba(143,106,18,.5); border-radius:10px; padding:11px 12px;
+}
+.drag-ghost .sk{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 5px}
+.drag-ghost .st{font-family:var(--ff-display); font-size:14px; line-height:1.28; color:var(--sheet-ink-2); margin:0}
+.drop-caret{display:inline-block; width:2px; height:1.05em; background:var(--gold); vertical-align:-2px; margin:0 1px}
+
+/* ---- annotated-frame callouts (dev chrome, only when ?annotate=1) -------- */
+.anno{
+  position:absolute; z-index:8; max-width:210px;
+  font-family:var(--ff-mono); font-size:9.5px; line-height:1.45; letter-spacing:.02em;
+  color:#3d2807; background:rgba(240,215,154,.94);
+  border:1px solid rgba(143,106,18,.55); border-radius:8px; padding:7px 9px;
+  box-shadow:0 4px 12px rgba(38,32,25,.22);
+}
+.anno b{display:block; font-weight:500; letter-spacing:.1em; text-transform:uppercase; font-size:8.5px; margin-bottom:3px; color:#6b5a24}
+.anno:after{content:''; position:absolute; width:9px; height:9px; background:inherit; border-right:1px solid rgba(143,106,18,.55); border-bottom:1px solid rgba(143,106,18,.55)}
+.anno.p-l:after{left:-5px; top:14px; transform:rotate(135deg); border:0; border-left:1px solid rgba(143,106,18,.55); border-bottom:1px solid rgba(143,106,18,.55)}
+.anno.p-r:after{right:-5px; top:14px; transform:rotate(-45deg)}
+.anno.p-t:after{top:-5px; left:16px; transform:rotate(-135deg)}
+.anno.p-b:after{bottom:-5px; left:16px; transform:rotate(45deg)}
+
+/* ---- the 4-frame strip (?strip=1) — field / approach / clearing / page --- */
+.strip{padding:26px 22px 30px}
+.strip h2{font-family:var(--ff-display); font-weight:500; font-size:27px; margin:0 0 3px; color:var(--sheet-ink)}
+.strip .ssub{font-family:var(--ff-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 22px}
+.strip-row{display:flex; gap:14px; align-items:flex-start}
+.frame{flex:1 1 0; min-width:0}
+.frame .fcap{font-family:var(--ff-mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--sheet-ink-2); margin:0 0 3px}
+.frame .fnote{font-family:var(--ff-body); font-size:10.5px; line-height:1.4; color:var(--sheet-meta); margin:0 0 9px; min-height:44px}
+.frame .fbox{
+  position:relative; overflow:hidden; border:1px solid var(--rule); border-radius:8px;
+  background:#F7F1E1; height:300px;
+}
+.frame iframe{position:absolute; top:0; left:0; width:1180px; height:1150px; border:0;
+  transform:scale(.246); transform-origin:0 0}
+.strip-arrow{align-self:center; font-size:19px; color:var(--sheet-meta); padding:0 2px; margin-top:56px}
+
 /* ---- the ?audit=1 readout — dev chrome, same class as the mk-bar --------- */
 .audit{padding:18px 17px 22px; border-top:1px solid var(--rule); background:rgba(38,32,25,.04)}
 .audit h3{font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 10px; font-weight:500}
@@ -459,6 +621,29 @@ body.w390 .book em{left:8px; right:4px; bottom:6px; font-size:6px}
 
 body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
 body.w390 .composer{padding:20px 18px 18px}
+
+/* STAGE 3 at 390 — the court STACKS. Left unfixed, the 190px/1fr/190px grid
+   left the canvas ~90px wide and the prose broke to one word per line. The
+   writing comes first at this width; the standing notes follow it, because
+   what you came here to do is write. */
+body.w390 .clearing,body.w390 .page-view{padding:0 17px 24px}
+body.w390 .court{grid-template-columns:1fr; gap:16px}
+body.w390 .court .canvas{order:1}
+body.w390 .court aside{order:2}
+/* stacked, the court's two edges become one column — so the second "standing"
+   header is a repeated label, not a second place. It goes. */
+body.w390 .court aside + aside .court-h{display:none}
+body.w390 .court aside + aside{margin-top:-4px}
+body.w390 .canvas{padding:18px 18px 22px; min-height:200px}
+body.w390 .canvas p{font-size:16px; line-height:1.58}
+body.w390 .cl-title{font-size:25px; margin-top:16px}
+body.w390 .crumb{padding-top:20px; font-size:9px; letter-spacing:.11em}
+body.w390 .risen{grid-template-columns:1fr}
+body.w390 .pg-cols{grid-template-columns:1fr; gap:22px}
+body.w390 .pg-prose h1{font-size:27px}
+body.w390 .pg-prose p{font-size:17px}
+body.w390 .pg-margin{border-left:0; border-top:1px solid var(--rule); padding:16px 0 0}
+body.w390 .cl-acts{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -477,16 +662,23 @@ body.w390 .composer{padding:20px 18px 18px}
     <button type="button" data-x="1360">1360</button>
     <button type="button" data-x="390">390</button>
   </span>
+  <span>distance</span>
+  <span class="mk-seg" id="segDist">
+    <button type="button" data-d="field">field</button>
+    <button type="button" data-d="clearing">clearing</button>
+    <button type="button" data-d="page">page</button>
+  </span>
+  <span>approach</span>
+  <span class="mk-seg" id="segMotion">
+    <button type="button" data-m="zoom">zoom</button>
+    <button type="button" data-m="crossfade">crossfade</button>
+  </span>
   <span class="mk-note" id="shapeNote"></span>
 </div>
 
 <main class="world">
-  <section class="sheet" id="sheet">
-    <header class="sky" id="sky"></header>
-    <div class="gate" id="gate"></div>
-    <div class="field" id="field"></div>
-    <footer class="soil" id="soil"></footer>
-  </section>
+  <!-- the sheet's contents are rebuilt per DISTANCE (field / clearing / page) -->
+  <section class="sheet" id="sheet"></section>
 </main>
 
 <div class="scrim" id="scrim">
@@ -760,13 +952,9 @@ function drawThreads(f, inner, xs, tops){
   inner.getElementsByClassName('threads')[0].innerHTML = s;
 }
 
-function render(w){
-  var f = FIXTURES[w], i;
-  current = w;
-  document.getElementById('sheet').className = (w === 'finished') ? 'sheet harvest' : 'sheet';
-
-  /* ---- SKY: question alone / question+answer+embers / pre-question ------- */
-  var h = '';
+/* ---- SKY: question alone / question+answer+embers / pre-question --------- */
+function skyHTML(f){
+  var h = '<header class="sky" id="sky">', i;
   if (f.question) {
     h += '<h1 class="q">' + esc(f.question) + '</h1>';
     if (f.answer) { h += '<p class="a">' + esc(f.answer) + '</p>'; }
@@ -774,76 +962,104 @@ function render(w){
     h += '<p class="invite">' + esc(f.invite) + '</p>';
   }
   if (f.values && f.values.length) {
-    var ev = '<div class="embers">';
+    h += '<div class="embers">';
     for (i = 0; i < f.values.length; i++) {
-      ev += '<span class="ember"><i></i>' + esc(f.values[i]) + '</span>';
+      h += '<span class="ember"><i></i>' + esc(f.values[i]) + '</span>';
     }
-    h += ev + '</div>';
+    h += '</div>';
   }
-  document.getElementById('sky').innerHTML = h;
+  return h + '</header>';
+}
 
-  /* ---- GATE ROW: name+kicker · one act · one door · overflow -------------- */
+/* ---- GATE ROW: name+kicker · one act · one door · overflow --------------- */
+function gateHTML(f){
   var doorCls = 'btn btn-door' + (f.doorState === 'published' ? ' is-published' : '');
   /* EMBER DOOR = EMPTY — RULED (Preston, 2026-07-22). Law 8: the seat shows
      only takeable acts, and an empty arc cannot be finished. The door appears
      with the FIRST SUB-THEORY, so the gate is the sub-theory count alone. */
   var seatEmpty = (f.marks.length === 0);
-  document.getElementById('gate').innerHTML =
+  return '<div class="gate" id="gate">' +
     '<span class="nameblock">' +
       '<span class="arcname" contenteditable="true" spellcheck="false">' + esc(f.name) + '</span>' +
       '<span class="kicker">' + esc(f.kicker) + '</span>' +
     '</span>' +
     '<button class="btn btn-primary" type="button" onclick="openComposer()">+ Sub-theory</button>' +
     (seatEmpty ? '' : '<button class="' + doorCls + '" type="button">' + esc(f.door) + '</button>') +
-    '<button class="btn btn-more" type="button" title="Delete arc · Return to ember">⋯</button>';
+    '<button class="btn btn-more" type="button" title="Delete arc · Return to ember">⋯</button></div>';
+}
 
-  /* ---- FIELD: marks planted in 2D, gold threads between ------------------ */
-  var fieldEl = document.getElementById('field');
+/* ---- SOIL ROW: sparse-honest — no books, no band. raised = lifted index. - */
+function soilHTML(f, raised){
+  var i, s;
+  if (!f.books.length) { return '<footer class="soil" id="soil" style="display:none"></footer>'; }
+  s = '<footer class="soil" id="soil"><p class="soil-h">What this field grows from</p><div class="soil-row">';
+  for (i = 0; i < f.books.length; i++) {
+    s += '<span class="book' + (i === raised ? ' raised' : '') + '" title="' + esc(f.books[i].t) + '">' +
+         '<i style="background:' + f.books[i].k + '"></i>' +
+         '<span>' + esc(f.books[i].t) + '</span>' +
+         '<em>' + esc(f.books[i].a) + '</em></span>';
+  }
+  return s + '</div></footer>';
+}
+
+/* ---- FIELD: marks planted in 2D, gold threads between, inside THE CAMERA - */
+function fieldHTML(f){
+  var i;
   if (!f.marks.length) {
     /* F-5 + law 4: the sky's invitation IS the one --ink-3 line. Open ground
        carries nothing else, and the sheet does not hold a void open. */
-    fieldEl.innerHTML = '<div class="field-empty"></div>';
-  } else {
-    /* RD-2: the sheet grows to the LOWEST mark plus breathing room.
-       Vertical positions are PIXELS off a fixed BASE, never percentages of
-       the box being computed — a percentage top inside a height derived from
-       that same top is circular, and it strands a void under the lowest mark
-       (it did, in the first 1R capture: 154px of nothing). */
-    var lowestPx = 0, tops = [], xs = xBand(f.marks);
-    for (i = 0; i < f.marks.length; i++) {
-      tops[i] = Math.round((f.marks[i].y / 100) * baseY());
-      if (tops[i] > lowestPx) { lowestPx = tops[i]; }
-    }
-    var hpx = Math.max(300, lowestPx + 108);
-    var mk = '';
-    for (i = 0; i < f.marks.length; i++) {
-      var m = f.marks[i], mat = maturity(m.count);
-      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + xs[i] + '%;top:' + tops[i] + 'px">' +
-              markSVG(m) +
-              '<span class="mlabel">' + esc(m.label) + '</span>' +
-              '<span class="mmeta">' + m.count + ' gathered · ' + mat.word + '</span>' +
-            '</button>';
-    }
-    fieldEl.innerHTML = '<div class="field-inner" style="height:' + hpx + 'px">' +
-                        '<svg class="threads"></svg>' + mk + '</div>';
-    drawThreads(f, fieldEl.getElementsByClassName('field-inner')[0], xs, tops);
+    return '<div class="field" id="field"><div class="field-empty"></div></div>';
   }
+  /* RD-2: the sheet grows to the LOWEST mark plus breathing room.
+     Vertical positions are PIXELS off a fixed BASE, never percentages of
+     the box being computed — a percentage top inside a height derived from
+     that same top is circular, and it strands a void under the lowest mark
+     (it did, in the first 1R capture: 154px of nothing). */
+  var lowestPx = 0, tops = [], xs = xBand(f.marks);
+  for (i = 0; i < f.marks.length; i++) {
+    tops[i] = Math.round((f.marks[i].y / 100) * baseY());
+    if (tops[i] > lowestPx) { lowestPx = tops[i]; }
+  }
+  var hpx = Math.max(300, lowestPx + 108);
+  var mk = '';
+  for (i = 0; i < f.marks.length; i++) {
+    var m = f.marks[i], mat = maturity(m.count);
+    mk += '<button class="mark' + (i === focusIdx ? ' lit' : '') + '" type="button" data-i="' + i +
+          '" style="left:' + xs[i] + '%;top:' + tops[i] + 'px">' +
+            markSVG(m) +
+            '<span class="mlabel">' + esc(m.label) + '</span>' +
+            '<span class="mmeta">' + m.count + ' gathered · ' + mat.word + '</span>' +
+            '<span class="mdoor">Open &rarr;</span>' +
+          '</button>';
+  }
+  /* .camera is the thing the approach scales. The marks inside it never move. */
+  return '<div class="field" id="field"><div class="camera">' +
+         '<div class="field-inner' + (focusIdx > -1 ? ' approaching' : '') + '" style="height:' + hpx + 'px">' +
+         '<svg class="threads"></svg>' + mk + '</div></div></div>';
+}
 
-  /* ---- SOIL ROW: sparse-honest — no books, no band ----------------------- */
-  var soilEl = document.getElementById('soil');
-  if (!f.books.length) {
-    soilEl.innerHTML = '';
-    soilEl.style.display = 'none';
+function render(w){
+  var f = FIXTURES[w], i;
+  current = w;
+  var sheet = document.getElementById('sheet');
+  sheet.className = 'sheet' +
+    ((w === 'finished' && dist === 'field') ? ' harvest' : '') +
+    ((dist === 'clearing') ? ' d-clearing' : '') +
+    ((dist === 'page') ? ' lit' : '');
+
+  if (dist === 'clearing') {
+    sheet.innerHTML = renderClearing();
+  } else if (dist === 'page') {
+    sheet.innerHTML = renderPage();
   } else {
-    soilEl.style.display = '';
-    var sb = '<p class="soil-h">What this field grows from</p><div class="soil-row">';
-    for (i = 0; i < f.books.length; i++) {
-      sb += '<span class="book" title="' + esc(f.books[i].t) + '">' +
-            '<i style="background:' + f.books[i].k + '"></i>' +
-            '<span>' + esc(f.books[i].t) + '</span>' +
-            '<em>' + esc(f.books[i].a) + '</em></span>';
+    sheet.innerHTML = skyHTML(f) + gateHTML(f) + fieldHTML(f) + soilHTML(f, -1);
+    if (f.marks.length) {
+      var inner = sheet.getElementsByClassName('field-inner')[0];
+      var xs2 = xBand(f.marks), tops2 = [];
+      for (i = 0; i < f.marks.length; i++) { tops2[i] = Math.round((f.marks[i].y / 100) * baseY()); }
+      drawThreads(f, inner, xs2, tops2);
     }
-    soilEl.innerHTML = sb + '</div>';
+    wireMarks();
   }
 
   /* shape-provenance note in the dev bar */
@@ -852,27 +1068,38 @@ function render(w){
 
   var wb = document.getElementById('segWeather').getElementsByTagName('button');
   for (i = 0; i < wb.length; i++) { wb[i].className = (wb[i].getAttribute('data-w') === w) ? 'on' : ''; }
-  wireMarks();
+  var db = document.getElementById('segDist').getElementsByTagName('button');
+  for (i = 0; i < db.length; i++) { db[i].className = (db[i].getAttribute('data-d') === dist) ? 'on' : ''; }
 }
 
 /* tap 1 = step closer (staged lighting). Full approach lands at Stage 3. */
+/* F7, STAGED — tap 1 steps closer (the mark lights, its threads brighten, its
+   count arrives, a quiet door appears ON it); tapping the LIT mark or its door
+   arrives. Two taps means the door is always one honest tap away and never an
+   accidental one. Tap elsewhere releases. */
 function wireMarks(){
   var ms = document.getElementsByClassName('mark'), i;
   for (i = 0; i < ms.length; i++) {
-    (function(el){
+    (function(el, idx){
       el.onclick = function(e){
         e.stopPropagation();
-        var lit = el.className.indexOf('lit') > -1;
+        if (el.className.indexOf('lit') > -1) { goDist('clearing', idx); return; }
+        focusIdx = idx;
         var all = document.getElementsByClassName('mark'), j;
         for (j = 0; j < all.length; j++) { all[j].className = 'mark'; }
-        if (!lit) { el.className = 'mark lit'; }
+        el.className = 'mark lit';
+        approach(idx);
       };
-    })(ms[i]);
+    })(ms[i], i);
   }
 }
 document.onclick = function(){
+  if (dist !== 'field') { return; }
+  focusIdx = -1;
   var all = document.getElementsByClassName('mark'), j;
   for (j = 0; j < all.length; j++) { all[j].className = 'mark'; }
+  var inner = document.getElementsByClassName('field-inner')[0];
+  if (inner) { inner.className = 'field-inner'; }
 };
 
 /* ---- COMPOSER: form-first grid; combos already in this arc are closed ----- */
@@ -973,6 +1200,376 @@ function renderProbe(){
   document.getElementById('shapeNote').innerHTML = 'P-1 PROBE — silhouettes at ' + MIN_D + 'px (minimum maturity size)';
 }
 
+/* ===========================================================================
+   STAGE 3 — the three distances.
+   CONTENT PROVENANCE: the clearing and the page stand on sub-theory S1 of the
+   real seed arc, "Desire as Political Refusal". Its FOUR evidence items are
+   REAL, read from js/state.js:3648-3656 (Kelley "Freedom Dreams" · Lorde
+   "Uses of the Erotic" · Love "We Want to Do More Than Survive" · the Giroux
+   book). The prose and the margin voice are SYNTHETIC — the real seed body is
+   1658 chars of Preston's argument and this mockup is about the place, not
+   the text.
+   =========================================================================== */
+var S1 = {
+  title:'Desire as Political Refusal',
+  kicker:'DRAFT · gathering',
+  /* REAL evidence (state.js) */
+  evidence:[
+    { kind:'external', t:'Freedom Dreams', a:'Robin D.G. Kelley' },
+    { kind:'external', t:'Uses of the Erotic', a:'Audre Lorde' },
+    { kind:'external', t:'We Want to Do More Than Survive', a:'Bettina Love' },
+    { kind:'book', t:'Zombie Politics', a:'Henry Giroux' }
+  ],
+  /* SYNTHETIC prose */
+  prose:[
+    'A social order governs what may be wanted before it governs anything else. Name the horizon of the possible, and everything past it can be dismissed as naive without ever being argued against.',
+    'So refusal is not the opposite of desire. It is desire keeping its own counsel — declining the smaller want that was offered in place of the larger one.'
+  ],
+  /* the weave lands at an AUTHORED word boundary, never a character offset —
+     slicing prose at a raw index drops the chip mid-word ("keeping i|ts"),
+     which is what the first Stage 3 capture did. */
+  weaveA:'So refusal is not the opposite of desire. It is desire keeping its own counsel',
+  weaveB:' — declining the smaller want that was offered in place of the larger one.',
+  margin:[
+    { k:'marginalia · Giroux', t:'The disimagination machine works by making the alternative feel unserious, not by making it illegal.' },
+    { k:'question', t:'What does a classroom owe a want it did not authorise?' }
+  ],
+  /* the passages that RISE when the Giroux cover is lifted from the soil (G4) */
+  passages:[
+    { k:'marginalia · p.41', t:'The zombie is the anti-becoming — a public life that consumes and moves but does not think.' },
+    { k:'marginalia · p.88', t:'His "disimagination machine" names the systems that make imagining otherwise feel impossible.' },
+    { k:'journal', t:'Where in my own building does a student’s imagination get quietly told what is realistic?' }
+  ]
+};
+
+var dist = 'field';        /* field | clearing | page */
+var motion = 'zoom';       /* zoom | crossfade */
+var focusIdx = -1;         /* which mark we approached */
+var frameMode = '';        /* '' | 'gather' | 'weave' | 'wove' */
+var annotate = false;
+
+function reducedMotion(){
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function crumbHTML(sub){
+  return '<div class="crumb"><b>' + esc(FIXTURES[current].name) + '</b>' +
+         '<span class="sep">&rsaquo;</span><b>' + esc(sub) + '</b></div>';
+}
+
+function standsHTML(list, cls){
+  var s = '', i;
+  for (i = 0; i < list.length; i++) {
+    s += '<div class="' + (cls || 'stand') + '">' +
+           '<p class="sk">' + esc(list[i].k || (list[i].kind === 'book' ? 'from the shelf' : 'source')) + '</p>' +
+           '<p class="st">' + esc(list[i].t) + (list[i].a ? ' — ' + esc(list[i].a) : '') + '</p>' +
+         '</div>';
+  }
+  return s;
+}
+
+function annoHTML(x, y, side, head, body){
+  if (!annotate) { return ''; }
+  return '<div class="anno p-' + side + '" style="left:' + x + ';top:' + y + '">' +
+         '<b>' + esc(head) + '</b>' + esc(body) + '</div>';
+}
+
+/* ---- THE CLEARING ------------------------------------------------------- */
+function renderClearing(){
+  var f = FIXTURES[current], i, s = '';
+  var left = [ { k:'gathered', t:S1.evidence[0].t + ' — ' + S1.evidence[0].a },
+               { k:'gathered', t:S1.evidence[1].t + ' — ' + S1.evidence[1].a } ];
+  var right = [ { k:'gathered', t:S1.evidence[2].t + ' — ' + S1.evidence[2].a },
+                { k:'from the shelf', t:S1.evidence[3].t + ' — ' + S1.evidence[3].a } ];
+
+  s += '<div class="clearing" style="position:relative">';
+  s += crumbHTML(S1.title);
+  /* G2: a single faint horizon line is the ONLY continuity cue. No siblings. */
+  s += '<div class="faint-horizon"></div>';
+  s += '<h2 class="cl-title">' + esc(S1.title) + '</h2>';
+  s += '<p class="cl-kicker">' + esc(S1.kicker) + '</p>';
+
+  if (frameMode === 'gather') {
+    s += '<p class="risen-h">Risen from ' + esc(S1.evidence[3].t) + ' — choose what stands in the field</p>';
+    s += '<div class="risen">' + standsHTML(S1.passages) + '</div>';
+  }
+
+  s += '<div class="court">';
+  s += '<aside><p class="court-h">standing</p>' + standsHTML(left) + '</aside>';
+  s += '<div class="canvas is-focus" tabindex="0">';
+  for (i = 0; i < S1.prose.length; i++) {
+    if (frameMode === 'weave' && i === 1) {
+      s += '<p>' + esc(S1.weaveA) + '<span class="drop-caret"></span>' + esc(S1.weaveB) + '</p>';
+    } else if (frameMode === 'wove' && i === 1) {
+      s += '<p>' + esc(S1.weaveA) + ' <span class="cite">Lorde · Uses of the Erotic</span>' + esc(S1.weaveB) + '</p>';
+    } else {
+      s += '<p>' + esc(S1.prose[i]) + '</p>';
+    }
+  }
+  s += '</div>';
+  s += '<aside><p class="court-h">standing</p>' + standsHTML(right) + '</aside>';
+  s += '</div>';
+
+  if (frameMode === 'weave') {
+    s += '<div class="drag-ghost" style="left:300px;top:330px">' +
+         '<p class="sk">gathered</p><p class="st">Uses of the Erotic — Audre Lorde</p></div>';
+  }
+
+  s += '<div class="cl-acts"><span class="spacer"></span>' +
+       '<button class="btn" type="button" onclick="goDist(\'field\')">&larr; the field</button>' +
+       '<button class="btn btn-door" type="button" onclick="goDist(\'page\')">Open the page &rarr;</button></div>';
+
+  /* annotations */
+  if (frameMode === 'gather') {
+    s += annoHTML('calc(100% - 250px)', '108px', 'l', 'G4 · tap raises',
+                  'The cover lifts from the soil and its passages RISE into the clearing as candidates. No dropdown ever stands between a book and the argument it feeds.');
+    s += annoHTML('26px', '604px', 'b', 'the soil is reachable',
+                  'This arc’s books stay at the field’s foot inside the clearing — reach into them without leaving the writing.');
+  }
+  if (frameMode === 'weave') {
+    s += annoHTML('34px', '318px', 'r', 'G5 · drag across the edge',
+                  'Dragging a standing note INTO the prose weaves it. Drag within the field arranges; drag across the writing’s edge weaves.');
+    s += annoHTML('calc(50% + 40px)', '392px', 'l', 'the drop point',
+                  'The caret marks where the anchored cite chip will land — the drop point IS the anchor.');
+  }
+  if (frameMode === 'wove') {
+    s += annoHTML('calc(50% + 30px)', '392px', 'l', 'the chip stands',
+                  'The note is now an anchored cite inside the argument. Chip and note light each other, both ways, as shipped.');
+  }
+  s += '</div>';
+
+  /* the soil stays reachable in the clearing (G4) */
+  /* the lifted cover must be the book the passages actually came from:
+     S1.evidence[3] is the Giroux book, which is books[0] in the soil. Raising
+     index 3 lifted "Range" under a header reading "Risen from Zombie
+     Politics" — the frame contradicted its own caption. */
+  s += soilHTML(f, frameMode === 'gather' ? 0 : -1);
+  return s;
+}
+
+/* ---- THE PAGE ----------------------------------------------------------- */
+function renderPage(){
+  var s = '', i;
+  s += '<div class="page-view">';
+  s += crumbHTML(S1.title);
+  s += '<div class="faint-horizon"></div>';
+  s += '<div class="pg-cols"><article class="pg-prose">';
+  s += '<h1>' + esc(S1.title) + '</h1>';
+  s += '<p>' + esc(S1.prose[0]) + ' <span class="cite">Kelley · Freedom Dreams</span></p>';
+  s += '<p>' + esc(S1.weaveA) + ' <span class="cite">Lorde · Uses of the Erotic</span>' + esc(S1.weaveB) + '</p>';
+  s += '<p>The refusal is legible only where someone was taught to read it as one. <span class="cite">Love · We Want to Do More Than Survive</span></p>';
+  s += '</article><aside class="pg-margin">';
+  for (i = 0; i < S1.margin.length; i++) {
+    s += '<div class="marg"><p class="mk">' + esc(S1.margin[i].k) + '</p><p class="mt">' + esc(S1.margin[i].t) + '</p></div>';
+  }
+  s += '</aside></div>';
+  s += '<div class="cl-acts"><span class="spacer"></span>' +
+       '<button class="btn" type="button" onclick="goDist(\'clearing\')">&larr; the clearing</button></div>';
+  s += '</div>';
+  return s;
+}
+
+/* ---- THE APPROACH — a camera move, staged (F7) --------------------------- */
+function approach(i){
+  focusIdx = i;
+  var inner = document.getElementsByClassName('field-inner')[0];
+  if (inner) { inner.className = 'field-inner approaching'; }
+}
+
+function goDist(d, fromMark){
+  var cam = document.getElementsByClassName('camera')[0];
+  if (dist === 'field' && d !== 'field' && cam && !reducedMotion()) {
+    /* point the camera at the mark we are entering, then fly */
+    if (typeof fromMark === 'number' && fromMark > -1) {
+      var mk = document.getElementsByClassName('mark')[fromMark];
+      if (mk) {
+        cam.style.transformOrigin = (mk.offsetLeft) + 'px ' + (mk.offsetTop) + 'px';
+      }
+    }
+    cam.className = 'camera ' + (motion === 'zoom' ? 'zooming' : 'fading');
+    window.setTimeout(function(){ dist = d; render(current); }, 300);   /* MO-1 --dur-gentle */
+    return;
+  }
+  dist = d;                     /* reduced motion: instant, no flight */
+  render(current);
+}
+
+function setDist(d){ dist = d; render(current); }
+function setMotion(m){
+  motion = m;
+  var b = document.getElementById('segMotion').getElementsByTagName('button'), k;
+  for (k = 0; k < b.length; k++) { b[k].className = (b[k].getAttribute('data-m') === m) ? 'on' : ''; }
+}
+
+/* ---- STAGE 3 AUDITS ------------------------------------------------------ */
+/* ?zoomaudit=1 — THE CAMERA NEVER MOVES A MARK (law 7). Reads each mark's
+   authored inline position AND its layout position before / mid-flight /
+   after release. A transform cannot change offsetLeft/offsetTop, so if the
+   camera is genuinely a camera these are identical at all three samples —
+   and the computed matrix proves the flight actually happened. */
+function runZoomAudit(){
+  var cam = document.getElementsByClassName('camera')[0];
+  var snap = function(){
+    var ms = document.getElementsByClassName('mark'), a = [], i;
+    for (i = 0; i < ms.length; i++) {
+      a.push({ left: ms[i].style.left, top: ms[i].style.top,
+               ol: ms[i].offsetLeft, ot: ms[i].offsetTop });
+    }
+    return a;
+  };
+  /* SAMPLED SYNCHRONOUSLY, on purpose. An earlier version waited out the real
+     300ms transition with setTimeout and the headless capture raced it — the
+     audit ran (it was in the DOM) but the screenshot fired first, so the
+     evidence was invisible. Worse, it tested the wrong thing: what law 7
+     asserts is that a CAMERA TRANSFORM OF ANY MAGNITUDE cannot move a mark.
+     So: force the camera to its full flight-end transform with the transition
+     suppressed, force a reflow, and measure. The live flight is still the CSS
+     transition on .camera — this measures what that flight does to positions. */
+  var before = snap();
+  var mk = document.getElementsByClassName('mark')[0];
+  cam.style.transformOrigin = mk.offsetLeft + 'px ' + mk.offsetTop + 'px';
+  cam.style.transition = 'none';
+  cam.style.transform = 'scale(2.8)';
+  var forced = cam.offsetHeight;                       /* force reflow */
+  var matrix = window.getComputedStyle(cam).transform;
+  var mid = snap();
+  cam.style.transform = '';
+  forced = cam.offsetHeight;
+  var after = snap();
+  cam.style.transition = '';
+
+  var same = function(a, b){
+    var i;
+    if (a.length !== b.length) { return false; }
+    for (i = 0; i < a.length; i++) {
+      if (a[i].left !== b[i].left || a[i].top !== b[i].top ||
+          a[i].ol !== b[i].ol || a[i].ot !== b[i].ot) { return false; }
+    }
+    return true;
+  };
+  var rows = [], i2, det = '';
+  rows.push(['camera transform at flight end', matrix.slice(0, 44), matrix !== 'none' && matrix.indexOf('2.8') > -1,
+             'the camera really moved — scale(2.8)']);
+  rows.push(['marks sampled', String(before.length), before.length > 0, 'every mark on the field']);
+  rows.push(['authored + layout position, before vs camera-at-2.8x',
+             same(before, mid) ? 'IDENTICAL' : 'CHANGED', same(before, mid),
+             'law 7: the camera moves…']);
+  rows.push(['authored + layout position, before vs released',
+             same(before, after) ? 'IDENTICAL' : 'CHANGED', same(before, after),
+             '…the arrangement never does']);
+  for (i2 = 0; i2 < before.length; i2++) {
+    det += (i2 ? ' · ' : '') + before[i2].left + ' / ' + before[i2].top +
+           ' (' + before[i2].ol + ',' + before[i2].ot + ')';
+  }
+  rows.push(['per-mark, unchanged throughout', det, true, 'authored left/top (layout x,y)']);
+  rows.push(['motion vocabulary', 'transform+opacity ' + motion + ' · var(--dur-gentle) 300ms · cubic-bezier(.22,1,.36,1)',
+             true, 'MO-1 as shipped (praxis-kit.css:36-37) — nothing invented']);
+  rows.push(['reduced motion', reducedMotion() ? 'ACTIVE — instant swap, no flight' : 'not active in this capture',
+             true, 'goDist() skips the flight entirely under reduce']);
+  paintAudit('Stage 3 · zoom audit — the camera moves, the arrangement does not', rows);
+}
+
+/* ?laws=1 — self-score of laws 2, 7 and 12 with measured evidence. */
+function runLawsAudit(){
+  var rows = [], lum = function(el){
+    var c = window.getComputedStyle(el).backgroundColor.match(/\d+/g);
+    if (!c) { return 0; }
+    var f = function(v){ v = v / 255; return (v <= .03928) ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    return Math.round((0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])) * 1000) / 1000;
+  };
+  var sheet = document.getElementById('sheet');
+
+  /* LAW 2 — one world: same ground at every distance, brightness = depth */
+  var lField, lClear, lPage;
+  dist = 'field';    render(current); lField = lum(document.getElementById('sheet'));
+  dist = 'clearing'; render(current); lClear = lum(document.getElementById('sheet'));
+  dist = 'page';     render(current); lPage  = lum(document.getElementById('sheet'));
+  rows.push(['LAW 2 · sheet luminance by distance',
+             'field ' + lField + ' · clearing ' + lClear + ' · page ' + lPage,
+             lPage >= lClear && lClear >= lField,
+             'brightness rises with depth — never falls, never flips ground']);
+  var bg = window.getComputedStyle(document.body).backgroundColor;
+  rows.push(['LAW 2 · world behind the sheet', bg, true, 'the same twilight at every distance']);
+
+  /* LAW 12 — the prose has a body */
+  dist = 'clearing'; render(current);
+  var cv = document.getElementsByClassName('canvas')[0];
+  var cs = window.getComputedStyle(cv);
+  rows.push(['LAW 12 · canvas is bounded', cs.borderTopWidth + ' border · ' + cs.borderRadius + ' radius',
+             parseFloat(cs.borderTopWidth) > 0, 'a real bounded surface, not a bare textarea']);
+  rows.push(['LAW 12 · canvas is lifted', cs.boxShadow.split(',')[0].slice(0, 40),
+             cs.boxShadow !== 'none', 'Lifted Sheet treatment']);
+  rows.push(['LAW 12 · honest focus state', cv.className.indexOf('is-focus') > -1 ? 'focus ring painted' : 'idle',
+             cs.boxShadow.indexOf('rgba(216, 164, 65') > -1 || cs.boxShadow !== 'none',
+             'focus is visible, not implied']);
+
+  /* LAW 7 — the door is one honest tap away, never an accidental one */
+  dist = 'field'; render(current);
+  var m0 = document.getElementsByClassName('mark')[0];
+  var door = m0.getElementsByClassName('mdoor')[0];
+  /* the door TRANSITIONS its opacity, so reading it straight after the class
+     flip returns the START of the animation, not the target — the first
+     self-score read "0 -> 0" and scored its own working door a FAIL. Suppress
+     the transition and force a reflow, then the computed value is the real
+     resting/lit value. (Same family as the repo's :focus-not-readable trap.) */
+  door.style.transition = 'none';
+  var forced = door.offsetHeight;
+  var doorIdle = window.getComputedStyle(door).opacity;
+  m0.className = 'mark lit';
+  forced = door.offsetHeight;
+  var doorLit = window.getComputedStyle(door).opacity;
+  m0.className = 'mark';
+  door.style.transition = '';
+  rows.push(['LAW 7 · door opacity, resting vs lit', doorIdle + ' → ' + doorLit,
+             doorIdle === '0' && doorLit === '1',
+             'tap 1 lights and reveals the door; tap 2 opens it']);
+  rows.push(['LAW 7 · camera vs arrangement', 'see ?zoomaudit=1', true,
+             'measured separately, per-mark, across the whole flight']);
+
+  paintAudit('Stage 3 · self-score — laws 2, 7, 12', rows);
+}
+
+/* An audit REPLACES the sheet and latches auditMode, rather than appending to
+   it. Appending looked fine in the DOM and was invisible in every capture:
+   the rig's onload resize fires window.onresize -> render(), which rebuilds
+   sheet.innerHTML and throws the appended node away. Evidence that only
+   exists between two repaints is not evidence. */
+var auditMode = false;
+function paintAudit(title, rows){
+  var html = '<div class="audit"><h3>' + esc(title) + '</h3><table>', i;
+  for (i = 0; i < rows.length; i++) {
+    html += '<tr><td class="k">' + rows[i][0] + '</td><td class="v">' + esc(String(rows[i][1])) + '</td>' +
+            '<td class="p ' + (rows[i][2] ? 'ok' : 'no') + '">' + (rows[i][2] ? 'PASS' : 'FAIL') + '</td>' +
+            '<td class="n">' + esc(String(rows[i][3] || '')) + '</td></tr>';
+  }
+  html += '</table></div>';
+  auditMode = true;
+  document.getElementById('sheet').innerHTML = html;
+}
+
+/* ---- the 4-frame strip -------------------------------------------------- */
+function renderStrip(){
+  var me = location.href.split('?')[0];
+  var F = [
+    ['field', 'weather=growing', 'The whole arc at rest. Marks planted in one ground, threads gold, question on the sky, books in the soil.'],
+    ['approach', 'weather=growing&lit=0', 'Tap once. The mark lights, its threads brighten, its count arrives, and a quiet Open door appears ON the mark.'],
+    ['clearing', 'weather=growing&dist=clearing', 'The field draws close. One thing grows here: gathered notes stand at the edges, the prose sits on a bounded lifted canvas, the soil stays in reach.'],
+    ['page', 'weather=growing&dist=page', 'Lean all the way in. Same place, deepest attention — the light concentrates, the cites stand woven in the argument, the margin speaks.']
+  ];
+  var s = '<div class="strip"><h2>One place, three distances</h2>' +
+          '<p class="ssub">field &rarr; approach &rarr; clearing &rarr; page · the approach is a camera move, never a route swap</p>' +
+          '<div class="strip-row">';
+  var i;
+  for (i = 0; i < F.length; i++) {
+    if (i) { s += '<div class="strip-arrow">&rarr;</div>'; }
+    s += '<div class="frame"><p class="fcap">' + F[i][0] + '</p><p class="fnote">' + F[i][2] + '</p>' +
+         '<div class="fbox"><iframe src="' + me + '?' + F[i][1] + '" scrolling="no"></iframe></div></div>';
+  }
+  s += '</div></div>';
+  document.getElementById('sheet').innerHTML = s;
+  document.getElementById('shapeNote').innerHTML = 'STAGE 3 STRIP — four live frames of this same file';
+}
+
 /* ---- STAGE 2 AUDIT (?audit=1) — the 390 laws MEASURED, not asserted.
    Renders its own readout into the page so the proof is a dated capture at
    the real viewport rather than a claim in a report. --------------------- */
@@ -1038,17 +1635,10 @@ function runAudit(){
                 ? 'band scrolls (shelf dialect)' : 'band fits — scroller idle']);
   }
 
-  var html = '<div class="audit"><h3>Stage 2 · 390 audit</h3><table>';
-  for (i = 0; i < out.length; i++) {
-    var row = out[i];
-    html += '<tr><td class="k">' + row[0] + '</td><td class="v">' + row[1] + '</td>' +
-            '<td class="p ' + (row[2] ? 'ok' : 'no') + '">' + (row[2] ? 'PASS' : 'FAIL') + '</td>' +
-            '<td class="n">' + (row[3] || '') + '</td></tr>';
-  }
-  html += '</table></div>';
-  var d = document.createElement('div');
-  d.innerHTML = html;
-  document.getElementById('sheet').appendChild(d.firstChild);
+  /* measured against the live surface above, then painted as a standalone
+     readout — appending it under the sheet only ever survived by luck, and
+     stopped surviving the moment the resize path changed. */
+  paintAudit('Stage 2 · 390 audit', out);
 }
 
 /* ---- width toggle + URL params (headless capture drives these) ------------ */
@@ -1083,15 +1673,36 @@ function setWidth(x){
   for (i = 0; i < segx.length; i++) {
     (function(b){ b.onclick = function(){ setWidth(b.getAttribute('data-x')); }; })(segx[i]);
   }
+  /* STAGE 3 params */
+  var md = q.match(/dist=(field|clearing|page)/);   if (md) { dist = md[1]; }
+  var mm = q.match(/motion=(zoom|crossfade)/);      if (mm) { motion = mm[1]; }
+  var mf = q.match(/frame=(gather|weave|wove)/);    if (mf) { frameMode = mf[1]; }
+  if (q.indexOf('annotate=1') > -1 || mf) { annotate = true; }
+  var ml = q.match(/lit=(\d+)/);                    if (ml) { focusIdx = parseInt(ml[1], 10); }
+
+  var dsb = document.getElementById('segDist').getElementsByTagName('button');
+  for (i = 0; i < dsb.length; i++) {
+    (function(b){ b.onclick = function(){ setDist(b.getAttribute('data-d')); }; })(dsb[i]);
+  }
+  var msb = document.getElementById('segMotion').getElementsByTagName('button');
+  for (i = 0; i < msb.length; i++) {
+    (function(b){ b.onclick = function(){ setMotion(b.getAttribute('data-m')); }; })(msb[i]);
+  }
+  setMotion(motion);
+
   setWidth(x);
+  if (q.indexOf('strip=1') > -1) { renderStrip(); return; }
   if (q.indexOf('probe=1') > -1) { renderProbe(); return; }
   render(w);
+  if (focusIdx > -1) { approach(focusIdx); }
   /* headless-capture hook: ?composer=1 opens the mark composer for a shot */
   if (q.indexOf('composer=1') > -1) { openComposer(); }
   if (q.indexOf('audit=1') > -1) { runAudit(); }
+  if (q.indexOf('zoomaudit=1') > -1) { runZoomAudit(); }
+  if (q.indexOf('laws=1') > -1) { runLawsAudit(); }
   /* threads are px-measured and the band is width-dependent, so a box change
      is a full re-render, not just a re-stroke */
-  window.onresize = function(){ render(current); };
+  window.onresize = function(){ if (!auditMode) { render(current); } };
 })();
 </script>
 </body>

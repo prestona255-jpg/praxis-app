@@ -34,26 +34,39 @@
       content height so a full-page capture has no inner scrollbar. If you are
       testing vh-dependent behaviour, set FRAME_H and do not auto-grow.
 
+  SECOND REASON TO USE IT AT ANY WIDTH (found 2026-07-22, Stage 3)
+  A node appended by script AFTER init does not make it into a plain
+  `--screenshot` frame: the Stage 2 and Stage 3 in-page audits were provably
+  in the DOM (`--dump-dom` found them) and provably absent from the capture.
+  Loading the page through this wrapper delays the capture past that append —
+  the frame's onload measures and resizes — so audit readouts actually appear.
+  Shoot ANY width through this rig, not just 390.
+
   USAGE
     chrome --headless=new --allow-file-access-from-files --hide-scrollbars \
-      --window-size=390,<tall> --screenshot=out.png \
-      "file:///.../frame-390.html?u=<url-encoded page url>"
+      --window-size=<W>,<tall> --screenshot=out.png \
+      "file:///.../frame.html?w=<W>&u=<url-encoded page url>"
   --allow-file-access-from-files is REQUIRED: without it the wrapper cannot
   read the inner document's height and the frame stays at its fallback size.
+  `w` defaults to 390.
 -->
 <style>
   html,body{margin:0;padding:0;background:#191F33}
-  iframe{display:block;width:390px;border:0;margin:0}
+  iframe{display:block;border:0;margin:0}
 </style>
 </head>
 <body>
-<iframe id="f" width="390" height="1400"></iframe>
+<iframe id="f" height="1400"></iframe>
 <script>
 /* ES3-style, to match the repo. */
 (function(){
   var m = location.search.match(/[?&]u=([^&]+)/);
   var url = m ? decodeURIComponent(m[1]) : 'about:blank';
+  var mw = location.search.match(/[?&]w=(\d+)/);
+  var w = mw ? parseInt(mw[1], 10) : 390;
   var f = document.getElementById('f');
+  f.width = w;
+  f.style.width = w + 'px';
   f.onload = function(){
     /* grow the frame to the content so the capture has no inner scrollbar */
     try {
