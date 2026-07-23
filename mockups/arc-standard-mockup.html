@@ -11,6 +11,7 @@
 /* ===========================================================================
    ARC STANDARD — do-not-merge mockup. Branch mockup/arc-standard.
    Binding record: docs/studio/arc-standard-brief.md (commit 9f254a0).
+   Stage 1R amendments: mockups/arc-standard-notes.md (PALETTE-X, SHAPES-X).
 
    TOKEN SNAPSHOTS — every hex below is copied from the live tree at the
    commit above. Each maps to its source var so the build can re-point to
@@ -31,20 +32,6 @@
      (sheet shadow mirrors --card-shadow        theme.css:121)
      --world-gap   18px     <-  --sheet-gap     theme.css:156  world margin
 
-     --m1  #9D7A20 <- --m1-on-ground  theme.css:205   *** RULED (Fork B, Preston,
-           this round): m1 on the sheet uses the GROUND-ADJUSTED gold, NOT the raw
-           --m1 #D9B24A. Measured: raw #D9B24A = 1.92:1 on #FDF9EE (fails the 3:1
-           graphical minimum); #9D7A20 = 3.81:1 (passes). This mirrors shipped
-           canon — .lit-page already re-points --gold to --gold-on-card because
-           "the world gold fails AA on paper" (components.css:14057). Not a DUSK
-           CARVE event: probe verdict = SYSTEM PASS (4/5 raw jewels and 5/5 edges
-           already clear 3:1). m2-m5 below are the RAW jewels, unmodified.
-     --m1-edge #725814 <- --m1-edge-on-ground theme.css:206
-     --m2  #C75434 / --m2-edge #94371F  <- theme.css:209   terracotta  4.21:1
-     --m3  #7C8B4F / --m3-edge #556032  <- theme.css:210   olive       3.52:1
-     --m4  #3E8A83 / --m4-edge #266059  <- theme.css:211   teal        3.86:1
-     --m5  #B07514 / --m5-edge #7D5109  <- theme.css:212   ochre       3.70:1
-
      --gold-on-card #8F6A12 <- --gold-on-card  theme.css:111  attention on the sheet
      --gold-ember   #DFB759 <- --gold-ember    theme.css:110  value embers on the sky
      --thread       #c2a463 <- --thread        theme.css:53   connection chrome (gold
@@ -56,17 +43,81 @@
      type ramp: display clamp(30,4.2vw,46) / title 26 / heading 18 / body 15 /
                 meta 12 (absolute floor) / reader 17   <- praxis-kit.css:29-34
 
-   FIXTURE PROVENANCE (real-data substrate law):
-     growing  = REAL SHAPE, censused from the live account at Stage 0 — the seed
-                arc: 5 sub-theories, 5 books, 12 evidence items, per-sub body
-                lengths 1658/1455/3156/1568/102 chars (mark scale is driven by
-                those real numbers). Values = 0, which is the real state, so the
-                growing sky carries the question ALONE — honestly empty.
-     ember    = SYNTHETIC-SHAPE (extrapolated; no zero-sub arc exists on the account)
-     finished = SYNTHETIC-SHAPE (extrapolated; no finished arc exists on the account;
-                its 2 value embers are invented to show the F4 grammar)
-   All displayed prose is synthetic. No marginalia, note, or question text from
-   the real account appears anywhere in this file.
+   ---------------------------------------------------------------------------
+   PALETTE-X (Preston felt ruling, Stage 1 review, 2026-07-22) — the mark
+   pigment family expands 5 -> 10. This AMENDS the committed brief's F6 hue
+   budget ("the five shipped jewel families m1-m5, re-frozen"). Discipline is
+   retained: 10 perceptually-spaced earth/jewel pigments, every one measured;
+   candy is still dead, because hue is still SECOND to form (SHAPES-X) and
+   GLOW IS GOLD-ONLY — a pigment never glows (semantic gold law).
+
+   AA — measured, worst case. Both vellum ends were measured; the sheet FOOT
+   (#F6EFDC) is the worst case for dark marks and is the number that rules.
+   (Stage 1 measured only the lighter top: moss would have passed there at
+   3.22 and FAILED here at 2.96. It was re-tuned to #55913F before shipping.)
+   Floor = 3:1, the WCAG graphical-object minimum.
+
+     pigment       fill      hue   vs top  vs foot   edge      vs foot
+     madder       #B8425A    348    5.03    4.62    #85293D     7.68
+     terracotta   #C75434     13    4.21    3.86    #94371F     6.48
+     ochre        #A65F10     32    4.68    4.29    #74400A     7.38
+     gold         #9D7A20     43    3.81    3.49    #725814     5.86
+     olive        #7C8B4F     75    3.52    3.23    #556032     5.89
+     moss         #55913F    104    3.62    3.32    #3B682B     5.72
+     teal         #3E8A83    174    3.86    3.54    #266059     6.31
+     lapis        #4A7BB8    213    4.14    3.80    #2F5484     6.72
+     iris         #7A6BB8    252    4.32    3.96    #55447E     7.28
+     plum         #A85A8E    320    4.42    4.05    #7A3D64     6.83
+     20/20 PASS. Band 3.23-4.62 — deliberately narrow, so no pigment reads
+     heavier than another at field distance.
+
+   Anchor provenance (which shipped jewels survived):
+     gold       = --m1-on-ground #9D7A20  theme.css:205 — the standing Fork-B
+                  ruling. Raw --m1 #D9B24A measures 1.76:1 on the foot: it can
+                  never touch this sheet. NOT a DUSK CARVE event.
+     terracotta = --m2 #C75434  theme.css:209   RAW, unchanged
+     olive      = --m3 #7C8B4F  theme.css:210   RAW, unchanged
+     teal       = --m4 #3E8A83  theme.css:211   RAW, unchanged
+     ochre      = --m5 #B07514 SHIFTED to #A65F10 (hue 37 -> 32). NOT an AA
+                  change (raw ochre passes at 3.39) — a SPACING change: at
+                  5-wide, ochre 37 and gold 43 could coexist; at 10-wide, 6
+                  degrees apart is a collision. The brief's own words license
+                  this ("keep m1-m5's hue anchors WHERE THEY SURVIVE SPACING").
+                  Flagged for the felt pass: gold/ochre remain the tightest
+                  pair at 11 degrees, separated by lightness (3.49 vs 4.29).
+     madder moss lapis iris plum = new. Preston's candidate list also named
+                  RUST; it is deliberately absent — rust lands at hue ~15-20,
+                  on top of terracotta. IRIS (252) was substituted to hold the
+                  blue-violet gap. Substitution is explicitly permitted
+                  ("you may substitute better forms").
+
+   SHAPES-X (same ruling) — silhouettes expand 5 -> 10, verified in the probe
+   at the SMALLEST maturity size F-4 produces (34px), not at resting size:
+   see mockups/shots/stage-1r/stage-1r-probe-min-1360.png (P-1). Uniqueness
+   law unchanged: no two marks in one arc share a full silhouette|treatment|
+   pigment triple.
+   ---------------------------------------------------------------------------
+
+   FIXTURE PROVENANCE (real-data substrate law) — CORRECTED at Stage 1R:
+     growing  = REAL. Read from js/state.js:3648-3677 (the '__praxis_seed__'
+                "A Pedagogy of Desire" worked example that self-seeds on a
+                fresh origin — repo-shipped seed data, not private account
+                content). REAL sub-theory titles, REAL evidence counts, REAL
+                body lengths, REAL member books, REAL connection graph.
+                *** Stage 1 claimed "5 sub-theories" and invented five titles
+                and five book titles. The arc really has FOUR sub-theories and
+                the five books are Giroux/hooks/Grant/Epstein/Hurston. The
+                fifth mark ("A note on grading", 102 chars) was synthetic and
+                is retired. The four body lengths Stage 1 carried
+                (1658/1455/3156/1568) were real and are preserved. ***
+     ember    = SYNTHETIC-SHAPE (extrapolated; no zero-sub-theory arc exists)
+     finished = SYNTHETIC-SHAPE (extrapolated; no finished arc exists; its 2
+                value embers and its 6-mark graph are invented — the graph
+                deliberately, to satisfy F-1's "not every mark connected",
+                which the REAL graph cannot show. See notes.md, F-1/P-2.)
+   Sub-theory titles and book titles are repo-shipped seed literals. No
+   marginalia, journal, or question prose from any account appears here; the
+   question and the finished answer are synthetic.
    =========================================================================== */
 
 :root{
@@ -81,13 +132,18 @@
   --sheet-radius:15px; --world-gap:18px;
   --sheet-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.28),0 10px 30px rgba(0,0,0,.26);
   --rule:rgba(38,32,25,.12);
-  /* jewels — m1 ground-adjusted per Fork B ruling; m2-m5 raw */
-  --m1:#9D7A20; --m1-edge:#725814;
-  --m2:#C75434; --m2-edge:#94371F;
-  --m3:#7C8B4F; --m3-edge:#556032;
-  --m4:#3E8A83; --m4-edge:#266059;
-  --m5:#B07514; --m5-edge:#7D5109;
-  /* attention + connection */
+  /* PALETTE-X — 10 pigments, all AA-measured on the sheet foot (table above) */
+  --madder:#B8425A;     --madder-edge:#85293D;
+  --terracotta:#C75434; --terracotta-edge:#94371F;
+  --ochre:#A65F10;      --ochre-edge:#74400A;
+  --gold-p:#9D7A20;     --gold-p-edge:#725814;
+  --olive:#7C8B4F;      --olive-edge:#556032;
+  --moss:#55913F;       --moss-edge:#3B682B;
+  --teal:#3E8A83;       --teal-edge:#266059;
+  --lapis:#4A7BB8;      --lapis-edge:#2F5484;
+  --iris:#7A6BB8;       --iris-edge:#55447E;
+  --plum:#A85A8E;       --plum-edge:#7A3D64;
+  /* attention + connection — GOLD ONLY. Pigment never glows. */
   --gold:#8F6A12; --gold-ember:#DFB759; --thread:#c2a463;
   /* motion (MO-1) */
   --dur-fast:150ms; --dur-gentle:300ms; --ease:cubic-bezier(.22,1,.36,1);
@@ -142,46 +198,60 @@ body{
   /* the ink ramp crosses back to print inside the sheet (the .lit-page boundary) */
   --ink:var(--sheet-ink); --ink-2:var(--sheet-ink-2); --ink-3:var(--sheet-meta);
 }
+/* F-6 HARVEST TURN — the whole sheet takes a warm-gold cast when the arc is
+   finished. Weather + gold carry "finished"; no per-mark labels, no badge. */
+.sheet.harvest{
+  background-image:
+    radial-gradient(120% 70% at 50% 0%, rgba(223,183,89,.22) 0%, rgba(223,183,89,.06) 46%, rgba(223,183,89,0) 72%),
+    linear-gradient(180deg,#FEF7E4 0%,#F6E8C8 100%);
+}
 
-/* ---- HORIZON — the sky. Only the question, its answer, and value embers ---- */
-.horizon{
-  padding:38px 46px 26px;
-  border-bottom:1px solid var(--rule);
-  background:radial-gradient(120% 80% at 50% 120%, rgba(223,183,89,.10) 0%, rgba(223,183,89,0) 62%);
+/* ---- SKY (F-3) — an atmospheric band, not a header. No rule beneath it. ---- */
+.sky{
+  padding:52px 46px 40px;
+  background:linear-gradient(180deg,
+    rgba(255,252,244,.95) 0%,
+    rgba(253,247,232,.55) 44%,
+    rgba(246,239,220,0) 100%);
 }
-.horizon .q{
+.sky .q{
   font-family:var(--ff-display); font-weight:500;
-  font-size:clamp(26px,2.6vw,34px); line-height:1.14; color:var(--sheet-ink);
-  margin:0; max-width:34ch;
+  font-size:clamp(28px,2.8vw,37px); line-height:1.16; color:var(--sheet-ink);
+  margin:0; max-width:34ch; letter-spacing:.002em;
 }
-.horizon .a{
-  font-family:var(--ff-display); font-style:italic; font-weight:500;
-  font-size:20px; line-height:1.4; color:var(--sheet-ink-2);
-  margin:14px 0 0; max-width:46ch;
-  padding-top:14px; border-top:1px solid var(--rule);
+/* the answer joins the question in the SAME display voice — one completed
+   thought, not a caption under a title (F-3 / law 3) */
+.sky .a{
+  font-family:var(--ff-display); font-weight:500; font-style:italic;
+  font-size:clamp(25px,2.5vw,33px); line-height:1.2; color:#4A4030;
+  margin:18px 0 0; max-width:34ch;
 }
-.horizon .invite{
-  font-family:var(--ff-display); font-style:italic; font-size:19px;
+.sky .invite{
+  font-family:var(--ff-display); font-style:italic; font-size:20px;
   color:var(--sheet-meta); margin:0; /* law 4: at most ONE ink-3 line */
 }
-.horizon .embers{display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 0}
-.ember-chip{
-  display:inline-flex; align-items:center; gap:6px;
-  font-family:var(--ff-mono); font-size:11px; letter-spacing:.05em;
-  color:#6b5a24; background:rgba(223,183,89,.16);
-  border:1px solid rgba(143,106,18,.34); border-radius:999px; padding:4px 11px;
+/* P-3 — value embers RIDE the sky: a small gold mark + fine text. No pill,
+   no border, no fill. Sky, not kit chrome. */
+.embers{display:flex; gap:22px; flex-wrap:wrap; margin:26px 0 0}
+.ember{
+  display:inline-flex; align-items:baseline; gap:7px;
+  font-family:var(--ff-display); font-style:italic; font-size:15px;
+  color:#7A6636;
 }
-.ember-chip i{width:6px;height:6px;border-radius:50%;background:var(--gold-ember);box-shadow:0 0 6px rgba(223,183,89,.8)}
+.ember i{
+  width:5px; height:5px; border-radius:50%; background:var(--gold-ember);
+  box-shadow:0 0 7px 1px rgba(223,183,89,.75); flex:0 0 auto;
+  position:relative; top:-3px;
+}
 
 /* ---- GATE ROW — every arc control lives here and nowhere else (law 5) ------ */
 .gate{
   display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-  padding:14px 46px; border-bottom:1px solid var(--rule);
-  background:rgba(38,32,25,.025);
+  padding:8px 46px 16px;
 }
 .gate .nameblock{display:flex; flex-direction:column; gap:3px; margin-right:auto; min-width:0}
 .gate .arcname{
-  font-family:var(--ff-display); font-size:24px; line-height:1.1; color:var(--sheet-ink);
+  font-family:var(--ff-display); font-size:23px; line-height:1.1; color:var(--sheet-ink-2);
   border:0; border-bottom:1px dashed transparent; background:none; padding:0;
   cursor:text; max-width:46ch;
 }
@@ -204,52 +274,59 @@ body{
 .btn-more{width:36px; padding:0; text-align:center; color:var(--sheet-meta)}
 
 /* ---- THE FIELD — one ground. Nothing floats on it as a panel (law 1) ------- */
-.field{
-  position:relative; padding:0 46px;
-  min-height:430px;               /* generous minimum (RD-2) */
-  background:transparent;          /* the sheet IS the ground */
-}
-.field-inner{position:relative; height:430px}
+.field{position:relative; padding:0 46px 10px; background:transparent}
+.field-inner{position:relative}
 .threads{position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none}
-.threads path{fill:none; stroke:var(--thread); stroke-width:1.4; opacity:.5}  /* law 10: gold, subtle, CSS-only, still */
+/* law 10: gold, subtle, CSS-only, still */
+.threads path{fill:none; stroke:var(--thread); stroke-width:1.3; opacity:.42}
 .mark{
   position:absolute; transform:translate(-50%,-50%);
-  display:flex; flex-direction:column; align-items:center; gap:7px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
   cursor:pointer; background:none; border:0; padding:0;
 }
 .mark svg{display:block; overflow:visible}
+/* F-7 QUIET LABELS — resting mark carries its NAME and nothing else. */
 .mark .mlabel{
   font-family:var(--ff-body); font-size:12.5px; color:var(--sheet-ink-2);
-  max-width:17ch; text-align:center; line-height:1.3;
+  max-width:16ch; text-align:center; line-height:1.32;
+  transition:color var(--dur-fast) var(--ease);
 }
+/* the count is a property of the APPROACH, not of resting (F-7) */
 .mark .mmeta{
   font-family:var(--ff-mono); font-size:10px; letter-spacing:.06em;
   color:var(--sheet-meta); text-transform:uppercase;
+  opacity:0; height:0; overflow:hidden;
+  transition:opacity var(--dur-fast) var(--ease);
 }
-/* tap 1 = step closer (staged) — full choreography lands at Stage 3 */
+.mark.lit .mmeta{opacity:1; height:auto}
 .mark.lit .mlabel{color:var(--sheet-ink)}
 .mark.lit .halo{opacity:1}
-.halo{opacity:0; transition:opacity var(--dur-gentle) var(--ease)}
-.field-empty{
-  display:flex; align-items:center; justify-content:center; height:430px;
-  font-family:var(--ff-display); font-style:italic; font-size:18px; color:var(--sheet-meta);
-}
+/* F-4 — the maturity coal. Gold only; steps with the gathered count. */
+.halo{transition:opacity var(--dur-gentle) var(--ease)}
+.field-empty{height:150px}   /* F-5: generous minimum only. No void. */
 
-/* ---- SOIL ROW — books at the field's foot, never in the canvas (law 9) ----- */
-.soil{
-  padding:18px 46px 24px; border-top:1px solid var(--rule);
-  background:rgba(38,32,25,.03);
-}
+/* ---- SOIL ROW (F-7) — shelf-dialect mini covers on a soil-tinted band ------ */
+.soil{padding:20px 46px 26px; background:linear-gradient(180deg,rgba(88,68,34,.05),rgba(88,68,34,.10))}
 .soil-h{
   font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--sheet-meta); margin:0 0 12px;
+  color:var(--sheet-meta); margin:0 0 14px;
 }
-.soil-row{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap}
-.book{width:46px; height:66px; border-radius:2px 4px 4px 2px; position:relative;
-  box-shadow:0 1px 2px rgba(0,0,0,.22), inset 1px 0 0 rgba(255,255,255,.12); cursor:pointer}
+.soil-row{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap}
+.book{
+  width:58px; height:82px; border-radius:2px 3px 3px 2px; position:relative; cursor:pointer;
+  background:linear-gradient(150deg,#FBF4E2,#EFE3C7);
+  box-shadow:0 1px 2px rgba(38,32,25,.20), 0 4px 10px rgba(38,32,25,.10);
+  overflow:hidden;
+}
+.book:before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:rgba(38,32,25,.16)}
+.book i{position:absolute; left:4px; right:0; top:0; height:3px}
 .book span{
-  position:absolute; left:5px; right:4px; top:7px;
-  font-family:var(--ff-display); font-size:8.5px; line-height:1.15; color:rgba(255,244,224,.86);
+  position:absolute; left:10px; right:5px; top:10px;
+  font-family:var(--ff-display); font-size:9px; line-height:1.2; color:#4A4030;
+}
+.book em{
+  position:absolute; left:10px; right:5px; bottom:7px; font-style:normal;
+  font-family:var(--ff-mono); font-size:6.5px; letter-spacing:.04em; color:#8A7F5F;
 }
 
 /* ---- MARK COMPOSER — form leads; taken combinations are unavailable (law 6) - */
@@ -257,20 +334,21 @@ body{
   align-items:flex-start; justify-content:center; padding:70px 18px 30px; overflow:auto}
 .scrim.on{display:flex}
 .composer{
-  width:100%; max-width:640px;
+  width:100%; max-width:680px;
   background-color:var(--sheet-1); background-image:linear-gradient(180deg,var(--sheet-1),var(--sheet-2));
   border-radius:var(--sheet-radius); box-shadow:var(--sheet-shadow); color:var(--sheet-ink);
   padding:26px 28px 24px;
 }
 .composer h3{font-family:var(--ff-display); font-weight:500; font-size:24px; margin:0 0 3px}
 .composer .sub{font-family:var(--ff-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 18px}
-.comp-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+.comp-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:9px}
 .comp-cell{
-  display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px 8px;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px;
+  padding:9px 3px 7px; min-height:74px;
   border:1px solid var(--rule); border-radius:10px; background:rgba(255,255,255,.45); cursor:pointer;
 }
 .comp-cell:hover{border-color:var(--gold)}
-.comp-cell .cname{font-family:var(--ff-mono); font-size:9px; letter-spacing:.05em; color:var(--sheet-meta); text-transform:uppercase}
+.comp-cell .cname{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.04em; color:var(--sheet-meta); text-transform:uppercase}
 .comp-cell.taken{opacity:.34; cursor:not-allowed; background:repeating-linear-gradient(45deg,rgba(38,32,25,.05) 0 5px,transparent 5px 10px)}
 .comp-cell.taken .cname{text-decoration:line-through}
 .comp-cell.sel{border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold)}
@@ -281,20 +359,29 @@ body{
 .comp-foot{display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--rule)}
 .comp-foot .law{font-family:var(--ff-body); font-size:12px; color:var(--sheet-ink-2); margin-right:auto}
 
+/* ---- P-1 PROBE (?probe=1) — every silhouette at the SMALLEST maturity size - */
+.probe{padding:34px 46px 40px}
+.probe h2{font-family:var(--ff-display); font-weight:500; font-size:26px; margin:0 0 4px}
+.probe .psub{font-family:var(--ff-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 24px}
+.probe-row{display:flex; gap:26px; flex-wrap:wrap; margin:0 0 26px}
+.probe-cell{display:flex; flex-direction:column; align-items:center; gap:7px; width:74px}
+.probe-cell .pn{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--sheet-meta)}
+.probe-h{font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sheet-ink-2); margin:0 0 14px; padding-top:8px; border-top:1px solid var(--rule)}
+
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important; transition:none !important}
 }
 /* ---- 390: same grammar full-width (Stage 2 refines) ----------------------- */
 body.w390 .world{padding:calc(46px + 12px) 10px 30px}
 body.w390 .sheet{max-width:370px}
-body.w390 .horizon{padding:24px 18px 18px}
-body.w390 .horizon .q{font-size:23px; max-width:none}
-body.w390 .gate{padding:12px 18px; gap:10px}
+body.w390 .sky{padding:32px 18px 26px}
+body.w390 .sky .q{font-size:24px; max-width:none}
+body.w390 .sky .a{font-size:21px; max-width:none}
+body.w390 .gate{padding:6px 18px 14px; gap:10px}
 body.w390 .gate .nameblock{width:100%; margin-right:0}
 body.w390 .btn{min-height:44px; padding:11px 15px}   /* P3 44px targets */
-body.w390 .field{padding:0 14px}
-body.w390 .field-inner,body.w390 .field-empty{height:380px}
-body.w390 .soil{padding:14px 18px 20px}
+body.w390 .field{padding:0 14px 8px}
+body.w390 .soil{padding:16px 18px 22px}
 body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
 </style>
 </head>
@@ -319,7 +406,7 @@ body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
 
 <main class="world">
   <section class="sheet" id="sheet">
-    <header class="horizon" id="horizon"></header>
+    <header class="sky" id="sky"></header>
     <div class="gate" id="gate"></div>
     <div class="field" id="field"></div>
     <footer class="soil" id="soil"></footer>
@@ -329,7 +416,7 @@ body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
 <div class="scrim" id="scrim">
   <div class="composer">
     <h3>Plant a sub-theory</h3>
-    <p class="sub">form leads · pigment second · this arc's taken forms are closed</p>
+    <p class="sub">form leads · pigment second · this arc's taken identities are closed</p>
     <div class="comp-preview" id="compPreview"></div>
     <div class="comp-row-h">Silhouette — form leads</div>
     <div class="comp-grid" id="rowSil"></div>
@@ -348,48 +435,98 @@ body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
 <script>
 /* ES3-style (var/function, string concat) to match repo convention. */
 
-var SILS = ['hex','diamond','orb','leaf','shield'];
-var SIL_NAMES = { hex:'beacon', diamond:'facet', orb:'seed', leaf:'frond', shield:'gate' };
+/* ---- SHAPES-X: NINE silhouettes. Verified distinct at MIN maturity (P-1).
+   Built as ten; STONE was CUT by the probe. At 34px a stone reads as a plain
+   rounded ovoid — the same silhouette as SEED in solid AND in outline (see
+   stage-1r-probe-min-1360-CUT.png, the failing shot, kept as evidence).
+   P-1 is explicit: if two forms blur at minimum, one is out. SEED survives
+   because it is the arc's own mint word; STONE was a candidate, not canon.
+   Nine forms x 3 treatments x 10 pigments = 270 unique identities, far past
+   the brief's "well over 16". Angular replacements were considered and
+   rejected: an irregular angular boulder collides with BEACON and FACET,
+   so the distinct-form budget at 34px is genuinely spent at nine. --------- */
+var SILS = ['beacon','facet','seed','frond','gate','spire','well','vessel','bloom'];
 var TREATS = ['solid','outline','hatched'];
-var HUES = ['m1','m2','m3','m4','m5'];
 
 /* silhouette paths on a 64x62 box */
 var PATHS = {
-  hex:     'M32 4 L54 17 L54 43 L32 56 L10 43 L10 17 Z',
-  diamond: 'M32 4 L58 30 L32 56 L6 30 Z',
-  orb:     'M32 30 m-25 0 a25 25 0 1 0 50 0 a25 25 0 1 0 -50 0',
-  leaf:    'M32 6 C50 18 54 40 32 56 C10 40 14 18 32 6 Z',
-  shield:  'M32 5 L55 14 V32 C55 46 44 53 32 57 C20 53 9 46 9 32 V14 Z'
+  beacon:  'M32 2 L55 16.5 L55 45.5 L32 60 L9 45.5 L9 16.5 Z',
+  facet:   'M32 1 L54 31 L32 61 L10 31 Z',
+  seed:    'M32 3 C46 12 52 26 52 37 C52 51 43 59 32 59 C21 59 12 51 12 37 C12 26 18 12 32 3 Z',
+  frond:   'M32 1 C49 16 51 41 32 61 C13 41 15 16 32 1 Z',
+  gate:    'M32 3 L56 12 V33 C56 48 44 56 32 60 C20 56 8 48 8 33 V12 Z',
+  spire:   'M32 3 L59 59 L5 59 Z',
+  vessel:  'M7 7 L57 7 L44 59 L20 59 Z',
+  bloom:   'M32 2 C41 2 46 10 45 19 C54 18 62 23 62 31 C62 39 54 44 45 43 C46 52 41 60 32 60 C23 60 18 52 19 43 C10 44 2 39 2 31 C2 23 10 18 19 19 C18 10 23 2 32 2 Z'
+  /* CUT by P-1 — kept as the record of what was rejected and why:
+     stone: 'M10 26 C10 13 20 5 33 7 C48 9 59 18 57 32 C55 48 42 59 28 56 C15 53 10 39 10 26 Z'
+     At 34px this is SEED with a lean. Not distinct. Out. */
+};
+/* well = a ring: two circles, evenodd. Its own renderer branch (below). */
+var WELL_OUTER = 'M32 31 m-29 0 a29 29 0 1 0 58 0 a29 29 0 1 0 -58 0';
+var WELL_INNER = 'M32 31 m-13 0 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0';
+
+/* ---- PALETTE-X: 10 pigments, NAMED not numbered (P-4) --------------------- */
+var HUES = ['madder','terracotta','ochre','gold-p','olive','moss','teal','lapis','iris','plum'];
+var HUE_NAMES = {
+  'madder':'madder', 'terracotta':'terracotta', 'ochre':'ochre', 'gold-p':'gold',
+  'olive':'olive', 'moss':'moss', 'teal':'teal', 'lapis':'lapis',
+  'iris':'iris', 'plum':'plum'
 };
 
+/* ---- F-4 MATURITY: three size steps, driven by the gathered/woven count.
+   The coal is GOLD ONLY and steps with the same number — pigment never glows
+   (semantic gold law). "Just planted" is the smallest and carries no coal. */
+function maturity(count){
+  if (count >= 4) { return { d:56, glow:.55, word:'mature' }; }
+  if (count >= 3) { return { d:45, glow:.30, word:'growing' }; }
+  return { d:34, glow:0, word:'nascent' };
+}
+var MIN_D = 34;   /* P-1 probes HERE — the smallest size F-4 produces */
+/* the arrangement's vertical scale: mark y% is taken off THIS, in pixels */
+var BASE_Y = 470;
+
 /* ---- FIXTURES -----------------------------------------------------------
-   growing = REAL SHAPE (seed arc censused at Stage 0). bodyChars are the real
-   per-sub-theory lengths and drive mark scale. ember/finished = SYNTHETIC-SHAPE.
-   All prose synthetic.                                                      */
+   growing = REAL, read from js/state.js:3648-3677 (the repo-shipped
+   '__praxis_seed__' worked example). Titles, evidence counts, body lengths,
+   books and the connection graph are all as they exist in state.
+
+   *** F-1 / P-2 COLLISION — REPORTED, NOT RESOLVED HERE ***
+   P-2 says real connection pairs first. The REAL graph is
+     S1-S2, S2-S3, S3-S4   (from linkedSubTheories: S1->[S2], S2->[S1,S3],
+     S3->[S2,S4], S4->[S3]; views.js:11936-11957 derives arc.edges from these)
+   — which is a 4-node CHAIN, and every mark is connected. F-1 asks for a
+   graph that is NOT a chain and where not every mark is connected. Both
+   cannot hold on real data. Resolution taken, pending Preston's ruling:
+   the GROWING weather carries the real graph honestly, and F-1's visual
+   requirement is met by ARRANGEMENT (F-2 scatters the path so no left-to-
+   right reading survives); the sparse/unconnected demonstration rides the
+   FINISHED weather, which is synthetic-shape and labelled as such.        */
 var FIXTURES = {
   growing: {
     synthetic:false,
-    note:'REAL SHAPE — seed arc: 5 sub-theories · 5 books · 12 evidence · values 0 (real)',
+    note:'REAL — __praxis_seed__ "A Pedagogy of Desire": 4 sub-theories · 5 books · 11 evidence · 3 real links · values 0 (real)',
     name:'A Pedagogy of Desire',
     kicker:'GATHERING · nascent',
     question:'What does it cost a reader to be taught that their wanting is the problem rather than the place to begin?',
     answer:null,
     values:[],
     door:'Finish →', doorState:'growing',
+    /* label + count + bodyChars are REAL (state.js). x/y are the arrangement —
+       the user's hand, and the one thing that is ours to compose (F-2). */
     marks:[
-      { sil:'hex',     treat:'solid',   hue:'m1', chars:1658, x:20, y:34, label:'Desire as method',      meta:'4 gathered' },
-      { sil:'leaf',    treat:'solid',   hue:'m4', chars:1568, x:41, y:19, label:'The banking objection', meta:'3 gathered' },
-      { sil:'orb',     treat:'hatched', hue:'m3', chars:3156, x:63, y:37, label:'What a question costs', meta:'5 gathered' },
-      { sil:'diamond', treat:'outline', hue:'m2', chars:1455, x:37, y:64, label:'Refusal as reading',    meta:'2 gathered' },
-      { sil:'shield',  treat:'outline', hue:'m5', chars:102,  x:76, y:70, label:'A note on grading',     meta:'just planted' }
+      { sil:'beacon', treat:'solid',   hue:'terracotta', count:4, chars:1658, x:21, y:26, label:'Desire as Political Refusal' },
+      { sil:'frond',  treat:'solid',   hue:'moss',       count:3, chars:1455, x:57, y:14, label:'Eros in the Classroom' },
+      { sil:'well',   treat:'outline', hue:'lapis',      count:2, chars:3156, x:38, y:63, label:'Pain and Struggle on the Path of Liberation' },
+      { sil:'bloom',  treat:'hatched', hue:'plum',       count:2, chars:1568, x:78, y:47, label:'Radical Self-Actualization' }
     ],
-    threads:[[0,1],[0,3],[2,4],[1,2]],
+    threads:[[0,1],[1,2],[2,3]],   /* REAL — every pair from linkedSubTheories */
     books:[
-      { t:'Pedagogy of the Oppressed', c:'#6E3B34' },
-      { t:'Teaching to Transgress',    c:'#4A5A3C' },
-      { t:'The Ignorant Schoolmaster', c:'#5A4632' },
-      { t:'Emile',                     c:'#3E4A5A' },
-      { t:'Deschooling Society',       c:'#6A4B2A' }
+      { t:'Zombie Politics', a:'Giroux',  k:'#7C8B4F' },
+      { t:'Yearning',        a:'hooks',   k:'#B8425A' },
+      { t:'Hidden Potential',a:'Grant',   k:'#4A7BB8' },
+      { t:'Range',           a:'Epstein', k:'#4A7BB8' },
+      { t:'Their Eyes Were Watching God', a:'Hurston', k:'#A85A8E' }
     ]
   },
   ember: {
@@ -402,73 +539,119 @@ var FIXTURES = {
     answer:null,
     values:[],
     door:'Finish →', doorState:'growing',
-    marks:[],
-    threads:[],
-    books:[]
+    marks:[], threads:[], books:[]
   },
   finished: {
     synthetic:true,
-    note:'SYNTHETIC-SHAPE — extrapolated: no finished arc exists on the account; its 2 value embers are invented to show the F4 grammar',
+    note:'SYNTHETIC-SHAPE — no finished arc exists; the 6-mark sparse graph and the 2 value embers are invented (F-1 demonstration)',
     name:'A Pedagogy of Desire',
     kicker:'FINISHED · harvest',
     question:'What does it cost a reader to be taught that their wanting is the problem rather than the place to begin?',
-    answer:'It costs them the only engine that was ever theirs — so the work is not to supply desire but to stop confiscating it.',
+    answer:'It costs them the only engine that was ever theirs.',
     values:[ 'attention as care', 'refusal is literacy' ],
     door:'Publish →', doorState:'finished',
     marks:[
-      { sil:'hex',     treat:'solid',   hue:'m1', chars:2400, x:20, y:34, label:'Desire as method',      meta:'woven' },
-      { sil:'leaf',    treat:'solid',   hue:'m4', chars:2100, x:41, y:19, label:'The banking objection', meta:'woven' },
-      { sil:'orb',     treat:'hatched', hue:'m3', chars:3156, x:63, y:37, label:'What a question costs', meta:'woven' },
-      { sil:'diamond', treat:'outline', hue:'m2', chars:1900, x:37, y:64, label:'Refusal as reading',    meta:'woven' },
-      { sil:'shield',  treat:'outline', hue:'m5', chars:1400, x:76, y:70, label:'A note on grading',     meta:'woven' }
+      { sil:'beacon', treat:'solid',   hue:'terracotta', count:6, x:19, y:24, label:'Desire as Political Refusal' },
+      { sil:'frond',  treat:'solid',   hue:'moss',       count:4, x:52, y:13, label:'Eros in the Classroom' },
+      { sil:'well',   treat:'outline', hue:'lapis',      count:5, x:35, y:56, label:'Pain and Struggle on the Path of Liberation' },
+      { sil:'bloom',  treat:'hatched', hue:'plum',       count:3, x:74, y:41, label:'Radical Self-Actualization' },
+      { sil:'spire',  treat:'solid',   hue:'ochre',      count:4, x:63, y:70, label:'The disimagination machine' },
+      { sil:'facet',  treat:'outline', hue:'iris',       count:2, x:12, y:62, label:'Match quality' }
     ],
-    threads:[[0,1],[0,3],[2,4],[1,2],[3,2]],
+    /* sparse + non-sequential: 5 is unconnected; 2 is the hub; no chain. */
+    threads:[[0,2],[1,2],[2,4],[3,4]],
     books:[
-      { t:'Pedagogy of the Oppressed', c:'#6E3B34' },
-      { t:'Teaching to Transgress',    c:'#4A5A3C' },
-      { t:'The Ignorant Schoolmaster', c:'#5A4632' },
-      { t:'Emile',                     c:'#3E4A5A' },
-      { t:'Deschooling Society',       c:'#6A4B2A' }
+      { t:'Zombie Politics', a:'Giroux',  k:'#7C8B4F' },
+      { t:'Yearning',        a:'hooks',   k:'#B8425A' },
+      { t:'Hidden Potential',a:'Grant',   k:'#4A7BB8' },
+      { t:'Range',           a:'Epstein', k:'#4A7BB8' },
+      { t:'Their Eyes Were Watching God', a:'Hurston', k:'#A85A8E' }
     ]
   }
 };
 
-/* mark diameter from the REAL body length — maturity reads as scale */
-function scaleFor(chars){
-  var min = 34, max = 62, cap = 3200;
-  var c = (typeof chars === 'number') ? chars : 0;
-  if (c > cap) { c = cap; }
-  return Math.round(min + (max - min) * Math.sqrt(c / cap));
-}
-
-/* compose one mark: silhouette x treatment x hue. Harvest adds the gold arrival. */
-function markSVG(m, harvest){
-  var d = scaleFor(m.chars);
+/* compose one mark: silhouette x treatment x pigment. */
+function markSVG(m, d){
   var fill = 'var(--' + m.hue + ')', edge = 'var(--' + m.hue + '-edge)';
-  var uid = m.sil + m.treat + m.hue;
-  var body = '';
-  if (m.treat === 'solid') {
-    body = '<path d="' + PATHS[m.sil] + '" fill="' + fill + '" stroke="' + edge + '" stroke-width="2"/>';
-  } else if (m.treat === 'outline') {
-    body = '<path d="' + PATHS[m.sil] + '" fill="none" stroke="' + edge + '" stroke-width="3.2"/>';
+  var uid = (m.sil + m.treat + m.hue).replace(/-/g,'');
+  var mat = maturity(m.count);
+  var body = '', p;
+
+  if (m.sil === 'well') {
+    /* the ring: outer + inner, evenodd. Treatments read on the annulus. */
+    if (m.treat === 'outline') {
+      body = '<path d="' + WELL_OUTER + '" fill="none" stroke="' + edge + '" stroke-width="3"/>' +
+             '<path d="' + WELL_INNER + '" fill="none" stroke="' + edge + '" stroke-width="3"/>';
+    } else if (m.treat === 'hatched') {
+      body = '<defs><pattern id="p' + uid + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+             '<line x1="0" y1="0" x2="0" y2="6" stroke="' + fill + '" stroke-width="3"/></pattern></defs>' +
+             '<path fill-rule="evenodd" d="' + WELL_OUTER + ' ' + WELL_INNER + '" fill="url(#p' + uid + ')" stroke="' + edge + '" stroke-width="2"/>';
+    } else {
+      body = '<path fill-rule="evenodd" d="' + WELL_OUTER + ' ' + WELL_INNER + '" fill="' + fill + '" stroke="' + edge + '" stroke-width="2"/>';
+    }
   } else {
-    body = '<defs><pattern id="p' + uid + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
-           '<line x1="0" y1="0" x2="0" y2="6" stroke="' + fill + '" stroke-width="3"/></pattern></defs>' +
-           '<path d="' + PATHS[m.sil] + '" fill="url(#p' + uid + ')" stroke="' + edge + '" stroke-width="2"/>';
+    p = PATHS[m.sil];
+    if (m.treat === 'solid') {
+      body = '<path d="' + p + '" fill="' + fill + '" stroke="' + edge + '" stroke-width="2"/>';
+    } else if (m.treat === 'outline') {
+      body = '<path d="' + p + '" fill="none" stroke="' + edge + '" stroke-width="3.2"/>';
+    } else {
+      body = '<defs><pattern id="p' + uid + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+             '<line x1="0" y1="0" x2="0" y2="6" stroke="' + fill + '" stroke-width="3"/></pattern></defs>' +
+             '<path d="' + p + '" fill="url(#p' + uid + ')" stroke="' + edge + '" stroke-width="2"/>';
+    }
   }
-  var halo = '<circle class="halo" cx="32" cy="30" r="30" fill="none" stroke="' + (harvest ? 'var(--gold-ember)' : 'var(--gold)') + '" stroke-width="1.4" opacity="' + (harvest ? '.5' : '0') + '"/>';
-  return '<svg width="' + d + '" height="' + d + '" viewBox="0 0 64 62">' + halo + body + '</svg>';
+  /* F-4 the coal — GOLD ONLY, stepped by maturity. Pigment never glows.
+     A soft radial bloom, NOT a stroked ring: a ring reads as a badge or a
+     border around the mark (it did, in the first 1R capture), which is
+     chrome. A coal has no edge — it is light the mark is sitting in. */
+  var halo = '';
+  if (mat.glow > 0) {
+    halo = '<defs><radialGradient id="g' + uid + '">' +
+             '<stop offset="38%" stop-color="var(--gold-ember)" stop-opacity="' + mat.glow + '"/>' +
+             '<stop offset="68%" stop-color="var(--gold-ember)" stop-opacity="' + (mat.glow * 0.34) + '"/>' +
+             '<stop offset="100%" stop-color="var(--gold-ember)" stop-opacity="0"/>' +
+           '</radialGradient></defs>' +
+           '<circle class="halo" cx="32" cy="31" r="52" fill="url(#g' + uid + ')"/>';
+  }
+  var size = d || mat.d;
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 64 62">' + halo + body + '</svg>';
 }
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 var current = 'growing';
 
-function render(w){
-  var f = FIXTURES[w];
-  current = w;
+/* ---- F-1/F-2: threads are drawn in REAL PIXELS after layout, so a curve is
+   an actual arc between two placed marks and never a stretched viewBox
+   artifact. Each curve bows perpendicular to its own chord, alternating
+   side by index, so no set of curves ever reads as one route. ------------ */
+function drawThreads(f, inner){
+  var w = inner.clientWidth, h = inner.clientHeight, i, s = '';
+  if (!w || !h) { return; }
+  for (i = 0; i < f.threads.length; i++) {
+    var a = f.marks[f.threads[i][0]], b = f.marks[f.threads[i][1]];
+    /* y is PIXELS off BASE_Y — the same math the marks use, so a thread
+       always lands on its mark's centre whatever the box height became. */
+    var ax = a.x / 100 * w, ay = a.y / 100 * BASE_Y;
+    var bx = b.x / 100 * w, by = b.y / 100 * BASE_Y;
+    var dx = bx - ax, dy = by - ay;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var bow = (i % 2 === 0) ? 0.11 : -0.11;      /* alternate the bow */
+    var cx = (ax + bx) / 2 + (-dy / len) * len * bow;
+    var cy = (ay + by) / 2 + ( dx / len) * len * bow;
+    s += '<path vector-effect="non-scaling-stroke" d="M ' + ax + ' ' + ay +
+         ' Q ' + cx + ' ' + cy + ' ' + bx + ' ' + by + '"/>';
+  }
+  inner.getElementsByClassName('threads')[0].innerHTML = s;
+}
 
-  /* ---- HORIZON: question alone / question+answer+embers / pre-question ---- */
+function render(w){
+  var f = FIXTURES[w], i;
+  current = w;
+  document.getElementById('sheet').className = (w === 'finished') ? 'sheet harvest' : 'sheet';
+
+  /* ---- SKY: question alone / question+answer+embers / pre-question ------- */
   var h = '';
   if (f.question) {
     h += '<h1 class="q">' + esc(f.question) + '</h1>';
@@ -478,21 +661,18 @@ function render(w){
   }
   if (f.values && f.values.length) {
     var ev = '<div class="embers">';
-    for (var vi = 0; vi < f.values.length; vi++) {
-      ev += '<span class="ember-chip"><i></i>' + esc(f.values[vi]) + '</span>';
+    for (i = 0; i < f.values.length; i++) {
+      ev += '<span class="ember"><i></i>' + esc(f.values[i]) + '</span>';
     }
     h += ev + '</div>';
   }
-  document.getElementById('horizon').innerHTML = h;
+  document.getElementById('sky').innerHTML = h;
 
   /* ---- GATE ROW: name+kicker · one act · one door · overflow -------------- */
   var doorCls = 'btn btn-door' + (f.doorState === 'published' ? ' is-published' : '');
-  /* EMBER DOOR = EMPTY — RULED (Preston, 2026-07-22, Stage-R takeover). The brief
-     names three door lives (growing -> Finish, finished -> Publish, published ->
-     Published) but not the EMBER case. Ruling: law 8 — the seat shows only takeable
-     acts, and an empty arc cannot be finished. The door APPEARS WITH THE FIRST
-     SUB-THEORY, so the gate is the sub-theory count alone (not the question): an
-     ember Gate Row is name + kicker + "+ Sub-theory" + overflow, nothing else. */
+  /* EMBER DOOR = EMPTY — RULED (Preston, 2026-07-22). Law 8: the seat shows
+     only takeable acts, and an empty arc cannot be finished. The door appears
+     with the FIRST SUB-THEORY, so the gate is the sub-theory count alone. */
   var seatEmpty = (f.marks.length === 0);
   document.getElementById('gate').innerHTML =
     '<span class="nameblock">' +
@@ -503,36 +683,39 @@ function render(w){
     (seatEmpty ? '' : '<button class="' + doorCls + '" type="button">' + esc(f.door) + '</button>') +
     '<button class="btn btn-more" type="button" title="Delete arc · Return to ember">⋯</button>';
 
-  /* ---- FIELD: marks planted in the ground, gold threads between ----------- */
+  /* ---- FIELD: marks planted in 2D, gold threads between ------------------ */
   var fieldEl = document.getElementById('field');
   if (!f.marks.length) {
-    /* law 4 (sparse-honest): the horizon's invitation IS the one --ink-3 line.
-       Open ground carries NOTHING else — no placeholder copy, no furniture. */
+    /* F-5 + law 4: the sky's invitation IS the one --ink-3 line. Open ground
+       carries nothing else, and the sheet does not hold a void open. */
     fieldEl.innerHTML = '<div class="field-empty"></div>';
   } else {
-    var harvest = (w === 'finished');
-    var svgT = '<svg class="threads" viewBox="0 0 100 100" preserveAspectRatio="none">';
-    for (var t = 0; t < f.threads.length; t++) {
-      var a = f.marks[f.threads[t][0]], b = f.marks[f.threads[t][1]];
-      var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 4;
-      /* non-scaling-stroke: the field SVG stretches non-uniformly (viewBox 100x100
-         over a wide box), which would otherwise smear the thread weight. */
-      svgT += '<path vector-effect="non-scaling-stroke" d="M ' + a.x + ' ' + a.y + ' Q ' + mx + ' ' + my + ' ' + b.x + ' ' + b.y + '"/>';
+    /* RD-2: the sheet grows to the LOWEST mark plus breathing room.
+       Vertical positions are PIXELS off a fixed BASE, never percentages of
+       the box being computed — a percentage top inside a height derived from
+       that same top is circular, and it strands a void under the lowest mark
+       (it did, in the first 1R capture: 154px of nothing). */
+    var lowestPx = 0, tops = [];
+    for (i = 0; i < f.marks.length; i++) {
+      tops[i] = Math.round((f.marks[i].y / 100) * BASE_Y);
+      if (tops[i] > lowestPx) { lowestPx = tops[i]; }
     }
-    svgT += '</svg>';
+    var hpx = Math.max(300, lowestPx + 108);
     var mk = '';
-    for (var i = 0; i < f.marks.length; i++) {
-      var m = f.marks[i];
-      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + m.x + '%;top:' + m.y + '%">' +
-              markSVG(m, harvest) +
+    for (i = 0; i < f.marks.length; i++) {
+      var m = f.marks[i], mat = maturity(m.count);
+      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + m.x + '%;top:' + tops[i] + 'px">' +
+              markSVG(m) +
               '<span class="mlabel">' + esc(m.label) + '</span>' +
-              '<span class="mmeta">' + esc(m.meta) + '</span>' +
+              '<span class="mmeta">' + m.count + ' gathered · ' + mat.word + '</span>' +
             '</button>';
     }
-    fieldEl.innerHTML = '<div class="field-inner">' + svgT + mk + '</div>';
+    fieldEl.innerHTML = '<div class="field-inner" style="height:' + hpx + 'px">' +
+                        '<svg class="threads"></svg>' + mk + '</div>';
+    drawThreads(f, fieldEl.getElementsByClassName('field-inner')[0]);
   }
 
-  /* ---- SOIL ROW: sparse-honest — no books, no row ------------------------- */
+  /* ---- SOIL ROW: sparse-honest — no books, no band ----------------------- */
   var soilEl = document.getElementById('soil');
   if (!f.books.length) {
     soilEl.innerHTML = '';
@@ -540,8 +723,11 @@ function render(w){
   } else {
     soilEl.style.display = '';
     var sb = '<p class="soil-h">What this field grows from</p><div class="soil-row">';
-    for (var bi = 0; bi < f.books.length; bi++) {
-      sb += '<span class="book" style="background:linear-gradient(135deg,' + f.books[bi].c + ',#241608)" title="' + esc(f.books[bi].t) + '"><span>' + esc(f.books[bi].t) + '</span></span>';
+    for (i = 0; i < f.books.length; i++) {
+      sb += '<span class="book" title="' + esc(f.books[i].t) + '">' +
+            '<i style="background:' + f.books[i].k + '"></i>' +
+            '<span>' + esc(f.books[i].t) + '</span>' +
+            '<em>' + esc(f.books[i].a) + '</em></span>';
     }
     soilEl.innerHTML = sb + '</div>';
   }
@@ -550,39 +736,36 @@ function render(w){
   var note = document.getElementById('shapeNote');
   note.innerHTML = f.synthetic ? '<span class="synth">' + esc(f.note) + '</span>' : esc(f.note);
 
-  /* toggles */
   var wb = document.getElementById('segWeather').getElementsByTagName('button');
-  for (var k = 0; k < wb.length; k++) { wb[k].className = (wb[k].getAttribute('data-w') === w) ? 'on' : ''; }
+  for (i = 0; i < wb.length; i++) { wb[i].className = (wb[i].getAttribute('data-w') === w) ? 'on' : ''; }
   wireMarks();
 }
 
 /* tap 1 = step closer (staged lighting). Full approach lands at Stage 3. */
 function wireMarks(){
-  var ms = document.getElementsByClassName('mark');
-  for (var i = 0; i < ms.length; i++) {
+  var ms = document.getElementsByClassName('mark'), i;
+  for (i = 0; i < ms.length; i++) {
     (function(el){
       el.onclick = function(e){
         e.stopPropagation();
         var lit = el.className.indexOf('lit') > -1;
-        var all = document.getElementsByClassName('mark');
-        for (var j = 0; j < all.length; j++) { all[j].className = 'mark'; }
+        var all = document.getElementsByClassName('mark'), j;
+        for (j = 0; j < all.length; j++) { all[j].className = 'mark'; }
         if (!lit) { el.className = 'mark lit'; }
       };
     })(ms[i]);
   }
 }
 document.onclick = function(){
-  var all = document.getElementsByClassName('mark');
-  for (var j = 0; j < all.length; j++) { all[j].className = 'mark'; }
+  var all = document.getElementsByClassName('mark'), j;
+  for (j = 0; j < all.length; j++) { all[j].className = 'mark'; }
 };
 
 /* ---- COMPOSER: form-first grid; combos already in this arc are closed ----- */
-/* The mint: form is chosen, then treatment, then pigment — pigment is SELECTED,
-   never derived (F6). Uniqueness is enforced on the FULL triple: a pigment whose
-   silhouette|treatment|pigment already stands in this arc is closed, and Plant is
-   refused while the current identity collides. Within-arc uniqueness is
-   guaranteed by construction, not hoped for (law 6). */
-var compSel = { sil:'hex', treat:'solid', hue:'m1' };
+/* The mint: form is chosen, then treatment, then pigment. Uniqueness is
+   enforced on the FULL triple; Plant is refused while the identity collides.
+   Within-arc uniqueness is guaranteed by construction (law 6). */
+var compSel = { sil:'beacon', treat:'solid', hue:'terracotta' };
 
 function takenSet(){
   var f = FIXTURES[current], t = {}, i;
@@ -595,20 +778,20 @@ function takenSet(){
 function renderComposer(){
   var taken = takenSet(), i, html;
   document.getElementById('compPreview').innerHTML =
-    markSVG({ sil:compSel.sil, treat:compSel.treat, hue:compSel.hue, chars:1900 }, false);
+    markSVG({ sil:compSel.sil, treat:compSel.treat, hue:compSel.hue, count:0 }, 62);
 
   html = '';
   for (i = 0; i < SILS.length; i++) {
     html += '<div class="comp-cell' + (SILS[i] === compSel.sil ? ' sel' : '') + '" data-k="sil" data-v="' + SILS[i] + '">' +
-            markSVG({ sil:SILS[i], treat:compSel.treat, hue:compSel.hue, chars:1000 }, false) +
-            '<span class="cname">' + SIL_NAMES[SILS[i]] + '</span></div>';
+            markSVG({ sil:SILS[i], treat:compSel.treat, hue:compSel.hue, count:0 }, 34) +
+            '<span class="cname">' + SILS[i] + '</span></div>';
   }
   document.getElementById('rowSil').innerHTML = html;
 
   html = '';
   for (i = 0; i < TREATS.length; i++) {
     html += '<div class="comp-cell' + (TREATS[i] === compSel.treat ? ' sel' : '') + '" data-k="treat" data-v="' + TREATS[i] + '">' +
-            markSVG({ sil:compSel.sil, treat:TREATS[i], hue:compSel.hue, chars:1000 }, false) +
+            markSVG({ sil:compSel.sil, treat:TREATS[i], hue:compSel.hue, count:0 }, 34) +
             '<span class="cname">' + TREATS[i] + '</span></div>';
   }
   document.getElementById('rowTreat').innerHTML = html;
@@ -617,14 +800,14 @@ function renderComposer(){
   for (i = 0; i < HUES.length; i++) {
     var closed = !!taken[compSel.sil + '|' + compSel.treat + '|' + HUES[i]];
     html += '<div class="comp-cell' + (HUES[i] === compSel.hue ? ' sel' : '') + (closed ? ' taken' : '') + '" data-k="hue" data-v="' + HUES[i] + '">' +
-            markSVG({ sil:compSel.sil, treat:compSel.treat, hue:HUES[i], chars:1000 }, false) +
-            '<span class="cname">' + HUES[i] + (closed ? ' · taken' : '') + '</span></div>';
+            markSVG({ sil:compSel.sil, treat:compSel.treat, hue:HUES[i], count:0 }, 34) +
+            '<span class="cname">' + HUE_NAMES[HUES[i]] + (closed ? ' · taken' : '') + '</span></div>';
   }
   document.getElementById('rowHue').innerHTML = html;
 
   var collide = !!taken[compSel.sil + '|' + compSel.treat + '|' + compSel.hue];
   document.getElementById('compLaw').innerHTML = collide
-    ? 'That identity already stands in this arc — choose another pigment or form.'
+    ? 'That identity already stands in this arc — choose another form or pigment.'
     : 'No two marks share a full identity. ' + FIXTURES[current].marks.length + ' standing; this one is free.';
   var pb = document.getElementById('plantBtn');
   pb.disabled = collide;
@@ -646,34 +829,64 @@ function renderComposer(){
 function openComposer(){
   /* opens on a deliberately COLLIDING identity when the arc already holds one,
      so the uniqueness law is visible the moment the mint opens */
-  compSel = { sil:'hex', treat:'solid', hue:'m1' };
+  compSel = { sil:'beacon', treat:'solid', hue:'terracotta' };
   renderComposer();
   document.getElementById('scrim').className = 'scrim on';
 }
 function closeComposer(){ document.getElementById('scrim').className = 'scrim'; }
 
+/* ---- P-1 PROBE: every silhouette at the SMALLEST size F-4 produces -------- */
+function renderProbe(){
+  var i, t, html = '<div class="probe"><h2>Silhouette probe — distinctness at minimum</h2>' +
+    '<p class="psub">every form at ' + MIN_D + 'px = the smallest maturity step (P-1) · pigment held constant so FORM is the only variable</p>';
+  for (t = 0; t < TREATS.length; t++) {
+    html += '<p class="probe-h">' + TREATS[t] + '</p><div class="probe-row">';
+    for (i = 0; i < SILS.length; i++) {
+      html += '<span class="probe-cell">' +
+              markSVG({ sil:SILS[i], treat:TREATS[t], hue:'gold-p', count:0 }, MIN_D) +
+              '<span class="pn">' + SILS[i] + '</span></span>';
+    }
+    html += '</div>';
+  }
+  html += '<p class="probe-h">the ten pigments — one form, resting size</p><div class="probe-row">';
+  for (i = 0; i < HUES.length; i++) {
+    html += '<span class="probe-cell">' +
+            markSVG({ sil:'seed', treat:'solid', hue:HUES[i], count:0 }, 45) +
+            '<span class="pn">' + HUE_NAMES[HUES[i]] + '</span></span>';
+  }
+  html += '</div></div>';
+  document.getElementById('sheet').innerHTML = html;
+  document.getElementById('shapeNote').innerHTML = 'P-1 PROBE — silhouettes at ' + MIN_D + 'px (minimum maturity size)';
+}
+
 /* ---- width toggle + URL params (headless capture drives these) ------------ */
 function setWidth(x){
   document.body.className = (x === '390') ? 'w390' : '';
-  var xb = document.getElementById('segWidth').getElementsByTagName('button');
-  for (var k = 0; k < xb.length; k++) { xb[k].className = (xb[k].getAttribute('data-x') === x) ? 'on' : ''; }
+  var xb = document.getElementById('segWidth').getElementsByTagName('button'), k;
+  for (k = 0; k < xb.length; k++) { xb[k].className = (xb[k].getAttribute('data-x') === x) ? 'on' : ''; }
 }
 (function init(){
-  var q = location.search, w = 'growing', x = '1360';
+  var q = location.search, w = 'growing', x = '1360', i;
   var mw = q.match(/weather=([a-z]+)/); if (mw && FIXTURES[mw[1]]) { w = mw[1]; }
   var mx = q.match(/w=(390|1360)/);     if (mx) { x = mx[1]; }
   var seg = document.getElementById('segWeather').getElementsByTagName('button');
-  for (var i = 0; i < seg.length; i++) {
+  for (i = 0; i < seg.length; i++) {
     (function(b){ b.onclick = function(){ render(b.getAttribute('data-w')); }; })(seg[i]);
   }
   var segx = document.getElementById('segWidth').getElementsByTagName('button');
-  for (var j = 0; j < segx.length; j++) {
-    (function(b){ b.onclick = function(){ setWidth(b.getAttribute('data-x')); }; })(segx[j]);
+  for (i = 0; i < segx.length; i++) {
+    (function(b){ b.onclick = function(){ setWidth(b.getAttribute('data-x')); }; })(segx[i]);
   }
   setWidth(x);
+  if (q.indexOf('probe=1') > -1) { renderProbe(); return; }
   render(w);
   /* headless-capture hook: ?composer=1 opens the mark composer for a shot */
   if (q.indexOf('composer=1') > -1) { openComposer(); }
+  /* threads are px-measured, so re-draw them when the box changes */
+  window.onresize = function(){
+    var fi = document.getElementById('field').getElementsByClassName('field-inner')[0];
+    if (fi) { drawThreads(FIXTURES[current], fi); }
+  };
 })();
 </script>
 </body>
