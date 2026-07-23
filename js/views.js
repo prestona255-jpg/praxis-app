@@ -11778,7 +11778,8 @@ function renderSubTheoryBuild(id) {
   var bk;
   for (bk in books) { if (books.hasOwnProperty(bk)) { bookKeys.push(bk); } }
   var anyBook = false;
-  var pullBookTitles = [];
+  // pullBookTitles removed at G4 (S3): it only ever populated the retired book
+  // <select>; now write-only dead data (reviewer residual).
   var bi2;
   for (bi2 = 0; bi2 < bookKeys.length; bi2++) {
     var book = books[bookKeys[bi2]];
@@ -11787,7 +11788,6 @@ function renderSubTheoryBuild(id) {
     if (margs.length === 0) { continue; }
     var isFirstBook = !anyBook;
     anyBook = true;
-    pullBookTitles.push(book.title || 'Untitled');
     var bookEl = document.createElement('div');
     bookEl.className = isFirstBook ? 'stb-book open' : 'stb-book';
     bookEl.setAttribute('data-book-title', book.title || 'Untitled');
@@ -11902,7 +11902,6 @@ function renderSubTheoryBuild(id) {
   if (unfiled.length > 0) {
     var uHadBooks = anyBook;
     anyBook = true;
-    pullBookTitles.push('Unfiled');
     var uEl = document.createElement('div');
     uEl.className = uHadBooks ? 'stb-book' : 'stb-book open';
     uEl.setAttribute('data-book-title', 'Unfiled');

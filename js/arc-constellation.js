@@ -1396,7 +1396,11 @@ function _stRenderLegend(arc, positions, width, height) {
   out = out + '<text x="' + _arcR(x + 16) + '" y="' + _arcR(rowY) + '" font-family="' + serif + '" font-style="italic" font-size="11" fill="' + ink + '" opacity="0.85">book</text>';
 
   // interaction hint
-  out = out + '<text x="16" y="' + _arcR(hintY) + '" font-family="' + serif + '" font-style="italic" font-size="10.5" fill="var(--ink-3, #7a5c34)" opacity="0.72">drag · connect two sub-theories or attach a book · hover for a card</text>';
+  // F3 (copy-is-a-contract): "hover for a card" is retired — the hover ghost is
+  // gone; a mark is reached by TAP now (the approach). This legend is
+  // showLegend:false on the arc field so it never renders there, but the copy is
+  // corrected so it can never promise a hover affordance that no longer exists.
+  out = out + '<text x="16" y="' + _arcR(hintY) + '" font-family="' + serif + '" font-style="italic" font-size="10.5" fill="var(--ink-3, #7a5c34)" opacity="0.72">drag to arrange · connect two sub-theories · tap a mark to approach</text>';
 
   out = out + '</g>';
   return out;

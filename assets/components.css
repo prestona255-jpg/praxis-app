@@ -6329,59 +6329,11 @@ html { overscroll-behavior-y: contain; }
   cursor: pointer;
 }
 
-/* Stage 9.6c.3: sub-theory hover card. Editorial chrome mirroring
-   .arc-tooltip (same surface/border/shadow/type tokens, no new palette);
-   built + positioned by attachSubTheoryDrag, which overlays it on the
-   position:relative .arc-detail-web-view container. pointer-events:none so
-   it never intercepts the pointer/hover it is describing. */
-.st-hover-card {
-  position: absolute;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-2);
-  padding: 8px 12px;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 150ms ease-out;
-  max-width: 220px;
-  z-index: 50;
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-/* Triage FIX C2 (#6): the idle card keeps pointer-events:none (above) so it
-   never intercepts the hover/pointer it describes -- but the SHOWN card must
-   be interactive, or its Open / Change mark / Unlink / Delete buttons are
-   dead click-through targets (clicks fall through to the SVG mark behind),
-   and the card's own mouseenter -- which cancels the 140ms hide timer so the
-   pointer can travel onto it -- never fires, so it vanishes before a button
-   can be reached. Re-enable pointer events only while visible. */
-.st-hover-card--visible { opacity: 1; pointer-events: auto; }
-
-.st-hover-card-title {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 14px;
-  color: var(--ink);
-  margin-bottom: 2px;
-}
-
-.st-hover-card-meta {
-  font-size: 12px;
-  color: var(--ink-3);
-}
-
-.st-hover-card-affordance {
-  font-size: 12px;
-  color: var(--gold);
-  margin-top: 4px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .st-hover-card { transition: none; }
-}
+/* ARC STANDARD F3 (2026-07-23): the sub-theory hover card + all its rules are
+   REMOVED — the ghost was killed in S-FELT (no JS ever creates .st-hover-card
+   now). Its jobs re-seat with touch parity (tap = approach; composer; workshop
+   connections / foot). Dead .st-hover-card / -title / -meta / -affordance /
+   -foot / -link / -link-danger rules excised (reviewer residual). */
 
 /* Stage 9.6c.4: Connect mode. The armed Connect button reads in resonance
    tan (--thread-color) to distinguish it from the gold marginalia toggle;
@@ -8731,27 +8683,8 @@ html { overscroll-behavior-y: contain; }
 .st-mark-chip-mark { width: 16px; height: 16px; display: inline-block; }
 .st-mark-chip-mark svg { width: 16px; height: 16px; display: block; }
 
-/* Hover-card footer (entry B). */
-.st-hover-card-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.st-hover-card-link {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--marginalia-color);
-  background: none;
-  border: 0;
-  padding: 2px 0;
-  cursor: pointer;
-}
-.st-hover-card-link:hover { color: var(--ink); }
+/* Hover-card footer rules REMOVED at ARC STANDARD F3 (see the excision note
+   above) — the ghost is dead; -foot / -link / -link:hover excised. */
 /* ===== END SYMBOL PICKER ===== */
 
 
@@ -8897,9 +8830,7 @@ html { overscroll-behavior-y: contain; }
   background: color-mix(in srgb, var(--danger) 8%, transparent);
 }
 
-/* Hover-card Delete link -- subordinate to Open (danger color). */
-.st-hover-card-link-danger { color: var(--danger); }
-.st-hover-card-link-danger:hover { color: var(--danger); filter: brightness(0.9); }
+/* Hover-card Delete link REMOVED at ARC STANDARD F3 (the ghost is dead). */
 /* ===== END SUB-THEORY DELETE ===== */
 
 
