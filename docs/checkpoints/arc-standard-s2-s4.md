@@ -169,3 +169,48 @@ the sub's own editor; byte-locks intact; sw.js bumps sequential; the arrive guar
 can't double-fire or deadlock.
 
 sw.js v3.249 → v3.250 (the fix commit).
+
+---
+
+## FINAL — real-account composition check (2026-07-23)
+
+Fresh snapshot from Preston, loaded re-keyed to the rig stub, measured, **then
+DELETED** (snap.json + snapcap.html + mockup.html removed; rig localStorage wiped;
+zero `praxis_state_*` remain; tree clean). Counts/ids/lengths only.
+
+**Census (real):** 3 arcs · 17 subs · 134 books · **7 orphans (confirmed a 3rd time)**.
+Densest real arc = `…3_153802` — **6 subs / 5 books / ember** (Preston added one sub
+since the S1 snapshot). Sparsest = 1 sub / 0 books.
+
+**Law sweep on the 6-mark densest real arc (1280):**
+
+| law | real-data result |
+|---|---|
+| 1 one ground | `.af-field` `rgba(0,0,0,0)` · border 0px · shadow none; sheet on twilight |
+| 3 horizon | question(=title) on the sky |
+| 5 one gate | **0** controls on the field |
+| 6 form first | 6 marks · **4 silhouettes / 5 pigments** · treatments {1 solid, 3 outline, 2 hatched} |
+| 9 soil/sky | 5 real covers in the soil · **0** canvas book-squares |
+| 10 threads | 3 non-scaling gold threads |
+| F1 composed | viewBox `0 0 600 260`; marks fill it (x 142→484 · y 75→195) — **one screen, no void** |
+| RD-2 | scrollWidth 1265 ≤ 1280 |
+
+**COMPOSITION vs THE MOCKUP (side-by-side, 1360):**
+`final-dense-1360.png` (real) vs `mockup-field-1360.png` (felt-passed mockup).
+The compositions **match in structure**: one continuous single-screen field, marks
+planted across it with gold threads, the question/name on the sky, the gate row at
+the edge, real covers in the soil — the void is gone on real data. Honest deltas,
+both ruled: (a) the mockup's sky shows a full authored QUESTION; the real arc shows
+its TITLE ("A Pedagogy of Desire") because the record has no separate question field
+(Stage-0 ruling 2 — arc.title is the one string; true question authoring is
+R-CAPTURE's seam). (b) The mockup's marks are hand-placed wide; the never-arranged
+real arc uses the composed DEFAULT layout (grid + jitter), a touch more central — a
+felt-dial for Preston, and the moment the user drags, the arrangement is theirs and
+round-trips exactly (the BLOCK-1 fix).
+
+Shots (rig, fresh, gitignored, dated 2026-07-23): `final-dense-{1360,390}.png` ·
+`final-sparse-1360.png` · `mockup-field-1360.png`.
+
+**Both extremes read well at 390** (dense = 6 composed marks + scrolling soil;
+sparse = one mark + honest empty soil). **The page is complete, gated, and shot.**
+Halting for Preston's push word + felt pass on the whole vision.
