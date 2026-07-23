@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARC STANDARD — mockup (do not merge)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===========================================================================
+   ARC STANDARD — do-not-merge mockup. Branch mockup/arc-standard.
+   Binding record: docs/studio/arc-standard-brief.md (commit 9f254a0).
+
+   TOKEN SNAPSHOTS — every hex below is copied from the live tree at the
+   commit above. Each maps to its source var so the build can re-point to
+   the real token rather than this literal:
+
+     --tw-1        #191F33  <-  --hour-1        theme.css:94   zenith, night blue
+     --tw-2        #1B1D2B  <-  --hour-2        theme.css:95   the turn
+     --tw-3        #241C14  <-  --hour-3        theme.css:96   warming
+     --tw-4        #29200F  <-  --hour-4        theme.css:97   horizon, ember brown
+     (world gradient mirrors --hour-arc / --hour-lamp / --hour-horizon  theme.css:98-100)
+
+     --sheet-1     #FDF9EE  <-  --card-1        theme.css:114  vellum, lit-page top
+     --sheet-2     #F6EFDC  <-  --card-2        theme.css:115  vellum, lit-page foot
+     --sheet-ink   #262019  <-  --card-ink      theme.css:116
+     --sheet-ink-2 #5C5340  <-  --card-ink-2    theme.css:117
+     --sheet-meta  #8A7F5F  <-  --card-meta     theme.css:118
+     --sheet-radius 15px    <-  --card-radius   theme.css:119
+     (sheet shadow mirrors --card-shadow        theme.css:121)
+     --world-gap   18px     <-  --sheet-gap     theme.css:156  world margin
+
+     --m1  #9D7A20 <- --m1-on-ground  theme.css:205   *** RULED (Fork B, Preston,
+           this round): m1 on the sheet uses the GROUND-ADJUSTED gold, NOT the raw
+           --m1 #D9B24A. Measured: raw #D9B24A = 1.92:1 on #FDF9EE (fails the 3:1
+           graphical minimum); #9D7A20 = 3.81:1 (passes). This mirrors shipped
+           canon — .lit-page already re-points --gold to --gold-on-card because
+           "the world gold fails AA on paper" (components.css:14057). Not a DUSK
+           CARVE event: probe verdict = SYSTEM PASS (4/5 raw jewels and 5/5 edges
+           already clear 3:1). m2-m5 below are the RAW jewels, unmodified.
+     --m1-edge #725814 <- --m1-edge-on-ground theme.css:206
+     --m2  #C75434 / --m2-edge #94371F  <- theme.css:209   terracotta  4.21:1
+     --m3  #7C8B4F / --m3-edge #556032  <- theme.css:210   olive       3.52:1
+     --m4  #3E8A83 / --m4-edge #266059  <- theme.css:211   teal        3.86:1
+     --m5  #B07514 / --m5-edge #7D5109  <- theme.css:212   ochre       3.70:1
+
+     --gold-on-card #8F6A12 <- --gold-on-card  theme.css:111  attention on the sheet
+     --gold-ember   #DFB759 <- --gold-ember    theme.css:110  value embers on the sky
+     --thread       #c2a463 <- --thread        theme.css:53   connection chrome (gold
+                                               family; law 10 — never cyan)
+
+     --dur-fast   150ms                  <- --dur-fast      praxis-kit.css:36
+     --dur-gentle 300ms                  <- --dur-gentle    praxis-kit.css:36  (MO-1)
+     --ease-standard cubic-bezier(.22,1,.36,1) <- praxis-kit.css:37
+     type ramp: display clamp(30,4.2vw,46) / title 26 / heading 18 / body 15 /
+                meta 12 (absolute floor) / reader 17   <- praxis-kit.css:29-34
+
+   FIXTURE PROVENANCE (real-data substrate law):
+     growing  = REAL SHAPE, censused from the live account at Stage 0 — the seed
+                arc: 5 sub-theories, 5 books, 12 evidence items, per-sub body
+                lengths 1658/1455/3156/1568/102 chars (mark scale is driven by
+                those real numbers). Values = 0, which is the real state, so the
+                growing sky carries the question ALONE — honestly empty.
+     ember    = SYNTHETIC-SHAPE (extrapolated; no zero-sub arc exists on the account)
+     finished = SYNTHETIC-SHAPE (extrapolated; no finished arc exists on the account;
+                its 2 value embers are invented to show the F4 grammar)
+   All displayed prose is synthetic. No marginalia, note, or question text from
+   the real account appears anywhere in this file.
+   =========================================================================== */
+
+:root{
+  /* twilight world */
+  --tw-1:#191F33; --tw-2:#1B1D2B; --tw-3:#241C14; --tw-4:#29200F;
+  --world-arc:linear-gradient(178deg,var(--tw-1) 0%,var(--tw-2) 36%,var(--tw-3) 70%,var(--tw-4) 100%);
+  --world-lamp:radial-gradient(1200px 640px at 50% -12%,rgba(255,214,150,.08),transparent 60%);
+  --world-horizon:radial-gradient(1000px 460px at 50% 112%,rgba(255,175,100,.06),transparent 62%);
+  /* the lit sheet */
+  --sheet-1:#FDF9EE; --sheet-2:#F6EFDC;
+  --sheet-ink:#262019; --sheet-ink-2:#5C5340; --sheet-meta:#8A7F5F;
+  --sheet-radius:15px; --world-gap:18px;
+  --sheet-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.28),0 10px 30px rgba(0,0,0,.26);
+  --rule:rgba(38,32,25,.12);
+  /* jewels — m1 ground-adjusted per Fork B ruling; m2-m5 raw */
+  --m1:#9D7A20; --m1-edge:#725814;
+  --m2:#C75434; --m2-edge:#94371F;
+  --m3:#7C8B4F; --m3-edge:#556032;
+  --m4:#3E8A83; --m4-edge:#266059;
+  --m5:#B07514; --m5-edge:#7D5109;
+  /* attention + connection */
+  --gold:#8F6A12; --gold-ember:#DFB759; --thread:#c2a463;
+  /* motion (MO-1) */
+  --dur-fast:150ms; --dur-gentle:300ms; --ease:cubic-bezier(.22,1,.36,1);
+  /* type */
+  --ff-display:'Cormorant Garamond',Georgia,serif;
+  --ff-body:'DM Sans',-apple-system,system-ui,sans-serif;
+  --ff-mono:'DM Mono','SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background-color:var(--tw-1);
+  background-image:var(--world-lamp),var(--world-horizon),var(--world-arc);
+  background-attachment:fixed;
+  min-height:100vh;
+  font-family:var(--ff-body);
+  color:#cfc4a8;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---- mockup chrome: the ONLY dev affordances in this file (weather + width) --- */
+.mk-bar{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:8px 16px; background:rgba(12,14,22,.86);
+  border-bottom:1px solid rgba(255,236,200,.12);
+  font-family:var(--ff-mono); font-size:11px; letter-spacing:.06em; color:#9d947c;
+}
+.mk-bar b{color:#e8dcc4; font-weight:500; letter-spacing:.14em; text-transform:uppercase; font-size:10px}
+.mk-seg{display:inline-flex; border:1px solid rgba(255,236,200,.22); border-radius:999px; padding:2px; background:rgba(0,0,0,.3)}
+.mk-seg button{
+  font-family:var(--ff-mono); font-size:11px; color:#9d947c; background:none; border:0;
+  border-radius:999px; padding:5px 12px; cursor:pointer;
+}
+.mk-seg button.on{background:linear-gradient(180deg,#F0D79A,#DFB759); color:#241a02; font-weight:500}
+.mk-note{font-size:10.5px; color:#7d7563}
+.mk-note .synth{color:#DFB759}
+
+/* ---- the world: the sheet floats on the twilight with visible margins ------- */
+.world{
+  padding:calc(46px + var(--world-gap) * 2) var(--world-gap) calc(var(--world-gap) * 3);
+  display:flex; justify-content:center;
+}
+.sheet{
+  width:100%; max-width:1200px;
+  background-color:var(--sheet-1);
+  background-image:linear-gradient(180deg,var(--sheet-1) 0%,var(--sheet-2) 100%);
+  border-radius:var(--sheet-radius);
+  box-shadow:var(--sheet-shadow);
+  color:var(--sheet-ink);
+  overflow:hidden;
+  /* the ink ramp crosses back to print inside the sheet (the .lit-page boundary) */
+  --ink:var(--sheet-ink); --ink-2:var(--sheet-ink-2); --ink-3:var(--sheet-meta);
+}
+
+/* ---- HORIZON — the sky. Only the question, its answer, and value embers ---- */
+.horizon{
+  padding:38px 46px 26px;
+  border-bottom:1px solid var(--rule);
+  background:radial-gradient(120% 80% at 50% 120%, rgba(223,183,89,.10) 0%, rgba(223,183,89,0) 62%);
+}
+.horizon .q{
+  font-family:var(--ff-display); font-weight:500;
+  font-size:clamp(26px,2.6vw,34px); line-height:1.14; color:var(--sheet-ink);
+  margin:0; max-width:34ch;
+}
+.horizon .a{
+  font-family:var(--ff-display); font-style:italic; font-weight:500;
+  font-size:20px; line-height:1.4; color:var(--sheet-ink-2);
+  margin:14px 0 0; max-width:46ch;
+  padding-top:14px; border-top:1px solid var(--rule);
+}
+.horizon .invite{
+  font-family:var(--ff-display); font-style:italic; font-size:19px;
+  color:var(--sheet-meta); margin:0; /* law 4: at most ONE ink-3 line */
+}
+.horizon .embers{display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 0}
+.ember-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--ff-mono); font-size:11px; letter-spacing:.05em;
+  color:#6b5a24; background:rgba(223,183,89,.16);
+  border:1px solid rgba(143,106,18,.34); border-radius:999px; padding:4px 11px;
+}
+.ember-chip i{width:6px;height:6px;border-radius:50%;background:var(--gold-ember);box-shadow:0 0 6px rgba(223,183,89,.8)}
+
+/* ---- GATE ROW — every arc control lives here and nowhere else (law 5) ------ */
+.gate{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:14px 46px; border-bottom:1px solid var(--rule);
+  background:rgba(38,32,25,.025);
+}
+.gate .nameblock{display:flex; flex-direction:column; gap:3px; margin-right:auto; min-width:0}
+.gate .arcname{
+  font-family:var(--ff-display); font-size:24px; line-height:1.1; color:var(--sheet-ink);
+  border:0; border-bottom:1px dashed transparent; background:none; padding:0;
+  cursor:text; max-width:46ch;
+}
+.gate .arcname:hover{border-bottom-color:rgba(38,32,25,.22)}
+.gate .arcname:focus{outline:none; border-bottom-color:var(--gold)}
+.gate .kicker{
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--sheet-meta);
+}
+.btn{
+  font-family:var(--ff-body); font-size:13.5px; border-radius:999px; cursor:pointer;
+  padding:9px 16px; border:1px solid rgba(38,32,25,.2); background:rgba(255,255,255,.5);
+  color:var(--sheet-ink); transition:border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  min-height:36px;
+}
+.btn:hover{border-color:var(--gold)}
+.btn-primary{background:linear-gradient(180deg,#F0D79A,#DFB759); border-color:transparent; color:#3d2807; font-weight:600}
+.btn-door{border-color:rgba(143,106,18,.5); color:#6b5a24; font-weight:500}
+.btn-door.is-published{background:rgba(143,106,18,.10); cursor:default}
+.btn-more{width:36px; padding:0; text-align:center; color:var(--sheet-meta)}
+
+/* ---- THE FIELD — one ground. Nothing floats on it as a panel (law 1) ------- */
+.field{
+  position:relative; padding:0 46px;
+  min-height:430px;               /* generous minimum (RD-2) */
+  background:transparent;          /* the sheet IS the ground */
+}
+.field-inner{position:relative; height:430px}
+.threads{position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none}
+.threads path{fill:none; stroke:var(--thread); stroke-width:1.4; opacity:.5}  /* law 10: gold, subtle, CSS-only, still */
+.mark{
+  position:absolute; transform:translate(-50%,-50%);
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  cursor:pointer; background:none; border:0; padding:0;
+}
+.mark svg{display:block; overflow:visible}
+.mark .mlabel{
+  font-family:var(--ff-body); font-size:12.5px; color:var(--sheet-ink-2);
+  max-width:17ch; text-align:center; line-height:1.3;
+}
+.mark .mmeta{
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.06em;
+  color:var(--sheet-meta); text-transform:uppercase;
+}
+/* tap 1 = step closer (staged) — full choreography lands at Stage 3 */
+.mark.lit .mlabel{color:var(--sheet-ink)}
+.mark.lit .halo{opacity:1}
+.halo{opacity:0; transition:opacity var(--dur-gentle) var(--ease)}
+.field-empty{
+  display:flex; align-items:center; justify-content:center; height:430px;
+  font-family:var(--ff-display); font-style:italic; font-size:18px; color:var(--sheet-meta);
+}
+
+/* ---- SOIL ROW — books at the field's foot, never in the canvas (law 9) ----- */
+.soil{
+  padding:18px 46px 24px; border-top:1px solid var(--rule);
+  background:rgba(38,32,25,.03);
+}
+.soil-h{
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--sheet-meta); margin:0 0 12px;
+}
+.soil-row{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap}
+.book{width:46px; height:66px; border-radius:2px 4px 4px 2px; position:relative;
+  box-shadow:0 1px 2px rgba(0,0,0,.22), inset 1px 0 0 rgba(255,255,255,.12); cursor:pointer}
+.book span{
+  position:absolute; left:5px; right:4px; top:7px;
+  font-family:var(--ff-display); font-size:8.5px; line-height:1.15; color:rgba(255,244,224,.86);
+}
+
+/* ---- MARK COMPOSER — form leads; taken combinations are unavailable (law 6) - */
+.scrim{position:fixed; inset:0; background:rgba(10,12,18,.62); z-index:60; display:none;
+  align-items:flex-start; justify-content:center; padding:70px 18px 30px; overflow:auto}
+.scrim.on{display:flex}
+.composer{
+  width:100%; max-width:640px;
+  background-color:var(--sheet-1); background-image:linear-gradient(180deg,var(--sheet-1),var(--sheet-2));
+  border-radius:var(--sheet-radius); box-shadow:var(--sheet-shadow); color:var(--sheet-ink);
+  padding:26px 28px 24px;
+}
+.composer h3{font-family:var(--ff-display); font-weight:500; font-size:24px; margin:0 0 3px}
+.composer .sub{font-family:var(--ff-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 18px}
+.comp-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+.comp-cell{
+  display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px 8px;
+  border:1px solid var(--rule); border-radius:10px; background:rgba(255,255,255,.45); cursor:pointer;
+}
+.comp-cell:hover{border-color:var(--gold)}
+.comp-cell .cname{font-family:var(--ff-mono); font-size:9px; letter-spacing:.05em; color:var(--sheet-meta); text-transform:uppercase}
+.comp-cell.taken{opacity:.34; cursor:not-allowed; background:repeating-linear-gradient(45deg,rgba(38,32,25,.05) 0 5px,transparent 5px 10px)}
+.comp-cell.taken .cname{text-decoration:line-through}
+.comp-cell.sel{border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold)}
+.comp-grid-3{grid-template-columns:repeat(3,1fr)}
+.comp-preview{display:flex; align-items:center; justify-content:center; height:104px;
+  border:1px solid var(--rule); border-radius:10px; background:rgba(255,255,255,.5)}
+.comp-row-h{font-family:var(--ff-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--sheet-meta); margin:18px 0 8px}
+.comp-foot{display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--rule)}
+.comp-foot .law{font-family:var(--ff-body); font-size:12px; color:var(--sheet-ink-2); margin-right:auto}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+}
+/* ---- 390: same grammar full-width (Stage 2 refines) ----------------------- */
+body.w390 .world{padding:calc(46px + 12px) 10px 30px}
+body.w390 .sheet{max-width:370px}
+body.w390 .horizon{padding:24px 18px 18px}
+body.w390 .horizon .q{font-size:23px; max-width:none}
+body.w390 .gate{padding:12px 18px; gap:10px}
+body.w390 .gate .nameblock{width:100%; margin-right:0}
+body.w390 .btn{min-height:44px; padding:11px 15px}   /* P3 44px targets */
+body.w390 .field{padding:0 14px}
+body.w390 .field-inner,body.w390 .field-empty{height:380px}
+body.w390 .soil{padding:14px 18px 20px}
+body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
+</style>
+</head>
+<body>
+
+<!-- the only dev chrome in this file -->
+<div class="mk-bar">
+  <b>Arc Standard · mockup</b>
+  <span>weather</span>
+  <span class="mk-seg" id="segWeather">
+    <button type="button" data-w="growing">growing</button>
+    <button type="button" data-w="ember">ember</button>
+    <button type="button" data-w="finished">finished</button>
+  </span>
+  <span>width</span>
+  <span class="mk-seg" id="segWidth">
+    <button type="button" data-x="1360">1360</button>
+    <button type="button" data-x="390">390</button>
+  </span>
+  <span class="mk-note" id="shapeNote"></span>
+</div>
+
+<main class="world">
+  <section class="sheet" id="sheet">
+    <header class="horizon" id="horizon"></header>
+    <div class="gate" id="gate"></div>
+    <div class="field" id="field"></div>
+    <footer class="soil" id="soil"></footer>
+  </section>
+</main>
+
+<div class="scrim" id="scrim">
+  <div class="composer">
+    <h3>Plant a sub-theory</h3>
+    <p class="sub">form leads · pigment second · this arc's taken forms are closed</p>
+    <div class="comp-preview" id="compPreview"></div>
+    <div class="comp-row-h">Silhouette — form leads</div>
+    <div class="comp-grid" id="rowSil"></div>
+    <div class="comp-row-h">Treatment</div>
+    <div class="comp-grid comp-grid-3" id="rowTreat"></div>
+    <div class="comp-row-h">Pigment — second</div>
+    <div class="comp-grid" id="rowHue"></div>
+    <div class="comp-foot">
+      <span class="law" id="compLaw"></span>
+      <button class="btn" type="button" onclick="closeComposer()">Close</button>
+      <button class="btn btn-primary" type="button" id="plantBtn">Plant</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ES3-style (var/function, string concat) to match repo convention. */
+
+var SILS = ['hex','diamond','orb','leaf','shield'];
+var SIL_NAMES = { hex:'beacon', diamond:'facet', orb:'seed', leaf:'frond', shield:'gate' };
+var TREATS = ['solid','outline','hatched'];
+var HUES = ['m1','m2','m3','m4','m5'];
+
+/* silhouette paths on a 64x62 box */
+var PATHS = {
+  hex:     'M32 4 L54 17 L54 43 L32 56 L10 43 L10 17 Z',
+  diamond: 'M32 4 L58 30 L32 56 L6 30 Z',
+  orb:     'M32 30 m-25 0 a25 25 0 1 0 50 0 a25 25 0 1 0 -50 0',
+  leaf:    'M32 6 C50 18 54 40 32 56 C10 40 14 18 32 6 Z',
+  shield:  'M32 5 L55 14 V32 C55 46 44 53 32 57 C20 53 9 46 9 32 V14 Z'
+};
+
+/* ---- FIXTURES -----------------------------------------------------------
+   growing = REAL SHAPE (seed arc censused at Stage 0). bodyChars are the real
+   per-sub-theory lengths and drive mark scale. ember/finished = SYNTHETIC-SHAPE.
+   All prose synthetic.                                                      */
+var FIXTURES = {
+  growing: {
+    synthetic:false,
+    note:'REAL SHAPE — seed arc: 5 sub-theories · 5 books · 12 evidence · values 0 (real)',
+    name:'A Pedagogy of Desire',
+    kicker:'GATHERING · nascent',
+    question:'What does it cost a reader to be taught that their wanting is the problem rather than the place to begin?',
+    answer:null,
+    values:[],
+    door:'Finish →', doorState:'growing',
+    marks:[
+      { sil:'hex',     treat:'solid',   hue:'m1', chars:1658, x:20, y:34, label:'Desire as method',      meta:'4 gathered' },
+      { sil:'leaf',    treat:'solid',   hue:'m4', chars:1568, x:41, y:19, label:'The banking objection', meta:'3 gathered' },
+      { sil:'orb',     treat:'hatched', hue:'m3', chars:3156, x:63, y:37, label:'What a question costs', meta:'5 gathered' },
+      { sil:'diamond', treat:'outline', hue:'m2', chars:1455, x:37, y:64, label:'Refusal as reading',    meta:'2 gathered' },
+      { sil:'shield',  treat:'outline', hue:'m5', chars:102,  x:76, y:70, label:'A note on grading',     meta:'just planted' }
+    ],
+    threads:[[0,1],[0,3],[2,4],[1,2]],
+    books:[
+      { t:'Pedagogy of the Oppressed', c:'#6E3B34' },
+      { t:'Teaching to Transgress',    c:'#4A5A3C' },
+      { t:'The Ignorant Schoolmaster', c:'#5A4632' },
+      { t:'Emile',                     c:'#3E4A5A' },
+      { t:'Deschooling Society',       c:'#6A4B2A' }
+    ]
+  },
+  ember: {
+    synthetic:true,
+    note:'SYNTHETIC-SHAPE — extrapolated: no zero-sub-theory arc exists on the account',
+    name:'Untitled arc',
+    kicker:'EMBER',
+    question:null,
+    invite:'No question yet — plant something, or name what you are circling.',
+    answer:null,
+    values:[],
+    door:'Finish →', doorState:'growing',
+    marks:[],
+    threads:[],
+    books:[]
+  },
+  finished: {
+    synthetic:true,
+    note:'SYNTHETIC-SHAPE — extrapolated: no finished arc exists on the account; its 2 value embers are invented to show the F4 grammar',
+    name:'A Pedagogy of Desire',
+    kicker:'FINISHED · harvest',
+    question:'What does it cost a reader to be taught that their wanting is the problem rather than the place to begin?',
+    answer:'It costs them the only engine that was ever theirs — so the work is not to supply desire but to stop confiscating it.',
+    values:[ 'attention as care', 'refusal is literacy' ],
+    door:'Publish →', doorState:'finished',
+    marks:[
+      { sil:'hex',     treat:'solid',   hue:'m1', chars:2400, x:20, y:34, label:'Desire as method',      meta:'woven' },
+      { sil:'leaf',    treat:'solid',   hue:'m4', chars:2100, x:41, y:19, label:'The banking objection', meta:'woven' },
+      { sil:'orb',     treat:'hatched', hue:'m3', chars:3156, x:63, y:37, label:'What a question costs', meta:'woven' },
+      { sil:'diamond', treat:'outline', hue:'m2', chars:1900, x:37, y:64, label:'Refusal as reading',    meta:'woven' },
+      { sil:'shield',  treat:'outline', hue:'m5', chars:1400, x:76, y:70, label:'A note on grading',     meta:'woven' }
+    ],
+    threads:[[0,1],[0,3],[2,4],[1,2],[3,2]],
+    books:[
+      { t:'Pedagogy of the Oppressed', c:'#6E3B34' },
+      { t:'Teaching to Transgress',    c:'#4A5A3C' },
+      { t:'The Ignorant Schoolmaster', c:'#5A4632' },
+      { t:'Emile',                     c:'#3E4A5A' },
+      { t:'Deschooling Society',       c:'#6A4B2A' }
+    ]
+  }
+};
+
+/* mark diameter from the REAL body length — maturity reads as scale */
+function scaleFor(chars){
+  var min = 34, max = 62, cap = 3200;
+  var c = (typeof chars === 'number') ? chars : 0;
+  if (c > cap) { c = cap; }
+  return Math.round(min + (max - min) * Math.sqrt(c / cap));
+}
+
+/* compose one mark: silhouette x treatment x hue. Harvest adds the gold arrival. */
+function markSVG(m, harvest){
+  var d = scaleFor(m.chars);
+  var fill = 'var(--' + m.hue + ')', edge = 'var(--' + m.hue + '-edge)';
+  var uid = m.sil + m.treat + m.hue;
+  var body = '';
+  if (m.treat === 'solid') {
+    body = '<path d="' + PATHS[m.sil] + '" fill="' + fill + '" stroke="' + edge + '" stroke-width="2"/>';
+  } else if (m.treat === 'outline') {
+    body = '<path d="' + PATHS[m.sil] + '" fill="none" stroke="' + edge + '" stroke-width="3.2"/>';
+  } else {
+    body = '<defs><pattern id="p' + uid + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+           '<line x1="0" y1="0" x2="0" y2="6" stroke="' + fill + '" stroke-width="3"/></pattern></defs>' +
+           '<path d="' + PATHS[m.sil] + '" fill="url(#p' + uid + ')" stroke="' + edge + '" stroke-width="2"/>';
+  }
+  var halo = '<circle class="halo" cx="32" cy="30" r="30" fill="none" stroke="' + (harvest ? 'var(--gold-ember)' : 'var(--gold)') + '" stroke-width="1.4" opacity="' + (harvest ? '.5' : '0') + '"/>';
+  return '<svg width="' + d + '" height="' + d + '" viewBox="0 0 64 62">' + halo + body + '</svg>';
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+var current = 'growing';
+
+function render(w){
+  var f = FIXTURES[w];
+  current = w;
+
+  /* ---- HORIZON: question alone / question+answer+embers / pre-question ---- */
+  var h = '';
+  if (f.question) {
+    h += '<h1 class="q">' + esc(f.question) + '</h1>';
+    if (f.answer) { h += '<p class="a">' + esc(f.answer) + '</p>'; }
+  } else {
+    h += '<p class="invite">' + esc(f.invite) + '</p>';
+  }
+  if (f.values && f.values.length) {
+    var ev = '<div class="embers">';
+    for (var vi = 0; vi < f.values.length; vi++) {
+      ev += '<span class="ember-chip"><i></i>' + esc(f.values[vi]) + '</span>';
+    }
+    h += ev + '</div>';
+  }
+  document.getElementById('horizon').innerHTML = h;
+
+  /* ---- GATE ROW: name+kicker · one act · one door · overflow -------------- */
+  var doorCls = 'btn btn-door' + (f.doorState === 'published' ? ' is-published' : '');
+  /* EMBER DOOR = EMPTY — RULED (Preston, 2026-07-22, Stage-R takeover). The brief
+     names three door lives (growing -> Finish, finished -> Publish, published ->
+     Published) but not the EMBER case. Ruling: law 8 — the seat shows only takeable
+     acts, and an empty arc cannot be finished. The door APPEARS WITH THE FIRST
+     SUB-THEORY, so the gate is the sub-theory count alone (not the question): an
+     ember Gate Row is name + kicker + "+ Sub-theory" + overflow, nothing else. */
+  var seatEmpty = (f.marks.length === 0);
+  document.getElementById('gate').innerHTML =
+    '<span class="nameblock">' +
+      '<span class="arcname" contenteditable="true" spellcheck="false">' + esc(f.name) + '</span>' +
+      '<span class="kicker">' + esc(f.kicker) + '</span>' +
+    '</span>' +
+    '<button class="btn btn-primary" type="button" onclick="openComposer()">+ Sub-theory</button>' +
+    (seatEmpty ? '' : '<button class="' + doorCls + '" type="button">' + esc(f.door) + '</button>') +
+    '<button class="btn btn-more" type="button" title="Delete arc · Return to ember">⋯</button>';
+
+  /* ---- FIELD: marks planted in the ground, gold threads between ----------- */
+  var fieldEl = document.getElementById('field');
+  if (!f.marks.length) {
+    /* law 4 (sparse-honest): the horizon's invitation IS the one --ink-3 line.
+       Open ground carries NOTHING else — no placeholder copy, no furniture. */
+    fieldEl.innerHTML = '<div class="field-empty"></div>';
+  } else {
+    var harvest = (w === 'finished');
+    var svgT = '<svg class="threads" viewBox="0 0 100 100" preserveAspectRatio="none">';
+    for (var t = 0; t < f.threads.length; t++) {
+      var a = f.marks[f.threads[t][0]], b = f.marks[f.threads[t][1]];
+      var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 4;
+      /* non-scaling-stroke: the field SVG stretches non-uniformly (viewBox 100x100
+         over a wide box), which would otherwise smear the thread weight. */
+      svgT += '<path vector-effect="non-scaling-stroke" d="M ' + a.x + ' ' + a.y + ' Q ' + mx + ' ' + my + ' ' + b.x + ' ' + b.y + '"/>';
+    }
+    svgT += '</svg>';
+    var mk = '';
+    for (var i = 0; i < f.marks.length; i++) {
+      var m = f.marks[i];
+      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + m.x + '%;top:' + m.y + '%">' +
+              markSVG(m, harvest) +
+              '<span class="mlabel">' + esc(m.label) + '</span>' +
+              '<span class="mmeta">' + esc(m.meta) + '</span>' +
+            '</button>';
+    }
+    fieldEl.innerHTML = '<div class="field-inner">' + svgT + mk + '</div>';
+  }
+
+  /* ---- SOIL ROW: sparse-honest — no books, no row ------------------------- */
+  var soilEl = document.getElementById('soil');
+  if (!f.books.length) {
+    soilEl.innerHTML = '';
+    soilEl.style.display = 'none';
+  } else {
+    soilEl.style.display = '';
+    var sb = '<p class="soil-h">What this field grows from</p><div class="soil-row">';
+    for (var bi = 0; bi < f.books.length; bi++) {
+      sb += '<span class="book" style="background:linear-gradient(135deg,' + f.books[bi].c + ',#241608)" title="' + esc(f.books[bi].t) + '"><span>' + esc(f.books[bi].t) + '</span></span>';
+    }
+    soilEl.innerHTML = sb + '</div>';
+  }
+
+  /* shape-provenance note in the dev bar */
+  var note = document.getElementById('shapeNote');
+  note.innerHTML = f.synthetic ? '<span class="synth">' + esc(f.note) + '</span>' : esc(f.note);
+
+  /* toggles */
+  var wb = document.getElementById('segWeather').getElementsByTagName('button');
+  for (var k = 0; k < wb.length; k++) { wb[k].className = (wb[k].getAttribute('data-w') === w) ? 'on' : ''; }
+  wireMarks();
+}
+
+/* tap 1 = step closer (staged lighting). Full approach lands at Stage 3. */
+function wireMarks(){
+  var ms = document.getElementsByClassName('mark');
+  for (var i = 0; i < ms.length; i++) {
+    (function(el){
+      el.onclick = function(e){
+        e.stopPropagation();
+        var lit = el.className.indexOf('lit') > -1;
+        var all = document.getElementsByClassName('mark');
+        for (var j = 0; j < all.length; j++) { all[j].className = 'mark'; }
+        if (!lit) { el.className = 'mark lit'; }
+      };
+    })(ms[i]);
+  }
+}
+document.onclick = function(){
+  var all = document.getElementsByClassName('mark');
+  for (var j = 0; j < all.length; j++) { all[j].className = 'mark'; }
+};
+
+/* ---- COMPOSER: form-first grid; combos already in this arc are closed ----- */
+/* The mint: form is chosen, then treatment, then pigment — pigment is SELECTED,
+   never derived (F6). Uniqueness is enforced on the FULL triple: a pigment whose
+   silhouette|treatment|pigment already stands in this arc is closed, and Plant is
+   refused while the current identity collides. Within-arc uniqueness is
+   guaranteed by construction, not hoped for (law 6). */
+var compSel = { sil:'hex', treat:'solid', hue:'m1' };
+
+function takenSet(){
+  var f = FIXTURES[current], t = {}, i;
+  for (i = 0; i < f.marks.length; i++) {
+    t[f.marks[i].sil + '|' + f.marks[i].treat + '|' + f.marks[i].hue] = 1;
+  }
+  return t;
+}
+
+function renderComposer(){
+  var taken = takenSet(), i, html;
+  document.getElementById('compPreview').innerHTML =
+    markSVG({ sil:compSel.sil, treat:compSel.treat, hue:compSel.hue, chars:1900 }, false);
+
+  html = '';
+  for (i = 0; i < SILS.length; i++) {
+    html += '<div class="comp-cell' + (SILS[i] === compSel.sil ? ' sel' : '') + '" data-k="sil" data-v="' + SILS[i] + '">' +
+            markSVG({ sil:SILS[i], treat:compSel.treat, hue:compSel.hue, chars:1000 }, false) +
+            '<span class="cname">' + SIL_NAMES[SILS[i]] + '</span></div>';
+  }
+  document.getElementById('rowSil').innerHTML = html;
+
+  html = '';
+  for (i = 0; i < TREATS.length; i++) {
+    html += '<div class="comp-cell' + (TREATS[i] === compSel.treat ? ' sel' : '') + '" data-k="treat" data-v="' + TREATS[i] + '">' +
+            markSVG({ sil:compSel.sil, treat:TREATS[i], hue:compSel.hue, chars:1000 }, false) +
+            '<span class="cname">' + TREATS[i] + '</span></div>';
+  }
+  document.getElementById('rowTreat').innerHTML = html;
+
+  html = '';
+  for (i = 0; i < HUES.length; i++) {
+    var closed = !!taken[compSel.sil + '|' + compSel.treat + '|' + HUES[i]];
+    html += '<div class="comp-cell' + (HUES[i] === compSel.hue ? ' sel' : '') + (closed ? ' taken' : '') + '" data-k="hue" data-v="' + HUES[i] + '">' +
+            markSVG({ sil:compSel.sil, treat:compSel.treat, hue:HUES[i], chars:1000 }, false) +
+            '<span class="cname">' + HUES[i] + (closed ? ' · taken' : '') + '</span></div>';
+  }
+  document.getElementById('rowHue').innerHTML = html;
+
+  var collide = !!taken[compSel.sil + '|' + compSel.treat + '|' + compSel.hue];
+  document.getElementById('compLaw').innerHTML = collide
+    ? 'That identity already stands in this arc — choose another pigment or form.'
+    : 'No two marks share a full identity. ' + FIXTURES[current].marks.length + ' standing; this one is free.';
+  var pb = document.getElementById('plantBtn');
+  pb.disabled = collide;
+  pb.style.opacity = collide ? '.42' : '1';
+  pb.style.cursor = collide ? 'not-allowed' : 'pointer';
+
+  var cells = document.getElementsByClassName('comp-cell');
+  for (i = 0; i < cells.length; i++) {
+    (function(el){
+      el.onclick = function(){
+        if (el.className.indexOf('taken') > -1) { return; }   /* closed = unpickable */
+        compSel[el.getAttribute('data-k')] = el.getAttribute('data-v');
+        renderComposer();
+      };
+    })(cells[i]);
+  }
+}
+
+function openComposer(){
+  /* opens on a deliberately COLLIDING identity when the arc already holds one,
+     so the uniqueness law is visible the moment the mint opens */
+  compSel = { sil:'hex', treat:'solid', hue:'m1' };
+  renderComposer();
+  document.getElementById('scrim').className = 'scrim on';
+}
+function closeComposer(){ document.getElementById('scrim').className = 'scrim'; }
+
+/* ---- width toggle + URL params (headless capture drives these) ------------ */
+function setWidth(x){
+  document.body.className = (x === '390') ? 'w390' : '';
+  var xb = document.getElementById('segWidth').getElementsByTagName('button');
+  for (var k = 0; k < xb.length; k++) { xb[k].className = (xb[k].getAttribute('data-x') === x) ? 'on' : ''; }
+}
+(function init(){
+  var q = location.search, w = 'growing', x = '1360';
+  var mw = q.match(/weather=([a-z]+)/); if (mw && FIXTURES[mw[1]]) { w = mw[1]; }
+  var mx = q.match(/w=(390|1360)/);     if (mx) { x = mx[1]; }
+  var seg = document.getElementById('segWeather').getElementsByTagName('button');
+  for (var i = 0; i < seg.length; i++) {
+    (function(b){ b.onclick = function(){ render(b.getAttribute('data-w')); }; })(seg[i]);
+  }
+  var segx = document.getElementById('segWidth').getElementsByTagName('button');
+  for (var j = 0; j < segx.length; j++) {
+    (function(b){ b.onclick = function(){ setWidth(b.getAttribute('data-x')); }; })(segx[j]);
+  }
+  setWidth(x);
+  render(w);
+  /* headless-capture hook: ?composer=1 opens the mark composer for a shot */
+  if (q.indexOf('composer=1') > -1) { openComposer(); }
+})();
+</script>
+</body>
+</html>
