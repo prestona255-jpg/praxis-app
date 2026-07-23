@@ -4975,6 +4975,13 @@ function renderShelf() {
   deskCount.id = 'shelf-desk-count';
   deskHead.appendChild(deskCount);
   desk.appendChild(deskHead);
+  // R-CAPTURE CA-1: the carrying-question row — its OWN block above the covers
+  // (the .desk-head baseline flex stays a tight h2+count row). Filled by
+  // renderDeskQuestion(); a question NEVER passes through the capture door.
+  var deskQ = document.createElement('div');
+  deskQ.className = 'desk-question';
+  deskQ.id = 'shelf-desk-question';
+  desk.appendChild(deskQ);
   var deskRow = document.createElement('div');
   deskRow.className = 'desk-row';
   deskRow.id = 'shelf-desk-row';
@@ -5410,6 +5417,7 @@ function buildCoverNode(book, opts) {
 function renderShelfDesk() {
   var row = document.getElementById('shelf-desk-row');
   if (!row || !shelfCtx) { return; }
+  renderDeskQuestion(); // CA-1: the carrying question (renders regardless of the reading set)
   row.innerHTML = '';
   var countEl = document.getElementById('shelf-desk-count');
   var reading = [], i, b;
@@ -5445,6 +5453,75 @@ function renderShelfDesk() {
     door.addEventListener('click', function () { openShelfFocusedBand('desk-reading', reading, 'Reading', null); });
     row.appendChild(door);
   }
+}
+
+// R-CAPTURE CA-1 — the desk's carrying-question row. Three states in one element:
+// EMPTY (one --ink-3 "or-nothing" line, tap to author), AUTHORED (the question,
+// tap-to-edit in place), EDITING (the input). Clearing is first-class + immediate
+// (un-carrying = clearing, not undeleting; F-B). Storage = ONE profile field,
+// never an entry. Needs an account (a question is a profile fact).
+function deskWriteCarryingQuestion(uid, value) {
+  var prof = getProfile(uid);
+  if (!prof) { return; }
+  prof.carryingQuestion = value;
+  saveState();
+  if (typeof saveProfileToFirestore === 'function') {
+    saveProfileToFirestore(uid, getProfile(uid), function () {});
+  }
+}
+function renderDeskQuestion() {
+  var host = document.getElementById('shelf-desk-question');
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user) { host.className = 'desk-question'; return; } // carrying a question needs an account
+  var prof = getProfile(user.uid) || {};
+  var q = (typeof prof.carryingQuestion === 'string') ? prof.carryingQuestion : '';
+  host.className = 'desk-question' + (q ? ' is-authored' : '');
+
+  var line = document.createElement('button');
+  line.type = 'button';
+  line.className = 'desk-question-line';
+  line.textContent = q ? q : 'Tap to carry a question.';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'desk-question-input';
+  input.maxLength = 140;
+  input.style.display = 'none';
+
+  var clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'desk-question-clear';
+  clear.setAttribute('aria-label', 'Clear the carried question');
+  clear.textContent = '×';
+  clear.style.display = q ? '' : 'none';
+
+  line.addEventListener('click', function () {
+    input.value = q;
+    line.style.display = 'none';
+    clear.style.display = 'none';
+    input.style.display = '';
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = q; input.blur(); }
+  });
+  input.addEventListener('blur', function () {
+    deskWriteCarryingQuestion(user.uid, capTrim(input.value));
+    renderDeskQuestion();
+  });
+  clear.addEventListener('click', function (e) {
+    e.stopPropagation();
+    deskWriteCarryingQuestion(user.uid, '');
+    renderDeskQuestion();
+  });
+
+  host.appendChild(line);
+  host.appendChild(input);
+  host.appendChild(clear);
 }
 
 function isMobileShelf() { return window.matchMedia('(max-width:759px)').matches; }
@@ -15873,6 +15950,45 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
     openEntryArcPicker(capturedId, mount);
   });
   overflow.appendChild(addToArcLink);
+
+  // R-CAPTURE CA-1 — the bridge: a question-register note gains "Carry on the
+  // desk", a FORWARD act (F-B) that writes the ONE profile-level carrying question
+  // (never a new record). Replace-with-confirm if the desk already carries one;
+  // otherwise carry directly. Un-carrying happens on the desk (clearing), not here.
+  if (entry.register === 'question') {
+    var carryLink = document.createElement('a');
+    carryLink.href = '#';
+    carryLink.className = 'notebook-entry-add-to-arc notebook-entry-carry-desk';
+    carryLink.textContent = 'Carry on the desk';
+    carryLink.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      var u = getCurrentUser();
+      if (!u) { return; }
+      var qBody = capTrim(entry.body || '');
+      if (!qBody) { return; }
+      var already = capTrim((getProfile(u.uid) || {}).carryingQuestion || '');
+      var chost = card.querySelector('.notebook-entry-carry-host');
+      if (!chost) { chost = document.createElement('div'); chost.className = 'notebook-entry-carry-host'; card.appendChild(chost); }
+      chost.innerHTML = '';
+      if (already && already !== qBody) {
+        var box = document.createElement('div'); box.className = 'desk-carry-confirm is-open';
+        var q1 = document.createElement('div'); q1.textContent = 'Replace the carried question?';
+        var q2 = document.createElement('div'); q2.className = 'q'; q2.textContent = '“' + already + '”  →  “' + qBody + '”';
+        var rrow = document.createElement('div'); rrow.className = 'row';
+        var rep = document.createElement('button'); rep.type = 'button'; rep.className = 'replace'; rep.textContent = 'Replace';
+        var can = document.createElement('button'); can.type = 'button'; can.className = 'cancel'; can.textContent = 'Cancel';
+        rep.addEventListener('click', function() { deskWriteCarryingQuestion(u.uid, qBody); chost.innerHTML = ''; if (typeof capShowToast === 'function') { capShowToast('Carried on the desk', null); } });
+        can.addEventListener('click', function() { chost.innerHTML = ''; });
+        rrow.appendChild(rep); rrow.appendChild(can);
+        box.appendChild(q1); box.appendChild(q2); box.appendChild(rrow);
+        chost.appendChild(box);
+      } else {
+        deskWriteCarryingQuestion(u.uid, qBody);
+        if (typeof capShowToast === 'function') { capShowToast('Carried on the desk', null); }
+      }
+    });
+    overflow.appendChild(carryLink);
+  }
 
   // N2: File to book -- only for an Inbox item (filed === false). Sets
   // filed = true + the bookId, routing it from Inbox into that book's bank.

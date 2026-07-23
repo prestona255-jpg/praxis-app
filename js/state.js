@@ -1355,7 +1355,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -1380,7 +1380,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -1432,6 +1432,15 @@ function ensureUser(uid) {
       typeof state.users[uid].profile.statement !== 'string') {
     state.users[uid].profile.statement = '';
   }
+  // R-CAPTURE CA-1: the desk's carrying question (the reader's one central
+  // question, authored inline on the Shelf desk). Additive guard so a profile
+  // seeded before R-CAPTURE gains the slot. Default '' = "or-nothing". Lives in
+  // profile{} so it mirrors via /userProfiles; NEVER an entry / never joins the
+  // corpus. No SCHEMA_VERSION bump (the answeringLine/statement precedent).
+  if (state.users[uid].profile &&
+      typeof state.users[uid].profile.carryingQuestion !== 'string') {
+    state.users[uid].profile.carryingQuestion = '';
+  }
   // yumi-intelligence Stage I: the reader-model store (named threads + a prose
   // reading profile), mirrored via its own /userReaderModel/{uid} doc. Additive
   // guards backfill the default shape + each sub-field for a record seeded
@@ -1470,7 +1479,7 @@ function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
     return state.users[uid].profile;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '' };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields

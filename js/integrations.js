@@ -603,7 +603,12 @@ firebase.auth().onAuthStateChanged(function (u) {
           // list (the Firestore-merge gotcha: a sign-in doc bypasses migrate(), so
           // read AND write must both carry it or a second device silently wipes it).
           // Default '' when absent on the remote doc.
-          statement:           (typeof rd.statement === 'string') ? rd.statement : ''
+          statement:           (typeof rd.statement === 'string') ? rd.statement : '',
+          // R-CAPTURE CA-1: the desk's carrying question. Symmetric with the
+          // .set() write list (the Firestore-merge gotcha: a sign-in doc bypasses
+          // migrate(), so read AND write must both carry it or a second device
+          // silently wipes it). Default '' when absent on the remote doc.
+          carryingQuestion:    (typeof rd.carryingQuestion === 'string') ? rd.carryingQuestion : ''
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -1032,6 +1037,9 @@ function saveProfileToFirestore(uid, profile, callback) {
         // R9a (AM8): persist the values-statement prose. Full-doc .set() -> must be
         // listed or it would be wiped on every Profile save. Default '' when absent.
         statement:           (profile && typeof profile.statement === 'string') ? profile.statement : '',
+        // R-CAPTURE CA-1: the desk's carrying question. Full-doc .set() -> must be
+        // listed or it would be wiped on every profile save. Default '' when absent.
+        carryingQuestion:    (profile && typeof profile.carryingQuestion === 'string') ? profile.carryingQuestion : '',
         updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(function () {
