@@ -23706,9 +23706,47 @@ function initCaptureDoor() {
 // public summon — e.g. openCaptureDoor({ targetKey: bookId, mode: 'note' })
 function openCaptureDoor(opts) { if (!CAP_MOUNTED) { initCaptureDoor(); } capOpen(opts || {}); }
 
+// Lane 3 — Android share_target landing (GET, text-only). The manifest's
+// share_target action is "/", so a share arrives as ?title=&text=&url= on cold
+// open. The router is 100% hash-based (zero location.search elsewhere), so this is
+// net-new plumbing scoped to the share case only: compose the shared bits, open the
+// door pre-filled, then strip the query so a reload never re-fires it. No-op when
+// there is no share payload (the normal cold open). File/image share = NO-GO (the
+// SW bails on non-GET); iOS = NO-GO (WebKit has no share_target) — GET-text only.
+function capHandleShareTarget() {
+  var s = location.search || '';
+  if (!s || s.indexOf('=') === -1) { return; }
+  var params = {}, pairs = s.replace(/^\?/, '').split('&'), i, kv;
+  for (i = 0; i < pairs.length; i = i + 1) {
+    kv = pairs[i].split('=');
+    if (kv[0]) {
+      try { params[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' ')); } catch (e) {}
+    }
+  }
+  var title = params.title || '', text = params.text || '', url = params.url || '';
+  if (!title && !text && !url) { return; }
+  var parts = [];
+  if (title && title !== text) { parts.push(title); }
+  if (text) { parts.push(text); }
+  if (url && text.indexOf(url) === -1) { parts.push(url); }
+  var body = capTrim(parts.join('\n'));
+  // strip the query so a reload does not re-open the share (keep the hash route)
+  if (window.history && history.replaceState) {
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e2) {}
+  }
+  if (!body) { return; }
+  if (!CAP_MOUNTED) { initCaptureDoor(); }
+  capOpen({ mode: 'note' });
+  var f = capEl('capField');
+  f.value = f.value ? (f.value + '\n' + body) : body;
+  capAutogrow();
+  capScheduleDraftSave();
+}
+
 window.views = {
   initCaptureDoor:       initCaptureDoor,
   openCaptureDoor:       openCaptureDoor,
+  capHandleShareTarget:  capHandleShareTarget,
   renderRoute:           renderRoute,
   drainCommonsExits:     drainCommonsExits,
   renderAccountPage:     renderAccountPage,

@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // focus lands in one frame on summon (CD-2, the <400ms local-first law). Body-
   // level + idempotent; persists across route re-renders like the Bloom corner.
   if (window.views && window.views.initCaptureDoor) { window.views.initCaptureDoor(); }
+  // R-CAPTURE Lane 3: handle an Android share_target landing (?title=&text=&url=)
+  // once at boot — opens the door pre-filled, then strips the query. No-op on a
+  // normal cold open (no share payload).
+  if (window.views && window.views.capHandleShareTarget) { window.views.capHandleShareTarget(); }
   // R-ARC S9 (the raised-hand seat): evaluate the hand AFTER loadState -- a
   // returning reader with a ripe backlog gets the hand on open. yumi-ui's own
   // init runs before state is loaded, so the boot raise belongs here. Cheap +
