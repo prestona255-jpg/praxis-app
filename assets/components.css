@@ -16427,6 +16427,23 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.af-world .af-field::before,
 .arcfield.af-world .af-field::after{ content:none; }
 .arcfield.af-world .af-field svg{ display:block; width:100%; height:auto; overflow:visible; }
+/* F7 THE ZOOM (S2) — the camera flies in toward the tapped mark and the route
+   swaps to the clearing. A transform on the CONTAINER only; mark positions
+   inside the SVG never move (law 7). MO-1 timing + easing; the sheet's
+   overflow:hidden clips the growing field, so it reads as flying inward.
+   Under reduced motion the flight never starts (skipped in JS) — the class is
+   still defined but harmless. */
+.arcfield.af-world .af-field{ transform:scale(1); opacity:1; will-change:transform, opacity; }
+.arcfield.af-world .af-field.af-zooming{
+  transition:transform var(--dur-gentle, 300ms) cubic-bezier(.22,1,.36,1),
+             opacity var(--dur-gentle, 300ms) ease;
+  transform:scale(2.8);
+  opacity:0;
+  pointer-events:none;
+}
+@media (prefers-reduced-motion:reduce){
+  .arcfield.af-world .af-field.af-zooming{ transition:none; transform:none; opacity:1; }
+}
 /* F7 QUIET LABELS — a resting mark carries its NAME and nothing else; the
    thread count is a property of the APPROACH (S2), never of rest. The halo
    stroke keeps a label legible where it crosses a thread. */
@@ -16509,3 +16526,35 @@ body.wc-focus .app-nav { opacity:.26; }
   display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
 }
 .arcfield.af-world .af-book-a{ bottom:8px; font-size:6px; }
+
+/* ===========================================================================
+   THE ARC STANDARD — S2 · THE CLEARING (the workshop reframed)   (2026-07-23)
+   Field -> clearing -> page is one continuous zoom. The clearing is the
+   workshop at the middle distance: a breadcrumb (where-you-are), ONE faint
+   horizon line (G2, the only continuity cue), the D3 one-gesture return. The
+   court — the workshop's two-column anatomy — is preserved; this is framing. */
+.st-build.lum-amber-deep .stb-clearing-crumb{
+  display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+  margin:0 0 14px; font-family:var(--lum-mono, var(--font-mono));
+  font-size:11px; letter-spacing:.08em;
+}
+.st-build.lum-amber-deep .stb-crumb-back{
+  color:var(--lum-gold, var(--gold)); text-decoration:none;
+  text-transform:uppercase; letter-spacing:.13em;
+}
+.st-build.lum-amber-deep .stb-crumb-back:hover{ text-decoration:underline; }
+.st-build.lum-amber-deep .stb-crumb-sep{ color:var(--lum-ink-4, var(--ink-4)); }
+.st-build.lum-amber-deep .stb-crumb-here{
+  color:var(--lum-ink-2, var(--ink-2)); font-family:var(--lum-serif, var(--font-serif));
+  font-style:italic; font-size:14px; letter-spacing:0; text-transform:none;
+}
+/* the single faint horizon — the clearing's one continuity cue (G2). */
+.st-build.lum-amber-deep .stb-clearing-horizon{
+  height:1px; margin:0 0 22px;
+  background:linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--lum-gold, var(--gold)) 34%, transparent) 22%,
+    color-mix(in srgb, var(--lum-gold, var(--gold)) 34%, transparent) 78%,
+    transparent 100%);
+  opacity:.6;
+}

@@ -11060,7 +11060,34 @@ function renderSubTheoryBuild(id) {
   // read's room only. .stb-warm-dim is the shared additive modifier (see the Page).
   wrap.className = 'st-build lum-amber-deep stb-warm-dim';
 
-  // ROOM-1 D3 rider: honest landing -- one gesture back; one-shot.
+  // F3 THE CLEARING (S2): the workshop reframes as the clearing — the third
+  // distance in one continuous zoom out of the field. A breadcrumb carries
+  // where-you-are (‹ the field you came from · this one thing), a SINGLE faint
+  // horizon line is the only continuity cue (G2 sparse), and the D3 return is
+  // one gesture back to the field. The court (the two-column workshop anatomy)
+  // is preserved untouched — the clearing is a framing change, not a rebuild.
+  var clearingCrumb = document.createElement('div');
+  clearingCrumb.className = 'stb-clearing-crumb';
+  var crumbBack = document.createElement('a');
+  crumbBack.className = 'stb-crumb-back';
+  crumbBack.href = subTheory.arcId ? ('#arc/' + subTheory.arcId) : '#arcs';
+  crumbBack.textContent = '‹ ' + ((arc && arc.title) ? arc.title : 'the field');
+  clearingCrumb.appendChild(crumbBack);
+  var crumbSep = document.createElement('span');
+  crumbSep.className = 'stb-crumb-sep';
+  crumbSep.textContent = '·';
+  clearingCrumb.appendChild(crumbSep);
+  var crumbHere = document.createElement('span');
+  crumbHere.className = 'stb-crumb-here';
+  crumbHere.textContent = (subTheory.header && subTheory.header.length) ? subTheory.header : 'this sub-theory';
+  clearingCrumb.appendChild(crumbHere);
+  wrap.appendChild(clearingCrumb);
+  var clearingHorizon = document.createElement('div');
+  clearingHorizon.className = 'stb-clearing-horizon';
+  clearingHorizon.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(clearingHorizon);
+
+  // ROOM-1 D3 rider: honest landing from CREATE keeps its notebook return too.
   if (stbArrivedFromCreate) {
     var stbReturn = document.createElement('a');
     stbReturn.className = 'stb-return-chip';
@@ -12102,8 +12129,9 @@ function _stEntryPreview(entry) {
 // mark]) so mark groups -- which carry both attributes -- are excluded.
 // Each render builds a fresh svg, so listeners + the lazily-created tooltip
 // are scoped per render and cannot leak across List<->Web toggles.
-function _stConstellationAttachInteractions(svgEl, arc) {
+function _stConstellationAttachInteractions(svgEl, arc, opts) {
   if (!svgEl || !arc) { return; }
+  opts = opts || {};
 
   var subById = {};
   var subs = (arc && arc.subTheories) ? arc.subTheories : [];
@@ -12305,10 +12333,18 @@ function _stConstellationAttachInteractions(svgEl, arc) {
         + names.join(', ') + '.'));
     }
     body.appendChild(line);
-    var open = document.createElement('a');
+    // F7: the quiet door on the approach card. Tapping it ARRIVES with the same
+    // zoom as tapping the lit mark (the door is one honest tap into the
+    // clearing). Falls back to a plain route if no arrive handler (Home embed).
+    var open = document.createElement('button');
+    open.type = 'button';
     open.className = 'arcfield-whisper-open';
-    open.href = '#subtheory/' + sub.id;
-    open.textContent = 'Open the sub-theory →';
+    open.textContent = 'Open →';
+    open.addEventListener('click', function (ev) {
+      if (ev && ev.stopPropagation) { ev.stopPropagation(); }
+      if (typeof opts.onArrive === 'function') { opts.onArrive(sub.id, null); }
+      else { location.hash = 'subtheory/' + sub.id + '/build'; }
+    });
     body.appendChild(open);
     // Wave 8 (Lane A, item 1): the future generative Yumi whisper mounts HERE.
     _stYumiWhisperSeam(sub, body);
@@ -12319,7 +12355,19 @@ function _stConstellationAttachInteractions(svgEl, arc) {
       if (evt && typeof evt.stopPropagation === 'function') { evt.stopPropagation(); }
       var id = el.getAttribute('data-st-sub-id');
       if (!id) { return; }
-      if (_stFocalId === id) { markRelease(); } else { markConcentrate(id); }
+      // F7 THE APPROACH (S2): tap 1 = step closer (concentrate — the mark lights,
+      // its threads brighten, the whisper card carries its read + count + door).
+      // Tapping the LIT mark = ARRIVE: the field draws close (the ruled zoom) and
+      // you land in the clearing. Tapping a DIFFERENT mark switches focus. Tap
+      // elsewhere (background) releases. The door is thus always one honest tap
+      // away and never an accidental one. onArrive is passed ONLY by the arc
+      // field (opts below), so Home's embed keeps its plain concentrate/release.
+      if (_stFocalId === id) {
+        if (typeof opts.onArrive === 'function') { opts.onArrive(id, el); }
+        else { markRelease(); }
+      } else {
+        markConcentrate(id);
+      }
     });
   }
   // A tap on empty field space releases the concentration (mark taps stop
@@ -13516,7 +13564,11 @@ function renderArcDetail(arcId) {
     // height above). RD-2: height grows to the lowest mark plus breathing room
     // over a generous minimum -- never a fixed box with a void under it.
     if (!afDesktop) { _afFitFieldHeight(afSvg); }
-    _stConstellationAttachInteractions(afSvg, arcData);
+    _stConstellationAttachInteractions(afSvg, arcData, {
+      // F7 ARRIVE (S2): the lit mark's second tap flies the camera in and lands
+      // in the clearing (the workshop). Passed only here, so Home stays plain.
+      onArrive: function (subId, markEl) { _afArrive(subId, markEl, webContainer); }
+    });
     if (typeof window.attachSubTheoryDrag === 'function') {
       window.attachSubTheoryDrag(afSvg, {
         arc: arcData,
@@ -13563,6 +13615,43 @@ function _afFitFieldHeight(svg) {
   // geometry, and a ceiling on the growing edge is exactly geometry cutting one.
   // The page lengthens instead (RD-2); that is the law it was written under.
   svg.setAttribute('viewBox', '0 0 600 ' + h);
+}
+
+// F7 THE APPROACH — THE ZOOM (S2, the round's signature). Arriving at a mark
+// flies the CAMERA in and lands in the clearing (the workshop). The camera is
+// the field container (#arc-field); a CSS transform scales it toward the mark
+// with the mark's own center as the transform-origin, then the route changes.
+//
+// LAW 7 — the camera moves, the arrangement never does. This is a transform on
+// the CONTAINER only; every mark's authored position lives in its own <g>
+// transform inside the SVG and is untouched, by construction. (Proven in the S2
+// checkpoint: authored coords identical before, during and after the flight.)
+//
+// MO-1 — the flight is one ~300ms glide on the shipped easing; under
+// prefers-reduced-motion it does not run at all — the route swaps instantly and
+// continuity is carried by the breadcrumb + faint horizon in the clearing.
+var _afArriving = false;
+function _afArrive(subId, markEl, camera) {
+  if (!subId || _afArriving) { return; }
+  var dest = 'subtheory/' + subId + '/build';  // the clearing = the workshop
+  var reduced = (typeof matchMedia === 'function')
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !camera) { location.hash = dest; return; }
+  if (!markEl && camera.querySelector) {
+    var svg = camera.querySelector('svg');
+    if (svg) { markEl = svg.querySelector('[data-st-sub-id="' + subId + '"]:not([data-st-mark])'); }
+  }
+  if (markEl && markEl.getBoundingClientRect) {
+    var cr = camera.getBoundingClientRect();
+    var mr = markEl.getBoundingClientRect();
+    camera.style.transformOrigin =
+      (mr.left + mr.width / 2 - cr.left) + 'px ' + (mr.top + mr.height / 2 - cr.top) + 'px';
+  }
+  _afArriving = true;
+  if (camera.className.indexOf('af-zooming') === -1) {
+    camera.className = camera.className + ' af-zooming';
+  }
+  setTimeout(function () { _afArriving = false; location.hash = dest; }, 300);  // MO-1 --dur-gentle
 }
 
 // F5: the arc's question is edited IN PLACE, on the horizon line where it
