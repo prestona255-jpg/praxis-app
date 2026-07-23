@@ -122,6 +122,32 @@ Rule: the completeness-inventory STATES row is judged on REAL conditions and add
 distribution-skew cases — a dominant-status majority, dense cross-membership, long
 titles.
 
+**L16 — LAWS VERIFY STRUCTURE, NEVER COMPOSITION-AT-REAL-DATA.**
+Specimen: THE ARC STANDARD S1 passed every §3 law on computed-style + DOM evidence
+(one ground, form-first, threads-gold, no overflow) and shipped a field that
+FAILED Preston's eye — the marks sat in the upper band of a 600×500 viewBox far
+taller than their spread, stranding a void. Green-gate laws proved the pieces were
+right; none of them measured whether the pieces COMPOSED into one screen on real
+data at real density.
+Rule: a composition round adds a stated final gate — a full-page shot of the
+DENSEST REAL arc/surface, at the owner's real width, judged SIDE-BY-SIDE against
+the felt-passed mockup. Structural law-passes are necessary, never sufficient; the
+composition-at-real-data shot is its own PASS row on the acceptance card, and the
+owner's felt pass outranks it (owner-viewport primacy).
+
+**L17 — NEVER HALT THE OWNER MID-VISION ON THE LIVE APP.**
+Specimen: THE ARC STANDARD ran S-FELT→S2→S3→S4 as ONE continuous session under a
+self-run law — local commit + brief report per slice, no push, no mid-run
+question — and interrupted Preston only at the three named gates (Stage-0, the S1
+field gate, the final push). A multi-slice vision (field → approach → clearing →
+gather → weave → composer) reads as one thing to the owner; halting between its
+limbs for a live look fragments the felt read and multiplies stale-SW re-verifies.
+Rule: for a multi-slice vision build, run continuously to a COMPLETE, gated, shot
+page on the rig (all verification on the honest rig, snapshot requested only at
+final verification), then halt ONCE for the push word + the whole-vision felt pass.
+A genuine HALT-class finding (byte-lock, brief contradiction, data-loss fork) still
+stops the run; a slice being merely done does not.
+
 ---
 
 ## MECHANICAL TRUTHS (one-liners, still binding)

@@ -197,3 +197,79 @@ Each sentence below is an acceptance criterion for the mockup and the build. A b
 ---
 
 *Rulings F1–F8, G1–G6 + sweep fold-ins: Preston, July 22, 2026, all at Claude's recommendation via tappable felt-dial. G4/G5 ruled as a same-day addendum after Preston caught the theorizing-acts gap (gather + weave); G6 ruled same day from Preston's textbox-usability finding with four live 1360 screenshots — the writing-core canvas migration claimed into this round. A final canon sweep (Preston-invited) folded four finds: the Hour reconciliation (sheet-on-twilight + jewel m1–m5 re-point), MO-1 motion riders, sequential-footer retirement, and the pre-question horizon. Brief amended in place before commit. Build serializes after the R-SHELF build (running S1→S4 as of this writing); design artifacts (this brief, the mockup branch) proceed in parallel per the pipeline model.*
+
+---
+
+## §11 — AS-BUILT ADDENDUM (round CLOSED 2026-07-23, Preston full felt PASS)
+
+The ARC STANDARD shipped across `591c702..c5a69f4` (S-FELT→S4 + two gate-fix
+commits + the real-data check), v3.246→v3.251, and Preston ratified the whole
+vision on the live app. This addendum records **every ruled deviation from the
+committed brief above** — the brief is preserved as-ruled; these are the
+as-built truths that supersede specific clauses. Each is a Preston ruling or a
+recon-surfaced stale-premise correction, none silent.
+
+**F6 — the mark vocabulary (amended by felt ruling, mockup Stage 1).** The brief
+froze the hue budget at "the five jewel families m1–m5." Superseded by
+**PALETTE-X + R-2**: **ten NAMED pigments** (madder · terracotta · ochre · olive ·
+moss · verdigris · teal · lapis · iris · plum), each AA-measured ≥3:1 on the sheet
+foot, **gold RETIRED as a pigment** (semantic-gold law completes — gold = coal /
+harvest only), **verdigris added** to hold the 10th slot, and **SHAPES-X = nine
+silhouettes** (beacon · facet · seed · frond · gate · spire · well · vessel · bloom;
+`stone` cut by probe P-1 as indistinct from seed at 34px). Identity is 9 × 3
+treatments × 10 pigments. F6's *ordering* law (form first, pigment second,
+uniqueness) is unchanged. Provenance: `mockups/arc-standard-notes.md`.
+
+**F8 — the lifecycle door (as-built).** The brief named Finish → / Publish → /
+Published. The live arc has no arc-level "finished" state — it carries
+`status: ember|graduated` plus a separate `published` flag, and the S2 ceremony is
+per SUB-THEORY. So law 8's *principle* governs (only the takeable act, named for
+its destination): **ember → "Graduate →" · graduated → "Publish →" · published →
+quiet "Published" + share**. The ember door is EMPTY at zero marks (no dead door
+ever). Stage-0 ruling 4.
+
+**F4/F5 — the horizon string.** The arc record has **no separate `question`
+field**; `arc.title` is the one string (the heading has read `.arcfield-q` since
+Wave 1). The horizon carries `arc.title`, **edited in place on the horizon line**
+(satisfying F5's "name, edit-in-place" without printing it twice), and the answer
+is the newest finished sub-theory's `answeringLine`. **True arc-level
+question/answer AUTHORING is R-CAPTURE's chartered seam**, not invented here.
+Stage-0 ruling 2.
+
+**G3 — migration executed DERIVE-ONLY.** `_stMarkIdentity(rec)` is a pure function;
+**S1 wrote no data at all**. A never-chosen mark takes the full ten-wide spread; a
+chosen one keeps its identity, moving only where R-2 moved it (every gold slot →
+ochre). The composer (S4) is the only writer. Stage-0 ruling 6.
+
+**G6 — premise corrected (canvas already adopted).** The brief ruled "full
+`createWritingCanvas` adoption, replacing the raw textarea." **Recon found there was
+no raw textarea** — the workshop already ran the canvas (since before this brief).
+The real work, shipped, was the **dress + honest focus** on the de-dressed
+`.stb-canvas-host` + the kit sweep. The named fallback was NOT triggered. Stage-0
+ruling A.
+
+**G5 — premise corrected (no anchor system).** The brief's §7.11 assumed a
+`proseAnchor` machinery. **Recon found it was deferred at Stage 10 and never built.**
+The weave lands on the shipped `insertAtCaret` + a new
+`document.caretRangeFromPoint` drop-mapping; the "anchor" is the inserted italic
+cite itself. **No anchor system was built.** Stage-0 ruling B.
+
+**F6 uniqueness — as-built scope.** Uniqueness is **guaranteed at the composer**
+(the mint and every recomposition close every taken triple in-arc and refuse Plant
+on a collision). Two marks BOTH left on their derived hash identity can collide
+(birthday-paradox at ~19+ never-composed marks in one arc) — a **named residual**,
+carried to the ledger. Forcing a derived mark's identity would make it
+arc-dependent and non-stable-across-reloads (violating the covenant + the
+pure-function-of-id law), so it is offered/never-applied (G3), not force-resolved.
+Red-team finding, corrected claim.
+
+**S-FELT — the composition fix-forward (post-S1 felt FAIL).** Preston's S1 felt
+verdict was *foundation ratified, composition FAILED*. Fixed forward (no revert):
+the field normalizes into ONE composed screen at desktop (`_stComposedLayout` —
+authored positions verbatim so a drag round-trips exactly, defaults in a composed
+slot); presence re-weighted toward solid; the hover ghost retired (touch parity).
+
+*As-built recorded at close by Claude Code; ruled by Preston across the vision
+session (July 22) + Stage-0 (July 22) + the S1 field gate + the final felt pass
+(July 23). The `mockup/arc-standard` branch stays on origin as the reference
+archive.*

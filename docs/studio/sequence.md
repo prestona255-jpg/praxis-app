@@ -31,6 +31,20 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-23 (THE ARC STANDARD — ROUND CLOSED, Preston full felt PASS on the whole vision, live)** —
+  the program's flagship round is CLOSED. The arc interior became the Field (one composed screen on
+  the Hour's twilight), the workshop the Clearing, the page the deepest distance. Shipped
+  `591c702..c5a69f4` (8 commits: S-FELT · S2 · S3 · S4 + 2 gate-fix + 2 docs), v3.246→**v3.251** live.
+  ARC STANDARD → Shipped. The S1 field gate FAILED on composition (foundation ratified) → **fix-forward
+  from Preston's words** (no revert, R-SHELF S5 precedent) → S-FELT composed the field → final felt
+  PASS. Both gates run (reviewer mechanical PASS; red-team 3 BLOCK/1 HOLD/3 NOTE all fixed — headline
+  the drag-snap-back covenant break). Debt carried out: Ask-Yumi arc-context gap (Yumi round) ·
+  derived-mark collision (composer-resolvable residual) · question-authoring → R-CAPTURE · B-M mobile
+  unchanged. `## Now` re-set — **R-CAPTURE is the truest next move** (it inherits the question-authoring
+  seam). Preston-directed close; nothing retired, no decision contradicted — no `PROPOSED:` flag. New
+  lesson **L16** (laws verify structure, never composition-at-real-data) + **L17** (never halt the owner
+  mid-vision on the live app), both ratified with this round's specimen. Records:
+  `docs/studio/arc-standard.md` + `docs/checkpoints/arc-standard-acceptance-close.md`. Builder regenerated.
 - **2026-07-22 (R-SHELF ROUND CLOSED — Preston-DIRECTED, felt pass #2 = PASS)** — the Shelf
   re-composition is CLOSED on Preston's dual felt read (390 phone + desktop) on production; v3.243
   `c90e70a` live. R-SHELF → Shipped. **All drafted close proposals RATIFIED** (this close-out docs
@@ -429,6 +443,27 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **THE ARC STANDARD — the arc interior + writing-surface north-star (DEEP round, S1→S4 + S-FELT
+  fix-forward, v3.246→v3.251; full felt PASS 2026-07-23)** — the flagship. The arc interior became
+  THE FIELD: one lit sheet on the Hour's twilight, nothing floating on it as a panel — the cream-panel
+  seam gone by construction. The sky carries the question(=`arc.title`, edit-in-place) with the answer
+  joining from the newest finished sub; the Gate Row consolidated 15 scattered controls into kicker +
+  one act + one state-aware door (Graduate→/Publish→/Published) + ⋯ overflow; the Field/Read/Page
+  switcher dissolved. Marks re-composed FORM-FIRST: 9 silhouettes × 3 treatments × 10 named pigments
+  (PALETTE-X + R-2, gold retired as pigment), maturity-sized with a gold coal, migrated DERIVE-ONLY
+  (S1 wrote no data). Books left the canvas (the ledgered stray-square glyph, 17 rects) for the SOIL
+  ROW. **S2** — tap→light→the ZOOM (law 7: camera moves, arrangement never does)→the Clearing (workshop
+  reframed). **S3** — the unrooted seat (adopt orphans, 7 on Preston's real account), the soil-reach
+  (native `<select>` retired), the weave (drag-across-edge at the caret). **S4** — the mark composer
+  (form-first, in-arc uniqueness, offered/never-applied; replaces every Change-mark path). **S1 field
+  gate FAILED on composition (foundation ratified) → S-FELT fix-forward composed the field into one
+  screen → final felt PASS.** Both gates run; red-team caught + fixed the drag-snap-back covenant break.
+  Push ledger `591c702..c5a69f4` (8 commits): S-FELT `53c406d` · S2 `a7f8e73` · S3 `3876924` · S4
+  `7ec7ff3` · gate `5ca540e`/`b4b1097` · docs `9962afc`/`c5a69f4`; v3.251 live. Byte-locks untouched;
+  the one data-model addition = per-mark `markSilhouette/Treatment/Pigment` (composer-written) +
+  orphan-adopt `arcId` reassignment. Records: `docs/studio/arc-standard.md` (ledger + debt),
+  `docs/checkpoints/arc-standard-{recon,s1,s2-s4,acceptance-close}.md`. Reference archive:
+  `mockup/arc-standard` on origin (do-not-merge).
 - [x] **R-SHELF — the Shelf re-composition (DEEP round, S1→S5, v3.242→v3.243; felt pass #2 = PASS
   2026-07-22)** — the sidebar dissolved (F4) into a slim header (search + Categories⇄Lenses re-shelving
   toggle + carried Manage/Add/Select + value chips); wheat horizon (F9) + the desk (NOW = still-reading,
@@ -686,20 +721,25 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**The 3 truest next moves after the R-SHELF close (2026-07-22). The runway view of
-the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
+**The 3 truest next moves after the ARC STANDARD close (2026-07-23). The runway view
+of the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [ ] **THE ARC STANDARD — deep round (build)** — the arc-interior + sub-theory writing-surface
-  north-star at 1360 in THE HOUR world; mockup spec comes from chat (do-not-merge branch,
-  second-yes ratification, build-to-mockup, fidelity-gated). Absorbs LOOK-1, LOOK-2-arc-side, and
-  the arc-Field ledger (candy glyph palette, pill sprawl, dark-panel seam, stray glyph). **The
-  build lane is now FREE — R-SHELF shipped (v3.243, felt pass #2 PASS).** `[arcs, arc-detail, subtheory-build]`
 - [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry,
-  sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`); shaping runs in chat during
-  ARC's build. **Now also owns the carrying-question AUTHORING seam surfaced at R-SHELF (ruling D4:
-  the desk line is carrying-question-OR-NOTHING; authoring lives here).** `[import-capture, notebook]`
+  sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`). **Now the truest next move — the
+  ARC STANDARD build lane is FREE (shipped v3.251, full felt PASS).** Owns the carrying-question
+  AUTHORING seam surfaced at R-SHELF (D4) **and re-confirmed by the ARC STANDARD** (the arc horizon
+  carries `arc.title`; true arc-level question/answer authoring lands here, not on the field).
+  `[import-capture, notebook]`
 - [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
   single shared `views.js`/`components.css` build lane (PIPELINE LAW).
+- [ ] **A Yumi round (unscoped) — owns the arc-context gap** — the Bloom's chat never learns which arc
+  you are in (`renderRoute` nulls `state.currentArcId` on `#arc/<id>`; `assembleContextData` carries
+  `{title}` at best), so "Ask Yumi what she sees here" is parked in the arc ⋯ overflow rather than
+  retired. Yumi-adjacent → this round's debt #1, deferred to a Yumi round. `[yumi-brain, views]`
+
+- [x] **THE ARC STANDARD — deep round — CLOSED 2026-07-23** (S-FELT→S4 + gate fixes,
+  v3.246→v3.251, full felt PASS; the flagship). The arc interior became the Field, the workshop
+  the Clearing, the page the deepest distance. Detail in `## Shipped` + `docs/studio/arc-standard.md`.
 
 - [x] **R-POLISH — the pre-launch polish round — CLOSED 2026-07-20** (batches B1→B4 +
   B-M all shipped v3.231→v3.238; FX-1 add-guard pulled forward, v3.237). Detail in
