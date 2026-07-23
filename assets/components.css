@@ -16558,3 +16558,67 @@ body.wc-focus .app-nav { opacity:.26; }
     transparent 100%);
   opacity:.6;
 }
+
+/* ===========================================================================
+   THE ARC STANDARD — S3 · THE UNROOTED SEAT              (2026-07-23, ruling 5a)
+   Orphan sub-theories (arcId → no arc) surface here, honest and repairable.
+   Quiet by design and rendered only when orphans exist (sparse-honest). Scoped
+   to the light Arcs page. */
+.arcs.lum-amber-deep .arcs-unrooted{ margin:var(--sp-6, 40px) 0 0; }
+.arcs.lum-amber-deep .arcs-unrooted-h{ margin-bottom:6px; }
+.arcs.lum-amber-deep .arcs-unrooted-sub{
+  font-family:var(--font-serif); font-style:italic; font-size:15px;
+  color:var(--ink-3); margin:0 0 14px;
+}
+.arcs.lum-amber-deep .arcs-unrooted-row{
+  display:flex; align-items:center; gap:14px;
+  padding:11px 14px; border:1px solid var(--border);
+  border-radius:var(--radius-md, 12px); background:var(--surface);
+  margin:0 0 10px;
+}
+.arcs.lum-amber-deep .arcs-unrooted-mark{ flex:0 0 auto; width:26px; height:26px; line-height:0; }
+.arcs.lum-amber-deep .arcs-unrooted-title{
+  flex:1 1 auto; min-width:0; font-family:var(--font-serif); font-size:17px;
+  color:var(--ink); text-decoration:none;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.arcs.lum-amber-deep .arcs-unrooted-title:hover{ text-decoration:underline; }
+.arcs.lum-amber-deep .arcs-unrooted-adopt{ position:relative; flex:0 0 auto; }
+.arcs.lum-amber-deep .arcs-unrooted-btn{
+  font-family:var(--font-body); font-size:13px; cursor:pointer;
+  padding:8px 14px; min-height:40px; border-radius:var(--radius-pill, 999px);
+  border:1px solid var(--gold); background:none; color:var(--gold-ink, var(--gold));
+}
+.arcs.lum-amber-deep .arcs-unrooted-btn:hover{ background:var(--wash); }
+.arcs.lum-amber-deep .arcs-unrooted-menu{
+  display:none; position:absolute; right:0; top:calc(100% + 6px); z-index:30;
+  min-width:200px; max-height:280px; overflow:auto; padding:6px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-md, 12px); box-shadow:var(--card-shadow);
+}
+.arcs.lum-amber-deep .arcs-unrooted-menu.is-open{ display:block; }
+.arcs.lum-amber-deep .arcs-unrooted-opt{
+  display:block; width:100%; text-align:left; cursor:pointer;
+  font-family:var(--font-body); font-size:14px; color:var(--ink);
+  background:none; border:0; border-radius:var(--radius-sm, 8px);
+  padding:9px 10px; min-height:38px;
+}
+.arcs.lum-amber-deep .arcs-unrooted-opt:hover{ background:var(--wash); }
+@media (max-width:759px){
+  .arcs.lum-amber-deep .arcs-unrooted-menu{ right:auto; left:0; }
+}
+
+/* THE ARC STANDARD — S3 · the weave a11y twin (field-card acts). Revealed when
+   a field card is lifted; keyboard/touch users weave without dragging. */
+.st-build.lum-amber-deep .stb-fc-acts{
+  display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;
+}
+.st-build.lum-amber-deep .stb-fc-act{
+  font-family:var(--lum-mono, var(--font-mono)); font-size:11px; letter-spacing:.06em;
+  text-transform:uppercase; cursor:pointer; text-decoration:none;
+  padding:6px 11px; min-height:32px; border-radius:var(--radius-pill, 999px);
+  border:1px solid var(--lum-line, rgba(255,236,200,.22));
+  color:var(--lum-ink-2, var(--ink-2)); background:none;
+}
+.st-build.lum-amber-deep .stb-fc-weave{ border-color:var(--lum-gold-d, var(--gold)); color:var(--lum-gold, var(--gold)); }
+.st-build.lum-amber-deep .stb-fc-act:hover{ border-color:var(--lum-gold, var(--gold)); }

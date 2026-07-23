@@ -4219,6 +4219,102 @@ function _arcsSortBar(count) {
   return bar;
 }
 
+// THE ARC STANDARD S3 — the unrooted seat (ruling 5a). Returns a quiet section
+// listing this user's ORPHAN sub-theories (arcId → no arc), each with an
+// adopt-into-an-arc repair, or null when there are none (sparse-honest). The
+// adopt picker is an in-DOM menu of the user's own arcs; picking one calls
+// adoptSubTheoryIntoArc (a real, guarded write) and re-renders.
+function _afBuildOrphanSeat(user, ownArcs) {
+  if (!user || !user.uid) { return null; }
+  var orphans = [], k, sub;
+  for (k in state.subTheories) {
+    if (!Object.prototype.hasOwnProperty.call(state.subTheories, k)) { continue; }
+    sub = state.subTheories[k];
+    if (!sub || sub.userId !== user.uid) { continue; }      // owner-only
+    if (sub.arcId && state.arcs[sub.arcId]) { continue; }   // rooted → skip
+    orphans.push(sub);
+  }
+  if (!orphans.length) { return null; }
+  // stable order: oldest first, id as tie-break (mirrors the field's sort)
+  orphans.sort(function (a, b) {
+    var ca = (typeof a.createdAt === 'number') ? a.createdAt : 0;
+    var cb = (typeof b.createdAt === 'number') ? b.createdAt : 0;
+    if (ca !== cb) { return ca - cb; }
+    return (a.id < b.id) ? -1 : ((a.id > b.id) ? 1 : 0);
+  });
+
+  var sec = document.createElement('section');
+  sec.className = 'arcs-unrooted';
+  var hd = document.createElement('div');
+  hd.className = 'arcs-section-h arcs-unrooted-h';
+  var h2 = document.createElement('h2');
+  h2.textContent = 'Unrooted';
+  hd.appendChild(h2);
+  var sub2 = document.createElement('p');
+  sub2.className = 'arcs-unrooted-sub';
+  sub2.textContent = orphans.length + (orphans.length === 1 ? ' sub-theory has' : ' sub-theories have')
+    + ' lost their arc — give each a home.';
+  hd.appendChild(sub2);
+  sec.appendChild(hd);
+
+  var oi;
+  for (oi = 0; oi < orphans.length; oi = oi + 1) {
+    (function (rec) {
+      var row = document.createElement('div');
+      row.className = 'arcs-unrooted-row';
+
+      var mk = document.createElement('span');
+      mk.className = 'arcs-unrooted-mark';
+      mk.setAttribute('aria-hidden', 'true');
+      if (typeof bookSubMarkHTML === 'function') { mk.innerHTML = bookSubMarkHTML(rec, 26); }
+      row.appendChild(mk);
+
+      var name = document.createElement('a');
+      name.className = 'arcs-unrooted-title';
+      name.href = '#subtheory/' + rec.id + '/build';
+      name.textContent = (rec.header && rec.header.length) ? rec.header : 'Unnamed sub-theory';
+      row.appendChild(name);
+
+      // the adopt control — a menu of the user's arcs. No arcs to adopt into
+      // (a rare edge) leaves only Delete, so the row is never a dead end.
+      var adopt = document.createElement('div');
+      adopt.className = 'arcs-unrooted-adopt';
+      if (ownArcs && ownArcs.length) {
+        var pick = document.createElement('button');
+        pick.type = 'button';
+        pick.className = 'arcs-unrooted-btn';
+        pick.textContent = 'Move to an arc ▾';
+        var menu = document.createElement('div');
+        menu.className = 'arcs-unrooted-menu';
+        pick.addEventListener('click', function () {
+          menu.classList.toggle('is-open');
+        });
+        var ai;
+        for (ai = 0; ai < ownArcs.length; ai = ai + 1) {
+          (function (targetId, targetRec) {
+            var opt = document.createElement('button');
+            opt.type = 'button';
+            opt.className = 'arcs-unrooted-opt';
+            opt.textContent = targetRec.title || 'Untitled arc';
+            opt.addEventListener('click', function () {
+              if (typeof adoptSubTheoryIntoArc === 'function'
+                  && adoptSubTheoryIntoArc(rec.id, targetId)) {
+                renderArcsPage();
+              }
+            });
+            menu.appendChild(opt);
+          })(ownArcs[ai].id, ownArcs[ai].rec);
+        }
+        adopt.appendChild(pick);
+        adopt.appendChild(menu);
+      }
+      row.appendChild(adopt);
+      sec.appendChild(row);
+    })(orphans[oi]);
+  }
+  return sec;
+}
+
 function renderArcsPage() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
@@ -4356,6 +4452,15 @@ function renderArcsPage() {
     yoursSec.appendChild(startTile);
 
     wrap.appendChild(yoursSec);
+
+    // THE ARC STANDARD S3 — THE UNROOTED SEAT (ruling 5a). Orphan sub-theories
+    // (arcId resolves to no arc) are a real, today-invisible data condition —
+    // 7 of them on Preston's real account. Rather than leave them lost, a quiet
+    // seat surfaces them here, honest and REPAIRABLE: each carries an adopt-into-
+    // an-arc control. Sparse-honest: the seat renders ONLY when orphans exist,
+    // so a clean account never sees it.
+    var orphanSeat = _afBuildOrphanSeat(arcsUser, ownArcs);
+    if (orphanSeat) { wrap.appendChild(orphanSeat); }
   }
 
   // Stage 5.3 Stage 3b: worked-example cards. Two cards in one section,
@@ -11657,26 +11762,17 @@ function renderSubTheoryBuild(id) {
     noBooks.textContent = 'No marked passages yet — add marginalia from a book to pull it in here.';
     source.appendChild(noBooks);
   }
-  // R6 S4: THE PULL SYSTEM — search/filter across the author's marginalia (book
-  // select + free text), inserted after srchead, before the book list. Deterministic
-  // vanilla JS (NO Yumi generation): narrows the .stb-book list, empties gracefully.
+  // G4 THE SOIL-REACH (S3): the native-select "Pull from reading" dropdown
+  // RETIRES BY REPLACEMENT (ruling) — the P-B control-dialect fracture resolved
+  // at the root. Reaching a book's passages is now the physical gesture the
+  // book rows already are: tap a book and its marginalia rise (the .stb-book
+  // accordions above). The book <select> was a second, redundant filter in a
+  // foreign dialect. What stays is the free-text SEARCH (the wider corpus door)
+  // — deterministic, vanilla JS, no Yumi generation; it narrows the book list
+  // and empties gracefully.
   if (anyBook) {
     var filterRow = document.createElement('div');
     filterRow.className = 'stb-pull-filter';
-    var bookSel = document.createElement('select');
-    bookSel.className = 'stb-pull-book-sel';
-    bookSel.setAttribute('aria-label', 'Filter by book');
-    var optAll = document.createElement('option');
-    optAll.value = ''; optAll.textContent = 'All books';
-    bookSel.appendChild(optAll);
-    var pti;
-    for (pti = 0; pti < pullBookTitles.length; pti = pti + 1) {
-      var opt = document.createElement('option');
-      opt.value = pullBookTitles[pti].toLowerCase();
-      opt.textContent = pullBookTitles[pti];
-      bookSel.appendChild(opt);
-    }
-    filterRow.appendChild(bookSel);
     var searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.className = 'stb-pull-search';
@@ -11688,14 +11784,12 @@ function renderSubTheoryBuild(id) {
     emptyMsg.style.display = 'none';
     emptyMsg.textContent = 'No marginalia matches.';
     function filterPull() {
-      var selVal = bookSel.value;
       var q = (searchInput.value || '').toLowerCase();
       var bookEls = source.querySelectorAll('.stb-book');
       var shown = 0, fi;
       for (fi = 0; fi < bookEls.length; fi = fi + 1) {
         var bEl = bookEls[fi];
         var title = (bEl.getAttribute('data-book-title') || '').toLowerCase();
-        var bookMatch = (selVal === '' || title === selVal);
         var textMatch = (q === '' || title.indexOf(q) !== -1);
         if (!textMatch) {
           var passages = bEl.querySelectorAll('.stb-passage');
@@ -11704,13 +11798,11 @@ function renderSubTheoryBuild(id) {
             if (passages[pj].textContent.toLowerCase().indexOf(q) !== -1) { textMatch = true; }
           }
         }
-        var visible = bookMatch && textMatch;
-        bEl.style.display = visible ? '' : 'none';
-        if (visible) { shown = shown + 1; }
+        bEl.style.display = textMatch ? '' : 'none';
+        if (textMatch) { shown = shown + 1; }
       }
       emptyMsg.style.display = (shown === 0) ? 'block' : 'none';
     }
-    bookSel.addEventListener('change', filterPull);
     searchInput.addEventListener('input', filterPull);
     var afterHead = srchead.nextSibling;
     source.insertBefore(filterRow, afterHead);
@@ -11771,20 +11863,102 @@ function renderSubTheoryBuild(id) {
         fCards.push({ id: ev.id, kindLine: kindLine, body: body, opens: opens });
       })(gEv[fi2]);
     }
+    // G5 THE WEAVE (S3): a standing note passes from the field into the prose by
+    // the hand. This lands on the SHIPPED machinery — insertAtCaret — plus a
+    // drop-point → caret mapping (document.caretRangeFromPoint, with the Firefox
+    // caretPositionFromPoint fallback). No new anchor system is built; §7.11's
+    // proseAnchor was never real (deferred at Stage 10), so the "anchor" is the
+    // inserted italic cite itself, exactly as the pull rail's weave already works.
+    function _stbEvCite(fEv) {
+      if (!fEv) { return ''; }
+      if (fEv.kind === 'entry') {
+        var en = state.notebookEntries ? state.notebookEntries[fEv.refId] : null;
+        var bid = (en && Array.isArray(en.bookIds) && en.bookIds.length) ? en.bookIds[0] : null;
+        return (bid && state.books && state.books[bid] && state.books[bid].title) ? state.books[bid].title : 'a note';
+      }
+      if (fEv.kind === 'book') {
+        var bk = state.books ? state.books[fEv.refId] : null;
+        return (bk && bk.title) ? bk.title : 'a book';
+      }
+      if (fEv.kind === 'external') {
+        return (fEv.external && fEv.external.title) ? fEv.external.title : 'a source';
+      }
+      return '';
+    }
+    function _stbEvById(evId) {
+      var j; for (j = 0; j < gEv.length; j = j + 1) { if (gEv[j] && gEv[j].id === evId) { return gEv[j]; } }
+      return null;
+    }
+    // Weave the evidence's cite into the canvas. With a point (cx,cy) the caret
+    // is placed there first — and if the point is NOT over the prose, the weave
+    // is refused (returns false) so the drag falls back to a normal arrange.
+    // Without a point (the keyboard/touch twin) it weaves at the current caret.
+    function _stbWeave(evId, cx, cy) {
+      if (!canvas) { return false; }
+      var fEv = _stbEvById(evId);
+      if (!fEv) { return false; }
+      var cite = _stbEvCite(fEv);
+      if (!cite) { return false; }
+      var wcInput = canvasHost.querySelector ? canvasHost.querySelector('.wc-input') : null;
+      if (typeof cx === 'number' && typeof cy === 'number') {
+        var rng = null;
+        if (document.caretRangeFromPoint) { rng = document.caretRangeFromPoint(cx, cy); }
+        else if (document.caretPositionFromPoint) {
+          var cp = document.caretPositionFromPoint(cx, cy);
+          if (cp) { rng = document.createRange(); rng.setStart(cp.offsetNode, cp.offset); rng.collapse(true); }
+        }
+        if (!rng || !wcInput || !wcInput.contains(rng.startContainer)) { return false; } // not over the prose
+        var sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(rng);
+        if (wcInput.focus) { wcInput.focus(); }
+      } else if (wcInput && wcInput.focus) {
+        wcInput.focus();
+      }
+      canvas.insertAtCaret(' *' + cite + '* ');
+      return true;
+    }
+
     var rfield = createRoomField(fieldPane, {
       cards: fCards,
       layout: subTheory.evidenceLayout || {},
       onMove: function (evId, x, y) {
         if (typeof setEvidenceLayout === 'function') { setEvidenceLayout(id, evId, x, y); }
       },
-      // RD-5/F2: click/tap = the card's door by kind -- entry -> ROOM-2 note,
-      // book -> the book direct, external -> honest lift (no door; DWF-1). One click.
+      // G5 DRAG ACROSS THE EDGE: a card dropped over the prose weaves at the drop
+      // point; a card dropped anywhere else stays an arrange (onDropAt returns
+      // false → the field writes the position as before). The full gesture law:
+      // tap = act · drag within the field = arrange · drag across the edge = weave.
+      onDropAt: function (evId, cx, cy) { return _stbWeave(evId, cx, cy); },
+      // Tap = lift the card and reveal its acts (Open + the WEAVE a11y twin), so
+      // keyboard and touch users get an honest weave path (arrangement stays
+      // pointer/touch; weaving does not). A second tap on the acts navigates.
       onTap: function (evId, cardEl) {
-        var fEv = null, fej;
-        for (fej = 0; fej < gEv.length; fej = fej + 1) { if (gEv[fej] && gEv[fej].id === evId) { fEv = gEv[fej]; break; } }
-        if (fEv && fEv.kind === 'entry' && state.notebookEntries && state.notebookEntries[fEv.refId]) { location.hash = 'note/' + fEv.refId; return; }
-        if (fEv && fEv.kind === 'book' && state.books && state.books[fEv.refId]) { location.hash = 'book/' + fEv.refId; return; }
-        cardEl.className = (cardEl.className.indexOf('rf-lifted') !== -1) ? 'rf-card' : 'rf-card rf-lifted';
+        var lifted = (cardEl.className.indexOf('rf-lifted') !== -1);
+        if (lifted) { cardEl.className = 'rf-card'; return; }
+        cardEl.className = 'rf-card rf-lifted';
+        if (cardEl.querySelector('.stb-fc-acts')) { return; }
+        var fEv = _stbEvById(evId);
+        var acts = document.createElement('div');
+        acts.className = 'stb-fc-acts';
+        if (fEv && fEv.kind === 'entry' && state.notebookEntries && state.notebookEntries[fEv.refId]) {
+          var openN = document.createElement('a');
+          openN.className = 'stb-fc-act'; openN.href = '#note/' + fEv.refId; openN.textContent = 'Open →';
+          acts.appendChild(openN);
+        } else if (fEv && fEv.kind === 'book' && state.books && state.books[fEv.refId]) {
+          var openB = document.createElement('a');
+          openB.className = 'stb-fc-act'; openB.href = '#book/' + fEv.refId; openB.textContent = 'Open →';
+          acts.appendChild(openB);
+        }
+        var weaveBtn = document.createElement('button');
+        weaveBtn.type = 'button';
+        weaveBtn.className = 'stb-fc-act stb-fc-weave';
+        weaveBtn.textContent = 'Weave into prose';
+        weaveBtn.addEventListener('click', function (ev) {
+          if (ev && ev.stopPropagation) { ev.stopPropagation(); }
+          _stbWeave(evId);   // no point → weave at the current caret
+        });
+        acts.appendChild(weaveBtn);
+        cardEl.appendChild(acts);
       }
     });
     rail.appendChild(fieldPane);

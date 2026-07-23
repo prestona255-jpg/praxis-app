@@ -2275,6 +2275,29 @@ function setSubTheoryPosition(id, x, y) {
   return subTheory;
 }
 
+// THE ARC STANDARD S3 (orphan seat, ruling 5a): adopt an UNROOTED sub-theory
+// into an arc. An orphan is a sub-theory whose arcId resolves to no arc (7 of
+// them on Preston's real account, confirmed on the snapshot) -- a real, today-
+// invisible data condition. This is the repair: set its arcId to a real arc the
+// user owns, and persist. Guards: the sub and the target arc must exist, the
+// sub must not be seed-locked, and the target arc must be one the current user
+// owns (never adopt into the shared seed exhibit, and never across users). No
+// schema change -- arcId already exists on every sub-theory. Returns the
+// updated record, or null if the move is refused.
+function adoptSubTheoryIntoArc(subId, arcId) {
+  var sub = state.subTheories[subId];
+  if (!sub || _subSeedLocked(sub)) { return null; }
+  var arc = state.arcs[arcId];
+  if (!arc) { return null; }
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!u || !u.uid || arc.userId !== u.uid) { return null; }
+  sub.arcId = arcId;
+  sub.updatedAt = Date.now();
+  markSubTheoriesDirty();
+  saveState();
+  return sub;
+}
+
 // Hard-delete WITH cascade. Resonance links exist since 9.5, so a delete must
 // drop this id from every partner's linkedSubTheories or a dangling half-edge
 // survives (the old "no cascade" note was stale). Reuses unlinkSubTheories for

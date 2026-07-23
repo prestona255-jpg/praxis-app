@@ -157,11 +157,17 @@
 
         function pointOf(e) {
           if (e.touches && e.touches.length) { return { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+          if (e.changedTouches && e.changedTouches.length) { return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }; }
           return { x: e.clientX, y: e.clientY };
         }
+        // G5 (ARC STANDARD S3): the last pointer position, so a drag that ends
+        // OUTSIDE the field (across the edge, over the prose) can be handled by
+        // the caller as a WEAVE rather than a move. Updated on every move.
+        var lastClientX = 0, lastClientY = 0;
         function begin(e, isTouch) {
           var p = pointOf(e);
           startX = p.x; startY = p.y;
+          lastClientX = p.x; lastClientY = p.y;
           origL = parseInt(el.style.left, 10) || 0;
           origT = parseInt(el.style.top, 10) || 0;
           moved = 0; grewTo = parseInt(canvas.style.height, 10) || MIN_H;
@@ -180,6 +186,7 @@
         }
         function move(e, isTouch) {
           var p = pointOf(e);
+          lastClientX = p.x; lastClientY = p.y;
           var dx = p.x - startX, dy = p.y - startY;
           var adx = dx < 0 ? -dx : dx, ady = dy < 0 ? -dy : dy;
           if (adx + ady > moved) { moved = adx + ady; }
@@ -227,6 +234,20 @@
               if (myGen !== settleGen) { return; }
               el.className = el.className.replace(/ ?rf-settle/, '');
             }, 340);
+            // G5 DRAG ACROSS THE EDGE: if the drop landed outside the field and
+            // the caller consumes it (a weave into the prose), it is NOT a move —
+            // the card returns to where it was and no position is written. onDropAt
+            // returns true when it wove. Only then do we skip the arrange write.
+            var wove = false;
+            if (typeof opts.onDropAt === 'function') {
+              wove = (opts.onDropAt(card.id, lastClientX, lastClientY, el) === true);
+            }
+            if (wove) {
+              el.style.left = String(origL) + 'px';
+              el.style.top = String(origT) + 'px';
+              relax();
+              return;
+            }
             var nx = (parseInt(el.style.left, 10) || 0) / xTrack();
             var ny = (parseInt(el.style.top, 10) || 0) / Y_TRACK;
             if (typeof opts.onMove === 'function') { opts.onMove(card.id, clamp01(nx), clamp01(ny)); }
