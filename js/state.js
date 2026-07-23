@@ -2311,10 +2311,15 @@ function setMarkIdentity(subId, ident) {
   if (ident === null) {
     delete sub.markSilhouette; delete sub.markTreatment; delete sub.markPigment;
   } else if (ident && typeof ident === 'object') {
-    var okSil = (typeof window !== 'undefined' && window.ST_SILS) ? (_stInList(ident.sil, window.ST_SILS)) : true;
-    var okTre = (typeof window !== 'undefined' && window.ST_TREATS) ? (_stInList(ident.treat, window.ST_TREATS)) : true;
-    var okPig = (typeof window !== 'undefined' && window.ST_PIGS) ? (_stInList(ident.pig, window.ST_PIGS)) : true;
-    if (!okSil || !okTre || !okPig) { return null; }
+    // FAIL-CLOSED (red-team NOTE): the write is refused unless the axis
+    // vocabularies are present AND the value is a member. A missing list (a
+    // load-order break, a partial script load) refuses rather than accepting an
+    // unvalidated identity. Unreachable today (called only at interaction time,
+    // long after arc-constellation.js exports these), but honest either way.
+    if (typeof window === 'undefined' || !window.ST_SILS || !window.ST_TREATS || !window.ST_PIGS) { return null; }
+    if (!_stInList(ident.sil, window.ST_SILS)) { return null; }
+    if (!_stInList(ident.treat, window.ST_TREATS)) { return null; }
+    if (!_stInList(ident.pig, window.ST_PIGS)) { return null; }
     sub.markSilhouette = ident.sil;
     sub.markTreatment = ident.treat;
     sub.markPigment = ident.pig;

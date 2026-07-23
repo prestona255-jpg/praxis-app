@@ -12152,7 +12152,15 @@ function renderSubTheoryBuild(id) {
       // pointer/touch; weaving does not). A second tap on the acts navigates.
       onTap: function (evId, cardEl) {
         var lifted = (cardEl.className.indexOf('rf-lifted') !== -1);
-        if (lifted) { cardEl.className = 'rf-card'; return; }
+        if (lifted) {
+          cardEl.className = 'rf-card';
+          // red-team BLOCK #3: retract the acts on un-lift so Open/Weave never
+          // float under a collapsed card. (The CSS also hides them off-lift; this
+          // removes the node too, belt-and-suspenders.)
+          var stale = cardEl.querySelector('.stb-fc-acts');
+          if (stale && stale.parentNode) { stale.parentNode.removeChild(stale); }
+          return;
+        }
         cardEl.className = 'rf-card rf-lifted';
         if (cardEl.querySelector('.stb-fc-acts')) { return; }
         var fEv = _stbEvById(evId);
@@ -14043,7 +14051,14 @@ function _afArrive(subId, markEl, camera) {
   if (camera.className.indexOf('af-zooming') === -1) {
     camera.className = camera.className + ' af-zooming';
   }
-  setTimeout(function () { _afArriving = false; location.hash = dest; }, 300);  // MO-1 --dur-gentle
+  // red-team NOTE: capture the route we launched from; if something else has
+  // navigated away during the 300ms flight (a live re-render, a manual nav), do
+  // NOT force the hash — the flight is stale. The guard flag is always reset.
+  var fromHash = location.hash;
+  setTimeout(function () {
+    _afArriving = false;
+    if (location.hash === fromHash) { location.hash = dest; }
+  }, 300);  // MO-1 --dur-gentle
 }
 
 // F5: the arc's question is edited IN PLACE, on the horizon line where it

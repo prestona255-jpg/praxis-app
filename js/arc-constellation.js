@@ -972,35 +972,45 @@ function _stLayout(mode, subs, width, height) {
 // xBand and its baseY scaling — so RELATIVE positions are preserved (who is left
 // of whom, the constellation's shape) and NOTHING is reordered or re-related.
 //
-// COVENANT: this is DISPLAY-ONLY. It mutates the render-pass position objects
-// (fresh per render), never the stored sub.x/sub.y. Drag still authors freely
-// (setSubTheoryPosition is the only writer, unchanged). After the first fit the
-// mapping is stable: a set already filling the target region maps to itself, so
-// an un-dragged arc renders identically every time, and dragging one mark
-// re-normalizes the set exactly as xBand does (Preston-accepted).
-//
-// Idempotence + the single-axis-degenerate cases (one mark, or all marks on a
-// line) are handled by centering that axis, so a lone mark sits mid-field and a
-// vertical/horizontal row keeps its run.
-function _stComposeFit(positions, width, targetH) {
-  var n = positions.length;
-  if (!n) { return; }
-  var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, i;
-  for (i = 0; i < n; i = i + 1) {
-    if (positions[i].x < minX) { minX = positions[i].x; }
-    if (positions[i].x > maxX) { maxX = positions[i].x; }
-    if (positions[i].y < minY) { minY = positions[i].y; }
-    if (positions[i].y > maxY) { maxY = positions[i].y; }
-  }
-  // target region: generous margins so a mark's label/coal never meets the edge.
+// COVENANT + DRAG ROUND-TRIP (red-team BLOCK #1 fix, 2026-07-23). The first cut
+// bbox-NORMALIZED the whole set. That was wrong: an UNDRAGGED mark comes back
+// from _stRadialLayout in raw radial (600x500) space while a DRAGGED mark is
+// stored in COMPOSED space, and normalizing the mixed bbox pulled the just-
+// dropped mark (now an extremum) back toward the margin on the very next render
+// — a visible snap-back that broke "the arrangement never moves." Matching the
+// mockup, this now does NOT normalize authored positions:
+//   - AUTHORED (a real x/y): used VERBATIM in composed space, only CLAMPED into
+//     the viewport. A drag stores composed-space coords (getScreenCTM over the
+//     composed viewBox), so clamp is a near-identity and the drop round-trips
+//     EXACTLY. Dragging one mark never touches another (each default slot is
+//     independent of siblings' authored state).
+//   - DEFAULT (null x/y): a composed slot that fills the screen — a loose grid
+//     with hash jitter (RD-3 organic), STABLE per id + index across renders.
+// This replaces _stComposeFit's normalization; it is called in place of
+// _stLayout when composeFit is on.
+function _stComposedLayout(subs, width, targetH) {
   var tL = width * 0.14, tR = width * 0.86;
   var tT = targetH * 0.20, tB = targetH * 0.82;
-  var spanX = maxX - minX, spanY = maxY - minY;
-  var midX = (tL + tR) / 2, midY = (tT + tB) / 2;
+  var n = subs.length, positions = [], i;
+  var cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.7)));  // wider than tall
+  var rows = Math.max(1, Math.ceil(n / cols));
   for (i = 0; i < n; i = i + 1) {
-    positions[i].x = (spanX < 1) ? midX : (tL + ((positions[i].x - minX) / spanX) * (tR - tL));
-    positions[i].y = (spanY < 1) ? midY : (tT + ((positions[i].y - minY) / spanY) * (tB - tT));
+    var s = subs[i], px, py;
+    if (typeof s.x === 'number' && typeof s.y === 'number') {
+      px = s.x; py = s.y;                              // authored — verbatim
+    } else {
+      var col = i % cols, row = Math.floor(i / cols); // default — composed slot
+      var cellW = (tR - tL) / cols, cellH = (tB - tT) / rows;
+      var jx = ((_stIdentityHash(s.id, 41) % 1000) / 1000 - 0.5) * cellW * 0.5;
+      var jy = ((_stIdentityHash(s.id, 43) % 1000) / 1000 - 0.5) * cellH * 0.5;
+      px = tL + (col + 0.5) * cellW + jx;
+      py = tT + (row + 0.5) * cellH + jy;
+    }
+    if (px < tL) { px = tL; } if (px > tR) { px = tR; }  // clamp into the viewport
+    if (py < tT) { py = tT; } if (py > tB) { py = tB; }
+    positions.push({ id: s.id, x: px, y: py, sub: s });
   }
+  return positions;
 }
 
 // Question -- amber gravity glow + italic serif text at center. Sibling of
@@ -1525,8 +1535,11 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   }
 
   var layoutMode = 'radial'; // swappable seam (curved-sweep deferred)
-  var positions = _stLayout(layoutMode, subTheories, width, height);
-  if (composeFit) { _stComposeFit(positions, width, height); }
+  // F1 (BLOCK #1 fix): composeFit uses the composed layout directly — authored
+  // positions verbatim (round-trips a drag), defaults in a composed screen slot.
+  var positions = composeFit
+    ? _stComposedLayout(subTheories, width, height)
+    : _stLayout(layoutMode, subTheories, width, height);
   var posById = {};
   var i;
   for (i = 0; i < positions.length; i = i + 1) {

@@ -240,7 +240,10 @@
             // returns true when it wove. Only then do we skip the arrange write.
             var wove = false;
             if (typeof opts.onDropAt === 'function') {
-              wove = (opts.onDropAt(card.id, lastClientX, lastClientY, el) === true);
+              // red-team HOLD: a throw in the caller's weave must not strand the
+              // card mid-drag — swallow it and fall through to a normal arrange.
+              try { wove = (opts.onDropAt(card.id, lastClientX, lastClientY, el) === true); }
+              catch (dropErr) { wove = false; }
             }
             if (wove) {
               el.style.left = String(origL) + 'px';

@@ -16613,6 +16613,10 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-fc-acts{
   display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;
 }
+/* red-team BLOCK #3: the acts belong to the LIFTED state only — never floating
+   under a collapsed card. Scoped so an un-lift hides them even before the node
+   is removed. */
+.st-build.lum-amber-deep .rf-card:not(.rf-lifted) .stb-fc-acts{ display:none; }
 .st-build.lum-amber-deep .stb-fc-act{
   font-family:var(--lum-mono, var(--font-mono)); font-size:11px; letter-spacing:.06em;
   text-transform:uppercase; cursor:pointer; text-decoration:none;

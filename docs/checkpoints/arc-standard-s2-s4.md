@@ -121,3 +121,51 @@ Byte-locks unchanged throughout (`lumen-amber.css` 070679b0…, `marks.js` 77288
   to hold at 12 synthetic marks; the real densest arc is 5 marks (from the S1
   snapshot), well within that.
 - Reviewer + red-team gates: **running** (results appended before the halt).
+
+---
+
+## Red-team gate (fix-red-team, Sonnet) — 3 BLOCK / 1 HOLD / 3 NOTE — all addressed
+
+Aimed at the covenant/drift, the zoom guard, the weave, and composer uniqueness.
+
+- **BLOCK 1 — compose-fit + drag was not idempotent (drag snapped back).** Real and
+  serious: the first cut bbox-NORMALIZED a MIXED set (a dragged mark in composed
+  space + undragged siblings in raw radial space), so the just-dropped mark, now an
+  extremum, was pulled back toward the margin on the next render — a visible
+  snap-back that broke "the arrangement never moves." **FIXED:** `_stComposeFit`'s
+  normalization is replaced by `_stComposedLayout` — authored positions are used
+  VERBATIM (clamped to the viewport), defaults get a composed screen slot (grid +
+  hash jitter, stable per id). **Verified live on an owned arc:** dropped (300,132)
+  → renders (300,132), identical across a double render, and dragging one mark
+  leaves the others still. The covenant is now honored more strictly than before
+  (authored coords verbatim, not transformed).
+- **BLOCK 3 — the weave a11y acts row never retracted on un-lift.** Real: Open/Weave
+  floated under a collapsed card. **FIXED:** the acts node is removed on un-lift AND
+  a `.rf-card:not(.rf-lifted) .stb-fc-acts{display:none}` rule scopes it to the
+  lifted state. **Verified live:** lift → acts visible; un-lift → node gone.
+- **HOLD 4 — a throw in `onDropAt` could strand the card.** **FIXED:** the call is
+  wrapped in try/catch in room-field.js; a throw falls through to a normal arrange.
+- **NOTE 6 — `setMarkIdentity` validation fail-OPEN.** **FIXED:** now fail-CLOSED —
+  a missing axis vocabulary refuses the write.
+- **NOTE 7 — a stale arrive flight could force navigation.** **FIXED:** the 300ms
+  timeout only sets the hash if the route hasn't changed since the flight launched.
+
+**BLOCK 2 — uniqueness "guaranteed" overstated — CLAIM CORRECTED (not a code bug).**
+The S4 commit said uniqueness is "guaranteed, not hoped for." The code enforces it
+at the COMPOSER (the mint and every recomposition): opening the composer reads every
+sibling's identity — derived or chosen — and closes any taken triple, refusing Plant
+on a collision. What it does NOT prevent is two marks BOTH left on their derived
+(hash-only) identity colliding silently — a birthday-paradox risk at ~19+ never-
+composed marks in one arc. **The honest, ruled-correct position:** uniqueness is
+**guaranteed at the composer**; for pre-existing derived marks it is best-effort and
+the composer is where a collision is surfaced and resolved. This is G3-as-built —
+**offered, never applied** — because forcing a derived mark's identity would make it
+arc-dependent and non-stable-across-reloads, violating the covenant and the "pure
+function of the id" law. Recorded as a **named residual**, not a ratified absolute.
+
+**Red-team confirmed clean:** mobile genuinely bypasses compose-fit; adopt +
+setMarkIdentity refuse seed-locked subs and non-owned targets; `_stbWeave` scopes to
+the sub's own editor; byte-locks intact; sw.js bumps sequential; the arrive guard
+can't double-fire or deadlock.
+
+sw.js v3.249 → v3.250 (the fix commit).
