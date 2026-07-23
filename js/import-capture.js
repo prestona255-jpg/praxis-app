@@ -138,18 +138,34 @@
       system: SEG_SYSTEM,
       messages: [ { role: 'user', content: src } ]
     };
-    return fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-      body: JSON.stringify(payload)
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.text().then(function (body) {
-          throw new Error('segmentDoc: proxy ' + res.status + ': ' + body);
-        });
-      }
-      return res.json();
-    }).then(function (data) {
+    // R-CAPTURE Lane 4 hardening: auto-retry ONCE on a transient failure — a 5xx
+    // (server) response or a network error — with a short backoff. A 4xx is NOT
+    // retried (a client error won't succeed on retry). Either way the raw paste/
+    // transcript is never lost: the caller's catch keeps it in the field (RAW
+    // joins the corpus).
+    function segAttempt(triesLeft) {
+      return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (!res.ok) {
+          if (res.status >= 500 && triesLeft > 0) {
+            return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () { return segAttempt(triesLeft - 1); });
+          }
+          return res.text().then(function (body) {
+            throw new Error('segmentDoc: proxy ' + res.status + ': ' + body);
+          });
+        }
+        return res.json();
+      }, function (netErr) {
+        if (triesLeft > 0) {
+          return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () { return segAttempt(triesLeft - 1); });
+        }
+        throw netErr;
+      });
+    }
+    return segAttempt(1).then(function (data) {
       var segs = coerceSegments(parseJSON(collectText(data)));
       if (segs === null) {
         throw new Error('segmentDoc: could not parse a {"segments":[...]} object from the model response');

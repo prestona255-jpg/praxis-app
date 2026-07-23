@@ -120,6 +120,12 @@ exports.handler = async function(event) {
     // the FormData body.
     var form = new FormData();
     form.append('model_id', ELEVENLABS_STT_MODEL_ID);
+    // R-CAPTURE Lane 4 hardening: tag_audio_events defaults TRUE on Scribe, which
+    // injects "(laughter)"/"(footsteps)"-style event tags into the transcript. A
+    // captured note wants clean prose (RAW joins the corpus as the reader's words,
+    // not annotations), so disable event tagging. Scribe stays the SOLE filed
+    // transcript — the client never renders a separate live caption.
+    form.append('tag_audio_events', 'false');
     form.append('file', new Blob([buf], { type: mimeType }), filename);
 
     var response = await fetch(
