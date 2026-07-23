@@ -258,6 +258,35 @@
   --pig-iris:       #7A6BB8;  --pig-iris-edge:       #55447E;
   --pig-plum:       #A85A8E;  --pig-plum-edge:       #7A3D64;
 
+  /* == THE FIELD's chrome inks (ARC STANDARD S1) ============================
+     The sky, the Gate Row and the soil row need a few warm values the vellum
+     set does not already carry. They live HERE, named, because the convention
+     is CSS variables only — never a literal inlined in components.css. (Caught
+     by the S1 reviewer gate: the pigment set above was tokenised correctly and
+     these ten were not, in the same commit.) Values are the felt-passed
+     mockup's, on the vellum sheet.
+
+     --harvest-1/2  the finished arc's warm-gold sheet cast (F4's harvest turn)
+     --card-ink-warm a warm dark ink for display italics + soil-book titles —
+                     between --card-ink #262019 and --card-ink-2 #5C5340,
+                     carrying more warmth than either
+     --ember-ink     the value-ember's text on the sky: quiet, gold-adjacent
+     --gold-hi       the light stop of the primary gradient; --gold-ember
+                     (#DFB759, above) is its dark stop and is REUSED, not
+                     re-declared
+     --gold-ink-door the lifecycle door's label — the gold family, one step
+                     quieter than --gold-on-card #8F6A12 so a door invites
+                     rather than shouts
+     --cloth-page-1/2 the soil row's coverless book: a printed cloth board, in
+                     the paper register (the --cloth-* trio above is the SPINE
+                     register — saturated dyes — and is a different material) */
+  --harvest-1:     #FEF7E4;  --harvest-2:     #F6E8C8;
+  --card-ink-warm: #4A4030;
+  --ember-ink:     #7A6636;
+  --gold-hi:       #F0D79A;
+  --gold-ink-door: #6b5a24;
+  --cloth-page-1:  #FBF4E2;  --cloth-page-2:  #EFE3C7;
+
   /* -- the cloth spines: the bound edge of a printed page (reference `.spine`).
         Tokens, not literals in components.css -- the same rule the jewel marks
         follow. Three cloths, each a two-stop gradient pair. -- */

@@ -121,7 +121,14 @@ LF-normalised, like-for-like (`git show HEAD:<f> | tr -d '\r'` vs `tr -d '\r' < 
 Declared S1 band: **+26,000 code / +9,000 comment = 35,000**. **Over by ~2,034.**
 Classification: 330 of 1,257 added lines (26%) are comment lines, so roughly +9,600 comment and
 +27,400 code — i.e. the comment half is inside its allowance and **the code half is over by ~1,400
-(5%)**. Recorded, not silently widened. Nothing is reverted for it; your call whether it clears.
+(5%)**. Recorded, not silently widened.
+
+> **RULED — BAND WIDENED EXPLICITLY (Preston, 2026-07-22, field gate).** On the classification
+> evidence above, and on the B1 precedent: a **468-line composition replaced by the full field** is
+> honest scope, and the **5% code overage is accepted**. The S1 band is amended in place to
+> **+27,400 code / +9,600 comment** — the measured figures — rather than the estimate it was
+> written against. This is a widening ON EVIDENCE, at a halt, with Preston's word; it is not a
+> band quietly stretched to fit a diff, and the distinction is the whole point of the rule.
 
 *(A note for the next stage's bands: the raw byte figures are ~16 KB larger per big file if measured
 without `tr -d '\r'` — the working tree is CRLF, the blobs are LF, and components.css has 16,257
@@ -140,7 +147,15 @@ flower **is** present (`#yumi-bloom`, `position:fixed`, `z-index:9999`, measured
   `bodyPublic`**.
 
 Retiring it would delete a capability the flower cannot replace. It is in the ⋯ overflow — off the
-field either way, so law 5 holds — and reversible in one line. **Your word at this gate.**
+field either way, so law 5 holds — and reversible in one line.
+
+> **RULED (Preston, 2026-07-22, field gate): overflow parking ACCEPTED.** The retirement ruling's
+> premise was wrong and stopping was correct. **THE ARC-CONTEXT GAP IS NAMED DEBT**, for the round
+> ledger, and is deliberately NOT built mid-gate: `renderRoute` never sets `state.currentArcId` on
+> `#arc/<id>` (views.js sets it to `null` there; only the sub-theory routes set it), so
+> `assembleContextData` hands the chat a `currentArc` of `{title}` at best and `null` in fact —
+> the Bloom cannot know which arc you are standing in. Closing it is **Yumi-adjacent, and Yumi is
+> a non-goal for this round.** Debt, named, not silently absorbed.
 
 ### 5.3 THE FIELD'S SHAPE — the one composition item S1 does not resolve
 
@@ -155,12 +170,21 @@ That is a felt call on real data, not a mechanical one, so it is not made here. 
 reads well** (see `s1-field-390.png`); the void is a 1360 problem. This is the DUSK-CARVE-class item
 for your eye.
 
+> **RULED (Preston, 2026-07-22, field gate): NO PRE-EMPTIVE STRETCH.** This is what the felt gate
+> is for — the void gets judged on real arcs at real density, not guessed at. **Requirement placed
+> on the snapshot verification: a 1360 shot of the DENSEST real arc (~24 marks) alongside a SPARSE
+> one, so the felt pass sees both extremes.** If the void fails his eye, the xBand-class stretch
+> becomes the fix-forward from his words.
+
 ### 5.4 NOT BUILT — the orphan "unrooted" seat (ruling 5)
 
 Ruled, scoped, **and not built in S1.** It is a separate surface (the Arcs index, per your
 placement note) rather than part of the field, and I stopped at the gate rather than start it half
 way. Its count also still needs re-verifying on the real S1 snapshot — the seed workspace has **0**
-orphans, so the figure of 7 is unconfirmed here. It carries into the next stage.
+orphans, so the figure of 7 is unconfirmed here.
+
+> **RULED (Preston, 2026-07-22, field gate): the orphan seat rides the S2→S3 run as its NAMED
+> FIRST ITEM, after the snapshot confirms the real count. Not blocking this gate.**
 
 ---
 
@@ -180,4 +204,113 @@ orphans, so the figure of 7 is unconfirmed here. It carries into the next stage.
 - **`_stRenderBooks`, `_stRenderLegend`, `_ST_MARK_TABLE`'s render path** are now uncalled from the
   arc field. Left defined on purpose — `_ST_MARK_TABLE` is the migration table's source of truth for
   what each legacy index meant. A later sweep removes what is genuinely dead.
-- Reviewer + red-team gates: **not yet run** — they belong to this halt, before the push.
+- Reviewer + red-team gates: **RUN. One BLOCK + one HOLD fixed in a follow-on commit; see §7.**
+
+---
+
+## 7 — GATE RESULTS + FIX (follow-on commit)
+
+Both gates ran against `0759e09` (Sonnet-pinned per MODEL LAW v2). The fix commit
+sits on top; base bytes for it are `0759e09`.
+
+### 7.1 Reviewer (praxis-reviewer) — HOLD → cleared
+
+PASS on ES3 (parse OK both files, zero real const/let/arrow/class/backtick),
+byte-locks (both MD5s match, neither in the diff), the behaviour-preservation
+inventory (`_arcReadSpine` confirmed still called by `renderInteract` at
+views.js:20513; every named removal is dead-but-defined, **zero dangling
+callers**), undeclared vars (no sibling to the `isSeedArc` bug), CSS brace/comment
+balance (+18/+18 comments, +62/+62 braces, no new imbalance), and the sw.js
+single-increment.
+
+**BLOCKING finding #6 — undisclosed new hardcoded hex in components.css.** True and
+fair: 10 values / 12 occurrences of raw hex in the sky / Gate Row / soil chrome,
+inlined from the mockup instead of tokenised — while the *same commit* tokenised
+the pigment set correctly, which made the omission worse, not better.
+
+**FIXED.** Ten named tokens added to `theme.css` (`--harvest-1/2`,
+`--card-ink-warm`, `--ember-ink`, `--gold-hi`, `--gold-ink-door`,
+`--cloth-page-1/2`) with a full provenance comment, and every literal in the
+appended CSS re-pointed to a token. Re-grep of the S1 block's added lines:
+**one** hex remains, `#3d2807` on `.af-btn-primary` — the gradient's dark *text*
+colour, which has no existing token and is a one-off; it is disclosed here rather
+than minted a token for a single use. `#DFB759` now reuses the existing
+`--gold-ember`; the wrong `--danger` fallback is gone (uses the real
+`var(--danger)`).
+
+### 7.2 Red-team (fix-red-team) — 1 BLOCK, 1 HOLD, 2 NOTE — all resolved
+
+**BLOCK #1 — "ONE IDENTITY EVERYWHERE" was false on the visitor #walk lens.** The
+real bug, and the one the recon should have traced into `integrations.js`:
+`buildPublishedArcDoc` (R5 S5, pre-existing, untouched) caches a hash-fallback
+`markShape`/`markColor` on the published payload; `_stMarkIdentity` cannot tell a
+cache from a user choice, so on the walk it took the "chosen" branch and collapsed
+every mark onto **four** pigments while the author's field showed **ten** — and,
+because the walk's `markSub` carried **no id**, hashed the empty string for
+treatment and gave **every walked mark in the system the same treatment.** Proven
+by the red-team under the cscript harness: pigment mismatched 13/13, silhouette
+8/13, treatment constant.
+
+**FIXED, and verified live.** `buildPublishedArcDoc` now also carries the COMPOSED
+triple (`markSilhouette`/`markTreatment`/`markPigment` + `markCount`), resolved
+from the real record via `window.stMarkIdentity` — display-only, no user record
+gains a field. `renderInteract`'s `markSub` prefers that triple and, for an old
+snapshot that lacks it, still hands the row a **stable id** (`arcId:index`) so the
+treatment axis varies again; republishing upgrades a stale snapshot exactly.
+Live proof on the seed arc (rig, signed-in): the payload carries
+`beacon/outline/verdigris · vessel/outline/iris · bloom/hatched/olive ·
+seed/solid/ochre` — **4 distinct pigments, 3 treatments**, and **all four match
+the author's field identity byte-for-byte** (`allMatchFieldVsWalk: true`). The old
+-snapshot fallback's treatment went from 1 distinct value to varied.
+*(The walk's full DOM render needs the Firestore fetch the rig has no backend for —
+"Opening the arc…" — so the on-screen walk is a post-push live-smoke item; the
+payload-equivalence proof above is the load-bearing evidence.)*
+
+**HOLD #2 — `_afFitFieldHeight`'s 500 ceiling clipped the DEFAULT even-count
+layout.** True: `_stRadialLayout` puts a mark at y=410 at every even sub-theory
+count (starting at the first 2-mark arc), which needs 506 and got clamped to 500 —
+geometry cutting a mark, which RD-3 forbids. **FIXED:** the upper clamp is
+removed; the page lengthens instead (RD-2, the law it was written under). The
+seed's own 4-sub (even) field now renders uncropped (`s1fix-field-1360.png`).
+
+**NOTE #3 — `bookSubMarkFill` still used the retired 16-slot hue.** FIXED: it now
+returns `var(--pig-<pigment>)` from `_stMarkIdentity`, so the "became →" glint
+matches the composed mark.
+
+**NOTE #4 — the arc field's own `renderSubTheoryConstellation` call omits
+`markScale`, inheriting the new 0.8→1 default (~25% larger marks).** Confirmed
+DELIBERATE — form-forward marks are the redesign — and now stated so. All four
+other call sites (Home's two variants) pass explicit scale and are unaffected.
+
+**Red-team CLEAN list, confirmed:** the Tidy branch nulls x/y on the fresh
+per-render object literals `_arcDetailBuildSubTheoryData` builds, **not** on
+`state.subTheories` references — no covenant-breaking write; `_ST_SIL16`/`_ST_PIG16`
+byte-accurate, all 9 silhouettes + 10 pigments reachable; **no SVG id collision**
+across concurrent constellations (`_stNextId`/`_stGlyphSeq` are page-global
+monotonic counters — Home draws two at once, verified `homeDupIds: false`);
+`_stRenderMarkLabel` XSS-safe (`_arcEscapeXml` applied last); no new identity write
+at the state or migrate layer.
+
+### 7.3 Interactive-control sweep (the DOM-restructure gate)
+
+Every control on the field fired live and observed its OWN state (not just global
+DOM): `+ Sub-theory` present/enabled · door reads `Publish →` on the graduated
+fixture · `⋯` opens and flips `aria-expanded` to true · Tidy shows its own label ·
+**Marginalia toggles its own `data-st-marginalia` on→off on the live svg** · Connect
+carries `data-st-control=connect` · edit-in-place opens `input.af-q-edit`.
+`scrollWidth 1265 ≤ 1280` — no overflow.
+
+### 7.4 Fix commit — files, bytes, cache
+
+| file | why |
+|---|---|
+| `js/integrations.js` | BLOCK #1 — payload carries the composed triple |
+| `js/views.js` | BLOCK #1 walk consumer + stable id · HOLD #2 clamp removal · NOTE #3 fill |
+| `assets/theme.css` | reviewer #6 — 10 named chrome tokens |
+| `assets/components.css` | reviewer #6 — literals re-pointed to tokens |
+| `sw.js` | CACHE_VERSION praxis-v3.244 → **v3.245** |
+| `docs/checkpoints/arc-standard-s1.md` | this §7 + the field-gate rulings folded in |
+
+`integrations.js` is a NEW file in the round's touch set (the recon's blind spot —
+it named `_arcReadSpine`'s dual use but did not trace the R5 S5 markShape cache
+across the diff boundary). Recorded, not hidden.

@@ -2553,11 +2553,27 @@ function buildPublishedArcDoc(uid, arcId, opts) {
       if (_msh === null) { _msh = _hx.shapeIdx; }
       if (_mco === null) { _mco = _hx.colorIdx; }
     }
+    // ARC STANDARD S1-FIX (red-team BLOCK): carry the COMPOSED identity too.
+    // markShape/markColor above are a hash-fallback CACHE, not a user choice --
+    // but _stMarkIdentity cannot tell those apart, so on the walk it took the
+    // "chosen" branch and collapsed every mark onto four pigments while the
+    // author's field showed ten (and gave every walked mark the SAME treatment,
+    // because the payload carries no sub id to hash). The payload carries no id
+    // deliberately, so the walk cannot re-derive: it must be TOLD. Resolving
+    // from the real record here keeps R5 S5's own invariant honest -- "the walk
+    // shows the SAME marks the author sees" -- and it is display-only: no user
+    // record gains a field.
+    var _mid = (typeof window !== 'undefined' && typeof window.stMarkIdentity === 'function')
+      ? window.stMarkIdentity(list[i]) : null;
     subs.push({
       header:    list[i].header || '',
       body:      (typeof list[i].bodyPublic === 'string') ? list[i].bodyPublic : '',
       markShape: (typeof _msh === 'number') ? _msh : 0,
-      markColor: (typeof _mco === 'number') ? _mco : 0
+      markColor: (typeof _mco === 'number') ? _mco : 0,
+      markSilhouette: _mid ? _mid.sil : null,
+      markTreatment:  _mid ? _mid.treat : null,
+      markPigment:    _mid ? _mid.pig : null,
+      markCount: (list[i].evidence && list[i].evidence.length) ? list[i].evidence.length : 0
     });
   }
   return {

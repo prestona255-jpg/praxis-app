@@ -16296,7 +16296,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.af-world .af-sheet.is-harvest{
   background-image:
     radial-gradient(120% 70% at 50% 0%, rgba(223,183,89,.22) 0%, rgba(223,183,89,.06) 46%, rgba(223,183,89,0) 72%),
-    linear-gradient(180deg, #FEF7E4 0%, #F6E8C8 100%);
+    linear-gradient(180deg, var(--harvest-1) 0%, var(--harvest-2) 100%);
 }
 
 /* ---- THE SKY (F4 / law 3) — an atmospheric band, not a header. No rule
@@ -16326,7 +16326,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.af-world .af-a{
   font-family:var(--font-serif); font-weight:500; font-style:italic;
   font-size:clamp(25px, 2.5vw, 33px); line-height:1.2;
-  color:#4A4030; margin:18px 0 0; max-width:34ch;
+  color:var(--card-ink-warm); margin:18px 0 0; max-width:34ch;
 }
 /* law 4 — the empty carries no furniture: ONE --ink-3 line and nothing else. */
 .arcfield.af-world .af-invite{
@@ -16340,7 +16340,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.af-world .af-embers{ display:flex; gap:22px; flex-wrap:wrap; margin:26px 0 0; }
 .arcfield.af-world .af-ember{
   display:inline-flex; align-items:baseline; gap:7px;
-  font-family:var(--font-serif); font-style:italic; font-size:15px; color:#7A6636;
+  font-family:var(--font-serif); font-style:italic; font-size:15px; color:var(--ember-ink);
 }
 .arcfield.af-world .af-ember i{
   width:5px; height:5px; border-radius:50%; background:var(--gold-ember);
@@ -16368,16 +16368,16 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 .arcfield.af-world .af-btn:hover{ border-color:var(--gold-on-card); }
 .arcfield.af-world .af-btn-primary{
-  background:linear-gradient(180deg, #F0D79A, #DFB759);
+  background:linear-gradient(180deg, var(--gold-hi), var(--gold-ember));
   border-color:transparent; color:#3d2807; font-weight:600;
 }
 .arcfield.af-world .af-door{
-  border-color:rgba(143,106,18,.5); color:#6b5a24; font-weight:500;
+  border-color:rgba(143,106,18,.5); color:var(--gold-ink-door); font-weight:500;
 }
 .arcfield.af-world .af-door-published{
   display:inline-flex; align-items:center; min-height:44px; padding:9px 16px;
   border-radius:var(--radius-pill, 999px); border:1px solid rgba(143,106,18,.5);
-  background:rgba(143,106,18,.10); color:#6b5a24;
+  background:rgba(143,106,18,.10); color:var(--gold-ink-door);
   font-family:var(--font-body); font-size:13.5px; font-weight:500;
 }
 .arcfield.af-world .af-btn-quiet{ background:none; border-color:transparent; color:var(--card-ink-2); }
@@ -16406,7 +16406,7 @@ body.wc-focus .app-nav { opacity:.26; }
   padding:9px 10px; min-height:38px;
 }
 .arcfield.af-world .af-menu-item:hover{ background:rgba(38,32,25,.06); }
-.arcfield.af-world .af-menu-item.is-danger{ color:var(--danger, #9B3B2E); }
+.arcfield.af-world .af-menu-item.is-danger{ color:var(--danger); }
 .arcfield.af-world .af-menu-item.is-connecting{
   background:rgba(194,164,99,.22); box-shadow:inset 0 0 0 1px var(--thread);
 }
@@ -16450,7 +16450,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .arcfield.af-world .af-book{
   position:relative; width:58px; height:82px; flex:0 0 auto; overflow:hidden;
   border-radius:2px 3px 3px 2px; text-decoration:none;
-  background:linear-gradient(150deg, #FBF4E2, #EFE3C7);
+  background:linear-gradient(150deg, var(--cloth-page-1), var(--cloth-page-2));
   box-shadow:0 1px 2px rgba(38,32,25,.20), 0 4px 10px rgba(38,32,25,.10);
 }
 /* the bound edge — the shelf's cloth spine, so a coverless book is a BOOK and
@@ -16462,7 +16462,7 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 .arcfield.af-world .af-book-t{
   position:absolute; left:10px; right:5px; top:10px;
-  font-family:var(--font-serif); font-size:9px; line-height:1.2; color:#4A4030;
+  font-family:var(--font-serif); font-size:9px; line-height:1.2; color:var(--card-ink-warm);
 }
 .arcfield.af-world .af-book-a{
   position:absolute; left:10px; right:5px; bottom:7px; font-style:normal;

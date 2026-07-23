@@ -8393,10 +8393,16 @@ function _stTruncPhrase(s, n) {
   return cut + '…';
 }
 
-// A mark's fill colour (the lighter palette stop), for a small tinted
-// glint (e.g. the "became ->" dot). Mirrors bookSubMarkHTML's index
-// derivation so the glint matches the mark.
+// A mark's fill colour, for a small tinted glint (e.g. the "became ->" dot).
+// ARC STANDARD S1-FIX (red-team NOTE 3): follow the COMPOSED pigment now, so
+// the glint matches the mark the field draws instead of the retired 16-slot
+// hue. Falls through to the legacy PraxisMarks stop only if the composed
+// accessor is somehow absent (load-order safety), which never happens live.
 function bookSubMarkFill(sub) {
+  if (typeof window.stMarkIdentity === 'function') {
+    var mid = window.stMarkIdentity(sub || {});
+    return 'var(--pig-' + mid.pig + ')';
+  }
   var co = (sub && typeof sub.markColor === 'number') ? sub.markColor : null;
   if (co === null) {
     var hx = (typeof window.stHashIndices === 'function' && sub && sub.id)
@@ -13518,7 +13524,13 @@ function _afFitFieldHeight(svg) {
   // so a low mark is never cut by geometry (RD-3's clip law).
   var h = Math.round(lowest + 96);
   if (h < 300) { h = 300; }
-  if (h > 500) { h = 500; }
+  // NO UPPER CLAMP (red-team HOLD, S1-FIX). A 500 ceiling clipped the DEFAULT
+  // layout: _stRadialLayout puts a mark at cy 250 + orbit 160 = y 410 whenever
+  // i/n lands on 0.5 -- i.e. at EVERY EVEN sub-theory count, starting at the
+  // very first two-mark arc anyone builds -- which needs 506 and got 500, cutting
+  // ~6 units off that mark's label and coal. RD-3 says a mark is never cut by
+  // geometry, and a ceiling on the growing edge is exactly geometry cutting one.
+  // The page lengthens instead (RD-2); that is the law it was written under.
   svg.setAttribute('viewBox', '0 0 600 ' + h);
 }
 
@@ -20502,9 +20514,23 @@ function renderInteract(arcId) {
       // R5 S5: use the real mark identity from the publish payload (markShape/
       // markColor). OLD snapshots (no mark fields) fall back to the arcId:index hash
       // gracefully — republishing the arc corrects them to the author's real marks.
+      // ARC STANDARD S1-FIX (red-team BLOCK): prefer the payload's COMPOSED
+      // identity, so a walked mark is byte-for-byte the mark its author sees.
+      // An OLD snapshot has only the cached markShape/markColor -- keep taking
+      // them, but hand the row a stable ID as well. Without one, every mark in
+      // every walk hashed the empty string for its treatment and came out
+      // IDENTICAL; arcId:index is stable per snapshot, so the axis varies again.
+      // Republishing the arc upgrades the snapshot to the exact identity.
+      var vHasComposed = (typeof vsub.markPigment === 'string' && vsub.markPigment);
       var vHasMark = (typeof vsub.markShape === 'number' && typeof vsub.markColor === 'number');
       vrows.push({
-        markSub:   vHasMark ? { markShape: vsub.markShape, markColor: vsub.markColor } : null,
+        markSub:   vHasComposed
+          ? { id: arcId + ':' + vsi,
+              markSilhouette: vsub.markSilhouette,
+              markTreatment:  vsub.markTreatment,
+              markPigment:    vsub.markPigment,
+              evCount:        (typeof vsub.markCount === 'number') ? vsub.markCount : 0 }
+          : (vHasMark ? { id: arcId + ':' + vsi, markShape: vsub.markShape, markColor: vsub.markColor } : null),
         markId:    arcId + ':' + vsi,
         title:     vsub.header ? vsub.header : 'Untitled sub-theory',
         firstLine: _arcReadFirstLine(vsub)
