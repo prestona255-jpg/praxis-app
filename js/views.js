@@ -8313,6 +8313,15 @@ function bookAmberSurface() {
 // the mark is stable-from-id. Returns an HTML string -- inline SVG with a
 // per-instance gradient (no <use> shadow-boundary bug).
 function bookSubMarkHTML(sub, cd) {
+  // ARC STANDARD S1 (F6): ONE identity, everywhere. The chrome sites now draw
+  // the same COMPOSED mark the field draws -- silhouette x treatment x pigment
+  // -- instead of a second, sixteen-shape rendering of the same sub-theory.
+  // Two renderings meant two faces: a mark could be a gold hexagon in the field
+  // and something else on its own page. marks.js (PraxisMarks) is byte-locked
+  // and is NOT touched; it simply loses this caller, and keeps its others.
+  if (typeof window.stComposedMarkHTML === 'function') {
+    return window.stComposedMarkHTML(sub, cd || 22);
+  }
   if (typeof PraxisMarks === 'undefined' || !PraxisMarks.render) { return ''; }
   var sh = (sub && typeof sub.markShape === 'number') ? sub.markShape : null;
   var co = (sub && typeof sub.markColor === 'number') ? sub.markColor : null;
@@ -11930,7 +11939,15 @@ function _arcDetailBuildSubTheoryData(arc) {
       // renderer never reads global state. Absent today (no picker UI yet) --
       // null => the renderer falls back to the id-hash shape/color.
       markShape: (typeof rec.markShape === 'number') ? rec.markShape : null,
-      markColor: (typeof rec.markColor === 'number') ? rec.markColor : null
+      markColor: (typeof rec.markColor === 'number') ? rec.markColor : null,
+      // ARC STANDARD S1: the COMPOSED identity axes (F6) ride the same seam --
+      // the renderer still never reads global state. Absent on every record
+      // today; _stMarkIdentity derives them, and only the S4 composer writes.
+      markSilhouette: (typeof rec.markSilhouette === 'string') ? rec.markSilhouette : null,
+      markTreatment:  (typeof rec.markTreatment === 'string') ? rec.markTreatment : null,
+      markPigment:    (typeof rec.markPigment === 'string') ? rec.markPigment : null,
+      // the gathered count drives the F-4 maturity ramp (size + gold coal)
+      evCount: (rec.evidence && rec.evidence.length) ? rec.evidence.length : 0
     });
   }
   // 9.6c.4: derive resonance edges from each record's linkedSubTheories (bare
@@ -12710,6 +12727,15 @@ function _arcMakeFocusable(el, label) {
 // renderArcDetail re-render a layer-switch toggle triggers (a per-render local
 // would reset to closed on every rebuild). Resets to closed on a full reload.
 var _stLayersOpen = false;
+// ARC STANDARD S1: the ⋯ overflow's open-state lives at module scope for the
+// same reason the Layers popover's did -- an item that re-enters
+// renderArcDetail (Tidy, Muted palette) would otherwise slam the menu shut
+// under the hand that just used it.
+var _afMoreOpen = false;
+// Connect's element is built with the field but seated in the overflow, and
+// the overflow is built first. This carries the node between them so
+// attachSubTheoryDrag keeps the EXACT button it toggles .is-connecting on.
+var _afPendingConnectBtn = null;
 
 // Stage C: the fixed, claim-free arc-voice fallback. Arc-voice is SOLICITED,
 // so a fail / error / over-budget / gate-suppressed outcome shows this line
@@ -13099,487 +13125,299 @@ function renderArcDetail(arcId) {
   // for this render pass. Re-renders triggered by the toggle click
   // handler re-enter renderArcDetail and re-read fresh.
   var viewMode = getArcViewMode();
-  // Wave 1 (F-D1): the interior FACE. getArcViewMode is locked to list/web, so
-  // the face is its own persisted preference. Default 'field'; List retired.
-  var arcFace = ls('praxis_arc_face', 'field');
-  if (arcFace !== 'read' && arcFace !== 'page') { arcFace = 'field'; }
+  // ARC STANDARD S1 (F5): THE FIELD/READ/PAGE SWITCHER DISSOLVES. This is the
+  // round's one behaviour merge, flagged and accepted in the brief. There is
+  // one field now: drag = arrange, tap = approach, and the Page is reached
+  // through a mark, never through a tab. The `praxis_arc_face` preference is
+  // no longer read; the key is left in localStorage, inert.
+  //   READ face, carried or retired BY NAME (brief §7.1) --
+  //     carried  : first body line, maturity word, thread count, the private
+  //                marker and the row's door all become properties of the
+  //                APPROACH (S2), where F7 already puts the detail.
+  //     retired  : the index-proportional gutter thread curves (the field's
+  //                real threads supersede an approximation of them), and the
+  //                "N sub-theories · M threads" closing line (its counts ride
+  //                the Gate Row kicker now).
+  //     PRESERVED: _arcReadSpine itself is NOT deleted -- the visitor #walk
+  //                lens (renderInteract) shares that renderer. Only this
+  //                author-side call site goes.
+  //   PAGE face: a self-described stub (focal mark + a fixed blurb + a door).
+  //                Retired by name; the marks are the real path to the page.
 
   var wrap = document.createElement('section');
-  // Wave 1: convert the arc interior to the Amber/Lumen "your thinking" room
-  // (.lum-amber, lumen-amber.css:15). Faces = Field / Read / Page (List retired,
-  // F-D1). The .arcfield.lum-amber block layers lumen over the theme-token base.
-  // R5 S2: + arcfield-warm converts the interior chrome to a WARM-DIM room
-  // (toasted parchment, dark ink kept — no inversion); the field stage stays deep
-  // cognac (dark-exception) and the visitor room (renderInteract) is separate.
-  wrap.className = 'arcfield lum-amber arcfield-warm';
+  // ARC STANDARD S1 (F1/F2): THE PLACE IS THE FIELD. The interior is ONE lit
+  // sheet on the Hour's twilight, with the world's margins visible around it,
+  // and NOTHING floats on that sheet as a panel. What used to be here was the
+  // pre-WALL shelf disease: a cream constellation panel floating on a toasted
+  // parchment page (measured before this build: sheet rgb(233,220,188), panel
+  // rgb(253,249,238) -- a seam on all four sides), a header above it, a rail
+  // beside it, and seven controls scattered around all of them.
+  wrap.className = 'arcfield af-world';
 
-  // Head (mock .arcfield-head): .t block (eyebrow + the question + a computed
-  // sub-meta line) on the left, the List/Web .seg on the right. arc.title IS
-  // the question (no separate field); sub-meta is display-only aggregation.
-  var header = document.createElement('header');
-  header.className = 'arcfield-head';
+  var afSheet = document.createElement('div');
+  afSheet.className = 'af-sheet';
 
-  var headT = document.createElement('div');
-  headT.className = 't';
+  // Real state the whole composition reads. Sub-theories of this arc, their
+  // finished ones, and the arc's own two lifecycle axes.
+  var afSubs = _arcSubsOf(arcId);
+  var afFinished = [];
+  var _afi;
+  for (_afi = 0; _afi < afSubs.length; _afi = _afi + 1) {
+    if (afSubs[_afi] && afSubs[_afi].status === 'published') { afFinished.push(afSubs[_afi]); }
+  }
+  var afGraduated = (arc.status === 'graduated');
+  var afPublished = (arc.published === true);
+  var afOwner = !!(user && user.uid && arc.userId === user.uid);
+  // The seed-owned worked example is globally viewable, including signed-out;
+  // its destructive act reads "Hide", never "Delete", because the books in it
+  // belong to the global catalogue and only the path through them is removed.
+  var isSeedArc = (arc.userId === '__praxis_seed__');
+  // F4 THE HARVEST TURN: a finished arc reads finished at a glance, badge-free
+  // -- the whole sheet takes a warm-gold cast. "Finished" here is the arc's own
+  // honest state: graduated, with at least one finished sub-theory in it.
+  if (afGraduated && afFinished.length > 0) { afSheet.className = 'af-sheet is-harvest'; }
 
-  var headEyebrow = document.createElement('div');
-  headEyebrow.className = 'eyebrow';
-  headEyebrow.textContent = 'Arc';
-  headT.appendChild(headEyebrow);
+  // ======================= THE SKY (F4 / law 3) =========================
+  // An atmospheric band, not a header: no rule beneath it, nothing riding it
+  // but the question, its answer, and value embers when they exist.
+  //
+  // ONE STRING, ONE SEAT (Preston, Stage 0 ruling 2). The arc record has NO
+  // `question` field and no answer field -- `arc.title` IS the question
+  // (views.js has said so since Wave 1: the heading's class is `arcfield-q`),
+  // and the only answers in the data are the per-sub-theory `answeringLine`s
+  // the shipped S2 threshold ceremony writes. So the name is not printed a
+  // second time in the Gate Row; instead the question line itself is the
+  // edit-in-place seat, which is F5's "name, edit-in-place" satisfied without
+  // duplication. TRUE arc-level question/answer AUTHORING is R-CAPTURE's
+  // chartered territory (brief §6) and is not invented here.
+  var afSky = document.createElement('header');
+  afSky.className = 'af-sky';
 
-  var title = document.createElement('h1');
-  title.className = 'arcfield-q';
-  // R-ARC S3 (F-A): an ember may be unnamed (rename can clear the title). A blank
-  // title renders a muted "Unnamed" so the heading is never an empty box; the ember
-  // chip beside Graduate carries the lifecycle, so this reads "ember · Unnamed".
   if (arc.title) {
-    title.textContent = arc.title;
-  } else {
-    // Unnamed is a stage, not a deficiency; the ember chip carries the lifecycle.
-    title.textContent = 'Unnamed';
-    title.className = 'arcfield-q arcfield-q-unnamed';
-  }
-  headT.appendChild(title);
+    var afQ = document.createElement('h1');
+    afQ.className = 'af-q';
+    afQ.textContent = arc.title;
+    if (afOwner) {
+      afQ.setAttribute('role', 'button');
+      afQ.setAttribute('tabindex', '0');
+      afQ.setAttribute('title', 'Edit this arc’s question');
+      afQ.addEventListener('click', function () { _afEditQuestion(arcId); });
+      afQ.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.keyCode === 13) { ev.preventDefault(); _afEditQuestion(arcId); }
+      });
+    }
+    afSky.appendChild(afQ);
 
-  if (arc.description) {
-    var desc = document.createElement('p');
-    desc.className = 'arcfield-desc';
-    desc.textContent = arc.description;
-    headT.appendChild(desc);
-  }
-
-  // Sub-meta: N sub-theories · M books · tended <relative> (real counts).
-  var stCount = 0, _stk;
-  if (state.subTheories) {
-    for (_stk in state.subTheories) {
-      if (Object.prototype.hasOwnProperty.call(state.subTheories, _stk) &&
-          state.subTheories[_stk] && state.subTheories[_stk].arcId === arcId) {
-        stCount = stCount + 1;
+    // F4: on finishing, the ANSWER joins the question on the horizon -- one
+    // line of sky, question and answer standing together as the completed
+    // thought. Its source is the newest finished sub-theory's answeringLine:
+    // the ceremony's own output, landing here (brief §6), on real data.
+    var afAnswer = '';
+    var afNewest = 0, _afj, _afr;
+    for (_afj = 0; _afj < afFinished.length; _afj = _afj + 1) {
+      _afr = afFinished[_afj];
+      var _aft = (typeof _afr.publishedAt === 'number') ? _afr.publishedAt : 0;
+      if (typeof _afr.answeringLine === 'string' && _afr.answeringLine.replace(/^\s+|\s+$/g, '') && _aft >= afNewest) {
+        afNewest = _aft;
+        afAnswer = _afr.answeringLine.replace(/^\s+|\s+$/g, '');
       }
     }
-  }
-  var bkCount = (arc.bookIds && arc.bookIds.length) ? arc.bookIds.length : 0;
-  var subParts = [
-    stCount + (stCount === 1 ? ' sub-theory' : ' sub-theories'),
-    bkCount + (bkCount === 1 ? ' book' : ' books')
-  ];
-  if (arc.updatedAt) {
-    var arcDays = Math.floor((Date.now() - arc.updatedAt) / 86400000);
-    subParts.push(arcDays <= 0 ? 'tended today'
-      : (arcDays === 1 ? 'tended yesterday' : 'tended ' + arcDays + ' days ago'));
-  }
-  var subMeta = document.createElement('div');
-  subMeta.className = 'arcfield-sub';
-  subMeta.textContent = subParts.join(' · ');
-  headT.appendChild(subMeta);
-
-  header.appendChild(headT);
-
-  // R5 S5 (D3): quiet publish/unpublish affordance + state line, owner-only (real arcs).
-  if (user && arc.userId === user.uid) {
-    header.appendChild(_arcHeadPublishControl(arcId, arc));
-  }
-
-  // R-ARC S3 (the ember): owner-only lifecycle strip -- a quiet status chip
-  // (ember/graduated) beside Graduate + Rename. Preston's ruling: the ember reads
-  // as a SMALL CHIP near the graduate button, not in the title. Seed arcs are never
-  // user-owned, so the same owner gate excludes them.
-  if (user && arc.userId === user.uid) {
-    header.appendChild(_arcHeadLifecycleControl(arcId, arc));
-  }
-
-  // R5 D4 (AF6): the header-only "+ Sub-theory" button is retired here — a single
-  // canonical control (.arcfield-addsub-canon) now lives in the head control column
-  // (.arcfield-headctl, built with the faces seg below) and is visible across ALL
-  // faces, not only Read/Page as this suppressed-in-Field button was.
-
-  // 3.9-b: delete button opens the in-DOM confirm panel mounted in
-  // #arc-detail-confirm-host. arcId captured in the click closure.
-  //
-  // Stage 5.3 Stage 3b: button label flips to "Hide arc" for seed-owned
-  // arcs (userId === '__praxis_seed__'). The action against a seed arc
-  // is conceptually a hide (the books in it belong to the global
-  // catalog, not the user; the only thing removed is the path through
-  // them on this user's Arcs page). The user-authored branch keeps the
-  // pre-3b "Delete arc" label intact. openArcDeleteConfirm reads
-  // arc.userId off state.arcs[arcId] internally to mirror this branch
-  // in the confirm-panel copy + the confirm-action link label.
-  var isSeedArc = (arc.userId === '__praxis_seed__');
-  // Suppress the destructive button for signed-out seed viewers: the
-  // click handler (openArcDeleteConfirm -> getCurrentUser) no-ops
-  // without a user, so a visible button would dead-click. Signed-in
-  // users always see it (Hide on the seed, Delete on their own arcs);
-  // signed-out viewers only ever reach the seed-arc render path (the
-  // gate above blocks signed-out access to user-authored arcs), so
-  // this collapses to "hide it when there is no user."
-  if (user || !isSeedArc) {
-    var deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'arc-detail-delete';
-    deleteBtn.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
-    deleteBtn.addEventListener('click', function() {
-      openArcDeleteConfirm(arcId);
-    });
-    header.appendChild(deleteBtn);
-  }
-
-  // Head control column (mock .arcfield-headctl): the Field/Read/Page faces seg +
-  // the ONE canonical +Sub-theory control, stacked at the head's right edge.
-  // Wave 1 (F-D1): faces = Field / Read / Page (List retired); persisted face pref
-  // praxis_arc_face -- getArcViewMode stays list/web-locked and untouched.
-  var headctl = document.createElement('div');
-  headctl.className = 'arcfield-headctl';
-
-  var toolbar = document.createElement('div');
-  toolbar.className = 'seg arcfield-faces';
-  toolbar.setAttribute('role', 'tablist');
-  toolbar.setAttribute('aria-label', 'Arc face');
-  var ARC_FACES = [['field', 'Field'], ['read', 'Read'], ['page', 'Page']];
-  var afi;
-  for (afi = 0; afi < ARC_FACES.length; afi = afi + 1) {
-    (function(faceKey, faceLabel) {
-      var faceBtn = document.createElement('button');
-      faceBtn.type = 'button';
-      faceBtn.className = 'seg-opt' + (arcFace === faceKey ? ' is-on' : '');
-      faceBtn.setAttribute('role', 'tab');
-      faceBtn.setAttribute('data-arc-face', faceKey);
-      faceBtn.textContent = faceLabel;
-      faceBtn.addEventListener('click', function() {
-        sv('praxis_arc_face', faceKey);
-        renderArcDetail(arcId);
+    if (afAnswer) {
+      var afA = document.createElement('p');
+      afA.className = 'af-a';
+      afA.textContent = afAnswer;
+      afSky.appendChild(afA);
+    }
+  } else {
+    // THE PRE-QUESTION HORIZON (sweep fold-in): open sky and ONE quiet
+    // invitation, in the never-asked-never-forbidden dialect. Law 4 caps the
+    // empty at a single --ink-3 line, so this is the only thing here.
+    var afInvite = document.createElement('p');
+    afInvite.className = 'af-invite';
+    afInvite.textContent = 'No question yet — plant something, or name what you are circling.';
+    if (afOwner) {
+      afInvite.setAttribute('role', 'button');
+      afInvite.setAttribute('tabindex', '0');
+      afInvite.addEventListener('click', function () { _afEditQuestion(arcId); });
+      afInvite.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.keyCode === 13) { ev.preventDefault(); _afEditQuestion(arcId); }
       });
-      toolbar.appendChild(faceBtn);
-    })(ARC_FACES[afi][0], ARC_FACES[afi][1]);
+    }
+    afSky.appendChild(afInvite);
   }
-  headctl.appendChild(toolbar);
 
-  // R5 D4 (AF6): the ONE canonical + Sub-theory control (signed-in only), visible on
-  // every face. Supersedes the retired header button, the dead unappended stControlBar
-  // instance in Field, and the Page-face empty-state's own separate CTA.
+  // F4 VALUES: quiet gold embers RIDING the sky line -- no pill, no border, no
+  // fill. When the arc carries none there is NOTHING: the "Values this carries"
+  // panel dissolves entirely (law 4 -- no furniture in the sky). Owner-only,
+  // the same gate the register carried.
+  if (afOwner && arc.valueMarks && arc.valueMarks.length) {
+    var afEmbers = document.createElement('div');
+    afEmbers.className = 'af-embers';
+    var _afv;
+    for (_afv = 0; _afv < arc.valueMarks.length; _afv = _afv + 1) {
+      var _afvm = arc.valueMarks[_afv];
+      var _afLabel = _afValueLabel(_afvm);
+      if (!_afLabel) { continue; }
+      var emb = document.createElement('span');
+      emb.className = 'af-ember';
+      var embDot = document.createElement('i');
+      embDot.setAttribute('aria-hidden', 'true');
+      emb.appendChild(embDot);
+      emb.appendChild(document.createTextNode(_afLabel));
+      afEmbers.appendChild(emb);
+    }
+    if (afEmbers.childNodes.length) { afSky.appendChild(afEmbers); }
+  }
+  afSheet.appendChild(afSky);
+
+  // ======================= THE GATE ROW (F5 / law 5) ====================
+  // One slim dock at the field's edge, under the horizon. Seven scattered
+  // controls become: a kicker, one act, one door, one overflow. No control
+  // floats anywhere else on the field, ever.
+  var afGate = document.createElement('div');
+  afGate.className = 'af-gate';
+
+  // The FF-7 mono kicker carries the status WORDS. EMBER is a kicker word, not
+  // a button (F5) -- the old `.arcfield-status-chip` retires into this line,
+  // as does the sub-meta row and the Read face's closing count line.
+  var afKickWords = [];
+  afKickWords.push(afSubs.length === 0 ? 'EMBER' : (afGraduated ? 'GRADUATED' : 'GROWING'));
+  afKickWords.push(afSubs.length + (afSubs.length === 1 ? ' SUB-THEORY' : ' SUB-THEORIES'));
+  var afBkN = (arc.bookIds && arc.bookIds.length) ? arc.bookIds.length : 0;
+  afKickWords.push(afBkN + (afBkN === 1 ? ' BOOK' : ' BOOKS'));
+  if (arc.updatedAt) {
+    var afDays = Math.floor((Date.now() - arc.updatedAt) / 86400000);
+    afKickWords.push(afDays <= 0 ? 'TENDED TODAY'
+      : (afDays === 1 ? 'TENDED YESTERDAY' : 'TENDED ' + afDays + ' DAYS AGO'));
+  }
+  var afKicker = document.createElement('p');
+  afKicker.className = 'af-kicker';
+  afKicker.textContent = afKickWords.join(' · ');
+  afGate.appendChild(afKicker);
+
+  // Gate parity with the retired .arcfield-addsub-canon: ANY signed-in user
+  // could plant here, seed arc included. Narrowing it to the owner would be a
+  // silent behaviour deletion, which behaviour-preservation forbids.
   if (user) {
-    var addSubCanon = document.createElement('button');
-    addSubCanon.type = 'button';
-    addSubCanon.className = 'arcfield-addsub-canon';
-    addSubCanon.textContent = '+ Sub-theory';
-    addSubCanon.addEventListener('click', function() {
-      // R-ARC S4 (One Door): funnel into the one door with this arc pre-selected (S4-4),
-      // instead of the retired '#arc/<id>/new-subtheory' redirect.
-      notebookCreateSubTheory({ arcId: arcId });
-    });
-    headctl.appendChild(addSubCanon);
+    // ONE PRIMARY ACT — the planting gesture.
+    var afAdd = document.createElement('button');
+    afAdd.type = 'button';
+    afAdd.className = 'af-btn af-btn-primary';
+    afAdd.textContent = '+ Sub-theory';
+    afAdd.addEventListener('click', function () { notebookCreateSubTheory({ arcId: arcId }); });
+    afGate.appendChild(afAdd);
   }
 
-  header.appendChild(headctl);
-  wrap.appendChild(header);
-
-  // R8 (values): the value-mark register for the arc — a quiet card under the
-  // head, owner-only (the same gate as the publish control above; excludes seed
-  // arcs, whose userId is the sentinel, and signed-out visitors). Renders across
-  // all faces; persists via the arc's own guarded sync.
-  if (user && user.uid && arc.userId === user.uid) {
-    var arcVreg = buildValueMarkRegister('arc', arcId);
-    if (arcVreg) { wrap.appendChild(arcVreg); }
+  // ONE LIFECYCLE DOOR, STATE-AWARE (F8-as-built, Preston Stage 0 ruling 4).
+  // F8 names Finish -> / Publish -> / Published. The live arc has no
+  // "finished" state: it has `status: ember|graduated` AND a separate
+  // `published` flag, and the S2 ceremony is per SUB-THEORY, not per arc.
+  // Graduation IS the arc's finish, and "Graduate" is the shipped, felt-passed
+  // word -- so law 8's principle governs (only the act that can be taken,
+  // named for its destination) rather than F8's literal labels:
+  //     ember      -> "Graduate →"    graduateArc
+  //     graduated  -> "Publish →"     openPublishCeremony (which gates itself
+  //                                   on >=1 finished sub-theory and says so)
+  //     published  -> quiet "Published", carrying share access
+  // THE EMBER DOOR IS EMPTY (ruling, mockup close): with zero marks planted,
+  // no act can honestly be taken, so the seat carries nothing at all. That is
+  // the S1 disabled-button law satisfied by construction -- there is never a
+  // dead door standing while the arc is still only an ember.
+  if (afOwner && afSubs.length > 0) {
+    if (afPublished) {
+      var afPubbed = document.createElement('span');
+      afPubbed.className = 'af-door af-door-published';
+      afPubbed.textContent = 'Published';
+      afGate.appendChild(afPubbed);
+      var afShare = document.createElement('a');
+      afShare.className = 'af-btn af-btn-quiet';
+      afShare.href = '#walk/' + arcId;
+      afShare.textContent = 'Open the walk →';
+      afGate.appendChild(afShare);
+    } else if (afGraduated) {
+      var afPub = document.createElement('button');
+      afPub.type = 'button';
+      afPub.className = 'af-btn af-door';
+      afPub.textContent = 'Publish →';
+      afPub.addEventListener('click', function () {
+        openPublishCeremony(arcId, function () { renderArcDetail(arcId); });
+      });
+      afGate.appendChild(afPub);
+    } else {
+      var afGrad = document.createElement('button');
+      afGrad.type = 'button';
+      afGrad.className = 'af-btn af-door';
+      afGrad.textContent = 'Graduate →';
+      afGrad.addEventListener('click', function () { graduateArc(arcId); renderRoute(); });
+      afGate.appendChild(afGrad);
+    }
   }
 
-  // Confirm panel mount -- empty in 3.9-a; 3.9-b populates on demand.
+  // THE OVERFLOW — off-row, per F-A. Everything that is real, wired behaviour
+  // but is not the one act or the one door lives behind it, and nowhere else.
+  // Connect's node is minted here, before the menu that seats it, and handed to
+  // attachSubTheoryDrag below -- same element, one identity, armed state intact.
+  _afPendingConnectBtn = (typeof window.renderSubTheoryConstellation === 'function')
+    ? _afConnectBtn() : null;
+  if (user || !isSeedArc) {
+    afGate.appendChild(_afOverflow(arcId, arc, user, isSeedArc, afGraduated, afPublished, afOwner));
+  }
+  afSheet.appendChild(afGate);
+
+  // Confirm panel mount -- delete / reset / unpublish all render into it.
   var confirmHost = document.createElement('div');
   confirmHost.id = 'arc-detail-confirm-host';
-  wrap.appendChild(confirmHost);
+  afSheet.appendChild(confirmHost);
 
-  // Stage C: solicited arc-voice affordance + inline host, under the view
-  // toggle (so it sits on both List and Web). Signed-in only (consent +
-  // budget are per-user; arc-voice needs a reader to gate on). The floating
-  // panel stays suppressed on this route -- arc-voice surfaces inline.
-  if (user) {
-    wrap.appendChild(buildArcVoiceAffordance(arcId));
-  }
+  // ======================= THE FIELD (F1 / law 1) =======================
+  // The arrangement itself, sitting DIRECTLY on the sheet. No container fill,
+  // no border, no shadow: there is no panel here to have a seam.
+  var arcTidyOn = ls('praxis_arc_tidy', false) === true;
+  var webContainer = document.createElement('div');
+  // .arc-detail-web-view is KEPT: every constellation rule (layer fades,
+  // drift, svg sizing) hangs off it. .af-field is the new, un-panelled dress.
+  webContainer.className = 'arc-detail-web-view af-field';
+  webContainer.id = 'arc-field';
 
-  // Stage 5.4 Stage 1d: branch on viewMode. Web mounts an empty
-  // container (1f fills it, Stage 2 draws the spine). List wraps the
-  // Stage 5.3 baseline render below in else; the brace moves, the
-  // iteration logic is byte-for-byte unchanged (kept at its existing
-  // indent on purpose -- minimum-scope diff).
-  if (arcFace === 'field') {
-    // Wave 1 (F-D5): Tidy is an opt-in, session-only compose -- when on, arcData
-    // positions are nulled so the renderer draws its OWN composed radial layout,
-    // WITHOUT clearing the persisted placements. Restore reverts. Never auto.
-    var arcTidyOn = ls('praxis_arc_tidy', false) === true;
-    var webContainer = document.createElement('div');
-    // Keep .arc-detail-web-view (ALL its constellation CSS — layer fades, drift,
-    // svg sizing — survives byte-identical) + ADD the mock .cstl-host + id.
-    webContainer.className = 'arc-detail-web-view cstl-host';
-    webContainer.id = 'arc-field';
-    // Stage 7.1B: wire the constellation renderer in place of the
-    // Stage 5.4 Stage 2a single-book temp. Container stays a <div>
-    // (keeps the wheat-field ::before backdrop intact); the renderer
-    // gets an inner <svg viewBox="0 0 600 500"> created via the SVG
-    // namespace (document.createElement('svg') would produce an HTML
-    // element with no SVG semantics). Defensive guard fails soft to a
-    // text notice if either script tag failed to load -- both files
-    // are now in APP_SHELL (sw.js 'praxis-v3.12-a') so this branch
-    // should be unreachable in steady state, but the SW can serve
-    // mid-deploy mixed states.
-    if (typeof window.renderSubTheoryConstellation !== 'function') {
-      var unavailable = document.createElement('p');
-      unavailable.className = 'arc-detail-web-placeholder';
-      unavailable.textContent = 'Constellation renderer unavailable.';
-      webContainer.appendChild(unavailable);
-    } else {
-      // The constellation control bar. R5 D4 (AF6): the dead, never-appended top
-      // stControlBar "+ Sub-theory" instance is REMOVED — the head canonical control
-      // (.arcfield-addsub-canon) is the single add path. Reset (9.6c.2) and Connect
-      // (9.6c.4) are wired via their data-st-control hooks (Reset clears placements
-      // below; Connect is handed to attachSubTheoryDrag). The marginalia toggle folds
-      // in from 9.6b unchanged (ls/sv, default ON, re-enters renderArcDetail); that
-      // flag feeds the renderer's showMarginalia option below.
-
-      // Stage 4 (mockup-fidelity): Connect / Reset / Layers move to a bottom
-      // control bar AFTER the constellation (mockup line 202, bottom-right).
-      // The + Sub-theory control stays in the top bar. The connectBtn / resetBtn
-      // / layersWrap NODES are MOVED into this bar (re-pointed appendChild),
-      // never re-created -- connectBtn stays the same reference handed to
-      // attachSubTheoryDrag and keeps its data-st-control='connect' hook.
-      var stControlBarBottom = document.createElement('div');
-      stControlBarBottom.className = 'st-control-bar st-control-bar-bottom';
-
-      // Wave 1 (F-D5): Tidy / Restore -- opt-in session compose (arcTidyOn above).
-      var tidyBtn = document.createElement('button');
-      tidyBtn.type = 'button';
-      tidyBtn.className = 'arc-detail-toggle-btn arcfield-tidy' + (arcTidyOn ? ' is-active' : '');
-      tidyBtn.setAttribute('data-st-control', 'tidy');
-      tidyBtn.title = 'Compose the field — opt-in, never automatic';
-      tidyBtn.textContent = arcTidyOn ? 'Restore' : 'Tidy';
-      tidyBtn.addEventListener('click', function() {
-        sv('praxis_arc_tidy', !arcTidyOn);
-        renderArcDetail(arcId);
-      });
-      stControlBarBottom.appendChild(tidyBtn);
-
-      var connectBtn = document.createElement('button');
-      connectBtn.type = 'button';
-      connectBtn.className = 'arc-detail-toggle-btn';
-      connectBtn.setAttribute('data-st-control', 'connect');
-      connectBtn.textContent = 'Connect';
-      stControlBarBottom.appendChild(connectBtn);
-
-      var resetBtn = document.createElement('button');
-      resetBtn.type = 'button';
-      resetBtn.className = 'arc-detail-toggle-btn arc-reset-btn';
-      resetBtn.setAttribute('data-st-control', 'reset');
-      resetBtn.textContent = 'Reset placements';
-      // Stage 9.6c.2 + Wave 8 (Lane A, item 3): Reset clears EVERY placement in
-      // this arc to null (persisting -- setSubTheoryPosition write-through), so
-      // _stRadialLayout falls back to the composed radial slots. Because that is
-      // destructive and irreversible -- unlike session-only Tidy/Restore -- it is
-      // now gated behind an in-DOM confirm panel (openArcResetConfirm) instead of
-      // firing on the bare click. Relabeled "Reset placements" so it reads
-      // distinct from Tidy.
-      resetBtn.addEventListener('click', function() {
-        openArcResetConfirm(arcId);
-      });
-      stControlBarBottom.appendChild(resetBtn);
-
-      // Hybrid Stage C: all visibility layers consolidate into ONE "Layers"
-      // popover -- Books / Marginalia / Faint links, each an independent
-      // persisted switch (ls/sv, default ON). Resonance is NOT a switch (it
-      // always renders -- the spine). The popover open-state lives in the
-      // module-level _stLayersOpen so a switch toggle (which re-enters
-      // renderArcDetail) leaves the popover open across the rebuild.
-      var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
-      var stShowBooks = ls('praxis_st_books_on', true) === true;
-      var stShowFaint = ls('praxis_st_faint_on', true) === true;
-      // 9b-iii: the global palette. Set the document-root attribute now so the
-      // hue remap is live for both the constellation and the spotlight chips.
-      var stPalette = (ls('praxis_constellation_palette', 'colorful') === 'muted')
-        ? 'muted' : 'colorful';
-      document.documentElement.setAttribute('data-st-palette', stPalette);
-
-      var layersWrap = document.createElement('div');
-      layersWrap.className = 'st-layers';
-
-      var layersBtn = document.createElement('button');
-      layersBtn.type = 'button';
-      layersBtn.className = 'arc-detail-toggle-btn';
-      layersBtn.setAttribute('data-st-control', 'layers');
-      layersBtn.textContent = 'Layers';
-      layersWrap.appendChild(layersBtn);
-
-      var layersPopover = document.createElement('div');
-      layersPopover.className = 'st-layers-popover'
-        + (_stLayersOpen ? ' st-layers-popover--open' : '');
-
-      // 9b-iii (R56): each layer switch flips its ls flag AND the matching root
-      // attribute on the LIVE svg -- the CSS in components.css fades the
-      // filter-free descendant group. No re-render, so node identity is
-      // preserved; the popover stays put. (webContainer is in closure scope.)
-      var stLayerSwitch = function(labelText, flagKey, attrName, isOn) {
-        var sw = document.createElement('button');
-        sw.type = 'button';
-        sw.className = 'arc-detail-toggle-btn st-layers-switch'
-          + (isOn ? ' is-active' : '');
-        sw.setAttribute('data-st-layer', flagKey);
-        sw.textContent = labelText;
-        sw.addEventListener('click', function() {
-          var nowOn = !(ls(flagKey, true) === true);
-          sv(flagKey, nowOn);
-          var svgEl = webContainer.querySelector('svg');
-          if (svgEl) { svgEl.setAttribute(attrName, nowOn ? 'on' : 'off'); }
-          sw.className = 'arc-detail-toggle-btn st-layers-switch'
-            + (nowOn ? ' is-active' : '');
-        });
-        return sw;
-      };
-
-      layersPopover.appendChild(
-        stLayerSwitch('Books', 'praxis_st_books_on', 'data-st-books', stShowBooks));
-      layersPopover.appendChild(
-        stLayerSwitch('Marginalia', 'praxis_st_marginalia_on', 'data-st-marginalia', stShowMarginalia));
-      layersPopover.appendChild(
-        stLayerSwitch('Faint links', 'praxis_st_faint_on', 'data-st-faint', stShowFaint));
-
-      // 9b-iii: palette toggle. Unlike the layer fades, switching palette
-      // changes the mark ANATOMY markup (muted body radial / no shine), so it
-      // re-enters renderArcDetail. The hue itself follows the root attribute set
-      // above; spotlight chips inherit it automatically.
-      var paletteSwitch = document.createElement('button');
-      paletteSwitch.type = 'button';
-      paletteSwitch.className = 'arc-detail-toggle-btn st-layers-switch'
-        + (stPalette === 'muted' ? ' is-active' : '');
-      paletteSwitch.setAttribute('data-st-layer', 'palette');
-      paletteSwitch.textContent = 'Muted palette';
-      paletteSwitch.addEventListener('click', function() {
-        var next = (ls('praxis_constellation_palette', 'colorful') === 'muted')
-          ? 'colorful' : 'muted';
-        sv('praxis_constellation_palette', next);
-        document.documentElement.setAttribute('data-st-palette', next);
-        _stLayersOpen = true;
-        renderArcDetail(arcId);
-      });
-      layersPopover.appendChild(paletteSwitch);
-
-      layersWrap.appendChild(layersPopover);
-
-      // The Layers button just opens/closes the popover in place (no re-render
-      // needed); the module flag carries the state across switch rebuilds.
-      layersBtn.addEventListener('click', function() {
-        _stLayersOpen = !_stLayersOpen;
-        layersPopover.className = 'st-layers-popover'
-          + (_stLayersOpen ? ' st-layers-popover--open' : '');
-      });
-
-      stControlBarBottom.appendChild(layersWrap);
-
-      // D5 (R5): a self-evident helper caption for the field controls. flex-basis
-      // 100% wraps it onto its own line beneath the buttons; the .arc-reset-btn
-      // danger styling + this caption's color land in S2 chrome (per mockup).
-      var tidyHelp = document.createElement('p');
-      tidyHelp.className = 'arcfield-tidy-help';
-      tidyHelp.textContent = 'Tidy composes an open arrangement for this session only — '
-        + 'Restore brings back what you saved. Reset placements permanently clears '
-        + 'every saved position; it cannot be undone.';
-      stControlBarBottom.appendChild(tidyHelp);
-
-      // R5 D4: the top "+ Sub-theory" bar is gone (the head canon owns the add path);
-      // the bottom Connect/Reset/Layers bar IS the mock's .cstl-controls and stays.
-
-      var SVG_NS = 'http://www.w3.org/2000/svg';
-      var svg = document.createElementNS(SVG_NS, 'svg');
-      svg.setAttribute('viewBox', '0 0 600 500');
-      svg.setAttribute('xmlns', SVG_NS);
-      webContainer.appendChild(svg);
-      // Stage 4: the Connect/Reset/Layers bar sits AFTER the svg (bottom).
-      webContainer.appendChild(stControlBarBottom);
-      var arcData = _arcDetailBuildSubTheoryData(arc);
-      // Wave 1 (F-D5): Tidy on -> null every position so the renderer lays out
-      // its OWN composed radial arrangement this render only (never persisted;
-      // the stored placements are untouched, so Restore brings them straight back).
-      if (arcTidyOn && arcData && arcData.subTheories) {
-        var tdi;
-        for (tdi = 0; tdi < arcData.subTheories.length; tdi = tdi + 1) {
-          arcData.subTheories[tdi].x = null;
-          arcData.subTheories[tdi].y = null;
-        }
-      }
-      window.renderSubTheoryConstellation(arcData, svg,
-        { showMarginalia: stShowMarginalia,
-          showBooks: stShowBooks,
-          showFaint: stShowFaint,
-          palette: stPalette });
-      // Stage 9.5: bind the sub-theory interaction layer. Pass arcData
-      // (resolved subTheories/marks), not the raw arc record -- the
-      // tooltip needs header/label/quote already resolved.
-      _stConstellationAttachInteractions(svg, arcData);
-      // Stage 9.6c.2: bind the drag-to-arrange layer on the freshly-built
-      // svg. onCommit persists the dropped position via setSubTheoryPosition
-      // then re-enters renderArcDetail, which rebuilds the svg and re-binds
-      // both layers -- no teardown needed (the old svg + its listeners are
-      // GC'd). Runs on initial render and every drag-commit/Reset re-render.
-      if (typeof window.attachSubTheoryDrag === 'function') {
-        window.attachSubTheoryDrag(svg, {
-          arc: arcData,
-          connectBtn: connectBtn,
-          // Stage 9.6c.4: Connect arming lives in attachSubTheoryDrag; on a
-          // confirmed pick-two it calls onLink. Re-render ONLY on a real new
-          // link (linkSubTheories returns false for a dup/self/missing pair).
-          onLink: function(aId, bId) {
-            if (linkSubTheories(aId, bId)) { renderArcDetail(arcId); }
-          },
-          onCommit: function(id, x, y) {
-            setSubTheoryPosition(id, x, y);
-            renderArcDetail(arcId);
-          }
-        });
-      }
-    }
-    // W11 S8 Lane 1 (L2): a zero-member arc otherwise renders a bare field --
-    // give it an in-voice empty in the constellation host (mirrors the "your
-    // shelf is open" tone). stCount is computed above from state.subTheories.
-    if (stCount === 0) {
-      var arcEmpty = document.createElement('div');
-      arcEmpty.className = 'empty-state arcfield-empty';
-      var aeMark = document.createElement('div');
-      aeMark.className = 'em-mark';
-      if (typeof yumiGlyphNode === 'function') { aeMark.appendChild(yumiGlyphNode(56)); }
-      arcEmpty.appendChild(aeMark);
-      var aeH = document.createElement('h2');
-      aeH.textContent = 'This arc is open';
-      arcEmpty.appendChild(aeH);
-      var aeP = document.createElement('p');
-      aeP.textContent = 'No sub-theories yet — gather a few notes in your notebook and one will take its place in this field.';
-      arcEmpty.appendChild(aeP);
-      webContainer.appendChild(arcEmpty);
-    }
-    // Mock .arcfield-stage: the constellation host + the books/add rail.
-    var arcStage = document.createElement('div');
-    arcStage.className = 'arcfield-stage';
-    arcStage.appendChild(webContainer);
-    arcStage.appendChild(buildArcFieldRail(arc, arcId, user));
-    wrap.appendChild(arcStage);
-
-    // Wave 1 (F-D3): the concentrate whisper card -- Yumi's cyan voice, but
-    // DETERMINISTIC (real thread facts only, no generated prose). Hidden until a
-    // mark is tapped; _stConstellationAttachInteractions populates + reveals it.
-    var arcWhisper = document.createElement('div');
-    arcWhisper.className = 'lum-yumi arcfield-whisper';
-    arcWhisper.id = 'arcfield-whisper';
-    var awDot = document.createElement('span');
-    awDot.className = 'dot';
-    awDot.setAttribute('aria-hidden', 'true');
-    var awBody = document.createElement('div');
-    awBody.className = 'arcfield-whisper-body';
-    arcWhisper.appendChild(awDot);
-    arcWhisper.appendChild(awBody);
-    wrap.appendChild(arcWhisper);
-  } else if (arcFace === 'read') {
-    // Wave 1 (F-D2): the READ face -- a DETERMINISTIC view of the arc's real
-    // threads (edges from linkedSubTheories) + the sub-theories they connect.
-    // No model call, no generated prose. Generative narration -> Deferred Log.
-    wrap.appendChild(_arcFieldReadFace(arc));
+  var connectBtn = _afPendingConnectBtn;
+  if (typeof window.renderSubTheoryConstellation !== 'function') {
+    var unavailable = document.createElement('p');
+    unavailable.className = 'arc-detail-web-placeholder';
+    unavailable.textContent = 'Constellation renderer unavailable.';
+    webContainer.appendChild(unavailable);
   } else {
-    // Wave 1: the PAGE face -- a real STUB that hands off to the existing writing
-    // route (#subtheory/<id>/build). The writing surface is NOT rebuilt here.
-    wrap.appendChild(_arcFieldPageFace(arc, arcId, user));
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 600 500');
+    svg.setAttribute('xmlns', SVG_NS);
+    webContainer.appendChild(svg);
   }
+
+  afSheet.appendChild(webContainer);
+
+  // ======================= THE SOIL ROW (G1 / law 9) ====================
+  // "What this field grows from" — the arc's member books, standing quietly in
+  // the shelf's cover dialect at the field's FOOT. Books are ground, not
+  // growth; they are never inside the arrangement canvas again.
+  afSheet.appendChild(_afSoilRow(arc, arcId));
+
+  wrap.appendChild(afSheet);
+
+  // Wave 1 (F-D3): the concentrate whisper card -- Yumi's voice, DETERMINISTIC
+  // (real thread facts only). Hidden until a mark is tapped;
+  // _stConstellationAttachInteractions populates + reveals it. It becomes the
+  // approach's read in S2.
+  var arcWhisper = document.createElement('div');
+  arcWhisper.className = 'lum-yumi arcfield-whisper';
+  arcWhisper.id = 'arcfield-whisper';
+  var awDot = document.createElement('span');
+  awDot.className = 'dot';
+  awDot.setAttribute('aria-hidden', 'true');
+  var awBody = document.createElement('div');
+  awBody.className = 'arcfield-whisper-body';
+  arcWhisper.appendChild(awDot);
+  arcWhisper.appendChild(awBody);
+  wrap.appendChild(arcWhisper);
 
   // OG3: the public seed arc is the one shareable payoff a signed-out visitor
   // reaches. It renders in full (the seed sentinel bypasses the gated-arc branch
@@ -13592,6 +13430,350 @@ function renderArcDetail(arcId) {
   }
 
   host.appendChild(wrap);
+
+  // ---- THE FIELD IS DRAWN AFTER THE MOUNT, ON PURPOSE ----------------------
+  // The svg is a fixed 600x500 viewBox stretched to the sheet, so a user unit
+  // is a different number of CSS pixels at every viewport (788px wide at 1360,
+  // ~344px at 390). A mark must be 34/45/56 CSS px by the maturity ramp at
+  // BOTH -- if the glyph rubber-bands with the viewport, the ramp stops meaning
+  // anything. So the renderer is handed uScale = 600 / measured width, which it
+  // multiplies into every SIZE while leaving every POSITION in untouched
+  // viewBox units. The arrangement is the user's authorship; nothing here may
+  // move a mark (covenant law).
+  var afSvg = webContainer.querySelector ? webContainer.querySelector('svg') : null;
+  if (afSvg && typeof window.renderSubTheoryConstellation === 'function') {
+    var afRect = afSvg.getBoundingClientRect();
+    var afU = (afRect && afRect.width > 0) ? (600 / afRect.width) : 1;
+    var arcData = _arcDetailBuildSubTheoryData(arc);
+    // Wave 1 (F-D5): Tidy is an opt-in, session-only compose -- positions are
+    // nulled for THIS RENDER so the renderer lays out its own composed
+    // arrangement, WITHOUT clearing the persisted placements. Restore reverts.
+    if (arcTidyOn && arcData && arcData.subTheories) {
+      var tdi;
+      for (tdi = 0; tdi < arcData.subTheories.length; tdi = tdi + 1) {
+        arcData.subTheories[tdi].x = null;
+        arcData.subTheories[tdi].y = null;
+      }
+    }
+    var stShowMarginalia = ls('praxis_st_marginalia_on', true) === true;
+    var stShowFaint = ls('praxis_st_faint_on', true) === true;
+    var stPalette = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+    document.documentElement.setAttribute('data-st-palette', stPalette);
+    window.renderSubTheoryConstellation(arcData, afSvg, {
+      showMarginalia: stShowMarginalia,
+      showBooks:      false,   // G1: books have left the canvas for the soil row
+      showFaint:      stShowFaint,
+      palette:        stPalette,
+      showQuestion:   false,   // the question stands on the sky now (law 3)
+      showYumi:       false,   // law 1: nothing floats on the field
+      showLegend:     false,   // law 4: the field explains itself, sparse-honest
+      showLabels:     true,    // F7: a resting mark carries its NAME
+      showDots:       false,   // F4: the mark's size + coal already say the count
+      uScale:         afU
+    });
+    // RD-2 THE LENGTHENING PAGE: height grows to the lowest mark plus breathing
+    // room over a generous minimum -- never a fixed box with a void under it.
+    // The viewBox is 600x500 whatever the arrangement is, so at four marks in
+    // the upper two-thirds the field stranded ~300px of empty sheet under the
+    // lowest one. Re-declaring the viewBox HEIGHT crops that away and moves
+    // NOTHING: every mark's position is absolute in this coordinate space, and
+    // the drag layer maps through getScreenCTM, so it follows any viewBox.
+    _afFitFieldHeight(afSvg);
+    _stConstellationAttachInteractions(afSvg, arcData);
+    if (typeof window.attachSubTheoryDrag === 'function') {
+      window.attachSubTheoryDrag(afSvg, {
+        arc: arcData,
+        connectBtn: connectBtn,
+        onLink: function (aId, bId) {
+          if (linkSubTheories(aId, bId)) { renderArcDetail(arcId); }
+        },
+        onCommit: function (id, x, y) {
+          setSubTheoryPosition(id, x, y);
+          renderArcDetail(arcId);
+        }
+      });
+    }
+  }
+}
+
+// RD-2: crop the field to its content. Reads each mark's OWN transform (the
+// authored position), takes the lowest, and re-declares only the viewBox's
+// HEIGHT. Nothing is moved and nothing is written -- this is a camera bound, of
+// the same class as the S2 approach: the arrangement is the user's authorship.
+// The floor keeps a nearly-empty field from collapsing into a strip.
+function _afFitFieldHeight(svg) {
+  if (!svg) { return; }
+  var gs = svg.querySelectorAll('[data-st-sub-id]:not([data-st-mark])');
+  if (!gs.length) { return; }
+  var lowest = 0, i, t, m;
+  for (i = 0; i < gs.length; i = i + 1) {
+    t = gs[i].getAttribute('transform') || '';
+    m = /translate\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/.exec(t);
+    if (m) {
+      var y = parseFloat(m[2]);
+      if (isFinite(y) && y > lowest) { lowest = y; }
+    }
+  }
+  // breathing room = the tallest mark's half-height plus its two label lines,
+  // so a low mark is never cut by geometry (RD-3's clip law).
+  var h = Math.round(lowest + 96);
+  if (h < 300) { h = 300; }
+  if (h > 500) { h = 500; }
+  svg.setAttribute('viewBox', '0 0 600 ' + h);
+}
+
+// F5: the arc's question is edited IN PLACE, on the horizon line where it
+// stands -- there is no Rename control any more, and the name is not printed a
+// second time in the Gate Row. `arc.title` is the one string (the arc record
+// has no separate question field), so this is both "rename" and "author the
+// question". updateArc allows a blank title, so clearing it is a legal unname:
+// the sky falls back to the pre-question invitation, which is honest.
+function _afEditQuestion(arcId) {
+  var arc = state.arcs[arcId];
+  if (!arc) { return; }
+  var line = document.querySelector('.af-q') || document.querySelector('.af-invite');
+  if (!line || !line.parentNode) { return; }
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'af-q af-q-edit';
+  input.value = arc.title || '';
+  input.setAttribute('placeholder', 'What is this arc asking?');
+  input.setAttribute('aria-label', 'Edit this arc’s question');
+  var done = false;
+  function commit() {
+    if (done) { return; }
+    done = true;
+    updateArc(arcId, { title: input.value.replace(/^\s+|\s+$/g, '') });
+    renderRoute();
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', function (ev) {
+    // Enter commits DIRECTLY: a programmatic blur() does not reliably fire the
+    // blur listener, and commit()'s `done` guard makes the real blur (from
+    // renderRoute tearing the input down) idempotent.
+    if (ev.key === 'Enter' || ev.keyCode === 13) { ev.preventDefault(); commit(); }
+    else if (ev.key === 'Escape' || ev.keyCode === 27) { done = true; renderRoute(); }
+  });
+  line.parentNode.replaceChild(input, line);
+  input.focus();
+  input.select();
+}
+
+// A value mark's display label, defensively -- the register stores different
+// shapes across its versions and an ember with no words is not an ember.
+function _afValueLabel(vm) {
+  if (!vm) { return ''; }
+  if (typeof vm === 'string') { return vm; }
+  if (typeof vm.label === 'string' && vm.label) { return vm.label; }
+  if (typeof vm.value === 'string' && vm.value) { return vm.value; }
+  if (typeof vm.name === 'string' && vm.name) { return vm.name; }
+  return '';
+}
+
+// Connect keeps its EXACT element identity: attachSubTheoryDrag is handed this
+// node and toggles .is-connecting on it to show the armed state. Only its seat
+// moved -- from floating on the field into the overflow.
+function _afConnectBtn() {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'af-menu-item';
+  b.setAttribute('data-st-control', 'connect');
+  b.textContent = 'Connect two marks';
+  return b;
+}
+
+// THE ⋯ OVERFLOW (F5). Everything wired but not the one act or the one door.
+// Three of these were named in the Stage-0 census as controls F5 gives no seat
+// to, and behaviour-preservation outranks structure-match, so they get one here
+// rather than disappearing: Connect (the ONLY way to author a thread), Tidy /
+// Restore, and Ask Yumi.
+//
+// ⚠ ASK YUMI — RULING PREMISE CORRECTION, awaiting Preston's word at the S1
+// gate. The Stage-0 ruling was "retire it by name IF the Yumi flower is present
+// on this surface, because the seat owns that job." The flower IS present
+// (#yumi-bloom, fixed, z-9999, measured on the arc route). But the seat does
+// NOT own the job: the chat's context is assembleContextData, whose currentArc
+// is `{title}` ONLY -- and renderRoute never even sets state.currentArcId on
+// #arc/<id> (views.js sets it to null there; only the sub-theory routes set
+// it), so the chat does not know which arc you are standing in. requestArcVoice
+// runs gatherArcContext, which reads every sub-theory's header and bodyPublic.
+// Retiring it would delete a capability the flower cannot replace. It is parked
+// in the overflow -- reversible in one line either way -- and flagged.
+function _afOverflow(arcId, arc, user, isSeedArc, afGraduated, afPublished, afOwner) {
+  var wrap = document.createElement('div');
+  wrap.className = 'af-more';
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'af-btn af-btn-more';
+  btn.setAttribute('aria-label', 'More arc actions');
+  btn.setAttribute('aria-expanded', _afMoreOpen ? 'true' : 'false');
+  btn.textContent = '⋯';
+  wrap.appendChild(btn);
+
+  var menu = document.createElement('div');
+  menu.className = 'af-menu' + (_afMoreOpen ? ' is-open' : '');
+  btn.addEventListener('click', function () {
+    _afMoreOpen = !_afMoreOpen;
+    menu.className = 'af-menu' + (_afMoreOpen ? ' is-open' : '');
+    btn.setAttribute('aria-expanded', _afMoreOpen ? 'true' : 'false');
+  });
+
+  function item(label, fn, cls) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'af-menu-item' + (cls ? (' ' + cls) : '');
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    menu.appendChild(b);
+    return b;
+  }
+  function group(label) {
+    var h = document.createElement('p');
+    h.className = 'af-menu-head';
+    h.textContent = label;
+    menu.appendChild(h);
+  }
+
+  if (afOwner) {
+    group('The field');
+    // Connect is built by the caller so attachSubTheoryDrag holds its node.
+    if (_afPendingConnectBtn) { menu.appendChild(_afPendingConnectBtn); }
+    var tidyOn = ls('praxis_arc_tidy', false) === true;
+    item(tidyOn ? 'Restore my arrangement' : 'Tidy the field — this session only', function () {
+      sv('praxis_arc_tidy', !tidyOn);
+      _afMoreOpen = true;
+      renderArcDetail(arcId);
+    });
+    item('Reset placements…', function () {
+      _afMoreOpen = false;
+      openArcResetConfirm(arcId);
+    }, 'is-danger');
+
+    group('Show');
+    // Layers, minus Books -- that switch retired with the squares it faded.
+    // §4-H holds: these are restyled, never rebuilt, and the item set is
+    // unchanged apart from the one whose subject no longer exists.
+    _afLayerItem(menu, 'Marginalia', 'praxis_st_marginalia_on', 'data-st-marginalia');
+    _afLayerItem(menu, 'Faint links', 'praxis_st_faint_on', 'data-st-faint');
+    var palOn = (ls('praxis_constellation_palette', 'colorful') === 'muted');
+    item((palOn ? '✓ ' : '') + 'Muted palette', function () {
+      sv('praxis_constellation_palette', palOn ? 'colorful' : 'muted');
+      _afMoreOpen = true;
+      renderArcDetail(arcId);
+    });
+
+    group('This arc');
+    if (typeof requestArcVoice === 'function') {
+      var yHost = document.createElement('div');
+      yHost.className = 'arc-voice-host af-menu-yumi';
+      var yBtn = item('Ask Yumi what she sees here', function () {
+        requestArcVoice(arcId, yHost, yBtn);
+      });
+      menu.appendChild(yHost);
+    }
+    if (afGraduated && !afPublished) {
+      item('Return to ember', function () { ungraduateArc(arcId); renderRoute(); });
+    }
+    if (afPublished) {
+      item('Unpublish…', function () {
+        _afMoreOpen = false;
+        openUnpublishConfirm(arcId, function () { renderArcDetail(arcId); });
+      }, 'is-danger');
+    }
+  }
+
+  if (user || !isSeedArc) {
+    if (!afOwner) { group('This arc'); }
+    item(isSeedArc ? 'Hide this arc…' : 'Delete this arc…', function () {
+      _afMoreOpen = false;
+      openArcDeleteConfirm(arcId);
+    }, 'is-danger');
+  }
+
+  wrap.appendChild(menu);
+  return wrap;
+}
+
+// One Layers switch: flips its ls flag AND the matching attribute on the LIVE
+// svg, so the CSS fades the layer with no re-render and the menu stays put.
+function _afLayerItem(menu, label, flagKey, attrName) {
+  var on = ls(flagKey, true) === true;
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'af-menu-item';
+  b.setAttribute('data-st-layer', flagKey);
+  b.textContent = (on ? '✓ ' : '') + label;
+  b.addEventListener('click', function () {
+    var nowOn = !(ls(flagKey, true) === true);
+    sv(flagKey, nowOn);
+    var svgEl = document.querySelector('#arc-field svg');
+    if (svgEl) { svgEl.setAttribute(attrName, nowOn ? 'on' : 'off'); }
+    b.textContent = (nowOn ? '✓ ' : '') + label;
+  });
+  menu.appendChild(b);
+  return b;
+}
+
+// G1 THE SOIL ROW — the arc's member books at the field's foot, in the shelf's
+// cover dialect. Source of truth is arc.bookIds -> state.books, the same source
+// the retired rail read. 2 of the 5 seed books have no coverUrl, so the cloth
+// spine fallback is not optional: a soil row that assumed covers would render
+// holes on real libraries.
+function _afSoilRow(arc, arcId) {
+  var soil = document.createElement('div');
+  soil.className = 'af-soil';
+  var h = document.createElement('p');
+  h.className = 'af-soil-h';
+  h.textContent = 'What this field grows from';
+  soil.appendChild(h);
+
+  var row = document.createElement('div');
+  row.className = 'af-soil-row';
+  var bookIds = (arc && arc.bookIds && arc.bookIds.length) ? arc.bookIds : [];
+  var shown = 0, i;
+  for (i = 0; i < bookIds.length; i = i + 1) {
+    var bm = bookIds[i];
+    var bk = (bm && bm.id && state.books) ? state.books[bm.id] : null;
+    if (!bk) { continue; }
+    (function (book, bid) {
+      var a = document.createElement('a');
+      a.className = 'af-book';
+      a.href = '#book/' + bid;
+      a.setAttribute('title', (book.title || 'Untitled') + (book.author ? (' — ' + book.author) : ''));
+      if (book.coverUrl) {
+        a.className = 'af-book af-book-cover';
+        var img = document.createElement('img');
+        img.className = 'af-book-img';
+        img.src = book.coverUrl;
+        img.alt = '';
+        img.setAttribute('loading', 'lazy');
+        a.appendChild(img);
+      } else {
+        var t = document.createElement('span');
+        t.className = 'af-book-t';
+        t.textContent = book.title || 'Untitled';
+        a.appendChild(t);
+        var au = document.createElement('em');
+        au.className = 'af-book-a';
+        au.textContent = book.author || '';
+        a.appendChild(au);
+      }
+      row.appendChild(a);
+    })(bk, bm.id);
+    shown = shown + 1;
+  }
+  if (shown === 0) {
+    // Sparse-honest: one --ink-3 line, no empty frame, no call to action for a
+    // flow that does not live on this surface (books join an arc from a book).
+    var none = document.createElement('p');
+    none.className = 'af-soil-empty';
+    none.textContent = 'No books in this arc yet.';
+    soil.appendChild(none);
+    return soil;
+  }
+  soil.appendChild(row);
+  return soil;
 }
 
 // Wave 1 (F-D2): the READ face. A DETERMINISTIC real-data view of the arc's

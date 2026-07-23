@@ -507,6 +507,195 @@ function _stIdentity(id) {
   };
 }
 
+// ===========================================================================
+// THE ARC STANDARD — COMPOSED MARK IDENTITY (S1, 2026-07-22)
+//
+// F6: identity re-weights from hue-primary to FORM-primary. A mark is told
+// apart by SILHOUETTE first, pigment second, with a treatment between them.
+//   SHAPES-X (Preston, mockup Stage 1): silhouettes 5 -> NINE. `stone` was CUT
+//     by probe P-1 -- at 34px, the smallest size the maturity ramp produces, a
+//     stone reads as a plain rounded ovoid, i.e. SEED, in solid AND outline.
+//   PALETTE-X + R-2: pigments 5 -> TEN, gold RETIRED as identity.
+// 9 forms x 3 treatments x 10 pigments = 270 unique identities.
+//
+// DERIVE, DO NOT WRITE (Preston, Stage 0 ruling 6). This is a PURE FUNCTION of
+// the record. The S1 build performs NO data write: no field is added to any
+// sub-theory, nothing syncs, and every mark's post-migration identity is
+// reproducible from its id plus the two tables below. The composer (S4) is the
+// only writer, into markSilhouette / markTreatment / markPigment.
+// ===========================================================================
+
+var _ST_SILS   = ['beacon', 'facet', 'seed', 'frond', 'gate', 'spire', 'well', 'vessel', 'bloom'];
+var _ST_TREATS = ['solid', 'outline', 'hatched'];
+var _ST_PIGS   = ['madder', 'terracotta', 'ochre', 'olive', 'moss',
+                  'verdigris', 'teal', 'lapis', 'iris', 'plum'];
+
+// Silhouette geometry on a 64x62 box, as felt-passed in the mockup.
+var _ST_SIL_PATHS = {
+  beacon: 'M32 2 L55 16.5 L55 45.5 L32 60 L9 45.5 L9 16.5 Z',
+  facet:  'M32 1 L54 31 L32 61 L10 31 Z',
+  seed:   'M32 3 C46 12 52 26 52 37 C52 51 43 59 32 59 C21 59 12 51 12 37 C12 26 18 12 32 3 Z',
+  frond:  'M32 1 C49 16 51 41 32 61 C13 41 15 16 32 1 Z',
+  gate:   'M32 3 L56 12 V33 C56 48 44 56 32 60 C20 56 8 48 8 33 V12 Z',
+  spire:  'M32 3 L59 59 L5 59 Z',
+  vessel: 'M7 7 L57 7 L44 59 L20 59 Z',
+  bloom:  'M32 2 C41 2 46 10 45 19 C54 18 62 23 62 31 C62 39 54 44 45 43 C46 52 41 60 32 60 C23 60 18 52 19 43 C10 44 2 39 2 31 C2 23 10 18 19 19 C18 10 23 2 32 2 Z'
+};
+// `well` is a RING and needs two subpaths + evenodd -- its own branch below.
+var _ST_WELL_OUTER = 'M32 31 m-29 0 a29 29 0 1 0 58 0 a29 29 0 1 0 -58 0';
+var _ST_WELL_INNER = 'M32 31 m-13 0 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0';
+
+// --- THE MIGRATION TABLES (G3-as-built) ------------------------------------
+// A mark whose owner CHOSE an identity keeps it; a mark that only ever had a
+// hash gets the full new spread. That split is the whole of the migration, and
+// it is why nothing changes silently: an unchosen mark had no identity to
+// change, and a chosen one moves only where a ruling moved it.
+//
+// SIL16: the 16 legacy _ST_MARK_TABLE bodies -> their nearest of the nine.
+//   beacon{hexagon,pentagon} facet{rhombus,kite} seed{teardrop,egg}
+//   frond{vesica} gate{arch,semicircle} spire{triangle} well{octagon}
+//   vessel{mound,squircle} bloom{4-pt star,rosette,6-pt star}
+// All nine are reachable, so no chosen shape collapses onto a crowd.
+var _ST_SIL16 = ['beacon', 'seed', 'bloom', 'beacon', 'frond', 'gate', 'facet', 'bloom',
+                 'spire', 'well', 'seed', 'facet', 'gate', 'bloom', 'vessel', 'vessel'];
+// PIG16: the 16 legacy colour slots -> pigments, for a CHOSEN colour only.
+// theme.css collapses --subtheory-N onto five jewels, so these 16 slots only
+// ever painted five hues; this table reproduces that exact five-way collapse
+// with ONE ruled change -- R-2: "existing m1/gold marks re-point to OCHRE
+// (nearest surviving pigment)". Gold slots {0,5,10,15} and ochre slots
+// {4,9,14} therefore both land on ochre, which is the ruling, verbatim.
+var _ST_PIG16 = ['ochre', 'terracotta', 'olive', 'teal', 'ochre',
+                 'ochre', 'terracotta', 'olive', 'teal', 'ochre',
+                 'ochre', 'terracotta', 'olive', 'teal', 'ochre', 'ochre'];
+
+// The composed identity of one sub-theory record. PURE -- reads the record,
+// writes nothing. Salts 11 / 13 / 17 are the shipped independent-axis salts
+// (_stIndices), so a mark's form, treatment and pigment stay genuinely
+// uncorrelated and every axis is stable across reloads.
+function _stMarkIdentity(rec) {
+  var id = (rec && rec.id) ? rec.id : '';
+  var sil, treat, pig;
+
+  // silhouette — composed > chosen-legacy > derived
+  if (rec && typeof rec.markSilhouette === 'string' && _ST_SIL_PATHS[rec.markSilhouette]) {
+    sil = rec.markSilhouette;
+  } else if (rec && rec.markSilhouette === 'well') {
+    sil = 'well';
+  } else if (rec && typeof rec.markShape === 'number' && rec.markShape >= 0 && rec.markShape <= 15) {
+    sil = _ST_SIL16[rec.markShape];
+  } else {
+    sil = _ST_SILS[_stIdentityHash(id, 11) % _ST_SILS.length];
+  }
+
+  // treatment — composed > derived. No legacy field exists to migrate from:
+  // the old _ST_TREATMENTS axis was dead code on the render path.
+  if (rec && typeof rec.markTreatment === 'string' &&
+      (rec.markTreatment === 'solid' || rec.markTreatment === 'outline' || rec.markTreatment === 'hatched')) {
+    treat = rec.markTreatment;
+  } else {
+    treat = _ST_TREATS[_stIdentityHash(id, 13) % _ST_TREATS.length];
+  }
+
+  // pigment — composed > chosen-legacy > derived
+  if (rec && typeof rec.markPigment === 'string' && _stPigIndex(rec.markPigment) >= 0) {
+    pig = rec.markPigment;
+  } else if (rec && typeof rec.markColor === 'number' && rec.markColor >= 0 && rec.markColor <= 15) {
+    pig = _ST_PIG16[rec.markColor];
+  } else {
+    pig = _ST_PIGS[_stIdentityHash(id, 17) % _ST_PIGS.length];
+  }
+
+  return { sil: sil, treat: treat, pig: pig };
+}
+
+function _stPigIndex(name) {
+  var i;
+  for (i = 0; i < _ST_PIGS.length; i = i + 1) { if (_ST_PIGS[i] === name) { return i; } }
+  return -1;
+}
+
+// F-4 MATURITY: three size steps, driven by the GATHERED count (evidence).
+// The coal is GOLD ONLY and steps with the same number -- a pigment never
+// glows (semantic gold law). "Just planted" is smallest and carries no coal,
+// which is what makes an ember arc read as an ember rather than as a dim one.
+function _stMaturityStep(count) {
+  if (count >= 4) { return { d: 56, glow: 0.55, word: 'mature' }; }
+  if (count >= 3) { return { d: 45, glow: 0.30, word: 'growing' }; }
+  return { d: 34, glow: 0, word: 'nascent' };
+}
+
+// The composed mark as an SVG STRING on a 64x62 viewBox, with an optional gold
+// maturity coal. `uid` must be unique per instance: pattern and gradient ids
+// are document-scoped, so two marks sharing an id would share a fill.
+// Colours are var() tokens throughout -- no hardcoded hex reaches this file.
+function _stComposedMarkBody(ident, count, uid) {
+  var fill = 'var(--pig-' + ident.pig + ')';
+  var edge = 'var(--pig-' + ident.pig + '-edge)';
+  var step = _stMaturityStep(count);
+  var body = '', hatch = '';
+
+  if (ident.treat === 'hatched') {
+    hatch = '<pattern id="ph' + uid + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+          +   '<line x1="0" y1="0" x2="0" y2="6" stroke="' + fill + '" stroke-width="3"/>'
+          + '</pattern>';
+  }
+
+  if (ident.sil === 'well') {
+    if (ident.treat === 'outline') {
+      body = '<path d="' + _ST_WELL_OUTER + '" fill="none" stroke="' + edge + '" stroke-width="3"/>'
+           + '<path d="' + _ST_WELL_INNER + '" fill="none" stroke="' + edge + '" stroke-width="3"/>';
+    } else {
+      body = '<path fill-rule="evenodd" d="' + _ST_WELL_OUTER + ' ' + _ST_WELL_INNER + '" fill="'
+           + (ident.treat === 'hatched' ? ('url(#ph' + uid + ')') : fill)
+           + '" stroke="' + edge + '" stroke-width="2"/>';
+    }
+  } else {
+    var p = _ST_SIL_PATHS[ident.sil] || _ST_SIL_PATHS.seed;
+    if (ident.treat === 'outline') {
+      body = '<path d="' + p + '" fill="none" stroke="' + edge + '" stroke-width="3.2"/>';
+    } else {
+      body = '<path d="' + p + '" fill="'
+           + (ident.treat === 'hatched' ? ('url(#ph' + uid + ')') : fill)
+           + '" stroke="' + edge + '" stroke-width="2"/>';
+    }
+  }
+
+  // THE COAL — a soft radial bloom, never a stroked ring. A ring around the
+  // mark reads as a badge or a border, i.e. chrome (it did, in the mockup's
+  // first capture). A coal has no edge: it is light the mark sits in.
+  var coal = '';
+  if (step.glow > 0) {
+    coal = '<radialGradient id="gc' + uid + '">'
+         +   '<stop offset="38%" stop-color="var(--gold-ember)" stop-opacity="' + step.glow + '"/>'
+         +   '<stop offset="68%" stop-color="var(--gold-ember)" stop-opacity="' + _arcR(step.glow * 0.34) + '"/>'
+         +   '<stop offset="100%" stop-color="var(--gold-ember)" stop-opacity="0"/>'
+         + '</radialGradient>';
+  }
+  var defs = (hatch || coal) ? ('<defs>' + hatch + coal + '</defs>') : '';
+  var coalCircle = step.glow > 0
+    ? '<circle class="st-coal" cx="32" cy="31" r="52" fill="url(#gc' + uid + ')"/>' : '';
+  return { defs: defs, coal: coalCircle, body: body, step: step };
+}
+
+// A standalone composed mark for the app's CHROME sites (read rows, hero
+// marks, chips) -- one identity everywhere, so a sub-theory can never wear two
+// different faces on two surfaces. Returns an HTML string.
+var _stGlyphSeq = 0;
+function stComposedMarkHTML(rec, px) {
+  var ident = _stMarkIdentity(rec);
+  // the gathered count, from whichever shape the caller holds: a live record
+  // (evidence[]), a field data object (evCount / marks[]), or a bare {id}.
+  var count = 0;
+  if (rec && rec.evidence && rec.evidence.length) { count = rec.evidence.length; }
+  else if (rec && typeof rec.evCount === 'number') { count = rec.evCount; }
+  else if (rec && rec.marks && rec.marks.length) { count = rec.marks.length; }
+  _stGlyphSeq = _stGlyphSeq + 1;
+  var parts = _stComposedMarkBody(ident, count, 'x' + _stGlyphSeq);
+  var d = px || 22;
+  return '<svg class="st-glyph" width="' + d + '" height="' + d + '" viewBox="0 0 64 62" aria-hidden="true">'
+       + parts.defs + parts.coal + parts.body + '</svg>';
+}
+
 // New st-* defs. Echoes the tradition grain/halo technique with a
 // tradition-NEUTRAL vocabulary: one color-agnostic grain overlay (faint
 // dark contour strokes on a transparent tile, layered over the translucent
@@ -826,24 +1015,42 @@ var _ST_MARK_TABLE = [
 // present and in [0,15]. The old silhouette x treatment construction retires
 // from the render path; tfa-innerL + the silhouette/treatment helpers + the
 // st-halo/st-grain defs remain as dead code (removal is a later cleanup).
-function _stRenderShapes(positions, muted, markScale) {
+//
+// ARC STANDARD S1 (2026-07-22) — the mark is now COMPOSED: silhouette x
+// treatment x pigment (_stMarkIdentity), sized by the F-4 maturity ramp and
+// lit by a GOLD-ONLY coal. The sixteen-frozen-mark recipe above it retires
+// from the render path; _ST_MARK_TABLE stays as the migration table's source
+// of truth for what each legacy index MEANT (see _ST_SIL16).
+//
+// ONE IDENTITY EVERYWHERE. This function draws every constellation the app
+// renders -- the arc field AND the Home embed -- so a sub-theory cannot wear
+// two different faces on two surfaces. Home's COMPOSITION is untouched (a
+// non-goal); only the glyph changes, which is the whole point of F6.
+//
+// uScale: the svg is a fixed 600x500 viewBox stretched to its container, so
+// one user unit is a different number of CSS pixels at every width. Marks and
+// labels must NOT rubber-band with the viewport -- a mark is 34/45/56 CSS px
+// by the maturity ramp, full stop. The caller measures the rendered width and
+// passes 600/renderedWidth; every size here is multiplied by it, so the
+// glyph holds its physical size while POSITIONS stay in untouched viewBox
+// units (the arrangement is the user's authorship -- covenant law).
+function _stRenderShapes(positions, muted, markScale, uScale, showLabels, showDots) {
   var out = '';
-  // 9a: embed-only size seam. Default 0.8 reproduces the shipped mark size
-  // EXACTLY (arc-detail + picker pass nothing -> byte-identical 'scale(0.8)').
-  var sc = (typeof markScale === 'number' && markScale > 0) ? markScale : 0.8;
+  // 9a: embed-only size seam. markScale multiplies the maturity ramp.
+  var sc = (typeof markScale === 'number' && markScale > 0) ? markScale : 1;
+  var us = (typeof uScale === 'number' && uScale > 0) ? uScale : 1;
   var i;
   for (i = 0; i < positions.length; i = i + 1) {
     var p = positions[i];
     var sub = p.sub || {};
-    var ix = _stIndices(p.id);
-    var shapeIdx = (typeof sub.markShape === 'number' && sub.markShape >= 0 && sub.markShape <= 15)
-      ? sub.markShape : ix.shapeIdx;
-    var colorIdx = (typeof sub.markColor === 'number' && sub.markColor >= 0 && sub.markColor <= 15)
-      ? sub.markColor : ix.colorIdx;
-    var mark = _ST_MARK_TABLE[shapeIdx];
-    var colorVar = 'var(--subtheory-' + (colorIdx + 1) + ')';
-    var edgeVar = 'var(--subtheory-' + (colorIdx + 1) + '-edge)';
-    var lum = _stLuminosity(sub.maturity);
+    var evCount = (typeof sub.evCount === 'number') ? sub.evCount
+      : ((sub.marks && sub.marks.length) ? sub.marks.length : 0);
+    var ident = _stMarkIdentity(sub.id ? sub : { id: p.id });
+    var uid = 'm' + _stNextId().replace(/[^0-9]/g, '');
+    var comp = _stComposedMarkBody(ident, evCount, uid);
+    // The composed path box is 64x62 centred at (32,31); the field's per-mark
+    // group is centred on the mark, so the box is translated back by half.
+    var mk = (comp.step.d / 64) * sc * us;
     // 9b-iv (R62/R64): celestial drift. One of four hash-stable wander paths
     // (seed 23 -- independent of shape seed 11 / color 17). The .st-drift
     // wrapper carries NO transform attribute and is CSS-animated; it sits
@@ -858,43 +1065,75 @@ function _stRenderShapes(positions, muted, markScale) {
     // dots/tethers are a filter-free sibling so they travel with the mark.
     out = out + '<g data-st-sub-id="' + _arcEscapeXml(p.id) + '" transform="translate(' + _arcR(p.x) + ',' + _arcR(p.y) + ')">';
     out = out +   '<g class="st-drift" data-st-drift="' + driftLetter + '">';
-    out = out +   '<g transform="scale(' + sc + ')">';
-    if (muted) {
-      // R53 + sheet muted recipe: body = inline radial #FFF8E7 -> hue@80% (hue
-      // is a var -> GUARD-37-safe), NO shine, body opacity .66, inner .5, halo
-      // opacity = lum*0.68 (gentler). cx/cy/r place the cream highlight high.
-      var gradId = _stNextId();
-      out = out +   '<radialGradient id="' + gradId + '" cx="50%" cy="38%" r="75%">';
-      out = out +     '<stop offset="0%" stop-color="#FFF8E7"/>';
-      out = out +     '<stop offset="80%" stop-color="' + colorVar + '"/>';
-      out = out +   '</radialGradient>';
-      out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum * 0.68) + '" style="filter:blur(9px)"/>';
-      out = out +   '<g opacity="0.66">';
-      out = out +     '<path d="' + mark.body + '" fill="url(#' + gradId + ')" stroke="' + colorVar + '" stroke-width="2"/>';
-      var jm;
-      for (jm = 0; jm < mark.inner.length; jm = jm + 1) {
-        out = out + '<path d="' + mark.inner[jm] + '" stroke="' + edgeVar + '" stroke-opacity="0.5" stroke-width="1.8" fill="none"/>';
-      }
-      out = out +   '</g>';
-    } else {
-      // colorful: solid hue fill + same-hue 2px ring + cream shine + DEEP inner
-      // design at .62 (the shipped 9b-ii recipe, unchanged).
-      out = out +   '<circle cx="0" cy="0" r="54" fill="' + colorVar + '" opacity="' + _arcR(lum) + '" style="filter:blur(9px)"/>';
-      out = out +   '<g opacity="0.92">';
-      out = out +     '<path d="' + mark.body + '" fill="' + colorVar + '" stroke="' + colorVar + '" stroke-width="2"/>';
-      out = out +     '<path d="' + mark.body + '" fill="url(#tfa-shine)"/>';
-      var j;
-      for (j = 0; j < mark.inner.length; j = j + 1) {
-        out = out + '<path d="' + mark.inner[j] + '" stroke="' + edgeVar + '" stroke-opacity="0.62" stroke-width="1.8" fill="none"/>';
-      }
-      out = out +   '</g>';
-    }
+    out = out +   comp.defs;
+    out = out +   '<g class="st-body" transform="scale(' + _arcR(mk) + ') translate(-32,-31)"'
+              +     (muted ? ' opacity="0.78"' : '') + '>';
+    out = out +     comp.coal;
+    out = out +     comp.body;
     out = out +   '</g>';
-    out = out +   _stRenderDotsForMark(p);
+    if (showLabels) {
+      // F-7 QUIET LABELS — a resting mark carries its NAME and nothing else;
+      // the thread count is a property of the APPROACH (S2), never of rest.
+      // Two lines maximum at 390 (RULED, Preston 2026-07-22): a three-line
+      // label collided with the mark below it on the finished weather. The
+      // full name is never lost -- it returns whole on approach.
+      out = out + _stRenderMarkLabel(sub.header || '', (comp.step.d * sc * us) / 2, us);
+    }
+    // F-4: on the arc field the GATHERED COUNT is carried by the mark itself --
+    // its size step and its gold coal -- so the teal evidence dots retire from
+    // that surface. They were the same number said twice, in a hue the
+    // semantic-gold law reserves for nothing (they read as candy scattered
+    // around each mark, and at 4 marks they outnumbered the marks 3:1). Other
+    // embeds keep them. Their per-dot source channel (data-st-kind/-ref, "click
+    // a dot to reach its source") is NOT lost: it becomes part of the approach
+    // card in S2, where F7 already puts a mark's detail.
+    if (showDots) { out = out + _stRenderDotsForMark(p); }
     out = out +   '</g>';
     out = out + '</g>';
   }
   return out;
+}
+
+// The resting label, in SVG text on the field's own coordinate system. Sizes
+// are multiplied by uScale for the same reason the glyph is: the label is
+// 12.5 CSS px at every viewport, not 12.5 rubber-band units.
+//
+// Line-breaking is done here, by character budget, because SVG <text> does not
+// wrap. It is deterministic, which matters more than typographic perfection:
+// the same name must break the same way on every render, or a mark appears to
+// twitch between repaints.
+function _stRenderMarkLabel(name, halfH, us) {
+  if (!name) { return ''; }
+  var FS = 12.5 * us;                 // font-size in user units
+  var LH = 16 * us;                   // line height
+  var BUDGET = 17;                    // characters per line at ~16ch
+  var words = String(name).split(/\s+/);
+  var lines = [], cur = '', w, i;
+  for (i = 0; i < words.length; i = i + 1) {
+    w = words[i];
+    if (!cur) { cur = w; }
+    else if ((cur + ' ' + w).length <= BUDGET) { cur = cur + ' ' + w; }
+    else { lines.push(cur); cur = w; }
+    if (lines.length === 2) { break; }
+  }
+  if (lines.length < 2 && cur) { lines.push(cur); }
+  // the 2-line clamp: anything past two lines becomes an ellipsis on line 2
+  var clamped = false;
+  if (lines.length > 2) { lines = [lines[0], lines[1]]; clamped = true; }
+  var consumed = lines.join(' ').length;
+  if (consumed < String(name).replace(/\s+/g, ' ').length) { clamped = true; }
+  if (clamped) {
+    var last = lines[lines.length - 1];
+    if (last.length > BUDGET - 1) { last = last.slice(0, BUDGET - 1); }
+    lines[lines.length - 1] = last + '…';
+  }
+  var y0 = halfH + LH * 0.95;
+  var s = '<text class="st-mlabel" x="0" y="' + _arcR(y0) + '" text-anchor="middle" font-size="'
+        + _arcR(FS) + '">';
+  for (i = 0; i < lines.length; i = i + 1) {
+    s = s + '<tspan x="0" dy="' + (i === 0 ? '0' : _arcR(LH)) + '">' + _arcEscapeXml(lines[i]) + '</tspan>';
+  }
+  return s + '</text>';
 }
 
 // 9b-iii (ruling 35): the gathered-evidence dots for ONE sub, in LOCAL coords
@@ -1204,7 +1443,16 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // TRANSPARENT stage rect. The old parchment tfa-stage fill is dropped; tfa-stage
   // stays defined but unused (tradition-forms-arc.js untouched).
   svg = svg + '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="none"/>';
-  svg = svg + _stRenderQuestion(arc.question || '', width, height);
+  // ARC STANDARD S1: on the arc field the question has LEFT the canvas -- it
+  // stands on the sky (F4/law 3), so the in-canvas watermark would print it
+  // twice. Other embeds keep it. Same for the Yumi ghost and the legend: the
+  // field is one ground with nothing floating on it (law 1).
+  var showQuestion = (options.showQuestion === false) ? false : true;
+  var showYumi = (options.showYumi === false) ? false : true;
+  var showLabels = (options.showLabels === true);
+  var showDots = (options.showDots === false) ? false : true;
+  var uScale = (typeof options.uScale === 'number' && options.uScale > 0) ? options.uScale : 1;
+  if (showQuestion) { svg = svg + _stRenderQuestion(arc.question || '', width, height); }
 
   if (!subTheories.length) {
     svg = svg + _stRenderEmpty(width, height);
@@ -1228,9 +1476,16 @@ function renderSubTheoryConstellation(arc, parentSvgElement, opts) {
   // (no switch). Dots now live INSIDE each per-mark group (_stRenderShapes ->
   // _stRenderDotsForMark, ruling 35), so there is no separate marginalia layer.
   svg = svg + _stRenderEdges(arc.edges || [], posById, true);
-  svg = svg + _stRenderBooks(arc.books || [], positions, width, height);
-  svg = svg + _stRenderShapes(positions, muted, options.markScale);
-  svg = svg + _stRenderYumi(yumiX, yumiY);
+  // G1 (ARC STANDARD): the member books have LEFT the arrangement canvas. They
+  // were drawn here as inert neutral squares -- 17 of them on the seed arc,
+  // the only dark objects on a light field, one of them sitting on top of the
+  // legend. That is the ledgered "stray square glyph", and G1 rules it out by
+  // name: "books are ground, not growth: never inside the arrangement canvas."
+  // They stand in the soil row at the field's foot instead. _stRenderBooks and
+  // the Books layer switch retire with it (the function is left defined, now
+  // uncalled -- a later sweep removes it).
+  svg = svg + _stRenderShapes(positions, muted, options.markScale, uScale, showLabels, showDots);
+  if (showYumi) { svg = svg + _stRenderYumi(yumiX, yumiY); }
   if (showLegend) {
     svg = svg + _stRenderLegend(arc, positions, width, height);
   }
@@ -1715,6 +1970,16 @@ function attachSubTheoryDrag(svg, opts) {
 if (typeof window !== 'undefined') {
   window.renderSubTheoryConstellation = renderSubTheoryConstellation;
   window.attachSubTheoryDrag = attachSubTheoryDrag;
+  // ARC STANDARD S1: the composed identity + its chrome-site glyph. views.js
+  // loads after this file, so these are the seam it reads them through --
+  // exactly the pattern stHashIndices already established below. ONE identity
+  // for one sub-theory, on every surface that draws it.
+  window.stMarkIdentity = _stMarkIdentity;
+  window.stComposedMarkHTML = stComposedMarkHTML;
+  window.stMaturityStep = _stMaturityStep;
+  window.ST_SILS = _ST_SILS;
+  window.ST_TREATS = _ST_TREATS;
+  window.ST_PIGS = _ST_PIGS;
   // Chrome-fidelity Stage 2: a thin id->color accessor so the ⌘K spotlight can
   // tint a sub-theory's result chip with the SAME hue as its constellation
   // mark. Single source -- reuses _stIdentity/_stIndices (no hash duplication).

@@ -16255,3 +16255,253 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 .home-page.lum-amber-deep .home-mspine-pending{ display:none; }
 .app-nav-search-kbd{ font-size:12px; }
+
+/* ===========================================================================
+   THE ARC STANDARD — S1 · THE FIELD                       (2026-07-22, v3.244)
+   Brief: docs/studio/arc-standard-brief.md (9f254a0). Mockup (felt-passed):
+   mockup/arc-standard @ 1ee4bb5.
+
+   LAW 1 — ONE GROUND. The arc interior is ONE lit sheet on the Hour's twilight,
+   world margins visible, and NOTHING floats on that sheet as a panel. What this
+   replaces was the pre-WALL shelf disease, measured before the build: the wrap
+   painted rgb(233,220,188) and the constellation panel painted rgb(253,249,238)
+   inside it — a visible seam on all four sides, with a header above it, a rail
+   beside it, and seven controls scattered around all three. There is no panel
+   here now, so there is no seam to fix.
+
+   The sheet recipe is the SHIPPED one (.shelf.lum-amber-deep, above): the same
+   --card-* vellum, the same --sheet-gap margin, the same --card-shadow. It is
+   not re-derived here, because one world means one recipe.
+   ======================================================================== */
+
+.arcfield.af-world{
+  /* the sheet's own ink ramp: inside the vellum the type crosses back to print */
+  --ink:var(--card-ink); --ink-2:var(--card-ink-2); --ink-3:var(--card-meta);
+  padding:0 0 96px;
+  margin-top:calc(var(--sheet-gap) + env(safe-area-inset-top));
+}
+.arcfield.af-world .af-sheet{
+  background-color:var(--card-1);
+  background-image:linear-gradient(180deg, var(--card-1) 0%, var(--card-2) 100%);
+  background-attachment:scroll;  /* a sheet scrolls with the page; only the world is fixed */
+  margin:0 var(--sheet-gap);
+  border-radius:var(--card-radius);
+  box-shadow:var(--card-shadow);
+  color:var(--card-ink);
+  overflow:hidden;
+}
+/* F4 THE HARVEST TURN — a finished arc reads finished at a glance, badge-free:
+   the whole sheet takes a warm-gold cast. Weather carries "finished"; there is
+   no chip, no label on any mark, nothing added to the composition. */
+.arcfield.af-world .af-sheet.is-harvest{
+  background-image:
+    radial-gradient(120% 70% at 50% 0%, rgba(223,183,89,.22) 0%, rgba(223,183,89,.06) 46%, rgba(223,183,89,0) 72%),
+    linear-gradient(180deg, #FEF7E4 0%, #F6E8C8 100%);
+}
+
+/* ---- THE SKY (F4 / law 3) — an atmospheric band, not a header. No rule
+   beneath it: a rule would make it a header again, and the question would read
+   as a title over content rather than as sky over a field. --------------- */
+.arcfield.af-world .af-sky{
+  padding:52px 46px 40px;
+  background:linear-gradient(180deg,
+    rgba(255,252,244,.95) 0%,
+    rgba(253,247,232,.55) 44%,
+    rgba(246,239,220,0) 100%);
+}
+.arcfield.af-world .af-q{
+  font-family:var(--font-serif); font-weight:500;
+  font-size:clamp(28px, 2.8vw, 37px); line-height:1.16; letter-spacing:.002em;
+  color:var(--card-ink); margin:0; max-width:34ch;
+  border:0; border-bottom:1px dashed transparent; background:none; padding:0;
+  transition:border-color 150ms var(--ease, ease);
+}
+.arcfield.af-world h1.af-q[role="button"]{ cursor:text; }
+.arcfield.af-world h1.af-q[role="button"]:hover,
+.arcfield.af-world .af-invite[role="button"]:hover{ border-bottom-color:rgba(38,32,25,.22); }
+.arcfield.af-world .af-q:focus{ outline:none; border-bottom-color:var(--gold-on-card); }
+.arcfield.af-world input.af-q-edit{ width:100%; max-width:34ch; display:block; }
+/* the ANSWER joins the question in the SAME display voice — one completed
+   thought standing on one line of sky, never a caption under a title. */
+.arcfield.af-world .af-a{
+  font-family:var(--font-serif); font-weight:500; font-style:italic;
+  font-size:clamp(25px, 2.5vw, 33px); line-height:1.2;
+  color:#4A4030; margin:18px 0 0; max-width:34ch;
+}
+/* law 4 — the empty carries no furniture: ONE --ink-3 line and nothing else. */
+.arcfield.af-world .af-invite{
+  font-family:var(--font-serif); font-style:italic; font-size:20px;
+  color:var(--card-meta); margin:0; max-width:34ch;
+  border:0; border-bottom:1px dashed transparent; padding:0;
+}
+/* value embers RIDE the sky: a small gold mark and fine text. No pill, no
+   border, no fill — sky, not kit chrome. When there are none there is nothing;
+   the old "Values this carries" panel dissolves entirely. */
+.arcfield.af-world .af-embers{ display:flex; gap:22px; flex-wrap:wrap; margin:26px 0 0; }
+.arcfield.af-world .af-ember{
+  display:inline-flex; align-items:baseline; gap:7px;
+  font-family:var(--font-serif); font-style:italic; font-size:15px; color:#7A6636;
+}
+.arcfield.af-world .af-ember i{
+  width:5px; height:5px; border-radius:50%; background:var(--gold-ember);
+  box-shadow:0 0 7px 1px rgba(223,183,89,.75);
+  flex:0 0 auto; position:relative; top:-3px;
+}
+
+/* ---- THE GATE ROW (F5 / law 5) — every arc control lives here and nowhere
+   else. A kicker, one act, one door, one overflow. ----------------------- */
+.arcfield.af-world .af-gate{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:8px 46px 18px;
+}
+.arcfield.af-world .af-kicker{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--card-meta);
+  margin:0 auto 0 0; min-width:0;
+}
+.arcfield.af-world .af-btn{
+  font-family:var(--font-body); font-size:13.5px; border-radius:var(--radius-pill, 999px);
+  cursor:pointer; padding:9px 16px; min-height:44px;
+  border:1px solid rgba(38,32,25,.2); background:rgba(255,255,255,.5);
+  color:var(--card-ink);
+  transition:border-color 150ms var(--ease, ease), background 150ms var(--ease, ease);
+}
+.arcfield.af-world .af-btn:hover{ border-color:var(--gold-on-card); }
+.arcfield.af-world .af-btn-primary{
+  background:linear-gradient(180deg, #F0D79A, #DFB759);
+  border-color:transparent; color:#3d2807; font-weight:600;
+}
+.arcfield.af-world .af-door{
+  border-color:rgba(143,106,18,.5); color:#6b5a24; font-weight:500;
+}
+.arcfield.af-world .af-door-published{
+  display:inline-flex; align-items:center; min-height:44px; padding:9px 16px;
+  border-radius:var(--radius-pill, 999px); border:1px solid rgba(143,106,18,.5);
+  background:rgba(143,106,18,.10); color:#6b5a24;
+  font-family:var(--font-body); font-size:13.5px; font-weight:500;
+}
+.arcfield.af-world .af-btn-quiet{ background:none; border-color:transparent; color:var(--card-ink-2); }
+.arcfield.af-world .af-btn-more{ width:44px; padding:0; text-align:center; color:var(--card-meta); }
+
+/* the overflow menu — SOLID, never blurred (canon §2: no backdrop-filter on
+   any dropdown, at any width; and no filter/transform on an ancestor of an
+   absolutely-positioned child that can overflow it — the iOS nav bug). */
+.arcfield.af-world .af-more{ position:relative; }
+.arcfield.af-world .af-menu{
+  display:none; position:absolute; right:0; top:calc(100% + 8px); z-index:40;
+  min-width:238px; padding:8px; border-radius:var(--radius-md, 12px);
+  background:var(--card-1); border:1px solid rgba(38,32,25,.16);
+  box-shadow:var(--card-shadow);
+}
+.arcfield.af-world .af-menu.is-open{ display:block; }
+.arcfield.af-world .af-menu-head{
+  font-family:var(--font-mono); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--card-meta); margin:10px 8px 4px;
+}
+.arcfield.af-world .af-menu-head:first-child{ margin-top:2px; }
+.arcfield.af-world .af-menu-item{
+  display:block; width:100%; text-align:left; cursor:pointer;
+  font-family:var(--font-body); font-size:13.5px; color:var(--card-ink);
+  background:none; border:0; border-radius:var(--radius-sm, 8px);
+  padding:9px 10px; min-height:38px;
+}
+.arcfield.af-world .af-menu-item:hover{ background:rgba(38,32,25,.06); }
+.arcfield.af-world .af-menu-item.is-danger{ color:var(--danger, #9B3B2E); }
+.arcfield.af-world .af-menu-item.is-connecting{
+  background:rgba(194,164,99,.22); box-shadow:inset 0 0 0 1px var(--thread);
+}
+.arcfield.af-world .af-menu-yumi:empty{ display:none; }
+.arcfield.af-world .af-menu-yumi{ padding:2px 10px 8px; font-size:13px; color:var(--card-ink-2); }
+
+/* ---- THE FIELD (law 1) — the arrangement sits DIRECTLY on the sheet. No
+   container fill, no border, no shadow, no inner scroll context: there is no
+   panel here to have a seam, and one scroll world (RD-2). --------------- */
+.arcfield.af-world .af-field{
+  background:none; border:0; box-shadow:none; padding:0 30px; margin:0;
+  overflow:visible; min-height:0;
+}
+.arcfield.af-world .af-field::before,
+.arcfield.af-world .af-field::after{ content:none; }
+.arcfield.af-world .af-field svg{ display:block; width:100%; height:auto; overflow:visible; }
+/* F7 QUIET LABELS — a resting mark carries its NAME and nothing else; the
+   thread count is a property of the APPROACH (S2), never of rest. The halo
+   stroke keeps a label legible where it crosses a thread. */
+.arcfield.af-world .st-mlabel{
+  font-family:var(--font-body); fill:var(--card-ink-2);
+  paint-order:stroke; stroke:var(--card-1); stroke-width:3px; stroke-linejoin:round;
+}
+
+/* ---- THE SOIL ROW (G1 / law 9) — books stand at the field's FOOT in the
+   shelf's cover dialect, on a soil-tinted band. They are ground, not growth:
+   never inside the arrangement canvas again. ----------------------------- */
+.arcfield.af-world .af-soil{
+  padding:20px 46px 30px;
+  background:linear-gradient(180deg, rgba(88,68,34,.05), rgba(88,68,34,.10));
+}
+.arcfield.af-world .af-soil-h{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--card-meta); margin:0 0 14px;
+}
+.arcfield.af-world .af-soil-empty{
+  font-family:var(--font-serif); font-style:italic; font-size:15px;
+  color:var(--card-meta); margin:0;
+}
+.arcfield.af-world .af-soil-row{ display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
+.arcfield.af-world .af-book{
+  position:relative; width:58px; height:82px; flex:0 0 auto; overflow:hidden;
+  border-radius:2px 3px 3px 2px; text-decoration:none;
+  background:linear-gradient(150deg, #FBF4E2, #EFE3C7);
+  box-shadow:0 1px 2px rgba(38,32,25,.20), 0 4px 10px rgba(38,32,25,.10);
+}
+/* the bound edge — the shelf's cloth spine, so a coverless book is a BOOK and
+   not a hole. 2 of the 5 seed books carry no coverUrl; on a real library the
+   fraction is larger, which is why this is the base and the cover is the skin. */
+.arcfield.af-world .af-book::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:rgba(38,32,25,.16); z-index:1;
+}
+.arcfield.af-world .af-book-t{
+  position:absolute; left:10px; right:5px; top:10px;
+  font-family:var(--font-serif); font-size:9px; line-height:1.2; color:#4A4030;
+}
+.arcfield.af-world .af-book-a{
+  position:absolute; left:10px; right:5px; bottom:7px; font-style:normal;
+  font-family:var(--font-mono); font-size:6.5px; letter-spacing:.04em; color:var(--card-meta);
+}
+.arcfield.af-world .af-book-img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* the whisper card rides the sheet's margin, not the retired warm-dim room's */
+.arcfield.af-world .arcfield-whisper{ margin:18px var(--sheet-gap) 0; }
+
+/* ---- MOBILE (<=759) — same grammar full-width, one scroll world, no pinch,
+   no pan. The sky band stays slim; the Gate Row wraps; the P3 44px targets are
+   in the base rules above, not a mobile special case. -------------------- */
+@media (max-width:759px){
+  .arcfield.af-world .af-sky{ padding:30px 20px 24px; }
+  .arcfield.af-world .af-q{ font-size:26px; }
+  .arcfield.af-world .af-a{ font-size:22px; }
+  .arcfield.af-world .af-invite{ font-size:18px; }
+  .arcfield.af-world .af-gate{ padding:4px 20px 14px; gap:10px; }
+  .arcfield.af-world .af-kicker{ flex:1 0 100%; margin:0 0 4px; }
+  .arcfield.af-world .af-field{ padding:0 12px; }
+  .arcfield.af-world .af-soil{ padding:16px 20px 24px; }
+  /* the soil is a horizontal band at 390 — shelf-dialect overflow, so the row
+     never wraps into a second stack and never widens the document (RD-2). */
+  .arcfield.af-world .af-soil-row{
+    flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    padding-bottom:6px;
+  }
+  .arcfield.af-world .af-menu{ right:auto; left:0; min-width:0; width:calc(100vw - 56px); }
+}
+
+/* S1 fix — the soil book's text box. At 58x82 with a 9px serif, a long title
+   ran under the author line and the two collided ("...Casino Capitalism" over
+   "Henry Giroux") on three of the five seed books. The title is now bounded
+   above the author's line and clamped, and the box carries a little more room.
+   Real titles on this arc run 16-59 chars, so this is sized to the data. */
+.arcfield.af-world .af-book{ width:62px; height:90px; }
+.arcfield.af-world .af-book-t{
+  top:9px; bottom:22px; overflow:hidden; font-size:8.5px; line-height:1.22;
+  display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
+}
+.arcfield.af-world .af-book-a{ bottom:8px; font-size:6px; }

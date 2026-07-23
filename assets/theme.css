@@ -211,6 +211,53 @@
   --m4:            #3E8A83;  --m4-edge: #266059;   /* teal       */
   --m5:            #B07514;  --m5-edge: #7D5109;   /* ochre      */
 
+  /* == PALETTE-X — the ten mark pigments (ARC STANDARD S1, 2026-07-22) =======
+     Preston's felt ruling at the mockup's Stage 1 review expands the mark
+     pigment family 5 -> 10, and R-2 (same day) RETIRES GOLD AS A PIGMENT:
+     gold is attention / coal / harvest ONLY, never identity. A pigment never
+     glows. Named, never numbered.
+
+     ADDITIVE. --m1..--m5 and --subtheory-1..16 above are NOT re-pointed — the
+     book constellation, the spotlight chips and the legacy mark picker all
+     still read them. These ten are a separate set the composed mark reads.
+
+     AA — measured at the WORST case, the vellum sheet FOOT (--card-2 #F6EFDC),
+     which is the harder end for dark marks (the sheet top is the easy one:
+     moss passed there at 3.22 and FAILED here at 2.96 before it was re-tuned).
+     Floor = 3:1, the WCAG graphical-object minimum. 20/20 PASS, band
+     3.23-4.62 — deliberately narrow, so no pigment reads heavier than another
+     at field distance.
+
+       pigment       fill      hue   vs foot   edge      edge vs foot
+       madder       #B8425A    348    4.62    #85293D      7.68
+       terracotta   #C75434     13    3.86    #94371F      6.48
+       ochre        #A65F10     32    4.29    #74400A      7.38
+       olive        #7C8B4F     75    3.23    #556032      5.89
+       moss         #55913F    104    3.32    #3B682B      5.72
+       verdigris    #3C9257    139    3.36    #1F6334      6.33
+       teal         #3E8A83    174    3.54    #266059      6.31
+       lapis        #4A7BB8    213    3.80    #2F5484      6.72
+       iris         #7A6BB8    252    3.96    #55447E      7.28
+       plum         #A85A8E    320    4.05    #7A3D64      6.83
+
+     Anchors: terracotta / olive / teal are --m2/--m3/--m4 RAW and unchanged.
+     Ochre is --m5 SHIFTED #B07514 -> #A65F10 (hue 37 -> 32) — a SPACING change,
+     not an AA change (raw ochre passes at 3.39): at 5-wide ochre 37 could
+     coexist with gold 43; at 10-wide six degrees is a collision. Raw --m1 gold
+     #D9B24A measures 1.76:1 on the foot and could never have touched this
+     sheet. RUST is deliberately absent — it lands at hue ~15-20, on top of
+     terracotta; IRIS holds the blue-violet gap instead. */
+  --pig-madder:     #B8425A;  --pig-madder-edge:     #85293D;
+  --pig-terracotta: #C75434;  --pig-terracotta-edge: #94371F;
+  --pig-ochre:      #A65F10;  --pig-ochre-edge:      #74400A;
+  --pig-olive:      #7C8B4F;  --pig-olive-edge:      #556032;
+  --pig-moss:       #55913F;  --pig-moss-edge:       #3B682B;
+  --pig-verdigris:  #3C9257;  --pig-verdigris-edge:  #1F6334;
+  --pig-teal:       #3E8A83;  --pig-teal-edge:       #266059;
+  --pig-lapis:      #4A7BB8;  --pig-lapis-edge:      #2F5484;
+  --pig-iris:       #7A6BB8;  --pig-iris-edge:       #55447E;
+  --pig-plum:       #A85A8E;  --pig-plum-edge:       #7A3D64;
+
   /* -- the cloth spines: the bound edge of a printed page (reference `.spine`).
         Tokens, not literals in components.css -- the same rule the jewel marks
         follow. Three cloths, each a two-stop gradient pair. -- */
