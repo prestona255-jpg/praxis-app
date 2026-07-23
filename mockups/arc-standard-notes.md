@@ -438,3 +438,54 @@ flight entirely and swaps instantly.
 - **The clearing did not collapse at 390** — the `190px 1fr 190px` court left
   the canvas ~90px wide, one word per line. It stacks now, canvas first,
   because writing is what you came for.
+
+---
+
+# ROUND CLOSE — 2026-07-22
+
+## Felt pass: **FULL PASS**
+
+> FELT PASS = FULL PASS — "perfect."
+> — Preston, 2026-07-22
+
+The mockup round for THE ARC STANDARD is **closed**. Per the studio loop, a
+round closes only on Preston's felt pass; computed styles and green gates are
+necessary and never sufficient. This is that close.
+
+## Approach ruling: **ZOOM**
+
+> Approach ruling: ZOOM (crossfade stays in the file as the built fallback,
+> unruled-out).
+> — Preston, 2026-07-22
+
+The approach choreography — §10's named riskiest ambiguity, the one thing in
+the brief that asked for a felt motion no shipped surface performs — **lands as
+the zoom.** It is the round's signature, as the brief hoped.
+
+The crossfade is **not deleted and not ruled out.** It stays in the file as the
+built fallback, reachable from the `approach` toggle, mirroring the shipped
+`.mo-crossfade` / `mo-cross` exactly. If the zoom ever janks on a DOM-real
+field at 390 or on slower hardware, the fallback is already built, already
+felt-passed alongside the zoom, and needs no new design decision — only a
+switch.
+
+Both paths remain bound by the same measured law: the camera moves and the
+arrangement never does (`matrix(2.8,0,0,2.8,0,0)`, per-mark positions
+IDENTICAL before, during and after — `shots/stage-3/stage-3-zoom-audit-1360.png`).
+Under `prefers-reduced-motion: reduce`, neither runs: `goDist()` swaps
+instantly and continuity is carried by the breadcrumb and horizon.
+
+## What carries into the build session
+
+The build is a **new session**. These travel with it:
+
+- **The amendments** — PALETTE-X (10 named pigments, gold retired as identity)
+  and SHAPES-X (nine silhouettes, `stone` cut by P-1) amend the committed
+  brief's F6. This file is their record.
+- **The standing rulings** — ember door EMPTY · F-1/P-2 split accepted as built
+  · 2-line label clamp at 390 STANDS · approach = ZOOM.
+- **The open close-ruling** — rig graduation from `mockups/rig/` to
+  `.claude/rig/`, which will need its own path-scoped hook exemption.
+- **The carried findings** — 7 orphan sub-theories · `published=false`
+  everywhere · the Stage 1 FORK-VERBATIM breach · the gold→ochre migration
+  note.
