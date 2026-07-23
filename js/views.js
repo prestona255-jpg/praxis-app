@@ -9996,6 +9996,220 @@ function _stPickerMarkSvg(subId, shapeIdx, colorIdx, pal, neutral) {
     + defs + inner + '</svg>';
 }
 
+// THE ARC STANDARD S4 — THE MARK COMPOSER. Form-first: silhouette is chosen,
+// then treatment, then pigment (F6). Whole composed marks are chosen, never a
+// hue row. The UNIQUENESS LAW is enforced in-arc: no two marks in one arc may
+// share a full silhouette|treatment|pigment triple, so a combination already
+// taken by a sibling is shown closed and Save is refused on it. This is the
+// ONLY writer of a chosen identity (setMarkIdentity); recomposition is OFFERED,
+// never applied (G3) — opening the composer on an existing mark pre-selects its
+// identity and changes nothing until the user saves. Replaces every "Change
+// mark" path (openSymbolPicker retires to a thin alias below).
+function openMarkComposer(subId) {
+  var rec = state.subTheories && state.subTheories[subId];
+  if (!rec) { return; }
+  if (typeof window.stMarkIdentity !== 'function'
+      || !window.ST_SILS || !window.ST_TREATS || !window.ST_PIGS
+      || typeof window.stComposedMarkHTML !== 'function') {
+    // renderer not loaded (should never happen live) — fall back to the picker.
+    return openSymbolPicker(subId);
+  }
+  var SILS = window.ST_SILS, TREATS = window.ST_TREATS, PIGS = window.ST_PIGS;
+  var opener = document.activeElement;
+  // pre-select the mark's CURRENT identity (derived or already chosen).
+  var cur = window.stMarkIdentity(rec);
+  var sel = { sil: cur.sil, treat: cur.treat, pig: cur.pig };
+  var hasOverride = (typeof rec.markPigment === 'string');
+
+  // the uniqueness set: every OTHER mark in this arc's full triple.
+  var taken = {};
+  var k, other;
+  for (k in state.subTheories) {
+    if (!Object.prototype.hasOwnProperty.call(state.subTheories, k)) { continue; }
+    if (k === subId) { continue; }
+    other = state.subTheories[k];
+    if (!other || other.arcId !== rec.arcId) { continue; }
+    var oid = window.stMarkIdentity(other);
+    taken[oid.sil + '|' + oid.treat + '|' + oid.pig] = true;
+  }
+  function isTaken(s, t, p) { return taken[s + '|' + t + '|' + p] === true; }
+
+  var backdrop = document.createElement('div');
+  backdrop.className = 'st-picker-backdrop mc-backdrop';
+  backdrop.addEventListener('click', close);
+
+  var dialog = document.createElement('div');
+  dialog.className = 'st-picker mc-composer';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-label', 'Compose this mark');
+  dialog.addEventListener('click', function (e) { e.stopPropagation(); });
+
+  // header
+  var head = document.createElement('div');
+  head.className = 'st-picker-head';
+  var headText = document.createElement('div');
+  var eyebrow = document.createElement('div');
+  eyebrow.className = 'st-picker-eyebrow';
+  eyebrow.textContent = 'Compose the mark';
+  var subName = document.createElement('div');
+  subName.className = 'st-picker-sub';
+  subName.textContent = (rec.header && rec.header.length) ? rec.header : 'Untitled sub-theory';
+  headText.appendChild(eyebrow);
+  headText.appendChild(subName);
+  head.appendChild(headText);
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'st-picker-close';
+  closeBtn.textContent = 'esc';
+  closeBtn.setAttribute('aria-label', 'Cancel');
+  closeBtn.addEventListener('click', close);
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  // preview
+  var preview = document.createElement('div');
+  preview.className = 'mc-preview';
+  dialog.appendChild(preview);
+
+  // the three form rows
+  var rowSil = _mcRow('Silhouette', 'form first');
+  var rowTreat = _mcRow('Treatment', 'solid · outline · hatched');
+  var rowPig = _mcRow('Pigment', 'taken combinations are closed');
+  dialog.appendChild(rowSil.label); dialog.appendChild(rowSil.grid);
+  dialog.appendChild(rowTreat.label); dialog.appendChild(rowTreat.grid);
+  dialog.appendChild(rowPig.label); dialog.appendChild(rowPig.grid);
+
+  // footer
+  var foot = document.createElement('div');
+  foot.className = 'st-picker-foot mc-foot';
+  var law = document.createElement('span');
+  law.className = 'mc-law';
+  foot.appendChild(law);
+  var resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'st-picker-btn st-picker-btn-text';
+  resetBtn.textContent = 'Reset to auto';
+  resetBtn.addEventListener('click', function () {
+    if (typeof setMarkIdentity === 'function') { setMarkIdentity(subId, null); }
+    close(); _mcReRender(subId);
+  });
+  var footRight = document.createElement('div');
+  footRight.className = 'st-picker-foot-right';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'st-picker-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', close);
+  var saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'st-picker-btn st-picker-btn-primary mc-plant';
+  saveBtn.textContent = hasOverride ? 'Save mark' : 'Plant this mark';
+  saveBtn.addEventListener('click', function () {
+    if (isTaken(sel.sil, sel.treat, sel.pig)) { return; } // uniqueness: refuse
+    if (typeof setMarkIdentity === 'function') { setMarkIdentity(subId, { sil: sel.sil, treat: sel.treat, pig: sel.pig }); }
+    close(); _mcReRender(subId);
+  });
+  footRight.appendChild(cancelBtn);
+  footRight.appendChild(saveBtn);
+  foot.appendChild(resetBtn);
+  foot.appendChild(footRight);
+  dialog.appendChild(foot);
+
+  function cellHTML(s, t, p) {
+    return window.stComposedMarkHTML({ id: subId, markSilhouette: s, markTreatment: t, markPigment: p, evCount: 3 }, 34);
+  }
+  function paint() {
+    // preview at full presence
+    preview.innerHTML = window.stComposedMarkHTML(
+      { id: subId, markSilhouette: sel.sil, markTreatment: sel.treat, markPigment: sel.pig, evCount: 4 }, 66);
+    // silhouette row
+    _mcFill(rowSil.grid, SILS, function (v) { return v; }, sel.sil, function (v) {
+      return cellHTML(v, sel.treat, sel.pig);
+    }, function (v) { sel.sil = v; paint(); }, function () { return false; });
+    // treatment row
+    _mcFill(rowTreat.grid, TREATS, function (v) { return v; }, sel.treat, function (v) {
+      return cellHTML(sel.sil, v, sel.pig);
+    }, function (v) { sel.treat = v; paint(); }, function () { return false; });
+    // pigment row — taken combinations closed
+    _mcFill(rowPig.grid, PIGS, function (v) { return v; }, sel.pig, function (v) {
+      return cellHTML(sel.sil, sel.treat, v);
+    }, function (v) { sel.pig = v; paint(); }, function (v) { return isTaken(sel.sil, sel.treat, v); });
+    // law line + plant guard
+    var collision = isTaken(sel.sil, sel.treat, sel.pig);
+    law.textContent = collision
+      ? 'Another mark in this arc already wears this — choose a different form, treatment, or pigment.'
+      : 'No two marks in an arc share a face.';
+    law.className = 'mc-law' + (collision ? ' mc-law-warn' : '');
+    if (collision) { saveBtn.setAttribute('disabled', 'disabled'); saveBtn.className = 'st-picker-btn st-picker-btn-primary mc-plant is-refused'; }
+    else { saveBtn.removeAttribute('disabled'); saveBtn.className = 'st-picker-btn st-picker-btn-primary mc-plant'; }
+  }
+
+  function close() {
+    if (backdrop.parentNode) { backdrop.parentNode.removeChild(backdrop); }
+    document.removeEventListener('keydown', onKey);
+    if (opener && opener.focus) { opener.focus(); }
+  }
+  function onKey(e) { if (e.key === 'Escape' || e.keyCode === 27) { close(); } }
+  document.addEventListener('keydown', onKey);
+
+  backdrop.appendChild(dialog);
+  document.body.appendChild(backdrop);
+  paint();
+  saveBtn.focus();
+}
+
+// re-render whatever surface the composer was opened from, so the new mark
+// shows immediately (the workshop, the page, or the arc field via the route).
+function _mcReRender(subId) {
+  if (typeof renderRoute === 'function') { renderRoute(); }
+}
+
+// one composer row: a mono label + a grid host.
+function _mcRow(labelText, hint) {
+  var label = document.createElement('div');
+  label.className = 'mc-row-label';
+  var l = document.createElement('span');
+  l.className = 'mc-row-name';
+  l.textContent = labelText;
+  label.appendChild(l);
+  if (hint) {
+    var h = document.createElement('span');
+    h.className = 'mc-row-hint';
+    h.textContent = hint;
+    label.appendChild(h);
+  }
+  var grid = document.createElement('div');
+  grid.className = 'mc-grid';
+  return { label: label, grid: grid };
+}
+
+// fill a composer grid: one cell per value, the selected one flagged, taken
+// ones closed. cellSvg(v) → the composed-mark HTML for that cell.
+function _mcFill(grid, values, valOf, selVal, cellSvg, onPick, isClosed) {
+  grid.innerHTML = '';
+  var i;
+  for (i = 0; i < values.length; i = i + 1) {
+    (function (v) {
+      var closed = isClosed(v);
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'mc-cell' + (v === selVal ? ' is-sel' : '') + (closed ? ' is-taken' : '');
+      var mk = document.createElement('span');
+      mk.className = 'mc-cell-mark';
+      mk.innerHTML = cellSvg(v);
+      cell.appendChild(mk);
+      var nm = document.createElement('span');
+      nm.className = 'mc-cell-name';
+      nm.textContent = v + (closed ? ' · taken' : '');
+      cell.appendChild(nm);
+      if (!closed) { cell.addEventListener('click', function () { onPick(v); }); }
+      else { cell.setAttribute('disabled', 'disabled'); }
+      grid.appendChild(cell);
+    })(values[i]);
+  }
+}
+
 function openSymbolPicker(subId) {
   var rec = state.subTheories && state.subTheories[subId];
   if (!rec) { return; }
@@ -10220,6 +10434,10 @@ function _stPickerColorCell(idx, onPick, store) {
 // 9b-iii: expose the picker so the constellation hover card (in
 // arc-constellation.js) can open it without reaching across layers.
 window.openSymbolPicker = openSymbolPicker;
+// S4: the composer is the canonical mark editor now; expose it and route the
+// old hook name to it so any straggler opens the composer, not the retired
+// hue-row picker. (openSymbolPicker stays defined as the load-order fallback.)
+window.openMarkComposer = openMarkComposer;
 
 // Fix (v3.81): a small reusable danger-confirm modal for deleting a sub-theory,
 // callable from any surface (the Web-view hover card is transient, so a
@@ -10865,9 +11083,9 @@ function renderSubTheoryPage(id) {
   stHeroMark.setAttribute('tabindex', '0');
   stHeroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
   stHeroMark.setAttribute('title', 'Change this sub-theory’s mark');
-  stHeroMark.addEventListener('click', function() { openSymbolPicker(id); });
+  stHeroMark.addEventListener('click', function() { openMarkComposer(id); });
   stHeroMark.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openSymbolPicker(id); }
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openMarkComposer(id); }
   });
   stTbLeft.appendChild(stHeroMark);
   var stKicker = document.createElement('div');
@@ -11277,9 +11495,9 @@ function renderSubTheoryBuild(id) {
   heroMark.setAttribute('tabindex', '0');
   heroMark.setAttribute('aria-label', 'Change this sub-theory’s mark');
   heroMark.setAttribute('title', 'Change this sub-theory’s mark');
-  heroMark.addEventListener('click', function() { openSymbolPicker(id); });
+  heroMark.addEventListener('click', function() { openMarkComposer(id); });
   heroMark.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openSymbolPicker(id); }
+    if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) { ev.preventDefault(); openMarkComposer(id); }
   });
   sthead.appendChild(heroMark);
 
@@ -14243,7 +14461,9 @@ function _arcReadSpine(rows, opts) {
         chg.textContent = 'Change mark ▾';
         (function (sid) {
           chg.addEventListener('click', function () {
-            if (typeof openSymbolPicker === 'function') { openSymbolPicker(sid); }
+            // S4: the composer replaces the picker on every Change-mark path.
+            if (typeof openMarkComposer === 'function') { openMarkComposer(sid); }
+            else if (typeof openSymbolPicker === 'function') { openSymbolPicker(sid); }
           });
         })(r.id);
         meta.appendChild(chg);

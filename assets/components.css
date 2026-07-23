@@ -16622,3 +16622,46 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 .st-build.lum-amber-deep .stb-fc-weave{ border-color:var(--lum-gold-d, var(--gold)); color:var(--lum-gold, var(--gold)); }
 .st-build.lum-amber-deep .stb-fc-act:hover{ border-color:var(--lum-gold, var(--gold)); }
+
+/* ===========================================================================
+   THE ARC STANDARD — S4 · THE MARK COMPOSER              (2026-07-23)
+   Form-first: silhouette → treatment → pigment. Whole composed marks are
+   chosen. The uniqueness law is enforced in-arc — a combination a sibling
+   already wears is shown closed and Plant is refused. Reuses the shipped
+   .st-picker modal shell (backdrop + dialog); these rules dress the composer's
+   own preview + grids. */
+.mc-composer{ max-width:560px; }
+.mc-preview{
+  display:flex; align-items:center; justify-content:center;
+  height:104px; margin:6px 0 6px;
+}
+.mc-preview svg{ width:66px; height:66px; }
+.mc-row-label{
+  display:flex; align-items:baseline; gap:10px; margin:16px 0 8px;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+}
+.mc-row-name{ color:var(--ink-2); }
+.mc-row-hint{ color:var(--meta); font-size:9.5px; }
+.mc-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:9px; }
+.mc-cell{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:10px 4px 8px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md, 12px);
+  transition:border-color 120ms var(--ease, ease), box-shadow 120ms var(--ease, ease);
+}
+.mc-cell:hover{ border-color:var(--gold); }
+.mc-cell-mark{ width:34px; height:34px; line-height:0; }
+.mc-cell-name{ font-family:var(--font-mono); font-size:8.5px; letter-spacing:.03em; color:var(--meta); text-transform:uppercase; }
+.mc-cell.is-sel{ border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold); }
+.mc-cell.is-taken{
+  opacity:.34; cursor:not-allowed;
+  background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 5%, transparent) 0 5px, transparent 5px 10px);
+}
+.mc-cell.is-taken .mc-cell-name{ text-decoration:line-through; }
+.mc-foot{ display:flex; align-items:center; gap:12px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; }
+.mc-law{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); margin-right:auto; flex:1 1 200px; }
+.mc-law-warn{ color:var(--danger); }
+.mc-plant.is-refused{ opacity:.45; cursor:not-allowed; }
+@media (max-width:759px){
+  .mc-grid{ grid-template-columns:repeat(4, 1fr); }
+}

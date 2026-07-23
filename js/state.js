@@ -2298,6 +2298,37 @@ function adoptSubTheoryIntoArc(subId, arcId) {
   return sub;
 }
 
+// THE ARC STANDARD S4 — the mark composer's ONLY writer (G3-as-built). The
+// composed identity (silhouette / treatment / pigment) is written HERE and
+// nowhere else; migration derives, the composer writes. Pass an ident object
+// {sil, treat, pig} to set it, or null to clear back to the derived auto mark.
+// Guards: the sub must exist and not be seed-locked; the three axes must be
+// members of the shipped vocabularies (window.ST_SILS / ST_TREATS / ST_PIGS,
+// exported by arc-constellation.js). No schema beyond these three string fields.
+function setMarkIdentity(subId, ident) {
+  var sub = state.subTheories[subId];
+  if (!sub || _subSeedLocked(sub)) { return null; }
+  if (ident === null) {
+    delete sub.markSilhouette; delete sub.markTreatment; delete sub.markPigment;
+  } else if (ident && typeof ident === 'object') {
+    var okSil = (typeof window !== 'undefined' && window.ST_SILS) ? (_stInList(ident.sil, window.ST_SILS)) : true;
+    var okTre = (typeof window !== 'undefined' && window.ST_TREATS) ? (_stInList(ident.treat, window.ST_TREATS)) : true;
+    var okPig = (typeof window !== 'undefined' && window.ST_PIGS) ? (_stInList(ident.pig, window.ST_PIGS)) : true;
+    if (!okSil || !okTre || !okPig) { return null; }
+    sub.markSilhouette = ident.sil;
+    sub.markTreatment = ident.treat;
+    sub.markPigment = ident.pig;
+  } else { return null; }
+  sub.updatedAt = Date.now();
+  markSubTheoriesDirty();
+  saveState();
+  return sub;
+}
+function _stInList(v, list) {
+  var i; for (i = 0; i < list.length; i = i + 1) { if (list[i] === v) { return true; } }
+  return false;
+}
+
 // Hard-delete WITH cascade. Resonance links exist since 9.5, so a delete must
 // drop this id from every partner's linkedSubTheories or a dangling half-edge
 // survives (the old "no cascade" note was stale). Reuses unlinkSubTheories for
