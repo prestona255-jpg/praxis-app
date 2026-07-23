@@ -1412,6 +1412,11 @@
     segmentDoc:    segmentDoc,
     matchBook:     matchBook,
     commitEntries: commitEntries,
+    // R-CAPTURE Lane 2: the capture sheet's voice mode reuses the shipped
+    // dictation transport DIRECTLY — transcript into the shared field, then
+    // filed via the sheet (never processDictation's own commit path).
+    canRecord:           canRecord,
+    recordAndTranscribe: recordAndTranscribe,
     // exposed for the dev harness / Stage-3 reuse:
     _lastImport:   function () { return lastImport; },
     _normTitle:    normTitle,

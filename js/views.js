@@ -23269,7 +23269,7 @@ var capLastFiled = null;
 var capToastTimer = null;
 var capDraftTimer = null;
 var capOwnerUid = null;
-var capMicTimer1 = null, capMicTimer2 = null;
+var capMicSession = null; // Lane 2: the active dictation session (null = idle)
 
 function capEl(id) { return document.getElementById(id); }
 function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
@@ -23369,7 +23369,9 @@ function capSetMode(mode) {
   }
   sheet.className = 'capdoor-sheet' + (sheet.classList.contains('is-open') ? ' is-open' : '')
     + (mode === 'note' ? '' : ' cap-expanded') + ' cap-mode-' + mode;
-  // reset voice UI on every mode change (Lane-2 wires the real dictation)
+  // reset voice UI on every mode change; stop any active dictation — its
+  // transcript still lands in the field via onResult (RAW joins the corpus).
+  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; }
   var mic = capEl('capMic');
   if (mic) { mic.classList.remove('is-listening'); }
   sheet.classList.remove('cap-mic-active');
@@ -23421,6 +23423,7 @@ function capOpen(opts) {
   capAutogrow();
 }
 function capClose() {
+  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; } // bound loss window (CA-2)
   capSaveDraftNow(); // CA-2: an un-filed draft is never lost on close
   capEl('capScrim').classList.remove('is-open');
   capEl('capSheet').classList.remove('is-open');
@@ -23653,6 +23656,38 @@ function initCaptureDoor() {
     reader.onload = function () { field.value = String(reader.result || ''); capAutogrow(); capScheduleDraftSave(); field.focus(); };
     reader.readAsText(fl);
     this.value = '';
+  });
+
+  // CD-6 voice mode (Lane 2): reuse the shipped dictation transport. The transcript
+  // writes into the SHARED field the instant it exists (draft-persisted), then is
+  // filed via the sheet like any note (never processDictation's own commit path).
+  // Loss window = mic-tap → rec.onstop only, bounded + disclosed in the hero copy.
+  var mic = capEl('capMic');
+  mic.addEventListener('click', function () {
+    if (!(window.ImportCapture && ImportCapture.recordAndTranscribe)) { return; }
+    if (capMicSession) { capMicSession.stop(); return; } // second tap = stop
+    var listenState = capEl('capListenState'), micLabel = capEl('capMicLabel'), sheet = capEl('capSheet');
+    if (!ImportCapture.canRecord()) { micLabel.textContent = 'Recording not supported here — type below'; return; }
+    mic.classList.add('is-listening'); sheet.classList.add('cap-mic-active');
+    listenState.textContent = 'STARTING…'; micLabel.textContent = 'Warming up…';
+    capMicSession = ImportCapture.recordAndTranscribe({
+      onStart: function () { listenState.textContent = 'LISTENING…'; micLabel.textContent = 'Listening… tap to stop'; },
+      onTranscribing: function () { mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = 'TRANSCRIBING…'; micLabel.textContent = 'Transcribing…'; },
+      onResult: function (text) {
+        capMicSession = null;
+        var t = capTrim(text || '');
+        if (t) { field.value = field.value ? (field.value + (/\s$/.test(field.value) ? '' : ' ') + t) : t; capAutogrow(); capScheduleDraftSave(); }
+        listenState.textContent = ''; micLabel.textContent = 'Review below, or tap to talk again';
+        field.focus();
+      },
+      onError: function (reason) {
+        capMicSession = null; mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = '';
+        micLabel.textContent = (reason === 'denied') ? 'Mic permission denied — type below'
+          : (reason === 'unsupported') ? 'Recording not supported here — type below'
+          : (reason === 'empty') ? 'Nothing recorded — tap to try again'
+          : 'Transcription failed — type below';
+      }
+    });
   });
 
   // CD-4 talk-it-through: inert seat, shows a tooltip, never opens chat
