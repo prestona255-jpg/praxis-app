@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>390 frame rig</title>
+<!--
+  PRAXIS 390 SHOT RIG (2026-07-22, ARC STANDARD Stage 2)
+
+  THE PROBLEM THIS SOLVES
+  `chrome --headless --window-size=390,N --screenshot` does NOT give a 390px
+  layout viewport on Windows. Chrome clamps the window's layout width to ~512
+  and still writes a 390-wide IMAGE, so the capture is a 512 layout CROPPED to
+  390. Every mobile claim measured that way is false. Caught only because the
+  page's own audit printed `window.innerWidth = 512` under a `--window-size=390`
+  capture. (CLAUDE.md's tier lesson, wearing a screenshot.)
+
+  Emulation.setDeviceMetricsOverride is the textbook fix, but launching a CDP
+  browser is denied under the agent sandbox (Start-Process: access denied;
+  background bash: permission denied). See shoot.ps1 — correct, and unusable
+  here.
+
+  THE LEVER THAT WORKS
+  An iframe is laid out at exactly the width you declare. The inner document's
+  window.innerWidth, its media queries, and its layout all resolve against 390
+  for real. The frame is pinned at the top-left with zero margin, so capturing
+  at --window-size=390,N crops the (empty) wrapper away and leaves exactly the
+  inner document.
+
+  HONEST LIMITS — state these whenever you use it:
+    - dpr is 1, not a phone's 2-3. Geometry is true; hairline rendering is not.
+    - position:fixed inside the frame pins to the FRAME, not the browser window
+      (fine here: the mockup's fixed chrome is meant to pin to its own viewport).
+    - 100vh inside the frame = the frame's height, which this rig sets to the
+      content height so a full-page capture has no inner scrollbar. If you are
+      testing vh-dependent behaviour, set FRAME_H and do not auto-grow.
+
+  USAGE
+    chrome --headless=new --allow-file-access-from-files --hide-scrollbars \
+      --window-size=390,<tall> --screenshot=out.png \
+      "file:///.../frame-390.html?u=<url-encoded page url>"
+  --allow-file-access-from-files is REQUIRED: without it the wrapper cannot
+  read the inner document's height and the frame stays at its fallback size.
+-->
+<style>
+  html,body{margin:0;padding:0;background:#191F33}
+  iframe{display:block;width:390px;border:0;margin:0}
+</style>
+</head>
+<body>
+<iframe id="f" width="390" height="1400"></iframe>
+<script>
+/* ES3-style, to match the repo. */
+(function(){
+  var m = location.search.match(/[?&]u=([^&]+)/);
+  var url = m ? decodeURIComponent(m[1]) : 'about:blank';
+  var f = document.getElementById('f');
+  f.onload = function(){
+    /* grow the frame to the content so the capture has no inner scrollbar */
+    try {
+      var d = f.contentDocument;
+      if (d) {
+        var h = Math.max(d.documentElement.scrollHeight, d.body ? d.body.scrollHeight : 0);
+        if (h > 0) { f.style.height = (h + 4) + 'px'; }
+      }
+    } catch (e) {
+      /* cross-origin: run chrome with --allow-file-access-from-files */
+    }
+  };
+  f.src = url;
+})();
+</script>
+</body>
+</html>

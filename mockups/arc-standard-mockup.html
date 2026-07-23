@@ -61,9 +61,9 @@
      madder       #B8425A    348    5.03    4.62    #85293D     7.68
      terracotta   #C75434     13    4.21    3.86    #94371F     6.48
      ochre        #A65F10     32    4.68    4.29    #74400A     7.38
-     gold         #9D7A20     43    3.81    3.49    #725814     5.86
      olive        #7C8B4F     75    3.52    3.23    #556032     5.89
      moss         #55913F    104    3.62    3.32    #3B682B     5.72
+     verdigris    #3C9257    139    3.67    3.36    #1F6334     6.33
      teal         #3E8A83    174    3.86    3.54    #266059     6.31
      lapis        #4A7BB8    213    4.14    3.80    #2F5484     6.72
      iris         #7A6BB8    252    4.32    3.96    #55447E     7.28
@@ -71,10 +71,27 @@
      20/20 PASS. Band 3.23-4.62 — deliberately narrow, so no pigment reads
      heavier than another at field distance.
 
+   R-2 — GOLD RETIRED AS A PIGMENT (Preston, 2026-07-22). Semantic gold
+   completes: gold is attention / coal / harvest ONLY, never identity. The
+   pigment slot it vacated is held by VERDIGRIS #3C9257 (hue 139) — dead
+   centre of the widest remaining gap (moss 104 -> teal 174), 35 degrees from
+   each neighbour against a 25-degree floor, 3.36:1 on the foot, aged-copper
+   register with no gold in it. Hue spacing after the swap, in order:
+     348 · 13 · 32 · 75 · 104 · 139 · 174 · 213 · 252 · 320
+     gaps 25 · 19 · 43 · 29 · 35 · 35 · 39 · 39 · 68 · 28
+   The tightest pair is now terracotta/ochre at 19 degrees, separated by
+   lightness (3.86 vs 4.29) — the old gold/ochre 11-degree squeeze is gone,
+   so R-2 made the palette MORE separable, not less.
+   MIGRATION: existing m1/gold marks re-point to OCHRE (nearest surviving
+   pigment) — deterministic, per G3's re-point law; nothing else changes, and
+   recomposition is offered in the composer, never applied.
+
    Anchor provenance (which shipped jewels survived):
      gold       = --m1-on-ground #9D7A20  theme.css:205 — the standing Fork-B
-                  ruling. Raw --m1 #D9B24A measures 1.76:1 on the foot: it can
-                  never touch this sheet. NOT a DUSK CARVE event.
+                  ruling, now MOOT as a pigment: R-2 retires gold from the
+                  identity set entirely. The value survives in this file only
+                  as --gold, the attention ink. Raw --m1 #D9B24A measures
+                  1.76:1 on the foot and could never have touched this sheet.
      terracotta = --m2 #C75434  theme.css:209   RAW, unchanged
      olive      = --m3 #7C8B4F  theme.css:210   RAW, unchanged
      teal       = --m4 #3E8A83  theme.css:211   RAW, unchanged
@@ -85,11 +102,12 @@
                   this ("keep m1-m5's hue anchors WHERE THEY SURVIVE SPACING").
                   Flagged for the felt pass: gold/ochre remain the tightest
                   pair at 11 degrees, separated by lightness (3.49 vs 4.29).
-     madder moss lapis iris plum = new. Preston's candidate list also named
-                  RUST; it is deliberately absent — rust lands at hue ~15-20,
-                  on top of terracotta. IRIS (252) was substituted to hold the
-                  blue-violet gap. Substitution is explicitly permitted
-                  ("you may substitute better forms").
+     madder moss lapis iris plum = new at PALETTE-X; verdigris = new at R-2.
+                  Preston's candidate list also named RUST; it is deliberately
+                  absent — rust lands at hue ~15-20, on top of terracotta.
+                  IRIS (252) was substituted to hold the blue-violet gap.
+                  Substitution is explicitly permitted ("you may substitute
+                  better forms").
 
    SHAPES-X (same ruling) — silhouettes expand 5 -> 10, verified in the probe
    at the SMALLEST maturity size F-4 produces (34px), not at resting size:
@@ -136,9 +154,9 @@
   --madder:#B8425A;     --madder-edge:#85293D;
   --terracotta:#C75434; --terracotta-edge:#94371F;
   --ochre:#A65F10;      --ochre-edge:#74400A;
-  --gold-p:#9D7A20;     --gold-p-edge:#725814;
   --olive:#7C8B4F;      --olive-edge:#556032;
   --moss:#55913F;       --moss-edge:#3B682B;
+  --verdigris:#3C9257;  --verdigris-edge:#1F6334;
   --teal:#3E8A83;       --teal-edge:#266059;
   --lapis:#4A7BB8;      --lapis-edge:#2F5484;
   --iris:#7A6BB8;       --iris-edge:#55447E;
@@ -368,21 +386,79 @@ body{
 .probe-cell .pn{font-family:var(--ff-mono); font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--sheet-meta)}
 .probe-h{font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sheet-ink-2); margin:0 0 14px; padding-top:8px; border-top:1px solid var(--rule)}
 
+/* ---- the ?audit=1 readout — dev chrome, same class as the mk-bar --------- */
+.audit{padding:18px 17px 22px; border-top:1px solid var(--rule); background:rgba(38,32,25,.04)}
+.audit h3{font-family:var(--ff-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sheet-meta); margin:0 0 10px; font-weight:500}
+.audit table{border-collapse:collapse; width:100%; font-family:var(--ff-mono); font-size:9.5px; line-height:1.5}
+.audit td{padding:3px 6px 3px 0; vertical-align:top; border-bottom:1px solid rgba(38,32,25,.07)}
+.audit .k{color:var(--sheet-meta); white-space:nowrap}
+.audit .v{color:var(--sheet-ink)}
+.audit .p{font-weight:500; white-space:nowrap}
+.audit .p.ok{color:#3B682B}
+.audit .p.no{color:#94371F}
+.audit .n{color:var(--sheet-meta)}
+
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important; transition:none !important}
 }
-/* ---- 390: same grammar full-width (Stage 2 refines) ----------------------- */
-body.w390 .world{padding:calc(46px + 12px) 10px 30px}
+/* ===========================================================================
+   STAGE 2 — 390. Same grammar full-width. One field, ONE SCROLL WORLD: no
+   inner scroll context anywhere in the vertical axis, no pinch/pan, and no
+   horizontal page scroll at any weather (proved, not assumed — see the
+   stage-2 report). The only horizontal scroller in the file is the soil row,
+   which is the shelf's own dialect for a cover band and is not a second
+   scroll WORLD; at this fixture's five books it does not even engage.
+   =========================================================================== */
+body.w390{overflow-x:hidden}
+/* the dev bar wraps to three lines at 390 and, fixed, sits on top of the sky.
+   It is chrome, not the design — at this width it stacks above the world
+   instead of floating over it. */
+body.w390 .mk-bar{position:static}
+body.w390 .world{padding:14px 10px 26px}
 body.w390 .sheet{max-width:370px}
-body.w390 .sky{padding:32px 18px 26px}
-body.w390 .sky .q{font-size:24px; max-width:none}
-body.w390 .sky .a{font-size:21px; max-width:none}
-body.w390 .gate{padding:6px 18px 14px; gap:10px}
-body.w390 .gate .nameblock{width:100%; margin-right:0}
+
+/* the horizon band goes SLIM — the sky is a strip here, not a room */
+body.w390 .sky{padding:24px 17px 18px}
+body.w390 .sky .q{font-size:22px; line-height:1.2; max-width:none}
+body.w390 .sky .a{font-size:19px; line-height:1.26; margin-top:13px; max-width:none}
+body.w390 .sky .invite{font-size:17px}
+body.w390 .embers{gap:14px; margin-top:16px}
+body.w390 .ember{font-size:13.5px}
+
+/* GATE ROW STACKS: name + kicker own row 1; the acts own row 2 at 44px */
+body.w390 .gate{padding:2px 17px 14px; gap:9px}
+body.w390 .gate .nameblock{width:100%; margin-right:0; margin-bottom:3px}
+body.w390 .gate .arcname{font-size:21px}
 body.w390 .btn{min-height:44px; padding:11px 15px}   /* P3 44px targets */
-body.w390 .field{padding:0 14px 8px}
-body.w390 .soil{padding:16px 18px 22px}
+body.w390 .btn-primary{flex:1 1 auto}
+body.w390 .btn-door{flex:1 1 auto}
+body.w390 .btn-more{width:44px; flex:0 0 44px}
+
+body.w390 .field{padding:0 13px 6px}
+/* PROPOSED LAW, NOT RULED (flagged in the Stage 2 report) — at 390 a resting
+   label clamps to TWO lines. The vertical stretch above buys room but cannot
+   fix a genuine 2D collision: "Pain and Struggle on the Path of Liberation"
+   runs to three lines and its box then reaches the mark below it. Clamping
+   drops a resting label's footprint from ~48px to ~32px. The full name is
+   never lost — it returns whole on approach (the lit state), which is where
+   F-7 already says the detail lives. Preston rules whether a mark's name may
+   ever be shortened on the field; until then this is visibly on, not silent. */
+body.w390 .mark .mlabel{
+  max-width:13ch; font-size:12px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+body.w390 .mark.lit .mlabel{-webkit-line-clamp:none; overflow:visible}
+
+/* soil = a horizontal cover band at the field's foot (shelf dialect) */
+body.w390 .soil{padding:15px 17px 20px}
+body.w390 .soil-h{margin-bottom:11px}
+body.w390 .soil-row{flex-wrap:nowrap; overflow-x:auto; gap:10px; padding-bottom:2px; -webkit-overflow-scrolling:touch}
+body.w390 .book{width:48px; height:68px; flex:0 0 48px}
+body.w390 .book span{left:8px; right:4px; top:8px; font-size:8px}
+body.w390 .book em{left:8px; right:4px; bottom:6px; font-size:6px}
+
 body.w390 .comp-grid{grid-template-columns:repeat(3,1fr)}
+body.w390 .composer{padding:20px 18px 18px}
 </style>
 </head>
 <body>
@@ -467,11 +543,18 @@ var WELL_OUTER = 'M32 31 m-29 0 a29 29 0 1 0 58 0 a29 29 0 1 0 -58 0';
 var WELL_INNER = 'M32 31 m-13 0 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0';
 
 /* ---- PALETTE-X: 10 pigments, NAMED not numbered (P-4) --------------------- */
-var HUES = ['madder','terracotta','ochre','gold-p','olive','moss','teal','lapis','iris','plum'];
+/* R-2 (Preston, 2026-07-22): GOLD RETIRES AS A PIGMENT. Semantic gold
+   completes — gold is attention / coal / harvest ONLY, never identity. The
+   10-pigment floor is held by VERDIGRIS #3C9257 (hue 139), which lands dead
+   centre of the widest remaining gap (moss 104 -> teal 174): 35 degrees from
+   each neighbour, well past the 25-degree floor, and 3.36:1 on the sheet foot.
+   Aged copper — earth/jewel register, no gold in it. Migration: existing
+   m1/gold marks re-point to OCHRE, the nearest surviving pigment. */
+var HUES = ['madder','terracotta','ochre','olive','moss','verdigris','teal','lapis','iris','plum'];
 var HUE_NAMES = {
-  'madder':'madder', 'terracotta':'terracotta', 'ochre':'ochre', 'gold-p':'gold',
-  'olive':'olive', 'moss':'moss', 'teal':'teal', 'lapis':'lapis',
-  'iris':'iris', 'plum':'plum'
+  'madder':'madder', 'terracotta':'terracotta', 'ochre':'ochre',
+  'olive':'olive', 'moss':'moss', 'verdigris':'verdigris', 'teal':'teal',
+  'lapis':'lapis', 'iris':'iris', 'plum':'plum'
 };
 
 /* ---- F-4 MATURITY: three size steps, driven by the gathered/woven count.
@@ -483,8 +566,14 @@ function maturity(count){
   return { d:34, glow:0, word:'nascent' };
 }
 var MIN_D = 34;   /* P-1 probes HERE — the smallest size F-4 produces */
-/* the arrangement's vertical scale: mark y% is taken off THIS, in pixels */
-var BASE_Y = 470;
+/* The arrangement's vertical scale: mark y% is taken off this, in pixels.
+   At 390 it STRETCHES. Horizontal room collapses from ~1108px to ~344px, so
+   two marks that were separated by their x distance at 1360 are only ~79px
+   apart at 390 while their labels are ~90px wide. Giving the field more
+   vertical room is the proportional half of the answer — the same class of
+   display-time transform as xBand: every mark keeps its relative place, and
+   nothing is written back to the user's stored arrangement. */
+function baseY(){ return isNarrow() ? 760 : 470; }
 
 /* ---- FIXTURES -----------------------------------------------------------
    growing = REAL, read from js/state.js:3648-3677 (the repo-shipped
@@ -626,15 +715,40 @@ var current = 'growing';
    an actual arc between two placed marks and never a stretched viewBox
    artifact. Each curve bows perpendicular to its own chord, alternating
    side by index, so no set of curves ever reads as one route. ------------ */
-function drawThreads(f, inner){
+/* ---- STAGE 2: at 390 the arrangement is NORMALISED into a safe band, never
+   clipped and never re-authored. The user's relative composition is preserved
+   exactly — the extremes map to the band edges and everything between keeps
+   its proportional place — because positions are the user's authorship
+   (covenant law) and narrowing the viewport must not move a mark relative to
+   its neighbours. The band exists because a centred 13ch label hanging off a
+   mark at x=78 would otherwise cross the sheet edge, and RD-2 forbids
+   horizontal overflow at any width. ---------------------------------------- */
+function xBand(marks){
+  var mn = 100, mx = 0, k, out = [];
+  if (!isNarrow()) {
+    for (k = 0; k < marks.length; k++) { out[k] = marks[k].x; }
+    return out;
+  }
+  for (k = 0; k < marks.length; k++) {
+    if (marks[k].x < mn) { mn = marks[k].x; }
+    if (marks[k].x > mx) { mx = marks[k].x; }
+  }
+  for (k = 0; k < marks.length; k++) {
+    out[k] = (mx - mn < 1) ? 50 : (22 + ((marks[k].x - mn) / (mx - mn)) * 56);
+  }
+  return out;
+}
+function isNarrow(){ return document.body.className.indexOf('w390') > -1; }
+
+function drawThreads(f, inner, xs, tops){
   var w = inner.clientWidth, h = inner.clientHeight, i, s = '';
   if (!w || !h) { return; }
   for (i = 0; i < f.threads.length; i++) {
-    var a = f.marks[f.threads[i][0]], b = f.marks[f.threads[i][1]];
+    var ia = f.threads[i][0], ib = f.threads[i][1];
     /* y is PIXELS off BASE_Y — the same math the marks use, so a thread
        always lands on its mark's centre whatever the box height became. */
-    var ax = a.x / 100 * w, ay = a.y / 100 * BASE_Y;
-    var bx = b.x / 100 * w, by = b.y / 100 * BASE_Y;
+    var ax = xs[ia] / 100 * w, ay = tops[ia];
+    var bx = xs[ib] / 100 * w, by = tops[ib];
     var dx = bx - ax, dy = by - ay;
     var len = Math.sqrt(dx * dx + dy * dy) || 1;
     var bow = (i % 2 === 0) ? 0.11 : -0.11;      /* alternate the bow */
@@ -695,16 +809,16 @@ function render(w){
        the box being computed — a percentage top inside a height derived from
        that same top is circular, and it strands a void under the lowest mark
        (it did, in the first 1R capture: 154px of nothing). */
-    var lowestPx = 0, tops = [];
+    var lowestPx = 0, tops = [], xs = xBand(f.marks);
     for (i = 0; i < f.marks.length; i++) {
-      tops[i] = Math.round((f.marks[i].y / 100) * BASE_Y);
+      tops[i] = Math.round((f.marks[i].y / 100) * baseY());
       if (tops[i] > lowestPx) { lowestPx = tops[i]; }
     }
     var hpx = Math.max(300, lowestPx + 108);
     var mk = '';
     for (i = 0; i < f.marks.length; i++) {
       var m = f.marks[i], mat = maturity(m.count);
-      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + m.x + '%;top:' + tops[i] + 'px">' +
+      mk += '<button class="mark" type="button" data-i="' + i + '" style="left:' + xs[i] + '%;top:' + tops[i] + 'px">' +
               markSVG(m) +
               '<span class="mlabel">' + esc(m.label) + '</span>' +
               '<span class="mmeta">' + m.count + ' gathered · ' + mat.word + '</span>' +
@@ -712,7 +826,7 @@ function render(w){
     }
     fieldEl.innerHTML = '<div class="field-inner" style="height:' + hpx + 'px">' +
                         '<svg class="threads"></svg>' + mk + '</div>';
-    drawThreads(f, fieldEl.getElementsByClassName('field-inner')[0]);
+    drawThreads(f, fieldEl.getElementsByClassName('field-inner')[0], xs, tops);
   }
 
   /* ---- SOIL ROW: sparse-honest — no books, no band ----------------------- */
@@ -843,7 +957,7 @@ function renderProbe(){
     html += '<p class="probe-h">' + TREATS[t] + '</p><div class="probe-row">';
     for (i = 0; i < SILS.length; i++) {
       html += '<span class="probe-cell">' +
-              markSVG({ sil:SILS[i], treat:TREATS[t], hue:'gold-p', count:0 }, MIN_D) +
+              markSVG({ sil:SILS[i], treat:TREATS[t], hue:'ochre', count:0 }, MIN_D) +
               '<span class="pn">' + SILS[i] + '</span></span>';
     }
     html += '</div>';
@@ -859,16 +973,108 @@ function renderProbe(){
   document.getElementById('shapeNote').innerHTML = 'P-1 PROBE — silhouettes at ' + MIN_D + 'px (minimum maturity size)';
 }
 
+/* ---- STAGE 2 AUDIT (?audit=1) — the 390 laws MEASURED, not asserted.
+   Renders its own readout into the page so the proof is a dated capture at
+   the real viewport rather than a claim in a report. --------------------- */
+function runAudit(){
+  var vw = window.innerWidth, out = [], i, el, r;
+  var docW = document.documentElement.scrollWidth;
+  out.push(['viewport width', vw + 'px', true]);
+  out.push(['document scrollWidth', docW + 'px',
+            docW <= vw, 'RD-2: no horizontal overflow at any width']);
+
+  /* who, if anyone, crosses the right edge */
+  var all = document.getElementsByTagName('*'), worst = 0, worstSel = 'none';
+  for (i = 0; i < all.length; i++) {
+    el = all[i];
+    if (el.className && String(el.className).indexOf('mk-') === 0) { continue; }
+    r = el.getBoundingClientRect();
+    if (r.width && r.right > worst) { worst = r.right; worstSel = el.className || el.tagName; }
+  }
+  out.push(['furthest right edge', Math.round(worst) + 'px (' + worstSel + ')',
+            worst <= vw + 0.5, 'nothing crosses the viewport']);
+
+  /* P3: every interactive target at 44px. Scoped to the GATE ROW — a global
+     .btn sweep also picks up the composer's buttons, which sit inside a
+     display:none scrim and measure 0, manufacturing a phantom FAIL. */
+  var btns = document.getElementById('gate').getElementsByClassName('btn'), minH = 999, names = [];
+  for (i = 0; i < btns.length; i++) {
+    r = btns[i].getBoundingClientRect();
+    if (r.height < minH) { minH = r.height; }
+    names.push(Math.round(r.height));
+  }
+  out.push(['gate targets (px)', names.join(' · '), minH >= 44, 'P3: 44px minimum']);
+
+  /* one scroll world: no vertical inner scroller anywhere */
+  var inner = [];
+  for (i = 0; i < all.length; i++) {
+    el = all[i];
+    if (el === document.body || el === document.documentElement) { continue; }
+    var ov = window.getComputedStyle(el).overflowY;
+    if ((ov === 'auto' || ov === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+      inner.push(el.className || el.tagName);
+    }
+  }
+  out.push(['vertical inner scrollers', inner.length ? inner.join(', ') : 'none',
+            inner.length === 0, 'one scroll world']);
+
+  /* the sky, slim */
+  var sky = document.getElementById('sky'), q = sky.getElementsByClassName('q')[0];
+  out.push(['sky band height', Math.round(sky.getBoundingClientRect().height) + 'px', true, 'slim horizon']);
+  if (q) {
+    var qs = window.getComputedStyle(q), lh = parseFloat(qs.lineHeight);
+    var qh = q.getBoundingClientRect().height, lines = Math.round(qh / lh);
+    out.push(['question', q.textContent.length + ' chars · ' + lines + ' lines · ' +
+              Math.round(qh) + 'px', q.scrollWidth <= q.clientWidth + 1,
+              'horizon fit: no truncation, no overflow']);
+  }
+
+  /* soil: a cover band, and whether it actually engages its scroller */
+  var sr = document.getElementsByClassName('soil-row')[0];
+  if (sr) {
+    out.push(['soil row', Math.round(sr.clientWidth) + 'px box · ' +
+              Math.round(sr.scrollWidth) + 'px content',
+              true, sr.scrollWidth > sr.clientWidth + 1
+                ? 'band scrolls (shelf dialect)' : 'band fits — scroller idle']);
+  }
+
+  var html = '<div class="audit"><h3>Stage 2 · 390 audit</h3><table>';
+  for (i = 0; i < out.length; i++) {
+    var row = out[i];
+    html += '<tr><td class="k">' + row[0] + '</td><td class="v">' + row[1] + '</td>' +
+            '<td class="p ' + (row[2] ? 'ok' : 'no') + '">' + (row[2] ? 'PASS' : 'FAIL') + '</td>' +
+            '<td class="n">' + (row[3] || '') + '</td></tr>';
+  }
+  html += '</table></div>';
+  var d = document.createElement('div');
+  d.innerHTML = html;
+  document.getElementById('sheet').appendChild(d.firstChild);
+}
+
 /* ---- width toggle + URL params (headless capture drives these) ------------ */
 function setWidth(x){
   document.body.className = (x === '390') ? 'w390' : '';
   var xb = document.getElementById('segWidth').getElementsByTagName('button'), k;
   for (k = 0; k < xb.length; k++) { xb[k].className = (xb[k].getAttribute('data-x') === x) ? 'on' : ''; }
+  /* the safe band is resolved AT RENDER, so a width flip must re-render.
+     Guarded so init's setWidth-before-render stays a no-op. */
+  var fi = document.getElementById('field');
+  if (fi && fi.innerHTML) { render(current); }
 }
 (function init(){
   var q = location.search, w = 'growing', x = '1360', i;
   var mw = q.match(/weather=([a-z]+)/); if (mw && FIXTURES[mw[1]]) { w = mw[1]; }
   var mx = q.match(/w=(390|1360)/);     if (mx) { x = mx[1]; }
+  /* STAGE 2 horizon-fit case (?q=long). The REAL seed question is already
+     105 chars — inside the 100-120 band the fit check names — so the honest
+     stress case is a SYNTHETIC question at the band's top: 114 chars. If the
+     sky holds this at 390 with no truncation and no overflow, no truncation
+     law is needed. Recorded rather than assumed. */
+  if (q.indexOf('q=long') > -1) {
+    FIXTURES.growing.question =
+      'What is a reader actually consenting to when they accept that their own hunger is the thing standing in their way?';
+    FIXTURES.growing.note = FIXTURES.growing.note + ' · HORIZON-FIT CASE: synthetic 114-char question';
+  }
   var seg = document.getElementById('segWeather').getElementsByTagName('button');
   for (i = 0; i < seg.length; i++) {
     (function(b){ b.onclick = function(){ render(b.getAttribute('data-w')); }; })(seg[i]);
@@ -882,11 +1088,10 @@ function setWidth(x){
   render(w);
   /* headless-capture hook: ?composer=1 opens the mark composer for a shot */
   if (q.indexOf('composer=1') > -1) { openComposer(); }
-  /* threads are px-measured, so re-draw them when the box changes */
-  window.onresize = function(){
-    var fi = document.getElementById('field').getElementsByClassName('field-inner')[0];
-    if (fi) { drawThreads(FIXTURES[current], fi); }
-  };
+  if (q.indexOf('audit=1') > -1) { runAudit(); }
+  /* threads are px-measured and the band is width-dependent, so a box change
+     is a full re-render, not just a re-stroke */
+  window.onresize = function(){ render(current); };
 })();
 </script>
 </body>
