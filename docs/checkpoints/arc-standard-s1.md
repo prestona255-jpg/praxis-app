@@ -314,3 +314,96 @@ carries `data-st-control=connect` · edit-in-place opens `input.af-q-edit`.
 `integrations.js` is a NEW file in the round's touch set (the recon's blind spot —
 it named `_arcReadSpine`'s dual use but did not trace the R5 S5 markShape cache
 across the diff boundary). Recorded, not hidden.
+
+---
+
+## 8 — REAL-ACCOUNT SNAPSHOT VERIFICATION (2026-07-23)
+
+Preston's real state, exported by him to `.claude/rigcap/snap.json` (gitignored),
+loaded re-keyed to the rig stub uid `d0tester` (every `userId` rewritten so the
+throwaway world is self-consistent and owner-gated surfaces render), migrated on
+load to schema 1.30.0, measured, then **the snapshot and its loader were DELETED
+and the rig localStorage wiped** (confirmed: `snap.json` absent, `snapcap.html`
+absent, zero `praxis_state_*` keys remain, tracked tree clean). **PRIVACY
+ABSOLUTE — counts, ids and lengths only below; no marginalia, note, prose or
+question text was read into any measurement or this report.**
+
+### 8.1 Census — real shape
+
+| | value |
+|---|---|
+| arcs | **3** (all ember, none graduated, none published, all titled, 0 value marks) |
+| sub-theories | 16 |
+| **orphan sub-theories** (arcId → no arc) | **7 — CONFIRMED** (matches the recon's carried figure exactly, and survives migrate) |
+| books | 134 |
+| notebook entries | 24 |
+
+Per-arc (ids by last 8): `…3_153802` — **5 subs / 5 books / ember / 5 finished /
+title 20ch** (the densest) · `…7_689125` — 3 subs / 2 books / ember / 0 finished /
+10ch · `…0_920680` — **1 sub / 0 books / ember / 1 finished / 7ch** (the sparsest).
+
+### 8.2 The density ruling, answered honestly — **there is no ~24-mark real arc**
+
+The ruling asked for a 1360 shot of "the densest real arc (the ~24-mark one)." **That
+arc does not exist in the data.** The 24 was my **rig probe** at Stage 0 — I injected
+20 synthetic marks to measure zoom feasibility, and the recon reported that number
+as a *probe*, not as one of Preston's arcs. **His densest real arc is 5 marks.**
+Recorded plainly rather than dressed up: the extremes captured are the true ones,
+5-mark and 1-mark.
+
+### 8.3 Weathers — which exist on real data, and which do not
+
+Captured on REAL data (`.claude/rigcap/shots/real-{dense,sparse}-{1360,390}.png`,
+2026-07-23):
+
+- **ember + marks** (both extremes): kicker `GROWING`, door `Graduate →`. ✔
+- **the 5-mark field at density**: 5 marks, **4 distinct silhouettes** (two `frond`s,
+  told apart by pigment — teal vs madder — so the full triple stays unique and
+  form-first holds), **5 distinct pigments**, 3 distinct treatments; **3 gold
+  threads** (rendered as gradient `<line>`s, `--thread-color` = rgb(194,164,99));
+  the **soil row shows real book covers** (5, lazy-loaded from the snapshot).
+- **the 0-book arc** (sparsest): soil row renders the sparse-honest line "No books in
+  this arc yet." — no empty frame, no CTA for a flow that lives elsewhere. ✔
+- **finished sub-theories inside an ember arc** (the 5-sub arc): the horizon carries
+  the question ALONE — **no answer** — because those five were finished *before*
+  FINISH-CHOREO S2 shipped and carry no `answeringLine`. This is correct: the answer
+  lands only for a sub finished through the ceremony. Honest on legacy data.
+
+NOT present in the real data, so verified on the rig fixture only (documented §2, not
+re-claimed here as real): **graduated · published · the harvest turn · value embers ·
+the pre-question horizon** (every real arc is ember, unpublished, value-less, titled).
+
+### 8.4 Full law sweep at real density (the 5-mark arc, 1280/1360)
+
+| law | result on real data |
+|---|---|
+| 1 one ground | `.af-field` `bg rgba(0,0,0,0) · border 0px · shadow none`; sheet `rgb(253,249,238)` on the transparent-body twilight — **no panel, no seam** |
+| 3 horizon speaks | question 20ch on the sky; no answer (legacy finishes, §8.3); 0 embers (0 values) |
+| 4 sparse-honest | 0-book arc → one `--ink-3` soil line; no value furniture anywhere |
+| 5 one gate | `+ Sub-theory` · `Graduate →` · `⋯` — nothing floats elsewhere |
+| 6 form first | 5 distinct pigments, 4 distinct silhouettes, uniqueness holds (the frond pair differs by pigment) |
+| 7 approach never teleport | 5 quiet name labels, 2-line clamp verified at 390 |
+| 8 honest doors | `Graduate →` (ember + marks); the 3-sub arc identical; no dead door |
+| 9 soil below sky above | 5 real covers in the soil; **0 book-squares in the canvas** (the 11 `<rect>`s are all `<defs>` pattern tiles + the transparent background — every one parented to `pattern/tfa-*` or `svg/`, none a mark) |
+| 10 threads gold | 3 edges, gold-family gradient lines |
+| RD-2 no overflow | `scrollWidth 1265 ≤ 1280`; viewBox cropped to `0 0 600 475` (lowest mark + 96, under 500 → no clip) |
+
+Three apparent failures during the sweep were **my measurement artifacts, not
+defects**, each re-checked against the source of truth: pigment read as "1 distinct"
+because the DOM probe only inspected `fill` and missed outline marks' stroke
+(source-of-truth: 5 distinct); threads read as "0" because the probe looked for
+`<path>` and edges render as gradient `<line>`s (3 present); the 11 rects read as
+"in canvas" but are all defs/background.
+
+### 8.5 The one thing left for the felt eye
+
+The **1360 field-shape void is real and visible** on the dense arc
+(`real-dense-1360.png`): five marks cluster in the middle band with open sheet above
+and a large empty lower third, because the 600×500 viewBox is taller than the marks'
+spread. This is the DUSK-CARVE-class item ruled to Preston's felt pass (no pre-emptive
+stretch). **At 390 both extremes read well** — the field is compact and the void does
+not appear. If the 1360 void fails his eye, the xBand-class display-time stretch is
+the fix-forward from his words.
+
+Nothing was committed from the snapshot; it never touched a tracked file and is now
+deleted.
