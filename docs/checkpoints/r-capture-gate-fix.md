@@ -70,11 +70,27 @@ empty field under B's `'capture'` key → `nbDraftSave` empty-body → `sv(k,nul
 B's pre-existing draft. (Predates the rewrite; in the mechanism this round touched.)
 
 Fix (`js/views.js`): cancel `capDraftTimer` at the top of the reset (covers both
-branches; the adopt branch persists explicitly). **Timer audit:** the door has 4
-timers — `capToastTimer` + `capDraftTimer` (data-relevant → both now cleared on the
-account switch) and a 0ms focus-defer + an 1800ms tooltip-remove (cosmetic, harmless
-post-reset). No other pending-async data path exists in the reset. Also fixed the NOTE:
-the stale `capSaveDraftNow` doc comment. Parse PASS. Confirmed by re-check #4.
+branches; the adopt branch persists explicitly). Also fixed the NOTE: the stale
+`capSaveDraftNow` doc comment. Parse PASS. The `capDraftTimer` BLOCK confirmed CLOSED by
+re-check #4 — but my round-3 "timer audit" over-claimed exhaustiveness (see round 4).
+
+## Gate-fix round 4 — the FileReader async path (re-check #4)
+
+Re-check #4 confirmed the `capDraftTimer` BLOCK CLOSED, but caught that my round-3
+audit only covered TIMERS and missed a fifth, non-timer pending-async data path: the
+paste/import **`FileReader.onload`** callback. If A clicks Upload and the file read
+spans an account switch to B, the stale `onload` writes A's file content into the
+field (over B's live typing) and schedules a fresh (non-stale) `capDraftTimer` that
+then persists it under B's `'capture'` key — a cross-account content leak, not just the
+wipe round 3 closed. Re-check #4 grep-confirmed this is the COMPLETE async inventory:
+4 timers (`capToastTimer` + `capDraftTimer` cleared on switch; 0ms focus + 1800ms
+tooltip cosmetic) + the mic transcribe callback (`capMicSeq`-guarded) + this FileReader.
+
+Fix (`js/views.js`): capture `ownerAtRead = capOwnerUid` at file-select; `onload` drops
+on a REAL→REAL owner change (null→real adopts, consistent with the listener). This
+closes the last uncovered path in the grep-confirmed inventory — the door's
+account-switch async surface is now complete (timers cleared · mic seq-guarded ·
+FileReader owner-guarded). Parse PASS.
 
 ## Corner arrangement — OWNER felt call (carried)
 

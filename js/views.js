@@ -23738,8 +23738,15 @@ function initCaptureDoor() {
   capEl('capFileInput').addEventListener('change', function () {
     var fl = this.files && this.files[0];
     if (!fl) { return; }
+    var ownerAtRead = capOwnerUid; // BLOCK 1 (re-check #4): a FileReader read can span an account switch
     var reader = new FileReader();
-    reader.onload = function () { field.value = String(reader.result || ''); capAutogrow(); capScheduleDraftSave(); field.focus(); };
+    reader.onload = function () {
+      // drop only on a REAL->REAL owner change (A's file must never land for B, nor
+      // seed B's draft via the fresh capScheduleDraftSave below); a null->real read is
+      // the same person's own file — allow it (consistent with the listener's adopt).
+      if (ownerAtRead !== null && capOwnerUid !== null && capOwnerUid !== ownerAtRead) { return; }
+      field.value = String(reader.result || ''); capAutogrow(); capScheduleDraftSave(); field.focus();
+    };
     reader.readAsText(fl);
     this.value = '';
   });
