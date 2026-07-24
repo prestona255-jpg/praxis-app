@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-23 (R-CAPTURE — THE DOOR SHIPPED ADDITIVE, felt pass #1 PASS on the real library; round STAYS OPEN for CD-6)** —
+  Preston-DIRECTED. The new unified capture door shipped at v3.252 (build commits `cd100e7..` + 5 gate-fix
+  rounds; the cross-account/auth-switch async surface closed to grep-confirmed completeness). Felt pass #1
+  ruled every finding: **F1** paste-as-one-note = designed → **DOOR-SEG** debt (segmentation handoff, follow-on);
+  **F2** note-detail readability = PRE-EXISTING drift → its own named task (+ the F3 wording NOTE); **F3** neutral
+  commit renders the "Inbox" chip + "Filed to Inbox" receipt = never-silent CLOSED; **F4** the door is ADDITIVE —
+  the four legacy doors still live, so **ONE DOOR is aspiration, not law-true: FIVE doors today**. Ruling: **CD-6
+  UNIFICATION is R-CAPTURE's OPEN next phase** — staged retirement per legacy surface (Notebook writeline first),
+  one felt pass each, HALT per stage; **the round does NOT close until CD-6 is built or explicitly re-scoped**.
+  Corner 18px stack kept (re-ruled from the phone once live); snapshot skipped (real-library felt pass). No item
+  retired, no decision contradicted — Preston-directed, no `PROPOSED:` flag. Records: `docs/studio/capture.md` +
+  `docs/checkpoints/r-capture-*`. Builder regenerated at the push-point.
 - **2026-07-23 (THE ARC STANDARD — ROUND CLOSED, Preston full felt PASS on the whole vision, live)** —
   the program's flagship round is CLOSED. The arc interior became the Field (one composed screen on
   the Hour's twilight), the workshop the Clearing, the page the deepest distance. Shipped
@@ -724,12 +736,13 @@ flagged at the top of the Builder's sequence page for his call — never applied
 **The 3 truest next moves after the ARC STANDARD close (2026-07-23). The runway view
 of the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [ ] **R-CAPTURE — the capture round (owns THE DOOR)** — text/voice/paste/import into one entry,
-  sub-400ms; ruled brief in-repo (`docs/studio/r-capture-brief.md`). **Now the truest next move — the
-  ARC STANDARD build lane is FREE (shipped v3.251, full felt PASS).** Owns the carrying-question
-  AUTHORING seam surfaced at R-SHELF (D4) **and re-confirmed by the ARC STANDARD** (the arc horizon
-  carries `arc.title`; true arc-level question/answer authoring lands here, not on the field).
-  `[import-capture, notebook]`
+- [~] **R-CAPTURE — THE DOOR (shipped ADDITIVE v3.252; round OPEN for CD-6)** — the unified capture door
+  is LIVE: the create-corner + Capture nav + ⌘N · pre-rendered two-size sheet · note/voice/paste · never-silent
+  context chip · commit-and-stay + save pulse · CA-1 desk carrying-question + bridge · Android text share_target.
+  Felt pass #1 PASS on Preston's real library. **The round's OPEN next phase = CD-6 UNIFICATION — staged
+  retirement of the 4 legacy doors (Notebook writeline FIRST), one felt pass + HALT each; the round does NOT
+  close until built or re-scoped.** ONE DOOR is aspiration, not law-true — five doors live today. Debt:
+  DOOR-SEG (multi-note paste). `[views, notebook, import-capture]`
 - [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
   single shared `views.js`/`components.css` build lane (PIPELINE LAW).
 - [ ] **A Yumi round (unscoped) — owns the arc-context gap** — the Bloom's chat never learns which arc

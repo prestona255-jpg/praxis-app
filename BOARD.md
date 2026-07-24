@@ -67,6 +67,7 @@ sync-render with none (W11-S8-L1: #profile social-fetch now graceful).
 |-------|-------|-------|
 | Yumi panel | yumi-ui.js:1333 / Bloom FAB :912/:998 | ✅ `.lum-amber-deep` |
 | Import/Capture | ImportCapture.open, wired v1456+ | ✅ `.lum-amber-deep` |
+| **THE DOOR** (capture sheet — R-CAPTURE, v3.252) | `initCaptureDoor`/`buildCaptureDoor` (views.js door module); summon = create-corner (bottom-left, stacks above the Shelf FAB on mobile) + Capture nav + ⌘N + `openCaptureDoor()` | ✅ LIGHT sheet over `--scrim` (ruled); 390 bottom-sheet / ≥760 corner-card; note/voice/paste + never-silent context chip + commit-and-stay + CA-1 desk carrying-question + Android text-share. Signed-out: commit gated (field preserved). **ADDITIVE — COEXISTS with the 4 legacy doors; CD-6 unification = R-CAPTURE's OPEN next phase (five doors live today)** |
 | Spotlight ⌘K | spotlight.js:341/353 — nav pill now routes `#search` (:442); overlay = ⌘K only | ? pre-Amber styling — verify |
 | Pickers ×8 (arc/sub/gather/file-to-book/mark…) | v12960/13077/13003/13437/2284/2945/8377 | ? unverified as a set |
 | Confirms ×6 (deletes/reset/unlink/review) | v12596/12699/8608/8678/14102/6654 | ? unverified as a set |

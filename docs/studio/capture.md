@@ -1,12 +1,13 @@
 ---
 surface: capture
-route: "overlay (planned — global, not route-bound)"
-render_fn: "NOT YET BUILT — planned as ONE shared component (CD-6); today the door is FOUR bespoke UIs: buildNotebookWriteline (js/views.js:3030) + captureNote (js/views.js:3434) · createWritingCanvas (js/writing-canvas.js:114) · window.ImportCapture (js/import-capture.js:400) · buildActMargin (js/intros.js:263)"
-ground: "light working surface, summoned over --scrim (RULED by sight 2026-07-23: LIGHT as built)"
-in_nav: "no (planned — CD-1 nav entry + ⌘N)"
-state: shaped
+route: "overlay (BUILT — global, body-mounted; summonable over any route)"
+render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door). The FOUR legacy doors still COEXIST (CD-6 unification is the round's OPEN next phase, F4): buildNotebookWriteline · createWritingCanvas · window.ImportCapture · buildActMargin"
+ground: "light working surface, summoned over --scrim (RULED LIGHT 2026-07-23)"
+in_nav: "yes — Capture nav entry + ⌘N + the create-corner (CD-1)"
+state: shipped
 mockup: docs/studio/mockups/capture.html
-rounds: 0
+shipped: v3.252
+rounds: 1
 ---
 
 ## State
@@ -162,8 +163,23 @@ each of 3 of the 4 places.
 
 ## Gap ledger
 
-(none opened by this mockup session — the pre-existing `import-capture.md` ledger's
-three REWORK/FIX/ADD items stand, unresolved by a mockup; they are build-round work.)
+- **F4 · CD-6 UNIFICATION — the round's OPEN next phase (ruled 2026-07-23).** The new
+  door shipped ADDITIVE; the four legacy bespoke doors still live. **ONE DOOR is
+  aspiration, not law-true: FIVE doors live today** (the new capture door +
+  buildNotebookWriteline · createWritingCanvas/Add-marginalia · window.ImportCapture ·
+  onboarding buildActMargin). Preston's ruling: staged retirement per legacy surface —
+  **Notebook writeline FIRST** — one felt pass each, HALT per stage. The R-CAPTURE
+  round does NOT close until CD-6 is built or explicitly re-scoped.
+- **DOOR-SEG (F1) — debt, follow-on lane.** A multi-note blob paste files as ONE raw
+  note (the door has no `segmentDoc` step — mockup-deferred, unbuilt). Deserves a
+  segmentation handoff: route the paste through the ImportCapture pipeline
+  (`segmentDoc` + review) or offer a split. Not this push.
+- **F2 — note-detail readability (PRE-EXISTING, un-owned by R-CAPTURE).** `renderNoteSurface`
+  (js/views.js ~15500–15610): serif ink barely readable on the dark-amber ground +
+  invisible back-link. Opened as its own named task. NOTE folded in (F3 wording): align
+  the note-detail's "Unfiled — not filed to a book" label (js/views.js:15605) to
+  "In the Inbox — not yet filed to a book" so it agrees with the door's "Filed to Inbox".
+- (The pre-existing `import-capture.md` ledger's REWORK/FIX/ADD items still stand.)
 
 ## Round history
 
@@ -184,12 +200,24 @@ three REWORK/FIX/ADD items stand, unresolved by a mockup; they are build-round w
   phone (carried as a stated check in the final felt script). Mockup + ledger +
   acceptance card committed locally as the build spec; the continuous four-lane
   build is authorized (self-run law — no mid-run halt, nothing pushed).
+- **2026-07-23 — THE DOOR SHIPPED (additive), v3.252.** Four lanes built as one
+  continuous self-run (Lane 1a door · Lane 1 CA-1 · Lane 2 voice · Lane 3 share_target
+  · Lane 4 hardening) + 5 gate-fix rounds (1 reviewer + 4 red-team passes; the
+  cross-account/auth-switch async surface closed to grep-confirmed completeness — timers
+  cleared · mic seq-guarded · FileReader exact-owner-guarded). Preston's felt pass #1 on
+  his REAL library ruled every finding: F1 designed one-note (→ DOOR-SEG debt) · F2
+  pre-existing (own task) · F3 closed/never-silent (+ wording NOTE) · F4 gap → CD-6
+  staged unification is the round's next phase · corner 18px stack kept · snapshot
+  skipped (felt pass exercised the real library). Build commits `cd100e7..` ; shipped at
+  the push-point commit (sw v3.252, this commit). Records: `docs/checkpoints/r-capture-*`.
 
 ## Next
 
-- Continuous build runs all four lanes per r-capture-brief.md §4 + the self-run law
-  (Lane 1 door+sheet+CA-1 → Lane 2 mode integrations → Lane 3 share_target STRETCH →
-  Lane 4 hardening close-out), building to a COMPLETE door with local commits and no
-  mid-run halt.
-- Final halt: gates clean (reviewer + red-team) + Preston's snapshot export +
-  the push word + the whole-door felt pass (with the 390-phone check in the script).
+- **CD-6 UNIFICATION (F4) — the round's OPEN next phase.** Staged retirement of the four
+  legacy doors into the shipped component: **Notebook writeline first**, then Book-Detail
+  Add-marginalia (capability care: contenteditable + images), then ImportCapture (segment
+  handoff / DOOR-SEG), then onboarding. One felt pass each, HALT per stage. The round
+  closes only when this is built or explicitly re-scoped.
+- **DOOR-SEG** (multi-note paste segmentation) — follow-on lane.
+- Post-push live-smoke: real dictation · paste · Android share · the 390 phone pass · the
+  auth-switch reset branches (numbered PASS/FAIL, delivered with the push).
