@@ -14,7 +14,7 @@ Note + paste modes fully wired; voice mode = Lane 2; photo/scan = inert seats (�
 Files: `assets/components.css` (+19,003 B — the `.capdoor-*` / `.cap-create-door` /
 `.cap-nav-entry` / `.desk-question` block, all existing tokens, `.mo-savepulse`
 reused), `js/views.js` (+22,669 B — `captureNote` gains a backward-compatible
-`noNav` param + the door module), `index.html` (+264 B — nav entry), `js/app.js`
+`noNav` param + the door module), `index.html` (+261 B committed-blob / +264 B working-tree CRLF — nav entry), `js/app.js`
 (+332 B — boot mount hook).
 
 Mechanical gates: **parse-check PASS** (cscript, views.js + app.js); byte deltas

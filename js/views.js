@@ -3464,10 +3464,15 @@ function captureNote(register, body, activeKey, images, noNav) {
   markNotebookDirty();
   saveState();
   nbJustSavedId = id;          // B1/MO-1: the render below answers the hand
-  if (register === 'journal') { notebookActiveTab = 'journal'; }
-  else if (filed) { notebookActiveTab = bookIds[0]; }
-  else { notebookActiveTab = 'inbox'; }
-  if (!noNav) { renderNotebook(); }
+  // noNav (the global capture door): leave the Notebook's tab selection AND its
+  // render untouched — a door commit from any route must not silently re-point
+  // notebookActiveTab (read at render, views.js ~2130) to the filed context.
+  if (!noNav) {
+    if (register === 'journal') { notebookActiveTab = 'journal'; }
+    else if (filed) { notebookActiveTab = bookIds[0]; }
+    else { notebookActiveTab = 'inbox'; }
+    renderNotebook();
+  }
   maybeDrawOut(id);
 }
 
@@ -15964,7 +15969,7 @@ function renderNotebookEntry(entry, gatherable, showBookChip) {
       ev.preventDefault();
       var u = getCurrentUser();
       if (!u) { return; }
-      var qBody = capTrim(entry.body || '');
+      var qBody = capTrim(capTrim(entry.body || '').slice(0, 140)); // NOTE 1: match the desk input's 140 cap
       if (!qBody) { return; }
       var already = capTrim((getProfile(u.uid) || {}).carryingQuestion || '');
       var chost = card.querySelector('.notebook-entry-carry-host');
@@ -23270,6 +23275,7 @@ var capToastTimer = null;
 var capDraftTimer = null;
 var capOwnerUid = null;
 var capMicSession = null; // Lane 2: the active dictation session (null = idle)
+var capMicSeq = 0;        // BLOCK 2: bumps on stop/mode-change/close so a late transcribe callback drops itself
 
 function capEl(id) { return document.getElementById(id); }
 function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
@@ -23369,9 +23375,10 @@ function capSetMode(mode) {
   }
   sheet.className = 'capdoor-sheet' + (sheet.classList.contains('is-open') ? ' is-open' : '')
     + (mode === 'note' ? '' : ' cap-expanded') + ' cap-mode-' + mode;
-  // reset voice UI on every mode change; stop any active dictation — its
-  // transcript still lands in the field via onResult (RAW joins the corpus).
-  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; }
+  // reset voice UI on every mode change; stop any active dictation AND invalidate
+  // its pending transcribe callback (bump the seq) so a late result can never land
+  // in the now-different mode/context's field (BLOCK 2 — the orphaned-callback race).
+  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; }
   var mic = capEl('capMic');
   if (mic) { mic.classList.remove('is-listening'); }
   sheet.classList.remove('cap-mic-active');
@@ -23395,8 +23402,13 @@ function capLoadDraft() {
   }
 }
 function capSaveDraftNow() {
-  if (!capOwnerUid) { return; }
-  nbDraftSave(capOwnerUid, capEl('capField').value, capRegister, CAP_DRAFT_KEY);
+  // BLOCK 1: re-verify the owner at write time (mirrors nbDraftFlush, views.js:3070).
+  // A pagehide/close AFTER an account switch must never write one account's text
+  // under another's key. capOwnerUid is the open-time owner; if the live user has
+  // diverged, abort (the prior owner's already-debounced draft stays safe in theirs).
+  var u = getCurrentUser();
+  if (!u || !capOwnerUid || u.uid !== capOwnerUid) { return; }
+  nbDraftSave(u.uid, capEl('capField').value, capRegister, CAP_DRAFT_KEY);
 }
 function capScheduleDraftSave() {
   if (capDraftTimer) { window.clearTimeout(capDraftTimer); }
@@ -23423,7 +23435,7 @@ function capOpen(opts) {
   capAutogrow();
 }
 function capClose() {
-  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; } // bound loss window (CA-2)
+  if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; } // bound loss window (CA-2) + drop the orphaned callback (BLOCK 2)
   capSaveDraftNow(); // CA-2: an un-filed draft is never lost on close
   capEl('capScrim').classList.remove('is-open');
   capEl('capSheet').classList.remove('is-open');
@@ -23473,11 +23485,26 @@ function capCommit() {
   if (!body) { return; } // mirrors captureNote's own empty guard
   var u = getCurrentUser();
   if (!u) { capShowToast('Sign in to keep your notes', null); return; }
+  // BLOCK 1: if the account switched while the door stayed open, the on-screen
+  // text belongs to the OPEN-TIME owner — never file A's words under B. Reset to
+  // the current owner and start fresh rather than commit contaminated content.
+  if (capOwnerUid !== null && u.uid !== capOwnerUid) {
+    capOwnerUid = u.uid;
+    f.value = ''; capAutogrow(); capLoadDraft();
+    capShowToast('Signed in as a different account — starting fresh', null);
+    return;
+  }
+  // HOLD 3: re-validate the target against live state — a book deleted while the
+  // sheet stayed open must not receive a note under a now-dead bookId. Fall back
+  // to Inbox and update the chip (the toast then names the real destination).
+  if (capTarget && capTarget.type === 'book' && !(state.books && state.books[capTarget.key])) {
+    capTarget = capFindTarget('inbox'); capSetChip();
+  }
   var prevBody = f.value, prevRegister = capRegister, tgt = capTarget;
   captureNote(capRegister, body, tgt.key, [], true); // noNav: never leave the route
   nbDraftClear(u.uid, CAP_DRAFT_KEY);
   var filedId = nbJustSavedId;
-  var localId = 'c' + (state.notebookEntries ? Object.keys(state.notebookEntries).length : 0) + '-' + body.length;
+  var localId = filedId; // NOTE 2: key the caught list on the real (unique) entry id, not a count+len hash
   capCaught.unshift({ localId: localId, id: filedId, register: prevRegister, body: body, target: tgt });
   capLastFiled = { localId: localId, id: filedId, prevBody: prevBody, prevRegister: prevRegister };
   capRenderCaught();
@@ -23507,6 +23534,16 @@ function capUndo() {
   f.focus();
   capSaveDraftNow();
   capLastFiled = null;
+}
+
+// Gate fix (CD-1 corner reconcile): keep the create-door clear of the shipped
+// Shelf "+ Add a book" FAB, which owns bottom-left at mobile. On #books, add the
+// stacking class (CSS lifts it above the FAB); elsewhere it sits at its corner.
+function capUpdateCreateDoorPos() {
+  var btn = capEl('capCreateDoor');
+  if (!btn) { return; }
+  var h = location.hash || '';
+  if (h.indexOf('#books') === 0) { btn.classList.add('cap-on-shelf'); } else { btn.classList.remove('cap-on-shelf'); }
 }
 
 // buildCaptureDoor — the pre-rendered DOM (CD-2). Mounted once at boot.
@@ -23579,6 +23616,34 @@ function initCaptureDoor() {
   CAP_MOUNTED = true;
   buildCaptureDoor();
   nbInstallDraftHooks(); // reuse the shipped visibilitychange/pagehide flush infra
+
+  // BLOCK 1: the door is mounted ONCE and never torn down on auth-change (unlike
+  // the notebook composer, which renderRoute rebuilds). Reset it when the signed-in
+  // uid changes so no account's on-screen text lingers for — or commits under —
+  // another. No storage write here: the prior owner's debounced draft stays safe in
+  // their own bucket (capSaveDraftNow now refuses a cross-owner write).
+  if (window.firebase && firebase.auth) {
+    try {
+      firebase.auth().onAuthStateChanged(function (au) {
+        var newUid = au ? au.uid : null;
+        if (newUid === capOwnerUid) { return; }
+        var ff = capEl('capField'), sh = capEl('capSheet');
+        if ((sh && sh.classList.contains('is-open')) || (ff && ff.value)) {
+          if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; }
+          if (ff) { ff.value = ''; capAutogrow(); }
+          if (sh && sh.classList.contains('is-open')) {
+            capEl('capScrim').classList.remove('is-open'); sh.classList.remove('is-open');
+            var navX = document.querySelector('.cap-nav-entry'); if (navX) { navX.setAttribute('aria-current', 'false'); }
+          }
+        }
+        capOwnerUid = newUid;
+      });
+    } catch (e) {}
+  }
+
+  // keep the create-door clear of the Shelf FAB across route changes (gate fix)
+  capUpdateCreateDoorPos();
+  window.addEventListener('hashchange', capUpdateCreateDoorPos);
 
   var field = capEl('capField');
   field.addEventListener('input', function () { capAutogrow(); capScheduleDraftSave(); });
@@ -23668,12 +23733,15 @@ function initCaptureDoor() {
     if (capMicSession) { capMicSession.stop(); return; } // second tap = stop
     var listenState = capEl('capListenState'), micLabel = capEl('capMicLabel'), sheet = capEl('capSheet');
     if (!ImportCapture.canRecord()) { micLabel.textContent = 'Recording not supported here — type below'; return; }
+    capMicSeq = capMicSeq + 1;
+    var mySeq = capMicSeq; // BLOCK 2: this recording's token; a callback drops itself if superseded
     mic.classList.add('is-listening'); sheet.classList.add('cap-mic-active');
     listenState.textContent = 'STARTING…'; micLabel.textContent = 'Warming up…';
     capMicSession = ImportCapture.recordAndTranscribe({
-      onStart: function () { listenState.textContent = 'LISTENING…'; micLabel.textContent = 'Listening… tap to stop'; },
-      onTranscribing: function () { mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = 'TRANSCRIBING…'; micLabel.textContent = 'Transcribing…'; },
+      onStart: function () { if (mySeq !== capMicSeq) { return; } listenState.textContent = 'LISTENING…'; micLabel.textContent = 'Listening… tap to stop'; },
+      onTranscribing: function () { if (mySeq !== capMicSeq) { return; } mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = 'TRANSCRIBING…'; micLabel.textContent = 'Transcribing…'; },
       onResult: function (text) {
+        if (mySeq !== capMicSeq) { return; } // stale: the recording was abandoned (mode-change/close/superseded) — drop the transcript
         capMicSession = null;
         var t = capTrim(text || '');
         if (t) { field.value = field.value ? (field.value + (/\s$/.test(field.value) ? '' : ' ') + t) : t; capAutogrow(); capScheduleDraftSave(); }
@@ -23681,6 +23749,7 @@ function initCaptureDoor() {
         field.focus();
       },
       onError: function (reason) {
+        if (mySeq !== capMicSeq) { return; }
         capMicSession = null; mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = '';
         micLabel.textContent = (reason === 'denied') ? 'Mic permission denied — type below'
           : (reason === 'unsupported') ? 'Recording not supported here — type below'
@@ -23716,11 +23785,13 @@ function openCaptureDoor(opts) { if (!CAP_MOUNTED) { initCaptureDoor(); } capOpe
 function capHandleShareTarget() {
   var s = location.search || '';
   if (!s || s.indexOf('=') === -1) { return; }
-  var params = {}, pairs = s.replace(/^\?/, '').split('&'), i, kv;
+  var params = {}, pairs = s.replace(/^\?/, '').split('&'), i, eq, pk, pv;
   for (i = 0; i < pairs.length; i = i + 1) {
-    kv = pairs[i].split('=');
-    if (kv[0]) {
-      try { params[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' ')); } catch (e) {}
+    eq = pairs[i].indexOf('=');                 // NOTE 3: split on the FIRST '=' only
+    pk = (eq === -1) ? pairs[i] : pairs[i].slice(0, eq);
+    pv = (eq === -1) ? '' : pairs[i].slice(eq + 1);
+    if (pk) {
+      try { params[decodeURIComponent(pk)] = decodeURIComponent(pv.replace(/\+/g, ' ')); } catch (e) {}
     }
   }
   var title = params.title || '', text = params.text || '', url = params.url || '';

@@ -16629,6 +16629,14 @@ body.wc-focus .app-nav { opacity:.26; }
 .cap-create-door:hover .cap-create-glyph{ transform:translateY(-2px); }
 .cap-create-door:focus-visible .cap-create-glyph{ outline:2px solid var(--gold-hi); outline-offset:3px; }
 .cap-create-glyph svg{ width:18px; height:18px; }
+/* CD-1 corner reconcile (gate fix): at mobile on the Shelf the shipped
+   .shelf-add-primary "+ Add a book" FAB owns bottom-left (components.css:12890,
+   z:90). The global create-door would render on top of it (z:9999), obscuring +
+   stealing its clicks — so on #books it stacks ABOVE the FAB (route-toggled by
+   capUpdateCreateDoorPos()). The exact stacking is an OWNER felt call. */
+@media (max-width:759px){
+  .cap-create-door.cap-on-shelf{ bottom:calc(var(--sp-5) + env(safe-area-inset-bottom, 0px) + 62px); }
+}
 
 /* CD-1 — the nav entry. Gold underline = door-open (canon §4-B); the transparent
    border reserves the space so toggling never shifts layout. */
