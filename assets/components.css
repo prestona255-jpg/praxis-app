@@ -16677,7 +16677,16 @@ body.wc-focus .app-nav { opacity:.26; }
     padding-bottom:env(safe-area-inset-bottom, 0px);
   }
   .capdoor-sheet.is-open{ transform:translateY(0); pointer-events:auto; }
-  .capdoor-sheet.cap-expanded{ max-height:86vh; }
+  /* MOBILE-SHEET-POLISH FAIL A (2026-07-24): the desktop rule .capdoor-sheet.cap-expanded
+     sets width:480px; on mobile the expanded modes (voice/paste/photo/scan) must stay the
+     full-width bottom sheet — reset width:auto so the 480px never overflows a 390 viewport. */
+  .capdoor-sheet.cap-expanded{ width:auto; max-height:86vh; }
+  /* MOBILE-SHEET-POLISH FAIL B: hide the desktop ⌘Enter keyboard hint on touch and keep the
+     File button right-aligned; safe-area L/R padding so File clears a notch in any orientation.
+     Scoped to the FOOT hint only — the uploadrow's .capdoor-hint copy is untouched. */
+  .capdoor-foot{ padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
+  .capdoor-foot .capdoor-hint{ display:none; }
+  .capdoor-foot .capdoor-commit{ margin-left:auto; }
 }
 
 .capdoor-handle{ display:none; }

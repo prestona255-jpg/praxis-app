@@ -148,6 +148,21 @@ final verification), then halt ONCE for the push word + the whole-vision felt pa
 A genuine HALT-class finding (byte-lock, brief contradiction, data-loss fork) still
 stops the run; a slice being merely done does not.
 
+**L18 — WALK EVERY MODE/STATE, NOT ONE.**
+Specimen: R-CAPTURE MOBILE-SHEET-POLISH (2026-07-24) — the automated 390 check opened
+only the capture sheet's `mode:'note'` and reported "0 h-overflow, full-width"; but the
+`cap-expanded` modes (voice/paste/photo/scan) render `width:480px` on a 390 viewport (a
+desktop `.capdoor-sheet.cap-expanded` rule the mobile `@media` block reset for
+`max-height` but never for `width`), clipping the File button + field off the right edge.
+Invisible until Preston's real-iPhone paste-mode screenshot — yet it reproduced in the
+same emulated Chrome the instant Paste was opened.
+Rule: a VISUAL GATE / composition proof walks EVERY mode and state a surface can render,
+not a single default — enumerate each mode × each width. "Checked at 390" means ALL modes
+at 390, or it proves nothing about the ones never opened. Corollary: when a real-device
+FAIL contradicts a passing emulated check, FIRST re-walk the modes/states the check
+skipped (it reproduces in the emulator) before reaching for iOS/WebKit/font/safe-area
+theories — coverage gaps masquerade as device-rendering differences.
+
 ---
 
 ## MECHANICAL TRUTHS (one-liners, still binding)
