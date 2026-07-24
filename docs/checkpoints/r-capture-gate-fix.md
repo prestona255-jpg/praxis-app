@@ -35,6 +35,29 @@ This commit resolves every actionable finding. Files: `js/views.js`,
   merge) and `ensureUser` + the Firestore merge both default it, so an absent field
   reads safely. The `statement` migrate step was belt-and-suspenders; not required here.
 
+## Gate-fix round 2 — BLOCK 1 residual (red-team re-check found it STILL-OPEN)
+
+The focused re-check (on `d6964e9`) confirmed BLOCK 2 + HOLD 2/3 + NOTE 1/2/3 +
+the corner CLOSED, but caught that **BLOCK 1 was not fully closed**: the auth-listener
+reset only touched the field/sheet/mic, leaving three side doors —
+- the **Undo toast + `capLastFiled`**: A commits (toast up to 6.5s) → B signs in →
+  listener clears the field but not the toast; B clicks Undo → A's text repopulates →
+  B commits → filed as B. Now: the listener hides the toast, clears `capToastTimer`,
+  and nulls `capLastFiled` on a real→real switch (and the toast is `pointer-events:none`
+  + `capUndo` early-returns on null `capLastFiled` — double-safe).
+- the **`capCaught` list**: never reset, so B saw A's caught note bodies. Now: cleared +
+  `capRenderCaught()` on a real→real switch, and `capOpen` re-renders it as a backstop.
+- **1b — signed-out→signed-in silent draft WIPE** (a real usability bug I introduced):
+  the old listener wiped a signed-out user's typed draft the instant they signed in to
+  save it. Now: a `prevUid === null` (signed-out → signed-in) transition **ADOPTS** the
+  on-screen text (it's the just-authenticated person's own words) and persists it under
+  the new owner — never wipes. Only a **real→real** account change resets.
+
+Fix in `js/views.js` (auth-listener rewrite + `capOpen` caught backstop). Parse PASS;
+caught-list survives close/reopen (verified); no console errors. The real→real /
+null→real branches are confirmed by a third focused re-check (the listener needs a live
+Firebase auth event the rig can't stub) — carried to Preston's signed-in live-smoke too.
+
 ## Corner arrangement — OWNER felt call (carried)
 
 The create-door/Shelf-FAB stacking (door above the "+ Add a book" FAB on mobile

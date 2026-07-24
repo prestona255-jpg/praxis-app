@@ -23425,6 +23425,7 @@ function capOpen(opts) {
   capSetMode(opts.mode || 'note');
   capSetRegister('marginalia');
   capLoadDraft();
+  capRenderCaught(); // backstop: reflect the current (owner-scoped) caught list on every open
   capEl('capScrim').classList.add('is-open');
   capEl('capSheet').classList.add('is-open');
   var nav = document.querySelector('.cap-nav-entry');
@@ -23618,25 +23619,39 @@ function initCaptureDoor() {
   nbInstallDraftHooks(); // reuse the shipped visibilitychange/pagehide flush infra
 
   // BLOCK 1: the door is mounted ONCE and never torn down on auth-change (unlike
-  // the notebook composer, which renderRoute rebuilds). Reset it when the signed-in
-  // uid changes so no account's on-screen text lingers for — or commits under —
-  // another. No storage write here: the prior owner's debounced draft stays safe in
-  // their own bucket (capSaveDraftNow now refuses a cross-owner write).
+  // the notebook composer, which renderRoute rebuilds). On a uid change, reset EVERY
+  // path that could carry one account's content to another — the field, the sheet,
+  // the mic, AND the Undo toast + capLastFiled + the caught-this-session list (the
+  // gate re-check found these three were the leak's un-audited side door).
   if (window.firebase && firebase.auth) {
     try {
       firebase.auth().onAuthStateChanged(function (au) {
         var newUid = au ? au.uid : null;
         if (newUid === capOwnerUid) { return; }
-        var ff = capEl('capField'), sh = capEl('capSheet');
-        if ((sh && sh.classList.contains('is-open')) || (ff && ff.value)) {
-          if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; }
-          if (ff) { ff.value = ''; capAutogrow(); }
-          if (sh && sh.classList.contains('is-open')) {
-            capEl('capScrim').classList.remove('is-open'); sh.classList.remove('is-open');
-            var navX = document.querySelector('.cap-nav-entry'); if (navX) { navX.setAttribute('aria-current', 'false'); }
-          }
-        }
+        var prevUid = capOwnerUid;
         capOwnerUid = newUid;
+        if (prevUid === null) {
+          // signed-out -> signed-in: the on-screen text was typed anonymously by the
+          // person who just authenticated as THEMSELVES — ADOPT it (a "type while
+          // logged out, then sign in to save" flow keeps the draft), persisting it
+          // under the now-correct owner. Never wipe it; this is not a cross-account case.
+          var f0 = capEl('capField');
+          if (newUid && f0 && capTrim(f0.value)) { capSaveDraftNow(); }
+          return;
+        }
+        // prevUid was a REAL account and it changed -> all on-screen/in-memory capture
+        // state belongs to the PREVIOUS account; reset every path (BLOCK 1, all doors).
+        if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; }
+        var ff = capEl('capField'), sh = capEl('capSheet');
+        if (ff) { ff.value = ''; capAutogrow(); }
+        if (sh && sh.classList.contains('is-open')) {
+          capEl('capScrim').classList.remove('is-open'); sh.classList.remove('is-open');
+          var navX = document.querySelector('.cap-nav-entry'); if (navX) { navX.setAttribute('aria-current', 'false'); }
+        }
+        var tt = capEl('capToast'); if (tt) { tt.classList.remove('is-show'); }
+        if (capToastTimer) { window.clearTimeout(capToastTimer); capToastTimer = null; }
+        capLastFiled = null;
+        capCaught = []; capRenderCaught();
       });
     } catch (e) {}
   }
