@@ -58,6 +58,24 @@ caught-list survives close/reopen (verified); no console errors. The real→real
 null→real branches are confirmed by a third focused re-check (the listener needs a live
 Firebase auth event the rig can't stub) — carried to Preston's signed-in live-smoke too.
 
+## Gate-fix round 3 — the last pending-timer path (re-check #3)
+
+Re-check #3 confirmed the three round-2 side doors CLOSED (Undo toast, capCaught,
+adopt-on-signin — with the adopt-save correctly guarded by `capTrim(f0.value)` so an
+empty boot field never triggers a clearing write), but found ONE more silent-loss path
+in the same listener: a **stale `capDraftTimer`**. If A is mid-type (300ms debounce
+pending) when B signs in, the reset clears the field + reassigns `capOwnerUid=B`, then
+the stale timer fires → `capSaveDraftNow` passes its guard (both read B) → saves the
+empty field under B's `'capture'` key → `nbDraftSave` empty-body → `sv(k,null)` wipes
+B's pre-existing draft. (Predates the rewrite; in the mechanism this round touched.)
+
+Fix (`js/views.js`): cancel `capDraftTimer` at the top of the reset (covers both
+branches; the adopt branch persists explicitly). **Timer audit:** the door has 4
+timers — `capToastTimer` + `capDraftTimer` (data-relevant → both now cleared on the
+account switch) and a 0ms focus-defer + an 1800ms tooltip-remove (cosmetic, harmless
+post-reset). No other pending-async data path exists in the reset. Also fixed the NOTE:
+the stale `capSaveDraftNow` doc comment. Parse PASS. Confirmed by re-check #4.
+
 ## Corner arrangement — OWNER felt call (carried)
 
 The create-door/Shelf-FAB stacking (door above the "+ Add a book" FAB on mobile

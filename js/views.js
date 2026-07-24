@@ -23404,8 +23404,9 @@ function capLoadDraft() {
 function capSaveDraftNow() {
   // BLOCK 1: re-verify the owner at write time (mirrors nbDraftFlush, views.js:3070).
   // A pagehide/close AFTER an account switch must never write one account's text
-  // under another's key. capOwnerUid is the open-time owner; if the live user has
-  // diverged, abort (the prior owner's already-debounced draft stays safe in theirs).
+  // under another's key. capOwnerUid tracks the door's owner (set at capOpen +
+  // maintained by the auth-change listener); if the live user has diverged, abort
+  // (the prior owner's already-debounced draft stays safe in their own bucket).
   var u = getCurrentUser();
   if (!u || !capOwnerUid || u.uid !== capOwnerUid) { return; }
   nbDraftSave(u.uid, capEl('capField').value, capRegister, CAP_DRAFT_KEY);
@@ -23630,6 +23631,11 @@ function initCaptureDoor() {
         if (newUid === capOwnerUid) { return; }
         var prevUid = capOwnerUid;
         capOwnerUid = newUid;
+        // defuse any pending debounced draft-save: with capOwnerUid now reassigned it
+        // would pass capSaveDraftNow's guard and write the (about-to-be-cleared, empty)
+        // field under the NEW owner's key — silently wiping their prior draft. Cancel it
+        // in BOTH branches; the adopt branch persists explicitly below.
+        if (capDraftTimer) { window.clearTimeout(capDraftTimer); capDraftTimer = null; }
         if (prevUid === null) {
           // signed-out -> signed-in: the on-screen text was typed anonymously by the
           // person who just authenticated as THEMSELVES — ADOPT it (a "type while
