@@ -23741,10 +23741,11 @@ function initCaptureDoor() {
     var ownerAtRead = capOwnerUid; // BLOCK 1 (re-check #4): a FileReader read can span an account switch
     var reader = new FileReader();
     reader.onload = function () {
-      // drop only on a REAL->REAL owner change (A's file must never land for B, nor
-      // seed B's draft via the fresh capScheduleDraftSave below); a null->real read is
-      // the same person's own file — allow it (consistent with the listener's adopt).
-      if (ownerAtRead !== null && capOwnerUid !== null && capOwnerUid !== ownerAtRead) { return; }
+      // Drop on ANY owner change since the read began — exact match only. A real->real
+      // switch is the direct leak; a real->null (sign-out) would otherwise re-seed the
+      // field so a later sign-in ADOPTS A's file as B. Conservative-safe: a rare
+      // signed-out-upload-then-sign-in drops the file (re-uploadable), never leaks it.
+      if (capOwnerUid !== ownerAtRead) { return; }
       field.value = String(reader.result || ''); capAutogrow(); capScheduleDraftSave(); field.focus();
     };
     reader.readAsText(fl);

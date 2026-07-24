@@ -86,11 +86,14 @@ wipe round 3 closed. Re-check #4 grep-confirmed this is the COMPLETE async inven
 4 timers (`capToastTimer` + `capDraftTimer` cleared on switch; 0ms focus + 1800ms
 tooltip cosmetic) + the mic transcribe callback (`capMicSeq`-guarded) + this FileReader.
 
-Fix (`js/views.js`): capture `ownerAtRead = capOwnerUid` at file-select; `onload` drops
-on a REAL→REAL owner change (null→real adopts, consistent with the listener). This
-closes the last uncovered path in the grep-confirmed inventory — the door's
+Fix (`js/views.js`): capture `ownerAtRead = capOwnerUid` at file-select; `onload`
+drops on ANY owner change (exact-match). A first pass dropped only real→real, but that
+left a real→null→real variant reachable (sign-out re-seeds the field via the late
+onload, then a sign-in adopts A's file as B) — so the rule is conservative exact-match:
+a rare signed-out-upload-then-sign-in drops the file (re-uploadable), never leaks it.
+This closes the last uncovered path in the grep-confirmed inventory — the door's
 account-switch async surface is now complete (timers cleared · mic seq-guarded ·
-FileReader owner-guarded). Parse PASS.
+FileReader exact-owner-guarded). Parse PASS; same-owner upload still applies (verified).
 
 ## Corner arrangement — OWNER felt call (carried)
 
