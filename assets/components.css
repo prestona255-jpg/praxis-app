@@ -14444,6 +14444,25 @@ body.wc-focus .app-nav { opacity:.26; }
 .notebook.lum-amber-deep .nb-mode .handoff{ font-family:var(--lum-mono); font-size:11px; color:var(--lum-ink-4); }
 .notebook.lum-amber-deep .nb-modes-hint{ font-family:var(--lum-serif); font-style:italic; font-size:12.5px; color:var(--lum-ink-3); margin-top:9px; }
 
+/* CD-6 UNIFICATION (Stage 1): the inline writeline is retired; a quiet "Catch a
+   thought" affordance opens the shared capture door. Mirrors the composer's paper
+   (the .nb-composer amber block above) so the leaf reads unchanged. Additive — the
+   dead .nb-composer / .nb-modes rules above are left in place per the round ruling. */
+.notebook.lum-amber-deep .nb-catch{
+  display:flex; align-items:center; gap:13px; width:100%; text-align:left; cursor:pointer;
+  background:linear-gradient(180deg,var(--u-sheet-1),var(--u-sheet-2));
+  border:1px solid var(--lum-glass-bd-2); border-radius:14px; padding:15px 16px;
+  box-shadow:inset 0 1px 0 rgba(255,250,235,.9);
+  transition:border-color .2s, box-shadow .2s;
+}
+.notebook.lum-amber-deep .nb-catch:hover{ border-color:var(--gold-hi); box-shadow:inset 0 1px 0 rgba(255,250,235,.9), 0 6px 18px -12px rgba(217,164,65,.5); }
+.notebook.lum-amber-deep .nb-catch:focus-visible{ outline:none; border-color:var(--gold-hi); box-shadow:inset 0 1px 0 rgba(255,250,235,.9), 0 0 0 3px rgba(217,164,65,.18); }
+.notebook.lum-amber-deep .nb-catch-glyph{ font-family:var(--lum-serif); font-size:20px; line-height:1; color:var(--lum-gold-ink); flex:none; }
+.notebook.lum-amber-deep .nb-catch-copy{ display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; }
+.notebook.lum-amber-deep .nb-catch-line{ font-family:var(--lum-serif); font-style:italic; font-size:17px; line-height:1.3; color:var(--lum-ink-3); }
+.notebook.lum-amber-deep .nb-catch-sub{ font-family:var(--lum-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lum-ink-4); }
+.notebook.lum-amber-deep .nb-catch-cue{ font-family:var(--lum-sans); font-size:20px; line-height:1; color:var(--lum-ink-4); flex:none; }
+
 /* 8 · note cards + entry chrome — light (rescue the dark rgba fills / glows) */
 .notebook.lum-amber-deep .notebook-entry{ background:var(--u-sheet-1); border-color:var(--lum-glass-bd-2); box-shadow:0 6px 16px -12px rgba(120,75,15,.24); }
 .notebook.lum-amber-deep .notebook-entry-gathered{ border-color:var(--gold-hi); background:var(--u-gathered); box-shadow:0 0 0 1px rgba(217,164,65,.4); }
@@ -16826,15 +16845,21 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 .capdoor-pill:hover{ border-color:var(--gold); }
 
-/* seats — photo / scan (present-but-labeled; camera not built — SCAN owns it, §7) */
+/* scan seat (present-but-labeled; book-scan/OCR not built — SCAN owns it, §7). CD-6
+   retired the photo seat: photo mode is now LIVE (rules below). */
 .capdoor-seat-card{ display:none; flex-direction:column; align-items:center; text-align:center; gap:8px; padding:30px 16px; border:1.5px dashed var(--border); border-radius:var(--radius-lg); color:var(--ink-3); margin-top:6px; }
-.cap-mode-photo .capdoor-seat-card.for-photo,
 .cap-mode-scan .capdoor-seat-card.for-scan{ display:flex; }
 .capdoor-seat-card .ico{ width:32px; height:32px; opacity:.55; }
 .capdoor-seat-card .lbl{ font-family:var(--font-body); font-size:13.5px; color:var(--ink-2); }
 .capdoor-seat-card .sub{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; color:var(--ink-3); }
-.cap-mode-photo .capdoor-seg, .cap-mode-photo .capdoor-context, .cap-mode-photo .capdoor-field-wrap,
 .cap-mode-scan  .capdoor-seg, .cap-mode-scan  .capdoor-context, .cap-mode-scan  .capdoor-field-wrap{ display:none; }
+/* CD-6: photo mode is LIVE (migrated from the retired notebook writeline). It keeps the
+   field + register + context (a note WITH a photo) and adds attach pills + a preview
+   strip. Camera/OCR + book-scan stay SCAN's socket (the .for-scan seat, above). */
+.capdoor-photo{ display:none; margin-top:2px; }
+.cap-mode-photo .capdoor-photo{ display:block; }
+.capdoor-photo-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.capdoor-photo-shots{ display:flex; flex-direction:column; gap:12px; }
 
 /* footer — CD-4 talk-it-through seat (inert socket) + commit hint + commit */
 .capdoor-foot{ flex:none; display:flex; align-items:center; gap:8px; padding:12px 16px 14px; border-top:1px solid var(--border); margin-top:4px; }

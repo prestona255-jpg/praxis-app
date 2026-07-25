@@ -31,6 +31,19 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-24 (R-CAPTURE / CD-6 UNIFICATION — STAGE 1 SHIPPED: the Notebook writeline RETIRED, v3.254; round STAYS OPEN)** —
+  Preston-DIRECTED (fork + register-default + photo ruled at the Stage-0 HALT; felt pass = PASS; "commit and push").
+  The first legacy door is retired: FORK B — `buildNotebookWriteline` + helpers removed (−8,168 B views.js), replaced
+  by `buildNotebookCatchAffordance` opening the ONE shared door (`openCaptureDoor`, tab-scoped targetKey/register via
+  additive `opts.register`). PHOTO migrated into the door's photo mode (existing plumbing only; captureNote(images) was
+  already the writer — **no new entry-write surface**). Ruling #5: door commit on `#notebook` refreshes the leaf; `noNav`
+  preserves `notebookActiveTab` (HOLD-2). Guards singular (grep-proven). **Stage-2 red-team caught + FIXED a real
+  same-account double-write race** (an auth-reset ungated `capCommitBusy` release — the exact class `9c385ea`/`9d5979c`/
+  `6847567` hardened); both releases now gen-gated, RE-CONFIRMED BLOCK-CLEARED; live-re-verified (4 rapid clicks → 1 note).
+  **CD-6 remains OPEN — 3 legacy doors left** (Book-Detail Add-marginalia next → ImportCapture/DOOR-SEG → onboarding), one
+  felt pass each, HALT per stage; the round does not close until CD-6 is complete or re-scoped. `## Now` unchanged
+  (R-CAPTURE). Preston-directed stage ship — nothing retired, no decision contradicted — no `PROPOSED:` flag. Records:
+  `docs/checkpoints/cd6-notebook-writeline{,-recon}.md` · ledger `docs/studio/capture.md`. Builder regenerated at this push-point.
 - **2026-07-23 (R-CAPTURE — THE DOOR SHIPPED ADDITIVE, felt pass #1 PASS on the real library; round STAYS OPEN for CD-6)** —
   Preston-DIRECTED. The new unified capture door shipped at v3.252 (build commits `cd100e7..` + 5 gate-fix
   rounds; the cross-account/auth-switch async surface closed to grep-confirmed completeness). Felt pass #1

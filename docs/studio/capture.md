@@ -1,7 +1,7 @@
 ---
 surface: capture
 route: "overlay (BUILT — global, body-mounted; summonable over any route)"
-render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door). The FOUR legacy doors still COEXIST (CD-6 unification is the round's OPEN next phase, F4): buildNotebookWriteline · createWritingCanvas · window.ImportCapture · buildActMargin"
+render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 Stage 1 RETIRED buildNotebookWriteline (v3.254); the THREE remaining legacy doors still COEXIST (CD-6 open): createWritingCanvas · window.ImportCapture · buildActMargin"
 ground: "light working surface, summoned over --scrim (RULED LIGHT 2026-07-23)"
 in_nav: "yes — Capture nav entry + ⌘N + the create-corner (CD-1)"
 state: shipped
@@ -163,13 +163,17 @@ each of 3 of the 4 places.
 
 ## Gap ledger
 
-- **F4 · CD-6 UNIFICATION — the round's OPEN next phase (ruled 2026-07-23).** The new
-  door shipped ADDITIVE; the four legacy bespoke doors still live. **ONE DOOR is
-  aspiration, not law-true: FIVE doors live today** (the new capture door +
-  buildNotebookWriteline · createWritingCanvas/Add-marginalia · window.ImportCapture ·
-  onboarding buildActMargin). Preston's ruling: staged retirement per legacy surface —
-  **Notebook writeline FIRST** — one felt pass each, HALT per stage. The R-CAPTURE
-  round does NOT close until CD-6 is built or explicitly re-scoped.
+- **F4 · CD-6 UNIFICATION — staged retirement IN PROGRESS (ruled 2026-07-23).** The new
+  door shipped ADDITIVE; the legacy bespoke doors are being retired one surface per stage,
+  one felt pass each. **Stage 1 SHIPPED (2026-07-24, v3.254):** `buildNotebookWriteline` is
+  RETIRED — the Notebook leaf now opens the shared door via `buildNotebookCatchAffordance`;
+  the writeline's photo capture MIGRATED into the door's photo mode (existing plumbing:
+  `nbDownscaleImageToBlob → nbPhotoIdbPut → captureNote(images)`, no new write surface). **FOUR
+  doors → the shared door + THREE remaining legacy:** createWritingCanvas/Add-marginalia ·
+  window.ImportCapture · onboarding buildActMargin. Next stages (order): Book-Detail Add-marginalia
+  (capability care: contenteditable + images) → ImportCapture (segment handoff / DOOR-SEG) →
+  onboarding. HALT per stage. The R-CAPTURE round does NOT close until CD-6 is complete or
+  explicitly re-scoped. Records: `docs/checkpoints/cd6-notebook-writeline{,-recon}.md`.
 - **DOOR-SEG (F1) — debt, follow-on lane.** A multi-note blob paste files as ONE raw
   note (the door has no `segmentDoc` step — mockup-deferred, unbuilt). Deserves a
   segmentation handoff: route the paste through the ImportCapture pipeline
@@ -210,14 +214,25 @@ each of 3 of the 4 places.
   staged unification is the round's next phase · corner 18px stack kept · snapshot
   skipped (felt pass exercised the real library). Build commits `cd100e7..` ; shipped at
   the push-point commit (sw v3.252, this commit). Records: `docs/checkpoints/r-capture-*`.
+- **2026-07-24 — CD-6 STAGE 1 SHIPPED: the Notebook writeline RETIRED (v3.254).** FORK B
+  (Preston-ruled): `buildNotebookWriteline` + its helpers removed (−8,168 B views.js); a quiet
+  `buildNotebookCatchAffordance` in the leaf opens the shared door (`openCaptureDoor`,
+  tab-scoped: book tab → `targetKey`, Journal tab → `register:'journal'` via additive
+  `opts.register`). PHOTO migrated into the door's photo mode (existing plumbing only; no new
+  write surface — `captureNote(images)` already existed). Ruling #5: a door commit on
+  `#notebook` refreshes the leaf; `noNav` keeps `notebookActiveTab` (HOLD-2). Guards singular,
+  grep-provable. Stage-2 red-team caught + FIXED a same-account double-write race (an auth-reset
+  ungated `capCommitBusy` release — the class the last 3 gate-fixes hardened); both releases now
+  gen-gated, RE-CONFIRMED BLOCK-CLEARED. Live-verified on the rig (affordance, register default,
+  targetKey, mode walk, photo→IndexedDB, leaf refresh, HOLD-2, 390+1360, console clean). Preston
+  felt pass = PASS. Records: `docs/checkpoints/cd6-notebook-writeline{,-recon}.md`.
 
 ## Next
 
-- **CD-6 UNIFICATION (F4) — the round's OPEN next phase.** Staged retirement of the four
-  legacy doors into the shipped component: **Notebook writeline first**, then Book-Detail
-  Add-marginalia (capability care: contenteditable + images), then ImportCapture (segment
-  handoff / DOOR-SEG), then onboarding. One felt pass each, HALT per stage. The round
-  closes only when this is built or explicitly re-scoped.
+- **CD-6 UNIFICATION (F4) — IN PROGRESS.** ✅ **Stage 1 (Notebook writeline) SHIPPED v3.254.**
+  Remaining staged retirements: **Book-Detail Add-marginalia next** (capability care:
+  contenteditable + images), then ImportCapture (segment handoff / DOOR-SEG), then onboarding.
+  One felt pass each, HALT per stage. The round closes only when this is complete or re-scoped.
 - **DOOR-SEG** (multi-note paste segmentation) — follow-on lane.
 - Post-push live-smoke: real dictation · paste · Android share · the 390 phone pass · the
   auth-switch reset branches (numbered PASS/FAIL, delivered with the push).

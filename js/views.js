@@ -1840,7 +1840,7 @@ var notebookSessionUid = null;
 // tab-scope a read-only filter: every composer writes the same key, and an empty
 // body writes sv(key,null), so merely visiting a second tab and backgrounding the
 // page would ERASE the draft waiting in the first. Uid is a parameter, never
-// re-read here -- see nbDraftFlush.
+// re-read here -- see capSaveDraftNow (the door's write-time owner-guard).
 function nbDraftKey(uid, activeKey) {
   if (!uid || typeof activeKey !== 'string') { return null; }
   return 'praxis_nb_draft_' + uid + '_' + activeKey;
@@ -1867,10 +1867,11 @@ function nbDraftClear(uid, activeKey) {
   if (k) { sv(k, null); }
 }
 
-// The live composer's flush, held module-side so the page-level hooks below are
-// installed ONCE. buildNotebookWriteline runs on every render, so per-composer
-// document listeners would accumulate one pair per render -- a leak, and every
-// stale pair would flush a detached textarea.
+// A composer's flush, held module-side so the page-level hooks below are installed
+// ONCE. A re-rendered composer would otherwise accumulate one document-listener pair
+// per render -- a leak, and every stale pair would flush a detached textarea. (The
+// capture door reuses this via nbInstallDraftHooks; the retired notebook writeline
+// was the original caller.)
 var nbDraftFlushFn = null;
 var nbDraftHooksInstalled = false;
 
@@ -2341,15 +2342,12 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
   leafsub.textContent = 'Catch a note';
   leaf.appendChild(leafsub);
 
-  // The capture composer (relocated from the right leaf -- behavior identical;
-  // it still routes by the active tab). autogrow / photo / register / Enter-commit
-  // all preserved.
-  leaf.appendChild(buildNotebookWriteline(activeKey));
-
-  // R4 (#1 unified composer): the paste/import/dictate affordances that used to
-  // live here as run-in prose (.nb-capmodes) now render as labeled chips INSIDE the
-  // composer's .nb-modes row (buildNotebookWriteline), beside photo/add-image. The
-  // "talk it through with Yumi" mode is dropped for R4. ImportCapture is untouched.
+  // CD-6 UNIFICATION (Stage 1): the bespoke inline writeline is RETIRED. A quiet
+  // "Catch a thought" affordance opens the ONE shared capture door (openCaptureDoor),
+  // which carries every mode + every guard (owner checks / auth-reset / draft gate /
+  // capMicSeq / FileReader guard) with zero forks. A book tab pre-targets that book;
+  // the Journal tab pre-selects the journal register (additive opts, no guard fork).
+  leaf.appendChild(buildNotebookCatchAffordance(activeKey));
 
   // R4 (#3b): the per-note book chip shows only where the book varies note-to-note
   // (Inbox + Journal). On a <book> tab the band states the book, so it is suppressed.
@@ -2375,6 +2373,45 @@ function buildNotebookLeftLeaf(activeKey, tabs, entries) {
     }
   }
   return leaf;
+}
+
+// CD-6 UNIFICATION (Stage 1): the notebook leaf's capture affordance. It replaces the
+// retired inline writeline with a single quiet door into the shared capture component
+// (openCaptureDoor). Pre-scopes by the active tab: a book tab pre-targets that book;
+// the Journal tab pre-selects the journal register (both additive opts on capOpen).
+function buildNotebookCatchAffordance(activeKey) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nb-catch';
+  btn.setAttribute('aria-haspopup', 'dialog');
+  var glyph = document.createElement('span');
+  glyph.className = 'nb-catch-glyph';
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.textContent = '✎';   // pencil
+  btn.appendChild(glyph);
+  var copy = document.createElement('span');
+  copy.className = 'nb-catch-copy';
+  var line = document.createElement('span');
+  line.className = 'nb-catch-line';
+  line.textContent = 'Catch a thought…';
+  copy.appendChild(line);
+  var sub = document.createElement('span');
+  sub.className = 'nb-catch-sub';
+  sub.textContent = 'type · dictate · paste · photo';
+  copy.appendChild(sub);
+  btn.appendChild(copy);
+  var cue = document.createElement('span');
+  cue.className = 'nb-catch-cue';
+  cue.setAttribute('aria-hidden', 'true');
+  cue.textContent = '＋';     // fullwidth plus, mirrors the create-corner
+  btn.appendChild(cue);
+  btn.addEventListener('click', function() {
+    var opts = { mode: 'note' };
+    if (activeKey !== 'inbox' && activeKey !== 'journal') { opts.targetKey = activeKey; }
+    if (activeKey === 'journal') { opts.register = 'journal'; }
+    openCaptureDoor(opts);
+  });
+  return btn;
 }
 
 // Right leaf (mockup "The working page"): the Gathered list (each card with a ×
@@ -2972,50 +3009,6 @@ function buildNotebookShot(ref) {
   return fig;
 }
 
-// N2 upgrade: toggle the composing focus treatment on the notebook wrap. Adds /
-// removes the .notebook-composing class on section.notebook ONLY -- the global
-// app nav (outside the view) is never touched (design-canon A).
-function setNotebookComposing(on) {
-  var wrap = document.querySelector('.notebook');
-  if (!wrap) { return; }
-  if (on) {
-    if (wrap.className.indexOf('notebook-composing') === -1) {
-      wrap.className = wrap.className + ' notebook-composing';
-    }
-  } else {
-    wrap.className = wrap.className.replace(/\s*\bnotebook-composing\b/g, '');
-  }
-}
-
-// ── R-POLISH B1 · UX-3 (THE FORGIVENESS LAW) — SUBMIT DEBOUNCE ──────────────
-// "All submit actions debounce -- killing the double-fire class at the root."
-// The composer's commit() has TWO entry points (the Capture button's click and
-// the composer's Enter keydown), so a double-click, or an Enter that lands
-// beside a click, can run it twice and write two identical entries. The recon
-// flagged exactly that shape: two identical marginalia moments apart.
-//
-// Both guards are MODULE-scoped on purpose. captureNote() re-renders the whole
-// spread, which rebuilds the composer and throws away its closure -- a guard
-// held inside buildNotebookWriteline would be reset by the very render it is
-// meant to survive.
-//   nbLastCommitAt : time gate for the SYNCHRONOUS (text-only) path.
-//   nbCommitBusy   : in-flight gate for the ASYNC (staged-photo) path, where an
-//                    IndexedDB put can outlive the time gate. Released on BOTH
-//                    the success and the error branch, so a failed put can never
-//                    wedge the composer shut (a lock you cannot release is a
-//                    worse bug than the double-write it prevents).
-// This ADDS a guard; it never deletes or rewrites an existing entry.
-var nbLastCommitAt = 0;
-var nbCommitBusy = false;
-var NB_COMMIT_DEBOUNCE_MS = 700;
-// Generation token for the in-flight gate (red-team finding 2). The backstop
-// timeout below must only ever release the commit that ARMED it: commit #1 can
-// finish legitimately at T+2s, commit #2 can start at T+3s with its own uploads
-// still in flight, and #1's stale T+15s timer would then unlatch #2's gate --
-// reopening the exact double-write race UX-3 exists to close, for the very
-// window it is meant to protect. Each commit takes the next token; a backstop
-// fires only if the token it captured is still the current one.
-var nbCommitGen = 0;
 
 // B1 · MO-1 SAVE PULSE — "every capture/save visibly answers the hand." Holds the
 // id of the note just committed; renderNotebookEntry consumes it exactly once (it
@@ -3023,364 +3016,6 @@ var nbCommitGen = 0;
 // and never again on an unrelated re-render. Render-layer only, never persisted.
 var nbJustSavedId = null;
 
-// N2: inline capture (the writeline). A composer + register chips (the mic is
-// DEFERRED to N2b; camera arrives in N2b photo capture). The selected register
-// is closure-local so a chip click never loses typed text. Enter (no shift)
-// commits via captureNote. Mounted at the top of the left leaf.
-function buildNotebookWriteline(activeKey) {
-  var line = document.createElement('div');
-  line.className = 'nb-composer';
-
-  // FIX A: auto-growing textarea (was a single-line <input>, which clipped any
-  // note past the visible width / height). Grows to fit content; Enter commits,
-  // Shift+Enter inserts a newline (the keydown handler below).
-  var input = document.createElement('textarea');
-  input.className = 'nb-ce';
-  input.setAttribute('rows', '1');
-  input.setAttribute('placeholder', 'Write a note…');
-  function autogrowWriteline() {
-    input.style.height = 'auto';
-    input.style.height = input.scrollHeight + 'px';
-  }
-  input.addEventListener('input', autogrowWriteline);
-
-  // Default register by context: Journal tab -> journal, else marginalia.
-  var selected = (activeKey === 'journal') ? 'journal' : 'marginalia';
-
-  // ── R-ARC S2: the draft waits where it was written (REQ#3) ────────────────
-  // The composer belongs to the account that opened it. Auth can change with NO
-  // reload (integrations.js: clearUserState -> sv('praxis_user', B) -> loadState),
-  // and this closure outlives its own composer, so the owner is captured ONCE here
-  // and every write is gated on it. Re-reading the uid at write time would let a
-  // pagehide after an account switch write A's text into B's key -- which B could
-  // then commit as their own words.
-  var nbOwner = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-  var nbOwnerUid = (nbOwner && nbOwner.uid) ? nbOwner.uid : null;
-  var nbDraft = nbOwnerUid ? nbDraftLoad(nbOwnerUid, activeKey) : null;
-  if (nbDraft) {
-    input.value = nbDraft.body;
-    if (nbDraft.register === 'marginalia' || nbDraft.register === 'question' ||
-        nbDraft.register === 'journal') {
-      selected = nbDraft.register;
-    }
-    // autogrow reads scrollHeight, which is 0 until the composer is in the DOM.
-    setTimeout(autogrowWriteline, 0);
-  }
-  var nbDraftTimer = null;
-  function nbDraftFlush() {
-    if (nbDraftTimer) { clearTimeout(nbDraftTimer); nbDraftTimer = null; }
-    // The owner must still be the signed-in account, or this composer has nothing
-    // to say: a stale flush from a torn-down composer must never write, and must
-    // never write under someone else's uid.
-    var now = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    if (!nbOwnerUid || !now || now.uid !== nbOwnerUid) { return; }
-    nbDraftSave(nbOwnerUid, input.value, selected, activeKey);
-  }
-  function nbDraftSchedule() {
-    if (nbDraftTimer) { clearTimeout(nbDraftTimer); }
-    nbDraftTimer = setTimeout(nbDraftFlush, 300);
-  }
-  input.addEventListener('input', nbDraftSchedule);
-  input.addEventListener('blur', nbDraftFlush);
-  nbDraftFlushFn = nbDraftFlush;
-  nbInstallDraftHooks();
-
-  var chips = document.createElement('div');
-  chips.className = 'seg';
-  var defs = [
-    { r: 'marginalia', l: 'Marginalia' },
-    { r: 'question', l: 'Question' },
-    { r: 'journal', l: 'Journal' }
-  ];
-  var chipEls = {};
-  function paint() {
-    var r;
-    for (r in chipEls) {
-      if (Object.prototype.hasOwnProperty.call(chipEls, r)) {
-        chipEls[r].className = 'seg-opt'
-          + (r === selected ? ' is-on' : '');
-      }
-    }
-  }
-  var d;
-  for (d = 0; d < defs.length; d = d + 1) {
-    appendWritelineChip(chips, defs[d], chipEls, function(reg) {
-      selected = reg; paint(); input.focus();
-      nbDraftFlush();   // the register is part of the draft
-    });
-  }
-  paint();
-
-  // N2b: photo capture -- two paths (camera + library) attach inline, stored
-  // device-local in IndexedDB on commit; the entry persists refs only. Staged
-  // blobs are held in memory until commit, so an abandoned compose leaks nothing.
-  var stagedImages = [];   // {id, blob, w, h, caption, url}
-
-  var shotsHost = document.createElement('div');
-  shotsHost.className = 'nb-shots';
-
-  function renderStagedShot(si) {
-    var fig = document.createElement('figure');
-    fig.className = 'notebook-shot';
-    var media = document.createElement('div');
-    media.className = 'notebook-shot-media';
-    if (si.w && si.h) { media.style.aspectRatio = si.w + ' / ' + si.h; }
-    var im = document.createElement('img');
-    im.className = 'notebook-shot-img';
-    im.alt = '';
-    im.src = si.url;
-    media.appendChild(im);
-    var rm = document.createElement('button');
-    rm.type = 'button';
-    rm.className = 'notebook-shot-remove';
-    rm.setAttribute('aria-label', 'Remove photo');
-    rm.textContent = '×';
-    rm.addEventListener('click', function() {
-      var k;
-      for (k = 0; k < stagedImages.length; k = k + 1) {
-        if (stagedImages[k] === si) { stagedImages.splice(k, 1); break; }
-      }
-      if (si.url) { URL.revokeObjectURL(si.url); }
-      if (fig.parentNode) { fig.parentNode.removeChild(fig); }
-    });
-    media.appendChild(rm);
-    fig.appendChild(media);
-    var cap = document.createElement('input');
-    cap.type = 'text';
-    cap.className = 'notebook-shot-cap-input';
-    cap.setAttribute('placeholder', 'Add a caption…');
-    cap.addEventListener('input', function() { si.caption = cap.value; });
-    fig.appendChild(cap);
-    shotsHost.appendChild(fig);
-  }
-
-  function addStagedPhoto(file) {
-    if (!file) { return; }
-    setNotebookComposing(true);
-    nbDownscaleImageToBlob(file, 1600, function(blob, w, h) {
-      var si = {
-        id: genNotebookImageId(), blob: blob, w: w, h: h,
-        caption: '', url: URL.createObjectURL(blob)
-      };
-      stagedImages.push(si);
-      renderStagedShot(si);
-    }, function(err) {
-      if (window.console) { console.warn('notebook photo decode/downscale failed', err); }
-    });
-  }
-
-  var cameraInput = document.createElement('input');
-  cameraInput.type = 'file';
-  cameraInput.accept = 'image/*';
-  cameraInput.setAttribute('capture', 'environment');
-  cameraInput.className = 'notebook-capture-input';
-  cameraInput.addEventListener('change', function() {
-    addStagedPhoto(cameraInput.files && cameraInput.files[0]);
-    cameraInput.value = '';
-  });
-
-  var libraryInput = document.createElement('input');
-  libraryInput.type = 'file';
-  libraryInput.accept = 'image/*';
-  libraryInput.className = 'notebook-capture-input';
-  libraryInput.addEventListener('change', function() {
-    addStagedPhoto(libraryInput.files && libraryInput.files[0]);
-    libraryInput.value = '';
-  });
-
-  // Mock .crow: the register segmented control (.seg, built above), a spacer, and
-  // the Capture button. R4 (#1 unified composer): the photo chips moved OUT of the
-  // crow into the labeled .nb-modes row below, alongside paste/import/dictate --
-  // one coherent "bring one in" affordance.
-  var crow = document.createElement('div');
-  crow.className = 'crow';
-  var crowSpacer = document.createElement('span');
-  crowSpacer.className = 'spacer';
-  var captureBtn = document.createElement('button');
-  captureBtn.type = 'button';
-  captureBtn.className = 'btn btn-primary';
-  captureBtn.textContent = 'Capture';
-  captureBtn.addEventListener('click', function() { commit(); });
-  crow.appendChild(chips);
-  crow.appendChild(crowSpacer);
-  crow.appendChild(captureBtn);
-
-  // R4 (#1 unified composer): one labeled "bring one in" row (.nb-modes) carrying
-  // every import affordance. photo + add-image STAGE INLINE (cameraInput /
-  // libraryInput .click() -- handlers byte-identical to the old .crow chips);
-  // paste / import / dictate HAND OFF to the shared capture overlay
-  // (window.ImportCapture.open() -- handler byte-identical to the old .nb-capmodes)
-  // and carry a hand-off cue. The old "talk it through with Yumi" mode is DROPPED
-  // for R4 (eval-gated; its own future round). ImportCapture.open is guarded, so
-  // the paste/import/dictate trio only appears when the module is present.
-  var modes = document.createElement('div');
-  modes.className = 'nb-modes';
-  var modesLabel = document.createElement('span');
-  modesLabel.className = 'nb-modes-label';
-  modesLabel.textContent = 'or bring one in';
-  modes.appendChild(modesLabel);
-  var modesRow = document.createElement('div');
-  modesRow.className = 'nb-modes-row';
-  var hasImport = window.ImportCapture && typeof window.ImportCapture.open === 'function';
-  if (hasImport) {
-    modesRow.appendChild(buildNotebookModeChip('paste', '☰', 'Paste', true, function() { window.ImportCapture.open(); }));
-    modesRow.appendChild(buildNotebookModeChip('import', '⭳', 'Import', true, function() { window.ImportCapture.open(); }));
-    modesRow.appendChild(buildNotebookModeChip('dictate', '🎤', 'Dictate', true, function() { window.ImportCapture.open(); }));
-  }
-  modesRow.appendChild(buildNotebookModeChip('photo', '📷', 'Photo', false, function() { cameraInput.click(); }));
-  modesRow.appendChild(buildNotebookModeChip('library', '🖼', 'Add image', false, function() { libraryInput.click(); }));
-  modes.appendChild(modesRow);
-  var modesHint = document.createElement('p');
-  modesHint.className = 'nb-modes-hint';
-  modesHint.textContent = hasImport
-    ? 'Photo & Add image stage right here on the page. Paste, import, and dictate open the capture window (↗) and come back with a note.'
-    : 'Photo & Add image stage right here on the page.';
-  modes.appendChild(modesHint);
-
-  function commit() {
-    var body = (input.value || '').replace(/^\s+|\s+$/g, '');
-    if (!body && stagedImages.length === 0) { return; }
-    // UX-3 debounce (see the module vars above). Placed AFTER the empty check so
-    // an empty Enter never arms the gate, and BEFORE any state mutation so a
-    // suppressed second fire touches nothing at all.
-    var nbNow = Date.now();
-    if (nbCommitBusy || (nbNow - nbLastCommitAt) < NB_COMMIT_DEBOUNCE_MS) { return; }
-    nbLastCommitAt = nbNow;
-    // S2 durability law: consuming the draft CLEARS it, and captureNote no-ops on a
-    // signed-out caller -- so clearing without a live user would destroy the text and
-    // write nothing. Confirm the write can land FIRST, and clear ONLY on the branch
-    // about to call captureNote (the image path clears inside finalize, so an
-    // IndexedDB abort that never reaches captureNote leaves the draft intact).
-    var cUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    if (!cUser || !cUser.uid) { return; }
-    // Cancel the pending debounce so a stale timer cannot re-save this text against
-    // the detached textarea after commit (the ghost-draft race).
-    if (nbDraftTimer) { clearTimeout(nbDraftTimer); nbDraftTimer = null; }
-    nbDraftFlushFn = null;
-    if (stagedImages.length === 0) {
-      nbDraftClear(nbOwnerUid, activeKey);
-      captureNote(selected, body, activeKey, []);
-      return;
-    }
-    // Persist each staged blob to IndexedDB, then create the note with refs.
-    // refs is index-keyed so display order survives the async puts.
-    var refs = new Array(stagedImages.length);
-    var remaining = stagedImages.length;
-    var done = false;
-    function finalize() {
-      if (done) { return; }
-      done = true;
-      var clean = [], j;
-      for (j = 0; j < refs.length; j = j + 1) { if (refs[j]) { clean.push(refs[j]); } }
-      var s;
-      for (s = 0; s < stagedImages.length; s = s + 1) {
-        if (stagedImages[s].url) { URL.revokeObjectURL(stagedImages[s].url); }
-      }
-      // Clear the draft only now, when captureNote is certain to run -- a hung or
-      // aborted put never reaches here, so the text survives.
-      nbDraftClear(nbOwnerUid, activeKey);
-      nbCommitBusy = false;          // released BEFORE the re-render swaps this composer out
-      captureNote(selected, body, activeKey, clean);
-    }
-    // UX-3: hold the in-flight gate across the async puts. Both the success and
-    // the error callback decrement `remaining` and funnel into finalize(), so the
-    // normal release is covered on either branch. The timeout is the backstop for
-    // the one case neither covers -- an IndexedDB put that never calls back at
-    // all: without it the gate would latch and the composer would be permanently
-    // unable to save, which is a worse failure than the double-write it guards.
-    nbCommitBusy = true;
-    nbCommitGen = nbCommitGen + 1;
-    (function(myGen) {
-      window.setTimeout(function() {
-        // Only unlatch if THIS commit still owns the gate. If a later commit has
-        // since armed it (nbCommitGen moved on), that commit's own backstop is
-        // the one entitled to release it -- never this stale one.
-        if (nbCommitGen === myGen) { nbCommitBusy = false; }
-      }, 15000);
-    })(nbCommitGen);
-    var i;
-    for (i = 0; i < stagedImages.length; i = i + 1) {
-      (function(si, idx) {
-        nbPhotoIdbPut(si.id, si.blob, function() {
-          refs[idx] = { id: si.id, idbKey: si.id, w: si.w, h: si.h, caption: si.caption || '' };
-          remaining = remaining - 1;
-          if (remaining === 0) { finalize(); }
-        }, function(err) {
-          if (window.console) { console.warn('notebook photo store failed', err); }
-          refs[idx] = null;
-          remaining = remaining - 1;
-          if (remaining === 0) { finalize(); }
-        });
-      })(stagedImages[i], i);
-    }
-  }
-  input.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); }
-  });
-
-  // N2 upgrade: focusing the composer recedes the in-view chrome (composing);
-  // when focus leaves the writeline entirely, return to resting. A chip click
-  // (or a capture button / caption field, all inside `line`) keeps focus within
-  // the writeline, so the deferred check leaves composing on.
-  input.addEventListener('focus', function() { setNotebookComposing(true); });
-  input.addEventListener('blur', function() {
-    window.setTimeout(function() {
-      var ae = document.activeElement;
-      if (!(ae && line.contains(ae))) { setNotebookComposing(false); }
-    }, 120);
-  });
-
-  // .nb-composer order: the writing measure (.ce), staged shots, the .crow
-  // (register seg + Capture), then the unified .nb-modes "bring one in" row. Hidden
-  // file inputs trail so .click() reaches them (they must be in the DOM).
-  line.appendChild(input);
-  line.appendChild(shotsHost);
-  line.appendChild(crow);
-  line.appendChild(modes);
-  line.appendChild(cameraInput);
-  line.appendChild(libraryInput);
-  return line;
-}
-
-// One writeline chip, closure-scoped per register (a var-in-for-loop would bind
-// every chip to the last register).
-function appendWritelineChip(chips, def, chipEls, onPick) {
-  var c = document.createElement('button');
-  c.type = 'button';
-  c.className = 'seg-opt';
-  c.setAttribute('data-reg', def.r);
-  c.appendChild(document.createTextNode(def.l));
-  c.addEventListener('click', function() { onPick(def.r); });
-  chipEls[def.r] = c;
-  chips.appendChild(c);
-}
-
-// R4 (#1 unified composer): one labeled affordance chip in the composer's
-// .nb-modes row. handoff=true appends the hand-off cue (paste/import/dictate open
-// the shared capture overlay); handoff=false is an inline stager (photo/add-image,
-// .is-inline). onClick is passed pre-bound so the wired handler is byte-identical
-// to the affordance it replaces.
-function buildNotebookModeChip(mode, icon, label, handoff, onClick) {
-  var b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'nb-mode' + (handoff ? '' : ' is-inline');
-  b.setAttribute('data-mode', mode);
-  var ic = document.createElement('span');
-  ic.className = 'ic';
-  ic.setAttribute('aria-hidden', 'true');
-  ic.textContent = icon;
-  b.appendChild(ic);
-  b.appendChild(document.createTextNode(label));
-  if (handoff) {
-    var ho = document.createElement('span');
-    ho.className = 'handoff';
-    ho.setAttribute('aria-hidden', 'true');
-    ho.textContent = '↗';
-    b.appendChild(ho);
-  }
-  b.addEventListener('click', onClick);
-  return b;
-}
 
 // R4 (#empty): the calm first-run / no-notes Inbox leaf that teaches the surface
 // (mockup #empty state). A mark, a title, a short body, and three quiet steps.
@@ -23276,6 +22911,13 @@ var capDraftTimer = null;
 var capOwnerUid = null;
 var capMicSession = null; // Lane 2: the active dictation session (null = idle)
 var capMicSeq = 0;        // BLOCK 2: bumps on stop/mode-change/close so a late transcribe callback drops itself
+// CD-6 (photo migrated from the retired notebook writeline): staged images live here
+// until commit (mirrors the writeline's stagedImages). Reset on open / close / mode-
+// change / auth-switch / commit. capCommitBusy + gen guard the async IndexedDB commit
+// window against a double-fire (the writeline's nbCommitBusy / nbCommitGen, ported).
+var capStagedImages = [];
+var capCommitBusy = false;
+var capCommitGen = 0;
 
 function capEl(id) { return document.getElementById(id); }
 function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
@@ -23384,8 +23026,11 @@ function capSetMode(mode) {
   sheet.classList.remove('cap-mic-active');
   if (capEl('capListenState')) { capEl('capListenState').textContent = ''; }
   if (capEl('capMicLabel')) { capEl('capMicLabel').textContent = 'Tap to talk'; }
+  // CD-6: leaving photo mode discards any un-committed staged images (parity with the
+  // old composer — an abandoned compose leaks nothing). Staying in photo keeps them.
+  if (mode !== 'photo') { capClearStaged(); }
   var f = capEl('capField');
-  if (mode === 'note' || mode === 'voice' || mode === 'paste') {
+  if (mode === 'note' || mode === 'voice' || mode === 'paste' || mode === 'photo') {
     f.placeholder = (mode === 'paste') ? 'Paste notes here — or type directly…' : 'Write a note…';
     window.setTimeout(function () { f.focus(); }, 0);
     capAutogrow();
@@ -23402,7 +23047,7 @@ function capLoadDraft() {
   }
 }
 function capSaveDraftNow() {
-  // BLOCK 1: re-verify the owner at write time (mirrors nbDraftFlush, views.js:3070).
+  // BLOCK 1: re-verify the owner at write time (the per-tab draft owner-guard pattern).
   // A pagehide/close AFTER an account switch must never write one account's text
   // under another's key. capOwnerUid tracks the door's owner (set at capOpen +
   // maintained by the auth-change listener); if the live user has diverged, abort
@@ -23424,7 +23069,10 @@ function capOpen(opts) {
   capTarget = capFindTarget(key);
   capSetChip();
   capSetMode(opts.mode || 'note');
-  capSetRegister('marginalia');
+  // CD-6 (register additive): a caller may pre-select the register (the Notebook's
+  // Journal tab passes 'journal'); default marginalia. A saved draft's register still
+  // wins in capLoadDraft below (resume beats default). capSetRegister is the one path.
+  capSetRegister((opts.register === 'question' || opts.register === 'journal' || opts.register === 'marginalia') ? opts.register : 'marginalia');
   capLoadDraft();
   capRenderCaught(); // backstop: reflect the current (owner-scoped) caught list on every open
   capEl('capScrim').classList.add('is-open');
@@ -23438,6 +23086,7 @@ function capOpen(opts) {
 }
 function capClose() {
   if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; } // bound loss window (CA-2) + drop the orphaned callback (BLOCK 2)
+  capClearStaged(); // CD-6: un-committed staged photos are discarded on close (parity)
   capSaveDraftNow(); // CA-2: an un-filed draft is never lost on close
   capEl('capScrim').classList.remove('is-open');
   capEl('capSheet').classList.remove('is-open');
@@ -23478,21 +23127,108 @@ function capShowToast(msg, onUndo) {
   capToastTimer = window.setTimeout(function () { toast.classList.remove('is-show'); }, 6500);
 }
 
+// ---- CD-6 photo (migrated from the retired notebook writeline) --------------
+// Discard every staged image: revoke its object URL and empty the preview strip.
+function capClearStaged() {
+  var i;
+  for (i = 0; i < capStagedImages.length; i++) {
+    if (capStagedImages[i] && capStagedImages[i].url) { try { URL.revokeObjectURL(capStagedImages[i].url); } catch (e) {} }
+  }
+  capStagedImages = [];
+  var host = capEl('capShots');
+  if (host) { host.innerHTML = ''; }
+}
+// One staged shot in the preview strip (reuses the shared .notebook-shot* classes).
+// Remove revokes the URL and drops it from capStagedImages; caption edits in place.
+function capRenderStagedShot(si) {
+  var host = capEl('capShots');
+  if (!host) { return; }
+  var fig = document.createElement('figure');
+  fig.className = 'notebook-shot';
+  var media = document.createElement('div');
+  media.className = 'notebook-shot-media';
+  if (si.w && si.h) { media.style.aspectRatio = si.w + ' / ' + si.h; }
+  var im = document.createElement('img');
+  im.className = 'notebook-shot-img';
+  im.alt = '';
+  im.src = si.url;
+  media.appendChild(im);
+  var rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'notebook-shot-remove';
+  rm.setAttribute('aria-label', 'Remove photo');
+  rm.textContent = '×';
+  rm.addEventListener('click', function () {
+    var k;
+    for (k = 0; k < capStagedImages.length; k++) { if (capStagedImages[k] === si) { capStagedImages.splice(k, 1); break; } }
+    if (si.url) { try { URL.revokeObjectURL(si.url); } catch (e) {} }
+    if (fig.parentNode) { fig.parentNode.removeChild(fig); }
+  });
+  media.appendChild(rm);
+  fig.appendChild(media);
+  var cap = document.createElement('input');
+  cap.type = 'text';
+  cap.className = 'notebook-shot-cap-input';
+  cap.setAttribute('placeholder', 'Add a caption…');
+  cap.addEventListener('input', function () { si.caption = cap.value; });
+  fig.appendChild(cap);
+  host.appendChild(fig);
+}
+// Downscale a chosen file to a JPEG blob (device-local, no network), stage it, and
+// preview it. Owner-guarded: a decode that spans an account switch drops itself so
+// account A's photo can never appear in account B's strip (mirrors the FileReader guard).
+function capAddStagedPhoto(file) {
+  if (!file) { return; }
+  var ownerAtAdd = capOwnerUid;
+  nbDownscaleImageToBlob(file, 1600, function (blob, w, h) {
+    if (capOwnerUid !== ownerAtAdd) { return; } // stale owner — the account switched mid-decode; drop the prior owner's photo (no object URL created yet, nothing to revoke)
+    var si = { id: genNotebookImageId(), blob: blob, w: w, h: h, caption: '', url: URL.createObjectURL(blob) };
+    capStagedImages.push(si);
+    capRenderStagedShot(si);
+  }, function (err) {
+    if (window.console) { console.warn('capture photo decode/downscale failed', err); }
+  });
+}
+
+// Ruling #5: a door-commit while on #notebook refreshes the left leaf so the new note
+// appears. captureNote ran noNav=true (never repoints notebookActiveTab — HOLD-2 holds);
+// renderNotebook re-reads the EXISTING tab.
+function capIsNotebookRoute() { return (location.hash || '').indexOf('#notebook') === 0; }
+
+// The shared after-file step for both the text and the image commit branches:
+// caught-list + undo record + field reset + save pulse + leaf refresh + toast.
+function capFinishCommit(prevBody, prevRegister, tgt, body) {
+  var filedId = nbJustSavedId;
+  capCaught.unshift({ localId: filedId, id: filedId, register: prevRegister, body: body, target: tgt });
+  capLastFiled = { localId: filedId, id: filedId, prevBody: prevBody, prevRegister: prevRegister };
+  capRenderCaught();
+  var f = capEl('capField');
+  f.value = '';
+  capAutogrow();
+  var wrap = f.parentNode; // .capdoor-field-wrap
+  if (wrap && !capPrefersReduced()) { wrap.classList.remove('mo-savepulse'); void wrap.offsetWidth; wrap.classList.add('mo-savepulse'); }
+  if (capIsNotebookRoute() && typeof renderNotebook === 'function') { renderNotebook(); }
+  f.focus();
+  capShowToast('Filed to ' + tgt.label + ' · Undo', capUndo);
+}
+
 // CD-5 — commit-and-stay. Files via captureNote (real write), clears the field,
-// pulses + toasts "filed to X · Undo", and leaves the sheet open.
+// pulses + toasts "filed to X · Undo", and leaves the sheet open. CD-6: photo mode
+// files the note WITH its staged images (async IndexedDB path); scan stays inert.
 function capCommit() {
-  if (capMode === 'photo' || capMode === 'scan') { return; } // seats: nothing to file
+  if (capMode === 'scan') { return; } // scan stays SCAN's inert socket — nothing to file
   var f = capEl('capField');
   var body = capTrim(f.value);
-  if (!body) { return; } // mirrors captureNote's own empty guard
+  if (!body && capStagedImages.length === 0) { return; } // nothing to file
+  if (capCommitBusy) { return; } // an async image commit is already in flight
   var u = getCurrentUser();
   if (!u) { capShowToast('Sign in to keep your notes', null); return; }
-  // BLOCK 1: if the account switched while the door stayed open, the on-screen
-  // text belongs to the OPEN-TIME owner — never file A's words under B. Reset to
-  // the current owner and start fresh rather than commit contaminated content.
+  // BLOCK 1: if the account switched while the door stayed open, the on-screen text
+  // AND staged photos belong to the OPEN-TIME owner — never file A's content under B.
+  // Reset to the current owner and start fresh rather than commit contaminated content.
   if (capOwnerUid !== null && u.uid !== capOwnerUid) {
     capOwnerUid = u.uid;
-    f.value = ''; capAutogrow(); capLoadDraft();
+    f.value = ''; capAutogrow(); capClearStaged(); capLoadDraft();
     capShowToast('Signed in as a different account — starting fresh', null);
     return;
   }
@@ -23503,19 +23239,66 @@ function capCommit() {
     capTarget = capFindTarget('inbox'); capSetChip();
   }
   var prevBody = f.value, prevRegister = capRegister, tgt = capTarget;
-  captureNote(capRegister, body, tgt.key, [], true); // noNav: never leave the route
-  nbDraftClear(u.uid, CAP_DRAFT_KEY);
-  var filedId = nbJustSavedId;
-  var localId = filedId; // NOTE 2: key the caught list on the real (unique) entry id, not a count+len hash
-  capCaught.unshift({ localId: localId, id: filedId, register: prevRegister, body: body, target: tgt });
-  capLastFiled = { localId: localId, id: filedId, prevBody: prevBody, prevRegister: prevRegister };
-  capRenderCaught();
-  f.value = '';
-  capAutogrow();
-  f.focus();
-  var wrap = f.parentNode; // .capdoor-field-wrap
-  if (wrap && !capPrefersReduced()) { wrap.classList.remove('mo-savepulse'); void wrap.offsetWidth; wrap.classList.add('mo-savepulse'); }
-  capShowToast('Filed to ' + tgt.label + ' · Undo', capUndo);
+  // Text-only path (synchronous). captureNote clears the field immediately below, so a
+  // stray double-fire sees an empty field and no-ops — no busy gate needed here.
+  if (capStagedImages.length === 0) {
+    captureNote(capRegister, body, tgt.key, [], true); // noNav: never leave the route
+    nbDraftClear(u.uid, CAP_DRAFT_KEY);
+    capFinishCommit(prevBody, prevRegister, tgt, body);
+    return;
+  }
+  // Image path (migrated from the writeline commit). Persist each staged blob to
+  // IndexedDB, then file the note with refs. refs is index-keyed so display order
+  // survives the async puts; capCommitBusy + the gen-token backstop close the
+  // double-write window the writeline's UX-3 gate was built for.
+  var commitOwner = capOwnerUid;
+  var imgs = capStagedImages;
+  capStagedImages = []; // detach so a fresh stage starts clean; imgs owns the blobs now
+  var refs = new Array(imgs.length), remaining = imgs.length, done = false, myGen = 0;
+  function revokeImgs() {
+    var s;
+    for (s = 0; s < imgs.length; s++) { if (imgs[s].url) { try { URL.revokeObjectURL(imgs[s].url); } catch (e) {} } }
+  }
+  function finalize() {
+    if (done) { return; }
+    done = true;
+    // Release ONLY our own gate (gen-token): a stale finalize whose commit was superseded
+    // (e.g. an account switch let a newer commit arm the gate) must NOT unlatch that newer
+    // commit's in-flight window — that would reopen the double-write race UX-3 closes.
+    if (capCommitGen === myGen) { capCommitBusy = false; }
+    var cu = getCurrentUser();
+    // account switched mid-put: the photos + text belong to commitOwner — abort filing,
+    // leave nothing under the new owner (the auth-reset path already cleared the field).
+    if (!cu || cu.uid !== commitOwner) { revokeImgs(); return; }
+    var clean = [], j;
+    for (j = 0; j < refs.length; j++) { if (refs[j]) { clean.push(refs[j]); } }
+    captureNote(capRegister, body, tgt.key, clean, true); // noNav
+    nbDraftClear(cu.uid, CAP_DRAFT_KEY);
+    revokeImgs();
+    var host = capEl('capShots');
+    if (host) { host.innerHTML = ''; }
+    capFinishCommit(prevBody, prevRegister, tgt, body);
+  }
+  capCommitGen = capCommitGen + 1;
+  myGen = capCommitGen;
+  capCommitBusy = true;
+  // backstop: release only if THIS commit still owns the gate (never unlatch a newer one).
+  window.setTimeout(function () { if (capCommitGen === myGen) { capCommitBusy = false; } }, 15000);
+  var i;
+  for (i = 0; i < imgs.length; i++) {
+    (function (si, idx) {
+      nbPhotoIdbPut(si.id, si.blob, function () {
+        refs[idx] = { id: si.id, idbKey: si.id, w: si.w, h: si.h, caption: si.caption || '' };
+        remaining = remaining - 1;
+        if (remaining === 0) { finalize(); }
+      }, function (err) {
+        if (window.console) { console.warn('capture photo store failed', err); }
+        refs[idx] = null;
+        remaining = remaining - 1;
+        if (remaining === 0) { finalize(); }
+      });
+    })(imgs[i], i);
+  }
 }
 function capUndo() {
   if (!capLastFiled) { return; }
@@ -23553,7 +23336,6 @@ function buildCaptureDoor() {
   var svgPlus = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="var(--br-deep)" stroke-width="2.6" stroke-linecap="round"/></svg>';
   var svgMic = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0M12 19v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var svgHeart = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-4.35-9.5-8.5C1 9 2.5 5.5 6 5c2-.3 4 .9 6 3 2-2.1 4-3.3 6-3 3.5.5 5 4 3.5 7.5C19 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
-  var svgCam = '<svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13.5" r="3.4" stroke="currentColor" stroke-width="1.6"/></svg>';
   var svgScan = '<svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6 8v8M9 8v8M12 8v8M15 8v8M18 8v8" stroke="currentColor" stroke-width="1.6"/></svg>';
   var html =
     '<button class="cap-create-door" id="capCreateDoor" type="button" aria-label="Capture a thought" aria-haspopup="dialog">' +
@@ -23593,7 +23375,15 @@ function buildCaptureDoor() {
           '<button class="capdoor-chip" id="capChipBtn" type="button" aria-haspopup="listbox" aria-expanded="false">' +
             '<span class="dot" id="capChipDot"></span><span class="lbl" id="capChipLabel">Inbox</span><span class="chev">▾</span></button>' +
           '<div class="capdoor-chip-pop" id="capChipPop" role="listbox" aria-label="file to"></div></div>' +
-        '<div class="capdoor-seat-card for-photo">' + svgCam + '<div class="lbl">Photo capture — the socket is here</div><div class="sub">camera + OCR arrive with SCAN</div></div>' +
+        '<div class="capdoor-photo" id="capPhoto">' +
+          '<div class="capdoor-photo-actions">' +
+            '<button class="capdoor-pill" id="capPhotoCam" type="button">Take a photo</button>' +
+            '<button class="capdoor-pill" id="capPhotoLib" type="button">Add an image</button>' +
+            '<input type="file" id="capCamInput" accept="image/*" capture="environment" class="notebook-capture-input">' +
+            '<input type="file" id="capLibInput" accept="image/*" class="notebook-capture-input">' +
+          '</div>' +
+          '<div class="capdoor-photo-shots" id="capShots"></div>' +
+        '</div>' +
         '<div class="capdoor-seat-card for-scan">' + svgScan + '<div class="lbl">Scan a book — the socket is here</div><div class="sub">barcode capture arrives with SCAN</div></div>' +
         '<div class="capdoor-caught" id="capCaught"></div>' +
         '<div class="capdoor-caught-empty" id="capCaughtEmpty" style="display:none;">nothing caught yet this session</div>' +
@@ -23648,6 +23438,7 @@ function initCaptureDoor() {
         // prevUid was a REAL account and it changed -> all on-screen/in-memory capture
         // state belongs to the PREVIOUS account; reset every path (BLOCK 1, all doors).
         if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; }
+        capClearStaged(); // CD-6: drop the prior owner's staged photos. Do NOT release capCommitBusy here — an in-flight image commit's own gen-gated finalize/backstop releases it; force-releasing mid-put would let the new owner's commit start while the prior put is still outstanding (the double-write race the gen-token guards).
         var ff = capEl('capField'), sh = capEl('capSheet');
         if (ff) { ff.value = ''; capAutogrow(); }
         if (sh && sh.classList.contains('is-open')) {
@@ -23751,6 +23542,15 @@ function initCaptureDoor() {
     reader.readAsText(fl);
     this.value = '';
   });
+
+  // CD-6 photo mode (migrated writeline image path): the attach pills fire the hidden
+  // file inputs; each chosen image downscales to a JPEG blob, previews inline, and is
+  // stored to IndexedDB on commit as a note.images ref via the shared captureNote path.
+  var camIn = capEl('capCamInput'), libIn = capEl('capLibInput');
+  capEl('capPhotoCam').addEventListener('click', function () { camIn.click(); });
+  capEl('capPhotoLib').addEventListener('click', function () { libIn.click(); });
+  camIn.addEventListener('change', function () { capAddStagedPhoto(this.files && this.files[0]); this.value = ''; });
+  libIn.addEventListener('change', function () { capAddStagedPhoto(this.files && this.files[0]); this.value = ''; });
 
   // CD-6 voice mode (Lane 2): reuse the shipped dictation transport. The transcript
   // writes into the SHARED field the instant it exists (draft-persisted), then is
