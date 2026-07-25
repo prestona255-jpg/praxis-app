@@ -284,9 +284,18 @@ each of 3 of the 4 places.
   Remaining: **onboarding act-margin (buildActMargin) — the last CD-6 door.** One felt pass each, HALT per
   stage. The round closes only when this is complete or re-scoped. (v3.257 awaits Preston's live felt pass —
   felt-skip does NOT apply, this stage changes surfaces.)
-- **CDSEG-NIT1 / CDSEG-NIT2 (named nits from the Stage-3 red-team).** N1: `.capdoor-split-row:first-of-type`
-  is dead (the head div is the true first-of-type) → harmless hairline. N2: the per-child split chip-pop has
-  no click-outside closer (closes on select / re-render). Both cosmetic/UX, non-destructive; own tiny lanes.
+- **CDSEG-SPLIT-POP-FIX — ✅ SHIPPED v3.258 (2026-07-25).** The desktop-only failure Preston felt (clicking a
+  split child's book chip did nothing; iPhone worked): the picker pop opened DOWNWARD into the scrollable
+  `.capdoor-body` overflow and clipped invisible when the chip sat near the fold. Fixed by flipping the pop UP
+  when it won't fit below (Option A, scoped to `.capdoor-split-chipwrap` — door-core untouched). **Riders shipped
+  with it: CDSEG-NIT2** (per-child chip-pop now has a document click-outside closer, leak-proof — open/close ×10
+  net 0) + **CDSEG-NIT1** (dead `:first-of-type` selector → `.capdoor-split-head + .capdoor-split-row`). Red-team
+  (Sonnet) CLEAN. Records: `docs/checkpoints/cd6-split-pop-fix.md` + `cd6-split-chip-desktop-recon.md`.
+- **SPLIT-HSCROLL (named task).** A horizontal scrollbar Preston saw on the review at desktop — NOT reproduced
+  with synthetic content (incl. long URLs, which wrapped); distinct from the pop-clip. Needs his exact triggering
+  note to reproduce; candidate = a wide element with real data. Own lane.
+- **R1 · SPLIT-POP-DOUBLE-CLIP (residual, named by the v3.258 red-team).** The flip-up checks only room below,
+  never above; in a degenerate short-body case the pop could flip up unreachable. No data loss. Follow-on.
 - **SPLIT-FOCUS-MODE (felt option).** A 3+-child split review pushes Accept below the fold (reachable via
   sheet scroll today); hiding the composer chrome during a review would remove the scroll. Preston's felt call.
 - **CD6-NBK-REFRESH-GUARD (micro-lane) — ✅ SHIPPED v3.256.** `capNotebookHasOpenInline()` mirrors the

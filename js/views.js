@@ -22933,6 +22933,10 @@ var capSplitGen = 0;
 var capSplitState = null;
 var capSplitUndo = null;
 var CAP_SPLIT_MINLEN = 280; // census: single-passage notes cluster <200 chars; the lone multi at 331
+// CD6-SPLIT-POP-FIX (v3.258): the single active per-child chip-pop's document click-outside
+// listener (CDSEG-NIT2) — added on open, removed on close/re-render/teardown so it never leaks
+// and never sticks. Only ever one at a time (a new open replaces it).
+var capSplitPopOutside = null;
 
 function capEl(id) { return document.getElementById(id); }
 function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
@@ -23493,6 +23497,13 @@ function capOfferSplit(noteId) {
   });
 }
 
+// CD6-SPLIT-POP-FIX: close ANY open per-child chip-pop and drop its outside-click listener.
+// Clears is-open + open-up so the flip direction never sticks. Safe to call when nothing is open.
+function capSplitCloseChipPop() {
+  var open = document.querySelectorAll('#capSplit .capdoor-split-chipwrap.is-open'), i;
+  for (i = 0; i < open.length; i++) { open[i].classList.remove('is-open'); open[i].classList.remove('open-up'); }
+  if (capSplitPopOutside) { document.removeEventListener('click', capSplitPopOutside, true); capSplitPopOutside = null; }
+}
 function capCancelSplit() {
   capSplitState = null;
   capRenderSplitReview();
@@ -23504,6 +23515,9 @@ function capCancelSplit() {
 function capRenderSplitReview() {
   var host = capEl('capSplit');
   if (!host) { return; }
+  // CD6-SPLIT-POP-FIX: any re-render (flip / select / cancel) rebuilds the rows, so drop the stale
+  // chip-pop outside-listener here — the single choke point — so it never leaks across re-renders.
+  if (capSplitPopOutside) { document.removeEventListener('click', capSplitPopOutside, true); capSplitPopOutside = null; }
   if (!capSplitState) { host.hidden = true; host.innerHTML = ''; return; }
   host.hidden = false;
   host.innerHTML = '';
@@ -23545,8 +23559,20 @@ function capRenderSplitReview() {
       chip.appendChild(cdot); chip.appendChild(clbl); chip.appendChild(chev);
       var pop = document.createElement('div'); pop.className = 'capdoor-chip-pop';
       chip.addEventListener('click', function () {
-        var open = wrap.classList.toggle('is-open');
-        if (open) { capRenderSplitChipPop(pop, kid); }
+        if (wrap.classList.contains('is-open')) { capSplitCloseChipPop(); return; } // toggle off
+        capSplitCloseChipPop(); // close any other open pop first (one at a time)
+        wrap.classList.add('is-open');
+        capRenderSplitChipPop(pop, kid);
+        // FLIP-UP-WHEN-NEEDED: the pop opens downward by default; if it would clip below the
+        // scrollable body fold, flip it above the chip. Measure AFTER render so pop.offsetHeight is
+        // real; #capSplit's parent IS .capdoor-body (a read, no layout change — never door-core).
+        var body = capEl('capSplit').parentNode;
+        var chipR = chip.getBoundingClientRect(), bodyR = body.getBoundingClientRect();
+        if ((bodyR.bottom - chipR.bottom) < pop.offsetHeight + 8) { wrap.classList.add('open-up'); }
+        // CDSEG-NIT2: a click OUTSIDE this chipwrap closes the pop; a click inside (an option) does
+        // not — the option's own handler re-renders, which drops this listener at the render top.
+        capSplitPopOutside = function (ev) { if (!wrap.contains(ev.target)) { capSplitCloseChipPop(); } };
+        document.addEventListener('click', capSplitPopOutside, true);
       });
       wrap.appendChild(chip); wrap.appendChild(pop);
       ctl.appendChild(wrap);
@@ -23797,6 +23823,7 @@ function initCaptureDoor() {
         // is the "picker-open-during-owner-change" surface (condition 3).
         capSplitGen = capSplitGen + 1;
         capSplitState = null; capSplitUndo = null;
+        if (capSplitPopOutside) { document.removeEventListener('click', capSplitPopOutside, true); capSplitPopOutside = null; }
         if (capEl('capSplit')) { capEl('capSplit').hidden = true; capEl('capSplit').innerHTML = ''; }
         capCaught = []; capRenderCaught();
       });

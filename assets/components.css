@@ -16507,12 +16507,15 @@ body.wc-focus .app-nav { opacity:.26; }
 .capdoor-split-loading{ font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); text-align:center; padding:16px 0; }
 .capdoor-split-head{ font-family:var(--font-serif); font-style:italic; font-size:17px; color:var(--ink); margin:0 0 6px; }
 .capdoor-split-row{ border-top:1px solid var(--border); padding:11px 0; }
-.capdoor-split-row:first-of-type{ border-top:none; }
+.capdoor-split-head + .capdoor-split-row{ border-top:none; } /* CDSEG-NIT1: the head div is the real :first-of-type, so the old .capdoor-split-row:first-of-type never fired — target the first row after the head instead. */
 .capdoor-split-text{ font-family:var(--font-serif); font-size:14px; line-height:1.45; color:var(--ink); white-space:pre-wrap; }
 .capdoor-split-ctl{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:8px; }
 #capSplit .capdoor-seg{ display:inline-flex; margin-top:0; }
 .capdoor-split-chipwrap{ position:relative; }
 .capdoor-split-chipwrap.is-open .capdoor-chip-pop{ display:block; }
+/* CD6-SPLIT-POP-FIX (v3.258): flip the per-child picker ABOVE the chip when it would clip below the
+   scrollable body fold (.open-up set in JS). Scoped to the split chipwrap — the door-core chip pop untouched. */
+.capdoor-split-chipwrap.open-up.is-open .capdoor-chip-pop{ top:auto; bottom:calc(100% + 6px); }
 .capdoor-split-foot{ display:flex; align-items:center; justify-content:flex-end; gap:14px; margin-top:12px; }
 .capdoor-split-cancel{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); background:transparent; border:none; cursor:pointer; }
 .capdoor-split-cancel:hover{ color:var(--ink); }

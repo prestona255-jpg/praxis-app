@@ -31,6 +31,16 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-25 (R-CAPTURE / CD6-SPLIT-POP-FIX SHIPPED, v3.258; round STAYS OPEN)** — Preston-DIRECTED felt-triage fix
+  of the desktop-only failure he found on v3.257: a split child's book chip opened its picker pop DOWNWARD into the
+  scrollable `.capdoor-body` overflow, clipping it invisible near the fold (iPhone worked; desktop's short corner-card
+  body made it reliable). Recon proved the mechanism (pop_visible_height 0 at the fold; T4 missed it by using
+  programmatic clicks + DOM-presence assertions). Fix = flip-up-when-needed (Option A, scoped to `.capdoor-split-chipwrap`
+  — door-core untouched), plus riders CDSEG-NIT2 (leak-proof click-outside closer) + CDSEG-NIT1 (dead selector). Verified
+  with REAL hit-tested clicks + visible-rect assertions at 1360 + 390; red-team (Sonnet) CLEAN. Named follow-ons:
+  SPLIT-HSCROLL (unreproduced, needs his note) · R1 SPLIT-POP-DOUBLE-CLIP (degenerate residual) · SPLIT-FOCUS-MODE.
+  No Builder regen (single-regen-owner at round close). `## Now` unchanged (R-CAPTURE). Preston-directed — no `PROPOSED:`
+  flag. Records: `docs/checkpoints/cd6-split-pop-fix.md` + `cd6-split-chip-desktop-recon.md`.
 - **2026-07-25 (R-CAPTURE / CD-6 UNIFICATION — STAGE 3 SHIPPED: ImportCapture RETIRED + DOOR-SEG PAID, v3.257; round STAYS OPEN)** —
   Preston-DIRECTED (Stage-0 rulings + HALT-A/B amendments; ship pre-authorized on red-team BLOCK-CLEARED). The third
   legacy door retires: the ImportCapture overlay was already ORPHANED (0 live `.open()` callers since Stage 1), so
