@@ -22924,6 +22924,15 @@ var capMicSeq = 0;        // BLOCK 2: bumps on stop/mode-change/close so a late 
 var capStagedImages = [];
 var capCommitBusy = false;
 var capCommitGen = 0;
+// DOOR-SEG (CD-6 Stage 3): the paste-split forward act on an ALREADY-FILED note.
+// capSplitGen gen-gates the async segmentDoc completion — a late / superseded result
+// or a cross-account switch drops itself (the capCommitGen / capMicSeq class). capSplitState
+// holds the in-flight + active review; capSplitUndo holds ONE ephemeral parent snapshot +
+// child ids for a CA-2 undo. No LLM runs before the user taps Split (local heuristic only).
+var capSplitGen = 0;
+var capSplitState = null;
+var capSplitUndo = null;
+var CAP_SPLIT_MINLEN = 280; // census: single-passage notes cluster <200 chars; the lone multi at 331
 
 function capEl(id) { return document.getElementById(id); }
 function capTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
@@ -23092,6 +23101,7 @@ function capOpen(opts) {
 }
 function capClose() {
   if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; } // bound loss window (CA-2) + drop the orphaned callback (BLOCK 2)
+  if (capSplitState) { capCancelSplit(); } // DOOR-SEG: a pending split review is dropped on close (nothing written yet; parent stays filed as one). The post-accept Undo (capSplitUndo) survives.
   capClearStaged(); // CD-6: un-committed staged photos are discarded on close (parity)
   capSaveDraftNow(); // CA-2: an un-filed draft is never lost on close
   capEl('capScrim').classList.remove('is-open');
@@ -23114,6 +23124,18 @@ function capRenderCaught() {
       var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.body;
       var tg = document.createElement('span'); tg.className = 'target'; tg.textContent = item.target.label;
       row.appendChild(dot); row.appendChild(txt); row.appendChild(tg);
+      // DOOR-SEG: a still-filed note whose live body reads as multi-note gets a forward
+      // "Split into notes?" act (local heuristic only — no network until tapped). Suppressed
+      // while a review is already open (one split at a time).
+      var ent = state.notebookEntries && state.notebookEntries[item.id];
+      if (ent && !capSplitState && capShouldOfferSplit(ent.body)) {
+        var sp = document.createElement('button');
+        sp.type = 'button';
+        sp.className = 'capdoor-caught-split';
+        sp.textContent = 'Split into notes?';
+        sp.addEventListener('click', function () { capOfferSplit(item.id); });
+        row.appendChild(sp);
+      }
       host.appendChild(row);
     })(capCaught[i]);
   }
@@ -23393,6 +23415,254 @@ function capUndo() {
   capLastFiled = null;
 }
 
+// =====================================================================
+// DOOR-SEG (CD-6 Stage 3): file-raw-first, then offer to split a multi-note
+// blob into per-note children. The parent is ALREADY filed (raw joins the
+// corpus by construction); split is a forward, non-destructive-until-accepted
+// act. segmentDoc is the ONLY network call and runs ONLY after the user taps
+// Split; captureNote stays the sole entry writer; CA-2 ordering means the raw
+// text is never in a lost state at any instant.
+// =====================================================================
+
+// Local heuristic (no network): does this body read as more than one note?
+// >=1 blank-line paragraph break, OR length past the census threshold.
+function capShouldOfferSplit(body) {
+  var b = capTrim(body || '');
+  if (b.length >= CAP_SPLIT_MINLEN) { return true; }
+  if (/\n[ \t]*\n/.test(b)) { return true; }
+  return false;
+}
+
+// The target key captureNote needs to (re)create an entry AS FILED: its book
+// (bookIds[0]), else 'journal' by register, else 'inbox'.
+function capEntryTargetKey(e) {
+  if (!e) { return 'inbox'; }
+  if (e.bookIds && e.bookIds.length && e.bookIds[0]) { return e.bookIds[0]; }
+  if (e.register === 'journal') { return 'journal'; }
+  return 'inbox';
+}
+
+// A caught-list row descriptor for an entry id (dot color + label only; the caught
+// list is a session hint — state.notebookEntries is the durable truth).
+function capCaughtRowFor(id) {
+  var e = state.notebookEntries[id];
+  if (!e) { return null; }
+  var label = (e.register === 'journal') ? 'Journal'
+    : ((e.bookIds && e.bookIds.length && state.books && state.books[e.bookIds[0]]) ? (state.books[e.bookIds[0]].title || 'Untitled') : 'Inbox');
+  return { localId: id, id: id, register: e.register, body: e.body, target: { label: label } };
+}
+
+// Offer -> segmentDoc (gen-gated, owner-guarded). The parent is untouched throughout;
+// a stale / cross-account / failed result never mutates anything.
+function capOfferSplit(noteId) {
+  if (capSplitState) { return; }                        // one split review at a time (double-tap guard)
+  var e = state.notebookEntries && state.notebookEntries[noteId];
+  if (!e) { return; }
+  if (!(window.ImportCapture && ImportCapture.segmentDoc)) { return; }
+  capSplitGen = capSplitGen + 1;
+  var myGen = capSplitGen;
+  var ownerAtStart = capOwnerUid;
+  capSplitState = { parentId: noteId, ownerUid: ownerAtStart, gen: myGen, phase: 'loading', children: [], snap: null };
+  capRenderSplitReview();
+  capRenderCaught();                                    // hide the caught-row Split button while one is open
+  ImportCapture.segmentDoc(e.body).then(function (segs) {
+    if (myGen !== capSplitGen) { return; }              // superseded (double-tap / newer split)
+    var cu = getCurrentUser();
+    if (capOwnerUid !== ownerAtStart || !cu || cu.uid !== ownerAtStart) { capCancelSplit(); return; } // cross-account drop
+    var parent = state.notebookEntries[noteId];
+    if (!parent) { capCancelSplit(); return; }          // parent removed while we were out
+    if (!segs || segs.length < 2) {                     // 0/1 segment: nothing to split, parent kept
+      capCancelSplit();
+      capShowToast((segs && segs.length === 1) ? 'That reads as one note — kept as is' : 'Couldn’t split — your note is filed', null);
+      return;
+    }
+    var kids = [], i;
+    for (i = 0; i < segs.length; i++) {
+      var bid = segs[i].bookGuess ? ImportCapture.matchBook(segs[i].bookGuess) : null;
+      kids.push({ text: segs[i].text, register: ImportCapture.registerFor(segs[i]), targetKey: bid ? bid : 'inbox', bookGuess: segs[i].bookGuess || null });
+    }
+    capSplitState.children = kids;
+    capSplitState.snap = { register: parent.register, body: parent.body, targetKey: capEntryTargetKey(parent) };
+    capSplitState.phase = 'review';
+    capRenderSplitReview();
+  }, function (err) {
+    if (myGen !== capSplitGen) { return; }
+    if (window.console) { console.warn('capture split failed', err); }
+    capCancelSplit();
+    capShowToast('Couldn’t split — your note is filed', null); // parent untouched: raw joins the corpus
+  });
+}
+
+function capCancelSplit() {
+  capSplitState = null;
+  capRenderSplitReview();
+  capRenderCaught();
+}
+
+// Render the review host from capSplitState. Reuses the door's chip / seg idiom
+// (classes only) — never capRenderChipPop / capSetRegister / capTarget.
+function capRenderSplitReview() {
+  var host = capEl('capSplit');
+  if (!host) { return; }
+  if (!capSplitState) { host.hidden = true; host.innerHTML = ''; return; }
+  host.hidden = false;
+  host.innerHTML = '';
+  if (capSplitState.phase === 'loading') {
+    var ld = document.createElement('div'); ld.className = 'capdoor-split-loading'; ld.textContent = 'Splitting…';
+    host.appendChild(ld);
+    return;
+  }
+  var head = document.createElement('div'); head.className = 'capdoor-split-head';
+  head.textContent = 'Split into ' + capSplitState.children.length + ' notes?';
+  host.appendChild(head);
+  var i;
+  for (i = 0; i < capSplitState.children.length; i++) {
+    (function (kid) {
+      var row = document.createElement('div'); row.className = 'capdoor-split-row';
+      var tx = document.createElement('div'); tx.className = 'capdoor-split-text'; tx.textContent = kid.text;
+      row.appendChild(tx);
+      var ctl = document.createElement('div'); ctl.className = 'capdoor-split-ctl';
+      var seg = document.createElement('div'); seg.className = 'capdoor-seg capdoor-split-seg'; seg.setAttribute('role', 'group');
+      var regs = ['marginalia', 'question', 'journal'], r;
+      for (r = 0; r < regs.length; r++) {
+        (function (rr) {
+          var b = document.createElement('button'); b.type = 'button'; b.setAttribute('data-r', rr);
+          b.textContent = rr.charAt(0).toUpperCase() + rr.slice(1);
+          b.setAttribute('aria-pressed', kid.register === rr ? 'true' : 'false');
+          b.addEventListener('click', function () { kid.register = rr; capRenderSplitReview(); });
+          seg.appendChild(b);
+        })(regs[r]);
+      }
+      ctl.appendChild(seg);
+      var wrap = document.createElement('div'); wrap.className = 'capdoor-split-chipwrap';
+      var chip = document.createElement('button'); chip.type = 'button'; chip.className = 'capdoor-chip';
+      var cdot = document.createElement('span'); cdot.className = 'dot';
+      var clbl = document.createElement('span'); clbl.className = 'lbl';
+      if (kid.targetKey && kid.targetKey !== 'inbox' && state.books && state.books[kid.targetKey]) {
+        clbl.textContent = state.books[kid.targetKey].title || 'Untitled'; cdot.style.background = 'var(--gold)';
+      } else { clbl.textContent = 'Inbox'; cdot.style.background = 'var(--ink-4)'; }
+      var chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '▾';
+      chip.appendChild(cdot); chip.appendChild(clbl); chip.appendChild(chev);
+      var pop = document.createElement('div'); pop.className = 'capdoor-chip-pop';
+      chip.addEventListener('click', function () {
+        var open = wrap.classList.toggle('is-open');
+        if (open) { capRenderSplitChipPop(pop, kid); }
+      });
+      wrap.appendChild(chip); wrap.appendChild(pop);
+      ctl.appendChild(wrap);
+      row.appendChild(ctl);
+      host.appendChild(row);
+    })(capSplitState.children[i]);
+  }
+  var foot = document.createElement('div'); foot.className = 'capdoor-split-foot';
+  var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'capdoor-split-cancel'; cancel.textContent = 'Keep as one';
+  cancel.addEventListener('click', capCancelSplit);
+  var accept = document.createElement('button'); accept.type = 'button'; accept.className = 'capdoor-commit capdoor-split-accept';
+  accept.textContent = 'File ' + capSplitState.children.length + ' notes';
+  accept.addEventListener('click', capAcceptSplit);
+  foot.appendChild(cancel); foot.appendChild(accept);
+  host.appendChild(foot);
+}
+
+// The per-note book picker: candidateBooks suggestions + Inbox. Reuses the chip-pop
+// idiom; sets ONLY this child's targetKey (never the door's capTarget).
+function capRenderSplitChipPop(pop, kid) {
+  pop.innerHTML = '';
+  var opts = [{ key: 'inbox', label: 'Inbox', hue: 'var(--ink-4)', sub: '' }];
+  var cands = (window.ImportCapture && ImportCapture.candidateBooks) ? ImportCapture.candidateBooks(kid.bookGuess) : [];
+  var i;
+  for (i = 0; i < cands.length; i++) { opts.push({ key: cands[i].bid, label: cands[i].title, hue: 'var(--gold)', sub: cands[i].author || '' }); }
+  for (i = 0; i < opts.length; i++) {
+    (function (o) {
+      var opt = document.createElement('div'); opt.className = 'capdoor-chip-opt'; opt.setAttribute('role', 'option');
+      opt.setAttribute('aria-selected', kid.targetKey === o.key ? 'true' : 'false');
+      var d = document.createElement('span'); d.className = 'dot'; d.style.background = o.hue;
+      var l = document.createElement('span'); l.textContent = o.label;
+      opt.appendChild(d); opt.appendChild(l);
+      if (o.sub) { var s = document.createElement('span'); s.className = 'sub'; s.textContent = o.sub; opt.appendChild(s); }
+      opt.addEventListener('click', function () { kid.targetKey = o.key; capRenderSplitReview(); });
+      pop.appendChild(opt);
+    })(opts[i]);
+  }
+}
+
+// CA-2 ACCEPT: write all N children via captureNote (sole writer) + verify each landed;
+// ONLY THEN remove the parent. A partial write deletes the landed children and keeps the
+// parent (raw never lost). Cross-account re-checked at accept time.
+function capAcceptSplit() {
+  if (!capSplitState || capSplitState.phase !== 'review') { return; }
+  var st = capSplitState;
+  var cu = getCurrentUser();
+  if (!cu || cu.uid !== st.ownerUid || capOwnerUid !== st.ownerUid) { capCancelSplit(); capShowToast('Signed in as a different account — split cancelled', null); return; }
+  var parent = state.notebookEntries[st.parentId];
+  if (!parent) { capCancelSplit(); return; }
+  var childIds = [], i, okAll = true;
+  for (i = 0; i < st.children.length; i++) {
+    var body = capTrim(st.children[i].text);
+    if (!body) { continue; }
+    captureNote(st.children[i].register, body, st.children[i].targetKey, [], true); // noNav; sole writer
+    var newId = nbJustSavedId;
+    if (newId && state.notebookEntries[newId]) { childIds.push(newId); }
+    else { okAll = false; break; }
+  }
+  if (!okAll || !childIds.length) {                     // CA-2 partial-failure: undo the children, keep parent
+    for (i = 0; i < childIds.length; i++) { if (state.notebookEntries[childIds[i]]) { delete state.notebookEntries[childIds[i]]; } }
+    markNotebookDirty(); saveState();
+    capCancelSplit();
+    capShowToast('Couldn’t split — your note is kept as one', null);
+    return;
+  }
+  // all children landed -> NOW remove the parent (never before; raw present the whole time)
+  if (state.notebookEntries[st.parentId]) { delete state.notebookEntries[st.parentId]; }
+  markNotebookDirty(); saveState();
+  capSplitUndo = { snap: st.snap, childIds: childIds };
+  var kept = [], k;
+  for (k = 0; k < capCaught.length; k++) { if (capCaught[k].id !== st.parentId) { kept.push(capCaught[k]); } }
+  capCaught = kept;
+  for (i = childIds.length - 1; i >= 0; i--) { var rr = capCaughtRowFor(childIds[i]); if (rr) { capCaught.unshift(rr); } }
+  capLastFiled = null;                                  // the parent's single-note Undo no longer applies
+  capSplitState = null;
+  capRenderSplitReview();
+  capRenderCaught();
+  capSplitRefreshRoute();
+  capShowToast('Split into ' + childIds.length + ' notes · Undo', capUndoSplit);
+}
+
+// CA-2 UNDO: re-file the parent from the ephemeral snapshot FIRST (verify it landed),
+// THEN delete the children — content present at every instant.
+function capUndoSplit() {
+  if (!capSplitUndo) { return; }
+  var us = capSplitUndo;
+  capSplitUndo = null;                                  // consume once (no re-entry)
+  var parentId = null;
+  if (us.snap) {
+    captureNote(us.snap.register, us.snap.body, us.snap.targetKey, [], true); // sole writer, new id
+    parentId = nbJustSavedId;
+    if (!(parentId && state.notebookEntries[parentId])) { capShowToast('Couldn’t undo the split', null); return; }
+  }
+  var i, cset = {};
+  for (i = 0; i < us.childIds.length; i++) { cset[us.childIds[i]] = true; if (state.notebookEntries[us.childIds[i]]) { delete state.notebookEntries[us.childIds[i]]; } }
+  markNotebookDirty(); saveState();
+  var kept = [], k;
+  for (k = 0; k < capCaught.length; k++) { if (!cset[capCaught[k].id]) { kept.push(capCaught[k]); } }
+  capCaught = kept;
+  if (parentId) { var pr = capCaughtRowFor(parentId); if (pr) { capCaught.unshift(pr); } }
+  capRenderCaught();
+  capSplitRefreshRoute();
+  capShowToast('Split undone — kept as one note', null);
+}
+
+// Shared route refresh after a split accept/undo — same route-gated, teardown-guarded
+// path capFinishCommit uses so an open inline editor is never destroyed.
+function capSplitRefreshRoute() {
+  if (capIsNotebookRoute() && typeof renderNotebook === 'function') {
+    if (!capNotebookHasOpenInline()) { renderNotebook(); }
+  } else if (typeof renderBookDetail === 'function') {
+    var bk = capCurrentBookKey();
+    if (bk && !capBookPageHasOpenInline()) { renderBookDetail(bk); }
+  }
+}
+
 // Gate fix (CD-1 corner reconcile): keep the create-door clear of the shipped
 // Shelf "+ Add a book" FAB, which owns bottom-left at mobile. On #books, add the
 // stacking class (CSS lifts it above the FAB); elsewhere it sits at its corner.
@@ -23459,6 +23729,7 @@ function buildCaptureDoor() {
         '<div class="capdoor-seat-card for-scan">' + svgScan + '<div class="lbl">Scan a book — the socket is here</div><div class="sub">barcode capture arrives with SCAN</div></div>' +
         '<div class="capdoor-caught" id="capCaught"></div>' +
         '<div class="capdoor-caught-empty" id="capCaughtEmpty" style="display:none;">nothing caught yet this session</div>' +
+        '<div class="capdoor-split" id="capSplit" hidden></div>' +
       '</div>' +
       '<div class="capdoor-foot">' +
         '<button class="capdoor-seat-btn" id="capTalkSeat" type="button" aria-label="Talk it through">' + svgHeart +
@@ -23520,6 +23791,13 @@ function initCaptureDoor() {
         var tt = capEl('capToast'); if (tt) { tt.classList.remove('is-show'); }
         if (capToastTimer) { window.clearTimeout(capToastTimer); capToastTimer = null; }
         capLastFiled = null;
+        // DOOR-SEG (cross-account): the pending split review AND its ephemeral parent-snapshot Undo
+        // belong to the PREVIOUS account — drop both, and bump the gen so any in-flight segmentDoc
+        // result drops itself (its own owner-check already would; this is belt-and-suspenders). This
+        // is the "picker-open-during-owner-change" surface (condition 3).
+        capSplitGen = capSplitGen + 1;
+        capSplitState = null; capSplitUndo = null;
+        if (capEl('capSplit')) { capEl('capSplit').hidden = true; capEl('capSplit').innerHTML = ''; }
         capCaught = []; capRenderCaught();
       });
     } catch (e) {}

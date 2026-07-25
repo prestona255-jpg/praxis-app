@@ -31,6 +31,21 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-25 (R-CAPTURE / CD-6 UNIFICATION — STAGE 3 SHIPPED: ImportCapture RETIRED + DOOR-SEG PAID, v3.257; round STAYS OPEN)** —
+  Preston-DIRECTED (Stage-0 rulings + HALT-A/B amendments; ship pre-authorized on red-team BLOCK-CLEARED). The third
+  legacy door retires: the ImportCapture overlay was already ORPHANED (0 live `.open()` callers since Stage 1), so
+  **Stage A** DELETED the overlay UI + its dictation UI + `commitEntries` + `buildBookSearch` + `el()` (import-capture.js
+  66,681→22,038 B) and cleared components.css to ZERO `.ic-` rules; the segmentation pipeline + dictation transport
+  stay HEADLESS on the kept `window.ImportCapture`. **Amendment (ratified):** buildBookSearch keep→retire — the review
+  uses the door's native capChip fed by `candidateBooks`. **Stage B (DOOR-SEG):** file-raw-first (capCommit untouched);
+  a local-heuristic "Split into N?" runs `segmentDoc` on the FILED note (gen-gated, cross-account-guarded), a minimal
+  per-note review, accept via a `captureNote` batch-loop under **CA-2** (children verified→parent deleted; undo re-files
+  parent first — the parent-first order ratified as safer than the prompt's literal). **Red-team (Sonnet) CLEAN 7/7**;
+  L18 + 390/desktop/all-mode live gates PASS. **CD-6 remains OPEN — ONE legacy door left (onboarding buildActMargin);**
+  the round does not close until CD-6 is complete or re-scoped. `## Now` unchanged (R-CAPTURE). Preston-directed stage
+  ship — nothing retired, no decision contradicted — no `PROPOSED:` flag. Named follow-ons: DEAD-VOICEINPUT ·
+  MARG-CREATE-DEAD · CDSEG-NIT1/2 · SPLIT-FOCUS-MODE. Records: `docs/checkpoints/cd6-importcapture{,-recon}.md` ·
+  ledger `docs/studio/capture.md`. Builder regenerated at this push-point.
 - **2026-07-24 (R-CAPTURE / CD6-NBK-REFRESH-GUARD micro-lane SHIPPED, v3.256; round STAYS OPEN)** —
   Preston-scheduled micro-lane (ahead of ImportCapture): the Stage-1 `#notebook` door-commit refresh gained the
   same teardown guard Stage 2 built for the book page — `capNotebookHasOpenInline()` skips `renderNotebook()`

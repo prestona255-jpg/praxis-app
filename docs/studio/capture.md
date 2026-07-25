@@ -174,15 +174,23 @@ each of 3 of the 4 places.
   marginalia, NOT locked — a question about a book is a valid capture); the book page's marg list
   refreshes on commit, GUARDED so it never tears down an open inline editor/picker. Census-ruled
   plain (his marginalia 0/11 on every formatting feature); `createWritingCanvas` UNTOUCHED (shared)
-  and the ✎ EDIT pencil kept (FORK 2 — edit is not capture; deferred until F2). **THREE doors →
-  the shared door + TWO remaining legacy:** window.ImportCapture · onboarding buildActMargin.
-  Next stages (order): ImportCapture (segment handoff / DOOR-SEG) → onboarding. HALT per stage.
-  The R-CAPTURE round does NOT close until CD-6 is complete or explicitly re-scoped. Records:
-  `docs/checkpoints/cd6-{notebook-writeline,book-marginalia}{,-recon}.md`.
-- **DOOR-SEG (F1) — debt, follow-on lane.** A multi-note blob paste files as ONE raw
-  note (the door has no `segmentDoc` step — mockup-deferred, unbuilt). Deserves a
-  segmentation handoff: route the paste through the ImportCapture pipeline
-  (`segmentDoc` + review) or offer a split. Not this push.
+  and the ✎ EDIT pencil kept (FORK 2 — edit is not capture; deferred until F2).
+  **Stage 3 SHIPPED (2026-07-25, v3.257):** the **ImportCapture overlay is RETIRED** — it was already
+  orphaned (0 live `.open()` callers since Stage 1); the overlay UI + its dictation UI + `commitEntries`
+  + `buildBookSearch` deleted, the segmentation pipeline + transport kept HEADLESS (window.ImportCapture
+  namespace kept). **DOOR-SEG PAID:** the door's paste files raw-as-one, then offers "Split into N?" — a
+  forward act (file-raw-first, Option A) that runs `segmentDoc` on the filed note and writes N children
+  via a `captureNote` batch-loop under CA-2 ordering (children verified-then-parent-deleted; undo re-files
+  the parent first). **TWO doors → the shared door + ONE remaining legacy:** onboarding buildActMargin.
+  Next (last) stage: onboarding act-margin. HALT per stage. The R-CAPTURE round does NOT close until CD-6
+  is complete or explicitly re-scoped. Records:
+  `docs/checkpoints/cd6-{notebook-writeline,book-marginalia,importcapture}{,-recon}.md`.
+- **DOOR-SEG (F1) — ✅ PAID (2026-07-25, v3.257, CD-6 Stage 3).** The door's paste files raw-as-one,
+  then offers "Split into N?" (local heuristic-gated: ≥1 blank-line break OR ≥280 chars; no LLM pre-tap)
+  → `segmentDoc` on the filed note → a minimal caught-list review (per-note register flip + book chip fed
+  by `candidateBooks` via the door's native capChip idiom) → accept writes N children via a `captureNote`
+  batch-loop (CA-2 verified-then-delete). Raw joins the corpus by construction; proxy-down/failure keeps
+  the parent untouched. Red-team CLEAN; 390 + desktop + all-modes gated.
 - **F2 — note-detail readability (PRE-EXISTING, un-owned by R-CAPTURE).** `renderNoteSurface`
   (js/views.js ~15500–15610): serif ink barely readable on the dark-amber ground +
   invisible back-link. Opened as its own named task. NOTE folded in (F3 wording): align
@@ -192,6 +200,21 @@ each of 3 of the 4 places.
 
 ## Round history
 
+- **2026-07-25 — CD-6 STAGE 3 SHIPPED: ImportCapture RETIRED + DOOR-SEG PAID (v3.257).** Preston-DIRECTED
+  (rulings + amendments at the Stage-0 HALT and HALT A/B). The overlay was already ORPHANED (git `-S`: 0 live
+  `.open()` callers since Stage 1). **Stage A** deleted the overlay UI + its own dictation UI + `commitEntries`
+  + `buildBookSearch` + `el()` (import-capture.js 66,681→22,038 B) and drove components.css to ZERO `.ic-` rules
+  (incl. the pre-existing `.ic-trigger` remnant, condition-1 ruled); the segmentation pipeline + transport stay
+  HEADLESS on the kept `window.ImportCapture`. **Amendment:** buildBookSearch retired (was keep) — the review uses
+  the door's native capChip idiom fed by `candidateBooks`. **Stage B (DOOR-SEG, views.js +15,428 B / 278·0):**
+  file-raw-first (capCommit untouched); a heuristic-gated "Split into N?" runs `segmentDoc` on the FILED note
+  (gen-gated, owner-guarded), a minimal per-note review (register flip + book chip), accept via a `captureNote`
+  batch-loop under **CA-2** (children verified → parent deleted; undo re-files parent first). L18 walk T1–T12 on
+  the rig + 390/desktop/all-mode gates all PASS, console clean. **Red-team (Sonnet) CLEAN** — 7/7 BLOCK-CLEARED
+  (stub-contract line-by-line, mid-loop kill, double-write, owner-change-during-loop=synchronous, sole-writer,
+  Stage-A completeness); heuristic-false-fire = NOTE (non-destructive). Ships v3.257. Records:
+  `docs/checkpoints/cd6-importcapture{,-recon}.md`. Named follow-ons: DEAD-VOICEINPUT · MARG-CREATE-DEAD ·
+  CDSEG-NIT1/2 · SPLIT-FOCUS-MODE. **CD-6: ONE legacy door left (onboarding buildActMargin); round STAYS OPEN.**
 - **2026-07-23 — SHAPE-B mockup delivered.** `docs/studio/mockups/capture.html`
   built against r-capture-brief.md v2 (CD-1..6 + CA-1..3), Universal token sheet +
   `universal-depth.css` v1.2, and the four source UIs read as Stage-A material
@@ -257,9 +280,15 @@ each of 3 of the 4 places.
 ## Next
 
 - **CD-6 UNIFICATION (F4) — IN PROGRESS.** ✅ **Stage 1 (Notebook writeline) v3.254 · Stage 2
-  (Book-Detail Add-marginalia CREATE) v3.255 — both SHIPPED.** Remaining: **ImportCapture next**
-  (segment handoff / DOOR-SEG), then onboarding act-margin. One felt pass each, HALT per stage.
-  The round closes only when this is complete or re-scoped.
+  (Book-Detail Add-marginalia CREATE) v3.255 · Stage 3 (ImportCapture retire + DOOR-SEG) v3.257 — SHIPPED.**
+  Remaining: **onboarding act-margin (buildActMargin) — the last CD-6 door.** One felt pass each, HALT per
+  stage. The round closes only when this is complete or re-scoped. (v3.257 awaits Preston's live felt pass —
+  felt-skip does NOT apply, this stage changes surfaces.)
+- **CDSEG-NIT1 / CDSEG-NIT2 (named nits from the Stage-3 red-team).** N1: `.capdoor-split-row:first-of-type`
+  is dead (the head div is the true first-of-type) → harmless hairline. N2: the per-child split chip-pop has
+  no click-outside closer (closes on select / re-render). Both cosmetic/UX, non-destructive; own tiny lanes.
+- **SPLIT-FOCUS-MODE (felt option).** A 3+-child split review pushes Accept below the fold (reachable via
+  sheet scroll today); hiding the composer chrome during a review would remove the scroll. Preston's felt call.
 - **CD6-NBK-REFRESH-GUARD (micro-lane) — ✅ SHIPPED v3.256.** `capNotebookHasOpenInline()` mirrors the
   book-page guard: the `#notebook` door-commit refresh is skipped while an inline picker/panel is open
   (4 self-clearing per-card hosts + 3 id hosts). Recon reframed the severity to **NOTE-tier** — the one
