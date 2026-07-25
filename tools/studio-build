@@ -21,7 +21,7 @@ SEQ="$STUDIO/sequence.md"
 MCANON="$STUDIO/praxis-mobile-canon.md"
 DCANON="$STUDIO/praxis-desktop-canon.md"
 LRUN="$REPO/docs/launch-runway.md"
-OUT="$STUDIO/builder.html"
+OUT="${STUDIO_OUT:-$STUDIO/builder.html}"   # B1 (2026-07-25): STUDIO_OUT overrides the output path for scratch renders; production path when unset
 US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g. no touches) are preserved by read
 
 # 22 surfaces (18 routed + 4 overlay); cross-cutting is a layer, not a surface.
@@ -87,18 +87,26 @@ fmt() { printf '%s' "$1" | sed -E \
   -e 's/\*\*([^*<]+)\*\*/<strong>\1<\/strong>/g' \
   -e 's/\*([^*<]+)\*/<em>\1<\/em>/g'; }
 
-# parse checkbox items of a section -> "title <TAB> touches <TAB> body" per item
+# parse checkbox items of a section -> "title <US> touches <US> body <US> state" per item.
+# NOW-parser fix (2026-07-25): $4=state is the marker, recorded additively (RIDER 1/A1a). Items are
+# matched BROADLY on /^- \[.\]/ then DISPATCHED (RIDER 4) so an unknown marker warns+skips (reachable)
+# instead of silently failing to match; [X] is case-normalised to [x] (RIDER 3). The state field drives
+# the Now-only filter at the call site and is stripped before any consumer reads it (OPT-3).
 parse_items() {
-awk -v sec="$1" '
-function emit(){ if(have){ gsub(/[\t\037]/," ",body); gsub(/[\t\037]/," ",title); printf "%s\037%s\037%s\n", title, touches, body; have=0; title=""; touches=""; body="" } }
+awk -v sec="$1" -v warnfile="$WARN" '
+function emit(){ if(have){ gsub(/[\t\037]/," ",body); gsub(/[\t\037]/," ",title); printf "%s\037%s\037%s\037%s\n", title, touches, body, state; have=0; title=""; touches=""; body=""; state="" } }
 BEGIN{insec=0;have=0}
 /^## /{ emit(); insec=($0 ~ ("^## " sec "([ ]|$)"))?1:0; next }
 insec==0{ next }
-/^- \[[ xX]\]/{ emit(); line=$0; sub(/^- \[[ xX]\][ ]+/,"",line); title=line;
+/^- \[.\]/{ emit(); mk=substr($0,4,1);
+  if(mk!=" " && mk!="x" && mk!="X" && mk!="~"){ printf "sequence.md:%d skipped unrecognized item marker [%s]: %s\n", NR, mk, $0 >> warnfile; next }
+  state=(mk=="X")?"[x]":"[" mk "]";
+  line=$0; sub(/^- \[.\][ ]+/,"",line); title=line;
   if(match(line,/\*\*[^*]+\*\*/)){ title=substr(line,RSTART+2,RLENGTH-4) } body=line; have=1; next }
 /^[ ]+touches:/{ if(have){ t=$0; sub(/^[ ]+touches:[ ]*\[?/,"",t); sub(/\].*/,"",t); touches=t } next }
 /^[ ]+[^ ]/{ if(have){ c=$0; sub(/^[ ]+/,"",c);
   if(touches=="" && match(c,/touches:[ ]*\[[^]]*\]/)){ tt=substr(c,RSTART,RLENGTH); sub(/^touches:[ ]*\[/,"",tt); sub(/\]$/,"",tt); touches=tt }
+  else if(touches=="" && match(c,/`\[[^]]*\]`/)){ touches=substr(c,RSTART+2,RLENGTH-4) }
   body=body " " c } next }
 /^[[:space:]]*$/{ emit(); next }
 END{ emit() }
@@ -198,8 +206,29 @@ collect_touches() { awk -F"$US" '{print $2}' "$TMP/$1" | tr ',' '\n' | sed 's/[]
 # --- precompute ONCE (Windows subprocess spawns are costly; do the awk/grep work here) ---
 TMP=$(mktemp -d 2>/dev/null || { d="${TMPDIR:-/tmp}/studiobuild.$$"; mkdir -p "$d"; printf '%s' "$d"; })
 trap 'rm -rf "$TMP"' EXIT INT TERM
-parse_items Now > "$TMP/now"; parse_items Next > "$TMP/next"; parse_items Then > "$TMP/then"
-parse_items Shipped > "$TMP/shipped"; parse_items Discovered > "$TMP/disc"
+# $WARN collects soft-fail parser warnings (parse_items unknown-marker + the 1c lab/milestones/risks
+# parsers). HOISTED here (was below with the 1c sources) so it exists before parse_items runs — the
+# unknown-marker warn (RIDER 4) writes to it. Rendered in the regen report (stderr summary); never fatal.
+WARN="$TMP/warnings"; : > "$WARN"
+# NOW-parser (OPT-3, ruled 2026-07-25): parse_items emits 4 fields (title,touches,body,state). For NOW,
+# FILTER on the state field (drop closed [x] rounds) THEN STRIP the field (RIDER 1 order — strip-first
+# would no-op the filter). For every section, STRIP so the $TMP/* file stays 3-field and every render
+# consumer reads exactly as before. sf() removes the LAST US-field (RIDER-1-proven safe: 2 US/record).
+sf(){ awk '{ sub(/\037[^\037]*$/, ""); print }'; }
+parse_items Now > "$TMP/now_s"                       # 4-field, incl the [~] and the closed [x] rounds
+awk -F"$US" '$4!="[x]"' "$TMP/now_s" > "$TMP/now_f"   # FILTER first: drop finished rounds, keep [~]/[ ], document order
+sf < "$TMP/now_f" > "$TMP/now"                        # STRIP last: 3-field for every Now render consumer
+parse_items Next       | sf > "$TMP/next"
+parse_items Then       | sf > "$TMP/then"
+parse_items Shipped    | sf > "$TMP/shipped"
+parse_items Discovered | sf > "$TMP/disc"
+# NOW banner selection (state-aware, RIDER 2): headline = first [~] (fallback: first surviving item);
+# NEXT = first surviving item in DOCUMENT ORDER that is not the headline (position-independent). The NOW
+# COLUMN renders $TMP/now in document order — no hoist. Computed from the filtered 4-field now_f.
+NOW_LEAD=$(awk -F"$US" '$4=="[~]"{print $1; exit}' "$TMP/now_f")
+[ -n "$NOW_LEAD" ] || NOW_LEAD=$(head -1 "$TMP/now_f" | awk -F"$US" '{print $1}')
+NOW_HEADI=$(awk -F"$US" '$4=="[~]"{print NR; exit}' "$TMP/now_f"); [ -n "$NOW_HEADI" ] || NOW_HEADI=1
+NOW_NEXT=$(awk -F"$US" -v h="$NOW_HEADI" 'NR!=h{print $1; exit}' "$TMP/now_f")
 parse_bullets "Re-plan log" > "$TMP/replan"; parse_bullets "Standing rules" > "$TMP/standing"; parse_bullets "Open calls" > "$TMP/opencalls"
 # overnight queue precompute (new source doc; inert if absent)
 OVN="$STUDIO/overnight.md"
@@ -208,8 +237,8 @@ awk '/^## /{insec=($0 ~ /^## Runs([ ]|$)/)?1:0; next} insec&&/^- /{print}' "$OVN
 OV_CURROUND=$(fm "$OVN" current-round 2>/dev/null); OV_CURRNUM=$(printf '%s' "$OV_CURROUND" | tr -cd '0-9'); [ -z "$OV_CURRNUM" ] && OV_CURRNUM=0
 OVQ=$(awk -F"$US" '$7=="queued"' "$TMP/overnight" | grep -c .); OVP=$(awk -F"$US" '$7=="proposed"' "$TMP/overnight" | grep -c .); OVTOT=$(grep -c . "$TMP/overnight")
 # 1c sources precompute (lab / milestones / risks) — soft-fail; warns collected, never fatal.
-# $WARN must exist before the parsers run (they append to it via -v warnfile).
-LAB="$STUDIO/lab.md"; MILE="$STUDIO/milestones.md"; RISK="$STUDIO/risks.md"; WARN="$TMP/warnings"; : > "$WARN"
+# ($WARN is initialised above, right after $TMP, so parse_items can append to it too.)
+LAB="$STUDIO/lab.md"; MILE="$STUDIO/milestones.md"; RISK="$STUDIO/risks.md"
 if [ -f "$LAB" ];  then parse_lab        > "$TMP/lab";        else : > "$TMP/lab"; fi
 if [ -f "$MILE" ]; then parse_milestones > "$TMP/milestones"; else : > "$TMP/milestones"; fi
 if [ -f "$RISK" ]; then parse_risks      > "$TMP/risks";      else : > "$TMP/risks"; fi
@@ -621,8 +650,8 @@ render_round_records(){
 }
 # --- 1d Stage 3: NOW banner (3a) + program map (3b) ---
 render_now_banner(){
-  lead=$(head -1 "$TMP/now" | awk -F"$US" '{print $1}')
-  nextt=$(sed -n '2p' "$TMP/now" | awk -F"$US" '{print $1}')
+  lead="$NOW_LEAD"                              # RIDER 2: state-aware headline (first [~]; fallback first surviving item)
+  nextt="$NOW_NEXT"                             # RIDER 2: first surviving item in document order that is not the headline
   [ -n "$nextt" ] || nextt=$(head -1 "$TMP/next" | awk -F"$US" '{print $1}')
   mslab=$(awk -F"$US" 'tolower($2)=="target"{print $3; exit}' "$TMP/milestones")
   msdate=$(awk -F"$US" 'tolower($2)=="target"{print $1; exit}' "$TMP/milestones")
