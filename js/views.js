@@ -9400,12 +9400,18 @@ function renderBookDetail(bookId) {
   if (user) {
     var actions = document.createElement('div');
     actions.className = 'bk-actions';
-    // SUB-CALL (accepted): PRIMARY = Add marginalia (the generative act).
+    // CD-6 Stage 2 (FORK 5): the PRIMARY generative act now opens the ONE shared
+    // capture door, pre-targeted to this book (CD-3 targetKey). Register defaults to
+    // marginalia but is NOT locked (FORK 3 — a question/journal about a book is a
+    // valid capture that feeds the carry-bridge). The bespoke createWritingCanvas
+    // CREATE composer is retired from this button; the ✎ edit pencil keeps
+    // openMarginaliaEditor unchanged (FORK 2 — edit is not capture; deferred until F2
+    // note-detail is readable, then revisit routing edit there).
     var addMargBtn = document.createElement('button');
     addMargBtn.type = 'button';
     addMargBtn.className = 'bk-actionbtn bk-actionbtn-primary';
     addMargBtn.textContent = '✎ Add marginalia';
-    addMargBtn.addEventListener('click', function() { openMarginaliaEditor(bookId); });
+    addMargBtn.addEventListener('click', function() { openCaptureDoor({ mode: 'note', targetKey: bookId }); });
     actions.appendChild(addMargBtn);
     var addArcBtn = document.createElement('button');
     addArcBtn.type = 'button';
@@ -23195,6 +23201,21 @@ function capAddStagedPhoto(file) {
 // renderNotebook re-reads the EXISTING tab.
 function capIsNotebookRoute() { return (location.hash || '').indexOf('#notebook') === 0; }
 
+// CD-6 Stage 2: is an inline editor or picker open in #app on the Book page? The ✎
+// pencil-edit canvas, the arc picker, and the sub-theory picker all mount into these
+// three hosts; renderBookDetail tears #app down (host.innerHTML=''), which would destroy
+// that in-progress UI. A door commit must never do that, so the book-page refresh is
+// skipped when one is open (the note is in the caught-list and surfaces when it closes).
+function capBookPageHasOpenInline() {
+  var ids = ['book-detail-editor-host', 'book-detail-arc-picker-host', 'book-detail-subtheory-picker-host'];
+  var i, el;
+  for (i = 0; i < ids.length; i = i + 1) {
+    el = document.getElementById(ids[i]);
+    if (el && el.firstChild) { return true; }
+  }
+  return false;
+}
+
 // The shared after-file step for both the text and the image commit branches:
 // caught-list + undo record + field reset + save pulse + leaf refresh + toast.
 function capFinishCommit(prevBody, prevRegister, tgt, body) {
@@ -23207,7 +23228,21 @@ function capFinishCommit(prevBody, prevRegister, tgt, body) {
   capAutogrow();
   var wrap = f.parentNode; // .capdoor-field-wrap
   if (wrap && !capPrefersReduced()) { wrap.classList.remove('mo-savepulse'); void wrap.offsetWidth; wrap.classList.add('mo-savepulse'); }
-  if (capIsNotebookRoute() && typeof renderNotebook === 'function') { renderNotebook(); }
+  // Route-gated refresh so the just-filed note appears without leaving the route.
+  // captureNote ran noNav=true (notebookActiveTab untouched — HOLD-2 holds). CD-6
+  // Stage 2: the Book page's marginalia list refreshes the same way on a #book route,
+  // BUT renderBookDetail tears down #app (host.innerHTML='') — so it is SKIPPED while an
+  // inline editor/picker is open on the page (it would destroy in-progress work; the note
+  // is in the caught-list and surfaces when that editor closes or on the next nav). The
+  // #notebook branch has the same latent teardown, pre-existing from Stage 1 — flagged as
+  // its own task (CD6-NBK-REFRESH-GUARD), not widened here (REVERT JUDGMENT: don't fold
+  // pre-existing drift into this stage).
+  if (capIsNotebookRoute() && typeof renderNotebook === 'function') {
+    renderNotebook();
+  } else if (typeof renderBookDetail === 'function') {
+    var bkKey = capCurrentBookKey();
+    if (bkKey && !capBookPageHasOpenInline()) { renderBookDetail(bkKey); }
+  }
   f.focus();
   capShowToast('Filed to ' + tgt.label + ' · Undo', capUndo);
 }

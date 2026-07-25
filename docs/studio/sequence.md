@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-24 (R-CAPTURE / CD-6 UNIFICATION — STAGE 2 SHIPPED: Book-Detail Add-marginalia CREATE retired, v3.255; round STAYS OPEN)** —
+  Preston-DIRECTED (census-gated rulings at the Stage-0 HALT; felt pass = PASS; "commit and push"). The second legacy door's
+  CREATE path retires: the "✎ Add marginalia" button opens the shared door pre-targeted to the book (`openCaptureDoor({targetKey})`,
+  register default marginalia but NOT locked — FORK 3); the book page's marg list refreshes on commit (route-gated, guarded against
+  tearing down an open inline editor). The census ruled the rich `createWritingCanvas` unused for capture (0/11 on every formatting
+  feature) → PLAIN door; the module + the ✎ EDIT pencil are UNTOUCHED (FORK 2 — edit is not capture, deferred until F2 note-detail is
+  readable). Data shape identical; no new write surface; photo additive (Stage-1 pipeline). **Stage-2 red-team caught + FIXED a real
+  BLOCK** (the new book-refresh tore down `#app`, destroying an open inline editor/picker) via a `capBookPageHasOpenInline()` guard;
+  RE-CONFIRMED BLOCK-CLEARED. **CD-6 remains OPEN — 2 legacy doors left** (ImportCapture next → onboarding). **Preston-scheduled
+  micro-lane: CD6-NBK-REFRESH-GUARD (v3.256) runs NEXT, ahead of ImportCapture** — the Stage-1 `#notebook` refresh has the same latent
+  teardown; same guard class, own audit + red-team + felt-skip. `## Now` unchanged (R-CAPTURE). Preston-directed — no `PROPOSED:`
+  flag. Records: `docs/checkpoints/cd6-book-marginalia{,-recon}.md` · ledger `docs/studio/capture.md`. Builder regenerated at this push-point.
 - **2026-07-24 (R-CAPTURE / CD-6 UNIFICATION — STAGE 1 SHIPPED: the Notebook writeline RETIRED, v3.254; round STAYS OPEN)** —
   Preston-DIRECTED (fork + register-default + photo ruled at the Stage-0 HALT; felt pass = PASS; "commit and push").
   The first legacy door is retired: FORK B — `buildNotebookWriteline` + helpers removed (−8,168 B views.js), replaced

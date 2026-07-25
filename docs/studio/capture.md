@@ -1,7 +1,7 @@
 ---
 surface: capture
 route: "overlay (BUILT — global, body-mounted; summonable over any route)"
-render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 Stage 1 RETIRED buildNotebookWriteline (v3.254); the THREE remaining legacy doors still COEXIST (CD-6 open): createWritingCanvas · window.ImportCapture · buildActMargin"
+render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 Stage 1 retired buildNotebookWriteline (v3.254) + Stage 2 retired the Book-Detail Add-marginalia CREATE composer into the door (v3.255); the TWO remaining legacy doors still COEXIST (CD-6 open): window.ImportCapture · buildActMargin. (createWritingCanvas stays — shared; its ✎ EDIT path is kept, deferred until F2.)"
 ground: "light working surface, summoned over --scrim (RULED LIGHT 2026-07-23)"
 in_nav: "yes — Capture nav entry + ⌘N + the create-corner (CD-1)"
 state: shipped
@@ -168,12 +168,17 @@ each of 3 of the 4 places.
   one felt pass each. **Stage 1 SHIPPED (2026-07-24, v3.254):** `buildNotebookWriteline` is
   RETIRED — the Notebook leaf now opens the shared door via `buildNotebookCatchAffordance`;
   the writeline's photo capture MIGRATED into the door's photo mode (existing plumbing:
-  `nbDownscaleImageToBlob → nbPhotoIdbPut → captureNote(images)`, no new write surface). **FOUR
-  doors → the shared door + THREE remaining legacy:** createWritingCanvas/Add-marginalia ·
-  window.ImportCapture · onboarding buildActMargin. Next stages (order): Book-Detail Add-marginalia
-  (capability care: contenteditable + images) → ImportCapture (segment handoff / DOOR-SEG) →
-  onboarding. HALT per stage. The R-CAPTURE round does NOT close until CD-6 is complete or
-  explicitly re-scoped. Records: `docs/checkpoints/cd6-notebook-writeline{,-recon}.md`.
+  `nbDownscaleImageToBlob → nbPhotoIdbPut → captureNote(images)`, no new write surface).
+  **Stage 2 SHIPPED (2026-07-24, v3.255):** the Book-Detail **CREATE** composer retired — the
+  "✎ Add marginalia" button opens the shared door pre-targeted to the book (register default
+  marginalia, NOT locked — a question about a book is a valid capture); the book page's marg list
+  refreshes on commit, GUARDED so it never tears down an open inline editor/picker. Census-ruled
+  plain (his marginalia 0/11 on every formatting feature); `createWritingCanvas` UNTOUCHED (shared)
+  and the ✎ EDIT pencil kept (FORK 2 — edit is not capture; deferred until F2). **THREE doors →
+  the shared door + TWO remaining legacy:** window.ImportCapture · onboarding buildActMargin.
+  Next stages (order): ImportCapture (segment handoff / DOOR-SEG) → onboarding. HALT per stage.
+  The R-CAPTURE round does NOT close until CD-6 is complete or explicitly re-scoped. Records:
+  `docs/checkpoints/cd6-{notebook-writeline,book-marginalia}{,-recon}.md`.
 - **DOOR-SEG (F1) — debt, follow-on lane.** A multi-note blob paste files as ONE raw
   note (the door has no `segmentDoc` step — mockup-deferred, unbuilt). Deserves a
   segmentation handoff: route the paste through the ImportCapture pipeline
@@ -214,6 +219,19 @@ each of 3 of the 4 places.
   staged unification is the round's next phase · corner 18px stack kept · snapshot
   skipped (felt pass exercised the real library). Build commits `cd100e7..` ; shipped at
   the push-point commit (sw v3.252, this commit). Records: `docs/checkpoints/r-capture-*`.
+- **2026-07-24 — CD-6 STAGE 2 SHIPPED: Book-Detail Add-marginalia CREATE retired (v3.255).**
+  The census ruled the rich editor unused (his marginalia 0/11 on every formatting feature), so a
+  surgical change: the "✎ Add marginalia" button opens the shared door pre-targeted to the book
+  (`openCaptureDoor({targetKey:bookId})`, register default marginalia NOT locked — FORK 3), and the
+  book page's marg list refreshes on commit (route-gated). `createWritingCanvas` + the ✎ EDIT pencil
+  UNCHANGED (FORK 2, deferred to post-F2). Data shape identical (11-field, `body` markdown, same
+  `wcRenderMarkdown`); no new write surface; photo additive via the Stage-1 pipeline. **Stage-2
+  red-team caught + FIXED a real BLOCK** — the book refresh tore down `#app` and would destroy an
+  open inline editor/picker; a `capBookPageHasOpenInline()` guard skips the refresh while one is
+  open (note still files, surfaces on close); RE-CONFIRMED BLOCK-CLEARED (exhaustive 3-host writer
+  audit). Preston felt pass = PASS. Byte-locks untouched (marks/lumen-amber MD5, writing-canvas.js
+  not in diff). Follow-ons: **CD6-NBK-REFRESH-GUARD** micro-lane (same guard for #notebook, v3.256,
+  next) + **PHOTO-PLACEHOLDER** polish. Records: `docs/checkpoints/cd6-book-marginalia{,-recon}.md`.
 - **2026-07-24 — CD-6 STAGE 1 SHIPPED: the Notebook writeline RETIRED (v3.254).** FORK B
   (Preston-ruled): `buildNotebookWriteline` + its helpers removed (−8,168 B views.js); a quiet
   `buildNotebookCatchAffordance` in the leaf opens the shared door (`openCaptureDoor`,
@@ -229,10 +247,20 @@ each of 3 of the 4 places.
 
 ## Next
 
-- **CD-6 UNIFICATION (F4) — IN PROGRESS.** ✅ **Stage 1 (Notebook writeline) SHIPPED v3.254.**
-  Remaining staged retirements: **Book-Detail Add-marginalia next** (capability care:
-  contenteditable + images), then ImportCapture (segment handoff / DOOR-SEG), then onboarding.
-  One felt pass each, HALT per stage. The round closes only when this is complete or re-scoped.
+- **CD-6 UNIFICATION (F4) — IN PROGRESS.** ✅ **Stage 1 (Notebook writeline) v3.254 · Stage 2
+  (Book-Detail Add-marginalia CREATE) v3.255 — both SHIPPED.** Remaining: **ImportCapture next**
+  (segment handoff / DOOR-SEG), then onboarding act-margin. One felt pass each, HALT per stage.
+  The round closes only when this is complete or re-scoped.
+- **CD6-NBK-REFRESH-GUARD (micro-lane) — Preston-scheduled IMMEDIATELY after v3.255, BEFORE Stage 3.**
+  The Stage-1 `#notebook` door-commit refresh (`renderNotebook()`) has the same unconditional `#app`
+  teardown Stage 2 just guarded on the book page — a live destroys-open-work bug (an open notebook
+  inline editor / gather name-canvas is torn out by a ⌘N/nav door commit). Apply the same
+  `capBookPageHasOpenInline`-class guard to the notebook's inline-mount hosts. Own Stage-0 inline-host
+  audit → guard fix → parse + element-identity verify → red-team confirm → HALT. Guard, not a surface
+  change → felt-skip. Ships **v3.256** on Preston's word. Ahead of ImportCapture.
+- **PHOTO-PLACEHOLDER (polish, own future lane — NOT this stage/micro-lane).** The "photo not on this
+  device" state (`buildNotebookShot`, views.js ~2946) renders a full-size empty slab dominating the
+  note card; it should collapse to a compact one-line chip. Pre-existing presentation, cosmetic.
 - **DOOR-SEG** (multi-note paste segmentation) — follow-on lane.
 - Post-push live-smoke: real dictation · paste · Android share · the 390 phone pass · the
   auth-switch reset branches (numbered PASS/FAIL, delivered with the push).
