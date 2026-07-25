@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-24 (R-CAPTURE / CD6-NBK-REFRESH-GUARD micro-lane SHIPPED, v3.256; round STAYS OPEN)** —
+  Preston-scheduled micro-lane (ahead of ImportCapture): the Stage-1 `#notebook` door-commit refresh gained the
+  same teardown guard Stage 2 built for the book page — `capNotebookHasOpenInline()` skips `renderNotebook()`
+  while an inline picker/panel is open (a ⌘N/nav door commit no longer closes one). Recon reframed the severity
+  to NOTE-tier (the one on-demand typed-text editor, `openJournalEditor`, is dead; the rest are selection
+  pickers). Red-team caught a real BLOCK — the gather picker's no-op `onDone` never self-clears, which would
+  stick the guard permanently true and suppress every refresh → **Option A (Preston-ruled): dropped the gather
+  host from the guard**; each of the 4 class + 2 id selectors re-verified individually + gather-exclusion +
+  normal path; RE-CONFIRMED BLOCK-CLEARED. Felt-skip (pure guard, no surface change). Two named follow-on tasks
+  logged: **GATHER-PICKER-DONE-NOOP** (the gather Done is a real UX no-op) + **DEAD-JOURNAL-EDITOR** (orphaned).
+  `## Now` unchanged (R-CAPTURE); ImportCapture is the next CD-6 stage. Preston-directed — no `PROPOSED:` flag.
+  Records: `docs/checkpoints/cd6-nbk-refresh-guard{,-recon}.md`. Builder regenerated at this push-point.
 - **2026-07-24 (R-CAPTURE / CD-6 UNIFICATION — STAGE 2 SHIPPED: Book-Detail Add-marginalia CREATE retired, v3.255; round STAYS OPEN)** —
   Preston-DIRECTED (census-gated rulings at the Stage-0 HALT; felt pass = PASS; "commit and push"). The second legacy door's
   CREATE path retires: the "✎ Add marginalia" button opens the shared door pre-targeted to the book (`openCaptureDoor({targetKey})`,

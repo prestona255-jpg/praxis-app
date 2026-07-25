@@ -219,6 +219,15 @@ each of 3 of the 4 places.
   staged unification is the round's next phase · corner 18px stack kept · snapshot
   skipped (felt pass exercised the real library). Build commits `cd100e7..` ; shipped at
   the push-point commit (sw v3.252, this commit). Records: `docs/checkpoints/r-capture-*`.
+- **2026-07-24 — CD6-NBK-REFRESH-GUARD micro-lane SHIPPED (v3.256).** The Stage-1 `#notebook` refresh
+  gained the same teardown guard Stage 2 built for the book page (`capNotebookHasOpenInline()` — a door
+  commit no longer closes an open notebook inline picker/panel). Recon reframed the severity to NOTE-tier
+  (the one on-demand typed-text editor `openJournalEditor` is dead; the rest are selection pickers).
+  Red-team caught a real BLOCK — the gather picker's no-op `onDone` never self-clears, which would stick
+  the guard permanently true → **Option A: dropped the gather host from the guard** (its `onDone` bug →
+  GATHER-PICKER-DONE-NOOP task); re-verified each of the 4 class + 2 id selectors individually, gather
+  exclusion + normal path; RE-CONFIRMED BLOCK-CLEARED. Felt-skip (Preston-ruled), pre-authorized ship on
+  green. Byte-locks untouched. Records: `docs/checkpoints/cd6-nbk-refresh-guard{,-recon}.md`.
 - **2026-07-24 — CD-6 STAGE 2 SHIPPED: Book-Detail Add-marginalia CREATE retired (v3.255).**
   The census ruled the rich editor unused (his marginalia 0/11 on every formatting feature), so a
   surgical change: the "✎ Add marginalia" button opens the shared door pre-targeted to the book
@@ -251,16 +260,24 @@ each of 3 of the 4 places.
   (Book-Detail Add-marginalia CREATE) v3.255 — both SHIPPED.** Remaining: **ImportCapture next**
   (segment handoff / DOOR-SEG), then onboarding act-margin. One felt pass each, HALT per stage.
   The round closes only when this is complete or re-scoped.
-- **CD6-NBK-REFRESH-GUARD (micro-lane) — Preston-scheduled IMMEDIATELY after v3.255, BEFORE Stage 3.**
-  The Stage-1 `#notebook` door-commit refresh (`renderNotebook()`) has the same unconditional `#app`
-  teardown Stage 2 just guarded on the book page — a live destroys-open-work bug (an open notebook
-  inline editor / gather name-canvas is torn out by a ⌘N/nav door commit). Apply the same
-  `capBookPageHasOpenInline`-class guard to the notebook's inline-mount hosts. Own Stage-0 inline-host
-  audit → guard fix → parse + element-identity verify → red-team confirm → HALT. Guard, not a surface
-  change → felt-skip. Ships **v3.256** on Preston's word. Ahead of ImportCapture.
-- **PHOTO-PLACEHOLDER (polish, own future lane — NOT this stage/micro-lane).** The "photo not on this
-  device" state (`buildNotebookShot`, views.js ~2946) renders a full-size empty slab dominating the
-  note card; it should collapse to a compact one-line chip. Pre-existing presentation, cosmetic.
+- **CD6-NBK-REFRESH-GUARD (micro-lane) — ✅ SHIPPED v3.256.** `capNotebookHasOpenInline()` mirrors the
+  book-page guard: the `#notebook` door-commit refresh is skipped while an inline picker/panel is open
+  (4 self-clearing per-card hosts + 3 id hosts). Recon reframed the severity to **NOTE-tier** — the one
+  on-demand typed-text editor (`openJournalEditor`) is dead, the rest are selection pickers. Stage-2
+  red-team caught + FIXED a real BLOCK (the gather picker's no-op `onDone` never self-clears → would
+  stick the guard true → **dropped the gather host from the guard**, Option A); re-verified each selector
+  individually + RE-CONFIRMED BLOCK-CLEARED. Felt-skip (Preston-ruled). Records:
+  `docs/checkpoints/cd6-nbk-refresh-guard{,-recon}.md`.
+- **GATHER-PICKER-DONE-NOOP (named task).** The gather "Choose an arc" picker's "Done" is a genuine
+  no-op — `openGatherArcPicker` passes `onDone: function(){}` (views.js:~2786) and `buildArcPickerPanel`
+  has no internal close/Escape (unlike its book/subtheory siblings). A real UX bug (Done doesn't close
+  the picker); deserves its own felt-passed fix lane. Surfaced by the v3.256 red-team.
+- **DEAD-JOURNAL-EDITOR (named task).** `openJournalEditor` + `#notebook-editor-host` are a pre-existing
+  orphan (zero callers — exhaustive grep). The host is created empty and never populated. A dead-code
+  cleanup for its own lane.
+- **PHOTO-PLACEHOLDER (polish, own future lane — NOT a micro-lane).** The "photo not on this device"
+  state (`buildNotebookShot`, views.js ~2946) renders a full-size empty slab dominating the note card;
+  it should collapse to a compact one-line chip. Pre-existing presentation, cosmetic.
 - **DOOR-SEG** (multi-note paste segmentation) — follow-on lane.
 - Post-push live-smoke: real dictation · paste · Android share · the 390 phone pass · the
   auth-switch reset branches (numbered PASS/FAIL, delivered with the push).

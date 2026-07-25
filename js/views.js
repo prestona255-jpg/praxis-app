@@ -23216,6 +23216,40 @@ function capBookPageHasOpenInline() {
   return false;
 }
 
+// CD6-NBK-REFRESH-GUARD: the Notebook twin of capBookPageHasOpenInline. renderNotebook rebuilds
+// #app (host.innerHTML=''), which would close an open inline picker/panel out from under the user
+// on a door commit — so the #notebook refresh is skipped while one is open (the note is in the
+// caught-list and surfaces on the next render). NOTE-tier (the pickers write on click, no typed
+// text; #notebook has no on-demand typed-text editor). The gather NAME canvas is deliberately NOT
+// checked — it is built into renderNotebook and its content is restored, and a .wc-input check
+// would wrongly suppress every refresh (it is always present). The per-card picker hosts are
+// class-based and lazily created, so ALL instances are scanned (a closed picker leaves an empty
+// host that must not count). notebook-editor-host is currently DEAD (openJournalEditor has zero
+// callers — DEAD-JOURNAL-EDITOR task); guarded anyway — harmless (always empty) + future-safe.
+function capNotebookHasOpenInline() {
+  var ids = ['notebook-editor-host', 'notebook-transparency-host', 'notebook-settings-host'];
+  var i, el;
+  for (i = 0; i < ids.length; i = i + 1) {
+    el = document.getElementById(ids[i]);
+    if (el && el.firstChild) { return true; }
+  }
+  // The gather '.notebook-working-arc-picker-host' is DELIBERATELY excluded: its picker's
+  // onDone is a no-op (openGatherArcPicker, views.js:~2786 — GATHER-PICKER-DONE-NOOP task), so
+  // it never self-clears and would stick this guard permanently true (suppressing every refresh).
+  // It is recoverable-tier anyway (selection list; the gather name + set persist/restore), so a
+  // door commit that tears it down is the accepted outcome. The 4 below all self-clear on close.
+  var sels = ['.notebook-entry-arc-picker-host', '.notebook-entry-carry-host',
+              '.notebook-entry-book-picker-host', '.notebook-entry-subtheory-picker-host'];
+  var nodes, j;
+  for (i = 0; i < sels.length; i = i + 1) {
+    nodes = document.querySelectorAll(sels[i]);
+    for (j = 0; j < nodes.length; j = j + 1) {
+      if (nodes[j].firstChild) { return true; }
+    }
+  }
+  return false;
+}
+
 // The shared after-file step for both the text and the image commit branches:
 // caught-list + undo record + field reset + save pulse + leaf refresh + toast.
 function capFinishCommit(prevBody, prevRegister, tgt, body) {
@@ -23238,7 +23272,10 @@ function capFinishCommit(prevBody, prevRegister, tgt, body) {
   // its own task (CD6-NBK-REFRESH-GUARD), not widened here (REVERT JUDGMENT: don't fold
   // pre-existing drift into this stage).
   if (capIsNotebookRoute() && typeof renderNotebook === 'function') {
-    renderNotebook();
+    // CD6-NBK-REFRESH-GUARD: same teardown guard as the book page — skip the refresh while an
+    // inline picker/panel is open on the notebook (renderNotebook would close it out from under
+    // the user). The note is filed; it surfaces on the next render.
+    if (!capNotebookHasOpenInline()) { renderNotebook(); }
   } else if (typeof renderBookDetail === 'function') {
     var bkKey = capCurrentBookKey();
     if (bkKey && !capBookPageHasOpenInline()) { renderBookDetail(bkKey); }
