@@ -47,6 +47,38 @@ if [ -n "$es3" ]; then
   printf '%s\n' "$es3" >&2
 fi
 
+# 5. AUTO-GUARD RAILS (blocking) — forbidden patterns in ADDED lines of CLIENT app
+#    files ONLY: js/*.js and assets/*.css. tools/, docs/, *.md, sw.js and this hook
+#    are OUT OF SCOPE by construction (they match neither pathspec) — tool scripts
+#    use backticks/heredocs legitimately, so scoping to js/*.js + assets/*.css keeps
+#    them clean. Each check below is fixture-proven fail-able AND false-positive-free
+#    on the current tree (docs/studio/auto-guard.md). ES3-as-a-BLOCK and hex on an
+#    edited legacy line are deliberately NOT blocks here — a raw-diff regex false-
+#    positives on comments/strings/edited lines; that enforcement stays at the parse-
+#    gate + fix-red-team (the same reason check #4 is a WARN, per FIX-PROTOCOL §2).
+
+# 5a. Dynamic CSS-custom-property construction — the setProperty / string-concat seam.
+#     Building a --var name at runtime is a forbidden seam (0 in the tree today). The
+#     prose-string case (+ '-- word') is excluded by requiring a letter right after --.
+jsadd=$(git diff --cached -- 'js/*.js' 2>/dev/null | grep -E '^\+' | grep -Ev '^\+\+\+')
+seam=$(printf '%s\n' "$jsadd" | grep -nE "setProperty\([^,)]*\+|['\"]--[a-z][a-z-]*['\"][[:space:]]*\+|\+[[:space:]]*['\"]--[a-z][a-z-]*['\"]")
+if [ -n "$seam" ]; then
+  emit "BLOCK (auto-guard): dynamic CSS-var-name construction in added JS (setProperty / concat seam) — use a static token name."
+  printf '%s\n' "$seam" | sed 's/^/  js: /' >&2; fail=1
+fi
+
+# 5b. New hardcoded hex color in client CSS OUTSIDE theme.css (the tokens-only rule).
+#     Value-context only (:...#hex) so #id selectors do not trip it. theme.css is the
+#     sanctioned home for hex literals and is excluded. Editing a legacy line that
+#     already carries a hex re-flags it — a nudge to tokenize; --no-verify (with a
+#     one-line reason) is the sanctioned escape for a genuine legacy-line edit.
+cssadd=$(git diff --cached -- 'assets/*.css' ':(exclude)assets/theme.css' 2>/dev/null | grep -E '^\+' | grep -Ev '^\+\+\+')
+hex=$(printf '%s\n' "$cssadd" | grep -nE ":[^;{}]*#[0-9a-fA-F]{3,8}([^0-9a-fA-F]|$)")
+if [ -n "$hex" ]; then
+  emit "BLOCK (auto-guard): hardcoded hex color added outside theme.css — use a var(--token) (CLAUDE.md conventions)."
+  printf '%s\n' "$hex" | sed 's/^/  css: /' >&2; fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   emit ""
   emit "Commit blocked by the Praxis gate. Fix the above, or 'git commit --no-verify' to bypass in an emergency."
