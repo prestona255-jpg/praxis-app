@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-25 (R-CAPTURE / CD-6 UNIFICATION CLOSED at three doors — docs-only re-scope, no ship; round STAYS OPEN)** —
+  Preston-DIRECTED (Option 1 at the CD-6 Stage-4 recon abort-gate). The fourth/last CD-6 candidate, onboarding
+  `buildActMargin` (intros.js:263), is ruled **NOT a CD-6 door**: it is beat 6 of the 8-beat first-run journey
+  overlay (one caller `renderStep`, no nav/⌘N) and **already writes through the sole-writer `captureNote`** (via
+  `doNote`) — no bespoke write path to unify, no door to retire. Unifying its *UI* into the shared door would
+  re-choreograph a felt-passed narrative beat + add a door-core completion opt, gated behind **OB L-1** (held
+  future-state) + a non-existent OB brief — filed as an **ONBOARDING-round item, NOT CD-6 debt** (`onboarding.md`
+  OB-DOOR + OB-BRIEF-UNLANDED). **CD-6 door-set complete at three:** writeline v3.254 · book-marg v3.255 ·
+  ImportCapture v3.257. Docs-only (capture.md · onboarding.md · BOARD.md · this log), **no CACHE_VERSION bump**.
+  `## Now` unchanged (**R-CAPTURE** — the round STAYS OPEN through F2 note-detail + Preston's live felt passes;
+  formal round-close + Builder regen ride that later event). Preston-directed — no `PROPOSED:` flag. Records:
+  `docs/checkpoints/cd6-onboarding-recon.md`.
 - **2026-07-25 (R-CAPTURE / CD6-SPLIT-POP-FIX SHIPPED, v3.258; round STAYS OPEN)** — Preston-DIRECTED felt-triage fix
   of the desktop-only failure he found on v3.257: a split child's book chip opened its picker pop DOWNWARD into the
   scrollable `.capdoor-body` overflow, clipping it invisible near the fold (iPhone worked; desktop's short corner-card

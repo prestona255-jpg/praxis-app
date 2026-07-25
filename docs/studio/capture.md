@@ -1,7 +1,7 @@
 ---
 surface: capture
 route: "overlay (BUILT — global, body-mounted; summonable over any route)"
-render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 Stage 1 retired buildNotebookWriteline (v3.254) + Stage 2 retired the Book-Detail Add-marginalia CREATE composer into the door (v3.255); the TWO remaining legacy doors still COEXIST (CD-6 open): window.ImportCapture · buildActMargin. (createWritingCanvas stays — shared; its ✎ EDIT path is kept, deferred until F2.)"
+render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 retired three legacy doors — writeline (Stage 1, v3.254) · Book-Detail Add-marginalia CREATE (Stage 2, v3.255) · window.ImportCapture (Stage 3, v3.257). **CD-6 CLOSED at three (2026-07-25 ruling):** onboarding buildActMargin ruled NOT a CD-6 door (beat 6 of the first-run journey, one caller, already writes through the sole-writer captureNote); its UI-unification is an ONBOARDING-round item under OB L-1 (held future-state). (createWritingCanvas stays — shared; its ✎ EDIT path is kept, deferred until F2.)"
 ground: "light working surface, summoned over --scrim (RULED LIGHT 2026-07-23)"
 in_nav: "yes — Capture nav entry + ⌘N + the create-corner (CD-1)"
 state: shipped
@@ -181,10 +181,17 @@ each of 3 of the 4 places.
   namespace kept). **DOOR-SEG PAID:** the door's paste files raw-as-one, then offers "Split into N?" — a
   forward act (file-raw-first, Option A) that runs `segmentDoc` on the filed note and writes N children
   via a `captureNote` batch-loop under CA-2 ordering (children verified-then-parent-deleted; undo re-files
-  the parent first). **TWO doors → the shared door + ONE remaining legacy:** onboarding buildActMargin.
-  Next (last) stage: onboarding act-margin. HALT per stage. The R-CAPTURE round does NOT close until CD-6
-  is complete or explicitly re-scoped. Records:
-  `docs/checkpoints/cd6-{notebook-writeline,book-marginalia,importcapture}{,-recon}.md`.
+  the parent first). **CD-6 CLOSED at three doors (2026-07-25, Preston-ruled Option 1 — RE-SCOPE at the
+  S4-0 recon abort-gate).** The fourth candidate, onboarding **buildActMargin** (intros.js:263), is ruled
+  **NOT a CD-6 door**: it is beat 6 of the 8-beat first-run journey overlay (one caller, `renderStep`
+  intros.js:379), not a summonable capture component, and it **already writes through the sole-writer
+  `captureNote`** (via `doNote`, intros.js:337) — there is no bespoke write path to unify and no door to
+  retire. Unifying its *UI* into the shared door (open the real door instead of the bespoke `.ij-noteta`
+  beat) would re-choreograph a felt-passed narrative beat + add a door-core completion opt, gated behind
+  **OB L-1** (held future-state) + a non-existent OB brief — an **ONBOARDING-round item, NOT CD-6 debt**
+  (logged in `onboarding.md`). Records:
+  `docs/checkpoints/cd6-{notebook-writeline,book-marginalia,importcapture,onboarding}{,-recon}.md`
+  (onboarding = recon-only, no build).
 - **DOOR-SEG (F1) — ✅ PAID (2026-07-25, v3.257, CD-6 Stage 3).** The door's paste files raw-as-one,
   then offers "Split into N?" (local heuristic-gated: ≥1 blank-line break OR ≥280 chars; no LLM pre-tap)
   → `segmentDoc` on the filed note → a minimal caught-list review (per-note register flip + book chip fed
@@ -200,6 +207,16 @@ each of 3 of the 4 places.
 
 ## Round history
 
+- **2026-07-25 — CD-6 CLOSED at three: onboarding buildActMargin ruled NOT-A-DOOR (docs-only re-scope, no ship).**
+  Preston-DIRECTED (Option 1 at the S4-0 recon abort-gate). The last CD-6 candidate is retired from the
+  door-set **by ruling, not code**: `buildActMargin` (intros.js:263) is beat 6 of the 8-beat first-run
+  journey overlay — one caller (`renderStep`), no nav/⌘N — and **already routes through the sole-writer
+  `captureNote`** (via `doNote`, intros.js:337). It is "not a door in any component sense" (r-capture-recon
+  §7); unifying its *UI* into the shared door would re-choreograph a felt-passed narrative beat + add a
+  door-core completion opt, gated behind **OB L-1** (held future-state) and a non-existent OB brief — an
+  ONBOARDING-round item, logged in `onboarding.md`, **NOT CD-6 debt**. **CD-6 door-set complete at three:**
+  writeline v3.254 · book-marg v3.255 · ImportCapture v3.257. Docs-only, **no CACHE_VERSION bump**. Records:
+  `docs/checkpoints/cd6-onboarding-recon.md`.
 - **2026-07-25 — CD-6 STAGE 3 SHIPPED: ImportCapture RETIRED + DOOR-SEG PAID (v3.257).** Preston-DIRECTED
   (rulings + amendments at the Stage-0 HALT and HALT A/B). The overlay was already ORPHANED (git `-S`: 0 live
   `.open()` callers since Stage 1). **Stage A** deleted the overlay UI + its own dictation UI + `commitEntries`
@@ -279,11 +296,11 @@ each of 3 of the 4 places.
 
 ## Next
 
-- **CD-6 UNIFICATION (F4) — IN PROGRESS.** ✅ **Stage 1 (Notebook writeline) v3.254 · Stage 2
-  (Book-Detail Add-marginalia CREATE) v3.255 · Stage 3 (ImportCapture retire + DOOR-SEG) v3.257 — SHIPPED.**
-  Remaining: **onboarding act-margin (buildActMargin) — the last CD-6 door.** One felt pass each, HALT per
-  stage. The round closes only when this is complete or re-scoped. (v3.257 awaits Preston's live felt pass —
-  felt-skip does NOT apply, this stage changes surfaces.)
+- **CD-6 UNIFICATION (F4) — ✅ CLOSED at three doors (2026-07-25, Option-1 re-scope).** Stage 1 (Notebook
+  writeline) v3.254 · Stage 2 (Book-Detail Add-marginalia CREATE) v3.255 · Stage 3 (ImportCapture retire +
+  DOOR-SEG) v3.257 — SHIPPED. The fourth candidate, onboarding `buildActMargin`, is ruled **NOT a CD-6
+  door** (already on the sole-writer; UI unification → ONBOARDING round under OB L-1, see `onboarding.md`).
+  (v3.257 still awaits Preston's live felt pass — felt-skip does NOT apply, that stage changed surfaces.)
 - **CDSEG-SPLIT-POP-FIX — ✅ SHIPPED v3.258 (2026-07-25).** The desktop-only failure Preston felt (clicking a
   split child's book chip did nothing; iPhone worked): the picker pop opened DOWNWARD into the scrollable
   `.capdoor-body` overflow and clipped invisible when the chip sat near the fold. Fixed by flipping the pop UP
