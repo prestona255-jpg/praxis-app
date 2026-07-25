@@ -11828,22 +11828,33 @@ body.wc-focus .app-nav { opacity:.26; }
 .st-build.lum-amber-deep .stb-marg-wrap{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
 .st-build.lum-amber-deep .stb-book.open .stb-marg-wrap{ max-height:1400px; }
 /* R-ARC ROOM-2: the NOTE SURFACE — a note as a place (view · durable edit · provenance) */
+/* F2 (v3.259): note-detail is a LIGHT working reading-page (sibling of book-detail /
+   the notebook leaf), NOT the dark reading room. renderNoteSurface dropped the wrap's
+   `lum-amber-deep` skin so the light :root ink lands on the light wheat ground (the
+   route resolves data-ground="bright"). Light-canon set only: --page-2 fills ·
+   --line-page lines · --gold-deep (#855410, AA on light) for gold-as-text. */
 .note-surface{ max-width:720px; margin:0 auto; padding:28px 20px 60px; }
-.note-surface .note-back{ display:inline-block; margin-bottom:18px; font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--gold-text); text-decoration:none; border-bottom:1px solid transparent; }
-.note-surface .note-back:hover{ border-bottom-color:var(--gold); }
+.note-surface .note-back{ display:inline-block; margin-bottom:18px; font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--gold-deep); text-decoration:none; border-bottom:1px solid transparent; }
+.note-surface .note-back:hover{ border-bottom-color:var(--gold-deep); }
 .note-surface .note-eyebrow{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:0 0 14px; }
-.note-surface .note-body{ font-family:var(--font-serif); font-size:17px; line-height:1.6; color:var(--ink); }
+/* full page = full body: override the .notebook-entry-body-md list-preview clamp (max-height:15em) */
+.note-surface .note-body{ font-family:var(--font-serif); font-size:17px; line-height:1.6; color:var(--ink); max-height:none; overflow:visible; }
 .note-surface .note-body-plain{ white-space:pre-wrap; }
 .note-surface .note-not-found{ font-family:var(--font-serif); font-style:italic; color:var(--ink-2); }
-.note-surface .note-edit-btn, .note-surface .note-edit-done{ margin:14px 10px 0 0; padding:7px 14px; font-family:var(--font-body); font-size:13px; border-radius:var(--radius-pill); border:1px solid var(--border); background:var(--surface); color:var(--ink-2); cursor:pointer; }
+.note-surface .note-edit-btn, .note-surface .note-edit-done{ margin:14px 10px 0 0; padding:7px 14px; font-family:var(--font-body); font-size:13px; border-radius:var(--radius-pill); border:1px solid var(--line-page); background:var(--page-2); color:var(--ink-2); cursor:pointer; }
 .note-surface .note-edit-done{ background:var(--grad); color:var(--text-on-dark); border-color:transparent; }
-.note-surface .note-edit-plain{ width:100%; min-height:180px; box-sizing:border-box; padding:12px; font-family:var(--font-serif); font-size:16px; line-height:1.55; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); }
-.note-surface .note-prov{ margin-top:34px; padding-top:18px; border-top:1px solid var(--border); }
+.note-surface .note-edit-plain{ width:100%; min-height:180px; box-sizing:border-box; padding:12px; font-family:var(--font-serif); font-size:16px; line-height:1.55; color:var(--ink); background:var(--page-2); border:1px solid var(--line-page); border-radius:var(--radius-md); }
+.note-surface .note-prov{ margin-top:34px; padding-top:18px; border-top:1px solid var(--line-page); }
 .note-surface .note-prov-head{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; color:var(--ink-3); margin:0 0 10px; }
 .note-surface .note-prov-row{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:6px 0; }
 .note-surface .note-prov-label{ font-family:var(--font-serif); font-size:14px; color:var(--ink-2); }
-.note-surface .note-prov-door{ font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--gold-text); text-decoration:none; white-space:nowrap; border-bottom:1px solid transparent; }
-.note-surface .note-prov-door:hover{ border-bottom-color:var(--gold); }
+.note-surface .note-prov-door{ font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--gold-deep); text-decoration:none; white-space:nowrap; border-bottom:1px solid transparent; }
+.note-surface .note-prov-door:hover{ border-bottom-color:var(--gold-deep); }
+/* mobile canon: P3 tap targets on the edit controls; P8 the prov door wraps under a long label (no h-scroll at 390) */
+@media (max-width:759px){
+  .note-surface .note-edit-btn, .note-surface .note-edit-done{ min-height:44px; }
+  .note-surface .note-prov-row{ flex-wrap:wrap; gap:2px 12px; }
+}
 /* R-ARC S7: recognition lighting in the LIVE canvas — quiet, non-interactive (DWF-1), no motion by design */
 .st-build.lum-amber-deep .wc-input .rec-lit { border-bottom:1px dotted var(--lum-gold-d); }
 

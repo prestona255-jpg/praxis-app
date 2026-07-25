@@ -15091,6 +15091,29 @@ function _recogIndex() {
 // ROOM-2 (INT-2): the NOTE SURFACE -- a note as a place. Owner-gated view +
 // DURABLE register-aware editing (closes MARG-EDIT; D5) + provenance
 // (mirror-read of the FF-12 data). Woven quote snapshots never retro-edit.
+/* F2: remember the in-app surface the reader came from, so a note's back-link
+   returns THERE when knowable (#notebook is the fallback). Additive history
+   observation only — routing dispatch is untouched. views.js loads before app.js,
+   so this hashchange listener records the prior hash before renderRoute reads it. */
+var _noteBackCurHash = (typeof location !== 'undefined' && location.hash) ? location.hash : '#notebook';
+var _noteBackPrevHash = '#notebook';
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('hashchange', function () {
+    _noteBackPrevHash = _noteBackCurHash;
+    _noteBackCurHash = location.hash || '#notebook';
+  });
+}
+// Resolve the note back-link: return to the prior in-app surface when it is a known
+// non-note route; otherwise fall back to the notebook. Generic '← Back' never mislabels.
+function noteBackAffordance() {
+  var prev = _noteBackPrevHash || '';
+  var backOk = { notebook: 1, books: 1, search: 1, home: 1, arcs: 1, arc: 1, account: 1, profile: 1, commons: 1, about: 1, book: 1, subtheory: 1, reader: 1, walk: 1, artifact: 1, 'yumi-sees': 1 }; // mirrors umberGroundDark (views.js:480), minus 'note' (guarded above)
+  var seg = prev.replace(/^#/, '').split('/')[0];
+  if (prev && prev.indexOf('#note/') !== 0 && backOk[seg] && seg !== 'notebook') {
+    return { href: prev, label: '← Back' };
+  }
+  return { href: '#notebook', label: '← Back to the notebook' };
+}
 function renderNoteSurface(entryId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
@@ -15102,26 +15125,30 @@ function renderNoteSurface(entryId) {
   }
   var en = state.notebookEntries ? state.notebookEntries[entryId] : null;
   var wrap = document.createElement('section');
-  wrap.className = 'note-surface lum-amber-deep';
+  // F2: note-detail is a LIGHT working page (the 'note' route resolves
+  // data-ground="bright"); drop the dark reading-room skin so the light ink lands.
+  wrap.className = 'note-surface';
   if (!en || en.userId !== user.uid) {
     var nf = document.createElement('p');
     nf.className = 'note-not-found';
     nf.textContent = 'This note isn’t here — it may have been deleted.';
     wrap.appendChild(nf);
+    var nfAff = noteBackAffordance();
     var nfBack = document.createElement('a');
     nfBack.className = 'note-back';
-    nfBack.href = '#notebook';
-    nfBack.textContent = '← Back to the notebook';
+    nfBack.href = nfAff.href;
+    nfBack.textContent = nfAff.label;
     wrap.appendChild(nfBack);
     host.appendChild(wrap);
     return;
   }
   var isMarg = (en.register === 'marginalia');
 
+  var bkAff = noteBackAffordance();
   var back = document.createElement('a');
   back.className = 'note-back';
-  back.href = '#notebook';
-  back.textContent = '← Back to the notebook';
+  back.href = bkAff.href;
+  back.textContent = bkAff.label;
   wrap.appendChild(back);
 
   var eyebrow = document.createElement('p');
@@ -15243,7 +15270,7 @@ function renderNoteSurface(entryId) {
     provRow('Filed to ' + (state.books[pbId].title || 'Untitled'), 'Open the book →', '#book/' + pbId);
     provAny = true;
   } else {
-    provRow('Unfiled — not filed to a book', null, null);
+    provRow('In the Inbox — not yet filed to a book', null, null);
   }
   var pai;
   var pArcs = Array.isArray(en.arcIds) ? en.arcIds : [];
