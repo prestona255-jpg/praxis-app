@@ -8358,7 +8358,13 @@ function scanStopStream() {
     scanStream = null;
   }
   var v = scanEl('scan-cam-video');
-  if (v) { try { v.pause(); v.srcObject = null; } catch (e) {} }
+  if (v) {
+    // Also stop any stream zxing attached to the video element itself (its reader
+    // opens its own stream on iOS Safari) — scanStopBookDecode reset() releases it,
+    // this is the belt-and-suspenders so the hardware light dies for certain (SCE-1).
+    try { if (v.srcObject && v.srcObject.getTracks) { var vt = v.srcObject.getTracks(), k; for (k = 0; k < vt.length; k++) { try { vt[k].stop(); } catch (e2) {} } } } catch (e) {}
+    try { v.pause(); v.srcObject = null; } catch (e) {}
+  }
   scanCamReady = false;
 }
 
@@ -8488,14 +8494,210 @@ function scanLeave() {
 }
 
 // ============================================================================
-// FORWARD STUBS — filled by later slices. Present so S2's controls never error.
-//   S3: scanStartBookDecode / scanStopBookDecode / scanShowVerdict
-//   S4: scanFireShelfShot / scanRenderReview / scanOpenWalker / scanShelve
+// S3 — BOOK MODE: continuous free barcode decode -> lock-on -> GB lookup ->
+// verdict card over the warm camera -> one-tap Add via the shared guarded write.
+// (SC3 cover-shot / Photo half of Book mode rides S4's paid-vision capture.)
 // ============================================================================
-function scanStartBookDecode() { /* S3: continuous BarcodeDetector / zxing decode + cover auto-fire */ }
-function scanStopBookDecode() { if (scanDecodeStop) { try { scanDecodeStop(); } catch (e) {} scanDecodeStop = null; } }
-function scanShowVerdict() { /* S3: verdict card over the warm camera */ }
+var scanZxingReader   = null;   // active zxing reader (SCE-1: reset on teardown)
+var scanNativeDecoding = false; // native BarcodeDetector loop flag
+var scanCurrentVerdict = null;  // {kind:'add'|'open', spec, existingId} for the Add button
+
+// Continuous decode on the EXISTING scan-cam-video stream (BarcodeDetector) or,
+// on iOS Safari (no detector), a lazy-loaded zxing reader. Free + local: no paid
+// call, auto-fire allowed (THE SHUTTER IS THE BUDGET — Law 6).
+function scanStartBookDecode() {
+  scanStopBookDecode();
+  if (scanMode !== 'book') { return; }
+  var v = scanEl('scan-cam-video');
+  if (!v) { return; }
+  if (window.BarcodeDetector) {
+    scanNativeDecoding = true;
+    var detector;
+    try { detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); }
+    catch (e) { scanNativeDecoding = false; return; }
+    var tick = function () {
+      if (!scanNativeDecoding) { return; }
+      if (!scanCamReady || !scanIsViewfinderLive()) { window.setTimeout(tick, 300); return; }
+      detector.detect(v).then(function (codes) {
+        if (!scanNativeDecoding) { return; }
+        if (codes && codes.length > 0 && codes[0].rawValue) { scanOnBarcode(codes[0].rawValue); return; }
+        window.setTimeout(tick, 300);
+      }, function () { if (scanNativeDecoding) { window.setTimeout(tick, 300); } });
+    };
+    window.setTimeout(tick, 300);
+  } else if (typeof loadZxingLibrary === 'function') {
+    loadZxingLibrary(function (ok) {
+      if (scanMode !== 'book' || !scanEl('scan-cam-video')) { return; } // left while loading
+      if (!ok || !zxingReady()) { return; } // silent — the denied/offline door carries ISBN type-in
+      try {
+        scanZxingReader = new window.ZXing.BrowserMultiFormatReader();
+        var onZx = function (result) { if (result && typeof result.getText === 'function') { scanOnBarcode(result.getText()); } };
+        if (typeof scanZxingReader.decodeFromConstraints === 'function') {
+          scanZxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, v, onZx);
+        } else if (typeof scanZxingReader.decodeFromVideoDevice === 'function') {
+          scanZxingReader.decodeFromVideoDevice(null, v, onZx);
+        }
+      } catch (eZ) { scanZxingReader = null; }
+    });
+  }
+}
+function scanStopBookDecode() {
+  scanNativeDecoding = false;
+  if (scanZxingReader) { try { scanZxingReader.reset(); } catch (e) {} scanZxingReader = null; }
+}
+
+// A barcode landed. Pause decode, lock-on snap, resolve the ISBN, show the verdict.
+function scanOnBarcode(rawIsbn) {
+  var isbn = ('' + (rawIsbn || '')).replace(/[\s-]/g, '');
+  if (isbn.length === 0) { return; }
+  scanStopBookDecode();
+  scanLockOnSnap(function () {
+    resolveBook({ kind: 'isbn', isbn: isbn }, function (result) { scanShowVerdict(result, isbn); });
+  });
+}
+
+// SC4 context line — ONE locally-derived signal, zero LLM. already-owned (Add->Open)
+// beats author-count beats silence. Returns {text, owned, existingId} or null.
+function scanComputeContext(title, author) {
+  var u = getCurrentUser(); if (!u) { return null; }
+  var ownedId = findShelfBookByIdentity(u.uid, title, author);
+  if (ownedId) { return { text: 'On your shelf', owned: true, existingId: ownedId }; }
+  var a = (author || '').replace(/^\s+|\s+$/g, '');
+  if (a.length === 0) { return null; }
+  // count existing shelf books by the same author (case-insensitive exact author)
+  var ub = state.userBooks[u.uid];
+  if (!ub || !ub.bookIds) { return null; }
+  var al = a.toLowerCase(), n = 0, i, bk;
+  for (i = 0; i < ub.bookIds.length; i++) {
+    bk = state.books[ub.bookIds[i]];
+    if (bk && typeof bk.author === 'string' && bk.author.replace(/^\s+|\s+$/g, '').toLowerCase() === al) { n++; }
+  }
+  if (n < 1) { return null; }
+  // n = existing copies by this author; the book being scanned is the (n+1)th.
+  // ordinals[k] is the (k+1)th word, so the (n+1)th maps to ordinals[n].
+  var ordinals = ['', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+  var ord = (n < ordinals.length) ? ordinals[n] : ('#' + (n + 1));
+  var toks = a.split(/\s+/); var last = toks[toks.length - 1];
+  return { text: ord + ' ' + last + ' on your shelf', owned: false, existingId: null };
+}
+
+// The verdict card. result = resolveBook output {status, book, alternates}. isbn
+// is the scanned code (backfills when GB has no ISBN). Zero LLM (Law 3).
+function scanShowVerdict(result, isbn) {
+  var book = (result && result.book) ? result.book : {};
+  var title = book.title || '';
+  var author = book.author || '';
+  var cov = scanEl('scan-vd-cov'); if (cov) { cov.innerHTML = ''; }
+  var ctx = scanEl('scan-vd-context'), sil = scanEl('scan-vd-silent'), add = scanEl('scan-vd-add');
+  if (ctx) { ctx.style.display = 'none'; }
+  if (sil) { sil.style.display = 'none'; }
+  scanEl('scan-vd-title').textContent = title || 'Not found';
+  scanEl('scan-vd-author').textContent = author || (isbn ? ('ISBN ' + isbn) : '');
+  if (cov) { cov.appendChild(scanCoverNode(title, author, book.coverUrl)); }
+  var c = scanComputeContext(title, author);
+  if (c) {
+    scanEl('scan-vd-context-txt').textContent = c.text;
+    if (ctx) { ctx.style.display = 'flex'; }
+  } else if (title) {
+    if (sil) { sil.style.display = 'block'; }
+  }
+  if (c && c.owned) {
+    add.textContent = 'Open';
+    scanCurrentVerdict = { kind: 'open', existingId: c.existingId };
+  } else {
+    add.textContent = 'Add to shelf';
+    scanCurrentVerdict = { kind: 'add', spec: {
+      title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null, status: 'reading'
+    } };
+  }
+  scanShow(scanEl('scan-verdict'));
+  scanEl('scan-verdict').classList.add('is-up');
+  scanAnnounce(title ? (title + (author ? ' by ' + author : '') + (c ? '. ' + c.text : '')) : 'No confident match.');
+}
+
+// The verdict Add/Open action (wired once in scanWireShell; reads scanCurrentVerdict).
+function scanVerdictAdd() {
+  var vd = scanCurrentVerdict; if (!vd) { return; }
+  scanHideVerdict();
+  if (vd.kind === 'open' && vd.existingId) {
+    location.hash = '#book/' + vd.existingId; // renderRoute cleanup tears the camera down
+    return;
+  }
+  var id = scanCommitBook(vd.spec, null);
+  scanAnnounce(id ? ('Added ' + (vd.spec.title || 'the book') + ' to your shelf.') : 'Could not add — sign in.');
+  scanCurrentVerdict = null;
+  if (scanMode === 'book') { scanStartBookDecode(); } // rapid-scan continues after Add
+}
+
+// ============================================================================
+// The scan add path — routes through the SHARED pending-guarded write discipline
+// (the 5-site census idiom: create record -> ensureBookFields schema chokepoint ->
+// ensureUser -> push -> markBookPending P0 guard -> markBooksDirty -> saveState ->
+// background cover fetch). NOT a new write mechanism: the guard + schema stamp are
+// the existing ones, composed so Book-mode Add (S3) and Shelf-mode Shelve (S4)
+// share one path. spec = {title, author, isbn, coverUrl, status}. Returns the id.
+// ============================================================================
+function scanCommitBook(spec, cb) {
+  var user = getCurrentUser();
+  if (!user) { if (cb) { cb(null); } return null; }
+  if (typeof ensureUser === 'function') { ensureUser(user.uid); }
+  var now = Date.now();
+  var id = genBookId();
+  state.books[id] = {
+    id: id,
+    title: (spec.title || ''),
+    author: (spec.author || ''),
+    isbn: (spec.isbn || ''),
+    addedAt: now,
+    status: (spec.status || 'reading'),
+    genre: '',
+    coverUrl: (spec.coverUrl || null)
+  };
+  ensureBookFields(state.books[id]);                 // 5.6 schema chokepoint (classification rides it)
+  state.userBooks[user.uid].bookIds.push(id);
+  markBookPending(user.uid, id);                      // P0: protect until Firestore-confirmed
+  markBooksDirty();
+  saveState();
+  if (!spec.coverUrl && spec.isbn && typeof fetchAndApplyCover === 'function') {
+    fetchAndApplyCover(id, spec.isbn, function () { /* soft; no re-render from the scan surface */ });
+  }
+  if (cb) { cb(id); }
+  return id;
+}
+
+// ---- verdict card helper ----
 function scanHideVerdict() { var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } }
+
+// ---- S3: the denied/offline add-doors (SC7b honest secondary) ----
+function scanWireAddDoors() {
+  scanWireIsbnDoor('scan-denied-isbn', 'scan-denied-isbn-add', 'scan-denied-status');
+  scanWireIsbnDoor('scan-offline-isbn', 'scan-offline-isbn-add', 'scan-offline-status');
+  var search = scanEl('scan-denied-search');
+  if (search) { search.addEventListener('click', function () { location.hash = '#books'; }); } // hand off to the Shelf's title/author add
+  // S4 wires the shelf-photo drop zones.
+}
+function scanWireIsbnDoor(inputId, btnId, statusId) {
+  var btn = scanEl(btnId), inp = scanEl(inputId), st = scanEl(statusId);
+  if (!btn || !inp) { return; }
+  function go() {
+    var raw = (inp.value || '').replace(/[\s-]/g, '');
+    if (raw.length === 0) { return; }
+    if (st) { st.textContent = 'Looking up ' + raw + '…'; }
+    resolveBook({ kind: 'isbn', isbn: raw }, function (result) {
+      var b = (result && result.book) ? result.book : {};
+      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, status: 'reading' }, null);
+      if (st) { st.textContent = id ? ('Added ' + (b.title || ('ISBN ' + raw)) + ' · on your shelf') : 'Sign in to add.'; }
+      inp.value = '';
+      scanAnnounce(id ? ('Added ' + (b.title || raw) + ' to your shelf.') : 'Could not add.');
+    });
+  }
+  btn.addEventListener('click', go);
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.keyCode === 13) { e.preventDefault(); go(); } });
+}
+
+// ============================================================================
+// FORWARD STUBS (S4) — filled by the Shelf-mode slice.
+// ============================================================================
 function scanFireShelfShot() { /* S4: freeze -> shimmer -> shelf-vision -> tray */ scanAnnounce('Shelf capture arrives in the next build slice.'); }
 function scanRenderReview() { /* S4: the mirror-shelf draft case */ }
 function scanOpenWalker(startIdx) { /* S4: the exception walker */ }
@@ -8695,15 +8897,15 @@ function scanWireShell() {
   var rvBack = scanEl('scan-rv-back'); if (rvBack) { rvBack.addEventListener('click', function () { scanGoScreen('scan-screen-view'); }); }
   var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
   var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }
-  var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); if (scanMode === 'book') { scanStartBookDecode(); } }); }
+  var vdAdd = scanEl('scan-vd-add'); if (vdAdd) { vdAdd.addEventListener('click', scanVerdictAdd); }
+  var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); scanCurrentVerdict = null; if (scanMode === 'book') { scanStartBookDecode(); } }); }
   // failure-dismiss (all four) -> back to the camera
   var fdis = document.querySelectorAll('[data-scan-fail-dismiss]'), i;
   for (i = 0; i < fdis.length; i++) {
     fdis[i].addEventListener('click', function () { scanCloseAllOverlays(); if (scanMode === 'book') { scanStartBookDecode(); } });
   }
-  scanWireAddDoors(); // S3 fills the ISBN/search/dropzone handlers
+  scanWireAddDoors(); // S3: ISBN/search handlers; S4: shelf drop-zone
 }
-function scanWireAddDoors() { /* S3/S4: ISBN add + search + shelf drop-zone -> shared pipeline */ }
 
 // Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
 // scoped (mirrors _stLayersOpen) so it survives the in-panel re-renders that

@@ -147,3 +147,50 @@ the `#scan` route block + active-link + `umberGroundDark` + renderRoute-cleanup 
 **390 width math:** at <760 the desktop nav list is `display:none` (hamburger takes over), so the
 8th (Scan) entry adds ZERO horizontal cost at 390 — it lives in the vertical panel. At 1360 the
 pill holds all 8 at 1114px total (< 1360), no overflow. Both verified live.
+
+---
+
+## S3 — BOOK MODE (decode → verdict → guarded Add) — BUILT + VERIFIED (local, v3.262)
+
+Replaces the S2 decode/verdict stubs with real behavior; adds the shared guarded add path.
+
+- **Continuous free decode** on the EXISTING scan-cam-video stream: native `BarcodeDetector`
+  (ean_13/8, upc_a/e; 300ms poll, paused while a verdict/overlay is up) with a lazy `zxing`
+  fallback for iOS Safari (mirrors `openBarcodeScanner`'s API usage). Free + local → auto-fire
+  allowed (Law 6). `scanStopBookDecode` resets the zxing reader; `scanStopStream` also stops any
+  zxing-owned video stream (SCE-1 belt-and-suspenders).
+- **Lock-on snap → resolveBook({kind:'isbn'}) → verdict card** over the warm camera. Cover
+  (media into a pre-sized slot), title, author. **SC4 context — ONE local signal, zero LLM:**
+  already-owned (`findShelfBookByIdentity`) → "On your shelf" + Add→**Open** (navigates to the
+  book); else author-match count → "Second/Third … <lastname> on your shelf"; else the silent
+  line. (Ordinal off-by-one caught + fixed on the rig: 1 existing → the new one is the 2nd →
+  "Second".)
+- **One-tap Add via the shared guarded write** (`scanCommitBook`): the 5-site census idiom —
+  create → `ensureBookFields` (schema/classification chokepoint) → `ensureUser` → push →
+  `markBookPending` (P0) → `markBooksDirty` → `saveState` → background `fetchAndApplyCover`. NOT
+  a new write mechanism (adversarial gate held). Rapid-scan resumes after Add.
+- **SC7(b) denied/offline ISBN door** wired real (`resolveBook` → `scanCommitBook`), search
+  hands off to the Shelf's title/author add. (Removed a duplicate `scanWireAddDoors` stub that
+  was shadowing the real one — caught on the rig when the door didn't fire.)
+
+**SC3 note (mockup-vs-brief):** the mockup's Book mode is barcode-auto-only; the brief's Book-mode
+cover-shot ("Photo rides shelf-vision as a one-book shelf") rides S4's paid-vision capture — built
+there, not dropped. Surfaced for Preston.
+
+### S3 verification (rig :8760, DOM/geometry)
+| check | result |
+|---|---|
+| parse-check views.js | **PARSE OK** |
+| ES3 forbidden tokens (added) | **0** |
+| duplicate scan fn defs | **0** (scanWireAddDoors de-duped; all others single) |
+| `scanCommitBook`: +1 book, `markBookPending` true, schema (`tradition`) stamped | **PASS** |
+| verdict render: title/author/cover; author-match "**Second Freire on your shelf**" | **PASS** |
+| owned verdict: "On your shelf" + Add label "**Open**" → navigates `#book/<id>` | **PASS** |
+| silent verdict (unknown author, no shelf match): silent line shown, context hidden | **PASS** |
+| Add (new) → count +1, verdict hides, decode resumes | **PASS** |
+| denied ISBN door → resolve → `scanCommitBook` → "Added … · on your shelf", input cleared | **PASS** |
+| decode start/stop safe when invoked; native BarcodeDetector absent in pane → zxing path | **PASS** (no throw) |
+| console errors | **0** |
+
+DEVICE-OWED: live barcode read (a real code from a real shelf) — Preston's phone (getUserMedia
++ BarcodeDetector/zxing on device; the rig has no camera).
