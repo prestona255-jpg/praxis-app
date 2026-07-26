@@ -16930,6 +16930,11 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-coach-rows li{ display:flex; gap:12px; align-items:center; font-family:var(--font-body); font-size:14px; color:var(--ink-2); }
 .scan-coach-rows .cr-ic{ width:34px; height:34px; flex:none; border-radius:9px; background:var(--wash-page); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold-deep); }
 
+/* FX-E: the camera surface owns its corners — suppress the global Yumi Bloom flower
+   while #scan is mounted (it collided with / clipped the verdict-card buttons).
+   body.scan-active is added by renderScan and removed by the router on exit. */
+body.scan-active .yumi-bloom{ display:none !important; }
+
 /* nav draft-count badge on the Scan entry (mirrors .cap-nav-entry state attrs) */
 .app-nav-scan-badge{ display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;
   border-radius:var(--radius-pill); background:var(--gold); color:var(--gold-ink-on-gold);

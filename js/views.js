@@ -448,6 +448,9 @@ function renderRoute() {
   // #scan (no stream, no video element), so it is safe on EVERY route change —
   // the router is the global teardown site, next to the nav/scroll cleanup above.
   if (typeof scanStopStream === 'function') { scanStopStream(); }
+  // FX-E: restore the Yumi Bloom on every route change; renderScan re-adds the marker
+  // if the incoming route is #scan (same synchronous frame, so no flicker).
+  document.body.classList.remove('scan-active');
 
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
@@ -8975,6 +8978,7 @@ function renderScan(preMode) {
     return;
   }
   host.innerHTML = scanShellHTML();
+  document.body.classList.add('scan-active'); // FX-E: hide the global Yumi Bloom while scanning
   scanWireShell();
   scanInitLifecycle();  // SCE-1 hardware half: bound once (guarded)
   // A fresh entry defaults to Book (the free, instant path); only an explicit
