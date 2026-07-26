@@ -8223,6 +8223,7 @@ var scanCurrentVerdict = null;  // {kind:'add'|'open', spec, existingId} for the
 // call, auto-fire allowed (THE SHUTTER IS THE BUDGET — Law 6).
 function scanStartBookDecode() {
   scanStopBookDecode();
+  scanLastDecode = null; // FX-B: a fresh decode session needs two fresh confirming reads
   if (scanMode !== 'book') { return; }
   var v = scanEl('scan-cam-video');
   if (!v) { return; }
@@ -8265,10 +8266,46 @@ function scanStopBookDecode() {
   if (scanZxingReader) { try { scanZxingReader.reset(); } catch (e) {} scanZxingReader = null; }
 }
 
-// A barcode landed. Pause decode, lock-on snap, resolve the ISBN, show the verdict.
+// FX-B — the decode plausibility gate. A sun/pen-marked barcode decoded as
+// 3127227818366 (a non-book EAN) and produced a garbage not-found card. Accept a
+// decode ONLY when it is a real book code AND the same value is read twice in a row;
+// everything else is ignored SILENTLY (keep scanning — no card, no error).
+var scanLastDecode = null;  // last accepted-shape decode, for the read-twice confirm
+
+// EAN-13 check digit (odd positions ×1, even ×3, mod-10 complement).
+function scanEan13Ok(s) {
+  if (s.length !== 13) { return false; }
+  var sum = 0, i, d;
+  for (i = 0; i < 12; i++) { d = parseInt(s.charAt(i), 10); if (isNaN(d)) { return false; } sum += (i % 2 === 0) ? d : d * 3; }
+  var check = (10 - (sum % 10)) % 10;
+  return check === parseInt(s.charAt(12), 10);
+}
+// ISBN-10 checksum (weights 10..1, mod-11; final 'X' = 10).
+function scanIsbn10Ok(s) {
+  if (s.length !== 10) { return false; }
+  var sum = 0, i, c;
+  for (i = 0; i < 9; i++) { c = parseInt(s.charAt(i), 10); if (isNaN(c)) { return false; } sum += c * (10 - i); }
+  var last = s.charAt(9), v = (last === 'X' || last === 'x') ? 10 : parseInt(last, 10);
+  if (isNaN(v)) { return false; }
+  return (sum + v) % 11 === 0;
+}
+// A real book barcode: a Bookland EAN-13 (978/979 prefix + valid check digit) or a
+// valid ISBN-10. Non-book EANs (grocery, etc.) and bad check digits are rejected.
+function scanIsBookBarcode(raw) {
+  var s = ('' + (raw || '')).replace(/[^0-9Xx]/g, '');
+  if (s.length === 13) { return (s.substring(0, 3) === '978' || s.substring(0, 3) === '979') && scanEan13Ok(s); }
+  if (s.length === 10) { return scanIsbn10Ok(s); }
+  return false;
+}
+
+// A candidate barcode landed from the decode loop. Gate it, then require a
+// confirming second read of the SAME value before acting.
 function scanOnBarcode(rawIsbn) {
   var isbn = ('' + (rawIsbn || '')).replace(/[\s-]/g, '');
   if (isbn.length === 0) { return; }
+  if (!scanIsBookBarcode(isbn)) { scanLastDecode = null; return; }   // not a book code -> ignore silently
+  if (scanLastDecode !== isbn) { scanLastDecode = isbn; return; }    // first read -> wait for a confirming read
+  scanLastDecode = null;
   scanStopBookDecode();
   scanLockOnSnap(function () {
     resolveBook({ kind: 'isbn', isbn: isbn }, function (result) { scanShowVerdict(result, isbn); });
