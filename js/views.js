@@ -4521,27 +4521,23 @@ function renderShelf() {
   });
   manageBody.appendChild(selectBtn);
 
-  // Secondary actions -> chips (carried; both photo paths preserved).
+  // SCAN ROUND — LEGACY RETIREMENT: the Manage-sheet scan chips now route to the
+  // unified #scan surface (mode-preselected), retiring the file-input shelf path
+  // (handleShelfScanFile/vision-proxy) and the openBarcodeScanner modal. The scan
+  // surface owns the camera, review, walker, cost + lifecycle now.
   var scanBtn = document.createElement('button');
   scanBtn.type = 'button';
   scanBtn.className = 'chip shelf-scan-btn';
   scanBtn.textContent = 'Scan shelf';
   scanBtn.title = 'Photograph one shelf at a time, filling the frame';
-  var scanInput = document.createElement('input');
-  scanInput.type = 'file';
-  scanInput.accept = 'image/*';
-  scanInput.setAttribute('capture', 'environment');
-  scanInput.className = 'shelf-scan-input';
-  scanBtn.addEventListener('click', function () { scanInput.click(); });
-  scanInput.addEventListener('change', function () { handleShelfScanFile(scanInput, scanBtn); });
+  scanBtn.addEventListener('click', function () { location.hash = '#scan/shelf'; });
   manageBody.appendChild(scanBtn);
-  manageBody.appendChild(scanInput);
 
   var barcodeBtn = document.createElement('button');
   barcodeBtn.type = 'button';
   barcodeBtn.className = 'chip shelf-barcode-btn';
   barcodeBtn.textContent = 'Scan barcode';
-  barcodeBtn.addEventListener('click', function () { openBarcodeScanner(); });
+  barcodeBtn.addEventListener('click', function () { location.hash = '#scan'; });
   manageBody.appendChild(barcodeBtn);
 
   var bulkBtn = document.createElement('button');
@@ -4664,14 +4660,12 @@ function renderShelf() {
   focused.id = 'shelf-focused';
   inner.appendChild(focused);
 
-  // editor host + scan status + arc-picker host (carried)
+  // editor host + arc-picker host (carried). SCAN ROUND: the legacy #shelf-scan-status
+  // element retired with the file-input shelf path (its only consumers were the
+  // now-deleted showScanStatus/clearScanStatus).
   var editorHost = document.createElement('div');
   editorHost.id = 'shelf-editor-host';
   inner.appendChild(editorHost);
-  var scanStatus = document.createElement('div');
-  scanStatus.className = 'shelf-scan-status';
-  scanStatus.id = 'shelf-scan-status';
-  inner.appendChild(scanStatus);
   var arcPickerHost = document.createElement('div');
   arcPickerHost.id = 'shelf-arc-picker-host';
   inner.appendChild(arcPickerHost);
@@ -6789,36 +6783,8 @@ function downscaleShelfPhoto(file, cb) {
 // engages). Downscales, logs the payload size, POSTs bare base64 to
 // vision-proxy, and console-logs the returned titles. Two-arg
 // .then(onOk, onErr) throughout -- never .catch (ES3 parse harness).
-// Phase 3: normalize a vision-proxy response into [{title,author,legibility}].
-// Accepts the new {books:[{title,author,legibility}]} shape and the legacy
-// {titles:[...]} string array (lifted to author '', legibility 'partial').
-function scanResponseToSpecs(json) {
-  var specs = [];
-  if (!json) { return specs; }
-  var i, b, t, s;
-  if (Object.prototype.toString.call(json.books) === '[object Array]') {
-    for (i = 0; i < json.books.length; i++) {
-      b = json.books[i];
-      if (!b || typeof b !== 'object') { continue; }
-      t = (typeof b.title === 'string') ? b.title.replace(/^\s+|\s+$/g, '') : '';
-      if (t.length === 0) { continue; }
-      specs.push({
-        title:      t,
-        author:     (typeof b.author === 'string') ? b.author.replace(/^\s+|\s+$/g, '') : '',
-        legibility: (b.legibility === 'clear') ? 'clear' : 'partial'
-      });
-    }
-  } else if (Object.prototype.toString.call(json.titles) === '[object Array]') {
-    for (i = 0; i < json.titles.length; i++) {
-      s = json.titles[i];
-      if (typeof s !== 'string') { s = String(s); }
-      s = s.replace(/^\s+|\s+$/g, '');
-      if (s.length === 0) { continue; }
-      specs.push({ title: s, author: '', legibility: 'partial' });
-    }
-  }
-  return specs;
-}
+// SCAN ROUND — RETIRED: scanResponseToSpecs (the vision-proxy shelf-response
+// normalizer) removed with the file-input shelf path; #scan uses scanClassify (S1).
 
 // Phase 3: hand a resolved single-book lookup (barcode / manual) to the review
 // screen. Guarded so Stage-3 inputs are verifiable before the Stage-4 screen lands.
@@ -6865,193 +6831,8 @@ function loadZxingLibrary(cb) {
   document.head.appendChild(s);
 }
 
-// Phase 3 / Stage 5: barcode / ISBN input (mockup C). A live camera decode runs
-// via native BarcodeDetector where present (Chrome/Android) and via an
-// on-demand @zxing/library decode where it is not (iPhone Safari). An ISBN
-// type-in fallback is ALWAYS present. A decoded/typed ISBN runs through the
-// shared resolver, then the review screen.
-function openBarcodeScanner() {
-  var hostEl = document.getElementById('shelf-editor-host');
-  if (!hostEl) { return; }
-  hostEl.innerHTML = '';
-
-  var hasDetector = (typeof window.BarcodeDetector === 'function');
-  var canCamera = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
-  var stream = null;
-  var scanning = false;
-  var zxingReader = null;
-  function stopCamera() {
-    scanning = false;
-    if (zxingReader) {
-      try { zxingReader.reset(); } catch (eR) {}
-      zxingReader = null;
-    }
-    if (stream) {
-      var tracks = stream.getTracks(), ti;
-      for (ti = 0; ti < tracks.length; ti++) { tracks[ti].stop(); }
-      stream = null;
-    }
-  }
-
-  var wrap = document.createElement('div');
-  wrap.className = 'barcode-scanner';
-
-  var heading = document.createElement('div');
-  heading.className = 'barcode-scanner-heading';
-  heading.textContent = 'Scan a barcode';
-  wrap.appendChild(heading);
-  var sub = document.createElement('p');
-  sub.className = 'barcode-scanner-sub';
-  sub.textContent = canCamera
-    ? 'Point your camera at the back-cover barcode.'
-    : 'Your browser can’t scan live — type the ISBN below.';
-  wrap.appendChild(sub);
-
-  var frame = document.createElement('div');
-  frame.className = 'scan-frame';
-  var view = document.createElement('div');
-  view.className = 'scan-view';
-
-  var video = document.createElement('video');
-  video.className = 'scan-cam-video';
-  video.setAttribute('playsinline', 'true');
-  video.muted = true;
-  view.appendChild(video);
-
-  var reticle = document.createElement('div');
-  reticle.className = 'reticle';
-  var corners = ['tl', 'tr', 'bl', 'br'], ci;
-  for (ci = 0; ci < corners.length; ci++) {
-    var corner = document.createElement('span');
-    corner.className = 'corner ' + corners[ci];
-    reticle.appendChild(corner);
-  }
-  var scanline = document.createElement('span');
-  scanline.className = 'scanline';
-  reticle.appendChild(scanline);
-  view.appendChild(reticle);
-
-  var hint = document.createElement('div');
-  hint.className = 'scan-hint';
-  hint.textContent = 'point at the barcode';
-  view.appendChild(hint);
-  frame.appendChild(view);
-
-  // ISBN type-in fallback (always present).
-  var fb = document.createElement('div');
-  fb.className = 'isbn-fallback';
-  var fbLab = document.createElement('div');
-  fbLab.className = 'if-lab';
-  fbLab.textContent = canCamera ? 'No scanner? Type the ISBN' : 'Type the ISBN';
-  fb.appendChild(fbLab);
-  var fbRow = document.createElement('div');
-  fbRow.className = 'if-row';
-  var isbnInput = document.createElement('input');
-  isbnInput.type = 'text';
-  isbnInput.setAttribute('inputmode', 'numeric');
-  isbnInput.setAttribute('placeholder', '978…');
-  fbRow.appendChild(isbnInput);
-  var findBtn = document.createElement('button');
-  findBtn.type = 'button';
-  findBtn.className = 'barcode-find-btn';
-  findBtn.textContent = 'Find';
-  fbRow.appendChild(findBtn);
-  fb.appendChild(fbRow);
-  frame.appendChild(fb);
-  wrap.appendChild(frame);
-
-  var status = document.createElement('div');
-  status.className = 'barcode-scanner-status';
-  wrap.appendChild(status);
-
-  var cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.className = 'barcode-scanner-cancel';
-  cancelBtn.textContent = 'Cancel';
-  wrap.appendChild(cancelBtn);
-
-  function lookupIsbn(rawIsbn) {
-    var isbn = ('' + (rawIsbn || '')).replace(/[\s-]/g, '');
-    if (isbn.length === 0) { return; }
-    stopCamera();
-    status.textContent = 'Looking up ' + isbn + '…';
-    resolveBook({ kind: 'isbn', isbn: isbn }, function(result) {
-      handoffResolvedSingle(result, 'barcode');
-    });
-  }
-
-  findBtn.addEventListener('click', function() { lookupIsbn(isbnInput.value); });
-  isbnInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.keyCode === 13) { e.preventDefault(); lookupIsbn(isbnInput.value); }
-  });
-  cancelBtn.addEventListener('click', function() { stopCamera(); renderShelf(); });
-  wrap.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' || e.keyCode === 27) { stopCamera(); renderShelf(); }
-  });
-
-  hostEl.appendChild(wrap);
-
-  // Start the live camera + decode loop only when BarcodeDetector + getUserMedia
-  // are both available. Any failure (no permission, no camera) silently leaves
-  // the ISBN fallback as the path -- never blocks the user.
-  if (hasDetector && canCamera) {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
-      stream = s;
-      video.srcObject = s;
-      var playPromise = video.play();
-      if (playPromise && typeof playPromise.then === 'function') { playPromise.then(function(){}, function(){}); }
-      scanning = true;
-      var detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
-      function tick() {
-        if (!scanning || !stream) { return; }
-        detector.detect(video).then(function(codes) {
-          if (!scanning) { return; }
-          if (codes && codes.length > 0 && codes[0].rawValue) {
-            lookupIsbn(codes[0].rawValue);
-            return;
-          }
-          if (typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
-        }, function() {
-          if (scanning && typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
-        });
-      }
-      if (typeof requestAnimationFrame === 'function') { requestAnimationFrame(tick); }
-    }, function() {
-      status.textContent = 'Camera unavailable — type the ISBN above.';
-    });
-  } else if (canCamera) {
-    // Stage 5: no native BarcodeDetector (iPhone Safari). Lazy-load zxing ONLY
-    // now and decode EAN-13/ISBN from the live camera. Any failure falls back to
-    // the ever-present ISBN type-in -- never blocks the user.
-    status.textContent = 'Starting camera…';
-    loadZxingLibrary(function(ok) {
-      // Bail if the user left the scanner while the lib was loading.
-      if (!video || !document.body.contains(video)) { return; }
-      if (!ok || !zxingReady()) {
-        status.textContent = 'Live scan unavailable — type the ISBN above.';
-        return;
-      }
-      try {
-        zxingReader = new window.ZXing.BrowserMultiFormatReader();
-        scanning = true;
-        status.textContent = '';
-        var onZxResult = function(result) {
-          if (!scanning) { return; }
-          if (result && typeof result.getText === 'function') { lookupIsbn(result.getText()); }
-        };
-        if (typeof zxingReader.decodeFromConstraints === 'function') {
-          zxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, video, onZxResult);
-        } else if (typeof zxingReader.decodeFromVideoDevice === 'function') {
-          zxingReader.decodeFromVideoDevice(null, video, onZxResult);
-        } else {
-          status.textContent = 'Live scan unavailable — type the ISBN above.';
-        }
-      } catch (eZ) {
-        status.textContent = 'Camera unavailable — type the ISBN above.';
-      }
-    });
-  }
-}
+// SCAN ROUND — RETIRED: openBarcodeScanner (the ISBN/barcode modal) removed; the
+// #scan Book mode owns live barcode decode (BarcodeDetector/zxing) now.
 
 // Phase 3: manual lookup (mockup C "Add manually"). Title/author OR ISBN ->
 // the shared resolver -> the review screen. Distinct from the legacy direct-add
@@ -8018,111 +7799,9 @@ function openLibraryCleanup() {
   render();
 }
 
-// restore() clears the busy label and resets input.value in every
-// terminal path so re-selecting the same photo re-fires the change event.
-function handleShelfScanFile(input, btn) {
-  if (!input.files || !input.files.length) return;
-  var file = input.files[0];
-  var originalLabel = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Scanning' + '…';
-  clearScanStatus();
-  function restore() {
-    btn.disabled = false;
-    btn.textContent = originalLabel;
-    input.value = '';
-  }
-  downscaleShelfPhoto(file, function(err, base64, w, h) {
-    if (err) {
-      console.warn('[scan] error downscale', err);
-      restore();
-      showScanStatus('Scan failed — please try again.');
-      return;
-    }
-    console.log('[scan] ' + w + 'x' + h + ' → ' +
-      Math.round(base64.length / 1024) + 'KB base64');
-    fetch('/.netlify/functions/vision-proxy', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-      body:    JSON.stringify({ image: base64, mediaType: 'image/jpeg' })
-    }).then(function(res) {
-      if (res.status === 200) {
-        res.json().then(function(json) {
-          restore();
-          // Phase 3: vision returns {books:[{title,author,legibility}]} (legacy
-          // {titles:[...]} accepted). Build a resolver query per spine, resolve
-          // the batch through the shared accuracy engine, and hand the resolved
-          // matches to the review screen. Never auto-writes.
-          var specs = scanResponseToSpecs(json);
-          if (specs.length === 0) {
-            showScanStatus('No readable titles found. Try photographing one shelf at a time, filling the frame.');
-            return;
-          }
-          var queries = [];
-          var si;
-          for (si = 0; si < specs.length; si++) {
-            queries.push({ kind: 'title', title: specs[si].title, author: specs[si].author, legibility: specs[si].legibility });
-          }
-          showScanStatus('Looking up ' + queries.length + (queries.length === 1 ? ' book…' : ' books…'));
-          resolveBatch(queries, function(resolved) {
-            clearScanStatus();
-            // openBookReview is the Stage-4 review screen; guard so the resolve
-            // pipeline is independently verifiable before it lands.
-            if (typeof openBookReview === 'function') {
-              openBookReview(resolved, 'scan');
-            }
-          });
-        }, function(parseErr) {
-          console.warn('[scan] error parse', parseErr);
-          restore();
-          showScanStatus('Scan failed — please try again.');
-        });
-      } else {
-        res.text().then(function(body) {
-          console.warn('[scan] error ' + res.status, body);
-          restore();
-          showScanStatus('Scan failed — please try again.');
-        }, function(readErr) {
-          console.warn('[scan] error ' + res.status, readErr);
-          restore();
-          showScanStatus('Scan failed — please try again.');
-        });
-      }
-    }, function(netErr) {
-      console.warn('[scan] error network', netErr);
-      restore();
-      showScanStatus('Scan failed — please try again.');
-    });
-  });
-}
-
-// 6.1c: scan status line plumbing. One shared auto-clear timer (module-
-// scoped, mirrors the _stLayersOpen idiom) so a new message replaces any
-// pending clear. The element is created per-render in renderShelf with a
-// stable id, so these helpers find it by id regardless of closure scope.
-var _scanStatusTimer = null;
-function clearScanStatus() {
-  if (_scanStatusTimer) {
-    clearTimeout(_scanStatusTimer);
-    _scanStatusTimer = null;
-  }
-  var el = document.getElementById('shelf-scan-status');
-  if (el) el.textContent = '';
-}
-function showScanStatus(msg) {
-  var el = document.getElementById('shelf-scan-status');
-  if (!el) return;
-  if (_scanStatusTimer) {
-    clearTimeout(_scanStatusTimer);
-    _scanStatusTimer = null;
-  }
-  el.textContent = msg;
-  _scanStatusTimer = setTimeout(function() {
-    var e2 = document.getElementById('shelf-scan-status');
-    if (e2) e2.textContent = '';
-    _scanStatusTimer = null;
-  }, 6000);
-}
+// SCAN ROUND — RETIRED: handleShelfScanFile (the vision-proxy file-input shelf
+// path) + scanResponseToSpecs + the #shelf-scan-status plumbing removed. #scan
+// Shelf mode owns shelf capture via shelf-vision (S1) + the mirror-shelf review.
 
 // ============================================================================
 // SCAN ROUND — S1: the shelf-vision pipeline (the build-first task).
@@ -8340,7 +8019,7 @@ function scanGoScreen(id) {
 }
 
 // ---- overlays (permission + failure) ----
-var SCAN_OVERLAYS = ['scan-ov-primer', 'scan-ov-denied', 'scan-ov-offline', 'scan-ov-failed', 'scan-ov-empty', 'scan-ov-truncated', 'scan-ov-refused'];
+var SCAN_OVERLAYS = ['scan-ov-primer', 'scan-ov-denied', 'scan-ov-offline', 'scan-ov-failed', 'scan-ov-empty', 'scan-ov-truncated', 'scan-ov-refused', 'scan-ov-cap'];
 function scanAnyOverlayOpen() {
   var i; for (i = 0; i < SCAN_OVERLAYS.length; i++) { var o = scanEl(SCAN_OVERLAYS[i]); if (o && o.classList.contains('is-on')) { return true; } }
   return false;
@@ -8471,7 +8150,7 @@ function scanEnter() {
   scanCloseAllOverlays();
   scanHideVerdict();
   scanHide(scanEl('scan-tray')); scanHide(scanEl('scan-shimmer'));
-  scanSetMode('book');
+  scanSetMode(scanMode || 'book');  // respect a Manage-sheet mode preselect (#scan/shelf); default book
   scanClearTimers(); scanStopBookDecode(); // don't decode until the camera is live
   if (navigator.onLine === false) { scanOpenOverlay('scan-ov-offline'); return; } // SCE-3: offline BEFORE the primer
   scanOpenOverlay('scan-ov-primer');                                             // SC7: primer BEFORE the OS ask
@@ -8783,7 +8462,7 @@ function scanRunShelfVision(base64) {
       scanResolveAndFill(result.books);
     } else if (result.state === 'truncated') { scanOpenOverlay('scan-ov-truncated'); }
     else if (result.state === 'refused')     { scanOpenOverlay('scan-ov-refused'); }
-    else                                      { scanOpenOverlay('scan-ov-failed'); }
+    else                                      { scanShelfBudgetRefund(); scanOpenOverlay('scan-ov-failed'); } // CALL-FAILED: no shot counted
   });
 }
 
@@ -9118,8 +8797,57 @@ function scanFireCoverShot() {
   });
 }
 
-// S5 cost-gate hooks (defined no-op-safe here; S5 supplies the real budget + copy).
-function scanShowCapRefusal() { scanAnnounce('Shelf reading is resting until tomorrow — Book mode is still yours.'); }
+// ============================================================================
+// S5 — LIFECYCLE + COST. THE SHUTTER IS THE BUDGET (Law 6): a soft daily counter
+// on PAID reads (shelf shots + cover shots); barcode stays free + uncounted. When
+// capped: honest warm refusal, Book mode stays — NEVER silent-degrade to sonnet
+// (the model request is always claude-opus-4-8, S1). ls-backed {day,count} — the
+// exact yumi-budget precedent (state.js:1851), no schema change.
+// ============================================================================
+var SCAN_SHELF_DAILY_CAP = 30; // SC9, informed by SC12 (~107 books over 3 shots; 30 paid reads/day is generous)
+function scanShelfBudgetSpend() {
+  var rec = ls('praxis_scan_shelf_budget', { day: '', count: 0 });
+  var now = new Date();
+  var day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+  if (!rec || rec.day !== day) { rec = { day: day, count: 0 }; }
+  if (rec.count >= SCAN_SHELF_DAILY_CAP) { sv('praxis_scan_shelf_budget', rec); return false; }
+  rec.count = rec.count + 1;
+  sv('praxis_scan_shelf_budget', rec);
+  return true;
+}
+// Refund a shot that never produced a read (CALL-FAILED — "no shot counted against you").
+function scanShelfBudgetRefund() {
+  var rec = ls('praxis_scan_shelf_budget', { day: '', count: 0 });
+  if (rec && rec.count > 0) { rec.count = rec.count - 1; sv('praxis_scan_shelf_budget', rec); }
+}
+function scanShowCapRefusal() { scanOpenOverlay('scan-ov-cap'); scanAnnounce('Shelf reading is resting until tomorrow. Book mode is still yours.'); }
+
+// SCE-1 (the hardware half): stop the stream on backgrounding, re-warm on return.
+// Bound ONCE (guarded) so re-renders don't stack listeners; the router already owns
+// the route-exit teardown (renderRoute cleanup, S2).
+var scanLifecycleBound = false;
+var scanNeedsRewarm = false;
+function scanOnScanRoute() { return location.hash.replace(/^#/, '').split('/')[0] === 'scan'; }
+function scanInitLifecycle() {
+  if (scanLifecycleBound) { return; }
+  scanLifecycleBound = true;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (scanOnScanRoute() && scanStream) { scanStopStream(); scanNeedsRewarm = true; }
+    } else {
+      if (scanNeedsRewarm && scanOnScanRoute() && scanEl('scan-cam-video')) {
+        scanNeedsRewarm = false;
+        if (!scanAnyOverlayOpen()) {
+          scanWarmUpThen(function () {});
+          scanStartStream(function (ok) {
+            window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); if (ok && scanMode === 'book') { scanStartBookDecode(); } }, scanRM() ? 250 : 850);
+          });
+        }
+      }
+    }
+  }, false);
+  window.addEventListener('pagehide', function () { scanStopStream(); }, false);
+}
 
 // ============================================================================
 // renderScan — the #scan route entry. Signed-out is hard-gated (scan is a
@@ -9138,7 +8866,11 @@ function renderScan(preMode) {
   }
   host.innerHTML = scanShellHTML();
   scanWireShell();
-  if (preMode === 'shelf' || preMode === 'book') { scanMode = preMode; }
+  scanInitLifecycle();  // SCE-1 hardware half: bound once (guarded)
+  // A fresh entry defaults to Book (the free, instant path); only an explicit
+  // '#scan/shelf' preselect (Manage-sheet "Scan shelf") opens in Shelf. Reset every
+  // entry so the module-level scanMode never leaks from a prior visit.
+  scanMode = (preMode === 'shelf') ? 'shelf' : 'book';
   // SCE-2: resume a persisted draft (a killed PWA / a return trip picks up where it
   // stood). Load it into scanResult; if it holds anything, the primer offers Review.
   scanResult = scanLoadDraft();
@@ -9292,6 +9024,9 @@ function scanFailureHTML() {
   +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Reshoot a smaller section</button></div></div></div>'
   + '<div class="scan-overlay over-cam" id="scan-ov-refused"><div class="scan-card"><div class="c-ic">◇</div>'
   +   '<h2>Couldn\'t read this one</h2><p>That shot couldn\'t be processed. It wasn\'t a book, or the frame was unreadable — nothing was added. Point at a shelf or a cover and try again.</p>'
+  +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Back to the camera</button></div></div></div>'
+  + '<div class="scan-overlay over-cam" id="scan-ov-cap"><div class="scan-card"><div class="c-ic">☾</div>'
+  +   '<h2>Shelf reading is resting</h2><p>You\'ve read a lot of shelves today — shelf reading is resting until tomorrow. Book mode (a barcode or a single cover) is still yours right now.</p>'
   +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Back to the camera</button></div></div></div>';
 }
 
@@ -24291,6 +24026,11 @@ function capAutogrow() {
   f.style.height = f.scrollHeight + 'px';
 }
 function capSetMode(mode) {
+  // CD-6 socket (SCAN ROUND): the create door's Scan mode opens SCAN's surface.
+  // Context-free ALWAYS — CD-3's context-smart pre-association does NOT apply to
+  // scanning (scan adds never pre-associate with a viewed book). Close the door and
+  // route; the inert socket at capCommit stays as a defensive backstop.
+  if (mode === 'scan') { capClose(); location.hash = '#scan'; return; }
   capMode = mode;
   var sheet = capEl('capSheet');
   var modes = document.querySelectorAll('.capdoor-mode'), i;

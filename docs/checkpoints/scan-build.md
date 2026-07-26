@@ -245,3 +245,53 @@ Replaces the four S4 stubs; the largest slice. All wired through the S1 pipeline
 
 DEVICE-OWED / S6: the FULL forced-timing race (real reload against real Firestore on
 prestonpraxistest) — the local bookkeeping is proven; S6 runs it on the live account.
+
+---
+
+## S5 — LIFECYCLE + COST + DOORS — BUILT + VERIFIED (local, v3.264)
+
+- **SCE-1 hardware half** (`scanInitLifecycle`, bound once): stop the stream on
+  `visibilitychange` hidden (when on #scan), re-warm on return; `pagehide` stops it too.
+  The router owns the route-exit teardown (S2). THE CAMERA FORGETS at the hardware layer.
+- **SC9 cost posture** (`scanShelfBudgetSpend`, cap **30/day**, ls `praxis_scan_shelf_budget`
+  `{day,count}` — the yumi-budget precedent, no schema change). PAID reads only (shelf shot +
+  cover shot); barcode stays free + uncounted. At cap → honest warm refusal card (Book mode
+  stays). **NEVER silent-degrade** — the model request is always claude-opus-4-8 (S1).
+  CALL-FAILED refunds the shot ("no shot counted against you").
+- **CD-6 socket fill**: `capSetMode('scan')` closes the create door and routes to `#scan` —
+  **context-free ALWAYS** (CD-3 pre-association does NOT apply to scanning). The `capCommit`
+  inert socket stays as a defensive backstop.
+- **Signed-out gate** (built S2): `renderScan` → `buildSignedOutPrompt` when signed out. Verified.
+- **LEGACY RETIREMENT**: Manage-sheet "Scan shelf" → `#scan/shelf`, "Scan barcode" → `#scan`
+  (mode-preselected). **Deleted** (grep-proven 0 live callers): `openBarcodeScanner` (the modal),
+  `handleShelfScanFile` (the vision-proxy file-input shelf path), `scanResponseToSpecs`, the
+  `showScanStatus/clearScanStatus/_scanStatusTimer` plumbing, and the `#shelf-scan-status`
+  element. **KEPT** `downscaleShelfPhoto` (reused by the S4 drop-zone) and `handoffResolvedSingle`
+  (shared, still referenced by the pre-existing-orphaned `openManualLookup` — out of scope).
+
+### VISION-PROXY CALLER REPORT (non-goal: endpoint file untouched)
+After retirement, **`js/` has ZERO `/.netlify/functions/vision-proxy` fetch callers** (grep-proven).
+The only remaining refs are comments. `netlify/functions/vision-proxy.js` **stays** (unchanged);
+it is now app-unused but preserved per the non-goal (a future feature may use it).
+
+### Two mode-persistence bugs caught + fixed on the rig
+`scanEnter` hard-coded `scanSetMode('book')` (ignored the `#scan/shelf` preselect), and the
+module-level `scanMode` leaked from a prior visit into a fresh plain `#scan`. Fixed: `scanEnter`
+respects `scanMode`; `renderScan` resets `scanMode = (preMode==='shelf') ? 'shelf' : 'book'` on
+every entry.
+
+### S5 verification (rig :8760)
+| check | result |
+|---|---|
+| parse OK; ES3 0 | **PASS** |
+| cost cap: 30 spends OK, 31st refused; refund restores a slot; cap=30 | **PASS** |
+| cost gate in flow → refusal card (`scan-ov-cap`) shown | **PASS** |
+| CD-6 socket: create-door Scan chip → door closes + routes `#scan` + surface mounts | **PASS** |
+| Manage-sheet "Scan shelf" → `#scan/shelf` (Shelf mode: title Shelf, shutter); "Scan barcode" → `#scan` (Book) | **PASS** |
+| `#scan` defaults Book (indicator + SC3 cover shutter); `#scan/shelf` Shelf; no mode leak across visits | **PASS** |
+| signed-out: no surface, `buildSignedOutPrompt` shown | **PASS** |
+| visibilitychange lifecycle bound once (`scanLifecycleBound`) | **PASS** |
+| retired symbols: 0 live callers (openBarcodeScanner/handleShelfScanFile/scanResponseToSpecs/showScanStatus/clearScanStatus); vision-proxy 0 fetch callers | **PASS** (grep) |
+| Shelf still renders; console errors | **0** |
+
+DEVICE-OWED / S6 felt card: the real hardware-indicator death on app-switch (SCE-1) — Preston's phone.
