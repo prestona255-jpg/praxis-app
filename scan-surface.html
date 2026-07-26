@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#191F33">
+<title>Praxis — Scan surface (MOCKUP)</title>
+<!--
+  scan-surface.html — SCAN ROUND felt-pass artifact (SHAPE-B mockup).
+  Standalone, dependency-free, ES3 (var/function, string concat, no arrow/const/let/backtick).
+  Fixtures only — NO model or proxy calls, costs nothing per use. Real getUserMedia
+  (needs HTTPS — runs on the LIVE site). ZERO app source touched.
+  Universal v1.2 tokens INLINED below (values read from assets/theme.css @ HEAD 88b9117).
+-->
+<style>
+/* ============================================================================
+   UNIVERSAL v1.2 TOKENS — inlined (values from assets/theme.css)
+   ============================================================================ */
+:root{
+  --font-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'DM Sans', sans-serif;
+  --font-mono:'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* light-page working surface */
+  --page:#f4efe4; --page-2:#fcf6e8;
+  --card-1:#FDF9EE; --card-2:#F6EFDC;
+  --ink:#241710; --ink-2:#645940; --ink-3:#645940; /* -3 pulled to AA-safe per L12 */
+  --ink-meta:#8A7F5F;
+  --line-page:rgba(36,23,16,.16); --line-page-2:rgba(36,23,16,.30);
+  --wash-page:rgba(36,23,16,.05);
+  --scrim:rgba(15,9,4,.6);
+
+  /* gold family — light ground uses -deep for gold-as-text (L8) */
+  --gold:#a8761a; --gold-deep:#855410; --gold-hi:#F0D79A; --gold-ember:#DFB759;
+  --gold-ink-on-gold:#3d2807;
+  --grad:linear-gradient(92deg,#d2a23e,#2e8a93);
+
+  /* the shelf's carved-cavity dialect (draft-case variant) */
+  --shelf-cavity:#efe7d6; --board-face:#e3d8c1; --board-under:#b9a97e;
+  --card-ink-2:#5C5340; --card-meta:#8A7F5F;
+
+  /* the amber night ground behind the camera chrome (hour family) */
+  --hour-1:#191F33; --hour-3:#241C14; --hour-4:#29200F;
+  --danger:#c2603a; --danger-line:rgba(194,96,58,.46);
+  --river:#3a5a8a; --teal:#2e8a93;
+
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:22px; --radius-pill:999px;
+
+  /* camera chrome */
+  --cam-bg:#0c0a07;
+  --glass:rgba(20,14,7,.62);
+  --glass-2:rgba(28,20,10,.82);
+  --on-dark:#f6efe0; --on-dark-2:rgba(246,239,224,.62);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; height:100%; }
+body{
+  font-family:var(--font-body);
+  background:var(--cam-bg);
+  color:var(--on-dark);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* the whole surface is a fixed full-viewport stack; screens toggle */
+#surface{ position:fixed; inset:0; overflow:hidden; }
+
+.screen{ position:absolute; inset:0; display:none; }
+.screen.is-active{ display:block; }
+
+/* ---------- MOCKUP banner + dev strip (kept visually quiet) ---------- */
+#mock-banner{
+  position:fixed; top:0; left:50%; transform:translateX(-50%);
+  z-index:900; margin-top:env(safe-area-inset-top);
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(246,239,224,.5); background:rgba(0,0,0,.34);
+  padding:3px 10px; border-radius:0 0 var(--radius-pill) var(--radius-pill);
+  pointer-events:none;
+}
+#dev-strip{
+  position:fixed; left:0; right:0; bottom:0; z-index:950;
+  padding:6px calc(8px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+  background:rgba(6,4,2,.9); border-top:1px solid rgba(246,239,224,.12);
+  display:flex; gap:5px; align-items:center; overflow-x:auto; transform:translateY(0); transition:transform .3s ease;
+}
+#dev-strip.is-hidden{ transform:translateY(115%); }
+#dev-strip .dv-tag{ font-family:var(--font-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:rgba(246,239,224,.4); flex:none; margin-right:2px; }
+#dev-strip button{
+  flex:none; font-family:var(--font-mono); font-size:10px; letter-spacing:.02em;
+  color:rgba(246,239,224,.78); background:rgba(246,239,224,.08);
+  border:1px solid rgba(246,239,224,.16); border-radius:var(--radius-sm);
+  padding:5px 8px; cursor:pointer; white-space:nowrap;
+}
+#dev-strip button:active{ background:rgba(246,239,224,.2); }
+#dev-toggle{
+  position:fixed; right:calc(8px + env(safe-area-inset-right)); bottom:calc(8px + env(safe-area-inset-bottom));
+  z-index:960; width:34px; height:34px; border-radius:50%;
+  background:rgba(6,4,2,.85); border:1px solid rgba(246,239,224,.2); color:rgba(246,239,224,.7);
+  font-family:var(--font-mono); font-size:13px; cursor:pointer; display:none;
+}
+
+/* ============================================================================
+   ENTRY — create-door chip + nav framing (light working surface)
+   ============================================================================ */
+#screen-entry{ background:var(--page); background-image:radial-gradient(900px 480px at 50% -8%, rgba(255,214,150,.18), transparent 62%); }
+.entry-wrap{ position:absolute; inset:0; display:flex; flex-direction:column;
+  padding:calc(env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.entry-nav{ display:flex; align-items:center; gap:12px; height:56px; }
+.entry-word{ font-family:var(--font-serif); font-weight:600; font-size:22px; color:var(--ink); }
+.entry-word b{ background:var(--grad); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:600; }
+.entry-nav .spacer{ flex:1; }
+.entry-avatar{ width:32px; height:32px; border-radius:50%; background:var(--grad); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:13px; }
+.entry-navlist{ display:flex; gap:16px; align-items:center; margin-top:2px; flex-wrap:wrap; }
+.entry-navlink{ font-family:var(--font-mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-2); position:relative; padding-bottom:5px; border-bottom:2px solid transparent; }
+.entry-navlink.is-active{ color:var(--ink); border-bottom-color:var(--gold); }
+.entry-navlink .nav-badge{ position:absolute; top:-6px; right:-12px; min-width:15px; height:15px; padding:0 4px;
+  border-radius:var(--radius-pill); background:var(--gold); color:var(--gold-ink-on-gold);
+  font-size:9px; line-height:15px; text-align:center; letter-spacing:0; }
+
+.entry-body{ flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:8px; }
+.entry-body h1{ font-family:var(--font-serif); font-weight:500; font-size:clamp(30px,8vw,40px); color:var(--ink); margin:0; line-height:1.05; }
+.entry-body p{ font-family:var(--font-body); font-size:15px; color:var(--ink-2); max-width:300px; margin:2px 0 22px; line-height:1.5; }
+
+/* the create door — the shared create component's Scan chip (framing only) */
+.create-door{ width:100%; max-width:340px; background:var(--card-1); border:1px solid var(--line-page); border-radius:var(--radius-lg);
+  box-shadow:0 1px 2px rgba(36,23,16,.06), 0 12px 34px -18px rgba(36,23,16,.4); padding:10px; }
+.create-door .cd-hd{ font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-meta); padding:6px 8px 10px; }
+.cd-modes{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cd-mode{ display:flex; align-items:center; gap:10px; padding:12px 12px; border-radius:var(--radius-md);
+  border:1px solid var(--line-page); background:var(--page-2); color:var(--ink); font-family:var(--font-body); font-size:14px; cursor:pointer; text-align:left; }
+.cd-mode .cd-ic{ width:26px; height:26px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--gold-deep); }
+.cd-mode.cd-scan{ grid-column:1 / -1; background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); border-color:transparent; color:var(--gold-ink-on-gold); font-weight:600; }
+.cd-mode.cd-scan .cd-ic{ color:var(--gold-ink-on-gold); }
+.cd-mode:active{ transform:translateY(1px); }
+.entry-hint{ margin-top:18px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; color:var(--ink-3); }
+
+/* ============================================================================
+   CAMERA STACK (shared) — live video / freeze canvas / warm-up veil
+   ============================================================================ */
+#cam-stack{ position:absolute; inset:0; background:var(--cam-bg); overflow:hidden; }
+#cam-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+#cam-freeze{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+/* the designed warm-up veil — the viewfinder FADES IN from the sheet, never a white flash */
+#cam-warm{ position:absolute; inset:0; opacity:0; pointer-events:none;
+  background:linear-gradient(178deg,var(--hour-1),var(--hour-3) 62%,var(--hour-4));
+  transition:opacity .5s ease; display:flex; align-items:center; justify-content:center; }
+#cam-warm.is-on{ opacity:1; }
+#cam-warm .warm-orb{ width:46px; height:46px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--gold-hi), var(--gold-ember) 55%, transparent 72%);
+  animation:warmPulse 1.4s ease-in-out infinite; }
+@keyframes warmPulse{ 0%,100%{ transform:scale(.82); opacity:.7 } 50%{ transform:scale(1.06); opacity:1 } }
+#cam-warm .warm-line{ position:absolute; bottom:38%; font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+/* the tint under all camera chrome so white ink reads over any frame */
+#cam-tint{ position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(6,4,2,.5) 0%, transparent 22%, transparent 62%, rgba(6,4,2,.62) 100%); }
+
+/* ============================================================================
+   VIEWFINDER chrome
+   ============================================================================ */
+#screen-view{ }
+.vf-top{ position:absolute; top:0; left:0; right:0; z-index:20;
+  padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left));
+  display:flex; align-items:center; gap:10px; }
+.vf-back{ width:38px; height:38px; flex:none; border-radius:50%; background:var(--glass); border:1px solid rgba(246,239,224,.14);
+  color:var(--on-dark); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.vf-title{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+.vf-top .spacer{ flex:1; }
+.vf-torch{ width:38px; height:38px; flex:none; border-radius:50%; background:var(--glass); border:1px solid rgba(246,239,224,.14);
+  color:var(--on-dark); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+.vf-torch .torch-tip{ position:absolute; top:44px; right:0; width:158px; background:var(--glass-2); color:var(--on-dark);
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:.04em; line-height:1.4; padding:7px 9px; border-radius:var(--radius-sm);
+  border:1px solid rgba(246,239,224,.14); opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .2s ease, transform .2s ease; text-transform:none; }
+.vf-torch.tip-open .torch-tip{ opacity:1; transform:translateY(0); }
+
+/* corner-bracket reticle */
+.vf-reticle{ position:absolute; z-index:12; left:50%; top:46%; transform:translate(-50%,-50%);
+  width:min(74vw,340px); height:min(50vh,300px); pointer-events:none; }
+.vf-reticle .br{ position:absolute; width:30px; height:30px; border:2px solid rgba(246,239,224,.9);
+  transition:all .22s cubic-bezier(.22,1,.36,1); }
+.vf-reticle .br.tl{ left:0; top:0; border-right:0; border-bottom:0; border-radius:8px 0 0 0; }
+.vf-reticle .br.tr{ right:0; top:0; border-left:0; border-bottom:0; border-radius:0 8px 0 0; }
+.vf-reticle .br.bl{ left:0; bottom:0; border-right:0; border-top:0; border-radius:0 0 0 8px; }
+.vf-reticle .br.br2{ right:0; bottom:0; border-left:0; border-top:0; border-radius:0 0 8px 0; }
+/* FELT SIGNATURE 1 — lock-on snap: brackets tighten inward + flare gold */
+.vf-reticle.is-lock .br{ width:22px; height:22px; border-color:var(--gold-hi); box-shadow:0 0 12px rgba(240,215,154,.6); }
+.vf-reticle.is-lock .br.tl{ transform:translate(9px,9px); }
+.vf-reticle.is-lock .br.tr{ transform:translate(-9px,9px); }
+.vf-reticle.is-lock .br.bl{ transform:translate(9px,-9px); }
+.vf-reticle.is-lock .br.br2{ transform:translate(-9px,-9px); }
+.vf-guide{ position:absolute; z-index:12; left:0; right:0; top:calc(46% + min(25vh,150px) + 14px); text-align:center;
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--on-dark-2); pointer-events:none; padding:0 20px; }
+
+/* bottom control cluster */
+.vf-bottom{ position:absolute; left:0; right:0; bottom:0; z-index:20;
+  padding:14px calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  display:flex; flex-direction:column; align-items:center; gap:16px; }
+/* two-segment mode control */
+.mode-seg{ display:inline-flex; padding:3px; border-radius:var(--radius-pill); background:var(--glass); border:1px solid rgba(246,239,224,.16); }
+.mode-seg button{ font-family:var(--font-body); font-size:13px; font-weight:500; color:var(--on-dark-2); background:none; border:none;
+  border-radius:var(--radius-pill); padding:8px 22px; min-height:40px; cursor:pointer; }
+.mode-seg button.is-on{ color:var(--gold-ink-on-gold); background:linear-gradient(180deg,var(--gold-hi) 0%,var(--gold-ember) 100%); font-weight:600; }
+/* the shutter (Shelf mode) / auto indicator (Book mode) */
+.vf-actionrow{ display:flex; align-items:center; justify-content:center; gap:24px; width:100%; }
+.shutter{ width:72px; height:72px; border-radius:50%; background:rgba(246,239,224,.16); border:3px solid rgba(246,239,224,.9);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.shutter:active{ transform:scale(.94); }
+.shutter .core{ width:56px; height:56px; border-radius:50%; background:var(--on-dark); }
+.book-auto{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.book-auto .ring{ width:52px; height:52px; border-radius:50%; border:2px dashed rgba(246,239,224,.5); display:flex; align-items:center; justify-content:center; color:var(--on-dark-2); font-size:19px; }
+.book-auto .lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--on-dark-2); }
+
+/* ============================================================================
+   BOOK MODE verdict card — slides over the still-warm camera
+   ============================================================================ */
+.verdict{ position:absolute; left:0; right:0; bottom:0; z-index:40;
+  transform:translateY(115%); transition:transform .34s cubic-bezier(.22,1,.36,1); }
+.verdict.is-up{ transform:translateY(0); }
+.verdict-inner{ margin:0 auto; max-width:520px;
+  background:var(--card-1); border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow:0 -8px 40px -12px rgba(0,0,0,.55); color:var(--ink);
+  padding:18px calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); }
+.verdict-grip{ width:38px; height:4px; border-radius:2px; background:var(--line-page-2); margin:0 auto 14px; }
+.verdict-row{ display:flex; gap:14px; align-items:flex-start; }
+.verdict .cov{ width:64px; height:96px; flex:none; }
+.verdict .meta{ flex:1; min-width:0; }
+.verdict .v-title{ font-family:var(--font-serif); font-weight:600; font-size:20px; line-height:1.15; color:var(--ink); margin:0; }
+.verdict .v-author{ font-family:var(--font-body); font-size:13px; color:var(--ink-2); margin:3px 0 0; }
+.verdict .v-context{ font-family:var(--font-mono); font-size:11px; letter-spacing:.02em; color:var(--gold-deep); margin:10px 0 0; display:flex; align-items:center; gap:6px; }
+.verdict .v-context .dot{ width:5px; height:5px; border-radius:50%; background:var(--gold); flex:none; }
+.verdict-actions{ display:flex; gap:10px; margin-top:16px; }
+.btn{ font-family:var(--font-body); font-size:15px; font-weight:600; border-radius:var(--radius-md); padding:13px 18px; cursor:pointer; border:1px solid transparent; min-height:48px; }
+.btn-primary{ background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); color:var(--gold-ink-on-gold); flex:1; }
+.btn-ghost{ background:transparent; border-color:var(--line-page-2); color:var(--ink); }
+.btn-quiet{ background:var(--wash-page); color:var(--ink-2); border-color:var(--line-page); }
+.verdict .v-silent{ font-family:var(--font-mono); font-size:11px; font-style:italic; color:var(--ink-3); margin:8px 0 0; }
+
+/* ============================================================================
+   SHELF MODE — shimmer read + live tray
+   ============================================================================ */
+/* FELT SIGNATURE 2 — the shimmer read (visibly indeterminate, NO percentages) */
+#shimmer{ position:absolute; inset:0; z-index:35; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px; }
+#shimmer.is-on{ display:flex; }
+#shimmer .shim-frame{ width:min(74vw,340px); height:min(46vh,280px); border-radius:12px; overflow:hidden; position:relative;
+  border:1px solid rgba(246,239,224,.2); background:rgba(6,4,2,.3); }
+#shimmer .shim-sweep{ position:absolute; inset:0;
+  background:linear-gradient(115deg, transparent 30%, rgba(240,215,154,.5) 50%, transparent 70%);
+  background-size:280% 100%; animation:shimSweep 1.15s linear infinite; }
+@keyframes shimSweep{ from{ background-position:180% 0 } to{ background-position:-80% 0 } }
+#shimmer .shim-line{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+
+/* the live tray along the bottom edge */
+#tray{ position:absolute; left:0; right:0; bottom:0; z-index:30; display:none;
+  padding:10px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  background:linear-gradient(to top, rgba(6,4,2,.9), rgba(6,4,2,.5) 70%, transparent); }
+#tray.is-on{ display:block; }
+.tray-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; padding:0 2px; }
+.tray-count{ font-family:var(--font-mono); font-size:12px; letter-spacing:.03em; color:var(--on-dark); }
+.tray-count b{ color:var(--gold-hi); font-weight:600; }
+.tray-sub{ font-family:var(--font-mono); font-size:10px; color:var(--on-dark-2); }
+.tray-strip{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 8px; scroll-behavior:smooth; }
+.tray-cov{ width:44px; height:66px; flex:none; border-radius:2px 4px 4px 2px; position:relative; overflow:visible;
+  animation:trayDrop .34s cubic-bezier(.22,1,.36,1); }
+@keyframes trayDrop{ from{ transform:translateY(14px) scale(.9); opacity:0 } to{ transform:translateY(0) scale(1); opacity:1 } }
+.tray-cov .dupe-tick{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%;
+  background:var(--teal); color:#fff; font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 0 2px rgba(6,4,2,.6);
+  animation:tickPop .3s ease; }
+@keyframes tickPop{ from{ transform:scale(0) } to{ transform:scale(1) } }
+.tray-review{ margin-top:4px; }
+#tray .btn{ min-height:46px; }
+
+/* ============================================================================
+   REVIEW — the mirror shelf (quiet DRAFT-CASE dialect of the carved cavity)
+   ============================================================================ */
+#screen-review{ background:var(--page); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.rv-wrap{ min-height:100%; padding:calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); max-width:960px; margin:0 auto; }
+.rv-top{ display:flex; align-items:center; gap:12px; height:48px; }
+.rv-back{ width:36px; height:36px; border-radius:50%; background:var(--wash-page); border:1px solid var(--line-page); color:var(--ink); font-size:17px; cursor:pointer; }
+.rv-top h1{ font-family:var(--font-serif); font-weight:500; font-size:26px; color:var(--ink); margin:0; }
+.rv-count{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); margin:4px 0 2px; }
+.rv-draftbadge{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--gold-deep); background:var(--wash-page); border:1px dashed var(--line-page-2); border-radius:var(--radius-pill); padding:4px 10px; margin-top:2px; }
+
+/* draft case — flat two-tone boards, NO wheat/embers/desk; a working case, visibly draft */
+.draft-band{ margin-top:20px; }
+.draft-band-hd{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+.draft-band-hd .lbl{ font-family:var(--font-serif); font-weight:600; font-size:18px; color:var(--ink); }
+.draft-band-hd .n{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); }
+.cavity{ position:relative; background:var(--shelf-cavity); border-radius:3px; padding:14px 12px 16px;
+  box-shadow:inset 0 15px 20px -15px rgba(36,23,16,.34); }
+.cavity::after{ content:''; position:absolute; left:-2px; right:-2px; bottom:-9px; height:9px; background:var(--board-face); border-bottom:5px solid var(--board-under); border-radius:0 0 3px 3px; }
+.shelfline{ display:flex; flex-wrap:wrap; align-items:flex-end; column-gap:14px; row-gap:22px; }
+/* the standing (confident) book — uniform 2:3 cover, upright */
+.dc{ width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:default; }
+.dc .cov{ width:64px; height:96px; }
+.dc .cap{ width:64px; height:34px; overflow:hidden; text-align:center; margin-top:7px; }
+.dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+/* the LEANING gray spine — an exception (Law 1: never copy alone; the lean carries it) */
+.dc.is-lean{ cursor:pointer; }
+.dc.is-lean .cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
+.dc.is-lean .spine-flag{ margin-top:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.dc.is-lean:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+/* generic typeset cloth cover (no external images — pre-sized slot, spine fallback per mech-truth) */
+.cov{ position:relative; border-radius:2px 5px 5px 2px; overflow:hidden;
+  box-shadow:0 3px 5px rgba(36,23,16,.3); background:linear-gradient(135deg,#e3d8c1,#d3c4a6); display:block; }
+.cov .cov-spine{ position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
+.cov .cov-txt{ position:absolute; inset:0; padding:8px 7px 7px 10px; display:flex; flex-direction:column; }
+.cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:#3a2c17; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:#6b5b3c; }
+
+/* review footer — Shelve N (fixed) */
+.rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;
+  padding:12px calc(18px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  background:linear-gradient(to top, var(--page) 60%, transparent); display:none; gap:10px; }
+.rv-foot.is-on{ display:flex; }
+#screen-review .rv-foot .btn-primary{ background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); }
+
+/* ============================================================================
+   EXCEPTION WALKER — sequential fix-next sheet
+   ============================================================================ */
+#walker{ position:fixed; inset:0; z-index:80; display:none; background:var(--scrim); }
+#walker.is-on{ display:block; }
+.wk-sheet{ position:absolute; left:0; right:0; bottom:0; max-height:92%; overflow-y:auto;
+  background:var(--card-1); border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  padding:16px calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  transform:translateY(0); }
+.wk-grip{ width:38px; height:4px; border-radius:2px; background:var(--line-page-2); margin:0 auto 12px; }
+.wk-progress{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); text-align:center; margin-bottom:14px; }
+.wk-row{ display:flex; gap:14px; }
+.wk-row .cov{ width:70px; height:105px; flex:none; filter:grayscale(1) brightness(.9); }
+.wk-guess{ flex:1; min-width:0; }
+.wk-guess .g-lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+.wk-guess .g-t{ font-family:var(--font-serif); font-weight:600; font-size:18px; color:var(--ink); margin:2px 0 0; line-height:1.15; }
+.wk-guess .g-a{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); margin:2px 0 0; }
+/* the evidence line — "I read: '<raw spineText>'" (SC6, requires shelf-vision spineText) */
+.wk-evidence{ margin-top:14px; padding:11px 13px; border-radius:var(--radius-md); background:var(--wash-page); border:1px solid var(--line-page);
+  font-family:var(--font-mono); font-size:12.5px; color:var(--ink); }
+.wk-evidence .lead{ color:var(--ink-3); }
+.wk-evidence .raw{ color:var(--danger); font-weight:500; }
+.wk-cands{ margin-top:14px; }
+.wk-cands .c-hd{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+.wk-cand{ width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;
+  padding:11px 13px; border-radius:var(--radius-md); border:1px solid var(--line-page); background:var(--page-2); color:var(--ink); cursor:pointer; margin-bottom:8px; }
+.wk-cand:active{ background:var(--wash-page); }
+.wk-cand .ct{ font-family:var(--font-serif); font-weight:600; font-size:15px; }
+.wk-cand .ca{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); }
+.wk-search{ width:100%; display:flex; align-items:center; gap:8px; padding:12px 13px; border-radius:var(--radius-md);
+  border:1px dashed var(--line-page-2); background:transparent; color:var(--ink-3); font-family:var(--font-body); font-size:13px; cursor:pointer; margin-bottom:8px; }
+.wk-foot{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+.wk-foot .btn{ flex:1; }
+.wk-skipall{ width:100%; text-align:center; margin-top:12px; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--ink-3); background:none; border:none; cursor:pointer; padding:8px; }
+
+/* ============================================================================
+   RECEIPT + shelve flight glyph
+   ============================================================================ */
+#flight-layer{ position:fixed; inset:0; z-index:70; pointer-events:none; display:none; }
+#flight-layer.is-on{ display:block; }
+.flight-cov{ position:fixed; width:44px; height:66px; z-index:71; }
+.shelf-glyph{ position:fixed; z-index:70; left:50%; top:26%; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:12px; background:var(--glass-2); border:1px solid rgba(246,239,224,.2);
+  display:flex; align-items:center; justify-content:center; color:var(--gold-hi); font-size:30px; opacity:0; transition:opacity .3s ease; }
+.shelf-glyph.is-on{ opacity:1; }
+
+#receipt{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translate(-50%,140%);
+  z-index:75; background:var(--glass-2); color:var(--on-dark); border:1px solid rgba(246,239,224,.16);
+  border-radius:var(--radius-pill); padding:12px 12px 12px 20px; display:flex; align-items:center; gap:14px;
+  transition:transform .34s cubic-bezier(.22,1,.36,1); box-shadow:0 10px 34px -12px rgba(0,0,0,.6); }
+#receipt.is-on{ transform:translate(-50%,0); }
+#receipt .r-txt{ font-family:var(--font-body); font-size:14px; }
+#receipt .r-txt b{ color:var(--gold-hi); font-weight:600; }
+#receipt .r-undo{ font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--gold-hi); background:rgba(246,239,224,.1);
+  border:1px solid rgba(246,239,224,.18); border-radius:var(--radius-pill); padding:9px 16px; cursor:pointer; min-height:42px; }
+
+/* ============================================================================
+   PERMISSION FAMILY + FAILURE FAMILY cards (over the warm ground)
+   ============================================================================ */
+.overlay{ position:absolute; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+  background:linear-gradient(178deg,var(--hour-1),var(--hour-3) 62%,var(--hour-4));
+  padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.overlay.is-on{ display:flex; }
+/* failure overlays sit over the frozen/still camera, not the warm ground */
+.overlay.over-cam{ background:rgba(6,4,2,.72); }
+.card{ width:100%; max-width:360px; background:var(--card-1); border-radius:var(--radius-xl); color:var(--ink);
+  padding:24px 22px; box-shadow:0 20px 60px -20px rgba(0,0,0,.6); }
+.card .c-ic{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:16px;
+  background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); color:var(--gold-ink-on-gold); }
+.card.warn .c-ic{ background:rgba(194,96,58,.16); color:var(--danger); }
+.card h2{ font-family:var(--font-serif); font-weight:600; font-size:23px; color:var(--ink); margin:0 0 8px; line-height:1.15; }
+.card p{ font-family:var(--font-body); font-size:14px; line-height:1.55; color:var(--ink-2); margin:0 0 8px; }
+.card .fineprint{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); margin:12px 0 4px; line-height:1.5; }
+.card .c-actions{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+.card .c-actions.row{ flex-direction:row; }
+/* the always-present add door (denied / offline keep a working way in) */
+.add-door{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line-page); }
+.add-door .ad-lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:9px; }
+.add-door .ad-field{ display:flex; gap:8px; }
+.add-door input{ flex:1; min-width:0; font-family:var(--font-body); font-size:16px; padding:12px 13px; border-radius:var(--radius-md);
+  border:1px solid var(--line-page-2); background:var(--page-2); color:var(--ink); }
+.add-door input::placeholder{ color:var(--ink-3); }
+.add-door .ad-search{ margin-top:9px; width:100%; font-family:var(--font-body); font-size:13px; color:var(--ink-2);
+  background:transparent; border:1px dashed var(--line-page-2); border-radius:var(--radius-md); padding:11px; cursor:pointer; text-align:center; }
+.coach-rows{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.coach-rows li{ display:flex; gap:12px; align-items:center; font-family:var(--font-body); font-size:14px; color:var(--ink-2); }
+.coach-rows .cr-ic{ width:34px; height:34px; flex:none; border-radius:9px; background:var(--wash-page); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold-deep); }
+
+/* ============================================================================
+   REDUCED MOTION — every mandated signature gets a still-state
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce){
+  #cam-warm{ transition:none; }
+  #cam-warm .warm-orb{ animation:none; }
+  .warm-orb{ opacity:1 !important; }
+  /* signature 1 — no bracket travel; the gold flare marks the lock statically */
+  .vf-reticle .br{ transition:none !important; }
+  .vf-reticle.is-lock .br{ transform:none !important; }
+  /* signature 2 — no sweep; a static labelled bar */
+  #shimmer .shim-sweep{ animation:none; background:linear-gradient(115deg, transparent 40%, rgba(240,215,154,.35) 50%, transparent 60%); }
+  /* signature 3 — covers don't fly; they fade at the tray */
+  .tray-cov, .verdict{ animation:none; }
+  .flight-cov{ transition:opacity .2s ease !important; }
+  .warm-orb{ animation:none; }
+  #receipt, .verdict{ transition:none; }
+}
+</style>
+</head>
+<body>
+<div id="mock-banner">Praxis · Scan surface — MOCKUP · fixtures only, no model calls</div>
+
+<div id="surface">
+
+  <!-- ============ ENTRY ============ -->
+  <section class="screen is-active" id="screen-entry">
+    <div class="entry-wrap">
+      <div class="entry-nav">
+        <span class="entry-word">praxis<b>.</b></span>
+        <span class="spacer"></span>
+        <span class="entry-avatar">P</span>
+      </div>
+      <div class="entry-navlist">
+        <span class="entry-navlink">Home</span>
+        <span class="entry-navlink">Shelf</span>
+        <span class="entry-navlink">Arcs</span>
+        <span class="entry-navlink">Notebook</span>
+        <span class="entry-navlink is-active">Scan<span class="nav-badge" id="nav-badge" style="display:none">3</span></span>
+      </div>
+      <div class="entry-body">
+        <h1>Scan a book</h1>
+        <p>Point at a barcode, a cover, or a whole shelf. Praxis reads it and adds it in one tap.</p>
+        <div class="create-door">
+          <div class="cd-hd">Add to your shelf</div>
+          <div class="cd-modes">
+            <button class="cd-mode" type="button"><span class="cd-ic">✎</span>Note</button>
+            <button class="cd-mode" type="button"><span class="cd-ic">🎙</span>Voice</button>
+            <button class="cd-mode" type="button"><span class="cd-ic">⧉</span>Paste</button>
+            <button class="cd-mode" type="button"><span class="cd-ic">🖼</span>Photo</button>
+            <button class="cd-mode cd-scan" type="button" id="door-scan"><span class="cd-ic">◲</span>Scan a book</button>
+          </div>
+        </div>
+        <div class="entry-hint">The create door's Scan mode opens into the surface below</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEWFINDER (holds camera stack + all camera-time chrome) ============ -->
+  <section class="screen" id="screen-view">
+    <div id="cam-stack">
+      <video id="cam-video" playsinline muted autoplay></video>
+      <canvas id="cam-freeze"></canvas>
+      <div id="cam-tint"></div>
+      <div id="cam-warm"><div class="warm-orb"></div><div class="warm-line">Warming the lens…</div></div>
+    </div>
+
+    <!-- top chrome -->
+    <div class="vf-top">
+      <button class="vf-back" type="button" id="vf-back" aria-label="Leave scan">‹</button>
+      <span class="vf-title" id="vf-mode-title">Book</span>
+      <span class="spacer"></span>
+      <button class="vf-torch" type="button" id="vf-torch" aria-label="Torch">
+        ⚡
+        <span class="torch-tip">Torch is Android-only — iOS has no camera-light API. In low light, use the framing coach.</span>
+      </button>
+    </div>
+
+    <!-- reticle -->
+    <div class="vf-reticle" id="reticle"><span class="br tl"></span><span class="br tr"></span><span class="br bl"></span><span class="br br2"></span></div>
+    <div class="vf-guide" id="vf-guide">Center a barcode or cover in the frame</div>
+
+    <!-- shimmer (shelf read) -->
+    <div id="shimmer"><div class="shim-frame"><div class="shim-sweep"></div></div><div class="shim-line">Reading the shelf…</div></div>
+
+    <!-- bottom control cluster -->
+    <div class="vf-bottom" id="vf-bottom">
+      <div class="mode-seg" role="tablist" aria-label="Scan mode">
+        <button type="button" id="seg-book" class="is-on" role="tab" aria-selected="true">Book</button>
+        <button type="button" id="seg-shelf" role="tab" aria-selected="false">Shelf</button>
+      </div>
+      <div class="vf-actionrow" id="vf-actionrow"></div>
+    </div>
+
+    <!-- BOOK verdict card -->
+    <div class="verdict" id="verdict">
+      <div class="verdict-inner">
+        <div class="verdict-grip"></div>
+        <div class="verdict-row">
+          <div class="cov" id="vd-cov"></div>
+          <div class="meta">
+            <p class="v-title" id="vd-title">—</p>
+            <p class="v-author" id="vd-author">—</p>
+            <p class="v-context" id="vd-context" style="display:none"><span class="dot"></span><span id="vd-context-txt"></span></p>
+            <p class="v-silent" id="vd-silent" style="display:none">Identified — no context on your shelf.</p>
+          </div>
+        </div>
+        <div class="verdict-actions">
+          <button class="btn btn-primary" type="button" id="vd-add">Add to shelf</button>
+          <button class="btn btn-ghost" type="button" id="vd-dismiss">Keep scanning</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHELF tray -->
+    <div id="tray">
+      <div class="tray-head">
+        <span class="tray-count" id="tray-count">Reading…</span>
+        <span class="tray-sub" id="tray-sub"></span>
+      </div>
+      <div class="tray-strip" id="tray-strip"></div>
+      <div class="tray-review"><button class="btn btn-primary" type="button" id="tray-review-btn" style="width:100%; display:none">Review the shelf</button></div>
+    </div>
+
+    <!-- permission + failure overlays live inside the viewfinder screen -->
+    <div class="overlay" id="ov-primer">
+      <div class="card">
+        <div class="c-ic">◲</div>
+        <h2>Turn on the camera to scan</h2>
+        <p>Praxis reads the book right on your phone. Images leave only as identification requests — nothing is stored, on your device or ours.</p>
+        <div class="c-actions">
+          <button class="btn btn-primary" type="button" id="primer-allow">Turn on camera</button>
+          <button class="btn btn-quiet" type="button" id="primer-manual">Add without the camera</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ov-denied">
+      <div class="card warn">
+        <div class="c-ic">⃠</div>
+        <h2>Camera's off — that's fine</h2>
+        <p>You can still add any book by its ISBN or by searching. Turn the camera on later from here whenever you like.</p>
+        <div class="add-door">
+          <div class="ad-lbl">Add by ISBN</div>
+          <div class="ad-field">
+            <input type="text" inputmode="numeric" placeholder="978…" aria-label="ISBN">
+            <button class="btn btn-primary" type="button" style="flex:none; padding:12px 16px">Add</button>
+          </div>
+          <button class="ad-search" type="button">Search by title or author instead</button>
+        </div>
+        <div class="c-actions" style="margin-top:16px">
+          <button class="btn btn-ghost" type="button" id="denied-retry">Try the camera again</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ov-offline">
+      <div class="card warn">
+        <div class="c-ic">⌁</div>
+        <h2>You're offline</h2>
+        <p>Barcodes still decode on your phone, but looking a book up needs a connection. Reconnect to scan covers and shelves — or add by ISBN now and we'll look it up when you're back.</p>
+        <div class="add-door">
+          <div class="ad-lbl">Add by ISBN</div>
+          <div class="ad-field">
+            <input type="text" inputmode="numeric" placeholder="978…" aria-label="ISBN">
+            <button class="btn btn-primary" type="button" style="flex:none; padding:12px 16px">Add</button>
+          </div>
+        </div>
+        <div class="c-actions" style="margin-top:16px">
+          <button class="btn btn-ghost" type="button" id="offline-retry">I'm back online</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAILURE FAMILY (four distinct felt states) -->
+    <div class="overlay over-cam" id="ov-failed">
+      <div class="card warn">
+        <div class="c-ic">↺</div>
+        <h2>That one didn't land</h2>
+        <p>Nothing was read and nothing was used — no shot counted against you. Try the shot again.</p>
+        <div class="c-actions"><button class="btn btn-primary" type="button" data-fail-dismiss>Try again — free</button></div>
+      </div>
+    </div>
+
+    <div class="overlay over-cam" id="ov-empty">
+      <div class="card">
+        <div class="c-ic">◎</div>
+        <h2>No books found in that shot</h2>
+        <p>The read worked — there just weren't any spines it could make out. A few things usually help:</p>
+        <ul class="coach-rows">
+          <li><span class="cr-ic">⤡</span>Get a little closer to the shelf</li>
+          <li><span class="cr-ic">☀</span>More light on the spines</li>
+          <li><span class="cr-ic">▭</span>Keep it to one row at a time</li>
+        </ul>
+        <div class="c-actions" style="margin-top:18px"><button class="btn btn-primary" type="button" data-fail-dismiss>Reshoot</button></div>
+      </div>
+    </div>
+
+    <div class="overlay over-cam" id="ov-truncated">
+      <div class="card">
+        <div class="c-ic">◑</div>
+        <h2>Read part of this shelf</h2>
+        <p>These are real — I read this far and stopped before the end of the shelf. Keep them, and reshoot the rest to finish the row.</p>
+        <div class="c-actions"><button class="btn btn-primary" type="button" data-fail-dismiss>Reshoot the rest</button><button class="btn btn-quiet" type="button" data-fail-keep>Keep these <span id="trunc-n">18</span> for now</button></div>
+      </div>
+    </div>
+
+    <div class="overlay over-cam" id="ov-refused">
+      <div class="card">
+        <div class="c-ic">◇</div>
+        <h2>Couldn't read this one</h2>
+        <p>That shot couldn't be processed. It wasn't a book, or the frame was unreadable — nothing was added. Point at a shelf or a cover and try again.</p>
+        <div class="c-actions"><button class="btn btn-primary" type="button" data-fail-dismiss>Back to the camera</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REVIEW (mirror shelf) ============ -->
+  <section class="screen" id="screen-review">
+    <div class="rv-wrap">
+      <div class="rv-top">
+        <button class="rv-back" type="button" id="rv-back" aria-label="Back to camera">‹</button>
+        <h1>The scan</h1>
+      </div>
+      <div class="rv-count" id="rv-count">—</div>
+      <span class="rv-draftbadge">◲ Draft case — nothing's on your shelf yet</span>
+
+      <div class="draft-band">
+        <div class="draft-band-hd"><span class="lbl">Ready to shelve</span><span class="n" id="rv-conf-n">—</span></div>
+        <div class="cavity"><div class="shelfline" id="rv-confident"></div></div>
+      </div>
+
+      <div class="draft-band" id="rv-exc-band">
+        <div class="draft-band-hd"><span class="lbl">Need a look</span><span class="n" id="rv-exc-n">—</span></div>
+        <div class="cavity"><div class="shelfline" id="rv-exceptions"></div></div>
+      </div>
+    </div>
+    <div class="rv-foot" id="rv-foot">
+      <button class="btn btn-ghost" type="button" id="rv-walk" style="flex:none">Review <span id="rv-walk-n">3</span></button>
+      <button class="btn btn-primary" type="button" id="rv-shelve" style="flex:1">Shelve <span id="rv-shelve-n">33</span></button>
+    </div>
+  </section>
+
+</div><!-- /surface -->
+
+<!-- walker overlay -->
+<div id="walker"><div class="wk-sheet" id="wk-sheet"></div></div>
+
+<!-- shelve flight + receipt -->
+<div id="flight-layer"></div>
+<div class="shelf-glyph" id="shelf-glyph">▤</div>
+<div id="receipt"><span class="r-txt" id="receipt-txt">Shelved <b>33</b></span><button class="r-undo" type="button" id="receipt-undo">Undo</button></div>
+
+<!-- dev strip -->
+<div id="dev-strip">
+  <span class="dv-tag">Dev</span>
+  <button type="button" data-dev="reset">↺ Entry</button>
+  <button type="button" data-dev="primer">Primer</button>
+  <button type="button" data-dev="denied">Denied</button>
+  <button type="button" data-dev="offline">Offline</button>
+  <button type="button" data-dev="book-new">Book·new</button>
+  <button type="button" data-dev="book-owned">Book·owned</button>
+  <button type="button" data-dev="book-silent">Book·silent</button>
+  <button type="button" data-dev="shelf">Shelf run</button>
+  <button type="button" data-dev="review">Review</button>
+  <button type="button" data-dev="fail-failed">Failed</button>
+  <button type="button" data-dev="fail-empty">Empty</button>
+  <button type="button" data-dev="fail-truncated">Truncated</button>
+  <button type="button" data-dev="fail-refused">Refused</button>
+  <button type="button" data-dev="hide">▾ hide</button>
+</div>
+<button id="dev-toggle" type="button" aria-label="Show dev strip">⚙</button>
+
+<script>
+/* ES3 ONLY — var/function, string concat, no arrow/const/let/backtick/class. */
+(function(){
+  "use strict";
+
+  var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function $(id){ return document.getElementById(id); }
+  function on(el, ev, fn){ if(el){ el.addEventListener(ev, fn, false); } }
+  function show(el){ if(el){ el.classList.add('is-on'); } }
+  function hide(el){ if(el){ el.classList.remove('is-on'); } }
+
+  /* ---- screen switching ---- */
+  var screens = ['screen-entry','screen-view','screen-review'];
+  function goScreen(id){
+    for(var i=0;i<screens.length;i++){
+      var s = $(screens[i]);
+      if(s){ s.className = 'screen' + (screens[i]===id ? ' is-active' : ''); }
+    }
+  }
+
+  /* ============================================================
+     FIXTURE — reconstructed to match the SC12 Shot-2 calibration:
+     36 detected · 33 confident · 3 exceptions under cut={low}.
+     Titles drawn from Preston's real critical-pedagogy library as
+     named PUBLICLY in the committed calibration doc; the raw 36-book
+     JSON was never committed, so this is a faithful reconstruction of
+     the published distribution + named specimens, NOT the byte payload.
+     ============================================================ */
+  function bk(t,a,conf){ return { title:t, author:a, conf:conf, exc:false }; }
+  function exc(guess,author,spine,cands){ return { title:guess, author:author, conf:'low', exc:true, spine:spine, cands:cands }; }
+
+  var CONFIDENT = [
+    bk('Pedagogy of the Oppressed','Paulo Freire','high'),
+    bk('Teaching to Transgress','bell hooks','high'),
+    bk('All About Love','bell hooks','high'),            /* dedupe target */
+    bk('Savage Inequalities','Jonathan Kozol','high'),
+    bk('We Want to Do More Than Survive','Bettina L. Love','high'),
+    bk('Punished for Dreaming','Bettina L. Love','high'),
+    bk('The Wretched of the Earth','Frantz Fanon','high'),
+    bk('Black Skin, White Masks','Frantz Fanon','medium'),
+    bk('Pedagogy of Freedom','Paulo Freire','high'),
+    bk('Discipline and Punish','Michel Foucault','medium'),
+    bk('The Souls of Black Folk','W. E. B. Du Bois','high'),
+    bk('Between the World and Me','Ta-Nehisi Coates','high'),
+    bk('How to Be an Antiracist','Ibram X. Kendi','high'),
+    bk('Stamped from the Beginning','Ibram X. Kendi','medium'),
+    bk('The New Jim Crow','Michelle Alexander','high'),
+    bk('Freedom Dreams','Robin D. G. Kelley','medium'),
+    bk('Sister Outsider','Audre Lorde','high'),
+    bk('The Fire Next Time','James Baldwin','high'),
+    bk('Democracy and Education','John Dewey','medium'),
+    bk('Experience and Education','John Dewey','high'),
+    bk('Feeling Power','Megan Boler','medium'),
+    bk('Teaching Community','bell hooks','high'),
+    bk('Belonging','bell hooks','medium'),
+    bk('The Beautiful Struggle','Ta-Nehisi Coates','high'),
+    bk('Learning to Labour','Paul Willis','medium'),
+    bk('Ways of Seeing','John Berger','high'),
+    bk('Pedagogy of the Heart','Paulo Freire','high'),
+    bk('The Mis-Education of the Negro','Carter G. Woodson','high'),
+    bk('Culturally Responsive Teaching','Zaretta Hammond','medium'),
+    bk('For White Folks Who Teach in the Hood','Christopher Emdin','high'),
+    bk('Other People’s Children','Lisa Delpit','high'),
+    bk('The Dreamkeepers','Gloria Ladson-Billings','high'),
+    bk('Rethinking Schools','Editors','medium')
+  ]; /* 33 */
+
+  var EXCEPTIONS = [
+    exc('Where We Stand: Class Matters','bell hooks','SECOND CLASS', [
+      { t:'Second Class: The Rules That Bind Us', a:'Batya Ungar-Sargon' },
+      { t:'Where We Stand: Class Matters', a:'bell hooks' }
+    ]),
+    exc('Black Beach', '', 'BLACK BEA', [
+      { t:'Black Beach: A Community, an Oil Company…', a:'Daniel Hall' },
+      { t:'The Black Beach', a:'' }
+    ]),
+    exc('Freedom Is a Constant Struggle','Angela Y. Davis','FR—D—M C—NST—NT', [
+      { t:'Freedom Is a Constant Struggle', a:'Angela Y. Davis' },
+      { t:'Are Prisons Obsolete?', a:'Angela Y. Davis' }
+    ])
+  ]; /* 3 */
+
+  /* ---- cloth cover node (no external images — pre-sized slot, spine fallback) ---- */
+  function coverNode(title, author){
+    var d = document.createElement('div'); d.className='cov';
+    var sp = document.createElement('span'); sp.className='cov-spine'; d.appendChild(sp);
+    var wr = document.createElement('div'); wr.className='cov-txt';
+    var t = document.createElement('div'); t.className='cov-t'; t.textContent=title; wr.appendChild(t);
+    var a = document.createElement('div'); a.className='cov-a'; a.textContent=author||''; wr.appendChild(a);
+    d.appendChild(wr);
+    return d;
+  }
+
+  /* ============================================================
+     CAMERA LIFECYCLE (SCE-1) — teardown on leave + visibilitychange
+     ============================================================ */
+  var stream = null;
+  var video = $('cam-video');
+  var camReady = false;
+
+  function stopStream(){
+    if(stream){
+      var tr = stream.getTracks();
+      for(var i=0;i<tr.length;i++){ try{ tr[i].stop(); }catch(e){} }
+      stream = null;
+    }
+    if(video){ try{ video.pause(); video.srcObject=null; }catch(e){} }
+    camReady = false;
+  }
+
+  function startStream(cb){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      cb(false, 'unsupported'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } }, audio:false })
+      .then(function(s){
+        stream = s;
+        video.srcObject = s;
+        var p = video.play();
+        if(p && p.then){ p.then(function(){}, function(){}); }
+        camReady = true;
+        cb(true);
+      })
+      .catch(function(err){
+        cb(false, err && err.name ? err.name : 'error');
+      });
+  }
+
+  /* warm-up transition: the viewfinder FADES IN — never a white flash */
+  function warmUpThen(cb){
+    show($('cam-warm'));
+    var wait = RM ? 250 : 850;
+    window.setTimeout(function(){
+      hide($('cam-warm'));
+      if(cb){ cb(); }
+    }, wait);
+  }
+
+  /* ============================================================
+     VIEWFINDER + MODE
+     ============================================================ */
+  var mode = 'book';         /* 'book' | 'shelf' */
+  var bookVariant = 'new';   /* which verdict card the auto-fire shows */
+  var autoTimer = null;
+
+  function clearTimers(){
+    if(autoTimer){ window.clearTimeout(autoTimer); autoTimer=null; }
+  }
+
+  function renderActionRow(){
+    var row = $('vf-actionrow'); row.innerHTML='';
+    if(mode==='book'){
+      var w = document.createElement('div'); w.className='book-auto';
+      var r = document.createElement('div'); r.className='ring'; r.textContent='||||';
+      var l = document.createElement('div'); l.className='lbl'; l.textContent='Auto-detecting';
+      w.appendChild(r); w.appendChild(l); row.appendChild(w);
+    } else {
+      var b = document.createElement('button'); b.type='button'; b.className='shutter'; b.setAttribute('aria-label','Capture shelf');
+      var c = document.createElement('span'); c.className='core'; b.appendChild(c);
+      on(b,'click', fireShelfShot);
+      row.appendChild(b);
+    }
+  }
+
+  function setMode(m){
+    mode = m;
+    $('seg-book').className = (m==='book'?'is-on':''); $('seg-book').setAttribute('aria-selected', m==='book');
+    $('seg-shelf').className = (m==='shelf'?'is-on':''); $('seg-shelf').setAttribute('aria-selected', m==='shelf');
+    $('vf-mode-title').textContent = (m==='book'?'Book':'Shelf');
+    $('vf-guide').textContent = (m==='book'?'Center a barcode or cover in the frame':'Fill the frame with one row of spines — then tap to read');
+    renderActionRow();
+    clearTimers();
+    hideVerdict();
+    if(m==='book'){ scheduleAutoFire(); }
+  }
+
+  /* Book mode: simulated auto-fire a few seconds after entering */
+  function scheduleAutoFire(){
+    clearTimers();
+    if(!isViewfinderLive()) return;
+    autoTimer = window.setTimeout(function(){
+      if(mode==='book' && isViewfinderLive()){ lockOnSnap(showVerdict); }
+    }, RM ? 1400 : 2600);
+  }
+
+  function isViewfinderLive(){
+    return $('screen-view').classList.contains('is-active')
+        && !anyOverlayOpen() && !$('verdict').classList.contains('is-up')
+        && !$('shimmer').classList.contains('is-on');
+  }
+
+  /* FELT SIGNATURE 1 — lock-on snap */
+  function lockOnSnap(after){
+    var ret = $('reticle');
+    ret.classList.add('is-lock');
+    var hold = RM ? 180 : 420;
+    window.setTimeout(function(){
+      ret.classList.remove('is-lock');
+      if(after){ after(); }
+    }, hold);
+  }
+
+  /* ---- BOOK verdict card ---- */
+  function showVerdict(){
+    var v = bookVariant;
+    var vd = $('verdict');
+    var ctx = $('vd-context'), sil = $('vd-silent'), add = $('vd-add');
+    $('vd-cov').innerHTML='';
+    ctx.style.display='none'; sil.style.display='none';
+    add.textContent = 'Add to shelf';
+
+    if(v==='owned'){
+      $('vd-title').textContent='All About Love';
+      $('vd-author').textContent='bell hooks';
+      $('vd-cov').appendChild(coverNode('All About Love','bell hooks'));
+      $('vd-context-txt').textContent='On your shelf';
+      ctx.style.display='flex';
+      add.textContent='Open';
+    } else if(v==='silent'){
+      $('vd-title').textContent='The Order of Things';
+      $('vd-author').textContent='Michel Foucault';
+      $('vd-cov').appendChild(coverNode('The Order of Things','Michel Foucault'));
+      sil.style.display='block';
+    } else { /* new */
+      $('vd-title').textContent='Pedagogy of Freedom';
+      $('vd-author').textContent='Paulo Freire';
+      $('vd-cov').appendChild(coverNode('Pedagogy of Freedom','Paulo Freire'));
+      $('vd-context-txt').textContent='Second Freire on your shelf';
+      ctx.style.display='flex';
+    }
+    show(vd); vd.classList.add('is-up');
+  }
+  function hideVerdict(){ var vd=$('verdict'); vd.classList.remove('is-up'); }
+
+  /* ============================================================
+     SHELF MODE — shutter → freeze → shimmer → tray fill
+     ============================================================ */
+  var trayItems = [];         /* landed identity keys */
+  var scanResult = null;      /* {confident:[], exceptions:[]} once read */
+
+  function idKey(t,a){
+    function norm(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+    return 'ta:'+norm(t)+'|'+norm(a);
+  }
+
+  function freezeFrame(){
+    var cv = $('cam-freeze');
+    try{
+      if(camReady && video.videoWidth){
+        cv.width = video.videoWidth; cv.height = video.videoHeight;
+        cv.getContext('2d').drawImage(video,0,0,cv.width,cv.height);
+      }
+    }catch(e){}
+    cv.style.display='block';
+  }
+  function unfreeze(){ $('cam-freeze').style.display='none'; }
+
+  function fireShelfShot(){
+    if(!isViewfinderLive() && !$('screen-view').classList.contains('is-active')) return;
+    clearTimers();
+    hideVerdict();
+    freezeFrame();
+    /* FELT SIGNATURE 2 — the shimmer read (indeterminate) */
+    show($('shimmer'));
+    var readMs = RM ? 700 : 1500;
+    window.setTimeout(function(){
+      hide($('shimmer'));
+      beginTrayFill();
+    }, readMs);
+  }
+
+  /* the arrival stream: 33 confident + 3 exceptions + 1 dedupe re-catch = 37 events, 36 land */
+  function buildArrivalStream(){
+    var arr = [];
+    var i;
+    for(i=0;i<CONFIDENT.length;i++){ arr.push({ kind:'ok', book:CONFIDENT[i] }); }
+    /* inject the All-About-Love re-catch a few beats in (absorbs with a tick) */
+    arr.splice(6, 0, { kind:'dupe', book:CONFIDENT[2] });
+    for(i=0;i<EXCEPTIONS.length;i++){ arr.push({ kind:'exc', book:EXCEPTIONS[i] }); }
+    return arr;
+  }
+
+  function beginTrayFill(){
+    show($('tray'));
+    var strip = $('tray-strip'); strip.innerHTML='';
+    trayItems = [];
+    var seen = {};
+    var stream2 = buildArrivalStream();
+    var found = 0, confident = 0, exceptions = 0;
+    $('tray-review-btn').style.display='none';
+
+    var step = 0;
+    function landNext(){
+      if(step >= stream2.length){
+        finishFill(found, confident, exceptions);
+        return;
+      }
+      var evt = stream2[step]; step++;
+      var b = evt.book;
+      var key = idKey(b.title, b.author);
+
+      if(evt.kind==='dupe' || seen[key]){
+        /* SCA3 soft dedupe — absorb with a tick on the existing tray cover */
+        var existing = strip.querySelector('[data-key="'+cssEsc(key)+'"]');
+        if(existing && !existing.querySelector('.dupe-tick')){
+          var tk = document.createElement('span'); tk.className='dupe-tick'; tk.textContent='✓';
+          existing.appendChild(tk);
+          existing.scrollIntoView({ block:'nearest', inline:'nearest' });
+        }
+        $('tray-sub').textContent = 'already caught · absorbed';
+      } else {
+        seen[key] = true;
+        var cov = coverNode(b.title, b.author);
+        cov.classList.add('tray-cov');
+        cov.setAttribute('data-key', key);
+        if(b.exc){ cov.style.filter='grayscale(1) brightness(.86)'; }
+        strip.appendChild(cov);
+        strip.scrollLeft = strip.scrollWidth;
+        found++;
+        if(b.exc){ exceptions++; } else { confident++; }
+        $('tray-sub').textContent='';
+      }
+      $('tray-count').innerHTML = '<b>'+found+'</b> found';
+      window.setTimeout(landNext, RM ? 30 : 95);
+    }
+    landNext();
+  }
+
+  function cssEsc(s){ return s.replace(/([^a-zA-Z0-9_-])/g, '\\$1'); }
+
+  function finishFill(found, confident, exceptions){
+    scanResult = { confident:confident, exceptions:exceptions, found:found };
+    /* count line computed from the fixture at cut={low} */
+    $('tray-count').innerHTML = '<b>'+found+'</b> found';
+    $('tray-sub').textContent = confident+' confident · '+exceptions+' need a look';
+    var btn = $('tray-review-btn');
+    btn.style.display='block';
+    btn.textContent = 'Review the shelf';
+    /* announce for a11y */
+    announce(found+' books found. '+confident+' confident, '+exceptions+' need a look.');
+  }
+
+  /* ============================================================
+     REVIEW — the mirror shelf (draft case)
+     ============================================================ */
+  function renderReview(){
+    var conf = (scanResult ? scanResult.confident : CONFIDENT.length);
+    var exc = (scanResult ? scanResult.exceptions : EXCEPTIONS.length);
+    var found = conf + exc;
+    $('rv-count').textContent = found + ' found · ' + conf + ' confident · ' + exc + ' need a look';
+    $('rv-conf-n').textContent = conf;
+    $('rv-exc-n').textContent = exc;
+
+    var cwrap = $('rv-confident'); cwrap.innerHTML='';
+    var i;
+    for(i=0;i<CONFIDENT.length;i++){
+      var b = CONFIDENT[i];
+      var d = document.createElement('div'); d.className='dc';
+      var cov = coverNode(b.title, b.author); cov.style.width='64px'; cov.style.height='96px';
+      d.appendChild(cov);
+      var cap = document.createElement('div'); cap.className='cap';
+      var t = document.createElement('div'); t.className='t'; t.textContent=b.title; cap.appendChild(t);
+      d.appendChild(cap);
+      cwrap.appendChild(d);
+    }
+
+    var ewrap = $('rv-exceptions'); ewrap.innerHTML='';
+    for(i=0;i<EXCEPTIONS.length;i++){
+      (function(idx){
+        var b = EXCEPTIONS[idx];
+        var d = document.createElement('div'); d.className='dc is-lean'; d.setAttribute('tabindex','0'); d.setAttribute('role','button');
+        d.setAttribute('aria-label','Needs a look: '+b.title+'. Open to fix.');
+        var cov = coverNode(b.title, b.author); cov.style.width='64px'; cov.style.height='96px';
+        d.appendChild(cov);
+        var fl = document.createElement('div'); fl.className='spine-flag'; fl.textContent='needs a look'; d.appendChild(fl);
+        on(d,'click', function(){ openWalker(idx); });
+        on(d,'keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openWalker(idx); } });
+        ewrap.appendChild(d);
+      })(i);
+    }
+    $('rv-exc-band').style.display = EXCEPTIONS.length ? 'block' : 'none';
+
+    $('rv-shelve-n').textContent = conf;
+    $('rv-walk-n').textContent = exc;
+    $('rv-walk').style.display = exc ? '' : 'none';
+    show($('rv-foot'));
+    goScreen('screen-review');
+  }
+
+  /* ============================================================
+     EXCEPTION WALKER
+     ============================================================ */
+  var walkOrder = [];  /* indices still unresolved */
+  var walkPos = 0;
+
+  function openWalker(startIdx){
+    walkOrder = [];
+    var i;
+    for(i=0;i<EXCEPTIONS.length;i++){ walkOrder.push(i); }
+    walkPos = 0;
+    if(typeof startIdx==='number'){
+      for(i=0;i<walkOrder.length;i++){ if(walkOrder[i]===startIdx){ walkPos=i; break; } }
+    }
+    renderWalkerStep();
+    show($('walker'));
+  }
+  function closeWalker(){ hide($('walker')); }
+
+  function renderWalkerStep(){
+    if(walkPos >= walkOrder.length){ closeWalker(); return; }
+    var idx = walkOrder[walkPos];
+    var b = EXCEPTIONS[idx];
+    var s = $('wk-sheet');
+    s.innerHTML='';
+
+    var grip=document.createElement('div'); grip.className='wk-grip'; s.appendChild(grip);
+    var prog=document.createElement('div'); prog.className='wk-progress';
+    prog.textContent = (walkPos+1)+' of '+walkOrder.length+' to review'; s.appendChild(prog);
+
+    var row=document.createElement('div'); row.className='wk-row';
+    var cov=coverNode(b.title, b.author); cov.className='cov'; cov.style.width='70px'; cov.style.height='105px';
+    /* rebuild inner because coverNode set class 'cov' already; re-add spine/text */
+    row.appendChild(cov);
+    var g=document.createElement('div'); g.className='wk-guess';
+    var gl=document.createElement('div'); gl.className='g-lbl'; gl.textContent='Best guess'; g.appendChild(gl);
+    var gt=document.createElement('div'); gt.className='g-t'; gt.textContent=b.title; g.appendChild(gt);
+    var ga=document.createElement('div'); ga.className='g-a'; ga.textContent=b.author||'author unclear'; g.appendChild(ga);
+    row.appendChild(g);
+    s.appendChild(row);
+
+    /* the evidence line — verbatim raw spineText (SC6) */
+    var ev=document.createElement('div'); ev.className='wk-evidence';
+    var lead=document.createElement('span'); lead.className='lead'; lead.textContent='I read: ';
+    var raw=document.createElement('span'); raw.className='raw'; raw.textContent="'"+b.spine+"'";
+    ev.appendChild(lead); ev.appendChild(raw); s.appendChild(ev);
+
+    var cands=document.createElement('div'); cands.className='wk-cands';
+    var ch=document.createElement('div'); ch.className='c-hd'; ch.textContent='Did you mean'; cands.appendChild(ch);
+    var j;
+    for(j=0;j<b.cands.length;j++){
+      (function(cd){
+        var c=document.createElement('button'); c.type='button'; c.className='wk-cand';
+        var ct=document.createElement('span'); ct.className='ct'; ct.textContent=cd.t; c.appendChild(ct);
+        if(cd.a){ var ca=document.createElement('span'); ca.className='ca'; ca.textContent=cd.a; c.appendChild(ca); }
+        on(c,'click', function(){ resolveStep('picked'); });
+        cands.appendChild(c);
+      })(b.cands[j]);
+    }
+    var search=document.createElement('button'); search.type='button'; search.className='wk-search';
+    search.innerHTML='<span>⌕</span> Search for the right book';
+    on(search,'click', function(){ resolveStep('search'); });
+    cands.appendChild(search);
+    s.appendChild(cands);
+
+    var foot=document.createElement('div'); foot.className='wk-foot';
+    var notbook=document.createElement('button'); notbook.type='button'; notbook.className='btn btn-quiet';
+    notbook.textContent='Not a book'; on(notbook,'click', function(){ resolveStep('notbook'); });
+    var skip=document.createElement('button'); skip.type='button'; skip.className='btn btn-ghost';
+    skip.textContent='Skip for now'; on(skip,'click', function(){ resolveStep('skip'); });
+    foot.appendChild(notbook); foot.appendChild(skip);
+    s.appendChild(foot);
+
+    var skipall=document.createElement('button'); skipall.type='button'; skipall.className='wk-skipall';
+    skipall.textContent='Skip all '+(walkOrder.length-walkPos)+' remaining';
+    on(skipall,'click', function(){ closeWalker(); });
+    s.appendChild(skipall);
+
+    s.scrollTop = 0;
+  }
+
+  /* fixing auto-advances to the next exception */
+  function resolveStep(kind){
+    /* 'picked'/'search'/'notbook' resolve the item; 'skip' leaves it and advances */
+    walkPos++;
+    if(walkPos >= walkOrder.length){
+      closeWalker();
+      announce('Review complete.');
+    } else {
+      renderWalkerStep();
+    }
+  }
+
+  /* ============================================================
+     SHELVE FLIGHT + RECEIPT + IMMEDIATE UNDO (ERRATA-1: no sync-hold)
+     ============================================================ */
+  function shelveConfident(){
+    var conf = (scanResult ? scanResult.confident : CONFIDENT.length);
+    var glyph = $('shelf-glyph');
+    show(glyph);
+    /* FELT SIGNATURE 3 — the shelve flight (covers leave toward a shelf glyph) */
+    var covers = document.querySelectorAll('#rv-confident .dc .cov');
+    var layer = $('flight-layer'); layer.innerHTML=''; show(layer);
+    var gr = glyph.getBoundingClientRect();
+    var tx = gr.left + gr.width/2, ty = gr.top + gr.height/2;
+    var n = Math.min(covers.length, 12);  /* fly a representative dozen, not all 33 */
+    var done = 0, launched = 0;
+
+    function afterFlight(){
+      hide(layer); layer.innerHTML='';
+      showReceipt(conf);
+      window.setTimeout(function(){ hide(glyph); }, 600);
+    }
+
+    if(RM || n===0){
+      /* reduced-motion still: no flight; fade + receipt */
+      afterFlight();
+      return;
+    }
+
+    var k;
+    for(k=0;k<n;k++){
+      (function(delay){
+        var src = covers[k].getBoundingClientRect();
+        var fly = document.createElement('div'); fly.className='cov flight-cov';
+        fly.style.left = src.left+'px'; fly.style.top = src.top+'px';
+        fly.style.width = src.width+'px'; fly.style.height = src.height+'px';
+        fly.appendChild(document.createTextNode(''));
+        layer.appendChild(fly);
+        launched++;
+        window.setTimeout(function(){
+          fly.style.transition = 'transform .55s cubic-bezier(.4,0,.2,1), opacity .55s ease';
+          fly.style.transform = 'translate('+(tx-src.left-src.width/2)+'px,'+(ty-src.top-src.height/2)+'px) scale(.28) rotate('+(Math.random()*20-10)+'deg)';
+          fly.style.opacity = '0';
+        }, delay);
+        window.setTimeout(function(){
+          done++;
+          if(done>=launched){ afterFlight(); }
+        }, delay + 620);
+      })(k*55);
+    }
+  }
+
+  function showReceipt(conf){
+    $('receipt-txt').innerHTML = 'Shelved <b>'+conf+'</b>';
+    show($('receipt'));
+    announce('Shelved '+conf+' books. Undo available.');
+  }
+
+  /* immediate batch undo — no "finishing sync" hold (ERRATA-1) */
+  on($('receipt-undo'),'click', function(){
+    hide($('receipt'));
+    announce('Shelving undone. '+ (scanResult?scanResult.confident:CONFIDENT.length) +' books returned to the draft case.');
+  });
+
+  /* ============================================================
+     OVERLAYS (permission + failure) helpers
+     ============================================================ */
+  var overlays = ['ov-primer','ov-denied','ov-offline','ov-failed','ov-empty','ov-truncated','ov-refused'];
+  function anyOverlayOpen(){
+    for(var i=0;i<overlays.length;i++){ if($(overlays[i]).classList.contains('is-on')) return true; }
+    return false;
+  }
+  function closeAllOverlays(){ for(var i=0;i<overlays.length;i++){ hide($(overlays[i])); } }
+  function openOverlay(id){ closeAllOverlays(); goScreen('screen-view'); show($(id)); }
+
+  /* ============================================================
+     ENTRY → warm-up → permission primer → live camera
+     ============================================================ */
+  function enterScan(){
+    goScreen('screen-view');
+    closeAllOverlays();
+    hideVerdict();
+    hide($('tray')); hide($('shimmer'));
+    setMode('book');
+    /* SCE-3: known-offline check BEFORE the primer */
+    if(navigator.onLine === false){
+      openOverlay('ov-offline');
+      return;
+    }
+    /* SC7: designed primer BEFORE the OS ask */
+    openOverlay('ov-primer');
+  }
+
+  function grantAndWarm(){
+    closeAllOverlays();
+    warmUpThen(function(){});  /* show warm veil immediately */
+    startStream(function(ok, why){
+      if(ok){
+        /* keep the warm veil until the fade completes, then run book auto-fire */
+        window.setTimeout(function(){
+          hide($('cam-warm'));
+          if(mode==='book'){ scheduleAutoFire(); }
+        }, RM?250:850);
+      } else {
+        hide($('cam-warm'));
+        if(why==='NotAllowedError' || why==='SecurityError' || why==='PermissionDeniedError'){
+          openOverlay('ov-denied');
+        } else {
+          /* unsupported / no camera — still a working add door via denied card */
+          openOverlay('ov-denied');
+        }
+      }
+    });
+  }
+
+  /* ============================================================
+     WIRING
+     ============================================================ */
+  on($('door-scan'),'click', enterScan);
+  on($('primer-allow'),'click', grantAndWarm);
+  on($('primer-manual'),'click', function(){ openOverlay('ov-denied'); });
+  on($('denied-retry'),'click', function(){ closeAllOverlays(); openOverlay('ov-primer'); });
+  on($('offline-retry'),'click', function(){ closeAllOverlays(); openOverlay('ov-primer'); });
+
+  on($('seg-book'),'click', function(){ if(mode!=='book'){ setMode('book'); } });
+  on($('seg-shelf'),'click', function(){ if(mode!=='shelf'){ setMode('shelf'); } });
+
+  on($('vf-torch'),'click', function(){ this.classList.toggle('tip-open'); });
+
+  on($('vd-add'),'click', function(){
+    hideVerdict();
+    announce('Added to shelf.');
+    if(mode==='book'){ scheduleAutoFire(); }
+  });
+  on($('vd-dismiss'),'click', function(){ hideVerdict(); if(mode==='book'){ scheduleAutoFire(); } });
+
+  on($('tray-review-btn'),'click', renderReview);
+  on($('rv-back'),'click', function(){ goScreen('screen-view'); });
+  on($('rv-walk'),'click', function(){ openWalker(); });
+  on($('rv-shelve'),'click', shelveConfident);
+
+  /* leave / back — SCE-1 teardown */
+  on($('vf-back'),'click', leaveSurface);
+  function leaveSurface(){
+    clearTimers();
+    stopStream();
+    closeAllOverlays();
+    hideVerdict(); hide($('tray')); hide($('shimmer'));
+    goScreen('screen-entry');
+  }
+
+  /* failure dismiss buttons */
+  var fdis = document.querySelectorAll('[data-fail-dismiss]');
+  for(var fi=0; fi<fdis.length; fi++){
+    on(fdis[fi],'click', function(){ closeAllOverlays(); if(mode==='book'){ scheduleAutoFire(); } });
+  }
+  var fkeep = document.querySelectorAll('[data-fail-keep]');
+  for(var ki=0; ki<fkeep.length; ki++){
+    on(fkeep[ki],'click', function(){
+      /* TRUNCATED keep-partial — the partial tray is REAL; go review what landed */
+      closeAllOverlays();
+      scanResult = { confident: 16, exceptions: 2, found: 18 };
+      /* trim the review to the partial set for the demo */
+      renderReviewPartial(18);
+    });
+  }
+  function renderReviewPartial(n){
+    /* reuse the full render but note it's partial in the count */
+    renderReview();
+    $('rv-count').textContent = 'Kept '+n+' · shelf not finished — reshoot the rest';
+  }
+
+  /* ============================================================
+     SCE-1 — the camera FORGETS: stop on backgrounding, re-warm on return
+     ============================================================ */
+  function onVisibility(){
+    if(document.hidden){
+      if($('screen-view').classList.contains('is-active') && stream){
+        stopStream();
+        /* mark that we should re-warm when we come back */
+        video.setAttribute('data-needs-rewarm','1');
+      }
+    } else {
+      if(video.getAttribute('data-needs-rewarm')==='1' && $('screen-view').classList.contains('is-active')){
+        video.removeAttribute('data-needs-rewarm');
+        if(!anyOverlayOpen()){
+          warmUpThen(function(){});
+          startStream(function(ok){
+            window.setTimeout(function(){ hide($('cam-warm')); if(ok && mode==='book'){ scheduleAutoFire(); } }, RM?250:850);
+          });
+        }
+      }
+    }
+  }
+  on(document,'visibilitychange', onVisibility);
+  on(window,'pagehide', function(){ stopStream(); });
+
+  /* ============================================================
+     a11y announcer (SC8/Law 8 — results announced)
+     ============================================================ */
+  var live = document.createElement('div');
+  live.setAttribute('aria-live','polite'); live.setAttribute('role','status');
+  live.style.cssText='position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);';
+  document.body.appendChild(live);
+  function announce(msg){ live.textContent=''; window.setTimeout(function(){ live.textContent=msg; }, 30); }
+
+  /* ============================================================
+     DEV STRIP — flip every state (visually quiet)
+     ============================================================ */
+  function devFakeCameraGround(){
+    /* for states that need to sit "over the camera" without a real stream in dev */
+    goScreen('screen-view'); setMode('book'); clearTimers();
+  }
+  var devBtns = document.querySelectorAll('#dev-strip button');
+  for(var di=0; di<devBtns.length; di++){
+    (function(btn){
+      on(btn,'click', function(){
+        var act = btn.getAttribute('data-dev');
+        if(act==='hide'){ $('dev-strip').classList.add('is-hidden'); $('dev-toggle').style.display='block'; return; }
+        if(act==='reset'){ leaveSurface(); return; }
+        if(act==='primer'){ enterScan(); return; }
+        if(act==='denied'){ openOverlay('ov-denied'); return; }
+        if(act==='offline'){ openOverlay('ov-offline'); return; }
+        if(act==='book-new'){ bookVariant='new'; devFakeCameraGround(); closeAllOverlays(); lockOnSnap(showVerdict); return; }
+        if(act==='book-owned'){ bookVariant='owned'; devFakeCameraGround(); closeAllOverlays(); lockOnSnap(showVerdict); return; }
+        if(act==='book-silent'){ bookVariant='silent'; devFakeCameraGround(); closeAllOverlays(); lockOnSnap(showVerdict); return; }
+        if(act==='shelf'){ goScreen('screen-view'); closeAllOverlays(); setMode('shelf'); fireShelfShot(); return; }
+        if(act==='review'){ if(!scanResult){ scanResult={confident:CONFIDENT.length, exceptions:EXCEPTIONS.length, found:CONFIDENT.length+EXCEPTIONS.length}; } renderReview(); return; }
+        if(act==='fail-failed'){ openOverlay('ov-failed'); return; }
+        if(act==='fail-empty'){ openOverlay('ov-empty'); return; }
+        if(act==='fail-truncated'){ openOverlay('ov-truncated'); return; }
+        if(act==='fail-refused'){ openOverlay('ov-refused'); return; }
+      });
+    })(devBtns[di]);
+  }
+  on($('dev-toggle'),'click', function(){ $('dev-strip').classList.remove('is-hidden'); this.style.display='none'; });
+
+  /* boot */
+  goScreen('screen-entry');
+})();
+</script>
+</body>
+</html>
