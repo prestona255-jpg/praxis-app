@@ -14,10 +14,10 @@ prerequisite and this file receives the numbers when the shots are pasted.)
   model}`) + header `latency __ ms / detected __ / matched __/__` + the titles that
   showed `✗ Google Books: no match`.
 
-## SC6 predicate to simulate (adjusted from the endpoint contract — see recon item 8)
+## SC6 predicate to simulate — RATIFIED as amended (BRIEF-ERRATA-2, Preston 2026-07-25)
 The shelf endpoint returns `confidence` (high/med/low), **no `legibility` field**
 (that lives in `vision-proxy`). So on the shelf path the three-arm SC6 predicate
-reduces to:
+reduces to (ratified):
 
   **exception ⇔ (Google Books no-match) OR (confidence == low)**
 

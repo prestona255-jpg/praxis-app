@@ -234,7 +234,57 @@ and (b) a **bounded-memory nuisance, not a data-resurrection race.** Batch-Undo 
 scanned BOOKS uses `deleteBook`, which already clears the pending-add (`:7542`) AND
 tombstones the delete (`:7543`); `pendingBookDeletes` covers the resurrection case.
 **The SCD-2 hold may still be wanted defensively, but its stated justification does not
-match the code.** Preston's call — this is a named go/no-go item.
+match the code.** **RULED → BRIEF-ERRATA-1 (below).**
+
+---
+
+## BRIEF-ERRATA LEDGER (Preston-ruled 2026-07-25)
+
+The brief file (`docs/studio/scan-round-brief.md`) STAYS AS COMMITTED (`6e10c41`);
+corrections live here, in the ledger — not by editing the constitution.
+
+### BRIEF-ERRATA-1 — SCD-2 batch-Undo hold is RETIRED
+Resolves the BRIEF-CONFLICT above **against the brief.** Recon reading stands:
+Finding C is arc-scoped and inert-for-correctness, NOT the book path.
+
+> `docs/checkpoints/fx1.md:146–151` — *"Finding C — pending-set growth on
+> delete-before-sync. `deleteArc`/`deleteSubTheory`/`deleteUserTheme` don't
+> `clearPendingSync` (unlike `deleteBook`'s `clearPendingBookSync`). Inert for
+> correctness (a deleted id is gone from state, so the clear-loop never revisits it)
+> but the pending array grows unbounded for created-then-deleted-before-first-sync
+> records."*
+
+`deleteBook` already clears the pending add (`js/views.js:7542`) and tombstones the
+delete (`:7543`); `pendingBookDeletes` (`js/state.js:1119`) covers resurrection.
+**RULING:** the SCD-2 "hold Undo until adds flush" gate is **dropped.** Batch Undo
+**fires immediately** as a loop over `deleteBook` — the canonical scrub.
+**BUILD-VERIFICATION RIDER (mandatory):** a **forced-timing race test on
+prestonpraxistest** — shelve a batch, hit Undo *instantly, mid-sync*, then reload and
+prove **zero resurrection** (books count stable + ids stable). This is a hard gate on
+the build's batch-Undo slice, not optional.
+
+### BRIEF-ERRATA-2 — SC6 predicate amended to the shelf endpoint's real vocabulary
+Ratified as amended: the shelf-path exception predicate is
+**exception ⇔ (Google Books no-match) OR (confidence == low)**. "legibility" was
+`vision-proxy` vocabulary (`clear|partial`), never `shelf-vision`'s — `shelf-vision`
+emits `confidence` (high/med/low) + `spineText`, no `legibility` field
+(`netlify/functions/shelf-vision.js:11–13, :314`). Calibration sweeps the cut across
+`{low}` vs `{low, medium}` (see `scan-open-calibration.md`).
+
+### BUILD-FIRST TASK (item 8) — shelf-vision WIRING
+The build's **first named task**: switch the app's shelf-scan from `vision-proxy`
+(`js/views.js:8020`) to the de-risk `shelf-vision` endpoint. **Client wiring only —
+the endpoint is UNTOUCHED** (the "zero endpoint change" non-goal stays intact). This
+is the prerequisite that makes SC6's `"I read: '<spineText>'"` correction sheet
+possible (only `shelf-vision` returns `spineText`).
+
+### SCE-3 LEDGER NOTE — offline barcode is contingent
+zxing is **CDN-lazy-loaded** (`@zxing/library@0.20.0`, `js/views.js:6830`), not
+vendored. So "barcode decodes offline" holds ONLY when either (a) native
+`BarcodeDetector` is present (Chrome/Android — no script needed), or (b) the zxing
+CDN script is already cached. On iPhone Safari offline with an uncached zxing, live
+barcode decode is unavailable and must fall through to the ISBN type-in. The SCE-3
+offline card + the `sw.js` zxing-precache decision are build-round items.
 
 ---
 
