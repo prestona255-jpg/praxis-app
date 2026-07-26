@@ -483,7 +483,12 @@ function renderRoute() {
   // It does NOT touch the nav: theme.css lists .app-nav (and .yumi-bloom,
   // .yumi-panel, .spotlight-panel) as INDEPENDENT selectors on the dark remap, so
   // that chrome keeps its own world fill over any ground.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1, scan: 1 };
+  // FX-D: #scan is NOT in the dark-ground set. The camera is dark via explicit
+  // --scan-* tokens (ground-independent); the surface's LIGHT cards (verdict, review,
+  // walker, permission/failure) use the --ink family, which on a dark ground resolves
+  // to LIGHT ink and renders ghost-faint on their light fill (the F3 title defect).
+  // A bright ground gives those cards full dark ink; the camera chrome is unaffected.
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
