@@ -194,3 +194,54 @@ there, not dropped. Surfaced for Preston.
 
 DEVICE-OWED: live barcode read (a real code from a real shelf) — Preston's phone (getUserMedia
 + BarcodeDetector/zxing on device; the rig has no camera).
+
+---
+
+## S4 — SHELF MODE + REVIEW + WALKER + SHELVE/UNDO — BUILT + VERIFIED (local, v3.263)
+
+Replaces the four S4 stubs; the largest slice. All wired through the S1 pipeline + the S3
+`scanCommitBook` shared write.
+
+- **Shutter → freeze → shimmer → shelf-vision** (`scanRunShelfVision`, SC10 queue depth 1 via
+  `scanShotBusy`). `scanCaptureBase64` scales the frame to ≤1600px jpeg. SC11 signature 2.
+- **Progressive tray fill** (`scanResolveAndFill`): sequential `resolveBook` (queue-1) → `scanIsException`
+  classify → drop as each lands. **SCA3 dedupe**: within-scan duplicate (same `bookIdentityKey`) →
+  absorb + teal tick; library match → SOFT `data-owned` signal but still counts + shelves (duplicates
+  are legal — Preston owns real copies). Count line at cut={low}.
+- **Mirror-shelf review** (`scanRenderReview`): draft-case carved cavity, uniform 2:3 covers, scanned
+  order; upright confident vs leaning gray-spine exceptions (Law 1 — the lean carries it).
+- **Exception walker** (`scanOpenWalker`/`scanResolveStep`): evidence line **`I read: '<raw spineText>'`**
+  (needs shelf-vision), GB candidates (resolver alternates), search (hands to Shelf), Not-a-book / Skip /
+  Skip-all, auto-advance. **picked → promotes to confident (shelves); notbook → drops; skip → persists as
+  draft.** Rebuilds the review on close.
+- **Shelve N** (`scanShelve`): commits via `scanCommitBook` (shared guarded write) → SC11 signature 3
+  flight (representative dozen) → receipt **"Shelved N · Undo"**. **IMMEDIATE batch Undo** (`scanUndoShelve`,
+  ERRATA-1): `deleteBook` loop over createdIds — NO sync-hold. Exceptions persist.
+- **Four failure states** from the endpoint stop_reason guard: CALL-FAILED / EMPTY / TRUNCATED / REFUSED
+  → distinct overlays (TRUNCATED honestly has no keep-partial tray — BRIEF-CONFLICT #1).
+- **SCE-2 draft persistence** (`scanSaveDraft`/`scanLoadDraft`, `praxis_scan_draft_<uid>` ls) + **quiet nav
+  badge** (unreviewed-exception count, refreshed on every route in renderRoute) + **primer resume** ("Review
+  N from your last scan").
+- **SC3 cover-shot** (`scanFireCoverShot`): Book mode's second sensor — a frame → shelf-vision single book →
+  verdict (paid; the shutter is the budget). **SC7(c) drop-zone** (`scanShelfFromFile`): a photo →
+  `downscaleShelfPhoto` → the same tray/review flow (desktop / no-camera).
+
+### S4 verification (rig :8760, stubbed vision — no paid calls)
+| check | result |
+|---|---|
+| parse-check views.js; ES3 0; no real dup defs | **PASS** (scanShelve/scanShelveFlight distinct) |
+| tray fill: 7 events → **6 covers**, **1 dedupe tick**, "6 found · 4 confident · 2 need a look" | **PASS** |
+| classification split at cut={low}: 4 confident / 2 exceptions | **PASS** |
+| review: 4 upright confident, 2 leaning exceptions; count + shelve/walk N | **PASS** |
+| walker: evidence `'SECOND CLASS'`, 2 candidates, progress "1 of 2" | **PASS** |
+| walker picked → confident +1 (promoted); notbook → dropped; auto-advance; close→review refresh | **PASS** |
+| Shelve → shared write commits N; flight; receipt "Shelved N" | **PASS** |
+| **ERRATA-1 immediate Undo (controlled): 0→shelve 3→Undo→0; all ids tombstoned (pendingBookDeletes); pending-add cleared; records gone** | **PASS — race-safe** |
+| four failure overlays (failed/refused/truncated/empty) | **PASS** |
+| drop-zone → downscale → shelf-vision fires | **PASS** |
+| SC10 queue depth 1: 2nd shot ignored while busy | **PASS** |
+| draft persisted + nav badge "2" (unreviewed exceptions) | **PASS** |
+| console errors | **0** |
+
+DEVICE-OWED / S6: the FULL forced-timing race (real reload against real Firestore on
+prestonpraxistest) — the local bookkeeping is proven; S6 runs it on the live account.

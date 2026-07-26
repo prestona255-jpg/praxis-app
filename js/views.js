@@ -545,6 +545,9 @@ function renderRoute() {
       links[i].classList.remove('app-nav-link-active');
     }
   }
+  // SCAN ROUND: the quiet draft-count badge on the Scan nav entry (unreviewed scan
+  // exceptions), visible from every route (SCE-2 idiom, device-local).
+  if (typeof scanUpdateNavBadge === 'function') { scanUpdateNavBadge(); }
 
   // Batch 1: populate the gradient avatar's initial from the cached
   // user (getCurrentUser -> .displayName, then .email), falling back
@@ -8398,10 +8401,16 @@ function scanRenderActionRow() {
   var row = scanEl('scan-actionrow'); if (!row) { return; }
   row.innerHTML = '';
   if (scanMode === 'book') {
+    // SC3 "two sensors": the auto-detect indicator (free barcode) + a cover shutter
+    // (paid single-book vision, for a book with no barcode / a cover-only spine).
     var w = document.createElement('div'); w.className = 'scan-book-auto';
     var r = document.createElement('div'); r.className = 'ring'; r.textContent = '||||';
     var l = document.createElement('div'); l.className = 'lbl'; l.textContent = 'Auto-detecting';
     w.appendChild(r); w.appendChild(l); row.appendChild(w);
+    var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'scan-shutter'; cb.setAttribute('aria-label', 'Shoot the cover');
+    var cc = document.createElement('span'); cc.className = 'core'; cb.appendChild(cc);
+    cb.addEventListener('click', scanFireCoverShot);
+    row.appendChild(cb);
   } else {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'scan-shutter'; b.setAttribute('aria-label', 'Capture shelf');
     var c = document.createElement('span'); c.className = 'core'; b.appendChild(c);
@@ -8674,7 +8683,33 @@ function scanWireAddDoors() {
   scanWireIsbnDoor('scan-offline-isbn', 'scan-offline-isbn-add', 'scan-offline-status');
   var search = scanEl('scan-denied-search');
   if (search) { search.addEventListener('click', function () { location.hash = '#books'; }); } // hand off to the Shelf's title/author add
-  // S4 wires the shelf-photo drop zones.
+  scanWireDropzone('denied'); // SC7(c) desktop / no-camera shelf-photo path -> the SAME shelf-vision pipeline
+}
+// The shelf-photo drop zone (SC7c): choose/drag a photo -> downscale -> shelf-vision
+// -> the same tray/review flow the live shutter feeds. Closes the overlay first.
+function scanWireDropzone(host) {
+  var dz = scanEl('scan-dropzone-' + host), input = scanEl('scan-dropzone-input-' + host);
+  if (!dz || !input) { return; }
+  function pick() { input.click(); }
+  dz.addEventListener('click', pick);
+  dz.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('is-drag'); });
+  dz.addEventListener('dragleave', function () { dz.classList.remove('is-drag'); });
+  dz.addEventListener('drop', function (e) {
+    e.preventDefault(); dz.classList.remove('is-drag');
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) { scanShelfFromFile(e.dataTransfer.files[0]); }
+  });
+  input.addEventListener('change', function () { if (input.files && input.files.length) { scanShelfFromFile(input.files[0]); input.value = ''; } });
+}
+function scanShelfFromFile(file) {
+  if (!file || scanShotBusy) { return; }
+  scanCloseAllOverlays();
+  if (typeof downscaleShelfPhoto === 'function') {
+    downscaleShelfPhoto(file, function (err, base64) {
+      if (err || !base64) { scanOpenOverlay('scan-ov-failed'); return; }
+      scanRunShelfVision(base64);
+    });
+  }
 }
 function scanWireIsbnDoor(inputId, btnId, statusId) {
   var btn = scanEl(btnId), inp = scanEl(inputId), st = scanEl(statusId);
@@ -8696,12 +8731,395 @@ function scanWireIsbnDoor(inputId, btnId, statusId) {
 }
 
 // ============================================================================
-// FORWARD STUBS (S4) — filled by the Shelf-mode slice.
+// S4 — SHELF MODE + REVIEW. Deliberate shutter -> freeze -> shimmer -> shelf-vision
+// (queue depth 1) -> progressive tray fill with SCA3 dedupe -> count line at
+// cut={low} -> mirror-shelf review (draft case) -> exception walker -> Shelve N
+// via the shared guarded write -> receipt with IMMEDIATE batch Undo (ERRATA-1).
+// Four failure states from the endpoint's stop_reason guard.
 // ============================================================================
-function scanFireShelfShot() { /* S4: freeze -> shimmer -> shelf-vision -> tray */ scanAnnounce('Shelf capture arrives in the next build slice.'); }
-function scanRenderReview() { /* S4: the mirror-shelf draft case */ }
-function scanOpenWalker(startIdx) { /* S4: the exception walker */ }
-function scanShelve() { /* S4: shelve flight + receipt + immediate undo */ }
+var scanShotBusy    = false;    // SC10 queue depth 1 (one read in flight)
+var scanLastShelvedIds = [];    // for the immediate batch Undo
+var scanReceiptTimer = null;
+
+// SC11 signature 2 base64 capture: scale the current video frame to a jpeg.
+function scanCaptureBase64() {
+  var v = scanEl('scan-cam-video');
+  if (!v || !v.videoWidth) { return ''; }
+  var maxDim = 1600, vw = v.videoWidth, vh = v.videoHeight;
+  var scale = Math.min(1, maxDim / Math.max(vw, vh));
+  var cw = Math.round(vw * scale), ch = Math.round(vh * scale);
+  var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  try { cv.getContext('2d').drawImage(v, 0, 0, cw, ch); } catch (e) { return ''; }
+  var url; try { url = cv.toDataURL('image/jpeg', 0.82); } catch (e2) { return ''; }
+  var ci = url.indexOf(','); return (ci > -1) ? url.substring(ci + 1) : url;
+}
+
+// The deliberate shelf shutter (the ONLY auto-fire is Book barcode — Law 6).
+function scanFireShelfShot() {
+  if (scanShotBusy) { return; }            // SC10 queue depth 1
+  if (!scanCamReady) { return; }
+  scanClearTimers(); scanStopBookDecode(); scanHideVerdict();
+  scanFreezeFrame();
+  var base64 = scanCaptureBase64();
+  if (!base64) { scanUnfreeze(); scanOpenOverlay('scan-ov-failed'); return; }
+  scanRunShelfVision(base64);
+}
+
+// The shared shelf read: shimmer -> shelf-vision -> dispatch by SC8 state. Used by
+// the shutter AND the desktop drop-zone (SC7c).
+function scanRunShelfVision(base64) {
+  if (scanShotBusy) { return; }
+  scanShotBusy = true;
+  if (typeof scanShelfBudgetSpend === 'function' && !scanShelfBudgetSpend()) { // S5 cost gate (no-op until S5)
+    scanShotBusy = false; scanUnfreeze(); scanShowCapRefusal(); return;
+  }
+  scanShow(scanEl('scan-shimmer'));
+  scanShelfVision(base64, function (result) {
+    scanShotBusy = false;
+    scanHide(scanEl('scan-shimmer'));
+    scanUnfreeze();
+    if (result.state === 'ok') {
+      if (!result.books || result.books.length === 0) { scanOpenOverlay('scan-ov-empty'); return; }
+      scanResolveAndFill(result.books);
+    } else if (result.state === 'truncated') { scanOpenOverlay('scan-ov-truncated'); }
+    else if (result.state === 'refused')     { scanOpenOverlay('scan-ov-refused'); }
+    else                                      { scanOpenOverlay('scan-ov-failed'); }
+  });
+}
+
+// Progressive tray fill: resolve each vision book (queue depth 1 via sequential
+// resolveBook), classify (S1), SCA3 dedupe (within-scan absorb + soft library
+// signal; duplicates are legal), drop into the tray as each lands.
+function scanResolveAndFill(visionBooks) {
+  scanShow(scanEl('scan-tray'));
+  var strip = scanEl('scan-tray-strip'); if (strip) { strip.innerHTML = ''; }
+  scanTrayItems = [];
+  var seen = {};                    // idKey -> tray cover element (within-scan)
+  var classified = { confident: [], exceptions: [] };
+  var found = 0, confident = 0, exceptions = 0;
+  var reviewBtn = scanEl('scan-tray-review-btn'); if (reviewBtn) { reviewBtn.style.display = 'none'; }
+  var u = getCurrentUser();
+  var idx = 0;
+  function next() {
+    if (idx >= visionBooks.length) {
+      scanResult = { confident: classified.confident, exceptions: classified.exceptions, found: found };
+      scanFinishFill(found, confident, exceptions);
+      return;
+    }
+    var vb = visionBooks[idx]; idx++;
+    resolveBook(scanQueryForBook(vb), function (rz) {
+      var isExc = scanIsException(vb, rz);
+      var item = {
+        title: vb.title || '', author: vb.author || '', spineText: vb.spineText || '',
+        confidence: vb.confidence || 'low', resolved: rz,
+        cover: (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
+        alternates: (rz && rz.alternates) ? rz.alternates : [], exception: isExc
+      };
+      var key = bookIdentityKey(item.title, item.author);
+      if (key !== 'ta:|' && seen[key]) {
+        // within-scan duplicate (same physical book emitted twice) -> absorb + tick
+        scanAddTick(seen[key]);
+        var subA = scanEl('scan-tray-sub'); if (subA) { subA.textContent = 'already caught · absorbed'; }
+      } else {
+        var owned = (u && findShelfBookByIdentity(u.uid, item.title, item.author)); // SOFT library signal (duplicates legal)
+        var el = scanDropTrayCover(item, key, !!owned);
+        if (key !== 'ta:|') { seen[key] = el; }
+        found++;
+        if (isExc) { exceptions++; classified.exceptions.push(item); } else { confident++; classified.confident.push(item); }
+        var subB = scanEl('scan-tray-sub'); if (subB) { subB.textContent = owned ? 'may already own · legal to add' : ''; }
+      }
+      var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
+      window.setTimeout(next, scanRM() ? 20 : 70);
+    });
+  }
+  next();
+}
+
+function scanDropTrayCover(item, key, owned) {
+  var strip = scanEl('scan-tray-strip');
+  var cov = scanCoverNode(item.title, item.author, item.cover);
+  cov.classList.add('scan-tray-cov');
+  cov.setAttribute('data-key', key);
+  if (item.exception) { cov.style.filter = 'grayscale(1) brightness(.86)'; }
+  if (owned) { cov.setAttribute('data-owned', '1'); }
+  if (strip) { strip.appendChild(cov); strip.scrollLeft = strip.scrollWidth; }
+  return cov;
+}
+function scanAddTick(el) {
+  if (!el || el.querySelector('.scan-dupe-tick')) { return; }
+  var tk = document.createElement('span'); tk.className = 'scan-dupe-tick'; tk.textContent = '✓';
+  el.appendChild(tk);
+  try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+}
+
+function scanFinishFill(found, confident, exceptions) {
+  var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
+  var sub = scanEl('scan-tray-sub'); if (sub) { sub.textContent = confident + ' confident · ' + exceptions + ' need a look'; }
+  var btn = scanEl('scan-tray-review-btn'); if (btn) { btn.style.display = 'block'; btn.textContent = 'Review the shelf'; }
+  scanSaveDraft(); scanUpdateNavBadge();
+  scanAnnounce(found + ' books found. ' + confident + ' confident, ' + exceptions + ' need a look.');
+}
+
+// ---- the mirror shelf (draft case) ----
+function scanRenderReview() {
+  if (!scanResult) { return; }
+  var conf = scanResult.confident.length, exc = scanResult.exceptions.length, found = conf + exc;
+  scanEl('scan-rv-count').textContent = found + ' found · ' + conf + ' confident · ' + exc + ' need a look';
+  scanEl('scan-rv-conf-n').textContent = conf;
+  scanEl('scan-rv-exc-n').textContent = exc;
+  var cwrap = scanEl('scan-rv-confident'); cwrap.innerHTML = '';
+  var i;
+  for (i = 0; i < scanResult.confident.length; i++) {
+    var b = scanResult.confident[i];
+    var d = document.createElement('div'); d.className = 'scan-dc';
+    var cov = scanCoverNode(b.title, b.author, b.cover); cov.style.width = '64px'; cov.style.height = '96px';
+    d.appendChild(cov);
+    var cap = document.createElement('div'); cap.className = 'cap';
+    var t = document.createElement('div'); t.className = 't'; t.textContent = b.title; cap.appendChild(t);
+    d.appendChild(cap); cwrap.appendChild(d);
+  }
+  var ewrap = scanEl('scan-rv-exceptions'); ewrap.innerHTML = '';
+  for (i = 0; i < scanResult.exceptions.length; i++) {
+    (function (eidx) {
+      var eb = scanResult.exceptions[eidx];
+      var d = document.createElement('div'); d.className = 'scan-dc is-lean';
+      d.setAttribute('tabindex', '0'); d.setAttribute('role', 'button');
+      d.setAttribute('aria-label', 'Needs a look: ' + eb.title + '. Open to fix.');
+      var cov = scanCoverNode(eb.title, eb.author, eb.cover); cov.style.width = '64px'; cov.style.height = '96px';
+      d.appendChild(cov);
+      var fl = document.createElement('div'); fl.className = 'spine-flag'; fl.textContent = 'needs a look'; d.appendChild(fl);
+      d.addEventListener('click', function () { scanOpenWalker(eidx); });
+      d.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scanOpenWalker(eidx); } });
+      ewrap.appendChild(d);
+    })(i);
+  }
+  scanEl('scan-rv-exc-band').style.display = exc ? 'block' : 'none';
+  scanEl('scan-rv-shelve-n').textContent = conf;
+  scanEl('scan-rv-walk-n').textContent = exc;
+  scanEl('scan-rv-walk').style.display = exc ? '' : 'none';
+  scanShow(scanEl('scan-rv-foot'));
+  scanGoScreen('scan-screen-review');
+}
+
+// ---- exception walker ----
+function scanOpenWalker(startIdx) {
+  if (!scanResult || !scanResult.exceptions.length) { return; }
+  scanWalkOrder = [];
+  var i; for (i = 0; i < scanResult.exceptions.length; i++) { scanWalkOrder.push(i); }
+  scanWalkPos = 0;
+  if (typeof startIdx === 'number') {
+    for (i = 0; i < scanWalkOrder.length; i++) { if (scanWalkOrder[i] === startIdx) { scanWalkPos = i; break; } }
+  }
+  scanRenderWalkerStep();
+  scanShow(scanEl('scan-walker'));
+}
+function scanCloseWalker() { scanHide(scanEl('scan-walker')); }
+
+function scanRenderWalkerStep() {
+  if (scanWalkPos >= scanWalkOrder.length) { scanCloseWalker(); return; }
+  var idx = scanWalkOrder[scanWalkPos];
+  var b = scanResult.exceptions[idx];
+  var s = scanEl('scan-wk-sheet'); s.innerHTML = '';
+  var grip = document.createElement('div'); grip.className = 'scan-wk-grip'; s.appendChild(grip);
+  var prog = document.createElement('div'); prog.className = 'scan-wk-progress';
+  prog.textContent = (scanWalkPos + 1) + ' of ' + scanWalkOrder.length + ' to review'; s.appendChild(prog);
+  var row = document.createElement('div'); row.className = 'scan-wk-row';
+  var cov = scanCoverNode(b.title, b.author, b.cover); cov.style.width = '70px'; cov.style.height = '105px';
+  row.appendChild(cov);
+  var g = document.createElement('div'); g.className = 'scan-wk-guess';
+  var gl = document.createElement('div'); gl.className = 'g-lbl'; gl.textContent = 'Best guess'; g.appendChild(gl);
+  var gt = document.createElement('div'); gt.className = 'g-t'; gt.textContent = b.title || 'Unclear'; g.appendChild(gt);
+  var ga = document.createElement('div'); ga.className = 'g-a'; ga.textContent = b.author || 'author unclear'; g.appendChild(ga);
+  row.appendChild(g); s.appendChild(row);
+  // the evidence line — verbatim raw spineText (SC6, needs shelf-vision)
+  var ev = document.createElement('div'); ev.className = 'scan-wk-evidence';
+  var lead = document.createElement('span'); lead.className = 'lead'; lead.textContent = 'I read: ';
+  var raw = document.createElement('span'); raw.className = 'raw'; raw.textContent = "'" + (b.spineText || '') + "'";
+  ev.appendChild(lead); ev.appendChild(raw); s.appendChild(ev);
+  var cands = document.createElement('div'); cands.className = 'scan-wk-cands';
+  var ch = document.createElement('div'); ch.className = 'c-hd'; ch.textContent = 'Did you mean'; cands.appendChild(ch);
+  var j;
+  for (j = 0; j < b.alternates.length && j < 5; j++) {
+    (function (cd) {
+      var c = document.createElement('button'); c.type = 'button'; c.className = 'scan-wk-cand';
+      var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = cd.title || ''; c.appendChild(ct);
+      if (cd.author) { var ca = document.createElement('span'); ca.className = 'ca'; ca.textContent = cd.author; c.appendChild(ca); }
+      c.addEventListener('click', function () { scanResolveStep('picked', cd); });
+      cands.appendChild(c);
+    })(b.alternates[j]);
+  }
+  var search = document.createElement('button'); search.type = 'button'; search.className = 'scan-wk-search';
+  search.innerHTML = '<span>⌕</span> Search on the Shelf instead';
+  search.addEventListener('click', function () { location.hash = '#books'; }); // hand off to the Shelf's title/author add
+  cands.appendChild(search); s.appendChild(cands);
+  var foot = document.createElement('div'); foot.className = 'scan-wk-foot';
+  var notbook = document.createElement('button'); notbook.type = 'button'; notbook.className = 'scan-btn scan-btn-quiet';
+  notbook.textContent = 'Not a book'; notbook.addEventListener('click', function () { scanResolveStep('notbook'); });
+  var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'scan-btn scan-btn-ghost';
+  skip.textContent = 'Skip for now'; skip.addEventListener('click', function () { scanResolveStep('skip'); });
+  foot.appendChild(notbook); foot.appendChild(skip); s.appendChild(foot);
+  var skipall = document.createElement('button'); skipall.type = 'button'; skipall.className = 'scan-wk-skipall';
+  skipall.textContent = 'Skip all ' + (scanWalkOrder.length - scanWalkPos) + ' remaining';
+  skipall.addEventListener('click', function () { scanCloseWalker(); scanAfterWalk(); });
+  s.appendChild(skipall);
+  s.scrollTop = 0;
+}
+
+// picked -> promote to confident (shelves with the batch); notbook -> drop;
+// skip -> leave as a persisting draft. Auto-advances; rebuilds on close.
+function scanResolveStep(kind, cand) {
+  var idx = scanWalkOrder[scanWalkPos];
+  var exc = scanResult.exceptions[idx];
+  if (kind === 'picked' && cand) {
+    scanResult.confident.push({
+      title: cand.title || exc.title, author: cand.author || exc.author, spineText: exc.spineText,
+      confidence: 'high', resolved: { status: 'strong', book: cand, alternates: [] },
+      cover: cand.coverUrl || null, alternates: [], exception: false
+    });
+    exc._resolved = 'picked';
+  } else if (kind === 'notbook') { exc._resolved = 'notbook'; }
+  else { exc._resolved = null; } // skip: stays a draft
+  scanWalkPos++;
+  if (scanWalkPos >= scanWalkOrder.length) { scanCloseWalker(); scanAfterWalk(); }
+  else { scanRenderWalkerStep(); }
+}
+
+function scanAfterWalk() {
+  var kept = [], i;
+  for (i = 0; i < scanResult.exceptions.length; i++) {
+    var e = scanResult.exceptions[i];
+    if (e._resolved !== 'picked' && e._resolved !== 'notbook') { kept.push(e); }
+  }
+  scanResult.exceptions = kept;
+  scanResult.found = scanResult.confident.length + scanResult.exceptions.length;
+  scanSaveDraft(); scanUpdateNavBadge();
+  scanRenderReview();
+}
+
+// ---- Shelve N (shared guarded write) + flight + receipt + IMMEDIATE Undo ----
+function scanShelve() {
+  if (!scanResult || !scanResult.confident.length) { return; }
+  var createdIds = [], i;
+  for (i = 0; i < scanResult.confident.length; i++) {
+    var it = scanResult.confident[i];
+    var isbn = (it.resolved && it.resolved.book && it.resolved.book.isbn) ? it.resolved.book.isbn : '';
+    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, status: 'reading' }, null);
+    if (id) { createdIds.push(id); }
+  }
+  scanLastShelvedIds = createdIds;
+  var n = createdIds.length;
+  // the confident set is now shelved; exceptions persist as the draft
+  scanResult.confident = [];
+  scanResult.found = scanResult.exceptions.length;
+  scanSaveDraft(); scanUpdateNavBadge();
+  scanShelveFlight(function () { scanShowReceipt(n); });
+}
+
+// FELT SIGNATURE 3 — the shelve flight (a representative dozen fly to the glyph).
+function scanShelveFlight(after) {
+  var glyph = scanEl('scan-shelf-glyph');
+  var covers = document.querySelectorAll('#scan-rv-confident .scan-dc .scan-cov');
+  var layer = scanEl('scan-flight-layer'); if (layer) { layer.innerHTML = ''; }
+  scanShow(glyph); scanShow(layer);
+  var gr = glyph.getBoundingClientRect();
+  var tx = gr.left + gr.width / 2, ty = gr.top + gr.height / 2;
+  var n = Math.min(covers.length, 12);
+  function done() { scanHide(layer); if (layer) { layer.innerHTML = ''; } window.setTimeout(function () { scanHide(glyph); }, 600); if (after) { after(); } }
+  if (scanRM() || n === 0) { done(); return; }
+  var launched = 0, finished = 0, k;
+  for (k = 0; k < n; k++) {
+    (function (delay, src) {
+      var fly = document.createElement('div'); fly.className = 'scan-cov scan-flight-cov';
+      fly.style.left = src.left + 'px'; fly.style.top = src.top + 'px';
+      fly.style.width = src.width + 'px'; fly.style.height = src.height + 'px';
+      layer.appendChild(fly); launched++;
+      window.setTimeout(function () {
+        fly.style.transition = 'transform .55s cubic-bezier(.4,0,.2,1), opacity .55s ease';
+        fly.style.transform = 'translate(' + (tx - src.left - src.width / 2) + 'px,' + (ty - src.top - src.height / 2) + 'px) scale(.28)';
+        fly.style.opacity = '0';
+      }, delay);
+      window.setTimeout(function () { finished++; if (finished >= launched) { done(); } }, delay + 620);
+    })(k * 55, covers[k].getBoundingClientRect());
+  }
+}
+
+function scanShowReceipt(n) {
+  scanEl('scan-receipt-txt').innerHTML = 'Shelved <b>' + n + '</b>';
+  scanShow(scanEl('scan-receipt'));
+  scanAnnounce('Shelved ' + n + ' books. Undo available.');
+  if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); }
+  scanReceiptTimer = window.setTimeout(function () { scanHide(scanEl('scan-receipt')); scanLastShelvedIds = []; }, 9000);
+  // re-render the review to reflect the shelved set leaving (exceptions remain)
+  scanRenderReview();
+}
+
+// IMMEDIATE batch Undo (ERRATA-1: no sync-hold). deleteBook is the canonical scrub
+// — it clears the pending-add AND tombstones the delete, so pendingBookDeletes
+// covers the delete-before-sync race (the forced-timing test proves it, S6).
+function scanUndoShelve() {
+  var ids = scanLastShelvedIds || [];
+  var u = getCurrentUser();
+  if (u) { var i; for (i = 0; i < ids.length; i++) { deleteBook(u.uid, ids[i]); } }
+  scanLastShelvedIds = [];
+  if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); scanReceiptTimer = null; }
+  scanHide(scanEl('scan-receipt'));
+  scanAnnounce('Shelving undone. ' + ids.length + ' books removed.');
+}
+
+// ---- SCE-2 draft persistence (device-local, non-schema) + quiet nav badge ----
+function scanDraftKey() { var u = getCurrentUser(); return u ? ('praxis_scan_draft_' + u.uid) : null; }
+function scanSaveDraft() {
+  var k = scanDraftKey(); if (!k) { return; }
+  if (scanResult && (scanResult.confident.length || scanResult.exceptions.length)) {
+    sv(k, { confident: scanResult.confident, exceptions: scanResult.exceptions, savedAt: Date.now() });
+  } else { scanClearDraft(); }
+}
+function scanLoadDraft() {
+  var k = scanDraftKey(); if (!k) { return null; }
+  var d = ls(k, null);
+  if (d && (d.confident || d.exceptions)) {
+    return { confident: d.confident || [], exceptions: d.exceptions || [], found: (d.confident || []).length + (d.exceptions || []).length };
+  }
+  return null;
+}
+function scanClearDraft() { var k = scanDraftKey(); if (k) { sv(k, null); } }
+function scanDraftExceptionCount() { var d = scanLoadDraft(); return d ? d.exceptions.length : 0; }
+function scanUpdateNavBadge() {
+  var badge = document.getElementById('app-nav-scan-badge');
+  if (!badge) { return; }
+  var n = scanDraftExceptionCount();
+  if (n > 0) { badge.textContent = String(n); badge.classList.add('is-on'); }
+  else { badge.textContent = ''; badge.classList.remove('is-on'); }
+}
+
+// ---- SC3 cover-shot (Book mode's photo sensor): a frame -> shelf-vision (single
+// book expected) -> verdict. Reuses the paid-vision transport (the shutter is the
+// budget). The mockup deferred this; the brief keeps it.
+function scanFireCoverShot() {
+  if (scanShotBusy || !scanCamReady) { return; }
+  scanStopBookDecode(); scanHideVerdict();
+  scanFreezeFrame();
+  var base64 = scanCaptureBase64();
+  if (!base64) { scanUnfreeze(); scanOpenOverlay('scan-ov-failed'); return; }
+  scanShotBusy = true;
+  if (typeof scanShelfBudgetSpend === 'function' && !scanShelfBudgetSpend()) { scanShotBusy = false; scanUnfreeze(); scanShowCapRefusal(); return; }
+  scanShow(scanEl('scan-shimmer'));
+  scanShelfVision(base64, function (result) {
+    scanShotBusy = false; scanHide(scanEl('scan-shimmer')); scanUnfreeze();
+    if (result.state === 'ok' && result.books && result.books.length) {
+      var vb = result.books[0];
+      resolveBook(scanQueryForBook(vb), function (rz) {
+        scanShowVerdict(rz && rz.book ? rz : { status: 'none', book: { title: vb.title, author: vb.author } }, '');
+      });
+    } else if (result.state === 'empty' || (result.state === 'ok')) { scanOpenOverlay('scan-ov-empty'); }
+    else if (result.state === 'refused') { scanOpenOverlay('scan-ov-refused'); }
+    else if (result.state === 'truncated') { scanOpenOverlay('scan-ov-truncated'); }
+    else { scanOpenOverlay('scan-ov-failed'); }
+  });
+}
+
+// S5 cost-gate hooks (defined no-op-safe here; S5 supplies the real budget + copy).
+function scanShowCapRefusal() { scanAnnounce('Shelf reading is resting until tomorrow — Book mode is still yours.'); }
 
 // ============================================================================
 // renderScan — the #scan route entry. Signed-out is hard-gated (scan is a
@@ -8721,6 +9139,15 @@ function renderScan(preMode) {
   host.innerHTML = scanShellHTML();
   scanWireShell();
   if (preMode === 'shelf' || preMode === 'book') { scanMode = preMode; }
+  // SCE-2: resume a persisted draft (a killed PWA / a return trip picks up where it
+  // stood). Load it into scanResult; if it holds anything, the primer offers Review.
+  scanResult = scanLoadDraft();
+  var resume = scanEl('scan-primer-resume');
+  if (resume && scanResult && (scanResult.confident.length || scanResult.exceptions.length)) {
+    resume.textContent = 'Review ' + scanResult.found + ' from your last scan';
+    resume.style.display = 'block';
+    resume.addEventListener('click', function () { scanCloseAllOverlays(); scanStopStream(); scanRenderReview(); });
+  }
   scanEnter();
 }
 
@@ -8805,6 +9232,7 @@ function scanPermissionHTML() {
   +     '<h2>Turn on the camera to scan</h2>'
   +     '<p>Praxis reads the book right on your phone. Images leave only as identification requests — nothing is stored, on your device or ours.</p>'
   +     '<div class="c-actions">'
+  +       '<button class="scan-btn scan-btn-ghost" type="button" id="scan-primer-resume" style="display:none"></button>'
   +       '<button class="scan-btn scan-btn-primary" type="button" id="scan-primer-allow">Turn on camera</button>'
   +       '<button class="scan-btn scan-btn-quiet" type="button" id="scan-primer-manual">Add without the camera</button>'
   +     '</div>'
@@ -8897,6 +9325,7 @@ function scanWireShell() {
   var rvBack = scanEl('scan-rv-back'); if (rvBack) { rvBack.addEventListener('click', function () { scanGoScreen('scan-screen-view'); }); }
   var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
   var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }
+  var rUndo = scanEl('scan-receipt-undo'); if (rUndo) { rUndo.addEventListener('click', scanUndoShelve); }
   var vdAdd = scanEl('scan-vd-add'); if (vdAdd) { vdAdd.addEventListener('click', scanVerdictAdd); }
   var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); scanCurrentVerdict = null; if (scanMode === 'book') { scanStartBookDecode(); } }); }
   // failure-dismiss (all four) -> back to the camera
