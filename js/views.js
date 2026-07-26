@@ -8354,18 +8354,17 @@ function scanShowVerdict(result, isbn) {
   var title = book.title || '';
   var author = book.author || '';
   var cov = scanEl('scan-vd-cov'); if (cov) { cov.innerHTML = ''; }
-  var ctx = scanEl('scan-vd-context'), sil = scanEl('scan-vd-silent'), add = scanEl('scan-vd-add');
+  var ctx = scanEl('scan-vd-context'), add = scanEl('scan-vd-add');
   if (ctx) { ctx.style.display = 'none'; }
-  if (sil) { sil.style.display = 'none'; }
   scanEl('scan-vd-title').textContent = title || 'Not found';
   scanEl('scan-vd-author').textContent = author || (isbn ? ('ISBN ' + isbn) : '');
   if (cov) { cov.appendChild(scanCoverNode(title, author, book.coverUrl)); }
   var c = scanComputeContext(title, author);
+  // FX-F: SC4 ruled silence — the context line shows ONLY when a real local signal
+  // exists; otherwise NOTHING (no "Identified — no context" filler). Silence is silence.
   if (c) {
     scanEl('scan-vd-context-txt').textContent = c.text;
     if (ctx) { ctx.style.display = 'flex'; }
-  } else if (title) {
-    if (sil) { sil.style.display = 'block'; }
   }
   // FX-C: a NOT-FOUND card must never invite a junk entry with the loudest button.
   // When GB found nothing usable (no title), the primary becomes "Keep scanning" and
@@ -9051,7 +9050,6 @@ function scanVerdictHTML() {
   +         '<p class="scan-vd-title" id="scan-vd-title">—</p>'
   +         '<p class="scan-vd-author" id="scan-vd-author">—</p>'
   +         '<p class="scan-vd-context" id="scan-vd-context" style="display:none"><span class="dot"></span><span id="scan-vd-context-txt"></span></p>'
-  +         '<p class="scan-vd-silent" id="scan-vd-silent" style="display:none">Identified — no context on your shelf.</p>'
   +       '</div>'
   +     '</div>'
   +     '<div class="scan-vd-actions">'

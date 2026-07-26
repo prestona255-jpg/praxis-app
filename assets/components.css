@@ -16764,7 +16764,6 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-vd-context{ font-family:var(--font-mono); font-size:11px; letter-spacing:.02em; color:var(--gold-deep); margin:10px 0 0; display:flex; align-items:center; gap:6px; }
 .scan-vd-context .dot{ width:5px; height:5px; border-radius:50%; background:var(--gold); flex:none; }
 .scan-vd-actions{ display:flex; gap:10px; margin-top:16px; }
-.scan-vd-silent{ font-family:var(--font-mono); font-size:11px; font-style:italic; color:var(--ink-3); margin:8px 0 0; }
 
 /* ---- shared buttons (scoped) ---- */
 .scan-btn{ font-family:var(--font-body); font-size:15px; font-weight:600; border-radius:var(--radius-md); padding:13px 18px; cursor:pointer; border:1px solid transparent; min-height:48px; }
