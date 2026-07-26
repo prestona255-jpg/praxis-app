@@ -7963,7 +7963,10 @@ function scanClassify(visionBooks, resolvedArray) {
 // ============================================================================
 
 var scanMode      = 'book';   // 'book' | 'shelf'
-var scanStream    = null;     // the live MediaStream (SCE-1 teardown target)
+var scanStream    = null;     // the live MediaStream we opened (SCE-1 teardown target)
+var scanCamStreams = [];      // FX-A: EVERY MediaStream the scan module opens — our
+                              // getUserMedia stream AND (best-effort) zxing's, so
+                              // teardown can stop every track no matter who owns it.
 var scanCamReady  = false;
 var scanAutoTimer = null;     // Book-mode auto-fire / decode timer
 var scanResult    = null;     // {confident:[], exceptions:[], found} after a shelf read
@@ -8031,22 +8034,41 @@ function scanOpenOverlay(id) { scanCloseAllOverlays(); scanGoScreen('scan-screen
 // CAMERA LIFECYCLE (SCE-1). Teardown on route exit (renderRoute cleanup, S5-wired
 // here) AND visibilitychange (S5). THE CAMERA FORGETS, hardware layer included.
 // ============================================================================
+// FX-A (SCE-1 privacy) — THE CAMERA FORGETS, guaranteed. The field showed the
+// hardware light surviving a normal navigation away from #scan, because more than
+// one owner can hold a live camera track: (1) our getUserMedia stream (scanStream);
+// (2) zxing's BrowserMultiFormatReader, which on iOS Safari opens its OWN stream and
+// attaches it to the video element (released by reset()); (3) any track left on ANY
+// <video> after the DOM swaps. This tears down ALL THREE, idempotently, and runs on
+// EVERY exit path (renderRoute cleanup :450 · back chevron scanLeave · hashchange
+// away + visibilitychange + pagehide in scanInitLifecycle).
 function scanStopStream() {
   scanClearTimers();
-  scanStopBookDecode();
-  if (scanStream) {
-    var tr = scanStream.getTracks(), i;
-    for (i = 0; i < tr.length; i++) { try { tr[i].stop(); } catch (e) {} }
-    scanStream = null;
+  scanStopBookDecode();                 // native flag off + scanZxingReader.reset() (releases zxing's stream)
+  // 1) every stream the module opened (our getUserMedia + any registered zxing stream)
+  scanRegisterStream(scanStream);
+  var i, tr, k;
+  for (i = 0; i < scanCamStreams.length; i++) {
+    var s = scanCamStreams[i];
+    if (s && typeof s.getTracks === 'function') { tr = s.getTracks(); for (k = 0; k < tr.length; k++) { try { tr[k].stop(); } catch (e) {} } }
   }
-  var v = scanEl('scan-cam-video');
-  if (v) {
-    // Also stop any stream zxing attached to the video element itself (its reader
-    // opens its own stream on iOS Safari) — scanStopBookDecode reset() releases it,
-    // this is the belt-and-suspenders so the hardware light dies for certain (SCE-1).
-    try { if (v.srcObject && v.srcObject.getTracks) { var vt = v.srcObject.getTracks(), k; for (k = 0; k < vt.length; k++) { try { vt[k].stop(); } catch (e2) {} } } } catch (e) {}
-    try { v.pause(); v.srcObject = null; } catch (e) {}
-  }
+  scanCamStreams = [];
+  scanStream = null;
+  // 2) belt-and-suspenders: stop the camera stream on EVERY <video> in the document.
+  // zxing attaches its stream to the video element; the id lookup can miss it once the
+  // route swapped #app, so sweep them all. Praxis has no other CAMERA <video>, and a
+  // src-based (content) video has no srcObject, so it is untouched.
+  try {
+    var vids = document.getElementsByTagName('video'), j, so, vt, m;
+    for (j = 0; j < vids.length; j++) {
+      so = vids[j].srcObject;
+      if (so && typeof so.getTracks === 'function') {
+        vt = so.getTracks();
+        for (m = 0; m < vt.length; m++) { try { vt[m].stop(); } catch (e) {} }
+        try { vids[j].pause(); vids[j].srcObject = null; } catch (e) {}
+      }
+    }
+  } catch (e) {}
   scanCamReady = false;
 }
 
@@ -8056,6 +8078,7 @@ function scanStartStream(cb) {
   navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
     .then(function (s) {
       scanStream = s;
+      scanRegisterStream(s); // FX-A: track it for guaranteed teardown
       v.srcObject = s;
       var p = v.play();
       if (p && p.then) { p.then(function () {}, function () {}); }
@@ -8064,6 +8087,11 @@ function scanStartStream(cb) {
     }, function (err) {
       cb(false, (err && err.name) ? err.name : 'error');
     });
+}
+// FX-A: register a MediaStream the module opened, so scanStopStream stops it even if
+// the video element that displays it is gone / swapped by the time we tear down.
+function scanRegisterStream(s) {
+  if (s && typeof s.getTracks === 'function' && scanCamStreams.indexOf(s) === -1) { scanCamStreams.push(s); }
 }
 
 // Warm-up transition: the viewfinder FADES IN from the sheet — never a white flash.
@@ -8225,6 +8253,9 @@ function scanStartBookDecode() {
         } else if (typeof scanZxingReader.decodeFromVideoDevice === 'function') {
           scanZxingReader.decodeFromVideoDevice(null, v, onZx);
         }
+        // FX-A: zxing opens + attaches its OWN stream to the video async — capture it
+        // into the registry so teardown stops it even if reset() misses / the DOM swaps.
+        window.setTimeout(function () { if (v && v.srcObject) { scanRegisterStream(v.srcObject); } }, 500);
       } catch (eZ) { scanZxingReader = null; }
     });
   }
@@ -8850,6 +8881,9 @@ function scanInitLifecycle() {
     }
   }, false);
   window.addEventListener('pagehide', function () { scanStopStream(); }, false);
+  // FX-A belt-and-suspenders: ANY hashchange that lands off #scan tears the camera
+  // down, independent of renderRoute's cleanup (idempotent — safe to double-fire).
+  window.addEventListener('hashchange', function () { if (!scanOnScanRoute()) { scanStopStream(); } }, false);
 }
 
 // ============================================================================
