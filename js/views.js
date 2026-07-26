@@ -8100,6 +8100,151 @@ function showScanStatus(msg) {
   }, 6000);
 }
 
+// ============================================================================
+// SCAN ROUND — S1: the shelf-vision pipeline (the build-first task).
+// Net-new, self-contained; consumed by the #scan Shelf mode (S4). The legacy
+// handleShelfScanFile/vision-proxy path above retires in S5. The endpoint
+// (netlify/functions/shelf-vision.js) is UNTOUCHED (non-goal: no endpoint edits).
+//
+// Contract (read from shelf-vision.js @ f7e925c): POST {image:<bare base64>,
+// mediaType:'image/jpeg', model:'claude-opus-4-8'} with x-praxis-key.
+//   200 {books:[{title,author,spineText,confidence}], model}  (books:[] = EMPTY)
+//   502 {error:'vision-truncated'|'vision-refused'|'vision-incomplete'|
+//        'extraction-parse-failed', stop_reason?}
+//   4xx / 5xx / network = CALL-FAILED.
+// BRIEF-CONFLICT (surfaced, docs/checkpoints/scan-build.md): a max_tokens
+// truncation returns 502 'vision-truncated' with NO partial books, so the SC8
+// TRUNCATED state is felt-distinct but cannot keep a partial tray (the mockup's
+// "keep these N" fixture is not achievable against the real endpoint; endpoint
+// is a non-goal). TRUNCATED ships as its own honest state, no impossible tray.
+// ============================================================================
+
+var SCAN_VISION_URL   = '/.netlify/functions/shelf-vision';
+var SCAN_VISION_MODEL = 'claude-opus-4-8'; // SC9: paid shelf read; NEVER silent-degrade to sonnet
+
+// SC8 four-state transport. cb(result) with result.state one of:
+//   'ok'        -> 200; result.books (may be []; the caller treats [] as EMPTY)
+//   'truncated' -> 502 vision-truncated (no partial books; see the note above)
+//   'refused'   -> 502 vision-refused (own quiet state, never laundered to EMPTY)
+//   'failed'    -> everything else (network / 5xx / 4xx / parse / incomplete)
+function scanShelfVision(base64, cb) {
+  var done = false;
+  function finish(r) { if (done) { return; } done = true; if (typeof cb === 'function') { cb(r); } }
+  if (typeof base64 !== 'string' || base64.length === 0) { finish({ state: 'failed', books: [] }); return; }
+  try {
+    fetch(SCAN_VISION_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+      body:    JSON.stringify({ image: base64, mediaType: 'image/jpeg', model: SCAN_VISION_MODEL })
+    }).then(function (res) {
+      if (res.status === 200) {
+        res.json().then(function (json) {
+          var books = (json && Object.prototype.toString.call(json.books) === '[object Array]') ? json.books : [];
+          finish({ state: 'ok', books: books });
+        }, function () { finish({ state: 'failed', books: [] }); });
+        return;
+      }
+      // Non-200: split the model-level stops (truncated / refused) from generic
+      // transport failure by the endpoint's error code.
+      res.json().then(function (j) {
+        var e = (j && typeof j.error === 'string') ? j.error : '';
+        if (e === 'vision-truncated')      { finish({ state: 'truncated', books: [] }); }
+        else if (e === 'vision-refused')   { finish({ state: 'refused',   books: [] }); }
+        else                               { finish({ state: 'failed',    books: [] }); }
+      }, function () { finish({ state: 'failed', books: [] }); });
+    }, function () { finish({ state: 'failed', books: [] }); });
+  } catch (e) { finish({ state: 'failed', books: [] }); }
+}
+
+// Author noise (calibration build-note #2): empty, an editor/translator credit,
+// a degree, a "with X", "et al", or a comma-list must fall back to a TITLE-ONLY
+// GB query. The one GB no-match in 107 (Sylvia Wynter, author "Katherine
+// McKittrick, editor") flipped totalItems 0 -> 300 when the noisy inauthor was
+// dropped. Case-insensitive.
+function scanAuthorIsNoisy(author) {
+  var a = (typeof author === 'string') ? author.replace(/^\s+|\s+$/g, '') : '';
+  if (a.length === 0) { return true; }
+  var lo = a.toLowerCase();
+  if (lo.indexOf(',') > -1) { return true; }                 // comma-list / "Name, editor"
+  if (/(^|[^a-z])(editor|editors|ed\.|eds\.|trans\.|translated|introduction|foreword|phd|ph\.d|m\.d|with )/.test(lo)) { return true; }
+  if (/(^|[^a-z])et al/.test(lo)) { return true; }
+  return false;
+}
+
+// The resolver query for a vision book, relaxing a noisy author to title-only so
+// a correctly-detected book with a messy author is not a false GB no-match.
+function scanQueryForBook(vb) {
+  return { kind: 'title', title: (vb && vb.title) ? vb.title : '', author: scanAuthorIsNoisy(vb ? vb.author : '') ? '' : vb.author };
+}
+
+// Normalized title (the bookIdentityKey idiom, :7565): lowercase, alnum-only.
+function scanNormTitle(s) {
+  return ('' + (s == null ? '' : s)).toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+// Detected corroborates a candidate title when normalized-equal, or the shorter
+// (>=6 chars, so a tiny fragment can't match) is a substring of the longer
+// (subtitle tolerance: "Stamped from the Beginning" in "...The Definitive History").
+function scanTitleCorroborates(detectedTitle, candidateTitle) {
+  var d = scanNormTitle(detectedTitle), c = scanNormTitle(candidateTitle);
+  if (d.length === 0 || c.length === 0) { return false; }
+  if (d === c) { return true; }
+  var shorter = (d.length <= c.length) ? d : c;
+  var longer  = (d.length <= c.length) ? c : d;
+  return (shorter.length >= 6 && longer.indexOf(shorter) > -1);
+}
+
+// GB no-match — the exception arm's independent anchor, STRENGTHENED per
+// calibration build-note #1: NOT merely totalItems>0 (which corroborated 106/107
+// including every WRONG book). A book is a GB no-match when NONE of the resolver's
+// returned candidates (top + alternates) has a title corroborating the detected
+// title. resolveBook returns status:'none' with a stub when GB returned zero
+// items -> also a no-match.
+function scanGbNoMatch(vb, resolved) {
+  if (!resolved || resolved.status === 'none') { return true; }
+  var cands = [];
+  if (resolved.book) { cands.push(resolved.book); }
+  if (resolved.alternates && resolved.alternates.length) {
+    var i; for (i = 0; i < resolved.alternates.length; i++) { cands.push(resolved.alternates[i]); }
+  }
+  var j;
+  for (j = 0; j < cands.length; j++) {
+    if (cands[j] && scanTitleCorroborates(vb.title, cands[j].title)) { return false; }
+  }
+  return true;
+}
+
+// SC6 exception predicate (BRIEF-ERRATA-2): exception is (GB no-match) OR
+// (confidence === 'low'). Cut = {low} (SC12 recommendation; 9.3% on the real shelf).
+function scanIsException(vb, resolved) {
+  if (vb && vb.confidence === 'low') { return true; }
+  return scanGbNoMatch(vb, resolved);
+}
+
+// Pair vision books with their resolver results (index-aligned; resolveBatch
+// preserves order) and split confident vs exception, carrying the fields the
+// surface needs: spineText for the walker evidence line; resolved cover +
+// alternates for the tray and the walker candidates.
+function scanClassify(visionBooks, resolvedArray) {
+  var confident = [], exceptions = [];
+  var i;
+  for (i = 0; i < visionBooks.length; i++) {
+    var vb = visionBooks[i] || {};
+    var rz = resolvedArray[i] || null;
+    var item = {
+      title:      (vb.title || ''),
+      author:     (vb.author || ''),
+      spineText:  (vb.spineText || ''),
+      confidence: (vb.confidence || 'low'),
+      resolved:   rz,
+      cover:      (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
+      alternates: (rz && rz.alternates) ? rz.alternates : []
+    };
+    if (scanIsException(vb, rz)) { item.exception = true; exceptions.push(item); }
+    else { item.exception = false; confident.push(item); }
+  }
+  return { confident: confident, exceptions: exceptions, found: confident.length + exceptions.length };
+}
+
 // Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
 // scoped (mirrors _stLayersOpen) so it survives the in-panel re-renders that
 // editing a field triggers (status / ISBN blur / tradition each re-enter
