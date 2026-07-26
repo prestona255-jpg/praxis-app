@@ -6090,7 +6090,7 @@ function startCoverBackfill() {
 // saveState, renderShelf. If ISBN non-empty, fire background
 // fetchAndApplyCover after the sync render. Cancel re-renders the
 // shelf with no writes.
-function openShelfEditor() {
+function openShelfEditor(prefillIsbn) {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) return;
 
@@ -6159,6 +6159,8 @@ function openShelfEditor() {
   isbnInput.type = 'text';
   isbnInput.className = 'shelf-editor-isbn-input';
   isbnInput.placeholder = 'ISBN (optional)';
+  // FX-C: the scan not-found "Add manually" hand-off prefills the scanned ISBN.
+  if (typeof prefillIsbn === 'string' && prefillIsbn.length > 0) { isbnInput.value = prefillIsbn; }
 
   var actions = document.createElement('div');
   actions.className = 'shelf-editor-actions';
@@ -8357,11 +8359,22 @@ function scanShowVerdict(result, isbn) {
   } else if (title) {
     if (sil) { sil.style.display = 'block'; }
   }
-  if (c && c.owned) {
-    add.textContent = 'Open';
+  // FX-C: a NOT-FOUND card must never invite a junk entry with the loudest button.
+  // When GB found nothing usable (no title), the primary becomes "Keep scanning" and
+  // "Add to shelf" demotes to a quiet "Add manually" that routes to the add form with
+  // the ISBN prefilled. A real hit keeps the gold Add/Open primary.
+  var dismiss = scanEl('scan-vd-dismiss');
+  if (!title) {
+    add.textContent = 'Add manually'; add.className = 'scan-btn scan-btn-quiet';
+    if (dismiss) { dismiss.textContent = 'Keep scanning'; dismiss.className = 'scan-btn scan-btn-primary'; }
+    scanCurrentVerdict = { kind: 'manual', isbn: (isbn || '') };
+  } else if (c && c.owned) {
+    add.textContent = 'Open'; add.className = 'scan-btn scan-btn-primary';
+    if (dismiss) { dismiss.textContent = 'Keep scanning'; dismiss.className = 'scan-btn scan-btn-ghost'; }
     scanCurrentVerdict = { kind: 'open', existingId: c.existingId };
   } else {
-    add.textContent = 'Add to shelf';
+    add.textContent = 'Add to shelf'; add.className = 'scan-btn scan-btn-primary';
+    if (dismiss) { dismiss.textContent = 'Keep scanning'; dismiss.className = 'scan-btn scan-btn-ghost'; }
     scanCurrentVerdict = { kind: 'add', spec: {
       title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null, status: 'reading'
     } };
@@ -8371,12 +8384,30 @@ function scanShowVerdict(result, isbn) {
   scanAnnounce(title ? (title + (author ? ' by ' + author : '') + (c ? '. ' + c.text : '')) : 'No confident match.');
 }
 
-// The verdict Add/Open action (wired once in scanWireShell; reads scanCurrentVerdict).
+// FX-C: after the not-found "Add manually" navigates to the Shelf, open the add
+// editor (in the visible #shelf-editor-host) with the scanned ISBN prefilled. The
+// hashchange render is async, so poll briefly for the host, then open once.
+function scanOpenManualWhenReady(isbn, tries) {
+  if (document.getElementById('shelf-editor-host')) { openShelfEditor(isbn); return; }
+  if (tries > 0) { window.setTimeout(function () { scanOpenManualWhenReady(isbn, tries - 1); }, 60); }
+}
+
+// The verdict Add/Open/Manual action (wired once in scanWireShell; reads scanCurrentVerdict).
 function scanVerdictAdd() {
   var vd = scanCurrentVerdict; if (!vd) { return; }
   scanHideVerdict();
   if (vd.kind === 'open' && vd.existingId) {
     location.hash = '#book/' + vd.existingId; // renderRoute cleanup tears the camera down
+    return;
+  }
+  if (vd.kind === 'manual') {
+    // FX-C: not-found -> the manual add form on the Shelf, ISBN prefilled (never a
+    // one-tap junk add). scanStopStream on the way out (SCE-1); then open the editor.
+    var pf = vd.isbn || '';
+    scanCurrentVerdict = null;
+    scanStopStream();
+    location.hash = '#books';
+    scanOpenManualWhenReady(pf, 12);
     return;
   }
   var id = scanCommitBook(vd.spec, null);
