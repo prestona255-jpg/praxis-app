@@ -4,13 +4,19 @@ route: "overlay (BUILT — global, body-mounted; summonable over any route)"
 render_fn: "BUILT — buildCaptureDoor/initCaptureDoor/capOpen (js/views.js door module, the new unified door) + buildNotebookCatchAffordance (the Notebook leaf's door into it). CD-6 retired three legacy doors — writeline (Stage 1, v3.254) · Book-Detail Add-marginalia CREATE (Stage 2, v3.255) · window.ImportCapture (Stage 3, v3.257). **CD-6 CLOSED at three (2026-07-25 ruling):** onboarding buildActMargin ruled NOT a CD-6 door (beat 6 of the first-run journey, one caller, already writes through the sole-writer captureNote); its UI-unification is an ONBOARDING-round item under OB L-1 (held future-state). (createWritingCanvas stays — shared; its ✎ EDIT path is kept, deferred until F2.)"
 ground: "light working surface, summoned over --scrim (RULED LIGHT 2026-07-23)"
 in_nav: "yes — Capture nav entry + ⌘N + the create-corner (CD-1)"
-state: shipped
+state: closed
 mockup: docs/studio/mockups/capture.html
 shipped: v3.252
 rounds: 1
 ---
 
 ## State
+
+**ROUND CLOSED (2026-07-25) — v3.252 → v3.259. See "## R-CAPTURE — ROUND CLOSED" below for the
+acceptance card, the felt-pass ledger (actual shape), the debt ledger, and what the round did NOT
+prove.** The narrative in the rest of this section is the MOCKUP-SESSION record (the `rounds: 0`
+era) and is kept for history; the surface has since shipped and the round has closed
+(`state: closed`, `rounds: 1`).
 
 R-CAPTURE / THE DOOR is a **net-new unified surface** — SHAPE-B mockup delivered
 2026-07-23, no build round has run yet (`rounds: 0`). The mission (r-capture-brief.md
@@ -20,6 +26,116 @@ decisions are CD-1..6 (ruled 2026-07-18) + CA-1..3 (ruled 2026-07-23, the R-SHEL
 inherited carrying-question-authoring seam). This file did not exist before this
 mockup session — created now per explicit instruction, not an append-only violation
 (no prior ledger content to preserve).
+
+## R-CAPTURE — ROUND CLOSED (2026-07-25)
+
+Closed on Preston's rulings at the Stage-0 acceptance gate (close-out session). The felt passes
+were GIVEN but had lived only in chat — landed here now, in their **actual shape**, not a
+flattened verdict. Draft class same as the OB brief: given ≠ landed.
+
+### Acceptance card (brief `r-capture-brief.md`, walked law by law)
+
+| Law | Verdict | Evidence |
+|---|---|---|
+| CD-1 two corners + nav + ⌘N | **MET** | `capCreateDoor` views.js:23893 · Bloom flower (AMB-1) · Capture nav :23895 · ⌘N :23928; v3.252 |
+| CD-2 pre-rendered two-size sheet | **MET** | `capOpen`/`buildCaptureDoor` :23110/:23730; two-size shipped v3.252. **390 bottom-sheet geometry PROVEN by the iPhone felt passes** (Preston, close ruling) |
+| CD-3 context-smart, never-silent chip | **MET** | never-silent context chip v3.252; felt #1 ruled F3 |
+| CD-4 talk-it-through = inert seat | **MET (inert)** | `#capTalkSeat` "arrives with the YG round" ~:23789 |
+| CD-5 commit-and-stay + save pulse | **MET** | `capCommit` :23343; scrim explicit-close ruled; v3.252 |
+| CD-6 one door, unify 4 sources | **MET (closed at 3)** | writeline v3.254 · book-marg v3.255 · ImportCapture v3.257; 4th (onboarding `buildActMargin`) ruled not-a-door (`bc0de4d`) |
+| CA-1 carrying-question on desk + bridge | **MET (built)** · tap-grammar felt PENDING | shipped v3.252; tap-grammar felt verdict owed → debt ledger |
+| CA-2 failure law | **PARTIALLY MET** | core MET (draft-persistence gate + raw-joins-corpus, DOOR-SEG verified); **offline sub-clause UNVERIFIED — the offline path was never exercised**; the pending-chip affordance is the NOT-MET LAW row below |
+| CA-3 workshop seat inherited | **MET as seam · wiring DEFERRED (by design)** | reserved comment-only per DWF-1 (views.js:11761); "the Room seam (CA-3)…deliberately absent" (:22987); in-Room door is D4's build |
+| LAW `<400ms` local-first | **UNVERIFIED** | engineered (recon §9: no pre-keystroke async; pre-rendered sheet); no post-build measurement, no instrumentation |
+| LAW ⌘Enter commits / Enter newline | **MET (impl) · exercise UNVERIFIED** | views.js:23867 (`(meta\|\|ctrl)+Enter→capCommit`; plain Enter → newline by fall-through); no recorded real-input firing |
+| LAW offline pending chip | **NOT MET (not built)** | grep of `js/` for `navigator.onLine`/offline/`capPending` = empty; the disclosure chip does not exist |
+| LAW raw joins corpus | **MET** | DOOR-SEG children-verified-then-parent-deleted under CA-2 (cd6-importcapture.md red-team CLEAN); persistence gate |
+| LAW F-B forward acts | **MET** | CA-1 "Carry on the desk" + DOOR-SEG "Split into N?" are forward acts; delete terminal |
+
+No CD/CA graded NOT MET. CA-2 is partial (offline sub-clause UNVERIFIED); the offline pending chip
+is a NOT-MET LAW, carried as debt (`CAPTURE-OFFLINE-CHIP` + `CAPTURE-OFFLINE-UNEXERCISED`).
+
+### Felt-pass ledger (actual shape — passes were given, landed here)
+
+- **v3.252 THE DOOR** — felt PASS #1 on Preston's real library (ruled F1–F4).
+- **v3.253 mobile-sheet** — felt-TRIAGE: originated from Preston's real-iPhone paste screenshot (the
+  L18 specimen). It exercised **PASTE mode only**; it did NOT walk all five door modes → **not
+  upgraded to a clean PASS**, and `MOBILE-ALLMODES-WALK` is owed (debt). (Upgrading it would violate
+  the very lesson the round wrote — L18, "walk every mode.")
+- **v3.254 writeline** — felt PASS.
+- **v3.255 book-marg** — felt PASS.
+- **v3.256 refresh-guard** — felt-SKIP (Preston-ruled; guard/wiring).
+- **v3.257 ImportCapture + DOOR-SEG** — **NOT a clean standalone pass.** Real iPhone: full flow PASS
+  (paste → file → split into 3 → file-3 → undo toast; LLM segmentation and question auto-flag
+  verified working). Desktop: per-child book chip **FAILED** (dead click) + review-panel h-scroll.
+  **The desktop leg was closed by v3.258.** The record shows the failure, not a laundered pass.
+- **v3.258 SPLIT-POP fix** — desktop PASS confirmed by hand: book chip flips up visible near the
+  fold, click-outside closes, phone re-tap fine. **This is what closes CD-6 Stage 3 end-to-end.**
+- **v3.259 F2** — desktop PASS: light ground with readable serif, long marginalia un-clamped, gold
+  back-link returning to the notebook, new Inbox wording. **Not walked: Edit-open and the 390 pass.**
+- **`ce277e7` / `bc0de4d` / `aa57ad5`** — felt-SKIP (hook / docs / Builder — no app surface).
+
+### Debt ledger (R-CAPTURE close — landed, not merely reported)
+
+| Item | Sev | One-line | Lives · owner |
+|---|---|---|---|
+| R1 SPLIT-POP-DOUBLE-CLIP | LOW | flip-up checks only room-below; degenerate short-body could flip unreachable; no data loss | cd6-split-pop-fix.md:39 · SCAN round / split micro-lane |
+| SPLIT-HSCROLL | HELD | desktop h-scrollbar on the review; not reproduced with synthetic content | sequence.md · blocked on Preston's triggering note |
+| SPLIT-FOCUS-MODE | LOW-MED | 3+-child review pushes Accept below the fold (reachable via scroll); hiding composer chrome would remove the scroll | cd6-importcapture.md:141 · Preston felt call |
+| MARG-CREATE-DEAD | LOW | unreachable Stage-2 create leftover (`openMarginaliaEditor` create branch, views.js:14577) | cd6-importcapture.md:119 · cleanup lane |
+| DEAD-VOICEINPUT | LOW | `voice-input.js` (5,796 B) dead but still `<script>`-loaded (index.html:83) | cd6-importcapture-recon.md:169 · cleanup lane |
+| PHOTO-PLACEHOLDER | LOW | "photo not on device" renders a full-size empty slab; should collapse to a chip (`buildNotebookShot`) | capture.md gap ledger · polish lane |
+| GATHER-PICKER-DONE-NOOP | **MED** | gather "Choose an arc" picker's Done is a genuine no-op (`onDone:function(){}`, no internal close) — a dead button | capture.md round history · own felt-passed fix lane |
+| DEAD-JOURNAL-EDITOR | LOW | `openJournalEditor` + `#notebook-editor-host`: zero callers, host created empty | capture.md Next · cleanup lane |
+| NOTE-IMG | **MED** | note-detail renders no attached photos (`renderNoteSurface`) — silently dropped | f2-note-detail-recon.md:61 · note-detail/canvas lane |
+| CANVAS-NO-SHELL | LOW | the writing canvas mounts with no visual frame on note-detail + book-detail; `#book-detail-editor-host` carries a layout-only rule; pre-existing on both, independent of F2 | canvas/shell round |
+| NOTE-PAGE-FLOOR | LOW | note-detail ends abruptly — ~2/3 of the viewport empty below the provenance block, where the book-detail sibling has grid structure | note-detail lane |
+| REGISTER-GRAMMAR-SPLIT | LOW | register is a chip with a gold left rule in the notebook list but plain mono text on note-detail; the timestamp drops its time | note-detail lane |
+| MOBILE-ALLMODES-WALK | **MED** | a 390 walk of all five door modes (note · voice · paste · photo · scan) is owed — v3.253 walked paste only (L18) | next round touching capture |
+| CAPTURE-OFFLINE-CHIP | LOW | the offline disclosure affordance ("pending" chip) is not built; deferred debt | next round touching capture |
+| CAPTURE-OFFLINE-UNEXERCISED | **MED** | the offline capture path was never exercised at all; "data-safe by local-first construction" is an inference we have never tested — same class as the `<400ms` UNVERIFIED grade | next round touching capture · task = exercise the offline path |
+| CA-1-TAPGRAMMAR-FELT | PENDING | the desk carrying-question tap-grammar (the round's riskiest ambiguity) was never felt | next round touching the desk |
+| OB-DOOR | ROUND-GAP | onboarding door UI-unification into the shared door, gated behind OB L-1 | onboarding.md:33 · ONBOARDING round |
+| OB-BRIEF-UNLANDED | ROUND-OPEN | the OB brief does not exist yet (dependency) | onboarding.md:40 · ONBOARDING round |
+| REACH-MAP-TIEBREAK | LOW | the Builder reach-map gap-cap tie-break is arbitrary among gap-0 surfaces (meaningful at the top, arbitrary at the bottom); pre-existing, not the parser fix's | gate 2026-07-25 · Builder/tooling lane |
+| C2-BYTE-IDENTITY-CONTINGENT | LOW | Builder NOW-parser byte-identity holds for current content only; exact trigger below | gate 2026-07-25 · close-out ledger / future Builder change |
+| GATE-HARNESS-FIDELITY | NOTE | the parser gate replicated the reach-map cap with `gapcount` (returns 0 for any name) instead of the Builder's real `qgap`-on-`$SURFACES`, producing confident-but-wrong numerics (the "8→7" / "`various` enters"); same proxy-assertion class as L19 but aimed at a HARNESS not a UI — a verification harness must exercise the real code path, not a look-alike | gate 2026-07-25 · verification-harness discipline (lesson-note, not a lane) |
+| B3-SMOKE-WIRING | **MED** (tooling) | auto-guard's B3 smoke stage skipped honestly (no automated smoke exists); follow-on = build one | auto-guard.md:80 · tooling lane |
+
+**Open questions — STAY OPEN (deliberately NOT answered in a closing session; owner = next round touching the notebook):**
+- **`#note/<id>` route promotion** — unlocked by F2; recorded report-only (f2-note-detail.md §"#note/<id> route", recon §8). A product call, left as a question.
+- **split-after-door-closes discoverability** — how does a user find a pending split review once the door closes? A product call, left as a question.
+
+### What this round did NOT prove (read before assuming)
+
+UNVERIFIED grades — implemented ≠ verified:
+- **`<400ms` local-first** — engineered (no pre-keystroke async, pre-rendered sheet); never measured post-build.
+- **⌘Enter commits / Enter newline** — implemented (views.js:23867); never exercised by a recorded real-input test.
+- **the offline path** — never exercised at all; "data-safe by local-first" is an inference we have not tested (`CAPTURE-OFFLINE-UNEXERCISED`).
+
+Un-walked felt legs:
+- v3.257 desktop before v3.258 (failed → closed by v3.258).
+- v3.259 F2: Edit-open + the 390 pass.
+- CA-1 desk carrying-question tap-grammar (the round's riskiest ambiguity) — never felt.
+- All-modes 390 walk (note · voice · paste · photo · scan) — only paste was walked (`MOBILE-ALLMODES-WALK`).
+
+### Corrections landed with this close (gate 2026-07-25)
+
+- **"Reach map 8→7" was a gate artifact — record the MECHANISM, never a number.** The Builder reach
+  map renders **only real `$SURFACES`**: it is the union of the Now/Next moves' `touches`, but the cap
+  is keyed on `qgap` (the `$SURFACES` gap map), so **non-surface touch-tags — `scan`, `shelf`,
+  `various`, `views`, `yumi-brain` — never appear on it** (their `qgap` is empty, so the cap drops
+  them). Mechanism: filtering closed `[x]` rounds out of `## Now` drops the real surfaces they carried,
+  so a closed round's surfaces leave — **`notebook` left because R-CAPTURE was its only carrier**. After
+  this close the map is the **6 rendered surfaces**: Shelf (books) · Arc interior (arc-detail) · Account ·
+  Yumi panel · Import & capture · Profile. (The earlier "8→7"/"8→8" figures and the "`various` enters"
+  claim were the parser gate replicating the cap with `gapcount` instead of `qgap` — see
+  `GATE-HARNESS-FIDELITY` in the debt ledger. Mechanism, not numbers.)
+- **`C2-BYTE-IDENTITY-CONTINGENT`** — the Builder NOW-parser's "Next/Then/Shipped/Discovered
+  byte-identical to the pre-fix parse" holds for **current content only.** Exact trigger: any future
+  item in those four sections carrying a backtick-bracket `` `[…]` `` with **no `touches:` line** —
+  C2 will populate `touches` from it where the old parser left it empty (enriches the reach map;
+  never drops, duplicates, or reorders an item).
 
 ## Current-surface structure (the four source UIs this round unifies)
 
@@ -296,6 +412,10 @@ each of 3 of the 4 places.
 
 ## Next
 
+- **R-CAPTURE ROUND CLOSED (2026-07-25).** `state: closed`, `rounds: 1`. The acceptance card, the
+  felt-pass ledger (actual shape), the debt ledger, and "what this round did not prove" are in
+  "## R-CAPTURE — ROUND CLOSED" above. Next surface in the sequence = **SCAN** (inherits THE DOOR's
+  mode-set socket, CD-6). Everything below this line is carried debt / follow-on, owned per the debt ledger.
 - **CD-6 UNIFICATION (F4) — ✅ CLOSED at three doors (2026-07-25, Option-1 re-scope).** Stage 1 (Notebook
   writeline) v3.254 · Stage 2 (Book-Detail Add-marginalia CREATE) v3.255 · Stage 3 (ImportCapture retire +
   DOOR-SEG) v3.257 — SHIPPED. The fourth candidate, onboarding `buildActMargin`, is ruled **NOT a CD-6

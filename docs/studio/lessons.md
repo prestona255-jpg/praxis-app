@@ -163,6 +163,21 @@ FAIL contradicts a passing emulated check, FIRST re-walk the modes/states the ch
 skipped (it reproduces in the emulator) before reaching for iOS/WebKit/font/safe-area
 theories — coverage gaps masquerade as device-rendering differences.
 
+**L19 — REAL-INPUT VERIFICATION, NOT PROGRAMMATIC-CLICK / DOM-PRESENCE.**
+Specimen: R-CAPTURE CD6-SPLIT-POP (2026-07-25, v3.258) — the T4 verifier fired
+`chip.click()` PROGRAMMATICALLY (which dispatches straight to the element, bypassing
+hit-testing) and asserted on DOM STATE (`is-open` true, `pop.children.length` = 2). Both
+stayed TRUE while the per-child book-chip pop rendered 100% CLIPPED below the scroll
+container's fold — `pop_visible_height_in_body = 0`. The check passed; the user saw a dead
+click. Preston's desktop felt pass caught it; v3.258 fixed it (flip the pop up near the fold).
+Rule: verify an interactive control with a REAL HIT-TESTED CLICK — `elementFromPoint` at the
+control's visible rect confirms the intended element is on top and hittable, force-settled —
+PLUS a VISIBLE-RECT assertion (the affordance is actually on-screen and reachable). NEVER a
+programmatic `.click()` (it bypasses hit-testing), NEVER DOM-presence / DOM-state alone
+(`is-open`, `.children.length`, `inDom` stay true even when the element is clipped invisible).
+Sibling to L10 (headless ≠ felt) and L18 (walk every mode): those name WHERE and WHICH mode;
+this names HOW you assert a click actually landed.
+
 ---
 
 ## MECHANICAL TRUTHS (one-liners, still binding)

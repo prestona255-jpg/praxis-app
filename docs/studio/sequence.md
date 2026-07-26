@@ -31,6 +31,17 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-25 (R-CAPTURE — ROUND FORMALLY CLOSED; SCAN promoted to `## Now`)** — Preston-DIRECTED at the
+  close-out acceptance gate. R-CAPTURE closes (v3.252→v3.259, full felt PASS on the real library; the desktop
+  split leg FAILED on v3.257 and was closed by v3.258 — recorded as the actual shape, never a flattened pass).
+  `## Now` re-set following the prior deep-round close shape: **R-CAPTURE → closed `[x]`**, **SCAN promoted as
+  the new truest next move** (it inherits THE DOOR's mode-set socket, CD-6); FINISH-CHOREO S3 + the Yumi round
+  carried. Docs-only close (capture.md `state: closed` + acceptance/felt/debt ledgers · lessons.md **L19
+  REAL-INPUT STANDARD** · BOARD.md DOOR panel · this log), single Builder regen, **no CACHE_VERSION bump** (no
+  app source, no `sw.js`). Two gate corrections landed: "reach map 8→7" recorded as a data-dependent snapshot
+  (mechanism, not number) + `C2-BYTE-IDENTITY-CONTINGENT` (exact trigger in capture.md). Preston-directed — no
+  `PROPOSED:` flag (SCAN was already next in the master sequence; the launch spine is unchanged). Records:
+  `docs/studio/capture.md` (## R-CAPTURE — ROUND CLOSED).
 - **2026-07-25 (R-CAPTURE / CD-6 UNIFICATION CLOSED at three doors — docs-only re-scope, no ship; round STAYS OPEN)** —
   Preston-DIRECTED (Option 1 at the CD-6 Stage-4 recon abort-gate). The fourth/last CD-6 candidate, onboarding
   `buildActMargin` (intros.js:263), is ruled **NOT a CD-6 door**: it is beat 6 of the 8-beat first-run journey
@@ -529,6 +540,20 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-CAPTURE — THE DOOR (net-new unified capture surface, v3.252→v3.259; ROUND CLOSED 2026-07-25)** —
+  every way a thought enters Praxis — type · voice · paste · import — became ONE fast, unlosable door instead
+  of four bespoke UIs. Shipped ADDITIVE v3.252 (create-corner + Capture nav + ⌘N · pre-rendered two-size sheet ·
+  never-silent context chip · commit-and-stay + save pulse · CA-1 desk carrying-question + bridge · Android text
+  share_target), felt PASS #1 on the real library. **CD-6 UNIFICATION closed the four source UIs at THREE doors:**
+  Notebook writeline retired v3.254 · Book-Detail Add-marginalia CREATE retired v3.255 · ImportCapture retired +
+  DOOR-SEG paid v3.257 (paste files raw-as-one → "Split into N?" forward act; children verified-then-parent-deleted
+  under CA-2); the 4th candidate (onboarding `buildActMargin`) ruled NOT-a-door (already on the sole-writer
+  `captureNote`). Micro-lane v3.256 (refresh-guard) · v3.258 (SPLIT-POP desktop fix — closed CD-6 Stage 3
+  end-to-end) · v3.259 (F2 note-detail repaint, pre-existing, folded in). Acceptance card: CD-1..6 + CA-1 MET,
+  CA-2 partial (offline sub-clause UNVERIFIED), CA-3 seam-deferred by design; UNVERIFIED laws — `<400ms`
+  (engineered, unmeasured) · ⌘Enter exercise · the offline path. Full ledger (acceptance card · felt-pass ledger
+  in actual shape · debt ledger · "what this round did not prove") in `docs/studio/capture.md`. Records:
+  `docs/checkpoints/r-capture-*` + `cd6-*`.
 - [x] **THE ARC STANDARD — the arc interior + writing-surface north-star (DEEP round, S1→S4 + S-FELT
   fix-forward, v3.246→v3.251; full felt PASS 2026-07-23)** — the flagship. The arc interior became
   THE FIELD: one lit sheet on the Hour's twilight, nothing floating on it as a panel — the cream-panel
@@ -807,22 +832,26 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**The 3 truest next moves after the ARC STANDARD close (2026-07-23). The runway view
+**The 3 truest next moves after the R-CAPTURE close (2026-07-25). The runway view
 of the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [~] **R-CAPTURE — THE DOOR (shipped ADDITIVE v3.252; round OPEN for CD-6)** — the unified capture door
-  is LIVE: the create-corner + Capture nav + ⌘N · pre-rendered two-size sheet · note/voice/paste · never-silent
-  context chip · commit-and-stay + save pulse · CA-1 desk carrying-question + bridge · Android text share_target.
-  Felt pass #1 PASS on Preston's real library. **The round's OPEN next phase = CD-6 UNIFICATION — staged
-  retirement of the 4 legacy doors (Notebook writeline FIRST), one felt pass + HALT each; the round does NOT
-  close until built or re-scoped.** ONE DOOR is aspiration, not law-true — five doors live today. Debt:
-  DOOR-SEG (multi-note paste). `[views, notebook, import-capture]`
+- [ ] **SCAN — the de-risk scan surface (round)** — the cover/ISBN scan flow predates THE DOOR; fold it
+  into the door's transport and give it the door's felt. SCAN plugs into the mode-set socket CD-6 designed
+  (the scan seat is already the socket — the sheet is never redesigned). **Now the truest next move —
+  R-CAPTURE shipped + CLOSED (v3.252→v3.259, full felt PASS on the real library; desktop split closed by
+  v3.258).** Fidelity spec on the scan-derisk lane (`scan-mockup.html`). `[scan, shelf]`
 - [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
   single shared `views.js`/`components.css` build lane (PIPELINE LAW).
 - [ ] **A Yumi round (unscoped) — owns the arc-context gap** — the Bloom's chat never learns which arc
   you are in (`renderRoute` nulls `state.currentArcId` on `#arc/<id>`; `assembleContextData` carries
   `{title}` at best), so "Ask Yumi what she sees here" is parked in the arc ⋯ overflow rather than
   retired. Yumi-adjacent → this round's debt #1, deferred to a Yumi round. `[yumi-brain, views]`
+
+- [x] **R-CAPTURE — THE DOOR — CLOSED 2026-07-25** (shipped ADDITIVE v3.252 + CD-6 unification at three
+  doors + DOOR-SEG, v3.252→v3.259; full felt PASS on the real library, the desktop split leg failed on
+  v3.257 and was closed by v3.258). Every way a thought enters — type/voice/paste/import — became one fast
+  unlosable door. Acceptance card · felt ledger (actual shape) · debt ledger in `docs/studio/capture.md`.
+  `[views, notebook, import-capture]`
 
 - [x] **THE ARC STANDARD — deep round — CLOSED 2026-07-23** (S-FELT→S4 + gate fixes,
   v3.246→v3.251, full felt PASS; the flagship). The arc interior became the Field, the workshop
