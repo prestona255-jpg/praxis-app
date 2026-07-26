@@ -7806,7 +7806,7 @@ function openLibraryCleanup() {
 // ============================================================================
 // SCAN ROUND — S1: the shelf-vision pipeline (the build-first task).
 // Net-new, self-contained; consumed by the #scan Shelf mode (S4). The legacy
-// handleShelfScanFile/vision-proxy path above retires in S5. The endpoint
+// handleShelfScanFile/vision-proxy path was RETIRED in S5 (deleted). The endpoint
 // (netlify/functions/shelf-vision.js) is UNTOUCHED (non-goal: no endpoint edits).
 //
 // Contract (read from shelf-vision.js @ f7e925c): POST {image:<bare base64>,
@@ -8738,11 +8738,14 @@ function scanShowReceipt(n) {
 function scanUndoShelve() {
   var ids = scanLastShelvedIds || [];
   var u = getCurrentUser();
-  if (u) { var i; for (i = 0; i < ids.length; i++) { deleteBook(u.uid, ids[i]); } }
+  var removed = 0;
+  if (u) { var i; for (i = 0; i < ids.length; i++) { if (deleteBook(u.uid, ids[i]) !== false) { removed++; } } }
   scanLastShelvedIds = [];
   if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); scanReceiptTimer = null; }
   scanHide(scanEl('scan-receipt'));
-  scanAnnounce('Shelving undone. ' + ids.length + ' books removed.');
+  // Report the REAL outcome (red-team S6 NOTE): a signed-out / already-gone Undo must
+  // never announce a false "N removed" — count actual deletions.
+  scanAnnounce(removed ? ('Shelving undone. ' + removed + ' books removed.') : 'Nothing to undo.');
 }
 
 // ---- SCE-2 draft persistence (device-local, non-schema) + quiet nav badge ----

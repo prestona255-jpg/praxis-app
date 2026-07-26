@@ -24,17 +24,19 @@ LRUN="$REPO/docs/launch-runway.md"
 OUT="${STUDIO_OUT:-$STUDIO/builder.html}"   # B1 (2026-07-25): STUDIO_OUT overrides the output path for scratch renders; production path when unset
 US=$(printf '\037')   # field delimiter — non-whitespace so empty fields (e.g. no touches) are preserved by read
 
-# 22 surfaces (18 routed + 4 overlay); cross-cutting is a layer, not a surface.
-SURFACES="home books book-detail book-marks artifact arcs arc-detail subtheory-page subtheory-build notebook account about profile commons reader walk search yumi-sees yumi-panel onboarding import-capture spotlight"
+# 23 surfaces (19 routed + 4 overlay); cross-cutting is a layer, not a surface.
+# SCAN ROUND: `scan` promoted ROUNDSTUB -> real surface (the #scan camera capture
+# surface shipped v3.260-v3.264; renderScan @ js/views.js).
+SURFACES="home books book-detail book-marks artifact scan arcs arc-detail subtheory-page subtheory-build notebook account about profile commons reader walk search yumi-sees yumi-panel onboarding import-capture spotlight"
 LAYERS="cross-cutting"
 # 1d: round-doc stubs — rounds with a doc but no history yet. NOT surfaces (kept OUT of
 # $SURFACES so TOTAL/PCT/heat/rollups/gapcount are undisturbed); rendered only as
 # round-doc entries in the Round-records page.
-ROUNDSTUBS="scan r-shelf r-arc"
+ROUNDSTUBS="r-shelf r-arc"
 
 # journey-ordered groups (fixed order everywhere: sidebar, overview, hue legend)
 G_ARRIVE="home onboarding about"
-G_READ="books book-detail book-marks artifact"
+G_READ="books book-detail book-marks artifact scan"
 G_WRITE="arcs arc-detail subtheory-page subtheory-build notebook import-capture"
 G_SHARE="account profile commons reader walk"
 G_YUMI="yumi-panel yumi-sees"

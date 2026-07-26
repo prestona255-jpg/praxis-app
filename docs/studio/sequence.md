@@ -31,6 +31,27 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-07-26 (SCAN — BUILT + VERIFIED, committed-local, awaiting push + felt pass)** — the SCAN deep
+  round is built across 6 local commits (`63267ff` hook infra · `71c0bcf` S1 shelf-vision pipeline ·
+  `007ad96` S2 the #scan surface · `6103937` S3 Book mode · `50656a6` S4 Shelf mode+review+walker+
+  shelve/undo · `a9e0c2b` S5 lifecycle+cost+CD-6 socket+legacy retirement), v3.259→**v3.264**. Ported
+  from the felt-pending `scan-surface.html`: a full-bleed camera entered from the CD-6 create-door Scan
+  socket + a first-class `#scan` nav entry; Book mode (free barcode → verdict → guarded one-tap Add) +
+  Shelf mode (opus `shelf-vision` → tray+SCA3 dedupe → mirror-shelf review → exception walker → Shelve N
+  → IMMEDIATE batch Undo, ERRATA-1). Cut={low} with the STRENGTHENED GB arm (bookIdentityKey, noisy-
+  author relaxation). Four SC8 failure states, designed permission/offline/denied doors, soft daily cost
+  cap (30/day, never silent-degrade), SCE-1 hardware camera lifecycle, death-proof draft + nav badge.
+  **LEGACY RETIRED** (net −260 L in views.js): the vision-proxy file-input shelf path
+  (`handleShelfScanFile`/`scanResponseToSpecs`) + the `openBarcodeScanner` modal + the scan-status
+  plumbing; Manage-sheet chips re-point to `#scan`. js/ now has ZERO vision-proxy fetch callers (the
+  endpoint file stays untouched, non-goal). **BRIEF-CONFLICT #1 surfaced** (max_tokens returns no
+  partial books → TRUNCATED honest, no keep-partial tray). Both gates run at the close (Sonnet); the
+  full forced-timing race on real Firestore is Preston's live-smoke (local bookkeeping proven). `## Now`
+  UNCHANGED — **SCAN stays the lead Now item; the round CLOSES only on Preston's felt pass** on the
+  installed PWA + Safari (the DEVICE-OWED felt card in `docs/checkpoints/scan-build.md`). `scan` promoted
+  ROUNDSTUB→real surface in the Builder (regen rides this push-point). Autonomous build-complete on a Now
+  item — nothing retired, no Preston decision contradicted — no `PROPOSED:` flag. Records:
+  `docs/checkpoints/scan-build.md` + `docs/studio/scan.md`.
 - **2026-07-25 (R-CAPTURE — ROUND FORMALLY CLOSED; SCAN promoted to `## Now`)** — Preston-DIRECTED at the
   close-out acceptance gate. R-CAPTURE closes (v3.252→v3.259, full felt PASS on the real library; the desktop
   split leg FAILED on v3.257 and was closed by v3.258 — recorded as the actual shape, never a flattened pass).
@@ -835,11 +856,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
 **The 3 truest next moves after the R-CAPTURE close (2026-07-25). The runway view
 of the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [ ] **SCAN — the de-risk scan surface (round)** — the cover/ISBN scan flow predates THE DOOR; fold it
-  into the door's transport and give it the door's felt. SCAN plugs into the mode-set socket CD-6 designed
-  (the scan seat is already the socket — the sheet is never redesigned). **Now the truest next move —
-  R-CAPTURE shipped + CLOSED (v3.252→v3.259, full felt PASS on the real library; desktop split closed by
-  v3.258).** Fidelity spec on the scan-derisk lane (`scan-mockup.html`). `[scan, shelf]`
+- [ ] **SCAN — the de-risk scan surface (round)** — the cover/ISBN scan flow predates THE DOOR; folded
+  into the door's transport with the door's felt. SCAN plugs into the mode-set socket CD-6 designed.
+  **BUILT + VERIFIED, committed-local, awaiting push + Preston's felt pass** (v3.259→v3.264, 6 commits
+  `63267ff..a9e0c2b`; ported from the felt-pending `scan-surface.html`; legacy vision-proxy shelf path +
+  openBarcodeScanner modal retired, net −260 L). The round CLOSES only on Preston's felt pass (installed
+  PWA + Safari — the DEVICE-OWED felt card in `docs/checkpoints/scan-build.md`). `[scan, shelf]`
 - [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
   single shared `views.js`/`components.css` build lane (PIPELINE LAW).
 - [ ] **A Yumi round (unscoped) — owns the arc-context gap** — the Bloom's chat never learns which arc

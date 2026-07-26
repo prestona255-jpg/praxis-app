@@ -41,6 +41,7 @@ Legend: ✅ done · ◐ partial · ✗ absent · — not applicable · ? ambiguo
 | 16 | `#reader/<uid>` renderOtherProfile | ✅ ember v16508 | ✅ css12217 | ✅ v16592 | ✅ hard v16501 | ✅ v16517/16530 |
 | 17 | `#walk/<arcId>` renderInteract | ✅ ember v16625 | ✅ css12217 | ✅ v16634/16641/16805 | ✅ hard v16620 | ✅ v16626/16759 |
 | 18 | `#search` renderSearch (W8) | ✅ v1025 | ✅ css11768 | ✅ v963 | ✅ hard v1005 (W11-S8-L1; soft-CTA retired) | — sync by design (no fetch) |
+| 19 | `#scan` renderScan (**SCAN round, v3.260→v3.264 — BUILT + VERIFIED, committed-local, awaiting push + felt pass**) | ✅ camera-dark HOUR chrome over live video → light draft-case review (Universal v1.2 tokens; scoped `.scan-surface`; scan camera-chrome + cover-cloth token families in theme.css) | ✅ **native** — mobile-first, 390 is the acceptance surface (env() insets throughout; the most safe-area-exposed surface); desktop = honest secondary (ISBN/search + drop-zone, no fake viewfinder) | ✅ SC8 EMPTY overlay (coaching) + designed KNOWN-OFFLINE card + the four failure states (CALL-FAILED/EMPTY/TRUNCATED/REFUSED) | ✅ hard — `renderScan` → `buildSignedOutPrompt` (scan is billable authed) | ✅ four SC8 failure states from the shelf-vision stop_reason guard + CALL-FAILED free-retry + soft daily cost cap (30/day, honest refusal, never silent-degrade) |
 
 > **NAMED DRIFT — this board under-reports the Desktop Wave (DW-4, 2026-07-14).** Only **DW-1**
 > (arcs · about) and profile's first tier were ever recorded here; **DW-2** (home · notebook,

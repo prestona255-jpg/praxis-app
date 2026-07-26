@@ -295,3 +295,138 @@ every entry.
 | Shelf still renders; console errors | **0** |
 
 DEVICE-OWED / S6 felt card: the real hardware-indicator death on app-switch (SCE-1) — Preston's phone.
+
+---
+
+## S6 — VERIFY + CLOSE
+
+### Skew states (L15/G5) — rig, stubbed vision
+| skew | result |
+|---|---|
+| 40-book payload (36 high + 4 low) | found 40 · 36 confident · 4 exceptions · 40 tray covers · review 36 upright + 4 leaning · **no doc h-overflow** |
+| all-exceptions batch (8 low) | 0 confident · 8 exceptions · Shelve N=**0** · Review N=**8** · walk shown |
+
+### Interactive-control sweep (L18/L19) — every control fired
+All 18 primary controls present + wired (back · Book/Shelf seg · torch · primer allow/manual ·
+denied retry/isbn-add/search · offline retry/isbn-add · verdict Add/dismiss · tray-review · rv
+back/walk/shelve · receipt-undo); 5 fail-dismiss buttons (failed/empty/truncated/refused/cap);
+1 drop-zone. RM still-state block present; 8 scan rules carry env(safe-area) insets; surface
+z-index 9000 (over nav). Console errors across the whole sweep: **0**. The felt-critical primer
+allow button was L19 hit-tested (`elementFromPoint` = the button, on top).
+
+### FORCED-TIMING RACE (ERRATA-1 hard gate)
+- **LOCAL bookkeeping PROVEN (rig, d0tester):** 0 -> shelve 3 -> **Undo instantly** -> back to
+  baseline 0; all 3 ids tombstoned in `pendingBookDeletes` (merge SKIPs them -> no resurrection),
+  pending-add cleared by `deleteBook`, records gone. The delete-before-first-sync resurrection is
+  covered for books BY CONSTRUCTION (`deleteBook` :7542 clears pending-add + :7543 tombstones).
+- **DEVICE-OWED (real Firestore):** the rig has NO Firestore (localStorage-only) + is signed out
+  of a real account -- **persistence/resurrection against real Firestore is UNVERIFIED here.**
+  Preston's live-smoke (below) runs it on `prestonpraxistest`.
+
+### ACCEPTANCE CARD — brief laws (PASS / DEFERRED / owner)
+| # | Brief law | Verdict | Note |
+|---|---|---|---|
+| 1 | **Two trust postures, one camera** | **PASS** | Book verdict card (confident) vs mirror-shelf upright/leaning gray spine; the lean + grayscale carries it, no apology copy |
+| 2 | **The camera forgets** (incl. hardware) | **PASS (structure)** / **DEFERRED (hardware felt)** | teardown on renderRoute-cleanup + visibilitychange + pagehide + zxing reset; the indicator-light proof = felt card |
+| 3 | **The quick card is free** | **PASS** | `scanComputeContext` is local (owned / author-count); silent otherwise; zero model call on the card |
+| 4 | **Exceptions never auto-commit** | **PASS** | Shelve commits only `scanResult.confident`; exceptions persist (SCE-2 draft + nav badge) |
+| 5 | **Failure wears its own clothes** (4 states) | **PASS** | CALL-FAILED / EMPTY / TRUNCATED / REFUSED each its own overlay; TRUNCATED honest (no impossible keep-partial — BRIEF-CONFLICT #1) |
+| 6 | **The shutter is the budget** | **PASS** | Shelf = deliberate shutter; Book barcode = free auto; SC10 queue depth 1; cost cap 30/day; always opus (never degrade) |
+| 7 | **Raised-hand Yumi** | **PASS** | no Yumi surface on scan; context is a quiet mono line; no enrichment built (correct) |
+| 8 | **Canon-native + a11y** | **PASS (structure)** / **DEFERRED (AT pass)** | parse OK; tokens wired real; no underlined captions; RM stills; `aria-live` announcer; walker keyboard-operable; real screen-reader pass = device |
+
+### 8-ROW COMPLETENESS INVENTORY
+| row | state |
+|---|---|
+| **Ground** | light app -> camera-dark viewfinder (HOUR warm-up/overlays) -> light draft-case review. Full-amber (visitor room) correctly absent. |
+| **States** | 20+ reachable + asserted incl. skew (40-book + all-exceptions). |
+| **Controls** | all fired live (sweep above); own-state asserted; 0 dead controls. |
+| **Widths** | **390 built + verified** (acceptance surface, L4); desktop honest-secondary built (ISBN/search + drop-zone; nav fits 1360 no overflow). XL-tier bespoke desktop composition = DEFERRED (flagged, not faked). |
+| **Motion** | 3 mandated signatures (lock-on snap / shimmer read / shelve flight) each with a reduced-motion still; + warm-up fade. |
+| **Marks** | Raised-hand Yumi -> no Yumi glyph. Covers = typeset cloth into pre-sized 2:3 slots (real coverUrl draws over; 404 -> fallback, never a hole). Reticle brackets + shelf glyph + teal tick. |
+| **Text-registers** | serif (titles/covers) / body (actions) / mono (eyebrows/meta/counts/evidence). Evidence line in mono; NO underlined-link captions (control canon). |
+| **Seams** | Entry = the CD-6 create-door Scan socket (wired). Review = draft-case of the shipped carved cavity (SCD-3). Add = the shared guarded write. Undo immediate (ERRATA-1). No endpoint / schema / sw-beyond-bump touched. |
+
+### ELEVATION PASS (L14)
+Rig-verified at the acceptance surface + skew data; the camera-dependent felt (warm-up length,
+first-frame, torch, indicator death, notch clearance) is DEVICE-OWED and cannot be elevated on the
+rig (no camera). Craft/Quiet on the live look is Preston's felt pass. No in-ruled-space regression
+found in the rig sweep.
+
+### FINAL CACHE_VERSION
+Per-slice +1 from live v3.259 -> S1 v3.260 / S2 v3.261 / S3 v3.262 / S4 v3.263 / S5 v3.264; the S6
+docs-close rides a comment-only views.js touch -> **v3.265** at the close commit (the shipped value).
+
+### RESIDUALS (carried, named — not folded)
+- **R1 — real-Firestore forced-timing race**: Preston's live-smoke (below); local bookkeeping proven.
+- **R2 — dead legacy CSS**: `.barcode-scanner-*` + `.shelf-scan-status` / `.shelf-scan-input` rules now
+  orphaned (their JS retired) -> S-B sweep, not this round.
+- **R3 — stale comment**: `downscaleShelfPhoto`'s doc still describes the retired vision-proxy flow (the
+  fn is generic + reused by the drop-zone) -> cosmetic, S-B.
+- **R4 — XL-tier bespoke desktop scan composition**: deferred (acceptance surface is 390 per L4; the
+  honest-secondary is built). Named, not built.
+
+## DEVICE-OWED FELT CARD (Preston's phone — the round CLOSES on this)
+Full walk in the **installed PWA** AND **Safari**:
+1. Create-door **Scan chip** -> the surface (and the nav **Scan** entry).
+2. **Book mode** on a real barcode from your shelf -> lock-on snap -> verdict -> Add (rapid-scan continues).
+3. **Shelf mode** on ONE real row (one real opus call — budget-sanctioned) -> shimmer -> tray -> count line.
+4. The **walker** on whatever it flags — the "I read: '...'" evidence line, candidates.
+5. **Shelve -> Undo -> re-Shelve** — and the forced-timing feel (Undo instantly mid-sync; reload; nothing resurrects).
+6. **App-switch -> does the camera indicator DIE?** (SCE-1 hardware proof.)
+7. **Notch / home-indicator clearance** (env() — the rig resolves env()=0, so device-only).
+8. Warm-up **feel**; torch (Android only — is EMPTY-state lighting coaching an OK iOS substitute?); reduced-motion spot check.
+
+**LIVE-SMOKE STEPS (R1, on prestonpraxistest — the auth-gated forced-timing race):** sign in on
+prestonpraxistest -> #scan Shelf -> shoot one row -> Shelve N -> hit **Undo the instant** the receipt
+appears -> **hard-reload** -> confirm the shelf book count + ids are unchanged (the N shelved books are
+GONE and NONE resurrected). Repeat once with a same-second app-background between Undo and reload.
+
+---
+
+## S6 — GATE VERDICTS (both Sonnet-pinned, run before the push HALT)
+
+### Byte deltas (LF-normalized, pre-round f7e925c → close; the reviewer noted these were missing)
+| file | before | after | delta |
+|---|---:|---:|---:|
+| js/views.js | 1,116,985 | 1,176,779 | **+59,794** (full surface minus the −260-line retirement) |
+| assets/components.css | 843,546 | 869,026 | **+25,480** (scan CSS section) |
+| assets/theme.css | 44,866 | 46,047 | **+1,181** (scan token families) |
+| index.html | 8,684 | 9,119 | **+435** (nav entry) |
+| hooks/pre-commit | 4,899 | 5,445 | +546 (0a exemption) |
+| sw.js | 6,041 | 6,041 | +0 (version digit count unchanged) |
+
+### fix-red-team (Sonnet) — SOUND, 1 NOTE fixed
+Independently re-derived every claim against source. Confirmed TRUE: scanCommitBook = the shared
+5-site guarded-write discipline (exactly one new write site, no shadow path); scanUndoShelve
+race-safety (deleteBook clears pending-add + tombstones; mergeRemoteBookDoc skips pendingBookDeletes —
+the reused Stage-6 guard); legacy retirement grep-clean repo-wide; cost always-opus + refund can't be
+gamed; SCE-1 teardown complete + bound once; ES3 0; parse OK (harness self-validates); foundations
+MD5s match; scope clean (state/integrations/yumi/netlify untouched); CACHE_VERSION +1/slice.
+- **Finding 1 (staging):** the uncommitted views.js comment edit = this S6 close's own deliberate change
+  (rides this commit) — resolved by committing S6 explicitly.
+- **Finding 2 (NOTE): FIXED** — `scanUndoShelve` announced "N books removed" even when signed-out
+  (loop skipped). Now counts real `deleteBook` successes → "N books removed" or honest "Nothing to undo".
+  Re-verified on the rig (signed-in Undo still 2→0; the honest branch present). parse OK, console clean.
+
+### praxis-reviewer (Sonnet) — HOLD → Finding A FIXED · Finding B is the mandatory human live-smoke
+Independently graded the 5 slices: ES3, foundations (14,966 B lumen-amber, untouched), EOL (i/lf, 0 CR),
+CACHE_VERSION +1/slice, staging, sanctioned accessors, Yumi covenant, honest empty states, and the core
+SC6/GB-arm/walker/Undo logic — **all PASS on trace**. Endpoint files byte-identical (non-goal honored).
+- **Finding A (CSS tokens-only) — FIXED:** 5 `rgba(6,4,2,α)` literals (near-black, matched no token) →
+  the sanctioned `rgba(0,0,0,α)` shadow idiom (the reviewer's own blessed 36-occurrence pattern). Scan
+  section now: 0 hex; every rgba is token-equal (`--danger`/`--gold-hi`/`--ink`/`--scan-on-dark` base) or
+  the `rgba(0,0,0)` shadow idiom. Compliance fix, NO owner-visible felt delta (near-black over a dark
+  camera). Re-verified live: tint gradient + over-cam overlay paint `rgba(0,0,0,α)`; surface mounts; console clean.
+- **Finding B (BRIEF-ERRATA-1 forced-timing race vs REAL Firestore) — OUTSTANDING, by design:** the rig
+  has NO Firestore (localStorage-only) + no connected `prestonpraxistest` session, so this HARD GATE
+  cannot run here. It is the DATA-LOSS-TIER human gate (FIX-PROTOCOL §5 path C — interim: red-team clean +
+  human read + live-smoke before push). The local bookkeeping is PROVEN (tombstone + pending-add clear);
+  the real-Firestore leg is **Preston's mandatory live-smoke** (steps in the felt card R1). **The round is
+  HELD on it** — it does not close/push until this runs green.
+
+### CLOSE POSTURE
+Both gates run. Red-team clean (NOTE fixed). Reviewer Finding A fixed + re-verified; Finding B is the
+auth-gated live-smoke reserved for Preston (data-loss tier). **The round HALTS for: (1) Preston's push
+word; (2) the forced-timing race live-smoke on prestonpraxistest; (3) the DEVICE-OWED felt pass** (installed
+PWA + Safari). Final shipped CACHE_VERSION at this close commit: **praxis-v3.265**.
