@@ -66,7 +66,9 @@ Harness: `https://praxis-reading.netlify.app/scan-derisk.html`, model `claude-op
 - Always-present ISBN type-in fallback `:6916–6936`.
 - `stopCamera()` @ `:6859–6870` stops all tracks + resets zxing. **Bound only to
   Cancel (`:6963`), Escape (`:6965`), successful lookup (`:6952`) — NOT to route
-  change or `visibilitychange`.** ← the exact SCE-1 gap the brief predicts.
+  change or `visibilitychange`.** ← **SCE-1 gap now FIELD-CONFIRMED as an OBSERVED
+  DEFECT** (2026-07-25, Preston's iPhone: stream stayed live ~5 min after leaving the
+  scanner, screenshot-backed). Upgraded predicted → observed. See calibration felt-card.
 - **NOTE — distinct idiom for whole-shelf:** the Shelf "Scan shelf" is a **file
   input** `<input type=file accept=image/* capture=environment>` @ `js/views.js:4506–
   4512` → `handleShelfScanFile`. So Praxis has TWO capture idioms today: live
@@ -290,10 +292,13 @@ offline card + the `sw.js` zxing-precache decision are build-round items.
 
 ## Consolidated DEVICE-OWED felt card (Preston's phone)
 
-1. **iOS live-camera in the installed PWA (item 4).** Add Praxis to Home Screen
-   (standalone). Open the barcode scanner. Does the live viewfinder appear and decode?
-   Repeat in a plain Safari tab. Report: viewfinder shows / decodes / permission
-   prompt behavior, in BOTH contexts.
+1. **iOS live-camera (item 4). — PARTIALLY ANSWERED 2026-07-25** (plain Safari tab,
+   iPhone; see `scan-open-calibration.md` §Felt-card item 1). **iOS-Safari
+   getUserMedia grant = PROVEN** (hardware half GO); a **legacy presentation bug**
+   (stream acquired, no visible frame) and the **SCE-1 leak** (stream not released)
+   were observed — both pre-existing, SCAN's new surface must assert a visible first
+   frame + own teardown. **Still owed:** the installed-PWA-standalone pass (stakes
+   downgraded to grant-parity-when-installed).
 2. **Camera warm-up time (item 2).** From tapping Scan mode to first live frame —
    perceived delay? (informs the SCD-1 warm-up transition length).
 3. **Safe-area on full-bleed (item 5).** Whatever full-bleed camera mock you view:
