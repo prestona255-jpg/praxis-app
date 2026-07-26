@@ -601,6 +601,22 @@
   --danger:        #c2603a;
   --danger-line:   rgba(194,96,58,.46);
 
+  /* --- SCAN surface: camera-chrome family (ground-independent) --- */
+  /* The viewfinder is always a dark camera regardless of the app ground, so
+     these are literal (not re-pointed in the dark block). DISTINCT from the
+     LIGHT --glass/--glass-2 nav chrome above: the camera needs a near-black
+     ground + dark translucent controls + a warm off-white ink over live video. */
+  --scan-cam-bg:    #0c0a07;                 /* camera fill / letterbox */
+  --scan-glass:     rgba(20,14,7,.62);       /* viewfinder control fill */
+  --scan-glass-2:   rgba(28,20,10,.82);      /* stronger chrome (torch tip, receipt) */
+  --scan-on-dark:   #f6efe0;                 /* ink over live video */
+  --scan-on-dark-2: rgba(246,239,224,.62);   /* secondary ink over live video */
+  /* typeset cloth-cover fallback (no external image) — cover slot + ink */
+  --scan-cloth-1:   #e3d8c1;                 /* cover cloth, light (== --board-face) */
+  --scan-cloth-2:   #d3c4a6;                 /* cover cloth, shade */
+  --scan-cover-ink: #3a2c17;                 /* serif title ink on the cloth cover */
+  --scan-cover-meta:#6b5b3c;                 /* author meta on the cloth cover */
+
   /* --- Notebook bound-leaf chrome (hybrid spread) --- */
   /* Dot-grid leaf texture: a 22px-pitch honey stipple over the leaf fill.
      Derived from --ink-4 so it reads as faint graphite on wheat. */

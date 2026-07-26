@@ -443,6 +443,12 @@ function renderRoute() {
     shelfHeadScrollHandler = null;
   }
 
+  // SCE-1: THE CAMERA FORGETS on route exit. scanStopStream stops the live
+  // getUserMedia stream + clears the decode loop + timers. A cheap no-op off
+  // #scan (no stream, no video element), so it is safe on EVERY route change —
+  // the router is the global teardown site, next to the nav/scroll cleanup above.
+  if (typeof scanStopStream === 'function') { scanStopStream(); }
+
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
 
@@ -477,7 +483,7 @@ function renderRoute() {
   // It does NOT touch the nav: theme.css lists .app-nav (and .yumi-bloom,
   // .yumi-panel, .spotlight-panel) as INDEPENDENT selectors on the dark remap, so
   // that chrome keeps its own world fill over any ground.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1, scan: 1 };
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -524,6 +530,9 @@ function renderRoute() {
     // pill (not a top-nav link) -- 'search' matches no data-route so no link
     // highlights (like yumi-sees), and it avoids defaulting to lighting Notebook.
     activeRoute = 'search';
+  } else if (parts[0] === 'scan') {
+    // SCAN ROUND: the #scan surface is its own top-level nav surface.
+    activeRoute = 'scan';
   } else {
     activeRoute = 'notebook';
   }
@@ -811,6 +820,18 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderSearch();
+    return;
+  }
+  // SCAN ROUND: the #scan surface (a full-bleed camera). parts[1] optionally
+  // preselects the mode ('#scan/shelf' from the Manage-sheet, S5). Symmetric
+  // pointer clear like the branches above; placed BEFORE the notebook fallthrough
+  // so #scan is caught here. renderScan hard-gates signed-out itself.
+  if (parts[0] === 'scan') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderScan(parts[1]);
     return;
   }
   // Notebook (explicit), empty hash, and any unknown route all
@@ -8244,6 +8265,445 @@ function scanClassify(visionBooks, resolvedArray) {
   }
   return { confident: confident, exceptions: exceptions, found: confident.length + exceptions.length };
 }
+
+// ============================================================================
+// SCAN ROUND — S2..S5: the #scan surface. Ported from scan-surface.html (the
+// felt-pending SHAPE-B mockup): a full-bleed camera that identifies a book
+// (Book mode: live barcode + cover shot) or a whole shelf (Shelf mode: shutter
+// -> shelf-vision), gives light locally-derived context, and adds in one tap;
+// the Shelf review wears the ASSISTED-DRAFT tier. Entered from the create-door
+// Scan mode (CD-6 socket, S5) and its own top-level nav entry. ES3 throughout.
+//
+// SLICE MAP: S2 = shell + camera + permission family + warm-up + mode + teardown
+// + signed-out gate. S3 = Book decode + verdict + Add. S4 = Shelf shot ->
+// shimmer -> tray -> review -> walker -> shelve/undo. S5 = visibilitychange
+// re-warm + soft cost counter + CD-6 socket + legacy retirement.
+// ============================================================================
+
+var scanMode      = 'book';   // 'book' | 'shelf'
+var scanStream    = null;     // the live MediaStream (SCE-1 teardown target)
+var scanCamReady  = false;
+var scanAutoTimer = null;     // Book-mode auto-fire / decode timer
+var scanResult    = null;     // {confident:[], exceptions:[], found} after a shelf read
+var scanTrayItems = [];       // landed identity keys (SCA3 dedupe set)
+var scanWalkOrder = [];       // exception indices still to review
+var scanWalkPos   = 0;
+var scanLiveEl    = null;     // aria-live announcer (created once)
+var scanDecodeStop = null;    // S3: teardown for the active decode loop
+
+function scanEl(id) { return document.getElementById(id); }
+function scanShow(el) { if (el) { el.classList.add('is-on'); } }
+function scanHide(el) { if (el) { el.classList.remove('is-on'); } }
+function scanRM() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+// a11y announcer (Law 8 — results announced). Created once, reused across mounts.
+function scanAnnounce(msg) {
+  if (!scanLiveEl) {
+    scanLiveEl = document.createElement('div');
+    scanLiveEl.setAttribute('aria-live', 'polite');
+    scanLiveEl.setAttribute('role', 'status');
+    scanLiveEl.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);';
+    document.body.appendChild(scanLiveEl);
+  }
+  scanLiveEl.textContent = '';
+  window.setTimeout(function () { if (scanLiveEl) { scanLiveEl.textContent = msg; } }, 30);
+}
+
+// Cloth cover node (media into a PRE-SIZED slot: a real coverUrl draws over the
+// typeset fallback; a 404/absent asset leaves the fallback, never a hole).
+function scanCoverNode(title, author, coverUrl) {
+  var d = document.createElement('div'); d.className = 'scan-cov';
+  var sp = document.createElement('span'); sp.className = 'cov-spine'; d.appendChild(sp);
+  var wr = document.createElement('div'); wr.className = 'cov-txt';
+  var t = document.createElement('div'); t.className = 'cov-t'; t.textContent = title || ''; wr.appendChild(t);
+  var a = document.createElement('div'); a.className = 'cov-a'; a.textContent = author || ''; wr.appendChild(a);
+  d.appendChild(wr);
+  if (coverUrl) {
+    var img = document.createElement('img'); img.className = 'cov-img'; img.alt = '';
+    img.onerror = function () { img.style.display = 'none'; }; // fall back to the typeset slot
+    img.src = coverUrl;
+    d.appendChild(img);
+  }
+  return d;
+}
+
+// ---- screen switching ----
+function scanGoScreen(id) {
+  var ids = ['scan-screen-view', 'scan-screen-review'], i;
+  for (i = 0; i < ids.length; i++) {
+    var s = scanEl(ids[i]);
+    if (s) { s.className = 'scan-screen' + (ids[i] === id ? ' is-active' : ''); }
+  }
+}
+
+// ---- overlays (permission + failure) ----
+var SCAN_OVERLAYS = ['scan-ov-primer', 'scan-ov-denied', 'scan-ov-offline', 'scan-ov-failed', 'scan-ov-empty', 'scan-ov-truncated', 'scan-ov-refused'];
+function scanAnyOverlayOpen() {
+  var i; for (i = 0; i < SCAN_OVERLAYS.length; i++) { var o = scanEl(SCAN_OVERLAYS[i]); if (o && o.classList.contains('is-on')) { return true; } }
+  return false;
+}
+function scanCloseAllOverlays() { var i; for (i = 0; i < SCAN_OVERLAYS.length; i++) { scanHide(scanEl(SCAN_OVERLAYS[i])); } }
+function scanOpenOverlay(id) { scanCloseAllOverlays(); scanGoScreen('scan-screen-view'); scanShow(scanEl(id)); }
+
+// ============================================================================
+// CAMERA LIFECYCLE (SCE-1). Teardown on route exit (renderRoute cleanup, S5-wired
+// here) AND visibilitychange (S5). THE CAMERA FORGETS, hardware layer included.
+// ============================================================================
+function scanStopStream() {
+  scanClearTimers();
+  scanStopBookDecode();
+  if (scanStream) {
+    var tr = scanStream.getTracks(), i;
+    for (i = 0; i < tr.length; i++) { try { tr[i].stop(); } catch (e) {} }
+    scanStream = null;
+  }
+  var v = scanEl('scan-cam-video');
+  if (v) { try { v.pause(); v.srcObject = null; } catch (e) {} }
+  scanCamReady = false;
+}
+
+function scanStartStream(cb) {
+  var v = scanEl('scan-cam-video');
+  if (!v || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cb(false, 'unsupported'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+    .then(function (s) {
+      scanStream = s;
+      v.srcObject = s;
+      var p = v.play();
+      if (p && p.then) { p.then(function () {}, function () {}); }
+      scanCamReady = true;
+      cb(true);
+    }, function (err) {
+      cb(false, (err && err.name) ? err.name : 'error');
+    });
+}
+
+// Warm-up transition: the viewfinder FADES IN from the sheet — never a white flash.
+function scanWarmUpThen(cb) {
+  scanShow(scanEl('scan-cam-warm'));
+  var wait = scanRM() ? 250 : 850;
+  window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); if (cb) { cb(); } }, wait);
+}
+
+// ---- mode + action row ----
+function scanClearTimers() { if (scanAutoTimer) { window.clearTimeout(scanAutoTimer); scanAutoTimer = null; } }
+
+function scanRenderActionRow() {
+  var row = scanEl('scan-actionrow'); if (!row) { return; }
+  row.innerHTML = '';
+  if (scanMode === 'book') {
+    var w = document.createElement('div'); w.className = 'scan-book-auto';
+    var r = document.createElement('div'); r.className = 'ring'; r.textContent = '||||';
+    var l = document.createElement('div'); l.className = 'lbl'; l.textContent = 'Auto-detecting';
+    w.appendChild(r); w.appendChild(l); row.appendChild(w);
+  } else {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'scan-shutter'; b.setAttribute('aria-label', 'Capture shelf');
+    var c = document.createElement('span'); c.className = 'core'; b.appendChild(c);
+    b.addEventListener('click', scanFireShelfShot);
+    row.appendChild(b);
+  }
+}
+
+function scanSetMode(m) {
+  scanMode = m;
+  var sb = scanEl('scan-seg-book'), ss = scanEl('scan-seg-shelf');
+  if (sb) { sb.className = (m === 'book' ? 'is-on' : ''); sb.setAttribute('aria-selected', m === 'book'); }
+  if (ss) { ss.className = (m === 'shelf' ? 'is-on' : ''); ss.setAttribute('aria-selected', m === 'shelf'); }
+  var title = scanEl('scan-vf-mode-title'); if (title) { title.textContent = (m === 'book' ? 'Book' : 'Shelf'); }
+  var guide = scanEl('scan-vf-guide');
+  if (guide) { guide.textContent = (m === 'book' ? 'Center a barcode or cover in the frame' : 'Fill the frame with one row of spines — then tap to read'); }
+  scanRenderActionRow();
+  scanClearTimers();
+  scanStopBookDecode();
+  scanHideVerdict();
+  if (m === 'book') { scanStartBookDecode(); }
+}
+
+function scanIsViewfinderLive() {
+  var view = scanEl('scan-screen-view');
+  return !!view && view.classList.contains('is-active')
+      && !scanAnyOverlayOpen()
+      && !(scanEl('scan-verdict') && scanEl('scan-verdict').classList.contains('is-up'))
+      && !(scanEl('scan-shimmer') && scanEl('scan-shimmer').classList.contains('is-on'));
+}
+
+// FELT SIGNATURE 1 — lock-on snap (brackets tighten inward + flare gold).
+function scanLockOnSnap(after) {
+  var ret = scanEl('scan-reticle'); if (!ret) { if (after) { after(); } return; }
+  ret.classList.add('is-lock');
+  var hold = scanRM() ? 180 : 420;
+  window.setTimeout(function () { ret.classList.remove('is-lock'); if (after) { after(); } }, hold);
+}
+
+function scanFreezeFrame() {
+  var cv = scanEl('scan-cam-freeze'), v = scanEl('scan-cam-video');
+  if (!cv || !v) { return; }
+  try {
+    if (scanCamReady && v.videoWidth) {
+      cv.width = v.videoWidth; cv.height = v.videoHeight;
+      cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+    }
+  } catch (e) {}
+  cv.style.display = 'block';
+}
+function scanUnfreeze() { var cv = scanEl('scan-cam-freeze'); if (cv) { cv.style.display = 'none'; } }
+
+// ============================================================================
+// ENTRY → offline check → permission primer → warm-up → live camera
+// ============================================================================
+function scanEnter() {
+  scanGoScreen('scan-screen-view');
+  scanCloseAllOverlays();
+  scanHideVerdict();
+  scanHide(scanEl('scan-tray')); scanHide(scanEl('scan-shimmer'));
+  scanSetMode('book');
+  scanClearTimers(); scanStopBookDecode(); // don't decode until the camera is live
+  if (navigator.onLine === false) { scanOpenOverlay('scan-ov-offline'); return; } // SCE-3: offline BEFORE the primer
+  scanOpenOverlay('scan-ov-primer');                                             // SC7: primer BEFORE the OS ask
+}
+
+function scanGrantAndWarm() {
+  scanCloseAllOverlays();
+  scanWarmUpThen(function () {});
+  scanStartStream(function (ok, why) {
+    if (ok) {
+      window.setTimeout(function () {
+        scanHide(scanEl('scan-cam-warm'));
+        if (scanMode === 'book') { scanStartBookDecode(); }
+      }, scanRM() ? 250 : 850);
+    } else {
+      scanHide(scanEl('scan-cam-warm'));
+      scanOpenOverlay('scan-ov-denied'); // denied / unsupported / no camera -> the working add door
+    }
+  });
+}
+
+function scanLeave() {
+  scanStopStream();
+  scanCloseAllOverlays();
+  scanHideVerdict();
+  scanHide(scanEl('scan-tray')); scanHide(scanEl('scan-shimmer'));
+  // Return to the shelf (the scanned books' home); mirrors the mockup's Back.
+  location.hash = '#books';
+}
+
+// ============================================================================
+// FORWARD STUBS — filled by later slices. Present so S2's controls never error.
+//   S3: scanStartBookDecode / scanStopBookDecode / scanShowVerdict
+//   S4: scanFireShelfShot / scanRenderReview / scanOpenWalker / scanShelve
+// ============================================================================
+function scanStartBookDecode() { /* S3: continuous BarcodeDetector / zxing decode + cover auto-fire */ }
+function scanStopBookDecode() { if (scanDecodeStop) { try { scanDecodeStop(); } catch (e) {} scanDecodeStop = null; } }
+function scanShowVerdict() { /* S3: verdict card over the warm camera */ }
+function scanHideVerdict() { var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } }
+function scanFireShelfShot() { /* S4: freeze -> shimmer -> shelf-vision -> tray */ scanAnnounce('Shelf capture arrives in the next build slice.'); }
+function scanRenderReview() { /* S4: the mirror-shelf draft case */ }
+function scanOpenWalker(startIdx) { /* S4: the exception walker */ }
+function scanShelve() { /* S4: shelve flight + receipt + immediate undo */ }
+
+// ============================================================================
+// renderScan — the #scan route entry. Signed-out is hard-gated (scan is a
+// billable, authed context); otherwise mount the shell and run the entry flow.
+// opts.mode preselects Book|Shelf (Manage-sheet re-points, S5).
+// ============================================================================
+function renderScan(preMode) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  if (!getCurrentUser()) {
+    host.appendChild(buildSignedOutPrompt(
+      'Sign in to scan',
+      'Scanning identifies a book and adds it to your shelf — sign in so it has a shelf to land on.'));
+    return;
+  }
+  host.innerHTML = scanShellHTML();
+  scanWireShell();
+  if (preMode === 'shelf' || preMode === 'book') { scanMode = preMode; }
+  scanEnter();
+}
+
+// The static shell (one fixed full-viewport layer). Dynamic content — tray
+// covers, review shelf, walker steps — is built by JS (S4). No dev-strip, no
+// mock banner, no entry screen (the create door + nav ARE the app's entry).
+function scanShellHTML() {
+  return ''
+  + '<div class="scan-surface" id="scan-surface">'
+  +   '<section class="scan-screen is-active" id="scan-screen-view">'
+  +     '<div class="scan-cam-stack">'
+  +       '<video id="scan-cam-video" playsinline muted autoplay></video>'
+  +       '<canvas id="scan-cam-freeze"></canvas>'
+  +       '<div class="scan-cam-tint"></div>'
+  +       '<div class="scan-cam-warm" id="scan-cam-warm"><div class="scan-warm-orb"></div><div class="scan-warm-line">Warming the lens…</div></div>'
+  +     '</div>'
+  +     '<div class="scan-vf-top">'
+  +       '<button class="scan-vf-back" type="button" id="scan-vf-back" aria-label="Leave scan">‹</button>'
+  +       '<span class="scan-vf-title" id="scan-vf-mode-title">Book</span>'
+  +       '<span class="scan-spacer"></span>'
+  +       '<button class="scan-vf-torch is-hidden" type="button" id="scan-vf-torch" aria-label="Torch">⚡'
+  +         '<span class="scan-torch-tip">Torch is Android-only — iOS has no camera-light API. In low light, use the framing coach.</span>'
+  +       '</button>'
+  +     '</div>'
+  +     '<div class="scan-reticle" id="scan-reticle"><span class="scan-br tl"></span><span class="scan-br tr"></span><span class="scan-br bl"></span><span class="scan-br br2"></span></div>'
+  +     '<div class="scan-vf-guide" id="scan-vf-guide">Center a barcode or cover in the frame</div>'
+  +     '<div class="scan-shimmer" id="scan-shimmer"><div class="scan-shim-frame"><div class="scan-shim-sweep"></div></div><div class="scan-shim-line">Reading the shelf…</div></div>'
+  +     '<div class="scan-vf-bottom">'
+  +       '<div class="scan-mode-seg" role="tablist" aria-label="Scan mode">'
+  +         '<button type="button" id="scan-seg-book" class="is-on" role="tab" aria-selected="true">Book</button>'
+  +         '<button type="button" id="scan-seg-shelf" role="tab" aria-selected="false">Shelf</button>'
+  +       '</div>'
+  +       '<div class="scan-actionrow" id="scan-actionrow"></div>'
+  +     '</div>'
+  +     scanVerdictHTML()
+  +     scanTrayHTML()
+  +     scanPermissionHTML()
+  +     scanFailureHTML()
+  +   '</section>'
+  +   scanReviewHTML()
+  +   '<div id="scan-walker"><div class="scan-wk-sheet" id="scan-wk-sheet"></div></div>'
+  +   '<div id="scan-flight-layer"></div>'
+  +   '<div id="scan-shelf-glyph">▤</div>'
+  +   '<div id="scan-receipt"><span class="r-txt" id="scan-receipt-txt">Shelved <b>0</b></span><button class="r-undo" type="button" id="scan-receipt-undo">Undo</button></div>'
+  + '</div>';
+}
+
+function scanVerdictHTML() {
+  return ''
+  + '<div class="scan-verdict" id="scan-verdict">'
+  +   '<div class="scan-verdict-inner">'
+  +     '<div class="scan-vd-grip"></div>'
+  +     '<div class="scan-vd-row"><div class="scan-cov" id="scan-vd-cov"></div>'
+  +       '<div class="scan-vd-meta">'
+  +         '<p class="scan-vd-title" id="scan-vd-title">—</p>'
+  +         '<p class="scan-vd-author" id="scan-vd-author">—</p>'
+  +         '<p class="scan-vd-context" id="scan-vd-context" style="display:none"><span class="dot"></span><span id="scan-vd-context-txt"></span></p>'
+  +         '<p class="scan-vd-silent" id="scan-vd-silent" style="display:none">Identified — no context on your shelf.</p>'
+  +       '</div>'
+  +     '</div>'
+  +     '<div class="scan-vd-actions">'
+  +       '<button class="scan-btn scan-btn-primary" type="button" id="scan-vd-add">Add to shelf</button>'
+  +       '<button class="scan-btn scan-btn-ghost" type="button" id="scan-vd-dismiss">Keep scanning</button>'
+  +     '</div>'
+  +   '</div>'
+  + '</div>';
+}
+
+function scanTrayHTML() {
+  return ''
+  + '<div class="scan-tray" id="scan-tray">'
+  +   '<div class="scan-tray-head"><span class="scan-tray-count" id="scan-tray-count">Reading…</span><span class="scan-tray-sub" id="scan-tray-sub"></span></div>'
+  +   '<div class="scan-tray-strip" id="scan-tray-strip"></div>'
+  +   '<div class="scan-tray-review"><button class="scan-btn scan-btn-primary" type="button" id="scan-tray-review-btn" style="width:100%; display:none">Review the shelf</button></div>'
+  + '</div>';
+}
+
+function scanPermissionHTML() {
+  return ''
+  + '<div class="scan-overlay" id="scan-ov-primer">'
+  +   '<div class="scan-card"><div class="c-ic">◲</div>'
+  +     '<h2>Turn on the camera to scan</h2>'
+  +     '<p>Praxis reads the book right on your phone. Images leave only as identification requests — nothing is stored, on your device or ours.</p>'
+  +     '<div class="c-actions">'
+  +       '<button class="scan-btn scan-btn-primary" type="button" id="scan-primer-allow">Turn on camera</button>'
+  +       '<button class="scan-btn scan-btn-quiet" type="button" id="scan-primer-manual">Add without the camera</button>'
+  +     '</div>'
+  +   '</div>'
+  + '</div>'
+  + '<div class="scan-overlay" id="scan-ov-denied">'
+  +   '<div class="scan-card warn"><div class="c-ic">⃠</div>'
+  +     '<h2>Camera\'s off — that\'s fine</h2>'
+  +     '<p>You can still add any book by its ISBN or by searching. Turn the camera on later from here whenever you like.</p>'
+  +     '<div class="scan-add-door">'
+  +       '<div class="ad-lbl">Add by ISBN</div>'
+  +       '<div class="ad-field"><input type="text" inputmode="numeric" placeholder="978…" aria-label="ISBN" id="scan-denied-isbn"><button class="scan-btn scan-btn-primary" type="button" id="scan-denied-isbn-add" style="flex:none; padding:12px 16px">Add</button></div>'
+  +       '<button class="ad-search" type="button" id="scan-denied-search">Search by title or author instead</button>'
+  +       '<div class="scan-add-status" id="scan-denied-status" role="status" aria-live="polite"></div>'
+  +     '</div>'
+  +     scanDropzoneHTML('denied')
+  +     '<div class="c-actions" style="margin-top:16px"><button class="scan-btn scan-btn-ghost" type="button" id="scan-denied-retry">Try the camera again</button></div>'
+  +   '</div>'
+  + '</div>'
+  + '<div class="scan-overlay" id="scan-ov-offline">'
+  +   '<div class="scan-card warn"><div class="c-ic">⌁</div>'
+  +     '<h2>You\'re offline</h2>'
+  +     '<p>Barcodes still decode on your phone, but looking a book up needs a connection. Reconnect to scan covers and shelves — or add by ISBN now and we\'ll look it up when you\'re back.</p>'
+  +     '<div class="scan-add-door">'
+  +       '<div class="ad-lbl">Add by ISBN</div>'
+  +       '<div class="ad-field"><input type="text" inputmode="numeric" placeholder="978…" aria-label="ISBN" id="scan-offline-isbn"><button class="scan-btn scan-btn-primary" type="button" id="scan-offline-isbn-add" style="flex:none; padding:12px 16px">Add</button></div>'
+  +       '<div class="scan-add-status" id="scan-offline-status" role="status" aria-live="polite"></div>'
+  +     '</div>'
+  +     '<div class="c-actions" style="margin-top:16px"><button class="scan-btn scan-btn-ghost" type="button" id="scan-offline-retry">I\'m back online</button></div>'
+  +   '</div>'
+  + '</div>';
+}
+
+// SC7(c) desktop / no-live-shelf secondary: a shelf-photo drop zone feeding the
+// SAME shelf-vision pipeline (wired in S4). host distinguishes the two mounts.
+function scanDropzoneHTML(host) {
+  return ''
+  + '<div class="scan-dropzone" id="scan-dropzone-' + host + '" role="button" tabindex="0">'
+  +   '<div class="dz-ic">▤</div>'
+  +   '<div class="dz-t">Add a whole shelf — drop or choose a photo</div>'
+  +   '<div class="dz-h">one row of spines, filling the frame</div>'
+  +   '<input type="file" accept="image/*" style="display:none" id="scan-dropzone-input-' + host + '">'
+  + '</div>';
+}
+
+function scanFailureHTML() {
+  return ''
+  + '<div class="scan-overlay over-cam" id="scan-ov-failed"><div class="scan-card warn"><div class="c-ic">↺</div>'
+  +   '<h2>That one didn\'t land</h2><p>Nothing was read and nothing was used — no shot counted against you. Try the shot again.</p>'
+  +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Try again — free</button></div></div></div>'
+  + '<div class="scan-overlay over-cam" id="scan-ov-empty"><div class="scan-card"><div class="c-ic">◎</div>'
+  +   '<h2>No books found in that shot</h2><p>The read worked — there just weren\'t any spines it could make out. A few things usually help:</p>'
+  +   '<ul class="scan-coach-rows"><li><span class="cr-ic">⤡</span>Get a little closer to the shelf</li><li><span class="cr-ic">☀</span>More light on the spines</li><li><span class="cr-ic">▭</span>Keep it to one row at a time</li></ul>'
+  +   '<div class="c-actions" style="margin-top:18px"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Reshoot</button></div></div></div>'
+  + '<div class="scan-overlay over-cam" id="scan-ov-truncated"><div class="scan-card"><div class="c-ic">◑</div>'
+  +   '<h2>Read part of this shelf</h2><p>I read this far and stopped before the end of the shelf — the read filled up. Try one shelf, or a smaller section, at a time.</p>'
+  +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Reshoot a smaller section</button></div></div></div>'
+  + '<div class="scan-overlay over-cam" id="scan-ov-refused"><div class="scan-card"><div class="c-ic">◇</div>'
+  +   '<h2>Couldn\'t read this one</h2><p>That shot couldn\'t be processed. It wasn\'t a book, or the frame was unreadable — nothing was added. Point at a shelf or a cover and try again.</p>'
+  +   '<div class="c-actions"><button class="scan-btn scan-btn-primary" type="button" data-scan-fail-dismiss>Back to the camera</button></div></div></div>';
+}
+
+function scanReviewHTML() {
+  return ''
+  + '<section class="scan-screen" id="scan-screen-review"><div class="scan-rv-wrap">'
+  +   '<div class="scan-rv-top"><button class="scan-rv-back" type="button" id="scan-rv-back" aria-label="Back to camera">‹</button><h1>The scan</h1></div>'
+  +   '<div class="scan-rv-count" id="scan-rv-count">—</div>'
+  +   '<span class="scan-rv-draftbadge">◲ Draft case — nothing\'s on your shelf yet</span>'
+  +   '<div class="scan-draft-band"><div class="scan-draft-band-hd"><span class="lbl">Ready to shelve</span><span class="n" id="scan-rv-conf-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-confident"></div></div></div>'
+  +   '<div class="scan-draft-band" id="scan-rv-exc-band"><div class="scan-draft-band-hd"><span class="lbl">Need a look</span><span class="n" id="scan-rv-exc-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-exceptions"></div></div></div>'
+  + '</div>'
+  + '<div class="scan-rv-foot" id="scan-rv-foot">'
+  +   '<button class="scan-btn scan-btn-ghost" type="button" id="scan-rv-walk" style="flex:none">Review <span id="scan-rv-walk-n">0</span></button>'
+  +   '<button class="scan-btn scan-btn-primary" type="button" id="scan-rv-shelve" style="flex:1">Shelve <span id="scan-rv-shelve-n">0</span></button>'
+  + '</div></section>';
+}
+
+// Wire the shell's controls (by id). Book decode / verdict Add / shutter / drop
+// zone / walker / shelve are wired in their slices (S3/S4).
+function scanWireShell() {
+  var back = scanEl('scan-vf-back'); if (back) { back.addEventListener('click', scanLeave); }
+  var segB = scanEl('scan-seg-book'); if (segB) { segB.addEventListener('click', function () { if (scanMode !== 'book') { scanSetMode('book'); } }); }
+  var segS = scanEl('scan-seg-shelf'); if (segS) { segS.addEventListener('click', function () { if (scanMode !== 'shelf') { scanSetMode('shelf'); } }); }
+  var torch = scanEl('scan-vf-torch'); if (torch) { torch.addEventListener('click', function () { this.classList.toggle('tip-open'); }); }
+  var allow = scanEl('scan-primer-allow'); if (allow) { allow.addEventListener('click', scanGrantAndWarm); }
+  var manual = scanEl('scan-primer-manual'); if (manual) { manual.addEventListener('click', function () { scanOpenOverlay('scan-ov-denied'); }); }
+  var dretry = scanEl('scan-denied-retry'); if (dretry) { dretry.addEventListener('click', function () { scanCloseAllOverlays(); scanOpenOverlay('scan-ov-primer'); }); }
+  var oretry = scanEl('scan-offline-retry'); if (oretry) { oretry.addEventListener('click', function () { scanCloseAllOverlays(); scanEnter(); }); }
+  var trayReview = scanEl('scan-tray-review-btn'); if (trayReview) { trayReview.addEventListener('click', scanRenderReview); }
+  var rvBack = scanEl('scan-rv-back'); if (rvBack) { rvBack.addEventListener('click', function () { scanGoScreen('scan-screen-view'); }); }
+  var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
+  var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }
+  var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); if (scanMode === 'book') { scanStartBookDecode(); } }); }
+  // failure-dismiss (all four) -> back to the camera
+  var fdis = document.querySelectorAll('[data-scan-fail-dismiss]'), i;
+  for (i = 0; i < fdis.length; i++) {
+    fdis[i].addEventListener('click', function () { scanCloseAllOverlays(); if (scanMode === 'book') { scanStartBookDecode(); } });
+  }
+  scanWireAddDoors(); // S3 fills the ISBN/search/dropzone handlers
+}
+function scanWireAddDoors() { /* S3/S4: ISBN add + search + shelf drop-zone -> shared pipeline */ }
 
 // Stage 4 (chrome-fidelity): book-detail Edit-panel collapse state. Module-
 // scoped (mirrors _stLayersOpen) so it survives the in-panel re-renders that

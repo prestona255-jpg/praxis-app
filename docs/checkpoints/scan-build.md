@@ -104,3 +104,46 @@ Unit test (`scratchpad/s1-classify-test.js`, not committed) covers author-noise 
 (Sylvia false-flag removed), corroboration (exact/subtitle/prefix vs unrelated), all 5 SC12
 named specimens' verdicts, the 3/4 split with carried spineText+cover, and a 36-book
 distribution → 33 confident / 3 exceptions (GB arm contributes 0, matching {low}=9.3%).
+
+---
+
+## S2 — THE SURFACE (#scan route + nav + permission family) — BUILT + VERIFIED (local, v3.261)
+
+New: `renderScan` + the scan module in `js/views.js` (~:8250); the scan CSS section in
+`assets/components.css` (scoped `.scan-surface`, `scan-`-prefixed, real tokens); the scan
+camera-chrome token family in `assets/theme.css` (`--scan-cam-bg/-glass/-glass-2/-on-dark/-on-dark-2`);
+the `#scan` route block + active-link + `umberGroundDark` + renderRoute-cleanup teardown in
+`renderRoute`; the SCAN nav entry in `index.html`.
+
+- **Shell** ported from the mockup MINUS the entry screen + dev-strip + mock banner (the real
+  create door + nav ARE the app's entry). One fixed full-viewport layer (`position:fixed`,
+  `z-index:9000`) injected into `#app`, covering the nav.
+- **Signed-out hard gate** built here (route front-gate; `buildSignedOutPrompt`) — S5 verifies.
+- **SCE-1 route-exit teardown** wired in the renderRoute cleanup block (`scanStopStream()` on
+  every route change; a cheap no-op off #scan). visibilitychange re-warm + soft counter = S5.
+- **Torch hidden by default** (`is-hidden`); S3's track-probe reveals it only where supported
+  (Android); iOS/desktop stay absent, per the brief's torch asymmetry.
+- Forward stubs for S3 (decode/verdict/add-doors) and S4 (shutter/review/walker/shelve) so no
+  control errors; those slices fill the bodies.
+
+### S2 verification (rig: localhost:8760, seed uid d0tester, DOM/geometry — pane screenshots are dead per rig README)
+| check | result |
+|---|---|
+| parse-check views.js | **PARSE OK** |
+| ES3 forbidden tokens (added views.js+index.html) | **0** (three "first-class" comments reworded off the `class ` regex) |
+| surface mounts | `position:fixed`, `z-index:9000`, view screen active |
+| SCE-3 offline: `onLine=false` → offline card BEFORE primer | **PASS** (primer suppressed; ISBN add-door present) |
+| SC7 primer BEFORE OS ask; allow hittable (L19 elementFromPoint) | **PASS** (primerAllowHittable) |
+| SC7(b) denied = working add door (ISBN + search + shelf drop-zone) | **PASS** |
+| grantAndWarm → getUserMedia fail (no cam) → denied fallback; warm veil off | **PASS** |
+| mode seg Book↔Shelf: title + shutter/indicator swap | **PASS** (Shelf→shutter, Book→auto indicator) |
+| torch hidden-by-default + tooltip toggle | **PASS** |
+| back (`‹`) → #books + camera teardown (`scanStream` nulled on leave) | **PASS** (SCE-1 route-exit half) |
+| nav Scan @ 1360: 8 entries, `navScrollW==navClientW` (1114), no doc overflow | **PASS** (8th entry fits Preston's viewport) |
+| nav @ 390: list `display:none` → hamburger; Scan reachable in panel; surface mounts, no doc overflow | **PASS** |
+| reduced-motion still-state block (scan) present | **1** |
+| console errors | **0** |
+
+**390 width math:** at <760 the desktop nav list is `display:none` (hamburger takes over), so the
+8th (Scan) entry adds ZERO horizontal cost at 390 — it lives in the vertical panel. At 1360 the
+pill holds all 8 at 1114px total (< 1360), no overflow. Both verified live.

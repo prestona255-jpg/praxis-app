@@ -16663,3 +16663,287 @@ body.wc-focus .app-nav { opacity:.26; }
 .desk-carry-confirm button{ font-family:var(--font-body); font-size:12.5px; font-weight:600; border-radius:999px; padding:7px 14px; cursor:pointer; border:1px solid transparent; }
 .desk-carry-confirm .replace{ background:var(--grad); color:var(--text-on-dark); }
 .desk-carry-confirm .cancel{ background:transparent; border-color:var(--border); color:var(--ink-2); }
+
+/* ============================================================================
+   SCAN SURFACE (#scan) — ported from scan-surface.html (SHAPE-B mockup), the
+   felt-pending porting reference. Additive, scoped under .scan-surface, all
+   classes scan-prefixed, Universal v1.2 tokens wired real (mockup inlined the
+   values; here they resolve from theme.css). The whole surface is one fixed
+   full-viewport layer injected into #app; it covers the app nav. env() insets
+   throughout; a prefers-reduced-motion block gives a still-state for every
+   mandated signature. SCAN ROUND S2–S4.
+   ============================================================================ */
+.scan-surface{ position:fixed; inset:0; z-index:9000; overflow:hidden;
+  background:var(--scan-cam-bg); color:var(--scan-on-dark);
+  font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+.scan-surface *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+.scan-screen{ position:absolute; inset:0; display:none; }
+.scan-screen.is-active{ display:block; }
+
+/* ---- camera stack (shared): live video / freeze canvas / warm-up veil ---- */
+.scan-cam-stack{ position:absolute; inset:0; background:var(--scan-cam-bg); overflow:hidden; }
+#scan-cam-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:var(--scan-cam-bg); }
+#scan-cam-freeze{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+.scan-cam-warm{ position:absolute; inset:0; opacity:0; pointer-events:none;
+  background:linear-gradient(178deg,var(--hour-1),var(--hour-3) 62%,var(--hour-4));
+  transition:opacity .5s ease; display:flex; align-items:center; justify-content:center; }
+.scan-cam-warm.is-on{ opacity:1; }
+.scan-warm-orb{ width:46px; height:46px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--gold-hi), var(--gold-ember) 55%, transparent 72%);
+  animation:scanWarmPulse 1.4s ease-in-out infinite; }
+@keyframes scanWarmPulse{ 0%,100%{ transform:scale(.82); opacity:.7 } 50%{ transform:scale(1.06); opacity:1 } }
+.scan-warm-line{ position:absolute; bottom:38%; font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--scan-on-dark-2); }
+.scan-cam-tint{ position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(6,4,2,.5) 0%, transparent 22%, transparent 62%, rgba(6,4,2,.62) 100%); }
+
+/* ---- viewfinder chrome ---- */
+.scan-vf-top{ position:absolute; top:0; left:0; right:0; z-index:20;
+  padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left));
+  display:flex; align-items:center; gap:10px; }
+.scan-vf-back{ width:38px; height:38px; flex:none; border-radius:50%; background:var(--scan-glass); border:1px solid rgba(246,239,224,.14);
+  color:var(--scan-on-dark); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.scan-vf-title{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--scan-on-dark-2); }
+.scan-vf-top .scan-spacer{ flex:1; }
+.scan-vf-torch{ width:38px; height:38px; flex:none; border-radius:50%; background:var(--scan-glass); border:1px solid rgba(246,239,224,.14);
+  color:var(--scan-on-dark); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+.scan-vf-torch.is-hidden{ display:none; }
+.scan-torch-tip{ position:absolute; top:44px; right:0; width:158px; background:var(--scan-glass-2); color:var(--scan-on-dark);
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:.04em; line-height:1.4; padding:7px 9px; border-radius:var(--radius-sm);
+  border:1px solid rgba(246,239,224,.14); opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .2s ease, transform .2s ease; text-transform:none; }
+.scan-vf-torch.tip-open .scan-torch-tip{ opacity:1; transform:translateY(0); }
+
+.scan-reticle{ position:absolute; z-index:12; left:50%; top:46%; transform:translate(-50%,-50%);
+  width:min(74vw,340px); height:min(50vh,300px); pointer-events:none; }
+.scan-br{ position:absolute; width:30px; height:30px; border:2px solid rgba(246,239,224,.9);
+  transition:all .22s cubic-bezier(.22,1,.36,1); }
+.scan-br.tl{ left:0; top:0; border-right:0; border-bottom:0; border-radius:8px 0 0 0; }
+.scan-br.tr{ right:0; top:0; border-left:0; border-bottom:0; border-radius:0 8px 0 0; }
+.scan-br.bl{ left:0; bottom:0; border-right:0; border-top:0; border-radius:0 0 0 8px; }
+.scan-br.br2{ right:0; bottom:0; border-left:0; border-top:0; border-radius:0 0 8px 0; }
+/* FELT SIGNATURE 1 — lock-on snap: brackets tighten inward + flare gold */
+.scan-reticle.is-lock .scan-br{ width:22px; height:22px; border-color:var(--gold-hi); box-shadow:0 0 12px rgba(240,215,154,.6); }
+.scan-reticle.is-lock .scan-br.tl{ transform:translate(9px,9px); }
+.scan-reticle.is-lock .scan-br.tr{ transform:translate(-9px,9px); }
+.scan-reticle.is-lock .scan-br.bl{ transform:translate(9px,-9px); }
+.scan-reticle.is-lock .scan-br.br2{ transform:translate(-9px,-9px); }
+.scan-vf-guide{ position:absolute; z-index:12; left:0; right:0; top:calc(46% + min(25vh,150px) + 14px); text-align:center;
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--scan-on-dark-2); pointer-events:none; padding:0 20px; }
+
+.scan-vf-bottom{ position:absolute; left:0; right:0; bottom:0; z-index:20;
+  padding:14px calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  display:flex; flex-direction:column; align-items:center; gap:16px; }
+.scan-mode-seg{ display:inline-flex; padding:3px; border-radius:var(--radius-pill); background:var(--scan-glass); border:1px solid rgba(246,239,224,.16); }
+.scan-mode-seg button{ font-family:var(--font-body); font-size:13px; font-weight:500; color:var(--scan-on-dark-2); background:none; border:none;
+  border-radius:var(--radius-pill); padding:8px 22px; min-height:40px; cursor:pointer; }
+.scan-mode-seg button.is-on{ color:var(--gold-ink-on-gold); background:linear-gradient(180deg,var(--gold-hi) 0%,var(--gold-ember) 100%); font-weight:600; }
+.scan-actionrow{ display:flex; align-items:center; justify-content:center; gap:24px; width:100%; }
+.scan-shutter{ width:72px; height:72px; border-radius:50%; background:rgba(246,239,224,.16); border:3px solid rgba(246,239,224,.9);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.scan-shutter:active{ transform:scale(.94); }
+.scan-shutter .core{ width:56px; height:56px; border-radius:50%; background:var(--scan-on-dark); }
+.scan-shutter[disabled]{ opacity:.5; cursor:default; }
+.scan-book-auto{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.scan-book-auto .ring{ width:52px; height:52px; border-radius:50%; border:2px dashed rgba(246,239,224,.5); display:flex; align-items:center; justify-content:center; color:var(--scan-on-dark-2); font-size:19px; }
+.scan-book-auto .lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--scan-on-dark-2); }
+
+/* ---- BOOK verdict card — slides over the still-warm camera ---- */
+.scan-verdict{ position:absolute; left:0; right:0; bottom:0; z-index:40;
+  transform:translateY(115%); transition:transform .34s cubic-bezier(.22,1,.36,1); }
+.scan-verdict.is-up{ transform:translateY(0); }
+.scan-verdict-inner{ margin:0 auto; max-width:520px;
+  background:var(--card-1); border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow:0 -8px 40px -12px rgba(0,0,0,.55); color:var(--ink);
+  padding:18px calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); }
+.scan-vd-grip{ width:38px; height:4px; border-radius:2px; background:var(--line-page-2); margin:0 auto 14px; }
+.scan-vd-row{ display:flex; gap:14px; align-items:flex-start; }
+.scan-verdict .scan-cov{ width:64px; height:96px; flex:none; }
+.scan-vd-meta{ flex:1; min-width:0; }
+.scan-vd-title{ font-family:var(--font-serif); font-weight:600; font-size:20px; line-height:1.15; color:var(--ink); margin:0; }
+.scan-vd-author{ font-family:var(--font-body); font-size:13px; color:var(--ink-2); margin:3px 0 0; }
+.scan-vd-context{ font-family:var(--font-mono); font-size:11px; letter-spacing:.02em; color:var(--gold-deep); margin:10px 0 0; display:flex; align-items:center; gap:6px; }
+.scan-vd-context .dot{ width:5px; height:5px; border-radius:50%; background:var(--gold); flex:none; }
+.scan-vd-actions{ display:flex; gap:10px; margin-top:16px; }
+.scan-vd-silent{ font-family:var(--font-mono); font-size:11px; font-style:italic; color:var(--ink-3); margin:8px 0 0; }
+
+/* ---- shared buttons (scoped) ---- */
+.scan-btn{ font-family:var(--font-body); font-size:15px; font-weight:600; border-radius:var(--radius-md); padding:13px 18px; cursor:pointer; border:1px solid transparent; min-height:48px; }
+.scan-btn-primary{ background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); color:var(--gold-ink-on-gold); flex:1; }
+.scan-btn-ghost{ background:transparent; border-color:var(--line-page-2); color:var(--ink); }
+.scan-btn-quiet{ background:var(--wash-page); color:var(--ink-2); border-color:var(--line-page); }
+
+/* ---- SHELF MODE — shimmer read + live tray ---- */
+/* FELT SIGNATURE 2 — the shimmer read (visibly indeterminate, NO percentages) */
+.scan-shimmer{ position:absolute; inset:0; z-index:35; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px; }
+.scan-shimmer.is-on{ display:flex; }
+.scan-shim-frame{ width:min(74vw,340px); height:min(46vh,280px); border-radius:12px; overflow:hidden; position:relative;
+  border:1px solid rgba(246,239,224,.2); background:rgba(6,4,2,.3); }
+.scan-shim-sweep{ position:absolute; inset:0;
+  background:linear-gradient(115deg, transparent 30%, rgba(240,215,154,.5) 50%, transparent 70%);
+  background-size:280% 100%; animation:scanShimSweep 1.15s linear infinite; }
+@keyframes scanShimSweep{ from{ background-position:180% 0 } to{ background-position:-80% 0 } }
+.scan-shim-line{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--scan-on-dark-2); }
+
+.scan-tray{ position:absolute; left:0; right:0; bottom:0; z-index:30; display:none;
+  padding:10px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  background:linear-gradient(to top, rgba(6,4,2,.9), rgba(6,4,2,.5) 70%, transparent); }
+.scan-tray.is-on{ display:block; }
+.scan-tray-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; padding:0 2px; }
+.scan-tray-count{ font-family:var(--font-mono); font-size:12px; letter-spacing:.03em; color:var(--scan-on-dark); }
+.scan-tray-count b{ color:var(--gold-hi); font-weight:600; }
+.scan-tray-sub{ font-family:var(--font-mono); font-size:10px; color:var(--scan-on-dark-2); }
+.scan-tray-strip{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 8px; scroll-behavior:smooth; }
+.scan-tray-cov{ width:44px; height:66px; flex:none; border-radius:2px 4px 4px 2px; position:relative; overflow:visible;
+  animation:scanTrayDrop .34s cubic-bezier(.22,1,.36,1); }
+@keyframes scanTrayDrop{ from{ transform:translateY(14px) scale(.9); opacity:0 } to{ transform:translateY(0) scale(1); opacity:1 } }
+.scan-dupe-tick{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%;
+  background:var(--teal); color:var(--text-on-dark); font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 0 2px rgba(6,4,2,.6);
+  animation:scanTickPop .3s ease; }
+@keyframes scanTickPop{ from{ transform:scale(0) } to{ transform:scale(1) } }
+.scan-tray-review{ margin-top:4px; }
+.scan-tray .scan-btn{ min-height:46px; }
+
+/* ---- REVIEW — the mirror shelf (quiet DRAFT-CASE dialect of the carved cavity) ---- */
+#scan-screen-review{ background:var(--page); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.scan-rv-wrap{ min-height:100%; padding:calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); max-width:960px; margin:0 auto; }
+.scan-rv-top{ display:flex; align-items:center; gap:12px; height:48px; }
+.scan-rv-back{ width:36px; height:36px; border-radius:50%; background:var(--wash-page); border:1px solid var(--line-page); color:var(--ink); font-size:17px; cursor:pointer; }
+.scan-rv-top h1{ font-family:var(--font-serif); font-weight:500; font-size:26px; color:var(--ink); margin:0; }
+.scan-rv-count{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); margin:4px 0 2px; }
+.scan-rv-draftbadge{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--gold-deep); background:var(--wash-page); border:1px dashed var(--line-page-2); border-radius:var(--radius-pill); padding:4px 10px; margin-top:2px; }
+.scan-draft-band{ margin-top:20px; }
+.scan-draft-band-hd{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+.scan-draft-band-hd .lbl{ font-family:var(--font-serif); font-weight:600; font-size:18px; color:var(--ink); }
+.scan-draft-band-hd .n{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); }
+.scan-cavity{ position:relative; background:var(--shelf-cavity); border-radius:3px; padding:14px 12px 16px;
+  box-shadow:inset 0 15px 20px -15px rgba(36,23,16,.34); }
+.scan-cavity::after{ content:''; position:absolute; left:-2px; right:-2px; bottom:-9px; height:9px; background:var(--board-face); border-bottom:5px solid var(--board-under); border-radius:0 0 3px 3px; }
+.scan-shelfline{ display:flex; flex-wrap:wrap; align-items:flex-end; column-gap:14px; row-gap:22px; }
+.scan-dc{ width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:default; }
+.scan-dc .scan-cov{ width:64px; height:96px; }
+.scan-dc .cap{ width:64px; height:34px; overflow:hidden; text-align:center; margin-top:7px; }
+.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+/* the LEANING gray spine — an exception (Law 1: the lean carries it, never copy alone) */
+.scan-dc.is-lean{ cursor:pointer; }
+.scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
+.scan-dc.is-lean .spine-flag{ margin-top:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.scan-dc.is-lean:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+/* generic typeset cloth cover (no external image — pre-sized slot, spine fallback) */
+.scan-cov{ position:relative; border-radius:2px 5px 5px 2px; overflow:hidden;
+  box-shadow:0 3px 5px rgba(36,23,16,.3); background:linear-gradient(135deg,var(--scan-cloth-1),var(--scan-cloth-2)); display:block; }
+.scan-cov .cov-spine{ position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
+.scan-cov .cov-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.scan-cov .cov-txt{ position:absolute; inset:0; padding:8px 7px 7px 10px; display:flex; flex-direction:column; }
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
+
+.scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;
+  padding:12px calc(18px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  background:linear-gradient(to top, var(--page) 60%, transparent); display:none; gap:10px; }
+.scan-rv-foot.is-on{ display:flex; }
+
+/* ---- EXCEPTION WALKER — sequential fix-next sheet ---- */
+#scan-walker{ position:absolute; inset:0; z-index:80; display:none; background:var(--scrim); }
+#scan-walker.is-on{ display:block; }
+.scan-wk-sheet{ position:absolute; left:0; right:0; bottom:0; max-height:92%; overflow-y:auto;
+  background:var(--card-1); border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  padding:16px calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  transform:translateY(0); }
+.scan-wk-grip{ width:38px; height:4px; border-radius:2px; background:var(--line-page-2); margin:0 auto 12px; }
+.scan-wk-progress{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); text-align:center; margin-bottom:14px; }
+.scan-wk-row{ display:flex; gap:14px; }
+.scan-wk-row .scan-cov{ width:70px; height:105px; flex:none; filter:grayscale(1) brightness(.9); }
+.scan-wk-guess{ flex:1; min-width:0; }
+.scan-wk-guess .g-lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+.scan-wk-guess .g-t{ font-family:var(--font-serif); font-weight:600; font-size:18px; color:var(--ink); margin:2px 0 0; line-height:1.15; }
+.scan-wk-guess .g-a{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); margin:2px 0 0; }
+.scan-wk-evidence{ margin-top:14px; padding:11px 13px; border-radius:var(--radius-md); background:var(--wash-page); border:1px solid var(--line-page);
+  font-family:var(--font-mono); font-size:12.5px; color:var(--ink); }
+.scan-wk-evidence .lead{ color:var(--ink-3); }
+.scan-wk-evidence .raw{ color:var(--danger); font-weight:500; }
+.scan-wk-cands{ margin-top:14px; }
+.scan-wk-cands .c-hd{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+.scan-wk-cand{ width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;
+  padding:11px 13px; border-radius:var(--radius-md); border:1px solid var(--line-page); background:var(--page-2); color:var(--ink); cursor:pointer; margin-bottom:8px; }
+.scan-wk-cand:active{ background:var(--wash-page); }
+.scan-wk-cand .ct{ font-family:var(--font-serif); font-weight:600; font-size:15px; }
+.scan-wk-cand .ca{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); }
+.scan-wk-search{ width:100%; display:flex; align-items:center; gap:8px; padding:12px 13px; border-radius:var(--radius-md);
+  border:1px dashed var(--line-page-2); background:transparent; color:var(--ink-3); font-family:var(--font-body); font-size:13px; cursor:pointer; margin-bottom:8px; }
+.scan-wk-foot{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+.scan-wk-foot .scan-btn{ flex:1; }
+.scan-wk-skipall{ width:100%; text-align:center; margin-top:12px; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--ink-3); background:none; border:none; cursor:pointer; padding:8px; }
+
+/* ---- RECEIPT + shelve flight glyph ---- */
+#scan-flight-layer{ position:absolute; inset:0; z-index:70; pointer-events:none; display:none; }
+#scan-flight-layer.is-on{ display:block; }
+.scan-flight-cov{ position:fixed; width:44px; height:66px; z-index:71; }
+#scan-shelf-glyph{ position:absolute; z-index:70; left:50%; top:26%; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:12px; background:var(--scan-glass-2); border:1px solid rgba(246,239,224,.2);
+  display:flex; align-items:center; justify-content:center; color:var(--gold-hi); font-size:30px; opacity:0; transition:opacity .3s ease; }
+#scan-shelf-glyph.is-on{ opacity:1; }
+#scan-receipt{ position:absolute; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translate(-50%,140%);
+  z-index:75; background:var(--scan-glass-2); color:var(--scan-on-dark); border:1px solid rgba(246,239,224,.16);
+  border-radius:var(--radius-pill); padding:12px 12px 12px 20px; display:flex; align-items:center; gap:14px;
+  transition:transform .34s cubic-bezier(.22,1,.36,1); box-shadow:0 10px 34px -12px rgba(0,0,0,.6); }
+#scan-receipt.is-on{ transform:translate(-50%,0); }
+#scan-receipt .r-txt{ font-family:var(--font-body); font-size:14px; }
+#scan-receipt .r-txt b{ color:var(--gold-hi); font-weight:600; }
+#scan-receipt .r-undo{ font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--gold-hi); background:rgba(246,239,224,.1);
+  border:1px solid rgba(246,239,224,.18); border-radius:var(--radius-pill); padding:9px 16px; cursor:pointer; min-height:42px; }
+
+/* ---- PERMISSION + FAILURE cards (over the warm ground) ---- */
+.scan-overlay{ position:absolute; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+  background:linear-gradient(178deg,var(--hour-1),var(--hour-3) 62%,var(--hour-4));
+  padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.scan-overlay.is-on{ display:flex; }
+.scan-overlay.over-cam{ background:rgba(6,4,2,.72); }
+.scan-card{ width:100%; max-width:360px; background:var(--card-1); border-radius:var(--radius-xl); color:var(--ink);
+  padding:24px 22px; box-shadow:0 20px 60px -20px rgba(0,0,0,.6); max-height:calc(100% - 24px); overflow-y:auto; }
+.scan-card .c-ic{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:16px;
+  background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); color:var(--gold-ink-on-gold); }
+.scan-card.warn .c-ic{ background:rgba(194,96,58,.16); color:var(--danger); }
+.scan-card h2{ font-family:var(--font-serif); font-weight:600; font-size:23px; color:var(--ink); margin:0 0 8px; line-height:1.15; }
+.scan-card p{ font-family:var(--font-body); font-size:14px; line-height:1.55; color:var(--ink-2); margin:0 0 8px; }
+.scan-card .fineprint{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); margin:12px 0 4px; line-height:1.5; }
+.scan-card .c-actions{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+.scan-card .c-actions.row{ flex-direction:row; }
+.scan-add-door{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line-page); }
+.scan-add-door .ad-lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:9px; }
+.scan-add-door .ad-field{ display:flex; gap:8px; }
+.scan-add-door input{ flex:1; min-width:0; font-family:var(--font-body); font-size:16px; padding:12px 13px; border-radius:var(--radius-md);
+  border:1px solid var(--line-page-2); background:var(--page-2); color:var(--ink); }
+.scan-add-door input::placeholder{ color:var(--ink-3); }
+.scan-add-door .ad-search{ margin-top:9px; width:100%; font-family:var(--font-body); font-size:13px; color:var(--ink-2);
+  background:transparent; border:1px dashed var(--line-page-2); border-radius:var(--radius-md); padding:11px; cursor:pointer; text-align:center; }
+.scan-add-status{ font-family:var(--font-mono); font-size:11px; color:var(--gold-deep); margin-top:10px; min-height:14px; }
+/* SC7(c) desktop / no-live-shelf secondary: a shelf-photo drop zone (same pipeline) */
+.scan-dropzone{ margin-top:14px; border:1.5px dashed var(--line-page-2); border-radius:var(--radius-md);
+  padding:20px 14px; text-align:center; cursor:pointer; background:var(--page-2); }
+.scan-dropzone.is-drag{ border-color:var(--gold); background:var(--wash-page); }
+.scan-dropzone .dz-ic{ font-size:24px; color:var(--gold-deep); }
+.scan-dropzone .dz-t{ font-family:var(--font-body); font-size:14px; color:var(--ink-2); margin-top:6px; }
+.scan-dropzone .dz-h{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); margin-top:4px; }
+.scan-coach-rows{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.scan-coach-rows li{ display:flex; gap:12px; align-items:center; font-family:var(--font-body); font-size:14px; color:var(--ink-2); }
+.scan-coach-rows .cr-ic{ width:34px; height:34px; flex:none; border-radius:9px; background:var(--wash-page); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold-deep); }
+
+/* nav draft-count badge on the Scan entry (mirrors .cap-nav-entry state attrs) */
+.app-nav-scan-badge{ display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;
+  border-radius:var(--radius-pill); background:var(--gold); color:var(--gold-ink-on-gold);
+  font-family:var(--font-mono); font-size:9px; line-height:16px; text-align:center; vertical-align:middle; }
+.app-nav-scan-badge.is-on{ display:inline-block; }
+
+/* ---- REDUCED MOTION — a still-state for every mandated signature ---- */
+@media (prefers-reduced-motion: reduce){
+  .scan-cam-warm{ transition:none; }
+  .scan-warm-orb{ animation:none; opacity:1; }
+  .scan-br{ transition:none; }
+  .scan-reticle.is-lock .scan-br{ transform:none; }
+  .scan-shim-sweep{ animation:none; background:linear-gradient(115deg, transparent 40%, rgba(240,215,154,.35) 50%, transparent 60%); }
+  .scan-tray-cov, .scan-verdict{ animation:none; }
+  .scan-flight-cov{ transition:opacity .2s ease; }
+  #scan-receipt, .scan-verdict{ transition:none; }
+}

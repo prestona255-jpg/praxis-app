@@ -48,6 +48,11 @@
     <li><a href="#books" class="app-nav-link" data-route="books">Shelf</a></li>
     <li><a href="#arcs" class="app-nav-link" data-route="arcs">Arcs</a></li>
     <li><a href="#notebook" class="app-nav-link" data-route="notebook">Notebook</a></li>
+    <!-- SCAN ROUND: the #scan surface is a top-level route (SCD-1: nav owns the
+         destination act). A draft-count badge (unreviewed scan exceptions) rides
+         the link, hidden until populated (renderRoute; the .cap-nav-entry state-
+         span precedent). -->
+    <li><a href="#scan" class="app-nav-link" data-route="scan">Scan<span class="app-nav-scan-badge" id="app-nav-scan-badge" aria-hidden="true"></span></a></li>
     <!-- CD-1: the capture-door nav entry. Not a route — opens the door (wired in
          initCaptureDoor); the gold underline marks door-open via aria-current. -->
     <li><a href="#" class="app-nav-link cap-nav-entry" aria-current="false">Capture</a></li>
