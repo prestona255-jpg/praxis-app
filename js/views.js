@@ -8111,6 +8111,32 @@ function scanWarmUpThen(cb) {
   window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); if (cb) { cb(); } }, wait);
 }
 
+// FX-G — guarantee the viewfinder shows a LIVE picture in whatever mode we land in.
+// On iOS the zxing reader (Book mode) attaches its OWN stream to the video element;
+// stopping decode on a mode switch (scanStopBookDecode -> reset) detaches it, leaving
+// our getUserMedia stream (scanStream) alive-but-unshown — F7: black Shelf, lit
+// indicator. Re-attach OUR stream (no NEW stream, no leak) if it is still live; only
+// if the display stream truly died do we re-warm ONE fresh stream. NEVER a second leak.
+function scanTrackLive(ms) {
+  if (!ms || typeof ms.getVideoTracks !== 'function') { return false; }
+  var t = ms.getVideoTracks();
+  return t.length > 0 && t[0].readyState === 'live';
+}
+function scanEnsureDisplay() {
+  var v = scanEl('scan-cam-video');
+  if (!v) { return; }
+  if (scanTrackLive(v.srcObject)) { return; }        // already a live picture — leave Book's zxing stream alone
+  if (scanTrackLive(scanStream)) {                    // our stream survived — re-attach it (no new stream)
+    try { v.srcObject = scanStream; var p = v.play(); if (p && p.then) { p.then(function () {}, function () {}); } } catch (e) {}
+    scanCamReady = true;
+    return;
+  }
+  // the display stream is gone — re-warm ONE fresh stream (registered for teardown).
+  if (scanAnyOverlayOpen()) { return; }
+  scanWarmUpThen(function () {});
+  scanStartStream(function () { window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); }, scanRM() ? 250 : 850); });
+}
+
 // ---- mode + action row ----
 function scanClearTimers() { if (scanAutoTimer) { window.clearTimeout(scanAutoTimer); scanAutoTimer = null; } }
 
@@ -8147,6 +8173,8 @@ function scanSetMode(m) {
   scanRenderActionRow();
   scanClearTimers();
   scanStopBookDecode();
+  scanEnsureDisplay(); // FX-G: a mode switch must NEVER leave a black viewfinder (Shelf
+                       // has no decode to restore the display; Book bridges the zxing gap)
   scanHideVerdict();
   if (m === 'book') { scanStartBookDecode(); }
 }
