@@ -16883,11 +16883,16 @@ body.wc-focus .app-nav { opacity:.26; }
   width:64px; height:64px; border-radius:12px; background:var(--scan-glass-2); border:1px solid rgba(246,239,224,.2);
   display:flex; align-items:center; justify-content:center; color:var(--gold-hi); font-size:30px; opacity:0; transition:opacity .3s ease; }
 #scan-shelf-glyph.is-on{ opacity:1; }
-#scan-receipt{ position:absolute; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translate(-50%,140%);
+/* FX-H (F6): STATE-GATED with display:none — the receipt renders ONLY after a shelve.
+   Previously it was display:flex hidden by transform:translateY(140%), which on iPhone
+   (bottom anchored above the home-indicator inset) rose into view as a clipped dark pill
+   in Book mode's resting state. display:none = not rendered until #scan-receipt.is-on;
+   the bottom:calc(24px + env(...)) then seats it fully on-screen above the inset. */
+#scan-receipt{ position:absolute; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translate(-50%,0);
   z-index:75; background:var(--scan-glass-2); color:var(--scan-on-dark); border:1px solid rgba(246,239,224,.16);
-  border-radius:var(--radius-pill); padding:12px 12px 12px 20px; display:flex; align-items:center; gap:14px;
-  transition:transform .34s cubic-bezier(.22,1,.36,1); box-shadow:0 10px 34px -12px rgba(0,0,0,.6); }
-#scan-receipt.is-on{ transform:translate(-50%,0); }
+  border-radius:var(--radius-pill); padding:12px 12px 12px 20px; display:none; align-items:center; gap:14px;
+  box-shadow:0 10px 34px -12px rgba(0,0,0,.6); }
+#scan-receipt.is-on{ display:flex; }
 #scan-receipt .r-txt{ font-family:var(--font-body); font-size:14px; }
 #scan-receipt .r-txt b{ color:var(--gold-hi); font-weight:600; }
 #scan-receipt .r-undo{ font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--gold-hi); background:rgba(246,239,224,.1);
