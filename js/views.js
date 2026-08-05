@@ -8082,10 +8082,19 @@ function scanStopStream() {
   scanCamReady = false;
 }
 
+// FX-I (F6): Shelf reads a whole row of small spine text -> the frame wants to be
+// SHARP and high-res. Ask for a high IDEAL resolution in Shelf mode; Book keeps the
+// light default (a barcode / single cover title decodes fine and stays cheap). ideal
+// (never exact/min) so a device that can't hit it still resolves at its best.
+function scanStreamConstraints() {
+  var video = { facingMode: { ideal: 'environment' } };
+  if (scanMode === 'shelf') { video.width = { ideal: 2560 }; video.height = { ideal: 1440 }; }
+  return { video: video, audio: false };
+}
 function scanStartStream(cb) {
   var v = scanEl('scan-cam-video');
   if (!v || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cb(false, 'unsupported'); return; }
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+  navigator.mediaDevices.getUserMedia(scanStreamConstraints())
     .then(function (s) {
       scanStream = s;
       scanRegisterStream(s); // FX-A: track it for guaranteed teardown
@@ -8137,6 +8146,20 @@ function scanEnsureDisplay() {
   scanStartStream(function () { window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); }, scanRM() ? 250 : 850); });
 }
 
+// FX-I (F6): the Shelf-mode fresh acquisition. Stop EVERY existing stream first
+// (FORK-β / FX-A teardown — never open-then-orphan; FX-G's black viewfinder and the
+// FX-A leak must not return), then getUserMedia fresh so iOS runs a focus/exposure
+// sweep and the frame is high-res (scanStreamConstraints keys off scanMode='shelf').
+function scanAcquireShelf() {
+  if (scanAnyOverlayOpen()) { return; } // never grab the camera behind a primer/failure overlay
+  scanStopStream();                     // stop all streams/tracks + decode (scanCamReady -> false)
+  scanWarmUpThen(function () {});
+  scanStartStream(function (ok) {
+    window.setTimeout(function () { scanHide(scanEl('scan-cam-warm')); }, scanRM() ? 250 : 850);
+    if (!ok) { scanOpenOverlay('scan-ov-denied'); } // lost the camera -> the working add door
+  });
+}
+
 // ---- mode + action row ----
 function scanClearTimers() { if (scanAutoTimer) { window.clearTimeout(scanAutoTimer); scanAutoTimer = null; } }
 
@@ -8173,8 +8196,20 @@ function scanSetMode(m) {
   scanRenderActionRow();
   scanClearTimers();
   scanStopBookDecode();
-  scanEnsureDisplay(); // FX-G: a mode switch must NEVER leave a black viewfinder (Shelf
-                       // has no decode to restore the display; Book bridges the zxing gap)
+  // FX-I (F6): on a GENUINE live-camera switch (camera already warm), re-acquire per
+  // mode instead of re-attaching the demoted iOS stream (FX-G) — which came back soft
+  // (no autofocus sweep on a bare re-attach) and low-res (no width/height). Shelf gets
+  // a FRESH high-res stream; Book stops any hi-res Shelf stream FIRST (FORK-β: never
+  // orphan a stream into Book) then re-warms via FX-G's path. On the INITIAL entry
+  // setup (camera not yet live) leave FX-G's scanEnsureDisplay exactly as shipped so
+  // the primer→grant path still gates the OS ask.
+  if (scanCamReady) {
+    if (m === 'shelf') { scanAcquireShelf(); }
+    else { scanStopStream(); scanEnsureDisplay(); }
+  } else {
+    scanEnsureDisplay(); // FX-G: fresh-entry setup (unchanged — Shelf has no decode to
+                         // restore the display; Book bridges the zxing gap)
+  }
   scanHideVerdict();
   if (m === 'book') { scanStartBookDecode(); }
 }
