@@ -2082,6 +2082,36 @@ function titleCloseness(a, b) {
   return ratio;
 }
 
+// FX-J (F7): the periodical / scanned-artifact test. Widened past scoreVolume's
+// original list, which MISSED "review", "reports", "lectures", "commissioner",
+// "cases" — every one a real F7 junk candidate a generic partial read pulled from
+// Google Books ("The Fortnightly Review", "The Texas Criminal Reports", "Lectures
+// Introductory to…", "Report of the Commissioner of Agriculture", "Cases Argued…").
+// Word-boundary anchored; also catches bound-volume markers (vol. N / no. N).
+function candidateIsPeriodical(text) {
+  var hay = ('' + (text || '')).toLowerCase();
+  return /\b(index|proceedings|transactions|periodical|magazine|bulletin|gazette|catalogue|catalog|annual report|review|reviews|reports|lectures|commissioner|cases)\b/.test(hay)
+      || /\bvol\.?\s*\d/.test(hay) || /\bno\.\s*\d/.test(hay);
+}
+
+// FX-J (F7): the plausibility FLOOR for a "did you mean" candidate the walker SHOWS.
+// A partial/generic spine read returns Google Books' public-domain-scan mass;
+// scoreVolume down-ranks it but the walker still surfaced the top-5, so junk showed.
+// A candidate is worth showing only if it looks like the book actually on the shelf:
+// a real ISBN (modern trade books carry one; the pre-1900 scans do not), not a
+// periodical/scan artifact, not implausibly old, and a real title overlap with what
+// we read. The book arg is a normalized volumeToBook record (title/author/year/isbn). When
+// NONE clear the floor the walker shows the honest no-match + Search (Law 3).
+function candidateIsPlausible(detectedTitle, book) {
+  if (!book || typeof book.title !== 'string' || book.title.length === 0) { return false; }
+  if (!book.isbn) { return false; }
+  if (candidateIsPeriodical(book.title)) { return false; }
+  var digits = ('' + (book.year || '')).replace(/[^0-9]/g, '').substring(0, 4);
+  var yr = digits.length === 4 ? parseInt(digits, 10) : 0;
+  if (yr && yr < 1900) { return false; }
+  return titleCloseness(detectedTitle || '', book.title) >= 0.5;
+}
+
 // Score a volumeInfo against the query (higher = better). vi._printType is the
 // item-level printType set by the caller.
 function scoreVolume(query, vi) {
@@ -2116,9 +2146,8 @@ function scoreVolume(query, vi) {
   }
   // Stage 2: periodical / index / proceedings artifacts -- a bound journal
   // volume or a scanned index page is never the book a reader photographed.
-  var hay = (((vi.title || '') + ' ' + (vi.subtitle || '')) + '').toLowerCase();
-  if (/\b(index|proceedings|transactions|periodical|magazine|bulletin|gazette|catalogue|catalog|annual report)\b/.test(hay) ||
-      /\bvol\.?\s*\d/.test(hay) || /\bno\.\s*\d/.test(hay)) {
+  // FX-J (F7): shares candidateIsPeriodical (widened list) with the walker floor.
+  if (candidateIsPeriodical((vi.title || '') + ' ' + (vi.subtitle || ''))) {
     score -= 25;
   }
   return score;

@@ -8785,16 +8785,26 @@ function scanRenderWalkerStep() {
   var raw = document.createElement('span'); raw.className = 'raw'; raw.textContent = "'" + (b.spineText || '') + "'";
   ev.appendChild(lead); ev.appendChild(raw); s.appendChild(ev);
   var cands = document.createElement('div'); cands.className = 'scan-wk-cands';
-  var ch = document.createElement('div'); ch.className = 'c-hd'; ch.textContent = 'Did you mean'; cands.appendChild(ch);
-  var j;
-  for (j = 0; j < b.alternates.length && j < 5; j++) {
+  // FX-J (F7): withhold implausible "did you mean" candidates. A generic partial read
+  // ("THE ESSENTIAL") pulls Google Books' public-domain-scan mass — 1890s periodicals,
+  // court reports — which the walker used to show as the top-5. candidateIsPlausible
+  // (integrations.js) gates each on the resolver's own signals; nothing plausible ->
+  // the honest "No confident match", Search as the path (Law 3 — silence over garbage).
+  var plausible = [], j;
+  for (j = 0; j < b.alternates.length; j++) {
+    if (candidateIsPlausible(b.title, b.alternates[j])) { plausible.push(b.alternates[j]); }
+  }
+  var ch = document.createElement('div'); ch.className = 'c-hd';
+  ch.textContent = (plausible.length > 0) ? 'Did you mean' : 'No confident match';
+  cands.appendChild(ch);
+  for (j = 0; j < plausible.length && j < 5; j++) {
     (function (cd) {
       var c = document.createElement('button'); c.type = 'button'; c.className = 'scan-wk-cand';
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = cd.title || ''; c.appendChild(ct);
       if (cd.author) { var ca = document.createElement('span'); ca.className = 'ca'; ca.textContent = cd.author; c.appendChild(ca); }
       c.addEventListener('click', function () { scanResolveStep('picked', cd); });
       cands.appendChild(c);
-    })(b.alternates[j]);
+    })(plausible[j]);
   }
   var search = document.createElement('button'); search.type = 'button'; search.className = 'scan-wk-search';
   search.innerHTML = '<span>⌕</span> Search on the Shelf instead';
