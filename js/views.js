@@ -8590,14 +8590,60 @@ var scanLastShelvedIds = [];    // for the immediate batch Undo
 var scanReceiptTimer = null;
 
 // SC11 signature 2 base64 capture: scale the current video frame to a jpeg.
-function scanCaptureBase64() {
+// F9 (fix-loop-4): map the on-screen framing rectangle to a source-crop rect in the
+// VIDEO's own pixels, honoring object-fit:cover, then grow it by a 5%-of-frame overscan
+// per edge (hand-jitter tolerance without re-inviting whole-shelf bleed) and clamp to the
+// video bounds. PURE — no DOM here; the caller measures the rects. Vw/Vh = video intrinsic
+// px; Dw/Dh = video element DISPLAY px; rx/ry/rw/rh = frame rect in display px, relative to
+// the video's top-left. Returns {sx,sy,sw,sh} in video px, or null when inputs are unusable
+// (caller then falls back to a full-frame capture — degraded beats broken).
+function scanFrameToVideoRect(Vw, Vh, Dw, Dh, rx, ry, rw, rh) {
+  if (!(Vw > 0 && Vh > 0 && Dw > 0 && Dh > 0 && rw > 0 && rh > 0)) { return null; }
+  var s = Math.max(Dw / Vw, Dh / Vh);   // object-fit:cover scale (video px -> display px)
+  if (!(s > 0)) { return null; }
+  var offX = (Vw * s - Dw) / 2;         // display px cover crops off EACH side (>= 0)
+  var offY = (Vh * s - Dh) / 2;
+  var sx = (rx + offX) / s;             // frame (display px) -> source (video px)
+  var sy = (ry + offY) / s;
+  var sw = rw / s;
+  var sh = rh / s;
+  var ox = sw * 0.05, oy = sh * 0.05;   // 5%-of-frame overscan per edge
+  sx = sx - ox; sy = sy - oy; sw = sw + 2 * ox; sh = sh + 2 * oy;
+  if (sx < 0) { sw = sw + sx; sx = 0; }         // clamp left / top into the video
+  if (sy < 0) { sh = sh + sy; sy = 0; }
+  if (sx + sw > Vw) { sw = Vw - sx; }           // clamp right / bottom
+  if (sy + sh > Vh) { sh = Vh - sy; }
+  if (!(sw > 0 && sh > 0)) { return null; }
+  return { sx: sx, sy: sy, sw: sw, sh: sh };
+}
+
+// F9: measure the framing rectangle (#scan-reticle) + the video element and map to a
+// video-pixel source crop. Returns null (full-frame fallback) when the frame or video is
+// not measurable (absent, display:none, or zero-size rect all yield a zero-size rect).
+function scanShelfCropRect() {
+  var v = scanEl('scan-cam-video'), ret = scanEl('scan-reticle');
+  if (!v || !ret || !v.videoWidth) { return null; }
+  var vr = v.getBoundingClientRect(), rr = ret.getBoundingClientRect();
+  if (!(vr.width > 0 && vr.height > 0 && rr.width > 0 && rr.height > 0)) { return null; }
+  return scanFrameToVideoRect(v.videoWidth, v.videoHeight, vr.width, vr.height,
+                              rr.left - vr.left, rr.top - vr.top, rr.width, rr.height);
+}
+
+// crop (optional): a {sx,sy,sw,sh} source rect in video px (F9, Shelf shot). Absent/invalid
+// -> the FULL video frame (Book cover shot + any fallback — unchanged behavior). Either way
+// the source region is downscaled to <=1600px longest side, so with a crop the full 1600px
+// budget lands on in-frame content (a resolution win).
+function scanCaptureBase64(crop) {
   var v = scanEl('scan-cam-video');
   if (!v || !v.videoWidth) { return ''; }
-  var maxDim = 1600, vw = v.videoWidth, vh = v.videoHeight;
-  var scale = Math.min(1, maxDim / Math.max(vw, vh));
-  var cw = Math.round(vw * scale), ch = Math.round(vh * scale);
+  var vw = v.videoWidth, vh = v.videoHeight;
+  var sx = 0, sy = 0, sw = vw, sh = vh;
+  if (crop && crop.sw > 0 && crop.sh > 0) { sx = crop.sx; sy = crop.sy; sw = crop.sw; sh = crop.sh; }
+  var maxDim = 1600;
+  var scale = Math.min(1, maxDim / Math.max(sw, sh));
+  var cw = Math.round(sw * scale), ch = Math.round(sh * scale);
   var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
-  try { cv.getContext('2d').drawImage(v, 0, 0, cw, ch); } catch (e) { return ''; }
+  try { cv.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, cw, ch); } catch (e) { return ''; }
   var url; try { url = cv.toDataURL('image/jpeg', 0.82); } catch (e2) { return ''; }
   var ci = url.indexOf(','); return (ci > -1) ? url.substring(ci + 1) : url;
 }
@@ -8608,7 +8654,7 @@ function scanFireShelfShot() {
   if (!scanCamReady) { return; }
   scanClearTimers(); scanStopBookDecode(); scanHideVerdict();
   scanFreezeFrame();
-  var base64 = scanCaptureBase64();
+  var base64 = scanCaptureBase64(scanShelfCropRect()); // F9: crop to the framing rectangle (null -> full-frame fallback)
   if (!base64) { scanUnfreeze(); scanOpenOverlay('scan-ov-failed'); return; }
   scanRunShelfVision(base64);
 }
