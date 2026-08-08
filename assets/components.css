@@ -254,31 +254,9 @@
   display: flex;
 }
 
-.yumi-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: 1px solid var(--border);
-}
-
 .yumi-panel-title {
   font-family: var(--font-serif);
   font-size: var(--fs-display);
-  color: var(--ink);
-}
-
-/* 6.2c: quiet affordance to the 'What Yumi sees' page. Muted and small
-   so it does not compete with the serif title; hover lifts to --ink. */
-.yumi-panel-sight-link {
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--ink-3);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.yumi-panel-sight-link:hover {
   color: var(--ink);
 }
 
@@ -10386,8 +10364,8 @@ html { overscroll-behavior-y: contain; }
    Umber port — Surface 10 (Yumi panel): mock aside#yumi-panel head + input +
    the in-panel "What Yumi sees" fold. Scoped under .yumi-panel. The panel's
    fixed slide-over + the .yumi-panel-open display/animation are KEPT (existing
-   CSS above; the JS open-class is unchanged). Old .yumi-panel-header /
-   .yumi-panel-sight-link rules go dead (renamed) — drift, flagged.
+   CSS above; the JS open-class is unchanged). The renamed-away legacy head /
+   sight-link rules were DELETED by the S-B sweep (2026-08-08).
    ============================================================================ */
 .yumi-panel .yumi-panel-head { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
 .yumi-panel .yumi-panel-head #panel-crest { display:grid; place-items:center; flex:none; }
