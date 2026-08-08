@@ -52,6 +52,13 @@ Full detail in `docs/LAUNCH-STATUS.md`.
 
 Named debts carried past R-POLISH — deferred, never dropped. Each has an owner slot.
 
+> **Reconciled 2026-08-08 into the S-B sweep's single debt table —
+> `docs/checkpoints/sb-sweep-debt-table.md`** (item · born-where · owner · trigger, deduped
+> across every ledger). The rows below stand as the runway view; the **deletion-class** items
+> (renderAccountPage — unrouted legacy; the R-a `.st-gutter` residual) are **Tier 1** there and
+> **in progress this sweep**. See the table for the full deduped worklist and the beta-gate /
+> overnight / D6-rubric owners.
+
 | Debt | Owner / lands in | What it is |
 |---|---|---|
 | **FX-1c — delete-symmetry guard** | its own slice (BETA-READINESS #1 completion) | the `pendingDeleteSync` tombstone half of the books precedent, for arcs/subTheories/themes/artifacts — stops a locally-deleted-but-unsynced record being resurrected by a stale remote splat. Folds in Finding C (delete fns don't `clearPendingSync`). In-scope (state.js + integrations.js), its own sim + red-team. Record: `docs/checkpoints/fx1.md`. · **SCAN (v3.269, 2026-08-08) re-confirms it a beta-gate prerequisite** — SCD-2's Undo hold is the SCAN-side mitigation, not a replacement; scan-build.md ERRATA-1 proved the local delete-bookkeeping (tombstone + pending-add clear), the real-Firestore delete-race leg is Preston's live-smoke (R1). |
@@ -59,7 +66,7 @@ Named debts carried past R-POLISH — deferred, never dropped. Each has an owner
 | **inert XL `.lede`** | whenever About XL is next opened | `.about .hero .lede{max-width:420px}` (base, 0,3,0) wins over both the fix's and XL's `.about .lede` (0,2,0); XL's lede declaration has been inert since B4. Kept mirrored; an XL-tier re-scope fixes both bands. Record: `docs/checkpoints/r-polish-b4.md`. |
 | **K-LISTBOX** | L2 control-canon / a control round | `.k-listbox*` in praxis-kit.css is presentation with ZERO JS app-wide — a from-scratch component (open/close, keyboard, ARIA, focus, value-sync), not band-cheap. AES-4 shipped the styled-native select instead. |
 | **arc-Field glyph items** | R10 / arc-adjacent | the candy-glyph palette items on the protected constellation renderer (RD-1 WIDENED remnants); the ARC-FIELD MOBILE TOUCH MODEL is a named carried slot for the field's drag/connect touch model. |
-| **renderAccountPage — unrouted legacy** | S-B (dead-code deletion) | ~1,370-line defined-but-unroutable renderer (`#account` hard-redirects to `#profile`); B4 confirmed it dead, not a light-page. |
+| **renderAccountPage — unrouted legacy** | S-B (dead-code deletion) — **IN PROGRESS 2026-08-08, Tier 1a–1d in `sb-sweep-debt-table.md`** | ~1,373-line defined-but-unroutable renderer (`#account` hard-redirects to `#profile`); B4 confirmed it dead, not a light-page. Marquee of the S-B sweep: excised as ~4 census-gated regions (renderAccountPage + renderOwnProfile + _opPublishControl + the _account* helpers). |
 | **SEARCH-IA1 — Search dark→light + no mobile entry** | its own round item | Search is the one unconverted surface (~56 `.search.lum-amber` dark selectors) AND has no mobile entry point (nav pill hidden ≤759, no hamburger item, ⌘K opens Spotlight not `#search`). Deferred from B-M as a bundled ruling — ground conversion + entry point decided together. |
 | **B-M-SA — subtheory evidence bottom-sheet safe-area (+momentum)** | ✓ **SHIPPED v3.239** (`micro-239`) | The live rail `.subtheory-rail.subtheory-rail-mobile-open` got `padding-bottom: calc(24px + env(safe-area-inset-bottom))` + `-webkit-overflow-scrolling:touch` (components.css:7021) — the same P4 pattern as the Bloom-orb / Shelf-select-bar slices. **Felt check** ("evidence-sheet last row clears the home indicator", standalone PWA) tracked below as **OV-4**. The dead `.st-gutter.subtheory-rail-mobile-open` mock (0 js hits) still folds into S-B's dead-code sweep. |
 | **MANIFEST-WARM — warm PWA splash theme** | ✓ **SHIPPED v3.239** (`micro-239`) | `manifest.json` `background_color`/`theme_color` **and** the `index.html:6` meta theme-color all `#191F33` → **`#29200F`** (hour-4 ember horizon). **The residual's "pre-amber leftover" premise was WRONG** — `#191F33` is `--ground` (theme.css:38), the *zenith* of THE HOUR's twilight gradient; `#29200F` is that same ground's warm horizon end. **Felt check** (splash reads warm, not navy) tracked below as **OV-3**. |
