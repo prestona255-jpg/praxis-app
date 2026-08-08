@@ -31,6 +31,23 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-08 (SCAN — ROUND CLOSED; next lead = RE-PLAN PENDING, Preston's ruling)** — Preston's device
+  felt round 4 (installed PWA + Safari, live v3.269) was a **FULL PASS**: F9 frame-crop confirmed (a framed
+  row of 13 → exactly 13 returned, out-of-bracket books absent), 11/11 confident correct, 2 need-a-look
+  correctly flagged, zero crop-bleed partials, failure card + draft persistence live, the green camera dot
+  dies on the primer, the camera light dead on nav-away and on app-switch (SCE-1 hardware), Shelf sharp on
+  Book→Shelf return. **SCAN → CLOSED** (shipped v3.259→v3.269: 6 build commits `63267ff..a9e0c2b` + 4 fix
+  loops through `6c021af`). Close-out was a docs-only session (**6 local commits, zero app bytes, sw.js stays
+  v3.269**): the 4 fix-loop checkpoints · the close acceptance card (8 laws PASS; SC8 keep-partial tray +
+  offline ISBN queue named DEFERRED honestly, not laundered) · 6 carried-debt rows + an FX-1c citation in
+  `docs/launch-runway.md` · this stamp + the BOARD scan row · one Builder regen · the session checkpoint.
+  **Next lead: RE-PLAN PENDING — Preston's ruling.** Not decided here (never invent an order). The fork he
+  rules on: the sequence's written `## Now` remainder (FINISH-CHOREO S3 — a rides-where-cheapest motion
+  slice; a Yumi round — unscoped, deferred to owns-the-arc-context-gap) vs. the substantive `## Next` rounds
+  (S-B sweep + dead-code deletion · R10 Connections · ONBOARDING). Deep-round closes have always been
+  Preston-directed spine re-sets, so the new lead is his call — written as the flagged fork, **`PROPOSED:`**-class
+  (it sets the spine lead), for his confirmation; nothing retired, no prior decision contradicted. Records:
+  `docs/checkpoints/scan-close-session.md` + `docs/checkpoints/scan-acceptance-close.md`.
 - **2026-07-26 (SCAN — BUILT + VERIFIED, committed-local, awaiting push + felt pass)** — the SCAN deep
   round is built across 6 local commits (`63267ff` hook infra · `71c0bcf` S1 shelf-vision pipeline ·
   `007ad96` S2 the #scan surface · `6103937` S3 Book mode · `50656a6` S4 Shelf mode+review+walker+
@@ -853,15 +870,28 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**The 3 truest next moves after the R-CAPTURE close (2026-07-25). The runway view
-of the whole spine → beta gate is `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
+**RE-PLAN PENDING — Preston's ruling.** The SCAN deep round (the lead) CLOSED 2026-08-08 on a full felt
+PASS (v3.269). With the lead closed, the next lead deep round is Preston's re-plan call — it is NOT
+mechanically determinable from this file's written order: the two remaining `## Now` items below are a
+rides-where-cheapest motion slice (FINISH-CHOREO S3) and an unscoped/deferred Yumi round, while the
+substantive next rounds — S-B · R10 · ONBOARDING — sit in `## Next`. Deep-round closes have always been
+Preston-directed spine re-sets, so the new lead is his call, surfaced as the flagged fork in the Re-plan
+log (2026-08-08); no order is invented here. The runway view of the whole spine → beta gate is
+`docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [ ] **SCAN — the de-risk scan surface (round)** — the cover/ISBN scan flow predates THE DOOR; folded
-  into the door's transport with the door's felt. SCAN plugs into the mode-set socket CD-6 designed.
-  **BUILT + VERIFIED, committed-local, awaiting push + Preston's felt pass** (v3.259→v3.264, 6 commits
-  `63267ff..a9e0c2b`; ported from the felt-pending `scan-surface.html`; legacy vision-proxy shelf path +
-  openBarcodeScanner modal retired, net −260 L). The round CLOSES only on Preston's felt pass (installed
-  PWA + Safari — the DEVICE-OWED felt card in `docs/checkpoints/scan-build.md`). `[scan, shelf]`
+- [~] **RE-PLAN PENDING — Preston's ruling: the next lead deep round** — SCAN (the prior lead) closed
+  2026-08-08 (v3.269, full felt PASS). The new lead is Preston's re-plan call; candidates are the flagged
+  fork in the Re-plan log (2026-08-08): the `## Now` remainder (FINISH-CHOREO S3 · a Yumi round) vs. the
+  `## Next` rounds (S-B · R10 · ONBOARDING). Not decided here — no order invented. `[various]`
+- [x] **SCAN — the de-risk scan surface (round) — CLOSED 2026-08-08** (full felt PASS on Preston's device
+  round 4, installed PWA + Safari; closing version **v3.269**). Shipped v3.259→v3.269: the 6 build commits
+  `63267ff..a9e0c2b` (v3.260→v3.264/265) + 4 fix loops through `6c021af` (F9 frame-crop last). A full-bleed
+  camera entered from the CD-6 create-door Scan socket + a first-class `#scan` nav entry; Book mode (free
+  barcode → verdict → guarded Add) + Shelf mode (opus `shelf-vision` → tray+SCA3 dedupe → mirror-shelf review
+  → exception walker → Shelve N → immediate batch Undo, ERRATA-1); legacy vision-proxy shelf path +
+  openBarcodeScanner modal retired (net −260 L). Records: acceptance card `docs/checkpoints/scan-acceptance-close.md`
+  · felt round 4 `docs/checkpoints/scan-fixloop4-ship.md` · build `docs/checkpoints/scan-build.md` · surface
+  ledger `docs/studio/scan.md` · debt in `docs/launch-runway.md`. `[scan, shelf]`
 - [ ] **FINISH-CHOREO S3 — motion dignity + measure** — rides where cheapest without breaking the
   single shared `views.js`/`components.css` build lane (PIPELINE LAW).
 - [ ] **A Yumi round (unscoped) — owns the arc-context gap** — the Bloom's chat never learns which arc

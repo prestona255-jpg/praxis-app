@@ -4,7 +4,7 @@ route: "#scan"
 render_fn: renderScan (js/views.js)
 ground: dark
 in_nav: yes
-state: built
+state: closed
 rounds: 1
 mobile: native
 desktop: honest-secondary
@@ -40,18 +40,27 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
 
 ## Gap ledger
 
+- SCAN carried debt lives in the round-close CARRIED-DEBT LEDGER (`docs/launch-runway.md`, 6 SCAN rows,
+  2026-08-08): partial-books endpoint (ERRATA-3) · OCR author misspells · hallucinated-author on hard
+  spines · FAB/Review-N overlap at 390 (overnight-eligible) · vision-proxy latent stop_reason gap · iOS
+  home-icon opens Safari. Scan-local S-B residuals: dead `.barcode-scanner-*` / `.shelf-scan-status` CSS
+  + the stale `downscaleShelfPhoto` comment.
+
 ## Round history
 
-- **SCAN (deep round) — BUILT + VERIFIED, committed-local, awaiting push + Preston's felt
-  pass** (v3.260→v3.264, 6 commits: `63267ff` hook infra · `71c0bcf` S1 pipeline · `007ad96`
-  S2 surface · `6103937` S3 Book mode · `50656a6` S4 Shelf mode · `a9e0c2b` S5 lifecycle+
-  retirement). Ported from `scan-surface.html`. Wired shelf-vision (opus), retired the legacy
-  vision-proxy shelf path + openBarcodeScanner modal (net −260 L). Full rig verification;
-  the forced-timing race is proven in local bookkeeping (real-Firestore leg = Preston's
-  live-smoke). Records: `docs/checkpoints/scan-build.md`. **Round closes on Preston's felt pass.**
+- **SCAN (deep round) — CLOSED 2026-08-08** (full felt PASS on Preston's device round 4, installed PWA +
+  Safari; closing version **v3.269**). Shipped v3.259→v3.269: the 6 build commits (`63267ff` hook infra ·
+  `71c0bcf` S1 pipeline · `007ad96` S2 surface · `6103937` S3 Book mode · `50656a6` S4 Shelf mode ·
+  `a9e0c2b` S5 lifecycle+retirement, v3.260→v3.264/265) + 4 fix loops through `6c021af` (F9 frame-crop
+  last, v3.269). Ported from `scan-surface.html`. Wired shelf-vision (opus), retired the legacy
+  vision-proxy shelf path + openBarcodeScanner modal (net −260 L). Full rig verification; the forced-timing
+  race is proven in local bookkeeping (real-Firestore leg = Preston's live-smoke, R1). Records:
+  `docs/checkpoints/scan-build.md` + `scan-fixloop4-ship.md` (felt round 4) + the close acceptance card
+  `docs/checkpoints/scan-acceptance-close.md`. **Round CLOSED on Preston's felt pass.**
 
 ## Next
 
-- Preston's felt pass on the installed PWA + Safari (the DEVICE-OWED felt card in scan-build.md).
-- Carried debt after the pass: dead `.barcode-scanner-*` / `.shelf-scan-status` CSS (S-B sweep);
-  the `downscaleShelfPhoto` comment still describes the retired vision-proxy flow.
+- Felt pass DONE — Preston, device round 4, 2026-08-08 = FULL PASS. Round CLOSED.
+- Next lead deep round = **RE-PLAN PENDING** (Preston's ruling; see `docs/studio/sequence.md` Re-plan log
+  2026-08-08). Carried debt is recorded in the CARRIED-DEBT LEDGER (above / `docs/launch-runway.md`),
+  recorded not licensed.
