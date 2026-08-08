@@ -85,6 +85,27 @@ if [ -n "$hex" ]; then
   printf '%s\n' "$hex" | sed 's/^/  css: /' >&2; fail=1
 fi
 
+# 5c. New EXTERNAL DEPENDENCY in client app files (S-B SWEEP, 2026-08-08). Praxis is a
+#     no-build, ES3, vanilla, zero-dependency static site — a vendored dep or an externally
+#     loaded resource is a deliberate REVIEW event, never a silent add. JS arm: a module
+#     loader — a line-initial `import` statement, `import(...)`, `require('...')`, or
+#     `importScripts(...)` — all 0 in the ES3 tree today (no bundler, no modules). CSS arm:
+#     an `@import` or an external `url(http…)` in a NON-foundations sheet. lumen-amber.css
+#     carries the one sanctioned Google-Fonts `@import` and is byte-locked by check #1, so it
+#     is EXCLUDED here (like theme.css is excluded from 5b). Both arms fixture-proven
+#     fail-able AND false-positive-free on the current tree (docs/studio/auto-guard.md).
+depjs=$(printf '%s\n' "$jsadd" | grep -nE "^\+[[:space:]]*import[[:space:]]|[^A-Za-z0-9_.]import[[:space:]]*\([[:space:]]*['\"]|[^A-Za-z0-9_.]require[[:space:]]*\([[:space:]]*['\"]|[^A-Za-z0-9_.]importScripts[[:space:]]*\(")
+if [ -n "$depjs" ]; then
+  emit "BLOCK (auto-guard): new external dependency in added JS (import / require / importScripts) — Praxis is a no-build ES3 site; a vendored dep is a review event, not a silent add."
+  printf '%s\n' "$depjs" | sed 's/^/  js: /' >&2; fail=1
+fi
+cssdepadd=$(git diff --cached -- 'assets/*.css' ':(exclude)assets/lumen-amber.css' 2>/dev/null | grep -E '^\+' | grep -Ev '^\+\+\+')
+cssdep=$(printf '%s\n' "$cssdepadd" | grep -nE "@import|url\([[:space:]]*['\"]?https?:")
+if [ -n "$cssdep" ]; then
+  emit "BLOCK (auto-guard): new external resource in added CSS (@import / external url(http…)) outside the byte-locked foundations sheet — inline it or load a local asset."
+  printf '%s\n' "$cssdep" | sed 's/^/  css: /' >&2; fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   emit ""
   emit "Commit blocked by the Praxis gate. Fix the above, or 'git commit --no-verify' to bypass in an emergency."
