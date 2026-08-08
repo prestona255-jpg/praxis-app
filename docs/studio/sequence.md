@@ -31,6 +31,17 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-08 (RE-PLAN RULED — S-B SWEEP promoted to the lead)** — Preston ruled the next-lead fork left
+  open at the SCAN close (entry below). **Ruling, verbatim in substance:** **S-B — the sweep + dead-code
+  deletion — is the next lead** (promoted `## Next` → `## Now`, in progress this session); **R10 —
+  Connections follows** on the swept/clean floor; **FINISH-CHOREO S3 stays rides-where-cheapest** (a motion
+  slice, not re-sequenced ahead of S-B); the **Yumi round stays parked, unscoped** (deferred to the
+  owns-the-arc-context-gap Yumi round). This resolves the `PROPOSED:`-class fork the SCAN close surfaced —
+  a Preston-directed spine lead-set; nothing retired, no prior decision contradicted. The S-B session then
+  surfaced at its Stage 0 that the auto-guard commissioned for it was **already landed + pushed** (`ce277e7`,
+  in the SCAN range), so S-B's guard stage became verify-the-existing-rails + add the one absent check
+  (new-external-deps), not a green-field build (Preston's fork ruling **B**, 2026-08-08). Record:
+  `docs/checkpoints/sb-sweep-session.md`.
 - **2026-08-08 (SCAN — ROUND CLOSED; next lead = RE-PLAN PENDING, Preston's ruling)** — Preston's device
   felt round 4 (installed PWA + Safari, live v3.269) was a **FULL PASS**: F9 frame-crop confirmed (a framed
   row of 13 → exactly 13 returned, out-of-bracket books absent), 11/11 confident correct, 2 need-a-look
@@ -870,19 +881,23 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**RE-PLAN PENDING — Preston's ruling.** The SCAN deep round (the lead) CLOSED 2026-08-08 on a full felt
-PASS (v3.269). With the lead closed, the next lead deep round is Preston's re-plan call — it is NOT
-mechanically determinable from this file's written order: the two remaining `## Now` items below are a
-rides-where-cheapest motion slice (FINISH-CHOREO S3) and an unscoped/deferred Yumi round, while the
-substantive next rounds — S-B · R10 · ONBOARDING — sit in `## Next`. Deep-round closes have always been
-Preston-directed spine re-sets, so the new lead is his call, surfaced as the flagged fork in the Re-plan
-log (2026-08-08); no order is invented here. The runway view of the whole spine → beta gate is
+**RE-PLAN RULED — S-B SWEEP is the lead (Preston, 2026-08-08).** With SCAN closed (v3.269, full felt
+PASS), Preston ruled the next-lead fork: **S-B — the sweep + dead-code deletion — is promoted to the lead
+`## Now` item** (in progress this session); **R10 — Connections follows** on the swept/clean floor;
+**FINISH-CHOREO S3 stays a rides-where-cheapest motion slice** (NOT re-sequenced ahead of S-B); the **Yumi
+round stays parked, unscoped** (deferred to the owns-the-arc-context-gap Yumi round). The ruling is recorded
+in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spine → beta gate is
 `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [~] **RE-PLAN PENDING — Preston's ruling: the next lead deep round** — SCAN (the prior lead) closed
-  2026-08-08 (v3.269, full felt PASS). The new lead is Preston's re-plan call; candidates are the flagged
-  fork in the Re-plan log (2026-08-08): the `## Now` remainder (FINISH-CHOREO S3 · a Yumi round) vs. the
-  `## Next` rounds (S-B · R10 · ONBOARDING). Not decided here — no order invented. `[various]`
+- [~] **S-B — Sweep + dead-code deletion (LEAD, in progress 2026-08-08)** — promoted from `## Next` on
+  Preston's re-plan ruling (Re-plan log, 2026-08-08). This session's portion: assemble ONE reconciled debt
+  table from the scattered ledgers (`docs/checkpoints/sb-sweep-debt-table.md`), verify+extend the already-
+  landed auto-guard (add the new-external-deps rail atop the shipped §5 5a/5b), then delete provably-
+  unreachable code top-down — the marquee being the R9a ~2,060-L defined-but-unrouted profile/account
+  renderers (`renderAccountPage` + `renderOwnProfile` + `_opPublishControl` + the `_account*` helpers),
+  each region its own census + commit under THE DELETION RULE. Zero runtime behavior / zero rendered pixels.
+  Remaining S-B round scope beyond this session (tokenize shared light-skin literals) stays in the round.
+  Record: `docs/checkpoints/sb-sweep-session.md`. `[import-capture, yumi-panel, account, profile]`
 - [x] **SCAN — the de-risk scan surface (round) — CLOSED 2026-08-08** (full felt PASS on Preston's device
   round 4, installed PWA + Safari; closing version **v3.269**). Shipped v3.259→v3.269: the 6 build commits
   `63267ff..a9e0c2b` (v3.260→v3.264/265) + 4 fix loops through `6c021af` (F9 frame-crop last). A full-bleed
@@ -961,9 +976,10 @@ log (2026-08-08); no order is invented here. The runway view of the whole spine 
 *(FINISH-CHOREO · R-SHELF · R-CAPTURE promoted to ## Now at the R-POLISH close, 2026-07-20 — see above.)*
 - [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
   R-CAPTURE's door**. touches: [books]
-- [ ] **S-B — Sweep + dead-code deletion** — Import-Capture overlay · Yumi/lens panel · Account residuals +
-  delete the ~2060-L defined-but-unrouted old profile renderers (R9a debt) + tokenize shared light-skin
-  literals app-wide. touches: [import-capture, yumi-panel, account, profile]
+- [~] **S-B — Sweep + dead-code deletion — PROMOTED to `## Now` (lead, 2026-08-08)** — see the `## Now`
+  lead item above. Import-Capture overlay · Yumi/lens panel · Account residuals + delete the ~2060-L
+  defined-but-unrouted old profile renderers (R9a debt) + tokenize shared light-skin literals app-wide.
+  touches: [import-capture, yumi-panel, account, profile]
 - [ ] **R10 — Connections** — the cross-arc/graph round (the R-ARC-named dependency).
 - [ ] **ONBOARDING round** — inherits the Bloom teaching beat (RD-6's retired hint text, handed off from
   R-POLISH L5).
