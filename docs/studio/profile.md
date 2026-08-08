@@ -14,7 +14,7 @@ desktop: native
 `#profile` → `renderProfilePage`. The single merged Profile (R9a). `#account` → `location.replace('#profile')`
 (the R7 /marks precedent); the nav avatar points `#profile`. Owner-only surface with a within-page
 "preview as visitor"; the real visitor route stays `#reader/<uid>` → `renderOtherProfile` (unchanged).
-Old `renderOwnProfile` / `renderAccountPage` retired **defined-but-unrouted** (~2060 L — S-B deletion debt).
+Old `renderOwnProfile` / `renderAccountPage` were **DELETED by the S-B sweep** (2026-08-08, v3.270–272, ~2,133 L). Their orphaned `.account-*` / `.op-root` CSS is ledgered for a dedicated CSS-dead-sweep (`sb-sweep-debt-table.md`).
 
 Anatomy: a galaxy hero (bright stars = sub-theories · soft planets = categories sized by books · faint field
 = books read · tappable values strip · clickable counts · uncarded thesis), then a containment-card system —
@@ -90,6 +90,7 @@ project's FIRST desktop composition tier. Owner-vs-visitor is a CONTENT fence (`
 
 ## Next
 
-- **DW-1..3 (Desktop Wave)** touches profile at ≥1200; **S-B** deletes the ~2060-L old profile renderers
-  (defined-but-unrouted) + tokenizes the shared light-skin literals. No dedicated profile round is on-deck —
-  the surface is shipped; DW + S-B are its next touches. (See `sequence.md`.)
+- **DW-1..3 (Desktop Wave)** touches profile at ≥1200; **S-B ✓ DELETED the ~2,133-L old profile renderers**
+  (2026-08-08, v3.270–272). Still open: the orphaned `.account-*`/`.op-root` CSS (a dedicated CSS-dead-sweep)
+  + tokenizing the shared light-skin literals. No dedicated profile round is on-deck — the surface is
+  shipped; those two + DW are its next touches. (See `sequence.md`.)

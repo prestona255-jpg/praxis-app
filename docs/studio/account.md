@@ -13,7 +13,7 @@ rounds: 0 (merged, not rounded on its own)
 **MERGED into the single Profile at `#profile` (R9a, v3.198 `e25ac6f`).** `#account` →
 `location.replace('#profile')` (the R7 /marks precedent — refresh-stable, no history push); old links +
 bookmarks land on the merged Profile. The nav avatar was repointed `#account`→`#profile`. `renderAccountPage`
-(and `renderOwnProfile`) are **retired defined-but-unrouted** (~2060 L combined — S-B deletion debt). All the
+(and `renderOwnProfile`) were **DELETED by the S-B sweep** (2026-08-08, v3.270–272, ~2,133 L incl. `_opPublishControl` + 14 `_account*` helpers; both Sonnet gates clear). Their orphaned `.account-*` CSS (~92 selectors) is ledgered for a dedicated CSS-dead-sweep (`sb-sweep-debt-table.md`). All the
 account DNA carried into `renderProfilePage`: settings + identity + sign-out + "Your data" covenant, the Yumi
 value-offer retrofit (AM19 dock), and the reader-model consent + threads/journey/returns (owner-only, via the
 parameterized `buildReaderModelSection`). Arc publish was NOT lost — it lives on the arc-detail page. See

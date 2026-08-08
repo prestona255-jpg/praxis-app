@@ -94,8 +94,34 @@ v3.239); DW-RING-RADIUS (CLOSED DW-4); ON-2 (absorbed by MW-1); ON-8 (absorbed i
 
 ---
 
-## Sweep summary (updated at close — Stage N+2)
+## Sweep summary (Stage N+2 close, 2026-08-08)
 
-- Deletion-class rows resolved: _TBD (Stage 4)_
-- Deletion-class rows skipped (census-ambiguous): _TBD (Stage 4)_
-- Deletion-class rows remaining: _TBD (Stage 4)_
+**Deletion-class RESOLVED (5 source commits, sw.js v3.269→v3.275, net −99,120 app-bytes LF):**
+1a `renderAccountPage` (`e5671d1`) · 1b/1c `renderOwnProfile` + `_opPublishControl` (`ca36c8c`) ·
+1d 14 `_account*` helpers (`e290187`) · 2 `.st-gutter` (`f4ddc2c`) · 3 `.yumi-panel-header` +
+`.yumi-panel-sight-link` (`700898f`). Item **4 Import-Capture overlay: ZERO** (already retired at CD-6).
+Reviewer-HOLD comment fix (`e6e93dc`) is the final app commit (v3.275).
+
+**SKIPPED — census-ambiguous OR scope/intent (NOT deleted; ledgered):**
+- **item 5 — orphaned `.account-*` CSS** (~92 dead selectors in components.css): the marquee JS
+  deletions (1a/1d) orphaned the entire account-surface stylesheet — **NEW S-B-created debt, surfaced by
+  the red-team gate.** SKIPPED because the census is **AMBIGUOUS**: the live `.account-readermodel .rm-*`
+  reader-model skin (dozens of rules), the shared live `.account-card` frame (reused by the reader-model,
+  comma-grouped with dead `.account-stat` at 14255), and the live `.account-confirm-panel` (the skipped
+  delete-confirm) are all interleaved with the dead selectors. Needs a **dedicated CSS-dead-sweep** with
+  per-rule census + comma-group splitting. The 3 dead section-header comments were retired inline (`e6e93dc`).
+- **openAccountDeleteConfirm** (views.js): orphaned; its deadness = a live-`#profile` **delete-account
+  PRODUCT GAP** (the merged profile offers no delete-account). Delete vs. re-wire = intent decision.
+- **renderShelfBookRow** (views.js): cascade-orphaned (sole caller was `_accountBuildCategoryPanel`);
+  **R-SHELF F7 deliberately kept it** for a future list view. Scope-addition.
+- **`.st-main` + `.subtheory-rail-toggle/close/backdrop`** (components.css): 0-emit siblings of `.st-gutter`;
+  the `.st-page` mock block may be substantially dead — rides the same dedicated CSS-dead-sweep.
+
+**REMAINING S-B round work (beyond this dead-code session):** the dedicated CSS-dead-sweep (item-5
+orphaned `.account-*` + the `.st-page` mock block) · tokenize shared light-skin literals app-wide ·
+Preston's rulings — openAccountDeleteConfirm (delete vs. restore delete-account) + renderShelfBookRow
+(delete vs. keep).
+
+**Gates (Sonnet):** reviewer — **code CLEAR** (reachability census, byte-exactness, parse, brace balance,
+EOL, staging, foundation locks, preserved-live-fn set all verified); HOLD only on docs (3 stale comments →
+fixed `e6e93dc`; ledger currency → this close). red-team — **no block, no revert**; surfaced item 5 above.

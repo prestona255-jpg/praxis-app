@@ -31,6 +31,19 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-08 (S-B SWEEP — dead-code portion SHIPPED local, awaiting push + felt/live check)** — the S-B
+  lead's dead-code + auto-guard + debt-table portion built across 8 local commits (`f4e7ef9` re-plan stamp ·
+  `10b297e` auto-guard 5c + L3 matrix 10/10 · `9041951` debt table · `e5671d1`/`ca36c8c`/`e290187` the R9a
+  marquee · `f4ddc2c` `.st-gutter` · `700898f` yumi-panel · `e6e93dc` reviewer-HOLD comment fix), sw.js
+  v3.269→**v3.275**, **net −99,120 app-bytes, ZERO runtime behavior / ZERO rendered pixels** (deletion of
+  provably-unreachable code only). Both Sonnet gates ran: reviewer **code-CLEAR** (HOLD only on docs,
+  resolved in this close), red-team **no-block/no-revert** (surfaced the orphaned-`.account-*` CSS residual).
+  **3 items SKIPPED + ledgered** per THE DELETION RULE: item-5 orphaned `.account-*` CSS (~92 selectors,
+  census-ambiguous → a dedicated CSS-dead-sweep) · `openAccountDeleteConfirm` (delete-account PRODUCT GAP) ·
+  `renderShelfBookRow` (R-SHELF F7 deliberate keep). SCAN's `## Now` remainder + `## Next` order unchanged;
+  S-B stays `[~]` (round not fully closed — the CSS-dead-sweep + tokenize-literals + 2 rulings remain).
+  Autonomous build-complete on a Now lead item — nothing retired, no decision contradicted — no `PROPOSED:`
+  flag. Records: `docs/checkpoints/sb-sweep-session.md` + `sb-sweep-debt-table.md`.
 - **2026-08-08 (RE-PLAN RULED — S-B SWEEP promoted to the lead)** — Preston ruled the next-lead fork left
   open at the SCAN close (entry below). **Ruling, verbatim in substance:** **S-B — the sweep + dead-code
   deletion — is the next lead** (promoted `## Next` → `## Now`, in progress this session); **R10 —
@@ -882,22 +895,25 @@ flagged at the top of the Builder's sequence page for his call — never applied
 ## Now
 
 **RE-PLAN RULED — S-B SWEEP is the lead (Preston, 2026-08-08).** With SCAN closed (v3.269, full felt
-PASS), Preston ruled the next-lead fork: **S-B — the sweep + dead-code deletion — is promoted to the lead
-`## Now` item** (in progress this session); **R10 — Connections follows** on the swept/clean floor;
+PASS), Preston ruled the next-lead fork: **S-B — the sweep + dead-code deletion — is the lead
+`## Now` item** (dead-code + auto-guard + debt-table portion SHIPPED local 2026-08-08, v3.270–275; the
+CSS-dead-sweep + tokenize-literals + 2 skipped-item rulings remain); **R10 — Connections follows** on the swept/clean floor;
 **FINISH-CHOREO S3 stays a rides-where-cheapest motion slice** (NOT re-sequenced ahead of S-B); the **Yumi
 round stays parked, unscoped** (deferred to the owns-the-arc-context-gap Yumi round). The ruling is recorded
 in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spine → beta gate is
 `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
-- [~] **S-B — Sweep + dead-code deletion (LEAD, in progress 2026-08-08)** — promoted from `## Next` on
-  Preston's re-plan ruling (Re-plan log, 2026-08-08). This session's portion: assemble ONE reconciled debt
-  table from the scattered ledgers (`docs/checkpoints/sb-sweep-debt-table.md`), verify+extend the already-
-  landed auto-guard (add the new-external-deps rail atop the shipped §5 5a/5b), then delete provably-
-  unreachable code top-down — the marquee being the R9a ~2,060-L defined-but-unrouted profile/account
-  renderers (`renderAccountPage` + `renderOwnProfile` + `_opPublishControl` + the `_account*` helpers),
-  each region its own census + commit under THE DELETION RULE. Zero runtime behavior / zero rendered pixels.
-  Remaining S-B round scope beyond this session (tokenize shared light-skin literals) stays in the round.
-  Record: `docs/checkpoints/sb-sweep-session.md`. `[import-capture, yumi-panel, account, profile]`
+- [~] **S-B — Sweep + dead-code deletion (LEAD — dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
+  promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
+  −99,120 app-bytes, ZERO behavior / ZERO pixels): the re-plan stamp; the auto-guard verify+extend
+  (new-external-deps rail 5c atop §5, L3 matrix 10/10); the reconciled debt table; and the R9a dead-code
+  marquee — `renderAccountPage` + `renderOwnProfile` + `_opPublishControl` + 14 `_account*` helpers
+  (~2,133 L) + `.st-gutter` mock CSS + dead yumi-panel rules. Both Sonnet gates: reviewer code-CLEAR,
+  red-team no-block. **Remaining S-B round work:** a dedicated CSS-dead-sweep (the ~92 orphaned `.account-*`
+  selectors + the `.st-page` mock block — census-ambiguous, ledgered) · tokenize shared light-skin literals ·
+  Preston's rulings — `openAccountDeleteConfirm` (delete vs. restore the delete-account gap) +
+  `renderShelfBookRow` (delete vs. keep). Record: `docs/checkpoints/sb-sweep-session.md` +
+  `sb-sweep-debt-table.md`. `[account, profile, yumi-panel, import-capture]`
 - [x] **SCAN — the de-risk scan surface (round) — CLOSED 2026-08-08** (full felt PASS on Preston's device
   round 4, installed PWA + Safari; closing version **v3.269**). Shipped v3.259→v3.269: the 6 build commits
   `63267ff..a9e0c2b` (v3.260→v3.264/265) + 4 fix loops through `6c021af` (F9 frame-crop last). A full-bleed
