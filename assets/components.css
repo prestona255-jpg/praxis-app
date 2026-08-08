@@ -10280,7 +10280,6 @@ html { overscroll-behavior-y: contain; }
    ============================================================================ */
 .st-page { max-width:1100px; margin:0 auto; padding:0 var(--sp-5); display:grid; grid-template-columns:1fr 300px; gap:var(--sp-6); align-items:start; }
 .st-page .st-main { min-width:0; }
-.st-page .st-gutter { align-self:start; }
 
 /* head: mark chip + title + delete */
 .st-page .st-head { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
@@ -10317,12 +10316,9 @@ html { overscroll-behavior-y: contain; }
 .st-page .manuscript .subtheory-cite-preview em { font-style:italic; }
 .st-page .manuscript .subtheory-cite-coach { font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--meta); margin-top:14px; }
 
-/* gutter (the evidence/source rail): mock .st-gutter */
-.st-page .st-gutter h3 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-ink); margin:0 0 12px; }
-.st-page .st-gutter .subtheory-rail-title { font-family:var(--font-serif); font-size:20px; color:var(--ink); margin:0 0 14px; }
 
 /* mobile (≤759): single column; the rail becomes a bottom sheet (live JS toggles
-   .subtheory-rail-mobile-open / .subtheory-rail-backdrop-open on .st-gutter) */
+   .subtheory-rail-mobile-open / .subtheory-rail-backdrop-open on the rail) */
 .st-page .subtheory-rail-toggle,
 .st-page .subtheory-rail-close,
 .st-page .subtheory-rail-backdrop { display:none; }
@@ -10330,13 +10326,6 @@ html { overscroll-behavior-y: contain; }
   .st-page { grid-template-columns:1fr; }
   .st-page .st-maturity { margin-left:0; }
   .st-page .subtheory-rail-toggle { display:inline-block; margin-bottom:20px; }
-  .st-page .st-gutter { display:none; }
-  .st-page .st-gutter.subtheory-rail-mobile-open {
-    display:block; position:fixed; left:0; right:0; bottom:0; max-height:70vh;
-    margin:0; padding:24px 16px; overflow-y:auto; background:var(--page-2);
-    border-top:1px solid var(--line-page); border-top-left-radius:var(--radius-md);
-    border-top-right-radius:var(--radius-md); z-index:100;
-  }
   .st-page .subtheory-rail-backdrop.subtheory-rail-backdrop-open {
     display:block; position:fixed; inset:0; background:rgba(15,9,4,.5); z-index:99;
   }
