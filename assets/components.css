@@ -6992,7 +6992,9 @@ html { overscroll-behavior-y: contain; }
 
 
 /* ===== ACCOUNT PAGE -- Stage 14.3.4.1 =====
-   Styling pass for the #account surface (renderAccountPage). Inputs
+   Styling pass for the #account surface (account renderer DELETED in the S-B
+   sweep 2026-08-08 — these .account-* rules are now ORPHANED dead CSS, ledgered
+   for a dedicated CSS-dead-sweep; see docs/checkpoints/sb-sweep-debt-table.md). Inputs
    mirror the .shelf-editor-*-input field pattern; the delete affordance
    reuses the --br-deep danger fill of .arc-confirm-confirm. CSS variables
    only for color; layout dims in px/rem. The h1 stays Cormorant
@@ -14218,7 +14220,8 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 
 /* =============================================================================
-   WAVE 5 · IDENTITY  (renderAccountPage on .account.lum-amber-ember). Additive +
+   WAVE 5 · IDENTITY  (account renderer DELETED, S-B sweep — .account.lum-amber-ember
+   rules now ORPHANED dead CSS, ledgered for a dedicated CSS-dead-sweep). Additive +
    scoped: the ~311 account/portrait rules are 100% token-based, so remapping the
    base tokens to --lum-* here reskins every section (no load-bearing rule rewritten)
    + glass cards + full-bleed centered-1080 (gutter on the ROOT, column on `> *` with
@@ -14317,7 +14320,8 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* =============================================================================
    WAVE 6 (re-scoped) · OWN PROFILE  (social surface, real backing only)
-   renderOwnProfile() -- the reader's own profile (#profile). Reached from the
+   The own-profile renderer (DELETED, S-B sweep — .op-root rules now ORPHANED dead
+   CSS, ledgered for a dedicated CSS-dead-sweep) was the reader's own profile (#profile). Reached from the
    Account page this wave (index.html nav left untouched per build ruling).
    Everything is scoped under .op-root so no selector bleeds to another surface;
    idea-marks render via bookSubMarkHTML -> PraxisMarks (global .lum-mark). The
