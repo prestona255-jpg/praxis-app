@@ -933,7 +933,7 @@ function gatherLensLibraryMetadata() {
   var valueNames = [];
   if (u && u.uid && typeof getProfile === 'function') {
     var vp = getProfile(u.uid);
-    if (vp && vp.values instanceof Array) { valueNames = vp.values; }
+    if (vp && vp.values instanceof Array) { valueNames = valueNamesFromArr(vp.values); }  // R10 S1: objects -> names
   }
   // LENS-1: defensive annotated-first cap, mirroring the value retrofit. Index-
   // grounding keeps output tiny so this never binds at typical sizes; when it
@@ -1068,7 +1068,7 @@ function readActiveValueNames() {
   var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   if (u && u.uid && typeof getProfile === 'function') {
     var p = getProfile(u.uid);
-    if (p && p.values instanceof Array) { return p.values; }
+    if (p && p.values instanceof Array) { return valueNamesFromArr(p.values); }  // R10 S1: objects -> names
   }
   return [];
 }
@@ -1212,7 +1212,7 @@ function gatherValueMetadata() {
   var existingValues = [];
   if (u && u.uid && typeof getProfile === 'function') {
     var p = getProfile(u.uid);
-    if (p && p.values instanceof Array) { existingValues = p.values; }
+    if (p && p.values instanceof Array) { existingValues = valueNamesFromArr(p.values); }  // R10 S1: objects -> names
   }
   var books = prioritizeValueBooks(meta.books, meta.titleToId, VALUE_RETROFIT_MAX);
   // VL-1: carry the reader's existing LENS names (the sibling generator) so the

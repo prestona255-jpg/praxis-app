@@ -109,7 +109,11 @@ var Intros = (function () {
       var _rpP = getProfile(_rpUid);
       if (_rpP && _rpP.values instanceof Array) {
         var _rpi;
-        for (_rpi = 0; _rpi < _rpP.values.length; _rpi++) { picked.values.push('' + _rpP.values[_rpi]); }
+        // R10 S1: declared entries are value OBJECTS -- seed the picker with their
+        // NAMES. (Coercing the object gave "[object Object]"; combined with doValues'
+        // wholesale replace, a retake would have overwritten every prior value with
+        // that one string. Merge-by-name in setProfile now also protects statements.)
+        for (_rpi = 0; _rpi < _rpP.values.length; _rpi++) { picked.values.push('' + (_rpP.values[_rpi] && typeof _rpP.values[_rpi] === 'object' ? _rpP.values[_rpi].name : _rpP.values[_rpi])); }
       }
     }
   }

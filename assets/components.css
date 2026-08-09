@@ -11824,6 +11824,47 @@ body.wc-focus .app-nav { opacity:.26; }
   .note-surface .note-edit-btn, .note-surface .note-edit-done{ min-height:44px; }
   .note-surface .note-prov-row{ flex-wrap:wrap; gap:2px 12px; }
 }
+
+/* ===================================================================
+   R10 S1 (GROUNDS) -- the VALUE PAGE (#value/<id>). Daylight reflective
+   surface (data-ground="bright"); mirrors the .note-surface F2 idiom
+   (light --ink on --page, --gold-deep links). Header + living statement
+   only. Empty-honest: no gathering/veins/evidence-trail this stage.
+   =================================================================== */
+.value-page{ max-width:680px; margin:0 auto; padding:28px 20px 72px; }
+.value-back{ display:inline-block; margin-bottom:26px; font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--gold-deep); text-decoration:none; border-bottom:1px solid transparent; }
+.value-back:hover{ border-bottom-color:var(--gold-deep); }
+.value-not-found{ font-family:var(--font-serif); font-style:italic; color:var(--ink-2); }
+.value-head{ margin-bottom:36px; }
+.value-orb{ display:block; width:30px; height:30px; border-radius:50%; margin-bottom:16px; background:var(--grad); box-shadow:0 1px 6px rgba(0,0,0,.10); }
+.value-name{ font-family:var(--font-serif); font-size:38px; line-height:1.1; font-weight:500; color:var(--ink); margin:0 0 10px; }
+.value-prov{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin:0; }
+.value-invite{ font-family:var(--font-serif); font-size:20px; font-style:italic; line-height:1.5; color:var(--ink-2); margin:0 0 20px; }
+.value-write-btn{ display:inline-flex; align-items:center; min-height:44px; padding:10px 20px; font-family:var(--font-body); font-size:15px; border-radius:var(--radius-pill); border:0; background:var(--grad); color:var(--text-on-dark); cursor:pointer; }
+.value-statement{ font-family:var(--font-serif); font-size:23px; line-height:1.55; color:var(--ink); margin:0 0 16px; white-space:pre-wrap; }
+.value-statement-meta{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.value-revised{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-3); }
+.value-history-btn, .value-edit-btn{ font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--gold-deep); background:none; border:0; padding:6px 2px; cursor:pointer; border-bottom:1px solid transparent; }
+.value-history-btn:hover, .value-edit-btn:hover{ border-bottom-color:var(--gold-deep); }
+.value-history{ margin-top:20px; padding-top:16px; border-top:1px solid var(--line-page); }
+.value-history-row{ padding:10px 0; border-bottom:1px solid var(--line-page); }
+.value-history-row:last-child{ border-bottom:0; }
+.value-history-date{ display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--ink-3); margin-bottom:5px; }
+.value-history-text{ font-family:var(--font-serif); font-size:16px; line-height:1.5; color:var(--ink-2); margin:0; white-space:pre-wrap; }
+.value-composer-input{ width:100%; box-sizing:border-box; min-height:150px; padding:14px; font-family:var(--font-serif); font-size:17px; line-height:1.55; color:var(--ink); background:var(--page-2); border:1px solid var(--line-page); border-radius:var(--radius-md); resize:vertical; }
+.value-composer-input:focus{ outline:none; border-color:var(--gold-deep); }
+.value-composer-row{ display:flex; gap:12px; margin-top:14px; }
+.value-composer-save{ min-height:44px; padding:10px 22px; font-family:var(--font-body); font-size:15px; border-radius:var(--radius-pill); border:0; background:var(--grad); color:var(--text-on-dark); cursor:pointer; }
+.value-composer-cancel{ min-height:44px; padding:10px 20px; font-family:var(--font-body); font-size:14px; border-radius:var(--radius-pill); border:1px solid var(--line-page); background:var(--page-2); color:var(--ink-2); cursor:pointer; }
+@media (max-width:759px){
+  .value-page{ padding:22px 16px 64px; }
+  .value-name{ font-size:30px; }
+  .value-statement{ font-size:20px; }
+  .value-invite{ font-size:18px; }
+  /* P3: 44px tap targets for the quiet inline meta controls (mirrors .note-surface). */
+  .value-history-btn, .value-edit-btn{ min-height:44px; display:inline-flex; align-items:center; }
+  .value-statement-meta{ gap:8px 16px; }
+}
 /* R-ARC S7: recognition lighting in the LIVE canvas — quiet, non-interactive (DWF-1), no motion by design */
 .st-build.lum-amber-deep .wc-input .rec-lit { border-bottom:1px dotted var(--lum-gold-d); }
 
@@ -15289,6 +15330,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-chip.yes{ background:linear-gradient(135deg,var(--gold-hi),var(--gold)); color:#3a2408; border-color:transparent; font-weight:500; }
 .pf-vcard{ display:flex; gap:14px; padding:16px 0; border-top:1px solid var(--line); }
 .pf-vcard:first-of-type{ border-top:none; }
+/* R10 S1-3: the whole value card = the door to #value/<id> (content untouched). */
+.pf-vcard{ cursor:pointer; }
+.pf-vcard:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; border-radius:var(--radius-sm); }
 .pf-orb{ flex:none; margin-top:5px; }
 .pf-vmain{ min-width:0; }
 .pf-vname{ font-family:var(--font-serif); font-weight:600; line-height:1.05; }

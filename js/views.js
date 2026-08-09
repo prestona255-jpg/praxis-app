@@ -694,6 +694,17 @@ function renderRoute() {
     renderNoteSurface(parts[1]);
     return;
   }
+  if (parts[0] === 'value' && parts[1]) {
+    // R10 S1 (GROUNDS): the value page -- a DAYLIGHT reflective surface (F2
+    // note-detail pattern). 'value' is absent from umberGroundDark, so
+    // data-ground resolves "bright".
+    state.currentBookId = null;
+    state.currentArcId = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderValuePage(parts[1]);
+    return;
+  }
   if (parts[0] === 'arc' && parts[1]) {
     // 3.9: arc detail. Setting currentArcId keeps yumi-brain's
     // currentArc context lens accurate; clearing currentBookId is the
@@ -10228,7 +10239,10 @@ function buildValueMarkRegister(kind, objId) {
     if (!(rec.valueMarks instanceof Array)) { rec.valueMarks = []; }
     var marks = rec.valueMarks;
     var profile = (typeof getProfile === 'function') ? (getProfile(user.uid) || {}) : {};
-    var vocab = (profile.values instanceof Array) ? profile.values : [];
+    // R10 S1: the picker vocab = declared value NAMES (entries are objects now).
+    // Marks store `value` as a name string and are NOT re-keyed this stage.
+    var _vocabObjs = (profile.values instanceof Array) ? profile.values : [], vocab = [], _vk;
+    for (_vk = 0; _vk < _vocabObjs.length; _vk = _vk + 1) { if (_vocabObjs[_vk] && _vocabObjs[_vk].name) { vocab.push(_vocabObjs[_vk].name); } }
     var i;
 
     var head = document.createElement('div');
@@ -16309,12 +16323,200 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 // non-note route; otherwise fall back to the notebook. Generic '← Back' never mislabels.
 function noteBackAffordance() {
   var prev = _noteBackPrevHash || '';
-  var backOk = { notebook: 1, books: 1, search: 1, home: 1, arcs: 1, arc: 1, account: 1, profile: 1, commons: 1, about: 1, book: 1, subtheory: 1, reader: 1, walk: 1, artifact: 1, 'yumi-sees': 1 }; // mirrors umberGroundDark (views.js:480), minus 'note' (guarded above)
+  var backOk = { notebook: 1, books: 1, search: 1, home: 1, arcs: 1, arc: 1, account: 1, profile: 1, commons: 1, about: 1, book: 1, subtheory: 1, reader: 1, walk: 1, artifact: 1, 'yumi-sees': 1, value: 1 }; // mirrors umberGroundDark (views.js:480), minus 'note' (guarded above); R10 S1: + 'value' (a bright reflective page a note can return to)
   var seg = prev.replace(/^#/, '').split('/')[0];
   if (prev && prev.indexOf('#note/') !== 0 && backOk[seg] && seg !== 'notebook') {
     return { href: prev, label: '← Back' };
   }
   return { href: '#notebook', label: '← Back to the notebook' };
+}
+
+// =====================================================================
+// R10 S1 (GROUNDS) -- the VALUE PAGE (#value/<id>). A DAYLIGHT reflective
+// surface: header (orb + name + provenance) + THE LIVING STATEMENT, nothing
+// else (empty-honest -- gathering/veins/evidence-trail are S2/S3). All static
+// copy is declarative; questions are Yumi's register and she is dark this round.
+// =====================================================================
+function _valueResolve(uid, valueId) {
+  var prof = getProfile(uid);
+  var vals = (prof.values instanceof Array) ? prof.values : [];
+  var i;
+  for (i = 0; i < vals.length; i = i + 1) {
+    if (vals[i] && (vals[i].id === valueId || vals[i].name === valueId)) { return vals[i]; }
+  }
+  return null;
+}
+function renderValuePage(valueId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var user = getCurrentUser();
+  if (!user || !user.uid) {
+    host.appendChild(buildSignedOutPrompt('This ground is private', 'Sign in to see the values your reading stands on.'));
+    return;
+  }
+  var wrap = document.createElement('section');
+  wrap.className = 'value-page';   // daylight working page (data-ground="bright")
+
+  var back = document.createElement('a');
+  back.className = 'value-back';
+  back.href = '#profile';
+  back.textContent = '← Back to your profile';
+  wrap.appendChild(back);
+
+  var v = _valueResolve(user.uid, valueId);
+  if (!v) {
+    var nf = document.createElement('p');
+    nf.className = 'value-not-found';
+    nf.textContent = 'This ground isn’t among your declared values.';
+    wrap.appendChild(nf);
+    host.appendChild(wrap);
+    return;
+  }
+
+  // ---- HEADER: orb + name + provenance -----------------------------------
+  var head = document.createElement('div');
+  head.className = 'value-head';
+  var orb = document.createElement('span');
+  orb.className = 'value-orb';
+  orb.setAttribute('aria-hidden', 'true');
+  head.appendChild(orb);
+  var nameEl = document.createElement('h1');
+  nameEl.className = 'value-name';
+  nameEl.textContent = v.name;
+  head.appendChild(nameEl);
+  var prov = document.createElement('p');
+  prov.className = 'value-prov';
+  var provText = 'A ground in your library';
+  if (v.declaredAt) { provText += ' · declared ' + new Date(v.declaredAt).toLocaleDateString(); }
+  prov.textContent = provText;
+  head.appendChild(prov);
+  wrap.appendChild(head);
+
+  // ---- THE LIVING STATEMENT ----------------------------------------------
+  var stmtHost = document.createElement('div');
+  stmtHost.className = 'value-statement-host';
+  wrap.appendChild(stmtHost);
+
+  function openComposer(initial) {
+    stmtHost.innerHTML = '';
+    var comp = document.createElement('div');
+    comp.className = 'value-composer';
+    var ta = document.createElement('textarea');
+    ta.className = 'value-composer-input';
+    ta.value = initial || '';
+    ta.setAttribute('rows', '5');
+    ta.setAttribute('maxlength', '2000');   // R10 S1: match setValueStatement's cap so the field can't accept text that would be silently truncated on save
+    ta.setAttribute('placeholder', 'Say what this word means in your reading. Revise it as your reading deepens.');
+    comp.appendChild(ta);
+    var row = document.createElement('div');
+    row.className = 'value-composer-row';
+    var save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'value-composer-save';
+    save.textContent = 'Save';
+    save.addEventListener('click', function () {
+      // R10 S1: an empty save is a no-op (never blank a written statement -- which
+      // would orphan its archived history behind the unwritten-state UI).
+      var _txt = ('' + ta.value).replace(/^\s+|\s+$/g, '');
+      if (!_txt) { renderStatement(); return; }
+      setValueStatement(user.uid, v.id, ta.value);
+      if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(user.uid, getProfile(user.uid), function () {}); }
+      renderStatement();
+    });
+    var cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'value-composer-cancel';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', function () { renderStatement(); });
+    row.appendChild(save);
+    row.appendChild(cancel);
+    comp.appendChild(row);
+    stmtHost.appendChild(comp);
+    if (ta.focus) { ta.focus(); }
+  }
+
+  function toggleHistory(btn) {
+    var panel = stmtHost.querySelector('.value-history');
+    if (!panel) { return; }
+    if (panel.style.display === 'none') {
+      panel.innerHTML = '';
+      var hist = (v.statementHistory instanceof Array) ? v.statementHistory : [];
+      var k;
+      for (k = hist.length - 1; k >= 0; k = k - 1) {
+        var hrow = document.createElement('div');
+        hrow.className = 'value-history-row';
+        var hd = document.createElement('span');
+        hd.className = 'value-history-date';
+        hd.textContent = new Date(hist[k].date || 0).toLocaleDateString();
+        hrow.appendChild(hd);
+        var htx = document.createElement('p');
+        htx.className = 'value-history-text';
+        htx.textContent = hist[k].text || '';
+        hrow.appendChild(htx);
+        panel.appendChild(hrow);
+      }
+      panel.style.display = '';
+      btn.textContent = 'hide history';
+    } else {
+      panel.style.display = 'none';
+      btn.textContent = 'history';
+    }
+  }
+
+  function renderStatement() {
+    stmtHost.innerHTML = '';
+    v = _valueResolve(user.uid, valueId) || v;   // re-read after a write
+    if (!v.statement) {
+      // UNWRITTEN -> the invitation
+      var inv = document.createElement('p');
+      inv.className = 'value-invite';
+      inv.textContent = 'This word is an invitation. Make it yours.';
+      stmtHost.appendChild(inv);
+      var writeBtn = document.createElement('button');
+      writeBtn.type = 'button';
+      writeBtn.className = 'value-write-btn';
+      writeBtn.textContent = 'Write your statement';
+      writeBtn.addEventListener('click', function () { openComposer(''); });
+      stmtHost.appendChild(writeBtn);
+      return;
+    }
+    // WRITTEN -> the statement (larger serif) + meta
+    var st = document.createElement('p');
+    st.className = 'value-statement';
+    st.textContent = v.statement;
+    stmtHost.appendChild(st);
+    var meta = document.createElement('div');
+    meta.className = 'value-statement-meta';
+    var hist = (v.statementHistory instanceof Array) ? v.statementHistory : [];
+    if (hist.length > 0) {
+      // shown only after a real revision (first-ever write archives nothing)
+      var rev = document.createElement('span');
+      rev.className = 'value-revised';
+      rev.textContent = 'revised ' + new Date(v.statementRevisedAt || 0).toLocaleDateString();
+      meta.appendChild(rev);
+      var histBtn = document.createElement('button');
+      histBtn.type = 'button';
+      histBtn.className = 'value-history-btn';
+      histBtn.textContent = 'history';
+      histBtn.addEventListener('click', function () { toggleHistory(histBtn); });
+      meta.appendChild(histBtn);
+    }
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'value-edit-btn';
+    editBtn.textContent = 'edit';
+    editBtn.addEventListener('click', function () { openComposer(v.statement); });
+    meta.appendChild(editBtn);
+    stmtHost.appendChild(meta);
+    var histPanel = document.createElement('div');
+    histPanel.className = 'value-history';
+    histPanel.style.display = 'none';
+    stmtHost.appendChild(histPanel);
+  }
+
+  renderStatement();
+  host.appendChild(wrap);
 }
 function renderNoteSurface(entryId) {
   var host = document.getElementById(APP_EL_ID);
@@ -19160,7 +19362,11 @@ function _profileValueLoad(uid) {
   var profile = getProfile(uid);
   var declared = (profile.values instanceof Array) ? profile.values : [];
   var declaredSet = {}, i;
-  for (i = 0; i < declared.length; i = i + 1) { declaredSet[declared[i]] = 1; }
+  // R10 S1: `declared` entries are value OBJECTS -- key the set BY NAME (marks
+  // store `valueMarks[].value` as a name string). Keying by the object itself
+  // silently coerced every entry to "[object Object]" (collapsed set / spurious
+  // orphans).
+  for (i = 0; i < declared.length; i = i + 1) { declaredSet[declared[i].name] = 1; }
   var whys = {}, orphans = {};
   function collectMarks(marks) {
     if (!(marks instanceof Array)) { return; }
@@ -19200,12 +19406,14 @@ function _profileValueLoad(uid) {
   }
   var out = [], vWhys, vSubs, score, w;
   for (i = 0; i < declared.length; i = i + 1) {
-    vWhys = whys[declared[i]] || []; vSubs = drawing[declared[i]] || [];
+    vWhys = whys[declared[i].name] || []; vSubs = drawing[declared[i].name] || [];
     // evidence-weighted: why-lines + drawing sub-theories (subs weigh a touch
     // more). Bucketed into 4 tiers; degrades gracefully for a sparse library.
     score = vWhys.length + vSubs.length * 1.5;
     w = (score >= 4) ? 1 : ((score >= 2) ? 2 : ((score >= 1) ? 3 : 4));
-    out.push({ name: declared[i], w: w, whys: vWhys, subs: vSubs });
+    // R10 S1: carry the stable `id` through so the .pf-vcard door can route to
+    // #value/<id> (S1-3) without re-deriving it.
+    out.push({ id: declared[i].id, name: declared[i].name, w: w, whys: vWhys, subs: vSubs });
   }
   var orphList = [], ok;
   for (ok in orphans) { if (orphans.hasOwnProperty(ok)) { orphList.push({ value: ok, count: orphans[ok] }); } }
@@ -19716,7 +19924,10 @@ function _pfValueCard(v, vis) {
   if (vis) { for (i = 0; i < v.subs.length; i = i + 1) { if (v.subs[i].pub) { subs.push(v.subs[i]); } } }
   else { subs = v.subs; }
   var drawn = subs.length;
-  var h = '<div class="pf-vcard w' + v.w + '">' + _pfOrbSvg(v.w) + '<div class="pf-vmain"><div class="pf-vname">' + _portraitEsc(v.name) + '</div>';
+  // R10 S1-3: the ONLY door wired this stage -- the whole card taps to #value/<id>
+  // (content UNTOUCHED; the inner .pf-sublink data-sub still routes to its sub,
+  // handled BEFORE the card in the delegated handler). data-value-id != data-value.
+  var h = '<div class="pf-vcard w' + v.w + '" data-value-id="' + _portraitEsc(v.id) + '" tabindex="0" role="link" aria-label="Open the ground: ' + _portraitEsc(v.name) + '">' + _pfOrbSvg(v.w) + '<div class="pf-vmain"><div class="pf-vname">' + _portraitEsc(v.name) + '</div>';
   for (i = 0; i < v.whys.length; i = i + 1) { h += '<div class="pf-why">' + _portraitEsc(v.whys[i]) + '</div>'; }
   if (subs.length) {
     h += '<div class="pf-drawn">Drawn on by ' + drawn + ' sub-theor' + (drawn === 1 ? 'y' : 'ies') + '</div><div class="pf-sublinks">';
@@ -20223,6 +20434,10 @@ function _pfWire(wrap, uid, vis) {
     if (chip) { var nm = chip.getAttribute('data-value'); if (chip.classList.contains('on')) { _pfClearValue(wrap); } else { _pfLightValue(wrap, nm); } return; }
     var sub = cl(t, '[data-sub]');
     if (sub) { var sid = sub.getAttribute('data-sub'); if (sid) { location.hash = '#subtheory/' + sid; } return; }
+    // R10 S1-3: the .pf-vcard door -- checked AFTER data-sub so an inner sublink
+    // wins; the rest of the card routes to its ground page.
+    var vcard = cl(t, '[data-value-id]');
+    if (vcard) { var vid = vcard.getAttribute('data-value-id'); if (vid) { location.hash = '#value/' + vid; } return; }
     var lens = cl(t, '[data-lens]');
     if (lens) {
       // R9b Lane G S7: Numbers lens card -> lens-scoped PANEL (was the v3.199 interim shelf link).
@@ -20248,7 +20463,7 @@ function _pfWire(wrap, uid, vis) {
   wrap.addEventListener('click', handle);
   wrap.addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest &&
-        e.target.closest('[data-star],[data-planet],[data-lens],[data-value],[data-act],[data-go],[data-axis],[data-sub],[data-arc-id],.pf-sg-core')) {
+        e.target.closest('[data-star],[data-planet],[data-lens],[data-value],[data-act],[data-go],[data-axis],[data-sub],[data-arc-id],[data-value-id],.pf-sg-core')) {
       e.preventDefault(); handle(e);
     }
   });
@@ -20288,7 +20503,9 @@ function _pfRenderOffers(uid, body, vals) {
     // the case-insensitive dedup and duplicate after setProfile trims on write).
     var nm = ('' + name).replace(/^\s+|\s+$/g, '');
     var p = getProfile(uid), cur = (p.values instanceof Array) ? p.values.slice(0) : [], i, ex = false;
-    for (i = 0; i < cur.length; i = i + 1) { if (('' + cur[i]).toLowerCase() === nm.toLowerCase()) { ex = true; } }
+    // R10 S1: cur entries are value objects -- dedup on `.name` (the string nm is
+    // pushed below and normalized by setProfile's merge-by-name write path).
+    for (i = 0; i < cur.length; i = i + 1) { if (('' + (cur[i] && cur[i].name)).toLowerCase() === nm.toLowerCase()) { ex = true; } }
     if (nm && !ex) {
       cur.push(nm);
       setProfile(uid, { values: cur });

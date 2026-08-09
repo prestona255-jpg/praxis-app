@@ -1475,9 +1475,66 @@ function ensureUser(uid) {
 // never-seeded uid by returning a fresh empty-fields object rather than
 // undefined, so callers can read .displayNameOverride / .penName
 // unconditionally.
+// =====================================================================
+// R10 S1 (GROUNDS) -- the value-object shim. profile.values entries are
+// OBJECTS { id, name, statement, statementRevisedAt, statementHistory[],
+// declaredAt }. Legacy string entries wrap to objects on READ (getProfile,
+// the single chokepoint) and are normalized on WRITE (setProfile, MERGE-BY-
+// NAME). NON-DESTRUCTIVE: stored strings upgrade lazily; no migrate/schema
+// change. `id` is a stable slug derived once from the name; marks are NOT
+// re-keyed (valueMarks[].value stays a name string -- see :421).
+// =====================================================================
+function valueSlug(name) {
+  var s = ('' + (name == null ? '' : name)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return s || 'value';
+}
+function valueIdFor(name) { return valueSlug(name); }
+function normalizeValue(entry) {
+  if (entry && typeof entry === 'object') {
+    var onm = ('' + (entry.name == null ? '' : entry.name)).replace(/^\s+|\s+$/g, '');
+    return {
+      id:                 (typeof entry.id === 'string' && entry.id) ? entry.id : valueSlug(onm),
+      name:               onm,
+      statement:          (typeof entry.statement === 'string') ? entry.statement : '',
+      statementRevisedAt: (typeof entry.statementRevisedAt === 'number') ? entry.statementRevisedAt : 0,
+      statementHistory:   (entry.statementHistory instanceof Array) ? entry.statementHistory : [],
+      declaredAt:         (typeof entry.declaredAt === 'number') ? entry.declaredAt : 0
+    };
+  }
+  var nm = ('' + (entry == null ? '' : entry)).replace(/^\s+|\s+$/g, '');
+  return { id: valueSlug(nm), name: nm, statement: '', statementRevisedAt: 0, statementHistory: [], declaredAt: 0 };
+}
+// Names-only projection (array of value objects OR legacy strings -> names).
+// The bare-string read sites (yumi-brain, mark-register vocab, onboarding chips)
+// route through this or read `.name` directly.
+function valueNamesFromArr(arr) {
+  var out = [], i;
+  if (!(arr instanceof Array)) { return out; }
+  for (i = 0; i < arr.length; i = i + 1) {
+    var e = arr[i];
+    out.push((e && typeof e === 'object') ? ('' + (e.name || '')) : ('' + (e == null ? '' : e)));
+  }
+  return out;
+}
+function valueNamesFor(uid) { return valueNamesFromArr(getProfile(uid).values); }
+
 function getProfile(uid) {
   if (uid && state.users[uid] && state.users[uid].profile) {
-    return state.users[uid].profile;
+    var pr = state.users[uid].profile;
+    // R10 S1 read-shim: lazily wrap legacy string entries into value objects,
+    // IN PLACE (idempotent; a well-formed object passes through untouched, so
+    // object identity + authored statements are preserved). Persists on the next
+    // saveState -- no destructive rewrite.
+    if (pr.values instanceof Array) {
+      var _vi;
+      for (_vi = 0; _vi < pr.values.length; _vi = _vi + 1) {
+        var _ve = pr.values[_vi];
+        if (!(_ve && typeof _ve === 'object' && typeof _ve.id === 'string')) {
+          pr.values[_vi] = normalizeValue(_ve);
+        }
+      }
+    }
+    return pr;
   }
   return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' };
 }
@@ -1536,10 +1593,40 @@ function setProfile(uid, fields) {
   // trimmed, non-empty strings; DECLARED by the reader, never inferred. Only an
   // explicit array writes (absent -> the default-on-read [] stands).
   if (fields && fields.values instanceof Array) {
-    var vv = [], vi;
+    // R10 S1 write-normalizer -- MERGE BY NAME. An incoming entry (bare string
+    // from the onboarding/editor declared-list, or an object from the Firestore
+    // sign-in merge, integrations.js:565) whose name matches an existing declared
+    // value resolves TO that existing object -- statement/statementHistory/
+    // declaredAt preserved, NEVER flattened. A genuinely new name mints a fresh
+    // object. This kills the old "('' + entry).trim()" flatten (which corrupted
+    // an object to "[object Object]" and, on the sign-in merge, wiped statements).
+    var _existing = {}, _ei;
+    var _cur = (p.values instanceof Array) ? p.values : [];
+    for (_ei = 0; _ei < _cur.length; _ei = _ei + 1) {
+      var _co = normalizeValue(_cur[_ei]);
+      if (_co.name) { _existing[_co.name] = _co; }
+    }
+    var vv = [], vi, _seen = {};
     for (vi = 0; vi < fields.values.length; vi = vi + 1) {
-      var vs = ('' + fields.values[vi]).trim();
-      if (vs) { vv.push(vs); }
+      var _inc = normalizeValue(fields.values[vi]);
+      if (!_inc.name || _seen[_inc.name]) { continue; }
+      _seen[_inc.name] = 1;
+      if (_existing[_inc.name]) {
+        var _keep = _existing[_inc.name];
+        // resolve to existing; adopt an incoming authored statement ONLY when the
+        // existing carries none (so a remote sign-in doc's prose is never lost,
+        // and existing authored prose is never overwritten).
+        if (!_keep.statement && _inc.statement) {
+          _keep.statement = _inc.statement;
+          _keep.statementHistory = _inc.statementHistory;
+          _keep.statementRevisedAt = _inc.statementRevisedAt;
+          if (!_keep.declaredAt) { _keep.declaredAt = _inc.declaredAt; }
+        }
+        vv.push(_keep);
+      } else {
+        if (!_inc.declaredAt) { _inc.declaredAt = Date.now(); }
+        vv.push(_inc);
+      }
     }
     p.values = vv;
   }
@@ -1553,6 +1640,35 @@ function setProfile(uid, fields) {
     p.statement = stTrim;
   }
   saveState();
+}
+
+// R10 S1: per-value living-statement writer. Resolves the value by id (or name),
+// writes the new statement, and -- only when REVISING an existing statement --
+// archives the prior version { text, date } onto statementHistory. First-ever
+// write sets no history (nothing was revised), so the page shows no "revised"
+// line. Returns the updated value object (or null when unresolved).
+function setValueStatement(uid, valueId, text) {
+  if (!uid) { return null; }
+  ensureUser(uid);
+  var p = state.users[uid].profile;
+  var vals = (p.values instanceof Array) ? p.values : [];
+  var i, v = null;
+  for (i = 0; i < vals.length; i = i + 1) {
+    vals[i] = normalizeValue(vals[i]);
+    if (vals[i].id === valueId || vals[i].name === valueId) { v = vals[i]; }
+  }
+  if (!v) { return null; }
+  var next = ('' + (text == null ? '' : text)).replace(/^\s+|\s+$/g, '');
+  if (next.length > 2000) { next = next.slice(0, 2000); }
+  if (next === v.statement) { return v; }
+  if (v.statement) {
+    if (!(v.statementHistory instanceof Array)) { v.statementHistory = []; }
+    v.statementHistory.push({ text: v.statement, date: v.statementRevisedAt || v.declaredAt || Date.now() });
+  }
+  v.statement = next;
+  v.statementRevisedAt = Date.now();
+  saveState();
+  return v;
 }
 
 // =====================================================================
