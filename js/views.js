@@ -5116,7 +5116,12 @@ function renderShelfDesk() {
   // one row. The desk now shows the ~6 most-recently-touched (order-by-life), never
   // scrolls; the rest open behind one quiet door. N == reading - shown (sum-proven).
   reading = shelfLifeSort(reading);
-  var cap = 6;
+  // R2 (FS-2): at 390 the in-hand desk covers are tall (2-per-row), so a 6-cap
+  // desk pushed the whole bookcase below the fold. Lower the MOBILE cap to one
+  // row (2) so the case reaches the first screen at any N>=1; the rest open
+  // behind the same "+N more" door. Desktop keeps 6. Sum stays proven (shown +
+  // more == reading).
+  var cap = isMobileShelf() ? 2 : 6;
   var shown = reading.length < cap ? reading.length : cap;
   if (countEl) { countEl.textContent = 'what you’re carrying'; }
   for (i = 0; i < shown; i = i + 1) {
