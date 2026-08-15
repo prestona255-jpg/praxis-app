@@ -31,6 +31,20 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-15 (R10 — PARKED AT S1, an honest resting state; park record landed)** — R10 S1 "GROUNDS"
+  shipped v3.276 (`2e99b2f`), **felt-passed 2026-08-09 (Preston)**; R10 is now **PARKED AT S1** — a
+  statement-only, self-consistent resting state (the `#value/<id>` living-statement page + the `.pf-vcard`
+  door), with **no dead affordance** waiting on unbuilt S2. **R10 S2 does not run in R-FIRSTSHELF.** Three
+  things landed to survive the park (L1 insurance): **(a)** the open S2-0 HALT-1 question — the sub+arc
+  mark census Preston runs read-only in the live console (0 sub+arc marks proves the `.pf-vcard` slim's
+  content-parity by data; recommended path A in `r10-s2-recon.md`); **(b)** the S2 "GATHERING" DoR /
+  build-prompt exists, hardened across two re-evaluation passes, UNSENT (`r10-s2-recon.md` §PROPOSAL is the
+  settled plan grounded in it); **(c)** S1's un-walked legs — the desktop keyboard door (Tab→Enter/Space,
+  rig-verified only) + the DevTools v3.276 read (blocked here by the Irving ISD filter, folds into Preston's
+  felt pass). Full record: `docs/checkpoints/r10-s1.md` (## R10 PARK RECORD). **No spine change, nothing
+  retired, no Preston decision contradicted** — R10 stays queued behind the S-B floor in `## Next`; the park
+  is a recorded state, not a re-order — so **no `PROPOSED:` flag.** (Landed by the R-FIRSTSHELF Stage 0.1
+  docs pass; rides the R-FIRSTSHELF recon commit.)
 - **2026-08-08 (S-B SWEEP — dead-code portion SHIPPED local, awaiting push + felt/live check)** — the S-B
   lead's dead-code + auto-guard + debt-table portion built across 8 local commits (`f4e7ef9` re-plan stamp ·
   `10b297e` auto-guard 5c + L3 matrix 10/10 · `9041951` debt table · `e5671d1`/`ca36c8c`/`e290187` the R9a
@@ -996,7 +1010,10 @@ in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spi
   lead item above. Import-Capture overlay · Yumi/lens panel · Account residuals + delete the ~2060-L
   defined-but-unrouted old profile renderers (R9a debt) + tokenize shared light-skin literals app-wide.
   touches: [import-capture, yumi-panel, account, profile]
-- [ ] **R10 — Connections** — the cross-arc/graph round (the R-ARC-named dependency).
+- [ ] **R10 — Connections** — the cross-arc/graph round (the R-ARC-named dependency). **S1 "GROUNDS"
+  shipped v3.276 (`2e99b2f`), felt-passed 2026-08-09; PARKED AT S1** (honest resting state — statement-only,
+  no dead affordance). S2 "GATHERING" DoR hardened + UNSENT, gated on Preston's sub+arc mark census
+  (S2-0 HALT-1). Park record: `docs/checkpoints/r10-s1.md` (## R10 PARK RECORD); Re-plan log 2026-08-15.
 - [ ] **ONBOARDING round** — inherits the Bloom teaching beat (RD-6's retired hint text, handed off from
   R-POLISH L5).
 - [ ] **BETA-READINESS gate** — NOT a round; the launch checklist: FX-1 · Goodreads import ·
