@@ -8668,6 +8668,10 @@ function scanWireIsbnDoor(inputId, btnId, statusId) {
 // ============================================================================
 var scanShotBusy    = false;    // SC10 queue depth 1 (one read in flight)
 var scanLastShelvedIds = [];    // for the immediate batch Undo
+var scanShelvedAny = false;     // R3a fix: did THIS scan pass actually shelve a book?
+                                // (found===0 alone conflates "shelved all" with
+                                // "discarded all via the walker" — the done-door copy
+                                // must only claim "on your shelf" when a shelve ran.)
 var scanReceiptTimer = null;
 
 // SC11 signature 2 base64 capture: scale the current video frame to a jpeg.
@@ -8768,6 +8772,7 @@ function scanRunShelfVision(base64) {
 function scanResolveAndFill(visionBooks) {
   scanShow(scanEl('scan-tray'));
   var strip = scanEl('scan-tray-strip'); if (strip) { strip.innerHTML = ''; }
+  scanShelvedAny = false;   // R3a: a fresh scan pass — nothing shelved from it yet
   scanTrayItems = [];
   var seen = {};                    // idKey -> tray cover element (within-scan)
   var classified = { confident: [], exceptions: [] };
@@ -8880,6 +8885,15 @@ function scanRenderReview() {
   if (found === 0) {
     if (rvBody) { rvBody.style.display = 'none'; }
     if (rvDone) { rvDone.style.display = ''; }
+    // R3a fix (red-team BLOCK 1): honest copy. The door only claims "on your shelf"
+    // when a shelve actually ran this pass; reaching found===0 by discarding every
+    // exception ("Not a book") added nothing, so it says so.
+    var rvDoneLine = scanEl('scan-rv-done-line');
+    if (rvDoneLine) {
+      rvDoneLine.textContent = scanShelvedAny
+        ? 'Everything from this scan is on your shelf.'
+        : 'None of these were added to your shelf.';
+    }
     scanHide(rvFoot);
   } else {
     if (rvBody) { rvBody.style.display = ''; }
@@ -9006,6 +9020,7 @@ function scanShelve() {
   }
   scanLastShelvedIds = createdIds;
   var n = createdIds.length;
+  if (n > 0) { scanShelvedAny = true; }   // R3a: a real shelve happened this pass
   // the confident set is now shelved; exceptions persist as the draft
   scanResult.confident = [];
   scanResult.found = scanResult.exceptions.length;
@@ -9367,7 +9382,7 @@ function scanReviewHTML() {
   +   '</div>'
   +   '<div class="scan-rv-done" id="scan-rv-done" style="display:none">'
   +     '<div class="scan-rv-done-mark" aria-hidden="true">✓</div>'
-  +     '<p class="scan-rv-done-line">Everything from this scan is on your shelf.</p>'
+  +     '<p class="scan-rv-done-line" id="scan-rv-done-line">Everything from this scan is on your shelf.</p>'
   +     '<button class="scan-btn scan-btn-primary" type="button" id="scan-rv-done-shelf">View your shelf →</button>'
   +   '</div>'
   + '</div>'
