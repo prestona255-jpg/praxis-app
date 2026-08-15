@@ -12736,6 +12736,9 @@ body.wc-focus .app-nav { opacity:.26; }
   .shelf.lum-amber-deep .wall{ display:flex; align-items:flex-start; gap:30px; }
   .shelf.lum-amber-deep .wall-col{ flex:1 1 0; min-width:0; }
   .shelf.lum-amber-deep .wall-col .cavity-band{ margin-bottom:30px; }
+  /* R1 (FS-1): a lone column (bandCount 1) is capped + centered, never full-bleed. */
+  .shelf.lum-amber-deep .wall.is-single{ justify-content:center; }
+  .shelf.lum-amber-deep .wall.is-single .wall-col{ flex:0 1 auto; width:100%; max-width:600px; }
 }
 .shelf.lum-amber-deep .band-label{ font-family:var(--font-serif); font-weight:600; font-size:21px; color:var(--ink); padding:2px 0; text-align:left; }
 .shelf.lum-amber-deep .cavity-band{ margin-bottom:34px; }

@@ -5532,9 +5532,13 @@ function renderShelfCase() {
       root.appendChild(buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName));
     }
   } else {
-    var ncols = shelfWallColumns();
+    // R1 (FS-1): never draw more columns than there are bands, so a small library
+    // can't leave empty columns. A lone column (bandCount 1) takes a width cap and
+    // centers via .wall.is-single (CSS) — it never stretches full-bleed.
+    var ncols = Math.min(bands.length, shelfWallColumns());
+    if (ncols < 1) { ncols = 1; }
     var wall = document.createElement('div');
-    wall.className = 'wall';
+    wall.className = 'wall' + (ncols === 1 ? ' is-single' : '');
     var cols = [], c2, cd;
     for (c2 = 0; c2 < ncols; c2 = c2 + 1) { cd = document.createElement('div'); cd.className = 'wall-col'; wall.appendChild(cd); cols.push(cd); }
     root.appendChild(wall);
