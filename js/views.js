@@ -4667,6 +4667,10 @@ function renderShelf() {
   desk.appendChild(deskRow);
   inner.appendChild(desk);
 
+  // ===== R-FIRSTSHELF (3b) · the one-time lens offer — a beat between desk + case =====
+  var fsOffer = buildFirstShelfOffer(user, allBooks.length);
+  if (fsOffer) { inner.appendChild(fsOffer); }
+
   // ===== F1 · the case — filled by renderShelfCase =====
   var caseEl = document.createElement('div');
   caseEl.className = 'case' + (getShelfGrouping() === 'lenses' ? ' is-lens' : '');
@@ -5444,6 +5448,58 @@ function shelfBuildLensRow(bandCount) {
   yrow.appendChild(p);
   yrow.appendChild(ask);
   return yrow;
+}
+
+// R-FIRSTSHELF (3b/R4/R5) · the one-time lens OFFER — a quiet beat on the Shelf
+// once the library has grown by scan. It AUTO-OFFERS (renders on its own) but
+// NEVER AUTO-FIRES: generateLenses runs only on tap, via the SAME lens-panel /
+// startLensSuggest path the "Ask Yumi" button uses (no second generation path,
+// zero network on render — R3c/R4). Gate = an ls flag armed by scanCommitBook;
+// floor = 5 books (R5). Stored-once: tap → 'used', × → 'dismissed', never re-
+// offered. Resettable for felt-testing: sv('praxis_firstshelf_offer_'+uid,'armed').
+function shelfFirstOfferKey(uid) { return 'praxis_firstshelf_offer_' + uid; }
+function buildFirstShelfOffer(user, bookCount) {
+  if (!user || !user.uid) { return null; }
+  if (ls(shelfFirstOfferKey(user.uid), '') !== 'armed') { return null; }
+  if (bookCount < 5) { return null; }   // R5: no offer below 5 books
+  var card = document.createElement('section');
+  card.className = 'firstshelf-offer';
+
+  var orb = (typeof yumiGlyphNode === 'function') ? yumiGlyphNode(22, 'firstshelf-offer-orb') : null;
+  if (orb) { card.appendChild(orb); }
+
+  var body = document.createElement('div');
+  body.className = 'firstshelf-offer-body';
+  var line = document.createElement('p');
+  line.className = 'firstshelf-offer-line';
+  // R5: the copy states honestly what she can do at this size (5–7 vs a fuller shelf).
+  line.textContent = (bookCount <= 7)
+    ? 'You’ve started a shelf. Yumi can read across these few books and name a lens or two — the threads you’re already following.'
+    : 'Your shelf is taking shape. Yumi can read across it and suggest lenses — ways of seeing what you’re gathering.';
+  body.appendChild(line);
+  var go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'btn btn-primary firstshelf-offer-go';
+  go.textContent = 'Find my lenses';
+  go.addEventListener('click', function () {
+    sv(shelfFirstOfferKey(user.uid), 'used');
+    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') { window.PraxisLensPanel.open(); }
+    if (card.parentNode) { card.parentNode.removeChild(card); }
+  });
+  body.appendChild(go);
+  card.appendChild(body);
+
+  var dismiss = document.createElement('button');
+  dismiss.type = 'button';
+  dismiss.className = 'firstshelf-offer-dismiss';
+  dismiss.setAttribute('aria-label', 'Not now');
+  dismiss.textContent = '×';
+  dismiss.addEventListener('click', function () {
+    sv(shelfFirstOfferKey(user.uid), 'dismissed');
+    if (card.parentNode) { card.parentNode.removeChild(card); }
+  });
+  card.appendChild(dismiss);
+  return card;
 }
 
 // F1 · the case. Bands by the active mode (categories = book.category incl. the
@@ -8538,6 +8594,11 @@ function scanCommitBook(spec, cb) {
   if (!spec.coverUrl && spec.isbn && typeof fetchAndApplyCover === 'function') {
     fetchAndApplyCover(id, spec.isbn, function () { /* soft; no re-render from the scan surface */ });
   }
+  // R-FIRSTSHELF (3b): the library has grown by scan — arm the one-time lens
+  // offer (shown on the Shelf at >=5 books, R5). Stored-once: never re-arms once
+  // the reader has used or dismissed it. Resettable via the ls key (see report).
+  var fsKey = 'praxis_firstshelf_offer_' + user.uid;
+  if (typeof ls === 'function' && !ls(fsKey, '')) { sv(fsKey, 'armed'); }
   if (cb) { cb(id); }
   return id;
 }
@@ -8811,7 +8872,20 @@ function scanRenderReview() {
   scanEl('scan-rv-shelve-n').textContent = conf;
   scanEl('scan-rv-walk-n').textContent = exc;
   scanEl('scan-rv-walk').style.display = exc ? '' : 'none';
-  scanShow(scanEl('scan-rv-foot'));
+  // R3 (3a): the post-shelve TRAY-EMPTY door. When nothing remains to review
+  // (everything shelved), swap the draft bands + foot for a quiet door to the
+  // shelf. The back-to-camera control stays live (rapid-scan preserved); the
+  // door never auto-navigates.
+  var rvBody = scanEl('scan-rv-body'), rvDone = scanEl('scan-rv-done'), rvFoot = scanEl('scan-rv-foot');
+  if (found === 0) {
+    if (rvBody) { rvBody.style.display = 'none'; }
+    if (rvDone) { rvDone.style.display = ''; }
+    scanHide(rvFoot);
+  } else {
+    if (rvBody) { rvBody.style.display = ''; }
+    if (rvDone) { rvDone.style.display = 'none'; }
+    scanShow(rvFoot);
+  }
   scanGoScreen('scan-screen-review');
 }
 
@@ -9285,10 +9359,17 @@ function scanReviewHTML() {
   return ''
   + '<section class="scan-screen" id="scan-screen-review"><div class="scan-rv-wrap">'
   +   '<div class="scan-rv-top"><button class="scan-rv-back" type="button" id="scan-rv-back" aria-label="Back to camera">‹</button><h1>The scan</h1></div>'
-  +   '<div class="scan-rv-count" id="scan-rv-count">—</div>'
-  +   '<span class="scan-rv-draftbadge">◲ Draft case — nothing\'s on your shelf yet</span>'
-  +   '<div class="scan-draft-band"><div class="scan-draft-band-hd"><span class="lbl">Ready to shelve</span><span class="n" id="scan-rv-conf-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-confident"></div></div></div>'
-  +   '<div class="scan-draft-band" id="scan-rv-exc-band"><div class="scan-draft-band-hd"><span class="lbl">Need a look</span><span class="n" id="scan-rv-exc-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-exceptions"></div></div></div>'
+  +   '<div class="scan-rv-body" id="scan-rv-body">'
+  +     '<div class="scan-rv-count" id="scan-rv-count">—</div>'
+  +     '<span class="scan-rv-draftbadge">◲ Draft case — nothing\'s on your shelf yet</span>'
+  +     '<div class="scan-draft-band"><div class="scan-draft-band-hd"><span class="lbl">Ready to shelve</span><span class="n" id="scan-rv-conf-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-confident"></div></div></div>'
+  +     '<div class="scan-draft-band" id="scan-rv-exc-band"><div class="scan-draft-band-hd"><span class="lbl">Need a look</span><span class="n" id="scan-rv-exc-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-exceptions"></div></div></div>'
+  +   '</div>'
+  +   '<div class="scan-rv-done" id="scan-rv-done" style="display:none">'
+  +     '<div class="scan-rv-done-mark" aria-hidden="true">✓</div>'
+  +     '<p class="scan-rv-done-line">Everything from this scan is on your shelf.</p>'
+  +     '<button class="scan-btn scan-btn-primary" type="button" id="scan-rv-done-shelf">View your shelf →</button>'
+  +   '</div>'
   + '</div>'
   + '<div class="scan-rv-foot" id="scan-rv-foot">'
   +   '<button class="scan-btn scan-btn-ghost" type="button" id="scan-rv-walk" style="flex:none">Review <span id="scan-rv-walk-n">0</span></button>'
@@ -9311,6 +9392,7 @@ function scanWireShell() {
   var rvBack = scanEl('scan-rv-back'); if (rvBack) { rvBack.addEventListener('click', function () { scanGoScreen('scan-screen-view'); }); }
   var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
   var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }
+  var rvDoneShelf = scanEl('scan-rv-done-shelf'); if (rvDoneShelf) { rvDoneShelf.addEventListener('click', function () { location.hash = '#books'; }); }
   var rUndo = scanEl('scan-receipt-undo'); if (rUndo) { rUndo.addEventListener('click', scanUndoShelve); }
   var vdAdd = scanEl('scan-vd-add'); if (vdAdd) { vdAdd.addEventListener('click', scanVerdictAdd); }
   var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); scanCurrentVerdict = null; if (scanMode === 'book') { scanStartBookDecode(); } }); }

@@ -12856,6 +12856,19 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .yumi-lens-row .dot{ width:6px; height:6px; border-radius:50%; background:var(--teal-on-ground); flex:none; }
 .shelf.lum-amber-deep .yumi-lens-row p{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
 
+/* R-FIRSTSHELF (3b) · the one-time lens offer — a quiet card between desk + case. */
+.shelf.lum-amber-deep .firstshelf-offer{ position:relative; display:flex; align-items:flex-start; gap:14px; margin:2px 0 20px; padding:18px 46px 18px 18px; background:var(--shelf-cavity); border:1px solid var(--line-page-2); border-radius:var(--radius-lg); }
+.shelf.lum-amber-deep .firstshelf-offer-orb{ flex:0 0 auto; margin-top:2px; }
+.shelf.lum-amber-deep .firstshelf-offer-body{ display:flex; flex-direction:column; gap:12px; }
+.shelf.lum-amber-deep .firstshelf-offer-line{ font-family:var(--font-serif); font-size:16px; line-height:1.42; color:var(--ink); margin:0; max-width:62ch; }
+.shelf.lum-amber-deep .firstshelf-offer-go{ align-self:flex-start; }
+.shelf.lum-amber-deep .firstshelf-offer-dismiss{ position:absolute; top:9px; right:11px; width:30px; height:30px; border:none; background:transparent; color:var(--ink-3); font-size:20px; line-height:1; cursor:pointer; border-radius:50%; }
+.shelf.lum-amber-deep .firstshelf-offer-dismiss:hover{ color:var(--ink); }
+@media (max-width:759px){
+  .shelf.lum-amber-deep .firstshelf-offer{ padding:16px 42px 16px 16px; }
+  .shelf.lum-amber-deep .firstshelf-offer-dismiss{ min-width:44px; min-height:44px; top:4px; right:4px; }
+}
+
 /* F5/§3.7 · the focused full view ("the case opens") — mobile-only */
 .shelf.lum-amber-deep .focused-view{ display:none; padding:8px 0 4px; }
 .shelf.lum-amber-deep .focused-view.is-shown{ display:block; }
@@ -16860,6 +16873,12 @@ body.wc-focus .app-nav { opacity:.26; }
   padding:12px calc(18px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
   background:linear-gradient(to top, var(--page) 60%, transparent); display:none; gap:10px; }
 .scan-rv-foot.is-on{ display:flex; }
+
+/* R3 (3a): the post-shelve tray-empty door — a quiet, centered done state. */
+.scan-rv-done{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:14px; padding:60px 8px 28px; }
+.scan-rv-done-mark{ width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--gold-hi); border:1.5px solid var(--gold); background:transparent; }
+.scan-rv-done-line{ font-family:var(--font-serif); font-size:19px; line-height:1.35; color:var(--ink); margin:0; max-width:24ch; }
+.scan-rv-done .scan-btn{ min-width:190px; }
 
 /* ---- EXCEPTION WALKER — sequential fix-next sheet ---- */
 #scan-walker{ position:absolute; inset:0; z-index:80; display:none; background:var(--scrim); }

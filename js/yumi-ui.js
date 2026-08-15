@@ -1915,6 +1915,16 @@ function renderLensPanelBody() {
         sug.appendChild(emptyp);
         sug.appendChild(buildLensSuggestRetry());
       } else {
+        // R5 (R-FIRSTSHELF 3d): a sparse result (1–2 lenses) is a DESIGNED honest
+        // state, never a failure — frame it as "so far, more as the shelf grows".
+        if (lensSuggestLenses.length <= 2) {
+          var sparse = document.createElement('p');
+          sparse.className = 'lens-panel-stub lens-suggest-sparse';
+          sparse.textContent = (lensSuggestLenses.length === 1)
+            ? 'One clear thread so far — more will surface as your shelf grows.'
+            : 'A couple of threads so far — more will surface as your shelf grows.';
+          sug.appendChild(sparse);
+        }
         var si;
         for (si = 0; si < lensSuggestLenses.length; si++) {
           sug.appendChild(buildProposedLensCard(lensSuggestLenses[si]));
