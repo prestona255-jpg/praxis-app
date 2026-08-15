@@ -144,6 +144,69 @@ childless, invisible**; the pile carries all books; no h-overflow. Harmless — 
 - Final commit stages `sw.js` + this checkpoint (runs WITH the pre-commit hook — sw.js present, no bare
   source). Then HALT for Preston's push word. **No push.**
 
+---
+
+# S2 RE-MEASURE AMENDMENT (2026-08-15) — the true fold · **A4 HALT, no code change**
+
+Base HEAD `02d1ef1` (clean). S2 had measured the fold at 844 (the iPhone's full logical height); the
+binding fold is **734** (Safari + chrome, first-touch) with **794** as the PWA-standalone secondary (A1).
+Method: viewport SET to 390×734 and 390×794 and rendered at each (not an 844 arithmetic proxy — L19);
+case-top = `getBoundingClientRect().top` at scrollY 0, force-settled; rig localhost:8796, served bytes
+confirmed to carry the S2 cap. **A2 = case-top must sit ≥40px ABOVE the binding fold** (case-top ≤ 694 at
+734; ≤ 754 at 794); tangent = FAIL.
+
+### S1 — RE-MEASURE (control, committed 92/138/104), scrollY 0 — **FAILS at both folds**
+
+| N | case-top | @734: clearance (need ≤694) | @794: clearance (need ≤754) |
+|---|---|---|---|
+| 1 | **770** | −36 · FAIL | +24 · FAIL |
+| 5 | **836** | −102 · FAIL | −42 · FAIL |
+| 13 | **836** | −102 · FAIL | −42 · FAIL |
+
+case-top is viewport-height-independent (identical at 734/794/844) — confirmed by rendering at each, so **no
+vh/env recomposition**; the 9px "margin" at 844 was never real. S2's 844 pass is **retracted**.
+
+### S2 — MECHANISM 2 (cover shrink) exhausted to the A4 floor → **cannot meet A2 for N≥3**
+
+Fixed chrome above the desk-row = **510px** (nav+horizon 139 · **header 270** · desk-head 25 · desk-question
+26 · gaps). For N≥3 the desk-row = cover-cell + gap(22) + the **wrapping "+N more" door (44)**. Measured
+shrink series @734, N=5 (all 2:3, cap reduced with width):
+
+| cover w/h/cap | cover-cell | case-top @734 | clearance (need ≤694) | door |
+|---|---|---|---|---|
+| 92/138/104 (control) | 92×250 | 836 | −102 | wraps |
+| 84/126/80 | 84×214 | 800 | −66 | wraps |
+| 78/117/72 | 78×197 | 783 | −49 | wraps |
+| **72/108/64 (A4 FLOOR)** | 72×180 | **766** | **−32** (72px short of 694) | wraps |
+| 72/108/50 (floor + min cap) | 72×166 | **752** | **−18** (58px short of 694) | wraps |
+
+The **"+N more" door wraps to its own line in EVERY case** (+66px: door 44 + gap 22), unavoidable for N≥3 —
+at the 72px floor 2 covers + gap + the 155px door still exceed the ~334px row. At the floor, N=5/13 land at
+752–766, **58–72px short of A2's 694**. N=1/2 (no door) WOULD pass at the floor (~684), but the round's core
+case is the **5–13-book first shelf (N≥3)**, which cannot.
+
+**Per A4: A2 cannot be met at or above the 72px floor → HALT, no shrink applied.** Shipping a floor shrink
+would degrade cover legibility for a non-pass ("a bookcase reached by unreadable covers is not a pass"). **Zero
+code changed this amendment.** sw.js stays v3.277 (no re-bump); foundations byte-lock intact.
+
+### ROOT CAUSE + FORK (out of the cover-size scope — Preston's ruling)
+
+1. **The 270px mobile header is the dominant fixed cost** (over half the 510px chrome above the desk).
+   Reducing it is the highest-leverage fix but is out of this amendment's cover-size scope — a header/mobile
+   round.
+2. **The "+N more" door wraps (+66px).** If it sat **inline** with the 2 covers (or were a compact "+N →"),
+   the N≥3 desk-row would collapse to one row → case-top ≈ **684 at the 72px floor → PASS at 734** (clearance
+   ~40). This is the smallest fix that actually clears the binding fold, but it needs (a) covers **at/near the
+   72px floor** (marginal legibility — Preston's felt call) AND (b) a **door layout/copy change** (the A5
+   "size only, grammar untouched" question — Preston rules whether an inline/compact door is in-grammar).
+3. Or **bind the softer 794 (PWA) fold** and accept a small scroll on Safari-734 — at 794 a floor shrink
+   (72/108/50 → 752) clears by 42px. But A1 binds 734.
+
+**Recommendation:** do NOT ship a cover-only floor shrink (fails the binding fold, costs legibility). The real
+unlock is **option 2** (inline/compact door + a modest shrink) — it clears 734 at ~684 — but it reaches past
+the amendment's cover-size scope on both the door layout and near-floor legibility, so it is Preston's call.
+**HALT for that ruling.**
+
 ## RESIDUALS (named, not folded)
 - **S2 mobile margin = 9px** at N≥3 (835 vs 844). Cleared the measured criterion; cover-shrink lever held for
   the felt pass if Preston wants more air.
