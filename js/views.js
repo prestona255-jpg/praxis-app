@@ -8066,6 +8066,9 @@ function scanEl(id) { return document.getElementById(id); }
 function scanShow(el) { if (el) { el.classList.add('is-on'); } }
 function scanHide(el) { if (el) { el.classList.remove('is-on'); } }
 function scanRM() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+// S3e: the idle viewfinder hint and the "Reading the shelf…" shimmer must never
+// paint together. Hide the guide while the read overlay is up; restore on exit.
+function scanGuideVisible(on) { var g = scanEl('scan-vf-guide'); if (g) { if (on) { g.classList.remove('is-hidden'); } else { g.classList.add('is-hidden'); } } }
 
 // a11y announcer (Law 8 — results announced). Created once, reused across mounts.
 function scanAnnounce(msg) {
@@ -8522,7 +8525,7 @@ function scanShowVerdict(result, isbn) {
     add.textContent = 'Add to shelf'; add.className = 'scan-btn scan-btn-primary';
     if (dismiss) { dismiss.textContent = 'Keep scanning'; dismiss.className = 'scan-btn scan-btn-ghost'; }
     scanCurrentVerdict = { kind: 'add', spec: {
-      title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null, status: 'reading'
+      title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null, status: 'will-read'
     } };
   }
   scanShow(scanEl('scan-verdict'));
@@ -8582,7 +8585,7 @@ function scanCommitBook(spec, cb) {
     author: (spec.author || ''),
     isbn: (spec.isbn || ''),
     addedAt: now,
-    status: (spec.status || 'reading'),
+    status: (spec.status || 'will-read'),   // D3: scanned books default to will-read (not reading)
     genre: '',
     coverUrl: (spec.coverUrl || null)
   };
@@ -8649,7 +8652,7 @@ function scanWireIsbnDoor(inputId, btnId, statusId) {
     if (st) { st.textContent = 'Looking up ' + raw + '…'; }
     resolveBook({ kind: 'isbn', isbn: raw }, function (result) {
       var b = (result && result.book) ? result.book : {};
-      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, status: 'reading' }, null);
+      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, status: 'will-read' }, null);
       if (st) { st.textContent = id ? ('Added ' + (b.title || ('ISBN ' + raw)) + ' · on your shelf') : 'Sign in to add.'; }
       inp.value = '';
       scanAnnounce(id ? ('Added ' + (b.title || raw) + ' to your shelf.') : 'Could not add.');
@@ -8753,9 +8756,11 @@ function scanRunShelfVision(base64) {
     scanShotBusy = false; scanUnfreeze(); scanShowCapRefusal(); return;
   }
   scanShow(scanEl('scan-shimmer'));
+  scanGuideVisible(false);
   scanShelfVision(base64, function (result) {
     scanShotBusy = false;
     scanHide(scanEl('scan-shimmer'));
+    scanGuideVisible(true);
     scanUnfreeze();
     if (result.state === 'ok') {
       if (!result.books || result.books.length === 0) { scanOpenOverlay('scan-ov-empty'); return; }
@@ -8782,7 +8787,8 @@ function scanResolveAndFill(visionBooks) {
   var idx = 0;
   function next() {
     if (idx >= visionBooks.length) {
-      scanResult = { confident: classified.confident, exceptions: classified.exceptions, found: found };
+      scanResult = { confident: classified.confident, exceptions: classified.exceptions, found: found,
+        rec: { found: found, conf: confident, exc: exceptions } };   // S3b: the scan's fixed found/confident record
       scanFinishFill(found, confident, exceptions);
       return;
     }
@@ -8844,7 +8850,17 @@ function scanFinishFill(found, confident, exceptions) {
 function scanRenderReview() {
   if (!scanResult) { return; }
   var conf = scanResult.confident.length, exc = scanResult.exceptions.length, found = conf + exc;
-  scanEl('scan-rv-count').textContent = found + ' found · ' + conf + ' confident · ' + exc + ' need a look';
+  var rec = scanResult.rec || { found: found, conf: conf, exc: exc };   // S3b: fixed scan record, not the live residual
+  // S3b (red-team BLOCK 1): the record line carries only the scan's immutable found +
+  // confident. "need a look" is DROPPED here because the live "Need a look" band below
+  // owns that word — showing a frozen rec.exc beside a live band count in the SAME
+  // vocabulary contradicted itself once the walker promotes/drops an exception.
+  scanEl('scan-rv-count').textContent = rec.found + ' found · ' + rec.conf + ' confident';
+  // S3a: the draft badge reads real state — "nothing" only when the library is truly empty.
+  var rvUser = getCurrentUser();
+  var rvLib = (rvUser && state.userBooks[rvUser.uid] && state.userBooks[rvUser.uid].bookIds) ? state.userBooks[rvUser.uid].bookIds.length : 0;
+  var rvBadge = document.querySelector('.scan-rv-draftbadge');
+  if (rvBadge) { rvBadge.textContent = rvLib > 0 ? '◲ Draft case — these aren\'t on your shelf yet' : '◲ Draft case — nothing\'s on your shelf yet'; }
   scanEl('scan-rv-conf-n').textContent = conf;
   scanEl('scan-rv-exc-n').textContent = exc;
   var cwrap = scanEl('scan-rv-confident'); cwrap.innerHTML = '';
@@ -8875,6 +8891,8 @@ function scanRenderReview() {
   }
   scanEl('scan-rv-exc-band').style.display = exc ? 'block' : 'none';
   scanEl('scan-rv-shelve-n').textContent = conf;
+  var rvShelveBtn = scanEl('scan-rv-shelve');   // S3c: no live "Shelve 0" primary — disabled when nothing is ready
+  if (rvShelveBtn) { rvShelveBtn.disabled = (conf === 0); }
   scanEl('scan-rv-walk-n').textContent = exc;
   scanEl('scan-rv-walk').style.display = exc ? '' : 'none';
   // R3 (3a): the post-shelve TRAY-EMPTY door. When nothing remains to review
@@ -8929,36 +8947,48 @@ function scanRenderWalkerStep() {
   var cov = scanCoverNode(b.title, b.author, b.cover); cov.style.width = '70px'; cov.style.height = '105px';
   row.appendChild(cov);
   var g = document.createElement('div'); g.className = 'scan-wk-guess';
+  // S1/D1: the primary acceptable candidate is the resolver's OWN top pick. It
+  // degrades to the vision read when Google Books returned nothing (manualStub
+  // carries the read title/author), so it is never empty.
+  var pick = (b.resolved && b.resolved.book && b.resolved.book.title)
+    ? b.resolved.book
+    : { title: b.title || '', author: b.author || '', coverUrl: b.cover || null, isbn: '' };
   var gl = document.createElement('div'); gl.className = 'g-lbl'; gl.textContent = 'Best guess'; g.appendChild(gl);
-  var gt = document.createElement('div'); gt.className = 'g-t'; gt.textContent = b.title || 'Unclear'; g.appendChild(gt);
-  var ga = document.createElement('div'); ga.className = 'g-a'; ga.textContent = b.author || 'author unclear'; g.appendChild(ga);
+  var gt = document.createElement('div'); gt.className = 'g-t'; gt.textContent = pick.title || 'Unclear'; g.appendChild(gt);
+  var ga = document.createElement('div'); ga.className = 'g-a'; ga.textContent = pick.author || 'author unclear'; g.appendChild(ga);
   row.appendChild(g); s.appendChild(row);
   // the evidence line — verbatim raw spineText (SC6, needs shelf-vision)
   var ev = document.createElement('div'); ev.className = 'scan-wk-evidence';
   var lead = document.createElement('span'); lead.className = 'lead'; lead.textContent = 'I read: ';
   var raw = document.createElement('span'); raw.className = 'raw'; raw.textContent = "'" + (b.spineText || '') + "'";
   ev.appendChild(lead); ev.appendChild(raw); s.appendChild(ev);
+  // S1/D1+D2: the PRIMARY accept — moves the top pick into ready-to-shelve (the
+  // tray), NEVER a direct library write; "Shelve N" stays the single commit point.
+  var accept = document.createElement('button'); accept.type = 'button'; accept.className = 'scan-btn scan-btn-primary scan-wk-accept';
+  accept.textContent = 'Add to ready-to-shelve';
+  accept.addEventListener('click', function () { scanResolveStep('picked', pick); });
+  s.appendChild(accept);
   var cands = document.createElement('div'); cands.className = 'scan-wk-cands';
-  // FX-J (F7): withhold implausible "did you mean" candidates. A generic partial read
-  // ("THE ESSENTIAL") pulls Google Books' public-domain-scan mass — 1890s periodicals,
-  // court reports — which the walker used to show as the top-5. candidateIsPlausible
-  // (integrations.js) gates each on the resolver's own signals; nothing plausible ->
-  // the honest "No confident match", Search as the path (Law 3 — silence over garbage).
+  // FX-J (F7): withhold implausible alternates. A generic partial read pulls Google
+  // Books' public-domain-scan mass (1890s periodicals, court reports); candidateIsPlausible
+  // (integrations.js) gates each on the resolver's own signals. Whatever survives renders
+  // BENEATH the primary accept as "or did you mean" (D1); nothing plausible -> no list.
   var plausible = [], j;
   for (j = 0; j < b.alternates.length; j++) {
     if (candidateIsPlausible(b.title, b.alternates[j])) { plausible.push(b.alternates[j]); }
   }
-  var ch = document.createElement('div'); ch.className = 'c-hd';
-  ch.textContent = (plausible.length > 0) ? 'Did you mean' : 'No confident match';
-  cands.appendChild(ch);
-  for (j = 0; j < plausible.length && j < 5; j++) {
-    (function (cd) {
-      var c = document.createElement('button'); c.type = 'button'; c.className = 'scan-wk-cand';
-      var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = cd.title || ''; c.appendChild(ct);
-      if (cd.author) { var ca = document.createElement('span'); ca.className = 'ca'; ca.textContent = cd.author; c.appendChild(ca); }
-      c.addEventListener('click', function () { scanResolveStep('picked', cd); });
-      cands.appendChild(c);
-    })(plausible[j]);
+  if (plausible.length > 0) {
+    var ch = document.createElement('div'); ch.className = 'c-hd'; ch.textContent = 'or did you mean';
+    cands.appendChild(ch);
+    for (j = 0; j < plausible.length && j < 5; j++) {
+      (function (cd) {
+        var c = document.createElement('button'); c.type = 'button'; c.className = 'scan-wk-cand';
+        var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = cd.title || ''; c.appendChild(ct);
+        if (cd.author) { var ca = document.createElement('span'); ca.className = 'ca'; ca.textContent = cd.author; c.appendChild(ca); }
+        c.addEventListener('click', function () { scanResolveStep('picked', cd); });
+        cands.appendChild(c);
+      })(plausible[j]);
+    }
   }
   var search = document.createElement('button'); search.type = 'button'; search.className = 'scan-wk-search';
   search.innerHTML = '<span>⌕</span> Search on the Shelf instead';
@@ -9015,7 +9045,7 @@ function scanShelve() {
   for (i = 0; i < scanResult.confident.length; i++) {
     var it = scanResult.confident[i];
     var isbn = (it.resolved && it.resolved.book && it.resolved.book.isbn) ? it.resolved.book.isbn : '';
-    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, status: 'reading' }, null);
+    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, status: 'will-read' }, null);
     if (id) { createdIds.push(id); }
   }
   scanLastShelvedIds = createdIds;
@@ -9087,14 +9117,16 @@ function scanDraftKey() { var u = getCurrentUser(); return u ? ('praxis_scan_dra
 function scanSaveDraft() {
   var k = scanDraftKey(); if (!k) { return; }
   if (scanResult && (scanResult.confident.length || scanResult.exceptions.length)) {
-    sv(k, { confident: scanResult.confident, exceptions: scanResult.exceptions, savedAt: Date.now() });
+    sv(k, { confident: scanResult.confident, exceptions: scanResult.exceptions, rec: scanResult.rec, savedAt: Date.now() });
   } else { scanClearDraft(); }
 }
 function scanLoadDraft() {
   var k = scanDraftKey(); if (!k) { return null; }
   var d = ls(k, null);
   if (d && (d.confident || d.exceptions)) {
-    return { confident: d.confident || [], exceptions: d.exceptions || [], found: (d.confident || []).length + (d.exceptions || []).length };
+    var lc = d.confident || [], le = d.exceptions || [];
+    return { confident: lc, exceptions: le, found: lc.length + le.length,
+      rec: d.rec || { found: lc.length + le.length, conf: lc.length, exc: le.length } };
   }
   return null;
 }
@@ -9120,8 +9152,9 @@ function scanFireCoverShot() {
   scanShotBusy = true;
   if (typeof scanShelfBudgetSpend === 'function' && !scanShelfBudgetSpend()) { scanShotBusy = false; scanUnfreeze(); scanShowCapRefusal(); return; }
   scanShow(scanEl('scan-shimmer'));
+  scanGuideVisible(false);
   scanShelfVision(base64, function (result) {
-    scanShotBusy = false; scanHide(scanEl('scan-shimmer')); scanUnfreeze();
+    scanShotBusy = false; scanHide(scanEl('scan-shimmer')); scanGuideVisible(true); scanUnfreeze();
     if (result.state === 'ok' && result.books && result.books.length) {
       var vb = result.books[0];
       resolveBook(scanQueryForBook(vb), function (rz) {
@@ -23136,8 +23169,7 @@ function buildCaptureDoor() {
     '<div class="capdoor-scrim" id="capScrim"></div>' +
     '<div class="capdoor-sheet" id="capSheet" role="dialog" aria-modal="true" aria-labelledby="capEyebrow">' +
       '<div class="capdoor-handle" id="capHandle" aria-hidden="true"></div>' +
-      '<div class="capdoor-head"><div><div class="capdoor-eyebrow" id="capEyebrow">Catch a thought' +
-        '<span class="capdoor-eyebrow-sub">pre-rendered — zero network before your first keystroke</span></div></div>' +
+      '<div class="capdoor-head"><div><div class="capdoor-eyebrow" id="capEyebrow">Catch a thought</div></div>' +
         '<button class="capdoor-close" id="capClose" type="button" aria-label="Close">×</button></div>' +
       '<div class="capdoor-body">' +
         '<div class="capdoor-modes" role="tablist" aria-label="capture mode">' +

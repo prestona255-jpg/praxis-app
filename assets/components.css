@@ -5610,6 +5610,13 @@ html { overscroll-behavior-y: contain; }
     display: none;
   }
 
+  /* S4: when the mobile menu is open, lift the whole nav stacking context above the
+     z:9999 corner FABs (the "+" create door + the Yumi bloom) so neither paints over
+     the full-screen menu. .app-nav is z:30, so its children (the z:100 list) can never
+     out-stack a body-level z:9999 FAB — the lift must be on .app-nav itself. Scoped to
+     the OPEN state; the closed nav returns to z:30. Not a transform (canon §2 safe). */
+  .app-nav.app-nav-mobile-open { z-index: 10010; }
+
   .app-nav.app-nav-mobile-open .app-nav-list {
     display: flex;
     flex-direction: column;
@@ -16419,11 +16426,13 @@ body.wc-focus .app-nav { opacity:.26; }
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
     box-shadow:0 -14px 40px -18px var(--scrim);
     max-height:56vh;
-    transform:translateY(100%); opacity:1; pointer-events:none;
-    transition:transform .26s var(--ease-standard);
+    /* S3f: opacity:0 when closed so a transformed/filtered ancestor (iOS fixed-pos
+       hazard) or the dynamic viewport can never leak the painted sheet onto the page. */
+    transform:translateY(100%); opacity:0; pointer-events:none;
+    transition:transform .26s var(--ease-standard), opacity .26s var(--ease-standard);
     padding-bottom:env(safe-area-inset-bottom, 0px);
   }
-  .capdoor-sheet.is-open{ transform:translateY(0); pointer-events:auto; }
+  .capdoor-sheet.is-open{ transform:translateY(0); opacity:1; pointer-events:auto; }
   /* MOBILE-SHEET-POLISH FAIL A (2026-07-24): the desktop rule .capdoor-sheet.cap-expanded
      sets width:480px; on mobile the expanded modes (voice/paste/photo/scan) must stay the
      full-width bottom sheet — reset width:auto so the 480px never overflows a 390 viewport. */
@@ -16760,6 +16769,8 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-reticle.is-lock .scan-br.br2{ transform:translate(-9px,-9px); }
 .scan-vf-guide{ position:absolute; z-index:12; left:0; right:0; top:calc(46% + min(25vh,150px) + 14px); text-align:center;
   font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--scan-on-dark-2); pointer-events:none; padding:0 20px; }
+/* S3e: hide the idle hint while the "Reading the shelf…" shimmer is up (one label at a time). */
+.scan-vf-guide.is-hidden{ visibility:hidden; }
 
 .scan-vf-bottom{ position:absolute; left:0; right:0; bottom:0; z-index:20;
   padding:14px calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
@@ -16801,6 +16812,12 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-btn-primary{ background:linear-gradient(180deg,var(--gold-hi),var(--gold-ember)); color:var(--gold-ink-on-gold); flex:1; }
 .scan-btn-ghost{ background:transparent; border-color:var(--line-page-2); color:var(--ink); }
 .scan-btn-quiet{ background:var(--wash-page); color:var(--ink-2); border-color:var(--line-page); }
+/* S3c: a disabled scan button (e.g. "Shelve 0" when nothing is ready) reads inert —
+   no live gold, no pointer. */
+.scan-btn:disabled{ opacity:.4; filter:grayscale(.55); cursor:default; }
+/* S1: the walker's primary accept — full-width and spaced off the evidence box above
+   (red-team NOTE 3: it otherwise sat flush, and a 195px primary read as a minor button). */
+.scan-wk-accept{ display:block; width:100%; margin-top:14px; }
 
 /* ---- SHELF MODE — shimmer read + live tray ---- */
 /* FELT SIGNATURE 2 — the shimmer read (visibly indeterminate, NO percentages) */
@@ -16853,7 +16870,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-dc{ width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:default; }
 .scan-dc .scan-cov{ width:64px; height:96px; }
 .scan-dc .cap{ width:64px; height:34px; overflow:hidden; text-align:center; margin-top:7px; }
-.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; word-break:break-word; text-overflow:ellipsis; }
 /* the LEANING gray spine — an exception (Law 1: the lean carries it, never copy alone) */
 .scan-dc.is-lean{ cursor:pointer; }
 .scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
@@ -16866,7 +16883,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-cov .cov-spine{ position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
 .scan-cov .cov-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .scan-cov .cov-txt{ position:absolute; inset:0; padding:8px 7px 7px 10px; display:flex; flex-direction:column; }
-.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; word-break:break-word; text-overflow:ellipsis; }
 .scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
 
 .scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;
@@ -16973,8 +16990,11 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* FX-E: the camera surface owns its corners — suppress the global Yumi Bloom flower
    while #scan is mounted (it collided with / clipped the verdict-card buttons).
-   body.scan-active is added by renderScan and removed by the router on exit. */
-body.scan-active .yumi-bloom{ display:none !important; }
+   body.scan-active is added by renderScan and removed by the router on exit.
+   S4: the global "+" create door is the SAME class of collider (bottom-left, z:9999,
+   not per-surface) and overlapped Review/Not-a-book — hide it on the scan surface too. */
+body.scan-active .yumi-bloom,
+body.scan-active .cap-create-door{ display:none !important; }
 
 /* nav draft-count badge on the Scan entry (mirrors .cap-nav-entry state attrs) */
 .app-nav-scan-badge{ display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;
