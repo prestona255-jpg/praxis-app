@@ -48,12 +48,44 @@ model for the others. All four of Preston's observed collisions covered.
 ## DEFECT 3 — capture-sheet "Scan a book"/field overlap — UNPROVEN (do NOT close)
 NOT reproducible in Blink: `.capdoor-modes` and `.capdoor-field-wrap` are static
 normal-flow siblings (field cleanly below modes, 0px overlap). The overlap requires
-the wrapped mode row to under-report its height on iOS-WebKit. BEST-HYPOTHESIS FIX:
-  .capdoor-modes{ ... align-content:flex-start; width:100%; box-sizing:border-box; }
-Zero effect in Blink (verified: field still starts exactly at modes.bottom, no
-overlap). This is UNPROVEN and stays open in the record until Preston walks it on
-device. A green rig does NOT close it. If it persists on device, next hypotheses:
-min-height:0 on .capdoor-body (flex-scroll fix), or de-flexing the modes.
+the wrapped mode row / body to mis-lay-out on iOS-WebKit.
+
+- ATTEMPT 1 (v3.280, DISPROVEN on device): `.capdoor-modes{ align-content:flex-start;
+  width:100%; box-sizing:border-box; }`. Device walk showed the overlap UNCHANGED.
+  align-content only redistributes when the flex container has extra cross-axis space
+  (a constrained height) — modes has content-height, so it was a no-op. REVERTED at
+  v3.281 (not stacked as dead CSS).
+- ATTEMPT 2 (v3.281, current, UNPROVEN): `.capdoor-body{ ... min-height:0; }`. The body
+  is a flex item (flex:1 1 auto) in the column-flex sheet with overflow-y:auto and
+  content overflowing its box by a MEASURED 24px (@390 note mode). Default
+  min-height:auto lets iOS-WebKit refuse to shrink the item, so overflow-y:auto never
+  engages and the field lays over the modes' 2nd row. min-height:0 lets it shrink and
+  scroll. Canonical iOS flex-scroll signature. Zero effect in Blink (it already
+  shrinks; field still starts exactly at modes.bottom, 0 overlap).
+
+STILL UNPROVEN — a green Blink rig does NOT close it; rests on Preston's device walk.
+If Attempt 2 also fails on device, next hypothesis: de-flex the modes row.
+
+## FINDING 2 (v3.281) — shelf section header over the iOS status bar — FIXED
+Mechanism: on mobile the nav is position:relative (an intentional iOS-composite-bug
+avoidance, components.css ~5572) and scrolls fully away; once gone, page content —
+which carries no top safe-area — scrolls under the iOS status bar (dark band-header
+text over the clock, no nav behind). Root PRE-EXISTING; the D2 token (144->160) merely
+surfaced more of it by raising max-scroll 64px (measured). Do NOT revert the token.
+FIX (direction A, the status-bar scrim):
+  index.html:    <div id="statusbar-scrim" aria-hidden="true"></div> (shell, before <nav>)
+  components.css: #statusbar-scrim{ position:fixed; top:0; left:0; right:0;
+                    height:env(safe-area-inset-top,0px); background:var(--surface);
+                    z-index:25; pointer-events:none; }
+Ground-color decision: background:var(--surface) — the SAME per-ground token the mobile
+nav paints (flips light/dark via [data-ground="dark"] on <body>, set per route by
+renderRoute; `books` IS in umberGroundDark so the shelf body is dark and its nav+scrim
+are legitimately dark). So the scrim is IDENTICAL to the nav's status-bar-zone color on
+every route (verified scrimBg===navBg on shelf/home/signed-out) — it reads as the nav's
+cap persisting. z:25 = above content, below nav (30) and every overlay. Verified: height
+0px in rig (no-op non-notch); scan-surface (z9000), capdoor backdrop (z10020)+sheet
+(z10021) all COVER it; signed-out welcome not broken; band header z:auto(0) < scrim(25)
+so status-bar-zone content paints under the scrim. pointer-events:none.
 
 ## DEFECT 4 — pre-auth orientation card — PASS
 Per-page intro cards fired for signed-out visitors ("Yesterday you marked Freire..."

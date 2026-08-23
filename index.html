@@ -29,6 +29,13 @@
 </head>
 <body>
 
+<!-- Finding 2 (device felt pass): status-bar scrim. On mobile the nav is
+     position:relative and scrolls away; page content has no top safe-area, so it
+     scrolls under the iOS status bar. This fixed strip of env(safe-area-inset-top)
+     keeps a solid ground cover in the status-bar zone at every scroll position.
+     Zero-height no-op on non-notch devices. Styled in components.css (#statusbar-scrim). -->
+<div id="statusbar-scrim" aria-hidden="true"></div>
+
 <nav class="app-nav">
   <a href="#home" class="app-nav-wordmark">praxis</a>
   <div class="app-nav-search">
