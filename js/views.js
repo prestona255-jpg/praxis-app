@@ -8026,6 +8026,10 @@ function scanClassify(visionBooks, resolvedArray) {
       confidence: (vb.confidence || 'low'),
       resolved:   rz,
       cover:      (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
+      // S1: carry the full OL->GB candidate list so the review cover + the shelved
+      // record can self-heal (see scanCoverNode / scanShelve). The single `cover`
+      // above stays for callers that only need the primary.
+      coverCandidates: (rz && rz.book && rz.book.coverCandidates) ? rz.book.coverCandidates : [],
       alternates: (rz && rz.alternates) ? rz.alternates : []
     };
     if (scanIsException(vb, rz)) { item.exception = true; exceptions.push(item); }
@@ -8085,17 +8089,33 @@ function scanAnnounce(msg) {
 
 // Cloth cover node (media into a PRE-SIZED slot: a real coverUrl draws over the
 // typeset fallback; a 404/absent asset leaves the fallback, never a hole).
-function scanCoverNode(title, author, coverUrl) {
+function scanCoverNode(title, author, coverUrl, candidates) {
   var d = document.createElement('div'); d.className = 'scan-cov';
   var sp = document.createElement('span'); sp.className = 'cov-spine'; d.appendChild(sp);
   var wr = document.createElement('div'); wr.className = 'cov-txt';
   var t = document.createElement('div'); t.className = 'cov-t'; t.textContent = title || ''; wr.appendChild(t);
   var a = document.createElement('div'); a.className = 'cov-a'; a.textContent = author || ''; wr.appendChild(a);
   d.appendChild(wr);
-  if (coverUrl) {
+  // S1 (COVERS+VOICE): walk the FULL candidate list (OpenLibrary -> Google Books),
+  // matching buildSelfHealingCover on every other surface. openLibraryIsbnCover
+  // ships ?default=false so OL 404s when it lacks that ISBN's cover -- BY DESIGN,
+  // to trigger the onerror fall-through to the Google Books image (coverCandidates
+  // [1]). This node previously took a single coverUrl and HID the img on the first
+  // error, so a confident match whose OL cover 404'd showed the typeset slot while
+  // its GB art (already in coverCandidates) went untried. Now it advances through
+  // the list and only reveals the typeset slot once EVERY candidate is exhausted.
+  var list = (candidates && candidates.length > 0)
+    ? candidates
+    : (coverUrl ? [coverUrl] : []);
+  if (list.length > 0) {
     var img = document.createElement('img'); img.className = 'cov-img'; img.alt = '';
-    img.onerror = function () { img.style.display = 'none'; }; // fall back to the typeset slot
-    img.src = coverUrl;
+    var ci = 0;
+    img.onerror = function () {
+      ci = ci + 1;
+      if (ci < list.length) { img.src = list[ci]; }
+      else { img.style.display = 'none'; } // all exhausted -> reveal the typeset slot
+    };
+    img.src = list[0];
     d.appendChild(img);
   }
   return d;
@@ -8500,7 +8520,7 @@ function scanShowVerdict(result, isbn) {
   if (ctx) { ctx.style.display = 'none'; }
   scanEl('scan-vd-title').textContent = title || 'Not found';
   scanEl('scan-vd-author').textContent = author || (isbn ? ('ISBN ' + isbn) : '');
-  if (cov) { cov.appendChild(scanCoverNode(title, author, book.coverUrl)); }
+  if (cov) { cov.appendChild(scanCoverNode(title, author, book.coverUrl, book.coverCandidates)); }
   var c = scanComputeContext(title, author);
   // FX-F: SC4 ruled silence — the context line shows ONLY when a real local signal
   // exists; otherwise NOTHING (no "Identified — no context" filler). Silence is silence.
@@ -8525,7 +8545,9 @@ function scanShowVerdict(result, isbn) {
     add.textContent = 'Add to shelf'; add.className = 'scan-btn scan-btn-primary';
     if (dismiss) { dismiss.textContent = 'Keep scanning'; dismiss.className = 'scan-btn scan-btn-ghost'; }
     scanCurrentVerdict = { kind: 'add', spec: {
-      title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null, status: 'will-read'
+      title: title, author: author, isbn: (book.isbn || isbn || ''), coverUrl: book.coverUrl || null,
+      coverCandidates: (book.coverCandidates && book.coverCandidates.length > 0) ? book.coverCandidates : (book.coverUrl ? [book.coverUrl] : []),
+      status: 'will-read'
     } };
   }
   scanShow(scanEl('scan-verdict'));
@@ -8587,7 +8609,12 @@ function scanCommitBook(spec, cb) {
     addedAt: now,
     status: (spec.status || 'will-read'),   // D3: scanned books default to will-read (not reading)
     genre: '',
-    coverUrl: (spec.coverUrl || null)
+    coverUrl: (spec.coverUrl || null),
+    // S1: store the OL->GB candidate list when the caller has it (scan/barcode
+    // resolves do). buildSelfHealingCover already falls back to [coverUrl] when this
+    // is absent, so it stays a plain [] otherwise -- an existing book-record field
+    // (the normal add path stores it too), not a new schema class.
+    coverCandidates: (spec.coverCandidates && spec.coverCandidates.length > 0) ? spec.coverCandidates : (spec.coverUrl ? [spec.coverUrl] : [])
   };
   ensureBookFields(state.books[id]);                 // 5.6 schema chokepoint (classification rides it)
   state.userBooks[user.uid].bookIds.push(id);
@@ -8652,7 +8679,12 @@ function scanWireIsbnDoor(inputId, btnId, statusId) {
     if (st) { st.textContent = 'Looking up ' + raw + '…'; }
     resolveBook({ kind: 'isbn', isbn: raw }, function (result) {
       var b = (result && result.book) ? result.book : {};
-      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, status: 'will-read' }, null);
+      // S1 (red-team BLOCK): the denied/offline ISBN door is a scan-commit site too --
+      // thread the OL->GB candidate list (b comes from the same resolveBook/volumeToBook
+      // shape) so a book added here self-heals like every other add path, instead of
+      // persisting an OL-only cover that 404s to the placeholder.
+      var bCands = (b.coverCandidates && b.coverCandidates.length > 0) ? b.coverCandidates : (b.coverUrl ? [b.coverUrl] : []);
+      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, coverCandidates: bCands, status: 'will-read' }, null);
       if (st) { st.textContent = id ? ('Added ' + (b.title || ('ISBN ' + raw)) + ' · on your shelf') : 'Sign in to add.'; }
       inp.value = '';
       scanAnnounce(id ? ('Added ' + (b.title || raw) + ' to your shelf.') : 'Could not add.');
@@ -8823,7 +8855,7 @@ function scanResolveAndFill(visionBooks) {
 
 function scanDropTrayCover(item, key, owned) {
   var strip = scanEl('scan-tray-strip');
-  var cov = scanCoverNode(item.title, item.author, item.cover);
+  var cov = scanCoverNode(item.title, item.author, item.cover, item.coverCandidates);
   cov.classList.add('scan-tray-cov');
   cov.setAttribute('data-key', key);
   if (item.exception) { cov.style.filter = 'grayscale(1) brightness(.86)'; }
@@ -8868,7 +8900,7 @@ function scanRenderReview() {
   for (i = 0; i < scanResult.confident.length; i++) {
     var b = scanResult.confident[i];
     var d = document.createElement('div'); d.className = 'scan-dc';
-    var cov = scanCoverNode(b.title, b.author, b.cover); cov.style.width = '64px'; cov.style.height = '96px';
+    var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
     d.appendChild(cov);
     var cap = document.createElement('div'); cap.className = 'cap';
     var t = document.createElement('div'); t.className = 't'; t.textContent = b.title; cap.appendChild(t);
@@ -8881,7 +8913,7 @@ function scanRenderReview() {
       var d = document.createElement('div'); d.className = 'scan-dc is-lean';
       d.setAttribute('tabindex', '0'); d.setAttribute('role', 'button');
       d.setAttribute('aria-label', 'Needs a look: ' + eb.title + '. Open to fix.');
-      var cov = scanCoverNode(eb.title, eb.author, eb.cover); cov.style.width = '64px'; cov.style.height = '96px';
+      var cov = scanCoverNode(eb.title, eb.author, eb.cover, eb.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
       d.appendChild(cov);
       var fl = document.createElement('div'); fl.className = 'spine-flag'; fl.textContent = 'needs a look'; d.appendChild(fl);
       d.addEventListener('click', function () { scanOpenWalker(eidx); });
@@ -8900,9 +8932,15 @@ function scanRenderReview() {
   // shelf. The back-to-camera control stays live (rapid-scan preserved); the
   // door never auto-navigates.
   var rvBody = scanEl('scan-rv-body'), rvDone = scanEl('scan-rv-done'), rvFoot = scanEl('scan-rv-foot');
+  var rvWrap = scanEl('scan-rv-wrap');   // S4: centering class handle
   if (found === 0) {
     if (rvBody) { rvBody.style.display = 'none'; }
     if (rvDone) { rvDone.style.display = ''; }
+    // S4: the done state is COMPOSED, not top-quartered. is-done makes the wrap a
+    // flex column so the done block centers in the viewport (before, it sat in the
+    // top quarter with ~1000px empty below and the "Shelved N" toast floating at the
+    // very bottom edge). shelf-look grammar: quiet, centered, on the light ground.
+    if (rvWrap) { rvWrap.classList.add('is-done'); }
     // R3a fix (red-team BLOCK 1): honest copy. The door only claims "on your shelf"
     // when a shelve actually ran this pass; reaching found===0 by discarding every
     // exception ("Not a book") added nothing, so it says so.
@@ -8912,10 +8950,18 @@ function scanRenderReview() {
         ? 'Everything from this scan is on your shelf.'
         : 'None of these were added to your shelf.';
     }
+    // S4: the Undo affordance is LEGIBLE + co-located here (was undiscoverable in the
+    // bottom toast). Shown only while a real shelve from this pass is still undoable.
+    var rvDoneUndo = scanEl('scan-rv-done-undo');
+    if (rvDoneUndo) {
+      var canUndo = scanShelvedAny && scanLastShelvedIds && scanLastShelvedIds.length > 0;
+      rvDoneUndo.style.display = canUndo ? '' : 'none';
+    }
     scanHide(rvFoot);
   } else {
     if (rvBody) { rvBody.style.display = ''; }
     if (rvDone) { rvDone.style.display = 'none'; }
+    if (rvWrap) { rvWrap.classList.remove('is-done'); }
     scanShow(rvFoot);
   }
   scanGoScreen('scan-screen-review');
@@ -8943,29 +8989,40 @@ function scanRenderWalkerStep() {
   var grip = document.createElement('div'); grip.className = 'scan-wk-grip'; s.appendChild(grip);
   var prog = document.createElement('div'); prog.className = 'scan-wk-progress';
   prog.textContent = (scanWalkPos + 1) + ' of ' + scanWalkOrder.length + ' to review'; s.appendChild(prog);
-  var row = document.createElement('div'); row.className = 'scan-wk-row';
-  var cov = scanCoverNode(b.title, b.author, b.cover); cov.style.width = '70px'; cov.style.height = '105px';
-  row.appendChild(cov);
-  var g = document.createElement('div'); g.className = 'scan-wk-guess';
   // S1/D1: the primary acceptable candidate is the resolver's OWN top pick. It
   // degrades to the vision read when Google Books returned nothing (manualStub
   // carries the read title/author), so it is never empty.
   var pick = (b.resolved && b.resolved.book && b.resolved.book.title)
     ? b.resolved.book
-    : { title: b.title || '', author: b.author || '', coverUrl: b.cover || null, isbn: '' };
-  var gl = document.createElement('div'); gl.className = 'g-lbl'; gl.textContent = 'Best guess'; g.appendChild(gl);
-  var gt = document.createElement('div'); gt.className = 'g-t'; gt.textContent = pick.title || 'Unclear'; g.appendChild(gt);
-  var ga = document.createElement('div'); ga.className = 'g-a'; ga.textContent = pick.author || 'author unclear'; g.appendChild(ga);
+    : { title: b.title || '', author: b.author || '', coverUrl: b.cover || null, isbn: '', coverCandidates: (b.coverCandidates || []) };
+  // S3 (COVERS+VOICE): Yumi ASKS. Her shared crest (yumiGlyphNode -- the single
+  // glyph source, decorative/aria-hidden) + a spoken question, so this reads as her
+  // wondering aloud, not a form reporting. Register + glyph ONLY: NO model call, NO
+  // generated copy -- static strings, so the walk stays instant and free over N
+  // books offline. (D5: every string here is provisional, listed in the report.)
+  var ask = document.createElement('div'); ask.className = 'scan-wk-ask';
+  if (typeof yumiGlyphNode === 'function') { ask.appendChild(yumiGlyphNode(26, 'scan-wk-orb')); }
+  var askt = document.createElement('div'); askt.className = 'scan-wk-ask-t'; askt.textContent = 'Is this the one?'; ask.appendChild(askt);
+  s.appendChild(ask);
+  var row = document.createElement('div'); row.className = 'scan-wk-row';
+  var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates); cov.style.width = '70px'; cov.style.height = '105px';
+  row.appendChild(cov);
+  var g = document.createElement('div'); g.className = 'scan-wk-guess';
+  var gt = document.createElement('div'); gt.className = 'g-t'; gt.textContent = pick.title || 'I couldn\'t quite read this one'; g.appendChild(gt);
+  var ga = document.createElement('div'); ga.className = 'g-a'; ga.textContent = pick.author || 'author I couldn\'t make out'; g.appendChild(ga);
   row.appendChild(g); s.appendChild(row);
-  // the evidence line — verbatim raw spineText (SC6, needs shelf-vision)
+  // S3: Yumi shows her work -- the verbatim raw spineText (SC6) is KEPT (the honesty
+  // the brief protects), but re-registered: a quiet "what I could read" quote, not
+  // the orange monospace debug artifact it was. Warmth is not the removal of
+  // uncertainty -- the raw read still shows, so a mismatch stays visible before Add.
   var ev = document.createElement('div'); ev.className = 'scan-wk-evidence';
-  var lead = document.createElement('span'); lead.className = 'lead'; lead.textContent = 'I read: ';
-  var raw = document.createElement('span'); raw.className = 'raw'; raw.textContent = "'" + (b.spineText || '') + "'";
-  ev.appendChild(lead); ev.appendChild(raw); s.appendChild(ev);
+  var lead = document.createElement('span'); lead.className = 'lead'; lead.textContent = 'What I could read on the spine: '; ev.appendChild(lead);
+  var raw = document.createElement('span'); raw.className = 'raw'; raw.textContent = '“' + (b.spineText || '') + '”';
+  ev.appendChild(raw); s.appendChild(ev);
   // S1/D1+D2: the PRIMARY accept — moves the top pick into ready-to-shelve (the
   // tray), NEVER a direct library write; "Shelve N" stays the single commit point.
   var accept = document.createElement('button'); accept.type = 'button'; accept.className = 'scan-btn scan-btn-primary scan-wk-accept';
-  accept.textContent = 'Add to ready-to-shelve';
+  accept.textContent = 'Yes — that’s the one';
   accept.addEventListener('click', function () { scanResolveStep('picked', pick); });
   s.appendChild(accept);
   var cands = document.createElement('div'); cands.className = 'scan-wk-cands';
@@ -8978,7 +9035,7 @@ function scanRenderWalkerStep() {
     if (candidateIsPlausible(b.title, b.alternates[j])) { plausible.push(b.alternates[j]); }
   }
   if (plausible.length > 0) {
-    var ch = document.createElement('div'); ch.className = 'c-hd'; ch.textContent = 'or did you mean';
+    var ch = document.createElement('div'); ch.className = 'c-hd'; ch.textContent = 'Or did I mean —';
     cands.appendChild(ch);
     for (j = 0; j < plausible.length && j < 5; j++) {
       (function (cd) {
@@ -8991,19 +9048,23 @@ function scanRenderWalkerStep() {
     }
   }
   var search = document.createElement('button'); search.type = 'button'; search.className = 'scan-wk-search';
-  search.innerHTML = '<span>⌕</span> Search on the Shelf instead';
+  search.innerHTML = '<span>⌕</span> Look it up on the Shelf';
   search.addEventListener('click', function () { location.hash = '#books'; }); // hand off to the Shelf's title/author add
   cands.appendChild(search); s.appendChild(cands);
-  var foot = document.createElement('div'); foot.className = 'scan-wk-foot';
-  var notbook = document.createElement('button'); notbook.type = 'button'; notbook.className = 'scan-btn scan-btn-quiet';
+  // S3: the three ways to DECLINE sit together as quiet text-buttons, visually
+  // subordinate to the gold accept above -- before, three equal-weight buttons
+  // competed with the single accept. Every honest exit is still here: Yumi keeps
+  // her ability to say she is unsure. (The mechanics are unchanged: notbook drops,
+  // skip leaves a draft, skip-the-rest closes the walk.)
+  var foot = document.createElement('div'); foot.className = 'scan-wk-refuse';
+  var notbook = document.createElement('button'); notbook.type = 'button'; notbook.className = 'scan-wk-refuse-btn';
   notbook.textContent = 'Not a book'; notbook.addEventListener('click', function () { scanResolveStep('notbook'); });
-  var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'scan-btn scan-btn-ghost';
+  var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'scan-wk-refuse-btn';
   skip.textContent = 'Skip for now'; skip.addEventListener('click', function () { scanResolveStep('skip'); });
-  foot.appendChild(notbook); foot.appendChild(skip); s.appendChild(foot);
-  var skipall = document.createElement('button'); skipall.type = 'button'; skipall.className = 'scan-wk-skipall';
-  skipall.textContent = 'Skip all ' + (scanWalkOrder.length - scanWalkPos) + ' remaining';
+  var skipall = document.createElement('button'); skipall.type = 'button'; skipall.className = 'scan-wk-refuse-btn';
+  skipall.textContent = 'Skip the rest (' + (scanWalkOrder.length - scanWalkPos) + ')';
   skipall.addEventListener('click', function () { scanCloseWalker(); scanAfterWalk(); });
-  s.appendChild(skipall);
+  foot.appendChild(notbook); foot.appendChild(skip); foot.appendChild(skipall); s.appendChild(foot);
   s.scrollTop = 0;
 }
 
@@ -9016,7 +9077,11 @@ function scanResolveStep(kind, cand) {
     scanResult.confident.push({
       title: cand.title || exc.title, author: cand.author || exc.author, spineText: exc.spineText,
       confidence: 'high', resolved: { status: 'strong', book: cand, alternates: [] },
-      cover: cand.coverUrl || null, alternates: [], exception: false
+      cover: cand.coverUrl || null,
+      // S1: carry the picked candidate's OL->GB list so its review cover + shelved
+      // record self-heal like every other add path.
+      coverCandidates: (cand.coverCandidates && cand.coverCandidates.length > 0) ? cand.coverCandidates : (cand.coverUrl ? [cand.coverUrl] : []),
+      alternates: [], exception: false
     });
     exc._resolved = 'picked';
   } else if (kind === 'notbook') { exc._resolved = 'notbook'; }
@@ -9045,7 +9110,12 @@ function scanShelve() {
   for (i = 0; i < scanResult.confident.length; i++) {
     var it = scanResult.confident[i];
     var isbn = (it.resolved && it.resolved.book && it.resolved.book.isbn) ? it.resolved.book.isbn : '';
-    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, status: 'will-read' }, null);
+    // S1: persist the OL->GB candidate list (not just the primary), so the SHELVED
+    // record self-heals via buildSelfHealingCover exactly like a normally-added book.
+    var itCands = (it.coverCandidates && it.coverCandidates.length > 0)
+      ? it.coverCandidates
+      : ((it.resolved && it.resolved.book && it.resolved.book.coverCandidates) ? it.resolved.book.coverCandidates : null);
+    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, coverCandidates: itCands, status: 'will-read' }, null);
     if (id) { createdIds.push(id); }
   }
   scanLastShelvedIds = createdIds;
@@ -9087,13 +9157,26 @@ function scanShelveFlight(after) {
 }
 
 function scanShowReceipt(n) {
+  scanAnnounce('Shelved ' + n + ' books. Undo available.');
+  // re-render the review to reflect the shelved set leaving (exceptions remain);
+  // this may raise the centered done door (found===0), which OWNS the Undo now.
+  scanRenderReview();
+  // S4: when the review is now EMPTY (everything from this scan is shelved), the
+  // centered done door carries the confirmation + a legible, persistent Undo, so the
+  // bottom-edge toast is suppressed (it was exactly the "floating at the very bottom"
+  // the composition set out to fix) and its 9s auto-clear is NOT armed -- the
+  // done-door Undo persists with the screen. When exceptions REMAIN, the review
+  // continues and the toast stays the right transient affordance (unchanged, 9s).
+  var reviewEmpty = !scanResult || (scanResult.confident.length + scanResult.exceptions.length) === 0;
+  if (reviewEmpty) {
+    scanHide(scanEl('scan-receipt'));
+    if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); scanReceiptTimer = null; }
+    return;
+  }
   scanEl('scan-receipt-txt').innerHTML = 'Shelved <b>' + n + '</b>';
   scanShow(scanEl('scan-receipt'));
-  scanAnnounce('Shelved ' + n + ' books. Undo available.');
   if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); }
   scanReceiptTimer = window.setTimeout(function () { scanHide(scanEl('scan-receipt')); scanLastShelvedIds = []; }, 9000);
-  // re-render the review to reflect the shelved set leaving (exceptions remain)
-  scanRenderReview();
 }
 
 // IMMEDIATE batch Undo (ERRATA-1: no sync-hold). deleteBook is the canonical scrub
@@ -9107,6 +9190,11 @@ function scanUndoShelve() {
   scanLastShelvedIds = [];
   if (scanReceiptTimer) { window.clearTimeout(scanReceiptTimer); scanReceiptTimer = null; }
   scanHide(scanEl('scan-receipt'));
+  // S4: after a real undo, nothing from this pass is on the shelf anymore -- clear
+  // the latch so the done door tells the truth, then re-render so the now-invalid
+  // done-door Undo disappears (canUndo -> false) and the line reflects the reversal.
+  if (removed > 0) { scanShelvedAny = false; }
+  scanRenderReview();
   // Report the REAL outcome (red-team S6 NOTE): a signed-out / already-gone Undo must
   // never announce a false "N removed" — count actual deletions.
   scanAnnounce(removed ? ('Shelving undone. ' + removed + ' books removed.') : 'Nothing to undo.');
@@ -9405,7 +9493,7 @@ function scanFailureHTML() {
 
 function scanReviewHTML() {
   return ''
-  + '<section class="scan-screen" id="scan-screen-review"><div class="scan-rv-wrap">'
+  + '<section class="scan-screen" id="scan-screen-review"><div class="scan-rv-wrap" id="scan-rv-wrap">'
   +   '<div class="scan-rv-top"><button class="scan-rv-back" type="button" id="scan-rv-back" aria-label="Back to camera">‹</button><h1>The scan</h1></div>'
   +   '<div class="scan-rv-body" id="scan-rv-body">'
   +     '<div class="scan-rv-count" id="scan-rv-count">—</div>'
@@ -9417,6 +9505,7 @@ function scanReviewHTML() {
   +     '<div class="scan-rv-done-mark" aria-hidden="true">✓</div>'
   +     '<p class="scan-rv-done-line" id="scan-rv-done-line">Everything from this scan is on your shelf.</p>'
   +     '<button class="scan-btn scan-btn-primary" type="button" id="scan-rv-done-shelf">View your shelf →</button>'
+  +     '<button class="scan-rv-done-undo" type="button" id="scan-rv-done-undo" style="display:none">Undo — put them back</button>'
   +   '</div>'
   + '</div>'
   + '<div class="scan-rv-foot" id="scan-rv-foot">'
@@ -9441,6 +9530,7 @@ function scanWireShell() {
   var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
   var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }
   var rvDoneShelf = scanEl('scan-rv-done-shelf'); if (rvDoneShelf) { rvDoneShelf.addEventListener('click', function () { location.hash = '#books'; }); }
+  var rvDoneUndo = scanEl('scan-rv-done-undo'); if (rvDoneUndo) { rvDoneUndo.addEventListener('click', scanUndoShelve); }   // S4: the legible done-door Undo
   var rUndo = scanEl('scan-receipt-undo'); if (rUndo) { rUndo.addEventListener('click', scanUndoShelve); }
   var vdAdd = scanEl('scan-vd-add'); if (vdAdd) { vdAdd.addEventListener('click', scanVerdictAdd); }
   var vdDismiss = scanEl('scan-vd-dismiss'); if (vdDismiss) { vdDismiss.addEventListener('click', function () { scanHideVerdict(); scanCurrentVerdict = null; if (scanMode === 'book') { scanStartBookDecode(); } }); }

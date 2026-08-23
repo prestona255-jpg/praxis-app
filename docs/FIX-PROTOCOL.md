@@ -104,6 +104,9 @@ either self-driven (§5) or a HALT (§5.5).
   Netlify build is not a failed deploy.
 - **Seed sentinel is `__praxis_seed__`** — public worked-example paths depend on
   it; don't break them.
+- **`git stash` roundtrips re-materialize LF files as CRLF** under `autocrlf=true` —
+  any session that stashes MUST re-verify `CR=0` (`tr -cd '\r' < f | wc -c`) on every
+  code file before committing (a stash/pop silently flips a CR=0 tree to CRLF).
 
 **Enforcement (#5).** These are backstopped by a blocking git pre-commit hook
 (`hooks/pre-commit`, activated via `git config core.hooksPath hooks`). It hard-

@@ -16870,7 +16870,11 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-dc{ width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:default; }
 .scan-dc .scan-cov{ width:64px; height:96px; }
 .scan-dc .cap{ width:64px; height:34px; overflow:hidden; text-align:center; margin-top:7px; }
-.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; word-break:break-word; text-overflow:ellipsis; }
+/* S2 (COVERS+VOICE): break at WORD boundaries; break INSIDE a word only when a
+   single word cannot fit the line on its own (overflow-wrap:break-word). The Tier-1
+   `word-break:break-word` broke mid-word ("Data Independen/ce") by greedily packing
+   the line across the space; removed. The -webkit-line-clamp:2 owns the ellipsis. */
+.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; text-overflow:ellipsis; }
 /* the LEANING gray spine — an exception (Law 1: the lean carries it, never copy alone) */
 .scan-dc.is-lean{ cursor:pointer; }
 .scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
@@ -16883,7 +16887,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-cov .cov-spine{ position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
 .scan-cov .cov-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .scan-cov .cov-txt{ position:absolute; inset:0; padding:8px 7px 7px 10px; display:flex; flex-direction:column; }
-.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; word-break:break-word; text-overflow:ellipsis; }
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; text-overflow:ellipsis; }
 .scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
 
 .scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;
@@ -16896,6 +16900,20 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-rv-done-mark{ width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--gold-hi); border:1.5px solid var(--gold); background:transparent; }
 .scan-rv-done-line{ font-family:var(--font-serif); font-size:19px; line-height:1.35; color:var(--ink); margin:0; max-width:24ch; }
 .scan-rv-done .scan-btn{ min-width:190px; }
+/* S4: the done state is COMPOSED — the wrap becomes a flex column and the done
+   block grows + centers in the viewport, instead of sitting in the top quarter with
+   ~1000px of dead space below and the shelve toast floating at the bottom edge. The
+   back/"The scan" header stays at the top; the done block owns the rest. */
+.scan-rv-wrap.is-done{ display:flex; flex-direction:column; padding-bottom:calc(28px + env(safe-area-inset-bottom)); }
+.scan-rv-wrap.is-done .scan-rv-done{ flex:1 1 auto; justify-content:center; padding-top:8px; padding-bottom:8px; }
+/* the done block grows to fill; its children must NOT (the primary .scan-btn base
+   carries flex:1, which would otherwise stretch it and un-center the cluster). */
+.scan-rv-wrap.is-done .scan-rv-done > *{ flex:0 0 auto; }
+/* S4: the legible, co-located Undo — a quiet text-button beneath the primary,
+   discoverable and persistent with the done screen (was buried in the 9s toast). */
+.scan-rv-done-undo{ background:none; border:none; cursor:pointer; font-family:var(--font-body); font-size:13px; color:var(--ink-3); padding:11px 8px; min-height:44px; margin-top:-2px; }
+.scan-rv-done-undo:active{ color:var(--ink-2); }
+.scan-rv-done-undo:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; border-radius:var(--radius-sm); }
 
 /* ---- EXCEPTION WALKER — sequential fix-next sheet ---- */
 #scan-walker{ position:absolute; inset:0; z-index:80; display:none; background:var(--scrim); }
@@ -16906,16 +16924,22 @@ body.wc-focus .app-nav { opacity:.26; }
   transform:translateY(0); }
 .scan-wk-grip{ width:38px; height:4px; border-radius:2px; background:var(--line-page-2); margin:0 auto 12px; }
 .scan-wk-progress{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); text-align:center; margin-bottom:14px; }
+/* S3 (COVERS+VOICE): Yumi asks. Her shared crest + a serif question, so the sheet
+   opens with her wondering aloud rather than a mono log-label. */
+.scan-wk-ask{ display:flex; align-items:center; gap:11px; margin-bottom:14px; }
+.scan-wk-ask .yumi-glyph-host{ flex:none; display:inline-flex; }
+.scan-wk-ask-t{ font-family:var(--font-serif); font-weight:600; font-size:20px; line-height:1.2; color:var(--ink); }
 .scan-wk-row{ display:flex; gap:14px; }
 .scan-wk-row .scan-cov{ width:70px; height:105px; flex:none; filter:grayscale(1) brightness(.9); }
 .scan-wk-guess{ flex:1; min-width:0; }
-.scan-wk-guess .g-lbl{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
 .scan-wk-guess .g-t{ font-family:var(--font-serif); font-weight:600; font-size:18px; color:var(--ink); margin:2px 0 0; line-height:1.15; }
 .scan-wk-guess .g-a{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); margin:2px 0 0; }
 .scan-wk-evidence{ margin-top:14px; padding:11px 13px; border-radius:var(--radius-md); background:var(--wash-page); border:1px solid var(--line-page);
   font-family:var(--font-mono); font-size:12.5px; color:var(--ink); }
 .scan-wk-evidence .lead{ color:var(--ink-3); }
-.scan-wk-evidence .raw{ color:var(--danger); font-weight:500; }
+/* S3: the raw spine read is KEPT (honest) but re-registered -- a quiet ink quote,
+   not the alarm-orange (--danger) debug string it was. */
+.scan-wk-evidence .raw{ color:var(--ink-2); font-weight:500; }
 .scan-wk-cands{ margin-top:14px; }
 .scan-wk-cands .c-hd{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
 .scan-wk-cand{ width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;
@@ -16925,9 +16949,13 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-wk-cand .ca{ font-family:var(--font-body); font-size:12px; color:var(--ink-2); }
 .scan-wk-search{ width:100%; display:flex; align-items:center; gap:8px; padding:12px 13px; border-radius:var(--radius-md);
   border:1px dashed var(--line-page-2); background:transparent; color:var(--ink-3); font-family:var(--font-body); font-size:13px; cursor:pointer; margin-bottom:8px; }
-.scan-wk-foot{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
-.scan-wk-foot .scan-btn{ flex:1; }
-.scan-wk-skipall{ width:100%; text-align:center; margin-top:12px; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--ink-3); background:none; border:none; cursor:pointer; padding:8px; }
+/* S3: the three ways to decline -- quiet, grouped, SUBORDINATE to the gold accept.
+   Text-buttons on no ground, 44px tap targets (P3), so one accept clearly outweighs
+   them (replaces the old .scan-wk-foot / .scan-wk-skipall equal-weight buttons). */
+.scan-wk-refuse{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:6px 20px; margin-top:18px; }
+.scan-wk-refuse-btn{ background:none; border:none; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--ink-3); padding:11px 4px; min-height:44px; }
+.scan-wk-refuse-btn:active{ color:var(--ink-2); }
+.scan-wk-refuse-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; border-radius:var(--radius-sm); }
 
 /* ---- RECEIPT + shelve flight glyph ---- */
 #scan-flight-layer{ position:absolute; inset:0; z-index:70; pointer-events:none; display:none; }
