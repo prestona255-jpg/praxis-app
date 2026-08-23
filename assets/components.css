@@ -5598,7 +5598,7 @@ html { overscroll-behavior-y: contain; }
      B1/L5: the `.yumi-bloom-line{display:none}` that used to hide the sprawling
      hint line here is retired -- there is no caption at any width now, which is
      what makes AMB-1's "ONE ruled size" true rather than width-conditional. */
-  #app { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  #app { padding-bottom: calc(var(--floating-stack-h) + env(safe-area-inset-bottom)); }
 
   /* Phase 3.1: the glass search is desktop chrome; hide it on the
      56px mobile bar so the hamburger layout is unchanged from before. */
@@ -16365,6 +16365,16 @@ body.wc-focus .app-nav { opacity:.26; }
    10021 (app modal tier) / toast 10022.
    ============================================================================= */
 
+/* DEVICE FELT PASS (Defect 2) — the floating-control stack clearance, ONE token so
+   every scroll container that carries a floating control (the "+" door, the Yumi
+   bloom, the scan foot) clears it by the same measure and the four surfaces never
+   drift apart. Sized to the TALLEST reach: the shelf-raised "+" = --sp-5 (24) + 62px
+   lift + 42px height = 128px, + a 32px gap = 160px (bumped from 144 at the device felt
+   pass: +16 was positive but read crowded on the exact surface that had overlapped;
+   the pad sits below the fold on every surface so the extra air costs nothing visible).
+   safe-area is added at each use site (the FABs already carry env(safe-area-inset-bottom),
+   so it cancels in the gap). */
+:root{ --floating-stack-h:160px; }
 /* CD-1 — the "+" create door (bottom-left), mirroring .yumi-bloom's ruled
    size/position/z (components.css:19-58) in the opposite corner. Gilded family
    (Universal Recipe 5) so the two corners read as one "presence" grammar. */
@@ -16466,7 +16476,13 @@ body.wc-focus .app-nav { opacity:.26; }
 .capdoor-body{ padding:10px 16px 4px; overflow-y:auto; flex:1 1 auto; }
 
 /* CD-6 — the mode set */
-.capdoor-modes{ display:flex; gap:6px; flex-wrap:wrap; padding:2px 0 12px; }
+/* DEVICE FELT PASS (Defect 3, UNPROVEN — iOS-WebKit only, not reproducible in Blink):
+   the wrapped mode row can under-report its height on iOS Safari, letting the following
+   .capdoor-field-wrap lay over its 2nd line (the ghosted "Scan a book"). align-content
+   :flex-start forces the wrapped lines to stack from the top so the container reports
+   its FULL height; width:100% + the box-sizing pin keep the wrap deterministic. Zero
+   effect in Blink (verified no change at 390); the real check is Preston's device walk. */
+.capdoor-modes{ display:flex; gap:6px; flex-wrap:wrap; align-content:flex-start; width:100%; box-sizing:border-box; padding:2px 0 12px; }
 .capdoor-mode{
   display:inline-flex; align-items:center; gap:6px; font-family:var(--font-body); font-size:12.5px;
   color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line-2);
@@ -16852,7 +16868,7 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* ---- REVIEW — the mirror shelf (quiet DRAFT-CASE dialect of the carved cavity) ---- */
 #scan-screen-review{ background:var(--page); overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.scan-rv-wrap{ min-height:100%; padding:calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); max-width:960px; margin:0 auto; }
+.scan-rv-wrap{ min-height:100%; padding:calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(var(--floating-stack-h) + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); max-width:960px; margin:0 auto; }
 .scan-rv-top{ display:flex; align-items:center; gap:12px; height:48px; }
 .scan-rv-back{ width:36px; height:36px; border-radius:50%; background:var(--wash-page); border:1px solid var(--line-page); color:var(--ink); font-size:17px; cursor:pointer; }
 .scan-rv-top h1{ font-family:var(--font-serif); font-weight:500; font-size:26px; color:var(--ink); margin:0; }
@@ -16886,8 +16902,14 @@ body.wc-focus .app-nav { opacity:.26; }
   box-shadow:0 3px 5px rgba(36,23,16,.3); background:linear-gradient(135deg,var(--scan-cloth-1),var(--scan-cloth-2)); display:block; }
 .scan-cov .cov-spine{ position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--gold)); }
 .scan-cov .cov-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.scan-cov .cov-txt{ position:absolute; inset:0; padding:8px 7px 7px 10px; display:flex; flex-direction:column; }
-.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; text-overflow:ellipsis; }
+/* COVERS+VOICE FIX (device felt pass): widen the text inset (was 8 7 7 10 -> inner
+   47px) so ordinary words fit even where iOS renders the serif wider than Blink. */
+.scan-cov .cov-txt{ position:absolute; inset:0; padding:7px 4px 7px 6px; display:flex; flex-direction:column; }
+/* .cov-t is STAND-IN ART, not the label (the .cap caption below carries the readable
+   title). It must NEVER stack mid-word: overflow-wrap:normal keeps whole words on the
+   line and a word too wide simply CLIPS at the box edge (overflow:hidden) -- a designed
+   cover cut, not a mid-word break. The Tier-1 `break-word` stacked "Independen/ce". */
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; text-overflow:ellipsis; }
 .scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
 
 .scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;

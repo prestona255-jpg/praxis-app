@@ -602,6 +602,13 @@ var Intros = (function () {
 
   function maybeShowPanel(id) {
     if (!id || rootEl) { return; }
+    // DEVICE FELT PASS (Defect 4): per-page intro cards are for signed-in readers.
+    // A signed-out visitor has marked nothing, so a card like "Yesterday you marked
+    // Freire on 'banking education.'" is false pre-auth. Gate BEFORE markPanelSeen so
+    // the seen-flag is NOT consumed while signed out and the panel still fires once
+    // after sign-in. About's "Re-enter a page" retake (showPanel/startJourney) is a
+    // deliberate user action and stays ungated.
+    if (typeof getCurrentUser === 'function' && !getCurrentUser()) { return; }
     if (panelSeen(id)) { return; }
     markPanelSeen(id);           // auto-show-once: showing counts as seen
     showPanel(id);
