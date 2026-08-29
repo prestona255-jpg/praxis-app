@@ -45,6 +45,11 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
   spines · FAB/Review-N overlap at 390 (overnight-eligible) · vision-proxy latent stop_reason gap · iOS
   home-icon opens Safari. Scan-local S-B residuals: dead `.barcode-scanner-*` / `.shelf-scan-status` CSS
   + the stale `downscaleShelfPhoto` comment.
+- **COVERS (v3.282/283, 2026-08-29)** — scan cover resolve: `scanResolveAndFill` never set `item.coverCandidates`,
+  so the tray / review / walker covers only ever tried `coverCandidates[0]` (the OpenLibrary url) and never the
+  Google Books art. Fixed at v3.282; dead `scanClassify` removed at v3.283. Carried debt T1 (three divergent cover
+  decision paths) and T4 (OL-before-GB ordering unexamined) are in the CARRIED-DEBT LEDGER (`docs/launch-runway.md`).
+  Record: `docs/checkpoints/covers-diagnosis.md`.
 
 ## Round history
 

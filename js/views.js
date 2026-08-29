@@ -6870,7 +6870,11 @@ function downscaleShelfPhoto(file, cb) {
 // vision-proxy, and console-logs the returned titles. Two-arg
 // .then(onOk, onErr) throughout -- never .catch (ES3 parse harness).
 // SCAN ROUND — RETIRED: scanResponseToSpecs (the vision-proxy shelf-response
-// normalizer) removed with the file-input shelf path; #scan uses scanClassify (S1).
+// normalizer) removed with the file-input shelf path. #scan builds its items in
+// scanResolveAndFill, which resolves and drops them into the tray one at a time.
+// (This line used to name scanClassify — a batch pairer that never had a caller
+// from the day it was written, v3.260. It is where the v3.279 cover-candidate fix
+// landed and died; both the function and that claim are gone as of v3.283.)
 
 // Phase 3: hand a resolved single-book lookup (barcode / manual) to the review
 // screen. Guarded so Stage-3 inputs are verifiable before the Stage-4 screen lands.
@@ -8009,35 +8013,6 @@ function scanIsException(vb, resolved) {
   return scanGbNoMatch(vb, resolved);
 }
 
-// Pair vision books with their resolver results (index-aligned; resolveBatch
-// preserves order) and split confident vs exception, carrying the fields the
-// surface needs: spineText for the walker evidence line; resolved cover +
-// alternates for the tray and the walker candidates.
-function scanClassify(visionBooks, resolvedArray) {
-  var confident = [], exceptions = [];
-  var i;
-  for (i = 0; i < visionBooks.length; i++) {
-    var vb = visionBooks[i] || {};
-    var rz = resolvedArray[i] || null;
-    var item = {
-      title:      (vb.title || ''),
-      author:     (vb.author || ''),
-      spineText:  (vb.spineText || ''),
-      confidence: (vb.confidence || 'low'),
-      resolved:   rz,
-      cover:      (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
-      // S1: carry the full OL->GB candidate list so the review cover + the shelved
-      // record can self-heal (see scanCoverNode / scanShelve). The single `cover`
-      // above stays for callers that only need the primary.
-      coverCandidates: (rz && rz.book && rz.book.coverCandidates) ? rz.book.coverCandidates : [],
-      alternates: (rz && rz.alternates) ? rz.alternates : []
-    };
-    if (scanIsException(vb, rz)) { item.exception = true; exceptions.push(item); }
-    else { item.exception = false; confident.push(item); }
-  }
-  return { confident: confident, exceptions: exceptions, found: confident.length + exceptions.length };
-}
-
 // ============================================================================
 // SCAN ROUND — S2..S5: the #scan surface. Ported from scan-surface.html (the
 // felt-pending SHAPE-B mockup): a full-bleed camera that identifies a book
@@ -8832,11 +8807,11 @@ function scanResolveAndFill(visionBooks) {
         confidence: vb.confidence || 'low', resolved: rz,
         cover: (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
         // COVERS-FIX: carry the resolver's FULL OL->GB candidate list. The four
-        // scanCoverNode call sites (tray 8858, review 8903/8916, walker 9008) read
+        // scanCoverNode call sites (tray 8842, review 8887/8900, walker 8992) read
         // item.coverCandidates; without this key they got `undefined`, so the walk
         // fell back to the single `cover` -- which IS coverCandidates[0], the
         // OpenLibrary url -- and a confident match whose OL cover 404'd never tried
-        // its Google Books art. Same defensive read as the shelve path (9115-9118);
+        // its Google Books art. Same defensive read as the shelve path (9099-9102);
         // [] degrades to today's single-url behavior inside scanCoverNode.
         coverCandidates: (rz && rz.book && rz.book.coverCandidates && rz.book.coverCandidates.length > 0)
           ? rz.book.coverCandidates : [],

@@ -166,6 +166,19 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   The reviewer then HELD on a regression its own tooling caused. Parse, grep and byte
   deltas all passed — they read the working tree. Only `git diff <base>..HEAD --stat`
   saw it. Verify the tree after ANY amend; prefer a new commit.)
+- A FIX MUST PROVE ITS CALL SITE EXECUTES, NOT MERELY THAT THE LINE EXISTS.
+  Editing a function is not shipping a behavior. Before any fix that changes a
+  function's body is claimed done, trace that function UP to a real entry point —
+  a listener, a route, a lifecycle hook — and record the chain. `grep -c '<fn>('`
+  == 1 means the only occurrence is the DEFINITION: zero callers, dead code.
+  Corroborate with `git log -S '<fn>('`, which shows every commit where the
+  occurrence COUNT changed; if the count never rose above 1, the function has
+  never had a caller. (COVERS, 2026-08-29: v3.279 shipped its cover-candidate fix
+  into `scanClassify` (views.js:8016) — a batch pairer with no caller since birth
+  at v3.260. The line was real, the comment was accurate, the parse gate was
+  green, and the behavior never changed on a single device. The live twin,
+  `scanResolveAndFill`, kept omitting the key for two more versions. This is the
+  claims-outliving-code family, wearing a shipped diff instead of a stale doc.)
 - CLAIMING ABSENCE REQUIRES PROOF: "X doesn't exist" must cite the exhaustive search
   that would have found it (`git log -S`, full-corpus grep with ESCAPED patterns),
   not a narrow grep. Bitten twice: v3.209's "the hole cannot exist by construction,
