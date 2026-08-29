@@ -8831,6 +8831,15 @@ function scanResolveAndFill(visionBooks) {
         title: vb.title || '', author: vb.author || '', spineText: vb.spineText || '',
         confidence: vb.confidence || 'low', resolved: rz,
         cover: (rz && rz.book && rz.book.coverUrl) ? rz.book.coverUrl : null,
+        // COVERS-FIX: carry the resolver's FULL OL->GB candidate list. The four
+        // scanCoverNode call sites (tray 8858, review 8903/8916, walker 9008) read
+        // item.coverCandidates; without this key they got `undefined`, so the walk
+        // fell back to the single `cover` -- which IS coverCandidates[0], the
+        // OpenLibrary url -- and a confident match whose OL cover 404'd never tried
+        // its Google Books art. Same defensive read as the shelve path (9115-9118);
+        // [] degrades to today's single-url behavior inside scanCoverNode.
+        coverCandidates: (rz && rz.book && rz.book.coverCandidates && rz.book.coverCandidates.length > 0)
+          ? rz.book.coverCandidates : [],
         alternates: (rz && rz.alternates) ? rz.alternates : [], exception: isExc
       };
       var key = bookIdentityKey(item.title, item.author);
