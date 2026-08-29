@@ -179,6 +179,11 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   green, and the behavior never changed on a single device. The live twin,
   `scanResolveAndFill`, kept omitting the key for two more versions. This is the
   claims-outliving-code family, wearing a shipped diff instead of a stale doc.)
+- When a session instruction bars spawning agents, FIX-PROTOCOL §9's fix-red-team gate
+  cannot run. That is a HALT-tier condition to be named and ruled on by Preston before
+  push, never silently absorbed or substituted with an inline pass. (COVERS, 2026-08-29:
+  named at the HALT and ruled acceptable for that round only — a two-line property
+  assignment mirroring an existing guard — explicitly NOT as precedent.)
 - CLAIMING ABSENCE REQUIRES PROOF: "X doesn't exist" must cite the exhaustive search
   that would have found it (`git log -S`, full-corpus grep with ESCAPED patterns),
   not a narrow grep. Bitten twice: v3.209's "the hole cannot exist by construction,

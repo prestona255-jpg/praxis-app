@@ -616,6 +616,18 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **COVERS (scan cover resolve) — fix + dead-code, v3.282/v3.283, 2026-08-29** — the scan tray/review/walker
+  covers only ever tried `coverCandidates[0]` (the OpenLibrary url) and never the Google Books art, because
+  `scanResolveAndFill`'s item literal never set `coverCandidates`. Device scan at v3.279 read "22 found · 20
+  confident" with **8 of 20** painting real art — an OpenLibrary per-ISBN hit rate, not a matcher signal.
+  `d9d47e5` carries the two-line property assignment (mirroring the shelve-path guard, views.js:9099-9102);
+  `e94740c` deletes `scanClassify` — **the caller-less function the v3.279 cover fix landed inside**, dead since
+  birth at v3.260 — and corrects the comment that claimed `#scan` used it. Mechanism proved headless on verbatim
+  bytes (candidates absent → 1 url attempted; present → 2, in order, art paints at 64×96; exhausted → typeset
+  slot, no broken-image icon). **Device resolve-rate is NOT measured — egress to the live site is blocked from
+  the build box; Preston's device pass owns it.** Carried debt T1/T2/T4 → `docs/launch-runway.md`; T3 + the
+  agents-barred/§9 rule → `CLAUDE.md` § Verification. Record: `docs/checkpoints/covers-diagnosis.md`.
+
 - [x] **R-CAPTURE — THE DOOR (net-new unified capture surface, v3.252→v3.259; ROUND CLOSED 2026-07-25)** —
   every way a thought enters Praxis — type · voice · paste · import — became ONE fast, unlosable door instead
   of four bespoke UIs. Shipped ADDITIVE v3.252 (create-corner + Capture nav + ⌘N · pre-rendered two-size sheet ·
