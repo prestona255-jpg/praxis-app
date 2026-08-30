@@ -8142,6 +8142,13 @@ function scanIsException(vb, resolved) {
   return scanGbNoMatch(vb, resolved);
 }
 
+// T14: did the CATALOGUE fail to answer, as opposed to answering "no such book"?
+// The predicate above is unchanged on purpose -- a book we could not look up still
+// cannot be confidently shelved, so it still lands in the exception band. What
+// changes is that we now KNOW which kind it is, and say so instead of telling the
+// reader their correctly-read spine "needs a look."
+function scanLookupFailed(resolved) { return !!(resolved && resolved.lookupFailed); }
+
 // ============================================================================
 // SCAN ROUND — S2..S5: the #scan surface. Ported from scan-surface.html (the
 // felt-pending SHAPE-B mockup): a full-bleed camera that identifies a book
@@ -8938,6 +8945,10 @@ function scanCaptureBase64(crop) {
 // The deliberate shelf shutter (the ONLY auto-fire is Book barcode — Law 6).
 function scanFireShelfShot() {
   if (scanShotBusy) { return; }            // SC10 queue depth 1
+  // RULING B: the earliest possible refusal — BEFORE the freeze, the capture and
+  // the budget spend, so a blocked tap costs the reader nothing. The shutter itself
+  // stays enabled and tappable; the tap routes attention to the bar.
+  if (scanShutterBlocked()) { scanCallDraftBar(); return; }
   if (!scanCamReady) { return; }
   scanClearTimers(); scanStopBookDecode(); scanHideVerdict();
   scanFreezeFrame();
@@ -8950,6 +8961,13 @@ function scanFireShelfShot() {
 // the shutter AND the desktop drop-zone (SC7c).
 function scanRunShelfVision(base64) {
   if (scanShotBusy) { return; }
+  // RULING B, second site: this is the CHOKEPOINT both shelf-capture doors share
+  // (the shutter above and the desktop drop-zone via scanShelfFromFile). Guarding
+  // only the shutter would leave the drop-zone able to destroy the draft, which is
+  // the per-path divergence the covers bug was made of. Book mode is deliberately
+  // NOT guarded: its cover shot and barcode add go through scanCommitBook and never
+  // touch scanResult, so they cannot destroy a draft.
+  if (scanShutterBlocked()) { scanCallDraftBar(); return; }
   scanShotBusy = true;
   if (typeof scanShelfBudgetSpend === 'function' && !scanShelfBudgetSpend()) { // S5 cost gate (no-op until S5)
     scanShotBusy = false; scanUnfreeze(); scanShowCapRefusal(); return;
@@ -8980,18 +8998,23 @@ function scanResolveAndFill(visionBooks) {
   scanShow(scanEl('scan-tray'));
   var strip = scanEl('scan-tray-strip'); if (strip) { strip.innerHTML = ''; }
   scanShelvedAny = false;   // R3a: a fresh scan pass — nothing shelved from it yet
+  // R1: a new capture supersedes the pending draft (8992 replaces scanResult
+  // wholesale), so the bar comes down the moment the reader shoots. The bar's job
+  // is to make that supersession VISIBLE BEFORE the shutter, not to hover over the
+  // tray afterwards claiming a draft that is already gone.
+  scanDraftPending = false; scanRenderDraftBar();
   scanTrayItems = [];
   var seen = {};                    // idKey -> tray cover element (within-scan)
   var classified = { confident: [], exceptions: [] };
-  var found = 0, confident = 0, exceptions = 0;
+  var found = 0, confident = 0, exceptions = 0, unlooked = 0;   // T14: unlooked = catalogue never answered
   var reviewBtn = scanEl('scan-tray-review-btn'); if (reviewBtn) { reviewBtn.style.display = 'none'; }
   var u = getCurrentUser();
   var idx = 0;
   function next() {
     if (idx >= visionBooks.length) {
       scanResult = { confident: classified.confident, exceptions: classified.exceptions, found: found,
-        rec: { found: found, conf: confident, exc: exceptions } };   // S3b: the scan's fixed found/confident record
-      scanFinishFill(found, confident, exceptions);
+        rec: { found: found, conf: confident, exc: exceptions, unlooked: unlooked } };   // S3b: the scan's fixed found/confident record
+      scanFinishFill(found, confident, exceptions, unlooked);
       return;
     }
     var vb = visionBooks[idx]; idx++;
@@ -9015,6 +9038,12 @@ function scanResolveAndFill(visionBooks) {
         // and it must survive scanSaveDraft -- deriving it from `resolved` at three
         // sites is exactly the per-path divergence the covers bug was made of.
         isbn: (rz && rz.book && rz.book.isbn) ? rz.book.isbn : '',
+        // T14: carry the catalogue-failure signal onto the ITEM, for the same
+        // reason coverCandidates/isbn are carried -- it must survive scanSaveDraft,
+        // and deriving it from `resolved` at each of the four read sites is exactly
+        // the per-path divergence the covers bug was made of.
+        lookupFailed: scanLookupFailed(rz),
+        lookupHttpStatus: (rz && rz.lookupHttpStatus) ? rz.lookupHttpStatus : 0,
         alternates: (rz && rz.alternates) ? rz.alternates : [], exception: isExc
       };
       var key = bookIdentityKey(item.title, item.author);
@@ -9032,8 +9061,15 @@ function scanResolveAndFill(visionBooks) {
         if (key !== 'ta:|') { seen[key] = el; }
         found++;
         if (isExc) { exceptions++; classified.exceptions.push(item); } else { confident++; classified.confident.push(item); }
+        if (item.lookupFailed) { unlooked++; }
         var subB = scanEl('scan-tray-sub');
-        if (subB) { subB.textContent = m ? (m.tier === 'exact' ? 'already on your shelf' : 'may be a copy · still adds') : ''; }
+        // T14: a catalogue outage outranks the shelf-match note in the live tray
+        // line -- it is the thing actually going wrong, and silence here is what
+        // let a whole degraded run look normal until the review face.
+        if (subB) {
+          subB.textContent = item.lookupFailed ? 'couldn’t reach the catalogue'
+            : (m ? (m.tier === 'exact' ? 'already on your shelf' : 'may be a copy · still adds') : '');
+        }
       }
       var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
       window.setTimeout(next, scanRM() ? 20 : 70);
@@ -9077,12 +9113,21 @@ function scanAddTick(el) {
   try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
 }
 
-function scanFinishFill(found, confident, exceptions) {
+// T14: `unlooked` are exceptions ONLY because the catalogue never answered. They
+// are counted inside `exceptions`, so the honest split is (exceptions - unlooked)
+// genuinely needing a look plus `unlooked` we could not ask about. Reporting them
+// together is what made a quota outage read as a bad shelf photograph.
+function scanFinishFill(found, confident, exceptions, unlooked) {
+  var un = unlooked || 0;
+  var needLook = exceptions - un;
+  var line = confident + ' confident · ' + needLook + ' need a look'
+           + (un ? (' · ' + un + ' couldn’t be looked up') : '');
   var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
-  var sub = scanEl('scan-tray-sub'); if (sub) { sub.textContent = confident + ' confident · ' + exceptions + ' need a look'; }
+  var sub = scanEl('scan-tray-sub'); if (sub) { sub.textContent = line; }
   var btn = scanEl('scan-tray-review-btn'); if (btn) { btn.style.display = 'block'; btn.textContent = 'Review the shelf'; }
   scanSaveDraft(); scanUpdateNavBadge();
-  scanAnnounce(found + ' books found. ' + confident + ' confident, ' + exceptions + ' need a look.');
+  scanAnnounce(found + ' books found. ' + confident + ' confident, ' + needLook + ' need a look'
+    + (un ? (', ' + un + ' could not be looked up — the book catalogue did not answer.') : '.'));
 }
 
 // ---- the mirror shelf (draft case) ----
@@ -9135,18 +9180,40 @@ function scanRenderReview() {
   for (i = 0; i < scanResult.exceptions.length; i++) {
     (function (eidx) {
       var eb = scanResult.exceptions[eidx];
-      var d = document.createElement('div'); d.className = 'scan-dc is-lean';
+      // T14: two DIFFERENT states used to share one gray leaning spine. `is-lean`
+      // (grayscale + rotate) reads as "unavailable / we could not read this" and
+      // is correct for a genuine no-match. A book whose spine we read perfectly
+      // and could not ASK about is not that -- it gets `is-unlooked`: upright,
+      // ungrayed, gold-deep flag (the .is-shelved/.is-maybe register), because
+      // nothing is wrong with the book. Both still open the walker.
+      var ebFailed = !!eb.lookupFailed;
+      var d = document.createElement('div'); d.className = 'scan-dc ' + (ebFailed ? 'is-unlooked' : 'is-lean');
       d.setAttribute('tabindex', '0'); d.setAttribute('role', 'button');
-      d.setAttribute('aria-label', 'Needs a look: ' + eb.title + '. Open to fix.');
+      d.setAttribute('aria-label', (ebFailed ? 'Could not be looked up: ' : 'Needs a look: ') + eb.title + '. Open to fix.');
       var cov = scanCoverNode(eb.title, eb.author, eb.cover, eb.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
       d.appendChild(cov);
-      var fl = document.createElement('div'); fl.className = 'spine-flag'; fl.textContent = 'needs a look'; d.appendChild(fl);
+      var fl = document.createElement('div'); fl.className = 'spine-flag';
+      fl.textContent = ebFailed ? 'couldn’t look up' : 'needs a look'; d.appendChild(fl);
       d.addEventListener('click', function () { scanOpenWalker(eidx); });
       d.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scanOpenWalker(eidx); } });
       ewrap.appendChild(d);
     })(i);
   }
   scanEl('scan-rv-exc-band').style.display = exc ? 'block' : 'none';
+  // T14: the RUN-level truth. Without this line a reader sees "19 found · 1
+  // confident" and concludes the scan misread eighteen spines. It did not — it
+  // could not reach the book catalogue for eighteen of them, which is a passing
+  // outage, not a bad photograph, and it means retrying costs nothing but time.
+  var rvUn = 0;
+  for (i = 0; i < scanResult.exceptions.length; i++) { if (scanResult.exceptions[i].lookupFailed) { rvUn++; } }
+  var rvNote = scanEl('scan-rv-lookupnote');
+  if (rvNote) {
+    if (rvUn > 0) {
+      rvNote.textContent = rvUn + (rvUn === 1 ? ' book couldn’t be looked up' : ' books couldn’t be looked up')
+        + ' — the book catalogue didn’t answer. Nothing is wrong with the read; try these again in a minute.';
+      rvNote.style.display = '';
+    } else { rvNote.style.display = 'none'; }
+  }
   // 2b: the button counts what it will CREATE (shelveN), not the confident total.
   // The band header above still shows the true confident count.
   scanEl('scan-rv-shelve-n').textContent = shelveN;
@@ -9229,7 +9296,12 @@ function scanRenderWalkerStep() {
   // books offline. (D5: every string here is provisional, listed in the report.)
   var ask = document.createElement('div'); ask.className = 'scan-wk-ask';
   if (typeof yumiGlyphNode === 'function') { ask.appendChild(yumiGlyphNode(26, 'scan-wk-orb')); }
-  var askt = document.createElement('div'); askt.className = 'scan-wk-ask-t'; askt.textContent = 'Is this the one?'; ask.appendChild(askt);
+  // T14: when the catalogue never answered, "Is this the one?" is a lie — there is
+  // no candidate to be the one, and the pick below is the vision read echoed back.
+  // Yumi says what actually happened instead of asking about a guess she never got.
+  var askt = document.createElement('div'); askt.className = 'scan-wk-ask-t';
+  askt.textContent = b.lookupFailed ? 'I read this one — I just couldn’t look it up' : 'Is this the one?';
+  ask.appendChild(askt);
   s.appendChild(ask);
   var row = document.createElement('div'); row.className = 'scan-wk-row';
   var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates); cov.style.width = '70px'; cov.style.height = '105px';
@@ -9248,8 +9320,14 @@ function scanRenderWalkerStep() {
   ev.appendChild(raw); s.appendChild(ev);
   // S1/D1+D2: the PRIMARY accept — moves the top pick into ready-to-shelve (the
   // tray), NEVER a direct library write; "Shelve N" stays the single commit point.
+  if (b.lookupFailed) {
+    var lf = document.createElement('div'); lf.className = 'scan-wk-lookupfail';
+    lf.textContent = 'The book catalogue didn’t answer' + (b.lookupHttpStatus ? (' (' + b.lookupHttpStatus + ')') : '')
+      + '. Accepting adds it exactly as read — cover and details fill in later.';
+    s.appendChild(lf);
+  }
   var accept = document.createElement('button'); accept.type = 'button'; accept.className = 'scan-btn scan-btn-primary scan-wk-accept';
-  accept.textContent = 'Yes — that’s the one';
+  accept.textContent = b.lookupFailed ? 'Add it as I read it' : 'Yes — that’s the one';
   accept.addEventListener('click', function () { scanResolveStep('picked', pick); });
   s.appendChild(accept);
   var cands = document.createElement('div'); cands.className = 'scan-wk-cands';
@@ -9444,18 +9522,219 @@ function scanSaveDraft() {
     sv(k, { confident: scanResult.confident, exceptions: scanResult.exceptions, rec: scanResult.rec, savedAt: Date.now() });
   } else { scanClearDraft(); }
 }
+// R2 / T15 — THE DRAFT NOW HAS A CLOCK. `savedAt` has been written by
+// scanSaveDraft since the field was introduced and read by NOTHING (grep was 1
+// occurrence, the write); scanLoadDraft rebuilt the object without it, so the
+// value could not reach any caller. It is rewritten on EVERY save, which makes it
+// a LAST-TOUCHED stamp already — exactly the clock R2 wants, so a draft started
+// yesterday and added to an hour ago is one hour old, not twenty-five.
+//
+// CLOCK SOURCE: Date.now(), the device wall clock. There is no server time on this
+// path and adding one would be a network call on a local read. Two ways it lies,
+// both handled by scanDraftAgeMs returning a NEGATIVE age:
+//   - the stamp is missing/garbage (a draft written before this round, or a
+//     corrupted value) -> age -1;
+//   - the clock moved BACKWARD after the save (travel, manual set, NTP step) ->
+//     age genuinely negative.
+// Both cases: the draft NEVER auto-expires and reads as "from an earlier scan."
+// Refusing to delete on an untrustworthy clock is the only safe direction — the
+// failure mode of keeping a draft too long is a banner; of dropping one too early,
+// silent data loss.
+var SCAN_DRAFT_TTL_MS = 24 * 60 * 60 * 1000;   // ~24h, R2
+function scanDraftAgeMs(savedAt) {
+  if (!(typeof savedAt === 'number' && isFinite(savedAt) && savedAt > 0)) { return -1; }
+  return Date.now() - savedAt;
+}
+function scanDraftIsExpired(d) {
+  if (!d) { return false; }
+  var age = scanDraftAgeMs(d.savedAt);
+  if (age < 0) { return false; }        // unknown stamp OR backward clock -> never expire
+  return age > SCAN_DRAFT_TTL_MS;
+}
+// A human phrase for the banner. Deliberately coarse — the reader needs "is this
+// mine from just now, or a leftover," not a timestamp.
+function scanDraftWhen(savedAt) {
+  var age = scanDraftAgeMs(savedAt);
+  if (age < 0) { return 'from an earlier scan'; }
+  if (age < 60000) { return 'from a moment ago'; }
+  var m = Math.round(age / 60000);
+  if (m < 60) { return 'from ' + m + (m === 1 ? ' minute ago' : ' minutes ago'); }
+  var h = Math.round(age / 3600000);
+  return 'from ' + h + (h === 1 ? ' hour ago' : ' hours ago');
+}
+// R2's auto-clear lives HERE, at the single load chokepoint, rather than at the
+// entry point: an expired draft must be invisible to EVERY reader (the nav badge
+// counts through this function too), and one chokepoint cannot be half-wired.
+// Silent by ruling — no banner, no prompt.
 function scanLoadDraft() {
   var k = scanDraftKey(); if (!k) { return null; }
   var d = ls(k, null);
   if (d && (d.confident || d.exceptions)) {
+    if (scanDraftIsExpired(d)) { scanClearDraft(); return null; }
     var lc = d.confident || [], le = d.exceptions || [];
     return { confident: lc, exceptions: le, found: lc.length + le.length,
+      savedAt: (typeof d.savedAt === 'number' && isFinite(d.savedAt)) ? d.savedAt : 0,
       rec: d.rec || { found: lc.length + le.length, conf: lc.length, exc: le.length } };
   }
   return null;
 }
+// The ONLY thing this touches is the device-local draft key. It never reads or
+// writes state.books, and it never touches scanLastShelvedIds — which is why
+// neither DISCARD nor expiry can make a pending Undo delete a shelved record
+// (2e; scanShelve is the sole writer of that list, and only for out.created ids).
 function scanClearDraft() { var k = scanDraftKey(); if (k) { sv(k, null); } }
 function scanDraftExceptionCount() { var d = scanLoadDraft(); return d ? d.exceptions.length : 0; }
+// R1's renderer. `scanDraftPending` is the guard that keeps the bar honest: it is
+// armed at rehydrate (renderScan) and disarmed the instant a NEW capture begins,
+// so the bar can never hover over a tray filling with the reader's current shot
+// and call it "a draft from earlier."
+var scanDraftPending = false;
+function scanRenderDraftBar() {
+  var bar = scanEl('scan-draftbar');
+  if (!bar) { return; }
+  var d = scanDraftPending ? scanLoadDraft() : null;    // load re-checks expiry (R2)
+  var n = d ? (d.confident.length + d.exceptions.length) : 0;
+  if (!d || n === 0) { bar.style.display = 'none'; scanDraftPending = false; return; }
+  var txt = scanEl('scan-draftbar-txt');
+  if (txt) {
+    txt.textContent = n + (n === 1 ? ' book ' : ' books ') + scanDraftWhen(d.savedAt)
+      + (n === 1 ? ' is' : ' are') + ' still in your draft case.';
+  }
+  var cf = scanEl('scan-draftbar-confirm'); if (cf) { cf.style.display = 'none'; }
+  var mn = scanEl('scan-draftbar-main');    if (mn) { mn.style.display = ''; }
+  bar.style.display = '';
+}
+// ============================================================================
+// FORK RULING B (Preston, 2026-08-30) — THE SHUTTER IS BLOCKED WHILE A PENDING
+// DRAFT IS ON SCREEN. A warning that does not prevent the thing it warns about is
+// the same defect class as a control that looks live and is not (DWF-1).
+//
+// THE ESCAPE HATCH IS THE POINT. B's failure mode is total: if the banner fails to
+// render while the flag is set, the shutter would be dead with no way out — a
+// render bug promoted to an unrecoverable state. So the block is NEVER conditioned
+// on scanDraftPending alone. It is conditioned on the banner being ACTUALLY ON
+// SCREEN at the moment of the tap. No banner, no block: the reader can always
+// shoot.
+//
+// The predicate below is deliberately written against RENDERED GEOMETRY + resolved
+// style, not against the flag and not against a class name, so a future CSS change
+// cannot silently disable the escape hatch: any rule that hides the bar (display,
+// visibility, opacity, zero size, off-viewport) makes this return false and the
+// shutter free. `scanDraftBarBlockProbe` exposes each clause so a test can assert
+// them one at a time — a change that neuters a clause fails the probe, it does not
+// pass quietly.
+function scanDraftBarIsOnScreen() {
+  var bar = scanEl('scan-draftbar');
+  if (!bar) { return false; }                                   // not in the DOM
+  if (bar.getClientRects && bar.getClientRects().length === 0) { return false; }  // display:none anywhere up the tree
+  var r = bar.getBoundingClientRect();
+  if (!(r.width > 0 && r.height > 0)) { return false; }          // collapsed
+  // Off-viewport check, applied ONLY when the layout viewport reports a real size.
+  // A 0x0 viewport (a hidden or zero-sized embedding) would otherwise read as "the
+  // bar is off screen" for every element on the page. Note the direction that costs
+  // nothing: an unknown viewport returns false -> NOT blocked -> the shutter is
+  // free. Every clause here fails OPEN. A predicate guarding an escape hatch must
+  // never invent a reason to lock someone out.
+  var vw = window.innerWidth || 0, vh = window.innerHeight || 0;
+  if (vw > 0 && vh > 0) {
+    if (r.bottom <= 0 || r.right <= 0 || r.top >= vh || r.left >= vw) { return false; }  // scrolled/positioned away
+  }
+  var cs = window.getComputedStyle ? window.getComputedStyle(bar) : null;
+  if (cs) {
+    if (cs.display === 'none' || cs.visibility === 'hidden') { return false; }
+    if (cs.opacity !== '' && parseFloat(cs.opacity) === 0) { return false; }
+  }
+  return true;
+}
+// The block itself, in the order the ruling requires:
+//   1. the bar must be on screen (the escape hatch, first — nothing else can lock),
+//   2. scanLoadDraft() runs, which applies R2 EXPIRY,
+//   3. only a draft that SURVIVED expiry and still holds items blocks.
+// An expired draft therefore never blocks (it is gone by step 3), and an EMPTY
+// draft never blocks (nothing to lose — blocking on it is pure obstruction).
+function scanShutterBlocked() {
+  if (!scanDraftPending) { return false; }
+  if (!scanDraftBarIsOnScreen()) { return false; }
+  var d = scanLoadDraft();
+  return !!(d && (d.confident.length + d.exceptions.length) > 0);
+}
+// Test surface: every clause of the gate, readable independently.
+function scanDraftBarBlockProbe() {
+  var d = scanDraftPending ? scanLoadDraft() : null;
+  return { pendingFlag: scanDraftPending, barOnScreen: scanDraftBarIsOnScreen(),
+           draftItems: d ? (d.confident.length + d.exceptions.length) : 0,
+           blocked: scanShutterBlocked() };
+}
+// What "blocked" LOOKS like: the shutter stays live and tappable — a dead-looking
+// control reads as a broken app, which is the .is-lean-gray mistake this round is
+// already undoing. The tap routes attention to the banner instead: a brief call on
+// the existing bar (no new component, no modal, no alert), plus the announcer.
+function scanCallDraftBar() {
+  var bar = scanEl('scan-draftbar');
+  if (!bar) { return; }
+  // The blocked-state invariant: IF WE REFUSE, THE REASON IS ON SCREEN. The bar
+  // lives at z-index 21 and the overlays sit at 50, so a refusal triggered from an
+  // overlay (the camera-denied card carries its own shelf drop-zone, which reaches
+  // scanRunShelfVision) would otherwise explain itself behind an opaque panel —
+  // a refusal with no visible cause, which is the failure this ruling exists to
+  // prevent. Routing attention to the banner means making the banner reachable.
+  scanCloseAllOverlays();
+  bar.classList.remove('is-calling');
+  if (bar.offsetWidth >= 0) { /* reflow so the class re-triggers on a repeat tap */ }
+  bar.classList.add('is-calling');
+  if (scanDraftBarCallTimer) { window.clearTimeout(scanDraftBarCallTimer); }
+  scanDraftBarCallTimer = window.setTimeout(function () { bar.classList.remove('is-calling'); }, 1400);
+  try { bar.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+  scanAnnounce('Finish with the books from your last scan first — resume them or discard them.');
+}
+var scanDraftBarCallTimer = null;
+
+function scanDraftBarAskDiscard() {
+  var d = scanLoadDraft();
+  var n = d ? (d.confident.length + d.exceptions.length) : 0;
+  if (!d || n === 0) { scanRenderDraftBar(); return; }
+  var t = scanEl('scan-draftbar-confirm-txt');
+  if (t) {
+    t.textContent = 'Discard ' + n + (n === 1 ? ' book' : ' books') + ' from that scan? '
+      + 'Books already on your shelf are not touched.';
+  }
+  var mn = scanEl('scan-draftbar-main');    if (mn) { mn.style.display = 'none'; }
+  var cf = scanEl('scan-draftbar-confirm'); if (cf) { cf.style.display = ''; }
+}
+// DISCARD. Clears the device-local draft key and the in-memory mirror, and NOTHING
+// else — no library write, no scanLastShelvedIds mutation (2e).
+// RULING B failure-safety. Both handlers RELEASE THE BLOCK IN A `finally`, so a
+// throw anywhere in the body can never leave the reader blocked. Note the escape
+// hatch already makes a "blocked with no banner" state unreachable (the gate
+// requires the bar to be on screen), so this is the second of two independent
+// guards, not the only one. A failed DISCARD is non-destructive: the draft stays in
+// storage and re-arms on the next entry, which is the safe direction.
+function scanDraftBarDiscard() {
+  var n = 0;
+  try {
+    var d = scanLoadDraft();
+    n = d ? (d.confident.length + d.exceptions.length) : 0;
+    scanClearDraft();
+    scanResult = null;
+  } finally {
+    scanDraftPending = false;
+    try { scanRenderDraftBar(); scanUpdateNavBadge(); } catch (e) {}
+  }
+  scanAnnounce(n ? ('Draft discarded. ' + n + ' set aside. Your shelf is unchanged.') : 'Nothing to discard.');
+}
+function scanDraftBarResume() {
+  var got = null;
+  try {
+    got = scanLoadDraft();
+    scanResult = got;
+  } finally {
+    scanDraftPending = false;
+    try { scanRenderDraftBar(); } catch (e) {}
+  }
+  if (!got) { return; }
+  scanCloseAllOverlays(); scanStopStream(); scanRenderReview();
+}
+
 function scanUpdateNavBadge() {
   var badge = document.getElementById('app-nav-scan-badge');
   if (!badge) { return; }
@@ -9571,13 +9850,15 @@ function renderScan(preMode) {
   scanMode = (preMode === 'shelf') ? 'shelf' : 'book';
   // SCE-2: resume a persisted draft (a killed PWA / a return trip picks up where it
   // stood). Load it into scanResult; if it holds anything, the primer offers Review.
-  scanResult = scanLoadDraft();
-  var resume = scanEl('scan-primer-resume');
-  if (resume && scanResult && (scanResult.confident.length || scanResult.exceptions.length)) {
-    resume.textContent = 'Review ' + scanResult.found + ' from your last scan';
-    resume.style.display = 'block';
-    resume.addEventListener('click', function () { scanCloseAllOverlays(); scanStopStream(); scanRenderReview(); });
-  }
+  // ORDER OF OPERATIONS ON ENTRY (ruled 2026-08-30), and it is load-bearing:
+  //   1. scanLoadDraft() runs R2 EXPIRY FIRST — a draft past ~24h is cleared here
+  //      and returns null, so it never reaches step 2;
+  //   2. THEN the block/banner decision is made, against whatever survived.
+  // A draft that should already have expired can therefore never block the shutter:
+  // by the time scanDraftPending is computed the expired draft does not exist.
+  scanResult = scanLoadDraft();                                    // 1 — expiry
+  scanDraftPending = !!(scanResult && (scanResult.confident.length || scanResult.exceptions.length));  // 2 — arm
+  scanRenderDraftBar();
   scanEnter();
 }
 
@@ -9603,6 +9884,7 @@ function scanShellHTML() {
   +       '</button>'
   +     '</div>'
   +     '<div class="scan-reticle" id="scan-reticle"><span class="scan-br tl"></span><span class="scan-br tr"></span><span class="scan-br bl"></span><span class="scan-br br2"></span></div>'
+  +     scanDraftBarHTML()
   +     '<div class="scan-vf-guide" id="scan-vf-guide">Center a barcode or cover in the frame</div>'
   +     '<div class="scan-shimmer" id="scan-shimmer"><div class="scan-shim-frame"><div class="scan-shim-sweep"></div></div><div class="scan-shim-line">Reading the shelf…</div></div>'
   +     '<div class="scan-vf-bottom">'
@@ -9622,6 +9904,40 @@ function scanShellHTML() {
   +   '<div id="scan-flight-layer"></div>'
   +   '<div id="scan-shelf-glyph">▤</div>'
   +   '<div id="scan-receipt"><span class="r-txt" id="scan-receipt-txt">Shelved <b>0</b></span><button class="r-undo" type="button" id="scan-receipt-undo">Undo</button></div>'
+  + '</div>';
+}
+
+// R1 — THE PENDING-DRAFT BAR, ON THE CAPTURE VIEW.
+// It sits under .scan-vf-top, over the live camera, because that is where the
+// shutter is. It REPLACES the old #scan-primer-resume button (removed in the same
+// commit — see the primer markup): that one lived inside the permission primer and
+// disappeared the moment the overlay was dismissed, so it fired before the reader
+// was looking at a shelf and was gone by the time they could shoot — which is how
+// an unresolved draft got silently overwritten (8992 replaces scanResult wholesale)
+// with nothing on screen having named it.
+// Register: the viewfinder's own glass chrome (--scan-glass-2 / --scan-on-dark,
+// the .scan-torch-tip family), gold accent. Explicitly NOT the .is-lean gray —
+// that gray means "unavailable," and this draft is the opposite: it is waiting.
+// DISCARD is destructive, so it does not fire on first press: it swaps in an
+// inline confirm that NAMES THE COUNT, and the confirm copy says in words that
+// nothing already shelved is touched.
+function scanDraftBarHTML() {
+  return ''
+  + '<div class="scan-draftbar" id="scan-draftbar" role="status" style="display:none">'
+  +   '<div class="scan-draftbar-main" id="scan-draftbar-main">'
+  +     '<p class="scan-draftbar-txt" id="scan-draftbar-txt"></p>'
+  +     '<div class="scan-draftbar-acts">'
+  +       '<button class="scan-draftbar-btn is-go" type="button" id="scan-draftbar-resume">Resume</button>'
+  +       '<button class="scan-draftbar-btn" type="button" id="scan-draftbar-discard">Discard</button>'
+  +     '</div>'
+  +   '</div>'
+  +   '<div class="scan-draftbar-confirm" id="scan-draftbar-confirm" style="display:none">'
+  +     '<p class="scan-draftbar-txt" id="scan-draftbar-confirm-txt"></p>'
+  +     '<div class="scan-draftbar-acts">'
+  +       '<button class="scan-draftbar-btn is-danger" type="button" id="scan-draftbar-yes">Discard them</button>'
+  +       '<button class="scan-draftbar-btn is-go" type="button" id="scan-draftbar-no">Keep them</button>'
+  +     '</div>'
+  +   '</div>'
   + '</div>';
 }
 
@@ -9661,7 +9977,17 @@ function scanPermissionHTML() {
   +     '<h2>Turn on the camera to scan</h2>'
   +     '<p>Praxis reads the book right on your phone. Images leave only as identification requests — nothing is stored, on your device or ours.</p>'
   +     '<div class="c-actions">'
-  +       '<button class="scan-btn scan-btn-ghost" type="button" id="scan-primer-resume" style="display:none"></button>'
+  // PRIMER COLLISION — RULED (2026-08-30): the capture-view bar SUPERSEDES the
+  // primer's resume button, which is removed here. One draft, one choice, one
+  // place. The primer's button was the weaker of the two: it only ever appeared
+  // before the camera was granted, vanished the instant the overlay was dismissed,
+  // and sat on a screen with no shutter — so it fired before the reader was looking
+  // at a shelf and was gone by the time they could lose anything. Keeping both
+  // would put the same decision in front of the reader twice on one entry, and the
+  // primer copy is off the block: RULING B's gate reads the BAR, so a resume taken
+  // from a screen the gate cannot see is a second, ungoverned path to the same
+  // state. Nothing is lost on the camera-denied path — that overlay never carried a
+  // resume affordance either, before or after.
   +       '<button class="scan-btn scan-btn-primary" type="button" id="scan-primer-allow">Turn on camera</button>'
   +       '<button class="scan-btn scan-btn-quiet" type="button" id="scan-primer-manual">Add without the camera</button>'
   +     '</div>'
@@ -9734,6 +10060,7 @@ function scanReviewHTML() {
   +   '<div class="scan-rv-body" id="scan-rv-body">'
   +     '<div class="scan-rv-count" id="scan-rv-count">—</div>'
   +     '<span class="scan-rv-draftbadge">◲ Draft case — nothing\'s on your shelf yet</span>'
+  +     '<p class="scan-rv-lookupnote" id="scan-rv-lookupnote" role="status" style="display:none"></p>'
   +     '<div class="scan-draft-band"><div class="scan-draft-band-hd"><span class="lbl">Ready to shelve</span><span class="n" id="scan-rv-conf-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-confident"></div></div></div>'
   +     '<div class="scan-draft-band" id="scan-rv-exc-band"><div class="scan-draft-band-hd"><span class="lbl">Need a look</span><span class="n" id="scan-rv-exc-n">—</span></div><div class="scan-cavity"><div class="scan-shelfline" id="scan-rv-exceptions"></div></div></div>'
   +   '</div>'
@@ -9762,6 +10089,11 @@ function scanWireShell() {
   var dretry = scanEl('scan-denied-retry'); if (dretry) { dretry.addEventListener('click', function () { scanCloseAllOverlays(); scanOpenOverlay('scan-ov-primer'); }); }
   var oretry = scanEl('scan-offline-retry'); if (oretry) { oretry.addEventListener('click', function () { scanCloseAllOverlays(); scanEnter(); }); }
   var trayReview = scanEl('scan-tray-review-btn'); if (trayReview) { trayReview.addEventListener('click', scanRenderReview); }
+  // R1 — the capture-view draft bar (T3: these four are the gesture entry points).
+  var dbR = scanEl('scan-draftbar-resume');  if (dbR)  { dbR.addEventListener('click', scanDraftBarResume); }
+  var dbD = scanEl('scan-draftbar-discard'); if (dbD)  { dbD.addEventListener('click', scanDraftBarAskDiscard); }
+  var dbY = scanEl('scan-draftbar-yes');     if (dbY)  { dbY.addEventListener('click', scanDraftBarDiscard); }
+  var dbN = scanEl('scan-draftbar-no');      if (dbN)  { dbN.addEventListener('click', scanRenderDraftBar); }
   var rvBack = scanEl('scan-rv-back'); if (rvBack) { rvBack.addEventListener('click', function () { scanGoScreen('scan-screen-view'); }); }
   var rvWalk = scanEl('scan-rv-walk'); if (rvWalk) { rvWalk.addEventListener('click', function () { scanOpenWalker(); }); }
   var rvShelve = scanEl('scan-rv-shelve'); if (rvShelve) { rvShelve.addEventListener('click', scanShelve); }

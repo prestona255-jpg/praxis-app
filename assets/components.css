@@ -16806,6 +16806,36 @@ body.wc-focus .app-nav { opacity:.26; }
 /* S3e: hide the idle hint while the "Reading the shelf…" shimmer is up (one label at a time). */
 .scan-vf-guide.is-hidden{ visibility:hidden; }
 
+/* R1 (T13) — the pending-draft bar, ON the capture view. Same glass-on-camera
+   register as .scan-torch-tip / .scan-vf-top chrome, gold-hi accent so it reads as
+   waiting rather than broken. SOLID fill (no backdrop-filter) per canon §2. */
+.scan-draftbar{ position:absolute; z-index:21; left:0; right:0;
+  top:calc(56px + env(safe-area-inset-top));
+  margin:0 calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  background:var(--scan-glass-2); border:1px solid var(--gold-hi); border-radius:var(--radius-md);
+  padding:11px 13px; box-shadow:0 6px 18px rgba(0,0,0,.34); }
+.scan-draftbar-txt{ margin:0 0 9px; font-family:var(--font-body); font-size:13px; line-height:1.4; color:var(--scan-on-dark); }
+.scan-draftbar-acts{ display:flex; gap:8px; }
+.scan-draftbar-btn{ flex:1; min-height:38px; border-radius:var(--radius-sm); cursor:pointer;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  background:transparent; border:1px solid rgba(246,239,224,.30); color:var(--scan-on-dark); }
+.scan-draftbar-btn.is-go{ background:var(--gold-hi); border-color:var(--gold-hi); color:var(--br-deep); font-weight:600; }
+.scan-draftbar-btn.is-danger{ border-color:var(--danger); color:var(--danger); }
+.scan-draftbar-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+/* RULING B — what a BLOCKED shutter tap looks like. The shutter itself is never
+   disabled and never grayed (a dead-looking control reads as a broken app); the tap
+   calls attention HERE instead. Same bar, briefly brighter — no new component, no
+   modal. Reduced-motion gets the steady emphasis without the pulse. */
+.scan-draftbar.is-calling{ animation:scanDraftCall 1.4s ease-out 1; }
+@keyframes scanDraftCall{
+  0%   { box-shadow:0 6px 18px rgba(0,0,0,.34); border-color:var(--gold-hi); }
+  18%  { box-shadow:0 6px 26px rgba(240,215,154,.55); border-color:var(--gold); }
+  100% { box-shadow:0 6px 18px rgba(0,0,0,.34); border-color:var(--gold-hi); }
+}
+@media (prefers-reduced-motion: reduce){
+  .scan-draftbar.is-calling{ animation:none; box-shadow:0 6px 26px rgba(240,215,154,.55); }
+}
+
 .scan-vf-bottom{ position:absolute; left:0; right:0; bottom:0; z-index:20;
   padding:14px calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   display:flex; flex-direction:column; align-items:center; gap:16px; }
@@ -16930,6 +16960,17 @@ body.wc-focus .app-nav { opacity:.26; }
    lean rotation: these books are informational, not unavailable. The two states are
    told apart by COPY ("already shelved" / "may be a copy") and by the tray badge. */
 .scan-dc.is-shelved .spine-flag, .scan-dc.is-maybe .spine-flag{ margin-top:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
+/* T14 — the catalogue-outage state. Deliberately NOT .is-lean: no grayscale, no
+   lean. The spine was read correctly; only the lookup failed, so the book must not
+   wear the "unavailable" gray. Clickable like the lean exception (it opens the
+   same walker), flagged in the informational gold-deep register. */
+.scan-dc.is-unlooked{ cursor:pointer; }
+.scan-dc.is-unlooked .spine-flag{ margin-top:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
+.scan-dc.is-unlooked:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+.scan-rv-lookupnote{ margin:8px 0 0; font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink-2);
+  background:var(--wash-page); border-left:2px solid var(--gold-deep); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:8px 11px; }
+.scan-wk-lookupfail{ margin:2px 0 12px; font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink-2);
+  background:var(--wash-page); border-left:2px solid var(--gold-deep); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:8px 11px; }
 
 /* generic typeset cloth cover (no external image — pre-sized slot, spine fallback) */
 .scan-cov{ position:relative; border-radius:2px 5px 5px 2px; overflow:hidden;

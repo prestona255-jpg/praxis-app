@@ -79,6 +79,78 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
   cannot drive the scan overlay. Felt pass PENDING. Record: `docs/checkpoints/firstshelf-dupes.md`;
   console census: `docs/checkpoints/firstshelf-dupes-census.js`.
 
+- **T13 / T14 / T15 — STALE-DRAFT ROUND (v3.285, 2026-08-30) — LOCAL, UNPUSHED.** Opened on the premise
+  that an unresolved draft case degrades every subsequent scan (observed 19 -> 6 -> 1 confident across
+  successive runs on one shelf; declining the batch restored 16/19). **Stage 1 falsified the premise and
+  named the real mechanism** — the third round running in which Stage 0/1 corrected the opening premise.
+  - **T13 REVISED, not filed as fact.** The draft neither corrupts confidence nor adds lookups. Measured:
+    lookups issued == vision books EXACTLY at draft sizes 0 / 5 / 20 (19 / 19 / 19), confidence curve flat
+    (19 / 19 / 19 confident), and every draft-facing path — rehydrate, review, all walker steps, nav badge —
+    issues **zero** fetches. Declining the batch changed the next run's request count by zero. What IS real
+    and was found alongside it: `scanResolveAndFill` replaces `scanResult` wholesale (`views.js:8992`), so a
+    second capture **silently destroyed** an unresolved draft with nothing on screen having named it.
+  - **T14 FIXED — the actual defect.** `googleBooksSearch` never checked `res.ok`; it called `res.json()` on
+    any status, and a Google Books error body is valid JSON with no `items`, so a **429 fell through the
+    `!data.items` guard and returned `[]` — byte-identical to "this book does not exist."** The proxy passes
+    the upstream status through untouched (`google-books-proxy.js:89-118`), so the information existed at
+    that hop and was discarded. Replayed with the REAL upstream body (1,306 B, saved verbatim): `res.ok`
+    false, parse succeeds, `items` undefined -> `manualStub` -> `status:'none'` -> `scanIsException` true ->
+    the reader is shown "The Beautiful Risk of Education / Gert Biesta -- needs a look", which is the exact
+    card in Preston's screenshot. A partial-failure run reproduces "23 found · 6 confident" exactly.
+    **Now three outcomes:** items · `[]` with `err === null` (a true no-match) · `[]` with `err`
+    (transport/quota). `lookupFailed` + `lookupHttpStatus` ride ALONGSIDE `status`, which is byte-untouched,
+    so all five existing readers are unaffected. Retry 2x (400/1200 ms) on **429 and 503 only** — a
+    deterministic 401/400/413 is never retried — behind a 20 s circuit breaker, so a 19-book dead-quota run
+    costs **21 HTTP calls, not 57**.
+  - **A NEW SURFACE STATE — `is-unlooked`.** Two different things shared one gray leaning spine. `is-lean`
+    (grayscale + rotate) reads "unavailable" and is right for a genuine no-match. A book whose spine was read
+    perfectly and could not be ASKED about is not that: upright, ungrayed, gold-deep flag ("couldn't look
+    up"), in the `.is-shelved` / `.is-maybe` informational register — plus a run-level note on the review
+    face, honest tray + announcer copy, and walker copy that stops asking "Is this the one?" about a
+    candidate it never received.
+  - **T15 FIXED.** `savedAt` was write-only since introduction (repo-wide grep = 1, the write). It is
+    rewritten on every save, so it was ALREADY a last-touched stamp that never reached a caller.
+    `scanLoadDraft` now returns it, and R2's ~24h silent auto-clear runs at that single chokepoint — the nav
+    badge reads through it too, so expiry cannot be half-wired. Clock = `Date.now()`; a missing/garbage stamp
+    OR a backward-moved clock yields a negative age, which **never expires**.
+  - **R1 + FORK RULING B (Preston, 2026-08-30) — THE SHUTTER IS BLOCKED.** `#scan-draftbar` mounts inside
+    `#scan-screen-view` (the capture view, where the shutter is), names count + age, offers RESUME and a
+    two-step DISCARD that names the count and states shelved books are untouched. It **replaces**
+    `#scan-primer-resume`, removed in the same commit — that button only appeared pre-grant, vanished on
+    dismissal, sat on a screen with no shutter, and was off the block. Preston ruled the warn-only version
+    insufficient: "the warning must prevent the thing it warns about." A shelf capture now refuses while a
+    pending draft is on screen, at BOTH shelf doors (`scanFireShelfShot` before the freeze/capture/budget
+    spend, and `scanRunShelfVision`, which the desktop drop-zone shares). Book mode is deliberately ungated —
+    it commits through `scanCommitBook` and cannot destroy a draft.
+  - **THE ESCAPE HATCH IS THE LOAD-BEARING PART.** B's failure mode is total, so the block is NEVER
+    conditioned on the flag: `scanShutterBlocked()` requires `scanDraftBarIsOnScreen()`, a predicate over
+    RENDERED GEOMETRY + RESOLVED STYLE (in-DOM · non-empty `getClientRects` · non-zero rect · viewport
+    intersection, guarded on a non-zero viewport · display/visibility/opacity). **Every clause fails OPEN** —
+    no banner, no block. Swept all six suppression modes individually (display:none, visibility:hidden,
+    opacity:0, zero size, off-viewport, detached); each releases the shutter, and restoring the bar re-blocks.
+    `scanDraftBarBlockProbe()` exposes each clause for a test and has **no production caller by design**.
+    RESUME/DISCARD release the block in a `finally`, so a mid-action throw cannot strand anyone.
+  - **The blocked shutter is never disabled and never grayed** (`disabled false · opacity 1 · filter none ·
+    pointer-events auto · cursor pointer`); the tap brightens the bar (`.is-calling`, reduced-motion aware)
+    and announces. `scanCallDraftBar` closes overlays first — the camera-denied card carries its own shelf
+    drop-zone, and a refusal that explains itself behind an opaque panel is the failure B exists to prevent.
+    **Invariant: if we refuse, the reason is on screen.**
+  - **INFRASTRUCTURE, for Preston, not a code change:** the keyless Google Books consumer is a shared
+    anonymous project (`project_number:624717413613`) whose `defaultPerDayPerProject` is literally **0** —
+    25 of 25 probe requests returned 429. If `GOOGLE_BOOKS_API_KEY` is unset in Netlify, matching is
+    permanently broken; if it is set, that key's quota is the binding constraint on books-scanned-per-day.
+    Launch-blocking, and explicitly out of this round's scope. From v3.285 the device reports the HTTP
+    status, so the next real run answers it with data instead of inference.
+  - **T16 — T5 IS PROBABLY NOT A SEPARATE PHENOMENON.** The 15/17/19 confidence spread was attributed to
+    vision-layer instability. The exception predicate has two arms — `confidence === 'low'` (vision) and GB
+    no-match (catalogue) — and a flapping catalogue moves the second arm run-to-run with no vision change at
+    all, which is that same shape. It cannot be split retrospectively (those runs recorded no status);
+    `rec.unlooked` separates them per run from v3.285 onward.
+  - **RESIDUALS:** VISUAL GATE uncleared (screenshots at 375x812 corroborate; felt pass is Preston's) ·
+    FIX-PROTOCOL §9's `fix-red-team` did NOT run (session agent-barred; named HALT-tier at Stage 0 and
+    unresolved at commit — the COVERS two-line ruling is explicitly not precedent for a +453-line diff
+    carrying a refusal gate on a paid capture path) · live CACHE_VERSION verify is owner-only (egress
+    blocked). Records: `docs/checkpoints/stale-draft-recon.md` + `docs/checkpoints/stale-draft.md`.
 ## Round history
 
 - **SCAN (deep round) — CLOSED 2026-08-08** (full felt PASS on Preston's device round 4, installed PWA +
@@ -94,6 +166,12 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
 ## Next
 
 - Felt pass DONE — Preston, device round 4, 2026-08-08 = FULL PASS. Round CLOSED.
+- **OPEN ON THIS SURFACE (v3.285, 2026-08-30, local + unpushed):** two felt passes owed —
+  (1) the capture-view draft bar + the blocked shelf shutter (which must still read as LIVE, not dead);
+  (2) the `is-unlooked` catalogue-outage state on the review face. And **§9's `fix-red-team` is unrun on
+  that diff** (agent-barred session) — HALT-tier, unresolved, gating the push, not just the felt pass.
+- **NOT a scan-surface question but it gates scan accuracy:** whether `GOOGLE_BOOKS_API_KEY` is set in
+  Netlify, and what its quota is. Preston is checking separately (T14).
 - Next lead deep round = **RE-PLAN PENDING** (Preston's ruling; see `docs/studio/sequence.md` Re-plan log
   2026-08-08). Carried debt is recorded in the CARRIED-DEBT LEDGER (above / `docs/launch-runway.md`),
   recorded not licensed.

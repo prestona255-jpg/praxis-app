@@ -31,6 +31,51 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-30 (T13 STALE-DRAFT — premise falsified, real defect fixed; v3.285 LOCAL, UNPUSHED)** — a fix
+  round on `#scan`, opened on the reported behaviour that an unresolved draft case degrades every
+  subsequent scan (19 -> 6 -> 1 confident across successive runs on one shelf; declining the batch restored
+  16/19). **Stage 1 disproved the premise and named a different defect** — the THIRD consecutive round in
+  which Stage 0/1 corrected the round's opening premise (covers: not mixed content; duplicates: not
+  title+surname; this one: not the draft). The pattern is now load-bearing enough to state plainly: the
+  reported symptom has been reliable, the reported mechanism has not, and the recon gate is what keeps a
+  wrong mechanism from being built on.
+  **Measured, not argued:** lookups issued == vision books EXACTLY at draft sizes 0 / 5 / 20; the confidence
+  curve is flat at 19/19/19; every draft-facing path (rehydrate, review, all walker steps, nav badge) issues
+  **zero** fetches; declining the batch changes the next run's request count by **zero**. Hypotheses H1
+  (draft corrupts confidence) and H3 (draft doubles the lookup load) are both dead.
+  **The real defect (T14):** `googleBooksSearch` never checked `res.ok`. A Google Books error body is valid
+  JSON with no `items`, so a **429 returned `[]` — byte-identical to "this book does not exist"** — and a
+  correctly-read spine was shown to the reader as "needs a look." Replaying the REAL upstream 429 body
+  through the client's own path reproduces Preston's screenshot card exactly, and a partial-failure run
+  reproduces "23 found · 6 confident" exactly. Fixed: three lookup outcomes, `lookupFailed` +
+  `lookupHttpStatus` alongside an untouched `status`, capped retry on 429/503 only behind a 20 s circuit
+  breaker, a distinct `is-unlooked` review state (upright + ungrayed — the `is-lean` gray means
+  "unavailable", which this is not), a run-level explanation, and honest tray / walker / announcer copy.
+  **Also fixed, and real regardless of the premise:** a second capture silently DESTROYED an unresolved
+  draft (`views.js:8992` replaces `scanResult` wholesale). Now surfaced by a capture-view draft bar (R1) and
+  auto-cleared past ~24h (R2) on `savedAt` — a field written since introduction and read by nothing (T15).
+  **FORK RULED IN-ROUND (Preston, 2026-08-30): B — BLOCK THE SHUTTER.** The warn-only bar was rejected on
+  the ground that a warning must prevent the thing it warns about. Folded into the SAME commit at the SAME
+  version so no warn-only intermediate stands in history as if it were a decision. The block is conditioned
+  on the banner being ACTUALLY RENDERED (geometry + resolved style, every clause failing OPEN), never on the
+  flag, so a render bug can never become an unrecoverable lockout; the primer's competing resume button was
+  removed rather than left as a second, ungoverned path.
+  **T16 re-examined:** T5's 15/17/19 confidence spread is probably the same catalogue flapping rather than a
+  separate vision-layer phenomenon; it cannot be split retrospectively, and `rec.unlooked` separates the two
+  arms per run from v3.285 onward.
+  **Two things stand honestly and both gate the push:** the VISUAL GATE is uncleared (felt pass is
+  Preston's), and **FIX-PROTOCOL §9's `fix-red-team` did NOT run** — this session was agent-barred, named
+  HALT-tier at Stage 0 and still unresolved at commit. The COVERS precedent (a two-line property assignment)
+  is explicitly NOT carried over to a +453-line diff that adds a refusal gate to a paid capture path.
+  **A launch-blocking INFRASTRUCTURE finding, out of scope by ruling:** the keyless Google Books consumer is
+  a shared anonymous project whose per-day quota is literally **0** (25/25 probes returned 429). Whether
+  `GOOGLE_BOOKS_API_KEY` is set in Netlify — and what its quota is — is the binding constraint on
+  books-scanned-per-day. Preston is checking it separately; no key was added or configured here.
+  **No spine change, nothing retired, no Preston decision contradicted** — `## Now` keeps S-B as lead and
+  R10 next; this is a fix on a CLOSED surface, not a re-order. So **no `PROPOSED:` flag.**
+  Records: `docs/checkpoints/stale-draft-recon.md` + `docs/checkpoints/stale-draft.md`; surface ledger
+  `docs/studio/scan.md`.
+
 - **2026-08-29 (R-FIRSTSHELF-DUPES — Stage 2 PREVENTION shipped local; STAGE 3 MERGE HELD)** — the shelf
   duplicate-records round ran as a **SPLIT round on Preston's ruling**: prevention ships, merging waits.
   Stage 0 corrected the round's own premise — the dedupe infrastructure **already existed**

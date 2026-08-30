@@ -2318,30 +2318,70 @@ function classifyBooksViaLLM(books, callback) {
   processBatch(0);
 }
 
-// Low-level Google Books search via the proxy. callback(itemsArray | []).
-// Two-arg .then on every hop -> fail-soft to [] (never throws/drops).
+// T14 (R-STALEDRAFT, 2026-08-30) — A LOOKUP HAS THREE OUTCOMES, NOT TWO.
+// The old googleBooksSearch never checked res.ok. It called res.json() on ANY
+// status, and because a Google Books error body IS valid JSON with no `items`
+// key, a 429 fell through the `!data.items` guard and returned [] -- byte-for-byte
+// the same answer as "this book does not exist." The proxy passes the upstream
+// status through untouched (google-books-proxy.js:89-118), so the information was
+// present at this hop and thrown away here. Measured against the REAL upstream
+// body: res.ok false, JSON.parse succeeds, data.items undefined -> [] -> a
+// correctly-read book is shown to the reader as "needs a look."
+// The outcomes now: items (a match) · [] with err===null (a genuine no-match) ·
+// [] with err (transport/quota -- we do not KNOW whether the book exists).
+var GB_RETRY_BACKOFF = [400, 1200];   // ms; two retries, then give up honestly
+var GB_BREAKER_MS    = 20000;         // after a retryable failure sticks, stop paying
+var gbBreakerUntil   = 0;             // the backoff on every later book in the same run
+// 429 = quota/rate; 503 = upstream unavailable. Everything else (401 key mismatch,
+// 400 bad q, 413 oversize) is DETERMINISTIC -- retrying it is pure latency.
+function gbStatusIsRetryable(s) { return s === 429 || s === 503; }
 function googleBooksSearch(q, callback) {
   var done = false;
-  function finish(items) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(items); } }
-  try {
-    fetch(GOOGLE_BOOKS_PROXY_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-      body:    JSON.stringify({ q: q })
-    }).then(function (res) { return res.json(); }, function () { finish([]); })
-      .then(function (data) {
-        if (!data || !data.items || data.items.length === 0) { finish([]); return; }
-        finish(data.items);
-      }, function () { finish([]); });
-  } catch (e) { finish([]); }
+  function finish(items, err) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(items, err || null); } }
+  var attempt = 0;
+  function retryOrFail(err) {
+    // The breaker is what keeps a dead quota from costing 19 books x 1.6s of
+    // sleeping: the FIRST book in a run pays the backoff, the rest fail fast.
+    if (gbStatusIsRetryable(err.status) && attempt < GB_RETRY_BACKOFF.length && Date.now() >= gbBreakerUntil) {
+      var wait = GB_RETRY_BACKOFF[attempt];
+      attempt = attempt + 1;
+      window.setTimeout(go, wait);
+      return;
+    }
+    if (gbStatusIsRetryable(err.status)) { gbBreakerUntil = Date.now() + GB_BREAKER_MS; }
+    finish([], err);
+  }
+  function go() {
+    try {
+      fetch(GOOGLE_BOOKS_PROXY_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
+        body:    JSON.stringify({ q: q })
+      }).then(function (res) {
+        var st = res.status;
+        if (!res.ok) { retryOrFail({ kind: 'http', status: st }); return; }
+        res.json().then(function (data) {
+          if (!data || !data.items || data.items.length === 0) { finish([], null); return; }  // a TRUE no-match
+          finish(data.items, null);
+        }, function () { finish([], { kind: 'parse', status: st }); });
+      }, function () { retryOrFail({ kind: 'network', status: 0 }); });
+    } catch (e) { finish([], { kind: 'network', status: 0 }); }
+  }
+  go();
 }
 
 function resolveBook(query, callback) {
   var done = false;
   function finish(result) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(result); } }
-  function manualStub(stubIsbn) {
+  // T14: `err` (from googleBooksSearch) means the lookup never COMPLETED. status
+  // stays 'none' -- every existing reader of it (views.js 7121/7163/7801/8125/10500)
+  // is byte-untouched -- and the two new fields ride ALONGSIDE it, so callers that
+  // want to tell "no such book" from "could not ask" now can.
+  function manualStub(stubIsbn, err) {
     return {
       status: 'none',
+      lookupFailed:     !!err,
+      lookupHttpStatus: err ? (err.status || 0) : 0,
       book: {
         title:   (query && query.title) ? query.title : '',
         author:  (query && query.author) ? query.author : '',
@@ -2357,8 +2397,8 @@ function resolveBook(query, callback) {
   if (query.kind === 'isbn') {
     var isbn = ('' + (query.isbn || '')).replace(/[\s-]/g, '');
     if (isbn.length === 0) { finish(manualStub('')); return; }
-    googleBooksSearch('isbn:' + isbn, function (items) {
-      if (!items || items.length === 0) { finish(manualStub(isbn)); return; }
+    googleBooksSearch('isbn:' + isbn, function (items, err) {
+      if (!items || items.length === 0) { finish(manualStub(isbn, err)); return; }
       var vi0 = items[0].volumeInfo || {};
       vi0._printType = items[0].printType;
       var book = volumeToBook(vi0, isbn);
@@ -2376,8 +2416,8 @@ function resolveBook(query, callback) {
   if (qTitle.length === 0) { finish(manualStub('')); return; }
   var q = 'intitle:' + qTitle;
   if (typeof query.author === 'string' && query.author.length > 0) { q = q + '+inauthor:' + query.author; }
-  googleBooksSearch(q, function (items) {
-    if (!items || items.length === 0) { finish(manualStub('')); return; }
+  googleBooksSearch(q, function (items, err) {
+    if (!items || items.length === 0) { finish(manualStub('', err)); return; }
     var scored = [], i;
     for (i = 0; i < items.length; i++) {
       var vi = items[i].volumeInfo || {};
