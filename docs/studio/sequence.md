@@ -31,6 +31,33 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-08-29 (R-FIRSTSHELF-DUPES — Stage 2 PREVENTION shipped local; STAGE 3 MERGE HELD)** — the shelf
+  duplicate-records round ran as a **SPLIT round on Preston's ruling**: prevention ships, merging waits.
+  Stage 0 corrected the round's own premise — the dedupe infrastructure **already existed**
+  (`bookIdentityKey`, `scanLibraryForCleanup`, `mergeBookDuplicates`, and a reachable manual-merge surface
+  at the Shelf Manage sheet's "Tidy library" chip); what was wrong was that **the key was too narrow to see
+  the duplicates** (`resolverNormalize` made "Helen Fisher, PhD" ≠ "Helen Fisher") and **the shelve path
+  never consulted it at all** (`scanCommitBook` minted a fresh `genBookId()` unconditionally).
+  **Shipped local, v3.283 → v3.284, one commit:** the identity source became TIERED in the one existing
+  function family (title + first-author SURNAME key; `bookIdentityTier` = exact / probable / near-miss /
+  none; `isbnKey13` restores the ISBN branch as a TIER, never folded back into the key — T9); the shelve
+  path folds an EXACT match at the shared commit point and enriches blank fields only, never `status`; the
+  tray + review face mark EXACT / PROBABLE with distinguishable copy and the "Shelve N" count now equals
+  what Shelve will CREATE. **F5 ordering hazard neutralized in the SAME commit** (Ruling 4):
+  `mergeBookDuplicates` went from 2 live callers to **ZERO** — the "Resolve all" bulk is covers-only and the
+  per-group Merge is disabled and labelled, detection untouched.
+  **STAGE 3 (detection + manual merge) IS HELD**, not retired: it ships in a later round once FIX-PROTOCOL
+  §9's `fix-red-team` gate can actually run (this session was agent-barred, named as HALT-tier at Stage 0
+  and ruled by Preston into this split) **and T8 is fixed** — `mergeBookDuplicates` drops `valueMarks`
+  (authored `why` prose), `movedMe`, `rating`, `dateRead`, `categoryOverride`, `traditionOverride`.
+  **Two residuals stand honestly:** the VISUAL GATE is uncleared (structural proof only — no camera on this
+  rig, egress blocked; felt pass pending) and **§9 did not run on this diff either**, so the commit is
+  LOCAL and UNPUSHED pending a genuine human read. Stage 1 could not reach real data; a read-only console
+  census (`docs/checkpoints/firstshelf-dupes-census.js`) is delivered for Preston to run, and the fixture
+  run is labelled fixture, not observation. **No spine change, nothing retired, no Preston decision
+  contradicted** — S-B's remainder and R10 keep their places in `## Now` / `## Next`; the held merge round
+  is recorded as a dependency, not a re-order — so **no `PROPOSED:` flag.**
+  Record: `docs/checkpoints/firstshelf-dupes.md`.
 - **2026-08-15 (R10 — PARKED AT S1, an honest resting state; park record landed)** — R10 S1 "GROUNDS"
   shipped v3.276 (`2e99b2f`), **felt-passed 2026-08-09 (Preston)**; R10 is now **PARKED AT S1** — a
   statement-only, self-consistent resting state (the `#value/<id>` living-statement page + the `.pf-vcard`

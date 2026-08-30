@@ -16881,6 +16881,16 @@ body.wc-focus .app-nav { opacity:.26; }
   background:var(--teal); color:var(--text-on-dark); font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 0 2px rgba(0,0,0,.6);
   animation:scanTickPop .3s ease; }
 @keyframes scanTickPop{ from{ transform:scale(0) } to{ transform:scale(1) } }
+/* R-FIRSTSHELF-DUPES (2b) — the ALREADY-ON-YOUR-SHELF marks. Same tick geometry as
+   the within-scan absorb tick above (the tray's existing state vocabulary, not a new
+   chip), moved to the LEFT so one cover can carry both, and in the gold "on your
+   shelf" role rather than the absorb tick's teal. Deliberately NOT the .is-lean gray
+   register: gray reads as unavailable, and these entries stay addable/visible.
+   EXACT is filled + ✓ (certainty); PROBABLE is hollow + ? (a maybe). */
+.scan-dupe-tick.is-shelved, .scan-dupe-tick.is-maybe{ left:-6px; right:auto; }
+.scan-dupe-tick.is-shelved{ background:var(--gold-hi); color:var(--br-deep); }
+.scan-dupe-tick.is-maybe{ background:transparent; color:var(--gold-hi);
+  box-shadow:0 0 0 2px rgba(0,0,0,.6), inset 0 0 0 1.5px var(--gold-hi); }
 .scan-tray-review{ margin-top:4px; }
 .scan-tray .scan-btn{ min-height:46px; }
 
@@ -16914,6 +16924,12 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
 .scan-dc.is-lean .spine-flag{ margin-top:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
 .scan-dc.is-lean:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+/* R-FIRSTSHELF-DUPES (2b) — the review-face already-shelved / may-be-a-copy flags.
+   Same .spine-flag typography the lean exception uses, re-scoped to these two states
+   and coloured --gold-deep instead of the lean's --ink-3 gray. NO grayscale and NO
+   lean rotation: these books are informational, not unavailable. The two states are
+   told apart by COPY ("already shelved" / "may be a copy") and by the tray badge. */
+.scan-dc.is-shelved .spine-flag, .scan-dc.is-maybe .spine-flag{ margin-top:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
 
 /* generic typeset cloth cover (no external image — pre-sized slot, spine fallback) */
 .scan-cov{ position:relative; border-radius:2px 5px 5px 2px; overflow:hidden;

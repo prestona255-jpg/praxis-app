@@ -7452,18 +7452,109 @@ function deleteBook(uid, id) {
 // Phase 6 -- existing-library cleanup (mockup E). Mechanism + UI.
 // =====================================================================
 
-// CX-2 (data-dup): the canonical duplicate-identity key -- normalized
-// title+author (the ISBN branch was removed so a title-only copy and an
-// ISBN-bearing copy of the same work still collide). ONE source, shared by
-// scanLibraryForCleanup's grouping AND the add-guards below, so "duplicate"
-// never means two different things.
+// CX-2 (data-dup): the canonical duplicate-identity key -- normalized title +
+// FIRST-AUTHOR SURNAME. ONE source, shared by scanLibraryForCleanup's grouping,
+// the add-guards below, and bookIdentityTier, so "duplicate" never means two
+// different things.
+//
+// R-FIRSTSHELF-DUPES (T9) -- WHY THE ISBN BRANCH IS NOT IN THIS KEY, so it is not
+// "restored" into it again: a bare ISBN key made a title-only copy and an
+// ISBN-bearing copy of one work MISS each other, which is exactly why CX-2 dropped
+// it. It comes back at bookIdentityTier as a TIER over this key, which keeps that
+// collision (both copies still reach PROBABLE through title+surname) AND lets an
+// ISBN-13 match speak with certainty. The key stays title+surname; the tier is a
+// relation computed over it. Do not fold ISBN back into the key itself.
 function bookIdentityKey(title, author) {
-  return 'ta:' + resolverNormalize(title || '') + '|' + resolverNormalize(author || '');
+  return 'ta:' + identityTitleKey(title) + '|' + identitySurnameKey(author);
+}
+
+// Normalized title for the identity key: resolverNormalize (lowercase, punctuation
+// -> space, collapse, trim) PLUS a leading-article strip, so "The Politics of
+// Education" and "Politics of Education" are one book.
+// SUBTITLES ARE NEVER STRIPPED. "Counternarratives: Stories and Novellas" and
+// "Counternarratives: Cultural Studies and Critical Pedagogies" are DIFFERENT
+// BOOKS; stripping after the colon would merge them. Full normalized string.
+function identityTitleKey(title) {
+  return resolverNormalize(title || '').replace(/^(a|an|the) /, '');
+}
+
+// The first author's surname, lowercased, or '' when the author is blank.
+// FIRST AUTHOR ONLY: take the segment before the first comma/semicolon. That one
+// move does three jobs -- it drops co-authors ("Giroux, Lankshear, McLaren" ->
+// "Giroux"), it drops a comma'd credential ("Helen Fisher, PhD" -> "Helen Fisher"),
+// and it tolerates the surname-first form ("Fisher, Helen" -> "Fisher"). A
+// credential arriving WITHOUT a comma ("Helen Fisher PhD") is removed by the suffix
+// pass. Surname = the last whitespace-delimited token of what remains.
+// Credential set is the RULED list only -- PhD, Ph.D., Ed.D, MD, Jr. Sr / II / III
+// are NOT handled (reported as a known gap, not silently widened).
+function identitySurnameKey(author) {
+  var a = ('' + (author || '')).split(/[;,]/)[0];
+  var prev = null;
+  while (prev !== a) {
+    prev = a;
+    a = a.replace(/[\s.]*\b(ph\s*\.?\s*d|ed\s*\.?\s*d|m\s*\.?\s*d|jr)\s*\.?\s*$/i, '');
+  }
+  var n = resolverNormalize(a);
+  if (n === '') { return ''; }
+  var toks = n.split(' ');
+  return toks[toks.length - 1];
+}
+
+// Normalized ISBN-13, or '' when absent / unparseable. An ISBN-10 is CONVERTED to
+// its ISBN-13 form (978 prefix, EAN-13 check digit recomputed) so the same edition
+// matches whichever form the answering API happened to return. Hyphens and
+// whitespace are stripped first. Anything that is not a well-formed 10- or
+// 13-character code returns '' and is treated as ABSENT, never as a mismatch.
+function isbnKey13(raw) {
+  var s = ('' + (raw || '')).toUpperCase().replace(/[^0-9X]/g, '');
+  if (/^[0-9]{13}$/.test(s)) { return s; }
+  if (!/^[0-9]{9}[0-9X]$/.test(s)) { return ''; }
+  var core = '978' + s.substring(0, 9);
+  var sum = 0, i;
+  for (i = 0; i < 12; i++) { sum = sum + (core.charCodeAt(i) - 48) * ((i % 2) ? 3 : 1); }
+  return core + ((10 - (sum % 10)) % 10);
+}
+
+// THE TIER -- the one relation over two book-like records {title, author, isbn}.
+// Ruled 2026-08-29 (Preston, Ruling 2). Four outcomes:
+//   'exact'     normalized ISBN-13 equality. Definitionally the same book.
+//   'probable'  identity-key equality (title + first-author surname) where ISBNs
+//               are absent on either side OR present and DIFFERING. A machine
+//               cannot tell two scans of one book from two editions the reader
+//               owns, so this is LABELLED, never collapsed silently.
+//   'near-miss' titles equal, surnames unequal but one a STRICT PREFIX of the
+//               other -- the vision layer's truncation (T7/F2: "Fishe"/"Fisher").
+//               It marks nothing and blocks nothing; it exists to be COUNTED, and
+//               to be consumed by the held manual-merge round. Deliberately NOT a
+//               wider surname rule: prefix matching would merge Fisher and Fischer,
+//               and the corruption is upstream in vision, not in the key.
+//   'none'      everything else.
+// CONSUMPTION (ruled): the shelve-path auto-block takes 'exact' ONLY; the tray
+// marks 'exact' and 'probable' with distinguishable copy; cleanup grouping would
+// take both -- that surface is HELD pending the section 9 red-team gate and F4/T8.
+function bookIdentityTier(a, b) {
+  if (!a || !b) { return 'none'; }
+  var ia = isbnKey13(a.isbn), ib = isbnKey13(b.isbn);
+  if (ia !== '' && ia === ib) { return 'exact'; }
+  var ka = bookIdentityKey(a.title, a.author), kb = bookIdentityKey(b.title, b.author);
+  // A blank identity ('ta:|') is never a duplicate signal -- same invariant the
+  // add-guards have always enforced (an ISBN-only add whose title never resolved
+  // must not collapse onto a stuck empty-title record).
+  if (ka === 'ta:|' || kb === 'ta:|') { return 'none'; }
+  if (ka === kb) { return 'probable'; }
+  var ta = identityTitleKey(a.title), tb = identityTitleKey(b.title);
+  if (ta === '' || ta !== tb) { return 'none'; }
+  var sa = identitySurnameKey(a.author), sb = identitySurnameKey(b.author);
+  if (sa === '' || sb === '') { return 'none'; }
+  if (sa.length !== sb.length && (sa.indexOf(sb) === 0 || sb.indexOf(sa) === 0)) { return 'near-miss'; }
+  return 'none';
 }
 
 // Returns an existing shelf book id for this user whose identity key matches the
 // candidate title/author, or null. Scans the user's deduped bookIds index (the
 // real shelf), so the add-guard tests against what the shelf actually holds.
+// NOTE: title+author only -- it cannot see the ISBN tier, so it resolves at
+// PROBABLE strength. Callers that hold an ISBN use findShelfMatch instead.
 function findShelfBookByIdentity(uid, title, author) {
   var key = bookIdentityKey(title, author);
   // An empty identity (blank title AND author -- e.g. an ISBN-only add whose
@@ -7480,9 +7571,29 @@ function findShelfBookByIdentity(uid, title, author) {
   return null;
 }
 
+// The TIERED shelf lookup: the STRONGEST match on this user's shelf for a
+// candidate {title, author, isbn}, or null. An 'exact' match returns immediately;
+// otherwise the first 'probable' is held and returned. 'near-miss' is NEVER
+// returned as a match -- by ruling it marks nothing and blocks nothing.
+function findShelfMatch(uid, cand) {
+  var ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var best = null, i, b, t;
+  for (i = 0; i < ids.length; i++) {
+    b = state.books[ids[i]];
+    if (!b) { continue; }
+    t = bookIdentityTier(cand, b);
+    if (t === 'exact') { return { id: ids[i], tier: 'exact' }; }
+    if (t === 'probable' && !best) { best = { id: ids[i], tier: 'probable' }; }
+  }
+  return best;
+}
+
 // Scan one user's shelf for (a) duplicate/near-duplicate records and (b) books
-// with no cover. Duplicate key = the shared bookIdentityKey (normalized
-// title+author). Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
+// with no cover. Duplicate key = the shared bookIdentityKey (normalized title +
+// first-author surname). Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
+// NOTE (R-FIRSTSHELF-DUPES): this grouping is DETECTION only. The merge actions it
+// used to feed are gated -- see the F5 note in openLibraryCleanup.
 function scanLibraryForCleanup(uid) {
   var out = { duplicates: [], missingCovers: [], wrongCovers: [], total: 0 };
   var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
@@ -7710,7 +7821,8 @@ function reResolveCover(bookId, callback) {
 }
 
 // The one-time cleanup pass UI (mockup E): summary stats, per-item review
-// (merge duplicates / resolve missing covers), and a "Resolve all" bulk.
+// (duplicate DETECTION -- merging is held, see F5 below -- and cover resolution),
+// plus a "Resolve all covers" bulk.
 function openLibraryCleanup() {
   var hostEl = document.getElementById('shelf-editor-host');
   if (!hostEl) { return; }
@@ -7727,7 +7839,7 @@ function openLibraryCleanup() {
     var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow'; eyebrow.textContent = 'Shelf · one-time cleanup';
     var h1 = document.createElement('h1'); h1.className = 'book-review-title'; h1.textContent = 'Tidy your library';
     var sub = document.createElement('p'); sub.className = 'book-review-sub';
-    sub.textContent = 'Resolve duplicates and fill in missing covers across your ' + report.total + ' books.';
+    sub.textContent = 'Fill in missing covers across your ' + report.total + ' books, and see which records look like duplicates.';
     wrap.appendChild(eyebrow); wrap.appendChild(h1); wrap.appendChild(sub);
 
     var summary = document.createElement('div'); summary.className = 'cl-summary';
@@ -7773,7 +7885,7 @@ function openLibraryCleanup() {
       var heroH = document.createElement('h3'); heroH.textContent = 'We found the missing covers';
       var heroP = document.createElement('p');
       heroP.textContent = coverWork.length + ' of your books are missing or have a broken cover. ' +
-        'We match each one against the catalog — review them below, or hit Resolve all.';
+        'We match each one against the catalog — review them below, or hit Resolve all covers.';
       heroTx.appendChild(heroH); heroTx.appendChild(heroP);
       hero.appendChild(baBig); hero.appendChild(heroTx);
       wrap.appendChild(hero);
@@ -7781,15 +7893,18 @@ function openLibraryCleanup() {
 
     var resolveAll = document.createElement('button');
     resolveAll.type = 'button'; resolveAll.className = 'review-confirm cl-resolve-all';
-    resolveAll.textContent = 'Resolve all →';
+    // R-FIRSTSHELF-DUPES / F5 — ORDERING HAZARD, NEUTRALIZED IN THE SAME COMMIT AS
+    // THE WIDENED KEY (Preston, Ruling 4, 2026-08-29). This button used to bulk-merge
+    // EVERY duplicate group with no per-group consent. The identity key widened in
+    // this same commit, so on the next render it would have found real groups on a
+    // live shelf and merged them all on one tap -- and mergeBookDuplicates still
+    // drops valueMarks / movedMe / rating / dateRead / categoryOverride /
+    // traditionOverride (F4/T8, authored prose in valueMarks.why). The merge loop is
+    // REMOVED from this bulk; covers only. Merging returns with the held Stage 3
+    // round, behind the section 9 red-team gate, once T8 is fixed.
+    resolveAll.textContent = 'Resolve all covers →';
     resolveAll.addEventListener('click', function() {
       resolveAll.disabled = true; resolveAll.textContent = 'Resolving…';
-      // merge every duplicate group (keep the first), then re-resolve covers.
-      var g;
-      for (g = 0; g < report.duplicates.length; g++) {
-        var grp = report.duplicates[g];
-        mergeBookDuplicates(user.uid, grp[0], grp.slice(1));
-      }
       var fresh = scanLibraryForCleanup(user.uid);
       var pending = fresh.missingCovers.concat(fresh.wrongCovers);
       var idx = 0;
@@ -7815,14 +7930,26 @@ function openLibraryCleanup() {
         var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = keep ? (keep.title || '') : '';
         var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = keep ? (keep.author || '') : '';
         var note = document.createElement('div'); note.className = 'cl-note';
-        note.textContent = grp.length + ' copies — merge keeps your notes and the read status.';
+        note.textContent = grp.length + ' copies of this book on your shelf.';
         mid.appendChild(ti); mid.appendChild(au); mid.appendChild(note); item.appendChild(mid);
         var acts = document.createElement('div'); acts.className = 'cl-actions';
-        var keepBoth = document.createElement('button'); keepBoth.type = 'button'; keepBoth.className = 'review-mark-all'; keepBoth.textContent = 'Keep both';
-        keepBoth.addEventListener('click', function() { /* leave as-is; re-render drops it from this pass only on merge */ });
-        var mergeBtn = document.createElement('button'); mergeBtn.type = 'button'; mergeBtn.className = 'review-confirm cl-merge'; mergeBtn.textContent = 'Merge';
-        mergeBtn.addEventListener('click', function() { mergeBookDuplicates(user.uid, grp[0], grp.slice(1)); render(); });
-        acts.appendChild(keepBoth); acts.appendChild(mergeBtn); item.appendChild(acts);
+        // R-FIRSTSHELF-DUPES / F5 (same hazard, same commit): the PER-GROUP Merge is
+        // gated too. Ruling 4 names the "Resolve all" bulk; this button is the same
+        // hazard from the same cause -- it was near-unreachable while the key was too
+        // narrow to group anything, and the widening in THIS commit makes it live on
+        // a real shelf. It calls the same mergeBookDuplicates that drops valueMarks
+        // (authored `why` prose), movedMe, rating, dateRead, categoryOverride and
+        // traditionOverride (F4/T8). Shipping it enabled would violate this round's
+        // own invariant that marks are never lost. Detection stays fully live -- the
+        // group still renders and still counts -- only the destructive action is off.
+        // It re-enables in the held Stage 3 round once T8 is fixed and section 9 can run.
+        var mergeBtn = document.createElement('button'); mergeBtn.type = 'button'; mergeBtn.className = 'review-confirm cl-merge'; mergeBtn.textContent = 'Merge — held';
+        mergeBtn.disabled = true;
+        mergeBtn.setAttribute('title', 'Merging is held until it can guarantee your marks and notes survive it.');
+        var heldNote = document.createElement('div'); heldNote.className = 'cl-note';
+        heldNote.textContent = 'Merging is held — it would not yet carry your value marks across. Nothing here is at risk; nothing has been changed.';
+        mid.appendChild(heldNote);
+        acts.appendChild(mergeBtn); item.appendChild(acts);
         list.appendChild(item);
       })(report.duplicates[di]);
     }
@@ -7970,7 +8097,9 @@ function scanQueryForBook(vb) {
   return { kind: 'title', title: (vb && vb.title) ? vb.title : '', author: scanAuthorIsNoisy(vb ? vb.author : '') ? '' : vb.author };
 }
 
-// Normalized title (the bookIdentityKey idiom, :7565): lowercase, alnum-only.
+// Normalized title (a LOOSER cousin of the bookIdentityKey idiom): lowercase,
+// alnum-only. Deliberately NOT identityTitleKey -- this one is the vision layer's
+// corroboration test, not the identity key, and the two must not be conflated.
 function scanNormTitle(s) {
   return ('' + (s == null ? '' : s)).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
@@ -8556,8 +8685,16 @@ function scanVerdictAdd() {
     scanOpenManualWhenReady(pf, 12);
     return;
   }
-  var id = scanCommitBook(vd.spec, null);
-  scanAnnounce(id ? ('Added ' + (vd.spec.title || 'the book') + ' to your shelf.') : 'Could not add — sign in.');
+  // R-FIRSTSHELF-DUPES (2a): report the REAL outcome. An EXACT match folds onto the
+  // copy already shelved instead of minting a second record, and must not announce
+  // "Added" — that would claim a write that did not happen.
+  var vout = {};
+  var id = scanCommitBook(vd.spec, null, vout);
+  scanAnnounce(id
+    ? (vout.folded
+        ? ((vd.spec.title || 'That book') + ' is already on your shelf.')
+        : ('Added ' + (vd.spec.title || 'the book') + ' to your shelf.'))
+    : 'Could not add — sign in.');
   scanCurrentVerdict = null;
   if (scanMode === 'book') { scanStartBookDecode(); } // rapid-scan continues after Add
 }
@@ -8570,10 +8707,57 @@ function scanVerdictAdd() {
 // the existing ones, composed so Book-mode Add (S3) and Shelf-mode Shelve (S4)
 // share one path. spec = {title, author, isbn, coverUrl, status}. Returns the id.
 // ============================================================================
-function scanCommitBook(spec, cb) {
+// R-FIRSTSHELF-DUPES (2a): fill ONLY blank fields on an existing record from an
+// incoming scan. NEVER overwrites a populated field. `status` is deliberately NOT
+// in the list -- read-status is the reader's, and a fresh scan's default
+// 'will-read' would silently un-finish a book they had marked read. Returns the
+// array of field names actually filled (empty = nothing written, nothing dirtied).
+function scanEnrichExisting(uid, bookId, spec) {
+  var b = state.books[bookId], filled = [];
+  if (!b) { return filled; }
+  function blank(v) { return (typeof v !== 'string') || v.replace(/^\s+|\s+$/g, '') === ''; }
+  if (blank(b.title)  && !blank(spec.title))  { b.title  = spec.title;  filled.push('title'); }
+  if (blank(b.author) && !blank(spec.author)) { b.author = spec.author; filled.push('author'); }
+  if (blank(b.isbn)   && !blank(spec.isbn))   { b.isbn   = spec.isbn;   filled.push('isbn'); }
+  if (blank(b.genre)  && !blank(spec.genre))  { b.genre  = spec.genre;  filled.push('genre'); }
+  if (!b.coverUrl && spec.coverUrl) { b.coverUrl = spec.coverUrl; filled.push('coverUrl'); }
+  if ((!(b.coverCandidates instanceof Array) || b.coverCandidates.length === 0)
+      && spec.coverCandidates && spec.coverCandidates.length > 0) {
+    b.coverCandidates = spec.coverCandidates.slice(); filled.push('coverCandidates');
+  }
+  if (filled.length > 0) {
+    ensureBookFields(b);
+    markBookPending(uid, bookId);
+    markBooksDirty();
+    saveState();
+  }
+  return filled;
+}
+
+// `out` (optional) is an out-param the caller supplies to learn WHICH outcome it
+// got: {created:bool, folded:bool, tier:string, existingId:string, enriched:[]}.
+// scanShelve NEEDS this -- an id returned from a FOLD is a pre-existing book, and
+// pushing it into scanLastShelvedIds would let the batch Undo DELETE a book the
+// reader already owned. Only `created` ids may enter that list.
+function scanCommitBook(spec, cb, out) {
   var user = getCurrentUser();
+  if (out) { out.created = false; out.folded = false; out.tier = 'none'; out.existingId = null; out.enriched = []; }
   if (!user) { if (cb) { cb(null); } return null; }
   if (typeof ensureUser === 'function') { ensureUser(user.uid); }
+  // R-FIRSTSHELF-DUPES (2a): the shelve path never consulted the identity source,
+  // so every scan of the same shelf minted fresh records. Consult it HERE -- the
+  // one commit point all three scan add-doors share (verdict Add, the denied/
+  // offline ISBN door, and Shelve N), so the guard cannot diverge per path.
+  // EXACT ONLY blocks (Ruling 2): a normalized ISBN-13 match is definitionally the
+  // same book. A PROBABLE match is NEVER silently refused -- it may be a second
+  // edition the reader genuinely owns; it is marked in the tray and still shelved.
+  var match = findShelfMatch(user.uid, { title: spec.title, author: spec.author, isbn: spec.isbn });
+  if (match && match.tier === 'exact') {
+    var enriched = scanEnrichExisting(user.uid, match.id, spec);
+    if (out) { out.folded = true; out.tier = 'exact'; out.existingId = match.id; out.enriched = enriched; }
+    if (cb) { cb(match.id); }
+    return match.id;
+  }
   var now = Date.now();
   var id = genBookId();
   state.books[id] = {
@@ -8604,6 +8788,10 @@ function scanCommitBook(spec, cb) {
   // the reader has used or dismissed it. Resettable via the ls key (see report).
   var fsKey = 'praxis_firstshelf_offer_' + user.uid;
   if (typeof ls === 'function' && !ls(fsKey, '')) { sv(fsKey, 'armed'); }
+  // R-FIRSTSHELF-DUPES (2a): only a REAL create reports created:true. A fold
+  // returns above and never reaches here, so the offer-arm above (which means
+  // "the library grew") also stays correct -- a folded add grows nothing.
+  if (out) { out.created = true; out.tier = match ? match.tier : 'none'; out.existingId = id; }
   if (cb) { cb(id); }
   return id;
 }
@@ -8659,10 +8847,14 @@ function scanWireIsbnDoor(inputId, btnId, statusId) {
       // shape) so a book added here self-heals like every other add path, instead of
       // persisting an OL-only cover that 404s to the placeholder.
       var bCands = (b.coverCandidates && b.coverCandidates.length > 0) ? b.coverCandidates : (b.coverUrl ? [b.coverUrl] : []);
-      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, coverCandidates: bCands, status: 'will-read' }, null);
-      if (st) { st.textContent = id ? ('Added ' + (b.title || ('ISBN ' + raw)) + ' · on your shelf') : 'Sign in to add.'; }
+      // R-FIRSTSHELF-DUPES (2a): the ISBN door is a scan-commit site, so it inherits
+      // the EXACT fold. Say so rather than claiming an add that did not happen.
+      var dout = {};
+      var id = scanCommitBook({ title: b.title || '', author: b.author || '', isbn: b.isbn || raw, coverUrl: b.coverUrl || null, coverCandidates: bCands, status: 'will-read' }, null, dout);
+      var dLabel = b.title || ('ISBN ' + raw);
+      if (st) { st.textContent = id ? (dout.folded ? (dLabel + ' · already on your shelf') : ('Added ' + dLabel + ' · on your shelf')) : 'Sign in to add.'; }
       inp.value = '';
-      scanAnnounce(id ? ('Added ' + (b.title || raw) + ' to your shelf.') : 'Could not add.');
+      scanAnnounce(id ? (dout.folded ? ((b.title || raw) + ' is already on your shelf.') : ('Added ' + (b.title || raw) + ' to your shelf.')) : 'Could not add.');
     });
   }
   btn.addEventListener('click', go);
@@ -8779,8 +8971,11 @@ function scanRunShelfVision(base64) {
 }
 
 // Progressive tray fill: resolve each vision book (queue depth 1 via sequential
-// resolveBook), classify (S1), SCA3 dedupe (within-scan absorb + soft library
-// signal; duplicates are legal), drop into the tray as each lands.
+// resolveBook), classify (S1), SCA3 dedupe (within-scan absorb), and mark against
+// the shelf via the TIER (R-FIRSTSHELF-DUPES 2b) -- 'exact' is already shelved and
+// will fold at commit, 'probable' is marked but still adds. Drop into the tray as
+// each lands. (The old note here said "duplicates are legal"; an EXACT duplicate is
+// no longer legal to mint -- scanCommitBook folds it.)
 function scanResolveAndFill(visionBooks) {
   scanShow(scanEl('scan-tray'));
   var strip = scanEl('scan-tray-strip'); if (strip) { strip.innerHTML = ''; }
@@ -8815,6 +9010,11 @@ function scanResolveAndFill(visionBooks) {
         // [] degrades to today's single-url behavior inside scanCoverNode.
         coverCandidates: (rz && rz.book && rz.book.coverCandidates && rz.book.coverCandidates.length > 0)
           ? rz.book.coverCandidates : [],
+        // R-FIRSTSHELF-DUPES (2b): carry the resolved ISBN on the item itself. The
+        // tray, the review face and Shelve N all need it to reach the EXACT tier,
+        // and it must survive scanSaveDraft -- deriving it from `resolved` at three
+        // sites is exactly the per-path divergence the covers bug was made of.
+        isbn: (rz && rz.book && rz.book.isbn) ? rz.book.isbn : '',
         alternates: (rz && rz.alternates) ? rz.alternates : [], exception: isExc
       };
       var key = bookIdentityKey(item.title, item.author);
@@ -8823,12 +9023,17 @@ function scanResolveAndFill(visionBooks) {
         scanAddTick(seen[key]);
         var subA = scanEl('scan-tray-sub'); if (subA) { subA.textContent = 'already caught · absorbed'; }
       } else {
-        var owned = (u && findShelfBookByIdentity(u.uid, item.title, item.author)); // SOFT library signal (duplicates legal)
-        var el = scanDropTrayCover(item, key, !!owned);
+        // R-FIRSTSHELF-DUPES (2b/R3): the TIERED shelf signal, replacing the old
+        // title+author-only "SOFT library signal (duplicates legal)". An EXACT match
+        // is no longer legal to add -- scanCommitBook folds it -- so the copy that
+        // promised the opposite is gone. A PROBABLE match stays addable and says so.
+        var m = (u && findShelfMatch(u.uid, { title: item.title, author: item.author, isbn: item.isbn }));
+        var el = scanDropTrayCover(item, key, m ? m.tier : '');
         if (key !== 'ta:|') { seen[key] = el; }
         found++;
         if (isExc) { exceptions++; classified.exceptions.push(item); } else { confident++; classified.confident.push(item); }
-        var subB = scanEl('scan-tray-sub'); if (subB) { subB.textContent = owned ? 'may already own · legal to add' : ''; }
+        var subB = scanEl('scan-tray-sub');
+        if (subB) { subB.textContent = m ? (m.tier === 'exact' ? 'already on your shelf' : 'may be a copy · still adds') : ''; }
       }
       var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
       window.setTimeout(next, scanRM() ? 20 : 70);
@@ -8837,19 +9042,37 @@ function scanResolveAndFill(visionBooks) {
   next();
 }
 
-function scanDropTrayCover(item, key, owned) {
+// `ownTier` is '' | 'probable' | 'exact' (R-FIRSTSHELF-DUPES 2b). Before this round
+// `data-owned` was written and read by NOTHING -- zero CSS selectors, zero readers
+// (F3), so R3's mark had no visual presence at all. It now carries the tier AND
+// gets a badge, seated on the LEFT so a cover can carry both this and the
+// within-scan absorb tick. Same tick geometry as that absorb tick (the tray's
+// existing state vocabulary), in the gold "on your shelf" role rather than teal --
+// deliberately NOT the .is-lean gray, which means unavailable; these are
+// informational and both tiers still appear in the tray.
+function scanDropTrayCover(item, key, ownTier) {
   var strip = scanEl('scan-tray-strip');
   var cov = scanCoverNode(item.title, item.author, item.cover, item.coverCandidates);
   cov.classList.add('scan-tray-cov');
   cov.setAttribute('data-key', key);
   if (item.exception) { cov.style.filter = 'grayscale(1) brightness(.86)'; }
-  if (owned) { cov.setAttribute('data-owned', '1'); }
+  if (ownTier) {
+    cov.setAttribute('data-owned', ownTier);
+    var ot = document.createElement('span');
+    ot.className = 'scan-dupe-tick ' + (ownTier === 'exact' ? 'is-shelved' : 'is-maybe');
+    ot.textContent = (ownTier === 'exact') ? '✓' : '?';
+    ot.setAttribute('aria-hidden', 'true');
+    cov.appendChild(ot);
+  }
   if (strip) { strip.appendChild(cov); strip.scrollLeft = strip.scrollWidth; }
   return cov;
 }
 function scanAddTick(el) {
-  if (!el || el.querySelector('.scan-dupe-tick')) { return; }
-  var tk = document.createElement('span'); tk.className = 'scan-dupe-tick'; tk.textContent = '✓';
+  // 2b: guard on the ABSORB tick specifically. An own-shelf badge is also a
+  // .scan-dupe-tick, so the old bare-class guard would have suppressed a real
+  // within-scan absorb tick on any cover already marked as owned.
+  if (!el || el.querySelector('.scan-dupe-tick.is-absorbed')) { return; }
+  var tk = document.createElement('span'); tk.className = 'scan-dupe-tick is-absorbed'; tk.textContent = '✓';
   el.appendChild(tk);
   try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
 }
@@ -8881,14 +9104,32 @@ function scanRenderReview() {
   scanEl('scan-rv-exc-n').textContent = exc;
   var cwrap = scanEl('scan-rv-confident'); cwrap.innerHTML = '';
   var i;
+  // R-FIRSTSHELF-DUPES (2b): shelveN is what "Shelve N" will actually CREATE.
+  // scanCommitBook folds an EXACT shelf match rather than minting a second record,
+  // so exact-matched entries are excluded from the count -- they stay VISIBLE and
+  // marked. PROBABLE entries are NOT excluded: they are not blocked either (a
+  // probable match may be a second edition), so counting them keeps the number
+  // equal to the behavior. A count that did not match what Shelve does would be
+  // the same dishonesty as T5's confidence line.
+  var shelveN = 0;
   for (i = 0; i < scanResult.confident.length; i++) {
     var b = scanResult.confident[i];
-    var d = document.createElement('div'); d.className = 'scan-dc';
+    var bm = rvUser ? findShelfMatch(rvUser.uid, { title: b.title, author: b.author, isbn: b.isbn }) : null;
+    var bTier = bm ? bm.tier : '';
+    if (bTier !== 'exact') { shelveN = shelveN + 1; }
+    var d = document.createElement('div');
+    d.className = 'scan-dc' + (bTier === 'exact' ? ' is-shelved' : (bTier === 'probable' ? ' is-maybe' : ''));
     var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
     d.appendChild(cov);
     var cap = document.createElement('div'); cap.className = 'cap';
     var t = document.createElement('div'); t.className = 't'; t.textContent = b.title; cap.appendChild(t);
-    d.appendChild(cap); cwrap.appendChild(d);
+    d.appendChild(cap);
+    if (bTier) {
+      var sf = document.createElement('div'); sf.className = 'spine-flag';
+      sf.textContent = (bTier === 'exact') ? 'already shelved' : 'may be a copy';
+      d.appendChild(sf);
+    }
+    cwrap.appendChild(d);
   }
   var ewrap = scanEl('scan-rv-exceptions'); ewrap.innerHTML = '';
   for (i = 0; i < scanResult.exceptions.length; i++) {
@@ -8906,9 +9147,11 @@ function scanRenderReview() {
     })(i);
   }
   scanEl('scan-rv-exc-band').style.display = exc ? 'block' : 'none';
-  scanEl('scan-rv-shelve-n').textContent = conf;
+  // 2b: the button counts what it will CREATE (shelveN), not the confident total.
+  // The band header above still shows the true confident count.
+  scanEl('scan-rv-shelve-n').textContent = shelveN;
   var rvShelveBtn = scanEl('scan-rv-shelve');   // S3c: no live "Shelve 0" primary — disabled when nothing is ready
-  if (rvShelveBtn) { rvShelveBtn.disabled = (conf === 0); }
+  if (rvShelveBtn) { rvShelveBtn.disabled = (shelveN === 0); }
   scanEl('scan-rv-walk-n').textContent = exc;
   scanEl('scan-rv-walk').style.display = exc ? '' : 'none';
   // R3 (3a): the post-shelve TRAY-EMPTY door. When nothing remains to review
@@ -9090,17 +9333,23 @@ function scanAfterWalk() {
 // ---- Shelve N (shared guarded write) + flight + receipt + IMMEDIATE Undo ----
 function scanShelve() {
   if (!scanResult || !scanResult.confident.length) { return; }
-  var createdIds = [], i;
+  var createdIds = [], foldedN = 0, i;
   for (i = 0; i < scanResult.confident.length; i++) {
     var it = scanResult.confident[i];
-    var isbn = (it.resolved && it.resolved.book && it.resolved.book.isbn) ? it.resolved.book.isbn : '';
+    var isbn = it.isbn || ((it.resolved && it.resolved.book && it.resolved.book.isbn) ? it.resolved.book.isbn : '');
     // S1: persist the OL->GB candidate list (not just the primary), so the SHELVED
     // record self-heals via buildSelfHealingCover exactly like a normally-added book.
     var itCands = (it.coverCandidates && it.coverCandidates.length > 0)
       ? it.coverCandidates
       : ((it.resolved && it.resolved.book && it.resolved.book.coverCandidates) ? it.resolved.book.coverCandidates : null);
-    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, coverCandidates: itCands, status: 'will-read' }, null);
-    if (id) { createdIds.push(id); }
+    // R-FIRSTSHELF-DUPES (2a): ONLY a real create may enter the Undo list. An EXACT
+    // match returns the id of a book the reader ALREADY OWNED; pushing that id here
+    // would make the batch Undo delete a pre-existing record. `out.created` is the
+    // only admissible test — a truthy id is not one.
+    var sout = {};
+    var id = scanCommitBook({ title: it.title, author: it.author, isbn: isbn, coverUrl: it.cover, coverCandidates: itCands, status: 'will-read' }, null, sout);
+    if (id && sout.created) { createdIds.push(id); }
+    else if (id && sout.folded) { foldedN = foldedN + 1; }
   }
   scanLastShelvedIds = createdIds;
   var n = createdIds.length;
@@ -9109,7 +9358,7 @@ function scanShelve() {
   scanResult.confident = [];
   scanResult.found = scanResult.exceptions.length;
   scanSaveDraft(); scanUpdateNavBadge();
-  scanShelveFlight(function () { scanShowReceipt(n); });
+  scanShelveFlight(function () { scanShowReceipt(n, foldedN); });
 }
 
 // FELT SIGNATURE 3 — the shelve flight (a representative dozen fly to the glyph).
@@ -9140,8 +9389,11 @@ function scanShelveFlight(after) {
   }
 }
 
-function scanShowReceipt(n) {
-  scanAnnounce('Shelved ' + n + ' books. Undo available.');
+function scanShowReceipt(n, foldedN) {
+  // R-FIRSTSHELF-DUPES (2a): name the folds out loud. Silently shelving 5 of 7 and
+  // announcing "Shelved 5" would read as two books lost, which is the same class of
+  // dishonest count as T5's confidence line.
+  scanAnnounce('Shelved ' + n + ' books.' + (foldedN ? (' ' + foldedN + ' were already on your shelf.') : '') + ' Undo available.');
   // re-render the review to reflect the shelved set leaving (exceptions remain);
   // this may raise the centered done door (found===0), which OWNS the Undo now.
   scanRenderReview();

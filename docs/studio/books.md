@@ -180,6 +180,31 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 - [source: cross-check 2026-07-08] [status: resolved 2026-07-09] [data-state][high] RE-GRADE — the Author filter rail finding already on this ledger (views.js:4027-4058 reading raw booksMap instead of the deduped shelfBookIds/lcArr set) is elevated to HIGH: because the filtered `books` array used to populate the grid IS scoped to the deduped set (views.js:4665-4681), an author whose only book(s) are orphan/duplicate records outside that set shows a >0 count in the sidebar but yields ZERO cards when clicked — a direct violation of the CLAUDE.md Live Forensic Smoke Test's "rendered count == stored count" bar, not just a cosmetic inflation.
 - [source: cross-check 2026-07-08] [status: open] [performance][high] RE-GRADE — the "no pagination/virtualization" finding already on this ledger is elevated to HIGH: renderShelf is the sole update path for the entire surface, confirmed called from 40 sites in views.js (grep count); every call tears down the page (`host.innerHTML=''`, views.js:3733) and re-runs ~9 separate O(n) passes over the book set (collect, sort, filter's 7-predicate pass, lens/status/author/category tallies) plus a full walk of state.notebookEntries AND state.subTheories for the "alight" computation (views.js:4759-4789) — on every filter click, toggle, and debounced keystroke, not just on load.
 
+- **R-FIRSTSHELF-DUPES Stage 2 (v3.284, 2026-08-29, local/unpushed)** — the Shelf's Manage-sheet
+  **"Tidy library"** surface (`openLibraryCleanup`) is materially affected, though the round's build was on
+  the scan path. Two changes here:
+  (1) **DETECTION GOT ITS SIGHT BACK.** The grouping key it shares with the add-guards widened from
+  normalized title+WHOLE-author to normalized title + first-author **surname** (leading article stripped;
+  subtitles never stripped). Before this the surface reported **0 duplicates** for Preston's real pairs,
+  because `"Helen Fisher, PhD"` and `"Helen Fisher"` normalized to different keys. It will now find them.
+  (2) **THE DESTRUCTIVE ACTIONS ARE GATED** — an ordering hazard closed in the SAME commit as the widening
+  (Preston Ruling 4), because a wider key makes those buttons live on a real shelf the moment it lands:
+  `mergeBookDuplicates` now has **ZERO live callers** (`grep -c 'mergeBookDuplicates('` 3 → 1, definition
+  only). "Resolve all →" became **"Resolve all covers →"** with the merge loop removed (kept, not deleted —
+  it also drives the useful cover re-resolution); the per-group **Merge** button is disabled and labelled
+  **"Merge — held"** with an inline note. Groups still render and still count; only the action is off.
+  **Why held:** `mergeBookDuplicates` does not union `valueMarks` (whose `why` is authored prose),
+  `movedMe`, `rating`, `dateRead`, `categoryOverride` or `traditionOverride` off the dropped records before
+  `delete state.books[dropId]` destroys them — carried debt **T8**, which blocks the held merge round.
+  It DOES repoint all 7 id-keyed collections correctly (verified line-by-line against `deleteBook`).
+  **COPY IS A CONTRACT fix:** the group note promised *"merge keeps your notes and the read status"* — false
+  per T8 — now reads *"N copies of this book on your shelf."* The page sub-line and hero copy were
+  re-worded to match covers-only behavior.
+  **Inherited widening at two other Shelf sites** (reported, not absorbed): the manual-add fold in
+  `openShelfEditor` now folds at PROBABLE strength (T10, flagged for Preston's confirmation — the manual
+  path folds on PROBABLE while the shelve path blocks only on EXACT), and bulk-paste title-form dedup now
+  strips a leading article. Record: `docs/checkpoints/firstshelf-dupes.md`.
+
 ## Round history
 
 ### R-SHELF THE BOOKCASE — CLOSED (felt pass #2 = PASS, 2026-07-22, v3.243 `c90e70a`; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4 `e63374d` · S5 `c90e70a`). Live on production. Canon ratified: elevation loop + completeness inventory (permanent) · ROW 9 · STATES amendments · G1–G5 (lessons L11–L15) · 2 mechanical truths.

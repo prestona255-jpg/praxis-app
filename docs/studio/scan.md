@@ -51,6 +51,34 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
   decision paths) and T4 (OL-before-GB ordering unexamined) are in the CARRIED-DEBT LEDGER (`docs/launch-runway.md`).
   Record: `docs/checkpoints/covers-diagnosis.md`.
 
+- **R-FIRSTSHELF-DUPES Stage 2 — PREVENTION (v3.284, 2026-08-29, local/unpushed)** — four consecutive scans
+  of one physical shelf produced duplicate shelf records. Two causes, both now closed on the prevention side:
+  (a) the shared identity key (`bookIdentityKey`) normalized the WHOLE author string, so
+  `"Helen Fisher, PhD"` and `"Helen Fisher"` were different books and the existing cleanup surface reported
+  **0 duplicates** for the pair on screen; (b) `scanCommitBook` — the one commit point all three scan
+  add-doors share — **never consulted the key at all** and minted a fresh `genBookId()` every time.
+  **Shipped:** the identity source is now TIERED (Preston Ruling 2) inside the one existing function family
+  — key = normalized title (leading article stripped, **subtitles never stripped**) + first-author
+  **surname**; `bookIdentityTier` returns `exact` (normalized ISBN-13 equality) / `probable` (key equality,
+  ISBNs absent or differing) / `near-miss` (titles equal, one surname a strict prefix of the other — the
+  vision layer's truncation, T7/F2; marks nothing, blocks nothing, counted only) / `none`.
+  The shelve path folds an **EXACT** match and enriches blank fields only — never `status`, never any
+  reader-authored field. A **PROBABLE** match is never silently refused (it may be a second edition).
+  **Tray + review face:** a new informational state — filled gold tick + "already shelved" (EXACT), hollow
+  gold tick + "may be a copy" (PROBABLE) — built on the tray's existing tick geometry and `.spine-flag`
+  typography, deliberately NOT the `.is-lean` gray. Before this, `data-owned` was written and read by
+  **nothing** (zero CSS selectors, zero readers). The "Shelve N" count now equals what Shelve will CREATE.
+  **F5 ordering hazard closed in the same commit:** `mergeBookDuplicates` went from 2 live callers to ZERO
+  (`grep -c 'mergeBookDuplicates('` 3 → 1, i.e. definition only) — "Resolve all" is covers-only, per-group
+  Merge disabled and labelled; detection untouched.
+  **HELD:** the merge surface (Stage 3) — it waits on FIX-PROTOCOL §9's `fix-red-team` gate and on **T8**
+  (`mergeBookDuplicates` drops `valueMarks` incl. authored `why`, `movedMe`, `rating`, `dateRead`,
+  `categoryOverride`, `traditionOverride`).
+  **RESIDUAL — VISUAL GATE UNCLEARED:** proven structurally (72/72 assertions across 3 cscript harnesses,
+  all exit 0, harness self-validated against a broken copy), NOT visually — this rig has no camera and
+  cannot drive the scan overlay. Felt pass PENDING. Record: `docs/checkpoints/firstshelf-dupes.md`;
+  console census: `docs/checkpoints/firstshelf-dupes-census.js`.
+
 ## Round history
 
 - **SCAN (deep round) — CLOSED 2026-08-08** (full felt PASS on Preston's device round 4, installed PWA +
