@@ -31,7 +31,25 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
-- **2026-08-30 (T13 STALE-DRAFT — premise falsified, real defect fixed; v3.285 LOCAL, UNPUSHED)** — a fix
+- **2026-09-01 (T12 TITLE CORRUPTION — writer identified; R1 RULED ACCEPTED; T21 filed. v3.286)** — no
+  re-order; a recorded state plus one new backlog item, so **no `PROPOSED:` flag.** The **FOURTH**
+  consecutive round whose opening premise Stage 0/1 corrected — the brief provisionally ruled out the scan
+  path and the evidence confirmed that, but it also showed the "clean" records were themselves a batch from
+  a *different* writer (v3.277 `scanCommitBook`), which nobody had proposed. The 2026-08-30 entry's pattern
+  holds a fourth time: the reported symptom is reliable, the reported mechanism is not.
+  Two things worth carrying forward beyond the fix itself. **(1) A discriminator can expire.** Stage 0
+  offered `coverCandidates`-absence as ruling out both review-confirm and scan; Preston caught that it did
+  not discriminate, and the reason was that `scanCommitBook` only gained the key on 2026-08-23 (`2fef2f1`,
+  v3.279) — *after* the records were written. A field-shape argument is only valid for the schema in force
+  on the record's own date; check the key's birthday before you lean on its absence. **(2) An alternative
+  fix was evaluated and declined on verification grounds, not on merit.** Letting a confident catalogue
+  result write the title back would retire R1's whole regression class, and the confidence machinery for it
+  already exists unused (`resolveBook`'s score/closeness/strong gate, `integrations.js:2414-2442`). It was
+  declined because **it could not be verified from the build box** — GB direct 429s (keyless quota 0),
+  curl to Netlify returns 000, Browser-pane navigation is denied — so every closeness figure supporting it
+  was arithmetic over Google Books title strings never actually observed. Shipping on that is the
+  claims-outliving-code failure this program keeps catching. Filed as **T21** with a live-verification gate.
+- **2026-08-30 (T13 STALE-DRAFT — premise falsified, real defect fixed; v3.285 SHIPPED `bc32953`)** — a fix
   round on `#scan`, opened on the reported behaviour that an unresolved draft case degrades every
   subsequent scan (19 -> 6 -> 1 confident across successive runs on one shelf; declining the batch restored
   16/19). **Stage 1 disproved the premise and named a different defect** — the THIRD consecutive round in
@@ -688,6 +706,28 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **T12 TITLE CORRUPTION — fix, v3.286, 2026-09-01** — three live shelf records carried the author
+  appended into the TITLE (`Empire of AI by Karen Hao`, `Mating in Captivity by Esther Perel`, `On Being
+  Human as Praxis by Sylvia Wynter`). Writer identified as **`processBulkLines`' title-form branch**
+  (`views.js:6635`, the Shelf "Bulk add" door) — not the scan path, which the round brief had provisionally
+  ruled out and which the evidence independently confirmed out. **The mechanism:** `fetchBookByTitle` queries
+  `'intitle:' + title` (`integrations.js:1937`), and `intitle:` is loose enough that Google Books **still
+  returned the right volume for the corrupted string** — so ISBN and author backfilled CORRECTLY onto a
+  record whose title stayed wrong, and the title-form branch never backfills title, so it was permanent.
+  That is why the duplicates match their clean twins EXACTLY by ISBN. Four paths eliminated against the
+  bytes deployed on the corruption date (v3.278, `93ee9a1`): scan on `status:'will-read'` at all three call
+  sites; review-confirm three ways; `doShelve` on `isbn:''` with no lookup; manual-add on timing + shape.
+  Also established that **the "clean" pair is itself a batch from a DIFFERENT writer** — v3.277's
+  `scanCommitBook`, which wrote `status:'reading'` and no `coverCandidates`. Fix: one normalizer,
+  `splitTitleByline` (`views.js:7532`), seated with the identity family; five conservative rules, biased
+  hard toward leaving the line alone. Byline is a FALLBACK only and can never outrank the catalogue —
+  census group 2 proves why ("by Sylvia Wynter" names the SUBJECT; the real author is McKittrick). Proof:
+  parse gate + **61 assertions, 0 failures** under real cscript/ES3 execution with the function extracted
+  verbatim from the shipped file; the corruption **reproduces on base bytes matching the live dump field
+  for field**. Two red-team passes; the first BLOCKED twice (locative false positives → rule 5; a dedup-key
+  change → reverted) and the second found the byline fallback fired on a FAILED lookup → gated on `result &&`.
+  **R1 ACCEPTED as a known residual** (retirement: T21). Records: `docs/checkpoints/title-corruption.md` +
+  `title-corruption-recon.md`. `[shelf]`
 - [x] **COVERS (scan cover resolve) — fix + dead-code, v3.282/v3.283, 2026-08-29** — the scan tray/review/walker
   covers only ever tried `coverCandidates[0]` (the OpenLibrary url) and never the Google Books art, because
   `scanResolveAndFill`'s item literal never set `coverCandidates`. Device scan at v3.279 read "22 found · 20

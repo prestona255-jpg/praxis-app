@@ -6680,12 +6680,21 @@ function processBulkLines(raw) {
       // this catches exact-title repeats + empty-author shelf copies; a title
       // line matching an already-authored shelf book is still caught later by
       // Tidy-library's post-resolution merge.
+      // T12: split "<title> by <author>" ONCE, here, so every downstream consumer
+      // -- the dedup key, the record, and the catalogue query -- sees the same
+      // cleaned title. splitTitleByline returns the line unchanged unless the
+      // shape is unambiguous, so an ordinary title is byte-identical to before.
+      var parsed = splitTitleByline(line);
+      // The dedup key stays on the RAW line -- today's exact semantics. Keying it
+      // on parsed.title would make a pasted "X by Y" collide with a title-only
+      // shelf copy of X and be silently dropped; that is a duplicate-prevention
+      // change, and duplicate prevention belongs to the HELD merge round, not here.
       var tkey = bookIdentityKey(line, '');
       if (tkey !== 'ta:|') {
         if (seenTitleKey[tkey]) { continue; }
         seenTitleKey[tkey] = true;
       }
-      entries.push({ kind: 'title', value: line });
+      entries.push({ kind: 'title', value: parsed.title, byline: parsed.author });
     }
   }
 
@@ -6738,7 +6747,7 @@ function processBulkLines(raw) {
       // 3.10e: title-form bulk lines now queue for background
       // resolution alongside ISBN-form lines. Same sequential queue,
       // discriminated by the kind field.
-      isbnQueue.push({ kind: 'title', bookId: id, title: entry.value });
+      isbnQueue.push({ kind: 'title', bookId: id, title: entry.value, byline: entry.byline });
     }
     state.userBooks[user.uid].bookIds.push(id);
     markBookPending(user.uid, id);  // P0: protect until Firestore-confirmed
@@ -6784,6 +6793,24 @@ function processBulkLines(raw) {
               typeof result.author === 'string' &&
               result.author.length > 0) {
             state.books[item.bookId].author = result.author;
+            metaChanged = true;
+          }
+          // T12: the byline parsed out of the pasted line is a FALLBACK ONLY --
+          // the catalogue above always wins. Census group 2 is why it can never
+          // outrank it: "On Being Human as Praxis by Sylvia Wynter" names the
+          // SUBJECT of the book; the real author is Katherine McKittrick, which
+          // is what the catalogue says and what the byline would have clobbered.
+          // `result` MUST be truthy -- i.e. the catalogue actually ANSWERED with a
+          // volume that simply carried no author. A null result means the lookup
+          // FAILED (fetchBookByTitle finishes null on a zero-result query AND on a
+          // 429/outage -- integrations.js:1946-1952 has no res.ok check, the same
+          // defect class T13/T14 fixed in googleBooksSearch, and keyless GB quota
+          // is 0). Writing an unvalidated guess into a durable field exactly when
+          // the catalogue is down is how this round's own bug was made; on a
+          // failed lookup the author stays '', which is base-bytes parity.
+          if (state.books[item.bookId].author === '' && result &&
+              typeof item.byline === 'string' && item.byline.length > 0) {
+            state.books[item.bookId].author = item.byline;
             metaChanged = true;
           }
           if (metaChanged) {
@@ -7466,6 +7493,64 @@ function deleteBook(uid, id) {
 // relation computed over it. Do not fold ISBN back into the key itself.
 function bookIdentityKey(title, author) {
   return 'ta:' + identityTitleKey(title) + '|' + identitySurnameKey(author);
+}
+
+// T12 (title corruption) -- the ONE title-INPUT normalizer, seated here with the
+// identity family because it answers the same question: what is this book actually
+// called. Do not grow a second one elsewhere.
+//
+// A pasted line is prose: "Mating in Captivity by Esther Perel". processBulkLines
+// stored that verbatim, and the title-form backfill is guarded on `title === ''`,
+// so a corrupt title was PERMANENT. Meanwhile fetchBookByTitle queries
+// `intitle:<the whole line>` (integrations.js:1937), which Google Books matches
+// loosely enough to still return the right volume -- so the ISBN and author
+// backfilled CORRECTLY onto a record whose title stayed wrong. That is why the
+// three census duplicates match their clean twins EXACTLY by ISBN.
+//
+// Biased HARD toward leaving the line alone: a false split CORRUPTS a real title
+// ("Death by Black Hole" -> "Death"), while a missed split is exactly today's
+// behavior and costs nothing. Splits only when ALL FOUR hold:
+//   1. the line contains " by " -- the LAST occurrence wins, so "Fooled by
+//      Randomness by Nassim Nicholas Taleb" splits at the right one
+//   2. the title side is >= 2 words -- saves "Death by Black Hole", "Saved by the
+//      Light", "Blinded by the Right", "Sapiens by X" (a safe miss)
+//   3. the byline side is 2-4 tokens -- saves "Ruled by Secrecy", "Bird by Bird",
+//      "Side by Side", "Wounded by School", "Divided by Faith"
+//   4. the byline carries no digit and no ':' -- that shape is a subtitle, not a name
+//   5. the byline does not OPEN with an article/determiner -- this is the LOCATIVE
+//      guard: "by the Sea" locates a cottage, it does not credit a person. Without
+//      it "The Cottage by the Sea" (Macomber) split to "The Cottage". No human name
+//      begins "the"/"a"/"my"/"his"..., while name particles (van, de, von, le) are
+//      deliberately NOT in the list, so "The Second Sex by de Beauvoir" still splits.
+// KNOWN RESIDUAL (ruled, not absorbed): a locative whose object is a bare proper
+// noun -- "The Cottage by Lake Michigan" -- still splits wrongly, because "Lake
+// Michigan" is shaped exactly like a name. Rule 5 cannot see the difference. The
+// reader's repair is the book-detail "Fix this book" control (views.js ~10870),
+// which re-resolves title+author from the catalogue.
+// Returns { title: <string>, author: <string> }. When no split is made, title is
+// the trimmed input line (which is '' for empty input) and author is ''.
+function splitTitleByline(raw) {
+  var line = ('' + (raw || '')).replace(/^\s+|\s+$/g, '');
+  var out = { title: line, author: '' };
+  if (line === '') { return out; }
+  // last " by " (case- and whitespace-tolerant); /g so exec walks every match
+  var re = /\s+by\s+/gi, m, at = -1, mlen = 0;
+  while ((m = re.exec(line)) !== null) { at = m.index; mlen = m[0].length; }
+  if (at < 0) { return out; }
+  var head = line.substring(0, at).replace(/^\s+|\s+$/g, '');
+  var tail = line.substring(at + mlen).replace(/[.,;]+$/, '').replace(/^\s+|\s+$/g, '');
+  if (head === '' || tail === '') { return out; }
+  if (head.split(/\s+/).length < 2) { return out; }                    // rule 2
+  if (tail.indexOf(':') !== -1 || /[0-9]/.test(tail)) { return out; }  // rule 4
+  var toks = tail.split(/\s+/);
+  if (toks.length < 2 || toks.length > 4) { return out; }              // rule 3
+  // rule 5 -- the locative guard (see the header note)
+  if (/^(the|a|an|my|your|his|her|its|our|their|this|that|these|those)$/i.test(toks[0])) {
+    return out;
+  }
+  out.title = head;
+  out.author = tail;
+  return out;
 }
 
 // Normalized title for the identity key: resolverNormalize (lowercase, punctuation
