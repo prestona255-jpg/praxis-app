@@ -706,6 +706,33 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-FIRSTSHELF RENDER ROUND — v3.287, 2026-09-01 (LOCAL, awaiting push; felt pass PENDING)** —
+  ten presentation defects Preston observed on device across v3.279–v3.286, none functional, all on the
+  surfaces a new user meets first. No data writes, no state mutation, no deletion in the diff.
+  **Fixed:** D1/D4 one cell height per band with the placeholder carrying the title once (async-safe —
+  the same node measures 137px before and after a real cover 404) · D2/D3 one text law on the caption
+  and card paths, word boundaries plus a real ellipsis, 0/33 elements overflowing · D6 the register
+  inversion completed at both ends · D9 five "need a look" strings down to one · D8's guide half fixed
+  in 6/6 safe-area combinations · D10 the bulk-add panel's contrast 1.3:1 → 15.18:1 · the T12 rider
+  (single-word titles now split; 30/31 regression set held).
+  **Honestly short:** D8's draft-bar half clears only at safe-area-top 0 — the reticle is the capture
+  crop and cannot yield; D7's cover-art overlap is structural to a fixed FAB (an un-stack was built and
+  measured with the identical result, so the stack was never the cause).
+  **Three findings that corrected the brief:** D5 does not reproduce (85.6px clearance; the stated cause
+  was never true even at v3.279) · D8's mechanism is overlay, not push, and had an unseen second half at
+  the bottom edge · D10's fix already existed four lines away and was an omission, not a design gap.
+  Record: `docs/checkpoints/render-firstshelf.md` (+ `-recon.md`). `[scan, books]`
+  **Log opened by this round:** **T21** query-raw / store-split — the shared retirement condition for
+  BOTH `splitTitleByline` residuals (R-A `The Cottage by Lake Michigan`, R-B `Death by Black Hole`),
+  ruled together so two structurally identical residuals are not decided opposite ways · **T22**
+  BULK-ADD FLOW — Manage → scroll → Bulk add → modal → keyboard → Submit, with no indication of what
+  format the field wants; register fixed this round, the flow is its own round, and it is the surface a
+  new user meets adding their first books · **T23** two "The Overstory" records on the live shelf from
+  the T12 verify; duplicate prevention missed them (different titles → different identity keys), so
+  title corruption and duplication compound — merge round.
+  **Owed:** Preston's felt pass; a ruling on the two stacked add affordances (note vs book — neither
+  removed); D5 stays an open observation.
+
 - [x] **T12 TITLE CORRUPTION — fix, v3.286, 2026-09-01** — three live shelf records carried the author
   appended into the TITLE (`Empire of AI by Karen Hao`, `Mating in Captivity by Esther Perel`, `On Being
   Human as Praxis by Sylvia Wynter`). Writer identified as **`processBulkLines`' title-form branch**

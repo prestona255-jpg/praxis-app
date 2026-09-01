@@ -12862,16 +12862,31 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* F5 (S5): the add/edit-book editor container uses --surface-2/--border — both flip
    DARK on the shelf's dark route (a legacy dark slab). Dress it to the light sheet +
-   kit dialect. Behavior byte-preserved (openShelfEditor JS untouched). */
-.shelf.lum-amber-deep .shelf-editor{ background:var(--card-2); border:1px solid var(--line-page-2); box-shadow:0 1px 2px rgba(36,23,16,.14), 0 10px 30px -18px rgba(36,23,16,.30); }
+   kit dialect. Behavior byte-preserved (openShelfEditor JS untouched).
+   RENDER ROUND (D10): .shelf-bulk-editor JOINS THIS BLOCK. It sits on the same
+   grouped container rule as .shelf-editor (components.css:3703) and therefore had
+   the identical legacy-dark-slab bug -- F5 simply never listed it. Measured before
+   this fix: background rgb(43,48,66) (--surface-2) carrying rgb(36,23,16) (--ink)
+   on a page ground of rgb(253,249,238) -- a dark navy panel in a cream app, and
+   near-black text on it at roughly 1.3:1, which is an accessibility failure and not
+   a matter of taste. Extending this selector list is the whole fix: no new
+   component, no new token, no new register -- the one it needed was four lines away.
+   .notebook-editor is the third member of that grouped rule and is NOT touched:
+   everything here is scoped under .shelf.lum-amber-deep. */
+.shelf.lum-amber-deep .shelf-editor,
+.shelf.lum-amber-deep .shelf-bulk-editor{ background:var(--card-2); border:1px solid var(--line-page-2); box-shadow:0 1px 2px rgba(36,23,16,.14), 0 10px 30px -18px rgba(36,23,16,.30); }
+.shelf.lum-amber-deep .shelf-bulk-editor-textarea{ color:var(--ink); background:transparent; border:1px solid var(--line-page-2); }
+.shelf.lum-amber-deep .shelf-bulk-editor-textarea::placeholder{ color:var(--ink-3); }
 .shelf.lum-amber-deep .shelf-editor-title-input,
 .shelf.lum-amber-deep .shelf-editor-author-input,
 .shelf.lum-amber-deep .shelf-editor-genre-input,
 .shelf.lum-amber-deep .shelf-editor-isbn-input{ color:var(--ink); border-bottom-color:var(--line-page-2); }
 .shelf.lum-amber-deep .shelf-editor-status,
 .shelf.lum-amber-deep .shelf-editor-status-option{ color:var(--ink-2); }
-.shelf.lum-amber-deep .shelf-editor-save{ background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%); color:var(--gold-ink-on-gold); border:1px solid var(--gold-deep); }
-.shelf.lum-amber-deep .shelf-editor-cancel{ background:transparent; color:var(--ink-3); border:1px solid var(--line-page-2); }
+.shelf.lum-amber-deep .shelf-editor-save,
+.shelf.lum-amber-deep .shelf-bulk-editor-submit{ background:linear-gradient(180deg,var(--field-1) 0%,var(--gold-hi) 40%,var(--gold) 100%); color:var(--gold-ink-on-gold); border:1px solid var(--gold-deep); }
+.shelf.lum-amber-deep .shelf-editor-cancel,
+.shelf.lum-amber-deep .shelf-bulk-editor-cancel{ background:transparent; color:var(--ink-3); border:1px solid var(--line-page-2); }
 
 /* F7 · "Ask Yumi for more lenses" row (lens-mode; doubles as lens-empty state) */
 .shelf.lum-amber-deep .yumi-lens-row{ display:none; }
@@ -16801,7 +16816,18 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-reticle.is-lock .scan-br.tr{ transform:translate(-9px,9px); }
 .scan-reticle.is-lock .scan-br.bl{ transform:translate(9px,-9px); }
 .scan-reticle.is-lock .scan-br.br2{ transform:translate(-9px,-9px); }
-.scan-vf-guide{ position:absolute; z-index:12; left:0; right:0; top:calc(46% + min(25vh,150px) + 14px); text-align:center;
+/* RENDER ROUND (D8, second half — layout only). The guide used to be anchored to
+   the same 46%-of-viewport expression as the reticle, which parked it in whatever
+   gap happened to be left above the control block. Measured at 390x664: it cleared
+   .scan-vf-bottom by 0.6px at safe-area-bottom 0, and was COVERED OUTRIGHT --
+   390 x 26px of full overlap -- once a 34px bottom inset grew that block. A 0.6px
+   clearance is the same flush-constant fragility as D7's lift.
+   It is now a child of .scan-vf-bottom anchored to `bottom:100%`, so it rides
+   immediately above the controls at every viewport height and every inset, and the
+   block that was eating it can no longer reach it. Costs the block no height.
+   The reticle is NOT moved or resized: scanShelfCropRect() (views.js ~9003) reads
+   its rect to build the capture crop, so it is capture geometry, not decoration. */
+.scan-vf-guide{ position:absolute; z-index:12; left:0; right:0; bottom:100%; margin-bottom:10px; text-align:center;
   font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--scan-on-dark-2); pointer-events:none; padding:0 20px; }
 /* S3e: hide the idle hint while the "Reading the shelf…" shimmer is up (one label at a time). */
 .scan-vf-guide.is-hidden{ visibility:hidden; }
@@ -16834,6 +16860,19 @@ body.wc-focus .app-nav { opacity:.26; }
 }
 @media (prefers-reduced-motion: reduce){
   .scan-draftbar.is-calling{ animation:none; box-shadow:0 6px 26px rgba(240,215,154,.55); }
+}
+/* RENDER ROUND (D8, first half — layout only). The bar OVERLAYS; nothing is pushed.
+   At 390x844 it clears the framing brackets by 74.8px, which is why it looked fine
+   until a real phone. At 390x664 -- iPhone portrait with the Safari toolbars up --
+   the reticle rises to top 155.4 while the bar still ends at 163.4, so the bar sat
+   8px INTO the frame and buried the two top brackets (30x30 each) outright.
+   The reticle cannot move (it is the capture crop, views.js ~9003), so the bar
+   yields: on a short viewport it compacts to roughly 86px, clearing the brackets by
+   ~13px. Height-scoped so the designed bar is untouched wherever there is room. */
+@media (max-height:720px){
+  .scan-draftbar{ padding:8px 11px; }
+  .scan-draftbar-txt{ margin-bottom:7px; font-size:12px; line-height:1.3; }
+  .scan-draftbar-btn{ min-height:32px; font-size:9.5px; }
 }
 
 .scan-vf-bottom{ position:absolute; left:0; right:0; bottom:0; z-index:20;
@@ -16947,12 +16986,35 @@ body.wc-focus .app-nav { opacity:.26; }
 /* S2 (COVERS+VOICE): break at WORD boundaries; break INSIDE a word only when a
    single word cannot fit the line on its own (overflow-wrap:break-word). The Tier-1
    `word-break:break-word` broke mid-word ("Data Independen/ce") by greedily packing
-   the line across the space; removed. The -webkit-line-clamp:2 owns the ellipsis. */
-.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; text-overflow:ellipsis; }
-/* the LEANING gray spine — an exception (Law 1: the lean carries it, never copy alone) */
+   the line across the space; removed. The -webkit-line-clamp:2 owns the ellipsis.
+   RENDER ROUND (D2): `break-word` was still the wrong instrument -- it does not
+   only break as a last resort, it breaks whenever the word overruns the measure,
+   and at 64px almost every long title does. Measured: "Counternarratives" rendered
+   as "Counternarrat" / "ives" with NO ellipsis, because the two halves fit the
+   2-line clamp and the clamp only marks a VERTICAL overflow. Now `normal` (a word
+   is never split arbitrarily) plus `hyphens:auto`, so a word that genuinely cannot
+   fit is divided at a dictionary point and MARKED with a hyphen. <html lang="en">
+   is set (index.html:2), which is what makes the dictionary apply. */
+.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; -webkit-hyphens:auto; hyphens:auto; text-overflow:ellipsis; }
+/* the LEANING spine — an exception (Law 1: the lean carries it, never copy alone)
+   RENDER ROUND (D6, Ruling 2) — THE INVERSION, BOTH ENDS.
+   These are the ONLY cards that actually want the reader's judgment, and they were
+   the deadest thing on the screen: grayscale(1) brightness(.86) on the art and
+   --ink-3 on the label, which is the vocabulary every interface uses for
+   "unavailable". Meanwhile .is-unlooked -- a catalogue outage the reader can do
+   nothing about -- wore --gold-deep. The prominence ran backwards.
+   Fixed at BOTH ends, because dropping the grayscale alone only levels them:
+     · here      the grayscale goes (the book is fine; nothing about it is
+                 unavailable), the deliberate -6deg lean STAYS as the "pull me out
+                 and look" signal, and a --gold hairline rides the cover so the
+                 card is the warmest thing in the band. The outline is on
+                 .scan-cov; the focus ring is on .scan-dc, so they never collide.
+     · below     .is-unlooked drops to --ink-3. It is informational, not a call to
+                 action, so it now sits BELOW the lean in prominence rather than
+                 above it. (This is the one place a quiet gray is the right answer:
+                 the reader is not being asked for anything.) */
 .scan-dc.is-lean{ cursor:pointer; }
-.scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; filter:grayscale(1) brightness(.86); }
-.scan-dc.is-lean .spine-flag{ margin-top:12px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.scan-dc.is-lean .scan-cov{ transform:rotate(-6deg); transform-origin:50% 100%; outline:1.5px solid var(--gold); outline-offset:-1.5px; }
 .scan-dc.is-lean:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
 /* R-FIRSTSHELF-DUPES (2b) — the review-face already-shelved / may-be-a-copy flags.
    Same .spine-flag typography the lean exception uses, re-scoped to these two states
@@ -16965,8 +17027,36 @@ body.wc-focus .app-nav { opacity:.26; }
    wear the "unavailable" gray. Clickable like the lean exception (it opens the
    same walker), flagged in the informational gold-deep register. */
 .scan-dc.is-unlooked{ cursor:pointer; }
-.scan-dc.is-unlooked .spine-flag{ margin-top:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
+/* colour demoted --gold-deep -> --ink-3 (D6 Ruling 2, the second end of the
+   inversion): informational, and it must not out-shout the lean beside it. */
+.scan-dc.is-unlooked .spine-flag{ margin-top:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
 .scan-dc.is-unlooked:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+/* ===== RENDER ROUND (D1 + D4) — ONE UNIFORM CELL BOX PER BAND =====
+   A row went ragged because cell height was content-derived: measured 137px plain,
+   169px once a status row appeared, 132/128px across the two exception states, all
+   bottom-aligned by .scan-shelfline's align-items:flex-end, so cover tops and
+   caption baselines wandered by up to 32px inside ONE row. Fixing D1 alone would
+   have made it worse -- dropping the caption from placeholders shortens exactly
+   those cells.
+   So the cell is FIXED and the contents fit it, not the reverse:
+     · a cover cell      = art (96) + caption (7 + 34)
+     · a placeholder cell = ONE text block filling that same total, caption dropped
+   The placeholder grows by flex-grow rather than a second height constant, which is
+   what makes the ASYNC case safe: scanCoverNode can add .is-typeset long after
+   layout (every candidate 404s) and the cell height does not move -- only what sits
+   inside it. That was the round's real hazard.
+   .has-flags is set by scanRenderReview per band, so the status row is reserved
+   only where one is actually used and a first shelf pays no dead air for it. */
+#scan-rv-confident .scan-dc{ height:137px; }
+#scan-rv-confident.has-flags .scan-dc{ height:169px; }
+#scan-rv-exceptions .scan-dc{ height:96px; }
+#scan-rv-exceptions.has-flags .scan-dc{ height:128px; }
+#scan-rv-confident .scan-dc .scan-cov{ flex:0 0 96px; }
+#scan-rv-confident .scan-dc .scan-cov.is-typeset{ flex:1 1 auto; height:auto; }
+#scan-rv-confident .scan-dc .scan-cov.is-typeset + .cap{ display:none; }
+/* the taller typeset slot can carry more of the title; the clamp still owns the ellipsis */
+#scan-rv-confident .scan-dc .scan-cov.is-typeset .cov-t{ -webkit-line-clamp:7; }
 .scan-rv-lookupnote{ margin:8px 0 0; font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink-2);
   background:var(--wash-page); border-left:2px solid var(--gold-deep); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:8px 11px; }
 .scan-wk-lookupfail{ margin:2px 0 12px; font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink-2);
@@ -16984,7 +17074,13 @@ body.wc-focus .app-nav { opacity:.26; }
    title). It must NEVER stack mid-word: overflow-wrap:normal keeps whole words on the
    line and a word too wide simply CLIPS at the box edge (overflow:hidden) -- a designed
    cover cut, not a mid-word break. The Tier-1 `break-word` stacked "Independen/ce". */
-.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; text-overflow:ellipsis; }
+/* RENDER ROUND (D3): the "designed cover cut" above was, measured, an UNMARKED
+   one -- "Education for Critical Consciousness" put "Consciousness" on its own
+   line, 13 characters into a 54px box, and the word was simply sliced mid-glyph
+   with no ellipsis and no hyphen (scrollWidth > clientWidth, no clamp overflow to
+   trigger the ellipsis). Same law as the caption now: never split arbitrarily,
+   hyphenate at a dictionary point when the measure cannot hold the word. */
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; -webkit-hyphens:auto; hyphens:auto; text-overflow:ellipsis; }
 .scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
 
 .scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;

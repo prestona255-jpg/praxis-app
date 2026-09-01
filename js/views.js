@@ -4736,9 +4736,16 @@ function renderShelf() {
     shelfWheatResizeTimer = setTimeout(function () {
       if (!shelfFocused) { renderShelfCase(); renderShelfDesk(); shelfUpdateSearchEmpty(); }
       buildShelfWheat();
+      capUpdateCreateDoorPos();   // D7: the Add FAB can change height on reflow -- re-derive the lift
     }, 150);
   };
   window.addEventListener('resize', shelfWheatResizeHandler);
+
+  // D7 (Ruling 3): the create-door's lift is measured off .shelf-add-primary, so
+  // it can only be computed once that button exists. The hashchange handler in
+  // buildCaptureDoor fires BEFORE this render on a cold route change, so without
+  // this call the door would keep the CSS constant for the life of the visit.
+  capUpdateCreateDoorPos();
 }
 
 // 3a (R2): deterministic per-arc hue from the Universal field spectrum
@@ -7512,8 +7519,16 @@ function bookIdentityKey(title, author) {
 // behavior and costs nothing. Splits only when ALL FOUR hold:
 //   1. the line contains " by " -- the LAST occurrence wins, so "Fooled by
 //      Randomness by Nassim Nicholas Taleb" splits at the right one
-//   2. the title side is >= 2 words -- saves "Death by Black Hole", "Saved by the
-//      Light", "Blinded by the Right", "Sapiens by X" (a safe miss)
+//   2. RETIRED (render round, Preston's Ruling 1). It required the title side to be
+//      >= 2 words, which silently corrupted EVERY single-word title carrying a
+//      byline -- Beloved, Educated, Persuasion, Middlemarch, Charm, Overstory. All
+//      are ordinary bulk-paste lines, and the corruption was permanent (the
+//      title-form backfill is guarded on `title === ''`). Measured against the 31
+//      "titles legitimately containing by" set: rules 3 and 4 independently save 8
+//      of the 9 shapes this rule claimed -- "Bird by Bird", "Ruled by Secrecy",
+//      "Side by Side", "Wounded by School" and "Divided by Faith" all die on the
+//      2-token byline minimum, and "Saved by the Light" / "Blinded by the Right"
+//      die on rule 5. Rule 5 is untouched, so "Cottage by the Sea" still refuses.
 //   3. the byline side is 2-4 tokens -- saves "Ruled by Secrecy", "Bird by Bird",
 //      "Side by Side", "Wounded by School", "Divided by Faith"
 //   4. the byline carries no digit and no ':' -- that shape is a subtitle, not a name
@@ -7522,11 +7537,30 @@ function bookIdentityKey(title, author) {
 //      it "The Cottage by the Sea" (Macomber) split to "The Cottage". No human name
 //      begins "the"/"a"/"my"/"his"..., while name particles (van, de, von, le) are
 //      deliberately NOT in the list, so "The Second Sex by de Beauvoir" still splits.
-// KNOWN RESIDUAL (ruled, not absorbed): a locative whose object is a bare proper
-// noun -- "The Cottage by Lake Michigan" -- still splits wrongly, because "Lake
-// Michigan" is shaped exactly like a name. Rule 5 cannot see the difference. The
-// reader's repair is the book-detail "Fix this book" control (views.js ~10870),
-// which re-resolves title+author from the catalogue.
+// KNOWN RESIDUALS (ruled, not absorbed). BOTH are false splits of a title that
+// legitimately contains " by ", both are repaired the same way -- the book-detail
+// "Fix this book" control (views.js ~10870), which re-resolves title+author from
+// the catalogue -- and BOTH retire on the same condition: T21 (query-raw /
+// store-split, i.e. sending the raw line to the catalogue and storing only what
+// the catalogue confirms). Decided together so two structurally identical
+// residuals are not ruled opposite ways.
+//   R-A. A locative whose object is a bare proper noun -- "The Cottage by Lake
+//        Michigan" -- splits wrongly, because "Lake Michigan" is shaped exactly
+//        like a name. Rule 5 cannot see the difference.
+//   R-B. A SINGLE-WORD title whose "by" object is a 2-4 token capitalised noun
+//        phrase, pasted WITHOUT an author -- "Death by Black Hole" -> title
+//        "Death", author "Black Hole". This is rule 2's retirement cost, and it is
+//        exactly one line of the 31-title regression set.
+// WHY THERE IS NO DISCRIMINATOR (recorded so a later round does not re-derive it):
+// a structural test separating "Beloved by Toni Morrison" from "Death by Black
+// Hole" does not exist. Both are <one word> + <two capitalised tokens>. The
+// obvious rule -- reject single-word heads that are passive participles -- fails
+// on the very titles this change exists to fix, because "Beloved" and "Educated"
+// ARE participles. A given-name dictionary was considered and DECLINED: it would
+// pass common Anglophone names and fail silently on everything else, which trades
+// a symmetric error for a biased one. The trade taken instead: a certain,
+// whole-class, permanent corruption becomes a rarer one of the same tier with the
+// same repair.
 // Returns { title: <string>, author: <string> }. When no split is made, title is
 // the trimmed input line (which is '' for empty input) and author is ''.
 function splitTitleByline(raw) {
@@ -7540,7 +7574,7 @@ function splitTitleByline(raw) {
   var head = line.substring(0, at).replace(/^\s+|\s+$/g, '');
   var tail = line.substring(at + mlen).replace(/[.,;]+$/, '').replace(/^\s+|\s+$/g, '');
   if (head === '' || tail === '') { return out; }
-  if (head.split(/\s+/).length < 2) { return out; }                    // rule 2
+  // rule 2 RETIRED -- see the header. A single-word title is a real title.
   if (tail.indexOf(':') !== -1 || /[0-9]/.test(tail)) { return out; }  // rule 4
   var toks = tail.split(/\s+/);
   if (toks.length < 2 || toks.length > 4) { return out; }              // rule 3
@@ -8303,16 +8337,26 @@ function scanCoverNode(title, author, coverUrl, candidates) {
   var list = (candidates && candidates.length > 0)
     ? candidates
     : (coverUrl ? [coverUrl] : []);
+  // RENDER ROUND (D1) -- `is-typeset` MARKS THE PLACEHOLDER, AND IT IS ASYNC.
+  // Placeholder-ness is NOT knowable at render time: a candidate list is appended
+  // as an <img> and only 404s later, so the same node can be a cover during layout
+  // and a placeholder a moment after. The caption drop (D1) therefore cannot be a
+  // render-time branch -- it is this class, toggled whenever the truth is known:
+  // synchronously when there is no candidate at all, and in onerror once EVERY
+  // candidate is exhausted. The review cell's height is fixed in CSS precisely so
+  // this late flip changes what the cell CONTAINS and never how tall it is.
   if (list.length > 0) {
     var img = document.createElement('img'); img.className = 'cov-img'; img.alt = '';
     var ci = 0;
     img.onerror = function () {
       ci = ci + 1;
       if (ci < list.length) { img.src = list[ci]; }
-      else { img.style.display = 'none'; } // all exhausted -> reveal the typeset slot
+      else { img.style.display = 'none'; d.classList.add('is-typeset'); } // all exhausted -> reveal the typeset slot
     };
     img.src = list[0];
     d.appendChild(img);
+  } else {
+    d.classList.add('is-typeset');   // no candidate at all -- typeset from birth
   }
   return d;
 }
@@ -9215,6 +9259,50 @@ function scanFinishFill(found, confident, exceptions, unlooked) {
     + (un ? (', ' + un + ' could not be looked up — the book catalogue did not answer.') : '.'));
 }
 
+// RENDER ROUND (D2 + D3) — THE TEXT LAW'S GUARANTEED FLOOR.
+// D2 (caption broke mid-word) and D3 (card text cut mid-glyph, unmarked) are one
+// defect on two paths. The correct typographic instrument is `hyphens:auto`, and
+// it is wired in CSS — but it is DELIBERATELY NOT what this fix rests on: it is a
+// silent no-op wherever the engine ships no hyphenation dictionary, which was
+// measured to be the case in this round's verification engine (a controlled probe
+// of the same word, same font, same 54px measure, showed `hyphens:auto` producing
+// byte-identical output to no hyphens at all). A fix whose only mechanism cannot
+// be shown to work is a claim outliving its code.
+// So the floor is deterministic: fit the title at WORD boundaries, and when a
+// single word is wider than the measure itself, cut it at a character boundary and
+// MARK the cut with a real ellipsis. Never a silent mid-glyph slice, never an
+// arbitrary mid-word break. Where hyphenation IS available it wraps the word first
+// and this pass finds nothing to do.
+// BOTH AXES, and the -webkit-line-clamp is NOT trusted for either. The clamp was
+// the shipped answer for vertical overflow, but its computed display resolves to
+// `flow-root` in a current engine (-webkit-box-orient is deprecated), so whether it
+// still paints its ellipsis is exactly the kind of thing that cannot be shown from
+// here -- the same unverifiable-mechanism problem as `hyphens:auto` above. The
+// clamp stays in the CSS as the visual cap; the mark is produced here, where it can
+// be measured.
+// Every box has a FIXED width and a fixed line budget (the 64px cell and its 54px
+// inner), so there is nothing for a viewport change or the late is-typeset flip to
+// invalidate -- one pass after the screen is shown is sufficient.
+function scanFitReviewText() {
+  var els = document.querySelectorAll('#scan-screen-review .cap .t, #scan-screen-review .cov-t');
+  var i, el, full, s, guard;
+  for (i = 0; i < els.length; i++) {
+    el = els[i];
+    full = el.getAttribute('data-full');
+    if (full === null) { full = el.textContent; el.setAttribute('data-full', full); }
+    el.textContent = full;
+    if (!el.clientWidth) { continue; }   // hidden branch (done state) -- unmeasurable, leave it whole
+    if (el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight) { continue; }
+    s = full; guard = 0;
+    while (s.length > 1 && guard < 200
+        && (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight)) {
+      s = s.substring(0, s.length - 1);
+      el.textContent = s + '…';
+      guard = guard + 1;
+    }
+  }
+}
+
 // ---- the mirror shelf (draft case) ----
 function scanRenderReview() {
   if (!scanResult) { return; }
@@ -9224,7 +9312,13 @@ function scanRenderReview() {
   // confident. "need a look" is DROPPED here because the live "Need a look" band below
   // owns that word — showing a frozen rec.exc beside a live band count in the SAME
   // vocabulary contradicted itself once the walker promotes/drops an exception.
-  scanEl('scan-rv-count').textContent = rec.found + ' found · ' + rec.conf + ' confident';
+  // D9 (render round): "· N confident" is DROPPED. The two band headers below --
+  // "Ready to shelve N" and "Need a look N" -- already carry the split, so the line
+  // restated a number the reader is about to see named twice. What it uniquely owns
+  // is the RUN TOTAL, and only that survives. (This is the same reasoning S3b used
+  // to drop "need a look" from this line; the confident half was the other half of
+  // the same duplication and was missed then.)
+  scanEl('scan-rv-count').textContent = rec.found + ' found';
   // S3a: the draft badge reads real state — "nothing" only when the library is truly empty.
   var rvUser = getCurrentUser();
   var rvLib = (rvUser && state.userBooks[rvUser.uid] && state.userBooks[rvUser.uid].bookIds) ? state.userBooks[rvUser.uid].bookIds.length : 0;
@@ -9234,6 +9328,7 @@ function scanRenderReview() {
   scanEl('scan-rv-exc-n').textContent = exc;
   var cwrap = scanEl('scan-rv-confident'); cwrap.innerHTML = '';
   var i;
+  var confHasFlags = false, excHasFlags = false;   // D4: see the .has-flags note below
   // R-FIRSTSHELF-DUPES (2b): shelveN is what "Shelve N" will actually CREATE.
   // scanCommitBook folds an EXACT shelf match rather than minting a second record,
   // so exact-matched entries are excluded from the count -- they stay VISIBLE and
@@ -9249,7 +9344,12 @@ function scanRenderReview() {
     if (bTier !== 'exact') { shelveN = shelveN + 1; }
     var d = document.createElement('div');
     d.className = 'scan-dc' + (bTier === 'exact' ? ' is-shelved' : (bTier === 'probable' ? ' is-maybe' : ''));
-    var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
+    if (bTier) { confHasFlags = true; }   // D4: the band reserves a status row only if one is used
+    // D1/D4: the 64x96 inline size is DROPPED here. It only restated
+    // `.scan-dc .scan-cov{width:64px;height:96px}` (components.css:16945), and an
+    // inline height cannot be overridden -- which is exactly what the typeset
+    // placeholder must do to fill the cell the caption vacates.
+    var cov = scanCoverNode(b.title, b.author, b.cover, b.coverCandidates);
     d.appendChild(cov);
     var cap = document.createElement('div'); cap.className = 'cap';
     var t = document.createElement('div'); t.className = 't'; t.textContent = b.title; cap.appendChild(t);
@@ -9261,6 +9361,13 @@ function scanRenderReview() {
     }
     cwrap.appendChild(d);
   }
+  // D4 -- ONE UNIFORM CELL BOX PER BAND, WITHOUT PAYING FOR AN UNUSED ROW.
+  // Every cell in a band is a fixed height so a row can never go ragged. The
+  // status row ("already shelved" / "couldn't look up") is the only variable-cost
+  // part, so the band reserves it ONLY when at least one card in that band uses
+  // it. On a first shelf -- no duplicates, no outage -- nothing is reserved and
+  // the cells keep their original height with no dead air under them.
+  if (confHasFlags) { cwrap.classList.add('has-flags'); } else { cwrap.classList.remove('has-flags'); }
   var ewrap = scanEl('scan-rv-exceptions'); ewrap.innerHTML = '';
   for (i = 0; i < scanResult.exceptions.length; i++) {
     (function (eidx) {
@@ -9275,15 +9382,26 @@ function scanRenderReview() {
       var d = document.createElement('div'); d.className = 'scan-dc ' + (ebFailed ? 'is-unlooked' : 'is-lean');
       d.setAttribute('tabindex', '0'); d.setAttribute('role', 'button');
       d.setAttribute('aria-label', (ebFailed ? 'Could not be looked up: ' : 'Needs a look: ') + eb.title + '. Open to fix.');
-      var cov = scanCoverNode(eb.title, eb.author, eb.cover, eb.coverCandidates); cov.style.width = '64px'; cov.style.height = '96px';
+      var cov = scanCoverNode(eb.title, eb.author, eb.cover, eb.coverCandidates);   // inline size dropped -- see the confident band
       d.appendChild(cov);
-      var fl = document.createElement('div'); fl.className = 'spine-flag';
-      fl.textContent = ebFailed ? 'couldn’t look up' : 'needs a look'; d.appendChild(fl);
+      // D9 -- THE PER-CARD "NEEDS A LOOK" STRING IS CUT. It sat under a band header
+      // already reading "Need a look N", so it said the same word a fifth time on
+      // one screen and told the reader nothing the band had not. "couldn't look up"
+      // STAYS: the band header does not name it, and it is a genuinely different
+      // state (the spine was read correctly; the catalogue did not answer).
+      // The aria-label above still carries "Needs a look: <title>. Open to fix.",
+      // so nothing is lost to a screen reader -- only the duplication is.
+      if (ebFailed) {
+        excHasFlags = true;
+        var fl = document.createElement('div'); fl.className = 'spine-flag';
+        fl.textContent = 'couldn’t look up'; d.appendChild(fl);
+      }
       d.addEventListener('click', function () { scanOpenWalker(eidx); });
       d.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scanOpenWalker(eidx); } });
       ewrap.appendChild(d);
     })(i);
   }
+  if (excHasFlags) { ewrap.classList.add('has-flags'); } else { ewrap.classList.remove('has-flags'); }
   scanEl('scan-rv-exc-band').style.display = exc ? 'block' : 'none';
   // T14: the RUN-level truth. Without this line a reader sees "19 found · 1
   // confident" and concludes the scan misread eighteen spines. It did not — it
@@ -9344,6 +9462,9 @@ function scanRenderReview() {
     scanShow(rvFoot);
   }
   scanGoScreen('scan-screen-review');
+  // D2/D3: fit AFTER the screen is shown -- the cards are built while
+  // .scan-screen is display:none, where every measurement reads 0.
+  scanFitReviewText();
 }
 
 // ---- exception walker ----
@@ -9970,9 +10091,17 @@ function scanShellHTML() {
   +     '</div>'
   +     '<div class="scan-reticle" id="scan-reticle"><span class="scan-br tl"></span><span class="scan-br tr"></span><span class="scan-br bl"></span><span class="scan-br br2"></span></div>'
   +     scanDraftBarHTML()
-  +     '<div class="scan-vf-guide" id="scan-vf-guide">Center a barcode or cover in the frame</div>'
   +     '<div class="scan-shimmer" id="scan-shimmer"><div class="scan-shim-frame"><div class="scan-shim-sweep"></div></div><div class="scan-shim-line">Reading the shelf…</div></div>'
+  // D8 (layout only) — THE FRAME PROMPT MOVES INSIDE .scan-vf-bottom.
+  // It used to be anchored to a percentage of the viewport height, which parked it
+  // in the 6.6px slot left between the reticle and the control block; a bottom
+  // safe-area of 34px then grew the block straight over it. Reparented here and
+  // anchored to `bottom:100%`, it rides immediately above the controls at every
+  // height and every inset, and the block it is escaping can no longer reach it.
+  // The reticle is NOT touched: scanShelfCropRect() (views.js ~9003) reads its
+  // rect to build the capture crop, so its geometry is capture, not decoration.
   +     '<div class="scan-vf-bottom">'
+  +       '<div class="scan-vf-guide" id="scan-vf-guide">Center a barcode or cover in the frame</div>'
   +       '<div class="scan-mode-seg" role="tablist" aria-label="Scan mode">'
   +         '<button type="button" id="scan-seg-book" class="is-on" role="tab" aria-selected="true">Book</button>'
   +         '<button type="button" id="scan-seg-shelf" role="tab" aria-selected="false">Shelf</button>'
@@ -23893,11 +24022,38 @@ function capSplitRefreshRoute() {
 // Gate fix (CD-1 corner reconcile): keep the create-door clear of the shipped
 // Shelf "+ Add a book" FAB, which owns bottom-left at mobile. On #books, add the
 // stacking class (CSS lifts it above the FAB); elsewhere it sits at its corner.
+// RENDER ROUND (D7, Ruling 3) — THE GAP MUST NOT BE A CONSTANT.
+// The shipped lift was a flat 62px, and the clearance it bought was exactly
+// 62 - the Add button's height (44px measured) = 18px. That is a constant sitting
+// flush against a control whose height is not fixed: a copy change, a larger
+// system font, or a label that wraps to two lines eats the gap 1:1 and the two
+// affordances touch. So the lift is DERIVED — the Add FAB's measured height plus
+// one --sp-4 (16px, theme.css:336, the nearest existing spacing token; no new
+// variable is introduced). Set inline so it beats the CSS constant, and cleared
+// on every other route so the stylesheet value governs there.
+// The CSS `.cap-on-shelf` rule stays as the floor for the window before
+// renderShelf() has mounted the FAB, and for the desktop case where the Add
+// primary is not a fixed FAB at all.
 function capUpdateCreateDoorPos() {
   var btn = capEl('capCreateDoor');
   if (!btn) { return; }
   var h = location.hash || '';
-  if (h.indexOf('#books') === 0) { btn.classList.add('cap-on-shelf'); } else { btn.classList.remove('cap-on-shelf'); }
+  if (h.indexOf('#books') !== 0) {
+    btn.classList.remove('cap-on-shelf');
+    btn.style.bottom = '';
+    return;
+  }
+  btn.classList.add('cap-on-shelf');
+  var fab = document.querySelector('.shelf-add-primary');
+  // Only the mobile treatment pins the Add primary as a FAB in this corner; at
+  // desktop it sits in the header and there is nothing here to clear.
+  if (!fab || window.getComputedStyle(fab).position !== 'fixed') { btn.style.bottom = ''; return; }
+  var gapRaw = window.getComputedStyle(document.documentElement).getPropertyValue('--sp-4');
+  var gap = parseFloat(gapRaw);
+  if (!(gap > 0)) { gap = 16; }
+  var lift = Math.round(fab.getBoundingClientRect().height + gap);
+  if (!(lift > 0)) { btn.style.bottom = ''; return; }
+  btn.style.bottom = 'calc(var(--sp-5) + env(safe-area-inset-bottom, 0px) + ' + lift + 'px)';
 }
 
 // buildCaptureDoor — the pre-rendered DOM (CD-2). Mounted once at boot.
