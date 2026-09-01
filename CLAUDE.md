@@ -124,10 +124,15 @@ round per window.
 · `repo-mapper` = `sonnet`; **`studio-mockup` = `sonnet`** (Preston 2026-07-15 — builds against a *locked*
 decisions list, i.e. ruled work, not unruled design judgment). ⚠ Inside a `Workflow`, omitting `model`
 inherits the SESSION model, not frontmatter — pin gate agents explicitly there.
-**FOLLOW-ON (config change, NOT this docs-only commit):** v2 pins `fix-red-team` to Sonnet, but its live
-frontmatter is still `inherit` (as is `fix-implementer`, invoke-only on `catastrophic` dual-builds) — align
-`.claude/agents/fix-red-team.md` → `sonnet` in a separate config commit. (In Slice 4 the red-team ran under
-Opus/`inherit` and caught two real BLOCKs; v2 now pins it Sonnet regardless.)
+**FOLLOW-ON — PARTLY DISCHARGED (re-verified 2026-09-01):** the `fix-red-team` half is **CLOSED** — its live
+frontmatter now reads `model: sonnet`, so the v2 pin is satisfied and the old "still `inherit`" text was stale.
+**Still open:** `fix-implementer` remains `model: inherit` (`.claude/agents/fix-implementer.md`) — it is
+invoke-only on `catastrophic` dual-builds, so it is low-traffic but not harmless: under `inherit`, a dual-build
+dispatched from an Opus session runs BOTH implementers on Opus, and the divergence-diff that is the entire
+point of dual-build then compares two same-model patches. Align it in a config commit, not a docs commit.
+(Historical: in Slice 4 the red-team ran under Opus/`inherit` and caught two real BLOCKs; v2 pins it Sonnet
+regardless.) Frontmatter census 2026-09-01 — `fix-red-team` · `praxis-recon` · `praxis-reviewer` ·
+`repo-mapper` · `studio-mockup` · `studio-scan` = `sonnet`; `fix-implementer` = `inherit`, the only one.
 
 ## Conventions — hard rules
 - `var` and `function` only. No `const`, `let`, arrow functions, `class`, or template literals.
@@ -184,6 +189,27 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   push, never silently absorbed or substituted with an inline pass. (COVERS, 2026-08-29:
   named at the HALT and ruled acceptable for that round only — a two-line property
   assignment mirroring an existing guard — explicitly NOT as precedent.)
+  - **THE BAR IS CONDITIONAL — ASK FOR THE LIFT (2026-09-01).** The instruction reads
+    "Do not call the AgentTool **unless the user requested it**." The exemption lives in
+    the bar's own text. It is not a permission, a settings `deny`, or a broken agent
+    registration — verified 2026-09-01: no deny rule in `.claude/settings.local.json` or
+    `~/.claude/settings.json`, no managed-settings directory, and `fix-red-team` healthy
+    at `model: sonnet`. The gate is therefore barred BY DEFAULT, never ABSOLUTELY.
+    **Any round that will need §9 carries "run fix-red-team on this" in Preston's
+    go-ahead** — that one sentence satisfies the `unless` clause and the gate runs
+    normally. The same lift covers EVERY gate agent, so a round needing §1#8's
+    recon-reviewer gate names those too (`praxis-recon` / `praxis-reviewer` /
+    `repo-mapper`). Ask BEFORE the build, not at the HALT — asking at the gate means the
+    work is already built and the red-team arrives a session late.
+  - **THE COST OF NOT ASKING, TALLIED.** The gate went unrun on **4 occasions across 3
+    rounds** before anyone tested whether the bar could be lifted: COVERS 2026-08-29
+    (`docs/checkpoints/covers-diagnosis.md:112` — §9 performed inline, ruled acceptable
+    that round only); R-FIRSTSHELF-DUPES Stage 2 (`firstshelf-dupes.md:94`) and again on
+    its second diff (`firstshelf-dupes.md:535` — "the bar applies to the whole session");
+    and T13/T14 STALE-DRAFT (`stale-draft.md:338`, which correctly ruled the COVERS
+    precedent spent). Every one was named honestly and none was silently absorbed — the
+    discipline held. What failed is that all four read the bar as a wall and never read
+    its second clause.
 - CLAIMING ABSENCE REQUIRES PROOF: "X doesn't exist" must cite the exhaustive search
   that would have found it (`git log -S`, full-corpus grep with ESCAPED patterns),
   not a narrow grep. Bitten twice: v3.209's "the hole cannot exist by construction,

@@ -29,12 +29,27 @@ agents: 7 files
 ```
 
 ### Can §9 run?
-**NO.** This session carries a standing instruction — "Do not call the AgentTool
-unless the user requested it" — which bars spawning `fix-red-team`. Per CLAUDE.md
-(agents-barred rule, ratified at COVERS 2026-08-29) that is a **HALT-tier condition
-to be named and ruled on by Preston before push, never silently absorbed or
-substituted with an inline pass.** Named here at Stage 0 so the ruling can be made
-early rather than at the gate.
+**NOT BY DEFAULT — but the bar is CONDITIONAL, and lifting it costs one sentence.**
+This session carries a standing instruction — "Do not call the AgentTool unless the
+user requested it" — which bars spawning `fix-red-team`. Read the whole clause: the
+bar is **conditional on Preston not having asked.** It is not a permission, a config
+line, or a broken agent registration (verified 2026-09-01: no `deny` rule in project
+or user settings, no managed-settings directory, and `.claude/agents/fix-red-team.md`
+is healthy at `model: sonnet`) — it is a per-session system-prompt injection whose own
+text carries its exemption. Preston saying "run fix-red-team on this" in the go-ahead
+satisfies the `unless` clause, and the gate then runs normally.
+
+So: barred **by default**, never barred **absolutely**. Per CLAUDE.md (agents-barred
+rule, ratified at COVERS 2026-08-29) an UNLIFTED bar is a **HALT-tier condition to be
+named and ruled on by Preston before push, never silently absorbed or substituted with
+an inline pass.** Named here at Stage 0 so the ruling can be made early rather than at
+the gate.
+
+> **CORRECTED 2026-09-01.** This section previously read a flat "**NO.**" That
+> overstated the bar, and because this doc became cited precedent it risked
+> propagating "the gate is unavailable" when the accurate reading is "the gate is one
+> request away." The HALT-tier treatment above is correct for a round where the lift
+> was never asked for; it is NOT a statement that §9 *cannot* run.
 
 ---
 
