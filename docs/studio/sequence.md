@@ -706,6 +706,41 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-FIRSTSHELF CORRECTION PASS — v3.288, 2026-09-01 (LOCAL, awaiting push; felt pass PENDING)** —
+  a reopen of v3.287, not a new round: four regressions the render fixes introduced, all observed on
+  device within an hour of the push. Presentation only.
+  **C1** the spine-flag read as belonging to the row beneath it. Mechanism: `.cap` reserved a fixed
+  34px while its clamped text rendered 24.2px, and the flag's margin was measured from the BOX bottom —
+  so the reader saw the unfilled remainder plus the margin. `height:auto` anchors the box to the text;
+  gap to its own caption **17.8px → 3.1px**, ratio to the next row **~1.4× → 10.26×**, titles keep two
+  lines. The 169-vs-137 placeholder split found in Stage 0 is closed in the same fix (the typeset cover
+  was flex-grown to "whatever is left"; now a fixed 137px). Async flip re-proven: `cellHeightMoved false`.
+  **C2** `hyphens:auto`, added in v3.287 as "the correct typographic instrument", was a second greedy
+  packer — "Artificial In-" (55.1px) fits the 64px measure, so the breaker took it over a clean
+  space-wrap that existed. Removed from both paths. It had been measured INERT in the verification
+  engine, which is exactly why it shipped: **a mechanism that cannot be exercised where you verify
+  cannot be claimed, and it can also be actively wrong in the place you could not see.**
+  **C3** the D7 lift moved the FAB off "+ Add a book" and onto "Retrieve covers" inside the Manage
+  sheet. Generalised: one `:has()` rule hides it whenever any sheet is open, proven across all three
+  plus the shipped scan rule.
+  **C4** the tray said "19 confident · 0 need a look" while the review header said "19 found". Both now
+  read one stored value through one builder: "N found · N already on your shelf" (EXACT tier — what
+  Shelve N folds), or "N found". **Outage clause RULED and restored in the same commit** — the first
+  shape had no slot for T14, leaving the tray silent about a catalogue failure; it now reads "N found ·
+  M couldn't look up", and an outage OUTRANKS "already on your shelf" when both apply, because a failed
+  lookup is what the reader must know before deciding to shelve. The count already existed (`unlooked`
+  on `rec`); only the shared builder needed the parameter. 5 cases proven, both surfaces, `allMatch true`.
+  **C5** ruled and NOT acted on: the unflagged card stays unlabelled.
+  Record: `docs/checkpoints/render-firstshelf-c.md` (+ `-c-recon.md`). `[scan, books]`
+  **Owed / logged:** **T24** two sheet registers — Manage `rgb(252,246,232)` (`--card-2`) vs Catch a
+  thought `rgb(35,40,56)` (`--surface-2`) on a `rgb(253,249,238)` page; both internally coherent, they
+  just disagree — Preston's ruling, untouched · **T25** scanning a displayed image of a shelf (laptop
+  screen) returned 19/19/0, cleaner than any live scan — for the P2 scan session · **T26** the repo
+  states NO supported-browser floor anywhere (no package.json, no browserslist, no support doc); the
+  de-facto floor is Safari 16.2+ via 153 uses of `color-mix()`, but it is nowhere written down · and
+  the C4 ruling leaves the TRAY silent about a catalogue outage (T14's clause has no slot in the ruled
+  shape; the review-face note and the announcer still carry it) — flagged for Preston, not absorbed.
+
 - [x] **R-FIRSTSHELF RENDER ROUND — v3.287, 2026-09-01 (LOCAL, awaiting push; felt pass PENDING)** —
   ten presentation defects Preston observed on device across v3.279–v3.286, none functional, all on the
   surfaces a new user meets first. No data writes, no state mutation, no deletion in the diff.

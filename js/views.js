@@ -9136,14 +9136,15 @@ function scanResolveAndFill(visionBooks) {
   var seen = {};                    // idKey -> tray cover element (within-scan)
   var classified = { confident: [], exceptions: [] };
   var found = 0, confident = 0, exceptions = 0, unlooked = 0;   // T14: unlooked = catalogue never answered
+  var onShelf = 0;   // C4: EXACT-tier matches -- the ones "Shelve N" will fold, not create
   var reviewBtn = scanEl('scan-tray-review-btn'); if (reviewBtn) { reviewBtn.style.display = 'none'; }
   var u = getCurrentUser();
   var idx = 0;
   function next() {
     if (idx >= visionBooks.length) {
       scanResult = { confident: classified.confident, exceptions: classified.exceptions, found: found,
-        rec: { found: found, conf: confident, exc: exceptions, unlooked: unlooked } };   // S3b: the scan's fixed found/confident record
-      scanFinishFill(found, confident, exceptions, unlooked);
+        rec: { found: found, conf: confident, exc: exceptions, unlooked: unlooked, onShelf: onShelf } };   // S3b: the scan's fixed found/confident record (C4 adds onShelf)
+      scanFinishFill(found, confident, exceptions, unlooked, onShelf);
       return;
     }
     var vb = visionBooks[idx]; idx++;
@@ -9188,6 +9189,7 @@ function scanResolveAndFill(visionBooks) {
         var m = (u && findShelfMatch(u.uid, { title: item.title, author: item.author, isbn: item.isbn }));
         var el = scanDropTrayCover(item, key, m ? m.tier : '');
         if (key !== 'ta:|') { seen[key] = el; }
+        if (m && m.tier === 'exact') { onShelf++; }   // C4: EXACT only -- what Shelve N folds
         found++;
         if (isExc) { exceptions++; classified.exceptions.push(item); } else { confident++; classified.confident.push(item); }
         if (item.lookupFailed) { unlooked++; }
@@ -9246,13 +9248,40 @@ function scanAddTick(el) {
 // are counted inside `exceptions`, so the honest split is (exceptions - unlooked)
 // genuinely needing a look plus `unlooked` we could not ask about. Reporting them
 // together is what made a quota outage read as a bad shelf photograph.
-function scanFinishFill(found, confident, exceptions, unlooked) {
+// CORRECTION PASS (C4) — ONE SENTENCE, BOTH SURFACES, AND IT EXPLAINS THE BUTTON.
+// The tray said "19 confident · 0 need a look" while the review header said
+// "19 found": two surfaces, one scan, different sentences. "confident" is dropped
+// from both -- the band headers on the review face already carry that split -- and
+// what replaces it is the number the reader is about to act on: how many of these
+// are ALREADY on the shelf, which is exactly what "Shelve N" excludes (an EXACT
+// match is folded by scanCommitBook, a PROBABLE one still adds). EXACT tier only,
+// for that reason. Built once here from the scan's own record so the tray and the
+// review face cannot drift apart again.
+// C4 (outage ruling, Preston 2026-09-01): a FAILED LOOKUP OUTRANKS "already on your
+// shelf". Both are true at once often enough to need an order, and the order is not
+// arbitrary -- "already on your shelf" is a convenience, while "couldn't look up" is
+// the thing the reader must know BEFORE deciding to shelve, because a book the
+// catalogue never answered about may be shelved wrong. T14 restored on the tray: the
+// first C4 shape had no slot for it, which left the surface that warns you mid-scan
+// silent about an outage. The tail is factored out so the tray (which splits the
+// sentence across two spans) and the review header cannot drift apart.
+function scanReviewCountTail(onShelf, unlooked) {
+  if (unlooked) { return unlooked + ' couldn’t look up'; }
+  return onShelf ? (onShelf + ' already on your shelf') : '';
+}
+function scanReviewCountLine(found, onShelf, unlooked) {
+  var tail = scanReviewCountTail(onShelf, unlooked);
+  return found + ' found' + (tail ? (' · ' + tail) : '');
+}
+function scanFinishFill(found, confident, exceptions, unlooked, onShelf) {
   var un = unlooked || 0;
   var needLook = exceptions - un;
-  var line = confident + ' confident · ' + needLook + ' need a look'
-           + (un ? (' · ' + un + ' couldn’t be looked up') : '');
+  // The tray splits the sentence across two spans (count + sub); composed, they read
+  // identically to the review header's scanReviewCountLine. The ANNOUNCER below keeps
+  // the fuller sentence, so T14's catalogue-outage honesty is not lost to a screen
+  // reader even though the ruled visual line does not carry it.
   var cnt = scanEl('scan-tray-count'); if (cnt) { cnt.innerHTML = '<b>' + found + '</b> found'; }
-  var sub = scanEl('scan-tray-sub'); if (sub) { sub.textContent = line; }
+  var sub = scanEl('scan-tray-sub'); if (sub) { sub.textContent = scanReviewCountTail(onShelf || 0, un); }
   var btn = scanEl('scan-tray-review-btn'); if (btn) { btn.style.display = 'block'; btn.textContent = 'Review the shelf'; }
   scanSaveDraft(); scanUpdateNavBadge();
   scanAnnounce(found + ' books found. ' + confident + ' confident, ' + needLook + ' need a look'
@@ -9261,13 +9290,16 @@ function scanFinishFill(found, confident, exceptions, unlooked) {
 
 // RENDER ROUND (D2 + D3) — THE TEXT LAW'S GUARANTEED FLOOR.
 // D2 (caption broke mid-word) and D3 (card text cut mid-glyph, unmarked) are one
-// defect on two paths. The correct typographic instrument is `hyphens:auto`, and
-// it is wired in CSS — but it is DELIBERATELY NOT what this fix rests on: it is a
-// silent no-op wherever the engine ships no hyphenation dictionary, which was
-// measured to be the case in this round's verification engine (a controlled probe
-// of the same word, same font, same 54px measure, showed `hyphens:auto` producing
-// byte-identical output to no hyphens at all). A fix whose only mechanism cannot
-// be shown to work is a claim outliving its code.
+// defect on two paths. This is now the ONLY mechanism marking a cut.
+// CORRECTION PASS (C2): `hyphens:auto` was wired alongside this as the "correct
+// typographic instrument" and has been REMOVED. It was inert in the verification
+// engine (no dictionary), which is why it looked harmless — and on a device that
+// HAS a dictionary it turned out to be a second greedy packer, filling line 1 with
+// a hyphenated fragment where a clean space-wrap existed: "Artificial In- /
+// telligence", because "Artificial In-" (55.1px) fits the 64px measure even though
+// "Artificial" and "Intelligence" each fit alone. Two lessons stand: a mechanism
+// that cannot be exercised where you verify cannot be claimed, and it can also be
+// actively wrong in the place you could not see.
 // So the floor is deterministic: fit the title at WORD boundaries, and when a
 // single word is wider than the measure itself, cut it at a character boundary and
 // MARK the cut with a real ellipsis. Never a silent mid-glyph slice, never an
@@ -9318,7 +9350,9 @@ function scanRenderReview() {
   // is the RUN TOTAL, and only that survives. (This is the same reasoning S3b used
   // to drop "need a look" from this line; the confident half was the other half of
   // the same duplication and was missed then.)
-  scanEl('scan-rv-count').textContent = rec.found + ' found';
+  // C4: the SAME sentence the tray composed, from the SAME stored value. `rec` is the
+  // scan's frozen record, so a walker promotion cannot make the two surfaces disagree.
+  scanEl('scan-rv-count').textContent = scanReviewCountLine(rec.found, rec.onShelf || 0, rec.unlooked || 0);
   // S3a: the draft badge reads real state — "nothing" only when the library is truly empty.
   var rvUser = getCurrentUser();
   var rvLib = (rvUser && state.userBooks[rvUser.uid] && state.userBooks[rvUser.uid].bookIds) ? state.userBooks[rvUser.uid].bookIds.length : 0;

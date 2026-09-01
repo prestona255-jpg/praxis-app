@@ -16982,7 +16982,16 @@ body.wc-focus .app-nav { opacity:.26; }
 .scan-shelfline{ display:flex; flex-wrap:wrap; align-items:flex-end; column-gap:14px; row-gap:22px; }
 .scan-dc{ width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:default; }
 .scan-dc .scan-cov{ width:64px; height:96px; }
-.scan-dc .cap{ width:64px; height:34px; overflow:hidden; text-align:center; margin-top:7px; }
+/* CORRECTION PASS (C1) — THE CAPTION BOX HUGS ITS TEXT.
+   `height:34px` reserved a fixed two-line slot, but the text inside is clamped to
+   its own rendered height (24.2px in Blink, shorter again in iOS Cormorant). The
+   spine-flag's margin was measured from the BOX bottom, so the reader saw the
+   reserved remainder PLUS the margin: ~18px here, ~20px on device — while the next
+   row's covers sat ~25px away. A label equidistant between two owners has no owner.
+   `height:auto` makes the box bottom the TEXT bottom, so the flag is anchored to
+   what the reader can actually see. The cell height is fixed independently below,
+   so a shorter caption never changes the cell -- only where the flag sits inside it. */
+.scan-dc .cap{ width:64px; height:auto; overflow:hidden; text-align:center; margin-top:7px; }
 /* S2 (COVERS+VOICE): break at WORD boundaries; break INSIDE a word only when a
    single word cannot fit the line on its own (overflow-wrap:break-word). The Tier-1
    `word-break:break-word` broke mid-word ("Data Independen/ce") by greedily packing
@@ -16991,11 +17000,19 @@ body.wc-focus .app-nav { opacity:.26; }
    only break as a last resort, it breaks whenever the word overruns the measure,
    and at 64px almost every long title does. Measured: "Counternarratives" rendered
    as "Counternarrat" / "ives" with NO ellipsis, because the two halves fit the
-   2-line clamp and the clamp only marks a VERTICAL overflow. Now `normal` (a word
-   is never split arbitrarily) plus `hyphens:auto`, so a word that genuinely cannot
-   fit is divided at a dictionary point and MARKED with a hyphen. <html lang="en">
-   is set (index.html:2), which is what makes the dictionary apply. */
-.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; -webkit-hyphens:auto; hyphens:auto; text-overflow:ellipsis; }
+   2-line clamp and the clamp only marks a VERTICAL overflow. Now `normal`: a word
+   is never split arbitrarily, and scanFitReviewText supplies the ellipsis.
+   CORRECTION PASS (C2) -- `hyphens:auto` REMOVED from this rule and from .cov-t.
+   It was added here as the "correct typographic instrument" and turned out to be a
+   second greedy packer: with a dictionary present (iOS has one; the verification
+   engine does not, which is why it read as inert), the line-breaker fills line 1 as
+   far as it can INCLUDING a hyphenated fragment. Measured at this 64px measure,
+   11px serif: "Artificial" 39.7px and "Intelligence" 50.1px each fit alone -- a
+   clean two-line space-wrap existed -- but "Artificial In-" is 55.1px, which also
+   fits, so the breaker took it and shipped "Artificial In- / telligence". Removing
+   it leaves word-boundary wrapping, with the JS floor marking the genuinely
+   over-measure word ("Counternarratives", 78.6px) with a real ellipsis. */
+.scan-dc .cap .t{ font-family:var(--font-serif); font-weight:600; font-size:11px; line-height:1.1; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; text-overflow:ellipsis; }
 /* the LEANING spine — an exception (Law 1: the lean carries it, never copy alone)
    RENDER ROUND (D6, Ruling 2) — THE INVERSION, BOTH ENDS.
    These are the ONLY cards that actually want the reader's judgment, and they were
@@ -17048,12 +17065,23 @@ body.wc-focus .app-nav { opacity:.26; }
    inside it. That was the round's real hazard.
    .has-flags is set by scanRenderReview per band, so the status row is reserved
    only where one is actually used and a first shelf pays no dead air for it. */
+   CORRECTION PASS (C1): the status row is 27px (3px gap + a 24px two-line flag), so
+   a flagged band is 137 + 27 = 164, not 169. And the typeset placeholder is now a
+   FIXED 137px rather than flex-grown: growing it to "whatever is left" made an
+   UNFLAGGED placeholder 169px and a FLAGGED one 137px in the SAME band -- the same
+   raggedness D4 exists to remove, reintroduced one layer down. 137 is the same
+   number from both directions (the unflagged cell height, and 164 minus the status
+   row), so the two bands agree by construction rather than by coincidence. */
 #scan-rv-confident .scan-dc{ height:137px; }
-#scan-rv-confident.has-flags .scan-dc{ height:169px; }
+#scan-rv-confident.has-flags .scan-dc{ height:164px; }
 #scan-rv-exceptions .scan-dc{ height:96px; }
 #scan-rv-exceptions.has-flags .scan-dc{ height:128px; }
 #scan-rv-confident .scan-dc .scan-cov{ flex:0 0 96px; }
-#scan-rv-confident .scan-dc .scan-cov.is-typeset{ flex:1 1 auto; height:auto; }
+#scan-rv-confident .scan-dc .scan-cov.is-typeset{ flex:0 0 137px; height:137px; }
+/* C1: the flag rides its own caption. 3px satisfies the ruled ratio (<=4px to its
+   own caption, >=3x that to the next row) on a TWO-line caption, which is the case
+   the device pass measured. */
+#scan-rv-confident .scan-dc .spine-flag{ margin-top:3px; }
 #scan-rv-confident .scan-dc .scan-cov.is-typeset + .cap{ display:none; }
 /* the taller typeset slot can carry more of the title; the clamp still owns the ellipsis */
 #scan-rv-confident .scan-dc .scan-cov.is-typeset .cov-t{ -webkit-line-clamp:7; }
@@ -17078,9 +17106,11 @@ body.wc-focus .app-nav { opacity:.26; }
    one -- "Education for Critical Consciousness" put "Consciousness" on its own
    line, 13 characters into a 54px box, and the word was simply sliced mid-glyph
    with no ellipsis and no hyphen (scrollWidth > clientWidth, no clamp overflow to
-   trigger the ellipsis). Same law as the caption now: never split arbitrarily,
-   hyphenate at a dictionary point when the measure cannot hold the word. */
-.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; -webkit-hyphens:auto; hyphens:auto; text-overflow:ellipsis; }
+   trigger the ellipsis). Same law as the caption now: never split arbitrarily, and
+   let scanFitReviewText mark the cut. CORRECTION PASS (C2): `hyphens:auto` removed
+   here too, for the reason recorded on the caption rule -- it packed a hyphenated
+   fragment onto a line where a clean word break existed. */
+.scan-cov .cov-t{ font-family:var(--font-serif); font-weight:600; font-size:10px; line-height:1.12; color:var(--scan-cover-ink); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:normal; text-overflow:ellipsis; }
 .scan-cov .cov-a{ margin-top:auto; font-family:var(--font-body); font-size:7.5px; color:var(--scan-cover-meta); }
 
 .scan-rv-foot{ position:fixed; left:0; right:0; bottom:0; z-index:60;
@@ -17216,6 +17246,24 @@ body.wc-focus .app-nav { opacity:.26; }
    not per-surface) and overlapped Review/Not-a-book — hide it on the scan surface too. */
 body.scan-active .yumi-bloom,
 body.scan-active .cap-create-door{ display:none !important; }
+/* CORRECTION PASS (C3) — THE FAB YIELDS TO ANY OPEN SHEET.
+   D7 lifted the create-door clear of the Shelf's "+ Add a book" and it promptly
+   landed on "Retrieve covers" inside the open Manage sheet: the same collision, a
+   new victim. The general rule, rather than a third position tweak: a sheet is a
+   modal surface, and a floating corner affordance has no business over one. This
+   generalises the shipped `body.scan-active` hide to every sheet the app opens.
+   :has() is the mechanism because these sheets are DESCENDANTS of the page, not
+   body classes, so no ancestor selector reaches them and the alternative is a
+   body-class toggle wired into three separate open/close paths.
+   FLOOR CHECK: the repo states no supported-browser floor anywhere (no
+   package.json, no browserslist, no support doc) -- reported as its own gap. But
+   the shipped CSS already uses color-mix() 153 times across components.css +
+   theme.css, and color-mix() is Safari 16.2+ / Chrome 111+, while :has() is Safari
+   15.4+ / Chrome 105+. :has() therefore cannot raise a floor color-mix() has
+   already set well above it. */
+body:has(.shelf-manage.is-open) .cap-create-door,
+body:has(.capdoor-sheet.is-open) .cap-create-door,
+body:has(.shelf-bulk-editor) .cap-create-door{ display:none !important; }
 
 /* nav draft-count badge on the Scan entry (mirrors .cap-nav-entry state attrs) */
 .app-nav-scan-badge{ display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;
