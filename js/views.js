@@ -754,6 +754,14 @@ function renderRoute() {
     location.replace('#profile');
     return;
   }
+  // #diag — the read-only shelf population report. Deliberately does NOT clear the
+  // pointer fields and does NOT call saveState: entering a diagnostic must not
+  // change what it is diagnosing. Placed with the other explicit routes, before
+  // the notebook catch-all.
+  if (parts[0] === 'diag') {
+    renderShelfDiagnostic();
+    return;
+  }
   // About page (#about): a static orientation surface. Symmetric pointer clear
   // mirroring the account / home branches; placed BEFORE the notebook
   // fallthrough so #about is caught here, not swallowed by the catch-all.
@@ -6192,6 +6200,190 @@ function startCoverBackfill() {
 // The host's position at the end of the column is the ROOT cause and relocating it
 // would fix this at the source; that is a bigger, riskier change than this defect
 // warrants and is logged as a candidate, not done here.
+// ===========================================================================
+// #diag — THE SHELF POPULATION REPORT. READ-ONLY, ON SCREEN.
+// ===========================================================================
+// Built because the console is unreachable: a district-filtered laptop and a
+// phone with no cable path. The question it answers is why the census reported
+// three EXACT duplicate groups that the Tidy panel does not show, when BOTH read
+// the same population (state.userBooks[uid].bookIds -- census:83, and
+// groupShelfDuplicates). The counts differ for a different reason: the census
+// prints ids.length (raw index entries) while the shelf counts only entries whose
+// state.books record EXISTS, and the pairwise sweep skips the rest. So an index
+// entry pointing at a missing record is invisible to grouping AND to the shelf,
+// which is the shape this report is looking for.
+//
+// READ-ONLY, precisely: this renderer performs no writes. It calls no saveState,
+// no sv(), no mark*Dirty, and deliberately uses getMergeTombstones (a pure read)
+// rather than pruneMergeTombstones (which persists). It cannot merge, delete or
+// repair anything. Honest caveat: ENTERING any route runs renderRoute's normal
+// route-entry housekeeping, exactly as navigating to #about does -- that is the
+// app behaving normally, not something this route adds.
+function buildShelfDiagnosticText() {
+  var L = [], P = function (s) { L.push(s); };
+  var CENSUS_IDS = ['book_1782217201307_492945', 'book_1787180192487_515348',
+    'book_1786888509302_616153', 'book_1787180192747_705127',
+    'book_1786888509304_99629', 'book_1787180191747_72341'];
+  var u = null, k, i;
+  try { if (getCurrentUser()) { u = getCurrentUser().uid; } } catch (e) {}
+  P('PRAXIS — SHELF POPULATION REPORT');
+  // The live bundle's version is the service-worker CACHE NAME, which is only
+  // readable asynchronously -- filled in below by renderShelfDiagnostic once
+  // caches.keys() resolves. It matters here: a report from a stale bundle would
+  // describe code that is not running.
+  P('bundle: __BUNDLE__');
+  P('signed-in uid: ' + (u || '(none)'));
+  P('');
+  P('-- uids present in state.userBooks --');
+  for (k in (state.userBooks || {})) {
+    if (!state.userBooks.hasOwnProperty(k)) { continue; }
+    var arr0 = (state.userBooks[k] && state.userBooks[k].bookIds) ? state.userBooks[k].bookIds : [];
+    P('   ' + k + '  (' + arr0.length + ' bookIds)' + (k === u ? '   <-- YOU' : ''));
+  }
+  var ub = (u && state.userBooks[u] && state.userBooks[u].bookIds) ? state.userBooks[u].bookIds : [];
+  var live = 0, dead = 0, deadIds = [], seen = {}, dupes = 0;
+  for (i = 0; i < ub.length; i++) {
+    if (seen[ub[i]]) { dupes = dupes + 1; }
+    seen[ub[i]] = true;
+    if (state.books[ub[i]]) { live = live + 1; }
+    else { dead = dead + 1; if (deadIds.length < 30) { deadIds.push(ub[i]); } }
+  }
+  var totalKeys = 0;
+  for (k in (state.books || {})) { if (state.books.hasOwnProperty(k)) { totalKeys = totalKeys + 1; } }
+  P('');
+  P('-- counts --');
+  P('   bookIds length (census printed this): ' + ub.length);
+  P('   ...of those WITH a state.books record: ' + live + '   (the shelf shows this)');
+  P('   ...of those with NO record (STRANDED): ' + dead);
+  P('   duplicate entries inside bookIds:      ' + dupes);
+  P('   total keys in state.books (global):    ' + totalKeys);
+  if (dead > 0) { P('   first stranded ids: ' + deadIds.join(', ')); }
+  P('');
+  P('-- the six census ids --');
+  for (i = 0; i < CENSUS_IDS.length; i++) {
+    var id = CENSUS_IDS[i];
+    var inBooks = !!(state.books && state.books[id]);
+    var owner = '(in no bookIds index)';
+    for (k in (state.userBooks || {})) {
+      if (!state.userBooks.hasOwnProperty(k)) { continue; }
+      var a2 = state.userBooks[k] && state.userBooks[k].bookIds;
+      if (a2 && a2.indexOf(id) > -1) { owner = k + (k === u ? '  <-- YOUR shelf' : '  <-- A DIFFERENT UID'); }
+    }
+    var b2 = inBooks ? state.books[id] : null;
+    P('   ' + id);
+    P('      in state.books: ' + inBooks + (b2 ? ('   title=' + (b2.title || '') + '   isbn=' + (b2.isbn || '-')) : ''));
+    P('      indexed by:     ' + owner);
+  }
+  P('');
+  P('-- live records matching those titles, under ANY id --');
+  var pats = [/empire/i, /wynter|being human/i, /mating in captivity/i];
+  var hits = [], p;
+  for (k in (state.books || {})) {
+    if (!state.books.hasOwnProperty(k)) { continue; }
+    var bb = state.books[k], t = (bb && bb.title) || '';
+    for (p = 0; p < pats.length; p++) {
+      if (pats[p].test(t)) {
+        var own = '(not in any index)';
+        for (var kk in (state.userBooks || {})) {
+          if (!state.userBooks.hasOwnProperty(kk)) { continue; }
+          var a3 = state.userBooks[kk] && state.userBooks[kk].bookIds;
+          if (a3 && a3.indexOf(k) > -1) { own = (kk === u ? 'YOUR shelf' : 'uid ' + kk); }
+        }
+        hits.push({ id: k, title: t, isbn: (bb.isbn || '-'), owner: own });
+        break;
+      }
+    }
+  }
+  if (hits.length === 0) { P('   (none — those titles are not in state.books at all)'); }
+  for (i = 0; i < hits.length; i++) {
+    P('   ' + hits[i].id);
+    P('      "' + hits[i].title + '"   isbn=' + hits[i].isbn + '   [' + hits[i].owner + ']');
+  }
+  if (hits.length > 1) {
+    P('');
+    P('-- tier between those live records --');
+    var any = false;
+    for (i = 0; i < hits.length; i++) {
+      for (var j2 = i + 1; j2 < hits.length; j2++) {
+        var tr = bookIdentityTier(state.books[hits[i].id], state.books[hits[j2].id]);
+        if (tr !== 'none') { any = true; P('   ' + tr.toUpperCase() + ': "' + hits[i].title + '"  ||  "' + hits[j2].title + '"'); }
+      }
+    }
+    if (!any) { P('   (no pair reaches exact/probable/near-miss)'); }
+  }
+  P('');
+  P('-- what the Tidy panel groups right now --');
+  if (u) {
+    var g = groupShelfDuplicates(u);
+    P('   groups: ' + g.groups.length + '   near-miss pairs: ' + g.nearMiss.length);
+    for (i = 0; i < g.groups.length; i++) {
+      var names = [];
+      for (var m2 = 0; m2 < g.groups[i].members.length; m2++) {
+        names.push('"' + ((state.books[g.groups[i].members[m2]] || {}).title || g.groups[i].members[m2]) + '"');
+      }
+      P('   [' + g.groups[i].tier + '] ' + names.join('  ||  '));
+    }
+  } else { P('   (not signed in)'); }
+  P('');
+  P('-- merge tombstones (read only) --');
+  try { P('   live tombstones: ' + getMergeTombstones(u).length); } catch (e2) { P('   (unavailable)'); }
+  P('');
+  P('END OF REPORT');
+  return L.join('\n');
+}
+
+// Renders the report on screen. A readonly <textarea> so long-press -> Select All
+// -> Copy works on iOS without any clipboard permission, plus a Copy button for
+// where the API is available.
+function renderShelfDiagnostic() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var wrap = document.createElement('section');
+  wrap.className = 'library-cleanup';
+  var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow';
+  eyebrow.textContent = 'Shelf · diagnostic';
+  var h1 = document.createElement('h1'); h1.className = 'book-review-title';
+  h1.textContent = 'Shelf population report';
+  var sub = document.createElement('p'); sub.className = 'book-review-sub';
+  sub.textContent = 'Read-only. Nothing here changes, merges or deletes anything. Long-press the text, choose Select All, then Copy — and paste it back.';
+  wrap.appendChild(eyebrow); wrap.appendChild(h1); wrap.appendChild(sub);
+  var ta = document.createElement('textarea');
+  ta.className = 'shelf-bulk-editor-textarea diag-out';
+  ta.setAttribute('readonly', 'readonly');
+  ta.setAttribute('rows', '24');
+  ta.value = buildShelfDiagnosticText().replace('__BUNDLE__', '(reading…)');
+  // Resolve the live bundle name from the SW cache keys. Read-only; degrades to a
+  // plain "unknown" rather than leaving "(reading…)" sitting there forever, which
+  // would be the same lie "searching…" told on the covers panel.
+  (function () {
+    var base = buildShelfDiagnosticText();
+    if (!window.caches || !caches.keys) { ta.value = base.replace('__BUNDLE__', '(unknown — no cache API)'); return; }
+    caches.keys().then(function (keys) {
+      var name = '(none cached yet)', ki;
+      for (ki = 0; ki < keys.length; ki++) { if (('' + keys[ki]).indexOf('praxis-v') === 0) { name = keys[ki]; } }
+      ta.value = base.replace('__BUNDLE__', name);
+    }, function () { ta.value = base.replace('__BUNDLE__', '(unknown)'); });
+  })();
+  wrap.appendChild(ta);
+  var acts = document.createElement('div'); acts.className = 'shelf-bulk-editor-actions';
+  var copyBtn = document.createElement('button'); copyBtn.type = 'button';
+  copyBtn.className = 'review-confirm'; copyBtn.textContent = 'Copy report';
+  copyBtn.addEventListener('click', function () {
+    try { ta.focus(); ta.setSelectionRange(0, ta.value.length); } catch (e) {}
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e2) {}
+    copyBtn.textContent = ok ? 'Copied' : 'Select the text and copy';
+  });
+  var backBtn = document.createElement('button'); backBtn.type = 'button';
+  backBtn.className = 'review-mark-all'; backBtn.textContent = 'Back to the shelf';
+  backBtn.addEventListener('click', function () { location.hash = '#books'; });
+  acts.appendChild(copyBtn); acts.appendChild(backBtn);
+  wrap.appendChild(acts);
+  host.appendChild(wrap);
+  if (typeof wrap.scrollIntoView === 'function') { wrap.scrollIntoView({ block: 'start' }); }
+}
+
 // M8 — ONE CLOSE, EVERY PATH. The Manage sheet's close was a closure-local
 // function inside renderShelf, so revealShelfPanel could not call it and
 // reimplemented the half it could see: it removed `is-open` and left behind
@@ -8514,6 +8706,17 @@ function openLibraryCleanup() {
     // permanent destination now, not a pass you run once. And the lead sentence put
     // covers first; merging is why the panel exists.
     var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow'; eyebrow.textContent = 'Shelf · cleanup';
+    // The PWA has no address bar, so #diag would be unreachable there. Five taps
+    // on this eyebrow opens it. Deliberately a dull, unlabelled gesture on a
+    // maintenance surface: discoverable when you are told, invisible otherwise,
+    // and it opens a read-only report -- nothing destructive sits behind it.
+    var diagTaps = 0, diagTimer = null;
+    eyebrow.addEventListener('click', function () {
+      diagTaps = diagTaps + 1;
+      if (diagTimer) { window.clearTimeout(diagTimer); }
+      diagTimer = window.setTimeout(function () { diagTaps = 0; }, 1200);
+      if (diagTaps >= 5) { diagTaps = 0; location.hash = '#diag'; }
+    });
     var h1 = document.createElement('h1'); h1.className = 'book-review-title'; h1.textContent = 'Tidy your library';
     var sub = document.createElement('p'); sub.className = 'book-review-sub';
     sub.textContent = 'Merge records that are the same book, and fill in missing covers across your ' + report.total + ' books.';
