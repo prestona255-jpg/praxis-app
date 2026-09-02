@@ -9591,6 +9591,14 @@ html { overscroll-behavior-y: contain; }
 .cl-mid .cl-note { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.4; }
 .cl-actions { display: flex; gap: 8px; align-items: center; }
 .cl-actions .review-mark-all, .cl-actions .review-confirm { font-size: 12.5px; padding: 8px 14px; }
+/* MERGE ROUND — the per-group SURVIVOR / TITLE pickers and the near-miss heading.
+   No new component and no new token: both reuse .cl-note's type and inks, adding
+   only the layout a radio row needs (a label must sit on one line beside its input
+   and be comfortably tappable). The near-miss heading reuses the same ink at the
+   mono/eyebrow weight the cleanup surface already uses for .cl-kind. */
+.cl-mid .cl-note.cl-pickrow { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; min-height: 24px; }
+.cl-mid .cl-note.cl-pickrow input { margin: 2px 0 0; flex: none; }
+.cl-note.cl-nm-head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 18px 0 2px; }
 
 /* Stage 3 (mockup E): before -> after hero + per-item cover before/after. */
 .cl-hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 20px 24px; margin-bottom: 20px; }

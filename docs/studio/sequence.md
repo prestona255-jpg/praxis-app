@@ -706,6 +706,33 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **R-FIRSTSHELF MERGE ROUND — v3.289 + v3.290, 2026-09-01 (LOCAL, awaiting push; census gate PENDING)** —
+  finishes what the tiered-identity round (v3.284) held: T8 repaired, then the merge wired to the
+  Tidy-library door. Data-loss tier; §9 ran **twice**, four BLOCKs, all fixed.
+  **The finding that reshaped it:** `scanLibraryForCleanup` grouped by `bookIdentityKey` while the census
+  swept pairwise by `bookIdentityTier` — measured on Preston's three real groups, the SURFACE found 0 and
+  the census found 3. Un-gating the button alone would have shipped a tool that could not see the records
+  it exists to merge. `groupShelfDuplicates()` is now the census's own union-find sweep, in the app.
+  **T8 (`e477b36`, v3.289):** the merge destroyed six authored fields on the dropped record, including
+  `valueMarks[].why` prose — reproduced on the live gated function before repair. Now unions them, writes
+  a both-halves tombstone (localStorage, 30 days), and the Undo re-marks the restored id pending so the
+  next sync cannot re-kill it.
+  **Surface (`f23bfd9`, v3.290):** per-group SURVIVOR and TITLE choices (separate questions — group 2 is
+  why), a pre-action preview, an Undo, near-miss in its own section behind an identity confirmation. No
+  auto-merge, no bulk, "Resolve all" still covers-only.
+  **§9:** pass 1 caught an Undo reachable only in its own render, and a blind restore that would clobber a
+  second merge; pass 2 caught `isbn` wrongly excluded from the staleness guard (it has a typed field) and
+  a missing CACHE_VERSION bump. My own proof caught a third: comparing whole records made every Undo
+  unreachable, because the shelf classifier writes `category` on render.
+  Record: `docs/checkpoints/merge-round.md` (+ `-recon.md`). `[books]`
+  **Logged:** **T27** merge Undo is device-local (localStorage tombstone, 30 days); cross-device Undo needs
+  a synced tombstone collection — schema, firestore.rules, a new sync path — deliberately deferred until
+  the local merge is proven on real data. A ruling, not a limitation to discover later. · **R-MERGE-1** a
+  write-phase clone sits outside the snapshot guard, safe today by an invariant now documented at the line.
+  ⭐ **The closing gate is Preston's and my rig cannot clear it:** merge the real groups on device, re-run
+  `firstshelf-dupes-census.js` → zero EXACT and zero PROBABLE groups, then Empire of AI shows 2 notebook
+  entries and rating 5.
+
 - [x] **R-FIRSTSHELF CORRECTION PASS — v3.288, 2026-09-01 (LOCAL, awaiting push; felt pass PENDING)** —
   a reopen of v3.287, not a new round: four regressions the render fixes introduced, all observed on
   device within an hour of the push. Presentation only.

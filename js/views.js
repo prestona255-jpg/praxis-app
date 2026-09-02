@@ -7713,12 +7713,115 @@ function findShelfMatch(uid, cand) {
 // first-author surname). Returns { duplicates:[[ids],...], missingCovers:[ids], total }.
 // NOTE (R-FIRSTSHELF-DUPES): this grouping is DETECTION only. The merge actions it
 // used to feed are gated -- see the F5 note in openLibraryCleanup.
+// ===========================================================================
+// ONE BUILDER — the surface and the census must not be able to disagree.
+// ===========================================================================
+// They did. scanLibraryForCleanup grouped by bookIdentityKey (normalized title +
+// surname) while firstshelf-dupes-census.js swept PAIRWISE by bookIdentityTier.
+// Measured on Preston's three real groups (Stage 0): the surface found ZERO, the
+// census found THREE, all EXACT. The cause is that the corrupted titles carry the
+// byline, so the keys never collide -- "ta:empire ai|hao" vs
+// "ta:empire of ai by karen hao|hao" -- while the ISBNs are identical. Un-gating
+// the merge without fixing this would have shipped a tool that cannot see the
+// records it exists to merge.
+// This is the census's union-find sweep, in the app. Both now consume one notion
+// of "duplicate": bookIdentityTier, pairwise. EXACT and PROBABLE form edges and
+// merge; NEAR-MISS is collected separately and is NEVER merge-eligible through the
+// same control.
+function groupShelfDuplicates(uid) {
+  var ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+    ? state.userBooks[uid].bookIds : [];
+  var parent = {}, i, j;
+  function find(x) { while (parent[x] !== x) { x = parent[x]; } return x; }
+  function uni(x, y) { var rx = find(x), ry = find(y); if (rx !== ry) { parent[rx] = ry; } }
+  for (i = 0; i < ids.length; i++) { parent[ids[i]] = ids[i]; }
+  var edges = [], nearMiss = [], t;
+  for (i = 0; i < ids.length; i++) {
+    if (!state.books[ids[i]]) { continue; }
+    for (j = i + 1; j < ids.length; j++) {
+      if (!state.books[ids[j]]) { continue; }
+      t = bookIdentityTier(state.books[ids[i]], state.books[ids[j]]);
+      if (t === 'exact' || t === 'probable') { edges.push({ a: ids[i], b: ids[j], tier: t }); uni(ids[i], ids[j]); }
+      else if (t === 'near-miss') { nearMiss.push({ a: ids[i], b: ids[j] }); }
+    }
+  }
+  var comps = {}, root;
+  for (i = 0; i < ids.length; i++) {
+    if (!state.books[ids[i]]) { continue; }
+    root = find(ids[i]);
+    if (!comps[root]) { comps[root] = []; }
+    comps[root].push(ids[i]);
+  }
+  var groups = [], gk, e, strongest;
+  for (gk in comps) {
+    if (!comps.hasOwnProperty(gk) || comps[gk].length < 2) { continue; }
+    strongest = 'probable';
+    for (e = 0; e < edges.length; e++) {
+      if (find(edges[e].a) === gk && edges[e].tier === 'exact') { strongest = 'exact'; break; }
+    }
+    groups.push({ members: comps[gk], tier: strongest });
+  }
+  return { groups: groups, nearMiss: nearMiss };
+}
+
+// What a record actually CARRIES. Drives both the default-survivor choice and the
+// per-record display, so the default is legible rather than magic -- the reader can
+// see why one side was preselected.
+function mergeContentCensus(uid, bookId) {
+  var b = state.books[bookId] || {};
+  var c = { notes: 0, marks: 0, rating: 0, movedMe: 0, artifact: 0, arcs: 0, evidence: 0, themes: 0 };
+  var k, arr, i;
+  var em = state.notebookEntries || {};
+  for (k in em) { if (em.hasOwnProperty(k) && em[k] && em[k].bookIds && em[k].bookIds.indexOf(bookId) > -1) { c.notes++; } }
+  c.marks = (b.valueMarks instanceof Array) ? b.valueMarks.length : 0;
+  c.rating = (b.rating === null || typeof b.rating === 'undefined') ? 0 : 1;
+  c.movedMe = (b.movedMe === true) ? 1 : 0;
+  if (state.bookArtifacts && typeof artifactKey === 'function' && state.bookArtifacts[artifactKey(uid, bookId)]) { c.artifact = 1; }
+  var am = state.arcs || {};
+  for (k in am) {
+    if (!am.hasOwnProperty(k) || !am[k] || !am[k].bookIds) { continue; }
+    arr = am[k].bookIds;
+    for (i = 0; i < arr.length; i++) { if (((arr[i] && arr[i].id) ? arr[i].id : arr[i]) === bookId) { c.arcs++; break; } }
+  }
+  var sm = state.subTheories || {};
+  for (k in sm) {
+    if (!sm.hasOwnProperty(k) || !sm[k] || !sm[k].evidence) { continue; }
+    arr = sm[k].evidence;
+    for (i = 0; i < arr.length; i++) { if (arr[i] && arr[i].kind === 'book' && arr[i].refId === bookId) { c.evidence++; } }
+  }
+  var tm = state.userThemes || {};
+  for (k in tm) { if (tm.hasOwnProperty(k) && tm[k] && tm[k].bookIds && tm[k].bookIds.indexOf(bookId) > -1) { c.themes++; } }
+  c.score = c.notes + c.marks + c.rating + c.movedMe + c.artifact + c.arcs + c.evidence + c.themes;
+  return c;
+}
+
+// A record's age, for the documented tie-break. addedAt when present; otherwise the
+// timestamp embedded in the minted id ('book_<ms>_<rand>', genBookId).
+function mergeRecordAge(bookId) {
+  var b = state.books[bookId] || {};
+  if (typeof b.addedAt === 'number' && b.addedAt > 0) { return b.addedAt; }
+  var m = ('' + bookId).match(/^book_(\d+)_/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+// DEFAULT SURVIVOR: the record carrying the most authored content; tie -> the OLDER
+// record. Both halves are shown on the surface so the default is legible.
+function mergeDefaultSurvivor(uid, members) {
+  var best = members[0], bestC = mergeContentCensus(uid, members[0]), i, c;
+  for (i = 1; i < members.length; i++) {
+    c = mergeContentCensus(uid, members[i]);
+    if (c.score > bestC.score || (c.score === bestC.score && mergeRecordAge(members[i]) < mergeRecordAge(best))) {
+      best = members[i]; bestC = c;
+    }
+  }
+  return best;
+}
+
 function scanLibraryForCleanup(uid) {
-  var out = { duplicates: [], missingCovers: [], wrongCovers: [], total: 0 };
+  var out = { duplicates: [], duplicateTiers: [], nearMiss: [], missingCovers: [], wrongCovers: [], total: 0 };
   var ub = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
     ? state.userBooks[uid].bookIds : [];
-  var groups = {};
-  var i, id, b, key;
+  var i, id, b;
   for (i = 0; i < ub.length; i++) {
     id = ub[i]; b = state.books[id];
     if (!b) { continue; }
@@ -7729,24 +7832,19 @@ function scanLibraryForCleanup(uid) {
     // the count, so it matches the blank cards on the shelf, not just nulls.
     if (!b.coverUrl || ('' + b.coverUrl).replace(/^\s+|\s+$/g, '') === '') { out.missingCovers.push(id); }
     else if (isCoverBroken(id)) { out.wrongCovers.push(id); }
-    // Group by the shared identity key (normalized title+author) so a title-only
-    // copy and an ISBN-bearing copy of the same book still collide. Same key the
-    // add-guard uses -- one notion of "duplicate".
-    key = bookIdentityKey(b.title, b.author);
-    if (!groups[key]) { groups[key] = []; }
-    groups[key].push(id);
   }
-  var gk;
-  for (gk in groups) {
-    if (!groups.hasOwnProperty(gk)) { continue; }
-    // R-x: blank-identity books ('ta:|' -- e.g. distinct ISBN-only adds whose
-    // titles never resolved, or titles that normalize to empty) are NOT
-    // duplicates of each other; they just share an empty key. Never cluster them
-    // for the destructive merge (it would delete a distinct book's identity).
-    // Same "empty identity is not a dup signal" invariant the add-guards enforce.
-    if (gk === 'ta:|') { continue; }
-    if (groups[gk].length > 1) { out.duplicates.push(groups[gk].slice()); }
+  // Grouping now comes from the ONE BUILDER above -- the same pairwise
+  // bookIdentityTier sweep the census runs. The old bookIdentityKey bucket is
+  // gone: it could not see an ISBN-identical pair whose titles differ, which is
+  // every duplicate on the real shelf. The 'ta:|' blank-identity guard it carried
+  // is not lost -- bookIdentityTier enforces it directly (a blank key returns
+  // 'none' before any grouping can happen).
+  var g = groupShelfDuplicates(uid), gi;
+  for (gi = 0; gi < g.groups.length; gi++) {
+    out.duplicates.push(g.groups[gi].members.slice());
+    out.duplicateTiers.push(g.groups[gi].tier);
   }
+  out.nearMiss = g.nearMiss;
   return out;
 }
 
@@ -7802,15 +7900,22 @@ function pruneMergeTombstones(uid) {
 // Dedup key for a value-mark. JSON rather than a delimiter join: `why` is free
 // reader prose and any separator character could occur inside it, which would make
 // two distinct marks collide and silently drop one.
+// §9 CONCERN: both helpers below used to DEGRADE on failure -- mergeValueMarkKey
+// fell back to a '|' join (exactly the delimiter collision JSON-keying exists to
+// avoid) and mergeCloneValue returned the LIVE OBJECT, which would have made the
+// tombstone an alias to the record the merge is about to mutate in place, silently
+// destroying the "before" snapshot the tombstone exists to be. Neither fallback is
+// reachable on today's plain-data shapes, but a clone helper whose failure mode is
+// "return a live reference" is the wrong shape for a data-loss guard. They now
+// THROW, and mergeBookDuplicates aborts before touching anything (see its guard).
 function mergeValueMarkKey(m) {
   if (!m) { return 'null'; }
-  try { return JSON.stringify([m.value || '', m.why || '']); }
-  catch (e) { return (m.value || '') + '|' + (m.why || ''); }
+  return JSON.stringify([m.value || '', m.why || '']);
 }
 
 function mergeCloneValue(v) {
   if (v === null || typeof v === 'undefined') { return v; }
-  try { return JSON.parse(JSON.stringify(v)); } catch (e) { return v; }
+  return JSON.parse(JSON.stringify(v));
 }
 
 // Tombstones are INDEPENDENT, not a stack: each merge appends its own record with
@@ -7894,6 +7999,79 @@ function buildMergeTombstone(uid, keepId, dropIds) {
   return ts;
 }
 
+// §9 BLOCK 2 — THE UNDO MUST NOT CLOBBER WORK DONE AFTER THE MERGE.
+// The restore below writes whole pre-merge arrays back. That reverses THIS merge
+// perfectly, and it also silently discards anything that touched the same objects
+// afterwards. The red-team's scenario is ordinary, not contrived: the panel
+// routinely shows several groups at once (Preston's real shelf has three), so
+// "merge A, merge B, undo A" is a normal gesture -- and if A and B share any arc,
+// sub-theory, notebook entry or theme, undoing A would roll that array back over
+// B's already-applied repoint. Editing the survivor after merging does the same.
+// So the tombstone also records what the world looked like when the merge FINISHED.
+// If any touched object has moved since, the Undo REFUSES rather than overwrite.
+// Refusing is the conservative direction: the merge stands and nothing is lost,
+// where overwriting would destroy newer authored work to undo older work.
+// The staleness fingerprint watches AUTHORED and STRUCTURAL state only, never
+// derived caches. Found by the proof itself: comparing whole records made every
+// Undo unreachable after a single navigation, because the shelf's classifier
+// writes `category` ('' -> 'Uncategorized') on render and the cover backfill
+// rewrites coverUrl/coverCandidates/bibliographic fields whenever a lookup lands.
+// Treating those as "the reader changed something" would refuse every real Undo
+// while protecting nothing -- they are machine-written caches, and re-deriving
+// them is exactly what they are for. What must block an Undo is the reader's own
+// work: their marks, rating, status, and the identity of the record.
+// §9 pass 2, BLOCK 1: `isbn` is IN. The first cut filed it with the catalogue
+// backfill because two of its three write sites are machine backfills
+// (views.js:6407, 8353) -- but the third is a text field the reader types into,
+// with its own blur handler (buildBookEditPanel, views.js:11753). It is the one
+// field in that exclusion list with an editable control, and correcting a
+// misidentified book's ISBN is exactly the kind of deliberate work an Undo must
+// not silently revert. title/author/isbn together are the record's identity, which
+// is inside this fingerprint's stated scope.
+function mergeBookFingerprint(b) {
+  if (!b) { return 'null'; }
+  return JSON.stringify([b.title || '', b.author || '', b.isbn || '', normalizeStatus(b.status) || '',
+    (typeof b.finishedAt === 'number') ? b.finishedAt : null,
+    (typeof b.rating === 'undefined') ? null : b.rating,
+    (typeof b.dateRead === 'undefined') ? null : b.dateRead,
+    b.categoryOverride || '', (typeof b.traditionOverride === 'undefined') ? null : b.traditionOverride,
+    b.movedMe === true, (b.valueMarks instanceof Array) ? b.valueMarks : []]);
+}
+
+function captureMergeAfterState(uid, ts) {
+  var fp = { books: {}, index: '', arcs: {}, subs: {}, notes: {}, themes: {}, artifacts: {} }, k, i;
+  fp.books[ts.keepId] = mergeBookFingerprint(state.books[ts.keepId]);
+  for (i = 0; i < ts.dropIds.length; i++) { fp.books[ts.dropIds[i]] = mergeBookFingerprint(state.books[ts.dropIds[i]]); }
+  fp.index = JSON.stringify((state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : []);
+  for (k in ts.arcsBefore) { if (ts.arcsBefore.hasOwnProperty(k)) { fp.arcs[k] = JSON.stringify((state.arcs && state.arcs[k]) ? state.arcs[k].bookIds : null); } }
+  for (k in ts.subsBefore) { if (ts.subsBefore.hasOwnProperty(k)) { fp.subs[k] = JSON.stringify((state.subTheories && state.subTheories[k]) ? state.subTheories[k].evidence : null); } }
+  for (k in ts.notesBefore) { if (ts.notesBefore.hasOwnProperty(k)) { fp.notes[k] = JSON.stringify((state.notebookEntries && state.notebookEntries[k]) ? state.notebookEntries[k].bookIds : null); } }
+  for (k in ts.themesBefore) { if (ts.themesBefore.hasOwnProperty(k)) { fp.themes[k] = JSON.stringify((state.userThemes && state.userThemes[k]) ? state.userThemes[k].bookIds : null); } }
+  for (k in ts.artifactsBefore) { if (ts.artifactsBefore.hasOwnProperty(k)) { fp.artifacts[k] = JSON.stringify((state.bookArtifacts && state.bookArtifacts[k]) ? state.bookArtifacts[k] : null); } }
+  return fp;
+}
+
+// Returns '' when the world still matches the end of the merge, or the name of the
+// first thing that moved. Named rather than boolean so the surface can say WHY.
+function mergeUndoStaleReason(uid, ts) {
+  if (!ts || !ts.afterState) { return ''; }   // pre-guard tombstone: allow, as before
+  var fp = captureMergeAfterState(uid, ts), k;
+  for (k in ts.afterState.books) { if (ts.afterState.books.hasOwnProperty(k) && fp.books[k] !== ts.afterState.books[k]) { return 'this book has changed since the merge'; } }
+  if (fp.index !== ts.afterState.index) { return 'your shelf has changed since the merge'; }
+  for (k in ts.afterState.arcs) { if (ts.afterState.arcs.hasOwnProperty(k) && fp.arcs[k] !== ts.afterState.arcs[k]) { return 'an arc has changed since the merge'; } }
+  for (k in ts.afterState.subs) { if (ts.afterState.subs.hasOwnProperty(k) && fp.subs[k] !== ts.afterState.subs[k]) { return 'a sub-theory has changed since the merge'; } }
+  for (k in ts.afterState.notes) { if (ts.afterState.notes.hasOwnProperty(k) && fp.notes[k] !== ts.afterState.notes[k]) { return 'a note has changed since the merge'; } }
+  for (k in ts.afterState.themes) { if (ts.afterState.themes.hasOwnProperty(k) && fp.themes[k] !== ts.afterState.themes[k]) { return 'a theme has changed since the merge'; } }
+  for (k in ts.afterState.artifacts) { if (ts.afterState.artifacts.hasOwnProperty(k) && fp.artifacts[k] !== ts.afterState.artifacts[k]) { return 'a book artifact has changed since the merge'; } }
+  return '';
+}
+
+function findMergeTombstone(uid, tombstoneId) {
+  var arr = getMergeTombstones(uid), i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id === tombstoneId) { return arr[i]; } }
+  return null;
+}
+
 // UNDO. Restores both halves, then does the thing that is easy to miss and looks
 // like success until the next sync: a restored record is a record the REMOTE does
 // not have and the local delete-guard is still holding down. Without clearing the
@@ -7901,10 +8079,11 @@ function buildMergeTombstone(uid, keepId, dropIds) {
 // deletes it again on the next read (measured at Stage 0: restoredRecordSurvivedSync
 // false). Both calls below are load-bearing, not defensive.
 function undoBookMerge(uid, tombstoneId) {
-  var arr = getMergeTombstones(uid), ts = null, i;
-  for (i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id === tombstoneId) { ts = arr[i]; break; } }
+  var ts = findMergeTombstone(uid, tombstoneId), i;
   if (!ts) { return false; }
   if (mergeTombstoneExpired(ts, Date.now())) { removeMergeTombstone(uid, tombstoneId); return false; }
+  // §9 BLOCK 2: never overwrite newer work to undo older work.
+  if (mergeUndoStaleReason(uid, ts) !== '') { return false; }
 
   if (ts.survivorBefore) { state.books[ts.keepId] = mergeCloneValue(ts.survivorBefore); }
   var did;
@@ -7966,8 +8145,12 @@ function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
   var dropSet = {}, di, d;
   for (di = 0; di < dropIds.length; di++) { dropSet[dropIds[di]] = true; }
 
-  // I2: snapshot BEFORE anything mutates. If this throws, nothing has changed yet.
-  var tomb = buildMergeTombstone(uid, keepId, dropIds);
+  // I2: snapshot BEFORE anything mutates. §9 CONCERN — if the snapshot cannot be
+  // taken faithfully we ABORT rather than merge without a usable Undo. Nothing has
+  // been touched at this point, so returning here is a complete no-op.
+  var tomb;
+  try { tomb = buildMergeTombstone(uid, keepId, dropIds); }
+  catch (snapErr) { return null; }
 
   var anyRead = (normalizeStatus(keep.status) === 'read');
   var earliest = (typeof keep.finishedAt === 'number') ? keep.finishedAt : null;
@@ -8015,6 +8198,14 @@ function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
       for (vmi = 0; vmi < d.valueMarks.length; vmi++) {
         if (!d.valueMarks[vmi]) { continue; }
         vmk = mergeValueMarkKey(d.valueMarks[vmi]);
+        // §9 pass 2, CONCERN 3 (logged as R-MERGE-1): this mergeCloneValue runs in
+        // the WRITE phase, outside the snapshot's try/catch. It is safe only
+        // because buildMergeTombstone already round-tripped this exact array
+        // through the same clone a moment ago, and nothing mutates `d` in between
+        // -- so it cannot throw here without having thrown there first, where the
+        // abort is a clean no-op. If a future edit ever feeds d.valueMarks from a
+        // source the snapshot did not see, that invariant breaks and this line
+        // could throw mid-merge with fields already written and no tombstone.
         if (!vmSeen[vmk]) { vmSeen[vmk] = true; keep.valueMarks.push(mergeCloneValue(d.valueMarks[vmi])); }
       }
     }
@@ -8140,6 +8331,9 @@ function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
   markBookPending(uid, keepId);
   // I2: the tombstone lands only once every mutation above has succeeded, so a
   // throw mid-merge cannot leave an Undo pointing at a state that never existed.
+  // §9 BLOCK 2: stamp what the world looks like NOW, so a later Undo can tell
+  // whether anything has moved since and refuse rather than clobber it.
+  tomb.afterState = captureMergeAfterState(uid, tomb);
   pushMergeTombstone(uid, tomb);
   markBooksDirty();
   if (typeof markArcsDirty === 'function') { markArcsDirty(); }
@@ -8282,39 +8476,246 @@ function openLibraryCleanup() {
 
     var list = document.createElement('div'); list.className = 'cl-list';
 
-    // duplicate items
+    // ---- duplicate groups: SURVIVOR + TITLE, then one explicit per-group action.
+    // The v3.284 "Merge — held" control is GONE. T8 is repaired (v3.289) and the
+    // merge now unions every authored field and writes an Undo tombstone, so the
+    // action this button was withheld for is safe to offer. Still no auto-merge and
+    // still no bulk: one group, one deliberate action, per Ruling R2.
+    // Survivor and TITLE are separate questions -- the record you keep and the title
+    // it keeps are not the same decision. Group 2 is the case that needs it:
+    // "Sylvia Wynter" is the record, "On Being Human as Praxis" is the title.
+    function describeCarry(c) {
+      var bits = [];
+      if (c.notes) { bits.push(c.notes + (c.notes === 1 ? ' note' : ' notes')); }
+      if (c.marks) { bits.push(c.marks + (c.marks === 1 ? ' value mark' : ' value marks')); }
+      if (c.rating) { bits.push('a rating'); }
+      if (c.movedMe) { bits.push('moved-me'); }
+      if (c.artifact) { bits.push('an artifact'); }
+      if (c.arcs) { bits.push(c.arcs + (c.arcs === 1 ? ' arc' : ' arcs')); }
+      if (c.evidence) { bits.push(c.evidence + ' evidence'); }
+      if (c.themes) { bits.push(c.themes + (c.themes === 1 ? ' theme' : ' themes')); }
+      return bits.length ? bits.join(' · ') : 'nothing yet';
+    }
+
+    function dupGroup(grp, tier, isSuggestion) {
+      var survivor = mergeDefaultSurvivor(user.uid, grp);
+      var chosenTitle = null;   // null means: the survivor keeps its own title
+      var confirmedSame = !isSuggestion;   // near-miss must be confirmed first (I4)
+      var lastTombstone = null;
+
+      var item = document.createElement('div'); item.className = 'cl-item';
+      item.setAttribute('data-state', isSuggestion ? 'cleanup-suggestion' : 'cleanup-duplicate');
+      var kind = document.createElement('span'); kind.className = 'cl-kind dup';
+      kind.textContent = isSuggestion ? 'possible match' : ('duplicate · ' + tier);
+      item.appendChild(kind);
+      var mid = document.createElement('div'); mid.className = 'cl-mid';
+      item.appendChild(mid);
+      var acts = document.createElement('div'); acts.className = 'cl-actions';
+      item.appendChild(acts);
+
+      function paint() {
+        mid.innerHTML = ''; acts.innerHTML = '';
+        var sb = state.books[survivor] || {};
+        var ti = document.createElement('div'); ti.className = 'cl-ti';
+        ti.textContent = (chosenTitle !== null) ? chosenTitle : (sb.title || '');
+        var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = sb.author || '';
+        mid.appendChild(ti); mid.appendChild(au);
+
+        if (lastTombstone) {
+          var doneN = (grp.length - 1);
+          var done = document.createElement('div'); done.className = 'cl-note';
+          done.textContent = 'Merged. ' + doneN + (doneN === 1 ? ' copy folded in.' : ' copies folded in.')
+            + ' You can undo this for 30 days, from “Recently merged” below.';
+          mid.appendChild(done);
+          // Same stale guard as the list: an Undo that would overwrite newer work
+          // is not offered at all (§9 BLOCK 2).
+          var stale0 = mergeUndoStaleReason(user.uid, findMergeTombstone(user.uid, lastTombstone));
+          if (stale0 !== '') {
+            var sn0 = document.createElement('div'); sn0.className = 'cl-note';
+            sn0.textContent = 'Undo is no longer safe here — ' + stale0 + '. Nothing has been changed.';
+            mid.appendChild(sn0);
+            return;
+          }
+          var undoBtn = document.createElement('button'); undoBtn.type = 'button';
+          undoBtn.className = 'review-confirm cl-merge'; undoBtn.textContent = 'Undo this merge';
+          undoBtn.addEventListener('click', function () {
+            if (undoBookMerge(user.uid, lastTombstone)) { render(); }
+          });
+          acts.appendChild(undoBtn);
+          return;
+        }
+
+        // SURVIVOR — one row per record, showing what each carries so the default
+        // is legible rather than magic.
+        var pick = document.createElement('div'); pick.className = 'cl-note';
+        pick.textContent = 'Which record do you want to keep?';
+        mid.appendChild(pick);
+        var gi2;
+        for (gi2 = 0; gi2 < grp.length; gi2++) {
+          (function (rid) {
+            var rb = state.books[rid] || {};
+            var row = document.createElement('label'); row.className = 'cl-note cl-pickrow';
+            var radio = document.createElement('input'); radio.type = 'radio';
+            radio.name = 'srv_' + grp.join('_'); radio.checked = (rid === survivor);
+            radio.addEventListener('change', function () {
+              if (radio.checked) { survivor = rid; chosenTitle = null; paint(); }
+            });
+            var txt = document.createElement('span');
+            txt.textContent = ' ' + (rb.title || '(untitled)') + ' — carries ' + describeCarry(mergeContentCensus(user.uid, rid));
+            row.appendChild(radio); row.appendChild(txt);
+            mid.appendChild(row);
+          })(grp[gi2]);
+        }
+
+        // TITLE — the survivor's own by default; every other title in the group
+        // offered alongside it.
+        var titles = [], seenT = {}, gi3, tb;
+        for (gi3 = 0; gi3 < grp.length; gi3++) {
+          tb = state.books[grp[gi3]];
+          if (tb && tb.title && !seenT[tb.title]) { seenT[tb.title] = true; titles.push(tb.title); }
+        }
+        if (titles.length > 1) {
+          var tl = document.createElement('div'); tl.className = 'cl-note';
+          tl.textContent = 'Which title should it keep?';
+          mid.appendChild(tl);
+          var effective = (chosenTitle !== null) ? chosenTitle : (sb.title || '');
+          for (gi3 = 0; gi3 < titles.length; gi3++) {
+            (function (tt) {
+              var trow = document.createElement('label'); trow.className = 'cl-note cl-pickrow';
+              var tradio = document.createElement('input'); tradio.type = 'radio';
+              tradio.name = 'ttl_' + grp.join('_'); tradio.checked = (tt === effective);
+              tradio.addEventListener('change', function () {
+                if (tradio.checked) { chosenTitle = tt; paint(); }
+              });
+              var tspan = document.createElement('span'); tspan.textContent = ' ' + tt;
+              trow.appendChild(tradio); trow.appendChild(tspan);
+              mid.appendChild(trow);
+            })(titles[gi3]);
+          }
+        }
+
+        // I4 — what will happen, before anything writes.
+        var drops = [], gi4, moving = { notes: 0, marks: 0, rating: 0, movedMe: 0, artifact: 0, arcs: 0, evidence: 0, themes: 0 };
+        for (gi4 = 0; gi4 < grp.length; gi4++) {
+          if (grp[gi4] === survivor) { continue; }
+          drops.push(grp[gi4]);
+          var dc = mergeContentCensus(user.uid, grp[gi4]);
+          moving.notes += dc.notes; moving.marks += dc.marks; moving.arcs += dc.arcs;
+          moving.evidence += dc.evidence; moving.themes += dc.themes;
+          moving.rating = moving.rating || dc.rating; moving.movedMe = moving.movedMe || dc.movedMe;
+          moving.artifact = moving.artifact || dc.artifact;
+        }
+        var prev = document.createElement('div'); prev.className = 'cl-note';
+        prev.textContent = 'Keeping “' + ((chosenTitle !== null) ? chosenTitle : (sb.title || '')) + '”. '
+          + 'Folding in ' + drops.length + (drops.length === 1 ? ' copy' : ' copies') + '. '
+          + 'Moving across: ' + describeCarry(moving) + '.';
+        mid.appendChild(prev);
+
+        if (isSuggestion && !confirmedSame) {
+          // NEAR-MISS: the weaker affordance. No Merge control exists at all until
+          // the reader asserts these are the same book -- an ISBN-exact pair is a
+          // fact, a surname-prefix guess is not, and they must not share a button.
+          var warn = document.createElement('div'); warn.className = 'cl-note';
+          warn.textContent = 'These look similar but Praxis is not sure they are the same book. Only you can say.';
+          mid.appendChild(warn);
+          var confirm = document.createElement('button'); confirm.type = 'button';
+          confirm.className = 'review-confirm cl-merge'; confirm.textContent = 'These are the same book';
+          confirm.addEventListener('click', function () { confirmedSame = true; paint(); });
+          acts.appendChild(confirm);
+          return;
+        }
+
+        var mergeBtn = document.createElement('button'); mergeBtn.type = 'button';
+        mergeBtn.className = 'review-confirm cl-merge';
+        mergeBtn.textContent = 'Merge ' + grp.length + ' into one';
+        mergeBtn.addEventListener('click', function () {
+          mergeBtn.disabled = true; mergeBtn.textContent = 'Merging…';
+          lastTombstone = mergeBookDuplicates(user.uid, survivor, drops, chosenTitle);
+          if (!lastTombstone) {
+            // The merge declined (snapshot could not be taken) -- nothing was
+            // touched. Say so rather than leave a dead "Merging…" button.
+            mergeBtn.disabled = false; mergeBtn.textContent = 'Merge ' + grp.length + ' into one';
+            var failN = document.createElement('div'); failN.className = 'cl-note';
+            failN.textContent = 'Could not prepare an undo for this merge, so nothing was changed.';
+            mid.appendChild(failN);
+            return;
+          }
+          paint();
+        });
+        acts.appendChild(mergeBtn);
+      }
+
+      paint();
+      return item;
+    }
+
     var di;
     for (di = 0; di < report.duplicates.length; di++) {
-      (function(grp) {
-        var keep = state.books[grp[0]];
-        var item = document.createElement('div'); item.className = 'cl-item'; item.setAttribute('data-state', 'cleanup-duplicate');
-        var kind = document.createElement('span'); kind.className = 'cl-kind dup'; kind.textContent = 'duplicate'; item.appendChild(kind);
-        var mid = document.createElement('div'); mid.className = 'cl-mid';
-        var ti = document.createElement('div'); ti.className = 'cl-ti'; ti.textContent = keep ? (keep.title || '') : '';
-        var au = document.createElement('div'); au.className = 'cl-au'; au.textContent = keep ? (keep.author || '') : '';
-        var note = document.createElement('div'); note.className = 'cl-note';
-        note.textContent = grp.length + ' copies of this book on your shelf.';
-        mid.appendChild(ti); mid.appendChild(au); mid.appendChild(note); item.appendChild(mid);
-        var acts = document.createElement('div'); acts.className = 'cl-actions';
-        // R-FIRSTSHELF-DUPES / F5 (same hazard, same commit): the PER-GROUP Merge is
-        // gated too. Ruling 4 names the "Resolve all" bulk; this button is the same
-        // hazard from the same cause -- it was near-unreachable while the key was too
-        // narrow to group anything, and the widening in THIS commit makes it live on
-        // a real shelf. It calls the same mergeBookDuplicates that drops valueMarks
-        // (authored `why` prose), movedMe, rating, dateRead, categoryOverride and
-        // traditionOverride (F4/T8). Shipping it enabled would violate this round's
-        // own invariant that marks are never lost. Detection stays fully live -- the
-        // group still renders and still counts -- only the destructive action is off.
-        // It re-enables in the held Stage 3 round once T8 is fixed and section 9 can run.
-        var mergeBtn = document.createElement('button'); mergeBtn.type = 'button'; mergeBtn.className = 'review-confirm cl-merge'; mergeBtn.textContent = 'Merge — held';
-        mergeBtn.disabled = true;
-        mergeBtn.setAttribute('title', 'Merging is held until it can guarantee your marks and notes survive it.');
-        var heldNote = document.createElement('div'); heldNote.className = 'cl-note';
-        heldNote.textContent = 'Merging is held — it would not yet carry your value marks across. Nothing here is at risk; nothing has been changed.';
-        mid.appendChild(heldNote);
-        acts.appendChild(mergeBtn); item.appendChild(acts);
-        list.appendChild(item);
-      })(report.duplicates[di]);
+      list.appendChild(dupGroup(report.duplicates[di], report.duplicateTiers[di] || 'probable', false));
+    }
+
+    // ---- §9 BLOCK 1 — THE 30-DAY UNDO HAS TO BE REACHABLE, NOT JUST STORED.
+    // The per-group Undo lives in a closure that is rebuilt on every render, and a
+    // merged pair stops appearing among the duplicate groups (it is no longer a
+    // duplicate). So the moment the panel was reopened, the confirmation copy's
+    // "you can undo this for 30 days" became a promise nothing in the UI could
+    // keep -- the tombstone sat in storage, unreachable. COPY IS A CONTRACT.
+    // Every live tombstone is now listed here, independent of the render that made
+    // it, for as long as its window lasts.
+    var live = pruneMergeTombstones(user.uid);
+    if (live.length > 0) {
+      var mgHead = document.createElement('div'); mgHead.className = 'cl-note cl-nm-head';
+      mgHead.textContent = 'Recently merged — undoable for 30 days';
+      list.appendChild(mgHead);
+      var mi;
+      for (mi = 0; mi < live.length; mi++) {
+        (function (ts) {
+          var row = document.createElement('div'); row.className = 'cl-item'; row.setAttribute('data-state', 'cleanup-merged');
+          var mk = document.createElement('span'); mk.className = 'cl-kind'; mk.textContent = 'merged'; row.appendChild(mk);
+          var mmid = document.createElement('div'); mmid.className = 'cl-mid';
+          var mti = document.createElement('div'); mti.className = 'cl-ti';
+          var sb2 = state.books[ts.keepId];
+          mti.textContent = sb2 ? (sb2.title || '') : (ts.keepTitleBefore || '(removed)');
+          mmid.appendChild(mti);
+          var mnote = document.createElement('div'); mnote.className = 'cl-note';
+          mnote.textContent = ts.dropIds.length + (ts.dropIds.length === 1 ? ' copy was folded in.' : ' copies were folded in.');
+          mmid.appendChild(mnote);
+          row.appendChild(mmid);
+          var macts = document.createElement('div'); macts.className = 'cl-actions';
+          // A tombstone whose world has moved on cannot be undone without
+          // destroying the newer work. Say so instead of offering a button that
+          // would silently do it.
+          var stale = mergeUndoStaleReason(user.uid, ts);
+          if (stale !== '') {
+            var sn = document.createElement('div'); sn.className = 'cl-note';
+            sn.textContent = 'Undo is no longer safe here — ' + stale + '. Nothing has been changed.';
+            mmid.appendChild(sn);
+          } else {
+            var ub2 = document.createElement('button'); ub2.type = 'button';
+            ub2.className = 'review-confirm cl-merge'; ub2.textContent = 'Undo this merge';
+            ub2.addEventListener('click', function () { if (undoBookMerge(user.uid, ts.id)) { render(); } });
+            macts.appendChild(ub2);
+          }
+          row.appendChild(macts);
+          list.appendChild(row);
+        })(live[mi]);
+      }
+    }
+
+    // ---- NEAR-MISS: its own section, and a weaker affordance.
+    // Title equal, surnames unequal but one a strict prefix of the other -- the
+    // Fishe/Fisher case. That is a plausible typo OR two genuinely different
+    // authors, and nothing in the data can tell them apart. So these are
+    // SUGGESTIONS: they never appear among the duplicate groups, and no Merge
+    // control exists on them until the reader asserts the identity themselves.
+    if (report.nearMiss && report.nearMiss.length > 0) {
+      var nmHead = document.createElement('div'); nmHead.className = 'cl-note cl-nm-head';
+      nmHead.textContent = 'Possible matches — these need your eye, not ours';
+      list.appendChild(nmHead);
+      var nmi;
+      for (nmi = 0; nmi < report.nearMiss.length; nmi++) {
+        list.appendChild(dupGroup([report.nearMiss[nmi].a, report.nearMiss[nmi].b], 'near-miss', true));
+      }
     }
 
     // Stage 3 (mockup E): cover items -- "missing cover" (Skip / Find cover)
