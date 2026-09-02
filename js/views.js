@@ -6169,6 +6169,49 @@ function startCoverBackfill() {
   processNextCover();
 }
 
+// ===========================================================================
+// THE REVEAL — every Manage chip shows you what it opened, on purpose.
+// ===========================================================================
+// LIVE DEFECT (v3.290, iPhone): tapping "Tidy library" appeared to do nothing.
+// It was not dead. openLibraryCleanup ran, mounted the panel, and returned --
+// into #shelf-editor-host, which sits at the END of the shelf's content column
+// (views.js ~4690), below the entire bookcase. Measured at 390x664 with the real
+// chip and the real sheet: panel mounted true, panel top 1146px on a 6-book
+// library and 4408px on a 136-book one, PIXELS VISIBLE 0.0 in both, page not
+// scrolled, Manage sheet still open, and elementFromPoint at the panel's position
+// returning .shelf-manage-backdrop.
+//
+// Why the two sibling chips looked fine: openShelfEditor and openBulkAddEditor
+// both end with an input .focus(), and iOS scrolls a focused input into view. That
+// scroll is INCIDENTAL -- a side effect of a text field, not a decision -- and it
+// would vanish the moment either panel stopped opening with a focused input.
+// openLibraryCleanup has no input to focus, so it had nothing.
+//
+// So the reveal is now explicit and shared by all three:
+//   1. the launcher CLOSES. A sheet that stays open over the thing it launched is
+//      a control that looks live and isn't -- the D6 class.
+//   2. the PANEL's own top (not the host's) is scrolled to just under the sticky
+//      head, which at mobile is position:sticky/top:0/z-40 and would otherwise
+//      cover whatever we scrolled to.
+// The host's position at the end of the column is the ROOT cause and relocating it
+// would fix this at the source; that is a bigger, riskier change than this defect
+// warrants and is logged as a candidate, not done here.
+function revealShelfPanel(panelEl) {
+  var mw = document.querySelector('.shelf-manage');
+  if (mw) { mw.classList.remove('is-open'); }
+  if (!panelEl) { return; }
+  var se = document.scrollingElement || document.documentElement;
+  if (!se) { return; }
+  var headH = 0;
+  var head = document.querySelector('.shelf-head');
+  if (head && window.getComputedStyle(head).position === 'sticky') {
+    headH = head.getBoundingClientRect().height;
+  }
+  var target = panelEl.getBoundingClientRect().top + se.scrollTop - headH - 8;
+  if (target < 0) { target = 0; }
+  se.scrollTop = target;
+}
+
 // Inline add-book editor mounted into #shelf-editor-host. Structurally
 // mirrors openMarginaliaEditor: title input + author input (optional)
 // + status radio (default 'reading') + genre input (optional) + ISBN
@@ -6441,6 +6484,10 @@ function openShelfEditor(prefillIsbn) {
   editor.appendChild(actions);
   hostEl.appendChild(editor);
 
+  // Reveal BEFORE focus: the panel is placed deliberately, and the focus that
+  // follows lands on an input already in view instead of being the only thing
+  // that ever brought it there. The focus itself is unchanged.
+  revealShelfPanel(editor);
   titleInput.focus();
 }
 
@@ -6498,6 +6545,7 @@ function openBulkAddEditor(prefillText) {
   editor.appendChild(actions);
   hostEl.appendChild(editor);
 
+  revealShelfPanel(editor);   // deliberate, not a focus() side effect
   textarea.focus();
 }
 
@@ -8776,7 +8824,15 @@ function openLibraryCleanup() {
     wrap.appendChild(done);
 
     hostEl.appendChild(wrap);
+    // The panel this defect was about. `wrap` IS .library-cleanup -- the measured
+    // element -- not the host, which is an empty positioning container whose top
+    // and the panel's coincide only when the host is empty.
+    // FIRST render only: render() re-runs after every merge and every undo, and
+    // yanking the page back to the top each time would throw away the reader's
+    // position mid-way down a list of groups they are working through.
+    if (!revealed) { revealed = true; revealShelfPanel(wrap); }
   }
+  var revealed = false;
   render();
 }
 

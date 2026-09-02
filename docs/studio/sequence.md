@@ -706,6 +706,30 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **MERGE-ROUND REVEAL FIX — v3.291, 2026-09-02 (LOCAL, awaiting push)** — a live defect on v3.290:
+  tapping "Tidy library" on iPhone did nothing visible. It was never a dead control — `openLibraryCleanup`
+  ran, mounted its panel, and returned into `#shelf-editor-host`, which sits at the END of the shelf's
+  content column, below the whole bookcase. Measured at 390×664 with the real chip and the real sheet:
+  panel top **1146px** on a 6-book library and **4408px** on a 136-book one, **0.0 pixels visible** in
+  both, page not scrolled, Manage sheet still open, `elementFromPoint` returning `.shelf-manage-backdrop`.
+  Its two sibling chips only looked fine because they end with an input `.focus()` and iOS scrolls a
+  focused input into view — incidental, not a decision.
+  **Fix:** one shared `revealShelfPanel()` on all three chips — the launcher CLOSES, then the PANEL's own
+  top scrolls to just under the sticky head. First render only, so a merge or undo does not throw away
+  the reader's place. Reveal-only: no merge logic, no write path.
+  **Proof:** 12 cells (3 chips × {6,136} books × {390×664, 390×844}) — pixels visible 302–836 everywhere,
+  sheet closed, `elementFromPoint` returning the panel; focus unchanged on both editors; unmount proven
+  across a navigation; I1 and the Undo-across-navigation merge proofs re-run clean on final bytes.
+  **Standing rule added to CLAUDE.md line 187**, beside T3: *T3 proves the call site executes; it does
+  not prove the result is visible.* Any UI-mount proof must carry a `getBoundingClientRect()` and a
+  pixels-visible measurement. This round is the specimen — the merge surface shipped with a passed T3
+  and zero visible pixels, and every Stage-2 proof I ran asserted node counts and passed.
+  Record: `docs/checkpoints/merge-round.md` (REVEAL FIX section). `[books]`
+  **Logged:** **T28** relocate `#shelf-editor-host` out of the end of the content column — the root
+  cause, and it would fix the four other panels that mount there; deliberately NOT done this round
+  (reveal-in-place was the bounded change). · pre-existing: `openLibraryCleanup` never revealed itself,
+  dormant while merge was held, live the moment the panel became a destination.
+
 - [x] **R-FIRSTSHELF MERGE ROUND — v3.289 + v3.290, 2026-09-01 (LOCAL, awaiting push; census gate PENDING)** —
   finishes what the tiered-identity round (v3.284) held: T8 repaired, then the merge wired to the
   Tidy-library door. Data-loss tier; §9 ran **twice**, four BLOCKs, all fixed.

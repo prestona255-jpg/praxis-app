@@ -184,6 +184,22 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   green, and the behavior never changed on a single device. The live twin,
   `scanResolveAndFill`, kept omitting the key for two more versions. This is the
   claims-outliving-code family, wearing a shipped diff instead of a stale doc.)
+- T3 PROVES THE CALL SITE EXECUTES. IT DOES NOT PROVE THE RESULT IS VISIBLE.
+  Any proof of a UI mount MUST include a `getBoundingClientRect()` and a
+  PIXELS-VISIBLE measurement at the target viewport. Existence in the DOM is not the
+  claim; a user seeing it is. `querySelectorAll('.thing').length > 0` proves a node
+  was created, which is a different sentence from "the reader can see it."
+  (MERGE ROUND, 2026-09-02 — the specimen: the merge surface shipped with a PASSED
+  T3 trace and ZERO VISIBLE PIXELS. `openLibraryCleanup` ran, mounted its panel, and
+  returned; the panel landed in `#shelf-editor-host` at the END of the shelf's
+  content column, measured 1146px below the fold on a 6-book library and 4408px on a
+  136-book one, at 390×664, with the Manage sheet still open over it and
+  `elementFromPoint` returning `.shelf-manage-backdrop`. Every Stage-2 proof I ran
+  asserted node COUNTS and passed. Preston found it in under a day on device, where
+  it read as a dead control. Its two sibling chips only looked fine because they end
+  with an input `.focus()` and iOS scrolls a focused input into view — an incidental
+  scroll, not a decision, and one that would have vanished the moment either panel
+  stopped opening with a focused input.)
 - When a session instruction bars spawning agents, FIX-PROTOCOL §9's fix-red-team gate
   cannot run. That is a HALT-tier condition to be named and ruled on by Preston before
   push, never silently absorbed or substituted with an inline pass. (COVERS, 2026-08-29:
