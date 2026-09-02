@@ -7750,12 +7750,210 @@ function scanLibraryForCleanup(uid) {
   return out;
 }
 
+// ===========================================================================
+// T8 / I2 — MERGE TOMBSTONES. Every merge is reversible for a bounded window.
+// ===========================================================================
+// Storage is localStorage-only, by Preston's ruling (2026-09-01): the realistic
+// Undo is a mistake made seconds ago on the device where it was made, and this is
+// the one round where adding a synced write path is worst. The cross-device gap is
+// a DECISION, logged as T27 -- not an oversight to be discovered later.
+//
+// The tombstone carries BOTH halves: every merged-away record in full, AND the
+// survivor's pre-merge state. That is also how I1's "if both records carry a
+// scalar, the survivor's wins and the loser's is PRESERVED" is satisfied -- the
+// loser's value is never discarded, it is in `droppedBefore` verbatim.
+//
+// Collections are snapshotted as WHOLE PRE-MERGE ARRAYS rather than as a diff.
+// The merge repoints AND dedups (an arc holding both copies collapses to one), so
+// reversing the repoint by inference would have to guess whether a collapsed entry
+// was originally one or two. Storing the array verbatim cannot guess wrong.
+var MERGE_TOMBSTONE_WINDOW_MS = 2592000000;   // 30 days
+
+function mergeTombstonesKey(uid) { return 'praxis_merge_tombstones_' + (uid || 'anon'); }
+
+function getMergeTombstones(uid) {
+  var arr = ls(mergeTombstonesKey(uid), []);
+  if (!arr || typeof arr.length !== 'number') { return []; }
+  return arr;
+}
+
+// WINDOW MECHANICS (ruled explicitly after the stale-draft round hit this gap).
+// Clock source: the DEVICE clock, via Date.now() -- there is no server time on this
+// path and a merge is a local action, so a local anchor is the honest one.
+//   · a tombstone with NO timestamp NEVER expires and never throws (it is data we
+//     failed to stamp, not data we may destroy);
+//   · `now <= mergedAt` means the clock moved BACKWARD since the merge -- never
+//     expire early on skew; wait for the clock to pass mergedAt again;
+//   · only a strictly forward elapsed span beyond the window expires.
+function mergeTombstoneExpired(ts, now) {
+  if (!ts || typeof ts.mergedAt !== 'number') { return false; }
+  if (now <= ts.mergedAt) { return false; }
+  return (now - ts.mergedAt) > MERGE_TOMBSTONE_WINDOW_MS;
+}
+
+// Expired tombstones clear SILENTLY -- the merge stands, only its Undo lapses.
+function pruneMergeTombstones(uid) {
+  var arr = getMergeTombstones(uid), now = Date.now(), next = [], i;
+  for (i = 0; i < arr.length; i++) { if (!mergeTombstoneExpired(arr[i], now)) { next.push(arr[i]); } }
+  if (next.length !== arr.length) { sv(mergeTombstonesKey(uid), next); }
+  return next;
+}
+
+// Dedup key for a value-mark. JSON rather than a delimiter join: `why` is free
+// reader prose and any separator character could occur inside it, which would make
+// two distinct marks collide and silently drop one.
+function mergeValueMarkKey(m) {
+  if (!m) { return 'null'; }
+  try { return JSON.stringify([m.value || '', m.why || '']); }
+  catch (e) { return (m.value || '') + '|' + (m.why || ''); }
+}
+
+function mergeCloneValue(v) {
+  if (v === null || typeof v === 'undefined') { return v; }
+  try { return JSON.parse(JSON.stringify(v)); } catch (e) { return v; }
+}
+
+// Tombstones are INDEPENDENT, not a stack: each merge appends its own record with
+// its own id, and undoing one neither requires nor disturbs any other.
+function pushMergeTombstone(uid, ts) {
+  var arr = pruneMergeTombstones(uid);
+  arr.push(ts);
+  sv(mergeTombstonesKey(uid), arr);
+}
+
+function removeMergeTombstone(uid, tombstoneId) {
+  var arr = getMergeTombstones(uid), next = [], i;
+  for (i = 0; i < arr.length; i++) { if (!arr[i] || arr[i].id !== tombstoneId) { next.push(arr[i]); } }
+  sv(mergeTombstonesKey(uid), next);
+}
+
+// Snapshot everything the merge is about to touch, BEFORE it touches it.
+function buildMergeTombstone(uid, keepId, dropIds) {
+  var stamp = Date.now();
+  var ts = {
+    id: 'mt_' + stamp + '_' + Math.floor(Math.random() * 1000000),
+    mergedAt: stamp,
+    uid: uid,
+    keepId: keepId,
+    dropIds: dropIds.slice(),
+    keepTitleBefore: (state.books[keepId] && typeof state.books[keepId].title === 'string') ? state.books[keepId].title : '',
+    survivorBefore: mergeCloneValue(state.books[keepId]),
+    droppedBefore: {},
+    bookIdsBefore: (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds)
+      ? state.userBooks[uid].bookIds.slice() : [],
+    arcsBefore: {}, subsBefore: {}, notesBefore: {}, themesBefore: {}, artifactsBefore: {}
+  };
+  var touched = {}, i;
+  touched[keepId] = true;
+  for (i = 0; i < dropIds.length; i++) {
+    touched[dropIds[i]] = true;
+    ts.droppedBefore[dropIds[i]] = mergeCloneValue(state.books[dropIds[i]]);
+  }
+  function refsTouched(arr, isEntry) {
+    var k, id2;
+    if (!arr || typeof arr.length !== 'number') { return false; }
+    for (k = 0; k < arr.length; k++) {
+      id2 = isEntry ? ((arr[k] && arr[k].id) ? arr[k].id : arr[k]) : arr[k];
+      if (touched[id2]) { return true; }
+    }
+    return false;
+  }
+  var am = state.arcs || {}, ak;
+  for (ak in am) {
+    if (am.hasOwnProperty(ak) && am[ak] && am[ak].bookIds && refsTouched(am[ak].bookIds, true)) {
+      ts.arcsBefore[ak] = mergeCloneValue(am[ak].bookIds);
+    }
+  }
+  var sm = state.subTheories || {}, sk, ev, e2, hit;
+  for (sk in sm) {
+    if (!sm.hasOwnProperty(sk) || !sm[sk] || !sm[sk].evidence) { continue; }
+    ev = sm[sk].evidence; hit = false;
+    for (e2 = 0; e2 < ev.length; e2++) { if (ev[e2] && ev[e2].kind === 'book' && touched[ev[e2].refId]) { hit = true; break; } }
+    if (hit) { ts.subsBefore[sk] = mergeCloneValue(ev); }
+  }
+  var em = state.notebookEntries || {}, ek;
+  for (ek in em) {
+    if (em.hasOwnProperty(ek) && em[ek] && em[ek].bookIds && refsTouched(em[ek].bookIds, false)) {
+      ts.notesBefore[ek] = mergeCloneValue(em[ek].bookIds);
+    }
+  }
+  var tm = state.userThemes || {}, tk;
+  for (tk in tm) {
+    if (tm.hasOwnProperty(tk) && tm[tk] && tm[tk].bookIds && refsTouched(tm[tk].bookIds, false)) {
+      ts.themesBefore[tk] = mergeCloneValue(tm[tk].bookIds);
+    }
+  }
+  if (state.bookArtifacts && typeof artifactKey === 'function') {
+    var aks = [artifactKey(uid, keepId)];
+    for (i = 0; i < dropIds.length; i++) { aks.push(artifactKey(uid, dropIds[i])); }
+    for (i = 0; i < aks.length; i++) {
+      // `null` is a MEANINGFUL snapshot value: "this key held nothing before".
+      ts.artifactsBefore[aks[i]] = state.bookArtifacts[aks[i]] ? mergeCloneValue(state.bookArtifacts[aks[i]]) : null;
+    }
+  }
+  return ts;
+}
+
+// UNDO. Restores both halves, then does the thing that is easy to miss and looks
+// like success until the next sync: a restored record is a record the REMOTE does
+// not have and the local delete-guard is still holding down. Without clearing the
+// delete-pending mark AND re-marking the id as a pending ADD, mergeRemoteBookDoc
+// deletes it again on the next read (measured at Stage 0: restoredRecordSurvivedSync
+// false). Both calls below are load-bearing, not defensive.
+function undoBookMerge(uid, tombstoneId) {
+  var arr = getMergeTombstones(uid), ts = null, i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id === tombstoneId) { ts = arr[i]; break; } }
+  if (!ts) { return false; }
+  if (mergeTombstoneExpired(ts, Date.now())) { removeMergeTombstone(uid, tombstoneId); return false; }
+
+  if (ts.survivorBefore) { state.books[ts.keepId] = mergeCloneValue(ts.survivorBefore); }
+  var did;
+  for (did in ts.droppedBefore) {
+    if (ts.droppedBefore.hasOwnProperty(did) && ts.droppedBefore[did]) {
+      state.books[did] = mergeCloneValue(ts.droppedBefore[did]);
+    }
+  }
+  if (state.userBooks && state.userBooks[uid]) { state.userBooks[uid].bookIds = ts.bookIdsBefore.slice(); }
+  var k;
+  for (k in ts.arcsBefore) { if (ts.arcsBefore.hasOwnProperty(k) && state.arcs && state.arcs[k]) { state.arcs[k].bookIds = mergeCloneValue(ts.arcsBefore[k]); } }
+  for (k in ts.subsBefore) { if (ts.subsBefore.hasOwnProperty(k) && state.subTheories && state.subTheories[k]) { state.subTheories[k].evidence = mergeCloneValue(ts.subsBefore[k]); } }
+  for (k in ts.notesBefore) { if (ts.notesBefore.hasOwnProperty(k) && state.notebookEntries && state.notebookEntries[k]) { state.notebookEntries[k].bookIds = mergeCloneValue(ts.notesBefore[k]); } }
+  for (k in ts.themesBefore) { if (ts.themesBefore.hasOwnProperty(k) && state.userThemes && state.userThemes[k]) { state.userThemes[k].bookIds = mergeCloneValue(ts.themesBefore[k]); } }
+  if (state.bookArtifacts) {
+    for (k in ts.artifactsBefore) {
+      if (!ts.artifactsBefore.hasOwnProperty(k)) { continue; }
+      if (ts.artifactsBefore[k]) { state.bookArtifacts[k] = mergeCloneValue(ts.artifactsBefore[k]); }
+      else if (state.bookArtifacts[k]) { delete state.bookArtifacts[k]; }
+    }
+  }
+  // THE SYNC HALF. Stop guarding the DELETE, start guarding the ADD.
+  if (typeof clearPendingBookDelete === 'function') { clearPendingBookDelete(uid, ts.dropIds); }
+  for (i = 0; i < ts.dropIds.length; i++) { markBookPending(uid, ts.dropIds[i]); }
+  markBookPending(uid, ts.keepId);
+
+  markBooksDirty();
+  if (typeof markArcsDirty === 'function') { markArcsDirty(); }
+  if (typeof markNotebookDirty === 'function') { markNotebookDirty(); }
+  if (typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  if (typeof markThemesDirty === 'function') { markThemesDirty(); }
+  if (typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
+  removeMergeTombstone(uid, tombstoneId);
+  saveState();
+  return true;
+}
+
 // Merge duplicate records into keepId: preserve the read/finished status (if any
 // copy is 'read', keep is read with the earliest finishedAt), fill keep's blank
 // bibliographic fields from the dropped copies, re-point marginalia + arc
 // membership from dropped ids onto keepId (deduped), then drop the extras. The
 // kept record's own notes/status are never discarded.
-function mergeBookDuplicates(uid, keepId, dropIds) {
+// T8 (2026-09-01): this function previously DESTROYED every authored field on the
+// dropped record -- valueMarks (including the reader's `why` prose), movedMe,
+// rating, dateRead, categoryOverride, traditionOverride. Measured on the live
+// gated function before the repair: six fields lost, prose included. It now UNIONS
+// them (I1) and writes a tombstone first (I2). `newTitle` is optional: the
+// per-group TITLE choice, applied to the survivor.
+function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
   var keep = state.books[keepId];
   if (!keep || !dropIds || dropIds.length === 0) { return; }
   // Data-loss invariant: the survivor is NEVER a drop. A corrupted bookIds index
@@ -7767,6 +7965,9 @@ function mergeBookDuplicates(uid, keepId, dropIds) {
   if (dropIds.length === 0) { return; }
   var dropSet = {}, di, d;
   for (di = 0; di < dropIds.length; di++) { dropSet[dropIds[di]] = true; }
+
+  // I2: snapshot BEFORE anything mutates. If this throws, nothing has changed yet.
+  var tomb = buildMergeTombstone(uid, keepId, dropIds);
 
   var anyRead = (normalizeStatus(keep.status) === 'read');
   var earliest = (typeof keep.finishedAt === 'number') ? keep.finishedAt : null;
@@ -7784,8 +7985,47 @@ function mergeBookDuplicates(uid, keepId, dropIds) {
     if (!keep.year && d.year) { keep.year = d.year; }
     if (!keep.description && d.description) { keep.description = d.description; }
     if (!keep.genre && d.genre) { keep.genre = d.genre; }
+
+    // ---- I1: THE AUTHORED FIELDS. This block is the whole of T8. -------------
+    // Rule: the survivor's value wins when it HAS one; otherwise the dropped
+    // copy's is carried across rather than destroyed. Either way the loser's
+    // value survives verbatim in the tombstone, so nothing authored is discarded.
+    if ((keep.rating === null || typeof keep.rating === 'undefined') &&
+        (d.rating !== null && typeof d.rating !== 'undefined')) { keep.rating = d.rating; }
+    if ((keep.dateRead === null || typeof keep.dateRead === 'undefined') &&
+        (d.dateRead !== null && typeof d.dateRead !== 'undefined')) { keep.dateRead = d.dateRead; }
+    if (!keep.categoryOverride && d.categoryOverride) { keep.categoryOverride = d.categoryOverride; }
+    if ((keep.traditionOverride === null || typeof keep.traditionOverride === 'undefined') &&
+        (d.traditionOverride !== null && typeof d.traditionOverride !== 'undefined')) { keep.traditionOverride = d.traditionOverride; }
+    // movedMe is a MARK, not a scalar preference: it unions (OR). `false` is the
+    // absence of the mark, so a true on either copy means the reader marked this
+    // book and that fact must not depend on which record won.
+    if (d.movedMe === true) { keep.movedMe = true; }
+    // valueMarks are a COLLECTION of authored items, each carrying reader prose in
+    // `why`. Survivor-wins would silently drop the loser's marks, so they UNION,
+    // deduped on (value, why) -- two marks with the same value but different prose
+    // are different writing and both survive.
+    if (d.valueMarks instanceof Array && d.valueMarks.length > 0) {
+      if (!(keep.valueMarks instanceof Array)) { keep.valueMarks = []; }
+      var vmSeen = {}, vmi, vmk;
+      for (vmi = 0; vmi < keep.valueMarks.length; vmi++) {
+        if (!keep.valueMarks[vmi]) { continue; }
+        vmSeen[mergeValueMarkKey(keep.valueMarks[vmi])] = true;
+      }
+      for (vmi = 0; vmi < d.valueMarks.length; vmi++) {
+        if (!d.valueMarks[vmi]) { continue; }
+        vmk = mergeValueMarkKey(d.valueMarks[vmi]);
+        if (!vmSeen[vmk]) { vmSeen[vmk] = true; keep.valueMarks.push(mergeCloneValue(d.valueMarks[vmi])); }
+      }
+    }
   }
   if (anyRead) { keep.status = 'read'; if (earliest !== null) { keep.finishedAt = earliest; } }
+  // The per-group TITLE choice (Stage 2). Survivor and title are separate questions:
+  // the record you keep and the title it keeps are not the same decision (group 2 --
+  // "Sylvia Wynter" survives, "On Being Human as Praxis" is the better title).
+  if (typeof newTitle === 'string' && newTitle.replace(/^\s+|\s+$/g, '') !== '') {
+    keep.title = newTitle.replace(/^\s+|\s+$/g, '');
+  }
   ensureBookFields(keep);
 
   var em = state.notebookEntries || {}, ek;
@@ -7898,6 +8138,9 @@ function mergeBookDuplicates(uid, keepId, dropIds) {
     for (di = 0; di < dropIds.length; di++) { markBookDeletePending(uid, dropIds[di]); }
   }
   markBookPending(uid, keepId);
+  // I2: the tombstone lands only once every mutation above has succeeded, so a
+  // throw mid-merge cannot leave an Undo pointing at a state that never existed.
+  pushMergeTombstone(uid, tomb);
   markBooksDirty();
   if (typeof markArcsDirty === 'function') { markArcsDirty(); }
   if (typeof markNotebookDirty === 'function') { markNotebookDirty(); }
@@ -7905,6 +8148,7 @@ function mergeBookDuplicates(uid, keepId, dropIds) {
   if (themesTouched && typeof markThemesDirty === 'function') { markThemesDirty(); }
   if (artifactTouched && typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
   saveState();
+  return tomb.id;   // the caller offers Undo against this id (I2)
 }
 
 // Re-resolve one book through the shared resolver and apply a found cover (and
