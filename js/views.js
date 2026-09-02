@@ -4495,14 +4495,10 @@ function renderShelf() {
     document.addEventListener('keydown', shelfManageEscapeHandler);
     manageClose.focus();
   }
-  function closeManageSheet() {
-    manageWrap.classList.remove('is-open');
-    manageBtn.setAttribute('aria-expanded', 'false');
-    manageSheet.setAttribute('aria-modal', 'false');
-    document.body.style.overflow = '';
-    if (shelfManageEscapeHandler) { document.removeEventListener('keydown', shelfManageEscapeHandler); shelfManageEscapeHandler = null; }
-    manageBtn.focus();
-  }
+  // M8: delegates to the ONE hoisted close. Kept as a local name so the three
+  // existing listeners below read unchanged, but it owns no logic of its own --
+  // there is exactly one implementation of "close this sheet" in the file.
+  function closeManageSheet() { closeShelfManageSheet(true); }
   manageBtn.addEventListener('click', function () {
     if (manageWrap.classList.contains('is-open')) { closeManageSheet(); } else { openManageSheet(); }
   });
@@ -6196,9 +6192,43 @@ function startCoverBackfill() {
 // The host's position at the end of the column is the ROOT cause and relocating it
 // would fix this at the source; that is a bigger, riskier change than this defect
 // warrants and is logged as a candidate, not done here.
+// M8 — ONE CLOSE, EVERY PATH. The Manage sheet's close was a closure-local
+// function inside renderShelf, so revealShelfPanel could not call it and
+// reimplemented the half it could see: it removed `is-open` and left behind
+// `document.body.style.overflow = 'hidden'`, the bound Escape handler, and a stale
+// aria-expanded="true". The page could not be scrolled after any Manage chip --
+// measured on all three at 390x664 -- which is the whole of M8, and it is also the
+// condition that had the reader tapping around to get unstuck.
+// The fix is a hoist, NOT a copy: two implementations of "close" is how one of
+// them ends up missing a step again. Every path that closes this sheet goes
+// through here -- its own dismiss, the backdrop, Escape, and the reveal.
+// `returnFocus` is FALSE for the reveal on purpose: focusing an element scrolls it
+// into view, so returning focus to the Manage button would undo the very scroll
+// the reveal is about to perform.
+function closeShelfManageSheet(returnFocus) {
+  var wrap = document.querySelector('.shelf-manage');
+  if (!wrap) { return false; }
+  var wasOpen = wrap.classList.contains('is-open');
+  wrap.classList.remove('is-open');
+  var btn = wrap.querySelector('.shelf-manage-btn');
+  if (btn) { btn.setAttribute('aria-expanded', 'false'); }
+  var sheet = wrap.querySelector('.shelf-manage-sheet');
+  if (sheet) { sheet.setAttribute('aria-modal', 'false'); }
+  document.body.style.overflow = '';
+  if (shelfManageEscapeHandler) {
+    document.removeEventListener('keydown', shelfManageEscapeHandler);
+    shelfManageEscapeHandler = null;
+  }
+  if (returnFocus && btn) { btn.focus(); }
+  return wasOpen;
+}
+
 function revealShelfPanel(panelEl) {
-  var mw = document.querySelector('.shelf-manage');
-  if (mw) { mw.classList.remove('is-open'); }
+  // ORDERING IS LOAD-BEARING: the close must COMPLETE before the scroll. A
+  // scrollTop assignment against a body still at overflow:hidden silently no-ops,
+  // which would leave the panel off-screen again -- M8 fixed and M1's precondition
+  // restored. This call is synchronous, so the overflow is cleared below.
+  closeShelfManageSheet(false);
   if (!panelEl) { return; }
   var se = document.scrollingElement || document.documentElement;
   if (!se) { return; }
@@ -7843,6 +7873,45 @@ function mergeContentCensus(uid, bookId) {
   return c;
 }
 
+// What a record carries, in words. Hoisted so the pick rows, the preview line and
+// the fingerprint all read from ONE description -- the same reason the close was
+// hoisted in M8: two phrasings of the same fact drift.
+function describeCarryCounts(c) {
+  var bits = [];
+  if (c.notes) { bits.push(c.notes + (c.notes === 1 ? ' note' : ' notes')); }
+  if (c.marks) { bits.push(c.marks + (c.marks === 1 ? ' value mark' : ' value marks')); }
+  if (c.rating) { bits.push('a rating'); }
+  if (c.movedMe) { bits.push('moved-me'); }
+  if (c.artifact) { bits.push('an artifact'); }
+  if (c.arcs) { bits.push(c.arcs + (c.arcs === 1 ? ' arc' : ' arcs')); }
+  if (c.evidence) { bits.push(c.evidence + ' evidence'); }
+  if (c.themes) { bits.push(c.themes + (c.themes === 1 ? ' theme' : ' themes')); }
+  return bits.length ? bits.join(' · ') : 'nothing yet';
+}
+function describeCarryFor(uid, bookId) { return describeCarryCounts(mergeContentCensus(uid, bookId)); }
+
+// M4 — the discriminators, as one line of text and as a comparable fingerprint.
+// The meta line names every axis on which two records of the same book can
+// legitimately differ; the fingerprint is the same set, so "these look identical on
+// screen" and "these ARE identical" can never disagree.
+function mergeRowMeta(uid, bookId) {
+  var b = state.books[bookId] || {};
+  var bits = [];
+  var when = mergeRecordAge(bookId);
+  bits.push(when ? ('added ' + new Date(when).toLocaleDateString()) : 'added date unknown');
+  bits.push(b.isbn ? ('ISBN ' + b.isbn) : 'no ISBN');
+  bits.push(normalizeStatus(b.status) === 'read' ? 'finished' : 'reading');
+  bits.push(b.coverUrl ? 'has a cover' : 'no cover');
+  bits.push('carries ' + describeCarryFor(uid, bookId));
+  return bits.join(' · ');
+}
+function mergeRowFingerprint(uid, bookId) {
+  var b = state.books[bookId] || {};
+  return JSON.stringify([b.title || '', b.author || '', b.isbn || '',
+    mergeRecordAge(bookId), normalizeStatus(b.status) || '', !!b.coverUrl,
+    describeCarryFor(uid, bookId)]);
+}
+
 // A record's age, for the documented tie-break. addedAt when present; otherwise the
 // timestamp embedded in the minted id ('book_<ms>_<rand>', genBookId).
 function mergeRecordAge(bookId) {
@@ -8441,10 +8510,13 @@ function openLibraryCleanup() {
     var wrap = document.createElement('section');
     wrap.className = 'library-cleanup';
 
-    var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow'; eyebrow.textContent = 'Shelf · one-time cleanup';
+    // M5: "one-time cleanup" was stale the moment merging landed here -- this is a
+    // permanent destination now, not a pass you run once. And the lead sentence put
+    // covers first; merging is why the panel exists.
+    var eyebrow = document.createElement('div'); eyebrow.className = 'book-review-eyebrow'; eyebrow.textContent = 'Shelf · cleanup';
     var h1 = document.createElement('h1'); h1.className = 'book-review-title'; h1.textContent = 'Tidy your library';
     var sub = document.createElement('p'); sub.className = 'book-review-sub';
-    sub.textContent = 'Fill in missing covers across your ' + report.total + ' books, and see which records look like duplicates.';
+    sub.textContent = 'Merge records that are the same book, and fill in missing covers across your ' + report.total + ' books.';
     wrap.appendChild(eyebrow); wrap.appendChild(h1); wrap.appendChild(sub);
 
     var summary = document.createElement('div'); summary.className = 'cl-summary';
@@ -8454,7 +8526,14 @@ function openLibraryCleanup() {
       var ll = document.createElement('div'); ll.className = 'l'; ll.textContent = label;
       s.appendChild(nn); s.appendChild(ll); return s;
     }
-    summary.appendChild(stat(report.duplicates.length, 'duplicate records to merge', true));
+    // M2: the number said GROUPS while the label said RECORDS -- 8 groups read as
+    // 8 records, hiding the fact that twice that many records were involved and
+    // that 8 was the number of DECISIONS. Both numbers now, groups first, because a
+    // group is a decision.
+    var dupRecordCount = 0, dgi;
+    for (dgi = 0; dgi < report.duplicates.length; dgi++) { dupRecordCount = dupRecordCount + report.duplicates[dgi].length; }
+    summary.appendChild(stat(report.duplicates.length,
+      'groups · ' + dupRecordCount + (dupRecordCount === 1 ? ' record' : ' records') + ' to merge', true));
     summary.appendChild(stat(report.missingCovers.length + report.wrongCovers.length, 'books missing or wrong covers', true));
     summary.appendChild(stat(report.total, 'books on your shelf total', false));
     wrap.appendChild(summary);
@@ -8481,7 +8560,7 @@ function openLibraryCleanup() {
       afterCover.appendChild(buildSelfHealingCover(heroBook, 'cover-img', function() {
         var hp = document.createElement('div'); hp.className = 'cover-pending';
         var hpt = document.createElement('span'); hpt.className = 'cp-ti'; hpt.textContent = heroBook.title || '';
-        var hpl = document.createElement('span'); hpl.className = 'cp-lab'; hpl.textContent = 'searching…';
+        var hpl = document.createElement('span'); hpl.className = 'cp-lab'; hpl.textContent = 'No cover yet.';
         hp.appendChild(hpt); hp.appendChild(hpl); return hp;
       }));
       afterCol.appendChild(afterLab); afterCol.appendChild(afterCover);
@@ -8520,7 +8599,11 @@ function openLibraryCleanup() {
       }
       nextCover();
     });
-    wrap.appendChild(resolveAll);
+    // M5: NOT appended here. "Resolve all covers →" was the first control on the
+    // screen, above every duplicate group -- a bulk cover action leading a panel
+    // whose reason to exist is merging. It is kept (a legitimate, pre-existing bulk
+    // action on covers, and nothing to do with merge) and DEMOTED: it now sits with
+    // the covers section it belongs to, below the duplicates. See the covers header.
 
     var list = document.createElement('div'); list.className = 'cl-list';
 
@@ -8532,18 +8615,7 @@ function openLibraryCleanup() {
     // Survivor and TITLE are separate questions -- the record you keep and the title
     // it keeps are not the same decision. Group 2 is the case that needs it:
     // "Sylvia Wynter" is the record, "On Being Human as Praxis" is the title.
-    function describeCarry(c) {
-      var bits = [];
-      if (c.notes) { bits.push(c.notes + (c.notes === 1 ? ' note' : ' notes')); }
-      if (c.marks) { bits.push(c.marks + (c.marks === 1 ? ' value mark' : ' value marks')); }
-      if (c.rating) { bits.push('a rating'); }
-      if (c.movedMe) { bits.push('moved-me'); }
-      if (c.artifact) { bits.push('an artifact'); }
-      if (c.arcs) { bits.push(c.arcs + (c.arcs === 1 ? ' arc' : ' arcs')); }
-      if (c.evidence) { bits.push(c.evidence + ' evidence'); }
-      if (c.themes) { bits.push(c.themes + (c.themes === 1 ? ' theme' : ' themes')); }
-      return bits.length ? bits.join(' · ') : 'nothing yet';
-    }
+    function describeCarry(c) { return describeCarryCounts(c); }   // delegates to the hoisted one
 
     function dupGroup(grp, tier, isSuggestion) {
       var survivor = mergeDefaultSurvivor(user.uid, grp);
@@ -8598,7 +8670,23 @@ function openLibraryCleanup() {
         var pick = document.createElement('div'); pick.className = 'cl-note';
         pick.textContent = 'Which record do you want to keep?';
         mid.appendChild(pick);
-        var gi2;
+        // M4 — the options must be TELLABLE APART. Before this, two copies of the
+        // same book both read "Educated — carries nothing yet": the reader was
+        // asked to choose and given nothing to choose on. Each row now shows the
+        // cover, when it was added, its ISBN (or that it has none), its read
+        // status, and what it carries. When every one of those is equal, the panel
+        // SAYS SO rather than staging a false choice.
+        var gi2, fps = {}, allSame = true, firstFp = null;
+        for (gi2 = 0; gi2 < grp.length; gi2++) {
+          var fp = mergeRowFingerprint(user.uid, grp[gi2]);
+          fps[grp[gi2]] = fp;
+          if (firstFp === null) { firstFp = fp; } else if (fp !== firstFp) { allSame = false; }
+        }
+        if (allSame && grp.length > 1) {
+          var same = document.createElement('div'); same.className = 'cl-note';
+          same.textContent = 'These are identical — same title, author, ISBN, date and content. Either is fine; we will keep the first.';
+          mid.appendChild(same);
+        }
         for (gi2 = 0; gi2 < grp.length; gi2++) {
           (function (rid) {
             var rb = state.books[rid] || {};
@@ -8608,9 +8696,17 @@ function openLibraryCleanup() {
             radio.addEventListener('change', function () {
               if (radio.checked) { survivor = rid; chosenTitle = null; paint(); }
             });
-            var txt = document.createElement('span');
-            txt.textContent = ' ' + (rb.title || '(untitled)') + ' — carries ' + describeCarry(mergeContentCensus(user.uid, rid));
-            row.appendChild(radio); row.appendChild(txt);
+            var thumb = document.createElement('span'); thumb.className = 'cl-pickthumb';
+            thumb.appendChild(buildSelfHealingCover(rb, 'cl-pickthumb-img', function () {
+              var ph = document.createElement('span'); ph.className = 'cl-pickthumb-ph'; ph.textContent = '▤'; return ph;
+            }));
+            var txt = document.createElement('span'); txt.className = 'cl-picktxt';
+            var line1 = document.createElement('span'); line1.className = 'cl-pickname';
+            line1.textContent = rb.title || '(untitled)';
+            var line2 = document.createElement('span'); line2.className = 'cl-pickmeta';
+            line2.textContent = mergeRowMeta(user.uid, rid);
+            txt.appendChild(line1); txt.appendChild(line2);
+            row.appendChild(radio); row.appendChild(thumb); row.appendChild(txt);
             mid.appendChild(row);
           })(grp[gi2]);
         }
@@ -8786,7 +8882,7 @@ function openLibraryCleanup() {
       afterCover2.appendChild(buildSelfHealingCover(b, 'cover-img', function() {
         var p = document.createElement('div'); p.className = 'cover-pending';
         var pt = document.createElement('span'); pt.className = 'cp-ti'; pt.textContent = b.title || '';
-        var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'searching…';
+        var pl = document.createElement('span'); pl.className = 'cp-lab'; pl.textContent = 'No cover yet.';
         p.appendChild(pt); p.appendChild(pl); return p;
       }));
       ba.appendChild(beforeCover); ba.appendChild(arrow2); ba.appendChild(afterCover2);
@@ -8806,6 +8902,15 @@ function openLibraryCleanup() {
       });
       acts.appendChild(leftBtn); acts.appendChild(rightBtn); item.appendChild(acts);
       return item;
+    }
+    // M5: the covers section, now BELOW the duplicates, with its own heading and
+    // the demoted bulk action seated in it.
+    var coverTotal = report.missingCovers.length + report.wrongCovers.length;
+    if (coverTotal > 0) {
+      var cvHead = document.createElement('div'); cvHead.className = 'cl-note cl-nm-head';
+      cvHead.textContent = 'Covers — ' + coverTotal + (coverTotal === 1 ? ' book needs one' : ' books need one');
+      list.appendChild(cvHead);
+      list.appendChild(resolveAll);
     }
     var coverShown = 0, ci2;
     for (ci2 = 0; ci2 < report.missingCovers.length && coverShown < 40; ci2++) {

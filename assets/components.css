@@ -9598,6 +9598,110 @@ html { overscroll-behavior-y: contain; }
    mono/eyebrow weight the cleanup surface already uses for .cl-kind. */
 .cl-mid .cl-note.cl-pickrow { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; min-height: 24px; }
 .cl-mid .cl-note.cl-pickrow input { margin: 2px 0 0; flex: none; }
+
+/* ===== M3 — THE CLEANUP PANEL JOINS THE SHELF'S CREAM REGISTER =====
+   This is D10's defect on the surface D10 did not reach. The panel inherits the
+   legacy dark slab (`.cl-item{background:var(--surface)}` = rgb(35,40,56)) and was
+   mounted into the cream shelf, so it shipped navy cards on a rgb(253,249,238)
+   page with LIGHT-GROUND inks on them. Measured before this block, on the live
+   panel: the Cormorant group title was rgb(36,23,16) on rgb(35,40,56) = **1.19:1**,
+   the worst contrast this program has recorded; author, notes, pick rows and the
+   stat label all 1.93:1; the stat number 3.51:1. Five text elements below 4.5:1.
+   Everything here is scoped under `.shelf.lum-amber-deep` so the panel takes the
+   shelf's own card register (--card-2 / --line-page-2) exactly as the bulk-add
+   editor does, and NOTHING outside the shelf route is touched. */
+.shelf.lum-amber-deep .library-cleanup .cl-item,
+.shelf.lum-amber-deep .library-cleanup .cl-stat{
+  background: var(--card-2); border: 1px solid var(--line-page-2);
+  box-shadow: 0 1px 2px rgba(36,23,16,.14), 0 10px 30px -18px rgba(36,23,16,.30);
+}
+.shelf.lum-amber-deep .library-cleanup .cl-stat .n{ color: var(--ink); }
+.shelf.lum-amber-deep .library-cleanup .cl-stat .l{ color: var(--ink-2); }
+.shelf.lum-amber-deep .library-cleanup .cl-stat.warn{ border-color: var(--gold-deep); }
+.shelf.lum-amber-deep .library-cleanup .cl-stat.warn .n{ color: var(--gold-deep); }
+.shelf.lum-amber-deep .library-cleanup .cl-mid .cl-ti{ color: var(--ink); }
+.shelf.lum-amber-deep .library-cleanup .cl-mid .cl-au{ color: var(--ink-2); }
+.shelf.lum-amber-deep .library-cleanup .cl-mid .cl-note{ color: var(--ink-2); }
+.shelf.lum-amber-deep .library-cleanup .cl-kind{
+  color: var(--ink-2); background: var(--wash-page); border-color: var(--line-page-2);
+}
+.shelf.lum-amber-deep .library-cleanup .cl-kind.dup{
+  color: var(--gold-deep); background: var(--wash-page); border-color: var(--gold-deep);
+}
+.shelf.lum-amber-deep .library-cleanup .cl-kind.miss{
+  color: var(--ink-2); background: var(--wash-page); border-color: var(--line-page-2);
+}
+/* The buttons. `.review-confirm` fills with `--grad`, the app's gold-to-teal
+   primary gradient, which is why a teal button appeared on a cream shelf panel and
+   nowhere near it. Preston's ruling for this surface is explicit: NO gradients. So
+   a FLAT gold fill with the gold-on-gold ink the shelf already defines. (Note this
+   is deliberately flatter than `.shelf-editor-save` beside it, which is a gold
+   GRADIENT -- the instruction was taken literally; see the appearance list.) */
+.shelf.lum-amber-deep .library-cleanup .review-confirm{
+  background: var(--gold); background-image: none;
+  color: var(--gold-ink-on-gold); border: 1px solid var(--gold-deep);
+}
+.shelf.lum-amber-deep .library-cleanup .review-confirm:hover{ background: var(--gold-hi); }
+.shelf.lum-amber-deep .library-cleanup .review-mark-all{
+  background: transparent; color: var(--ink-2); border: 1px solid var(--line-page-2);
+}
+/* The choice controls. Native radios paint iOS system blue, which is the one
+   colour in the app that belongs to no surface. accent-color puts them in the
+   shelf's gold without replacing the control -- it stays a real radio, keyboard
+   and screen-reader intact. */
+.shelf.lum-amber-deep .library-cleanup .cl-pickrow input[type="radio"]{
+  accent-color: var(--gold-deep); width: 17px; height: 17px;
+}
+/* M4 — the discriminator row: thumbnail + name + meta, on one tappable line. */
+.shelf.lum-amber-deep .library-cleanup .cl-pickrow{ align-items: center; gap: 10px; padding: 5px 0; min-height: 44px; }
+.cl-pickthumb{ flex: none; width: 30px; height: 44px; border-radius: 2px; overflow: hidden;
+  background: var(--wash-page); display: flex; align-items: center; justify-content: center; }
+.cl-pickthumb-img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+.cl-pickthumb-ph{ font-size: 15px; line-height: 1; color: var(--ink-3); }
+.cl-picktxt{ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cl-pickname{ font-family: var(--font-serif); font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.cl-pickmeta{ font-family: var(--font-mono); font-size: 10px; letter-spacing: .02em; color: var(--ink-2); line-height: 1.35; }
+/* M3, second pass — the eight elements the first pass left below 4.5:1, each
+   measured on the live panel. Nothing on this surface ships under the floor, and
+   that includes chips, glyphs and button labels: "small" and "decorative" are not
+   exemptions, they are just text a reader still has to read. */
+/* the coverless placeholder was still the dark slab (its own gradient), so its
+   title and label sat at 1.93:1 inside an otherwise cream card */
+/* OPAQUE, not --wash-page: that token is rgba(36,23,16,.05), so it composites to
+   whatever sits behind it -- and behind it is the dark `.cover` slot, which left
+   this text at 1.95:1 even after the rule "won". Alpha over a dark parent is still
+   dark. The enclosing slot is dressed too, so nothing here inherits the slab. */
+.shelf.lum-amber-deep .library-cleanup .cover{ background: var(--card-2); }
+.shelf.lum-amber-deep .library-cleanup .cover-pending{
+  background: var(--card-2); background-image: none; border: 1px solid var(--line-page-2);
+}
+.shelf.lum-amber-deep .library-cleanup .cover-pending .cp-ti,
+.shelf.lum-amber-deep .library-cleanup .cover-pending .cp-lab{ color: var(--ink-2); }
+/* chips: --gold-deep and --ink-3 on a 5%-ink wash are 2.72 and 2.30. The chips keep
+   their DISTINCTION in the border, and take a legible ink. */
+.shelf.lum-amber-deep .library-cleanup .cl-kind.dup{ color: var(--ink); }
+.shelf.lum-amber-deep .library-cleanup .cl-kind.miss{ color: var(--ink-2); }
+.shelf.lum-amber-deep .library-cleanup .cl-pickthumb-ph{ color: var(--ink-2); }
+/* THE PRIMARY (Preston's ruling, 2026-09-02). My first cut measured
+   --gold-ink-on-gold (#3d2807) on flat --gold at 3.50:1 and concluded a gold fill
+   could not carry a label, so it went dark. That was the wrong read of "no
+   gradients": the failing pair was gold under a LIGHT-ish label, not gold as such.
+   Gold under --ink is a different measurement, and it is the treatment
+   .shelf-add-primary wears on this same page. Flat, so still no gradient.
+   MEASURED, and the ruling's premise needed one correction: --ink on the token
+   literally named --gold is 4.37:1 -- better than 3.50, still under the floor. The
+   reason is visible in the reference button itself: .shelf-add-primary is a
+   GRADIENT whose visible fill is dominated by --gold-hi (the 40% stop), not --gold
+   (the 100% stop) -- and its own label measures 6.20:1 against that lighter gold.
+   So the flat equivalent of "matching .shelf-add-primary" is --gold-hi, which is
+   the gold a reader actually sees on that button. --ink on --gold-hi = 7.75:1.
+   Flat gold with an ink label, as ruled; the token corrected to the one the ruling
+   was describing. */
+.shelf.lum-amber-deep .library-cleanup .review-confirm{
+  background: var(--gold-hi); background-image: none;
+  color: var(--ink); border: 1px solid var(--gold-deep);
+}
+.shelf.lum-amber-deep .library-cleanup .review-confirm:hover{ background: var(--field-1); }
 .cl-note.cl-nm-head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 18px 0 2px; }
 
 /* Stage 3 (mockup E): before -> after hero + per-item cover before/after. */
@@ -17269,9 +17373,19 @@ body.scan-active .cap-create-door{ display:none !important; }
    theme.css, and color-mix() is Safari 16.2+ / Chrome 111+, while :has() is Safari
    15.4+ / Chrome 105+. :has() therefore cannot raise a floor color-mix() has
    already set well above it. */
+/* M7: the C3 rule covered SHEETS. A panel mounted into #shelf-editor-host is not a
+   sheet, so the create-door and the Shelf's own "+ Add a book" FAB sat on top of
+   the cleanup panel -- measured display:flex with the panel mounted. Every
+   editor-host panel is now included, and the Shelf FAB yields too: it is the same
+   collision C3 fixed, on a surface C3 did not name. */
 body:has(.shelf-manage.is-open) .cap-create-door,
 body:has(.capdoor-sheet.is-open) .cap-create-door,
-body:has(.shelf-bulk-editor) .cap-create-door{ display:none !important; }
+body:has(.shelf-bulk-editor) .cap-create-door,
+body:has(.shelf-editor) .cap-create-door,
+body:has(.library-cleanup) .cap-create-door{ display:none !important; }
+body:has(.shelf-bulk-editor) .shelf-add-primary,
+body:has(.shelf-editor) .shelf-add-primary,
+body:has(.library-cleanup) .shelf-add-primary{ display:none !important; }
 
 /* nav draft-count badge on the Scan entry (mirrors .cap-nav-entry state attrs) */
 .app-nav-scan-badge{ display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;

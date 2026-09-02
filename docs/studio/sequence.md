@@ -706,6 +706,33 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **TIDY LIBRARY — REGISTER, ROUTING, LEGIBILITY — v3.292, 2026-09-02 (LOCAL, awaiting push)** —
+  reopen of v3.289–v3.291: the merge surface shipped proven and unreviewed by eye, and was unusable on
+  device before anything could be merged. §9 not run and not needed — 0 lines touch merge, undo,
+  tombstone or grouping; M2 was a label, not a grouping defect (all three census groups already render).
+  **M8, the one that was mine:** `openManageSheet` scroll-locks the body at mobile and
+  `closeManageSheet` cleared it — but it was closure-local, so v3.291's reveal could only remove the
+  class and left `overflow:hidden`, the Escape handler, and `aria-expanded="true"` behind. Fixed by
+  HOISTING one `closeShelfManageSheet(returnFocus)`; five close paths enumerated, all proven to call it.
+  Five conditions × three chips × two viewports all pass.
+  **M3:** the panel was the legacy dark slab on a cream page — the Cormorant title measured **1.19:1**,
+  the worst this program has recorded. Now 26 text elements measured, **0 below 4.5:1, minimum 5.59**,
+  zero gradients, radios in the shelf's gold. **M2** "6 groups · 12 records to merge". **M4** rows carry
+  thumbnail + added date + ISBN + status + cover + carries, and say "These are identical" when they are.
+  **M5** "one-time" gone, duplicates lead, Resolve-all kept and demoted. **M6** "searching…" was a
+  static placeholder lying about an idle state → "No cover yet." **M7** FAB and Add hide for all three
+  editor-host panels.
+  **M1 (routing detour to the account page) stays OPEN** — not reproduced in 3 chips × wrapped router
+  (0 route fires, hash unchanged), no mechanism found, and deliberately NOT recorded as closed-by-M8.
+  Preston re-tests on device.
+  Record: `docs/checkpoints/merge-round.md` (final section). `[books]`
+  **Logged:** **T29** shelf shows 148 books vs the Aug-29 census's 192 records on the same account —
+  unexplained; a records-vs-bookIds question for the census script. · **T30** the panel was built on the
+  legacy dark slab because "reuse the existing register" pointed at a register D10 had already ruled
+  wrong; future briefs saying "existing register" must NAME the surface. · **T20** confirmed
+  (`fetchBookByTitle` has no `res.ok`, integrations.js:1942) and deliberately not touched — it cannot
+  hang and was not M6's cause.
+
 - [x] **MERGE-ROUND REVEAL FIX — v3.291, 2026-09-02 (LOCAL, awaiting push)** — a live defect on v3.290:
   tapping "Tidy library" on iPhone did nothing visible. It was never a dead control — `openLibraryCleanup`
   ran, mounted its panel, and returned into `#shelf-editor-host`, which sits at the END of the shelf's

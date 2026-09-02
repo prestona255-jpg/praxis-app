@@ -201,3 +201,155 @@ T3, **outside `## Lessons`**, which is the only section `tools/studio-build` rea
 
 `openLibraryCleanup` never revealed itself — dormant while merge was held (the panel had nothing
 actionable), live the moment the panel became a destination.
+
+---
+
+# REGISTER, ROUTING, LEGIBILITY — v3.292
+
+Reopen of v3.289–v3.291. The merge surface shipped proven and unreviewed by eye; it was
+unusable on device before anything could be merged. **§9 NOT run and not needed** — mechanically
+confirmed: 0 lines in this diff touch `mergeBookDuplicates`, `undoBookMerge`, the tombstone family,
+or `groupShelfDuplicates`. M2 was a label; the grouping was already correct.
+
+## M1 — routing detour: NOT REPRODUCED, ledger stays OPEN
+
+| chip | hash before → after | `renderRoute` fires | panel visible |
+|---|---|---|---|
+| tidy | `#books` → `#books` | **0** | 656px |
+| bulk | `#books` → `#books` | **0** | 302px |
+| add | `#books` → `#books` | **0** | 364px |
+
+`renderRoute` was wrapped and counted. The two full-viewport overlays still in the DOM
+(`.shelf-manage-backdrop`, `#capScrim`, both z-10020) are `pointer-events:none; opacity:0`, and four
+hit-tests inside the panel all land on panel content. After the reveal the nav sits at **top −4,791px**;
+the only `#profile` link is hamburger-hidden at 0×0. **No mechanism found. M1 stays OPEN per ruling —
+not recorded as closed-by-M8.** Preston re-tests on device; if it recurs it becomes its own item.
+
+## M8 — the scroll lock, and the hoist
+
+`openManageSheet` sets `document.body.style.overflow='hidden'` at mobile. `closeManageSheet` cleared
+it — but was **closure-local inside `renderShelf`**, so v3.291's `revealShelfPanel` could only do
+`classList.remove('is-open')` and left the lock, the bound Escape handler and `aria-expanded="true"`
+behind. Measured on all three chips before the fix: `body.style.overflow` = `hidden`.
+
+Fixed by **hoisting, not copying**: one `closeShelfManageSheet(returnFocus)`. `returnFocus` is FALSE
+for the reveal on purpose — focusing an element scrolls it into view, which would undo the reveal.
+
+**Close-path enumeration — every path calls the one function:**
+
+| path | line | call |
+|---|---|---|
+| Manage button toggle | 4503 | `closeManageSheet()` → 4501 → `closeShelfManageSheet(true)` |
+| backdrop tap | 4505 | same |
+| close button | 4506 | same |
+| Escape key | 4494 | same |
+| the reveal | 6231 | `closeShelfManageSheet(false)` |
+
+No path closes this sheet without it.
+
+**Ordering, proven:** the close is synchronous and completes before the scroll, so the scroll never
+runs against a locked body. Five conditions × three chips × two viewports, **all pass**:
+
+| chip | overflow empty | aria false | Escape unbound | scrollable | top under sticky head | pixels |
+|---|---|---|---|---|---|---|
+| tidy 664 / 844 | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | 8 / 8 | **656 / 836** |
+| bulk 664 / 844 | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | 64 / 244 | **302 / 302** |
+| add 664 / 844 | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | ✔ / ✔ | 8 / 182 | **364 / 364** |
+
+## M2 — the number and the noun
+
+`report.duplicates.length` is the GROUP count and was labelled "duplicate records to merge". Fixture
+(census three + three scan-test pairs + 20 filler): **"6 groups · 12 records to merge"**. All three
+census groups render, alongside Educated / Artificial Intelligence / Marriage a History — so the
+grouping was never the problem.
+
+## M3 — contrast, every text element, before and after
+
+| element | before | after |
+|---|---|---|
+| group title (Cormorant) | **1.19** ✘ | **15.18** ✔ |
+| group author | 1.93 ✘ | 6.61 ✔ |
+| notes / pick rows | 1.93 ✘ | 6.61 ✔ |
+| stat label | 1.93 ✘ | 6.61 ✔ |
+| stat number | 3.51 ✘ | 5.59 ✔ |
+| cover placeholder title / label | 1.93 ✘ | 6.61 ✔ |
+| duplicate chip | 2.72 ✘ | 13.77 ✔ |
+| missing-cover chip | 2.30 ✘ | 6.00 ✔ |
+| thumbnail glyph | 2.30 ✘ | 6.00 ✔ |
+| button labels (×3) | 3.50 ✘ | **16.72** ✔ |
+
+**26 text elements measured, 0 below 4.5:1, minimum 5.59:1, 0 gradients.** Card bg
+`rgb(35,40,56)` → `rgb(246,239,220)` (`--card-2`). Radios `accent-color: --gold-deep` (was iOS blue).
+
+⚠ **A measurement error I made and corrected mid-build:** my first contrast pass read
+`background-color` without compositing alpha, so `rgba(36,23,16,.05)` was scored as near-black and
+five elements showed false failures (one at "1.00"). Fixed by stacking every translucent layer to an
+opaque base before measuring. It also found a *real* one the naive method hid: the cover placeholder
+was `--wash-page` over a **dark parent slot**, still 1.95:1 after the rule "won" — alpha over a dark
+parent is still dark. Both the slot and the placeholder are now opaque cream.
+
+## M4 — discriminators
+
+Rows now carry a thumbnail, name, and a meta line: `added <date> · ISBN <n>/no ISBN · reading/finished
+· has a cover/no cover · carries <what>`.
+
+Fixture differing ONLY in `addedAt` and cover presence:
+```
+Educated · added 7/21/2023  · ISBN 9780399590504 · reading · no cover   · carries nothing yet
+Educated · added 11/14/2023 · ISBN 9780399590504 · reading · has a cover · carries nothing yet
+```
+Distinguishable. Truly-identical fixture shows: **"These are identical — same title, author, ISBN,
+date and content. Either is fine; we will keep the first."**
+
+## M5 — copy and hierarchy
+
+Eyebrow `Shelf · one-time cleanup` → **`Shelf · cleanup`**; "one-time" count **0**. Lead sentence now
+opens with merging. Order measured: 6 duplicate groups (0–5) → covers heading (6) → **Resolve all
+covers (7)** → cover items (8+). Kept, demoted.
+
+## M6 — copy that is true
+
+"searching…" was `buildSelfHealingCover`'s **static placeholder** for a book with no cover — nothing
+was searching. Strings now: **idle "No cover yet."** · **action "Find cover"** · **in-flight "Looking…"**
+(unchanged). Occurrences of "searching…": **0**.
+**T20 confirmed and NOT touched** — `fetchBookByTitle` (integrations.js:1942) calls `res.json()` with
+no `res.ok` check; it has a `.catch` so it cannot hang, and it is not this defect.
+
+## M7 — FAB and Add over the panel
+
+| state | create-door | Add a book |
+|---|---|---|
+| cleanup panel | `none` ✔ | `none` ✔ |
+| bulk panel | `none` ✔ | `none` ✔ |
+| add panel | `none` ✔ | `none` ✔ |
+| **no panel (control)** | `flex` | `flex` |
+
+## Merge regression — untouched code, proven anyway
+
+I1 both directions (rating 5, `why` prose, 2 notes on the survivor either way) **PASS**.
+Undo-across-navigation (merged row listed after reopen, dropped record restored, tombstone consumed)
+**PASS**.
+
+## Gates
+
+Parse `PARSE OK` · foundations md5 unchanged · NUL 0 · CR 0 · `views.js` **+6,551**,
+`components.css` **+6,976**, `sw.js` **+0** · 7 surfaces render, **0 console errors**, shelf counts ==
+data · zero-duplicate panel opens clean ("0 groups · 0 records to merge", overflow empty).
+
+## Appearance judgments — NOT measurements
+
+1. **The primary is a flat `--gold-hi` fill with an `--ink` label** — Preston's ruling, 2026-09-02,
+   and it corrected a wrong call of mine. My first cut went DARK on a bad read of "no gradients".
+   His ruling was right; its premise needed one correction, measured: `--ink` on the token literally
+   named `--gold` is **4.37:1** — better than my 3.50, still under the floor. The reference he named,
+   `.shelf-add-primary`, is a GRADIENT whose visible fill is `--gold-hi` (the 40% stop, not the 100%
+   stop), and its own label measures **6.20** against that lighter gold. So the flat equivalent of
+   "matching .shelf-add-primary" is `--gold-hi`: **7.75:1**. Flat gold, ink label, no gradient, as
+   ruled — with the token corrected to the one the ruling was describing.
+2. Whether the meta line (`added · ISBN · status · cover · carries`) is the right amount, or too much
+   for a phone.
+3. Whether "These are identical — either is fine" reassures or reads as the app giving up.
+4. Whether the covers section reads as clearly secondary now that it sits below the duplicates.
+5. Whether the gold radios read as the app's own control or just as "not blue".
+6. **What I could not judge at all:** whether this panel now feels like somewhere you'd trust your
+   prose. I can measure that no text is under 4.5:1; I cannot measure whether it reads as Praxis.
