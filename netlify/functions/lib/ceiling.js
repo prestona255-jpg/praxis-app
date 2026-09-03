@@ -157,7 +157,11 @@ async function _saAccessToken(sa, nowMs) {
   var head = _b64url(Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' }), 'utf8'));
   var claim = _b64url(Buffer.from(JSON.stringify({
     iss:   sa.client_email,
-    scope: 'https://www.googleapis.com/auth/datastore',
+    // Two scopes, space-delimited, one token, one cache (P1 fix round 2, R1,
+    // Preston's Option A): `datastore` for the Firestore REST counter and
+    // `identitytoolkit` for the cold-path accounts:lookup. The narrowest pair
+    // that covers both calls -- deliberately NOT cloud-platform.
+    scope: 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/identitytoolkit',
     aud:   TOKEN_URL,
     iat:   iat,
     exp:   iat + 3600
@@ -197,6 +201,27 @@ async function _readUsage(projectId, uid, access) {
   else if (f.count && typeof f.count.integerValue === 'number') { count = f.count.integerValue; }
   if (isNaN(count) || count < 0) { count = 0; }
   return { day: (f.day && typeof f.day.stringValue === 'string') ? f.day.stringValue : '', count: count };
+}
+
+// Identity Toolkit accounts:lookup by localId (P1 fix round 2, R1). Returns
+// { found: true } / { found: false } / { error: true } and NEVER throws, so the
+// decision is taken explicitly by ceiling-core's decideIdentity rather than by an
+// exception path. A deleted account returns 200 with NO `users` key, which is the
+// empty-array case; the SA token carries the identitytoolkit scope for this call.
+async function _lookupUser(projectId, uid, access) {
+  try {
+    var res = await fetch('https://identitytoolkit.googleapis.com/v1/projects/' + projectId + '/accounts:lookup', {
+      method:  'POST',
+      headers: { 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ localId: [ uid ] })
+    });
+    if (!res.ok) { return { error: true, status: res.status }; }
+    var data = await res.json();
+    var users = (data && data.users && typeof data.users.length === 'number') ? data.users : [];
+    return { found: users.length > 0 };
+  } catch (e) {
+    return { error: true };
+  }
 }
 
 async function _writeUsage(projectId, uid, access, decision) {
@@ -240,6 +265,20 @@ async function enforce(event, nowMs) {
   try {
     var access = await _saAccessToken(sa, nowMs);
     var doc = await _readUsage(projectId, uid, access);
+    // GHOST DOC (P1 fix round 2, R1): closes the deleted-user, still-valid-token,
+    // <=1h window. No usage doc means a NEW reader or a DELETED one -- only here do
+    // we ask whether the account still exists, so a reader who already has a doc
+    // never pays the lookup. Not-found -> 403 and RETURN: no decide, no write (the
+    // counter is not recreated), no upstream call.
+    if (doc === null) {
+      var idDecision = core.decideIdentity(await _lookupUser(projectId, uid, access));
+      if (!idDecision.allowed) {
+        return _json(idDecision.status, {
+          error: (idDecision.code === 'account_deleted') ? 'account deleted' : 'identity unavailable',
+          code:  idDecision.code
+        });
+      }
+    }
     var decision = core.decide(doc, nowMs, cap);
     if (!decision.allowed) {
       return _json(429, {

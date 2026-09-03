@@ -608,6 +608,19 @@ the `_<uid>` sweep. Findings + dispositions:
    its copy." Whatever a stale device writes in that window lands under a uid no one can ever sign in as
    again (Auth reissues a new uid) — unreadable orphans, a hygiene residual, not a privacy hole; the
    device click-path (8) observes it.
+   **R2-1 CEILING CLAUSE, added 2026-09-03 (P1 fix round 2, D3 + R1).** The same window had a second,
+   worse mouth that this entry did not name: the AI proxy. `verifyIdToken` checks a SIGNATURE, not an
+   account, so a deleted user's still-valid token reached `enforce`, `_readUsage` returned null (the
+   documents were just deleted), and `_writeUsage` **RECREATED `aiUsage/{uid}`** while the upstream
+   Anthropic call proceeded — billable spend and a resurrected counter under a dead account, for the
+   rest of the token's life. Unlike the client-write half, this one IS closable without a tombstone and
+   is now **CLOSED**: `netlify/functions/lib/ceiling.js:273` guards the null-read path with an Identity
+   Toolkit `accounts:lookup`, and a not-found account gets 403 `account_deleted` with no decide, no
+   write and no upstream call (`ceiling.js:276`; decision in `ceiling-core.js` `ceilingDecideIdentity`,
+   harness block [8], 36/36). A lookup that itself fails gets 503 `identity_unavailable` — fail closed.
+   **What REMAINS in R2-1 is only the client-write half**: another signed-in device writing to the
+   private collections under its own still-valid token, which the untouched per-uid rules admit and
+   which only a tombstone could stop. Verified live by Item 1 click-path (h).
 3. **CONCERN — the three `where` queries are rule-servable in principle but the harness enforces no
    rules.** Firestore evaluates a rule against a query's constraints; `where('targetUid','==',uid)`
    satisfies the `targetUid == request.auth.uid` arm of `follows`' OR, `where('fromUid','==',uid)` the
@@ -760,8 +773,8 @@ of a missing key, not a bug.
     }
 ```
 Publishing the rules BEFORE v3.298 is safe on its own (they only widen delete for owners and lock
-`aiUsage` to server-only writes). Publishing them before v3.295 is also fine — the function's service
-account bypasses rules.
+`aiUsage` to **read/create/update: server-only; delete: owner** — the rule verbatim). Publishing them
+before v3.295 is also fine — the function's service account bypasses rules.
 
 **Order:** rules published → env vars set (overrides UNSET) → push v3.295…v3.298 (one push) → the Item 1
 cap=3 test on the TEST account → restore `PRAXIS_AI_DAILY_CAP=300`, set the override → Items 2/3 device
@@ -777,8 +790,8 @@ Expected observable in bold. Any of (c)–(f) returning 200 = FAIL-OPEN = Item 1
   the TEST account.
 - (a) Console: `firebase.auth().currentUser.getIdToken().then(function(t){copy(t); console.log(t.length)})`
   → **a ~900+ char token is on the clipboard**; paste it into a note now — it is the (e) input.
-- (a′) Read the day's starting count: nothing to read client-side (the doc is server-only by rule) —
-  note the UTC date instead.
+- (a′) Read the day's starting count: nothing to read client-side (the rule is read/create/update:
+  server-only; delete: owner) — note the UTC date instead.
 - (b) Open Yumi, send "hello" → **Yumi answers** (this is the FIRST check: a normal signed-in call
   succeeds through the new verifier). One Yumi turn is ~3 proxy calls (router + gate + reply), so with
   cap 3 the SECOND message must be refused: send "and again" → **the bubble reads "You’ve reached today’s
@@ -799,8 +812,17 @@ Expected observable in bold. Any of (c)–(f) returning 200 = FAIL-OPEN = Item 1
 - (g) Sign in as the MAIN account on a second device/profile during the same UTC day → send one Yumi
   message → **answers** (a second uid is unaffected; its own counter).
 - After: `PRAXIS_AI_DAILY_CAP=300`, set `PRAXIS_AI_CAP_OVERRIDES=5rQp6HQkZZgIoIULLtyY2YHXqWj2:1500`,
-  redeploy. **The test uid's `aiUsage/IdeCZDWvmPMvoEcfAQnMXVApQUg2` doc will read `count: 4` (or the
-  attempts made) until 00:00 UTC** — expected; it rolls to 1 on its first call the next UTC day.
+  redeploy. **The test uid's `aiUsage/IdeCZDWvmPMvoEcfAQnMXVApQUg2` doc will read `count: 3` — the cap,
+  not the cap plus the refusal — until 00:00 UTC**; it rolls to 1 on its first call the next UTC day.
+  CORRECTED 2026-09-03 (P1 fix round 2, D2): the count is taken BEFORE the upstream call and ONLY on an
+  admitted one, so the refused call writes nothing and the effective cap is exactly N. This is what the
+  harness has always asserted, verbatim — `call 3 admitted, count 3 (= cap)` (ceiling-core-test:93) and
+  `call 4 REFUSED with resetAt` … `used: 3` (:95). The earlier "count: 4" was a report slip, never code.
+- (h) **The ghost doc** (P1 fix round 2, R1): still signed in on the laptop as the throwaway account you
+  deleted in the Item 2 pass, and INSIDE the hour after that deletion, re-run the (c) fetch with a token
+  captured before the deletion → **403** `{"code":"account_deleted"}`; Firestore → **no `aiUsage/<that
+  uid>` document is created**. Outside the hour the token is expired and the same call gives 401. Both
+  are closed; the 403 is the one that proves the guard rather than the clock.
 
 **Item 3 — export (installed PWA on the iPhone; then Safari on the laptop).**
 - (1) PWA: Profile → scroll to the **"Your data"** card below Settings → tap **"Export my data"** →

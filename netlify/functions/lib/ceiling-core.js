@@ -94,6 +94,29 @@ function ceilingDecide(doc, nowMs, cap) {
   return { allowed: true, day: today, rolled: true, nextCount: 1, cap: cap };
 }
 
+// THE GHOST-DOC DECISION (P1 fix round 2, R1). Consulted ONLY on the cold path --
+// a request whose uid has NO usage document. That means one of two things: a
+// genuinely NEW reader, or a DELETED user whose ID token is still inside its <=1h
+// validity window (tokens are stateless; ceiling.js verifies a signature, not an
+// account). Without this, the second case sails through: the read returns null,
+// the write RECREATES aiUsage/{uid}, and the upstream call is billed. `lookup` is
+// the outcome of ceiling.js's Identity Toolkit accounts:lookup for this uid:
+//   { found: true }   -> the account exists: proceed exactly as before
+//   { found: false }  -> an empty users array: the account is GONE -> 403
+//   { error: true }   -> the lookup itself failed -> 503, fail CLOSED
+// Anything malformed is treated as not-found, which is also the closed direction.
+// An `allowed:false` decision is returned BEFORE ceilingDecide and before any
+// write, so a deleted account can neither spend nor recreate its counter.
+function ceilingDecideIdentity(lookup) {
+  if (lookup && lookup.error === true) {
+    return { allowed: false, status: 503, code: 'identity_unavailable' };
+  }
+  if (!lookup || lookup.found !== true) {
+    return { allowed: false, status: 403, code: 'account_deleted' };
+  }
+  return { allowed: true };
+}
+
 if (typeof module === 'object' && module && module.exports) {
   module.exports = {
     utcDayKey:      ceilingUtcDayKey,
@@ -101,6 +124,7 @@ if (typeof module === 'object' && module && module.exports) {
     parseOverrides: ceilingParseOverrides,
     capFor:         ceilingCapFor,
     defaultCap:     ceilingDefaultCap,
-    decide:         ceilingDecide
+    decide:         ceilingDecide,
+    decideIdentity: ceilingDecideIdentity
   };
 }

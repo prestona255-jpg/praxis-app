@@ -29,7 +29,7 @@ try { src = readFile(corePath); } catch (e) { WScript.Echo('LOAD FAIL: ' + coreP
 // `module`, then hand back the six functions by name.
 var core;
 try {
-  core = new Function(src + '\nreturn { utcDayKey: ceilingUtcDayKey, nextResetIso: ceilingNextResetIso, parseOverrides: ceilingParseOverrides, capFor: ceilingCapFor, defaultCap: ceilingDefaultCap, decide: ceilingDecide };')();
+  core = new Function(src + '\nreturn { utcDayKey: ceilingUtcDayKey, nextResetIso: ceilingNextResetIso, parseOverrides: ceilingParseOverrides, capFor: ceilingCapFor, defaultCap: ceilingDefaultCap, decide: ceilingDecide, decideIdentity: ceilingDecideIdentity };')();
 } catch (e2) { WScript.Echo('PARSE FAIL: ' + e2.message); WScript.Quit(2); }
 
 var failures = 0, total = 0;
@@ -116,6 +116,22 @@ WScript.Echo('\n[7] malformed stored docs');
 check('negative count treated as 0', core.decide({ day: '2026-09-03', count: -5 }, T_NOON, 3).nextCount, 1);
 check('non-numeric count treated as 0', core.decide({ day: '2026-09-03', count: 'x' }, T_NOON, 3).nextCount, 1);
 check('missing day -> rolled', core.decide({ count: 9 }, T_NOON, 3).rolled, true);
+
+WScript.Echo('\n[8] THE GHOST DOC -- the cold path only (deleted user, still-valid token, <=1h)');
+// ceiling.js reaches this ONLY when _readUsage returned null (no usage doc). An
+// `allowed:false` decision is returned BEFORE ceilingDecide and before _writeUsage,
+// so these two cases are exactly "no write, no upstream call" -- the glue's early
+// return is the trace; this is the decision it acts on.
+check('lookup FOUND -> proceed (an ordinary new reader)', core.decideIdentity({ found: true }).allowed, true);
+var gone = core.decideIdentity({ found: false });
+check('empty users array -> 403 account_deleted', gone.status + '/' + gone.code, '403/account_deleted');
+check('  ... allowed=false, so no decide, no write, no upstream call', gone.allowed, false);
+var oops = core.decideIdentity({ error: true });
+check('lookup FAILED -> 503 identity_unavailable (fail CLOSED)', oops.status + '/' + oops.code, '503/identity_unavailable');
+check('  ... allowed=false, so no decide, no write, no upstream call', oops.allowed, false);
+check('a non-2xx lookup carries its status and still fails closed', core.decideIdentity({ error: true, status: 500 }).status, 503);
+check('malformed/absent lookup -> treated as not-found (the closed direction)', core.decideIdentity(null).status, 403);
+check('the existing-doc path is NOT gated: decide() still admits a live counter', core.decide({ day: '2026-09-03', count: 1 }, T_NOON, 3).allowed, true);
 
 WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
 WScript.Quit(failures ? 1 : 0);

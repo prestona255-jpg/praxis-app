@@ -2431,12 +2431,28 @@ function classifyBooksViaLLM(books, callback) {
       system:      CLASSIFY_SYSTEM,
       messages:    [ { role: 'user', content: buildClassifyPrompt(batch) } ]
     };
-    fetch(CLAUDE_PROXY_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-      body:    JSON.stringify(payload)
-    }).then(function (res) {
-      return res.ok ? res.json() : null;
+    // P1 FIX ROUND 2 (D1): this was the ONE proxy call site the Item 1 hoist missed
+    // -- it reaches claude-proxy through the CLAUDE_PROXY_URL constant, which the
+    // hoist's grep patterns did not match (and which two recon docs wrongly recorded
+    // as dead). Unhoisted it would carry no Authorization header, so the v3.295
+    // ceiling answers 401 and shelf classification fails silently while spending
+    // nothing against the counter. Routed through the same door as the other 14.
+    // The door is defined in yumi-brain.js, which loads AFTER this file; the call
+    // happens at runtime (from renderShelf), never at parse/define time -- the
+    // established cross-file pattern. A missing door is treated as a failed batch,
+    // exactly like any other failure below.
+    if (typeof aiProxyFetch !== 'function') {
+      applyClassifyBatch(batch, null, result);
+      processBatch(start + CLASSIFY_BATCH);
+      return;
+    }
+    // Error-shape equivalence with the old fetch: aiProxyFetch THROWS on non-2xx
+    // (where the old code returned null via `res.ok ? ... : null`) and rejects when
+    // signed out (where the old code would have called the proxy anonymously), so
+    // the rejection arm maps every failure back to the same `null` the caller has
+    // always seen. Success returns the parsed JSON, as before.
+    aiProxyFetch(payload).then(function (data) {
+      return data;
     }, function () { return null; })
       .then(function (data) {
         applyClassifyBatch(batch, data, result);
