@@ -6,7 +6,7 @@
   all build discipline. If this file and PROTOCOL.md ever disagree,
   PROTOCOL.md wins for build process.
 - IMPORTANT: Load docs/FIX-PROTOCOL.md every session — the standing fix &
-  build discipline (v1.2) for any staged code change; its invariants are
+  build discipline (v1.3) for any staged code change; its invariants are
   enforced by the hooks/pre-commit gate.
 - Run `sh tools/ground-truth` at session start to confirm the fix-infra is live
   (agents, hook armed, protocol version, HEAD) before any build work.
@@ -15,6 +15,10 @@
   answer from memory of past sessions or from docs alone.
 - After any build completes and BEFORE any commit, use the
   praxis-reviewer agent to grade the work. Its verdict gates the commit.
+  - Both of the above — and every other gate agent — are barred by DEFAULT in a
+    session whose system prompt carries the AgentTool bar. The bar is CONDITIONAL
+    and one sentence in Preston's go-ahead lifts it; see § Verification, "THE
+    SESSION BAR ON AGENTS IS CONDITIONAL." Ask before the work, not at the gate.
 - Docs ride with the diff: if this session's work contradicts any
   committed doc (this file, BUILD_STATE, docs/checkpoints), correct that
   doc in the SAME commit — never "separately later."
@@ -93,6 +97,32 @@ syntax. Guard the seams:
   add-only and buried the decision in a comment; the red-team caught it as
   a claims-outliving-code BLOCK. A recon-named fork on a data-loss-tier fix
   is Preston's call, always.)
+- NAME THE REFERENCE SURFACE: a brief that says "the existing register" names
+  nothing — it points at whatever the executor finds first, which may be a
+  register already ruled wrong. Every brief names the surface by its selector:
+  "the register `.shelf-manage-sheet` uses," never "the existing register."
+  (MERGE ROUND, 2026-09-01: the merge panel was built on the legacy dark slab
+  and shipped at **1.19:1** on its own title — because "reuse the existing
+  register" resolved to the exact register D10 had corrected from `--surface-2`
+  to `--card-2` three commits earlier the same day, at v3.287, on the sibling
+  panel in the same file. v3.292 then re-measured 26 text elements to 0 below
+  4.5:1 — the whole correction was already available and was pointed away from
+  by four words.)
+- HOIST, NEVER COPY HALF: when a new caller needs behaviour that lives inside a
+  closure, hoist the closure into ONE reachable function with one set of callers
+  and enumerate every path through it. Two implementations of one close is the
+  bug. (MERGE ROUND, 2026-09-01→02: v3.291's reveal helper copied
+  `classList.remove` out of a closure-local `closeManageSheet` and left behind
+  the `body.overflow:hidden` lock, the bound Escape handler and
+  `aria-expanded="true"` — measured `hidden` on all three chips. v3.292 fixed it
+  by hoisting to one `closeShelfManageSheet(returnFocus)` and tabling all five
+  close paths through it.)
+- THE INSTRUMENT SETTLES IT, NOT MORE REASONING: when two hypotheses are live and
+  an instrument can discriminate between them, build the instrument before
+  arguing further. This binds the agent and Preston equally. (#diag, 2026-09-02:
+  two weeks of reasoning about 192-vs-148 ranked stranded pointers above an
+  account split — confidently, and wrongly. The on-screen report answered it in
+  ten lines on the first tap: a different uid.)
 
 ## Project
 Praxis: vanilla-JS theory-publishing platform with an AI persona, Yumi. Pure static site on Netlify; Firebase/Firestore backend. Live: praxis-reading.netlify.app. Work on `main` by default. Use worktrees only for parallel lanes, and only via the Worktree & Merge Protocol below — never freehand.
@@ -200,23 +230,24 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   with an input `.focus()` and iOS scrolls a focused input into view — an incidental
   scroll, not a decision, and one that would have vanished the moment either panel
   stopped opening with a focused input.)
-- When a session instruction bars spawning agents, FIX-PROTOCOL §9's fix-red-team gate
-  cannot run. That is a HALT-tier condition to be named and ruled on by Preston before
-  push, never silently absorbed or substituted with an inline pass. (COVERS, 2026-08-29:
-  named at the HALT and ruled acceptable for that round only — a two-line property
-  assignment mirroring an existing guard — explicitly NOT as precedent.)
-  - **THE BAR IS CONDITIONAL — ASK FOR THE LIFT (2026-09-01).** The instruction reads
-    "Do not call the AgentTool **unless the user requested it**." The exemption lives in
-    the bar's own text. It is not a permission, a settings `deny`, or a broken agent
-    registration — verified 2026-09-01: no deny rule in `.claude/settings.local.json` or
+- THE SESSION BAR ON AGENTS IS CONDITIONAL, AND THE LIFT IS ASKED FOR BEFORE THE BUILD.
+  Any round that will need FIX-PROTOCOL §9 — or §1#8's recon-reviewer gate — carries
+  "run fix-red-team on this" in Preston's go-ahead; that one sentence satisfies the bar's
+  own `unless` clause and EVERY gate agent runs normally (`fix-red-team` / `praxis-recon`
+  / `praxis-reviewer` / `repo-mapper`). Ask BEFORE the build, never at the HALT: asking
+  at the gate means the work is already built and the red-team arrives a session late.
+  **HALT-tier is the consequence of an UNLIFTED bar, not of the bar.** A round that
+  reaches its commit gate with the lift never asked for HALTs, names the unrun gate, and
+  waits for Preston's ruling — never silently absorbed, never substituted with an inline
+  pass. (COVERS, 2026-08-29: named at the HALT and ruled acceptable for that round only —
+  a two-line property assignment mirroring an existing guard — explicitly NOT as
+  precedent.)
+  - **THE VERIFICATION BEHIND IT (2026-09-01).** The instruction reads "Do not call the
+    AgentTool **unless the user requested it**." The exemption lives in the bar's own
+    text. It is not a permission, a settings `deny`, or a broken agent registration —
+    verified 2026-09-01: no deny rule in `.claude/settings.local.json` or
     `~/.claude/settings.json`, no managed-settings directory, and `fix-red-team` healthy
     at `model: sonnet`. The gate is therefore barred BY DEFAULT, never ABSOLUTELY.
-    **Any round that will need §9 carries "run fix-red-team on this" in Preston's
-    go-ahead** — that one sentence satisfies the `unless` clause and the gate runs
-    normally. The same lift covers EVERY gate agent, so a round needing §1#8's
-    recon-reviewer gate names those too (`praxis-recon` / `praxis-reviewer` /
-    `repo-mapper`). Ask BEFORE the build, not at the HALT — asking at the gate means the
-    work is already built and the red-team arrives a session late.
   - **THE COST OF NOT ASKING, TALLIED.** The gate went unrun on **4 occasions across 3
     rounds** before anyone tested whether the bar could be lifted: COVERS 2026-08-29
     (`docs/checkpoints/covers-diagnosis.md:112` — §9 performed inline, ruled acceptable
@@ -233,6 +264,44 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   DWF-1's MARG-EDIT framing ("no edit-existing path anywhere" — delete and
   same-session update both existed). An unescaped `.` in a grep is a wildcard, which
   is how `pen.textContent` matched `open.textContent` and manufactured a phantom.
+- FIXTURES REPRODUCE THE LIVE DATA SHAPE — INCLUDING BLANKS, DUPLICATES AND STALE IDS.
+  A passed proof is evidence about its FIXTURE until the device agrees; when a device
+  finding contradicts a passed proof, suspect the fixture FIRST. Build fixture records
+  through the app's own writer, never by hand. (Three this week, each TRUE on its fixture
+  and WRONG on the shelf: the surface==census equivalence, whose fixture had every record
+  live (MERGE ROUND, 2026-09-02); the undo fingerprint, whose fixture merges never
+  tripped it (UNDO INDEPENDENCE, 2026-09-03); and the evidence matcher, whose fixture
+  gave every entry a distinct quote when `addEvidence` writes none — that one hid a §9
+  BLOCK from my own pass, and the real path silently misattributed one reader's passage
+  to the wrong book while reporting success.)
+- "BOTH READERS AGREE" IS NOT "BOTH READERS SEE EVERYTHING." Two code paths that skip
+  the same records agree perfectly and see nothing. An equivalence proof must include the
+  cases each path would SKIP. (MERGE ROUND, 2026-09-02: the census counts `ids.length`
+  while the shelf and the sweep skip records with no `state.books` entry. The fixture had
+  none, so the two agreed — and would have agreed on stranded entries too, by both
+  skipping them.)
+- CONFIRM THE UID BEFORE ANY CROSS-SURFACE OR CROSS-SESSION COMPARISON. Any diagnostic
+  that reads user data prints the uid it BOUND *and* the SIGNED-IN uid, and refuses to
+  proceed if they differ. (#diag, 2026-09-02: two weeks of reasoning about 192-vs-148
+  dissolved the moment a report printed a different uid. `firstshelf-dupes-census.js:76`
+  falls back to the sole key of `state.userBooks`, silently binding the whole census to
+  whichever account is in the store; it printed a uid and nobody compared it to the
+  signed-in one. That fallback is still in the script — a `.js` file, out of scope for
+  the docs commit that recorded this.)
+- RE-RENDER AFTER MUTATION, OR THE READER CONCLUDES IT FAILED. Any surface that mutates
+  shelf data re-renders the shelf on return, and the proof measures the RENDERED count
+  after the mutation, not the stored one (the check already lives here — "Counts must
+  match data", § Live Forensic Smoke Test). (MERGE ROUND, 2026-09-02: six merges
+  persisted correctly and the shelf went on showing 148 and two Overstorys until a full
+  app restart. Correct data, stale screen, and a reader who reasonably concludes the
+  merge did nothing.)
+- A DIAGNOSTIC THAT NEEDS A CONSOLE DOES NOT EXIST FOR A PHONE-ONLY USER. Diagnostics
+  render ON SCREEN in the app, reachable from the PWA. This is a different rule from
+  "UI-driven > function-call" (§ Live Forensic Smoke Test), which governs how the AGENT
+  verifies; this governs how a report reaches Preston. (#diag, 2026-09-02: two rounds
+  stalled on "paste this into the console" for a reader whose laptop is
+  district-filtered. The `#diag` route — on screen, five-tap gesture, copy button,
+  v3.293 — resolved in one paste what console snippets could not in two days.)
 - Open every task with Stage 0 recon: read the files, confirm anchors, report stats, then STOP for go-ahead.
 - Byte deltas are measured before AND after — never back-derived. Report grep counts. (Git stores text blobs as LF though the working tree is CRLF, so the autocrlf warning is cosmetic; prove "no EOL flip" with a small diff stat, not the warning.)
   - CAVEAT — the diffstat test is NECESSARY BUT NOT SUFFICIENT, and was over-trusted until DW-STP2 (2026-07-14). With `core.autocrlf=true` the clean filter normalizes CRLF→LF **before every comparison git makes** (diff, numstat, staging), so a pure EOL flip of otherwise-unchanged lines is **structurally invisible** to it — a small diffstat reads small either way. It proves the CONTENT change is surgical; it cannot prove EOL held. For the EOL question use `git ls-files --eol` (compare `i/` vs `w/`), or a scratch-clone checkout. And note the practical floor: when every blob is already LF (`git show HEAD:<f> | tr -cd '\r' | wc -c` == 0 — true across this repo), a working-tree flip is **immaterial to what commits**, because the blob is LF regardless and any fresh checkout re-materializes CRLF regardless.

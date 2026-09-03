@@ -1,4 +1,4 @@
-# PRAXIS — Fix & Build Protocol (v1.2)
+# PRAXIS — Fix & Build Protocol (v1.3)
 
 Standing instruction set for **any staged code change** in praxis-app. Claude
 Code loads this every session (via the pointer in CLAUDE.md). A fix prompt should
@@ -13,6 +13,12 @@ format (§5.5), an internal red-team pass (§9), the status-ledger rule (§1).
 the red-team pass is a named subagent that fires on EVERY fix (§9); Stage 0 has a
 formal prior-fix regression check and a named live-smoke artifact (§1); and there
 is a defined subagent roster + a dual-build procedure (§10).
+**New in v1.3** (the canon update of 2026-09-03, written from twelve rounds over six
+days — evidence in `docs/checkpoints/` 08-29 → 09-03): Stage 0 tests the brief's PREMISE
+before planning against it (#9) and states any ORDERING DEPENDENCY (#10); Stage 1 has a
+**VISUAL GATE** (#11) — this protocol carried no visual step at all before this version;
+Stage 2's live-verify names how it is discharged when the origin is unreachable; §9
+dispatches against a frozen tree and points at the conditional agent bar, as does §1#8.
 
 ---
 
@@ -40,6 +46,17 @@ either self-driven (§5) or a HALT (§5.5).
   patched, or cross-cutting sync/state logic, dispatch the **repo-mapper** agent
   (§10) BEFORE recon to build a fresh data-flow map from source. This is the
   antidote to stale premises.
+- **Test the brief's PREMISE before planning against it (#9).** A brief's diagnosis
+  is a HYPOTHESIS, not a finding — assume it is wrong until the source proves it.
+  Stage 0's first job is to reproduce the stated failure and confirm the stated
+  mechanism, not to plan around either. (Five consecutive rounds, 2026-08-29 →
+  09-01, opened on a wrong premise and all five were caught here: COVERS — not
+  mixed content, a missing `coverCandidates` key; R-FIRSTSHELF-DUPES — not
+  title+surname, the ISBN tier; T13/T14 — not a poisoned draft, an unchecked
+  `res.ok` laundering a 429 into "needs a look"; T12 — right path, wrong mechanism,
+  `intitle:` loose enough to return the right volume onto a permanently wrong
+  title; MERGE ROUND — the surface could not see the records it existed to merge,
+  0 groups against the census's 3.)
 - **Confirm anchors:** quote exact function + file:line for every site you'll
   touch. Mismatch, or code that contradicts the fix's premise → STOP (fork, §4).
 - **Enumerate scope:** every file/collection/site. Confirm counts; don't trust a
@@ -53,13 +70,20 @@ either self-driven (§5) or a HALT (§5.5).
   the exact throwaway-account click-path into the checkpoint file now (stale-cache
   sign-in → the racing mutation → confirm the pre-existing cloud record survives),
   so the Stage-2 live smoke is ready, not improvised.
-- State the planned edit + a **byte FLOOR** per file.
+- State the planned edit + a **byte FLOOR** per file, **and any ORDERING DEPENDENCY
+  the fix carries (#10)** — the brief states it and the commit message repeats it.
+  Ordering hazards are STATED, never assumed. (Three this week: close the sheet
+  BEFORE the scroll, because a scroll against `overflow:hidden` no-ops (v3.292);
+  neutralize "Resolve all" in the SAME commit that widens the identity key, or the
+  widening arms a bulk destructive button (R-FIRSTSHELF-DUPES, 2026-08-29); repair
+  the merge (v3.289) before wiring the surface that calls it (v3.290).)
 - **Recon reviewer gate (#8):** before building on the recon, dispatch
   `fix-red-team` (or `repo-mapper` when a stale premise is the risk, §10) to
   VALIDATE the recon itself — every anchor resolves to a real file:line, the
   premises hold against source, scope/counts are complete, no collision missed. A
   finding here STOPS the build before a line is written: catch a bad plan before
-  it is built on, not only after.
+  it is built on, not only after. **This gate needs the same lift as §9 — see
+  there; it is barred by default and asked for in the go-ahead.**
 - Clean and no fork → Stage 1. Fork → HALT.
 
 **Stage 1 — BUILD + PROVE**
@@ -68,6 +92,17 @@ either self-driven (§5) or a HALT (§5.5).
 - Run the checks (§3): ES3 grep, parse gate, byte deltas, foundations MD5,
   staging scope.
 - Any proof or check FAILS → STOP, report, do NOT patch-the-patch, do NOT commit.
+- **VISUAL GATE (#11) — a fix that changes what a surface LOOKS LIKE is not done
+  when the proofs are green.** State the owner-visible before/after at **1360**
+  desktop and **390** mobile BEFORE building, name the reference surface by its
+  selector, and close only on Preston's eyes. The standard lives in
+  `CLAUDE.md` § Lessons — VISUAL GATE, MOCKUP FIRST, FELT-DELTA
+  CLAUSE, OWNER-VIEWPORT PRIMACY, CAPTURE PROVENANCE, NAME THE REFERENCE SURFACE —
+  and is not restated here. **This protocol carried no visual step at all until
+  2026-09-03**, which is the root the register, reveal and contrast defects all grew
+  from. (MERGE ROUND v3.290–v3.292, its own words: "the merge surface shipped proven
+  and unreviewed by eye" — a panel 4,408px below the fold, a 1.19:1 title, and a
+  legacy dark register, all three behind green proofs.)
 - All green → **red-team pass** (§9) → then the commit gate (§5).
 
 **Stage 2 — COMMIT**
@@ -79,7 +114,15 @@ either self-driven (§5) or a HALT (§5.5).
 - `git show --stat` = exactly the intended files + the ledger.
 - Push; confirm `HEAD == origin`; report the SHA.
 - Re-md5 the byte-locked foundations (§2); confirm unchanged.
-- Live-verify the deployed CACHE_VERSION.
+- Live-verify the deployed CACHE_VERSION. **When egress to the live origin is blocked
+  from the build machine — MEASURED, not assumed (`curl -s -o /dev/null -w "%{http_code}"
+  https://praxis-reading.netlify.app/sw.js` → `000`, exit 56, re-confirmed 2026-09-03) —
+  the requirement is NOT waived: the executor AUTHORS the device pass and Preston
+  discharges it.** Write the named click-path into the checkpoint (hard-refresh, the exact
+  CACHE_VERSION to confirm, the taps, the pass condition — the `covers-diagnosis.md`
+  "What Preston runs" pattern) and say in one line that the origin was unreachable. It is
+  never dropped and never claimed. Three rounds this week re-derived that sentence from
+  scratch (covers-diagnosis R1, firstshelf-dupes R1, merge-round).
 
 ---
 
@@ -281,6 +324,17 @@ exact gap that shipped `tools/ground-truth` exiting 1 on success); scope drift;
 silently-absorbed residuals; prior-fix regressions. It returns `RED-TEAM: clean`
 or findings. A real block-commit finding = a failed check: the fix does NOT
 self-commit; it returns to a human.
+
+**Dispatch against a FROZEN tree, and ask for the lift BEFORE the build.** The agent
+reads `git diff`, so dispatching while still editing the function under review spends a
+pass on a revision that no longer exists. (UNDO INDEPENDENCE, 2026-09-03: dispatched
+mid-edit on `mergeRestoreEvidence`; the agent named the instability rather than absorbing
+it — correct behaviour, and the wasted pass was the author's fault, not the agent's.) And
+note the gate agents are **barred BY DEFAULT** in a session carrying the AgentTool bar —
+the bar is CONDITIONAL, and one sentence in Preston's go-ahead ("run fix-red-team on
+this") lifts it for every gate agent, §1#8's recon reviewer included. Asking at the gate
+means the work is already built. Full rule, and the tallied cost of not asking:
+`CLAUDE.md` § Verification, "THE SESSION BAR ON AGENTS IS CONDITIONAL."
 
 This pass raises the floor on EVERY tier. Under §5 it does NOT lower the human bar
 on the data-loss tier: interim, that tier still gets a genuine human read of the

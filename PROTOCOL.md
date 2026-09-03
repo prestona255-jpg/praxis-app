@@ -1,6 +1,6 @@
 # PROTOCOL.md — Praxis Wave Build Protocol
 
-**Version:** 1.1
+**Version:** 1.2
 **Applies to:** every surface conversion and feature wave in praxis-app.
 **Read this first, every wave. Obey it exactly. It overrides convenience, momentum, and your own judgment about what would be faster.**
 
@@ -8,6 +8,9 @@
 > - BOX 1 now requires a **mockup-derived fidelity manifest** for any wave with a design target — enumerated from the file (never from memory), presented for Preston's approval at the HALT, and mapped against the build row-by-row (§2, §3).
 > - §4: the **759 responsive reflow is a built deliverable**, not a verify-only afterthought — build it, then verify at true 390.
 > - §9: **live-deployed-bundle verification** is required after push (fetch the deployed origin, not the local server), and byte reconciliation is done via `git diff --stat` (fully determined) rather than summed self-reports.
+
+> **Changes in v1.2** (canon update, 2026-09-03):
+> - §9: named how the live-deployed-bundle verification is **discharged when the build machine cannot reach the origin** — it is never dropped and never claimed.
 
 ---
 
@@ -147,7 +150,7 @@ Every factual claim in every box carries independent evidence: a byte size, a gr
 - **Byte reconciliation:** report final **absolute** byte size per touched file. The canonical wave delta is `git diff --stat <base-hash>..<head-hash>` — fully determined by the commit, not by summed self-reports. Use it.
 - New version number.
 - Await the explicit `commit and push`. On instruction: commit with explicit-file staging, push, and report the **hash** + `HEAD == origin/main`.
-- **Live verification (deployed bundle, after push):** the local preview browser is scoped to the local dev server — verifying `localhost` proves nothing about the deploy. Confirm on the **live origin**: fetch the deployed URL directly (WebFetch) to confirm `CACHE_VERSION` shipped, then render the live site (SW + caches cleared → re-registered) to confirm each surface carries its atmosphere on the deployed bundle. **No hash + no live confirm = not shipped.**
+- **Live verification (deployed bundle, after push):** the local preview browser is scoped to the local dev server — verifying `localhost` proves nothing about the deploy. Confirm on the **live origin**: fetch the deployed URL directly (WebFetch) to confirm `CACHE_VERSION` shipped, then render the live site (SW + caches cleared → re-registered) to confirm each surface carries its atmosphere on the deployed bundle. **No hash + no live confirm = not shipped.** **If the build machine cannot reach the origin** — measured, not assumed (`curl -s -o /dev/null -w "%{http_code}" https://praxis-reading.netlify.app/sw.js` → `000`, exit 56 from this box, re-confirmed 2026-09-03) — the requirement is **discharged by Preston on device, from a click-path the executor writes into the checkpoint** (hard-refresh, the exact CACHE_VERSION to confirm, the taps, the pass condition). It is never dropped and never claimed. See `docs/FIX-PROTOCOL.md` §1 Stage 2.
 
 ---
 
