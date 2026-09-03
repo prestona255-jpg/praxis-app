@@ -434,3 +434,131 @@ No code file was touched in this stage.
 **STAGE 3: PASS**
 
 ---
+# STAGE 4 — CLOSE-OUT (no push) — PASS
+
+## 4.1 Final three-layer census
+
+**(a) constants** — unchanged set of five; `ELEVENLABS_PROXY_URL` shifted 2610 → 2626 by Stage 1's hunk.
+
+**(b) `fetch(<NAME>)`**
+```
+  fetch(CLAUDE_PROXY_URL         (none)          <- was integrations.js:2434
+  fetch(SCAN_VISION_URL          (none)
+  fetch(PROXY_URL                (none)
+  fetch(GOOGLE_BOOKS_PROXY_URL   integrations.js:1981, 2068, 2503
+  fetch(ELEVENLABS_PROXY_URL     integrations.js:2684
+  fetch(TRANSCRIBE_PROXY_URL     import-capture.js:350
+```
+
+**(c) every bare `fetch(` in js/ — 9 hits (was 10), all accounted for**
+
+| file:line | classification |
+|---|---|
+| js/yumi-brain.js:83 | through the door (`aiProxyRequest`'s own fetch) |
+| js/integrations.js:1981 · 2068 · 2503 | direct → google-books-proxy (non-goal) |
+| js/integrations.js:2684 | direct → elevenlabs-proxy (not ceiling-covered) |
+| js/import-capture.js:350 | direct → transcribe-proxy (not ceiling-covered) |
+| js/integrations.js:1914 · 1934 | non-Netlify — openlibrary.org |
+| js/yumi-brain.js:17 | non-Netlify — `/docs/yumi-voice.md` |
+
+**DIRECT FETCHES TO A CEILING-COVERED FUNCTION (claude-proxy + shelf-vision) OUTSIDE THE DOOR: `0`.**
+That is the number the go-ahead asked for.
+
+## 4.2 Marker grep, every file touched in Stages 1–3 (plus sw.js)
+
+```
+  js/integrations.js                         C3A2=0
+  netlify/functions/lib/ceiling.js           C3A2=0
+  netlify/functions/lib/ceiling-core.js      C3A2=0
+  tools/ceiling-core-test                    C3A2=0
+  docs/checkpoints/p1-safety-build.md        C3A2=0
+  docs/launch-runway.md                      C3A2=0
+  docs/checkpoints/p1-fix-round-2.md         C3A2=0
+  sw.js                                      C3A2=0
+```
+**All zero.** The encoding rule held for every write this round.
+
+## 4.3 Gates
+
+```
+$ sh tools/ground-truth
+== Praxis ground-truth ==
+HEAD:           c8a35ae            (pre-commit reading)
+hook gate:      ARMED (core.hooksPath = hooks)
+FIX-PROTOCOL:   # PRAXIS — Fix & Build Protocol (v1.3)
+
+$ cscript //nologo //E:jscript tools/parse-check js/integrations.js                    -> PARSE OK
+$ cscript //nologo //E:jscript tools/parse-check netlify/functions/lib/ceiling-core.js -> PARSE OK
+
+harness regression, all four:
+  ceiling-core-test  36 / 36 passed      (was 28 — +8 ghost-doc cases)
+  fx1c-sim           60 / 60 passed
+  export-test        58 / 58 passed
+  delete-test        58 / 58 passed
+
+foundations: lumen-amber 070679b0… · marks 772886c0…   (both unchanged)
+hooks/pre-commit on the staged set: exit 0 (WARN-only — backticks inside comment lines)
+```
+
+## 4.4 Version + commit
+
+**`sw.js` bumped `praxis-v3.298` → `praxis-v3.299`, and this commit REQUIRED it**: `js/integrations.js`
+is served source (`sw.js:30` precaches it), CLAUDE.md requires a bump on any shipped JS change, and
+`hooks/pre-commit` rule #3 hard-BLOCKS served source staged without `sw.js`. sw.js byte delta +0 (an
+equal-length version string).
+
+**Commit `d872966`** — `fix(P1 FIX ROUND 2) — D1: the one proxy call site the hoist missed, hiding behind
+a constant two recon docs called dead; R1: a deleted account could still spend and resurrect its own
+counter → v3.299`. 8 files, +570 / −17. Tracked tree clean after. **NOT pushed** (`origin/main` still
+`53c968d`; five local commits ahead).
+
+## 4.5 Consolidated report
+
+**Protocol docs** — found: CLAUDE.md · PROTOCOL.md v1.2 · docs/FIX-PROTOCOL.md v1.3 · all seven agent
+files · hooks/pre-commit · tools/parse-check · BOARD.md · docs/studio/sequence.md · docs/launch-runway.md ·
+proposals/README.md. Missing: **docs/LAUNCH-STATUS.md** (FIX-PROTOCOL's ledger pointer; launch-runway.md
+is the live ledger).
+
+**Per stage** — Stage 0 PASS (read-only; one fork surfaced and ruled, three carries approved) ·
+Stage 1 PASS (D1) · Stage 2 PASS (R1) · Stage 3 PASS (D2 + D3 + wording) · Stage 4 PASS.
+**No stage FAILED, so no edit was reverted.**
+
+**Before / after, every touched file**
+
+| file | bytes before | bytes after | Δ | non-ASCII before → after | C3 A2 |
+|---|---|---|---|---|---|
+| js/integrations.js | 193,647 | 194,808 | +1,161 | 2,074 → 2,074 (+0) | 0 |
+| netlify/functions/lib/ceiling.js | 12,176 | 14,301 | +2,125 | 0 → 0 (+0) | 0 |
+| netlify/functions/lib/ceiling-core.js | 4,804 | 6,176 | +1,372 | 0 → 0 (+0) | 0 |
+| tools/ceiling-core-test | 7,023 | 8,500 | +1,477 | 4 → 4 (+0) | 0 |
+| docs/checkpoints/p1-safety-build.md | 77,508 | 79,822 | +2,314 | 1,772 → 1,796 (+24) | 0 |
+| docs/launch-runway.md | 27,677 | 28,126 | +449 | 423 → 426 (+3) | 0 |
+| sw.js | 6,041 | 6,041 | +0 | 6 → 6 (+0) | 0 |
+| docs/checkpoints/p1-fix-round-2.md | — | new | — | — | 0 |
+
+Every code-file non-ASCII delta is **+0**: all added code and comments are pure ASCII by construction.
+The two doc deltas are em-dashes and ellipses in added prose, house style, marker 0.
+
+**Final census** — 0 direct fetches to a ceiling-covered Netlify function outside the door (§4.1).
+
+**Commit** — `d872966`, v3.299, not pushed.
+
+**`CLAUDE_PROXY_URL` after D1** — **2 references in `js/`, both in `js/integrations.js`: the declaration
+at `:12` and a mention inside the new D1 comment at `:2435`. Zero `fetch()` uses.** Per the non-goal the
+constant was NOT deleted. **CANDIDATE DEBT ITEM:** it is now genuinely unreferenced-by-code — either
+retire it in a later sweep, or keep it as the one place the proxy path is written down. Preston's call;
+not taken here.
+
+**Pre-existing drift flagged, not fixed this round**
+1. `docs/checkpoints/sec-recon.md:50` and `docs/checkpoints/import-recon.md:328` both assert
+   `CLAUDE_PROXY_URL` "is defined but never consumed" / "is dead". Both were FALSE from the moment the
+   classify path was written, and that stale claim is the most likely reason the P1 Stage 0 census
+   trusted integrations.js and missed D1. (After this commit they are accidentally true.) **This is the
+   claims-outliving-code family with a measured cost: one defect, one round.**
+2. `docs/launch-runway.md` ends "Full detail in `docs/LAUNCH-STATUS.md`" — a pointer to the file that
+   does not exist (the same missing-ledger gap recorded at 0.1).
+3. `yumi-ui.js`'s `yumiRenderProxyError` has no branch for the new `account_deleted` / `identity_unavailable`
+   codes, so both render the generic "Something went wrong reaching Yumi." Adding them to the existing
+   `unauthenticated` branch is one token; left untouched by ruling, reported as a follow-up.
+
+**STAGE 4: PASS**
