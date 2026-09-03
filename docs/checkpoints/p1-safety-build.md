@@ -673,3 +673,44 @@ Post-fix: parse OK, `tools/delete-test` 58/58, C3A2 0. Final bytes (LF) vs ac8a7
 tools/delete-test new 21,959 · sw.js +0. No third agent pass: the pass-2 fixes are one awaited promise, a
 per-collection try, two list entries and two doc corrections, each re-proven by the harness; recorded here
 for Preston's read (data-loss tier, FIX-PROTOCOL §5 C — the human read is the gate).
+
+# CONSOLIDATED REPORT (appended after the final commit)
+
+Base 53c968d / v3.294 confirmed (HEAD == origin/main, clean tracked tree). Four local commits, NO push.
+Full record: `docs/checkpoints/p1-safety-build.md` (Stage 0: `p1-safety-recon.md`).
+
+## 1. Protocol docs — found / missing (by filename)
+FOUND: CLAUDE.md · PROTOCOL.md (v1.2) · docs/FIX-PROTOCOL.md (v1.3) · .claude/agents/fix-red-team.md (Sonnet-pinned; dispatched 4×) · the other six agent files · hooks/pre-commit · tools/parse-check · docs/launch-runway.md (the live ledger) · docs/checkpoints/p1-safety-recon.md.
+MISSING: docs/LAUNCH-STATUS.md (FIX-PROTOCOL §1/§11 point at it; docs/studio/LAUNCH-STATUS.md exists) — noted, NOT created, per the go-ahead.
+
+## 2. R1.2 premise test — can any AI call site fire before sign-in?
+NO, for all 14 (12 claude-proxy sites in yumi-brain, import-capture's segmentDoc, the scan surface's shelf-vision). Each traced to its entry gate: the Yumi send handler returns signed-out before any brain call (yumi-ui.js:1212); the lens panel opens only from inside renderShelf's signed-in branch; the profile page returns a sign-in prompt; every consider* orchestrator early-outs on no uid; the capture door's Split button exists only after a commit that requires sign-in; renderScan hard-gates signed-out. Table with every anchor in the checkpoint. No fork → proceeded.
+
+## 3. R4.1 rendered-home statement
+A deleted arc's sub-theories are re-homed to `arcId:null` and render where today's orphans render: the Arcs field's ORPHAN SEAT (`_afBuildOrphanSeat`, views.js:3921, mounted at :4156 for a signed-in owner — its predicate is exactly "arcId falsy or no live arc") and their own `#subtheory/<id>` page (`renderSubTheoryPage` resolves the arc with `sub.arcId && state.arcs[sub.arcId]` and renders with null). Registers: the field's `.af-*` and the page's `.st-*`. No new surface, no HALT. The red-team swept all 86 `.arcId` readers and found ONE more that needed a null guard (the mark composer's sibling scan) — fixed.
+
+## 4. Per item
+| Item | commit | sw.js | files (expected → actual bytes, LF) | grep before → after | red-team |
+|---|---|---|---|---|---|
+| **1 — cost ceiling** | `0fb8aa8` | v3.295 | claude-proxy +900→+1,057 · shelf-vision +700→+444 · lib/ceiling.js new 11,692 · lib/ceiling-core.js new 4,804 · tools/ceiling-core-test new 7,023 · vision-proxy.js −10,134 (deleted) · yumi-brain −392 (helpers +3,900, 12 sites −4,290) · import-capture +106 · views +1,732 · yumi-ui +891 · sw +0 | direct proxy `fetch(`: 14 → 0 (12 + 1 + 1); `aiProxyFetch(` 14, `aiProxyRequest(` 3 | no BLOCK; 2 CONCERNs fixed pre-commit (explicit `createPublicKey` on the cert PEM; doc currency), 4 notes; residuals R1-a (a cert-fetch blip reads as "sign in again"), R1-b (book-mode does not refund the client shot on `limit`, matching its existing pattern) |
+| **4 — FX-1c + reference sweep** | `12a8c2c` | v3.296 | state +4,800→+5,070 · integrations +3,200→+5,261 (4a +3,393; the retry queue added after the red-team +1,868) · views +1,200→+2,420 · tools/fx1c-sim new 16,316 · sw +0 | `FX-1c splat-begin/end` 4/4 · `noteRecordDeleted(` 4+1 · `getPendingDeletes(` 4+4 · `clearPendingDelete(` 1+4 · `unpublishArc(` in views 1 → 2 · `pendingDeleteSync` 0 (the record's name; the key is `praxis_pending_deletes_<kind>_<uid>`) | no BLOCK; 3 CONCERNs fixed pre-commit (mark-composer orphan collision; the deleted-arc toast said "publish again" and my "sanitize retries" claim was false → honest copy + a durable retry queue drained on the next arcs load; two anchors re-derived against the committed tree: `mergeBookDuplicates` views.js:8599, drop-side artifact delete :8778). Residual R4-1: the merge's drop-side artifact delete stays unguarded (marking it needs a 2-line touch inside the closed Undo — your call) |
+| **3 — export** | `ac8a7f0` | v3.297 | integrations +9,000→+23,041 (CODE overage, stated: five Markdown writers + zip + delivery + two hoisted builders) · views +2,500→+5,191 · state −1,428 (exportWorkspace deleted) · components.css +770 · tools/export-test new 20,292 · sw +0 | `exportWorkspace` fn 0 · `buildUserProfileDoc(` 3 · `buildUserReaderModelDoc(` 3 · `prepareExport(` 1+2 · `_pfDataSection(` 2 | 1 BLOCK + 1 CONCERN, both fixed pre-commit: the studio ledger line overclaimed Item 2 as built; the prepared archive was not uid-bound at Save (now stamped + re-checked). The agent also validated a real archive with Info-ZIP `unzip -t` |
+| **2 — account deletion** | ``277c7fd`` | v3.298 | integrations +3,800→+9,886 (the flow + the batch + the sweep + the awaited re-upload) · views +5,000→+5,572 · state −900→−55 · components.css +1,200→+2,417 · firestore.rules +400→+1,486 · tools/delete-test new 21,959 · sw +0 | `function deleteAccount` 1 · `deleteAccountCloudData(` 2 · `wipeAccountLocal(` 2 · `accountLocalKeysFor(` 2 · `openAccountDeleteConfirm` fn 0 · `wipeActiveUserLocal` fn 0 · `renderDeletedPage(` 2 · `parts[0] === 'deleted'` 1 · rules `aiUsage` 1 | pass 1: 2 BLOCKs (the "recoverable by sync" claim → now an AWAITED per-collection re-upload; the absolute "nothing can be restored" → honest copy + residual R2-1) + 4 concerns/notes (partial-chunk honesty, the visual row, four uid-less keys, null email) — all fixed; pass 2 on the fixes: 1 BLOCK (a stale 49/49 in the ledger) + the retry race the recovery introduced (fixed by awaiting) + two measure keys — all fixed. Residual R2-2: rule-servable queries, live check |
+
+Proof harnesses (all cscript, all over the REAL bytes, all self-checking): `tools/ceiling-core-test` 28/28 (N admitted, N+1 refused with resetAt, the 00:00 UTC reset with an injected clock, a second uid unaffected, a forged body uid unreachable) · `tools/fx1c-sim` 60/60, and with the guard stripped exactly the 4 resurrection cases fail · `tools/export-test` 58/58 (round-trip counts + every string byte-equal, 12 prose strings verbatim in JSON and Markdown, a second uid absent, the zip parsed back with re-computed CRCs) · `tools/delete-test` 49/49 (every failure leg + the success order + the local sweep). Rig (localhost, stub uid): Item 3's prepare → "Ready: 1 book, 1 arc … (6 KB)" → Save; Items 2/3 measured fresh at 1360 and 390 (rects, pixels visible, element under the tap, contrast ≥ 6.78:1 on every text element, the confirm ≈14:1) — screenshots time out in this pane (the documented rig fact); geometry is the evidence and the felt pass is yours.
+
+Not provable from this box, stated plainly: Item 1's Node glue (token verify + Firestore REST) — Node is blocked; proven live by §6 (a). The iOS Share sheet (no iOS here). Item 2's Firebase legs (re-auth, batch, Auth delete) — no real auth on the rig; the harness proves the ORDER and what each leg touches, §6 proves them live.
+
+Things I did that you should know: state.js and integrations.js were MIXED CRLF/LF in the working tree; both normalized to LF (every blob is LF regardless; git sees content lines only). The first views.js edit double-encoded 728 UTF-8 characters — caught by a marker grep, restored from HEAD, redone byte-safely. The first sim run "passed" vacuously because cscript has no JSON — caught, shimmed, re-run. R4-1's residual and the retry queue were my calls under the rulings; both named in the checkpoint.
+
+
+
+## 7. Push readiness
+| version | commit | state |
+|---|---|---|
+| v3.295 (Item 1) | `0fb8aa8` | GREEN locally; needs `PRAXIS_SA_KEY` + caps in Netlify BEFORE push (fail-closed) |
+| v3.296 (Item 4) | `12a8c2c` | GREEN |
+| v3.297 (Item 3) | `ac8a7f0` | GREEN |
+| v3.298 (Item 2) | ``277c7fd`` | GREEN (two passes); needs the rules published BEFORE push |
+NOT pushed. Builder regen (`tools/studio-build`) deferred to the push point per BUILDER CADENCE — it rides
+the push go-ahead, not these commits. Pushing is a separate go-ahead.
