@@ -353,3 +353,62 @@ data · zero-duplicate panel opens clean ("0 groups · 0 records to merge", over
 5. Whether the gold radios read as the app's own control or just as "not blue".
 6. **What I could not judge at all:** whether this panel now feels like somewhere you'd trust your
    prose. I can measure that no text is under 4.5:1; I cannot measure whether it reads as Praxis.
+
+---
+
+# RESOLVED — TWO ACCOUNTS (2026-09-02, from the #diag report)
+
+**No defect. Nothing built.** The `#diag` report (v3.293) answered it on the first tap.
+
+## What the report showed
+
+The signed-in account is **`5rQp6HQkZZgIoIULLtyY2YHXqWj2`**. The Aug-29 census ran on a
+**different uid (`VApQUg2…`)**. Two accounts, one browser profile.
+
+On the live account:
+
+| | |
+|---|---|
+| bookIds length | **148** |
+| ...with a `state.books` record | **148** |
+| ...STRANDED (no record) | **0** |
+| duplicate entries in bookIds | **0** |
+| duplicate groups found | **8, all legitimate** |
+| The Overstory | **grouped EXACT** |
+
+## What this closes
+
+- **The stranded-pointer line is CLOSED.** It was a real mechanism and it is not this one:
+  zero stranded entries on this account. My reading of the code was sound — the census counts
+  `ids.length` while the shelf and the sweep skip records that are missing — but that divergence
+  never fired here.
+- **T29 (192 vs 148) — RESOLVED: two accounts.** Not stranded pointers, not a data-integrity
+  problem. Different shelves, different counts.
+- **M2 (the census three absent from the panel) — RESOLVED: two accounts.** Empire AI, Sylvia
+  Wynter and Mating in Captivity live on the *other* account. The 8 groups on this shelf are
+  real, and the grouping was correct the whole way through.
+- **T23 (are the two Overstory records EXACT?) — ANSWERED: yes, EXACT.** Recorded as unknown at
+  the merge round's Stage 0 and designed for all three tiers; the live data says EXACT, so they
+  group and are merge-eligible.
+
+## What stands
+
+- **The census's uid FALLBACK is the hazard** (`firstshelf-dupes-census.js:76`): when
+  `getCurrentUser()` yields nothing it takes the sole key of `state.userBooks`, which silently
+  binds the whole census to whichever account happens to be in the store. It printed a uid, and
+  nobody compared it to the signed-in one. **Any future census run states the uid it bound and
+  confirms it against the signed-in account before its numbers are trusted.**
+- **The equivalence-proof gap stands as a lesson.** My fixture had every record live, so both
+  readers agreed — and they would have agreed on stranded entries too, by both skipping them.
+  *"Both readers agree" is not the same claim as "both readers see everything."* It did not bite
+  here; it is still the shape that would hide this class of bug.
+- Honest note on my own weighting: I named both candidates — stranded pointers and the census's
+  uid fallback — and weighted stranded higher. The answer was the one I weighted lower. The
+  diagnostic is what settled it rather than more reasoning, which is the right order.
+
+## Where this leaves the round
+
+The merge surface is proven, legible, reachable, and looking at 8 real groups on the correct
+account. **The T8 closing gate is unchanged and still Preston's:** merge on device, re-run the
+census (pinned to the signed-in uid), zero EXACT and zero PROBABLE, then Empire of AI — on the
+account that holds it — showing 2 notebook entries and rating 5.

@@ -706,6 +706,30 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **#diag + THE ACCOUNT SPLIT — v3.293, 2026-09-02 (RESOLVED; no defect)** — Empire AI, Sylvia
+  Wynter and Mating in Captivity did not appear in the Tidy groups on device. Reading the code
+  falsified the leading hypothesis: the census (`firstshelf-dupes-census.js:83`) and
+  `groupShelfDuplicates` read the SAME population, `state.userBooks[uid].bookIds`. The counting
+  differs — the census prints `ids.length` while the shelf and the pairwise sweep skip entries whose
+  `state.books` record is missing — so stranded pointers were a real candidate mechanism.
+  The console was unreachable (district-filtered laptop, no cable path), so `#diag` shipped: a
+  read-only on-screen shelf population report, reachable by hash route AND by five taps on the Tidy
+  panel's eyebrow (the installed PWA has no address bar). Read-only was audited, not asserted — no
+  `saveState`, no `sv()`, no `mark*Dirty`, `getMergeTombstones` rather than `prune…`, and
+  `state.books`/`state.userBooks` proven byte-identical before and after entering the route.
+  **It answered on the first tap: TWO ACCOUNTS.** Signed-in uid `5rQp6HQkZZgIoIULLtyY2YHXqWj2`; the
+  Aug-29 census had run on `VApQUg2…`. The live account is clean — **148 bookIds / 148 with records /
+  0 stranded / 0 index duplicates / 8 legitimate groups**, and **The Overstory grouped EXACT**.
+  **Resolves T29** (192 vs 148 = different shelves, not a data-integrity problem) · **resolves M2**
+  (the census three live on the other account; the grouping was correct throughout) · **answers T23**
+  (Overstory is EXACT, so it groups and is merge-eligible). The stranded-pointer line is CLOSED.
+  **Stands:** the census's uid FALLBACK (`census:76`) silently binds to whichever account is in the
+  store — any future run states the uid it bound and confirms it against the signed-in account before
+  its numbers are trusted. And the equivalence-proof gap stands as a lesson though it did not bite:
+  my fixture had every record live, so both readers agreed — and they would have agreed on stranded
+  entries too, by both skipping them. *"Both readers agree" is not "both readers see everything."*
+  Record: `docs/checkpoints/merge-round.md` (final section). `[books]`
+
 - [x] **TIDY LIBRARY — REGISTER, ROUTING, LEGIBILITY — v3.292, 2026-09-02 (LOCAL, awaiting push)** —
   reopen of v3.289–v3.291: the merge surface shipped proven and unreviewed by eye, and was unusable on
   device before anything could be merged. §9 not run and not needed — 0 lines touch merge, undo,
