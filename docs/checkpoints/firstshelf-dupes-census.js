@@ -8,9 +8,16 @@
    no mark*Dirty, no localStorage write, no network call. It reads `state` and
    prints. You can run it as many times as you like; it cannot change your shelf.
 
-   It carries its OWN copy of the tier functions so it runs against the CURRENTLY
-   DEPLOYED bundle (v3.283), which does not have them yet. The function bodies are
-   the same source text that ships in js/views.js this round.
+   It carries its OWN copy of the tier functions so it does not depend on the
+   deployed bundle having them. (Written when the live bundle was v3.283 and did
+   not; the tiers shipped at v3.284. The carried copies are kept so an older
+   bundle can still be censused -- they are not a claim about what is deployed
+   today. Verify the live CACHE_VERSION yourself before reading anything into a
+   disagreement.)
+
+   YOU MUST BE SIGNED IN. This census binds to getCurrentUser().uid ONLY. It has
+   no fallback and will not guess a uid from the store -- see the note at the
+   "who" section below for the two-account run that cost two weeks.
    ============================================================================ */
 (function praxisDupeCensus() {
   'use strict';
@@ -71,18 +78,55 @@
     console.log('CENSUS ABORT -- no `state` on this page. Are you signed in on the app?');
     return;
   }
-  var uid = null;
-  try { if (typeof getCurrentUser === 'function' && getCurrentUser()) { uid = getCurrentUser().uid; } } catch (e) {}
-  if (!uid) {
-    var ks = [], k;
-    for (k in (state.userBooks || {})) { if (state.userBooks.hasOwnProperty(k)) { ks.push(k); } }
-    if (ks.length === 1) { uid = ks[0]; }
+  // ---- who: the SIGNED-IN account, and nothing else ------------------------
+  // There was a sole-key fallback here: when getCurrentUser() yielded nothing it
+  // took the only key of state.userBooks. That silently bound the 2026-08-29 run
+  // to whichever account happened to be in the store, and a two-account browser
+  // profile then read as a 192-vs-148 data-integrity defect for two weeks. It
+  // printed a uid and nobody compared it to the signed-in one.
+  // REMOVED 2026-09-03. This census binds to getCurrentUser().uid ONLY and never
+  // guesses. (CLAUDE.md, "CONFIRM THE UID BEFORE ANY CROSS-SURFACE OR
+  // CROSS-SESSION COMPARISON".)
+  var signedInUid = null;
+  try {
+    if (typeof getCurrentUser === 'function' && getCurrentUser()) {
+      signedInUid = getCurrentUser().uid || null;
+    }
+  } catch (e) { signedInUid = null; }
+
+  if (!signedInUid) {
+    console.log('CENSUS ABORT -- no signed-in user on this page.');
+    console.log('Sign in on the app, then run this again. This census binds to the');
+    console.log('signed-in account ONLY; it will not guess a uid from the store.');
+    return;
   }
-  if (!uid) { console.log('CENSUS ABORT -- could not determine your uid. Sign in first.'); return; }
+
+  var uid = signedInUid;
+
+  var storeUids = [], k;
+  for (k in (state.userBooks || {})) {
+    if (state.userBooks.hasOwnProperty(k)) { storeUids.push(k); }
+  }
+  var boundInStore = false, si;
+  for (si = 0; si < storeUids.length; si++) {
+    if (storeUids[si] === uid) { boundInStore = true; }
+  }
 
   var ids = (state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
   P('R-FIRSTSHELF-DUPES -- SHELF CENSUS (read-only)');
-  P('uid: ' + uid);
+  P('bound uid:     ' + uid);
+  P('signed-in uid: ' + signedInUid);
+  P('uid check: MATCH -- bound to the signed-in account (no fallback exists)');
+  P('accounts in this browser store: ' + storeUids.length + '  [' + storeUids.join(', ') + ']');
+  if (storeUids.length > 1) {
+    P('  ** This browser holds more than one account. Every number below is for');
+    P('  ** ' + uid + ' ONLY. A count that disagrees with another session is the');
+    P('  ** other account, not a defect, until this uid is compared to that one.');
+  }
+  if (!boundInStore) {
+    P('  ** The signed-in uid has NO record in this browser store. The shelf reads');
+    P('  ** as empty here; that is a local-store fact, not a claim about the cloud.');
+  }
   P('total records on the shelf: ' + ids.length);
   P('');
 

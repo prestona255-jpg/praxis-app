@@ -603,7 +603,13 @@ round_entries(){
 render_round_records(){
   printf '<section class="page" id="page-round-records"><h1 class="page-h u-inkgold">Round records</h1>'
   printf '<p class="ov-lead">What every round taught, gathered in one place &mdash; the <b>lessons</b> across the whole build, then each surface&rsquo;s rounds newest-first. The surface ledgers are the record; this reads across them.</p>'
-  # cross-round LESSONS strip: per-surface Round-record `lessons:` (0 today) + CLAUDE.md seams; deduped, newest-first, cap 30
+  # cross-round LESSONS strip: per-surface Round-record `lessons:` + CLAUDE.md seams,
+  # deduped, ledgers first then seams. CAP 50, with a VISIBLE "+N more" line when it fires.
+  # Do NOT read a count off this comment -- measure it. A stale "(0 today)" sat here and is
+  # exactly what made the 2026-09-03 canon round mispredict the strip size (CLAUDE.md
+  # DOC = POINTER). Raised 30 -> 50 in the same round: the strip had reached the old cap,
+  # and because the seams are concatenated LAST, the next CLAUDE.md lesson would have been
+  # the one silently dropped.
   { for s in $SURFACES $LAYERS; do
       awk '/^## Round record/{r=1;next} /^## /{r=0} r&&/^lessons:/{v=$0;sub(/^lessons:[[:space:]]*/,"",v); if(v!="")print v}' "$STUDIO/$s.md" 2>/dev/null
     done
@@ -617,9 +623,11 @@ render_round_records(){
   printf '<p class="sec-eyebrow">Lessons &mdash; across every round</p>'
   printf '<p class="sec-lead">Deduped across every surface ledger and the standing seams in <code>CLAUDE.md</code> &mdash; the whole set fills in as the round-record schema does.</p>'
   printf '<div class="rr-lessons">'
-  head -30 "$TMP/rrlessons" | while IFS= read -r L; do [ -z "$L" ] && continue; printf '<div class="rr-lesson">%s</div>' "$(fmt "$(dectrunc "$L")")"; done
+  head -50 "$TMP/rrlessons" | while IFS= read -r L; do [ -z "$L" ] && continue; printf '<div class="rr-lesson">%s</div>' "$(fmt "$(dectrunc "$L")")"; done
   printf '</div>'
-  [ "$ln" -gt 30 ] && printf '<p class="rr-more">&plus; %s more not shown</p>' "$((ln-30))"
+  # `if`, not a bare `&&` list: a trailing `&&` that tests false returns 1, which would
+  # leak a nonzero status out of this function whenever the cap is NOT exceeded.
+  if [ "$ln" -gt 50 ]; then printf '<p class="rr-more">&plus; %s more not shown</p>' "$((ln-50))"; fi
   # rounds by surface — one card per doc with round history; each row = id + date + tag + lead + ledger link
   printf '<p class="sec-eyebrow">Rounds by surface</p>'
   printf '<p class="sec-lead"><b>ledger</b> = free-form Round history &middot; <b>record</b> = the machine-readable Round-record schema. Newest-first; tap a row to open the surface ledger.</p>'
