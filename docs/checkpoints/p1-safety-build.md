@@ -695,9 +695,9 @@ A deleted arc's sub-theories are re-homed to `arcId:null` and render where today
 | **1 — cost ceiling** | `0fb8aa8` | v3.295 | claude-proxy +900→+1,057 · shelf-vision +700→+444 · lib/ceiling.js new 11,692 · lib/ceiling-core.js new 4,804 · tools/ceiling-core-test new 7,023 · vision-proxy.js −10,134 (deleted) · yumi-brain −392 (helpers +3,900, 12 sites −4,290) · import-capture +106 · views +1,732 · yumi-ui +891 · sw +0 | direct proxy `fetch(`: 14 → 0 (12 + 1 + 1); `aiProxyFetch(` 14, `aiProxyRequest(` 3 | no BLOCK; 2 CONCERNs fixed pre-commit (explicit `createPublicKey` on the cert PEM; doc currency), 4 notes; residuals R1-a (a cert-fetch blip reads as "sign in again"), R1-b (book-mode does not refund the client shot on `limit`, matching its existing pattern) |
 | **4 — FX-1c + reference sweep** | `12a8c2c` | v3.296 | state +4,800→+5,070 · integrations +3,200→+5,261 (4a +3,393; the retry queue added after the red-team +1,868) · views +1,200→+2,420 · tools/fx1c-sim new 16,316 · sw +0 | `FX-1c splat-begin/end` 4/4 · `noteRecordDeleted(` 4+1 · `getPendingDeletes(` 4+4 · `clearPendingDelete(` 1+4 · `unpublishArc(` in views 1 → 2 · `pendingDeleteSync` 0 (the record's name; the key is `praxis_pending_deletes_<kind>_<uid>`) | no BLOCK; 3 CONCERNs fixed pre-commit (mark-composer orphan collision; the deleted-arc toast said "publish again" and my "sanitize retries" claim was false → honest copy + a durable retry queue drained on the next arcs load; two anchors re-derived against the committed tree: `mergeBookDuplicates` views.js:8599, drop-side artifact delete :8778). Residual R4-1: the merge's drop-side artifact delete stays unguarded (marking it needs a 2-line touch inside the closed Undo — your call) |
 | **3 — export** | `ac8a7f0` | v3.297 | integrations +9,000→+23,041 (CODE overage, stated: five Markdown writers + zip + delivery + two hoisted builders) · views +2,500→+5,191 · state −1,428 (exportWorkspace deleted) · components.css +770 · tools/export-test new 20,292 · sw +0 | `exportWorkspace` fn 0 · `buildUserProfileDoc(` 3 · `buildUserReaderModelDoc(` 3 · `prepareExport(` 1+2 · `_pfDataSection(` 2 | 1 BLOCK + 1 CONCERN, both fixed pre-commit: the studio ledger line overclaimed Item 2 as built; the prepared archive was not uid-bound at Save (now stamped + re-checked). The agent also validated a real archive with Info-ZIP `unzip -t` |
-| **2 — account deletion** | ``277c7fd`` | v3.298 | integrations +3,800→+9,886 (the flow + the batch + the sweep + the awaited re-upload) · views +5,000→+5,572 · state −900→−55 · components.css +1,200→+2,417 · firestore.rules +400→+1,486 · tools/delete-test new 21,959 · sw +0 | `function deleteAccount` 1 · `deleteAccountCloudData(` 2 · `wipeAccountLocal(` 2 · `accountLocalKeysFor(` 2 · `openAccountDeleteConfirm` fn 0 · `wipeActiveUserLocal` fn 0 · `renderDeletedPage(` 2 · `parts[0] === 'deleted'` 1 · rules `aiUsage` 1 | pass 1: 2 BLOCKs (the "recoverable by sync" claim → now an AWAITED per-collection re-upload; the absolute "nothing can be restored" → honest copy + residual R2-1) + 4 concerns/notes (partial-chunk honesty, the visual row, four uid-less keys, null email) — all fixed; pass 2 on the fixes: 1 BLOCK (a stale 49/49 in the ledger) + the retry race the recovery introduced (fixed by awaiting) + two measure keys — all fixed. Residual R2-2: rule-servable queries, live check |
+| **2 — account deletion** | `277c7fd` | v3.298 | integrations +3,800→+9,886 (the flow + the batch + the sweep + the awaited re-upload) · views +5,000→+5,572 · state −900→−55 · components.css +1,200→+2,417 · firestore.rules +400→+1,486 · tools/delete-test new 21,959 · sw +0 | `function deleteAccount` 1 · `deleteAccountCloudData(` 2 · `wipeAccountLocal(` 2 · `accountLocalKeysFor(` 2 · `openAccountDeleteConfirm` fn 0 · `wipeActiveUserLocal` fn 0 · `renderDeletedPage(` 2 · `parts[0] === 'deleted'` 1 · rules `aiUsage` 1 | pass 1: 2 BLOCKs (the "recoverable by sync" claim → now an AWAITED per-collection re-upload; the absolute "nothing can be restored" → honest copy + residual R2-1) + 4 concerns/notes (partial-chunk honesty, the visual row, four uid-less keys, null email) — all fixed; pass 2 on the fixes: 1 BLOCK (a stale 49/49 in the ledger) + the retry race the recovery introduced (fixed by awaiting) + two measure keys — all fixed. Residual R2-2: rule-servable queries, live check |
 
-Proof harnesses (all cscript, all over the REAL bytes, all self-checking): `tools/ceiling-core-test` 28/28 (N admitted, N+1 refused with resetAt, the 00:00 UTC reset with an injected clock, a second uid unaffected, a forged body uid unreachable) · `tools/fx1c-sim` 60/60, and with the guard stripped exactly the 4 resurrection cases fail · `tools/export-test` 58/58 (round-trip counts + every string byte-equal, 12 prose strings verbatim in JSON and Markdown, a second uid absent, the zip parsed back with re-computed CRCs) · `tools/delete-test` 49/49 (every failure leg + the success order + the local sweep). Rig (localhost, stub uid): Item 3's prepare → "Ready: 1 book, 1 arc … (6 KB)" → Save; Items 2/3 measured fresh at 1360 and 390 (rects, pixels visible, element under the tap, contrast ≥ 6.78:1 on every text element, the confirm ≈14:1) — screenshots time out in this pane (the documented rig fact); geometry is the evidence and the felt pass is yours.
+Proof harnesses (all cscript, all over the REAL bytes, all self-checking): `tools/ceiling-core-test` 28/28 (N admitted, N+1 refused with resetAt, the 00:00 UTC reset with an injected clock, a second uid unaffected, a forged body uid unreachable) · `tools/fx1c-sim` 60/60, and with the guard stripped exactly the 4 resurrection cases fail · `tools/export-test` 58/58 (round-trip counts + every string byte-equal, 12 prose strings verbatim in JSON and Markdown, a second uid absent, the zip parsed back with re-computed CRCs) · `tools/delete-test` 58/58 (every failure leg incl. a mid-way chunk failure, the awaited re-upload, the success order, the local sweep). Rig (localhost, stub uid): Item 3's prepare → "Ready: 1 book, 1 arc … (6 KB)" → Save; Items 2/3 measured fresh at 1360 and 390 (rects, pixels visible, element under the tap, contrast ≥ 6.78:1 on every text element, the confirm ≈14:1) — screenshots time out in this pane (the documented rig fact); geometry is the evidence and the felt pass is yours.
 
 Not provable from this box, stated plainly: Item 1's Node glue (token verify + Firestore REST) — Node is blocked; proven live by §6 (a). The iOS Share sheet (no iOS here). Item 2's Firebase legs (re-auth, batch, Auth delete) — no real auth on the rig; the harness proves the ORDER and what each leg touches, §6 proves them live.
 
@@ -711,6 +711,143 @@ Things I did that you should know: state.js and integrations.js were MIXED CRLF/
 | v3.295 (Item 1) | `0fb8aa8` | GREEN locally; needs `PRAXIS_SA_KEY` + caps in Netlify BEFORE push (fail-closed) |
 | v3.296 (Item 4) | `12a8c2c` | GREEN |
 | v3.297 (Item 3) | `ac8a7f0` | GREEN |
-| v3.298 (Item 2) | ``277c7fd`` | GREEN (two passes); needs the rules published BEFORE push |
+| v3.298 (Item 2) | `277c7fd` | GREEN (two passes); needs the rules published BEFORE push |
 NOT pushed. Builder regen (`tools/studio-build`) deferred to the push point per BUILDER CADENCE — it rides
 the push go-ahead, not these commits. Pushing is a separate go-ahead.
+
+(Sections 5 and 6 of the consolidated report — the prerequisites and the device click-paths — follow; they belong between §4 and §7 above.)
+## 5. PRESTON'S PREREQUISITES — exact, in order
+
+**Before v3.295 (Item 1) pushes — Netlify → Site configuration → Environment variables:**
+| name | value | secret? |
+|---|---|---|
+| `PRAXIS_SA_KEY` | the FULL service-account JSON (Firebase console → Project settings → Service accounts → Generate new private key; project `praxis-b25d6`). Paste the whole file as one value. | **YES — secret; never in the repo, never in chat** |
+| `PRAXIS_AI_DAILY_CAP` | `300` | no |
+| `PRAXIS_AI_CAP_OVERRIDES` | **leave UNSET until the cap=3 test is done**, then `5rQp6HQkZZgIoIULLtyY2YHXqWj2:1500` | no |
+(`PRAXIS_CLIENT_KEY` and `ANTHROPIC_API_KEY` already exist — unchanged.) Fail-closed means: until
+`PRAXIS_SA_KEY` is set, every Yumi / shelf-scan call answers 503 `ceiling_unconfigured` and the app says
+"Yumi is unavailable right now — the usage ceiling could not be checked." That is the intended behaviour
+of a missing key, not a bug.
+
+**Before v3.298 (Item 2) pushes — Firebase console → Firestore → Rules → paste the repo's
+`firestore.rules` (the whole file, it is the source of truth) → Publish.** The three additions, verbatim:
+
+```
+    match /publicProfiles/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(publicProfileKeys());
+      // P1 SAFETY (2026-09-03): the owner may DELETE their public projection --
+      // without this the public name + publishedArcIds outlived the account.
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
+    }
+```
+```
+      // P1 SAFETY (2026-09-03): EITHER endpoint may delete the edge -- a reader
+      // deleting their account must be able to remove the edges that point AT
+      // them, not only the ones they made.
+      allow delete: if request.auth != null
+                    && (resource.data.followerUid == request.auth.uid
+                        || resource.data.targetUid == request.auth.uid);
+```
+```
+    match /aiUsage/{uid} {
+      allow read, create, update: if false;
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
+    }
+```
+Publishing the rules BEFORE v3.298 is safe on its own (they only widen delete for owners and lock
+`aiUsage` to server-only writes). Publishing them before v3.295 is also fine — the function's service
+account bypasses rules.
+
+**Order:** rules published → env vars set (overrides UNSET) → push v3.295…v3.298 (one push) → the Item 1
+cap=3 test on the TEST account → restore `PRAXIS_AI_DAILY_CAP=300`, set the override → Items 2/3 device
+passes.
+
+## 6. DEVICE CLICK-PATHS (written for DevTools on the live site unless marked PWA)
+
+**Item 1 — the ceiling (test account `IdeCZDWvmPMvoEcfAQnMXVApQUg2`, `PRAXIS_AI_DAILY_CAP=3`,
+`PRAXIS_AI_CAP_OVERRIDES` UNSET — the override must not be in place or it silently defeats the test).**
+Expected observable in bold. Any of (c)–(f) returning 200 = FAIL-OPEN = Item 1 FAIL regardless of (b).
+- (0) Hard-refresh praxis-reading.netlify.app on the laptop, accept "new version ready — Reload",
+  DevTools → Application → Service Workers → confirm **`praxis-v3.298`** (or the pushed tip). Sign in as
+  the TEST account.
+- (a) Console: `firebase.auth().currentUser.getIdToken().then(function(t){copy(t); console.log(t.length)})`
+  → **a ~900+ char token is on the clipboard**; paste it into a note now — it is the (e) input.
+- (a′) Read the day's starting count: nothing to read client-side (the doc is server-only by rule) —
+  note the UTC date instead.
+- (b) Open Yumi, send "hello" → **Yumi answers** (this is the FIRST check: a normal signed-in call
+  succeeds through the new verifier). One Yumi turn is ~3 proxy calls (router + gate + reply), so with
+  cap 3 the SECOND message must be refused: send "and again" → **the bubble reads "You’ve reached today’s
+  limit for Yumi. It resets at <your local time for 00:00 UTC>."** — NOT "Something went wrong reaching
+  Yumi." Network tab: the refused `claude-proxy` call is **429** with body
+  `{"code":"daily_limit","limit":3,"used":3,"resetAt":"<tomorrow>T00:00:00.000Z"}`.
+- (c) Console, no Authorization header:
+  `fetch('/.netlify/functions/claude-proxy',{method:'POST',headers:{'Content-Type':'application/json','x-praxis-key':PRAXIS_CLIENT_KEY},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8,messages:[{role:'user',content:'hi'}]})}).then(r=>r.status)`
+  → **401** (body `{"code":"unauthenticated"}`).
+- (d) Same fetch with `'Authorization':'Bearer '+T` where `T` is the token from (a) with its LAST character
+  changed → **401**.
+- (e) More than ONE HOUR after (a): the same fetch with the ORIGINAL token from (a) → **401** (exp).
+  (A fresh `getIdToken()` at that moment → 429/200 as normal — proves it is the expiry, not the account.)
+- (f) Netlify → env → temporarily UNSET `PRAXIS_SA_KEY` → trigger a redeploy (Deploys → Trigger deploy) →
+  the (c) fetch WITH a fresh valid token → **503** `{"code":"ceiling_unconfigured"}`, and Yumi's bubble
+  says "Yumi is unavailable right now — the usage ceiling could not be checked." → restore the key,
+  redeploy.
+- (g) Sign in as the MAIN account on a second device/profile during the same UTC day → send one Yumi
+  message → **answers** (a second uid is unaffected; its own counter).
+- After: `PRAXIS_AI_DAILY_CAP=300`, set `PRAXIS_AI_CAP_OVERRIDES=5rQp6HQkZZgIoIULLtyY2YHXqWj2:1500`,
+  redeploy. **The test uid's `aiUsage/IdeCZDWvmPMvoEcfAQnMXVApQUg2` doc will read `count: 4` (or the
+  attempts made) until 00:00 UTC** — expected; it rolls to 1 on its first call the next UTC day.
+
+**Item 3 — export (installed PWA on the iPhone; then Safari on the laptop).**
+- (1) PWA: Profile → scroll to the **"Your data"** card below Settings → tap **"Export my data"** →
+  button reads **"Preparing…"**, status "Gathering your books, arcs, notes and photos…" → then
+  **"Ready: N books, M arcs, K photos · praxis-export-2026-09-0X.zip (S KB). Tap Save to keep it."** and
+  the button reads **"Save the archive"**. (N/M should match the shelf and arcs pages; K = photos taken on
+  THIS phone.)
+- (2) Tap "Save the archive" → **the iOS Share sheet opens with the zip** → choose "Save to Files" →
+  status **"Shared praxis-export-….zip. Export again any time…"**. Files app → open the zip → **a folder
+  with praxis.json, README.md, notebook.md, profile.md, books/, arcs/, images/**; open one book's .md →
+  its notes and value-mark "why" read verbatim.
+- (3) Laptop Safari/Chrome: same two taps → **a download** (no Share sheet) → unzip → `praxis.json`
+  opens as JSON, `"uid"` is yours, `collections.userBooks.books` has every book.
+- (4) Contrast/look (VISUAL GATE): the card sits in the Settings register; at 1360 the button is the
+  gold `Save` register, at 390 the button spans the row. Felt pass = yours.
+
+**Item 2 — account deletion (a THROWAWAY Google account; never the main one).**
+- (0) Create/sign in with a throwaway Google account on the laptop; add 2 books, 1 arc with a sub-theory,
+  1 note with a photo; publish the arc; follow the main account from it and have the main account follow
+  it back. Wait for sync (reload → the data is still there).
+- (1) Profile → Your data → **"Delete account…"** → the panel opens IN the card: title "Delete your
+  account", the plain-language copy, step 1 **"Export first"** (optional), step 2 the email field, the
+  red **"Delete my account"** button DISABLED.
+- (2) Tap "Export first" → the same prepare/save flow as Item 3 inside the panel (optional — skipping is
+  allowed).
+- (3) Type a WRONG email → **button stays disabled**; type the account's email exactly → **enabled**.
+- (4) Tap "Delete my account" → **"Step 1 of 4 — confirming it is you (a Google window will open)…"** →
+  CLOSE the Google popup without choosing → **"Nothing was deleted. We could not confirm it was you… Your
+  account and everything in it are exactly as they were."** — reload: **everything is still there,
+  still signed in** (the requires-recent-login leg: data + session intact).
+- (5) Tap again → this time complete the Google re-auth → **"Step 2 of 4 — removing your data…"** → **"Step
+  3 of 4 — removing the login…"** → **"Step 4 of 4 — clearing this device…"** → **the #deleted page:
+  "Your account is gone."** with "Back to Praxis".
+- (6) Proof of absence: Firebase console → Authentication → **the throwaway user is gone**; Firestore →
+  `userBooks/<uid>` … `userArtifacts/<uid>`, `publicProfiles/<uid>`, `aiUsage/<uid>` → **no documents**;
+  `publishedArcs` filtered by that authorUid → **none**; `follows` → **both edges gone**. DevTools →
+  Application → Local Storage → **no key contains the uid**, `praxis_user` absent; IndexedDB
+  `praxisNotebook/photos` → **that photo's record gone**. Sign in as the MAIN account → **everything
+  intact**, and the main account's Followers no longer lists the ghost.
+- (7) Partial-failure leg (forced): with a SECOND throwaway, run (1)–(4), then before tapping Delete,
+  Firebase console → Authentication → **disable** that user; tap Delete → re-auth completes (the popup
+  may refuse a disabled user — if it does, that IS the reauth leg again, note it and re-enable, sign in
+  fresh, then instead revoke the session via console → Users → "…" → Revoke tokens AFTER the re-auth
+  popup closes but before Step 3) → expected: **"Your data was removed from Praxis, but the login could
+  not be removed (…). Nothing on this device was cleared, so your account is recoverable…"** → reload:
+  **still signed in, the shelf still shows the local data, and sync writes it back** (Firestore shows
+  the docs again) → run Delete again → **completes to #deleted**.
+- (8) Second signed-in device: sign the throwaway in on the phone too, delete from the laptop; on the
+  phone, reload → **the phone sees no user data and cannot write it back (the auth user is gone: the
+  next token refresh fails and the phone falls to signed-out)**. Note what the phone shows.
