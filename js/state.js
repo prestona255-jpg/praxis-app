@@ -2038,51 +2038,11 @@ function _yumiProfileCooldownOk() {
 }
 function _markProfileRefresh() { sv('praxis_yumi_profile_cooldown', Date.now()); }
 
-// Stage 14.3 Stage 2: serialize the ACTIVE user's workspace into a single
-// JSON-serializable object. No download trigger here -- Stage 4 (views)
-// owns the Blob/anchor. uid is resolved at CALL time via getCurrentUser
-// (defined in integrations.js, which loads AFTER state.js; referencing it
-// only inside this function body is safe because the call happens at
-// runtime, never at parse/define time). Null user -> null return.
-//
-// Scoping asymmetry is intentional (locked Stage 2 decision):
-//   - books: walk state.userBooks[uid].bookIds and map each id to its
-//     state.books record, SKIPPING any id with no matching record. The
-//     ownership list makes export immune to a stale cross-uid book ever
-//     present in the flat state.books map.
-//   - arcs / subTheories / notebookEntries: serialized DIRECTLY from
-//     their flat maps. They have no per-uid ownership list and ride the
-//     clearUserState single-user wipe guarantee; a userId filter would
-//     wrongly drop the shared __praxis_seed__ "A Pedagogy of Desire" arc.
-function exportWorkspace() {
-  var u = getCurrentUser();
-  if (!u || !u.uid) {
-    return null;
-  }
-  var uid = u.uid;
-  var books = {};
-  var bookIds = (state.userBooks &&
-                 state.userBooks[uid] &&
-                 state.userBooks[uid].bookIds)
-    ? state.userBooks[uid].bookIds
-    : [];
-  var i;
-  for (i = 0; i < bookIds.length; i++) {
-    var bid = bookIds[i];
-    if (state.books && state.books[bid]) {
-      books[bid] = state.books[bid];
-    }
-  }
-  return {
-    schemaVersion:   state.SCHEMA_VERSION,
-    exportedAt:      Date.now(),
-    profile:         getProfile(uid),
-    books:           books,
-    arcs:            state.arcs ? state.arcs : {},
-    subTheories:     state.subTheories ? state.subTheories : {},
-    notebookEntries: state.notebookEntries ? state.notebookEntries : {}
-  };
-}
+// P1 Item 3 (2026-09-03): exportWorkspace() -- the Stage 14.3 serializer -- was DELETED.
+// It had had no caller since e5671d1 and omitted userThemes, bookArtifacts, the reader
+// model and the notebook photos. The export now lives in integrations.js
+// (buildExportBundle + prepareExport / deliverExport) and is built from the SAME
+// eight Firestore payload builders the sync writes, so it equals the cloud record.
 
 function clearUserState() {
   state.currentBookId = null;
@@ -2128,7 +2088,7 @@ function clearUserState() {
   // state into B -- B's first outgoing .set() would otherwise clobber B's un-loaded
   // remote data. The latches are module-global vars in integrations.js (loaded AFTER
   // state.js), so this is a runtime-only typeof-guarded call, never referenced at
-  // parse/define time. Mirrors the exportWorkspace/getCurrentUser cross-file pattern.
+  // parse/define time. Mirrors the getCurrentUser cross-file pattern (typeof-guarded runtime call).
   if (typeof resetSyncLatches === 'function') { resetSyncLatches(); }
 }
 
@@ -2409,7 +2369,7 @@ function createSubTheory(arcId, fields) {
   var id = genSubTheoryId();
   var creator = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   // L4 (W10 Lane B): block a signed-out caller from minting a draft via a stale
-  // #arc/<id>/new-subtheory link. Mirrors exportWorkspace's auth guard -- reuse the
+  // #arc/<id>/new-subtheory link. Mirrors the runtime getCurrentUser auth guard -- reuse the
   // creator capture above, guard on uid, return null. The views.js redirect already
   // falls back to #arcs on a null return; no schema change, signed-in path unchanged.
   if (!creator || !creator.uid) return null;

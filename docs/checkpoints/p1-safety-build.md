@@ -311,3 +311,151 @@ null. Findings + dispositions, all fixed before commit:
 Post-fix re-checks: parse OK ×3, sim 60/60 + unguarded 56/60 (4 C1), C3A2 0, CR 0. Final bytes
 (LF): state.js +5,070 · integrations.js +5,261 (4a +3,393, the retry queue + reason +1,868) ·
 views.js +2,420 (4a +350, 4b +854, the guard + honest toast + retry call +1,216) · sw.js +0.
+
+### Item 4 commit
+**`12a8c2c`** — `fix(P1 Item 4) — FX-1c delete symmetry, verbatim from the record, and the reference
+sweep: a deleted arc no longer stays live in the commons → v3.296` — 9 files, +636/−15, tracked tree
+clean after.
+
+## ITEM 3 — EXPORT (v3.297)
+
+### Design as ruled
+- **JSON canonical from the SAME eight Firestore payload builders** (R3.1): `buildExportBundle(uid, email,
+  published, publicProfile, exportedAt)` (integrations.js, beside the builders) calls `buildUserBookDoc` /
+  `buildUserArcsDoc` / `buildUserNotebookDoc` / `buildUserSubTheoriesDoc` / `buildUserThemesDoc` /
+  `buildUserArtifactsDoc` and the two payloads that were INLINE in their save functions and are now
+  HOISTED — `buildUserProfileDoc(uid, profile, stampFn)` and `buildUserReaderModelDoc(uid, model,
+  stampFn)` — so `saveProfileToFirestore` / `saveReaderModelToFirestore` and the export write the SAME
+  fields (the HOIST lesson; the save sites now call the builders with `_fsServerStamp`). The ONLY
+  transformation on a payload is the `updatedAt`/`syncedAt` Firestore sentinel → the export instant;
+  every record object is carried by reference. Wrapper: `{format:'praxis-export', version:1,
+  schemaVersion, exportedAt, exportedAtIso, uid, email, collections:{8}, published:[{id,data}…] (publishedArcs
+  where authorUid==uid), publicProfile}`. Firestore Timestamps inside the projections → ISO strings in
+  the JSON (a replacer), everything else verbatim.
+- **Markdown bundle** (R3.5): `books/<slug>.md` (details · value marks with `why` verbatim · every entry on
+  the book with body verbatim + photo links · the artifact title + body verbatim), `arcs/<slug>.md` (title,
+  description, value marks, books, each sub-theory: header/status, PUBLIC and WORKING bodies verbatim,
+  value marks, evidence with quote + annotation verbatim and the cited entry's body for `{kind:'entry'}`,
+  the arc's entries), `arcs/_unrooted.md` (sub-theories with no live arc — the re-homed ones), `notebook.md`
+  (every entry, in order, with its book/arc context), `profile.md` (names, tagline, carrying question,
+  statement, per-value statements, the reader-model summary + threads, the public profile), `README.md`.
+  Slugs are title-derived with a uid-suffix on collision; prose is inserted RAW (never escaped).
+- **ZIP, hand-written, STORE-only, real CRC32** (R3.2): `buildZipBlob(entries, nowMs)` — local headers
+  (flag 0x0800 UTF-8 names), central directory, EOCD; `zipCrc32` table-driven (0xEDB88320); a manual
+  UTF-8 encoder (`_u8FromString`, surrogate pairs handled). No library.
+- **Photos** (R3.3): `_exportCollectImages` reads every image id this bundle's entries reference from
+  IndexedDB (`nbPhotoIdbGet`), packs `images/<id>.<ext>` by blob type, and rewrites the Markdown links to
+  the real extension; a blob absent on this device (cross-device ref) is skipped, not an error.
+- **Delivery** (R3.4): two taps by design — PREPARE (async: projections + photos; button reads
+  "Preparing…", status line reports what was gathered and the size) then SAVE inside the tap:
+  `deliverExport` → `navigator.canShare({files:[File]})` → Share sheet; else `<a download>`; `cancelled`
+  / `failed` / `shared` / `downloaded` each get an honest status line. The projections' Firestore reads
+  failing (signed-out rig, offline) does NOT block the export — the private record still exports.
+- **Placement** (R3.6): the Profile's Settings register — a new "Your data" `.pf-card` after the Settings
+  card (`_pfDataSection`, `sec-data pf-owner-only`), primary `.pf-btn.save` "Export my data", wired
+  through `_pfWire` (`export-prepare` / `export-save` act on the TAPPED button so Item 2's panel can offer
+  the same export). `_pfDataDeleteControl` is an empty stub Item 2 fills.
+- `exportWorkspace()` (state.js) DELETED with a note; its two comment citations reworded.
+
+### Proofs
+- **`tools/export-test`** (cscript; loads the REAL state.js + integrations.js in ONE scope with
+  localStorage / firebase / Blob / Uint8Array shims and ES5 shims, seeds a fixture through the app's own
+  writers — `ensureUser`, `ensureBookFields`, `createArc`, `addBookToArc`, `addEntryToArc`,
+  `createSubTheory`, `addEvidence`, `createUserTheme`, `ensureOneArtifact`, `setProfile`, `getReaderModel`;
+  notebook entries in the capture writer's shape) → **58 / 58 passed** (self-check first):
+  [1] round-trip: parse(stringify(bundle)) → counts per collection == seed (2 books / 2 index / 1 arc /
+  2 entries / 2 subs / 1 theme / 1 artifact), the sentinel replaced by the export instant, profile
+  statement + reader-model summary byte-equal, projections + public profile carried, **every string field
+  of every live record byte-equal after the round-trip (0 mismatches)**; [2] PROSE INVARIANT: 12 prose
+  strings (two `why`s incl. newlines/unicode/emoji, two entry bodies incl. markdown-looking text, the
+  public + working bodies, artifact title + body, quote, annotation, statement, description) each present
+  VERBATIM in the JSON and in the Markdown; the artifact body in the book file, the working body in the
+  arc file, the orphan in `_unrooted.md`, the photo link in the book file; [3] a second uid's book, arc,
+  entry and prose ABSENT from JSON and Markdown; [4] CRC32 reference vector `'123456789'` → 0xCBF43926,
+  UTF-8 encoder 5 bytes for `café` / 4 for an emoji, the archive parsed BACK from its bytes — EOCD
+  signature + count, central directory ends at the EOCD, every entry's local signature / STORE method /
+  sizes / **re-computed CRC equal**, names intact, total size == Σ(30+name+data) + Σ(46+name) + 22.
+  (Three harness-side false failures on the way, each fixed in the harness: `createArc`'s argument order
+  is (title, description, uid); the REAL `getCurrentUser` in integrations.js reads `praxis_user`, so the
+  fixture must stub it; cscript reads the harness in the system codepage, so non-ASCII test strings are
+  built from char codes.)
+- Parse gates: integrations.js / state.js / views.js → PARSE OK exit 0. C3A2 0, CR 0 on all.
+- grep: `exportWorkspace` fn defs 0 (1 comment mention, the deletion note) · `buildUserProfileDoc(` 3 (def
+  + save site + export) · `buildUserReaderModelDoc(` 3 · `prepareExport(` views 1 / integrations 2 (def +
+  self) · `deliverExport(` views 1 · `_pfDataSection(` 2 · `export-prepare` act 1 · `.pf-data-line` 2.
+- **Live, UI-driven, on the rig** (localhost:8791, SW unregistered, stub uid `d0tester`, the seed
+  workspace): see the rig lines below — the card renders in the Profile, the button is the element under
+  the tap, PREPARE runs against the real code path (the projection reads fail signed-out and are
+  tolerated), the status line reports the archive.
+
+### VISUAL GATE (#11) — owner-visible delta, measured fresh 2026-09-03 on the rig
+Delta stated before build: the Profile's Settings column gains a "Your data" card below Settings with one
+gold primary button "Export my data"; nothing else on the page moves. Reference surface: `.pf-card` /
+`.pf-set-row` / `.pf-btn.save` (components.css:15488/15576-15578; views.js `_pfSettingsSection`).
+| viewport | card rect | pixels visible (after scrollIntoView) | element under the button | copy |
+|---|---|---|---|---|
+| 1360×900 | x34 y734 w1277 h166 | 166 / 166 | `.pf-data-line` (card), button 113×44 | eyebrow "Your data" |
+| 390×844 | x18 y473 w354 h189 | 189 / 189, no horizontal overflow | `[data-act=export-prepare]` (button 310×44, full-row) | same |
+Type: `.pf-data-line` Cormorant Garamond 15px `rgb(100,89,64)` on the card's `rgb(255,253,248)` → **6.8:1**;
+the button is the unchanged `.pf-btn.save` gold register. Screenshots in this headless pane time out
+(the documented rig fact — geometry is the evidence); Preston's felt pass closes the gate. Rig note: at
+390 the FIRST measurement hit the first-run intro overlay (`.intro-panel-wrap`, the stub user's
+`praxis_intro_profile`), not the button — the rig's first-run flow, not a defect; removed for the tap
+measurement. Console on the rig: two `google-books-proxy` 404s (no functions on the rig) + the SW
+registration error — pre-existing rig behaviour, not Item 3.
+
+### Bytes (LF-normalized) — expected vs actual
+| file | expected | actual |
+|---|---|---|
+| js/integrations.js | +9,000 (bundle + markdown + zip) | +23,041 (the module is 4× the estimate: markdown writers for 5 files + the zip + delivery + the two hoisted builders) |
+| js/state.js | −1,500 (exportWorkspace deleted) | −1,428 |
+| js/views.js | +2,500 | +5,191 |
+| assets/components.css | +900 | +770 |
+| tools/export-test | new | new 18,4xx |
+| sw.js | +0 | +0 (praxis-v3.296 → praxis-v3.297) |
+The integrations.js overage is CODE, not comment (a code-band breach by the declared figure): stated
+here, not widened silently — the Stage-0 floor under-counted five Markdown writers and the delivery layer.
+
+### Rig — live, UI-driven (2026-09-03, localhost:8791, SW unregistered, stub uid `d0tester`)
+1. Fresh stub (owns nothing; the seed workspace belongs to `__praxis_seed__`): tap "Export my data" →
+   button "Preparing…" (disabled), status "Gathering your books, arcs, notes and photos…" → after the
+   real `prepareExport` (the two Firestore projection reads FAIL signed-out and are tolerated) → status
+   **"Ready: 0 books, 0 arcs, 0 photos · praxis-export-2026-09-03.zip (3 KB). Tap Save to keep it."**,
+   button → "Save the archive" (`data-act=export-save`), `_pfExportPrepared` = 4 entries (praxis.json,
+   notebook.md, profile.md, README.md), json head `{"format":"praxis-export","version":1,
+   "schemaVersion":"1.30.0",…}`.
+2. Seeded 1 book (+ a value mark `why`) / 1 arc / 1 sub-theory (+ book evidence with quote +
+   annotation) / 1 marginalia entry for `d0tester` through the state writers + `saveState()`, re-tapped →
+   **"Ready: 1 book, 1 arc, 0 photos · praxis-export-2026-09-03.zip (6 KB)"**, 6 entries, **all 7 RIG prose
+   needles present in the JSON**, `"uid": "d0tester"` in the JSON.
+3. Tap "Save the archive" → this pane has no `navigator.share` → the anchor-download path → status
+   **"Saved praxis-export-2026-09-03.zip to your downloads. Export again any time — the archive is a
+   snapshot of right now."**, button back to "Export my data", `_pfExportPrepared` cleared. (The pane's
+   sandbox makes the download itself inert — the path and the copy are what is proven here; the Share
+   sheet is proven on Preston's iPhone.)
+
+### Red-team (§9) — dispatched on the frozen (staged) tree
+(appended below when it returns)
+
+### Red-team (§9) — dispatched on the frozen (staged) tree — VERDICT: 1 BLOCK + 1 CONCERN, both fixed before commit
+The agent diffed the hoisted builders field-by-field against the deleted inline payloads (HEAD vs staged:
+byte-identical fields, defaults and guards; the sentinel still what the save sites write; the export
+stamps only its own fresh wrapper), re-ran `tools/export-test` (58/58), re-measured every byte delta
+(exact), the ES3 rail, UTF-8 and CR, the sw.js bump, the owner-only fence, the synchronous share call
+inside the tap — and went further than the harness: it wrote a standalone script that loads the REAL
+staged `buildZipBlob` / `_u8FromString`, wrote a real .zip, and validated it with the actual Info-ZIP
+`unzip` binary (`unzip -t` → "No errors detected"; `-l` / `-p` list and extract) — the format is
+standard-compliant, not merely self-consistent.
+1. **BLOCK** — `docs/studio/account.md` (staged) said "Items 3 + 2 — LOCAL v3.297 / v3.298" and described
+   Item 2's mechanics as built, inside a diff that builds Item 3 only: a status claim about work that did
+   not exist (the claims-outliving-code family). FIXED: the line now records Item 3 only and says in so
+   many words that Item 2 is the next commit and not built as of that line. (BOARD.md's parallel line
+   was phrased as a forward note and was fine.)
+2. **CONCERN** — `_pfExportPrepared` was a bare module var with no uid; the SAVE tap re-used it without
+   re-checking identity, so a shared-browser account switch between PREPARE and SAVE (narrow but real:
+   the Profile page must stay mounted across the switch) could hand one reader another reader's prose.
+   FIXED: `prepareExport` stamps `uid` on the prepared record; `_pfExportSave` discards it and re-prepares
+   when `r.uid !== uid` or the signed-in user now is not `uid`. Not harness-testable offline (the prepare
+   path is Firebase-async); proven by code read + grep (`r.uid !== uid` 1, `uid: uid, blob` 1).
+Post-fix: parse OK ×2, 58/58, C3A2 0. Final bytes (LF): integrations.js +23,041 · views.js +5,191 ·
+state.js −1,428 · components.css +770 · sw.js +0.

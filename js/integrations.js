@@ -1051,46 +1051,7 @@ function saveProfileToFirestore(uid, profile, callback) {
     firebase.firestore()
       .collection('userProfiles')
       .doc(uid)
-      .set({
-        displayNameOverride: (profile && profile.displayNameOverride) ? profile.displayNameOverride : '',
-        penName:             (profile && profile.penName) ? profile.penName : '',
-        // #8 Stage 4b: persist the additive tagline. .set() is a full-doc
-        // overwrite, so this MUST be listed or it would be wiped on every save.
-        tagline:             (profile && profile.tagline) ? profile.tagline : '',
-        // 6.2b: persist the first-run greeting flag. .set() is a full-doc
-        // overwrite, so this field must be present or it would be wiped on
-        // every Account-page save. Callers pass getProfile(uid), which now
-        // carries onboardingSeen.
-        onboardingSeen:      (profile && profile.onboardingSeen === true),
-        // N-epic: master consent switch. Full-doc .set() -> must be listed or
-        // it would be wiped. Default-true-preserving: writes true unless the
-        // local value is explicitly false.
-        yumiReadsAlong:      !(profile && profile.yumiReadsAlong === false),
-        // yumi-intelligence Stage I: reader-model opt-in. Full-doc .set() -> must
-        // be listed or it would be wiped. Default-FALSE-preserving (opt-in):
-        // writes true ONLY when the local value is explicitly true.
-        yumiReaderModel:     !!(profile && profile.yumiReaderModel === true),
-        // yumi-intelligence Stage III: live-web grounding opt-in. Full-doc
-        // .set() -> must be listed or it would be wiped. Default-FALSE-preserving
-        // (opt-in): writes true ONLY when the local value is explicitly true.
-        yumiWebGrounding:    !!(profile && profile.yumiWebGrounding === true),
-        // Alive Yumi: voice prefs. Full-doc .set() -> must be listed or wiped.
-        // Default-preserving: voiceOn writes true only when explicitly true;
-        // talkMode writes hands-free only when explicitly hands-free.
-        voiceOn:             !!(profile && profile.voiceOn === true),
-        talkMode:            (profile && profile.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk',
-        // Portrait Stage 1: the reader's DECLARED values (the "stones"). Full-doc
-        // .set() -> must be listed or it would be wiped on every Account-page
-        // save. Default [] when absent.
-        values:              (profile && profile.values instanceof Array) ? profile.values : [],
-        // R9a (AM8): persist the values-statement prose. Full-doc .set() -> must be
-        // listed or it would be wiped on every Profile save. Default '' when absent.
-        statement:           (profile && typeof profile.statement === 'string') ? profile.statement : '',
-        // R-CAPTURE CA-1: the desk's carrying question. Full-doc .set() -> must be
-        // listed or it would be wiped on every profile save. Default '' when absent.
-        carryingQuestion:    (profile && typeof profile.carryingQuestion === 'string') ? profile.carryingQuestion : '',
-        updatedAt:           firebase.firestore.FieldValue.serverTimestamp()
-      })
+      .set(buildUserProfileDoc(uid, profile, _fsServerStamp))   // P1 Item 3: the ONE profile payload (export uses it too)
       .then(function () {
         finish({ status: 'ok' });
       })
@@ -1163,26 +1124,11 @@ function saveReaderModelToFirestore(uid, model, callback) {
     finish({ status: 'deferred' });
     return;
   }
-  var m = (model && typeof model === 'object') ? model : {};
-  var threads = (m.threads instanceof Array) ? m.threads : [];
-  var prof = (m.profile && typeof m.profile === 'object') ? m.profile : {};
   try {
     firebase.firestore()
       .collection('userReaderModel')
       .doc(uid)
-      .set({
-        threads:   threads,
-        profile: {
-          summary:   (typeof prof.summary === 'string') ? prof.summary : '',
-          updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0,
-          // yumi-intelligence Stage II: persist provenance so a hand-edit lock
-          // ('edited') survives the round-trip and is honored on another device.
-          // Full-doc .set() -> must be listed or it would be wiped. Default 'auto'.
-          source:    (prof.source === 'edited') ? 'edited' : 'auto'
-        },
-        updatedAt: (typeof m.updatedAt === 'number') ? m.updatedAt : 0,
-        syncedAt:  firebase.firestore.FieldValue.serverTimestamp()
-      })
+      .set(buildUserReaderModelDoc(uid, model, _fsServerStamp))   // P1 Item 3: the ONE reader-model payload (export uses it too)
       .then(function () {
         finish({ status: 'ok' });
       })
@@ -2600,6 +2546,495 @@ function playLine(text, onStart, onEnd) {
     if (typeof onEnd === 'function') { onEnd(); }
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// P1 Item 3 — EXPORT. A reader gets ALL their data out, in a form they can use:
+// ONE archive (praxis-export-<date>.zip, STORE-only, hand-written, no library)
+// holding praxis.json (CANONICAL — built from the SAME eight Firestore payload
+// builders the sync writes, so it equals the cloud record by construction) and a
+// Markdown bundle a human can read without a parser: one file per book (marks,
+// notes, rating, artifact), one per arc (sub-theories + evidence), notebook.md,
+// profile.md, README.md, and the notebook photos as images/<id>.<ext>. PROSE
+// INVARIANT: every valueMarks[].why, entry body, artifact body, sub-theory body
+// appears VERBATIM in both formats. Reachable from the Profile's Settings card
+// (Your data) and offered first in the account-deletion flow (Item 2).
+// Delivery: navigator.share with a File when navigator.canShare says so (the
+// installed iOS PWA — Files / AirDrop / Mail), else an <a download>. The share
+// must run inside a user gesture, so the flow is two-step: PREPARE (async:
+// Firestore projections + IndexedDB photos) then a second tap SAVES.
+// ES3: var/function, string concat, two-arg .then. Typed arrays / Blob / File
+// are runtime objects, not syntax.
+// ═══════════════════════════════════════════════════════════════════════
+
+var EXPORT_FORMAT_VERSION = 1;
+
+// The two payloads that were inline in their save functions are hoisted here so
+// the export and the sync write the SAME fields (the HOIST lesson).
+function buildUserProfileDoc(uid, profile, stampFn) {
+  return {
+    displayNameOverride: (profile && profile.displayNameOverride) ? profile.displayNameOverride : '',
+    penName:             (profile && profile.penName) ? profile.penName : '',
+    tagline:             (profile && profile.tagline) ? profile.tagline : '',
+    onboardingSeen:      (profile && profile.onboardingSeen === true),
+    yumiReadsAlong:      !(profile && profile.yumiReadsAlong === false),
+    yumiReaderModel:     !!(profile && profile.yumiReaderModel === true),
+    yumiWebGrounding:    !!(profile && profile.yumiWebGrounding === true),
+    voiceOn:             !!(profile && profile.voiceOn === true),
+    talkMode:            (profile && profile.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk',
+    values:              (profile && profile.values instanceof Array) ? profile.values : [],
+    statement:           (profile && typeof profile.statement === 'string') ? profile.statement : '',
+    carryingQuestion:    (profile && typeof profile.carryingQuestion === 'string') ? profile.carryingQuestion : '',
+    updatedAt:           stampFn()
+  };
+}
+function buildUserReaderModelDoc(uid, model, stampFn) {
+  var m = (model && typeof model === 'object') ? model : {};
+  var threads = (m.threads instanceof Array) ? m.threads : [];
+  var prof = (m.profile && typeof m.profile === 'object') ? m.profile : {};
+  return {
+    threads:   threads,
+    profile: {
+      summary:   (typeof prof.summary === 'string') ? prof.summary : '',
+      updatedAt: (typeof prof.updatedAt === 'number') ? prof.updatedAt : 0,
+      source:    (prof.source === 'edited') ? 'edited' : 'auto'
+    },
+    updatedAt: (typeof m.updatedAt === 'number') ? m.updatedAt : 0,
+    syncedAt:  stampFn()
+  };
+}
+function _fsServerStamp() { return firebase.firestore.FieldValue.serverTimestamp(); }
+
+// The six map builders stamp updatedAt with a Firestore sentinel; in the export
+// that field becomes the export instant (the ONLY transformation applied — every
+// record object is carried by reference, untouched).
+function _exportStampDoc(doc, exportedAt) {
+  if (doc && typeof doc === 'object') {
+    if (Object.prototype.hasOwnProperty.call(doc, 'updatedAt')) { doc.updatedAt = exportedAt; }
+    if (Object.prototype.hasOwnProperty.call(doc, 'syncedAt'))  { doc.syncedAt  = exportedAt; }
+  }
+  return doc;
+}
+
+// The canonical record. `published` = [{id, data}] from publishedArcs where
+// authorUid == uid; `publicProfile` = publicProfiles/{uid} data or null.
+function buildExportBundle(uid, email, published, publicProfile, exportedAt) {
+  var stamp = function () { return exportedAt; };
+  var rm = (typeof getReaderModel === 'function') ? getReaderModel(uid) : null;
+  return {
+    format:        'praxis-export',
+    version:       EXPORT_FORMAT_VERSION,
+    schemaVersion: state.SCHEMA_VERSION,
+    exportedAt:    exportedAt,
+    exportedAtIso: new Date(exportedAt).toISOString(),
+    uid:           uid,
+    email:         email || '',
+    collections: {
+      userBooks:       _exportStampDoc(buildUserBookDoc(uid), exportedAt),
+      userArcs:        _exportStampDoc(buildUserArcsDoc(uid), exportedAt),
+      userNotebook:    _exportStampDoc(buildUserNotebookDoc(uid), exportedAt),
+      userSubTheories: _exportStampDoc(buildUserSubTheoriesDoc(uid), exportedAt),
+      userThemes:      _exportStampDoc(buildUserThemesDoc(uid), exportedAt),
+      userArtifacts:   _exportStampDoc(buildUserArtifactsDoc(uid), exportedAt),
+      userProfiles:    buildUserProfileDoc(uid, getProfile(uid), stamp),
+      userReaderModel: buildUserReaderModelDoc(uid, rm, stamp)
+    },
+    published:     published || [],
+    publicProfile: publicProfile || null
+  };
+}
+
+// ── Markdown ───────────────────────────────────────────────────────────
+function _mdDate(ms) {
+  if (typeof ms !== 'number' || !(ms > 0)) { return ''; }
+  var d = new Date(ms);
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+}
+function _mdSlug(s, fallback) {
+  var t = (typeof s === 'string') ? s : '';
+  t = t.replace(/[\\\/:*?"<>|#%&{}$!'@+`=\[\]]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  if (t.length > 80) { t = t.slice(0, 80).replace(/\s+$/, ''); }
+  return t.length ? t : fallback;
+}
+function _mdMarks(marks, indent) {
+  var out = '', i, m;
+  if (!(marks instanceof Array) || marks.length === 0) { return ''; }
+  for (i = 0; i < marks.length; i++) {
+    m = marks[i];
+    if (!m) { continue; }
+    out += indent + '- **' + (m.value || '') + '**';
+    if (typeof m.why === 'string' && m.why.length) { out += ' — ' + m.why; }
+    out += '\n';
+  }
+  return out;
+}
+function _mdImages(entry, rel) {
+  var out = '', i, im;
+  if (!entry || !(entry.images instanceof Array)) { return ''; }
+  for (i = 0; i < entry.images.length; i++) {
+    im = entry.images[i];
+    if (!im || !im.id) { continue; }
+    out += '\n![' + (im.caption || '') + '](' + rel + 'images/' + im.id + ')\n';
+  }
+  return out;
+}
+function _mdEntry(entry, heading, rel) {
+  var out = heading + ' ' + ((typeof notebookRegisterLabel === 'function') ? notebookRegisterLabel(entry.register) : (entry.register || 'Note'));
+  var when = _mdDate(entry.createdAt);
+  if (when) { out += ' · ' + when; }
+  if (entry.isPrivate) { out += ' · private'; }
+  out += '\n\n' + (typeof entry.body === 'string' ? entry.body : '') + '\n';
+  out += _mdImages(entry, rel);
+  return out + '\n';
+}
+function _bookLine(b) { return (b && b.title ? b.title : 'Untitled') + (b && b.author ? ' — ' + b.author : ''); }
+
+function _exportEntriesFor(bundle, predicate) {
+  var em = bundle.collections.userNotebook.notebookEntries || {}, k, e, list = [];
+  for (k in em) { if (Object.prototype.hasOwnProperty.call(em, k) && em[k] && predicate(em[k])) { list.push(em[k]); } }
+  list.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+  return list;
+}
+
+function exportBookMarkdown(bundle, bookId) {
+  var b = bundle.collections.userBooks.books[bookId];
+  if (!b) { return ''; }
+  var md = '# ' + (b.title || 'Untitled') + '\n';
+  if (b.author) { md += '*' + b.author + '*\n'; }
+  md += '\n';
+  md += '- Status: ' + (b.status || '') + '\n';
+  if (b.rating !== null && typeof b.rating !== 'undefined') { md += '- Rating: ' + b.rating + '\n'; }
+  if (b.dateRead) { md += '- Read: ' + b.dateRead + '\n'; }
+  if (b.finishedAt) { md += '- Finished: ' + _mdDate(b.finishedAt) + '\n'; }
+  if (b.addedAt) { md += '- Added: ' + _mdDate(b.addedAt) + '\n'; }
+  if (b.isbn) { md += '- ISBN: ' + b.isbn + '\n'; }
+  if (b.movedMe) { md += '- Moved me: yes\n'; }
+  if (b.category || b.categoryOverride) { md += '- Category: ' + (b.categoryOverride || b.category) + '\n'; }
+  if (b.description) { md += '\n' + b.description + '\n'; }
+  var marks = _mdMarks(b.valueMarks, '');
+  if (marks) { md += '\n## Value marks\n\n' + marks; }
+  var entries = _exportEntriesFor(bundle, function (e) { return e.bookIds instanceof Array && e.bookIds.indexOf(bookId) !== -1; });
+  var i;
+  if (entries.length) {
+    md += '\n## Notes\n\n';
+    for (i = 0; i < entries.length; i++) { md += _mdEntry(entries[i], '###', '../'); }
+  }
+  var arts = bundle.collections.userArtifacts.bookArtifacts || {}, ak, art = null;
+  for (ak in arts) { if (Object.prototype.hasOwnProperty.call(arts, ak) && arts[ak] && arts[ak].bookId === bookId) { art = arts[ak]; break; } }
+  if (art && (art.title || art.body)) {
+    md += '\n## Artifact\n\n';
+    if (art.title) { md += '### ' + art.title + '\n\n'; }
+    if (art.body) { md += art.body + '\n'; }
+  }
+  return md;
+}
+
+function _exportSubMarkdown(bundle, st, rel) {
+  var md = '### ' + (st.header || '(unnamed)') + (st.status ? ' · ' + st.status : '') + '\n\n';
+  if (st.bodyPublic) { md += '**Public**\n\n' + st.bodyPublic + '\n\n'; }
+  if (st.bodyIntellectual) { md += '**Working**\n\n' + st.bodyIntellectual + '\n\n'; }
+  var marks = _mdMarks(st.valueMarks, '');
+  if (marks) { md += 'Value marks:\n\n' + marks + '\n'; }
+  var ev = st.evidence, i, e, line, ref;
+  if (ev instanceof Array && ev.length) {
+    md += 'Evidence:\n\n';
+    for (i = 0; i < ev.length; i++) {
+      e = ev[i]; if (!e) { continue; }
+      if (e.kind === 'book') { ref = bundle.collections.userBooks.books[e.refId]; line = '- (book) ' + (ref ? _bookLine(ref) : e.refId); }
+      else if (e.kind === 'entry') { ref = (bundle.collections.userNotebook.notebookEntries || {})[e.refId]; line = '- (note) ' + (ref && typeof ref.body === 'string' ? ref.body : e.refId); }
+      else if (e.kind === 'external') { line = '- (external) ' + ((e.external && e.external.title) || '') + ((e.external && e.external.author) ? ' — ' + e.external.author : ''); }
+      else { line = '- (' + (e.kind || 'evidence') + ') ' + (e.refId || ''); }
+      if (e.quote) { line += '\n  > ' + e.quote; }
+      if (e.annotation) { line += '\n  ' + e.annotation; }
+      md += line + '\n';
+    }
+    md += '\n';
+  }
+  return md;
+}
+
+function exportArcMarkdown(bundle, arcId) {
+  var a = bundle.collections.userArcs.arcs[arcId];
+  if (!a) { return ''; }
+  var md = '# ' + (a.title || 'Untitled arc') + '\n\n';
+  if (a.description) { md += a.description + '\n\n'; }
+  if (a.status) { md += '- Status: ' + a.status + '\n'; }
+  if (a.createdAt) { md += '- Created: ' + _mdDate(a.createdAt) + '\n'; }
+  var marks = _mdMarks(a.valueMarks, '');
+  if (marks) { md += '\n## Value marks\n\n' + marks; }
+  var i, ent, id, b;
+  if (a.bookIds instanceof Array && a.bookIds.length) {
+    md += '\n## Books\n\n';
+    for (i = 0; i < a.bookIds.length; i++) {
+      ent = a.bookIds[i]; id = (ent && ent.id) ? ent.id : ent; b = bundle.collections.userBooks.books[id];
+      md += '- ' + (b ? _bookLine(b) : id) + '\n';
+    }
+  }
+  var subs = bundle.collections.userSubTheories.subTheories || {}, k, list = [];
+  for (k in subs) { if (Object.prototype.hasOwnProperty.call(subs, k) && subs[k] && subs[k].arcId === arcId) { list.push(subs[k]); } }
+  list.sort(function (x, y) { return (x.createdAt || 0) - (y.createdAt || 0); });
+  if (list.length) {
+    md += '\n## Sub-theories\n\n';
+    for (i = 0; i < list.length; i++) { md += _exportSubMarkdown(bundle, list[i], '../'); }
+  }
+  var entries = _exportEntriesFor(bundle, function (e) { return e.arcIds instanceof Array && e.arcIds.indexOf(arcId) !== -1; });
+  if (entries.length) {
+    md += '\n## Entries\n\n';
+    for (i = 0; i < entries.length; i++) { md += _mdEntry(entries[i], '###', '../'); }
+  }
+  return md;
+}
+
+function exportUnrootedMarkdown(bundle) {
+  var subs = bundle.collections.userSubTheories.subTheories || {}, k, list = [], i;
+  for (k in subs) {
+    if (!Object.prototype.hasOwnProperty.call(subs, k) || !subs[k]) { continue; }
+    if (!subs[k].arcId || !bundle.collections.userArcs.arcs[subs[k].arcId]) { list.push(subs[k]); }
+  }
+  if (!list.length) { return ''; }
+  list.sort(function (x, y) { return (x.createdAt || 0) - (y.createdAt || 0); });
+  var md = '# Sub-theories without an arc\n\n';
+  for (i = 0; i < list.length; i++) { md += _exportSubMarkdown(bundle, list[i], '../'); }
+  return md;
+}
+
+function exportNotebookMarkdown(bundle) {
+  var entries = _exportEntriesFor(bundle, function () { return true; }), i, e, md = '# Notebook\n\n', ctx, j, b, a;
+  for (i = 0; i < entries.length; i++) {
+    e = entries[i];
+    ctx = [];
+    if (e.bookIds instanceof Array) { for (j = 0; j < e.bookIds.length; j++) { b = bundle.collections.userBooks.books[e.bookIds[j]]; if (b) { ctx.push(_bookLine(b)); } } }
+    if (e.arcIds instanceof Array) { for (j = 0; j < e.arcIds.length; j++) { a = bundle.collections.userArcs.arcs[e.arcIds[j]]; if (a) { ctx.push('arc: ' + (a.title || '')); } } }
+    md += _mdEntry(e, '##', '');
+    if (ctx.length) { md += '_' + ctx.join(' · ') + '_\n\n'; }
+  }
+  return md;
+}
+
+function exportProfileMarkdown(bundle) {
+  var p = bundle.collections.userProfiles, rm = bundle.collections.userReaderModel, md = '# Profile\n\n', i, v, t;
+  if (p.displayNameOverride) { md += '- Display name: ' + p.displayNameOverride + '\n'; }
+  if (p.penName) { md += '- Pen name: ' + p.penName + '\n'; }
+  if (p.tagline) { md += '- Reading life: ' + p.tagline + '\n'; }
+  if (p.carryingQuestion) { md += '- Carrying question: ' + p.carryingQuestion + '\n'; }
+  if (p.statement) { md += '\n## Values statement\n\n' + p.statement + '\n'; }
+  if (p.values instanceof Array && p.values.length) {
+    md += '\n## Values\n\n';
+    for (i = 0; i < p.values.length; i++) {
+      v = p.values[i]; if (!v) { continue; }
+      md += '### ' + (v.name || v.id || '') + '\n\n';
+      if (v.statement) { md += v.statement + '\n\n'; }
+    }
+  }
+  if (rm && rm.profile && rm.profile.summary) { md += '\n## Reading profile (Yumi\'s reader model)\n\n' + rm.profile.summary + '\n'; }
+  if (rm && rm.threads instanceof Array && rm.threads.length) {
+    md += '\n## Threads\n\n';
+    for (i = 0; i < rm.threads.length; i++) { t = rm.threads[i]; if (t && t.label) { md += '- ' + t.label + (t.status ? ' (' + t.status + ')' : '') + '\n'; } }
+  }
+  if (bundle.publicProfile) { md += '\n## Public profile\n\n- Public name: ' + (bundle.publicProfile.publicName || '') + '\n' + (bundle.publicProfile.tagline ? '- Tagline: ' + bundle.publicProfile.tagline + '\n' : ''); }
+  return md;
+}
+
+function exportReadme(bundle, counts) {
+  return '# Praxis export\n\n' +
+    'Exported ' + bundle.exportedAtIso + ' for ' + (bundle.email || bundle.uid) + '.\n\n' +
+    '- `praxis.json` — the complete record (schema ' + bundle.schemaVersion + ', export format ' + bundle.version + '): every collection under your account with ids intact, so another tool can rebuild it losslessly.\n' +
+    '- `books/` — one file per book: details, value marks, notes, artifact. (' + counts.books + ')\n' +
+    '- `arcs/` — one file per arc: books, sub-theories with evidence, entries. (' + counts.arcs + ')\n' +
+    '- `notebook.md` — every notebook entry in order.\n' +
+    '- `profile.md` — your profile, values and reading profile.\n' +
+    '- `images/` — the photos attached to notebook entries. (' + counts.images + ')\n\n' +
+    'Everything you wrote appears verbatim in both the JSON and the Markdown.\n';
+}
+
+// ── UTF-8 + ZIP (STORE only, real CRC32) ──────────────────────────────
+function _u8FromString(str) {
+  var out = [], i, c, c2;
+  for (i = 0; i < str.length; i++) {
+    c = str.charCodeAt(i);
+    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < str.length) {
+      c2 = str.charCodeAt(i + 1);
+      if (c2 >= 0xDC00 && c2 <= 0xDFFF) { c = 0x10000 + ((c - 0xD800) << 10) + (c2 - 0xDC00); i++; }
+    }
+    if (c < 0x80) { out.push(c); }
+    else if (c < 0x800) { out.push(0xC0 | (c >> 6), 0x80 | (c & 63)); }
+    else if (c < 0x10000) { out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    else { out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+  }
+  return new Uint8Array(out);
+}
+var _zipCrcTable = null;
+function zipCrc32(bytes) {
+  var c, n, k;
+  if (!_zipCrcTable) {
+    _zipCrcTable = [];
+    for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) { c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); } _zipCrcTable[n] = c >>> 0; }
+  }
+  c = 0xFFFFFFFF;
+  for (n = 0; n < bytes.length; n++) { c = _zipCrcTable[(c ^ bytes[n]) & 0xFF] ^ (c >>> 8); }
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function _zipDosTime(ms) {
+  var d = new Date(ms), y = d.getFullYear();
+  if (y < 1980) { return { time: 0, date: 0x21 }; }
+  return {
+    time: ((d.getHours() & 31) << 11) | ((d.getMinutes() & 63) << 5) | ((d.getSeconds() >> 1) & 31),
+    date: (((y - 1980) & 127) << 9) | (((d.getMonth() + 1) & 15) << 5) | (d.getDate() & 31)
+  };
+}
+function _zipPut16(arr, v) { arr.push(v & 0xFF, (v >>> 8) & 0xFF); }
+function _zipPut32(arr, v) { arr.push(v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF); }
+// entries: [{ name: 'dir/file.ext', bytes: Uint8Array }]. Returns a Blob.
+function buildZipBlob(entries, nowMs) {
+  var parts = [], central = [], offset = 0, i, e, name, crc, dt = _zipDosTime(nowMs), head, cen, total = 0;
+  for (i = 0; i < entries.length; i++) {
+    e = entries[i]; name = _u8FromString(e.name); crc = zipCrc32(e.bytes);
+    head = [];
+    _zipPut32(head, 0x04034b50); _zipPut16(head, 20); _zipPut16(head, 0x0800); _zipPut16(head, 0);
+    _zipPut16(head, dt.time); _zipPut16(head, dt.date); _zipPut32(head, crc);
+    _zipPut32(head, e.bytes.length); _zipPut32(head, e.bytes.length); _zipPut16(head, name.length); _zipPut16(head, 0);
+    cen = [];
+    _zipPut32(cen, 0x02014b50); _zipPut16(cen, 20); _zipPut16(cen, 20); _zipPut16(cen, 0x0800); _zipPut16(cen, 0);
+    _zipPut16(cen, dt.time); _zipPut16(cen, dt.date); _zipPut32(cen, crc);
+    _zipPut32(cen, e.bytes.length); _zipPut32(cen, e.bytes.length); _zipPut16(cen, name.length); _zipPut16(cen, 0);
+    _zipPut16(cen, 0); _zipPut16(cen, 0); _zipPut16(cen, 0); _zipPut32(cen, 0); _zipPut32(cen, offset);
+    parts.push(new Uint8Array(head), name, e.bytes);
+    central.push(new Uint8Array(cen), name);
+    total = 30 + name.length + e.bytes.length;
+    offset += total;
+  }
+  var cdSize = 0;
+  for (i = 0; i < central.length; i++) { cdSize += central[i].length; }
+  var eocd = [];
+  _zipPut32(eocd, 0x06054b50); _zipPut16(eocd, 0); _zipPut16(eocd, 0); _zipPut16(eocd, entries.length); _zipPut16(eocd, entries.length);
+  _zipPut32(eocd, cdSize); _zipPut32(eocd, offset); _zipPut16(eocd, 0);
+  var all = parts.concat(central); all.push(new Uint8Array(eocd));
+  return new Blob(all, { type: 'application/zip' });
+}
+
+// ── The archive ────────────────────────────────────────────────────────
+function _exportImageExt(blob) {
+  var t = (blob && typeof blob.type === 'string') ? blob.type : '';
+  if (t === 'image/png') { return '.png'; }
+  if (t === 'image/webp') { return '.webp'; }
+  if (t === 'image/gif') { return '.gif'; }
+  return '.jpg';
+}
+// Collect the photos the bundle references from IndexedDB. cb(images) where
+// images = [{ id, bytes, ext }]; missing blobs are skipped (cross-device refs).
+function _exportCollectImages(bundle, cb) {
+  var em = bundle.collections.userNotebook.notebookEntries || {}, ids = [], seen = {}, k, e, i;
+  for (k in em) {
+    if (!Object.prototype.hasOwnProperty.call(em, k) || !em[k] || !(em[k].images instanceof Array)) { continue; }
+    e = em[k];
+    for (i = 0; i < e.images.length; i++) { if (e.images[i] && e.images[i].id && !seen[e.images[i].id]) { seen[e.images[i].id] = true; ids.push(e.images[i].idbKey || e.images[i].id); } }
+  }
+  var out = [], n = 0;
+  if (ids.length === 0 || typeof nbPhotoIdbGet !== 'function') { cb(out); return; }
+  function next() {
+    if (n >= ids.length) { cb(out); return; }
+    var id = ids[n]; n++;
+    nbPhotoIdbGet(id, function (blob) {
+      if (!blob) { next(); return; }
+      var fr = new FileReader();
+      fr.onload = function () { out.push({ id: id, bytes: new Uint8Array(fr.result), ext: _exportImageExt(blob) }); next(); };
+      fr.onerror = function () { next(); };
+      fr.readAsArrayBuffer(blob);
+    }, function () { next(); });
+  }
+  next();
+}
+// Rewrite the Markdown image links to carry the real extension once known.
+function _exportImageNames(images) { var m = {}, i; for (i = 0; i < images.length; i++) { m[images[i].id] = images[i].id + images[i].ext; } return m; }
+function _exportFixImageLinks(md, names) {
+  return md.replace(/\]\((\.\.\/)?images\/([^)]+)\)/g, function (all, rel, id) { return '](' + (rel || '') + 'images/' + (names[id] || id) + ')'; });
+}
+
+// prepareExport(uid, cb) -> cb({ status:'ok', blob, filename, counts, json }) or
+// { status:'error', error }. Async: Firestore projections + IndexedDB photos.
+function prepareExport(uid, cb) {
+  var done = false;
+  function finish(r) { if (done) { return; } done = true; if (typeof cb === 'function') { cb(r); } }
+  var user = getCurrentUser();
+  if (!user || !user.uid || user.uid !== uid) { finish({ status: 'error', error: new Error('prepareExport: uid mismatch or signed out') }); return; }
+  var exportedAt = Date.now();
+  var db = firebase.firestore();
+  var published = [], publicProfile = null;
+  db.collection('publishedArcs').where('authorUid', '==', uid).get().then(function (snap) {
+    snap.forEach(function (d) { published.push({ id: d.id, data: d.data() }); });
+    return db.collection('publicProfiles').doc(uid).get();
+  }).then(function (doc) {
+    if (doc && doc.exists) { publicProfile = doc.data(); }
+  }, function () { /* projections unreachable: the private record still exports */ }).then(function () {
+    var bundle, entries = [], counts = { books: 0, arcs: 0, images: 0 }, k, md, b, a;
+    try {
+      bundle = buildExportBundle(uid, user.email, published, publicProfile, exportedAt);
+    } catch (e) { finish({ status: 'error', error: e }); return; }
+    _exportCollectImages(bundle, function (images) {
+      var names = _exportImageNames(images), i;
+      var json = JSON.stringify(bundle, function (key, value) {
+        // Firestore Timestamps in the projections -> ISO strings; everything else verbatim.
+        if (value && typeof value === 'object' && typeof value.toDate === 'function') { return value.toDate().toISOString(); }
+        return value;
+      }, 2);
+      entries.push({ name: 'praxis.json', bytes: _u8FromString(json) });
+      var books = bundle.collections.userBooks.books || {}, arcs = bundle.collections.userArcs.arcs || {}, used = {};
+      for (k in books) {
+        if (!Object.prototype.hasOwnProperty.call(books, k)) { continue; }
+        b = books[k]; md = exportBookMarkdown(bundle, k); if (!md) { continue; }
+        var bn = _mdSlug(b.title, k); if (used['b:' + bn]) { bn = bn + ' (' + k + ')'; } used['b:' + bn] = true;
+        entries.push({ name: 'books/' + bn + '.md', bytes: _u8FromString(_exportFixImageLinks(md, names)) }); counts.books++;
+      }
+      for (k in arcs) {
+        if (!Object.prototype.hasOwnProperty.call(arcs, k)) { continue; }
+        a = arcs[k]; md = exportArcMarkdown(bundle, k); if (!md) { continue; }
+        var an = _mdSlug(a.title, k); if (used['a:' + an]) { an = an + ' (' + k + ')'; } used['a:' + an] = true;
+        entries.push({ name: 'arcs/' + an + '.md', bytes: _u8FromString(_exportFixImageLinks(md, names)) }); counts.arcs++;
+      }
+      md = exportUnrootedMarkdown(bundle);
+      if (md) { entries.push({ name: 'arcs/_unrooted.md', bytes: _u8FromString(md) }); }
+      entries.push({ name: 'notebook.md', bytes: _u8FromString(_exportFixImageLinks(exportNotebookMarkdown(bundle), names)) });
+      entries.push({ name: 'profile.md', bytes: _u8FromString(exportProfileMarkdown(bundle)) });
+      for (i = 0; i < images.length; i++) { entries.push({ name: 'images/' + images[i].id + images[i].ext, bytes: images[i].bytes }); counts.images++; }
+      entries.push({ name: 'README.md', bytes: _u8FromString(exportReadme(bundle, counts)) });
+      var blob;
+      try { blob = buildZipBlob(entries, exportedAt); } catch (e2) { finish({ status: 'error', error: e2 }); return; }
+      finish({ status: 'ok', uid: uid, blob: blob, filename: 'praxis-export-' + exportDateStamp() + '.zip', counts: counts, json: json, entries: entries.length });   // uid-stamped: SAVE re-checks it
+    });
+  }, function (err) { finish({ status: 'error', error: err }); });
+}
+
+// deliverExport(prepared, cb): MUST be called inside a user gesture. Share sheet
+// with a File when the platform supports files (iOS 15+ standalone PWA), else an
+// anchor download. cb('shared' | 'downloaded' | 'cancelled' | 'failed').
+function deliverExport(prepared, cb) {
+  var file = null;
+  function report(s) { if (typeof cb === 'function') { cb(s); } }
+  function download() {
+    try {
+      var url = URL.createObjectURL(prepared.blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = prepared.filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      report('downloaded');
+    } catch (e) { report('failed'); }
+  }
+  try { file = new File([prepared.blob], prepared.filename, { type: 'application/zip' }); } catch (e0) { file = null; }
+  if (file && navigator.share && navigator.canShare) {
+    var can = false;
+    try { can = navigator.canShare({ files: [file] }); } catch (e1) { can = false; }
+    if (can) {
+      navigator.share({ files: [file], title: prepared.filename }).then(function () { report('shared'); }, function (err) {
+        if (err && err.name === 'AbortError') { report('cancelled'); return; }
+        download();
+      });
+      return;
+    }
+  }
+  download();
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // W6.5 — SOCIAL DATA LAYER (publish projections + write-through + seeds).

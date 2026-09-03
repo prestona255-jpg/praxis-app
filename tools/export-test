@@ -1,0 +1,247 @@
+// tools/export-test -- P1 Item 3 proof harness for the EXPORT (cscript JScript),
+// over the REAL BYTES of js/state.js + js/integrations.js (loaded whole with
+// shims; the export module lives in integrations.js beside the eight payload
+// builders). EXTENSIONLESS on purpose (see tools/parse-check).
+//
+// Usage:  cscript //nologo //E:jscript tools/export-test
+// Exit:   0 = every case passed · 1 = a case failed · 2 = could not load
+//
+// Proves, on a fixture with content in EVERY collection built through the app's
+// own writers where one exists:
+//   [1] JSON round-trip: parse(stringify(bundle)) -> record counts per collection
+//       equal the seed, every string field byte-equal to the live record;
+//   [2] PROSE INVARIANT: every valueMarks[].why, entry body, artifact body,
+//       sub-theory body appears VERBATIM in both the JSON and the Markdown;
+//   [3] a second uid's records are ABSENT from the bundle;
+//   [4] the ZIP: parsed back from the bytes (EOCD -> central directory -> local
+//       headers), every entry's CRC32 re-computed and equal, names intact, and
+//       the harness's own reference CRC ('123456789' -> 0xCBF43926) matches.
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+function neutralize(src) { return src.replace(/\.catch\b/g, '.catch_').replace(/\.finally\b/g, '.finally_').replace(/\.delete\b/g, '.delete_'); }
+
+// ---- ES5 + runtime shims (cscript is ES3; the browser has these) --------------
+if (typeof Array.isArray !== 'function') { Array.isArray = function (a) { return Object.prototype.toString.call(a) === '[object Array]'; }; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+if (typeof String.prototype.trim !== 'function') { String.prototype.trim = function () { return this.replace(/^\s+|\s+$/g, ''); }; }
+if (typeof Date.prototype.toISOString !== 'function') { Date.prototype.toISOString = function () { function p(n) { return n < 10 ? '0' + n : '' + n; } return this.getUTCFullYear() + '-' + p(this.getUTCMonth() + 1) + '-' + p(this.getUTCDate()) + 'T' + p(this.getUTCHours()) + ':' + p(this.getUTCMinutes()) + ':' + p(this.getUTCSeconds()) + '.000Z'; }; }
+if (typeof JSON === 'undefined') {
+  JSON = {
+    stringify: function (v, replacer, indent) {
+      function enc(v, key, holder) {
+        if (typeof replacer === 'function') { v = replacer.call(holder, key, v); }
+        var t = typeof v, out, i, k;
+        if (v === null || t === 'undefined' || t === 'function') { return (t === 'undefined' || t === 'function') ? undefined : 'null'; }
+        if (t === 'number') { return isFinite(v) ? String(v) : 'null'; }
+        if (t === 'boolean') { return String(v); }
+        if (t === 'string') { return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"'; }
+        if (Array.isArray(v)) { out = []; for (i = 0; i < v.length; i++) { var e = enc(v[i], String(i), v); out.push(typeof e === 'undefined' ? 'null' : e); } return '[' + out.join(',') + ']'; }
+        out = []; for (k in v) { if (Object.prototype.hasOwnProperty.call(v, k)) { var ev = enc(v[k], k, v); if (typeof ev !== 'undefined') { out.push(enc(k) + ':' + ev); } } }
+        return '{' + out.join(',') + '}';
+      }
+      return enc(v, '', { '': v });
+    },
+    parse: function (s) { return eval('(' + s + ')'); }
+  };
+}
+// typed array + Blob shims: plain arrays with .length, a Blob that concatenates.
+function Uint8Array(a) { var out = [], i; if (typeof a === 'number') { for (i = 0; i < a; i++) { out.push(0); } } else { for (i = 0; i < a.length; i++) { out.push(a[i] & 255); } } return out; }
+function Blob(parts, opts) { var i, j; this.bytes = []; for (i = 0; i < parts.length; i++) { for (j = 0; j < parts[i].length; j++) { this.bytes.push(parts[i][j]); } } this.size = this.bytes.length; this.type = (opts && opts.type) || ''; }
+
+var store = {};
+var localStorage = { getItem: function (k) { return store.hasOwnProperty(k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; }, key: function (i) { var n = 0, k; for (k in store) { if (n === i) { return k; } n++; } return null; } };
+var window = this;
+var console = { log: function () {}, warn: function () {}, error: function () {} };
+var document = { addEventListener: function () {}, getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {}, appendChild: function () {} }; }, body: { appendChild: function () {}, removeChild: function () {} } };
+var navigator = { userAgent: 'cscript', share: null, canShare: null };
+var setTimeout = function (f) { return 0; };
+var location = { hash: '', href: '' };
+var UID = 'export_uid_A', OTHER = 'export_uid_B';
+var STAMP = { __serverTimestamp: true };
+var firebase = {
+  initializeApp: function () {},
+  auth: function () { return { onAuthStateChanged: function () {}, currentUser: null, signOut: function () {} }; },
+  firestore: function () { return {}; }
+};
+firebase.firestore.FieldValue = { serverTimestamp: function () { return STAMP; }, arrayRemove: function () {}, increment: function () {} };
+firebase.auth.GoogleAuthProvider = function () {};
+function getCurrentUser() { return { uid: UID, email: 'a@example.test' }; }
+
+// ---- load the real files: BOTH in ONE scope, exactly as the browser does (integrations.js
+// reads state.js globals -- SHELF_CATEGORIES, CATEGORY_UNCATEGORIZED, ls/sv, getProfile ... -- as
+// free identifiers; concatenating the two sources gives it the same scope, no hand-fed list).
+var S, I;
+function lsShim(k, d) { try { var raw = localStorage.getItem(k); if (raw === null) { return d; } return JSON.parse(raw); } catch (e) { return d; } }
+try {
+  var ssrc = neutralize(readFile(fso.BuildPath(root, 'js\\state.js')));
+  var isrc = neutralize(readFile(fso.BuildPath(root, 'js\\integrations.js')));
+  var api = new Function('localStorage', 'window', 'console', 'document', 'setTimeout', 'getCurrentUser', 'firebase', 'navigator', 'location', 'Uint8Array', 'Blob', 'exportDateStamp', 'notebookRegisterLabel', 'nbPhotoIdbGet',
+    ssrc + '\n' + isrc +
+    '\nreturn { state: state, ensureUser: ensureUser, ensureBookFields: ensureBookFields, createArc: createArc, addBookToArc: addBookToArc, addEntryToArc: addEntryToArc, createSubTheory: createSubTheory, addEvidence: addEvidence, createUserTheme: createUserTheme, ensureOneArtifact: ensureOneArtifact, setProfile: setProfile, getProfile: getProfile, getReaderModel: (typeof getReaderModel === "function" ? getReaderModel : null), SCHEMA: state.SCHEMA_VERSION, ' +
+    'buildExportBundle: buildExportBundle, exportBookMarkdown: exportBookMarkdown, exportArcMarkdown: exportArcMarkdown, exportUnrootedMarkdown: exportUnrootedMarkdown, exportNotebookMarkdown: exportNotebookMarkdown, exportProfileMarkdown: exportProfileMarkdown, exportReadme: exportReadme, buildZipBlob: buildZipBlob, zipCrc32: zipCrc32, _u8FromString: _u8FromString, buildUserProfileDoc: buildUserProfileDoc, buildUserReaderModelDoc: buildUserReaderModelDoc, buildUserBookDoc: buildUserBookDoc };')(
+    localStorage, window, console, document, setTimeout, getCurrentUser, firebase, navigator, location, Uint8Array, Blob,
+    function () { return '2026-09-03'; }, function (r) { return r === 'marginalia' ? 'Marginalia' : (r === 'question' ? 'Question' : 'Journal'); }, null);
+  S = api; I = api;
+} catch (e2) { WScript.Echo('LOAD FAIL: ' + e2.message); WScript.Quit(2); }
+
+// ---- harness --------------------------------------------------------------------
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+WScript.Echo('harness self-check: a wrong expectation fails -> OK');
+function count(o) { var n = 0, k; for (k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { n++; } } return n; }
+
+// ---- the fixture: every collection, through the app's writers ---------------------
+localStorage.setItem('praxis_user', JSON.stringify({ uid: UID, email: 'a@example.test' }));   // the REAL getCurrentUser (integrations.js) reads this
+S.ensureUser(UID); S.ensureUser(OTHER);
+var PROSE = {
+  why1: 'Because it taught me to sit with not-knowing — "the long way round".',
+  why2: 'A why with\nnewlines and unicode: café, — dash, 日本語, emoji 🙂',
+  body1: '# Not a heading\n\nA note with markdown-looking prose, `backticks`, and a quote:\n> stay',
+  body2: 'Second entry body, plain.',
+  bodyPub: 'Public body of the sub-theory. Verbatim matters.',
+  bodyInt: 'Working body — the private draft, with <angle> brackets & ampersands.',
+  artTitle: 'What the book made me',
+  artBody: 'The artifact body, several\nlines long,\nverbatim.',
+  quote: 'a quoted passage from the book',
+  annotation: 'and what I make of it',
+  statement: 'My values statement, in full.',
+  desc: 'The arc description.',
+  otherBody: 'THIS BELONGS TO UID B AND MUST NOT EXPORT'
+};
+// books (state.books + the owner index — the shelf writer's shape, ensureBookFields backfills)
+state.books['bk1'] = { id: 'bk1', title: 'Beloved', author: 'Toni Morrison', isbn: '9781400033416', addedAt: 1700000000000, status: 'read', genre: '', coverUrl: '', pageCount: 324, publisher: '', year: 1987, description: 'desc', rating: 5, dateRead: '2026-01-02' };
+state.books['bk2'] = { id: 'bk2', title: 'The Overstory', author: 'Richard Powers', isbn: '', addedAt: 1700000001000, status: 'reading', genre: '', coverUrl: '', pageCount: null, publisher: '', year: null, description: '', rating: null, dateRead: null };
+state.books['bkB'] = { id: 'bkB', title: 'Other user book', author: 'X', isbn: '', addedAt: 1, status: 'read' };
+S.ensureBookFields(state.books['bk1']); S.ensureBookFields(state.books['bk2']); S.ensureBookFields(state.books['bkB']);
+state.books['bk1'].valueMarks.push({ value: 'care', why: PROSE.why1 });
+state.userBooks[UID].bookIds = ['bk1', 'bk2'];
+state.userBooks[OTHER].bookIds = ['bkB'];
+// arcs
+var arc = S.createArc('Reading as repair', PROSE.desc, UID);
+S.addBookToArc(arc.id, 'bk1');
+arc.valueMarks.push({ value: 'repair', why: PROSE.why2 });
+var arcB = S.createArc('B arc', PROSE.otherBody, OTHER);
+// notebook entries (the views.js:3137 capture shape)
+state.notebookEntries['e1'] = { id: 'e1', userId: UID, register: 'marginalia', isPrivate: false, body: PROSE.body1, bookIds: ['bk1'], arcIds: [], images: [ { id: 'nbimg_1', idbKey: 'nbimg_1', w: 10, h: 10, caption: 'cap' } ], filed: true, createdAt: 1700000002000, updatedAt: 1700000002000 };
+state.notebookEntries['e2'] = { id: 'e2', userId: UID, register: 'journal', isPrivate: true, body: PROSE.body2, bookIds: [], arcIds: [], images: [], filed: false, createdAt: 1700000003000, updatedAt: 1700000003000 };
+state.notebookEntries['eB'] = { id: 'eB', userId: OTHER, register: 'journal', isPrivate: false, body: PROSE.otherBody, bookIds: [], arcIds: [], images: [], filed: false, createdAt: 1, updatedAt: 1 };
+S.addEntryToArc(arc.id, 'e2');
+// sub-theories + evidence
+var sub = S.createSubTheory(arc.id, { header: 'Repair is slow', bodyPublic: PROSE.bodyPub, bodyIntellectual: PROSE.bodyInt });
+S.addEvidence(sub.id, { kind: 'book', refId: 'bk1', quote: PROSE.quote, annotation: PROSE.annotation });
+S.addEvidence(sub.id, { kind: 'entry', refId: 'e1', quote: '', annotation: '' });
+sub.valueMarks.push({ value: 'patience', why: 'sub why' });
+var orphan = S.createSubTheory(arc.id, { header: 'Orphan-to-be', bodyPublic: 'orphan prose' }); orphan.arcId = null;
+// themes, artifact, profile, reader model
+var theme = S.createUserTheme('Grief books'); theme.bookIds.push('bk1');
+S.ensureOneArtifact(UID, 'bk1', { userId: UID, bookId: 'bk1', title: '', body: '', updatedAt: 1 }); var artKey = UID + ':' + 'bk1';
+(function () { var k; for (k in state.bookArtifacts) { if (state.bookArtifacts[k] && state.bookArtifacts[k].bookId === 'bk1' && state.bookArtifacts[k].userId === UID) { artKey = k; } } })();
+state.bookArtifacts[artKey].title = PROSE.artTitle; state.bookArtifacts[artKey].body = PROSE.artBody;
+S.setProfile(UID, { displayNameOverride: 'A', penName: 'Pen', tagline: 'reads at night', statement: PROSE.statement });
+var rmA = S.getReaderModel ? S.getReaderModel(UID) : null; if (rmA) { rmA.profile.summary = 'reader model summary prose'; rmA.threads.push({ id: 't1', label: 'thread label', status: 'named' }); }
+
+var seedCounts = { books: 2, arcs: 1, entries: 2, subs: 2, themes: 1, artifacts: 1 };
+var pub = [ { id: arc.id, data: { authorUid: UID, title: 'Reading as repair', subTheories: [], walkedBy: 0 } } ];
+var bundle = I.buildExportBundle(UID, 'a@example.test', pub, { publicName: 'A', tagline: 't', publishedArcIds: [arc.id] }, 1756900000000);
+
+WScript.Echo('\n[1] JSON round-trip');
+var json = JSON.stringify(bundle, function (key, value) { if (value && typeof value === 'object' && typeof value.toDate === 'function') { return value.toDate().toISOString(); } return value; }, 2);
+var back = JSON.parse(json);
+check('format', back.format, 'praxis-export');
+check('schemaVersion carried', back.schemaVersion, S.SCHEMA);
+check('uid', back.uid, UID);
+check('books count', count(back.collections.userBooks.books), seedCounts.books);
+check('bookIds index length', back.collections.userBooks.bookIds.length, seedCounts.books);
+check('arcs count', count(back.collections.userArcs.arcs), seedCounts.arcs);
+check('entries count', count(back.collections.userNotebook.notebookEntries), seedCounts.entries);
+check('subTheories count', count(back.collections.userSubTheories.subTheories), seedCounts.subs);
+check('themes count', count(back.collections.userThemes.userThemes), seedCounts.themes);
+check('artifacts count', count(back.collections.userArtifacts.bookArtifacts), seedCounts.artifacts);
+check('updatedAt sentinel replaced by the export instant', back.collections.userArcs.updatedAt, 1756900000000);
+check('profile statement byte-equal', back.collections.userProfiles.statement, PROSE.statement);
+check('reader model summary byte-equal', back.collections.userReaderModel.profile.summary, rmA ? 'reader model summary prose' : back.collections.userReaderModel.profile.summary);
+check('published projection carried', back.published.length === 1 && back.published[0].id === arc.id, true);
+check('public profile carried', back.publicProfile.publicName, 'A');
+// every string field of every live record equals the parsed copy
+function walkStrings(live, parsed, path) {
+  var k, bad = 0;
+  for (k in live) {
+    if (!Object.prototype.hasOwnProperty.call(live, k)) { continue; }
+    if (typeof live[k] === 'string') { if (parsed[k] !== live[k]) { bad++; WScript.Echo('        mismatch at ' + path + '.' + k); } }
+    else if (live[k] && typeof live[k] === 'object') { bad += walkStrings(live[k], parsed[k] || {}, path + '.' + k); }
+  }
+  return bad;
+}
+var mism = 0;
+mism += walkStrings(state.books['bk1'], back.collections.userBooks.books['bk1'], 'bk1');
+mism += walkStrings(state.arcs[arc.id], back.collections.userArcs.arcs[arc.id], 'arc');
+mism += walkStrings(state.notebookEntries['e1'], back.collections.userNotebook.notebookEntries['e1'], 'e1');
+mism += walkStrings(state.subTheories[sub.id], back.collections.userSubTheories.subTheories[sub.id], 'sub');
+mism += walkStrings(state.userThemes[theme.id], back.collections.userThemes.userThemes[theme.id], 'theme');
+mism += walkStrings(state.bookArtifacts[artKey], back.collections.userArtifacts.bookArtifacts[artKey], 'artifact');
+check('every string field byte-equal after the round-trip (mismatches)', mism, 0);
+
+WScript.Echo('\n[2] PROSE INVARIANT — verbatim in JSON and in Markdown');
+var mdBook = I.exportBookMarkdown(bundle, 'bk1'), mdArc = I.exportArcMarkdown(bundle, arc.id), mdNb = I.exportNotebookMarkdown(bundle), mdPf = I.exportProfileMarkdown(bundle), mdUn = I.exportUnrootedMarkdown(bundle);
+var allMd = mdBook + '\n' + mdArc + '\n' + mdNb + '\n' + mdPf + '\n' + mdUn;
+var k;
+for (k in PROSE) {
+  if (!Object.prototype.hasOwnProperty.call(PROSE, k) || k === 'otherBody') { continue; }
+  check('JSON carries ' + k + ' verbatim', json.indexOf(JSON.stringify(PROSE[k]).slice(1, -1)) !== -1, true);
+  check('Markdown carries ' + k + ' verbatim', allMd.indexOf(PROSE[k]) !== -1, true);
+}
+check('book file carries the artifact body', mdBook.indexOf(PROSE.artBody) !== -1, true);
+check('arc file carries the sub-theory working body', mdArc.indexOf(PROSE.bodyInt) !== -1, true);
+check('unrooted file carries the orphan sub', mdUn.indexOf('orphan prose') !== -1, true);
+check('book file links the photo', mdBook.indexOf('images/nbimg_1') !== -1, true);
+
+WScript.Echo('\n[3] a second uid is absent');
+check('uid B book absent', !!back.collections.userBooks.books['bkB'], false);
+check('uid B arc absent', !!back.collections.userArcs.arcs[arcB.id], false);
+check('uid B entry absent', !!back.collections.userNotebook.notebookEntries['eB'], false);
+check('uid B prose absent from JSON', json.indexOf(PROSE.otherBody) !== -1, false);
+check('uid B prose absent from Markdown', allMd.indexOf(PROSE.otherBody) !== -1, false);
+
+WScript.Echo('\n[4] the ZIP');
+check('CRC32 reference vector', I.zipCrc32(I._u8FromString('123456789')), 0xCBF43926);
+// (escapes, not literals: cscript reads this file in the system codepage, not UTF-8)
+check('UTF-8 encoder: café is 5 bytes', I._u8FromString(String.fromCharCode(99, 97, 102, 233)).length, 5);
+check('UTF-8 encoder: emoji (surrogate pair) is 4 bytes', I._u8FromString(String.fromCharCode(55357, 56898)).length, 4);
+var entries = [
+  { name: 'praxis.json', bytes: I._u8FromString(json) },
+  { name: 'books/Beloved.md', bytes: I._u8FromString(mdBook) },
+  { name: 'arcs/Reading as repair.md', bytes: I._u8FromString(mdArc) },
+  { name: 'notebook.md', bytes: I._u8FromString(mdNb) },
+  { name: 'images/nbimg_1.jpg', bytes: Uint8Array([255, 216, 255, 224, 0, 16]) }
+];
+var zip = I.buildZipBlob(entries, 1756900000000);
+var b = zip.bytes;
+function u16(o) { return b[o] | (b[o + 1] << 8); }
+function u32(o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+var eocd = b.length - 22;
+check('EOCD signature', u32(eocd), 0x06054b50);
+check('EOCD entry count', u16(eocd + 10), entries.length);
+var cdSize = u32(eocd + 12), cdOff = u32(eocd + 16);
+check('central directory ends at EOCD', cdOff + cdSize, eocd);
+var p = cdOff, i, ok = 0, names = [];
+for (i = 0; i < entries.length; i++) {
+  if (u32(p) !== 0x02014b50) { break; }
+  var crc = u32(p + 16), csz = u32(p + 20), usz = u32(p + 24), nl = u16(p + 28), el = u16(p + 30), cl = u16(p + 32), loff = u32(p + 42);
+  var nm = '', j; for (j = 0; j < nl; j++) { nm += String.fromCharCode(b[p + 46 + j]); }
+  names.push(nm);
+  // local header
+  var lsig = u32(loff), lnl = u16(loff + 26), lel = u16(loff + 28), dataOff = loff + 30 + lnl + lel;
+  var data = [], m; for (m = 0; m < usz; m++) { data.push(b[dataOff + m]); }
+  var recrc = I.zipCrc32(data);
+  if (lsig === 0x04034b50 && csz === usz && recrc === crc && usz === entries[i].bytes.length && u16(loff + 8) === 0) { ok++; }
+  p += 46 + nl + el + cl;
+}
+check('every entry: local sig + STORE method + sizes + CRC re-computed', ok, entries.length);
+check('names intact (bytes for ASCII)', names.join('|'), 'praxis.json|books/Beloved.md|arcs/Reading as repair.md|notebook.md|images/nbimg_1.jpg');
+check('archive size = sum(30+name+data) + sum(46+name) + 22', b.length, (function () { var s = 22, i; for (i = 0; i < entries.length; i++) { s += 30 + entries[i].name.length + entries[i].bytes.length + 46 + entries[i].name.length; } return s; })());
+
+WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
+WScript.Quit(failures ? 1 : 0);

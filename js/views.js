@@ -22583,6 +22583,7 @@ function _pfBuildPage(uid, vis, mob) {
     h += '<div class="pf-sec sec-consent pf-owner-only pf-yumi-mount" id="pf-yumi-mount"></div>';
   }
   h += '<div class="pf-sec sec-settings pf-owner-only pf-settings">' + _pfSettingsSection(uid) + '</div>';
+  h += '<div class="pf-sec sec-data pf-owner-only pf-yourdata">' + _pfDataSection(uid) + '</div>';   // P1 Item 3 (+ Item 2)
   // R9b Lane G S6: the selection-panel host (fixed overlay; filled on a planet/Numbers-card tap).
   return h + '</div><div class="pf-panel-host" aria-hidden="true"></div>';
 }
@@ -22644,6 +22645,79 @@ function _pfShelfTo(kind, value) {
   location.hash = '#books';
 }
 
+
+// ── P1 Item 3 — "Your data": the export, in the Profile's Settings register
+// (`.pf-card` / `.pf-set-row` / `.pf-btn` — the NAMED reference surface,
+// components.css:15488 / views.js _pfSettingsSection). Two taps by design:
+// PREPARE (async — the Firestore projections + the IndexedDB photos, may take a
+// moment) then SAVE (inside a user gesture, so navigator.share works on the
+// installed iOS PWA). Item 2 adds the delete control to this same card and
+// offers this same export first, so the handlers act on the TAPPED button.
+var _pfExportPrepared = null;   // { blob, filename, counts, entries } for this session
+
+function _pfDataSection(uid) {
+  return '<div class="pf-eyebrow">Your data</div><div class="pf-card pf-data" data-uid="' + _portraitEsc(uid) + '">'
+    + '<div class="pf-data-line">Everything you have written here is yours to take with you: every book, arc, sub-theory, note, photo and value mark, as one archive — a complete <b>praxis.json</b> plus readable Markdown.</div>'
+    + '<div class="pf-set-row pf-data-actions"><button class="pf-btn save" data-act="export-prepare">Export my data</button>'
+    + _pfDataDeleteControl(uid)
+    + '</div>'
+    + '<div class="pf-data-status" aria-live="polite"></div>'
+    + '<div class="pf-data-host"></div>'
+    + '</div>';
+}
+// Item 2 replaces this stub with the delete control; Item 3 ships it empty.
+function _pfDataDeleteControl(uid) { return ''; }
+
+// The status line nearest the tapped button (the card's, or the delete panel's).
+function _pfDataStatusEl(btn, wrap) {
+  var scope = (btn && btn.closest) ? (btn.closest('.pf-del') || btn.closest('.pf-data')) : null;
+  var s = scope ? scope.querySelector('.pf-data-status, .pf-del-exportnote') : null;
+  return s || wrap.querySelector('.pf-data-status');
+}
+function _pfDataStatus(btn, wrap, text) {
+  var s = _pfDataStatusEl(btn, wrap);
+  if (s) { s.textContent = text || ''; }
+}
+
+// PREPARE: build the archive, then swap THIS button to SAVE so the share sheet is
+// opened by a fresh tap.
+function _pfExportPrepare(wrap, uid, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+  _pfDataStatus(btn, wrap, 'Gathering your books, arcs, notes and photos…');
+  if (typeof prepareExport !== 'function') { _pfDataStatus(btn, wrap, 'Export is unavailable in this build.'); if (btn) { btn.disabled = false; btn.textContent = 'Export my data'; } return; }
+  prepareExport(uid, function (r) {
+    if (!r || r.status !== 'ok') {
+      _pfDataStatus(btn, wrap, 'Could not prepare the export' + (r && r.error && r.error.message ? ' — ' + r.error.message : '') + '. Nothing was changed. Try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Export my data'; }
+      return;
+    }
+    _pfExportPrepared = r;
+    var kb = Math.max(1, Math.round(r.blob.size / 1024));
+    _pfDataStatus(btn, wrap, 'Ready: ' + r.counts.books + ' book' + (r.counts.books === 1 ? '' : 's') + ', ' + r.counts.arcs + ' arc' + (r.counts.arcs === 1 ? '' : 's') + ', ' + r.counts.images + ' photo' + (r.counts.images === 1 ? '' : 's') + ' · ' + r.filename + ' (' + kb + ' KB). Tap Save to keep it.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Save the archive'; btn.setAttribute('data-act', 'export-save'); }
+  });
+}
+// SAVE: must run inside the tap. Share sheet on iOS, download elsewhere.
+function _pfExportSave(wrap, uid, btn) {
+  var r = _pfExportPrepared;
+  // The prepared archive is bound to the uid it was built for AND to the signed-in
+  // user NOW (red-team: a shared-browser account switch between PREPARE and SAVE
+  // must never hand one reader another reader's prose). Any mismatch discards
+  // the archive and prepares afresh for the current reader.
+  var cur = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (r && (r.uid !== uid || !cur || cur.uid !== uid)) { _pfExportPrepared = null; r = null; }
+  if (!r) { if (btn) { btn.setAttribute('data-act', 'export-prepare'); btn.textContent = 'Export my data'; } _pfExportPrepare(wrap, uid, btn); return; }
+  deliverExport(r, function (how) {
+    if (how === 'shared')          { _pfDataStatus(btn, wrap, 'Shared ' + r.filename + '. Export again any time — the archive is a snapshot of right now.'); }
+    else if (how === 'downloaded') { _pfDataStatus(btn, wrap, 'Saved ' + r.filename + ' to your downloads. Export again any time — the archive is a snapshot of right now.'); }
+    else if (how === 'cancelled')  { _pfDataStatus(btn, wrap, 'Not saved. Tap Save again when you are ready.'); return; }
+    else                           { _pfDataStatus(btn, wrap, 'Could not hand the archive to this browser. Try again, or from another browser.'); return; }
+    _pfExportPrepared = null;
+    if (btn) { btn.setAttribute('data-act', 'export-prepare'); btn.textContent = 'Export my data'; }
+  });
+}
+
+
 function _pfWire(wrap, uid, vis) {
   function cl(t, s) { return (t && t.closest) ? t.closest(s) : null; }
   function handle(e) {
@@ -22674,6 +22748,8 @@ function _pfWire(wrap, uid, vis) {
       }
       if (act === 'save-settings') { _pfSaveSettings(wrap, uid); return; }
       if (act === 'signout') { if (typeof signOut === 'function') { signOut(); } return; }
+      if (act === 'export-prepare') { _pfExportPrepare(wrap, uid, a); return; }   // P1 Item 3
+      if (act === 'export-save')    { _pfExportSave(wrap, uid, a); return; }      // P1 Item 3 (inside the tap: share sheet)
       if (act === 'edit-thesis') { var ta = wrap.querySelector('textarea[data-field="statement"]'); if (ta) { if (ta.scrollIntoView) { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); } ta.focus(); } return; }
       if (act === 'retro-run') { _pfRunRetrofit(wrap, uid); return; }
       if (act === 'signin') { if (typeof signInWithGoogle === 'function') { signInWithGoogle(); } return; }

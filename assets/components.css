@@ -17404,3 +17404,17 @@ body:has(.library-cleanup) .shelf-add-primary{ display:none !important; }
   .scan-flight-cov{ transition:opacity .2s ease; }
   #scan-receipt, .scan-verdict{ transition:none; }
 }
+
+/* ── P1 Item 3 — "Your data" (export) in the Profile's Settings register:
+   .pf-card / .pf-set-row / .pf-btn are the named reference surface; these rules
+   only ADD the card's inner rhythm and the disabled state. Item 2 adds the
+   delete controls below this block. ── */
+.pf-data-line{ font-family:var(--font-serif); font-size:15px; line-height:1.55; color:var(--ink-2); max-width:62ch; }
+.pf-data-line b{ font-weight:600; color:var(--ink); }
+.pf-data-actions{ flex-wrap:wrap; }
+.pf-data-status{ margin-top:10px; font-size:12.5px; line-height:1.5; color:var(--ink-3); }
+.pf-data-status:empty{ margin-top:0; }
+.pf-btn:disabled{ opacity:.55; cursor:default; }
+@media (max-width:759px){
+  .pf-data-actions .pf-btn{ flex:1 1 auto; justify-content:center; }
+}

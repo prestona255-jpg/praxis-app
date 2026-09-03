@@ -47,5 +47,10 @@ parameterized `buildReaderModelSection`). Arc publish was NOT lost — it lives 
   toggle (the merged Profile mounts ONE `buildReaderModelSection`), and it completes VC5's other half via the
   re-homed values-offer dock + the R9a values section. Remaining account gaps (Export, the FIX try/catch
   umbrella, mobile-galaxy rebuild) migrate to the Profile's ledger / S-B. touches: [profile, account].
+- **P1 SAFETY Item 3 — EXPORT — LOCAL v3.297, 2026-09-03.** The Export gap closes: a "Your data" card in
+  the Profile's Settings register — one ZIP (praxis.json from the eight sync payload builders + Markdown +
+  photos, hand-written store zip, Share sheet on iOS). Record: `docs/checkpoints/p1-safety-build.md`. Felt
+  pass PENDING. touches: [profile]. (Item 2 — account deletion — is the NEXT commit and will add its own
+  line here; it is not built as of this line.)
 
 ## Next
