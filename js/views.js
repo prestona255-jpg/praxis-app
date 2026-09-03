@@ -7734,7 +7734,12 @@ function deleteBook(uid, id) {
   var artifactTouched = false;
   if (state.bookArtifacts && typeof artifactKey === 'function') {
     var artK = artifactKey(uid, id);
-    if (state.bookArtifacts[artK]) { delete state.bookArtifacts[artK]; artifactTouched = true; }
+    if (state.bookArtifacts[artK]) {
+      delete state.bookArtifacts[artK]; artifactTouched = true;
+      // FX-1c: guard the artifact DELETE against a stale artifacts splat (and stop
+      // guarding it as a pending add), keyed by the same composite artifactKey.
+      if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('artifacts', uid, artK); }
+    }
   }
 
   // 8. durability: stop guarding it as a pending ADD; start guarding the DELETE
@@ -13196,7 +13201,10 @@ function openMarkComposer(subId) {
     if (!Object.prototype.hasOwnProperty.call(state.subTheories, k)) { continue; }
     if (k === subId) { continue; }
     other = state.subTheories[k];
-    if (!other || other.arcId !== rec.arcId) { continue; }
+    // P1 Item 4b: a re-homed sub (arcId === null) has NO arc siblings -- without
+    // the `!rec.arcId` guard every orphan from every dead arc would collide here
+    // (null === null) and over-restrict the glyph set (red-team finding).
+    if (!other || !rec.arcId || other.arcId !== rec.arcId) { continue; }
     var oid = window.stMarkIdentity(other);
     taken[oid.sil + '|' + oid.treat + '|' + oid.pig] = true;
   }
@@ -17846,9 +17854,25 @@ function openArcDeleteConfirm(arcId) {
   confirmLink.textContent = isSeedArc ? 'Hide arc' : 'Delete arc';
   confirmLink.addEventListener('click', function(ev) {
     ev.preventDefault();
+    // P1 Item 4b: a PUBLISHED arc must leave the commons when it is deleted --
+    // deleteArc never touched the projection, so a deleted arc stayed live under
+    // a title its author no longer holds. Capture the flag BEFORE the record
+    // goes; unpublishArc deletes publishedArcs/{arcId} + the publicProfiles entry
+    // (owner-authorized) and tolerates the local record being gone. If the
+    // network refuses, the retry lives in the existing commons-exit queue.
+    var wasPublished = !!(arcRecord && arcRecord.published === true && !isSeedArc);
     var ok = deleteArc(arcId);
     if (ok) {
       saveState();
+      if (wasPublished && typeof unpublishArc === 'function') {
+        unpublishArc(arcId, function (r) {
+          if (!(r && r.status === 'ok')) {
+            if (window.console) { console.warn('deleteArc: unpublish failed, queued for retry', r && r.error); }
+            if (typeof queueArcUnpublishRetry === 'function') { queueArcUnpublishRetry(arcId); }   // durable retry (next arcs load)
+            if (typeof _commonsQueueExit === 'function') { _commonsQueueExit(arcId, 'deleted'); }  // honest toast, not "publish again"
+          }
+        });
+      }
       // Stage 5.3 Stage 3b: seed-arc hide returns the user to the
       // Arcs page (the surface they came from); user-authored delete
       // returns to the Notebook (where their other arcs live). Both
@@ -23013,11 +23037,21 @@ function drainCommonsExits() {
   var q = ls('praxis_commons_exits', []);
   if (!(q instanceof Array) || q.length === 0) { return; }
   sv('praxis_commons_exits', []);
-  var msg;
-  if (q.length === 1) {
-    msg = '‘' + q[0].name + '’ left the commons — nothing in it was finished yet. Publish again when something is.';
+  // P1 Item 4b: a DELETED arc whose unpublish the network refused carries
+  // reason:'deleted' -- its copy must not promise a re-publish there is nothing
+  // left to publish (COPY IS A CONTRACT). It is retried on the next arcs load
+  // (drainArcUnpublishRetries, integrations.js).
+  var msg, del = [], san = [], i;
+  for (i = 0; i < q.length; i++) { if (q[i] && q[i].reason === 'deleted') { del.push(q[i]); } else if (q[i]) { san.push(q[i]); } }
+  if (del.length) {
+    msg = (del.length === 1 ? '‘' + del[0].name + '’ was deleted here but' : del.length + ' deleted arcs') + ' could not be removed from the commons yet — Praxis will retry the next time it loads.';
+    if (typeof showToast === 'function') { showToast(msg); }
+  }
+  if (san.length === 0) { return; }
+  if (san.length === 1) {
+    msg = '‘' + san[0].name + '’ left the commons — nothing in it was finished yet. Publish again when something is.';
   } else {
-    msg = q.length + ' arcs left the commons — nothing in them was finished yet. Publish again when something is.';
+    msg = san.length + ' arcs left the commons — nothing in them was finished yet. Publish again when something is.';
   }
   if (typeof showToast === 'function') { showToast(msg); }
 }

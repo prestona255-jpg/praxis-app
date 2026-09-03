@@ -1366,7 +1366,9 @@ spine and the evolution track and folded into the program — nothing dropped.
   1. **FX-1 — data-loss sync guards FIRST (HARD DEPENDENCY, Preston 2026-07-12)** — F-DL1 sync guards on all 5
      unguarded collections + F-DL2 flush (F-PX1 proxy cap already shipped, v3.203). No outside account is EVER
      invited before FX-1; it **jumps immediately on any data-loss scare**. Interim guardrail: after signing in
-     on any device, let the app settle before editing. (RULED — no re-raise.)
+     on any device, let the app settle before editing. (RULED — no re-raise.) **P1 Item 4 (2026-09-03, LOCAL
+     v3.296): FX-1c delete-symmetry BUILT verbatim from the record + the reference sweep (deleteArc
+     unpublishes + re-homes, deleteEntry scrubs evidence); FX-1b remains** (`docs/checkpoints/p1-safety-build.md`).
   1b. **CAPTURE-OWNER — HARD REVIEW at this gate (Preston 2026-07-16, R-ARC S2 carry).** `captureNote`
      (`views.js`) reads `getCurrentUser()` fresh; the **multi-image** commit path calls it inside `finalize()`
      after the async IndexedDB puts, so an account switch (no reload) landing in that window misattributes

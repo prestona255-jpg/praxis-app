@@ -200,6 +200,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         // FX-1: the remote id set, computed BEFORE the clear-loop so the guard
         // can distinguish "absent from remote because created locally and not
         // yet synced" (KEEP) from "absent because deleted server-side" (DROP).
+        // FX-1c splat-begin:arcs
         var remoteArcs = (arcResult.data && arcResult.data.arcs)
           ? arcResult.data.arcs
           : {};
@@ -207,6 +208,16 @@ firebase.auth().onAuthStateChanged(function (u) {
         var rhaid;
         for (rhaid in remoteArcs) {
           if (Object.prototype.hasOwnProperty.call(remoteArcs, rhaid)) { arcRemoteHas[rhaid] = true; }
+        }
+        // FX-1c: ids the user DELETED whose remote removal may still be in
+        // flight. A stale remote doc still lists them -- never copy them back
+        // (resurrect). Absent from remote = removal confirmed -> clear the mark.
+        // Mirrors mergeRemoteBookDoc's delSet for books.
+        var arcDelPend = (typeof getPendingDeletes === 'function') ? getPendingDeletes('arcs', u.uid) : [];
+        var arcDelSet = {}, arcDk, arcConfirmed = [];
+        for (arcDk = 0; arcDk < arcDelPend.length; arcDk++) {
+          arcDelSet[arcDelPend[arcDk]] = true;
+          if (!arcRemoteHas[arcDelPend[arcDk]]) { arcConfirmed.push(arcDelPend[arcDk]); }
         }
         var aid;
         if (state.arcs) {
@@ -221,9 +232,12 @@ firebase.auth().onAuthStateChanged(function (u) {
         var raid;
         for (raid in remoteArcs) {
           if (Object.prototype.hasOwnProperty.call(remoteArcs, raid)) {
+            if (arcDelSet[raid]) { if (state.arcs[raid]) { delete state.arcs[raid]; } continue; }   // FX-1c: pending delete, never resurrected
             state.arcs[raid] = remoteArcs[raid];
           }
         }
+        if (arcConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('arcs', u.uid, arcConfirmed); }   // FX-1c: confirmed
+        // FX-1c splat-end:arcs
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and (unlike books / subTheories) had no field backfill, so a remote
         // arc from an older schema landed missing bookIds / entryIds -- the
@@ -238,6 +252,8 @@ firebase.auth().onAuthStateChanged(function (u) {
           window.views.renderRoute();
         }
         console.log('loadArcsFromFirestore: merged remote arc doc');
+        // P1 Item 4b: retry any deleted-arc unpublish the network refused.
+        if (typeof drainArcUnpublishRetries === 'function') { drainArcUnpublishRetries(u.uid); }
       } else if (arcResult.status === 'absent') {
         console.log('loadArcsFromFirestore: no remote arc doc for uid, keeping cache');
         // F-DL1: no remote doc -> flush any write deferred during the load
@@ -262,6 +278,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           // subTheories are the required pair to arcs — both guards ship in this
           // same commit, so a sub-theory preserved here never points at an arc
           // the (now also guarded) arcs merge wiped.
+          // FX-1c splat-begin:subTheories
           var remoteSubs = (stResult.data && stResult.data.subTheories)
             ? stResult.data.subTheories
             : {};
@@ -269,6 +286,13 @@ firebase.auth().onAuthStateChanged(function (u) {
           var rhsid;
           for (rhsid in remoteSubs) {
             if (Object.prototype.hasOwnProperty.call(remoteSubs, rhsid)) { stRemoteHas[rhsid] = true; }
+          }
+          // FX-1c: pending-DELETE set (see the arcs splat).
+          var stDelPend = (typeof getPendingDeletes === 'function') ? getPendingDeletes('subTheories', u.uid) : [];
+          var stDelSet = {}, stDk, stConfirmed = [];
+          for (stDk = 0; stDk < stDelPend.length; stDk++) {
+            stDelSet[stDelPend[stDk]] = true;
+            if (!stRemoteHas[stDelPend[stDk]]) { stConfirmed.push(stDelPend[stDk]); }
           }
           var sid;
           if (state.subTheories) {
@@ -285,9 +309,12 @@ firebase.auth().onAuthStateChanged(function (u) {
           var rsid;
           for (rsid in remoteSubs) {
             if (Object.prototype.hasOwnProperty.call(remoteSubs, rsid)) {
+              if (stDelSet[rsid]) { if (state.subTheories[rsid]) { delete state.subTheories[rsid]; } continue; }   // FX-1c
               state.subTheories[rsid] = remoteSubs[rsid];
             }
           }
+          if (stConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('subTheories', u.uid, stConfirmed); }   // FX-1c
+          // FX-1c splat-end:subTheories
           if (typeof backfillSubTheoryUserId === 'function') {
             backfillSubTheoryUserId(state.subTheories, state.arcs);
           }
@@ -339,6 +366,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       if (themeResult.status === 'found') {
         if (!state.userThemes) { state.userThemes = {}; }
         // FX-1: remote id set before the clear-loop (see the arcs guard).
+        // FX-1c splat-begin:themes
         var remoteThemes = (themeResult.data && themeResult.data.userThemes)
           ? themeResult.data.userThemes
           : {};
@@ -346,6 +374,13 @@ firebase.auth().onAuthStateChanged(function (u) {
         var rhtid;
         for (rhtid in remoteThemes) {
           if (Object.prototype.hasOwnProperty.call(remoteThemes, rhtid)) { themeRemoteHas[rhtid] = true; }
+        }
+        // FX-1c: pending-DELETE set (see the arcs splat).
+        var thDelPend = (typeof getPendingDeletes === 'function') ? getPendingDeletes('themes', u.uid) : [];
+        var thDelSet = {}, thDk, thConfirmed = [];
+        for (thDk = 0; thDk < thDelPend.length; thDk++) {
+          thDelSet[thDelPend[thDk]] = true;
+          if (!themeRemoteHas[thDelPend[thDk]]) { thConfirmed.push(thDelPend[thDk]); }
         }
         var tid;
         if (state.userThemes) {
@@ -360,9 +395,12 @@ firebase.auth().onAuthStateChanged(function (u) {
         var rtid;
         for (rtid in remoteThemes) {
           if (Object.prototype.hasOwnProperty.call(remoteThemes, rtid)) {
+            if (thDelSet[rtid]) { if (state.userThemes[rtid]) { delete state.userThemes[rtid]; } continue; }   // FX-1c
             state.userThemes[rtid] = remoteThemes[rtid];
           }
         }
+        if (thConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('themes', u.uid, thConfirmed); }   // FX-1c
+        // FX-1c splat-end:themes
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and had no field backfill, so a remote theme from an older schema
         // landed missing name / bookIds. Backfill on the merge path, mirroring
@@ -398,6 +436,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         // FX-1: remote key set before the clear-loop. artifacts key by the
         // composite artifactKey(uid,bookId); the pending set stores the same
         // composite string, so the keep-predicate transplants unchanged.
+        // FX-1c splat-begin:artifacts
         var remoteArts = (artResult.data && artResult.data.bookArtifacts)
           ? artResult.data.bookArtifacts
           : {};
@@ -405,6 +444,13 @@ firebase.auth().onAuthStateChanged(function (u) {
         var rhaki;
         for (rhaki in remoteArts) {
           if (Object.prototype.hasOwnProperty.call(remoteArts, rhaki)) { artRemoteHas[rhaki] = true; }
+        }
+        // FX-1c: pending-DELETE set, keyed by the composite artifactKey (see arcs).
+        var artDelPend = (typeof getPendingDeletes === 'function') ? getPendingDeletes('artifacts', u.uid) : [];
+        var artDelSet = {}, artDk, artConfirmed = [];
+        for (artDk = 0; artDk < artDelPend.length; artDk++) {
+          artDelSet[artDelPend[artDk]] = true;
+          if (!artRemoteHas[artDelPend[artDk]]) { artConfirmed.push(artDelPend[artDk]); }
         }
         var aki;
         if (state.bookArtifacts) {
@@ -419,9 +465,12 @@ firebase.auth().onAuthStateChanged(function (u) {
         var raki;
         for (raki in remoteArts) {
           if (Object.prototype.hasOwnProperty.call(remoteArts, raki)) {
+            if (artDelSet[raki]) { if (state.bookArtifacts[raki]) { delete state.bookArtifacts[raki]; } continue; }   // FX-1c
             state.bookArtifacts[raki] = remoteArts[raki];
           }
         }
+        if (artConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('artifacts', u.uid, artConfirmed); }   // FX-1c
+        // FX-1c splat-end:artifacts
         if (typeof ensureArtifactFieldsAll === 'function') {
           ensureArtifactFieldsAll(state.bookArtifacts);
         }
@@ -2892,7 +2941,7 @@ function _trimH(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, ''
 // arc left the commons because nothing in it is finished. Drained + shown once
 // by views.js (drainCommonsExits -> showToast) on the next render, so it survives
 // the reload between a live-edit unpublish and the next paint.
-function _commonsQueueExit(arcId) {
+function _commonsQueueExit(arcId, reason) {
   var arc = (state.arcs && state.arcs[arcId]) ? state.arcs[arcId] : null;
   var nm = (arc && typeof arc.title === 'string' && arc.title.replace(/^\s+|\s+$/g, '') !== '')
     ? arc.title : 'An arc';
@@ -2900,8 +2949,43 @@ function _commonsQueueExit(arcId) {
   if (!(q instanceof Array)) { q = []; }
   var i;
   for (i = 0; i < q.length; i = i + 1) { if (q[i] && q[i].arcId === arcId) { return; } }
-  q.push({ arcId: arcId, name: nm });
+  // P1 Item 4b: reason 'deleted' = the arc was deleted locally and the unpublish
+  // could not reach Firestore; the drain words that case honestly.
+  q.push({ arcId: arcId, name: nm, reason: (typeof reason === 'string') ? reason : 'sanitize' });
   sv('praxis_commons_exits', q);
+}
+
+// P1 Item 4b: a DELETED arc's unpublish that the network refused is retried on
+// the next arcs load (durable per-uid list, so it survives a reload; the key
+// carries the uid and is swept by account deletion). unpublishArc tolerates the
+// local record being gone -- it deletes publishedArcs/{arcId} and removes the id
+// from publicProfiles.publishedArcIds, both owner-authorized by rule.
+function _arcUnpublishRetryKey(uid) { return 'praxis_pending_unpublish_' + (uid || 'anon'); }
+function queueArcUnpublishRetry(arcId) {
+  var u = getCurrentUser();
+  if (!u || !u.uid || !arcId) { return; }
+  var q = ls(_arcUnpublishRetryKey(u.uid), []);
+  if (!(q instanceof Array)) { q = []; }
+  var i;
+  for (i = 0; i < q.length; i = i + 1) { if (q[i] === arcId) { return; } }
+  q.push(arcId);
+  sv(_arcUnpublishRetryKey(u.uid), q);
+}
+function drainArcUnpublishRetries(uid) {
+  var q = ls(_arcUnpublishRetryKey(uid), []);
+  if (!(q instanceof Array) || q.length === 0) { return; }
+  var i;
+  for (i = 0; i < q.length; i = i + 1) {
+    (function (arcId) {
+      unpublishArc(arcId, function (r) {
+        if (!(r && r.status === 'ok')) { return; }            // stays queued for the next load
+        var cur = ls(_arcUnpublishRetryKey(uid), []), next = [], j;
+        if (!(cur instanceof Array)) { cur = []; }
+        for (j = 0; j < cur.length; j = j + 1) { if (cur[j] !== arcId) { next.push(cur[j]); } }
+        sv(_arcUnpublishRetryKey(uid), next);
+      });
+    })(q[i]);
+  }
 }
 
 // sanitizeFrozenPublishedArcs (B — the frozen sanitize, ruled 2026-07-21). A

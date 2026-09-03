@@ -1,0 +1,251 @@
+// tools/fx1c-sim -- FX-1c (P1 Item 4a) race simulator, cscript JScript, over the
+// REAL BYTES of js/state.js (loaded whole, with a localStorage shim) and the REAL
+// incoming-splat blocks of js/integrations.js (sliced between the
+// `// FX-1c splat-begin:<kind>` / `// FX-1c splat-end:<kind>` markers and
+// evaluated in a scope that supplies exactly the closure variables the block
+// reads). No re-implementation of the guard: if the guard is wrong in the
+// shipped bytes, this sim fails. EXTENSIONLESS on purpose (tools/parse-check).
+//
+// Usage:  cscript //nologo //E:jscript tools/fx1c-sim
+// Exit:   0 = every case passed · 1 = a case failed · 2 = could not load
+//
+// The failure it exists to catch: a record deleted locally whose Firestore
+// removal has not propagated is RESURRECTED by a stale remote read (the REPLACE
+// splat copies it back). Books have guarded this since Stage 6; arcs /
+// subTheories / themes / artifacts did not until FX-1c.
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+function neutralize(src) { return src.replace(/\.catch\b/g, '.catch_').replace(/\.finally\b/g, '.finally_').replace(/\.delete\b/g, '.delete_'); }
+
+var UID = 'sim_uid_A';
+var OTHER = 'sim_uid_B';
+
+// ---- ES5 shims (cscript's JScript is ES3; the real files use these at RUNTIME,
+// which the parse gate never exercises: JSON, Array.isArray, indexOf, trim) ----
+if (typeof Array.isArray !== 'function') { Array.isArray = function (a) { return Object.prototype.toString.call(a) === '[object Array]'; }; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+if (typeof String.prototype.trim !== 'function') { String.prototype.trim = function () { return this.replace(/^\s+|\s+$/g, ''); }; }
+if (typeof JSON === 'undefined') {
+  JSON = {
+    stringify: function (v) {
+      var t = typeof v, out, i, k, keys;
+      if (v === null || t === 'undefined') { return 'null'; }
+      if (t === 'number' || t === 'boolean') { return String(v); }
+      if (t === 'string') { return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"'; }
+      if (Array.isArray(v)) { out = []; for (i = 0; i < v.length; i++) { out.push(JSON.stringify(v[i])); } return '[' + out.join(',') + ']'; }
+      out = []; for (k in v) { if (Object.prototype.hasOwnProperty.call(v, k) && typeof v[k] !== 'function' && typeof v[k] !== 'undefined') { out.push(JSON.stringify(k) + ':' + JSON.stringify(v[k])); } }
+      return '{' + out.join(',') + '}';
+    },
+    parse: function (s) { return eval('(' + s + ')'); }   // our own serialised data only
+  };
+}
+
+// ---- shims ------------------------------------------------------------------
+var store = {};
+var localStorage = {
+  getItem: function (k) { return store.hasOwnProperty(k) ? store[k] : null; },
+  setItem: function (k, v) { store[k] = String(v); },
+  removeItem: function (k) { delete store[k]; }
+};
+var window = this;
+var console = { log: function () {}, warn: function () {}, error: function () {} };
+var document = { addEventListener: function () {}, getElementById: function () { return null; } };
+var setTimeout = function () { return 0; };
+function getCurrentUser() { return { uid: UID }; }
+
+// ---- load real state.js -------------------------------------------------------
+var api;
+try {
+  var ssrc = neutralize(readFile(fso.BuildPath(root, 'js\\state.js')));
+  api = new Function('localStorage', 'window', 'console', 'document', 'setTimeout', 'getCurrentUser',
+    ssrc + '\nreturn { state: state, deleteArc: deleteArc, deleteSubTheory: deleteSubTheory, ' +
+    'deleteUserTheme: deleteUserTheme, createUserTheme: createUserTheme, deleteEntry: deleteEntry, ' +
+    'markPendingSync: markPendingSync, isPendingSync: isPendingSync, getPendingSync: getPendingSync, ' +
+    'clearPendingSync: clearPendingSync, getPendingDeletes: getPendingDeletes, ' +
+    'markPendingDelete: markPendingDelete, isPendingDelete: isPendingDelete, ' +
+    'clearPendingDelete: clearPendingDelete, ls: ls, sv: sv };')(localStorage, window, console, document, setTimeout, getCurrentUser);
+} catch (e) { WScript.Echo('LOAD FAIL (state.js): ' + e.message); WScript.Quit(2); }
+var state = api.state;
+
+// ---- slice the real splat blocks ---------------------------------------------
+var isrc = neutralize(readFile(fso.BuildPath(root, 'js\\integrations.js')));
+function sliceBlock(kind) {
+  var b = '// FX-1c splat-begin:' + kind;
+  var e = '// FX-1c splat-end:' + kind;
+  var i = isrc.indexOf(b), j = isrc.indexOf(e);
+  if (i < 0 || j < 0 || j < i) { return null; }
+  return isrc.slice(i + b.length, j);
+}
+// Each kind's block reads: u, <resultVar>, state, isPendingSync, getPendingDeletes,
+// clearPendingDelete (+ the backfill helpers, stubbed as no-ops).
+var KINDS = {
+  arcs:        { resultVar: 'arcResult',   field: 'arcs',          map: 'arcs' },
+  subTheories: { resultVar: 'stResult',    field: 'subTheories',   map: 'subTheories' },
+  themes:      { resultVar: 'themeResult', field: 'userThemes',    map: 'userThemes' },
+  artifacts:   { resultVar: 'artResult',   field: 'bookArtifacts', map: 'bookArtifacts' }
+};
+// `cscript //nologo //E:jscript tools/fx1c-sim unguarded` strips the FX-1c skip
+// line out of each sliced block before evaluating it -- the §3 "mechanism
+// removed" leg: C1 MUST then fail (the record resurrects), proving the sim
+// discriminates and the shipped bytes are what stop the race.
+var UNGUARDED = (WScript.Arguments.length > 0 && String(WScript.Arguments(0)) === 'unguarded');
+function runSplat(kind, remoteMap) {
+  var block = sliceBlock(kind);
+  if (block === null) { throw new Error('no FX-1c markers for ' + kind + ' in integrations.js'); }
+  if (UNGUARDED) { block = block.replace(/\n[^\n]*DelSet\[[a-z]+\]\) \{[^\n]*continue; \}[^\n]*/g, '\n'); }
+  var cfg = KINDS[kind];
+  var result = { status: 'found', data: {} };
+  result.data[cfg.field] = remoteMap;
+  var fn = new Function('u', cfg.resultVar, 'state', 'isPendingSync', 'getPendingDeletes', 'clearPendingDelete',
+                        'backfillSubTheoryUserId', 'ensureArtifactFieldsAll', 'Object', block);
+  fn({ uid: UID }, result, state, api.isPendingSync, api.getPendingDeletes, api.clearPendingDelete,
+     function () {}, function () {}, Object);
+}
+
+// ---- harness ------------------------------------------------------------------
+var failures = 0, total = 0;
+function check(name, got, want) {
+  total++;
+  if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); }
+  else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); }
+}
+function has(arr, id) { var i; for (i = 0; i < arr.length; i++) { if (arr[i] === id) { return true; } } return false; }
+function clone(o) { var out = {}, k; for (k in o) { if (o.hasOwnProperty(k)) { out[k] = o[k]; } } return out; }
+
+// self-validation: the harness must be able to fail
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+WScript.Echo('harness self-check: a wrong expectation fails -> OK');
+// marker presence
+var mk, missing = [];
+for (mk in KINDS) { if (sliceBlock(mk) === null) { missing.push(mk); } }
+if (missing.length) { WScript.Echo('NO MARKERS for: ' + missing.join(', ') + ' (the guarded splat is not in the tree)'); WScript.Quit(2); }
+WScript.Echo('splat blocks sliced from real integrations.js: arcs, subTheories, themes, artifacts');
+
+function seedRecord(kind, id, owner) {
+  var rec;
+  if (kind === 'arcs') { rec = { id: id, userId: owner, title: 'Arc ' + id, bookIds: [], entryIds: [], valueMarks: [], createdAt: 1, updatedAt: 1 }; }
+  else if (kind === 'subTheories') { rec = { id: id, userId: owner, arcId: null, header: 'Sub ' + id, evidence: [], linkedSubTheories: [], valueMarks: [], createdAt: 1, updatedAt: 1 }; }
+  else if (kind === 'themes') { rec = { id: id, userId: owner, name: 'Theme ' + id, bookIds: [], createdAt: 1, updatedAt: 1 }; }
+  else { rec = { userId: owner, bookId: id, title: 'Artifact ' + id, body: 'authored prose ' + id, updatedAt: 1 }; }
+  state[KINDS[kind].map][id] = rec;
+  return rec;
+}
+function realDelete(kind, id) {
+  if (kind === 'arcs') { return api.deleteArc(id); }
+  if (kind === 'subTheories') { return api.deleteSubTheory(id); }
+  if (kind === 'themes') { return api.deleteUserTheme(id); }
+  // artifacts: the app's delete site is deleteBook step 7 (views.js) -- not
+  // loadable here; the sim performs the SAME two-call bookkeeping that site does
+  // (proven present by grep in the checkpoint) and then the real record removal.
+  api.clearPendingSync('artifacts', UID, [id]);
+  api.markPendingDelete('artifacts', UID, id);
+  delete state.bookArtifacts[id];
+  return true;
+}
+
+var kinds = ['arcs', 'subTheories', 'themes', 'artifacts'];
+var ki, kind, R, Y, P, Z, remote;
+for (ki = 0; ki < kinds.length; ki++) {
+  kind = kinds[ki];
+  WScript.Echo('\n[' + kind + ']');
+  R = kind + '_R'; Y = kind + '_Y'; P = kind + '_P'; Z = kind + '_Z';
+  state[KINDS[kind].map] = {};
+  store = {};  // fresh localStorage per kind
+
+  // C1 THE FAILURE (the race FX-1c exists for): R created + synced, then
+  // deleted locally; a STALE remote read still lists R -> must NOT resurrect.
+  seedRecord(kind, R, UID);
+  seedRecord(kind, Y, UID);
+  api.markPendingSync(kind, UID, R); api.markPendingSync(kind, UID, Y);
+  api.clearPendingSync(kind, UID, [R, Y]);          // confirmed save
+  check('C0 real delete fn removes ' + R, realDelete(kind, R) === true && !state[KINDS[kind].map][R], true);
+  check('C0 delete marked ' + R + ' pending-delete', api.isPendingDelete(kind, UID, R), true);
+  remote = {}; remote[R] = seedRecord(kind, R + '_remotecopy', UID); delete state[KINDS[kind].map][R + '_remotecopy'];
+  remote[R].id = R; remote[Y] = clone(state[KINDS[kind].map][Y]);
+  runSplat(kind, remote);
+  check('C1 stale remote listing ' + R + ' does NOT resurrect it', !!state[KINDS[kind].map][R], false);
+  check('C1 sibling ' + Y + ' untouched by the skip', !!state[KINDS[kind].map][Y], true);
+  check('C1 mark persists while remote still lists it', api.isPendingDelete(kind, UID, R), true);
+
+  // C3 CONFIRMED: the remote no longer lists R -> mark cleared, nothing resurrected.
+  remote = {}; remote[Y] = clone(state[KINDS[kind].map][Y]);
+  runSplat(kind, remote);
+  check('C3 remote dropped ' + R + ' -> mark cleared', api.isPendingDelete(kind, UID, R), false);
+  check('C3 ' + R + ' still absent', !!state[KINDS[kind].map][R], false);
+
+  // C2 CONTROL: a record deleted on ANOTHER device (present locally, absent from
+  // remote, not pending-add, not pending-delete) is still dropped by the splat.
+  seedRecord(kind, Z, UID);
+  remote = {}; remote[Y] = clone(state[KINDS[kind].map][Y]);
+  runSplat(kind, remote);
+  check('C2 control: server-side delete of ' + Z + ' still drops it', !!state[KINDS[kind].map][Z], false);
+
+  // C5 NO NEW SILENT LOSS: a pending-ADD record (created locally, not yet synced)
+  // survives the splat exactly as FX-1 guaranteed.
+  seedRecord(kind, P, UID); api.markPendingSync(kind, UID, P);
+  remote = {}; remote[Y] = clone(state[KINDS[kind].map][Y]);
+  runSplat(kind, remote);
+  check('C5 pending-ADD ' + P + ' survives the splat (FX-1 intact)', !!state[KINDS[kind].map][P], true);
+
+  // C4 FINDING C: create -> delete BEFORE first sync -> the pending-ADD set no
+  // longer holds the id (the delete fn clears it).
+  if (kind !== 'artifacts') {
+    var F = kind + '_F';
+    seedRecord(kind, F, UID); api.markPendingSync(kind, UID, F);
+    realDelete(kind, F);
+    check('C4 Finding C: delete-before-sync clears the pending-ADD mark', has(api.getPendingSync(kind, UID), F), false);
+    remote = {}; remote[Y] = clone(state[KINDS[kind].map][Y]);
+    runSplat(kind, remote);
+    check('C4 remote never listed ' + F + ' -> pending-delete mark cleared at once', api.isPendingDelete(kind, UID, F), false);
+  }
+
+  // C6 A SECOND UID's pending-delete set is untouched (keys are per uid).
+  api.markPendingDelete(kind, OTHER, 'someone_elses');
+  remote = {}; remote[Y] = clone(state[KINDS[kind].map][Y]);
+  runSplat(kind, remote);
+  check('C6 other uid mark untouched', api.isPendingDelete(kind, OTHER, 'someone_elses'), true);
+}
+
+// C7 the seed sentinel never marks: hiding the seed arc writes no pending-delete.
+WScript.Echo('\n[seed]');
+state.arcs = {}; store = {};
+state.arcs['seed_arc'] = { id: 'seed_arc', userId: '__praxis_seed__', title: 'Seed', bookIds: [], entryIds: [] };
+api.deleteArc('seed_arc');
+check('C7 seed arc hide marks nothing (any uid)', api.getPendingDeletes('arcs', '__praxis_seed__').length + api.getPendingDeletes('arcs', UID).length, 0);
+
+// ---- P1 Item 4b: the reference sweep (real state.js delete fns) ---------------
+WScript.Echo('\n[4b re-home] deleteArc re-homes its sub-theories (arcId -> null), never deletes them');
+state.arcs = {}; state.subTheories = {}; state.notebookEntries = {}; store = {};
+state.arcs['arcX'] = { id: 'arcX', userId: UID, title: 'X', bookIds: [], entryIds: [], valueMarks: [] };
+state.arcs['arcK'] = { id: 'arcK', userId: UID, title: 'K', bookIds: [], entryIds: [], valueMarks: [] };
+state.subTheories['s1'] = { id: 's1', userId: UID, arcId: 'arcX', header: 'S1', bodyPublic: 'authored public prose', bodyIntellectual: 'authored working prose', evidence: [], linkedSubTheories: [], valueMarks: [ { value: 'care', why: 'authored why' } ], updatedAt: 1 };
+state.subTheories['s2'] = { id: 's2', userId: UID, arcId: 'arcK', header: 'S2', bodyPublic: '', bodyIntellectual: '', evidence: [], linkedSubTheories: [], valueMarks: [], updatedAt: 1 };
+api.deleteArc('arcX');
+check('arc gone', !!state.arcs['arcX'], false);
+check('s1 still exists (no cascade)', !!state.subTheories['s1'], true);
+check('s1 re-homed: arcId === null', state.subTheories['s1'].arcId, null);
+check('s1 prose verbatim (public)', state.subTheories['s1'].bodyPublic, 'authored public prose');
+check('s1 prose verbatim (working)', state.subTheories['s1'].bodyIntellectual, 'authored working prose');
+check('s1 valueMarks why verbatim', state.subTheories['s1'].valueMarks[0].why, 'authored why');
+check('s2 (other arc) untouched', state.subTheories['s2'].arcId, 'arcK');
+check('arcX marked pending-delete', api.isPendingDelete('arcs', UID, 'arcX'), true);
+
+WScript.Echo('\n[4b evidence] deleteEntry scrubs {kind:entry} evidence from sub-theories');
+state.notebookEntries['e1'] = { id: 'e1', userId: UID, register: 'journal', body: 'the note', bookIds: [], arcIds: [], images: [] };
+state.notebookEntries['e2'] = { id: 'e2', userId: UID, register: 'journal', body: 'other note', bookIds: [], arcIds: [], images: [] };
+state.subTheories['s2'].evidence = [
+  { id: 'ev1', kind: 'entry', refId: 'e1', quote: '', annotation: '' },
+  { id: 'ev2', kind: 'book',  refId: 'e1', quote: '', annotation: '' },   // a BOOK ref that happens to share the id string: must stay
+  { id: 'ev3', kind: 'entry', refId: 'e2', quote: 'q', annotation: 'a' }
+];
+api.deleteEntry('e1');
+check('entry gone', !!state.notebookEntries['e1'], false);
+check('evidence citing e1 (kind entry) scrubbed', (function () { var i, ev = state.subTheories['s2'].evidence; for (i = 0; i < ev.length; i++) { if (ev[i].kind === 'entry' && ev[i].refId === 'e1') { return true; } } return false; })(), false);
+check('book evidence with the same refId string kept', (function () { var i, ev = state.subTheories['s2'].evidence; for (i = 0; i < ev.length; i++) { if (ev[i].id === 'ev2') { return true; } } return false; })(), true);
+check('evidence citing e2 kept verbatim', (function () { var i, ev = state.subTheories['s2'].evidence; for (i = 0; i < ev.length; i++) { if (ev[i].id === 'ev3' && ev[i].quote === 'q' && ev[i].annotation === 'a') { return true; } } return false; })(), true);
+check('evidence array length 3 -> 2', state.subTheories['s2'].evidence.length, 2);
+
+WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
+WScript.Quit(failures ? 1 : 0);

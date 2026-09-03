@@ -1174,6 +1174,65 @@ function clearPendingBookDelete(uid, ids) {
   sv(pendingBookDeletesKey(uid), next);
 }
 
+// =====================================================================
+// FX-1c (P1 Item 4a) -- the DELETE-symmetry guard: the pendingBookDeletes half
+// of the books precedent, generalised for the 4 clear-and-splat collections
+// arcs / subTheories / themes / artifacts (record: docs/checkpoints/fx1.md
+// §Residual, docs/launch-runway.md FX-1c row). A per-uid localStorage set of
+// locally-DELETED record ids whose Firestore removal has NOT yet been confirmed
+// by a remote read. The REPLACE-splat in integrations.js (per collection) would
+// otherwise RESURRECT such a record from a stale remote doc; the splat now SKIPS
+// ids in this set (never copies them back) until the remote no longer lists
+// them, then clears the mark -- exactly mergeRemoteBookDoc's delSet. Keyed like
+// pendingSyncKey ('artifacts' stores the composite artifactKey), promise-free,
+// ls/sv only, never in the state blob. Sim: tools/fx1c-sim over the real bytes.
+// =====================================================================
+function pendingDeleteKey(kind, uid) {
+  return 'praxis_pending_deletes_' + kind + '_' + (uid || 'anon');
+}
+function getPendingDeletes(kind, uid) {
+  var arr = ls(pendingDeleteKey(kind, uid), []);
+  if (!arr || typeof arr.length !== 'number') return [];
+  return arr;
+}
+function markPendingDelete(kind, uid, id) {
+  if (!kind || !uid || !id) return;
+  var arr = getPendingDeletes(kind, uid);
+  var i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] === id) return; }
+  arr.push(id);
+  sv(pendingDeleteKey(kind, uid), arr);
+}
+function isPendingDelete(kind, uid, id) {
+  if (!kind || !uid || !id) return false;
+  var arr = getPendingDeletes(kind, uid);
+  var i;
+  for (i = 0; i < arr.length; i++) { if (arr[i] === id) return true; }
+  return false;
+}
+// Clear exactly the ids in `ids` (confirmed absent from the remote) from the
+// kind's delete-pending set. No-op for ids that were never pending.
+function clearPendingDelete(kind, uid, ids) {
+  if (!kind || !uid || !ids || typeof ids.length !== 'number' || ids.length === 0) return;
+  var arr = getPendingDeletes(kind, uid);
+  if (arr.length === 0) return;
+  var remove = {};
+  var i;
+  for (i = 0; i < ids.length; i++) { remove[ids[i]] = true; }
+  var next = [];
+  for (i = 0; i < arr.length; i++) { if (!remove[arr[i]]) next.push(arr[i]); }
+  sv(pendingDeleteKey(kind, uid), next);
+}
+// The delete-side bookkeeping every real-uid delete performs (FX-1c + Finding C):
+// stop guarding the id as a pending ADD (a create-then-delete-before-sync no
+// longer grows the pending set unbounded), and start guarding the DELETE against
+// a stale remote splat. The seed sentinel owns no synced records -> marks nothing.
+function noteRecordDeleted(kind, owner, id) {
+  if (typeof owner !== 'string' || owner === '' || owner === '__praxis_seed__' || !id) return;
+  clearPendingSync(kind, owner, [id]);
+  markPendingDelete(kind, owner, id);
+}
+
 // Phase 0 (Stage 3): best-effort flush of any unsynced book adds. Called on
 // page-hide (visibilitychange hidden / pagehide) so a scan/bulk add gets one
 // more push to Firestore before the tab backgrounds or closes. No-op when
@@ -2267,6 +2326,22 @@ function deleteArc(arcId) {
       }
     }
   }
+  // P1 Item 4b (reference symmetry): the arc's sub-theories are the reader's
+  // authored prose and are NEVER cascade-deleted. They are RE-HOMED -- arcId
+  // becomes null explicitly (not a dangling pointer at a dead arc) -- and keep
+  // rendering where orphaned sub-theories already render: the Arcs field's
+  // orphan seat (_afBuildOrphanSeat) and their own #subtheory/<id> page, both of
+  // which resolve the parent by `sub.arcId && state.arcs[sub.arcId]`.
+  var subsRehomed = false, rhk, rhs;
+  if (state.subTheories) {
+    for (rhk in state.subTheories) {
+      if (!Object.prototype.hasOwnProperty.call(state.subTheories, rhk)) continue;
+      rhs = state.subTheories[rhk];
+      if (rhs && rhs.arcId === arcId) { rhs.arcId = null; rhs.updatedAt = Date.now(); subsRehomed = true; }
+    }
+  }
+  if (subsRehomed && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  noteRecordDeleted('arcs', arc.userId, arcId);   // FX-1c + Finding C
   delete state.arcs[arcId];
   markArcsDirty();
   return true;
@@ -2296,6 +2371,25 @@ function deleteEntry(entryId) {
       }
     }
   }
+  // P1 Item 4b (reference symmetry): sub-theory evidence citing this entry
+  // ({kind:'entry', refId:<entryId>}) was left dangling and only filtered at
+  // read time; scrub it here, the way deleteBook scrubs {kind:'book'}.
+  var evTouched = false, evk, evs, evArr, evKept, evi;
+  if (state.subTheories) {
+    for (evk in state.subTheories) {
+      if (!Object.prototype.hasOwnProperty.call(state.subTheories, evk)) continue;
+      evs = state.subTheories[evk];
+      evArr = (evs && evs.evidence && typeof evs.evidence.length === 'number') ? evs.evidence : null;
+      if (!evArr) continue;
+      evKept = [];
+      for (evi = 0; evi < evArr.length; evi++) {
+        if (evArr[evi] && evArr[evi].kind === 'entry' && evArr[evi].refId === entryId) { evTouched = true; continue; }
+        evKept.push(evArr[evi]);
+      }
+      if (evKept.length !== evArr.length) { evs.evidence = evKept; evs.updatedAt = Date.now(); }
+    }
+  }
+  if (evTouched && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
   delete state.notebookEntries[entryId];
   markArcsDirty();
   markNotebookDirty();
@@ -2475,6 +2569,7 @@ function deleteSubTheory(id) {
   for (i = 0; i < partners.length; i = i + 1) {
     unlinkSubTheories(id, partners[i]);
   }
+  noteRecordDeleted('subTheories', subTheory.userId, id);   // FX-1c + Finding C
   delete state.subTheories[id];
   if (state.currentSubTheoryId === id) { state.currentSubTheoryId = null; }
   markSubTheoriesDirty();
@@ -2591,6 +2686,7 @@ function renameUserTheme(themeId, name) {
 function deleteUserTheme(themeId) {
   if (typeof themeId !== 'string') { return false; }
   if (!state.userThemes || !state.userThemes[themeId]) { return false; }
+  noteRecordDeleted('themes', state.userThemes[themeId].userId, themeId);   // FX-1c + Finding C
   delete state.userThemes[themeId];
   markThemesDirty();
   saveState();

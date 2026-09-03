@@ -139,10 +139,20 @@ Byte deltas (LF vs ba60224): `state.js` +4,308 · `integrations.js` +2,294.
   resurrected by a stale remote splat, for arcs/subTheories/themes/artifacts. Fully
   in-scope (state.js delete fns + integrations.js splat) — does NOT have the views.js
   coupling FX-1b has. **Preston's scope call: build now (option A) or defer (option B)
-  — see STATUS.**
+  — see STATUS.** → **BUILT — P1 Item 4a, 2026-09-03 (local v3.296).** Implemented verbatim as
+  recorded: `praxis_pending_deletes_<kind>_<uid>` (state.js `getPendingDeletes` / `markPendingDelete` /
+  `isPendingDelete` / `clearPendingDelete` + the one `noteRecordDeleted(kind, owner, id)` every real-uid
+  delete calls, which also clears the pending ADD = Finding C), a `delSet` skip at the four splat sites
+  (integrations.js, wrapped in `FX-1c splat-begin/end:<kind>` markers) that never copies a
+  pending-delete id back and clears the mark once the remote no longer lists it. The artifact delete is
+  marked at `deleteBook` step 7 (views.js) — the one views.js touch. Proven by `tools/fx1c-sim` over the
+  REAL bytes of state.js + the sliced splat blocks: 60/60; with the skip stripped (`unguarded`) exactly
+  the four C1 cases fail. Record: `docs/checkpoints/p1-safety-build.md` §ITEM 4.
 - **FX-1b — notebook's incoming ADD guard + the mergeBookDuplicates artifact site.**
   Both are views.js-coupled add-sites (notebook's 4 creation sites + the artifact
-  repoint at views.js:8394), sequenced after B-M's views.js work lands. Tabled.
+  repoint at views.js:8394 — STALE: at v3.296 `mergeBookDuplicates` is views.js:8599 and its
+  drop-side artifact delete is :8778 (re-derived against the committed tree; re-grep, do not
+  trust the number), sequenced after B-M's views.js work lands. Tabled.
 - **Finding C — pending-set growth on delete-before-sync.** `deleteArc`/
   `deleteSubTheory`/`deleteUserTheme` don't `clearPendingSync` (unlike `deleteBook`'s
   `clearPendingBookSync`). Inert for correctness (a deleted id is gone from state, so
