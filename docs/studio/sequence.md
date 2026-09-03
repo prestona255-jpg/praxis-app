@@ -31,6 +31,36 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-09-03 (UNDO INDEPENDENCE — the Undo was a stack; guard narrowed, restore made surgical. v3.294)** —
+  no re-order and no new backlog item, so **no `PROPOSED:` flag.** A live defect on `#books`, fixed in one
+  commit. Two things worth carrying forward.
+  **(1) The reported mechanism was again only part of the cause — the FIFTH round running.** The ruling
+  named the shelf `bookIds` array as the suspect and said "verify, do not assume." Verifying found **five of
+  the seven fingerprint buckets** move when an unrelated book is merged: `index` *and* `arcs`/`subs`/`notes`/
+  `themes`. Had I fixed the named suspect, the defect would have survived on any shelf whose duplicates share
+  a collection — which is Preston's. The 2026-08-30 pattern now holds a fifth time: **the reported symptom is
+  reliable, the reported mechanism is not.** The instruction to verify rather than assume is the only reason
+  this round did not ship a half-fix that tested clean on a fixture and failed on device — exactly the shape
+  of the original bug.
+  **(2) A guard's width is a function of its restore's precision.** The staleness guard was not paranoid by
+  accident: it was compensating for a restore that overwrote whole arrays, where any loosening would have
+  turned a false refusal into real data loss. The two are one mechanism and could only be changed together.
+  Worth remembering the next time a guard looks over-broad — ask what it is covering for before narrowing it.
+  Corollary observed in the result: with a surgical restore, the guard's remaining checks produce LIFO
+  ordering **only where merges genuinely share a record**, and free ordering everywhere else, without that
+  being coded anywhere.
+  **(3) A FIXTURE CAN HIDE THE DEFECT IT WAS BUILT TO CATCH — and §9 earned its keep.** My own adversarial
+  pass found that sub-theory evidence entries came back swapped, and I fixed it. `fix-red-team` then showed
+  that fix was still unsound, because my fixture gave every evidence entry a distinct quote and **the app
+  attaches book evidence with no quote and no annotation**, so real entries share one degenerate signature
+  — and `deleteBook` re-indexes the array, defeating the index primary I had just added. Reproduced: the
+  old matcher silently attributes one reader's passage to the wrong book while reporting success. Fixed by
+  matching the entry's stable `id`. Two lessons, both already in the canon and both re-earned here: **verify
+  on the real snapshot, not a fixture**, and **build fixture data through the app's own writer** (here
+  `addEvidence`) rather than by hand. Also a process fault of mine: I dispatched the red-team while still
+  editing the function under review, and it correctly named the unstable tree rather than absorbing it —
+  freeze the tree before dispatch.
+
 - **2026-09-01 (T12 TITLE CORRUPTION — writer identified; R1 RULED ACCEPTED; T21 filed. v3.286)** — no
   re-order; a recorded state plus one new backlog item, so **no `PROPOSED:` flag.** The **FOURTH**
   consecutive round whose opening premise Stage 0/1 corrected — the brief provisionally ruled out the scan

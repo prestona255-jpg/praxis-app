@@ -207,6 +207,71 @@ spectrum. Either is a data/model decision for its own round, not a visual mockup
 
 ## Round history
 
+### UNDO INDEPENDENCE — v3.294, SHIPPED LOCAL (awaiting Preston's push + device felt pass). Records: `docs/checkpoints/undo-independence-recon.md` + `undo-independence.md`.
+
+**The defect (live, his account, 6 merges).** After each merge, every earlier tombstone's
+Undo refused with *"your shelf has changed since the merge."* Only the newest merge ever
+had a live Undo — a stack, where the ruling was independence. Reproduced on a 148-book /
+6-pair fixture: 148 → 142, message verbatim, undoable count stuck at 1.
+
+**The measured cause, wider than the suspicion.** The ruling suspected the shelf `bookIds`
+array and said verify, do not assume. Verification found **five of seven fingerprint
+buckets** move when an unrelated book is merged: `index` (JSON of the whole shelf array,
+changes on *every* merge) plus `arcs` / `subs` / `notes` / `themes` (whole membership
+arrays of any collection shared with another duplicate pair). Only `books` and `artifacts`
+held still. Fixing the named suspect alone would have left the defect live on his shelf.
+
+**Why the guard could not simply be loosened.** It was compensating for a wholesale
+restore — `bookIds = ts.bookIdsBefore.slice()` plus four sibling array overwrites — under
+which undoing #1 after #2 would have rolled #2 back with it. Guard and restore are one
+mechanism; loosening the guard alone converts a false refusal into real data loss. The
+restore became surgical first, the guard narrowed second.
+
+**Shipped.** `mergeRestoreMembership` re-inserts the folded record adjacent to the survivor
+at its *current* position (never a stored index), in pre-merge order, deduped, returning
+null rather than resurrecting membership the reader removed since. `mergeRestoreEvidence` inverts
+the sub-theory repoint per-entry by the entry's own stable `id` — never position, never
+content (see §9 below; the first two attempts used both, and both are unsound). The
+fingerprint now watches only the two records' own authored state: `books` + `artifacts`.
+**`mergeBookDuplicates` untouched** — the merge write path needed no change, and that was
+an explicit non-goal with a STOP condition. Old tombstones need no migration; his six
+become undoable the moment v3.294 loads.
+
+**Proven** (fresh captures, 2026-09-03, final bytes): six merges → all six undoable, zero
+refusals at every step · Undo #2 restores both records at shelf idx 137/138 with the other
+five pairs showing zero field changes · Undo #5 after #2 leaves #2's restoration intact in
+every collection · a rating edit on #4's survivor refuses #4 only, returns false, mutates
+nothing, while #3/#6 stay live · restored records survive a stale-remote `mergeRemoteBookDoc`
+read · I1 both directions round-trip · Undo driven as a real button after a Notebook→Shelf
+navigation · pixels-visible at 390×664 and at **1360×900, Preston's real viewport** (5 cards
+1261×72, all REACHABLE). Edge found by my own adversarial pass: two merges onto the **same
+survivor** correctly refuse out-of-order then both undo once ordered — LIFO emerges only
+where records genuinely overlap, and is coded nowhere.
+
+**§9 `fix-red-team` (bar lifted in Preston's go-ahead) returned ONE BLOCK, and it was
+right** — on the half I had already "fixed" once. `mergeRestoreEvidence` matched entries by
+content signature with index as primary. Both discriminators fail on real data: book
+evidence is routinely attached with **no quote and no annotation**, so real entries commonly
+share the single signature `["book","",""]`; and `deleteBook` (`views.js:7702`) REBUILDS a
+sub-theory's evidence array through a keep-filter, so deleting any unrelated book shifts
+every later index. **My fixture gave each entry a distinct quote — not how the app writes
+them — and that is exactly what hid it.** Reproduced both ways on `[P,B,D]` with blank
+signatures, after merging B→A and D→A then deleting P: the old matcher returns **`[D,B]`**
+— one reader's passage silently attributed to the wrong book, Undo reporting success —
+where the truth is `[B,D]`. Fixed by matching the entry's own **`id`**: `state.js:2716` is
+the ONLY `evidence.push(` in the codebase and `addEvidence` always stamps
+`genEvidenceId()`, so no id-less element can exist, and the tombstone deep-clones those ids.
+`mergeEvidenceSignature` is **deleted** (grep 0) and the scan fallback removed — an
+unmatchable entry is skipped, never guessed at. Its other findings (membership invariants,
+old-tombstone compatibility, parse/bytes/bump/call-sites/ES3) all PASS.
+
+**Lesson for this surface: build evidence through `addEvidence`, never by hand.** A
+hand-built fixture with distinct quotes cannot see the degenerate-signature case that real
+data produces constantly.
+
+**⭐ CLOSING GATE IS PRESTON'S:** six merges on device, then Undo the middle one and confirm
+the others still offer Undo.
+
 ### R-SHELF THE BOOKCASE — CLOSED (felt pass #2 = PASS, 2026-07-22, v3.243 `c90e70a`; S1 `bcce692` · S2 `d49cdca` · S3 `f818008` · S4 `e63374d` · S5 `c90e70a`). Live on production. Canon ratified: elevation loop + completeness inventory (permanent) · ROW 9 · STATES amendments · G1–G5 (lessons L11–L15) · 2 mechanical truths.
 
 **S5 (felt pass #1 FAILED — skin/seams/data-reality):** verified against Preston's REAL library (law G1;

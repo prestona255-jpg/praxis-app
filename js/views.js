@@ -8227,6 +8227,107 @@ function mergeCloneValue(v) {
   return JSON.parse(JSON.stringify(v));
 }
 
+// UNDO-INDEPENDENCE (v3.294). Tombstones were ALWAYS meant to be independent, and
+// the storage always was -- but the RESTORE was not, so the guard had to be. The
+// restore wrote whole pre-merge arrays back (`bookIds = ts.bookIdsBefore.slice()`),
+// which reverses one merge perfectly and rolls every LATER merge back with it. The
+// guard was widened to cover for that: it compared the entire shelf index and the
+// entire membership array of every shared arc / sub / note / theme. Every merge
+// changes the shelf index, so every merge invalidated every earlier tombstone --
+// measured on a 148-book fixture with six pairs, only the newest merge was ever
+// undoable, which is a stack (docs/checkpoints/undo-independence-recon.md §1).
+//
+// The two helpers below make the restore SURGICAL, which is what lets the guard
+// become narrow. They restore the membership of the TOUCHED ids only and leave
+// every other member of the array exactly where it is, so an unrelated merge that
+// happened in between survives an Undo untouched.
+//
+// `before` is the whole pre-merge array -- the tombstone stores it verbatim, so
+// membership is READ, never inferred. Entries are bare ids or {id, addedAt} (arcs);
+// both shapes round-trip. The restored ids land ADJACENT TO THE SURVIVOR at its
+// CURRENT position, never at a stored index -- the index moved the moment another
+// merge removed a book above it.
+//
+// Returns null (meaning: leave this collection alone) in the two cases where a
+// restore would invent work rather than reverse it:
+//   · none of the touched ids is present -- the reader removed this book from the
+//     collection after the merge, and resurrecting it would undo THEIR edit;
+//   · the snapshot restores nothing -- never strip the survivor out on an empty
+//     `before` (a tombstone written when the collection was missing).
+function mergeRestoreMembership(cur, before, touched) {
+  var i, id, anchor = -1, rest = [], restored = [], seen = {}, out;
+  if (!(cur instanceof Array) || !(before instanceof Array)) { return null; }
+  function entryId(e) { return (e && e.id) ? e.id : e; }
+  for (i = 0; i < cur.length; i++) {
+    id = entryId(cur[i]);
+    if (touched[id]) { if (anchor < 0) { anchor = rest.length; } }
+    else { rest.push(cur[i]); }
+  }
+  if (anchor < 0) { return null; }
+  for (i = 0; i < before.length; i++) {
+    id = entryId(before[i]);
+    // A corrupt index could list the same id twice; restoring it twice would
+    // manufacture the duplicate this whole surface exists to remove.
+    if (!touched[id] || seen[id]) { continue; }
+    seen[id] = true;
+    restored.push(mergeCloneValue(before[i]));
+  }
+  if (restored.length === 0) { return null; }
+  out = rest.slice(0, anchor);
+  for (i = 0; i < restored.length; i++) { out.push(restored[i]); }
+  for (i = anchor; i < rest.length; i++) { out.push(rest[i]); }
+  return out;
+}
+
+// Sub-theory evidence is the one collection the merge repoints IN PLACE and never
+// dedups (each entry is its own passage, and collapsing two would destroy a quote).
+// So its inverse is per-ENTRY, not per-array -- and the entry is matched by its own
+// STABLE ID, never by position and never by content.
+//
+// §9 BLOCK (2026-09-03) -- WHY NOT POSITION, AND WHY NOT CONTENT. The first cut
+// matched on a (kind, quote, annotation) signature, then on index with that
+// signature as a fallback. Both are unsound on real data:
+//   · CONTENT does not discriminate. Book evidence is routinely attached with no
+//     quote and no annotation, so a large share of real entries share the single
+//     signature ["book","",""]. A scan for "the first unclaimed entry that looks
+//     like this" can therefore claim a DIFFERENT book's entry that merely also
+//     points at this survivor -- silently, with the Undo still reporting success.
+//   · INDEX does not hold. `deleteBook` (views.js:7702) REBUILDS a sub-theory's
+//     evidence array through a keep-filter, so deleting any unrelated book shifts
+//     the index of every entry authored after it. Ordinary use, no warning.
+//   Together they produce misattribution: undo merge A after merge B folded a
+//   second book into the same survivor and an unrelated book was deleted, and B's
+//   evidence entry is re-pointed at A's folded record while A's is left behind.
+//
+// `id` closes both holes exactly. Every evidence element in this codebase is
+// created by state.js `addEvidence`, which assigns `id: genEvidenceId()` -- and
+// state.js:2716 is the ONLY `evidence.push(` anywhere, so there is no path that
+// makes an id-less element. The tombstone deep-clones the pre-merge array, so the
+// snapshot carries those ids verbatim.
+//
+// An entry we cannot match by id is SKIPPED, never guessed at. Skipping leaves the
+// citation pointing at the survivor -- visible, and correctable by hand -- where a
+// guess silently attributes one reader's passage to the wrong book.
+function mergeRestoreEvidence(cur, before, dropSet, keepId) {
+  var i, j, b, changed = false;
+  if (!(cur instanceof Array) || !(before instanceof Array)) { return false; }
+  for (i = 0; i < before.length; i++) {
+    b = before[i];
+    if (!b || b.kind !== 'book' || !dropSet[b.refId] || !b.id) { continue; }
+    for (j = 0; j < cur.length; j++) {
+      if (!cur[j] || cur[j].id !== b.id) { continue; }
+      // Found the very entry this merge repointed. Only put it back if it is still
+      // pointing where the merge left it -- if something else has moved it since,
+      // that is newer work and this Undo does not own it.
+      if (cur[j].kind === 'book' && cur[j].refId === keepId) {
+        cur[j].refId = b.refId; changed = true;
+      }
+      break;
+    }
+  }
+  return changed;
+}
+
 // Tombstones are INDEPENDENT, not a stack: each merge appends its own record with
 // its own id, and undoing one neither requires nor disturbs any other.
 function pushMergeTombstone(uid, ts) {
@@ -8347,31 +8448,52 @@ function mergeBookFingerprint(b) {
     b.movedMe === true, (b.valueMarks instanceof Array) ? b.valueMarks : []]);
 }
 
+// UNDO-INDEPENDENCE (v3.294) — WHAT THE FINGERPRINT WATCHES.
+//
+// BEFORE, it watched seven buckets: the two records, the ENTIRE shelf `bookIds`
+// array, and the ENTIRE membership array of every arc / sub-theory / note / theme
+// that referenced either id, plus their artifacts. Five of those seven move when an
+// UNRELATED book is merged elsewhere on the shelf. That is why six merges in a row
+// left only the newest one undoable: `index` changes on every merge without
+// exception, and a shelf whose duplicates share an arc invalidates `arcs`, `subs`,
+// `notes` and `themes` too. Measured, all five, on a 148-book fixture -- so removing
+// the `index` check alone would NOT have fixed this.
+//
+// AFTER, it watches only what the ruling names: **the survivor's and the folded
+// record's own authored state.**
+//   · `books`     — the reader's work on the two records: rating, marks, movedMe,
+//                   status/finishedAt, and the record's identity (title/author/isbn).
+//                   A survivor DELETED since the merge lands here too: its record is
+//                   gone from state.books, so its fingerprint becomes 'null'.
+//   · `artifacts` — the reader's writing ON those two books, keyed per book by
+//                   artifactKey(uid, bookId). An unrelated merge can never touch
+//                   those keys; a SECOND merge onto the same survivor can, and that
+//                   one should still refuse, because it appended to that writing.
+//
+// Other books moving is not this book's authored state, so it is no longer a reason
+// to refuse. Collections are handled by mergeRestoreMembership / mergeRestoreEvidence
+// above, which repoint only the two ids involved -- the guard could only be narrowed
+// because the restore stopped being wholesale.
+//
+// Old tombstones need no migration: their afterState carries all seven buckets, and
+// the two this reads are byte-identical in shape to what it wrote.
 function captureMergeAfterState(uid, ts) {
-  var fp = { books: {}, index: '', arcs: {}, subs: {}, notes: {}, themes: {}, artifacts: {} }, k, i;
+  var fp = { books: {}, artifacts: {} }, k, i;
   fp.books[ts.keepId] = mergeBookFingerprint(state.books[ts.keepId]);
   for (i = 0; i < ts.dropIds.length; i++) { fp.books[ts.dropIds[i]] = mergeBookFingerprint(state.books[ts.dropIds[i]]); }
-  fp.index = JSON.stringify((state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : []);
-  for (k in ts.arcsBefore) { if (ts.arcsBefore.hasOwnProperty(k)) { fp.arcs[k] = JSON.stringify((state.arcs && state.arcs[k]) ? state.arcs[k].bookIds : null); } }
-  for (k in ts.subsBefore) { if (ts.subsBefore.hasOwnProperty(k)) { fp.subs[k] = JSON.stringify((state.subTheories && state.subTheories[k]) ? state.subTheories[k].evidence : null); } }
-  for (k in ts.notesBefore) { if (ts.notesBefore.hasOwnProperty(k)) { fp.notes[k] = JSON.stringify((state.notebookEntries && state.notebookEntries[k]) ? state.notebookEntries[k].bookIds : null); } }
-  for (k in ts.themesBefore) { if (ts.themesBefore.hasOwnProperty(k)) { fp.themes[k] = JSON.stringify((state.userThemes && state.userThemes[k]) ? state.userThemes[k].bookIds : null); } }
   for (k in ts.artifactsBefore) { if (ts.artifactsBefore.hasOwnProperty(k)) { fp.artifacts[k] = JSON.stringify((state.bookArtifacts && state.bookArtifacts[k]) ? state.bookArtifacts[k] : null); } }
   return fp;
 }
 
-// Returns '' when the world still matches the end of the merge, or the name of the
-// first thing that moved. Named rather than boolean so the surface can say WHY.
+// Returns '' when the two records still match the end of the merge, or the name of
+// the first thing that moved. Named rather than boolean so the surface can say WHY.
 function mergeUndoStaleReason(uid, ts) {
   if (!ts || !ts.afterState) { return ''; }   // pre-guard tombstone: allow, as before
   var fp = captureMergeAfterState(uid, ts), k;
   for (k in ts.afterState.books) { if (ts.afterState.books.hasOwnProperty(k) && fp.books[k] !== ts.afterState.books[k]) { return 'this book has changed since the merge'; } }
-  if (fp.index !== ts.afterState.index) { return 'your shelf has changed since the merge'; }
-  for (k in ts.afterState.arcs) { if (ts.afterState.arcs.hasOwnProperty(k) && fp.arcs[k] !== ts.afterState.arcs[k]) { return 'an arc has changed since the merge'; } }
-  for (k in ts.afterState.subs) { if (ts.afterState.subs.hasOwnProperty(k) && fp.subs[k] !== ts.afterState.subs[k]) { return 'a sub-theory has changed since the merge'; } }
-  for (k in ts.afterState.notes) { if (ts.afterState.notes.hasOwnProperty(k) && fp.notes[k] !== ts.afterState.notes[k]) { return 'a note has changed since the merge'; } }
-  for (k in ts.afterState.themes) { if (ts.afterState.themes.hasOwnProperty(k) && fp.themes[k] !== ts.afterState.themes[k]) { return 'a theme has changed since the merge'; } }
-  for (k in ts.afterState.artifacts) { if (ts.afterState.artifacts.hasOwnProperty(k) && fp.artifacts[k] !== ts.afterState.artifacts[k]) { return 'a book artifact has changed since the merge'; } }
+  if (ts.afterState.artifacts) {
+    for (k in ts.afterState.artifacts) { if (ts.afterState.artifacts.hasOwnProperty(k) && fp.artifacts[k] !== ts.afterState.artifacts[k]) { return 'your writing on this book has changed since the merge'; } }
+  }
   return '';
 }
 
@@ -8394,6 +8516,16 @@ function undoBookMerge(uid, tombstoneId) {
   // §9 BLOCK 2: never overwrite newer work to undo older work.
   if (mergeUndoStaleReason(uid, ts) !== '') { return false; }
 
+  // UNDO-INDEPENDENCE (v3.294): restore by IDENTITY, not by position. Every array
+  // below used to be overwritten wholesale from the snapshot, which reversed this
+  // merge and silently reversed every LATER one with it. Each is now repointed for
+  // the two ids this tombstone owns, leaving every other member untouched -- so
+  // "merge six groups, undo the second" leaves the other five exactly as they are.
+  // A null return means "leave this collection alone" (see mergeRestoreMembership).
+  var dropSet = {}, touched = {};
+  touched[ts.keepId] = true;
+  for (i = 0; i < ts.dropIds.length; i++) { dropSet[ts.dropIds[i]] = true; touched[ts.dropIds[i]] = true; }
+
   if (ts.survivorBefore) { state.books[ts.keepId] = mergeCloneValue(ts.survivorBefore); }
   var did;
   for (did in ts.droppedBefore) {
@@ -8401,12 +8533,30 @@ function undoBookMerge(uid, tombstoneId) {
       state.books[did] = mergeCloneValue(ts.droppedBefore[did]);
     }
   }
-  if (state.userBooks && state.userBooks[uid]) { state.userBooks[uid].bookIds = ts.bookIdsBefore.slice(); }
-  var k;
-  for (k in ts.arcsBefore) { if (ts.arcsBefore.hasOwnProperty(k) && state.arcs && state.arcs[k]) { state.arcs[k].bookIds = mergeCloneValue(ts.arcsBefore[k]); } }
-  for (k in ts.subsBefore) { if (ts.subsBefore.hasOwnProperty(k) && state.subTheories && state.subTheories[k]) { state.subTheories[k].evidence = mergeCloneValue(ts.subsBefore[k]); } }
-  for (k in ts.notesBefore) { if (ts.notesBefore.hasOwnProperty(k) && state.notebookEntries && state.notebookEntries[k]) { state.notebookEntries[k].bookIds = mergeCloneValue(ts.notesBefore[k]); } }
-  for (k in ts.themesBefore) { if (ts.themesBefore.hasOwnProperty(k) && state.userThemes && state.userThemes[k]) { state.userThemes[k].bookIds = mergeCloneValue(ts.themesBefore[k]); } }
+  var k, restored;
+  if (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) {
+    restored = mergeRestoreMembership(state.userBooks[uid].bookIds, ts.bookIdsBefore, touched);
+    if (restored) { state.userBooks[uid].bookIds = restored; }
+  }
+  for (k in ts.arcsBefore) {
+    if (!ts.arcsBefore.hasOwnProperty(k) || !state.arcs || !state.arcs[k]) { continue; }
+    restored = mergeRestoreMembership(state.arcs[k].bookIds, ts.arcsBefore[k], touched);
+    if (restored) { state.arcs[k].bookIds = restored; }
+  }
+  for (k in ts.subsBefore) {
+    if (!ts.subsBefore.hasOwnProperty(k) || !state.subTheories || !state.subTheories[k]) { continue; }
+    mergeRestoreEvidence(state.subTheories[k].evidence, ts.subsBefore[k], dropSet, ts.keepId);
+  }
+  for (k in ts.notesBefore) {
+    if (!ts.notesBefore.hasOwnProperty(k) || !state.notebookEntries || !state.notebookEntries[k]) { continue; }
+    restored = mergeRestoreMembership(state.notebookEntries[k].bookIds, ts.notesBefore[k], touched);
+    if (restored) { state.notebookEntries[k].bookIds = restored; }
+  }
+  for (k in ts.themesBefore) {
+    if (!ts.themesBefore.hasOwnProperty(k) || !state.userThemes || !state.userThemes[k]) { continue; }
+    restored = mergeRestoreMembership(state.userThemes[k].bookIds, ts.themesBefore[k], touched);
+    if (restored) { state.userThemes[k].bookIds = restored; }
+  }
   if (state.bookArtifacts) {
     for (k in ts.artifactsBefore) {
       if (!ts.artifactsBefore.hasOwnProperty(k)) { continue; }
