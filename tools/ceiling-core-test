@@ -1,0 +1,121 @@
+// tools/ceiling-core-test -- P1 Item 1 proof harness for the AI cost ceiling's
+// DECISION CORE (netlify/functions/lib/ceiling-core.js), run under cscript
+// JScript because Node is blocked on the build box. EXTENSIONLESS on purpose
+// (see tools/parse-check for the reason).
+//
+// Usage:  cscript //nologo //E:jscript tools/ceiling-core-test
+// Exit:   0 = every case passed · 1 = a case failed · 2 = harness could not load
+//
+// The clock is INJECTED into every core call, so the 00:00 UTC reset and the
+// N-vs-N+1 boundary are exercised deterministically. The harness self-checks
+// first: a deliberately wrong expectation must FAIL before the real cases run.
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var shell = new ActiveXObject('WScript.Shell');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+var corePath = fso.BuildPath(root, 'netlify\\functions\\lib\\ceiling-core.js');
+
+function readFile(p) {
+  var s = fso.OpenTextFile(p, 1, false);
+  var t = s.ReadAll();
+  s.Close();
+  return t;
+}
+
+var src;
+try { src = readFile(corePath); } catch (e) { WScript.Echo('LOAD FAIL: ' + corePath); WScript.Quit(2); }
+
+// Load the core: evaluate the file's function declarations in a scope with NO
+// `module`, then hand back the six functions by name.
+var core;
+try {
+  core = new Function(src + '\nreturn { utcDayKey: ceilingUtcDayKey, nextResetIso: ceilingNextResetIso, parseOverrides: ceilingParseOverrides, capFor: ceilingCapFor, defaultCap: ceilingDefaultCap, decide: ceilingDecide };')();
+} catch (e2) { WScript.Echo('PARSE FAIL: ' + e2.message); WScript.Quit(2); }
+
+var failures = 0, total = 0;
+function check(name, got, want) {
+  total++;
+  var g = (typeof got === 'object') ? JSONish(got) : String(got);
+  var w = (typeof want === 'object') ? JSONish(want) : String(want);
+  if (g === w) { WScript.Echo('  PASS  ' + name + '  = ' + g); }
+  else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + g + '\n        want ' + w); }
+}
+function JSONish(o) {
+  if (o === null) { return 'null'; }
+  var keys = [], k, i, out = '{';
+  for (k in o) { if (o.hasOwnProperty(k)) { keys.push(k); } }
+  keys.sort();
+  for (i = 0; i < keys.length; i++) { out += (i ? ',' : '') + keys[i] + ':' + o[keys[i]]; }
+  return out + '}';
+}
+
+// --- self-validation: the harness must be able to FAIL ------------------------
+var selfFail = 0;
+(function () {
+  var before = failures;
+  check('self-check (expected to FAIL)', core.utcDayKey(0), 'not-a-date');
+  selfFail = failures - before;
+  failures = before; total = total - 1;
+})();
+if (selfFail !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED: a wrong expectation did not fail'); WScript.Quit(2); }
+WScript.Echo('harness self-check: a wrong expectation fails -> OK');
+
+// Clock fixtures (ms since epoch, UTC).
+var T_2359 = Date.UTC(2026, 8, 3, 23, 59, 59, 0);   // 2026-09-03T23:59:59Z
+var T_0000 = Date.UTC(2026, 8, 4, 0, 0, 0, 0);      // 2026-09-04T00:00:00Z
+var T_NOON = Date.UTC(2026, 8, 3, 12, 0, 0, 0);
+
+WScript.Echo('\n[1] UTC day key + reset');
+check('day key one second before UTC midnight', core.utcDayKey(T_2359), '2026-09-03');
+check('day key at 00:00:00 UTC (the reset)',     core.utcDayKey(T_0000), '2026-09-04');
+check('resetAt from 23:59:59',                   core.nextResetIso(T_2359), '2026-09-04T00:00:00.000Z');
+check('resetAt from exactly 00:00:00',           core.nextResetIso(T_0000), '2026-09-05T00:00:00.000Z');
+check('day key ignores local zone (noon)',       core.utcDayKey(T_NOON), '2026-09-03');
+
+WScript.Echo('\n[2] cap config');
+check('default cap from env "300"',      core.defaultCap('300'), 300);
+check('default cap from unset env',      core.defaultCap(undefined), 300);
+check('default cap from garbage',        core.defaultCap('lots'), 300);
+check('default cap from "0" -> 300',     core.defaultCap('0'), 300);
+check('override hit',                    core.capFor('u1', 300, 'u1:1500,u2:5'), 1500);
+check('override miss -> default',        core.capFor('u3', 300, 'u1:1500,u2:5'), 300);
+check('override with spaces',            core.capFor('u2', 300, ' u1:1500 , u2:5 '), 5);
+check('override malformed entries skip', core.capFor('u1', 300, 'u1,:9,u1:,x:y,u1:7'), 7);
+check('override unset',                  core.capFor('u1', 300, undefined), 300);
+check('override zero cap skipped',       core.capFor('u1', 300, 'u1:0'), 300);
+
+WScript.Echo('\n[3] N succeed, N+1 refused (cap = 3, same UTC day)');
+var d0 = core.decide(null, T_NOON, 3);
+check('call 1 (no doc) admitted, rolled, count 1', d0, { allowed: true, day: '2026-09-03', rolled: true, nextCount: 1, cap: 3 });
+var d1 = core.decide({ day: '2026-09-03', count: 1 }, T_NOON, 3);
+check('call 2 admitted, count 2', d1, { allowed: true, day: '2026-09-03', rolled: false, nextCount: 2, cap: 3 });
+var d2 = core.decide({ day: '2026-09-03', count: 2 }, T_NOON, 3);
+check('call 3 admitted, count 3 (= cap)', d2, { allowed: true, day: '2026-09-03', rolled: false, nextCount: 3, cap: 3 });
+var d3 = core.decide({ day: '2026-09-03', count: 3 }, T_NOON, 3);
+check('call 4 REFUSED with resetAt', d3, { allowed: false, day: '2026-09-03', used: 3, cap: 3, resetAt: '2026-09-04T00:00:00.000Z' });
+var d4 = core.decide({ day: '2026-09-03', count: 3 }, T_2359, 3);
+check('still refused at 23:59:59', d4.allowed, false);
+
+WScript.Echo('\n[4] the window resets at 00:00 UTC (clock-injected)');
+var d5 = core.decide({ day: '2026-09-03', count: 3 }, T_0000, 3);
+check('at 00:00:00 UTC the same doc is admitted, rolled, count 1', d5, { allowed: true, day: '2026-09-04', rolled: true, nextCount: 1, cap: 3 });
+
+WScript.Echo('\n[5] a second uid is unaffected (independent docs, independent caps)');
+var dA = core.decide({ day: '2026-09-03', count: 300 }, T_NOON, core.capFor('A', 300, 'B:1500'));
+var dB = core.decide({ day: '2026-09-03', count: 300 }, T_NOON, core.capFor('B', 300, 'B:1500'));
+check('uid A at 300/300 refused', dA.allowed, false);
+check('uid B at 300/1500 admitted', dB, { allowed: true, day: '2026-09-03', rolled: false, nextCount: 301, cap: 1500 });
+
+WScript.Echo('\n[6] a forged uid in a request body cannot reach the counter');
+// The core takes a uid ONLY as an argument (ceiling.js passes the verified
+// token sub). Prove the core has no notion of a request body at all.
+check('core source never references a request body', /\bbody\b/.test(src.replace(/\/\/[^\n]*/g, '')), false);
+check('decide() ignores extra fields on the stored doc', core.decide({ day: '2026-09-03', count: 0, uid: 'forged' }, T_NOON, 3).allowed, true);
+
+WScript.Echo('\n[7] malformed stored docs');
+check('negative count treated as 0', core.decide({ day: '2026-09-03', count: -5 }, T_NOON, 3).nextCount, 1);
+check('non-numeric count treated as 0', core.decide({ day: '2026-09-03', count: 'x' }, T_NOON, 3).nextCount, 1);
+check('missing day -> rolled', core.decide({ count: 9 }, T_NOON, 3).rolled, true);
+
+WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
+WScript.Quit(failures ? 1 : 0);

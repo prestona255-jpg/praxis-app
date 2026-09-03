@@ -330,6 +330,18 @@ function renderError(customText) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
+// P1 Item 1: name the proxy's answer instead of a generic error. A ceiling
+// refusal (429 daily_limit) renders the honest line with the reset in local
+// time; a rejected/absent token renders a sign-in line; everything else keeps
+// the generic copy. Never "Yumi is thinking", never silence.
+function yumiRenderProxyError(err) {
+  var code = (err && typeof err.code === 'string') ? err.code : '';
+  if (code === 'daily_limit' && typeof aiLimitMessage === 'function') { renderError(aiLimitMessage(err)); return; }
+  if (code === 'unauthenticated' || code === 'sign_in_required') { renderError('Please sign in again to think with Yumi.'); return; }
+  if (code === 'ceiling_unconfigured' || code === 'ceiling_unavailable') { renderError('Yumi is unavailable right now — the usage ceiling could not be checked. Try again in a moment.'); return; }
+  renderError();
+}
+
 // Stage B-2.2: ZERO-LLM co-write guard (string check only, no model call). A
 // reply is woven into the pending complicate note ONLY when it reads as
 // substantive engagement. It FALLS THROUGH to normal chat (no weave) when the
@@ -1280,7 +1292,7 @@ function buildYumiPanel() {
         }).then(null, function (err) {
           console.error('[yumi] considerName failed', err);
           removeTypingIndicator();
-          renderError();
+          yumiRenderProxyError(err);
           yumi_request_in_flight = false;
           if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
         });
@@ -1310,7 +1322,7 @@ function buildYumiPanel() {
       }).catch(function (err) {
         console.error('[yumi] sendMessage failed', err);
         removeTypingIndicator();
-        renderError();
+        yumiRenderProxyError(err);
         if (yumi_handsfree_active) { handsFreeReArm(); }
       }).finally(function () {
         yumi_request_in_flight = false;

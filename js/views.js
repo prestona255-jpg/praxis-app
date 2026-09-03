@@ -9329,27 +9329,28 @@ function scanShelfVision(base64, cb) {
   var done = false;
   function finish(r) { if (done) { return; } done = true; if (typeof cb === 'function') { cb(r); } }
   if (typeof base64 !== 'string' || base64.length === 0) { finish({ state: 'failed', books: [] }); return; }
+  // P1 Item 1: the endpoint joined the per-uid AI ceiling, so the call goes
+  // through the one door (aiProxyRequest, yumi-brain.js) that attaches the
+  // Firebase ID token; a 429 {code:'daily_limit'} is its own honest state
+  // ('limit', with resetAt), never laundered into 'failed'.
+  if (typeof aiProxyRequest !== 'function') { finish({ state: 'failed', books: [] }); return; }
   try {
-    fetch(SCAN_VISION_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-      body:    JSON.stringify({ image: base64, mediaType: 'image/jpeg', model: SCAN_VISION_MODEL })
-    }).then(function (res) {
-      if (res.status === 200) {
-        res.json().then(function (json) {
-          var books = (json && Object.prototype.toString.call(json.books) === '[object Array]') ? json.books : [];
-          finish({ state: 'ok', books: books });
-        }, function () { finish({ state: 'failed', books: [] }); });
+    aiProxyRequest(SCAN_VISION_URL, { image: base64, mediaType: 'image/jpeg', model: SCAN_VISION_MODEL }).then(function (r) {
+      if (r.status === 200) {
+        var json = r.json;
+        var books = (json && Object.prototype.toString.call(json.books) === '[object Array]') ? json.books : [];
+        finish({ state: 'ok', books: books });
         return;
       }
-      // Non-200: split the model-level stops (truncated / refused) from generic
-      // transport failure by the endpoint's error code.
-      res.json().then(function (j) {
-        var e = (j && typeof j.error === 'string') ? j.error : '';
-        if (e === 'vision-truncated')      { finish({ state: 'truncated', books: [] }); }
-        else if (e === 'vision-refused')   { finish({ state: 'refused',   books: [] }); }
-        else                               { finish({ state: 'failed',    books: [] }); }
-      }, function () { finish({ state: 'failed', books: [] }); });
+      // Non-200: split the model-level stops (truncated / refused) and the
+      // ceiling (daily_limit) from generic transport failure by the body codes.
+      var j = r.json;
+      var e = (j && typeof j.error === 'string') ? j.error : '';
+      var code = (j && typeof j.code === 'string') ? j.code : '';
+      if (code === 'daily_limit')       { finish({ state: 'limit', books: [], resetAt: (typeof j.resetAt === 'string') ? j.resetAt : null }); }
+      else if (e === 'vision-truncated') { finish({ state: 'truncated', books: [] }); }
+      else if (e === 'vision-refused')   { finish({ state: 'refused',   books: [] }); }
+      else                               { finish({ state: 'failed',    books: [] }); }
     }, function () { finish({ state: 'failed', books: [] }); });
   } catch (e) { finish({ state: 'failed', books: [] }); }
 }
@@ -10272,6 +10273,7 @@ function scanRunShelfVision(base64) {
       scanResolveAndFill(result.books);
     } else if (result.state === 'truncated') { scanOpenOverlay('scan-ov-truncated'); }
     else if (result.state === 'refused')     { scanOpenOverlay('scan-ov-refused'); }
+    else if (result.state === 'limit')       { scanShelfBudgetRefund(); scanShowServerLimit(result.resetAt); } // ceiling: honest, no shot counted
     else                                      { scanShelfBudgetRefund(); scanOpenOverlay('scan-ov-failed'); } // CALL-FAILED: no shot counted
   });
 }
@@ -11165,6 +11167,7 @@ function scanFireCoverShot() {
     } else if (result.state === 'empty' || (result.state === 'ok')) { scanOpenOverlay('scan-ov-empty'); }
     else if (result.state === 'refused') { scanOpenOverlay('scan-ov-refused'); }
     else if (result.state === 'truncated') { scanOpenOverlay('scan-ov-truncated'); }
+    else if (result.state === 'limit') { scanShowServerLimit(result.resetAt); }
     else { scanOpenOverlay('scan-ov-failed'); }
   });
 }
@@ -11192,7 +11195,26 @@ function scanShelfBudgetRefund() {
   var rec = ls('praxis_scan_shelf_budget', { day: '', count: 0 });
   if (rec && rec.count > 0) { rec.count = rec.count - 1; sv('praxis_scan_shelf_budget', rec); }
 }
-function scanShowCapRefusal() { scanOpenOverlay('scan-ov-cap'); scanAnnounce('Shelf reading is resting until tomorrow. Book mode is still yours.'); }
+// The client-side soft cap (this device, local day) and the SERVER ceiling (per
+// uid, UTC day, P1 Item 1) share the scan-ov-cap card; each sets its own copy
+// on open so neither inherits the other's words.
+function scanSetCapCopy(title, body) {
+  var ov = scanEl('scan-ov-cap');
+  var h = ov ? ov.querySelector('h2') : null;
+  var p = ov ? ov.querySelector('p') : null;
+  if (h) { h.textContent = title; }
+  if (p) { p.textContent = body; }
+}
+function scanShowCapRefusal() {
+  scanSetCapCopy('Shelf reading is resting', 'You\'ve read a lot of shelves today — shelf reading is resting until tomorrow. Book mode (a barcode or a single cover) is still yours right now.');
+  scanOpenOverlay('scan-ov-cap'); scanAnnounce('Shelf reading is resting until tomorrow. Book mode is still yours.');
+}
+function scanShowServerLimit(resetAt) {
+  var when = (typeof aiLimitResetLabel === 'function') ? aiLimitResetLabel(resetAt) : 'tomorrow';
+  var line = 'You\'ve reached today\'s limit for reading with Yumi. It resets ' + when + '. Everything already on your shelf is still yours.';
+  scanSetCapCopy('Today\'s limit is reached', line);
+  scanOpenOverlay('scan-ov-cap'); scanAnnounce(line);
+}
 
 // SCE-1 (the hardware half): stop the stream on backgrounding, re-warm on return.
 // Bound ONCE (guarded) so re-renders don't stack listeners; the router already owns
@@ -25016,7 +25038,8 @@ function capOfferSplit(noteId) {
     if (myGen !== capSplitGen) { return; }
     if (window.console) { console.warn('capture split failed', err); }
     capCancelSplit();
-    capShowToast('Couldn’t split — your note is filed', null); // parent untouched: raw joins the corpus
+    if (err && err.code === 'daily_limit' && typeof aiLimitMessage === 'function') { capShowToast(aiLimitMessage(err) + ' Your note is filed.', null); } // ceiling: honest
+    else { capShowToast('Couldn’t split — your note is filed', null); } // parent untouched: raw joins the corpus
   });
 }
 

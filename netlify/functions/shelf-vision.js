@@ -1,13 +1,15 @@
 // shelf-vision.js -- SCAN DE-RISK LANE endpoint (NEW FILE, not app-wired).
 //
 // Purpose: answer the de-risk question "can a vision model reliably identify
-// books from a real shelf photo?" against the DEPLOYED endpoint. Mirrors the
-// shipped vision-proxy.js pattern -- identical CORS + the x-praxis-key
-// shared-secret gate (fail CLOSED), the upstream ANTHROPIC_API_KEY stays
-// server-side and is only ever read via process.env.
+// books from a real shelf photo?" against the DEPLOYED endpoint. It MIRRORED
+// the (since-retired) vision-proxy.js pattern -- identical CORS + the
+// x-praxis-key shared-secret gate (fail CLOSED), the upstream ANTHROPIC_API_KEY
+// stays server-side and is only ever read via process.env. P1 Item 1
+// (2026-09-03) DELETED vision-proxy.js (0 client callers); this file is now the
+// only vision endpoint and is self-contained.
 //
-// DISTINCT from vision-proxy.js on purpose (the shipped proxy is the reference,
-// not a thing to edit):
+// It WAS distinct from vision-proxy.js on purpose (the differences, kept for
+// the record):
 //   (a) output contract adds "spineText" (raw legible spine text) + a
 //       high|medium|low "confidence" tri-state (vision-proxy uses
 //       clear|partial "legibility" and no spineText);
@@ -17,7 +19,7 @@
 //       claude-opus-4-8. Absent/malformed -> default; a non-allow-listed value
 //       -> clean 4xx (silent coercion would MISLABEL de-risk results, so we
 //       reject instead);
-//   (c) it BAKES IN the truncation-as-error lesson vision-proxy lacks: a
+//   (c) it BAKES IN the truncation-as-error lesson vision-proxy lacked: a
 //       non-'end_turn' stop_reason (esp. 'max_tokens') is an ERROR, never an
 //       empty result. Silence never wears the empty state's clothes.
 //
@@ -43,6 +45,11 @@ var MAX_TOKENS = 4096;
 // doomed upstream call.
 var MAX_IMAGE_B64_CHARS = 7500000;
 
+// P1 Item 1: this endpoint JOINS the per-uid AI cost ceiling (R1.5) -- the
+// same Firebase-ID-token identity, the same aiUsage/{uid} counter and cap as
+// claude-proxy, enforced in ./lib/ceiling.js before any upstream call.
+var ceiling = require('./lib/ceiling.js');
+
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -50,7 +57,7 @@ exports.handler = async function(event) {
       headers: {
         'Access-Control-Allow-Origin':  '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key'
+        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key, Authorization'
       },
       body: ''
     };
@@ -60,7 +67,7 @@ exports.handler = async function(event) {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
-  // Shared-secret gate (matches vision-proxy.js: fail CLOSED). When
+  // Shared-secret gate (the pattern vision-proxy.js used: fail CLOSED). When
   // PRAXIS_CLIENT_KEY is set in the Netlify environment, every POST must carry a
   // matching x-praxis-key header. When the env var is UNSET/empty the request is
   // REJECTED (fail-open would be an open relay on a billable key). The key IS
@@ -87,6 +94,10 @@ exports.handler = async function(event) {
       body: JSON.stringify({ error: 'unauthorized' })
     };
   }
+
+  // P1 Item 1: the per-uid ceiling (identity + count) before body parse.
+  var gate = await ceiling.enforce(event, Date.now());
+  if (gate) { return gate; }
 
   try {
     var body = JSON.parse(event.body || '{}');
@@ -255,7 +266,7 @@ exports.handler = async function(event) {
       };
     }
 
-    // TRUNCATION GUARD -- the bake-in the shipped vision-proxy lacks. A clean
+    // TRUNCATION GUARD -- the bake-in the retired vision-proxy lacked. A clean
     // vision completion is stop_reason 'end_turn'. Anything else is abnormal and
     // is reported as an ERROR, never as an empty {books:[]} result:
     //   'max_tokens' -> the silent killer: output truncated mid-JSON.

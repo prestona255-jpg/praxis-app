@@ -27,7 +27,9 @@
 
 (function () {
 
-  var PROXY_URL = '/.netlify/functions/claude-proxy';
+  // P1 Item 1: the claude-proxy door is aiProxyFetch (yumi-brain.js, loaded
+  // earlier) -- it attaches the Firebase ID token the server ceiling keys on.
+  // No direct fetch() to the proxy lives here any more.
   var TRANSCRIBE_PROXY_URL = '/.netlify/functions/transcribe-proxy';
   var TRANSCRIBE_TIMEOUT_MS = 20000; // hard cap on the transcribe POST -> textarea on expiry (never an infinite "transcribing")
   var SEG_MODEL = 'claude-sonnet-4-6';
@@ -146,25 +148,19 @@
     // transcript is never lost: the caller's catch keeps it in the field (RAW
     // joins the corpus).
     function segAttempt(triesLeft) {
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-        body: JSON.stringify(payload)
-      }).then(function (res) {
-        if (!res.ok) {
-          if (res.status >= 500 && triesLeft > 0) {
-            return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () { return segAttempt(triesLeft - 1); });
-          }
-          return res.text().then(function (body) {
-            throw new Error('segmentDoc: proxy ' + res.status + ': ' + body);
-          });
-        }
-        return res.json();
-      }, function (netErr) {
-        if (triesLeft > 0) {
+      if (typeof aiProxyFetch !== 'function') { return Promise.reject(new Error('segmentDoc: proxy door unavailable')); }
+      return aiProxyFetch(payload).then(function (data) {
+        return data;
+      }, function (err) {
+        // A 5xx or a network failure (status 0) retries once; a 4xx -- including
+        // the ceiling's 429 daily_limit and a 401 -- does not. The typed error
+        // ({status, code, resetAt}) reaches the caller's catch intact so the
+        // toast can be honest.
+        var st = (err && typeof err.status === 'number') ? err.status : 0;
+        if ((st === 0 || st >= 500) && triesLeft > 0) {
           return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () { return segAttempt(triesLeft - 1); });
         }
-        throw netErr;
+        throw err;
       });
     }
     return segAttempt(1).then(function (data) {

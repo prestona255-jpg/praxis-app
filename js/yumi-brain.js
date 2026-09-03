@@ -51,6 +51,85 @@ function resolveActiveUid() {
   return null;
 }
 
+// =====================================================================
+// P1 Item 1 -- THE ONE DOOR TO THE AI PROXIES (R1.7, the HOIST lesson).
+// Every call to /.netlify/functions/claude-proxy and shelf-vision goes through
+// aiProxyRequest / aiProxyFetch. The door attaches the signed-in reader's
+// Firebase ID token (the server-side ceiling keys its count on the token's
+// VERIFIED uid -- nothing else identifies a caller), and it names the server's
+// answers so the UI can be honest instead of generic: 429 {code:'daily_limit',
+// resetAt} = today's ceiling; 401 {code:'unauthenticated'} = sign in again;
+// 503 {code:'ceiling_unconfigured'|'ceiling_unavailable'} = the ceiling itself
+// is down (the server fails CLOSED, never open). A signed-out caller makes ZERO
+// network calls: the promise rejects with code 'sign_in_required'. No direct
+// fetch() to either proxy exists anywhere else in js/ (grep count 0).
+// =====================================================================
+function _aiProxyError(status, code, text, resetAt) {
+  var e = new Error('proxy ' + status + ': ' + (text || ''));
+  e.status = status;
+  e.code = code || null;
+  e.resetAt = resetAt || null;
+  return e;
+}
+// Low level: resolves { status, ok, json, text } for ANY HTTP status (never
+// rejects on a status); rejects on no signed-in user / no token / a network
+// failure.
+function aiProxyRequest(url, payload) {
+  var fbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!fbUser || typeof fbUser.getIdToken !== 'function') {
+    return Promise.reject(_aiProxyError(0, 'sign_in_required', 'not signed in', null));
+  }
+  return fbUser.getIdToken().then(function (token) {
+    return fetch(url, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'x-praxis-key':  PRAXIS_CLIENT_KEY,
+        'Authorization': 'Bearer ' + token
+      },
+      body:    JSON.stringify(payload)
+    });
+  }).then(function (res) {
+    return res.text().then(function (text) {
+      var json = null;
+      try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+      return { status: res.status, ok: res.ok, json: json, text: text };
+    });
+  });
+}
+// The claude-proxy door: resolves the Anthropic response JSON; rejects with a
+// typed Error ({status, code, resetAt}) on any non-2xx, keeping the
+// 'proxy <status>: <body>' message shape every existing catch handler expects.
+function aiProxyFetch(payload) {
+  return aiProxyRequest('/.netlify/functions/claude-proxy', payload).then(function (r) {
+    if (!r.ok) {
+      var j = r.json || {};
+      throw _aiProxyError(r.status, (typeof j.code === 'string') ? j.code : null, r.text,
+                          (typeof j.resetAt === 'string') ? j.resetAt : null);
+    }
+    return r.json;
+  });
+}
+// The honest copy for a ceiling refusal: the reset in the READER'S local time.
+// resetAt is the server's ISO instant (the next 00:00 UTC); "tomorrow" is judged
+// on the local calendar. nowMs is injectable for the harness.
+function aiLimitResetLabel(resetAtIso, nowMs) {
+  var t = new Date(resetAtIso || '');
+  if (isNaN(t.getTime())) { return 'at midnight UTC'; }
+  var now = new Date(typeof nowMs === 'number' ? nowMs : Date.now());
+  var sameDay = (t.getFullYear() === now.getFullYear() && t.getMonth() === now.getMonth() && t.getDate() === now.getDate());
+  var h = t.getHours(), m = t.getMinutes();
+  var ampm = (h >= 12) ? 'PM' : 'AM';
+  var h12 = h % 12;
+  if (h12 === 0) { h12 = 12; }
+  var mm = (m < 10) ? ('0' + m) : ('' + m);
+  return (sameDay ? 'at ' : 'tomorrow at ') + h12 + ':' + mm + ' ' + ampm;
+}
+function aiLimitMessage(err, who) {
+  return 'You’ve reached today’s limit for ' + (who || 'Yumi') + '. It resets ' +
+         aiLimitResetLabel(err && err.resetAt ? err.resetAt : null) + '.';
+}
+
 // Summarize a single dropped turn into yumiMemory.summary via a
 // rewrite-to-unify proxy call. Reuses YUMI_VOICE_TEXT as system so
 // the summary lands in Yumi's voice. Returns Promise<string|null>:
@@ -89,18 +168,7 @@ function summarizeAndRoll(uid, droppedTurn) {
     ]
   };
 
-  return fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  return aiProxyFetch(payload).then(function (data) {
     var blocks = data && data.content;
     if (!blocks || !blocks.length) {
       throw new Error('summarizeAndRoll: no text content in response');
@@ -742,18 +810,7 @@ function gradeUtterance(candidateText, readerInput) {
       { role: 'user', content: buildGateUserMessage(readerInput, candidateText) }
     ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     var verdict = _yumiParseGateVerdict(data);
     _yumiGateCache[key] = verdict;
     return verdict;
@@ -782,18 +839,7 @@ function sendMessage(userText) {
     // stream parameter intentionally omitted — non-streaming for 2.4
   };
 
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     var blocks = data && data.content;
     if (!blocks || !blocks.length) {
       throw new Error('no text content in response');
@@ -982,18 +1028,7 @@ function generateLenses(meta) {
       { role: 'user', content: buildLensGenUserMessage(meta) }
     ]
   };
-  return fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  return aiProxyFetch(payload).then(function (data) {
     var blocks = data && data.content;
     var text = '';
     var i;
@@ -1265,18 +1300,7 @@ function generateValueRetrofit(meta) {
       { role: 'user', content: buildValueGenUserMessage(meta) }
     ]
   };
-  return fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  return aiProxyFetch(payload).then(function (data) {
     var blocks = data && data.content;
     var text = '';
     var i;
@@ -1718,16 +1742,7 @@ function distillWebAngle(subject, testData) {
   if (useLiveSearch) {
     payload.tools = [ { type: 'web_search_20250305', name: 'web_search', max_uses: 2 } ];
   }
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) { throw new Error('proxy ' + res.status + ': ' + body); });
-    }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     return _distillerParse(data);
   });
   return _yumiWithTimeout(call, YUMI_WEB_TIMEOUT_MS).then(function (v) {
@@ -1962,18 +1977,7 @@ function generateMove(noteText, bookTitle, webAngle) {
       { role: 'user', content: buildMoveUserMessage(noteText, bookTitle, webAngle) }
     ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (body) {
-        throw new Error('proxy ' + res.status + ': ' + body);
-      });
-    }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     return _moveParse(data);
   });
   return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) {
@@ -2338,14 +2342,7 @@ function scanThread(entries) {
     system: NOTICE_SCAN_SYSTEM,
     messages: [ { role: 'user', content: buildScanUserMessage(entries) } ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
-    return res.json();
-  }).then(function (data) { return _scanParse(data, entries); });
+  var call = aiProxyFetch(payload).then(function (data) { return _scanParse(data, entries); });
   return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
     console.warn('yumi-notice: scan fail-quiet (' + (err && err.message) + ')');
     return { none: true };
@@ -2360,14 +2357,7 @@ function generateName(thread, reply) {
     system: NAME_GEN_SYSTEM,
     messages: [ { role: 'user', content: buildNameUserMessage(thread, reply) } ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
-    return res.json();
-  }).then(function (data) { return _nameParse(data); });
+  var call = aiProxyFetch(payload).then(function (data) { return _nameParse(data); });
   return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
     console.warn('yumi-name: generate fail-quiet (' + (err && err.message) + ')');
     return { none: true };
@@ -2717,14 +2707,7 @@ function generateArcVoice(ctx, webAngle) {
     system: ARC_VOICE_GEN_SYSTEM,
     messages: [ { role: 'user', content: buildArcVoiceUserMessage(ctx, webAngle) } ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     var blocks = data && data.content; var t = ''; var i;
     if (blocks && blocks.length) {
       for (i = 0; i < blocks.length; i = i + 1) {
@@ -2870,14 +2853,7 @@ function generateProfileSummary(entries) {
     system: PROFILE_GEN_SYSTEM,
     messages: [ { role: 'user', content: buildProfileUserMessage(entries) } ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) { return res.text().then(function (b) { throw new Error('proxy ' + res.status + ': ' + b); }); }
-    return res.json();
-  }).then(function (data) { return _yumiContentText(data); });
+  var call = aiProxyFetch(payload).then(function (data) { return _yumiContentText(data); });
   return _yumiWithTimeout(call, YUMI_GATE_TIMEOUT_MS).then(function (v) { return v; }, function (err) {
     console.warn('yumi-profile: refresh fail (' + (err && err.message) + ')');
     return '';
@@ -3050,16 +3026,7 @@ function classifyUtterance(text) {
     system:      ROUTER_SYSTEM,
     messages: [ { role: 'user', content: t } ]
   };
-  var call = fetch('/.netlify/functions/claude-proxy', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (b) { throw new Error('router proxy ' + res.status + ' ' + b); });
-    }
-    return res.json();
-  }).then(function (data) {
+  var call = aiProxyFetch(payload).then(function (data) {
     var verdict = _yumiParseRouterVerdict(_yumiContentText(data));
     _yumiRouterCache[key] = verdict;     // cache only definitive verdicts
     return verdict;

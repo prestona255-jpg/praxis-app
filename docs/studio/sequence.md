@@ -1375,7 +1375,10 @@ spine and the evolution track and folded into the program — nothing dropped.
      function, out of S2 scope). Same family + same posture as FX-1: **no outside account is invited while this
      stands unreviewed.** Record: `docs/checkpoints/r-arc-s2.md` residual #10.
   2. **Stage-2 JWT auth (two-phase)** — the proxy auth-gating hardening (per F-PX1 0c, Yumi + google-books are
-     reachable signed-out today; this is the beta-gate auth item).
+     reachable signed-out today; this is the beta-gate auth item). **P1 Item 1 (2026-09-03, LOCAL v3.295) built
+     the AI half:** `claude-proxy` + `shelf-vision` verify a Firebase ID token in the function and enforce a
+     per-uid daily ceiling on it (`docs/checkpoints/p1-safety-build.md`); google-books stays keyed-only by ruling
+     (its quota is a separate item). Closes on the live device pass.
   3. **Goodreads import — minimal CSV** (title / author / ISBN / shelf). The rich shelves → lenses mapping is a
      **post-gate round**, not a blocker.
   4. **Export / backup + a minimal Settings surface.**

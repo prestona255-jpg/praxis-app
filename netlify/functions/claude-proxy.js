@@ -1,3 +1,15 @@
+// --- P1 Item 1: SERVER-SIDE COST CEILING (per uid, per UTC day) -----------
+// Every POST past the shared-secret gate must carry a Firebase ID token; the
+// ceiling in ./lib/ceiling.js verifies it statelessly (RS256 against Google's
+// securetoken certs -- tokens stay valid until exp after sign-out; revocation is
+// out of scope), keys the count on the VERIFIED sub, reads/increments
+// aiUsage/{uid} through the Firestore REST API with a service account, and
+// answers 401 {code:unauthenticated} / 429 {code:daily_limit, resetAt} / 503
+// {code:ceiling_unconfigured|ceiling_unavailable} BEFORE any upstream call.
+// Count-before-forward; concurrent overshoot bounded by the uid's own
+// concurrency (documented in ceiling.js). Fail CLOSED, never open.
+var ceiling = require('./lib/ceiling.js');
+
 // --- F-PX1 per-request cost bounds (Stage 1) --------------------------------
 // claude-proxy is otherwise a verbatim relay onto the billable Anthropic key,
 // so the caps live here. Model + max_tokens are read from the client body and
@@ -24,7 +36,7 @@ exports.handler = async function(event) {
       headers: {
         'Access-Control-Allow-Origin':  '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key',
+        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key, Authorization',
       },
       body: ''
     };
@@ -61,6 +73,11 @@ exports.handler = async function(event) {
       body: JSON.stringify({ error: 'unauthorized' })
     };
   }
+
+  // P1 Item 1: the per-uid ceiling -- identity + count, before body parse and
+  // before the upstream call. A non-null return is the 401/429/503 answer.
+  var gate = await ceiling.enforce(event, Date.now());
+  if (gate) { return gate; }
 
   // F-PX1 Stage 1a: hard body-size cap, checked BEFORE parsing so an oversized
   // payload never reaches JSON.parse. 413 + a stable code the client can name.

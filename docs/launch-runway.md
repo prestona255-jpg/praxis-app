@@ -37,12 +37,21 @@ RUNWAY panel). No clock — the July-15 date is retired; order, not dates.
 |---|---|---|
 | 1 | **FX-1 — data-loss sync guards (HARD DEPENDENCY)** | **PARTIAL — pulled forward, add-guard LIVE (v3.237).** The incoming-wipe ADD guard for arcs/subTheories/themes/artifacts shipped + proven (headless 42/42 + independent 15/15). **Remaining before the give: FX-1c (delete-symmetry) + FX-1b (notebook + the 5th artifact site).** No outside account is invited before FX-1 is COMPLETE. |
 | 1b | **CAPTURE-OWNER — hard review** | open; scoped `captureNote` owner-uid follow-on (multi-image commit misattribution window). Same posture as FX-1. |
-| 2 | **Stage-2 JWT auth (two-phase)** | open; proxy auth-gating hardening. |
+| 2 | **Stage-2 JWT auth (two-phase)** | **BUILT LOCAL — P1 Item 1 (v3.295, 2026-09-03):** `claude-proxy` + `shelf-vision` now require a Firebase ID token verified in the function (RS256, no dependency) and key a per-uid daily ceiling on it; signed-out reach = 401. CLOSES when the R1.10 device click-path passes on the live deploy (see the P1 block below). |
 | 3 | **Goodreads import — minimal CSV** | open (title/author/ISBN/shelf; rich mapping is post-gate). |
 | 4 | **Export / backup + minimal Settings** | open. |
 | 5 | **commons `#reader` fencing** | open; the draft-sub-body leak — `buildPublishedArcDoc` exposes draft sub-theory bodies because it has NO `status==='published'` filter (`integrations.js:2499-2516`; the prior `:2456` cite was STALE — that line is now TTS-cache code, corrected 2026-07-21 from the FINISH-CHOREO recon). **Owned by FINISH-CHOREO S1** — the filter is part of its ruled privacy sweep. **This row CLOSES as a VERIFIED side effect — it flips only when the filter provably ships and is red-teamed.** Not deleted preemptively, not double-built. The legacy frozen sanitize carries two named, privacy-safe residuals — see `finish-choreo-s1-recon.md`. |
 | 6 | **Admin runbook doc** | open. |
 | 7 | **Unlisted-URL + open-auth access model** | open. |
+
+## P1 SAFETY SLICE (2026-09-03) — the four items ruled Aug 22 as the gate before anyone but Preston touches the app
+
+Record: `docs/checkpoints/p1-safety-recon.md` (Stage 0) + `docs/checkpoints/p1-safety-build.md` (build). Local commits only; NO push until the separate go-ahead. Builder regen deferred to the push point (the final local commit).
+
+| Item | Status | What shipped |
+|---|---|---|
+| **1 — server-side cost ceiling** | **LOCAL v3.295** | `netlify/functions/lib/ceiling{,-core}.js`: Firebase ID token verified statelessly in the function (RS256, `crypto.verify`, no dependency), count keyed on the VERIFIED uid in Firestore `aiUsage/{uid}` `{day (UTC), count}` via REST + a service account, 429 `{code:daily_limit, resetAt}` before any upstream call, fail-closed 503 when unconfigured; `claude-proxy` + `shelf-vision` both gated; `vision-proxy.js` DELETED (0 callers). Client: ONE door (`aiProxyFetch` / `aiProxyRequest`, yumi-brain.js) for all 14 former fetch sites; honest copy in the Yumi bubble, the import split toast and the scan overlay with the reset in local time. Core proven under cscript (28/28, clock-injected); the Node glue is proven LIVE by the R1.10 click-path. **Preston prerequisites before push:** Netlify env `PRAXIS_SA_KEY` (secret) · `PRAXIS_AI_DAILY_CAP=300` · `PRAXIS_AI_CAP_OVERRIDES` (set AFTER the cap=3 test). Beta-gate row 2 (JWT auth) closes as a side effect once live-verified. |
+
 
 Full detail in `docs/LAUNCH-STATUS.md`.
 
