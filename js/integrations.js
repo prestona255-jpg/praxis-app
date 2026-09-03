@@ -1140,104 +1140,240 @@ function saveReaderModelToFirestore(uid, model, callback) {
   }
 }
 
-// Stage 14.3 Stage 3: account deletion. Irreversible. Definition only --
-// no UI trigger (Stage 4) and no console call this stage. Contract:
-//   - No signed-in user -> callback({status:'error', error:'no signed-in
-//     user'}) and do nothing.
-//   STEP 1: delete all five per-user Firestore docs (doc id = uid) via a
-//     counted-callback fan-out -- userBooks, userArcs, userNotebook,
-//     userSubTheories, userProfiles. Firestore .delete() RESOLVES for a
-//     missing doc, so not-found naturally counts as success; only a real
-//     reject is a hard error. Any hard error -> callback({status:'error',
-//     phase:'firestore', error}) and ABORT with NO local changes (retry-
-//     able). The aborted flag guards against a second done() once any
-//     delete has rejected.
-//   STEP 2: only after all five settle -> wipeActiveUserLocal() (empties
-//     the per-uid localStorage bucket + wipes in-memory maps).
-//   STEP 3: attempt firebase.auth().currentUser.delete().
-//     - success -> sv('praxis_user', null); callback({status:'deleted'}).
-//     - 'auth/requires-recent-login' OR any other error -> the DATA IS
-//       ALREADY GONE (steps 1+2 done). Sign out anyway (the observer
-//       clears praxis_user) and surface a soft note via
-//       {status:'deleted-data-only'}. Do NOT resurrect data, do NOT abort.
-//   INVARIANT: once the five docs are deleted, local is wiped and the user
-//   is signed out regardless of whether currentUser.delete() succeeds.
-//   Data deletion never blocks on auth-record deletion.
-function deleteAccount(callback) {
-  function done(result) {
-    if (typeof callback === 'function') callback(result);
-  }
+// P1 Item 2 (2026-09-03): ACCOUNT DELETION, END TO END. Replaces the Stage 14.3
+// definition that deleted the data FIRST and then tried the auth record — on
+// `auth/requires-recent-login` it signed out with a live login and no data,
+// the exact outcome the brief forbids — and that omitted userArtifacts and every
+// social projection. Ruled order (P1 R2.3, go-ahead):
+//
+//   0. the caller has ALREADY offered the export (Item 3) — this function does
+//      not know or care whether it was taken;
+//   1. RE-AUTHENTICATE FIRST (reauthenticateWithPopup, Google — the only wired
+//      provider). Abort cleanly on any refusal: data intact, session live,
+//      { status:'error', phase:'reauth' };
+//   2. capture the uid to a LOCAL var (never re-read praxis_user mid-flow);
+//   3. ONE ATOMIC BATCH over everything under the uid — the 8 private docs
+//      (userBooks, userArcs, userNotebook, userSubTheories, userProfiles,
+//      userThemes, userReaderModel, userArtifacts), aiUsage/{uid} (the AI
+//      ceiling counter, owner-DELETE only by rule), publicProfiles/{uid},
+//      publishedArcs where authorUid == uid, follows where followerUid == uid
+//      AND where targetUid == uid, buildOns where fromUid == uid. Firestore
+//      batches cap at 500 writes; a real account is 10 fixed docs + a few
+//      dozen edges/arcs, so one batch holds it; the batch is CHUNKED at 400
+//      anyway (each chunk atomic, the whole run idempotent — a re-run finds
+//      nothing and completes). Any failure here → { status:'error',
+//      phase:'firestore' }: nothing local is touched, the session stays live,
+//      the reader can retry.
+//   4. DELETE THE AUTH USER. If THIS fails after the batch succeeded, the
+//      LOCAL data is deliberately left intact AND is re-uploaded at once and
+//      AWAITED (restoreCloudFromLocal: the eight save functions called directly,
+//      each its own job, the callback of every one waited for before the panel
+//      hears the result — the load-side 'absent' branches never push on their
+//      own, so recovery is an explicit, settled push, not a hope) —
+//      and the reader is told exactly that: { status:'error', phase:'auth',
+//      recoverable:true }. Local wipe comes AFTER a successful auth delete,
+//      never before.
+//   5. WIPE LOCAL: every localStorage key that carries this uid (a suffix /
+//      infix sweep — praxis_state_<uid>, every praxis_pending_*_<uid>,
+//      praxis_merge_tombstones_<uid>, praxis_nb_gather_<uid>,
+//      praxis_nb_draft_<uid>_*, praxis_scan_draft_<uid>,
+//      praxis_firstshelf_offer_<uid>, and any key a later build adds with the
+//      uid in its name), this uid's entry in praxis_yumi_noticed, the global
+//      per-device caches / budgets / cooldowns (wiped whole: they hold no
+//      prose), and the notebook photos this uid's entries reference — deleted
+//      PER RECORD from IndexedDB (never deleteDatabase: another account on a
+//      shared device keeps its photos). Then praxis_user and the in-memory
+//      maps.
+//   6. sign out (the observer sees no user) → callback({ status:'deleted' });
+//      the caller lands on #deleted.
+//
+// progress(phase) is called with 'reauth' | 'cloud' | 'login' | 'local' as each
+// phase begins, so the surface can show honest progress.
+function deleteAccount(callback, progress) {
+  var done = false;
+  function finish(r) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(r); } }
+  function phase(p) { if (typeof progress === 'function') { try { progress(p); } catch (e) {} } }
   var u = getCurrentUser();
-  if (!u || !u.uid) {
-    done({ status: 'error', error: 'no signed-in user' });
-    return;
-  }
-  var uid = u.uid;
-  var collections = ['userBooks', 'userArcs', 'userNotebook',
-                     'userSubTheories', 'userProfiles', 'userThemes',
-                     'userReaderModel'];
-  var total = collections.length;
-  var settled = 0;
-  var aborted = false;
+  if (!u || !u.uid) { finish({ status: 'error', phase: 'reauth', error: new Error('no signed-in user') }); return; }
+  var uid = u.uid;                                   // captured ONCE
+  var authUser = firebase.auth().currentUser;
+  if (!authUser || authUser.uid !== uid) { finish({ status: 'error', phase: 'reauth', error: new Error('auth user missing or mismatched') }); return; }
 
-  function afterFirestore() {
-    // STEP 2: wipe local (per-uid bucket + in-memory maps). praxis_user
-    // is intentionally left for STEP 3 / sign-out to clear.
-    wipeActiveUserLocal();
-    // STEP 3: attempt the auth-record deletion.
-    var authUser = firebase.auth().currentUser;
-    if (!authUser) {
-      // No live auth record -- data already wiped; clear the cache and
-      // report a clean delete.
-      sv('praxis_user', null);
-      done({ status: 'deleted' });
-      return;
-    }
-    authUser.delete().then(function () {
-      sv('praxis_user', null);
-      done({ status: 'deleted' });
-    }).catch(function (err) {
-      // 'auth/requires-recent-login' or any other error: data is already
-      // gone, so sign out (observer clears praxis_user) and surface the
-      // soft note rather than aborting or resurrecting data.
-      firebase.auth().signOut();
-      done({
-        status: 'deleted-data-only',
-        note:   'Account data removed. Sign in again to finish removing the login.'
+  // 1. re-auth FIRST.
+  phase('reauth');
+  var provider = new firebase.auth.GoogleAuthProvider();
+  authUser.reauthenticateWithPopup(provider).then(function () {
+    // 2+3. the atomic batch.
+    phase('cloud');
+    return deleteAccountCloudData(uid);
+  }, function (err) {
+    throw { phase: 'reauth', error: err };
+  }).then(function () {
+    // 4. the auth record.
+    phase('login');
+    return authUser.delete().then(function () {}, function (err) {
+      // The cloud record is gone but the login (and this device's copy) remain:
+      // RE-UPLOAD the local record NOW, while the fresh re-auth token is valid,
+      // so "recoverable" is a thing that happened, not a hope (red-team: the
+      // load-side 'absent' branches never push on their own -- only a dirty
+      // flag does, so mark every collection dirty and save).
+      // AWAITED (red-team pass 2): the panel must not invite a retry while the
+      // re-upload is still in flight, or a second run could delete the docs and
+      // then have the first run's late writes land under a dead uid.
+      return restoreCloudFromLocal(uid).then(function () {
+        throw { phase: 'auth', error: err, recoverable: true };
       });
     });
-  }
+  }).then(function () {
+    // 5. local, only now.
+    phase('local');
+    return wipeAccountLocal(uid);
+  }).then(function () {
+    // 6. the observer will see no user; make the cache agree immediately.
+    sv('praxis_user', null);
+    return firebase.auth().signOut().then(function () {}, function () {});
+  }).then(function () {
+    finish({ status: 'deleted', uid: uid });
+  }, function (fail) {
+    var f = (fail && fail.phase) ? fail : { phase: 'firestore', error: fail };
+    finish({ status: 'error', phase: f.phase, error: f.error, recoverable: !!f.recoverable,
+             partial: (typeof f.committed === 'number') ? f.committed : 0 });   // docs already removed before a mid-way failure
+  });
+}
 
-  function onSettle(err, isHardError) {
-    if (aborted) return;
-    if (isHardError) {
-      aborted = true;
-      done({ status: 'error', phase: 'firestore', error: err });
-      return;
-    }
-    settled++;
-    if (settled === total) {
-      afterFirestore();
-    }
-  }
-
+// Every Firestore document under uid, in chunked atomic batches. Resolves when
+// all chunks commit; rejects on the first failure (nothing local touched).
+function deleteAccountCloudData(uid) {
+  var db = firebase.firestore();
+  var refs = [];
+  var privateCollections = ['userBooks', 'userArcs', 'userNotebook', 'userSubTheories',
+                            'userProfiles', 'userThemes', 'userReaderModel', 'userArtifacts'];
   var i;
-  for (i = 0; i < collections.length; i++) {
-    try {
-      firebase.firestore()
-        .collection(collections[i])
-        .doc(uid)
-        .delete()
-        .then(function () {
-          onSettle(null, false);
-        })
-        .catch(function (err) {
-          onSettle(err, true);
-        });
-    } catch (e) {
-      onSettle(e, true);
+  for (i = 0; i < privateCollections.length; i++) { refs.push(db.collection(privateCollections[i]).doc(uid)); }
+  refs.push(db.collection('aiUsage').doc(uid));
+  refs.push(db.collection('publicProfiles').doc(uid));
+  function collect(q) {
+    return q.get().then(function (snap) { snap.forEach(function (d) { refs.push(d.ref); }); });
+  }
+  return collect(db.collection('publishedArcs').where('authorUid', '==', uid))
+    .then(function () { return collect(db.collection('follows').where('followerUid', '==', uid)); })
+    .then(function () { return collect(db.collection('follows').where('targetUid', '==', uid)); })
+    .then(function () { return collect(db.collection('buildOns').where('fromUid', '==', uid)); })
+    .then(function () {
+      // chunked atomic batches (Firestore caps a batch at 500 writes).
+      var chunks = [], c = [], k;
+      for (k = 0; k < refs.length; k++) { c.push(refs[k]); if (c.length === 400) { chunks.push(c); c = []; } }
+      if (c.length) { chunks.push(c); }
+      // Each chunk is atomic; ACROSS chunks it is not -- a failure after an earlier
+      // chunk committed reports how many docs are already gone (`committed`), so
+      // the surface never says "nothing was deleted" when something was. A re-run
+      // finishes the rest (idempotent).
+      var p = Promise.resolve(), committed = 0;
+      for (k = 0; k < chunks.length; k++) {
+        (function (chunk) {
+          p = p.then(function () {
+            var batch = db.batch(), j;
+            for (j = 0; j < chunk.length; j++) { batch['delete'](chunk[j]); }
+            return batch.commit().then(function () { committed = committed + chunk.length; });
+          });
+        })(chunks[k]);
+      }
+      return p.then(function () { return refs.length; }, function (err) {
+        throw { phase: 'firestore', error: err, committed: committed };
+      });
+    });
+}
+
+// After the cloud record was removed but the Auth delete FAILED: push the local
+// record straight back up. Every collection's outgoing write is dirty-flag
+// driven and latch-gated on its load having settled (F-DL1), which in a live
+// signed-in session it has; the re-auth that just succeeded means the token is
+// fresh. Profile + reader model have no dirty flag and are saved directly.
+function restoreCloudFromLocal(uid) {
+  var jobs = [];
+  // Each collection is its own job with its own try -- one builder throwing
+  // cannot stop the others (red-team pass 2, note 5) -- and each resolves when
+  // its save callback fires (ok / deferred / error alike), so the caller can
+  // WAIT for every write to settle before it reports.
+  function job(fn, payloadFn) {
+    jobs.push(new Promise(function (resolve) {
+      var settled = false;
+      function done() { if (!settled) { settled = true; resolve(true); } }
+      try {
+        if (typeof fn !== 'function') { done(); return; }
+        fn(uid, payloadFn(), done);
+      } catch (e) { console.warn('restoreCloudFromLocal: ', e && e.message); done(); }
+    }));
+  }
+  job(typeof saveBooksToFirestore === 'function' ? saveBooksToFirestore : null,             function () { return buildUserBookDoc(uid); });
+  job(typeof saveArcsToFirestore === 'function' ? saveArcsToFirestore : null,               function () { return buildUserArcsDoc(uid); });
+  job(typeof saveNotebookToFirestore === 'function' ? saveNotebookToFirestore : null,       function () { return buildUserNotebookDoc(uid); });
+  job(typeof saveSubTheoriesToFirestore === 'function' ? saveSubTheoriesToFirestore : null, function () { return buildUserSubTheoriesDoc(uid); });
+  job(typeof saveThemesToFirestore === 'function' ? saveThemesToFirestore : null,           function () { return buildUserThemesDoc(uid); });
+  job(typeof saveArtifactsToFirestore === 'function' ? saveArtifactsToFirestore : null,     function () { return buildUserArtifactsDoc(uid); });
+  job(typeof saveProfileToFirestore === 'function' ? saveProfileToFirestore : null,         function () { return getProfile(uid); });
+  job(typeof saveReaderModelToFirestore === 'function' ? saveReaderModelToFirestore : null, function () { return (typeof getReaderModel === 'function') ? getReaderModel(uid) : null; });
+  return Promise.all(jobs);
+}
+
+// The list of localStorage keys this uid owns, by INSPECTION of the store —
+// never a hand-kept list, so a key a later build introduces with the uid in its
+// name is swept too. Global per-device keys (caches / budgets / cooldowns / view
+// prefs) are listed explicitly; they hold no prose.
+var ACCOUNT_GLOBAL_KEYS = [
+  'praxis_yumi_gate_budget', 'praxis_yumi_router_budget', 'praxis_yumi_web_budget',
+  'praxis_yumi_profile_budget', 'praxis_tts_budget', 'praxis_scan_shelf_budget',
+  'praxis_yumi_web_cache', 'praxis_yumi_web_cooldown', 'praxis_yumi_scan_cooldown',
+  'praxis_yumi_profile_cooldown', 'praxis_yumi_last_greeting_idx', 'praxis_yumi_open',
+  'praxis_publish_identity', 'praxis_sanitized_arcs', 'praxis_arc_tidy', 'praxis_commons_exits',
+  'praxis_lens_ai_suggestions', 'praxis_constellation_palette', 'praxis_shelf_view',
+  'praxis_shelf_grouping', 'praxis_arcs_sort', 'praxis_arc_view_mode', 'praxis_st_marginalia_on',
+  'praxis_st_faint_on', 'praxis_state',
+  // red-team-found globals with no uid in their name: account-linked dismissals,
+  // the Yumi hand flag, the measure.js first-seen/activated stamps
+  'praxis_portrait_dismissed', 'praxis_yumi_hand', 'praxis_m_first_seen', 'praxis_m_activated', 'praxis_m_counts', 'praxis_m_errors'
+];
+function accountLocalKeysFor(uid) {
+  var keys = [], i, k;
+  try {
+    for (i = 0; i < localStorage.length; i++) {
+      k = localStorage.key(i);
+      if (typeof k === 'string' && k.indexOf('_' + uid) !== -1) { keys.push(k); }
+    }
+  } catch (e) {}
+  return keys;
+}
+// Resolves when every local trace is gone. Photos: the ids this uid's entries
+// reference are read from state BEFORE the maps are cleared, then deleted one
+// record at a time.
+function wipeAccountLocal(uid) {
+  var imageIds = [], em = state.notebookEntries || {}, k, e, i;
+  for (k in em) {
+    if (!Object.prototype.hasOwnProperty.call(em, k) || !em[k]) { continue; }
+    e = em[k];
+    if (e.userId === uid && e.images instanceof Array) {
+      for (i = 0; i < e.images.length; i++) { if (e.images[i] && (e.images[i].idbKey || e.images[i].id)) { imageIds.push(e.images[i].idbKey || e.images[i].id); } }
     }
   }
+  return new Promise(function (resolve) {
+    function afterPhotos() {
+      var keys = accountLocalKeysFor(uid);
+      for (i = 0; i < keys.length; i++) { try { localStorage.removeItem(keys[i]); } catch (e1) {} }
+      for (i = 0; i < ACCOUNT_GLOBAL_KEYS.length; i++) { try { localStorage.removeItem(ACCOUNT_GLOBAL_KEYS[i]); } catch (e2) {} }
+      var noticed = ls('praxis_yumi_noticed', null);
+      if (noticed && typeof noticed === 'object' && Object.prototype.hasOwnProperty.call(noticed, uid)) { delete noticed[uid]; sv('praxis_yumi_noticed', noticed); }
+      clearUserState();
+      resolve(true);
+    }
+    if (imageIds.length === 0 || typeof nbPhotoIdbDelete !== 'function') { afterPhotos(); return; }
+    var n = 0;
+    function next() {
+      if (n >= imageIds.length) { afterPhotos(); return; }
+      var id = imageIds[n]; n++;
+      nbPhotoIdbDelete(id, next, next);
+    }
+    next();
+  });
 }
 
 // Stage 14.1a (workspace sync): per-user arc-doc read from

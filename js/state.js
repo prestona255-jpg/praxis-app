@@ -2092,18 +2092,13 @@ function clearUserState() {
   if (typeof resetSyncLatches === 'function') { resetSyncLatches(); }
 }
 
-// Stage 14.3 Stage 3: account-deletion local wipe. Captures the per-uid
-// bucket key WHILE praxis_user still holds the uid (stateKey() derives
-// from praxis_user), empties that bucket, then wipes the in-memory maps
-// and pointers via clearUserState. Deliberately does NOT touch
-// praxis_user -- the caller (deleteAccount in integrations.js) owns the
-// auth-record removal / sign-out that finally clears praxis_user, so the
-// two responsibilities stay separated. Promise-free -> cscript-parseable.
-function wipeActiveUserLocal() {
-  var key = stateKey();
-  sv(key, null);
-  clearUserState();
-}
+// P1 Item 2 (2026-09-03): wipeActiveUserLocal (Stage 14.3 Stage 3) was DELETED with its
+// only caller, the old deleteAccount. It cleared ONE key (praxis_state_<uid>) and left
+// every other per-uid key -- pending sets, merge tombstones, the gather draft's prose --
+// on the device. Its successor is wipeAccountLocal (integrations.js): a sweep of every
+// localStorage key carrying the uid, the global caches, this uid's noticed map, and the
+// notebook photos its entries reference (per record, never deleteDatabase), then
+// clearUserState.
 
 // 3.8 arc data layer. createArc / addBookToArc / addEntryToArc are
 // pure in-memory mutators: they write into state.arcs (and, for

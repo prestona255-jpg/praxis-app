@@ -104,6 +104,10 @@ service cloud.firestore {
       allow create, update: if request.auth != null
                             && request.auth.uid == uid
                             && request.resource.data.keys().hasOnly(publicProfileKeys());
+      // P1 SAFETY (2026-09-03): the owner may DELETE their public projection --
+      // without this the public name + publishedArcIds outlived the account.
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
     }
 
     // follows/{followerUid_targetUid}: a one-way edge. Readable by BOTH ends
@@ -116,8 +120,12 @@ service cloud.firestore {
                       || resource.data.targetUid == request.auth.uid);
       allow create: if request.auth != null
                     && request.resource.data.followerUid == request.auth.uid;
+      // P1 SAFETY (2026-09-03): EITHER endpoint may delete the edge -- a reader
+      // deleting their account must be able to remove the edges that point AT
+      // them, not only the ones they made.
       allow delete: if request.auth != null
-                    && resource.data.followerUid == request.auth.uid;
+                    && (resource.data.followerUid == request.auth.uid
+                        || resource.data.targetUid == request.auth.uid);
     }
 
     // buildOns/{id}: public contributions on a published arc. type=="build-on"
@@ -135,6 +143,19 @@ service cloud.firestore {
                     && request.resource.data.fromUid == request.auth.uid;
       allow delete: if request.auth != null
                     && resource.data.fromUid == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // P1 SAFETY (2026-09-03) — aiUsage/{uid}: the server-side AI cost
+    // ceiling's counter ({day, count}), written ONLY by the Netlify function's
+    // service account (which bypasses these rules). NO client read, create or
+    // update -- a reader can neither see nor reset their own count -- and the
+    // OWNER may DELETE it, so account deletion leaves nothing behind.
+    // ─────────────────────────────────────────────────────────────────
+    match /aiUsage/{uid} {
+      allow read, create, update: if false;
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
     }
   }
 }

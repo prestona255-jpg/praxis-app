@@ -50,7 +50,11 @@ parameterized `buildReaderModelSection`). Arc publish was NOT lost — it lives 
 - **P1 SAFETY Item 3 — EXPORT — LOCAL v3.297, 2026-09-03.** The Export gap closes: a "Your data" card in
   the Profile's Settings register — one ZIP (praxis.json from the eight sync payload builders + Markdown +
   photos, hand-written store zip, Share sheet on iOS). Record: `docs/checkpoints/p1-safety-build.md`. Felt
-  pass PENDING. touches: [profile]. (Item 2 — account deletion — is the NEXT commit and will add its own
-  line here; it is not built as of this line.)
+  pass PENDING. touches: [profile].
+- **P1 SAFETY Item 2 — ACCOUNT DELETION — LOCAL v3.298, 2026-09-03.** "Delete account…" beside Export in
+  the Your-data card: the export offered first, the email typed to confirm, re-auth FIRST, one atomic batch
+  over every collection under the uid (incl. the public projections and the AI-ceiling counter), Auth
+  delete, then the local wipe, then `#deleted`. Rules change published by Preston before the push. Record:
+  `docs/checkpoints/p1-safety-build.md`. Felt pass PENDING. touches: [profile].
 
 ## Next

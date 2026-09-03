@@ -459,3 +459,217 @@ standard-compliant, not merely self-consistent.
    path is Firebase-async); proven by code read + grep (`r.uid !== uid` 1, `uid: uid, blob` 1).
 Post-fix: parse OK ×2, 58/58, C3A2 0. Final bytes (LF): integrations.js +23,041 · views.js +5,191 ·
 state.js −1,428 · components.css +770 · sw.js +0.
+
+## ITEM 2 — ACCOUNT DELETION, END TO END (v3.298)
+
+### Design as ruled (the exact order)
+`deleteAccount(callback, progress)` (integrations.js, replacing the Stage 14.3 definition that deleted
+the data FIRST, could not re-auth, and omitted userArtifacts + every social projection):
+0. the surface has ALREADY offered the export (step 1 of the panel — optional, the reader may skip);
+1. **RE-AUTHENTICATE FIRST** — `authUser.reauthenticateWithPopup(GoogleAuthProvider)` (the only wired
+   provider). Refused / closed → `{status:'error', phase:'reauth'}`: nothing deleted, session live;
+2. the uid is captured to a LOCAL var before anything else;
+3. **ONE ATOMIC BATCH** over everything under the uid — `deleteAccountCloudData(uid)`: the 8 private docs
+   (`userBooks userArcs userNotebook userSubTheories userProfiles userThemes userReaderModel
+   userArtifacts`/{uid}), `aiUsage/{uid}` (the AI-ceiling counter; owner-DELETE only by rule),
+   `publicProfiles/{uid}`, `publishedArcs where authorUid==uid`, `follows where followerUid==uid` AND
+   `where targetUid==uid`, `buildOns where fromUid==uid`. Refs are gathered first, then committed in
+   chunks of 400 (Firestore caps a batch at 500) — a realistic account is 10 fixed docs + a few dozen
+   edges/arcs, so ONE chunk; idempotent (a re-run finds nothing by query and completes). Any failure →
+   `{status:'error', phase:'firestore'}`: nothing local touched, session live, retryable;
+4. **Auth delete** (`authUser.delete()`). If THIS fails after the batch → `{status:'error', phase:'auth',
+   recoverable:true}` and the LOCAL DATA IS LEFT INTACT AND RE-UPLOADED AT ONCE (`restoreCloudFromLocal`:
+   every collection marked dirty + saved, profile + reader model saved directly); the panel says exactly that;
+5. **local wipe** ONLY after a successful Auth delete — `wipeAccountLocal(uid)`: `accountLocalKeysFor(uid)`
+   sweeps EVERY localStorage key carrying `_<uid>` (by inspection of the store, never a hand-kept list —
+   so a key a later build adds is swept too), plus the enumerated global caches / budgets / cooldowns /
+   view prefs (`ACCOUNT_GLOBAL_KEYS`, no prose in any of them), this uid's entry in `praxis_yumi_noticed`,
+   the notebook photos this uid's entries reference — deleted PER RECORD via the new `nbPhotoIdbDelete`
+   (never `deleteDatabase`; another account on a shared device keeps its photos), then `clearUserState()`;
+6. `praxis_user` → null, `signOut()`, `{status:'deleted'}` → the surface routes to `#deleted`.
+`progress(phase)` fires `reauth | cloud | login | local` so the panel shows honest phase copy.
+
+**The local keys enumerated — by grepping the diffs of Items 1, 3 and 4 + the app's own writers**
+(every one carries the uid in its name and is swept by the `_<uid>` inspection): Item 4a
+`praxis_pending_deletes_{arcs,subTheories,themes,artifacts}_<uid>`; Item 4b `praxis_pending_unpublish_<uid>`;
+Item 1 and Item 3 introduce NO localStorage keys and NO IndexedDB stores (Item 1's counter is
+server-side; Item 3's `_pfExportPrepared` is an in-memory module var). Pre-existing per-uid keys swept
+by the same rule: `praxis_state_<uid>`, `praxis_pending_books_<uid>`,
+`praxis_pending_{arcs,subTheories,themes,artifacts}_<uid>`, `praxis_pending_book_deletes_<uid>`,
+`praxis_merge_tombstones_<uid>`, `praxis_nb_gather_<uid>` (draft prose), `praxis_nb_draft_<uid>_<ctx>`,
+`praxis_scan_draft_<uid>`, `praxis_firstshelf_offer_<uid>`. Global (wiped whole): the 25 keys in
+`ACCOUNT_GLOBAL_KEYS`. IndexedDB: `praxisNotebook/photos`, per record. `praxis_user`: cleared last.
+
+**Surface** (in the Item 3 card, same `.pf-*` register): `_pfDataDeleteControl` fills the stub with a
+ghost + danger-ink "Delete account…" beside Export; `_pfOpenDeletePanel` mounts a panel INSIDE the card —
+title, the plain copy ("It is final. There is no undo and no grace period; the export is the grace."),
+step 1 "Export first" (optional; the Item 3 prepare/save on the TAPPED button), step 2 the email field
+(the confirm button is DISABLED until the typed value equals the account email, case-insensitive), the
+red "Delete my account" + "Keep my account"; `_pfRunDelete` shows the four phase lines and a plain
+outcome line per failure leg; `renderDeletedPage` renders `#deleted` in the profile's signed-out prompt
+register (`.pf-below .pf-thesis .pf-card .pf-now`) — "Your account is gone." + one "Back to Praxis". The
+`#deleted` route is dispatched before `#about` in `renderRoute`. `openAccountDeleteConfirm` (dead since
+e5671d1) and `wipeActiveUserLocal` (its only caller was the old deleteAccount) are DELETED with notes.
+
+**firestore.rules** (written to the repo; Preston publishes BEFORE v3.298 pushes — report §5 carries the
+verbatim text): `publicProfiles/{uid}` gains `allow delete` for the owner; `follows/{edgeId}` delete by
+EITHER endpoint; new `match /aiUsage/{uid}`: `read, create, update: if false`, `delete` by the owner.
+
+### Proofs
+- **`tools/delete-test`** (cscript; the REAL state.js + integrations.js in one scope, a scripted Firebase
+  stub — reauth / batch / auth-delete each forced to fail or succeed — a synchronous Promise shim, a
+  recording `nbPhotoIdbDelete`, a device fixture with 17 per-uid keys for EACH of two uids + the global
+  caches + `praxis_yumi_noticed` for both + photos for both, a server fixture with both uids' published
+  arcs, follows in both directions and a foreign one, and build-ons from each): **49 / 49** —
+  [F] the sweep finds all 17 of uid A's key shapes (incl. Item 4's pending-delete key, 4b's unpublish
+  key, the composer draft) and none of B's; [A] re-auth refused → phase `reauth` only, 0 batches, 0 cloud
+  deletes, auth user kept, not signed out, all local keys + `praxis_user` + in-memory entries intact;
+  [B] batch fails → phase `firestore`, 0 cloud deletes, nothing local touched; [C] Auth delete fails
+  AFTER the batch → phase `auth`, `recoverable:true`, cloud docs deleted, **local keys / `praxis_user` /
+  photos / in-memory maps INTACT**, not signed out; [D] success → phases `reauth>cloud>login>local`,
+  re-auth exactly once and first, the batch holds **exactly the 15 owned docs** (8 private + aiUsage +
+  publicProfiles + 2 published arcs + BOTH follow edges + my build-on) and NOT the other uid's arc, a
+  foreign edge, or the other reader's build-on on my arc (rule-bound: their words), auth user deleted,
+  every key carrying the uid gone, the other uid's 17 keys untouched, the global caches gone, this uid
+  removed from `praxis_yumi_noticed` and the other kept, this uid's two photos deleted per record and
+  the other's kept, `praxis_user` null, signed out, in-memory maps cleared; [E] a re-run after success
+  completes with only the 10 fixed docs in the batch and nothing found by query (idempotent). The
+  harness first ran against a scratch copy of the tree with Item 2's scripts applied (49/49 there too),
+  before the real tree changed.
+- Parse gates: integrations.js / state.js / views.js → PARSE OK exit 0; C3A2 0; CR 0.
+- grep: `function deleteAccount` 1 · `deleteAccountCloudData(` 2 · `wipeAccountLocal(` 2 ·
+  `accountLocalKeysFor(` 2 · `openAccountDeleteConfirm` 0 fn (1 note) · `wipeActiveUserLocal` 0 fn (1
+  note) · `renderDeletedPage(` 2 · `_pfOpenDeletePanel(` 2 · `nbPhotoIdbDelete(` 2 (def + call in
+  wipeAccountLocal via typeof) · `parts[0] === 'deleted'` 1 · rules: `aiUsage` 1 block, `targetUid ==
+  request.auth.uid` 2 (the read rule + the new delete rule).
+- The rig cannot exercise the Firebase legs (no real auth on the rig) — they are the device click-path
+  (report §6, Item 2 (4)–(8)); the harness is the offline proof of the ORDER and of what each leg
+  touches.
+
+### Item 3 commit
+**`ac8a7f0`** — `feat(P1 Item 3) — export: one archive, praxis.json from the same eight builders the sync
+writes, plus Markdown a reader can open without a parser → v3.297` — 10 files, +992/−106, tree clean after.
+
+### VISUAL GATE (#11) — Item 2, measured fresh on the rig 2026-09-03 (port 8792, stub uid `d0tester`)
+Delta stated before build: the Your-data card gains a ghost "Delete account…" beside Export; tapping it
+opens a panel INSIDE the card (title, copy, step 1 Export first, step 2 the email field, the confirm
+disabled until the email matches, Keep my account); `#deleted` is a one-card page in the profile's
+signed-out register. Reference surfaces: `.pf-card` / `.pf-set-row` / `.pf-btn` (the card + buttons),
+`.pf-below .pf-thesis .pf-card .pf-now` (the done page).
+| viewport | element | rect | visible / hit | contrast |
+|---|---|---|---|---|
+| 1360×900 | Delete account… | x180 y456 122×44 | element under the tap = `delete-account` | ink `rgb(100,89,64)` on `rgb(255,253,248)` **6.78:1**, border `--danger` |
+| 1360×900 | the panel (open) | x56 y516 1233×364 | 364 / 364 px | title 17.14:1 · copy 6.78:1 · step eyebrow 6.78:1 |
+| 1360×900 | confirm, DISABLED at open + after a wrong email | x56 y832 136×44 | `disabled` true → true | ink `--ink-3` `rgb(151,139,109)` 3.32:1 on the card (an INACTIVE control — exempt; re-measured on the final bytes, see pass 1 #5) |
+| 1360×900 | confirm, ENABLED after the exact email (case-insensitive) | same | `disabled` false | `--ink` 600 on a 14% `--danger` wash inside a `--danger` border → **≈14:1** (composited `rgb(247,231,221)`; the in-page helper misparsed `color()` and printed 12.45 — both ≫ 4.5) |
+| 1360×900 | Keep my account | — | closes the panel (`.pf-del` gone) | ghost register |
+| 390×844 | Delete account… | x196 y180 154×44 | tappable | same inks |
+| 390×844 | the panel | x40 y240 310×402 | 402 / 402 at panel top; no horizontal overflow | Export first 300×44 full-row; confirm 155×44 + Keep 145×44 side by side; element under the confirm tap = `del-confirm` |
+| 1360 / 390 | `#deleted` | card 564×180 @1360 · 354×234 @390 | rendered on the route, "Your account is gone.", link → `#home` 107×46 | `.pf-now` 6.78:1 |
+Two contrast defects were found BY this measurement and fixed before the freeze: the ghost register's
+`.pf-btn.ghost` (0,2,0) beat `.pf-btn-danger` (0,1,0), leaving the delete control at the ghost's 3.1:1
+`--ink-3`; and the first solid confirm (`--text-on-dark` on `--danger`) measured 3.3:1, then `--ink` on
+solid `--danger` 4.17:1 — `--danger` is too light a fill for AA at 12px. Final cut: dark ink everywhere,
+the danger carried as border + wash. No new hex (`color-mix` is already in use 153× — the Safari 16.2+
+floor T26 recorded). Screenshots time out in this pane (rig fact); geometry + computed colour are the
+evidence; Preston's felt pass closes the gate.
+
+### Bytes (LF-normalized) — expected vs actual
+| file | expected | actual |
+|---|---|---|
+| js/integrations.js | +3,800 | +5,769 (the flow + the cloud batch + the local sweep + the photo loop) |
+| js/views.js | +5,000 | +4,873 |
+| js/state.js | −900 (wipeActiveUserLocal deleted) | −55 (the note is as long as the function was) |
+| assets/components.css | +1,200 | +2,417 |
+| firestore.rules | +400 | +1,486 (three commented blocks; the file also normalised CRLF→LF, blob unaffected) |
+| tools/delete-test | new | new 19,561 |
+| sw.js | +0 | +0 (praxis-v3.297 → praxis-v3.298) |
+
+### Red-team pass 1 (§9, deep) — VERDICT: 2 BLOCKs + 4 CONCERNs/NOTEs. Every one acted on before commit.
+The agent re-ran the harness (49/49, exit 0 checked separately), re-measured every byte, CR, parse gate,
+confirmed 0 callers left for the deleted functions, traced attack (1) (nothing touched before re-auth
+resolves — correct) and attack (2)'s first half (local / `praxis_user` / signOut untouched after an Auth
+failure — correct), and verified every per-uid key from Items 1/3/4 and the pre-existing set resolves to
+the `_<uid>` sweep. Findings + dispositions:
+1. **BLOCK — "recoverable by sync" was a claim the code did not deliver.** The load-side `'absent'`
+   branches never push local data up; only a dirty flag does, and nothing set one. So "sign in again and
+   your data syncs back up" was false for books/arcs/notebook/subs/themes/profile/readerModel. FIXED by
+   MECHANISM: on an Auth-delete failure after the batch, `restoreCloudFromLocal(uid)` marks every
+   collection dirty + `saveState()` and saves profile + reader model directly — while the fresh re-auth
+   token is valid. Harness case [C] now asserts all EIGHT collections are re-uploaded (`set` on each
+   doc ref) before the panel reports; the panel copy says what happened ("Praxis has re-uploaded your
+   data from this device, so nothing is lost and you are still signed in"). The header comment and the
+   ledger row that echoed the old claim reworded.
+2. **BLOCK — the `#deleted` page said "nothing can be restored" while a second signed-in device could
+   still write under the uid for up to an hour** (its ID token stays valid until `exp`; the untouched
+   private-collection rules admit it). Not closable without a deletion tombstone, which the brief forbids
+   ("Deletion is final. No tombstone"). FIXED as COPY + a NAMED RESIDUAL **R2-1**: the done page now says
+   "If another device was still signed in, it will be signed out within the hour — sign out there to clear
+   its copy." Whatever a stale device writes in that window lands under a uid no one can ever sign in as
+   again (Auth reissues a new uid) — unreadable orphans, a hygiene residual, not a privacy hole; the
+   device click-path (8) observes it.
+3. **CONCERN — the three `where` queries are rule-servable in principle but the harness enforces no
+   rules.** Firestore evaluates a rule against a query's constraints; `where('targetUid','==',uid)`
+   satisfies the `targetUid == request.auth.uid` arm of `follows`' OR, `where('fromUid','==',uid)` the
+   `fromUid` arm of `buildOns`' OR, and `publishedArcs` reads are `request.auth != null` — and the app
+   already runs `publishedArcs.where('authorUid'…)` and `buildOns.where('fromUid'…)` today. RESIDUAL
+   **R2-2**: a named live check in the device pass — if a query is refused, the flow stops at phase
+   `firestore` with nothing touched (safe), and the fix is to read the ids from local state / the public
+   profile instead of querying.
+4. **CONCERN — a failure after an earlier chunk committed said "nothing was deleted".** FIXED:
+   `deleteAccountCloudData` counts committed docs and rejects with `committed`; the panel says "N
+   documents were removed before it stopped, and the rest are still there … run Delete account again —
+   it picks up where it left off." Harness case [B2] (405 refs → 2 chunks, the second refused) asserts
+   phase `firestore`, `partial === 400`, 400 cloud deletes, local intact.
+5. **CONCERN — the visual table mislabelled the disabled confirm** ("`--ink-3`… measured `rgb(36,23,16)`"
+   — the measurement had run before the cache-busted CSS applied). RE-MEASURED on the final bytes:
+   disabled ink `rgb(151,139,109)` = `--ink-3`, **3.32:1** on the card, border `--danger-line` — an
+   INACTIVE control (WCAG 1.4.3 exempts disabled components); enabled ink `rgb(36,23,16)` = `--ink`.
+6. **NOTE — four uid-less globals survived the wipe** (`praxis_portrait_dismissed` — account-linked,
+   a pre-existing cross-account leak — `praxis_yumi_hand`, `praxis_m_first_seen`, `praxis_m_activated`).
+   FIXED: added to `ACCOUNT_GLOBAL_KEYS`; harness [D] asserts them gone. The completeness claim is now
+   stated precisely: uid-carrying keys by inspection, uid-less keys by the list.
+7. **NOTE — a null email made the confirm a dead end.** FIXED: with no email on file the step reads
+   "Type **delete my account** to confirm" and the phrase enables the button (harness-independent; code
+   read + rig: with an email present the step still reads "Type your email to confirm").
+8. **NOTE — grep count**: `targetUid == request.auth.uid` is 2 (the pre-existing read rule + the new
+   delete rule), not 1. Corrected.
+Post-fix: parse OK ×2, `tools/delete-test` **58 / 58** (was 49: + the 8 re-upload asserts, [B2] ×7, the
+globals), C3A2 0, CR 0. Final bytes (LF) vs ac8a7f0: integrations.js **+8,413** · views.js **+5,572** ·
+state.js −55 · components.css +2,417 · firestore.rules +1,486 · tools/delete-test new 21,857 · sw.js +0.
+Rig re-measured on a fresh port (8793): the panel opens, the step reads "Type your email to confirm", the
+label carries the email, the exact email enables the confirm; the `#deleted` copy is the new copy.
+
+### Red-team pass 2 (§9) — on the fixes — VERDICT: 1 BLOCK + 2 CONCERNs + 2 NOTEs. Every one acted on.
+Confirmed clean by the agent: the chunk accounting (`committed` only after commit resolves; [B2] re-run),
+the F-DL1 latches (every save fn gated on its own `*Loaded`; the harness's `setLoaded` sets exactly those,
+no cheat), a failed `auth.delete()` does not revoke the token, no absolute copy remains, the null-email
+check cannot be satisfied by an empty string when an email exists, the rules match the queries, parse OK
+×3, 58/58, C3A2 0 (its own first hex scan false-positived and it said so).
+1. **BLOCK** — `docs/launch-runway.md` still said "tools/delete-test 49/49" after the harness grew to
+   58. FIXED (58/58, with what the nine new cases cover). The same doc-currency slip the round's own
+   Item 3 pass blocked — caught again by the gate, as it should be.
+2. **CONCERN** — the checkpoint's integrations.js delta (+8,413) was measured BEFORE the header comment
+   was reworded; the agent measured +8,564. FIXED by re-measuring on the final bytes after the pass-2
+   changes below: **+9,886** (LF, vs the `ac8a7f0` blob). Views +5,572 unchanged.
+3. **CONCERN — a race the recovery mechanism introduced.** `restoreCloudFromLocal` was fire-and-forget;
+   the panel re-enabled "Delete my account" at once and its copy invited a retry, so a fast second run
+   could delete the docs and then have the FIRST run's late re-upload writes land under a uid whose Auth
+   record was by then gone — a self-inflicted version of R2-1. FIXED by MECHANISM: `restoreCloudFromLocal`
+   now calls the eight save functions DIRECTLY, each as its own job that resolves when its callback fires
+   (ok / deferred / error alike), returns `Promise.all`, and `deleteAccount` AWAITS it before it throws the
+   `'auth'` failure — the panel cannot hear the result, let alone re-enable the button, until every
+   re-upload has settled. Harness [C] still asserts all 8 `set`s (now necessarily BEFORE the callback).
+4. **NOTE** — `praxis_m_counts` / `praxis_m_errors` (measure.js' anonymous aggregate counters) were the
+   two uid-less siblings still outside the list. Added to `ACCOUNT_GLOBAL_KEYS` (harmless to wipe: no
+   per-user link) and to the harness fixture + assertion (now "the six uid-less globals gone").
+5. **NOTE** — `saveState()`'s six dirty-flag blocks run in source order without per-block isolation, so
+   one builder throwing would have silenced the rest and the copy would still say "nothing is lost".
+   Addressed by the same change as #3: the restore no longer goes through `saveState`; each collection is
+   its own try, so one failing builder cannot stop the other seven. (The app-wide `saveState` shape
+   itself is pre-existing and untouched — a separate residual, not this item's.)
+Post-fix: parse OK, `tools/delete-test` 58/58, C3A2 0. Final bytes (LF) vs ac8a7f0: integrations.js
++9,886 · views.js +5,572 · state.js −55 · components.css +2,417 · firestore.rules +1,486 ·
+tools/delete-test new 21,959 · sw.js +0. No third agent pass: the pass-2 fixes are one awaited promise, a
+per-collection try, two list entries and two doc corrections, each re-proven by the harness; recorded here
+for Preston's read (data-loss tier, FIX-PROTOCOL §5 C — the human read is the gate).

@@ -17418,3 +17418,33 @@ body:has(.library-cleanup) .shelf-add-primary{ display:none !important; }
 @media (max-width:759px){
   .pf-data-actions .pf-btn{ flex:1 1 auto; justify-content:center; }
 }
+
+/* ── P1 Item 2 — account deletion: the confirmation panel INSIDE the Your-data
+   card (same .pf-* register) + the #deleted done page (the profile's signed-out
+   prompt register: .pf-below .pf-thesis .pf-card .pf-now). Danger colour is the
+   existing --danger / --danger-line tokens (theme.css:601). ── */
+/* AA on the cream card (measured on the rig 2026-09-03): --danger as INK is 4.1:1 at
+   12px, the ghost's --ink-3 is 3.1:1, and --ink on a SOLID --danger fill is 4.17:1 —
+   all below 4.5. So the danger controls keep dark ink and carry the danger as a
+   border + a light wash: the enabled confirm is --ink (17:1) on a 14% --danger wash
+   inside a --danger border. */
+.pf-btn.ghost.pf-btn-danger{ color:var(--ink-2); border-color:var(--danger); }
+.pf-btn-danger-solid{ background:color-mix(in srgb, var(--danger) 14%, transparent); color:var(--ink); font-weight:600; border-color:var(--danger); }
+.pf-btn-danger-solid:disabled{ background:transparent; color:var(--ink-3); border-color:var(--danger-line); opacity:1; }
+.pf-del{ margin-top:16px; padding:16px 0 4px; border-top:1px solid var(--line); }
+.pf-del-title{ font-family:var(--font-serif); font-size:19px; color:var(--ink); margin-bottom:6px; }
+.pf-del-copy{ font-size:13px; line-height:1.55; color:var(--ink-2); max-width:64ch; }
+.pf-del-copy b{ color:var(--danger); font-weight:600; }
+.pf-del-step{ margin-top:16px; font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2); display:flex; align-items:center; gap:8px; }
+.pf-del-step .whisper{ text-transform:none; letter-spacing:.02em; color:var(--ink-3); font-size:10.5px; }
+.pf-del-num{ display:inline-flex; width:20px; height:20px; border-radius:50%; border:1px solid var(--line); align-items:center; justify-content:center; font-size:10.5px; color:var(--ink-3); }
+.pf-del-field{ margin-top:8px; }
+.pf-del-field label{ font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
+.pf-del-exportnote{ align-self:center; font-size:12px; line-height:1.4; color:var(--ink-3); }
+.pf-del-progress{ margin-top:12px; font-size:13px; line-height:1.55; color:var(--ink-2); max-width:64ch; }
+.pf-del-progress:empty{ margin-top:0; }
+.pf-deleted .pf-set-row a.pf-btn{ text-decoration:none; }
+@media (max-width:759px){
+  .pf-del .pf-set-row{ flex-wrap:wrap; }
+  .pf-del .pf-set-row .pf-btn{ flex:1 1 auto; justify-content:center; }
+}

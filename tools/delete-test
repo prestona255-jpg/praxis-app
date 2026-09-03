@@ -1,0 +1,320 @@
+// tools/delete-test -- P1 Item 2 proof harness for ACCOUNT DELETION (cscript
+// JScript) over the REAL BYTES of js/state.js + js/integrations.js, loaded in one
+// scope with a scripted Firebase stub and a minimal synchronous Promise shim.
+// EXTENSIONLESS on purpose (see tools/parse-check).
+//
+// Usage:  cscript //nologo //E:jscript tools/delete-test
+// Exit:   0 = every case passed · 1 = a case failed · 2 = could not load
+//
+// Proves the RULED ORDER and every failure leg of deleteAccount:
+//   [A] re-auth refused        -> NOTHING deleted (cloud or local), session live, phase 'reauth'
+//   [B] batch commit fails     -> NOTHING deleted, nothing local touched, phase 'firestore'
+//   [C] Auth delete fails AFTER the batch -> cloud gone, LOCAL INTACT, praxis_user intact,
+//                                 phase 'auth', recoverable:true (the account syncs back up)
+//   [D] success                -> phases reauth -> cloud -> login -> local; the batch held
+//                                 every collection under the uid (8 private + aiUsage +
+//                                 publicProfiles + publishedArcs by authorUid + follows by
+//                                 BOTH endpoints + buildOns by fromUid); Auth user deleted;
+//                                 every localStorage key carrying the uid gone, the global
+//                                 caches gone, the OTHER uid's keys untouched; this uid's
+//                                 photos deleted per record and the other uid's kept;
+//                                 praxis_user null; signed out; status 'deleted'
+//   [E] re-run after success   -> idempotent: completes with nothing to delete
+//   [F] the local-key sweep    -> accountLocalKeysFor(uid) finds every per-uid key shape
+//                                 Items 1/3/4 and the app write, and none of another uid's
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+// optional first argument: an alternate root (a scratch copy of the tree) -- used to
+// dry-run the harness against a candidate before the real tree changes.
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+function neutralize(src) { return src.replace(/\.catch\b/g, '.catch_').replace(/\.finally\b/g, '.finally_').replace(/\.delete\b/g, '.delete_'); }
+
+// ---- ES5 shims ------------------------------------------------------------------
+if (typeof Array.isArray !== 'function') { Array.isArray = function (a) { return Object.prototype.toString.call(a) === '[object Array]'; }; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+if (typeof String.prototype.trim !== 'function') { String.prototype.trim = function () { return this.replace(/^\s+|\s+$/g, ''); }; }
+if (typeof JSON === 'undefined') {
+  JSON = {
+    stringify: function (v) {
+      var t = typeof v, out, i, k;
+      if (v === null || t === 'undefined') { return 'null'; }
+      if (t === 'number' || t === 'boolean') { return String(v); }
+      if (t === 'string') { return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"'; }
+      if (Array.isArray(v)) { out = []; for (i = 0; i < v.length; i++) { out.push(JSON.stringify(v[i])); } return '[' + out.join(',') + ']'; }
+      out = []; for (k in v) { if (Object.prototype.hasOwnProperty.call(v, k) && typeof v[k] !== 'function' && typeof v[k] !== 'undefined') { out.push(JSON.stringify(k) + ':' + JSON.stringify(v[k])); } }
+      return '{' + out.join(',') + '}';
+    },
+    parse: function (s) { return eval('(' + s + ')'); }
+  };
+}
+// A minimal SYNCHRONOUS Promise (then-chaining, rejection propagation, resolve/all).
+// Synchronous settlement is what lets the harness read the outcome without a loop.
+function Promise(executor) {
+  var self = this; this.state = 'pending'; this.value = undefined; this.handlers = [];
+  function settle(state, value) { if (self.state !== 'pending') { return; } self.state = state; self.value = value; var hs = self.handlers; self.handlers = []; var i; for (i = 0; i < hs.length; i++) { hs[i](); } }
+  function resolve(v) { if (v && typeof v.then === 'function') { v.then(function (x) { settle('fulfilled', x); }, function (e) { settle('rejected', e); }); return; } settle('fulfilled', v); }
+  function reject(e) { settle('rejected', e); }
+  try { executor(resolve, reject); } catch (e) { reject(e); }
+}
+Promise.prototype.then = function (onOk, onErr) {
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    function run() {
+      var h = (self.state === 'fulfilled') ? onOk : onErr;
+      if (typeof h !== 'function') { if (self.state === 'fulfilled') { resolve(self.value); } else { reject(self.value); } return; }
+      try { resolve(h(self.value)); } catch (e) { reject(e); }
+    }
+    if (self.state === 'pending') { self.handlers.push(run); } else { run(); }
+  });
+};
+Promise.prototype.catch_ = function (onErr) { return this.then(null, onErr); };
+Promise.resolve = function (v) { return new Promise(function (r) { r(v); }); };
+Promise.reject = function (e) { return new Promise(function (r, j) { j(e); }); };
+Promise.all = function (arr) { return new Promise(function (resolve, reject) { var n = arr.length, out = [], done = 0, i; if (!n) { resolve(out); return; } for (i = 0; i < n; i++) { (function (idx) { Promise.resolve(arr[idx]).then(function (v) { out[idx] = v; done++; if (done === n) { resolve(out); } }, reject); })(i); } });
+};
+
+// ---- shims: storage, dom, firebase (scripted) ----------------------------------
+var store = {};
+var localStorage = {
+  getItem: function (k) { return store.hasOwnProperty(k) ? store[k] : null; },
+  setItem: function (k, v) { store[k] = String(v); },
+  removeItem: function (k) { delete store[k]; },
+  key: function (i) { var n = 0, k; for (k in store) { if (store.hasOwnProperty(k)) { if (n === i) { return k; } n++; } } return null; }
+};
+function defineLength() { var n = 0, k; for (k in store) { if (store.hasOwnProperty(k)) { n++; } } localStorage.length = n; }
+var window = this;
+var console = { log: function () {}, warn: function () {}, error: function () {} };
+var document = { addEventListener: function () {}, getElementById: function () { return null; } };
+var navigator = { userAgent: 'cscript' };
+var setTimeout = function (f) { f(); return 0; };
+var location = { hash: '', href: '' };
+var UID = 'del_uid_A', OTHER = 'del_uid_B';
+
+var scenario = {};            // per case: { reauth:'ok'|'fail', batch:'ok'|'fail', authDelete:'ok'|'fail' }
+var log = { phases: [], deletedPaths: [], batches: 0, signedOut: 0, authDeleted: 0, reauthCalls: 0, photosDeleted: [] };
+function fbRef(path) { return { path: path, set: function () { log.sets.push(path); return Promise.resolve(); } }; }
+function fbQuery(coll, field, value) {
+  return {
+    get: function () {
+      // the scripted "server": which docs exist for this uid / the other uid
+      var docs = [], i;
+      for (i = 0; i < serverDocs.length; i++) {
+        var d = serverDocs[i];
+        if (d.coll === coll && d.data[field] === value) { docs.push(d); }
+      }
+      return Promise.resolve({ forEach: function (fn) { var j; for (j = 0; j < docs.length; j++) { fn({ ref: fbRef(docs[j].coll + '/' + docs[j].id), id: docs[j].id, data: docs[j].data }); } } });
+    },
+    where: function (f2, op, v2) { return fbQuery(coll, f2, v2); }
+  };
+}
+var serverDocs = [];
+var firebase = {
+  initializeApp: function () {},
+  auth: function () {
+    return {
+      onAuthStateChanged: function () {},
+      currentUser: {
+        uid: UID,
+        reauthenticateWithPopup: function () { log.reauthCalls++; return scenario.reauth === 'fail' ? Promise.reject({ code: 'auth/popup-closed-by-user' }) : Promise.resolve({}); },
+        delete_: function () { if (scenario.authDelete === 'fail') { return Promise.reject({ code: 'auth/requires-recent-login' }); } log.authDeleted++; return Promise.resolve(); }
+      },
+      signOut: function () { log.signedOut++; return Promise.resolve(); }
+    };
+  },
+  firestore: function () {
+    return {
+      collection: function (name) {
+        return {
+          doc: function (id) { return fbRef(name + '/' + id); },
+          where: function (field, op, value) { return fbQuery(name, field, value); }
+        };
+      },
+      batch: function () {
+        var refs = [];
+        var b = {
+          commit: function () {
+            log.batches++;
+            if (scenario.batch === 'fail') { return Promise.reject({ code: 'unavailable' }); }
+            if (scenario.batch === 'fail-second' && log.batches === 2) { return Promise.reject({ code: 'unavailable' }); }
+            var i; for (i = 0; i < refs.length; i++) { log.deletedPaths.push(refs[i]); }
+            return Promise.resolve();
+          }
+        };
+        // the app calls batch['delete'](ref) (bracket form -- ES3-safe for the reserved
+        // word); the neutralizer only rewrites the DOT form, so define both names.
+        b['delete'] = function (ref) { refs.push(ref.path); };
+        b.delete_ = b['delete'];
+        return b;
+      }
+    };
+  }
+};
+firebase.auth.GoogleAuthProvider = function () {};
+firebase.firestore.FieldValue = { serverTimestamp: function () { return 0; }, arrayRemove: function () {}, increment: function () {} };
+function nbPhotoIdbDelete(id, onOk) { log.photosDeleted.push(id); onOk(); }
+
+// ---- load the real files in ONE scope -------------------------------------------
+var api;
+try {
+  var ssrc = neutralize(readFile(fso.BuildPath(root, 'js\\state.js')));
+  var isrc = neutralize(readFile(fso.BuildPath(root, 'js\\integrations.js')));
+  api = new Function('localStorage', 'window', 'console', 'document', 'setTimeout', 'firebase', 'navigator', 'location', 'Promise', 'nbPhotoIdbDelete',
+    ssrc + '\n' + isrc + '\nreturn { state: state, ensureUser: ensureUser, deleteAccount: deleteAccount, accountLocalKeysFor: accountLocalKeysFor, wipeAccountLocal: wipeAccountLocal, ls: ls, sv: sv, ' +
+    'setLoaded: function () { arcsLoaded = true; notebookLoaded = true; subTheoriesLoaded = true; themesLoaded = true; artifactsLoaded = true; booksLoaded = true; profileLoaded = true; readerModelLoaded = true; } };')(
+    localStorage, window, console, document, setTimeout, firebase, navigator, location, Promise, nbPhotoIdbDelete);
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+var state = api.state;
+
+// ---- harness ----------------------------------------------------------------------
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+WScript.Echo('harness self-check: a wrong expectation fails -> OK');
+function has(arr, v) { var i; for (i = 0; i < arr.length; i++) { if (arr[i] === v) { return true; } } return false; }
+function keysWith(sub) { var out = [], k; for (k in store) { if (store.hasOwnProperty(k) && k.indexOf(sub) !== -1) { out.push(k); } } return out; }
+
+// The device + server fixture: every key shape Items 1/3/4 + the app write, for BOTH uids.
+function seedDevice() {
+  store = {};
+  var shapes = ['praxis_state_', 'praxis_pending_books_', 'praxis_pending_arcs_', 'praxis_pending_subTheories_', 'praxis_pending_themes_', 'praxis_pending_artifacts_',
+                'praxis_pending_book_deletes_', 'praxis_pending_deletes_arcs_', 'praxis_pending_deletes_subTheories_', 'praxis_pending_deletes_themes_', 'praxis_pending_deletes_artifacts_',
+                'praxis_pending_unpublish_', 'praxis_merge_tombstones_', 'praxis_nb_gather_', 'praxis_scan_draft_', 'praxis_firstshelf_offer_'];
+  var i, u, uids = [UID, OTHER];
+  for (u = 0; u < uids.length; u++) {
+    for (i = 0; i < shapes.length; i++) { store[shapes[i] + uids[u]] = JSON.stringify(['x']); }
+    store['praxis_nb_draft_' + uids[u] + '_book_1'] = JSON.stringify({ body: 'DRAFT PROSE ' + uids[u] });
+  }
+  store['praxis_yumi_gate_budget'] = JSON.stringify({ day: 'd', count: 3 });
+  store['praxis_yumi_web_cache'] = JSON.stringify({ k: 'v' });
+  store['praxis_portrait_dismissed'] = JSON.stringify(['cat']); store['praxis_yumi_hand'] = 'true';
+  store['praxis_m_first_seen'] = '1'; store['praxis_m_activated'] = '1'; store['praxis_m_counts'] = '{}'; store['praxis_m_errors'] = '[]';
+  store['praxis_yumi_noticed'] = JSON.stringify({ del_uid_A: [ { members: ['a'], status: 'noticed' } ], del_uid_B: [ { members: ['b'], status: 'named' } ] });
+  store['praxis_user'] = JSON.stringify({ uid: UID, email: 'a@example.test' });
+  defineLength();
+  // in-memory state: this uid's entries reference two photos, the other uid's one
+  api.ensureUser(UID); api.ensureUser(OTHER);
+  state.notebookEntries = {
+    e1: { id: 'e1', userId: UID, body: 'x', images: [ { id: 'img_A1', idbKey: 'img_A1' }, { id: 'img_A2', idbKey: 'img_A2' } ] },
+    e2: { id: 'e2', userId: OTHER, body: 'y', images: [ { id: 'img_B1', idbKey: 'img_B1' } ] }
+  };
+  state.books = { bk1: { id: 'bk1', title: 'T' } };
+  serverDocs = [
+    { coll: 'publishedArcs', id: 'arcA1', data: { authorUid: UID } },
+    { coll: 'publishedArcs', id: 'arcA2', data: { authorUid: UID } },
+    { coll: 'publishedArcs', id: 'arcB1', data: { authorUid: OTHER } },
+    { coll: 'follows', id: 'A_B', data: { followerUid: UID, targetUid: OTHER } },
+    { coll: 'follows', id: 'B_A', data: { followerUid: OTHER, targetUid: UID } },
+    { coll: 'follows', id: 'B_C', data: { followerUid: OTHER, targetUid: 'C' } },
+    { coll: 'buildOns', id: 'bo1', data: { fromUid: UID, targetArcId: 'arcB1' } },
+    { coll: 'buildOns', id: 'bo2', data: { fromUid: OTHER, targetArcId: 'arcA1' } }
+  ];
+  log = { phases: [], deletedPaths: [], batches: 0, signedOut: 0, authDeleted: 0, reauthCalls: 0, photosDeleted: [], sets: [] };
+  api.setLoaded();   // a live signed-in session: every load has settled, so outgoing writes are not latched
+}
+function run(sc) {
+  scenario = sc; var result = null;
+  api.deleteAccount(function (r) { result = r; }, function (p) { log.phases.push(p); });
+  return result;
+}
+var keysBefore, r;
+
+WScript.Echo('\n[F] the local-key sweep');
+seedDevice();
+var mine = api.accountLocalKeysFor(UID);
+check('finds every per-uid key shape for uid A (17)', mine.length, 17);
+check('none of uid B\'s keys', (function () { var i; for (i = 0; i < mine.length; i++) { if (mine[i].indexOf(OTHER) !== -1) { return true; } } return false; })(), false);
+check('includes the Item 4 pending-delete key', has(mine, 'praxis_pending_deletes_arcs_' + UID), true);
+check('includes the Item 4b unpublish-retry key', has(mine, 'praxis_pending_unpublish_' + UID), true);
+check('includes the composer draft (prose)', has(mine, 'praxis_nb_draft_' + UID + '_book_1'), true);
+
+WScript.Echo('\n[A] re-auth refused -> nothing touched, session live');
+seedDevice(); keysBefore = keysWith(UID).length;
+r = run({ reauth: 'fail', batch: 'ok', authDelete: 'ok' });
+check('status error / phase reauth', r.status + '/' + r.phase, 'error/reauth');
+check('phases seen: reauth only', log.phases.join('>'), 'reauth');
+check('no batch committed', log.batches, 0);
+check('nothing deleted in the cloud', log.deletedPaths.length, 0);
+check('auth user not deleted', log.authDeleted, 0);
+check('not signed out', log.signedOut, 0);
+check('local keys intact', keysWith(UID).length, keysBefore);
+check('praxis_user intact', !!store['praxis_user'], true);
+check('in-memory entries intact', !!state.notebookEntries.e1, true);
+
+WScript.Echo('\n[B] batch commit fails -> nothing touched');
+seedDevice(); keysBefore = keysWith(UID).length;
+r = run({ reauth: 'ok', batch: 'fail', authDelete: 'ok' });
+check('status error / phase firestore', r.status + '/' + r.phase, 'error/firestore');
+check('phases: reauth > cloud', log.phases.join('>'), 'reauth>cloud');
+check('nothing deleted in the cloud (commit rejected)', log.deletedPaths.length, 0);
+check('auth user not deleted', log.authDeleted, 0);
+check('not signed out', log.signedOut, 0);
+check('local keys intact', keysWith(UID).length, keysBefore);
+check('praxis_user intact', !!store['praxis_user'], true);
+
+WScript.Echo('\n[C] Auth delete fails AFTER the batch -> cloud gone, local intact, recoverable');
+seedDevice(); keysBefore = keysWith(UID).length;
+r = run({ reauth: 'ok', batch: 'ok', authDelete: 'fail' });
+check('status error / phase auth / recoverable', r.status + '/' + r.phase + '/' + r.recoverable, 'error/auth/true');
+check('phases: reauth > cloud > login', log.phases.join('>'), 'reauth>cloud>login');
+check('cloud docs WERE deleted', log.deletedPaths.length > 0, true);
+check('LOCAL keys intact (the account is recoverable by sync)', keysWith(UID).length, keysBefore);
+check('praxis_user intact', !!store['praxis_user'], true);
+check('not signed out', log.signedOut, 0);
+check('photos not touched', log.photosDeleted.length, 0);
+check('in-memory maps intact', !!state.notebookEntries.e1, true);
+// the RECOVERY is a mechanism, not a hope: every collection re-uploaded from local right away
+var restored = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userThemes/' + UID, 'userArtifacts/' + UID, 'userProfiles/' + UID, 'userReaderModel/' + UID];
+var notRestored = [];
+for (i = 0; i < restored.length; i++) { if (!has(log.sets, restored[i])) { notRestored.push(restored[i]); } }
+check('all 8 collections RE-UPLOADED from local after the auth failure (missing: ' + notRestored.join(',') + ')', notRestored.length, 0);
+
+WScript.Echo('\n[B2] a second chunk fails after the first committed -> partial reported honestly, local intact');
+seedDevice(); keysBefore = keysWith(UID).length;
+for (i = 0; i < 395; i++) { serverDocs.push({ coll: 'publishedArcs', id: 'bulk' + i, data: { authorUid: UID } }); }
+r = run({ reauth: 'ok', batch: 'fail-second', authDelete: 'ok' });
+check('status error / phase firestore', r.status + '/' + r.phase, 'error/firestore');
+check('two chunks attempted (405 refs)', log.batches, 2);
+check('partial = the 400 already removed', r.partial, 400);
+check('cloud deletes = 400', log.deletedPaths.length, 400);
+check('auth user not deleted', log.authDeleted, 0);
+check('local keys intact', keysWith(UID).length, keysBefore);
+check('praxis_user intact', !!store['praxis_user'], true);
+
+WScript.Echo('\n[D] success -> the ruled order, every collection, every local trace');
+seedDevice();
+r = run({ reauth: 'ok', batch: 'ok', authDelete: 'ok' });
+check('status deleted', r.status, 'deleted');
+check('phases in the ruled order', log.phases.join('>'), 'reauth>cloud>login>local');
+check('re-auth happened exactly once, first', log.reauthCalls, 1);
+var expectPaths = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userProfiles/' + UID, 'userThemes/' + UID, 'userReaderModel/' + UID, 'userArtifacts/' + UID,
+                   'aiUsage/' + UID, 'publicProfiles/' + UID, 'publishedArcs/arcA1', 'publishedArcs/arcA2', 'follows/A_B', 'follows/B_A', 'buildOns/bo1'];
+var missing = [], i;
+for (i = 0; i < expectPaths.length; i++) { if (!has(log.deletedPaths, expectPaths[i])) { missing.push(expectPaths[i]); } }
+check('every collection under the uid in the batch (missing: ' + missing.join(',') + ')', missing.length, 0);
+check('batch size = exactly the 15 owned docs', log.deletedPaths.length, 15);
+check('the OTHER uid\'s published arc NOT deleted', has(log.deletedPaths, 'publishedArcs/arcB1'), false);
+check('the OTHER uid\'s foreign follow edge NOT deleted', has(log.deletedPaths, 'follows/B_C'), false);
+check('the OTHER uid\'s build-on on my arc NOT deleted (their words; rule-bound)', has(log.deletedPaths, 'buildOns/bo2'), false);
+check('auth user deleted', log.authDeleted, 1);
+check('every local key carrying the uid gone', keysWith(UID).length, 0);
+check('the OTHER uid\'s keys untouched (17)', keysWith(OTHER).length, 17);
+check('global caches gone', !!store['praxis_yumi_gate_budget'] || !!store['praxis_yumi_web_cache'], false);
+check('the six uid-less globals gone (portrait_dismissed / yumi_hand / m_*)', !!store['praxis_portrait_dismissed'] || !!store['praxis_yumi_hand'] || !!store['praxis_m_first_seen'] || !!store['praxis_m_activated'] || !!store['praxis_m_counts'] || !!store['praxis_m_errors'], false);
+check('this uid removed from praxis_yumi_noticed, the other kept', (function () { var n = JSON.parse(store['praxis_yumi_noticed']); return (!n.hasOwnProperty(UID)) && n.hasOwnProperty(OTHER); })(), true);
+check('this uid\'s photos deleted per record', log.photosDeleted.join(','), 'img_A1,img_A2');
+check('the other uid\'s photo kept', has(log.photosDeleted, 'img_B1'), false);
+check('praxis_user null', store['praxis_user'], 'null');
+check('signed out', log.signedOut, 1);
+check('in-memory maps cleared', (function () { var n = 0, k; for (k in state.notebookEntries) { n++; } return n; })(), 0);
+
+WScript.Echo('\n[E] re-run after success -> idempotent, completes');
+serverDocs = []; store['praxis_user'] = JSON.stringify({ uid: UID, email: 'a@example.test' }); defineLength();
+log = { phases: [], deletedPaths: [], batches: 0, signedOut: 0, authDeleted: 0, reauthCalls: 0, photosDeleted: [] };
+r = run({ reauth: 'ok', batch: 'ok', authDelete: 'ok' });
+check('completes with status deleted', r.status, 'deleted');
+check('only the fixed docs (10) in the batch, nothing found by query', log.deletedPaths.length, 10);
+
+WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
+WScript.Quit(failures ? 1 : 0);

@@ -764,6 +764,14 @@ function renderRoute() {
   }
   // About page (#about): a static orientation surface. Symmetric pointer clear
   // mirroring the account / home branches; placed BEFORE the notebook
+  // P1 Item 2: the done page after account deletion (signed-out by construction).
+  if (parts[0] === 'deleted') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    renderDeletedPage();
+    return;
+  }
   // fallthrough so #about is caught here, not swallowed by the catch-all.
   if (parts[0] === 'about') {
     state.currentBookId = null;
@@ -2984,6 +2992,24 @@ function nbPhotoIdbGet(key, onOk, onErr) {
     } catch (e) { onErr(e); return; }
     pr.onsuccess = function() { onOk(pr.result); };
     pr.onerror = function() { onErr(pr.error || new Error('idb get failed')); };
+  }, onErr);
+}
+
+// P1 Item 2: delete ONE photo record by key (account deletion removes the photos
+// this uid's entries reference, one by one -- never deleteDatabase, so another
+// account on a shared device keeps its photos). Resolves through onOk either way
+// the key is absent (idb delete of a missing key succeeds).
+function nbPhotoIdbDelete(key, onOk, onErr) {
+  nbPhotoIdbOpen(function(db) {
+    var tx, st, pr;
+    try {
+      tx = db.transaction(NB_PHOTO_STORE, 'readwrite');
+      st = tx.objectStore(NB_PHOTO_STORE);
+      pr = st['delete'](key);
+    } catch (e) { onErr(e); return; }
+    tx.oncomplete = function() { onOk(); };
+    tx.onerror = function() { onErr(tx.error || new Error('idb delete failed')); };
+    pr.onerror = function() { onErr(pr.error || new Error('idb delete failed')); };
   }, onErr);
 }
 
@@ -20022,73 +20048,11 @@ function exportDateStamp() {
   return y + '-' + mm + '-' + dd;
 }
 
-// Stage 14.3 Stage 4: in-DOM delete-account confirmation. Mirrors
-// openArcDeleteConfirm -- mounts into #account-delete-host, explicit
-// irreversible wording, no native confirm(). Confirm calls deleteAccount
-// (definition in integrations.js); on status:'error' the data is
-// untouched (retryable) so the panel stays open with an inline error and
-// the confirm link is reset. On 'deleted' OR 'deleted-data-only' the data
-// is gone and the user is signed out -- location.reload() gives a clean
-// signed-out slate (the soft note for 'deleted-data-only' is discarded by
-// the reload, which is acceptable per the Stage 4 brief). Cancel clears
-// the host; the account page underneath is untouched.
-function openAccountDeleteConfirm(uid) {
-  var host = document.getElementById('account-delete-host');
-  if (!host) return;
-  host.innerHTML = '';
-
-  var panel = document.createElement('div');
-  panel.className = 'arc-confirm-panel account-confirm-panel';
-
-  var copy = document.createElement('p');
-  copy.className = 'arc-confirm-copy';
-  copy.textContent =
-    'Delete your account? This permanently removes your books, arcs, ' +
-    'sub-theories, notebook, and profile from Praxis. This cannot be ' +
-    'undone.';
-  panel.appendChild(copy);
-
-  var actions = document.createElement('div');
-  actions.className = 'arc-confirm-actions';
-
-  var confirmLink = document.createElement('a');
-  confirmLink.href = '#';
-  confirmLink.className = 'arc-confirm-confirm';
-  confirmLink.textContent = 'Delete my account';
-  confirmLink.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    confirmLink.textContent = 'Deleting...';
-    deleteAccount(function(r) {
-      if (r && r.status === 'error') {
-        confirmLink.textContent = 'Delete my account';
-        var errNote = document.createElement('p');
-        errNote.className = 'arc-confirm-stale-note';
-        errNote.textContent = 'Could not delete the account: ' +
-          (r.error ? ('' + r.error) : 'unknown error') +
-          '. Nothing was removed -- please try again.';
-        host.appendChild(errNote);
-        return;
-      }
-      // 'deleted' or 'deleted-data-only': data is gone, user signed out.
-      location.reload();
-    });
-  });
-  actions.appendChild(confirmLink);
-
-  var cancelLink = document.createElement('a');
-  cancelLink.href = '#';
-  cancelLink.className = 'arc-confirm-cancel';
-  cancelLink.textContent = 'Cancel';
-  cancelLink.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    var h = document.getElementById('account-delete-host');
-    if (h) h.innerHTML = '';
-  });
-  actions.appendChild(cancelLink);
-
-  panel.appendChild(actions);
-  host.appendChild(panel);
-}
+// P1 Item 2 (2026-09-03): openAccountDeleteConfirm (Stage 14.3 Stage 4) was DELETED. It
+// mounted into #account-delete-host, which nothing has emitted since the S-B sweep
+// removed renderAccountPage (e5671d1) -- 0 reachable callers in the repo's history.
+// Its successor is _pfOpenDeletePanel (the Profile's Your-data card), which offers
+// the export first, asks for the email, and runs deleteAccount in the ruled order.
 
 // yumi-intelligence Stage I: the reader-model section on the merged Profile.
 // One unified card: a consent control (opt-in, default OFF) + an in-place
@@ -22665,8 +22629,10 @@ function _pfDataSection(uid) {
     + '<div class="pf-data-host"></div>'
     + '</div>';
 }
-// Item 2 replaces this stub with the delete control; Item 3 ships it empty.
-function _pfDataDeleteControl(uid) { return ''; }
+// Item 2: the delete control, beside the export (same row, ghost + danger ink).
+function _pfDataDeleteControl(uid) {
+  return '<button class="pf-btn ghost pf-btn-danger" data-act="delete-account">Delete account…</button>';
+}
 
 // The status line nearest the tapped button (the card's, or the delete panel's).
 function _pfDataStatusEl(btn, wrap) {
@@ -22718,6 +22684,94 @@ function _pfExportSave(wrap, uid, btn) {
 }
 
 
+
+// ── P1 Item 2 — ACCOUNT DELETION: the confirmation panel, mounted INSIDE the
+// Your-data card (same `.pf-*` register as Settings — the named reference
+// surface). Three steps — offer the export (optional), type the email, watch the
+// four phases — and a plain outcome line for every failure. The done page is
+// #deleted (renderDeletedPage), in the profile's signed-out prompt register.
+function _pfOpenDeletePanel(wrap, uid) {
+  var host = wrap.querySelector('.pf-data-host');
+  if (!host) { return; }
+  var user = getCurrentUser();
+  var email = (user && user.email) ? user.email : '';
+  host.innerHTML = ''
+    + '<div class="pf-del" role="region" aria-label="Delete account">'
+    + '<div class="pf-del-title">Delete your account</div>'
+    + '<div class="pf-del-copy">This removes <b>everything</b> — your books, arcs, sub-theories, notes, photos, value marks, your profile and anything you published — from Praxis and from this device, and then the login itself. It is final. There is no undo and no grace period; the export is the grace.</div>'
+    + '<div class="pf-del-step"><span class="pf-del-num">1</span> Take your data with you first? <span class="whisper">optional</span></div>'
+    + '<div class="pf-set-row"><button class="pf-btn ghost" data-act="export-prepare">Export first</button><span class="pf-del-exportnote"></span></div>'
+    + '<div class="pf-del-step"><span class="pf-del-num">2</span> ' + (email ? 'Type your email to confirm' : 'Type <b>delete my account</b> to confirm') + '</div>'
+    + '<div class="pf-field pf-del-field"><label>' + _portraitEsc(email || 'delete my account') + '</label><input type="' + (email ? 'email' : 'text') + '" autocomplete="off" autocapitalize="none" spellcheck="false" data-field="del-email" placeholder="' + _portraitEsc(email || 'delete my account') + '"></div>'
+    + '<div class="pf-set-row"><button class="pf-btn pf-btn-danger-solid" data-act="del-confirm" disabled>Delete my account</button><button class="pf-btn ghost" data-act="del-cancel">Keep my account</button></div>'
+    + '<div class="pf-del-progress" aria-live="polite"></div>'
+    + '</div>';
+  var input = host.querySelector('[data-field="del-email"]');
+  var confirmBtn = host.querySelector('[data-act="del-confirm"]');
+  function check() {
+    var v = (input && typeof input.value === 'string') ? input.value.replace(/^\s+|\s+$/g, '').toLowerCase() : '';
+    // An account with no email on file (rare under Google sign-in) confirms with the
+    // fixed phrase instead of a dead-end disabled button.
+    var need = (email || 'delete my account').toLowerCase();
+    var ok = v === need;
+    if (confirmBtn) { confirmBtn.disabled = !ok; }
+  }
+  if (input) { input.addEventListener('input', check); input.addEventListener('keyup', check); }
+  try { host.scrollIntoView({ block: 'nearest' }); } catch (e2) {}
+}
+function _pfCloseDeletePanel(wrap) {
+  var host = wrap.querySelector('.pf-data-host');
+  if (host) { host.innerHTML = ''; }
+}
+function _pfDeleteProgress(wrap, text) {
+  var p = wrap.querySelector('.pf-del-progress');
+  if (p) { p.textContent = text || ''; }
+}
+function _pfRunDelete(wrap, uid) {
+  var confirmBtn = wrap.querySelector('[data-act="del-confirm"]');
+  var cancelBtn = wrap.querySelector('[data-act="del-cancel"]');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Deleting…'; }
+  if (cancelBtn) { cancelBtn.disabled = true; }
+  var labels = {
+    reauth: 'Step 1 of 4 — confirming it is you (a Google window will open)…',
+    cloud:  'Step 2 of 4 — removing your data from Praxis…',
+    login:  'Step 3 of 4 — removing the login…',
+    local:  'Step 4 of 4 — clearing this device…'
+  };
+  deleteAccount(function (r) {
+    if (r && r.status === 'deleted') {
+      _pfDeleteProgress(wrap, 'Done.');
+      location.hash = '#deleted';
+      return;
+    }
+    var ph = (r && r.phase) ? r.phase : 'firestore';
+    var detail = (r && r.error && r.error.message) ? ' (' + r.error.message + ')' : '';
+    var msg;
+    if (ph === 'reauth')         { msg = 'Nothing was deleted. We could not confirm it was you — the sign-in window was closed or refused. Your account and everything in it are exactly as they were.'; }
+    else if (ph === 'firestore' && r && r.partial > 0) { msg = 'Praxis lost the connection part-way: ' + r.partial + ' document' + (r.partial === 1 ? ' was' : 's were') + ' removed before it stopped, and the rest are still there. Nothing on this device was touched. Run Delete account again — it picks up where it left off.'; }
+    else if (ph === 'firestore') { msg = 'Nothing was deleted. Praxis could not reach your data to remove it' + detail + '. Your account is untouched — try again in a moment.'; }
+    else if (ph === 'auth')      { msg = 'Your data was removed from Praxis, but the login could not be removed' + detail + '. Praxis has re-uploaded your data from this device, so nothing is lost and you are still signed in. Run Delete account again to finish, or keep the account.'; }
+    else                         { msg = 'Something stopped the deletion' + detail + '. Check what remains before trying again.'; }
+    _pfDeleteProgress(wrap, msg);
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Delete my account'; }
+    if (cancelBtn) { cancelBtn.disabled = false; }
+  }, function (phase) { _pfDeleteProgress(wrap, labels[phase] || ''); });
+}
+
+// #deleted — the done page. Signed-out by construction (the observer has no user).
+function renderDeletedPage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var wrap = document.createElement('section');
+  wrap.className = 'pf-root pf-deleted';
+  wrap.innerHTML = '<div class="pf-below" style="padding-top:80px"><div class="pf-thesis"><p>Your account is gone.</p></div>'
+    + '<div class="pf-card" style="max-width:520px"><div class="pf-now">Everything you kept in Praxis — books, arcs, notes, photos, your profile and anything you published — has been removed, along with the login and this device’s copy. Nothing is held back. If another device was still signed in, it will be signed out within the hour — sign out there to clear its copy.</div>'
+    + '<div class="pf-set-row"><a class="pf-btn ghost" href="#home">Back to Praxis</a></div></div></div>';
+  host.appendChild(wrap);
+}
+
+
 function _pfWire(wrap, uid, vis) {
   function cl(t, s) { return (t && t.closest) ? t.closest(s) : null; }
   function handle(e) {
@@ -22750,6 +22804,9 @@ function _pfWire(wrap, uid, vis) {
       if (act === 'signout') { if (typeof signOut === 'function') { signOut(); } return; }
       if (act === 'export-prepare') { _pfExportPrepare(wrap, uid, a); return; }   // P1 Item 3
       if (act === 'export-save')    { _pfExportSave(wrap, uid, a); return; }      // P1 Item 3 (inside the tap: share sheet)
+      if (act === 'delete-account') { _pfOpenDeletePanel(wrap, uid); return; }   // P1 Item 2
+      if (act === 'del-cancel')     { _pfCloseDeletePanel(wrap); return; }       // P1 Item 2
+      if (act === 'del-confirm')    { if (!a.disabled) { _pfRunDelete(wrap, uid); } return; }   // P1 Item 2
       if (act === 'edit-thesis') { var ta = wrap.querySelector('textarea[data-field="statement"]'); if (ta) { if (ta.scrollIntoView) { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); } ta.focus(); } return; }
       if (act === 'retro-run') { _pfRunRetrofit(wrap, uid); return; }
       if (act === 'signin') { if (typeof signInWithGoogle === 'function') { signInWithGoogle(); } return; }
