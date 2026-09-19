@@ -736,6 +736,8 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **V-1 vision — CLOSED 2026-09-19.** Canon delta v1.1 at `docs/studio/v1-canon-delta.md` (ten rules + token sheet). Recon at `docs/studio/v1-recon.md`. Next: P2 shape.
+
 - [x] **#diag + THE ACCOUNT SPLIT — v3.293, 2026-09-02 (RESOLVED; no defect)** — Empire AI, Sylvia
   Wynter and Mating in Captivity did not appear in the Tidy groups on device. Reading the code
   falsified the leading hypothesis: the census (`firstshelf-dupes-census.js:83`) and
