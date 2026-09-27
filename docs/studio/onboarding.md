@@ -27,6 +27,7 @@ Overlay (js/intros.js): `window.Intros`; first-run journey + 12 per-page intro p
   R-CAPTURE recon §7 flagged as *already contradicted* by live code (the beat is book-scoped, not neutral).
   Doing it requires OB L-1 ruled live + a mockup + a new door completion/one-shot opt + a felt pass — a
   round, not a socket. Recon: `docs/checkpoints/cd6-onboarding-recon.md`.
+- **BRIEF v3 RATIFIED (2026-09-27, Preston; chat-side, Fable) — `docs/studio/onboarding-brief.md` is the round's constitution.** Six-beat spine on real surfaces (front door with the covenant → books through the Shelf's three real doors, scan first on a phone → one note through the shared capture door → the R8 values beat as shipped → consent on the real `#yumi-sees` → computed release landing on Home sky-first; Yumi's first line on demand, scripted below the 3-book floor). Eight deltas vs v2, cap held. Five forks ruled at rec: Δ2 books-first, Δ8 Home landing, Δ1 covenant pre-auth, Δ4 zero-call first line, hygiene fork = SPLIT (render gap + seed leak → P3 Stage 0; the rest → H-1). ONE FIRST-RUN inventory: brief §5 names every shipped first-run behavior and its fate — the 8-beat journey, the six-beat greeting, `onboardingSeen`, the beat-1 escape, "Retake the walk", the OG6 suppression. Next: the mockup-stage acceptance card (`docs/checkpoints/onboarding-acceptance-mockup.md`, per `acceptance-card.md`) → spine mockup → stranger walks the mockup → P3.
 
 ## Gap ledger
 
@@ -37,11 +38,11 @@ Overlay (js/intros.js): `window.Intros`; first-run journey + 12 per-page intro p
   `.ij-noteta` beat, open the real door pre-scoped, re-choreograph the narrative around a door-completion
   callback. Gated: OB L-1 live + mockup + door completion opt + felt pass. **Owned by the ONBOARDING round,
   not CD-6.**
-- [source: r-capture-brief.md §7 2026-07-25] [status: dependency] [sev: ROUND-OPEN] OB-BRIEF-UNLANDED —
+- [source: r-capture-brief.md §7 2026-07-25] [status: landed 2026-09-27] [sev: ROUND-OPEN] OB-BRIEF-UNLANDED —
   `docs/studio/onboarding-brief.md` (the "OB brief" the R-CAPTURE brief §7 defers onboarding-spine changes
   to) **does not exist on any branch or in git history**. Landing it — the OB pre-decisions incl. OB L-1's
   live-vs-held ruling — is a **named ONBOARDING round-open task**, a prerequisite of OB-DOOR above. Not
-  R-CAPTURE / CD-6 debt.
+  R-CAPTURE / CD-6 debt. **LANDED 2026-09-27 as v3** — `docs/studio/onboarding-brief.md` (the July-17 v1/v2 were chat-only; v3 written from the P2 census `f4490e3`). OB L-1 is superseded by v3 Δ2 (books first, then one note through the shared door).
 
 ## Gap ledger (legacy — imported audits)
 

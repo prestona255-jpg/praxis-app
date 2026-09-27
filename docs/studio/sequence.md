@@ -31,6 +31,13 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-09-27 (P2 SHAPE — brief v3 ratified; eight deltas; five forks; hygiene fork split)** —
+  no re-order of ## Now, so **no `PROPOSED:` flag**; P2 SHAPE stays the lead. Recorded here the same day so v3
+  does not join the four chat-only rulings the ## Next audit line already tracks. The brief is
+  `docs/studio/onboarding-brief.md`; its §2 carries the deltas and the fork outcomes, its §6 the P3 preconditions.
+  The one plan consequence: **P3 Stage 0 now owns two defects** (the first-sign-in render gap, the seed leak
+  at `homeReadingBooks()` + sees/context assembly) that the Sept-13 plan had in H-1; H-1 keeps the rest and
+  runs before the stranger test.
 - **2026-09-03 (UNDO INDEPENDENCE — the Undo was a stack; guard narrowed, restore made surgical. v3.294)** —
   no re-order and no new backlog item, so **no `PROPOSED:` flag.** A live defect on `#books`, fixed in one
   commit. Two things worth carrying forward.
@@ -1261,8 +1268,8 @@ flagged at the top of the Builder's sequence page for his call — never applied
 re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: 8 deltas (Fable, capped) · brief v3 ·
 acceptance card · spine mockup. Hygiene fork (H-1 vs P3) unanswered.
 
-- [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`)** — 8 deltas
-  (Fable, capped) → brief v3 + acceptance card → spine mockup → stranger walks the mockup.
+- [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27)** — 8 deltas
+  RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → mockup-stage acceptance card → spine mockup → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
