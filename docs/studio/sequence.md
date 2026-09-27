@@ -151,6 +151,34 @@ flagged at the top of the Builder's sequence page for his call — never applied
   contradicted** — S-B's remainder and R10 keep their places in `## Now` / `## Next`; the held merge round
   is recorded as a dependency, not a re-order — so **no `PROPOSED:` flag.**
   Record: `docs/checkpoints/firstshelf-dupes.md`.
+- **2026-08-22 (GAMEPLAN RULED — the beta runway: twelve rulings + the LOCKED PHASE PLAN; landed 2026-09-27,
+  never written at the time)** — **GAMEPLAN RULED (Preston, 2026-08-22, chat session; landed 2026-09-27 — the
+  entry was never written at the time).** Twelve rulings: (1) prototype bar = a **REAL BETA GATE**, not a
+  share link · (2) land the held 2026-08-15 R-FIRSTSHELF work first · (3) the successor round consumes
+  R-FIRSTSHELF · (4) that successor **IS THE ONBOARDING ROUND, widened** — the onboarding round is the
+  container for the beta runway · (5) beta-gate scope = the locked 7 + LA-1's 6, re-triaged in one pass · (6)
+  **S-B SWEEP RUNS AS A PARALLEL LANE; R10 parks past beta** · (7) **SCAN PROMOTED TO A FIRST-CLASS FIRST-RUN
+  DOOR** (amends the 2026-07-17 ground ruling 1 and OB-8: Goodreads-primary / scan-fallback no longer holds) ·
+  (8) aesthetic leg = close B-M via the installed-PWA re-census of M-A–M-F · (9) first cohort = 3–5 trusted
+  circle · (10) pace = one round at a time, S-B the only parallel lane · (11) capture debt scope = only debts
+  the first-run spine touches · (12) shaping = a short Fable delta session capped at 8 deltas + a spine
+  mockup. Re-evaluation rulings the same day: the stranger test stays a **ROUND-CLOSE gate** (not moved ahead
+  of shaping; the spine mockup also gets walked by a stranger and the round budgets a fix loop) · a **SAFETY
+  SLICE runs BEFORE the round** (server-side cost ceiling · account deletion end-to-end · export · FX-1c
+  delete symmetry) — this became P1. **LOCKED PHASE PLAN:** P0 clear held ground → P1 safety slice → P2 shape
+  (brief lands first; four moved premises = scan-as-door, capture's place in the spine, the lens beat's home,
+  the small-corpus floor at ~3 books; output = brief v3 + acceptance card + spine mockup) → P3 build (4 serial
+  lanes: spine · scan door promotion · capture-in-first-run · B-M close; then stranger test, then fix loop) →
+  P4 beta-gate triage → P5 invite 3–5. S-B spans P0–P3. **ACCEPTANCE TEST for the whole plan:** a named
+  person, on their own phone, signs in, gets books in, leaves a note, closes the app, and returns two days
+  later to find it all there and legible — with no Preston intervention.
+  **AMENDMENTS since:** 2026-08-29 — the weekend-only cadence law from this session is **RETRACTED** (Preston
+  builds whenever he has time; a session that opens finishes at a clean gate). 2026-09-13 — the three P1
+  residuals (rail classification · deletion re-run with an arc + the stale-tab ghost-doc write · export check)
+  are **PARKED as a hard gate before P3**; P2 opens with them on the books; a V-1 look-and-feel beat runs
+  before P2 and an H-1 hygiene round is proposed before P3 (fork unanswered: separate H-1 vs folded into P3).
+  2026-09-27 — rail residual classified **(A) SEED LEAK** and export residual **PASS** by the P2 census
+  (`f4490e3`); deletion re-run still parked.
 - **2026-08-15 (R10 — PARKED AT S1, an honest resting state; park record landed)** — R10 S1 "GROUNDS"
   shipped v3.276 (`2e99b2f`), **felt-passed 2026-08-09 (Preston)**; R10 is now **PARKED AT S1** — a
   statement-only, self-consistent resting state (the `#value/<id>` living-statement page + the `.pf-vcard`
@@ -1333,6 +1361,9 @@ in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spi
 `docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
 
 - [ ] S-B: rule on BUILD_STATE.md (stale since 2026-07-03, still named canonical in CLAUDE.md) — retire or refresh.
+- [ ] S-B: audit chat-only rulings — every dated ruling cited anywhere in sequence.md must resolve to a
+  Re-plan log entry (four found missing to date: onboarding-brief v2 2026-07-17, gameplan 2026-08-22, cadence
+  retraction 2026-08-29, V-1 close 2026-09-19).
 - [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
   R-CAPTURE's door**. touches: [books]
 - [~] **S-B — Sweep + dead-code deletion — runs in `## Now` as the parallel lane (2026-08-08 lead;
