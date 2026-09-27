@@ -1228,16 +1228,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Now
 
-**RE-PLAN RULED — S-B SWEEP is the lead (Preston, 2026-08-08).** With SCAN closed (v3.269, full felt
-PASS), Preston ruled the next-lead fork: **S-B — the sweep + dead-code deletion — is the lead
-`## Now` item** (dead-code + auto-guard + debt-table portion SHIPPED local 2026-08-08, v3.270–275; the
-CSS-dead-sweep + tokenize-literals + 2 skipped-item rulings remain); **R10 — Connections follows** on the swept/clean floor;
-**FINISH-CHOREO S3 stays a rides-where-cheapest motion slice** (NOT re-sequenced ahead of S-B); the **Yumi
-round stays parked, unscoped** (deferred to the owns-the-arc-context-gap Yumi round). The ruling is recorded
-in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spine → beta gate is
-`docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
+**P2 SHAPE — OPEN 2026-09-19, census landed `f4490e3` (run 2026-09-20).** Rail residual classified
+**(A) SEED LEAK** (P2-grade; reaches `#yumi-sees` + Yumi context). Export residual **PASS**. Deletion
+re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: 8 deltas (Fable, capped) · brief v3 ·
+acceptance card · spine mockup. Hygiene fork (H-1 vs P3) unanswered.
 
-- [~] **S-B — Sweep + dead-code deletion (LEAD — dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
+- [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`)** — 8 deltas
+  (Fable, capped) → brief v3 + acceptance card → spine mockup → stranger walks the mockup.
+  touches: [home, intros, shelf, yumi]
+- [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
   −99,120 app-bytes, ZERO behavior / ZERO pixels): the re-plan stamp; the auto-guard verify+extend
   (new-external-deps rail 5c atop §5, L3 matrix 10/10); the reconciled debt table; and the R9a dead-code
@@ -1324,10 +1323,20 @@ in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spi
 ## Next
 **Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate).**
 *(FINISH-CHOREO · R-SHELF · R-CAPTURE promoted to ## Now at the R-POLISH close, 2026-07-20 — see above.)*
+**RE-PLAN RULED — S-B SWEEP is the lead (Preston, 2026-08-08).** With SCAN closed (v3.269, full felt
+PASS), Preston ruled the next-lead fork: **S-B — the sweep + dead-code deletion — is the lead
+`## Now` item** (dead-code + auto-guard + debt-table portion SHIPPED local 2026-08-08, v3.270–275; the
+CSS-dead-sweep + tokenize-literals + 2 skipped-item rulings remain); **R10 — Connections follows** on the swept/clean floor;
+**FINISH-CHOREO S3 stays a rides-where-cheapest motion slice** (NOT re-sequenced ahead of S-B); the **Yumi
+round stays parked, unscoped** (deferred to the owns-the-arc-context-gap Yumi round). The ruling is recorded
+in the Re-plan log (2026-08-08, RE-PLAN RULED). The runway view of the whole spine → beta gate is
+`docs/launch-runway.md` (Builder: LAUNCH RUNWAY panel).**
+
+- [ ] S-B: rule on BUILD_STATE.md (stale since 2026-07-03, still named canonical in CLAUDE.md) — retire or refresh.
 - [ ] **SCAN round (studio-scan)** — the seven-lens audit re-enters steady state; **camera modes plug into
   R-CAPTURE's door**. touches: [books]
-- [~] **S-B — Sweep + dead-code deletion — PROMOTED to `## Now` (lead, 2026-08-08)** — see the `## Now`
-  lead item above. Import-Capture overlay · Yumi/lens panel · Account residuals + delete the ~2060-L
+- [~] **S-B — Sweep + dead-code deletion — runs in `## Now` as the parallel lane (2026-08-08 lead;
+  parallel since 2026-08-22)** — see `## Now`. Import-Capture overlay · Yumi/lens panel · Account residuals + delete the ~2060-L
   defined-but-unrouted old profile renderers (R9a debt) + tokenize shared light-skin literals app-wide.
   touches: [import-capture, yumi-panel, account, profile]
 - [ ] **R10 — Connections** — the cross-arc/graph round (the R-ARC-named dependency). **S1 "GROUNDS"
