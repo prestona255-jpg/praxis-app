@@ -139,3 +139,5 @@ Names below are the CANON names. Existing token names in the app are NOT renamed
 - The contrast table in R10 reproduced by the build's own check, all pairs at or above floor.
 - Home matches the mockup at 390 and 1360, day and night, by Preston's felt pass on the deployed build — the FELT-DELTA clause applies: the before/after at 1360 is stated before the build starts.
 - Every other route: renders, no h-scroll, no regressions in the interactive-control sweep, and reads as the same app as Home. Structure unchanged.
+
+> AMENDED 2026-09-29 by docs/studio/v1-canon-delta-amend-1.2.md (canon v1.2). Where the two disagree, 1.2 governs. Reference picture = design/sunflower-v7.html.

@@ -31,6 +31,14 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-09-29 (V-1 AMENDMENT 1.2 — the Sunflower deepened; eight rulings; canon + reference picture)** —
+  V-1 amendment 1.2 — the Sunflower deepened. Eight rulings in chat (Fable, capped at 8, all at rec): (1) capture
+  door = pressed gold FAB, every surface; (2) Yumi glyph = the seed (ring + off-center dot), redraw round absorbed;
+  (3) Home rail shows covers, gold stripe removed (R4 violation fixed); (4) all five depth levers kept — range,
+  scale, light, stem green, grain; (5) Home sky still, no ambient motion; (6) italic Fraunces = anything with a
+  voice (Yumi + named arcs); (7) day sky stays #2B1E12; (8) Yumi's dock stays at the foot. Two pairs re-measured
+  and darkened (ink-3, stem). Canon: docs/studio/v1-canon-delta-amend-1.2.md. Reference: design/sunflower-v7.html
+  (artifact "Sunflower v7"). P3 inherits v1.1 + 1.2 + the picture.
 - **2026-09-27 (P2 SHAPE — brief v3 ratified; eight deltas; five forks; hygiene fork split)** —
   no re-order of ## Now, so **no `PROPOSED:` flag**; P2 SHAPE stays the lead. Recorded here the same day so v3
   does not join the four chat-only rulings the ## Next audit line already tracks. The brief is
@@ -771,6 +779,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- 2026-09-29 · V-1 AMENDMENT 1.2 — the Sunflower deepened: eight rulings (door · Yumi seed · rail covers · five depth levers · sky still · italic = voice · day sky kept · dock at foot). Canon = docs/studio/v1-canon-delta-amend-1.2.md; reference = design/sunflower-v7.html. Docs only, live stays v3.299.
 - [x] **V-1 vision — CLOSED 2026-09-19.** Canon delta v1.1 at `docs/studio/v1-canon-delta.md` (ten rules + token sheet). Recon at `docs/studio/v1-recon.md`. Next: P2 shape.
 
 - [x] **#diag + THE ACCOUNT SPLIT — v3.293, 2026-09-02 (RESOLVED; no defect)** — Empire AI, Sylvia

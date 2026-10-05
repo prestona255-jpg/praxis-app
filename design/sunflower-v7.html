@@ -1,0 +1,340 @@
+<title>Sunflower v7</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap">
+<style>
+/* Layout: the B "lamp" Home, sky-first, paper below — phone 390 + desktop 1360. The V-1 reference at canon v1.2. */
+:root{
+  --pg:#F8F5EC; --pg-ink:#2B2216; --pg-ink-2:#6F6552; --pg-line:#E1DCCB;
+  --serif:"Fraunces",Georgia,serif; --sans:"DM Sans",-apple-system,system-ui,sans-serif; --mono:"DM Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --pg:#17150F; --pg-ink:#EDE6D6; --pg-ink-2:#A39B88; --pg-line:#2E2A20; color-scheme:dark } }
+:root[data-theme="dark"]{ --pg:#17150F; --pg-ink:#EDE6D6; --pg-ink-2:#A39B88; --pg-line:#2E2A20; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--pg);color:var(--pg-ink);font-family:var(--sans);padding-block:28px 56px;padding-inline:16px}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+header h1{font-family:var(--serif);font-weight:500;font-size:30px;margin:0;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--pg-ink-2);font-size:14px;max-width:62ch;line-height:1.5}
+.ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;border:1px solid var(--pg-line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--pg-ink-2);font:500 13px var(--sans);padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--pg-ink);color:var(--pg)}
+.seg button:focus-visible{outline:2px solid #D9931A;outline-offset:2px}
+
+.stage{display:grid;grid-template-columns:1fr;gap:24px;align-items:start}
+@media (min-width:860px){ .stage{grid-template-columns:420px 1fr} }
+.side{display:flex;flex-direction:column;gap:14px;color:var(--pg-ink-2);font-size:14px;line-height:1.55;min-width:0}
+.side h2{font-family:var(--serif);font-weight:500;font-size:22px;margin:0;color:var(--pg-ink);letter-spacing:-.01em}
+.side p{margin:0}
+.sw{display:flex;gap:6px;margin-top:2px}
+.sw i{flex:1;height:22px;border-radius:6px;display:block;border:1px solid rgba(0,0,0,.08)}
+.swl{display:flex;gap:6px;font:11px var(--mono);letter-spacing:.04em}
+.swl span{flex:1}
+.role{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13.5px}
+.role b{font-weight:500;color:var(--pg-ink)}
+.rules{border-top:1px solid var(--pg-line);padding-top:12px}
+.rules h3{font:500 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px;color:var(--pg-ink-2)}
+.rules ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px}
+.rules li b{font-weight:500;color:var(--pg-ink)}
+
+/* the phone */
+.phone{width:100%;max-width:400px;margin:0 auto;border-radius:38px;padding:10px;background:#111;box-shadow:0 20px 50px rgba(0,0,0,.22)}
+.screen{border-radius:30px;overflow:hidden;background:var(--s-bg);color:var(--s-ink);font-size:15px;line-height:1.45;min-height:780px;display:flex;flex-direction:column;position:relative}
+.screen a{color:inherit;text-decoration:none}
+
+/* ---- THE SUNFLOWER v1.2 token sheet ---- */
+[data-pal="sunflower"]{
+  --p-page:#EDD79E; --p-page-2:#FBF3D9; --p-page-3:#E2C98C;
+  --p-ink:#2A1E10; --p-ink-2:#6F5A34; --p-ink-3:#6B5936;
+  --p-gold:#D9931A; --p-on-gold:#2A1E10; --p-gold-ink:#835508; --p-star:#E8B23A;
+  --p-sky-day:#2B1E12; --p-sky-night:#1C120A; --p-night-page:#24180C; --p-umber:#4A2E18; --p-umber-2:#63401F; --p-umber-lamp:#5C3B21;
+  --p-on-night:#F5E8C4; --p-on-night-2:#CDB894; --p-on-night-3:#BAA48C;
+  --p-yumi:#C8552E; --p-stem:#45704F; --p-stem-night:#8DB08A;
+  --p-line:rgba(42,30,16,.16); --p-line-night:rgba(255,255,255,.14);
+  --h-size:46px; --h-size-desk:66px; --h-weight:500; --sub-size:26px; --sub-size-desk:32px; --stat-size:34px; --k-size:11px; --k-track:.12em;
+  --lamp:radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
+  --lamp-foot:radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%);
+  --star-glow:drop-shadow(0 0 5px rgba(232,178,58,.85));
+}
+/* day */
+.screen{
+  --s-bg:var(--p-page); --s-card:var(--p-page-2); --s-card-2:var(--p-page-3);
+  --s-ink:var(--p-ink); --s-ink-2:var(--p-ink-2); --s-ink-3:var(--p-ink-3);
+  --s-k:var(--p-gold-ink); --s-acc:var(--p-gold); --s-on-acc:var(--p-on-gold);
+  --s-line:var(--p-line);
+  --s-sky:var(--p-sky-day); --s-inv:var(--p-sky-day); --s-inv-2:var(--p-umber); --s-on-inv:var(--p-on-night); --s-on-inv-2:var(--p-on-night-2); --s-on-inv-3:var(--p-on-night-3);
+  --s-star:var(--p-star); --s-yumi:var(--p-yumi); --s-stem:var(--p-stem);
+  --s-spill:linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
+  --s-card-hi:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
+  --s-grain-op:.32; --s-grain-blend:multiply;
+}
+/* night: the lamp is off — the page is the seed head, the sky one step deeper, cards umber */
+[data-mood="night"] .screen{
+  --s-bg:var(--p-night-page); --s-card:var(--p-umber); --s-card-2:var(--p-umber-2);
+  --s-ink:var(--p-on-night); --s-ink-2:var(--p-on-night-2); --s-ink-3:var(--p-on-night-3);
+  --s-k:var(--p-star); --s-acc:var(--p-star); --s-on-acc:var(--p-sky-night);
+  --s-line:var(--p-line-night);
+  --s-sky:var(--p-sky-night); --s-inv:var(--p-sky-night); --s-inv-2:var(--p-umber);
+  --s-stem:var(--p-stem-night);
+  --s-spill:linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
+  --s-card-hi:inset 0 1px 0 rgba(255,255,255,.07);
+  --s-grain-op:.22; --s-grain-blend:screen;
+}
+
+/* GRAIN: paper has tooth, the sky is smooth. One noise tile over the paper layer. */
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--s-grain-op);mix-blend-mode:var(--s-grain-blend);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:220px 220px}
+
+/* atoms */
+.k{font-family:var(--mono);font-size:var(--k-size);letter-spacing:var(--k-track);text-transform:uppercase;color:var(--s-k)}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--s-ink-3);letter-spacing:.04em}
+.h{font-family:var(--serif);font-weight:var(--h-weight);letter-spacing:-.015em;line-height:1.02;text-wrap:balance;margin:0}
+.sub{font-family:var(--serif);font-weight:500;font-size:var(--sub-size);letter-spacing:-.01em;margin:0;line-height:1.15}
+.p{margin:0;color:var(--s-ink-2)}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 18px;font:500 14px var(--sans);background:var(--s-acc);color:var(--s-on-acc)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.row a.eyebrow{color:var(--s-stem)}
+.sect{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--s-card);border-radius:20px;padding:18px;box-shadow:var(--s-card-hi)}
+.field{display:block;width:100%;height:auto}
+.stars{filter:var(--star-glow)}
+.stat{display:flex;gap:18px}
+.stat div{display:flex;flex-direction:column}
+.stat b{font-family:var(--serif);font-weight:500;font-size:var(--stat-size);line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--s-ink-3)}
+
+/* covers: content is exempt from the palette (R2). Typographic placeholders here; real art in the build. */
+.covers{display:flex;gap:8px}
+.cover{flex:1;aspect-ratio:2/3;border-radius:4px;position:relative;overflow:hidden;padding:8px 7px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px rgba(42,30,16,.18)}
+.cover b{font:500 10px/1.15 var(--serif);letter-spacing:-.01em;overflow-wrap:anywhere}
+.cover small{font:9px/1.1 var(--sans);opacity:.8}
+.cover.dim{opacity:.6}
+.cover.c1{background:#7A2E1E;color:#F5E8C4}
+.cover.c2{background:#2F4A6B;color:#F5E8C4}
+.cover.c3{background:#1F1F1F;color:#F2EFE6}
+.cover.c4{background:#3B5A3C;color:#F5E8C4}
+.cover.c5{background:#B44B2A;color:#FBF3D9}
+.cover.c6{background:#E8E2D3;color:#1F1F1F}
+.cover.none{background:var(--s-card-2);color:var(--s-ink-2);box-shadow:inset 0 0 0 1px var(--s-line)}
+
+.hero{background:var(--lamp-foot),var(--lamp),var(--s-sky);color:var(--s-on-inv);padding:56px 22px 20px;display:flex;flex-direction:column;gap:14px;border-radius:0 0 28px 28px;position:relative;z-index:1}
+.hero .h{font-size:var(--h-size)}
+.hero .p{color:var(--s-on-inv-2)}
+.hero .k{color:var(--s-star)}
+.hero .eyebrow{color:var(--s-on-inv-3)}
+.body{padding:14px 16px 88px;display:flex;flex-direction:column;gap:12px;background:var(--s-spill)}
+
+.tabs{margin-top:auto;display:flex;justify-content:space-around;padding:10px 6px 14px;border-top:1px solid var(--s-line);background:var(--s-bg);position:relative;z-index:1}
+.tabs a{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 10.5px var(--sans);color:var(--s-ink-3);letter-spacing:.02em}
+.tabs a.on{color:var(--s-k)}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* the door: one pressed gold circle, every surface */
+.fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;background:var(--s-acc);color:var(--s-on-acc);display:grid;place-items:center;z-index:3;box-shadow:0 6px 16px rgba(28,18,10,.28), inset 0 1px 0 rgba(255,255,255,.35)}
+.fab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.yumi{display:flex;align-items:center;gap:12px;background:var(--s-inv-2);color:var(--s-on-inv);border-radius:999px;padding:10px 16px 10px 10px}
+.yumi .g{width:34px;height:34px;border-radius:50%;background:var(--s-sky);display:grid;place-items:center;flex:none}
+.yumi .g svg{width:20px;height:20px}
+.yumi em{font:italic 400 15px var(--serif);color:var(--s-on-inv);letter-spacing:-.005em}
+.yumi small{display:block;font:11px var(--mono);color:var(--s-on-inv-3);margin-top:1px;letter-spacing:.04em}
+
+@media (prefers-reduced-motion:no-preference){ .screen,.card,.hero,.tabs,.yumi,.pill,.body,.fab{transition:background .28s ease,color .28s ease,box-shadow .28s ease} }
+
+/* ---- DESKTOP ---- */
+.desk-wrap{margin-top:36px}
+.desk-wrap h2{font-family:var(--serif);font-weight:500;font-size:22px;margin:0 0 6px;color:var(--pg-ink);letter-spacing:-.01em}
+.desk-wrap > p{margin:0 0 14px;color:var(--pg-ink-2);font-size:14px;max-width:70ch;line-height:1.55}
+.desk-frame{width:100%;overflow:hidden;border-radius:14px;background:#111;padding:8px}
+.desk-scale{width:1360px;transform-origin:0 0}
+.desk{width:1360px;height:860px;overflow:hidden;background:var(--s-bg);color:var(--s-ink);font-size:16px;line-height:1.5;border-radius:8px;position:relative}
+.desk .screen{min-height:0;border-radius:0;height:100%;background:var(--s-spill),var(--s-bg)}
+.dnav{height:64px;display:flex;align-items:center;gap:28px;padding:0 80px;border-bottom:1px solid var(--s-line)}
+.dnav .wm{font-family:var(--serif);font-weight:600;font-size:22px;letter-spacing:-.01em;margin-right:12px}
+.dnav a{font:500 14px var(--sans);color:var(--s-ink-2)}
+.dnav a.on{color:var(--s-k)}
+.dnav .sp{flex:1}
+.dnav .cmd{font:12px var(--mono);color:var(--s-ink-3);border:1px solid var(--s-line);border-radius:999px;padding:6px 12px}
+.dnav .av{width:30px;height:30px;border-radius:50%;background:var(--s-sky);color:var(--s-on-inv);display:grid;place-items:center;font:500 12px var(--sans)}
+.dgrid{display:grid;grid-template-columns:520px 1fr;gap:32px;width:1200px;margin:32px auto 0;align-items:start}
+.dsky{justify-content:space-between;background:var(--lamp-foot),radial-gradient(120% 60% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%),var(--s-sky);color:var(--s-on-inv);border-radius:24px;padding:40px 36px 32px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;min-height:700px;z-index:1}
+.dsky .h{font-size:var(--h-size-desk);color:var(--s-on-inv)}
+.dsky .eyebrow{color:var(--s-on-inv-3)}
+.dsky .k{color:var(--s-star)}
+.dsky .p{color:var(--s-on-inv-2)}
+.dsky .stat b{color:var(--s-on-inv)}
+.dsky .stat span{color:var(--s-on-inv-3)}
+.dpaper{display:flex;flex-direction:column;gap:16px;max-width:648px}
+.dpaper .card{padding:26px 28px}
+.dpaper .sub{font-size:var(--sub-size-desk)}
+.dpaper .p{font-size:16px}
+.dpaper .covers{gap:12px}
+.dpaper .cover{padding:12px 10px;gap:3px}
+.dpaper .cover b{font-size:12px}
+.dpaper .cover small{font-size:10.5px}
+.dpaper .yumi{padding:14px 22px 14px 14px;border-radius:24px}
+.dpaper .yumi em{font-size:18px}
+.dpaper .yumi .g{width:42px;height:42px}
+.dpaper .yumi .g svg{width:24px;height:24px}
+.desk .fab{right:40px;bottom:36px}
+
+@media (max-width:420px){ header h1{font-size:26px} .phone{border-radius:30px;padding:8px} .screen{border-radius:24px} }
+</style>
+
+<div class="wrap" id="root" data-mood="day" data-pal="sunflower">
+  <header>
+    <div>
+      <h1>Sunflower v7</h1>
+      <p>The V-1 reference at canon v1.2: the five depth levers baked in, the capture door drawn, Yumi's seed, real covers in the rail, italic for anything with a voice. Flip the mood to see it after dark.</p>
+    </div>
+    <div class="ctrls">
+      <div class="seg" role="group" aria-label="Mood">
+        <button type="button" data-mood="day" aria-pressed="true">Day</button>
+        <button type="button" data-mood="night" aria-pressed="false">Night</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phone"><div class="screen">
+      <div class="hero">
+        <div class="eyebrow">Tuesday · 29 September</div>
+        <h2 class="h">Good evening,<br>Preston.</h2>
+        <svg class="field" viewBox="0 0 340 170" aria-label="Constellation of three knowledge arcs">
+          <g fill="var(--s-on-inv-3)" opacity=".5"><circle cx="24" cy="30" r="1.4"/><circle cx="96" cy="14" r="1.2"/><circle cx="210" cy="12" r="1.4"/><circle cx="320" cy="120" r="1.2"/><circle cx="170" cy="150" r="1.3"/><circle cx="40" cy="150" r="1.1"/><circle cx="280" cy="70" r="1.2"/><circle cx="130" cy="80" r="1"/><circle cx="300" cy="20" r="1"/></g>
+          <g stroke="var(--s-stem)" stroke-opacity=".55" stroke-width="1">
+            <line x1="50" y1="110" x2="140" y2="50"/><line x1="140" y1="50" x2="226" y2="96"/><line x1="226" y1="96" x2="296" y2="40"/><line x1="140" y1="50" x2="112" y2="132"/><line x1="226" y1="96" x2="248" y2="140"/>
+          </g>
+          <g class="stars" fill="var(--s-star)"><circle cx="50" cy="110" r="4"/><circle cx="140" cy="50" r="6.5"/><circle cx="226" cy="96" r="5"/><circle cx="296" cy="40" r="3.5"/><circle cx="112" cy="132" r="3"/><circle cx="248" cy="140" r="3"/></g>
+          <text x="152" y="42" font-family="Fraunces,serif" font-style="italic" font-size="12" fill="var(--s-on-inv)">A pedagogy of desire</text>
+        </svg>
+        <div class="row"><div class="k">How your arcs connect</div><span class="eyebrow">3 arcs</span></div>
+      </div>
+      <div class="body">
+        <div class="card sect">
+          <div class="k">Where you left off</div>
+          <p class="sub">Naming the world is already changing it</p>
+          <p class="p">Margin of <em>Pedagogy of the Oppressed</em>, Wednesday.</p>
+          <div><a class="pill" href="#">Pick it back up</a></div>
+        </div>
+        <div class="card sect">
+          <div class="row"><div class="k">Still reading</div><a class="eyebrow" href="#">Your shelf →</a></div>
+          <div class="covers">
+            <div class="cover c1"><b>Pedagogy of the Oppressed</b><small>Freire</small></div>
+            <div class="cover c2"><b>Teaching to Transgress</b><small>hooks</small></div>
+            <div class="cover c3 dim"><b>Empire of AI</b><small>Hao</small></div>
+            <div class="cover none dim"><b>Fugitive Pedagogy</b><small>Givens</small></div>
+          </div>
+        </div>
+        <div class="card sect">
+          <div class="k">Where your thinking stands</div>
+          <div class="stat"><div><b>148</b><span>books</span></div><div><b>3</b><span>arcs</span></div><div><b>11</b><span>sub-theories</span></div><div><b>62</b><span>notes</span></div></div>
+        </div>
+        <div class="yumi"><div class="g"><svg viewBox="0 0 20 20" fill="none" stroke="var(--s-yumi)" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><circle cx="12.6" cy="7.6" r="1.7" fill="var(--s-yumi)" stroke="none"/></svg></div><div><em>What pulled you back to Freire this week?</em><small>YUMI · asks, never answers for you</small></div></div>
+      </div>
+      <a class="fab" href="#" aria-label="Leave a note"><svg viewBox="0 0 24 24"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="M13.5 7.5l3 3"/></svg></a>
+      <nav class="tabs" aria-label="Sections">
+        <a class="on" href="#"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 1 15-4 1z"/></svg>Shelf</a>
+        <a href="#"><svg viewBox="0 0 24 24"><circle cx="6" cy="16" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="18" cy="14" r="2"/><path d="M7.5 14.5l3-5.5M13.7 8.5l3 4"/></svg>Arcs</a>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM9 7h6M9 11h6"/></svg>Notebook</a>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/></svg>Scan</a>
+      </nav>
+    </div></div>
+
+    <aside class="side">
+      <h2>The sunflower, v1.2</h2>
+      <p>Ochre page with a shade more range, one yellow to press, a brown sky at two depths with its light spilling onto the paper, a stem green between the stars, terracotta for the one thing on the screen that is alive. The paper has tooth; the sky is smooth.</p>
+      <div class="sw"><i style="background:#EDD79E"></i><i style="background:#D9931A"></i><i style="background:#2B1E12"></i><i style="background:#45704F"></i><i style="background:#C8552E"></i></div>
+      <div class="swl"><span>page</span><span>gold</span><span>sky</span><span>stem</span><span>Yumi</span></div>
+      <div class="role">
+        <b>Page</b><span>#EDD79E, cards #FBF3D9, third step #E2C98C</span>
+        <b>Gold</b><span>pressed, never painted: the pill, the door, the stars</span>
+        <b>Sky</b><span>seed head by day, one step deeper by night; the lamp and its spill are the only gradients</span>
+        <b>Stem</b><span>the lines between stars and one quiet link; never a fill, never a press</span>
+        <b>Yumi</b><span>terracotta seed: an open ring, one off-center dot</span>
+      </div>
+      <div class="rules">
+        <h3>What v7 settles</h3>
+        <ol>
+          <li><b>The door.</b> One pressed gold circle, 56px, bottom-right, above the tab bar on phone and at the window's corner on desktop. Every surface. The paper keeps 88px clear beneath it so nothing is ever covered.</li>
+          <li><b>Yumi's seed</b> replaces the smile. Glyph only, her seat is the sky color.</li>
+          <li><b>The rail shows covers</b>, as the Shelf does. No gold stripe. A missing cover is a third-step block with the title.</li>
+          <li><b>Italic Fraunces</b> belongs to anything with a voice: Yumi's lines and named arcs. The app's own words stay roman.</li>
+          <li><b>Type scale.</b> Greeting 46 (66 desktop) at weight 500, counts 34, labels 11 mono tracked wide (the HIG floor).</li>
+          <li><b>Light.</b> The lamp spills 140px onto the paper; stars glow; every card catches a hairline on its top edge.</li>
+          <li><b>Grain</b> at .32 multiply by day, .22 screen by night, paper only.</li>
+          <li><b>Still.</b> No ambient motion in the sky. Day sky stays #2B1E12; Yumi's dock stays at the foot.</li>
+        </ol>
+      </div>
+      <p>Every text/ground pair measured in both moods; lowest is 4.53 (gold-ink on the page). Cover art here is typographic placeholder, not the books' real jackets.</p>
+    </aside>
+  </div>
+
+  <div class="desk-wrap">
+    <h2>The same home at 1360</h2>
+    <p>Composed, not stretched. The sky becomes a column that stays put while the paper scrolls; the door sits at the window's corner. The mood switch flips this frame too.</p>
+    <div class="desk-frame"><div class="desk-scale" id="desk-scale"><div class="desk"><div class="screen">
+      <nav class="dnav" aria-label="Sections">
+        <span class="wm">praxis</span>
+        <a class="on" href="#">Home</a><a href="#">Shelf</a><a href="#">Arcs</a><a href="#">Notebook</a><a href="#">Scan</a><a href="#">About</a>
+        <span class="sp"></span>
+        <span class="cmd">⌘K · search</span>
+        <span class="av">P</span>
+      </nav>
+      <div class="dgrid">
+        <div class="dsky">
+          <div class="eyebrow">Tuesday · 29 September</div>
+          <h2 class="h">Good evening,<br>Preston.</h2>
+          <svg class="field" viewBox="0 0 448 300" aria-label="Constellation of three knowledge arcs">
+            <g fill="var(--s-on-inv-3)" opacity=".5"><circle cx="30" cy="40" r="1.6"/><circle cx="120" cy="18" r="1.3"/><circle cx="270" cy="16" r="1.6"/><circle cx="420" cy="200" r="1.3"/><circle cx="220" cy="270" r="1.5"/><circle cx="50" cy="260" r="1.2"/><circle cx="360" cy="110" r="1.3"/><circle cx="170" cy="150" r="1.1"/><circle cx="400" cy="30" r="1.1"/><circle cx="90" cy="200" r="1.2"/><circle cx="310" cy="250" r="1.1"/></g>
+            <g stroke="var(--s-stem)" stroke-opacity=".55" stroke-width="1.2">
+              <line x1="64" y1="196" x2="180" y2="88"/><line x1="180" y1="88" x2="296" y2="170"/><line x1="296" y1="170" x2="392" y2="70"/><line x1="180" y1="88" x2="146" y2="236"/><line x1="296" y1="170" x2="326" y2="250"/>
+            </g>
+            <g class="stars" fill="var(--s-star)"><circle cx="64" cy="196" r="5.5"/><circle cx="180" cy="88" r="9"/><circle cx="296" cy="170" r="7"/><circle cx="392" cy="70" r="5"/><circle cx="146" cy="236" r="4"/><circle cx="326" cy="250" r="4"/></g>
+            <text x="196" y="78" font-family="Fraunces,serif" font-style="italic" font-size="16" fill="var(--s-on-inv)">A pedagogy of desire</text>
+          </svg>
+          <div class="k">How your arcs connect</div><p class="p" style="margin-top:-10px">Choose any light to step into that thread.</p>
+          <div class="stat"><div><b>148</b><span>books</span></div><div><b>3</b><span>arcs</span></div><div><b>11</b><span>sub-theories</span></div><div><b>62</b><span>notes</span></div></div>
+        </div>
+        <div class="dpaper">
+          <div class="card sect">
+            <div class="k">Where you left off</div>
+            <p class="sub">Naming the world is already changing it</p>
+            <p class="p">A note in the margin of <em>Pedagogy of the Oppressed</em>, Wednesday. You left the thread mid-thought; pick it back up whenever you like.</p>
+            <div><a class="pill" href="#">Pick it back up</a></div>
+          </div>
+          <div class="card sect">
+            <div class="row"><div class="k">Still reading</div><a class="eyebrow" href="#">Your shelf →</a></div>
+            <div class="covers">
+              <div class="cover c1"><b>Pedagogy of the Oppressed</b><small>Freire</small></div>
+              <div class="cover c2"><b>Teaching to Transgress</b><small>hooks</small></div>
+              <div class="cover c3 dim"><b>Empire of AI</b><small>Hao</small></div>
+              <div class="cover none dim"><b>Fugitive Pedagogy</b><small>Givens</small></div>
+              <div class="cover c5 dim"><b>Freedom Dreams</b><small>Kelley</small></div>
+              <div class="cover c6 dim"><b>Black Skin, White Masks</b><small>Fanon</small></div>
+            </div>
+          </div>
+          <div class="yumi"><div class="g"><svg viewBox="0 0 20 20" fill="none" stroke="var(--s-yumi)" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><circle cx="12.6" cy="7.6" r="1.7" fill="var(--s-yumi)" stroke="none"/></svg></div><div><em>What pulled you back to Freire this week?</em><small>YUMI · asks, never answers for you</small></div></div>
+        </div>
+      </div>
+      <a class="fab" href="#" aria-label="Leave a note"><svg viewBox="0 0 24 24"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="M13.5 7.5l3 3"/></svg></a>
+    </div></div></div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.getElementById('root');
+  function press(val){ var bs=document.querySelectorAll('.seg button'); for(var i=0;i<bs.length;i++) bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-mood')===val?'true':'false'); }
+  function setMood(val){ root.setAttribute('data-mood',val); press(val); try{ localStorage.setItem('praxis-v7-mood', val); }catch(e){} }
+  var bs=document.querySelectorAll('.seg button');
+  for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click',function(){ setMood(b.getAttribute('data-mood')); }); })(bs[i]); }
+  var sm=null; try{ sm=localStorage.getItem('praxis-v7-mood'); }catch(e){}
+  if(sm==='night') setMood('night');
+  var ds=document.getElementById('desk-scale'), df=ds.parentNode;
+  function fit(){ var w=df.clientWidth-16; var k=Math.min(1, w/1360); ds.style.transform='scale('+k+')'; df.style.height=(860*k+16)+'px'; }
+  fit(); window.addEventListener('resize',fit);
+})();
+</script>
