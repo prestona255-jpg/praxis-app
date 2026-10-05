@@ -779,7 +779,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
-- 2026-09-29 · V-1 AMENDMENT 1.2 — the Sunflower deepened: eight rulings (door · Yumi seed · rail covers · five depth levers · sky still · italic = voice · day sky kept · dock at foot). Canon = docs/studio/v1-canon-delta-amend-1.2.md; reference = design/sunflower-v7.html. Docs only, live stays v3.299.
+- [x] **2026-09-29 · V-1 AMENDMENT 1.2 — the Sunflower deepened**: eight rulings (door · Yumi seed · rail covers · five depth levers · sky still · italic = voice · day sky kept · dock at foot). Canon = docs/studio/v1-canon-delta-amend-1.2.md; reference = design/sunflower-v7.html. Docs only, live stays v3.299.
 - [x] **V-1 vision — CLOSED 2026-09-19.** Canon delta v1.1 at `docs/studio/v1-canon-delta.md` (ten rules + token sheet). Recon at `docs/studio/v1-recon.md`. Next: P2 shape.
 
 - [x] **#diag + THE ACCOUNT SPLIT — v3.293, 2026-09-02 (RESOLVED; no defect)** — Empire AI, Sylvia

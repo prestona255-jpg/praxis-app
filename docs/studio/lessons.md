@@ -178,6 +178,35 @@ programmatic `.click()` (it bypasses hit-testing), NEVER DOM-presence / DOM-stat
 Sibling to L10 (headless ≠ felt) and L18 (walk every mode): those name WHERE and WHICH mode;
 this names HOW you assert a click actually landed.
 
+**L20 — THE EDITOR STRIPPED THE LINE ENDINGS.**
+Specimen: V-1 amendment 1.2 (2026-10-05) — an `awk` insert into `sequence.md`
+(CRLF in the worktree) flipped all 1527 CRLFs to LF on the way through: Git Bash
+`awk` and `sed` strip `\r` on input. The byte delta read −1214 (1527 CRs removed
+minus 313 inserted) instead of the expected +313, and `git diff --stat` could not
+see it — the blob is LF, so the clean filter normalizes before every comparison
+git makes. Caught only because the delta was pre-stated and then measured.
+Rule: never use `awk` or `sed` as in-place editors on this repo's CRLF worktree.
+Insert with a byte-exact splice — `grep -b` for the anchor offset, then
+`{ head -c N f; cat insert; tail -c +N+1 f; }` with the insert written via
+`printf "%s\r\n"` — and report BOTH deltas: the worktree delta (+1 byte per
+inserted line, from the CR) and the blob-equivalent delta (`tr -d '\r' | wc -c`),
+which is what a stated expectation means and what actually commits. A small
+diffstat proves the CONTENT is surgical; it never proves EOL held. Extends the
+MECHANICAL TRUTHS "EOL truth" one-liner from measurement to editing.
+
+**L21 — "WARNINGS 0" IS NOT "IT RENDERED."**
+Specimen: V-1 amendment 1.2 (2026-10-05) — the new `## Shipped` entry landed in
+`sequence.md` as a plain bullet. `parse_items` matches only `/^- \[.\]/`, and its
+unknown-marker warning fires INSIDE that branch, so a bullet that is not a
+checkbox at all never reaches it: silently skipped, `warnings 0`, `SHIPCOUNT`
+unmoved at 37. The line was in the source, absent from the Builder, and the regen
+complained about nothing. Found by grepping the generated HTML, not by the gate.
+Rule: a generator's clean exit reports the absence of complaints, not the presence
+of output. Any edit meant to appear in a generated view is verified AGAINST THE
+GENERATED ARTIFACT — grep `builder.html` for the new content, and confirm the
+count that should have moved actually moved. Sibling to L1 (delivered ≠ landed),
+at the generator seam.
+
 ---
 
 ## MECHANICAL TRUTHS (one-liners, still binding)
