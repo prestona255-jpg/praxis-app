@@ -31,6 +31,38 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-09 (P2 SHAPE — spine mockup + mockup-stage acceptance card land; five forks; the 10-05 score corrected)** —
+  no re-order of ## Now, so no `PROPOSED:` flag; P2 SHAPE stays the lead. Two chat sessions are recorded here so
+  neither joins the chat-only rulings the ## Next audit line tracks. **2026-10-05 (Preston, tappable, at rec):** the
+  SKY BAND — each act lights a star, no step counters, release opens onto the Home sky with the same stars
+  unconnected and the line "Name your first arc, and lines appear."; a paper-first and an Apple-anatomy variant were
+  both rejected; the Sunflower canon was re-confirmed a third time, the cream and linen alternates declined, no
+  canon amendment. That day's chat score (eleven PASS, one PARTIAL) was taken from a summary of the brief and was
+  wrong. **2026-10-09:** a walk against the brief's own sentences found six breaks and one inventory failure (no
+  control on the phone worked); Preston then caught a seventh that walk had missed — the scan door drew one book at
+  a time, though brief §1.2 names Shelf mode and the live Scan surface has it. He ruled five forks, all at rec: the
+  covenant carries the brief's three terms verbatim ("No feeds. No follower counts." dropped as an unruled promise);
+  the values beat is drawn into the walk as brief §1.4 says; the consent page shows what is true today; in first-run
+  the scan door opens in SHELF MODE, Book one tap away (the existing `#scan/shelf` preselect); a reader on a phone
+  can also CHOOSE A SHELF PHOTO (a new build item — today that drop zone appears only once the camera is refused or
+  unavailable). Three more were fixed to the brief without a ruling: two neutral consent chips, one book goes on,
+  Yumi's first line waits until she is opened. Four presentation changes were ruled the same day, all at rec: a
+  waiting sky and the headline "Where reading becomes theory." on the welcome; scan as the one main door; each star
+  fading in once as its act lands (the canon's single 280ms motion), with one caption the first time the band
+  appears. Two independent reviewers then read the mockup, the card and the landing prompt cold, twice. They found
+  that the consent fork had been offered with a wrong description of the live page (it said the shelf, margins and
+  reading activity are listed as visible), and that the first redraw was still wrong. The frame now carries the live
+  `#yumi-sees` page's own sentence, the reader's own books and one note as brief §1.5 asks (a row the live page does
+  not have), Journal never read, reads-along as a fact with its own switch, and PAUSED when that switch is off. That
+  redraw is OWNER row O-8, not yet confirmed, and delta 6 is scored OWNER until it is. Also fixed in review: Yumi
+  read the shelf after a no; the search and paste doors opened nothing (each now opens a marked stand-in); a second
+  shelf photo re-offered books already shelved. Mockup: `design/praxis-spine-v1.html` (artifact "Praxis First-Run
+  Spine", version 11). Card: `docs/checkpoints/onboarding-acceptance-mockup.md` (v2) — laws 8 PASS · 3 DEFERRED · 2
+  FAIL; deltas 2 PASS · 3 FAIL · 1 DEFERRED · 2 OWNER. On that card a row is FAIL when the build needs a frame the
+  mockup does not draw, and the five FAILs ride as named debt: law 4 and delta 8 (the re-entry frame), law 10 (six
+  of thirteen §8 states drawn), delta 3 (the search and paste doors are stand-ins), delta 5 (the Lenses rail's
+  "arrived" state). Its inventory adds two MISSING rows (those states; 1360). Six debts D-1 to D-6; nine OWNER rows
+  blank. Still owed before P3 Stage 0: Preston's felt pass on the changed frames, then the stranger.
 - **2026-09-29 (V-1 AMENDMENT 1.2 — the Sunflower deepened; eight rulings; canon + reference picture)** —
   V-1 amendment 1.2 — the Sunflower deepened. Eight rulings in chat (Fable, capped at 8, all at rec): (1) capture
   door = pressed gold FAB, every surface; (2) Yumi glyph = the seed (ring + off-center dot), redraw round absorbed;
@@ -1274,11 +1306,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 **P2 SHAPE — OPEN 2026-09-19, census landed `f4490e3` (run 2026-09-20).** Rail residual classified
 **(A) SEED LEAK** (P2-grade; reaches `#yumi-sees` + Yumi context). Export residual **PASS**. Deletion
-re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: 8 deltas (Fable, capped) · brief v3 ·
-acceptance card · spine mockup. Hygiene fork (H-1 vs P3) unanswered.
+re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: Preston's felt pass on the spine mockup ·
+the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + card. Hygiene fork ruled (split).
 
-- [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27)** — 8 deltas
-  RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → mockup-stage acceptance card → spine mockup → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
+- [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
+  RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net

@@ -1,0 +1,688 @@
+<meta charset="utf-8">
+<title>Praxis First-Run Spine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap">
+<style>
+/* Layout: the six-beat first-run walk of onboarding brief v3, one phone, the sky band filling as the reader acts. Sunflower canon v1.2. Annotated view for design review; Walk view for a first-time reader. */
+:root{
+  --pg:#F8F5EC; --pg-ink:#2B2216; --pg-ink-2:#6F6552; --pg-line:#E1DCCB;
+  --serif:"Fraunces",Georgia,serif; --sans:"DM Sans",-apple-system,system-ui,sans-serif; --mono:"DM Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --pg:#17150F; --pg-ink:#EDE6D6; --pg-ink-2:#A39B88; --pg-line:#2E2A20; color-scheme:dark } }
+:root[data-theme="dark"]{ --pg:#17150F; --pg-ink:#EDE6D6; --pg-ink-2:#A39B88; --pg-line:#2E2A20; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--pg);color:var(--pg-ink);font-family:var(--sans);padding-block:28px 56px;padding-inline:16px}
+.wrap{max-width:1100px;margin:0 auto}
+header h1{font-family:var(--serif);font-weight:500;font-size:30px;margin:0;letter-spacing:-.01em}
+header > p{margin:6px 0 14px;color:var(--pg-ink-2);font-size:14px;max-width:64ch;line-height:1.5}
+.seg{display:inline-flex;border:1px solid var(--pg-line);border-radius:999px;padding:3px;gap:2px;margin-bottom:12px}
+.seg button{border:0;background:transparent;color:var(--pg-ink-2);font:500 13px var(--sans);padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--pg-ink);color:var(--pg)}
+.beats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.beats button{border:1px solid var(--pg-line);background:transparent;color:var(--pg-ink-2);font:500 12.5px var(--sans);padding:7px 12px;border-radius:999px;cursor:pointer}
+.beats button[aria-current="true"]{background:var(--pg-ink);color:var(--pg);border-color:var(--pg-ink)}
+.states{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:30px}
+.states button{background:transparent;color:var(--pg-ink-2);font:12px var(--mono);letter-spacing:.03em;padding:6px 10px;border-radius:8px;cursor:pointer;border:1px dashed transparent}
+.states button[aria-current="true"]{border-color:var(--pg-ink-2);color:var(--pg-ink)}
+.pn{display:flex;gap:8px;margin:14px 0 0}
+.pn button,.walkbar button{border:1px solid var(--pg-line);background:transparent;color:var(--pg-ink);font:500 13px var(--sans);padding:9px 16px;border-radius:999px;cursor:pointer}
+.pn button:disabled{opacity:.4;cursor:default}
+.seg button:focus-visible,.beats button:focus-visible,.states button:focus-visible,.pn button:focus-visible,.walkbar button:focus-visible{outline:2px solid #D9931A;outline-offset:2px}
+.walkbar{display:none;gap:8px;justify-content:center;margin:14px 0 0}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}
+@media (min-width:860px){ .stage{grid-template-columns:420px minmax(0,1fr)} }
+.side{display:flex;flex-direction:column;gap:12px;color:var(--pg-ink-2);font-size:14px;line-height:1.55;min-width:0}
+.side h2{font-family:var(--serif);font-weight:500;font-size:22px;margin:0;color:var(--pg-ink);letter-spacing:-.01em}
+.side .law{font:11.5px var(--mono);letter-spacing:.05em;color:var(--pg-ink-2);text-transform:uppercase}
+.side p{margin:0}
+.side .desk-note{border-top:1px solid var(--pg-line);padding-top:12px;font-size:13.5px;display:flex;flex-direction:column;gap:8px}
+.side .desk-note b{color:var(--pg-ink);font-weight:500}
+.side .desk-note .seg{margin:4px 0 0;align-self:flex-start;flex-wrap:wrap;border-radius:18px}
+
+/* Walk view: the phone alone, for a first-time reader */
+body[data-mode="walk"] header,body[data-mode="walk"] .side{display:none}
+body[data-mode="walk"] .stage{grid-template-columns:minmax(0,1fr)}
+body[data-mode="walk"] .walkbar{display:flex}
+.walkend{display:none;margin:14px auto 0;max-width:360px;text-align:center;font:13px/1.5 var(--sans);color:var(--pg-ink-2)}
+body[data-mode="walk"] .walkend:not([hidden]){display:block}
+
+/* phone — tokens on .screen; the declined alternates override them on body[data-pal] */
+.phone{width:100%;max-width:400px;margin:0 auto;border-radius:38px;padding:10px;background:#111;box-shadow:0 20px 50px rgba(0,0,0,.22)}
+.screen{border-radius:30px;overflow:hidden;font-size:15px;line-height:1.45;min-height:780px;display:none;flex-direction:column;position:relative;
+  --page:#EDD79E; --card:#FBF3D9; --card2:#E2C98C; --ink:#2A1E10; --ink2:#6F5A34; --ink3:#6B5936;
+  --gold:#D9931A; --on-gold:#2A1E10; --gold-ink:#835508; --star:#E8B23A;
+  --sky:#2B1E12; --umber:#4A2E18; --on-n:#F5E8C4; --on-n2:#CDB894; --on-n3:#BAA48C;
+  --yumi:#C8552E; --stem:#45704F; --line:rgba(42,30,16,.16);
+  background:var(--page);color:var(--ink)}
+body[data-pal="cream"] .screen{--page:#F7F0E1;--card:#FDFAF3;--card2:#EADFC8;--line:rgba(42,30,16,.14)}
+body[data-pal="linen"] .screen{--page:#F4F1EA;--card:#FBF9F3;--card2:#E6E0D2;--ink:#26231C;--ink2:#625B4C;--ink3:#6B655A;--gold-ink:#7A5520;--sky:#1E1B16;--umber:#38322A;--on-n:#F2EDE2;--on-n2:#CBC3B3;--on-n3:#A49C8B;--line:rgba(38,35,28,.14)}
+.screen.on{display:flex;container-type:inline-size}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.32;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:220px 220px}
+body[data-pal="cream"] .screen::after, body[data-pal="linen"] .screen::after{opacity:.22}
+.screen.nightful{background:var(--sky);color:var(--on-n)}
+.screen.nightful::after{display:none}
+.screen.nightful.dawn{background:radial-gradient(90% 34% at 50% 100%, rgba(232,178,58,.13), rgba(232,178,58,0) 70%),var(--sky)}
+.waitsky{display:block;width:100%;height:auto;margin-top:auto}
+:where(.screen) button{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.screen button:focus-visible,.screen textarea:focus-visible,.screen input:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.nightful button:focus-visible{outline-color:var(--star)}
+.screen [data-static]{cursor:default}
+.screen:focus{outline:none}
+body[data-mode="walk"] .ylabel{display:none}
+.vchips button{overflow-wrap:anywhere;text-align:left}
+
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink)}
+.nightful .k{color:var(--star)}
+.h{font-family:var(--serif);font-weight:500;letter-spacing:-.015em;line-height:1.06;text-wrap:balance;margin:0;font-size:38px}
+.sub{font-family:var(--serif);font-weight:500;font-size:24px;letter-spacing:-.01em;margin:0;line-height:1.18;text-wrap:balance;overflow-wrap:anywhere}
+.p{margin:0;color:var(--ink2)}
+.nightful .p{color:var(--on-n2)}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:12px 20px;min-height:44px;font:500 15px var(--sans);background:var(--gold);color:var(--on-gold);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.ghost{display:inline-flex;align-items:center;min-height:44px;border-radius:999px;padding:11px 20px;font:500 14px var(--sans);border:1px solid var(--line);color:var(--ink)}
+.nightful .ghost{border-color:rgba(255,255,255,.22);color:var(--on-n)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);display:flex;flex-direction:column;gap:12px;width:100%}
+.hatch{margin-top:auto;padding:12px 0 0;text-align:center}
+.hatch button,.quiet{display:inline-flex;align-items:center;min-height:44px;font:500 13px var(--sans);color:var(--ink3);text-decoration:underline;text-underline-offset:3px;padding:12px 8px}
+.flow{padding:50px 22px 20px;display:flex;flex-direction:column;gap:16px;flex:1}
+.skyband{border-radius:18px;background:radial-gradient(120% 150% at 50% -30%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%),var(--sky);overflow:hidden;flex:none}
+.skyband svg{display:block;width:100%;height:auto}
+@keyframes kindle{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.skyband circle.new{animation:kindle 280ms cubic-bezier(.2,.7,.2,1) both;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){ .skyband circle.new{animation:none} }
+.bandcap{margin:-8px 0 0;font:12.5px var(--sans);color:var(--ink3);text-align:center}
+.spill{background:linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px)}
+body[data-pal="linen"] .spill{background:linear-gradient(180deg, rgba(56,50,42,.12), rgba(56,50,42,0) 140px)}
+.wm{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.cov{display:flex;flex-direction:column;gap:14px;font-size:16px;line-height:1.4}
+.cov div{display:grid;grid-template-columns:20px 1fr;gap:10px}
+.cov i{display:block;width:8px;height:8px;border-radius:50%;background:var(--star);margin-top:7px}
+.cov b{display:block;font-weight:500}
+.cov small{display:block;font-size:14px;line-height:1.45;color:var(--on-n2);margin-top:2px}
+.err{border:1px solid var(--line);border-left:3px solid var(--gold-ink);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--ink2);background:var(--card)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;border-radius:999px;padding:13px 20px;font:500 15px var(--sans);background:var(--ink);color:var(--card);width:100%}
+.gbtn b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--card);color:var(--ink);font:600 13px var(--sans)}
+.maindoor{gap:14px;padding:16px}
+.shelfart{display:flex;align-items:flex-end;justify-content:center;gap:5px;height:88px;padding:0 12px;border-radius:14px;background:var(--card2);border-bottom:3px solid var(--ink2);overflow:hidden}
+.shelfart i{display:block;flex:1 1 0;min-width:0;max-width:20px;border-radius:2px 2px 0 0}
+.maindoor b{display:block;font-weight:500;font-size:17px}
+.maindoor small{display:block;font-size:13px;color:var(--ink3);margin-top:2px}
+.maindoor .pill{align-self:flex-start}
+.rows{padding:2px 16px;gap:0}
+.rowbtn{display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;width:100%;min-height:60px;border-bottom:1px solid var(--line)}
+.rowbtn:last-child{border-bottom:0}
+.rowbtn svg{width:22px;height:22px;stroke:var(--ink2);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rowbtn b{display:block;font-weight:500;font-size:15px}
+.rowbtn small{display:block;font-size:12.5px;color:var(--ink3)}
+.chev{color:var(--ink3);font-size:20px;line-height:1}
+.dots{display:flex;gap:7px;align-items:center}
+.dots i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink3);display:block}
+.dots i.f{background:var(--ink2);border-color:var(--ink2)}
+.dots span{font:12px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-left:4px}
+.covers{display:flex;gap:8px;max-width:260px}
+.cover{flex:1;aspect-ratio:2/3;border-radius:4px;padding:8px 7px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px rgba(42,30,16,.18)}
+.cover b{font:500 11px/1.15 var(--serif);overflow-wrap:anywhere}
+.cover small{font:11px/1.1 var(--sans);opacity:.85}
+.cover.empty{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line)}
+.c1{background:#7A2E1E;color:#F5E8C4}.c2{background:#2F4A6B;color:#F5E8C4}.c3{background:#1F1F1F;color:#F2EFE6}.c4{background:#5B4A6B}.c5{background:#3F5A46}.c6{background:#8A5A2B}
+.vf{flex:1;border-radius:20px;background:var(--sky);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:330px;width:100%;padding:16px 16px 78px}
+.vf .corner{position:absolute;width:34px;height:34px;border:2.5px solid var(--star)}
+.vf .bookghost{width:150px;aspect-ratio:2/3;border-radius:4px;background:rgba(245,232,196,.12);box-shadow:0 0 0 1px rgba(245,232,196,.25)}
+.vf .spines{display:flex;gap:7px;align-items:flex-end;height:170px;max-width:100%}
+.vf .spines i{display:block;flex:0 1 24px;min-width:0;border-radius:3px;background:rgba(245,232,196,.12);box-shadow:0 0 0 1px rgba(245,232,196,.25)}
+.vfseg{display:inline-flex;align-self:center;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.vfseg button{padding:10px 22px;border-radius:999px;font:500 14px var(--sans);color:var(--ink2);min-height:44px}
+.vfseg button.on{background:var(--ink);color:var(--card)}
+.badge{margin:0;font:13px var(--sans);color:var(--ink3)}
+.band-hd{display:flex;justify-content:space-between;align-items:baseline}
+.found{display:flex;flex-direction:column}
+.found .row{display:grid;grid-template-columns:12px 1fr;gap:12px;align-items:center;font-size:14.5px;padding:8px 0;border-bottom:1px solid var(--line)}
+.found .row:last-child{border-bottom:0;padding-bottom:0}
+.found .row i{display:block;width:10px;height:28px;border-radius:2px}
+.found .row small{display:block;font-size:12.5px;color:var(--ink3)}
+.receipt{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:4px 6px 4px 14px;font-size:14px;color:var(--ink2)}
+.vf .cap{position:absolute;bottom:18px;left:0;right:0;padding:0 18px;text-align:center;font:500 13px var(--sans);color:var(--on-n2);margin:0}
+.vf .cap small{display:block;font:11px var(--mono);letter-spacing:.05em;color:var(--on-n3);margin-top:4px}
+.regs,.vchips,.chips{display:flex;flex-wrap:wrap;gap:8px}
+.regs button,.vchips button,.chips button{border:1.5px solid var(--ink2);color:var(--ink);font:500 14px var(--sans);padding:10px 16px;border-radius:999px;min-height:44px}
+.regs button.on,.vchips button.on,.chips button.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.notearea{background:var(--card);border:1px solid var(--line);border-radius:16px;min-height:150px;padding:14px 16px;font:17px/1.5 var(--serif);color:var(--ink);width:100%;resize:none;display:block}
+.notearea::placeholder{color:var(--ink3);font-family:var(--sans);font-size:16px}
+.typein{display:flex;gap:8px}
+.typein input{flex:1 1 0;width:0;min-width:0;min-height:44px;border:1px solid var(--line);border-radius:999px;padding:10px 16px;background:var(--card);font:16px var(--sans);color:var(--ink)}
+.typein input::placeholder{color:var(--ink3)}
+.sees{display:flex;flex-direction:column}
+.sees .row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14.5px;padding:9px 0;border-bottom:1px solid var(--line)}
+.sees .row:last-child{border-bottom:0;padding-bottom:0}
+.sees .row:first-child{padding-top:0}
+.sees .row b{display:block;font-weight:500}
+.sees .row small{display:block;font-size:12.5px;color:var(--ink3);overflow-wrap:anywhere}
+.sees .stt{color:var(--ink3);font:12px var(--mono);letter-spacing:.04em;white-space:nowrap}
+.sees .row.in{padding-left:14px;font-size:13.5px;width:100%;min-height:44px}
+.sw{display:block;width:42px;height:26px;border-radius:999px;background:var(--ink);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:19px;width:20px;height:20px;border-radius:50%;background:var(--card)}
+[aria-checked="false"] > .sw{background:var(--ink3)}
+[aria-checked="false"] > .sw::after{left:3px}
+.yline{display:flex;gap:12px;align-items:flex-start;background:var(--umber);color:var(--on-n);border-radius:18px;padding:13px 16px 13px 12px;width:100%}
+.yline .g,.yhead .g{width:34px;height:34px;border-radius:50%;background:var(--sky);color:var(--yumi);display:grid;place-items:center;flex:none}
+.yline em{font:italic 400 15.5px var(--serif);letter-spacing:-.005em;display:block}
+.yline small,.ylabel{display:block;font:11px var(--mono);color:var(--on-n3);margin-top:2px;letter-spacing:.04em}
+.yhead{display:flex;align-items:center;gap:10px}
+.yhead .g{background:var(--umber)}
+.yhead b{font:500 17px var(--serif);flex:1}
+.yq{font:italic 400 26px/1.2 var(--serif);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.stance{display:flex;flex-direction:column;gap:8px}
+.stance button{border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:11px 14px;width:100%}
+.stance button b{display:block;font-weight:500}
+.stance button small{display:block;font-size:13px;color:var(--on-n2)}
+.stance button.on{background:var(--umber);border-color:var(--star)}
+.reply{border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:12px 16px;color:var(--on-n3);font-size:15px}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.04em}
+.fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:grid;place-items:center;z-index:3;box-shadow:0 6px 16px rgba(28,18,10,.28), inset 0 1px 0 rgba(255,255,255,.35)}
+.fab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs{margin-top:auto;display:flex;justify-content:space-around;padding:10px 6px 14px;border-top:1px solid var(--line);background:var(--page);position:relative;z-index:1}
+.tabs span{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px var(--sans);color:var(--ink3);letter-spacing:.02em}
+.tabs span.on2{color:var(--gold-ink)}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.hero{background:radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%),radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%),var(--sky);color:var(--on-n);padding:54px 22px 20px;display:flex;flex-direction:column;gap:12px;border-radius:0 0 28px 28px;position:relative;z-index:1}
+.hero .h{font-size:46px;font-size:min(46px,calc((100cqw - 44px) / 7.6));color:var(--on-n)}
+.skyline{margin:-6px 0 0;text-align:center;font:italic 400 13px var(--serif);color:var(--on-n2)}
+.hero .eyebrow{color:var(--on-n3)}
+.hero svg{display:block;width:100%;height:auto}
+.stat{display:flex;gap:18px}
+.stat div{display:flex;flex-direction:column}
+.stat b{font-family:var(--serif);font-weight:500;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;color:var(--on-n)}
+.stat span{font-size:12px;color:var(--on-n3)}
+.body2{padding:14px 16px 88px;display:flex;flex-direction:column;gap:12px}
+.next{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--ink2);padding:2px 6px}
+.next div{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.next div::before{content:"→";color:var(--ink3)}
+@media (max-width:520px){
+  header h1{font-size:26px} .phone{border-radius:30px;padding:8px} .screen{border-radius:24px}
+  body[data-mode="walk"]{padding-block:12px 20px}
+  body[data-mode="walk"] .phone{padding:0;background:none;box-shadow:none}
+  body[data-mode="walk"] .screen{min-height:calc(100vh - 110px);min-height:calc(100dvh - 110px)}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>The first-run spine</h1>
+    <p>Six beats from the front door to a Home that is yours, drawn to onboarding brief v3 in the Sunflower canon. Tap through the phone itself, or step with Back and Next. Walk view hides these notes so a first-time reader meets only the phone.</p>
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" data-mode="notes" aria-pressed="true">Annotated</button>
+      <button type="button" data-mode="walk" aria-pressed="false">Walk view</button>
+    </div>
+    <div class="beats" id="beats"></div>
+    <div class="states" id="states"></div>
+  </header>
+
+  <div class="stage">
+    <div class="phone" id="phone">
+
+      <div class="screen nightful dawn" data-id="welcome">
+        <div class="flow">
+          <span class="wm">praxis</span>
+          <h2 class="h" style="margin-top:34px">Where reading becomes theory.</h2>
+          <p class="p" style="font-size:16.5px">Your books, the notes you leave in their margins, and the theories they grow into.</p>
+          <div style="margin-top:18px"><button type="button" class="pill" data-go="covenant">Begin</button></div>
+          <svg class="waitsky" viewBox="0 0 340 300" role="img" aria-label="A night sky with five stars not yet lit">
+            <g fill="#BAA48C" opacity=".45"><circle cx="24" cy="52" r="1.4"/><circle cx="96" cy="22" r="1.2"/><circle cx="210" cy="16" r="1.4"/><circle cx="322" cy="196" r="1.2"/><circle cx="170" cy="236" r="1.3"/><circle cx="40" cy="222" r="1.1"/><circle cx="284" cy="128" r="1.2"/><circle cx="132" cy="160" r="1"/><circle cx="300" cy="34" r="1"/><circle cx="70" cy="138" r="1.1"/><circle cx="232" cy="190" r="1"/><circle cx="152" cy="74" r="1.1"/><circle cx="12" cy="150" r="1"/><circle cx="262" cy="262" r="1.1"/><circle cx="98" cy="270" r="1"/><circle cx="330" cy="92" r="1"/><circle cx="200" cy="280" r="1"/></g>
+            <g fill="none" stroke="#E8B23A" stroke-width="1.4" opacity=".7"><circle cx="50" cy="150" r="5"/><circle cx="120" cy="92" r="5"/><circle cx="190" cy="162" r="5"/><circle cx="255" cy="72" r="5"/><circle cx="300" cy="126" r="7.5"/></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="screen nightful" data-id="covenant">
+        <div class="flow">
+          <span class="k">The covenant</span>
+          <h2 class="h" style="font-size:32px">Nothing here is hidden.</h2>
+          <p class="p">Three terms, before anything else.</p>
+          <div class="cov" style="margin-top:4px">
+            <div><i></i><span><b>Yumi sees only what you allow</b><small>Listed plainly on What Yumi Sees — always current. You'll read it yourself in a minute.</small></span></div>
+            <div><i></i><span><b>Memory is yours to grant</b><small>Off until you turn it on. Readable, correctable, endable.</small></span></div>
+            <div><i></i><span><b>Your words stay yours</b><small>Yumi quotes you; she never replaces you.</small></span></div>
+          </div>
+          <div class="acts" style="margin-top:14px"><button type="button" class="pill" data-go="signin">I'm in</button><button type="button" class="ghost" data-static aria-disabled="true">Read it in full</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="signin">
+        <div class="flow spill" data-band>
+          <p class="bandcap">Your sky. It fills as you go.</p>
+          <span class="k" style="margin-top:12px">Sign in</span>
+          <h2 class="sub" style="font-size:28px">So your shelf is yours.</h2>
+          <p class="p">Your books and notes live under your account, governed by the covenant you just read.</p>
+          <div class="card" style="margin-top:10px">
+            <button type="button" class="gbtn" data-go="doors"><b>G</b> Continue with Google</button>
+            <p class="p" style="font-size:12.5px;text-align:center">We ask for nothing but your name and email.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="signinfail">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:12px">Sign in</span>
+          <h2 class="sub" style="font-size:28px">So your shelf is yours.</h2>
+          <div class="err" role="alert">Google didn't finish signing you in. Nothing was lost. The covenant stands and your place is held. Try once more.</div>
+          <div class="card">
+            <button type="button" class="gbtn" data-go="doors"><b>G</b> Try again</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="doors">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">Bring your books</span>
+          <h2 class="sub" style="font-size:28px">Start with what's within reach.</h2>
+          <p class="p">Scan a spine, search a title, or paste a whole list. Three is enough to begin.</p>
+          <button type="button" class="card maindoor" data-go="scanning" data-first>
+            <span class="shelfart" aria-hidden="true"><i class="c1" style="height:62px"></i><i class="c2" style="height:78px"></i><i class="c5" style="height:54px"></i><i class="c3" style="height:84px"></i><i class="c6" style="height:70px"></i><i class="c4" style="height:58px"></i><i class="c2" style="height:80px"></i><i class="c1" style="height:66px"></i><i class="c5" style="height:74px"></i><i class="c6" style="height:50px"></i><i class="c3" style="height:82px"></i></span>
+            <span><b>Scan a spine</b><small>A whole shelf in one photo, or one book</small></span>
+            <span class="pill">Open the camera</span>
+          </button>
+          <span class="eyebrow">Without a camera</span>
+          <div class="card rows">
+            <button type="button" class="rowbtn" data-standin="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span><b>Search a title</b><small>Find a book by its name</small></span><span class="chev" aria-hidden="true">›</span></button>
+            <button type="button" class="rowbtn" data-standin="paste"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg><span><b>Paste a whole list</b><small>Titles, or a Goodreads file</small></span><span class="chev" aria-hidden="true">›</span></button>
+          </div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="standin">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px" id="si-k"></span>
+          <h2 class="sub">This door isn't drawn yet.</h2>
+          <p class="p" id="si-p"></p>
+          <p class="badge">MOCKUP STAND-IN</p>
+          <div class="acts"><button type="button" class="pill" data-standin-go>Continue</button><button type="button" class="quiet" data-go="doors">Back to the doors</button></div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="scanning">
+        <div class="flow" data-band style="padding-bottom:16px">
+          <button type="button" class="vf" style="margin-top:4px" data-shot aria-label="Capture">
+            <span class="corner" style="top:14px;left:14px;border-right:0;border-bottom:0"></span>
+            <span class="corner" style="top:14px;right:14px;border-left:0;border-bottom:0"></span>
+            <span class="corner" style="bottom:14px;left:14px;border-right:0;border-top:0"></span>
+            <span class="corner" style="bottom:14px;right:14px;border-left:0;border-top:0"></span>
+            <span id="vf-ghost"></span>
+            <span class="cap"><span id="vf-guide"></span><small>MOCKUP · TAP THE FRAME</small></span>
+          </button>
+          <div class="vfseg" role="group" aria-label="Scan mode" id="vfseg"><button type="button" data-scanmode="book">Book</button><button type="button" data-scanmode="shelf">Shelf</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><button type="button" class="ghost" id="vf-alt"></button><button type="button" class="ghost" data-scandone>Done</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="found">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">Review the shelf</span>
+          <p class="badge" id="fd-badge"></p>
+          <div class="card"><div class="band-hd"><span class="k">Ready to shelve</span><span class="eyebrow" id="fd-n"></span></div><div class="found" id="fd-ready"></div></div>
+          <div class="card" id="fd-exc"><div class="band-hd"><span class="k">Need a look</span><span class="eyebrow">1</span></div><div class="found"><div class="row"><i class="c6"></i><span>A spine that didn't read cleanly<small id="fd-x"></small></span></div></div></div>
+          <div class="acts" id="fd-acts"></div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="shelf">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">Your shelf begins</span>
+          <div class="covers" id="sh-covers"></div>
+          <div class="dots" id="sh-dots"></div>
+          <div class="receipt" id="sh-receipt"></div>
+          <h2 class="sub" id="sh-head">That's a shelf.</h2>
+          <p class="p" id="sh-line"></p>
+          <div class="acts" id="sh-acts"></div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="margin">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">Catch a thought</span>
+          <h2 class="sub">Pedagogy of the Oppressed</h2>
+          <div class="regs" id="regs"><button type="button" class="on" data-reg="marginalia">Marginalia</button><button type="button" data-reg="journal">Journal</button></div>
+          <textarea class="notearea" id="spine-note" aria-label="Your note" placeholder="What struck you? One honest sentence is plenty."></textarea>
+          <p class="p" style="font-size:13px">Marginalia sits beside the text. Journal sits beside your life, and Yumi never reads it. Either way it lands in your Notebook, under this book.</p>
+          <div class="acts"><button type="button" class="ghost" id="keep" data-keep>File it</button><button type="button" class="quiet" data-go="values">Not now</button></div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="values">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">Your values</span>
+          <h2 class="sub">What do you read toward?</h2>
+          <p class="p">Not what a book is about — what it's for in you. Your values: the weight your reading carries. Pick the ones that feel true; change them anytime.</p>
+          <div class="vchips" id="vchips"></div>
+          <div class="typein"><input id="spine-value" type="text" aria-label="Name your own value" placeholder="…or name your own"><button type="button" class="ghost" id="vadd">Add</button></div>
+          <p class="p" style="font-size:13px">You place these — Yumi never fills them in.</p>
+          <div class="acts"><button type="button" class="pill" data-go="consent">Continue</button><button type="button" class="quiet" data-go="consent">Skip for now</button></div>
+          <div class="hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="consent">
+        <div class="flow spill" data-band>
+          <span class="k" style="margin-top:6px">What Yumi sees</span>
+          <p class="p" style="font-size:13px">This is everything Yumi sees right now: the book you are reading, the arc you are following, the sub-theory you are writing, recent notebook entries that are marked visible, and the conversation you and Yumi have been having. <span id="sees-tail">Yumi does not see anything else.</span><span id="sees-tail-on" hidden>With her walk on, she also reads your whole shelf, for lenses. She sees nothing else.</span></p>
+          <div class="card"><div class="sees" id="sees"></div></div>
+          <div id="ask" style="display:flex;flex-direction:column;gap:12px"></div>
+          <div class="hatch" id="consent-hatch"><button type="button" data-bail>I'll explore on my own</button></div>
+        </div>
+      </div>
+
+      <div class="screen" data-id="release">
+        <div class="hero">
+          <span class="eyebrow" id="rl-date"></span>
+          <h2 class="h" id="rl-hello"></h2>
+          <div id="rl-sky"></div>
+          <p class="skyline">Name your first arc, and lines appear.</p>
+          <div class="stat" id="rl-stat"></div>
+        </div>
+        <div class="body2 spill">
+          <div class="card" id="rl-note"></div>
+          <div class="next" id="rl-next"></div>
+          <button type="button" class="yline" data-go="yumi" aria-label="Open Yumi"><span class="g"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><circle cx="12.6" cy="7.6" r="1.7" fill="currentColor" stroke="none"/></svg></span><span><em>I'm in the corner when you want me.</em><small>YUMI</small></span></button>
+        </div>
+        <span class="fab" data-static role="img" aria-label="Leave a note"><svg viewBox="0 0 24 24"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="M13.5 7.5l3 3"/></svg></span>
+        <div class="tabs" data-static>
+          <span class="on2"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</span>
+          <span><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 1 15-4 1z"/></svg>Shelf</span>
+          <span><svg viewBox="0 0 24 24"><circle cx="6" cy="16" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="18" cy="14" r="2"/><path d="M7.5 14.5l3-5.5M13.7 8.5l3 4"/></svg>Arcs</span>
+          <span><svg viewBox="0 0 24 24"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM9 7h6M9 11h6"/></svg>Notebook</span>
+          <span><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/></svg>Scan</span>
+        </div>
+      </div>
+
+      <div class="screen nightful" data-id="yumi">
+        <div class="flow">
+          <div class="yhead"><span class="g"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><circle cx="12.6" cy="7.6" r="1.7" fill="currentColor" stroke="none"/></svg></span><b>Yumi</b><button type="button" class="ghost" data-go="release">Close</button></div>
+          <div style="margin-top:10px"><p class="yq" id="yq"></p><span class="ylabel" id="ylabel"></span></div>
+          <p class="p" style="margin-top:8px">How should I begin with you? You can change this any time.</p>
+          <div class="stance" id="stance">
+            <button type="button" data-st="press"><b>Press me</b><small>Question my readings. Find what I'm avoiding.</small></button>
+            <button type="button" data-st="company"><b>Keep me company</b><small>Notice with me. Think alongside, not against.</small></button>
+            <button type="button" data-st="quiet"><b>Stay out unless asked</b><small>I'll summon you when I want you.</small></button>
+          </div>
+          <div class="reply" data-static style="margin-top:auto">Write back…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <aside class="side">
+      <h2 id="an-title">—</h2>
+      <p class="law" id="an-law">—</p>
+      <p id="an-body">—</p>
+      <div class="pn"><button type="button" id="prev">← Back</button><button type="button" id="next">Next →</button></div>
+      <div class="desk-note">
+        <p><b>Working controls:</b> every button on the phone moves the walk, and the scan mode toggle, the note, the value chips, the consent chips, the reads-along switch and Yumi's stance all take input. Static by design: Read it in full, the pen, the tab bar, and Write back. Search and paste open a marked stand-in, not a drawn door.</p>
+        <p><b>At 1360:</b> not drawn here. Beats 1 to 5 center this card at 480px on the page, and the books beat leads with search and paste (brief §1.2); release is the v7 desktop Home.</p>
+        <p><b>Scheme:</b> Sunflower is the canon (ruled Oct 5). The two alternates were declined and stay switchable for reference only.</p>
+        <div class="seg" role="group" aria-label="Scheme" id="palseg">
+          <button type="button" data-pal="sunflower">Sunflower (canon)</button>
+          <button type="button" data-pal="cream">Morning cream</button>
+          <button type="button" data-pal="linen">Linen &amp; ink</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <p class="walkend" id="walk-end" hidden>The mockup ends here. The tab bar, the pen and About are not drawn. Yumi's line at the foot of the page opens her first words.</p>
+  <div class="walkbar"><button type="button" id="restart">Start over</button><button type="button" id="shownotes">Show the notes</button></div>
+</div>
+
+<script>
+(function(){
+  var SAMPLE="The banking model is exactly what my own schooling felt like — and what I promised my students I'd never do.";
+  var PRESETS=["Liberation","Power, named","Dignity","Solidarity","Care","Doubt","Praxis","Inheritance","Hope","Craft"];
+  var BOOKS=[["c1","Pedagogy of the Oppressed","Freire"],["c2","Teaching to Transgress","hooks"],["c3","Empire of AI","Hao"],["c4","Sister Outsider","Lorde"],["c5","The Undercommons","Harney & Moten"],["c6","Freedom Dreams","Kelley"]];
+  var BOOKS2=[["c1","Fugitive Pedagogy","Givens"],["c2","We Want to Do More Than Survive","Love"],["c3","Cruel Optimism","Berlant"],["c4","Borderlands / La Frontera","Anzaldúa"],["c5","Black Marxism","Robinson"],["c6","Decolonizing Methodologies","Smith"]];
+  var GLYPH='<span class="g"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><circle cx="12.6" cy="7.6" r="1.7" fill="currentColor" stroke="none"/></svg></span>';
+  /* one entry per drawn state: screen id, beat, state name, the walk state it shows, and its design note */
+  var ST=[
+    {s:"welcome",b:"1 · Front door",n:"welcome",w:[0,0,null],t:"Welcome",l:"Beat 1 · §1.1",x:"The headline says what Praxis does that a tracker does not. Below it the sky waits with five stars unlit, the same five the walk will light. Nothing is written before sign-in, so there is no escape hatch yet."},
+    {s:"covenant",b:"1 · Front door",n:"the covenant",w:[0,0,null],t:"The covenant",l:"Beat 1 · Δ1: terms before sign-in",x:"The three terms are the brief's contract copy, word for word, each with the gloss the live app already ships. Read it in full is the brief's open item (§11)."},
+    {s:"signin",b:"1 · Front door",n:"sign in",w:[0,0,null],t:"Sign in",l:"Beat 1 · OB-12 · the sky band begins",x:"The lamp-lit band appears here, empty, with one line saying what it is. Signing in lights its first star, and each star fades in once as its act lands (the canon's one motion, 280ms; still otherwise). No step counter for the walk."},
+    {s:"signinfail",b:"1 · Front door",n:"when it fails",w:[0,0,null],t:"When it fails",l:"Beat 1 · designed failure",x:"The error says what happened, what was not lost, and the one way forward. The canon has no error color yet; P3 Stage 0 mints the token."},
+    {s:"doors",b:"2 · Books",n:"three doors",w:[0,0,null],t:"Three doors",l:"Beat 2 · Δ3: the Shelf's own sentence",x:"The beat is the Shelf's zero-state sentence. Scan is the one main door: it opens the real Scan surface, in Shelf mode in first-run (ruled 10-09). Search and paste sit under it as quiet rows and, in this mockup, open a marked stand-in (debt D-6). The beat asks for three and says so."},
+    {s:"standin",b:"2 · Books",n:"a door not drawn",w:[0,0,null],t:"A door not drawn",l:"Beat 2 · stand-in, not design",x:"Search and paste are real doors in the brief, but neither surface is drawn here: search needs the add door rebuilt as a title search (brief §6 E) and paste needs its import path. This frame says so and puts sample books on the shelf so the walk can go on."},
+    {s:"scanning",b:"2 · Books",n:"scanning a shelf",w:[0,0,null,0,0,"shelf"],t:"Scanning a shelf",l:"Beat 2 · §1.2: Book or Shelf mode · Shelf leads",x:"The real Scan surface in Shelf mode: one row of spines, one deliberate tap. The guide line and the Book | Shelf toggle are the live app's. Choose a photo beside a live camera is new (ruled 10-09); today the photo drop zone appears only once the camera is refused or unavailable."},
+    {s:"found",b:"2 · Books",n:"the shelf, read",w:[0,0,null,0,0,"shelf"],t:"The shelf, read",l:"Beat 2 · the real review: a draft, then Shelve N",x:"Nothing is on the shelf until the reader says so. Two bands as shipped: ready to shelve, and the one that needs a look. Review opens the live exception walker, which is not redrawn; here it resolves in place."},
+    {s:"shelf",b:"2 · Books",n:"a whole shelf lands",w:[6,0,null,0,0,"shelf",6],t:"A whole shelf lands",l:"Beat 2 · past the floor in one act",x:"Six books from one photo, with the live receipt and its Undo. The sky still lights one star per book up to three, so a big shelf does not outshine the note."},
+    {s:"scanning",b:"2 · Books",n:"one book at a time",w:[0,0,null,0,0,"book"],t:"One book at a time",l:"Beat 2 · Book mode, one tap away",x:"Book mode for a reader who is not standing at a shelf: a barcode or a single cover. In the mockup, tapping the frame stands in for a capture."},
+    {s:"shelf",b:"2 · Books",n:"one lands",w:[1,0,null],t:"One lands",l:"Beat 2 · asks for three, accepts one",x:"The cover lands and a second star lights. The walk goes on from one book: Go on with this one sits beside the next add, and the other doors stay one tap away. Nothing blocks."},
+    {s:"shelf",b:"2 · Books",n:"two",w:[2,0,null],t:"Two",l:"Beat 2 · sparse-honest",x:"A two-book shelf is drawn as what it is: two covers and one open place, with the same two ways forward."},
+    {s:"shelf",b:"2 · Books",n:"the floor: three",w:[3,0,null],t:"The floor: three",l:"Beat 2 · small-corpus floor = 3",x:"That's a shelf. Four lights overhead. Keep adding or move on, both first-class; the gold pill leads to the note because that is the spine."},
+    {s:"margin",b:"3 · Margin",n:"the door opens",w:[3,0,null],t:"The door opens",l:"Beat 3 · Δ2: the shared door, plain",x:"The same door the gold pen opens forever after, with its own labels (Catch a thought, File it): no Room, no basin, pre-scoped to the first book, Marginalia or Journal. Not now records the note as skipped, and release will say so."},
+    {s:"margin",b:"3 · Margin",n:"written",w:[3,0,null,1],t:"Written",l:"Beat 3 · the note is the brightest light",x:"File it turns gold only when there is something to file. When the note is filed the fifth star lights, larger than the others. The reader can type their own sentence here."},
+    {s:"values",b:"4 · Values",n:"the invitation",w:[3,1,null],t:"The invitation",l:"Beat 4 · Δ7: the R8 beat, as shipped",x:"The ten presets and name-your-own, copy as shipped at v3.195, re-skinned to the canon. Values light no star, so skipping costs nothing and nothing is asserted."},
+    {s:"consent",b:"5 · Consent",n:"the question",w:[3,1,null],t:"The question",l:"Beat 5 · Δ6: the real page, two neutral chips",x:"The live page's own sentence. The books row follows brief §1.5 (the reader's own books); the live page has no such list today and, opened this way, reads No book is open right now. Journal notes are never read. Reads-along is a fact with its own switch. The empty arc and conversation lines are folded into one, and the empty sub-theory and Artifacts sections are left out. One question, two chips, neither lit until tapped."},
+    {s:"consent",b:"5 · Consent",n:"granted",w:[3,1,"granted"],t:"Granted",l:"Beat 5 · consent is the generation trigger",x:"A yes lets her read across the whole shelf and starts lens generation in the background, and the page's sentence changes to say so. With reads-along off the walk reads PAUSED and she holds her line, as the live app pauses memory. Yumi's line is the one the live app ships for memory on."},
+    {s:"consent",b:"5 · Consent",n:"declined, gracefully",w:[3,1,"declined"],t:"Declined, gracefully",l:"Beat 5 · declined is first-class",x:"No sulking, no retry nag, no feature held hostage. The row reads DECLINED so the refusal is a visible fact, and the sky does not dim."},
+    {s:"consent",b:"5 · Consent",n:"decide later",w:[3,1,"unanswered"],t:"Decide later",l:"Beat 5 · unanswered is not declined",x:"Generation never ran. The question waits on this page and may be asked once more here, never by a ping."},
+    {s:"release",b:"6 · Release",n:"home, yours",w:[3,1,"granted"],t:"Home, yours",l:"Beat 6 · Δ8: computed, sky-first",x:"Every line here is computed from what the reader did. The band opens into the Home sky with the same stars, unconnected. The lens promise names its surface, and Yumi's only words are the brief's closing line."},
+    {s:"release",b:"6 · Release",n:"declined",w:[3,1,"declined"],t:"Home, after a no",l:"Beat 6 · nothing sulks",x:"The same Home without the lens promise. Nothing else changes."},
+    {s:"release",b:"6 · Release",n:"one book, no note",w:[1,0,"unanswered",0,1],t:"Home, after leaving early",l:"Beat 6 · resume · sparse-honest",x:"Leaving early writes progress, not done. Home tells the truth about one book and a clean margin, and names where the walk continues."},
+    {s:"yumi",b:"After · Yumi's first line",n:"below the floor",w:[1,0,"unanswered"],t:"Yumi, below the floor",l:"§1.7 · Δ4: scripted, zero calls",x:"She speaks only once the reader opens her. Under three books her first line is scripted, with no model call until the reader writes back. Her stance question lives here now (Δ7)."},
+    {s:"yumi",b:"After · Yumi's first line",n:"at the floor",w:[3,1,"granted"],t:"Yumi, at the floor",l:"§1.7 · performed from the reader's shelf",x:"At three books and with a yes, her first line is read from the reader's own shelf and nothing else. Without a yes it stays scripted. The question shown stands in for a live one."}
+  ];
+  var W={}, cur=0;
+  function setW(a){ W={books:a[0],note:a[1],consent:a[2],draft:a[3]?SAMPLE:"",bailed:!!a[4],mode:a[5]||"shelf",batch:a[6]||0,scans:a[6]?1:0,exc:true,via:"scan",standin:"search",reads:true,noteText:a[1]?SAMPLE:"",values:[],stance:"",reg:"marginalia"}; }
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function plural(n,w){ return n+" "+w+(n===1?"":"s"); }
+
+  /* the sky: one star for signing in, one per book up to three, the note brightest */
+  var BAND=[[50,30],[120,20],[190,32],[255,16],[300,25]], HOME=[[50,72],[120,47],[190,76],[255,40],[300,61]];
+  var SIGNED=false, LAST={n:9,note:1};
+  function stars(pos,r,R,anim){
+    var n=(SIGNED?1:0)+Math.min(W.books,3), h='', k;
+    for(k=0;k<n;k++){ h+='<circle'+((anim && k>=LAST.n)?' class="new"':'')+' cx="'+pos[k][0]+'" cy="'+pos[k][1]+'" r="'+r+'"/>'; }
+    if(W.note){ h+='<circle'+((anim && !LAST.note)?' class="new"':'')+' cx="'+pos[4][0]+'" cy="'+pos[4][1]+'" r="'+R+'"/>'; }
+    if(anim){ LAST={n:n,note:W.note}; }
+    return {n:n+(W.note?1:0),h:h};
+  }
+  function paintBands(){
+    var fs=document.querySelectorAll('.flow[data-band]'), i, b, s=stars(BAND,3.2,5,true);
+    for(i=0;i<fs.length;i++){
+      b=fs[i].querySelector('.skyband');
+      if(!b){ b=document.createElement('div'); b.className='skyband'; fs[i].insertBefore(b,fs[i].firstChild); }
+      b.innerHTML='<svg viewBox="0 0 340 48" role="img" aria-label="Your sky so far: '+plural(s.n,'light')+'"><g fill="#BAA48C" opacity=".4"><circle cx="20" cy="14" r="1"/><circle cx="90" cy="36" r="1"/><circle cx="160" cy="11" r="1"/><circle cx="225" cy="38" r="1"/><circle cx="285" cy="9" r="1"/><circle cx="325" cy="33" r="1"/></g><g fill="#E8B23A" style="filter:drop-shadow(0 0 4px rgba(232,178,58,.85))">'+s.h+'</g></svg>';
+    }
+  }
+  function paintScan(){
+    var sh=(W.mode==="shelf"), bs=$('vfseg').querySelectorAll('button'), i, g='';
+    if(sh){ var hs=[134,158,118,170,144,128,152]; g='<span class="spines">'; for(i=0;i<hs.length;i++){ g+='<i style="height:'+hs[i]+'px"></i>'; } g+='</span>'; }
+    else { g='<span class="bookghost" style="display:block"></span>'; }
+    $('vf-ghost').innerHTML=g;
+    $('vf-guide').textContent=sh?"Fill the frame with one row of spines — then tap to read":"Center a barcode or cover in the frame";
+    $('vf-alt').textContent=sh?"Choose a photo":"Type it instead";
+    for(i=0;i<bs.length;i++){ bs[i].className=(bs[i].getAttribute('data-scanmode')===W.mode)?'on':''; bs[i].setAttribute('aria-pressed',String(bs[i].getAttribute('data-scanmode')===W.mode)); }
+  }
+  function paintFound(){
+    /* a first and a second photo bring different books; a third finds nothing new, as the live review flags exact matches */
+    var rep=(W.scans>=2), src=(W.scans===0)?BOOKS:BOOKS2, n=rep?0:(W.exc?5:6), h='', i;
+    for(i=0;i<(rep?5:n);i++){ h+='<div class="row"><i class="'+src[i][0]+'"></i><span>'+src[i][1]+'<small>'+src[i][2]+(rep?' · already shelved':'')+'</small></span></div>'; }
+    $('fd-ready').innerHTML=h; $('fd-n').textContent=String(n); $('fd-exc').hidden=(rep || !W.exc);
+    $('fd-x').textContent='Best guess: '+src[5][1]+', '+src[5][2];
+    $('fd-badge').textContent=rep?"Draft case — nothing new in this photo":(W.books?"Draft case — these aren't on your shelf yet":"Draft case — nothing's on your shelf yet");
+    $('fd-acts').innerHTML=rep
+      ?'<button type="button" class="pill" data-go="shelf">Back to your shelf</button><button type="button" class="quiet" data-go="scanning">Scan again</button>'
+      :(W.exc?'<button type="button" class="ghost" data-review>Review 1</button>':'')+'<button type="button" class="pill" data-shelve>Shelve '+n+'</button><button type="button" class="quiet" data-go="scanning">Scan again</button>';
+  }
+  function paintShelf(){
+    var n=Math.min(W.books,3), c='', d='', i;
+    for(i=0;i<3;i++){
+      c+=(i<n)?'<div class="cover '+BOOKS[i][0]+'"><b>'+BOOKS[i][1]+'</b><small>'+BOOKS[i][2]+'</small></div>':'<div class="cover empty"></div>';
+      d+='<i'+(i<n?' class="f"':'')+'></i>';
+    }
+    $('sh-covers').innerHTML=c; $('sh-dots').innerHTML=d+'<span>'+(W.books>3?W.books+' ON YOUR SHELF':n+' OF 3')+'</span>';
+    $('sh-receipt').hidden=!W.batch;
+    $('sh-receipt').innerHTML='<span>Shelved <b>'+W.batch+'</b></span><button type="button" class="ghost" data-undo>Undo</button>';
+    $('sh-head').hidden=(n<3);
+    $('sh-line').textContent=(n>=3)?"Keep adding if you like, or leave your first note.":(n===2?"Two. One more and your shelf can carry a thought.":"One down. Two more and your shelf can carry a thought.");
+    $('sh-acts').innerHTML=(n>=3)
+      ?'<button type="button" class="pill" data-go="margin">Leave a note</button><button type="button" class="ghost" data-go="doors">Keep adding</button>'
+      :((W.via==="scan")?'<button type="button" class="pill" data-go="scanning">Scan the next one</button>':'<button type="button" class="pill" data-go="doors">Add another</button>')+
+        '<button type="button" class="ghost" data-go="margin">Go on with '+(n===1?'this one':'these two')+'</button>'+
+        ((W.via==="scan")?'<button type="button" class="quiet" data-go="doors">Add another way</button>':'');
+  }
+  function paintStandin(){
+    var se=(W.standin==="search");
+    $('si-k').textContent=se?"Search a title":"Paste a whole list";
+    $('si-p').textContent=se?"In the app you would type a title here and pick the book. For this walk, one sample book goes onto your shelf.":"In the app you would paste your list here, or bring a Goodreads file. For this walk, three sample books go onto your shelf.";
+  }
+  function paintMargin(){
+    var ta=$('spine-note'), k=$('keep'), bs=$('regs').querySelectorAll('button'), i;
+    if(ta.value!==W.draft){ ta.value=W.draft; }
+    k.className=W.draft.replace(/\s/g,'')?'pill':'ghost';
+    for(i=0;i<bs.length;i++){ bs[i].className=(bs[i].getAttribute('data-reg')===W.reg)?'on':''; bs[i].setAttribute('aria-pressed',String(bs[i].getAttribute('data-reg')===W.reg)); }
+  }
+  function paintValues(){
+    var all=PRESETS.concat([]), h='', i;
+    for(i=0;i<W.values.length;i++){ if(all.indexOf(W.values[i])<0){ all.push(W.values[i]); } }
+    for(i=0;i<all.length;i++){ h+='<button type="button" data-v="'+esc(all[i])+'"'+(W.values.indexOf(all[i])>=0?' class="on"':'')+' aria-pressed="'+(W.values.indexOf(all[i])>=0)+'">'+esc(all[i])+'</button>'; }
+    $('vchips').innerHTML=h;
+  }
+  function paintConsent(){
+    var c=W.consent, on=(c==="granted" && W.reads), paused=(c==="granted" && !W.reads), h, t=W.noteText, n=Math.min(W.books,3), bk=[], i;
+    var walk=on?"ON":(paused?"PAUSED":(c==="declined"?"DECLINED":"UNANSWERED"));
+    var vis=(W.note && W.reg==="marginalia" && W.reads);
+    for(i=0;i<n;i++){ bk.push(BOOKS[i][1]); }
+    $('sees-tail').hidden=on; $('sees-tail-on').hidden=!on;
+    $('sees').innerHTML=
+      '<div class="row"><div><b>Your books</b><small>'+(n?bk.join(' · ')+(W.books>3?' · and '+(W.books-3)+' more':''):'No books yet.')+'</small></div></div>'+
+      '<div class="row"><div><b>Recent notebook entries</b><small>'+(vis?'“'+esc(t.length>40?t.slice(0,38).replace(/\s+\S*$/,'')+'…':t)+'” · marginalia':'No notebook entries are visible to Yumi right now.'+((W.note && W.reg==="journal")?' Journal notes are never read.':''))+'</small></div><span class="stt">'+(vis?'VISIBLE':'NONE')+'</span></div>'+
+      '<button type="button" class="row in" role="switch" aria-checked="'+W.reads+'" data-reads><span>Yumi reads along</span><i class="sw"></i></button>'+
+      '<div class="row"><div><small>No arc is active right now. No conversation has happened yet in this session.</small></div></div>';
+    if(!c){
+      h='<h2 class="sub">May Yumi walk your shelves?</h2>'+
+        '<p class="p" style="font-size:13px">Her walk: your whole shelf, read for lenses, and her memory of you.</p>'+
+        '<div class="chips"><button type="button" data-consent="granted">Yes, walk them</button><button type="button" data-consent="declined">No, thank you</button></div>'+
+        '<div><button type="button" class="quiet" style="padding-left:0" data-consent="unanswered">Decide later</button></div>'+
+        '<p class="p" style="font-size:12.5px">Nothing is preselected. You can change this any time, on this page.</p>';
+    } else {
+      h='<div class="card"><div class="sees"><div class="row"><div><b>Yumi\'s walk</b><small>'+(paused?'Paused while “Yumi reads along” is off. Turn it on, above, and her walk begins.':'your whole shelf, read for lenses, and her memory of you')+'</small></div><span class="stt" id="walk-state">'+walk+'</span></div></div></div>';
+      h+=on?'<div class="yline">'+GLYPH+'<span><em>Then I\'ll remember with you — and everything I keep stays readable, correctable, endable.</em><small>YUMI</small></span></div>'
+        :paused?''
+        :(c==="declined")?'<div class="yline">'+GLYPH+'<span><em>Then I\'ll wait to be asked.</em><small>YUMI</small></span></div><p class="p" style="font-size:13px">Praxis works fully without her walk. If you change your mind, the question is here.</p>'
+        :'<p class="p">Left unanswered, which is not a no. The question waits on this page and will not come looking for you.</p>';
+      h+='<div class="acts"><button type="button" class="pill" data-go="release" data-done>Enter Praxis</button><button type="button" class="quiet" data-consent="">Change my answer</button></div>';
+    }
+    $('ask').innerHTML=h; $('consent-hatch').hidden=!!c;
+  }
+  function paintRelease(){
+    var now=new Date(), hr=now.getHours(), s=stars(HOME,3.5,5), nx='', t=W.noteText;
+    var D=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], M=["January","February","March","April","May","June","July","August","September","October","November","December"];
+    $('rl-date').textContent=D[now.getDay()]+" · "+now.getDate()+" "+M[now.getMonth()];
+    $('rl-hello').innerHTML=(hr<12?"Good morning":(hr<18?"Good afternoon":"Good evening"))+",<br>Reader.";
+    $('rl-sky').innerHTML='<svg viewBox="0 0 340 100" role="img" aria-label="Your sky, carrying the '+plural(s.n,'light')+' you lit"><g fill="#BAA48C" opacity=".45"><circle cx="24" cy="30" r="1.4"/><circle cx="96" cy="14" r="1.2"/><circle cx="210" cy="12" r="1.4"/><circle cx="320" cy="88" r="1.2"/><circle cx="170" cy="94" r="1.3"/><circle cx="40" cy="92" r="1.1"/><circle cx="280" cy="60" r="1.2"/><circle cx="130" cy="75" r="1"/><circle cx="300" cy="20" r="1"/><circle cx="68" cy="66" r="1.1"/></g><g fill="#E8B23A" style="filter:drop-shadow(0 0 5px rgba(232,178,58,.85))">'+s.h+'</g></svg>';
+    $('rl-stat').innerHTML='<div><b>'+W.books+'</b><span>'+(W.books===1?'book':'books')+'</span></div><div><b>'+(W.note?1:0)+'</b><span>'+(W.note?'note':'notes')+'</span></div><div><b>0</b><span>arcs, for now</span></div>';
+    $('rl-note').innerHTML=W.note
+      ?'<span class="k">Where you left off</span><p class="sub" style="font-size:21px">'+esc(t.length>64?t.slice(0,62).replace(/\s+\S*$/,'').replace(/[,;:.\s]+$/,'')+'…':t)+'</p><p class="p" style="font-size:14px">Your note in <em>Pedagogy of the Oppressed</em>, just now.</p>'
+      :'<span class="k">Your margin</span><p class="sub" style="font-size:21px">Nothing written yet.</p><p class="p" style="font-size:14px">The gold pen opens a margin in any book.</p>';
+    if(W.books===0){ nx+='<div>No books yet. Scan, in the bar below, takes your first.</div>'; }
+    if(W.consent==="granted"){ nx+=(!W.reads)?'<div>Yumi\'s walk is paused while “Yumi reads along” is off. The switch is on What Yumi Sees.</div>':((W.books>=3)?'<div>Yumi is walking your shelf. Your lenses land on the shelf, under Lenses.</div>':'<div>Yumi walks your shelf once it holds three books.</div>'); }
+    else if(W.consent!=="declined"){ nx+='<div>The question about Yumi\'s walk waits on What Yumi Sees.</div>'; }
+    if(W.bailed){ nx+='<div>You left the introduction early. Continue the walk, in About, picks up where you stopped.</div>'; }
+    $('rl-next').innerHTML=nx; $('rl-next').hidden=!nx;
+  }
+  function paintYumi(){
+    var bs=$('stance').querySelectorAll('button'), i;
+    $('yq').textContent=W.books?"What pulled you to Freire first?":"Which book would you bring here first?";
+    $('ylabel').textContent=(W.consent==="granted" && W.reads && W.books>=3)?"READ FROM YOUR SHELF":"SCRIPTED · NO MODEL CALL UNTIL YOU WRITE BACK";
+    for(i=0;i<bs.length;i++){ bs[i].className=(bs[i].getAttribute('data-st')===W.stance)?'on':''; bs[i].setAttribute('aria-pressed',String(bs[i].getAttribute('data-st')===W.stance)); }
+  }
+
+  var screens=document.querySelectorAll('.screen');
+  var beatsEl=$('beats'), statesEl=$('states'), beatNames=[], i;
+  for(i=0;i<ST.length;i++){ if(beatNames.indexOf(ST[i].b)<0){ beatNames.push(ST[i].b); } }
+  function mkBtn(label,on,fn){ var b=document.createElement('button'); b.type='button'; b.textContent=label; b.setAttribute('aria-current',on?'true':'false'); b.onclick=fn; return b; }
+  function render(){
+    var st=ST[cur], j;
+    for(j=0;j<screens.length;j++){ screens[j].className=screens[j].className.replace(/ on\b/,'')+(screens[j].getAttribute('data-id')===st.s?' on':''); }
+    SIGNED=(st.s!=="welcome" && st.s!=="covenant" && st.s!=="signin" && st.s!=="signinfail");
+    paintBands(); paintScan(); paintFound(); paintShelf(); paintStandin(); paintMargin(); paintValues(); paintConsent(); paintRelease(); paintYumi();
+    beatsEl.innerHTML=''; statesEl.innerHTML='';
+    for(j=0;j<beatNames.length;j++){ (function(name){ beatsEl.appendChild(mkBtn(name,name===st.b,function(){ var k; for(k=0;k<ST.length;k++){ if(ST[k].b===name){ jump(k); break; } } })); })(beatNames[j]); }
+    for(j=0;j<ST.length;j++){ if(ST[j].b===st.b){ (function(idx){ statesEl.appendChild(mkBtn(ST[idx].n,idx===cur && !OFF,function(){ jump(idx); })); })(j); } }
+    $('an-title').textContent=OFF?"Your own path":st.t; $('an-law').textContent=OFF?"Reached by your taps · not a drawn state":st.l; $('an-body').textContent=OFF?"The phone now shows what your own taps produced. Pick a state above to return to a drawn one and its note.":st.x;
+    $('prev').disabled=(cur===0); $('next').disabled=(cur===ST.length-1);
+    $('walk-end').hidden=(st.s!=="release");
+    try{ localStorage.setItem('praxis-spine-f', String(cur)); }catch(e){}
+  }
+  /* jump = the design switcher: show a drawn state exactly. go = the reader's own tap: keep what they did. */
+  var OFF=false;
+  function jump(idx){ cur=idx; OFF=false; setW(ST[idx].w); $('spine-value').value=''; render(); }
+  function go(id){
+    var best=-1, score=-1, k, sc, from=ST[cur].s, on, r;
+    for(k=0;k<ST.length;k++){ if(ST[k].s===id){
+      sc=(ST[k].w[0]===W.books?1:0)+(ST[k].w[1]===W.note?1:0)+(ST[k].w[2]===W.consent?1:0)+(!!ST[k].w[3]===!!W.draft?1:0)+(!!ST[k].w[4]===W.bailed?1:0)+((ST[k].w[5]||"shelf")===W.mode?1:0)+(!!ST[k].w[6]===!!W.batch?1:0);
+      if(sc>score){ score=sc; best=k; }
+    } }
+    cur=best; OFF=(score<7); render();
+    on=document.querySelector('.screen.on'); if(on){ on.setAttribute('tabindex','-1'); try{ on.focus({preventScroll:true}); }catch(e){} }
+    if(from!==id){ r=$('phone').getBoundingClientRect(); if(r.top<0){ try{ window.scrollBy(0,r.top-12); }catch(e){} } }
+  }
+  $('phone').addEventListener('click',function(ev){
+    var el=ev.target, a;
+    while(el && el!==this && !(el.tagName==='BUTTON')){ el=el.parentNode; }
+    if(!el || el===this){ return; }
+    if(el.hasAttribute('data-keep')){ if(!W.draft.replace(/\s/g,'')){ $('spine-note').focus(); return; } W.note=1; W.noteText=W.draft.replace(/^\s+|\s+$/g,''); go('values'); return; }
+    if(el.hasAttribute('data-bail')){ W.bailed=true; go('release'); return; }
+    if(el.hasAttribute('data-scanmode')){ W.mode=el.getAttribute('data-scanmode'); go('scanning'); return; }
+    if(el.hasAttribute('data-shot') || el.id==='vf-alt'){ if(W.mode==="shelf"){ W.exc=true; go('found'); } else if(el.id==='vf-alt'){ W.standin="search"; go('standin'); } else { W.books+=1; W.batch=0; W.via="scan"; go('shelf'); } return; }
+    if(el.hasAttribute('data-standin')){ W.standin=el.getAttribute('data-standin'); go('standin'); return; }
+    if(el.hasAttribute('data-standin-go')){ W.books+=(W.standin==="search"?1:3); W.batch=0; W.via="other"; go('shelf'); return; }
+    if(el.hasAttribute('data-scandone')){ go(W.books?'shelf':'doors'); return; }
+    if(el.hasAttribute('data-review')){ W.exc=false; paintFound(); return; }
+    if(el.hasAttribute('data-shelve')){ W.batch=W.exc?5:6; W.books+=W.batch; W.scans+=1; W.via="scan"; go('shelf'); return; }
+    if(el.hasAttribute('data-undo')){ W.books-=W.batch; W.batch=0; W.scans-=1; go(W.books?'shelf':'scanning'); return; }
+    if(el.hasAttribute('data-reg')){ W.reg=el.getAttribute('data-reg'); paintMargin(); return; }
+    if(el.hasAttribute('data-v')){ a=el.getAttribute('data-v'); if(W.values.indexOf(a)>=0){ W.values.splice(W.values.indexOf(a),1); } else { W.values.push(a); } paintValues(); return; }
+    if(el.id==='vadd'){ a=$('spine-value').value.replace(/^\s+|\s+$/g,''); if(a && W.values.indexOf(a)<0){ W.values.push(a); } $('spine-value').value=''; paintValues(); return; }
+    if(el.hasAttribute('data-reads')){ W.reads=!W.reads; paintConsent(); return; }
+    if(el.hasAttribute('data-consent')){ W.consent=el.getAttribute('data-consent')||null; go('consent'); return; }
+    if(el.hasAttribute('data-st')){ W.stance=el.getAttribute('data-st'); paintYumi(); return; }
+    if(el.hasAttribute('data-go')){
+      if(el.hasAttribute('data-first')){ W.mode="shelf"; }
+      if(el.hasAttribute('data-done')){ W.bailed=false; }
+      go(el.getAttribute('data-go'));
+    }
+  });
+  $('spine-note').addEventListener('input',function(){ W.draft=this.value; $('keep').className=W.draft.replace(/\s/g,'')?'pill':'ghost'; });
+  $('spine-value').addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); $('vadd').click(); } });
+  $('prev').onclick=function(){ if(cur>0){ jump(cur-1); } };
+  $('next').onclick=function(){ if(cur<ST.length-1){ jump(cur+1); } };
+
+  /* view: annotated or walk. #walk on the link opens straight into the walk. */
+  function setMode(m){
+    var bs=document.querySelectorAll('[data-mode]'), k;
+    document.body.setAttribute('data-mode',m);
+    for(k=0;k<bs.length;k++){ if(bs[k].tagName==='BUTTON'){ bs[k].setAttribute('aria-pressed', bs[k].getAttribute('data-mode')===m?'true':'false'); } }
+  }
+  var mbs=document.querySelectorAll('button[data-mode]');
+  for(i=0;i<mbs.length;i++){ (function(b){ b.onclick=function(){ setMode(b.getAttribute('data-mode')); if(b.getAttribute('data-mode')==='walk'){ jump(0); } }; })(mbs[i]); }
+  $('restart').onclick=function(){ jump(0); };
+  $('shownotes').onclick=function(){ setMode('notes'); };
+
+  /* declined alternates, reference only */
+  var seg=$('palseg'), pbs=seg.querySelectorAll('button');
+  function setPal(v){ var k; document.body.setAttribute('data-pal', v); for(k=0;k<pbs.length;k++){ pbs[k].setAttribute('aria-pressed', pbs[k].getAttribute('data-pal')===v?'true':'false'); } }
+  for(i=0;i<pbs.length;i++){ (function(b){ b.onclick=function(){ setPal(b.getAttribute('data-pal')); }; })(pbs[i]); }
+  setPal('sunflower');
+
+  var walk=(location.hash==='#walk'), sv=null;
+  if(!walk){ try{ sv=localStorage.getItem('praxis-spine-f'); }catch(e){} }
+  setMode(walk?'walk':'notes');
+  jump((sv!==null && +sv>=0 && +sv<ST.length)?+sv:0);
+})();
+</script>
