@@ -233,3 +233,115 @@ ruling at Preston's instruction ("Add sequence.md's L7 entry"), not `PROPOSED:`.
 - **praxis-reviewer (re-grade): CLEARED TO COMMIT** — gate 6 PASS (every plan blob checked by content); gates 1–5, 7, 8
   PASS on the revised tree; 9 N/A. Blocking gates: none.
 STOP — awaiting "commit and push".
+
+## SHIPPED — 2026-10-18
+
+`caa35c3` L7a.1 · `d7760b8` L7a.2 · `2001f6e` L7a.3 — pushed; HEAD == origin/main == 2001f6ea0986808af09aae266a45eaccbc80bcb2.
+Hook per commit: exit 0 ×3 (L7a.1/L7a.3 silent; L7a.2 one rule-4 WARN on vendor code, 0 `BLOCK` lines).
+Netlify deploy 6ad50c2fe220af52afe2c007: commit_ref 2001f6e, state ready, deploy_time 12 s (prior deploy 8 s — no
+dependency install ran for `ios-shell/package.json`; recon §0.8 backstop discharged), 5 functions unchanged (same digests).
+
+## STAGE 4 — live check on Preston's iPhone (praxis-v3.302, after the update banner), 2026-10-18
+
+| check | result | evidence (Preston) |
+|---|---|---|
+| Yumi round-trip (claude-proxy, base '') | **PASS** | message round-tripped |
+| Book title search (google-books-proxy) | **PASS** | results returned |
+| Dictation (transcribe-proxy) | **PASS** | words returned |
+| Shelf photo scan (shelf-vision) | **NOT RUN** | residual R16 — same base and same `aiProxyRequest` door as Yumi, which passed |
+| Barcode decode (vendored zxing) | **PASS** | ISBN 9781324004615 decoded; matches the printed 978-1-324-00461-5 |
+| Barcode lookup | **FAIL — PRE-EXISTING** | "Not found" for *The Selected Works of Audre Lorde* (Norton 2020), which Open Library has |
+| Viewfinder behind the verdict | **FAIL — PRE-EXISTING** | went black behind the verdict |
+| Detection speed | **FAIL — PRE-EXISTING** | slow before it locked |
+
+The three scan failures are ruled PRE-EXISTING by Preston, not caused by L7a. They are NOT patched here and go to a
+separate **SCAN-FIX** slice. L7a's only scan-path change is where zxing is loaded from, and decoding PASSED.
+Not run on device: steps 1–2 (version via #diag, vendored URLs) and 9 (desktop DevTools). The working Firebase
+sign-in, the zxing decode and the v3.302 banner reload cover what they were for.
+
+## STAGE 5 — the simulator proof, 2026-10-18
+
+Artifact: `ios-shell-sim.zip` (2,545,268 B, sha256 1A72BF86…542B9C) from Preston's Downloads. Its contents were
+checked BEFORE use: exactly the four paths the workflow uploads (out/screenshot.png, out/console-pty.log,
+out/log-stream.log, ios-shell/package-lock.json), timestamped 18:19–18:25 UTC, after the 18:13 UTC deploy. Copied
+to `.claude/l7a-sim/` (gitignored, hash identical) and extracted to `.claude/l7a-sim/extracted/`.
+Run (public GitHub API): run 39153619725, "iOS shell — simulator", event workflow_dispatch, head 2001f6e,
+runner label macos-26, **conclusion success**, 18:19:17 → 18:26:17 UTC.
+
+| # | step | result | time (UTC) |
+|---|---|---|---|
+| 2 | Checkout | success | 18:19:31–33 |
+| 3 | Select Xcode 26.6 | success | 18:19:33 |
+| 4 | Set up Node 24.20.0 | success | 18:19:33–41 |
+| 5 | Install Capacitor 8.5.2 | success | 18:19:41–46 |
+| 6 | Assemble www | success | 18:19:46 |
+| 7 | Add the iOS platform | success | 18:19:46–47 |
+| 8 | Sync iOS | success | 18:19:47–48 |
+| 9 | Build App (Debug, iphonesimulator) | success | 18:19:48–20:44 |
+| 10 | Boot the first available iPhone simulator | success | 18:20:44–22:16 |
+| 11 | Install the app | success | 18:22:16–23:49 |
+| 12 | Launch, wait 25 s, screenshot, capture the console | success | 18:23:49–25:37 |
+| 13 | Upload artifacts | success | 18:25:37–44 |
+| 14 | Verify the shell reported in | success | 18:25:44–45 |
+
+**Screenshot** (1206×2622 px, status bar 6:24): the signed-out front door. "praxis" wordmark top left with the menu
+button, the gold flower mark, "Welcome to Praxis", the intro paragraph ending "Sign in to begin.", a gold **Sign in**
+button, the + capture button bottom left and the Yumi bloom bottom right, on the dark-to-amber ground. The simulator's
+device name is in the run log, which needs GitHub sign-in to read; the artifacts do not record it.
+
+**[praxis-shell] line, verbatim:**
+`[praxis-shell] {SpeechRecognition:false, webkitSpeechRecognition:true, MediaRecorder:true, mediaDevices.getUserMedia:false, BarcodeDetector:false, serviceWorker:false, PRAXIS_API_BASE:"https://praxis-reading.netlify.app"}`
+
+**Page console** (console-pty.log, 1,124 B): Capacitor's "Loading app at capacitor://localhost..." line, then the
+nine `… loaded` lines, `App init`, the `[praxis-shell]` line, `yumi-brain: voice doc loaded (11885 chars)`,
+"WebView loaded", `onAuthStateChanged: signed out`. The one native line before them is iOS's DiskCookieStorage
+policy notice.
+**Console errors: NONE.** No sign-in-popup error appears because nothing was tapped, so there is nothing to classify
+as "expected (L7b)" or "NEW".
+log-stream.log (144 B): only the `log` tool's header and its own SIGTERM line, with zero page output. This confirms
+fork F3: the page console reaches stdout only.
+
+**What loaded:**
+- Firebase (vendored): yes. `onAuthStateChanged` ran, and index.html has no other Firebase source.
+- The voice doc from `docs/`: yes (11,885 chars, same as the web).
+- zxing: not loaded. It is lazy-loaded when a scan opens, and no scan was opened.
+- `universal-depth.css`: bundled by assemble-www.sh. No log line proves it either way.
+- Fonts (Google Fonts, network): the screenshot shows a serif wordmark and a geometric sans for the body, consistent
+  with Cormorant Garamond and DM Sans. No log line proves it, so this is "appears loaded", not proven.
+
+**package-lock.json** (42,905 B, lockfileVersion 3): @capacitor/cli, /core and /ios resolved at 8.5.2 from
+registry.npmjs.org; 98 `node_modules/` entries. Committing it is a later step (R5).
+
+**Stage 5 verdict: PASS.** It built, installed and launched; the front door rendered; the `[praxis-shell]` line and
+the voice-doc line are present; no console errors. As stated before the run, this proves the shell opens and the API
+base resolves (`PRAXIS_API_BASE:"https://praxis-reading.netlify.app"`). It does NOT prove a server call from inside
+the shell, which needs sign-in (L7b).
+
+**Shell findings, measured not explained** (each feeds L7b or a later slice):
+- `mediaDevices.getUserMedia:false`: camera and mic capture are unavailable in this shell as configured, so scan and
+  dictation will not work in the iOS app until it is addressed. R4 is already open for the usage strings.
+- `SpeechRecognition:false / webkitSpeechRecognition:true`: only the prefixed constructor exists.
+- `MediaRecorder:true`, `BarcodeDetector:false`, `serviceWorker:false` (the SW guard is moot, as expected).
+
+## Residuals added at close
+
+R16 shelf-photo scan (shelf-vision) not run live on v3.302; same base and door as the passing Yumi call ·
+R17 **SCAN-FIX** (pre-existing, separate slice): the ISBN lookup misses a book Open Library has, the viewfinder goes
+black behind the verdict, and detection is slow to lock · R18 `getUserMedia` is absent inside the shell (camera and
+mic), measured in Stage 5. Owner: L7b or a dedicated slice.
+
+## Stage 5 — required lines, verbatim from out/console-pty.log (grep -F, CR stripped, not retyped)
+
+Voice-doc line (`grep -cF 'yumi-brain: voice doc loaded ('` = 1):
+
+```
+⚡️  [log] - yumi-brain: voice doc loaded (11885 chars)
+```
+
+Feature line (`grep -cF '[praxis-shell]'` = 1):
+
+```
+⚡️  [log] - [praxis-shell] {SpeechRecognition:false, webkitSpeechRecognition:true, MediaRecorder:true, mediaDevices.getUserMedia:false, BarcodeDetector:false, serviceWorker:false, PRAXIS_API_BASE:"https://praxis-reading.netlify.app"}
+```
+
+Error/warning search: `grep -ciE 'error|warn|fail|exception|unhandled|refused|denied'` = 0 in console-pty.log (17 lines) and 0 in log-stream.log (3 lines); Capacitor level tags `[error]` = 0, `[warn]` = 0, `[log]` = 13. Nothing to classify.
