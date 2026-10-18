@@ -9841,7 +9841,10 @@ function scanStartBookDecode() {
       if (!scanCamReady || !scanIsViewfinderLive()) { window.setTimeout(tick, 300); return; }
       detector.detect(v).then(function (codes) {
         if (!scanNativeDecoding) { return; }
-        if (codes && codes.length > 0 && codes[0].rawValue) { scanOnBarcode(codes[0].rawValue); return; }
+        // SCAN-FIX.4 — keep reading after the FIRST read, or the confirming read (FX-B) never
+        // comes. A confirming read calls scanStopBookDecode, which sets scanNativeDecoding false
+        // before this guard runs, so the loop ends there.
+        if (codes && codes.length > 0 && codes[0].rawValue) { scanOnBarcode(codes[0].rawValue); if (scanNativeDecoding) { window.setTimeout(tick, 300); } return; }
         window.setTimeout(tick, 300);
       }, function () { if (scanNativeDecoding) { window.setTimeout(tick, 300); } });
     };

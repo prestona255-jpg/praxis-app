@@ -31,6 +31,14 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-18 (SCAN-FIX — L7a's three pre-existing scan failures, built local v3.303–v3.306)** — added to
+  `## Now` under L7; nothing re-ordered or retired, so no `PROPOSED:` flag. Also corrects the L7 entry, which still
+  read "awaits commit and push" after L7a shipped. Stage 0 corrected the brief twice before a line was built: the
+  existing `fetchBookByIsbn` was the wrong reuse (it re-asks Google and can discard the Open Library record), and
+  the photo paths do not keep a frame behind the verdict (they unfreeze first). Preston split the fallback's reach
+  (F7): "Fix this book" opts out because it overwrites the record and Open Library keeps only the first author;
+  every other ISBN caller gets it. Which Google outcome produced the device's "Not found" stays UNKNOWN (no egress).
+  Record: `docs/checkpoints/scan-fix.md`.
 - **2026-10-17 (L7 — THE APP SHELL opens; L7a built local, three commits awaiting "commit and push")** —
   records a ruling that until now lived only in chat (thirteenth sitting r4; twelfth r25–28): **Praxis ships to
   the App Store by January 1 as a BUNDLED app** — the code inside a Capacitor iOS shell, not a wrapper around the
@@ -1329,12 +1337,19 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
-- [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a built local 2026-10-17, v3.300–v3.302)** —
+- [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a SHIPPED 2026-10-18, v3.300–v3.302)** —
   the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
-  `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Awaits "commit and push" → Preston's
-  on-device live check (Stage 4) → the simulator run (Stage 5). L7b (native sign-in, bundle ID, icon, TestFlight)
-  waits for the Apple Developer account. Record: `docs/checkpoints/l7a.md`.
+  `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Pushed `2001f6e`; Preston's on-device
+  check (Stage 4) and the simulator run (Stage 5) PASS, record `60ce6b5`. Its three pre-existing scan failures went
+  to SCAN-FIX (below); `getUserMedia` absent inside the shell (R18) goes to L7b. L7b (native sign-in, bundle ID,
+  icon, TestFlight) waits for the Apple Developer account. Record: `docs/checkpoints/l7a.md`.
   touches: [cross-cutting]
+- [~] **SCAN-FIX — the website barcode scanner (L7a R17; built local 2026-10-18, v3.303–v3.306)** — an ISBN Google
+  Books misses or fails on now falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out
+  until its preview, r22); the last camera frame stays behind the Book verdict; zxing reads only the four book
+  formats with 150 ms to the confirming read; the Chrome BarcodeDetector loop no longer dies after its first read.
+  Awaits "commit and push" → Preston's device check. Record: `docs/checkpoints/scan-fix.md`.
+  touches: [scan]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
   −99,120 app-bytes, ZERO behavior / ZERO pixels): the re-plan stamp; the auto-guard verify+extend
