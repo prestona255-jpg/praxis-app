@@ -9851,7 +9851,19 @@ function scanStartBookDecode() {
       if (scanMode !== 'book' || !scanEl('scan-cam-video')) { return; } // left while loading
       if (!ok || !zxingReady()) { return; } // silent — the denied/offline door carries ISBN type-in
       try {
-        scanZxingReader = new window.ZXing.BrowserMultiFormatReader();
+        // SCAN-FIX.3 T1 — decode only the four formats the native list above reads, so Safari
+        // and Chrome read the same codes. With no hints zxing ran every 1D reader plus QR, Data
+        // Matrix, Aztec and PDF417 on each frame. zxing's hints API is a Map; try -> null keeps
+        // today's all-formats reader if it is missing.
+        var zxHints = null;
+        try {
+          zxHints = new Map();
+          zxHints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [window.ZXing.BarcodeFormat.EAN_13,
+            window.ZXing.BarcodeFormat.EAN_8, window.ZXing.BarcodeFormat.UPC_A, window.ZXing.BarcodeFormat.UPC_E]);
+        } catch (eH) { zxHints = null; }
+        // SCAN-FIX.3 T2 — 150 ms (zxing's default 500) between a successful read and the next
+        // attempt: the confirming second read arrives sooner. The second read itself stays.
+        scanZxingReader = new window.ZXing.BrowserMultiFormatReader(zxHints, 150);
         var onZx = function (result) { if (result && typeof result.getText === 'function') { scanOnBarcode(result.getText()); } };
         if (typeof scanZxingReader.decodeFromConstraints === 'function') {
           scanZxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, v, onZx);
