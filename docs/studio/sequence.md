@@ -31,6 +31,23 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-17 (L7 — THE APP SHELL opens; L7a built local, three commits awaiting "commit and push")** —
+  records a ruling that until now lived only in chat (thirteenth sitting r4; twelfth r25–28): **Praxis ships to
+  the App Store by January 1 as a BUNDLED app** — the code inside a Capacitor iOS shell, not a wrapper around the
+  live site. Added to `## Now` as a lane beside P2; no existing item re-ordered or retired, so no `PROPOSED:` flag.
+  L7a makes the web app shell-ready with the web behaving exactly as today: one API base (`PRAXIS_API_BASE`, '' on
+  the web), Firebase 10.12.5 compat + zxing 0.20.0 vendored under `vendor/`, a service-worker guard, a shell-only
+  feature line, the `ios-shell/` scaffold (Capacitor 8.5.2) and a manual-only simulator workflow on a GitHub macOS
+  runner (the repo is public, so its minutes are free). Stage 0 corrected three things in the brief before a line
+  was built: the pre-commit hook blocks a JS commit without a cache bump, so Preston RETRACTED "one bump in the
+  last commit" and each of the three commits bumps once (v3.300 → v3.302); Capacitor sends the page console to the
+  app's stdout, which `log stream` never sees, so the workflow captures with `simctl launch --console-pty` on a
+  Debug build; and two runtime files live under `docs/` (`studio/universal-depth.css`, `yumi-voice.md`), so the
+  shell's copy list carries them. Netlify's primary domain is praxisreader.com; Preston verified from outside this
+  network on 17 Oct that praxis-reading.netlify.app serves the app directly, so it stays the API base — re-check
+  before L7b. Next in L7: Preston's on-device live check (Stage 4), the simulator run (Stage 5), then L7b (native
+  sign-in, bundle ID, icon, TestFlight) once the Apple Developer account exists. Record:
+  `docs/checkpoints/l7a-recon.md` + `docs/checkpoints/l7a.md`.
 - **2026-10-09 (P2 SHAPE — spine mockup + mockup-stage acceptance card land; five forks; the 10-05 score corrected)** —
   no re-order of ## Now, so no `PROPOSED:` flag; P2 SHAPE stays the lead. Two chat sessions are recorded here so
   neither joins the chat-only rulings the ## Next audit line tracks. **2026-10-05 (Preston, tappable, at rec):** the
@@ -1312,6 +1329,12 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
+- [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a built local 2026-10-17, v3.300–v3.302)** —
+  the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
+  `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Awaits "commit and push" → Preston's
+  on-device live check (Stage 4) → the simulator run (Stage 5). L7b (native sign-in, bundle ID, icon, TestFlight)
+  waits for the Apple Developer account. Record: `docs/checkpoints/l7a.md`.
+  touches: [cross-cutting]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
   −99,120 app-bytes, ZERO behavior / ZERO pixels): the re-plan stamp; the auto-guard verify+extend

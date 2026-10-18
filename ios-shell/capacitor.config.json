@@ -1,0 +1,7 @@
+{
+  "_comment": "appId is a placeholder until Preston confirms the bundle ID in L7b; it becomes permanent at App Store registration",
+  "appId": "com.praxisreading.app",
+  "appName": "Praxis",
+  "webDir": "www",
+  "loggingBehavior": "debug"
+}

@@ -265,6 +265,7 @@ Checkpoints: `docs/checkpoints/N0-recon.md`, `N-foundation.md`, `N1.md`, `N2.md`
 | 3 | 9.6d book-evidence layer | PLANNED | Authored, never shipped; nearest unshipped constellation sub-stage. |
 | 4 | 10.5.8 = audit bug #5 writing-surface field treatment | DEFERRED | Own comp-gate; cross-linked to audit #5 (§4). |
 | 5 | Visual-uplift per-surface residual backlog | OPEN | Yumi panel, settings, empty states, onboarding polish. Initiative, not a dated stage. |
+| 6 | **L7a — the app shell, first slice** (App Store by Jan 1, bundled Capacitor shell) | BUILT LOCAL 2026-10-17 · v3.300–v3.302 · awaiting "commit and push" | Three commits L7a.1–L7a.3: one API base (`PRAXIS_API_BASE`), Firebase 10.12.5 + zxing 0.20.0 vendored, SW guard, `ios-shell/` (Capacitor 8.5.2), dispatch-only simulator workflow. Live check = Preston on device; simulator proof = Stage 5. Record: `docs/checkpoints/l7a.md`. (This tracker is otherwise stale since 2026-07-03 — the S-B retire/refresh ruling is open; this row is added only so L7a is not missing from it.) |
 
 ---
 

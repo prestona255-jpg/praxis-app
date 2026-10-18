@@ -1,0 +1,158 @@
+# L7a — the Praxis iOS app shell, simulator proof.
+# Manual only: runs when someone presses "Run workflow" on the Actions tab.
+# There is deliberately NO push / pull_request trigger, so it never spends
+# macOS minutes by surprise. Every step fails the job on any error.
+name: iOS shell — simulator
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode 26.6
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+
+      - name: Set up Node 24.20.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.20.0'
+
+      - name: Install Capacitor 8.5.2
+        working-directory: ios-shell
+        run: npm install
+
+      - name: Assemble www
+        working-directory: ios-shell
+        run: bash scripts/assemble-www.sh
+
+      - name: Add the iOS platform
+        working-directory: ios-shell
+        run: npx cap add ios
+
+      - name: Sync iOS
+        working-directory: ios-shell
+        run: npx cap sync ios
+
+      - name: Build App (Debug, iphonesimulator)
+        working-directory: ios-shell/ios/App
+        run: |
+          set -euo pipefail
+          if [ -d App.xcworkspace ]; then
+            TARGET="-workspace App.xcworkspace"
+          else
+            TARGET="-project App.xcodeproj"
+          fi
+          xcodebuild $TARGET -scheme App -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$GITHUB_WORKSPACE/derived-data" \
+            CODE_SIGNING_ALLOWED=NO build
+          APP_PATH="$GITHUB_WORKSPACE/derived-data/Build/Products/Debug-iphonesimulator/App.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::App.app not found at $APP_PATH"
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Boot the first available iPhone simulator
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          UDID=$(xcrun simctl list devices available | grep -E '^[[:space:]]+iPhone' | head -1 \
+            | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' || true)
+          if [ -z "$UDID" ]; then
+            echo "::error::no available iPhone simulator"
+            exit 1
+          fi
+          echo "Using simulator $UDID"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          if xcrun simctl list devices | grep "$UDID" | grep "(Booted)" > /dev/null; then
+            echo "Simulator already booted"
+          else
+            xcrun simctl boot "$UDID"
+          fi
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install the app
+        run: xcrun simctl install "$UDID" "$APP_PATH"
+
+      - name: Launch, wait 25 s, screenshot, capture the console
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          APP_ID=$(node -p "require('./ios-shell/capacitor.config.json').appId")
+          echo "Launching $APP_ID"
+          # Capacitor forwards the page console to the app's stdout (Debug build,
+          # loggingBehavior debug); --console-pty relays it line-buffered.
+          xcrun simctl launch --console-pty --terminate-running-process "$UDID" "$APP_ID" > out/console-pty.log 2>&1 &
+          LAUNCH_PID=$!
+          sleep 25
+          if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then
+            echo "::error::the app exited within 25 s of launch"
+            cat out/console-pty.log
+            exit 1
+          fi
+          xcrun simctl io "$UDID" screenshot out/screenshot.png
+          # Second artifact: 30 s of the app process's unified log.
+          xcrun simctl spawn "$UDID" log stream --style compact --level debug \
+            --predicate 'process == "App"' > out/log-stream.log 2>&1 &
+          LOG_PID=$!
+          sleep 30
+          # Stop the second capture. It is stopped on purpose, so its exit status is
+          # reported, never allowed to fail the step before the console is printed.
+          kill "$LOG_PID" 2>/dev/null || echo "log stream had already stopped"
+          wait "$LOG_PID" 2>/dev/null || echo "log stream stopped"
+          # End the app cleanly so `simctl launch --console-pty` returns on its own
+          # and flushes its output, rather than being killed mid-buffer.
+          xcrun simctl terminate "$UDID" "$APP_ID" || echo "terminate reported non-zero"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$LAUNCH_PID" 2>/dev/null; then
+            echo "console capture still running after terminate; stopping it"
+            kill "$LAUNCH_PID" 2>/dev/null || true
+          fi
+          wait "$LAUNCH_PID" 2>/dev/null || echo "console capture exited non-zero (expected after terminate)"
+          echo "--- console-pty.log"
+          cat out/console-pty.log
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-shell-sim
+          path: |
+            out/screenshot.png
+            out/console-pty.log
+            out/log-stream.log
+            ios-shell/package-lock.json
+          if-no-files-found: warn
+
+      - name: Verify the shell reported in
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in out/screenshot.png out/console-pty.log ios-shell/package-lock.json; do
+            if [ ! -s "$f" ]; then echo "::error::missing or empty: $f"; fail=1; fi
+          done
+          if ! grep -F '[praxis-shell]' out/console-pty.log; then
+            echo "::error::no [praxis-shell] feature line in the page console"; fail=1
+          fi
+          if ! grep -F 'yumi-brain: voice doc loaded (' out/console-pty.log; then
+            echo "::error::no 'yumi-brain: voice doc loaded (' line in the page console"; fail=1
+          fi
+          exit "$fail"

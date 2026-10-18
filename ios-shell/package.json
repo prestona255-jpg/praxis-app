@@ -1,0 +1,11 @@
+{
+  "name": "praxis-ios-shell",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Praxis iOS app shell (Capacitor). Build-time tooling only; runs in CI, never on the Netlify deploy.",
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  }
+}

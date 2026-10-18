@@ -10,6 +10,17 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App init');
+  // L7 · shell-only feature report: one console line, inside the iOS app shell only (window.Capacitor is undefined on the web).
+  if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+    var shellMd = navigator.mediaDevices;
+    console.log('[praxis-shell] {SpeechRecognition:' + (typeof window.SpeechRecognition !== 'undefined') +
+      ', webkitSpeechRecognition:' + (typeof window.webkitSpeechRecognition !== 'undefined') +
+      ', MediaRecorder:' + (typeof window.MediaRecorder !== 'undefined') +
+      ', mediaDevices.getUserMedia:' + !!(shellMd && shellMd.getUserMedia) +
+      ', BarcodeDetector:' + (typeof window.BarcodeDetector !== 'undefined') +
+      ', serviceWorker:' + ('serviceWorker' in navigator) +
+      ', PRAXIS_API_BASE:"' + PRAXIS_API_BASE + '"}');
+  }
   // ME-1 (B4): arm the measurement covenant BEFORE loadState, so a failure in
   // load/migrate is counted rather than lost — that is the single most useful
   // error this module can catch. install() only reads two ls() keys and sets a
