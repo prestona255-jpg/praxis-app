@@ -569,3 +569,382 @@ the rehearsed final tree equals the working tree for js/integrations.js, js/view
   true before SCAN-FIX.4, not after).
 
 STOP — awaiting "commit and push".
+
+## SHIPPED — 2026-10-18 (on Preston's "Commit and push")
+
+`bb29310` SCAN-FIX.1 (v3.303) · `c9925df` SCAN-FIX.2 (v3.304) · `479b51d` SCAN-FIX.3 (v3.305) · `d245283` SCAN-FIX.4
+(v3.306) — pushed `60ce6b5..d245283`; HEAD == origin/main == d245283cb9dca0485810b5917ed213b9faa08607.
+Each commit's `git show --stat` = exactly its planned files; hook silent ×4; HEAD tree == working tree for
+js/integrations.js, js/views.js, sw.js. Foundations re-md5: lumen-amber.css `070679b0…` 14,966 B · marks.js
+`772886c0…` 10,255 B — unchanged.
+Netlify deploy 6ad529d38b356a3a019372d4: commit_ref d245283, state ready, published 2026-10-18T20:19:41Z,
+deploy_time 9 s, 5 functions deployed (no function source changed in this slice).
+Live origin from this machine: curl `000`, exit 56 — the device check above is Preston's (PROTOCOL §9).
+This SHIPPED note rides the SCAN-FIX.5 commit, with the device-check results below.
+
+## Device check of SCAN-FIX.1–4 — Preston, iPhone Safari, live praxis-v3.306, 2026-10-18 ~3:20–3:25 pm CT
+
+| step | result | what Preston saw |
+|---|---|---|
+| The Lorde book (9781324004615) | **PASS** | resolved with its title, author "Audre Lorde", a cover and "On your shelf" |
+| Frozen frame behind the verdict | **PASS** | the frame showed behind the verdict |
+| Rescan with "Keep scanning", several times | **PASS** | passed each time |
+| Lock-on speed | felt fast | not timed in seconds |
+| A DIFFERENT book after "Keep scanning" (a pink Routledge paperback, barcode far away and out of focus) | **FAIL** | the verdict appeared INSTANTLY reading "Not found · ISBN 9781324004615" — the PREVIOUS book's ISBN — over a frozen frame of the pink book; no chance to scan the new book |
+
+The FAIL opens **SCAN-FIX.5** below.
+
+---
+
+# SCAN-FIX.5 — Stage 0 recon + instrument, 2026-10-18
+
+Ground truth: HEAD `d245283` (SCAN-FIX.4), CACHE_VERSION `'praxis-v3.306'`, hook ARMED, FIX-PROTOCOL v1.3.
+Tracked changes: only `docs/checkpoints/scan-fix.md` (the uncommitted SHIPPED note, +12 lines). Untracked: 111.
+Re-read: CLAUDE.md · PROTOCOL.md · docs/FIX-PROTOCOL.md · .claude/agents/ (7) · this file — all present, none missing;
+no commit has touched the protocol docs since they were read this session (`git log 60ce6b5..HEAD` on them: 0).
+
+## The brief's code facts, checked against vendor/zxing/0.20.0/index.min.js
+
+- ⚠ **PREMISE CORRECTED: `reset()` DOES reach `stopContinuousDecode()`** — `reset(){this.stopStreams(),…}` and
+  `stopStreams(){…,!1===this._stopAsyncDecode&&this.stopAsyncDecode(),!1===this._stopContinuousDecode&&this.stopContinuousDecode()}`.
+  A RUNNING loop (flag `false`) is stopped by reset().
+- The real hole is the START. The constructor sets `_stopContinuousDecode=!1`; `decodeFromConstraints` awaits
+  `getUserMedia`, then `decodeFromStream` → `this.reset()` → awaits `attachStreamToVideo` (which waits for the video
+  to play) → `decodeContinuously(t,e){this._stopContinuousDecode=!1;…}`. A `reset()` that lands while a reader is
+  still starting sets the flag to `true`, and `decodeContinuously` then **overwrites it with `false`**. The reader
+  decodes forever, and `scanStopBookDecode` has already set `scanZxingReader = null`, so nothing can stop it. **An orphan.**
+- Confirmed: `decodeContinuously` reschedules after a success (`timeBetweenScansMillis`, 150 ms since T2) and after
+  NotFound/Checksum/Format (0 ms), always on the element it was given (`#scan-cam-video`). Every "Keep scanning" makes a
+  new reader. `decodeFromConstraints` returns a promise that resolves right after the loop's first pass.
+- Where orphans are born: (1) **entry** — `scanEnter` → `scanSetMode` → `scanStartBookDecode` creates a reader, and
+  `scanEnter` then calls `scanStopBookDecode()` (:9786) while it is still awaiting getUserMedia → an orphan before the
+  primer is tapped; (2) **every restart** — an orphan's confirm calls `scanStopBookDecode()` during the NEW reader's
+  start (~300 ms on iOS) → that reader is orphaned too. Orphans multiply.
+
+## The instrument (`.claude/scanfix-head/instrument2.js` + `harness5.js`, gitignored)
+
+Fake camera via `getUserMedia` → `canvas.captureStream`: ISBN A (9781324004615, paper ground) until "Keep scanning",
+then B (9780415389556, pink ground), alternating; 300 ms getUserMedia latency (iOS-like). Variant `stale`: each new
+stream shows the PREVIOUS book for a set window. Counters: decode calls per zxing reader instance (prototype wrap on
+`BrowserMultiFormatReader.prototype.decode`), every `scanOnBarcode` with its source reader, every `resolveBook`, every
+`scanShowVerdict`. Google proxy = the rig's real 404; Open Library stubbed (A found, B a miss) with device-like latency.
+Rig caveat found and fixed mid-run: the app's SW serves same-origin rig files cache-first (`cache:'no-store'` does not
+bypass it), so the first two stale runs used an old instrument and are DISCARDED; every later fetch is `?v=`-busted. A
+third stale run is also discarded: its F-d-on half inherited a chain already misaligned by its F-d-off half.
+
+## 0.3 — reproduced on HEAD bytes (v3.306)
+
+Entry, before "Allow" is tapped: **1 loop alive, 4–5 reads**, and a confirm + lookup + verdict before Allow.
+`scanZxingReader` is `null` from then on. Five A→B cycles, Open Library at 2.5 s:
+
+| cycle | camera | verdicts that landed (in order) | wrong-book | lookups | reads during the verdict | loops alive during the verdict |
+|---|---|---|---|---|---|---|
+| 1 | B | A, A, A, A — first at 598 ms after the tap | **4** | 10 | 15 | 3 |
+| 2 | A | A,A,A,A,A,B(nf),A,B(nf),A,B(nf) | **3** | 8 | 17 | 4 |
+| 3 | B | A,B(nf),B(nf),A,B(nf),B(nf),A,A,B(nf),B(nf),A,B(nf),A,B(nf) | **6** | 9 | 16 | 5 |
+| 4 | A | A | 0 | 11 | 19 | 6 |
+| 5 | B | B(nf)×5, A, B(nf), A, B(nf), A, B(nf), A, B(nf), A, A | **6** | 8 | 19 | 7 |
+
+(nf = not found.) An earlier 4-cycle run: 25–45 lookups per 4 s window, 328 Open Library calls in four cycles.
+**H1 REPRODUCES** — loops from earlier readers survive (orphans), keep reading during every verdict and after every
+restart, and each of their confirms launches a lookup whose verdict lands whenever it lands. Cycle 1 is the device
+FAIL exactly: camera on the new book, verdicts for the old ISBN arriving "instantly" (598 ms) over a frozen frame of
+the new book (each orphan confirm calls `scanFreezeFrame()`, which draws the live video — the new book).
+**H2** — with the orphans removed (the draft fix below), a camera whose new stream shows the previous book for 1 s
+DOES re-confirm the previous book: **6/6 wrong** without F-d. So H2 is real ON THE RIG for a ≥ ~1 s stale window (a
+300 ms window was not enough, because zxing's first decode waits for the new stream to play). Whether an iPhone delivers
+stale frames that long is **device-only**.
+
+## Why "Not found" for an ISBN that resolved minutes earlier — from code; the device cause stays UNKNOWN
+
+A "Not found" barcode card means BOTH legs failed: `googleBooksSearch` returned no items or an err (integrations.js
+:2511 / :2509 / :2514 — including a 429 after its 1.6 s backoff, or a fast fail while its 20 s breaker is open), AND
+`isbnViaOpenLibrary` got no titled record: `fetchOpenLibrary` returns null on ANY fetch/JSON error (no `res.ok` check,
+:1914–1961 — a 429/503 HTML body fails `res.json()`), or the 6 s limit fired. On HEAD the orphans fire **dozens of
+lookups per verdict** (above), every one a Google proxy call (+2 retries on 429) and 1–2 Open Library calls for the same
+ISBN — the load that trips Google's quota/breaker and makes Open Library slow or refuse. Which of these produced the
+device's "Not found" is **UNKNOWN** (no egress to the live proxy, no device log). One measured data point, not a proof:
+openlibrary.org timed out from this machine twice today at ~20:45 UTC (curl exit 28; the pane's fetch "Failed to
+fetch"). And the verdict was "instant" because it was not the new scan's lookup at all — an older lookup landed after
+the tap.
+
+## 0.4 — the fix, as four parts (drafted on a scratch copy and run in the rig page; app code untouched)
+
+- **F-a (as written: "stopContinuousDecode() before reset()") — REDUNDANT, and does not reach the bug.** reset()
+  already calls it for a running loop, and during a start the flag it sets is overwritten by `decodeContinuously`.
+  **Proposed F-a′ instead:** capture each reader (`zxReader`) and chain on its start promise
+  (`decodeFromConstraints(...).then(onZxStarted)`); if that reader is no longer current when its loop starts, call
+  `zxReader.stopContinuousDecode()` — which sticks now, because the loop is running — and stop its camera stream
+  unless it is the one on screen (then `scanRegisterStream`, so FX-A's teardown owns it).
+- **F-b — generation guard.** zxing: `onZx` drops a read unless `zxReader === scanZxingReader`. Native: each start
+  takes `nGen = ++scanNativeGen`; a tick or an in-flight `detect()` with a stale gen ends. **Closes R14.**
+- **F-c — one lookup at a time.** `scanAwaitingVerdict` from the confirming read until the verdict closes (reads
+  ignored), plus a `scanLookupGen` token bumped on every close, so a lookup that lands after a mode switch / leave is
+  dropped instead of popping a verdict. With F-a′+F-b the read gate is belt-and-braces (the confirm already stops the
+  current reader); the lookup token is not redundant (it covers a close DURING a lookup, which nothing else does).
+- **F-d — the last book is quiet for 1.5 s.** `scanShowVerdict` records the barcode ISBN shown; every close
+  (`scanHideVerdict`, the one close path) quiets it for 1.5 s; `scanOnBarcode` ignores it in that window without
+  counting it as a first read. The same book again works after 1.5 s. Shown necessary on the rig against a 1 s stale
+  window (above). **Limit:** a stale window longer than 1.5 s would still misfire (R16).
+
+**Draft results on the rig** (same harness, 300 ms getUserMedia, Open Library 2.5 s):
+- Plain A↔B, 10 cycles: **10/10 correct**, **1 lookup per confirm**, **1 loop alive while scanning, 0 during the
+  verdict, 0 reads during the verdict**; nothing reads before Allow.
+- Stale 1 s, fresh session, F-d on: **8/8 correct** (verdict 2.4–2.9 s after the tap, once the stale frames pass).
+  Stale 1 s, F-d off (fresh session): **6/6 wrong**.
+
+**Bytes (measured on the draft, LF, views.js only):** **+3,043** = code **+1,956** / comment **+1,087**
+(51 insertions, 7 deletions). Approximate code split by part: F-a′ + F-b zxing ~+700 (they share the capture line),
+F-b native ~+310, F-c ~+550, F-d ~+480. sw.js **+0** (v3.306 → v3.307). Parse: the draft — PARSE OK, exit 0.
+**Greps (HEAD → draft):** `stopContinuousDecode` 0 → 1 (in `onZxStarted`, NOT in `scanStopBookDecode`) ·
+`onZxStarted` 0 → 2 · `zxReader !== scanZxingReader` 0 → 1 · `scanNativeGen` 0 → 4 · `scanAwaitingVerdict` 0 → 4 ·
+`scanLookupGen` 0 → 5 · `scanQuietIsbn` 0 → 3 · `scanLastDecode !== isbn` **1 → 1** · the T2 constructor line and both
+T1 hint lines **unchanged (1 → 1 each)**.
+
+**Prior-fix regression check (§1 #2):** beside FX-A (`scanRegisterStream` reused, unchanged), FX-B (the read-twice gate,
+unchanged), FX-G (`scanEnsureDisplay`, untouched), SCAN-FIX.2 (freeze/unfreeze lines unchanged; `scanHideVerdict` gains
+lines AFTER `scanUnfreeze()`), SCAN-FIX.3 (T1/T2 lines unchanged), SCAN-FIX.4 (its reschedule line unchanged; F-b adds
+the gen check above it). No shared names.
+
+**Residuals named now:** R16 F-d covers stale frames up to 1.5 s only · R17 the pre-primer camera request at entry (R10)
+is not removed — its reader is now stopped once started, but the request still happens · R18 the device "Not found"
+cause stays UNKNOWN (above) · R12 (Google has no timeout) unchanged.
+
+**Owner-visible delta (not a visual slice; no felt pass queued):** after "Keep scanning", a new book shows its own title
+(or its own ISBN if not found), never the previous book's. No layout or copy change.
+
+## Recon gate (§1#8) — fix-red-team, Sonnet, 2026-10-18 — and what changed
+
+Static re-derivation (it did not re-run the rig). CONFIRMED: the premise correction against the vendor source; F-a as
+written is redundant; F-a′ is the right mechanism (the start promise resolves microtasks after the loop's first pass, so
+`stopContinuousDecode` sticks; the identity guard drops that first pass's read; `reader.stream` is a real field);
+stopping a stale stream cannot black out the current display (only when `v.srcObject !== st`); F-b cannot drop the
+current reader's reads; F-d cannot eat a first read and leaves FX-B's `scanLastDecode` alone; `scanHideVerdict` is the
+only `is-up` remover; the cover shot passes `''`; Add/Open/Manual all pass through `scanHideVerdict`; no shared names
+with FX-A/FX-B/FX-G or SCAN-FIX.2/3/4; +3,043 B and the T1/T2/`scanLastDecode` greps re-derived; parse OK and the
+harness fails a broken copy. Findings, and what this recon did:
+
+- **F1 (blocks-build as drafted) — TAKEN.** A reader whose start completes AFTER the user left (`scanLeave`, hashchange,
+  pagehide) attaches to the detached `v`; the draft kept and registered that stream ("FX-A owns it") although FX-A's
+  teardown had already run → camera light on until the next route change. HEAD leaks the same way via its orphan, but
+  the draft's claim was false for this case. **Revised:** keep/register ONLY when
+  `v.srcObject === st && scanEl('scan-cam-video') === v && scanOnScanRoute()`; otherwise stop the tracks.
+- **F4 (hardening) — TAKEN.** The visibility re-warm restarts decode without closing the verdict; a hung lookup (R12)
+  would have left `scanAwaitingVerdict` true and every read ignored. **Revised:** `scanStartBookDecode` also clears
+  `scanAwaitingVerdict` and bumps `scanLookupGen` — a fresh decode session supersedes any lookup in flight.
+- **F5 — TAKEN (rig runs added, revised draft):** 4 plain A↔B cycles all correct (1 lookup, 1 loop scanning, 0 during
+  the verdict, 0 reads during it). **Mode switch to Shelf while a lookup is in flight:** the lookup lands, **0 verdicts**,
+  no verdict up, gate clear, 0 loops; back to Book → the camera's book confirms normally (verdict B over camera B,
+  2.75 s). **Leave (Back) while a lookup is in flight:** route `#books`, **0 verdicts**, **0 live camera tracks**, 0 loops.
+- **F6 — TAKEN (bytes restated).** 529 B of trailing `//` comments had been counted as code.
+- **F7 — TAKEN (wording).** "The verdict was instant because it was an older lookup landing after the tap" is a
+  rig-consistent INFERENCE (cycle 1, 598 ms), not device-proven. The openlibrary.org timeouts from this machine are not
+  evidence about the device and are withdrawn from the explanation.
+- **F2, F3, F8 — residuals, named below.**
+
+**Revised draft — bytes (LF, views.js, measured):** **+3,414** = code **+1,550** / comment **+1,864** (whole-line
++1,335, trailing +529); 56 insertions, 7 deletions. sw.js **+0** (→ v3.307). PARSE OK, exit 0.
+**Greps, HEAD → revised draft (occurrences):** `stopContinuousDecode` 0 → 1 (in `onZxStarted`) · `onZxStarted` 0 → 2 ·
+`zxReader !== scanZxingReader` 0 → 1 · `scanNativeGen` 0 → 4 · `scanAwaitingVerdict` 0 → 5 · `scanLookupGen` 0 → 7 ·
+`scanQuietIsbn` 0 → 3 · `scanLastDecode !== isbn` **1 → 1** · T2 constructor line and the T1 hint lines **1 → 1**.
+
+**Residuals (added by the gate):**
+- **R19** (F2) the reader stopped during entry (pre-primer, R10/R17) attaches late; F-a′ keeps its stream because it is
+  on screen, so the camera stays live behind the primer and Allow then opens a second stream (as on HEAD). A late attach
+  during a Book→Shelf switch can put a book-mode stream on `v` over Shelf's hi-res stream (as on HEAD). Stale readers
+  leave inert `ended`/`playing`/`canplay` listeners on `v`.
+- **R20** (F3) if a stale reader's start never resolves (`play()` never fires `playing`; zxing swallows the failure),
+  `onZxStarted` never runs and a stale stream that is not on screen is never stopped; only FX-A's 500 ms registration
+  catches it, and only if it is displayed. getUserMedia rejection is safe (no stream).
+- **R21** (F8) other orphan birthplaces, covered by F-a′ + F-b: two `scanStartBookDecode` calls queued on
+  `loadZxingLibrary` before it is ready (entry, then Allow) make two readers, the second overwriting the first; a
+  library-load callback landing while backgrounded (the re-warm then resets it).
+
+## The one question
+
+**F-a as written is a no-op** — `reset()` already calls `stopContinuousDecode()` for a running loop, and during a start
+the flag it sets is overwritten by `decodeContinuously`, which is the actual bug. So the Stage 1 PASS grep
+"stopContinuousDecode inside scanStopBookDecode" would test a line that does nothing. **Build F-a′ in its place** (stop a
+replaced reader when its start completes; the grep becomes `stopContinuousDecode` inside `onZxStarted`), with F-b, F-c
+and F-d as drafted including the two gate revisions?
+
+HALT — awaiting go-ahead for SCAN-FIX.5 Stages 1–2.
+
+**Preston's go-ahead (2026-10-18), verbatim:** "build F-a′ in place of F-a, plus F-b, F-c and F-d as drafted with the
+two gate revisions. The Stage 1 grep is stopContinuousDecode inside onZxStarted."
+
+# SCAN-FIX.5 — build record (Stages 1–2), 2026-10-18
+
+## Stage 1 — build (js/views.js only; commit SCAN-FIX.5, → praxis-v3.307)
+
+The approved draft (`.claude/scanfix-head/views-draft.js`, incl. the F1 and F4 gate revisions) was copied over
+js/views.js after confirming js/views.js was byte-identical to HEAD (`git hash-object` == `HEAD:js/views.js`).
+
+| file | expected | measured |
+|---|---|---|
+| js/views.js | +3,414 (code +1,550 / comment +1,864, revised draft) | **+3,414** = code **+1,550** / comment **+1,864** (whole-line +1,335, trailing +529); 56 insertions, 7 deletions |
+| sw.js | +0 | **+0** (`praxis-v3.306` → `praxis-v3.307`) |
+
+- Parse: js/views.js **PARSE OK, exit 0** · sw.js **PARSE OK, exit 0** (the harness fails a broken copy, exit 1 — shown
+  at SCAN-FIX.1–4 and again by the recon gate).
+- `stopContinuousDecode` **inside `onZxStarted`** (views.js:9892 `var onZxStarted = function () {` → :9894
+  `try { zxReader.stopContinuousDecode(); } catch (eS) {}` → :9900 `};`); inside `scanStopBookDecode`: **0**.
+- `scanLastDecode !== isbn` **1** · the T2 line `BrowserMultiFormatReader(zxHints, 150);` **1** and the T1 hint lines are
+  **not in the diff** (grep of the `-U0` diff for them: 0).
+- ES3 on added lines (`const`/`let`/`=>`/backtick): **0**. `git diff --check`: clean. EOL: js/views.js, sw.js
+  **i/lf w/lf**, CR = 0.
+- Where each part lives: globals after `scanCurrentVerdict` (:9824–9833) · F-c/F-d reset at the top of
+  `scanStartBookDecode` · F-b native gen (`nGen`) in the BarcodeDetector branch · F-a′/F-b zxing (`zxReader`, `onZx`
+  guard, `onZxStarted`, `zxStart.then`) after the unchanged T2 line · F-c/F-d gates in `scanOnBarcode` and the lookup
+  token in its `resolveBook` callback · F-d record in `scanShowVerdict` · F-c/F-d close in `scanHideVerdict` (after
+  the unchanged `scanUnfreeze()`).
+
+## Stage 2 — proof on the rig (the REAL served bytes)
+
+Fresh origin `http://localhost:8773` (new port, so no service worker holds the old views.js). Served `sw.js` reads
+**praxis-v3.307**; the page's `scanStartBookDecode` contains `onZxStarted` and `scanHideVerdict` sets `scanQuietUntil`.
+No BarcodeDetector (the iPhone's zxing path). Instrument as in Stage 0: 300 ms getUserMedia; Open Library stub.
+
+**10 cycles A → Keep scanning → B → Keep scanning → A … (Open Library 2.5 s):**
+
+| cycle | camera | verdict | wrong | lookups per confirm | loops alive while scanning (max) | loops alive during the verdict | reads during the verdict |
+|---|---|---|---|---|---|---|---|
+| 1 | B | B (not found) | 0 | 1 | 1 | 0 | 0 |
+| 2 | A | A | 0 | 1 | 1 | 0 | 0 |
+| 3 | B | B (not found) | 0 | 1 | 1 | 0 | 0 |
+| 4 | A | A | 0 | 1 | 1 | 0 | 0 |
+| 5 | B | B (not found) | 0 | 1 | 1 | 0 | 0 |
+| 6 | A | A | 0 | 1 | 1 | 0 | 0 |
+| 7 | B | B (not found) | 0 | 1 | 1 | 0 | 0 |
+| 8 | A | A | 0 | 1 | 1 | 0 | 0 |
+| 9 | B | B (not found) | 0 | 1 | 1 | 0 | 0 |
+| 10 | A | A | 0 | 1 | 1 | 0 | 0 |
+
+**10/10 on spec** — every verdict is the ISBN on camera; exactly 1 loop while scanning and 0 during a verdict; 1 lookup
+per confirm. Entry: 0 loops and 0 reads before Allow. (B is "not found" by the stub's design: Open Library has no
+record for it in the rig. A's verdicts take ~6 s because the stub delays each of Open Library's two requests 2.5 s.)
+
+**Stale-frame variant** (each new stream shows the previous book for 1 s; fresh session): **6/6 correct** — B's verdict
+never shows A and vice versa (verdict 2.57–2.90 s after the tap, once the stale frames pass).
+
+**The same book twice** (camera stays on A): **3/3** confirm A again; the lookup starts 2.27–2.41 s after the tap
+(after F-d's 1.5 s quiet window), verdict at 2.53–2.75 s.
+
+**Regression — SCAN-FIX.1–4, same page:**
+- SCAN-FIX.1: `resolveBook({kind:'isbn', isbn: A})` with Google failing (the rig's 404) → **'strong'**, "The Selected
+  Works of Audre Lorde", 2 Open Library calls; with `noFallback: true` → **'none'**, **0** Open Library calls.
+- SCAN-FIX.2: at a verdict, `#scan-cam-freeze` **display:block**, 1280 px wide, sampled pixel **[232,224,208]** (the fake
+  frame's paper ground — not black).
+- SCAN-FIX.4 + F-b: a fake BarcodeDetector returning B, B; `scanStartBookDecode()` called **twice 50 ms apart** → detect
+  calls **2 at 2.5 s and still 2 at 4 s** (one chain: the first start's chain ended on the gen check), 2 reads,
+  **1 lookup**, verdict up, `scanNativeDecoding` false.
+- Mode switch to Shelf while a lookup is in flight (revised draft, Stage 0): 0 verdicts; back to Book confirms
+  normally. Leave while a lookup is in flight: 0 verdicts, 0 live camera tracks, 0 loops.
+
+Console on the rig: only 404s from the Google proxy (no functions on a static server). No script errors.
+
+**Not provable here:** an iPhone's real stale-frame window (H2's length — F-d covers ≤ 1.5 s, R16); the device's
+"Not found" cause (R18). Persistence is not touched by this slice.
+
+## Gates on the built tree (Sonnet), 2026-10-18
+
+**fix-red-team — no blocks-commit finding.** Re-derived: `git hash-object js/views.js` == the reviewed draft
+(`e32a77c6…`), so the applied code IS the draft + the two revisions (F1 at :9897–9898, F4 at :9843–9844, as of that
+review; after the F4 repair line below, the file is `e32a77c6…` + one line = `427f32f8…`, F4's reset at :9844–9845) — which also
+makes the Stage-0 mode-switch / leave runs (made on the draft) runs of these exact bytes; bytes, greps, parse (two broken
+copies fail, exit 1), EOL, close paths, the F1 route/element check, the native gen chain; no wrong-ISBN verdict after a
+close or restart; FX-A/B/G and the two-read confirm untouched. Its findings:
+1. **F4 leaves the freeze up on the visibility re-warm path — CONFIRMED ON THE RIG, a regression F4 introduced.**
+   Confirm → lookup in flight → background/return (`visibilitychange` → `scanStopStream` → `scanStartStream` →
+   `scanStartBookDecode`) with nothing readable on camera: the old lookup lands and is dropped by the gen token
+   (correct), but nothing calls `scanUnfreeze()` → **freeze `display:block`, no verdict, gate clear, a reader running
+   underneath (1 loop)** — a frozen frame with no buttons over a live scanner. (On HEAD the old verdict would have
+   landed.) With the barcode still readable the restarted reader re-confirms and a verdict appears (rig: lookup 2 →
+   verdict A), so the stuck case needs nothing readable on return. One-line repair offered:
+   `if (scanAwaitingVerdict) { scanUnfreeze(); }` at the top of F4's reset in `scanStartBookDecode` (the cover-shot
+   freeze never sets the gate, so it stays safe). Held for Preston's call (beyond the approved scope) → **APPLIED on
+   his ruling; see "F4 repair" below (rig re-run: closed; fix-red-team: "F4 closed").**
+2. **Residual R22** — a re-warm while a verdict is UP reopens the one-lookup gate on the zxing path (native is still held
+   by `scanIsViewfinderLive`), so a new confirm can replace a shown verdict after a re-warm; the same ISBN can
+   re-confirm (it is quieted only on close). Same as HEAD; the F-c comment's "until the verdict closes" overstates it.
+   **Amended after the F4 repair (red-team):** the gate is still true while a barcode verdict is up, so a re-warm in that
+   state also runs the repair line and removes the frozen frame from behind the SHOWN verdict — the card stays, its
+   buttons work, the live camera shows behind it. Not stuck, but a visible inconsistency (a cover-shot verdict keeps its
+   frame, because the cover shot never sets the gate). Testing `#scan-verdict.is-up` instead of the gate would make it
+   exact; not done (beyond the ruled line).
+3. **Nit** — F1's late-attach branches and F4's re-warm path were proven by code reading only (until finding 1's rig run
+   above, for F4); the "0 live tracks after leave" run exercises a reset current reader, not the `onZxStarted` stop.
+4. **Nit** — F-d's window uses `Date.now()`; a wall-clock jump could stretch or shrink it (R16 already bounds it).
+
+## F4 repair — Preston's ruling ("Apply the one-line unfreeze fix for F4"), 2026-10-18
+
+**What F4 was:** if the app was backgrounded while a scan was being looked up and the camera saw nothing readable on
+return, the restarted scanner dropped that old lookup but left its frozen picture on screen — a still frame with no
+verdict and no buttons, over a camera that was in fact scanning again. **What the one line changes:** when a fresh scan
+session starts while a lookup was still pending, it now removes that frozen picture too, so the reader sees the live
+camera instead of a frame that will never get a verdict.
+
+The line (js/views.js:9843, inside `scanStartBookDecode`, before F4's `scanAwaitingVerdict = false;`):
+`if (scanAwaitingVerdict) { scanUnfreeze(); }   // its frozen frame goes with it (else a frame with no verdict)`
+
+| file | measured |
+|---|---|
+| js/views.js — the line | **+113** = code **+49** / trailing comment **+64** |
+| js/views.js — the slice vs HEAD | **+3,527** = code **+1,599** / comment **+1,928** (whole-line +1,335, trailing +593) |
+| sw.js | **+0** (still `praxis-v3.306` → `praxis-v3.307`) |
+
+PARSE OK, exit 0 · CR 0 · `git diff --check` clean · `scanUnfreeze()` 8 → 9 · `scanLastDecode !== isbn` 1 ·
+`stopContinuousDecode` only in `onZxStarted` (:9895).
+
+**Rig, re-run on the fixed bytes** — fresh origin `http://localhost:8774`, served sw.js `praxis-v3.307`, the page's
+`scanStartBookDecode` contains the line; no BarcodeDetector; 300 ms getUserMedia; Open Library 2.5 s:
+- **The F4 case** (confirm → lookup in flight → the re-warm sequence `scanStopStream` → `scanStartStream` →
+  `scanStartBookDecode`, nothing readable on camera): at the lookup freeze `block`, gate true → **right after the
+  re-warm: freeze `none`**, gate false, no verdict → **7 s later: freeze `none`, no verdict, the old lookup landed and
+  was dropped, 1 loop scanning the live camera.** Then pointing at a real book: it confirms (verdict A over camera A,
+  4.9 s). (Before the line, the same run left freeze `block` with no verdict — recorded above.)
+- **Control** — the same re-warm with the barcode still readable: verdict A over camera A (2 lookups landed, the old one
+  dropped, the new one shown).
+- **10 cycles A → Keep scanning → B → …: 10/10 on spec** — every verdict the book on camera; 1 lookup per confirm;
+  1 loop while scanning, 0 during a verdict, 0 reads during a verdict; 0 loops and 0 reads before Allow.
+- **Mode switch to Shelf mid-lookup:** 0 verdicts, freeze `none`, gate false, 0 loops; back to Book → verdict B over
+  camera B (3.0 s).
+- **Leave (Back) mid-lookup:** route `#books`, 0 verdicts, 0 loops, **0 live camera tracks**.
+
+**Re-gates on the repaired tree (Sonnet), 2026-10-18:**
+- **praxis-reviewer — gate (A) CLEARED, the one-line fix CLEARED.** Deleting line 9843 from a scratch copy hashes to
+  the reviewed `e32a77c6…` (the line is the only change); sw.js 306 → 307 only; parse exit 0; ES3 clean on the 57 added
+  lines; i/lf w/lf, CR 0; +3,527 and the line's 113 B (49 code / 64 trailing comment) measured; foundations 14,966 B /
+  10,255 B; `git diff --check` clean; the line is a no-op for the cover-shot, shelf-shot, mode-switch, grant, dismiss and
+  Add callers and acts only on the re-warm. builder.html: the generator reads `docs/studio/` + `docs/launch-runway.md`
+  only — its one changed input, sequence.md (16:16), predates its finished output (16:23, warnings 0), so it is current.
+- **fix-red-team — "F4 closed"; no blocks-commit finding.** Traced all five callers of `scanStartBookDecode`; the line
+  cannot unfreeze the cover-shot or shelf-shot freeze (both hide the verdict — gate false — before freezing). Its one
+  residual is folded into R22 above (a re-warm while a barcode verdict is up now also removes the frame behind the shown
+  card). Its "needs a rig re-run" nit is answered by the F4 run above.
+
+Final tree (2026-10-18): `git diff HEAD --stat` — BUILD_STATE.md 2 ± · scan-fix.md +357 · builder.html 8 ± ·
+sequence.md 15 ± · js/views.js 64 ± · sw.js 2 ± (6 files, 433+ / 15−). js/views.js `427f32f8…`, +3,527 LF; sw.js +0.
+Foundations md5 `070679b0…` / `772886c0…` unchanged. `stash@{0}` predates this slice and is untouched.
+
+**Commit plan (ONE commit, explicit files, real index):** `git add js/views.js sw.js docs/checkpoints/scan-fix.md
+docs/studio/sequence.md "docs/Checklist and Roadmap/BUILD_STATE.md" docs/studio/builder.html` → subject
+"SCAN-FIX.5 — one decode loop at a time; a new scan can't re-read the last book", CACHE_VERSION `praxis-v3.307`.
+
+STOP — awaiting "commit and push".
+
+## What Preston runs — device check (live origin unreachable from this machine: curl 000, exit 56)
+
+iPhone, Safari, praxis-reading.netlify.app, after "commit and push", the Netlify build and the "new version" banner
+(tap **Reload**; again if it reappears). Optional: `/#diag` → the bundle line reads **praxis-v3.307**.
+1. **The Lorde book → Keep scanning → a different book.** Scan → Book → the Lorde book; when its verdict shows, tap
+   **Keep scanning** and point at a different book (the pink Routledge paperback is ideal). PASS: the verdict shows THAT
+   book's title — or "Not found" with ITS OWN ISBN — never "ISBN 9781324004615". Also try it with the camera far away
+   and out of focus, as before: PASS = no verdict appears until the barcode is actually readable.
+2. **Three different books in a row**, "Keep scanning" between them. PASS: each verdict names the book on camera.
+3. **The same book twice in a row**: verdict → Keep scanning → the same book. PASS: it confirms again (after about a
+   second and a half).
+4. **Optional — leave mid-lookup (the F4 path):** point at a barcode and, the instant the gold brackets flare, press the
+   Home button (or switch apps); come back with the camera pointed at a blank wall. PASS: the live camera shows — not a
+   frozen picture with no card — and pointing back at a book scans it.
+Report each as PASS/FAIL with what you saw (and the ISBN line if any verdict looks wrong).

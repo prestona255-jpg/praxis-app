@@ -31,6 +31,14 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-18 (SCAN-FIX.5 — the wrong-book verdict, built local v3.307)** — no re-order, no retirement, so no
+  `PROPOSED:` flag. Preston's device check of SCAN-FIX.1–4 passed the Lorde book and the frozen frame, but a different
+  book after "Keep scanning" got the previous book's ISBN. Stage 0 corrected the brief's premise from the vendored
+  source: zxing's `reset()` does stop a running loop; a reset that lands while a reader is still STARTING is lost, so
+  that reader decodes forever with nothing holding it, and orphans multiply on every restart. The rig instrument
+  reproduced the device FAIL on v3.306 (old-ISBN verdicts landing 598 ms after the tap over a frozen frame of the new
+  book). Preston ruled F-a′ (stop a replaced reader once its start completes) in place of the brief's F-a, which the
+  source showed was a no-op. Record: `docs/checkpoints/scan-fix.md`.
 - **2026-10-18 (SCAN-FIX — L7a's three pre-existing scan failures, built local v3.303–v3.306)** — added to
   `## Now` under L7; nothing re-ordered or retired, so no `PROPOSED:` flag. Also corrects the L7 entry, which still
   read "awaits commit and push" after L7a shipped. Stage 0 corrected the brief twice before a line was built: the
@@ -1344,11 +1352,14 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   to SCAN-FIX (below); `getUserMedia` absent inside the shell (R18) goes to L7b. L7b (native sign-in, bundle ID,
   icon, TestFlight) waits for the Apple Developer account. Record: `docs/checkpoints/l7a.md`.
   touches: [cross-cutting]
-- [~] **SCAN-FIX — the website barcode scanner (L7a R17; built local 2026-10-18, v3.303–v3.306)** — an ISBN Google
+- [~] **SCAN-FIX — the website barcode scanner (L7a R17; SCAN-FIX.1–4 SHIPPED 2026-10-18 v3.303–v3.306; SCAN-FIX.5 built local, v3.307)** — an ISBN Google
   Books misses or fails on now falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out
   until its preview, r22); the last camera frame stays behind the Book verdict; zxing reads only the four book
   formats with 150 ms to the confirming read; the Chrome BarcodeDetector loop no longer dies after its first read.
-  Awaits "commit and push" → Preston's device check. Record: `docs/checkpoints/scan-fix.md`.
+  Device check of .1–4: the Lorde book, the frozen frame and rescans PASS; a different book after "Keep scanning"
+  FAILED (the previous book's ISBN). SCAN-FIX.5 fixes it: one decode loop at a time (a zxing reader replaced while
+  starting is stopped once started), one lookup at a time, and the book just shown is quiet for 1.5 s. Awaits
+  "commit and push" → Preston's device check. Record: `docs/checkpoints/scan-fix.md`.
   touches: [scan]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net

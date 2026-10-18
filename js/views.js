@@ -9821,6 +9821,16 @@ function scanLeave() {
 var scanZxingReader   = null;   // active zxing reader (SCE-1: reset on teardown)
 var scanNativeDecoding = false; // native BarcodeDetector loop flag
 var scanCurrentVerdict = null;  // {kind:'add'|'open', spec, existingId} for the Add button
+// SCAN-FIX.5 — one decode loop at a time. A zxing reset() that lands while a reader is still
+// starting (awaiting getUserMedia / play) is LOST: decodeContinuously sets the stop flag back
+// to false, and the orphan decodes forever with nothing holding it. So every reader and native
+// tick chain checks it is still the current one, and a replaced reader is stopped once started.
+var scanNativeGen = 0;           // F-b: a native tick chain from an older start sees a newer gen and ends
+var scanAwaitingVerdict = false; // F-c: from a confirming read until the verdict closes, reads are ignored
+var scanLookupGen = 0;           // F-c: bumped at every verdict close; a lookup landing after one is dropped
+var scanShownIsbn = '';          // F-d: the barcode ISBN on the verdict now up
+var scanQuietIsbn = '';          // F-d: that ISBN is ignored for 1.5 s after its verdict closes
+var scanQuietUntil = 0;
 
 // Continuous decode on the EXISTING scan-cam-video stream (BarcodeDetector) or,
 // on iOS Safari (no detector), a lazy-loaded zxing reader. Free + local: no paid
@@ -9828,19 +9838,25 @@ var scanCurrentVerdict = null;  // {kind:'add'|'open', spec, existingId} for the
 function scanStartBookDecode() {
   scanStopBookDecode();
   scanLastDecode = null; // FX-B: a fresh decode session needs two fresh confirming reads
+  // SCAN-FIX.5 F-c: a fresh decode session supersedes any lookup still in flight (the
+  // visibility re-warm restarts decode without closing the verdict).
+  if (scanAwaitingVerdict) { scanUnfreeze(); }   // its frozen frame goes with it (else a frame with no verdict)
+  scanAwaitingVerdict = false;
+  scanLookupGen = scanLookupGen + 1;
   if (scanMode !== 'book') { return; }
   var v = scanEl('scan-cam-video');
   if (!v) { return; }
   if (window.BarcodeDetector) {
     scanNativeDecoding = true;
+    var nGen = ++scanNativeGen;   // SCAN-FIX.5 F-b (closes R14)
     var detector;
     try { detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); }
     catch (e) { scanNativeDecoding = false; return; }
     var tick = function () {
-      if (!scanNativeDecoding) { return; }
+      if (!scanNativeDecoding || nGen !== scanNativeGen) { return; }
       if (!scanCamReady || !scanIsViewfinderLive()) { window.setTimeout(tick, 300); return; }
       detector.detect(v).then(function (codes) {
-        if (!scanNativeDecoding) { return; }
+        if (!scanNativeDecoding || nGen !== scanNativeGen) { return; }
         // SCAN-FIX.4 — keep reading after the FIRST read, or the confirming read (FX-B) never
         // comes. A confirming read calls scanStopBookDecode, which sets scanNativeDecoding false
         // before this guard runs, so the loop ends there.
@@ -9867,12 +9883,28 @@ function scanStartBookDecode() {
         // SCAN-FIX.3 T2 — 150 ms (zxing's default 500) between a successful read and the next
         // attempt: the confirming second read arrives sooner. The second read itself stays.
         scanZxingReader = new window.ZXing.BrowserMultiFormatReader(zxHints, 150);
-        var onZx = function (result) { if (result && typeof result.getText === 'function') { scanOnBarcode(result.getText()); } };
+        // SCAN-FIX.5 F-b — a read from a reader that is no longer current is dropped.
+        var zxReader = scanZxingReader, zxStart = null;
+        var onZx = function (result) { if (zxReader !== scanZxingReader) { return; } if (result && typeof result.getText === 'function') { scanOnBarcode(result.getText()); } };
+        // SCAN-FIX.5 F-a — zxing's start promise resolves once its loop is running; a reader
+        // replaced before then never heard its reset(), so stop its loop now (the flag sticks
+        // this time) and stop its camera stream — unless it is the one on screen, on the live
+        // #scan view (then FX-A's teardown owns it); after a leave it is stopped, never kept.
+        var onZxStarted = function () {
+          if (zxReader === scanZxingReader) { return; }
+          try { zxReader.stopContinuousDecode(); } catch (eS) {}
+          var st = zxReader.stream;
+          if (st && typeof st.getTracks === 'function') {
+            if (v.srcObject === st && scanEl('scan-cam-video') === v && scanOnScanRoute()) { scanRegisterStream(st); }
+            else { var tk = st.getTracks(), ti; for (ti = 0; ti < tk.length; ti++) { try { tk[ti].stop(); } catch (eT) {} } }
+          }
+        };
         if (typeof scanZxingReader.decodeFromConstraints === 'function') {
-          scanZxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, v, onZx);
+          zxStart = scanZxingReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, v, onZx);
         } else if (typeof scanZxingReader.decodeFromVideoDevice === 'function') {
-          scanZxingReader.decodeFromVideoDevice(null, v, onZx);
+          zxStart = scanZxingReader.decodeFromVideoDevice(null, v, onZx);
         }
+        if (zxStart && typeof zxStart.then === 'function') { zxStart.then(onZxStarted, function () {}); }
         // FX-A: zxing opens + attaches its OWN stream to the video async — capture it
         // into the registry so teardown stops it even if reset() misses / the DOM swaps.
         window.setTimeout(function () { if (v && v.srcObject) { scanRegisterStream(v.srcObject); } }, 500);
@@ -9922,15 +9954,24 @@ function scanIsBookBarcode(raw) {
 function scanOnBarcode(rawIsbn) {
   var isbn = ('' + (rawIsbn || '')).replace(/[\s-]/g, '');
   if (isbn.length === 0) { return; }
+  if (scanAwaitingVerdict) { return; }   // SCAN-FIX.5 F-c: one lookup at a time
+  // SCAN-FIX.5 F-d: the book just shown is ignored for 1.5 s after its verdict closes, and
+  // does not count as a first read, so a stale frame of it cannot confirm.
+  if (isbn === scanQuietIsbn && Date.now() < scanQuietUntil) { return; }
   if (!scanIsBookBarcode(isbn)) { scanLastDecode = null; return; }   // not a book code -> ignore silently
   if (scanLastDecode !== isbn) { scanLastDecode = isbn; return; }    // first read -> wait for a confirming read
   scanLastDecode = null;
+  scanAwaitingVerdict = true;
+  var lookupGen = scanLookupGen;
   // SCAN-FIX.2 — freeze BEFORE stopping decode. On iOS, zxing's reset() stops its own
   // stream and sets video.srcObject = null, which left the viewfinder black behind the verdict.
   scanFreezeFrame();
   scanStopBookDecode();
   scanLockOnSnap(function () {
-    resolveBook({ kind: 'isbn', isbn: isbn }, function (result) { scanShowVerdict(result, isbn); });
+    resolveBook({ kind: 'isbn', isbn: isbn }, function (result) {
+      if (lookupGen !== scanLookupGen) { return; }   // F-c: the verdict closed (mode switch, leave) meanwhile
+      scanShowVerdict(result, isbn);
+    });
   });
 }
 
@@ -9962,6 +10003,7 @@ function scanComputeContext(title, author) {
 // The verdict card. result = resolveBook output {status, book, alternates}. isbn
 // is the scanned code (backfills when GB has no ISBN). Zero LLM (Law 3).
 function scanShowVerdict(result, isbn) {
+  scanShownIsbn = isbn || '';   // SCAN-FIX.5 F-d (the cover shot passes '': nothing to quiet)
   var book = (result && result.book) ? result.book : {};
   var title = book.title || '';
   var author = book.author || '';
@@ -10146,7 +10188,15 @@ function scanCommitBook(spec, cb, out) {
 // SCAN-FIX.2 — every way the verdict closes (Keep scanning, Add, mode switch, leave) drops
 // the barcode freeze, so the live camera comes back. The photo paths hide the verdict
 // BEFORE they freeze, so their own freeze is untouched.
-function scanHideVerdict() { var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } scanUnfreeze(); }
+function scanHideVerdict() {
+  var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } scanUnfreeze();
+  // SCAN-FIX.5 F-c + F-d: every close ends the one-lookup gate, drops any lookup still in
+  // flight, and quiets the ISBN that was on screen for 1.5 s.
+  scanAwaitingVerdict = false;
+  scanLookupGen = scanLookupGen + 1;
+  if (scanShownIsbn) { scanQuietIsbn = scanShownIsbn; scanQuietUntil = Date.now() + 1500; }
+  scanShownIsbn = '';
+}
 
 // ---- S3: the denied/offline add-doors (SC7b honest secondary) ----
 function scanWireAddDoors() {
