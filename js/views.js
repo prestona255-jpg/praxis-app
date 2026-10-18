@@ -9910,6 +9910,9 @@ function scanOnBarcode(rawIsbn) {
   if (!scanIsBookBarcode(isbn)) { scanLastDecode = null; return; }   // not a book code -> ignore silently
   if (scanLastDecode !== isbn) { scanLastDecode = isbn; return; }    // first read -> wait for a confirming read
   scanLastDecode = null;
+  // SCAN-FIX.2 — freeze BEFORE stopping decode. On iOS, zxing's reset() stops its own
+  // stream and sets video.srcObject = null, which left the viewfinder black behind the verdict.
+  scanFreezeFrame();
   scanStopBookDecode();
   scanLockOnSnap(function () {
     resolveBook({ kind: 'isbn', isbn: isbn }, function (result) { scanShowVerdict(result, isbn); });
@@ -10125,7 +10128,10 @@ function scanCommitBook(spec, cb, out) {
 }
 
 // ---- verdict card helper ----
-function scanHideVerdict() { var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } }
+// SCAN-FIX.2 — every way the verdict closes (Keep scanning, Add, mode switch, leave) drops
+// the barcode freeze, so the live camera comes back. The photo paths hide the verdict
+// BEFORE they freeze, so their own freeze is untouched.
+function scanHideVerdict() { var v = scanEl('scan-verdict'); if (v) { v.classList.remove('is-up'); } scanUnfreeze(); }
 
 // ---- S3: the denied/offline add-doors (SC7b honest secondary) ----
 function scanWireAddDoors() {
