@@ -5,9 +5,11 @@
 // for API + third-party CDNs. CACHE_VERSION is bumped on each shipping
 // stage to invalidate stale caches. var/function only -- no const,
 // let, arrow, class, or template literals anywhere.
+// L7a: Firebase compat + zxing are vendored under /vendor/ and precached
+// in APP_SHELL (same-origin), no longer loaded from third-party CDNs.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.300';
+var CACHE_VERSION = 'praxis-v3.301';
 
 var APP_SHELL = [
   '/',
@@ -21,6 +23,10 @@ var APP_SHELL = [
   '/assets/icon.svg',
   '/assets/icon-maskable.svg',
   '/assets/wheat-field.svg',
+  '/vendor/firebase/10.12.5/firebase-app-compat.js',
+  '/vendor/firebase/10.12.5/firebase-auth-compat.js',
+  '/vendor/firebase/10.12.5/firebase-firestore-compat.js',
+  '/vendor/zxing/0.20.0/index.min.js',
   '/js/state.js',
   '/js/measure.js',
   '/js/recognition.js',

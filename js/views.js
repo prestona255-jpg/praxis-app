@@ -7216,7 +7216,8 @@ function handoffResolvedSingle(result, source) {
 
 // Stage 5: lazy-load @zxing/library (UMD) ON DEMAND -- only when the barcode
 // scanner opens on a browser WITHOUT native BarcodeDetector (iPhone Safari).
-// NEVER part of the core bundle / SW precache. The external lib is exempt from
+// Not in the core script bundle; L7a vendors it at /vendor/zxing/0.20.0/ and
+// sw.js APP_SHELL precaches it. The external lib is exempt from
 // the ES3 client rules; this loader + its call sites are ES3. Idempotent and
 // queues concurrent callers; cb(true) once window.ZXing is ready, cb(false) on
 // failure (the ISBN type-in fallback always remains the safety net).
@@ -7237,7 +7238,7 @@ function loadZxingLibrary(cb) {
   if (zxingLoadState === 'loading') { return; }
   zxingLoadState = 'loading';
   var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js';
+  s.src = '/vendor/zxing/0.20.0/index.min.js';
   s.async = true;
   s.onload = function() {
     var ok = zxingReady();
