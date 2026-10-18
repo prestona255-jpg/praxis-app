@@ -2539,13 +2539,36 @@ function resolveBook(query, callback) {
       alternates: [], query: query
     };
   }
+  // SCAN-FIX.1 — Google Books had no match for an ISBN, or the call failed: ask Open
+  // Library through its existing client (fetchOpenLibrary) before giving up. ISBN
+  // branch only, never reached when Google matched. A miss, a 6 s silence, or a caller
+  // that opts out (query.noFallback — "Fix this book", which overwrites the record)
+  // returns today's stub unchanged, Google's err included, so lookupFailed keeps its meaning.
+  function isbnViaOpenLibrary(olIsbn, err) {
+    if (query.noFallback) { finish(manualStub(olIsbn, err)); return; }
+    var olTimer = window.setTimeout(function () { finish(manualStub(olIsbn, err)); }, 6000);
+    fetchOpenLibrary(olIsbn, function (ol) {
+      window.clearTimeout(olTimer);
+      if (!ol || !ol.title) { finish(manualStub(olIsbn, err)); return; }
+      finish({
+        status: 'strong',
+        book: {
+          title: ol.title, author: ol.author || '', year: ol.publishYear || null,
+          pageCount: null, publisher: '', description: '', isbn: olIsbn,
+          coverUrl: ol.coverUrl || null, coverCandidates: ol.coverUrl ? [ol.coverUrl] : [],
+          rawCategories: []
+        },
+        alternates: [], query: query
+      });
+    });
+  }
   if (!query || (query.kind !== 'isbn' && query.kind !== 'title')) { finish(manualStub('')); return; }
 
   if (query.kind === 'isbn') {
     var isbn = ('' + (query.isbn || '')).replace(/[\s-]/g, '');
     if (isbn.length === 0) { finish(manualStub('')); return; }
     googleBooksSearch('isbn:' + isbn, function (items, err) {
-      if (!items || items.length === 0) { finish(manualStub(isbn, err)); return; }
+      if (!items || items.length === 0) { isbnViaOpenLibrary(isbn, err); return; }
       var vi0 = items[0].volumeInfo || {};
       vi0._printType = items[0].printType;
       var book = volumeToBook(vi0, isbn);

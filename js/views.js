@@ -12285,8 +12285,11 @@ function buildBookEditPanel(bookId, book, user) {
   fixBtn.addEventListener('click', function() {
     fixBtn.disabled = true;
     fixBtn.textContent = 'Looking up…';
+    // SCAN-FIX.1 — noFallback: this button overwrites title/author/year/publisher, and the
+    // Open Library fallback keeps only the first author — one tap in a Google outage could
+    // drop a co-author with no undo. Opted out until this button has a preview (r22).
     var q = (book.isbn && ('' + book.isbn).length > 0)
-      ? { kind: 'isbn', isbn: book.isbn }
+      ? { kind: 'isbn', isbn: book.isbn, noFallback: true }
       : { kind: 'title', title: book.title || '', author: book.author || '' };
     resolveBook(q, function(result) {
       if (!state.books[bookId]) { return; }
