@@ -9348,7 +9348,7 @@ function openLibraryCleanup() {
 // is a non-goal). TRUNCATED ships as its own honest state, no impossible tray.
 // ============================================================================
 
-var SCAN_VISION_URL   = '/.netlify/functions/shelf-vision';
+var SCAN_VISION_URL   = PRAXIS_API_BASE + '/.netlify/functions/shelf-vision';
 var SCAN_VISION_MODEL = 'claude-opus-4-8'; // SC9: paid shelf read; NEVER silent-degrade to sonnet
 
 // SC8 four-state transport. cb(result) with result.state one of:

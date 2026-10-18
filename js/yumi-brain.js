@@ -101,7 +101,7 @@ function aiProxyRequest(url, payload) {
 // typed Error ({status, code, resetAt}) on any non-2xx, keeping the
 // 'proxy <status>: <body>' message shape every existing catch handler expects.
 function aiProxyFetch(payload) {
-  return aiProxyRequest('/.netlify/functions/claude-proxy', payload).then(function (r) {
+  return aiProxyRequest(PRAXIS_API_BASE + '/.netlify/functions/claude-proxy', payload).then(function (r) {
     if (!r.ok) {
       var j = r.json || {};
       throw _aiProxyError(r.status, (typeof j.code === 'string') ? j.code : null, r.text,

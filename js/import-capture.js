@@ -30,7 +30,7 @@
   // P1 Item 1: the claude-proxy door is aiProxyFetch (yumi-brain.js, loaded
   // earlier) -- it attaches the Firebase ID token the server ceiling keys on.
   // No direct fetch() to the proxy lives here any more.
-  var TRANSCRIBE_PROXY_URL = '/.netlify/functions/transcribe-proxy';
+  var TRANSCRIBE_PROXY_URL = PRAXIS_API_BASE + '/.netlify/functions/transcribe-proxy';
   var TRANSCRIBE_TIMEOUT_MS = 20000; // hard cap on the transcribe POST -> textarea on expiry (never an infinite "transcribing")
   var SEG_MODEL = 'claude-sonnet-4-6';
 

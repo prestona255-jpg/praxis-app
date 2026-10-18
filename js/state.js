@@ -268,6 +268,8 @@ function sv(k, v) {
   }
 }
 
+// L7 · the API base: '' on the web (relative, exactly as today); the full Netlify origin inside the iOS app shell.
+var PRAXIS_API_BASE = (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) ? 'https://praxis-reading.netlify.app' : '';
 var state = {
   SCHEMA_VERSION:  '1.9.3',
   currentBookId:   null,

@@ -9,8 +9,8 @@
 
 'use strict';
 
-var CLAUDE_PROXY_URL       = '/.netlify/functions/claude-proxy';
-var GOOGLE_BOOKS_PROXY_URL = '/.netlify/functions/google-books-proxy';
+var CLAUDE_PROXY_URL       = PRAXIS_API_BASE + '/.netlify/functions/claude-proxy';
+var GOOGLE_BOOKS_PROXY_URL = PRAXIS_API_BASE + '/.netlify/functions/google-books-proxy';
 
 // Soft shared gate for the three Netlify proxies -- ships in the public
 // client bundle by design (NOT a secret; deters casual abuse). Proxies
@@ -2623,7 +2623,7 @@ function resolveBatch(queries, callback) {
 // when it ends/fails, so the caller drives Bloom. The voiceOn pref is checked
 // by the caller (yumi-ui.js isVoiceOn); playLine assumes voice is wanted.
 // =====================================================================
-var ELEVENLABS_PROXY_URL = '/.netlify/functions/elevenlabs-proxy';
+var ELEVENLABS_PROXY_URL = PRAXIS_API_BASE + '/.netlify/functions/elevenlabs-proxy';
 var TTS_DAILY_CAP = 120;
 var _ttsCache = {};      // text -> object URL (session-lived)
 var _ttsAudio = null;    // the single active Audio element
