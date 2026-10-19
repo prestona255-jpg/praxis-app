@@ -162,6 +162,14 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
   race is proven in local bookkeeping (real-Firestore leg = Preston's live-smoke, R1). Records:
   `docs/checkpoints/scan-build.md` + `scan-fixloop4-ship.md` (felt round 4) + the close acceptance card
   `docs/checkpoints/scan-acceptance-close.md`. **Round CLOSED on Preston's felt pass.**
+- **SCAN-FIX.1–6 (fix slices from L7a's device check, 2026-10-18, v3.303→v3.308)** — the website's barcode scanner:
+  .1 an ISBN Google Books misses or fails on falls back to Open Library (6 s limit; "Fix this book" opted out until its
+  preview) · .2 the last camera frame stays behind the Book verdict · .3 zxing reads the four book formats, 150 ms to
+  the confirming read · .4 the Chrome BarcodeDetector loop keeps reading for the confirming read · .5 one decode loop
+  at a time, one lookup at a time, the last book quiet for 1.5 s (orphaned zxing readers had answered a new book with
+  the previous ISBN) · .6 the camera primer shows only until the camera is granted on the device, and no camera
+  starts before "Turn on camera" (R10); `#scan/primer` shows the first-time card again. Device: .1–.4 PASS except the
+  wrong-book FAIL that opened .5; .5 PASS on every test; .6 awaiting. Record: `docs/checkpoints/scan-fix.md`.
 
 ## Next
 

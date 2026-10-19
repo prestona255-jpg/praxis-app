@@ -948,3 +948,323 @@ iPhone, Safari, praxis-reading.netlify.app, after "commit and push", the Netlify
    Home button (or switch apps); come back with the camera pointed at a blank wall. PASS: the live camera shows — not a
    frozen picture with no card — and pointing back at a book scans it.
 Report each as PASS/FAIL with what you saw (and the ISBN line if any verdict looks wrong).
+
+## SCAN-FIX.5 SHIPPED — 2026-10-18 (on Preston's "commit and push")
+
+`1e6e026` SCAN-FIX.5 (praxis-v3.307) — pushed `d245283..1e6e026`; HEAD == origin/main ==
+1e6e0262869be6c6a4d7c5791ae395bcb5f605e1; hook silent; exactly the six planned files. Foundations md5 unchanged
+(`070679b0…` / `772886c0…`). Netlify deploy 6ad5408af682b72b45ff4fb6: commit_ref 1e6e026, state ready, published
+2026-10-18T21:56:37Z, deploy_time 9 s, 5 functions (unchanged digests). `stash@{0}` untouched.
+
+## Device check of SCAN-FIX.5 — Preston, iPhone Safari, live praxis-v3.307, 2026-10-18 ~5:10–5:20 pm CT (close-out)
+
+Preston: "It works significantly better now and I did every test."
+
+| step | result |
+|---|---|
+| 1 · The Lorde book → Keep scanning → a different book | **PASS** — the right book |
+| 2 · Three different books in a row | **PASS** |
+| 3 · The same book twice in a row | **PASS** |
+| Leaving the scan screen | **PASS** |
+| 4 · Switching apps mid-lookup (the F4 path) | **PASS** |
+
+**SCAN-FIX.5 CLOSED** on the device. New issue from the same session → **SCAN-FIX.6** below.
+
+---
+
+# SCAN-FIX.6 — Stage 0 recon + instrument, 2026-10-18
+
+**The issue (Preston, device, 5:19 pm):** every entry to Scan shows "Turn on the camera to scan" and needs "Turn on
+camera" again — and his screenshot of that card shows iOS's green camera dot: the camera is already running behind a
+card that asks to turn it on.
+
+Ground truth: HEAD `1e6e026`, CACHE_VERSION `'praxis-v3.307'`, hook ARMED, FIX-PROTOCOL v1.3. Tracked changes: none
+before this file. Untracked: 111. Re-read: CLAUDE.md · PROTOCOL.md · docs/FIX-PROTOCOL.md · .claude/agents/ (7) · this
+file — all present, none missing; no commit has touched the protocol docs since they were read this session.
+
+## 0.2 — every camera start from `scanEnter` (js/views.js @ 1e6e026)
+
+`renderScan` (:11357) → `scanMode` from the preselect (:11373) → `scanEnter()` (:11386). `scanEnter` (:9780–9789):
+`scanGoScreen` → `scanCloseAllOverlays` (:9782) → `scanHideVerdict` → **`scanSetMode(scanMode||'book')` (:9785)** →
+`scanStopBookDecode` (:9786) → offline? → `scanOpenOverlay('scan-ov-offline')` (:9787) : `scanOpenOverlay('scan-ov-primer')` (:9788).
+Inside `scanSetMode` (:9719): `scanCamReady` is false on entry (route teardown ran `scanStopStream`), so the else
+branch runs **`scanEnsureDisplay()` (:9741)** — its overlay guard (:9675) cannot hold, because `scanEnter` closed every
+overlay at :9782 and opens the primer only at :9788 — so it calls **`scanStartStream` → getUserMedia (:9628)**; then
+in Book mode **`scanStartBookDecode()` (:9745)** → zxing **`decodeFromConstraints` → its own getUserMedia (:9903)**
+(at once when zxing is loaded; after the lazy load on a first visit).
+
+| path | camera starts, in order | primer/card up? |
+|---|---|---|
+| (a) first entry | ours (:9741 → :9628), then zxing (:9745 → :9903, after the library loads) | primer opens at :9788 — both requests precede the reader's tap |
+| (b) re-entry | ours, then zxing (synchronously; `scanEnter`'s stop at :9786 then resets that reader mid-start — SCAN-FIX.5's F-a′ stops it once started) | the same |
+| (c) offline | ours, then zxing — BEFORE the offline check | offline card over a live camera |
+| (d) denied card → "Try the camera again" (:11621) | none — it only reopens the primer | — |
+| (e) Book↔Shelf after a grant (`scanCamReady` true) | Shelf: `scanAcquireShelf` (:9738); Book: `scanStopStream` + `scanEnsureDisplay` (:9739) then zxing (:9745) | no card |
+| "Turn on camera" (`scanGrantAndWarm` :9791) | ours (:9794), then zxing after 850 ms (:9798); failure → denied card (:9802) | — |
+
+The primer covers the mode switch and Back (z-index 50; `elementFromPoint` at both returns `scan-ov-primer`), so entry
+is the only path that lights the camera behind a card.
+
+## 0.3 — instrument on HEAD (`.claude/scanfix-head/instrument3.js`, gitignored)
+
+Fresh origin `http://localhost:8775`, served `praxis-v3.307`; `getUserMedia` counted with who called it (zxing tagged by
+wrapping its `decodeFromConstraints` when the lazy library lands) and which card was up; 300 ms getUserMedia latency.
+
+| path | getUserMedia before "Turn on camera" | live camera tracks behind the card |
+|---|---|---|
+| (a) first entry | **2** (ours + zxing) | (zxing's arrived while the primer was up) |
+| (b) re-entry | **2** | **1** — the green dot in Preston's screenshot |
+| (c) offline | **2** | **1** behind the offline card |
+| (d) denied-card retry | 0 | — |
+| (e) Shelf / Book switch after a grant | Shelf **1**, Book **2** — the reference for "unchanged" | — |
+
+**R10 reproduced on the rig.**
+
+## 0.4 — the Permissions API, as far as this machine can show
+
+- The vendored code (`vendor/`) never uses `navigator.permissions`.
+- The rig's Chromium: `navigator.permissions.query({name:'camera'})` works and returns **`'denied'`** (this machine's real,
+  absent camera; the rig's fake getUserMedia does not change it) — so every rig proof stubs the API.
+- **iOS Safari: UNKNOWN** — whether `query({name:'camera'})` is supported, what it returns under Safari's per-site
+  "Ask / Allow / Deny" setting, and whether a grant persists across visits. Not guessed. The design treats every answer
+  safely: `'granted'` → straight to the camera; `'denied'` → the denied card (its "Try the camera again" still reaches the
+  primer, so a wrong 'denied' is recoverable in one tap); `'prompt'`, a throw, a missing API, or no answer within 1 s →
+  the remembered flag decides.
+- Safari's own permission prompt is the browser's and may still appear after the card is skipped (Preston's note).
+
+## 0.5 — the proposed change (drafted on a scratch copy, run in the rig page; app code untouched)
+
+**B — no camera before the reader says yes:** `scanSetMode(m, entry)` gains an `entry` flag; with it, the mode chrome is
+set and decode stopped but NO camera starts (neither `scanEnsureDisplay` nor `scanStartBookDecode`). `scanEnter` passes
+`true`. Every other caller (the mode switch, Book after a grant) is unchanged — FX-G and FX-I keep their behavior there.
+Consequence (stated): the offline card no longer sits over a live camera.
+**A — the primer shows once:** after the offline check (SCE-3 still first, unchanged), `scanEnter` asks
+`scanCameraDecision`: `'go'` → `scanGrantAndWarm()` (the exact path "Turn on camera" uses); `'denied'` → forget the flag,
+denied card; `'ask'` → `scanOpenOverlay('scan-ov-primer')`. The flag `praxis_scan_camera_ok` is set (`sv`) when
+`scanGrantAndWarm`'s stream starts and cleared (`sv`) when it fails; read once through `ls`. A decision that lands after
+a leave or re-entry is dropped (`scanEntryGen`, `scanOnScanRoute()`, the primer element present).
+**Seeing the first-time card again:** a Safari private tab does NOT work signed-out — `#scan` signed out renders "Sign in
+to scan" (:11361), never the primer; signed in, a private tab would likely show it but that depends on Safari's
+permission state there (UNKNOWN). **Proposed: `#scan/primer`** — `renderScan` reads the preselect, and that entry forgets
+the flag and shows the primer once (Book mode), whatever the Permissions API says. No new UI, no copy.
+
+**Rig, the draft (fake camera, Permissions API stubbed per row):**
+
+| case | card | getUserMedia | flag | result |
+|---|---|---|---|---|
+| T1 first entry, no flag, no API | **PRIMER** | **0** while up | — | Allow → 2 calls (ours + zxing), a scan confirms, flag set |
+| T2 re-entry, flag set | **none** | 2 | kept | the camera comes straight up; a scan confirms |
+| T3 flag set, camera denied | **DENIED** | 1 (rejected) | **cleared** | |
+| T4 offline | **OFFLINE** | **0** | kept | |
+| T5 API 'granted', no flag | none | 2 | set | |
+| T6 API 'denied', flag set | **DENIED** | **0** | **cleared** | |
+| T7 API throws, flag set | none | 2 | kept | falls back to the flag |
+| T7b API 'prompt', no flag | **PRIMER** | **0** | — | |
+| T8 `#scan/primer`, flag set + 'granted' | **PRIMER** | **0** | cleared | Allow → flag set; the next entry skips the card |
+
+**Bytes (measured on the draft, LF, views.js only):** **+2,521** = code **+1,469** / comment **+1,052** (whole-line
++654, trailing +398); 41 insertions, 3 deletions. sw.js **+0** (→ `praxis-v3.308`). PARSE OK, exit 0.
+**Greps (HEAD → draft):** `praxis_scan_camera_ok` 0 → 1 (the constant) · `ls(SCAN_CAM_OK_KEY` 0 → 1 ·
+`sv(SCAN_CAM_OK_KEY` 0 → 4 · raw `localStorage` in views.js 10 → 10 (unchanged — the key never touches it directly) ·
+`scanOpenOverlay('scan-ov-primer')` 2 → 3 (the first-time path is still there) · `navigator.permissions` 0 → 3 ·
+`scanSetMode(scanMode || 'book', true)` 0 → 1.
+
+**Prior-fix regression check (§1 #2):** beside FX-G (`scanEnsureDisplay` untouched; its entry call is what B skips),
+FX-I (`scanAcquireShelf` and the live-switch branch untouched), SCE-3 (offline first, unchanged line), SCAN-FIX.5
+(`scanStartBookDecode` and its guards untouched). No shared names.
+
+**Pre-existing drift (flagged, not fixed):** `renderScan`'s comment (:11375) says a pending draft makes "the primer
+offer Review" — stale since the 2026-08-30 ruling that the draft bar supersedes the primer's resume button (:11512–11522).
+
+**Residuals named now:**
+- **R23 → L3** the primer copy "nothing is stored, on your device or ours" overclaims for images sent to the
+  identification AI; L3's consent/honest-copy work owns it (not edited here, per the non-goals).
+- **R24** with the card skipped, a returning reader no longer sees the primer's "Add without the camera" button; the
+  manual add doors stay on the denied/offline cards and the Shelf's add.
+- **R25** iOS Safari's Permissions API behavior is UNKNOWN (0.4); every answer is handled.
+- R10 → **closed by B** (on build).
+
+**Owner-visible delta (not a visual slice; no felt pass queued):** on a later entry, the camera comes straight up with no
+card; on a first entry (or `#scan/primer`), the card shows with the camera OFF until "Turn on camera". No layout or copy
+change.
+
+## Recon gate (§1#8) — fix-red-team, Sonnet, 2026-10-18 — and what changed
+
+No blocks-build finding. Re-derived: bytes, greps (`navigator.permissions` is 3 occurrences on 2 lines), ES3, parse (and
+two broken copies fail, exit 1), every 0.2 cite (`scanMode`'s assignment is :11374, not :11373), the FX-G guard claim,
+`scanEnter`'s only callers (renderScan, the offline retry), the seg buttons' non-entry `scanSetMode`, the router sending
+`#scan/primer` to `renderScan('primer')` with Book mode, the Shelf preselect getting the hi-res stream, the decision's
+settled/timeout/throw handling, and the denied → retry → primer → Allow recovery. Findings and what the draft did:
+1. **`scanEntryGen` was bumped after the offline return** — an older pending decision could survive a leave + OFFLINE
+   re-entry and replace the offline card (breaking SCE-3). **Fixed:** the bump moves above the offline check. Rig N3.
+2. **The decision window (≤ 1 s) left the mode switch live** — a tap there ran the non-entry `scanSetMode` and lit the
+   camera before the card. **Fixed:** `scanDeciding` makes such a tap set the chrome only (the decision then starts the
+   camera in the tapped mode, or opens the primer). Rig N5.
+3. **Residual R26** (pre-existing, rare): nothing is made inert behind an overlay, so keyboard / VoiceOver focus can still
+   reach the seg buttons behind the primer (from `#scan/shelf`, a Book switch there runs `scanStartBookDecode`, which has
+   no overlay guard); and `scanGrantAndWarm`'s 850 ms timer is not entry-gated (a re-entry within 850 ms of a previous
+   grant could start decode under a new primer).
+4. **Ruling needed — the account-delete wipe.** `praxis_scan_camera_ok` is a per-DEVICE camera flag, not account data;
+   it is not in `ACCOUNT_GLOBAL_KEYS` (integrations.js:1325), so deleting the account leaves it. **Proposed: leave it** —
+   it holds no prose or identity, it describes this device's camera permission (which deleting an account does not
+   revoke), and it self-heals on a failed start. integrations.js stays out of scope.
+5. **Residual (part of R25):** the flag is cleared only on a `scanGrantAndWarm` failure (transient errors included —
+   conservative). A Shelf re-acquire failure (:9690), the visibility re-warm, or a later revoke don't clear it; the next
+   entry auto-starts, fails, clears it and shows the denied card (after a brief warm-up glow) — not the primer; "Try the
+   camera again" recovers.
+6. **`#scan/primer` stayed in the URL** (a reload / PWA restore / bookmark re-forced it). **Fixed:** `renderScan` rewrites
+   it to `#scan` (`history.replaceState`, no route re-render). Stated: if that entry is offline, the force stays armed and
+   applies at the "I'm back online" retry; the flag is cleared when the card shows (leaving without Allow means the next
+   entry asks again — that is the point of the check).
+7. **Stale comments in `scanSetMode`** (the FX-I note "leave FX-G's scanEnsureDisplay exactly as shipped" on entry, the
+   FX-G "fresh-entry setup" note) — **corrected** in the draft.
+8. **The stale `renderScan` comment** ("the primer offers Review") — **corrected** in the draft (it rides with the diff,
+   since this slice edits `renderScan`).
+
+**Revised draft — bytes (LF, views.js, measured vs HEAD):** **+3,118** = code **+1,694** / comment **+1,424**
+(whole-line +779, trailing +645). sw.js +0 (→ v3.308). PARSE OK, exit 0. Greps unchanged in kind: the key only through
+`ls` (1) / `sv` (4); raw `localStorage` 10 → 10; `scanOpenOverlay('scan-ov-primer')` 2 → 3.
+
+**Rig, revised draft** (fresh page; T1–T8 as above, re-run — identical results, plus T8's URL now reads `#scan`):
+
+| case | result |
+|---|---|
+| N1 API never answers, flag set | 0 getUserMedia at 0.6 s; the camera starts by 2 s (the 1 s fallback) |
+| N1 API never answers, no flag | 0 getUserMedia; the primer opens after ~1 s |
+| N2 leave mid-decision (flag set, API hangs) | the late 'go' is dropped: 0 getUserMedia, 0 live tracks on `#books` |
+| N3 online entry → leave → offline re-entry inside the window | the offline card stays; 0 getUserMedia (finding 1) |
+| N5 a mode tap during the decision (no flag) | mode → Shelf, 0 getUserMedia; the primer then opens; still 0 (finding 2) |
+| N4 `#scan/shelf` with the flag (API absent) | no card; 1 getUserMedia with `{width:{ideal:2560},height:{ideal:1440}}` — the hi-res Shelf stream; no decode |
+
+## The one question
+
+Approve A + B as revised — with **`#scan/primer`** as the way to see the first-time card again, and the camera flag
+**left out of the account-delete wipe** (finding 4)?
+
+HALT — awaiting go-ahead for SCAN-FIX.6 Stages 1–2.
+
+**Preston's go-ahead (2026-10-18), verbatim:** "Go-ahead for SCAN-FIX.6 Stages 1–2: build A + B as revised, with
+#scan/primer to see the first-time card again, and leave the camera flag out of the account-delete wipe."
+→ Finding 4 RULED: `praxis_scan_camera_ok` stays out of `ACCOUNT_GLOBAL_KEYS`; deleting an account leaves this device's
+camera flag (R27, by ruling).
+
+# SCAN-FIX.6 — build record (Stages 1–2), 2026-10-18
+
+## Stage 1 — build (js/views.js only; commit SCAN-FIX.6, → praxis-v3.308)
+
+The revised draft (`.claude/scanfix-head/views6-draft.js`) was copied over js/views.js after confirming js/views.js was
+byte-identical to HEAD.
+
+| file | expected | measured |
+|---|---|---|
+| js/views.js | +3,118 (code +1,694 / comment +1,424) | **+3,118** = code **+1,694** / comment **+1,424** (whole-line +779, trailing +645) |
+| sw.js | +0 | **+0** (`praxis-v3.307` → `praxis-v3.308`) |
+
+- Parse: js/views.js and sw.js **PARSE OK, exit 0**. ES3 on added lines: **0**. `git diff --check`: clean. EOL: both
+  **i/lf w/lf**, CR 0. Hunks touch only `scanSetMode`, the new block before `scanEnter`, `scanEnter`,
+  `scanGrantAndWarm`, `renderScan`.
+- Greps (HEAD → now): `praxis_scan_camera_ok` 0 → 1 (the constant) · `ls(SCAN_CAM_OK_KEY` 0 → 1 ·
+  `sv(SCAN_CAM_OK_KEY` 0 → 4 · `SCAN_CAM_OK_KEY` used anywhere other than its definition, `ls(` or `sv(`: **0** · raw
+  `localStorage` **10 → 10** · `scanOpenOverlay('scan-ov-primer')` **2 → 3** (the first-time path present) ·
+  `scanSetMode(scanMode || 'book', true)` 0 → 1. SCAN-FIX.1–5 lines unchanged: `scanLastDecode !== isbn` 1 → 1 ·
+  `if (scanAwaitingVerdict) { scanUnfreeze(); }` 1 → 1 · `BrowserMultiFormatReader(zxHints, 150);` 1 → 1.
+
+## Stage 2 — proof on the rig (the served bytes)
+
+Fresh origin `http://localhost:8776`; served `sw.js` reads **praxis-v3.308**; the page's `scanEnter` calls
+`scanCameraDecision`. No BarcodeDetector. Fake camera (an EAN-13 for A); getUserMedia counted per caller; 300 ms latency;
+Permissions API stubbed per row (the rig's real Chromium answers 'denied').
+
+| case | card | getUserMedia | flag | result |
+|---|---|---|---|---|
+| T1 first entry, no flag, no API (zxing not yet loaded) | **PRIMER** | **0** while it is up | — | "Turn on camera" → ours + zxing; the Lorde book confirms **3.1 s** after the tap; **flag set** |
+| T2 re-entry, flag set | **none** | 2 (ours + zxing) | kept | the camera comes straight up; **a scan confirms** |
+| T3 flag set, camera denied | **DENIED** | 1 (rejected) | **cleared** | |
+| T4 offline, flag set | **OFFLINE** first | **0** | kept | |
+| T5 API 'granted', no flag | none | 2 | set | |
+| T6 API 'denied', flag set | **DENIED** | **0** | **cleared** | |
+| T7 API throws, flag set | none | 2 | kept | falls back to the flag |
+| T7b API 'prompt', no flag | **PRIMER** | **0** | — | |
+| T8 `#scan/primer`, flag set + 'granted' | **PRIMER** | **0** | cleared | URL now `#scan`; Allow → flag set; the next entry skips the card |
+| N1 API never answers, flag set | none | 0 at 0.6 s → the camera by 2 s | kept | the 1 s fallback |
+| N1 API never answers, no flag | PRIMER after ~1 s | **0** | — | |
+| N2 leave mid-decision (flag, API hangs) | — | **0**, 0 live tracks on `#books` | | the late 'go' dropped |
+| N3 online entry → leave → offline re-entry inside the window | **OFFLINE** stays | **0** | | (gate finding 1) |
+| N5 mode tap during the decision (no flag) | PRIMER then opens | **0** throughout | | mode → Shelf (gate finding 2) |
+| N4 `#scan/shelf`, flag set | none | 1 — `{width:{ideal:2560},height:{ideal:1440}}` | kept | the hi-res Shelf stream; no decode |
+
+**Regression — SCAN-FIX.5 (fresh page, no flag, so the first entry goes through the primer):** 10 cycles A → Keep
+scanning → B → …: **10/10 on spec** — every verdict the book on camera, 1 lookup per confirm, 1 loop while scanning,
+0 during a verdict, 0 reads during a verdict; 0 loops and 0 reads before Allow. **Leave mid-lookup:** `#books`,
+0 verdicts, 0 loops, **0 live camera tracks**.
+Console: no script errors (only the rig's Google-proxy 404s).
+
+**R10 — CLOSED ON THE ENTRY PATH** (no camera before "Turn on camera" on any entry: 0 getUserMedia while the primer or
+the offline card is up in rows T1, T4, T6, T7b, T8, N1, N3, N5 — true for the rows driven). Late completions from an
+EARLIER session are not gated and are carried as the widened **R26** below. **R23 → L3** (primer copy) handed off, not edited.
+**Not provable here:** iOS Safari's Permissions API answers (R25) and whether Safari asks its own prompt again on a
+remembered entry (the browser's, not ours).
+
+## What Preston runs — device check (live origin unreachable from this machine)
+
+iPhone, Safari, praxis-reading.netlify.app, after "commit and push", the Netlify build and the "new version" banner
+(tap **Reload**; again if it reappears). Optional: `/#diag` → **praxis-v3.308**.
+1. **Open Scan normally.** PASS: no "Turn on the camera" card — the camera comes straight up. (Safari may still show its
+   OWN small permission prompt; that one is Safari's and is expected.) The first time after this update the card may
+   appear once (no grant remembered yet): tap "Turn on camera"; from then on it should not.
+2. **See the first-time card again — in a SAFARI TAB, signed in** (the installed home-screen app has no address bar, and
+   a Safari tab keeps its own storage, so this exercises the Safari tab's remembered grant, not the app's): open
+   `praxis-reading.netlify.app/#scan/primer`. PASS: the card shows **and there is NO green camera dot while it is up**;
+   the address then reads `#scan`; tapping "Turn on camera" starts the camera (the dot appears only then). In the
+   installed app there is no in-app way to re-show the card: it returns only if a camera start fails (the remembered
+   grant is then forgotten, the denied card shows, and its "Try the camera again" opens the first-time card). Which iOS
+   setting would force that failure for an installed app is UNKNOWN here — not given as a step.
+3. **One Lorde scan** (978-1-324-00461-5). PASS: "The Selected Works of Audre Lorde", as before.
+Report each as PASS/FAIL.
+
+**Residuals (this slice):** R23 → L3 (primer copy "nothing is stored, on your device or ours" overclaims for
+identification images) · R24 a returning reader no longer sees the primer's "Add without the camera" button · R25 iOS
+Permissions API behavior UNKNOWN, and the flag self-heals rather than clearing on non-grant-path failures (gate finding 5)
+· **R26 (widened at the build red-team)** getUserMedia can still fire under a primer through paths this slice did not
+gate, all from an EARLIER session's work completing late: (a) `scanStartBookDecode` (no overlay or entry guard) from
+`scanGrantAndWarm`'s 850 ms timer, which runs from the tap through the stream resolving (≥ 300 ms; seconds on iOS) plus
+850 ms; (b) zxing's queued `loadZxingLibrary` callback on a first visit (checks mode and the video only); (c) a late
+`scanStartStream` completion from an older entry (it also writes the flag true and `scanCamReady` from a stale shell).
+`renderRoute` re-runs WITHOUT a hashchange on auth / Firestore merges (integrations.js:161, :252, :332 …), so a PWA cold
+start onto `#scan` can re-enter `scanEnter` while such work is in flight; not driven on the rig. Plus the original gate
+finding 3: focus (keyboard / VoiceOver) can reach the seg buttons behind an overlay · R27 the camera flag survives an
+account delete (ruled) · **R28** during the decision window (≤ 1 s, only when the Permissions API is slow) the capture
+view is live with no overlay: the draft bar's Resume and Back are tappable, and a 'go' landing after Resume would start
+the camera behind the review screen (the callback checks route, gen and shell, not the active screen); a 'go' while
+`document.hidden` may be refused and clear the flag (harmless: the next entry shows the card).
+
+## Gates on the built tree (Sonnet), 2026-10-18
+
+- **fix-red-team — no blocks-commit finding.** Re-derived: applied js/views.js md5 `2f7c5263…` == the reviewed draft;
+  its earlier findings 1, 2, 6, 7, 8 present in the code (:9817, :9821/:9734, :11418, :9730–9747, :11420); +3,118 B; the
+  key only via `ls`/`sv` (6 uses: definition + 1 + 4); raw `localStorage` 10 → 10; primer opener 2 → 3; parse OK and two
+  broken copies fail (exit 1); five hunks only; SCAN-FIX.1–5 anchors untouched; no copy changed; no
+  `ACCOUNT_GLOBAL_KEYS` edit; `scanDeciding` cannot stick (every `scanEnter` resets it; a stale callback cannot clear a
+  newer entry's flag); `history.replaceState` fires no hashchange, nothing reads `history.state`, `activeRoute` stays
+  `scan`, later `renderRoute` re-runs see `#scan` (the force cannot re-fire); the leftover 1 s timer is inert; the
+  visibility re-warm writes no flag; the shutters are guarded by `scanCamReady`. Findings taken: (1) R10's closure scoped
+  to the entry path and **R26 widened** (above); (2) device step 2 made runnable — a signed-in Safari tab, with the PWA
+  limitation stated (above); (3) **R28** (above); (4) **BOARD.md row 19 + `docs/studio/scan.md`** now record SCAN-FIX.1–6
+  (they had recorded none of it) — ride this commit; (5) the code/comment split is a classification the agent did not
+  reproduce exactly (the total +3,118 it confirmed).
+- **praxis-reviewer — code CLEARED; HOLD on the staging plan only.** Every code gate PASS: ES3 (0 of 53 added lines) ·
+  foundations 14,966 / 10,255 B · +3,118 LF re-derived, and the code +1,694 / comment +1,424 split reproduced exactly
+  (trailing comments counted with their line's LF) · sw.js 307 → 308 only · EOL · `git diff --check` · parse · the key
+  only via `ls` (:9794) / `sv` (:9820, :9826, :9836, :9842), raw `localStorage` 10 → 10 · primer opener 2 → 3 · every
+  ruling at its line · SCAN-FIX.1–5 untouched · no copy change · both stale comments corrected · logged-out / offline /
+  denied states honest · integrations.js unchanged (the wipe ruling). The HOLD: the plan named 6 files while BOARD.md
+  and `docs/studio/scan.md` were also modified (written mid-review, after the red-team's finding 4). **Answered:** the
+  commit stages all 8 (below); `git status` re-checked immediately before the commit.
+
+**Commit plan (ONE commit, explicit files, real index):** `git add js/views.js sw.js BOARD.md docs/studio/scan.md
+docs/checkpoints/scan-fix.md docs/studio/sequence.md "docs/Checklist and Roadmap/BUILD_STATE.md"
+docs/studio/builder.html` → subject "SCAN-FIX.6 — the camera primer shows once, and never over a live camera",
+CACHE_VERSION `praxis-v3.308`. builder.html is regenerated AFTER the last studio-markdown edit (scan.md) so it matches
+its source. `stash@{0}` predates this slice and is not touched.
+
+STOP — awaiting "commit and push".

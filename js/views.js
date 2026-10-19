@@ -9716,7 +9716,7 @@ function scanRenderActionRow() {
   }
 }
 
-function scanSetMode(m) {
+function scanSetMode(m, entry) {
   scanMode = m;
   var sb = scanEl('scan-seg-book'), ss = scanEl('scan-seg-shelf');
   if (sb) { sb.className = (m === 'book' ? 'is-on' : ''); sb.setAttribute('aria-selected', m === 'book'); }
@@ -9727,18 +9727,23 @@ function scanSetMode(m) {
   scanRenderActionRow();
   scanClearTimers();
   scanStopBookDecode();
+  // SCAN-FIX.6 — on ENTRY (and while scanEnter is still deciding) no camera starts here,
+  // ours or zxing's: scanEnter's gate decides (primer / remembered grant / denied /
+  // offline). FX-G's overlay guard could not hold on entry, because no overlay was open
+  // yet — the camera was lit behind the primer (R10).
+  if (entry || scanDeciding) { scanHideVerdict(); return; }
   // FX-I (F6): on a GENUINE live-camera switch (camera already warm), re-acquire per
   // mode instead of re-attaching the demoted iOS stream (FX-G) — which came back soft
   // (no autofocus sweep on a bare re-attach) and low-res (no width/height). Shelf gets
   // a FRESH high-res stream; Book stops any hi-res Shelf stream FIRST (FORK-β: never
-  // orphan a stream into Book) then re-warms via FX-G's path. On the INITIAL entry
-  // setup (camera not yet live) leave FX-G's scanEnsureDisplay exactly as shipped so
-  // the primer→grant path still gates the OS ask.
+  // orphan a stream into Book) then re-warms via FX-G's path. Entry no longer reaches
+  // this point (SCAN-FIX.6, above); a switch before the camera is warm still re-warms
+  // through FX-G's scanEnsureDisplay below.
   if (scanCamReady) {
     if (m === 'shelf') { scanAcquireShelf(); }
     else { scanStopStream(); scanEnsureDisplay(); }
   } else {
-    scanEnsureDisplay(); // FX-G: fresh-entry setup (unchanged — Shelf has no decode to
+    scanEnsureDisplay(); // FX-G: the camera is not warm yet (Shelf has no decode to
                          // restore the display; Book bridges the zxing gap)
   }
   scanHideVerdict();
@@ -9777,15 +9782,50 @@ function scanUnfreeze() { var cv = scanEl('scan-cam-freeze'); if (cv) { cv.style
 // ============================================================================
 // ENTRY → offline check → permission primer → warm-up → live camera
 // ============================================================================
+// SCAN-FIX.6 — the primer shows until the camera has been granted on this device. A start
+// from "Turn on camera" that succeeds is remembered (ls/sv); one that fails forgets it. Where
+// the Permissions API exists it can settle it first: 'granted' skips the card, 'denied' goes
+// to the denied card; missing, throwing, silent (1 s) or 'prompt' falls back to the flag.
+var SCAN_CAM_OK_KEY = 'praxis_scan_camera_ok';
+var scanEntryGen = 0;          // a decision that lands after a leave / re-entry is dropped
+var scanForcePrimer = false;   // '#scan/primer' shows the first-time card again, once
+var scanDeciding = false;      // true while scanEnter waits on scanCameraDecision
+function scanCameraDecision(cb) {
+  var remembered = ls(SCAN_CAM_OK_KEY, false) === true;
+  var settled = false;
+  function fin(d) { if (settled) { return; } settled = true; cb(d); }
+  window.setTimeout(function () { fin(remembered ? 'go' : 'ask'); }, 1000);
+  try {
+    if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+      navigator.permissions.query({ name: 'camera' }).then(function (st) {
+        var s = st ? st.state : '';
+        if (s === 'granted') { fin('go'); } else if (s === 'denied') { fin('denied'); } else { fin(remembered ? 'go' : 'ask'); }
+      }, function () { fin(remembered ? 'go' : 'ask'); });
+      return;
+    }
+  } catch (e) {}
+  fin(remembered ? 'go' : 'ask');
+}
+
 function scanEnter() {
   scanGoScreen('scan-screen-view');
   scanCloseAllOverlays();
   scanHideVerdict();
   scanHide(scanEl('scan-tray')); scanHide(scanEl('scan-shimmer'));
-  scanSetMode(scanMode || 'book');  // respect a Manage-sheet mode preselect (#scan/shelf); default book
+  scanSetMode(scanMode || 'book', true);  // mode preselect (#scan/shelf; default book) — no camera yet (SCAN-FIX.6)
   scanClearTimers(); scanStopBookDecode(); // don't decode until the camera is live
+  var gen = ++scanEntryGen;     // bumped BEFORE the offline check: an older pending decision can never land on this entry
+  scanDeciding = false;
   if (navigator.onLine === false) { scanOpenOverlay('scan-ov-offline'); return; } // SCE-3: offline BEFORE the primer
-  scanOpenOverlay('scan-ov-primer');                                             // SC7: primer BEFORE the OS ask
+  if (scanForcePrimer) { scanForcePrimer = false; sv(SCAN_CAM_OK_KEY, false); scanOpenOverlay('scan-ov-primer'); return; }
+  scanDeciding = true;          // until the decision lands, a mode tap sets the chrome only (no camera)
+  scanCameraDecision(function (d) {
+    if (gen !== scanEntryGen || !scanOnScanRoute() || !scanEl('scan-ov-primer')) { return; }   // left or re-entered meanwhile
+    scanDeciding = false;
+    if (d === 'go') { scanGrantAndWarm(); }                                    // the same path "Turn on camera" takes
+    else if (d === 'denied') { sv(SCAN_CAM_OK_KEY, false); scanOpenOverlay('scan-ov-denied'); }
+    else { scanOpenOverlay('scan-ov-primer'); }                                // SC7: primer BEFORE the OS ask
+  });
 }
 
 function scanGrantAndWarm() {
@@ -9793,11 +9833,13 @@ function scanGrantAndWarm() {
   scanWarmUpThen(function () {});
   scanStartStream(function (ok, why) {
     if (ok) {
+      sv(SCAN_CAM_OK_KEY, true);   // SCAN-FIX.6: granted on this device — the next entry skips the primer
       window.setTimeout(function () {
         scanHide(scanEl('scan-cam-warm'));
         if (scanMode === 'book') { scanStartBookDecode(); }
       }, scanRM() ? 250 : 850);
     } else {
+      sv(SCAN_CAM_OK_KEY, false);  // SCAN-FIX.6: denied / revoked / unsupported — forget the grant
       scanHide(scanEl('scan-cam-warm'));
       scanOpenOverlay('scan-ov-denied'); // denied / unsupported / no camera -> the working add door
     }
@@ -11372,8 +11414,11 @@ function renderScan(preMode) {
   // '#scan/shelf' preselect (Manage-sheet "Scan shelf") opens in Shelf. Reset every
   // entry so the module-level scanMode never leaks from a prior visit.
   scanMode = (preMode === 'shelf') ? 'shelf' : 'book';
+  scanForcePrimer = (preMode === 'primer');   // SCAN-FIX.6: '#scan/primer' — the first-time card, once
+  if (scanForcePrimer) { try { history.replaceState(null, '', '#scan'); } catch (eH) {} }   // a reload must not force it again
   // SCE-2: resume a persisted draft (a killed PWA / a return trip picks up where it
-  // stood). Load it into scanResult; if it holds anything, the primer offers Review.
+  // stood). Load it into scanResult; if it holds anything, the capture-view draft bar
+  // offers Resume (the primer's resume button was retired by the 2026-08-30 ruling).
   // ORDER OF OPERATIONS ON ENTRY (ruled 2026-08-30), and it is load-bearing:
   //   1. scanLoadDraft() runs R2 EXPIRY FIRST — a draft past ~24h is cleared here
   //      and returns null, so it never reaches step 2;
