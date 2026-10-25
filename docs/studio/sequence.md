@@ -31,6 +31,9 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-25 (SCAN-FIX CLOSED)** — Preston's phone check of SCAN-FIX.6 on praxis-v3.308 passed all three steps, so the
+  SCAN-FIX lane moves from `## Now` to `## Shipped` (shipped v3.303–v3.308; .5 and .6 device PASS). No re-order, no retirement,
+  no `PROPOSED:` flag; the residuals it hands on (R23 → L3; R26; the device-only unknowns R18/R25) are named in the entry.
 - **2026-10-18 (SCAN-FIX.6 — the primer once, never over a live camera, built local v3.308)** — no re-order, no
   retirement, so no `PROPOSED:` flag. SCAN-FIX.5 shipped (`1e6e026`) and passed every device test. Preston then found the
   "Turn on the camera" card on every entry, with iOS's green camera dot already on behind it: `scanEnter` started our
@@ -850,6 +853,18 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **2026-10-25 · SCAN-FIX — the website barcode scanner — CLOSED (L7a R17; SCAN-FIX.1–6, v3.303–v3.308, `bb29310`…`ba7b289`; .5 and .6 device PASS on every test)**: an ISBN Google
+  Books misses or fails on now falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out
+  until its preview, r22); the last camera frame stays behind the Book verdict; zxing reads only the four book
+  formats with 150 ms to the confirming read; the Chrome BarcodeDetector loop no longer dies after its first read.
+  Device check of .1–4: the Lorde book, the frozen frame and rescans PASS; a different book after "Keep scanning"
+  FAILED (the previous book's ISBN). SCAN-FIX.5 fixes it: one decode loop at a time (a zxing reader replaced while
+  starting is stopped once started), one lookup at a time, and the book just shown is quiet for 1.5 s — device PASS on
+  every test. SCAN-FIX.6: the camera primer shows only until the camera has been granted on the device (remembered;
+  the Permissions API can confirm or refuse), and no camera starts before "Turn on camera" (R10 closed); `#scan/primer`
+  shows the first-time card again — pushed `ba7b289`, device PASS 1–3 (camera straight up; the first-time card with no
+  camera dot; a Lorde scan). Open hand-offs: R23 (primer copy) → L3; R18/R25 device-only unknowns; R26 late-completion
+  camera starts; native-scanner work is L7b. Record: `docs/checkpoints/scan-fix.md`.
 - [x] **2026-09-29 · V-1 AMENDMENT 1.2 — the Sunflower deepened**: eight rulings (door · Yumi seed · rail covers · five depth levers · sky still · italic = voice · day sky kept · dock at foot). Canon = docs/studio/v1-canon-delta-amend-1.2.md; reference = design/sunflower-v7.html. Docs only, live stays v3.299.
 - [x] **V-1 vision — CLOSED 2026-09-19.** Canon delta v1.1 at `docs/studio/v1-canon-delta.md` (ten rules + token sheet). Recon at `docs/studio/v1-recon.md`. Next: P2 shape.
 
@@ -1355,20 +1370,9 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
   `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Pushed `2001f6e`; Preston's on-device
   check (Stage 4) and the simulator run (Stage 5) PASS, record `60ce6b5`. Its three pre-existing scan failures went
-  to SCAN-FIX (below); `getUserMedia` absent inside the shell (R18) goes to L7b. L7b (native sign-in, bundle ID,
+  to SCAN-FIX (CLOSED 2026-10-25, now under `## Shipped`); `getUserMedia` absent inside the shell (R18) goes to L7b. L7b (native sign-in, bundle ID,
   icon, TestFlight) waits for the Apple Developer account. Record: `docs/checkpoints/l7a.md`.
   touches: [cross-cutting]
-- [~] **SCAN-FIX — the website barcode scanner (L7a R17; SCAN-FIX.1–5 SHIPPED 2026-10-18 v3.303–v3.307, .5 device PASS; SCAN-FIX.6 built local, v3.308)** — an ISBN Google
-  Books misses or fails on now falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out
-  until its preview, r22); the last camera frame stays behind the Book verdict; zxing reads only the four book
-  formats with 150 ms to the confirming read; the Chrome BarcodeDetector loop no longer dies after its first read.
-  Device check of .1–4: the Lorde book, the frozen frame and rescans PASS; a different book after "Keep scanning"
-  FAILED (the previous book's ISBN). SCAN-FIX.5 fixes it: one decode loop at a time (a zxing reader replaced while
-  starting is stopped once started), one lookup at a time, and the book just shown is quiet for 1.5 s — device PASS on
-  every test. SCAN-FIX.6: the camera primer shows only until the camera has been granted on the device (remembered;
-  the Permissions API can confirm or refuse), and no camera starts before "Turn on camera" (R10 closed); `#scan/primer`
-  shows the first-time card again. Awaits "commit and push" → Preston's device check. Record: `docs/checkpoints/scan-fix.md`.
-  touches: [scan]
 - [~] **S-B — Sweep + dead-code deletion (PARALLEL LANE per the 2026-08-22 ruling; dead-code portion SHIPPED local 2026-08-08, v3.270–275)** —
   promoted from `## Next` on Preston's re-plan ruling. **Shipped this session** (8 local commits, net
   −99,120 app-bytes, ZERO behavior / ZERO pixels): the re-plan stamp; the auto-guard verify+extend

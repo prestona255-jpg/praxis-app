@@ -1268,3 +1268,30 @@ CACHE_VERSION `praxis-v3.308`. builder.html is regenerated AFTER the last studio
 its source. `stash@{0}` predates this slice and is not touched.
 
 STOP — awaiting "commit and push".
+
+## SCAN-FIX.6 SHIPPED — 2026-10-19 (on Preston's "commit and push")
+
+`ba7b289` SCAN-FIX.6 (praxis-v3.308) — pushed `1e6e026..ba7b289`; HEAD == origin/main ==
+ba7b289fedfa9b37fccbff4692098d3349767765; hook silent; exactly the eight planned files. Before the commit, as Preston asked:
+`tail -c 20 docs/studio/builder.html` ended `</body>\n</html>`, and that run's summary read
+`studio-build: wrote … (HEAD 1e6e026, praxis-v3.308, 2026-10-19 00:01 UTC; … warnings 0)`. Foundations md5 unchanged
+(`070679b0…` / `772886c0…`). Netlify deploy 6ad63c38e5b57197be1b37d1: commit_ref ba7b289, state ready, published
+2026-10-19T15:50:30Z, deploy_time 12 s, 5 functions (unchanged digests). `stash@{0}` untouched.
+
+## Device check of SCAN-FIX.6 — Preston, iPhone, live praxis-v3.308 (reported 2026-10-25)
+
+| step | result |
+|---|---|
+| 1 · Open Scan normally — no card, the camera comes straight up | **PASS** |
+| 2 · The first-time card again (`#scan/primer`) — no camera dot while it is up; "Turn on camera" starts it | **PASS** |
+| 3 · One Lorde scan | **PASS** |
+
+**SCAN-FIX.6 CLOSED. The SCAN-FIX lane (SCAN-FIX.1–6, v3.303–v3.308) is CLOSED** — every slice shipped; .1–.4's one
+device failure opened .5, and .5 and .6 passed every device test.
+
+**Handed on, still open:** R23 the primer copy's "nothing is stored" overclaim → L3 (consent / honest copy) · R26
+camera starts from an earlier session's late completions (the 850 ms grant timer, a queued zxing load, a late stream) ·
+R18 / R25 device-only unknowns (the cause of the original "Not found"; iOS's Permissions API answers) · R12 Google
+Books has no timeout · R16 F-d covers stale frames ≤ 1.5 s · R24 returning readers no longer see "Add without the
+camera" · R27 the camera flag survives an account delete (ruled) · R28 the decision-window taps · D2 the iOS cover shot
+probably captures an empty frame (non-goal) · the native scanner is L7b.

@@ -169,7 +169,7 @@ secondary (ISBN/search add-door + a shelf-photo drop-zone — no fake viewfinder
   at a time, one lookup at a time, the last book quiet for 1.5 s (orphaned zxing readers had answered a new book with
   the previous ISBN) · .6 the camera primer shows only until the camera is granted on the device, and no camera
   starts before "Turn on camera" (R10); `#scan/primer` shows the first-time card again. Device: .1–.4 PASS except the
-  wrong-book FAIL that opened .5; .5 PASS on every test; .6 awaiting. Record: `docs/checkpoints/scan-fix.md`.
+  wrong-book FAIL that opened .5; .5 PASS on every test; .6 PASS 1–3 (2026-10-25). **SCAN-FIX CLOSED.** Record: `docs/checkpoints/scan-fix.md`.
 
 ## Next
 
