@@ -358,10 +358,11 @@ function renderReadAloudAsk(pendingText) {
 // L3.2b (F-L3.2-b, ruled 26 Oct): a reply held back always shows SOMETHING (never
 // silent), but the "Let me try that again" card speaks only when her OWN CHECK held
 // it. The grader's own non-answers -- no candidate ('empty'), its daily budget spent
-// ('budget'), its call failing ('error') -- are not her check: they get the panel's
-// existing error line. Every silent result goes through here, so there is one fork.
+// ('budget'), its call failing ('error'), an answer it could not read ('unknown',
+// ruled 26 Oct, R-L3-26) -- are not her check: they get the panel's existing error
+// line. Every silent result goes through here, so there is one fork.
 function renderYumiHeld(text, layer) {
-  if (layer === 'empty' || layer === 'budget' || layer === 'error') {
+  if (layer === 'empty' || layer === 'budget' || layer === 'error' || layer === 'unknown' || !layer) {
     if (window.console && console.info) { console.info('[yumi] reply not checked, layer=' + layer); }
     renderError();
     return;
