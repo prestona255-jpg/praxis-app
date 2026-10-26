@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-25 (L3.1 — CONSENT, built local v3.309)** — L3 opens as a lane beside L7 (fifteenth sitting r64: L3.1 consent
+  v3.309 then L3.2 hygiene v3.310); nothing re-ordered or retired, so no `PROPOSED:` flag. Stage 0 corrected the brief
+  nine times before a line was built (the seed is minted, not loaded; no owner identity in code; the blank first reply is
+  the fail-closed gate's silent branch; the sorter stamps Uncategorized on any refusal) and Preston ruled 18 forks + the
+  missing copy (consent-copy.md "Added 25 Oct"). Built: the one yes as one component (Home's quiet dock, What Yumi Sees
+  as the ledger and the re-ask), the gate in `aiProxyRequest` + the sorter/scan/chat pre-checks, ONE note substrate
+  (20 × 240, stated on the ledger) for every sender, "Yumi may read this", the dictation + read-aloud asks, opt-in error counts
+  (`error-counts` function), the honest camera card. Amends thirteenth r3: not-now = "by name or barcode".
+  Record: `docs/checkpoints/l3.md`.
 - **2026-10-25 (SCAN-FIX CLOSED)** — Preston's phone check of SCAN-FIX.6 on praxis-v3.308 passed all three steps, so the
   SCAN-FIX lane moves from `## Now` to `## Shipped` (shipped v3.303–v3.308; .5 and .6 device PASS). No re-order, no retirement,
   no `PROPOSED:` flag; the residuals it hands on (R23 → L3; R26; the device-only unknowns R18/R25) are named in the entry.
@@ -1366,6 +1375,13 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
+- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent BUILT local v3.309, awaiting commit; L3.2 hygiene next)** —
+  the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
+  this" per artifact, opt-in error counts, the honest camera card (L3.1); then new accounts start empty, the invite
+  allowlist, ceilings on the voice proxies, the never-silent reply and the first-sign-in render gap (L3.2).
+  Rulings: `docs/checkpoints/p2-fifteenth-sitting-rulings.md` 52–53, 63–64 + "Rulings, Stage 0" in the record.
+  Record: `docs/checkpoints/l3.md`.
+  touches: [home, yumi-sees, profile, book-detail, artifact, scan, capture, yumi]
 - [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a SHIPPED 2026-10-18, v3.300–v3.302)** —
   the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
   `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Pushed `2001f6e`; Preston's on-device

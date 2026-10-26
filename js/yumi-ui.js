@@ -275,6 +275,14 @@ function renderYumiMessage(text, grounding, opts) {
   // to speaking when audio begins and back to resting (or listening in
   // hands-free) when it ends.
   if (opts && opts.speak === true && isVoiceOn() && typeof playLine === 'function') {
+    // L3.1 (F-D1 + RT-8): read-aloud asks ONCE, at the first line she would speak
+    // -- so a reader who already had voice on is asked too. Until "Read aloud" is
+    // tapped nothing goes to ElevenLabs (playLine refuses as well).
+    if (!readAloudGranted()) {
+      renderReadAloudAsk(text);
+      if (yumi_handsfree_active) { handsFreeReArm(); }   // RT-10: an unanswered ask never stalls the listening loop
+      return;
+    }
     playLine(text, function () {
       setBloomState('speaking');
     }, function () {
@@ -284,6 +292,62 @@ function renderYumiMessage(text, grounding, opts) {
       else { setBloomState('resting'); }
     });
   }
+}
+
+// L3.1 READ ALOUD — the first-use ask (consent sheet "Read aloud", ruled 25 Oct
+// as Call A). One card in her thread: "Read aloud" records the answer and speaks
+// the line it was asked over; "Not now" records not-now and turns voice off, so
+// the speaker stays quiet and the ask returns the next time voice is turned on.
+function readAloudGranted() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var p = (u && u.uid && typeof getProfile === 'function') ? getProfile(u.uid) : null;
+  return !!(p && p.readAloudAsked === 'granted');
+}
+function renderReadAloudAsk(pendingText) {
+  if (!yumiBodyEl) { return; }
+  var old = yumiBodyEl.querySelector('.yumi-ask');
+  if (old && old.parentNode) { old.parentNode.removeChild(old); }
+  var card = document.createElement('div');
+  card.className = 'yumi-ask';
+  card.setAttribute('role', 'group');
+  var p = document.createElement('p');
+  p.className = 'yumi-ask-body';
+  p.textContent = 'Her words go to ElevenLabs to be spoken, including any of your notes she quotes.';
+  card.appendChild(p);
+  var acts = document.createElement('div');
+  acts.className = 'yumi-ask-acts';
+  var yes = document.createElement('button');
+  yes.type = 'button';
+  yes.className = 'yumi-ask-yes';
+  yes.textContent = 'Read aloud';
+  var no = document.createElement('button');
+  no.type = 'button';
+  no.className = 'yumi-ask-no';
+  no.textContent = 'Not now';
+  acts.appendChild(yes);
+  acts.appendChild(no);
+  card.appendChild(acts);
+  function answer(v) {
+    var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!u || !u.uid || typeof setProfile !== 'function') { return; }
+    var f = { readAloudAsked: v };
+    if (v === 'not-now') { f.voiceOn = false; }
+    setProfile(u.uid, f);
+    if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(u.uid, getProfile(u.uid), function () {}); }
+    if (card.parentNode) { card.parentNode.removeChild(card); }
+  }
+  yes.addEventListener('click', function () {
+    answer('granted');
+    if (pendingText && typeof playLine === 'function') {
+      playLine(pendingText, function () { setBloomState('speaking'); }, function () {
+        if (yumi_handsfree_active) { setBloomState('listening'); handsFreeReArm(); }
+        else { setBloomState('resting'); }
+      });
+    }
+  });
+  no.addEventListener('click', function () { answer('not-now'); });
+  yumiBodyEl.appendChild(card);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
 function renderTypingIndicator() {
@@ -336,6 +400,7 @@ function renderError(customText) {
 // the generic copy. Never "Yumi is thinking", never silence.
 function yumiRenderProxyError(err) {
   var code = (err && typeof err.code === 'string') ? err.code : '';
+  if (code === 'consent_required') { openYumiYesFromChrome(); return; }   // L3.1: the answer to "not yet" is the yes
   if (code === 'daily_limit' && typeof aiLimitMessage === 'function') { renderError(aiLimitMessage(err)); return; }
   if (code === 'unauthenticated' || code === 'sign_in_required') { renderError('Please sign in again to think with Yumi.'); return; }
   if (code === 'ceiling_unconfigured' || code === 'ceiling_unavailable') { renderError('Yumi is unavailable right now — the usage ceiling could not be checked. Try again in a moment.'); return; }
@@ -887,6 +952,7 @@ function maybeStartOnboarding(uid) {
     Intros.startJourney();
     return;
   }
+  if (!yumiYesOk()) { return; }   // L3.1: the scripted Yumi greeting is Yumi speaking -- not before the yes
   startOnboarding();
 }
 
@@ -1236,6 +1302,9 @@ function buildYumiPanel() {
       renderYumiSignedOut();
       return;
     }
+    // L3.1: before the yes, nothing is rendered, remembered or sent -- the words
+    // stay in the field and the yes sheet opens (RT-10: never appendTurn first).
+    if (!yumiYesOk()) { openYumiYesFromChrome(); return; }
 
     renderUserMessage(trimmed);
     if (yumiInputEl) { yumiInputEl.value = ''; }
@@ -1370,6 +1439,27 @@ function buildYumiPanel() {
   return panel;
 }
 
+// L3.1 THE ONE YES, in the chrome. Until the reader says yes, Yumi is quiet: no
+// Bloom, no panel, no first-run greeting -- every door to her opens the yes sheet
+// instead (views.js openYumiYesSheet; the Home dock and What Yumi Sees carry it).
+function yumiYesOk() {
+  return typeof isYumiYesGranted === 'function' && isYumiYesGranted();
+}
+function openYumiYesFromChrome() {
+  if (window.views && typeof window.views.openYumiYesSheet === 'function') { window.views.openYumiYesSheet('chrome'); }
+}
+// Re-read the yes and set the chrome to match: body.yumi-quiet hides the Bloom
+// (components.css); a panel left open from before is closed. Called on every
+// panel render and on every route render, so the yes and a not-now land at once.
+function syncYumiYes() {
+  var quiet = !yumiYesOk();
+  if (document.body && document.body.classList) { document.body.classList.toggle('yumi-quiet', quiet); }
+  if (quiet && yumiPanelEl && yumiPanelEl.classList.contains('yumi-panel-open')) {
+    yumiPanelEl.classList.remove('yumi-panel-open');
+  }
+  return !quiet;
+}
+
 function renderYumiPanel() {
   if (!yumiBloomEl) {
     yumiBloomEl = buildYumiBloom();
@@ -1382,15 +1472,17 @@ function renderYumiPanel() {
     yumiPanelEl = buildYumiPanel();
     document.body.appendChild(yumiPanelEl);
   }
-  if (isYumiPanelOpen() && !isArcRoute()) {
+  if (isYumiPanelOpen() && !isArcRoute() && yumiYesOk()) {
     yumiPanelEl.classList.add('yumi-panel-open');
     renderYumiEmptyState();
   } else {
     yumiPanelEl.classList.remove('yumi-panel-open');
   }
+  syncYumiYes();
 }
 
 function openYumiPanel() {
+  if (!yumiYesOk()) { openYumiYesFromChrome(); return; }   // L3.1: the door to her is the yes
   if (!yumiPanelEl) { renderYumiPanel(); }
   sv('praxis_yumi_open', true);
   yumiPanelEl.classList.add('yumi-panel-open');
@@ -1460,6 +1552,7 @@ function onYumiKeydown(e) {
   if (key !== 'j') { return; }
   if (!isYumiKeyboardEventEligible(e)) { return; }
   e.preventDefault();
+  if (!yumiYesOk()) { openYumiYesFromChrome(); return; }   // L3.1 (RT-10)
   toggleYumiPanel();
 }
 
@@ -1596,7 +1689,10 @@ window.YumiUI = {
   startOnboarding:      startOnboarding,
   // 6.2b.1: called by the auth callbacks to keep the body-level panel from
   // showing a stale onboarding transcript across an in-app re-auth.
-  refreshPanelForAuth:  refreshYumiPanelForAuthChange
+  refreshPanelForAuth:  refreshYumiPanelForAuthChange,
+  // L3.1: re-read the one yes into the chrome (Bloom / panel); views.renderRoute
+  // and the yes sheet call it.
+  syncYes:              syncYumiYes
 };
 
 // =====================================================================

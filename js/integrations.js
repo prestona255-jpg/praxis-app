@@ -657,7 +657,19 @@ firebase.auth().onAuthStateChanged(function (u) {
           // .set() write list (the Firestore-merge gotcha: a sign-in doc bypasses
           // migrate(), so read AND write must both carry it or a second device
           // silently wipes it). Default '' when absent on the remote doc.
-          carryingQuestion:    (typeof rd.carryingQuestion === 'string') ? rd.carryingQuestion : ''
+          carryingQuestion:    (typeof rd.carryingQuestion === 'string') ? rd.carryingQuestion : '',
+          // L3.1 consent: the one yes, the two asks and the error-counts switch.
+          // Symmetric with buildUserProfileDoc (the Firestore-merge gotcha). Absent ->
+          // '' / false: a legacy profile is never granted (F-A2).
+          // RT-4: the NEWER answer wins (by yumiYesAt), so a yes given on this device
+          // during the load window -- or a doc last written by a pre-L3 client, which
+          // drops the field -- never silently revokes it.
+          yumiYes:             l3NewerYes(rd, getProfile(u.uid)).yumiYes,
+          yumiYesAt:           l3NewerYes(rd, getProfile(u.uid)).yumiYesAt,
+          dictationAsked:      (typeof rd.dictationAsked === 'string') ? rd.dictationAsked : '',
+          dictationAskedAt:    (typeof rd.dictationAskedAt === 'number') ? rd.dictationAskedAt : 0,
+          readAloudAsked:      (typeof rd.readAloudAsked === 'string') ? rd.readAloudAsked : '',
+          sendErrorCounts:     rd.sendErrorCounts === true
         });
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -665,6 +677,16 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.log('loadProfileFromFirestore: merged remote profile doc');
       } else if (profResult.status === 'absent') {
         console.log('loadProfileFromFirestore: no remote profile doc for uid, keeping cache');
+        // L3.1 (F-A1): a NEW account (Auth creationTime at/after the cutoff) starts
+        // with reads-along OFF, written explicitly so the stored value rules from now
+        // on. Only on a settled ABSENT -- never on found (a remote true from another
+        // device wins) or error (unknown). Runs before the F-DL3 flush below, so that
+        // flush carries the false. Display only: the yes is what gates (rec 7c).
+        if (l3IsNewAccount(u) && typeof setProfile === 'function' &&
+            getProfile(u.uid).yumiYes !== 'granted') {   // RT-4: never half-undo a yes given in the load window
+          setProfile(u.uid, { yumiReadsAlong: false });
+          profileWritePending = true;
+        }
       } else {
         console.warn('loadProfileFromFirestore: fetch failed, keeping cache', profResult.error);
       }
@@ -675,6 +697,8 @@ firebase.auth().onAuthStateChanged(function (u) {
         profileWritePending = false;
         saveProfileToFirestore(u.uid, getProfile(u.uid), function () {});
       }
+      // L3.1: the opt-in error-count report, once a day, only with the switch on.
+      if (profResult.status !== 'error') { maybeSendErrorCounts(u.uid); }
       // 6.2b: first-run greeting trigger. Evaluated only after the remote
       // profile is known (found = merged flag; absent = definitively fresh)
       // -- never on 'error', where the remote onboardingSeen is unknown and
@@ -2691,6 +2715,12 @@ function _ttsPlayUrl(url, onStart, onEnd) {
 function playLine(text, onStart, onEnd) {
   var t = (typeof text === 'string') ? text.replace(/^\s+|\s+$/g, '') : '';
   if (t === '') { if (typeof onEnd === 'function') { onEnd(); } return; }
+  // L3.1: her words (which can quote the reader's notes) reach ElevenLabs only
+  // after the read-aloud ask was answered "Read aloud". Fail-closed seam: the ask
+  // itself lives at the speak site (yumi-ui.js), this refuses any other path.
+  var _rcu = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var _rp = (_rcu && _rcu.uid && typeof getProfile === 'function') ? getProfile(_rcu.uid) : null;
+  if (!_rp || _rp.readAloudAsked !== 'granted') { if (typeof onEnd === 'function') { onEnd(); } return; }
 
   // Cache hit -> replay without a fetch or a budget spend.
   if (_ttsCache[t]) {
@@ -2720,6 +2750,84 @@ function playLine(text, onStart, onEnd) {
     // network / proxy / decode error -> stay silent, no chrome.
     if (typeof onEnd === 'function') { onEnd(); }
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// L3.1 — SEND ERROR COUNTS (opt-in, thirteenth r8). measure.js stays network-free;
+// this is the only sender, and it runs only when profile.sendErrorCounts is true.
+// Once per UTC day it posts exactly { kinds, opened, version }: error counts by
+// kind, where a kind is the source FILE NAME + LINE NUMBER and never any part of
+// the message (measure.js's signature carries up to 80 chars of message text,
+// which can echo the reader -- stripped here); opened = the app opened today
+// (true when this runs, which is on a signed-in boot); version = CACHE_VERSION.
+// The endpoint verifies the ID token and never stores the uid.
+// ═══════════════════════════════════════════════════════════════════════
+// L3.1 (F-A1): NEW account = Auth creationTime at/after L3_NEW_ACCOUNT_CUTOFF.
+// creationTime is server-set (RFC-1123 string on the compat SDK), so it reads the
+// same on every device. Unknown/unparseable -> false (keep the legacy default).
+function l3IsNewAccount(fbUser) {
+  var ct = (fbUser && fbUser.metadata) ? fbUser.metadata.creationTime : null;
+  var t = ct ? Date.parse(ct) : NaN;
+  return !isNaN(t) && typeof L3_NEW_ACCOUNT_CUTOFF === 'number' && t >= L3_NEW_ACCOUNT_CUTOFF;
+}
+
+// RT-4: of the remote doc's answer to the one yes and this device's, the newer
+// (by yumiYesAt) wins; a remote doc without the field (a pre-L3 client) keeps local.
+function l3NewerYes(rd, local) {
+  var rAt = (rd && typeof rd.yumiYesAt === 'number') ? rd.yumiYesAt : -1;
+  var lAt = (local && typeof local.yumiYesAt === 'number') ? local.yumiYesAt : 0;
+  if (rd && typeof rd.yumiYes === 'string' && rAt >= lAt) { return { yumiYes: rd.yumiYes, yumiYesAt: (rAt < 0 ? 0 : rAt) }; }
+  return { yumiYes: (local && local.yumiYes) ? local.yumiYes : '', yumiYesAt: lAt };
+}
+
+var ERROR_COUNTS_URL = PRAXIS_API_BASE + '/.netlify/functions/error-counts';
+var ERROR_COUNTS_SENT_KEY = 'praxis_errc_sent_day_';   // + uid (RT-10: per account)
+
+function errorCountKinds(errs) {
+  var kinds = {}, k, at, kind, n = 0;
+  if (!errs || typeof errs !== 'object') { return kinds; }
+  for (k in errs) {
+    if (!Object.prototype.hasOwnProperty.call(errs, k) || typeof errs[k] !== 'number') { continue; }
+    at = k.lastIndexOf(' @');
+    kind = (at >= 0) ? k.substring(at + 2) : '?:0';
+    if (!/^(?:[A-Za-z0-9_\-]{1,32}\.js|\?):[0-9]{1,7}$/.test(kind)) { kind = '?:0'; }   // same shape the endpoint accepts
+    if (typeof kinds[kind] !== 'number') {
+      if (n >= 40) { continue; }
+      kinds[kind] = 0;
+      n = n + 1;
+    }
+    kinds[kind] = kinds[kind] + errs[k];
+  }
+  return kinds;
+}
+
+function maybeSendErrorCounts(uid) {
+  var p = (uid && typeof getProfile === 'function') ? getProfile(uid) : null;
+  if (!p || p.sendErrorCounts !== true) { return false; }
+  if (!window.PraxisMeasure || typeof firebase === 'undefined' || !firebase.auth) { return false; }
+  var day = new Date().toISOString().substring(0, 10);
+  if (ls(ERROR_COUNTS_SENT_KEY + uid, '') === day) { return false; }
+  var fbUser = firebase.auth().currentUser;
+  if (!fbUser || typeof fbUser.getIdToken !== 'function') { return false; }
+  var body = { kinds: errorCountKinds(PraxisMeasure.errors()), opened: true, version: '' };
+  sv(ERROR_COUNTS_SENT_KEY + uid, day);   // stamped before the send on purpose: a lost report is never retried in a loop
+  // The bundle version is read the way #diag reads it: the SW cache name.
+  var verP = (window.caches && caches.keys) ? caches.keys() : Promise.resolve([]);
+  verP.then(function (keys) {
+    var i;
+    for (i = 0; keys && i < keys.length; i = i + 1) {
+      if (/^praxis-v[0-9]+\.[0-9]+$/.test(keys[i])) { body.version = keys[i]; }
+    }
+  }, function () {}).then(function () {
+    return fbUser.getIdToken();
+  }).then(function (token) {
+    return fetch(ERROR_COUNTS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY, 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify(body)
+    });
+  }).then(null, function () { /* a lost count is fine; never retried in a loop */ });
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2759,6 +2867,13 @@ function buildUserProfileDoc(uid, profile, stampFn) {
     values:              (profile && profile.values instanceof Array) ? profile.values : [],
     statement:           (profile && typeof profile.statement === 'string') ? profile.statement : '',
     carryingQuestion:    (profile && typeof profile.carryingQuestion === 'string') ? profile.carryingQuestion : '',
+    // L3.1 consent (read side: the loadProfileFromFirestore mapping).
+    yumiYes:             (profile && typeof consentAnswer === 'function') ? consentAnswer(profile.yumiYes) : '',
+    yumiYesAt:           (profile && typeof profile.yumiYesAt === 'number') ? profile.yumiYesAt : 0,
+    dictationAsked:      (profile && typeof consentAnswer === 'function') ? consentAnswer(profile.dictationAsked) : '',
+    dictationAskedAt:    (profile && typeof profile.dictationAskedAt === 'number') ? profile.dictationAskedAt : 0,
+    readAloudAsked:      (profile && typeof consentAnswer === 'function') ? consentAnswer(profile.readAloudAsked) : '',
+    sendErrorCounts:     !!(profile && profile.sendErrorCounts === true),
     updatedAt:           stampFn()
   };
 }

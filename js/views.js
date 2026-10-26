@@ -400,6 +400,9 @@ function renderRoute() {
   // closed. Guarded + memoised in measure.js, so this is a comparison in the
   // common case. It derives from existing state and records nothing about it.
   if (window.PraxisMeasure) { PraxisMeasure.checkActivation(); }
+  // L3.1: re-read the one yes into Yumi's chrome on every route (Bloom shown only
+  // after the yes; a panel open from before a not-now is closed).
+  if (window.YumiUI && typeof YumiUI.syncYes === 'function') { YumiUI.syncYes(); }
   // FINISH-CHOREO S1: surface any queued commons-exit notice (an arc that left
   // the commons because nothing in it was finished — from D block-empty or the
   // frozen sanitize). Drains + toasts once; a no-op when the queue is empty.
@@ -1373,6 +1376,180 @@ function renderSearch() {
 // renderer; reader-question / built-on / walk-with pieces omitted (no source).
 var HOME_GROWING_MAX = 0.7; // 'still growing' = aggregate maturity below 'bright'
 
+// =====================================================================
+// L3.1 THE ONE YES — "What leaves your phone" (consent sheet card 1, every word
+// from docs/studio/consent-copy.md). ONE component, built as a card so it can sit
+// inline (What Yumi Sees, under not-now) or rise in a sheet (the Home dock, any
+// door to Yumi before the yes). The first-run walk reuses it in L5.
+// Yes: yumiYes 'granted' (+ yumiYesAt), reads-along + reader-model on (the sheet:
+// "true on the yes"), and the sorter runs once over Uncategorized books. Not now:
+// yumiYes 'not-now'; nothing else changes; books still come in by name or barcode.
+// =====================================================================
+var YUMI_YES_ROWS = [
+  ['A photo of your shelf', 'Read once to find the titles. Praxis doesn’t save it, and Anthropic deletes it within 30 days.'],
+  ['Your titles', 'Sorted into categories, and with your yes, read by Yumi so she can offer lenses and remember what you’re reading.'],
+  ['What you say to her', 'Notes you mark visible. Never the Journal. Dictation asks on its own the first time, because your voice goes to a different company, ElevenLabs.']
+];
+function yumiYesAnswer(answer) {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!u || !u.uid) { return; }
+  var f = { yumiYes: answer, yumiYesAt: Date.now() };
+  if (answer === 'granted') { f.yumiReadsAlong = true; f.yumiReaderModel = true; }
+  setProfile(u.uid, f);
+  if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(u.uid, getProfile(u.uid), function () {}); }
+  if (answer === 'granted') { yumiYesResortUncategorized(u.uid); }
+  if (window.YumiUI && typeof YumiUI.syncYes === 'function') { YumiUI.syncYes(); }
+}
+// The ruled "sorter runs over the Uncategorized books once" at the yes: a book the
+// sorter left Uncategorized (and the reader did not pin) is unstamped, so the next
+// Shelf render classifies it. The reader's own pins are never touched.
+function yumiYesResortUncategorized(uid) {
+  var ub = state.userBooks && state.userBooks[uid];
+  var ids = (ub && ub.bookIds instanceof Array) ? ub.bookIds : [];
+  var i, b, n = 0;
+  for (i = 0; i < ids.length; i = i + 1) {
+    b = state.books && state.books[ids[i]];
+    if (b && b.category === CATEGORY_UNCATEGORIZED && !b.categoryOverride) { b.category = ''; n = n + 1; }
+  }
+  if (n > 0) { markBooksDirty(); saveState(); }
+  return n;
+}
+function buildYumiYesCard(onAnswered) {
+  var card = document.createElement('section');
+  card.className = 'yes-card';
+  card.setAttribute('aria-labelledby', 'yes-title');
+  var k = document.createElement('p');
+  k.className = 'yes-kicker';
+  k.textContent = 'Before you bring your books';
+  card.appendChild(k);
+  var h = document.createElement('h2');
+  h.className = 'yes-title';
+  h.id = 'yes-title';
+  h.textContent = 'What leaves your phone.';
+  card.appendChild(h);
+  var lead = document.createElement('p');
+  lead.className = 'yes-lead';
+  lead.textContent = 'Yumi thinks with Claude, an AI made by Anthropic. Three things go there to be read. Anthropic doesn’t train its AI on them.';
+  card.appendChild(lead);
+  var rows = document.createElement('div');
+  rows.className = 'yes-rows';
+  var i, row, b, s;
+  for (i = 0; i < YUMI_YES_ROWS.length; i = i + 1) {
+    row = document.createElement('div');
+    row.className = 'yes-row';
+    b = document.createElement('b');
+    b.textContent = YUMI_YES_ROWS[i][0];
+    s = document.createElement('small');
+    s.textContent = YUMI_YES_ROWS[i][1];
+    row.appendChild(b);
+    row.appendChild(s);
+    // RT-3 (ruled): after the notes line, same register -- inside the third row,
+    // so the lead's "Three things go there" stays true.
+    if (i === YUMI_YES_ROWS.length - 1) {
+      var s2 = document.createElement('small');
+      s2.textContent = 'Your lens names and the values you chose.';
+      row.appendChild(s2);
+    }
+    rows.appendChild(row);
+  }
+  card.appendChild(rows);
+  var yes = document.createElement('button');
+  yes.type = 'button';
+  yes.className = 'yes-btn';
+  yes.textContent = 'Yes, bring my books';
+  card.appendChild(yes);
+  var under = document.createElement('p');
+  under.className = 'yes-under';
+  under.textContent = 'You can read the full list any time on What Yumi Sees.';
+  card.appendChild(under);
+  var hatch = document.createElement('button');
+  hatch.type = 'button';
+  hatch.className = 'yes-hatch';
+  hatch.textContent = 'Not now — add books by name or barcode';
+  card.appendChild(hatch);
+  yes.addEventListener('click', function () { yumiYesAnswer('granted'); if (typeof onAnswered === 'function') { onAnswered('granted'); } });
+  hatch.addEventListener('click', function () { yumiYesAnswer('not-now'); if (typeof onAnswered === 'function') { onAnswered('not-now'); } });
+  return card;
+}
+// The sheet form: scrim + the card, over whatever is on screen. Escape or the scrim
+// closes it with no answer. Any answer closes it and re-renders the current route
+// so the Bloom, the dock and the gated doors all reflect the answer at once.
+function closeYumiYesSheet() {
+  var s = document.getElementById('yes-sheet');
+  var sc = document.getElementById('yes-scrim');
+  if (s && s.parentNode) { s.parentNode.removeChild(s); }
+  if (sc && sc.parentNode) { sc.parentNode.removeChild(sc); }
+  document.removeEventListener('keydown', yumiYesSheetKey);
+  window.removeEventListener('hashchange', closeYumiYesSheet);
+  if (yumiYesSheetReturn && yumiYesSheetReturn.focus) { try { yumiYesSheetReturn.focus(); } catch (e) {} }
+  yumiYesSheetReturn = null;
+}
+var yumiYesSheetReturn = null;
+function yumiYesSheetKey(e) { if (e && (e.key === 'Escape' || e.key === 'Esc')) { closeYumiYesSheet(); } }
+function openYumiYesSheet(origin) {
+  if (!getCurrentUser()) { return; }
+  closeYumiYesSheet();
+  yumiYesSheetReturn = document.activeElement;
+  var sc = document.createElement('div');
+  sc.id = 'yes-scrim';
+  sc.className = 'yes-scrim';
+  sc.addEventListener('click', closeYumiYesSheet);
+  var sheet = document.createElement('div');
+  sheet.id = 'yes-sheet';
+  sheet.className = 'yes-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-labelledby', 'yes-title');
+  sheet.setAttribute('data-origin', origin || '');
+  sheet.appendChild(buildYumiYesCard(function () { closeYumiYesSheet(); renderRoute(); }));
+  document.body.appendChild(sc);
+  document.body.appendChild(sheet);
+  document.addEventListener('keydown', yumiYesSheetKey);
+  // The sheet lives on <body>; a route change (Back, a link) closes it so it never
+  // strands over the next page. (Not on renderRoute: background loaders call that.)
+  window.addEventListener('hashchange', closeYumiYesSheet);
+  var first = sheet.querySelector('.yes-btn');
+  if (first && first.focus) { first.focus(); }
+}
+
+// L3.1 HOME'S YUMI DOCK (ruled 25 Oct, consent-copy "Added 25 Oct" #1). Before the
+// yes (never asked, or not-now) the whole dock reads "I'm quiet until you say yes."
+// and opens the yes sheet; after the yes it reads as Day Three draws it and opens
+// her panel (the held-hand line while a hand is raised).
+function buildHomeYumiDock() {
+  var granted = (typeof isYumiYesGranted === 'function') && isYumiYesGranted();
+  var hand = granted && window.YumiUI && typeof YumiUI.handRaised === 'function' && YumiUI.handRaised();
+  var dock = document.createElement('button');
+  dock.type = 'button';
+  dock.className = 'home-ydock' + (granted ? '' : ' is-quiet');
+  var seed = document.createElement('span');
+  seed.className = 'home-ydock-seed';
+  seed.setAttribute('aria-hidden', 'true');
+  dock.appendChild(seed);
+  var txt = document.createElement('span');
+  txt.className = 'home-ydock-text';
+  var em = document.createElement('em');
+  var sm = document.createElement('small');
+  if (!granted) {
+    em.textContent = 'I’m quiet until you say yes.';
+    sm.textContent = 'YUMI';
+  } else if (hand) {
+    em.textContent = 'I noticed a thread in your notes. When you want it.';
+    sm.textContent = 'YUMI · HOLDING SOMETHING';
+  } else {
+    em.textContent = 'I’m in the corner when you want me.';
+    sm.textContent = 'YUMI';
+  }
+  txt.appendChild(em);
+  txt.appendChild(sm);
+  dock.appendChild(txt);
+  dock.addEventListener('click', function () {
+    if (!((typeof isYumiYesGranted === 'function') && isYumiYesGranted())) { openYumiYesSheet('home-dock'); return; }
+    if (window.YumiUI && typeof YumiUI.open === 'function') { YumiUI.open(); }
+  });
+  return dock;
+}
+
 // Yumi's voice: cyan dot + Cormorant italic. Deterministic template text only.
 function homeYumiLine(text) {
   var y = document.createElement('div');
@@ -1735,6 +1912,7 @@ function renderHome() {
   alt.appendChild(altNote);
   welcome.appendChild(alt);
   wrap.appendChild(welcome);
+  wrap.appendChild(buildHomeYumiDock());   // L3.1: the quiet dock (before the yes) / Yumi's dock (after)
 
   // Variant A: the whole field (Option A, lights = arcs)
   var vField = document.createElement('div');
@@ -2911,6 +3089,10 @@ function buildNotebookMasterSwitch(user) {
     var prof = getProfile(user.uid);
     if (prof && prof.yumiReadsAlong === false) { reads = false; }
   }
+  // L3.1 (F-H4): before the yes nothing is read, so the switch shows OFF and a tap
+  // opens the yes (the stored value is untouched until then).
+  var yesOk = user && user.uid && isYumiYesGranted(user.uid);
+  if (!yesOk) { reads = false; }
   // Umber frame: mock .nb-switch (label span + button.nb-toggle[aria-pressed]).
   // The privacy/consent handler is preserved verbatim; a native <button> is
   // keyboard-accessible (Enter/Space), so the explicit keydown is no longer needed.
@@ -2926,6 +3108,7 @@ function buildNotebookMasterSwitch(user) {
   tog.setAttribute('aria-label', 'Yumi reads along: ' + (reads ? 'on' : 'off'));
   function flip() {
     if (!user || !user.uid) { return; }
+    if (!yesOk) { openYumiYesSheet('notebook-switch'); return; }   // L3.1
     setProfile(user.uid, { yumiReadsAlong: !reads });
     if (typeof saveProfileToFirestore === 'function') {
       saveProfileToFirestore(user.uid, getProfile(user.uid), function() {});
@@ -5423,6 +5606,11 @@ function closeShelfFocusedBand() {
 // caches book.category, persists once, and re-renders. Watchdog recovers a hang.
 function shelfMaybeClassify(pending) {
   if (!pending.length || shelfCategorizing || !getCurrentUser()) { return; }
+  // L3.1: the sorter is Claude. Before the yes it never sends -- and never stamps:
+  // the books stay unsorted (shown as Uncategorized, by name), and the next Shelf
+  // render after the yes sorts them. (A refusal at the door would have stamped
+  // every one Uncategorized for good -- classifyBooksViaLLM maps any failure there.)
+  if (!isYumiYesGranted()) { return; }
   shelfCategorizing = true;
   shelfClassifyGen = shelfClassifyGen + 1;
   var gen = shelfClassifyGen;
@@ -5451,7 +5639,11 @@ function shelfMaybeClassify(pending) {
 function shelfBuildPile(books) {
   var pile = document.createElement('section');
   pile.className = 'cavity-band pile-band';
-  buildShelfBandHeader(pile, 'Unshelved', books.length, 'pile', null, null);
+  // L3.1: before the yes the sorter never runs, so the pile is the reader's
+  // Uncategorized shelf and says so in Day Three's words (not "classify", which
+  // would promise a sort that cannot happen yet).
+  var yesOk = isYumiYesGranted();
+  buildShelfBandHeader(pile, yesOk ? 'Unshelved' : 'Uncategorized', books.length, 'pile', null, null);
   var prow = document.createElement('div');
   prow.className = 'pile-row';
   var i;
@@ -5459,7 +5651,8 @@ function shelfBuildPile(books) {
   pile.appendChild(prow);
   var note = document.createElement('p');
   note.className = 'pile-note';
-  note.textContent = 'no shelf yet — classify to give them a home';
+  note.textContent = yesOk ? 'no shelf yet — classify to give them a home'
+    : 'Every book has a shelf. Books that arrive before your yes wait here, by name.';
   pile.appendChild(note);
   return pile;
 }
@@ -5497,6 +5690,7 @@ function shelfBuildLensRow(bandCount) {
 function shelfFirstOfferKey(uid) { return 'praxis_firstshelf_offer_' + uid; }
 function buildFirstShelfOffer(user, bookCount) {
   if (!user || !user.uid) { return null; }
+  if (!isYumiYesGranted(user.uid)) { return null; }   // L3.1: no lens offer before the yes
   if (ls(shelfFirstOfferKey(user.uid), '') !== 'armed') { return null; }
   if (bookCount < 5) { return null; }   // R5: no offer below 5 books
   var card = document.createElement('section');
@@ -5654,7 +5848,7 @@ function renderShelfCase() {
   if (mode === 'categories') {
     if (pileBooks.length) { root.appendChild(shelfBuildPile(pileBooks)); }
   } else {
-    root.appendChild(shelfBuildLensRow(bands.length));
+    if (isYumiYesGranted()) { root.appendChild(shelfBuildLensRow(bands.length)); }   // L3.1: no Yumi offer before the yes
   }
 
   root.className = 'case' + (mode === 'lenses' ? ' is-lens' : '');
@@ -9704,10 +9898,14 @@ function scanRenderActionRow() {
     var r = document.createElement('div'); r.className = 'ring'; r.textContent = '||||';
     var l = document.createElement('div'); l.className = 'lbl'; l.textContent = 'Auto-detecting';
     w.appendChild(r); w.appendChild(l); row.appendChild(w);
-    var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'scan-shutter'; cb.setAttribute('aria-label', 'Shoot the cover');
-    var cc = document.createElement('span'); cc.className = 'core'; cb.appendChild(cc);
-    cb.addEventListener('click', scanFireCoverShot);
-    row.appendChild(cb);
+    // L3.1 (F-C2): the cover shot is a photo to Claude -- only after the yes. The
+    // barcode stays open (decoded on the phone; Google Books gets an ISBN).
+    if (isYumiYesGranted()) {
+      var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'scan-shutter'; cb.setAttribute('aria-label', 'Shoot the cover');
+      var cc = document.createElement('span'); cc.className = 'core'; cb.appendChild(cc);
+      cb.addEventListener('click', scanFireCoverShot);
+      row.appendChild(cb);
+    }
   } else {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'scan-shutter'; b.setAttribute('aria-label', 'Capture shelf');
     var c = document.createElement('span'); c.className = 'core'; b.appendChild(c);
@@ -9716,7 +9914,19 @@ function scanRenderActionRow() {
   }
 }
 
+// L3.1 (F-C2): before the yes, the photo doors (Shelf mode, every shelf drop zone)
+// are not shown -- hidden, not dimmed, so no word is needed. Book mode's barcode
+// is unchanged. Re-applied on every entry and mode change.
+function scanApplyYes() {
+  var ok = isYumiYesGranted();
+  var ss = scanEl('scan-seg-shelf');
+  if (ss) { ss.style.display = ok ? '' : 'none'; }
+  var dz = document.querySelectorAll('.scan-dropzone'), i;
+  for (i = 0; i < dz.length; i = i + 1) { dz[i].style.display = ok ? '' : 'none'; }
+  return ok;
+}
 function scanSetMode(m, entry) {
+  if (!scanApplyYes() && m === 'shelf') { m = 'book'; }   // L3.1: #scan/shelf before the yes opens Book
   scanMode = m;
   var sb = scanEl('scan-seg-book'), ss = scanEl('scan-seg-shelf');
   if (sb) { sb.className = (m === 'book' ? 'is-on' : ''); sb.setAttribute('aria-selected', m === 'book'); }
@@ -10266,6 +10476,7 @@ function scanWireDropzone(host) {
 }
 function scanShelfFromFile(file) {
   if (!file || scanShotBusy) { return; }
+  if (!isYumiYesGranted()) { return; }   // L3.1: no photo to Claude before the yes
   scanCloseAllOverlays();
   if (typeof downscaleShelfPhoto === 'function') {
     downscaleShelfPhoto(file, function (err, base64) {
@@ -10395,6 +10606,7 @@ function scanFireShelfShot() {
 // the shutter AND the desktop drop-zone (SC7c).
 function scanRunShelfVision(base64) {
   if (scanShotBusy) { return; }
+  if (!isYumiYesGranted()) { return; }   // L3.1: the shared shelf-photo chokepoint, before the yes
   // RULING B, second site: this is the CHOKEPOINT both shelf-capture doors share
   // (the shutter above and the desktop drop-zone via scanShelfFromFile). Guarding
   // only the shutter would leave the drop-zone able to destroy the draft, which is
@@ -11294,6 +11506,7 @@ function scanUpdateNavBadge() {
 // budget). The mockup deferred this; the brief keeps it.
 function scanFireCoverShot() {
   if (scanShotBusy || !scanCamReady) { return; }
+  if (!isYumiYesGranted()) { return; }   // L3.1: no photo to Claude before the yes
   scanStopBookDecode(); scanHideVerdict();
   scanFreezeFrame();
   var base64 = scanCaptureBase64();
@@ -11551,8 +11764,10 @@ function scanPermissionHTML() {
   return ''
   + '<div class="scan-overlay" id="scan-ov-primer">'
   +   '<div class="scan-card"><div class="c-ic">◲</div>'
-  +     '<h2>Turn on the camera to scan</h2>'
-  +     '<p>Praxis reads the book right on your phone. Images leave only as identification requests — nothing is stored, on your device or ours.</p>'
+  // L3.1 (consent sheet "The camera card (Scan)"; R23): the honest wording. The
+  // gate, the remembered grant and Safari's own prompt are unchanged.
+  +     '<h2>Before the camera comes on.</h2>'
+  +     '<p>Barcode scans never leave your phone. A photo of a shelf or a cover goes to Claude to read the titles; Praxis doesn’t keep it, and Anthropic deletes it within 30 days.</p>'
   +     '<div class="c-actions">'
   // PRIMER COLLISION — RULED (2026-08-30): the capture-view bar SUPERSEDES the
   // primer's resume button, which is removed here. One draft, one choice, one
@@ -11572,8 +11787,11 @@ function scanPermissionHTML() {
   + '</div>'
   + '<div class="scan-overlay" id="scan-ov-denied">'
   +   '<div class="scan-card warn"><div class="c-ic">⃠</div>'
-  +     '<h2>Camera\'s off — that\'s fine</h2>'
-  +     '<p>You can still add any book by its ISBN or by searching. Turn the camera on later from here whenever you like.</p>'
+  // L3.1 (consent sheet "Microphone or camera refused"): the cause, and what still
+  // works. "Open Settings" is not drawn on the web -- Safari cannot open iPhone
+  // Settings (F-D2); it rides L7b's app. The doors below stay.
+  +     '<h2>The camera is off for Praxis.</h2>'
+  +     '<p>iPhone Settings turned it off, so scanning waits. Adding by name still works.</p>'
   +     '<div class="scan-add-door">'
   +       '<div class="ad-lbl">Add by ISBN</div>'
   +       '<div class="ad-field"><input type="text" inputmode="numeric" placeholder="978…" aria-label="ISBN" id="scan-denied-isbn"><button class="scan-btn scan-btn-primary" type="button" id="scan-denied-isbn-add" style="flex:none; padding:12px 16px">Add</button></div>'
@@ -12299,10 +12517,13 @@ function buildBookArtifactCard(bookId, book, user) {
   if (rec && typeof rec.body === 'string' && rec.body.length > 0) {
     body.textContent = rec.body;
   } else {
-    body.textContent = 'A standing place for what this book is doing in your '
-      + 'thinking — written once, yours, and visible to Yumi only when you choose.';
+    // L3.1 (consent sheet "Book-page card, no artifact yet"): the old line promised
+    // a choice that did not exist; this one is true now that the switch does.
+    body.textContent = 'What this book is doing in your thinking, in your own words. '
+      + 'Yours to edit any time; Yumi reads it only when you say so.';
   }
   card.appendChild(body);
+  if (rec && rec.userId === user.uid) { card.appendChild(buildArtifactMayReadSwitch(rec)); }   // L3.1
   if (rec && typeof rec.body === 'string' && rec.body.length > 0) {
     var openLink = document.createElement('a');
     openLink.className = 'bk-artifact-open';
@@ -15609,7 +15830,52 @@ function renderArtifact(bookId) {
   substrateLink.textContent = 'Marginalia and journal for this book →';
   wrap.appendChild(substrateLink);
 
+  // L3.1: the reader's own artifact carries its "Yumi may read this" switch.
+  if (user && user.uid && artifact.userId === user.uid) { wrap.appendChild(buildArtifactMayReadSwitch(artifact)); }
+
   host.appendChild(wrap);
+}
+
+// L3.1 "YUMI MAY READ THIS" — per artifact (consent sheet card; ruling 26). OFF by
+// default for every artifact, existing ones included; only an artifact switched on
+// joins what Yumi sees (yumi-brain assembleContextData) and is listed on What Yumi
+// Sees. yumiMayReadAt orders that list (newest last). The write is the artifact's
+// own synced record (markArtifactsDirty -> /userArtifacts), like an edit.
+function buildArtifactMayReadSwitch(artifact) {
+  var row = document.createElement('div');
+  row.className = 'art-may';
+  var lab = document.createElement('span');
+  lab.className = 'art-may-label';
+  var t = document.createElement('span');
+  t.className = 'art-may-title';
+  t.id = 'art-may-' + (artifact.bookId || 'x');
+  t.textContent = 'Yumi may read this';
+  var under = document.createElement('small');
+  under.className = 'art-may-under';
+  lab.appendChild(t);
+  lab.appendChild(under);
+  var sw = document.createElement('button');
+  sw.type = 'button';
+  sw.className = 'art-may-switch';
+  sw.setAttribute('role', 'switch');
+  sw.setAttribute('aria-labelledby', t.id);
+  function paint() {
+    var on = artifact.yumiMayRead === true;
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    under.textContent = on ? 'She can bring it into what she says.' : 'Off until you turn it on. Today it never reaches her.';
+  }
+  sw.addEventListener('click', function () {
+    var on = artifact.yumiMayRead !== true;
+    artifact.yumiMayRead = on;
+    if (on) { artifact.yumiMayReadAt = Date.now(); }
+    if (typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
+    saveState();
+    paint();
+  });
+  paint();
+  row.appendChild(lab);
+  row.appendChild(sw);
+  return row;
 }
 
 // Stage 7.1A: adapter from real arc shape (state.arcs[id]) to the
@@ -17524,7 +17790,10 @@ function _afOverflow(arcId, arc, user, isSeedArc, afGraduated, afPublished, afOw
     });
 
     group('This arc');
-    if (typeof requestArcVoice === 'function') {
+    // L3.1: the live arc-voice trigger -- off in the beta (RT-3, YUMI_ARC_VOICE_OFF
+    // in yumi-brain guards the send) and never before the yes.
+    if (typeof requestArcVoice === 'function' && isYumiYesGranted() &&
+        !(typeof YUMI_ARC_VOICE_OFF !== 'undefined' && YUMI_ARC_VOICE_OFF)) {
       var yHost = document.createElement('div');
       yHost.className = 'arc-voice-host af-menu-yumi';
       var yBtn = item('Ask Yumi what she sees here', function () {
@@ -18272,7 +18541,9 @@ function openArtifactEditor(bookId) {
         title:     titleVal,
         body:      bodyVal,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        yumiMayRead:   false,   // L3.1: off until the reader turns it on
+        yumiMayReadAt: 0
       };
       ensureOneArtifact(user.uid, bookId, artifact);
       // 2.0 hardening (batch 2b): mark the artifact doc dirty so saveState
@@ -19853,55 +20124,239 @@ function openTransparencyView() {
 // panel-only and added by openTransparencyView, not here.
 function buildTransparencyContent(snap, context) {
   var panel = document.createElement('section');
-  panel.className = 'transparency-panel';
+  panel.className = 'transparency-panel yumi-ledger';
+  var lu = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  var luid = (lu && lu.uid) ? lu.uid : null;
+  var granted = (typeof isYumiYesGranted === 'function') && isYumiYesGranted(luid);
+  // L3.1: re-render THIS surface after a change made on it (the panel or the page).
+  function rerender() {
+    if (context === 'page') { renderWhatYumiSeesPage(); } else { openTransparencyView(); }
+  }
 
-  // Header: title only. The close button is panel-only and re-appended
-  // by openTransparencyView after this builder returns.
+  // Header (L3.1, consent sheet "What Yumi sees"). The close button is panel-only
+  // and re-appended by openTransparencyView after this builder returns.
   var header = document.createElement('header');
   header.className = 'transparency-header';
-
+  var kicker = document.createElement('p');
+  kicker.className = 'transparency-kicker';
+  kicker.textContent = 'What Yumi sees';
+  header.appendChild(kicker);
   var title = document.createElement('h2');
   title.className = 'transparency-title';
-  title.textContent = 'What Yumi sees';
+  title.textContent = 'Everything she sees right now.';
   header.appendChild(title);
-
   panel.appendChild(header);
+  var under = document.createElement('p');
+  under.className = 'transparency-under';
+  under.textContent = 'Nothing else. You can change any of it here.';
+  panel.appendChild(under);
 
-  // Framing copy: two paragraphs, verbatim from the Stage 3.6 brief.
-  var framing = document.createElement('div');
-  framing.className = 'transparency-framing';
-
-  var p1 = document.createElement('p');
-  p1.textContent =
-    'This is everything Yumi sees right now: the book you are ' +
-    'reading, the arc you are following, the sub-theory you are ' +
-    'writing, recent notebook entries that are marked visible, ' +
-    'and the conversation you and Yumi have been having. Yumi ' +
-    'does not see anything else.';
-  framing.appendChild(p1);
-
-  // 6.2-polish: the panel-return clause is true only for the Notebook
-  // panel. The shared prefix is identical; only the trailing sentence
-  // differs by context ('page' drops it, the page has no Close). Panel
-  // branch is byte-identical to the pre-split literal.
-  var p2Base =
-    'Entries marked private do not appear here. They stay in the ' +
-    'Notebook for the reader and are excluded from what Yumi ' +
-    'receives. Yumi sees the three most recent visible entries, ' +
-    'trimmed; older or longer writing lives in the Notebook but ' +
-    'not in this view.';
-  var p2 = document.createElement('p');
-  if (context === 'page') {
-    p2.textContent = p2Base;
-  } else {
-    p2.textContent = p2Base + ' Closing this panel returns to the Notebook.';
+  // THE YES. Granted: its switch, which withdraws it (reads-along + reader-model
+  // follow the switch, consent sheet). Not yet (never asked or not-now): the one
+  // yes itself, card 1, in place of the switch -- the ledger IS the re-ask (ruled
+  // 25 Oct), and every row below is drawn in its off state under the sheet's
+  // off line.
+  if (granted) {
+    var yesRow = document.createElement('div');
+    yesRow.className = 'ledger-yes';
+    var yl = document.createElement('span');
+    yl.className = 'ledger-yes-label';
+    var yt = document.createElement('span');
+    yt.className = 'ledger-yes-title';
+    yt.id = 'ledger-yes-' + (context || 'x');
+    yt.textContent = 'The yes';
+    var ys = document.createElement('small');
+    ys.textContent = 'Your shelf, read for lenses and sorting; your visible notes; her memory of you.';
+    yl.appendChild(yt);
+    yl.appendChild(ys);
+    var ysw = document.createElement('button');
+    ysw.type = 'button';
+    ysw.className = 'art-may-switch';
+    ysw.setAttribute('role', 'switch');
+    ysw.setAttribute('aria-checked', 'true');
+    ysw.setAttribute('aria-labelledby', yt.id);
+    ysw.addEventListener('click', function () {
+      if (!luid) { return; }
+      setProfile(luid, { yumiYes: 'not-now', yumiYesAt: Date.now(), yumiReadsAlong: false, yumiReaderModel: false });
+      if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(luid, getProfile(luid), function () {}); }
+      if (window.YumiUI && typeof YumiUI.syncYes === 'function') { YumiUI.syncYes(); }
+      if (typeof showToast === 'function') { showToast('She stops reading and offering. Your kept lenses stay yours. Nothing new is sorted.'); }
+      rerender();
+    });
+    yesRow.appendChild(yl);
+    yesRow.appendChild(ysw);
+    panel.appendChild(yesRow);
+  } else if (luid) {
+    panel.appendChild(buildYumiYesCard(function () { rerender(); }));
+    var offLine = document.createElement('p');
+    offLine.className = 'ledger-offline';
+    offLine.textContent = 'She stops reading and offering. Your kept lenses stay yours. Nothing new is sorted.';
+    panel.appendChild(offLine);
   }
-  framing.appendChild(p2);
+  function offState(sec) {
+    if (!granted) { sec.className = sec.className + ' is-off'; }
+    return sec;
+  }
 
-  panel.appendChild(framing);
+  // Row: your shelf (what the sorter and the lenses read -- metadata only).
+  var ub = (luid && state.userBooks && state.userBooks[luid]) ? state.userBooks[luid] : null;
+  var nBooks = (ub && ub.bookIds instanceof Array) ? ub.bookIds.length : 0;
+  var shelfSec = offState(renderTransparencySection('Your shelf'));
+  shelfSec.querySelector('.transparency-section-body').textContent =
+    nBooks + (nBooks === 1 ? ' title' : ' titles') + ', authors and genre tags. Never what’s inside a book.';
+  panel.appendChild(shelfSec);
 
+  // Row: the notes she reads along -- THE ONE SUBSTRATE (F-H2(1)): the real N and
+  // L, the very notes every sender takes, listed. The Journal count is said, never
+  // shown.
+  var noteL = (typeof YUMI_NOTE_L === 'number') ? YUMI_NOTE_L : 240;
+  var nNotes = snap.recentEntries.length;
+  var nJournal = 0, jk, je;
+  if (luid && state.notebookEntries) {
+    for (jk in state.notebookEntries) {
+      if (Object.prototype.hasOwnProperty.call(state.notebookEntries, jk)) {
+        je = state.notebookEntries[jk];
+        if (je && je.register === 'journal' && je.userId === luid) { nJournal = nJournal + 1; }
+      }
+    }
+  }
+  var entriesSec = offState(renderTransparencySection('Notes she reads along'));
+  var entriesBody = entriesSec.querySelector('.transparency-section-body');
+  var entriesLine = document.createElement('p');
+  entriesLine.className = 'ledger-line';
+  if (nNotes === 0) {
+    entriesLine.textContent =
+      'No notebook entries are visible to Yumi right now. New ' +
+      'entries or entries marked visible will appear here.';
+    entriesBody.className = 'transparency-section-body transparency-empty';
+  } else {
+    entriesLine.textContent = 'Your ' + nNotes + ' most recent ' + (nNotes === 1 ? 'note' : 'notes') +
+      ', each shortened to about ' + noteL + ' characters.';
+  }
+  if (nJournal > 0) {
+    entriesLine.textContent = entriesLine.textContent + ' The ' + nJournal +
+      ' Journal ' + (nJournal === 1 ? 'entry never appears' : 'entries never appear') + ' here.';
+  }
+  entriesBody.appendChild(entriesLine);
+  var i;
+  for (i = 0; i < snap.recentEntries.length; i++) {
+    entriesBody.appendChild(renderTransparencyEntry(snap.recentEntries[i]));
+  }
+  panel.appendChild(entriesSec);
+
+  // Row: lens names and values (RT-3, ruled): what lens generation and the value
+  // retrofit send of the reader's own words. "Nothing sent yet." until one of them
+  // actually has (yumi-brain yumiMarkLensNamesSent stamps it, per uid, this device).
+  var lensSec = offState(renderTransparencySection('Your lens names and the values you chose — so she can sort your books and name a lens.'));
+  lensSec.className = lensSec.className + ' ledger-lens';
+  var lensSent = luid ? ls('praxis_yumi_lensnames_sent_' + luid, 0) : 0;
+  if (!lensSent) {
+    var lensBody = lensSec.querySelector('.transparency-section-body');
+    lensBody.textContent = 'Nothing sent yet.';
+    lensBody.className = 'transparency-section-body transparency-empty';
+  }
+  panel.appendChild(lensSec);
+
+  // Row: artifacts -- ruled 25 Oct (consent-copy "Added 25 Oct" #2). Only the
+  // reader's own; the ones switched on are named in the order switched on,
+  // newest last; after three titles, "and N−3 more".
+  var own = [], onArts = [], ak, ar;
+  if (luid && state.bookArtifacts) {
+    for (ak in state.bookArtifacts) {
+      if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, ak)) {
+        ar = state.bookArtifacts[ak];
+        if (ar && ar.userId === luid) {
+          own.push(ar);
+          if (ar.yumiMayRead === true) { onArts.push(ar); }
+        }
+      }
+    }
+  }
+  onArts.sort(function (a, b) { return (a.yumiMayReadAt || 0) - (b.yumiMayReadAt || 0); });
+  function artBook(a) {
+    var bk = (a && a.bookId && state.books) ? state.books[a.bookId] : null;
+    return (bk && bk.title) ? bk.title : ((a && a.title) ? a.title : '');
+  }
+  var artLine;
+  if (own.length === 0) {
+    artLine = 'None yet. When you write one, it stays off until you switch it on.';
+  } else if (onArts.length === 0 && own.length === 1) {
+    artLine = 'None. Your artifact for ' + artBook(own[0]) + ' is switched off.';
+  } else if (onArts.length === 0) {
+    artLine = 'None. ' + own.length + ' switched off.';
+  } else if (onArts.length === 1) {
+    artLine = '1 artifact, ' + artBook(onArts[0]) + '. You turned it on.';
+  } else {
+    var names = [], ni;
+    for (ni = 0; ni < onArts.length && ni < 3; ni = ni + 1) { names.push(artBook(onArts[ni])); }
+    artLine = onArts.length + ' artifacts: ' + names.join(', ') +
+      (onArts.length > 3 ? ' and ' + (onArts.length - 3) + ' more' : '') + '. You turned them on.';
+  }
+  var artifactsSec = offState(renderTransparencySection('Artifacts'));
+  var artifactsBody = artifactsSec.querySelector('.transparency-section-body');
+  var artP = document.createElement('p');
+  artP.className = 'ledger-line';
+  artP.textContent = artLine;
+  artifactsBody.appendChild(artP);
+  var ai;
+  for (ai = 0; ai < snap.recentArtifacts.length; ai++) {
+    artifactsBody.appendChild(renderTransparencyArtifact(snap.recentArtifacts[ai]));
+  }
+  panel.appendChild(artifactsSec);
+
+  // Row: her portrait of you (the reader-model prose; sent with the reader-model
+  // consent). Correct this -> the editor on the Profile; End it -> the existing
+  // forget (clearReaderModel + mirror), as the Profile's own control does.
+  var rm = (luid && typeof getReaderModel === 'function') ? getReaderModel(luid) : null;
+  var portrait = (rm && rm.profile && typeof rm.profile.summary === 'string') ? rm.profile.summary.replace(/^\s+|\s+$/g, '') : '';
+  if (portrait !== '') {
+    var porSec = offState(renderTransparencySection('Her portrait of you'));
+    var porBody = porSec.querySelector('.transparency-section-body');
+    var porP = document.createElement('p');
+    porP.className = 'ledger-portrait';
+    porP.textContent = portrait;
+    porBody.appendChild(porP);
+    var porActs = document.createElement('div');
+    porActs.className = 'ledger-acts';
+    var corr = document.createElement('button');
+    corr.type = 'button';
+    corr.className = 'ledger-act';
+    corr.textContent = 'Correct this';
+    corr.addEventListener('click', function () { location.hash = '#profile'; });
+    var endIt = document.createElement('button');
+    endIt.type = 'button';
+    endIt.className = 'ledger-act';
+    endIt.textContent = 'End it';
+    endIt.addEventListener('click', function () {
+      if (!luid || typeof clearReaderModel !== 'function') { return; }
+      clearReaderModel(luid);
+      if (typeof saveReaderModelToFirestore === 'function') { saveReaderModelToFirestore(luid, getReaderModel(luid), function () {}); }
+      rerender();
+    });
+    porActs.appendChild(corr);
+    porActs.appendChild(endIt);
+    porBody.appendChild(porActs);
+    panel.appendChild(porSec);
+  }
+
+  // Row: the threads she holds (their names go out with the reader-model consent;
+  // Day Three's words).
+  var nNamed = 0, ti, th;
+  var thr = (rm && rm.threads instanceof Array) ? rm.threads : [];
+  for (ti = 0; ti < thr.length; ti = ti + 1) {
+    th = thr[ti];
+    if (th && th.status === 'named' && typeof th.label === 'string' && th.label.replace(/^\s+|\s+$/g, '') !== '') { nNamed = nNamed + 1; }
+  }
+  if (nNamed > 0) {
+    var thSec = offState(renderTransparencySection('Threads she is holding'));
+    thSec.querySelector('.transparency-section-body').textContent = nNamed + ' named, listed on You.';
+    panel.appendChild(thSec);
+  }
+
+  // The live rows below are also sent with every chat (kept with their words):
+  // where you are, her memory of this conversation, its recent turns.
   // Section: Current book.
-  var bookSec = renderTransparencySection('Current book');
+  var bookSec = offState(renderTransparencySection('Current book'));
   var bookBody = bookSec.querySelector('.transparency-section-body');
   if (snap.currentBook === null) {
     bookBody.textContent = 'No book is open right now.';
@@ -19916,7 +20371,7 @@ function buildTransparencyContent(snap, context) {
   panel.appendChild(bookSec);
 
   // Section: Current arc.
-  var arcSec = renderTransparencySection('Current arc');
+  var arcSec = offState(renderTransparencySection('Current arc'));
   var arcBody = arcSec.querySelector('.transparency-section-body');
   if (snap.currentArc === null) {
     arcBody.textContent = 'No arc is active right now.';
@@ -19930,7 +20385,7 @@ function buildTransparencyContent(snap, context) {
   // already carries currentSubTheory.header and buildContext sends it
   // to Yumi, so the surface must show it for the framing's "Yumi does
   // not see anything else" to stay true. Placed in the current-* group.
-  var subTheorySec = renderTransparencySection('Current sub-theory');
+  var subTheorySec = offState(renderTransparencySection('Current sub-theory'));
   var subTheoryBody = subTheorySec.querySelector('.transparency-section-body');
   if (snap.currentSubTheory === null) {
     subTheoryBody.textContent = 'No sub-theory is open right now.';
@@ -19940,51 +20395,10 @@ function buildTransparencyContent(snap, context) {
   }
   panel.appendChild(subTheorySec);
 
-  // Section: Recent notebook entries. Bodies are already truncated
-  // to 200 chars by assembleContextData -- this is exactly the form
-  // Yumi receives.
-  var entriesSec = renderTransparencySection('Recent notebook entries');
-  var entriesBody = entriesSec.querySelector('.transparency-section-body');
-  if (snap.recentEntries.length === 0) {
-    entriesBody.textContent =
-      'No notebook entries are visible to Yumi right now. New ' +
-      'entries or entries marked visible will appear here.';
-    entriesBody.className = 'transparency-section-body transparency-empty';
-  } else {
-    var i;
-    for (i = 0; i < snap.recentEntries.length; i++) {
-      entriesBody.appendChild(renderTransparencyEntry(snap.recentEntries[i]));
-    }
-  }
-  panel.appendChild(entriesSec);
-
-  // Stage 3.7: Recent book Artifacts. Same provenance and truncation
-  // rules as recentEntries -- this is what Yumi sees of the user's
-  // finished-room writing, subject to the same privacy filter the
-  // entries loop uses (artifacts do not carry isPrivate today; the
-  // filter is the contract). Principle #5 -- anything captured is
-  // visible and correctable to the user, including via this surface.
-  var artifactsSec = renderTransparencySection('Recent book Artifacts');
-  var artifactsBody = artifactsSec.querySelector('.transparency-section-body');
-  if (snap.recentArtifacts.length === 0) {
-    artifactsBody.textContent =
-      'No Artifacts are visible to Yumi right now. Marking a book ' +
-      'finished and writing its Artifact will surface it here.';
-    artifactsBody.className = 'transparency-section-body transparency-empty';
-  } else {
-    var ai;
-    for (ai = 0; ai < snap.recentArtifacts.length; ai++) {
-      artifactsBody.appendChild(
-        renderTransparencyArtifact(snap.recentArtifacts[ai])
-      );
-    }
-  }
-  panel.appendChild(artifactsSec);
-
   // Section: Conversation summary.
-  var summarySec = renderTransparencySection(
+  var summarySec = offState(renderTransparencySection(
     'What Yumi remembers from this conversation'
-  );
+  ));
   var summaryBody = summarySec.querySelector('.transparency-section-body');
   if (!snap.summary) {
     summaryBody.textContent =
@@ -19997,9 +20411,9 @@ function buildTransparencyContent(snap, context) {
   panel.appendChild(summarySec);
 
   // Section: Recent turns in this conversation.
-  var turnsSec = renderTransparencySection(
+  var turnsSec = offState(renderTransparencySection(
     'Recent turns in this conversation'
-  );
+  ));
   var turnsBody = turnsSec.querySelector('.transparency-section-body');
   if (snap.recentTurns.length === 0) {
     turnsBody.textContent =
@@ -20033,10 +20447,13 @@ function renderWhatYumiSeesPage() {
   var snap = window.YumiBrain.getContextSnapshot();
   wrap.appendChild(buildTransparencyContent(snap, 'page'));
 
-  var closing = document.createElement('p');
-  closing.className = 'yumi-sees-closing';
-  closing.textContent = 'This page is always here — one tap away in Yumi\'s panel.';
-  wrap.appendChild(closing);
+  // L3.1: "one tap away in Yumi's panel" is true only once there is a panel to tap.
+  if (isYumiYesGranted()) {
+    var closing = document.createElement('p');
+    closing.className = 'yumi-sees-closing';
+    closing.textContent = 'This page is always here — one tap away in Yumi\'s panel.';
+    wrap.appendChild(closing);
+  }
 
   host.appendChild(wrap);
 }
@@ -20191,10 +20608,13 @@ function exportDateStamp() {
 function buildReaderModelSection(uid, rerenderFn) {
   var profile = getProfile(uid);
   var model = getReaderModel(uid);
-  var optedIn = profile.yumiReaderModel === true;
-  var readsAlong = profile.yumiReadsAlong !== false;
+  // L3.1 (F-H4): before the yes, the Claude-facing switches show OFF and a tap
+  // opens the yes; stored values are untouched until then.
+  var yesOk = isYumiYesGranted(uid);
+  var optedIn = yesOk && profile.yumiReaderModel === true;
+  var readsAlong = yesOk && profile.yumiReadsAlong !== false;
   var active = optedIn && readsAlong;   // both on -> manual add/edit enabled
-  var webOn = profile.yumiWebGrounding === true;   // Stage III: separate opt-in
+  var webOn = yesOk && profile.yumiWebGrounding === true;   // Stage III: separate opt-in
   var voiceOn = profile.voiceOn === true;          // Alive Yumi: TTS opt-in
   var handsFree = profile.talkMode === 'hands-free';
 
@@ -20210,6 +20630,7 @@ function buildReaderModelSection(uid, rerenderFn) {
     }
   }
   function flipConsent() {
+    if (!yesOk) { openYumiYesSheet('reader-model'); return; }   // L3.1
     setProfile(uid, { yumiReaderModel: !optedIn });
     if (typeof saveProfileToFirestore === 'function') {
       saveProfileToFirestore(uid, getProfile(uid), function() {});
@@ -20219,6 +20640,7 @@ function buildReaderModelSection(uid, rerenderFn) {
   // Stage III: the SEPARATE live-web grounding opt-in. Same F4 write path
   // (setProfile -> saveProfileToFirestore) so it round-trips default-false.
   function flipWebConsent() {
+    if (!yesOk) { openYumiYesSheet('reader-model'); return; }   // L3.1
     setProfile(uid, { yumiWebGrounding: !webOn });
     if (typeof saveProfileToFirestore === 'function') {
       saveProfileToFirestore(uid, getProfile(uid), function() {});
@@ -22279,7 +22701,7 @@ function _pfValuesSection(uid, vis) {
   // AM19 Yumi value-offer dock (owner-only): the R8 retrofit, re-homed. The
   // trigger + offer cards render into [data-retro-body]; accept adds a DECLARED
   // value and re-renders the Profile (never auto-marks). See _pfRunRetrofit.
-  if (!vis) {
+  if (!vis && isYumiYesGranted(uid)) {   // L3.1: the value retrofit asks Claude -- hidden before the yes
     h += '<div class="pf-offer-dock pf-owner-only"><button class="pf-btn ghost" data-act="retro-run" type="button">Ask Yumi to notice values in your library</button><div class="pf-retro-body" data-retro-body></div></div>';
   }
   if (load.values.length === 0) {
@@ -22469,14 +22891,24 @@ function _pfThreadsSection(uid) {
   return h + '</div>';
 }
 
+// L3.1 Settings rows (consent sheet: reads-along, outside angles, Voice, error
+// counts -- Day Three's order). Reads-along and outside angles need the yes: before
+// it they show OFF and a tap opens the yes (F-H4). Voice and error counts are their
+// own switches (the read-aloud and dictation asks live where they happen).
+function _pfSetRow(act, on, title, sub) {
+  return '<div class="pf-toggle pf-setrow' + (on ? '' : ' off') + '" data-act="' + act + '" tabindex="0" role="switch" aria-checked="' + (on ? 'true' : 'false') + '"><span class="tk"></span><span class="pf-setrow-text"><span class="pf-setrow-title">' + title + '</span><small class="pf-setrow-sub">' + sub + '</small></span></div>';
+}
 function _pfSettingsSection(uid) {
-  var p = getProfile(uid), readsAlong = (p.yumiReadsAlong !== false);
+  var p = getProfile(uid), yesOk = isYumiYesGranted(uid), readsAlong = yesOk && (p.yumiReadsAlong !== false);
   var h = '<div class="pf-eyebrow">Settings</div><div class="pf-card"><div class="pf-set-fields">'
     + '<div class="pf-field"><label>Display name</label><input data-field="displayNameOverride" value="' + _portraitEsc(p.displayNameOverride || '') + '"></div>'
     + '<div class="pf-field"><label>Pen name</label><input data-field="penName" value="' + _portraitEsc(p.penName || '') + '"></div>'
     + '<div class="pf-field"><label>Reading life</label><input data-field="tagline" value="' + _portraitEsc(p.tagline || '') + '"></div>'
     + '<div class="pf-field"><label>Values statement</label><textarea data-field="statement">' + _portraitEsc(p.statement || '') + '</textarea></div></div>'
-    + '<div class="pf-toggle' + (readsAlong ? '' : ' off') + '" data-act="toggle-reads" tabindex="0" role="switch" aria-checked="' + (readsAlong ? 'true' : 'false') + '"><span class="tk"></span> Yumi reads along</div>'
+    + _pfSetRow('toggle-reads', readsAlong, 'Yumi reads along', 'Marginalia and questions, never the Journal.')
+    + _pfSetRow('toggle-angles', yesOk && p.yumiWebGrounding === true, 'Outside angles', 'One angle from beyond your books, now and then. Yumi searches the web for it.')
+    + _pfSetRow('toggle-voice', p.voiceOn === true, 'Voice', 'Dictation (ElevenLabs) and read-aloud. Each asks the first time.')
+    + _pfSetRow('toggle-errs', p.sendErrorCounts === true, 'Send error counts', 'Only how many things broke and whether the app opened. Off by default; nothing else leaves the phone. Only counts, by file and line — never what you wrote.')
     + '<div class="pf-set-row"><button class="pf-btn save" data-act="save-settings">Save</button><button class="pf-btn ghost" data-act="signout">Sign out</button></div>'
     + '<div class="pf-covenant">Everything here is yours. Yumi offers; you decide what it means. &nbsp;<a data-go="#yumi-sees" tabindex="0" role="link">View what Yumi sees &rarr;</a></div>';
   return h + '</div>';
@@ -22914,11 +23346,29 @@ function _pfWire(wrap, uid, vis) {
         renderProfilePage(); return;
       }
       if (act === 'exit-preview') { _pfPreview = false; renderProfilePage(); return; }
-      if (act === 'toggle-reads') {
-        var np = (getProfile(uid).yumiReadsAlong === false);
-        setProfile(uid, { yumiReadsAlong: np });
+      if (act === 'toggle-reads' || act === 'toggle-angles') {
+        if (!isYumiYesGranted(uid)) { openYumiYesSheet('settings'); return; }   // L3.1 (F-H4)
+        var rkey = (act === 'toggle-reads') ? 'yumiReadsAlong' : 'yumiWebGrounding';
+        var np = (act === 'toggle-reads') ? (getProfile(uid).yumiReadsAlong === false) : (getProfile(uid).yumiWebGrounding !== true);
+        var rf = {}; rf[rkey] = np;
+        setProfile(uid, rf);
         if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(uid, getProfile(uid), function () {}); }
         a.classList.toggle('off', !np); a.setAttribute('aria-checked', np ? 'true' : 'false'); return;
+      }
+      // L3.1: Voice (read-aloud on/off; its ask fires at the first spoken line) and
+      // Send error counts (off by default; turning it on says what leaves, once).
+      if (act === 'toggle-voice' || act === 'toggle-errs') {
+        var vkey = (act === 'toggle-voice') ? 'voiceOn' : 'sendErrorCounts';
+        var vp = (getProfile(uid)[vkey] !== true);
+        var vf = {}; vf[vkey] = vp;
+        setProfile(uid, vf);
+        if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(uid, getProfile(uid), function () {}); }
+        a.classList.toggle('off', !vp); a.setAttribute('aria-checked', vp ? 'true' : 'false');
+        if (act === 'toggle-errs' && vp) {
+          showToast('Only counts leave the phone. Says so in About.');
+          if (typeof maybeSendErrorCounts === 'function') { maybeSendErrorCounts(uid); }
+        }
+        return;
       }
       if (act === 'save-settings') { _pfSaveSettings(wrap, uid); return; }
       if (act === 'signout') { if (typeof signOut === 'function') { signOut(); } return; }
@@ -24427,10 +24877,12 @@ function renderAbout() {
   // ME-1 · THE MEASUREMENT COVENANT (R-POLISH B4). Sits beside the privacy
   // covenant, as ruled. Every claim below is CHECKABLE in js/measure.js — that
   // file is short on purpose, and it contains no code capable of sending
-  // anything, which is what makes "stays on this device" a fact and not a
-  // promise. Stroke icon, no emoji (B4 mobile clause).
+  // anything. L3.1 (thirteenth r8): the ONE sender is the opt-in in
+  // integrations.js (maybeSendErrorCounts) -- counts by file and line plus "opened
+  // today", only with Send error counts on -- and this term now says so, in the
+  // consent sheet's words. Stroke icon, no emoji (B4 mobile clause).
   html +=     '<div class="featrow"><div class="fico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7v10M10 7v10M14 7v10M18 7v10"/><path d="M4 16.5L20 8"/></svg></div>';
-  html +=       '<div><div class="ft">We count, we never watch</div><div class="fd">Praxis keeps a few plain totals &mdash; how often something was used, how often something broke &mdash; and nothing else. No profile of you, no record of the order you did things in, no third-party trackers, no session replay, ever. It all stays on this device: there is no code in Praxis that could send it anywhere.</div></div></div>';
+  html +=       '<div><div class="ft">We count, we never watch</div><div class="fd">Praxis keeps a few numbers on your phone to understand itself. Nothing leaves unless you turn on Send error counts in Settings, and then only how many things broke and whether the app opened.</div></div></div>';
   html +=   '</div>';
   html += '</section>';
 
@@ -24854,6 +25306,72 @@ function capAutogrow() {
   f.style.height = 'auto';
   f.style.height = f.scrollHeight + 'px';
 }
+// L3.1 the Voice door's two quiet cards (consent sheet "Dictation's first ask" and
+// "Microphone or camera refused"), drawn in the mic hero. 'ask': OK, dictate ->
+// dictationAsked 'granted', then the mic starts; Type instead -> 'not-now' and the
+// door switches to Note (the ask returns next time Voice is tapped). 'mic-off':
+// the cause and what still works; no "Open Settings" on the web (F-D2).
+function capClearVoiceCard() {
+  var old = document.getElementById('capVoiceCard');
+  if (old && old.parentNode) { old.parentNode.removeChild(old); }
+}
+function capShowVoiceCard(kind, onOk) {
+  capClearVoiceCard();
+  var hero = document.querySelector('#capSheet .capdoor-mic-hero');
+  if (!hero) { return; }
+  var card = document.createElement('div');
+  card.id = 'capVoiceCard';
+  card.className = 'capdoor-qc';
+  card.setAttribute('role', 'group');
+  var b = document.createElement('b');
+  var p = document.createElement('p');
+  if (kind === 'ask') {
+    b.textContent = 'Before your voice goes out.';
+    p.textContent = 'Dictation sends your voice to ElevenLabs to turn it into words. ElevenLabs keeps recordings under its own policy; Praxis keeps only the words. You can type instead.';
+  } else {
+    b.textContent = 'The microphone is off for Praxis.';
+    p.textContent = 'iPhone Settings turned it off, so dictation waits. Typing still works, and so does paste.';
+  }
+  card.appendChild(b);
+  card.appendChild(p);
+  if (kind === 'ask') {
+    var acts = document.createElement('div');
+    acts.className = 'capdoor-qc-acts';
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'capdoor-qc-ok';
+    ok.textContent = 'OK, dictate';
+    var no = document.createElement('button');
+    no.type = 'button';
+    no.className = 'capdoor-qc-no';
+    no.textContent = 'Type instead';
+    acts.appendChild(ok);
+    acts.appendChild(no);
+    card.appendChild(acts);
+    ok.addEventListener('click', function () {
+      capAnswerDictation('granted');
+      capClearVoiceCard();
+      if (typeof onOk === 'function') { onOk(); }
+    });
+    no.addEventListener('click', function () {
+      capAnswerDictation('not-now');
+      capClearVoiceCard();
+      capSetMode('note');
+    });
+  }
+  hero.insertBefore(card, hero.firstChild);
+}
+function capAnswerDictation(answer) {
+  var u = getCurrentUser();
+  if (!u || !u.uid) { return; }
+  setProfile(u.uid, { dictationAsked: answer, dictationAskedAt: Date.now() });
+  if (typeof saveProfileToFirestore === 'function') { saveProfileToFirestore(u.uid, getProfile(u.uid), function () {}); }
+}
+function capDictationGranted() {
+  var u = getCurrentUser();
+  return !!(u && u.uid && getProfile(u.uid).dictationAsked === 'granted');
+}
+
 function capSetMode(mode) {
   // CD-6 socket (SCAN ROUND): the create door's Scan mode opens SCAN's surface.
   // Context-free ALWAYS — CD-3's context-smart pre-association does NOT apply to
@@ -24877,6 +25395,7 @@ function capSetMode(mode) {
   sheet.classList.remove('cap-mic-active');
   if (capEl('capListenState')) { capEl('capListenState').textContent = ''; }
   if (capEl('capMicLabel')) { capEl('capMicLabel').textContent = 'Tap to talk'; }
+  capClearVoiceCard();   // L3.1: an open ask / mic-off card never outlives the mode
   // CD-6: leaving photo mode discards any un-committed staged images (parity with the
   // old composer — an abandoned compose leaks nothing). Staying in photo keeps them.
   if (mode !== 'photo') { capClearStaged(); }
@@ -24885,6 +25404,10 @@ function capSetMode(mode) {
     f.placeholder = (mode === 'paste') ? 'Paste notes here — or type directly…' : 'Write a note…';
     window.setTimeout(function () { f.focus(); }, 0);
     capAutogrow();
+  }
+  // L3.1: the first tap on Voice asks before anything is recorded; OK starts the mic.
+  if (mode === 'voice' && !capDictationGranted()) {
+    capShowVoiceCard('ask', function () { var m = capEl('capMic'); if (m) { m.click(); } });
   }
 }
 
@@ -24964,7 +25487,10 @@ function capRenderCaught() {
       // "Split into notes?" act (local heuristic only — no network until tapped). Suppressed
       // while a review is already open (one split at a time).
       var ent = state.notebookEntries && state.notebookEntries[item.id];
-      if (ent && !capSplitState && capShouldOfferSplit(ent.body)) {
+      // L3.1: Split asks Claude -- hidden before the yes, and NEVER offered on a
+      // Journal or private note (the yes card's "Never the Journal" is a contract).
+      if (ent && !capSplitState && capShouldOfferSplit(ent.body) && isYumiYesGranted() &&
+          ent.register !== 'journal' && ent.isPrivate !== true) {
         var sp = document.createElement('button');
         sp.type = 'button';
         sp.className = 'capdoor-caught-split';
@@ -25294,6 +25820,7 @@ function capOfferSplit(noteId) {
   if (capSplitState) { return; }                        // one split review at a time (double-tap guard)
   var e = state.notebookEntries && state.notebookEntries[noteId];
   if (!e) { return; }
+  if (e.register === 'journal' || e.isPrivate === true) { return; }   // L3.1: the Journal never reaches Claude
   if (!(window.ImportCapture && ImportCapture.segmentDoc)) { return; }
   capSplitGen = capSplitGen + 1;
   var myGen = capSplitGen;
@@ -25796,6 +26323,9 @@ function initCaptureDoor() {
   mic.addEventListener('click', function () {
     if (!(window.ImportCapture && ImportCapture.recordAndTranscribe)) { return; }
     if (capMicSession) { capMicSession.stop(); return; } // second tap = stop
+    // L3.1: nothing is recorded until "OK, dictate" -- a tap before it shows the ask.
+    if (!capDictationGranted()) { capShowVoiceCard('ask', function () { mic.click(); }); return; }
+    capClearVoiceCard();
     var listenState = capEl('capListenState'), micLabel = capEl('capMicLabel'), sheet = capEl('capSheet');
     if (!ImportCapture.canRecord()) { micLabel.textContent = 'Recording not supported here — type below'; return; }
     capMicSeq = capMicSeq + 1;
@@ -25803,7 +26333,8 @@ function initCaptureDoor() {
     mic.classList.add('is-listening'); sheet.classList.add('cap-mic-active');
     listenState.textContent = 'STARTING…'; micLabel.textContent = 'Warming up…';
     capMicSession = ImportCapture.recordAndTranscribe({
-      onStart: function () { if (mySeq !== capMicSeq) { return; } listenState.textContent = 'LISTENING…'; micLabel.textContent = 'Listening… tap to stop'; },
+      // L3.1: the sheet's listening words (who hears it is said while it hears).
+      onStart: function () { if (mySeq !== capMicSeq) { return; } listenState.textContent = 'TAP WHEN YOU’RE DONE · HEARD BY ELEVENLABS'; micLabel.textContent = 'Listening…'; },
       onTranscribing: function () { if (mySeq !== capMicSeq) { return; } mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = 'TRANSCRIBING…'; micLabel.textContent = 'Transcribing…'; },
       onResult: function (text) {
         if (mySeq !== capMicSeq) { return; } // stale: the recording was abandoned (mode-change/close/superseded) — drop the transcript
@@ -25816,7 +26347,8 @@ function initCaptureDoor() {
       onError: function (reason) {
         if (mySeq !== capMicSeq) { return; }
         capMicSession = null; mic.classList.remove('is-listening'); sheet.classList.remove('cap-mic-active'); listenState.textContent = '';
-        micLabel.textContent = (reason === 'denied') ? 'Mic permission denied — type below'
+        if (reason === 'denied') { capShowVoiceCard('mic-off'); }   // L3.1: the sheet's mic card
+        micLabel.textContent = (reason === 'denied') ? ''
           : (reason === 'unsupported') ? 'Recording not supported here — type below'
           : (reason === 'empty') ? 'Nothing recorded — tap to try again'
           : 'Transcription failed — type below';
@@ -25880,6 +26412,7 @@ function capHandleShareTarget() {
 }
 
 window.views = {
+  openYumiYesSheet:      openYumiYesSheet,   // L3.1: the one yes (yumi-ui opens it from every Yumi door)
   initCaptureDoor:       initCaptureDoor,
   openCaptureDoor:       openCaptureDoor,
   capHandleShareTarget:  capHandleShareTarget,

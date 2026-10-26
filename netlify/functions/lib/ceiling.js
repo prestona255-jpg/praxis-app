@@ -243,15 +243,24 @@ async function _writeUsage(projectId, uid, access, decision) {
 // ---------------------------------------------------------------- enforce
 // Returns null when the request is admitted (and counted), else a response
 // object the function returns as-is.
-async function enforce(event, nowMs) {
-  if (typeof nowMs !== 'number') { nowMs = Date.now(); }
+// The service account from PRAXIS_SA_KEY, or null when it is unset or malformed.
+// L3.1: hoisted out of enforce() so error-counts.js reads the SAME account the
+// same way (HOIST, never copy half); enforce's behaviour is unchanged.
+function loadServiceAccount() {
   var raw = process.env.PRAXIS_SA_KEY;
-  if (!raw) {
-    return _json(503, { error: 'ceiling unconfigured', code: 'ceiling_unconfigured' });
-  }
+  if (!raw) { return null; }
   var sa;
   try { sa = JSON.parse(raw); } catch (e) { sa = null; }
   if (!sa || typeof sa.project_id !== 'string' || typeof sa.client_email !== 'string' || typeof sa.private_key !== 'string') {
+    return null;
+  }
+  return sa;
+}
+
+async function enforce(event, nowMs) {
+  if (typeof nowMs !== 'number') { nowMs = Date.now(); }
+  var sa = loadServiceAccount();
+  if (!sa) {
     return _json(503, { error: 'ceiling unconfigured', code: 'ceiling_unconfigured' });
   }
   var projectId = sa.project_id;
@@ -299,4 +308,12 @@ async function enforce(event, nowMs) {
   }
 }
 
-module.exports = { enforce: enforce, verifyIdToken: verifyIdToken };
+// L3.1: error-counts.js reuses the account, the bearer parse, the token verify and
+// the SA access token (one implementation each); it never touches aiUsage.
+module.exports = {
+  enforce:            enforce,
+  verifyIdToken:      verifyIdToken,
+  loadServiceAccount: loadServiceAccount,
+  bearer:             _bearer,
+  saAccessToken:      _saAccessToken
+};

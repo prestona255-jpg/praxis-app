@@ -27,6 +27,11 @@
 //     which returns nothing. The `-v` matters: the names appear in THIS comment
 //     block (they have to, to name what is absent), so a naive grep hits these
 //     lines and looks like a contradiction. Preston's B4 ruling: local-only.
+//     L3.1 (thirteenth r8) AMENDS that ruling, not this file: this file still
+//     sends nothing. The ONE sender is opt-in and lives outside it --
+//     integrations.js maybeSendErrorCounts, which runs only when the reader turns
+//     on Send error counts, and sends only counts by file and line plus "opened
+//     today". With the switch off (the default), nothing measured leaves.
 //   · NO new schema, NO Firestore field, NO sync path. Storage is localStorage
 //     via the house ls()/sv() wrappers only, so this never enters the data model.
 //   · NO streaks, NO engagement mechanics, NO dark patterns. RETENTION PHILOSOPHY

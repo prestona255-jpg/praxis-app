@@ -17448,3 +17448,171 @@ body:has(.library-cleanup) .shelf-add-primary{ display:none !important; }
   .pf-del .pf-set-row{ flex-wrap:wrap; }
   .pf-del .pf-set-row .pf-btn{ flex:1 1 auto; justify-content:center; }
 }
+
+/* =====================================================================
+   L3.1 CONSENT — the one yes, the quiet dock, the per-artifact switch, the
+   ledger, the asks. Tokens only (the paper register .shelf-manage-sheet uses:
+   --page-2 / --line-page-2 / --shadow-page / --ink / --gold-deep). Z: scrim
+   10020, sheet 10021 (the app-modal row of the ledger).
+   ===================================================================== */
+/* Yumi is quiet until the yes: the corner Bloom is not drawn (yumi-ui syncYumiYes). */
+body.yumi-quiet #yumi-bloom{ display:none !important; }
+
+/* the one yes — sheet + card */
+.yes-scrim{ position:fixed; inset:0; z-index:10020; background:var(--scrim); }
+.yes-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:10021;
+  max-height:88vh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;
+  background:var(--page-2); color:var(--ink);
+  border-top:1px solid var(--line-page-2); border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow:0 -14px 40px -18px var(--scrim);
+  padding:18px 18px calc(20px + env(safe-area-inset-bottom));
+}
+@media (min-width:760px){
+  .yes-sheet{
+    left:50%; right:auto; bottom:auto; top:50%; transform:translate(-50%,-50%);
+    width:440px; max-width:calc(100vw - 32px); border:1px solid var(--line-page-2);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow-page); padding:22px 24px 20px;
+  }
+}
+.yes-card{ display:flex; flex-direction:column; gap:12px; color:var(--ink); }
+.yes-kicker{ margin:0; font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); }
+.yes-title{ margin:0; font-family:var(--font-serif); font-weight:500; font-size:28px; line-height:1.1; color:var(--ink); }
+.yes-lead{ margin:0; font-family:var(--font-body); font-size:15px; line-height:1.5; color:var(--ink-2); }
+.yes-rows{ display:flex; flex-direction:column; border-top:1px solid var(--line-page); }
+.yes-row{ display:flex; flex-direction:column; gap:2px; padding:11px 0; border-bottom:1px solid var(--line-page); }
+.yes-row b{ font-family:var(--font-body); font-weight:500; font-size:15px; color:var(--ink); }
+.yes-row small{ font-family:var(--font-body); font-size:13px; line-height:1.45; color:var(--ink-2); }
+.yes-btn{
+  min-height:48px; border:none; border-radius:var(--radius-pill); cursor:pointer;
+  background:var(--gold); color:var(--gold-ink-on-gold); font-family:var(--font-body); font-weight:500; font-size:15px;
+}
+.yes-under{ margin:0; text-align:center; font-family:var(--font-body); font-size:12.5px; color:var(--ink-2); }
+.yes-hatch{
+  align-self:center; min-height:44px; padding:10px 8px; border:none; background:transparent; cursor:pointer;
+  font-family:var(--font-body); font-size:13px; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px;
+}
+.yes-btn:focus-visible, .yes-hatch:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+/* Home's Yumi dock (a strip of dark on the paper) */
+.home-ydock{
+  display:flex; align-items:center; gap:12px; width:100%; max-width:560px; box-sizing:border-box;
+  margin:14px 0 6px; padding:8px 18px 8px 8px; min-height:52px; text-align:left; cursor:pointer;
+  border:none; border-radius:var(--radius-pill); background:var(--ink); color:var(--text-on-dark);
+}
+.home-ydock-seed{ flex:none; width:36px; height:36px; border-radius:50%; background:var(--gold); opacity:.85; }
+.home-ydock.is-quiet .home-ydock-seed{ opacity:.45; }
+.home-ydock-text{ display:flex; flex-direction:column; min-width:0; }
+.home-ydock-text em{ font-family:var(--font-serif); font-style:italic; font-size:16px; line-height:1.3; color:var(--text-on-dark); }
+.home-ydock-text small{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--text-on-dark); opacity:.7; margin-top:2px; }
+.home-ydock:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+/* "Yumi may read this" (artifact page, book card) + the ledger's yes switch */
+.art-may, .ledger-yes{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin:16px 0 0; padding:12px 14px; border:1px solid var(--line-page); border-radius:var(--radius-lg);
+}
+.art-may-label, .ledger-yes-label{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.art-may-title, .ledger-yes-title{ font-family:var(--font-body); font-size:15px; font-weight:500; color:var(--ink); }
+.art-may-under, .ledger-yes-label small{ font-family:var(--font-body); font-size:12.5px; line-height:1.4; color:var(--ink-2); }
+.art-may-switch{
+  flex:none; position:relative; width:48px; height:28px; min-width:48px; padding:0; cursor:pointer;
+  border:none; border-radius:var(--radius-pill); background:var(--ink-3);
+}
+.art-may-switch::after{
+  content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+  background:var(--page-2); transition:left .2s ease;
+}
+.art-may-switch[aria-checked="true"]{ background:var(--gold); }
+.art-may-switch[aria-checked="true"]::after{ left:23px; }
+.art-may-switch:focus-visible{ outline:2px solid var(--gold-deep); outline-offset:2px; }
+
+/* What Yumi sees — the ledger */
+.yumi-ledger .transparency-kicker{ margin:0 0 4px; font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); }
+.yumi-ledger .transparency-under{ margin:4px 0 12px; font-family:var(--font-body); font-size:14px; color:var(--ink-2); }
+.yumi-ledger .yes-card{ margin:8px 0 6px; padding:16px; border:1px solid var(--line-page-2); border-radius:var(--radius-lg); background:var(--page-2); }
+.yumi-ledger .ledger-offline{ margin:10px 0 4px; font-family:var(--font-body); font-size:13px; line-height:1.45; color:var(--ink-2); }
+.yumi-ledger .transparency-section.is-off{ opacity:.62; }
+.yumi-ledger .ledger-line{ margin:0 0 8px; }
+.yumi-ledger .ledger-portrait{ margin:0 0 8px; font-family:var(--font-serif); font-size:16px; line-height:1.45; }
+.yumi-ledger .ledger-acts{ display:flex; gap:12px; flex-wrap:wrap; }
+.yumi-ledger .ledger-act{
+  min-height:44px; padding:0 4px; border:none; background:transparent; cursor:pointer;
+  font-family:var(--font-body); font-size:14px; font-weight:500; color:var(--gold-deep);
+}
+
+/* the first-use asks: read-aloud (Yumi's thread) and dictation / mic-off (capture door) */
+.yumi-ask, .capdoor-qc{
+  display:flex; flex-direction:column; gap:8px; margin:10px 0; padding:12px 14px; text-align:left;
+  border:1px solid var(--line-page); border-left:3px solid var(--gold-ink); border-radius:var(--radius-lg);
+}
+.capdoor-qc b{ font-family:var(--font-body); font-weight:500; font-size:15px; }
+.yumi-ask-body, .capdoor-qc p{ margin:0; font-family:var(--font-body); font-size:13.5px; line-height:1.45; }
+.yumi-ask-acts, .capdoor-qc-acts{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.yumi-ask-yes, .capdoor-qc-ok{
+  min-height:44px; padding:0 18px; border:none; border-radius:var(--radius-pill); cursor:pointer;
+  background:var(--gold); color:var(--gold-ink-on-gold); font-family:var(--font-body); font-weight:500; font-size:14px;
+}
+.yumi-ask-no, .capdoor-qc-no{
+  min-height:44px; padding:0 8px; border:none; background:transparent; cursor:pointer;
+  font-family:var(--font-body); font-size:13px; color:inherit; text-decoration:underline; text-underline-offset:3px;
+}
+
+/* Settings rows with their under-lines (Profile Settings card) */
+.pf-toggle.pf-setrow{ display:flex; align-items:flex-start; gap:12px; margin-top:14px; font-size:13px; color:var(--ink); }
+.pf-toggle.pf-setrow .tk{ flex:none; margin-top:2px; }
+.pf-setrow-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.pf-setrow-title{ font-family:var(--font-body); font-size:14px; font-weight:500; color:var(--ink); }
+.pf-setrow-sub{ font-family:var(--font-body); font-size:12.5px; line-height:1.4; color:var(--ink-2); }
+
+/* L3.1 the dock on Home's twilight world: Home re-points --ink to the cream on-ground ramp, so the
+   dock takes Home's own register (.home-yumi's: --on-ground ink, --gold-world/--gold-ember seed) and
+   out-ranks .home-composed > * (0,3,0) for its measure. */
+.home-page.lum-amber-deep.home-composed > .home-ydock{ max-width:560px; margin:14px auto 6px; }
+.home-page.lum-amber-deep .home-ydock{
+  background:color-mix(in srgb, var(--on-ground) 9%, transparent); color:var(--on-ground);
+  border:1px solid color-mix(in srgb, var(--on-ground) 22%, transparent);
+}
+.home-page.lum-amber-deep .home-ydock-text em, .home-page.lum-amber-deep .home-ydock-text small{ color:var(--on-ground); }
+.home-page.lum-amber-deep .home-ydock-seed{ background:var(--gold-ember); }
+.home-page.lum-amber-deep .home-ydock:focus-visible{ outline-color:var(--gold-ember); }
+
+/* L3.1 the yes is a printed page on ANY ground: body[data-ground="dark"] re-points the ink ramp to
+   cream, so a vellum sheet must cross back to the on-card ramp exactly as .lit-page does (measured
+   before this rule: title 1.1:1, lead 2.03:1 -- the MERGE ROUND failure). */
+.yes-sheet, .yumi-ledger .yes-card{
+  background-color:var(--card-1); color:var(--card-ink);
+  --ink:var(--card-ink); --ink-2:var(--card-ink-2); --ink-3:var(--card-meta);
+  --gold:var(--gold-on-card); --gold-deep:var(--gold-on-card);
+  --line-page:rgba(38,32,25,.14); --line-page-2:rgba(38,32,25,.24);
+}
+.yes-sheet .yes-btn, .yumi-ledger .yes-card .yes-btn{ background:var(--gold-world); color:var(--gold-ink-on-gold); }   /* L3.1: the fill the dark-on-gold label is measured against (5.39:1) */
+
+/* L3.1 contrast fixes, measured: the Book page scopes its own ramp (--lum-ink*), so the switch there
+   reads from it (was 1.04:1 / 1.91:1); the ledger kicker reads --gold-text, which follows the ground
+   (was 1.72:1 on #yumi-sees); not-now rows are NOT dimmed -- the off line above them says why
+   ("nothing dimmed without a word"; opacity .62 put every row under 4.5:1). */
+.bk-surface .art-may{ border-color:var(--bk-line); }
+.bk-surface .art-may-title{ color:var(--lum-ink); }
+.bk-surface .art-may-under{ color:var(--lum-ink-2); }
+.bk-surface .art-may-switch::after{ background:var(--lum-base); }
+.yumi-ledger .transparency-kicker{ color:var(--gold-text); }
+.yumi-ledger .transparency-section.is-off{ opacity:1; }
+
+/* L3.1 the ledger panel paints a light glass (--panel-yumi) on every ground, so the NEW head reads the
+   on-card ink: kicker in the on-card gold, the title in card ink (Day Three draws it in ink), and the
+   new ledger lines likewise. The inherited .transparency-* rows and their nested entry cards keep their
+   own (pre-existing) colours -- a blanket re-point broke the dark entry cards (1.23:1), so it is not
+   done here; their contrast is recorded as pre-existing drift (docs/checkpoints/l3.md, D9). */
+.yumi-ledger .transparency-kicker{ color:var(--gold-on-card); }
+.yumi-ledger .transparency-title,
+.yumi-ledger .transparency-under,
+.yumi-ledger .ledger-line,
+.yumi-ledger .ledger-offline,
+.yumi-ledger .ledger-portrait{ color:var(--card-ink); }
+.yumi-ledger .ledger-act{ color:var(--gold-on-card); }
+.yumi-ledger .transparency-kicker, .yumi-ledger .ledger-act{ color:var(--gold-ink); }   /* L3.1: on-card gold measured 4.49:1 on --panel-yumi */
+.yumi-ledger .ledger-yes-title{ color:var(--card-ink); }
+.yumi-ledger .ledger-yes-label small{ color:var(--card-ink-2); }
+.yumi-ledger .ledger-yes{ border-color:rgba(38,32,25,.14); }
+.yumi-ledger .ledger-lens .transparency-section-label, .yumi-ledger .ledger-lens .transparency-section-body{ color:var(--card-ink); }   /* L3.1 RT-3: new words, not the inherited (L1) row colour */

@@ -1341,6 +1341,16 @@ function ensureArtifactFields(artifact) {
     artifact.body = '';
     changed = true;
   }
+  // L3.1: "Yumi may read this" -- per artifact, default FALSE for every artifact,
+  // existing ones included; yumiMayReadAt orders What Yumi Sees (newest last).
+  if (typeof artifact.yumiMayRead !== 'boolean') {
+    artifact.yumiMayRead = false;
+    changed = true;
+  }
+  if (typeof artifact.yumiMayReadAt !== 'number') {
+    artifact.yumiMayReadAt = 0;
+    changed = true;
+  }
   return changed;
 }
 
@@ -1407,6 +1417,29 @@ function genThreadId() {
   return 'thread_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
 }
 
+// L3.1 consent. An answer to the one yes or a first-use ask is '' (never asked),
+// 'granted' or 'not-now' -- anything else reads as never asked.
+function consentAnswer(v) {
+  return (v === 'granted' || v === 'not-now') ? v : '';
+}
+// THE gate every send to Claude checks (aiProxyRequest, the sorter, the scan
+// photo doors, the chat send): true only once this reader said the one yes.
+// Defaults to the signed-in reader. Fail-closed: no profile -> false.
+function isYumiYesGranted(uid) {
+  var u = uid;
+  if (!u && typeof getCurrentUser === 'function') {
+    var cu = getCurrentUser();
+    u = (cu && cu.uid) ? cu.uid : null;
+  }
+  if (!u || !state.users || !state.users[u] || !state.users[u].profile) { return false; }
+  return state.users[u].profile.yumiYes === 'granted';
+}
+// L3.1 (F-A1): an account whose Firebase Auth creationTime is at or after this
+// instant is NEW, so its yumiReadsAlong starts FALSE; an older account keeps what
+// it stored (absent still reads true). Decided once, at the first settled-absent
+// profile load (integrations.js). Display only -- the yes is what gates.
+var L3_NEW_ACCOUNT_CUTOFF = Date.UTC(2026, 9, 25, 0, 0, 0);
+
 // Lazy initializer for per-user records. The schema-versioned shape of
 // a user record is owned here so that future writers (notebook entries,
 // artifacts, arcs, etc.) can call ensureUser(uid) instead of duplicating
@@ -1416,7 +1449,7 @@ function ensureUser(uid) {
     state.users[uid] = {
       yumiMemory:       { summary: '', recentTurns: [], updatedAt: 0 },
       registerDefaults: { journal: true, marginalia: false, question: false },
-      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' },
+      profile:          { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '', yumiYes: '', yumiYesAt: 0, dictationAsked: '', dictationAskedAt: 0, readAloudAsked: '', sendErrorCounts: false },
       readerModel:      { threads: [], profile: { summary: '', updatedAt: 0 }, updatedAt: 0 }
     };
   }
@@ -1441,7 +1474,7 @@ function ensureUser(uid) {
   // an existing in-memory user gains the slot without disturbing
   // yumiMemory / registerDefaults.
   if (!state.users[uid].profile) {
-    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' };
+    state.users[uid].profile = { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '', yumiYes: '', yumiYesAt: 0, dictationAsked: '', dictationAskedAt: 0, readAloudAsked: '', sendErrorCounts: false };
   }
   // N-epic: yumiReadsAlong master consent switch, default true (the pre-epic
   // behavior). Lives in profile{} so it mirrors via /userProfiles. Additive
@@ -1477,6 +1510,20 @@ function ensureUser(uid) {
       state.users[uid].profile.talkMode !== 'push-to-talk' &&
       state.users[uid].profile.talkMode !== 'hands-free') {
     state.users[uid].profile.talkMode = 'push-to-talk';
+  }
+  // L3.1 consent: the one yes + the two first-use asks, each '' (never asked) |
+  // 'granted' | 'not-now' (the consent sheet's shape, ruled F-A3); the yes and the
+  // dictation ask carry when-stamps. sendErrorCounts is a switch, default FALSE.
+  // Lives in profile{} so it mirrors via /userProfiles. Additive field guards: a
+  // profile seeded before L3 is NOT granted -- every account says yes once (F-A2).
+  if (state.users[uid].profile) {
+    var _cp = state.users[uid].profile;
+    _cp.yumiYes = consentAnswer(_cp.yumiYes);
+    _cp.dictationAsked = consentAnswer(_cp.dictationAsked);
+    _cp.readAloudAsked = consentAnswer(_cp.readAloudAsked);
+    if (typeof _cp.yumiYesAt !== 'number') { _cp.yumiYesAt = 0; }
+    if (typeof _cp.dictationAskedAt !== 'number') { _cp.dictationAskedAt = 0; }
+    if (typeof _cp.sendErrorCounts !== 'boolean') { _cp.sendErrorCounts = false; }
   }
   // Portrait Stage 1: declared values list (the "stones"). Additive guard so a
   // profile seeded before this build gains the slot. Default [] -- DECLARED by
@@ -1597,7 +1644,7 @@ function getProfile(uid) {
     }
     return pr;
   }
-  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '' };
+  return { displayNameOverride: '', penName: '', onboardingSeen: false, tagline: '', yumiReadsAlong: true, yumiReaderModel: false, yumiWebGrounding: false, voiceOn: false, talkMode: 'push-to-talk', values: [], statement: '', carryingQuestion: '', yumiYes: '', yumiYesAt: 0, dictationAsked: '', dictationAskedAt: 0, readAloudAsked: '', sendErrorCounts: false };
 }
 
 // Stage 14.3 Stage 1: profile mutator. Writes the two string fields
@@ -1650,6 +1697,14 @@ function setProfile(uid, fields) {
   if (fields && typeof fields.talkMode !== 'undefined') {
     p.talkMode = (fields.talkMode === 'hands-free') ? 'hands-free' : 'push-to-talk';
   }
+  // L3.1 consent: the one yes + the two asks ('' | 'granted' | 'not-now'), their
+  // when-stamps, and the error-counts switch. Coerced so the stored shape stays strict.
+  if (fields && typeof fields.yumiYes !== 'undefined') { p.yumiYes = consentAnswer(fields.yumiYes); }
+  if (fields && typeof fields.yumiYesAt === 'number') { p.yumiYesAt = fields.yumiYesAt; }
+  if (fields && typeof fields.dictationAsked !== 'undefined') { p.dictationAsked = consentAnswer(fields.dictationAsked); }
+  if (fields && typeof fields.dictationAskedAt === 'number') { p.dictationAskedAt = fields.dictationAskedAt; }
+  if (fields && typeof fields.readAloudAsked !== 'undefined') { p.readAloudAsked = consentAnswer(fields.readAloudAsked); }
+  if (fields && typeof fields.sendErrorCounts !== 'undefined') { p.sendErrorCounts = fields.sendErrorCounts === true; }
   // Portrait Stage 1: declared values (the "stones"). Sanitized to an array of
   // trimmed, non-empty strings; DECLARED by the reader, never inferred. Only an
   // explicit array writes (absent -> the default-on-read [] stands).

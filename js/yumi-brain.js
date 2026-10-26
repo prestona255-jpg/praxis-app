@@ -79,6 +79,14 @@ function aiProxyRequest(url, payload) {
   if (!fbUser || typeof fbUser.getIdToken !== 'function') {
     return Promise.reject(_aiProxyError(0, 'sign_in_required', 'not signed in', null));
   }
+  // L3.1 THE CONSENT GATE (thirteenth r4/r5). Until this reader has said the one
+  // yes, nothing of theirs reaches Claude: every claude-proxy and shelf-vision
+  // call is refused here with ZERO network. Status -1 (not 0) so no caller mistakes
+  // it for a network drop and retries. Callers that would mis-handle a refusal
+  // (the sorter, the scan photo doors, the chat send) also check before calling.
+  if (typeof isYumiYesGranted !== 'function' || !isYumiYesGranted(fbUser.uid)) {
+    return Promise.reject(_aiProxyError(-1, 'consent_required', 'the one yes not given', null));
+  }
   return fbUser.getIdToken().then(function (token) {
     return fetch(url, {
       method:  'POST',
@@ -238,10 +246,10 @@ function appendTurn(role, content) {
 
 // Assemble the structured context Yumi sees. Single source of truth for
 // buildContext (prose blob for the model call) and getContextSnapshot
-// (structured object for the transparency view) -- NOT a single enforcement
-// point: the move, scan, and arc-voice readers do not route through here, but
-// each independently applies the SAME predicate (skip isPrivate === true OR
-// register === 'journal'), so no path bypasses the covenant.
+// (structured object for the transparency view). L3.1: its notes, the scan's, the
+// hand's, the portrait's, the move's and arc-voice's evidence are all THE ONE
+// SUBSTRATE (_visibleEntriesForScan: YUMI_NOTE_N newest, cut to YUMI_NOTE_L), so
+// the predicate (skip isPrivate === true OR register === 'journal') lives once.
 // Enforces principle #5: the notebookEntries loop skips any entry the user
 // has flagged private OR any journal-register entry, so private / journal
 // writing never enters Yumi's context. Top 3 newest visible entries, each
@@ -281,48 +289,23 @@ function assembleContextData() {
     }
   }
 
-  var collected = [];
-  var key;
-  for (key in state.notebookEntries) {
-    if (Object.prototype.hasOwnProperty.call(state.notebookEntries, key)) {
-      // Covenant (Wave 3 · the Notebook): Yumi NEVER reads journal-register
-      // notes -- categorically, independent of the isPrivate default (which
-      // getRegisterDefault can leave false). Plus the existing isPrivate gate.
-      // The book's OWN TEXT never reaches here at all: only book.title/author
-      // are passed (currentBook above), and note bodies are marginalia/question.
-      if (state.notebookEntries[key] &&
-          (state.notebookEntries[key].isPrivate === true ||
-           state.notebookEntries[key].register === 'journal')) {
-        continue;
-      }
-      collected.push(state.notebookEntries[key]);
-    }
-  }
-  collected.sort(function (a, b) {
-    return b.createdAt - a.createdAt;
-  });
-  var top = collected.slice(0, 3);
-
+  // Covenant (Wave 3 · the Notebook): Yumi NEVER reads journal-register notes --
+  // categorically, independent of the isPrivate default (which getRegisterDefault
+  // can leave false). Plus the existing isPrivate gate. The book's OWN TEXT never
+  // reaches here at all: only book.title/author are passed (currentBook above),
+  // and note bodies are marginalia/question. L3.1 (F-H2(1)): the notes are THE
+  // ONE SUBSTRATE (_visibleEntriesForScan: the YUMI_NOTE_N newest, each cut to
+  // YUMI_NOTE_L) -- the same set every other sender takes, so the transparency
+  // view, the chat and the scan see identical notes. The filter lives there.
   var recentEntries = [];
+  var subst = _visibleEntriesForScan();
   var i;
-  for (i = 0; i < top.length; i++) {
-    var src = top[i];
-    var body = src.body;
-    if (body.length > 200) {
-      body = body.substring(0, 197) + '...';
-    }
-    var bookTitle = null;
-    if (src.bookIds && src.bookIds.length > 0) {
-      var bId = src.bookIds[0];
-      if (state.books && state.books[bId]) {
-        bookTitle = state.books[bId].title;
-      }
-    }
+  for (i = 0; i < subst.length; i++) {
     recentEntries.push({
-      body:      body,
-      register:  src.register || 'journal',
-      bookTitle: bookTitle,
-      createdAt: src.createdAt
+      body:      subst[i].body,
+      register:  subst[i].register,
+      bookTitle: subst[i].bookTitle ? subst[i].bookTitle : null,
+      createdAt: subst[i].createdAt
     });
   }
 
@@ -341,6 +324,11 @@ function assembleContextData() {
     if (Object.prototype.hasOwnProperty.call(state.bookArtifacts, aKey)) {
       var artRec = state.bookArtifacts[aKey];
       if (artRec && artRec.isPrivate === true) {
+        continue;
+      }
+      // L3.1 "Yumi may read this": an artifact reaches her ONLY when the reader
+      // switched it on. Default off for every artifact, existing ones included.
+      if (!artRec || artRec.yumiMayRead !== true) {
         continue;
       }
       if (artRec) collectedArtifacts.push(artRec);
@@ -824,6 +812,11 @@ function gradeUtterance(candidateText, readerInput) {
 }
 
 function sendMessage(userText) {
+  // L3.1: refuse BEFORE the user turn is written to memory, so a not-yet-granted
+  // reader's words never sit in yumiMemory waiting to reach Claude after the yes.
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted()) {
+    return Promise.reject(_aiProxyError(-1, 'consent_required', 'the one yes not given', null));
+  }
   // Known limitation (2.7b-ii-a): if the proxy call below fails between
   // these two appendTurn calls, the user turn persists without a matching
   // assistant turn -- left as-is, addressed in a follow-up sub-stage.
@@ -1019,7 +1012,22 @@ function buildLensGenUserMessage(meta) {
 // ONE-SHOT lens generation. Returns a Promise of the raw model text; the
 // caller runs evalLensResponse before showing anything. Does NOT append to
 // the chat transcript. Reuses the claude-proxy call path verbatim.
+// L3.1 (RT-3): What Yumi Sees says "Nothing sent yet." under the lens-names-and-
+// values row until one of these two generators actually sends a reader-made lens
+// name or a declared value. Stamped per uid, on this device, only when the call
+// will leave (signed in + the yes) and the payload carries at least one such name.
+function yumiMarkLensNamesSent(meta) {
+  if (!meta) { return; }
+  var n = (meta.themeLensNames ? meta.themeLensNames.length : 0) +
+          (meta.valueNames ? meta.valueNames.length : 0) +
+          (meta.existingValues ? meta.existingValues.length : 0);
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (n > 0 && u && u.uid && typeof isYumiYesGranted === 'function' && isYumiYesGranted(u.uid)) {
+    sv('praxis_yumi_lensnames_sent_' + u.uid, Date.now());
+  }
+}
 function generateLenses(meta) {
+  yumiMarkLensNamesSent(meta);
   var payload = {
     model:      'claude-sonnet-4-6',
     max_tokens: 1024,
@@ -1292,6 +1300,7 @@ function buildValueGenUserMessage(meta) {
 // caller runs evalValueResponse before showing anything. Reuses the claude-proxy
 // path verbatim; does NOT append to the chat transcript.
 function generateValueRetrofit(meta) {
+  yumiMarkLensNamesSent(meta);   // L3.1 (RT-3)
   var payload = {
     model:      'claude-sonnet-4-6',
     max_tokens: 1024,
@@ -1761,7 +1770,10 @@ function distillWebAngle(subject, testData) {
 // grounding, no chip). NEVER rejects. testData routes the harness injection
 // battery through the identical distiller path with the live search DISABLED
 // (bypassing consent/budget/cooldown/cache -- it is a code-level test only).
+var YUMI_WEB_BOOK_ONLY = true;   // L3.1 (F-H2(3)): see _webSubjectForArc
+var YUMI_ARC_VOICE_OFF = true;   // L3.1 (RT-3): see considerArcVoice -- the arc menu item reads it too
 function considerWebAngle(subject, testData) {
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted()) { return Promise.resolve({ angle: '', source: null }); }   // L3.1: before any cooldown/budget stamp
   var subj = (typeof subject === 'string') ? subject.replace(/^\s+|\s+$/g, '') : '';
   if (subj === '') { return Promise.resolve({ angle: '', source: null }); }
   if (typeof testData === 'string' && testData.replace(/^\s+|\s+$/g, '') !== '') {
@@ -1803,7 +1815,12 @@ function _webSubjectForBook(entry) {
 
 // PUBLIC subject for arc-voice: the arc title + up to 3 sub-theory HEADERS
 // (public theme names) -- never evidence/note bodies.
+// L3.1 (F-H2(3)): DISABLED in the beta. The web query carries ONLY a book's title
+// and author and the question's own words -- arc titles and sub-theory headers are
+// the reader's writing, so arc-voice gets no web angle. The body below is kept,
+// unreachable, for when the theory layer opens.
 function _webSubjectForArc(ctx) {
+  if (YUMI_WEB_BOOK_ONLY) { return ''; }
   if (!ctx) { return ''; }
   var subj = (typeof ctx.title === 'string') ? ctx.title.replace(/^\s+|\s+$/g, '') : '';
   var heads = [];
@@ -2034,6 +2051,10 @@ function considerMove(entry, panelOpen) {
   }
   var uid = resolveActiveUid();
   if (!uid) { return Promise.resolve({ quiet: true, reason: 'no-user' }); }
+  // 0. L3.1 the one yes (before any budget/cooldown read or stamp).
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted(uid)) {
+    return Promise.resolve({ quiet: true, reason: 'consent-yes' });
+  }
   // 1. consent -- the master "Yumi reads along" switch (same gate as context).
   if (state.users[uid] && state.users[uid].profile &&
       state.users[uid].profile.yumiReadsAlong === false) {
@@ -2059,7 +2080,7 @@ function considerMove(entry, panelOpen) {
   return considerWebAngle(_webSubjectForBook(entry)).then(function (web) {
     var webAngle = (web && web.angle) ? web.angle : '';
     var webSource = (web && web.source) ? web.source : null;
-    return generateMove(entry.body, bookTitle, webAngle).then(function (decision) {
+    return generateMove(yumiNoteForSend(entry.body), bookTitle, webAngle).then(function (decision) {   // L3.1: shortened like the substrate
       var move = decision && decision.move;
       var text = decision && decision.text;
       if ((move !== 'draw-out' && move !== 'complicate') ||
@@ -2070,7 +2091,7 @@ function considerMove(entry, panelOpen) {
         return considerNotice(uid, panelOpen);
       }
       // 6. gate (Stage A) -- the question judged against the note text.
-      return gradeUtterance(text, entry.body).then(function (verdict) {
+      return gradeUtterance(text, yumiNoteForSend(entry.body)).then(function (verdict) {
         if (!verdict || !verdict.pass) {
           return { quiet: true, reason: 'gate', move: move,
                    layer: (verdict && verdict.layer) || 'unknown' };
@@ -2108,7 +2129,7 @@ function considerMove(entry, panelOpen) {
 // =====================================================================
 
 // EDITABLE tunables (REPORTED at the checkpoint).
-var NOTICE_SCAN_N       = 20;      // recent visible notes the scan sees
+var NOTICE_SCAN_N       = 20;      // L3.1: superseded by YUMI_NOTE_N (no reader left; kept so a revert is one line)
 var NOTICE_COOLDOWN_MS  = 120000;  // >= this long between scans (kept rare)
 var NOTICE_OVERLAP_MIN  = 2;       // shared members means the same cluster (idempotency)
 
@@ -2243,9 +2264,29 @@ function _scanCooldownOk() {
 }
 function _markScanRan() { sv('praxis_yumi_scan_cooldown', Date.now()); }
 
-// The recent visible notes the scan sees (mirrors the assembleContextData
-// filter: skips isPrivate === true OR register === 'journal'; newest first,
-// capped at NOTICE_SCAN_N).
+// L3.1 (F-H2(1)) THE ONE NOTE SUBSTRATE. Every path that sends the reader's
+// notes to Claude takes THIS set and no more: the YUMI_NOTE_N most recent visible
+// notes (never isPrivate, never the Journal, never blank), each shortened to about
+// YUMI_NOTE_L characters. What Yumi Sees states exactly these two numbers.
+// Ruled at the L3.1 gate (RT-2): ONE list for every sender -- the 20 newest visible
+// notes, each cut to 240 characters -- and the ledger states exactly these numbers.
+// (Three notes starve the raised hand, which needs a thread between notes.)
+var YUMI_NOTE_N = 20;
+var YUMI_NOTE_L = 240;
+function yumiNoteForSend(body) {
+  var b = (typeof body === 'string') ? body : '';
+  if (b.length > YUMI_NOTE_L) { b = b.substring(0, YUMI_NOTE_L - 3) + '...'; }
+  return b;
+}
+// id -> true for every note in the substrate (the arc-voice evidence filter).
+function yumiNoteSubstrateIds() {
+  var ids = {}, s = _visibleEntriesForScan(), i;
+  for (i = 0; i < s.length; i = i + 1) { ids[s[i].id] = true; }
+  return ids;
+}
+// The substrate itself (the assembleContextData filter: skips isPrivate === true
+// OR register === 'journal'; newest first, capped at YUMI_NOTE_N, bodies cut to
+// YUMI_NOTE_L). Kept under its old name: the scan, the hand and the portrait call it.
 function _visibleEntriesForScan() {
   var out = [];
   var key;
@@ -2260,7 +2301,7 @@ function _visibleEntriesForScan() {
     }
   }
   out.sort(function (a, b) { return b.createdAt - a.createdAt; });
-  out = out.slice(0, NOTICE_SCAN_N);
+  out = out.slice(0, YUMI_NOTE_N);
   var res = [];
   var i;
   for (i = 0; i < out.length; i = i + 1) {
@@ -2269,17 +2310,18 @@ function _visibleEntriesForScan() {
     if (src.bookIds && src.bookIds.length && state.books && state.books[src.bookIds[0]]) {
       bt = state.books[src.bookIds[0]].title || '';
     }
-    var body = src.body;
-    if (body.length > 240) { body = body.substring(0, 237) + '...'; }
-    res.push({ id: src.id, body: body, bookTitle: bt });
+    res.push({ id: src.id, body: yumiNoteForSend(src.body), bookTitle: bt,
+               register: src.register || 'journal', createdAt: src.createdAt });
   }
   return res;
 }
 function _memberBodies(ids) {
   var parts = []; var i;
+  var inSub = yumiNoteSubstrateIds();
   for (i = 0; i < ids.length; i = i + 1) {
     var e = state.notebookEntries[ids[i]];
-    if (e && e.isPrivate !== true && e.register !== 'journal' && typeof e.body === 'string') { parts.push(e.body); }
+    // L3.1: only substrate notes, shortened like every other send.
+    if (e && inSub[ids[i]] && e.isPrivate !== true && e.register !== 'journal' && typeof e.body === 'string') { parts.push(yumiNoteForSend(e.body)); }
   }
   return parts.join('\n\n');
 }
@@ -2369,6 +2411,7 @@ function generateName(thread, reply) {
 // gate -> surface + pendingNotice. Always resolves.
 function considerNotice(uid, panelOpen) {
   if (!uid) { return Promise.resolve({ quiet: true, reason: 'notice-no-user' }); }
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted(uid)) { return Promise.resolve({ quiet: true, reason: 'consent-yes' }); }   // L3.1: before _markScanRan
   // (b) >=3 visible non-private notes
   var entries = _visibleEntriesForScan();
   if (entries.length < 3) { return Promise.resolve({ quiet: true, reason: 'notice-fewnotes' }); }
@@ -2407,6 +2450,7 @@ function considerNotice(uid, panelOpen) {
 // opened hands.
 function handEligible(uid) {
   if (!uid) { return false; }
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted(uid)) { return false; }   // L3.1: no hand before the yes
   if (state.users[uid] && state.users[uid].profile &&
       state.users[uid].profile.yumiReadsAlong === false) { return false; }
   var entries = _visibleEntriesForScan();
@@ -2450,6 +2494,7 @@ function considerName(pn, reply) {
   if (!pn || !pn.memberIds || typeof reply !== 'string') {
     return Promise.resolve({ quiet: true, reason: 'name-noinput' });
   }
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted()) { return Promise.resolve({ quiet: true, reason: 'consent-yes' }); }   // L3.1
   return generateName(pn.thread, reply).then(function (res) {
     if (!res || res.none || typeof res.utterance !== 'string') {
       _noticedSet(resolveActiveUid(), pn.memberIds, 'dismissed');
@@ -2625,6 +2670,7 @@ function gatherArcContext(arcId) {
   sts.sort(function (a, b) { return a.createdAt - b.createdAt; });
   var out = [];
   var i, j;
+  var inSub = yumiNoteSubstrateIds();   // L3.1 (F-H2(1)): note evidence only from the one substrate
   for (i = 0; i < sts.length; i = i + 1) {
     var s = sts[i];
     var ev = [];
@@ -2636,8 +2682,10 @@ function gatherArcContext(arcId) {
         // covenant: exclude private (or unverifiable) entry evidence
         var src = state.notebookEntries && state.notebookEntries[item.refId];
         if (!src || src.isPrivate === true || src.register === 'journal') { continue; }
+        if (!inSub[item.refId]) { continue; }
       }
       var quote = (typeof item.quote === 'string') ? item.quote.replace(/^\s+|\s+$/g, '') : '';
+      if (item.kind === 'entry') { quote = yumiNoteForSend(quote); }
       if (quote !== '') { ev.push({ kind: item.kind, text: quote }); }
       else if (item.kind === 'book') {
         var b = state.books && state.books[item.refId];
@@ -2731,6 +2779,13 @@ function generateArcVoice(ctx, webAngle) {
 function considerArcVoice(arcId) {
   var uid = resolveActiveUid();
   if (!uid) { return Promise.resolve({ fallback: true, reason: 'no-user' }); }
+  // L3.1 (RT-3, ruled): arc voice sends NOTHING in the beta -- the one check at its
+  // send seam, so the ledger's "Nothing else" is true without a row for a surface L5
+  // hides. Owed to L5: when arcs return, arc voice gets a ledger row or stays off.
+  if (YUMI_ARC_VOICE_OFF) { return Promise.resolve({ fallback: true, reason: 'beta-off' }); }
+  if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted(uid)) {
+    return Promise.resolve({ fallback: true, reason: 'consent-yes' });   // L3.1 (the menu item is hidden too)
+  }
   if (state.users[uid] && state.users[uid].profile &&
       state.users[uid].profile.yumiReadsAlong === false) {
     return Promise.resolve({ fallback: true, reason: 'consent' });
@@ -2873,6 +2928,7 @@ function considerProfileRefresh(onWritten) {
   if (!prof || prof.yumiReadsAlong === false || prof.yumiReaderModel !== true) {
     return Promise.resolve({ quiet: true, reason: 'consent' });
   }
+  if (prof.yumiYes !== 'granted') { return Promise.resolve({ quiet: true, reason: 'consent-yes' }); }   // L3.1: before _markProfileRefresh
   var rm = (typeof getReaderModel === 'function') ? getReaderModel(uid) : null;
   if (rm && rm.profile && rm.profile.source === 'edited') {
     return Promise.resolve({ quiet: true, reason: 'hand-edited' });
