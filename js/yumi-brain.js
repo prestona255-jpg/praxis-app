@@ -811,7 +811,7 @@ function gradeUtterance(candidateText, readerInput) {
   });
 }
 
-function sendMessage(userText) {
+function sendMessage(userText, opts) {
   // L3.1: refuse BEFORE the user turn is written to memory, so a not-yet-granted
   // reader's words never sit in yumiMemory waiting to reach Claude after the yes.
   if (typeof isYumiYesGranted === 'function' && !isYumiYesGranted()) {
@@ -820,7 +820,9 @@ function sendMessage(userText) {
   // Known limitation (2.7b-ii-a): if the proxy call below fails between
   // these two appendTurn calls, the user turn persists without a matching
   // assistant turn -- left as-is, addressed in a follow-up sub-stage.
-  appendTurn('user', userText);
+  // L3.2 (l): a "Try again" resend (opts.retry) is the SAME turn -- its user turn is
+  // already in memory, so it is not written a second time.
+  if (!(opts && opts.retry === true)) { appendTurn('user', userText); }
 
   var payload = {
     model:      'claude-sonnet-4-6',

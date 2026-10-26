@@ -105,8 +105,16 @@ async function _certForKid(kid, nowMs) {
 }
 
 // ---------------------------------------------------------------- token
-// Returns the verified uid (sub) or null. Never throws to the caller.
+// Returns the verified uid (sub) or null. Never throws to the caller. (Unchanged API;
+// L3.2 reads the full claims through _verifyClaims for the allowlist's email match.)
 async function verifyIdToken(token, projectId, nowMs) {
+  var claims = await _verifyClaims(token, projectId, nowMs);
+  return claims ? claims.sub : null;
+}
+
+// The verified claims object, or null -- every check below is the original
+// verifyIdToken's, moved here verbatim so there is ONE verifier (HOIST, not copy).
+async function _verifyClaims(token, projectId, nowMs) {
   try {
     if (typeof token !== 'string') { return null; }
     var parts = token.split('.');
@@ -138,10 +146,25 @@ async function verifyIdToken(token, projectId, nowMs) {
     if (typeof claims.sub !== 'string' || claims.sub.length === 0) { return null; }
     if (typeof claims.exp !== 'number' || claims.exp <= nowS - skewS) { return null; }
     if (typeof claims.iat !== 'number' || claims.iat > nowS + skewS) { return null; }
-    return claims.sub;
+    return claims;
   } catch (e) {
     return null;
   }
+}
+
+// L3.2 (F-K2): is this reader on the invite allowlist? The same rule as firestore.rules
+// onList(): betaAllowlist/{uid}, else -- email verified -- betaAllowlist/{lowercased
+// email}. true / false; any other answer THROWS, so enforce fails closed (503).
+async function _isListed(projectId, claims, access) {
+  var base = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/betaAllowlist/';
+  var r1 = await fetch(base + encodeURIComponent(claims.sub), { headers: { 'Authorization': 'Bearer ' + access } });
+  if (r1.status === 200) { return true; }
+  if (r1.status !== 404) { throw new Error('allowlist read ' + r1.status); }
+  if (typeof claims.email !== 'string' || claims.email === '' || claims.email_verified !== true) { return false; }
+  var r2 = await fetch(base + encodeURIComponent(claims.email.toLowerCase()), { headers: { 'Authorization': 'Bearer ' + access } });
+  if (r2.status === 200) { return true; }
+  if (r2.status !== 404) { throw new Error('allowlist read ' + r2.status); }
+  return false;
 }
 
 function _bearer(event) {
@@ -265,7 +288,8 @@ async function enforce(event, nowMs) {
   }
   var projectId = sa.project_id;
 
-  var uid = await verifyIdToken(_bearer(event), projectId, nowMs);
+  var claims = await _verifyClaims(_bearer(event), projectId, nowMs);
+  var uid = claims ? claims.sub : null;
   if (!uid) {
     return _json(401, { error: 'unauthenticated', code: 'unauthenticated' });
   }
@@ -273,6 +297,11 @@ async function enforce(event, nowMs) {
   var cap = core.capFor(uid, core.defaultCap(process.env.PRAXIS_AI_DAILY_CAP), process.env.PRAXIS_AI_CAP_OVERRIDES);
   try {
     var access = await _saAccessToken(sa, nowMs);
+    // L3.2 (F-K2): only readers on the invite allowlist reach a paid upstream. Not
+    // listed -> 403 and RETURN: no count, no write, no upstream call.
+    if (!(await _isListed(projectId, claims, access))) {
+      return _json(403, { error: 'not on the list', code: 'not_listed' });
+    }
     var doc = await _readUsage(projectId, uid, access);
     // GHOST DOC (P1 fix round 2, R1): closes the deleted-user, still-valid-token,
     // <=1h window. No usage doc means a NEW reader or a DELETED one -- only here do
@@ -309,10 +338,13 @@ async function enforce(event, nowMs) {
 }
 
 // L3.1: error-counts.js reuses the account, the bearer parse, the token verify and
-// the SA access token (one implementation each); it never touches aiUsage.
+// the SA access token (one implementation each); it never touches aiUsage. L3.2 RT-2:
+// it also takes the allowlist check from here, so a delisted reader cannot write reports.
 module.exports = {
   enforce:            enforce,
   verifyIdToken:      verifyIdToken,
+  verifyClaims:       _verifyClaims,
+  isListed:           _isListed,
   loadServiceAccount: loadServiceAccount,
   bearer:             _bearer,
   saAccessToken:      _saAccessToken

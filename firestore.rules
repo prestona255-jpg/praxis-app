@@ -2,6 +2,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // L3.2 (j) THE INVITE ALLOWLIST. A signed-in reader is on the list when
+    // betaAllowlist/{uid} exists, or -- email verified -- betaAllowlist/{lowercased
+    // email} exists (uid first; ruled 25 Oct). Every user and social collection below
+    // requires it for read and write, so a uid not on the list reads and writes nothing
+    // except what deleting its own account needs (the ruling below). Preston edits
+    // the list by hand in the Firebase console (docs/checkpoints/l3.md, Stage 2).
+    // RULED (Preston, L3.2): the list gates READ and WRITE only. DELETE of a reader's
+    // own documents needs only a signed-in uid, so a reader taken off the list (or never
+    // on it) can still delete their own cloud data -- and (option 1) a reader may READ
+    // their own publishedArcs / follows / buildOns, list or no list, because account
+    // deletion has to query those before it can delete them.
+    function onList() {
+      return request.auth != null
+             && (exists(/databases/$(database)/documents/betaAllowlist/$(request.auth.uid))
+                 || (request.auth.token.email is string
+                     && request.auth.token.email_verified == true
+                     && exists(/databases/$(database)/documents/betaAllowlist/$(request.auth.token.email.lower()))));
+    }
+    // A reader may read ONLY their own list entry (by uid or by lowercased email) --
+    // that read is how the app tells "not on the list" from "on it". No listing, no
+    // client writes: the list is Preston's, edited in the console.
+    match /betaAllowlist/{key} {
+      allow get: if request.auth != null
+                 && (key == request.auth.uid
+                     || (request.auth.token.email is string && key == request.auth.token.email.lower()));
+      allow list, create, update, delete: if false;
+    }
+    // L3.1 error counts: written only by the error-counts function's service account.
+    match /errorReports/{id} {
+      allow read, write: if false;
+    }
+
     // An update that touches ONLY walkedBy and raises it by exactly 1. This is
     // what lets any authed reader anonymously mark that they walked an arc,
     // without being able to alter any authored content. Declared first so it
@@ -9,7 +41,7 @@ service cloud.firestore {
     // being present on every published doc (publishArc stamps 0 on first
     // publish; seeds stamp 0) — a missing field would make this deny.
     function isWalkedByIncrement() {
-      return request.auth != null
+      return onList()
              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['walkedBy'])
              && request.resource.data.walkedBy == resource.data.walkedBy + 1;
     }
@@ -33,36 +65,44 @@ service cloud.firestore {
     // Deny-by-default everywhere else; each doc keyed by owner uid.
     // ─────────────────────────────────────────────────────────────────
     match /userBooks/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userArcs/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userNotebook/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userSubTheories/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userProfiles/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userThemes/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userReaderModel/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
     match /userArtifacts/{uid} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == uid;
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -81,13 +121,16 @@ service cloud.firestore {
     // Any authed user may increment the anonymous walkedBy counter and NOTHING
     // ELSE.
     match /publishedArcs/{arcId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
+      // L3.2 ruling (option 1): the AUTHOR may always read their own projection, list
+      // or no list, so account deletion can find it.
+      allow read: if onList()
+                  || (request.auth != null && resource.data.authorUid == request.auth.uid);
+      allow create: if onList()
                     && request.resource.data.authorUid == request.auth.uid
                     && request.resource.data.keys().hasOnly(publishedArcKeys());
-      allow delete: if request.auth != null
+      allow delete: if request.auth != null   // L3.2 ruling: deletion is never list-gated
                     && resource.data.authorUid == request.auth.uid;
-      allow update: if (request.auth != null
+      allow update: if (onList()
                         && resource.data.authorUid == request.auth.uid
                         && request.resource.data.keys().hasOnly(publishedArcKeys()))
                     || isWalkedByIncrement();
@@ -100,13 +143,13 @@ service cloud.firestore {
     // userProfiles doc stays private (see above) — this is the only public
     // identity artifact.
     match /publicProfiles/{uid} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null
+      allow read: if onList();
+      allow create, update: if onList()
                             && request.auth.uid == uid
                             && request.resource.data.keys().hasOnly(publicProfileKeys());
       // P1 SAFETY (2026-09-03): the owner may DELETE their public projection --
       // without this the public name + publishedArcIds outlived the account.
-      allow delete: if request.auth != null
+      allow delete: if request.auth != null   // L3.2 ruling: deletion is never list-gated
                     && request.auth.uid == uid;
     }
 
@@ -115,15 +158,17 @@ service cloud.firestore {
     // Non-anonymous by design — the followed user can read the edge and learn
     // followerUid (matches "always readable by the followed person").
     match /follows/{edgeId} {
+      // L3.2 ruling (option 1): an endpoint's own edges are readable list or no list,
+      // so account deletion can find them.
       allow read: if request.auth != null
                   && (resource.data.followerUid == request.auth.uid
                       || resource.data.targetUid == request.auth.uid);
-      allow create: if request.auth != null
+      allow create: if onList()
                     && request.resource.data.followerUid == request.auth.uid;
       // P1 SAFETY (2026-09-03): EITHER endpoint may delete the edge -- a reader
       // deleting their account must be able to remove the edges that point AT
       // them, not only the ones they made.
-      allow delete: if request.auth != null
+      allow delete: if request.auth != null   // L3.2 ruling: deletion is never list-gated
                     && (resource.data.followerUid == request.auth.uid
                         || resource.data.targetUid == request.auth.uid);
     }
@@ -133,15 +178,15 @@ service cloud.firestore {
     // asker (fromUid) and the arc's author (resolved from the public
     // projection). Written only by the author of the contribution (fromUid).
     match /buildOns/{id} {
-      allow read: if (request.auth != null && resource.data.type == 'build-on')
-                  || (request.auth != null
+      allow read: if (onList() && resource.data.type == 'build-on')
+                  || (request.auth != null   // L3.2 ruling (option 1): own contributions, list or no list
                       && resource.data.fromUid == request.auth.uid)
-                  || (request.auth != null
+                  || (onList()
                       && exists(/databases/$(database)/documents/publishedArcs/$(resource.data.targetArcId))
                       && get(/databases/$(database)/documents/publishedArcs/$(resource.data.targetArcId)).data.authorUid == request.auth.uid);
-      allow create: if request.auth != null
+      allow create: if onList()
                     && request.resource.data.fromUid == request.auth.uid;
-      allow delete: if request.auth != null
+      allow delete: if request.auth != null   // L3.2 ruling: deletion is never list-gated
                     && resource.data.fromUid == request.auth.uid;
     }
 

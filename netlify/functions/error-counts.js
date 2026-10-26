@@ -7,8 +7,9 @@
 // never any part of an error message; "opened" = the app opened today; the bundle
 // version. Any other key, any text-shaped kind, any non-integer count -> 400.
 //
-// Who may send: a signed-in reader (Firebase ID token, verified by lib/ceiling.js's
-// verifyIdToken) through the same shared-secret gate the other functions use. The
+// Who may send: a signed-in reader on the invite allowlist (Firebase ID token, verified
+// by lib/ceiling.js's verifyClaims; listed per its isListed -- L3.2) through the same
+// shared-secret gate the other functions use. The
 // uid is used ONLY to admit the request and is NEVER stored: each report becomes
 // one Firestore document errorReports/<random id> = { day, version, opened, kinds },
 // written with the service account (the rules grant no client access to it).
@@ -104,7 +105,8 @@ exports.handler = async function (event) {
   var sa = ceiling.loadServiceAccount();
   if (!sa) { return _json(503, { error: 'unconfigured', code: 'ceiling_unconfigured' }); }
   var nowMs = Date.now();
-  var uid = await ceiling.verifyIdToken(ceiling.bearer(event), sa.project_id, nowMs);
+  var claims = await ceiling.verifyClaims(ceiling.bearer(event), sa.project_id, nowMs);
+  var uid = claims ? claims.sub : null;
   if (!uid) { return _json(401, { error: 'unauthenticated', code: 'unauthenticated' }); }
   // uid admitted the request; from here it is not read again and never written.
 
@@ -115,7 +117,12 @@ exports.handler = async function (event) {
 
   try {
     var access = await ceiling.saAccessToken(sa, nowMs);
-    var id = crypto.randomBytes(12).toString('hex');
+    // L3.2 RT-2: the same allowlist as the rules and the AI proxies (a read failure throws
+    // to the catch below: 503, nothing written).
+    if (!(await ceiling.isListed(sa.project_id, claims, access))) {
+      return _json(403, { error: 'not on the list', code: 'not_listed' });
+    }
+    var id =crypto.randomBytes(12).toString('hex');
     var name = 'projects/' + sa.project_id + '/databases/(default)/documents/errorReports/' + id;
     var day = new Date(nowMs).toISOString().substring(0, 10);
     var res = await fetch('https://firestore.googleapis.com/v1/projects/' + sa.project_id + '/databases/(default)/documents:commit', {

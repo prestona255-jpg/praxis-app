@@ -21,6 +21,12 @@ var ELEVENLABS_OUTPUT_FORMAT = 'mp3_44100_128';
 // payload on the billable ElevenLabs key.
 var MAX_TTS_CHARS = 5000;
 
+// L3.2 (k): this endpoint JOINS the per-uid AI cost ceiling, the same way
+// claude-proxy and shelf-vision use it -- the SAME aiUsage/{uid} counter (F-K1: one
+// cost per reader, already removed by account deletion), identity from the verified
+// Firebase ID token, the invite allowlist (F-K2), fail CLOSED.
+var ceiling = require('./lib/ceiling.js');
+
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -28,7 +34,7 @@ exports.handler = async function(event) {
       headers: {
         'Access-Control-Allow-Origin':  '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key',
+        'Access-Control-Allow-Headers': 'Content-Type, x-praxis-key, Authorization',
       },
       body: ''
     };
@@ -65,6 +71,11 @@ exports.handler = async function(event) {
       body: JSON.stringify({ error: 'unauthorized' })
     };
   }
+
+  // L3.2 (k): the per-uid ceiling (identity + list + count) before body parse,
+  // exactly as claude-proxy does. 401 / 403 / 429 / 503 are returned as-is.
+  var gate = await ceiling.enforce(event, Date.now());
+  if (gate) { return gate; }
 
   try {
     var body = JSON.parse(event.body || '{}');

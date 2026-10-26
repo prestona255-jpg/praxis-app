@@ -544,6 +544,10 @@ var Intros = (function () {
     if (keyHandler) { document.removeEventListener('keydown', keyHandler); keyHandler = null; }
     if (rootEl && rootEl.parentNode) { rootEl.parentNode.removeChild(rootEl); }
     rootEl = stageEl = dotsEl = nextEl = skipEl = backEl = null;
+    // L3.2 (m) THE FIRST-SIGN-IN RENDER GAP (census §3.1): on a first-ever sign-in no
+    // loader answers "found", so nothing had re-rendered the signed-in surface under
+    // the journey -- closing it revealed the signed-out page. Re-render, then resume.
+    if (window.views && typeof window.views.renderRoute === 'function') { window.views.renderRoute(); }
     panelForHash();           // resume per-page panels for the revealed surface
   }
 
@@ -627,6 +631,9 @@ var Intros = (function () {
 
   function panelForHash() {
     removePanel();               // clear the previous surface's panel on nav
+    // L3.2 (j): a reader held at the invite allowlist sees only the gate screen --
+    // no page introductions over it.
+    if (typeof L3_LIST_GATE !== 'undefined' && L3_LIST_GATE) { return; }
     maybeShowPanel(introForHash(location.hash));
   }
 
@@ -675,7 +682,8 @@ var Intros = (function () {
     buildAboutOrientation: buildAboutOrientation,
     maybeShowPanel: maybeShowPanel,
     showPanel: showPanel,
-    initPanels: initPanels
+    initPanels: initPanels,
+    panelForHash: panelForHash   // L3.2: the allowlist gate re-runs it to clear a panel already up
   };
 })();
 window.Intros = Intros;

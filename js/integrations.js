@@ -63,6 +63,9 @@ var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendin
 var profileLoaded            = false;
 var readerModelLoaded        = false;
 var profileWritePending      = false;
+// L3.2 (j): null while the app may load; 'not-listed' | 'offline' while the signed-in
+// uid is held at the allowlist (views.renderRoute draws the gate screen instead).
+var L3_LIST_GATE             = null;
 var readerModelWritePending  = false;
 
 // F-DL4: reset ALL ten cloud-sync latches on a same-tab account switch. On an
@@ -126,6 +129,32 @@ firebase.auth().onAuthStateChanged(function (u) {
     // the idle state via the load callbacks below.
     if (window.YumiUI && typeof window.YumiUI.refreshPanelForAuth === 'function') {
       window.YumiUI.refreshPanelForAuth();
+    }
+
+    // L3.2 (j) THE INVITE ALLOWLIST -- asked BEFORE any Firestore read or write for
+    // this uid. Every loader below runs inside this callback, so a uid that is not on
+    // the list loads nothing, and (with the load latches never opening) writes nothing.
+    // Branches: ok -> load; 'not-listed' (a definite answer) -> ruling 63's screen;
+    // 'offline' (could not ask, and this device never saw this uid pass) -> the quiet
+    // offline card. A uid that passed before on this device is let in from the stamp.
+    L3_LIST_GATE = null;
+    l3CheckAllowlist(u, function (verdict) {
+    // L3.2 RT-4 (late verdict): the read can take seconds offline. If this uid signed
+    // out, or another signed in, meanwhile, the answer is stale -- drop it (never set a
+    // gate on a signed-out page, never reopen an old uid's load latches).
+    var curFb = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!curFb || curFb.uid !== u.uid) { return; }
+    if (verdict.status !== 'ok') {
+      L3_LIST_GATE = verdict.status;
+      if (typeof renderRoute === 'function') { renderRoute(); }
+      if (window.Intros && typeof window.Intros.panelForHash === 'function') { window.Intros.panelForHash(); }   // clears a page intro already up
+      return;
+    }
+    // L3.2 (i) NEW ACCOUNTS START EMPTY: the shared worked example leaves every account
+    // but the owner's (seed:true on the owner's list entry). Only on an affirmative
+    // answer from the list -- never from the cached stamp, never on an error.
+    if (verdict.source === 'list' && !verdict.owner && typeof purgeSharedSeed === 'function') {
+      if (purgeSharedSeed() > 0 && typeof renderRoute === 'function') { renderRoute(); }
     }
 
     // Firestore Stage 1: fetch this user's book-doc from
@@ -687,6 +716,10 @@ firebase.auth().onAuthStateChanged(function (u) {
           setProfile(u.uid, { yumiReadsAlong: false });
           profileWritePending = true;
         }
+        // L3.2 (m) THE FIRST-SIGN-IN RENDER GAP (census §3.1): every other renderRoute in
+        // this path sits under 'found', so a first-ever sign-in (all loaders absent)
+        // never re-rendered the signed-in surface. The settled-absent profile renders it.
+        if (window.views && window.views.renderRoute) { window.views.renderRoute(); }
       } else {
         console.warn('loadProfileFromFirestore: fetch failed, keeping cache', profResult.error);
       }
@@ -736,9 +769,20 @@ firebase.auth().onAuthStateChanged(function (u) {
         saveReaderModelToFirestore(u.uid, getReaderModel(u.uid), function () {});
       }
     });
+    });   // L3.2 (j): end of l3CheckAllowlist -- the loaders above run only for a listed uid
   } else {
+    L3_LIST_GATE = null;   // L3.2: signing out leaves the list screen
     clearUserState();
     sv('praxis_user', null);
+    // L3.2 RT-5a: after a non-owner's purge the in-memory state is seedless and marked
+    // purged; saving it now would write that into the anon bucket and lose the signed-out
+    // worked example for good. Re-read the anon bucket instead (it still holds the seed);
+    // with no anon bucket yet, drop the marker so loadState mints it as for a first visit.
+    if (state.seeds && state.seeds.pedagogyOfDesire && state.seeds.pedagogyOfDesire.purged === true &&
+        typeof loadState === 'function') {
+      if (ls('praxis_state_anon', null) === null) { delete state.seeds.pedagogyOfDesire; }
+      loadState();
+    }
     console.log('onAuthStateChanged: signed out');
     // Stage 14.3 Stage 4.2: repaint the current route so the UI reflects
     // the signed-out state immediately (e.g. the Account page falls back
@@ -1042,6 +1086,64 @@ function loadProfileFromFirestore(uid, callback) {
   } catch (e) {
     finish({ status: 'error', error: e });
   }
+}
+
+// L3.2 (j) THE ALLOWLIST CHECK. Reads betaAllowlist/{uid}, then -- only if that is
+// absent -- betaAllowlist/{lowercased email} (uid first; ruled 25 Oct). Calls back once:
+//   { status:'ok', owner, source:'list' }   an entry exists (owner = its seed:true)
+//   { status:'not-listed' }                 BOTH reads answered "no such entry"
+//   { status:'ok', owner, source:'cache' }  a read failed, but this device saw this
+//                                           uid pass before (F-J1's allowOk stamp)
+//   { status:'offline' }                    a read failed and it never passed here
+// A pass stamps allowOk (+ the owner bit) per uid on this device, so a later offline
+// launch is let in by uid. The client never writes the list (the rules forbid it).
+function l3CheckAllowlist(fbUser, cb) {
+  var uid = fbUser && fbUser.uid;
+  var email = (fbUser && typeof fbUser.email === 'string') ? fbUser.email.toLowerCase() : '';
+  var done = false;
+  function finish(v) { if (done) { return; } done = true; cb(v); }
+  function pass(doc) {
+    var owner = !!(doc && doc.data && doc.data() && doc.data().seed === true);
+    sv('praxis_allow_ok_' + uid, 1);
+    sv('praxis_seed_owner_' + uid, owner ? 1 : 0);
+    finish({ status: 'ok', owner: owner, source: 'list' });
+  }
+  function failed(err) {
+    console.warn('l3CheckAllowlist: could not read the list', err && err.code);
+    if (ls('praxis_allow_ok_' + uid, 0)) {
+      finish({ status: 'ok', owner: !!ls('praxis_seed_owner_' + uid, 0), source: 'cache' });
+    } else {
+      finish({ status: 'offline' });
+    }
+  }
+  // A definite "no" also clears a stale pass stamp, so a reader taken off the list is
+  // not let in later from the cache (RT-11).
+  function notListed() { sv('praxis_allow_ok_' + uid, null); finish({ status: 'not-listed' }); }
+  if (!uid) { finish({ status: 'not-listed' }); return; }
+  // The email key counts only for a VERIFIED email -- the same rule as onList() in
+  // firestore.rules, so the client never admits a reader the rules then deny.
+  if (fbUser.emailVerified !== true) { email = ''; }
+  try {
+    var col = firebase.firestore().collection('betaAllowlist');
+    col.doc(uid).get().then(function (d1) {
+      if (d1 && d1.exists) { pass(d1); return; }
+      if (!email) { notListed(); return; }
+      col.doc(email).get().then(function (d2) {
+        if (d2 && d2.exists) { pass(d2); return; }
+        notListed();
+      }).catch(failed);
+    }).catch(failed);
+  } catch (e) {
+    failed(e);
+  }
+}
+// L3.2: the offline card re-asks the list when the connection comes back.
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('online', function () {
+    if (L3_LIST_GATE !== 'offline' || typeof firebase === 'undefined') { return; }
+    var fu = firebase.auth().currentUser;
+    if (fu) { L3_LIST_GATE = null; location.reload(); }
+  });
 }
 
 // Stage 14.3 Stage 1: per-user profile-doc write to /userProfiles/{uid}.
@@ -2734,10 +2836,16 @@ function playLine(text, onStart, onEnd) {
     return;
   }
 
-  fetch(ELEVENLABS_PROXY_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY },
-    body:    JSON.stringify({ text: t })
+  // L3.2 (k): the proxy now enforces the per-uid ceiling, so the call carries the
+  // Firebase ID token like the Claude door does. No signed-in user -> silent, no send.
+  var ttsUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if (!ttsUser || typeof ttsUser.getIdToken !== 'function') { if (typeof onEnd === 'function') { onEnd(); } return; }
+  ttsUser.getIdToken().then(function (token) {
+    return fetch(ELEVENLABS_PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-praxis-key': PRAXIS_CLIENT_KEY, 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ text: t })
+    });
   }).then(function (res) {
     if (!res || !res.ok) { return null; }
     return res.blob();

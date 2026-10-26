@@ -428,6 +428,9 @@ function renderRoute() {
   if (navOpen) {
     navOpen.classList.remove('app-nav-mobile-open');
   }
+  // L3.2 (j): a signed-in uid held at the invite allowlist sees ONLY the gate screen
+  // (ruling 63's words, or the quiet offline card) on every route.
+  if (typeof L3_LIST_GATE !== 'undefined' && L3_LIST_GATE) { renderListGate(L3_LIST_GATE); return; }
 
   // MW-1 (P1/P8): release the Shelf Manage-sheet's page scroll-lock and purge its
   // listeners on EVERY route change. Opening the mobile sheet locks body scroll +
@@ -1510,6 +1513,52 @@ function openYumiYesSheet(origin) {
   window.addEventListener('hashchange', closeYumiYesSheet);
   var first = sheet.querySelector('.yes-btn');
   if (first && first.focus) { first.focus(); }
+}
+
+// L3.2 (j) THE GATE SCREEN. 'not-listed' = ruling 63, verbatim: the title, the body,
+// one action ("Ask Preston for a place" -- the plain mail link ruled 25 Oct, carrying
+// the first 8 characters of the uid as the sign-in code) and a quiet "Sign out".
+// 'offline' = the list could not be asked and this device never saw this uid pass:
+// Day Three's quiet offline card, title only (its body speaks of a shelf that is
+// here, which is not true for an account that has not loaded), never ruling 63.
+function renderListGate(kind) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var wrap = document.createElement('section');
+  wrap.className = 'list-gate';
+  var card = document.createElement('div');
+  card.className = 'list-gate-card';
+  card.setAttribute('role', 'status');
+  var h = document.createElement('h1');
+  h.className = 'list-gate-title';
+  var u = getCurrentUser();
+  if (kind === 'not-listed') {
+    h.textContent = 'Praxis is a small beta right now';
+    card.appendChild(h);
+    var p = document.createElement('p');
+    p.className = 'list-gate-body';
+    p.textContent = 'This address isn\'t on the list yet. Preston adds readers by hand, so nothing is wrong on your side.';
+    card.appendChild(p);
+    var code = (u && u.uid) ? u.uid.substring(0, 8) : '';
+    var ask = document.createElement('a');
+    ask.className = 'list-gate-ask';
+    ask.href = 'mailto:prestona255@gmail.com?subject=' + encodeURIComponent('Praxis beta — a place') +
+      '&body=' + encodeURIComponent('My sign-in code is ' + code + '.');
+    ask.textContent = 'Ask Preston for a place';
+    card.appendChild(ask);
+  } else {
+    h.textContent = 'You’re offline.';
+    card.appendChild(h);
+  }
+  var out = document.createElement('button');
+  out.type = 'button';
+  out.className = 'list-gate-signout';
+  out.textContent = 'Sign out';
+  out.addEventListener('click', function () { if (typeof signOut === 'function') { signOut(); } });
+  card.appendChild(out);
+  wrap.appendChild(card);
+  host.appendChild(wrap);
 }
 
 // L3.1 HOME'S YUMI DOCK (ruled 25 Oct, consent-copy "Added 25 Oct" #1). Before the

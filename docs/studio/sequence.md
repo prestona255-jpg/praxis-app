@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-26 (L3.2 — HYGIENE, built local v3.310)** — no re-order, no retirement, so no `PROPOSED:` flag. L3.1 is
+  committed local (`59d3ee0`, v3.309) and unpushed by ruling. L3.2 builds the invite allowlist (`betaAllowlist`, uid or
+  lowercased email; rules gate read + write on every user + social collection, never a reader's deletion of their own
+  data — Preston's ruling; ruling 63's screen; the quiet offline card), new accounts
+  start empty (the minted seed is purged for every account but the owner's, on an affirmative list answer only), ceilings
+  on the two voice proxies (the shared `aiUsage` counter + the allowlist at the proxies and at `error-counts`), the
+  never-silent reply card, and the first-sign-in render gap. H-1's cache / backup / auth-edges / error-reporting items are
+  UNDEFINED in the repo and were not built. Before the push: Preston's own `betaAllowlist` entry (seed:true), then the
+  rules, then the push. Three gate-screen / copy forks (F-L3.2-a/b/c) wait on Preston. Record: `docs/checkpoints/l3.md`.
 - **2026-10-25 (L3.1 — CONSENT, built local v3.309)** — L3 opens as a lane beside L7 (fifteenth sitting r64: L3.1 consent
   v3.309 then L3.2 hygiene v3.310); nothing re-ordered or retired, so no `PROPOSED:` flag. Stage 0 corrected the brief
   nine times before a line was built (the seed is minted, not loaded; no owner identity in code; the blank first reply is
@@ -1375,13 +1384,13 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
-- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent BUILT local v3.309, awaiting commit; L3.2 hygiene next)** —
+- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent COMMITTED local `59d3ee0` v3.309; L3.2 hygiene BUILT local v3.310, awaiting commit; both unpushed)** —
   the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
   this" per artifact, opt-in error counts, the honest camera card (L3.1); then new accounts start empty, the invite
   allowlist, ceilings on the voice proxies, the never-silent reply and the first-sign-in render gap (L3.2).
   Rulings: `docs/checkpoints/p2-fifteenth-sitting-rulings.md` 52–53, 63–64 + "Rulings, Stage 0" in the record.
   Record: `docs/checkpoints/l3.md`.
-  touches: [home, yumi-sees, profile, book-detail, artifact, scan, capture, yumi]
+  touches: [home, yumi-sees, profile, book-detail, artifact, scan, capture, yumi, shelf, arcs, notebook, intros, cross-cutting]
 - [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a SHIPPED 2026-10-18, v3.300–v3.302)** —
   the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
   `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Pushed `2001f6e`; Preston's on-device

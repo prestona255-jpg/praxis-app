@@ -347,7 +347,17 @@
         if (controller) { try { controller.abort(); } catch (e0) {} }
         finishErr();
       }, TRANSCRIBE_TIMEOUT_MS);
-      fetch(TRANSCRIBE_PROXY_URL, opts).then(function (res) {
+      // L3.2 seam (closes L3.1 RT-10 at the sender): the voice reaches ElevenLabs only
+      // after "OK, dictate" -- fail-closed here as playLine is, whatever the caller. (k): the proxy now
+      // enforces the per-uid ceiling, so the call carries the Firebase ID token.
+      var cu = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+      var pf = (cu && cu.uid && typeof getProfile === 'function') ? getProfile(cu.uid) : null;
+      var fbU = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!pf || pf.dictationAsked !== 'granted' || !fbU || typeof fbU.getIdToken !== 'function') { finishErr(); return; }
+      fbU.getIdToken().then(function (token) {
+        opts.headers.Authorization = 'Bearer ' + token;
+        return fetch(TRANSCRIBE_PROXY_URL, opts);
+      }).then(function (res) {
         if (!res.ok) { finishErr(); return; }
         res.json().then(function (data) {
           var text = (data && typeof data.transcript === 'string') ? data.transcript : '';

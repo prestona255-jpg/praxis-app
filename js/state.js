@@ -2101,6 +2101,47 @@ function _markProfileRefresh() { sv('praxis_yumi_profile_cooldown', Date.now());
 // (buildExportBundle + prepareExport / deliverExport) and is built from the SAME
 // eight Firestore payload builders the sync writes, so it equals the cloud record.
 
+// L3.2 (i) NEW ACCOUNTS START EMPTY (twelfth r14). The shared '__praxis_seed__' worked
+// example is minted LOCALLY by migrate() into any empty bucket (anon and every new uid)
+// and carries into a first sign-in; nothing fetches it. So it is removed here, on a
+// signed-in account the allowlist says is NOT the owner (integrations.js calls this only
+// on an affirmative list answer, never from the cached stamp, never on an error).
+// Removes every sentinel-owned arc / sub-theory / artifact / note and every seed book
+// no shelf owns; keeps state.seeds.pedagogyOfDesire with attempted + contentSeeded so
+// migrate() never re-mints it into this bucket. Local only: seed records never sync.
+// Idempotent; returns how many records it removed.
+function purgeSharedSeed() {
+  var removed = 0, k, i;
+  var sd = (state.seeds && state.seeds.pedagogyOfDesire) ? state.seeds.pedagogyOfDesire : null;
+  var owned = {}, uk;
+  if (state.userBooks) {
+    for (uk in state.userBooks) {
+      if (state.userBooks.hasOwnProperty(uk) && state.userBooks[uk] && state.userBooks[uk].bookIds instanceof Array) {
+        for (i = 0; i < state.userBooks[uk].bookIds.length; i = i + 1) { owned[state.userBooks[uk].bookIds[i]] = true; }
+      }
+    }
+  }
+  var seedBookIds = (sd && sd.bookIds instanceof Array) ? sd.bookIds : [];
+  for (i = 0; i < seedBookIds.length; i = i + 1) {
+    if (state.books && state.books[seedBookIds[i]] && !owned[seedBookIds[i]]) { delete state.books[seedBookIds[i]]; removed = removed + 1; }
+  }
+  var maps = ['arcs', 'subTheories', 'bookArtifacts', 'notebookEntries'], m, src;
+  for (m = 0; m < maps.length; m = m + 1) {
+    src = state[maps[m]];
+    if (!src || typeof src !== 'object') { continue; }
+    for (k in src) {
+      if (src.hasOwnProperty(k) && src[k] && src[k].userId === '__praxis_seed__') { delete src[k]; removed = removed + 1; }
+    }
+  }
+  if (!state.seeds) { state.seeds = {}; }
+  if (!state.seeds.pedagogyOfDesire) { state.seeds.pedagogyOfDesire = {}; }
+  state.seeds.pedagogyOfDesire.attempted = true;
+  state.seeds.pedagogyOfDesire.contentSeeded = true;
+  state.seeds.pedagogyOfDesire.purged = true;
+  if (removed > 0) { saveState(); }
+  return removed;
+}
+
 function clearUserState() {
   state.currentBookId = null;
   state.currentArcId = null;

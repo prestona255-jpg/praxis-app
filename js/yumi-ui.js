@@ -350,6 +350,52 @@ function renderReadAloudAsk(pendingText) {
   yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
 }
 
+// L3.2 (l) NEVER SILENT (twelfth r23a; words ruled 25 Oct from Day Three). When her
+// reply fails her own voice check the line is still never shown, but the reader is
+// told and can try again. "Try again" resends the SAME text as the same turn
+// (sendMessage retry: no second user turn). The instrument first (RT-11): the layer
+// that held the line is logged, so the cause of a blank reply can be read.
+function renderYumiRetry(text, layer) {
+  if (!yumiBodyEl) { return; }
+  if (window.console && console.info) { console.info('[yumi] reply held by her check, layer=' + (layer || 'unknown')); }
+  var old = yumiBodyEl.querySelector('.yumi-retry');
+  if (old && old.parentNode) { old.parentNode.removeChild(old); }
+  var card = document.createElement('div');
+  card.className = 'yumi-retry';
+  card.setAttribute('role', 'status');
+  var s = document.createElement('span');
+  s.textContent = 'Let me try that again. What I had didn’t pass my own check.';
+  card.appendChild(s);
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'yumi-retry-btn';
+  b.textContent = 'Try again';
+  b.addEventListener('click', function () {
+    if (yumi_request_in_flight) { return; }
+    if (card.parentNode) { card.parentNode.removeChild(card); }
+    yumi_request_in_flight = true;
+    if (yumiSendBtnEl) { yumiSendBtnEl.disabled = true; }
+    renderTypingIndicator();
+    window.YumiBrain.sendMessage(text, { retry: true }).then(function (result) {
+      removeTypingIndicator();
+      if (result && result.silent) { renderYumiRetry(text, result.layer); }
+      else { renderYumiMessage(result.text, null, { speak: true }); }
+      if (yumi_handsfree_active) { handsFreeReArm(); }
+    }, function (err) {
+      removeTypingIndicator();
+      yumiRenderProxyError(err);
+      if (yumi_handsfree_active) { handsFreeReArm(); }
+    }).then(retryDone, retryDone);   // RT-7: unlock even if a handler above threw
+  });
+  function retryDone() {
+    yumi_request_in_flight = false;
+    if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
+  }
+  card.appendChild(b);
+  yumiBodyEl.appendChild(card);
+  yumiBodyEl.scrollTop = yumiBodyEl.scrollHeight;
+}
+
 function renderTypingIndicator() {
   if (!yumiBodyEl) { return; }
   removeTypingIndicator();
@@ -1355,6 +1401,7 @@ function buildYumiPanel() {
           return window.YumiBrain.sendMessage(trimmed).then(function (result) {
             removeTypingIndicator();
             if (!(result && result.silent)) { renderYumiMessage(result.text); }
+            else { renderYumiRetry(trimmed, result.layer); }   // L3.2 (l): never silent
             yumi_request_in_flight = false;
             if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
           });
@@ -1379,9 +1426,11 @@ function buildYumiPanel() {
     function runChat() {
       window.YumiBrain.sendMessage(trimmed).then(function (result) {
         removeTypingIndicator();
-        // Fail-closed gate: a suppressed utterance renders nothing -- no
-        // error, no fallback line, no chrome. Yumi simply stays silent.
+        // Fail-closed gate: a suppressed utterance is never SHOWN -- but L3.2 (l)
+        // (twelfth r23a, "never silent"): the reader is told, in Day Three's words,
+        // and can try again. The line that failed is still never rendered.
         if (result && result.silent) {
+          renderYumiRetry(trimmed, result.layer);
           if (yumi_handsfree_active) { handsFreeReArm(); }
           return;
         }

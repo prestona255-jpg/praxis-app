@@ -17616,3 +17616,21 @@ body.yumi-quiet #yumi-bloom{ display:none !important; }
 .yumi-ledger .ledger-yes-label small{ color:var(--card-ink-2); }
 .yumi-ledger .ledger-yes{ border-color:rgba(38,32,25,.14); }
 .yumi-ledger .ledger-lens .transparency-section-label, .yumi-ledger .ledger-lens .transparency-section-body{ color:var(--card-ink); }   /* L3.1 RT-3: new words, not the inherited (L1) row colour */
+
+/* L3.2 (j) the invite-allowlist gate screen (ruling 63; quiet-card dialect). A vellum card on any ground:
+   the on-card ramp, as the yes sheet and .lit-page use. */
+.list-gate{ display:flex; justify-content:center; padding:72px 16px 48px; }
+.list-gate-card{
+  width:100%; max-width:440px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;
+  padding:20px 20px 18px; border-radius:var(--radius-lg); border:1px solid rgba(38,32,25,.14);
+  border-left:3px solid var(--gold-on-card); background-color:var(--card-1); color:var(--card-ink);
+}
+.list-gate-title{ margin:0; font-family:var(--font-serif); font-weight:500; font-size:26px; line-height:1.15; color:var(--card-ink); }
+.list-gate-body{ margin:0; font-family:var(--font-body); font-size:15px; line-height:1.5; color:var(--card-ink-2); }
+.list-gate-ask{ align-self:flex-start; display:inline-flex; align-items:center; min-height:44px; font-family:var(--font-body); font-size:15px; font-weight:500; color:var(--gold-ink); text-decoration:underline; text-underline-offset:3px; }
+.list-gate-signout{ align-self:flex-start; min-height:44px; padding:0; border:none; background:transparent; cursor:pointer; font-family:var(--font-body); font-size:13px; color:var(--card-ink-2); text-decoration:underline; text-underline-offset:3px; }
+.list-gate-ask:focus-visible, .list-gate-signout:focus-visible{ outline:2px solid var(--gold-ink); outline-offset:2px; }
+
+/* L3.2 (l) Yumi's never-silent card (Day Three .retry): her line failed her own check; Try again. */
+.yumi-retry{ display:flex; flex-direction:column; gap:8px; margin:10px 0; padding:10px 12px; border:1px dashed var(--line-page-2); border-radius:var(--radius-lg); font-family:var(--font-body); font-size:14px; }
+.yumi-retry-btn{ align-self:flex-start; min-height:44px; padding:0 4px; border:none; background:transparent; cursor:pointer; font-family:var(--font-body); font-size:14px; font-weight:500; color:inherit; text-decoration:underline; text-underline-offset:3px; }
