@@ -355,6 +355,20 @@ function renderReadAloudAsk(pendingText) {
 // told and can try again. "Try again" resends the SAME text as the same turn
 // (sendMessage retry: no second user turn). The instrument first (RT-11): the layer
 // that held the line is logged, so the cause of a blank reply can be read.
+// L3.2b (F-L3.2-b, ruled 26 Oct): a reply held back always shows SOMETHING (never
+// silent), but the "Let me try that again" card speaks only when her OWN CHECK held
+// it. The grader's own non-answers -- no candidate ('empty'), its daily budget spent
+// ('budget'), its call failing ('error') -- are not her check: they get the panel's
+// existing error line. Every silent result goes through here, so there is one fork.
+function renderYumiHeld(text, layer) {
+  if (layer === 'empty' || layer === 'budget' || layer === 'error') {
+    if (window.console && console.info) { console.info('[yumi] reply not checked, layer=' + layer); }
+    renderError();
+    return;
+  }
+  renderYumiRetry(text, layer);
+}
+
 function renderYumiRetry(text, layer) {
   if (!yumiBodyEl) { return; }
   if (window.console && console.info) { console.info('[yumi] reply held by her check, layer=' + (layer || 'unknown')); }
@@ -378,7 +392,7 @@ function renderYumiRetry(text, layer) {
     renderTypingIndicator();
     window.YumiBrain.sendMessage(text, { retry: true }).then(function (result) {
       removeTypingIndicator();
-      if (result && result.silent) { renderYumiRetry(text, result.layer); }
+      if (result && result.silent) { renderYumiHeld(text, result.layer); }
       else { renderYumiMessage(result.text, null, { speak: true }); }
       if (yumi_handsfree_active) { handsFreeReArm(); }
     }, function (err) {
@@ -1401,7 +1415,7 @@ function buildYumiPanel() {
           return window.YumiBrain.sendMessage(trimmed).then(function (result) {
             removeTypingIndicator();
             if (!(result && result.silent)) { renderYumiMessage(result.text); }
-            else { renderYumiRetry(trimmed, result.layer); }   // L3.2 (l): never silent
+            else { renderYumiHeld(trimmed, result.layer); }   // L3.2 (l): never silent
             yumi_request_in_flight = false;
             if (yumiSendBtnEl) { yumiSendBtnEl.disabled = false; }
           });
@@ -1430,7 +1444,7 @@ function buildYumiPanel() {
         // (twelfth r23a, "never silent"): the reader is told, in Day Three's words,
         // and can try again. The line that failed is still never rendered.
         if (result && result.silent) {
-          renderYumiRetry(trimmed, result.layer);
+          renderYumiHeld(trimmed, result.layer);
           if (yumi_handsfree_active) { handsFreeReArm(); }
           return;
         }

@@ -17630,6 +17630,12 @@ body.yumi-quiet #yumi-bloom{ display:none !important; }
 .list-gate-ask{ align-self:flex-start; display:inline-flex; align-items:center; min-height:44px; font-family:var(--font-body); font-size:15px; font-weight:500; color:var(--gold-ink); text-decoration:underline; text-underline-offset:3px; }
 .list-gate-signout{ align-self:flex-start; min-height:44px; padding:0; border:none; background:transparent; cursor:pointer; font-family:var(--font-body); font-size:13px; color:var(--card-ink-2); text-decoration:underline; text-underline-offset:3px; }
 .list-gate-ask:focus-visible, .list-gate-signout:focus-visible{ outline:2px solid var(--gold-ink); outline-offset:2px; }
+/* L3.2b (F-L3.2-c): Try again on the offline / couldn't-check cards -- the ask link's weight, as a button. */
+.list-gate-retry{ align-self:flex-start; min-height:44px; padding:0; border:none; background:transparent; cursor:pointer; font-family:var(--font-body); font-size:15px; font-weight:500; color:var(--gold-ink); text-decoration:underline; text-underline-offset:3px; }
+.list-gate-retry:disabled{ cursor:default; opacity:.6; }
+.list-gate-retry:focus-visible{ outline:2px solid var(--gold-ink); outline-offset:2px; }
+/* L3.2b (F-L3.2-a): the capture door and the Talk seat stand down while the gate card is up. */
+body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !important; }
 
 /* L3.2 (l) Yumi's never-silent card (Day Three .retry): her line failed her own check; Try again. */
 .yumi-retry{ display:flex; flex-direction:column; gap:8px; margin:10px 0; padding:10px 12px; border:1px dashed var(--line-page-2); border-radius:var(--radius-lg); font-family:var(--font-body); font-size:14px; }

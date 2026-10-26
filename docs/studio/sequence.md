@@ -40,6 +40,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
   never-silent reply card, and the first-sign-in render gap. H-1's cache / backup / auth-edges / error-reporting items are
   UNDEFINED in the repo and were not built. Before the push: Preston's own `betaAllowlist` entry (seed:true), then the
   rules, then the push. Three gate-screen / copy forks (F-L3.2-a/b/c) wait on Preston. Record: `docs/checkpoints/l3.md`.
+- **2026-10-26 (L3.2b — GATE EDGES, built local v3.311)** — no re-order, no retirement, so no `PROPOSED:` flag. L3.2 is
+  committed local (`7ff0ec3`, v3.310). Preston ruled F-L3.2-a/b/c at the recommendation: the capture door and the Talk
+  seat stand down behind the gate card; the "Let me try that again" card speaks only when her own check held a reply
+  (empty / budget / error get the panel's error line); "You're offline." only when offline, a new "Couldn't check the
+  list" card otherwise, both with Try again (re-asks the list, no reload). The lane's push still waits on Preston.
 - **2026-10-25 (L3.1 — CONSENT, built local v3.309)** — L3 opens as a lane beside L7 (fifteenth sitting r64: L3.1 consent
   v3.309 then L3.2 hygiene v3.310); nothing re-ordered or retired, so no `PROPOSED:` flag. Stage 0 corrected the brief
   nine times before a line was built (the seed is minted, not loaded; no owner identity in code; the blank first reply is
@@ -1384,7 +1389,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
-- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent COMMITTED local `59d3ee0` v3.309; L3.2 hygiene BUILT local v3.310, awaiting commit; both unpushed)** —
+- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent COMMITTED local `59d3ee0` v3.309; L3.2 hygiene COMMITTED local `7ff0ec3` v3.310; L3.2b gate edges local v3.311; all unpushed)** —
   the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
   this" per artifact, opt-in error counts, the honest camera card (L3.1); then new accounts start empty, the invite
   allowlist, ceilings on the voice proxies, the never-silent reply and the first-sign-in render gap (L3.2).

@@ -169,3 +169,5 @@ Ruled in the design chat, 25 Oct (recorded in docs/checkpoints/l3.md, "Rulings, 
 10. What Yumi Sees · lens names and values row (ruled 25 Oct, RT-3): "Your lens names and the values you chose — so she can sort your books and name a lens." Under it, while nothing has been sent yet: "Nothing sent yet."
 11. Card 1 (the one yes), after the notes line, same register (ruled 25 Oct, RT-3): "Your lens names and the values you chose."
 12. Notes row, final (ruled 25 Oct, RT-2 — supersedes item 6's placeholder): "Your 20 most recent notes, each shortened to about 240 characters."
+13. The list gate when the reader list could not be read and the device is NOT offline (ruled 26 Oct, F-L3.2-c) — a second card in the same quiet dialect. Title: "Couldn't check the list" · Body: "Praxis couldn't reach its reader list just now. Nothing is wrong on your side." · Actions: Try again · Sign out.
+14. The offline card (ruled 26 Oct, F-L3.2-c): "You're offline." stays for the true offline case only, and gains Try again beside Sign out (Sign out ruled kept). Try again re-asks the list without a reload.

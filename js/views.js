@@ -429,8 +429,13 @@ function renderRoute() {
     navOpen.classList.remove('app-nav-mobile-open');
   }
   // L3.2 (j): a signed-in uid held at the invite allowlist sees ONLY the gate screen
-  // (ruling 63's words, or the quiet offline card) on every route.
-  if (typeof L3_LIST_GATE !== 'undefined' && L3_LIST_GATE) { renderListGate(L3_LIST_GATE); return; }
+  // (ruling 63's words, or the quiet offline card) on every route. L3.2b (F-L3.2-a):
+  // the l3-gated class on <body> stands the capture door and the Talk seat down behind it.
+  var l3Held = (typeof L3_LIST_GATE !== 'undefined' && !!L3_LIST_GATE);
+  if (document.body) {
+    if (l3Held) { document.body.classList.add('l3-gated'); } else { document.body.classList.remove('l3-gated'); }
+  }
+  if (l3Held) { renderListGate(L3_LIST_GATE); return; }
 
   // MW-1 (P1/P8): release the Shelf Manage-sheet's page scroll-lock and purge its
   // listeners on EVERY route change. Opening the mobile sheet locks body scroll +
@@ -1521,6 +1526,7 @@ function openYumiYesSheet(origin) {
 // 'offline' = the list could not be asked and this device never saw this uid pass:
 // Day Three's quiet offline card, title only (its body speaks of a shelf that is
 // here, which is not true for an account that has not loaded), never ruling 63.
+// 'list-error' (L3.2b) = online, but the read failed: "Couldn't check the list".
 function renderListGate(kind) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
@@ -1548,8 +1554,33 @@ function renderListGate(kind) {
     ask.textContent = 'Ask Preston for a place';
     card.appendChild(ask);
   } else {
-    h.textContent = 'You’re offline.';
-    card.appendChild(h);
+    // L3.2b (F-L3.2-c, ruled 26 Oct): "You’re offline." for the true offline case only;
+    // any other failure to read the list gets its own card (consent-copy, 25 Oct). Both
+    // carry Try again, which re-asks the list without a reload (integrations L3_RECHECK).
+    if (kind === 'offline') {
+      h.textContent = 'You’re offline.';
+      card.appendChild(h);
+    } else {
+      h.textContent = 'Couldn\'t check the list';
+      card.appendChild(h);
+      var pe = document.createElement('p');
+      pe.className = 'list-gate-body';
+      pe.textContent = 'Praxis couldn\'t reach its reader list just now. Nothing is wrong on your side.';
+      card.appendChild(pe);
+    }
+    var again = document.createElement('button');
+    again.type = 'button';
+    again.className = 'list-gate-retry';
+    again.textContent = 'Try again';
+    again.addEventListener('click', function () {
+      if (typeof L3_RECHECK !== 'function' || again.disabled) { return; }
+      again.disabled = true;
+      again.setAttribute('aria-busy', 'true');
+      // An answer that keeps the gate redraws this card (fresh button); one that lets
+      // the reader in tears it down. Either way this button never stays the live one.
+      L3_RECHECK();
+    });
+    card.appendChild(again);
   }
   var out = document.createElement('button');
   out.type = 'button';

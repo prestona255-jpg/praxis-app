@@ -63,9 +63,15 @@ var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendin
 var profileLoaded            = false;
 var readerModelLoaded        = false;
 var profileWritePending      = false;
-// L3.2 (j): null while the app may load; 'not-listed' | 'offline' while the signed-in
-// uid is held at the allowlist (views.renderRoute draws the gate screen instead).
+// L3.2 (j): null while the app may load; 'not-listed' | 'offline' | 'list-error' while
+// the signed-in uid is held at the allowlist (views.renderRoute draws the gate screen).
 var L3_LIST_GATE             = null;
+// L3.2b (F-L3.2-c): re-asks the list for the held uid without a reload (the gate's
+// Try again, and the 'online' event). Set per sign-in; null when signed out.
+var L3_RECHECK               = null;
+// L3.2b RT-R1: one number per sign-in (and per sign-out). A verdict from an earlier
+// sign-in -- even of the SAME uid -- is stale and is dropped, so loaders never run twice.
+var l3SignInSeq              = 0;
 var readerModelWritePending  = false;
 
 // F-DL4: reset ALL ten cloud-sync latches on a same-tab account switch. On an
@@ -135,20 +141,36 @@ firebase.auth().onAuthStateChanged(function (u) {
     // this uid. Every loader below runs inside this callback, so a uid that is not on
     // the list loads nothing, and (with the load latches never opening) writes nothing.
     // Branches: ok -> load; 'not-listed' (a definite answer) -> ruling 63's screen;
-    // 'offline' (could not ask, and this device never saw this uid pass) -> the quiet
-    // offline card. A uid that passed before on this device is let in from the stamp.
+    // 'offline' / 'list-error' (could not ask -- the device is offline, or the read
+    // failed -- and this device never saw this uid pass) -> the quiet card with Try
+    // again. A uid that passed before on this device is let in from the stamp.
     L3_LIST_GATE = null;
-    l3CheckAllowlist(u, function (verdict) {
+    // L3.2b (F-L3.2-c): the verdict handler is ONE function with two callers -- the
+    // first ask below and L3_RECHECK (the gate's Try again / coming back online), so a
+    // re-ask that comes back ok runs the very same loaders, without a reload.
+    var l3Rechecking = false;
+    l3SignInSeq = l3SignInSeq + 1;
+    var l3MySeq = l3SignInSeq;
+    var l3Verdict = function (verdict) {
     // L3.2 RT-4 (late verdict): the read can take seconds offline. If this uid signed
     // out, or another signed in, meanwhile, the answer is stale -- drop it (never set a
-    // gate on a signed-out page, never reopen an old uid's load latches).
+    // gate on a signed-out page, never reopen an old uid's load latches). L3.2b: also
+    // stale if it belongs to an EARLIER sign-in of this same uid (sign-out, sign-in).
     var curFb = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
-    if (!curFb || curFb.uid !== u.uid) { return; }
+    if (!curFb || curFb.uid !== u.uid || l3MySeq !== l3SignInSeq) { return; }
     if (verdict.status !== 'ok') {
       L3_LIST_GATE = verdict.status;
       if (typeof renderRoute === 'function') { renderRoute(); }
       if (window.Intros && typeof window.Intros.panelForHash === 'function') { window.Intros.panelForHash(); }   // clears a page intro already up
       return;
+    }
+    // Let in: no further re-asks; a gate that was up comes down before the loaders paint.
+    L3_RECHECK = null;
+    if (L3_LIST_GATE) {
+      L3_LIST_GATE = null;
+      if (typeof renderRoute === 'function') { renderRoute(); }
+      // the page intro the gate held back may rise now (RT-N2)
+      if (window.Intros && typeof window.Intros.panelForHash === 'function') { window.Intros.panelForHash(); }
     }
     // L3.2 (i) NEW ACCOUNTS START EMPTY: the shared worked example leaves every account
     // but the owner's (seed:true on the owner's list entry). Only on an affirmative
@@ -769,9 +791,21 @@ firebase.auth().onAuthStateChanged(function (u) {
         saveReaderModelToFirestore(u.uid, getReaderModel(u.uid), function () {});
       }
     });
-    });   // L3.2 (j): end of l3CheckAllowlist -- the loaders above run only for a listed uid
+    };   // L3.2 (j): end of l3Verdict -- the loaders above run only for a listed uid
+    L3_RECHECK = function (done) {
+      if (l3Rechecking) { return; }
+      l3Rechecking = true;
+      l3CheckAllowlist(u, function (v) {
+        l3Rechecking = false;
+        l3Verdict(v);
+        if (typeof done === 'function') { done(v); }
+      });
+    };
+    l3CheckAllowlist(u, l3Verdict);
   } else {
     L3_LIST_GATE = null;   // L3.2: signing out leaves the list screen
+    L3_RECHECK = null;
+    l3SignInSeq = l3SignInSeq + 1;   // L3.2b RT-R1: any verdict still in flight is now stale
     clearUserState();
     sv('praxis_user', null);
     // L3.2 RT-5a: after a non-owner's purge the in-memory state is seedless and marked
@@ -1094,7 +1128,9 @@ function loadProfileFromFirestore(uid, callback) {
 //   { status:'not-listed' }                 BOTH reads answered "no such entry"
 //   { status:'ok', owner, source:'cache' }  a read failed, but this device saw this
 //                                           uid pass before (F-J1's allowOk stamp)
-//   { status:'offline' }                    a read failed and it never passed here
+//   { status:'offline' }                    a read failed, it never passed here, and
+//                                           the device is offline (navigator.onLine)
+//   { status:'list-error' }                 the same, but the device is online (L3.2b)
 // A pass stamps allowOk (+ the owner bit) per uid on this device, so a later offline
 // launch is let in by uid. The client never writes the list (the rules forbid it).
 function l3CheckAllowlist(fbUser, cb) {
@@ -1113,7 +1149,11 @@ function l3CheckAllowlist(fbUser, cb) {
     if (ls('praxis_allow_ok_' + uid, 0)) {
       finish({ status: 'ok', owner: !!ls('praxis_seed_owner_' + uid, 0), source: 'cache' });
     } else {
-      finish({ status: 'offline' });
+      // L3.2b (F-L3.2-c): "You're offline." only when the device IS offline; any other
+      // failure to read the list (permission, rules not yet published, quota, a server
+      // error) is "Couldn't check the list".
+      var offline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+      finish({ status: offline ? 'offline' : 'list-error' });
     }
   }
   // A definite "no" also clears a stale pass stamp, so a reader taken off the list is
@@ -1137,12 +1177,12 @@ function l3CheckAllowlist(fbUser, cb) {
     failed(e);
   }
 }
-// L3.2: the offline card re-asks the list when the connection comes back.
+// L3.2: the offline card re-asks the list when the connection comes back -- L3.2b:
+// through the same re-ask as Try again (no reload).
 if (typeof window !== 'undefined' && window.addEventListener) {
   window.addEventListener('online', function () {
-    if (L3_LIST_GATE !== 'offline' || typeof firebase === 'undefined') { return; }
-    var fu = firebase.auth().currentUser;
-    if (fu) { L3_LIST_GATE = null; location.reload(); }
+    if (L3_LIST_GATE !== 'offline' && L3_LIST_GATE !== 'list-error') { return; }
+    if (typeof L3_RECHECK === 'function') { L3_RECHECK(); }
   });
 }
 
