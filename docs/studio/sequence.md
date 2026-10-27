@@ -31,6 +31,10 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-27 (L3 CLOSED)** — Preston's phone check on praxis-v3.312 passed steps 3 (his own account intact, Yumi
+  never silent) and 4 (voice through the new ceilings); steps 1, 2 and 5 need a second account and travel with the first
+  invite as L3-OI-1..3. L3 moves from `## Now` to `## Shipped`; nothing else is re-ordered or retired, so no
+  `PROPOSED:` flag, and the rest of `## Now` stands as it was. Record: `docs/checkpoints/l3.md` (Stage 3).
 - **2026-10-26 (L3.2 — HYGIENE, built local v3.310)** — no re-order, no retirement, so no `PROPOSED:` flag. L3.1 is
   committed local (`59d3ee0`, v3.309) and unpushed by ruling. L3.2 builds the invite allowlist (`betaAllowlist`, uid or
   lowercased email; rules gate read + write on every user + social collection, never a reader's deletion of their own
@@ -877,6 +881,17 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **2026-10-27 · L3 — CONSENT + HYGIENE, the first iPhone beta — CLOSED (L3.1 `59d3ee0` v3.309 · L3.2 `7ff0ec3` v3.310 · L3.2b `452cf7c` v3.311 · L3.2c `f54be02` v3.312; pushed together 2026-10-26; phone check 3 + 4 PASS, 1 · 2 · 5 DEFERRED to the first invite)**:
+  the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
+  this" per artifact, opt-in error counts, the honest camera card (L3.1); new accounts start empty, the invite allowlist
+  (`betaAllowlist`, uid or lowercased verified email; read + write list-gated, a reader's own deletion never), the
+  not-on-the-list screen, ceilings on the voice proxies, never a silent reply, the first-sign-in render gap (L3.2); the
+  door and seat stand down behind the gate, the retry card only for her own check, Try again on the list (L3.2b); an
+  unreadable grader answer is an error (L3.2c). Live deploy `6adfaa9b` ready 19:31:57Z, six functions incl. the new
+  `error-counts`. **Owed to the first invite:** L3-OI-1 the not-on-the-list screen live · L3-OI-2 offline → Try again
+  loads with no reload · L3-OI-3 delete an email-listed account with a published arc + follow (the batch rule-check
+  limit). Rulings: `docs/checkpoints/p2-fifteenth-sitting-rulings.md` 52–53, 63–64 + the record's rulings. Record:
+  `docs/checkpoints/l3.md`.
 - [x] **2026-10-25 · SCAN-FIX — the website barcode scanner — CLOSED (L7a R17; SCAN-FIX.1–6, v3.303–v3.308, `bb29310`…`ba7b289`; .5 and .6 device PASS on every test)**: an ISBN Google
   Books misses or fails on now falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out
   until its preview, r22); the last camera frame stays behind the Book verdict; zxing reads only the four book
@@ -1390,13 +1405,6 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
-- [~] **L3 — CONSENT + HYGIENE (the first iPhone beta; L3.1 consent COMMITTED local `59d3ee0` v3.309; L3.2 hygiene COMMITTED `7ff0ec3` v3.310; L3.2b gate edges `452cf7c` v3.311; L3.2c the unreadable-answer fix v3.312; pushed together)** —
-  the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
-  this" per artifact, opt-in error counts, the honest camera card (L3.1); then new accounts start empty, the invite
-  allowlist, ceilings on the voice proxies, the never-silent reply and the first-sign-in render gap (L3.2).
-  Rulings: `docs/checkpoints/p2-fifteenth-sitting-rulings.md` 52–53, 63–64 + "Rulings, Stage 0" in the record.
-  Record: `docs/checkpoints/l3.md`.
-  touches: [home, yumi-sees, profile, book-detail, artifact, scan, capture, yumi, shelf, arcs, notebook, intros, cross-cutting]
 - [~] **L7 — THE APP SHELL (App Store by January 1, bundled; L7a SHIPPED 2026-10-18, v3.300–v3.302)** —
   the web app made shell-ready with the web unchanged (one API base, Firebase + zxing vendored, SW guard) +
   `ios-shell/` Capacitor 8.5.2 scaffold + a manual-only simulator workflow. Pushed `2001f6e`; Preston's on-device

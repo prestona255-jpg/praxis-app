@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-07-03
-**Live:** https://praxis-reading.netlify.app
-**Live CACHE_VERSION:** `praxis-v3.172`
-**HEAD == origin/main:** `c3f0d2d`
+**Authoritative as of:** 2026-10-27 (header refreshed at the L3 close; it had stood at 2026-07-03 / v3.172 / `c3f0d2d`)
+**Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
+**Live CACHE_VERSION:** `praxis-v3.312`
+**HEAD == origin/main:** `f54be02` at the L3 push (the L3 close-out docs commit sits on top of it)
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -267,6 +267,7 @@ Checkpoints: `docs/checkpoints/N0-recon.md`, `N-foundation.md`, `N1.md`, `N2.md`
 | 5 | Visual-uplift per-surface residual backlog | OPEN | Yumi panel, settings, empty states, onboarding polish. Initiative, not a dated stage. |
 | 6 | **L7a — the app shell, first slice** (App Store by Jan 1, bundled Capacitor shell) | SHIPPED 2026-10-18 · `caa35c3` `d7760b8` `2001f6e` · v3.300–v3.302 · Stage 4 device check + Stage 5 simulator PASS (record `60ce6b5`) | Three commits L7a.1–L7a.3: one API base (`PRAXIS_API_BASE`), Firebase 10.12.5 + zxing 0.20.0 vendored, SW guard, `ios-shell/` (Capacitor 8.5.2), dispatch-only simulator workflow. Live check = Preston on device; simulator proof = Stage 5. Record: `docs/checkpoints/l7a.md`. (This tracker is otherwise stale since 2026-07-03 — the S-B retire/refresh ruling is open; this row is added only so L7a is not missing from it.) |
 | 7 | **SCAN-FIX — the website barcode scanner** (L7a residual R17) | SCAN-FIX.1–4 SHIPPED 2026-10-18 · `bb29310`…`d245283` · v3.303–v3.306 (device: Lorde book + frozen frame PASS; a different book after "Keep scanning" FAIL) · SCAN-FIX.5 SHIPPED `1e6e026` · v3.307 · device PASS · SCAN-FIX.6 SHIPPED `ba7b289` · v3.308 · device PASS 1–3 (2026-10-25) · **SCAN-FIX CLOSED** | Four commits: SCAN-FIX.1 an ISBN that Google Books misses or fails on falls back to Open Library (`fetchOpenLibrary`, 6 s limit; "Fix this book" opted out) · .2 the last frame stays behind the Book verdict · .3 zxing reads the four book formats, 150 ms to the confirming read · .4 the Chrome BarcodeDetector loop keeps reading for the confirming read · .5 one decode loop at a time, one lookup at a time, the last book quiet for 1.5 s (a new scan can't re-read the last book) · .6 the camera primer shows once (remembered grant; Permissions API), never over a live camera. Live check = Preston on device. Record: `docs/checkpoints/scan-fix.md`. |
+| 8 | **L3 — consent + hygiene, the first iPhone beta** | L3.1 `59d3ee0` v3.309 · L3.2 `7ff0ec3` v3.310 · L3.2b `452cf7c` v3.311 · L3.2c `f54be02` v3.312 · pushed together 2026-10-26 (deploy `6adfaa9b`, ready) · phone check 2026-10-27: 3 PASS · 4 PASS · 1, 2, 5 DEFERRED to the first invite · **L3 CLOSED** | L3.1: the one yes before anything reaches Claude, the voice asks, "Yumi may read this", opt-in error counts, the honest camera card · L3.2: new accounts start empty, the invite allowlist (`betaAllowlist`; read + write list-gated, own deletion never) and the not-on-the-list screen, voice-proxy ceilings, never a silent reply, the first-sign-in render gap · L3.2b: door + seat behind the gate, the retry card only for her own check, Try again on the list · L3.2c: an unreadable grader answer is an error. **Owed to the first invite:** L3-OI-1 the not-on-the-list screen live · L3-OI-2 offline → Try again loads with no reload · L3-OI-3 delete an email-listed account with a published arc + follow. Record: `docs/checkpoints/l3.md`. |
 
 ---
 
@@ -345,4 +346,6 @@ the very end (after this list).
 | v3.95 | 10.4 read-only render + Privacy Gate A |
 | v3.96 | 10.5 Citation UX |
 | v3.97 | 10.5.9 cleanup (Defects A+B) |
-| **v3.112** | **Notebook N1–N3 epic + profile tagline fix — current live** |
+| v3.112 | Notebook N1–N3 epic + profile tagline fix |
+| v3.113→v3.308 | not retro-filled here (see `docs/studio/sequence.md` ## Shipped) |
+| **v3.309→v3.312** | **L3 consent + hygiene (L3.1 · L3.2 · L3.2b · L3.2c) — current live** |
