@@ -4,185 +4,447 @@
    layout rules. Component styles arrive with their respective views.
    ===================================================================== */
 
+/* =====================================================================
+   L1 — THE SUNFLOWER TOKEN LAYER (canon amendment 1.4, 2026-10-19).
+   docs/studio/v1-canon-delta-amend-1.4-tokens.md is the source of every
+   value below, as corrected by v1-canon-delta-amend-1.4-corrections.md (L1.1). The ONLY colour literals in the app live in this :root
+   (night, the default — §2), the day block under it, the camera tokens
+   and the theory layer. Every other sheet points here.
+   ===================================================================== */
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/assets/fonts/fraunces-latin-opsz-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 100 900; font-display: swap; src: url("/assets/fonts/fraunces-latin-opsz-italic.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/fonts/dm-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 500; font-display: swap; src: url("/assets/fonts/dm-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url("/assets/fonts/dm-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 400 500; font-display: swap; src: url("/assets/fonts/dm-mono-latin-500-normal.woff2") format("woff2"); }
+
+/* §1 + §2 — the core, NIGHT column (night is the default; r39, 25 Oct). */
 :root {
-  /* Fonts
-     THE HOUR, REFINED (v3.232): the UI face leads with the SF system stack --
-     "twilight's soul, Cupertino's tailoring". DM Sans stays in the stack as the
-     non-Apple fallback, so no glyph coverage is lost. --font-serif (Cormorant
-     Garamond) keeps display/titles/the reader's words; --font-mono (DM Mono)
-     keeps TRUE meta only, per TY-1. Both are unchanged. */
-  --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-body:  -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'DM Sans', sans-serif;
-  --font-mono:  'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+  /* paper */
+  --page:   #24180C;
+  --page-2: #4A2E18;
+  --page-3: #63401F;
+  --ink:    #F5E8C4;
+  --ink-2:  #CDB894;
+  --ink-3:  #BAA48C;
+  --line:   rgba(255,255,255,.14);
+  --line-field: var(--ink-3);
+  /* gold (the petal) */
+  --gold:      #E8B23A;
+  --gold-ink:  #E8B23A;
+  --gold-star: #E8B23A;
+  --on-gold:   #1C120A;
+  /* sky (the seed head) */
+  --sky:        #1C120A;
+  --umber:      #4A2E18;
+  --umber-2:    #63401F;
+  --on-night:   #F5E8C4;
+  --on-night-2: #CDB894;
+  --on-night-3: #BAA48C;
+  --line-night: rgba(255,255,255,.14);
+  /* Yumi and the stem */
+  --yumi:     #C8552E;
+  --stem:     #8DB08A;
+  --stem-sky: #8DB08A;
+  /* light — one gradient per property (token rule 23) */
+  --lamp:      none;
+  --lamp-foot: radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%);
+  --pool:      radial-gradient(82% 46% at 50% 56%, rgba(92,59,33,.58), rgba(92,59,33,0) 72%);
+  --sky-a:     var(--pool);
+  --sky-b:     none;
+  --spill:     linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
+  --star-glow: drop-shadow(0 0 5px rgba(232,178,58,.85));
+  --hi:        rgba(255,255,255,.07);
+  --card-hi:   inset 0 1px 0 rgba(255,255,255,.07);
+  --grain-op:    .22;
+  --grain-blend: screen;
+  /* the Bloom on paper */
+  --bl-core:    #FDFAF3;
+  --bl-gold:    #C79A3A;
+  --bl-light:   #DFB759;
+  --bl-wisdom:  #F8E078;
+  --bl-theory:  #F0A88A;
+  --bl-emp:     #F8C8AA;
+  --bl-edge:    rgba(255,241,210,0);
+  /* shadow — only what floats */
+  --shadow-float: 0 10px 30px rgba(0,0,0,.5);
+  --shadow-cover: inset 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px rgba(42,30,16,.18);
+  --scrim:        rgba(15,9,4,.7);
+  /* type faces */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body:    "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "DM Mono", ui-monospace, Menlo, monospace;
+  /* §3 type scale — phone (desktop >=1200 below). Floors: 11px any text, 15px running text. */
+  --fs-greeting: 46px; --lh-greeting: 1.04;
+  --fs-h1:       38px; --lh-h1:       1.06;
+  --fs-count:    34px; --lh-count:    1.0;
+  --fs-title:    26px; --lh-title:    1.18;
+  --fs-sub:      24px; --lh-sub:      1.18;
+  --fs-wordmark: 20px; --lh-wordmark: 1.0;
+  --fs-heading:  18px; --lh-heading:  1.3;
+  --fs-reader:   17px; --lh-reader:   1.5;
+  --fs-body:     15px; --lh-body:     1.45;
+  --fs-control:  15px; --lh-control:  1.0;
+  --fs-small:    14px; --lh-small:    1.45;
+  --fs-caption:  13px; --lh-caption:  1.4;
+  --fs-tab:      11px; --lh-tab:      1.2;
+  --fs-kicker:   11px; --lh-kicker:   1.3;
+  /* §4 shape and motion */
+  --r-card:  20px;
+  --r-sky:   28px;
+  --r-sheet: 24px;
+  --r-field: 16px;
+  --r-pill:  999px;
+  --r-spine: 6px;
+  --r-glyph: 50%;
+  --ease:     cubic-bezier(.2,.7,.2,1);
+  --dur:      280ms;
+  --dur-half: 140ms;
+  /* §8 — the UA draws its own controls (scrollbars, form defaults) in the mood, not the OS (red-team W4). */
+  color-scheme: dark;
+}
+@media (min-width: 1200px) {
+  :root { --fs-greeting: 66px; --fs-h1: 52px; --fs-title: 32px; --fs-sub: 26px; --fs-body: 16px; }
+}
 
-  /* =====================================================================
-     UMBER palette (June 2026 re-skin) -- design/praxis-umber-mockup.html.
-     Dual-ground: this :root carries the BRIGHT-page values for the shared
-     tokens; the [data-ground="dark"] block below re-points the ~15
-     ground-sensitive shared tokens to the dark study set. New Umber-named
-     tokens are ADDED here; existing token NAMES are kept and re-pointed,
-     never renamed or deleted. The --tradition-* renderer feed is intentionally
-     left at its values (tradition retint is a separate, deferred task).
-     UPDATED (B2, 2026-07-19): --subtheory-* is NO LONGER frozen at its 9b-ii
-     values. Preston unfroze it for the ruled RD-1 batch; it collapsed 16 -> the
-     five jewel tokens and was RE-FROZEN at five in the same commit. The mapping
-     and the re-freeze notice live at the --subtheory-* block below. */
+/* §6 — every other live name, re-pointed (names stay, values move; ruled D: retired hues are
+   aliases, never purged). Declared on :root AND re-declared on the two sky scopes so each alias resolves
+   against that scope's core (a custom property resolves where it is declared, not where it is used). */
+:root,
+.yumi-panel,
+.yumi-bloom {
+  --arc-question-glow: var(--gold-star);
+  --bg: var(--page);
+  --bg-2: var(--page-2);
+  --bk-cyan-text: var(--ink-2);
+  --bk-field-1: var(--gold);
+  --bk-field-10: var(--gold);
+  --bk-field-2: var(--gold);
+  --bk-field-3: var(--gold);
+  --bk-field-4: var(--gold);
+  --bk-field-5: var(--gold);
+  --bk-field-6: var(--gold);
+  --bk-field-7: var(--gold);
+  --bk-field-8: var(--gold);
+  --bk-field-9: var(--gold);
+  --bk-gold-deep: var(--gold-ink);
+  --bk-gold-hi: var(--gold);
+  --bk-line: var(--line);
+  --bk-star: var(--gold-star);
+  --bk-surface-2: var(--page-3);
+  --board-face: var(--page-3);
+  --board-under: var(--ink-3);
+  --border: var(--line);
+  --border-2: var(--line-night);
+  --br-deep: var(--sky);
+  --card-1: var(--page-2);
+  --card-2: var(--page-3);
+  --card-ink: var(--ink);
+  --card-ink-2: var(--ink-2);
+  --card-ink-warm: var(--ink-2);
+  --card-meta: var(--ink-3);
+  --card-radius: var(--r-card);
+  --card-shadow: var(--card-hi);
+  --card-shadow-h: var(--card-hi);
+  --cloth-olive-1: var(--page-3);
+  --cloth-olive-2: var(--page-3);
+  --cloth-ox-1: var(--page-3);
+  --cloth-ox-2: var(--page-3);
+  --cloth-page-1: var(--page-2);
+  --cloth-page-2: var(--page-3);
+  --cloth-teal-1: var(--page-3);
+  --cloth-teal-2: var(--page-3);
+  --color-surface: var(--page);
+  --danger: var(--gold-ink);
+  --danger-line: var(--line);
+  --dark-2: var(--umber);
+  --dots: radial-gradient(circle, color-mix(in srgb, var(--ink-3) 26%, transparent) 1.3px, transparent 1.5px);
+  --dur-fast: var(--dur-half);
+  --dur-gentle: var(--dur);
+  --ease-emphasis: var(--ease);
+  --ease-standard: var(--ease);
+  --ember-ink: var(--ink-3);
+  --ff-body: var(--font-body);
+  --ff-display: var(--font-display);
+  --ff-heading: var(--font-body);
+  --ff-meta: var(--font-mono);
+  --ff-reader: var(--font-display);
+  --ff-title: var(--font-display);
+  --field-1: var(--gold);
+  --field-1-deep: var(--gold-ink);
+  --field-10: var(--gold);
+  --field-10-deep: var(--gold-ink);
+  --field-2: var(--gold);
+  --field-2-deep: var(--gold-ink);
+  --field-3: var(--gold);
+  --field-3-deep: var(--gold-ink);
+  --field-4: var(--gold);
+  --field-4-deep: var(--gold-ink);
+  --field-5: var(--gold);
+  --field-5-deep: var(--gold-ink);
+  --field-6: var(--gold);
+  --field-6-deep: var(--gold-ink);
+  --field-7: var(--gold);
+  --field-7-deep: var(--gold-ink);
+  --field-8: var(--gold);
+  --field-8-deep: var(--gold-ink);
+  --field-9: var(--gold);
+  --field-9-deep: var(--gold-ink);
+  --font-script: "Fraunces", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "Noto Sans CJK JP", "Songti SC", "MS PMincho", serif;
+  --font-serif: var(--font-display);
+  --fs-display: var(--fs-h1);
+  --fs-meta: var(--fs-kicker);
+  --fs-sm: var(--fs-caption);
+  --glass: var(--page-2);
+  --glass-2: var(--page-2);
+  --glass-bar: var(--page);
+  --glass-border: var(--line);
+  --glass-pill: var(--page-2);
+  --glass-spotlight: var(--page-2);
+  --gold-deep: var(--gold-ink);
+  --gold-ember: var(--gold-star);
+  --gold-hi: var(--gold);
+  --gold-ink-door: var(--gold-ink);
+  --gold-ink-on-gold: var(--on-gold);
+  --gold-light: var(--gold-ink);
+  --gold-on-card: var(--gold-ink);
+  --gold-soft: var(--gold-star);
+  --gold-text: var(--gold-ink);
+  --gold-world: var(--gold-star);
+  --grad: linear-gradient(var(--gold), var(--gold));
+  --grad-soft: linear-gradient(var(--gold), var(--gold));
+  --ground: var(--sky);
+  --ground-base: var(--page);
+  --ground-center: var(--page);
+  --ground-edge: var(--page);
+  --ground-grad: none;
+  --hairline: var(--line-night);
+  --harvest-1: var(--page-2);
+  --harvest-2: var(--page-3);
+  --highlight-edge: var(--hi);
+  --hour-1: var(--sky);
+  --hour-2: var(--sky);
+  --hour-3: var(--sky);
+  --hour-4: var(--sky);
+  --hour-arc: linear-gradient(var(--sky), var(--sky));
+  --hour-horizon: var(--lamp-foot);
+  --hour-lamp: var(--lamp);
+  --ink-4: var(--ink-3);
+  --journal-color: var(--ink-2);
+  --lh-display: var(--lh-h1);
+  --lh-meta: var(--lh-kicker);
+  --line-2: var(--line);
+  --line-page: var(--line);
+  --line-page-2: var(--line);
+  --lum-base: var(--page-2);
+  --lum-bg: var(--page);
+  --lum-cloth: var(--page-3);
+  --lum-coral: var(--gold);
+  --lum-cyan: var(--yumi);
+  --lum-glass: var(--page-2);
+  --lum-glass-bd: var(--line);
+  --lum-glass-bd-2: var(--line);
+  --lum-glass-blur: 0px;
+  --lum-glass-raised: var(--page-2);
+  --lum-gold: var(--gold);
+  --lum-gold-d: var(--gold);
+  --lum-gold-ink: var(--on-gold);
+  --lum-gold-l: var(--gold);
+  --lum-ink: var(--ink);
+  --lum-ink-2: var(--ink-2);
+  --lum-ink-3: var(--ink-3);
+  --lum-ink-4: var(--ink-3);
+  --lum-mono: var(--font-mono);
+  --lum-r-card: var(--r-card);
+  --lum-r-pill: var(--r-pill);
+  --lum-rose: var(--ink-2);
+  --lum-sans: var(--font-body);
+  --lum-serif: var(--font-display);
+  --lum-star: var(--gold-star);
+  --margin-rule: color-mix(in srgb, var(--ink-3) 40%, transparent);
+  --marginalia-color: var(--ink-2);
+  --mark-glow: var(--gold-star);
+  --meta: var(--ink-3);
+  --motion-base: var(--dur);
+  --muted: var(--on-night-2);
+  --nav-blur: 0px;
+  --nav-frost: var(--page);
+  --nav-solid: var(--page);
+  --on-ground: var(--on-night);
+  --on-ground-2: var(--on-night-2);
+  --on-ground-3: var(--on-night-3);
+  --on-teal: var(--on-night);
+  --orb-deep: var(--gold-ink);
+  --orb-glow: var(--gold-star);
+  --orb-hi: var(--gold-star);
+  --panel-yumi: var(--page-2);
+  --paper: var(--page);
+  --question-color: var(--ink-2);
+  --radius: var(--r-card);
+  --radius-lg: var(--r-field);
+  --radius-md: var(--r-card);
+  --radius-pill: var(--r-pill);
+  --radius-sm: var(--r-spine);
+  --radius-xl: var(--r-sheet);
+  --register-journal: var(--ink-2);
+  --register-marginalia: var(--ink-2);
+  --register-question: var(--ink-2);
+  --river: var(--ink-2);
+  --river-l: var(--ink-2);
+  --shadow-1: var(--card-hi);
+  --shadow-2: var(--card-hi);
+  --shadow-d: var(--shadow-float);
+  --shadow-page: var(--card-hi);
+  --shadow-spotlight: var(--shadow-float);
+  --shadow-yumi: var(--shadow-float);
+  --shelf-cavity: var(--page-3);
+  --spine-cloth: var(--page-3);
+  --star-gold: var(--gold-star);
+  --status-read: var(--ink-3);
+  --status-reading: var(--gold);
+  --status-will: transparent;
+  --sunk: var(--page-3);
+  --sunk-d: var(--sky);
+  --surface: var(--page-2);
+  --surface-2: var(--page-3);
+  --surface-d: var(--umber);
+  --surface-d2: var(--umber-2);
+  --teal: var(--yumi);
+  --teal-on-ground: var(--yumi);
+  --text-d: var(--on-night);
+  --text-on-dark: var(--on-night);
+  --thread: var(--stem-sky);
+  --thread-color: var(--stem-sky);
+  --thread-color-faint: color-mix(in srgb, var(--stem-sky) 65%, transparent);
+  --tradition-ground: var(--page-2);
+  --tradition-inner-light: var(--page-2);
+  --u-chip: var(--page-3);
+  --u-cloth-2: var(--page-3);
+  --u-gathered: var(--page-3);
+  --u-ground-2: var(--page-3);
+  --u-orb-hi: var(--gold-star);
+  --u-panel-1: var(--page-2);
+  --u-panel-2: var(--page-3);
+  --u-seg-2: var(--page-3);
+  --u-sheet-1: var(--page-2);
+  --u-sheet-2: var(--page-3);
+  --u-shot-1: var(--page-3);
+  --u-shot-2: var(--ink-3);
+  --u-spread-2: var(--page-3);
+  --u-teal-deep: var(--yumi);
+  --u-teal-mid: var(--yumi);
+  --u-toggle-off: var(--page-3);
+  --u-white: var(--page-2);
+  --vr-card: var(--page-2);
+  --vr-field: var(--page);
+  --vr-gold: var(--gold);
+  --vr-gold-d: var(--gold);
+  --vr-gold-hi: var(--gold);
+  --vr-gold-ink: var(--on-gold);
+  --vr-ink: var(--ink);
+  --vr-ink-2: var(--ink-2);
+  --vr-ink-3: var(--ink-3);
+  --vr-line: var(--line);
+  --vr-orb-hi: var(--page-2);
+  --vr-rose: var(--ink-2);
+  --wash: color-mix(in srgb, var(--ink) 5%, transparent);
+  --wash-page: color-mix(in srgb, var(--ink) 5%, transparent);
+  --wheat-ear-1: var(--gold-star);
+  --wheat-ear-2: var(--gold);
+  --wheat-ear-far-1: var(--gold-star);
+  --wheat-ear-far-2: var(--gold-ink);
+  --wheat-far-1: var(--page-3);
+  --wheat-far-2: var(--ink-3);
+  --wheat-glow: color-mix(in srgb, var(--gold-star) 28%, transparent);
+  --wheat-near-1: var(--gold);
+  --wheat-near-2: var(--gold-ink);
+  --wheat-sky-1: var(--page-2);
+  --wheat-sky-2: var(--page);
+  --wheat-sky-3: var(--page-3);
+  --wheat-soil-1: transparent;
+  --wheat-soil-2: color-mix(in srgb, var(--ink) 22%, transparent);
+  --window-bg: var(--sky);
+  --window-line: color-mix(in srgb, var(--gold-star) 16%, transparent);
+  --wordmark: var(--ink);
+}
 
-  /* -- dark study surfaces -- RE-POINTED to THE HOUR, REFINED (v3.232).
-        Umber's brown study (#2f1c0e family) becomes the twilight arc. Names are
-        kept, values re-pointed, so every existing consumer crosses over without
-        being edited. Panels are tuned to the MID-ARC so they read correctly at
-        any scroll position on the gradient (a single opaque value cannot match
-        both the #191F33 zenith and the #29200F horizon; mid-arc is the honest
-        compromise, and depth is carried by the shadow trio, not by panel hue). */
-  --ground:        #191F33;
-  --ground-grad:   var(--hour-lamp), var(--hour-horizon), var(--hour-arc);
-  --surface-d:     #232838;
-  --surface-d2:    #2B3042;
-  --sunk-d:        #12151F;
-  --dark-2:        #1B1F2D;
-  /* -- new Umber: bright page surfaces -- */
-  --page:          #f4efe4;  /* R-POLISH S0: v1.1 canon paper (was #f8f1e1) */
-  --page-2:        #fcf6e8;
-  --meta:          #9a7e4e;
-  /* THE HOUR: the on-dark text ramp is the cream ramp, not Umber's honey. */
-  --text-d:        var(--on-ground);
-  --muted:         var(--on-ground-2);
-  /* -- new Umber: accents -- */
-  --teal:          #2e8a93;
-  --thread:        #c2a463;
-  --gold-soft:     var(--gold-ember);
-  --gold-ink:      #855410;
-  --register-marginalia: var(--teal);
-  --register-journal:    #7d6db0;
-  --register-question:   #3a5a8a;
-  --grad-soft:     linear-gradient(92deg, #e7c46a, #3aa0a9);
-  /* -- new Umber: glass / lines / shadows -- */
-  /* THE HOUR: glass/lines re-pointed off Umber brown onto the twilight world.
-     Chrome fills stay SOLID-ENOUGH to satisfy the nav no-blur-bleed guardrail;
-     only the nav itself frosts (§2 of the canon), and it is not an ancestor of
-     any absolutely-positioned overflow child. */
-  --glass-bar:     linear-gradient(180deg, rgba(21,24,38,.88), rgba(16,19,30,.78));
-  --glass-pill:    rgba(21,24,38,.78);
-  --glass-border:  var(--hairline);
-  --border-2:      rgba(240,235,223,.16);
-  --line-page:     rgba(36,23,16,.16);
-  --line-page-2:   rgba(36,23,16,.30);
-  --wash-page:     rgba(36,23,16,.05);
-  --shadow-d:      0 3px 10px rgba(0,0,0,.34), 0 14px 38px rgba(0,0,0,.32);
-  --shadow-page:   3px 5px 12px rgba(28,18,9,.10), 8px 16px 32px rgba(28,18,9,.08);
-  /* Fixed dark scrim for modal/overlay backdrops -- NOT --ink-derived, so it
-     stays a darkening veil no matter which ground --ink resolves to. */
-  --scrim:         rgba(15,9,4,.6);
+/* §2 — DAY. Declared twice from one source (tools: docs/checkpoints/l1-tools/build-theme.pl); the two
+   bodies are byte-identical and diffed by the build (P3). */
+html[data-mood="day"] {
+  --page:   #EDD79E;
+  --page-2: #FBF3D9;
+  --page-3: #E2C98C;
+  --ink:    #2A1E10;
+  --ink-2:  #6F5A34;
+  --ink-3:  #6B5936;
+  --line:   rgba(42,30,16,.16);
+  --gold:     #D9931A;
+  --gold-ink: #835508;
+  --on-gold:  #2A1E10;
+  --sky:      #2B1E12;
+  --stem:     #3D6446;
+  --lamp:     radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
+  --sky-a:    var(--lamp-foot);
+  --sky-b:    var(--lamp);
+  --spill:    linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
+  --hi:       rgba(255,255,255,.55);
+  --card-hi:  inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
+  --grain-op:    .32;
+  --grain-blend: multiply;
+  --bl-core:   #FFF8E6;
+  --bl-gold:   #B06F12;
+  --bl-light:  #E0A030;
+  --bl-wisdom: #F8DF86;
+  --bl-theory: #E8845E;
+  --bl-emp:    #F0B48C;
+  --bl-edge:   rgba(42,30,16,.56);
+  --shadow-float: 0 10px 30px rgba(28,18,9,.18);
+  --scrim:        rgba(15,9,4,.6);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+html[data-mood="auto"] {
+  --page:   #EDD79E;
+  --page-2: #FBF3D9;
+  --page-3: #E2C98C;
+  --ink:    #2A1E10;
+  --ink-2:  #6F5A34;
+  --ink-3:  #6B5936;
+  --line:   rgba(42,30,16,.16);
+  --gold:     #D9931A;
+  --gold-ink: #835508;
+  --on-gold:  #2A1E10;
+  --sky:      #2B1E12;
+  --stem:     #3D6446;
+  --lamp:     radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
+  --sky-a:    var(--lamp-foot);
+  --sky-b:    var(--lamp);
+  --spill:    linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
+  --hi:       rgba(255,255,255,.55);
+  --card-hi:  inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
+  --grain-op:    .32;
+  --grain-blend: multiply;
+  --bl-core:   #FFF8E6;
+  --bl-gold:   #B06F12;
+  --bl-light:  #E0A030;
+  --bl-wisdom: #F8DF86;
+  --bl-theory: #E8845E;
+  --bl-emp:    #F0B48C;
+  --bl-edge:   rgba(42,30,16,.56);
+  --shadow-float: 0 10px 30px rgba(28,18,9,.18);
+  --scrim:        rgba(15,9,4,.6);
+  color-scheme: light;
+}
+}
 
-  /* =====================================================================
-     THE HOUR, REFINED -- the ratified world (v3.232, July 19 2026).
-     Source of truth: docs/studio/praxis-the-hour-refined.html (its header
-     comment carries the full token spec). Design history, including the
-     six-world exploration that ratified this one:
-     docs/studio/praxis-illuminated-worlds.html.
-
-     PG-1 is amended to v2 by this ship: "One twilight world; printed pages
-     are where you work; depth is meaning." Umber's brown study becomes a
-     twilight arc; the working surfaces become vellum PAGES that sit ON that
-     world rather than replacing it. The Umber tokens above are KEPT and
-     re-pointed below (never renamed), so all 4,899 var() consumers in
-     components.css cross over without being touched individually.
-     ===================================================================== */
-
-  /* -- the ground: a twilight arc, night-blue falling to ember-brown -- */
-  --hour-1:        #191F33;   /* zenith, night blue        */
-  --hour-2:        #1B1D2B;   /* the turn                  */
-  --hour-3:        #241C14;   /* warming                   */
-  --hour-4:        #29200F;   /* horizon, ember brown      */
-  --hour-lamp:     radial-gradient(1200px 640px at 50% -12%, rgba(255,214,150,.08), transparent 60%);
-  --hour-horizon:  radial-gradient(1000px 460px at 50% 112%, rgba(255,175,100,.06), transparent 62%);
-  --hour-arc:      linear-gradient(178deg, var(--hour-1) 0%, var(--hour-2) 36%, var(--hour-3) 70%, var(--hour-4) 100%);
-
-  /* -- on-ground text ramp (text ON the world, not on a page) -- */
-  --on-ground:     #F0EBDF;   /* heads     */
-  --on-ground-2:   #B4AFA2;   /* secondary */
-  --on-ground-3:   #8C897E;   /* meta      */
-  --hairline:      rgba(240,235,223,.10);
-
-  /* -- gold: world / ember / on-card. SEMANTIC GOLD = presence + attention -- */
-  --gold-world:    #C79A3A;
-  --gold-ember:    #DFB759;
-  --gold-on-card:  #8F6A12;
-
-  /* -- the vellum page: a printed sheet laid on the world -- */
-  --card-1:        #FDF9EE;
-  --card-2:        #F6EFDC;
-  --card-ink:      #262019;
-  --card-ink-2:    #5C5340;
-  --card-meta:     #8A7F5F;
-  --card-radius:   15px;
-  /* Apple-tight shadow trio: hairline + contact + modest ambient. */
-  --card-shadow:   0 0 0 1px rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.28), 0 10px 30px rgba(0,0,0,.26);
-  --card-shadow-h: 0 0 0 1px rgba(0,0,0,.2), 0 2px 4px rgba(0,0,0,.3), 0 14px 38px rgba(0,0,0,.3);
-
-  /* -- Yumi's voice ON THE WORLD.
-        #256b80 (the "pale cyan -> AA deep teal" fix) was chosen for a LIGHT
-        page, where it passes. On the twilight world it measures 2.72:1 -- a
-        FAIL. This is the same correction, inverted for the dark ground:
-        measured 7.03:1 on #191F33. The cyan DOT is unchanged; only the text
-        moves, so Yumi keeps her hue and gains her legibility. -- */
-  --teal-on-ground: #5FB8C4;
-
-  /* -- the constellation window: lapis, for B2's living miniature -- */
-  --window-bg:     #0D1424;
-  --window-line:   rgba(199,154,58,.16);
-
-  /* -- JEWEL MARKS (canonical, WIRED + RE-FROZEN at B2).
-        CORRECTION (B2): the v3.232 note here said these "retire the --field-N
-        pastel candy". That named the WRONG target and is fixed rather than left
-        to mislead the next reader -- `js/arc-constellation.js` never reads
-        --field-N at all (zero grep hits; corroborated by r-polish-b1.md:654).
-        The renderer's real candy was --subtheory-1..16 / -edge, and THAT is what
-        these retire, via the deterministic collapse documented at the
-        --subtheory-* block below. --field-N remains a separate decorative token
-        used by chrome in components.css, untouched by this batch.
-        Each jewel carries a companion -edge (its deep tone) for the marks'
-        inner-design strokes. -- */
-  /* AES-1 · THE ONE GLOW. Every mark glow is this token — never a per-hue halo.
-     SEMANTIC GOLD: gold means presence and attention, never decoration. The
-     glow's OPACITY still carries lum(maturity) (annotation density) exactly as
-     before, so the signal is unchanged; only its costume becomes lawful. The
-     jewel hue now lives in the glyph body alone. */
-  --mark-glow:     var(--gold-world);
+/* The theory layer (behind the switch; re-pointed when arcs return) and the not-a-look tokens — untouched at L1. */
+:root {
 
   /* AES-2 · the world margin. How much twilight shows around a lit sheet, so a
      page reads as a sheet ON the world rather than as the world itself. */
   --sheet-gap:     18px;
 
-  /* R-SHELF (v3.242) · the bookcase + wheat-horizon motif. New decorative
-     literals for the Shelf re-composition (brief v4 §3.1 CARVED board + §3.2
-     BREEZE wheat + F9 horizon); kept in the paper / honey-gold / --gold-hi
-     family, never a new hue system. Wired by name in components.css (Law 6:
-     no raw hex outside theme.css). Cavity fill reuses --surface-2 (no token). */
-  --shelf-cavity:  #efe7d6;   /* cavity interior + recessed controls — one step
-                                 darker than the sheet. Light-safe twin of
-                                 --surface-2 (which the shelf's dark route flips). */
-  --board-face:    #e3d8c1;   /* §3.1 board: two flat tones — face */
-  --board-under:   #b9a97e;   /* §3.1 board: underside strip */
-  --spine-cloth:   #4a3f4d;   /* cover-less book spine — deep cloth (charm) */
-  --gold-ink-on-gold:#3d2807; /* dark-brown ink on gold fills — the shelf's
-                                 established literal (12754/12785…), tokenized so
-                                 new R-SHELF rules carry no raw hex. */
-  --wheat-sky-1:   #fbf4e0;   /* horizon sky, top */
-  --wheat-sky-2:   #f5eccb;   /* horizon sky, mid */
-  --wheat-sky-3:   #ecdcac;   /* horizon sky, at the soil line */
-  --wheat-glow:    rgba(217,164,65,.28);   /* low-sun glow = --gold-hi @alpha */
-  --wheat-near-1:  #c9a95e;   /* near stalk, tip */
-  --wheat-near-2:  #a98d4e;   /* near stalk, base */
-  --wheat-ear-1:   #e3bd6b;   /* near ear */
-  --wheat-ear-2:   #c39a4a;
-  --wheat-far-1:   #a48a52;   /* far stalk (one tone dimmer than near) */
-  --wheat-far-2:   #8a7040;
-  --wheat-ear-far-1:#c2a05e;  /* far ear */
-  --wheat-ear-far-2:#a5813a;
-  --wheat-soil-1:  rgba(122,95,44,0);      /* soil gradient, top (transparent) */
-  --wheat-soil-2:  rgba(122,95,44,.22);    /* soil gradient, base */
+            /* soil gradient, base */
 
   /* AES / B3 rider · --m1 ON PARCHMENT. #D9B24A measures 1.92:1 as a mark FILL
      on the parchment field (#FDF9EE) — below the 3:1 non-text floor. The
@@ -258,77 +520,6 @@
   --pig-iris:       #7A6BB8;  --pig-iris-edge:       #55447E;
   --pig-plum:       #A85A8E;  --pig-plum-edge:       #7A3D64;
 
-  /* == THE FIELD's chrome inks (ARC STANDARD S1) ============================
-     The sky, the Gate Row and the soil row need a few warm values the vellum
-     set does not already carry. They live HERE, named, because the convention
-     is CSS variables only — never a literal inlined in components.css. (Caught
-     by the S1 reviewer gate: the pigment set above was tokenised correctly and
-     these ten were not, in the same commit.) Values are the felt-passed
-     mockup's, on the vellum sheet.
-
-     --harvest-1/2  the finished arc's warm-gold sheet cast (F4's harvest turn)
-     --card-ink-warm a warm dark ink for display italics + soil-book titles —
-                     between --card-ink #262019 and --card-ink-2 #5C5340,
-                     carrying more warmth than either
-     --ember-ink     the value-ember's text on the sky: quiet, gold-adjacent
-     --gold-hi       the light stop of the primary gradient; --gold-ember
-                     (#DFB759, above) is its dark stop and is REUSED, not
-                     re-declared
-     --gold-ink-door the lifecycle door's label — the gold family, one step
-                     quieter than --gold-on-card #8F6A12 so a door invites
-                     rather than shouts
-     --cloth-page-1/2 the soil row's coverless book: a printed cloth board, in
-                     the paper register (the --cloth-* trio above is the SPINE
-                     register — saturated dyes — and is a different material) */
-  --harvest-1:     #FEF7E4;  --harvest-2:     #F6E8C8;
-  --card-ink-warm: #4A4030;
-  --ember-ink:     #7A6636;
-  --gold-hi:       #F0D79A;
-  --gold-ink-door: #6b5a24;
-  --cloth-page-1:  #FBF4E2;  --cloth-page-2:  #EFE3C7;
-
-  /* -- the cloth spines: the bound edge of a printed page (reference `.spine`).
-        Tokens, not literals in components.css -- the same rule the jewel marks
-        follow. Three cloths, each a two-stop gradient pair. -- */
-  --cloth-ox-1:    #8E4434;  --cloth-ox-2:    #6E3226;
-  --cloth-olive-1: #7A8A4E;  --cloth-olive-2: #5E6C3B;
-  --cloth-teal-1:  #357B75;  --cloth-teal-2:  #265A55;
-
-  /* -- world chrome: the nav --
-     --nav-frost / --nav-blur are the REFERENCE's frosted values, kept as
-     tokens so the treatment is one edit away if Preston rules for the frost.
-     --nav-solid is what SHIPS: the composite of that frost over the twilight
-     zenith (.60 * #151826 over #191F33), so the look lands without the
-     backdrop-filter the canon guardrail forbids on nav chrome (iOS
-     overflow-composite bug, fixed v3.106 -- see the rule in components.css). */
-  --nav-frost:     rgba(21,24,38,.60);
-  --nav-blur:      22px;
-  --nav-solid:     #171B2B;
-
-  /* -- existing shared tokens, re-pointed to BRIGHT-page base values -- */
-  /* R-POLISH Slice 0: :root reconciled to the Universal v1.1 token sheet (§3).
-     Global defaults were pre-v1.1 while the scoped light skins already ran v1.1
-     (the drift the census flagged). Rendered surfaces mostly shadow these via
-     [data-ground="dark"] / scoped blocks, so this is near-zero visual delta;
-     it aligns the default so future unscoped light surfaces are born correct.
-     --gold-deep is ADDED (it was referenced but undefined at :root). */
-  --ink:     #241710;
-  --ink-2:   #645940;
-  --ink-3:   #978b6d;
-  --ink-4:   #978b6d;
-  --gold:    #a8761a;
-  --gold-deep: #855410;
-  --bg:      var(--page);
-  --surface: #fffdf8;
-  --border:  var(--line-page);
-  --br-deep:      #1c1209;
-  --surface-2:    #efe7d6;
-  --gold-light:   var(--gold-ink);
-  --gold-text:    var(--gold-ink);
-  --river:        #3a5a8a;
-  --color-surface: var(--page);
-  --text-on-dark: #fdfaf3;
-
   /* Spacing scale */
   --sp-1: 4px;
   --sp-2: 8px;
@@ -336,12 +527,6 @@
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
-
-  --radius-sm: 6px;
-  --radius-lg: 16px;
-  --fs-sm: 0.8125rem;
-  --fs-body: 0.9375rem;
-  --fs-display: 1.5rem;
 
   /* Stage 5.4: arc-web spine + node tokens. */
   --arc-web-spine-width: 2px;
@@ -420,15 +605,7 @@
   --register-place-deep:     var(--register-place);
   --register-practice-deep:  var(--register-practice);
 
-  /* Arc constellation tokens — additive, not replacing --register-* */
-  --tradition-ground: #FAEEDA;
-  --tradition-inner-light: #FFF8E7;
-  --thread-color: var(--thread);   /* Umber: resonance tan (re-point) */
-  --thread-color-faint: color-mix(in srgb, var(--thread) 65%, transparent);  /* speculative/faint */
-  --marginalia-color: var(--teal);  /* Umber: teal through-line */
-  --journal-color: #7d6db0;        /* Umber: journal register spine (violet) */
-  --question-color: var(--river);  /* question register spine (Umber indigo #3a5a8a) */
-  --arc-question-glow: var(--gold);  /* question gravity glow */
+                     /* question gravity glow */
   --tradition-theory-halo: #F0A88A;
   --tradition-wisdom-halo: #F8E078;
   --tradition-empirical-halo: #F8C8AA;
@@ -508,60 +685,6 @@
   --subtheory-15-edge: var(--m5-edge);
   --subtheory-16-edge: var(--m1-edge);
 
-  /* =====================================================================
-     Stage 5.1 -- Material system tokens (A1-A4).
-
-     LIGHT DIRECTION (load-bearing): light rakes from the upper-left of
-     the page at a low warm angle. Every shadow in this stylesheet
-     falls DOWN-AND-RIGHT (positive X offset, positive Y offset). Every
-     lit-edge highlight sits at the TOP + LEFT of a surface. Future
-     rules MUST follow this direction -- mixing directions reads as
-     broken material per the v2 direction-consistency rule.
-
-     The previous --shadow-1 was two-layer black rgba (A3.1 violation).
-     It is redefined here in the warm --br-deep family; its callers
-     (.yumi-bloom, .yumi-panel) are in 5.1 scope and re-tuned at
-     Checkpoint 2 anyway -- the Yumi panel migrates to --shadow-yumi
-     and the toggle picks up the warm Tier 1 directly.
-     ===================================================================== */
-
-  /* Shadow set -- warm-brown, expressed from --br-deep so the token is
-     the single source of truth. NEVER rgba(0,0,0,...) per A3.1. Each
-     tier is two-layer (tight ambient + softer wider cast). Offsets
-     encode the upper-left light direction. */
-  --shadow-1:
-    2px 3px 6px color-mix(in srgb, var(--br-deep) 8%, transparent),
-    4px 8px 18px color-mix(in srgb, var(--br-deep) 6%, transparent);
-  --shadow-2:
-    3px 5px 12px color-mix(in srgb, var(--br-deep) 10%, transparent),
-    8px 16px 32px color-mix(in srgb, var(--br-deep) 8%, transparent);
-  --shadow-spotlight: 0 40px 100px -34px rgba(58,40,16,.5);
-  --shadow-yumi:
-    3px 4px 10px color-mix(in srgb, var(--br-deep) 9%, transparent),
-    6px 12px 24px color-mix(in srgb, var(--br-deep) 7%, transparent);
-  /* S5: book-detail cover. The mockup (B.6) specifies a literal #000
-     drop -- a deliberate deviation from the warm-brown A3.1 family for
-     the one heavy media frame. This token is the sole home for the
-     #000; components.css references the var, never the literal. */
-  --shadow-cover: 0 24px 50px -20px #000;
-
-  /* Lit-edge highlight (A1.3) -- a warm near-white at low opacity for
-     the top + left of every surface. Derived from --text-on-dark so it
-     sits in the yellow-warm hue family, not pure white. */
-  --highlight-edge: color-mix(in srgb, var(--text-on-dark) 55%, transparent);
-
-  /* Radius (A2.3) -- 10px is the consistent card/panel radius.
-     --radius-sm and --radius-lg are retained for pills and Yumi
-     legacy uses; --radius-md is the v2 default for new chrome. */
-  --radius-md: 10px;
-
-  /* Motion (A4.2) -- slow ease-out, no overshoot. 350ms is the
-     baseline duration; applied ONLY to the four permitted motions
-     in A4.3 (route cross-fade, card hover lift, nav underline slide,
-     picker/panel fade-and-rise). */
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --motion-base: 350ms;
-
   /* Stage 5.2 presence dial. 1j shipped at 0.22 with the 70-stalk
      denser field; 0.22 is the calibrated floor for the visible-ground
      model (wheat reads in margins and card gutters). Ceiling ~0.32
@@ -569,37 +692,6 @@
      are effectively invisible on the wheat-cream + 5.1-grain
      background. Tune from 0.22. */
   --field-presence: 0.22;
-
-  /* --- medium-skin additive roles (Umber-re-pointed) --- */
-  --ground-center: var(--page);
-  --bg-2:          var(--page-2);
-  --sunk:          #e3d4b0;
-  --glass:         rgba(248,241,225,.5);
-  --glass-2:       rgba(252,246,232,.82);
-  --glass-spotlight: rgba(48,30,16,.94);
-  --line-2:        var(--line-page-2);
-  --river-l:       #5a7ab0;
-  --grad:          linear-gradient(92deg,#d2a23e,#2e8a93);
-  --radius-xl:     22px;
-
-  /* --- Batch 1 foundation: deep-honey ground radial + chrome roles --- */
-  /* Batch 5: the dark goldenrod stops retired -- both now resolve to the
-     paler --bg-2 so the ground reads as light airy honey with no dark
-     band. Tokens kept (not renamed) to avoid touching any consumer. */
-  --ground-base:   var(--bg-2);
-  --ground-edge:   var(--bg-2);
-  --wordmark:      var(--gold-soft);
-  --wash:          var(--wash-page);
-  --radius-pill:   999px;
-
-  /* --- Batch 2: trust-cluster roles --- */
-  --on-teal:       #06241a;  /* dark text on a teal FILL (tog.on, vis.on) */
-  --panel-yumi:    color-mix(in srgb, var(--surface) 93%, var(--marginalia-color) 7%);
-                   /* opaque honey with a faint teal cast -- What-Yumi-Sees body */
-
-  /* --- Batch 3: danger zone (Account delete) --- */
-  --danger:        #c2603a;
-  --danger-line:   rgba(194,96,58,.46);
 
   /* --- SCAN surface: camera-chrome family (ground-independent) --- */
   /* The viewfinder is always a dark camera regardless of the app ground, so
@@ -615,23 +707,7 @@
   --scan-cloth-1:   #e3d8c1;                 /* cover cloth, light (== --board-face) */
   --scan-cloth-2:   #d3c4a6;                 /* cover cloth, shade */
   --scan-cover-ink: #3a2c17;                 /* serif title ink on the cloth cover */
-  --scan-cover-meta:#6b5b3c;                 /* author meta on the cloth cover */
-
-  /* --- Notebook bound-leaf chrome (hybrid spread) --- */
-  /* Dot-grid leaf texture: a 22px-pitch honey stipple over the leaf fill.
-     Derived from --ink-4 so it reads as faint graphite on wheat. */
-  --dots:          radial-gradient(circle, color-mix(in srgb, var(--ink-4) 26%, transparent) 1.3px, transparent 1.5px);
-  /* Faded brick-red margin rule down the left leaf (notebook ruling). */
-  --margin-rule:   color-mix(in srgb, var(--danger) 30%, transparent);
-
-  /* --- R9a (AM26): --field-*-deep companion ramp. The bright --field-1..10
-     (universal-depth.css) are for sky/orbs/bar-fills; these deep companions are
-     the text/rail/dot/border tone on LIGHT surfaces (the --gold/--gold-deep
-     precedent). AA-verified per hue vs --surface-2 (#efe7d6, the worst-case light
-     surface deep text sits on): ratios 4.89-7.17:1, all >= AA 4.5. Same slug-order
-     index as the bright ramp so category N shares hue N across both ramps. */
-  --field-1-deep:#7a5410; --field-2-deep:#9c3f1e; --field-3-deep:#97423c; --field-4-deep:#a53a62; --field-5-deep:#4d6333;
-  --field-6-deep:#2b6f4f; --field-7-deep:#3a4590; --field-8-deep:#726010; --field-9-deep:#7f5514; --field-10-deep:#68412c;
+  --scan-cover-meta:#6b5b3c;
 
   /* --- R9b Lane G (S5): the PROFILE-GALAXY planet hue wheel. A DIVERSE muted full-spectrum wheel
      (warm + slate/steel blue + dusty teal + plum + sage + olive), deterministic per slug, shared across
@@ -648,51 +724,21 @@
   --pf-hue-7:#90ac7e;  --pf-hue-7d:#46603a;  /* sage       */
   --pf-hue-8:#a9a45e;  --pf-hue-8d:#5f5b1e;  /* olive      */
   --pf-hue-9:#c08f6e;  --pf-hue-9d:#6e4a2c;  /* clay       */
-  --pf-hue-10:#7fa4c2; --pf-hue-10d:#3e5a78; /* steel blue */
+  --pf-hue-10:#7fa4c2; --pf-hue-10d:#3e5a78;
 }
 
-/* =====================================================================
-   UMBER dual-ground override. The :root above is the BRIGHT page; this
-   re-points the ~15 ground-sensitive shared tokens to the dark study set
-   wherever data-ground="dark" is set on <body> (per route, by renderRoute),
-   AND on the always-dark floating chrome (nav, Yumi Bloom/panel, spotlight)
-   so that chrome stays dark/brown even when it floats over a bright page.
-   Components keep referencing var(--ink) etc.; only the resolved values
-   shift here. Custom properties inherit, so descendants follow. */
-[data-ground="dark"],
-.app-nav,
-.yumi-bloom,
-.yumi-panel,
-.spotlight-panel {
-  --ink:           var(--text-d);
-  --ink-2:         var(--muted);
-  --ink-3:         var(--muted);
-  --ink-4:         var(--muted);
-  --surface:       var(--surface-d);
-  --surface-2:     var(--surface-d2);
-  --color-surface: var(--dark-2);
-  --bg:            var(--ground);
-  --bg-2:          var(--surface-d2);
-  --border:        var(--hairline);
-  --line-2:        var(--border-2);
-  --wash:          rgba(240,235,223,.06);
-  --glass:         var(--glass-pill);
-  --glass-2:       rgba(21,24,38,.88);
-  --sunk:          #2E3446;
-  /* Gold goes BRIGHT on the dark world; the muted gold-ink base is for the
-     light page, where the bright gold fails AA and gold-ink passes (5.7).
-     THE HOUR re-points this to the world gold (#C79A3A). */
-  --gold:          var(--gold-world);
-  --gold-light:    var(--gold-soft);
-  --gold-text:     var(--gold-soft);
-  /* R-POLISH S0 red-team fix: --gold-deep is now defined at :root (#855410, the
-     light-page AA gold). On the dark study it must NOT stay #855410 (dark-on-dark);
-     re-point it to the bright gold so unscoped dark-ground uses (e.g.
-     .account-readermodel .rm-col-will) stay legible. Scoped .lum-amber-deep skins
-     keep their own #855410 on their light paper via higher specificity. */
-  --gold-deep:     var(--gold-soft);
-}
+/* §7 — [data-ground="dark"] carries no token lines after L1 (the mood owns every value); the selector is
+   kept because views.js still writes it on 16 routes. .app-nav and .spotlight-panel follow the mood. */
+[data-ground="dark"] {}
+/* §2 — Yumi's panel is always sky: its scope maps the paper tokens onto the sky set. */
+.yumi-panel { --page:var(--sky); --page-2:var(--umber); --page-3:var(--umber-2); --ink:var(--on-night); --ink-2:var(--on-night-2); --ink-3:var(--on-night-3); --line:var(--line-night); --gold:var(--gold-star); --gold-ink:var(--gold-star); --on-gold:var(--sky); }
+/* §2 — the Bloom on paper: the --bl-* set. */
+.yumi-bloom { --gold:var(--bl-gold); --gold-light:var(--bl-light); --text-on-dark:var(--bl-core); --tradition-wisdom-halo:var(--bl-wisdom); --tradition-theory-halo:var(--bl-theory); --tradition-empirical-halo:var(--bl-emp); }
 
+html {
+  /* §8 — the web splash: the page colour paints before anything else loads. */
+  background: var(--page);
+}
 body {
   /* Stage 5.1: body bg is transparent so the page-light/grain pseudo
      (rendered at z-index: -1 in the root stacking context) shows
@@ -705,6 +751,10 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
 }
+/* §3 (L1.1) — no button or field falls to the UA or system face (F4: `font:inherit` itself is Stage 2). */
+button, input, textarea, select { font-family: inherit; }
+/* §3 — the faces carry 400 / 500 / 600 only; a UA bold (700) would be synthesised. */
+b, strong, h1, h2, h3, h4, h5, h6, th { font-weight: 600; }
 
 /* =====================================================================
    Stage 5.1 -- Page light + grain pseudo-element (A1.2, A2.1).
@@ -774,7 +824,7 @@ body::before {
    lamp radial + horizon radial + the twilight arc, painted over the --ground
    fill; no vignette, per the canon. */
 body[data-ground="dark"]::before {
-  background: var(--ground-grad), var(--ground);
+  /* L1: no override — the mood paints the same --page ground on every route. */
 }
 
 /* THE HOUR, REFINED -- the grain. A STATIC layer (it neither animates nor
@@ -791,8 +841,10 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  opacity: .015;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: var(--grain-op);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
 }
 
 /* 9b-iii: MUTED constellation palette (frozen sheet). A global remap activated

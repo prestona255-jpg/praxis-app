@@ -1,0 +1,460 @@
+--bk-cyan-text	ALIAS	`var(--ink-2)`
+--bk-field-1	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-10	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-2	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-3	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-4	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-5	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-6	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-7	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-8	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-field-9	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--bk-gold-deep	ALIAS	`var(--gold-ink)`
+--bk-gold-hi	ALIAS	`var(--gold)`
+--bk-line	ALIAS	`var(--line)`
+--bk-star	ALIAS	`var(--gold-star)`
+--bk-surface-2	ALIAS	`var(--page-3)`
+--card-1	ALIAS	`var(--page-2)`
+--card-2	ALIAS	`var(--page-3)`
+--card-ink	ALIAS	`var(--ink)`
+--card-ink-2	ALIAS	`var(--ink-2)`
+--card-ink-warm	ALIAS	`var(--ink-2)`
+--card-meta	ALIAS	`var(--ink-3)`
+--card-radius	ALIAS	`var(--r-card)`
+--card-shadow	ALIAS	`var(--card-hi)`
+--card-shadow-h	ALIAS	`var(--card-hi)`
+--cloth-olive-1	ALIAS	`var(--page-3)`
+--cloth-olive-2	ALIAS	`var(--page-3)`
+--cloth-ox-1	ALIAS	`var(--page-3)`
+--cloth-ox-2	ALIAS	`var(--page-3)`
+--cloth-page-1	ALIAS	`var(--page-2)`
+--cloth-page-2	ALIAS	`var(--page-3)`
+--cloth-teal-1	ALIAS	`var(--page-3)`
+--cloth-teal-2	ALIAS	`var(--page-3)`
+--dur-fast	ALIAS	`var(--dur-half)`
+--dur-gentle	ALIAS	`var(--dur)`
+--ease	CORE	canon literal (§1)
+--ease-emphasis	ALIAS	`var(--ease)`
+--ease-standard	ALIAS	`var(--ease)`
+--ff-body	ALIAS	`var(--font-body)`
+--ff-display	ALIAS	`var(--font-display)`
+--ff-heading	ALIAS	`var(--font-body)`
+--ff-meta	ALIAS	`var(--font-mono)`
+--ff-reader	ALIAS	`var(--font-display)`
+--ff-title	ALIAS	`var(--font-display)`
+--field-1	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-1-deep	ALIAS	`var(--gold-ink)`
+--field-10	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-10-deep	ALIAS	`var(--gold-ink)`
+--field-2	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-2-deep	ALIAS	`var(--gold-ink)`
+--field-3	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-3-deep	ALIAS	`var(--gold-ink)`
+--field-4	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-4-deep	ALIAS	`var(--gold-ink)`
+--field-5	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-5-deep	ALIAS	`var(--gold-ink)`
+--field-6	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-6-deep	ALIAS	`var(--gold-ink)`
+--field-7	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-7-deep	ALIAS	`var(--gold-ink)`
+--field-8	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-8-deep	ALIAS	`var(--gold-ink)`
+--field-9	ALIAS	`var(--gold)` day · `var(--gold-star)` night
+--field-9-deep	ALIAS	`var(--gold-ink)`
+--fs-body	ALIAS	`var(--fs-body)`
+--fs-display	ALIAS	`var(--fs-h1)`
+--fs-heading	ALIAS	`var(--fs-heading)`
+--fs-meta	ALIAS	`var(--fs-kicker)`
+--fs-reader	ALIAS	`var(--fs-reader)`
+--fs-sm	ALIAS	`var(--fs-caption)`
+--fs-title	ALIAS	`var(--fs-title)`
+--glass	ALIAS	`var(--page-2)`
+--glass-2	ALIAS	`var(--page-2)`
+--glass-bar	ALIAS	`var(--page)`
+--glass-border	ALIAS	`var(--line)`
+--glass-pill	ALIAS	`var(--page-2)`
+--glass-spotlight	ALIAS	`var(--umber)`
+--gold	CORE	canon literal (§1)
+--gold-deep	ALIAS	`var(--gold-ink)`
+--gold-ember	ALIAS	`var(--gold-star)`
+--gold-hi	ALIAS	`var(--gold)`
+--gold-ink	CORE	canon literal (§1)
+--gold-ink-door	ALIAS	`var(--gold-ink)`
+--gold-ink-on-gold	ALIAS	`var(--on-gold)`
+--gold-light	ALIAS	`var(--gold-ink)`
+--gold-on-card	ALIAS	`var(--gold-ink)`
+--gold-soft	ALIAS	`var(--gold-star)`
+--gold-text	ALIAS	`var(--gold-ink)`
+--gold-world	ALIAS	`var(--gold-star)`
+--ground	ALIAS	`var(--sky)`
+--ground-base	ALIAS	`var(--page)`
+--ground-center	ALIAS	`var(--page)`
+--ground-edge	ALIAS	`var(--page)`
+--ground-grad	ALIAS	`none`
+--hour-1	ALIAS	`var(--sky)`
+--hour-2	ALIAS	`var(--sky)`
+--hour-3	ALIAS	`var(--sky)`
+--hour-4	ALIAS	`var(--sky)`
+--hour-arc	ALIAS	`linear-gradient(var(--sky), var(--sky))`
+--hour-horizon	ALIAS	`var(--lamp-foot)`
+--hour-lamp	ALIAS	`var(--lamp)`
+--ink	CORE	canon literal (§1)
+--ink-2	CORE	canon literal (§1)
+--ink-3	CORE	canon literal (§1)
+--ink-4	ALIAS	`var(--ink-3)`
+--lh-body	ALIAS	`var(--lh-body)`
+--lh-display	ALIAS	`var(--lh-h1)`
+--lh-heading	ALIAS	`var(--lh-heading)`
+--lh-meta	ALIAS	`var(--lh-kicker)`
+--lh-reader	ALIAS	`var(--lh-reader)`
+--lh-title	ALIAS	`var(--lh-title)`
+--line	CORE	canon literal (§1)
+--line-2	ALIAS	`var(--line)`
+--line-page	ALIAS	`var(--line)`
+--line-page-2	ALIAS	`var(--line)`
+--lum-base	ALIAS	`var(--page-2)`
+--lum-bg	ALIAS	`var(--page)`
+--lum-cloth	ALIAS	`var(--page-3)`
+--lum-coral	ALIAS	`var(--gold)`
+--lum-cyan	ALIAS	`var(--yumi)`
+--lum-glass	ALIAS	`var(--page-2)`
+--lum-glass-bd	ALIAS	`var(--line)`
+--lum-glass-bd-2	ALIAS	`var(--line)`
+--lum-glass-blur	ALIAS	`0px`
+--lum-glass-raised	ALIAS	`var(--page-2)`
+--lum-gold	ALIAS	`var(--gold)`
+--lum-gold-d	ALIAS	`var(--gold)`
+--lum-gold-ink	ALIAS	`var(--on-gold)`
+--lum-gold-l	ALIAS	`var(--gold)`
+--lum-ink	ALIAS	`var(--ink)`
+--lum-ink-2	ALIAS	`var(--ink-2)`
+--lum-ink-3	ALIAS	`var(--ink-3)`
+--lum-ink-4	ALIAS	`var(--ink-3)`
+--lum-mono	ALIAS	`var(--font-mono)`
+--lum-r-card	ALIAS	`var(--r-card)`
+--lum-r-pill	ALIAS	`var(--r-pill)`
+--lum-rose	ALIAS	`var(--ink-2)`
+--lum-sans	ALIAS	`var(--font-body)`
+--lum-serif	ALIAS	`var(--font-display)`
+--lum-star	ALIAS	`var(--gold-star)`
+--on-ground	ALIAS	`var(--on-night)`
+--on-ground-2	ALIAS	`var(--on-night-2)`
+--on-ground-3	ALIAS	`var(--on-night-3)`
+--arc-question-glow	ALIAS	`var(--gold-star)`
+--bg	ALIAS	`var(--page)`
+--bg-2	ALIAS	`var(--page-2)`
+--board-face	ALIAS	`var(--page-3)`
+--board-under	ALIAS	`var(--ink-3)`
+--border	ALIAS	`var(--line)`
+--border-2	ALIAS	`var(--line-night)`
+--br-deep	ALIAS	`var(--sky)`
+--color-surface	ALIAS	`var(--page)`
+--danger	ALIAS	`var(--gold-ink)`
+--danger-line	ALIAS	`var(--line)`
+--dark-2	ALIAS	`var(--umber)`
+--dots	ALIAS	`radial-gradient(circle, color-mix(in srgb, var(--ink-3) 26%, transparent) 1.3px, transparent 1.5px)`
+--ember-ink	ALIAS	`var(--ink-3)`
+--font-body	CORE	canon literal (§1)
+--font-mono	CORE	canon literal (§1)
+--font-script	ALIAS	`"Fraunces", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "Noto Sans CJK JP", "Songti SC", "MS PMincho", serif`
+--font-serif	ALIAS	`var(--font-display)`
+--grad	ALIAS	`linear-gradient(var(--gold), var(--gold))`
+--grad-soft	ALIAS	`linear-gradient(var(--gold), var(--gold))`
+--hairline	ALIAS	`var(--line-night)`
+--harvest-1	ALIAS	`var(--page-2)`
+--harvest-2	ALIAS	`var(--page-3)`
+--highlight-edge	ALIAS	`var(--hi)`
+--journal-color	ALIAS	`var(--ink-2)`
+--margin-rule	ALIAS	`color-mix(in srgb, var(--ink-3) 40%, transparent)`
+--marginalia-color	ALIAS	`var(--ink-2)`
+--mark-glow	ALIAS	`var(--gold-star)`
+--meta	ALIAS	`var(--ink-3)`
+--motion-base	ALIAS	`var(--dur)`
+--muted	ALIAS	`var(--on-night-2)`
+--nav-blur	ALIAS	`0px`
+--nav-frost	ALIAS	`var(--page)`
+--nav-solid	ALIAS	`var(--page)`
+--on-teal	ALIAS	`var(--on-night)`
+--orb-deep	ALIAS	`var(--gold-ink)`
+--orb-glow	ALIAS	`var(--gold-star)`
+--orb-hi	ALIAS	`var(--gold-star)`
+--panel-yumi	ALIAS	`var(--page-2)`
+--paper	ALIAS	`var(--page)`
+--question-color	ALIAS	`var(--ink-2)`
+--river	ALIAS	`var(--ink-2)`
+--river-l	ALIAS	`var(--ink-2)`
+--scrim	CORE	canon literal (§1)
+--shelf-cavity	ALIAS	`var(--page-3)`
+--star-gold	ALIAS	`var(--gold-star)`
+--teal	ALIAS	`var(--yumi)`
+--teal-on-ground	ALIAS	`var(--yumi)`
+--text-d	ALIAS	`var(--on-night)`
+--text-on-dark	ALIAS	`var(--on-night)`
+--window-bg	ALIAS	`var(--sky)`
+--window-line	ALIAS	`color-mix(in srgb, var(--gold-star) 16%, transparent)`
+--wordmark	ALIAS	`var(--ink)`
+--page	CORE	canon literal (§1)
+--page-2	CORE	canon literal (§1)
+--radius	ALIAS	`var(--r-card)`
+--radius-lg	ALIAS	`var(--r-field)`
+--radius-md	ALIAS	`var(--r-card)`
+--radius-pill	ALIAS	`var(--r-pill)`
+--radius-sm	ALIAS	`var(--r-spine)`
+--radius-xl	ALIAS	`var(--r-sheet)`
+--register-journal	ALIAS	`var(--ink-2)`
+--register-marginalia	ALIAS	`var(--ink-2)`
+--register-question	ALIAS	`var(--ink-2)`
+--shadow-1	ALIAS	`var(--card-hi)`
+--shadow-2	ALIAS	`var(--card-hi)`
+--shadow-cover	CORE	canon literal (§1)
+--shadow-d	ALIAS	`var(--shadow-float)`
+--shadow-page	ALIAS	`var(--card-hi)`
+--shadow-spotlight	ALIAS	`var(--shadow-float)`
+--shadow-yumi	ALIAS	`var(--shadow-float)`
+--spine-cloth	ALIAS	`var(--page-3)`
+--status-read	ALIAS	`var(--ink-3)`
+--status-reading	ALIAS	`var(--gold)`
+--status-will	ALIAS	`transparent`
+--sunk	ALIAS	`var(--page-3)`
+--sunk-d	ALIAS	`var(--sky)`
+--surface	ALIAS	`var(--page-2)`
+--surface-2	ALIAS	`var(--page-3)`
+--surface-d	ALIAS	`var(--umber)`
+--surface-d2	ALIAS	`var(--umber-2)`
+--thread	ALIAS	`var(--stem-sky)`
+--thread-color	ALIAS	`var(--stem-sky)`
+--thread-color-faint	ALIAS	`color-mix(in srgb, var(--stem-sky) 65%, transparent)`
+--tradition-ground	ALIAS	`var(--page-2)`
+--tradition-inner-light	ALIAS	`var(--page-2)`
+--u-chip	ALIAS	`var(--page-3)`
+--u-cloth-2	ALIAS	`var(--page-3)`
+--u-gathered	ALIAS	`var(--page-3)`
+--u-ground-2	ALIAS	`var(--page-3)`
+--u-orb-hi	ALIAS	`var(--gold-star)`
+--u-panel-1	ALIAS	`var(--page-2)`
+--u-panel-2	ALIAS	`var(--page-3)`
+--u-seg-2	ALIAS	`var(--page-3)`
+--u-sheet-1	ALIAS	`var(--page-2)`
+--u-sheet-2	ALIAS	`var(--page-3)`
+--u-shot-1	ALIAS	`var(--page-3)`
+--u-shot-2	ALIAS	`var(--ink-3)`
+--u-spread-2	ALIAS	`var(--page-3)`
+--u-teal-deep	ALIAS	`var(--yumi)`
+--u-teal-mid	ALIAS	`var(--yumi)`
+--u-toggle-off	ALIAS	`var(--page-3)`
+--u-white	ALIAS	`var(--page-2)`
+--vr-card	ALIAS	`var(--page-2)`
+--vr-field	ALIAS	`var(--page)`
+--vr-gold	ALIAS	`var(--gold)`
+--vr-gold-d	ALIAS	`var(--gold)`
+--vr-gold-hi	ALIAS	`var(--gold)`
+--vr-gold-ink	ALIAS	`var(--on-gold)`
+--vr-ink	ALIAS	`var(--ink)`
+--vr-ink-2	ALIAS	`var(--ink-2)`
+--vr-ink-3	ALIAS	`var(--ink-3)`
+--vr-line	ALIAS	`var(--line)`
+--vr-orb-hi	ALIAS	`var(--page-2)`
+--vr-rose	ALIAS	`var(--ink-2)`
+--wash	ALIAS	`color-mix(in srgb, var(--ink) 5%, transparent)`
+--wash-page	ALIAS	`color-mix(in srgb, var(--ink) 5%, transparent)`
+--wheat-ear-1	ALIAS	`var(--gold-star)`
+--wheat-ear-2	ALIAS	`var(--gold)`
+--wheat-ear-far-1	ALIAS	`var(--gold-star)`
+--wheat-ear-far-2	ALIAS	`var(--gold-ink)`
+--wheat-far-1	ALIAS	`var(--page-3)`
+--wheat-far-2	ALIAS	`var(--ink-3)`
+--wheat-glow	ALIAS	`color-mix(in srgb, var(--gold-star) 28%, transparent)`
+--wheat-near-1	ALIAS	`var(--gold)`
+--wheat-near-2	ALIAS	`var(--gold-ink)`
+--wheat-sky-1	ALIAS	`var(--page-2)`
+--wheat-sky-2	ALIAS	`var(--page)`
+--wheat-sky-3	ALIAS	`var(--page-3)`
+--wheat-soil-1	ALIAS	`transparent`
+--wheat-soil-2	ALIAS	`color-mix(in srgb, var(--ink) 22%, transparent)`
+--field-presence	KEEP	unchanged (not a look token)
+--m1	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m1-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m1-edge-on-ground	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m1-on-ground	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m2	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m2-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m3	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m3-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m4	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m4-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m5	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--m5-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--arc-web-node-cover-height	KEEP	unchanged (not a look token)
+--arc-web-node-gap	KEEP	unchanged (not a look token)
+--arc-web-spine-width	KEEP	unchanged (not a look token)
+--cap-h	KEEP	unchanged (not a look token)
+--cap-h-lens	KEEP	unchanged (not a look token)
+--cap-h-now	KEEP	unchanged (not a look token)
+--col-gap	KEEP	unchanged (not a look token)
+--cover-h	KEEP	unchanged (not a look token)
+--cover-h-now	KEEP	unchanged (not a look token)
+--cover-w	KEEP	unchanged (not a look token)
+--cover-w-now	KEEP	unchanged (not a look token)
+--far	KEEP	unchanged (not a look token)
+--floating-stack-h	KEEP	unchanged (not a look token)
+--glyph-hue	KEEP	unchanged (not a look token)
+--grid-cols	KEEP	unchanged (not a look token)
+--gutter	KEEP	unchanged (not a look token)
+--h	KEEP	unchanged (not a look token)
+--hd	KEEP	unchanged (not a look token)
+--hg	KEEP	unchanged (not a look token)
+--hl	KEEP	unchanged (not a look token)
+--measure	KEEP	unchanged (not a look token)
+--near	KEEP	unchanged (not a look token)
+--orb-hue	KEEP	unchanged (not a look token)
+--orb-r	KEEP	unchanged (not a look token)
+--orb-s	KEEP	unchanged (not a look token)
+--row-gap	KEEP	unchanged (not a look token)
+--sheet-gap	KEEP	unchanged (not a look token)
+--pf-hue-1	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-10	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-10d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-1d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-2	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-2d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-3	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-3d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-4	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-4d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-5	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-5d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-6	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-6d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-7	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-7d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-8	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-8d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-9	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pf-hue-9d	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-iris	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-iris-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-lapis	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-lapis-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-madder	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-madder-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-moss	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-moss-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-ochre	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-ochre-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-olive	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-olive-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-plum	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-plum-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-teal	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-teal-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-terracotta	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-terracotta-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-verdigris	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--pig-verdigris-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-empirical	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-empirical-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-empirical-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-empirical-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-history	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-history-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-history-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-history-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-memoir	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-memoir-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-memoir-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-memoir-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-novel	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-novel-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-novel-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-novel-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-place	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-place-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-place-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-place-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-poetry	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-poetry-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-poetry-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-poetry-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-practice	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-practice-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-practice-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-practice-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-theory	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-theory-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-theory-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-theory-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-wisdom	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-wisdom-deep	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-wisdom-light	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--register-wisdom-mid	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--scan-cam-bg	KEEP	unchanged (not a look token)
+--scan-cloth-1	KEEP	unchanged (not a look token)
+--scan-cloth-2	KEEP	unchanged (not a look token)
+--scan-cover-ink	KEEP	unchanged (not a look token)
+--scan-cover-meta	KEEP	unchanged (not a look token)
+--scan-glass	KEEP	unchanged (not a look token)
+--scan-glass-2	KEEP	unchanged (not a look token)
+--scan-on-dark	KEEP	unchanged (not a look token)
+--scan-on-dark-2	KEEP	unchanged (not a look token)
+--sp-1	KEEP	unchanged (not a look token)
+--sp-2	KEEP	unchanged (not a look token)
+--sp-3	KEEP	unchanged (not a look token)
+--sp-4	KEEP	unchanged (not a look token)
+--sp-5	KEEP	unchanged (not a look token)
+--sp-6	KEEP	unchanged (not a look token)
+--space-2xl	KEEP	unchanged (not a look token)
+--space-2xs	KEEP	unchanged (not a look token)
+--space-3xl	KEEP	unchanged (not a look token)
+--space-3xs	KEEP	unchanged (not a look token)
+--space-lg	KEEP	unchanged (not a look token)
+--space-md	KEEP	unchanged (not a look token)
+--space-sm	KEEP	unchanged (not a look token)
+--space-xl	KEEP	unchanged (not a look token)
+--space-xs	KEEP	unchanged (not a look token)
+--spine-w	KEEP	unchanged (not a look token)
+--subtheory-1	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-1-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-10	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-10-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-11	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-11-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-12	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-12-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-13	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-13-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-14	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-14-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-15	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-15-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-16	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-16-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-2	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-2-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-3	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-3-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-4	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-4-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-5	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-5-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-6	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-6-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-7	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-7-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-8	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-8-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-9	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--subtheory-9-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--thread-pad	KEEP	unchanged (not a look token)
+--thread-r	KEEP	unchanged (not a look token)
+--thread-w	KEEP	unchanged (not a look token)
+--thread-x	KEEP	unchanged (not a look token)
+--tradition-empirical-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-history-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-memoir-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-novel-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-place-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-poetry-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-practice-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-theory-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
+--tradition-wisdom-halo	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return

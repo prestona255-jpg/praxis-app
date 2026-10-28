@@ -47,11 +47,11 @@ Provenance tags used below:
 
 | Token | Stack | Used for |
 |---|---|---|
-| `--serif` | `'Cormorant Garamond', Georgia, serif` | page titles, book titles, prose, "the question", quotes, Yumi-voice italics |
+| `--serif` (live: `--font-display`, aliased by `--font-serif`) | `"Fraunces", Georgia, serif` — Cormorant retired at L1.1 (2026-10-28, canon 1.4 §1) | page titles, book titles, prose, "the question", quotes, Yumi-voice italics |
 | `--ui` | `'DM Sans', system-ui, sans-serif` | body, nav, buttons, hero H1, inputs |
 | `--mono` | `'DM Mono', monospace` | eyebrows, labels, meta, kbd hints, status, register tags |
 
-Loaded weights: Cormorant 400/500/600 + italic 400/500; DM Sans 300–700; DM Mono 400/500.
+Loaded faces (L1.1, self-hosted in `assets/fonts`, OFL, precached): Fraunces variable roman + italic (opsz, wght 100–900); DM Sans 400 / 500 / 600; DM Mono 500 (also serves 400). No 700 face: bold requests are 600 (canon 1.4 §3; no synthesised bold).
 
 **Note the trap:** the hero H1 is **DM Sans 700**, *not* serif. Serif is for the
 quieter editorial layer; the hero shouts in sans.

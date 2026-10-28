@@ -134,10 +134,12 @@ either self-driven (§5) or a HALT (§5.5).
   cscript harness, and the harness must **self-validate** (fail a broken copy
   before it passes the real file). Neutralize reserved-word method names
   (`.catch`/`.delete`/`.finally`) for the parse only.
-- **Foundations are byte-locked:** `lumen-amber.css` (MD5 `070679b0…`, 14,966 B) and
+- **Foundations are byte-locked:** `lumen-amber.css` (MD5 `ed83f9724433e08f3c7ba7174c3a96b2`, 12,662 B) and
   `marks.js` (MD5 `772886c0…`, 10,255 B). Do NOT edit. Re-md5 and confirm at every halt.
   *(lumen-amber re-baselined from MD5 `9879ddb8…` at R-POLISH B3 — one ruled line, the
-  AES-1 `--mk-glow` retirement at `:177`. `marks.js` unchanged and still matches.)*
+  AES-1 `--mk-glow` retirement at `:177` — and from `070679b0…` / 14,966 B at L1.1 (2026-10-28,
+  Preston's F2 ruling): its 26 look-token definitions moved to theme.css per canon 1.4 §6 and its
+  30 consumer literals re-pointed by the ruled table (+ the M7 `.lum-cite` re-point, 28 Oct). `marks.js` unchanged and still matches.)*
 - **Explicit-file staging always.** Never `git add -A`. Never stage
   `test-arc-constellation.html`.
 - **Bump CACHE_VERSION** (`sw.js`) on any shipped change; live-verify after push.
@@ -153,7 +155,8 @@ either self-driven (§5) or a HALT (§5.5).
 
 **Enforcement (#5).** These are backstopped by a blocking git pre-commit hook
 (`hooks/pre-commit`, activated via `git config core.hooksPath hooks`). It hard-
-BLOCKS a commit that stages a foundations file, stages `test-arc`, or stages
+BLOCKS a commit that stages `marks.js`, or stages `lumen-amber.css` whose md5 is not the full value recorded
+above (read from the index, so a ruled re-baseline must update that record in the same commit — L1.1, 2026-10-28), stages `test-arc`, or stages
 source without `sw.js`. It WARNS (does not block) on likely ES3 tokens in the
 staged diff — real ES3 enforcement stays at the parse-gate + red-team, because a
 raw-diff regex false-positives on comments/strings. `git commit --no-verify`

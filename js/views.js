@@ -22978,6 +22978,23 @@ function _pfThreadsSection(uid) {
 function _pfSetRow(act, on, title, sub) {
   return '<div class="pf-toggle pf-setrow' + (on ? '' : ' off') + '" data-act="' + act + '" tabindex="0" role="switch" aria-checked="' + (on ? 'true' : 'false') + '"><span class="tk"></span><span class="pf-setrow-text"><span class="pf-setrow-title">' + title + '</span><small class="pf-setrow-sub">' + sub + '</small></span></div>';
 }
+// L1 (F1, ruled 27 Oct): Night · Day. Night is no attribute (:root holds the night column); Day is
+// html[data-mood="day"]. theme-color follows the mood; the choice persists and index.html reads it
+// back before first paint. L5 adds the third option, "Match my phone".
+function praxisSetMood(mood) {
+  var root = document.documentElement, tc = document.querySelector('meta[name="theme-color"]');
+  if (mood === 'day') { root.setAttribute('data-mood', 'day'); } else { root.removeAttribute('data-mood'); }
+  if (tc) { tc.setAttribute('content', mood === 'day' ? '#EDD79E' : '#24180C'); }
+  sv('praxis_mood', mood === 'day' ? 'day' : 'night');
+}
+function _pfMoodRow() {
+  var day = document.documentElement.getAttribute('data-mood') === 'day';
+  return '<div class="pf-set-row pf-mood-row"><span class="pf-setrow-title">Mood</span>'
+    + '<span class="pf-seg" role="radiogroup" aria-label="Mood">'
+    + '<button type="button" class="' + (day ? '' : 'on') + '" data-act="mood-night" role="radio" aria-checked="' + (day ? 'false' : 'true') + '">Night</button>'
+    + '<button type="button" class="' + (day ? 'on' : '') + '" data-act="mood-day" role="radio" aria-checked="' + (day ? 'true' : 'false') + '">Day</button>'
+    + '</span></div>';
+}
 function _pfSettingsSection(uid) {
   var p = getProfile(uid), yesOk = isYumiYesGranted(uid), readsAlong = yesOk && (p.yumiReadsAlong !== false);
   var h = '<div class="pf-eyebrow">Settings</div><div class="pf-card"><div class="pf-set-fields">'
@@ -22985,6 +23002,7 @@ function _pfSettingsSection(uid) {
     + '<div class="pf-field"><label>Pen name</label><input data-field="penName" value="' + _portraitEsc(p.penName || '') + '"></div>'
     + '<div class="pf-field"><label>Reading life</label><input data-field="tagline" value="' + _portraitEsc(p.tagline || '') + '"></div>'
     + '<div class="pf-field"><label>Values statement</label><textarea data-field="statement">' + _portraitEsc(p.statement || '') + '</textarea></div></div>'
+    + _pfMoodRow()
     + _pfSetRow('toggle-reads', readsAlong, 'Yumi reads along', 'Marginalia and questions, never the Journal.')
     + _pfSetRow('toggle-angles', yesOk && p.yumiWebGrounding === true, 'Outside angles', 'One angle from beyond your books, now and then. Yumi searches the web for it.')
     + _pfSetRow('toggle-voice', p.voiceOn === true, 'Voice', 'Dictation (ElevenLabs) and read-aloud. Each asks the first time.')
@@ -23418,6 +23436,16 @@ function _pfWire(wrap, uid, vis) {
     var a = cl(t, '[data-act]');
     if (a) {
       var act = a.getAttribute('data-act');
+      if (act === 'mood-night' || act === 'mood-day') {   // L1 (F1): the Night · Day row
+        praxisSetMood(act === 'mood-day' ? 'day' : 'night');
+        var mbs = a.parentNode ? a.parentNode.querySelectorAll('[data-act^="mood-"]') : [], mi;
+        for (mi = 0; mi < mbs.length; mi++) {
+          var mon = (mbs[mi] === a);
+          if (mon) { mbs[mi].className = 'on'; } else { mbs[mi].className = ''; }
+          mbs[mi].setAttribute('aria-checked', mon ? 'true' : 'false');
+        }
+        return;
+      }
       if (act === 'preview') {
         _pfPreview = true;
         // R9b: the profile INTRO beat is owner-only -> drop the W9 panel/summon in preview too.

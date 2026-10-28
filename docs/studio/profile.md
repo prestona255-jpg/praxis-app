@@ -52,6 +52,11 @@ project's FIRST desktop composition tier. Owner-vs-visitor is a CONTENT fence (`
 
 ## Gap ledger
 
+- [status: OPEN — profile round] L1-NAME (L1.1, 2026-10-28): Fraunces sets the display name wider than Cormorant,
+  so a wrapped name collided with the sky invitation; L1.1 holds `.pf-name` to one line with an ellipsis. At 390 the name
+  box is 108px beside the "preview as visitor" pill (~7–8 characters) — even "D0 Tester" shows "D0 Tes…", and long real
+  names truncate. Real fix: `_pfPlaceInvite` (emptiest-quadrant placement) or the name layout. Record:
+  `docs/checkpoints/l1.md`.
 - [status: CLOSED v3.198] PA3 — the deferred-social em-dash placeholder is gone (renderOwnProfile retired;
   the merged Profile renders honest states).
 - [status: OPEN — S-B] tokenize the shared light-skin literals app-wide (3 surfaces share them).

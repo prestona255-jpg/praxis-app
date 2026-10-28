@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-28 (L1.1 — THE NEW LOOK, the token layer, built local v3.313)** — L1 joins `## Now` at the top as the lane in
+  flight (the first-beta look). No re-order of the rest, no retirement, no contradiction of a ruling, so no `PROPOSED:`
+  flag. Stage 1a table ruled 28 Oct (C1–C5, Q1–Q10); Stage 1b built against canon 1.4 and the twelve role swaps +
+  the page-3 label moves Preston ruled the same day. Record: `docs/checkpoints/l1.md`, `docs/checkpoints/l1-literals.md`.
+
 - **2026-10-27 (L3 CLOSED)** — Preston's phone check on praxis-v3.312 passed steps 3 (his own account intact, Yumi
   never silent) and 4 (voice through the new ceilings); steps 1, 2 and 5 need a second account and travel with the first
   invite as L3-OI-1..3. L3 moves from `## Now` to `## Shipped`; nothing else is re-ordered or retired, so no
@@ -1402,6 +1407,15 @@ flagged at the top of the Builder's sequence page for his call — never applied
 re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: Preston's felt pass on the spine mockup ·
 the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + card. Hygiene fork ruled (split).
 
+- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.1 token layer BUILT local 2026-10-28, v3.313)** —
+  night by default with a Night · Day row in Settings; one definition per token in theme.css (night `:root` + the day block
+  declared twice, byte-identical); every other sheet points there; 796 consumer literals ruled by table (187 left: theory +
+  camera); six self-hosted OFL fonts (Fraunces, DM Sans, DM Mono) precached; the PWA shell (#24180C theme-color + manifest,
+  apple metas, touch icon). L1.1 commits on Preston's word, then his twelve-route felt pass on the phone; L1.2 waits on it —
+  first the arc / sub-theory / commons / reader / walk shared-token sweep (Preston 28 Oct: reachable until L5), then
+  the flat pass (backdrop-filter 20 → 0, flat gold). Hands on: lens palettes → L4, "Match my phone" → L5, icon +
+  storyboard → L7b. Record: `docs/checkpoints/l1.md`.
+  touches: [cross-cutting]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]

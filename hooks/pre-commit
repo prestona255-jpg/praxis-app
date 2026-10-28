@@ -15,9 +15,17 @@ staged=$(git diff --cached --name-only)
 fail=0
 emit() { echo "$1" >&2; }
 
-# 1. Foundations are byte-locked — never commit them changed (match any path).
+# 1. Foundations are byte-locked. lumen-amber.css may change ONLY by a ruled re-baseline: the STAGED blob's md5
+#    must equal the full md5 recorded in FIX-PROTOCOL §2 (read from the index, so the record has to ride the same
+#    commit). A deliberate edit lands with its record; an accidental one is still blocked. (L1.1, Preston
+#    2026-10-28: "the lock should learn the new value, not be skipped".) marks.js stays blocked by name.
 if printf '%s\n' "$staged" | grep -Eq '(^|/)lumen-amber\.css$'; then
-  emit "BLOCK: lumen-amber.css is staged — it is byte-locked (FIX-PROTOCOL §2)."; fail=1
+  la_path=$(printf '%s\n' "$staged" | grep -E '(^|/)lumen-amber\.css$' | head -n 1)
+  la_got=$(git show ":$la_path" 2>/dev/null | md5sum | cut -c1-32)
+  la_want=$(git show ":docs/FIX-PROTOCOL.md" 2>/dev/null | grep -o 'lumen-amber\.css` (MD5 `[0-9a-f]\{32\}' | grep -o '[0-9a-f]\{32\}' | head -n 1)
+  if [ -z "$la_want" ] || [ "$la_got" != "$la_want" ]; then
+    emit "BLOCK: lumen-amber.css is staged and its md5 ($la_got) is not the value recorded in FIX-PROTOCOL §2 (${la_want:-none found}) -- it is byte-locked; re-baseline only by a ruled change recorded there in the same commit."; fail=1
+  fi
 fi
 if printf '%s\n' "$staged" | grep -Eq '(^|/)marks\.js$'; then
   emit "BLOCK: marks.js is staged — it is byte-locked (FIX-PROTOCOL §2)."; fail=1

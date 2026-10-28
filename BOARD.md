@@ -10,6 +10,14 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
+**L1.1 (2026-10-28, v3.313, local) — the Amber column now reads through the Sunflower token layer.** Every
+surface's colour, type and shape resolve from theme.css (canon 1.4): night by default, day via the Settings
+Night · Day row. The per-surface Amber cells below are unchanged in STRUCTURE (no layout moved) and were
+re-measured at 390 in both moods on the twelve beta routes AND the states the first sweep missed — signed-out,
+the publish / finish ceremonies, intro panels, the capture door (each register), About, Spotlight (`docs/checkpoints/l1.md`
+P4 + the extended P4 after the red-team BLOCK). Theory surfaces (arcs, sub-theories) keep their theory-layer tokens and literals; their shared-token consumers (ink, gold, surface,
+line) follow the mood and are NOT yet swept — L1.2's first item (arc, sub-theory, commons, reader, walk).
+
 **Source of truth for this revision:** Ground-Truth Census v3 — W13 pre-audit
 re-census, July 6 2026, HEAD `0ee5fad` (`praxis-v3.177`). Route census =
 `renderRoute()` @ `js/views.js:343` (18 render surfaces + 1 redirect, unchanged).

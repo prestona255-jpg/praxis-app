@@ -25,37 +25,14 @@
 
 :root{
   /* base + ink ramp (warm near-white) */
-  --lum-base:#231708;
-  --lum-ink:#fdf8ec;
-  --lum-ink-2:#e8dcc4;
-  --lum-ink-3:#b6a888;
-  --lum-ink-4:#867a5e;
 
   /* glass material — two elevations */
-  --lum-glass:linear-gradient(157deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.04) 100%);
-  --lum-glass-raised:linear-gradient(157deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.06) 100%);
-  --lum-glass-bd:rgba(255,236,200,.28);
-  --lum-glass-bd-2:rgba(255,236,200,.16);
-  --lum-glass-blur:16px;
 
   /* accents */
-  --lum-gold:#ffce4a;       /* the lead accent */
-  --lum-gold-l:#ffe79a;
-  --lum-gold-d:#cf9c2a;
-  --lum-gold-ink:#241a02;   /* text on a gold fill */
-  --lum-cyan:#7fd0f0;       /* Yumi — always */
-  --lum-coral:#ff9a6e;      /* warmth / build-on heat */
-  --lum-rose:#ff8e8e;       /* tension / friction */
-  --lum-cloth:#5a4632;      /* book covers */
 
   /* type */
-  --lum-serif:"Cormorant Garamond", Georgia, serif;
-  --lum-sans:"DM Sans", system-ui, sans-serif;
-  --lum-mono:"DM Mono", ui-monospace, monospace;
 
   /* radii */
-  --lum-r-card:16px;
-  --lum-r-pill:999px;
 }
 
 /* base reset hook (apply to the app root) */
@@ -71,36 +48,20 @@
    ATMOSPHERES  — set the ground for a surface region.
    ============================================================================ */
 .lum-amber{
-  --lum-bg:
-    radial-gradient(70% 55% at 14% 2%,  rgba(255,202,92,.50) 0%, rgba(255,202,92,0) 60%),
-    radial-gradient(62% 52% at 89% 12%, rgba(228,150,56,.44) 0%, rgba(228,150,56,0) 62%),
-    radial-gradient(82% 62% at 72% 104%,rgba(255,160,70,.40) 0%, rgba(255,160,70,0) 60%),
-    radial-gradient(58% 50% at 26% 96%, rgba(210,120,50,.26) 0%, rgba(210,120,50,0) 60%),
-    radial-gradient(120% 120% at 50% 44%, #3a2912 0%, #2a1d0c 50%, #1c1208 100%);
   background:var(--lum-bg);
 }
 .lum-amber-deep{
-  --lum-bg:
-    radial-gradient(72% 56% at 16% 4%,  rgba(255,190,80,.42) 0%, rgba(255,190,80,0) 60%),
-    radial-gradient(60% 52% at 88% 14%, rgba(216,130,60,.34) 0%, rgba(216,130,60,0) 62%),
-    radial-gradient(82% 62% at 64% 104%,rgba(230,150,64,.42) 0%, rgba(230,150,64,0) 60%),
-    radial-gradient(120% 120% at 50% 44%, #33240f 0%, #241a0a 50%, #181006 100%);
   background:var(--lum-bg);
 }
 .lum-amber-ember{
-  --lum-bg:
-    radial-gradient(70% 55% at 14% 4%,  rgba(255,200,90,.40) 0%, rgba(255,200,90,0) 60%),
-    radial-gradient(64% 52% at 88% 10%, rgba(232,120,120,.36) 0%, rgba(232,120,120,0) 62%),
-    radial-gradient(82% 62% at 72% 104%,rgba(255,140,80,.44) 0%, rgba(255,140,80,0) 60%),
-    radial-gradient(120% 120% at 50% 44%, #381f12 0%, #2a160d 50%, #1c0f08 100%);
   background:var(--lum-bg);
 }
 
 /* ============================================================================
    TYPE
    ============================================================================ */
-.lum-display{ font-family:var(--lum-serif); font-weight:500; color:#fffaf0; line-height:1.04; }
-.lum-h{ font-family:var(--lum-serif); font-weight:600; color:#fff; line-height:1.08; }
+.lum-display{ font-family:var(--lum-serif); font-weight:500; color:var(--on-night); line-height:1.04; }
+.lum-h{ font-family:var(--lum-serif); font-weight:600; color:var(--on-night); line-height:1.08; }
 .lum-h-em{ font-style:italic; }
 .lum-body{ font-family:var(--lum-sans); color:var(--lum-ink-2); }
 .lum-quote{ font-family:var(--lum-serif); font-style:italic; color:var(--lum-ink-2); }
@@ -115,7 +76,7 @@
   border-radius:var(--lum-r-card);
   -webkit-backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
   backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 18px 40px -30px rgba(0,0,0,.6);
+  box-shadow:var(--card-hi);
 }
 .lum-glass-raised{
   background:var(--lum-glass-raised);
@@ -124,10 +85,7 @@
   -webkit-backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
   backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
   box-shadow:
-    0 30px 60px -24px rgba(0,0,0,.6),
-    0 6px 18px -8px rgba(0,0,0,.4),
-    inset 0 1px 0 rgba(255,255,255,.30),
-    inset 0 -30px 50px -38px rgba(0,0,0,.36);
+    var(--card-hi);
 }
 
 /* ============================================================================
@@ -147,9 +105,9 @@
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:var(--cd,14px); height:var(--cd,14px); border-radius:50%;
   background:
-    radial-gradient(circle at 36% 28%, rgba(255,255,255,.86) 0%, rgba(255,255,255,0) 42%),
+    radial-gradient(circle at 36% 28%, var(--hi) 0%, transparent 42%),
     radial-gradient(circle at 38% 32%, var(--hl) 0%, var(--h) 46%, var(--hd) 100%);
-  box-shadow:0 0 calc(var(--cd,14px) * .8) var(--hg), 0 0 0 1px rgba(255,255,255,.1);
+  box-shadow:var(--card-hi), 0 0 calc(var(--cd,14px) * .8) var(--hg);
 }
 .lg { --h:#ffce4a; --hl:#ffeeb0; --hd:#bd8a1e; --hg:rgba(255,206,74,.62); }  /* gold    */
 .lam{ --h:#ffab4a; --hl:#ffd9a0; --hd:#c47a1e; --hg:rgba(255,171,74,.55); }  /* amber   */
@@ -182,7 +140,7 @@
 }
 .lum-mark > svg{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:100%; height:100%; overflow:visible; filter:drop-shadow(0 2px 7px rgba(0,0,0,.4));
+  width:100%; height:100%; overflow:visible; filter:none;
 }
 
 /* ============================================================================
@@ -192,20 +150,20 @@
    PraxisMarks.COLORS; toggle .is-on on the chosen one.
    ============================================================================ */
 .lum-pick{ display:grid; grid-template-columns:repeat(8,1fr); gap:7px; }
-.lum-pick button{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid transparent; background:rgba(255,255,255,.05); cursor:pointer; padding:0; transition:background .15s, border-color .15s; }
-.lum-pick button:hover{ background:rgba(255,255,255,.1); }
-.lum-pick button.is-on{ border-color:var(--lum-gold); background:rgba(255,206,74,.16); }
+.lum-pick button{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid transparent; background:var(--hi); cursor:pointer; padding:0; transition:background .15s, border-color .15s; }
+.lum-pick button:hover{ background:var(--hi); }
+.lum-pick button.is-on{ border-color:var(--lum-gold); background:color-mix(in srgb, var(--gold-star) 16%, transparent); }
 .lum-swatches{ display:flex; flex-wrap:wrap; gap:8px; }
-.lum-swatches button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); transition:transform .12s, border-color .15s; }
+.lum-swatches button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; box-shadow:var(--card-hi); transition:transform .12s, border-color .15s; }
 .lum-swatches button:hover{ transform:scale(1.08); }
-.lum-swatches button.is-on{ border-color:#fff; }
+.lum-swatches button.is-on{ border-color:var(--line-night); }
 
 /* ============================================================================
    IDEA CARD  — a raised glass card fronted by an idea-mark + Cormorant title.
    ============================================================================ */
 .lum-idea{ padding:18px 20px; }                 /* compose with .lum-glass-raised */
 .lum-idea .head{ display:flex; align-items:center; gap:11px; }
-.lum-idea .title{ font-family:var(--lum-serif); font-weight:600; font-size:22px; color:#fff; margin:0; line-height:1.06; }
+.lum-idea .title{ font-family:var(--lum-serif); font-weight:600; font-size:22px; color:var(--on-night); margin:0; line-height:1.06; }
 .lum-idea .gloss{ font-family:var(--lum-serif); font-size:16px; color:var(--lum-ink-2); margin:11px 0 0; line-height:1.44; }
 
 /* ============================================================================
@@ -213,8 +171,8 @@
    ============================================================================ */
 .lum-cite{
   display:inline-flex; align-items:center; gap:5px;
-  font-family:var(--lum-sans); font-size:11px; color:var(--lum-gold-l);
-  background:rgba(255,206,74,.16); border:1px solid rgba(255,206,74,.40);
+  font-family:var(--lum-sans); font-size:11px; color:var(--gold-ink);
+  background:color-mix(in srgb, var(--gold-star) 16%, transparent); border:1px solid var(--line);
   border-radius:7px; padding:2px 9px;
 }
 .lum-cite .dot{ width:6px; height:6px; border-radius:50%; background:var(--lum-gold); }
@@ -225,7 +183,7 @@
 }
 .lum-chip-line{
   font-family:var(--lum-sans); font-size:11.5px; font-weight:500;
-  color:#fff; background:transparent; border:1px solid var(--lum-glass-bd);
+  color:var(--on-night); background:transparent; border:1px solid var(--lum-glass-bd);
   border-radius:var(--lum-r-pill); padding:6px 14px;
 }
 
@@ -236,27 +194,27 @@
 .lum-yumi{ display:flex; align-items:flex-start; gap:9px; }
 .lum-yumi .dot{
   flex:none; width:11px; height:11px; border-radius:50%; margin-top:4px;
-  background:radial-gradient(circle at 38% 32%, #fff, var(--lum-cyan) 46%, #2f8fb4 100%);
-  box-shadow:0 0 9px rgba(127,208,240,.7);
+  background:radial-gradient(circle at 38% 32%, var(--yumi), var(--lum-cyan) 46%, var(--yumi) 100%);
+  box-shadow:none;
 }
-.lum-yumi p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:#c4eafa; }
+.lum-yumi p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--on-night-2); }
 .lum-yumi.has-well{
   padding:11px 13px; border-radius:11px;
-  background:rgba(127,208,240,.08); border:1px solid rgba(127,208,240,.24);
+  background:color-mix(in srgb, var(--yumi) 8%, transparent); border:1px solid color-mix(in srgb, var(--yumi) 24%, transparent);
 }
 
 /* ============================================================================
    SEGMENTED TOGGLE  (e.g. Field ⇄ Read, Lenses ⇄ Categories)
    ============================================================================ */
-.lum-seg{ display:inline-flex; border:1px solid var(--lum-glass-bd); border-radius:var(--lum-r-pill); padding:3px; background:rgba(255,255,255,.06); }
-.lum-seg > *{ font-family:var(--lum-sans); font-size:11.5px; font-weight:500; color:rgba(255,244,224,.72); border-radius:var(--lum-r-pill); padding:5px 13px; cursor:pointer; }
+.lum-seg{ display:inline-flex; border:1px solid var(--lum-glass-bd); border-radius:var(--lum-r-pill); padding:3px; background:var(--hi); }
+.lum-seg > *{ font-family:var(--lum-sans); font-size:11.5px; font-weight:500; color:var(--on-night-2); border-radius:var(--lum-r-pill); padding:5px 13px; cursor:pointer; }
 .lum-seg > .is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold)); }
 
 /* ============================================================================
    AMBIENT MOTES (optional dust over an atmosphere) — purely decorative.
    ============================================================================ */
 .lum-motes{ position:absolute; inset:0; pointer-events:none; }
-.lum-motes i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff3da; opacity:.42; }
+.lum-motes i{ position:absolute; width:2px; height:2px; border-radius:50%; background:var(--gold-star); opacity:.42; }
 
 /* ============================================================================
    GUARDRAIL (the line no aesthetic crosses): legibility + content lead, chrome

@@ -1497,7 +1497,9 @@ var ACCOUNT_GLOBAL_KEYS = [
   'praxis_st_faint_on', 'praxis_state',
   // red-team-found globals with no uid in their name: account-linked dismissals,
   // the Yumi hand flag, the measure.js first-seen/activated stamps
-  'praxis_portrait_dismissed', 'praxis_yumi_hand', 'praxis_m_first_seen', 'praxis_m_activated', 'praxis_m_counts', 'praxis_m_errors'
+  'praxis_portrait_dismissed', 'praxis_yumi_hand', 'praxis_m_first_seen', 'praxis_m_activated', 'praxis_m_counts', 'praxis_m_errors',
+  // L1.1 (red-team W3, ruled 28 Oct): the Night · Day choice -- a display pref, like praxis_shelf_view
+  'praxis_mood'
 ];
 function accountLocalKeysFor(uid) {
   var keys = [], i, k;

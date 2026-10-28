@@ -9,7 +9,7 @@
 // in APP_SHELL (same-origin), no longer loaded from third-party CDNs.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.312';
+var CACHE_VERSION = 'praxis-v3.313';
 
 var APP_SHELL = [
   '/',
@@ -23,6 +23,14 @@ var APP_SHELL = [
   '/assets/icon.svg',
   '/assets/icon-maskable.svg',
   '/assets/wheat-field.svg',
+  '/assets/apple-touch-icon.png',
+  // L1: the six self-hosted faces (OFL; assets/fonts) -- precached so the type holds offline.
+  '/assets/fonts/fraunces-latin-opsz-normal.woff2',
+  '/assets/fonts/fraunces-latin-opsz-italic.woff2',
+  '/assets/fonts/dm-sans-latin-400-normal.woff2',
+  '/assets/fonts/dm-sans-latin-500-normal.woff2',
+  '/assets/fonts/dm-sans-latin-600-normal.woff2',
+  '/assets/fonts/dm-mono-latin-500-normal.woff2',
   '/vendor/firebase/10.12.5/firebase-app-compat.js',
   '/vendor/firebase/10.12.5/firebase-auth-compat.js',
   '/vendor/firebase/10.12.5/firebase-firestore-compat.js',

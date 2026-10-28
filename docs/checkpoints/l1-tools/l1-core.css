@@ -1,0 +1,101 @@
+/* =====================================================================
+   L1 — THE SUNFLOWER TOKEN LAYER (canon amendment 1.4, 2026-10-19).
+   docs/studio/v1-canon-delta-amend-1.4-tokens.md is the source of every
+   value below. The ONLY colour literals in the app live in this :root
+   (night, the default — §2), the day block under it, the camera tokens
+   and the theory layer. Every other sheet points here.
+   ===================================================================== */
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/assets/fonts/fraunces-latin-opsz-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 100 900; font-display: swap; src: url("/assets/fonts/fraunces-latin-opsz-italic.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/fonts/dm-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 500; font-display: swap; src: url("/assets/fonts/dm-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url("/assets/fonts/dm-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 400 500; font-display: swap; src: url("/assets/fonts/dm-mono-latin-500-normal.woff2") format("woff2"); }
+
+/* §1 + §2 — the core, NIGHT column (night is the default; r39, 25 Oct). */
+:root {
+  /* paper */
+  --page:   #24180C;
+  --page-2: #4A2E18;
+  --page-3: #63401F;
+  --ink:    #F5E8C4;
+  --ink-2:  #CDB894;
+  --ink-3:  #BAA48C;
+  --line:   rgba(255,255,255,.14);
+  --line-field: var(--ink-3);
+  /* gold (the petal) */
+  --gold:      #E8B23A;
+  --gold-ink:  #E8B23A;
+  --gold-star: #E8B23A;
+  --on-gold:   #1C120A;
+  /* sky (the seed head) */
+  --sky:        #1C120A;
+  --umber:      #4A2E18;
+  --umber-2:    #63401F;
+  --on-night:   #F5E8C4;
+  --on-night-2: #CDB894;
+  --on-night-3: #BAA48C;
+  --line-night: rgba(255,255,255,.14);
+  /* Yumi and the stem */
+  --yumi:     #C8552E;
+  --stem:     #8DB08A;
+  --stem-sky: #8DB08A;
+  /* light — one gradient per property (token rule 23) */
+  --lamp:      none;
+  --lamp-foot: radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%);
+  --pool:      radial-gradient(82% 46% at 50% 56%, rgba(92,59,33,.58), rgba(92,59,33,0) 72%);
+  --sky-a:     var(--pool);
+  --sky-b:     none;
+  --spill:     linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
+  --star-glow: drop-shadow(0 0 5px rgba(232,178,58,.85));
+  --hi:        rgba(255,255,255,.07);
+  --card-hi:   inset 0 1px 0 rgba(255,255,255,.07);
+  --grain-op:    .22;
+  --grain-blend: screen;
+  /* the Bloom on paper */
+  --bl-core:    #FDFAF3;
+  --bl-gold:    #C79A3A;
+  --bl-light:   #DFB759;
+  --bl-wisdom:  #F8E078;
+  --bl-theory:  #F0A88A;
+  --bl-emp:     #F8C8AA;
+  --bl-edge:    rgba(255,241,210,0);
+  /* shadow — only what floats */
+  --shadow-float: 0 10px 30px rgba(0,0,0,.5);
+  --shadow-cover: inset 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px rgba(42,30,16,.18);
+  --scrim:        rgba(15,9,4,.7);
+  /* type faces */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body:    "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "DM Mono", ui-monospace, Menlo, monospace;
+  /* §3 type scale — phone (desktop >=1200 below). Floors: 11px any text, 15px running text. */
+  --fs-greeting: 46px; --lh-greeting: 1.04;
+  --fs-h1:       38px; --lh-h1:       1.06;
+  --fs-count:    34px; --lh-count:    1.0;
+  --fs-title:    26px; --lh-title:    1.18;
+  --fs-sub:      24px; --lh-sub:      1.18;
+  --fs-wordmark: 20px; --lh-wordmark: 1.0;
+  --fs-heading:  18px; --lh-heading:  1.3;
+  --fs-reader:   17px; --lh-reader:   1.5;
+  --fs-body:     15px; --lh-body:     1.45;
+  --fs-control:  15px; --lh-control:  1.0;
+  --fs-small:    14px; --lh-small:    1.45;
+  --fs-caption:  13px; --lh-caption:  1.4;
+  --fs-tab:      11px; --lh-tab:      1.2;
+  --fs-kicker:   11px; --lh-kicker:   1.3;
+  /* §4 shape and motion */
+  --r-card:  20px;
+  --r-sky:   28px;
+  --r-sheet: 24px;
+  --r-field: 16px;
+  --r-pill:  999px;
+  --r-spine: 6px;
+  --r-glyph: 50%;
+  --ease:     cubic-bezier(.2,.7,.2,1);
+  --dur:      280ms;
+  --dur-half: 140ms;
+  color-scheme: dark;
+}
+@media (min-width: 1200px) {
+  :root { --fs-greeting: 66px; --fs-h1: 52px; --fs-title: 32px; --fs-sub: 26px; --fs-body: 16px; }
+}

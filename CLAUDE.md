@@ -440,11 +440,12 @@ literals matched live CSS; the R0 recon carries the verified resolved snapshot. 
 semantic → `[data-ground="dark"]`** layer, so no single literal can capture a token: wire the
 token by NAME and read its value from `theme.css` (or the recon report's Stage-1 snapshot).
 
-- **Fonts (3):** `--font-serif` = `'Cormorant Garamond', Georgia, 'Times New Roman', serif`
-  (titles, prose, italics); `--font-body` = `'DM Sans', -apple-system, …, sans-serif`
-  (body, nav, buttons, hero H1); `--font-mono` = `'DM Mono', 'SF Mono', Menlo, Consolas, monospace`
-  (eyebrows, labels, meta, desktop nav links per §4-B). (These three stacks DO match live
-  `theme.css:9-11`.)
+- **Fonts (3, self-hosted since L1.1 — `assets/fonts`, OFL, precached):** `--font-display` = `"Fraunces", Georgia, serif`
+  (titles, the reader's words, Yumi's lines in italic; `--font-serif` is now an alias of it — Cormorant is retired);
+  `--font-body` = `"DM Sans", -apple-system, …, sans-serif` (body, nav, buttons, hero H1);
+  `--font-mono` = `"DM Mono", ui-monospace, Menlo, monospace`
+  (eyebrows, labels, meta, desktop nav links per §4-B). (These three stacks match the L1 `:root` in live
+  `theme.css`.)
 - **Surfaces:** `--surface` (card fill) · `--surface-2` (lighter card) · `--color-surface`
   (page fill / mobile panels) · `--bg` · `--bg-2` · `--sunk` · `--glass` / `--glass-2` /
   `--glass-spotlight` (translucent chrome fills).
