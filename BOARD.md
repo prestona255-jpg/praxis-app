@@ -17,6 +17,15 @@ re-measured at 390 in both moods on the twelve beta routes AND the states the fi
 the publish / finish ceremonies, intro panels, the capture door (each register), About, Spotlight (`docs/checkpoints/l1.md`
 P4 + the extended P4 after the red-team BLOCK). Theory surfaces (arcs, sub-theories) keep their theory-layer tokens and literals; their shared-token consumers (ink, gold, surface,
 line) follow the mood and are NOT yet swept — L1.2's first item (arc, sub-theory, commons, reader, walk).
+**L1.2a (2026-10-29, v3.314, local) — swept.** The Arcs list and the arc interior keep their light literal grounds and
+now take the day token values in both moods (method M9, `docs/studio/v1-canon-delta-amend-1.4-corrections.md`);
+sub-theory, commons, reader and walk measured clean as they stood. Re-measured at 390, both moods, on the twelve routes +
+the Arcs list + the five arc-family routes with a 67-book fixture profile: every row at or above floor except L1.1's
+ruled residuals (`.search-chip-n`, `.bk-unwoven-note`, `.pf-taphint` sub-11px sizes; `.transparency-entry-meta` 3:1
+meta allowance). Profile: the sky invitation re-docks clear of the header; category-colour text → `--ink`. The capture
+door's Paste icon is ↓ (drawn by the self-hosted DM Sans). Yumi's greeting scrolls whole. Logged-out: the signed-out
+Arcs prompt sits in the M9 room, so at night it now reads dark on its light ground (4.96, was 1.01); signed-out #arc
+measured 5.94 both moods; the other logged-out cells were not re-measured here.
 
 **Source of truth for this revision:** Ground-Truth Census v3 — W13 pre-audit
 re-census, July 6 2026, HEAD `0ee5fad` (`praxis-v3.177`). Route census =

@@ -22435,7 +22435,10 @@ function _pfPlaceLabels(items, w, h, pad, obstacles) {
 
 // The invitation docks in the EMPTIEST quadrant, clear of labels AND stars
 // (ported 1:1 from the mockup placeInvite). AM47.
-function _pfPlaceInvite(text, fs, occ, w, h, pad) {
+// L1.2 R74: excl = the rendered header's boxes in viewBox units (see _pfDockInvite).
+// They gate a slot only -- the quadrant tally ignores them, so an invite that
+// already clears the header never moves.
+function _pfPlaceInvite(text, fs, occ, w, h, pad, excl) {
   var tw = text.length * fs * 0.5, q = [0, 0, 0, 0], i, qi2;
   for (i = 0; i < occ.length; i = i + 1) {
     var b = occ[i], cxq = (b.x0 + b.x1) / 2, cyq = (b.y0 + b.y1) / 2;
@@ -22454,6 +22457,7 @@ function _pfPlaceInvite(text, fs, occ, w, h, pad) {
     if (bxx.x0 < pad - 0.1 || bxx.x1 > w - pad + 0.1 || bxx.y0 < 4 || bxx.y1 > h - 4) { return false; }
     var i2, b2;
     for (i2 = 0; i2 < occ.length; i2 = i2 + 1) { b2 = occ[i2]; if (bxx.x0 < b2.x1 + 5 && bxx.x1 > b2.x0 - 5 && bxx.y0 < b2.y1 + 4 && bxx.y1 > b2.y0 - 4) { return false; } }
+    if (excl) { for (i2 = 0; i2 < excl.length; i2 = i2 + 1) { b2 = excl[i2]; if (bxx.x0 < b2.x1 + 5 && bxx.x1 > b2.x0 - 5 && bxx.y0 < b2.y1 + 4 && bxx.y1 > b2.y0 - 4) { return false; } } }
     return true;
   }
   var qi, Q, cx2, yl, yi, bx2;
@@ -22465,6 +22469,48 @@ function _pfPlaceInvite(text, fs, occ, w, h, pad) {
   var y, bx3;
   for (y = h - 10; y > 10; y = y - 6) { bx3 = boxAt(w / 2, y); if (clear(bx3)) { return bx3; } }
   return boxAt(w / 2, h - 14);
+}
+
+// L1.2 R74 (felt pass F1): the header (avatar, name, tagline, pen-name line, pill)
+// is HTML laid over the top of the sky, so its size is only known after layout
+// (Fraunces sets it taller; a pen name wraps to 2-4 lines). _profileBuildSky
+// stashes the invite's placement inputs; _pfDockInvite measures the rendered
+// header, maps it into the sky's viewBox and re-docks the invite clear of it.
+// Called on BOTH sky builds (renderProfilePage + the Categories/Lenses toggle),
+// again when the fonts settle, and on resize.
+var _pfInviteCtx = null, _pfDockBound = false;
+function _pfDockInvite(wrap) {
+  var ctx = _pfInviteCtx, sky = wrap ? wrap.querySelector('.pf-sky') : null;
+  var inv = sky ? sky.querySelector('.pf-invite') : null;
+  if (!ctx || !inv || !sky.getBoundingClientRect) { return; }
+  var r = sky.getBoundingClientRect();
+  if (!r.width || !r.height) { return; }
+  var s = Math.min(r.width / ctx.w, r.height / ctx.h);
+  var ox = r.left + (r.width - ctx.w * s) / 2, oy = r.top + (r.height - ctx.h * s) / 2;
+  var sels = ['.pf-avatar', '.pf-name', '.pf-tag', '.pf-byline', '.pf-preview-link', '.pf-vis-badge'], excl = [], i, el, b;
+  for (i = 0; i < sels.length; i = i + 1) {
+    el = wrap.querySelector('.pf-hero-head ' + sels[i]);
+    if (!el) { continue; }
+    b = el.getBoundingClientRect();
+    if (!b.width || !b.height) { continue; }
+    excl.push({ x0: (b.left - ox) / s, x1: (b.right - ox) / s, y0: (b.top - oy) / s, y1: (b.bottom - oy) / s });
+  }
+  var p = _pfPlaceInvite(ctx.text, ctx.fs, ctx.occ, ctx.w, ctx.h, ctx.pad, excl);
+  inv.setAttribute('x', p.x.toFixed(1));
+  inv.setAttribute('y', p.y.toFixed(1));
+}
+function _pfDockInviteSoon(wrap) {
+  _pfDockInvite(wrap);
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { if (wrap.parentNode) { _pfDockInvite(wrap); } }, function () {});
+  }
+  if (!_pfDockBound && typeof window !== 'undefined' && window.addEventListener) {
+    _pfDockBound = true;
+    window.addEventListener('resize', function () {
+      var live = document.querySelector('.pf-root');
+      if (live) { _pfDockInvite(live); }
+    });
+  }
 }
 
 // R9b Lane G (S3) -- the SIGIL-GALAXY at the sky's center: an M63 flocculent disk
@@ -22548,6 +22594,7 @@ function _pfSigilDefs() {
 // preview); mob = mobile viewport. All figures read live state; category hues
 // are tokens (var(--field-N)); the sky seeds stably.
 function _profileBuildSky(uid, pub, mob, lensMode) {
+  _pfInviteCtx = null;   // L1.2 R74: set below only when this sky carries an invite
   // R9b Lane G S5 sky lens-mode (owner-only): planets are LENSES when lensMode, else CATEGORIES.
   var cats = (lensMode && !pub) ? _profileLensStats(uid).lenses : _profileCategoryStats(uid).cats;   // sorted by books desc; [0] = dominant
   var w = mob ? 460 : 1000, h = mob ? 560 : 460, pad = mob ? 54 : 30;
@@ -22672,6 +22719,7 @@ function _profileBuildSky(uid, pub, mob, lensMode) {
   if (cats.length === 0 || cats.length < 3 || minB <= 3 || bookN < 25) {
     var invText = (cats.length === 0) ? 'your reading gathers here as you read' : 'still thin here — worth returning to?';
     var inv = _pfPlaceInvite(invText, 13, occ, w, h, pad);
+    _pfInviteCtx = { text: invText, fs: 13, occ: occ.slice(0), w: w, h: h, pad: pad };
     body += '<text class="pf-invite pf-skytext" x="' + inv.x.toFixed(1) + '" y="' + inv.y.toFixed(1) + '" text-anchor="middle">' + _portraitEsc(invText) + '</text>';
   }
   // value lines (connect a value's drawing subs' stars; drawn on tap-to-light)
@@ -23430,7 +23478,7 @@ function _pfWire(wrap, uid, vis) {
       var _ax = seg.getAttribute('data-axis');
       _pfSetAxis(wrap, _ax);
       // R9b Lane G S5: the SKY follows the Numbers axis (owner only) -- rebuild planets as lenses/categories.
-      if (!vis) { var _skh = wrap.querySelector('.pf-sky-host'); if (_skh) { _skh.innerHTML = _profileBuildSky(uid, vis, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth < 1200 : false), _ax === 'lenses'); } }
+      if (!vis) { var _skh = wrap.querySelector('.pf-sky-host'); if (_skh) { _skh.innerHTML = _profileBuildSky(uid, vis, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth < 1200 : false), _ax === 'lenses'); _pfDockInvite(wrap); } }
       return;
     }
     var a = cl(t, '[data-act]');
@@ -23659,6 +23707,7 @@ function renderProfilePage() {
   wrap.setAttribute('data-mob', mob ? '1' : '0');
   wrap.innerHTML = _pfBuildPage(uid, vis, mob);
   host.appendChild(wrap);
+  _pfDockInviteSoon(wrap);   // L1.2 R74
   // DNA carry: mount the reader-model section as a live DOM node (owner-only). Its
   // re-render target is renderProfilePage (Condition-1 -- carried handlers re-render
   // the LIVE surface, never the retired Account page).
@@ -26212,7 +26261,7 @@ function buildCaptureDoor() {
         '<div class="capdoor-modes" role="tablist" aria-label="capture mode">' +
           '<button class="capdoor-mode" data-mode="note" aria-pressed="true" type="button"><span class="ic">✎</span>Note</button>' +
           '<button class="capdoor-mode" data-mode="voice" aria-pressed="false" type="button"><span class="ic">🎙</span>Voice</button>' +
-          '<button class="capdoor-mode" data-mode="paste" aria-pressed="false" type="button"><span class="ic">⭳</span>Paste/Import</button>' +
+          '<button class="capdoor-mode" data-mode="paste" aria-pressed="false" type="button"><span class="ic">↓</span>Paste/Import</button>' +
           '<button class="capdoor-mode is-seat" data-mode="photo" aria-pressed="false" type="button"><span class="ic">📷</span>Photo</button>' +
           '<button class="capdoor-mode is-seat" data-mode="scan" aria-pressed="false" type="button"><span class="ic">▤</span>Scan a book</button>' +
         '</div>' +

@@ -46,12 +46,14 @@ for my $n (sort keys %cat) {
 my $aliasBlock = "/* §6 — every other live name, re-pointed (names stay, values move; ruled D: retired hues are\n"
   . "   aliases, never purged). Declared on :root AND re-declared on the two sky scopes so each alias resolves\n"
   . "   against that scope's core (a custom property resolves where it is declared, not where it is used). */\n"
-  . ":root,\n.yumi-panel,\n.yumi-bloom {\n" . join("\n", @alias) . "\n}\n";
+  . ":root,\n.yumi-panel,\n.yumi-bloom,\n.arcs.lum-amber-deep,\n.arcfield {\n" . join("\n", @alias) . "\n}\n";   # L1.2 M9: the two arc rooms
 
 # ---- 3. the day block, generated from ONE source and declared twice (rail 4) ----
 my $dayBlock = "/* §2 — DAY. Declared twice from one source (tools: docs/checkpoints/l1-tools/build-theme.pl); the two\n"
-  . "   bodies are byte-identical and diffed by the build (P3). */\n"
-  . "html[data-mood=\"day\"] {\n$day}\n"
+  . "   bodies are byte-identical and diffed by the build (P3).\n"
+  . "   L1.2 M9: the Arcs list and the arc interior keep a light literal ground in both moods, so they take the\n"
+  . "   day values here in both moods (and re-declare the §6 aliases above) — corrections.md M9. */\n"
+  . "html[data-mood=\"day\"],\n.arcs.lum-amber-deep,\n.arcfield {\n$day}\n"
   . "\@media (prefers-color-scheme: light) {\nhtml[data-mood=\"auto\"] {\n$day}\n}\n";
 
 # ---- 4. the old dual-ground override -> the two sky scopes of §2 ----

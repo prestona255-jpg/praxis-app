@@ -287,7 +287,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 100%;
   text-align: center;
 }
 
@@ -1702,7 +1702,7 @@ html { overscroll-behavior-y: contain; }
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink);
 }
 
 /* Cover thumbnails row (live card only). Five small covers in a
@@ -1853,7 +1853,7 @@ html { overscroll-behavior-y: contain; }
    Re-point values verbatim from the R3 home skin (components.css:11707-11741).
    ============================================================================ */
 .arcs.lum-amber-deep{
-  max-width:none; margin:0; padding:56px var(--sp-5) 80px; min-height:100vh;
+  max-width:none; margin:0; padding:56px var(--sp-5) 80px; min-height:100vh; color:var(--ink);
   background-color:#f4efe4;
   background-image:
     radial-gradient(70% 55% at 14% 2%,  rgba(248,228,176,.55) 0%, rgba(248,228,176,0) 60%),
@@ -1870,7 +1870,7 @@ html { overscroll-behavior-y: contain; }
 /* control bar (mock .bar): segmented sort + count */
 .arcs.lum-amber-deep .arcs-bar{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:0 auto 18px; }
 .arcs.lum-amber-deep .arcs-seg{ display:inline-flex; border:1px solid var(--border); border-radius:var(--radius-pill); padding:3px; background:var(--surface-2); }
-.arcs.lum-amber-deep .arcs-seg-btn{ font-family:var(--font-body); font-size:12px; color:var(--ink-3); background:none; border:none; border-radius:var(--radius-pill); padding:6px 13px; cursor:pointer; }
+.arcs.lum-amber-deep .arcs-seg-btn{ font-family:var(--font-body); font-size:12px; color:var(--ink); background:none; border:none; border-radius:var(--radius-pill); padding:6px 13px; cursor:pointer; }
 .arcs.lum-amber-deep .arcs-seg-btn:hover{ color:var(--ink); }
 .arcs.lum-amber-deep .arcs-seg-btn.is-on{ color:#3d2807; background:linear-gradient(180deg,var(--field-1),var(--gold)); font-weight:600; }
 .arcs.lum-amber-deep .arcs-count{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--ink-3); }
@@ -8625,7 +8625,7 @@ html { overscroll-behavior-y: contain; }
   padding: 8px 18px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  color: var(--ink-2);
+  color: var(--ink);
 }
 .st-picker-btn:hover { background: var(--surface); border-color: var(--ink-4); }
 .st-picker-btn:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; }
@@ -8634,6 +8634,9 @@ html { overscroll-behavior-y: contain; }
   border-color: var(--gold-deep, var(--gold-light));
   color:var(--on-gold);
 }
+/* L1.2: .st-picker-btn:hover (0,2,0) out-ranked the primary and filled it --surface under --on-gold (1.49 at night) —
+   the primary keeps its gold fill and border on hover (M1). */
+.st-picker-btn-primary:hover { background:var(--gold); border-color: var(--gold-deep, var(--gold-light)); }
 .st-picker-btn-text {
   border: 0;
   background: none;
@@ -8697,7 +8700,7 @@ html { overscroll-behavior-y: contain; }
 .st-confirm-copy {
   font-size: 14px;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink);
   margin: 0 0 18px 0;
 }
 .st-confirm-actions {
@@ -8714,7 +8717,7 @@ html { overscroll-behavior-y: contain; }
   padding: 8px 18px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  color: var(--ink-2);
+  color: var(--ink);
 }
 .st-confirm-btn:hover { background: var(--surface); border-color: var(--ink-4); }
 .st-confirm-btn:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; }
@@ -8735,6 +8738,7 @@ html { overscroll-behavior-y: contain; }
   color: var(--br-deep);
 }
 .st-confirm-btn-primary:hover {
+  background: var(--gold);
   filter: brightness(1.06);
   border-color: var(--gold);
 }
@@ -12859,7 +12863,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .cavity-cover.is-picked .shelf-book-cover-area{ outline:2px solid var(--gold); outline-offset:2px; }
 /* caption zone contents */
 .shelf.lum-amber-deep .cap .shelf-book-title{ font-family:var(--font-serif); font-weight:600; font-size:13px; color:var(--ink); text-align:center; line-height:1.2; max-width:var(--cover-w); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
-.shelf.lum-amber-deep .cap .shelf-book-author{ font-family:var(--font-body); font-size:10.5px; color:var(--ink-3); text-align:center; max-width:var(--cover-w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.shelf.lum-amber-deep .cap .shelf-book-author{ font-family:var(--font-body); font-size:10.5px; color:var(--ink); text-align:center; max-width:var(--cover-w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .shelf.lum-amber-deep .cap .shelf-book-meta{ display:flex; align-items:center; gap:5px; margin-top:3px; }
 .shelf.lum-amber-deep .cavity-cover .shelf-book-status{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-deep); }
 .shelf.lum-amber-deep .cavity-cover .shelf-book-status::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--gold); box-shadow:none; }
@@ -12879,7 +12883,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .cavity-cover.is-lit .shelf-book-cover-area{ box-shadow:var(--shadow-cover), 0 0 0 2px var(--gold-hi); }
 
 /* A1 · mobile See-all tile (after the 2nd stacked shelf line) */
-.shelf.lum-amber-deep .seeall-tile{ width:var(--cover-w); height:var(--cover-h); border-radius:6px; border:1.5px dashed var(--line-page-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-2); display:flex; align-items:center; justify-content:center; text-align:center; padding:8px; line-height:1.5; cursor:pointer; }
+.shelf.lum-amber-deep .seeall-tile{ width:var(--cover-w); height:var(--cover-h); border-radius:6px; border:1.5px dashed var(--line-page-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; color:var(--ink); display:flex; align-items:center; justify-content:center; text-align:center; padding:8px; line-height:1.5; cursor:pointer; }
 .shelf.lum-amber-deep .seeall-tile:hover{ border-color:var(--gold); color:var(--gold-deep); }
 
 /* the unshelved pile (Uncategorized) — outside the case, "in motion", last */
@@ -15335,7 +15339,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-why::after{ content:'\201D'; }
 .pf-drawn{ font-family:var(--font-body); font-size:12.5px; color:var(--ink-3); margin-top:9px; }
 .pf-sublinks{ margin-top:6px; display:flex; flex-wrap:wrap; gap:6px 14px; }
-.pf-sublink{ font-family:var(--font-body); font-size:13px; color:var(--field-deep,var(--gold-deep)); border-bottom:1px solid currentColor; cursor:pointer; display:inline-flex; align-items:center; gap:6px; opacity:.95; }
+.pf-sublink{ font-family:var(--font-body); font-size:13px; color:var(--ink); border-bottom:1px solid var(--field-deep,var(--gold-deep)); cursor:pointer; display:inline-flex; align-items:center; gap:6px; opacity:.95; }
 .pf-sublink::after{ content:'\2192'; opacity:.55; margin-left:2px; }
 .pf-sublink.draft{ color:var(--ink-3); }
 .pf-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
@@ -15363,7 +15367,7 @@ body.wc-focus .app-nav { opacity:.26; }
    the dot is nudged 3px to sit on the first line's optical centre. */
 .pf-catcard .cn{ font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--ink); display:flex; align-items:flex-start; gap:6px; }
 .pf-catcard .cn .pf-dot{ margin-top:3px; }
-.pf-catcard .cm{ font-family:var(--font-mono); font-size:10.5px; color:var(--railtext); margin-top:3px; font-variant-numeric:tabular-nums lining-nums; }
+.pf-catcard .cm{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink); margin-top:3px; font-variant-numeric:tabular-nums lining-nums; }
 .pf-bar{ height:5px; border-radius:3px; background:var(--line); margin-top:8px; overflow:hidden; }
 .pf-bar i{ display:block; height:100%; background:var(--barfill); border-radius:3px; }
 .pf-numcov{ font-family:var(--font-mono); font-size:12px; color:var(--ink-3); font-style:italic; margin-top:15px; padding-top:12px; border-top:1px solid var(--line); }
@@ -15372,7 +15376,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-gap{ padding:12px 0; border-top:1px solid var(--line); }
 .pf-gap:first-of-type{ border-top:none; }
 .pf-gap-q{ font-family:var(--font-serif); font-size:18px; line-height:1.4; color:var(--ink); max-width:58ch; }
-.pf-gap-q .cat{ font-weight:600; color:var(--field-deep); border-bottom:1px solid var(--field-deep); }
+.pf-gap-q .cat{ font-weight:600; color:var(--ink); border-bottom:1px solid var(--field-deep); }
 .pf-gap-a{ font-family:var(--font-body); font-size:13px; color:var(--ink-3); margin-top:4px; }
 .pf-now{ font-family:var(--font-serif); font-size:17px; font-style:italic; color:var(--ink-2); max-width:60ch; }
 .pf-now b{ font-style:normal; font-weight:600; color:var(--ink); }
@@ -15383,9 +15387,9 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-pub:hover{ box-shadow:var(--shadow-2); }
 .pf-pub .pt{ font-family:var(--font-serif); font-weight:600; font-size:19px; color:var(--ink); line-height:1.15; }
 .pf-pub .pe{ font-family:var(--font-serif); font-style:italic; font-size:14.5px; color:var(--ink-2); margin-top:5px; line-height:1.4; }
-.pf-pub .pl{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); margin-top:7px; }
+.pf-pub .pl{ font-family:var(--font-mono); font-size:10px; color:var(--ink); margin-top:7px; }
 .pf-pub .pm{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:auto; padding-top:11px; }
-.pf-pub .pcat{ font-family:var(--font-mono); font-size:10.5px; color:var(--railtext); display:inline-flex; align-items:center; gap:5px; }
+.pf-pub .pcat{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink); display:inline-flex; align-items:center; gap:5px; }
 .pf-pub .pdate{ font-family:var(--font-mono); font-size:10px; color:var(--ink-3); white-space:nowrap; font-variant-numeric:tabular-nums lining-nums; }
 .pf-pub-more{ margin-top:14px; font-family:var(--font-body); font-size:13px; color:var(--gold-deep); cursor:pointer; border-bottom:1px solid var(--line); display:inline-block; }
 /* settings */
@@ -15438,7 +15442,7 @@ body.wc-focus .app-nav { opacity:.26; }
 .pf-pret b{ color:var(--ink); font-weight:600; } .pf-pret em{ color:var(--ink); font-style:italic; }
 .pf-pret .ct{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); white-space:nowrap; }
 .pf-pstars{ display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px; }
-.pf-pstar{ font-family:var(--font-body); font-size:13px; color:var(--railtext,var(--gold-deep)); border-bottom:1px solid currentColor; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.pf-pstar{ font-family:var(--font-body); font-size:13px; color:var(--ink); border-bottom:1px solid var(--railtext,var(--gold-deep)); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .pf-pstar::after{ content:'\2192'; opacity:.55; } .pf-pstar.draft{ color:var(--ink-3); }
 .pf-pstar .sd{ width:7px; height:7px; border-radius:50%; background:var(--star-gold); flex:none; }
 .pf-pstar:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }

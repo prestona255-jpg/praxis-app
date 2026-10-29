@@ -112,7 +112,9 @@
    against that scope's core (a custom property resolves where it is declared, not where it is used). */
 :root,
 .yumi-panel,
-.yumi-bloom {
+.yumi-bloom,
+.arcs.lum-amber-deep,
+.arcfield {
   --arc-question-glow: var(--gold-star);
   --bg: var(--page);
   --bg-2: var(--page-2);
@@ -369,8 +371,12 @@
 }
 
 /* §2 — DAY. Declared twice from one source (tools: docs/checkpoints/l1-tools/build-theme.pl); the two
-   bodies are byte-identical and diffed by the build (P3). */
-html[data-mood="day"] {
+   bodies are byte-identical and diffed by the build (P3).
+   L1.2 M9: the Arcs list and the arc interior keep a light literal ground in both moods, so they take the
+   day values here in both moods (and re-declare the §6 aliases above) — corrections.md M9. */
+html[data-mood="day"],
+.arcs.lum-amber-deep,
+.arcfield {
   --page:   #EDD79E;
   --page-2: #FBF3D9;
   --page-3: #E2C98C;

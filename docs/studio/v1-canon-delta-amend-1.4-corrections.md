@@ -20,4 +20,17 @@ rulings changed what it says, the correction is recorded here; **where the two d
 5. **§8** — `color-scheme` follows the mood in CSS (`dark` at `:root`, `light` in the day block), so the UA's own
    controls follow the chosen mood, not the OS.
 
+6. **M8 and M9 (Preston, 28-29 Oct).** M8 — the extended sweep: the states a resting-route sweep never renders
+   (signed-out, ceremonies, intro panels, each capture-door register, About, Spotlight) are swept too (`l1.md`, "Extended
+   P4 (M8)"). **M9 — a room on a fixed light LITERAL ground takes the day token values in both moods** (L1.2, 29 Oct).
+   A theory room whose ground is a literal Q1 left untouched (the Arcs list `.arcs.lum-amber-deep`, light paper; the arc
+   interior `.arcfield`, warm-dim) must not pair it with a mood-flipping shared token — at night `--ink` turned light on
+   light paper (the Arcs title 1.01:1). Method: the room's selector joins the first day block (`html[data-mood="day"]`)
+   AND the §6 alias list (`:root, .yumi-panel, .yumi-bloom, …` — an alias resolves where it is declared, so the core values
+   alone would leave `--card-ink`, `--surface`, `--border`… at night). Never the `auto` block: it sits inside a media
+   query. The room then renders its Day look in both moods; theory tokens and literals stay untouched. The day block's
+   non-token lines ride in with it (`color-scheme: light`, `--lamp`, `--sky-a/-b`, `--spill`, `--grain-*`, `--bl-*`,
+   `--shadow-float`, `--scrim`) — measured harmless in both rooms. Proof: every text pair on #arcs and #arc/<id> at or
+   above floor in both moods (`l1.md`, L1.2a P5).
+
 Records: `docs/checkpoints/l1.md`, `docs/checkpoints/l1-tools/pair-spec.tsv`.
