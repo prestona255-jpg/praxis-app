@@ -31,6 +31,16 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-29 (L1.2a + L1.2b — the felt-pass fixes, the arc-route sweep, the flat pass; ruling 79's lane L4b)** —
+  L1.1 pushed `1a74f48` (v3.313); Preston's felt pass PASSED the paint and found five defects (F1–F5,
+  `docs/checkpoints/l1-felt-pass.md`). **L1.2a** (`94ebcb9`, v3.314, committed local): the profile header collision, the
+  paste icon, the category stat lines, Yumi's greeting overflow; method **M9** (the Arcs list + the arc interior take the
+  day token values in both moods). **L1.2b** (v3.315, local): the flat pass as ruled + amended (blur 20 → 0; gradients 230
+  → 64 = canon §1's 7 + 7 kept drawings / fades + theory 36 + camera 14; 41 shadows to the canon set; motion literals to
+  `--ease` / `--dur` / `--dur-half`; one shortening reduced-motion guard; buttons in DM Sans except the four title-role buttons
+  (corrections item 8) and the camera). **Ruling 79 places a new lane, L4b — the Day Three rooms, after L4 and before L5: L1 → L2 → L4 →
+  L4b → L5 → L6 → L7b, the Scan lane as before.** Preston's ruling — not a re-plan of the agent's, so no `PROPOSED:`
+  flag; L1 stays at the top of `## Now`. Record: `docs/checkpoints/l1.md`, `docs/checkpoints/l1-flat.md`.
 - **2026-10-28 (L1.1 — THE NEW LOOK, the token layer, built local v3.313)** — L1 joins `## Now` at the top as the lane in
   flight (the first-beta look). No re-order of the rest, no retirement, no contradiction of a ruling, so no `PROPOSED:`
   flag. Stage 1a table ruled 28 Oct (C1–C5, Q1–Q10); Stage 1b built against canon 1.4 and the twelve role swaps +
@@ -1407,7 +1417,12 @@ flagged at the top of the Builder's sequence page for his call — never applied
 re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: Preston's felt pass on the spine mockup ·
 the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + card. Hygiene fork ruled (split).
 
-- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.1 token layer BUILT local 2026-10-28, v3.313)** —
+- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.1 PUSHED v3.313 · L1.2a committed v3.314 · L1.2b built v3.315)** —
+  **Where it stands (2026-10-29):** L1.1 pushed `1a74f48`; felt pass on the phone PASSED the paint, five defects → L1.2a
+  (`94ebcb9`: F1 header re-dock, F3 ↓ icon, F4 stat lines → ink, F5 greeting scrolls, M9 arc rooms, ruling-43 sweep) and
+  L1.2b (the flat pass, `docs/checkpoints/l1-flat.md`); both push together on Preston's word, then his felt pass of
+  v3.315 (the twelve routes both moods + Search + the not-on-the-list card + the offline font check), then the close-out.
+  The original L1.1 note follows.
   night by default with a Night · Day row in Settings; one definition per token in theme.css (night `:root` + the day block
   declared twice, byte-identical); every other sheet points there; 796 consumer literals ruled by table (187 left: theory +
   camera); six self-hosted OFL fonts (Fraunces, DM Sans, DM Mono) precached; the PWA shell (#24180C theme-color + manifest,
@@ -1511,6 +1526,14 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   v3.229.** Everything built; only that felt confirmation is outstanding.
 
 ## Next
+- [ ] **L4b — THE DAY THREE ROOMS (ruling 79, 2026-10-29; after L4, before L5)** — the rooms no lane owned: Search
+  redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category
+  page (r47) · the Notebook head + its Settings link · the What Yumi Sees page ("Everything she sees right now") · the
+  bottom tabs (Home · Shelf · Notebook · Capture · You) + the Search pill, the floating "+" retired. Needs L4's lens
+  engine; L5's walk lands on finished rooms. **Beta lane order: L1 → L2 → L4 → L4b → L5 → L6 → L7b; the Scan lane as
+  before.** The design chat writes its prompt when L4 closes. Source: `docs/checkpoints/l1-felt-pass.md` §C–§D.
+  touches: [search, lenses, notebook, yumi-sees, nav]
+
 **Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate).**
 *(FINISH-CHOREO · R-SHELF · R-CAPTURE promoted to ## Now at the R-POLISH close, 2026-07-20 — see above.)*
 **RE-PLAN RULED — S-B SWEEP is the lead (Preston, 2026-08-08).** With SCAN closed (v3.269, full felt

@@ -44,13 +44,13 @@
 /* ---- MO-1 named moments (all reduced-motion-guarded at the file foot) --------- */
 .mo-hover{ transition:transform var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard); }
 .mo-hover:hover{ transform:translateY(-2px); }
-.mo-press:active{ transform:translateY(1px) scale(.99); transition:transform 90ms var(--ease-standard); }
+.mo-press:active{ transform:translateY(1px) scale(.99); transition:transform var(--dur-half) var(--ease-standard); }
 .mo-reveal{ animation:mo-reveal var(--dur-gentle) var(--ease-standard) both; }
 @keyframes mo-reveal{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
 .mo-crossfade{ animation:mo-cross var(--dur-gentle) var(--ease-standard) both; }
 @keyframes mo-cross{ from{opacity:0;} to{opacity:1;} }
 /* SAVE PULSE — every capture/save visibly answers the hand */
-.mo-savepulse{ animation:mo-save 520ms var(--ease-standard); }
+.mo-savepulse{ animation:mo-save var(--dur) var(--ease-standard); }
 @keyframes mo-save{ 0%{box-shadow:0 0 0 0 transparent;} 30%{box-shadow:none;} 100%{box-shadow:0 0 0 0 transparent;} }
 
 /* ============================================================================
@@ -113,7 +113,7 @@
 /* CC-3 · buttons — ONE primary-gold per view (restraint) */
 .k-btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px 20px; border-radius:12px;
   font-family:var(--ff-body); font-size:14px; font-weight:600; cursor:pointer; border:1px solid transparent; }
-.k-btn--primary{ color:var(--on-gold); background:linear-gradient(180deg,var(--gold) 0%, var(--gold-hi) 40%, var(--gold) 100%);
+.k-btn--primary{ color:var(--on-gold); background:var(--gold);
   box-shadow:var(--card-hi); }
 .k-btn--secondary{ color:var(--gold-deep); background:var(--surface); border-color:var(--gold); }
 .k-btn--quiet{ color:var(--ink-2); background:transparent; border-color:var(--border); }

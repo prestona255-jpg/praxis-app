@@ -26,6 +26,12 @@ meta allowance). Profile: the sky invitation re-docks clear of the header; categ
 door's Paste icon is ↓ (drawn by the self-hosted DM Sans). Yumi's greeting scrolls whole. Logged-out: the signed-out
 Arcs prompt sits in the M9 room, so at night it now reads dark on its light ground (4.96, was 1.01); signed-out #arc
 measured 5.94 both moods; the other logged-out cells were not re-measured here.
+**L1.2b (2026-10-29, v3.315, local) — the flat pass.** No blur anywhere; gradients only where canon §1 allows (plus
+drawn marks, two fades, and the theory / camera layers, untouched); shadows only where something floats; motion on the
+canon's one easing and two durations, and a reduced-motion guard that shortens. Every cell's STRUCTURE is unchanged
+(no layout moved — `button{font:inherit}` was dropped because it would have resized 88 controls). Re-measured at 390,
+both moods, on the same 17 routes + the Arcs list: unchanged from L1.2a (every row at or above floor except L1.1's
+ruled residuals). Record: `docs/checkpoints/l1-flat.md`.
 
 **Source of truth for this revision:** Ground-Truth Census v3 — W13 pre-audit
 re-census, July 6 2026, HEAD `0ee5fad` (`praxis-v3.177`). Route census =

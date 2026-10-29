@@ -160,7 +160,7 @@
   --danger: var(--gold-ink);
   --danger-line: var(--line);
   --dark-2: var(--umber);
-  --dots: radial-gradient(circle, color-mix(in srgb, var(--ink-3) 26%, transparent) 1.3px, transparent 1.5px);
+  --dots: none;
   --dur-fast: var(--dur-half);
   --dur-gentle: var(--dur);
   --ease-emphasis: var(--ease);
@@ -213,8 +213,8 @@
   --gold-soft: var(--gold-star);
   --gold-text: var(--gold-ink);
   --gold-world: var(--gold-star);
-  --grad: linear-gradient(var(--gold), var(--gold));
-  --grad-soft: linear-gradient(var(--gold), var(--gold));
+  --grad: var(--gold);
+  --grad-soft: var(--gold);
   --ground: var(--sky);
   --ground-base: var(--page);
   --ground-center: var(--page);
@@ -228,7 +228,7 @@
   --hour-2: var(--sky);
   --hour-3: var(--sky);
   --hour-4: var(--sky);
-  --hour-arc: linear-gradient(var(--sky), var(--sky));
+  --hour-arc: var(--sky);
   --hour-horizon: var(--lamp-foot);
   --hour-lamp: var(--lamp);
   --ink-4: var(--ink-3);
@@ -807,15 +807,7 @@ body::before {
      The dark-study ground is the [data-ground="dark"]::before override just
      below (it swaps in --ground-grad). The old wheat radial and its three
      hardcoded honey stops are retired here in favour of the --page token. */
-  background:
-    repeating-linear-gradient(
-      37deg,
-      transparent 0,
-      transparent 3px,
-      color-mix(in srgb, var(--meta) 4%, transparent) 3px,
-      color-mix(in srgb, var(--meta) 4%, transparent) 4px
-    ),
-    var(--page);
+  background:var(--page);
 }
 
 /* THE HOUR, REFINED -- the world ground. Swaps the bright page for the twilight

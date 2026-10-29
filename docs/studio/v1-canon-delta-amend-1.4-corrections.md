@@ -33,4 +33,33 @@ rulings changed what it says, the correction is recorded here; **where the two d
    `--shadow-float`, `--scrim`) — measured harmless in both rooms. Proof: every text pair on #arcs and #arc/<id> at or
    above floor in both moods (`l1.md`, L1.2a P5).
 
+7. **§10 ruling A — the flat pass, AS AMENDED (Preston, 29 Oct, L1.2b).** backdrop-filter → 0 (all 20). Gradients:
+   only §1's `--lamp`, `--lamp-foot`, `--pool`, `--spill` remain as definitions; consumer gradients go flat by role —
+   gold controls → `--gold`; gradient-clipped titles → `--ink`; lines and marks → their own colour; glows → `none`
+   unless one matches a §1 light (none did); a fill → its darker stop, and where the darker stop flips with the mood →
+   the stop the surface's role names (so a surface is one role in both moods). Kept as drawings, not fills: the
+   `.k-select` chevron, the `.mc-cell.is-taken` hatch, `.cover-unknown` stripes, the shelf's cavity lines, and the two
+   scroll / action-bar fades (`.pf-strip-wrap.overflow::after`, `.intro-journey .ij-actionbar`). Theory and camera
+   gradients untouched (rails). Shadows: only what floats takes `--shadow-float`; cards `--card-hi`; covers
+   `--shadow-cover`; rings / bars drawn as shadow stay (borders); glows → `none`. Motion: literals → `--ease`, `--dur`
+   (230–599ms), `--dur-half` (under 230ms); loops of 600ms or longer keep their durations; one global reduced-motion
+   guard SHORTENS (0.01ms, one iteration) and never sets `animation:none` / `transition:none`, so end events fire.
+   **`button{font:inherit}` is DROPPED** — it resized 88 controls (a layout change); `font-family:inherit` stays and
+   each non-DM-Sans button's own `font-family` → `var(--font-body)`. Applied table: `docs/checkpoints/l1-flat.md`.
+8. **Title-role button exemptions (Preston, 29 Oct) — buttons that stay in the display serif.** A button whose role in
+   Day Three is a TITLE keeps `var(--font-serif)` (= `--font-display`, Fraunces); a later sweep must not move it to DM
+   Sans. The list (each keeps `var(--font-serif)`):
+   - `.shelf.lum-amber-deep .cavity-band-hd button.label` — the shelf's category headings ("Education", "Theory &
+     Philosophy"; Day Three `.bnd .bh .bhbtn em`, serif 500).
+   - `.arcfield.af-world .af-q` — the arc's question: an `<h1>`, the arc's title (role=button only for its owner, to edit).
+   - `.arcfield.af-world .af-invite` — the line that holds the same title slot while an arc has no question.
+   - `.desk-question.is-authored .desk-question-line` — the question the reader carries, once written (Day Three
+     `.desk .carry`, the display serif). **Flagged for Preston's felt pass:** it is the reader's words rather than a
+     title in the strict sense; its unwritten prompt ("Tap to carry a question.") follows the DM Sans rule.
+   Not buttons any rule reaches: `.shelf .shelf-filter`, `.shelf-sort-btn`, `.account-retro-btn` (no renderer in js/).
+   The camera's `.scan-draftbar-btn` stays mono with the camera surface (untouched, as its gradients). The proof is a
+   RULE census (every font rule whose subject is a `<button>` / role=button class in js/ — what is left is this list +
+   the camera + three `font:inherit` rules that inherit the body face) AND the live probe: buttons not in DM Sans on
+   the 18 routes + the lens sheet at 390 and 1360 = the shelf headings only.
+
 Records: `docs/checkpoints/l1.md`, `docs/checkpoints/l1-tools/pair-spec.tsv`.

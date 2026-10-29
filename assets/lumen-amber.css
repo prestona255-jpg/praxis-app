@@ -74,16 +74,12 @@
   background:var(--lum-glass);
   border:1px solid var(--lum-glass-bd-2);
   border-radius:var(--lum-r-card);
-  -webkit-backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
-  backdrop-filter:blur(var(--lum-glass-blur)) saturate(150%);
   box-shadow:var(--card-hi);
 }
 .lum-glass-raised{
   background:var(--lum-glass-raised);
   border:1px solid var(--lum-glass-bd);
   border-radius:var(--lum-r-card);
-  -webkit-backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
-  backdrop-filter:blur(calc(var(--lum-glass-blur) + 2px)) saturate(155%);
   box-shadow:
     var(--card-hi);
 }
@@ -99,15 +95,13 @@
 .lum-light .halo{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:calc(var(--cd,14px) * 3.3); height:calc(var(--cd,14px) * 3.3);
-  border-radius:50%; background:radial-gradient(circle, var(--hg) 0%, transparent 66%); opacity:.5;
+  border-radius:50%; background:none; opacity:.5;
 }
 .lum-light .core{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:var(--cd,14px); height:var(--cd,14px); border-radius:50%;
-  background:
-    radial-gradient(circle at 36% 28%, var(--hi) 0%, transparent 42%),
-    radial-gradient(circle at 38% 32%, var(--hl) 0%, var(--h) 46%, var(--hd) 100%);
-  box-shadow:var(--card-hi), 0 0 calc(var(--cd,14px) * .8) var(--hg);
+  background:var(--h);
+  box-shadow:var(--card-hi);
 }
 .lg { --h:#ffce4a; --hl:#ffeeb0; --hd:#bd8a1e; --hg:rgba(255,206,74,.62); }  /* gold    */
 .lam{ --h:#ffab4a; --hl:#ffd9a0; --hd:#c47a1e; --hg:rgba(255,171,74,.55); }  /* amber   */
@@ -136,7 +130,7 @@
      into an inline --mk-glow; that read is DROPPED here so the glow is gold-only,
      app-wide, without editing byte-locked marks.js. Ruled edit — byte-lock
      re-recorded in the same commit. */
-  border-radius:50%; background:radial-gradient(circle, var(--mark-glow) 0%, transparent 68%); opacity:.55;
+  border-radius:50%; background:none; opacity:.55;
 }
 .lum-mark > svg{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
@@ -150,11 +144,11 @@
    PraxisMarks.COLORS; toggle .is-on on the chosen one.
    ============================================================================ */
 .lum-pick{ display:grid; grid-template-columns:repeat(8,1fr); gap:7px; }
-.lum-pick button{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid transparent; background:var(--hi); cursor:pointer; padding:0; transition:background .15s, border-color .15s; }
+.lum-pick button{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid transparent; background:var(--hi); cursor:pointer; padding:0; transition:background var(--dur-half), border-color var(--dur-half); }
 .lum-pick button:hover{ background:var(--hi); }
 .lum-pick button.is-on{ border-color:var(--lum-gold); background:color-mix(in srgb, var(--gold-star) 16%, transparent); }
 .lum-swatches{ display:flex; flex-wrap:wrap; gap:8px; }
-.lum-swatches button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; box-shadow:var(--card-hi); transition:transform .12s, border-color .15s; }
+.lum-swatches button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; box-shadow:var(--card-hi); transition:transform var(--dur-half), border-color var(--dur-half); }
 .lum-swatches button:hover{ transform:scale(1.08); }
 .lum-swatches button.is-on{ border-color:var(--line-night); }
 
@@ -178,7 +172,7 @@
 .lum-cite .dot{ width:6px; height:6px; border-radius:50%; background:var(--lum-gold); }
 .lum-chip-gold{
   font-family:var(--lum-sans); font-size:11.5px; font-weight:500;
-  color:var(--lum-gold-ink); background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold));
+  color:var(--lum-gold-ink); background:var(--gold);
   border:none; border-radius:var(--lum-r-pill); padding:6px 14px;
 }
 .lum-chip-line{
@@ -194,7 +188,7 @@
 .lum-yumi{ display:flex; align-items:flex-start; gap:9px; }
 .lum-yumi .dot{
   flex:none; width:11px; height:11px; border-radius:50%; margin-top:4px;
-  background:radial-gradient(circle at 38% 32%, var(--yumi), var(--lum-cyan) 46%, var(--yumi) 100%);
+  background:var(--yumi);
   box-shadow:none;
 }
 .lum-yumi p{ margin:0; font-family:var(--lum-serif); font-style:italic; font-size:15px; color:var(--on-night-2); }
@@ -208,7 +202,7 @@
    ============================================================================ */
 .lum-seg{ display:inline-flex; border:1px solid var(--lum-glass-bd); border-radius:var(--lum-r-pill); padding:3px; background:var(--hi); }
 .lum-seg > *{ font-family:var(--lum-sans); font-size:11.5px; font-weight:500; color:var(--on-night-2); border-radius:var(--lum-r-pill); padding:5px 13px; cursor:pointer; }
-.lum-seg > .is-on{ color:var(--lum-gold-ink); background:linear-gradient(180deg, var(--lum-gold-l), var(--lum-gold)); }
+.lum-seg > .is-on{ color:var(--lum-gold-ink); background:var(--gold); }
 
 /* ============================================================================
    AMBIENT MOTES (optional dust over an atmosphere) — purely decorative.
