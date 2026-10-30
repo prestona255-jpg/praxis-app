@@ -710,17 +710,19 @@ html { overscroll-behavior-y: contain; }
    and scrolls away; once gone, page content — which carries no top safe-area — scrolls
    under the iOS status bar (dark header text over the clock, no nav behind). This fixed
    strip of exactly env(safe-area-inset-top) keeps a solid ground cover in the status-bar
-   zone at every scroll position. background:var(--surface) is the SAME per-ground token
-   the mobile nav paints and it flips light/dark via [data-ground="dark"] on <body>, so
-   it reads as the nav's status-bar cap persisting on both parchment and dark grounds.
-   Zero-height no-op on non-notch devices (env resolves to 0). z:25 sits ABOVE page
-   content and BELOW the nav (30) and every full-screen overlay (scan-surface 9000,
-   Bloom 9999, nav-open 10010, capdoor-scrim 10020, sheet/modal 10021) — each of which
-   therefore covers it on its surface. pointer-events:none so it never eats a tap. */
+   zone at every scroll position. L1.2c: it paints var(--page) in both moods — the same
+   colour as theme-color. Zero-height, so it paints nothing, on non-notch devices (env
+   resolves to 0). z:25 sits ABOVE page content; below 760 it rises to 31 (see the mobile
+   block), above the nav (30), so the status zone is one colour at every scroll position.
+   It stays BELOW every full-screen overlay (scan-surface 9000, Bloom 9999, nav-open
+   10010, capdoor-scrim 10020, sheet/modal 10021), so each dims or covers it. The Shelf's
+   Manage scrim is the one exception — trapped in .shelf's stacking context, it cannot
+   cover the band, so ::after fades the same scrim in over it (mobile block).
+   pointer-events:none so it never eats a tap. */
 #statusbar-scrim{
   position:fixed; top:0; left:0; right:0;
   height:env(safe-area-inset-top, 0px);
-  background:var(--surface); z-index:25; pointer-events:none;
+  background:var(--page); z-index:25; pointer-events:none;
 }
 
 /* ============================================================================
@@ -5546,6 +5548,14 @@ html { overscroll-behavior-y: contain; }
    block at the top of this file. */
 
 @media (max-width: 759px) {
+  /* L1.2c: the status band rises above the mobile nav. Scoped here: at 760+ the sticky pill stays above it. */
+  #statusbar-scrim { z-index: 31; }
+  #statusbar-scrim::after {
+    content: ""; position: absolute; inset: 0; background: transparent;
+    transition: background-color var(--dur-half) var(--ease);
+  }
+  body:has(.shelf-manage.is-open) #statusbar-scrim::after { background: var(--scrim); }
+
   /* Nav: 56px height, 16px padding, hamburger visible, link list
      collapsed to a slide-down panel anchored below the nav. */
   .app-nav {
@@ -12604,10 +12614,12 @@ body.wc-focus .app-nav { opacity:.26; }
 @media (max-width:759px){
   /* P1 · Manage becomes a bottom SHEET (slides up over a scrim backdrop) */
   .shelf.lum-amber-deep .shelf-manage-backdrop{
-    display:block; position:fixed; inset:0; z-index:10020; background:var(--scrim);
-    opacity:0; pointer-events:none; transition:opacity var(--dur-half) var(--ease);
+    display:block; position:fixed; inset:0; z-index:10020; background:transparent; visibility:hidden;
+    opacity:0; pointer-events:none;
+    /* L1.2c: closed = nothing to paint or sample; the colour and visibility wait out the fade, so it closes as before */
+    transition:opacity var(--dur-half) var(--ease), visibility 0s linear var(--dur-half), background-color 0s linear var(--dur-half);
   }
-  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-backdrop{ opacity:1; pointer-events:auto; }
+  .shelf.lum-amber-deep .shelf-manage.is-open .shelf-manage-backdrop{ background:var(--scrim); visibility:visible; opacity:1; pointer-events:auto; transition:opacity var(--dur-half) var(--ease), visibility 0s, background-color 0s; }
   .shelf.lum-amber-deep .shelf-manage-sheet{
     display:block; position:fixed; left:0; right:0; bottom:0; top:auto; z-index:10021;
     width:auto; max-width:none; max-height:82vh; overflow-y:auto;
@@ -12886,11 +12898,22 @@ body.wc-focus .app-nav { opacity:.26; }
 .shelf.lum-amber-deep .shelf-editor-genre-input,
 .shelf.lum-amber-deep .shelf-editor-isbn-input{ color:var(--ink); border-bottom-color:var(--line-page-2); }
 .shelf.lum-amber-deep .shelf-editor-status,
-.shelf.lum-amber-deep .shelf-editor-status-option{ color:var(--ink-2); }
+.shelf.lum-amber-deep .shelf-editor-status-option{ color:var(--ink); }
+/* L1.2c: the Add-a-book radios leave the system colours. Still real inputs in their labels: same 13px box, ring --ink-2, a
+   selected control is --ink (corrections item 1), the gap is the form's own --page-3. */
+.shelf.lum-amber-deep .shelf-editor-status-option input[type="radio"]{
+  -webkit-appearance:none; appearance:none; box-sizing:border-box; width:13px; height:13px; flex:none;
+  border:1.5px solid var(--ink-2); border-radius:50%; background:transparent; cursor:pointer;
+}
+.shelf.lum-amber-deep .shelf-editor-status-option input[type="radio"]:checked{ background:var(--ink); border-color:var(--ink); box-shadow:inset 0 0 0 2px var(--page-3); }
+.shelf.lum-amber-deep .shelf-editor-status-option input[type="radio"]:focus-visible{ outline:2px solid var(--gold-ink); outline-offset:2px; }
+@media (forced-colors: active){
+  .shelf.lum-amber-deep .shelf-editor-status-option input[type="radio"]:checked{ forced-color-adjust:none; background:CanvasText; border-color:CanvasText; }
+}
 .shelf.lum-amber-deep .shelf-editor-save,
 .shelf.lum-amber-deep .shelf-bulk-editor-submit{ background:var(--gold); color:var(--gold-ink-on-gold); border:1px solid var(--gold-deep); }
 .shelf.lum-amber-deep .shelf-editor-cancel,
-.shelf.lum-amber-deep .shelf-bulk-editor-cancel{ background:transparent; color:var(--ink-3); border:1px solid var(--line-page-2); }
+.shelf.lum-amber-deep .shelf-bulk-editor-cancel{ background:transparent; color:var(--ink); border:1px solid var(--line-page-2); }
 
 /* F7 · "Ask Yumi for more lenses" row (lens-mode; doubles as lens-empty state) */
 .shelf.lum-amber-deep .yumi-lens-row{ display:none; }
@@ -16322,10 +16345,12 @@ body.wc-focus .app-nav { opacity:.26; }
 
 /* CD-2/3/4/5/6 — the sheet */
 .capdoor-scrim{
-  position:fixed; inset:0; z-index:10020; background:var(--scrim);
-  opacity:0; pointer-events:none; transition:opacity var(--dur-gentle) var(--ease-standard);
+  position:fixed; inset:0; z-index:10020; background:transparent; visibility:hidden;
+  opacity:0; pointer-events:none;
+  /* L1.2c: closed = nothing to paint or sample; the colour and visibility wait out the fade, so it closes as before */
+  transition:opacity var(--dur-gentle) var(--ease-standard), visibility 0s linear var(--dur-gentle), background-color 0s linear var(--dur-gentle);
 }
-.capdoor-scrim.is-open{ opacity:1; pointer-events:auto; }
+.capdoor-scrim.is-open{ background:var(--scrim); visibility:visible; opacity:1; pointer-events:auto; transition:opacity var(--dur-gentle) var(--ease-standard), visibility 0s, background-color 0s; }
 .capdoor-scrim.is-nudge{ animation:cap-nudge var(--dur) var(--ease-standard); }
 @keyframes cap-nudge{ 0%,100%{ background:var(--scrim); } 50%{ background:color-mix(in srgb, var(--scrim) 80%, black 20%); } }
 

@@ -62,4 +62,12 @@ rulings changed what it says, the correction is recorded here; **where the two d
    the camera + three `font:inherit` rules that inherit the body face) AND the live probe: buttons not in DM Sans on
    the 18 routes + the lens sheet at 390 and 1360 = the shelf headings only.
 
+9. **The status zone and closed scrims (Preston, 30 Oct, L1.2c).** A full-screen overlay that stays mounted is unpaintable
+   while closed: `visibility:hidden` + `background:transparent`, its colour and visibility waiting out the fade (a browser
+   can sample a fixed box at the top edge even at `opacity:0`). The band `#statusbar-scrim` is `--page` in both moods,
+   above the mobile nav and below every overlay, except the Shelf's Manage scrim, trapped in `.shelf`'s stacking context — so
+   an `::after` fades that scrim over the band (the nav stays bright, R-L12C-1). It paints only where
+   `env(safe-area-inset-top)` > 0. A selected radio is
+   `--ink` (item 1). Over a mood-flipping ground, a darker band uses `--sky` at low alpha, never `--ink`.
+
 Records: `docs/checkpoints/l1.md`, `docs/checkpoints/l1-tools/pair-spec.tsv`.

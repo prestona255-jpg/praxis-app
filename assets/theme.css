@@ -364,7 +364,7 @@
   --wheat-sky-2: var(--page);
   --wheat-sky-3: var(--page-3);
   --wheat-soil-1: transparent;
-  --wheat-soil-2: color-mix(in srgb, var(--ink) 22%, transparent);
+  --wheat-soil-2: color-mix(in srgb, var(--sky) 22%, transparent);
   --window-bg: var(--sky);
   --window-line: color-mix(in srgb, var(--gold-star) 16%, transparent);
   --wordmark: var(--ink);

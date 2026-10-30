@@ -271,7 +271,7 @@
 --wheat-sky-2	ALIAS	`var(--page)`
 --wheat-sky-3	ALIAS	`var(--page-3)`
 --wheat-soil-1	ALIAS	`transparent`
---wheat-soil-2	ALIAS	`color-mix(in srgb, var(--ink) 22%, transparent)`
+--wheat-soil-2	ALIAS	`color-mix(in srgb, var(--sky) 22%, transparent)`
 --field-presence	KEEP	unchanged (not a look token)
 --m1	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return
 --m1-edge	THEORY	untouched at L1 — theory layer / galaxy wheel, behind the switch (twelfth r9); re-pointed when arcs return

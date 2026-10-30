@@ -31,6 +31,9 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-10-30 (L1.2c — the status zone, the Add-a-book radios, the soil band; v3.316, local)** — Preston's felt pass on
+  v3.315 PASSED L1.2a/b and found three paint defects; no re-order, no retirement, so no `PROPOSED:` flag. L1 stays at the
+  top of `## Now`; L1's close-out follows his L1.2c pass. Record: `docs/checkpoints/l1.md`.
 - **2026-10-29 (L1.2a + L1.2b — the felt-pass fixes, the arc-route sweep, the flat pass; ruling 79's lane L4b)** —
   L1.1 pushed `1a74f48` (v3.313); Preston's felt pass PASSED the paint and found five defects (F1–F5,
   `docs/checkpoints/l1-felt-pass.md`). **L1.2a** (`94ebcb9`, v3.314, committed local): the profile header collision, the
@@ -1417,11 +1420,11 @@ flagged at the top of the Builder's sequence page for his call — never applied
 re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: Preston's felt pass on the spine mockup ·
 the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + card. Hygiene fork ruled (split).
 
-- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.1 PUSHED v3.313 · L1.2a committed v3.314 · L1.2b built v3.315)** —
-  **Where it stands (2026-10-29):** L1.1 pushed `1a74f48`; felt pass on the phone PASSED the paint, five defects → L1.2a
+- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.2a/b PUSHED v3.315 · L1.2c built v3.316)** —
+  **Where it stands (2026-10-30):** L1.1 pushed `1a74f48`; felt pass on the phone PASSED the paint, five defects → L1.2a
   (`94ebcb9`: F1 header re-dock, F3 ↓ icon, F4 stat lines → ink, F5 greeting scrolls, M9 arc rooms, ruling-43 sweep) and
-  L1.2b (the flat pass, `docs/checkpoints/l1-flat.md`); both push together on Preston's word, then his felt pass of
-  v3.315 (the twelve routes both moods + Search + the not-on-the-list card + the offline font check), then the close-out.
+  L1.2b (`b73459e`, the flat pass, `docs/checkpoints/l1-flat.md`), pushed; felt pass PASS on v3.315 with three paint defects
+  → L1.2c (the status zone + closed scrims, the Add-a-book radios, the soil band). Then Preston's short felt pass, then the close-out.
   The original L1.1 note follows.
   night by default with a Night · Day row in Settings; one definition per token in theme.css (night `:root` + the day block
   declared twice, byte-identical); every other sheet points there; 796 consumer literals ruled by table (187 left: theory +

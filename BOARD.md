@@ -32,6 +32,10 @@ canon's one easing and two durations, and a reduced-motion guard that shortens. 
 (no layout moved — `button{font:inherit}` was dropped because it would have resized 88 controls). Re-measured at 390,
 both moods, on the same 17 routes + the Arcs list: unchanged from L1.2a (every row at or above floor except L1.1's
 ruled residuals). Record: `docs/checkpoints/l1-flat.md`.
+**L1.2c (2026-10-30, v3.316, local) — three paint defects from the v3.315 felt pass.** Closed full-screen scrims are now
+unpaintable (0 on 18 routes, both moods; the iPhone status-zone result is phone-pending); the status band is `--page` above
+the mobile nav where a safe-area inset exists; the Add-a-book radios are in the palette; the shelf's soil band no longer
+greys at night. Every cell's structure unchanged. Record: `docs/checkpoints/l1.md`.
 
 **Source of truth for this revision:** Ground-Truth Census v3 — W13 pre-audit
 re-census, July 6 2026, HEAD `0ee5fad` (`praxis-v3.177`). Route census =
