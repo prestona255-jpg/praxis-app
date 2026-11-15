@@ -2908,7 +2908,9 @@ function ensureLensLooks(uid) {
     looks.push(lk);
     changed = true;
   }
-  if (changed) { markThemesDirty(); saveState(); }
+  // L4 hotfix R4: worked out in memory always; SAVED only after this session's
+  // themes load succeeded (integrations.js themesLoadOk). Fails closed.
+  if (changed && typeof themesLoadOk !== 'undefined' && themesLoadOk) { markThemesDirty(); saveState(); }
   return changed;
 }
 

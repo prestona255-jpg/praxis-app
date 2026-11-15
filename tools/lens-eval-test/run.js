@@ -7,7 +7,7 @@
 // Usage:  cscript //nologo //E:jscript tools/lens-eval-test/run.js
 // Exit:   0 = every fixture and assertion passed - 1 = a failure - 2 = could not load
 //
-// 14 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
+// 16 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
 // old-shape and second reader-claim), on a 20-title numbered library, each with
 // its expected survivors and expected [L4-eval] log lines.
 
@@ -100,6 +100,7 @@ var longQ = 'What would it take for a classroom to stop depositing and start ask
 var F1 = clean('Who gets to deposit', [1, 2, 3]);
 var F2 = clean('The machine as teacher', [4, 5, 6, 7]);
 var F3 = clean('Maps against the pacing guide', [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+var F16 = clean('Six on one shelf', [1, 2, 3, 4, 5, 6]);
 var F10 = clean('Watching before the screen', [5, 6, 7], { clauses: [{ i: 5, c: clause(5) }, { i: 6, c: clause(6) }, { i: 19, c: clause(19) }] });
 var F6 = { name: 'Who counts as knowing', lead: 'You told me: ' + LDQ + 'you never finish these.' + RDQ + ' Through that, the three ask who is allowed to count.',
            close: 'Read that way the bank is a court.', q: 'Who sits on the bench?', books: [1, 2, 3] };
@@ -108,7 +109,7 @@ var RE_TITLES = [LIB[0], LIB[1], LIB[2]];
 var FIX = [
   { n: 1,  what: 'clean, 3 books',                    reply: jsonStr([F1]), keep: ['Who gets to deposit'], logs: [], check: function (o) { return o[0].reading === readingOf(F1, [1, 2, 3]) && o[0].clauses[LIB[2]] === clause(3) && o[0].bookIds.join() === 'bk01,bk02,bk03' && o[0].themes.length === 3; } },
   { n: 2,  what: 'clean, 4 books',                    reply: jsonStr([F2]), keep: ['The machine as teacher'], logs: [], check: function (o) { return o[0].books.length === 4 && o[0].clauses[LIB[6]] === clause(7) && o[0].reading === readingOf(F2, [4, 5, 6, 7]); } },
-  { n: 3,  what: 'clean, 9 cited -> first 8 kept',    reply: jsonStr([F3]), keep: ['Maps against the pacing guide'], logs: [], check: function (o) { return o[0].books.length === 8 && !o[0].clauses.hasOwnProperty(LIB[8]) && o[0].reading === readingOf(F3, [1, 2, 3, 4, 5, 6, 7, 8]); } },
+  { n: 3,  what: 'clean, 9 cited -> first 5 kept',    reply: jsonStr([F3]), keep: ['Maps against the pacing guide'], logs: [], check: function (o) { return o[0].books.length === 5 && !o[0].clauses.hasOwnProperty(LIB[5]) && o[0].reading === readingOf(F3, [1, 2, 3, 4, 5]); } },
   { n: 4,  what: 'reader-claim: the live phrase',     reply: jsonStr([clean('Selfhood', [10, 11, 12], { lead: 'Across these three you keep circling the same question.' })]), keep: [], logs: ['[L4-eval] voice: "you keep": Selfhood'] },
   { n: 5,  what: 'reader-claim: in a clause',         reply: jsonStr([clean('Love as a discipline', [12, 13], { clauses: [{ i: 12, c: 'You seem drawn to Morrison here.' }, { i: 13, c: clause(13) }] })]), keep: [], logs: ['[L4-eval] voice: "you seem": Love as a discipline'] },
   { n: 6,  what: 're-reading: "You told me:" exempt', reply: jsonStr(F6), reRead: true, keep: ['Who counts as knowing'], logs: [], check: function (o) { return o[0].books.length === 3 && o[0].reading === F6.lead + ' ' + F6.close; } },
@@ -119,7 +120,11 @@ var FIX = [
   { n: 11, what: 'over-length q without "?"',         reply: jsonStr([clean('The long question', [8, 9], { q: longQ })]), keep: [], logs: ['[L4-eval] question: The long question'] },
   { n: 12, what: 'old shape {name, why, books}',      reply: '[{"name":"Selfhood and its makers","why":"Books about the self and who makes it.","books":[1,2]}]', keep: [], logs: ['[L4-eval] thin (old shape, no clauses): Selfhood and its makers'] },
   { n: 13, what: 'old shape, reader-claim in why',    reply: '[{"name":"Technologies of liberation","why":"You keep circling the machine.","books":[4,5,6]}]', keep: [], logs: ['[L4-eval] thin (old shape, no clauses): Technologies of liberation'] },
-  { n: 14, what: 'unparseable reply',                 reply: 'Sorry ' + MDASH + ' I could not read the shelf this time.', keep: [], logs: ['[L4-eval] unparseable: (reply)'] }
+  { n: 14, what: 'unparseable reply',                 reply: 'Sorry ' + MDASH + ' I could not read the shelf this time.', keep: [], logs: ['[L4-eval] unparseable: (reply)'] },
+  // L4 hotfix (R1, R2, 14 Nov 2026): extras are DROPPED, never the whole reply.
+  { n: 15, what: 'four lenses -> first 3 kept (R1)',  reply: jsonStr([clean('The bank and the classroom', [1, 2]), clean('Machines that sort', [4, 5]), clean('Land as teacher', [10, 12]), clean('Rest as refusal', [13, 14])]),
+    keep: ['The bank and the classroom', 'Machines that sort', 'Land as teacher'], logs: ['[L4-eval] cap: Rest as refusal'] },
+  { n: 16, what: 'six-book lens -> first 5 kept (R2)', reply: jsonStr([F16]), keep: ['Six on one shelf'], logs: [], check: function (o) { return o[0].books.length === 5 && !o[0].clauses.hasOwnProperty(LIB[5]) && o[0].reading === readingOf(F16, [1, 2, 3, 4, 5]); } }
 ];
 
 // ---- run the fixtures -----------------------------------------------------
@@ -142,6 +147,26 @@ for (ii = 0; ii < FIX.length; ii++) {
 // ---- assertions -----------------------------------------------------------
 var A = [];
 function assert(name, cond, detail) { A.push((cond ? 'PASS ' : 'FAIL ') + name + ((!cond && detail) ? '\n     detail: ' + detail() : '')); if (cond) { pass++; } else { fail++; } }
+// L4 hotfix (14 Nov 2026): the prompt must EQUAL the contract, character for
+// character -- sec.1's quoted block (the "> " lines between **System prompt** and
+// **User message**), blank ">" lines as paragraph breaks, the JSON line's
+// backticks stripped. A length check alone cannot see a five->three swap.
+var CONTRACT_PROMPT = (function () {
+  var md = readUtf8(fso.BuildPath(root, 'docs\\studio\\l4-lens-engine-contract.md')).replace(/\r\n/g, '\n').split('\n'), i, on = false, out = [], ln;
+  for (i = 0; i < md.length; i++) {
+    if (md[i].indexOf('**System prompt**') === 0) { on = true; continue; }
+    if (md[i].indexOf('**User message**') === 0) { break; }
+    if (!on || md[i].charAt(0) !== '>') { continue; }
+    ln = md[i].replace(/^> ?/, '');
+    if (/^`.*`$/.test(ln)) { ln = ln.substring(1, ln.length - 1); }
+    out.push(ln);
+  }
+  return out.join('\n');
+})();
+function firstDiff(a, b) { var i = 0; while (i < a.length && i < b.length && a.charAt(i) === b.charAt(i)) { i++; } return i; }
+assert('LENS_GEN_SYSTEM === contract sec.1 quoted prompt, character for character (' + CONTRACT_PROMPT.length + ' chars)',
+  CONTRACT_PROMPT.length > 2000 && LENS_GEN_SYSTEM === CONTRACT_PROMPT,
+  function () { var d = firstDiff(LENS_GEN_SYSTEM, CONTRACT_PROMPT); return 'lengths ' + LENS_GEN_SYSTEM.length + ' / ' + CONTRACT_PROMPT.length + '; first diff at ' + d + ': code [' + LENS_GEN_SYSTEM.substr(d, 40) + '] contract [' + CONTRACT_PROMPT.substr(d, 40) + ']'; });
 assert('LENS_GEN_SYSTEM is the contract text (2,372 chars, ban list quotes the live phrase)',
   LENS_GEN_SYSTEM.length === 2372 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
   function () { return 'length ' + LENS_GEN_SYSTEM.length + ', ban-list at ' + LENS_GEN_SYSTEM.indexOf('never "you keep circling"') + ', exemption at ' + LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"'); });
@@ -168,7 +193,7 @@ assert('payload items in contract order: shelf, kept, offered (values empty -> l
   function () { return 'tail: ' + MSG.substring(MSG.indexOf('20. "')).replace(/\n/g, ' / '); });
 CALLS = 0; NEXT = jsonStr([F1]);
 var got = null; generateLenses(META).then(function (t) { got = t; });
-assert('one generation = one call; max_tokens 1600; model sonnet-4-6', CALLS === 1 && got === NEXT && LASTPAYLOAD.max_tokens === 1600 && LASTPAYLOAD.model === 'claude-sonnet-4-6');
+assert('one generation = one call; max_tokens 1000; model sonnet-4-6', CALLS === 1 && got === NEXT && LASTPAYLOAD.max_tokens === 1000 && LASTPAYLOAD.model === 'claude-sonnet-4-6');
 CALLS = 0; NEXT = 'Sorry, nothing readable.'; var rejected = false;
 generateLenses(META).then(function () {}, function () { rejected = true; });
 assert('an unreadable reply rejects into the error state (LENS-1), one call', CALLS === 1 && rejected);
@@ -184,7 +209,7 @@ assert('sameLens: name ignoring case; two-thirds of the larger; symmetric',
   !sameLens({ name: 'x', bookIds: ['1', '2', '3'] }, { name: 'y', bookIds: ['1', '2', '3', '4', '5'] }) &&
   !sameLens({ name: 'y', bookIds: ['1', '2', '3', '4', '5'] }, { name: 'x', bookIds: ['1', '2', '3'] }));
 
-WScript.Echo('L4.1 lens eval v2 -- 14 fixtures on a 20-title library');
+WScript.Echo('L4.1 lens eval v2 -- 16 fixtures on a 20-title library');
 WScript.Echo(pad('#', 3) + pad('fixture', 38) + pad('expect', 10) + 'expected log  verdict');
 for (ii = 0; ii < rows.length; ii++) { WScript.Echo(rows[ii]); }
 WScript.Echo('');

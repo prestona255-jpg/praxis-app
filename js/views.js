@@ -26846,19 +26846,39 @@ function lensRunGeneration(uid) {
   if (!(window.YumiBrain && window.YumiBrain.generateLenses && window.YumiBrain.evalLensResponse)) { return false; }
   g.status = 'loading'; g.err = null;
   var meta = window.YumiBrain.gatherLensMetadata();
-  var titles = [], i;
+  var titles = [], i, t0 = Date.now();
   for (i = 0; i < meta.books.length; i++) { titles.push(meta.books[i].title); }
+  // L4 hotfix: the ?lenstime=on line's record -- seconds, usage, outcome.
+  function lxTimed(ok, err, made) {
+    g.time = { ms: Date.now() - t0, ok: ok, err: err || null, made: made,
+               usage: (window.YumiBrain.lensLastUsage ? window.YumiBrain.lensLastUsage() : null) };
+  }
   window.YumiBrain.generateLenses(meta).then(function (raw) {
     var surv = window.YumiBrain.evalLensResponse(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
     var made = createLensOffers(uid, surv);
     markLensRead(uid);
     g.status = 'done'; g.survived = made.length;
+    lxTimed(true, null, made.length);
     lxRefresh();
   }, function (err) {
     g.status = 'error'; g.err = err || null;
+    lxTimed(false, err, 0);
     lxRefresh();
   });
   return true;
+}
+// L4 hotfix: "Lens read: 14.2 s · 3310 in / 812 out · OK (3 offered)". Read-only.
+function lxLensTimeLine(g) {
+  var t = g && g.time, s;
+  if (g && g.status === 'loading') { s = 'Lens read: running…'; }
+  else if (!t) { s = 'Lens read: none yet this session'; }
+  else {
+    s = 'Lens read: ' + (t.ms / 1000).toFixed(1) + ' s · ' +
+        (t.usage ? t.usage.input + ' in / ' + t.usage.output + ' out' : '—') + ' · ' +
+        (t.ok ? 'OK (' + t.made + ' offered)'
+              : 'error: ' + ((t.err && (t.err.status ? 'proxy ' + t.err.status : t.err.message)) || 'unknown'));
+  }
+  return lxEl('p', 'lx-fine lx-lenstime', s);
 }
 // Contract §5's automatic re-read: at most once per session per uid, only when a
 // surface renders (never on a timer); fromHome never fires the FIRST read.
@@ -26940,6 +26960,8 @@ function renderLensesPage() {
   if (hers) { maybeAutoLensRead(uid, false); }   // the first read fires HERE (L4.4), never from the sky
   var open = lensOfferList(uid, 'open'), later = lensOfferList(uid, 'later'),
       declined = lensOfferList(uid, 'declined'), kept = lensKeptThemes(uid), i, sect, card;
+  // L4 hotfix: the phone's timing instrument -- ONLY with ?lenstime=on in the URL.
+  if (/[?&]lenstime=on\b/.test(location.search || '')) { body.appendChild(lxLensTimeLine(g)); }
 
   // Her state, in her own voice, then From Yumi (S13).
   if (!yes) {
@@ -26947,7 +26969,7 @@ function renderLensesPage() {
   } else if (n < LENS_OFFER_FLOOR) {
     body.appendChild(lxStateBand('Lenses come once your shelf holds five books. It holds ' + n + '.', 'NAME YOUR OWN ANY TIME'));
   } else if (g.status === 'loading') {
-    body.appendChild(lxStateBand('Reading across your shelf…', 'USUALLY A FEW SECONDS · ' + n + ' BOOKS'));
+    body.appendChild(lxStateBand('Reading across your shelf…', 'USUALLY UNDER HALF A MINUTE · ' + n + ' BOOKS'));
   } else if (g.status === 'error') {
     body.appendChild(lxStateBand(lxErrLine(g.err), '', lxAskAgainBtn(uid)));
   } else if (open.length) {

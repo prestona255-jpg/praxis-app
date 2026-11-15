@@ -109,7 +109,7 @@ for (i = 1; i <= 12; i++) {
 X('setBooksLoaded = function (v) { booksLoaded = v; }');
 X('setBooksLoaded')(true);
 // open every sync latch the way a settled sign-in would (themes + reader model)
-X('themesLoaded = true; readerModelLoaded = true;');
+X('themesLoaded = true; themesLoadOk = true; readerModelLoaded = true;');   // themesLoadOk: L4 hotfix R4
 
 // ===== proof 1: unknown-field survival through EVERY lens writer ============
 var th = X('createUserTheme')('Books I teach from');
@@ -358,6 +358,30 @@ var setsBefore = SETS.length;
 X('applyLensOffersLoad')(UID, { status: 'error', error: 'offline' });
 X('markLensOffersDirty')(); X('saveState')();
 check('rule 4', 'an errored load keeps the latch shut: no cloud write', (SETS.length - setsBefore) + '/' + X('lensOffersLoaded'), '0/false', 'lens-contract rule 4');
+
+// ===== L4 hotfix R4 (14 Nov 2026): the automatic look-save waits on a SUCCESSFUL themes load =====
+// ensureLensLooks is what the Lenses page runs on open (views.js renderLensesPage). The flags are set
+// as the sign-in handler's themes callback sets them (integrations.js: themesLoaded opens on ANY
+// outcome; themesLoadOk only on found/absent).
+(function () {
+  var r4 = X('createUserTheme')('R4 lens');
+  X('assignBookToTheme')(r4.id, 'bk01'); X('assignBookToTheme')(r4.id, 'bk02');
+  function themeSets() { var n = 0, j; for (j = 0; j < SETS.length; j++) { if (SETS[j] === 'userThemes/' + UID) { n++; } } return n; }
+  // the themes load FAILED this session: the latch is open (F-DL1), the load is not OK
+  X('themesLoaded = true; themesLoadOk = false;');
+  r4.look = null;
+  var b1 = themeSets();
+  X('ensureLensLooks')(UID);
+  check('R4', 'themes load failed -> opening Lenses performs NO themes save (look computed in memory)',
+    (themeSets() - b1) + ' saves / look ' + (r4.look && typeof r4.look.pi === 'number' ? 'in memory' : 'missing'), '0 saves / look in memory', 'L4 hotfix R4');
+  // the themes load SUCCEEDED: the look-save happens as today
+  X('themesLoaded = true; themesLoadOk = true;');
+  r4.look = null;
+  var b2 = themeSets();
+  X('ensureLensLooks')(UID);
+  check('R4', 'themes load succeeded -> the look-save happens as today',
+    (themeSets() - b2) + ' save / look ' + (r4.look && typeof r4.look.pi === 'number' ? 'in memory' : 'missing'), '1 save / look in memory', 'L4 hotfix R4');
+})();
 
 WScript.Echo('L4.2 lens data contract -- proofs (proof | check | evidence | rule)');
 for (i = 0; i < rows.length; i++) { WScript.Echo(rows[i]); }

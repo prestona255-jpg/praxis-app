@@ -889,10 +889,10 @@ var LENS_GEN_SYSTEM =
   + 'aside or declined, and any values they have declared. You are not given '
   + 'their notes, marginalia, journal or anything from inside a book, and you '
   + 'never ask for them.\n\n'
-  + 'Read across the whole shelf and offer up to five LENSES: ways of seeing '
+  + 'Read across the whole shelf and offer up to three LENSES: ways of seeing '
   + 'it, named in the language of ideas, not bookstores ("Technologies of '
   + 'liberation and oppression", not "Technology"). A lens rests on at least '
-  + 'two books and at most eight.\n\n'
+  + 'two books and at most five.\n\n'
   + 'Speak about the BOOKS, never about the reader. You may be sure about the '
   + 'shelf — what these titles do when set side by side — and you may ask the '
   + 'reader a question. You may not claim anything about the reader\'s inner '
@@ -908,7 +908,7 @@ var LENS_GEN_SYSTEM =
   + 'together); q (one question the lens would hold for the reader, ending in '
   + 'a question mark); themes (three short key phrases, each a key word and a '
   + 'few words after it); books (an array of the 1-based numbers cited, 2 to '
-  + '8, only numbers from the list).\n\n'
+  + '5, only numbers from the list).\n\n'
   + 'Never propose a lens that duplicates or lightly rephrases a value they '
   + 'have declared, a lens they keep, or one they set aside or declined. If '
   + 'the shelf is too small or scattered for honest lenses, offer fewer, or '
@@ -1081,6 +1081,9 @@ function yumiMarkLensNamesSent(meta) {
 }
 // L4.1: the text of a proxy reply, plus the token counts from its usage (the
 // contract §5 rule: report usage, never estimates).
+// L4 hotfix: the last lens call's usage, for the ?lenstime=on line (views.js).
+// Cleared at the start of each generateLenses call so a failed read shows none.
+var lensLastUsageVal = null;
 function lensReplyText(data, label) {
   var blocks = data && data.content;
   var text = '';
@@ -1093,6 +1096,7 @@ function lensReplyText(data, label) {
       }
     }
   }
+  if (data && data.usage) { lensLastUsageVal = { input: data.usage.input_tokens, output: data.usage.output_tokens }; }
   if (data && data.usage && typeof console !== 'undefined' && console.log) {
     console.log('[L4] ' + label + ' usage: ' + data.usage.input_tokens + ' in / ' + data.usage.output_tokens + ' out');
   }
@@ -1100,10 +1104,11 @@ function lensReplyText(data, label) {
 }
 
 function generateLenses(meta) {
+  lensLastUsageVal = null;
   yumiMarkLensNamesSent(meta);
   var payload = {
     model:      'claude-sonnet-4-6',
-    max_tokens: 1600,
+    max_tokens: 1000,
     system:     LENS_GEN_SYSTEM,
     messages: [
       { role: 'user', content: buildLensGenUserMessage(meta) }
@@ -1207,7 +1212,7 @@ function readActiveValueNames() {
 // of the SAME numbered list the model saw. Per lens: distinct in-bounds indices
 // -> canonical titles; >=2 or drop; junk-name blocklist; VL-1 sibling-collision
 // drop (a lens whose name matches/contains a declared VALUE is dropped + logged);
-// cap 5. NO display cap on the books array -- the adopt path assigns all of them. valueNames
+// cap 3. NO display cap on the books array -- the adopt path assigns all of them. valueNames
 // optional -> falls back to readActiveValueNames() for callers that cannot pass it.
 // Fail-safe []; never throws.
 // ---- L4.1: evalLensResponse v2 (engine contract §3, the ten steps in order) --
@@ -1220,8 +1225,8 @@ function readActiveValueNames() {
 //   reReading -- true for the say-back: ONE object back, clauses optional (the
 //                books stay), and a sentence beginning "You told me:" is exempt
 //                from the voice lint and from the lead's length.
-var LENS_EVAL_MAX_BOOKS = 8;
-var LENS_EVAL_CAP = 5;
+var LENS_EVAL_MAX_BOOKS = 5;
+var LENS_EVAL_CAP = 3;
 // EDITABLE (contract §3 step 7): the reader-claim list -- word-bounded,
 // case-insensitive. Her claims stay about the books.
 var LENS_VOICE_LINT = [
@@ -1336,7 +1341,7 @@ function evalLensResponse(rawText, libraryTitles, valueNames, opts) {
     if (nameCollidesWith(nm, others)) { lensEvalLog('value-collision', nm); continue; }
     tw = lensTwinOf({ name: nm, bookIds: [] }, against);
     if (tw) { lensEvalLog(lensTwinReason(tw), nm); continue; }
-    // Step 5: grounding -- 1-based, distinct, in bounds; <2 drops; >8 keeps the first 8.
+    // Step 5: grounding -- 1-based, distinct, in bounds; <2 drops; >5 keeps the first 5.
     var idx = [], seen = {};
     for (j = 0; j < L.books.length; j++) {
       n = L.books[j];
@@ -1413,7 +1418,7 @@ function evalLensResponse(rawText, libraryTitles, valueNames, opts) {
       books: bookTitles, bookIds: bookIds,
       reading: lead2 + (parts.length ? ' ' + parts.join(' ') : '') + ' ' + close2
     });
-    // Step 8: cap at five.
+    // Step 8: cap at three.
     if (out.length >= LENS_EVAL_CAP) {
       for (j = i + 1; j < parsed.length; j++) { lensEvalLog('cap', (parsed[j] && lensTrim(parsed[j].name)) || '(no name)'); }
       break;
@@ -3423,6 +3428,7 @@ window.YumiBrain = {
   evalLensResponse:   evalLensResponse,
   generateLensReReading: generateLensReReading,   // L4.1: the say-back's one call
   lensBookMeta:       lensBookMeta,
+  lensLastUsage:      function () { return lensLastUsageVal; },   // L4 hotfix: ?lenstime=on
   sameLens:           sameLens,
   gatherValueMetadata:   gatherValueMetadata,
   generateValueRetrofit: generateValueRetrofit,

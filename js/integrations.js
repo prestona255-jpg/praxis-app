@@ -55,6 +55,11 @@ var arcsLoaded         = false;
 var notebookLoaded     = false;
 var subTheoriesLoaded  = false;
 var themesLoaded       = false;
+// L4 hotfix R4 (14 Nov 2026): true ONLY when this session's themes load SUCCEEDED
+// (found or absent). themesLoaded (F-DL1) also opens on error; the automatic
+// look-save (state.js ensureLensLooks) waits on this instead, so a failed load
+// can never let it .set() a partial local copy over the cloud doc.
+var themesLoadOk       = false;
 // L4.2 (lens-contract rule 4): the lens-offers latch opens ONLY on a found or
 // absent load -- never on an error -- so a failed read can never let a .set() of
 // a partial local copy overwrite the cloud doc (the themes latch opens on error).
@@ -93,6 +98,7 @@ function resetSyncLatches() {
   notebookLoaded          = false;
   subTheoriesLoaded       = false;
   themesLoaded            = false;
+  themesLoadOk            = false;   // L4 hotfix R4
   lensOffersLoaded        = false;   // L4.2
   artifactsLoaded         = false;
   booksLoaded             = false;
@@ -419,6 +425,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // resurrect from cache. Ownership is theme.userId (direct).
     loadThemesFromFirestore(u.uid, function (themeResult) {
       themesLoaded = true;   // F-DL1: load settled -> open the latch.
+      themesLoadOk = (themeResult.status === 'found' || themeResult.status === 'absent');   // L4 hotfix R4
       if (themeResult.status === 'found') {
         if (!state.userThemes) { state.userThemes = {}; }
         // FX-1: remote id set before the clear-loop (see the arcs guard).

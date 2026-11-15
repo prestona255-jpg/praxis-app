@@ -31,6 +31,10 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-14 (L4 HOTFIX — Preston, 14 Nov 2026)** — v3.317's lens read timed out live (three 504s at 30 s): one read now asks for
+  up to three lenses of at most five books, max_tokens 1000 (R1–R3); the automatic look-save waits on a successful themes
+  load (R4). The hotfix takes v3.318, so the sky's flip moves to v3.319. The two-step read joins L4b as a named slice (R5).
+  Preston's ruling, recorded as ruled. Record: `docs/checkpoints/l4.md` "Hotfix, 14 Nov".
 - **2026-11-10 (RULING 83 — L4 moves ahead of L2; Preston, 8 Nov 2026)** — L4 lens engine + sky → L2 file import → L4b
   the Day Three rooms → L5 the walk → L6 capture debts → L7b native shell; nothing in L4 depends on import; the main
   account's 148 books are the test library. Supersedes r79's order. Preston's own ruling, so recorded as ruled, not
@@ -1434,7 +1438,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   edition, lifted byte-for-byte; the scoped sky block in components.css) on Home and You, dark-launched (sweep 29/29;
   key-off DOM identical to HEAD but for the post-yes Yumi row, ruling 84 as amended). Owed at the push gate: Preston
   publishes the `/userLensOffers` rule BEFORE the push; one real generation on his account; the phone walk; then
-  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.318). **Lane order (ruling 83): L4 → L2 → L4b → L5
+  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.319; v3.318 is the L4 hotfix). **Lane order (ruling 83): L4 → L2 → L4b → L5
   → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
   touches: [lenses, home, profile, shelf, yumi, yumi-sees]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
@@ -1535,7 +1539,10 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
 - [ ] **L4b — THE DAY THREE ROOMS (ruling 79, 2026-10-29; after L4, before L5)** — the rooms no lane owned: Search
   redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category
   page (r47) · the Notebook head + its Settings link · the What Yumi Sees page ("Everything she sees right now") · the
-  bottom tabs (Home · Shelf · Notebook · Capture · You) + the Search pill, the floating "+" retired. Needs L4's lens
+  bottom tabs (Home · Shelf · Notebook · Capture · You) + the Search pill, the floating "+" retired · **the two-step lens
+  read (L4 hotfix R5, ruled 14 Nov 2026): names and questions first in one short call, each lens's full reading (lead,
+  clauses, close, themes) fetched when its sheet opens — so five lenses never ride one call again; proved with one real,
+  timed call before it ships.** Needs L4's lens
   engine; L5's walk lands on finished rooms. **Beta lane order (ruling 83, 8 Nov 2026): L4 → L2 → L4b → L5 → L6 →
   L7b; the Scan lane as before** (L1 shipped). The design chat writes its prompt when L4 closes. Source: `docs/checkpoints/l1-felt-pass.md` §C–§D.
   touches: [search, lenses, notebook, yumi-sees, nav]

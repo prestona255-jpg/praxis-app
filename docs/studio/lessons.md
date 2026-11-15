@@ -235,6 +235,10 @@ at the generator seam.
 - **PROPOSED (L4):** a carry's host CSS is lifted SCOPED, never bare: check every top-level class against live components.css
   + views.js class strings first (specimen: sky.css's bare `.core` / `.pt` would have moved the scan shutter dot and animated
   Profile titles with the sky OFF — caught by the §1#8 recon gate).
+- **PROPOSED (L4 hotfix, 14 Nov 2026):** No lane ships a new shape of AI call without one real, timed call. A stub proves
+  the parse, never the clock (specimen: v3.317's lens read asked for five full lenses of up to eight books at
+  `max_tokens` 1600 — every rig run stubbed `aiProxyFetch`, and three real reads on Preston's 143-book shelf ran
+  30.09 / 30.58 / 30.22 s into claude-proxy's 30 s limit and returned 504).
 ---
 
 ## AMENDMENT RULE
