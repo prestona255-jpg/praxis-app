@@ -7,7 +7,7 @@
 // Usage:  cscript //nologo //E:jscript tools/lens-eval-test/run.js
 // Exit:   0 = every fixture and assertion passed - 1 = a failure - 2 = could not load
 //
-// 23 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
+// 25 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
 // old-shape and second reader-claim), on a 20-title numbered library, each with
 // its expected survivors and expected [L4-eval] log lines.
 
@@ -118,6 +118,16 @@ function atLimits(name, nums, closeLen) {
 var LIM1 = atLimits('Ledgers of the classroom', [6, 7]), LIM2 = atLimits('Sorting as a machine', [8, 9]);
 var LIM1OVER = atLimits('Ledgers of the classroom', [6, 7], 161);
 function atLimitsOk(o) { return o.lead.length === 180 && o.close.length === 130 && o.q.length === 100 && o.clauses[0].c.length === 100 && o.clauses[1].c.length === 100; }
+// L4 hotfix 4 (14 Nov 2026): the live say-back reply -- a fenced json array whose lead quotes
+// the reader's line in BARE straight quotes inside the JSON string (not valid JSON) -- and the
+// same reply with those two quotes properly escaped. Modelled on F6 (reRead: true).
+var SB_LINE = 'They\'re for seeing who gets to decide what counts as intelligence, and who pays for it.';
+var F24 = { name: 'Who decides what counts', lead: 'You told me: "' + SB_LINE + '" These books hold that adjudication open.',
+            close: 'Read that way the bank is a court.', q: 'Who sits on the bench?', books: [1, 2, 3] };   // F6's close and q
+var SB_OK = jsonStr([F24]);                                    // the quotes escaped: valid JSON
+var SB_BARE = SB_OK.replace('You told me: \\"', 'You told me: "').replace('\\" These books', '" These books');   // un-escape exactly those two
+function sbFence(t) { return '```json\n' + t + '\n```'; }
+function plainParseFails(t) { try { JSON.parse(t); return false; } catch (e) { return true; } }
 var F10 = clean('Watching before the screen', [5, 6, 7], { clauses: [{ i: 5, c: clause(5) }, { i: 6, c: clause(6) }, { i: 19, c: clause(19) }] });
 var F6 = { name: 'Who counts as knowing', lead: 'You told me: ' + LDQ + 'you never finish these.' + RDQ + ' Through that, the three ask who is allowed to count.',
            close: 'Read that way the bank is a court.', q: 'Who sits on the bench?', books: [1, 2, 3] };
@@ -151,7 +161,12 @@ var FIX = [
   // L4 hotfix 3: the told limits clear the eval; one char over the close CAP drops that lens only.
   { n: 22, what: 'two lenses at the told limits -> 2',  reply: jsonStr([LIM1, LIM2]), keep: ['Ledgers of the classroom', 'Sorting as a machine'], logs: [],
     check: function () { return atLimitsOk(LIM1) && atLimitsOk(LIM2) && LIM1OVER.close.length === 161; } },
-  { n: 23, what: 'one close at 161 -> that lens dropped', reply: jsonStr([LIM1OVER, LIM2]), keep: ['Sorting as a machine'], logs: ['[L4-eval] length: close: Ledgers of the classroom'] }
+  { n: 23, what: 'one close at 161 -> that lens dropped', reply: jsonStr([LIM1OVER, LIM2]), keep: ['Sorting as a machine'], logs: ['[L4-eval] length: close: Ledgers of the classroom'] },
+  // L4 hotfix 4: the re-reading repair (bare straight quotes -> curly), and an escaped reply untouched.
+  { n: 24, what: 're-reading: bare straight quotes repaired', reply: sbFence(SB_BARE), reRead: true, keep: ['Who decides what counts'], logs: [],
+    check: function (o) { return SB_BARE !== SB_OK && plainParseFails(SB_BARE) && plainParseFails(sbFence(SB_BARE)) && o[0].lead.indexOf('You told me: ' + LDQ) === 0; } },
+  { n: 25, what: 're-reading: escaped quotes untouched', reply: sbFence(SB_OK), reRead: true, keep: ['Who decides what counts'], logs: [],
+    check: function (o) { return o[0].lead.indexOf('You told me: "' + SB_LINE + '"') === 0; } }
 ];
 
 // ---- run the fixtures -----------------------------------------------------
@@ -253,8 +268,16 @@ assert('sameLens: name ignoring case; two-thirds of the larger; symmetric',
   sameLens({ name: 'x', bookIds: ['1', '2', '3'] }, { name: 'y', bookIds: ['1', '2', '3', '4'] }) &&
   !sameLens({ name: 'x', bookIds: ['1', '2', '3'] }, { name: 'y', bookIds: ['1', '2', '3', '4', '5'] }) &&
   !sameLens({ name: 'y', bookIds: ['1', '2', '3', '4', '5'] }, { name: 'x', bookIds: ['1', '2', '3'] }));
+// L4 hotfix 4: the first-read path is NOT repaired; a reply with nothing to repair comes back
+// unchanged; the outgoing say-back message sends the reader's straight double quotes as single.
+assert('first-read path not repaired: parseLensReply(fixture 24 text, false) === null', parseLensReply(sbFence(SB_BARE), false) === null);
+assert('lensRepairToldMe(fixture 25 text) === fixture 25 text (nothing to repair)', lensRepairToldMe(sbFence(SB_OK)) === sbFence(SB_OK));
+var SBMSG = buildLensReReadMessage({ name: 'Who gets to deposit', lead: F1.lead, close: F1.close, q: F1.q }, { books: [] }, 'It is "intelligence" they count, not knowledge.');
+assert('say-back message: the reader\'s straight quotes go out as single quotes; it asks for curly quotes',
+  SBMSG.indexOf('The reader said: "It is \'intelligence\' they count, not knowledge."') !== -1 && SBMSG.indexOf('never straight ones') !== -1,
+  function () { return SBMSG.substring(SBMSG.indexOf('The reader said')).replace(/\n/g, ' / '); });
 
-WScript.Echo('L4.1 lens eval v2 -- 23 fixtures on a 20-title library');
+WScript.Echo('L4.1 lens eval v2 -- 25 fixtures on a 20-title library');
 WScript.Echo(pad('#', 3) + pad('fixture', 38) + pad('expect', 10) + 'expected log  verdict');
 for (ii = 0; ii < rows.length; ii++) { WScript.Echo(rows[ii]); }
 WScript.Echo('');

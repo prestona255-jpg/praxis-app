@@ -1054,14 +1054,15 @@ function buildLensReReadMessage(lens, bookMeta, line) {
   var s = 'Here is one lens on the reader\'s shelf (metadata only), its books numbered:\n\n';
   var i, books = (bookMeta && bookMeta.books instanceof Array) ? bookMeta.books : [];
   for (i = 0; i < books.length; i++) { s = s + lensBookLine(i + 1, books[i]); }
-  var said = (typeof line === 'string') ? line.replace(/^\s+|\s+$/g, '').substring(0, 140) : '';
+  var said = (typeof line === 'string') ? line.replace(/^\s+|\s+$/g, '').substring(0, 140).replace(/"/g, '\'') : '';
   s = s + '\nIts current name: ' + (lens.name || '') + '\n'
     + 'Lead: ' + (lens.lead || '') + '\n'
     + 'Close: ' + (lens.close || '') + '\n'
     + 'Question: ' + (lens.q || '') + '\n\n'
     + 'The reader said: "' + said + '"\n\n'
     + 'Re-read these books through what the reader said. Keep the same books. Quote the reader\'s line once, '
-    + 'as "You told me: …". Return ONE lens object with a new name, lead, close and question.';
+    + 'as You told me: “…” — in curly quotes, never straight ones. '
+    + 'Return ONE lens object with a new name, lead, close and question.';
   return s;
 }
 
@@ -1273,7 +1274,12 @@ function parseLensReply(rawText, preferObject) {
     if (lensIsArray(obj)) { return obj; }
     return null;
   }
-  if (preferObject) { return asObject() || parseValueRetrofitArray(rawText); }
+  if (preferObject) {
+    var fixed, firstTry = asObject() || parseValueRetrofitArray(rawText);
+    if (firstTry) { return firstTry; }
+    fixed = lensRepairToldMe(rawText);   // L4 hotfix 4: one repair, then one more parse
+    return (fixed === rawText) ? null : parseLensReply(fixed, true);
+  }
   return parseValueRetrofitArray(rawText) || asObject() || lensSalvageArray(rawText);   // L4 hotfix 2 (R3): last
 }
 
@@ -1307,6 +1313,16 @@ function lensSalvageArray(rawText) {
     }
   }
   return out.length ? out : null;
+}
+
+// L4 hotfix 4 (14 Nov 2026): the say-back asks Yumi to quote the reader, and she wrote
+// the quote in straight double quotes INSIDE a JSON string, unescaped -- so a whole,
+// good re-reading was thrown away as unreadable. Re-reading only: a bare
+// You told me: "..." becomes curly quotes, then the reply is parsed once more. An
+// escaped quote (backslash first) never matches; a reply with nothing to repair comes
+// back unchanged, so the second parse cannot loop.
+function lensRepairToldMe(rawText) {
+  return String(rawText).replace(/(You told me:\s*)"([^"\\]*)"/g, '$1' + String.fromCharCode(8220) + '$2' + String.fromCharCode(8221));
 }
 
 // The say-back exemption: drop every sentence that begins "You told me:" (the
