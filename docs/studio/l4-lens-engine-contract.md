@@ -19,7 +19,7 @@ What this covers: §1 what Yumi is sent · §2 what comes back · §3 the eval �
 
 ## 1 · What Yumi is sent
 
-**Model** `claude-sonnet-4-6` (the only model the proxy allows; J4 pins it). **`max_tokens` 1000** (L4 hotfix, ruled by Preston 14 Nov 2026, R1–R3; was 1600 at v3.317, 1024 before): the ruled reading is longer per lens — lead, one clause per book, a close, a question, three themes — about 190–280 output tokens each, three lenses of at most five books ≈ 600–840 plus JSON; 1000 leaves room and sits under the proxy's 4096 clamp. Why: at five lenses of up to eight books, three real reads on v3.317 ran 30.09 / 30.58 / 30.22 s and were cut off by claude-proxy's 30 s limit (504). Both lens callers set it; the proxy's clamp still applies.
+**Model** `claude-sonnet-4-6` (the only model the proxy allows; J4 pins it). **`max_tokens` 800** (L4 hotfix 2, ruled by Preston 14 Nov 2026, R1–R2; was 1000 at v3.318, 1600 at v3.317, 1024 before): the ruled reading is longer per lens — lead, one clause per book, a close, a question, three themes — about 350–450 output tokens each on the live evidence (above the earlier 190–280 estimate), so two lenses of at most five books ≈ 700–900; 800 caps the call's time and sits under the proxy's 4096 clamp. A reply cut at 800 keeps every lens that arrived complete (§3 step 2). Why: at five lenses of up to eight books, three real reads on v3.317 ran 30.09 / 30.58 / 30.22 s and were cut off by claude-proxy's 30 s limit (504); at three lenses and 1000, reads on v3.318 completed (23.25 / 22.83 / 30.30 s, 200) and were then discarded as unreadable. This is a stopgap: the two-step read (R5) replaces it. Both lens callers set it; the proxy's clamp still applies.
 
 **System prompt** — `LENS_GEN_SYSTEM` is rewritten to the ruled voice (seventh §F; tenth r2; the sixth sitting's "her claims stay about the books"). Normative text, to land verbatim in yumi-brain.js:
 
@@ -27,7 +27,7 @@ What this covers: §1 what Yumi is sent · §2 what comes back · §3 the eval �
 >
 > You are given a reader's shelf as METADATA ONLY: a numbered list of books (a 1-based number, then title, author, and the shelf's category), the names of lenses they already keep, lenses they have already set aside or declined, and any values they have declared. You are not given their notes, marginalia, journal or anything from inside a book, and you never ask for them.
 >
-> Read across the whole shelf and offer up to three LENSES: ways of seeing it, named in the language of ideas, not bookstores ("Technologies of liberation and oppression", not "Technology"). A lens rests on at least two books and at most five.
+> Read across the whole shelf and offer up to two LENSES: ways of seeing it, named in the language of ideas, not bookstores ("Technologies of liberation and oppression", not "Technology"). A lens rests on at least two books and at most five.
 >
 > Speak about the BOOKS, never about the reader. You may be sure about the shelf — what these titles do when set side by side — and you may ask the reader a question. You may not claim anything about the reader's inner life, habits, feelings or motives: never "you keep circling", "you seem drawn to", "you love", "you tend to", "you have been". The one exception is quoting their own words back when they are given to you under "The reader said", marked "You told me: …".
 >
@@ -47,7 +47,7 @@ What this covers: §1 what Yumi is sent · §2 what comes back · §3 the eval �
 
 **Never sent:** notes, marginalia, journal, the `why` line, `said[]` beyond the one line of the round, covers, the chat transcript, titleToId, any id. The payload is provably metadata-only (the live gather already keeps `titleToId` out: yumi-brain.js:950).
 
-**Size on the 148-book test library:** ≈ 148 × 18 ≈ 2,700 input tokens for the list + ≈ 700 system + ≈ 100 names ≈ **3,500 in**, ≤ **1,000 out** per generation; a re-reading ≈ 1,100 in, ≤ 400 out.
+**Size on the 148-book test library:** ≈ 148 × 18 ≈ 2,700 input tokens for the list + ≈ 700 system + ≈ 100 names ≈ **3,500 in**, ≤ **800 out** per generation; a re-reading ≈ 1,100 in, ≤ 400 out.
 
 ## 2 · What comes back, and what the build keeps
 
@@ -70,13 +70,13 @@ Taking up copies every one of these onto `userThemes[id]` (`origin:'hers'`, `her
 Fail-safe `[]`; never throws; a parse failure is the error state ("Yumi couldn't reach for lenses just now." + Ask Yumi again), never silence (LENS-1 stands).
 
 1. **Gate before the call** — no generation request at all when the shelf holds fewer than **5 books** (the offer floor, seventh r4): the Lenses page shows "Lenses come once your shelf holds five books. It holds N." No call, no ceiling spent.
-2. **Parse** with `parseValueRetrofitArray`; accept the old `{name, why, books}` shape too (map `why` → `lead`, no clauses, no close) so a stale cache or a fallback reply still grounds — but such a lens is marked `thin:true` and never offered without a clause per book (step 6), so in practice it is dropped.
+2. **Parse** with `parseValueRetrofitArray`; accept the old `{name, why, books}` shape too (map `why` → `lead`, no clauses, no close) so a stale cache or a fallback reply still grounds — but such a lens is marked `thin:true` and never offered without a clause per book (step 6), so in practice it is dropped. **A reply cut off (L4 hotfix 2, R3):** only after the three existing parses fail (whole text; first `[` to last `]`; first `{` to last `}`), the generation parse walks from the first `[` tracking nesting depth and skipping quoted strings, collects each top-level `{…}` that closes, parses each on its own, and keeps them if there is at least one. A kept lens then passes every step below unchanged. When the reply's `stop_reason` is `max_tokens`, one line logs `[L4-eval] truncated: kept N` (N = complete lenses recovered). Lens replies only; `parseValueRetrofitArray` and the value retrofit are unchanged.
 3. **Structure**: `name` non-empty string; `books` an array; `lead`, `close`, `q` strings; `clauses` an array of `{i, c}`; `themes` an array (missing → `[]`).
 4. **Name**: not in `LENS_GEN_BLOCKLIST`; not colliding with a declared value (`nameCollidesWith`, VL-1 kept); **not the same lens as** a kept lens, an open offer, a Later offer or a declined offer — same lens = the same name ignoring case OR at least two-thirds of its books shared (lens-contract §2). A collision with a declined offer is logged `[L4-eval] declined-twin dropped`.
 5. **Grounding**: 1-based indices → distinct, in bounds, canonical titles → bookIds via `titleToId`; **fewer than 2 books → drop**; more than 5 → keep the first 5 cited (L4 hotfix R2; was 8).
 6. **Clauses cover the books**: a clause whose `i` is not a cited book is discarded; a cited book without a clause is removed from the lens; if that takes the lens under 2 books it is dropped. Clause ≤ 140 characters, lead ≤ 220, close ≤ 160, q ≤ 120 and ending in `?`, theme key ≤ 3 words; over-length fields are dropped with the lens (a truncated reading is not offered).
 7. **The voice law, linted**: a lens is dropped if `lead`, any clause, `close` or `q` matches the reader-claim list (case-insensitive, word-bounded): `you keep`, `you seem`, `you('re| are) drawn`, `you love`, `you want`, `you feel`, `you tend`, `you('ve| have) been`, `you circle`, `you return`, `your heart`, `your (mind|soul|life|habit)`, `you need`, `you always`, `you never`. Exempt: a sentence beginning `You told me:` in a re-reading. Dropped lenses are logged `[L4-eval] voice: "<phrase>"`. The live `why` field's "you keep circling…" is the exact thing this catches.
-8. **Cap**: at most 3 offers per generation (L4 hotfix R1; was 5); a fourth and later lens is dropped and logged `[L4-eval] cap: <name>`; if fewer than 3 survive, the sparse lines show (live copy, kept: "One clear thread so far — more will surface as your shelf grows." / "A couple of threads so far…"); none → the live "didn't find clear lenses" line.
+8. **Cap**: at most 2 offers per generation (L4 hotfix 2 R1; 3 at v3.318, 5 before); a third and later lens is dropped and logged `[L4-eval] cap: <name>`; if fewer than the cap survive (one, at a cap of two — hotfix 2, D-2), the sparse line shows (live copy, kept: "One clear thread so far — more will surface as your shelf grows." / "A couple of threads so far…"); none → the live "didn't find clear lenses" line.
 9. **Colour** (how a lens gets its Garden colour and keeps it): at offer creation, `look = PraxisHand.makeLook(name, looks)` where `looks` = the looks of every kept lens plus every open and Later offer (so the sky's colours stay distinct up to the Garden's 17; past 17 the least-used colour from the hash onward). The **≥3:1 clamp** is inside `makeLook` via `gardenColour(pi)`: the flat colour is stepped toward `#FFF1D2` in .05 until it reads ≥3:1 on BOTH skies (`#1C120A` night, `#2B1E12` day). Measured on the Garden: only Inheritance clamps (`#9C4A6E → #A15273`, t .05 → 3.48 night / 3.06 day); the lowest unclamped are own-6 `#2F7F9E` (4.08 / 3.59) and Power, named `#D4472F` (4.16 / 3.66). Stored on the offer; carried unchanged onto the kept lens. **Across regenerations**: an offer that is the same lens (step 4's test) as an open or Later offer is not re-created, so its colour stands; a declined twin is never shown; a new lens takes a new colour. A rename keeps `look`.
 10. **The Garden** is `PraxisHand.GARDEN` — amendment 1.3's ten presets then its seven "more", in that order (17). The Day Three copy carried 11; this is the full set. The six "own" slots beyond the ten are colours, not names: a lens's name is always its own.
 
@@ -90,7 +90,7 @@ Fail-safe `[]`; never throws; a parse failure is the error state ("Yumi couldn't
 
 ## 5 · Cost per generation against the 300/day ceiling
 
-One generation = **one call** (today, and still). Per call on the test library: ≈ 3,500 input + ≤ 1,000 output tokens (§1; L4 hotfix R3, was 1,600). A re-reading ≈ 1,100 in + ≤ 400 out, one call each, at most two per offer (tenth r1: three readings is enough).
+One generation = **one call** (today, and still). Per call on the test library: ≈ 3,500 input + ≤ 800 output tokens (§1; L4 hotfix 2 R2, was 1,000 at v3.318 and 1,600 at v3.317). A re-reading ≈ 1,100 in + ≤ 400 out, one call each, at most two per offer (tenth r1: three readings is enough).
 
 | Event | Calls | Trigger |
 |---|---|---|

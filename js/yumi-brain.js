@@ -889,7 +889,7 @@ var LENS_GEN_SYSTEM =
   + 'aside or declined, and any values they have declared. You are not given '
   + 'their notes, marginalia, journal or anything from inside a book, and you '
   + 'never ask for them.\n\n'
-  + 'Read across the whole shelf and offer up to three LENSES: ways of seeing '
+  + 'Read across the whole shelf and offer up to two LENSES: ways of seeing '
   + 'it, named in the language of ideas, not bookstores ("Technologies of '
   + 'liberation and oppression", not "Technology"). A lens rests on at least '
   + 'two books and at most five.\n\n'
@@ -1108,7 +1108,7 @@ function generateLenses(meta) {
   yumiMarkLensNamesSent(meta);
   var payload = {
     model:      'claude-sonnet-4-6',
-    max_tokens: 1000,
+    max_tokens: 800,
     system:     LENS_GEN_SYSTEM,
     messages: [
       { role: 'user', content: buildLensGenUserMessage(meta) }
@@ -1119,9 +1119,19 @@ function generateLenses(meta) {
     // LENS-1: reject an unreadable/truncated reply so the caller routes it to
     // its ERROR state -- silence is impossible. A parseable-but-empty reply
     // resolves normally and shows the honest "no lenses yet" state.
-    if (parseLensReply(text, false) === null) {
+    // L4 hotfix 2 (R4, D-1): the stop reason and the reply's length ride the usage record
+    // for the ?lenstime=on line; a cut-off reply logs how many complete lenses it kept.
+    var parsedReply = parseLensReply(text, false);
+    var cut = !!(data && data.stop_reason === 'max_tokens');
+    lensLastUsageVal = lensLastUsageVal || {};
+    lensLastUsageVal.stop = (data && typeof data.stop_reason === 'string') ? data.stop_reason : '';
+    lensLastUsageVal.chars = text.length;
+    lensLastUsageVal.cut = cut;
+    lensLastUsageVal.kept = parsedReply ? parsedReply.length : 0;
+    if (parsedReply === null) {
       throw new Error('lens response unreadable (truncated or non-JSON)');
     }
+    if (cut) { lensEvalLog('truncated', 'kept ' + parsedReply.length); }
     return text;
   });
 }
@@ -1212,7 +1222,7 @@ function readActiveValueNames() {
 // of the SAME numbered list the model saw. Per lens: distinct in-bounds indices
 // -> canonical titles; >=2 or drop; junk-name blocklist; VL-1 sibling-collision
 // drop (a lens whose name matches/contains a declared VALUE is dropped + logged);
-// cap 3. NO display cap on the books array -- the adopt path assigns all of them. valueNames
+// cap 2. NO display cap on the books array -- the adopt path assigns all of them. valueNames
 // optional -> falls back to readActiveValueNames() for callers that cannot pass it.
 // Fail-safe []; never throws.
 // ---- L4.1: evalLensResponse v2 (engine contract §3, the ten steps in order) --
@@ -1226,7 +1236,7 @@ function readActiveValueNames() {
 //                books stay), and a sentence beginning "You told me:" is exempt
 //                from the voice lint and from the lead's length.
 var LENS_EVAL_MAX_BOOKS = 5;
-var LENS_EVAL_CAP = 3;
+var LENS_EVAL_CAP = 2;
 // EDITABLE (contract §3 step 7): the reader-claim list -- word-bounded,
 // case-insensitive. Her claims stay about the books.
 var LENS_VOICE_LINT = [
@@ -1260,7 +1270,39 @@ function parseLensReply(rawText, preferObject) {
     return null;
   }
   if (preferObject) { return asObject() || parseValueRetrofitArray(rawText); }
-  return parseValueRetrofitArray(rawText) || asObject();
+  return parseValueRetrofitArray(rawText) || asObject() || lensSalvageArray(rawText);   // L4 hotfix 2 (R3): last
+}
+
+// L4 hotfix 2 (R3): a reply cut off (max_tokens) keeps every lens that arrived COMPLETE.
+// Tried only after the three parses above fail. From the first "[", track nesting depth,
+// skipping quoted strings (with \" escapes), so a brace inside a string never counts;
+// collect each top-level {...} that closes and parse it ON ITS OWN (one bad object is
+// dropped, its neighbours kept). Returns the array (at least one), or null. Lens replies
+// only -- parseValueRetrofitArray and the value retrofit are unchanged.
+function lensSalvageArray(rawText) {
+  if (typeof rawText !== 'string') { return null; }
+  var BACKSLASH = String.fromCharCode(92), st = rawText.indexOf('['), out = [], depth = 0, inStr = false, esc = false, objStart = -1, i, ch, obj;
+  if (st === -1) { return null; }
+  for (i = st + 1; i < rawText.length; i++) {
+    ch = rawText.charAt(i);
+    if (inStr) {
+      if (esc) { esc = false; } else if (ch === BACKSLASH) { esc = true; } else if (ch === '"') { inStr = false; }
+      continue;
+    }
+    if (ch === '"') { inStr = true; }
+    else if (ch === '{' || ch === '[') { if (depth === 0 && ch === '{') { objStart = i; } depth++; }
+    else if (ch === '}' || ch === ']') {
+      if (depth === 0) { break; }   // the outer array closed (or stray): stop
+      depth--;
+      if (depth === 0 && ch === '}' && objStart !== -1) {
+        obj = null;
+        try { obj = JSON.parse(rawText.substring(objStart, i + 1)); } catch (e) { obj = null; }
+        if (obj && typeof obj === 'object' && !lensIsArray(obj)) { out.push(obj); }
+        objStart = -1;
+      }
+    }
+  }
+  return out.length ? out : null;
 }
 
 // The say-back exemption: drop every sentence that begins "You told me:" (the
@@ -1418,7 +1460,7 @@ function evalLensResponse(rawText, libraryTitles, valueNames, opts) {
       books: bookTitles, bookIds: bookIds,
       reading: lead2 + (parts.length ? ' ' + parts.join(' ') : '') + ' ' + close2
     });
-    // Step 8: cap at three.
+    // Step 8: cap at two.
     if (out.length >= LENS_EVAL_CAP) {
       for (j = i + 1; j < parsed.length; j++) { lensEvalLog('cap', (parsed[j] && lensTrim(parsed[j].name)) || '(no name)'); }
       break;

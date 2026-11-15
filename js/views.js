@@ -26873,10 +26873,13 @@ function lxLensTimeLine(g) {
   if (g && g.status === 'loading') { s = 'Lens read: running…'; }
   else if (!t) { s = 'Lens read: none yet this session'; }
   else {
+    var u = t.usage;
     s = 'Lens read: ' + (t.ms / 1000).toFixed(1) + ' s · ' +
-        (t.usage ? t.usage.input + ' in / ' + t.usage.output + ' out' : '—') + ' · ' +
-        (t.ok ? 'OK (' + t.made + ' offered)'
-              : 'error: ' + ((t.err && (t.err.status ? 'proxy ' + t.err.status : t.err.message)) || 'unknown'));
+        (u ? u.input + ' in / ' + u.output + ' out' : '—') + ' · ' +
+        (t.ok ? (u && u.cut ? 'cut off, kept ' + u.kept : 'OK (' + t.made + ' offered)')   // L4 hotfix 2 (R4)
+              : 'error: ' + ((t.err && (t.err.status ? 'proxy ' + t.err.status : t.err.message)) || 'unknown')) +
+        // L4 hotfix 2 (D-1): the stop reason and the reply's length tell a cut-off from malformed JSON
+        (u && typeof u.stop === 'string' ? ' · stop: ' + (u.stop || '?') + ' · reply ' + u.chars + ' chars' : '');
   }
   return lxEl('p', 'lx-fine lx-lenstime', s);
 }
@@ -26974,7 +26977,7 @@ function renderLensesPage() {
     body.appendChild(lxStateBand(lxErrLine(g.err), '', lxAskAgainBtn(uid)));
   } else if (open.length) {
     sect = lxSect('From Yumi', lxPlural(open.length, 'offer'));
-    if (g.status === 'done' && g.survived >= 1 && g.survived <= 2) {
+    if (g.status === 'done' && g.survived >= 1 && g.survived < LENS_EVAL_CAP) {   // L4 hotfix 2 (D-2): never at a full read
       sect.appendChild(lxEl('p', 'lx-fine', g.survived === 1
         ? 'One clear thread so far — more will surface as your shelf grows.'
         : 'A couple of threads so far — more will surface as your shelf grows.'));

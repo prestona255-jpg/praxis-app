@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-14 (refreshed at the L4 hotfix; before that at L4 Stage 5, 2026-11-10)
+**Authoritative as of:** 2026-11-14 (refreshed at L4 hotfix 2; before that at the L4 hotfix, the same day)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.317` (L4, pushed ee8309d); the L4 hotfix ships v3.318
-**HEAD == origin/main:** `ee8309d` (L4); the L4 hotfix is built on it, local, awaiting the commit
+**Live CACHE_VERSION:** `praxis-v3.318` (the L4 hotfix, pushed 0959606); L4 hotfix 2 ships v3.319
+**HEAD == origin/main:** `0959606` (the L4 hotfix); L4 hotfix 2 is built on it, local, awaiting the commit
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -354,5 +354,6 @@ the very end (after this list).
 | v3.314 | L1.2a the felt-pass fixes + the arc-route sweep (M9) — pushed with b73459e |
 | v3.315 | L1.2b the flat pass (blur 0, gradients to the ruled 64, shadows + motion to the canon) — pushed b73459e |
 | v3.316 | L1.2c the status zone, the Add-a-book radios, the soil band — pushed c6a32eb |
-| **v3.317** | **L4.1–L4.4 the lens eval, the data contract, the Lenses page and sheet, the sky (dark) — pushed ee8309d, current live; its lens read timed out on the live site (three 504s at 30 s)** |
-| v3.318 | L4 hotfix — the lens read fits the limit (three lenses, five books, max_tokens 1000), the look-save guarded, the ?lenstime=on line — built local, awaiting commit |
+| v3.317 | L4.1–L4.4 the lens eval, the data contract, the Lenses page and sheet, the sky (dark) — pushed ee8309d; its lens read timed out on the live site (three 504s at 30 s) |
+| **v3.318** | **L4 hotfix — the lens read fits the limit (three lenses, five books, max_tokens 1000), the look-save guarded, the ?lenstime=on line — pushed 0959606, current live; its reads finished in time (200) but were discarded as unreadable** |
+| v3.319 | L4 hotfix 2 — keep what arrives (a cut-off reply keeps its complete lenses), ask for two (max_tokens 800); the ?lenstime=on line shows stop and length — built local, awaiting commit |

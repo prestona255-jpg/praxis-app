@@ -7,7 +7,7 @@
 // Usage:  cscript //nologo //E:jscript tools/lens-eval-test/run.js
 // Exit:   0 = every fixture and assertion passed - 1 = a failure - 2 = could not load
 //
-// 16 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
+// 21 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
 // old-shape and second reader-claim), on a 20-title numbered library, each with
 // its expected survivors and expected [L4-eval] log lines.
 
@@ -101,6 +101,10 @@ var F1 = clean('Who gets to deposit', [1, 2, 3]);
 var F2 = clean('The machine as teacher', [4, 5, 6, 7]);
 var F3 = clean('Maps against the pacing guide', [1, 2, 3, 4, 5, 6, 7, 8, 9]);
 var F16 = clean('Six on one shelf', [1, 2, 3, 4, 5, 6]);
+// L4 hotfix 2: the cut-off fixtures. HB carries braces INSIDE its strings, so a salvage that
+// did not skip quoted strings would miscount depth and lose it.
+var H1 = clean('The bank and the classroom', [1, 2]), H2 = clean('Machines that sort', [4, 5]), H3 = clean('Land as teacher', [10, 12]);
+var HB = clean('Who holds the {key}', [1, 2], { lead: 'These books ask who holds the {key} and who is } locked out.' });
 var F10 = clean('Watching before the screen', [5, 6, 7], { clauses: [{ i: 5, c: clause(5) }, { i: 6, c: clause(6) }, { i: 19, c: clause(19) }] });
 var F6 = { name: 'Who counts as knowing', lead: 'You told me: ' + LDQ + 'you never finish these.' + RDQ + ' Through that, the three ask who is allowed to count.',
            close: 'Read that way the bank is a court.', q: 'Who sits on the bench?', books: [1, 2, 3] };
@@ -122,9 +126,15 @@ var FIX = [
   { n: 13, what: 'old shape, reader-claim in why',    reply: '[{"name":"Technologies of liberation","why":"You keep circling the machine.","books":[4,5,6]}]', keep: [], logs: ['[L4-eval] thin (old shape, no clauses): Technologies of liberation'] },
   { n: 14, what: 'unparseable reply',                 reply: 'Sorry ' + MDASH + ' I could not read the shelf this time.', keep: [], logs: ['[L4-eval] unparseable: (reply)'] },
   // L4 hotfix (R1, R2, 14 Nov 2026): extras are DROPPED, never the whole reply.
-  { n: 15, what: 'four lenses -> first 3 kept (R1)',  reply: jsonStr([clean('The bank and the classroom', [1, 2]), clean('Machines that sort', [4, 5]), clean('Land as teacher', [10, 12]), clean('Rest as refusal', [13, 14])]),
-    keep: ['The bank and the classroom', 'Machines that sort', 'Land as teacher'], logs: ['[L4-eval] cap: Rest as refusal'] },
-  { n: 16, what: 'six-book lens -> first 5 kept (R2)', reply: jsonStr([F16]), keep: ['Six on one shelf'], logs: [], check: function (o) { return o[0].books.length === 5 && !o[0].clauses.hasOwnProperty(LIB[5]) && o[0].reading === readingOf(F16, [1, 2, 3, 4, 5]); } }
+  { n: 15, what: 'four lenses -> first 2 kept (hf2 R1)',  reply: jsonStr([clean('The bank and the classroom', [1, 2]), clean('Machines that sort', [4, 5]), clean('Land as teacher', [10, 12]), clean('Rest as refusal', [13, 14])]),
+    keep: ['The bank and the classroom', 'Machines that sort'], logs: ['[L4-eval] cap: Land as teacher', '[L4-eval] cap: Rest as refusal'] },
+  { n: 16, what: 'six-book lens -> first 5 kept (R2)', reply: jsonStr([F16]), keep: ['Six on one shelf'], logs: [], check: function (o) { return o[0].books.length === 5 && !o[0].clauses.hasOwnProperty(LIB[5]) && o[0].reading === readingOf(F16, [1, 2, 3, 4, 5]); } },
+  // L4 hotfix 2 (R3, 14 Nov 2026): a cut-off reply keeps every lens that arrived COMPLETE.
+  { n: 17, what: 'two lenses, cut inside the 2nd -> 1 kept', reply: '[' + jsonStr(H1) + ',' + jsonStr(H2).substring(0, jsonStr(H2).indexOf('"close"') + 15), keep: ['The bank and the classroom'], logs: [] },
+  { n: 18, what: 'cut inside the 1st -> unreadable',    reply: '[' + jsonStr(H1).substring(0, 90), keep: [], logs: ['[L4-eval] unparseable: (reply)'] },
+  { n: 19, what: 'complete two-lens reply, unchanged',  reply: jsonStr([H1, H2]), keep: ['The bank and the classroom', 'Machines that sort'], logs: [] },
+  { n: 20, what: 'three lenses -> first 2 + one cap',   reply: jsonStr([H1, H2, H3]), keep: ['The bank and the classroom', 'Machines that sort'], logs: ['[L4-eval] cap: Land as teacher'] },
+  { n: 21, what: 'cut in a string holding a brace',     reply: '[' + jsonStr(HB) + ',{"name":"Machines that sort","lead":"A brace } then the cut', keep: ['Who holds the {key}'], logs: [] }
 ];
 
 // ---- run the fixtures -----------------------------------------------------
@@ -167,8 +177,8 @@ function firstDiff(a, b) { var i = 0; while (i < a.length && i < b.length && a.c
 assert('LENS_GEN_SYSTEM === contract sec.1 quoted prompt, character for character (' + CONTRACT_PROMPT.length + ' chars)',
   CONTRACT_PROMPT.length > 2000 && LENS_GEN_SYSTEM === CONTRACT_PROMPT,
   function () { var d = firstDiff(LENS_GEN_SYSTEM, CONTRACT_PROMPT); return 'lengths ' + LENS_GEN_SYSTEM.length + ' / ' + CONTRACT_PROMPT.length + '; first diff at ' + d + ': code [' + LENS_GEN_SYSTEM.substr(d, 40) + '] contract [' + CONTRACT_PROMPT.substr(d, 40) + ']'; });
-assert('LENS_GEN_SYSTEM is the contract text (2,372 chars, ban list quotes the live phrase)',
-  LENS_GEN_SYSTEM.length === 2372 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
+assert('LENS_GEN_SYSTEM is the contract text (2,370 chars, ban list quotes the live phrase)',
+  LENS_GEN_SYSTEM.length === 2370 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
   function () { return 'length ' + LENS_GEN_SYSTEM.length + ', ban-list at ' + LENS_GEN_SYSTEM.indexOf('never "you keep circling"') + ', exemption at ' + LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"'); });
 // metadata-only payload: build a real meta and look for every id
 state.userBooks = { u_test: { bookIds: [] } }; state.books = {};
@@ -193,7 +203,25 @@ assert('payload items in contract order: shelf, kept, offered (values empty -> l
   function () { return 'tail: ' + MSG.substring(MSG.indexOf('20. "')).replace(/\n/g, ' / '); });
 CALLS = 0; NEXT = jsonStr([F1]);
 var got = null; generateLenses(META).then(function (t) { got = t; });
-assert('one generation = one call; max_tokens 1000; model sonnet-4-6', CALLS === 1 && got === NEXT && LASTPAYLOAD.max_tokens === 1000 && LASTPAYLOAD.model === 'claude-sonnet-4-6');
+assert('one generation = one call; max_tokens 800; model sonnet-4-6', CALLS === 1 && got === NEXT && LASTPAYLOAD.max_tokens === 800 && LASTPAYLOAD.model === 'claude-sonnet-4-6');
+// L4 hotfix 2 (R4, D-1): a reply cut at max_tokens resolves (it is not unreadable), logs
+// "[L4-eval] truncated: kept N" once, and records stop / chars / cut / kept for ?lenstime=on.
+var CUT17 = FIX[16].reply, STOPNEXT = 'max_tokens';
+aiProxyFetch = function (payload) { CALLS++; LASTPAYLOAD = payload; return new T({ content: [{ type: 'text', text: NEXT }], usage: { input_tokens: 3310, output_tokens: 800 }, stop_reason: STOPNEXT }); };
+CALLS = 0; NEXT = CUT17; LOGS = []; got = null; var cutRejected = false;
+generateLenses(META).then(function (t) { got = t; }, function () { cutRejected = true; });
+var LU = lensLastUsageVal, truncLogs = []; for (ii = 0; ii < LOGS.length; ii++) { if (LOGS[ii].indexOf('[L4-eval] truncated') === 0) { truncLogs.push(LOGS[ii]); } }
+assert('a reply cut at max_tokens resolves, logs "truncated: kept 1" once, records stop/chars/cut/kept',
+  !cutRejected && got === CUT17 && truncLogs.join('|') === '[L4-eval] truncated: kept 1' && LU && LU.stop === 'max_tokens' && LU.cut === true && LU.kept === 1 && LU.chars === CUT17.length && LU.output === 800,
+  function () { return 'rejected ' + cutRejected + ', logs [' + truncLogs.join('|') + '], usage ' + jsonStr(LU); });
+CALLS = 0; NEXT = jsonStr([H1, H2]); STOPNEXT = 'end_turn'; LOGS = []; generateLenses(META).then(function () {}, function () {});
+truncLogs = []; for (ii = 0; ii < LOGS.length; ii++) { if (LOGS[ii].indexOf('[L4-eval] truncated') === 0) { truncLogs.push(LOGS[ii]); } }
+assert('a complete reply (end_turn): no truncated log; cut false, kept 2', truncLogs.length === 0 && lensLastUsageVal.cut === false && lensLastUsageVal.kept === 2 && lensLastUsageVal.stop === 'end_turn');
+STOPNEXT = undefined;
+// (d) parseValueRetrofitArray is untouched: a cut-off array is still null there (the value
+// retrofit keeps its honest ERROR state), while the lens parse now salvages.
+assert('parseValueRetrofitArray unchanged: a cut-off array -> null; parseLensReply salvages 1',
+  parseValueRetrofitArray(CUT17) === null && parseLensReply(CUT17, false) !== null && parseLensReply(CUT17, false).length === 1);
 CALLS = 0; NEXT = 'Sorry, nothing readable.'; var rejected = false;
 generateLenses(META).then(function () {}, function () { rejected = true; });
 assert('an unreadable reply rejects into the error state (LENS-1), one call', CALLS === 1 && rejected);
@@ -209,7 +237,7 @@ assert('sameLens: name ignoring case; two-thirds of the larger; symmetric',
   !sameLens({ name: 'x', bookIds: ['1', '2', '3'] }, { name: 'y', bookIds: ['1', '2', '3', '4', '5'] }) &&
   !sameLens({ name: 'y', bookIds: ['1', '2', '3', '4', '5'] }, { name: 'x', bookIds: ['1', '2', '3'] }));
 
-WScript.Echo('L4.1 lens eval v2 -- 16 fixtures on a 20-title library');
+WScript.Echo('L4.1 lens eval v2 -- 21 fixtures on a 20-title library');
 WScript.Echo(pad('#', 3) + pad('fixture', 38) + pad('expect', 10) + 'expected log  verdict');
 for (ii = 0; ii < rows.length; ii++) { WScript.Echo(rows[ii]); }
 WScript.Echo('');
