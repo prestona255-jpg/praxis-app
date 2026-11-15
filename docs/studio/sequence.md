@@ -31,6 +31,13 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-14 (L4 HOTFIX 3 — Preston, 14 Nov 2026)** — v3.319's live read hit max_tokens (3646 in / 800 out), kept one complete
+  lens, and the eval dropped it at the close cap (`length: close`): the prompt never stated a length. Hotfix 3 tells Yumi the line
+  lengths (lead 180 / clause 100 / close 130 / q 100, below the eval caps on purpose) and puts "Ask Yumi again" on the Lenses
+  page's last band, which had no button. It takes v3.320, so the sky's flip moves to v3.321. Preston's ruling, recorded as ruled.
+  **Ledger (recorded, NOT acted on):** (1) the idle band says "Nothing new from me" when no read has run this session;
+  (2) "your shelf may be small" shows at 143 books; (3) a read that offers nothing still stamps `markLensRead`.
+  Record: `docs/checkpoints/l4.md` "Hotfix 3, 14 Nov".
 - **2026-11-14 (L4 HOTFIX 2 — Preston, 14 Nov 2026)** — v3.318's reads finished inside the limit (23.25 / 22.83 / 30.30 s, 200)
   and were then discarded as unreadable: one read now asks for up to TWO lenses, max_tokens 800, and a cut-off reply keeps
   every lens that arrived complete (R1–R4). The hotfix takes v3.319, so the sky's flip moves to v3.320. The two-step read
@@ -1443,7 +1450,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   edition, lifted byte-for-byte; the scoped sky block in components.css) on Home and You, dark-launched (sweep 29/29;
   key-off DOM identical to HEAD but for the post-yes Yumi row, ruling 84 as amended). Owed at the push gate: Preston
   publishes the `/userLensOffers` rule BEFORE the push; one real generation on his account; the phone walk; then
-  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.320; v3.318 and v3.319 are the L4 hotfixes). **Lane order (ruling 83): L4 → L2 → L4b → L5
+  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.321; v3.318, v3.319 and v3.320 are the L4 hotfixes). **Lane order (ruling 83): L4 → L2 → L4b → L5
   → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
   touches: [lenses, home, profile, shelf, yumi, yumi-sees]
 - [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; the NEXT build, ahead of everything below)** —

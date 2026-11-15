@@ -26992,7 +26992,7 @@ function renderLensesPage() {
       'NAME YOUR OWN BELOW · OR ASK HER AGAIN AS IT GROWS', lxAskAgainBtn(uid)));
   } else {
     body.appendChild(lxStateBand('Nothing new from me. Every thread I found is taken up, waiting, or remembered as not this.',
-      'SHE READS AGAIN WHEN YOUR SHELF CHANGES'));
+      'SHE READS AGAIN WHEN YOUR SHELF CHANGES', lxAskAgainBtn(uid)));
   }
 
   // Later (hers to decide only while the yes stands -- contract §4).

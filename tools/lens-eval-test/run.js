@@ -7,7 +7,7 @@
 // Usage:  cscript //nologo //E:jscript tools/lens-eval-test/run.js
 // Exit:   0 = every fixture and assertion passed - 1 = a failure - 2 = could not load
 //
-// 21 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
+// 23 fixtures (Preston's ruling 4: the brief's 12 + the contract's second
 // old-shape and second reader-claim), on a 20-title numbered library, each with
 // its expected survivors and expected [L4-eval] log lines.
 
@@ -105,6 +105,19 @@ var F16 = clean('Six on one shelf', [1, 2, 3, 4, 5, 6]);
 // did not skip quoted strings would miscount depth and lose it.
 var H1 = clean('The bank and the classroom', [1, 2]), H2 = clean('Machines that sort', [4, 5]), H3 = clean('Land as teacher', [10, 12]);
 var HB = clean('Who holds the {key}', [1, 2], { lead: 'These books ask who holds the {key} and who is } locked out.' });
+// L4 hotfix 3 (14 Nov 2026): every line EXACTLY at the told limits (lead 180, clause 100,
+// close 130, q 100), then the same reply with one close at 161 (over the 160 cap).
+function exactLen(seed, n, last) { var s = seed; while (s.length < n) { s = s + ' ' + seed; } return s.substring(0, n - 1) + (last || '.'); }
+function atLimits(name, nums, closeLen) {
+  var o = { name: name, lead: exactLen('These books set the ledger beside the classroom', 180), clauses: [],
+            close: exactLen('Read together they ask what the room is for', closeLen || 130),
+            q: exactLen('Who decides what a classroom is for', 100, '?'), themes: THEMES, books: nums }, i;
+  for (i = 0; i < nums.length; i++) { o.clauses.push({ i: nums[i], c: exactLen('Book ' + nums[i] + ' sets its title against the others', 100) }); }
+  return o;
+}
+var LIM1 = atLimits('Ledgers of the classroom', [6, 7]), LIM2 = atLimits('Sorting as a machine', [8, 9]);
+var LIM1OVER = atLimits('Ledgers of the classroom', [6, 7], 161);
+function atLimitsOk(o) { return o.lead.length === 180 && o.close.length === 130 && o.q.length === 100 && o.clauses[0].c.length === 100 && o.clauses[1].c.length === 100; }
 var F10 = clean('Watching before the screen', [5, 6, 7], { clauses: [{ i: 5, c: clause(5) }, { i: 6, c: clause(6) }, { i: 19, c: clause(19) }] });
 var F6 = { name: 'Who counts as knowing', lead: 'You told me: ' + LDQ + 'you never finish these.' + RDQ + ' Through that, the three ask who is allowed to count.',
            close: 'Read that way the bank is a court.', q: 'Who sits on the bench?', books: [1, 2, 3] };
@@ -134,7 +147,11 @@ var FIX = [
   { n: 18, what: 'cut inside the 1st -> unreadable',    reply: '[' + jsonStr(H1).substring(0, 90), keep: [], logs: ['[L4-eval] unparseable: (reply)'] },
   { n: 19, what: 'complete two-lens reply, unchanged',  reply: jsonStr([H1, H2]), keep: ['The bank and the classroom', 'Machines that sort'], logs: [] },
   { n: 20, what: 'three lenses -> first 2 + one cap',   reply: jsonStr([H1, H2, H3]), keep: ['The bank and the classroom', 'Machines that sort'], logs: ['[L4-eval] cap: Land as teacher'] },
-  { n: 21, what: 'cut in a string holding a brace',     reply: '[' + jsonStr(HB) + ',{"name":"Machines that sort","lead":"A brace } then the cut', keep: ['Who holds the {key}'], logs: [] }
+  { n: 21, what: 'cut in a string holding a brace',     reply: '[' + jsonStr(HB) + ',{"name":"Machines that sort","lead":"A brace } then the cut', keep: ['Who holds the {key}'], logs: [] },
+  // L4 hotfix 3: the told limits clear the eval; one char over the close CAP drops that lens only.
+  { n: 22, what: 'two lenses at the told limits -> 2',  reply: jsonStr([LIM1, LIM2]), keep: ['Ledgers of the classroom', 'Sorting as a machine'], logs: [],
+    check: function () { return atLimitsOk(LIM1) && atLimitsOk(LIM2) && LIM1OVER.close.length === 161; } },
+  { n: 23, what: 'one close at 161 -> that lens dropped', reply: jsonStr([LIM1OVER, LIM2]), keep: ['Sorting as a machine'], logs: ['[L4-eval] length: close: Ledgers of the classroom'] }
 ];
 
 // ---- run the fixtures -----------------------------------------------------
@@ -177,8 +194,8 @@ function firstDiff(a, b) { var i = 0; while (i < a.length && i < b.length && a.c
 assert('LENS_GEN_SYSTEM === contract sec.1 quoted prompt, character for character (' + CONTRACT_PROMPT.length + ' chars)',
   CONTRACT_PROMPT.length > 2000 && LENS_GEN_SYSTEM === CONTRACT_PROMPT,
   function () { var d = firstDiff(LENS_GEN_SYSTEM, CONTRACT_PROMPT); return 'lengths ' + LENS_GEN_SYSTEM.length + ' / ' + CONTRACT_PROMPT.length + '; first diff at ' + d + ': code [' + LENS_GEN_SYSTEM.substr(d, 40) + '] contract [' + CONTRACT_PROMPT.substr(d, 40) + ']'; });
-assert('LENS_GEN_SYSTEM is the contract text (2,370 chars, ban list quotes the live phrase)',
-  LENS_GEN_SYSTEM.length === 2370 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
+assert('LENS_GEN_SYSTEM is the contract text (2,639 chars, ban list quotes the live phrase)',
+  LENS_GEN_SYSTEM.length === 2639 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
   function () { return 'length ' + LENS_GEN_SYSTEM.length + ', ban-list at ' + LENS_GEN_SYSTEM.indexOf('never "you keep circling"') + ', exemption at ' + LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"'); });
 // metadata-only payload: build a real meta and look for every id
 state.userBooks = { u_test: { bookIds: [] } }; state.books = {};
@@ -237,7 +254,7 @@ assert('sameLens: name ignoring case; two-thirds of the larger; symmetric',
   !sameLens({ name: 'x', bookIds: ['1', '2', '3'] }, { name: 'y', bookIds: ['1', '2', '3', '4', '5'] }) &&
   !sameLens({ name: 'y', bookIds: ['1', '2', '3', '4', '5'] }, { name: 'x', bookIds: ['1', '2', '3'] }));
 
-WScript.Echo('L4.1 lens eval v2 -- 21 fixtures on a 20-title library');
+WScript.Echo('L4.1 lens eval v2 -- 23 fixtures on a 20-title library');
 WScript.Echo(pad('#', 3) + pad('fixture', 38) + pad('expect', 10) + 'expected log  verdict');
 for (ii = 0; ii < rows.length; ii++) { WScript.Echo(rows[ii]); }
 WScript.Echo('');
